@@ -52,8 +52,7 @@ void CheckExistingCookieId()
 	if (config_has_user_value(main->Config(), "Panels", "CookieId"))
 		return;
 
-	config_set_string(main->Config(), "Panels", "CookieId",
-			  GenId().c_str());
+	config_set_string(main->Config(), "Panels", "CookieId", GenId().c_str());
 }
 
 #ifdef BROWSER_AVAILABLE
@@ -67,8 +66,7 @@ static void InitPanelCookieManager()
 	CheckExistingCookieId();
 
 	OBSBasic *main = OBSBasic::Get();
-	const char *cookie_id =
-		config_get_string(main->Config(), "Panels", "CookieId");
+	const char *cookie_id = config_get_string(main->Config(), "Panels", "CookieId");
 
 	std::string sub_path;
 	sub_path += "obs_profile_cookies/";
@@ -103,8 +101,7 @@ void DuplicateCurrentCookieProfile(ConfigFile &config)
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
 		OBSBasic *main = OBSBasic::Get();
-		std::string cookie_id =
-			config_get_string(main->Config(), "Panels", "CookieId");
+		std::string cookie_id = config_get_string(main->Config(), "Panels", "CookieId");
 
 		std::string src_path;
 		src_path += "obs_profile_cookies/";
@@ -136,10 +133,8 @@ void DuplicateCurrentCookieProfile(ConfigFile &config)
 			}
 		}
 
-		config_set_string(config, "Panels", "CookieId",
-				  cookie_id.c_str());
-		config_set_string(main->Config(), "Panels", "CookieId",
-				  new_id.c_str());
+		config_set_string(config, "Panels", "CookieId", cookie_id.c_str());
+		config_set_string(main->Config(), "Panels", "CookieId", new_id.c_str());
 	}
 #else
 	UNUSED_PARAMETER(config);
@@ -156,8 +151,7 @@ void OBSBasic::InitBrowserPanelSafeBlock()
 		return;
 	}
 
-	ExecThreadedWithoutBlocking([] { cef->wait_for_browser_init(); },
-				    QTStr("BrowserPanelInit.Title"),
+	ExecThreadedWithoutBlocking([] { cef->wait_for_browser_init(); }, QTStr("BrowserPanelInit.Title"),
 				    QTStr("BrowserPanelInit.Text"));
 	InitPanelCookieManager();
 #endif

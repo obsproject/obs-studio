@@ -32,8 +32,7 @@ static void HandleIntProperty(obs_property_t *prop, std::vector<int> &bitrates)
 		bitrates.push_back(i);
 }
 
-static void HandleListProperty(obs_property_t *prop, const char *id,
-			       std::vector<int> &bitrates)
+static void HandleListProperty(obs_property_t *prop, const char *id, std::vector<int> &bitrates)
 {
 	obs_combo_format format = obs_property_list_format(prop);
 	if (format != OBS_COMBO_FORMAT_INT) {
@@ -50,8 +49,7 @@ static void HandleListProperty(obs_property_t *prop, const char *id,
 		if (obs_property_list_item_disabled(prop, i))
 			continue;
 
-		int bitrate =
-			static_cast<int>(obs_property_list_item_int(prop, i));
+		int bitrate = static_cast<int>(obs_property_list_item_int(prop, i));
 		bitrates.push_back(bitrate);
 	}
 }
@@ -61,8 +59,7 @@ static void HandleSampleRate(obs_property_t *prop, const char *id)
 	auto ReleaseData = [](obs_data_t *data) {
 		obs_data_release(data);
 	};
-	std::unique_ptr<obs_data_t, decltype(ReleaseData)> data{
-		obs_encoder_defaults(id), ReleaseData};
+	std::unique_ptr<obs_data_t, decltype(ReleaseData)> data{obs_encoder_defaults(id), ReleaseData};
 
 	if (!data) {
 		blog(LOG_ERROR,
@@ -79,8 +76,7 @@ static void HandleSampleRate(obs_property_t *prop, const char *id)
 		return;
 	}
 
-	uint32_t sampleRate =
-		config_get_uint(main->Config(), "Audio", "SampleRate");
+	uint32_t sampleRate = config_get_uint(main->Config(), "Audio", "SampleRate");
 
 	obs_data_set_int(data.get(), "samplerate", sampleRate);
 
@@ -92,8 +88,8 @@ static void HandleEncoderProperties(const char *id, std::vector<int> &bitrates)
 	auto DestroyProperties = [](obs_properties_t *props) {
 		obs_properties_destroy(props);
 	};
-	std::unique_ptr<obs_properties_t, decltype(DestroyProperties)> props{
-		obs_get_encoder_properties(id), DestroyProperties};
+	std::unique_ptr<obs_properties_t, decltype(DestroyProperties)> props{obs_get_encoder_properties(id),
+									     DestroyProperties};
 
 	if (!props) {
 		blog(LOG_ERROR,
@@ -103,8 +99,7 @@ static void HandleEncoderProperties(const char *id, std::vector<int> &bitrates)
 		return;
 	}
 
-	obs_property_t *samplerate =
-		obs_properties_get(props.get(), "samplerate");
+	obs_property_t *samplerate = obs_properties_get(props.get(), "samplerate");
 	if (samplerate)
 		HandleSampleRate(samplerate, id);
 
@@ -156,16 +151,14 @@ static void PopulateBitrateLists()
 		for (auto &bitrate : fallbackBitrates)
 			ss << "\n	" << setw(3) << bitrate << " kbit/s:";
 
-		blog(LOG_DEBUG, "Fallback encoder bitrates:%s",
-		     ss.str().c_str());
+		blog(LOG_DEBUG, "Fallback encoder bitrates:%s", ss.str().c_str());
 
 		const char *id = nullptr;
 		for (size_t i = 0; obs_enum_encoder_types(i, &id); i++) {
 			if (obs_get_encoder_type(id) != OBS_ENCODER_AUDIO)
 				continue;
 
-			if (strcmp(id, "ffmpeg_aac") == 0 ||
-			    strcmp(id, "ffmpeg_opus") == 0)
+			if (strcmp(id, "ffmpeg_aac") == 0 || strcmp(id, "ffmpeg_opus") == 0)
 				continue;
 
 			std::string encoder = id;
@@ -180,11 +173,9 @@ static void PopulateBitrateLists()
 
 			ostringstream ss;
 			for (auto &bitrate : encoderBitrates[encoder])
-				ss << "\n	" << setw(3) << bitrate
-				   << " kbit/s";
+				ss << "\n	" << setw(3) << bitrate << " kbit/s";
 
-			blog(LOG_DEBUG, "%s (%s) encoder bitrates:%s",
-			     EncoderName(id), id, ss.str().c_str());
+			blog(LOG_DEBUG, "%s (%s) encoder bitrates:%s", EncoderName(id), id, ss.str().c_str());
 		}
 
 		if (encoderBitrates.empty() && fallbackBitrates.empty())
@@ -222,8 +213,7 @@ static void PopulateSimpleAACBitrateMap()
 				return val == NullToEmpty(id);
 			};
 
-			if (find_if(begin(encoders), end(encoders), Compare) !=
-			    end(encoders))
+			if (find_if(begin(encoders), end(encoders), Compare) != end(encoders))
 				continue;
 
 			if (strcmp(GetCodec(id), "aac") != 0)
@@ -256,12 +246,10 @@ static void PopulateSimpleAACBitrateMap()
 
 		ostringstream ss;
 		for (auto &entry : simpleAACBitrateMap)
-			ss << "\n	" << setw(3) << entry.first
-			   << " kbit/s: '" << EncoderName(entry.second) << "' ("
-			   << entry.second << ')';
+			ss << "\n	" << setw(3) << entry.first << " kbit/s: '" << EncoderName(entry.second)
+			   << "' (" << entry.second << ')';
 
-		blog(LOG_DEBUG, "AAC simple encoder bitrate mapping:%s",
-		     ss.str().c_str());
+		blog(LOG_DEBUG, "AAC simple encoder bitrate mapping:%s", ss.str().c_str());
 	});
 }
 
@@ -301,12 +289,10 @@ static void PopulateSimpleOpusBitrateMap()
 
 		ostringstream ss;
 		for (auto &entry : simpleOpusBitrateMap)
-			ss << "\n	" << setw(3) << entry.first
-			   << " kbit/s: '" << EncoderName(entry.second) << "' ("
-			   << entry.second << ')';
+			ss << "\n	" << setw(3) << entry.first << " kbit/s: '" << EncoderName(entry.second)
+			   << "' (" << entry.second << ')';
 
-		blog(LOG_DEBUG, "Opus simple encoder bitrate mapping:%s",
-		     ss.str().c_str());
+		blog(LOG_DEBUG, "Opus simple encoder bitrate mapping:%s", ss.str().c_str());
 	});
 }
 
@@ -342,8 +328,7 @@ const char *GetSimpleOpusEncoderForBitrate(int bitrate)
 
 #define INVALID_BITRATE 10000
 
-static int FindClosestAvailableSimpleBitrate(int bitrate,
-					     const map<int, std::string> &map)
+static int FindClosestAvailableSimpleBitrate(int bitrate, const map<int, std::string> &map)
 {
 	int prev = 0;
 	int next = INVALID_BITRATE;
@@ -369,14 +354,12 @@ static int FindClosestAvailableSimpleBitrate(int bitrate,
 
 int FindClosestAvailableSimpleAACBitrate(int bitrate)
 {
-	return FindClosestAvailableSimpleBitrate(
-		bitrate, GetSimpleAACEncoderBitrateMap());
+	return FindClosestAvailableSimpleBitrate(bitrate, GetSimpleAACEncoderBitrateMap());
 }
 
 int FindClosestAvailableSimpleOpusBitrate(int bitrate)
 {
-	return FindClosestAvailableSimpleBitrate(
-		bitrate, GetSimpleOpusEncoderBitrateMap());
+	return FindClosestAvailableSimpleBitrate(bitrate, GetSimpleOpusEncoderBitrateMap());
 }
 
 const std::vector<int> &GetAudioEncoderBitrates(const char *id)
@@ -396,9 +379,7 @@ int FindClosestAvailableAudioBitrate(const char *id, int bitrate)
 	int next = INVALID_BITRATE;
 	std::string encoder = id;
 
-	for (auto val : encoderBitrates[encoder].empty()
-				? fallbackBitrates
-				: encoderBitrates[encoder]) {
+	for (auto val : encoderBitrates[encoder].empty() ? fallbackBitrates : encoderBitrates[encoder]) {
 		if (next > val) {
 			if (val == bitrate)
 				return bitrate;

@@ -2,80 +2,61 @@
 
 #include "window-basic-main.hpp"
 
-OBSBasicControls::OBSBasicControls(OBSBasic *main)
-	: QFrame(nullptr),
-	  ui(new Ui::OBSBasicControls)
+OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui::OBSBasicControls)
 {
 	/* Create UI elements */
 	ui->setupUi(this);
 
 	streamButtonMenu.reset(new QMenu());
-	startStreamAction =
-		streamButtonMenu->addAction(QTStr("Basic.Main.StartStreaming"));
-	stopStreamAction =
-		streamButtonMenu->addAction(QTStr("Basic.Main.StopStreaming"));
-	QAction *forceStopStreamAction = streamButtonMenu->addAction(
-		QTStr("Basic.Main.ForceStopStreaming"));
+	startStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.StartStreaming"));
+	stopStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.StopStreaming"));
+	QAction *forceStopStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"));
 
 	/* Transfer buttons signals as OBSBasicControls signals */
 	connect(
-		ui->streamButton, &QPushButton::clicked, this,
-		[this]() { emit this->StreamButtonClicked(); },
+		ui->streamButton, &QPushButton::clicked, this, [this]() { emit this->StreamButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
-		ui->broadcastButton, &QPushButton::clicked, this,
-		[this]() { emit this->BroadcastButtonClicked(); },
+		ui->broadcastButton, &QPushButton::clicked, this, [this]() { emit this->BroadcastButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
-		ui->recordButton, &QPushButton::clicked, this,
-		[this]() { emit this->RecordButtonClicked(); },
+		ui->recordButton, &QPushButton::clicked, this, [this]() { emit this->RecordButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
-		ui->pauseRecordButton, &QPushButton::clicked, this,
-		[this]() { emit this->PauseRecordButtonClicked(); },
+		ui->pauseRecordButton, &QPushButton::clicked, this, [this]() { emit this->PauseRecordButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
 		ui->replayBufferButton, &QPushButton::clicked, this,
-		[this]() { emit this->ReplayBufferButtonClicked(); },
-		Qt::DirectConnection);
+		[this]() { emit this->ReplayBufferButtonClicked(); }, Qt::DirectConnection);
 	connect(
 		ui->saveReplayButton, &QPushButton::clicked, this,
-		[this]() { emit this->SaveReplayBufferButtonClicked(); },
-		Qt::DirectConnection);
+		[this]() { emit this->SaveReplayBufferButtonClicked(); }, Qt::DirectConnection);
 	connect(
-		ui->virtualCamButton, &QPushButton::clicked, this,
-		[this]() { emit this->VirtualCamButtonClicked(); },
+		ui->virtualCamButton, &QPushButton::clicked, this, [this]() { emit this->VirtualCamButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
 		ui->virtualCamConfigButton, &QPushButton::clicked, this,
-		[this]() { emit this->VirtualCamConfigButtonClicked(); },
+		[this]() { emit this->VirtualCamConfigButtonClicked(); }, Qt::DirectConnection);
+	connect(
+		ui->modeSwitch, &QPushButton::clicked, this, [this]() { emit this->StudioModeButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
-		ui->modeSwitch, &QPushButton::clicked, this,
-		[this]() { emit this->StudioModeButtonClicked(); },
+		ui->settingsButton, &QPushButton::clicked, this, [this]() { emit this->SettingsButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
-		ui->settingsButton, &QPushButton::clicked, this,
-		[this]() { emit this->SettingsButtonClicked(); },
-		Qt::DirectConnection);
-	connect(
-		ui->exitButton, &QPushButton::clicked, this,
-		[this]() { emit this->ExitButtonClicked(); },
+		ui->exitButton, &QPushButton::clicked, this, [this]() { emit this->ExitButtonClicked(); },
 		Qt::DirectConnection);
 
 	/* Transfer menu actions signals as OBSBasicControls signals */
 	connect(
 		startStreamAction.get(), &QAction::triggered, this,
-		[this]() { emit this->StartStreamMenuActionClicked(); },
-		Qt::DirectConnection);
+		[this]() { emit this->StartStreamMenuActionClicked(); }, Qt::DirectConnection);
 	connect(
 		stopStreamAction.get(), &QAction::triggered, this,
-		[this]() { emit this->StopStreamMenuActionClicked(); },
-		Qt::DirectConnection);
+		[this]() { emit this->StopStreamMenuActionClicked(); }, Qt::DirectConnection);
 	connect(
 		forceStopStreamAction, &QAction::triggered, this,
-		[this]() { emit this->ForceStopStreamMenuActionClicked(); },
-		Qt::DirectConnection);
+		[this]() { emit this->ForceStopStreamMenuActionClicked(); }, Qt::DirectConnection);
 
 	/* Set up default visibilty */
 	ui->broadcastButton->setVisible(false);
@@ -86,57 +67,35 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main)
 	ui->virtualCamConfigButton->setVisible(false);
 
 	/* Set up state update connections */
-	connect(main, &OBSBasic::StreamingPreparing, this,
-		&OBSBasicControls::StreamingPreparing);
-	connect(main, &OBSBasic::StreamingStarting, this,
-		&OBSBasicControls::StreamingStarting);
-	connect(main, &OBSBasic::StreamingStarted, this,
-		&OBSBasicControls::StreamingStarted);
-	connect(main, &OBSBasic::StreamingStopping, this,
-		&OBSBasicControls::StreamingStopping);
-	connect(main, &OBSBasic::StreamingStopped, this,
-		&OBSBasicControls::StreamingStopped);
+	connect(main, &OBSBasic::StreamingPreparing, this, &OBSBasicControls::StreamingPreparing);
+	connect(main, &OBSBasic::StreamingStarting, this, &OBSBasicControls::StreamingStarting);
+	connect(main, &OBSBasic::StreamingStarted, this, &OBSBasicControls::StreamingStarted);
+	connect(main, &OBSBasic::StreamingStopping, this, &OBSBasicControls::StreamingStopping);
+	connect(main, &OBSBasic::StreamingStopped, this, &OBSBasicControls::StreamingStopped);
 
-	connect(main, &OBSBasic::BroadcastStreamReady, this,
-		&OBSBasicControls::BroadcastStreamReady);
-	connect(main, &OBSBasic::BroadcastStreamActive, this,
-		&OBSBasicControls::BroadcastStreamActive);
-	connect(main, &OBSBasic::BroadcastStreamStarted, this,
-		&OBSBasicControls::BroadcastStreamStarted);
+	connect(main, &OBSBasic::BroadcastStreamReady, this, &OBSBasicControls::BroadcastStreamReady);
+	connect(main, &OBSBasic::BroadcastStreamActive, this, &OBSBasicControls::BroadcastStreamActive);
+	connect(main, &OBSBasic::BroadcastStreamStarted, this, &OBSBasicControls::BroadcastStreamStarted);
 
-	connect(main, &OBSBasic::RecordingStarted, this,
-		&OBSBasicControls::RecordingStarted);
-	connect(main, &OBSBasic::RecordingPaused, this,
-		&OBSBasicControls::RecordingPaused);
-	connect(main, &OBSBasic::RecordingUnpaused, this,
-		&OBSBasicControls::RecordingUnpaused);
-	connect(main, &OBSBasic::RecordingStopping, this,
-		&OBSBasicControls::RecordingStopping);
-	connect(main, &OBSBasic::RecordingStopped, this,
-		&OBSBasicControls::RecordingStopped);
+	connect(main, &OBSBasic::RecordingStarted, this, &OBSBasicControls::RecordingStarted);
+	connect(main, &OBSBasic::RecordingPaused, this, &OBSBasicControls::RecordingPaused);
+	connect(main, &OBSBasic::RecordingUnpaused, this, &OBSBasicControls::RecordingUnpaused);
+	connect(main, &OBSBasic::RecordingStopping, this, &OBSBasicControls::RecordingStopping);
+	connect(main, &OBSBasic::RecordingStopped, this, &OBSBasicControls::RecordingStopped);
 
-	connect(main, &OBSBasic::ReplayBufStarted, this,
-		&OBSBasicControls::ReplayBufferStarted);
-	connect(main, &OBSBasic::ReplayBufStopping, this,
-		&OBSBasicControls::ReplayBufferStopping);
-	connect(main, &OBSBasic::ReplayBufStopped, this,
-		&OBSBasicControls::ReplayBufferStopped);
+	connect(main, &OBSBasic::ReplayBufStarted, this, &OBSBasicControls::ReplayBufferStarted);
+	connect(main, &OBSBasic::ReplayBufStopping, this, &OBSBasicControls::ReplayBufferStopping);
+	connect(main, &OBSBasic::ReplayBufStopped, this, &OBSBasicControls::ReplayBufferStopped);
 
-	connect(main, &OBSBasic::VirtualCamStarted, this,
-		&OBSBasicControls::VirtualCamStarted);
-	connect(main, &OBSBasic::VirtualCamStopped, this,
-		&OBSBasicControls::VirtualCamStopped);
+	connect(main, &OBSBasic::VirtualCamStarted, this, &OBSBasicControls::VirtualCamStarted);
+	connect(main, &OBSBasic::VirtualCamStopped, this, &OBSBasicControls::VirtualCamStopped);
 
-	connect(main, &OBSBasic::PreviewProgramModeChanged, this,
-		&OBSBasicControls::UpdateStudioModeState);
+	connect(main, &OBSBasic::PreviewProgramModeChanged, this, &OBSBasicControls::UpdateStudioModeState);
 
 	/* Set up enablement connection */
-	connect(main, &OBSBasic::BroadcastFlowEnabled, this,
-		&OBSBasicControls::EnableBroadcastFlow);
-	connect(main, &OBSBasic::ReplayBufEnabled, this,
-		&OBSBasicControls::EnableReplayBufferButtons);
-	connect(main, &OBSBasic::VirtualCamEnabled, this,
-		&OBSBasicControls::EnableVirtualCamButtons);
+	connect(main, &OBSBasic::BroadcastFlowEnabled, this, &OBSBasicControls::EnableBroadcastFlow);
+	connect(main, &OBSBasic::ReplayBufEnabled, this, &OBSBasicControls::EnableReplayBufferButtons);
+	connect(main, &OBSBasic::VirtualCamEnabled, this, &OBSBasicControls::EnableVirtualCamButtons);
 }
 
 void OBSBasicControls::StreamingPreparing()
@@ -153,8 +112,7 @@ void OBSBasicControls::StreamingStarting(bool broadcastAutoStart)
 		// well, we need to disable button while stream is not active
 		ui->broadcastButton->setEnabled(false);
 
-		ui->broadcastButton->setText(
-			QTStr("Basic.Main.StartBroadcast"));
+		ui->broadcastButton->setText(QTStr("Basic.Main.StartBroadcast"));
 
 		ui->broadcastButton->setProperty("broadcastState", "ready");
 		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
@@ -209,9 +167,7 @@ void OBSBasicControls::BroadcastStreamActive()
 
 void OBSBasicControls::BroadcastStreamStarted(bool autoStop)
 {
-	ui->broadcastButton->setText(
-		QTStr(autoStop ? "Basic.Main.AutoStopEnabled"
-			       : "Basic.Main.StopBroadcast"));
+	ui->broadcastButton->setText(QTStr(autoStop ? "Basic.Main.AutoStopEnabled" : "Basic.Main.StopBroadcast"));
 	if (autoStop)
 		ui->broadcastButton->setEnabled(false);
 
@@ -276,8 +232,7 @@ void OBSBasicControls::ReplayBufferStarted()
 
 void OBSBasicControls::ReplayBufferStopping()
 {
-	ui->replayBufferButton->setText(
-		QTStr("Basic.Main.StoppingReplayBuffer"));
+	ui->replayBufferButton->setText(QTStr("Basic.Main.StoppingReplayBuffer"));
 }
 
 void OBSBasicControls::ReplayBufferStopped()

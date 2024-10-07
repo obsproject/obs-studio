@@ -71,17 +71,14 @@ PY_EXTERN PyObject *(*Import_PyLong_FromLong)(long);
 PY_EXTERN PyObject *(*Import_PyBool_FromLong)(long);
 PY_EXTERN PyGILState_STATE (*Import_PyGILState_Ensure)(void);
 PY_EXTERN PyThreadState *(*Import_PyGILState_GetThisThreadState)(void);
-PY_EXTERN void (*Import_PyErr_SetString)(PyObject *exception,
-					 const char *string);
+PY_EXTERN void (*Import_PyErr_SetString)(PyObject *exception, const char *string);
 PY_EXTERN PyObject *(*Import_PyErr_Occurred)(void);
 PY_EXTERN void (*Import_PyErr_Fetch)(PyObject **, PyObject **, PyObject **);
 PY_EXTERN void (*Import_PyErr_Restore)(PyObject *, PyObject *, PyObject *);
 PY_EXTERN void (*Import_PyErr_WriteUnraisable)(PyObject *);
-PY_EXTERN int (*Import_PyArg_UnpackTuple)(PyObject *, const char *, Py_ssize_t,
-					  Py_ssize_t, ...);
+PY_EXTERN int (*Import_PyArg_UnpackTuple)(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
 PY_EXTERN PyObject *(*Import_Py_BuildValue)(const char *, ...);
-PY_EXTERN int (*Import_PyRun_SimpleStringFlags)(const char *,
-						PyCompilerFlags *);
+PY_EXTERN int (*Import_PyRun_SimpleStringFlags)(const char *, PyCompilerFlags *);
 PY_EXTERN void (*Import_PyErr_Print)(void);
 PY_EXTERN void (*Import_Py_SetPythonHome)(wchar_t *);
 PY_EXTERN void (*Import_Py_Initialize)(void);
@@ -92,31 +89,23 @@ PY_EXTERN int (*Import_PyEval_ThreadsInitialized)(void);
 PY_EXTERN void (*Import_PyEval_ReleaseThread)(PyThreadState *tstate);
 PY_EXTERN void (*Import_PySys_SetArgv)(int, wchar_t **);
 PY_EXTERN PyObject *(*Import_PyImport_ImportModule)(const char *name);
-PY_EXTERN PyObject *(*Import_PyObject_CallFunctionObjArgs)(PyObject *callable,
-							   ...);
+PY_EXTERN PyObject *(*Import_PyObject_CallFunctionObjArgs)(PyObject *callable, ...);
 PY_EXTERN PyObject(*Import__Py_NotImplementedStruct);
 PY_EXTERN PyObject *(*Import_PyExc_TypeError);
 PY_EXTERN PyObject *(*Import_PyExc_RuntimeError);
 PY_EXTERN PyObject *(*Import_PyObject_GetAttr)(PyObject *, PyObject *);
 PY_EXTERN PyObject *(*Import_PyUnicode_FromString)(const char *u);
 PY_EXTERN PyObject *(*Import_PyDict_New)(void);
-PY_EXTERN PyObject *(*Import_PyDict_GetItemString)(PyObject *dp,
-						   const char *key);
-PY_EXTERN int (*Import_PyDict_SetItemString)(PyObject *dp, const char *key,
-					     PyObject *item);
-PY_EXTERN PyObject *(*Import_PyCFunction_NewEx)(PyMethodDef *, PyObject *,
-						PyObject *);
-PY_EXTERN PyObject *(*Import_PyCMethod_New)(PyMethodDef *, PyObject *,
-					    PyObject *, PyTypeObject *);
+PY_EXTERN PyObject *(*Import_PyDict_GetItemString)(PyObject *dp, const char *key);
+PY_EXTERN int (*Import_PyDict_SetItemString)(PyObject *dp, const char *key, PyObject *item);
+PY_EXTERN PyObject *(*Import_PyCFunction_NewEx)(PyMethodDef *, PyObject *, PyObject *);
+PY_EXTERN PyObject *(*Import_PyCMethod_New)(PyMethodDef *, PyObject *, PyObject *, PyTypeObject *);
 PY_EXTERN PyObject *(*Import_PyModule_GetDict)(PyObject *);
 PY_EXTERN PyObject *(*Import_PyModule_GetNameObject)(PyObject *);
-PY_EXTERN int (*Import_PyModule_AddObject)(PyObject *, const char *,
-					   PyObject *);
-PY_EXTERN int (*Import_PyModule_AddStringConstant)(PyObject *, const char *,
-						   const char *);
+PY_EXTERN int (*Import_PyModule_AddObject)(PyObject *, const char *, PyObject *);
+PY_EXTERN int (*Import_PyModule_AddStringConstant)(PyObject *, const char *, const char *);
 PY_EXTERN PyObject *(*Import_PyImport_Import)(PyObject *name);
-PY_EXTERN PyObject *(*Import_PyObject_CallObject)(PyObject *callable_object,
-						  PyObject *args);
+PY_EXTERN PyObject *(*Import_PyObject_CallObject)(PyObject *callable_object, PyObject *args);
 PY_EXTERN struct _longobject(*Import__Py_FalseStruct);
 PY_EXTERN struct _longobject(*Import__Py_TrueStruct);
 PY_EXTERN void (*Import_PyGILState_Release)(PyGILState_STATE);
@@ -124,18 +113,15 @@ PY_EXTERN int (*Import_PyList_Append)(PyObject *, PyObject *);
 PY_EXTERN PyObject *(*Import_PySys_GetObject)(const char *);
 PY_EXTERN PyObject *(*Import_PyImport_ReloadModule)(PyObject *m);
 PY_EXTERN PyObject *(*Import_PyObject_GetAttrString)(PyObject *, const char *);
-PY_EXTERN PyObject *(*Import_PyCapsule_New)(void *pointer, const char *name,
-					    PyCapsule_Destructor destructor);
-PY_EXTERN void *(*Import_PyCapsule_GetPointer)(PyObject *capsule,
-					       const char *name);
+PY_EXTERN PyObject *(*Import_PyCapsule_New)(void *pointer, const char *name, PyCapsule_Destructor destructor);
+PY_EXTERN void *(*Import_PyCapsule_GetPointer)(PyObject *capsule, const char *name);
 PY_EXTERN int (*Import_PyArg_ParseTuple)(PyObject *, const char *, ...);
 PY_EXTERN PyTypeObject(*Import_PyFunction_Type);
 PY_EXTERN int (*Import_PyObject_SetAttr)(PyObject *, PyObject *, PyObject *);
 PY_EXTERN PyObject *(*Import__PyObject_New)(PyTypeObject *);
 PY_EXTERN void *(*Import_PyCapsule_Import)(const char *name, int no_block);
 PY_EXTERN void (*Import_PyErr_Clear)(void);
-PY_EXTERN PyObject *(*Import_PyObject_Call)(PyObject *callable_object,
-					    PyObject *args, PyObject *kwargs);
+PY_EXTERN PyObject *(*Import_PyObject_Call)(PyObject *callable_object, PyObject *args, PyObject *kwargs);
 PY_EXTERN PyObject *(*Import_PyList_New)(Py_ssize_t size);
 PY_EXTERN Py_ssize_t (*Import_PyList_Size)(PyObject *);
 PY_EXTERN PyObject *(*Import_PyList_GetItem)(PyObject *, Py_ssize_t);
@@ -151,8 +137,7 @@ PY_EXTERN void (*Import__Py_Dealloc)(PyObject *obj);
 
 PY_EXTERN PyTypeObject PyCFunction_Type;
 
-extern bool import_python(const char *python_path,
-			  python_version_t *python_version);
+extern bool import_python(const char *python_path, python_version_t *python_version);
 
 #ifndef NO_REDEFS
 #define PyType_Ready Import_PyType_Ready
@@ -239,8 +224,7 @@ extern bool import_python(const char *python_path,
 #endif
 
 #if PY_VERSION_HEX >= 0x030800f0
-static inline void Import__Py_DECREF(const char *filename, int lineno,
-				     PyObject *op)
+static inline void Import__Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
 	UNUSED_PARAMETER(filename);
 	UNUSED_PARAMETER(lineno);
@@ -271,8 +255,7 @@ static inline void Import__Py_XDECREF(PyObject *op)
 #endif // PY_VERSION_HEX >= 0x030800f0
 
 #if PY_VERSION_HEX >= 0x030900b0
-static inline int Import_PyType_HasFeature(PyTypeObject *type,
-					   unsigned long feature)
+static inline int Import_PyType_HasFeature(PyTypeObject *type, unsigned long feature)
 {
 	return ((PyType_GetFlags(type) & feature) != 0);
 }

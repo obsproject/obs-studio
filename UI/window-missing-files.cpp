@@ -41,32 +41,27 @@ enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
   Delegate - Presents cells in the grid.
 **********************************************************/
 
-MissingFilesPathItemDelegate::MissingFilesPathItemDelegate(
-	bool isOutput, const QString &defaultPath)
+MissingFilesPathItemDelegate::MissingFilesPathItemDelegate(bool isOutput, const QString &defaultPath)
 	: QStyledItemDelegate(),
 	  isOutput(isOutput),
 	  defaultPath(defaultPath)
 {
 }
 
-QWidget *MissingFilesPathItemDelegate::createEditor(
-	QWidget *parent, const QStyleOptionViewItem & /* option */,
-	const QModelIndex &) const
+QWidget *MissingFilesPathItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
+						    const QModelIndex &) const
 {
-	QSizePolicy buttonSizePolicy(QSizePolicy::Policy::Minimum,
-				     QSizePolicy::Policy::Expanding,
+	QSizePolicy buttonSizePolicy(QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding,
 				     QSizePolicy::ControlType::PushButton);
 
 	QWidget *container = new QWidget(parent);
 
 	auto browseCallback = [this, container]() {
-		const_cast<MissingFilesPathItemDelegate *>(this)->handleBrowse(
-			container);
+		const_cast<MissingFilesPathItemDelegate *>(this)->handleBrowse(container);
 	};
 
 	auto clearCallback = [this, container]() {
-		const_cast<MissingFilesPathItemDelegate *>(this)->handleClear(
-			container);
+		const_cast<MissingFilesPathItemDelegate *>(this)->handleClear(container);
 	};
 
 	QHBoxLayout *layout = new QHBoxLayout();
@@ -75,8 +70,7 @@ QWidget *MissingFilesPathItemDelegate::createEditor(
 
 	QLineEdit *text = new QLineEdit();
 	text->setObjectName(QStringLiteral("text"));
-	text->setSizePolicy(QSizePolicy(QSizePolicy::Policy::Expanding,
-					QSizePolicy::Policy::Expanding,
+	text->setSizePolicy(QSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding,
 					QSizePolicy::ControlType::LineEdit));
 	layout->addWidget(text);
 
@@ -94,8 +88,7 @@ QWidget *MissingFilesPathItemDelegate::createEditor(
 		clearButton->setSizePolicy(buttonSizePolicy);
 		layout->addWidget(clearButton);
 
-		container->connect(clearButton, &QToolButton::clicked,
-				   clearCallback);
+		container->connect(clearButton, &QToolButton::clicked, clearCallback);
 	}
 
 	container->setLayout(layout);
@@ -104,8 +97,7 @@ QWidget *MissingFilesPathItemDelegate::createEditor(
 	return container;
 }
 
-void MissingFilesPathItemDelegate::setEditorData(QWidget *editor,
-						 const QModelIndex &index) const
+void MissingFilesPathItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
 	QLineEdit *text = editor->findChild<QLineEdit *>();
 	text->setText(index.data().toString());
@@ -113,8 +105,7 @@ void MissingFilesPathItemDelegate::setEditorData(QWidget *editor,
 	editor->setProperty(PATH_LIST_PROP, QVariant());
 }
 
-void MissingFilesPathItemDelegate::setModelData(QWidget *editor,
-						QAbstractItemModel *model,
+void MissingFilesPathItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
 						const QModelIndex &index) const
 {
 	// We use the PATH_LIST_PROP property to pass a list of
@@ -126,28 +117,24 @@ void MissingFilesPathItemDelegate::setModelData(QWidget *editor,
 	// as normal text data in the default role.
 	QVariant pathListProp = editor->property(PATH_LIST_PROP);
 	if (pathListProp.isValid()) {
-		QStringList list =
-			editor->property(PATH_LIST_PROP).toStringList();
+		QStringList list = editor->property(PATH_LIST_PROP).toStringList();
 		if (isOutput) {
 			model->setData(index, list);
 		} else
-			model->setData(index, list,
-				       MissingFilesRole::NewPathsToProcessRole);
+			model->setData(index, list, MissingFilesRole::NewPathsToProcessRole);
 	} else {
 		QLineEdit *lineEdit = editor->findChild<QLineEdit *>();
 		model->setData(index, lineEdit->text(), 0);
 	}
 }
 
-void MissingFilesPathItemDelegate::paint(QPainter *painter,
-					 const QStyleOptionViewItem &option,
+void MissingFilesPathItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 					 const QModelIndex &index) const
 {
 	QStyleOptionViewItem localOption = option;
 	initStyleOption(&localOption, index);
 
-	QApplication::style()->drawControl(QStyle::CE_ItemViewItem,
-					   &localOption, painter);
+	QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &localOption, painter);
 }
 
 void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
@@ -156,15 +143,13 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 	QLineEdit *text = container->findChild<QLineEdit *>();
 
 	QString currentPath = text->text();
-	if (currentPath.isEmpty() ||
-	    currentPath.compare(QTStr("MissingFiles.Clear")) == 0)
+	if (currentPath.isEmpty() || currentPath.compare(QTStr("MissingFiles.Clear")) == 0)
 		currentPath = defaultPath;
 
 	bool isSet = false;
 	if (isOutput) {
-		QString newPath = QFileDialog::getOpenFileName(
-			container, QTStr("MissingFiles.SelectFile"),
-			currentPath, nullptr);
+		QString newPath =
+			QFileDialog::getOpenFileName(container, QTStr("MissingFiles.SelectFile"), currentPath, nullptr);
 
 #ifdef __APPLE__
 		// TODO: Revisit when QTBUG-42661 is fixed
@@ -172,8 +157,7 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 #endif
 
 		if (!newPath.isEmpty()) {
-			container->setProperty(PATH_LIST_PROP,
-					       QStringList() << newPath);
+			container->setProperty(PATH_LIST_PROP, QStringList() << newPath);
 			isSet = true;
 		}
 	}
@@ -186,8 +170,7 @@ void MissingFilesPathItemDelegate::handleClear(QWidget *container)
 {
 	// An empty string list will indicate that the entry is being
 	// blanked and should be deleted.
-	container->setProperty(PATH_LIST_PROP,
-			       QStringList() << QTStr("MissingFiles.Clear"));
+	container->setProperty(PATH_LIST_PROP, QStringList() << QTStr("MissingFiles.Clear"));
 	container->findChild<QLineEdit *>()->clearFocus();
 	((QWidget *)container->parent())->setFocus();
 	emit commitData(container);
@@ -197,8 +180,7 @@ void MissingFilesPathItemDelegate::handleClear(QWidget *container)
 	Model
 **/
 
-MissingFilesModel::MissingFilesModel(QObject *parent)
-	: QAbstractTableModel(parent)
+MissingFilesModel::MissingFilesModel(QObject *parent) : QAbstractTableModel(parent)
 {
 	QStyle *style = QApplication::style();
 
@@ -266,24 +248,19 @@ QVariant MissingFilesModel::data(const QModelIndex &index, int role) const
 			}
 			break;
 		}
-	} else if (role == Qt::DecorationRole &&
-		   index.column() == MissingFilesColumn::Source) {
-		OBSBasic *main =
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		OBSSourceAutoRelease source = obs_get_source_by_name(
-			files[index.row()].source.toStdString().c_str());
+	} else if (role == Qt::DecorationRole && index.column() == MissingFilesColumn::Source) {
+		OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		OBSSourceAutoRelease source = obs_get_source_by_name(files[index.row()].source.toStdString().c_str());
 
 		if (source) {
 			result = main->GetSourceIcon(obs_source_get_id(source));
 		}
-	} else if (role == Qt::FontRole &&
-		   index.column() == MissingFilesColumn::State) {
+	} else if (role == Qt::FontRole && index.column() == MissingFilesColumn::State) {
 		QFont font = QFont();
 		font.setBold(true);
 
 		result = font;
-	} else if (role == Qt::ToolTipRole &&
-		   index.column() == MissingFilesColumn::State) {
+	} else if (role == Qt::ToolTipRole && index.column() == MissingFilesColumn::State) {
 		switch (files[index.row()].state) {
 		case MissingFilesState::Missing:
 			result = QTStr("MissingFiles.Missing");
@@ -326,22 +303,18 @@ Qt::ItemFlags MissingFilesModel::flags(const QModelIndex &index) const
 
 	if (index.column() == MissingFilesColumn::OriginalPath) {
 		flags &= ~Qt::ItemIsEditable;
-	} else if (index.column() == MissingFilesColumn::NewPath &&
-		   index.row() != files.length()) {
+	} else if (index.column() == MissingFilesColumn::NewPath && index.row() != files.length()) {
 		flags |= Qt::ItemIsEditable;
 	}
 
 	return flags;
 }
 
-void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files,
-				      QString path, bool skipPrompt)
+void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt)
 {
 	loop = false;
 	QUrl url = QUrl().fromLocalFile(path);
-	QString dir =
-		url.toDisplayString(QUrl::RemoveScheme | QUrl::RemoveFilename |
-				    QUrl::PreferLocalFile);
+	QString dir = url.toDisplayString(QUrl::RemoveScheme | QUrl::RemoveFilename | QUrl::PreferLocalFile);
 
 	bool prompted = skipPrompt;
 
@@ -356,10 +329,8 @@ void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files,
 		if (os_file_exists(testFile.toStdString().c_str())) {
 			if (!prompted) {
 				QMessageBox::StandardButton button =
-					QMessageBox::question(
-						nullptr,
-						QTStr("MissingFiles.AutoSearch"),
-						QTStr("MissingFiles.AutoSearchText"));
+					QMessageBox::question(nullptr, QTStr("MissingFiles.AutoSearch"),
+							      QTStr("MissingFiles.AutoSearchText"));
 
 				if (button == QMessageBox::No)
 					break;
@@ -373,8 +344,7 @@ void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files,
 	loop = true;
 }
 
-bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value,
-				int role)
+bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
 	bool success = false;
 
@@ -399,25 +369,19 @@ bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value,
 		if (index.column() == MissingFilesColumn::NewPath) {
 			files[index.row()].newPath = value.toString();
 			QString fileName = QUrl(path).fileName();
-			QString origFileName =
-				QUrl(files[index.row()].originalPath).fileName();
+			QString origFileName = QUrl(files[index.row()].originalPath).fileName();
 
 			if (path.isEmpty()) {
-				files[index.row()].state =
-					MissingFilesState::Missing;
-			} else if (path.compare(QTStr("MissingFiles.Clear")) ==
-				   0) {
-				files[index.row()].state =
-					MissingFilesState::Cleared;
+				files[index.row()].state = MissingFilesState::Missing;
+			} else if (path.compare(QTStr("MissingFiles.Clear")) == 0) {
+				files[index.row()].state = MissingFilesState::Cleared;
 			} else if (fileName.compare(origFileName) == 0) {
-				files[index.row()].state =
-					MissingFilesState::Found;
+				files[index.row()].state = MissingFilesState::Found;
 
 				if (loop)
 					fileCheckLoop(files, path, false);
 			} else {
-				files[index.row()].state =
-					MissingFilesState::Replaced;
+				files[index.row()].state = MissingFilesState::Replaced;
 
 				if (loop)
 					fileCheckLoop(files, path, false);
@@ -431,13 +395,11 @@ bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value,
 	return success;
 }
 
-QVariant MissingFilesModel::headerData(int section, Qt::Orientation orientation,
-				       int role) const
+QVariant MissingFilesModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
 	QVariant result = QVariant();
 
-	if (role == Qt::DisplayRole &&
-	    orientation == Qt::Orientation::Horizontal) {
+	if (role == Qt::DisplayRole && orientation == Qt::Orientation::Horizontal) {
 		switch (section) {
 		case MissingFilesColumn::State:
 			result = QTStr("MissingFiles.State");
@@ -467,30 +429,22 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 	ui->setupUi(this);
 
 	ui->tableView->setModel(filesModel);
-	ui->tableView->setItemDelegateForColumn(
-		MissingFilesColumn::OriginalPath,
-		new MissingFilesPathItemDelegate(false, ""));
-	ui->tableView->setItemDelegateForColumn(
-		MissingFilesColumn::NewPath,
-		new MissingFilesPathItemDelegate(true, ""));
-	ui->tableView->horizontalHeader()->setSectionResizeMode(
-		QHeaderView::ResizeMode::Stretch);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(
-		MissingFilesColumn::Source,
-		QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::OriginalPath,
+						new MissingFilesPathItemDelegate(false, ""));
+	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::NewPath,
+						new MissingFilesPathItemDelegate(true, ""));
+	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::Stretch);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::Source,
+								QHeaderView::ResizeMode::ResizeToContents);
 	ui->tableView->horizontalHeader()->setMaximumSectionSize(width() / 3);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(
-		MissingFilesColumn::State,
-		QHeaderView::ResizeMode::ResizeToContents);
-	ui->tableView->setEditTriggers(
-		QAbstractItemView::EditTrigger::CurrentChanged);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::State,
+								QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->setEditTriggers(QAbstractItemView::EditTrigger::CurrentChanged);
 
-	ui->warningIcon->setPixmap(
-		filesModel->warningIcon.pixmap(QSize(32, 32)));
+	ui->warningIcon->setPixmap(filesModel->warningIcon.pixmap(QSize(32, 32)));
 
 	for (size_t i = 0; i < obs_missing_files_count(files); i++) {
-		obs_missing_file_t *f =
-			obs_missing_files_get_file(files, (int)i);
+		obs_missing_file_t *f = obs_missing_files_get_file(files, (int)i);
 
 		const char *oldPath = obs_missing_file_get_path(f);
 		const char *name = obs_missing_file_get_source_name(f);
@@ -498,27 +452,19 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 		addMissingFile(oldPath, name);
 	}
 
-	QString found =
-		QTStr("MissingFiles.NumFound")
-			.arg("0",
-			     QString::number(obs_missing_files_count(files)));
+	QString found = QTStr("MissingFiles.NumFound").arg("0", QString::number(obs_missing_files_count(files)));
 
 	ui->found->setText(found);
 
 	fileStore = files;
 
-	connect(ui->doneButton, &QPushButton::clicked, this,
-		&OBSMissingFiles::saveFiles);
-	connect(ui->browseButton, &QPushButton::clicked, this,
-		&OBSMissingFiles::browseFolders);
-	connect(ui->cancelButton, &QPushButton::clicked, this,
-		&OBSMissingFiles::close);
-	connect(filesModel, &MissingFilesModel::dataChanged, this,
-		&OBSMissingFiles::dataChanged);
+	connect(ui->doneButton, &QPushButton::clicked, this, &OBSMissingFiles::saveFiles);
+	connect(ui->browseButton, &QPushButton::clicked, this, &OBSMissingFiles::browseFolders);
+	connect(ui->cancelButton, &QPushButton::clicked, this, &OBSMissingFiles::close);
+	connect(filesModel, &MissingFilesModel::dataChanged, this, &OBSMissingFiles::dataChanged);
 
 	QModelIndex index = filesModel->createIndex(0, 1);
-	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex",
-				  Qt::QueuedConnection,
+	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex", Qt::QueuedConnection,
 				  Q_ARG(const QModelIndex &, index));
 }
 
@@ -527,19 +473,16 @@ OBSMissingFiles::~OBSMissingFiles()
 	obs_missing_files_destroy(fileStore);
 }
 
-void OBSMissingFiles::addMissingFile(const char *originalPath,
-				     const char *sourceName)
+void OBSMissingFiles::addMissingFile(const char *originalPath, const char *sourceName)
 {
 	QStringList list;
 
 	list.append(originalPath);
 	list.append(sourceName);
 
-	QModelIndex insertIndex = filesModel->index(filesModel->rowCount() - 1,
-						    MissingFilesColumn::Source);
+	QModelIndex insertIndex = filesModel->index(filesModel->rowCount() - 1, MissingFilesColumn::Source);
 
-	filesModel->setData(insertIndex, list,
-			    MissingFilesRole::NewPathsToProcessRole);
+	filesModel->setData(insertIndex, list, MissingFilesRole::NewPathsToProcessRole);
 }
 
 void OBSMissingFiles::saveFiles()
@@ -547,8 +490,7 @@ void OBSMissingFiles::saveFiles()
 	for (int i = 0; i < filesModel->files.length(); i++) {
 		MissingFilesState state = filesModel->files[i].state;
 		if (state != MissingFilesState::Missing) {
-			obs_missing_file_t *f =
-				obs_missing_files_get_file(fileStore, i);
+			obs_missing_file_t *f = obs_missing_files_get_file(fileStore, i);
 
 			QString path = filesModel->files[i].newPath;
 
@@ -567,9 +509,8 @@ void OBSMissingFiles::saveFiles()
 
 void OBSMissingFiles::browseFolders()
 {
-	QString dir = QFileDialog::getExistingDirectory(
-		this, QTStr("MissingFiles.SelectDir"), "",
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	QString dir = QFileDialog::getExistingDirectory(this, QTStr("MissingFiles.SelectDir"), "",
+							QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
 	if (dir != "") {
 		dir += "/";
@@ -579,10 +520,9 @@ void OBSMissingFiles::browseFolders()
 
 void OBSMissingFiles::dataChanged()
 {
-	QString found = QTStr("MissingFiles.NumFound")
-				.arg(QString::number(filesModel->found()),
-				     QString::number(obs_missing_files_count(
-					     fileStore)));
+	QString found =
+		QTStr("MissingFiles.NumFound")
+			.arg(QString::number(filesModel->found()), QString::number(obs_missing_files_count(fileStore)));
 
 	ui->found->setText(found);
 

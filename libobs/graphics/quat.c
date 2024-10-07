@@ -92,9 +92,7 @@ void quat_from_matrix4(struct quat *dst, const struct matrix4 *m)
 
 		/* ---------------------------------- */
 
-		four_d = sqrtf(
-			(val->ptr[i][i] - val->ptr[j][j] - val->ptr[k][k]) +
-			1.0f);
+		four_d = sqrtf((val->ptr[i][i] - val->ptr[j][j] - val->ptr[k][k]) + 1.0f);
 
 		dst->ptr[i] = four_d * 0.5f;
 
@@ -126,13 +124,11 @@ void quat_set_look_dir(struct quat *dst, const struct vec3 *dir)
 	quat_identity(&xz_rot);
 	quat_identity(&yz_rot);
 
-	xz_valid = close_float(new_dir.x, 0.0f, EPSILON) ||
-		   close_float(new_dir.z, 0.0f, EPSILON);
+	xz_valid = close_float(new_dir.x, 0.0f, EPSILON) || close_float(new_dir.z, 0.0f, EPSILON);
 	yz_valid = close_float(new_dir.y, 0.0f, EPSILON);
 
 	if (xz_valid) {
-		axisang_set(&aa, 0.0f, 1.0f, 0.0f,
-			    atan2f(new_dir.x, new_dir.z));
+		axisang_set(&aa, 0.0f, 1.0f, 0.0f, atan2f(new_dir.x, new_dir.z));
 
 		quat_from_axisang(&xz_rot, &aa);
 	}
@@ -175,8 +171,7 @@ void quat_exp(struct quat *dst, const struct quat *q)
 	dst->w = cosf(length);
 }
 
-void quat_interpolate(struct quat *dst, const struct quat *q1,
-		      const struct quat *q2, float t)
+void quat_interpolate(struct quat *dst, const struct quat *q1, const struct quat *q2, float t)
 {
 	float dot = quat_dot(q1, q2);
 	float anglef = acosf(dot);
@@ -199,8 +194,7 @@ void quat_interpolate(struct quat *dst, const struct quat *q1,
 	}
 }
 
-void quat_get_tangent(struct quat *dst, const struct quat *prev,
-		      const struct quat *q, const struct quat *next)
+void quat_get_tangent(struct quat *dst, const struct quat *prev, const struct quat *q, const struct quat *next)
 {
 	struct quat temp;
 
@@ -210,8 +204,7 @@ void quat_get_tangent(struct quat *dst, const struct quat *prev,
 	quat_mulf(dst, &temp, 0.5f);
 }
 
-void quat_interpolate_cubic(struct quat *dst, const struct quat *q1,
-			    const struct quat *q2, const struct quat *m1,
+void quat_interpolate_cubic(struct quat *dst, const struct quat *q1, const struct quat *q2, const struct quat *m1,
 			    const struct quat *m2, float t)
 {
 	struct quat temp1, temp2;

@@ -37,8 +37,7 @@
 		exports->func = os_dlsym(module, #func); \
 	} while (false)
 
-bool load_graphics_imports(struct gs_exports *exports, void *module,
-			   const char *module_name)
+bool load_graphics_imports(struct gs_exports *exports, void *module, const char *module_name)
 {
 	bool success = true;
 

@@ -33,11 +33,8 @@ enum mp4_mux_flags {
 	MP4_USE_NEGATIVE_CTS = 1 << 3,
 };
 
-struct mp4_mux *mp4_mux_create(obs_output_t *output,
-			       struct serializer *serializer,
-			       enum mp4_mux_flags flags);
+struct mp4_mux *mp4_mux_create(obs_output_t *output, struct serializer *serializer, enum mp4_mux_flags flags);
 void mp4_mux_destroy(struct mp4_mux *mux);
 bool mp4_mux_submit_packet(struct mp4_mux *mux, struct encoder_packet *pkt);
-bool mp4_mux_add_chapter(struct mp4_mux *mux, int64_t dts_usec,
-			 const char *name);
+bool mp4_mux_add_chapter(struct mp4_mux *mux, int64_t dts_usec, const char *name);
 bool mp4_mux_finalise(struct mp4_mux *mux);

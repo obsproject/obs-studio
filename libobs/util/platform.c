@@ -258,8 +258,7 @@ bool os_quick_write_mbs_file(const char *path, const char *str, size_t len)
 	return true;
 }
 
-bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
-			      bool marker)
+bool os_quick_write_utf8_file(const char *path, const char *str, size_t len, bool marker)
 {
 	FILE *f = os_fopen(path, "wb");
 	if (!f)
@@ -284,9 +283,8 @@ bool os_quick_write_utf8_file(const char *path, const char *str, size_t len,
 	return true;
 }
 
-bool os_quick_write_utf8_file_safe(const char *path, const char *str,
-				   size_t len, bool marker,
-				   const char *temp_ext, const char *backup_ext)
+bool os_quick_write_utf8_file_safe(const char *path, const char *str, size_t len, bool marker, const char *temp_ext,
+				   const char *backup_ext)
 {
 	struct dstr backup_path = {0};
 	struct dstr temp_path = {0};
@@ -363,8 +361,7 @@ size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 	return out_len;
 }
 
-size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
-		      size_t dst_size)
+size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 {
 	size_t in_len;
 	size_t out_len;
@@ -380,8 +377,7 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 			return 0;
 
 		if (out_len)
-			out_len =
-				utf8_to_wchar(str, in_len, dst, out_len + 1, 0);
+			out_len = utf8_to_wchar(str, in_len, dst, out_len + 1, 0);
 
 		dst[out_len] = 0;
 	}
@@ -413,8 +409,7 @@ size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 	return out_len;
 }
 
-size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst,
-		      size_t dst_size)
+size_t os_wcs_to_utf8(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 {
 	size_t in_len;
 	size_t out_len;
@@ -677,8 +672,7 @@ static inline bool valid_string(const char *str)
 	return false;
 }
 
-static void replace_text(struct dstr *str, size_t pos, size_t len,
-			 const char *new_text)
+static void replace_text(struct dstr *str, size_t pos, size_t len, const char *new_text)
 {
 	struct dstr front = {0};
 	struct dstr back = {0};
@@ -701,8 +695,7 @@ static void erase_ch(struct dstr *str, size_t pos)
 	*str = new_str;
 }
 
-char *os_generate_formatted_filename(const char *extension, bool space,
-				     const char *format)
+char *os_generate_formatted_filename(const char *extension, bool space, const char *format)
 {
 	time_t now = time(0);
 	struct tm *cur_time;
@@ -712,13 +705,12 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 
 	const size_t spec_count = 23;
 	static const char *spec[][2] = {
-		{"%CCYY", "%Y"}, {"%YY", "%y"}, {"%MM", "%m"}, {"%DD", "%d"},
-		{"%hh", "%H"},   {"%mm", "%M"}, {"%ss", "%S"}, {"%%", "%%"},
+		{"%CCYY", "%Y"}, {"%YY", "%y"}, {"%MM", "%m"}, {"%DD", "%d"}, {"%hh", "%H"},
+		{"%mm", "%M"},   {"%ss", "%S"}, {"%%", "%%"},
 
-		{"%a", ""},      {"%A", ""},    {"%b", ""},    {"%B", ""},
-		{"%d", ""},      {"%H", ""},    {"%I", ""},    {"%m", ""},
-		{"%M", ""},      {"%p", ""},    {"%S", ""},    {"%y", ""},
-		{"%Y", ""},      {"%z", ""},    {"%Z", ""},
+		{"%a", ""},      {"%A", ""},    {"%b", ""},    {"%B", ""},    {"%d", ""},
+		{"%H", ""},      {"%I", ""},    {"%m", ""},    {"%M", ""},    {"%p", ""},
+		{"%S", ""},      {"%y", ""},    {"%Y", ""},    {"%z", ""},    {"%Z", ""},
 	};
 
 	char convert[128] = {0};
@@ -735,11 +727,9 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 
 			if (astrcmp_n(cmp, spec[i][0], len) == 0) {
 				if (strlen(spec[i][1]))
-					strftime(convert, sizeof(convert),
-						 spec[i][1], cur_time);
+					strftime(convert, sizeof(convert), spec[i][1], cur_time);
 				else
-					strftime(convert, sizeof(convert),
-						 spec[i][0], cur_time);
+					strftime(convert, sizeof(convert), spec[i][0], cur_time);
 
 				dstr_copy(&c, convert);
 				if (c.len && valid_string(c.array))
@@ -750,35 +740,27 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 		if (!convert[0]) {
 			if (astrcmp_n(cmp, "%FPS", 4) == 0) {
 				if (ovi.fps_den <= 1) {
-					snprintf(convert, sizeof(convert), "%u",
-						 ovi.fps_num);
+					snprintf(convert, sizeof(convert), "%u", ovi.fps_num);
 				} else {
-					const double obsFPS =
-						(double)ovi.fps_num /
-						(double)ovi.fps_den;
-					snprintf(convert, sizeof(convert),
-						 "%.2f", obsFPS);
+					const double obsFPS = (double)ovi.fps_num / (double)ovi.fps_den;
+					snprintf(convert, sizeof(convert), "%.2f", obsFPS);
 				}
 				replace_text(&sf, pos, 4, convert);
 
 			} else if (astrcmp_n(cmp, "%CRES", 5) == 0) {
-				snprintf(convert, sizeof(convert), "%ux%u",
-					 ovi.base_width, ovi.base_height);
+				snprintf(convert, sizeof(convert), "%ux%u", ovi.base_width, ovi.base_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%ORES", 5) == 0) {
-				snprintf(convert, sizeof(convert), "%ux%u",
-					 ovi.output_width, ovi.output_height);
+				snprintf(convert, sizeof(convert), "%ux%u", ovi.output_width, ovi.output_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%VF", 3) == 0) {
-				strcpy(convert, get_video_format_name(
-							ovi.output_format));
+				strcpy(convert, get_video_format_name(ovi.output_format));
 				replace_text(&sf, pos, 3, convert);
 
 			} else if (astrcmp_n(cmp, "%s", 2) == 0) {
-				snprintf(convert, sizeof(convert), "%" PRId64,
-					 (int64_t)now);
+				snprintf(convert, sizeof(convert), "%" PRId64, (int64_t)now);
 				replace_text(&sf, pos, 2, convert);
 			}
 		}
@@ -817,13 +799,11 @@ static struct {
 
 static void init_timespec_offset(void)
 {
-	timespec_offset.ts_valid =
-		timespec_get(&timespec_offset.ts, TIME_UTC) == TIME_UTC;
+	timespec_offset.ts_valid = timespec_get(&timespec_offset.ts, TIME_UTC) == TIME_UTC;
 	timespec_offset.timestamp = os_gettime_ns();
 }
 
-struct timespec *os_nstime_to_timespec(uint64_t timestamp,
-				       struct timespec *storage)
+struct timespec *os_nstime_to_timespec(uint64_t timestamp, struct timespec *storage)
 {
 	static pthread_once_t once = PTHREAD_ONCE_INIT;
 	pthread_once(&once, init_timespec_offset);

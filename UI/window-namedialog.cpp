@@ -42,8 +42,7 @@ NameDialog::NameDialog(QWidget *parent) : QDialog(parent)
 	checkbox = new QCheckBox(this);
 	layout->addWidget(checkbox);
 
-	QDialogButtonBox *buttonbox = new QDialogButtonBox(
-		QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	QDialogButtonBox *buttonbox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 	layout->addWidget(buttonbox);
 	buttonbox->setCenterButtons(true);
 	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -63,8 +62,7 @@ static void CleanWhitespace(std::string &str)
 		str.erase(str.begin());
 }
 
-bool NameDialog::AskForName(QWidget *parent, const QString &title,
-			    const QString &text, std::string &userTextInput,
+bool NameDialog::AskForName(QWidget *parent, const QString &title, const QString &text, std::string &userTextInput,
 			    const QString &placeHolder, int maxSize)
 {
 	if (maxSize <= 0 || maxSize > 32767)
@@ -87,11 +85,8 @@ bool NameDialog::AskForName(QWidget *parent, const QString &title,
 	return true;
 }
 
-bool NameDialog::AskForNameWithOption(QWidget *parent, const QString &title,
-				      const QString &text,
-				      std::string &userTextInput,
-				      const QString &optionLabel,
-				      bool &optionChecked,
+bool NameDialog::AskForNameWithOption(QWidget *parent, const QString &title, const QString &text,
+				      std::string &userTextInput, const QString &optionLabel, bool &optionChecked,
 				      const QString &placeHolder)
 {
 	NameDialog dialog(parent);

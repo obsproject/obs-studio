@@ -19,21 +19,17 @@ MultitrackVideoError MultitrackVideoError::cancel()
 	return {Type::Cancel, {}};
 }
 
-bool MultitrackVideoError::ShowDialog(
-	QWidget *parent, const QString &multitrack_video_name) const
+bool MultitrackVideoError::ShowDialog(QWidget *parent, const QString &multitrack_video_name) const
 {
 	QMessageBox mb(parent);
 	mb.setTextFormat(Qt::RichText);
 	mb.setWindowTitle(QTStr("Output.StartStreamFailed"));
 
 	if (type == Type::Warning) {
-		mb.setText(
-			error +
-			QTStr("FailedToStartStream.WarningRetryNonMultitrackVideo")
-				.arg(multitrack_video_name));
+		mb.setText(error +
+			   QTStr("FailedToStartStream.WarningRetryNonMultitrackVideo").arg(multitrack_video_name));
 		mb.setIcon(QMessageBox::Warning);
-		QAbstractButton *yesButton =
-			mb.addButton(QTStr("Yes"), QMessageBox::YesRole);
+		QAbstractButton *yesButton = mb.addButton(QTStr("Yes"), QMessageBox::YesRole);
 		mb.addButton(QTStr("No"), QMessageBox::NoRole);
 		mb.exec();
 
@@ -41,8 +37,7 @@ bool MultitrackVideoError::ShowDialog(
 	} else if (type == Type::Critical) {
 		mb.setText(error);
 		mb.setIcon(QMessageBox::Critical);
-		mb.setStandardButtons(
-			QMessageBox::StandardButton::Ok); // cannot continue
+		mb.setStandardButtons(QMessageBox::StandardButton::Ok); // cannot continue
 		mb.exec();
 	}
 

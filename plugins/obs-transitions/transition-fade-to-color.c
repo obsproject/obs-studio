@@ -72,8 +72,7 @@ static void *fade_to_color_create(obs_data_t *settings, obs_source_t *source)
 	bfree(file);
 
 	if (!effect) {
-		blog(LOG_ERROR,
-		     "Could not find fade_to_color_transition.effect");
+		blog(LOG_ERROR, "Could not find fade_to_color_transition.effect");
 		return NULL;
 	}
 
@@ -97,8 +96,7 @@ static void fade_to_color_destroy(void *data)
 	bfree(fade_to_color);
 }
 
-static void fade_to_color_callback(void *data, gs_texture_t *a, gs_texture_t *b,
-				   float t, uint32_t cx, uint32_t cy)
+static void fade_to_color_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t, uint32_t cx, uint32_t cy)
 {
 	struct fade_to_color_info *fade_to_color = data;
 
@@ -116,12 +114,10 @@ static void fade_to_color_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 
 	if (nonlinear_fade) {
 		gs_effect_set_texture(fade_to_color->ep_tex, tex);
-		gs_effect_set_vec4(fade_to_color->ep_color,
-				   &fade_to_color->color);
+		gs_effect_set_vec4(fade_to_color->ep_color, &fade_to_color->color);
 	} else {
 		gs_effect_set_texture_srgb(fade_to_color->ep_tex, tex);
-		gs_effect_set_vec4(fade_to_color->ep_color,
-				   &fade_to_color->color_srgb);
+		gs_effect_set_vec4(fade_to_color->ep_color, &fade_to_color->color_srgb);
 	}
 
 	gs_effect_set_float(fade_to_color->ep_swp, swp);
@@ -139,8 +135,7 @@ static void fade_to_color_video_render(void *data, gs_effect_t *effect)
 	const bool previous = gs_set_linear_srgb(true);
 
 	struct fade_to_color_info *fade_to_color = data;
-	obs_transition_video_render(fade_to_color->source,
-				    fade_to_color_callback);
+	obs_transition_video_render(fade_to_color->source, fade_to_color_callback);
 
 	gs_set_linear_srgb(previous);
 }
@@ -161,14 +156,11 @@ static float mix_b(void *data, float t)
 	return lerp(0.0f, t, smoothstep(sp, 1.0f, t));
 }
 
-static bool fade_to_color_audio_render(void *data, uint64_t *ts_out,
-				       struct obs_source_audio_mix *audio,
-				       uint32_t mixers, size_t channels,
-				       size_t sample_rate)
+static bool fade_to_color_audio_render(void *data, uint64_t *ts_out, struct obs_source_audio_mix *audio,
+				       uint32_t mixers, size_t channels, size_t sample_rate)
 {
 	struct fade_to_color_info *fade_to_color = data;
-	return obs_transition_audio_render(fade_to_color->source, ts_out, audio,
-					   mixers, channels, sample_rate, mix_a,
+	return obs_transition_audio_render(fade_to_color->source, ts_out, audio, mixers, channels, sample_rate, mix_a,
 					   mix_b);
 }
 
@@ -177,8 +169,7 @@ static obs_properties_t *fade_to_color_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 
 	obs_properties_add_color(props, S_COLOR, S_COLOR_TEXT);
-	obs_property_t *p = obs_properties_add_int_slider(
-		props, S_SWITCH_POINT, S_SWITCH_POINT_TEXT, 0, 100, 1);
+	obs_property_t *p = obs_properties_add_int_slider(props, S_SWITCH_POINT, S_SWITCH_POINT_TEXT, 0, 100, 1);
 	obs_property_int_set_suffix(p, "%");
 
 	UNUSED_PARAMETER(data);
@@ -191,13 +182,11 @@ static void fade_to_color_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, S_SWITCH_POINT, 50);
 }
 
-static enum gs_color_space
-fade_to_color_video_get_color_space(void *data, size_t count,
-				    const enum gs_color_space *preferred_spaces)
+static enum gs_color_space fade_to_color_video_get_color_space(void *data, size_t count,
+							       const enum gs_color_space *preferred_spaces)
 {
 	struct fade_to_color_info *fade_to_color = data;
-	const enum gs_color_space transition_space =
-		obs_transition_video_get_color_space(fade_to_color->source);
+	const enum gs_color_space transition_space = obs_transition_video_get_color_space(fade_to_color->source);
 
 	enum gs_color_space space = transition_space;
 	for (size_t i = 0; i < count; ++i) {

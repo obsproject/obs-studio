@@ -20,14 +20,11 @@
 
 #include "obs-scripting-lua.h"
 
-#define ls_get_libobs_obj(type, lua_index, obs_obj)                      \
-	ls_get_libobs_obj_(script, #type " *", lua_index, obs_obj, NULL, \
-			   __FUNCTION__, __LINE__)
-#define ls_push_libobs_obj(type, obs_obj, ownership)                      \
-	ls_push_libobs_obj_(script, #type " *", obs_obj, ownership, NULL, \
-			    __FUNCTION__, __LINE__)
-#define call_func(func, args, rets) \
-	call_func_(script, cb->reg_idx, args, rets, #func, "frontend API")
+#define ls_get_libobs_obj(type, lua_index, obs_obj) \
+	ls_get_libobs_obj_(script, #type " *", lua_index, obs_obj, NULL, __FUNCTION__, __LINE__)
+#define ls_push_libobs_obj(type, obs_obj, ownership) \
+	ls_push_libobs_obj_(script, #type " *", obs_obj, ownership, NULL, __FUNCTION__, __LINE__)
+#define call_func(func, args, rets) call_func_(script, cb->reg_idx, args, rets, #func, "frontend API")
 
 /* ----------------------------------- */
 
@@ -248,8 +245,7 @@ static int add_event_callback(lua_State *script)
 
 /* ----------------------------------- */
 
-static void frontend_save_callback(obs_data_t *save_data, bool saving,
-				   void *priv)
+static void frontend_save_callback(obs_data_t *save_data, bool saving, void *priv)
 {
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
@@ -305,38 +301,23 @@ typedef struct lua_function_tuple {
 static const obs_frontend_func functions[] = {
 	{.name = "obs_frontend_get_scene_names", .function = get_scene_names},
 	{.name = "obs_frontend_get_scenes", .function = get_scenes},
-	{.name = "obs_frontend_get_current_scene",
-	 .function = get_current_scene},
-	{.name = "obs_frontend_set_current_scene",
-	 .function = set_current_scene},
+	{.name = "obs_frontend_get_current_scene", .function = get_current_scene},
+	{.name = "obs_frontend_set_current_scene", .function = set_current_scene},
 	{.name = "obs_frontend_get_transitions", .function = get_transitions},
-	{.name = "obs_frontend_get_current_transition",
-	 .function = get_current_transition},
-	{.name = "obs_frontend_set_current_transition",
-	 .function = set_current_transition},
-	{.name = "obs_frontend_get_transition_duration",
-	 .function = get_transition_duration},
-	{.name = "obs_frontend_set_transition_duration",
-	 .function = set_transition_duration},
-	{.name = "obs_frontend_get_scene_collections",
-	 .function = get_scene_collections},
-	{.name = "obs_frontend_get_current_scene_collection",
-	 .function = get_current_scene_collection},
-	{.name = "obs_frontend_set_current_scene_collection",
-	 .function = set_current_scene_collection},
+	{.name = "obs_frontend_get_current_transition", .function = get_current_transition},
+	{.name = "obs_frontend_set_current_transition", .function = set_current_transition},
+	{.name = "obs_frontend_get_transition_duration", .function = get_transition_duration},
+	{.name = "obs_frontend_set_transition_duration", .function = set_transition_duration},
+	{.name = "obs_frontend_get_scene_collections", .function = get_scene_collections},
+	{.name = "obs_frontend_get_current_scene_collection", .function = get_current_scene_collection},
+	{.name = "obs_frontend_set_current_scene_collection", .function = set_current_scene_collection},
 	{.name = "obs_frontend_get_profiles", .function = get_profiles},
-	{.name = "obs_frontend_get_current_profile",
-	 .function = get_current_profile},
-	{.name = "obs_frontend_set_current_profile",
-	 .function = set_current_profile},
-	{.name = "obs_frontend_remove_event_callback",
-	 .function = remove_event_callback},
-	{.name = "obs_frontend_add_event_callback",
-	 .function = add_event_callback},
-	{.name = "obs_frontend_remove_save_callback",
-	 .function = remove_save_callback},
-	{.name = "obs_frontend_add_save_callback",
-	 .function = add_save_callback},
+	{.name = "obs_frontend_get_current_profile", .function = get_current_profile},
+	{.name = "obs_frontend_set_current_profile", .function = set_current_profile},
+	{.name = "obs_frontend_remove_event_callback", .function = remove_event_callback},
+	{.name = "obs_frontend_add_event_callback", .function = add_event_callback},
+	{.name = "obs_frontend_remove_save_callback", .function = remove_save_callback},
+	{.name = "obs_frontend_add_save_callback", .function = add_save_callback},
 };
 
 void add_lua_frontend_funcs(lua_State *script)

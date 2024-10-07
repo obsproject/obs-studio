@@ -111,9 +111,7 @@ static json_t *open_compat_file(void)
 }
 
 static json_t *compat_entries;
-struct compat_result *check_compatibility(const char *win_title,
-					  const char *win_class,
-					  const char *exe,
+struct compat_result *check_compatibility(const char *win_title, const char *win_class, const char *exe,
 					  enum source_type type)
 {
 	if (!compat_entries) {
@@ -130,14 +128,11 @@ struct compat_result *check_compatibility(const char *win_title,
 	size_t index;
 
 	json_array_foreach (compat_entries, index, entry) {
-		if (type == GAME_CAPTURE &&
-		    !get_bool_val(entry, "game_capture"))
+		if (type == GAME_CAPTURE && !get_bool_val(entry, "game_capture"))
 			continue;
-		if (type == WINDOW_CAPTURE_WGC &&
-		    !get_bool_val(entry, "window_capture_wgc"))
+		if (type == WINDOW_CAPTURE_WGC && !get_bool_val(entry, "window_capture_wgc"))
 			continue;
-		if (type == WINDOW_CAPTURE_BITBLT &&
-		    !get_bool_val(entry, "window_capture"))
+		if (type == WINDOW_CAPTURE_BITBLT && !get_bool_val(entry, "window_capture"))
 			continue;
 
 		int match_flags = get_int_val(entry, "match_flags");
@@ -145,17 +140,13 @@ struct compat_result *check_compatibility(const char *win_title,
 		const char *j_title = get_string_val(entry, "window_title");
 		const char *j_class = get_string_val(entry, "window_class");
 
-		if ((match_flags & MATCH_CLASS) &&
-		    (!win_class || strcmp(win_class, j_class) != 0))
+		if ((match_flags & MATCH_CLASS) && (!win_class || strcmp(win_class, j_class) != 0))
 			continue;
-		if ((match_flags & MATCH_EXE) &&
-		    (!exe || astrcmpi(exe, j_exe) != 0))
+		if ((match_flags & MATCH_EXE) && (!exe || astrcmpi(exe, j_exe) != 0))
 			continue;
 		/* Title supports partial matches as some games append additional
 		 * information after the title, e.g., "Minecraft 1.18". */
-		if ((match_flags & MATCH_TITLE) &&
-		    (!win_title ||
-		     astrcmpi_n(win_title, j_title, strlen(j_title)) != 0))
+		if ((match_flags & MATCH_TITLE) && (!win_title || astrcmpi_n(win_title, j_title, strlen(j_title)) != 0))
 			continue;
 
 		/* Attempt to translate and compile message */
@@ -174,8 +165,7 @@ struct compat_result *check_compatibility(const char *win_title,
 		const char *url = get_string_val(entry, "url");
 		/* Append clickable URL in Qt rich text */
 		if (url && strncmp(url, "https://", 8) == 0) {
-			dstr_catf(&message, "<br>\n<a href=\"%s\">%s</a>", url,
-				  url + 8);
+			dstr_catf(&message, "<br>\n<a href=\"%s\">%s</a>", url, url + 8);
 		}
 
 		res = bzalloc(sizeof(struct compat_result));

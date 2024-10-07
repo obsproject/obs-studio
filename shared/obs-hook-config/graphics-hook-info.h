@@ -131,12 +131,10 @@ static inline HANDLE create_hook_info(DWORD id)
 	HANDLE handle = NULL;
 
 	wchar_t new_name[64];
-	const int len = swprintf(new_name, _countof(new_name),
-				 SHMEM_HOOK_INFO L"%lu", id);
+	const int len = swprintf(new_name, _countof(new_name), SHMEM_HOOK_INFO L"%lu", id);
 	if (len > 0) {
-		handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
-					    PAGE_READWRITE, 0,
-					    sizeof(struct hook_info), new_name);
+		handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(struct hook_info),
+					    new_name);
 	}
 
 	return handle;

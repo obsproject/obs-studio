@@ -26,21 +26,15 @@ static const char *imageExtensions[] = {"bmp", "gif", "jpeg", "jpg",
 static const char *htmlExtensions[] = {"htm", "html", nullptr};
 
 static const char *mediaExtensions[] = {
-	"3ga",   "669",   "a52",   "aac",  "ac3",  "adt",  "adts", "aif",
-	"aifc",  "aiff",  "amb",   "amr",  "aob",  "ape",  "au",   "awb",
-	"caf",   "dts",   "flac",  "it",   "kar",  "m4a",  "m4b",  "m4p",
-	"m5p",   "mid",   "mka",   "mlp",  "mod",  "mpa",  "mp1",  "mp2",
-	"mp3",   "mpc",   "mpga",  "mus",  "oga",  "ogg",  "oma",  "opus",
-	"qcp",   "ra",    "rmi",   "s3m",  "sid",  "spx",  "tak",  "thd",
-	"tta",   "voc",   "vqf",   "w64",  "wav",  "wma",  "wv",   "xa",
-	"xm",    "3g2",   "3gp",   "3gp2", "3gpp", "amv",  "asf",  "avi",
-	"bik",   "crf",   "divx",  "drc",  "dv",   "evo",  "f4v",  "flv",
-	"gvi",   "gxf",   "iso",   "m1v",  "m2v",  "m2t",  "m2ts", "m4v",
-	"mkv",   "mov",   "mp2",   "mp2v", "mp4",  "mp4v", "mpe",  "mpeg",
-	"mpeg1", "mpeg2", "mpeg4", "mpg",  "mpv2", "mts",  "mtv",  "mxf",
-	"mxg",   "nsv",   "nuv",   "ogg",  "ogm",  "ogv",  "ogx",  "ps",
-	"rec",   "rm",    "rmvb",  "rpl",  "thp",  "tod",  "ts",   "tts",
-	"txd",   "vob",   "vro",   "webm", "wm",   "wmv",  "wtv",  nullptr};
+	"3ga", "669",  "a52", "aac",  "ac3",   "adt",   "adts",  "aif",  "aifc", "aiff", "amb",  "amr",  "aob", "ape",
+	"au",  "awb",  "caf", "dts",  "flac",  "it",    "kar",   "m4a",  "m4b",  "m4p",  "m5p",  "mid",  "mka", "mlp",
+	"mod", "mpa",  "mp1", "mp2",  "mp3",   "mpc",   "mpga",  "mus",  "oga",  "ogg",  "oma",  "opus", "qcp", "ra",
+	"rmi", "s3m",  "sid", "spx",  "tak",   "thd",   "tta",   "voc",  "vqf",  "w64",  "wav",  "wma",  "wv",  "xa",
+	"xm",  "3g2",  "3gp", "3gp2", "3gpp",  "amv",   "asf",   "avi",  "bik",  "crf",  "divx", "drc",  "dv",  "evo",
+	"f4v", "flv",  "gvi", "gxf",  "iso",   "m1v",   "m2v",   "m2t",  "m2ts", "m4v",  "mkv",  "mov",  "mp2", "mp2v",
+	"mp4", "mp4v", "mpe", "mpeg", "mpeg1", "mpeg2", "mpeg4", "mpg",  "mpv2", "mts",  "mtv",  "mxf",  "mxg", "nsv",
+	"nuv", "ogg",  "ogm", "ogv",  "ogx",   "ps",    "rec",   "rm",   "rmvb", "rpl",  "thp",  "tod",  "ts",  "tts",
+	"txd", "vob",  "vro", "webm", "wm",    "wmv",   "wtv",   nullptr};
 
 static string GenerateSourceName(const char *base)
 {
@@ -56,8 +50,7 @@ static string GenerateSourceName(const char *base)
 			name += ")";
 		}
 
-		OBSSourceAutoRelease source =
-			obs_get_source_by_name(name.c_str());
+		OBSSourceAutoRelease source = obs_get_source_by_name(name.c_str());
 
 		if (!source)
 			return name;
@@ -73,8 +66,7 @@ static QString ReadWindowsURLFile(const QString &file)
 }
 #endif
 
-void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
-			  const obs_video_info &ovi)
+void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings, const obs_video_info &ovi)
 {
 	QUrl path = QString::fromUtf8(url);
 	QUrlQuery query = QUrlQuery(path.query(QUrl::FullyEncoded));
@@ -93,20 +85,16 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 		// decoding kicks in again. This is to allow JavaScript's
 		// default searchParams.append function to simply append css
 		// to the query parameters, which is the intended usecase for this.
-		QString fullyEncoded =
-			query.queryItemValue("layer-css", QUrl::FullyEncoded);
+		QString fullyEncoded = query.queryItemValue("layer-css", QUrl::FullyEncoded);
 		fullyEncoded = fullyEncoded.replace("+", "%20");
-		QString decoded = QUrl::fromPercentEncoding(
-			QByteArray::fromStdString(QT_TO_UTF8(fullyEncoded)));
+		QString decoded = QUrl::fromPercentEncoding(QByteArray::fromStdString(QT_TO_UTF8(fullyEncoded)));
 		obs_data_set_string(settings, "css", QT_TO_UTF8(decoded));
 	}
 
 	obs_data_set_int(settings, "width", cx);
 	obs_data_set_int(settings, "height", cy);
 
-	name = query.hasQueryItem("layer-name")
-		       ? query.queryItemValue("layer-name", QUrl::FullyDecoded)
-		       : path.host();
+	name = query.hasQueryItem("layer-name") ? query.queryItemValue("layer-name", QUrl::FullyDecoded) : path.host();
 
 	query.removeQueryItem("layer-width");
 	query.removeQueryItem("layer-height");
@@ -181,39 +169,30 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	if (name.isEmpty())
 		name = obs_source_get_display_name(type);
 	std::string sourceName = GenerateSourceName(QT_TO_UTF8(name));
-	OBSSourceAutoRelease source =
-		obs_source_create(type, sourceName.c_str(), settings, nullptr);
+	OBSSourceAutoRelease source = obs_source_create(type, sourceName.c_str(), settings, nullptr);
 	if (source) {
 		OBSDataAutoRelease wrapper = obs_save_source(source);
 
 		OBSScene scene = main->GetCurrentScene();
-		std::string sceneUUID =
-			obs_source_get_uuid(obs_scene_get_source(scene));
+		std::string sceneUUID = obs_source_get_uuid(obs_scene_get_source(scene));
 		std::string sourceUUID = obs_source_get_uuid(source);
 
 		auto undo = [sceneUUID, sourceUUID](const std::string &) {
-			OBSSourceAutoRelease source =
-				obs_get_source_by_uuid(sourceUUID.c_str());
+			OBSSourceAutoRelease source = obs_get_source_by_uuid(sourceUUID.c_str());
 			obs_source_remove(source);
-			OBSSourceAutoRelease scene =
-				obs_get_source_by_uuid(sceneUUID.c_str());
+			OBSSourceAutoRelease scene = obs_get_source_by_uuid(sceneUUID.c_str());
 			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
 		};
-		auto redo = [sceneUUID, sourceName,
-			     type](const std::string &data) {
-			OBSSourceAutoRelease scene =
-				obs_get_source_by_uuid(sceneUUID.c_str());
+		auto redo = [sceneUUID, sourceName, type](const std::string &data) {
+			OBSSourceAutoRelease scene = obs_get_source_by_uuid(sceneUUID.c_str());
 			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
 
-			OBSDataAutoRelease dat =
-				obs_data_create_from_json(data.c_str());
+			OBSDataAutoRelease dat = obs_data_create_from_json(data.c_str());
 			OBSSourceAutoRelease source = obs_load_source(dat);
-			obs_scene_add(obs_scene_from_source(scene),
-				      source.Get());
+			obs_scene_add(obs_scene_from_source(scene), source.Get());
 		};
 
-		undo_s.add_action(QTStr("Undo.Add").arg(sourceName.c_str()),
-				  undo, redo, "",
+		undo_s.add_action(QTStr("Undo.Add").arg(sourceName.c_str()), undo, redo, "",
 				  std::string(obs_data_get_json(wrapper)));
 		obs_scene_add(scene, source);
 	}
@@ -255,10 +234,8 @@ void OBSBasic::ConfirmDropUrl(const QString &url)
 		messageBox.setWindowTitle(QTStr("AddUrl.Title"));
 		messageBox.setText(msg);
 
-		QPushButton *yesButton = messageBox.addButton(
-			QTStr("Yes"), QMessageBox::YesRole);
-		QPushButton *noButton =
-			messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+		QPushButton *yesButton = messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
+		QPushButton *noButton = messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
 		messageBox.setDefaultButton(yesButton);
 		messageBox.setEscapeButton(noButton);
 		messageBox.setIcon(QMessageBox::Question);
@@ -287,8 +264,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 			}
 
 #ifdef _WIN32
-			if (fileInfo.suffix().compare(
-				    "url", Qt::CaseInsensitive) == 0) {
+			if (fileInfo.suffix().compare("url", Qt::CaseInsensitive) == 0) {
 				QString urlTarget = ReadWindowsURLFile(file);
 				if (!urlTarget.isEmpty()) {
 					ConfirmDropUrl(urlTarget);

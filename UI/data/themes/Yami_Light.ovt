@@ -66,56 +66,56 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/filter.svg);
 }
 
-* [themeID="addIconSmall"] {
+.icon-plus {
     qproperty-icon: url(theme:Light/plus.svg);
 }
 
-* [themeID="removeIconSmall"] {
+.icon-minus {
+    qproperty-icon: url(theme:Light/minus.svg);
+}
+
+.icon-trash {
     qproperty-icon: url(theme:Light/trash.svg);
 }
 
-* [themeID="clearIconSmall"] {
+.icon-clear {
     qproperty-icon: url(theme:Light/entry-clear.svg);
 }
 
-* [themeID="propertiesIconSmall"] {
+.icon-gear {
     qproperty-icon: url(theme:Light/settings/general.svg);
 }
 
-* [themeID="configIconSmall"] {
-    qproperty-icon: url(theme:Light/settings/general.svg);
-}
-
-* [themeID="menuIconSmall"] {
+.icon-dots-vert {
     qproperty-icon: url(theme:Light/dots-vert.svg);
 }
 
-* [themeID="refreshIconSmall"] {
+.icon-refresh {
     qproperty-icon: url(theme:Light/refresh.svg);
 }
 
-* [themeID="cogsIcon"] {
+.icon-cogs {
     qproperty-icon: url(theme:Light/cogs.svg);
 }
 
-#sourceInteractButton {
+.icon-touch {
     qproperty-icon: url(theme:Light/interact.svg);
 }
 
-* [themeID="upArrowIconSmall"] {
+.icon-up {
     qproperty-icon: url(theme:Light/up.svg);
 }
 
-* [themeID="downArrowIconSmall"] {
+.icon-down {
     qproperty-icon: url(theme:Light/down.svg);
 }
 
-* [themeID="pauseIconSmall"] {
-    qproperty-icon: url(theme:Light/media-pause.svg);
+.icon-filter {
+    qproperty-icon: url(theme:Light/filter.svg);
 }
 
-* [themeID="filtersIcon"] {
-    qproperty-icon: url(theme:Light/filter.svg);
+.icon-revert {
+    qproperty-icon: url(theme:Light/revert.svg);
 }
 
 QToolBarExtension {
@@ -196,10 +196,6 @@ QCheckBox[visibilityCheckBox=true]::indicator:checked:hover {
     image: url(theme:Light/visible.svg);
 }
 
-* [themeID="revertIcon"] {
-    qproperty-icon: url(theme:Light/revert.svg);
-}
-
 MuteCheckBox::indicator:checked {
     image: url(theme:Light/mute.svg);
 }
@@ -262,32 +258,32 @@ OBSBasic {
     qproperty-audioProcessOutputIcon: url(theme:Light/sources/windowaudio.svg);
 }
 
-* [themeID="replayIconSmall"] {
+.icon-save {
     qproperty-icon: url(theme:Light/save.svg);
 }
 
 /* Media icons */
-* [themeID="playIcon"] {
+.icon-media-play {
     qproperty-icon: url(theme:Light/media/media_play.svg);
 }
 
-* [themeID="pauseIcon"] {
+.icon-media-pause {
     qproperty-icon: url(theme:Light/media/media_pause.svg);
 }
 
-* [themeID="restartIcon"] {
+.icon-media-restart {
     qproperty-icon: url(theme:Light/media/media_restart.svg);
 }
 
-* [themeID="stopIcon"] {
+.icon-media-stop {
     qproperty-icon: url(theme:Light/media/media_stop.svg);
 }
 
-* [themeID="nextIcon"] {
+.icon-media-next {
     qproperty-icon: url(theme:Light/media/media_next.svg);
 }
 
-* [themeID="previousIcon"] {
+.icon-media-prev {
     qproperty-icon: url(theme:Light/media/media_previous.svg);
 }
 

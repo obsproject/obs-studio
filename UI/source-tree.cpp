@@ -30,9 +30,7 @@ static inline OBSScene GetCurrentScene()
 
 /* ========================================================================= */
 
-SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
-	: tree(tree_),
-	  sceneitem(sceneitem_)
+SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tree(tree_), sceneitem(sceneitem_)
 {
 	setAttribute(Qt::WA_TranslucentBackground);
 	setMouseTracking(true);
@@ -40,8 +38,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	const char *name = obs_source_get_name(source);
 
-	OBSDataAutoRelease privData =
-		obs_sceneitem_get_private_settings(sceneitem);
+	OBSDataAutoRelease privData = obs_sceneitem_get_private_settings(sceneitem);
 	int preset = obs_data_get_int(privData, "color-preset");
 
 	if (preset == 1) {
@@ -77,26 +74,20 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		iconLabel->setPixmap(pixmap);
 		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
-		iconLabel->setProperty("TH_Source_Icon", true);
+		iconLabel->setProperty("class", "source-icon");
 	}
 
 	vis = new QCheckBox();
-	vis->setProperty("visibilityCheckBox", true);
-	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	vis->setProperty("class", "checkbox-icon indicator-visibility");
 	vis->setChecked(sourceVisible);
-	vis->setStyleSheet("background: none");
 	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
-	vis->setAccessibleDescription(
-		QTStr("Basic.Main.Sources.VisibilityDescription").arg(name));
+	vis->setAccessibleDescription(QTStr("Basic.Main.Sources.VisibilityDescription").arg(name));
 
 	lock = new QCheckBox();
-	lock->setProperty("lockCheckBox", true);
-	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	lock->setProperty("class", "checkbox-icon indicator-lock");
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
-	lock->setStyleSheet("background: none");
 	lock->setAccessibleName(QTStr("Basic.Main.Sources.Lock"));
-	lock->setAccessibleDescription(
-		QTStr("Basic.Main.Sources.LockDescription").arg(name));
+	lock->setAccessibleDescription(QTStr("Basic.Main.Sources.LockDescription").arg(name));
 
 	label = new OBSSourceLabel(source);
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -139,26 +130,20 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		const char *uuid = obs_source_get_uuid(scenesource);
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 
-		auto undo_redo = [](const std::string &uuid, int64_t id,
-				    bool val) {
-			OBSSourceAutoRelease s =
-				obs_get_source_by_uuid(uuid.c_str());
+		auto undo_redo = [](const std::string &uuid, int64_t id, bool val) {
+			OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
 			obs_scene_t *sc = obs_group_or_scene_from_source(s);
-			obs_sceneitem_t *si =
-				obs_scene_find_sceneitem_by_id(sc, id);
+			obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
 			if (si)
 				obs_sceneitem_set_visible(si, val);
 		};
 
-		QString str = QTStr(val ? "Undo.ShowSceneItem"
-					: "Undo.HideSceneItem");
+		QString str = QTStr(val ? "Undo.ShowSceneItem" : "Undo.HideSceneItem");
 
 		OBSBasic *main = OBSBasic::Get();
-		main->undo_s.add_action(
-			str.arg(obs_source_get_name(source), name),
-			std::bind(undo_redo, std::placeholders::_1, id, !val),
-			std::bind(undo_redo, std::placeholders::_1, id, val),
-			uuid, uuid);
+		main->undo_s.add_action(str.arg(obs_source_get_name(source), name),
+					std::bind(undo_redo, std::placeholders::_1, id, !val),
+					std::bind(undo_redo, std::placeholders::_1, id, val), uuid, uuid);
 
 		QSignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_visible(sceneitem, val);
@@ -204,16 +189,12 @@ void SourceTreeItem::ReconnectSignals()
 	/* --------------------------------------------------------- */
 
 	auto removeItem = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
-		obs_sceneitem_t *curItem =
-			(obs_sceneitem_t *)calldata_ptr(cd, "item");
-		obs_scene_t *curScene =
-			(obs_scene_t *)calldata_ptr(cd, "scene");
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
+		obs_scene_t *curScene = (obs_scene_t *)calldata_ptr(cd, "scene");
 
 		if (curItem == this_->sceneitem) {
-			QMetaObject::invokeMethod(this_->tree, "Remove",
-						  Q_ARG(OBSSceneItem, curItem),
+			QMetaObject::invokeMethod(this_->tree, "Remove", Q_ARG(OBSSceneItem, curItem),
 						  Q_ARG(OBSScene, curScene));
 			curItem = nullptr;
 		}
@@ -222,52 +203,41 @@ void SourceTreeItem::ReconnectSignals()
 	};
 
 	auto itemVisible = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
-		obs_sceneitem_t *curItem =
-			(obs_sceneitem_t *)calldata_ptr(cd, "item");
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 		bool visible = calldata_bool(cd, "visible");
 
 		if (curItem == this_->sceneitem)
-			QMetaObject::invokeMethod(this_, "VisibilityChanged",
-						  Q_ARG(bool, visible));
+			QMetaObject::invokeMethod(this_, "VisibilityChanged", Q_ARG(bool, visible));
 	};
 
 	auto itemLocked = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
-		obs_sceneitem_t *curItem =
-			(obs_sceneitem_t *)calldata_ptr(cd, "item");
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 		bool locked = calldata_bool(cd, "locked");
 
 		if (curItem == this_->sceneitem)
-			QMetaObject::invokeMethod(this_, "LockedChanged",
-						  Q_ARG(bool, locked));
+			QMetaObject::invokeMethod(this_, "LockedChanged", Q_ARG(bool, locked));
 	};
 
 	auto itemSelect = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
-		obs_sceneitem_t *curItem =
-			(obs_sceneitem_t *)calldata_ptr(cd, "item");
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
 			QMetaObject::invokeMethod(this_, "Select");
 	};
 
 	auto itemDeselect = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
-		obs_sceneitem_t *curItem =
-			(obs_sceneitem_t *)calldata_ptr(cd, "item");
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
 			QMetaObject::invokeMethod(this_, "Deselect");
 	};
 
 	auto reorderGroup = [](void *data, calldata_t *) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
 		QMetaObject::invokeMethod(this_->tree, "ReorderItems");
 	};
 
@@ -292,8 +262,7 @@ void SourceTreeItem::ReconnectSignals()
 	/* --------------------------------------------------------- */
 
 	auto removeSource = [](void *data, calldata_t *) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
 		this_->DisconnectSignals();
 		this_->sceneitem = nullptr;
 		QMetaObject::invokeMethod(this_->tree, "RefreshItems");
@@ -312,8 +281,7 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 		expand->setChecked(!expand->isChecked());
 	} else {
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
-		OBSBasic *main =
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		if (obs_source_configurable(source)) {
 			main->CreatePropertiesWindow(source);
 		}
@@ -370,8 +338,7 @@ void SourceTreeItem::ExitEditMode(bool save)
 		OBSData redoSceneData = main->BackupScene(GetCurrentScene());
 
 		QString text = QTStr("Undo.GroupItems").arg(newName.c_str());
-		main->CreateSceneUndoRedoAction(text, tree->undoSceneData,
-						redoSceneData);
+		main->CreateSceneUndoRedoAction(text, tree->undoSceneData, redoSceneData);
 
 		tree->undoSceneData = nullptr;
 	}
@@ -404,8 +371,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 		return;
 
 	if (newName.empty()) {
-		OBSMessageBox::information(main, QTStr("NoNameEntered.Title"),
-					   QTStr("NoNameEntered.Text"));
+		OBSMessageBox::information(main, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
 		return;
 	}
 
@@ -419,13 +385,11 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	/* ----------------------------------------- */
 	/* check for existing source                 */
 
-	OBSSourceAutoRelease existingSource =
-		obs_get_source_by_name(newName.c_str());
+	OBSSourceAutoRelease existingSource = obs_get_source_by_name(newName.c_str());
 	bool exists = !!existingSource;
 
 	if (exists) {
-		OBSMessageBox::information(main, QTStr("NameExists.Title"),
-					   QTStr("NameExists.Text"));
+		OBSMessageBox::information(main, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
 		return;
 	}
 
@@ -434,33 +398,27 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 
 	QSignalBlocker sourcesSignalBlocker(this);
 	std::string prevName(obs_source_get_name(source));
-	std::string scene_uuid =
-		obs_source_get_uuid(main->GetCurrentSceneSource());
+	std::string scene_uuid = obs_source_get_uuid(main->GetCurrentSceneSource());
 	auto undo = [scene_uuid, prevName, main](const std::string &data) {
-		OBSSourceAutoRelease source =
-			obs_get_source_by_uuid(data.c_str());
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
 		obs_source_set_name(source, prevName.c_str());
 
-		OBSSourceAutoRelease scene_source =
-			obs_get_source_by_uuid(scene_uuid.c_str());
+		OBSSourceAutoRelease scene_source = obs_get_source_by_uuid(scene_uuid.c_str());
 		main->SetCurrentScene(scene_source.Get(), true);
 	};
 
 	std::string editedName = newName;
 
 	auto redo = [scene_uuid, main, editedName](const std::string &data) {
-		OBSSourceAutoRelease source =
-			obs_get_source_by_uuid(data.c_str());
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
 		obs_source_set_name(source, editedName.c_str());
 
-		OBSSourceAutoRelease scene_source =
-			obs_get_source_by_uuid(scene_uuid.c_str());
+		OBSSourceAutoRelease scene_source = obs_get_source_by_uuid(scene_uuid.c_str());
 		main->SetCurrentScene(scene_source.Get(), true);
 	};
 
 	const char *uuid = obs_source_get_uuid(source);
-	main->undo_s.add_action(QTStr("Undo.Rename").arg(newName.c_str()), undo,
-				redo, uuid, uuid);
+	main->undo_s.add_action(QTStr("Undo.Rename").arg(newName.c_str()), undo, redo, uuid, uuid);
 
 	obs_source_set_name(source, newName.c_str());
 }
@@ -471,15 +429,11 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 		return false;
 
 	if (LineEditCanceled(event)) {
-		QMetaObject::invokeMethod(this, "ExitEditMode",
-					  Qt::QueuedConnection,
-					  Q_ARG(bool, false));
+		QMetaObject::invokeMethod(this, "ExitEditMode", Qt::QueuedConnection, Q_ARG(bool, false));
 		return true;
 	}
 	if (LineEditChanged(event)) {
-		QMetaObject::invokeMethod(this, "ExitEditMode",
-					  Qt::QueuedConnection,
-					  Q_ARG(bool, true));
+		QMetaObject::invokeMethod(this, "ExitEditMode", Qt::QueuedConnection, Q_ARG(bool, true));
 		return true;
 	}
 
@@ -557,24 +511,18 @@ void SourceTreeItem::Update(bool force)
 
 	} else if (type == Type::Group) {
 		expand = new QCheckBox();
-		expand->setProperty("sourceTreeSubItem", true);
-		expand->setSizePolicy(QSizePolicy::Maximum,
-				      QSizePolicy::Maximum);
-		expand->setMaximumSize(10, 16);
-		expand->setMinimumSize(10, 0);
+		expand->setProperty("class", "checkbox-icon indicator-expand");
 #ifdef __APPLE__
 		expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 #endif
 		boxLayout->insertWidget(0, expand);
 
-		OBSDataAutoRelease data =
-			obs_sceneitem_get_private_settings(sceneitem);
+		OBSDataAutoRelease data = obs_sceneitem_get_private_settings(sceneitem);
 		expand->blockSignals(true);
 		expand->setChecked(obs_data_get_bool(data, "collapsed"));
 		expand->blockSignals(false);
 
-		connect(expand, &QPushButton::toggled, this,
-			&SourceTreeItem::ExpandClicked);
+		connect(expand, &QPushButton::toggled, this, &SourceTreeItem::ExpandClicked);
 
 	} else {
 		spacer = new QSpacerItem(3, 1);
@@ -641,8 +589,7 @@ void SourceTreeModel::Clear()
 
 static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 {
-	QVector<OBSSceneItem> &items =
-		*reinterpret_cast<QVector<OBSSceneItem> *>(ptr);
+	QVector<OBSSceneItem> &items = *reinterpret_cast<QVector<OBSSceneItem> *>(ptr);
 
 	obs_source_t *src = obs_sceneitem_get_source(item);
 	if (obs_source_removed(src)) {
@@ -650,13 +597,11 @@ static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	}
 
 	if (obs_sceneitem_is_group(item)) {
-		OBSDataAutoRelease data =
-			obs_sceneitem_get_private_settings(item);
+		OBSDataAutoRelease data = obs_sceneitem_get_private_settings(item);
 
 		bool collapse = obs_data_get_bool(data, "collapsed");
 		if (!collapse) {
-			obs_scene_t *scene =
-				obs_sceneitem_group_get_scene(item);
+			obs_scene_t *scene = obs_sceneitem_group_get_scene(item);
 
 			obs_scene_enum_items(scene, enumItem, &items);
 		}
@@ -682,15 +627,13 @@ void SourceTreeModel::SceneChanged()
 		bool select = obs_sceneitem_selected(items[i]);
 		QModelIndex index = createIndex(i, 0);
 
-		st->selectionModel()->select(
-			index, select ? QItemSelectionModel::Select
-				      : QItemSelectionModel::Deselect);
+		st->selectionModel()->select(index,
+					     select ? QItemSelectionModel::Select : QItemSelectionModel::Deselect);
 	}
 }
 
 /* moves a scene item index (blame linux distros for using older Qt builds) */
-static inline void MoveItem(QVector<OBSSceneItem> &items, int oldIdx,
-			    int newIdx)
+static inline void MoveItem(QVector<OBSSceneItem> &items, int oldIdx, int newIdx)
 {
 	OBSSceneItem item = items[oldIdx];
 	items.remove(oldIdx);
@@ -763,8 +706,7 @@ void SourceTreeModel::ReorderItems()
 		}
 
 		/* move items */
-		beginMoveRows(QModelIndex(), idx1Old, idx1Old + count - 1,
-			      QModelIndex(), idx1New + count);
+		beginMoveRows(QModelIndex(), idx1Old, idx1Old + count - 1, QModelIndex(), idx1New + count);
 		for (i = 0; i < count; i++) {
 			int to = idx1New + count;
 			if (to > idx1Old)
@@ -810,8 +752,7 @@ void SourceTreeModel::Remove(obs_sceneitem_t *item)
 
 		for (int i = endIdx + 1; i < items.count(); i++) {
 			obs_sceneitem_t *subitem = items[i];
-			obs_scene_t *subscene =
-				obs_sceneitem_get_scene(subitem);
+			obs_scene_t *subscene = obs_sceneitem_get_scene(subitem);
 
 			if (subscene == scene)
 				endIdx = i;
@@ -837,9 +778,7 @@ OBSSceneItem SourceTreeModel::Get(int idx)
 	return items[idx];
 }
 
-SourceTreeModel::SourceTreeModel(SourceTree *st_)
-	: QAbstractListModel(st_),
-	  st(st_)
+SourceTreeModel::SourceTreeModel(SourceTree *st_) : QAbstractListModel(st_), st(st_)
 {
 	obs_frontend_add_event_callback(OBSFrontendEvent, this);
 }
@@ -868,8 +807,7 @@ Qt::ItemFlags SourceTreeModel::flags(const QModelIndex &index) const
 	obs_sceneitem_t *item = items[index.row()];
 	bool is_group = obs_sceneitem_is_group(item);
 
-	return QAbstractListModel::flags(index) | Qt::ItemIsEditable |
-	       Qt::ItemIsDragEnabled |
+	return QAbstractListModel::flags(index) | Qt::ItemIsEditable | Qt::ItemIsDragEnabled |
 	       (is_group ? Qt::ItemIsDropEnabled : Qt::NoItemFlags);
 }
 
@@ -885,8 +823,7 @@ QString SourceTreeModel::GetNewGroupName()
 
 	int i = 2;
 	for (;;) {
-		OBSSourceAutoRelease group =
-			obs_get_source_by_name(QT_TO_UTF8(name));
+		OBSSourceAutoRelease group = obs_get_source_by_name(QT_TO_UTF8(name));
 		if (!group)
 			break;
 		name = QTStr("Basic.Main.Group").arg(QString::number(i++));
@@ -898,8 +835,7 @@ QString SourceTreeModel::GetNewGroupName()
 void SourceTreeModel::AddGroup()
 {
 	QString name = GetNewGroupName();
-	obs_sceneitem_t *group =
-		obs_scene_add_group(GetCurrentScene(), QT_TO_UTF8(name));
+	obs_sceneitem_t *group = obs_scene_add_group(GetCurrentScene(), QT_TO_UTF8(name));
 	if (!group)
 		return;
 
@@ -910,8 +846,7 @@ void SourceTreeModel::AddGroup()
 	st->UpdateWidget(createIndex(0, 0, nullptr), group);
 	UpdateGroupState(true);
 
-	QMetaObject::invokeMethod(st, "Edit", Qt::QueuedConnection,
-				  Q_ARG(int, 0));
+	QMetaObject::invokeMethod(st, "Edit", Qt::QueuedConnection, Q_ARG(int, 0));
 }
 
 void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
@@ -932,8 +867,7 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 
 	st->undoSceneData = main->BackupScene(scene);
 
-	obs_sceneitem_t *item = obs_scene_insert_group(
-		scene, QT_TO_UTF8(name), item_order.data(), item_order.size());
+	obs_sceneitem_t *item = obs_scene_insert_group(scene, QT_TO_UTF8(name), item_order.data(), item_order.size());
 	if (!item) {
 		st->undoSceneData = nullptr;
 		return;
@@ -955,8 +889,7 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 	/* that's created automatically.                                     */
 
 	int newIdx = indices[0].row();
-	QMetaObject::invokeMethod(st, "NewGroupEdit", Qt::QueuedConnection,
-				  Q_ARG(int, newIdx));
+	QMetaObject::invokeMethod(st, "NewGroupEdit", Qt::QueuedConnection, Q_ARG(int, newIdx));
 }
 
 void SourceTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
@@ -976,8 +909,7 @@ void SourceTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 	SceneChanged();
 
 	OBSData redoData = main->BackupScene(scene);
-	main->CreateSceneUndoRedoAction(QTStr("Basic.Main.Ungroup"), undoData,
-					redoData);
+	main->CreateSceneUndoRedoAction(QTStr("Basic.Main.Ungroup"), undoData, redoData);
 }
 
 void SourceTreeModel::ExpandGroup(obs_sceneitem_t *item)
@@ -1053,19 +985,17 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 {
 	SourceTreeModel *stm_ = new SourceTreeModel(this);
 	setModel(stm_);
-	setStyleSheet(QString(
-		"*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
-		"*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
-		"*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
-		"*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
-		"*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
-		"*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
-		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
-		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
+	setStyleSheet(QString("*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
+			      "*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
+			      "*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
+			      "*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
+			      "*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
+			      "*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
+			      "*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
+			      "*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
 	UpdateNoSourcesMessage();
-	connect(App(), &OBSApp::StyleChanged, this,
-		&SourceTree::UpdateNoSourcesMessage);
+	connect(App(), &OBSApp::StyleChanged, this, &SourceTree::UpdateNoSourcesMessage);
 	connect(App(), &OBSApp::StyleChanged, this, &SourceTree::UpdateIcons);
 
 	setItemDelegate(new SourceTreeDelegate(this));
@@ -1134,9 +1064,7 @@ void SourceTree::SelectItem(obs_sceneitem_t *sceneitem, bool select)
 
 	QModelIndex index = stm->createIndex(i, 0);
 	if (index.isValid() && select != selectionModel()->isSelected(index))
-		selectionModel()->select(
-			index, select ? QItemSelectionModel::Select
-				      : QItemSelectionModel::Deselect);
+		selectionModel()->select(index, select ? QItemSelectionModel::Select : QItemSelectionModel::Deselect);
 }
 
 Q_DECLARE_METATYPE(OBSSceneItem);
@@ -1183,9 +1111,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	obs_sceneitem_t *dropItem = items[row]; /* item being dropped on */
 	bool itemIsGroup = obs_sceneitem_is_group(dropItem);
 
-	obs_sceneitem_t *dropGroup =
-		itemIsGroup ? dropItem
-			    : obs_sceneitem_get_group(scene, dropItem);
+	obs_sceneitem_t *dropGroup = itemIsGroup ? dropItem : obs_sceneitem_get_group(scene, dropItem);
 
 	/* not a group if moving above the group */
 	if (indicator == QAbstractItemView::AboveItem && itemIsGroup)
@@ -1199,14 +1125,12 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 	bool dropOnCollapsed = false;
 	if (dropGroup) {
-		obs_data_t *data =
-			obs_sceneitem_get_private_settings(dropGroup);
+		obs_data_t *data = obs_sceneitem_get_private_settings(dropGroup);
 		dropOnCollapsed = obs_data_get_bool(data, "collapsed");
 		obs_data_release(data);
 	}
 
-	if (indicator == QAbstractItemView::BelowItem ||
-	    indicator == QAbstractItemView::OnItem ||
+	if (indicator == QAbstractItemView::BelowItem || indicator == QAbstractItemView::OnItem ||
 	    indicator == QAbstractItemView::OnViewport)
 		row++;
 
@@ -1238,8 +1162,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 		itemBelow = stm->items[row];
 
 	if (hasGroups) {
-		if (!itemBelow ||
-		    obs_sceneitem_get_group(scene, itemBelow) != dropGroup) {
+		if (!itemBelow || obs_sceneitem_get_group(scene, itemBelow) != dropGroup) {
 			dropGroup = nullptr;
 			dropOnCollapsed = false;
 		}
@@ -1260,8 +1183,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	for (int i = 0; i < indices.size(); i++) {
 		obs_sceneitem_t *item = items[indices[i].row()];
 		if (obs_sceneitem_get_scene(item) != scene)
-			sources.push_back(obs_scene_get_source(
-				obs_sceneitem_get_scene(item)));
+			sources.push_back(obs_scene_get_source(obs_sceneitem_get_scene(item)));
 	}
 	if (dropGroup)
 		sources.push_back(obs_sceneitem_get_source(dropGroup));
@@ -1290,13 +1212,10 @@ void SourceTree::dropEvent(QDropEvent *event)
 			if (obs_sceneitem_is_group(item)) {
 				for (int j = items.size() - 1; j >= 0; j--) {
 					obs_sceneitem_t *subitem = items[j];
-					obs_sceneitem_t *subitemGroup =
-						obs_sceneitem_get_group(
-							scene, subitem);
+					obs_sceneitem_t *subitemGroup = obs_sceneitem_get_group(scene, subitem);
 
 					if (subitemGroup == item) {
-						QModelIndex idx =
-							stm->createIndex(j, 0);
+						QModelIndex idx = stm->createIndex(j, 0);
 						indices.insert(i + 1, idx);
 					}
 				}
@@ -1326,8 +1245,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 			itemTo--;
 
 		if (itemTo != from) {
-			stm->beginMoveRows(QModelIndex(), from, from,
-					   QModelIndex(), to);
+			stm->beginMoveRows(QModelIndex(), from, from, QModelIndex(), to);
 			MoveItem(items, from, itemTo);
 			stm->endMoveRows();
 		}
@@ -1356,22 +1274,18 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 	using insertCollapsed_t = decltype(insertCollapsed);
 
-	auto preInsertCollapsed = [](obs_scene_t *, obs_sceneitem_t *item,
-				     void *param) {
+	auto preInsertCollapsed = [](obs_scene_t *, obs_sceneitem_t *item, void *param) {
 		(*reinterpret_cast<insertCollapsed_t *>(param))(item);
 		return true;
 	};
 
 	auto insertLastGroup = [&]() {
-		OBSDataAutoRelease data =
-			obs_sceneitem_get_private_settings(lastGroup);
+		OBSDataAutoRelease data = obs_sceneitem_get_private_settings(lastGroup);
 		bool collapsed = obs_data_get_bool(data, "collapsed");
 
 		if (collapsed) {
 			insertCollapsedIdx = 0;
-			obs_sceneitem_group_enum_items(lastGroup,
-						       preInsertCollapsed,
-						       &insertCollapsed);
+			obs_sceneitem_group_enum_items(lastGroup, preInsertCollapsed, &insertCollapsed);
 		}
 
 		struct obs_sceneitem_order_info info;
@@ -1415,8 +1329,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 			insertLastGroup();
 		}
 
-		obs_scene_reorder_items2(scene, orderList.data(),
-					 orderList.size());
+		obs_scene_reorder_items2(scene, orderList.data(), orderList.size());
 	};
 
 	using updateScene_t = decltype(updateScene);
@@ -1462,8 +1375,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	QListView::dropEvent(event);
 }
 
-void SourceTree::selectionChanged(const QItemSelection &selected,
-				  const QItemSelection &deselected)
+void SourceTree::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
 	{
 		QSignalBlocker sourcesSignalBlocker(this);
@@ -1512,8 +1424,7 @@ void SourceTree::NewGroupEdit(int row)
 		OBSData redoSceneData = main->BackupScene(GetCurrentScene());
 
 		QString text = QTStr("Undo.GroupItems").arg("Unknown");
-		main->CreateSceneUndoRedoAction(text, undoSceneData,
-						redoSceneData);
+		main->CreateSceneUndoRedoAction(text, undoSceneData, redoSceneData);
 
 		undoSceneData = nullptr;
 	}
@@ -1618,10 +1529,8 @@ void SourceTree::Remove(OBSSceneItem item, OBSScene scene)
 	if (!main->SavingDisabled()) {
 		obs_source_t *sceneSource = obs_scene_get_source(scene);
 		obs_source_t *itemSource = obs_sceneitem_get_source(item);
-		blog(LOG_INFO, "User Removed source '%s' (%s) from scene '%s'",
-		     obs_source_get_name(itemSource),
-		     obs_source_get_id(itemSource),
-		     obs_source_get_name(sceneSource));
+		blog(LOG_INFO, "User Removed source '%s' (%s) from scene '%s'", obs_source_get_name(itemSource),
+		     obs_source_get_id(itemSource), obs_source_get_name(sceneSource));
 	}
 }
 
@@ -1645,8 +1554,7 @@ void SourceTree::AddGroup()
 
 void SourceTree::UpdateNoSourcesMessage()
 {
-	QString file = !App()->IsThemeDark() ? ":res/images/no_sources.svg"
-					     : "theme:Dark/no_sources.svg";
+	QString file = !App()->IsThemeDark() ? ":res/images/no_sources.svg" : "theme:Dark/no_sources.svg";
 	iconNoSources.load(file);
 
 	QTextOption opt(Qt::AlignHCenter);
@@ -1676,8 +1584,7 @@ void SourceTree::paintEvent(QPaintEvent *event)
 		QSizeF thisSize = size();
 		const qreal spacing = 16.0;
 
-		qreal totalHeight =
-			iconSize.height() + spacing + textSize.height();
+		qreal totalHeight = iconSize.height() + spacing + textSize.height();
 
 		qreal x = thisSize.width() / 2.0 - iconSize.width() / 2.0;
 		qreal y = thisSize.height() / 2.0 - totalHeight / 2.0;
@@ -1692,13 +1599,9 @@ void SourceTree::paintEvent(QPaintEvent *event)
 	}
 }
 
-SourceTreeDelegate::SourceTreeDelegate(QObject *parent)
-	: QStyledItemDelegate(parent)
-{
-}
+SourceTreeDelegate::SourceTreeDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
 
-QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &option,
-				   const QModelIndex &index) const
+QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
 	SourceTree *tree = qobject_cast<SourceTree *>(parent());
 	QWidget *item = tree->indexWidget(index);

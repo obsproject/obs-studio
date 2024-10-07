@@ -37,14 +37,12 @@ typedef struct _SECTION_BASIC_INFORMATION {
 	LARGE_INTEGER Size;
 } SECTION_BASIC_INFORMATION;
 
-typedef NTSTATUS(STDMETHODCALLTYPE *fn_NtMapViewOfSection)(
-	HANDLE, HANDLE, PVOID, ULONG_PTR, SIZE_T, PLARGE_INTEGER, PSIZE_T,
-	SECTION_INHERIT, ULONG, ULONG);
+typedef NTSTATUS(STDMETHODCALLTYPE *fn_NtMapViewOfSection)(HANDLE, HANDLE, PVOID, ULONG_PTR, SIZE_T, PLARGE_INTEGER,
+							   PSIZE_T, SECTION_INHERIT, ULONG, ULONG);
 
 typedef NTSTATUS(STDMETHODCALLTYPE *fn_NtUnmapViewOfSection)(HANDLE, PVOID);
 
-typedef NTSTATUS(STDMETHODCALLTYPE *fn_NtQuerySection)(
-	HANDLE, SECTION_INFORMATION_CLASS, PVOID, SIZE_T, PSIZE_T);
+typedef NTSTATUS(STDMETHODCALLTYPE *fn_NtQuerySection)(HANDLE, SECTION_INFORMATION_CLASS, PVOID, SIZE_T, PSIZE_T);
 
 static fn_NtMapViewOfSection ntMap;
 static fn_NtUnmapViewOfSection ntUnmap;
@@ -181,8 +179,7 @@ static blocked_module_t blocked_modules[] = {
 	// HolisticMotionCapture capture filter, not yet patched. Blocking
 	// all previous versions in case an update is released.
 	// Reference: https://github.com/obsproject/obs-studio/issues/8552
-	{L"\\holisticmotioncapturefilter64bit.dll", 0, 1680044549,
-	 TS_LESS_THAN},
+	{L"\\holisticmotioncapturefilter64bit.dll", 0, 1680044549, TS_LESS_THAN},
 
 	// Elgato Stream Deck plugin < 2024-02-01
 	// Blocking all previous versions because they have undefined behavior
@@ -216,16 +213,13 @@ static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)
 			if (b->method == TS_IGNORE) {
 				b->blocked_count++;
 				return true;
-			} else if (b->method == TS_EQUAL &&
-				   timestamp == b->timestamp) {
+			} else if (b->method == TS_EQUAL && timestamp == b->timestamp) {
 				b->blocked_count++;
 				return true;
-			} else if (b->method == TS_LESS_THAN &&
-				   timestamp < b->timestamp) {
+			} else if (b->method == TS_LESS_THAN && timestamp < b->timestamp) {
 				b->blocked_count++;
 				return true;
-			} else if (b->method == TS_GREATER_THAN &&
-				   timestamp > b->timestamp) {
+			} else if (b->method == TS_GREATER_THAN && timestamp > b->timestamp) {
 				b->blocked_count++;
 				return true;
 			} else if (b->method == TS_ALLOW_ONLY_THIS) {
@@ -252,12 +246,10 @@ static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)
 	return should_block;
 }
 
-static NTSTATUS
-NtMapViewOfSection_hook(HANDLE SectionHandle, HANDLE ProcessHandle,
-			PVOID *BaseAddress, ULONG_PTR ZeroBits,
-			SIZE_T CommitSize, PLARGE_INTEGER SectionOffset,
-			PSIZE_T ViewSize, SECTION_INHERIT InheritDisposition,
-			ULONG AllocationType, ULONG Win32Protect)
+static NTSTATUS NtMapViewOfSection_hook(HANDLE SectionHandle, HANDLE ProcessHandle, PVOID *BaseAddress,
+					ULONG_PTR ZeroBits, SIZE_T CommitSize, PLARGE_INTEGER SectionOffset,
+					PSIZE_T ViewSize, SECTION_INHERIT InheritDisposition, ULONG AllocationType,
+					ULONG Win32Protect)
 {
 	SECTION_BASIC_INFORMATION section_information;
 	wchar_t fileName[MAX_PATH];
@@ -265,18 +257,16 @@ NtMapViewOfSection_hook(HANDLE SectionHandle, HANDLE ProcessHandle,
 	NTSTATUS ret;
 	uint32_t timestamp = 0;
 
-	ret = ntMap(SectionHandle, ProcessHandle, BaseAddress, ZeroBits,
-		    CommitSize, SectionOffset, ViewSize, InheritDisposition,
-		    AllocationType, Win32Protect);
+	ret = ntMap(SectionHandle, ProcessHandle, BaseAddress, ZeroBits, CommitSize, SectionOffset, ViewSize,
+		    InheritDisposition, AllocationType, Win32Protect);
 
 	// Verify map and process
 	if (ret < 0 || ProcessHandle != GetCurrentProcess())
 		return ret;
 
 	// Fetch section information
-	if (ntQuery(SectionHandle, SectionBasicInformation,
-		    &section_information, sizeof(section_information),
-		    &wrote) < 0)
+	if (ntQuery(SectionHandle, SectionBasicInformation, &section_information, sizeof(section_information), &wrote) <
+	    0)
 		return ret;
 
 	// Verify fetch was successful
@@ -307,8 +297,7 @@ NtMapViewOfSection_hook(HANDLE SectionHandle, HANDLE ProcessHandle,
 	}
 
 	// Get the actual filename if possible
-	if (K32GetMappedFileNameW(ProcessHandle, *BaseAddress, fileName,
-				  _countof(fileName)) == 0)
+	if (K32GetMappedFileNameW(ProcessHandle, *BaseAddress, fileName, _countof(fileName)) == 0)
 		return ret;
 
 	if (is_module_blocked(fileName, timestamp)) {
@@ -329,8 +318,7 @@ void install_dll_blocklist_hook(void)
 	if (!ntMap)
 		return;
 
-	ntUnmap = (fn_NtUnmapViewOfSection)GetProcAddress(
-		nt, "NtUnmapViewOfSection");
+	ntUnmap = (fn_NtUnmapViewOfSection)GetProcAddress(nt, "NtUnmapViewOfSection");
 	if (!ntUnmap)
 		return;
 
@@ -357,9 +345,7 @@ void log_blocked_dlls(void)
 	for (int i = 0; i < _countof(blocked_modules); i++) {
 		blocked_module_t *b = &blocked_modules[i];
 		if (b->blocked_count) {
-			blog(LOG_WARNING,
-			     "Blocked loading of '%S' %" PRIu64 " time%S.",
-			     b->name, b->blocked_count,
+			blog(LOG_WARNING, "Blocked loading of '%S' %" PRIu64 " time%S.", b->name, b->blocked_count,
 			     b->blocked_count == 1 ? L"" : L"s");
 		}
 	}

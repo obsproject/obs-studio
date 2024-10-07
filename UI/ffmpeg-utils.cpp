@@ -26,8 +26,7 @@ extern "C" {
 
 using namespace std;
 
-vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format,
-				    bool ignore_compatibility)
+vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format, bool ignore_compatibility)
 {
 	vector<FFmpegCodec> codecs;
 	const AVCodec *codec;
@@ -38,8 +37,7 @@ vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format,
 		if (!av_codec_is_encoder(codec))
 			continue;
 		// Skip if not supported and compatibility check not disabled
-		if (!ignore_compatibility &&
-		    !av_codec_get_tag(format.codec_tags, codec->id)) {
+		if (!ignore_compatibility && !av_codec_get_tag(format.codec_tags, codec->id)) {
 			continue;
 		}
 
@@ -82,8 +80,7 @@ vector<FFmpegFormat> GetSupportedFormats()
 
 FFmpegCodec FFmpegFormat::GetDefaultEncoder(FFmpegCodecType codec_type) const
 {
-	const AVCodecID codec_id = codec_type == VIDEO ? video_codec
-						       : audio_codec;
+	const AVCodecID codec_id = codec_type == VIDEO ? video_codec : audio_codec;
 	if (codec_type == UNKNOWN || codec_id == AV_CODEC_ID_NONE)
 		return {};
 
@@ -100,23 +97,19 @@ bool FFCodecAndFormatCompatible(const char *codec, const char *format)
 	if (!codec || !format)
 		return false;
 
-	const AVOutputFormat *output_format =
-		av_guess_format(format, nullptr, nullptr);
+	const AVOutputFormat *output_format = av_guess_format(format, nullptr, nullptr);
 	if (!output_format)
 		return false;
 
-	const AVCodecDescriptor *codec_desc =
-		avcodec_descriptor_get_by_name(codec);
+	const AVCodecDescriptor *codec_desc = avcodec_descriptor_get_by_name(codec);
 	if (!codec_desc)
 		return false;
 
-	return avformat_query_codec(output_format, codec_desc->id,
-				    FF_COMPLIANCE_NORMAL) == 1;
+	return avformat_query_codec(output_format, codec_desc->id, FF_COMPLIANCE_NORMAL) == 1;
 }
 
 static const unordered_set<string> builtin_codecs = {
-	"h264", "hevc", "av1",       "prores",    "aac",       "opus",
-	"alac", "flac", "pcm_s16le", "pcm_s24le", "pcm_f32le",
+	"h264", "hevc", "av1", "prores", "aac", "opus", "alac", "flac", "pcm_s16le", "pcm_s24le", "pcm_f32le",
 };
 
 bool IsBuiltinCodec(const char *codec)

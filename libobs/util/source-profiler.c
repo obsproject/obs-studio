@@ -277,12 +277,10 @@ void source_profiler_frame_begin(void)
 
 static inline bool is_async_video_source(const struct obs_source *source)
 {
-	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) ==
-	       OBS_SOURCE_ASYNC_VIDEO;
+	return (source->info.output_flags & OBS_SOURCE_ASYNC_VIDEO) == OBS_SOURCE_ASYNC_VIDEO;
 }
 
-static const char *source_profiler_frame_collect_name =
-	"source_profiler_frame_collect";
+static const char *source_profiler_frame_collect_name = "source_profiler_frame_collect";
 void source_profiler_frame_collect(void)
 {
 	if (!enabled)
@@ -299,13 +297,11 @@ void source_profiler_frame_collect(void)
 		if (timer_ranges[timer_range_idx]) {
 			gpu_ready = true;
 			gs_enter_context(obs->video.graphics);
-			gs_timer_range_get_data(timer_ranges[timer_range_idx],
-						&gpu_disjoint, &freq);
+			gs_timer_range_get_data(timer_ranges[timer_range_idx], &gpu_disjoint, &freq);
 		}
 
 		if (gpu_disjoint) {
-			blog(LOG_WARNING,
-			     "GPU Timers were disjoint, discarding samples.");
+			blog(LOG_WARNING, "GPU Timers were disjoint, discarding samples.");
 		}
 	}
 
@@ -337,8 +333,7 @@ void source_profiler_frame_collect(void)
 			for (size_t idx = 0; idx < smp->render_cpu.num; idx++) {
 				sum += smp->render_cpu.array[idx];
 			}
-			ucirclebuf_push(&ent->render_cpu,
-					smp->render_cpu.array[0]);
+			ucirclebuf_push(&ent->render_cpu, smp->render_cpu.array[0]);
 			ucirclebuf_push(&ent->render_cpu_sum, sum);
 			da_clear(smp->render_cpu);
 		} else {
@@ -354,11 +349,9 @@ void source_profiler_frame_collect(void)
 			for (size_t i = 0; i < smp->render_timers.num; i++) {
 				gs_timer_t *timer = smp->render_timers.array[i];
 
-				if (gpu_ready && !gpu_disjoint &&
-				    gs_timer_get_data(timer, &ticks)) {
+				if (gpu_ready && !gpu_disjoint && gs_timer_get_data(timer, &ticks)) {
 					/* Convert ticks to ns */
-					sum += util_mul_div64(
-						ticks, 1000000000ULL, freq);
+					sum += util_mul_div64(ticks, 1000000000ULL, freq);
 					if (!first)
 						first = sum;
 				}
@@ -463,8 +456,7 @@ uint64_t source_profiler_source_render_begin(gs_timer_t **timer)
 	return os_gettime_ns();
 }
 
-void source_profiler_source_render_end(obs_source_t *source, uint64_t start,
-				       gs_timer_t *timer)
+void source_profiler_source_render_end(obs_source_t *source, uint64_t start, gs_timer_t *timer)
 {
 	if (!enabled)
 		return;
@@ -479,8 +471,7 @@ void source_profiler_source_render_end(obs_source_t *source, uint64_t start,
 	if (smp) {
 		da_push_back(smp->frames[smp->frame_idx]->render_cpu, &delta);
 		if (timer) {
-			da_push_back(smp->frames[smp->frame_idx]->render_timers,
-				     &timer);
+			da_push_back(smp->frames[smp->frame_idx]->render_timers, &timer);
 		}
 	} else if (timer) {
 		gs_timer_destroy(timer);
@@ -514,8 +505,7 @@ void source_profiler_remove_source(obs_source_t *source)
 	obs_queue_task(OBS_TASK_GRAPHICS, task_delete_source, source, false);
 }
 
-static inline void calculate_tick(struct profiler_entry *ent,
-				  struct profiler_result *result)
+static inline void calculate_tick(struct profiler_entry *ent, struct profiler_result *result)
 {
 	size_t idx = 0;
 	uint64_t sum = 0;
@@ -532,8 +522,7 @@ static inline void calculate_tick(struct profiler_entry *ent,
 		result->tick_avg = sum / idx;
 }
 
-static inline void calculate_render(struct profiler_entry *ent,
-				    struct profiler_result *result)
+static inline void calculate_render(struct profiler_entry *ent, struct profiler_result *result)
 {
 	size_t idx;
 	uint64_t sum = 0, sum_sum = 0;
@@ -571,8 +560,7 @@ static inline void calculate_render(struct profiler_entry *ent,
 	}
 }
 
-static inline void calculate_fps(const struct ucirclebuf *frames, double *avg,
-				 uint64_t *best, uint64_t *worst)
+static inline void calculate_fps(const struct ucirclebuf *frames, double *avg, uint64_t *best, uint64_t *worst)
 {
 	uint64_t deltas = 0, delta_sum = 0, best_delta = 0, worst_delta = 0;
 
@@ -603,8 +591,7 @@ static inline void calculate_fps(const struct ucirclebuf *frames, double *avg,
 	}
 }
 
-bool source_profiler_fill_result(obs_source_t *source,
-				 struct profiler_result *result)
+bool source_profiler_fill_result(obs_source_t *source, struct profiler_result *result)
 {
 	if (!enabled || !result)
 		return false;
@@ -620,13 +607,9 @@ bool source_profiler_fill_result(obs_source_t *source,
 		calculate_render(ent, result);
 
 		if (is_async_video_source(source)) {
-			calculate_fps(&ent->async_frame_ts,
-				      &result->async_input,
-				      &result->async_input_best,
+			calculate_fps(&ent->async_frame_ts, &result->async_input, &result->async_input_best,
 				      &result->async_input_worst);
-			calculate_fps(&ent->async_rendered_ts,
-				      &result->async_rendered,
-				      &result->async_rendered_best,
+			calculate_fps(&ent->async_rendered_ts, &result->async_rendered, &result->async_rendered_best,
 				      &result->async_rendered_worst);
 		}
 	}

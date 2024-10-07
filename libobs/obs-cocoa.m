@@ -30,13 +30,6 @@
 #import <AppKit/AppKit.h>
 
 // MARK: macOS Bundle Management
-
-bool is_in_bundle()
-{
-    NSRunningApplication *app = [NSRunningApplication currentApplication];
-    return [app bundleIdentifier] != nil;
-}
-
 const char *get_module_extension(void)
 {
     return "";
@@ -173,7 +166,9 @@ void log_system_info(void)
 static bool dstr_from_cfstring(struct dstr *str, CFStringRef ref)
 {
     CFIndex length = CFStringGetLength(ref);
-    CFIndex max_size = CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8);
+    CFIndex max_size = CFStringGetMaximumSizeForEncoding(length, kCFStringEncodingUTF8) + 1;
+    assert(max_size > 0);
+
     dstr_reserve(str, max_size);
 
     if (!CFStringGetCString(ref, str->array, max_size, kCFStringEncodingUTF8))

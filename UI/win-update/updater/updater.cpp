@@ -37,12 +37,9 @@ using namespace updater;
 
 constexpr const string_view kCDNUrl = "https://cdn-fastly.obsproject.com/";
 constexpr const wchar_t *kCDNHostname = L"cdn-fastly.obsproject.com";
-constexpr const wchar_t *kCDNUpdateBaseUrl =
-	L"https://cdn-fastly.obsproject.com/update_studio";
-constexpr const wchar_t *kPatchManifestURL =
-	L"https://obsproject.com/update_studio/getpatchmanifest";
-constexpr const wchar_t *kVSRedistURL =
-	L"https://aka.ms/vs/17/release/vc_redist.x64.exe";
+constexpr const wchar_t *kCDNUpdateBaseUrl = L"https://cdn-fastly.obsproject.com/update_studio";
+constexpr const wchar_t *kPatchManifestURL = L"https://obsproject.com/update_studio/getpatchmanifest";
+constexpr const wchar_t *kVSRedistURL = L"https://aka.ms/vs/17/release/vc_redist.x64.exe";
 constexpr const wchar_t *kMSHostname = L"aka.ms";
 
 /* ----------------------------------------------------------------------- */
@@ -93,8 +90,7 @@ static bool IsVSRedistOutdated()
 	if (!GetFileVersionInfo(vc_dll, 0, size, buf.data()))
 		return true;
 
-	bool success = VerQueryValue(buf.data(), L"\\",
-				     reinterpret_cast<LPVOID *>(&info), &len);
+	bool success = VerQueryValue(buf.data(), L"\\", reinterpret_cast<LPVOID *>(&info), &len);
 	if (!success || !info || !len)
 		return true;
 
@@ -120,13 +116,12 @@ try {
 	WinHandle hSrc;
 	WinHandle hDest;
 
-	hSrc = CreateFile(src, GENERIC_READ, FILE_SHARE_READ, nullptr,
-			  OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
+	hSrc = CreateFile(src, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN,
+			  nullptr);
 	if (!hSrc.Valid())
 		throw LastError();
 
-	hDest = CreateFile(dest, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0,
-			   nullptr);
+	hDest = CreateFile(dest, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
 	if (!hDest.Valid())
 		throw LastError();
 
@@ -182,8 +177,7 @@ static bool IsSafeFilename(const wchar_t *path)
 		return false;
 
 	while (*p) {
-		if (!isalnum(*p) && *p != '.' && *p != '/' && *p != '_' &&
-		    *p != '-')
+		if (!isalnum(*p) && *p != '.' && *p != '/' && *p != '_' && *p != '-')
 			return false;
 		p++;
 	}
@@ -195,8 +189,7 @@ static string QuickReadFile(const wchar_t *path)
 {
 	string data;
 
-	WinHandle handle = CreateFileW(path, GENERIC_READ, 0, nullptr,
-				       OPEN_EXISTING, 0, nullptr);
+	WinHandle handle = CreateFileW(path, GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	if (!handle.Valid()) {
 		return {};
 	}
@@ -210,8 +203,7 @@ static string QuickReadFile(const wchar_t *path)
 	data.resize((size_t)size.QuadPart);
 
 	DWORD read;
-	if (!ReadFile(handle, data.data(), (DWORD)data.size(), &read,
-		      nullptr)) {
+	if (!ReadFile(handle, data.data(), (DWORD)data.size(), &read, nullptr)) {
 		return {};
 	}
 	if (read != size.QuadPart) {
@@ -223,9 +215,7 @@ static string QuickReadFile(const wchar_t *path)
 
 static bool QuickWriteFile(const wchar_t *file, const void *data, size_t size)
 try {
-	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr,
-				      CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
-				      nullptr);
+	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH, nullptr);
 
 	if (handle == INVALID_HANDLE_VALUE)
 		throw GetLastError();
@@ -247,9 +237,7 @@ try {
 template<> struct std::hash<B2Hash> {
 	size_t operator()(const B2Hash &value) const noexcept
 	{
-		return hash<string_view>{}(string_view(
-			reinterpret_cast<const char *>(value.data()),
-			value.size()));
+		return hash<string_view>{}(string_view(reinterpret_cast<const char *>(value.data()), value.size()));
 	}
 };
 
@@ -305,8 +293,7 @@ struct update_t {
 		if (state == STATE_INSTALL_FAILED || state == STATE_INSTALLED) {
 			if (!previousFile.empty()) {
 				DeleteFile(outputPath.c_str());
-				MyCopyFile(previousFile.c_str(),
-					   outputPath.c_str());
+				MyCopyFile(previousFile.c_str(), outputPath.c_str());
 				DeleteFile(previousFile.c_str());
 			} else {
 				DeleteFile(outputPath.c_str());
@@ -324,8 +311,7 @@ struct deletion_t {
 	void UndoRename() const
 	{
 		if (!deleteMeFilename.empty())
-			MoveFile(deleteMeFilename.c_str(),
-				 originalFilename.c_str());
+			MoveFile(deleteMeFilename.c_str(), originalFilename.c_str());
 	}
 };
 
@@ -358,8 +344,7 @@ static int Decompress(ZSTD_DCtx *ctx, std::vector<std::byte> &buf, size_t size)
 	}
 
 	// Overwrite buffer with decompressed data
-	size_t result = ZSTD_decompressDCtx(ctx, buf.data(), buf.size(),
-					    comp.data(), comp.size());
+	size_t result = ZSTD_decompressDCtx(ctx, buf.data(), buf.size(), comp.data(), comp.size());
 
 	if (result != size)
 		return -9;
@@ -371,34 +356,28 @@ static int Decompress(ZSTD_DCtx *ctx, std::vector<std::byte> &buf, size_t size)
 
 bool DownloadWorkerThread()
 {
-	const DWORD tlsProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 |
-				   WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+	const DWORD tlsProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
 
 	const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
 
 	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
-	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0",
-					  WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
-					  WINHTTP_NO_PROXY_NAME,
-					  WINHTTP_NO_PROXY_BYPASS, 0);
+	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+					  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	if (!hSession) {
 		downloadThreadFailure = true;
 		Status(L"Update failed: Couldn't open obsproject.com");
 		return false;
 	}
 
-	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS,
-			 (LPVOID)&tlsProtocols, sizeof(tlsProtocols));
+	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, (LPVOID)&tlsProtocols, sizeof(tlsProtocols));
 
-	WinHttpSetOption(hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL,
-			 (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag));
+	WinHttpSetOption(hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL, (LPVOID)&enableHTTP2Flag,
+			 sizeof(enableHTTP2Flag));
 
-	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION,
-			 (LPVOID)&compressionFlags, sizeof(compressionFlags));
+	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&compressionFlags, sizeof(compressionFlags));
 
-	HttpHandle hConnect = WinHttpConnect(hSession, kCDNHostname,
-					     INTERNET_DEFAULT_HTTPS_PORT, 0);
+	HttpHandle hConnect = WinHttpConnect(hSession, kCDNHostname, INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
 		downloadThreadFailure = true;
 		Status(L"Update failed: Couldn't connect to %S", kCDNHostname);
@@ -415,8 +394,7 @@ bool DownloadWorkerThread()
 		for (update_t &update : updates) {
 			int responseCode;
 
-			DWORD waitResult =
-				WaitForSingleObject(cancelRequested, 0);
+			DWORD waitResult = WaitForSingleObject(cancelRequested, 0);
 			if (waitResult == WAIT_OBJECT_0) {
 				return false;
 			}
@@ -438,8 +416,7 @@ bool DownloadWorkerThread()
 			/* Reserve required memory */
 			buf.reserve(update.fileSize);
 
-			if (!HTTPGetBuffer(hConnect, update.sourceURL.c_str(),
-					   L"Accept-Encoding: gzip", buf,
+			if (!HTTPGetBuffer(hConnect, update.sourceURL.c_str(), L"Accept-Encoding: gzip", buf,
 					   &responseCode)) {
 				downloadThreadFailure = true;
 				Status(L"Update failed: Could not download "
@@ -458,8 +435,7 @@ bool DownloadWorkerThread()
 
 			/* Validate hash of downloaded data. */
 			B2Hash dataHash;
-			blake2b(dataHash.data(), dataHash.size(), buf.data(),
-				buf.size(), nullptr, 0);
+			blake2b(dataHash.data(), dataHash.size(), buf.data(), buf.size(), nullptr, 0);
 
 			if (dataHash != update.downloadHash) {
 				downloadThreadFailure = true;
@@ -471,8 +447,7 @@ bool DownloadWorkerThread()
 
 			/* Decompress data in compressed buffer. */
 			if (update.compressed && !update.patchable) {
-				int res =
-					Decompress(zCtx, buf, update.fileSize);
+				int res = Decompress(zCtx, buf, update.fileSize);
 				if (res) {
 					downloadThreadFailure = true;
 					Status(L"Update failed: Decompression "
@@ -531,9 +506,7 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 
 	*path = 0;
 
-	WinHandle proc = OpenProcess(PROCESS_QUERY_INFORMATION |
-					     PROCESS_VM_READ | SYNCHRONIZE,
-				     false, id);
+	WinHandle proc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, false, id);
 	if (!proc.Valid())
 		return WAITIFOBS_WRONG_PROCESS;
 
@@ -602,8 +575,7 @@ static inline bool UTF8ToWide(wchar_t *wide, int wideSize, const char *utf8)
 
 static inline bool WideToUTF8(char *utf8, int utf8Size, const wchar_t *wide)
 {
-	return !!WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8, utf8Size,
-				     nullptr, nullptr);
+	return !!WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8, utf8Size, nullptr, nullptr);
 }
 
 #define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
@@ -692,8 +664,7 @@ static bool AddPackageUpdateFiles(const Package &package, const wchar_t *branch)
 	if (!UTF8ToWideBuf(wPackageName, package.name.c_str()))
 		return false;
 
-	if (package.name != "core" &&
-	    !NonCorePackageInstalled(package.name.c_str()))
+	if (package.name != "core" && !NonCorePackageInstalled(package.name.c_str()))
 		return true;
 
 	for (const File &file : package.files) {
@@ -723,8 +694,7 @@ static bool AddPackageUpdateFiles(const Package &package, const wchar_t *branch)
 			return false;
 		}
 
-		StringCbPrintf(sourceURL, sizeof(sourceURL), L"%s/%s/%s/%s",
-			       kCDNUpdateBaseUrl, branch, wPackageName,
+		StringCbPrintf(sourceURL, sizeof(sourceURL), L"%s/%s/%s/%s", kCDNUpdateBaseUrl, branch, wPackageName,
 			       updateFileName);
 
 		/* Convert hashes */
@@ -786,11 +756,9 @@ static void AddPackageRemovedFiles(const Package &package)
 			continue;
 		/* Technically GetFileAttributes can fail for other reasons,
 		 * so double-check by also checking the last error */
-		if (GetFileAttributesW(removedFileName) ==
-		    INVALID_FILE_ATTRIBUTES) {
+		if (GetFileAttributesW(removedFileName) == INVALID_FILE_ATTRIBUTES) {
 			int err = GetLastError();
-			if (err == ERROR_FILE_NOT_FOUND ||
-			    err == ERROR_PATH_NOT_FOUND)
+			if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND)
 				continue;
 		}
 
@@ -819,8 +787,7 @@ static bool RenameRemovedFile(deletion_t &deletion)
 
 	randomStr[8] = 0;
 
-	StringCbCopy(deleteMeName, sizeof(deleteMeName),
-		     deletion.originalFilename.c_str());
+	StringCbCopy(deleteMeName, sizeof(deleteMeName), deletion.originalFilename.c_str());
 
 	StringCbCat(deleteMeName, sizeof(deleteMeName), L".");
 	StringCbCat(deleteMeName, sizeof(deleteMeName), randomStr);
@@ -891,8 +858,7 @@ static bool MoveInUseFileAway(const update_t &file)
 
 	randomStr[8] = 0;
 
-	StringCbCopy(deleteMeName, sizeof(deleteMeName),
-		     file.outputPath.c_str());
+	StringCbCopy(deleteMeName, sizeof(deleteMeName), file.outputPath.c_str());
 
 	StringCbCat(deleteMeName, sizeof(deleteMeName), L".");
 	StringCbCat(deleteMeName, sizeof(deleteMeName), randomStr);
@@ -901,8 +867,7 @@ static bool MoveInUseFileAway(const update_t &file)
 	if (MoveFile(file.outputPath.c_str(), deleteMeName)) {
 
 		if (MyCopyFile(deleteMeName, file.outputPath.c_str())) {
-			MoveFileEx(deleteMeName, NULL,
-				   MOVEFILE_DELAY_UNTIL_REBOOT);
+			MoveFileEx(deleteMeName, NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
 
 			return true;
 		} else {
@@ -927,8 +892,7 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 	if (attribs != INVALID_FILE_ATTRIBUTES) {
 		wchar_t baseName[MAX_PATH];
 
-		StringCbCopy(baseName, sizeof(baseName),
-			     file.outputPath.c_str());
+		StringCbCopy(baseName, sizeof(baseName), file.outputPath.c_str());
 
 		wchar_t *curFileName = wcsrchr(baseName, '/');
 		if (curFileName) {
@@ -938,16 +902,12 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 			curFileName = baseName;
 
 		/* Backup the existing file in case a rollback is needed */
-		StringCbCopy(oldFileRenamedPath, sizeof(oldFileRenamedPath),
-			     file.outputPath.c_str());
-		StringCbCat(oldFileRenamedPath, sizeof(oldFileRenamedPath),
-			    L".old");
+		StringCbCopy(oldFileRenamedPath, sizeof(oldFileRenamedPath), file.outputPath.c_str());
+		StringCbCat(oldFileRenamedPath, sizeof(oldFileRenamedPath), L".old");
 
 		if (!MyCopyFile(file.outputPath.c_str(), oldFileRenamedPath)) {
 			DWORD err = GetLastError();
-			int is_sharing_violation =
-				(err == ERROR_SHARING_VIOLATION ||
-				 err == ERROR_USER_MAPPED_FILE);
+			int is_sharing_violation = (err == ERROR_SHARING_VIOLATION || err == ERROR_USER_MAPPED_FILE);
 
 			if (is_sharing_violation)
 				Status(L"Update failed: %s is still in use.  "
@@ -969,16 +929,13 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 	retryAfterMovingFile:
 
 		if (file.patchable) {
-			error_code = ApplyPatch(ctx, patch_data.data(),
-						file.fileSize,
-						file.outputPath.c_str());
+			error_code = ApplyPatch(ctx, patch_data.data(), file.fileSize, file.outputPath.c_str());
 
 			installed_ok = (error_code == 0);
 
 			if (installed_ok) {
 				B2Hash patchedFileHash;
-				if (!CalculateFileHash(file.outputPath.c_str(),
-						       patchedFileHash)) {
+				if (!CalculateFileHash(file.outputPath.c_str(), patchedFileHash)) {
 					Status(L"Update failed: Couldn't "
 					       L"verify integrity of patched %s",
 					       curFileName);
@@ -998,16 +955,13 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 				}
 			}
 		} else {
-			installed_ok = QuickWriteFile(file.outputPath.c_str(),
-						      patch_data.data(),
-						      patch_data.size());
+			installed_ok = QuickWriteFile(file.outputPath.c_str(), patch_data.data(), patch_data.size());
 			error_code = GetLastError();
 		}
 
 		if (!installed_ok) {
 			int is_sharing_violation =
-				(error_code == ERROR_SHARING_VIOLATION ||
-				 error_code == ERROR_USER_MAPPED_FILE);
+				(error_code == ERROR_SHARING_VIOLATION || error_code == ERROR_USER_MAPPED_FILE);
 
 			if (is_sharing_violation) {
 				if (!already_tried_to_move) {
@@ -1037,8 +991,7 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 		if (file.patchable) {
 			/* Uh oh, we thought we could patch something but it's
 			 * no longer there! */
-			Status(L"Update failed: Source file %s not found",
-			       file.outputPath.c_str());
+			Status(L"Update failed: Source file %s not found", file.outputPath.c_str());
 			return false;
 		}
 
@@ -1049,12 +1002,10 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 
 		file.previousFile = L"";
 
-		bool success = !!QuickWriteFile(file.outputPath.c_str(),
-						patch_data.data(),
-						patch_data.size());
+		bool success = !!QuickWriteFile(file.outputPath.c_str(), patch_data.data(), patch_data.size());
 		if (!success) {
-			Status(L"Update failed: Couldn't install %s (error %d)",
-			       file.outputPath.c_str(), GetLastError());
+			Status(L"Update failed: Couldn't install %s (error %d)", file.outputPath.c_str(),
+			       GetLastError());
 			file.state = STATE_INSTALL_FAILED;
 			return false;
 		}
@@ -1091,13 +1042,10 @@ static bool UpdateWorker()
 			updateThreadFailed = true;
 			return false;
 		} else {
-			int position = (int)(((float)++installed /
-					      (float)completedUpdates) *
-					     100.0f);
+			int position = (int)(((float)++installed / (float)completedUpdates) * 100.0f);
 			if (position > lastPosition) {
 				lastPosition = position;
-				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
-						   PBM_SETPOS, position, 0);
+				SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, position, 0);
 			}
 		}
 	}
@@ -1137,23 +1085,18 @@ static bool UpdateVSRedists()
 
 	const DWORD compressionFlags = WINHTTP_DECOMPRESSION_FLAG_ALL;
 
-	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0",
-					  WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
-					  WINHTTP_NO_PROXY_NAME,
-					  WINHTTP_NO_PROXY_BYPASS, 0);
+	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/3.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+					  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	if (!hSession) {
 		Status(L"VC Redist Update failed: Couldn't create session");
 		return false;
 	}
 
-	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS,
-			 (LPVOID)&tlsProtocols, sizeof(tlsProtocols));
+	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, (LPVOID)&tlsProtocols, sizeof(tlsProtocols));
 
-	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION,
-			 (LPVOID)&compressionFlags, sizeof(compressionFlags));
+	WinHttpSetOption(hSession, WINHTTP_OPTION_DECOMPRESSION, (LPVOID)&compressionFlags, sizeof(compressionFlags));
 
-	HttpHandle hConnect = WinHttpConnect(hSession, kMSHostname,
-					     INTERNET_DEFAULT_HTTPS_PORT, 0);
+	HttpHandle hConnect = WinHttpConnect(hSession, kMSHostname, INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
 		Status(L"Update failed: Couldn't connect to %S", kMSHostname);
 		return false;
@@ -1175,8 +1118,7 @@ static bool UpdateVSRedists()
 	destPath += tempPath;
 	destPath += L"\\VC_redist.x64.exe";
 
-	if (!HTTPGetFile(hConnect, kVSRedistURL, destPath.c_str(),
-			 L"Accept-Encoding: gzip", &responseCode)) {
+	if (!HTTPGetFile(hConnect, kVSRedistURL, destPath.c_str(), L"Accept-Encoding: gzip", &responseCode)) {
 
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Could not download "
@@ -1215,15 +1157,13 @@ static bool UpdateVSRedists()
 	 * If verification succeeded, install redist  */
 
 	wchar_t commandline[MAX_PATH + MAX_PATH];
-	StringCbPrintf(commandline, sizeof(commandline),
-		       L"%s /install /quiet /norestart", destPath.c_str());
+	StringCbPrintf(commandline, sizeof(commandline), L"%s /install /quiet /norestart", destPath.c_str());
 
 	PROCESS_INFORMATION pi = {};
 	STARTUPINFO si = {};
 	si.cb = sizeof(si);
 
-	bool success = !!CreateProcessW(destPath.c_str(), commandline, nullptr,
-					nullptr, false, CREATE_NO_WINDOW,
+	bool success = !!CreateProcessW(destPath.c_str(), commandline, nullptr, nullptr, false, CREATE_NO_WINDOW,
 					nullptr, nullptr, &si, &pi);
 	if (success) {
 		Status(L"Installing %s...", L"Visual C++ Redistributable");
@@ -1249,8 +1189,7 @@ static bool UpdateVSRedists()
 
 static void UpdateRegistryVersion(const Manifest &manifest)
 {
-	const char *regKey =
-		R"(Software\Microsoft\Windows\CurrentVersion\Uninstall\OBS Studio)";
+	const char *regKey = R"(Software\Microsoft\Windows\CurrentVersion\Uninstall\OBS Studio)";
 	LSTATUS res;
 	HKEY key;
 	char version[32];
@@ -1258,38 +1197,30 @@ static void UpdateRegistryVersion(const Manifest &manifest)
 
 	/* The manifest does not store a version string, so we gotta make one ourselves. */
 	if (manifest.beta || manifest.rc) {
-		formattedLen = sprintf_s(
-			version, sizeof(version), "%d.%d.%d-%s%d",
-			manifest.version_major, manifest.version_minor,
-			manifest.version_patch, manifest.beta ? "beta" : "rc",
-			manifest.beta ? manifest.beta : manifest.rc);
+		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d-%s%d", manifest.version_major,
+					 manifest.version_minor, manifest.version_patch, manifest.beta ? "beta" : "rc",
+					 manifest.beta ? manifest.beta : manifest.rc);
 	} else {
-		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d",
-					 manifest.version_major,
-					 manifest.version_minor,
-					 manifest.version_patch);
+		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d", manifest.version_major,
+					 manifest.version_minor, manifest.version_patch);
 	}
 
 	if (formattedLen <= 0)
 		return;
 
-	res = RegOpenKeyExA(HKEY_LOCAL_MACHINE, regKey, 0,
-			    KEY_WRITE | KEY_WOW64_32KEY, &key);
+	res = RegOpenKeyExA(HKEY_LOCAL_MACHINE, regKey, 0, KEY_WRITE | KEY_WOW64_32KEY, &key);
 	if (res != ERROR_SUCCESS)
 		return;
 
-	RegSetValueExA(key, "DisplayVersion", 0, REG_SZ, (const BYTE *)version,
-		       formattedLen + 1);
+	RegSetValueExA(key, "DisplayVersion", 0, REG_SZ, (const BYTE *)version, formattedLen + 1);
 	RegCloseKey(key);
 }
 
 static void ClearShaderCache()
 {
 	wchar_t shader_path[MAX_PATH];
-	SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT,
-			 shader_path);
-	StringCbCatW(shader_path, sizeof(shader_path),
-		     L"\\obs-studio\\shader-cache");
+	SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, shader_path);
+	StringCbCatW(shader_path, sizeof(shader_path), L"\\obs-studio\\shader-cache");
 	filesystem::remove_all(shader_path);
 }
 
@@ -1300,8 +1231,7 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Check to make sure OBS isn't running  */
 
-	HANDLE hObsUpdateMutex =
-		OpenMutexW(SYNCHRONIZE, false, L"OBSStudioUpdateMutex");
+	HANDLE hObsUpdateMutex = OpenMutexW(SYNCHRONIZE, false, L"OBSStudioUpdateMutex");
 	if (hObsUpdateMutex) {
 		HANDLE hWait[2];
 		hWait[0] = hObsUpdateMutex;
@@ -1325,10 +1255,8 @@ static bool Update(wchar_t *cmdLine)
 	 * Init crypt stuff                      */
 
 	CryptProvider hProvider;
-	if (!CryptAcquireContext(&hProvider, nullptr, MS_ENH_RSA_AES_PROV,
-				 PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) {
-		SetDlgItemTextW(hwndMain, IDC_STATUS,
-				L"Update failed: CryptAcquireContext failure");
+	if (!CryptAcquireContext(&hProvider, nullptr, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) {
+		SetDlgItemTextW(hwndMain, IDC_STATUS, L"Update failed: CryptAcquireContext failure");
 		return false;
 	}
 
@@ -1336,8 +1264,7 @@ static bool Update(wchar_t *cmdLine)
 
 	/* ------------------------------------- */
 
-	SetDlgItemTextW(hwndMain, IDC_STATUS,
-			L"Searching for available updates...");
+	SetDlgItemTextW(hwndMain, IDC_STATUS, L"Searching for available updates...");
 
 	HWND hProgress = GetDlgItem(hwndMain, IDC_PROGRESS);
 	LONG_PTR style = GetWindowLongPtr(hProgress, GWL_STYLE);
@@ -1362,18 +1289,13 @@ static bool Update(wchar_t *cmdLine)
 					// Legacy OBS
 					bIsPortable = true;
 					break;
-				} else if (wcsncmp(argv[i], L"--branch=", 9) ==
-					   0) {
+				} else if (wcsncmp(argv[i], L"--branch=", 9) == 0) {
 					branch = argv[i] + 9;
-				} else if (wcsncmp(argv[i], L"--appdata=",
-						   10) == 0) {
+				} else if (wcsncmp(argv[i], L"--appdata=", 10) == 0) {
 					appdata = argv[i] + 10;
-				} else if (wcscmp(argv[i], L"--portable") ==
-					   0) {
+				} else if (wcscmp(argv[i], L"--portable") == 0) {
 					bIsPortable = true;
-				} else if (wcsncmp(argv[i],
-						   L"--portable--branch=",
-						   19) == 0) {
+				} else if (wcsncmp(argv[i], L"--portable--branch=", 19) == 0) {
 					/* Versions pre-29.1 beta 2 produce broken parameters :( */
 					bIsPortable = true;
 					branch = argv[i] + 19;
@@ -1390,14 +1312,11 @@ static bool Update(wchar_t *cmdLine)
 	lpAppDataPath[0] = 0;
 
 	if (bIsPortable) {
-		StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath),
-			     obs_base_directory);
+		StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath), obs_base_directory);
 		StringCbCat(lpAppDataPath, sizeof(lpAppDataPath), L"\\config");
 	} else {
 		if (!appdata.empty()) {
-			HRESULT hr = StringCbCopy(lpAppDataPath,
-						  sizeof(lpAppDataPath),
-						  appdata.c_str());
+			HRESULT hr = StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath), appdata.c_str());
 			if (hr != S_OK) {
 				Status(L"Update failed: Could not determine AppData "
 				       L"location");
@@ -1405,17 +1324,14 @@ static bool Update(wchar_t *cmdLine)
 			}
 		} else {
 			CoTaskMemPtr<wchar_t> pOut;
-			HRESULT hr = SHGetKnownFolderPath(
-				FOLDERID_RoamingAppData, KF_FLAG_DEFAULT,
-				nullptr, &pOut);
+			HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_DEFAULT, nullptr, &pOut);
 			if (hr != S_OK) {
 				Status(L"Update failed: Could not determine AppData "
 				       L"location");
 				return false;
 			}
 
-			StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath),
-				     pOut);
+			StringCbCopy(lpAppDataPath, sizeof(lpAppDataPath), pOut);
 		}
 	}
 
@@ -1430,16 +1346,13 @@ static bool Update(wchar_t *cmdLine)
 	manifestPath[0] = 0;
 	tempDirName[0] = 0;
 
-	StringCbPrintf(manifestPath, sizeof(manifestPath),
-		       L"%s\\updates\\manifest.json", lpAppDataPath);
+	StringCbPrintf(manifestPath, sizeof(manifestPath), L"%s\\updates\\manifest.json", lpAppDataPath);
 	if (!GetTempPathW(_countof(tempDirName), tempDirName)) {
-		Status(L"Update failed: Failed to get temp path: %ld",
-		       GetLastError());
+		Status(L"Update failed: Failed to get temp path: %ld", GetLastError());
 		return false;
 	}
 	if (!GetTempFileNameW(tempDirName, L"obs-studio", 0, tempPath)) {
-		Status(L"Update failed: Failed to create temp dir name: %ld",
-		       GetLastError());
+		Status(L"Update failed: Failed to create temp dir name: %ld", GetLastError());
 		return false;
 	}
 
@@ -1544,10 +1457,8 @@ static bool Update(wchar_t *cmdLine)
 
 		compressedJson.resize(compressSize);
 
-		size_t result =
-			ZSTD_compress(compressedJson.data(),
-				      compressedJson.size(), post_body.data(),
-				      post_body.size(), ZSTD_CLEVEL_DEFAULT);
+		size_t result = ZSTD_compress(compressedJson.data(), compressedJson.size(), post_body.data(),
+					      post_body.size(), ZSTD_CLEVEL_DEFAULT);
 
 		if (ZSTD_isError(result))
 			return false;
@@ -1559,11 +1470,9 @@ static bool Update(wchar_t *cmdLine)
 			manifestUrl += L"?branch=" + branch;
 
 		int responseCode;
-		bool success = !!HTTPPostData(manifestUrl.c_str(),
-					      (BYTE *)compressedJson.data(),
-					      (int)compressedJson.size(),
-					      L"Accept-Encoding: gzip",
-					      &responseCode, newManifest);
+		bool success = !!HTTPPostData(manifestUrl.c_str(), (BYTE *)compressedJson.data(),
+					      (int)compressedJson.size(), L"Accept-Encoding: gzip", &responseCode,
+					      newManifest);
 
 		if (!success)
 			return false;
@@ -1586,8 +1495,7 @@ static bool Update(wchar_t *cmdLine)
 		json patchManifest = json::parse(newManifest);
 		patches = patchManifest.get<PatchesResponse>();
 	} catch (json::exception &e) {
-		Status(L"Update failed: Couldn't parse patch manifest: %S",
-		       e.what());
+		Status(L"Update failed: Couldn't parse patch manifest: %S", e.what());
 		return false;
 	}
 
@@ -1649,9 +1557,8 @@ static bool Update(wchar_t *cmdLine)
 		si.wShowWindow = SW_HIDE;
 
 		PROCESS_INFORMATION pi;
-		bool success = !!CreateProcessW(nullptr, cmd, nullptr, nullptr,
-						false, CREATE_NEW_CONSOLE,
-						nullptr, nullptr, &si, &pi);
+		bool success = !!CreateProcessW(nullptr, cmd, nullptr, nullptr, false, CREATE_NEW_CONSOLE, nullptr,
+						nullptr, &si, &pi);
 		if (success) {
 			WaitForSingleObject(pi.hProcess, INFINITE);
 			CloseHandle(pi.hThread);
@@ -1666,13 +1573,11 @@ static bool Update(wchar_t *cmdLine)
 		wchar_t tmp[MAX_PATH];
 		wchar_t tmp2[MAX_PATH];
 
-		SHGetFolderPathW(nullptr, CSIDL_SYSTEM, nullptr,
-				 SHGFP_TYPE_CURRENT, regsvr);
+		SHGetFolderPathW(nullptr, CSIDL_SYSTEM, nullptr, SHGFP_TYPE_CURRENT, regsvr);
 		StringCbCat(regsvr, sizeof(regsvr), L"\\regsvr32.exe");
 
 		StringCbCopy(src, sizeof(src), obs_base_directory);
-		StringCbCat(src, sizeof(src),
-			    L"\\data\\obs-plugins\\win-dshow\\");
+		StringCbCat(src, sizeof(src), L"\\data\\obs-plugins\\win-dshow\\");
 
 		StringCbCopy(tmp, sizeof(tmp), L"\"");
 		StringCbCat(tmp, sizeof(tmp), regsvr);
@@ -1809,13 +1714,11 @@ static void LaunchOBS(LPWSTR lpCmdLine)
 	ShellExecuteEx(&execInfo);
 }
 
-static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam,
-					 LPARAM lParam)
+static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_INITDIALOG: {
-		static HICON hMainIcon =
-			LoadIcon(hinstMain, MAKEINTRESOURCE(IDI_ICON1));
+		static HICON hMainIcon = LoadIcon(hinstMain, MAKEINTRESOURCE(IDI_ICON1));
 		SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hMainIcon);
 		SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hMainIcon);
 		return true;
@@ -1824,8 +1727,7 @@ static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam,
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDC_BUTTON) {
 			if (HIWORD(wParam) == BN_CLICKED) {
-				DWORD result =
-					WaitForSingleObject(updateThread, 0);
+				DWORD result = WaitForSingleObject(updateThread, 0);
 				if (result == WAIT_OBJECT_0) {
 					if (updateFailed)
 						PostQuitMessage(0);
@@ -1858,8 +1760,7 @@ static int RestartAsAdmin(LPCWSTR lpCmdLine, LPCWSTR cwd)
 	 * AppData to the command line so we can load the correct manifest. */
 	wstring elevatedCmdLine(lpCmdLine);
 	CoTaskMemPtr<wchar_t> pOut;
-	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
-					  KF_FLAG_DEFAULT, nullptr, &pOut);
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_DEFAULT, nullptr, &pOut);
 	if (hr == S_OK) {
 		elevatedCmdLine += L" \"--appdata=";
 		elevatedCmdLine += pOut;
@@ -1870,10 +1771,9 @@ static int RestartAsAdmin(LPCWSTR lpCmdLine, LPCWSTR cwd)
 	shExInfo.cbSize = sizeof(shExInfo);
 	shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 	shExInfo.hwnd = nullptr;
-	shExInfo.lpVerb = L"runas"; /* Operation to perform */
-	shExInfo.lpFile = myPath;   /* Application to start */
-	shExInfo.lpParameters =
-		elevatedCmdLine.c_str(); /* Additional parameters */
+	shExInfo.lpVerb = L"runas";                      /* Operation to perform */
+	shExInfo.lpFile = myPath;                        /* Application to start */
+	shExInfo.lpParameters = elevatedCmdLine.c_str(); /* Additional parameters */
 	shExInfo.lpDirectory = cwd;
 	shExInfo.nShow = SW_NORMAL;
 	shExInfo.hInstApp = nullptr;
@@ -1904,9 +1804,8 @@ static bool HasElevation()
 	BOOL elevated = false;
 	BOOL success;
 
-	success = AllocateAndInitializeSid(&sia, 2, SECURITY_BUILTIN_DOMAIN_RID,
-					   DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0,
-					   0, 0, &sid);
+	success = AllocateAndInitializeSid(&sia, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0,
+					   0, &sid);
 	if (success && sid) {
 		CheckTokenMembership(nullptr, sid, &elevated);
 		FreeSid(sid);
@@ -1923,37 +1822,31 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 	GetCurrentDirectoryW(_countof(cwd) - 1, cwd);
 
 	if (!IsWindows10OrGreater()) {
-		MessageBox(
-			nullptr,
-			L"OBS Studio 28 and newer no longer support Windows 7,"
-			L" Windows 8, or Windows 8.1. You can disable the"
-			L" following setting to opt out of future updates:"
-			L" Settings → General → General → Automatically check"
-			L" for updates on startup",
-			L"Unsupported Operating System", MB_ICONWARNING);
+		MessageBox(nullptr,
+			   L"OBS Studio 28 and newer no longer support Windows 7,"
+			   L" Windows 8, or Windows 8.1. You can disable the"
+			   L" following setting to opt out of future updates:"
+			   L" Settings → General → General → Automatically check"
+			   L" for updates on startup",
+			   L"Unsupported Operating System", MB_ICONWARNING);
 		return 0;
 	}
 
 	if (!HasElevation()) {
 
-		WinHandle hMutex = OpenMutex(
-			SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
+		WinHandle hMutex = OpenMutex(SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
 		if (hMutex) {
-			MessageBox(
-				nullptr,
-				L"OBS Studio Updater must be run as an administrator.",
-				L"Updater Error", MB_ICONWARNING);
+			MessageBox(nullptr, L"OBS Studio Updater must be run as an administrator.", L"Updater Error",
+				   MB_ICONWARNING);
 			return 2;
 		}
 
-		HANDLE hLowMutex = CreateMutexW(
-			nullptr, true, L"OBSUpdaterRunningAsNonAdminUser");
+		HANDLE hLowMutex = CreateMutexW(nullptr, true, L"OBSUpdaterRunningAsNonAdminUser");
 
 		/* return code 1 =  user wanted to launch OBS */
 		if (RestartAsAdmin(lpCmdLine, cwd) == 1) {
 			StringCbCat(cwd, sizeof(cwd), L"\\..\\..");
-			GetFullPathName(cwd, _countof(obs_base_directory),
-					obs_base_directory, nullptr);
+			GetFullPathName(cwd, _countof(obs_base_directory), obs_base_directory, nullptr);
 			SetCurrentDirectory(obs_base_directory);
 
 			LaunchOBS(lpCmdLine);
@@ -1967,8 +1860,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 		return 0;
 	} else {
 		StringCbCat(cwd, sizeof(cwd), L"\\..\\..");
-		GetFullPathName(cwd, _countof(obs_base_directory),
-				obs_base_directory, nullptr);
+		GetFullPathName(cwd, _countof(obs_base_directory), obs_base_directory, nullptr);
 		SetCurrentDirectory(obs_base_directory);
 
 		hinstMain = hInstance;
@@ -1978,9 +1870,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 
 		InitCommonControlsEx(&icce);
 
-		hwndMain = CreateDialog(hInstance,
-					MAKEINTRESOURCE(IDD_UPDATEDIALOG),
-					nullptr, UpdateDialogProc);
+		hwndMain = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_UPDATEDIALOG), nullptr, UpdateDialogProc);
 		if (!hwndMain) {
 			return -1;
 		}
@@ -1989,8 +1879,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 		SetForegroundWindow(hwndMain);
 
 		cancelRequested = CreateEvent(nullptr, true, false, nullptr);
-		updateThread = CreateThread(nullptr, 0, UpdateThread, lpCmdLine,
-					    0, nullptr);
+		updateThread = CreateThread(nullptr, 0, UpdateThread, lpCmdLine, 0, nullptr);
 
 		MSG msg;
 		while (GetMessage(&msg, nullptr, 0, 0)) {
@@ -2002,8 +1891,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 
 		/* there is no non-elevated process waiting for us if UAC is
 		 * disabled */
-		WinHandle hMutex = OpenMutex(
-			SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
+		WinHandle hMutex = OpenMutex(SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
 		if (msg.wParam == 1 && !hMutex) {
 			LaunchOBS(lpCmdLine);
 		}

@@ -48,8 +48,7 @@ private slots:
 	void SourceRemoved(OBSSource source);
 
 public:
-	OBSBasicSourceSelect(OBSBasic *parent, const char *id,
-			     undo_stack &undo_s);
+	OBSBasicSourceSelect(OBSBasic *parent, const char *id, undo_stack &undo_s);
 
 	OBSSource newSource;
 

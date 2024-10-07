@@ -61,10 +61,8 @@ static obs_properties_t *eq_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-#define make_db_slider(name)                                                  \
-	p = obs_properties_add_float_slider(props, name,                      \
-					    obs_module_text("3BandEq." name), \
-					    -20.0f, 20.0, 0.1);               \
+#define make_db_slider(name)                                                                                   \
+	p = obs_properties_add_float_slider(props, name, obs_module_text("3BandEq." name), -20.0f, 20.0, 0.1); \
 	obs_property_float_set_suffix(p, " dB");
 
 	make_db_slider("high");
@@ -98,8 +96,7 @@ static void eq_destroy(void *data)
 
 #define EQ_EPSILON (1.0f / 4294967295.0f)
 
-static inline float eq_process(struct eq_data *eq, struct eq_channel_state *c,
-			       float sample)
+static inline float eq_process(struct eq_data *eq, struct eq_channel_state *c, float sample)
 {
 	float l, m, h;
 
@@ -129,8 +126,7 @@ static inline float eq_process(struct eq_data *eq, struct eq_channel_state *c,
 	return l + m + h;
 }
 
-static struct obs_audio_data *eq_filter_audio(void *data,
-					      struct obs_audio_data *audio)
+static struct obs_audio_data *eq_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct eq_data *eq = data;
 	const uint32_t frames = audio->frames;

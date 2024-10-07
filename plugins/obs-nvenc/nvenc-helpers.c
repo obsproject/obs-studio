@@ -43,8 +43,7 @@ bool nv_fail2(obs_encoder_t *encoder, void *session, const char *format, ...)
 	return true;
 }
 
-bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
-		const char *func, const char *call)
+bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err, const char *func, const char *call)
 {
 	struct dstr error_message = {0};
 	const char *nvenc_error = NULL;
@@ -65,30 +64,25 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 	switch (err) {
 	case NV_ENC_ERR_OUT_OF_MEMORY:
 	case NV_ENC_ERR_INCOMPATIBLE_CLIENT_KEY:
-		obs_encoder_set_last_error(encoder,
-					   obs_module_text("TooManySessions"));
+		obs_encoder_set_last_error(encoder, obs_module_text("TooManySessions"));
 		break;
 
 	case NV_ENC_ERR_NO_ENCODE_DEVICE:
 	case NV_ENC_ERR_UNSUPPORTED_DEVICE:
-		obs_encoder_set_last_error(
-			encoder, obs_module_text("UnsupportedDevice"));
+		obs_encoder_set_last_error(encoder, obs_module_text("UnsupportedDevice"));
 		break;
 
 	case NV_ENC_ERR_INVALID_VERSION:
-		obs_encoder_set_last_error(encoder,
-					   obs_module_text("OutdatedDriver"));
+		obs_encoder_set_last_error(encoder, obs_module_text("OutdatedDriver"));
 		break;
 
 	default:
 		if (nvenc_error && *nvenc_error) {
-			dstr_printf(&error_message, "NVENC Error: %s (%s)",
-				    nvenc_error, nv_error_name(err));
+			dstr_printf(&error_message, "NVENC Error: %s (%s)", nvenc_error, nv_error_name(err));
 		} else {
 
-			dstr_printf(&error_message,
-				    "NVENC Error: %s: %s failed: %d (%s)", func,
-				    call, (int)err, nv_error_name(err));
+			dstr_printf(&error_message, "NVENC Error: %s: %s failed: %d (%s)", func, call, (int)err,
+				    nv_error_name(err));
 		}
 		obs_encoder_set_last_error(encoder, error_message.array);
 		dstr_free(&error_message);
@@ -96,11 +90,9 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
 	}
 
 	if (nvenc_error && *nvenc_error) {
-		error("%s: %s failed: %d (%s): %s", func, call, (int)err,
-		      nv_error_name(err), nvenc_error);
+		error("%s: %s failed: %d (%s): %s", func, call, (int)err, nv_error_name(err), nvenc_error);
 	} else {
-		error("%s: %s failed: %d (%s)", func, call, (int)err,
-		      nv_error_name(err));
+		error("%s: %s failed: %d (%s)", func, call, (int)err, nv_error_name(err));
 	}
 	return true;
 }
@@ -141,8 +133,7 @@ static uint32_t get_nvenc_ver(void)
 		if (failed)
 			return 0;
 
-		nv_max_ver = (NV_MAX_VER_FUNC)load_nv_func(
-			"NvEncodeAPIGetMaxSupportedVersion");
+		nv_max_ver = (NV_MAX_VER_FUNC)load_nv_func("NvEncodeAPIGetMaxSupportedVersion");
 		if (!nv_max_ver) {
 			failed = true;
 			return 0;
@@ -205,28 +196,23 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 
 	uint32_t ver = get_nvenc_ver();
 	if (ver == 0) {
-		obs_encoder_set_last_error(
-			encoder,
-			"Missing NvEncodeAPIGetMaxSupportedVersion, check "
-			"your video card drivers are up to date.");
+		obs_encoder_set_last_error(encoder, "Missing NvEncodeAPIGetMaxSupportedVersion, check "
+						    "your video card drivers are up to date.");
 		return false;
 	}
 
 	if (ver < NVCODEC_CONFIGURED_VERSION) {
-		obs_encoder_set_last_error(encoder,
-					   obs_module_text("OutdatedDriver"));
+		obs_encoder_set_last_error(encoder, obs_module_text("OutdatedDriver"));
 
 		error("Current driver version does not support this NVENC "
 		      "version, please upgrade your driver");
 		return false;
 	}
 
-	nv_create_instance = (NV_CREATE_INSTANCE_FUNC)load_nv_func(
-		"NvEncodeAPICreateInstance");
+	nv_create_instance = (NV_CREATE_INSTANCE_FUNC)load_nv_func("NvEncodeAPICreateInstance");
 	if (!nv_create_instance) {
-		obs_encoder_set_last_error(
-			encoder, "Missing NvEncodeAPICreateInstance, check "
-				 "your video card drivers are up to date.");
+		obs_encoder_set_last_error(encoder, "Missing NvEncodeAPICreateInstance, check "
+						    "your video card drivers are up to date.");
 		return false;
 	}
 
@@ -272,13 +258,11 @@ bool has_broken_split_encoding(void)
 	return driver_version_major < 555;
 }
 
-static void read_codec_caps(config_t *config, enum codec_type codec,
-			    const char *section)
+static void read_codec_caps(config_t *config, enum codec_type codec, const char *section)
 {
 	struct encoder_caps *caps = &encoder_capabilities[codec];
 
-	codec_supported[codec] =
-		config_get_bool(config, section, "codec_supported");
+	codec_supported[codec] = config_get_bool(config, section, "codec_supported");
 	if (!codec_supported[codec])
 		return;
 
@@ -287,10 +271,8 @@ static void read_codec_caps(config_t *config, enum codec_type codec,
 	caps->engines = (int)config_get_int(config, section, "engines");
 	caps->max_width = (int)config_get_int(config, section, "max_width");
 	caps->max_height = (int)config_get_int(config, section, "max_height");
-	caps->temporal_filter =
-		(int)config_get_int(config, section, "temporal_filter");
-	caps->lookahead_level =
-		(int)config_get_int(config, section, "lookahead_level");
+	caps->temporal_filter = (int)config_get_int(config, section, "temporal_filter");
+	caps->lookahead_level = (int)config_get_int(config, section, "lookahead_level");
 
 	caps->dyn_bitrate = config_get_bool(config, section, "dynamic_bitrate");
 	caps->lookahead = config_get_bool(config, section, "lookahead");
@@ -323,8 +305,7 @@ static bool nvenc_check(void)
 
 	for (;;) {
 		char data[2048];
-		size_t len =
-			os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
+		size_t len = os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
 		if (!len)
 			break;
 
@@ -334,9 +315,8 @@ static bool nvenc_check(void)
 	os_process_pipe_destroy(pp);
 
 	if (dstr_is_empty(&caps_str)) {
-		blog(LOG_WARNING,
-		     "[NVENC] Seems the NVENC test subprocess crashed. "
-		     "Better there than here I guess. ");
+		blog(LOG_WARNING, "[NVENC] Seems the NVENC test subprocess crashed. "
+				  "Better there than here I guess. ");
 		goto fail;
 	}
 
@@ -347,10 +327,8 @@ static bool nvenc_check(void)
 
 	success = config_get_bool(config, "general", "nvenc_supported");
 	if (!success) {
-		const char *error =
-			config_get_string(config, "general", "reason");
-		blog(LOG_WARNING, "[NVENC] Test process failed: %s",
-		     error ? error : "unknown");
+		const char *error = config_get_string(config, "general", "reason");
+		blog(LOG_WARNING, "[NVENC] Test process failed: %s", error ? error : "unknown");
 		goto fail;
 	}
 
@@ -359,20 +337,16 @@ static bool nvenc_check(void)
 	read_codec_caps(config, CODEC_HEVC, "hevc");
 	read_codec_caps(config, CODEC_AV1, "av1");
 
-	const char *nvenc_ver =
-		config_get_string(config, "general", "nvenc_ver");
+	const char *nvenc_ver = config_get_string(config, "general", "nvenc_ver");
 	const char *cuda_ver = config_get_string(config, "general", "cuda_ver");
-	const char *driver_ver =
-		config_get_string(config, "general", "driver_ver");
+	const char *driver_ver = config_get_string(config, "general", "driver_ver");
 	/* Parse out major/minor for some brokenness checks  */
-	sscanf(driver_ver, "%d.%d", &driver_version_major,
-	       &driver_version_minor);
+	sscanf(driver_ver, "%d.%d", &driver_version_major, &driver_version_minor);
 
 	blog(LOG_INFO,
 	     "[obs-nvenc] NVENC version: %d.%d (compiled) / %s (driver), "
 	     "CUDA driver version: %s, AV1 supported: %s",
-	     NVCODEC_CONFIGURED_VERSION >> 4, NVCODEC_CONFIGURED_VERSION & 0xf,
-	     nvenc_ver, cuda_ver,
+	     NVCODEC_CONFIGURED_VERSION >> 4, NVCODEC_CONFIGURED_VERSION & 0xf, nvenc_ver, cuda_ver,
 	     codec_supported[CODEC_AV1] ? "true" : "false");
 
 fail:

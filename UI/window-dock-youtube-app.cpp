@@ -11,19 +11,16 @@
 using json = nlohmann::json;
 
 #ifdef YOUTUBE_WEBAPP_PLACEHOLDER
-static constexpr const char *YOUTUBE_WEBAPP_PLACEHOLDER_URL =
-	YOUTUBE_WEBAPP_PLACEHOLDER;
+static constexpr const char *YOUTUBE_WEBAPP_PLACEHOLDER_URL = YOUTUBE_WEBAPP_PLACEHOLDER;
 #else
 static constexpr const char *YOUTUBE_WEBAPP_PLACEHOLDER_URL =
 	"https://studio.youtube.com/live/channel/UC/console?kc=OBS";
 #endif
 
 #ifdef YOUTUBE_WEBAPP_ADDRESS
-static constexpr const char *YOUTUBE_WEBAPP_ADDRESS_URL =
-	YOUTUBE_WEBAPP_ADDRESS;
+static constexpr const char *YOUTUBE_WEBAPP_ADDRESS_URL = YOUTUBE_WEBAPP_ADDRESS;
 #else
-static constexpr const char *YOUTUBE_WEBAPP_ADDRESS_URL =
-	"https://studio.youtube.com/live/channel/%1/console?kc=OBS";
+static constexpr const char *YOUTUBE_WEBAPP_ADDRESS_URL = "https://studio.youtube.com/live/channel/%1/console?kc=OBS";
 #endif
 
 static constexpr const char *BROADCAST_CREATED = "BROADCAST_CREATED";
@@ -31,22 +28,11 @@ static constexpr const char *BROADCAST_SELECTED = "BROADCAST_SELECTED";
 static constexpr const char *INGESTION_STARTED = "INGESTION_STARTED";
 static constexpr const char *INGESTION_STOPPED = "INGESTION_STOPPED";
 
-YouTubeAppDock::YouTubeAppDock(const QString &title)
-	: BrowserDock(title),
-	  dockBrowser(nullptr),
-	  cookieManager(nullptr)
+YouTubeAppDock::YouTubeAppDock(const QString &title) : BrowserDock(title), dockBrowser(nullptr)
 {
 	cef->init_browser();
 	OBSBasic::InitBrowserPanelSafeBlock();
 	AddYouTubeAppDock();
-}
-
-YouTubeAppDock::~YouTubeAppDock()
-{
-	if (cookieManager) {
-		cookieManager->FlushStore();
-		delete cookieManager;
-	}
 }
 
 bool YouTubeAppDock::IsYTServiceSelected()
@@ -78,9 +64,12 @@ void YouTubeAppDock::SettingsUpdated(bool cleanup)
 
 	// definitely cleanup if YT switched off
 	if (!ytservice || cleanup) {
-		if (cookieManager)
-			cookieManager->DeleteCookies("", "");
+		if (panel_cookies) {
+			panel_cookies->DeleteCookies("youtube.com", "");
+			panel_cookies->DeleteCookies("google.com", "");
+		}
 	}
+
 	if (ytservice)
 		Update();
 }
@@ -93,15 +82,11 @@ std::string YouTubeAppDock::InitYTUserUrl()
 		YoutubeApiWrappers *apiYouTube = GetYTApi();
 		if (apiYouTube) {
 			ChannelDescription channel_description;
-			if (apiYouTube->GetChannelDescription(
-				    channel_description)) {
-				QString url =
-					QString(YOUTUBE_WEBAPP_ADDRESS_URL)
-						.arg(channel_description.id);
+			if (apiYouTube->GetChannelDescription(channel_description)) {
+				QString url = QString(YOUTUBE_WEBAPP_ADDRESS_URL).arg(channel_description.id);
 				user_url = url.toStdString();
 			} else {
-				blog(LOG_ERROR,
-				     "YT: InitYTUserUrl() Failed to get channel id");
+				blog(LOG_ERROR, "YT: InitYTUserUrl() Failed to get channel id");
 			}
 		}
 	} else {
@@ -135,16 +120,9 @@ void YouTubeAppDock::AddYouTubeAppDock()
 
 void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 {
-	std::string dir_name = std::string("obs_profile_cookies_youtube/") +
-			       config_get_string(OBSBasic::Get()->Config(),
-						 "Panels", "CookieId");
-	if (cookieManager)
-		delete cookieManager;
-	cookieManager = cef->create_cookie_manager(dir_name, true);
-
 	if (dockBrowser)
 		delete dockBrowser;
-	dockBrowser = cef->create_widget(this, url, cookieManager);
+	dockBrowser = cef->create_widget(this, url, panel_cookies);
 	if (!dockBrowser)
 		return;
 
@@ -152,6 +130,9 @@ void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 		dockBrowser->allowAllPopups(true);
 
 	this->SetWidget(dockBrowser);
+
+	QWidget::connect(dockBrowser.get(), &QCefWidget::urlChanged, this, &YouTubeAppDock::ReloadChatDock);
+
 	Update();
 }
 
@@ -184,21 +165,16 @@ void YouTubeAppDock::IngestionStarted()
 	const char *service = obs_data_get_string(settings, "service");
 	if (IsYouTubeService(service)) {
 		if (IsUserSignedIntoYT()) {
-			const char *broadcast_id =
-				obs_data_get_string(settings, "broadcast_id");
-			this->IngestionStarted(broadcast_id,
-					       YouTubeAppDock::YTSM_ACCOUNT);
+			const char *broadcast_id = obs_data_get_string(settings, "broadcast_id");
+			this->IngestionStarted(broadcast_id, YouTubeAppDock::YTSM_ACCOUNT);
 		} else {
-			const char *stream_key =
-				obs_data_get_string(settings, "key");
-			this->IngestionStarted(stream_key,
-					       YouTubeAppDock::YTSM_STREAM_KEY);
+			const char *stream_key = obs_data_get_string(settings, "key");
+			this->IngestionStarted(stream_key, YouTubeAppDock::YTSM_STREAM_KEY);
 		}
 	}
 }
 
-void YouTubeAppDock::IngestionStarted(const char *stream_id,
-				      streaming_mode_t mode)
+void YouTubeAppDock::IngestionStarted(const char *stream_id, streaming_mode_t mode)
 {
 	DispatchYTEvent(INGESTION_STARTED, stream_id, mode);
 }
@@ -212,21 +188,16 @@ void YouTubeAppDock::IngestionStopped()
 
 	if (IsYouTubeService(service)) {
 		if (IsUserSignedIntoYT()) {
-			const char *broadcast_id =
-				obs_data_get_string(settings, "broadcast_id");
-			this->IngestionStopped(broadcast_id,
-					       YouTubeAppDock::YTSM_ACCOUNT);
+			const char *broadcast_id = obs_data_get_string(settings, "broadcast_id");
+			this->IngestionStopped(broadcast_id, YouTubeAppDock::YTSM_ACCOUNT);
 		} else {
-			const char *stream_key =
-				obs_data_get_string(settings, "key");
-			this->IngestionStopped(stream_key,
-					       YouTubeAppDock::YTSM_STREAM_KEY);
+			const char *stream_key = obs_data_get_string(settings, "key");
+			this->IngestionStopped(stream_key, YouTubeAppDock::YTSM_STREAM_KEY);
 		}
 	}
 }
 
-void YouTubeAppDock::IngestionStopped(const char *stream_id,
-				      streaming_mode_t mode)
+void YouTubeAppDock::IngestionStopped(const char *stream_id, streaming_mode_t mode)
 {
 	DispatchYTEvent(INGESTION_STOPPED, stream_id, mode);
 }
@@ -243,8 +214,7 @@ void YouTubeAppDock::closeEvent(QCloseEvent *event)
 	this->SetWidget(nullptr);
 }
 
-void YouTubeAppDock::DispatchYTEvent(const char *event, const char *video_id,
-				     streaming_mode_t mode)
+void YouTubeAppDock::DispatchYTEvent(const char *event, const char *video_id, streaming_mode_t mode)
 {
 	if (!dockBrowser)
 		return;
@@ -307,25 +277,18 @@ void YouTubeAppDock::Update()
 	// if streaming already run, let's notify YT about past event
 	if (OBSBasic::Get()->StreamingActive()) {
 		obs_service_t *service_obj = OBSBasic::Get()->GetService();
-		OBSDataAutoRelease settings =
-			obs_service_get_settings(service_obj);
+		OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 		if (IsUserSignedIntoYT()) {
 			channelId.clear(); // renew channelId
 			UpdateChannelId();
-			const char *broadcast_id =
-				obs_data_get_string(settings, "broadcast_id");
-			SetInitEvent(YTSM_ACCOUNT, INGESTION_STARTED,
-				     broadcast_id,
-				     channelId.toStdString().c_str());
+			const char *broadcast_id = obs_data_get_string(settings, "broadcast_id");
+			SetInitEvent(YTSM_ACCOUNT, INGESTION_STARTED, broadcast_id, channelId.toStdString().c_str());
 		} else {
-			const char *stream_key =
-				obs_data_get_string(settings, "key");
-			SetInitEvent(YTSM_STREAM_KEY, INGESTION_STARTED,
-				     stream_key);
+			const char *stream_key = obs_data_get_string(settings, "key");
+			SetInitEvent(YTSM_STREAM_KEY, INGESTION_STARTED, stream_key);
 		}
 	} else {
-		SetInitEvent(IsUserSignedIntoYT() ? YTSM_ACCOUNT
-						  : YTSM_STREAM_KEY);
+		SetInitEvent(IsUserSignedIntoYT() ? YTSM_ACCOUNT : YTSM_STREAM_KEY);
 	}
 
 	dockBrowser->reloadPage();
@@ -337,8 +300,7 @@ void YouTubeAppDock::UpdateChannelId()
 		YoutubeApiWrappers *apiYouTube = GetYTApi();
 		if (apiYouTube) {
 			ChannelDescription channel_description;
-			if (apiYouTube->GetChannelDescription(
-				    channel_description)) {
+			if (apiYouTube->GetChannelDescription(channel_description)) {
 				channelId = channel_description.id;
 			} else {
 				blog(LOG_ERROR, "YT: AccountConnected() Failed "
@@ -348,8 +310,17 @@ void YouTubeAppDock::UpdateChannelId()
 	}
 }
 
-void YouTubeAppDock::SetInitEvent(streaming_mode_t mode, const char *event,
-				  const char *video_id, const char *channelId)
+void YouTubeAppDock::ReloadChatDock()
+{
+	if (IsUserSignedIntoYT()) {
+		YoutubeApiWrappers *apiYouTube = GetYTApi();
+		if (apiYouTube) {
+			apiYouTube->ReloadChat();
+		}
+	}
+}
+
+void YouTubeAppDock::SetInitEvent(streaming_mode_t mode, const char *event, const char *video_id, const char *channelId)
 {
 	const std::string version = App()->GetVersionString();
 
@@ -396,8 +367,7 @@ void YouTubeAppDock::SetInitEvent(streaming_mode_t mode, const char *event,
 	)""")
 				     .arg("OBS")
 				     .arg(version.c_str())
-				     .arg(mode == YTSM_ACCOUNT ? "'ACCOUNT'"
-							       : "'STREAM_KEY'")
+				     .arg(mode == YTSM_ACCOUNT ? "'ACCOUNT'" : "'STREAM_KEY'")
 				     .arg(api_event)
 				     .toStdString();
 	dockBrowser->setStartupScript(script);
@@ -407,13 +377,11 @@ YoutubeApiWrappers *YouTubeAppDock::GetYTApi()
 {
 	Auth *auth = OBSBasic::Get()->GetAuth();
 	if (auth) {
-		YoutubeApiWrappers *apiYouTube(
-			dynamic_cast<YoutubeApiWrappers *>(auth));
+		YoutubeApiWrappers *apiYouTube(dynamic_cast<YoutubeApiWrappers *>(auth));
 		if (apiYouTube) {
 			return apiYouTube;
 		} else {
-			blog(LOG_ERROR,
-			     "YT: GetYTApi() Failed to get YoutubeApiWrappers");
+			blog(LOG_ERROR, "YT: GetYTApi() Failed to get YoutubeApiWrappers");
 		}
 	} else {
 		blog(LOG_ERROR, "YT: GetYTApi() Failed to get Auth");
@@ -426,21 +394,17 @@ void YouTubeAppDock::CleanupYouTubeUrls()
 	if (!cef_js_avail)
 		return;
 
-	static constexpr const char *YOUTUBE_VIDEO_URL =
-		"://studio.youtube.com/video/";
+	static constexpr const char *YOUTUBE_VIDEO_URL = "://studio.youtube.com/video/";
 	// remove legacy YouTube Browser Docks (once)
 
-	bool youtube_cleanup_done = config_get_bool(
-		App()->GetUserConfig(), "General", "YtDockCleanupDone");
+	bool youtube_cleanup_done = config_get_bool(App()->GetUserConfig(), "General", "YtDockCleanupDone");
 
 	if (youtube_cleanup_done)
 		return;
 
-	config_set_bool(App()->GetUserConfig(), "General", "YtDockCleanupDone",
-			true);
+	config_set_bool(App()->GetUserConfig(), "General", "YtDockCleanupDone", true);
 
-	const char *jsonStr = config_get_string(
-		App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks");
+	const char *jsonStr = config_get_string(App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks");
 	if (!jsonStr)
 		return;
 
@@ -455,8 +419,7 @@ void YouTubeAppDock::CleanupYouTubeUrls()
 		auto url = item["url"].get<std::string>();
 
 		if (url.find(YOUTUBE_VIDEO_URL) != std::string::npos) {
-			blog(LOG_DEBUG, "YT: found legacy url: %s",
-			     url.c_str());
+			blog(LOG_DEBUG, "YT: found legacy url: %s", url.c_str());
 			removedYTUrl += url;
 			removedYTUrl += ";\n";
 		} else {
@@ -466,13 +429,10 @@ void YouTubeAppDock::CleanupYouTubeUrls()
 
 	if (!removedYTUrl.empty()) {
 		const QString msg_title = QTStr("YouTube.DocksRemoval.Title");
-		const QString msg_text =
-			QTStr("YouTube.DocksRemoval.Text")
-				.arg(QT_UTF8(removedYTUrl.c_str()));
+		const QString msg_text = QTStr("YouTube.DocksRemoval.Text").arg(QT_UTF8(removedYTUrl.c_str()));
 		OBSMessageBox::warning(OBSBasic::Get(), msg_title, msg_text);
 
 		std::string output = save_array.dump();
-		config_set_string(App()->GetUserConfig(), "BasicWindow",
-				  "ExtraBrowserDocks", output.c_str());
+		config_set_string(App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks", output.c_str());
 	}
 }

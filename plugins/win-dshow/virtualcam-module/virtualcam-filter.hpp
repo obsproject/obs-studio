@@ -48,10 +48,7 @@ class VCamFilter : public DShow::OutputFilter {
 
 	nv12_scale_t scaler = {};
 
-	inline bool stopped() const
-	{
-		return WaitForSingleObject(thread_stop, 0) != WAIT_TIMEOUT;
-	}
+	inline bool stopped() const { return WaitForSingleObject(thread_stop, 0) != WAIT_TIMEOUT; }
 
 	inline uint64_t GetTime();
 

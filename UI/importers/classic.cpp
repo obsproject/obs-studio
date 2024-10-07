@@ -33,11 +33,9 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 	return false;
 }
 
-#define translate_int(in_key, in, out_key, out, off) \
-	out[out_key] = in[in_key].int_value() + off;
+#define translate_int(in_key, in, out_key, out, off) out[out_key] = in[in_key].int_value() + off;
 #define translate_string(in_key, in, out_key, out) out[out_key] = in[in_key];
-#define translate_bool(in_key, in, out_key, out) \
-	out[out_key] = in[in_key].int_value() == 1;
+#define translate_bool(in_key, in, out_key, out) out[out_key] = in[in_key].int_value() == 1;
 
 static Json::object translate_scene_item(const Json &in, const Json &source)
 {
@@ -122,22 +120,15 @@ static Json::object translate_source(const Json &in, const Json &sources)
 		settings["outline_color"] = color;
 
 		translate_string("text", in_settings, "text", settings);
-		translate_int("backgroundOpacity", in_settings, "bk_opacity",
-			      settings, 0);
+		translate_int("backgroundOpacity", in_settings, "bk_opacity", settings, 0);
 		translate_bool("vertical", in_settings, "vertical", settings);
-		translate_int("textOpacity", in_settings, "opacity", settings,
-			      0);
+		translate_int("textOpacity", in_settings, "opacity", settings, 0);
 		translate_bool("useOutline", in_settings, "outline", settings);
-		translate_int("outlineOpacity", in_settings, "outline_opacity",
-			      settings, 0);
-		translate_int("outlineSize", in_settings, "outline_size",
-			      settings, 0);
-		translate_bool("useTextExtents", in_settings, "extents",
-			       settings);
-		translate_int("extentWidth", in_settings, "extents_cx",
-			      settings, 0);
-		translate_int("extentHeight", in_settings, "extents_cy",
-			      settings, 0);
+		translate_int("outlineOpacity", in_settings, "outline_opacity", settings, 0);
+		translate_int("outlineSize", in_settings, "outline_size", settings, 0);
+		translate_bool("useTextExtents", in_settings, "extents", settings);
+		translate_int("extentWidth", in_settings, "extents_cx", settings, 0);
+		translate_int("extentHeight", in_settings, "extents_cy", settings, 0);
 		translate_bool("mode", in_settings, "read_from_file", settings);
 		translate_bool("wrap", in_settings, "extents_wrap", settings);
 
@@ -145,9 +136,7 @@ static Json::object translate_source(const Json &in, const Json &sources)
 		settings["file"] = StringReplace(str, "\\\\", "/");
 
 		int in_align = in_settings["align"].int_value();
-		string align = in_align == 0
-				       ? "left"
-				       : (in_align == 1 ? "center" : "right");
+		string align = in_align == 0 ? "left" : (in_align == 1 ? "center" : "right");
 
 		settings["align"] = align;
 
@@ -181,8 +170,7 @@ static Json::object translate_source(const Json &in, const Json &sources)
 		out["id"] = "monitor_capture";
 
 		translate_int("monitor", in_settings, "monitor", settings, 0);
-		translate_bool("captureMouse", in_settings, "capture_cursor",
-			       settings);
+		translate_bool("captureMouse", in_settings, "capture_cursor", settings);
 	} else if (id == "BitmapImageSource") {
 		out["id"] = "image_source";
 
@@ -214,10 +202,7 @@ static Json::object translate_source(const Json &in, const Json &sources)
 		out["id"] = "browser_source";
 
 		string browser_dec =
-			QByteArray::fromBase64(in_settings["sourceSettings"]
-						       .string_value()
-						       .c_str())
-				.toStdString();
+			QByteArray::fromBase64(in_settings["sourceSettings"].string_value().c_str()).toStdString();
 
 		string err;
 
@@ -258,8 +243,7 @@ static Json::object translate_source(const Json &in, const Json &sources)
 
 		settings["window"] = ":" + winClass + ":" + exec;
 
-		translate_bool("captureMouse", in_settings, "capture_cursor",
-			       settings);
+		translate_bool("captureMouse", in_settings, "capture_cursor", settings);
 	}
 
 	out["settings"] = settings;
@@ -303,10 +287,8 @@ static void translate_sc(const Json &in, Json &out)
 		for (size_t x = sources.size(); x > 0; x--) {
 			Json source = sources[x - 1];
 
-			Json::object out_source =
-				translate_source(source, out_sources);
-			Json::object out_item =
-				translate_scene_item(source, out_source);
+			Json::object out_source = translate_source(source, out_sources);
+			Json::object out_item = translate_scene_item(source, out_source);
 
 			out_item["id"] = (int)x - 1;
 
@@ -316,12 +298,10 @@ static void translate_sc(const Json &in, Json &out)
 				out_sources.push_back(out_source);
 		}
 
-		out_sources.push_back(Json::object{
-			{"id", "scene"},
-			{"name", in_scene["name"]},
-			{"settings",
-			 Json::object{{"items", items},
-				      {"id_counter", (int)items.size()}}}});
+		out_sources.push_back(
+			Json::object{{"id", "scene"},
+				     {"name", in_scene["name"]},
+				     {"settings", Json::object{{"items", items}, {"id_counter", (int)items.size()}}}});
 	}
 
 	res["current_scene"] = first_name;
@@ -332,8 +312,7 @@ static void translate_sc(const Json &in, Json &out)
 	out = res;
 }
 
-static void create_string(const string &name, Json::object &out,
-			  const string &data)
+static void create_string(const string &name, Json::object &out, const string &data)
 {
 	string str = StringReplace(data, "\\\\", "/");
 	out[name] = str;
@@ -346,15 +325,13 @@ static void create_string_obj(const string &data, Json::array &arr)
 	arr.push_back(obj);
 }
 
-static void create_double(const string &name, Json::object &out,
-			  const string &data)
+static void create_double(const string &name, Json::object &out, const string &data)
 {
 	double d = atof(data.c_str());
 	out[name] = d;
 }
 
-static void create_int(const string &name, Json::object &out,
-		       const string &data)
+static void create_int(const string &name, Json::object &out, const string &data)
 {
 	int i = atoi(data.c_str());
 	out[name] = i;
@@ -376,8 +353,7 @@ static void create_data_item(Json::object &out, const string &line)
 
 	string first = line.substr(end_pos + 3);
 
-	if ((first[0] >= 'A' && first[0] <= 'Z') ||
-	    (first[0] >= 'a' && first[0] <= 'z') || first[0] == '\\' ||
+	if ((first[0] >= 'A' && first[0] <= 'Z') || (first[0] >= 'a' && first[0] <= 'z') || first[0] == '\\' ||
 	    first[0] == '/') {
 		if (out.find(c_name) != out.end()) {
 			Json::array arr = out[c_name].array_items();
@@ -515,8 +491,7 @@ int ClassicImporter::ImportScenes(const string &path, string &name, Json &res)
 	string line = ReadLine(file);
 
 	while (!line.empty() && line[0] != '\0') {
-		string key = line != "global sources : {" ? "scenes"
-							  : "globals";
+		string key = line != "global sources : {" ? "scenes" : "globals";
 
 		Json::array arr = create_sources(data, line, file);
 		data[key] = arr;

@@ -31,8 +31,7 @@ static void ScreenshotTick(void *param, float);
 
 /* ========================================================================= */
 
-ScreenshotObj::ScreenshotObj(obs_source_t *source)
-	: weakSource(OBSGetWeakRef(source))
+ScreenshotObj::ScreenshotObj(obs_source_t *source) : weakSource(OBSGetWeakRef(source))
 {
 	obs_add_tick_callback(ScreenshotTick, this);
 }
@@ -52,8 +51,7 @@ ScreenshotObj::~ScreenshotObj()
 		if (cx && cy) {
 			OBSBasic *main = OBSBasic::Get();
 			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo")
-					.arg(QT_UTF8(path.c_str())));
+				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
 
 			main->lastScreenshot = path;
 
@@ -84,8 +82,7 @@ void ScreenshotObj::Screenshot()
 	}
 
 #ifdef _WIN32
-	enum gs_color_space space =
-		obs_source_get_color_space(source, 0, nullptr);
+	enum gs_color_space space = obs_source_get_color_space(source, 0, nullptr);
 	if (space == GS_CS_709_EXTENDED) {
 		/* Convert for JXR */
 		space = GS_CS_709_SCRGB;
@@ -138,19 +135,15 @@ void ScreenshotObj::Copy()
 			half_bytes.reserve(cx * cy * 8);
 
 			for (uint32_t y = 0; y < cy; y++) {
-				const uint8_t *const line =
-					videoData + (y * videoLinesize);
-				half_bytes.insert(half_bytes.end(), line,
-						  line + linesize);
+				const uint8_t *const line = videoData + (y * videoLinesize);
+				half_bytes.insert(half_bytes.end(), line, line + linesize);
 			}
 		} else {
 			image = QImage(cx, cy, QImage::Format::Format_RGBX8888);
 
 			int linesize = image.bytesPerLine();
 			for (int y = 0; y < (int)cy; y++)
-				memcpy(image.scanLine(y),
-				       videoData + (y * videoLinesize),
-				       linesize);
+				memcpy(image.scanLine(y), videoData + (y * videoLinesize), linesize);
 		}
 
 		gs_stagesurface_unmap(stagesurf);
@@ -164,33 +157,24 @@ void ScreenshotObj::Save()
 
 	const char *mode = config_get_string(config, "Output", "Mode");
 	const char *type = config_get_string(config, "AdvOut", "RecType");
-	const char *adv_path =
-		strcmp(type, "Standard")
-			? config_get_string(config, "AdvOut", "FFFilePath")
-			: config_get_string(config, "AdvOut", "RecFilePath");
-	const char *rec_path =
-		strcmp(mode, "Advanced")
-			? config_get_string(config, "SimpleOutput", "FilePath")
-			: adv_path;
+	const char *adv_path = strcmp(type, "Standard") ? config_get_string(config, "AdvOut", "FFFilePath")
+							: config_get_string(config, "AdvOut", "RecFilePath");
+	const char *rec_path = strcmp(mode, "Advanced") ? config_get_string(config, "SimpleOutput", "FilePath")
+							: adv_path;
 
-	bool noSpace =
-		config_get_bool(config, "SimpleOutput", "FileNameWithoutSpace");
-	const char *filenameFormat =
-		config_get_string(config, "Output", "FilenameFormatting");
-	bool overwriteIfExists =
-		config_get_bool(config, "Output", "OverwriteIfExists");
+	bool noSpace = config_get_bool(config, "SimpleOutput", "FileNameWithoutSpace");
+	const char *filenameFormat = config_get_string(config, "Output", "FilenameFormatting");
+	bool overwriteIfExists = config_get_bool(config, "Output", "OverwriteIfExists");
 
 	const char *ext = half_bytes.empty() ? "png" : "jxr";
-	path = GetOutputFilename(
-		rec_path, ext, noSpace, overwriteIfExists,
-		GetFormatString(filenameFormat, "Screenshot", nullptr).c_str());
+	path = GetOutputFilename(rec_path, ext, noSpace, overwriteIfExists,
+				 GetFormatString(filenameFormat, "Screenshot", nullptr).c_str());
 
 	th = std::thread([this] { MuxAndFinish(); });
 }
 
 #ifdef _WIN32
-static HRESULT SaveJxrImage(LPCWSTR path, uint8_t *pixels, uint32_t cx,
-			    uint32_t cy, IWICBitmapFrameEncode *frameEncode,
+static HRESULT SaveJxrImage(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy, IWICBitmapFrameEncode *frameEncode,
 			    IPropertyBag2 *options)
 {
 	wchar_t lossless[] = L"Lossless";
@@ -220,8 +204,7 @@ static HRESULT SaveJxrImage(LPCWSTR path, uint8_t *pixels, uint32_t cx,
 	if (FAILED(hr))
 		return hr;
 
-	if (memcmp(&pixelFormat, &GUID_WICPixelFormat64bppRGBAHalf,
-		   sizeof(WICPixelFormatGUID)) != 0)
+	if (memcmp(&pixelFormat, &GUID_WICPixelFormat64bppRGBAHalf, sizeof(WICPixelFormatGUID)) != 0)
 		return E_FAIL;
 
 	hr = frameEncode->WritePixels(cy, cx * 8, cx * cy * 8, pixels);
@@ -238,8 +221,7 @@ static HRESULT SaveJxrImage(LPCWSTR path, uint8_t *pixels, uint32_t cx,
 static HRESULT SaveJxr(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy)
 {
 	Microsoft::WRL::ComPtr<IWICImagingFactory> factory;
-	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL,
-				      CLSCTX_INPROC_SERVER,
+	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER,
 				      IID_PPV_ARGS(factory.GetAddressOf()));
 	if (FAILED(hr))
 		return hr;
@@ -254,8 +236,7 @@ static HRESULT SaveJxr(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy)
 		return hr;
 
 	Microsoft::WRL::ComPtr<IWICBitmapEncoder> encoder = NULL;
-	hr = factory->CreateEncoder(GUID_ContainerFormatWmp, NULL,
-				    encoder.GetAddressOf());
+	hr = factory->CreateEncoder(GUID_ContainerFormatWmp, NULL, encoder.GetAddressOf());
 	if (FAILED(hr))
 		return hr;
 
@@ -265,13 +246,11 @@ static HRESULT SaveJxr(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy)
 
 	Microsoft::WRL::ComPtr<IWICBitmapFrameEncode> frameEncode;
 	Microsoft::WRL::ComPtr<IPropertyBag2> options;
-	hr = encoder->CreateNewFrame(frameEncode.GetAddressOf(),
-				     options.GetAddressOf());
+	hr = encoder->CreateNewFrame(frameEncode.GetAddressOf(), options.GetAddressOf());
 	if (FAILED(hr))
 		return hr;
 
-	hr = SaveJxrImage(path, pixels, cx, cy, frameEncode.Get(),
-			  options.Get());
+	hr = SaveJxrImage(path, pixels, cx, cy, frameEncode.Get(), options.Get());
 	if (FAILED(hr))
 		return hr;
 

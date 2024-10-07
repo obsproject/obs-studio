@@ -25,8 +25,7 @@
 #include "obs-scripting-callback.h"
 
 #if defined(LUAJIT_FOUND)
-extern obs_script_t *obs_lua_script_create(const char *path,
-					   obs_data_t *settings);
+extern obs_script_t *obs_lua_script_create(const char *path, obs_data_t *settings);
 extern bool obs_lua_script_load(obs_script_t *s);
 extern void obs_lua_script_unload(obs_script_t *s);
 extern void obs_lua_script_destroy(obs_script_t *s);
@@ -39,8 +38,7 @@ extern void obs_lua_script_save(obs_script_t *script);
 #endif
 
 #if defined(Python_FOUND)
-extern obs_script_t *obs_python_script_create(const char *path,
-					      obs_data_t *settings);
+extern obs_script_t *obs_python_script_create(const char *path, obs_data_t *settings);
 extern bool obs_python_script_load(obs_script_t *s);
 extern void obs_python_script_unload(obs_script_t *s);
 extern void obs_python_script_destroy(obs_script_t *s);
@@ -48,8 +46,7 @@ extern void obs_python_load(void);
 extern void obs_python_unload(void);
 
 extern obs_properties_t *obs_python_script_get_properties(obs_script_t *script);
-extern void obs_python_script_update(obs_script_t *script,
-				     obs_data_t *settings);
+extern void obs_python_script_update(obs_script_t *script, obs_data_t *settings);
 extern void obs_python_script_save(obs_script_t *script);
 #endif
 
@@ -150,9 +147,7 @@ bool obs_scripting_load(void)
 
 #if defined(Python_FOUND)
 	obs_python_load();
-#if !defined(_WIN32) && \
-	!defined(       \
-		__APPLE__) /* Win32 and macOS need user-provided Python library paths */
+#if !defined(_WIN32) && !defined(__APPLE__) /* Win32 and macOS need user-provided Python library paths */
 	obs_scripting_load_python(NULL);
 #endif
 #endif
@@ -196,8 +191,7 @@ void obs_scripting_unload(void)
 	pthread_mutex_unlock(&detach_mutex);
 	pthread_mutex_destroy(&detach_mutex);
 
-	blog(LOG_INFO, "[Scripting] Total detached callbacks: %d",
-	     total_detached);
+	blog(LOG_INFO, "[Scripting] Total detached callbacks: %d", total_detached);
 
 	/* ---------------------- */
 
@@ -224,8 +218,7 @@ const char **obs_scripting_supported_formats(void)
 	return supported_formats;
 }
 
-static inline bool pointer_valid(const void *x, const char *name,
-				 const char *func)
+static inline bool pointer_valid(const void *x, const char *name, const char *func)
 {
 	if (!x) {
 		blog(LOG_WARNING, "obs-scripting: [%s] %s is null", func, name);

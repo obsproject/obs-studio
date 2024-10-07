@@ -43,13 +43,10 @@ bool IsUserSignedIntoYT();
 class YoutubeApiWrappers : public YoutubeAuth {
 	Q_OBJECT
 
-	bool TryInsertCommand(const char *url, const char *content_type,
-			      std::string request_type, const char *data,
-			      json11::Json &ret, long *error_code = nullptr,
-			      int data_size = 0);
+	bool TryInsertCommand(const char *url, const char *content_type, std::string request_type, const char *data,
+			      json11::Json &ret, long *error_code = nullptr, int data_size = 0);
 	bool UpdateAccessToken();
-	bool InsertCommand(const char *url, const char *content_type,
-			   std::string request_type, const char *data,
+	bool InsertCommand(const char *url, const char *content_type, std::string request_type, const char *data,
 			   json11::Json &ret, int data_size = 0);
 
 public:
@@ -58,26 +55,18 @@ public:
 	bool GetChannelDescription(ChannelDescription &channel_description);
 	bool InsertBroadcast(BroadcastDescription &broadcast);
 	bool InsertStream(StreamDescription &stream);
-	bool BindStream(const QString broadcast_id, const QString stream_id,
-			json11::Json &json_out);
-	bool GetBroadcastsList(json11::Json &json_out, const QString &page,
-			       const QString &status);
-	bool
-	GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out);
-	bool SetVideoCategory(const QString &video_id,
-			      const QString &video_title,
-			      const QString &video_description,
+	bool BindStream(const QString broadcast_id, const QString stream_id, json11::Json &json_out);
+	bool GetBroadcastsList(json11::Json &json_out, const QString &page, const QString &status);
+	bool GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out);
+	bool SetVideoCategory(const QString &video_id, const QString &video_title, const QString &video_description,
 			      const QString &categorie_id);
-	bool SetVideoThumbnail(const QString &video_id,
-			       const QString &thumbnail_file);
+	bool SetVideoThumbnail(const QString &video_id, const QString &thumbnail_file);
 	bool StartBroadcast(const QString &broadcast_id);
 	bool StopBroadcast(const QString &broadcast_id);
-	bool ResetBroadcast(const QString &broadcast_id,
-			    json11::Json &json_out);
+	bool ResetBroadcast(const QString &broadcast_id, json11::Json &json_out);
 	bool StartLatestBroadcast();
 	bool StopLatestBroadcast();
-	bool SendChatMessage(const std::string &chat_id,
-			     const QString &message);
+	bool SendChatMessage(const std::string &chat_id, const QString &message);
 
 	void SetBroadcastId(QString &broadcast_id);
 	QString GetBroadcastId();

@@ -13,13 +13,12 @@
 
 VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	: source(source_),
-	  enabledSignal(obs_source_get_signal_handler(source), "enable",
-			OBSSourceEnabled, this)
+	  enabledSignal(obs_source_get_signal_handler(source), "enable", OBSSourceEnabled, this)
 {
 	bool enabled = obs_source_enabled(source);
 
 	vis = new QCheckBox();
-	vis->setProperty("visibilityCheckBox", true);
+	vis->setProperty("class", "checkbox-icon indicator-visibility");
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setChecked(enabled);
 
@@ -32,21 +31,16 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	itemLayout->setContentsMargins(0, 0, 0, 0);
 
 	setLayout(itemLayout);
-	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 
-	connect(vis, &QCheckBox::clicked, [this](bool visible) {
-		obs_source_set_enabled(source, visible);
-	});
+	connect(vis, &QCheckBox::clicked, [this](bool visible) { obs_source_set_enabled(source, visible); });
 }
 
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 {
-	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget *>(param);
+	VisibilityItemWidget *window = reinterpret_cast<VisibilityItemWidget *>(param);
 	bool enabled = calldata_bool(data, "enabled");
 
-	QMetaObject::invokeMethod(window, "SourceEnabled",
-				  Q_ARG(bool, enabled));
+	QMetaObject::invokeMethod(window, "SourceEnabled", Q_ARG(bool, enabled));
 }
 
 void VisibilityItemWidget::SourceEnabled(bool enabled)
@@ -55,8 +49,7 @@ void VisibilityItemWidget::SourceEnabled(bool enabled)
 		vis->setChecked(enabled);
 }
 
-void VisibilityItemWidget::SetColor(const QColor &color, bool active_,
-				    bool selected_)
+void VisibilityItemWidget::SetColor(const QColor &color, bool active_, bool selected_)
 {
 	/* Do not update unless the state has actually changed */
 	if (active_ == active && selected_ == selected)
@@ -72,13 +65,9 @@ void VisibilityItemWidget::SetColor(const QColor &color, bool active_,
 	selected = selected_;
 }
 
-VisibilityItemDelegate::VisibilityItemDelegate(QObject *parent)
-	: QStyledItemDelegate(parent)
-{
-}
+VisibilityItemDelegate::VisibilityItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
 
-void VisibilityItemDelegate::paint(QPainter *painter,
-				   const QStyleOptionViewItem &option,
+void VisibilityItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 				   const QModelIndex &index) const
 {
 	QStyledItemDelegate::paint(painter, option, index);
@@ -89,8 +78,7 @@ void VisibilityItemDelegate::paint(QPainter *painter,
 		return;
 
 	QListWidgetItem *item = list->item(index.row());
-	VisibilityItemWidget *widget =
-		qobject_cast<VisibilityItemWidget *>(list->itemWidget(item));
+	VisibilityItemWidget *widget = qobject_cast<VisibilityItemWidget *>(list->itemWidget(item));
 	if (!widget)
 		return;
 
@@ -99,8 +87,7 @@ void VisibilityItemDelegate::paint(QPainter *painter,
 
 	QPalette palette = list->palette();
 #if defined(_WIN32) || defined(__APPLE__)
-	QPalette::ColorGroup group = active ? QPalette::Active
-					    : QPalette::Inactive;
+	QPalette::ColorGroup group = active ? QPalette::Active : QPalette::Inactive;
 #else
 	QPalette::ColorGroup group = QPalette::Active;
 #endif
@@ -130,8 +117,7 @@ bool VisibilityItemDelegate::eventFilter(QObject *object, QEvent *event)
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
-		if (keyEvent->key() == Qt::Key_Tab ||
-		    keyEvent->key() == Qt::Key_Backtab) {
+		if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
 			return false;
 		}
 	}
@@ -139,8 +125,7 @@ bool VisibilityItemDelegate::eventFilter(QObject *object, QEvent *event)
 	return QStyledItemDelegate::eventFilter(object, event);
 }
 
-void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
-			 obs_source_t *source)
+void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item, obs_source_t *source)
 {
 	VisibilityItemWidget *baseWidget = new VisibilityItemWidget(source);
 

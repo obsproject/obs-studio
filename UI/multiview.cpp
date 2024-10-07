@@ -6,8 +6,7 @@
 
 Multiview::Multiview()
 {
-	InitSafeAreas(&actionSafeMargin, &graphicsSafeMargin,
-		      &fourByThreeSafeMargin, &leftLine, &topLine, &rightLine);
+	InitSafeAreas(&actionSafeMargin, &graphicsSafeMargin, &fourByThreeSafeMargin, &leftLine, &topLine, &rightLine);
 }
 
 Multiview::~Multiview()
@@ -59,14 +58,12 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	const char *text_source_id = "text_ft2_source";
 #endif
 
-	OBSSourceAutoRelease txtSource =
-		obs_source_create_private(text_source_id, name, settings);
+	OBSSourceAutoRelease txtSource = obs_source_create_private(text_source_id, name, settings);
 
 	return txtSource.Get();
 }
 
-void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
-		       bool drawSafeArea)
+void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool drawSafeArea)
 {
 	this->multiviewLayout = multiviewLayout;
 	this->drawLabel = drawLabel;
@@ -87,10 +84,8 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
 	struct obs_frontend_source_list scenes = {};
 	obs_frontend_get_scenes(&scenes);
 
-	multiviewLabels.emplace_back(
-		CreateLabel(Str("StudioMode.Preview"), h / 2));
-	multiviewLabels.emplace_back(
-		CreateLabel(Str("StudioMode.Program"), h / 2));
+	multiviewLabels.emplace_back(CreateLabel(Str("StudioMode.Preview"), h / 2));
+	multiviewLabels.emplace_back(CreateLabel(Str("StudioMode.Program"), h / 2));
 
 	switch (multiviewLayout) {
 	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
@@ -175,15 +170,13 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
 		multiviewScenes.emplace_back(OBSGetWeakRef(src));
 		obs_source_inc_showing(src);
 
-		multiviewLabels.emplace_back(
-			CreateLabel(obs_source_get_name(src), h / 3));
+		multiviewLabels.emplace_back(CreateLabel(obs_source_get_name(src), h / 3));
 	}
 
 	obs_frontend_source_list_free(&scenes);
 }
 
-static inline uint32_t labelOffset(MultiviewLayout multiviewLayout,
-				   obs_source_t *label, uint32_t cx)
+static inline uint32_t labelOffset(MultiviewLayout multiviewLayout, obs_source_t *label, uint32_t cx)
 {
 	uint32_t w = obs_source_get_width(label);
 
@@ -232,8 +225,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 
 	auto drawBox = [&](float cx, float cy, uint32_t colorVal) {
 		gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
-		gs_eparam_t *color =
-			gs_effect_get_param_by_name(solid, "color");
+		gs_eparam_t *color = gs_effect_get_param_by_name(solid, "color");
 
 		gs_effect_set_color(color, colorVal);
 		while (gs_effect_loop(solid, "Solid"))
@@ -375,8 +367,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		}
 	};
 
-	auto paintAreaWithColor = [&](float tx, float ty, float cx, float cy,
-				      uint32_t color) {
+	auto paintAreaWithColor = [&](float tx, float ty, float cx, float cy, uint32_t color) {
 		gs_matrix_push();
 		gs_matrix_translate3f(tx, ty, 0.0f);
 		drawBox(cx, cy, color);
@@ -384,8 +375,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 	};
 
 	// Define the whole usable region for the multiview
-	startRegion(x, y, targetCX * scale, targetCY * scale, 0.0f, fw, 0.0f,
-		    fh);
+	startRegion(x, y, targetCX * scale, targetCY * scale, 0.0f, fw, 0.0f, fh);
 
 	// Change the background color to highlight all sources
 	drawBox(fw, fh, outerColor);
@@ -399,10 +389,8 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 
 		if (i >= numSrcs) {
 			// Just paint the background and continue
-			paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY,
-					   outerColor);
-			paintAreaWithColor(siX, siY, siCX, siCY,
-					   backgroundColor);
+			paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY, outerColor);
+			paintAreaWithColor(siX, siY, siCX, siCY, backgroundColor);
 			continue;
 		}
 
@@ -416,8 +404,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 			colorVal = studioMode ? previewColor : programColor;
 
 		// Paint the background
-		paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY,
-				   colorVal);
+		paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY, colorVal);
 		paintAreaWithColor(siX, siY, siCX, siCY, backgroundColor);
 
 		/* ----------- */
@@ -444,15 +431,11 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		offset = labelOffset(multiviewLayout, label, scenesCX);
 
 		gs_matrix_push();
-		gs_matrix_translate3f(
-			sourceX + offset,
-			sourceY + scenesCY -
-				(obs_source_get_height(label) * ppiScaleY) -
-				(thickness * 3),
-			0.0f);
+		gs_matrix_translate3f(sourceX + offset,
+				      sourceY + scenesCY - (obs_source_get_height(label) * ppiScaleY) - (thickness * 3),
+				      0.0f);
 		gs_matrix_scale3f(ppiScaleX, ppiScaleY, 1.0f);
-		drawBox(obs_source_get_width(label),
-			obs_source_get_height(label) + thicknessx2, labelColor);
+		drawBox(obs_source_get_width(label), obs_source_get_height(label) + thicknessx2, labelColor);
 		gs_matrix_translate3f(0, thickness, 0.0f);
 		obs_source_video_render(label);
 		gs_matrix_pop();
@@ -504,15 +487,9 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 	if (drawLabel) {
 		gs_matrix_push();
 		gs_matrix_translate3f(
-			labelX,
-			labelY -
-				(obs_source_get_height(previewLabel) *
-				 ppiScaleY) -
-				(thickness * 3),
-			0.0f);
+			labelX, labelY - (obs_source_get_height(previewLabel) * ppiScaleY) - (thickness * 3), 0.0f);
 		gs_matrix_scale3f(ppiScaleX, ppiScaleY, 1.0f);
-		drawBox(obs_source_get_width(previewLabel),
-			obs_source_get_height(previewLabel) + thicknessx2,
+		drawBox(obs_source_get_width(previewLabel), obs_source_get_height(previewLabel) + thicknessx2,
 			labelColor);
 		gs_matrix_translate3f(0, thickness, 0.0f);
 		obs_source_video_render(previewLabel);
@@ -543,15 +520,9 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 	if (drawLabel) {
 		gs_matrix_push();
 		gs_matrix_translate3f(
-			labelX,
-			labelY -
-				(obs_source_get_height(programLabel) *
-				 ppiScaleY) -
-				(thickness * 3),
-			0.0f);
+			labelX, labelY - (obs_source_get_height(programLabel) * ppiScaleY) - (thickness * 3), 0.0f);
 		gs_matrix_scale3f(ppiScaleX, ppiScaleY, 1.0f);
-		drawBox(obs_source_get_width(programLabel),
-			obs_source_get_height(programLabel) + thicknessx2,
+		drawBox(obs_source_get_width(programLabel), obs_source_get_height(programLabel) + thicknessx2,
 			labelColor);
 		gs_matrix_translate3f(0, thickness, 0.0f);
 		obs_source_video_render(programLabel);
@@ -561,10 +532,8 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 	// Region for future usage with additional info.
 	if (multiviewLayout == MultiviewLayout::HORIZONTAL_TOP_24_SCENES) {
 		// Just paint the background for now
-		paintAreaWithColor(thickness, thickness, siCX,
-				   siCY * 2 + thicknessx2, backgroundColor);
-		paintAreaWithColor(thickness + 2.5 * (thicknessx2 + ppiCX),
-				   thickness, siCX, siCY * 2 + thicknessx2,
+		paintAreaWithColor(thickness, thickness, siCX, siCY * 2 + thicknessx2, backgroundColor);
+		paintAreaWithColor(thickness + 2.5 * (thicknessx2 + ppiCX), thickness, siCX, siCY * 2 + thicknessx2,
 				   backgroundColor);
 	}
 

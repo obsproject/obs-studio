@@ -2,10 +2,8 @@
 
 LineEditAutoResize::LineEditAutoResize() : m_maxLength(32767)
 {
-	connect(this, &LineEditAutoResize::textChanged, this,
-		&LineEditAutoResize::checkTextLength);
-	connect(document()->documentLayout(),
-		&QAbstractTextDocumentLayout::documentSizeChanged, this,
+	connect(this, &LineEditAutoResize::textChanged, this, &LineEditAutoResize::checkTextLength);
+	connect(document()->documentLayout(), &QAbstractTextDocumentLayout::documentSizeChanged, this,
 		&LineEditAutoResize::resizeVertically);
 }
 
@@ -63,8 +61,7 @@ void LineEditAutoResize::keyPressEvent(QKeyEvent *event)
 	 * allow all. Actions that will still exceed the limit (like
 	 * Paste) can be caught in a later step. */
 	default:
-		if (toPlainText().length() >= m_maxLength &&
-		    event->modifiers() == Qt::NoModifier &&
+		if (toPlainText().length() >= m_maxLength && event->modifiers() == Qt::NoModifier &&
 		    !textCursor().hasSelection())
 			event->ignore();
 		else
@@ -86,8 +83,7 @@ QString LineEditAutoResize::text()
 
 void LineEditAutoResize::setText(const QString &text)
 {
-	QMetaObject::invokeMethod(this, "SetPlainText", Qt::QueuedConnection,
-				  Q_ARG(const QString &, text));
+	QMetaObject::invokeMethod(this, "SetPlainText", Qt::QueuedConnection, Q_ARG(const QString &, text));
 }
 
 void LineEditAutoResize::SetPlainText(const QString &text)

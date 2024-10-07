@@ -40,8 +40,7 @@ void os_process_args_add_arg(struct os_process_args *args, const char *arg)
 	da_insert(args->arguments, args->arguments.num - 1, &str);
 }
 
-void os_process_args_add_argf(struct os_process_args *args, const char *format,
-			      ...)
+void os_process_args_add_argf(struct os_process_args *args, const char *format, ...)
 {
 	va_list va_args;
 	struct dstr tmp = {0};

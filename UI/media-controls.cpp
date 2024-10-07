@@ -43,58 +43,45 @@ void MediaControls::OBSMediaPrevious(void *data, calldata_t *)
 	QMetaObject::invokeMethod(media, "UpdateSlideCounter");
 }
 
-MediaControls::MediaControls(QWidget *parent)
-	: QWidget(parent),
-	  ui(new Ui::MediaControls)
+MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::MediaControls)
 {
 	ui->setupUi(this);
-	ui->playPauseButton->setProperty("themeID", "playIcon");
-	ui->previousButton->setProperty("themeID", "previousIcon");
-	ui->nextButton->setProperty("themeID", "nextIcon");
-	ui->stopButton->setProperty("themeID", "stopIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-play");
+	ui->previousButton->setProperty("class", "icon-media-prev");
+	ui->nextButton->setProperty("class", "icon-media-next");
+	ui->stopButton->setProperty("class", "icon-media-stop");
 	setFocusPolicy(Qt::StrongFocus);
 
-	connect(&mediaTimer, &QTimer::timeout, this,
-		&MediaControls::SetSliderPosition);
-	connect(&seekTimer, &QTimer::timeout, this,
-		&MediaControls::SeekTimerCallback);
-	connect(ui->slider, &AbsoluteSlider::sliderPressed, this,
-		&MediaControls::AbsoluteSliderClicked);
-	connect(ui->slider, &AbsoluteSlider::absoluteSliderHovered, this,
-		&MediaControls::AbsoluteSliderHovered);
-	connect(ui->slider, &AbsoluteSlider::sliderReleased, this,
-		&MediaControls::AbsoluteSliderReleased);
-	connect(ui->slider, &AbsoluteSlider::sliderMoved, this,
-		&MediaControls::AbsoluteSliderMoved);
+	connect(&mediaTimer, &QTimer::timeout, this, &MediaControls::SetSliderPosition);
+	connect(&seekTimer, &QTimer::timeout, this, &MediaControls::SeekTimerCallback);
+	connect(ui->slider, &AbsoluteSlider::sliderPressed, this, &MediaControls::AbsoluteSliderClicked);
+	connect(ui->slider, &AbsoluteSlider::absoluteSliderHovered, this, &MediaControls::AbsoluteSliderHovered);
+	connect(ui->slider, &AbsoluteSlider::sliderReleased, this, &MediaControls::AbsoluteSliderReleased);
+	connect(ui->slider, &AbsoluteSlider::sliderMoved, this, &MediaControls::AbsoluteSliderMoved);
 
-	countDownTimer = config_get_bool(App()->GetUserConfig(), "BasicWindow",
-					 "MediaControlsCountdownTimer");
+	countDownTimer = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MediaControlsCountdownTimer");
 
 	QAction *restartAction = new QAction(this);
 	restartAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	restartAction->setShortcut({Qt::Key_R});
-	connect(restartAction, &QAction::triggered, this,
-		&MediaControls::RestartMedia);
+	connect(restartAction, &QAction::triggered, this, &MediaControls::RestartMedia);
 	addAction(restartAction);
 
 	QAction *sliderFoward = new QAction(this);
 	sliderFoward->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(sliderFoward, &QAction::triggered, this,
-		&MediaControls::MoveSliderFoward);
+	connect(sliderFoward, &QAction::triggered, this, &MediaControls::MoveSliderFoward);
 	sliderFoward->setShortcut({Qt::Key_Right});
 	addAction(sliderFoward);
 
 	QAction *sliderBack = new QAction(this);
 	sliderBack->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(sliderBack, &QAction::triggered, this,
-		&MediaControls::MoveSliderBackwards);
+	connect(sliderBack, &QAction::triggered, this, &MediaControls::MoveSliderBackwards);
 	sliderBack->setShortcut({Qt::Key_Left});
 	addAction(sliderBack);
 
 	QAction *playPause = new QAction(this);
 	playPause->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(playPause, &QAction::triggered, this,
-		&MediaControls::on_playPauseButton_clicked);
+	connect(playPause, &QAction::triggered, this, &MediaControls::on_playPauseButton_clicked);
 	playPause->setShortcut({Qt::Key_Space});
 	addAction(playPause);
 }
@@ -213,11 +200,10 @@ void MediaControls::StopMediaTimer()
 void MediaControls::SetPlayingState()
 {
 	ui->slider->setEnabled(true);
-	ui->playPauseButton->setProperty("themeID", "pauseIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-pause");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
-	ui->playPauseButton->setToolTip(
-		QTStr("ContextBar.MediaControls.PauseMedia"));
+	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PauseMedia"));
 
 	prevPaused = false;
 
@@ -227,22 +213,20 @@ void MediaControls::SetPlayingState()
 
 void MediaControls::SetPausedState()
 {
-	ui->playPauseButton->setProperty("themeID", "playIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-play");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
-	ui->playPauseButton->setToolTip(
-		QTStr("ContextBar.MediaControls.PlayMedia"));
+	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PlayMedia"));
 
 	StopMediaTimer();
 }
 
 void MediaControls::SetRestartState()
 {
-	ui->playPauseButton->setProperty("themeID", "restartIcon");
+	ui->playPauseButton->setProperty("class", "icon-media-restart");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
-	ui->playPauseButton->setToolTip(
-		QTStr("ContextBar.MediaControls.RestartMedia"));
+	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.RestartMedia"));
 
 	ui->slider->setValue(0);
 
@@ -354,8 +338,7 @@ void MediaControls::SetSliderPosition()
 	float sliderPosition;
 
 	if (duration)
-		sliderPosition =
-			(time / duration) * (float)ui->slider->maximum();
+		sliderPosition = (time / duration) * (float)ui->slider->maximum();
 	else
 		sliderPosition = 0.0f;
 
@@ -465,8 +448,7 @@ void MediaControls::on_durationLabel_clicked()
 {
 	countDownTimer = !countDownTimer;
 
-	config_set_bool(App()->GetUserConfig(), "BasicWindow",
-			"MediaControlsCountdownTimer", countDownTimer);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "MediaControlsCountdownTimer", countDownTimer);
 
 	if (MediaPaused())
 		SetSliderPosition();
@@ -544,10 +526,7 @@ void MediaControls::UpdateLabels(int val)
 	ui->timerLabel->setText(FormatSeconds((int)(time / 1000.0f)));
 
 	if (!countDownTimer)
-		ui->durationLabel->setText(
-			FormatSeconds((int)(duration / 1000.0f)));
+		ui->durationLabel->setText(FormatSeconds((int)(duration / 1000.0f)));
 	else
-		ui->durationLabel->setText(
-			QString("-") +
-			FormatSeconds((int)((duration - time) / 1000.0f)));
+		ui->durationLabel->setText(QString("-") + FormatSeconds((int)((duration - time) / 1000.0f)));
 }

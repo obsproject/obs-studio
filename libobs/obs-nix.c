@@ -61,25 +61,20 @@ static const char *module_data[] = {
 	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%",
 };
 
-static const int module_patterns_size =
-	sizeof(module_bin) / sizeof(module_bin[0]);
+static const int module_patterns_size = sizeof(module_bin) / sizeof(module_bin[0]);
 
 static const struct obs_nix_hotkeys_vtable *hotkeys_vtable = NULL;
 
 void add_default_module_paths(void)
 {
-	char *module_bin_path =
-		os_get_executable_path_ptr("../" OBS_PLUGIN_PATH);
-	char *module_data_path = os_get_executable_path_ptr(
-		"../" OBS_DATA_PATH "/obs-plugins/%module%");
+	char *module_bin_path = os_get_executable_path_ptr("../" OBS_PLUGIN_PATH);
+	char *module_data_path = os_get_executable_path_ptr("../" OBS_DATA_PATH "/obs-plugins/%module%");
 
 	if (module_bin_path && module_data_path) {
-		char *abs_module_bin_path =
-			os_get_abs_path_ptr(module_bin_path);
+		char *abs_module_bin_path = os_get_abs_path_ptr(module_bin_path);
 
 		if (abs_module_bin_path &&
-		    strcmp(abs_module_bin_path, OBS_INSTALL_PREFIX
-			   "/" OBS_PLUGIN_DESTINATION) != 0) {
+		    strcmp(abs_module_bin_path, OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION) != 0) {
 			obs_add_module_path(module_bin_path, module_data_path);
 		}
 		bfree(abs_module_bin_path);
@@ -105,8 +100,7 @@ char *find_libobs_data_file(const char *file)
 	if (check_path(file, OBS_DATA_PATH "/libobs/", &output))
 		return output.array;
 
-	char *relative_data_path =
-		os_get_executable_path_ptr("../" OBS_DATA_PATH "/libobs/");
+	char *relative_data_path = os_get_executable_path_ptr("../" OBS_DATA_PATH "/libobs/");
 	if (relative_data_path) {
 		bool found = check_path(file, relative_data_path, &output);
 
@@ -128,8 +122,7 @@ char *find_libobs_data_file(const char *file)
 
 static void log_processor_cores(void)
 {
-	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d",
-	     os_get_physical_cores(), os_get_logical_cores());
+	blog(LOG_INFO, "Physical Cores: %d, Logical Cores: %d", os_get_physical_cores(), os_get_logical_cores());
 }
 
 #if defined(__linux__)
@@ -267,18 +260,15 @@ static void log_memory_info(void)
 	len = sizeof(mem);
 
 	if (sysctl(mib, 2, &mem, &len, NULL, 0) >= 0)
-		blog(LOG_INFO, "Physical Memory: %" PRIi64 "MB Total",
-		     mem / 1024 / 1024);
+		blog(LOG_INFO, "Physical Memory: %" PRIi64 "MB Total", mem / 1024 / 1024);
 #else
 	struct sysinfo info;
 	if (sysinfo(&info) < 0)
 		return;
 
-	blog(LOG_INFO,
-	     "Physical Memory: %" PRIu64 "MB Total, %" PRIu64 "MB Free",
+	blog(LOG_INFO, "Physical Memory: %" PRIu64 "MB Total, %" PRIu64 "MB Free",
 	     (uint64_t)info.totalram * info.mem_unit / 1024 / 1024,
-	     ((uint64_t)info.freeram + (uint64_t)info.bufferram) *
-		     info.mem_unit / 1024 / 1024);
+	     ((uint64_t)info.freeram + (uint64_t)info.bufferram) * info.mem_unit / 1024 / 1024);
 #endif
 }
 
@@ -354,8 +344,7 @@ static void log_flatpak_info(void)
 {
 	config_t *fp_info = NULL;
 
-	if (config_open(&fp_info, "/.flatpak-info", CONFIG_OPEN_EXISTING) !=
-	    CONFIG_SUCCESS) {
+	if (config_open(&fp_info, "/.flatpak-info", CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS) {
 		blog(LOG_ERROR, "Unable to open .flatpak-info file");
 		return;
 	}
@@ -363,16 +352,12 @@ static void log_flatpak_info(void)
 	const char *branch = config_get_string(fp_info, "Instance", "branch");
 	const char *arch = config_get_string(fp_info, "Instance", "arch");
 
-	const char *runtime =
-		config_get_string(fp_info, "Application", "runtime");
+	const char *runtime = config_get_string(fp_info, "Application", "runtime");
 
-	const char *app_exts =
-		config_get_string(fp_info, "Instance", "app-extensions");
-	const char *runtime_exts =
-		config_get_string(fp_info, "Instance", "runtime-extensions");
+	const char *app_exts = config_get_string(fp_info, "Instance", "app-extensions");
+	const char *runtime_exts = config_get_string(fp_info, "Instance", "runtime-extensions");
 
-	const char *fp_version =
-		config_get_string(fp_info, "Instance", "flatpak-version");
+	const char *fp_version = config_get_string(fp_info, "Instance", "flatpak-version");
 
 	blog(LOG_INFO, "Flatpak Branch: %s", branch ? branch : "none");
 	blog(LOG_INFO, "Flatpak Arch: %s", arch ? arch : "unknown");
@@ -389,8 +374,7 @@ static void log_flatpak_info(void)
 		log_flatpak_extensions(runtime_exts);
 	}
 
-	blog(LOG_INFO, "Flatpak Framework Version: %s",
-	     fp_version ? fp_version : "unknown");
+	blog(LOG_INFO, "Flatpak Framework Version: %s", fp_version ? fp_version : "unknown");
 
 	config_close(fp_info);
 }
@@ -402,11 +386,9 @@ static void log_desktop_session_info(void)
 	char *session_type = getenv("XDG_SESSION_TYPE");
 
 	if (current_desktop && session_desktop)
-		blog(LOG_INFO, "Desktop Environment: %s (%s)", current_desktop,
-		     session_desktop);
+		blog(LOG_INFO, "Desktop Environment: %s (%s)", current_desktop, session_desktop);
 	else if (current_desktop || session_desktop)
-		blog(LOG_INFO, "Desktop Environment: %s",
-		     current_desktop ? current_desktop : session_desktop);
+		blog(LOG_INFO, "Desktop Environment: %s", current_desktop ? current_desktop : session_desktop);
 
 	if (session_type)
 		blog(LOG_INFO, "Session Type: %s", session_type);
@@ -457,8 +439,7 @@ void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 	hotkeys_vtable = NULL;
 }
 
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
-				     obs_key_t key)
+bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	return hotkeys_vtable->is_pressed(context, key);
 }
@@ -494,8 +475,7 @@ static inline void add_combo_key(obs_key_t key, struct dstr *str)
 	dstr_free(&key_str);
 }
 
-void obs_key_combination_to_str(obs_key_combination_t combination,
-				struct dstr *str)
+void obs_key_combination_to_str(obs_key_combination_t combination, struct dstr *str)
 {
 	if ((combination.modifiers & INTERACT_CONTROL_KEY) != 0) {
 		add_combo_key(OBS_KEY_CONTROL, str);

@@ -14,8 +14,7 @@ static inline DXGI_FORMAT strip_dxgi_format_srgb(DXGI_FORMAT format)
 	return format;
 }
 
-static inline DXGI_FORMAT apply_dxgi_format_typeless(DXGI_FORMAT format,
-						     bool allow_srgb_alias)
+static inline DXGI_FORMAT apply_dxgi_format_typeless(DXGI_FORMAT format, bool allow_srgb_alias)
 {
 	if (allow_srgb_alias) {
 		switch (format) {
@@ -46,11 +45,8 @@ static void print_swap_desc(const DXGI_SWAP_CHAIN_DESC *desc)
 	     "    Windowed: %u\n"
 	     "    SwapEffect: %u\n"
 	     "    Flags: %u",
-	     desc->BufferDesc.Width, desc->BufferDesc.Height,
-	     desc->BufferDesc.RefreshRate.Numerator,
-	     desc->BufferDesc.RefreshRate.Denominator, desc->BufferDesc.Format,
-	     desc->BufferDesc.ScanlineOrdering, desc->BufferDesc.Scaling,
-	     desc->SampleDesc.Count, desc->SampleDesc.Quality,
-	     desc->BufferUsage, desc->BufferCount, desc->Windowed,
-	     desc->SwapEffect, desc->Flags);
+	     desc->BufferDesc.Width, desc->BufferDesc.Height, desc->BufferDesc.RefreshRate.Numerator,
+	     desc->BufferDesc.RefreshRate.Denominator, desc->BufferDesc.Format, desc->BufferDesc.ScanlineOrdering,
+	     desc->BufferDesc.Scaling, desc->SampleDesc.Count, desc->SampleDesc.Quality, desc->BufferUsage,
+	     desc->BufferCount, desc->Windowed, desc->SwapEffect, desc->Flags);
 }

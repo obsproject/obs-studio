@@ -14,94 +14,109 @@
     author: 'Warchamp7';
 }
 
-/* We need to set back the icons, or the preview wont stick. */
+.bg-base {
+    background-color: #DCD9D7;
+}
 
-* [themeID="addIconSmall"] {
+.text-heading {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.text-large {
+    font-size: 16px;
+}
+
+.text-bright {
+    color: var(--primary_light);
+}
+
+/* We need to set back the icons, or the preview wont stick. */
+.icon-plus {
     qproperty-icon: url(:/res/images/plus.svg);
 }
 
-* [themeID="removeIconSmall"] {
+.icon-minus {
     qproperty-icon: url(:/res/images/minus.svg);
 }
 
-* [themeID="clearIconSmall"] {
+.icon-trash {
+    qproperty-icon: url(:/res/images/trash.svg);
+}
+
+.icon-clear {
     qproperty-icon: url(:/res/images/entry-clear.svg);
 }
 
-* [themeID="propertiesIconSmall"] {
-    qproperty-icon: url(:/settings/images/settings/general.svg);
+.icon-gear {
+    qproperty-icon: url(:/res/images/settings/general.svg);
 }
 
-* [themeID="configIconSmall"] {
-    qproperty-icon: url(:/settings/images/settings/general.svg);
+.icon-dots-vert {
+    qproperty-icon: url(:/res/images/dots-vert.svg);
 }
 
-* [themeID="upArrowIconSmall"] {
-    qproperty-icon: url(:/res/images/up.svg);
-}
-
-* [themeID="refreshIconSmall"] {
+.icon-refresh {
     qproperty-icon: url(:/res/images/refresh.svg);
 }
 
-* [themeID="downArrowIconSmall"] {
-    qproperty-icon: url(:/res/images/down.svg);
-}
-
-* [themeID="pauseIconSmall"] {
-    qproperty-icon: url(:/res/images/media-pause.svg);
-}
-
-* [themeID="menuIconSmall"] {
-    qproperty-icon: url(:res/images/dots-vert.svg);
-}
-
-* [themeID="cogsIcon"] {
+.icon-cogs {
     qproperty-icon: url(:/res/images/cogs.svg);
 }
 
-* [themeID="filtersIcon"] {
+.icon-touch {
+    qproperty-icon: url(:/res/images/interact.svg);
+}
+
+.icon-up {
+    qproperty-icon: url(:/res/images/up.svg);
+}
+
+.icon-down {
+    qproperty-icon: url(:/res/images/down.svg);
+}
+
+.icon-filter {
     qproperty-icon: url(:/res/images/filter.svg);
+}
+
+.icon-revert {
+    qproperty-icon: url(:res/images/revert.svg);
 }
 
 MuteCheckBox {
     outline: none;
 }
 
-MuteCheckBox::indicator:checked {
+.indicator-mute::indicator:checked {
     image: url(:/res/images/mute.svg);
 }
 
-MuteCheckBox::indicator:indeterminate {
-    image: url(theme:Dark/unassigned.svg);
+.indicator-mute::indicator:indeterminate {
+    image: url(:/res/images/unassigned.svg);
 }
 
-MuteCheckBox::indicator:unchecked {
+.indicator-mute::indicator:unchecked {
     image: url(:/settings/images/settings/audio.svg);
 }
 
-QCheckBox[sourceTreeSubItem=true] {
+.indicator-expand {
     background: transparent;
     outline: none;
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator {
+.indicator-expand::indicator {
     width: 10px;
     height: 10px;
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator:checked {
+.indicator-expand::indicator:checked {
     image: url(:/res/images/expand.svg);
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator:unchecked {
+.indicator-expand::indicator:unchecked {
     image: url(:/res/images/collapse.svg);
 }
-
-OBSHotkeyLabel[hotkeyPairHover=true] {
-    color: red;
-}
-
 
 /* Volume Control */
 
@@ -127,29 +142,16 @@ VolumeMeter {
 
 /* Label warning/error */
 
-QLabel#warningLabel {
+.text-warning {
     color: rgb(192, 128, 0);
-    font-weight: bold;
 }
 
-QLabel#errorLabel {
+.text-danger {
     color: rgb(192, 0, 0);
-    font-weight: bold;
 }
 
-* [themeID="warning"] {
-    color: rgb(192, 128, 0);
-    font-weight: bold;
-}
-
-* [themeID="error"] {
-    color: rgb(192, 0, 0);
-    font-weight: bold;
-}
-
-* [themeID="good"] {
+.text-success {
     color: rgb(0, 128, 0);
-    font-weight: bold;
 }
 
 /* macOS Separator Fix */
@@ -157,26 +159,6 @@ QMainWindow::separator {
     background: transparent;
     width: 4px;
     height: 4px;
-}
-
-/* About dialog */
-
-* [themeID="aboutName"] {
-    font-size: 36px;
-    font-weight: bold;
-}
-
-* [themeID="aboutVersion"] {
-    font-size: 16px;
-    margin-bottom: 20px;
-}
-
-* [themeID="aboutInfo"] {
-    margin-bottom: 20px;
-}
-
-* [themeID="aboutHLayout"] {
-    background-color: #DCD9D7;
 }
 
 /* Preview background color */
@@ -187,7 +169,7 @@ OBSQTDisplay {
 
 /* Preview/Program labels */
 
-* [themeID="previewProgramLabels"] {
+.label-preview-title {
     font-size: 18px;
     font-weight: bold;
     color: rgb(122,121,122);
@@ -211,38 +193,29 @@ OBSBasicSettings QListWidget::item {
     padding-bottom: 5px;
 }
 
-/* Locked CheckBox */
-
-QCheckBox[lockCheckBox=true] {
+.checkbox-icon {
     outline: none;
     background: transparent;
 }
 
-QCheckBox[lockCheckBox=true]::indicator:checked {
+/* Locked CheckBox */
+
+.indicator-lock::indicator:checked {
     image: url(:res/images/locked.svg);
 }
 
-QCheckBox[lockCheckBox=true]::indicator:unchecked {
+.indicator-lock::indicator:unchecked {
     image: url(:res/images/unlocked.svg);
 }
 
 /* Visibility CheckBox */
 
-QCheckBox[visibilityCheckBox=true] {
-    outline: none;
-    background: transparent;
-}
-
-QCheckBox[visibilityCheckBox=true]::indicator:checked {
+.indicator-visibility::indicator:checked {
     image: url(:res/images/visible.svg);
 }
 
-QCheckBox[visibilityCheckBox=true]::indicator:unchecked {
+.indicator-visibility::indicator:unchecked {
     image: url(:res/images/invisible.svg);
-}
-
-* [themeID="revertIcon"] {
-    qproperty-icon: url(:res/images/revert.svg);
 }
 
 OBSMissingFiles {
@@ -279,28 +252,28 @@ SceneTree {
 
 /* Save icon */
 
-* [themeID="replayIconSmall"] {
+.icon-save {
     qproperty-icon: url(:res/images/save.svg);
 }
 
 /* Studio Mode T-Bar */
 
-QSlider[themeID="tBarSlider"] {
+.slider-tbar {
     height: 24px;
 }
 
-QSlider::groove:horizontal[themeID="tBarSlider"] {
+.slider-tbar::groove:horizontal {
     border: 1px solid #4c4c4c;
     height: 5px;
     background: #DCD9D7;
 }
 
-QSlider::sub-page:horizontal[themeID="tBarSlider"] {
+.slider-tbar::sub-page:horizontal {
     background: #DCD9D7;
     border: 1px solid #4c4c4c;
 }
 
-QSlider::handle:horizontal[themeID="tBarSlider"] {
+.slider-tbar::handle:horizontal {
     background-color: #4c4c4c;
     width: 12px;
     height: 24px;
@@ -310,10 +283,6 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 /* Source Context */
 #contextContainer QPushButton {
     padding: 3px 10px;
-}
-
-#contextContainer QPushButton[themeID2=contextBarButton] {
-    padding: 3px 6px;
 }
 
 #contextContainer QPushButton#sourcePropertiesButton {
@@ -330,28 +299,28 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 
 /* Media icons */
 
-* [themeID="playIcon"] {
+.icon-media-play {
     qproperty-icon: url(:res/images/media/media_play.svg);
 }
 
-* [themeID="pauseIcon"] {
-    qproperty-icon: url(:/res/images/media/media_pause.svg);
+.icon-media-pause {
+    qproperty-icon: url(:res/images/media/media_pause.svg);
 }
 
-* [themeID="restartIcon"] {
-    qproperty-icon: url(:/res/images/media/media_restart.svg);
+.icon-media-restart {
+    qproperty-icon: url(:res/images/media/media_restart.svg);
 }
 
-* [themeID="stopIcon"] {
-    qproperty-icon: url(:/res/images/media/media_stop.svg);
+.icon-media-stop {
+    qproperty-icon: url(:res/images/media/media_stop.svg);
 }
 
-* [themeID="nextIcon"] {
-    qproperty-icon: url(:/res/images/media/media_next.svg);
+.icon-media-next {
+    qproperty-icon: url(:res/images/media/media_next.svg);
 }
 
-* [themeID="previousIcon"] {
-    qproperty-icon: url(:/res/images/media/media_previous.svg);
+.icon-media-prev {
+    qproperty-icon: url(:res/images/media/media_previous.svg);
 }
 
 /* YouTube Integration */
@@ -369,7 +338,7 @@ OBSYoutubeActions {
     border: 1px solid #777;
 }
 
-#ytEventList QLabel[isSelectedEvent=true] {
+#ytEventList .row-selected {
     background-color: #ccc;
     border: 1px solid #444;
 }
@@ -380,7 +349,7 @@ QCalendarWidget QToolButton {
 }
 
 #qt_calendar_monthbutton::menu-indicator {
-    image: url(theme:Dark/down.svg);
+    image: url(:/res/images/down.svg);
     subcontrol-position: right;
     padding-top: 2px;
     padding-right: 2px;
@@ -395,13 +364,13 @@ QCalendarWidget QToolButton {
 
 QCalendarWidget #qt_calendar_prevmonth {
     padding: 2px;
-    qproperty-icon: url(theme:Dark/left.svg);
+    qproperty-icon: url(:/res/images/left.svg);
     icon-size: 16px;
 }
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(theme:Dark/right.svg);
+    qproperty-icon: url(:/res/images/right.svg);
     icon-size: 16px;
 }
 

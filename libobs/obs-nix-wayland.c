@@ -45,8 +45,7 @@ struct obs_hotkeys_platform {
 
 static obs_key_t obs_nix_wayland_key_from_virtual_key(int sym);
 
-static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key,
-			     void *data)
+static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key, void *data)
 {
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 	if (key >= MAX_KEYCODES)
@@ -54,13 +53,11 @@ static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key,
 
 	const xkb_keysym_t *syms;
 	for (int level = 0; level < MAX_SHIFT_LEVELS; level++) {
-		int nsyms = xkb_keymap_key_get_syms_by_level(
-			keymap, key, plat->current_layout, level, &syms);
+		int nsyms = xkb_keymap_key_get_syms_by_level(keymap, key, plat->current_layout, level, &syms);
 		if (nsyms < 1)
 			continue;
 
-		obs_key_t obs_key =
-			obs_nix_wayland_key_from_virtual_key(syms[0]);
+		obs_key_t obs_key = obs_nix_wayland_key_from_virtual_key(syms[0]);
 		// This avoids ambiguity where multiple scancodes produce the same symbols.
 		// e.g. LSGT and Shift+AB08 produce `<` on default US layout.
 		if (!plat->obs_to_key[obs_key])
@@ -71,14 +68,13 @@ static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key,
 
 static void rebuild_keymap_data(obs_hotkeys_platform_t *plat)
 {
-	memset(plat->key_to_sym, 0,
-	       sizeof(xkb_keysym_t) * MAX_SHIFT_LEVELS * MAX_KEYCODES);
+	memset(plat->key_to_sym, 0, sizeof(xkb_keysym_t) * MAX_SHIFT_LEVELS * MAX_KEYCODES);
 	memset(plat->obs_to_key, 0, sizeof(xkb_keysym_t) * OBS_KEY_LAST_VALUE);
 	xkb_keymap_key_for_each(plat->xkb_keymap, load_keymap_data, plat);
 }
 
-static void platform_keyboard_keymap(void *data, struct wl_keyboard *keyboard,
-				     uint32_t format, int32_t fd, uint32_t size)
+static void platform_keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format, int32_t fd,
+				     uint32_t size)
 {
 	UNUSED_PARAMETER(keyboard);
 	UNUSED_PARAMETER(format);
@@ -91,8 +87,7 @@ static void platform_keyboard_keymap(void *data, struct wl_keyboard *keyboard,
 	}
 
 	struct xkb_keymap *xkb_keymap = xkb_keymap_new_from_string(
-		plat->xkb_context, keymap_shm, XKB_KEYMAP_FORMAT_TEXT_V1,
-		XKB_KEYMAP_COMPILE_NO_FLAGS);
+		plat->xkb_context, keymap_shm, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
 	munmap(keymap_shm, size);
 	close(fd);
 
@@ -105,18 +100,14 @@ static void platform_keyboard_keymap(void *data, struct wl_keyboard *keyboard,
 	rebuild_keymap_data(plat);
 }
 
-static void platform_keyboard_modifiers(void *data,
-					struct wl_keyboard *keyboard,
-					uint32_t serial,
-					uint32_t mods_depressed,
-					uint32_t mods_latched,
-					uint32_t mods_locked, uint32_t group)
+static void platform_keyboard_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial,
+					uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked,
+					uint32_t group)
 {
 	UNUSED_PARAMETER(keyboard);
 	UNUSED_PARAMETER(serial);
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
-	xkb_state_update_mask(plat->xkb_state, mods_depressed, mods_latched,
-			      mods_locked, 0, 0, group);
+	xkb_state_update_mask(plat->xkb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
 
 	if (plat->current_layout != group) {
 		plat->current_layout = group;
@@ -124,9 +115,8 @@ static void platform_keyboard_modifiers(void *data,
 	}
 }
 
-static void platform_keyboard_key(void *data, struct wl_keyboard *keyboard,
-				  uint32_t serial, uint32_t time, uint32_t key,
-				  uint32_t state)
+static void platform_keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time,
+				  uint32_t key, uint32_t state)
 {
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(keyboard);
@@ -139,9 +129,8 @@ static void platform_keyboard_key(void *data, struct wl_keyboard *keyboard,
 	// callbacks.
 }
 
-static void platform_keyboard_enter(void *data, struct wl_keyboard *keyboard,
-				    uint32_t serial, struct wl_surface *surface,
-				    struct wl_array *keys)
+static void platform_keyboard_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial,
+				    struct wl_surface *surface, struct wl_array *keys)
 {
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(keyboard);
@@ -151,8 +140,8 @@ static void platform_keyboard_enter(void *data, struct wl_keyboard *keyboard,
 	// Nothing to do here.
 }
 
-static void platform_keyboard_leave(void *data, struct wl_keyboard *keyboard,
-				    uint32_t serial, struct wl_surface *surface)
+static void platform_keyboard_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial,
+				    struct wl_surface *surface)
 {
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(keyboard);
@@ -161,9 +150,7 @@ static void platform_keyboard_leave(void *data, struct wl_keyboard *keyboard,
 	// Nothing to do.
 }
 
-static void platform_keyboard_repeat_info(void *data,
-					  struct wl_keyboard *keyboard,
-					  int32_t rate, int32_t delay)
+static void platform_keyboard_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay)
 {
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(keyboard);
@@ -181,8 +168,7 @@ const struct wl_keyboard_listener keyboard_listener = {
 	.repeat_info = platform_keyboard_repeat_info,
 };
 
-static void platform_seat_capabilities(void *data, struct wl_seat *seat,
-				       uint32_t capabilities)
+static void platform_seat_capabilities(void *data, struct wl_seat *seat, uint32_t capabilities)
 {
 	UNUSED_PARAMETER(seat);
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
@@ -191,15 +177,13 @@ static void platform_seat_capabilities(void *data, struct wl_seat *seat,
 
 	if (kb_present && plat->keyboard == NULL) {
 		plat->keyboard = wl_seat_get_keyboard(plat->seat);
-		wl_keyboard_add_listener(plat->keyboard, &keyboard_listener,
-					 plat);
+		wl_keyboard_add_listener(plat->keyboard, &keyboard_listener, plat);
 	} else if (!kb_present && plat->keyboard != NULL) {
 		wl_keyboard_release(plat->keyboard);
 		plat->keyboard = NULL;
 	}
 }
-static void platform_seat_name(void *data, struct wl_seat *seat,
-			       const char *name)
+static void platform_seat_name(void *data, struct wl_seat *seat, const char *name)
 {
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(seat);
@@ -212,27 +196,23 @@ const struct wl_seat_listener seat_listener = {
 	.name = platform_seat_name,
 };
 
-static void platform_registry_handler(void *data, struct wl_registry *registry,
-				      uint32_t id, const char *interface,
+static void platform_registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface,
 				      uint32_t version)
 {
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 
 	if (strcmp(interface, wl_seat_interface.name) == 0) {
 		if (version < 4) {
-			blog(LOG_WARNING,
-			     "[wayland] hotkeys disabled, compositor is too old");
+			blog(LOG_WARNING, "[wayland] hotkeys disabled, compositor is too old");
 			return;
 		}
 		// Only negotiate up to version 7, the current wl_seat at time of writing.
-		plat->seat = wl_registry_bind(registry, id, &wl_seat_interface,
-					      version <= 7 ? version : 7);
+		plat->seat = wl_registry_bind(registry, id, &wl_seat_interface, version <= 7 ? version : 7);
 		wl_seat_add_listener(plat->seat, &seat_listener, plat);
 	}
 }
 
-static void platform_registry_remover(void *data, struct wl_registry *registry,
-				      uint32_t id)
+static void platform_registry_remover(void *data, struct wl_registry *registry, uint32_t id)
 {
 	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(registry);
@@ -256,24 +236,20 @@ void obs_nix_wayland_log_info(void)
 	blog(LOG_INFO, "Connected to Wayland server");
 }
 
-static bool
-obs_nix_wayland_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
+static bool obs_nix_wayland_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
 	struct wl_display *display = obs_get_nix_platform_display();
 	hotkeys->platform_context = bzalloc(sizeof(obs_hotkeys_platform_t));
 	hotkeys->platform_context->display = display;
-	hotkeys->platform_context->xkb_context =
-		xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+	hotkeys->platform_context->xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
 	struct wl_registry *registry = wl_display_get_registry(display);
-	wl_registry_add_listener(registry, &registry_listener,
-				 hotkeys->platform_context);
+	wl_registry_add_listener(registry, &registry_listener, hotkeys->platform_context);
 	wl_display_roundtrip(display);
 	return true;
 }
 
-static void
-obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
+static void obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 {
 	obs_hotkeys_platform_t *plat = hotkeys->platform_context;
 	xkb_context_unref(plat->xkb_context);
@@ -282,9 +258,7 @@ obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 	bfree(plat);
 }
 
-static bool
-obs_nix_wayland_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
-					    obs_key_t key)
+static bool obs_nix_wayland_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	UNUSED_PARAMETER(context);
 	UNUSED_PARAMETER(key);
@@ -300,8 +274,7 @@ static void obs_nix_wayland_key_to_str(obs_key_t key, struct dstr *dstr)
 		if (obs->hotkeys.translations[key]) {
 			dstr_copy(dstr, obs->hotkeys.translations[key]);
 		} else {
-			dstr_printf(dstr, "Mouse %d",
-				    (int)(key - OBS_KEY_MOUSE1 + 1));
+			dstr_printf(dstr, "Mouse %d", (int)(key - OBS_KEY_MOUSE1 + 1));
 		}
 		return;
 	}
@@ -310,14 +283,12 @@ static void obs_nix_wayland_key_to_str(obs_key_t key, struct dstr *dstr)
 		if (obs->hotkeys.translations[key]) {
 			dstr_copy(dstr, obs->hotkeys.translations[key]);
 		} else {
-			dstr_printf(dstr, "Numpad %d",
-				    (int)(key - OBS_KEY_NUM0));
+			dstr_printf(dstr, "Numpad %d", (int)(key - OBS_KEY_NUM0));
 		}
 		return;
 	}
 
-#define translate_key(key, def) \
-	dstr_copy(dstr, obs_get_hotkey_translation(key, def))
+#define translate_key(key, def) dstr_copy(dstr, obs_get_hotkey_translation(key, def))
 
 	switch (key) {
 	case OBS_KEY_INSERT:

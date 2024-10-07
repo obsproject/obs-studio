@@ -7,25 +7,22 @@
  * use offsetof() or similar with those we resort to macros here to avoid too
  * much boilerplate. */
 
-#define APPLY_BIT_OPT(opt_name, bits)                                                \
-	if (strcmp(opt->name, #opt_name) == 0) {                                     \
-		uint32_t old_val = nv_conf->opt_name;                                \
-		nv_conf->opt_name = strtol(opt->value, NULL, 10);                    \
-		blog(LOG_DEBUG,                                                      \
-		     "[obs-nvenc] Changing parameter: \"%s\": %u -> %u (%d bit(s))", \
-		     #opt_name, old_val, nv_conf->opt_name, bits);                   \
-		return true;                                                         \
+#define APPLY_BIT_OPT(opt_name, bits)                                                                               \
+	if (strcmp(opt->name, #opt_name) == 0) {                                                                    \
+		uint32_t old_val = nv_conf->opt_name;                                                               \
+		nv_conf->opt_name = strtol(opt->value, NULL, 10);                                                   \
+		blog(LOG_DEBUG, "[obs-nvenc] Changing parameter: \"%s\": %u -> %u (%d bit(s))", #opt_name, old_val, \
+		     nv_conf->opt_name, bits);                                                                      \
+		return true;                                                                                        \
 	}
 
-#define APPLY_INT_OPT(opt_name, type, format)                           \
-	if (strcmp(opt->name, #opt_name) == 0) {                        \
-		type old_val = nv_conf->opt_name;                       \
-		nv_conf->opt_name = (type)strtol(opt->value, NULL, 10); \
-		blog(LOG_DEBUG,                                         \
-		     "[obs-nvenc] Changing parameter: \"%s\": %" format \
-		     " -> %" format " (%s)",                            \
-		     #opt_name, old_val, nv_conf->opt_name, #type);     \
-		return true;                                            \
+#define APPLY_INT_OPT(opt_name, type, format)                                                                         \
+	if (strcmp(opt->name, #opt_name) == 0) {                                                                      \
+		type old_val = nv_conf->opt_name;                                                                     \
+		nv_conf->opt_name = (type)strtol(opt->value, NULL, 10);                                               \
+		blog(LOG_DEBUG, "[obs-nvenc] Changing parameter: \"%s\": %" format " -> %" format " (%s)", #opt_name, \
+		     old_val, nv_conf->opt_name, #type);                                                              \
+		return true;                                                                                          \
 	}
 
 static void parse_qp_opt(const char *name, const char *val, NV_ENC_QP *qp_opt)
@@ -38,9 +35,7 @@ static void parse_qp_opt(const char *name, const char *val, NV_ENC_QP *qp_opt)
 		p = b = i = atoi(val);
 	}
 
-	blog(LOG_DEBUG,
-	     "[obs-nvenc] Applying custom %s = %d / %d / %d (P / B / I)", name,
-	     p, b, i);
+	blog(LOG_DEBUG, "[obs-nvenc] Applying custom %s = %d / %d / %d (P / B / I)", name, p, b, i);
 
 	/* Values should be treated as int32_t but are passed in as uint32_t
 	 * for legacy reasons, see comment in nvEncodeAPI.h */
@@ -55,8 +50,7 @@ static void parse_qp_opt(const char *name, const char *val, NV_ENC_QP *qp_opt)
 		return true;                                             \
 	}
 
-static bool apply_rc_opt(const struct obs_option *opt,
-			 NV_ENC_RC_PARAMS *nv_conf)
+static bool apply_rc_opt(const struct obs_option *opt, NV_ENC_RC_PARAMS *nv_conf)
 {
 	APPLY_QP_OPT(constQP)
 	APPLY_QP_OPT(minQP)
@@ -122,8 +116,7 @@ static void parse_level_opt(const char *val, uint32_t *level, bool hevc)
 	if (hevc)
 		int_val *= 3;
 
-	blog(LOG_DEBUG, "[obs-nvenc] Applying custom level = %s (%u)", val,
-	     int_val);
+	blog(LOG_DEBUG, "[obs-nvenc] Applying custom level = %s (%u)", val, int_val);
 	*level = int_val;
 }
 
@@ -175,8 +168,7 @@ static bool apply_av1_opt(struct obs_option *opt, NV_ENC_CONFIG_AV1 *nv_conf)
 	return false;
 }
 
-static bool apply_codec_opt(enum codec_type codec, struct obs_option *opt,
-			    NV_ENC_CODEC_CONFIG *enc_config)
+static bool apply_codec_opt(enum codec_type codec, struct obs_option *opt, NV_ENC_CODEC_CONFIG *enc_config)
 {
 	if (codec == CODEC_H264)
 		return apply_h264_opt(opt, &enc_config->h264Config);
@@ -194,16 +186,14 @@ void apply_user_args(struct nvenc_data *enc)
 		struct obs_option *opt = &enc->props.opts.options[idx];
 
 		/* Special options handled elsewhere */
-		if (strcmp(opt->name, "lookaheadDepth") == 0 ||
-		    strcmp(opt->name, "keyint") == 0)
+		if (strcmp(opt->name, "lookaheadDepth") == 0 || strcmp(opt->name, "keyint") == 0)
 			continue;
 
 		if (apply_rc_opt(opt, &enc->config.rcParams))
 			continue;
 		if (apply_conf_opt(opt, &enc->config))
 			continue;
-		if (apply_codec_opt(enc->codec, opt,
-				    &enc->config.encodeCodecConfig))
+		if (apply_codec_opt(enc->codec, opt, &enc->config.encodeCodecConfig))
 			continue;
 
 		warn("Unknown custom option: \"%s\"", opt->name);

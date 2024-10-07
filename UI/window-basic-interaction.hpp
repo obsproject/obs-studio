@@ -64,8 +64,7 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
-	virtual bool nativeEvent(const QByteArray &eventType, void *message,
-				 qintptr *result) override;
+	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 };
 
 typedef std::function<bool(QObject *, QEvent *)> EventFilterFunc;
@@ -76,10 +75,7 @@ public:
 	OBSEventFilter(EventFilterFunc filter_) : filter(filter_) {}
 
 protected:
-	bool eventFilter(QObject *obj, QEvent *event)
-	{
-		return filter(obj, event);
-	}
+	bool eventFilter(QObject *obj, QEvent *event) { return filter(obj, event); }
 
 public:
 	EventFilterFunc filter;

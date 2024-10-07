@@ -37,9 +37,8 @@
  * Standard identifier is included if not referring to ISO/IEC 14496-12.
  */
 
-#define do_log(level, format, ...)               \
-	blog(level, "[mp4 muxer: '%s'] " format, \
-	     obs_output_get_name(mux->output), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[mp4 muxer: '%s'] " format, obs_output_get_name(mux->output), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -58,8 +57,7 @@ static inline size_t write_box_size(struct serializer *s, int64_t start)
 }
 
 /// 4.2 Box header with size and char[4] name
-static inline void write_box(struct serializer *s, const size_t size,
-			     const char name[4])
+static inline void write_box(struct serializer *s, const size_t size, const char name[4])
 {
 	if (size <= UINT32_MAX) {
 		s_wb32(s, (uint32_t)size); // size
@@ -72,8 +70,7 @@ static inline void write_box(struct serializer *s, const size_t size,
 }
 
 /// 4.2 FullBox extended header with u8 version and u24 flags
-static inline void write_fullbox(struct serializer *s, const size_t size,
-				 const char name[4], uint8_t version,
+static inline void write_fullbox(struct serializer *s, const size_t size, const char name[4], uint8_t version,
 				 uint32_t flags)
 {
 	write_box(s, size, name);
@@ -156,8 +153,7 @@ static size_t mp4_write_mvhd(struct mp4_mux *mux)
 	for (size_t i = 0; i < mux->tracks.num; i++) {
 		struct mp4_track *track = &mux->tracks.array[i];
 		if (track->type == TRACK_VIDEO) {
-			duration = util_mul_div64(track->duration, 1000,
-						  track->timebase_den);
+			duration = util_mul_div64(track->duration, 1000, track->timebase_den);
 			break;
 		}
 	}
@@ -173,7 +169,7 @@ static size_t mp4_write_mvhd(struct mp4_mux *mux)
 		s_wb32(s, (uint32_t)mux->creation_time); // creation time
 		s_wb32(s, (uint32_t)mux->creation_time); // modification time
 		s_wb32(s, 1000);                         // timescale
-		s_wb32(s, (uint32_t)duration); // duration (0 for fragmented)
+		s_wb32(s, (uint32_t)duration);           // duration (0 for fragmented)
 	}
 
 	s_wb32(s, 0x00010000); // rate, 16.16 fixed float (1 << 16)
@@ -206,8 +202,7 @@ static size_t mp4_write_tkhd(struct mp4_mux *mux, struct mp4_track *track)
 	struct serializer *s = mux->serializer;
 	size_t start = serializer_get_pos(s);
 
-	uint64_t duration =
-		util_mul_div64(track->duration, 1000, track->timebase_den);
+	uint64_t duration = util_mul_div64(track->duration, 1000, track->timebase_den);
 
 	/* Flags are 0x1 (enabled) | 0x2 (in movie) */
 	static const uint32_t flags = 0x1 | 0x2;
@@ -224,7 +219,7 @@ static size_t mp4_write_tkhd(struct mp4_mux *mux, struct mp4_track *track)
 		s_wb32(s, (uint32_t)mux->creation_time); // modification time
 		s_wb32(s, track->track_id);              // track_id
 		s_wb32(s, 0);                            // reserved
-		s_wb32(s, (uint32_t)duration); // duration in movie timescale
+		s_wb32(s, (uint32_t)duration);           // duration in movie timescale
 	}
 
 	s_wb32(s, 0);                                      // reserved
@@ -265,8 +260,7 @@ static size_t mp4_write_mdhd(struct mp4_mux *mux, struct mp4_track *track)
 
 	if (track->type == TRACK_VIDEO) {
 		/* Update to track timescale */
-		duration = util_mul_div64(duration, track->timescale,
-					  track->timebase_den);
+		duration = util_mul_div64(duration, track->timescale, track->timebase_den);
 	}
 
 	/* use 64-bit duration if necessary */
@@ -424,9 +418,7 @@ static size_t mp4_write_avcC(struct mp4_mux *mux, obs_encoder_t *enc)
 	uint8_t *header;
 	size_t size;
 
-	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
-					.timebase_den = 1,
-					.keyframe = true};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = true};
 
 	if (!obs_encoder_get_extra_data(enc, &header, &size))
 		return 0;
@@ -450,9 +442,7 @@ static size_t mp4_write_hvcC(struct mp4_mux *mux, obs_encoder_t *enc)
 	uint8_t *header;
 	size_t size;
 
-	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
-					.timebase_den = 1,
-					.keyframe = true};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = true};
 
 	if (!obs_encoder_get_extra_data(enc, &header, &size))
 		return 0;
@@ -476,9 +466,7 @@ static size_t mp4_write_av1C(struct mp4_mux *mux, obs_encoder_t *enc)
 	uint8_t *header;
 	size_t size;
 
-	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO,
-					.timebase_den = 1,
-					.keyframe = true};
+	struct encoder_packet packet = {.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = true};
 
 	if (!obs_encoder_get_extra_data(enc, &header, &size))
 		return 0;
@@ -529,8 +517,7 @@ static size_t mp4_write_pasp(struct mp4_mux *mux)
 }
 
 /// 12.1.3 Visual Sample Entry
-static inline void mp4_write_visual_sample_entry(struct mp4_mux *mux,
-						 obs_encoder_t *enc)
+static inline void mp4_write_visual_sample_entry(struct mp4_mux *mux, obs_encoder_t *enc)
 {
 	struct serializer *s = mux->serializer;
 
@@ -587,8 +574,7 @@ static size_t mp4_write_clli(struct mp4_mux *mux, obs_encoder_t *enc)
 	const struct video_output_info *info = video_output_get_info(video);
 
 	/* Only write box for HDR video */
-	if (info->colorspace != VIDEO_CS_2100_PQ &&
-	    info->colorspace != VIDEO_CS_2100_HLG)
+	if (info->colorspace != VIDEO_CS_2100_PQ && info->colorspace != VIDEO_CS_2100_HLG)
 		return 0;
 
 	write_box(s, 12, "clli");
@@ -610,8 +596,7 @@ static size_t mp4_write_mdcv(struct mp4_mux *mux, obs_encoder_t *enc)
 	const struct video_output_info *info = video_output_get_info(video);
 
 	// Only write atom for HDR video
-	if (info->colorspace != VIDEO_CS_2100_PQ &&
-	    info->colorspace != VIDEO_CS_2100_HLG)
+	if (info->colorspace != VIDEO_CS_2100_PQ && info->colorspace != VIDEO_CS_2100_HLG)
 		return 0;
 
 	write_box(s, 32, "mdcv");
@@ -736,16 +721,14 @@ static size_t mp4_write_esds(struct mp4_mux *mux, struct mp4_track *track)
 	/* Encoder extradata will be used as DecoderSpecificInfo  */
 	uint8_t *extradata;
 	size_t extradata_size;
-	if (!obs_encoder_get_extra_data(track->encoder, &extradata,
-					&extradata_size)) {
+	if (!obs_encoder_get_extra_data(track->encoder, &extradata, &extradata_size)) {
 		extradata_size = 0;
 	}
 
 	/// ISO/IEC 14496-1
 
 	// ES_Descriptor
-	size_t decoder_specific_info_len = extradata_size ? extradata_size + 5
-							  : 0;
+	size_t decoder_specific_info_len = extradata_size ? extradata_size + 5 : 0;
 
 	put_descr(s, 0x03, 3 + 5 + 13 + decoder_specific_info_len + 5 + 1);
 	s_wb16(s, track->track_id);
@@ -786,9 +769,7 @@ static size_t mp4_write_esds(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// 12.2.3 Audio Sample Entry
-static inline void mp4_write_audio_sample_entry(struct mp4_mux *mux,
-						struct mp4_track *track,
-						uint8_t version)
+static inline void mp4_write_audio_sample_entry(struct mp4_mux *mux, struct mp4_track *track, uint8_t version)
 {
 	struct serializer *s = mux->serializer;
 
@@ -868,8 +849,7 @@ static size_t mp4_write_chnl(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// ISO/IEC 14496-14 5.6 MP4AudioSampleEntry
-static size_t mp4_write_mp4a(struct mp4_mux *mux, struct mp4_track *track,
-			     uint8_t version)
+static size_t mp4_write_mp4a(struct mp4_mux *mux, struct mp4_track *track, uint8_t version)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -897,8 +877,7 @@ static size_t mp4_write_dfLa(struct mp4_mux *mux, struct mp4_track *track)
 	uint8_t *extradata;
 	size_t extradata_size;
 
-	if (!obs_encoder_get_extra_data(track->encoder, &extradata,
-					&extradata_size))
+	if (!obs_encoder_get_extra_data(track->encoder, &extradata, &extradata_size))
 		return 0;
 
 	write_fullbox(s, 0, "dfLa", 0, 0);
@@ -916,8 +895,7 @@ static size_t mp4_write_dfLa(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// Encapsulation of FLAC in ISO Base Media File Format 3.3.1 FLACSampleEntry
-static size_t mp4_write_fLaC(struct mp4_mux *mux, struct mp4_track *track,
-			     uint8_t version)
+static size_t mp4_write_fLaC(struct mp4_mux *mux, struct mp4_track *track, uint8_t version)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -936,8 +914,7 @@ static size_t mp4_write_fLaC(struct mp4_mux *mux, struct mp4_track *track,
 }
 
 /// Apple Lossless Format "Magic Cookie" Description - MP4/M4A File
-static size_t mp4_write_alac(struct mp4_mux *mux, struct mp4_track *track,
-			     uint8_t version)
+static size_t mp4_write_alac(struct mp4_mux *mux, struct mp4_track *track, uint8_t version)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -945,8 +922,7 @@ static size_t mp4_write_alac(struct mp4_mux *mux, struct mp4_track *track,
 	uint8_t *extradata;
 	size_t extradata_size;
 
-	if (!obs_encoder_get_extra_data(track->encoder, &extradata,
-					&extradata_size))
+	if (!obs_encoder_get_extra_data(track->encoder, &extradata, &extradata_size))
 		return 0;
 
 	write_box(s, 0, "alac");
@@ -984,8 +960,7 @@ static size_t mp4_write_pcmc(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// ISO/IEC 23003-5 5.1 PCM configuration
-static size_t mp4_write_xpcm(struct mp4_mux *mux, struct mp4_track *track,
-			     uint8_t version)
+static size_t mp4_write_xpcm(struct mp4_mux *mux, struct mp4_track *track, uint8_t version)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1039,8 +1014,7 @@ static size_t mp4_write_dOps(struct mp4_mux *mux, struct mp4_track *track)
 	uint8_t *extradata;
 	size_t extradata_size;
 
-	if (!obs_encoder_get_extra_data(track->encoder, &extradata,
-					&extradata_size))
+	if (!obs_encoder_get_extra_data(track->encoder, &extradata, &extradata_size))
 		return 0;
 
 	write_box(s, 0, "dOps");
@@ -1063,8 +1037,7 @@ static size_t mp4_write_dOps(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// Encapsulation of Opus in ISO Base Media File Format 4.3.1 Sample entry format
-static size_t mp4_write_Opus(struct mp4_mux *mux, struct mp4_track *track,
-			     uint8_t version)
+static size_t mp4_write_Opus(struct mp4_mux *mux, struct mp4_track *track, uint8_t version)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1118,8 +1091,7 @@ static size_t mp4_write_stsd(struct mp4_mux *mux, struct mp4_track *track)
 			mp4_write_fLaC(mux, track, version);
 		else if (track->codec == CODEC_ALAC)
 			mp4_write_alac(mux, track, version);
-		else if (track->codec == CODEC_PCM_I16 ||
-			 track->codec == CODEC_PCM_I24 ||
+		else if (track->codec == CODEC_PCM_I16 || track->codec == CODEC_PCM_I24 ||
 			 track->codec == CODEC_PCM_F32)
 			mp4_write_xpcm(mux, track, version);
 	} else if (track->type == TRACK_CHAPTERS) {
@@ -1130,8 +1102,7 @@ static size_t mp4_write_stsd(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// 8.6.1.2 Decoding Time to Sample Box
-static size_t mp4_write_stts(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_stts(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 
@@ -1152,8 +1123,7 @@ static size_t mp4_write_stts(struct mp4_mux *mux, struct mp4_track *track,
 	for (size_t idx = 0; idx < num; idx++) {
 		struct sample_delta *smp = &arr[idx];
 
-		uint64_t delta = util_mul_div64(smp->delta, track->timescale,
-						track->timebase_den);
+		uint64_t delta = util_mul_div64(smp->delta, track->timescale, track->timebase_den);
 
 		s_wb32(s, smp->count);      // sample_count
 		s_wb32(s, (uint32_t)delta); // sample_delta
@@ -1198,8 +1168,7 @@ static size_t mp4_write_ctts(struct mp4_mux *mux, struct mp4_track *track)
 	s_wb32(s, num); // entry_count
 
 	for (size_t idx = 0; idx < num; idx++) {
-		int64_t offset = (int64_t)track->offsets.array[idx].offset *
-				 (int64_t)track->timescale /
+		int64_t offset = (int64_t)track->offsets.array[idx].offset * (int64_t)track->timescale /
 				 (int64_t)track->timebase_den;
 
 		s_wb32(s, track->offsets.array[idx].count); // sample_count
@@ -1210,8 +1179,7 @@ static size_t mp4_write_ctts(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// 8.7.4 Sample To Chunk Box
-static size_t mp4_write_stsc(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_stsc(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 
@@ -1235,9 +1203,7 @@ static size_t mp4_write_stsc(struct mp4_mux *mux, struct mp4_track *track,
 	for (size_t idx = 0; idx < arr_num; idx++) {
 		struct chunk *chk = &arr[idx];
 
-		if (!chunk_runs.num ||
-		    chunk_runs.array[chunk_runs.num - 1].samples !=
-			    chk->samples) {
+		if (!chunk_runs.num || chunk_runs.array[chunk_runs.num - 1].samples != chk->samples) {
 			struct chunk_run *cr = da_push_back_new(chunk_runs);
 			cr->samples = chk->samples;
 			cr->first = (uint32_t)idx + 1; // ISO-BMFF is 1-indexed
@@ -1265,8 +1231,7 @@ static size_t mp4_write_stsc(struct mp4_mux *mux, struct mp4_track *track,
 }
 
 /// 8.7.3 Sample Size Boxes
-static size_t mp4_write_stsz(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_stsz(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 
@@ -1308,8 +1273,7 @@ static size_t mp4_write_stsz(struct mp4_mux *mux, struct mp4_track *track,
 }
 
 /// 8.7.5 Chunk Offset Box
-static size_t mp4_write_stco(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_stco(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 
@@ -1386,8 +1350,7 @@ static size_t mp4_write_sbgp_aac(struct mp4_mux *mux, struct mp4_track *track)
 	return write_box_size(s, start);
 }
 
-static size_t mp4_write_sbgp_sbgp_opus(struct mp4_mux *mux,
-				       struct mp4_track *track)
+static size_t mp4_write_sbgp_sbgp_opus(struct mp4_mux *mux, struct mp4_track *track)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1405,11 +1368,8 @@ static size_t mp4_write_sbgp_sbgp_opus(struct mp4_mux *mux,
 	uint16_t preroll_count = 0;
 	int64_t preroll_remaining = opus_preroll;
 
-	for (size_t i = 0; i < track->deltas.num && preroll_remaining > 0;
-	     i++) {
-		for (uint32_t j = 0;
-		     j < track->deltas.array[i].count && preroll_remaining > 0;
-		     j++) {
+	for (size_t i = 0; i < track->deltas.num && preroll_remaining > 0; i++) {
+		for (uint32_t j = 0; j < track->deltas.array[i].count && preroll_remaining > 0; j++) {
 			preroll_remaining -= track->deltas.array[i].delta;
 			preroll_count++;
 		}
@@ -1435,14 +1395,13 @@ static size_t mp4_write_sbgp_sbgp_opus(struct mp4_mux *mux,
 	s_wb32(s, 0);             // group_description_index
 	// entry 1
 	s_wb32(s, (uint32_t)track->samples - preroll_count); // sample_count
-	s_wb32(s, 1); // group_description_index
+	s_wb32(s, 1);                                        // group_description_index
 
 	return size_sgpd + write_box_size(s, start);
 }
 
 /// 8.5.1 Sample Table Box
-static size_t mp4_write_stbl(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_stbl(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 
@@ -1532,8 +1491,7 @@ static size_t mp4_write_dinf(struct mp4_mux *mux)
 }
 
 /// 8.4.4 Media Information Box
-static size_t mp4_write_minf(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_minf(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1558,8 +1516,7 @@ static size_t mp4_write_minf(struct mp4_mux *mux, struct mp4_track *track,
 }
 
 /// 8.4.1 Media Box
-static size_t mp4_write_mdia(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_mdia(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1579,8 +1536,7 @@ static size_t mp4_write_mdia(struct mp4_mux *mux, struct mp4_track *track,
 }
 
 /// (QTFF/Apple) User data atom
-static size_t mp4_write_udta_atom(struct mp4_mux *mux, const char tag[4],
-				  const char *val)
+static size_t mp4_write_udta_atom(struct mp4_mux *mux, const char tag[4], const char *val)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1613,8 +1569,7 @@ static size_t mp4_write_track_udta(struct mp4_mux *mux, struct mp4_track *track)
 
 		obs_data_t *settings = obs_encoder_get_settings(track->encoder);
 		if (settings) {
-			const char *json =
-				obs_data_get_json_with_defaults(settings);
+			const char *json = obs_data_get_json_with_defaults(settings);
 			mp4_write_udta_atom(mux, "json", json);
 			obs_data_release(settings);
 		}
@@ -1633,12 +1588,10 @@ static size_t mp4_write_elst(struct mp4_mux *mux, struct mp4_track *track)
 
 	s_wb32(s, 1); // entry count
 
-	uint64_t duration =
-		util_mul_div64(track->duration, 1000, track->timebase_den);
+	uint64_t duration = util_mul_div64(track->duration, 1000, track->timebase_den);
 	uint64_t delay = 0;
 
-	if (track->type == TRACK_VIDEO &&
-	    !(mux->flags & MP4_USE_NEGATIVE_CTS)) {
+	if (track->type == TRACK_VIDEO && !(mux->flags & MP4_USE_NEGATIVE_CTS)) {
 		/* Compensate for frame-reordering delay (for example, when
 		 * using b-frames). */
 		int64_t dts_offset = 0;
@@ -1655,11 +1608,9 @@ static size_t mp4_write_elst(struct mp4_mux *mux, struct mp4_track *track)
 			dts_offset = pkt.pts - pkt.dts;
 		}
 
-		delay = util_mul_div64(dts_offset, track->timescale,
-				       track->timebase_den);
+		delay = util_mul_div64(dts_offset, track->timescale, track->timebase_den);
 	} else if (track->type == TRACK_AUDIO && track->first_pts < 0) {
-		delay = util_mul_div64(llabs(track->first_pts),
-				       track->timescale, track->timebase_den);
+		delay = util_mul_div64(llabs(track->first_pts), track->timescale, track->timebase_den);
 		/* Subtract priming delay from total duration */
 		duration -= util_mul_div64(delay, 1000, track->timescale);
 	}
@@ -1712,8 +1663,7 @@ static size_t mp4_write_tref(struct mp4_mux *mux)
 }
 
 /// 8.3.1 Track Box
-static size_t mp4_write_trak(struct mp4_mux *mux, struct mp4_track *track,
-			     bool fragmented)
+static size_t mp4_write_trak(struct mp4_mux *mux, struct mp4_track *track, bool fragmented)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1811,8 +1761,7 @@ static size_t mp4_write_data_atom(struct mp4_mux *mux, const char *data)
 }
 
 /// (QTFF/Apple) Metadata item atom
-static size_t mp4_write_ilst_item_atom(struct mp4_mux *mux, const char name[4],
-				       const char *value)
+static size_t mp4_write_ilst_item_atom(struct mp4_mux *mux, const char name[4], const char *value)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -1900,8 +1849,7 @@ static size_t mp4_write_mdta_keys(struct mp4_mux *mux, obs_data_t *meta)
 }
 
 /// (QTFF/Apple) Metadata item atom, but name is an index instead
-static inline void write_key_entry(struct mp4_mux *mux, obs_data_item_t *item,
-				   uint32_t idx)
+static inline void write_key_entry(struct mp4_mux *mux, obs_data_item_t *item, uint32_t idx)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -2038,14 +1986,12 @@ static size_t mp4_write_mfhd(struct mp4_mux *mux)
 }
 
 /// 8.8.7 Track Fragment Header Box
-static size_t mp4_write_tfhd(struct mp4_mux *mux, struct mp4_track *track,
-			     size_t moof_start)
+static size_t mp4_write_tfhd(struct mp4_mux *mux, struct mp4_track *track, size_t moof_start)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
 
-	uint32_t flags = BASE_DATA_OFFSET_PRESENT |
-			 DEFAULT_SAMPLE_FLAGS_PRESENT;
+	uint32_t flags = BASE_DATA_OFFSET_PRESENT | DEFAULT_SAMPLE_FLAGS_PRESENT;
 
 	/* Add default size/duration if all samples match. */
 	bool durations_match = true;
@@ -2061,10 +2007,8 @@ static size_t mp4_write_tfhd(struct mp4_mux *mux, struct mp4_track *track,
 		sample_size = track->fragment_samples.array[0].size;
 
 		for (size_t idx = 1; idx < track->fragment_samples.num; idx++) {
-			uint32_t frag_duration =
-				track->fragment_samples.array[idx].duration;
-			uint32_t frag_size =
-				track->fragment_samples.array[idx].size;
+			uint32_t frag_duration = track->fragment_samples.array[idx].duration;
+			uint32_t frag_size = track->fragment_samples.array[idx].size;
 
 			durations_match = frag_duration == duration;
 			sizes_match = frag_size == sample_size;
@@ -2085,9 +2029,7 @@ static size_t mp4_write_tfhd(struct mp4_mux *mux, struct mp4_track *track,
 	if (durations_match) {
 		if (track->type == TRACK_VIDEO) {
 			/* Convert duration to track timescale */
-			duration = (uint32_t)util_mul_div64(
-				duration, track->timescale,
-				track->timebase_den);
+			duration = (uint32_t)util_mul_div64(duration, track->timescale, track->timebase_den);
 		}
 
 		s_wb32(s, duration);
@@ -2119,9 +2061,7 @@ static size_t mp4_write_tfdt(struct mp4_mux *mux, struct mp4_track *track)
 
 	if (track->type == TRACK_VIDEO) {
 		/* Convert to track timescale */
-		duration_written = util_mul_div64(duration_written,
-						  track->timescale,
-						  track->timebase_den);
+		duration_written = util_mul_div64(duration_written, track->timescale, track->timebase_den);
 	}
 
 	s_wb64(s, duration_written); // baseMediaDecodeTime
@@ -2130,8 +2070,8 @@ static size_t mp4_write_tfdt(struct mp4_mux *mux, struct mp4_track *track)
 }
 
 /// 8.8.8 Track Fragment Run Box
-static size_t mp4_write_trun(struct mp4_mux *mux, struct mp4_track *track,
-			     uint32_t moof_size, uint64_t *samples_mdat_offset)
+static size_t mp4_write_trun(struct mp4_mux *mux, struct mp4_track *track, uint32_t moof_size,
+			     uint64_t *samples_mdat_offset)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -2176,16 +2116,14 @@ static size_t mp4_write_trun(struct mp4_mux *mux, struct mp4_track *track,
 		s_wb32(s, SAMPLE_FLAG_DEPENDS_NO); // first_sample_flags
 
 	for (size_t idx = 0; idx < sample_count; idx++) {
-		struct fragment_sample *smp =
-			&track->fragment_samples.array[idx];
+		struct fragment_sample *smp = &track->fragment_samples.array[idx];
 
 		s_wb32(s, smp->size); // sample_size
 
 		if (track->type == TRACK_VIDEO) {
 			// sample_composition_time_offset
-			int64_t offset = (int64_t)smp->offset *
-					 (int64_t)track->timescale /
-					 (int64_t)track->timebase_den;
+			int64_t offset =
+				(int64_t)smp->offset * (int64_t)track->timescale / (int64_t)track->timebase_den;
 			s_wb32(s, (uint32_t)offset);
 		}
 
@@ -2196,8 +2134,7 @@ static size_t mp4_write_trun(struct mp4_mux *mux, struct mp4_track *track,
 }
 
 /// 8.8.6 Track Fragment Box
-static size_t mp4_write_traf(struct mp4_mux *mux, struct mp4_track *track,
-			     int64_t moof_start, uint32_t moof_size,
+static size_t mp4_write_traf(struct mp4_mux *mux, struct mp4_track *track, int64_t moof_start, uint32_t moof_size,
 			     uint64_t *samples_mdat_offset)
 {
 	struct serializer *s = mux->serializer;
@@ -2218,8 +2155,7 @@ static size_t mp4_write_traf(struct mp4_mux *mux, struct mp4_track *track,
 }
 
 /// 8.8.4 Movie Fragment Box
-static size_t mp4_write_moof(struct mp4_mux *mux, uint32_t moof_size,
-			     int64_t moof_start)
+static size_t mp4_write_moof(struct mp4_mux *mux, uint32_t moof_size, int64_t moof_start)
 {
 	struct serializer *s = mux->serializer;
 	int64_t start = serializer_get_pos(s);
@@ -2238,8 +2174,7 @@ static size_t mp4_write_moof(struct mp4_mux *mux, uint32_t moof_size,
 		if (!track->fragment_samples.num)
 			continue;
 
-		mp4_write_traf(mux, track, moof_start, moof_size,
-			       &samples_mdat_offset);
+		mp4_write_traf(mux, track, moof_start, moof_size, &samples_mdat_offset);
 	}
 
 	return write_box_size(s, start);
@@ -2248,8 +2183,7 @@ static size_t mp4_write_moof(struct mp4_mux *mux, uint32_t moof_size,
 /* ========================================================================== */
 /* Chapter packets                                                            */
 
-static void mp4_create_chapter_pkt(struct encoder_packet *pkt, int64_t dts_usec,
-				   const char *name)
+static void mp4_create_chapter_pkt(struct encoder_packet *pkt, int64_t dts_usec, const char *name)
 {
 	int64_t dts = dts_usec / 1000; // chapter track uses a ms timebase
 
@@ -2297,8 +2231,7 @@ static inline uint64_t get_longest_track_duration(struct mp4_mux *mux)
 
 	for (size_t i = 0; i < mux->tracks.num; i++) {
 		struct mp4_track *track = &mux->tracks.array[i];
-		uint64_t track_dur = util_mul_div64(track->duration, 1000,
-						    track->timebase_den);
+		uint64_t track_dur = util_mul_div64(track->duration, 1000, track->timebase_den);
 
 		if (track_dur > dur)
 			dur = track_dur;
@@ -2307,8 +2240,7 @@ static inline uint64_t get_longest_track_duration(struct mp4_mux *mux)
 	return dur;
 }
 
-static void process_packets(struct mp4_mux *mux, struct mp4_track *track,
-			    uint64_t *mdat_size)
+static void process_packets(struct mp4_mux *mux, struct mp4_track *track, uint64_t *mdat_size)
 {
 	size_t count = track->packets.size / sizeof(struct encoder_packet);
 
@@ -2320,12 +2252,10 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track,
 	for (size_t i = 0; i < count - 1; i++) {
 		struct encoder_packet *pkt = get_pkt_at(&track->packets, i);
 
-		if (mux->next_frag_pts &&
-		    packet_pts_usec(pkt) >= mux->next_frag_pts)
+		if (mux->next_frag_pts && packet_pts_usec(pkt) >= mux->next_frag_pts)
 			break;
 
-		struct encoder_packet *next =
-			get_pkt_at(&track->packets, i + 1);
+		struct encoder_packet *next = get_pkt_at(&track->packets, i + 1);
 
 		/* Duration is just distance between current and next DTS. */
 		uint32_t duration = (uint32_t)(next->dts - pkt->dts);
@@ -2334,8 +2264,7 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track,
 		int32_t offset = (int32_t)(pkt->pts - pkt->dts);
 
 		/* When using negative CTS, subtract DTS-PTS offset. */
-		if (track->type == TRACK_VIDEO &&
-		    mux->flags & MP4_USE_NEGATIVE_CTS) {
+		if (track->type == TRACK_VIDEO && mux->flags & MP4_USE_NEGATIVE_CTS) {
 			if (!track->offsets.num)
 				track->dts_offset = offset;
 
@@ -2343,8 +2272,7 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track,
 		}
 
 		/* Create temporary sample information for moof */
-		struct fragment_sample *smp =
-			da_push_back_new(track->fragment_samples);
+		struct fragment_sample *smp = da_push_back_new(track->fragment_samples);
 		smp->size = size;
 		smp->offset = offset;
 		smp->duration = duration;
@@ -2367,16 +2295,12 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track,
 
 		/* If delta (duration) matche sprevious, increment counter,
 		 * otherwise create a new entry. */
-		if (track->deltas.num == 0 ||
-		    track->deltas.array[track->deltas.num - 1].delta !=
-			    duration) {
-			struct sample_delta *new =
-				da_push_back_new(track->deltas);
+		if (track->deltas.num == 0 || track->deltas.array[track->deltas.num - 1].delta != duration) {
+			struct sample_delta *new = da_push_back_new(track->deltas);
 			new->delta = duration;
 			new->count = sample_count;
 		} else {
-			track->deltas.array[track->deltas.num - 1].count +=
-				sample_count;
+			track->deltas.array[track->deltas.num - 1].count += sample_count;
 		}
 
 		if (!track->sample_size)
@@ -2394,11 +2318,8 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track,
 
 		/* If dts-pts offset matche sprevious, increment counter,
 		 * otherwise create a new entry. */
-		if (track->offsets.num == 0 ||
-		    track->offsets.array[track->offsets.num - 1].offset !=
-			    offset) {
-			struct sample_offset *new =
-				da_push_back_new(track->offsets);
+		if (track->offsets.num == 0 || track->offsets.array[track->offsets.num - 1].offset != offset) {
+			struct sample_offset *new = da_push_back_new(track->offsets);
 			new->offset = offset;
 			new->count = 1;
 		} else {
@@ -2422,8 +2343,7 @@ static void write_packets(struct mp4_mux *mux, struct mp4_track *track)
 
 	for (size_t i = 0; i < track->fragment_samples.num; i++) {
 		struct encoder_packet pkt;
-		deque_pop_front(&track->packets, &pkt,
-				sizeof(struct encoder_packet));
+		deque_pop_front(&track->packets, &pkt, sizeof(struct encoder_packet));
 		s_write(s, pkt.data, pkt.size);
 		obs_encoder_packet_release(&pkt);
 	}
@@ -2479,8 +2399,7 @@ static void mp4_flush_fragment(struct mp4_mux *mux)
 		uint64_t duration = get_longest_track_duration(mux);
 		struct encoder_packet pkt;
 		mp4_create_chapter_pkt(&pkt, (int64_t)duration * 1000, "Dummy");
-		deque_push_back(&mux->chapter_track->packets, &pkt,
-				sizeof(struct encoder_packet));
+		deque_push_back(&mux->chapter_track->packets, &pkt, sizeof(struct encoder_packet));
 
 		process_packets(mux, mux->chapter_track, &mdat_size);
 	}
@@ -2526,8 +2445,7 @@ static void mp4_flush_fragment(struct mp4_mux *mux)
 /* ========================================================================== */
 /* Track object functions                                                     */
 
-static inline void track_insert_packet(struct mp4_track *track,
-				       struct encoder_packet *pkt)
+static inline void track_insert_packet(struct mp4_track *track, struct encoder_packet *pkt)
 {
 	int64_t pts_usec = packet_pts_usec(pkt);
 	if (pts_usec > track->last_pts_usec)
@@ -2589,9 +2507,7 @@ static inline void add_track(struct mp4_mux *mux, obs_encoder_t *enc)
 {
 	struct mp4_track *track = da_push_back_new(mux->tracks);
 
-	track->type = obs_encoder_get_type(enc) == OBS_ENCODER_VIDEO
-			      ? TRACK_VIDEO
-			      : TRACK_AUDIO;
+	track->type = obs_encoder_get_type(enc) == OBS_ENCODER_VIDEO ? TRACK_VIDEO : TRACK_AUDIO;
 	track->encoder = obs_encoder_get_ref(enc);
 	track->codec = get_codec(enc);
 	track->track_id = ++mux->track_ctr;
@@ -2599,8 +2515,7 @@ static inline void add_track(struct mp4_mux *mux, obs_encoder_t *enc)
 	/* Set timebase/timescale */
 	if (track->type == TRACK_VIDEO) {
 		video_t *video = obs_encoder_video(enc);
-		const struct video_output_info *info =
-			video_output_get_info(video);
+		const struct video_output_info *info = video_output_get_info(video);
 		track->timebase_num = info->fps_den;
 		track->timebase_den = info->fps_num;
 
@@ -2668,9 +2583,7 @@ static inline void free_track(struct mp4_track *track)
 /* ===========================================================================*/
 /* API */
 
-struct mp4_mux *mp4_mux_create(obs_output_t *output,
-			       struct serializer *serializer,
-			       enum mp4_mux_flags flags)
+struct mp4_mux *mp4_mux_create(obs_output_t *output, struct serializer *serializer, enum mp4_mux_flags flags)
 {
 	struct mp4_mux *mux = bzalloc(sizeof(struct mp4_mux));
 
@@ -2718,8 +2631,7 @@ bool mp4_mux_submit_packet(struct mp4_mux *mux, struct encoder_packet *pkt)
 	for (size_t i = 0; i < mux->tracks.num; i++) {
 		struct mp4_track *tmp = &mux->tracks.array[i];
 
-		fragment_ready = fragment_ready &&
-				 tmp->last_pts_usec >= mux->next_frag_pts;
+		fragment_ready = fragment_ready && tmp->last_pts_usec >= mux->next_frag_pts;
 
 		if (tmp->encoder == pkt->encoder)
 			track = tmp;
@@ -2728,8 +2640,7 @@ bool mp4_mux_submit_packet(struct mp4_mux *mux, struct encoder_packet *pkt)
 	if (!track) {
 		warn("Could not find track for packet of type %s with "
 		     "track id %zu!",
-		     type == OBS_ENCODER_VIDEO ? "video" : "audio",
-		     pkt->track_idx);
+		     type == OBS_ENCODER_VIDEO ? "video" : "audio", pkt->track_idx);
 		return false;
 	}
 
@@ -2759,8 +2670,7 @@ bool mp4_mux_submit_packet(struct mp4_mux *mux, struct encoder_packet *pkt)
 	return true;
 }
 
-bool mp4_mux_add_chapter(struct mp4_mux *mux, int64_t dts_usec,
-			 const char *name)
+bool mp4_mux_add_chapter(struct mp4_mux *mux, int64_t dts_usec, const char *name)
 {
 	if (dts_usec < 0)
 		return false;
@@ -2770,8 +2680,7 @@ bool mp4_mux_add_chapter(struct mp4_mux *mux, int64_t dts_usec,
 	/* To work correctly there needs to be a chapter at PTS 0,
 	 * create that here if necessary. */
 	if (dts_usec > 0 && mux->chapter_track->packets.size == 0) {
-		mp4_mux_add_chapter(mux, 0,
-				    obs_module_text("MP4Output.StartChapter"));
+		mp4_mux_add_chapter(mux, 0, obs_module_text("MP4Output.StartChapter"));
 	}
 
 	/* Create packets that will be muxed on final flush */
@@ -2828,8 +2737,7 @@ bool mp4_mux_finalise(struct mp4_mux *mux)
 	mp4_write_ftyp(mux, false);
 
 	size_t data_size = data_end - mux->placeholder_offset;
-	serializer_seek(s, (int64_t)mux->placeholder_offset,
-			SERIALIZE_SEEK_START);
+	serializer_seek(s, (int64_t)mux->placeholder_offset, SERIALIZE_SEEK_START);
 
 	/* If data is more than 4 GiB the mdat header becomes 16 bytes, hence
 	 * why we create a 16-byte placeholder "free" box at the start. */

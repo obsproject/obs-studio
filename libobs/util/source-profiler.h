@@ -59,8 +59,7 @@ EXPORT void source_profiler_gpu_enable(bool enable);
 /* Get latest profiling results for source (must be freed by user) */
 EXPORT profiler_result_t *source_profiler_get_result(obs_source_t *source);
 /* Update existing profiler results object for source */
-EXPORT bool source_profiler_fill_result(obs_source_t *source,
-					profiler_result_t *result);
+EXPORT bool source_profiler_fill_result(obs_source_t *source, profiler_result_t *result);
 
 #ifdef __cplusplus
 }

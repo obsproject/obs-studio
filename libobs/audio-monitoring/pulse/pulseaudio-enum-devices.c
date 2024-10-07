@@ -1,8 +1,7 @@
 #include <obs-internal.h>
 #include "pulseaudio-wrapper.h"
 
-static void pulseaudio_output_info(pa_context *c, const pa_sink_info *i,
-				   int eol, void *userdata)
+static void pulseaudio_output_info(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
 	UNUSED_PARAMETER(c);
 	if (eol != 0)

@@ -114,10 +114,7 @@ struct FFmpegCodec {
 	{
 	}
 
-	FFmpegCodec(const AVCodec *codec)
-		: name(codec->name),
-		  long_name(codec->long_name),
-		  id(codec->id)
+	FFmpegCodec(const AVCodec *codec) : name(codec->name), long_name(codec->long_name), id(codec->id)
 	{
 		switch (codec->type) {
 		case AVMEDIA_TYPE_AUDIO:
@@ -142,10 +139,8 @@ struct FFmpegCodec {
 Q_DECLARE_METATYPE(FFmpegCodec)
 
 std::vector<FFmpegFormat> GetSupportedFormats();
-std::vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format,
-					 bool ignore_compatibility);
+std::vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format, bool ignore_compatibility);
 
 bool FFCodecAndFormatCompatible(const char *codec, const char *format);
 bool IsBuiltinCodec(const char *codec);
-bool ContainerSupportsCodec(const std::string &container,
-			    const std::string &codec);
+bool ContainerSupportsCodec(const std::string &container, const std::string &codec);

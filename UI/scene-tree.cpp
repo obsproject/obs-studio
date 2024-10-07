@@ -16,7 +16,7 @@ SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 
 void SceneTree::SetGridMode(bool grid)
 {
-	parent()->setProperty("gridMode", grid);
+	parent()->setProperty("class", grid ? "list-grid" : "");
 	gridMode = grid;
 
 	if (gridMode) {
@@ -182,9 +182,7 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 
 			QModelIndex index = indexFromItem(wItem);
 
-			int off = (i >= r ? 1 : 0) -
-				  (i > orig && i > r ? 1 : 0) -
-				  (i > orig && i == r ? 2 : 0);
+			int off = (i >= r ? 1 : 0) - (i > orig && i > r ? 1 : 0) - (i > orig && i == r ? 2 : 0);
 
 			int xPos = (i + off) % (int)std::ceil(wid / maxWidth);
 			int yPos = (i + off) / (int)std::ceil(wid / maxWidth);
@@ -240,11 +238,9 @@ void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 4, 3)
 // Workaround for QTBUG-105870. Remove once that is solved upstream.
-void SceneTree::selectionChanged(const QItemSelection &selected,
-				 const QItemSelection &deselected)
+void SceneTree::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
-	if (selected.count() == 0 && deselected.count() > 0 &&
-	    !property("clearing").toBool())
+	if (selected.count() == 0 && deselected.count() > 0 && !property("clearing").toBool())
 		setCurrentRow(deselected.indexes().front().row());
 }
 #endif

@@ -32,18 +32,12 @@ enum bpm_sei_types {
 };
 
 #define SEI_UUID_SIZE 16
-static const uint8_t bpm_ts_uuid[SEI_UUID_SIZE] = {0x0a, 0xec, 0xff, 0xe7,
-						   0x52, 0x72, 0x4e, 0x2f,
-						   0xa6, 0x2f, 0xd1, 0x9c,
-						   0xd6, 0x1a, 0x93, 0xb5};
-static const uint8_t bpm_sm_uuid[SEI_UUID_SIZE] = {0xca, 0x60, 0xe7, 0x1c,
-						   0x6a, 0x8b, 0x43, 0x88,
-						   0xa3, 0x77, 0x15, 0x1d,
-						   0xf7, 0xbf, 0x8a, 0xc2};
-static const uint8_t bpm_erm_uuid[SEI_UUID_SIZE] = {0xf1, 0xfb, 0xc1, 0xd5,
-						    0x10, 0x1e, 0x4f, 0xb5,
-						    0xa6, 0x1e, 0xb8, 0xce,
-						    0x3c, 0x07, 0xb8, 0xc0};
+static const uint8_t bpm_ts_uuid[SEI_UUID_SIZE] = {0x0a, 0xec, 0xff, 0xe7, 0x52, 0x72, 0x4e, 0x2f,
+						   0xa6, 0x2f, 0xd1, 0x9c, 0xd6, 0x1a, 0x93, 0xb5};
+static const uint8_t bpm_sm_uuid[SEI_UUID_SIZE] = {0xca, 0x60, 0xe7, 0x1c, 0x6a, 0x8b, 0x43, 0x88,
+						   0xa3, 0x77, 0x15, 0x1d, 0xf7, 0xbf, 0x8a, 0xc2};
+static const uint8_t bpm_erm_uuid[SEI_UUID_SIZE] = {0xf1, 0xfb, 0xc1, 0xd5, 0x10, 0x1e, 0x4f, 0xb5,
+						    0xa6, 0x1e, 0xb8, 0xce, 0x3c, 0x07, 0xb8, 0xc0};
 
 // Broadcast Performance Metrics timestamp types
 enum bpm_ts_type {
@@ -65,14 +59,14 @@ enum bpm_sm_type {
 	BPM_SM_FRAMES_RENDERED = 1, // Frames rendered by compositor
 	BPM_SM_FRAMES_LAGGED,       // Frames lagged by compositor
 	BPM_SM_FRAMES_DROPPED,      // Frames dropped due to network congestion
-	BPM_SM_FRAMES_OUTPUT // Total frames output (sum of all video encoder rendition sinks)
+	BPM_SM_FRAMES_OUTPUT        // Total frames output (sum of all video encoder rendition sinks)
 };
 
 // Broadcast Performance Encoded Rendition Metrics types
 enum bpm_erm_type {
 	BPM_ERM_FRAMES_INPUT = 1, // Frames input to the encoder rendition
 	BPM_ERM_FRAMES_SKIPPED,   // Frames skippped by the encoder rendition
-	BPM_ERM_FRAMES_OUTPUT // Frames output (encoded) by the encoder rendition
+	BPM_ERM_FRAMES_OUTPUT     // Frames output (encoded) by the encoder rendition
 };
 
 struct metrics_data {
@@ -86,8 +80,7 @@ struct metrics_data {
 	struct counter_data session_frames_lagged;
 	struct array_output_data sei_payload[BPM_MAX_SEI];
 	bool sei_rendered[BPM_MAX_SEI];
-	struct metrics_time
-		cts; // Composition timestamp (i.e. when the frame was created)
+	struct metrics_time cts;    // Composition timestamp (i.e. when the frame was created)
 	struct metrics_time ferts;  // Frame encode request timestamp
 	struct metrics_time fercts; // Frame encode request complete timestamp
 	struct metrics_time pirts;  // Packet Interleave Request timestamp
@@ -98,7 +91,9 @@ struct output_metrics_link {
 	struct metrics_data *metrics_tracks[MAX_OUTPUT_VIDEO_ENCODERS];
 };
 
+static pthread_once_t bpm_once = PTHREAD_ONCE_INIT;
 static pthread_mutex_t bpm_metrics_mutex;
+
 /* This DARRAY is used for creating an association between the output_t
  * and the BPM metrics track data for each output that requires BPM injection.
  */

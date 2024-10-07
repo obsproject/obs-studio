@@ -20,9 +20,7 @@ void gs_free_image_deps()
 	MagickCoreTerminus();
 }
 
-uint8_t *gs_create_texture_file_data(const char *file,
-				     enum gs_color_format *format,
-				     uint32_t *cx_out, uint32_t *cy_out)
+uint8_t *gs_create_texture_file_data(const char *file, enum gs_color_format *format, uint32_t *cx_out, uint32_t *cy_out)
 {
 	uint8_t *data = NULL;
 	ImageInfo *info;
@@ -42,8 +40,7 @@ uint8_t *gs_create_texture_file_data(const char *file,
 		size_t cy = image->magick_rows;
 		data = bmalloc(cx * cy * 4);
 
-		ExportImagePixels(image, 0, 0, cx, cy, "BGRA", CharPixel, data,
-				  exception);
+		ExportImagePixels(image, 0, 0, cx, cy, "BGRA", CharPixel, data, exception);
 		if (exception->severity != UndefinedException) {
 			blog(LOG_WARNING,
 			     "magickcore warning/error getting "

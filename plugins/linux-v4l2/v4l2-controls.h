@@ -32,8 +32,7 @@ extern "C" {
  *
  * @return negative on failure
  */
-int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props,
-				  obs_data_t *settings);
+int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props, obs_data_t *settings);
 
 #ifdef __cplusplus
 }

@@ -10,33 +10,29 @@
 
 #define LOGO_URL "https://obsproject.com/assets/images/new_icon_small-r.png"
 
-static const QString serverResponseHeader =
-	QStringLiteral("HTTP/1.0 200 OK\n"
-		       "Connection: close\n"
-		       "Content-Type: text/html; charset=UTF-8\n"
-		       "Server: OBS Studio\n"
-		       "\n"
-		       "<html><head><title>OBS Studio"
-		       "</title></head>");
+static const QString serverResponseHeader = QStringLiteral("HTTP/1.0 200 OK\n"
+							   "Connection: close\n"
+							   "Content-Type: text/html; charset=UTF-8\n"
+							   "Server: OBS Studio\n"
+							   "\n"
+							   "<html><head><title>OBS Studio"
+							   "</title></head>");
 
-static const QString responseTemplate =
-	"<center>"
-	"<img src=\"" LOGO_URL
-	"\" alt=\"OBS\" class=\"center\"  height=\"60\" width=\"60\">"
-	"</center>"
-	"<center><p style=\"font-family:verdana; font-size:13pt\">%1</p></center>";
+static const QString responseTemplate = "<center>"
+					"<img src=\"" LOGO_URL
+					"\" alt=\"OBS\" class=\"center\"  height=\"60\" width=\"60\">"
+					"</center>"
+					"<center><p style=\"font-family:verdana; font-size:13pt\">%1</p></center>";
 
 AuthListener::AuthListener(QObject *parent) : QObject(parent)
 {
 	server = new QTcpServer(this);
-	connect(server, &QTcpServer::newConnection, this,
-		&AuthListener::NewConnection);
+	connect(server, &QTcpServer::newConnection, this, &AuthListener::NewConnection);
 	if (!server->listen(QHostAddress::LocalHost, 0)) {
 		blog(LOG_DEBUG, "Server could not start");
 		emit fail();
 	} else {
-		blog(LOG_DEBUG, "Server started at port %d",
-		     server->serverPort());
+		blog(LOG_DEBUG, "Server started at port %d", server->serverPort());
 	}
 }
 
@@ -54,8 +50,7 @@ void AuthListener::NewConnection()
 {
 	QTcpSocket *socket = server->nextPendingConnection();
 	if (socket) {
-		connect(socket, &QTcpSocket::disconnected, socket,
-			&QTcpSocket::deleteLater);
+		connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
 		connect(socket, &QTcpSocket::readyRead, socket, [&, socket]() {
 			QByteArray buffer;
 			while (socket->bytesAvailable() > 0) {
@@ -65,13 +60,10 @@ void AuthListener::NewConnection()
 			QString redirect = QString::fromLatin1(buffer);
 			blog(LOG_DEBUG, "redirect: %s", QT_TO_UTF8(redirect));
 
-			QRegularExpression re_state(
-				"(&|\\?)state=(?<state>[^&]+)");
-			QRegularExpression re_code(
-				"(&|\\?)code=(?<code>[^&]+)");
+			QRegularExpression re_state("(&|\\?)state=(?<state>[^&]+)");
+			QRegularExpression re_code("(&|\\?)code=(?<code>[^&]+)");
 
-			QRegularExpressionMatch match =
-				re_state.match(redirect);
+			QRegularExpressionMatch match = re_state.match(redirect);
 
 			QString code;
 
@@ -95,13 +87,11 @@ void AuthListener::NewConnection()
 			}
 
 			if (code.isEmpty()) {
-				auto data = responseTemplate.arg(
-					QTStr("YouTube.Auth.NoCode"));
+				auto data = responseTemplate.arg(QTStr("YouTube.Auth.NoCode"));
 				socket->write(QT_TO_UTF8(data));
 				emit fail();
 			} else {
-				auto data = responseTemplate.arg(
-					QTStr("YouTube.Auth.Ok"));
+				auto data = responseTemplate.arg(QTStr("YouTube.Auth.Ok"));
 				socket->write(QT_TO_UTF8(data));
 				emit ok(code);
 			}

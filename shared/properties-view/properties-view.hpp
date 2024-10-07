@@ -13,8 +13,7 @@ class OBSPropertiesView;
 class QLabel;
 
 typedef obs_properties_t *(*PropertiesReloadCallback)(void *obj);
-typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *old_settings,
-					 obs_data_t *new_settings);
+typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *old_settings, obs_data_t *new_settings);
 typedef void (*PropertiesVisualUpdateCb)(void *obj, obs_data_t *settings);
 
 /* ------------------------------------------------------------------------- */
@@ -49,8 +48,7 @@ private:
 	void TogglePasswordText(bool checked);
 
 public:
-	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop,
-			  QWidget *widget_)
+	inline WidgetInfo(OBSPropertiesView *view_, obs_property_t *prop, QWidget *widget_)
 		: view(view_),
 		  property(prop),
 		  widget(widget_)
@@ -89,8 +87,7 @@ class OBSPropertiesView : public VScrollArea {
 	friend class WidgetInfo;
 
 	using properties_delete_t = decltype(&obs_properties_destroy);
-	using properties_t =
-		std::unique_ptr<obs_properties_t, properties_delete_t>;
+	using properties_t = std::unique_ptr<obs_properties_t, properties_delete_t>;
 
 private:
 	QWidget *widget = nullptr;
@@ -111,29 +108,21 @@ private:
 	bool disableScrolling = false;
 
 	template<typename Sender, typename SenderParent, typename... Args>
-	QWidget *NewWidget(obs_property_t *prop, Sender *widget,
-			   void (SenderParent::*signal)(Args...));
+	QWidget *NewWidget(obs_property_t *prop, Sender *widget, void (SenderParent::*signal)(Args...));
 
 	QWidget *AddCheckbox(obs_property_t *prop);
-	QWidget *AddText(obs_property_t *prop, QFormLayout *layout,
-			 QLabel *&label);
+	QWidget *AddText(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	void AddPath(obs_property_t *prop, QFormLayout *layout, QLabel **label);
 	void AddInt(obs_property_t *prop, QFormLayout *layout, QLabel **label);
-	void AddFloat(obs_property_t *prop, QFormLayout *layout,
-		      QLabel **label);
+	void AddFloat(obs_property_t *prop, QFormLayout *layout, QLabel **label);
 	QWidget *AddList(obs_property_t *prop, bool &warning);
-	void AddEditableList(obs_property_t *prop, QFormLayout *layout,
-			     QLabel *&label);
+	void AddEditableList(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	QWidget *AddButton(obs_property_t *prop);
-	void AddColorInternal(obs_property_t *prop, QFormLayout *layout,
-			      QLabel *&label, bool supportAlpha);
-	void AddColor(obs_property_t *prop, QFormLayout *layout,
-		      QLabel *&label);
-	void AddColorAlpha(obs_property_t *prop, QFormLayout *layout,
-			   QLabel *&label);
+	void AddColorInternal(obs_property_t *prop, QFormLayout *layout, QLabel *&label, bool supportAlpha);
+	void AddColor(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
+	void AddColorAlpha(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
-	void AddFrameRate(obs_property_t *prop, bool &warning,
-			  QFormLayout *layout, QLabel *&label);
+	void AddFrameRate(obs_property_t *prop, bool &warning, QFormLayout *layout, QLabel *&label);
 
 	void AddGroup(obs_property_t *prop, QFormLayout *layout);
 
@@ -157,29 +146,18 @@ signals:
 	void PropertiesRefreshed();
 
 public:
-	OBSPropertiesView(OBSData settings, obs_object_t *obj,
-			  PropertiesReloadCallback reloadCallback,
-			  PropertiesUpdateCallback callback,
-			  PropertiesVisualUpdateCb cb = nullptr,
-			  int minSize = 0);
-	OBSPropertiesView(OBSData settings, void *obj,
-			  PropertiesReloadCallback reloadCallback,
-			  PropertiesUpdateCallback callback,
-			  PropertiesVisualUpdateCb cb = nullptr,
-			  int minSize = 0);
-	OBSPropertiesView(OBSData settings, const char *type,
-			  PropertiesReloadCallback reloadCallback,
-			  int minSize = 0);
+	OBSPropertiesView(OBSData settings, obs_object_t *obj, PropertiesReloadCallback reloadCallback,
+			  PropertiesUpdateCallback callback, PropertiesVisualUpdateCb cb = nullptr, int minSize = 0);
+	OBSPropertiesView(OBSData settings, void *obj, PropertiesReloadCallback reloadCallback,
+			  PropertiesUpdateCallback callback, PropertiesVisualUpdateCb cb = nullptr, int minSize = 0);
+	OBSPropertiesView(OBSData settings, const char *type, PropertiesReloadCallback reloadCallback, int minSize = 0);
 
-#define obj_constructor(type)                                              \
-	inline OBSPropertiesView(OBSData settings, obs_##type##_t *type,   \
-				 PropertiesReloadCallback reloadCallback,  \
-				 PropertiesUpdateCallback callback,        \
-				 PropertiesVisualUpdateCb cb = nullptr,    \
-				 int minSize = 0)                          \
-		: OBSPropertiesView(settings, (obs_object_t *)type,        \
-				    reloadCallback, callback, cb, minSize) \
-	{                                                                  \
+#define obj_constructor(type)                                                                                     \
+	inline OBSPropertiesView(OBSData settings, obs_##type##_t *type, PropertiesReloadCallback reloadCallback, \
+				 PropertiesUpdateCallback callback, PropertiesVisualUpdateCb cb = nullptr,        \
+				 int minSize = 0)                                                                 \
+		: OBSPropertiesView(settings, (obs_object_t *)type, reloadCallback, callback, cb, minSize)        \
+	{                                                                                                         \
 	}
 
 	obj_constructor(source);

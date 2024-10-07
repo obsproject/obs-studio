@@ -76,8 +76,7 @@ void xcb_xcursor_offset(xcb_xcursor_t *data, const int x_org, const int y_org);
 /**
  * Update the offset to match the window's origin.
  */
-void xcb_xcursor_offset_win(xcb_connection_t *xcb, xcb_xcursor_t *data,
-			    xcb_window_t win);
+void xcb_xcursor_offset_win(xcb_connection_t *xcb, xcb_xcursor_t *data, xcb_window_t win);
 
 #ifdef __cplusplus
 }

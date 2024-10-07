@@ -22,10 +22,9 @@
 
 /**
  * Widget to be used if a label is to be supplied a QIcon instead of a QPixmap,
- * specifically so that qproperty-icon QSS styling (and as a result the OBS
- * "themeID" property) works on it without having to first convert the icon to
- * a fixed size PNG and then setting qproperty-pixmap in addition to the
- * qproperty-icon statements.
+ * specifically so that qproperty-icon QSS styling works on it without having to
+ * first convert the icon to a fixed size PNG and then setting qproperty-pixmap
+ * in addition to the qproperty-icon statements.
  */
 class IconLabel : public QLabel {
 	Q_OBJECT
@@ -33,12 +32,7 @@ class IconLabel : public QLabel {
 	Q_PROPERTY(int iconSize READ iconSize WRITE setIconSize)
 
 public:
-	inline IconLabel(QWidget *parent = nullptr)
-		: QLabel(parent),
-		  m_icon(),
-		  m_iconSize(16)
-	{
-	}
+	inline IconLabel(QWidget *parent = nullptr) : QLabel(parent), m_icon(), m_iconSize(16) {}
 
 	inline QIcon icon() const { return m_icon; }
 	void setIcon(const QIcon &icon)

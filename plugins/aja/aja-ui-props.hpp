@@ -52,8 +52,7 @@ static const UIProperty kUIPropInput = {
 };
 
 // Used for showing "Select..." item in Input/Output selection drop-downs
-static const UIProperty kUIPropIOSelectNone = {"ui_prop_select_input",
-					       "IOSelect", ""};
+static const UIProperty kUIPropIOSelectNone = {"ui_prop_select_input", "IOSelect", ""};
 
 static const UIProperty kUIPropSDITransport = {
 	"ui_prop_sdi_transport",

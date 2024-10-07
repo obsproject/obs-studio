@@ -13,14 +13,10 @@
 #include <util/apple/cfstring-utils.h>
 #endif
 
-#define CA_LOG(level, format, ...) \
-	blog(level, "[CoreAudio encoder]: " format, ##__VA_ARGS__)
-#define CA_LOG_ENCODER(format_name, encoder, level, format, ...)  \
-	blog(level, "[CoreAudio %s: '%s']: " format, format_name, \
-	     obs_encoder_get_name(encoder), ##__VA_ARGS__)
-#define CA_BLOG(level, format, ...)                                 \
-	CA_LOG_ENCODER(ca->format_name, ca->encoder, level, format, \
-		       ##__VA_ARGS__)
+#define CA_LOG(level, format, ...) blog(level, "[CoreAudio encoder]: " format, ##__VA_ARGS__)
+#define CA_LOG_ENCODER(format_name, encoder, level, format, ...) \
+	blog(level, "[CoreAudio %s: '%s']: " format, format_name, obs_encoder_get_name(encoder), ##__VA_ARGS__)
+#define CA_BLOG(level, format, ...) CA_LOG_ENCODER(ca->format_name, ca->encoder, level, format, ##__VA_ARGS__)
 #define CA_CO_LOG(level, format, ...)                          \
 	do {                                                   \
 		if (ca)                                        \
@@ -132,31 +128,21 @@ namespace std {
 
 #ifndef _WIN32
 template<> struct default_delete<remove_pointer<CFErrorRef>::type> {
-	void operator()(remove_pointer<CFErrorRef>::type *err)
-	{
-		CFRelease(err);
-	}
+	void operator()(remove_pointer<CFErrorRef>::type *err) { CFRelease(err); }
 };
 
 template<> struct default_delete<remove_pointer<CFStringRef>::type> {
-	void operator()(remove_pointer<CFStringRef>::type *str)
-	{
-		CFRelease(str);
-	}
+	void operator()(remove_pointer<CFStringRef>::type *str) { CFRelease(str); }
 };
 #endif
 
 template<> struct default_delete<remove_pointer<AudioConverterRef>::type> {
-	void operator()(AudioConverterRef converter)
-	{
-		AudioConverterDispose(converter);
-	}
+	void operator()(AudioConverterRef converter) { AudioConverterDispose(converter); }
 };
 
 } // namespace std
 
-template<typename T>
-using cf_ptr = unique_ptr<typename remove_pointer<T>::type>;
+template<typename T> using cf_ptr = unique_ptr<typename remove_pointer<T>::type>;
 
 #ifndef _MSC_VER
 __attribute__((__format__(__printf__, 3, 4)))
@@ -208,11 +194,9 @@ static const char *flush_log(DStr &log)
 	return log->array;
 }
 
-#define CA_CO_DLOG_(level, format) \
-	CA_CO_LOG(level, format "%s%s", log->array ? ":\n" : "", flush_log(log))
-#define CA_CO_DLOG(level, format, ...)                 \
-	CA_CO_LOG(level, format "%s%s", ##__VA_ARGS__, \
-		  log->array ? ":\n" : "", flush_log(log))
+#define CA_CO_DLOG_(level, format) CA_CO_LOG(level, format "%s%s", log->array ? ":\n" : "", flush_log(log))
+#define CA_CO_DLOG(level, format, ...) \
+	CA_CO_LOG(level, format "%s%s", ##__VA_ARGS__, log->array ? ":\n" : "", flush_log(log))
 
 static const char *aac_get_name(void *)
 {
@@ -257,8 +241,7 @@ static DStr osstatus_to_dstr(OSStatus code)
 	DStr result;
 
 #ifndef _WIN32
-	cf_ptr<CFErrorRef> err{CFErrorCreate(
-		kCFAllocatorDefault, kCFErrorDomainOSStatus, code, NULL)};
+	cf_ptr<CFErrorRef> err{CFErrorCreate(kCFAllocatorDefault, kCFErrorDomainOSStatus, code, NULL)};
 	cf_ptr<CFStringRef> str{CFErrorCopyDescription(err.get())};
 
 	if (cfstr_copy_dstr(str.get(), kCFStringEncodingUTF8, result))
@@ -266,14 +249,12 @@ static DStr osstatus_to_dstr(OSStatus code)
 #endif
 
 	const char *code_str = code_to_str(code);
-	dstr_printf(result, "%s%s%d%s", code_str ? code_str : "",
-		    code_str ? " (" : "", static_cast<int>(code),
+	dstr_printf(result, "%s%s%d%s", code_str ? code_str : "", code_str ? " (" : "", static_cast<int>(code),
 		    code_str ? ")" : "");
 	return result;
 }
 
-static void log_osstatus(int log_level, ca_encoder *ca, const char *context,
-			 OSStatus code)
+static void log_osstatus(int log_level, ca_encoder *ca, const char *context, OSStatus code)
 {
 	DStr str = osstatus_to_dstr(code);
 	if (ca)
@@ -336,19 +317,14 @@ static void aac_destroy(void *data)
 }
 
 template<typename Func>
-static bool query_converter_property_raw(DStr &log, ca_encoder *ca,
-					 AudioFormatPropertyID property,
-					 const char *get_property_info,
-					 const char *get_property,
-					 AudioConverterRef converter,
-					 Func &&func)
+static bool query_converter_property_raw(DStr &log, ca_encoder *ca, AudioFormatPropertyID property,
+					 const char *get_property_info, const char *get_property,
+					 AudioConverterRef converter, Func &&func)
 {
 	UInt32 size = 0;
-	OSStatus code = AudioConverterGetPropertyInfo(converter, property,
-						      &size, nullptr);
+	OSStatus code = AudioConverterGetPropertyInfo(converter, property, &size, nullptr);
 	if (code) {
-		log_to_dstr(log, ca, "%s: %s\n", get_property_info,
-			    osstatus_to_dstr(code)->array);
+		log_to_dstr(log, ca, "%s: %s\n", get_property_info, osstatus_to_dstr(code)->array);
 		return false;
 	}
 
@@ -362,16 +338,13 @@ static bool query_converter_property_raw(DStr &log, ca_encoder *ca,
 	try {
 		buffer.resize(size);
 	} catch (...) {
-		log_to_dstr(log, ca, "Failed to allocate %u bytes for %s\n",
-			    static_cast<uint32_t>(size), get_property);
+		log_to_dstr(log, ca, "Failed to allocate %u bytes for %s\n", static_cast<uint32_t>(size), get_property);
 		return false;
 	}
 
-	code = AudioConverterGetProperty(converter, property, &size,
-					 buffer.data());
+	code = AudioConverterGetProperty(converter, property, &size, buffer.data());
 	if (code) {
-		log_to_dstr(log, ca, "%s: %s\n", get_property,
-			    osstatus_to_dstr(code)->array);
+		log_to_dstr(log, ca, "%s: %s\n", get_property, osstatus_to_dstr(code)->array);
 		return false;
 	}
 
@@ -380,30 +353,23 @@ static bool query_converter_property_raw(DStr &log, ca_encoder *ca,
 	return true;
 }
 
-#define EXPAND_CONVERTER_NAMES(x)                   \
-	x, "AudioConverterGetPropertyInfo(" #x ")", \
-		"AudioConverterGetProperty(" #x ")"
+#define EXPAND_CONVERTER_NAMES(x) x, "AudioConverterGetPropertyInfo(" #x ")", "AudioConverterGetProperty(" #x ")"
 
 template<typename Func>
-static bool enumerate_bitrates(DStr &log, ca_encoder *ca,
-			       AudioConverterRef converter, Func &&func)
+static bool enumerate_bitrates(DStr &log, ca_encoder *ca, AudioConverterRef converter, Func &&func)
 {
 	auto helper = [&](UInt32 size, void *data) {
 		auto range = static_cast<AudioValueRange *>(data);
 		size_t num_ranges = size / sizeof(AudioValueRange);
 		for (size_t i = 0; i < num_ranges; i++)
-			func(static_cast<UInt32>(range[i].mMinimum),
-			     static_cast<UInt32>(range[i].mMaximum));
+			func(static_cast<UInt32>(range[i].mMinimum), static_cast<UInt32>(range[i].mMaximum));
 	};
 
-	return query_converter_property_raw(
-		log, ca,
-		EXPAND_CONVERTER_NAMES(kAudioConverterApplicableEncodeBitRates),
-		converter, helper);
+	return query_converter_property_raw(log, ca, EXPAND_CONVERTER_NAMES(kAudioConverterApplicableEncodeBitRates),
+					    converter, helper);
 }
 
-static bool bitrate_valid(DStr &log, ca_encoder *ca,
-			  AudioConverterRef converter, UInt32 bitrate)
+static bool bitrate_valid(DStr &log, ca_encoder *ca, AudioConverterRef converter, UInt32 bitrate)
 {
 	bool valid = false;
 
@@ -417,48 +383,37 @@ static bool bitrate_valid(DStr &log, ca_encoder *ca,
 	return valid;
 }
 
-static bool create_encoder(DStr &log, ca_encoder *ca,
-			   AudioStreamBasicDescription *in,
-			   AudioStreamBasicDescription *out, UInt32 format_id,
-			   UInt32 bitrate, UInt32 samplerate,
-			   UInt32 rate_control)
+static bool create_encoder(DStr &log, ca_encoder *ca, AudioStreamBasicDescription *in, AudioStreamBasicDescription *out,
+			   UInt32 format_id, UInt32 bitrate, UInt32 samplerate, UInt32 rate_control)
 {
-#define STATUS_CHECK(c)                                     \
-	code = c;                                           \
-	if (code) {                                         \
-		log_to_dstr(log, ca, #c " returned %s",     \
-			    osstatus_to_dstr(code)->array); \
-		return false;                               \
+#define STATUS_CHECK(c)                                                                 \
+	code = c;                                                                       \
+	if (code) {                                                                     \
+		log_to_dstr(log, ca, #c " returned %s", osstatus_to_dstr(code)->array); \
+		return false;                                                           \
 	}
 
-	Float64 srate = samplerate ? (Float64)samplerate
-				   : (Float64)ca->samples_per_second;
+	Float64 srate = samplerate ? (Float64)samplerate : (Float64)ca->samples_per_second;
 
-	auto out_ = asbd_builder()
-			    .sample_rate(srate)
-			    .channels_per_frame((UInt32)ca->channels)
-			    .format_id(format_id)
-			    .asbd;
+	auto out_ =
+		asbd_builder().sample_rate(srate).channels_per_frame((UInt32)ca->channels).format_id(format_id).asbd;
 
 	UInt32 size = sizeof(*out);
 	OSStatus code;
-	STATUS_CHECK(AudioFormatGetProperty(kAudioFormatProperty_FormatInfo, 0,
-					    NULL, &size, &out_));
+	STATUS_CHECK(AudioFormatGetProperty(kAudioFormatProperty_FormatInfo, 0, NULL, &size, &out_));
 
 	*out = out_;
 
 	STATUS_CHECK(AudioConverterNew(in, out, &ca->converter))
 
-	STATUS_CHECK(AudioConverterSetProperty(
-		ca->converter, kAudioCodecPropertyBitRateControlMode,
-		sizeof(rate_control), &rate_control));
+	STATUS_CHECK(AudioConverterSetProperty(ca->converter, kAudioCodecPropertyBitRateControlMode,
+					       sizeof(rate_control), &rate_control));
 
 	if (!bitrate_valid(log, ca, ca->converter, bitrate)) {
 		log_to_dstr(log, ca,
 			    "Encoder does not support bitrate %u "
 			    "for format %s (0x%x)\n",
-			    (uint32_t)bitrate, format_id_to_str(format_id),
-			    (uint32_t)format_id);
+			    (uint32_t)bitrate, format_id_to_str(format_id), (uint32_t)format_id);
 		return false;
 	}
 
@@ -489,16 +444,14 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	UInt32 bitrate = (UInt32)obs_data_get_int(settings, "bitrate") * 1000;
 	if (!bitrate) {
-		CA_LOG_ENCODER("AAC", encoder, LOG_ERROR,
-			       "Invalid bitrate specified");
+		CA_LOG_ENCODER("AAC", encoder, LOG_ERROR, "Invalid bitrate specified");
 		return NULL;
 	}
 
 	const enum audio_format format = AUDIO_FORMAT_FLOAT;
 
 	if (is_audio_planar(format)) {
-		CA_LOG_ENCODER("AAC", encoder, LOG_ERROR,
-			       "Got non-interleaved audio format %d", format);
+		CA_LOG_ENCODER("AAC", encoder, LOG_ERROR, "Got non-interleaved audio format %d", format);
 		return NULL;
 	}
 
@@ -507,8 +460,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 	try {
 		ca.reset(new ca_encoder());
 	} catch (...) {
-		CA_LOG_ENCODER("AAC", encoder, LOG_ERROR,
-			       "Could not allocate encoder");
+		CA_LOG_ENCODER("AAC", encoder, LOG_ERROR, "Could not allocate encoder");
 		return nullptr;
 	}
 
@@ -532,8 +484,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 			  .bytes_per_packet((UInt32)(1 * bytes_per_frame))
 			  .bits_per_channel((UInt32)bits_per_channel)
 			  .format_id(kAudioFormatLinearPCM)
-			  .format_flags(kAudioFormatFlagsNativeEndian |
-					kAudioFormatFlagIsPacked |
+			  .format_flags(kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked |
 					kAudioFormatFlagIsFloat | 0)
 			  .asbd;
 
@@ -547,18 +498,16 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		ca->allowed_formats = &aac_lc_formats;
 	}
 
-	auto samplerate =
-		static_cast<UInt32>(obs_data_get_int(settings, "samplerate"));
+	auto samplerate = static_cast<UInt32>(obs_data_get_int(settings, "samplerate"));
 
 	DStr log;
 
 	bool encoder_created = false;
 	for (UInt32 format_id : *ca->allowed_formats) {
-		log_to_dstr(log, ca.get(), "Trying format %s (0x%x)\n",
-			    format_id_to_str(format_id), (uint32_t)format_id);
+		log_to_dstr(log, ca.get(), "Trying format %s (0x%x)\n", format_id_to_str(format_id),
+			    (uint32_t)format_id);
 
-		if (!create_encoder(log, ca.get(), &in, &out, format_id,
-				    bitrate, samplerate, rate_control))
+		if (!create_encoder(log, ca.get(), &in, &out, format_id, bitrate, samplerate, rate_control))
 			continue;
 
 		encoder_created = true;
@@ -578,28 +527,22 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	OSStatus code;
 	UInt32 converter_quality = kAudioConverterQuality_Max;
-	STATUS_CHECK(AudioConverterSetProperty(
-		ca->converter, kAudioConverterCodecQuality,
-		sizeof(converter_quality), &converter_quality));
+	STATUS_CHECK(AudioConverterSetProperty(ca->converter, kAudioConverterCodecQuality, sizeof(converter_quality),
+					       &converter_quality));
 
-	STATUS_CHECK(AudioConverterSetProperty(ca->converter,
-					       kAudioConverterEncodeBitRate,
-					       sizeof(bitrate), &bitrate));
+	STATUS_CHECK(AudioConverterSetProperty(ca->converter, kAudioConverterEncodeBitRate, sizeof(bitrate), &bitrate));
 
 	UInt32 size = sizeof(in);
-	STATUS_CHECK(AudioConverterGetProperty(
-		ca->converter, kAudioConverterCurrentInputStreamDescription,
-		&size, &in));
+	STATUS_CHECK(
+		AudioConverterGetProperty(ca->converter, kAudioConverterCurrentInputStreamDescription, &size, &in));
 
 	size = sizeof(out);
-	STATUS_CHECK(AudioConverterGetProperty(
-		ca->converter, kAudioConverterCurrentOutputStreamDescription,
-		&size, &out));
+	STATUS_CHECK(
+		AudioConverterGetProperty(ca->converter, kAudioConverterCurrentOutputStreamDescription, &size, &out));
 
 	AudioConverterPrimeInfo primeInfo;
 	size = sizeof(primeInfo);
-	STATUS_CHECK(AudioConverterGetProperty(
-		ca->converter, kAudioConverterPrimeInfo, &size, &primeInfo));
+	STATUS_CHECK(AudioConverterGetProperty(ca->converter, kAudioConverterPrimeInfo, &size, &primeInfo));
 
 	/*
 	 * Fix channel map differences between CoreAudio AAC, FFmpeg, Wav
@@ -608,9 +551,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	if (ca->channels == 3) {
 		SInt32 channelMap3[3] = {2, 0, 1};
-		AudioConverterSetProperty(ca->converter,
-					  kAudioConverterChannelMap,
-					  sizeof(channelMap3), channelMap3);
+		AudioConverterSetProperty(ca->converter, kAudioConverterChannelMap, sizeof(channelMap3), channelMap3);
 
 	} else if (ca->channels == 4) {
 		/*
@@ -620,34 +561,22 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		 */
 		AudioChannelLayout inAcl = {0};
 		inAcl.mChannelLayoutTag = (116L << 16) | 4;
-		AudioConverterSetProperty(ca->converter,
-					  kAudioConverterInputChannelLayout,
-					  sizeof(inAcl), &inAcl);
-		AudioConverterSetProperty(ca->converter,
-					  kAudioConverterOutputChannelLayout,
-					  sizeof(inAcl), &inAcl);
+		AudioConverterSetProperty(ca->converter, kAudioConverterInputChannelLayout, sizeof(inAcl), &inAcl);
+		AudioConverterSetProperty(ca->converter, kAudioConverterOutputChannelLayout, sizeof(inAcl), &inAcl);
 		SInt32 channelMap4[4] = {2, 0, 1, 3};
-		AudioConverterSetProperty(ca->converter,
-					  kAudioConverterChannelMap,
-					  sizeof(channelMap4), channelMap4);
+		AudioConverterSetProperty(ca->converter, kAudioConverterChannelMap, sizeof(channelMap4), channelMap4);
 
 	} else if (ca->channels == 5) {
 		SInt32 channelMap5[5] = {2, 0, 1, 3, 4};
-		AudioConverterSetProperty(ca->converter,
-					  kAudioConverterChannelMap,
-					  sizeof(channelMap5), channelMap5);
+		AudioConverterSetProperty(ca->converter, kAudioConverterChannelMap, sizeof(channelMap5), channelMap5);
 
 	} else if (ca->channels == 6) {
 		SInt32 channelMap6[6] = {2, 0, 1, 4, 5, 3};
-		AudioConverterSetProperty(ca->converter,
-					  kAudioConverterChannelMap,
-					  sizeof(channelMap6), channelMap6);
+		AudioConverterSetProperty(ca->converter, kAudioConverterChannelMap, sizeof(channelMap6), channelMap6);
 
 	} else if (ca->channels == 8) {
 		SInt32 channelMap8[8] = {2, 0, 1, 6, 7, 4, 5, 3};
-		AudioConverterSetProperty(ca->converter,
-					  kAudioConverterChannelMap,
-					  sizeof(channelMap8), channelMap8);
+		AudioConverterSetProperty(ca->converter, kAudioConverterChannelMap, sizeof(channelMap8), channelMap8);
 	}
 
 	ca->in_frame_size = in.mBytesPerFrame;
@@ -663,14 +592,10 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		UInt32 max_packet_size = 0;
 		size = sizeof(max_packet_size);
 
-		code = AudioConverterGetProperty(
-			ca->converter,
-			kAudioConverterPropertyMaximumOutputPacketSize, &size,
-			&max_packet_size);
+		code = AudioConverterGetProperty(ca->converter, kAudioConverterPropertyMaximumOutputPacketSize, &size,
+						 &max_packet_size);
 		if (code) {
-			log_osstatus(LOG_WARNING, ca.get(),
-				     "AudioConverterGetProperty(PacketSz)",
-				     code);
+			log_osstatus(LOG_WARNING, ca.get(), "AudioConverterGetProperty(PacketSz)", code);
 			ca->output_buffer_size = 32768;
 		} else {
 			ca->output_buffer_size = max_packet_size;
@@ -684,10 +609,9 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		return nullptr;
 	}
 
-	const char *format_name =
-		out.mFormatID == kAudioFormatMPEG4AAC_HE_V2 ? "HE-AAC v2"
-		: out.mFormatID == kAudioFormatMPEG4AAC_HE  ? "HE-AAC"
-							    : "AAC";
+	const char *format_name = out.mFormatID == kAudioFormatMPEG4AAC_HE_V2 ? "HE-AAC v2"
+				  : out.mFormatID == kAudioFormatMPEG4AAC_HE  ? "HE-AAC"
+									      : "AAC";
 	CA_BLOG(LOG_INFO,
 		"settings:\n"
 		"\tmode:          %s\n"
@@ -695,21 +619,17 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		"\tsample rate:   %llu\n"
 		"\tcbr:           %s\n"
 		"\toutput buffer: %lu",
-		format_name, (unsigned int)bitrate / 1000,
-		ca->samples_per_second,
-		rate_control == kAudioCodecBitRateControlMode_Constant ? "on"
-								       : "off",
+		format_name, (unsigned int)bitrate / 1000, ca->samples_per_second,
+		rate_control == kAudioCodecBitRateControlMode_Constant ? "on" : "off",
 		(unsigned long)ca->output_buffer_size);
 
 	return ca.release();
 #undef STATUS_CHECK
 }
 
-static OSStatus
-complex_input_data_proc(AudioConverterRef inAudioConverter,
-			UInt32 *ioNumberDataPackets, AudioBufferList *ioData,
-			AudioStreamPacketDescription **outDataPacketDescription,
-			void *inUserData)
+static OSStatus complex_input_data_proc(AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
+					AudioBufferList *ioData,
+					AudioStreamPacketDescription **outDataPacketDescription, void *inUserData)
 {
 	UNUSED_PARAMETER(inAudioConverter);
 	UNUSED_PARAMETER(outDataPacketDescription);
@@ -727,8 +647,7 @@ complex_input_data_proc(AudioConverterRef inAudioConverter,
 	ca->encode_buffer.assign(start, stop);
 	ca->input_buffer.erase(start, stop);
 
-	*ioNumberDataPackets =
-		(UInt32)(ca->in_bytes_required / ca->in_frame_size);
+	*ioNumberDataPackets = (UInt32)(ca->in_bytes_required / ca->in_frame_size);
 	ioData->mNumberBuffers = 1;
 
 	ioData->mBuffers[0].mData = ca->encode_buffer.data();
@@ -744,13 +663,11 @@ complex_input_data_proc(AudioConverterRef inAudioConverter,
 #pragma warning(push)
 #pragma warning(disable : 4706)
 #endif
-static bool aac_encode(void *data, struct encoder_frame *frame,
-		       struct encoder_packet *packet, bool *received_packet)
+static bool aac_encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet)
 {
 	ca_encoder *ca = static_cast<ca_encoder *>(data);
 
-	ca->input_buffer.insert(end(ca->input_buffer), frame->data[0],
-				frame->data[0] + frame->linesize[0]);
+	ca->input_buffer.insert(end(ca->input_buffer), frame->data[0], frame->data[0] + frame->linesize[0]);
 
 	if (ca->input_buffer.size() < ca->in_bytes_required)
 		return true;
@@ -765,12 +682,10 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 
 	AudioStreamPacketDescription out_desc = {0};
 
-	OSStatus code = AudioConverterFillComplexBuffer(
-		ca->converter, complex_input_data_proc, ca, &packets,
-		&buffer_list, &out_desc);
+	OSStatus code = AudioConverterFillComplexBuffer(ca->converter, complex_input_data_proc, ca, &packets,
+							&buffer_list, &out_desc);
 	if (code && code != 1) {
-		log_osstatus(LOG_ERROR, ca, "AudioConverterFillComplexBuffer",
-			     code);
+		log_osstatus(LOG_ERROR, ca, "AudioConverterFillComplexBuffer", code);
 		return false;
 	}
 
@@ -784,8 +699,7 @@ static bool aac_encode(void *data, struct encoder_frame *frame,
 	packet->type = OBS_ENCODER_AUDIO;
 	packet->keyframe = true;
 	packet->size = out_desc.mDataByteSize;
-	packet->data = (uint8_t *)buffer_list.mBuffers[0].mData +
-		       out_desc.mStartOffset;
+	packet->data = (uint8_t *)buffer_list.mBuffers[0].mData + out_desc.mStartOffset;
 
 	ca->total_samples += ca->in_bytes_required / ca->in_frame_size;
 
@@ -835,8 +749,7 @@ static int read_descr(uint8_t **buffer, int *tag)
 }
 
 // based off of mov_read_esds from mov.c in ffmpeg's libavformat
-static void read_esds_desc_ext(uint8_t *desc_ext, vector<uint8_t> &buffer,
-			       bool version_flags)
+static void read_esds_desc_ext(uint8_t *desc_ext, vector<uint8_t> &buffer, bool version_flags)
 {
 	uint8_t *esds = desc_ext;
 	int tag, len;
@@ -873,13 +786,9 @@ static void query_extra_data(ca_encoder *ca)
 	UInt32 size = 0;
 
 	OSStatus code;
-	code = AudioConverterGetPropertyInfo(
-		ca->converter, kAudioConverterCompressionMagicCookie, &size,
-		NULL);
+	code = AudioConverterGetPropertyInfo(ca->converter, kAudioConverterCompressionMagicCookie, &size, NULL);
 	if (code) {
-		log_osstatus(LOG_ERROR, ca,
-			     "AudioConverterGetPropertyInfo(magic_cookie)",
-			     code);
+		log_osstatus(LOG_ERROR, ca, "AudioConverterGetPropertyInfo(magic_cookie)", code);
 		return;
 	}
 
@@ -897,12 +806,10 @@ static void query_extra_data(ca_encoder *ca)
 		return;
 	}
 
-	code = AudioConverterGetProperty(ca->converter,
-					 kAudioConverterCompressionMagicCookie,
-					 &size, extra_data.data());
+	code = AudioConverterGetProperty(ca->converter, kAudioConverterCompressionMagicCookie, &size,
+					 extra_data.data());
 	if (code) {
-		log_osstatus(LOG_ERROR, ca,
-			     "AudioConverterGetProperty(magic_cookie)", code);
+		log_osstatus(LOG_ERROR, ca, "AudioConverterGetProperty(magic_cookie)", code);
 		return;
 	}
 
@@ -929,9 +836,7 @@ static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
 	return true;
 }
 
-static asbd_builder fill_common_asbd_fields(asbd_builder builder,
-					    bool in = false,
-					    UInt32 channels = 2)
+static asbd_builder fill_common_asbd_fields(asbd_builder builder, bool in = false, UInt32 channels = 2)
 {
 	UInt32 bytes_per_frame = sizeof(float) * channels;
 	UInt32 bits_per_channel = bytes_per_frame / channels * 8;
@@ -953,35 +858,29 @@ static AudioStreamBasicDescription get_default_in_asbd()
 	return fill_common_asbd_fields(asbd_builder(), true)
 		.sample_rate(44100)
 		.format_id(kAudioFormatLinearPCM)
-		.format_flags(kAudioFormatFlagsNativeEndian |
-			      kAudioFormatFlagIsPacked |
-			      kAudioFormatFlagIsFloat | 0)
+		.format_flags(kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked | kAudioFormatFlagIsFloat | 0)
 		.asbd;
 }
 
 static asbd_builder get_default_out_asbd_builder(UInt32 channels)
 {
-	return fill_common_asbd_fields(asbd_builder(), false, channels)
-		.sample_rate(44100);
+	return fill_common_asbd_fields(asbd_builder(), false, channels).sample_rate(44100);
 }
 
-static cf_ptr<AudioConverterRef>
-get_converter(DStr &log, ca_encoder *ca, AudioStreamBasicDescription out,
-	      AudioStreamBasicDescription in = get_default_in_asbd())
+static cf_ptr<AudioConverterRef> get_converter(DStr &log, ca_encoder *ca, AudioStreamBasicDescription out,
+					       AudioStreamBasicDescription in = get_default_in_asbd())
 {
 	UInt32 size = sizeof(out);
 	OSStatus code;
 
-#define STATUS_CHECK(x)                                     \
-	code = x;                                           \
-	if (code) {                                         \
-		log_to_dstr(log, ca, "%s: %s\n", #x,        \
-			    osstatus_to_dstr(code)->array); \
-		return nullptr;                             \
+#define STATUS_CHECK(x)                                                              \
+	code = x;                                                                    \
+	if (code) {                                                                  \
+		log_to_dstr(log, ca, "%s: %s\n", #x, osstatus_to_dstr(code)->array); \
+		return nullptr;                                                      \
 	}
 
-	STATUS_CHECK(AudioFormatGetProperty(kAudioFormatProperty_FormatInfo, 0,
-					    NULL, &size, &out));
+	STATUS_CHECK(AudioFormatGetProperty(kAudioFormatProperty_FormatInfo, 0, NULL, &size, &out));
 
 	AudioConverterRef converter;
 	STATUS_CHECK(AudioConverterNew(&in, &out, &converter));
@@ -990,8 +889,7 @@ get_converter(DStr &log, ca_encoder *ca, AudioStreamBasicDescription out,
 #undef STATUS_CHECK
 }
 
-static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate,
-			    UInt32 &best_match)
+static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate, UInt32 &best_match)
 {
 	UInt32 actual_bitrate = bitrate * 1000;
 	bool found_match = false;
@@ -999,8 +897,7 @@ static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate,
 	auto handle_bitrate = [&](UInt32 candidate) {
 		if (abs(static_cast<intmax_t>(actual_bitrate - candidate)) <
 		    abs(static_cast<intmax_t>(actual_bitrate - best_match))) {
-			log_to_dstr(log, ca, "Found new best match %u\n",
-				    static_cast<uint32_t>(candidate));
+			log_to_dstr(log, ca, "Found new best match %u\n", static_cast<uint32_t>(candidate));
 
 			found_match = true;
 			best_match = candidate;
@@ -1013,20 +910,16 @@ static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate,
 		if (min_ == max_)
 			return;
 
-		log_to_dstr(log, ca, "Got actual bit rate range: %u<->%u\n",
-			    static_cast<uint32_t>(min_),
+		log_to_dstr(log, ca, "Got actual bit rate range: %u<->%u\n", static_cast<uint32_t>(min_),
 			    static_cast<uint32_t>(max_));
 
 		handle_bitrate(max_);
 	};
 
 	for (UInt32 format_id : aac_formats) {
-		log_to_dstr(log, ca, "Trying %s (0x%x)\n",
-			    format_id_to_str(format_id), format_id);
+		log_to_dstr(log, ca, "Trying %s (0x%x)\n", format_id_to_str(format_id), format_id);
 
-		auto out = get_default_out_asbd_builder(2)
-				   .format_id(format_id)
-				   .asbd;
+		auto out = get_default_out_asbd_builder(2).format_id(format_id).asbd;
 
 		auto converter = get_converter(log, ca, out);
 
@@ -1065,8 +958,7 @@ static UInt32 find_matching_bitrate(UInt32 bitrate)
 			CA_CO_DLOG(LOG_INFO,
 				   "Default bitrate (%u) isn't "
 				   "supported, returning %u as closest match",
-				   static_cast<uint32_t>(bitrate),
-				   static_cast<uint32_t>(match));
+				   static_cast<uint32_t>(bitrate), static_cast<uint32_t>(match));
 			return;
 		}
 
@@ -1083,23 +975,18 @@ static UInt32 find_matching_bitrate(UInt32 bitrate)
 static void aac_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "samplerate", 0); //match input
-	obs_data_set_default_int(settings, "bitrate",
-				 find_matching_bitrate(128));
+	obs_data_set_default_int(settings, "bitrate", find_matching_bitrate(128));
 	obs_data_set_default_bool(settings, "allow he-aac", true);
 }
 
 template<typename Func>
-static bool
-query_property_raw(DStr &log, ca_encoder *ca, AudioFormatPropertyID property,
-		   const char *get_property_info, const char *get_property,
-		   AudioStreamBasicDescription &desc, Func &&func)
+static bool query_property_raw(DStr &log, ca_encoder *ca, AudioFormatPropertyID property, const char *get_property_info,
+			       const char *get_property, AudioStreamBasicDescription &desc, Func &&func)
 {
 	UInt32 size = 0;
-	OSStatus code = AudioFormatGetPropertyInfo(
-		property, sizeof(AudioStreamBasicDescription), &desc, &size);
+	OSStatus code = AudioFormatGetPropertyInfo(property, sizeof(AudioStreamBasicDescription), &desc, &size);
 	if (code) {
-		log_to_dstr(log, ca, "%s: %s\n", get_property_info,
-			    osstatus_to_dstr(code)->array);
+		log_to_dstr(log, ca, "%s: %s\n", get_property_info, osstatus_to_dstr(code)->array);
 		return false;
 	}
 
@@ -1113,17 +1000,13 @@ query_property_raw(DStr &log, ca_encoder *ca, AudioFormatPropertyID property,
 	try {
 		buffer.resize(size);
 	} catch (...) {
-		log_to_dstr(log, ca, "Failed to allocate %u bytes for %s\n",
-			    static_cast<uint32_t>(size), get_property);
+		log_to_dstr(log, ca, "Failed to allocate %u bytes for %s\n", static_cast<uint32_t>(size), get_property);
 		return false;
 	}
 
-	code = AudioFormatGetProperty(property,
-				      sizeof(AudioStreamBasicDescription),
-				      &desc, &size, buffer.data());
+	code = AudioFormatGetProperty(property, sizeof(AudioStreamBasicDescription), &desc, &size, buffer.data());
 	if (code) {
-		log_to_dstr(log, ca, "%s: %s\n", get_property,
-			    osstatus_to_dstr(code)->array);
+		log_to_dstr(log, ca, "%s: %s\n", get_property, osstatus_to_dstr(code)->array);
 		return false;
 	}
 
@@ -1132,14 +1015,10 @@ query_property_raw(DStr &log, ca_encoder *ca, AudioFormatPropertyID property,
 	return true;
 }
 
-#define EXPAND_PROPERTY_NAMES(x)                 \
-	x, "AudioFormatGetPropertyInfo(" #x ")", \
-		"AudioFormatGetProperty(" #x ")"
+#define EXPAND_PROPERTY_NAMES(x) x, "AudioFormatGetPropertyInfo(" #x ")", "AudioFormatGetProperty(" #x ")"
 
 template<typename Func>
-static bool enumerate_samplerates(DStr &log, ca_encoder *ca,
-				  AudioStreamBasicDescription &desc,
-				  Func &&func)
+static bool enumerate_samplerates(DStr &log, ca_encoder *ca, AudioStreamBasicDescription &desc, Func &&func)
 {
 	auto helper = [&](UInt32 size, void *data) {
 		auto range = static_cast<AudioValueRange *>(data);
@@ -1148,11 +1027,8 @@ static bool enumerate_samplerates(DStr &log, ca_encoder *ca,
 			func(range[i]);
 	};
 
-	return query_property_raw(
-		log, ca,
-		EXPAND_PROPERTY_NAMES(
-			kAudioFormatProperty_AvailableEncodeSampleRates),
-		desc, helper);
+	return query_property_raw(log, ca, EXPAND_PROPERTY_NAMES(kAudioFormatProperty_AvailableEncodeSampleRates), desc,
+				  helper);
 }
 
 #if 0
@@ -1182,14 +1058,11 @@ static vector<UInt32> get_samplerates(DStr &log, ca_encoder *ca)
 	vector<UInt32> samplerates;
 
 	auto handle_samplerate = [&](UInt32 rate) {
-		if (find(begin(samplerates), end(samplerates), rate) ==
-		    end(samplerates)) {
-			log_to_dstr(log, ca, "Adding sample rate %u\n",
-				    static_cast<uint32_t>(rate));
+		if (find(begin(samplerates), end(samplerates), rate) == end(samplerates)) {
+			log_to_dstr(log, ca, "Adding sample rate %u\n", static_cast<uint32_t>(rate));
 			samplerates.push_back(rate);
 		} else {
-			log_to_dstr(log, ca, "Sample rate %u already added\n",
-				    static_cast<uint32_t>(rate));
+			log_to_dstr(log, ca, "Sample rate %u already added\n", static_cast<uint32_t>(rate));
 		}
 	};
 
@@ -1202,17 +1075,14 @@ static vector<UInt32> get_samplerates(DStr &log, ca_encoder *ca)
 		if (min_ == max_)
 			return;
 
-		log_to_dstr(log, ca, "Got actual sample rate range: %u<->%u\n",
-			    static_cast<uint32_t>(min_),
+		log_to_dstr(log, ca, "Got actual sample rate range: %u<->%u\n", static_cast<uint32_t>(min_),
 			    static_cast<uint32_t>(max_));
 
 		handle_samplerate(max_);
 	};
 
 	for (UInt32 format : (ca ? *ca->allowed_formats : aac_formats)) {
-		log_to_dstr(log, ca, "Trying %s (0x%x)\n",
-			    format_id_to_str(format),
-			    static_cast<uint32_t>(format));
+		log_to_dstr(log, ca, "Trying %s (0x%x)\n", format_id_to_str(format), static_cast<uint32_t>(format));
 
 		auto asbd = asbd_builder().format_id(format).asbd;
 
@@ -1224,8 +1094,7 @@ static vector<UInt32> get_samplerates(DStr &log, ca_encoder *ca)
 
 static void add_samplerates(obs_property_t *prop, ca_encoder *ca)
 {
-	obs_property_list_add_int(prop, obs_module_text("UseInputSampleRate"),
-				  0);
+	obs_property_list_add_int(prop, obs_module_text("UseInputSampleRate"), 0);
 
 	DStr log;
 
@@ -1250,8 +1119,7 @@ static void add_samplerates(obs_property_t *prop, ca_encoder *ca)
 
 #define NBSP "\xC2\xA0"
 
-static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
-				   Float64 samplerate)
+static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca, Float64 samplerate)
 {
 	vector<UInt32> bitrates;
 	struct obs_audio_info aoi;
@@ -1261,14 +1129,11 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 	channels = get_audio_channels(aoi.speakers);
 
 	auto handle_bitrate = [&](UInt32 bitrate) {
-		if (find(begin(bitrates), end(bitrates), bitrate) ==
-		    end(bitrates)) {
-			log_to_dstr(log, ca, "Adding bitrate %u\n",
-				    static_cast<uint32_t>(bitrate));
+		if (find(begin(bitrates), end(bitrates), bitrate) == end(bitrates)) {
+			log_to_dstr(log, ca, "Adding bitrate %u\n", static_cast<uint32_t>(bitrate));
 			bitrates.push_back(bitrate);
 		} else {
-			log_to_dstr(log, ca, "Bitrate %u already added\n",
-				    static_cast<uint32_t>(bitrate));
+			log_to_dstr(log, ca, "Bitrate %u already added\n", static_cast<uint32_t>(bitrate));
 		}
 	};
 
@@ -1278,22 +1143,17 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		if (min_ == max_)
 			return;
 
-		log_to_dstr(log, ca, "Got actual bitrate range: %u<->%u\n",
-			    static_cast<uint32_t>(min_),
+		log_to_dstr(log, ca, "Got actual bitrate range: %u<->%u\n", static_cast<uint32_t>(min_),
 			    static_cast<uint32_t>(max_));
 
 		handle_bitrate(max_);
 	};
 
 	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats)) {
-		log_to_dstr(log, ca, "Trying %s (0x%x) at %g" NBSP "hz\n",
-			    format_id_to_str(format_id),
+		log_to_dstr(log, ca, "Trying %s (0x%x) at %g" NBSP "hz\n", format_id_to_str(format_id),
 			    static_cast<uint32_t>(format_id), samplerate);
 
-		auto out = get_default_out_asbd_builder(channels)
-				   .format_id(format_id)
-				   .sample_rate(samplerate)
-				   .asbd;
+		auto out = get_default_out_asbd_builder(channels).format_id(format_id).sample_rate(samplerate).asbd;
 
 		auto converter = get_converter(log, ca, out);
 
@@ -1304,9 +1164,7 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 	return bitrates;
 }
 
-static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
-			 Float64 samplerate = 44100.,
-			 UInt32 *selected = nullptr)
+static void add_bitrates(obs_property_t *prop, ca_encoder *ca, Float64 samplerate = 44100., UInt32 *selected = nullptr)
 {
 	obs_property_list_clear(prop);
 
@@ -1324,8 +1182,7 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
 
 	bool selected_in_range = true;
 	if (selected) {
-		selected_in_range = find(begin(bitrates), end(bitrates),
-					 *selected * 1000) != end(bitrates);
+		selected_in_range = find(begin(bitrates), end(bitrates), *selected * 1000) != end(bitrates);
 
 		if (!selected_in_range)
 			bitrates.push_back(*selected * 1000);
@@ -1336,8 +1193,7 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
 	DStr buffer;
 	for (UInt32 bitrate : bitrates) {
 		dstr_printf(buffer, "%u", (uint32_t)bitrate / 1000);
-		size_t idx = obs_property_list_add_int(prop, buffer->array,
-						       bitrate / 1000);
+		size_t idx = obs_property_list_add_int(prop, buffer->array, bitrate / 1000);
 
 		if (selected_in_range || bitrate / 1000 != *selected)
 			continue;
@@ -1346,18 +1202,15 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca,
 	}
 }
 
-static bool samplerate_updated(obs_properties_t *props, obs_property_t *prop,
-			       obs_data_t *settings)
+static bool samplerate_updated(obs_properties_t *props, obs_property_t *prop, obs_data_t *settings)
 {
-	auto samplerate =
-		static_cast<UInt32>(obs_data_get_int(settings, "samplerate"));
+	auto samplerate = static_cast<UInt32>(obs_data_get_int(settings, "samplerate"));
 	if (!samplerate)
 		samplerate = 44100;
 
 	prop = obs_properties_get(props, "bitrate");
 	if (prop) {
-		auto bitrate = static_cast<UInt32>(
-			obs_data_get_int(settings, "bitrate"));
+		auto bitrate = static_cast<UInt32>(obs_data_get_int(settings, "bitrate"));
 
 		add_bitrates(prop, nullptr, samplerate, &bitrate);
 
@@ -1372,18 +1225,15 @@ static obs_properties_t *aac_properties(void *data)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *sample_rates = obs_properties_add_list(
-		props, "samplerate", obs_module_text("OutputSamplerate"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *sample_rates = obs_properties_add_list(props, "samplerate", obs_module_text("OutputSamplerate"),
+							       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_property_set_modified_callback(sample_rates, samplerate_updated);
 
-	obs_property_t *bit_rates = obs_properties_add_list(
-		props, "bitrate", obs_module_text("Bitrate"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *bit_rates = obs_properties_add_list(props, "bitrate", obs_module_text("Bitrate"),
+							    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_properties_add_bool(props, "allow he-aac",
-				obs_module_text("AllowHEAAC"));
+	obs_properties_add_bool(props, "allow he-aac", obs_module_text("AllowHEAAC"));
 
 	if (data) {
 		ca_encoder *ca = static_cast<ca_encoder *>(data);

@@ -51,8 +51,7 @@ void OBSPreviewScalingComboBox::OutputResized(uint32_t width, uint32_t height)
 {
 	SetOutputSize(width, height);
 
-	bool canvasMatchesOutput = output_width == canvas_width &&
-				   output_height == canvas_height;
+	bool canvasMatchesOutput = output_width == canvas_width && output_height == canvas_height;
 
 	SetScaleOutputEnabled(!canvasMatchesOutput);
 	UpdateOutputText();
@@ -94,8 +93,7 @@ void OBSPreviewScalingComboBox::UpdateAllText()
 void OBSPreviewScalingComboBox::UpdateCanvasText()
 {
 	QString text = QTStr("Basic.MainMenu.Edit.Scale.Canvas");
-	text = text.arg(QString::number(canvas_width),
-			QString::number(canvas_height));
+	text = text.arg(QString::number(canvas_width), QString::number(canvas_height));
 	setItemText(1, text);
 }
 
@@ -103,8 +101,7 @@ void OBSPreviewScalingComboBox::UpdateOutputText()
 {
 	if (scaleOutputEnabled) {
 		QString text = QTStr("Basic.MainMenu.Edit.Scale.Output");
-		text = text.arg(QString::number(output_width),
-				QString::number(output_height));
+		text = text.arg(QString::number(output_width), QString::number(output_height));
 		setItemText(2, text);
 	}
 }
@@ -127,8 +124,7 @@ void OBSPreviewScalingComboBox::UpdateSelection()
 	} else {
 		if (previewScale == 1.0f) {
 			setCurrentIndex(1);
-		} else if (scaleOutputEnabled &&
-			   (previewScale == outputScale)) {
+		} else if (scaleOutputEnabled && (previewScale == outputScale)) {
 			setCurrentIndex(2);
 		} else {
 			setCurrentIndex(-1);

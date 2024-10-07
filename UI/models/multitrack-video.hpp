@@ -47,18 +47,16 @@ template<typename T> struct nlohmann::adl_serializer<std::optional<T>> {
 	}
 };
 
-NLOHMANN_JSON_SERIALIZE_ENUM(obs_scale_type,
-			     {
-				     {OBS_SCALE_DISABLE, "OBS_SCALE_DISABLE"},
-				     {OBS_SCALE_POINT, "OBS_SCALE_POINT"},
-				     {OBS_SCALE_BICUBIC, "OBS_SCALE_BICUBIC"},
-				     {OBS_SCALE_BILINEAR, "OBS_SCALE_BILINEAR"},
-				     {OBS_SCALE_LANCZOS, "OBS_SCALE_LANCZOS"},
-				     {OBS_SCALE_AREA, "OBS_SCALE_AREA"},
-			     })
+NLOHMANN_JSON_SERIALIZE_ENUM(obs_scale_type, {
+						     {OBS_SCALE_DISABLE, "OBS_SCALE_DISABLE"},
+						     {OBS_SCALE_POINT, "OBS_SCALE_POINT"},
+						     {OBS_SCALE_BICUBIC, "OBS_SCALE_BICUBIC"},
+						     {OBS_SCALE_BILINEAR, "OBS_SCALE_BILINEAR"},
+						     {OBS_SCALE_LANCZOS, "OBS_SCALE_LANCZOS"},
+						     {OBS_SCALE_AREA, "OBS_SCALE_AREA"},
+					     })
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(media_frames_per_second, numerator,
-				   denominator)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(media_frames_per_second, numerator, denominator)
 
 namespace GoLiveApi {
 using std::string;
@@ -79,8 +77,7 @@ struct Cpu {
 	optional<uint32_t> speed;
 	optional<string> name;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Cpu, physical_cores, logical_cores,
-				       speed, name)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Cpu, physical_cores, logical_cores, speed, name)
 };
 
 struct Memory {
@@ -98,9 +95,8 @@ struct Gpu {
 	uint64_t shared_system_memory;
 	optional<string> driver_version;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Gpu, model, vendor_id, device_id,
-				       dedicated_video_memory,
-				       shared_system_memory, driver_version)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Gpu, model, vendor_id, device_id, dedicated_video_memory, shared_system_memory,
+				       driver_version)
 };
 
 struct GamingFeatures {
@@ -111,10 +107,8 @@ struct GamingFeatures {
 	optional<bool> game_mode_enabled;
 	optional<bool> hags_enabled;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(GamingFeatures, game_bar_enabled,
-				       game_dvr_allowed, game_dvr_enabled,
-				       game_dvr_bg_recording, game_mode_enabled,
-				       hags_enabled)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(GamingFeatures, game_bar_enabled, game_dvr_allowed, game_dvr_enabled,
+				       game_dvr_bg_recording, game_mode_enabled, hags_enabled)
 };
 
 struct System {
@@ -127,8 +121,7 @@ struct System {
 	bool arm;
 	bool armEmulation;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(System, version, name, build, release,
-				       revision, bits, arm, armEmulation)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(System, version, name, build, release, revision, bits, arm, armEmulation)
 };
 
 struct Capabilities {
@@ -138,8 +131,7 @@ struct Capabilities {
 	System system;
 	optional<std::vector<Gpu>> gpu;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Capabilities, cpu, memory,
-				       gaming_features, system, gpu)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Capabilities, cpu, memory, gaming_features, system, gpu)
 };
 
 struct Preferences {
@@ -153,10 +145,8 @@ struct Preferences {
 	uint32_t canvas_height;
 	optional<uint32_t> composition_gpu_index;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Preferences, maximum_aggregate_bitrate,
-				       maximum_video_tracks, vod_track_audio,
-				       width, height, framerate, canvas_width,
-				       canvas_height, composition_gpu_index)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Preferences, maximum_aggregate_bitrate, maximum_video_tracks, vod_track_audio,
+				       width, height, framerate, canvas_width, canvas_height, composition_gpu_index)
 };
 
 struct PostData {
@@ -168,8 +158,7 @@ struct PostData {
 	Capabilities capabilities;
 	Preferences preferences;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(PostData, service, schema_version,
-				       authentication, client, capabilities,
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(PostData, service, schema_version, authentication, client, capabilities,
 				       preferences)
 };
 
@@ -190,13 +179,12 @@ enum struct StatusResult {
 	Error,
 };
 
-NLOHMANN_JSON_SERIALIZE_ENUM(StatusResult,
-			     {
-				     {StatusResult::Unknown, nullptr},
-				     {StatusResult::Success, "success"},
-				     {StatusResult::Warning, "warning"},
-				     {StatusResult::Error, "error"},
-			     })
+NLOHMANN_JSON_SERIALIZE_ENUM(StatusResult, {
+						   {StatusResult::Unknown, nullptr},
+						   {StatusResult::Success, "success"},
+						   {StatusResult::Warning, "warning"},
+						   {StatusResult::Error, "error"},
+					   })
 
 struct Status {
 	StatusResult result = StatusResult::Unknown;
@@ -209,9 +197,7 @@ struct IngestEndpoint {
 	string url_template;
 	optional<string> authentication;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(IngestEndpoint, protocol,
-						    url_template,
-						    authentication)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(IngestEndpoint, protocol, url_template, authentication)
 };
 
 struct VideoEncoderConfiguration {
@@ -222,10 +208,8 @@ struct VideoEncoderConfiguration {
 	optional<obs_scale_type> gpu_scale_type;
 	json settings;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(VideoEncoderConfiguration,
-						    type, width, height,
-						    framerate, gpu_scale_type,
-						    settings)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(VideoEncoderConfiguration, type, width, height, framerate,
+						    gpu_scale_type, settings)
 };
 
 struct AudioEncoderConfiguration {
@@ -234,16 +218,14 @@ struct AudioEncoderConfiguration {
 	uint32_t channels;
 	json settings;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(AudioEncoderConfiguration, codec,
-				       track_id, channels, settings)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(AudioEncoderConfiguration, codec, track_id, channels, settings)
 };
 
 struct AudioConfigurations {
 	std::vector<AudioEncoderConfiguration> live;
 	optional<std::vector<AudioEncoderConfiguration>> vod;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(AudioConfigurations, live,
-						    vod)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(AudioConfigurations, live, vod)
 };
 
 struct Config {
@@ -253,9 +235,7 @@ struct Config {
 	std::vector<VideoEncoderConfiguration> encoder_configurations;
 	AudioConfigurations audio_configurations;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Config, meta, status,
-						    ingest_endpoints,
-						    encoder_configurations,
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Config, meta, status, ingest_endpoints, encoder_configurations,
 						    audio_configurations)
 };
 } // namespace GoLiveApi
