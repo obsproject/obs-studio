@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.16...3.25)
+cmake_minimum_required(VERSION 3.22...3.25)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
   project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
 
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+  if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Windows)" AND CMAKE_SIZEOF_VOID_P EQUAL 4)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/32bit/projects.cmake")
     return()
   endif()
@@ -33,6 +33,20 @@ if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATE
   message_configuration()
   return()
 endif()
+
+message(
+  DEPRECATION
+    "\n"
+    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============"
+    "\n"
+    "You are using the legacy build system to build OBS Studio. "
+    "The legacy build system is unsupported and will be removed in the near future."
+    "\n"
+    "To migrate to the new build system, familiarize yourself with CMake presets "
+    "(https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) and create "
+    "a user preset with your customized build settings, inheriting from one of the default presets."
+    "\n"
+    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 include(VersionConfig)

@@ -30,6 +30,9 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 		stats->ResetRecTimeLeft();
 		break;
 	case OBS_FRONTEND_EVENT_EXIT:
+		// This is only reached when the non-closable (dock) stats
+		// window is being cleaned up. The closable stats window is
+		// already gone by this point as it's deleted on close.
 		obs_frontend_remove_event_callback(OBSFrontendEvent, stats);
 		break;
 	default:
@@ -52,7 +55,7 @@ static QString MakeMissedFramesText(uint32_t total_lagged,
 		     QString::number(num, 'f', 1));
 }
 
-OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
+OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	: QFrame(parent),
 	  cpu_info(os_cpu_usage_info_start()),
 	  timer(this),
@@ -112,13 +115,13 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 	/* --------------------------------------------- */
 	QPushButton *closeButton = nullptr;
-	if (closeable)
+	if (closable)
 		closeButton = new QPushButton(QTStr("Close"));
 	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addStretch();
 	buttonLayout->addWidget(resetButton);
-	if (closeable)
+	if (closable)
 		buttonLayout->addWidget(closeButton);
 
 	/* --------------------------------------------- */
@@ -162,7 +165,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	setLayout(mainLayout);
 
 	/* --------------------------------------------- */
-	if (closeable)
+	if (closable)
 		connect(closeButton, &QPushButton::clicked,
 			[this]() { close(); });
 	connect(resetButton, &QPushButton::clicked, [this]() { Reset(); });
@@ -230,6 +233,10 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 				  saveGeometry().toBase64().constData());
 		config_save_safe(main->Config(), "tmp", nullptr);
 	}
+
+	// This code is only reached when the non-dockable stats window is
+	// manually closed or OBS is exiting.
+	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
 
 	QWidget::closeEvent(event);
 }
@@ -539,10 +546,20 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 	setThemeID(status, themeID);
 
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
+	const char *unit = "MiB";
+	if (num > 1024) {
+		num /= 1024;
+		unit = "GiB";
+	}
+	megabytesSent->setText(QString("%1 %2").arg(num, 0, 'f', 1).arg(unit));
 
-	megabytesSent->setText(
-		QString("%1 MB").arg(QString::number(num, 'f', 1)));
-	bitrate->setText(QString("%1 kb/s").arg(QString::number(kbps, 'f', 0)));
+	num = kbps;
+	unit = "kb/s";
+	if (num >= 10'000) {
+		num /= 1000;
+		unit = "Mb/s";
+	}
+	bitrate->setText(QString("%1 %2").arg(num, 0, 'f', 0).arg(unit));
 
 	if (!rec) {
 		int total = output ? obs_output_get_total_frames(output) : 0;

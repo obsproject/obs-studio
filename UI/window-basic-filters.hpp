@@ -87,11 +87,7 @@ private slots:
 	void ReorderFilters();
 	void RenameAsyncFilter();
 	void RenameEffectFilter();
-	void DuplicateAsyncFilter();
-	void DuplicateEffectFilter();
 	void ResetFilters();
-
-	void AddFilterFromAction();
 
 	void on_addAsyncFilter_clicked();
 	void on_removeAsyncFilter_clicked();
@@ -114,9 +110,6 @@ private slots:
 	void on_actionMoveDown_triggered();
 
 	void on_actionRenameFilter_triggered();
-
-	void AsyncFilterNameEdited(QWidget *editor);
-	void EffectFilterNameEdited(QWidget *editor);
 
 	void CopyFilter();
 	void PasteFilter();

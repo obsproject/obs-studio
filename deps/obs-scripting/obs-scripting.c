@@ -19,7 +19,7 @@
 #include <util/dstr.h>
 #include <util/platform.h>
 #include <util/threading.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 
 #include "obs-scripting-internal.h"
 #include "obs-scripting-callback.h"
@@ -71,7 +71,7 @@ static const char *supported_formats[] = {
 /* -------------------------------------------- */
 
 static pthread_mutex_t defer_call_mutex;
-static struct circlebuf defer_call_queue;
+static struct deque defer_call_queue;
 static bool defer_call_exit = false;
 static os_sem_t *defer_call_semaphore;
 static pthread_t defer_call_thread;
@@ -95,7 +95,7 @@ static void *defer_thread(void *unused)
 			return NULL;
 		}
 
-		circlebuf_pop_front(&defer_call_queue, &info, sizeof(info));
+		deque_pop_front(&defer_call_queue, &info, sizeof(info));
 		pthread_mutex_unlock(&defer_call_mutex);
 
 		info.call(info.cb);
@@ -112,7 +112,7 @@ void defer_call_post(defer_call_cb call, void *cb)
 
 	pthread_mutex_lock(&defer_call_mutex);
 	if (!defer_call_exit)
-		circlebuf_push_back(&defer_call_queue, &info, sizeof(info));
+		deque_push_back(&defer_call_queue, &info, sizeof(info));
 	pthread_mutex_unlock(&defer_call_mutex);
 
 	os_sem_post(defer_call_semaphore);
@@ -122,7 +122,7 @@ void defer_call_post(defer_call_cb call, void *cb)
 
 bool obs_scripting_load(void)
 {
-	circlebuf_init(&defer_call_queue);
+	deque_init(&defer_call_queue);
 
 	if (pthread_mutex_init(&detach_mutex, NULL) != 0) {
 		return false;
@@ -206,7 +206,7 @@ void obs_scripting_unload(void)
 	/* TODO */
 
 	defer_call_exit = true;
-	circlebuf_free(&defer_call_queue);
+	deque_free(&defer_call_queue);
 
 	pthread_mutex_unlock(&defer_call_mutex);
 

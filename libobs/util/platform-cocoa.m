@@ -190,7 +190,7 @@ os_cpu_usage_info_t *os_cpu_usage_info_start(void)
         return NULL;
     }
 
-    info->core_count = sysconf(_SC_NPROCESSORS_ONLN);
+    info->core_count = (int) sysconf(_SC_NPROCESSORS_ONLN);
     return info;
 }
 
@@ -223,13 +223,8 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 os_performance_token_t *os_request_high_performance(const char *reason)
 {
     @autoreleasepool {
-        NSProcessInfo *pi = [NSProcessInfo processInfo];
-        SEL sel = @selector(beginActivityWithOptions:reason:);
-        if (![pi respondsToSelector:sel])
-            return nil;
-
-        //taken from http://stackoverflow.com/a/20100906
-        id activity = [pi beginActivityWithOptions:0x00FFFFFF reason:@(reason)];
+        NSProcessInfo *processInfo = NSProcessInfo.processInfo;
+        id activity = [processInfo beginActivityWithOptions:NSActivityUserInitiated reason:@(reason ? reason : "")];
 
         return CFBridgingRetain(activity);
     }
@@ -238,12 +233,8 @@ os_performance_token_t *os_request_high_performance(const char *reason)
 void os_end_high_performance(os_performance_token_t *token)
 {
     @autoreleasepool {
-        NSProcessInfo *pi = [NSProcessInfo processInfo];
-        SEL sel = @selector(beginActivityWithOptions:reason:);
-        if (![pi respondsToSelector:sel])
-            return;
-
-        [pi endActivity:CFBridgingRelease(token)];
+        NSProcessInfo *processInfo = NSProcessInfo.processInfo;
+        [processInfo endActivity:CFBridgingRelease(token)];
     }
 }
 
@@ -365,6 +356,38 @@ uint64_t os_get_sys_free_size(void)
         return 0;
 
     return vmstat.free_count * vm_page_size;
+}
+
+int64_t os_get_free_space(const char *path)
+{
+    if (path) {
+        NSURL *fileURL = [NSURL fileURLWithPath:@(path)];
+
+        NSArray *availableCapacityKeys = @[
+            NSURLVolumeAvailableCapacityKey, NSURLVolumeAvailableCapacityForImportantUsageKey,
+            NSURLVolumeAvailableCapacityForOpportunisticUsageKey
+        ];
+
+        NSDictionary *values = [fileURL resourceValuesForKeys:availableCapacityKeys error:nil];
+
+        NSNumber *availableImportantSpace = values[NSURLVolumeAvailableCapacityForImportantUsageKey];
+        NSNumber *availableSpace = values[NSURLVolumeAvailableCapacityKey];
+
+        if (availableImportantSpace.longValue > 0) {
+            return availableImportantSpace.longValue;
+        } else {
+            return availableSpace.longValue;
+        }
+    }
+
+    return 0;
+}
+
+uint64_t os_get_free_disk_space(const char *dir)
+{
+    int64_t free_space = os_get_free_space(dir);
+
+    return (uint64_t) free_space;
 }
 
 static uint64_t total_memory = 0;

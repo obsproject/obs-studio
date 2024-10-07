@@ -72,13 +72,13 @@ static void log_processor_name(void)
     if (ret != 0)
         return;
 
-    name = malloc(size);
+    name = bmalloc(size);
 
     ret = sysctlbyname("machdep.cpu.brand_string", name, &size, NULL, 0);
     if (ret == 0)
         blog(LOG_INFO, "CPU Name: %s", name);
 
-    free(name);
+    bfree(name);
 }
 
 static void log_processor_speed(void)
@@ -91,6 +91,25 @@ static void log_processor_speed(void)
     ret = sysctlbyname("hw.cpufrequency", &freq, &size, NULL, 0);
     if (ret == 0)
         blog(LOG_INFO, "CPU Speed: %lldMHz", freq / 1000000);
+}
+
+static void log_model_name(void)
+{
+    char *name = NULL;
+    size_t size;
+    int ret;
+
+    ret = sysctlbyname("hw.model", NULL, &size, NULL, 0);
+    if (ret != 0)
+        return;
+
+    name = bmalloc(size);
+
+    ret = sysctlbyname("hw.model", name, &size, NULL, 0);
+    if (ret == 0)
+        blog(LOG_INFO, "Model Identifier: %s", name);
+
+    bfree(name);
 }
 
 static void log_processor_cores(void)
@@ -139,6 +158,7 @@ void log_system_info(void)
     log_processor_speed();
     log_processor_cores();
     log_available_memory();
+    log_model_name();
     log_os();
     log_emulation_status();
     log_kernel_version();
@@ -160,6 +180,7 @@ static bool dstr_from_cfstring(struct dstr *str, CFStringRef ref)
 struct obs_hotkeys_platform {
     volatile long refs;
     CFTypeRef monitor;
+    CFTypeRef local_monitor;
     bool is_key_down[OBS_KEY_LAST_VALUE];
     TISInputSourceRef tis;
     CFDataRef layout_data;
@@ -172,6 +193,7 @@ static void hotkeys_retain(struct obs_hotkeys_platform *plat)
 }
 
 static inline void free_hotkeys_platform(obs_hotkeys_platform_t *plat);
+
 static void hotkeys_release(struct obs_hotkeys_platform *plat)
 {
     if (os_atomic_dec_long(&plat->refs) == -1)
@@ -320,7 +342,7 @@ obs_key_t obs_key_from_virtual_key(int code)
         return OBS_KEY_META;
     for (size_t i = 0; i < OBS_KEY_LAST_VALUE; i++) {
         if (virtual_keys[i] == code) {
-            return i;
+            return (obs_key_t) i;
         }
     }
     return OBS_KEY_NONE;
@@ -462,7 +484,7 @@ static bool code_to_str(int code, struct dstr *str)
 void obs_key_to_str(obs_key_t key, struct dstr *str)
 {
     const UniCharCount max_length = 16;
-    UniChar buffer[max_length];
+    UniChar buffer[16];
 
     if (localized_key_to_str(key, str))
         return;
@@ -555,6 +577,7 @@ err:
 }
 
 #define OBS_COCOA_MODIFIER_SIZE 7
+
 static void unichar_to_utf8(const UniChar *c, char *buff)
 {
     CFStringRef string = CFStringCreateWithCharactersNoCopy(NULL, c, 2, kCFAllocatorNull);
@@ -577,6 +600,7 @@ static char ctrl_str[OBS_COCOA_MODIFIER_SIZE];
 static char opt_str[OBS_COCOA_MODIFIER_SIZE];
 static char shift_str[OBS_COCOA_MODIFIER_SIZE];
 static char cmd_str[OBS_COCOA_MODIFIER_SIZE];
+
 static void init_utf_8_strings(void)
 {
     const UniChar ctrl_uni[] = {kControlUnicode, 0};
@@ -591,6 +615,7 @@ static void init_utf_8_strings(void)
 }
 
 static pthread_once_t strings_token = PTHREAD_ONCE_INIT;
+
 void obs_key_combination_to_str(obs_key_combination_t key, struct dstr *str)
 {
     struct dstr key_str = {0};
@@ -674,6 +699,16 @@ static bool init_hotkeys_platform(obs_hotkeys_platform_t **plat_)
         [NSEvent addGlobalMonitorForEventsMatchingMask:NSEventMaskKeyDown | NSEventMaskKeyUp | NSEventMaskFlagsChanged
                                                handler:handler];
 
+    NSEvent *_Nullable (^local_handler)(NSEvent *event) = ^NSEvent *_Nullable(NSEvent *event)
+    {
+        handle_monitor_event(plat, event);
+
+        return event;
+    };
+    plat->local_monitor = (__bridge CFTypeRef)
+        [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown | NSEventMaskKeyUp | NSEventMaskFlagsChanged
+                                              handler:local_handler];
+
     plat->tis = TISCopyCurrentKeyboardLayoutInputSource();
     plat->layout_data = (CFDataRef) TISGetInputSourceProperty(plat->tis, kTISPropertyUnicodeKeyLayoutData);
 
@@ -699,8 +734,13 @@ static inline void free_hotkeys_platform(obs_hotkeys_platform_t *plat)
         return;
 
     if (plat->monitor) {
-        CFRelease(plat->monitor);
+        [NSEvent removeMonitor:(__bridge id _Nonnull)(plat->monitor)];
         plat->monitor = NULL;
+    }
+
+    if (plat->local_monitor) {
+        [NSEvent removeMonitor:(__bridge id _Nonnull)(plat->local_monitor)];
+        plat->local_monitor = NULL;
     }
 
     if (plat->tis) {
@@ -769,6 +809,7 @@ void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 }
 
 typedef unsigned long NSUInteger;
+
 static bool mouse_button_pressed(obs_key_t key, bool *pressed)
 {
     int button = 0;

@@ -66,6 +66,8 @@ static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 	switch (format) {
 	case bmdFormat8BitBGRA:
 		return VIDEO_FORMAT_BGRX;
+	case bmdFormat10BitRGBXLE:
+		return VIDEO_FORMAT_R10L;
 	case bmdFormat10BitYUV:
 		return VIDEO_FORMAT_V210;
 	default:
@@ -408,12 +410,12 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 
 	BMDPixelFormat convertFormat;
 	switch (pixelFormat) {
-	case bmdFormat8BitBGRA:
 	case bmdFormat10BitYUV:
+	case bmdFormat8BitBGRA:
+	case bmdFormat10BitRGBXLE:
 		convertFormat = pixelFormat;
 		break;
 	default:
-	case bmdFormat8BitYUV:;
 		convertFormat = bmdFormat8BitYUV;
 		break;
 	}
@@ -624,13 +626,24 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	}
 	activeBlob = nullptr;
 
+	struct obs_video_info ovi;
+	const enum video_colorspace colorspace =
+		obs_get_video_info(&ovi) ? ovi.colorspace : VIDEO_CS_DEFAULT;
+	const bool source_hdr = (colorspace == VIDEO_CS_2100_PQ) ||
+				(colorspace == VIDEO_CS_2100_HLG);
+	const bool enable_hdr =
+		source_hdr &&
+		(obs_output_get_video_conversion(decklinkOutput->GetOutput())
+			 ->colorspace == VIDEO_CS_2100_PQ);
+	BMDPixelFormat pixelFormat = enable_hdr ? bmdFormat10BitRGBXLE
+						: bmdFormat8BitBGRA;
 	const int64_t minimumPrerollFrames =
 		std::max(device->GetMinimumPrerollFrames(), INT64_C(3));
 	for (int64_t i = 0; i < minimumPrerollFrames; ++i) {
 		ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
 		HRESULT result = output_->CreateVideoFrame(
 			decklinkOutput->GetWidth(), decklinkOutput->GetHeight(),
-			rowSize, bmdFormat8BitBGRA, bmdFrameFlagDefault,
+			rowSize, pixelFormat, bmdFrameFlagDefault,
 			&decklinkOutputFrame);
 		if (result != S_OK) {
 			blog(LOG_ERROR, "failed to create video frame 0x%X",
@@ -638,7 +651,15 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 			return false;
 		}
 
-		result = output_->ScheduleVideoFrame(decklinkOutputFrame,
+		IDeckLinkVideoFrame *theFrame = decklinkOutputFrame.Get();
+		ComPtr<HDRVideoFrame> decklinkOutputHDRFrame;
+		if (enable_hdr) {
+			*decklinkOutputHDRFrame.Assign() =
+				new HDRVideoFrame(decklinkOutputFrame);
+			theFrame = decklinkOutputHDRFrame.Get();
+		}
+
+		result = output_->ScheduleVideoFrame(theFrame,
 						     i * frameDuration,
 						     frameDuration,
 						     frameTimescale);
@@ -773,27 +794,32 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 	BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode *newMode,
 	BMDDetectedVideoInputFormatFlags detectedSignalFlags)
 {
+	bool formatChanged = false;
 	if (events & bmdVideoInputColorspaceChanged) {
+		constexpr BMDDetectedVideoInputFormatFlags highBitFlags =
+			(bmdDetectedVideoInput12BitDepth |
+			 bmdDetectedVideoInput10BitDepth);
 		if (detectedSignalFlags & bmdDetectedVideoInputRGB444) {
-			pixelFormat = bmdFormat8BitBGRA;
+			const BMDPixelFormat nextFormat =
+				((detectedSignalFlags & highBitFlags) &&
+				 allow10Bit)
+					? bmdFormat10BitRGBXLE
+					: bmdFormat8BitBGRA;
+			formatChanged = pixelFormat != nextFormat;
+			pixelFormat = nextFormat;
 		}
 		if (detectedSignalFlags & bmdDetectedVideoInputYCbCr422) {
-			if (detectedSignalFlags &
-			    bmdDetectedVideoInput10BitDepth) {
-				if (allow10Bit) {
-					pixelFormat = bmdFormat10BitYUV;
-				} else {
-					pixelFormat = bmdFormat8BitYUV;
-				}
-			}
-			if (detectedSignalFlags &
-			    bmdDetectedVideoInput8BitDepth) {
-				pixelFormat = bmdFormat8BitYUV;
-			}
+			const BMDPixelFormat nextFormat =
+				((detectedSignalFlags & highBitFlags) &&
+				 allow10Bit)
+					? bmdFormat10BitYUV
+					: bmdFormat8BitYUV;
+			formatChanged = pixelFormat != nextFormat;
+			pixelFormat = nextFormat;
 		}
 	}
 
-	if (events & bmdVideoInputDisplayModeChanged) {
+	if (formatChanged || (events & bmdVideoInputDisplayModeChanged)) {
 		input->PauseStreams();
 		mode->SetMode(newMode);
 		displayMode = mode->GetDisplayMode();

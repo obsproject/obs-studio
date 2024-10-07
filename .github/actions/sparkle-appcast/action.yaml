@@ -72,7 +72,6 @@ runs:
 
         mkdir builds
         mkdir -p output/appcasts/stable
-        mkdir -p output/sparkle_deltas
 
     - name: Download Builds 📥
       id: builds
@@ -136,12 +135,10 @@ runs:
         : Prepare Release Notes 📝
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-        git tag -l --format='%(contents)' ${GITHUB_REF_NAME} \
-          | tr '\n' '\\n' \
-          | sed 's/-----BEGIN SSH SIGNATURE-----.*-----END SSH SIGNATURE-----//g' \
-          | tr '\\n' '\n' > notes.rst
-
-        sed -i '' '2i\'$'\n''###################################################' notes.rst
+        git tag -l --format='%(contents:subject)' ${GITHUB_REF_NAME} > notes.rst
+        echo '###################################################' >> notes.rst
+        echo '' >> notes.rst
+        git tag -l --format='%(contents:body)' ${GITHUB_REF_NAME} >> notes.rst
         pandoc -f rst -t html notes.rst -o output/appcasts/notes_${{ inputs.channel }}.html
 
     - name: Generate Appcast 🎙️
@@ -152,21 +149,30 @@ runs:
 
         print -n '${{ inputs.sparklePrivateKey }}' >> eddsa_private.key
         local feed_url='${{ steps.builds.outputs.feedUrl }}'
+        local arch=${${${(s:_:)feed_url:t}[2]}//x86/x86_64}
+        local sparkle_options=(
+          --verbose
+          --ed-key-file eddsa_private.key
+          --download-url-prefix '${{ inputs.urlPrefix }}/'
+          --full-release-notes-url "${feed_url//updates_*/notes_${{ inputs.channel }}.html}"
+          --maximum-versions 0
+          --maximum-deltas '${{ inputs.count }}'
+          --channel '${{ inputs.channel }}'
+        )
+
+        if [[ '${{ inputs.channel }}' == 'stable' ]] {
+          sparkle_options+=(--phased-rollout-interval 86400)
+        }
 
         Sparkle/bin/generate_appcast \
-          --verbose \
-          --ed-key-file eddsa_private.key \
-          --download-url-prefix '${{ inputs.urlPrefix }}/' \
-          --full-release-notes-url "${feed_url//updates_*/notes_${{ inputs.channel }}.html}" \
-          --maximum-versions 0 \
-          --maximum-deltas ${{ inputs.count }} \
-          --channel '${{ inputs.channel }}' \
+          ${sparkle_options} \
           builds
 
         local -a deltas=(builds/*.delta(N))
 
         if (( #deltas )) {
-          mv ${deltas} output/sparkle_deltas
+          mkdir -p output/sparkle_deltas/${arch}
+          mv ${deltas} output/sparkle_deltas/${arch}
         }
 
         mv builds/*.xml output/appcasts
@@ -202,12 +208,16 @@ runs:
 
         local -a appcasts=(output/appcasts/*_v2.xml)
         local legacy
+        local feed_url='${{ steps.builds.outputs.feedUrl }}'
+        local arch=${${${(s:_:)feed_url:t}[2]}//x86/x86_64}
 
         for appcast (${appcasts}) {
           legacy="${appcast//.xml/-legacy.xml}"
           xsltproc \
             -o ${legacy} ${GITHUB_ACTION_PATH}/appcast_legacy.xslt ${appcast}
 
-          xmllint --format ${legacy} >! output/appcasts/stable/${${appcast:t}//-v2.xml/.xml}
+          xmllint --format ${legacy} >! output/appcasts/stable/${${appcast:t}//_v2.xml/.xml}
+
+          if [[ ${arch} == x86_64 ]] xmllint --format ${legacy} >! output/appcasts/stable/${${appcast:t}//_x86_64_v2.xml/.xml}
           rm ${legacy}
         }

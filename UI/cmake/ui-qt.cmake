@@ -1,4 +1,12 @@
-find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui)
+# cmake-format: off
+find_package(Qt6 REQUIRED Widgets Network Svg Xml)
+# cmake-format: on
+
+if(OS_LINUX
+   OR OS_FREEBSD
+   OR OS_OPENBSD)
+  find_package(Qt6 REQUIRED Gui DBus)
+endif()
 
 target_link_libraries(obs-studio PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
 
@@ -26,6 +34,7 @@ set(_qt_sources
     forms/OBSAbout.ui
     forms/OBSAdvAudio.ui
     forms/OBSBasic.ui
+    forms/OBSBasicControls.ui
     forms/OBSBasicFilters.ui
     forms/OBSBasicInteraction.ui
     forms/OBSBasicProperties.ui

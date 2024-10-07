@@ -1,10 +1,6 @@
 #include <AvailabilityMacros.h>
 #include <Cocoa/Cocoa.h>
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300  // __MAC_12_3
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunguarded-availability-new"
-
 #include <stdlib.h>
 #include <obs-module.h>
 #include <util/threading.h>
@@ -29,13 +25,16 @@ typedef enum {
     ScreenCaptureAudioApplicationStream = 1,
 } ScreenCaptureAudioStreamType;
 
+API_AVAILABLE(macos(12.5)) typedef SCDisplay *SCDisplayRef;
+
+API_AVAILABLE(macos(12.5))
 @interface ScreenCaptureDelegate : NSObject <SCStreamOutput, SCStreamDelegate>
 
 @property struct screen_capture *sc;
 
 @end
 
-struct screen_capture {
+struct API_AVAILABLE(macos(12.5)) screen_capture {
     obs_source_t *source;
 
     gs_effect_t *effect;
@@ -70,19 +69,16 @@ struct screen_capture {
 
 bool is_screen_capture_available(void);
 
-void screen_capture_build_content_list(struct screen_capture *sc, bool display_capture);
+API_AVAILABLE(macos(12.5)) void screen_capture_build_content_list(struct screen_capture *sc, bool display_capture);
 
-bool build_display_list(struct screen_capture *sc, obs_properties_t *props);
+API_AVAILABLE(macos(12.5)) bool build_display_list(struct screen_capture *sc, obs_properties_t *props);
 
-bool build_window_list(struct screen_capture *sc, obs_properties_t *props);
+API_AVAILABLE(macos(12.5)) bool build_window_list(struct screen_capture *sc, obs_properties_t *props);
 
-bool build_application_list(struct screen_capture *sc, obs_properties_t *props);
+API_AVAILABLE(macos(12.5)) bool build_application_list(struct screen_capture *sc, obs_properties_t *props);
 
 static const char *screen_capture_getname(void *unused __unused);
 
-void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer);
+API_AVAILABLE(macos(12.5)) void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer);
 
-void screen_stream_audio_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer);
-
-#pragma clang diagnostic pop
-#endif
+API_AVAILABLE(macos(12.5)) void screen_stream_audio_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer);

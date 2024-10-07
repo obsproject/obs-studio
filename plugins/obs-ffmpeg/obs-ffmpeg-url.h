@@ -6,7 +6,6 @@
 #include <libavutil/time.h>
 #include <libavutil/error.h>
 #include <stdio.h>
-#include <sys/timeb.h>
 #include <time.h>
 
 #define HTTP_PROTO "http"
@@ -47,7 +46,7 @@ typedef struct URLContext {
 //#define LOG_DEBUG 7 // issue w/ libobs
 #define LOG_PRIMASK 0x07
 
-#define LOG_PRI(p) ((p)&LOG_PRIMASK)
+#define LOG_PRI(p) ((p) & LOG_PRIMASK)
 #define LOG_MAKEPRI(fac, pri) (((fac) << 3) | (pri))
 
 #define LOG_KERN (0 << 3)
@@ -75,7 +74,7 @@ typedef struct URLContext {
 
 #define LOG_NFACILITIES 24
 #define LOG_FACMASK 0x03f8
-#define LOG_FAC(p) (((p)&LOG_FACMASK) >> 3)
+#define LOG_FAC(p) (((p) & LOG_FACMASK) >> 3)
 #endif
 #endif
 
@@ -139,5 +138,5 @@ enum type {
 };
 }
 class Logger;
-}
+} // namespace srt_logging
 #endif

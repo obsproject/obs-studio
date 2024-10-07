@@ -11,6 +11,7 @@
 #define BUFFERING "buffering"
 #define DEACTIVATE_WNS "deactivate_when_not_showing"
 #define AUTO_START "auto_start"
+#define FORCE_SDR "force_sdr"
 #define KEYER "keyer"
 #define SWAP "swap"
 #define ALLOW_10_BIT "allow_10_bit"
@@ -37,6 +38,7 @@
 #define TEXT_BUFFERING obs_module_text("Buffering")
 #define TEXT_DWNS obs_module_text("DeactivateWhenNotShowing")
 #define TEXT_AUTO_START obs_module_text("AutoStart")
+#define TEXT_FORCE_SDR obs_module_text("ForceSDR")
 #define TEXT_ENABLE_KEYER obs_module_text("Keyer")
 #define TEXT_SWAP obs_module_text("SwapFC-LFE")
 #define TEXT_SWAP_TOOLTIP obs_module_text("SwapFC-LFE.Tooltip")

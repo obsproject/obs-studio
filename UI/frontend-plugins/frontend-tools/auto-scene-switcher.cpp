@@ -49,7 +49,6 @@ struct SwitcherData {
 	OBSWeakSource nonMatchingScene;
 	int interval = DEFAULT_INTERVAL;
 	bool switchIfNotMatching = false;
-	bool startAtLaunch = false;
 
 	void Thread();
 	void Start();
@@ -257,15 +256,6 @@ void SceneSwitcher::on_remove_clicked()
 	}
 
 	delete item;
-}
-
-void SceneSwitcher::on_startAtLaunch_toggled(bool value)
-{
-	if (loading)
-		return;
-
-	lock_guard<mutex> lock(switcher->m);
-	switcher->startAtLaunch = value;
 }
 
 void SceneSwitcher::UpdateNonMatchingScene(const QString &name)

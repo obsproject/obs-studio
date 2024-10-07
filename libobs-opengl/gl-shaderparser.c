@@ -71,6 +71,12 @@ static bool gl_write_type_n(struct gl_shader_parser *glsp, const char *type,
 		dstr_cat(&glsp->gl_string, "ivec3");
 	else if (cmp_type(type, len, "int4", 4) == 0)
 		dstr_cat(&glsp->gl_string, "ivec4");
+	else if (cmp_type(type, len, "uint2", 5) == 0)
+		dstr_cat(&glsp->gl_string, "uvec2");
+	else if (cmp_type(type, len, "uint3", 5) == 0)
+		dstr_cat(&glsp->gl_string, "uvec3");
+	else if (cmp_type(type, len, "uint4", 5) == 0)
+		dstr_cat(&glsp->gl_string, "uvec4");
 	else if (cmp_type(type, len, "float3x3", 8) == 0)
 		dstr_cat(&glsp->gl_string, "mat3x3");
 	else if (cmp_type(type, len, "float3x4", 8) == 0)
@@ -267,6 +273,7 @@ static inline void gl_write_structs(struct gl_shader_parser *glsp)
  *   lerp     -> mix
  *   lit      -> (unsupported)
  *   log10    -> (unsupported)
+ *   mad      -> (change to operator) [fma needs GLSL 400]
  *   mul      -> (change to operator)
  *   rsqrt    -> inversesqrt
  *   saturate -> (use clamp)
@@ -279,6 +286,31 @@ static inline void gl_write_structs(struct gl_shader_parser *glsp)
  *
  *   All else can be left as-is
  */
+
+static bool gl_write_mad(struct gl_shader_parser *glsp,
+			 struct cf_token **p_token)
+{
+	struct cf_parser *cfp = &glsp->parser.cfp;
+	cfp->cur_token = *p_token;
+
+	if (!cf_next_token(cfp))
+		return false;
+	if (!cf_token_is(cfp, "("))
+		return false;
+
+	dstr_cat(&glsp->gl_string, "(");
+	gl_write_function_contents(glsp, &cfp->cur_token, ",");
+	dstr_cat(&glsp->gl_string, ") * (");
+	cf_next_token(cfp);
+	gl_write_function_contents(glsp, &cfp->cur_token, ",");
+	dstr_cat(&glsp->gl_string, ") + (");
+	cf_next_token(cfp);
+	gl_write_function_contents(glsp, &cfp->cur_token, ")");
+	dstr_cat(&glsp->gl_string, "))");
+
+	*p_token = cfp->cur_token;
+	return true;
+}
 
 static bool gl_write_mul(struct gl_shader_parser *glsp,
 			 struct cf_token **p_token)
@@ -456,18 +488,21 @@ static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
 		dstr_cat(&glsp->gl_string, "dFdx");
 	} else if (strref_cmp(&token->str, "ddy") == 0) {
 		dstr_cat(&glsp->gl_string, "dFdy");
+	} else if (strref_cmp(&token->str, "fmod") == 0) {
+		dstr_cat(&glsp->gl_string, "mod");
 	} else if (strref_cmp(&token->str, "frac") == 0) {
 		dstr_cat(&glsp->gl_string, "fract");
 	} else if (strref_cmp(&token->str, "lerp") == 0) {
 		dstr_cat(&glsp->gl_string, "mix");
-	} else if (strref_cmp(&token->str, "fmod") == 0) {
-		dstr_cat(&glsp->gl_string, "mod");
+	} else if (strref_cmp(&token->str, "mad") == 0) {
+		/* fma not available in GLSL 330 */
+		written = gl_write_mad(glsp, &token);
+	} else if (strref_cmp(&token->str, "mul") == 0) {
+		written = gl_write_mul(glsp, &token);
 	} else if (strref_cmp(&token->str, "rsqrt") == 0) {
 		dstr_cat(&glsp->gl_string, "inversesqrt");
 	} else if (strref_cmp(&token->str, "saturate") == 0) {
 		written = gl_write_saturate(glsp, &token);
-	} else if (strref_cmp(&token->str, "mul") == 0) {
-		written = gl_write_mul(glsp, &token);
 	} else if (strref_cmp(&token->str, "sincos") == 0) {
 		written = gl_write_sincos(glsp, &token);
 	} else {

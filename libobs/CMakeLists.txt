@@ -1,29 +1,41 @@
-cmake_minimum_required(VERSION 3.16...3.25)
+cmake_minimum_required(VERSION 3.22...3.25)
 
 legacy_check()
 
-# cmake-format: off
-add_library(libobs-version STATIC EXCLUDE_FROM_ALL)
-add_library(OBS::libobs-version ALIAS libobs-version)
-# cmake-format: on
-configure_file(obsversion.c.in obsversion.c @ONLY)
-target_sources(libobs-version PRIVATE obsversion.c obsversion.h)
-set_property(TARGET libobs-version PROPERTY FOLDER core)
-
-add_library(libobs SHARED)
-add_library(OBS::libobs ALIAS libobs)
+include(cmake/obs-version.cmake)
 
 find_package(Threads REQUIRED)
-find_package(FFmpeg REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
+
+# cmake-format: off
+if(OS_WINDOWS OR OS_MACOS)
+  set(ffmpeg_version 6)
+else()
+  set(ffmpeg_version 4.4)
+endif()
+
+find_package(
+  FFmpeg ${ffmpeg_version}
+  REQUIRED avformat
+           avutil
+           swscale
+           swresample
+  OPTIONAL_COMPONENTS avcodec)
+# cmake-format: on
+
 find_package(ZLIB REQUIRED)
+find_package(Uthash REQUIRED)
 
 if(ENABLE_UI)
-  find_qt(COMPONENTS Core)
+  find_package(Qt6 REQUIRED Core)
 endif()
 
 find_package(jansson REQUIRED)
-add_subdirectory("${CMAKE_SOURCE_DIR}/deps/libcaption" "${CMAKE_BINARY_DIR}/deps/libcaption")
-add_subdirectory("${CMAKE_SOURCE_DIR}/deps/uthash" "${CMAKE_BINARY_DIR}/deps/uthash")
+if(NOT TARGET OBS::caption)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/libcaption" "${CMAKE_BINARY_DIR}/deps/libcaption")
+endif()
+
+add_library(libobs SHARED)
+add_library(OBS::libobs ALIAS libobs)
 
 target_sources(
   libobs
@@ -33,8 +45,11 @@ target_sources(
           obs-audio-controls.c
           obs-audio-controls.h
           obs-audio.c
+          obs-av1.c
+          obs-av1.h
           obs-avc.c
           obs-avc.h
+          obs-config.h
           obs-data.c
           obs-data.h
           obs-defs.h
@@ -67,7 +82,6 @@ target_sources(
           obs-source-transition.c
           obs-source.c
           obs-source.h
-          obs-ui.h
           obs-video-gpu-encode.c
           obs-video.c
           obs-view.c
@@ -86,6 +100,8 @@ target_sources(
           util/bitstream.h
           util/bmem.c
           util/bmem.h
+          util/buffered-file-serializer.c
+          util/buffered-file-serializer.h
           util/c99defs.h
           util/cf-lexer.c
           util/cf-lexer.h
@@ -98,12 +114,14 @@ target_sources(
           util/crc32.h
           util/curl/curl-helper.h
           util/darray.h
+          util/deque.h
           util/dstr.c
           util/dstr.h
           util/file-serializer.c
           util/file-serializer.h
           util/lexer.c
           util/lexer.h
+          util/pipe.c
           util/pipe.h
           util/platform.c
           util/platform.h
@@ -223,6 +241,7 @@ target_sources(
           graphics/vec4.h)
 
 target_compile_features(libobs PUBLIC cxx_std_17)
+
 target_compile_definitions(
   libobs
   PRIVATE IS_LIBOBS
@@ -232,7 +251,6 @@ target_compile_definitions(
 target_link_libraries(
   libobs
   PRIVATE OBS::caption
-          OBS::uthash
           OBS::libobs-version
           FFmpeg::avcodec
           FFmpeg::avformat
@@ -240,6 +258,7 @@ target_link_libraries(
           FFmpeg::swscale
           FFmpeg::swresample
           jansson::jansson
+          Uthash::Uthash
           ZLIB::ZLIB
   PUBLIC Threads::Threads)
 
@@ -249,32 +268,54 @@ elseif(OS_MACOS)
   include(cmake/os-macos.cmake)
 elseif(OS_LINUX)
   include(cmake/os-linux.cmake)
-elseif(OS_FREEBSD)
+elseif(OS_FREEBSD OR OS_OPENBSD)
   include(cmake/os-freebsd.cmake)
 endif()
 
 configure_file(obsconfig.h.in "${CMAKE_BINARY_DIR}/config/obsconfig.h" @ONLY)
+
 target_include_directories(libobs PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>"
                                          "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
+
 target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 
 set(public_headers
     # cmake-format: sortable
     callback/calldata.h
+    callback/decl.h
     callback/proc.h
     callback/signal.h
+    graphics/axisang.h
+    graphics/bounds.h
+    graphics/effect-parser.h
+    graphics/effect.h
     graphics/graphics.h
+    graphics/image-file.h
     graphics/input.h
+    graphics/libnsgif/libnsgif.h
     graphics/math-defs.h
+    graphics/math-extra.h
+    graphics/matrix3.h
+    graphics/matrix4.h
+    graphics/plane.h
+    graphics/quat.h
+    graphics/shader-parser.h
     graphics/srgb.h
     graphics/vec2.h
     graphics/vec3.h
     graphics/vec4.h
     media-io/audio-io.h
+    media-io/audio-math.h
+    media-io/audio-resampler.h
+    media-io/format-conversion.h
     media-io/frame-rate.h
     media-io/media-io-defs.h
+    media-io/media-remux.h
+    media-io/video-frame.h
     media-io/video-io.h
+    media-io/video-scaler.h
     obs-audio-controls.h
+    obs-avc.h
     obs-config.h
     obs-data.h
     obs-defs.h
@@ -282,54 +323,80 @@ set(public_headers
     obs-hotkey.h
     obs-hotkeys.h
     obs-interaction.h
-    obs-internal.h
     obs-missing-files.h
     obs-module.h
+    obs-nal.h
+    obs-nix-platform.h
     obs-output.h
     obs-properties.h
     obs-service.h
     obs-source.h
-    obs-ui.h
     obs.h
     obs.hpp
+    util/array-serializer.h
     util/base.h
+    util/bitstream.h
     util/bmem.h
     util/c99defs.h
+    util/cf-lexer.h
+    util/cf-parser.h
     util/circlebuf.h
     util/config-file.h
+    util/crc32.h
     util/darray.h
+    util/deque.h
     util/dstr.h
+    util/dstr.hpp
+    util/file-serializer.h
+    util/lexer.h
+    util/pipe.h
     util/platform.h
     util/profiler.h
     util/profiler.hpp
+    util/serializer.h
+    util/simde/check.h
+    util/simde/debug-trap.h
+    util/simde/hedley.h
+    util/simde/simde-align.h
+    util/simde/simde-arch.h
+    util/simde/simde-common.h
+    util/simde/simde-constify.h
+    util/simde/simde-detect-clang.h
+    util/simde/simde-diagnostic.h
+    util/simde/simde-features.h
+    util/simde/simde-math.h
+    util/simde/x86/mmx.h
+    util/simde/x86/sse.h
+    util/simde/x86/sse2.h
     util/sse-intrin.h
+    util/task.h
     util/text-lookup.h
+    util/threading-posix.h
     util/threading.h
+    util/uthash.h
     util/util.hpp
+    util/util_uint128.h
     util/util_uint64.h)
+
+if(OS_WINDOWS)
+  list(
+    APPEND
+    public_headers
+    util/threading-windows.h
+    util/windows/ComPtr.hpp
+    util/windows/CoTaskMemPtr.hpp
+    util/windows/device-enum.h
+    util/windows/HRError.hpp
+    util/windows/win-registry.h
+    util/windows/win-version.h
+    util/windows/window-helpers.h
+    util/windows/WinHandle.hpp)
+elseif(OS_MACOS)
+  list(APPEND public_headers util/apple/cfstring-utils.h)
+endif()
 
 if(ENABLE_HEVC)
   list(APPEND public_headers obs-hevc.h)
-endif()
-
-if(ARCH_SIMD_FLAGS)
-  set(public_headers
-      # cmake-format: sortable
-      ${public_headers}
-      util/simde/check.h
-      util/simde/debug-trap.h
-      util/simde/hedley.h
-      util/simde/simde-align.h
-      util/simde/simde-arch.h
-      util/simde/simde-common.h
-      util/simde/simde-constify.h
-      util/simde/simde-detect-clang.h
-      util/simde/simde-diagnostic.h
-      util/simde/simde-features.h
-      util/simde/simde-math.h
-      util/simde/x86/mmx.h
-      util/simde/x86/sse.h
-      util/simde/x86/sse2.h)
 endif()
 
 # cmake-format: off

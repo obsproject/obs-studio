@@ -68,14 +68,19 @@ runs:
         print "::error:steam-upload action can only be used with 'release', 'workflow-dispatch', or 'schedule' events."
         exit 2
 
+    - name: Download Nightly Assets 🌙
+      id: asset-info-nightly
+      uses: actions/download-artifact@v4
+      if: github.event_name == 'schedule'
+
     - name: Download Assets 📥
       id: asset-info
       shell: zsh --no-rcs --errexit --pipefail {0}
       env:
         GH_TOKEN: ${{ inputs.workflowSecret }}
-        windows_custom_asset: ${{ steps.asset-info.outputs.windowsAssetUrl }}
-        macos_apple_custom_asset: ${{ steps.asset-info.outputs.macos_appleAssetUrl }}
-        macos_intel_custom_asset: ${{ steps.asset-info.outputs.macos_intelAssetUrl }}
+        windows_custom_asset: ${{ inputs.customAssetWindows }}
+        macos_apple_custom_asset: ${{ inputs.customAssetMacOSApple }}
+        macos_intel_custom_asset: ${{ inputs.customAssetMacOSIntel }}
       run: |
         : Download Assets 📥
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
@@ -86,28 +91,24 @@ runs:
 
         case ${GITHUB_EVENT_NAME} {
           release)
-            gh release download \
-              --pattern '*macOS*.dmg' \
-              --pattern '*Windows*' \
+            gh release download ${{ inputs.tagName }} \
+              --pattern '*.dmg' \
               --pattern '*.zip' \
               --clobber
 
-            IFS=';' read -r description is_prerelease <<< \
-              "$(gh release view --json tagName,isPrerelease --jq 'join(";")')"
+            IFS=';' read -r is_prerelease description <<< \
+              "$(gh release view ${{ inputs.tagName }} --json isPrerelease,tagName --jq 'join(";")')"
             ;;
           workflow_dispatch)
             if [[ '${{ inputs.tagName }}' =~ [0-9]+\.[0-9]+\.[0-9]+(-(rc|beta)[0-9]+)*$ ]] {
               gh release download ${{ inputs.tagName }} \
-                --pattern '*macOS*.dmg' \
-                --pattern '*Windows*' \
+                --pattern '*.dmg' \
                 --pattern '*.zip' \
                 --clobber
 
               description='${{ inputs.tagName }}'
               read -r is_prerelease <<< \
                 "$(gh release view ${{ inputs.tagName }} --json isPrerelease --jq '.isPrerelease')"
-              asset_names=(gh release view ${{ inputs.tagName }} --json assets \
-                --jq '.assets[] | select(.name|test(".*(macos|Full-x64|windows).*")) | .name')
 
               local -A custom_assets=(
                 windows "Windows x64;${windows_custom_asset}"
@@ -140,19 +141,15 @@ runs:
             }
             ;;
           schedule)
-            gh run download ${GITHUB_RUN_ID} \
-              --pattern '*macos*' \
-              --pattern '*windows*'
-
             local short_hash="${GITHUB_SHA:0:9}"
             mv obs-studio-windows-x64-${short_hash}/obs-studio-*-windows-x64.zip \
               ${root_dir}
             mv obs-studio-macos-arm64-${short_hash}/obs-studio-*-macos-apple.dmg \
               ${root_dir}
-            mv obs-studio-macos-intel-${short_hash}/obs-studio-*-macos-intel.dmg \
+            mv obs-studio-macos-x86_64-${short_hash}/obs-studio-*-macos-intel.dmg \
               ${root_dir}
 
-            description="g${GITHUB_SHA}"
+            description="g${GITHUB_SHA:0:9}"
             is_prerelease='false'
             ;;
         }
@@ -171,7 +168,7 @@ runs:
 
         print '::group::Prepare Windows x64 assets'
         mkdir -p steam-windows && pushd steam-windows
-        unzip ${root_dir}/(#i)obs-studio-*.zip
+        unzip ${root_dir}/(#i)obs-studio-(^*-pdbs).zip
         rm ${root_dir}/(#i)obs-studio-*.zip
 
         cp -r ${root_dir}/build-aux/steam/scripts_windows scripts
@@ -200,11 +197,11 @@ runs:
         popd
 
     - name: Set Up steamcmd 🚂
-      uses: CyberAndrii/setup-steamcmd@b786e0da44db3d817e66fa3910a9560cb28c9323
+      uses: CyberAndrii/setup-steamcmd@29e114af032a947f5ed57832409070d6e4cbfce3
 
     - name: Generate Steam auth code 🔐
       id: steam-totp
-      uses: CyberAndrii/steam-totp@c7f636bc64e77f1b901e0420b7890813141508ee
+      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
       if: ${{ ! fromJSON(inputs.preview) }}
       with:
         shared_secret: ${{ inputs.steamSecret }}
@@ -244,25 +241,33 @@ runs:
 
         steamcmd \
           +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp.outputs.code }}' \
-          +run_app_build ${preview:+-preview} ${build_file} \
+          +run_app_build ${preview:+-preview} ${build_file:a} \
           +quit
         print '::endgroup'
         popd
+
+    - name: Generate Steam auth code 🔐
+      id: steam-totp-playtest
+      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
+      if: ${{ ! fromJSON(inputs.preview) && fromJSON(steps.asset-info.outputs.is_prerelease) }}
+      with:
+        shared_secret: ${{ inputs.steamSecret }}
 
     - name: Upload to Steam (Playtest) 📤
       if: fromJSON(steps.asset-info.outputs.is_prerelease)
       shell: zsh --no-rcs --errexit --pipefail {0}
       run: |
-        : Upload to Steam (Playtest) 📤
+        : Upload to Steam Playtest 📤
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
+        local root_dir="${PWD}"
         local build_file='build_playtest.vdf'
         local branch_name='${{ inputs.playtestBranch }}'
 
         pushd steam
         print '::group::Prepare Steam Build Script'
 
-        set "s/@@DESC@@/${branch_name}-${{ steps.asset-info.outputs.description }}/;s/@@BRANCH@@/${branch_name}" \
+        sed "s/@@DESC@@/${branch_name}-${{ steps.asset-info.outputs.description }}/;s/@@BRANCH@@/${branch_name}/" \
           ${root_dir}/build-aux/steam/obs_playtest_build.vdf > ${build_file}
 
         print "Generated ${build_file}:\n$(<${build_file})"
@@ -273,14 +278,14 @@ runs:
         if [[ '${{ inputs.preview }}' == 'true' ]] preview='-preview'
 
         steamcmd \
-          +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp.outputs.code }}' \
-          +run_app_build ${preview} ${build_file} \
+          +login '${{ inputs.steamUser }}' '${{ inputs.steamPassword }}' '${{ steps.steam-totp-playtest.outputs.code }}' \
+          +run_app_build ${preview} ${build_file:a} \
           +quit
         print '::endgroup'
         popd
 
     - name: Upload Steam build logs
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: steam-build-logs
         path: ${{ github.workspace }}/steam/build/*.log

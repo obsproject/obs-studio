@@ -1,4 +1,4 @@
-name: Pull Request
+name: Pull
 run-name: ${{ github.event.pull_request.title }} pull request run 🚀
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - '**.md'
     branches: [master]
-    types: [ opened, synchronize, reopened, labeled, unlabeled ]
+    types: [ opened, synchronize, reopened ]
 permissions:
   contents: read
 concurrency:
@@ -14,26 +14,26 @@ concurrency:
   cancel-in-progress: true
 jobs:
   check-format:
-    name: Check Formatting 🔍
+    name: Format 🔍
     uses: ./.github/workflows/check-format.yaml
     permissions:
       contents: read
 
   build-project:
-    name: Build Project 🧱
+    name: Build 🧱
     uses: ./.github/workflows/build-project.yaml
     secrets: inherit
     permissions:
       contents: read
 
   compatibility-validation:
-    name: Validate Compatibility Data 🕵️
+    name: Validate Compatibility 🕵️
     if: github.base_ref == 'master'
     runs-on: ubuntu-22.04
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -49,13 +49,13 @@ jobs:
         uses: ./.github/actions/compatibility-validator
 
   services-validation:
-    name: Validate Services Data 🕵️
+    name: Validate Services 🕵️
     if: github.base_ref == 'master'
     runs-on: ubuntu-22.04
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -79,7 +79,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && github.base_ref == 'master'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 

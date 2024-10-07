@@ -3,6 +3,7 @@
     "buildsystem": "cmake-ninja",
     "//": "Disable SCTP IP code. Packets are handle by WebRTC so we don't need it",
     "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
         "-Dsctp_build_shared_lib=ON",
         "-Dsctp_build_programs=OFF",
         "-Dsctp_inet=OFF",

@@ -95,6 +95,9 @@ Array Output Serializer
 
 Provides an output serializer used with dynamic arrays.
 
+.. versionchanged:: 30.2
+   Array output serializer now supports seeking.
+
 .. code:: cpp
 
    #include <util/array-serializer.h>
@@ -119,6 +122,13 @@ Array Output Serializer Functions
 
 ---------------------
 
+.. function:: void array_output_serializer_reset(struct array_output_data *data)
+
+   Resets serializer without freeing data.
+
+   .. versionadded:: 30.2
+
+---------------------
 
 File Input/Output Serializers
 =============================
@@ -171,3 +181,44 @@ File Output Serializer Functions
 .. function:: void file_output_serializer_free(struct serializer *s)
 
    Frees the file output serializer and saves the file.
+
+---------------------
+
+Buffered File Output Serializer
+===============================
+
+Provides a buffered file serializer that writes data asynchronously to prevent stalls due to slow disk I/O.
+
+Writes will only block when the buffer is full.
+
+The buffer and chunk size are configurable with the defaults being 256 MiB and 1 MiB respectively.
+
+.. versionadded:: 30.2
+
+.. code:: cpp
+
+   #include <util/buffered-file-serializer.h>
+
+
+Buffered File Output Serializer Functions
+-----------------------------------------
+
+.. function:: bool buffered_file_serializer_init_defaults(struct serializer *s, const char *path)
+
+   Initializes a buffered file output serializer with default buffer and chunk sizes.
+
+   :return:     *true* if file created successfully, *false* otherwise
+
+---------------------
+
+.. function:: bool buffered_file_serializer_init(struct serializer *s, const char *path, size_t max_bufsize, size_t chunk_size)
+
+   Initialize buffered writer with specified buffer and chunk sizes. Setting either to `0` will use the default value.
+
+   :return:     *true* if file created successfully, *false* otherwise
+
+---------------------
+
+.. function:: void buffered_file_serializer_free(struct serializer *s)
+
+   Frees the file output serializer and saves the file. Will block until I/O thread completes outstanding writes.

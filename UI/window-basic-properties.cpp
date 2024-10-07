@@ -84,8 +84,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->propertiesLayout->addWidget(view);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		connect(view, SIGNAL(PropertiesRefreshed()), this,
-			SLOT(AddPreviewButton()));
+		connect(view, &OBSPropertiesView::PropertiesRefreshed, this,
+			&OBSBasicProperties::AddPreviewButton);
 	}
 
 	view->show();
@@ -476,18 +476,9 @@ void OBSBasicProperties::reject()
 
 void OBSBasicProperties::closeEvent(QCloseEvent *event)
 {
-	if (!acceptClicked && (CheckSettings() != 0)) {
-		if (!ConfirmQuit()) {
-			event->ignore();
-			return;
-		}
-	}
-
 	QDialog::closeEvent(event);
-	if (!event->isAccepted())
-		return;
-
-	Cleanup();
+	if (event->isAccepted())
+		Cleanup();
 }
 
 bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message,

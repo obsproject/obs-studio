@@ -6,18 +6,18 @@
 #include <mutex>
 #include <vector>
 #include <obs.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/windows/WinHandle.hpp>
 
 #include <fstream>
 
-class CircleBuf {
-	circlebuf buf = {};
+class Deque {
+	deque buf = {};
 
 public:
-	inline ~CircleBuf() { circlebuf_free(&buf); }
-	inline operator circlebuf *() { return &buf; }
-	inline circlebuf *operator->() { return &buf; }
+	inline ~Deque() { deque_free(&buf); }
+	inline operator deque *() { return &buf; }
+	inline deque *operator->() { return &buf; }
 };
 
 class mssapi_captions;
@@ -36,7 +36,7 @@ class CaptionStream : public ISpAudio {
 	std::vector<int16_t> temp_buf;
 	WAVEFORMATEX format = {};
 
-	CircleBuf buf;
+	Deque buf;
 	ULONG wait_size = 0;
 	DWORD samplerate = 0;
 	ULARGE_INTEGER pos = {};

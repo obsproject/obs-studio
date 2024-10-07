@@ -51,7 +51,7 @@ size_t utf8_char_length(const utf8_char_t* c)
 int utf8_char_whitespace(const utf8_char_t* c)
 {
     // 0x7F is DEL
-    if (!c || (c[0] >= 0 && c[0] <= ' ') || c[0] == 0x7F) {
+    if (!c || (unsigned char)c[0] <= ' ' || c[0] == 0x7F) {
         return 1;
     }
 

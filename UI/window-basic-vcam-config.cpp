@@ -31,8 +31,8 @@ OBSBasicVCamConfig::OBSBasicVCamConfig(const VCamConfig &_config,
 	ui->outputType->setCurrentIndex(
 		ui->outputType->findData((int)config.type));
 	OutputTypeChanged();
-	connect(ui->outputType, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(OutputTypeChanged()));
+	connect(ui->outputType, &QComboBox::currentIndexChanged, this,
+		&OBSBasicVCamConfig::OutputTypeChanged);
 
 	connect(ui->buttonBox, &QDialogButtonBox::accepted, this,
 		&OBSBasicVCamConfig::UpdateConfig);

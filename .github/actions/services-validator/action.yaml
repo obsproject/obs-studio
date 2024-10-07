@@ -4,6 +4,12 @@ inputs:
   repositorySecret:
     description: GitHub token for API access
     required: true
+  checkApiSecret:
+    description: Token for server check API
+    required: false
+  checkApiServers:
+    description: Servers for the check API
+    required: false
   runSchemaChecks:
     description: Enable schema checking
     required: false
@@ -45,9 +51,13 @@ runs:
         if [[ "${RUNNER_OS}" == Linux ]]; then
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+          brew install --overwrite --quiet python3
         fi
-        brew install --quiet python3
-        python3 -m pip install jsonschema json_source_map requests
+
+        python3 -m venv .venv
+
+        source .venv/bin/activate
+        python3 -m pip install jsonschema json_source_map requests aiohttp
         echo ::endgroup::
 
     - name: Validate Services File JSON Schema 🕵️
@@ -60,6 +70,8 @@ runs:
         shopt -s extglob
 
         echo ::group::Run Validation
+
+        source .venv/bin/activate
         python3 -u \
           .github/scripts/utils.py/check-jsonschema.py \
           plugins/rtmp-services/data/@(services|package).json \
@@ -68,7 +80,7 @@ runs:
 
     - name: Annotate schema validation errors 🏷️
       if: fromJSON(inputs.runSchemaChecks) && failure()
-      uses: yuzutech/annotations-action@v0.4.0
+      uses: yuzutech/annotations-action@0e061a6e3ac848299310b6429b60d67cafd4e7f8
       with:
         repo-token: ${{ inputs.repositorySecret }}
         title: Service JSON Errors
@@ -76,7 +88,7 @@ runs:
 
     - name: Restore Timestamp Cache ⏳
       if: fromJSON(inputs.runServiceChecks)
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/other
         key: service-check-${{ github.run_id }}
@@ -91,18 +103,22 @@ runs:
         GITHUB_TOKEN: ${{ inputs.repositorySecret }}
         WORKFLOW_RUN_ID: ${{ github.run_id }}
         REPOSITORY: ${{ github.repository }}
+        API_KEY: ${{ inputs.checkApiSecret }}
+        API_SERVERS: ${{ inputs.checkApiServers }}
       run: |
         : Check for defunct services 📉
+
+        source .venv/bin/activate
         python3 -u .github/scripts/utils.py/check-services.py
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: fromJSON(inputs.runServiceChecks)
       with:
         name: timestamps
         path: ${{ inputs.workingDirectory }}/other/*
 
     - name: Create pull request 🔧
-      uses: peter-evans/create-pull-request@f094b77505fb89581e68a1163fbd2fffece39da1
+      uses: peter-evans/create-pull-request@b1ddad2c994a25fbc81a28b3ec0e368bb2021c50
       if: fromJSON(inputs.createPullRequest) && fromJSON(inputs.runServiceChecks) && fromJSON(steps.services-check.outputs.make_pr)
       with:
         author: 'Service Checker <commits@obsproject.com>'

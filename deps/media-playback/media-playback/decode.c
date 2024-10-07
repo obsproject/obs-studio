@@ -21,8 +21,8 @@
 #include <libavutil/mastering_display_metadata.h>
 
 enum AVHWDeviceType hw_priority[] = {
-	AV_HWDEVICE_TYPE_D3D11VA,      AV_HWDEVICE_TYPE_DXVA2,
-	AV_HWDEVICE_TYPE_CUDA,         AV_HWDEVICE_TYPE_VAAPI,
+	AV_HWDEVICE_TYPE_CUDA,         AV_HWDEVICE_TYPE_D3D11VA,
+	AV_HWDEVICE_TYPE_DXVA2,        AV_HWDEVICE_TYPE_VAAPI,
 	AV_HWDEVICE_TYPE_VDPAU,        AV_HWDEVICE_TYPE_QSV,
 	AV_HWDEVICE_TYPE_VIDEOTOOLBOX, AV_HWDEVICE_TYPE_NONE,
 };
@@ -114,8 +114,14 @@ static uint16_t get_max_luminance(const AVStream *stream)
 {
 	uint32_t max_luminance = 0;
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 	for (int i = 0; i < stream->nb_side_data; i++) {
 		const AVPacketSideData *const sd = &stream->side_data[i];
+#else
+	for (int i = 0; i < stream->codecpar->nb_coded_side_data; i++) {
+		const AVPacketSideData *const sd =
+			&stream->codecpar->coded_side_data[i];
+#endif
 		switch (sd->type) {
 		case AV_PKT_DATA_MASTERING_DISPLAY_METADATA: {
 			const AVMasteringDisplayMetadata *mastering =
@@ -233,7 +239,7 @@ void mp_decode_clear_packets(struct mp_decode *d)
 
 	while (d->packets.size) {
 		AVPacket *pkt;
-		circlebuf_pop_front(&d->packets, &pkt, sizeof(pkt));
+		deque_pop_front(&d->packets, &pkt, sizeof(pkt));
 		mp_media_free_packet(d->m, pkt);
 	}
 }
@@ -241,7 +247,7 @@ void mp_decode_clear_packets(struct mp_decode *d)
 void mp_decode_free(struct mp_decode *d)
 {
 	mp_decode_clear_packets(d);
-	circlebuf_free(&d->packets);
+	deque_free(&d->packets);
 
 	av_packet_free(&d->pkt);
 	av_packet_free(&d->orig_pkt);
@@ -268,7 +274,7 @@ void mp_decode_free(struct mp_decode *d)
 
 void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 {
-	circlebuf_push_back(&decode->packets, &packet, sizeof(packet));
+	deque_push_back(&decode->packets, &packet, sizeof(packet));
 }
 
 static inline int64_t get_estimated_duration(struct mp_decode *d,
@@ -331,16 +337,24 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 			return ret;
 		}
 
+		/* does not check for color format or other parameter changes which would require frame buffer realloc */
+		if (d->sw_frame->data[0] &&
+		    (d->sw_frame->width != d->hw_frame->width ||
+		     d->sw_frame->height != d->hw_frame->height)) {
+			blog(LOG_DEBUG,
+			     "MP: hardware frame size changed from %dx%d to %dx%d. reallocating frame",
+			     d->sw_frame->width, d->sw_frame->height,
+			     d->hw_frame->width, d->hw_frame->height);
+			av_frame_unref(d->sw_frame);
+		}
+
 		int err = av_hwframe_transfer_data(d->sw_frame, d->hw_frame, 0);
+		if (err == 0) {
+			err = av_frame_copy_props(d->sw_frame, d->hw_frame);
+		}
 		if (err) {
 			ret = 0;
 			*got_frame = false;
-		} else {
-			d->sw_frame->color_range = d->hw_frame->color_range;
-			d->sw_frame->color_primaries =
-				d->hw_frame->color_primaries;
-			d->sw_frame->color_trc = d->hw_frame->color_trc;
-			d->sw_frame->colorspace = d->hw_frame->colorspace;
 		}
 	}
 
@@ -370,8 +384,8 @@ bool mp_decode_next(struct mp_decode *d)
 				}
 			} else {
 				mp_media_free_packet(d->m, d->orig_pkt);
-				circlebuf_pop_front(&d->packets, &d->orig_pkt,
-						    sizeof(d->orig_pkt));
+				deque_pop_front(&d->packets, &d->orig_pkt,
+						sizeof(d->orig_pkt));
 				av_packet_ref(d->pkt, d->orig_pkt);
 				d->packet_pending = true;
 			}

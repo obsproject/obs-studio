@@ -12,6 +12,7 @@ on:
           - services
           - translations
           - documentation
+          - patches
       ref:
         description: GitHub reference to use for job
         type: string
@@ -28,21 +29,29 @@ on:
         description: Custom macOS Intel build for Steam Upload
         type: string
         required: false
+      channel:
+        description: Channel to use when generating Windows update files
+        type: string
+        required: false
 permissions:
   contents: write
 jobs:
   services-validation:
-    name: Check Services Configuration Files 🕵️
+    name: Validate Services 🕵️
     if: github.repository_owner == 'obsproject' && inputs.job == 'services'
-    runs-on: ubuntu-22.04
+    runs-on: macos-14
     permissions:
       checks: write
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check for Defunct Services 📉
         uses: ./.github/actions/services-validator
         with:
           repositorySecret: ${{ secrets.GITHUB_TOKEN }}
+          checkApiSecret: ${{ secrets.CHECK_SERVERS_API_KEY }}
+          checkApiServers: ${{ secrets.CHECK_SERVERS_LIST }}
           runSchemaChecks: true
           runServiceChecks: true
           createPullRequest: true
@@ -54,18 +63,19 @@ jobs:
     env:
       CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
-      - uses: obsproject/obs-crowdin-sync/download@0.2.1
+          fetch-depth: 0
+      - uses: obsproject/obs-crowdin-sync/download@30b5446e3b5eb19595aa68a81ddf896a857302cf
 
   steam-upload:
     name: Upload Steam Builds 🚂
     if: github.repository_owner == 'obsproject' && inputs.job == 'steam'
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/steam-upload
         with:
           steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
@@ -83,30 +93,17 @@ jobs:
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Get Commit Information 🆔
-        id: setup
-        run: |
-          : Get Commit Hash 🆔
-          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
-        with:
-          commitHash: ${{ steps.checks.setup.commitHash }}
 
   update-documentation-cloudflare:
     name: Update Documentation for Cloudflare ☁️
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Get Commit Information 🆔
-        id: setup
-        run: |
-          : Get Commit Hash 🆔
-          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
         with:
-          commitHash: ${{ steps.checks.setup.commitHash }}
           disableLinkExtensions: true
 
   deploy-documentation:
@@ -117,6 +114,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    environment:
+      name: cf-pages-deploy
     steps:
       - name: Get Commit Information 🆔
         id: setup
@@ -124,18 +123,10 @@ jobs:
           : Get Commit Hash 🆔
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
           path: docs
-
-      - name: Set Up Redirects 🔄
-        run: |
-          : Set Up Redirects 🔄
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-
-          echo "/previous/27.2 https://obsproject.com/docs/27.2 302" >> docs/_redirects
-          echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
 
       - name: Publish to Live Page
         uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
@@ -144,3 +135,17 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'
+
+  windows-patches:
+    name: Create Windows Patches 🩹
+    if: github.repository_owner == 'obsproject' && inputs.job == 'patches'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-patches
+        with:
+          tagName: ${{ inputs.ref }}
+          workflowSecret: ${{ github.token }}
+          channel: ${{ inputs.channel }}
+          gcsAccessKeyId: ${{ secrets.GCS_ACCESS_KEY_ID }}
+          gcsAccessKeySecret: ${{ secrets.GCS_ACCESS_KEY_SECRET }}

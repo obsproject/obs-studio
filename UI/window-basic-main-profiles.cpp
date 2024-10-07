@@ -317,6 +317,10 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	if (create_new) {
 		auth.reset();
 		DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+		if (youtubeAppDock)
+			DeleteYouTubeAppDock();
+#endif
 	} else if (!rename) {
 		DuplicateCurrentCookieProfile(config);
 	}
@@ -782,6 +786,10 @@ void OBSBasic::ChangeProfile()
 	Auth::Save();
 	auth.reset();
 	DestroyPanelCookieManager();
+#ifdef YOUTUBE_ENABLED
+	if (youtubeAppDock)
+		DeleteYouTubeAppDock();
+#endif
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -793,6 +801,10 @@ void OBSBasic::ChangeProfile()
 	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+		NewYouTubeAppDock();
+#endif
 
 	CheckForSimpleModeX264Fallback();
 
@@ -837,14 +849,12 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	const char *id;
 
 	while (obs_enum_encoder_types(idx++, &id)) {
-		if (strcmp(id, "amd_amf_h264") == 0)
+		if (strcmp(id, "h264_texture_amf") == 0)
 			amd_supported = true;
-#ifdef _WIN32
 		else if (strcmp(id, "obs_qsv11") == 0)
 			qsv_supported = true;
 		else if (strcmp(id, "obs_qsv11_av1") == 0)
 			qsv_av1_supported = true;
-#endif
 		else if (strcmp(id, "ffmpeg_nvenc") == 0)
 			nve_supported = true;
 #ifdef ENABLE_HEVC

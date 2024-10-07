@@ -15,6 +15,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 extern struct obs_output_info rtmp_output_info;
 extern struct obs_output_info null_output_info;
 extern struct obs_output_info flv_output_info;
+extern struct obs_output_info mp4_output_info;
 #if defined(FTL_FOUND)
 extern struct obs_output_info ftl_output_info;
 #endif
@@ -65,6 +66,7 @@ bool obs_module_load(void)
 	obs_register_output(&rtmp_output_info);
 	obs_register_output(&null_output_info);
 	obs_register_output(&flv_output_info);
+	obs_register_output(&mp4_output_info);
 #if defined(FTL_FOUND)
 	obs_register_output(&ftl_output_info);
 #endif

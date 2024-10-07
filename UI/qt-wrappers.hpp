@@ -86,19 +86,6 @@ void EnableThreadedMessageBoxes(bool enable);
 void ExecThreadedWithoutBlocking(std::function<void()> func,
 				 const QString &title, const QString &text);
 
-class SignalBlocker {
-	QWidget *widget;
-	bool blocked;
-
-public:
-	inline explicit SignalBlocker(QWidget *widget_) : widget(widget_)
-	{
-		blocked = widget->blockSignals(true);
-	}
-
-	inline ~SignalBlocker() { widget->blockSignals(blocked); }
-};
-
 void DeleteLayout(QLayout *layout);
 
 static inline Qt::ConnectionType WaitConnection()

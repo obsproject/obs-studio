@@ -57,11 +57,18 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   add_library(_virtualcam INTERFACE)
 
   configure_file(cmake/windows/obs-module.rc.in virtualcam-module.rc)
-  target_sources(_virtualcam INTERFACE placeholder.cpp sleepto.c sleepto.h virtualcam-filter.cpp virtualcam-filter.hpp
-                                       virtualcam-module.cpp)
+  target_sources(
+    _virtualcam
+    INTERFACE # cmake-format: sortable
+              ${CMAKE_CURRENT_BINARY_DIR}/virtualcam-module.rc
+              placeholder.cpp
+              sleepto.c
+              sleepto.h
+              virtualcam-filter.cpp
+              virtualcam-filter.hpp
+              virtualcam-module.cpp)
   target_include_directories(_virtualcam INTERFACE "${CMAKE_CURRENT_BINARY_DIR}")
   target_compile_definitions(_virtualcam INTERFACE VIRTUALCAM_AVAILABLE)
-  target_compile_options(_virtualcam INTERFACE $<IF:$<CONFIG:Debug>,/MTd,/MT>)
 
   target_link_libraries(
     _virtualcam
@@ -81,6 +88,8 @@ add_library(OBS::virtualcam ALIAS obs-virtualcam-module)
 
 target_sources(obs-virtualcam-module PRIVATE cmake/windows/virtualcam-module64.def)
 target_link_libraries(obs-virtualcam-module PRIVATE _virtualcam)
+
+set_property(TARGET obs-virtualcam-module PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 configure_file(virtualcam-install.bat.in virtualcam-install.bat)
 target_add_resource(obs-virtualcam-module "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat"

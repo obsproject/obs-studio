@@ -4,8 +4,9 @@
 
 DoubleSlider::DoubleSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 {
-	connect(this, SIGNAL(valueChanged(int)), this,
-		SLOT(intValChanged(int)));
+	connect(this, &DoubleSlider::valueChanged, [this](int val) {
+		emit doubleValChanged((minVal / minStep + val) * minStep);
+	});
 }
 
 void DoubleSlider::setDoubleConstraints(double newMin, double newMax,
@@ -22,11 +23,6 @@ void DoubleSlider::setDoubleConstraints(double newMin, double newMax,
 	setMaximum(intMax);
 	setSingleStep(1);
 	setDoubleVal(val);
-}
-
-void DoubleSlider::intValChanged(int val)
-{
-	emit doubleValChanged((minVal / minStep + val) * minStep);
 }
 
 void DoubleSlider::setDoubleVal(double val)

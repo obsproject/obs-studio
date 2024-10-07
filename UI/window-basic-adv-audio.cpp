@@ -12,10 +12,15 @@ Q_DECLARE_METATYPE(OBSSource);
 OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	: QDialog(parent),
 	  ui(new Ui::OBSAdvAudio),
-	  sourceAddedSignal(obs_get_signal_handler(), "source_activate",
+	  sourceAddedSignal(obs_get_signal_handler(), "source_audio_activate",
 			    OBSSourceAdded, this),
-	  sourceRemovedSignal(obs_get_signal_handler(), "source_deactivate",
-			      OBSSourceRemoved, this),
+	  sourceRemovedSignal(obs_get_signal_handler(),
+			      "source_audio_deactivate", OBSSourceRemoved,
+			      this),
+	  sourceActivatedSignal(obs_get_signal_handler(), "source_activate",
+				OBSSourceActivated, this),
+	  sourceDeactivatedSignal(obs_get_signal_handler(), "source_deactivate",
+				  OBSSourceRemoved, this),
 	  showInactive(false)
 {
 	ui->setupUi(this);
@@ -51,7 +56,8 @@ bool OBSBasicAdvAudio::EnumSources(void *param, obs_source_t *source)
 	uint32_t flags = obs_source_get_output_flags(source);
 
 	if ((flags & OBS_SOURCE_AUDIO) != 0 &&
-	    (dialog->showInactive || obs_source_active(source)))
+	    (dialog->showInactive ||
+	     (obs_source_active(source) && obs_source_audio_active(source))))
 		dialog->AddAudioSource(source);
 
 	return true;
@@ -71,6 +77,16 @@ void OBSBasicAdvAudio::OBSSourceRemoved(void *param, calldata_t *calldata)
 
 	QMetaObject::invokeMethod(reinterpret_cast<OBSBasicAdvAudio *>(param),
 				  "SourceRemoved", Q_ARG(OBSSource, source));
+}
+
+void OBSBasicAdvAudio::OBSSourceActivated(void *param, calldata_t *calldata)
+{
+	OBSSource source((obs_source_t *)calldata_ptr(calldata, "source"));
+
+	if (obs_source_audio_active(source))
+		QMetaObject::invokeMethod(
+			reinterpret_cast<OBSBasicAdvAudio *>(param),
+			"SourceAdded", Q_ARG(OBSSource, source));
 }
 
 inline void OBSBasicAdvAudio::AddAudioSource(obs_source_t *source)
@@ -144,6 +160,8 @@ void OBSBasicAdvAudio::SetShowInactive(bool show)
 
 	sourceAddedSignal.Disconnect();
 	sourceRemovedSignal.Disconnect();
+	sourceActivatedSignal.Disconnect();
+	sourceDeactivatedSignal.Disconnect();
 
 	if (showInactive) {
 		sourceAddedSignal.Connect(obs_get_signal_handler(),
@@ -158,15 +176,22 @@ void OBSBasicAdvAudio::SetShowInactive(bool show)
 		SetIconsVisible(showVisible);
 	} else {
 		sourceAddedSignal.Connect(obs_get_signal_handler(),
-					  "source_activate", OBSSourceAdded,
-					  this);
+					  "source_audio_activate",
+					  OBSSourceAdded, this);
 		sourceRemovedSignal.Connect(obs_get_signal_handler(),
-					    "source_deactivate",
+					    "source_audio_deactivate",
 					    OBSSourceRemoved, this);
+		sourceActivatedSignal.Connect(obs_get_signal_handler(),
+					      "source_activate",
+					      OBSSourceActivated, this);
+		sourceDeactivatedSignal.Connect(obs_get_signal_handler(),
+						"source_deactivate",
+						OBSSourceRemoved, this);
 
 		for (size_t i = 0; i < controls.size(); i++) {
 			const auto source = controls[i]->GetSource();
-			if (!obs_source_active(source)) {
+			if (!(obs_source_active(source) &&
+			      obs_source_audio_active(source))) {
 				delete controls[i];
 				controls.erase(controls.begin() + i);
 				i--;

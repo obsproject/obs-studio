@@ -1,10 +1,11 @@
 # OBS CMake macOS helper functions module
 
 # cmake-format: off
+# cmake-lint: disable=C0301
 # cmake-lint: disable=C0307
+# cmake-lint: disable=E1126
 # cmake-lint: disable=R0912
 # cmake-lint: disable=R0915
-# cmake-lint: disable=E1126
 # cmake-format: on
 
 include_guard(GLOBAL)
@@ -22,9 +23,7 @@ function(set_target_xcode_properties target)
 
   while(_STXP_PROPERTIES)
     list(POP_FRONT _STXP_PROPERTIES key value)
-    # cmake-format: off
     set_property(TARGET ${target} PROPERTY XCODE_ATTRIBUTE_${key} "${value}")
-    # cmake-format: on
   endwhile()
 endfunction()
 
@@ -41,6 +40,7 @@ function(set_target_properties_obs target)
     list(POP_FRONT _STPO_PROPERTIES key value)
     set_property(TARGET ${target} PROPERTY ${key} "${value}")
   endwhile()
+
   get_target_property(target_type ${target} TYPE)
 
   string(TIMESTAMP CURRENT_YEAR "%Y")
@@ -80,10 +80,6 @@ function(set_target_properties_obs target)
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
       add_dependencies(${target} ${obs_dependencies})
 
-      if(NOT XCODE)
-        return()
-      endif()
-
       get_property(obs_frameworks GLOBAL PROPERTY _OBS_FRAMEWORKS)
       set_property(
         TARGET ${target}
@@ -107,11 +103,8 @@ function(set_target_properties_obs target)
       get_property(obs_executables GLOBAL PROPERTY _OBS_EXECUTABLES)
       add_dependencies(${target} ${obs_executables})
       foreach(executable IN LISTS obs_executables)
-        # cmake-format: off
-        set_target_xcode_properties(
-          ${executable}
-          PROPERTIES INSTALL_PATH "$(LOCAL_APPS_DIR)/$<TARGET_BUNDLE_DIR_NAME:${target}>/Contents/MacOS")
-        # cmake-format: on
+        set_target_xcode_properties(${executable} PROPERTIES INSTALL_PATH
+                                    "$(LOCAL_APPS_DIR)/$<TARGET_BUNDLE_DIR_NAME:${target}>/Contents/MacOS")
 
         add_custom_command(
           TARGET ${target}
@@ -152,18 +145,6 @@ function(set_target_properties_obs target)
       endif()
 
       set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${entitlements_file}")
-
-      add_custom_command(
-        TARGET ${target}
-        POST_BUILD
-        COMMAND
-          /usr/bin/sed -i '' 's/font-size: 10pt\;/font-size: 12pt\;/'
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Acri.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Grey.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Light.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Rachni.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Yami.qss"
-        COMMENT "Patch Qt stylesheets to use larger default font size on macOS")
 
       add_custom_command(
         TARGET ${target}
@@ -216,6 +197,14 @@ function(set_target_properties_obs target)
       install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT Application)
     elseif(${target} STREQUAL mac-camera-extension)
       set_target_properties(${target} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+      set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
+    elseif(${target} STREQUAL obs-ffmpeg-mux)
+      if(OBS_CODESIGN_IDENTITY STREQUAL "-")
+        set_target_xcode_properties(${target} PROPERTIES ENABLE_HARDENED_RUNTIME NO)
+      endif()
+
+      set_target_xcode_properties(${target} PROPERTIES SKIP_INSTALL NO)
+      set_property(GLOBAL APPEND PROPERTY _OBS_EXECUTABLES ${target})
       set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
     else()
       set_property(TARGET ${target} PROPERTY XCODE_ATTRIBUTE_SKIP_INSTALL NO)
@@ -461,7 +450,7 @@ function(_bundle_dependencies target)
         continue()
       endif()
 
-      if(library MATCHES "Qt[56]?::.+")
+      if(library MATCHES "Qt6?::.+")
         find_qt_plugins(COMPONENT ${library} TARGET ${target} FOUND_VAR plugins_list)
       endif()
       list(APPEND library_paths ${library_location})

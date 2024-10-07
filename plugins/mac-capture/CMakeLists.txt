@@ -8,7 +8,6 @@ target_sources(
   PRIVATE # cmake-format: sortable
           audio-device-enum.c
           audio-device-enum.h
-          CGDisplayStream.h
           mac-audio.c
           mac-display-capture.m
           mac-sck-audio-capture.m

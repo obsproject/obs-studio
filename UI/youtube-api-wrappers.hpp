@@ -38,6 +38,7 @@ struct BroadcastDescription {
 };
 
 bool IsYouTubeService(const std::string &service);
+bool IsUserSignedIntoYT();
 
 class YoutubeApiWrappers : public YoutubeAuth {
 	Q_OBJECT

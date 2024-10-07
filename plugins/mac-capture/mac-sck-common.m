@@ -18,14 +18,11 @@ bool is_screen_capture_available(void)
     if (self.sc != NULL) {
         if (type == SCStreamOutputTypeScreen && !self.sc->audio_only) {
             screen_stream_video_update(self.sc, sampleBuffer);
-        }
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
-        else if (@available(macOS 13.0, *)) {
+        } else if (@available(macOS 13.0, *)) {
             if (type == SCStreamOutputTypeAudio) {
                 screen_stream_audio_update(self.sc, sampleBuffer);
             }
         }
-#endif
     }
 }
 
@@ -33,11 +30,9 @@ bool is_screen_capture_available(void)
 {
     NSString *errorMessage;
     switch (error.code) {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
         case SCStreamErrorUserStopped:
             errorMessage = @"User stopped stream.";
             break;
-#endif
         case SCStreamErrorNoCaptureSource:
             errorMessage = @"Stream stopped as no capture source was not found.";
             break;
@@ -203,7 +198,7 @@ bool build_application_list(struct screen_capture *sc, obs_properties_t *props)
 
 #pragma mark - audio/video
 
-void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer)
+API_AVAILABLE(macos(12.5)) void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer)
 {
     bool frame_detail_errored = false;
     float scale_factor = 1.0f;

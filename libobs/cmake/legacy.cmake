@@ -13,12 +13,14 @@ target_sources(libobs-version PRIVATE obsversion.c obsversion.h)
 target_include_directories(libobs-version PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TARGET libobs-version PROPERTY FOLDER core)
 
+find_package(Jansson 2.5 REQUIRED)
 find_package(Threads REQUIRED)
 find_package(
   FFmpeg REQUIRED
   COMPONENTS avformat avutil swscale swresample
   OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
+find_package(Uthash REQUIRED)
 
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
@@ -31,6 +33,8 @@ target_sources(
           obs-audio.c
           obs-audio-controls.c
           obs-audio-controls.h
+          obs-av1.c
+          obs-av1.h
           obs-avc.c
           obs-avc.h
           obs-data.c
@@ -65,7 +69,6 @@ target_sources(
           obs-source.h
           obs-source-deinterlace.c
           obs-source-transition.c
-          obs-ui.h
           obs-video.c
           obs-video-gpu-encode.c
           obs-view.c
@@ -173,6 +176,8 @@ target_sources(
           util/bitstream.h
           util/bmem.c
           util/bmem.h
+          util/buffered-file-serializer.c
+          util/buffered-file-serializer.h
           util/c99defs.h
           util/cf-lexer.c
           util/cf-lexer.h
@@ -183,6 +188,7 @@ target_sources(
           util/config-file.h
           util/crc32.c
           util/crc32.h
+          util/deque.h
           util/dstr.c
           util/dstr.h
           util/file-serializer.c
@@ -194,6 +200,7 @@ target_sources(
           util/profiler.c
           util/profiler.h
           util/profiler.hpp
+          util/pipe.c
           util/pipe.h
           util/serializer.h
           util/sse-intrin.h
@@ -251,8 +258,8 @@ target_link_libraries(
           FFmpeg::swresample
           Jansson::Jansson
           OBS::caption
-          OBS::uthash
           OBS::libobs-version
+          Uthash::Uthash
           ZLIB::ZLIB
   PUBLIC Threads::Threads)
 

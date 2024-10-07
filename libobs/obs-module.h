@@ -73,16 +73,22 @@ bool obs_module_load(void)
  */
 
 /** Required: Declares a libobs module. */
-#define OBS_DECLARE_MODULE()                                                  \
-	static obs_module_t *obs_module_pointer;                              \
-	MODULE_EXPORT void obs_module_set_pointer(obs_module_t *module);      \
-	void obs_module_set_pointer(obs_module_t *module)                     \
-	{                                                                     \
-		obs_module_pointer = module;                                  \
-	}                                                                     \
-	obs_module_t *obs_current_module(void) { return obs_module_pointer; } \
-	MODULE_EXPORT uint32_t obs_module_ver(void);                          \
-	uint32_t obs_module_ver(void) { return LIBOBS_API_VER; }
+#define OBS_DECLARE_MODULE()                                             \
+	static obs_module_t *obs_module_pointer;                         \
+	MODULE_EXPORT void obs_module_set_pointer(obs_module_t *module); \
+	void obs_module_set_pointer(obs_module_t *module)                \
+	{                                                                \
+		obs_module_pointer = module;                             \
+	}                                                                \
+	obs_module_t *obs_current_module(void)                           \
+	{                                                                \
+		return obs_module_pointer;                               \
+	}                                                                \
+	MODULE_EXPORT uint32_t obs_module_ver(void);                     \
+	uint32_t obs_module_ver(void)                                    \
+	{                                                                \
+		return LIBOBS_API_VER;                                   \
+	}
 
 /**
  * Required: Called when the module is loaded.  Use this function to load all
@@ -166,7 +172,10 @@ MODULE_EXTERN obs_module_t *obs_current_module(void);
  */
 #define OBS_MODULE_AUTHOR(name)                            \
 	MODULE_EXPORT const char *obs_module_author(void); \
-	const char *obs_module_author(void) { return name; }
+	const char *obs_module_author(void)                \
+	{                                                  \
+		return name;                               \
+	}
 
 /** Optional: Returns the full name of the module */
 MODULE_EXPORT const char *obs_module_name(void);

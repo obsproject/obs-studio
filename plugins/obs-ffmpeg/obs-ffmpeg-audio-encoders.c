@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <util/base.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-module.h>
@@ -271,12 +271,21 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 #else
 	av_channel_layout_default(&enc->context->ch_layout,
 				  (int)audio_output_get_channels(audio));
+	/* The avutil default channel layout for 5 channels is 5.0, which OBS
+	 * does not support. Manually set 5 channels to 4.1. */
 	if (aoi->speakers == SPEAKERS_4POINT1)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+	/* AAC, ALAC, & FLAC default to 3.0 for 3 channels instead of 2.1.
+	 * Tell the encoder to deal with 2.1 as if it were 3.0. */
 	if (aoi->speakers == SPEAKERS_2POINT1)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_SURROUND;
+	// ALAC supports 7.1 wide instead of regular 7.1.
+	if (aoi->speakers == SPEAKERS_7POINT1 &&
+	    astrcmpi(enc->type, "alac") == 0)
+		enc->context->ch_layout =
+			(AVChannelLayout)AV_CHANNEL_LAYOUT_7POINT1_WIDE_BACK;
 #endif
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
@@ -442,6 +451,7 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 	packet->data = enc->packet_buffer.array;
 	packet->size = avpacket.size;
 	packet->type = OBS_ENCODER_AUDIO;
+	packet->keyframe = true;
 	packet->timebase_num = 1;
 	packet->timebase_den = (int32_t)enc->context->sample_rate;
 	av_packet_unref(&avpacket);

@@ -103,4 +103,4 @@ private:
 	mutable std::mutex mMutex;
 };
 
-} // aja
+} // namespace aja

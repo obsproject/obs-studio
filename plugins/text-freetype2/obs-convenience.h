@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 gs_vertbuffer_t *create_uv_vbuffer(uint32_t num_verts, bool add_color);
 void draw_uv_vbuffer(gs_vertbuffer_t *vbuf, gs_texture_t *tex,
-		     gs_effect_t *effect, uint32_t num_verts);
+		     gs_effect_t *effect, uint32_t num_verts, bool use_color);
 
 #define set_v3_rect(a, x, y, w, h)       \
 	vec3_set(a, x, y, 0.0f);         \

@@ -83,7 +83,13 @@ void *os_dlopen(const char *path)
 		dstr_cat(&dylib_name, ".so");
 
 #ifdef __APPLE__
-	void *res = dlopen(dylib_name.array, RTLD_LAZY | RTLD_FIRST);
+	int dlopen_flags = RTLD_LAZY | RTLD_FIRST;
+	if (dstr_find(&dylib_name, "Python")) {
+		dlopen_flags = dlopen_flags | RTLD_GLOBAL;
+	} else {
+		dlopen_flags = dlopen_flags | RTLD_LOCAL;
+	}
+	void *res = dlopen(dylib_name.array, dlopen_flags);
 #else
 	void *res = dlopen(dylib_name.array, RTLD_LAZY);
 #endif
@@ -565,6 +571,7 @@ void os_closedir(os_dir_t *dir)
 	}
 }
 
+#ifndef __APPLE__
 int64_t os_get_free_space(const char *path)
 {
 	struct statvfs info;
@@ -575,6 +582,7 @@ int64_t os_get_free_space(const char *path)
 
 	return ret;
 }
+#endif
 
 struct posix_glob_info {
 	struct os_glob_info base;
@@ -1130,6 +1138,7 @@ uint64_t os_get_sys_total_size(void)
 }
 #endif
 
+#ifndef __APPLE__
 uint64_t os_get_free_disk_space(const char *dir)
 {
 	struct statvfs info;
@@ -1138,6 +1147,7 @@ uint64_t os_get_free_disk_space(const char *dir)
 
 	return (uint64_t)info.f_frsize * (uint64_t)info.f_bavail;
 }
+#endif
 
 char *os_generate_uuid(void)
 {

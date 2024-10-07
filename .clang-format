@@ -1,4 +1,4 @@
-# please use clang-format version 13 or later
+# please use clang-format version 16 or later
 
 Standard: c++17
 AccessModifierOffset: -8
@@ -52,8 +52,8 @@ ContinuationIndentWidth: 8
 Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat: false
-FixNamespaceComments: false
-ForEachMacros: 
+FixNamespaceComments: true
+ForEachMacros:
   - 'json_object_foreach'
   - 'json_object_foreach_safe'
   - 'json_array_foreach'
@@ -111,14 +111,13 @@ AlignArrayOfStructures: Right
 AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
-AlignConsecutiveMacros: AcrossComments
-#AlignConsecutiveMacros:
-#  Enabled: true
-#  AcrossEmptyLines: false
-#  AcrossComments: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
 AllowShortBlocksOnASingleLine: Never
 AllowShortEnumsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: None
 AttributeMacros: ['__unused', '__autoreleasing', '_Nonnull', '__bridge']
@@ -144,11 +143,10 @@ BraceWrapping:
   SplitEmptyFunction: false
   SplitEmptyRecord: false
   SplitEmptyNamespace: true
-#BreakAfterAttributes: Never                                        # clang-format 16
-#BreakArrays: false                                                 # clang-format 16
-#BreakBeforeConceptDeclarations: Allowed
-BreakBeforeConceptDeclarations: true
-#BreakBeforeInlineASMColon: OnlyMultiline                           # clang-format 16
+BreakAfterAttributes: Never
+BreakArrays: false
+BreakBeforeConceptDeclarations: Allowed
+BreakBeforeInlineASMColon: OnlyMultiline
 BreakConstructorInitializers: AfterColon
 BreakInheritanceList: AfterComma
 ColumnLimit: 120
@@ -163,18 +161,13 @@ IndentCaseBlocks: false
 IndentCaseLabels: true
 IndentExternBlock: Indent
 IndentGotoLabels: false
-#IndentRequiresClause: true                                         # clang-format 15
+IndentRequiresClause: true
 IndentWidth: 4
 IndentWrappedFunctionNames: true
-#InsertBraces: false                                                # clang-format 15
-#InsertNewlineAtEOF: true                                           # clang-format 16
-#IntegerLiteralSeparator:                                           # clang-format 16
-#  Binary: 0
-#  Decimal: 3
-#  Hex: -1
+InsertBraces: false
+InsertNewlineAtEOF: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 LambdaBodyIndentation: Signature
-#LineEnding: LF                                                     # clang-format 16
 NamespaceIndentation: All
 ObjCBinPackProtocolList: Auto
 ObjCBlockIndentWidth: 4
@@ -182,14 +175,13 @@ ObjCBreakBeforeNestedBlockParam: false
 ObjCSpaceAfterProperty: true
 ObjCSpaceBeforeProtocolList: true
 PPIndentWidth: -1
-#PackConstructorInitializers: NextLine                              # clang-format 14
-#QualifierAlignment: Left                                           # clang-format 14
-#QualifierOrder: ['inline', 'static', 'type', 'const', 'volatile' ] # clang-format 14
+PackConstructorInitializers: NextLine
+QualifierAlignment: Leave
 ReferenceAlignment: Right
-#RemoveSemicolon: false                                             # clang-format 16
-#RequiresClausePosition: WithPreceding                              # clang-format 15
-#RequiresExpressionIndentation: OuterScope                          # clang-format 16
-#SeparateDefinitionBlocks: Always                                   # clang-format 14
+RemoveSemicolon: false
+RequiresClausePosition: WithPreceding
+RequiresExpressionIndentation: OuterScope
+SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
 SortIncludes: false
 #SortUsingDeclarations: LexicographicNumeric

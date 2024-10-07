@@ -1,29 +1,28 @@
 #include "visibility-item-widget.hpp"
-#include "visibility-checkbox.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "source-label.hpp"
 #include <QListWidget>
 #include <QLineEdit>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QLabel>
 #include <QKeyEvent>
+#include <QCheckBox>
 
 VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	: source(source_),
 	  enabledSignal(obs_source_get_signal_handler(source), "enable",
-			OBSSourceEnabled, this),
-	  renamedSignal(obs_source_get_signal_handler(source), "rename",
-			OBSSourceRenamed, this)
+			OBSSourceEnabled, this)
 {
-	const char *name = obs_source_get_name(source);
 	bool enabled = obs_source_enabled(source);
 
-	vis = new VisibilityCheckBox();
+	vis = new QCheckBox();
+	vis->setProperty("visibilityCheckBox", true);
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setChecked(enabled);
 
-	label = new QLabel(QT_UTF8(name));
+	label = new OBSSourceLabel(source);
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
 	QHBoxLayout *itemLayout = new QHBoxLayout();
@@ -34,8 +33,9 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	setLayout(itemLayout);
 	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 
-	connect(vis, SIGNAL(clicked(bool)), this,
-		SLOT(VisibilityClicked(bool)));
+	connect(vis, &QCheckBox::clicked, [this](bool visible) {
+		obs_source_set_enabled(source, visible);
+	});
 }
 
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
@@ -48,31 +48,10 @@ void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 				  Q_ARG(bool, enabled));
 }
 
-void VisibilityItemWidget::OBSSourceRenamed(void *param, calldata_t *data)
-{
-	VisibilityItemWidget *window =
-		reinterpret_cast<VisibilityItemWidget *>(param);
-	const char *name = calldata_string(data, "new_name");
-
-	QMetaObject::invokeMethod(window, "SourceRenamed",
-				  Q_ARG(QString, QT_UTF8(name)));
-}
-
-void VisibilityItemWidget::VisibilityClicked(bool visible)
-{
-	obs_source_set_enabled(source, visible);
-}
-
 void VisibilityItemWidget::SourceEnabled(bool enabled)
 {
 	if (vis->isChecked() != enabled)
 		vis->setChecked(enabled);
-}
-
-void VisibilityItemWidget::SourceRenamed(QString name)
-{
-	if (label && name != label->text())
-		label->setText(name);
 }
 
 void VisibilityItemWidget::SetColor(const QColor &color, bool active_,

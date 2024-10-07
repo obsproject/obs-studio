@@ -13,20 +13,22 @@ endif()
 add_library(coreaudio-encoder MODULE)
 add_library(OBS::coreaudio-encoder ALIAS coreaudio-encoder)
 
-target_sources(coreaudio-encoder PRIVATE encoder.cpp)
-target_link_libraries(coreaudio-encoder PRIVATE OBS::libobs)
+target_sources(coreaudio-encoder PRIVATE encoder.cpp $<$<PLATFORM_ID:Windows>:windows-imports.h>)
+
+# cmake-format: off
+target_link_libraries(
+  coreaudio-encoder
+  PRIVATE OBS::libobs
+          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AudioToolbox.framework>>"
+          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>>"
+          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>")
+# cmake-format: on
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in coreaudio-encoder.rc)
-  target_sources(coreaudio-encoder PRIVATE coreaudio-encoder.rc windows-imports.h)
-elseif(OS_MACOS)
-  # cmake-format: off
-  target_link_libraries(
-    coreaudio-encoder
-    PRIVATE "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
-            "$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>"
-            "$<LINK_LIBRARY:FRAMEWORK,AudioToolbox.framework>")
-  # cmake-format: on
+  target_sources(coreaudio-encoder PRIVATE coreaudio-encoder.rc)
 endif()
 
+# cmake-format: off
 set_target_properties_obs(coreaudio-encoder PROPERTIES FOLDER plugins PREFIX "")
+# cmake-format: on

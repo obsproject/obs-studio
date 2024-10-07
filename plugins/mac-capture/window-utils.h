@@ -31,3 +31,8 @@ void window_defaults(obs_data_t *settings);
 void add_window_properties(obs_properties_t *props);
 
 void show_window_properties(obs_properties_t *props, bool show);
+
+/** Get the display ID of a display and simultaneously migrate pre-30.0 display IDs to 30.0 UUIDs.
+ - Parameter settings: Pointer to `obs_data_t` object containing `display` int and/or `display_uuid` string
+ - Returns: `CGDirectDisplayID` of the display the user selected. May be 0 if the display cannot be found. */
+CGDirectDisplayID get_display_migrate_settings(obs_data_t *settings);

@@ -44,6 +44,8 @@ target_sources(
   PRIVATE # cmake-format: sortable
           app-helpers.c
           app-helpers.h
+          audio-helpers.c
+          audio-helpers.h
           compat-format-ver.h
           compat-helpers.c
           compat-helpers.h
@@ -77,7 +79,8 @@ target_link_libraries(
           OBS::winrt-headers
           jansson::jansson)
 
-target_link_options(win-capture PRIVATE /NODEFAULTLIB:msvcrtd.lib)
+# Remove once jansson has been fixed on obs-deps
+target_link_options(win-capture PRIVATE /IGNORE:4098)
 
 # cmake-format: off
 set_target_properties_obs(win-capture PROPERTIES FOLDER plugins/win-capture PREFIX "")

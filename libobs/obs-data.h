@@ -70,7 +70,9 @@ EXPORT void obs_data_addref(obs_data_t *data);
 EXPORT void obs_data_release(obs_data_t *data);
 
 EXPORT const char *obs_data_get_json(obs_data_t *data);
+EXPORT const char *obs_data_get_json_with_defaults(obs_data_t *data);
 EXPORT const char *obs_data_get_json_pretty(obs_data_t *data);
+EXPORT const char *obs_data_get_json_pretty_with_defaults(obs_data_t *data);
 EXPORT const char *obs_data_get_last_json(obs_data_t *data);
 EXPORT bool obs_data_save_json(obs_data_t *data, const char *file);
 EXPORT bool obs_data_save_json_safe(obs_data_t *data, const char *file,
@@ -132,6 +134,8 @@ EXPORT void obs_data_set_autoselect_bool(obs_data_t *data, const char *name,
 					 bool val);
 EXPORT void obs_data_set_autoselect_obj(obs_data_t *data, const char *name,
 					obs_data_t *obj);
+EXPORT void obs_data_set_autoselect_array(obs_data_t *data, const char *name,
+					  obs_data_array_t *arr);
 
 /*
  * Get functions

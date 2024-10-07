@@ -36,11 +36,11 @@
    </item>
    <item>
     <widget class="QLabel" name="warningLabel">
+     <property name="visible">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Basic.VCam.RestartWarning</string>
-     </property>
-     <property name="visible">
-	<bool>false</bool>
      </property>
     </widget>
    </item>

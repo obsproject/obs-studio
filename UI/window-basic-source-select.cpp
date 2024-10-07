@@ -33,7 +33,7 @@ struct AddSourceData {
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 {
 	if (obs_source_is_hidden(source))
-		return false;
+		return true;
 
 	OBSBasicSourceSelect *window =
 		static_cast<OBSBasicSourceSelect *>(data);
@@ -122,7 +122,7 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	sceneitem = obs_scene_add(scene, data->source);
 
 	if (data->transform != nullptr)
-		obs_sceneitem_set_info(sceneitem, data->transform);
+		obs_sceneitem_set_info2(sceneitem, data->transform);
 	if (data->crop != nullptr)
 		obs_sceneitem_set_crop(sceneitem, data->crop);
 	if (data->blend_method != nullptr)

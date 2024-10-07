@@ -27,7 +27,8 @@ bool obs_display_init(struct obs_display *display,
 
 #if defined(_WIN32)
 	/* Conservative test for NVIDIA flickering in multi-GPU setups */
-	display->use_clear_workaround = gs_get_adapter_count() > 1;
+	display->use_clear_workaround = gs_get_adapter_count() > 1 &&
+					!gs_can_adapter_fast_clear();
 #elif defined(__APPLE__)
 	/* Apple Silicon GL driver doesn't seem to track SRGB clears correctly */
 	display->use_clear_workaround = true;

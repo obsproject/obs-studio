@@ -2,8 +2,6 @@
 #include <obs-module.h>
 #include <string>
 
-#define MAX_CODECS 3
-
 struct WHIPService {
 	std::string server;
 	std::string bearer_token;

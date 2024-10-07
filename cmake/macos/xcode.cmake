@@ -91,9 +91,6 @@ set(CMAKE_XCODE_ATTRIBUTE_GCC_INLINES_ARE_PRIVATE_EXTERN YES)
 # Strip unused code
 set(CMAKE_XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING YES)
 
-# Display mangled names in Debug configuration
-set(CMAKE_XCODE_ATTRIBUTE_LINKER_DISPLAYS_MANGLED_NAMES[variant=Debug] YES)
-
 # Build active architecture only in Debug configuration
 set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH[variant=Debug] YES)
 
@@ -120,9 +117,9 @@ set(CMAKE_XCODE_ATTRIBUTE_GCC_STRICT_ALIASING NO)
 #
 # set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD c++17)
 
-# Enable support for module imports in ObjC
+# Disable support for module imports in ObjC
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES NO)
-# Enable automatic linking of imported modules in ObjC
+# Disable automatic linking of imported modules in ObjC
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_MODULES_AUTOLINK NO)
 # Enable strict msg_send rules for ObjC
 set(CMAKE_XCODE_ATTRIBUTE_ENABLE_STRICT_OBJC_MSGSEND YES)

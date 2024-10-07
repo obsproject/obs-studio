@@ -1,26 +1,25 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2023-06-22",
+            "version": "2024-05-08",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "a0d2e03f0ea79681634c31627430a220d9b62113d6ff58174d0bdab6fafdd32b",
-                "windows-x64": "1b12e86e2d62a97a889866d66b95fe47ddc6f7fa9b13e88aedfab4ea9e298ea2",
-                "windows-x86": "8c6bfda01ec7d38a50a61ac4954dc00d6fcb171830a7f32593c5bd20a44be3a9",
-                "linux-x86_64": "1b82ab4247bc2730ae84caa5a009e76637eac77b05bfb4b4a2bae610e7a75262"
+                "macos-universal": "da3167a3efecfa67dd72e4f2b7964c3456d74c639d4c62aa21ec300ebd5007a8",
+                "windows-x64": "773c87a0d173125ef2768aaca6f6de64a7d6053213cc9f7d3970a301152042d8",
+                "windows-x86": "8f4bc6b37acbabe5434e7ebce3bbc8a213d6c265cd7b4e708cd17ca4aa334130"
             }
         },
         "qt6": {
-            "version": "2023-06-22",
+            "version": "2024-05-08",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "f890d258a1afa7ba409b79c8ee55d53155e5c72105b8b18a3f52047ee70fc0aa",
-                "windows-x64": "1907fbcbcef69527154b29316c425b0885afb77ad69a9a2af7a1471d79512195"
+                "macos-universal": "248fb342e7ddf574af0960aaedeffb832deda1485dc81583302646e979593a6e",
+                "windows-x64": "8f459af5115ce081ae24b108712327e113893f250e14a902b1bd188b43873ed1"
             },
             "debugSymbols": {
-                "windows-x64": "b461a7ade0c099505baea857fa5b98c4f8e9b702681be019ea354735d062e065"
+                "windows-x64": "e4bc882f23195becbe53f1594fe75bdb9ff4f1d01e319f6caf8e0a38000cb42b"
             }
         },
         "cef": {
@@ -28,24 +27,27 @@
             "baseUrl": "https://cdn-fastly.obsproject.com/downloads",
             "label": "Chromium Embedded Framework",
             "hashes": {
-                "macos-x86_64": "7ef71717ff2e4ff4212274c33f0993729f47c109c464e499544fd3f63586a069",
-                "macos-arm64": "a9da8909202aefc8f35509d03eff9a7c837b5d3b2ed3afb39b67121cb16d457b",
-                "linux-x86_64": "bf4aa9388bab7e94fa945cc3bba16b6da63b6a30f9c0342d42235468b39d84bf",
-                "linux-aarch64": "68d915c9ba2639cba762a54cd3430fce2527aa6355d831d3cfcb6157664206b0",
-                "windows-x64": "c1b47beb7ee42e98f1a41b6d694c26842a4a3d452e44bdf6f758c9785696533d"
+                "macos-x86_64": "140bfd517b4b9d12343ac000abba7bb16eecefe80ecbd7225993d03f0b9c0603",
+                "macos-arm64": "3970a781132b033bb9be6a9fe328a07e97fa7737fdf1575b1c5db24a3e130da1",
+                "ubuntu-x86_64": "1253a6a36c3b8ac5b5ece9bfdb6eae6ab75e49516375fc475e2e871795ad9bea",
+                "ubuntu-aarch64": "66ebcfce94a4527c8dd085a685691d0c43291adab9f2be4f8a0762f4a614083a",
+                "windows-x64": "7480e9ed5688e09919db67237d130eef9a4c24df32ba2a7b8a5587de45ff8e69"
             },
             "revision": {
-                "macos-x86_64": 2,
-                "macos-arm64": 2
+                "macos-x86_64": 4,
+                "macos-arm64": 4,
+                "ubuntu-x86_64": 3,
+                "ubuntu-aarch64": 3,
+                "windows-x64": 3
             }
         }
     },
     "tools": {
         "sparkle": {
-            "version": "2.3.2",
+            "version": "2.6.2",
             "baseUrl": "https://github.com/sparkle-project/Sparkle/releases/download",
             "label": "Sparkle 2",
-            "hash": "2b3fe6918ca20a83729aad34f8f693a678b714a17d33b5f13ca2d25edfa7eed3"
+            "hash": "2300a7dc2545a4968e54621b7f351d388ddf1a5cb49e79f6c99e9a09d826f5e8"
         },
         "ccache-win": {
             "version": "4.8.1",
@@ -55,13 +57,11 @@
         }
     },
     "platformConfig": {
-        "macos-universal": {
-            "qtVersion": 6
+        "ubuntu-x86_64": {
+            "qtVersion": 6,
+            "generator": "Ninja"
         },
-        "windows-x64": {
-            "qtVersion": 6
-        },
-        "linux-x86_64": {
+        "ubuntu-aarch64": {
             "qtVersion": 6,
             "generator": "Ninja"
         }

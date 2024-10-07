@@ -513,8 +513,8 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 		&OBSMissingFiles::browseFolders);
 	connect(ui->cancelButton, &QPushButton::clicked, this,
 		&OBSMissingFiles::close);
-	connect(filesModel, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this,
-		SLOT(dataChanged()));
+	connect(filesModel, &MissingFilesModel::dataChanged, this,
+		&OBSMissingFiles::dataChanged);
 
 	QModelIndex index = filesModel->createIndex(0, 1);
 	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex",

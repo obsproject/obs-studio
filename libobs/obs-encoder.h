@@ -29,10 +29,14 @@
 extern "C" {
 #endif
 
+struct obs_encoder;
+typedef struct obs_encoder obs_encoder_t;
+
 #define OBS_ENCODER_CAP_DEPRECATED (1 << 0)
 #define OBS_ENCODER_CAP_PASS_TEXTURE (1 << 1)
 #define OBS_ENCODER_CAP_DYN_BITRATE (1 << 2)
 #define OBS_ENCODER_CAP_INTERNAL (1 << 3)
+#define OBS_ENCODER_CAP_ROI (1 << 4)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
@@ -100,6 +104,33 @@ struct encoder_frame {
 
 	/** Presentation timestamp */
 	int64_t pts;
+};
+
+/** Encoder region of interest */
+struct obs_encoder_roi {
+	/* The rectangle edges of the region are specified as number of pixels
+	 * from the input video's top and left edges (i.e. row/column 0). */
+	uint32_t top;
+	uint32_t bottom;
+	uint32_t left;
+	uint32_t right;
+
+	/* Priority is specified as a float value between -1 and 1.
+	 * These are converted to encoder-specific values by the encoder.
+	 * Values above 0 tell the encoder to increase quality for that region,
+	 * values below tell it to worsen it.
+	 * Not all encoders support negative values and they may be ignored. */
+	float priority;
+};
+
+struct gs_texture;
+
+/** Encoder input texture */
+struct encoder_texture {
+	/** Shared texture handle, only set on Windows */
+	uint32_t handle;
+	/** Textures, length determined by format */
+	struct gs_texture *tex[4];
 };
 
 /**
@@ -262,6 +293,12 @@ struct obs_encoder_info {
 			       uint64_t lock_key, uint64_t *next_key,
 			       struct encoder_packet *packet,
 			       bool *received_packet);
+
+	bool (*encode_texture2)(void *data, struct encoder_texture *texture,
+				int64_t pts, uint64_t lock_key,
+				uint64_t *next_key,
+				struct encoder_packet *packet,
+				bool *received_packet);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,

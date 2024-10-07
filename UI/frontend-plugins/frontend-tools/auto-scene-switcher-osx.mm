@@ -42,5 +42,4 @@ void GetCurrentWindowTitle(string &title)
     }
 }
 
-void CleanupSceneSwitcher()
-{}
+void CleanupSceneSwitcher() {}

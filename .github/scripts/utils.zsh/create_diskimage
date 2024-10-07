@@ -1,4 +1,4 @@
-autoload -Uz log_debug log_error log_info log_status log_group log_output
+autoload -Uz log_debug log_error log_info log_status log_group log_output log_warning
 
 local -r _usage="Usage: %B${0}%b <source> <volume name> <output_name>
 
@@ -16,23 +16,43 @@ local output_name=${3}
 
 log_group "Create macOS disk image"
 
-local _hdiutil_flags
-if (( _loglevel < 1 )) _hdiutil_flags='-quiet'
+trap "safe_hdiutil detach /Volumes/${output_name}; rm temp.dmg; log_group; return 2" ERR
 
-trap "hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}; rm temp.dmg; log_group return 2" ERR
+safe_hdiutil() {
+  local _status=0
+  local -r -a _backoff=(2 5 10 15 30)
 
-hdiutil create ${_hdiutil_flags} \
-    -volname "${volume_name}" \
-    -srcfolder ${source} \
-    -ov \
-    -fs APFS \
-    -format UDRW \
-    temp.dmg
-hdiutil attach ${_hdiutil_flags} \
-    -noverify \
-    -readwrite \
-    -mountpoint /Volumes/${output_name} \
-    temp.dmg
+  for i ({1..5}) {
+    hdiutil ${@} && _status=0 || _status=1
+
+    if (( _status )) {
+      log_warning "Unable to run 'hdiutil ${@}' (attempt #${i}). Retrying."
+      if (( ${+CI} )) sudo pkill -9 XProtect >/dev/null || true
+      sleep ${_backoff[${i}]}
+    } else {
+      break
+    }
+  }
+
+  if (( _status )) {
+    log_error "Unable to run 'hdiutil ${@}'. Aborting"
+    log_group
+    return 2
+  }
+}
+
+safe_hdiutil create \
+  -volname "${volume_name}" \
+  -srcfolder ${source} \
+  -ov \
+  -fs HFS+ \
+  -format UDRW \
+  temp.dmg
+safe_hdiutil attach \
+  -noverify \
+  -readwrite \
+  -mountpoint /Volumes/${output_name} \
+  temp.dmg
 
 log_info "Waiting 2 seconds to ensure mounted volume is available..."
 sleep 2
@@ -47,11 +67,13 @@ chmod -Rf go-w /Volumes/${output_name}
 SetFile -a C /Volumes/${output_name}
 rm -rf -- /Volumes/${output_name}/.fseventsd(N)
 log_info "Converting disk image..."
-hdiutil detach ${_hdiutil_flags} /Volumes/${output_name}
-hdiutil convert ${_hdiutil_flags} \
-    -format ULMO \
-    -ov \
-    -o ${output_name}.dmg temp.dmg
+
+safe_hdiutil detach /Volumes/${output_name}
+
+safe_hdiutil convert \
+  -format ULFO \
+  -ov \
+  -o ${output_name}.dmg temp.dmg
 
 rm temp.dmg
 

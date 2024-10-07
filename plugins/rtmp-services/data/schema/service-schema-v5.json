@@ -198,6 +198,18 @@
                         "$ref": "#/definitions/saneUrl",
                         "description": "Link that provides additional info about the service, presented in the UI as a button next to the services dropdown."
                     },
+                    "multitrack_video_configuration_url": {
+                        "$ref": "#/definitions/saneUrl",
+                        "description": "Accessed for multitrack video auto configuration"
+                    },
+                    "multitrack_video_name": {
+                        "type": "string",
+                        "description": "Marketing name for eRTMP multitrack video (e.g., Enhanced Broadcasting for Twitch)"
+                    },
+                    "multitrack_video_learn_more_link": {
+                        "$ref": "#/definitions/saneUrl",
+                        "description": "Link to additional information and privacy policy (for e.g., data sent to `multitrack_video_configuration_url`)"
+                    },
                     "alt_names": {
                         "type": "array",
                         "description": "Previous names of the service used for migrating existing users to the updated entry.",

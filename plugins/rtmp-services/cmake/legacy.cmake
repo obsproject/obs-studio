@@ -11,6 +11,8 @@ mark_as_advanced(RTMP_SERVICES_URL)
 add_library(rtmp-services MODULE)
 add_library(OBS::rtmp-services ALIAS rtmp-services)
 
+find_package(Jansson 2.5 REQUIRED)
+
 target_sources(
   rtmp-services
   PRIVATE service-specific/twitch.c

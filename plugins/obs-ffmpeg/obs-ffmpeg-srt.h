@@ -20,6 +20,9 @@
 #include "obs-ffmpeg-url.h"
 #include <srt/srt.h>
 #include <libavformat/avformat.h>
+#ifdef _WIN32
+#include <sys/timeb.h>
+#endif
 
 #define POLLING_TIME 100 /// Time in milliseconds between interrupt check
 

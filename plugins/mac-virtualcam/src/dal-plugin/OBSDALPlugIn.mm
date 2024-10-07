@@ -37,6 +37,7 @@ typedef enum {
     //! Timeout timer when we haven't received frames for 5s
     dispatch_source_t _timeoutTimer;
 }
+
 @property OBSDALPlugInState state;
 @property OBSDALMachClient *machClient;
 

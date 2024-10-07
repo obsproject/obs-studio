@@ -91,6 +91,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			return false;
 		}
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
 #if FF_API_BUFFER_SIZE_T
 		int content_size;
 #else
@@ -125,6 +126,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 				       mastering_size);
 			}
 		}
+#endif
 
 		ret = avcodec_parameters_copy(out_stream->codecpar,
 					      in_stream->codecpar);
@@ -149,6 +151,31 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 		} else {
 			// Otherwise tag 0 to let FFmpeg automatically select the appropriate tag
 			out_stream->codecpar->codec_tag = 0;
+		}
+
+		if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
+			out_stream->codecpar->channel_layout =
+				av_get_default_channel_layout(
+					in_stream->codecpar->channels);
+			/* The avutil default channel layout for 5 channels is
+			 * 5.0, which OBS does not support. Manually set 5
+			 * channels to 4.1. */
+			if (in_stream->codecpar->channels == 5)
+				out_stream->codecpar->channel_layout =
+					av_get_channel_layout("4.1");
+#else
+			av_channel_layout_default(
+				&out_stream->codecpar->ch_layout,
+				in_stream->codecpar->ch_layout.nb_channels);
+			/* The avutil default channel layout for 5 channels is
+			 * 5.0, which OBS does not support. Manually set 5
+			 * channels to 4.1. */
+			if (in_stream->codecpar->ch_layout.nb_channels == 5)
+				out_stream->codecpar->ch_layout =
+					(AVChannelLayout)
+						AV_CHANNEL_LAYOUT_4POINT1;
+#endif
 		}
 	}
 

@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include <obs-module.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/threading.h>
 #include <util/dstr.h>
 #include <util/darray.h>
@@ -200,43 +200,6 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
-	const enum AVColorTransferCharacteristic trc = data->config.color_trc;
-	const bool pq = trc == AVCOL_TRC_SMPTE2084;
-	const bool hlg = trc == AVCOL_TRC_ARIB_STD_B67;
-	if (pq || hlg) {
-		const int hdr_nominal_peak_level =
-			pq ? (int)obs_get_video_hdr_nominal_peak_level()
-			   : (hlg ? 1000 : 0);
-
-		size_t content_size;
-		AVContentLightMetadata *const content =
-			av_content_light_metadata_alloc(&content_size);
-		content->MaxCLL = hdr_nominal_peak_level;
-		content->MaxFALL = hdr_nominal_peak_level;
-		av_stream_add_side_data(data->video,
-					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
-					(uint8_t *)content, content_size);
-
-		AVMasteringDisplayMetadata *const mastering =
-			av_mastering_display_metadata_alloc();
-		mastering->display_primaries[0][0] = av_make_q(17, 25);
-		mastering->display_primaries[0][1] = av_make_q(8, 25);
-		mastering->display_primaries[1][0] = av_make_q(53, 200);
-		mastering->display_primaries[1][1] = av_make_q(69, 100);
-		mastering->display_primaries[2][0] = av_make_q(3, 20);
-		mastering->display_primaries[2][1] = av_make_q(3, 50);
-		mastering->white_point[0] = av_make_q(3127, 10000);
-		mastering->white_point[1] = av_make_q(329, 1000);
-		mastering->min_luminance = av_make_q(0, 1);
-		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
-		mastering->has_primaries = 1;
-		mastering->has_luminance = 1;
-		av_stream_add_side_data(data->video,
-					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
-					(uint8_t *)mastering,
-					sizeof(*mastering));
-	}
-
 	closest_format = data->config.format;
 	if (data->vcodec->pix_fmts) {
 		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
@@ -262,6 +225,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
+	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
 
 	if (data->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -270,6 +234,59 @@ static bool create_video_stream(struct ffmpeg_data *data)
 
 	if (!open_video_codec(data))
 		return false;
+
+	const enum AVColorTransferCharacteristic trc = data->config.color_trc;
+	const bool pq = trc == AVCOL_TRC_SMPTE2084;
+	const bool hlg = trc == AVCOL_TRC_ARIB_STD_B67;
+	if (pq || hlg) {
+		const int hdr_nominal_peak_level =
+			pq ? (int)obs_get_video_hdr_nominal_peak_level()
+			   : (hlg ? 1000 : 0);
+
+		size_t content_size;
+		AVContentLightMetadata *const content =
+			av_content_light_metadata_alloc(&content_size);
+		content->MaxCLL = hdr_nominal_peak_level;
+		content->MaxFALL = hdr_nominal_peak_level;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
+		av_stream_add_side_data(data->video,
+					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+					(uint8_t *)content, content_size);
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_CONTENT_LIGHT_LEVEL, (uint8_t *)content,
+			content_size, 0);
+#endif
+
+		AVMasteringDisplayMetadata *const mastering =
+			av_mastering_display_metadata_alloc();
+		mastering->display_primaries[0][0] = av_make_q(17, 25);
+		mastering->display_primaries[0][1] = av_make_q(8, 25);
+		mastering->display_primaries[1][0] = av_make_q(53, 200);
+		mastering->display_primaries[1][1] = av_make_q(69, 100);
+		mastering->display_primaries[2][0] = av_make_q(3, 20);
+		mastering->display_primaries[2][1] = av_make_q(3, 50);
+		mastering->white_point[0] = av_make_q(3127, 10000);
+		mastering->white_point[1] = av_make_q(329, 1000);
+		mastering->min_luminance = av_make_q(0, 1);
+		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
+		mastering->has_primaries = 1;
+		mastering->has_luminance = 1;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 31, 102)
+		av_stream_add_side_data(data->video,
+					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+					(uint8_t *)mastering,
+					sizeof(*mastering));
+#else
+		av_packet_side_data_add(
+			&data->video->codecpar->coded_side_data,
+			&data->video->codecpar->nb_coded_side_data,
+			AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+			(uint8_t *)mastering, sizeof(*mastering), 0);
+#endif
+	}
 
 	if (context->pix_fmt != data->config.format ||
 	    data->config.width != data->config.scale_width ||
@@ -392,6 +409,11 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	data->audio_infos[idx].stream = stream;
 	data->audio_infos[idx].ctx = context;
 
+	if (data->config.audio_stream_names[idx] &&
+	    *data->config.audio_stream_names[idx] != '\0')
+		av_dict_set(&stream->metadata, "title",
+			    data->config.audio_stream_names[idx], 0);
+
 	return open_audio_codec(data, idx);
 }
 
@@ -498,7 +520,7 @@ static void close_audio(struct ffmpeg_data *data)
 {
 	for (int idx = 0; idx < data->num_audio_streams; idx++) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++)
-			circlebuf_free(&data->excess_frames[idx][i]);
+			deque_free(&data->excess_frames[idx][i]);
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);
@@ -944,15 +966,14 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 	frame_size_bytes = (size_t)data->frame_size * data->audio_size;
 
 	for (size_t i = 0; i < data->audio_planes; i++)
-		circlebuf_push_back(&data->excess_frames[track_order][i],
-				    in.data[i], in.frames * data->audio_size);
+		deque_push_back(&data->excess_frames[track_order][i],
+				in.data[i], in.frames * data->audio_size);
 
 	while (data->excess_frames[track_order][0].size >= frame_size_bytes) {
 		for (size_t i = 0; i < data->audio_planes; i++)
-			circlebuf_pop_front(
-				&data->excess_frames[track_order][i],
-				data->samples[track_order][i],
-				frame_size_bytes);
+			deque_pop_front(&data->excess_frames[track_order][i],
+					data->samples[track_order][i],
+					frame_size_bytes);
 
 		encode_audio(output, track_order, context, data->audio_size);
 	}
@@ -1152,6 +1173,27 @@ static bool try_connect(struct ffmpeg_output *output)
 		config.scale_width = config.width;
 	if (!config.scale_height)
 		config.scale_height = config.height;
+
+	obs_data_array_t *audioNames =
+		obs_data_get_array(settings, "audio_names");
+	if (audioNames) {
+		for (size_t i = 0, idx = 0; i < MAX_AUDIO_MIXES; i++) {
+			if ((config.audio_tracks & (1 << i)) == 0)
+				continue;
+
+			obs_data_t *item_data =
+				obs_data_array_item(audioNames, i);
+			config.audio_stream_names[idx] =
+				obs_data_get_string(item_data, "name");
+			obs_data_release(item_data);
+
+			idx++;
+		}
+		obs_data_array_release(audioNames);
+	} else {
+		for (int idx = 0; idx < config.audio_mix_count; idx++)
+			config.audio_stream_names[idx] = NULL;
+	}
 
 	success = ffmpeg_data_init(&output->ff_data, &config);
 	obs_data_release(settings);

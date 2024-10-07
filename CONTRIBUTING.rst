@@ -58,6 +58,8 @@ Coding Guidelines
 
 - Comments and names of variables/functions/etc. must be in English
 
+- Formatting scripts (mac0S/Linux only) are available `here <./build-aux>`__
+
 Commit Guidelines
 -----------------
 
