@@ -303,6 +303,7 @@ void OBSBasic::RefreshProfileCache()
 
 	const std::filesystem::path profilesPath =
 		App()->userProfilesLocation / std::filesystem::u8path(OBSProfilePath.substr(1));
+	const std::filesystem::path profileSettingsFile = std::filesystem::u8path(OBSProfileSettingsFile);
 
 	if (!std::filesystem::exists(profilesPath)) {
 		blog(LOG_WARNING, "Failed to get profiles config path");
@@ -314,13 +315,11 @@ void OBSBasic::RefreshProfileCache()
 			continue;
 		}
 
-		std::string profileCandidate;
-		profileCandidate.reserve(entry.path().u8string().size() + OBSProfileSettingsFile.size() + 1);
-		profileCandidate.append(entry.path().u8string()).append("/").append(OBSProfileSettingsFile);
+		const auto profileCandidate = entry.path() / profileSettingsFile;
 
 		ConfigFile config;
 
-		if (config.Open(profileCandidate.c_str(), CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS) {
+		if (config.Open(profileCandidate.u8string().c_str(), CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS) {
 			continue;
 		}
 
