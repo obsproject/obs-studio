@@ -1,6 +1,7 @@
 /* camera-portal.c
  *
  * Copyright 2021 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
+ * Copyright 2024-2026 Dimitris Papaioannou <dimtpap@protonmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -361,8 +362,18 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			obs_data_set_int(data, "video_format", format);
 
 			format_name = obs_pw_video_format.pretty_name;
-		} else {
-			continue;
+		} else if (media_subtype == SPA_MEDIA_SUBTYPE_mjpg || media_subtype == SPA_MEDIA_SUBTYPE_h264) {
+			obs_data_set_bool(data, "encoded", true);
+			obs_data_set_int(data, "video_format", SPA_VIDEO_FORMAT_ENCODED);
+
+			switch (media_subtype) {
+			case SPA_MEDIA_SUBTYPE_mjpg:
+				format_name = "MJPG";
+				break;
+			case SPA_MEDIA_SUBTYPE_h264:
+				format_name = "H264";
+				break;
+			}
 		}
 
 		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, format ? &format : NULL,
