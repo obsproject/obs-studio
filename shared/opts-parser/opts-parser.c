@@ -34,6 +34,12 @@ struct obs_options obs_parse_options(const char *options_string)
 	size_t input_option_count = 0;
 	for (char **input_word = input_words; *input_word; ++input_word)
 		input_option_count += 1;
+
+	if (!input_option_count) {
+		strlist_free(input_words);
+		goto failure;
+	}
+
 	char **ignored_words = bmalloc(input_option_count * sizeof(*ignored_words));
 	char **ignored_word = ignored_words;
 	struct obs_option *out_options = bmalloc(input_option_count * sizeof(*out_options));
