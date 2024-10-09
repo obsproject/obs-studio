@@ -84,7 +84,7 @@
     qproperty-icon: url(:res/images/revert.svg);
 }
 
-MuteCheckBox {
+.indicator-mute {
     outline: none;
 }
 

@@ -1413,7 +1413,7 @@ VolControl #volLabel {
     margin-right: var(--padding_xlarge);
 }
 
-#vMixerScrollArea VolControl MuteCheckBox {
+#vMixerScrollArea VolControl .indicator-mute {
     margin-left: var(--padding_xlarge);
 }
 
@@ -1624,7 +1624,7 @@ QGroupBox::indicator:unchecked:disabled {
 
 /* Mute CheckBox */
 
-MuteCheckBox {
+.indicator-mute {
     outline: none;
 }
 
