@@ -186,13 +186,13 @@ QGroupBox::indicator:unchecked:disabled {
     image: url(theme:Light/checkbox_unchecked_disabled.svg);
 }
 
-QCheckBox[lockCheckBox=true]::indicator:checked,
-QCheckBox[lockCheckBox=true]::indicator:checked:hover {
+.indicator-lock::indicator:checked,
+.indicator-lock::indicator:checked:hover {
     image: url(theme:Light/locked.svg);
 }
 
-QCheckBox[visibilityCheckBox=true]::indicator:checked,
-QCheckBox[visibilityCheckBox=true]::indicator:checked:hover {
+.indicator-visibility::indicator:checked,
+.indicator-visibility::indicator:checked:hover {
     image: url(theme:Light/visible.svg);
 }
 
@@ -228,13 +228,13 @@ MuteCheckBox::indicator:unchecked:disabled {
     image: url(theme:Light/settings/audio.svg);
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator:checked,
-QCheckBox[sourceTreeSubItem=true]::indicator:checked:hover {
+.indicator-expand::indicator:checked,
+.indicator-expand::indicator:checked:hover {
     image: url(theme:Light/expand.svg);
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator:unchecked,
-QCheckBox[sourceTreeSubItem=true]::indicator:unchecked:hover {
+.indicator-expand::indicator:unchecked,
+.indicator-expand::indicator:unchecked:hover {
     image: url(theme:Light/collapse.svg);
 }
 
