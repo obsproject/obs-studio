@@ -498,7 +498,7 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		blog(LOG_ERROR, "%s", error.what());
 	}
 
-	const OBSProfile &newProfile = profiles.rbegin()->second;
+	const OBSProfile &newProfile = profiles.begin()->second;
 
 	ActivateProfile(newProfile, true);
 	RemoveProfile(currentProfile);
