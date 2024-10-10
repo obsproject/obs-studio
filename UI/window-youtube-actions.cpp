@@ -406,8 +406,7 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api, BroadcastDesc
 			blog(LOG_DEBUG, "No stream created.");
 			return false;
 		}
-		json11::Json json;
-		if (!apiYouTube->BindStream(broadcast.id, stream.id, json)) {
+		if (!apiYouTube->BindStream(broadcast.id, stream.id)) {
 			blog(LOG_DEBUG, "No stream binded.");
 			return false;
 		}
@@ -455,7 +454,7 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api, StreamDescr
 			blog(LOG_DEBUG, "No stream created.");
 			return false;
 		}
-		if (!apiYouTube->BindStream(selectedBroadcast, stream.id, json)) {
+		if (!apiYouTube->BindStream(selectedBroadcast, stream.id)) {
 			blog(LOG_DEBUG, "No stream binded.");
 			return false;
 		}
