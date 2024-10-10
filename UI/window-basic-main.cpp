@@ -121,6 +121,9 @@ QCef *cef = nullptr;
 QCefCookieManager *panel_cookies = nullptr;
 bool cef_js_avail = false;
 
+extern std::string opt_starting_profile;
+extern std::string opt_starting_collection;
+
 void DestroyPanelCookieManager();
 
 namespace {
@@ -1876,22 +1879,21 @@ bool OBSBasic::InitBasicConfig()
 
 	RefreshProfiles(true);
 
-	std::string currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
+	const std::string currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
+	const std::optional<OBSProfile> currentProfile = GetProfileByName(currentProfileName);
+	const std::optional<OBSProfile> foundProfile = GetProfileByName(opt_starting_profile);
 
-	auto foundProfile = GetProfileByName(currentProfileName);
-
-	if (!foundProfile) {
-		const OBSProfile &newProfile = CreateProfile(currentProfileName);
-
-		ActivateProfile(newProfile);
-	} else {
-		// TODO: Remove duplicate code from OBS initialization and just use ActivateProfile here instead
-		int code = activeConfiguration.Open(foundProfile.value().profileFile.u8string().c_str(),
-						    CONFIG_OPEN_ALWAYS);
-		if (code != CONFIG_SUCCESS) {
-			OBSErrorBox(NULL, "Failed to open basic.ini: %d", code);
-			return false;
+	try {
+		if (foundProfile) {
+			ActivateProfile(foundProfile.value());
+		} else if (currentProfile) {
+			ActivateProfile(currentProfile.value());
+		} else {
+			SetupNewProfile(currentProfileName);
 		}
+	} catch (const std::logic_error &) {
+		OBSErrorBox(NULL, "Failed to open basic.ini: %d", -1);
+		return false;
 	}
 
 	return InitBasicConfigDefaults();
@@ -2170,19 +2172,22 @@ void OBSBasic::OBSInit()
 
 	{
 		ProfileScope("OBSBasic::Load");
-		disableSaving--;
+		const std::string sceneCollectionName{
+			config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
+		const std::optional<OBSSceneCollection> configuredCollection =
+			GetSceneCollectionByName(sceneCollectionName);
+		const std::optional<OBSSceneCollection> foundCollection =
+			GetSceneCollectionByName(opt_starting_collection);
 
-		try {
-			const OBSSceneCollection &currentCollection = GetCurrentSceneCollection();
-			ActivateSceneCollection(currentCollection);
-		} catch (const std::invalid_argument &) {
-			const std::string collectionName =
-				config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
-
-			SetupNewSceneCollection(collectionName);
+		if (foundCollection) {
+			ActivateSceneCollection(foundCollection.value());
+		} else if (configuredCollection) {
+			ActivateSceneCollection(configuredCollection.value());
+		} else {
+			disableSaving--;
+			SetupNewSceneCollection(sceneCollectionName);
+			disableSaving++;
 		}
-
-		disableSaving++;
 	}
 
 	loaded = true;
