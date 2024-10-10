@@ -1465,7 +1465,7 @@ QTableView QPushButton,
 QTableView QToolButton {
     padding: 0px;
     margin: -1px;
-    border_radius: 0px;
+    border-radius: 0px;
 }
 
 QHeaderView::section {
