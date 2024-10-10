@@ -507,7 +507,7 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered(bool skipConfirmation)
 		blog(LOG_ERROR, "%s", error.what());
 	}
 
-	const OBSSceneCollection &newCollection = collections.rbegin()->second;
+	const OBSSceneCollection &newCollection = collections.begin()->second;
 
 	ActivateSceneCollection(newCollection);
 	RemoveSceneCollection(currentCollection);
