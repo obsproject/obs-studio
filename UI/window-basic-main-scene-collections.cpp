@@ -165,12 +165,8 @@ const OBSSceneCollection &OBSBasic::CreateSceneCollection(const std::string &col
 
 void OBSBasic::RemoveSceneCollection(OBSSceneCollection collection)
 {
-	std::filesystem::path collectionBackupFile{collection.collectionFile};
-	collectionBackupFile.replace_extension("json.bak");
-
 	try {
 		std::filesystem::remove(collection.collectionFile);
-		std::filesystem::remove(collectionBackupFile);
 	} catch (const std::filesystem::filesystem_error &error) {
 		blog(LOG_DEBUG, "%s", error.what());
 		throw std::logic_error("Failed to remove scene collection file: " + collection.fileName);
