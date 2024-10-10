@@ -9,28 +9,23 @@
 
 #ifdef BROWSER_AVAILABLE
 #include "window-dock-browser.hpp"
-#include "lineedit-autoresize.hpp"
 #include <QHBoxLayout>
 class YoutubeChatDock : public BrowserDock {
 	Q_OBJECT
 
 private:
-	std::string apiChatId;
 	bool isLoggedIn;
-	LineEditAutoResize *lineEdit;
-	QPushButton *sendButton;
-	QHBoxLayout *chatLayout;
 
 public:
-	YoutubeChatDock(const QString &title);
-	void SetWidget(QCefWidget *widget_);
-	void SetApiChatId(const std::string &id);
+	YoutubeChatDock(const QString &title) : BrowserDock(title) {}
 
+	inline void SetWidget(QCefWidget *widget_)
+	{
+		BrowserDock::SetWidget(widget_);
+		QWidget::connect(cefWidget.get(), &QCefWidget::urlChanged, this, &YoutubeChatDock::YoutubeCookieCheck);
+	}
 private slots:
 	void YoutubeCookieCheck();
-	void SendChatMessage();
-	void ShowErrorMessage(const QString &error);
-	void EnableChatInput(bool visible);
 };
 #endif
 
@@ -59,7 +54,7 @@ public:
 	YoutubeAuth(const Def &d);
 	~YoutubeAuth();
 
-	void SetChatId(const QString &chat_id, const std::string &api_chat_id);
+	void SetChatId(const QString &chat_id);
 	void ResetChat();
 	void ReloadChat();
 
