@@ -96,8 +96,8 @@ invoke_formatter() {
       if (( ${+commands[gersemi]} )) {
         local gersemi_version=($(gersemi --version))
 
-        if ! is-at-least 0.12.0 ${gersemi_version[2]}; then
-          log_error "gersemi is not version 0.12.0 or above (found ${gersemi_version[2]}."
+        if ! is-at-least 0.21.0 ${gersemi_version[2]}; then
+          log_error "gersemi is not version 0.21.0 or above (found ${gersemi_version[2]}."
           exit 2
         fi
       }
@@ -116,9 +116,13 @@ invoke_formatter() {
         if (( ${#source_files} )) {
           while read -r line; do
             local -a line_tokens=(${(z)line})
-            file=${line_tokens[1]//*obs-studio\//}
+            if (( #line_tokens )) {
+              file=${line_tokens[1]//*${project_root}\//}
 
-            log_error "${file} requires formatting changes."
+              log_error "${file} requires formatting changes."
+            } else {
+              log_error "${line}"
+            }
 
             if (( fail_on_error == 2 )) return 2
             num_failures=$(( num_failures + 1 ))
@@ -205,6 +209,7 @@ invoke_formatter() {
 run_format() {
   if (( ! ${+SCRIPT_HOME} )) typeset -g SCRIPT_HOME=${ZSH_ARGZERO:A:h}
   if (( ! ${+FORMATTER_NAME} )) typeset -g FORMATTER_NAME=${${(s:-:)ZSH_ARGZERO:t:r}[2]}
+  local project_root=${SCRIPT_HOME:A:h}
 
   typeset -g host_os=${${(L)$(uname -s)}//darwin/macos}
   local -i fail_on_error=0
