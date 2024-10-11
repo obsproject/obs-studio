@@ -10,7 +10,7 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 find_package(MbedTLS REQUIRED)
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 find_package(Detours REQUIRED)
-find_package(nlohmann_json REQUIRED)
+find_package(nlohmann_json 3.11 REQUIRED)
 
 configure_file(cmake/windows/obs.rc.in obs.rc)
 
