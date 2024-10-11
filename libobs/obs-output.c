@@ -342,7 +342,7 @@ bool obs_output_is_ready_to_update(obs_output_t *output)
 {
 	bool ret = true;
 
-	if (output->context.data)
+	if (output->context.data && output->info.is_ready_to_update)
 		ret = output->info.is_ready_to_update(output->context.data);
 
 	return ret;
