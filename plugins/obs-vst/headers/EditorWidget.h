@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QWidget>
 
 #if defined(_WIN32)
-#define NOMINMAX
 #include <QWindow>
 #include <Windows.h>
 #elif defined(__linux__)
