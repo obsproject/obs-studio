@@ -2,6 +2,9 @@ target_sources(obs-studio PRIVATE platform-x11.cpp)
 target_compile_definitions(obs-studio PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}")
 target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate Qt::DBus procstat)
 
+find_package(glib REQUIRED)
+target_link_libraries(obs-studio PRIVATE glib::glib)
+
 target_sources(obs-studio PRIVATE system-info-posix.cpp)
 
 if(TARGET OBS::python)

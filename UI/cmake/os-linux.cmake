@@ -5,6 +5,9 @@ target_compile_definitions(
 )
 target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate Qt::DBus)
 
+find_package(glib REQUIRED)
+target_link_libraries(obs-studio PRIVATE glib::glib)
+
 target_sources(obs-studio PRIVATE system-info-posix.cpp)
 
 if(TARGET OBS::python)
