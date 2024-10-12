@@ -73,7 +73,6 @@ add_compile_options(
   "$<$<COMPILE_LANG_AND_ID:C,Clang>:${_obs_clang_c_options}>"
   "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:${_obs_clang_cxx_options}>"
   $<$<NOT:$<CONFIG:Debug>>:/Gy>
-  $<$<NOT:$<CONFIG:Debug>>:/GL>
   $<$<NOT:$<CONFIG:Debug>>:/Oi>
 )
 
@@ -87,11 +86,12 @@ add_compile_definitions(
   $<$<CONFIG:DEBUG>:_DEBUG>
 )
 
+# Visual Studio sets "/LTCG:INCREMENTAL" when "Whole Program Optimization" is enabled for a x86 or x64 target. To
+# ensure "proper" link-time optimization, the LTCG flag has to be explicitly added here.
 add_link_options(
-  $<$<NOT:$<CONFIG:Debug>>:/OPT:REF>
-  $<$<NOT:$<CONFIG:Debug>>:/OPT:ICF>
-  $<$<NOT:$<CONFIG:Debug>>:/LTCG>
-  $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO>
+  $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/LTCG>
+  $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/OPT:REF>
+  $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/OPT:ICF>
   /DEBUG
   /Brepro
 )
