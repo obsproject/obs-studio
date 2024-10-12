@@ -1015,8 +1015,11 @@ General Source Functions
    Updates the settings for a source and calls the
    :c:member:`obs_source_info.update` callback of the source.  If the
    source is a video source, the :c:member:`obs_source_info.update` will
-   be not be called immediately; instead, it will be deferred to the
-   video thread to prevent threading issues.
+   not be called immediately; instead, it will be deferred to the video
+   thread to prevent threading issues.
+
+   :param   settings:  The settings for the source, or *NULL* to call
+                       the callback without changing the settings.
 
 ---------------------
 
