@@ -10,7 +10,7 @@ endif()
 add_library(obs-qsv11 MODULE)
 add_library(OBS::qsv11 ALIAS obs-qsv11)
 
-find_package(VPL 2.6 REQUIRED)
+find_package(VPL 2.9 REQUIRED)
 
 if(OS_LINUX)
   find_package(Libva REQUIRED)
