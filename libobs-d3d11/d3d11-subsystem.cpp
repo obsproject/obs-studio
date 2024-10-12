@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <algorithm>
 #include <cassert>
 #include <cinttypes>
 #include <optional>
@@ -229,7 +230,7 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 
 	ComQIPtr<IDXGIFactory5> factory5 = device->factory;
 	if (factory5) {
-		initData.num_backbuffers = max(data->num_backbuffers, 2);
+		initData.num_backbuffers = std::max(data->num_backbuffers, (uint32_t)2);
 
 		effect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		flags |= DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;

@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-#define NOMINMAX
-
 class QString;
 class QWidget;
 
