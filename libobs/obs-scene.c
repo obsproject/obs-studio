@@ -2364,7 +2364,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene, obs_source_t 
 	item->absolute_coordinates = scene->absolute_coordinates;
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
-	vec2_set(&item->scale_ref, (float)scene_getwidth(scene), (float)scene_getheight(scene));
+	get_scene_dimensions(item, &item->scale_ref.x, &item->scale_ref.y);
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
 
