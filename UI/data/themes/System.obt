@@ -41,7 +41,7 @@
 }
 
 .icon-trash {
-    qproperty-icon: url(:/res/images/trash.svg);
+    qproperty-icon: url(:/res/images/minus.svg);
 }
 
 .icon-clear {
@@ -49,7 +49,7 @@
 }
 
 .icon-gear {
-    qproperty-icon: url(:/res/images/settings/general.svg);
+    qproperty-icon: url(:/settings/images/settings/general.svg);
 }
 
 .icon-dots-vert {
@@ -179,6 +179,7 @@ OBSQTDisplay {
 
 OBSBasicSettings {
     qproperty-generalIcon: url(:settings/images/settings/general.svg);
+    qproperty-streamIcon: url(:settings/images/settings/appearance.svg);
     qproperty-streamIcon: url(:settings/images/settings/stream.svg);
     qproperty-outputIcon: url(:settings/images/settings/output.svg);
     qproperty-audioIcon: url(:settings/images/settings/audio.svg);
