@@ -1889,7 +1889,8 @@ bool OBSBasic::InitBasicConfig()
 		} else if (currentProfile) {
 			ActivateProfile(currentProfile.value());
 		} else {
-			SetupNewProfile(currentProfileName);
+			const OBSProfile &newProfile = CreateProfile(currentProfileName);
+			ActivateProfile(newProfile);
 		}
 	} catch (const std::logic_error &) {
 		OBSErrorBox(NULL, "Failed to open basic.ini: %d", -1);
