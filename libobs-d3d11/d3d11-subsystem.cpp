@@ -583,6 +583,21 @@ static bool FastClearSupported(UINT vendorId, uint64_t version)
 	return aa >= 31 && bb >= 0 && ccccc >= 15 && ddddd >= 2737;
 }
 
+static bool HAGSPriorityFixed(UINT vendorId, uint64_t version)
+{
+	/* Always true for non-NVIDIA GPUs */
+	if (vendorId != 0x10de)
+		return true;
+
+	const uint16_t aa = (version >> 48) & 0xffff;
+	const uint16_t bb = (version >> 32) & 0xffff;
+	const uint16_t ccccc = (version >> 16) & 0xffff;
+	const uint16_t ddddd = version & 0xffff;
+
+	/* Check for NVIDIA driver version >= 31.0.15.3699 */
+	return aa >= 31 && bb >= 0 && ccccc >= 15 && ddddd >= 3699;
+}
+
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
@@ -633,7 +648,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	/* adjust gpu thread priority on non-intel GPUs */
 #ifdef USE_GPU_PRIORITY
-	if (desc.VendorId != 0x8086 && !set_priority(device, hags_enabled)) {
+	bool hags_workaround =
+		!HAGSPriorityFixed(desc.VendorId, driverVersion) &&
+		hags_enabled;
+	if (desc.VendorId != 0x8086 && !set_priority(device, hags_workaround)) {
 		blog(LOG_INFO, "D3D11 GPU priority setup "
 			       "failed (not admin?)");
 	}
