@@ -768,7 +768,12 @@ bool OBSApp::MigrateGlobalSettings()
 		return false;
 	}
 
-	std::filesystem::copy(legacyGlobalConfigFile, userConfigFile);
+	try {
+		std::filesystem::copy(legacyGlobalConfigFile, userConfigFile);
+	} catch (const std::filesystem::filesystem_error &) {
+		OBSErrorBox(nullptr, "Unable to migrate global configuration - copy failed.");
+		return false;
+	}
 
 	return true;
 }
