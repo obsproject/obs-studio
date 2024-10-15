@@ -282,8 +282,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
 		s->close_when_inactive ? "yes" : "no",
-		s->full_decode ? "yes" : "no",
-		s->enable_caching ? "yes" : "no",
+		s->full_decode ? "yes" : "no", s->enable_caching ? "yes" : "no",
 		s->ffmpeg_options);
 }
 

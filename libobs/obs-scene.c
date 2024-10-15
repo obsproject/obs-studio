@@ -1714,13 +1714,15 @@ static bool scene_audio_render_internal(
 			/* Update buf so that parent mute state applies to all current
 			* scene items as well */
 			if (parent_buf &&
-				(!apply_buf ||
-				memcmp(buf, parent_buf, sizeof(float) * count) != 0)) {
+			    (!apply_buf ||
+			     memcmp(buf, parent_buf, sizeof(float) * count) !=
+				     0)) {
 				for (size_t i = 0; i < count; i++) {
 					if (!apply_buf) {
 						buf[i] = parent_buf[i];
 					} else {
-						buf[i] = buf[i] < parent_buf[i]
+						buf[i] =
+							buf[i] < parent_buf[i]
 								? buf[i]
 								: parent_buf[i];
 					}
@@ -1731,12 +1733,13 @@ static bool scene_audio_render_internal(
 
 			/* If "source" is a group/scene and has no transition,
 			* add their items to the current list */
-			if (source == item->source && (obs_source_is_group(source) ||
-							obs_source_is_scene(source))) {
-				scene_audio_render_internal(source->context.data,
-								mix_scene, NULL, NULL, 0, 0,
-								sample_rate,
-								apply_buf ? buf : NULL);
+			if (source == item->source &&
+			    (obs_source_is_group(source) ||
+			     obs_source_is_scene(source))) {
+				scene_audio_render_internal(
+					source->context.data, mix_scene, NULL,
+					NULL, 0, 0, sample_rate,
+					apply_buf ? buf : NULL);
 				item = item->next;
 				continue;
 			}

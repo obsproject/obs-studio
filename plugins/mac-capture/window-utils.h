@@ -76,5 +76,4 @@ void show_window_properties(obs_properties_t *props, bool show);
  - Returns: `CGDirectDisplayID` of the display the user selected. May be 0 if the display cannot be found. */
 CGDirectDisplayID get_display_migrate_settings(obs_data_t *settings);
 
-
 #endif

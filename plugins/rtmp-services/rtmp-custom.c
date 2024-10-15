@@ -134,7 +134,6 @@ static const char *rtmp_custom_get_protocol(void *data)
 	return "RTMP";
 }
 
-
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 				       obs_data_t *audio_settings)
 {

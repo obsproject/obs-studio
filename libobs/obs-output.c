@@ -2638,7 +2638,8 @@ static inline bool initialize_audio_encoders(obs_output_t *output,
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
 
 		if (output->audio_encoders[i] && force_encoder)
-			ensure_force_initialize_encoder(output->video_encoders[i]);
+			ensure_force_initialize_encoder(
+				output->video_encoders[i]);
 
 		obs_encoder_t *audio = output->audio_encoders[i];
 
@@ -2739,7 +2740,9 @@ bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
 
 	if (flag_video(output) && !initialize_video_encoders(output))
 		return false;
-	if (flag_audio(output) && !initialize_audio_encoders(output, false)) // TODO: remove boolean parameter
+	if (flag_audio(output) &&
+	    !initialize_audio_encoders(output,
+				       false)) // TODO: remove boolean parameter
 		return false;
 
 	return true;

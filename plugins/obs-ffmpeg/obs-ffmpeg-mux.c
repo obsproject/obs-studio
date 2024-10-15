@@ -1205,7 +1205,7 @@ static void *replay_buffer_mux_thread(void *data)
 			hasFailed = !write_packet(stream, pkt);
 			if (hasFailed) {
 				warn("Could not write packet for file '%s'",
- 				     stream->path.array);
+				     stream->path.array);
 				error = true;
 				goto error;
 			}

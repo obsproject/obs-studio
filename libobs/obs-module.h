@@ -79,7 +79,7 @@ bool obs_module_load(void)
 	MODULE_EXPORT void obs_module_set_pointer(obs_module_t *module); \
 	void obs_module_set_pointer(obs_module_t *module)                \
 	{                                                                \
-		signal(SIGABRT, &handle_aborts);                              \
+		signal(SIGABRT, &handle_aborts);                         \
 		obs_module_pointer = module;                             \
 	}                                                                \
 	obs_module_t *obs_current_module(void)                           \

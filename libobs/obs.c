@@ -1326,7 +1326,8 @@ extern void log_system_info(void);
 static bool obs_init(const char *locale, const char *module_config_path,
 		     profiler_name_store_t *store)
 {
-	blog(LOG_INFO, "OBS API version %d.%d.%d", LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER);
+	blog(LOG_INFO, "OBS API version %d.%d.%d", LIBOBS_API_MAJOR_VER,
+	     LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER);
 
 	obs = bzalloc(sizeof(struct obs_core));
 
@@ -1812,7 +1813,8 @@ bool obs_get_video_info_for_output(obs_output_t *output,
 	if (!output || !output->video_encoders[index])
 		return false;
 
-	return obs_get_video_info_for_encoder(output->video_encoders[index], ovi);
+	return obs_get_video_info_for_encoder(output->video_encoders[index],
+					      ovi);
 }
 
 bool obs_get_video_info_for_encoder(obs_encoder_t *encoder,

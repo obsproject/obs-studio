@@ -459,7 +459,8 @@ EXPORT bool obs_get_video_info_by_index(size_t index,
 					struct obs_video_info *ovi);
 /** Gets video info used by output*/
 EXPORT bool obs_get_video_info_for_output(obs_output_t *output,
-					  struct obs_video_info *ovi, size_t index);
+					  struct obs_video_info *ovi,
+					  size_t index);
 /** Gets video info used by output*/
 EXPORT bool obs_get_video_info_for_encoder(obs_encoder_t *encoder,
 					   struct obs_video_info *ovi);

@@ -257,7 +257,8 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		return;
 
 	if (!current_mix->ovi) {
-		blog(LOG_ERROR, "maybe_set_up_gpu_rescale - no obs_video_info for current mix");
+		blog(LOG_ERROR,
+		     "maybe_set_up_gpu_rescale - no obs_video_info for current mix");
 		return;
 	}
 

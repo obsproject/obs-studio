@@ -1083,7 +1083,8 @@ static obs_properties_t *text_get_properties(void *data)
 
 void *text_create(obs_data_t *settings, obs_source_t *source)
 {
-	return reinterpret_cast<void *>(new TextSource(source, settings, false));
+	return reinterpret_cast<void *>(
+		new TextSource(source, settings, false));
 }
 
 void text_destroy(void *data)

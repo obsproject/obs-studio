@@ -858,7 +858,6 @@ static void coreaudio_destroy(void *data)
 
 		coreaudio_shutdown(ca);
 
-
 		if (ca->channel_map) {
 			bfree(ca->channel_map);
 			ca->channel_map = NULL;

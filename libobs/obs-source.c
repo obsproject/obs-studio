@@ -5942,9 +5942,9 @@ static inline void process_audio_source_tick(obs_source_t *source,
 	}
 
 	for (size_t ch = 0; ch < channels; ch++)
-		deque_peek_front(
-			&source->audio_input_buf[ch],
-			get_source_audio_output_buf(source, 0, 0, ch), size);
+		deque_peek_front(&source->audio_input_buf[ch],
+				 get_source_audio_output_buf(source, 0, 0, ch),
+				 size);
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 

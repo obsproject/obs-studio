@@ -603,10 +603,11 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 		if (current_frame->format == VIDEO_FORMAT_NONE)
 			return;
 
-		current_frame->timestamp = m->full_decode
-					   ? d->frame_pts
-					   : (m->base_ts + d->frame_pts - m->start_ts +
-				 	     m->play_sys_ts - base_sys_ts);
+		current_frame->timestamp =
+			m->full_decode
+				? d->frame_pts
+				: (m->base_ts + d->frame_pts - m->start_ts +
+				   m->play_sys_ts - base_sys_ts);
 
 		current_frame->duration = d->last_duration;
 		current_frame->width = f->width;
@@ -639,7 +640,7 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(58, 29, 100)
 			if (!f->key_frame)
 #else
-		if (!(f->flags & AV_FRAME_FLAG_KEY))
+			if (!(f->flags & AV_FRAME_FLAG_KEY))
 #endif
 				return;
 

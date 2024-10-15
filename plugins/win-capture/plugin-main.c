@@ -117,7 +117,6 @@ bool obs_module_load(void)
 	snprintf(update_url, sizeof(update_url), "%s/v%d", COMPAT_URL,
 		 COMPAT_FORMAT_VERSION);
 
-
 	struct win_version_info win1903 = {.major = 10,
 					   .minor = 0,
 					   .build = 18362,

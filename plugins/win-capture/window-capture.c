@@ -923,7 +923,8 @@ struct obs_source_info window_capture_info = {
 	.id = "window_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_AUDIO |
-			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_SRGB,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_SRGB,
 	.get_name = wc_getname,
 	.create = wc_create,
 	.destroy = wc_destroy,
