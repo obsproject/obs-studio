@@ -188,6 +188,7 @@ static void adjust_video_encoder_scaling(const obs_video_info &ovi, obs_encoder_
 	obs_encoder_set_scaled_size(video_encoder, requested_width, requested_height);
 	obs_encoder_set_gpu_scale_type(video_encoder, encoder_config.gpu_scale_type.value_or(OBS_SCALE_BICUBIC));
 	obs_encoder_set_preferred_video_format(video_encoder, VIDEO_FORMAT_NV12);
+	obs_encoder_set_preferred_color_space(video_encoder, VIDEO_CS_709);
 }
 
 static uint32_t closest_divisor(const obs_video_info &ovi, const media_frames_per_second &target_fps)
