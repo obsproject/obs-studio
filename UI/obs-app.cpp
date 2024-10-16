@@ -1510,6 +1510,35 @@ static uint64_t convert_log_name(bool has_prefix, const char *name)
 	return std::stoull(timestring.str());
 }
 
+/* If upgrading from an older (non-XDG) build of OBS, move config files to XDG directory. */
+/* TODO: Remove after version 32.0. */
+#if defined(__FreeBSD__)
+static void move_to_xdg(void)
+{
+	char old_path[512];
+	char new_path[512];
+	char *home = getenv("HOME");
+	if (!home)
+		return;
+
+	if (snprintf(old_path, sizeof(old_path), "%s/.obs-studio", home) <= 0)
+		return;
+
+	/* make base xdg path if it doesn't already exist */
+	if (GetAppConfigPath(new_path, sizeof(new_path), "") <= 0)
+		return;
+	if (os_mkdirs(new_path) == MKDIR_ERROR)
+		return;
+
+	if (GetAppConfigPath(new_path, sizeof(new_path), "obs-studio") <= 0)
+		return;
+
+	if (os_file_exists(old_path) && !os_file_exists(new_path)) {
+		rename(old_path, new_path);
+	}
+}
+#endif
+
 static void delete_oldest_file(bool has_prefix, const char *location)
 {
 	BPtr<char> logDir(GetAppConfigPathPtr(location));
@@ -2466,6 +2495,10 @@ int main(int argc, char *argv[])
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
+
+#if defined(__FreeBSD__)
+	move_to_xdg();
+#endif
 
 	obs_set_cmdline_args(argc, argv);
 
