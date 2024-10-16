@@ -351,6 +351,9 @@ Libobs Objects
    Increments the source reference counter, use
    :c:func:`obs_source_release()` to release it when complete.
 
+   .. deprecated:: 31.0
+      Use :c:func:`obs_frontend_get_transitions` from the Frontend API or :c:func:`obs_get_source_by_uuid` instead.
+
 ---------------------
 
 .. function:: obs_source_t *obs_get_transition_by_uuid(const char *uuid)
@@ -361,6 +364,9 @@ Libobs Objects
    :c:func:`obs_source_release()` to release it when complete.
 
    .. versionadded:: 29.1
+
+   .. deprecated:: 31.0
+      Use :c:func:`obs_get_source_by_uuid` instead.
 
 ---------------------
 
