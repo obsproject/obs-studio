@@ -2462,8 +2462,6 @@ int main(int argc, char *argv[])
 
 	base_get_log_handler(&def_log_handler, nullptr);
 
-	obs_set_cmdline_args(argc, argv);
-
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--multi", "-m")) {
 			multi = true;
@@ -2535,6 +2533,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--steam", nullptr)) {
 			steam = true;
 
+		} else if (arg_is(argv[i], "--bmem-trace", nullptr)) {
+			bmem_trace_enable();
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::string help =
 				"--help, -h: Get list of available commands.\n\n"
@@ -2556,6 +2557,7 @@ int main(int argc, char *argv[])
 				"--only-bundled-plugins: Only load included (first-party) plugins\n"
 				"--disable-shutdown-check: Disable unclean shutdown detection.\n"
 				"--verbose: Make log more verbose.\n"
+				"--bmem-trace: Keep stack traces of memory to log leaks on shutdown.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"
 				"--unfiltered_log: Make log unfiltered.\n\n"
 				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
@@ -2573,6 +2575,8 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 	}
+
+	obs_set_cmdline_args(argc, argv);
 
 #if ALLOW_PORTABLE_MODE
 	if (!portable_mode) {
@@ -2613,6 +2617,10 @@ int main(int argc, char *argv[])
 
 	delete_safe_mode_sentinel();
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
+
+	if (bmem_trace_is_enabled())
+		bmem_trace_dump(LOG_ERROR);
+
 	base_set_log_handler(nullptr, nullptr);
 
 	if (restart || restart_safe) {

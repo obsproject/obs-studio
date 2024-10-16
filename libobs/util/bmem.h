@@ -41,6 +41,10 @@ EXPORT long bnum_allocs(void);
 
 EXPORT void *bmemdup(const void *ptr, size_t size);
 
+EXPORT void bmem_trace_enable();
+EXPORT bool bmem_trace_is_enabled();
+EXPORT void bmem_trace_dump(int log_level);
+
 static inline void *bzalloc(size_t size)
 {
 	void *mem = bmalloc(size);
