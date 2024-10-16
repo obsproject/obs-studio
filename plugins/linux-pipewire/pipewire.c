@@ -173,6 +173,11 @@ static void teardown_pipewire(obs_pipewire *obs_pw)
 		pw_thread_loop_stop(obs_pw->thread_loop);
 	}
 
+	if (obs_pw->registry) {
+		pw_proxy_destroy((struct pw_proxy *)obs_pw->registry);
+		obs_pw->registry = NULL;
+	}
+
 	g_clear_pointer(&obs_pw->context, pw_context_destroy);
 	g_clear_pointer(&obs_pw->thread_loop, pw_thread_loop_destroy);
 
