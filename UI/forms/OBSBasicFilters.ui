@@ -126,10 +126,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-plus</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-plus</string>
                </property>
               </widget>
              </item>
@@ -158,10 +155,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-trash</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-trash</string>
                </property>
               </widget>
              </item>
@@ -190,10 +184,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-up</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-up</string>
                </property>
               </widget>
              </item>
@@ -222,10 +213,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-down</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-down</string>
                </property>
               </widget>
              </item>
@@ -360,10 +348,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-plus</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-plus</string>
                </property>
               </widget>
              </item>
@@ -392,10 +377,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-trash</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-trash</string>
                </property>
               </widget>
              </item>
@@ -424,10 +406,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-up</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-up</string>
                </property>
               </widget>
              </item>
@@ -456,10 +435,7 @@
                 <bool>true</bool>
                </property>
                <property name="class" stdset="0">
-                <string>icon-down</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+                <string notr="true">btn-tool icon-down</string>
                </property>
               </widget>
              </item>
