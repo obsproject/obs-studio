@@ -84,7 +84,7 @@
               <bool>true</bool>
              </property>
              <property name="class" stdset="0">
-              <string notr="true">btn-tool icon-plus</string>
+              <string notr="true">icon-plus</string>
              </property>
             </widget>
            </item>
@@ -115,7 +115,7 @@
               <bool>true</bool>
              </property>
              <property name="class" stdset="0">
-              <string notr="true">btn-tool icon-trash</string>
+              <string notr="true">icon-trash</string>
              </property>
             </widget>
            </item>
@@ -146,7 +146,7 @@
               <bool>true</bool>
              </property>
              <property name="class" stdset="0">
-              <string notr="true">btn-tool icon-refresh</string>
+              <string notr="true">icon-refresh</string>
              </property>
             </widget>
            </item>
