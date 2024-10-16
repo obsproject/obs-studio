@@ -118,8 +118,8 @@ jobs:
       OS_TAG: "windows64"
       CEF_VERSION: 5060
       CEF_REVISION: v3
-      WIN_DEPS_VERSION: windows-deps-2023-08-31sl1-x64
-      WIN_DEPS_VERSION_X86: 2023-04-12
+      WIN_DEPS_VERSION: windows-deps-2024-09-10v4-x64
+      WIN_DEPS_VERSION_X86: 2024-05-08
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
       VLC_VERSION: vlc_3.0.0-git
