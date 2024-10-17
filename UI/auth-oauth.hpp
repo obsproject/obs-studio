@@ -72,11 +72,13 @@ class OAuthStreamKey : public OAuth {
 
 protected:
 	std::string key_;
+	std::string server_;
 
 public:
 	inline OAuthStreamKey(const Def &d) : OAuth(d) {}
 
 	inline const std::string &key() const { return key_; }
+	inline const std::string &server() const { return server_; }
 
 	virtual void OnStreamConfig() override;
 };
