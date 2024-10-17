@@ -691,9 +691,8 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 static void NewButton(QLayout *layout, WidgetInfo *info, const char *themeIcon, void (WidgetInfo::*method)())
 {
 	QPushButton *button = new QPushButton();
-	button->setProperty("class", themeIcon);
+	button->setProperty("class", "btn-tool " + QString(themeIcon));
 	button->setFlat(true);
-	button->setProperty("toolButton", true);
 
 	QObject::connect(button, &QPushButton::clicked, info, method);
 
