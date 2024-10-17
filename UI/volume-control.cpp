@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "window-basic-main.hpp"
 #include "moc_volume-control.cpp"
 #include "obs-app.hpp"
