@@ -20,7 +20,6 @@ target_sources(
 target_compile_definitions(
   libobs
   PRIVATE
-    USE_XDG
     OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}"
     $<$<COMPILE_LANG_AND_ID:C,GNU>:ENABLE_DARRAY_TYPE_TEST>
     $<$<COMPILE_LANG_AND_ID:CXX,GNU>:ENABLE_DARRAY_TYPE_TEST>
