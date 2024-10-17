@@ -379,7 +379,7 @@ bool gl_egl_query_dmabuf_modifiers_for_format(EGLDisplay egl_display, uint32_t d
 		blog(LOG_ERROR, "Unable to load eglQueryDmaBufModifiersEXT");
 		return false;
 	}
-	if (!query_dmabuf_modifiers(egl_display, drm_format, modifiers, n_modifiers)) {
+	if (!query_dmabuf_modifiers(egl_display, drm_format, modifiers, (EGLuint64KHR *)n_modifiers)) {
 		*n_modifiers = 0;
 		*modifiers = NULL;
 		return false;
