@@ -270,8 +270,8 @@ QPushButton[toolButton="true"] {
   font-size: var(--font_base);
 }
 
-MuteCheckBox::indicator,
-MuteCheckBox::indicator:unchecked {
+.indicator-mute::indicator,
+.indicator-mute::indicator:unchecked {
     background-color: var(--bg_base);
     border: none;
     width: var(--icon_base_mixer);
@@ -279,17 +279,17 @@ MuteCheckBox::indicator:unchecked {
     icon-size: var(--icon_base_mixer);
 }
 
-MuteCheckBox::indicator:checked {
+.indicator-mute::indicator:checked {
     background-color: var(--bg_base);
 }
 
-MuteCheckBox::indicator:checked:hover,
-MuteCheckBox::indicator:unchecked:hover {
+.indicator-mute::indicator:checked:hover,
+.indicator-mute::indicator:unchecked:hover {
     background-color: var(--bg_base);
 }
 
-MuteCheckBox::indicator:hover,
-MuteCheckBox::indicator:unchecked:hover {
+.indicator-mute::indicator:hover,
+.indicator-mute::indicator:unchecked:hover {
     icon-size: var(--icon_base_mixer);
     border: none;
 }

@@ -1,6 +1,6 @@
 include_guard(DIRECTORY)
 
-find_package(nlohmann_json REQUIRED)
+find_package(nlohmann_json 3.11 REQUIRED)
 
 if(NOT TARGET OBS::blake2)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/blake2" "${CMAKE_BINARY_DIR}/deps/blake2")

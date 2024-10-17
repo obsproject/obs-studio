@@ -113,7 +113,7 @@ private:
 	bool InitGlobalLocationDefaults();
 
 	bool MigrateGlobalSettings();
-	bool MigrateLegacySettings(uint32_t lastVersion);
+	void MigrateLegacySettings(uint32_t lastVersion);
 
 	bool InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion);
 	void InitUserConfigDefaults();

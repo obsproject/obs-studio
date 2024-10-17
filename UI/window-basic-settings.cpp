@@ -1249,7 +1249,7 @@ void OBSBasicSettings::LoadGeneralSettings()
 	LoadLanguageList();
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
-	bool enableAutoUpdates = config_get_bool(App()->GetUserConfig(), "General", "EnableAutoUpdates");
+	bool enableAutoUpdates = config_get_bool(App()->GetAppConfig(), "General", "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 
 	LoadBranchesList();
@@ -2615,7 +2615,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->enableLowLatencyMode->setToolTip(QTStr("Basic.Settings.Advanced.Network.TCPPacing.Tooltip"));
 #endif
 #if defined(_WIN32) || defined(__APPLE__)
-	bool browserHWAccel = config_get_bool(App()->GetUserConfig(), "General", "BrowserHWAccel");
+	bool browserHWAccel = config_get_bool(App()->GetAppConfig(), "General", "BrowserHWAccel");
 	ui->browserHWAccel->setChecked(browserHWAccel);
 	prevBrowserAccel = ui->browserHWAccel->isChecked();
 #endif
@@ -2944,7 +2944,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	if (WidgetChanged(ui->enableAutoUpdates))
-		config_set_bool(App()->GetUserConfig(), "General", "EnableAutoUpdates",
+		config_set_bool(App()->GetAppConfig(), "General", "EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
 	int branchIdx = ui->updateChannelBox->currentIndex();
 	QString branchName = ui->updateChannelBox->itemData(branchIdx).toString();
@@ -3163,7 +3163,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 #endif
 #if defined(_WIN32) || defined(__APPLE__)
 	bool browserHWAccel = ui->browserHWAccel->isChecked();
-	config_set_bool(App()->GetUserConfig(), "General", "BrowserHWAccel", browserHWAccel);
+	config_set_bool(App()->GetAppConfig(), "General", "BrowserHWAccel", browserHWAccel);
 #endif
 
 	if (WidgetChanged(ui->hotkeyFocusType)) {

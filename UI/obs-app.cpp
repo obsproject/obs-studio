@@ -677,8 +677,6 @@ bool OBSApp::InitGlobalConfig()
 
 bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion)
 {
-	bool hasChanges = false;
-
 	const std::string userConfigFile = userConfigLocation.u8string() + "/obs-studio/user.ini";
 
 	int errorCode = userConfig.Open(userConfigFile.c_str(), CONFIG_OPEN_ALWAYS);
@@ -688,45 +686,13 @@ bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t 
 		return false;
 	}
 
-	hasChanges = MigrateLegacySettings(lastVersion);
-
-	if (!opt_starting_collection.empty()) {
-		const OBSBasic *basic = reinterpret_cast<OBSBasic *>(GetMainWindow());
-		const std::optional<OBSSceneCollection> foundCollection =
-			basic->GetSceneCollectionByName(opt_starting_collection);
-
-		if (foundCollection) {
-			config_set_string(userConfig, "Basic", "SceneCollection", foundCollection.value().name.c_str());
-			config_set_string(userConfig, "Basic", "SceneCollectionFile",
-					  foundCollection.value().fileName.c_str());
-			hasChanges = true;
-		}
-	}
-
-	if (!opt_starting_profile.empty()) {
-		const OBSBasic *basic = reinterpret_cast<OBSBasic *>(GetMainWindow());
-
-		const std::optional<OBSProfile> foundProfile = basic->GetProfileByName(opt_starting_profile);
-
-		if (foundProfile) {
-			config_set_string(userConfig, "Basic", "Profile", foundProfile.value().name.c_str());
-			config_set_string(userConfig, "Basic", "ProfileDir",
-					  foundProfile.value().directoryName.c_str());
-
-			hasChanges = true;
-		}
-	}
-
-	if (hasChanges) {
-		config_save_safe(userConfig, "tmp", nullptr);
-	}
-
+	MigrateLegacySettings(lastVersion);
 	InitUserConfigDefaults();
 
 	return true;
 }
 
-bool OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
+void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 {
 	bool hasChanges = false;
 
@@ -766,7 +732,9 @@ bool OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 		hasChanges = true;
 	}
 
-	return hasChanges;
+	if (hasChanges) {
+		userConfig.SaveSafe("tmp");
+	}
 }
 
 static constexpr string_view OBSGlobalIniPath = "/obs-studio/global.ini";
@@ -800,7 +768,12 @@ bool OBSApp::MigrateGlobalSettings()
 		return false;
 	}
 
-	std::filesystem::copy(legacyGlobalConfigFile, userConfigFile);
+	try {
+		std::filesystem::copy(legacyGlobalConfigFile, userConfigFile);
+	} catch (const std::filesystem::filesystem_error &) {
+		OBSErrorBox(nullptr, "Unable to migrate global configuration - copy failed.");
+		return false;
+	}
 
 	return true;
 }
@@ -1293,7 +1266,7 @@ bool OBSApp::OBSInit()
 	obs_set_ui_task_handler(ui_task_handler);
 
 #if defined(_WIN32) || defined(__APPLE__)
-	bool browserHWAccel = config_get_bool(userConfig, "General", "BrowserHWAccel");
+	bool browserHWAccel = config_get_bool(appConfig, "General", "BrowserHWAccel");
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
@@ -1544,7 +1517,7 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 	uint64_t oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
 
-	unsigned int maxLogs = (unsigned int)config_get_uint(App()->GetUserConfig(), "General", "MaxLogs");
+	unsigned int maxLogs = (unsigned int)config_get_uint(App()->GetAppConfig(), "General", "MaxLogs");
 
 	os_dir_t *dir = os_opendir(logDir);
 	if (dir) {

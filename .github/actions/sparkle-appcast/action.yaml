@@ -121,7 +121,7 @@ runs:
         #                                   (required to match the
         #                                   namespaced sparkle:channel node),
         #                                   which in turn has
-        # [text()='${{ inputs.channel}']  - A text node that contains the
+        # [text()='<channel>']            - A text node that contains the
         #                                   content of inputs.channel
         # /enclosure/@url                 - Then select the "url" attribute of
         #                                   every <enclosure> node under

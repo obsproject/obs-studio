@@ -74,7 +74,7 @@ runs:
       env:
         RCLONE_TRANSFERS: '100'
         RCLONE_FAST_LIST: 'true'
-        RCLONE_EXCLUDE: '{pdbs/**,**/${{ inputs.tagName }}/**}'
+        RCLONE_EXCLUDE: '"{pdbs/**,**/${{ inputs.tagName }}/**}"'
         RCLONE_S3_PROVIDER: 'GCS'
         RCLONE_S3_ACCESS_KEY_ID: '${{ inputs.gcsAccessKeyId }}'
         RCLONE_S3_SECRET_ACCESS_KEY: '${{ inputs.gcsAccessKeySecret }}'

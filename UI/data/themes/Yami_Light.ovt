@@ -186,55 +186,55 @@ QGroupBox::indicator:unchecked:disabled {
     image: url(theme:Light/checkbox_unchecked_disabled.svg);
 }
 
-QCheckBox[lockCheckBox=true]::indicator:checked,
-QCheckBox[lockCheckBox=true]::indicator:checked:hover {
+.indicator-lock::indicator:checked,
+.indicator-lock::indicator:checked:hover {
     image: url(theme:Light/locked.svg);
 }
 
-QCheckBox[visibilityCheckBox=true]::indicator:checked,
-QCheckBox[visibilityCheckBox=true]::indicator:checked:hover {
+.indicator-visibility::indicator:checked,
+.indicator-visibility::indicator:checked:hover {
     image: url(theme:Light/visible.svg);
 }
 
-MuteCheckBox::indicator:checked {
+.indicator-mute::indicator:checked {
     image: url(theme:Light/mute.svg);
 }
 
-MuteCheckBox::indicator:unchecked {
+.indicator-mute::indicator:unchecked {
     image: url(theme:Light/settings/audio.svg);
 }
 
-MuteCheckBox::indicator:unchecked:hover {
+.indicator-mute::indicator:unchecked:hover {
     image: url(theme:Light/settings/audio.svg);
 }
 
-MuteCheckBox::indicator:unchecked:focus {
+.indicator-mute::indicator:unchecked:focus {
     image: url(theme:Light/settings/audio.svg);
 }
 
-MuteCheckBox::indicator:checked:hover {
+.indicator-mute::indicator:checked:hover {
     image: url(theme:Light/mute.svg);
 }
 
-MuteCheckBox::indicator:checked:focus {
+.indicator-mute::indicator:checked:focus {
     image: url(theme:Light/mute.svg);
 }
 
-MuteCheckBox::indicator:checked:disabled {
+.indicator-mute::indicator:checked:disabled {
     image: url(theme:Light/mute.svg);
 }
 
-MuteCheckBox::indicator:unchecked:disabled {
+.indicator-mute::indicator:unchecked:disabled {
     image: url(theme:Light/settings/audio.svg);
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator:checked,
-QCheckBox[sourceTreeSubItem=true]::indicator:checked:hover {
+.indicator-expand::indicator:checked,
+.indicator-expand::indicator:checked:hover {
     image: url(theme:Light/expand.svg);
 }
 
-QCheckBox[sourceTreeSubItem=true]::indicator:unchecked,
-QCheckBox[sourceTreeSubItem=true]::indicator:unchecked:hover {
+.indicator-expand::indicator:unchecked,
+.indicator-expand::indicator:unchecked:hover {
     image: url(theme:Light/collapse.svg);
 }
 

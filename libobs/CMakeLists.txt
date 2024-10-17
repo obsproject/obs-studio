@@ -371,6 +371,7 @@ set(
   util/simde/x86/mmx.h
   util/simde/x86/sse.h
   util/simde/x86/sse2.h
+  util/source-profiler.h
   util/sse-intrin.h
   util/task.h
   util/text-lookup.h
