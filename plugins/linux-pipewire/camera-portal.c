@@ -899,6 +899,8 @@ static void on_destroy_proxy_cb(void *data)
 {
 	struct camera_device *device = data;
 
+	g_clear_pointer(&device->info, pw_node_info_free);
+
 	spa_hook_remove(&device->proxy_listener);
 
 	device->proxy = NULL;
