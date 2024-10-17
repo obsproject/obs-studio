@@ -5017,7 +5017,7 @@ void OBSBasic::on_actionShowMacPermissions_triggered()
 {
 #ifdef __APPLE__
 	OBSPermissions check(this, CheckPermission(kScreenCapture), CheckPermission(kVideoDeviceAccess),
-			     CheckPermission(kAudioDeviceAccess), CheckPermission(kAccessibility));
+			     CheckPermission(kAudioDeviceAccess), CheckPermission(kInputMonitoring));
 	check.exec();
 #endif
 }
