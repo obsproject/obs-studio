@@ -6,6 +6,7 @@
 !/build-aux
 !/cmake
 !/deps
+!/dependencies
 !/docs
 !/libobs*
 !/plugins
