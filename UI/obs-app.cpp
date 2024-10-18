@@ -58,6 +58,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#if defined(_M_ARM64)
+#include <shellapi.h>
+#endif
 #include <filesystem>
 #include <util/windows/win-version.h>
 #else
