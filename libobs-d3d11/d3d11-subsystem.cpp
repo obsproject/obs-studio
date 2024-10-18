@@ -2983,10 +2983,30 @@ extern "C" EXPORT void device_debug_marker_begin(gs_device_t *, const char *mark
 	D3DCOLOR bgra = D3DCOLOR_ARGB((DWORD)(255.0f * color[3]), (DWORD)(255.0f * color[0]),
 				      (DWORD)(255.0f * color[1]), (DWORD)(255.0f * color[2]));
 
+#if _CPPUNWIND
+	// Allocate the correct buffer size on the stack to allow for arbitrary
+	// size strings. On some platforms, this will automatically swap to heap
+	// once a certain threshold is exceeded. Same performance as before, but
+	// much more versatile this way.
+	__try {
+		size_t len = os_utf8_to_wcs(markername, 0, nullptr, 0);
+		// This has a warning that is nonsense on MSVC.
+		wchar_t *wide = reinterpret_cast<wchar_t *>(
+			_malloca((len + 1) * sizeof(wchar_t)));
+		os_utf8_to_wcs(markername, 0, wide, len);
+
+		D3DPERF_BeginEvent(bgra, wide);
+
+		_freea(reinterpret_cast<void *>(wide));
+	} __except (GetExceptionCode() == STATUS_STACK_OVERFLOW) {
+		// Handle the stack overflow gracefully.
+		D3DPERF_BeginEvent(bgra, L"(stack overflow)");
+	}
+#else
 	wchar_t wide[64];
 	os_utf8_to_wcs(markername, 0, wide, _countof(wide));
-
 	D3DPERF_BeginEvent(bgra, wide);
+#endif
 }
 
 extern "C" EXPORT void device_debug_marker_end(gs_device_t *)
