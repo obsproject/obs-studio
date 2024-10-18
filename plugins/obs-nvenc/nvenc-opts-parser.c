@@ -129,6 +129,9 @@ static bool apply_h264_opt(struct obs_option *opt, NV_ENC_CONFIG_H264 *nv_conf)
 
 	APPLY_INT_OPT(idrPeriod, uint32_t, PRIu32)
 	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE, PRIu32)
+#ifdef NVENC_13_0_OR_LATER
+	APPLY_INT_OPT(tfLevel, NV_ENC_TEMPORAL_FILTER_LEVEL, PRIu32)
+#endif
 
 	APPLY_BIT_OPT(enableFillerDataInsertion, 1)
 
@@ -162,6 +165,9 @@ static bool apply_av1_opt(struct obs_option *opt, NV_ENC_CONFIG_AV1 *nv_conf)
 	APPLY_INT_OPT(numTileRows, uint32_t, PRIu32)
 	APPLY_INT_OPT(idrPeriod, uint32_t, PRIu32)
 	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE, PRIu32)
+#ifdef NVENC_13_0_OR_LATER
+	APPLY_INT_OPT(tfLevel, NV_ENC_TEMPORAL_FILTER_LEVEL, PRIu32)
+#endif
 
 	APPLY_BIT_OPT(enableBitstreamPadding, 1)
 

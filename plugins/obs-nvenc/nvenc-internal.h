@@ -108,6 +108,11 @@ struct nvenc_data {
 	size_t roi_map_size;
 	uint32_t roi_increment;
 
+#ifdef NVENC_13_0_OR_LATER
+	CONTENT_LIGHT_LEVEL *cll;
+	MASTERING_DISPLAY_INFO *mdi;
+#endif
+
 	struct nvenc_properties props;
 
 	CUcontext cu_ctx;
