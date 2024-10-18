@@ -64,6 +64,7 @@ const unordered_map<uint32_t, const string_view> arch_to_name = {
 	{7, "Ampere"},
 	{8, "Ada"},
 	{9, "Hopper"},
+	{10, "Blackwell"},
 };
 
 /* List of capabilities to be queried per codec */
@@ -83,6 +84,11 @@ static const vector<pair<NV_ENC_CAPS, string>> capabilities = {
 	/* SDK 12.2+ features */
 	{NV_ENC_CAPS_SUPPORT_TEMPORAL_FILTER, "temporal_filter"},
 	{NV_ENC_CAPS_SUPPORT_LOOKAHEAD_LEVEL, "lookahead_level"},
+	{NV_ENC_CAPS_SUPPORT_UNIDIRECTIONAL_B, "unidirectional_b"},
+#endif
+#if NVENCAPI_MAJOR_VERSION >= 13
+	/* SDK 13.0+ features */
+	{NV_ENC_CAPS_SUPPORT_YUV422_ENCODE, "yuv_422"},
 #endif
 };
 
@@ -363,9 +369,22 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 				continue;
 
 			device_info.caps[codec_name][name] = v;
-			if (v > caps[codec_name][name])
-				caps[codec_name][name] = v;
+			caps[codec_name][name] = std::max(v, caps[codec_name][name]);
 		}
+
+#if NVENCAPI_MAJOR_VERSION > 12 || NVENCAPI_MINOR_VERSION >= 2
+		/* Explicitly check if UHQ tuning is supported since temporal filtering query is true for all codecs. */
+		NV_ENC_PRESET_CONFIG preset_config = {};
+		preset_config.version = NV_ENC_PRESET_CONFIG_VER;
+		preset_config.presetCfg.version = NV_ENC_CONFIG_VER;
+
+		NVENCSTATUS res = nv.nvEncGetEncodePresetConfigEx(nvSession.ptr, *guid, NV_ENC_PRESET_P7_GUID,
+								  NV_ENC_TUNING_INFO_ULTRA_HIGH_QUALITY,
+								  &preset_config);
+
+		device_info.caps[codec_name]["uhq"] = res == NV_ENC_SUCCESS ? 1 : 0;
+		caps[codec_name]["uhq"] = std::max(device_info.caps[codec_name]["uhq"], caps[codec_name]["uhq"]);
+#endif
 	}
 
 	return true;
@@ -447,6 +466,19 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 		printf("reason=no_supported_devices\n");
 		return false;
 	}
+
+	uint32_t latest_architecture = 0;
+	string_view architecture = "Unknown";
+
+	for (auto &info : device_infos)
+		latest_architecture = std::max(info.architecture, latest_architecture);
+
+	if (arch_to_name.count(latest_architecture))
+		architecture = arch_to_name.at(latest_architecture);
+
+	printf("latest_architecture=%u\n"
+	       "latest_architecture_name=%s\n",
+	       latest_architecture, architecture.data());
 
 	return true;
 }
