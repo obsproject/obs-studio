@@ -101,6 +101,16 @@ static const struct obs_pw_video_format supported_formats[] = {
 
 	},
 #endif
+	{
+		SPA_VIDEO_FORMAT_ENCODED,
+		DRM_FORMAT_INVALID,
+		GS_UNKNOWN,
+		VIDEO_FORMAT_NONE,
+		false,
+		0,
+		"Encoded",
+	},
+
 };
 
 #define N_SUPPORTED_FORMATS (sizeof(supported_formats) / sizeof(supported_formats[0]))
