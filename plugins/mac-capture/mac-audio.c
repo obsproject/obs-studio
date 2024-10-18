@@ -818,6 +818,7 @@ static void coreaudio_set_channels(struct coreaudio_data *ca, obs_data_t *settin
 static void coreaudio_update(void *data, obs_data_t *settings)
 {
 	struct coreaudio_data *ca = data;
+	bool async_compensation;
 
 	coreaudio_shutdown(ca);
 
@@ -830,6 +831,9 @@ static void coreaudio_update(void *data, obs_data_t *settings)
 		coreaudio_set_channels(ca, settings);
 	}
 
+	async_compensation = obs_data_get_bool(settings, "async_compensation");
+	obs_source_set_async_compensation(ca->source, async_compensation);
+
 	coreaudio_try_init(ca);
 }
 
@@ -837,6 +841,7 @@ static void coreaudio_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "device_id", "default");
 	obs_data_set_default_bool(settings, "enable_downmix", true);
+	obs_data_set_default_bool(settings, "async_compensation", true);
 }
 
 static void *coreaudio_create(obs_data_t *settings, obs_source_t *source, bool input)
@@ -1017,6 +1022,8 @@ static obs_properties_t *coreaudio_properties(bool input, void *data)
 	}
 
 	device_list_free(&devices);
+
+	obs_properties_add_bool(props, "async_compensation", obs_module_text("AsyncCompensation"));
 	return props;
 }
 
