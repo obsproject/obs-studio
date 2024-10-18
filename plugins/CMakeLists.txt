@@ -32,7 +32,7 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
       add_subdirectory(obs-websocket)
     endif()
   endmacro()
-  message(FATAL_ERROR "ololololo")
+
   # Add plugins in alphabetical order to retain order in IDE projects
   #add_obs_plugin(aja PLATFORMS WINDOWS MACOS LINUX WITH_MESSAGE)
   add_obs_plugin(coreaudio-encoder PLATFORMS WINDOWS MACOS)
