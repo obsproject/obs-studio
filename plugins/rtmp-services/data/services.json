@@ -3421,6 +3421,21 @@
             }
         },
         {
+            "name": "Prism",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global-rtmp.lip2.navercorp.com:8080/relay"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 3
+            }
+        },
+        {
             "name": "Dolby Millicast",
             "common": false,
             "more_info_link": "https://docs.dolby.io/streaming-apis/docs/using-obs",
