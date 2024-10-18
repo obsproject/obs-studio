@@ -261,7 +261,8 @@ void OBSBasic::ChangeSceneCollection()
 
 	const std::string_view currentCollectionName{
 		config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
-	const std::string selectedCollectionName{action->text().toStdString()};
+	const QVariant qCollectionName = action->property("collection_name");
+	const std::string selectedCollectionName{qCollectionName.toString().toStdString()};
 
 	if (currentCollectionName == selectedCollectionName) {
 		action->setChecked(true);
@@ -310,9 +311,11 @@ void OBSBasic::RefreshSceneCollections(bool refreshCache)
 	for (auto &name : sortedSceneCollections) {
 		const std::string collectionName = name.toStdString();
 		try {
-			OBSSceneCollection &collection = collections.at(collectionName);
+			const OBSSceneCollection &collection = collections.at(collectionName);
+			const QString qCollectionName = QString().fromStdString(collectionName);
 
-			QAction *action = new QAction(QString().fromStdString(collectionName), this);
+			QAction *action = new QAction(qCollectionName, this);
+			action->setProperty("collection_name", qCollectionName);
 			action->setProperty("file_name", QString().fromStdString(collection.fileName));
 			connect(action, &QAction::triggered, this, &OBSBasic::ChangeSceneCollection);
 			action->setCheckable(true);

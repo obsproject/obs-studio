@@ -258,7 +258,8 @@ void OBSBasic::ChangeProfile()
 	}
 
 	const std::string_view currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
-	const std::string selectedProfileName{action->text().toStdString()};
+	const QVariant qProfileName = action->property("profile_name");
+	const std::string selectedProfileName{qProfileName.toString().toStdString()};
 
 	if (currentProfileName == selectedProfileName) {
 		action->setChecked(true);
@@ -270,7 +271,7 @@ void OBSBasic::ChangeProfile()
 	if (!foundProfile) {
 		const std::string errorMessage{"Selected profile not found: "};
 
-		throw std::invalid_argument(errorMessage + currentProfileName.data());
+		throw std::invalid_argument(errorMessage + selectedProfileName.data());
 	}
 
 	const OBSProfile &selectedProfile = foundProfile.value();
@@ -307,9 +308,11 @@ void OBSBasic::RefreshProfiles(bool refreshCache)
 	for (auto &name : sortedProfiles) {
 		const std::string profileName = name.toStdString();
 		try {
-			OBSProfile &profile = profiles.at(profileName);
+			const OBSProfile &profile = profiles.at(profileName);
+			const QString qProfileName = QString().fromStdString(profileName);
 
-			QAction *action = new QAction(QString().fromStdString(profileName), this);
+			QAction *action = new QAction(qProfileName, this);
+			action->setProperty("profile_name", qProfileName);
 			action->setProperty("file_name", QString().fromStdString(profile.directoryName));
 			connect(action, &QAction::triggered, this, &OBSBasic::ChangeProfile);
 			action->setCheckable(true);
