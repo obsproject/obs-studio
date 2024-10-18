@@ -1,0 +1,46 @@
+name: Update Translations and AUTHORS
+description: Creates a Pull Request updating translations and AUTHORS.
+inputs:
+  crowdinSecret:
+    description: Crowdin Token for API access
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os != 'Linux'
+      shell: bash
+      run: |
+        echo "::warning::Action requires Linux-based runner."
+        exit 2
+
+    - name: Install and Configure Python 🐍
+      shell: bash
+      run: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        python3 -m pip install lxml requests crowdin-api-client
+
+    - name: Update Translations 🌐
+      shell: bash
+      run: |
+        source .venv/bin/activate
+        python3 .github/scripts/utils.py/update-translations.py \
+          ${{ inputs.crowdinSecret }}
+
+    - name: Create Pull Request 🔧
+      uses: peter-evans/create-pull-request@6ce4eca6b6db0ff4f4d1b542dce50e785446dc27
+      with:
+        author: OBS Translators <commits@obsproject.com>
+        commit-message: Update Translations and AUTHORS
+        title: Update Translations and AUTHORS
+        branch: automated/update-translations
+        body: |
+          This updates the translations and the `AUTHORS` file.
+
+          Translations are pulled from https://crowdin.com/project/obs-studio.
+          Top translators are pulled from https://crowdin.com/project/obs-studio/reports/top-members.
+          Top Git contributors are generated using `git shortlog --all -sn --no-merges`
+
+          The creation of this Pull Request was triggered manually.
+        delete-branch: true
