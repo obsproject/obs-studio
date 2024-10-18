@@ -34,6 +34,30 @@
 
 constexpr std::string_view OBSSceneCollectionPath = "/obs-studio/basic/scenes/";
 
+// MARK: - Anonymous Namespace
+namespace {
+QList<QString> sortedSceneCollections{};
+
+void updateSortedSceneCollections(const OBSSceneCollectionCache &collections)
+{
+	const QLocale locale = QLocale::system();
+	QList<QString> newList{};
+
+	for (auto [collectionName, _] : collections) {
+		QString entry = QString::fromStdString(collectionName);
+		newList.append(entry);
+	}
+
+	std::sort(newList.begin(), newList.end(), [&locale](const QString &lhs, const QString &rhs) -> bool {
+		int result = QString::localeAwareCompare(locale.toLower(lhs), locale.toLower(rhs));
+
+		return (result < 0);
+	});
+
+	sortedSceneCollections.swap(newList);
+}
+} // namespace
+
 // MARK: - Main Scene Collection Management Functions
 
 void OBSBasic::SetupNewSceneCollection(const std::string &collectionName)
@@ -280,17 +304,27 @@ void OBSBasic::RefreshSceneCollections(bool refreshCache)
 		RefreshSceneCollectionCache();
 	}
 
+	updateSortedSceneCollections(collections);
+
 	size_t numAddedCollections = 0;
-	for (auto &[collectionName, collection] : collections) {
-		QAction *action = new QAction(QString().fromStdString(collectionName), this);
-		action->setProperty("file_name", QString().fromStdString(collection.fileName));
-		connect(action, &QAction::triggered, this, &OBSBasic::ChangeSceneCollection);
-		action->setCheckable(true);
-		action->setChecked(collectionName == currentCollectionName);
+	for (auto &name : sortedSceneCollections) {
+		const std::string collectionName = name.toStdString();
+		try {
+			OBSSceneCollection &collection = collections.at(collectionName);
 
-		ui->sceneCollectionMenu->addAction(action);
+			QAction *action = new QAction(QString().fromStdString(collectionName), this);
+			action->setProperty("file_name", QString().fromStdString(collection.fileName));
+			connect(action, &QAction::triggered, this, &OBSBasic::ChangeSceneCollection);
+			action->setCheckable(true);
+			action->setChecked(collectionName == currentCollectionName);
 
-		numAddedCollections += 1;
+			ui->sceneCollectionMenu->addAction(action);
+
+			numAddedCollections += 1;
+		} catch (const std::out_of_range &error) {
+			blog(LOG_ERROR, "No scene collection with name %s found in scene collection cache.\n%s",
+			     collectionName.c_str(), error.what());
+		}
 	}
 
 	ui->actionRemoveSceneCollection->setEnabled(numAddedCollections > 1);
