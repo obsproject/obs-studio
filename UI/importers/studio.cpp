@@ -116,8 +116,8 @@ void TranslateOSStudio(Json &res)
 			ClearTranslation("game_capture", "xcomposite_input");
 			ClearTranslation("window_capture", "xcomposite_input");
 		} else {
-			ClearTranslation("game_capture", "pipewire-window-capture-source");
-			ClearTranslation("window_capture", "pipewire-window-capture-source");
+			ClearTranslation("game_capture", "pipewire-screen-capture-source");
+			ClearTranslation("window_capture", "pipewire-screen-capture-source");
 		}
 
 		if (id == "monitor_capture") {
