@@ -144,9 +144,15 @@ struct Preferences {
 	uint32_t canvas_width;
 	uint32_t canvas_height;
 	optional<uint32_t> composition_gpu_index;
+	uint32_t audio_samples_per_sec;
+	uint32_t audio_channels;
+	uint32_t audio_max_buffering_ms;
+	bool audio_fixed_buffering;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Preferences, maximum_aggregate_bitrate, maximum_video_tracks, vod_track_audio,
-				       width, height, framerate, canvas_width, canvas_height, composition_gpu_index)
+				       width, height, framerate, canvas_width, canvas_height, composition_gpu_index,
+				       audio_samples_per_sec, audio_channels, audio_max_buffering_ms,
+				       audio_fixed_buffering)
 };
 
 struct PostData {
