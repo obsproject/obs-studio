@@ -22,7 +22,7 @@ target_sources(
     updater.rc
 )
 
-target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
+target_compile_definitions(updater PRIVATE "PSAPI_VERSION=2")
 
 target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_SOURCE_DIR}/UI/win-update")
 

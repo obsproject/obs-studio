@@ -78,6 +78,7 @@ add_compile_options(
 )
 
 add_compile_definitions(
+  NOMINMAX
   UNICODE
   _UNICODE
   _CRT_SECURE_NO_WARNINGS
