@@ -43,6 +43,30 @@ extern void DuplicateCurrentCookieProfile(ConfigFile &config);
 extern void CheckExistingCookieId();
 extern void DeleteCookies();
 
+// MARK: - Anonymous Namespace
+namespace {
+QList<QString> sortedProfiles{};
+
+void updateSortedProfiles(const OBSProfileCache &profiles)
+{
+	const QLocale locale = QLocale::system();
+	QList<QString> newList{};
+
+	for (auto [profileName, _] : profiles) {
+		QString entry = QString::fromStdString(profileName);
+		newList.append(entry);
+	}
+
+	std::sort(newList.begin(), newList.end(), [&locale](const QString &lhs, const QString &rhs) -> bool {
+		int result = QString::localeAwareCompare(locale.toLower(lhs), locale.toLower(rhs));
+
+		return (result < 0);
+	});
+
+	sortedProfiles.swap(newList);
+}
+} // namespace
+
 // MARK: - Main Profile Management Functions
 
 void OBSBasic::SetupNewProfile(const std::string &profileName, bool useWizard)
@@ -234,7 +258,8 @@ void OBSBasic::ChangeProfile()
 	}
 
 	const std::string_view currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
-	const std::string selectedProfileName{action->text().toStdString()};
+	const QVariant qProfileName = action->property("profile_name");
+	const std::string selectedProfileName{qProfileName.toString().toStdString()};
 
 	if (currentProfileName == selectedProfileName) {
 		action->setChecked(true);
@@ -246,7 +271,7 @@ void OBSBasic::ChangeProfile()
 	if (!foundProfile) {
 		const std::string errorMessage{"Selected profile not found: "};
 
-		throw std::invalid_argument(errorMessage + currentProfileName.data());
+		throw std::invalid_argument(errorMessage + selectedProfileName.data());
 	}
 
 	const OBSProfile &selectedProfile = foundProfile.value();
@@ -277,18 +302,29 @@ void OBSBasic::RefreshProfiles(bool refreshCache)
 	if (refreshCache) {
 		RefreshProfileCache();
 	}
+	updateSortedProfiles(profiles);
 
 	size_t numAddedProfiles = 0;
-	for (auto &[profileName, profile] : profiles) {
-		QAction *action = new QAction(QString().fromStdString(profileName), this);
-		action->setProperty("file_name", QString().fromStdString(profile.directoryName));
-		connect(action, &QAction::triggered, this, &OBSBasic::ChangeProfile);
-		action->setCheckable(true);
-		action->setChecked(profileName == currentProfileName);
+	for (auto &name : sortedProfiles) {
+		const std::string profileName = name.toStdString();
+		try {
+			const OBSProfile &profile = profiles.at(profileName);
+			const QString qProfileName = QString().fromStdString(profileName);
 
-		ui->profileMenu->addAction(action);
+			QAction *action = new QAction(qProfileName, this);
+			action->setProperty("profile_name", qProfileName);
+			action->setProperty("file_name", QString().fromStdString(profile.directoryName));
+			connect(action, &QAction::triggered, this, &OBSBasic::ChangeProfile);
+			action->setCheckable(true);
+			action->setChecked(profileName == currentProfileName);
 
-		numAddedProfiles += 1;
+			ui->profileMenu->addAction(action);
+
+			numAddedProfiles += 1;
+		} catch (const std::out_of_range &error) {
+			blog(LOG_ERROR, "No profile with name %s found in profile cache.\n%s", profileName.c_str(),
+			     error.what());
+		}
 	}
 
 	ui->actionRemoveProfile->setEnabled(numAddedProfiles > 1);
