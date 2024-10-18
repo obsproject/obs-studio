@@ -281,6 +281,8 @@ static void read_codec_caps(config_t *config, enum codec_type codec, const char 
 	caps->temporal_aq = config_get_bool(config, section, "temporal_aq");
 	caps->ten_bit = config_get_bool(config, section, "10bit");
 	caps->four_four_four = config_get_bool(config, section, "yuv_444");
+	caps->four_two_two = config_get_bool(config, section, "yuv_422");
+	caps->uhq = config_get_bool(config, section, "uhq");
 }
 
 static bool nvenc_check(void)

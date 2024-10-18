@@ -157,13 +157,10 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 				    OBS_COMBO_FORMAT_STRING);
 
 #define add_tune(val) obs_property_list_add_string(p, obs_module_text("Tuning." val), val)
-#ifdef NVENC_12_2_OR_LATER
-	/* The UHQ tune is only supported on Turing or later.
-	 * It uses the temporal filtering feature, so we can use its
-	 * availability as an indicator that we are on a supported GPU. */
-	if (codec == CODEC_HEVC && caps->temporal_filter)
+	/* The UHQ tune is only supported on Turing or later. */
+	if (caps->uhq)
 		add_tune("uhq");
-#endif
+
 	add_tune("hq");
 	add_tune("ll");
 	add_tune("ull");
@@ -189,6 +186,10 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	} else if (codec == CODEC_AV1) {
 		add_profile("main");
 	} else {
+#ifdef NVENC_13_0_OR_LATER
+		if (caps->ten_bit)
+			add_profile("high10");
+#endif
 		add_profile("high");
 		add_profile("main");
 		add_profile("baseline");
@@ -244,6 +245,12 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 			obs_property_list_add_int(p, obs_module_text("SplitEncode.ThreeWay"),
 						  NV_ENC_SPLIT_THREE_FORCED_MODE);
 		}
+#ifdef NVENC_13_0_OR_LATER
+		if (caps->engines > 3) {
+			obs_property_list_add_int(p, obs_module_text("SplitEncode.FourWay"),
+						  NV_ENC_SPLIT_FOUR_FORCED_MODE);
+		}
+#endif
 	}
 #endif
 
