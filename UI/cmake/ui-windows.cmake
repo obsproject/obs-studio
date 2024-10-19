@@ -58,4 +58,6 @@ target_sources(
     window-projector.hpp
     window-remux.cpp
     window-remux.hpp
+    window-whats-new.cpp
+    window-whats-new.hpp
 )
