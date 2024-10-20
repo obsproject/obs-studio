@@ -68,6 +68,7 @@ function(set_target_properties_obs target)
                    INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey"
                    INFOPLIST_KEY_NSCameraUsageDescription "OBS needs to access the camera to enable camera sources to work."
                    INFOPLIST_KEY_NSMicrophoneUsageDescription "OBS needs to access the microphone to enable audio input."
+                   INFOPLIST_KEY_NSAppleEventsUsageDescription "OBS needs to access background events to enable hotkeys while not in focus."
       )
 
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)

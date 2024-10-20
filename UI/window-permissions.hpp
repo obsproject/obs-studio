@@ -37,6 +37,7 @@ private slots:
 	void on_capturePermissionButton_clicked();
 	void on_videoPermissionButton_clicked();
 	void on_audioPermissionButton_clicked();
+	void on_inputMonitoringPermissionButton_clicked();
 	void on_accessibilityPermissionButton_clicked();
 	void on_continueButton_clicked();
 };
