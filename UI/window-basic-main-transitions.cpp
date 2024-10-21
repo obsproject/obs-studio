@@ -577,6 +577,17 @@ void OBSBasic::on_transitionProps_clicked()
 	connect(action, &QAction::triggered, properties);
 	menu.addAction(action);
 
+	uint32_t flags = obs_source_get_output_flags(source);
+	if ((flags & OBS_TRANSITION_HAS_AUDIO) != 0) {
+		auto transitionAudio = [&]() {
+			CreateTransitionAudioWindow(source);
+		};
+
+		action = new QAction(QTStr("Audio Settings"), &menu);
+		connect(action, &QAction::triggered, transitionAudio);
+		menu.addAction(action);
+	}
+
 	menu.exec(QCursor::pos());
 }
 
