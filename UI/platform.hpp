@@ -76,9 +76,6 @@ public:
 	RunOnceMutex &operator=(RunOnceMutex &&rom);
 };
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
-QString GetMonitorName(const QString &id);
-#endif
 bool IsRunningOnWine();
 #endif
 
@@ -105,8 +102,7 @@ void InstallNSThreadLocks();
 void disableColorSpaceConversion(QWidget *window);
 void SetMacOSDarkMode(bool dark);
 
-MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
-					      bool prompt_for_permission);
+MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type, bool prompt_for_permission);
 #define CheckPermission(x) CheckPermissionWithPrompt(x, false)
 #define RequestPermission(x) CheckPermissionWithPrompt(x, true)
 void OpenMacOSPrivacyPreferences(const char *tab);

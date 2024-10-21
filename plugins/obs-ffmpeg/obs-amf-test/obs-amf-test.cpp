@@ -36,8 +36,7 @@ static std::map<uint32_t, adapter_caps> adapter_info;
 static bool has_encoder(AMFContextPtr &amf_context, const wchar_t *encoder_name)
 {
 	AMFComponentPtr encoder;
-	AMF_RESULT res = amf_factory->CreateComponent(amf_context, encoder_name,
-						      &encoder);
+	AMF_RESULT res = amf_factory->CreateComponent(amf_context, encoder_name, &encoder);
 	return res == AMF_OK;
 }
 
@@ -75,9 +74,8 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 
 	ComPtr<ID3D11Device> device;
 	ComPtr<ID3D11DeviceContext> context;
-	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0,
-			       nullptr, 0, D3D11_SDK_VERSION, &device, nullptr,
-			       &context);
+	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device,
+			       nullptr, &context);
 	if (FAILED(hr))
 		return true;
 
@@ -117,13 +115,11 @@ try {
 	HRESULT hr;
 
 	HANDLE hMainThread;
-	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-			GetCurrentProcess(), &hMainThread, 0, FALSE,
+	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &hMainThread, 0, FALSE,
 			DUPLICATE_SAME_ACCESS);
 	DWORD threadId;
 	HANDLE hThread;
-	hThread =
-		CreateThread(NULL, 0, TimeoutThread, hMainThread, 0, &threadId);
+	hThread = CreateThread(NULL, 0, TimeoutThread, hMainThread, 0, &threadId);
 	CloseHandle(hThread);
 
 	/* --------------------------------------------------------- */
@@ -133,8 +129,7 @@ try {
 	if (!amf_module)
 		throw "Failed to load AMF lib";
 
-	auto init =
-		(AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
+	auto init = (AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
 	if (!init)
 		throw "Failed to get init func";
 
@@ -163,12 +158,9 @@ try {
 	for (auto &[idx, caps] : adapter_info) {
 		printf("[%u]\n", idx);
 		printf("is_amd=%s\n", caps.is_amd ? "true" : "false");
-		printf("supports_avc=%s\n",
-		       caps.supports_avc ? "true" : "false");
-		printf("supports_hevc=%s\n",
-		       caps.supports_hevc ? "true" : "false");
-		printf("supports_av1=%s\n",
-		       caps.supports_av1 ? "true" : "false");
+		printf("supports_avc=%s\n", caps.supports_avc ? "true" : "false");
+		printf("supports_hevc=%s\n", caps.supports_hevc ? "true" : "false");
+		printf("supports_av1=%s\n", caps.supports_av1 ? "true" : "false");
 	}
 
 	return 0;

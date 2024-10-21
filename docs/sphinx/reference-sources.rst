@@ -915,15 +915,6 @@ General Source Functions
 
 ---------------------
 
-.. function:: void obs_source_addref(obs_source_t *source)
-
-   Adds a reference to a source.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_source_get_ref()` instead.
-
----------------------
-
 .. function:: obs_source_t *obs_source_get_ref(obs_source_t *source)
 
    Returns an incremented reference if still valid, otherwise returns

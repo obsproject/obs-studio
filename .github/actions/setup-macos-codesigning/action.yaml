@@ -27,13 +27,13 @@ outputs:
     value: ${{ steps.codesign.outputs.haveCodesignIdent }}
   haveProvisioningProfile:
     description: True if necessary provisioning profile credentials were found
-    value: ${{ steps.provisioning.outputs.haveProvisioningProfile }}
+    value: ${{ steps.provisioning.outputs.haveProvisioningProfile || steps.codesign.outputs.haveProvisioningProfile }}
   provisioningProfileUUID:
     description: UUID of imported provisioning profile
     value: ${{ steps.provisioning.outputs.provisioningProfileUUID }}
   haveNotarizationUser:
     description: True if necessary notarization credentials were found
-    value: ${{ steps.notarization.outputs.haveNotarizationUser }}
+    value: ${{ steps.notarization.outputs.haveNotarizationUser || steps.codesign.outputs.haveNotarizationUser }}
   codesignIdent:
     description: Code signing identity
     value: ${{ steps.codesign.outputs.codesignIdent }}
@@ -95,6 +95,8 @@ runs:
           print "codesignTeam=${team_id}" >> $GITHUB_OUTPUT
         } else {
           print 'haveCodesignIdent=false' >> $GITHUB_OUTPUT
+          print 'haveProvisioningProfile=false' >> $GITHUB_OUTPUT
+          print 'haveNotarizationUser=false' >> $GITHUB_OUTPUT
         }
 
     - name: Provisioning Profile 👤

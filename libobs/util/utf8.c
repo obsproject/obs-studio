@@ -28,8 +28,7 @@ static inline bool has_utf8_bom(const char *in_char)
 	return (in && in[0] == 0xef && in[1] == 0xbb && in[2] == 0xbf);
 }
 
-size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
-		     size_t outsize, int flags)
+size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out, size_t outsize, int flags)
 {
 	int i_insize = (int)insize;
 	int ret;
@@ -51,8 +50,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 	return (ret > 0) ? (size_t)ret : 0;
 }
 
-size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
-		     size_t outsize, int flags)
+size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out, size_t outsize, int flags)
 {
 	int i_insize = (int)insize;
 	int ret;
@@ -60,8 +58,7 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 	if (i_insize == 0)
 		i_insize = (int)wcslen(in);
 
-	ret = WideCharToMultiByte(CP_UTF8, 0, in, i_insize, out, (int)outsize,
-				  NULL, NULL);
+	ret = WideCharToMultiByte(CP_UTF8, 0, in, i_insize, out, (int)outsize, NULL, NULL);
 
 	UNUSED_PARAMETER(flags);
 	return (ret > 0) ? (size_t)ret : 0;
@@ -130,8 +127,7 @@ static int utf8_forbidden(unsigned char octet)
  *	   not prepare buffer in advance (\0 terminate) but after calling this
  *	   function.
  */
-size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
-		     size_t outsize, int flags)
+size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out, size_t outsize, int flags)
 {
 	unsigned char *p, *lim;
 	wchar_t *wlim, high;
@@ -259,8 +255,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
  *	If UCS-4 string contains zero symbols, they will be translated
  *	as regular symbols.
  */
-size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
-		     size_t outsize, int flags)
+size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out, size_t outsize, int flags)
 {
 	wchar_t *w, *wlim, ch = 0;
 	unsigned char *p, *lim, *oc;
@@ -335,16 +330,14 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 		case 4:
 			p[3] = _NXT | (oc[0] & 0x3f);
 			p[2] = _NXT | (oc[0] >> 6) | ((oc[1] & 0x0f) << 2);
-			p[1] = _NXT | ((oc[1] & 0xf0) >> 4) |
-			       ((oc[2] & 0x03) << 4);
+			p[1] = _NXT | ((oc[1] & 0xf0) >> 4) | ((oc[2] & 0x03) << 4);
 			p[0] = _SEQ4 | ((oc[2] & 0x1f) >> 2);
 			break;
 
 		case 5:
 			p[4] = _NXT | (oc[0] & 0x3f);
 			p[3] = _NXT | (oc[0] >> 6) | ((oc[1] & 0x0f) << 2);
-			p[2] = _NXT | ((oc[1] & 0xf0) >> 4) |
-			       ((oc[2] & 0x03) << 4);
+			p[2] = _NXT | ((oc[1] & 0xf0) >> 4) | ((oc[2] & 0x03) << 4);
 			p[1] = _NXT | (oc[2] >> 2);
 			p[0] = _SEQ5 | (oc[3] & 0x03);
 			break;

@@ -59,20 +59,17 @@ static inline void darray_free(struct darray *dst)
 	dst->capacity = 0;
 }
 
-static inline size_t darray_alloc_size(const size_t element_size,
-				       const struct darray *da)
+static inline size_t darray_alloc_size(const size_t element_size, const struct darray *da)
 {
 	return element_size * da->num;
 }
 
-static inline void *darray_item(const size_t element_size,
-				const struct darray *da, size_t idx)
+static inline void *darray_item(const size_t element_size, const struct darray *da, size_t idx)
 {
 	return (void *)(((uint8_t *)da->array) + element_size * idx);
 }
 
-static inline void *darray_end(const size_t element_size,
-			       const struct darray *da)
+static inline void *darray_end(const size_t element_size, const struct darray *da)
 {
 	if (!da->num)
 		return NULL;
@@ -80,8 +77,7 @@ static inline void *darray_end(const size_t element_size,
 	return darray_item(element_size, da, da->num - 1);
 }
 
-static inline void darray_reserve(const size_t element_size, struct darray *dst,
-				  const size_t capacity)
+static inline void darray_reserve(const size_t element_size, struct darray *dst, const size_t capacity)
 {
 	void *ptr;
 	if (capacity == 0 || capacity <= dst->capacity)
@@ -98,9 +94,7 @@ static inline void darray_reserve(const size_t element_size, struct darray *dst,
 	dst->capacity = capacity;
 }
 
-static inline void darray_ensure_capacity(const size_t element_size,
-					  struct darray *dst,
-					  const size_t new_size)
+static inline void darray_ensure_capacity(const size_t element_size, struct darray *dst, const size_t new_size)
 {
 	size_t new_cap;
 	void *ptr;
@@ -126,8 +120,7 @@ static inline void darray_clear(struct darray *dst)
 	dst->num = 0;
 }
 
-static inline void darray_resize(const size_t element_size, struct darray *dst,
-				 const size_t size)
+static inline void darray_resize(const size_t element_size, struct darray *dst, const size_t size)
 {
 	int b_clear;
 	size_t old_num;
@@ -146,12 +139,10 @@ static inline void darray_resize(const size_t element_size, struct darray *dst,
 	dst->num = size;
 
 	if (b_clear)
-		memset(darray_item(element_size, dst, old_num), 0,
-		       element_size * (dst->num - old_num));
+		memset(darray_item(element_size, dst, old_num), 0, element_size * (dst->num - old_num));
 }
 
-static inline void darray_copy(const size_t element_size, struct darray *dst,
-			       const struct darray *da)
+static inline void darray_copy(const size_t element_size, struct darray *dst, const struct darray *da)
 {
 	if (da->num == 0) {
 		darray_free(dst);
@@ -161,9 +152,7 @@ static inline void darray_copy(const size_t element_size, struct darray *dst,
 	}
 }
 
-static inline void darray_copy_array(const size_t element_size,
-				     struct darray *dst, const void *array,
-				     const size_t num)
+static inline void darray_copy_array(const size_t element_size, struct darray *dst, const void *array, const size_t num)
 {
 	darray_resize(element_size, dst, num);
 	memcpy(dst->array, array, element_size * dst->num);
@@ -178,9 +167,7 @@ static inline void darray_move(struct darray *dst, struct darray *src)
 	src->num = 0;
 }
 
-static inline size_t darray_find(const size_t element_size,
-				 const struct darray *da, const void *item,
-				 const size_t idx)
+static inline size_t darray_find(const size_t element_size, const struct darray *da, const void *item, const size_t idx)
 {
 	size_t i;
 
@@ -195,8 +182,7 @@ static inline size_t darray_find(const size_t element_size,
 	return DARRAY_INVALID;
 }
 
-static inline size_t darray_push_back(const size_t element_size,
-				      struct darray *dst, const void *item)
+static inline size_t darray_push_back(const size_t element_size, struct darray *dst, const void *item)
 {
 	darray_ensure_capacity(element_size, dst, ++dst->num);
 	memcpy(darray_end(element_size, dst), item, element_size);
@@ -204,8 +190,7 @@ static inline size_t darray_push_back(const size_t element_size,
 	return dst->num - 1;
 }
 
-static inline void *darray_push_back_new(const size_t element_size,
-					 struct darray *dst)
+static inline void *darray_push_back_new(const size_t element_size, struct darray *dst)
 {
 	void *last;
 
@@ -216,9 +201,8 @@ static inline void *darray_push_back_new(const size_t element_size,
 	return last;
 }
 
-static inline size_t darray_push_back_array(const size_t element_size,
-					    struct darray *dst,
-					    const void *array, const size_t num)
+static inline size_t darray_push_back_array(const size_t element_size, struct darray *dst, const void *array,
+					    const size_t num)
 {
 	size_t old_num;
 	if (!dst)
@@ -228,21 +212,17 @@ static inline size_t darray_push_back_array(const size_t element_size,
 
 	old_num = dst->num;
 	darray_resize(element_size, dst, dst->num + num);
-	memcpy(darray_item(element_size, dst, old_num), array,
-	       element_size * num);
+	memcpy(darray_item(element_size, dst, old_num), array, element_size * num);
 
 	return old_num;
 }
 
-static inline size_t darray_push_back_darray(const size_t element_size,
-					     struct darray *dst,
-					     const struct darray *da)
+static inline size_t darray_push_back_darray(const size_t element_size, struct darray *dst, const struct darray *da)
 {
 	return darray_push_back_array(element_size, dst, da->array, da->num);
 }
 
-static inline void darray_insert(const size_t element_size, struct darray *dst,
-				 const size_t idx, const void *item)
+static inline void darray_insert(const size_t element_size, struct darray *dst, const size_t idx, const void *item)
 {
 	void *new_item;
 	size_t move_count;
@@ -259,13 +239,11 @@ static inline void darray_insert(const size_t element_size, struct darray *dst,
 
 	new_item = darray_item(element_size, dst, idx);
 
-	memmove(darray_item(element_size, dst, idx + 1), new_item,
-		move_count * element_size);
+	memmove(darray_item(element_size, dst, idx + 1), new_item, move_count * element_size);
 	memcpy(new_item, item, element_size);
 }
 
-static inline void *darray_insert_new(const size_t element_size,
-				      struct darray *dst, const size_t idx)
+static inline void *darray_insert_new(const size_t element_size, struct darray *dst, const size_t idx)
 {
 	void *item;
 	size_t move_count;
@@ -278,15 +256,13 @@ static inline void *darray_insert_new(const size_t element_size,
 	darray_ensure_capacity(element_size, dst, ++dst->num);
 
 	item = darray_item(element_size, dst, idx);
-	memmove(darray_item(element_size, dst, idx + 1), item,
-		move_count * element_size);
+	memmove(darray_item(element_size, dst, idx + 1), item, move_count * element_size);
 
 	memset(item, 0, element_size);
 	return item;
 }
 
-static inline void darray_insert_array(const size_t element_size,
-				       struct darray *dst, const size_t idx,
+static inline void darray_insert_array(const size_t element_size, struct darray *dst, const size_t idx,
 				       const void *array, const size_t num)
 {
 	size_t old_num;
@@ -298,42 +274,36 @@ static inline void darray_insert_array(const size_t element_size,
 	old_num = dst->num;
 	darray_resize(element_size, dst, dst->num + num);
 
-	memmove(darray_item(element_size, dst, idx + num),
-		darray_item(element_size, dst, idx),
+	memmove(darray_item(element_size, dst, idx + num), darray_item(element_size, dst, idx),
 		element_size * (old_num - idx));
 	memcpy(darray_item(element_size, dst, idx), array, element_size * num);
 }
 
-static inline void darray_insert_darray(const size_t element_size,
-					struct darray *dst, const size_t idx,
+static inline void darray_insert_darray(const size_t element_size, struct darray *dst, const size_t idx,
 					const struct darray *da)
 {
 	darray_insert_array(element_size, dst, idx, da->array, da->num);
 }
 
-static inline void darray_erase(const size_t element_size, struct darray *dst,
-				const size_t idx)
+static inline void darray_erase(const size_t element_size, struct darray *dst, const size_t idx)
 {
 	assert(idx < dst->num);
 
 	if (idx >= dst->num || !--dst->num)
 		return;
 
-	memmove(darray_item(element_size, dst, idx),
-		darray_item(element_size, dst, idx + 1),
+	memmove(darray_item(element_size, dst, idx), darray_item(element_size, dst, idx + 1),
 		element_size * (dst->num - idx));
 }
 
-static inline void darray_erase_item(const size_t element_size,
-				     struct darray *dst, const void *item)
+static inline void darray_erase_item(const size_t element_size, struct darray *dst, const void *item)
 {
 	size_t idx = darray_find(element_size, dst, item, 0);
 	if (idx != DARRAY_INVALID)
 		darray_erase(element_size, dst, idx);
 }
 
-static inline void darray_erase_range(const size_t element_size,
-				      struct darray *dst, const size_t start,
+static inline void darray_erase_range(const size_t element_size, struct darray *dst, const size_t start,
 				      const size_t end)
 {
 	size_t count, move_count;
@@ -353,15 +323,13 @@ static inline void darray_erase_range(const size_t element_size,
 
 	move_count = dst->num - end;
 	if (move_count)
-		memmove(darray_item(element_size, dst, start),
-			darray_item(element_size, dst, end),
+		memmove(darray_item(element_size, dst, start), darray_item(element_size, dst, end),
 			move_count * element_size);
 
 	dst->num -= count;
 }
 
-static inline void darray_pop_front(const size_t element_size,
-				    struct darray *dst)
+static inline void darray_pop_front(const size_t element_size, struct darray *dst)
 {
 	assert(dst->num != 0);
 
@@ -369,8 +337,7 @@ static inline void darray_pop_front(const size_t element_size,
 		darray_erase(element_size, dst, 0);
 }
 
-static inline void darray_pop_back(const size_t element_size,
-				   struct darray *dst)
+static inline void darray_pop_back(const size_t element_size, struct darray *dst)
 {
 	assert(dst->num != 0);
 
@@ -378,16 +345,14 @@ static inline void darray_pop_back(const size_t element_size,
 		darray_erase(element_size, dst, dst->num - 1);
 }
 
-static inline void darray_join(const size_t element_size, struct darray *dst,
-			       struct darray *da)
+static inline void darray_join(const size_t element_size, struct darray *dst, struct darray *da)
 {
 	darray_push_back_darray(element_size, dst, da);
 	darray_free(da);
 }
 
-static inline void darray_split(const size_t element_size, struct darray *dst1,
-				struct darray *dst2, const struct darray *da,
-				const size_t idx)
+static inline void darray_split(const size_t element_size, struct darray *dst1, struct darray *dst2,
+				const struct darray *da, const size_t idx)
 {
 	struct darray temp;
 
@@ -402,20 +367,15 @@ static inline void darray_split(const size_t element_size, struct darray *dst1,
 
 	if (da->num) {
 		if (idx)
-			darray_copy_array(element_size, dst1, temp.array,
-					  temp.num);
+			darray_copy_array(element_size, dst1, temp.array, temp.num);
 		if (idx < temp.num - 1)
-			darray_copy_array(element_size, dst2,
-					  darray_item(element_size, &temp, idx),
-					  temp.num - idx);
+			darray_copy_array(element_size, dst2, darray_item(element_size, &temp, idx), temp.num - idx);
 	}
 
 	darray_free(&temp);
 }
 
-static inline void darray_move_item(const size_t element_size,
-				    struct darray *dst, const size_t from,
-				    const size_t to)
+static inline void darray_move_item(const size_t element_size, struct darray *dst, const size_t from, const size_t to)
 {
 	void *temp, *p_from, *p_to;
 
@@ -434,18 +394,15 @@ static inline void darray_move_item(const size_t element_size,
 	memcpy(temp, p_from, element_size);
 
 	if (to < from)
-		memmove(darray_item(element_size, dst, to + 1), p_to,
-			element_size * (from - to));
+		memmove(darray_item(element_size, dst, to + 1), p_to, element_size * (from - to));
 	else
-		memmove(p_from, darray_item(element_size, dst, from + 1),
-			element_size * (to - from));
+		memmove(p_from, darray_item(element_size, dst, from + 1), element_size * (to - from));
 
 	memcpy(p_to, temp, element_size);
 	free(temp);
 }
 
-static inline void darray_swap(const size_t element_size, struct darray *dst,
-			       const size_t a, const size_t b)
+static inline void darray_swap(const size_t element_size, struct darray *dst, const size_t a, const size_t b)
 {
 	void *temp, *a_ptr, *b_ptr;
 
@@ -496,18 +453,15 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 
 #define da_end(v) darray_end(sizeof(*(v).array), &(v).da)
 
-#define da_reserve(v, capacity) \
-	darray_reserve(sizeof(*(v).array), &(v).da, capacity)
+#define da_reserve(v, capacity) darray_reserve(sizeof(*(v).array), &(v).da, capacity)
 
 #define da_resize(v, size) darray_resize(sizeof(*(v).array), &(v).da, size)
 
 #define da_clear(v) darray_clear(&(v).da)
 
-#define da_copy(dst, src) \
-	darray_copy(sizeof(*(dst).array), &(dst).da, &(src).da)
+#define da_copy(dst, src) darray_copy(sizeof(*(dst).array), &(dst).da, &(src).da)
 
-#define da_copy_array(dst, src_array, n) \
-	darray_copy_array(sizeof(*(dst).array), &(dst).da, src_array, n)
+#define da_copy_array(dst, src_array, n) darray_copy_array(sizeof(*(dst).array), &(dst).da, src_array, n)
 
 #define da_move(dst, src) darray_move(&(dst).da, &(src).da)
 
@@ -542,8 +496,7 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 		darray_find(sizeof(*(v).array), &(v).da, item, idx); \
 	})
 #else
-#define da_find(v, item, idx) \
-	darray_find(sizeof(*(v).array), &(v).da, item, idx)
+#define da_find(v, item, idx) darray_find(sizeof(*(v).array), &(v).da, item, idx)
 #endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
@@ -553,8 +506,7 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 		darray_push_back(sizeof(*(v).array), &(v).da, item); \
 	})
 #else
-#define da_push_back(v, item) \
-	darray_push_back(sizeof(*(v).array), &(v).da, item)
+#define da_push_back(v, item) darray_push_back(sizeof(*(v).array), &(v).da, item)
 #endif
 
 #ifdef __GNUC__
@@ -573,27 +525,23 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 #endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
-#define da_push_back_array(dst, src_array, n)                           \
-	({                                                              \
-		da_type_test(dst, src_array);                           \
-		darray_push_back_array(sizeof(*(dst).array), &(dst).da, \
-				       src_array, n);                   \
+#define da_push_back_array(dst, src_array, n)                                          \
+	({                                                                             \
+		da_type_test(dst, src_array);                                          \
+		darray_push_back_array(sizeof(*(dst).array), &(dst).da, src_array, n); \
 	})
 #else
-#define da_push_back_array(dst, src_array, n) \
-	darray_push_back_array(sizeof(*(dst).array), &(dst).da, src_array, n)
+#define da_push_back_array(dst, src_array, n) darray_push_back_array(sizeof(*(dst).array), &(dst).da, src_array, n)
 #endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
-#define da_push_back_da(dst, src)                                        \
-	({                                                               \
-		da_type_test(dst, (src).array);                          \
-		darray_push_back_darray(sizeof(*(dst).array), &(dst).da, \
-					&(src).da);                      \
+#define da_push_back_da(dst, src)                                                    \
+	({                                                                           \
+		da_type_test(dst, (src).array);                                      \
+		darray_push_back_darray(sizeof(*(dst).array), &(dst).da, &(src).da); \
 	})
 #else
-#define da_push_back_da(dst, src) \
-	darray_push_back_darray(sizeof(*(dst).array), &(dst).da, &(src).da)
+#define da_push_back_da(dst, src) darray_push_back_darray(sizeof(*(dst).array), &(dst).da, &(src).da)
 #endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
@@ -603,35 +551,29 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 		darray_insert(sizeof(*(v).array), &(v).da, idx, item); \
 	})
 #else
-#define da_insert(v, idx, item) \
-	darray_insert(sizeof(*(v).array), &(v).da, idx, item)
+#define da_insert(v, idx, item) darray_insert(sizeof(*(v).array), &(v).da, idx, item)
 #endif
 
-#define da_insert_new(v, idx) \
-	darray_insert_new(sizeof(*(v).array), &(v).da, idx)
+#define da_insert_new(v, idx) darray_insert_new(sizeof(*(v).array), &(v).da, idx)
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
-#define da_insert_array(dst, idx, src_array, n)                           \
-	({                                                                \
-		da_type_test(dst, src_array);                             \
-		darray_insert_array(sizeof(*(dst).array), &(dst).da, idx, \
-				    src_array, n);                        \
+#define da_insert_array(dst, idx, src_array, n)                                          \
+	({                                                                               \
+		da_type_test(dst, src_array);                                            \
+		darray_insert_array(sizeof(*(dst).array), &(dst).da, idx, src_array, n); \
 	})
 #else
-#define da_insert_array(dst, idx, src_array, n) \
-	darray_insert_array(sizeof(*(dst).array), &(dst).da, idx, src_array, n)
+#define da_insert_array(dst, idx, src_array, n) darray_insert_array(sizeof(*(dst).array), &(dst).da, idx, src_array, n)
 #endif
 
 #ifdef ENABLE_DARRAY_TYPE_TEST
-#define da_insert_da(dst, idx, src)                                        \
-	({                                                                 \
-		da_type_test(dst, (src).array);                            \
-		darray_insert_darray(sizeof(*(dst).array), &(dst).da, idx, \
-				     &(src).da);                           \
+#define da_insert_da(dst, idx, src)                                                    \
+	({                                                                             \
+		da_type_test(dst, (src).array);                                        \
+		darray_insert_darray(sizeof(*(dst).array), &(dst).da, idx, &(src).da); \
 	})
 #else
-#define da_insert_da(dst, idx, src) \
-	darray_insert_darray(sizeof(*(dst).array), &(dst).da, idx, &(src).da)
+#define da_insert_da(dst, idx, src) darray_insert_darray(sizeof(*(dst).array), &(dst).da, idx, &(src).da)
 #endif
 
 #define da_erase(dst, idx) darray_erase(sizeof(*(dst).array), &(dst).da, idx)
@@ -643,28 +585,21 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 		darray_erase_item(sizeof(*(dst).array), &(dst).da, item); \
 	})
 #else
-#define da_erase_item(dst, item) \
-	darray_erase_item(sizeof(*(dst).array), &(dst).da, item)
+#define da_erase_item(dst, item) darray_erase_item(sizeof(*(dst).array), &(dst).da, item)
 #endif
 
-#define da_erase_range(dst, from, to) \
-	darray_erase_range(sizeof(*(dst).array), &(dst).da, from, to)
+#define da_erase_range(dst, from, to) darray_erase_range(sizeof(*(dst).array), &(dst).da, from, to)
 
 #define da_pop_front(dst) darray_pop_front(sizeof(*(dst).array), &(dst).da);
 #define da_pop_back(dst) darray_pop_back(sizeof(*(dst).array), &(dst).da);
 
-#define da_join(dst, src) \
-	darray_join(sizeof(*(dst).array), &(dst).da, &(src).da)
+#define da_join(dst, src) darray_join(sizeof(*(dst).array), &(dst).da, &(src).da)
 
-#define da_split(dst1, dst2, src, idx)                                        \
-	darray_split(sizeof(*(src).array), &(dst1).da, &(dst2).da, &(src).da, \
-		     idx)
+#define da_split(dst1, dst2, src, idx) darray_split(sizeof(*(src).array), &(dst1).da, &(dst2).da, &(src).da, idx)
 
-#define da_move_item(v, from, to) \
-	darray_move_item(sizeof(*(v).array), &(v).da, from, to)
+#define da_move_item(v, from, to) darray_move_item(sizeof(*(v).array), &(v).da, from, to)
 
-#define da_swap(v, idx1, idx2) \
-	darray_swap(sizeof(*(v).array), &(v).da, idx1, idx2)
+#define da_swap(v, idx1, idx2) darray_swap(sizeof(*(v).array), &(v).da, idx1, idx2)
 
 #ifdef __cplusplus
 }

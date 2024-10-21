@@ -54,33 +54,87 @@ invoke_formatter() {
         exit 2
       fi
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps)/**/*.(c|cpp|h|hpp|m|mm)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
 
-      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|obs-outputs/ftl-sdk|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|libdshowcapture)/*})
 
       local -a format_args=(-style=file -fallback-style=none)
       if (( _loglevel > 2 )) format_args+=(--verbose)
-      ;;
-    cmake)
-      local formatter=cmake-format
-      if (( ${+commands[cmake-format]} )) {
-        local cmake_format_version=$(cmake-format --version)
 
-        if ! is-at-least 0.6.13 ${cmake_format_version}; then
-          log_error "cmake-format is not version 0.6.13 or above (found ${cmake_format_version})."
-          exit 2
-        fi
-      } else {
-        log_error "No viable cmake-format version found (required 0.6.13)"
-        exit 2
+      check_files() {
+        local -i num_failures=0
+        local -a source_files=($@)
+        local file
+        local -a format_args=(-style=file -fallback-style=none)
+        if (( _loglevel > 2 )) format_args+=(--verbose)
+
+        local -a command=(${formatter} ${format_args})
+
+        for file (${source_files}) {
+          if ! ${command} "${file}" | diff -q "${file}" - &> /dev/null; then
+            log_error "${file} requires formatting changes."
+            if (( fail_on_error == 2 )) return 2;
+            num_failures=$(( num_failures + 1 ))
+          fi
+        }
+        if (( num_failures && fail_on_error == 1 )) return 2
       }
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|cmake)/**/(CMakeLists.txt|*.cmake)(.N))
+      format_files() {
+        local -a source_files=($@)
 
-      source_files=(${source_files:#*/(obs-outputs/ftl-sdk|jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
+        if (( ${#source_files} )) {
+          local -a format_args=(-style=file -fallback-style=none -i)
+          if (( _loglevel > 2 )) format_args+=(--verbose)
 
-      local -a format_args=()
-      if (( _loglevel > 2 )) format_args+=(--log-level debug)
+          "${formatter}" ${format_args} ${source_files}
+        }
+      }
+      ;;
+    gersemi)
+      local formatter=gersemi
+      if (( ${+commands[gersemi]} )) {
+        local gersemi_version=($(gersemi --version))
+
+        if ! is-at-least 0.12.0 ${gersemi_version[2]}; then
+          log_error "gersemi is not version 0.12.0 or above (found ${gersemi_version[2]}."
+          exit 2
+        fi
+      }
+
+      if (( ! #source_files )) source_files=(CMakeLists.txt (libobs|libobs-*|UI|plugins|deps|shared|cmake|test)/**/(CMakeLists.txt|*.cmake)(.N))
+
+      source_files=(${source_files:#*/(jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|libdshowcapture)/*})
+      source_files=(${source_files:#(cmake/Modules/*|*/legacy.cmake)})
+
+      check_files() {
+        local -i num_failures=0
+        local -a source_files=($@)
+        local file
+        local -a command=(${formatter} -c --no-cache ${source_files})
+
+        if (( ${#source_files} )) {
+          while read -r line; do
+            local -a line_tokens=(${(z)line})
+            file=${line_tokens[1]//*obs-studio\//}
+
+            log_error "${file} requires formatting changes."
+
+            if (( fail_on_error == 2 )) return 2
+            num_failures=$(( num_failures + 1 ))
+          done < <(${command} 2>&1)
+
+          if (( num_failures && fail_on_error == 1 )) return 2
+        }
+      }
+
+      format_files() {
+        local -a source_files=($@)
+
+        if (( ${#source_files} )) {
+          "${formatter}" -i ${source_files}
+        }
+      }
       ;;
     swift)
       local formatter=swift-format
@@ -98,30 +152,53 @@ invoke_formatter() {
 
       if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins)/**/*.swift(.N))
 
-      local -a format_args=()
+      check_files() {
+        local -i num_failures=0
+        local -a source_files=($@)
+        local file
+        local -a format_args=()
+
+        local -a command=(${formatter} ${format_args})
+
+        for file (${source_files}) {
+          if ! "${command}" "${file}" | diff -q "${file}" - &> /dev/null; then
+            log_error "${file} requires formatting changes."
+            if (( fail_on_error == 2 )) return 2;
+            num_failures=$(( num_failures + 1 ))
+          fi
+        }
+        if (( num_failures && fail_on_error == 1 )) return 2
+      }
+
+      format_files() {
+        local -a source_files=($@)
+
+        if (( ${#source_files} )) {
+          local -a format_args=(-i)
+
+          "${formatter}" ${format_args} ${source_files}
+        }
+      }
       ;;
-    *) log_error "Invalid formatter specified: ${1}. Valid options are clang-format, cmake-format, and swift-format."; exit 2 ;;
+    *) log_error "Invalid formatter specified: ${1}. Valid options are clang-format, gersemi, and swift-format."; exit 2 ;;
   }
 
   local file
   local -i num_failures=0
   if (( check_only )) {
-    for file (${source_files}) {
-      if (( _loglevel > 1 )) log_info "Checking format of ${file}..."
-
-      if ! "${formatter}" ${format_args} "${file}" | diff -q "${file}" - &> /dev/null; then
-        log_error "${file} requires formatting changes."
-
-        if (( fail_on_error == 2 )) return 2;
-        num_failures=$(( num_failures + 1 ))
-      else
-        if (( _loglevel > 1 )) log_status "${file} requires no formatting changes."
-      fi
+    if (( ${+functions[check_files]} )) {
+      check_files ${source_files}
+    } else {
+      log_error "No format check function defined for formatter '${formatter}'"
+      exit 2
     }
-    if (( fail_on_error && num_failures )) return 2;
-  } elif (( ${#source_files} )) {
-    format_args+=(-i)
-    "${formatter}" ${format_args} ${source_files}
+  } else {
+    if (( ${+functions[format_files]} )) {
+      format_files ${source_files}
+    } else {
+      log_error "No format function defined for formatter '${formatter}'"
+      exit 2
+    }
   }
 }
 

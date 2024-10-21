@@ -18,8 +18,8 @@
         {
             "type": "git",
             "url": "https://github.com/intel/libvpl.git",
-            "commit": "11a9bbda5b22ac1c544da59b4007bb57f737b487",
-            "tag": "v2.11.0"
+            "commit": "0c13c410095764799afea0cf645bd896378579b8",
+            "tag": "v2.12.0"
         }
     ]
 }

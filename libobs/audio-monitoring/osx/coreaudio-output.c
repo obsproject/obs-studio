@@ -40,15 +40,13 @@ static inline bool fill_buffer(struct audio_monitor *monitor)
 	}
 
 	deque_pop_front(&monitor->empty_buffers, &buf, sizeof(buf));
-	deque_pop_front(&monitor->new_data, buf->mAudioData,
-			monitor->buffer_size);
+	deque_pop_front(&monitor->new_data, buf->mAudioData, monitor->buffer_size);
 
 	buf->mAudioDataByteSize = (UInt32)monitor->buffer_size;
 
 	stat = AudioQueueEnqueueBuffer(monitor->queue, buf, 0, NULL);
 	if (!success(stat, "AudioQueueEnqueueBuffer")) {
-		blog(LOG_WARNING, "%s: %s", __FUNCTION__,
-		     "Failed to enqueue buffer");
+		blog(LOG_WARNING, "%s: %s", __FUNCTION__, "Failed to enqueue buffer");
 		AudioQueueStop(monitor->queue, false);
 	}
 	return true;
@@ -63,8 +61,7 @@ static void on_audio_pause(void *data, calldata_t *calldata)
 	pthread_mutex_unlock(&monitor->mutex);
 }
 
-static void on_audio_playback(void *param, obs_source_t *source,
-			      const struct audio_data *audio_data, bool muted)
+static void on_audio_playback(void *param, obs_source_t *source, const struct audio_data *audio_data, bool muted)
 {
 	struct audio_monitor *monitor = param;
 	float vol = source->user_volume;
@@ -83,10 +80,8 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	uint64_t ts_offset;
 	bool success;
 
-	success = audio_resampler_resample(
-		monitor->resampler, resample_data, &resample_frames, &ts_offset,
-		(const uint8_t *const *)audio_data->data,
-		(uint32_t)audio_data->frames);
+	success = audio_resampler_resample(monitor->resampler, resample_data, &resample_frames, &ts_offset,
+					   (const uint8_t *const *)audio_data->data, (uint32_t)audio_data->frames);
 	if (!success) {
 		return;
 	}
@@ -99,8 +94,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		/* apply volume */
 		if (!close_float(vol, 1.0f, EPSILON)) {
 			register float *cur = (float *)resample_data[0];
-			register float *end =
-				cur + resample_frames * monitor->channels;
+			register float *end = cur + resample_frames * monitor->channels;
 
 			while (cur < end)
 				*(cur++) *= vol;
@@ -151,30 +145,25 @@ static void buffer_audio(void *data, AudioQueueRef aq, AudioQueueBufferRef buf)
 
 extern bool devices_match(const char *id1, const char *id2);
 
-static bool audio_monitor_init(struct audio_monitor *monitor,
-			       obs_source_t *source)
+static bool audio_monitor_init(struct audio_monitor *monitor, obs_source_t *source)
 {
-	const struct audio_output_info *info =
-		audio_output_get_info(obs->audio.audio);
+	const struct audio_output_info *info = audio_output_get_info(obs->audio.audio);
 	uint32_t channels = get_audio_channels(info->speakers);
 	OSStatus stat;
 
-	AudioStreamBasicDescription desc = {
-		.mSampleRate = (Float64)info->samples_per_sec,
-		.mFormatID = kAudioFormatLinearPCM,
-		.mFormatFlags = kAudioFormatFlagIsFloat |
-				kAudioFormatFlagIsPacked,
-		.mBytesPerPacket = sizeof(float) * channels,
-		.mFramesPerPacket = 1,
-		.mBytesPerFrame = sizeof(float) * channels,
-		.mChannelsPerFrame = channels,
-		.mBitsPerChannel = sizeof(float) * 8};
+	AudioStreamBasicDescription desc = {.mSampleRate = (Float64)info->samples_per_sec,
+					    .mFormatID = kAudioFormatLinearPCM,
+					    .mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
+					    .mBytesPerPacket = sizeof(float) * channels,
+					    .mFramesPerPacket = 1,
+					    .mBytesPerFrame = sizeof(float) * channels,
+					    .mChannelsPerFrame = channels,
+					    .mBitsPerChannel = sizeof(float) * 8};
 
 	monitor->source = source;
 
 	monitor->channels = channels;
-	monitor->buffer_size =
-		channels * sizeof(float) * info->samples_per_sec / 100 * 3;
+	monitor->buffer_size = channels * sizeof(float) * info->samples_per_sec / 100 * 3;
 	monitor->wait_size = monitor->buffer_size * 3;
 
 	pthread_mutex_init_value(&monitor->mutex);
@@ -196,20 +185,17 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		}
 	}
 
-	stat = AudioQueueNewOutput(&desc, buffer_audio, monitor, NULL, NULL, 0,
-				   &monitor->queue);
+	stat = AudioQueueNewOutput(&desc, buffer_audio, monitor, NULL, NULL, 0, &monitor->queue);
 	if (!success(stat, "AudioStreamBasicDescription")) {
 		return false;
 	}
 
 	if (strcmp(uid, "default") != 0) {
-		CFStringRef cf_uid = CFStringCreateWithBytes(
-			NULL, (const UInt8 *)uid, strlen(uid),
-			kCFStringEncodingUTF8, false);
+		CFStringRef cf_uid =
+			CFStringCreateWithBytes(NULL, (const UInt8 *)uid, strlen(uid), kCFStringEncodingUTF8, false);
 
-		stat = AudioQueueSetProperty(monitor->queue,
-					     kAudioQueueProperty_CurrentDevice,
-					     &cf_uid, sizeof(cf_uid));
+		stat = AudioQueueSetProperty(monitor->queue, kAudioQueueProperty_CurrentDevice, &cf_uid,
+					     sizeof(cf_uid));
 		CFRelease(cf_uid);
 
 		if (!success(stat, "set current device")) {
@@ -217,27 +203,22 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		}
 	}
 
-	stat = AudioQueueSetParameter(monitor->queue, kAudioQueueParam_Volume,
-				      1.0);
+	stat = AudioQueueSetParameter(monitor->queue, kAudioQueueParam_Volume, 1.0);
 	if (!success(stat, "set volume")) {
 		return false;
 	}
 
 	for (size_t i = 0; i < 3; i++) {
-		stat = AudioQueueAllocateBuffer(monitor->queue,
-						(UInt32)monitor->buffer_size,
-						&monitor->buffers[i]);
+		stat = AudioQueueAllocateBuffer(monitor->queue, (UInt32)monitor->buffer_size, &monitor->buffers[i]);
 		if (!success(stat, "allocation of buffer")) {
 			return false;
 		}
 
-		deque_push_back(&monitor->empty_buffers, &monitor->buffers[i],
-				sizeof(monitor->buffers[i]));
+		deque_push_back(&monitor->empty_buffers, &monitor->buffers[i], sizeof(monitor->buffers[i]));
 	}
 
 	if (pthread_mutex_init(&monitor->mutex, NULL) != 0) {
-		blog(LOG_WARNING, "%s: %s", __FUNCTION__,
-		     "Failed to init mutex");
+		blog(LOG_WARNING, "%s: %s", __FUNCTION__, "Failed to init mutex");
 		return false;
 	}
 
@@ -250,8 +231,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 
 	monitor->resampler = audio_resampler_create(&to, &from);
 	if (!monitor->resampler) {
-		blog(LOG_WARNING, "%s: %s", __FUNCTION__,
-		     "Failed to create resampler");
+		blog(LOG_WARNING, "%s: %s", __FUNCTION__, "Failed to create resampler");
 		return false;
 	}
 
@@ -267,18 +247,15 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 static void audio_monitor_free(struct audio_monitor *monitor)
 {
 	if (monitor->source) {
-		obs_source_remove_audio_capture_callback(
-			monitor->source, on_audio_playback, monitor);
-		obs_source_remove_audio_pause_callback(monitor->source,
-						       on_audio_pause, monitor);
+		obs_source_remove_audio_capture_callback(monitor->source, on_audio_playback, monitor);
+		obs_source_remove_audio_pause_callback(monitor->source, on_audio_pause, monitor);
 	}
 	if (monitor->active) {
 		AudioQueueStop(monitor->queue, true);
 	}
 	for (size_t i = 0; i < 3; i++) {
 		if (monitor->buffers[i]) {
-			AudioQueueFreeBuffer(monitor->queue,
-					     monitor->buffers[i]);
+			AudioQueueFreeBuffer(monitor->queue, monitor->buffers[i]);
 		}
 	}
 	if (monitor->queue) {
@@ -296,10 +273,8 @@ static void audio_monitor_init_final(struct audio_monitor *monitor)
 	if (monitor->ignore)
 		return;
 
-	obs_source_add_audio_capture_callback(monitor->source,
-					      on_audio_playback, monitor);
-	obs_source_add_audio_pause_callback(monitor->source, on_audio_pause,
-					    monitor);
+	obs_source_add_audio_capture_callback(monitor->source, on_audio_playback, monitor);
+	obs_source_add_audio_pause_callback(monitor->source, on_audio_pause, monitor);
 }
 
 struct audio_monitor *audio_monitor_create(obs_source_t *source)

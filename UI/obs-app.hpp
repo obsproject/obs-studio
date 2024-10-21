@@ -38,21 +38,19 @@
 #include <memory>
 #include <vector>
 #include <deque>
+#include <filesystem>
 
 #include "window-main.hpp"
 #include "obs-app-theming.hpp"
 
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
-std::string GenerateTimeDateFilename(const char *extension,
-				     bool noSpace = false);
-std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
-				      const char *format);
-std::string GetFormatString(const char *format, const char *prefix,
-			    const char *suffix);
+std::string GenerateTimeDateFilename(const char *extension, bool noSpace = false);
+std::string GenerateSpecifiedFilename(const char *extension, bool noSpace, const char *format);
+std::string GetFormatString(const char *format, const char *prefix, const char *suffix);
 std::string GetFormatExt(const char *container);
-std::string GetOutputFilename(const char *path, const char *container,
-			      bool noSpace, bool overwrite, const char *format);
+std::string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite,
+			      const char *format);
 QObject *CreateShortcutFilter();
 
 struct BaseLexer {
@@ -70,8 +68,7 @@ class OBSTranslator : public QTranslator {
 public:
 	virtual bool isEmpty() const override { return false; }
 
-	virtual QString translate(const char *context, const char *sourceText,
-				  const char *disambiguation,
+	virtual QString translate(const char *context, const char *sourceText, const char *disambiguation,
 				  int n) const override;
 };
 
@@ -91,7 +88,8 @@ class OBSApp : public QApplication {
 private:
 	std::string locale;
 
-	ConfigFile globalConfig;
+	ConfigFile appConfig;
+	ConfigFile userConfig;
 	TextLookup textLookup;
 	QPointer<OBSMainWindow> mainWindow;
 	profiler_name_store_t *profilerNameStore = nullptr;
@@ -112,6 +110,14 @@ private:
 
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
+	bool InitGlobalLocationDefaults();
+
+	bool MigrateGlobalSettings();
+	void MigrateLegacySettings(uint32_t lastVersion);
+
+	bool InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion);
+	void InitUserConfigDefaults();
+
 	bool InitLocale();
 	bool InitTheme();
 
@@ -147,14 +153,15 @@ public:
 	void UpdateHotkeyFocusSetting(bool reset = true);
 	void DisableHotkeys();
 
-	inline bool HotkeysEnabledInFocus() const
-	{
-		return enableHotkeysInFocus;
-	}
+	inline bool HotkeysEnabledInFocus() const { return enableHotkeysInFocus; }
 
 	inline QMainWindow *GetMainWindow() const { return mainWindow.data(); }
 
-	inline config_t *GlobalConfig() const { return globalConfig; }
+	inline config_t *GetAppConfig() const { return appConfig; }
+	inline config_t *GetUserConfig() const { return userConfig; }
+	std::filesystem::path userConfigLocation;
+	std::filesystem::path userScenesLocation;
+	std::filesystem::path userProfilesLocation;
 
 	inline const char *GetLocale() const { return locale.c_str(); }
 
@@ -162,27 +169,18 @@ public:
 	QList<OBSTheme> GetThemes() const { return themes.values(); }
 	OBSTheme *GetTheme(const QString &name);
 	bool SetTheme(const QString &name);
-	bool IsThemeDark() const
-	{
-		return currentTheme ? currentTheme->isDark : false;
-	}
+	bool IsThemeDark() const { return currentTheme ? currentTheme->isDark : false; }
 
 	void SetBranchData(const std::string &data);
 	std::vector<UpdateBranch> GetBranches();
 
 	inline lookup_t *GetTextLookup() const { return textLookup; }
 
-	inline const char *GetString(const char *lookupVal) const
-	{
-		return textLookup.GetString(lookupVal);
-	}
+	inline const char *GetString(const char *lookupVal) const { return textLookup.GetString(lookupVal); }
 
 	bool TranslateString(const char *lookupVal, const char **out) const;
 
-	profiler_name_store_t *GetProfilerNameStore() const
-	{
-		return profilerNameStore;
-	}
+	profiler_name_store_t *GetProfilerNameStore() const { return profilerNameStore; }
 
 	const char *GetLastLog() const;
 	const char *GetCurrentLog() const;
@@ -217,10 +215,7 @@ public:
 			os_inhibit_sleep_set_active(sleepInhibitor, false);
 	}
 
-	inline void PushUITranslation(obs_frontend_translate_ui_cb cb)
-	{
-		translatorHooks.emplace_front(cb);
-	}
+	inline void PushUITranslation(obs_frontend_translate_ui_cb cb) { translatorHooks.emplace_front(cb); }
 
 	inline void PopUITranslation() { translatorHooks.pop_front(); }
 #ifndef _WIN32
@@ -235,8 +230,8 @@ signals:
 	void StyleChanged();
 };
 
-int GetConfigPath(char *path, size_t size, const char *name);
-char *GetConfigPathPtr(const char *name);
+int GetAppConfigPath(char *path, size_t size, const char *name);
+char *GetAppConfigPathPtr(const char *name);
 
 int GetProgramDataPath(char *path, size_t size, const char *name);
 char *GetProgramDataPathPtr(const char *name);
@@ -244,11 +239,6 @@ char *GetProgramDataPathPtr(const char *name);
 inline OBSApp *App()
 {
 	return static_cast<OBSApp *>(qApp);
-}
-
-inline config_t *GetGlobalConfig()
-{
-	return App()->GlobalConfig();
 }
 
 std::vector<std::pair<std::string, std::string>> GetLocaleNames();
@@ -266,13 +256,6 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension);
 bool GetUnusedSceneCollectionFile(std::string &name, std::string &file);
 
 bool WindowPositionValid(QRect rect);
-
-static inline int GetProfilePath(char *path, size_t size, const char *file)
-{
-	OBSMainWindow *window =
-		reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
-	return window->GetProfilePath(path, size, file);
-}
 
 extern bool portable_mode;
 extern bool steam;

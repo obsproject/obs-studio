@@ -44,10 +44,8 @@ static void luma_key_update(void *data, obs_data_t *settings)
 
 	double lumaMax = obs_data_get_double(settings, SETTING_LUMA_MAX);
 	double lumaMin = obs_data_get_double(settings, SETTING_LUMA_MIN);
-	double lumaMaxSmooth =
-		obs_data_get_double(settings, SETTING_LUMA_MAX_SMOOTH);
-	double lumaMinSmooth =
-		obs_data_get_double(settings, SETTING_LUMA_MIN_SMOOTH);
+	double lumaMaxSmooth = obs_data_get_double(settings, SETTING_LUMA_MAX_SMOOTH);
+	double lumaMinSmooth = obs_data_get_double(settings, SETTING_LUMA_MIN_SMOOTH);
 
 	filter->luma_max = (float)lumaMax;
 	filter->luma_min = (float)lumaMin;
@@ -68,12 +66,9 @@ static void luma_key_destroy(void *data)
 	bfree(data);
 }
 
-static void *luma_key_create_internal(obs_data_t *settings,
-				      obs_source_t *context,
-				      const char *effect_name)
+static void *luma_key_create_internal(obs_data_t *settings, obs_source_t *context, const char *effect_name)
 {
-	struct luma_key_filter_data *filter =
-		bzalloc(sizeof(struct luma_key_filter_data));
+	struct luma_key_filter_data *filter = bzalloc(sizeof(struct luma_key_filter_data));
 	char *effect_path = obs_module_file(effect_name);
 
 	filter->context = context;
@@ -82,14 +77,10 @@ static void *luma_key_create_internal(obs_data_t *settings,
 
 	filter->effect = gs_effect_create_from_file(effect_path, NULL);
 	if (filter->effect) {
-		filter->luma_max_param =
-			gs_effect_get_param_by_name(filter->effect, "lumaMax");
-		filter->luma_min_param =
-			gs_effect_get_param_by_name(filter->effect, "lumaMin");
-		filter->luma_max_smooth_param = gs_effect_get_param_by_name(
-			filter->effect, "lumaMaxSmooth");
-		filter->luma_min_smooth_param = gs_effect_get_param_by_name(
-			filter->effect, "lumaMinSmooth");
+		filter->luma_max_param = gs_effect_get_param_by_name(filter->effect, "lumaMax");
+		filter->luma_min_param = gs_effect_get_param_by_name(filter->effect, "lumaMin");
+		filter->luma_max_smooth_param = gs_effect_get_param_by_name(filter->effect, "lumaMaxSmooth");
+		filter->luma_min_smooth_param = gs_effect_get_param_by_name(filter->effect, "lumaMinSmooth");
 	}
 
 	obs_leave_graphics();
@@ -107,14 +98,12 @@ static void *luma_key_create_internal(obs_data_t *settings,
 
 static void *luma_key_create_v1(obs_data_t *settings, obs_source_t *context)
 {
-	return luma_key_create_internal(settings, context,
-					"luma_key_filter.effect");
+	return luma_key_create_internal(settings, context, "luma_key_filter.effect");
 }
 
 static void *luma_key_create_v2(obs_data_t *settings, obs_source_t *context)
 {
-	return luma_key_create_internal(settings, context,
-					"luma_key_filter_v2.effect");
+	return luma_key_create_internal(settings, context, "luma_key_filter_v2.effect");
 }
 
 static void luma_key_render_internal(void *data, bool premultiplied)
@@ -128,33 +117,24 @@ static void luma_key_render_internal(void *data, bool premultiplied)
 	};
 
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_target(filter->context),
-		OBS_COUNTOF(preferred_spaces), preferred_spaces);
+		obs_filter_get_target(filter->context), OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	if (source_space == GS_CS_709_EXTENDED) {
 		obs_source_skip_video_filter(filter->context);
 	} else {
-		const enum gs_color_format format =
-			gs_get_format_from_space(source_space);
-		if (obs_source_process_filter_begin_with_color_space(
-			    filter->context, format, source_space,
-			    OBS_ALLOW_DIRECT_RENDERING)) {
-			gs_effect_set_float(filter->luma_max_param,
-					    filter->luma_max);
-			gs_effect_set_float(filter->luma_min_param,
-					    filter->luma_min);
-			gs_effect_set_float(filter->luma_max_smooth_param,
-					    filter->luma_max_smooth);
-			gs_effect_set_float(filter->luma_min_smooth_param,
-					    filter->luma_min_smooth);
+		const enum gs_color_format format = gs_get_format_from_space(source_space);
+		if (obs_source_process_filter_begin_with_color_space(filter->context, format, source_space,
+								     OBS_ALLOW_DIRECT_RENDERING)) {
+			gs_effect_set_float(filter->luma_max_param, filter->luma_max);
+			gs_effect_set_float(filter->luma_min_param, filter->luma_min);
+			gs_effect_set_float(filter->luma_max_smooth_param, filter->luma_max_smooth);
+			gs_effect_set_float(filter->luma_min_smooth_param, filter->luma_min_smooth);
 
 			if (premultiplied) {
 				gs_blend_state_push();
-				gs_blend_function(GS_BLEND_ONE,
-						  GS_BLEND_INVSRCALPHA);
+				gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 			}
 
-			obs_source_process_filter_end(filter->context,
-						      filter->effect, 0, 0);
+			obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
 			if (premultiplied) {
 				gs_blend_state_pop();
@@ -181,16 +161,11 @@ static obs_properties_t *luma_key_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_text(props, SETTING_SDR_ONLY_INFO,
-				TEXT_SDR_ONLY_INFO, OBS_TEXT_INFO);
-	obs_properties_add_float_slider(props, SETTING_LUMA_MAX, TEXT_LUMA_MAX,
-					0, 1, 0.0001);
-	obs_properties_add_float_slider(props, SETTING_LUMA_MAX_SMOOTH,
-					TEXT_LUMA_MAX_SMOOTH, 0, 1, 0.0001);
-	obs_properties_add_float_slider(props, SETTING_LUMA_MIN, TEXT_LUMA_MIN,
-					0, 1, 0.0001);
-	obs_properties_add_float_slider(props, SETTING_LUMA_MIN_SMOOTH,
-					TEXT_LUMA_MIN_SMOOTH, 0, 1, 0.0001);
+	obs_properties_add_text(props, SETTING_SDR_ONLY_INFO, TEXT_SDR_ONLY_INFO, OBS_TEXT_INFO);
+	obs_properties_add_float_slider(props, SETTING_LUMA_MAX, TEXT_LUMA_MAX, 0, 1, 0.0001);
+	obs_properties_add_float_slider(props, SETTING_LUMA_MAX_SMOOTH, TEXT_LUMA_MAX_SMOOTH, 0, 1, 0.0001);
+	obs_properties_add_float_slider(props, SETTING_LUMA_MIN, TEXT_LUMA_MIN, 0, 1, 0.0001);
+	obs_properties_add_float_slider(props, SETTING_LUMA_MIN_SMOOTH, TEXT_LUMA_MIN_SMOOTH, 0, 1, 0.0001);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -204,9 +179,8 @@ static void luma_key_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, SETTING_LUMA_MIN_SMOOTH, 0.0);
 }
 
-static enum gs_color_space
-luma_key_get_color_space(void *data, size_t count,
-			 const enum gs_color_space *preferred_spaces)
+static enum gs_color_space luma_key_get_color_space(void *data, size_t count,
+						    const enum gs_color_space *preferred_spaces)
 {
 	UNUSED_PARAMETER(count);
 	UNUSED_PARAMETER(preferred_spaces);
@@ -219,8 +193,7 @@ luma_key_get_color_space(void *data, size_t count,
 
 	struct luma_key_filter_data *const filter = data;
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_target(filter->context),
-		OBS_COUNTOF(potential_spaces), potential_spaces);
+		obs_filter_get_target(filter->context), OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	return source_space;
 }

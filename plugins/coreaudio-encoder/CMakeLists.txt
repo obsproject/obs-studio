@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 if(OS_WINDOWS)
   option(ENABLE_COREAUDIO_ENCODER "Enable building with CoreAudio encoder (Windows)" ON)
@@ -15,20 +13,18 @@ add_library(OBS::coreaudio-encoder ALIAS coreaudio-encoder)
 
 target_sources(coreaudio-encoder PRIVATE encoder.cpp $<$<PLATFORM_ID:Windows>:windows-imports.h>)
 
-# cmake-format: off
 target_link_libraries(
   coreaudio-encoder
-  PRIVATE OBS::libobs
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AudioToolbox.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>>"
-          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>")
-# cmake-format: on
+  PRIVATE
+    OBS::libobs
+    "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,AudioToolbox.framework>>"
+    "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreAudio.framework>>"
+    "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>>"
+)
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in coreaudio-encoder.rc)
   target_sources(coreaudio-encoder PRIVATE coreaudio-encoder.rc)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(coreaudio-encoder PROPERTIES FOLDER plugins PREFIX "")
-# cmake-format: on

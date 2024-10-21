@@ -16,10 +16,12 @@ function(target_add_idl_files target)
     add_custom_command(
       OUTPUT "${idl_file_header}" "${idl_file_source}"
       DEPENDS "${idl_file}"
-      COMMAND midl /h "${idl_file_name}.h" /iid "${idl_file_name}_i.c" "$<$<NOT:$<BOOL:${_AIF_WITH_TLIB}>>:/notlb>"
-              /win64 "${CMAKE_CURRENT_SOURCE_DIR}/${idl_file}"
+      COMMAND
+        midl /h "${idl_file_name}.h" /iid "${idl_file_name}_i.c" "$<$<NOT:$<BOOL:${_AIF_WITH_TLIB}>>:/notlb>" /win64
+        "${CMAKE_CURRENT_SOURCE_DIR}/${idl_file}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-      COMMENT "Generate idl files")
+      COMMENT "Generate idl files"
+    )
 
     set_source_files_properties(${idl_file} PROPERTIES HEADER_FILE_ONLY TRUE)
     target_sources(${target} PRIVATE "${idl_file_source}" "${idl_file_header}")

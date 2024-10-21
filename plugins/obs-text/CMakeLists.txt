@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(obs-text MODULE)
 add_library(OBS::text ALIAS obs-text)
@@ -11,6 +9,4 @@ target_sources(obs-text PRIVATE gdiplus/obs-text.cpp obs-text.rc)
 
 target_link_libraries(obs-text PRIVATE OBS::libobs gdiplus)
 
-# cmake-format: off
 set_target_properties_obs(obs-text PROPERTIES FOLDER plugins PREFIX "")
-# cmake-format: on

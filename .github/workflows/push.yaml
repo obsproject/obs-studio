@@ -29,7 +29,7 @@ jobs:
   compatibility-validation:
     name: Validate Compatibility 🕵️
     if: github.ref_name == 'master'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       checks: write
     steps:
@@ -53,7 +53,7 @@ jobs:
   services-validation:
     name: Validate Services 🕵️
     if: github.ref_name == 'master'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       checks: write
     steps:
@@ -79,7 +79,7 @@ jobs:
   update-documentation:
     name: Update Documentation 📖
     if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -101,7 +101,7 @@ jobs:
   deploy-documentation:
     name: Deploy Documentation to Cloudflare ☁️
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: update-documentation
     defaults:
       run:
@@ -129,7 +129,7 @@ jobs:
           echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
 
       - name: Publish to Live Page
-        uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
+        uses: cloudflare/wrangler-action@f84a562284fc78278ff9052435d9526f9c718361
         with:
           workingDirectory: docs
           apiToken: ${{ secrets.CF_API_TOKEN }}
@@ -195,7 +195,7 @@ jobs:
           path: ${{ github.workspace }}/output
 
   merge-appcasts:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: create-appcast
     steps:
       - name: Merge Appcasts
@@ -207,7 +207,7 @@ jobs:
 
   sign-windows-build:
     name: Windows Signing ✍️
-    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@d2b05a6e0c6a0f51c42f247efd581bed8f4a1877
+    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@dc7a58484d3ef2c610a5184dd05d1d02dbd3e549
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
     needs: build-project
     permissions:
@@ -219,7 +219,7 @@ jobs:
   create-release:
     name: Create Release 🛫
     if: github.ref_type == 'tag'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [build-project, sign-windows-build]
     defaults:
       run:
@@ -263,8 +263,6 @@ jobs:
           macos_arm64_dsym_artifact_name="obs-studio-macos-arm64-${commit_hash}-dSYMs"
           macos_intel_artifact_name="obs-studio-macos-x86_64-${commit_hash}"
           macos_intel_dsym_artifact_name="obs-studio-macos-x86_64-${commit_hash}-dSYMs"
-          ubuntu_2204_x86_64_artifact_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}"
-          ubuntu_2204_x86_64_debug_name="obs-studio-ubuntu-22.04-x86_64-${commit_hash}-dbgsym"
           ubuntu_2404_x86_64_artifact_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}"
           ubuntu_2404_x86_64_debug_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}-dbgsym"
           ubuntu_2404_sources_name="obs-studio-ubuntu-24.04-sources-${commit_hash}"
@@ -281,10 +279,6 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel.dmg
           mv -v "${macos_intel_dsym_artifact_name}/"obs-studio-*-macos-intel-dSYMs.tar.xz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel-dSYMs.tar.xz
-          mv -v "${ubuntu_2204_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-22.04-x86_64.deb
-          mv -v "${ubuntu_2204_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-22.04-x86_64-dbsym.ddeb
           mv -v "${ubuntu_2404_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64.deb
           mv -v "${ubuntu_2404_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
@@ -314,7 +308,7 @@ jobs:
       - name: Create Release 🛫
         if: fromJSON(steps.check.outputs.validTag)
         id: create_release
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
         with:
           draft: true
           prerelease: ${{ fromJSON(steps.check.outputs.prerelease) }}

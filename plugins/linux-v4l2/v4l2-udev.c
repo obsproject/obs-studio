@@ -27,15 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "v4l2-udev.h"
 
 /** udev action enum */
-enum udev_action {
-	UDEV_ACTION_ADDED,
-	UDEV_ACTION_REMOVED,
-	UDEV_ACTION_UNKNOWN
-};
+enum udev_action { UDEV_ACTION_ADDED, UDEV_ACTION_REMOVED, UDEV_ACTION_UNKNOWN };
 
-static const char *udev_signals[] = {"void device_added(string device)",
-				     "void device_removed(string device)",
-				     NULL};
+static const char *udev_signals[] = {"void device_added(string device)", "void device_removed(string device)", NULL};
 
 /* global data */
 static uint_fast32_t udev_refs = 0;
@@ -88,12 +82,10 @@ static inline void udev_signal_event(struct udev_device *dev)
 
 	switch (action) {
 	case UDEV_ACTION_ADDED:
-		signal_handler_signal(udev_signalhandler, "device_added",
-				      &data);
+		signal_handler_signal(udev_signalhandler, "device_added", &data);
 		break;
 	case UDEV_ACTION_REMOVED:
-		signal_handler_signal(udev_signalhandler, "device_removed",
-				      &data);
+		signal_handler_signal(udev_signalhandler, "device_removed", &data);
 		break;
 	default:
 		break;
@@ -120,8 +112,7 @@ static void *udev_event_thread(void *vptr)
 	os_set_thread_name("v4l2: udev");
 	udev = udev_new();
 	mon = udev_monitor_new_from_netlink(udev, "udev");
-	udev_monitor_filter_add_match_subsystem_devtype(mon, "video4linux",
-							NULL);
+	udev_monitor_filter_add_match_subsystem_devtype(mon, "video4linux", NULL);
 	if (udev_monitor_enable_receiving(mon) < 0)
 		return NULL;
 
@@ -168,8 +159,7 @@ void v4l2_init_udev(void)
 			goto fail;
 		if ((udev_event_fd = eventfd(0, EFD_CLOEXEC)) < 0)
 			goto fail;
-		if (pthread_create(&udev_thread, NULL, udev_event_thread,
-				   NULL) != 0) {
+		if (pthread_create(&udev_thread, NULL, udev_event_thread, NULL) != 0) {
 			close(udev_event_fd);
 			goto fail;
 		}

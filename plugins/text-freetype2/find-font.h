@@ -38,6 +38,4 @@ extern char *sfnt_name_to_utf8(FT_SfntName *sfnt_name);
 extern bool load_cached_os_font_list(void);
 extern void load_os_font_list(void);
 extern void free_os_font_list(void);
-extern const char *get_font_path(const char *family, uint16_t size,
-				 const char *style, uint32_t flags,
-				 FT_Long *idx);
+extern const char *get_font_path(const char *family, uint16_t size, const char *style, uint32_t flags, FT_Long *idx);

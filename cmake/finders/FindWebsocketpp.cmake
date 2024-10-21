@@ -31,22 +31,22 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_path(
   Websocketpp_INCLUDE_DIR
   NAMES websocketpp/client.hpp
   PATHS /usr/include /usr/local/include
-  DOC "WebSocket++ include directory")
+  DOC "WebSocket++ include directory"
+)
 
 if(EXISTS "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp")
-  file(STRINGS "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp" _version_string
-       REGEX "^.*(major|minor|patch)_version[ \t]+=[ \t]+[0-9]+")
+  file(
+    STRINGS
+    "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp"
+    _version_string
+    REGEX "^.*(major|minor|patch)_version[ \t]+=[ \t]+[0-9]+"
+  )
 
   string(REGEX REPLACE ".*major_version[ \t]+=[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
   string(REGEX REPLACE ".*minor_version[ \t]+=[ \t]+([0-9]+).*" "\\1" _version_minor "${_version_string}")
@@ -72,20 +72,26 @@ endif()
 find_package_handle_standard_args(
   Websocketpp
   REQUIRED_VARS Websocketpp_INCLUDE_DIR
-  VERSION_VAR Websocketpp_VERSION REASON_FAILURE_MESSAGE "${Websocketpp_ERROR_REASON}")
+  VERSION_VAR Websocketpp_VERSION
+  REASON_FAILURE_MESSAGE "${Websocketpp_ERROR_REASON}"
+)
 mark_as_advanced(Websocketpp_INCLUDE_DIR)
 unset(Websocketpp_ERROR_REASON)
 
 if(Websocketpp_FOUND)
   if(NOT TARGET Websocketpp::Websocketpp)
     add_library(Websocketpp::Websocketpp INTERFACE IMPORTED)
-    set_target_properties(Websocketpp::Websocketpp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                              "${Websocketpp_INCLUDE_DIR}")
+    set_target_properties(
+      Websocketpp::Websocketpp
+      PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Websocketpp_INCLUDE_DIR}"
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Websocketpp PROPERTIES
-  URL "https://www.zaphoyd.com/websocketpp/"
-  DESCRIPTION "WebSocket++ is a header only C++ library that implements RFC6455 The WebSocket Protocol.")
+  Websocketpp
+  PROPERTIES
+    URL "https://www.zaphoyd.com/websocketpp/"
+    DESCRIPTION "WebSocket++ is a header only C++ library that implements RFC6455 The WebSocket Protocol."
+)

@@ -114,6 +114,20 @@
             "message": "UWP applications may not be capturable using the selected Capture Method (BitBlt).",
             "url": ""
         },
+	{
+            "name": "WinUI 3",
+            "translation_key": "Compatibility.WindowCapture.BitBlt.Applications",
+            "severity": 0,
+            "executable": "",
+            "window_class": "WinUIDesktopWin32WindowClass",
+            "window_title": "",
+            "match_flags": 4,
+            "game_capture": false,
+            "window_capture": true,
+            "window_capture_wgc": false,
+            "message": "WinUI 3 applications may not be capturable using the selected Capture Method (BitBlt).",
+            "url": ""
+        },
         {
             "name": "Gaming Services",
             "translation_key": "Compatibility.WindowCapture.BitBlt.Applications",
@@ -546,6 +560,20 @@
             "window_capture": false,
             "window_capture_wgc": false,
             "message": "Honkai: Star Rail may require OBS to be run as admin to use Game Capture.",
+            "url": "https://obsproject.com/kb/game-capture-troubleshooting"
+        },
+        {
+            "name": "Zenless Zone Zero",
+            "translation_key": "Compatibility.GameCapture.Admin",
+            "severity": 1,
+            "executable": "ZenlessZoneZero.exe",
+            "window_class": "",
+            "window_title": "",
+            "match_flags": 1,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "Zenless Zone Zero may require OBS to be run as admin to use Game Capture.",
             "url": "https://obsproject.com/kb/game-capture-troubleshooting"
         }
     ]

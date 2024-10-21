@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -52,14 +48,16 @@ find_path(
   NAMES libudev.h
   HINTS ${PC_Libudev_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Libudev include directory")
+  DOC "Libudev include directory"
+)
 
 find_library(
   Libudev_LIBRARY
   NAMES udev libudev
   HINTS ${PC_Libudev_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libudev location")
+  DOC "Libudev location"
+)
 
 if(PC_Libudev_VERSION VERSION_GREATER 0)
   set(Libudev_VERSION ${PC_Libudev_VERSION})
@@ -73,7 +71,9 @@ endif()
 find_package_handle_standard_args(
   Libudev
   REQUIRED_VARS Libudev_LIBRARY Libudev_INCLUDE_DIR
-  VERSION_VAR Libudev_VERSION REASON_FAILURE_MESSAGE "Ensure that Libudev is installed on the system.")
+  VERSION_VAR Libudev_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that Libudev is installed on the system."
+)
 mark_as_advanced(Libudev_INCLUDE_DIR Libudev_LIBRARY)
 
 if(Libudev_FOUND)
@@ -88,14 +88,18 @@ if(Libudev_FOUND)
 
     set_target_properties(
       Libudev::Libudev
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libudev_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Libudev_INCLUDE_DIR}"
-                 VERSION ${Libudev_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libudev_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libudev_INCLUDE_DIR}"
+        VERSION ${Libudev_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Libudev PROPERTIES
-  URL "https://www.freedesktop.org/wiki/Software/systemd/"
-  DESCRIPTION "API for enumerating and introspecting local devices.")
+  Libudev
+  PROPERTIES
+    URL "https://www.freedesktop.org/wiki/Software/systemd/"
+    DESCRIPTION "API for enumerating and introspecting local devices."
+)

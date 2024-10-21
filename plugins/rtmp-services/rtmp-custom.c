@@ -49,8 +49,7 @@ static void *rtmp_custom_create(obs_data_t *settings, obs_service_t *service)
 	return data;
 }
 
-static bool use_auth_modified(obs_properties_t *ppts, obs_property_t *p,
-			      obs_data_t *settings)
+static bool use_auth_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
 {
 	bool use_auth = obs_data_get_bool(settings, "use_auth");
 	p = obs_properties_get(ppts, "username");
@@ -69,15 +68,11 @@ static obs_properties_t *rtmp_custom_properties(void *unused)
 
 	obs_properties_add_text(ppts, "server", "URL", OBS_TEXT_DEFAULT);
 
-	obs_properties_add_text(ppts, "key", obs_module_text("StreamKey"),
-				OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "key", obs_module_text("StreamKey"), OBS_TEXT_PASSWORD);
 
-	p = obs_properties_add_bool(ppts, "use_auth",
-				    obs_module_text("UseAuth"));
-	obs_properties_add_text(ppts, "username", obs_module_text("Username"),
-				OBS_TEXT_DEFAULT);
-	obs_properties_add_text(ppts, "password", obs_module_text("Password"),
-				OBS_TEXT_PASSWORD);
+	p = obs_properties_add_bool(ppts, "use_auth", obs_module_text("UseAuth"));
+	obs_properties_add_text(ppts, "username", obs_module_text("Username"), OBS_TEXT_DEFAULT);
+	obs_properties_add_text(ppts, "password", obs_module_text("Password"), OBS_TEXT_PASSWORD);
 	obs_property_set_modified_callback(p, use_auth_modified);
 	return ppts;
 }
@@ -111,7 +106,6 @@ static const char *rtmp_custom_password(void *data)
 }
 
 #define RTMPS_PREFIX "rtmps://"
-#define FTL_PREFIX "ftl://"
 #define SRT_PREFIX "srt://"
 #define RIST_PREFIX "rist://"
 
@@ -122,9 +116,6 @@ static const char *rtmp_custom_get_protocol(void *data)
 	if (strncmp(service->server, RTMPS_PREFIX, strlen(RTMPS_PREFIX)) == 0)
 		return "RTMPS";
 
-	if (strncmp(service->server, FTL_PREFIX, strlen(FTL_PREFIX)) == 0)
-		return "FTL";
-
 	if (strncmp(service->server, SRT_PREFIX, strlen(SRT_PREFIX)) == 0)
 		return "SRT";
 
@@ -134,8 +125,7 @@ static const char *rtmp_custom_get_protocol(void *data)
 	return "RTMP";
 }
 
-static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
-				       obs_data_t *audio_settings)
+static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings, obs_data_t *audio_settings)
 {
 	struct rtmp_custom *service = data;
 	const char *protocol = rtmp_custom_get_protocol(service);

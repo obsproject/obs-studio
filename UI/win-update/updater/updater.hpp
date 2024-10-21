@@ -78,14 +78,11 @@ using B2Hash = std::array<std::byte, kBlake2HashLength>;
 #include <util/windows/WinHandle.hpp>
 #include "resource.h"
 
-bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url,
-		 const wchar_t *outputPath, const wchar_t *extraHeaders,
+bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url, const wchar_t *outputPath, const wchar_t *extraHeaders,
 		 int *responseCode);
-bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url,
-		   const wchar_t *extraHeaders, std::vector<std::byte> &out,
+bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url, const wchar_t *extraHeaders, std::vector<std::byte> &out,
 		   int *responseCode);
-bool HTTPPostData(const wchar_t *url, const BYTE *data, int dataLen,
-		  const wchar_t *extraHeaders, int *responseCode,
+bool HTTPPostData(const wchar_t *url, const BYTE *data, int dataLen, const wchar_t *extraHeaders, int *responseCode,
 		  std::string &response);
 
 void HashToString(const B2Hash &in, std::string &out);
@@ -93,8 +90,7 @@ void StringToHash(const std::string &in, B2Hash &out);
 
 bool CalculateFileHash(const wchar_t *path, B2Hash &hash);
 
-int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data,
-	       size_t patch_size, const wchar_t *targetFile);
+int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data, size_t patch_size, const wchar_t *targetFile);
 
 extern HWND hwndMain;
 extern HCRYPTPROV hProvider;

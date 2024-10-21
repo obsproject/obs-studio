@@ -39,8 +39,7 @@ void CleanupSceneSwitcher()
 static bool ewmhIsSupported()
 {
 	Display *display = disp();
-	Atom netSupportingWmCheck =
-		XInternAtom(display, "_NET_SUPPORTING_WM_CHECK", true);
+	Atom netSupportingWmCheck = XInternAtom(display, "_NET_SUPPORTING_WM_CHECK", true);
 	Atom actualType;
 	int format = 0;
 	unsigned long num = 0, bytes = 0;
@@ -53,10 +52,8 @@ static bool ewmhIsSupported()
 		return false;
 	}
 
-	int status = XGetWindowProperty(display, root_window,
-					netSupportingWmCheck, 0L, 1L, false,
-					XA_WINDOW, &actualType, &format, &num,
-					&bytes, &data);
+	int status = XGetWindowProperty(display, root_window, netSupportingWmCheck, 0L, 1L, false, XA_WINDOW,
+					&actualType, &format, &num, &bytes, &data);
 
 	if (status == Success) {
 		if (num > 0) {
@@ -69,12 +66,9 @@ static bool ewmhIsSupported()
 	}
 
 	if (ewmh_window) {
-		status = XGetWindowProperty(display, ewmh_window,
-					    netSupportingWmCheck, 0L, 1L, false,
-					    XA_WINDOW, &actualType, &format,
-					    &num, &bytes, &data);
-		if (status != Success || num == 0 ||
-		    ewmh_window != ((Window *)data)[0]) {
+		status = XGetWindowProperty(display, ewmh_window, netSupportingWmCheck, 0L, 1L, false, XA_WINDOW,
+					    &actualType, &format, &num, &bytes, &data);
+		if (status != Success || num == 0 || ewmh_window != ((Window *)data)[0]) {
 			ewmh_window = 0;
 		}
 		if (status == Success && data) {
@@ -107,10 +101,8 @@ static std::vector<Window> getTopLevelWindows()
 			continue;
 		}
 
-		int status = XGetWindowProperty(disp(), rootWin, netClList, 0L,
-						~0L, false, AnyPropertyType,
-						&actualType, &format, &num,
-						&bytes, (uint8_t **)&data);
+		int status = XGetWindowProperty(disp(), rootWin, netClList, 0L, ~0L, false, AnyPropertyType,
+						&actualType, &format, &num, &bytes, (uint8_t **)&data);
 
 		if (status != Success) {
 			continue;
@@ -141,8 +133,7 @@ static std::string GetWindowTitle(size_t i)
 		XFree(name);
 	} else {
 		XTextProperty xtp_new_name;
-		if (XGetWMName(disp(), w, &xtp_new_name) != 0 &&
-		    xtp_new_name.value != nullptr) {
+		if (XGetWMName(disp(), w, &xtp_new_name) != 0 && xtp_new_name.value != nullptr) {
 			std::string str((const char *)xtp_new_name.value);
 			windowTitle = str;
 			XFree(xtp_new_name.value);
@@ -180,8 +171,7 @@ void GetCurrentWindowTitle(string &title)
 		return;
 	}
 
-	XGetWindowProperty(disp(), rootWin, active, 0L, ~0L, false,
-			   AnyPropertyType, &actualType, &format, &num, &bytes,
+	XGetWindowProperty(disp(), rootWin, active, 0L, ~0L, false, AnyPropertyType, &actualType, &format, &num, &bytes,
 			   (uint8_t **)&data);
 
 	if (!data[0]) {
@@ -194,8 +184,7 @@ void GetCurrentWindowTitle(string &title)
 		title = str;
 	} else {
 		XTextProperty xtp_new_name;
-		if (XGetWMName(disp(), data[0], &xtp_new_name) != 0 &&
-		    xtp_new_name.value != nullptr) {
+		if (XGetWMName(disp(), data[0], &xtp_new_name) != 0 && xtp_new_name.value != nullptr) {
 			std::string str((const char *)xtp_new_name.value);
 			title = str;
 			XFree(xtp_new_name.value);

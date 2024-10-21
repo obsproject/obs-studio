@@ -52,15 +52,13 @@ bool CalculateFileHash(const wchar_t *path, B2Hash &hash)
 
 	hashBuffer.resize(1048576);
 
-	WinHandle handle = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ,
-				       nullptr, OPEN_EXISTING, 0, nullptr);
+	WinHandle handle = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
 	if (handle == INVALID_HANDLE_VALUE)
 		return false;
 
 	for (;;) {
 		DWORD read = 0;
-		if (!ReadFile(handle, hashBuffer.data(),
-			      (DWORD)hashBuffer.size(), &read, nullptr))
+		if (!ReadFile(handle, hashBuffer.data(), (DWORD)hashBuffer.size(), &read, nullptr))
 			return false;
 
 		if (!read)

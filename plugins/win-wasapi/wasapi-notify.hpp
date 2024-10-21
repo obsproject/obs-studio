@@ -7,8 +7,7 @@
 #include <functional>
 #include <mutex>
 
-typedef std::function<void(EDataFlow, ERole, LPCWSTR)>
-	WASAPINotifyDefaultDeviceChangedCallback;
+typedef std::function<void(EDataFlow, ERole, LPCWSTR)> WASAPINotifyDefaultDeviceChangedCallback;
 
 class NotificationClient;
 
@@ -17,8 +16,7 @@ public:
 	WASAPINotify();
 	~WASAPINotify();
 
-	void AddDefaultDeviceChangedCallback(
-		void *handle, WASAPINotifyDefaultDeviceChangedCallback cb);
+	void AddDefaultDeviceChangedCallback(void *handle, WASAPINotifyDefaultDeviceChangedCallback cb);
 	void RemoveDefaultDeviceChangedCallback(void *handle);
 
 private:
@@ -29,6 +27,5 @@ private:
 	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<NotificationClient> notificationClient;
 
-	std::unordered_map<void *, WASAPINotifyDefaultDeviceChangedCallback>
-		defaultDeviceChangedCallbacks;
+	std::unordered_map<void *, WASAPINotifyDefaultDeviceChangedCallback> defaultDeviceChangedCallbacks;
 };

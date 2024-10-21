@@ -3,9 +3,12 @@
 include_guard(GLOBAL)
 
 # Define build number cache file
-set(_BUILD_NUMBER_CACHE
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/.CMakeBuildNumber"
-    CACHE INTERNAL "OBS build number cache file")
+set(
+  _BUILD_NUMBER_CACHE
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/.CMakeBuildNumber"
+  CACHE INTERNAL
+  "OBS build number cache file"
+)
 
 # Read build number from cache file or manual override
 if(NOT DEFINED OBS_BUILD_NUMBER)

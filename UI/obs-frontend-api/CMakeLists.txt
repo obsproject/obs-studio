@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(obs-frontend-api SHARED)
 add_library(OBS::frontend-api ALIAS obs-frontend-api)
@@ -18,12 +16,10 @@ elseif(OS_MACOS)
   set_target_properties(obs-frontend-api PROPERTIES SOVERSION 1)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(obs-frontend-api PROPERTIES FOLDER frontend PUBLIC_HEADER obs-frontend-api.h)
 
-if (OS_WINDOWS OR OS_MACOS)
+if(OS_WINDOWS OR OS_MACOS)
   set_property(TARGET obs-frontend-api PROPERTY PREFIX "")
 endif()
-# cmake-format: on
 
 target_export(obs-frontend-api)

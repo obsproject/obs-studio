@@ -25,8 +25,7 @@ public:
 
 typedef std::function<void(const std::string &)> captions_cb;
 
-#define CAPTIONS_ERROR_GENERIC_FAIL \
-	std::string(obs_module_text("Captions.Error.GenericFail"))
+#define CAPTIONS_ERROR_GENERIC_FAIL std::string(obs_module_text("Captions.Error.GenericFail"))
 
 /* ------------------------------------------------------------------------- */
 
@@ -44,8 +43,7 @@ protected:
 
 public:
 	/* throw std::string for errors shown to users */
-	captions_handler(captions_cb callback, enum audio_format format,
-			 uint32_t sample_rate);
+	captions_handler(captions_cb callback, enum audio_format format, uint32_t sample_rate);
 	virtual ~captions_handler() {}
 
 	void push_audio(const audio_data *audio);

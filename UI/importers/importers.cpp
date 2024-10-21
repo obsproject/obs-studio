@@ -32,8 +32,7 @@ void ImportersInit()
 	importers.push_back(make_unique<XSplitImporter>());
 }
 
-int ImportSCFromProg(const string &path, string &name, const string &program,
-		     Json &res)
+int ImportSCFromProg(const string &path, string &name, const string &program, Json &res)
 {
 	if (!os_file_exists(path.c_str())) {
 		return IMPORTER_FILE_NOT_FOUND;

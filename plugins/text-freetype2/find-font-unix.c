@@ -31,8 +31,7 @@ bool load_cached_os_font_list(void)
 
 void load_os_font_list(void) {}
 
-const char *get_font_path(const char *family, uint16_t size, const char *style,
-			  uint32_t flags, FT_Long *idx)
+const char *get_font_path(const char *family, uint16_t size, const char *style, uint32_t flags, FT_Long *idx)
 {
 	bool bold = !!(flags & OBS_FONT_BOLD);
 	bool italic = !!(flags & OBS_FONT_ITALIC);
@@ -46,10 +45,8 @@ const char *get_font_path(const char *family, uint16_t size, const char *style,
 
 	FcPatternAddString(pattern, FC_FAMILY, (const FcChar8 *)family);
 	FcPatternAddString(pattern, FC_STYLE, (const FcChar8 *)style);
-	FcPatternAddInteger(pattern, FC_WEIGHT,
-			    bold ? FC_WEIGHT_BOLD : FC_WEIGHT_REGULAR);
-	FcPatternAddInteger(pattern, FC_SLANT,
-			    italic ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
+	FcPatternAddInteger(pattern, FC_WEIGHT, bold ? FC_WEIGHT_BOLD : FC_WEIGHT_REGULAR);
+	FcPatternAddInteger(pattern, FC_SLANT, italic ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
 	FcPatternAddDouble(pattern, FC_SIZE, (double)size);
 
 	FcConfigSubstitute(NULL, pattern, FcMatchPattern);
@@ -57,8 +54,7 @@ const char *get_font_path(const char *family, uint16_t size, const char *style,
 
 	match = FcFontMatch(NULL, pattern, &match_result);
 	if (match) {
-		FcChar8 *path =
-			FcPatternFormat(match, (const FcChar8 *)"%{file}");
+		FcChar8 *path = FcPatternFormat(match, (const FcChar8 *)"%{file}");
 		strncpy(result, (char *)path, 511);
 		FcStrFree(path);
 

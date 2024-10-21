@@ -90,13 +90,6 @@ runs:
         Ensure-Location "${{ github.workspace }}/old_builds"
         rclone copy --transfers 100 ":gcs:obs-latest/${{ inputs.channel }}" .
 
-    - name: Download Presigned Game Capture Files (REMOVE AFTER 30.2!!)
-      shell: pwsh
-      env:
-        RCLONE_GCS_ENV_AUTH: 'true'
-      run: |
-        rclone copy :gcs:obs-game-capture "${{ github.workspace }}/build/data/obs-plugins/win-capture"
-
     - name: Run bouf
       shell: pwsh
       run: |

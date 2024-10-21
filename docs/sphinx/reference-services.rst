@@ -241,15 +241,6 @@ General Service Functions
 
 ---------------------
 
-.. function:: void obs_service_addref(obs_service_t *service)
-
-   Adds a reference to a service.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_service_get_ref()` instead.
-
----------------------
-
 .. function:: obs_service_t *obs_service_get_ref(obs_service_t *service)
 
    Returns an incremented reference if still valid, otherwise returns
@@ -316,42 +307,6 @@ General Service Functions
 .. function:: void obs_service_update(obs_service_t *service, obs_data_t *settings)
 
    Updates the settings for this service context.
-
----------------------
-
-.. function:: const char *obs_service_get_url(const obs_service_t *service)
-
-  :return: The URL currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
-
----------------------
-
-.. function:: const char *obs_service_get_key(const obs_service_t *service)
-
-  :return: Stream key (if any) currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
-
----------------------
-
-.. function:: const char *obs_service_get_username(const obs_service_t *service)
-
-   :return: User name (if any) currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
-
----------------------
-
-.. function:: const char *obs_service_get_password(const obs_service_t *service)
-
-   :return: Password (if any) currently used for this service
-
-.. deprecated:: 29.1.0
-   Use :c:func:`obs_service_get_connect_info()` instead.
 
 ---------------------
 

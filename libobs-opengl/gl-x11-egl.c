@@ -34,8 +34,8 @@
 
 #include <glad/glad_egl.h>
 
-typedef EGLDisplay(EGLAPIENTRYP PFNEGLGETPLATFORMDISPLAYEXTPROC)(
-	EGLenum platform, void *native_display, const EGLint *attrib_list);
+typedef EGLDisplay(EGLAPIENTRYP PFNEGLGETPLATFORMDISPLAYEXTPROC)(EGLenum platform, void *native_display,
+								 const EGLint *attrib_list);
 
 static const int ctx_attribs[] = {
 #ifdef _DEBUG
@@ -87,8 +87,7 @@ struct gl_platform {
 
 /* The following utility function is copied verbatim from GLX code. */
 
-static xcb_get_geometry_reply_t *get_window_geometry(xcb_connection_t *xcb_conn,
-						     xcb_drawable_t drawable)
+static xcb_get_geometry_reply_t *get_window_geometry(xcb_connection_t *xcb_conn, xcb_drawable_t drawable)
 {
 	xcb_get_geometry_cookie_t cookie;
 	xcb_generic_error_t *error;
@@ -148,16 +147,13 @@ static EGLDisplay get_egl_display(struct gl_platform *plat)
 	egl_client_extensions = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
 
 	PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
-		(PFNEGLGETPLATFORMDISPLAYEXTPROC)(strstr(egl_client_extensions,
-							 "EGL_EXT_platform_base")
-							  ? eglGetProcAddress(
-								    "eglGetPlatformDisplayEXT")
+		(PFNEGLGETPLATFORMDISPLAYEXTPROC)(strstr(egl_client_extensions, "EGL_EXT_platform_base")
+							  ? eglGetProcAddress("eglGetPlatformDisplayEXT")
 							  : NULL);
 
 	if (eglGetPlatformDisplayEXT) {
 		const EGLint plat_attribs[] = {EGL_NONE};
-		edisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_X11_EXT,
-						    display, plat_attribs);
+		edisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_X11_EXT, display, plat_attribs);
 		if (EGL_NO_DISPLAY == edisplay)
 			blog(LOG_ERROR, "Failed to get EGL/X11 display");
 	}
@@ -183,54 +179,42 @@ static bool gl_context_create(struct gl_platform *plat)
 	edisplay = get_egl_display(plat);
 
 	if (EGL_NO_DISPLAY == edisplay) {
-		blog(LOG_ERROR,
-		     "Failed to get EGL display using eglGetDisplay");
+		blog(LOG_ERROR, "Failed to get EGL display using eglGetDisplay");
 		return false;
 	}
 
 	if (!eglInitialize(edisplay, &egl_maj, &egl_min)) {
-		blog(LOG_ERROR, "Failed to initialize EGL: %s",
-		     get_egl_error_string());
+		blog(LOG_ERROR, "Failed to initialize EGL: %s", get_egl_error_string());
 		return false;
 	}
 
-	if (!eglChooseConfig(edisplay, ctx_config_attribs, &config, 1,
-			     &frame_buf_config_count)) {
-		blog(LOG_ERROR, "Unable to find suitable EGL config: %s",
-		     get_egl_error_string());
+	if (!eglChooseConfig(edisplay, ctx_config_attribs, &config, 1, &frame_buf_config_count)) {
+		blog(LOG_ERROR, "Unable to find suitable EGL config: %s", get_egl_error_string());
 		goto error;
 	}
 
-	context =
-		eglCreateContext(edisplay, config, EGL_NO_CONTEXT, ctx_attribs);
+	context = eglCreateContext(edisplay, config, EGL_NO_CONTEXT, ctx_attribs);
 #ifdef _DEBUG
 	if (EGL_NO_CONTEXT == context) {
 		const EGLint error = eglGetError();
 		if (error == EGL_BAD_ATTRIBUTE) {
 			/* Sometimes creation fails because debug gl is not supported */
-			blog(LOG_ERROR,
-			     "Unable to create EGL context with DEBUG attrib, trying without");
-			context = eglCreateContext(edisplay, config,
-						   EGL_NO_CONTEXT,
-						   ctx_attribs + 2);
+			blog(LOG_ERROR, "Unable to create EGL context with DEBUG attrib, trying without");
+			context = eglCreateContext(edisplay, config, EGL_NO_CONTEXT, ctx_attribs + 2);
 		} else {
-			blog(LOG_ERROR, "Unable to create EGL context: %s",
-			     get_egl_error_string2(error));
+			blog(LOG_ERROR, "Unable to create EGL context: %s", get_egl_error_string2(error));
 			goto error;
 		}
 	}
 #endif
 	if (EGL_NO_CONTEXT == context) {
-		blog(LOG_ERROR, "Unable to create EGL context: %s",
-		     get_egl_error_string());
+		blog(LOG_ERROR, "Unable to create EGL context: %s", get_egl_error_string());
 		goto error;
 	}
 
-	plat->pbuffer =
-		eglCreatePbufferSurface(edisplay, config, ctx_pbuffer_attribs);
+	plat->pbuffer = eglCreatePbufferSurface(edisplay, config, ctx_pbuffer_attribs);
 	if (EGL_NO_SURFACE == plat->pbuffer) {
-		blog(LOG_ERROR, "Failed to create OpenGL pbuffer: %s",
-		     get_egl_error_string());
+		blog(LOG_ERROR, "Failed to create OpenGL pbuffer: %s", get_egl_error_string());
 		goto error;
 	}
 
@@ -254,13 +238,11 @@ error:
 
 static void gl_context_destroy(struct gl_platform *plat)
 {
-	eglMakeCurrent(plat->edisplay, EGL_NO_SURFACE, EGL_NO_SURFACE,
-		       EGL_NO_CONTEXT);
+	eglMakeCurrent(plat->edisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	eglDestroyContext(plat->edisplay, plat->context);
 }
 
-static struct gl_windowinfo *
-gl_x11_egl_windowinfo_create(const struct gs_init_data *info)
+static struct gl_windowinfo *gl_x11_egl_windowinfo_create(const struct gs_init_data *info)
 {
 	UNUSED_PARAMETER(info);
 	return bmalloc(sizeof(struct gl_windowinfo));
@@ -325,8 +307,7 @@ static int x_error_handler(Display *display, XErrorEvent *error)
 	return 0;
 }
 
-static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device,
-						      uint32_t adapter)
+static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device, uint32_t adapter)
 {
 	/* There's some trickery here... we're mixing libX11, xcb, and EGL
 	   For an explanation see here: http://xcb.freedesktop.org/MixingCalls/
@@ -351,10 +332,8 @@ static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device,
 		goto fail_context_create;
 	}
 
-	if (!eglMakeCurrent(plat->edisplay, plat->pbuffer, plat->pbuffer,
-			    plat->context)) {
-		blog(LOG_ERROR, "Failed to make context current: %s",
-		     get_egl_error_string());
+	if (!eglMakeCurrent(plat->edisplay, plat->pbuffer, plat->pbuffer, plat->context)) {
+		blog(LOG_ERROR, "Failed to make context current: %s", get_egl_error_string());
 		goto fail_make_current;
 	}
 
@@ -398,8 +377,7 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 	xcb_connection_t *xcb_conn = XGetXCBConnection(display);
 	xcb_window_t wid = xcb_generate_id(xcb_conn);
 	xcb_window_t parent = swap->info.window.id;
-	xcb_get_geometry_reply_t *geometry =
-		get_window_geometry(xcb_conn, parent);
+	xcb_get_geometry_reply_t *geometry = get_window_geometry(xcb_conn, parent);
 	bool status = false;
 
 	int visual;
@@ -408,12 +386,8 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 		goto fail_geometry_request;
 
 	{
-		if (!eglGetConfigAttrib(plat->edisplay, plat->config,
-					EGL_NATIVE_VISUAL_ID,
-					(EGLint *)&visual)) {
-			blog(LOG_ERROR,
-			     "Cannot get visual id for EGL context: %s",
-			     get_egl_error_string());
+		if (!eglGetConfigAttrib(plat->edisplay, plat->config, EGL_NATIVE_VISUAL_ID, (EGLint *)&visual)) {
+			blog(LOG_ERROR, "Cannot get visual id for EGL context: %s", get_egl_error_string());
 			goto fail_visual_id;
 		}
 	}
@@ -422,13 +396,11 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 	uint32_t mask = XCB_CW_BORDER_PIXEL | XCB_CW_COLORMAP;
 	uint32_t mask_values[] = {0, colormap, 0};
 
-	xcb_create_colormap(xcb_conn, XCB_COLORMAP_ALLOC_NONE, colormap, parent,
-			    visual);
+	xcb_create_colormap(xcb_conn, XCB_COLORMAP_ALLOC_NONE, colormap, parent, visual);
 
-	xcb_void_cookie_t window_cookie = xcb_create_window_checked(
-		xcb_conn, 24 /* Hardcoded? */, wid, parent, 0, 0,
-		geometry->width, geometry->height, 0, 0, visual, mask,
-		mask_values);
+	xcb_void_cookie_t window_cookie = xcb_create_window_checked(xcb_conn, 24 /* Hardcoded? */, wid, parent, 0, 0,
+								    geometry->width, geometry->height, 0, 0, visual,
+								    mask, mask_values);
 	xcb_generic_error_t *err = xcb_request_check(xcb_conn, window_cookie);
 	if (err != NULL) {
 		char text[512];
@@ -440,11 +412,9 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 		goto fail_window_surface;
 	}
 
-	const EGLSurface surface =
-		eglCreateWindowSurface(plat->edisplay, plat->config, wid, 0);
+	const EGLSurface surface = eglCreateWindowSurface(plat->edisplay, plat->config, wid, 0);
 	if (EGL_NO_SURFACE == surface) {
-		blog(LOG_ERROR, "Cannot get window EGL surface: %s",
-		     get_egl_error_string());
+		blog(LOG_ERROR, "Cannot get window EGL surface: %s", get_egl_error_string());
 		goto fail_window_surface;
 	}
 
@@ -474,23 +444,18 @@ static void gl_x11_egl_device_enter_context(gs_device_t *device)
 {
 	const EGLContext context = device->plat->context;
 	const EGLDisplay display = device->plat->edisplay;
-	const EGLSurface surface = (device->cur_swap)
-					   ? device->cur_swap->wi->surface
-					   : device->plat->pbuffer;
+	const EGLSurface surface = (device->cur_swap) ? device->cur_swap->wi->surface : device->plat->pbuffer;
 
 	if (!eglMakeCurrent(display, surface, surface, context))
-		blog(LOG_ERROR, "Failed to make context current: %s",
-		     get_egl_error_string());
+		blog(LOG_ERROR, "Failed to make context current: %s", get_egl_error_string());
 }
 
 static void gl_x11_egl_device_leave_context(gs_device_t *device)
 {
 	const EGLDisplay display = device->plat->edisplay;
 
-	if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE,
-			    EGL_NO_CONTEXT)) {
-		blog(LOG_ERROR, "Failed to reset current context: %s",
-		     get_egl_error_string());
+	if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+		blog(LOG_ERROR, "Failed to reset current context: %s", get_egl_error_string());
 	}
 }
 
@@ -499,15 +464,12 @@ static void *gl_x11_egl_device_get_device_obj(gs_device_t *device)
 	return device->plat->context;
 }
 
-static void gl_x11_egl_getclientsize(const struct gs_swap_chain *swap,
-				     uint32_t *width, uint32_t *height)
+static void gl_x11_egl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width, uint32_t *height)
 {
-	xcb_connection_t *xcb_conn =
-		XGetXCBConnection(swap->device->plat->xdisplay);
+	xcb_connection_t *xcb_conn = XGetXCBConnection(swap->device->plat->xdisplay);
 	xcb_window_t window = swap->wi->window;
 
-	xcb_get_geometry_reply_t *geometry =
-		get_window_geometry(xcb_conn, window);
+	xcb_get_geometry_reply_t *geometry = get_window_geometry(xcb_conn, window);
 	if (geometry) {
 		*width = geometry->width;
 		*height = geometry->height;
@@ -521,11 +483,9 @@ static void gl_x11_egl_update(gs_device_t *device)
 	Display *display = device->plat->xdisplay;
 	xcb_window_t window = device->cur_swap->wi->window;
 
-	uint32_t values[] = {device->cur_swap->info.cx,
-			     device->cur_swap->info.cy};
+	uint32_t values[] = {device->cur_swap->info.cx, device->cur_swap->info.cy};
 
-	xcb_configure_window(XGetXCBConnection(display), window,
-			     XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,
+	xcb_configure_window(XGetXCBConnection(display), window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,
 			     values);
 }
 
@@ -533,14 +493,12 @@ static void gl_x11_egl_clear_context(gs_device_t *device)
 {
 	Display *display = device->plat->edisplay;
 
-	if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE,
-			    EGL_NO_CONTEXT)) {
+	if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
 		blog(LOG_ERROR, "Failed to reset current context.");
 	}
 }
 
-static void gl_x11_egl_device_load_swapchain(gs_device_t *device,
-					     gs_swapchain_t *swap)
+static void gl_x11_egl_device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 {
 	if (device->cur_swap == swap)
 		return;
@@ -563,60 +521,51 @@ static void gl_x11_egl_device_present(gs_device_t *device)
 	if (eglSwapInterval(device->plat->edisplay, 0) == EGL_FALSE) {
 		blog(LOG_ERROR, "eglSwapInterval failed");
 	}
-	if (!eglSwapBuffers(device->plat->edisplay,
-			    device->cur_swap->wi->surface))
-		blog(LOG_ERROR, "Cannot swap EGL buffers: %s",
-		     get_egl_error_string());
+	if (!eglSwapBuffers(device->plat->edisplay, device->cur_swap->wi->surface))
+		blog(LOG_ERROR, "Cannot swap EGL buffers: %s", get_egl_error_string());
 }
 
-static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(
-	gs_device_t *device, unsigned int width, unsigned int height,
-	uint32_t drm_format, enum gs_color_format color_format,
-	uint32_t n_planes, const int *fds, const uint32_t *strides,
-	const uint32_t *offsets, const uint64_t *modifiers)
+static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(gs_device_t *device, unsigned int width,
+								       unsigned int height, uint32_t drm_format,
+								       enum gs_color_format color_format,
+								       uint32_t n_planes, const int *fds,
+								       const uint32_t *strides, const uint32_t *offsets,
+								       const uint64_t *modifiers)
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_create_dmabuf_image(plat->edisplay, width, height,
-					  drm_format, color_format, n_planes,
-					  fds, strides, offsets, modifiers);
+	return gl_egl_create_dmabuf_image(plat->edisplay, width, height, drm_format, color_format, n_planes, fds,
+					  strides, offsets, modifiers);
 }
 
-static struct gs_texture *gl_x11_egl_device_texture_create_from_pixmap(
-	gs_device_t *device, uint32_t width, uint32_t height,
-	enum gs_color_format color_format, uint32_t target, void *pixmap)
+static struct gs_texture *gl_x11_egl_device_texture_create_from_pixmap(gs_device_t *device, uint32_t width,
+								       uint32_t height,
+								       enum gs_color_format color_format,
+								       uint32_t target, void *pixmap)
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_create_texture_from_pixmap(plat->edisplay, width, height,
-						 color_format, target,
+	return gl_egl_create_texture_from_pixmap(plat->edisplay, width, height, color_format, target,
 						 (EGLClientBuffer)pixmap);
 }
 
-static bool gl_x11_egl_device_query_dmabuf_capabilities(
-	gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
-	uint32_t **drm_formats, size_t *n_formats)
+static bool gl_x11_egl_device_query_dmabuf_capabilities(gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
+							uint32_t **drm_formats, size_t *n_formats)
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_query_dmabuf_capabilities(plat->edisplay, dmabuf_flags,
-						drm_formats, n_formats);
+	return gl_egl_query_dmabuf_capabilities(plat->edisplay, dmabuf_flags, drm_formats, n_formats);
 }
 
-static bool gl_x11_egl_device_query_dmabuf_modifiers_for_format(
-	gs_device_t *device, uint32_t drm_format, uint64_t **modifiers,
-	size_t *n_modifiers)
+static bool gl_x11_egl_device_query_dmabuf_modifiers_for_format(gs_device_t *device, uint32_t drm_format,
+								uint64_t **modifiers, size_t *n_modifiers)
 {
 	struct gl_platform *plat = device->plat;
 
-	return gl_egl_query_dmabuf_modifiers_for_format(
-		plat->edisplay, drm_format, modifiers, n_modifiers);
+	return gl_egl_query_dmabuf_modifiers_for_format(plat->edisplay, drm_format, modifiers, n_modifiers);
 }
 
-static bool gl_x11_egl_enum_adapters(gs_device_t *device,
-				     bool (*callback)(void *param,
-						      const char *name,
-						      uint32_t id),
+static bool gl_x11_egl_enum_adapters(gs_device_t *device, bool (*callback)(void *param, const char *name, uint32_t id),
 				     void *param)
 {
 	return gl_egl_enum_adapters(device->plat->edisplay, callback, param);
@@ -637,14 +586,10 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.update = gl_x11_egl_update,
 	.device_load_swapchain = gl_x11_egl_device_load_swapchain,
 	.device_present = gl_x11_egl_device_present,
-	.device_texture_create_from_dmabuf =
-		gl_x11_egl_device_texture_create_from_dmabuf,
-	.device_query_dmabuf_capabilities =
-		gl_x11_egl_device_query_dmabuf_capabilities,
-	.device_query_dmabuf_modifiers_for_format =
-		gl_x11_egl_device_query_dmabuf_modifiers_for_format,
-	.device_texture_create_from_pixmap =
-		gl_x11_egl_device_texture_create_from_pixmap,
+	.device_texture_create_from_dmabuf = gl_x11_egl_device_texture_create_from_dmabuf,
+	.device_query_dmabuf_capabilities = gl_x11_egl_device_query_dmabuf_capabilities,
+	.device_query_dmabuf_modifiers_for_format = gl_x11_egl_device_query_dmabuf_modifiers_for_format,
+	.device_texture_create_from_pixmap = gl_x11_egl_device_texture_create_from_pixmap,
 	.device_enum_adapters = gl_x11_egl_enum_adapters,
 };
 

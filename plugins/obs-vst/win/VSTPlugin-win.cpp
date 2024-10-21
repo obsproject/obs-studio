@@ -46,17 +46,14 @@ AEffect *VSTPlugin::loadEffect()
 		return nullptr;
 	}
 
-	vstPluginMain mainEntryPoint =
-		(vstPluginMain)GetProcAddress(dllHandle, "VSTPluginMain");
+	vstPluginMain mainEntryPoint = (vstPluginMain)GetProcAddress(dllHandle, "VSTPluginMain");
 
 	if (mainEntryPoint == nullptr) {
-		mainEntryPoint = (vstPluginMain)GetProcAddress(
-			dllHandle, "VstPluginMain()");
+		mainEntryPoint = (vstPluginMain)GetProcAddress(dllHandle, "VstPluginMain()");
 	}
 
 	if (mainEntryPoint == nullptr) {
-		mainEntryPoint =
-			(vstPluginMain)GetProcAddress(dllHandle, "main");
+		mainEntryPoint = (vstPluginMain)GetProcAddress(dllHandle, "main");
 	}
 
 	if (mainEntryPoint == nullptr) {
@@ -73,8 +70,7 @@ AEffect *VSTPlugin::loadEffect()
 	}
 
 	if (plugin == nullptr) {
-		blog(LOG_WARNING, "Couldn't create instance for '%s'",
-		     pluginPath.c_str());
+		blog(LOG_WARNING, "Couldn't create instance for '%s'", pluginPath.c_str());
 		return nullptr;
 	}
 

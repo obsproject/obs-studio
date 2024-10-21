@@ -51,7 +51,7 @@ struct half {
 };
 
 /* adapted from DirectXMath XMConvertFloatToHalf */
-static struct half half_from_float(float f)
+static inline struct half half_from_float(float f)
 {
 	uint32_t Result;
 
@@ -62,8 +62,7 @@ static struct half half_from_float(float f)
 
 	if (IValue > 0x477FE000U) {
 		// The number is too large to be represented as a half.  Saturate to infinity.
-		if (((IValue & 0x7F800000) == 0x7F800000) &&
-		    ((IValue & 0x7FFFFF) != 0)) {
+		if (((IValue & 0x7F800000) == 0x7F800000) && ((IValue & 0x7FFFFF) != 0)) {
 			Result = 0x7FFF; // NAN
 		} else {
 			Result = 0x7C00U; // INF
@@ -81,8 +80,7 @@ static struct half half_from_float(float f)
 			IValue += 0xC8000000U;
 		}
 
-		Result = ((IValue + 0x0FFFU + ((IValue >> 13U) & 1U)) >> 13U) &
-			 0x7FFFU;
+		Result = ((IValue + 0x0FFFU + ((IValue >> 13U) & 1U)) >> 13U) & 0x7FFFU;
 	}
 
 	struct half h;
@@ -90,7 +88,7 @@ static struct half half_from_float(float f)
 	return h;
 }
 
-static struct half half_from_bits(uint16_t u)
+static inline struct half half_from_bits(uint16_t u)
 {
 	struct half h;
 	h.u = u;

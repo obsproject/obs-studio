@@ -70,57 +70,51 @@ EXPORT void gs_image_file_init(gs_image_file_t *image, const char *file);
 EXPORT void gs_image_file_free(gs_image_file_t *image);
 
 EXPORT void gs_image_file_init_texture(gs_image_file_t *image);
-EXPORT bool gs_image_file_tick(gs_image_file_t *image,
-			       uint64_t elapsed_time_ns);
+EXPORT bool gs_image_file_tick(gs_image_file_t *image, uint64_t elapsed_time_ns);
 EXPORT void gs_image_file_update_texture(gs_image_file_t *image);
 
 EXPORT void gs_image_file2_init(gs_image_file2_t *if2, const char *file);
 
-EXPORT bool gs_image_file2_tick(gs_image_file2_t *if2,
-				uint64_t elapsed_time_ns);
+EXPORT bool gs_image_file2_tick(gs_image_file2_t *if2, uint64_t elapsed_time_ns);
 EXPORT void gs_image_file2_update_texture(gs_image_file2_t *if2);
 
-EXPORT void gs_image_file3_init(gs_image_file3_t *if3, const char *file,
-				enum gs_image_alpha_mode alpha_mode);
+EXPORT void gs_image_file3_init(gs_image_file3_t *if3, const char *file, enum gs_image_alpha_mode alpha_mode);
 
-EXPORT bool gs_image_file3_tick(gs_image_file3_t *if3,
-				uint64_t elapsed_time_ns);
+EXPORT bool gs_image_file3_tick(gs_image_file3_t *if3, uint64_t elapsed_time_ns);
 EXPORT void gs_image_file3_update_texture(gs_image_file3_t *if3);
 
-EXPORT void gs_image_file4_init(gs_image_file4_t *if4, const char *file,
-				enum gs_image_alpha_mode alpha_mode);
+EXPORT void gs_image_file4_init(gs_image_file4_t *if4, const char *file, enum gs_image_alpha_mode alpha_mode);
 
-EXPORT bool gs_image_file4_tick(gs_image_file4_t *if4,
-				uint64_t elapsed_time_ns);
+EXPORT bool gs_image_file4_tick(gs_image_file4_t *if4, uint64_t elapsed_time_ns);
 EXPORT void gs_image_file4_update_texture(gs_image_file4_t *if4);
 
-static void gs_image_file2_free(gs_image_file2_t *if2)
+static inline void gs_image_file2_free(gs_image_file2_t *if2)
 {
 	gs_image_file_free(&if2->image);
 	if2->mem_usage = 0;
 }
 
-static void gs_image_file2_init_texture(gs_image_file2_t *if2)
+static inline void gs_image_file2_init_texture(gs_image_file2_t *if2)
 {
 	gs_image_file_init_texture(&if2->image);
 }
 
-static void gs_image_file3_free(gs_image_file3_t *if3)
+static inline void gs_image_file3_free(gs_image_file3_t *if3)
 {
 	gs_image_file2_free(&if3->image2);
 }
 
-static void gs_image_file3_init_texture(gs_image_file3_t *if3)
+static inline void gs_image_file3_init_texture(gs_image_file3_t *if3)
 {
 	gs_image_file2_init_texture(&if3->image2);
 }
 
-static void gs_image_file4_free(gs_image_file4_t *if4)
+static inline void gs_image_file4_free(gs_image_file4_t *if4)
 {
 	gs_image_file3_free(&if4->image3);
 }
 
-static void gs_image_file4_init_texture(gs_image_file4_t *if4)
+static inline void gs_image_file4_init_texture(gs_image_file4_t *if4)
 {
 	gs_image_file3_init_texture(&if4->image3);
 }

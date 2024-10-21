@@ -41,12 +41,10 @@ class VisibilityItemDelegate : public QStyledItemDelegate {
 public:
 	VisibilityItemDelegate(QObject *parent = nullptr);
 
-	void paint(QPainter *painter, const QStyleOptionViewItem &option,
-		   const QModelIndex &index) const override;
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
 protected:
 	bool eventFilter(QObject *object, QEvent *event) override;
 };
 
-void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
-			 obs_source_t *source);
+void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item, obs_source_t *source);

@@ -125,11 +125,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>addIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-plus</string>
                </property>
               </widget>
              </item>
@@ -157,11 +154,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>removeIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-trash</string>
                </property>
               </widget>
              </item>
@@ -189,11 +183,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>upArrowIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-up</string>
                </property>
               </widget>
              </item>
@@ -221,11 +212,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>downArrowIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-down</string>
                </property>
               </widget>
              </item>
@@ -359,11 +347,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>addIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-plus</string>
                </property>
               </widget>
              </item>
@@ -391,11 +376,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>removeIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-trash</string>
                </property>
               </widget>
              </item>
@@ -423,11 +405,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>upArrowIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-up</string>
                </property>
               </widget>
              </item>
@@ -455,11 +434,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>downArrowIconSmall</string>
-               </property>
-               <property name="toolButton" stdset="0">
-                <bool>true</bool>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-down</string>
                </property>
               </widget>
              </item>

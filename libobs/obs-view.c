@@ -87,8 +87,7 @@ obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel)
 	return source;
 }
 
-void obs_view_set_source(obs_view_t *view, uint32_t channel,
-			 obs_source_t *source)
+void obs_view_set_source(obs_view_t *view, uint32_t channel, obs_source_t *source)
 {
 	struct obs_source *prev_source;
 
@@ -219,10 +218,7 @@ bool obs_view_get_video_info(obs_view_t *view, struct obs_video_info *ovi)
 	return false;
 }
 
-void obs_view_enum_video_info(obs_view_t *view,
-			      bool (*enum_proc)(void *,
-						struct obs_video_info *),
-			      void *param)
+void obs_view_enum_video_info(obs_view_t *view, bool (*enum_proc)(void *, struct obs_video_info *), void *param)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 

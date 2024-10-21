@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -53,7 +49,8 @@ macro(jansson_set_soname)
     execute_process(
       COMMAND sh -c "otool -D '${jansson_LIBRARY}' | grep -v '${jansson_LIBRARY}'"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
       set_property(TARGET jansson::jansson PROPERTY IMPORTED_SONAME "${_output}")
@@ -62,7 +59,8 @@ macro(jansson_set_soname)
     execute_process(
       COMMAND sh -c "objdump -p '${jansson_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
-      RESULT_VARIABLE _result)
+      RESULT_VARIABLE _result
+    )
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
@@ -80,7 +78,8 @@ find_path(
   HINTS ${PC_jansson_INCLUDE_DIR}
   PATHS /usr/include /usr/local/include
   PATH_SUFFIXES jansson-2.1
-  DOC "jansson include directory")
+  DOC "jansson include directory"
+)
 
 if(PC_jansson_VERSION VERSION_GREATER 0)
   set(jansson_VERSION ${PC_jansson_VERSION})
@@ -99,7 +98,8 @@ find_library(
   NAMES jansson
   HINTS ${PC_jansson_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "jansson location")
+  DOC "jansson location"
+)
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
   set(jansson_ERROR_REASON "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
@@ -110,7 +110,9 @@ endif()
 find_package_handle_standard_args(
   jansson
   REQUIRED_VARS jansson_LIBRARY jansson_INCLUDE_DIR
-  VERSION_VAR jansson_VERSION REASON_FAILURE_MESSAGE "${jansson_ERROR_REASON}")
+  VERSION_VAR jansson_VERSION
+  REASON_FAILURE_MESSAGE "${jansson_ERROR_REASON}"
+)
 mark_as_advanced(jansson_INCLUDE_DIR jansson_LIBRARY)
 unset(jansson_ERROR_REASON)
 
@@ -127,14 +129,18 @@ if(jansson_FOUND)
     jansson_set_soname()
     set_target_properties(
       jansson::jansson
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_jansson_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${jansson_INCLUDE_DIR}"
-                 VERSION ${jansson_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_jansson_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${jansson_INCLUDE_DIR}"
+        VERSION ${jansson_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  jansson PROPERTIES
-  URL "https://www.digip.org/jansson/"
-  DESCRIPTION "A C library for encoding, decoding, and manipulating JSON data.")
+  jansson
+  PROPERTIES
+    URL "https://www.digip.org/jansson/"
+    DESCRIPTION "A C library for encoding, decoding, and manipulating JSON data."
+)

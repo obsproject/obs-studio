@@ -24,8 +24,7 @@ sign_kms_key_id = "projects/ci-signing/locations/global/keyRings/production/cryp
 sign_digest = "sha384"
 sign_ts_serv = "http://timestamp.digicert.com"
 sign_exts = ['exe', 'dll', 'pyd']
-sign_append = true
-sign_ts_algo = "sha256"
+sign_append = false
 
 [prepare.strip_pdbs]
 # PDBs to not strip

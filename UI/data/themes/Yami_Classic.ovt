@@ -31,7 +31,7 @@
     /* OS Fixes */
     --os_mac_font_base_value: 11;
 
-    --font_small: calc(0.8pt * var(--font_base_value));
+    --font_small: calc(0.75pt * var(--font_base_value));
 
     --icon_base: calc(6px + var(--font_base_value));
 
@@ -171,6 +171,12 @@ QPlainTextEdit:hover {
     background-color: var(--input_bg_focus);
 }
 
+QTextEdit:!editable,
+QTextEdit:!editable:hover,
+QTextEdit:!editable:focus {
+    background-color: var(--input_bg_focus);
+}
+
 QSpinBox,
 QDoubleSpinBox {
     background-color: var(--input_bg_focus);
@@ -264,8 +270,8 @@ QPushButton[toolButton="true"] {
   font-size: var(--font_base);
 }
 
-MuteCheckBox::indicator,
-MuteCheckBox::indicator:unchecked {
+.indicator-mute::indicator,
+.indicator-mute::indicator:unchecked {
     background-color: var(--bg_base);
     border: none;
     width: var(--icon_base_mixer);
@@ -273,23 +279,30 @@ MuteCheckBox::indicator:unchecked {
     icon-size: var(--icon_base_mixer);
 }
 
-MuteCheckBox::indicator:checked {
+.indicator-mute::indicator:checked {
     background-color: var(--bg_base);
 }
 
-MuteCheckBox::indicator:checked:hover,
-MuteCheckBox::indicator:unchecked:hover {
+.indicator-mute::indicator:checked:hover,
+.indicator-mute::indicator:unchecked:hover {
     background-color: var(--bg_base);
 }
 
-MuteCheckBox::indicator:hover,
-MuteCheckBox::indicator:unchecked:hover {
+.indicator-mute::indicator:hover,
+.indicator-mute::indicator:unchecked:hover {
     icon-size: var(--icon_base_mixer);
     border: none;
 }
 
 #contextContainer {
   background-color: var(--bg_window);
+}
+
+#stackedMixerArea QPushButton,
+#stackedMixerArea QPushButton:!hover {
+    width: var(--icon_base_mixer);
+    height: var(--icon_base_mixer);
+    padding: var(--spacing_base);
 }
 
 VolumeMeter {

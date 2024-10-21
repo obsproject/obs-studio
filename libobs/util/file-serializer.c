@@ -23,8 +23,7 @@ static size_t file_input_read(void *file, void *data, size_t size)
 	return fread(data, 1, size, file);
 }
 
-static int64_t file_input_seek(void *file, int64_t offset,
-			       enum serialize_seek_type seek_type)
+static int64_t file_input_seek(void *file, int64_t offset, enum serialize_seek_type seek_type)
 {
 	int origin = SEEK_SET;
 
@@ -84,8 +83,7 @@ static size_t file_output_write(void *sdata, const void *data, size_t size)
 	return fwrite(data, 1, size, out->file);
 }
 
-static int64_t file_output_seek(void *sdata, int64_t offset,
-				enum serialize_seek_type seek_type)
+static int64_t file_output_seek(void *sdata, int64_t offset, enum serialize_seek_type seek_type)
 {
 	struct file_output_data *out = sdata;
 	int origin = SEEK_SET;
@@ -133,8 +131,7 @@ bool file_output_serializer_init(struct serializer *s, const char *path)
 	return true;
 }
 
-bool file_output_serializer_init_safe(struct serializer *s, const char *path,
-				      const char *temp_ext)
+bool file_output_serializer_init_safe(struct serializer *s, const char *path, const char *temp_ext)
 {
 	struct dstr temp_name = {0};
 	struct file_output_data *out;

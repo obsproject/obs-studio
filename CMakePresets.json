@@ -1,8 +1,8 @@
 {
-  "version": 3,
+  "version": 8,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 22,
+    "minor": 28,
     "patch": 0
   },
   "configurePresets": [
@@ -54,7 +54,8 @@
       "inherits": ["macos"],
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ENABLE_CCACHE": true
       }
     },
     {
@@ -73,9 +74,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
-        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
         "ENABLE_AJA": false,
-        "ENABLE_NATIVE_NVENC": false,
         "ENABLE_VLC": true,
         "ENABLE_WAYLAND": true,
         "ENABLE_WEBRTC": false
@@ -86,7 +85,9 @@
       "inherits": ["ubuntu"],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "CMAKE_COLOR_DIAGNOSTICS": true,
+        "ENABLE_CCACHE": true
       }
     },
     {
@@ -99,15 +100,13 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "architecture": "x64",
+      "architecture": "x64,version=10.0.22621",
       "binaryDir": "${sourceDir}/build_x64",
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {
-        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
         "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
         "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
-        "ENABLE_BROWSER": true,
-        "ENABLE_CCACHE": false
+        "ENABLE_BROWSER": true
       }
     },
     {
@@ -117,8 +116,7 @@
       "inherits": ["windows-x64"],
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-        "ENABLE_CCACHE": false
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
     }
   ],

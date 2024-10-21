@@ -197,15 +197,6 @@ General Scene Functions
 
 ---------------------
 
-.. function:: void obs_scene_addref(obs_scene_t *scene)
-
-   Adds a reference to a scene.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_scene_get_ref()` instead.
-
----------------------
-
 .. function:: obs_scene_t *obs_scene_get_ref(obs_scene_t *scene)
 
    Returns an incremented reference if still valid, otherwise returns
@@ -335,6 +326,11 @@ Scene Item Functions
 
    :return: The sceneitem associated with a source in a scene. Returns NULL if not found.
 
+   .. deprecated:: 31.0
+      This function is problematic because there can be multiple items of the same source in a scene.
+      In that case, which of those this function will return is undefined.
+      If this is the behavior you need, manually use :c:func:`obs_scene_enum_items` instead.
+
 ---------------------
 
 .. function:: void obs_sceneitem_set_id(obs_sceneitem_t *item);
@@ -366,6 +362,18 @@ Scene Item Functions
               void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 
    Sets/gets the position of a scene item.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_relative_pos(obs_sceneitem_t *item, const struct vec2 *pos)
+              void obs_sceneitem_get_relative_pos(const obs_sceneitem_t *item, struct vec2 *pos)
+
+   Sets/gets the position of a scene item in relative coordinates.
+   In this system `(0.0, 0.0)` is the center of the screen, `(0, -1.0)` the bottom and `(0, 1.0)` the top.
+   The visible range of the horizontal axis depends on aspect ratio, for example, with 16:9 (1.7777...) this is `[-1.777.., -1.777..]`.
+   Positions are rounded to the nearest half-pixel when converting from relative to absolute pixel values to maintain backwards compaibility.
+
+   .. versionadded:: 31.0
 
 ---------------------
 
@@ -461,10 +469,40 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_relative_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
+              void obs_sceneitem_get_relative_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
+
+   Sets/gets the bounding box width/height of the scene item in relative sizes.
+   See :c:func:`obs_sceneitem_get_relative_pos()`/:c:func:`obs_sceneitem_set_relative_pos()` for details on the relative coordinate system.
+   
+   .. versionadded:: 31.0
+
+---------------------
+
 .. function:: void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info)
               void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info)
 
    Sets/gets the transform information of the scene item.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_info2(obs_sceneitem_t *item, const struct obs_transform_info *info)
+              void obs_sceneitem_get_info2(const obs_sceneitem_t *item, struct obs_transform_info *info)
+
+   Sets/gets the transform information of the scene item.
+   This version of the function also sets the `crop_to_bounds` member of `obs_transform_info`.
+
+   .. versionadded:: 30.1
+
+---------------------
+
+.. function:: void obs_sceneitem_set_info3(obs_sceneitem_t *item, const struct obs_transform_info *info)
+              void obs_sceneitem_get_info3(const obs_sceneitem_t *item, struct obs_transform_info *info)
+
+   Sets/gets the transform information of the scene item.
+   This version uses relative coordinates, see :c:func:`obs_sceneitem_get_relative_pos()`/:c:func:`obs_sceneitem_set_relative_pos()` for details.
+
+   .. versionadded:: 31.0
 
 ---------------------
 
@@ -582,16 +620,6 @@ Scene Item Functions
 
 ---------------------
 
-.. function:: void obs_sceneitem_set_show_transition(obs_sceneitem_t *item, obs_source_t *transition)
-              void obs_sceneitem_set_hide_transition(obs_sceneitem_t *item, obs_source_t *transition)
-
-   Sets a transition for showing or hiding a scene item. Set *NULL* to remove the transition.
-
-.. deprecated:: 27.2.4
-   Use :c:func:`obs_sceneitem_set_transition()` instead.
-
----------------------
-
 .. function:: obs_source_t *obs_sceneitem_get_transition(obs_sceneitem_t *item, bool show)
 
    :param item: The target scene item
@@ -600,14 +628,6 @@ Scene Item Functions
    :return:     The transition for showing or hiding a scene item. *NULL* if no transition is set.
 
 ---------------------
-
-.. function:: obs_source_t *obs_sceneitem_get_show_transition(obs_sceneitem_t *item)
-              obs_source_t *obs_sceneitem_get_hide_transition(obs_sceneitem_t *item)
-
-   :return: The transition for showing or hiding a scene item. *NULL* if no transition is set.
-
-.. deprecated:: 27.2.4
-   Use :c:func:`obs_sceneitem_get_transition()` instead.
 
 ---------------------
 
@@ -622,16 +642,6 @@ Scene Item Functions
 
 ---------------------
 
-.. function:: void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
-              void obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
-
-   Sets the transition duration for showing or hiding a scene item.
-
-.. deprecated:: 27.2.4
-   Use :c:func:`obs_sceneitem_set_transition_duration()` instead.
-
----------------------
-
 .. function:: uint32_t obs_sceneitem_get_transition_duration(obs_sceneitem_t *item, bool show)
 
    Gets the transition duration for showing or hiding a scene item.
@@ -640,16 +650,6 @@ Scene Item Functions
    :param show: If *true*, this will return the duration of the show transition.
                 If *false*, this will return the duration of the hide transition.
    :return:     The transition duration in milliseconds
-
----------------------
-
-.. function:: uint32_t obs_sceneitem_get_show_transition_duration(obs_sceneitem_t *item)
-              uint32_t obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item)
-
-   :return: The transition duration in ms for showing or hiding a scene item.
-
-.. deprecated:: 27.2.4
-   Use :c:func:`obs_sceneitem_get_transition_duration()` instead.
 
 ---------------------
 

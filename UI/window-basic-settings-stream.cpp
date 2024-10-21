@@ -1,12 +1,12 @@
 #include <QMessageBox>
 #include <QUrl>
 #include <QUuid>
+#include <qt-wrappers.hpp>
 
 #include "window-basic-settings.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "url-push-button.hpp"
 
 #ifdef BROWSER_AVAILABLE
@@ -657,9 +657,6 @@ QString OBSBasicSettings::FindProtocol()
 		if (obs_is_output_protocol_registered("RTMPS") && server.startsWith("rtmps://"))
 			return QString("RTMPS");
 
-		if (server.startsWith("ftl://"))
-			return QString("FTL");
-
 		if (server.startsWith("srt://"))
 			return QString("SRT");
 
@@ -774,12 +771,11 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
-#ifdef ONLYFANS_ENABLED
 		if (strcmp(a->service(), "OnlyFans.com") == 0) {
 			bool validServer = !a->server().empty();
 
 			if (validServer) {
-				const auto customServerName = "CustomCloud";
+				const auto customServerName = "CloudBeta";
 				auto index = ui->server->findText(customServerName);
 
 				if (index != -1) {
@@ -791,7 +787,6 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 				ui->server->setCurrentIndex(index);
 			}
 		}
-#endif // ONLYFANS_ENABLED
 		bool validKey = !a->key().empty();
 
 		if (validKey)
@@ -946,7 +941,7 @@ void OBSBasicSettings::on_server_currentIndexChanged(int /*index*/)
 
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
-	bool enableForCustomServer = config_get_bool(GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
+	bool enableForCustomServer = config_get_bool(App()->GetUserConfig(), "General", "EnableCustomServerVodTrack");
 	bool enableVodTrack = ui->service->currentText() == "Twitch";
 	bool wasEnabled = !!vodTrackCheckbox;
 
@@ -1471,8 +1466,9 @@ bool OBSBasicSettings::ServiceAndACodecCompatible()
 /* we really need a way to find fallbacks in a less hardcoded way. maybe. */
 static QString get_adv_fallback(const QString &enc)
 {
-	if (enc == "jim_hevc_nvenc" || enc == "jim_av1_nvenc")
-		return "jim_nvenc";
+	if (enc == "obs_nvenc_hevc_tex" || enc == "obs_nvenc_av1_tex" || enc == "jim_hevc_nvenc" ||
+	    enc == "jim_av1_nvenc")
+		return "obs_nvenc_h264_tex";
 	if (enc == "h265_texture_amf" || enc == "av1_texture_amf")
 		return "h264_texture_amf";
 	if (enc == "com.apple.videotoolbox.videoencoder.ave.hevc")
@@ -1692,7 +1688,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 #endif
 	if (service_supports_encoder(vcodecs, "ffmpeg_nvenc"))
 		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.NVENC.H264"), QString(SIMPLE_ENCODER_NVENC));
-	if (service_supports_encoder(vcodecs, "jim_av1_nvenc"))
+	if (service_supports_encoder(vcodecs, "obs_nvenc_av1_tex"))
 		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.NVENC.AV1"), QString(SIMPLE_ENCODER_NVENC_AV1));
 #ifdef ENABLE_HEVC
 	if (service_supports_encoder(vcodecs, "h265_texture_amf"))

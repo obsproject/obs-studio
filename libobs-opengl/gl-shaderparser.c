@@ -18,12 +18,9 @@
 #include "gl-subsystem.h"
 #include "gl-shaderparser.h"
 
-static void gl_write_function_contents(struct gl_shader_parser *glsp,
-				       struct cf_token **p_token,
-				       const char *end);
+static void gl_write_function_contents(struct gl_shader_parser *glsp, struct cf_token **p_token, const char *end);
 
-static inline struct shader_var *sp_getparam(struct gl_shader_parser *glsp,
-					     struct cf_token *token)
+static inline struct shader_var *sp_getparam(struct gl_shader_parser *glsp, struct cf_token *token)
 {
 	size_t i;
 	for (i = 0; i < glsp->parser.params.num; i++) {
@@ -35,13 +32,11 @@ static inline struct shader_var *sp_getparam(struct gl_shader_parser *glsp,
 	return NULL;
 }
 
-static inline size_t sp_getsampler(struct gl_shader_parser *glsp,
-				   struct cf_token *token)
+static inline size_t sp_getsampler(struct gl_shader_parser *glsp, struct cf_token *token)
 {
 	size_t i;
 	for (i = 0; i < glsp->parser.samplers.num; i++) {
-		struct shader_sampler *sampler =
-			glsp->parser.samplers.array + i;
+		struct shader_sampler *sampler = glsp->parser.samplers.array + i;
 		if (strref_cmp(&token->str, sampler->name) == 0)
 			return i;
 	}
@@ -49,15 +44,13 @@ static inline size_t sp_getsampler(struct gl_shader_parser *glsp,
 	return -1;
 }
 
-static inline int cmp_type(const char *name, const size_t name_len,
-			   const char *type, const size_t type_len)
+static inline int cmp_type(const char *name, const size_t name_len, const char *type, const size_t type_len)
 {
 	size_t min_len = (name_len < type_len) ? type_len : name_len;
 	return astrcmp_n(name, type, min_len);
 }
 
-static bool gl_write_type_n(struct gl_shader_parser *glsp, const char *type,
-			    size_t len)
+static bool gl_write_type_n(struct gl_shader_parser *glsp, const char *type, size_t len)
 {
 	if (cmp_type(type, len, "float2", 6) == 0)
 		dstr_cat(&glsp->gl_string, "vec2");
@@ -97,15 +90,13 @@ static bool gl_write_type_n(struct gl_shader_parser *glsp, const char *type,
 	return true;
 }
 
-static inline void gl_write_type(struct gl_shader_parser *glsp,
-				 const char *type)
+static inline void gl_write_type(struct gl_shader_parser *glsp, const char *type)
 {
 	if (!gl_write_type_n(glsp, type, strlen(type)))
 		dstr_cat(&glsp->gl_string, type);
 }
 
-static inline bool gl_write_type_token(struct gl_shader_parser *glsp,
-				       struct cf_token *token)
+static inline bool gl_write_type_token(struct gl_shader_parser *glsp, struct cf_token *token)
 {
 	return gl_write_type_n(glsp, token->str.array, token->str.len);
 }
@@ -138,13 +129,10 @@ static inline void gl_write_params(struct gl_shader_parser *glsp)
 	dstr_cat(&glsp->gl_string, "\n");
 }
 
-static void gl_write_storage_var(struct gl_shader_parser *glsp,
-				 struct shader_var *var, bool input,
-				 const char *prefix);
+static void gl_write_storage_var(struct gl_shader_parser *glsp, struct shader_var *var, bool input, const char *prefix);
 
 /* unwraps a structure that's used for input/output */
-static void gl_unwrap_storage_struct(struct gl_shader_parser *glsp,
-				     struct shader_struct *st, const char *name,
+static void gl_unwrap_storage_struct(struct gl_shader_parser *glsp, struct shader_struct *st, const char *name,
 				     bool input, const char *prefix)
 {
 	struct dstr prefix_str;
@@ -164,12 +152,9 @@ static void gl_unwrap_storage_struct(struct gl_shader_parser *glsp,
 	dstr_free(&prefix_str);
 }
 
-static void gl_write_storage_var(struct gl_shader_parser *glsp,
-				 struct shader_var *var, bool input,
-				 const char *prefix)
+static void gl_write_storage_var(struct gl_shader_parser *glsp, struct shader_var *var, bool input, const char *prefix)
 {
-	struct shader_struct *st =
-		shader_parser_getstruct(&glsp->parser, var->type);
+	struct shader_struct *st = shader_parser_getstruct(&glsp->parser, var->type);
 
 	if (st) {
 		gl_unwrap_storage_struct(glsp, st, var->name, input, prefix);
@@ -203,18 +188,15 @@ static void gl_write_storage_var(struct gl_shader_parser *glsp,
 	}
 }
 
-static inline void gl_write_inputs(struct gl_shader_parser *glsp,
-				   struct shader_func *main)
+static inline void gl_write_inputs(struct gl_shader_parser *glsp, struct shader_func *main)
 {
 	size_t i;
 	for (i = 0; i < main->params.num; i++)
-		gl_write_storage_var(glsp, main->params.array + i, true,
-				     "inputval_");
+		gl_write_storage_var(glsp, main->params.array + i, true, "inputval_");
 	dstr_cat(&glsp->gl_string, "\n");
 }
 
-static void gl_write_outputs(struct gl_shader_parser *glsp,
-			     struct shader_func *main)
+static void gl_write_outputs(struct gl_shader_parser *glsp, struct shader_func *main)
 {
 	struct shader_var var = {0};
 	var.type = main->return_type;
@@ -226,8 +208,7 @@ static void gl_write_outputs(struct gl_shader_parser *glsp,
 	dstr_cat(&glsp->gl_string, "\n");
 }
 
-static void gl_write_struct(struct gl_shader_parser *glsp,
-			    struct shader_struct *st)
+static void gl_write_struct(struct gl_shader_parser *glsp, struct shader_struct *st)
 {
 	size_t i;
 	dstr_cat(&glsp->gl_string, "struct ");
@@ -287,8 +268,7 @@ static inline void gl_write_structs(struct gl_shader_parser *glsp)
  *   All else can be left as-is
  */
 
-static bool gl_write_mad(struct gl_shader_parser *glsp,
-			 struct cf_token **p_token)
+static bool gl_write_mad(struct gl_shader_parser *glsp, struct cf_token **p_token)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	cfp->cur_token = *p_token;
@@ -312,8 +292,7 @@ static bool gl_write_mad(struct gl_shader_parser *glsp,
 	return true;
 }
 
-static bool gl_write_mul(struct gl_shader_parser *glsp,
-			 struct cf_token **p_token)
+static bool gl_write_mul(struct gl_shader_parser *glsp, struct cf_token **p_token)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	cfp->cur_token = *p_token;
@@ -334,8 +313,7 @@ static bool gl_write_mul(struct gl_shader_parser *glsp,
 	return true;
 }
 
-static bool gl_write_sincos(struct gl_shader_parser *glsp,
-			    struct cf_token **p_token)
+static bool gl_write_sincos(struct gl_shader_parser *glsp, struct cf_token **p_token)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	struct dstr var = {0};
@@ -379,8 +357,7 @@ fail:
 	return success;
 }
 
-static bool gl_write_saturate(struct gl_shader_parser *glsp,
-			      struct cf_token **p_token)
+static bool gl_write_saturate(struct gl_shader_parser *glsp, struct cf_token **p_token)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	cfp->cur_token = *p_token;
@@ -398,9 +375,8 @@ static bool gl_write_saturate(struct gl_shader_parser *glsp,
 	return true;
 }
 
-static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
-					 struct shader_var *var,
-					 const char *call, bool sampler)
+static inline bool gl_write_texture_call(struct gl_shader_parser *glsp, struct shader_var *var, const char *call,
+					 bool sampler)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
 
@@ -431,9 +407,7 @@ static inline bool gl_write_texture_call(struct gl_shader_parser *glsp,
 }
 
 /* processes texture.Sample(sampler, texcoord) */
-static bool gl_write_texture_code(struct gl_shader_parser *glsp,
-				  struct cf_token **p_token,
-				  struct shader_var *var)
+static bool gl_write_texture_code(struct gl_shader_parser *glsp, struct cf_token **p_token, struct shader_var *var)
 {
 	struct cf_parser *cfp = &glsp->parser.cfp;
 	bool written = false;
@@ -457,9 +431,7 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 	} else if (cf_token_is(cfp, "SampleLevel")) {
 		written = gl_write_texture_call(glsp, var, "textureLod", true);
 	} else if (cf_token_is(cfp, "Load")) {
-		const char *const func = (strcmp(var->type, "texture3d") == 0)
-						 ? "obs_load_3d"
-						 : "obs_load_2d";
+		const char *const func = (strcmp(var->type, "texture3d") == 0) ? "obs_load_3d" : "obs_load_2d";
 		written = gl_write_texture_call(glsp, var, func, false);
 	}
 
@@ -476,8 +448,7 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 	return true;
 }
 
-static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
-			       struct cf_token **p_token)
+static bool gl_write_intrinsic(struct gl_shader_parser *glsp, struct cf_token **p_token)
 {
 	struct cf_token *token = *p_token;
 	bool written = true;
@@ -518,14 +489,11 @@ static bool gl_write_intrinsic(struct gl_shader_parser *glsp,
 	return written;
 }
 
-static void gl_write_function_contents(struct gl_shader_parser *glsp,
-				       struct cf_token **p_token,
-				       const char *end)
+static void gl_write_function_contents(struct gl_shader_parser *glsp, struct cf_token **p_token, const char *end)
 {
 	struct cf_token *token = *p_token;
 
-	if (token->type != CFTOKEN_NAME || (!gl_write_type_token(glsp, token) &&
-					    !gl_write_intrinsic(glsp, &token)))
+	if (token->type != CFTOKEN_NAME || (!gl_write_type_token(glsp, token) && !gl_write_intrinsic(glsp, &token)))
 		dstr_cat_strref(&glsp->gl_string, &token->str);
 
 	while (token->type != CFTOKEN_NONE) {
@@ -535,8 +503,7 @@ static void gl_write_function_contents(struct gl_shader_parser *glsp,
 			break;
 
 		if (token->type == CFTOKEN_NAME) {
-			if (!gl_write_type_token(glsp, token) &&
-			    !gl_write_intrinsic(glsp, &token))
+			if (!gl_write_type_token(glsp, token) && !gl_write_intrinsic(glsp, &token))
 				dstr_cat_strref(&glsp->gl_string, &token->str);
 
 		} else if (token->type == CFTOKEN_OTHER) {
@@ -555,8 +522,7 @@ static void gl_write_function_contents(struct gl_shader_parser *glsp,
 	*p_token = token;
 }
 
-static void gl_write_function(struct gl_shader_parser *glsp,
-			      struct shader_func *func)
+static void gl_write_function(struct gl_shader_parser *glsp, struct shader_func *func)
 {
 	size_t i;
 	struct cf_token *token;
@@ -595,13 +561,11 @@ static inline void gl_write_functions(struct gl_shader_parser *glsp)
 	}
 }
 
-static inline void gl_write_main_interface_assign(struct gl_shader_parser *glsp,
-						  struct shader_var *var,
+static inline void gl_write_main_interface_assign(struct gl_shader_parser *glsp, struct shader_var *var,
 						  const char *src)
 {
 	/* vertex shaders: write gl_Position */
-	if (glsp->type == GS_SHADER_VERTEX &&
-	    strcmp(var->mapping, "POSITION") == 0) {
+	if (glsp->type == GS_SHADER_VERTEX && strcmp(var->mapping, "POSITION") == 0) {
 		dstr_cat(&glsp->gl_string, "\tgl_Position = ");
 		dstr_cat(&glsp->gl_string, src);
 		dstr_cat(&glsp->gl_string, var->name);
@@ -609,10 +573,8 @@ static inline void gl_write_main_interface_assign(struct gl_shader_parser *glsp,
 	}
 }
 
-static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
-					 struct shader_var *var,
-					 const char *dst, const char *src,
-					 bool input)
+static void gl_write_main_storage_assign(struct gl_shader_parser *glsp, struct shader_var *var, const char *dst,
+					 const char *src, bool input)
 {
 	struct shader_struct *st;
 	struct dstr dst_copy = {0};
@@ -640,22 +602,18 @@ static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
 
 		for (i = 0; i < st->vars.num; i++) {
 			struct shader_var *st_var = st->vars.array + i;
-			gl_write_main_storage_assign(glsp, st_var,
-						     dst_copy.array,
-						     src_copy.array, input);
+			gl_write_main_storage_assign(glsp, st_var, dst_copy.array, src_copy.array, input);
 		}
 
 		dstr_free(&src_copy);
 	} else {
-		if (input || (glsp->type != GS_SHADER_VERTEX) ||
-		    (strcmp(var->mapping, "POSITION"))) {
+		if (input || (glsp->type != GS_SHADER_VERTEX) || (strcmp(var->mapping, "POSITION"))) {
 			if (!dstr_is_empty(&dst_copy))
 				dstr_cat_dstr(&glsp->gl_string, &dst_copy);
 			dstr_cat(&glsp->gl_string, " = ");
 			if (input && (strcmp(var->mapping, "VERTEXID") == 0))
 				dstr_cat(&glsp->gl_string, "uint(gl_VertexID)");
-			else if (input && (glsp->type == GS_SHADER_PIXEL) &&
-				 (strcmp(var->mapping, "POSITION") == 0))
+			else if (input && (glsp->type == GS_SHADER_PIXEL) && (strcmp(var->mapping, "POSITION") == 0))
 				dstr_cat(&glsp->gl_string, "gl_FragCoord");
 			else {
 				if (src)
@@ -672,15 +630,12 @@ static void gl_write_main_storage_assign(struct gl_shader_parser *glsp,
 	dstr_free(&dst_copy);
 }
 
-static inline void gl_write_main_storage_inputs(struct gl_shader_parser *glsp,
-						struct shader_func *main)
+static inline void gl_write_main_storage_inputs(struct gl_shader_parser *glsp, struct shader_func *main)
 {
-	gl_write_main_storage_assign(glsp, main->params.array, NULL,
-				     "inputval_", true);
+	gl_write_main_storage_assign(glsp, main->params.array, NULL, "inputval_", true);
 }
 
-static inline void gl_write_main_storage_outputs(struct gl_shader_parser *glsp,
-						 struct shader_func *main)
+static inline void gl_write_main_storage_outputs(struct gl_shader_parser *glsp, struct shader_func *main)
 {
 	/* we only do this *if* we're writing a struct, because otherwise
 	 * the call to 'main' already does the assignment for us */
@@ -693,8 +648,7 @@ static inline void gl_write_main_storage_outputs(struct gl_shader_parser *glsp,
 	}
 }
 
-static inline void gl_write_main_vars(struct gl_shader_parser *glsp,
-				      struct shader_func *main_func)
+static inline void gl_write_main_vars(struct gl_shader_parser *glsp, struct shader_func *main_func)
 {
 	size_t i;
 	for (i = 0; i < main_func->params.num; i++) {
@@ -712,8 +666,7 @@ static inline void gl_write_main_vars(struct gl_shader_parser *glsp,
 	}
 }
 
-static inline void gl_write_main_func_call(struct gl_shader_parser *glsp,
-					   struct shader_func *main_func)
+static inline void gl_write_main_func_call(struct gl_shader_parser *glsp, struct shader_func *main_func)
 {
 	size_t i;
 	dstr_cat(&glsp->gl_string, "\n\toutputval = _main_wrap(");
@@ -727,8 +680,7 @@ static inline void gl_write_main_func_call(struct gl_shader_parser *glsp,
 	dstr_cat(&glsp->gl_string, ");\n");
 }
 
-static void gl_write_main(struct gl_shader_parser *glsp,
-			  struct shader_func *main)
+static void gl_write_main(struct gl_shader_parser *glsp, struct shader_func *main)
 {
 	dstr_cat(&glsp->gl_string, "void main(void)\n{\n");
 
@@ -760,8 +712,7 @@ static void gl_rename_attributes(struct gl_shader_parser *glsp)
 		}
 
 		dstr_printf(&new_name, "%s%u", prefix, (unsigned int)val);
-		dstr_replace(&glsp->gl_string, attrib->name.array,
-			     new_name.array);
+		dstr_replace(&glsp->gl_string, attrib->name.array, new_name.array);
 		dstr_move(&attrib->name, &new_name);
 	}
 }
@@ -778,23 +729,19 @@ static bool gl_shader_buildstring(struct gl_shader_parser *glsp)
 
 	dstr_copy(&glsp->gl_string, "#version 330\n\n");
 	dstr_cat(&glsp->gl_string, "const bool obs_glsl_compile = true;\n\n");
-	dstr_cat(&glsp->gl_string,
-		 "vec4 obs_load_2d(sampler2D s, ivec3 p_lod)\n");
+	dstr_cat(&glsp->gl_string, "vec4 obs_load_2d(sampler2D s, ivec3 p_lod)\n");
 	dstr_cat(&glsp->gl_string, "{\n");
 	dstr_cat(&glsp->gl_string, "\tint lod = p_lod.z;\n");
 	dstr_cat(&glsp->gl_string, "\tvec2 size = textureSize(s, lod);\n");
-	dstr_cat(&glsp->gl_string,
-		 "\tvec2 p = (vec2(p_lod.xy) + 0.5) / size;\n");
+	dstr_cat(&glsp->gl_string, "\tvec2 p = (vec2(p_lod.xy) + 0.5) / size;\n");
 	dstr_cat(&glsp->gl_string, "\tvec4 color = textureLod(s, p, lod);\n");
 	dstr_cat(&glsp->gl_string, "\treturn color;\n");
 	dstr_cat(&glsp->gl_string, "}\n\n");
-	dstr_cat(&glsp->gl_string,
-		 "vec4 obs_load_3d(sampler3D s, ivec4 p_lod)\n");
+	dstr_cat(&glsp->gl_string, "vec4 obs_load_3d(sampler3D s, ivec4 p_lod)\n");
 	dstr_cat(&glsp->gl_string, "{\n");
 	dstr_cat(&glsp->gl_string, "\tint lod = p_lod.w;\n");
 	dstr_cat(&glsp->gl_string, "\tvec3 size = textureSize(s, lod);\n");
-	dstr_cat(&glsp->gl_string,
-		 "\tvec3 p = (vec3(p_lod.xyz) + 0.5) / size;\n");
+	dstr_cat(&glsp->gl_string, "\tvec3 p = (vec3(p_lod.xyz) + 0.5) / size;\n");
 	dstr_cat(&glsp->gl_string, "\tvec4 color = textureLod(s, p, lod);\n");
 	dstr_cat(&glsp->gl_string, "\treturn color;\n");
 	dstr_cat(&glsp->gl_string, "}\n\n");
@@ -810,8 +757,7 @@ static bool gl_shader_buildstring(struct gl_shader_parser *glsp)
 	return true;
 }
 
-bool gl_shader_parse(struct gl_shader_parser *glsp, const char *shader_str,
-		     const char *file)
+bool gl_shader_parse(struct gl_shader_parser *glsp, const char *shader_str, const char *file)
 {
 	bool success = shader_parse(&glsp->parser, shader_str, file);
 	char *str = shader_parser_geterrors(&glsp->parser);

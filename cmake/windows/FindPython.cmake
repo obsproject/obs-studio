@@ -40,24 +40,11 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
-find_path(
-  Python_INCLUDE_DIR
-  NAMES Python.h
-  PATH_SUFFIXES include include/python
-  DOC "Python include directory")
+find_path(Python_INCLUDE_DIR NAMES Python.h PATH_SUFFIXES include include/python DOC "Python include directory")
 
-find_library(
-  Python_LIBRARY
-  NAMES python3
-  PATHS lib
-  DOC "Python location")
+find_library(Python_LIBRARY NAMES python3 PATHS lib DOC "Python location")
 
 if(EXISTS "${Python_INCLUDE_DIR}/patchlevel.h")
   file(STRINGS "${Python_INCLUDE_DIR}/patchlevel.h" _VERSION_STRING REGEX "^.*PY_VERSION[ \t]+\"[0-9\\.]+\"[ \t]*$")
@@ -72,8 +59,10 @@ endif()
 find_package_handle_standard_args(
   Python
   REQUIRED_VARS Python_LIBRARY Python_INCLUDE_DIR
-  VERSION_VAR Python_VERSION HANDLE_VERSION_RANGE REASON_FAILURE_MESSAGE
-                             "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
+  VERSION_VAR Python_VERSION
+  HANDLE_VERSION_RANGE
+  REASON_FAILURE_MESSAGE "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH."
+)
 mark_as_advanced(Python_INCLUDE_DIR Python_LIBRARY)
 
 if(Python_FOUND)
@@ -90,14 +79,18 @@ if(Python_FOUND)
       set_property(TARGET Python::Python PROPERTY IMPORTED_LIBNAME "${Python_LIBRARY}")
     endif()
 
-    set_target_properties(Python::Python PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Python_INCLUDE_DIR}"
-                                                    VERSION ${Python_VERSION})
+    set_target_properties(
+      Python::Python
+      PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Python_INCLUDE_DIR}" VERSION ${Python_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Python PROPERTIES
-  URL "https://www.python.org"
-  DESCRIPTION
-    "Python is a programming language that lets you work more quickly and integrate your systems more effectively.")
+  Python
+  PROPERTIES
+    URL "https://www.python.org"
+    DESCRIPTION
+      "Python is a programming language that lets you work more quickly and integrate your systems more effectively."
+)

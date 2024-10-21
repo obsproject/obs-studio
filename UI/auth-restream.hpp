@@ -22,6 +22,5 @@ public:
 	RestreamAuth(const Def &d);
 	~RestreamAuth();
 
-	static std::shared_ptr<Auth> Login(QWidget *parent,
-					   const std::string &service_name);
+	static std::shared_ptr<Auth> Login(QWidget *parent, const std::string &service_name);
 };

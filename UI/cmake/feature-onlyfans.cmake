@@ -1,8 +1,4 @@
-if(
-    ONLYFANS_CLIENTID
-    AND ONLYFANS_HASH MATCHES "^(0|[a-fA-F0-9]+)$"
-    AND TARGET OBS::browser-panels
-)
+if(TARGET OBS::browser-panels)
     target_sources(
         obs-studio
         PRIVATE

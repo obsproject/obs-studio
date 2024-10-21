@@ -57,8 +57,7 @@ private slots:
 	void RenameProjector(QString oldName, QString newName);
 
 public:
-	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
-		     ProjectorType type_);
+	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, ProjectorType type_);
 	~OBSProjector();
 
 	OBSSource GetSource();

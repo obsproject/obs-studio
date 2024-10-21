@@ -19,8 +19,7 @@
 #include "matrix3.h"
 #include "plane.h"
 
-void plane_from_tri(struct plane *dst, const struct vec3 *v1,
-		    const struct vec3 *v2, const struct vec3 *v3)
+void plane_from_tri(struct plane *dst, const struct vec3 *v1, const struct vec3 *v2, const struct vec3 *v3)
 {
 	struct vec3 temp;
 
@@ -31,8 +30,7 @@ void plane_from_tri(struct plane *dst, const struct vec3 *v1,
 	dst->dist = vec3_dot(v1, &dst->dir);
 }
 
-void plane_transform(struct plane *dst, const struct plane *p,
-		     const struct matrix4 *m)
+void plane_transform(struct plane *dst, const struct plane *p, const struct matrix4 *m)
 {
 	struct vec3 temp;
 
@@ -45,8 +43,7 @@ void plane_transform(struct plane *dst, const struct plane *p,
 	dst->dist = p->dist - vec3_dot(&dst->dir, &temp);
 }
 
-void plane_transform3x4(struct plane *dst, const struct plane *p,
-			const struct matrix3 *m)
+void plane_transform3x4(struct plane *dst, const struct plane *p, const struct matrix3 *m)
 {
 	struct vec3 temp;
 
@@ -57,8 +54,7 @@ void plane_transform3x4(struct plane *dst, const struct plane *p,
 	dst->dist = p->dist - vec3_dot(&dst->dir, &temp);
 }
 
-bool plane_intersection_ray(const struct plane *p, const struct vec3 *orig,
-			    const struct vec3 *dir, float *t)
+bool plane_intersection_ray(const struct plane *p, const struct vec3 *orig, const struct vec3 *dir, float *t)
 {
 	float c = vec3_dot(&p->dir, dir);
 
@@ -71,8 +67,7 @@ bool plane_intersection_ray(const struct plane *p, const struct vec3 *orig,
 	}
 }
 
-bool plane_intersection_line(const struct plane *p, const struct vec3 *v1,
-			     const struct vec3 *v2, float *t)
+bool plane_intersection_line(const struct plane *p, const struct vec3 *v1, const struct vec3 *v2, float *t)
 {
 	float p1_dist, p2_dist, p1_abs_dist, dist2;
 	bool p1_over, p2_over;
@@ -106,8 +101,7 @@ bool plane_intersection_line(const struct plane *p, const struct vec3 *v1,
 	return true;
 }
 
-bool plane_tri_inside(const struct plane *p, const struct vec3 *v1,
-		      const struct vec3 *v2, const struct vec3 *v3,
+bool plane_tri_inside(const struct plane *p, const struct vec3 *v1, const struct vec3 *v2, const struct vec3 *v3,
 		      float precision)
 {
 	/* bit 1: part or all is behind the plane      */
@@ -135,8 +129,7 @@ bool plane_tri_inside(const struct plane *p, const struct vec3 *v1,
 	return sides;
 }
 
-bool plane_line_inside(const struct plane *p, const struct vec3 *v1,
-		       const struct vec3 *v2, float precision)
+bool plane_line_inside(const struct plane *p, const struct vec3 *v1, const struct vec3 *v2, float precision)
 {
 	/* bit 1: part or all is behind the plane      */
 	/* bit 2: part or all is in front of the plane */

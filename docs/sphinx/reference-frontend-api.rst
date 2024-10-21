@@ -480,6 +480,12 @@ Functions
    Adds a dock with the widget to the UI with a toggle in the Docks
    menu.
 
+   When the dock is closed, a custom QEvent of type `QEvent::User + QEvent::Close`
+   is sent to the widget to enable it to react to the event (e.g., unload elements
+   to save resources).
+   A generic QShowEvent is already sent by default when the widget is being
+   shown (e.g., dock opened).
+
    Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
          and the id from the UI.
 
@@ -730,9 +736,26 @@ Functions
 
 ---------------------------------------
 
+.. deprecated:: 31.0
 .. function:: config_t *obs_frontend_get_global_config(void)
 
    :return: The config_t* associated with the global config (global.ini)
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_app_config(void)
+
+   :return: The config_t* associated with system-wide settings (global.ini)
+
+   .. versionadded:: 31.0
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_user_config(void)
+
+   :return: The config_t* associated with user settings (user.ini)
+
+   .. versionadded:: 31.0
 
 ---------------------------------------
 

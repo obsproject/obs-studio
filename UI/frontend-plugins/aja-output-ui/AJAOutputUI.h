@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QDialog>
+#include <properties-view.hpp>
 
 #include "ui_output.h"
-#include "../../UI/properties-view.hpp"
 
 namespace aja {
 class CardManager;

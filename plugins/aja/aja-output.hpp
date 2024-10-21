@@ -38,12 +38,10 @@ public:
 	enum {
 		// min queue sizes computed in AJAOutput
 		kVideoQueueMaxSize = 15,
-		kAudioQueueMaxSize =
-			96, // ~(48000 / 1024 samples per audio_frame) * 2sec
+		kAudioQueueMaxSize = 96, // ~(48000 / 1024 samples per audio_frame) * 2sec
 	};
 
-	AJAOutput(CNTV2Card *card, const std::string &cardID,
-		  const std::string &outputID, UWord deviceIndex,
+	AJAOutput(CNTV2Card *card, const std::string &cardID, const std::string &outputID, UWord deviceIndex,
 		  const NTV2DeviceID deviceID);
 
 	~AJAOutput();
@@ -61,8 +59,7 @@ public:
 	void CacheConnections(const NTV2XptConnections &cnx);
 	void ClearConnections();
 
-	void GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
-				 NTV2TestPatternSelect pattern,
+	void GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf, NTV2TestPatternSelect pattern,
 				 uint32_t frameNum);
 
 	void QueueVideoFrame(struct video_data *frame, size_t size);
@@ -72,8 +69,7 @@ public:
 	size_t VideoQueueSize();
 	size_t AudioQueueSize();
 
-	void DMAAudioFromQueue(NTV2AudioSystem audioSys, uint32_t channels,
-			       uint32_t sampleRate, uint32_t sampleSize);
+	void DMAAudioFromQueue(NTV2AudioSystem audioSys, uint32_t channels, uint32_t sampleRate, uint32_t sampleSize);
 	void DMAVideoFromQueue();
 
 	void CreateThread(bool enable = false);
@@ -128,13 +124,10 @@ public:
 
 private:
 	void reset_frame_counts();
-	void calculate_card_frame_indices(uint32_t numFrames, NTV2DeviceID id,
-					  NTV2Channel channel,
-					  NTV2VideoFormat vf,
+	void calculate_card_frame_indices(uint32_t numFrames, NTV2DeviceID id, NTV2Channel channel, NTV2VideoFormat vf,
 					  NTV2PixelFormat pf);
 	uint32_t get_card_play_count();
-	void dma_audio_samples(NTV2AudioSystem audioSys, uint32_t *data,
-			       size_t size);
+	void dma_audio_samples(NTV2AudioSystem audioSys, uint32_t *data, size_t size);
 
 	CNTV2Card *mCard;
 

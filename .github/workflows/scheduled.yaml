@@ -35,7 +35,7 @@ jobs:
 
   cache-cleanup:
     name: Cache Cleanup 🧹
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       actions: write
     steps:
@@ -44,6 +44,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           : Remove Stale Ccache Caches
+
+          # The jq expressions below use multiple 'select' calls to filter
+          # each item in the array with the 'actions_caches' key.
+          # First it only selects objects whose 'ref' element has the value
+          # 'refs/heads/master', of those objects only those whose 'key'
+          # value matches the specifies expression, before finally only
+          # selecting the 'id' and 'key' elements for a new object.
+          # The final 'join' command combines both elements with a semicolon
+          # into a raw string which can then be parsed directly.
 
           echo '::group::Processing master branch cache entries'
           while IFS=";" read -r cache_id cache_name; do
@@ -99,7 +108,7 @@ jobs:
   upload-language-files:
     name: Upload Language Files 🌐
     if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -113,6 +122,17 @@ jobs:
         run: |
           : Check Nightly Runs ☑️
           if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+          # This 'gh' command retrieves the last 2 runs of the workflow defined
+          # by 'scheduled.yaml' and retrieve only the 'headSha' value of the
+          # JSON response payload.
+          #
+          # As this job runs in context of the same workflow, the first element
+          # of the workflow list will be the currently active run.
+          #
+          # The jq expression then selects the 'headSha' element of the second
+          # element in the array, which is the SHA-1 hash of the commit used
+          # for the immediately prior run of this workflow.
 
           last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
 
@@ -132,8 +152,8 @@ jobs:
           checkGlob: '**/en-US.ini'
 
       - name: Upload US English Language Files 🇺🇸
-        if: fromJSON(steps.nightly-checks.outputs.passed) && steps.checks.outputs.passed == 'true'
-        uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
+        if: steps.checks.outcome == 'success' && fromJSON(steps.checks.outputs.hasChangedFiles)
+        uses: obsproject/obs-crowdin-sync/upload@84628cad04d2423e02443c64965cb834b4c5a245
         env:
           CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
           GITHUB_EVENT_BEFORE: ${{ steps.nightly-checks.outputs.lastNightly }}
@@ -156,6 +176,17 @@ jobs:
         run: |
           : Check Nightly Runs ☑️
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          # This 'gh' command retrieves the last 2 runs of the workflow defined
+          # by 'scheduled.yaml' and retrieve only the 'headSha' value of the
+          # JSON response payload.
+          #
+          # As this job runs in context of the same workflow, the first element
+          # of the workflow list will be the currently active run.
+          #
+          # The jq expression then selects the 'headSha' element of the second
+          # element in the array, which is the SHA-1 hash of the commit used
+          # for the immediately prior run of this workflow.
 
           local last_nightly=$(gh run list --workflow scheduled.yaml --limit 2 --json headSha --jq '.[1].headSha')
 

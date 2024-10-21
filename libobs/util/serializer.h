@@ -27,11 +27,7 @@
 extern "C" {
 #endif
 
-enum serialize_seek_type {
-	SERIALIZE_SEEK_START,
-	SERIALIZE_SEEK_CURRENT,
-	SERIALIZE_SEEK_END
-};
+enum serialize_seek_type { SERIALIZE_SEEK_START, SERIALIZE_SEEK_CURRENT, SERIALIZE_SEEK_END };
 
 struct serializer {
 	void *data;
@@ -49,8 +45,7 @@ static inline size_t s_read(struct serializer *s, void *data, size_t size)
 	return 0;
 }
 
-static inline size_t s_write(struct serializer *s, const void *data,
-			     size_t size)
+static inline size_t s_write(struct serializer *s, const void *data, size_t size)
 {
 	if (s && s->write && data && size)
 		return s->write(s->data, (void *)data, size);
@@ -69,8 +64,7 @@ static inline size_t serialize(struct serializer *s, void *data, size_t len)
 	return 0;
 }
 
-static inline int64_t serializer_seek(struct serializer *s, int64_t offset,
-				      enum serialize_seek_type seek_type)
+static inline int64_t serializer_seek(struct serializer *s, int64_t offset, enum serialize_seek_type seek_type)
 {
 	if (s && s->seek)
 		return s->seek(s->data, offset, seek_type);

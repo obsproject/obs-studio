@@ -42,6 +42,9 @@
      <property name="text">
       <string>Basic.VCam.RestartWarning</string>
      </property>
+     <property name="class" stdset="0">
+      <string notr="true">text-warning</string>
+     </property>
     </widget>
    </item>
    <item>

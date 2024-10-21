@@ -31,13 +31,10 @@ static bool upload_texture_2d(struct gs_texture_2d *tex, const uint8_t **data)
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 		return false;
 
-	success = gl_init_face(GL_TEXTURE_2D, tex->base.gl_type, num_levels,
-			       tex->base.gl_format,
-			       tex->base.gl_internal_format, compressed,
-			       tex->width, tex->height, tex_size, &data);
+	success = gl_init_face(GL_TEXTURE_2D, tex->base.gl_type, num_levels, tex->base.gl_format,
+			       tex->base.gl_internal_format, compressed, tex->width, tex->height, tex_size, &data);
 
-	if (!gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,
-			    num_levels - 1))
+	if (!gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, num_levels - 1))
 		success = false;
 	if (!gl_bind_texture(GL_TEXTURE_2D, 0))
 		success = false;
@@ -76,10 +73,8 @@ static bool create_pixel_unpack_buffer(struct gs_texture_2d *tex)
 	return success;
 }
 
-gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
-				    uint32_t height,
-				    enum gs_color_format color_format,
-				    uint32_t levels, const uint8_t **data,
+gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width, uint32_t height,
+				    enum gs_color_format color_format, uint32_t levels, const uint8_t **data,
 				    uint32_t flags)
 {
 	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
@@ -110,8 +105,7 @@ gs_texture_t *device_texture_create(gs_device_t *device, uint32_t width,
 		if (!gl_bind_texture(GL_TEXTURE_2D, tex->base.texture))
 			goto fail;
 
-		bool did_init =
-			gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+		bool did_init = gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
 		bool did_unbind = gl_bind_texture(GL_TEXTURE_2D, 0);
 		if (!did_init || !did_unbind)
@@ -144,13 +138,11 @@ void gs_texture_destroy(gs_texture_t *tex)
 
 	if (!tex->is_dummy && tex->is_dynamic) {
 		if (tex->type == GS_TEXTURE_2D) {
-			struct gs_texture_2d *tex2d =
-				(struct gs_texture_2d *)tex;
+			struct gs_texture_2d *tex2d = (struct gs_texture_2d *)tex;
 			if (tex2d->unpack_buffer)
 				gl_delete_buffers(1, &tex2d->unpack_buffer);
 		} else if (tex->type == GS_TEXTURE_3D) {
-			struct gs_texture_3d *tex3d =
-				(struct gs_texture_3d *)tex;
+			struct gs_texture_3d *tex3d = (struct gs_texture_3d *)tex;
 			if (tex3d->unpack_buffer)
 				gl_delete_buffers(1, &tex3d->unpack_buffer);
 		}
@@ -234,8 +226,8 @@ void gs_texture_unmap(gs_texture_t *tex)
 	if (!gl_bind_texture(GL_TEXTURE_2D, tex2d->base.texture))
 		goto failed;
 
-	glTexImage2D(GL_TEXTURE_2D, 0, tex->gl_internal_format, tex2d->width,
-		     tex2d->height, 0, tex->gl_format, tex->gl_type, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, tex->gl_internal_format, tex2d->width, tex2d->height, 0, tex->gl_format,
+		     tex->gl_type, 0);
 	if (!gl_success("glTexImage2D"))
 		goto failed;
 
