@@ -315,7 +315,7 @@ void d3d12_capture(void *swap_ptr, void *)
 	if (capture_should_init()) {
 		d3d12_init(swap);
 	}
-	if (capture_ready()) {
+	if (data.handle != nullptr && capture_ready()) {
 		d3d12_shtex_capture(swap);
 	}
 }
