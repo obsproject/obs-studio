@@ -799,10 +799,10 @@
             ]
         },
         {
-            "name": "SOOP Korea",
+            "name": "SOOP - Korea",
             "alt_names": [
                 "숲",
-                "SOOP Korea"
+                "SOOP - Korea"
             ],
             "servers": [
                 {
@@ -811,23 +811,23 @@
                 },
                 {
                     "name": "North America : US East",
-                    "url": "rtmp-esu.sooplive.co.kr"
+                    "url": "rtmp://rtmp-esu.sooplive.co.kr/app/"
                 },
                 {
                     "name": "North America : US West",
-                    "url": "rtmp-wsu.sooplive.co.kr"
+                    "url": "rtmp://rtmp-wsu.sooplive.co.kr/app/"
                 },
                 {
                     "name": "South America : Brazil",
-                    "url": "rtmp-brz.sooplive.co.kr"
+                    "url": "rtmp://rtmp-brz.sooplive.co.kr/app/"
                 },
                 {
                     "name": "Europe : UK",
-                    "url": "rtmp-uk.sooplive.co.kr"
+                    "url": "rtmp://rtmp-uk.sooplive.co.kr/app/"
                 },
                 {
                     "name": "Asia : Singapore",
-                    "url": "rtmp-sgp.sooplive.co.kr"
+                    "url": "rtmp://rtmp-sgp.sooplive.co.kr/app/"
                 }
             ],
             "recommended": {
