@@ -129,8 +129,6 @@ jobs:
           YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
           YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
-          ONLYFANS_CLIENTID: ${{ secrets.ONLYFANS_CLIENT_ID }}
-          ONLYFANS_HASH: ${{ secrets.ONLYFANS_HASH }}
         with:
           target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
@@ -205,8 +203,6 @@ jobs:
           YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
           YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
-          ONLYFANS_CLIENTID: ${{ secrets.ONLYFANS_CLIENT_ID }}
-          ONLYFANS_HASH: ${{ secrets.ONLYFANS_HASH }}
         with:
           target: x86_64
           config: ${{ needs.check-event.outputs.config }}
@@ -355,8 +351,6 @@ jobs:
           YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
           YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
-          ONLYFANS_CLIENTID: ${{ secrets.ONLYFANS_CLIENT_ID }}
-          ONLYFANS_HASH: ${{ secrets.ONLYFANS_HASH }}
           GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
         with:
           target: x64
