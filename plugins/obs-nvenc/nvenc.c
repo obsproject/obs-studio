@@ -274,6 +274,14 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 
 	initialize_params(enc, &nv_preset, nv_tuning, voi->width, voi->height, voi->fps_num, voi->fps_den);
 
+#ifdef NVENC_12_2_OR_LATER
+	/* Force at least 4 b-frames when using the UHQ tune */
+	if (nv_tuning == NV_ENC_TUNING_INFO_ULTRA_HIGH_QUALITY && enc->props.bf < 4) {
+		warn("Forcing number of b-frames to 4 for UHQ tune.");
+		enc->props.bf = 4;
+	}
+#endif
+
 	config->gopLength = gop_size;
 	config->frameIntervalP = gop_size == 1 ? 0 : (int32_t)enc->props.bf + 1;
 
