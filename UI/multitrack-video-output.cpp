@@ -175,9 +175,6 @@ static void adjust_video_encoder_scaling(const obs_video_info &ovi, obs_encoder_
 	auto requested_width = encoder_config.width;
 	auto requested_height = encoder_config.height;
 
-	if (ovi.output_width == requested_width || ovi.output_height == requested_height)
-		return;
-
 	if (ovi.base_width < requested_width || ovi.base_height < requested_height) {
 		blog(LOG_WARNING,
 		     "Requested resolution exceeds canvas/available resolution for encoder %zu: %" PRIu32 "x%" PRIu32
