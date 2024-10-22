@@ -2490,37 +2490,20 @@ static bool hotkey_hide_sceneitem(void *data, obs_hotkey_pair_id id,
 static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 			 const char *name)
 {
-	struct obs_data_array *hotkey_array;
-	obs_data_t *hotkey_data = scene->source->context.hotkey_data;
-
 	struct dstr show = {0};
 	struct dstr hide = {0};
-	struct dstr legacy = {0};
 	struct dstr show_desc = {0};
 	struct dstr hide_desc = {0};
 
-	dstr_printf(&show, "libobs.show_scene_item.%" PRIi64, item->id);
-	dstr_printf(&hide, "libobs.hide_scene_item.%" PRIi64, item->id);
+	dstr_copy(&show, "libobs.show_scene_item.%1");
+	dstr_replace(&show, "%1", name);
+	dstr_copy(&hide, "libobs.hide_scene_item.%1");
+	dstr_replace(&hide, "%1", name);
 
 	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
 	dstr_replace(&show_desc, "%1", name);
 	dstr_copy(&hide_desc, obs->hotkeys.sceneitem_hide);
 	dstr_replace(&hide_desc, "%1", name);
-
-	/* Check if legacy keys exists, migrate if necessary */
-	dstr_printf(&legacy, "libobs.show_scene_item.%s", name);
-	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
-	if (hotkey_array) {
-		obs_data_set_array(hotkey_data, show.array, hotkey_array);
-		obs_data_array_release(hotkey_array);
-	}
-
-	dstr_printf(&legacy, "libobs.hide_scene_item.%s", name);
-	hotkey_array = obs_data_get_array(hotkey_data, legacy.array);
-	if (hotkey_array) {
-		obs_data_set_array(hotkey_data, hide.array, hotkey_array);
-		obs_data_array_release(hotkey_array);
-	}
 
 	item->toggle_visibility = obs_hotkey_pair_register_source(
 		scene->source, show.array, show_desc.array, hide.array,
@@ -2529,7 +2512,6 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 
 	dstr_free(&show);
 	dstr_free(&hide);
-	dstr_free(&legacy);
 	dstr_free(&show_desc);
 	dstr_free(&hide_desc);
 }
@@ -2537,9 +2519,17 @@ static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item,
 static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
 				    const char *new_name)
 {
+	struct dstr show = {0};
+	struct dstr hide = {0};
 	struct dstr show_desc = {0};
 	struct dstr hide_desc = {0};
 
+	dstr_copy(&show, "libobs.show_scene_item.%1");
+	dstr_replace(&show, "%1", new_name);
+	dstr_copy(&hide, "libobs.hide_scene_item.%1");
+	dstr_replace(&hide, "%1", new_name);
+	obs_hotkey_pair_set_names(scene_item->toggle_visibility, show.array,
+				  hide.array);
 	dstr_copy(&show_desc, obs->hotkeys.sceneitem_show);
 	dstr_replace(&show_desc, "%1", new_name);
 	dstr_copy(&hide_desc, obs->hotkeys.sceneitem_hide);
@@ -2548,6 +2538,8 @@ static void sceneitem_rename_hotkey(const obs_sceneitem_t *scene_item,
 	obs_hotkey_pair_set_descriptions(scene_item->toggle_visibility,
 					 show_desc.array, hide_desc.array);
 
+	dstr_free(&show);
+	dstr_free(&hide);
 	dstr_free(&show_desc);
 	dstr_free(&hide_desc);
 }
