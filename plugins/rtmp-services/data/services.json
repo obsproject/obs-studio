@@ -3530,6 +3530,19 @@
             "supported video codecs": [
                 "h264"
             ]
-        }
+        },
+        {
+            "name": "SOOP - Global",
+            "stream_key_link": "https://www.sooplive.com/dashboard",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global-stream.sooplive.com/app"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ]
+        },
     ]
 }
