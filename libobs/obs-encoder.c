@@ -206,13 +206,14 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	uint32_t width, height;
 	enum video_format format;
 	enum video_colorspace space;
+	enum video_range_type range;
 
 	if (!encoder->media)
 		return;
 	if (encoder->gpu_scale_type == OBS_SCALE_DISABLE)
 		return;
 	if (!encoder->scaled_height && !encoder->scaled_width && encoder->preferred_format == VIDEO_FORMAT_NONE &&
-	    encoder->preferred_space == VIDEO_CS_DEFAULT)
+	    encoder->preferred_space == VIDEO_CS_DEFAULT && encoder->preferred_range == VIDEO_RANGE_DEFAULT)
 		return;
 
 	info = video_output_get_info(encoder->media);
@@ -220,6 +221,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	height = encoder->scaled_height ? encoder->scaled_height : info->height;
 	format = encoder->preferred_format != VIDEO_FORMAT_NONE ? encoder->preferred_format : info->format;
 	space = encoder->preferred_space != VIDEO_CS_DEFAULT ? encoder->preferred_space : info->colorspace;
+	range = encoder->preferred_range != VIDEO_RANGE_DEFAULT ? encoder->preferred_range : info->range;
 
 	current_mix = get_mix_for_video(encoder->media);
 	if (!current_mix)
@@ -235,7 +237,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		if (voi->width != width || voi->height != height)
 			continue;
 
-		if (voi->format != format || voi->colorspace != space || voi->range != info->range)
+		if (voi->format != format || voi->colorspace != space || voi->range != range)
 			continue;
 
 		current->encoder_refs += 1;
@@ -253,7 +255,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 
 	ovi.output_format = format;
 	ovi.colorspace = space;
-	ovi.range = info->range;
+	ovi.range = range;
 
 	ovi.output_height = height;
 	ovi.output_width = width;
@@ -281,7 +283,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		if (voi->width != width || voi->height != height)
 			continue;
 
-		if (voi->format != format || voi->colorspace != space || voi->range != info->range)
+		if (voi->format != format || voi->colorspace != space || voi->range != range)
 			continue;
 
 		obs_encoder_set_video(encoder, current->video);
@@ -1796,6 +1798,22 @@ enum video_colorspace obs_encoder_get_preferred_color_space(const obs_encoder_t 
 		return VIDEO_CS_DEFAULT;
 
 	return encoder->preferred_space;
+}
+
+void obs_encoder_set_preferred_range(obs_encoder_t *encoder, enum video_range_type range)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return;
+
+	encoder->preferred_range = range;
+}
+
+enum video_range_type obs_encoder_get_preferred_range(const obs_encoder_t *encoder)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return VIDEO_RANGE_DEFAULT;
+
+	return encoder->preferred_range;
 }
 
 void obs_encoder_release(obs_encoder_t *encoder)

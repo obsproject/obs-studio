@@ -2267,6 +2267,14 @@ EXPORT enum video_format obs_encoder_get_preferred_video_format(const obs_encode
 EXPORT void obs_encoder_set_preferred_color_space(obs_encoder_t *encoder, enum video_colorspace colorspace);
 EXPORT enum video_colorspace obs_encoder_get_preferred_color_space(const obs_encoder_t *encoder);
 
+/**
+ * Sets the preferred range for an encoder.
+ * 
+ * Only supported when GPU scaling is enabled.
+ */
+EXPORT void obs_encoder_set_preferred_range(obs_encoder_t *encoder, enum video_range_type range);
+EXPORT enum video_range_type obs_encoder_get_preferred_range(const obs_encoder_t *encoder);
+
 /** Gets the default settings for an encoder type */
 EXPORT obs_data_t *obs_encoder_defaults(const char *id);
 EXPORT obs_data_t *obs_encoder_get_defaults(const obs_encoder_t *encoder);
