@@ -27,7 +27,8 @@ const struct obs_source_info group_info;
 static void resize_group(obs_sceneitem_t *group, bool scene_resize);
 static void resize_scene(obs_scene_t *scene);
 static void signal_parent(obs_scene_t *parent, const char *name, calldata_t *params);
-static void get_ungrouped_transform(obs_sceneitem_t *group, struct vec2 *pos, struct vec2 *scale, float *rot);
+static void get_ungrouped_transform(obs_sceneitem_t *group, obs_sceneitem_t *item, struct vec2 *pos, struct vec2 *scale,
+				    float *rot);
 static inline bool crop_enabled(const struct obs_sceneitem_crop *crop);
 static inline bool item_texture_enabled(const struct obs_scene_item *item);
 static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item, const char *name);
@@ -1313,7 +1314,7 @@ static void scene_save_item(obs_data_array_t *array, struct obs_scene_item *item
 	float rot = item->rot;
 
 	if (backup_group) {
-		get_ungrouped_transform(backup_group, &pos, &scale, &rot);
+		get_ungrouped_transform(backup_group, item, &pos, &scale, &rot);
 	}
 
 	obs_data_set_string(item_data, "name", name);
@@ -2363,7 +2364,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene, obs_source_t 
 	item->absolute_coordinates = scene->absolute_coordinates;
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
-	vec2_set(&item->scale_ref, (float)scene_getwidth(scene), (float)scene_getheight(scene));
+	get_scene_dimensions(item, &item->scale_ref.x, &item->scale_ref.y);
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
 
@@ -3483,27 +3484,46 @@ static inline void transform_val(struct vec2 *v2, struct matrix4 *transform)
 	v2->y = v.y;
 }
 
-static void get_ungrouped_transform(obs_sceneitem_t *group, struct vec2 *pos, struct vec2 *scale, float *rot)
+static void get_ungrouped_transform(obs_sceneitem_t *group, obs_sceneitem_t *item, struct vec2 *pos, struct vec2 *scale,
+				    float *rot)
 {
 	struct matrix4 transform;
 	struct matrix4 mat;
 	struct vec4 x_base;
+	struct vec2 scale_abs, pos_abs;
+
+	if (item->absolute_coordinates) {
+		vec2_copy(&scale_abs, scale);
+		vec2_copy(&pos_abs, pos);
+	} else {
+		size_to_absolute(&scale_abs, scale, item);
+		pos_to_absolute(&pos_abs, pos, item);
+	}
 
 	vec4_set(&x_base, 1.0f, 0.0f, 0.0f, 0.0f);
 
 	matrix4_copy(&transform, &group->draw_transform);
 
-	transform_val(pos, &transform);
+	transform_val(&pos_abs, &transform);
 	vec4_set(&transform.t, 0.0f, 0.0f, 0.0f, 1.0f);
 
-	vec4_set(&mat.x, scale->x, 0.0f, 0.0f, 0.0f);
-	vec4_set(&mat.y, 0.0f, scale->y, 0.0f, 0.0f);
+	vec4_set(&mat.x, scale_abs.x, 0.0f, 0.0f, 0.0f);
+	vec4_set(&mat.y, 0.0f, scale_abs.y, 0.0f, 0.0f);
 	vec4_set(&mat.z, 0.0f, 0.0f, 1.0f, 0.0f);
 	vec4_set(&mat.t, 0.0f, 0.0f, 0.0f, 1.0f);
 	matrix4_mul(&mat, &mat, &transform);
 
-	scale->x = vec4_len(&mat.x) * (scale->x > 0.0f ? 1.0f : -1.0f);
-	scale->y = vec4_len(&mat.y) * (scale->y > 0.0f ? 1.0f : -1.0f);
+	scale_abs.x = vec4_len(&mat.x) * (scale_abs.x > 0.0f ? 1.0f : -1.0f);
+	scale_abs.y = vec4_len(&mat.y) * (scale_abs.y > 0.0f ? 1.0f : -1.0f);
+
+	if (item->absolute_coordinates) {
+		vec2_copy(scale, &scale_abs);
+		vec2_copy(pos, &pos_abs);
+	} else {
+		size_from_absolute(scale, &scale_abs, item);
+		pos_from_absolute(pos, &pos_abs, item);
+	}
+
 	*rot += group->rot;
 }
 
@@ -3513,7 +3533,7 @@ static void remove_group_transform(obs_sceneitem_t *group, obs_sceneitem_t *item
 	if (!parent || !group)
 		return;
 
-	get_ungrouped_transform(group, &item->pos, &item->scale, &item->rot);
+	get_ungrouped_transform(group, item, &item->pos, &item->scale, &item->rot);
 
 	update_item_transform(item, false);
 }
@@ -3524,21 +3544,37 @@ static void apply_group_transform(obs_sceneitem_t *item, obs_sceneitem_t *group)
 	struct matrix4 mat;
 	struct vec4 x_base;
 
+	struct vec2 scale_abs, pos_abs;
+
+	if (item->absolute_coordinates) {
+		vec2_copy(&scale_abs, &item->scale);
+		vec2_copy(&pos_abs, &item->pos);
+	} else {
+		size_to_absolute(&scale_abs, &item->scale, item);
+		pos_to_absolute(&pos_abs, &item->pos, item);
+	}
+
 	vec4_set(&x_base, 1.0f, 0.0f, 0.0f, 0.0f);
 
 	matrix4_inv(&transform, &group->draw_transform);
 
-	transform_val(&item->pos, &transform);
+	transform_val(&pos_abs, &transform);
 	vec4_set(&transform.t, 0.0f, 0.0f, 0.0f, 1.0f);
 
-	vec4_set(&mat.x, item->scale.x, 0.0f, 0.0f, 0.0f);
-	vec4_set(&mat.y, 0.0f, item->scale.y, 0.0f, 0.0f);
+	vec4_set(&mat.x, scale_abs.x, 0.0f, 0.0f, 0.0f);
+	vec4_set(&mat.y, 0.0f, scale_abs.y, 0.0f, 0.0f);
 	vec4_set(&mat.z, 0.0f, 0.0f, 1.0f, 0.0f);
 	vec4_set(&mat.t, 0.0f, 0.0f, 0.0f, 1.0f);
 	matrix4_mul(&mat, &mat, &transform);
 
-	item->scale.x = vec4_len(&mat.x) * (item->scale.x > 0.0f ? 1.0f : -1.0f);
-	item->scale.y = vec4_len(&mat.y) * (item->scale.y > 0.0f ? 1.0f : -1.0f);
+	if (item->absolute_coordinates) {
+		vec2_copy(&item->scale, &scale_abs);
+		vec2_copy(&item->pos, &pos_abs);
+	} else {
+		size_from_absolute(&item->scale, &scale_abs, item);
+		pos_from_absolute(&item->pos, &pos_abs, item);
+	}
+
 	item->rot -= group->rot;
 
 	update_item_transform(item, false);

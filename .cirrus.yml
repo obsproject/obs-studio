@@ -1,7 +1,7 @@
 # $FreeBSD$
 
 freebsd_instance:
-  image: freebsd-13-2-release-amd64
+  image: freebsd-14-1-release-amd64-ufs
 
 env:
   CIRRUS_CLONE_DEPTH: 1
@@ -14,6 +14,7 @@ task:
     ffmpeg qt6-base qt6-svg jansson libsysinfo e2fsprogs-libuuid pulseaudio
     alsa-lib pipewire v4l_compat libpci librist srt nlohmann-json uthash
     qr-code-generator websocketpp asio vlc swig luajit jackit sndio fdk-aac
+    libdatachannel
   script:
   - cmake
     -S $(pwd)
@@ -23,7 +24,6 @@ task:
     -DENABLE_JACK:BOOL=ON
     -DENABLE_SNDIO:BOOL=ON
     -DENABLE_LIBFDK:BOOL=ON
-    -DENABLE_WEBRTC:BOOL=OFF
   - cmake
     --build build
     --config RelWithDebInfo

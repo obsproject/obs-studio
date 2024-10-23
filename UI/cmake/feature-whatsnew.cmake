@@ -9,7 +9,7 @@ if(ENABLE_WHATSNEW AND TARGET OBS::browser-panels)
     set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
     find_package(MbedTLS REQUIRED)
     set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
-    find_package(nlohmann_json REQUIRED)
+    find_package(nlohmann_json 3.11 REQUIRED)
 
     if(NOT TARGET OBS::blake2)
       add_subdirectory("${CMAKE_SOURCE_DIR}/deps/blake2" "${CMAKE_BINARY_DIR}/deps/blake2")
