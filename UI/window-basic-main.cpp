@@ -2124,6 +2124,7 @@ void OBSBasic::OBSInit()
 
 	InitBasicConfigDefaults2();
 
+	CheckForMissingEncoders();
 	CheckForSimpleModeX264Fallback();
 
 	LogEncoders();
