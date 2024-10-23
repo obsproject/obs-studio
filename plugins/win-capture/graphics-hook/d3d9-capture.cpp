@@ -543,7 +543,7 @@ static void d3d9_capture(IDirect3DDevice9 *device, IDirect3DSurface9 *backbuffer
 	if (capture_should_init()) {
 		d3d9_init(device);
 	}
-	if (capture_ready()) {
+	if (capture_ready() && data.handle != nullptr) {
 		if (data.device != device) {
 			d3d9_free();
 			return;
