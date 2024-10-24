@@ -41,7 +41,7 @@ jobs:
 
   macos:
     name: macOS 🍏 (clang-analyze)
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
