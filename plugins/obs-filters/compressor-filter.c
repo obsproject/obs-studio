@@ -27,6 +27,9 @@
 /* clang-format off */
 
 #define S_RATIO                         "ratio"
+#if defined(_M_ARM64)
+	#undef S_THRESHOLD
+#endif
 #define S_THRESHOLD                     "threshold"
 #define S_ATTACK_TIME                   "attack_time"
 #define S_RELEASE_TIME                  "release_time"
