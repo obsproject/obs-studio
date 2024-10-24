@@ -339,7 +339,7 @@ RTMP_TLS_LoadCerts(RTMP *r) {
 
     CFRelease(anchors);
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
     if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") < 0) {
         RTMP_Log(RTMP_LOGERROR, "mbedtls_x509_crt_parse_path: Couldn't parse "
             "/etc/ssl/certs");
