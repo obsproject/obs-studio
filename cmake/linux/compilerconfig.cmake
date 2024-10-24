@@ -39,6 +39,7 @@ set(
   -Wunused-value
   -Wunused-variable
   -Wvla
+  -Wswitch
 )
 
 add_compile_options(
