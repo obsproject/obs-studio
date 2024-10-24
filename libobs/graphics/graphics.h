@@ -299,6 +299,7 @@ typedef struct gs_effect_technique gs_technique_t;
 typedef struct gs_effect_pass gs_epass_t;
 typedef struct gs_effect_param gs_eparam_t;
 typedef struct gs_device gs_device_t;
+typedef void gs_sync_t;
 typedef struct graphics_subsystem graphics_t;
 
 /* ---------------------------------------------------
@@ -899,6 +900,19 @@ EXPORT bool gs_query_dmabuf_modifiers_for_format(uint32_t drm_format, uint64_t *
 EXPORT gs_texture_t *gs_texture_create_from_pixmap(uint32_t width, uint32_t height, enum gs_color_format color_format,
 						   uint32_t target, void *pixmap);
 
+EXPORT bool gs_query_sync_capabilities(void);
+
+EXPORT gs_sync_t *gs_sync_create(void);
+
+EXPORT gs_sync_t *gs_sync_create_from_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point);
+
+EXPORT void gs_sync_destroy(gs_sync_t *sync);
+
+EXPORT bool gs_sync_export_syncobj_timeline_point(gs_sync_t *sync, int syncobj_fd, uint64_t timeline_point);
+
+EXPORT bool gs_sync_signal_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point);
+
+EXPORT bool gs_sync_wait(gs_sync_t *sync);
 #endif
 
 /* inline functions used by modules */

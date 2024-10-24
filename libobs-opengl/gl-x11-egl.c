@@ -83,6 +83,7 @@ struct gl_platform {
 	EGLContext context;
 	EGLSurface pbuffer;
 	bool close_xdisplay;
+	int drm_fd;
 };
 
 /* The following utility function is copied verbatim from GLX code. */
@@ -342,6 +343,11 @@ static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device, uint3
 		goto fail_load_gl;
 	}
 
+	plat->drm_fd = get_drm_render_node_fd(plat->edisplay);
+	if (plat->drm_fd < 0) {
+		blog(LOG_WARNING, "Unable to open DRM render node.");
+	}
+
 	goto success;
 
 fail_make_current:
@@ -367,6 +373,7 @@ static void gl_x11_egl_platform_destroy(struct gl_platform *plat)
 	eglTerminate(plat->edisplay);
 	if (plat->close_xdisplay)
 		XCloseDisplay(plat->xdisplay);
+	close_drm_render_node_fd(plat->drm_fd);
 	bfree(plat);
 }
 
@@ -571,6 +578,59 @@ static bool gl_x11_egl_enum_adapters(gs_device_t *device, bool (*callback)(void 
 	return gl_egl_enum_adapters(device->plat->edisplay, callback, param);
 }
 
+static bool gl_x11_egl_device_query_sync_capabilities(gs_device_t *device)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_query_sync_capabilities(plat->drm_fd);
+}
+
+static gs_sync_t *gl_x11_egl_device_sync_create(gs_device_t *device)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_create_sync(plat->edisplay);
+}
+
+static gs_sync_t *gl_x11_egl_device_sync_create_from_syncobj_timeline_point(gs_device_t *device, int syncobj_fd,
+									    uint64_t timeline_point)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_create_sync_from_syncobj_timeline_point(plat->edisplay, plat->drm_fd, syncobj_fd, timeline_point);
+}
+
+static void gl_x11_egl_device_sync_destroy(gs_device_t *device, gs_sync_t *sync)
+{
+	struct gl_platform *plat = device->plat;
+
+	gl_egl_device_sync_destroy(plat->edisplay, sync);
+}
+
+static bool gl_x11_egl_device_sync_export_syncobj_timeline_point(gs_device_t *device, gs_sync_t *sync, int syncobj_fd,
+								 uint64_t timeline_point)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_sync_export_syncobj_timeline_point(plat->edisplay, sync, plat->drm_fd, syncobj_fd,
+							 timeline_point);
+}
+
+static bool gl_x11_egl_device_sync_signal_syncobj_timeline_point(gs_device_t *device, int syncobj_fd,
+								 uint64_t timeline_point)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_sync_signal_syncobj_timeline_point(plat->drm_fd, syncobj_fd, timeline_point);
+}
+
+static bool gl_x11_egl_device_sync_wait(gs_device_t *device, gs_sync_t *sync)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_sync_wait(plat->edisplay, sync);
+}
+
 static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.windowinfo_create = gl_x11_egl_windowinfo_create,
 	.windowinfo_destroy = gl_x11_egl_windowinfo_destroy,
@@ -591,6 +651,13 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.device_query_dmabuf_modifiers_for_format = gl_x11_egl_device_query_dmabuf_modifiers_for_format,
 	.device_texture_create_from_pixmap = gl_x11_egl_device_texture_create_from_pixmap,
 	.device_enum_adapters = gl_x11_egl_enum_adapters,
+	.device_query_sync_capabilities = gl_x11_egl_device_query_sync_capabilities,
+	.device_sync_create = gl_x11_egl_device_sync_create,
+	.device_sync_create_from_syncobj_timeline_point = gl_x11_egl_device_sync_create_from_syncobj_timeline_point,
+	.device_sync_destroy = gl_x11_egl_device_sync_destroy,
+	.device_sync_export_syncobj_timeline_point = gl_x11_egl_device_sync_export_syncobj_timeline_point,
+	.device_sync_signal_syncobj_timeline_point = gl_x11_egl_device_sync_signal_syncobj_timeline_point,
+	.device_sync_wait = gl_x11_egl_device_sync_wait,
 };
 
 const struct gl_winsys_vtable *gl_x11_egl_get_winsys_vtable(void)
