@@ -150,6 +150,22 @@ EXPORT bool device_query_dmabuf_modifiers_for_format(gs_device_t *device, uint32
 EXPORT gs_texture_t *device_texture_create_from_pixmap(gs_device_t *device, uint32_t width, uint32_t height,
 						       enum gs_color_format color_format, uint32_t target,
 						       void *pixmap);
+
+EXPORT bool device_query_sync_capabilities(gs_device_t *device);
+
+EXPORT gs_sync_t *device_sync_create(gs_device_t *device);
+
+EXPORT gs_sync_t *device_sync_create_from_syncobj_timeline_point(gs_device_t *device, int syncobj_fd,
+								 uint64_t timeline_point);
+
+EXPORT void device_sync_destroy(gs_device_t *device, gs_sync_t *sync);
+
+EXPORT bool device_sync_export_syncobj_timeline_point(gs_device_t *device, gs_sync_t *sync, int syncobj_fd,
+						      uint64_t timeline_point);
+
+EXPORT bool device_sync_signal_syncobj_timeline_point(gs_device_t *device, int syncobj_fd, uint64_t timeline_point);
+
+EXPORT bool device_sync_wait(gs_device_t *device, gs_sync_t *sync);
 #endif
 
 #ifdef __cplusplus

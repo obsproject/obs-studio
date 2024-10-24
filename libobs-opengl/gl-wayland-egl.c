@@ -90,6 +90,8 @@ struct gl_platform {
 	EGLDisplay display;
 	EGLConfig config;
 	EGLContext context;
+
+	int drm_fd;
 };
 
 struct gl_windowinfo *gl_wayland_egl_windowinfo_create(const struct gs_init_data *info)
@@ -227,6 +229,11 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device, u
 		goto fail_load_egl;
 	}
 
+	plat->drm_fd = get_drm_render_node_fd(plat->display);
+	if (plat->drm_fd < 0) {
+		blog(LOG_WARNING, "Unable to open DRM render node.");
+	}
+
 	goto success;
 
 fail_load_egl:
@@ -247,6 +254,7 @@ static void gl_wayland_egl_platform_destroy(struct gl_platform *plat)
 	if (plat) {
 		egl_context_destroy(plat);
 		eglTerminate(plat->display);
+		close_drm_render_node_fd(plat->drm_fd);
 		bfree(plat);
 	}
 }
@@ -381,6 +389,58 @@ static bool gl_wayland_egl_enum_adapters(gs_device_t *device,
 	return gl_egl_enum_adapters(device->plat->display, callback, param);
 }
 
+static bool gl_wayland_egl_device_query_sync_capabilities(gs_device_t *device)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_query_sync_capabilities(plat->drm_fd);
+}
+
+static gs_sync_t *gl_wayland_egl_device_sync_create(gs_device_t *device)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_create_sync(plat->display);
+}
+
+static gs_sync_t *gl_wayland_egl_device_sync_create_from_syncobj_timeline_point(gs_device_t *device, int syncobj_fd,
+										uint64_t timeline_point)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_create_sync_from_syncobj_timeline_point(plat->display, plat->drm_fd, syncobj_fd, timeline_point);
+}
+
+static void gl_wayland_egl_device_sync_destroy(gs_device_t *device, gs_sync_t *sync)
+{
+	struct gl_platform *plat = device->plat;
+
+	gl_egl_device_sync_destroy(plat->display, sync);
+}
+
+static bool gl_wayland_egl_device_sync_export_syncobj_timeline_point(gs_device_t *device, gs_sync_t *sync,
+								     int syncobj_fd, uint64_t timeline_point)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_sync_export_syncobj_timeline_point(plat->display, sync, plat->drm_fd, syncobj_fd, timeline_point);
+}
+
+static bool gl_wayland_egl_device_sync_signal_syncobj_timeline_point(gs_device_t *device, int syncobj_fd,
+								     uint64_t timeline_point)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_sync_signal_syncobj_timeline_point(plat->drm_fd, syncobj_fd, timeline_point);
+}
+
+static bool gl_wayland_egl_device_sync_wait(gs_device_t *device, gs_sync_t *sync)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_sync_wait(plat->display, sync);
+}
+
 static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
 	.windowinfo_create = gl_wayland_egl_windowinfo_create,
 	.windowinfo_destroy = gl_wayland_egl_windowinfo_destroy,
@@ -401,6 +461,13 @@ static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
 	.device_query_dmabuf_modifiers_for_format = gl_wayland_egl_device_query_dmabuf_modifiers_for_format,
 	.device_texture_create_from_pixmap = gl_wayland_egl_device_texture_create_from_pixmap,
 	.device_enum_adapters = gl_wayland_egl_enum_adapters,
+	.device_query_sync_capabilities = gl_wayland_egl_device_query_sync_capabilities,
+	.device_sync_create = gl_wayland_egl_device_sync_create,
+	.device_sync_create_from_syncobj_timeline_point = gl_wayland_egl_device_sync_create_from_syncobj_timeline_point,
+	.device_sync_destroy = gl_wayland_egl_device_sync_destroy,
+	.device_sync_export_syncobj_timeline_point = gl_wayland_egl_device_sync_export_syncobj_timeline_point,
+	.device_sync_signal_syncobj_timeline_point = gl_wayland_egl_device_sync_signal_syncobj_timeline_point,
+	.device_sync_wait = gl_wayland_egl_device_sync_wait,
 };
 
 const struct gl_winsys_vtable *gl_wayland_egl_get_winsys_vtable(void)

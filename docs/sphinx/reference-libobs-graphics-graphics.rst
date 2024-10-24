@@ -1082,6 +1082,91 @@ Texture Functions
 
 ---------------------
 
+.. function:: bool gs_query_sync_capabilities(void)
+
+   **only Linux, FreeBSD, DragonFly:** Checks if the use of synchronization objects is supported
+
+   :rtype:  bool
+   :return: *true* if supported, *false* otherwise
+
+---------------------
+
+.. function:: gs_sync_t *gs_sync_create(void)
+
+   **only Linux, FreeBSD, DragonFly:** Creates a synchronization object
+
+   Inserts a fence command into the command stream of the bound context and
+   creates a synchronization object that is signalled when all the commands
+   preceding the inserted fence are executed.
+
+   :rtype: gs_sync_t*
+
+---------------------
+
+.. function:: gs_sync_t *gs_sync_create_from_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point)
+
+   **only Linux, FreeBSD, DragonFly:** Creates a synchronization object
+
+   Creates a synchronization object that is signalled when the specified
+   timeline point of the given DRM syncobj is signalled.
+
+   :param syncobj_fd:     A file descriptor that is referencing a DRM syncobj
+   :param timeline_point: Timeline point of the DRM syncobj
+   :rtype:                gs_sync_t*
+
+---------------------
+
+.. function:: void gs_sync_destroy(gs_sync_t *sync)
+
+   **only Linux, FreeBSD, DragonFly:** Destroys a synchronization object
+
+   If the given synchronization object is in use, it will be marked for
+   destruction and will be destroyed later when it is no longer referenced.
+
+   :param sync: Synchronization object
+
+---------------------
+
+.. function:: bool gs_sync_export_syncobj_timeline_point(gs_sync_t *sync, int syncobj_fd, uint64_t timeline_point)
+
+   **only Linux, FreeBSD, DragonFly:** Exports a synchronization object to a DRM syncobj timeline point
+
+   Creates a DRM syncobj timeline point that is signalled when the given
+   synchronization object is signalled.
+
+   :param sync:           Synchronization object
+   :param syncobj_fd:     A file descriptor that is referencing a DRM syncobj
+   :param timeline_point: Timeline point of the DRM syncobj
+   :rtype:                bool
+   :return:               *true* if the synchronization object is exported successfully, *false* otherwise
+
+---------------------
+
+.. function:: bool gs_sync_signal_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point)
+
+   **only Linux, FreeBSD, DragonFly:** Signals a DRM syncobj timeline point
+
+   :param syncobj_fd:     A file descriptor that is referencing a DRM syncobj
+   :param timeline_point: Timeline point of the DRM syncobj
+   :rtype:                bool
+   :return:               *true* if the timeline point is signalled successfully, *false* otherwise
+
+---------------------
+
+.. function:: bool gs_sync_wait(gs_sync_t *sync)
+
+   **only Linux, FreeBSD, DragonFly:** Wait for a synchronization object to be signalled
+
+   Blocks the execution of the commands that would be inserted into the command
+   stream of the bound context until the given synchronization object is
+   signalled.
+
+   :param sync: Synchronization object
+   :rtype:      bool
+   :return:     *true* if successful, *false* otherwise
+
+---------------------
+
 .. function:: gs_texture_t *gs_texture_create_from_iosurface(void *iosurf)
 
    **macOS only:** Creates a texture from an IOSurface.
@@ -1586,4 +1671,5 @@ Graphics Types
 .. type:: struct gs_shader           gs_shader_t
 .. type:: struct gs_shader_param     gs_sparam_t
 .. type:: struct gs_device           gs_device_t
+.. type:: void                       gs_sync_t
 .. type:: struct graphics_subsystem  graphics_t
