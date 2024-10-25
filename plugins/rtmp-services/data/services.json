@@ -799,7 +799,7 @@
             ]
         },
         {
-            "name": "AfreecaTV",
+            "name": "SOOP - Korea",
             "alt_names": [
                 "아프리카TV",
                 "Afreeca.TV"
@@ -807,27 +807,27 @@
             "servers": [
                 {
                     "name": "Asia : Korea",
-                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app"
+                    "url": "rtmp://stream.sooplive.co.kr/app/"
                 },
                 {
                     "name": "North America : US East",
-                    "url": "rtmp://rtmp-esu.afreecatv.com/app"
+                    "url": "rtmp://rtmp-esu.sooplive.co.kr/app/"
                 },
                 {
                     "name": "North America : US West",
-                    "url": "rtmp://rtmp-wsu.afreecatv.com/app"
+                    "url": "rtmp://rtmp-wsu.sooplive.co.kr/app/"
                 },
                 {
                     "name": "South America : Brazil",
-                    "url": "rtmp://rtmp-brz.afreecatv.com/app"
+                    "url": "rtmp://rtmp-brz.sooplive.co.kr/app/"
                 },
                 {
                     "name": "Europe : UK",
-                    "url": "rtmp://rtmp-uk.afreecatv.com/app"
+                    "url": "rtmp://rtmp-uk.sooplive.co.kr/app/"
                 },
                 {
                     "name": "Asia : Singapore",
-                    "url": "rtmp://rtmp-sgp.afreecatv.com/app"
+                    "url": "rtmp://rtmp-sgp.sooplive.co.kr/app/"
                 }
             ],
             "recommended": {
