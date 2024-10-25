@@ -1055,6 +1055,8 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	streamPage->ui->useMultitrackVideo->setChecked(hardwareEncodingAvailable && multitrackVideoEnabled);
 	streamPage->ServiceChanged();
 
+	TestSoftwareEncoding();
+	TestHardwareEncoding();
 	if (!hardwareEncodingAvailable) {
 		delete streamPage->ui->preferHardware;
 		streamPage->ui->preferHardware = nullptr;
@@ -1078,6 +1080,16 @@ AutoConfig::~AutoConfig()
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	main->EnableOutputs(true);
 	EnableThreadedMessageBoxes(false);
+}
+
+void AutoConfig::TestSoftwareEncoding()
+{
+	size_t idx = 0;
+	const char *id;
+	while (obs_enum_encoder_types(idx++, &id)) {
+		if (strcmp(id, "obs_x264") == 0)
+			x264Available = true;
+	}
 }
 
 void AutoConfig::TestHardwareEncoding()
@@ -1155,8 +1167,10 @@ inline const char *AutoConfig::GetEncoderId(Encoder enc)
 		return SIMPLE_ENCODER_AMD;
 	case Encoder::Apple:
 		return SIMPLE_ENCODER_APPLE_H264;
-	default:
+	case Encoder::x264:
 		return SIMPLE_ENCODER_X264;
+	default:
+		return SIMPLE_ENCODER_OPENH264;
 	}
 };
 

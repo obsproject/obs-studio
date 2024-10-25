@@ -705,7 +705,7 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 		ResetProfileData();
 	}
 
-	CheckForSimpleModeX264Fallback();
+	CheckForSimpleModeH264Fallback();
 
 	RefreshProfiles();
 
@@ -776,10 +776,11 @@ std::vector<std::string> OBSBasic::GetRestartRequirements(const ConfigFile &conf
 	return result;
 }
 
-void OBSBasic::CheckForSimpleModeX264Fallback()
+void OBSBasic::CheckForSimpleModeH264Fallback()
 {
 	const char *curStreamEncoder = config_get_string(activeConfiguration, "SimpleOutput", "StreamEncoder");
 	const char *curRecEncoder = config_get_string(activeConfiguration, "SimpleOutput", "RecEncoder");
+	bool x264_supported = false;
 	bool qsv_supported = false;
 	bool qsv_av1_supported = false;
 	bool amd_supported = false;
@@ -796,7 +797,9 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	const char *id;
 
 	while (obs_enum_encoder_types(idx++, &id)) {
-		if (strcmp(id, "h264_texture_amf") == 0)
+		if (strcmp(id, "obs_x264") == 0)
+			x264_supported = true;
+		else if (strcmp(id, "h264_texture_amf") == 0)
 			amd_supported = true;
 		else if (strcmp(id, "obs_qsv11") == 0)
 			qsv_supported = true;
@@ -819,69 +822,71 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 			apple_hevc_supported = true;
 #endif
 	}
+	// Check to see whether x264 is available
+	const char *fallback_encoder_name = (x264_supported ? SIMPLE_ENCODER_X264 : SIMPLE_ENCODER_OPENH264);
 
 	auto CheckEncoder = [&](const char *&name) {
 		if (strcmp(name, SIMPLE_ENCODER_QSV) == 0) {
 			if (!qsv_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 		} else if (strcmp(name, SIMPLE_ENCODER_QSV_AV1) == 0) {
 			if (!qsv_av1_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 		} else if (strcmp(name, SIMPLE_ENCODER_NVENC) == 0) {
 			if (!nve_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 		} else if (strcmp(name, SIMPLE_ENCODER_NVENC_AV1) == 0) {
 			if (!nve_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 #ifdef ENABLE_HEVC
 		} else if (strcmp(name, SIMPLE_ENCODER_AMD_HEVC) == 0) {
 			if (!amd_hevc_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 		} else if (strcmp(name, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
 			if (!nve_hevc_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 #endif
 		} else if (strcmp(name, SIMPLE_ENCODER_AMD) == 0) {
 			if (!amd_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 		} else if (strcmp(name, SIMPLE_ENCODER_AMD_AV1) == 0) {
 			if (!amd_av1_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 		} else if (strcmp(name, SIMPLE_ENCODER_APPLE_H264) == 0) {
 			if (!apple_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 #ifdef ENABLE_HEVC
 		} else if (strcmp(name, SIMPLE_ENCODER_APPLE_HEVC) == 0) {
 			if (!apple_hevc_supported) {
 				changed = true;
-				name = SIMPLE_ENCODER_X264;
+				name = fallback_encoder_name;
 				return false;
 			}
 #endif

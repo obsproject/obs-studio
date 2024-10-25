@@ -1459,7 +1459,9 @@ static QString get_adv_fallback(const QString &enc)
 		return "com.apple.videotoolbox.videoencoder.ave.avc";
 	if (enc == "obs_qsv11_av1")
 		return "obs_qsv11";
-	return "obs_x264";
+	if (EncoderAvailable("obs_x264"))
+		return "obs_x264";
+	return "ffmpeg_openh264";
 }
 
 static QString get_adv_audio_fallback(const QString &enc)
@@ -1488,7 +1490,9 @@ static QString get_simple_fallback(const QString &enc)
 		return SIMPLE_ENCODER_APPLE_H264;
 	if (enc == SIMPLE_ENCODER_QSV_AV1)
 		return SIMPLE_ENCODER_QSV;
-	return SIMPLE_ENCODER_X264;
+	if (EncoderAvailable("obs_x264"))
+		return SIMPLE_ENCODER_X264;
+	return SIMPLE_ENCODER_OPENH264;
 }
 
 bool OBSBasicSettings::ServiceSupportsCodecCheck()
@@ -1663,7 +1667,11 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 
 #define ENCODER_STR(str) QTStr("Basic.Settings.Output.Simple.Encoder." str)
 
-	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"), QString(SIMPLE_ENCODER_X264));
+	if (!service_supports_encoder(vcodecs, "obs_x264"))
+		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software.OpenH264.H264"),
+						 QString(SIMPLE_ENCODER_OPENH264));
+	else
+		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software.X264.H264"), QString(SIMPLE_ENCODER_X264));
 #ifdef _WIN32
 	if (service_supports_encoder(vcodecs, "obs_qsv11"))
 		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.QSV.H264"), QString(SIMPLE_ENCODER_QSV));

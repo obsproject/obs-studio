@@ -1582,6 +1582,8 @@ extern void CheckExistingCookieId();
 #define DEFAULT_CONTAINER "hybrid_mp4"
 #endif
 
+extern bool EncoderAvailable(const char *encoder);
+
 bool OBSBasic::InitBasicConfigDefaults()
 {
 	QList<QScreen *> screens = QGuiApplication::screens();
@@ -1743,7 +1745,9 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(activeConfiguration, "AdvOut", "UseRescale", false);
 	config_set_default_uint(activeConfiguration, "AdvOut", "TrackIndex", 1);
 	config_set_default_uint(activeConfiguration, "AdvOut", "VodTrackIndex", 2);
-	config_set_default_string(activeConfiguration, "AdvOut", "Encoder", "obs_x264");
+
+	bool useX264 = EncoderAvailable("obs_x264");
+	config_set_default_string(activeConfiguration, "AdvOut", "Encoder", (useX264 ? "obs_x264" : "ffmpeg_openh264"));
 
 	config_set_default_string(activeConfiguration, "AdvOut", "RecType", "Standard");
 
@@ -1861,10 +1865,13 @@ void OBSBasic::InitBasicConfigDefaults2()
 	bool oldEncDefaults = config_get_bool(App()->GetUserConfig(), "General", "Pre23Defaults");
 	bool useNV = EncoderAvailable("ffmpeg_nvenc") && !oldEncDefaults;
 
+	bool useX264 = EncoderAvailable("obs_x264");
+	const char *h264_fallback = (useX264 ? SIMPLE_ENCODER_X264 : SIMPLE_ENCODER_OPENH264);
+
 	config_set_default_string(activeConfiguration, "SimpleOutput", "StreamEncoder",
-				  useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
+				  useNV ? SIMPLE_ENCODER_NVENC : h264_fallback);
 	config_set_default_string(activeConfiguration, "SimpleOutput", "RecEncoder",
-				  useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
+				  useNV ? SIMPLE_ENCODER_NVENC : h264_fallback);
 
 	const char *aac_default = "ffmpeg_aac";
 	if (EncoderAvailable("CoreAudio_AAC"))
@@ -2127,7 +2134,7 @@ void OBSBasic::OBSInit()
 
 	InitBasicConfigDefaults2();
 
-	CheckForSimpleModeX264Fallback();
+	CheckForSimpleModeH264Fallback();
 
 	LogEncoders();
 

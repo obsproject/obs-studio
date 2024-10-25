@@ -192,7 +192,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	const char *serverType = wiz->customServer ? "rtmp_custom" : "rtmp_common";
 
-	OBSEncoderAutoRelease vencoder = obs_video_encoder_create("obs_x264", "test_x264", nullptr, nullptr);
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create((wiz->x264Available ? "obs_x264" : "ffmpeg_openh264"),
+								  "test_h264", nullptr, nullptr);
 	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create("ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
 	OBSServiceAutoRelease service = obs_service_create(serverType, "test_service", nullptr, nullptr);
 
@@ -224,10 +225,11 @@ void AutoConfigTestPage::TestBandwidthThread()
 	obs_data_set_string(service_settings, "key", key.c_str());
 
 	obs_data_set_int(vencoder_settings, "bitrate", wiz->startingBitrate);
-	obs_data_set_string(vencoder_settings, "rate_control", "CBR");
-	obs_data_set_string(vencoder_settings, "preset", "veryfast");
-	obs_data_set_int(vencoder_settings, "keyint_sec", 2);
-
+	if (wiz->x264Available) {
+		obs_data_set_string(vencoder_settings, "rate_control", "CBR");
+		obs_data_set_string(vencoder_settings, "preset", "veryfast");
+		obs_data_set_int(vencoder_settings, "keyint_sec", 2);
+	}
 	obs_data_set_int(aencoder_settings, "bitrate", 32);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -555,7 +557,8 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	/* -----------------------------------*/
 	/* create obs objects                 */
 
-	OBSEncoderAutoRelease vencoder = obs_video_encoder_create("obs_x264", "test_x264", nullptr, nullptr);
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create((wiz->x264Available ? "obs_x264" : "ffmpeg_openh264"),
+								  "test_h264", nullptr, nullptr);
 	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create("ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
 	OBSOutputAutoRelease output = obs_output_create("null_output", "null", nullptr, nullptr);
 
@@ -567,16 +570,20 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	obs_data_set_int(aencoder_settings, "bitrate", 32);
 
 	if (wiz->type != AutoConfig::Type::Recording) {
-		obs_data_set_int(vencoder_settings, "keyint_sec", 2);
+		if (wiz->x264Available) {
+			obs_data_set_int(vencoder_settings, "keyint_sec", 2);
+			obs_data_set_string(vencoder_settings, "rate_control", "CBR");
+			obs_data_set_string(vencoder_settings, "preset", "veryfast");
+		}
 		obs_data_set_int(vencoder_settings, "bitrate", wiz->idealBitrate);
-		obs_data_set_string(vencoder_settings, "rate_control", "CBR");
 		obs_data_set_string(vencoder_settings, "profile", "main");
-		obs_data_set_string(vencoder_settings, "preset", "veryfast");
 	} else {
-		obs_data_set_int(vencoder_settings, "crf", 20);
-		obs_data_set_string(vencoder_settings, "rate_control", "CRF");
+		if (wiz->x264Available) {
+			obs_data_set_int(vencoder_settings, "crf", 20);
+			obs_data_set_string(vencoder_settings, "rate_control", "CRF");
+			obs_data_set_string(vencoder_settings, "preset", "veryfast");
+		}
 		obs_data_set_string(vencoder_settings, "profile", "high");
-		obs_data_set_string(vencoder_settings, "preset", "veryfast");
 	}
 
 	/* -----------------------------------*/
@@ -923,7 +930,10 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 		else
 			wiz->streamingEncoder = AutoConfig::Encoder::AMD;
 	} else {
-		wiz->streamingEncoder = AutoConfig::Encoder::x264;
+		if (wiz->x264Available)
+			wiz->streamingEncoder = AutoConfig::Encoder::x264;
+		else
+			wiz->streamingEncoder = AutoConfig::Encoder::OpenH264;
 	}
 
 #ifdef __linux__
@@ -967,7 +977,10 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 		else
 			wiz->recordingEncoder = AutoConfig::Encoder::AMD;
 	} else {
-		wiz->recordingEncoder = AutoConfig::Encoder::x264;
+		if (wiz->x264Available)
+			wiz->streamingEncoder = AutoConfig::Encoder::x264;
+		else
+			wiz->streamingEncoder = AutoConfig::Encoder::OpenH264;
 	}
 
 	if (wiz->recordingEncoder != AutoConfig::Encoder::NVENC) {
@@ -981,7 +994,8 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 }
 
 #define ENCODER_TEXT(x) "Basic.Settings.Output.Simple.Encoder." x
-#define ENCODER_SOFTWARE ENCODER_TEXT("Software")
+#define ENCODER_OPENH264 ENCODER_TEXT("Software.OpenH264.H264")
+#define ENCODER_X264 ENCODER_TEXT("Software.X264.H264")
 #define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC.H264")
 #define ENCODER_QSV ENCODER_TEXT("Hardware.QSV.H264")
 #define ENCODER_AMD ENCODER_TEXT("Hardware.AMD.H264")
@@ -1019,8 +1033,10 @@ void AutoConfigTestPage::FinalizeResults()
 
 	auto encName = [](AutoConfig::Encoder enc) -> QString {
 		switch (enc) {
+		case AutoConfig::Encoder::OpenH264:
+			return QTStr(ENCODER_OPENH264);
 		case AutoConfig::Encoder::x264:
-			return QTStr(ENCODER_SOFTWARE);
+			return QTStr(ENCODER_X264);
 		case AutoConfig::Encoder::NVENC:
 			return QTStr(ENCODER_NVENC);
 		case AutoConfig::Encoder::QSV:
@@ -1033,7 +1049,7 @@ void AutoConfigTestPage::FinalizeResults()
 			return QTStr(QUALITY_SAME);
 		}
 
-		return QTStr(ENCODER_SOFTWARE);
+		return QTStr(ENCODER_OPENH264);
 	};
 
 	auto newLabel = [this](const char *str) -> QLabel * {
