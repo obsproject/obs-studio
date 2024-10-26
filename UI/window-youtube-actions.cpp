@@ -26,6 +26,10 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);
 
+	QString toolTip = GetFormatToolTip();
+	ui->title->setToolTip(toolTip);
+	ui->description->setTooltip(toolTip);
+
 	ui->privacyBox->addItem(QTStr("YouTube.Actions.Privacy.Public"), "public");
 	ui->privacyBox->addItem(QTStr("YouTube.Actions.Privacy.Unlisted"), "unlisted");
 	ui->privacyBox->addItem(QTStr("YouTube.Actions.Privacy.Private"), "private");
@@ -387,7 +391,11 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api, BroadcastDesc
 		blog(LOG_DEBUG, "No broadcast created.");
 		return false;
 	}
-	if (!apiYouTube->SetVideoCategory(broadcast.id, broadcast.title, broadcast.description,
+
+	std::string title = GenerateSpecifiedFilename(nullptr, false, broadcast.title);
+	std::string description = GenerateSpecifiedFilename(nullptr, false, broadcast.description);
+
+	if (!apiYouTube->SetVideoCategory(broadcast.id, QT_UTF8(title.c_str()), QT_UTF8(description.c_str()),
 					  broadcast.category.id)) {
 		blog(LOG_DEBUG, "No category set.");
 		return false;

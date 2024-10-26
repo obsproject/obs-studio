@@ -52,6 +52,7 @@ std::string GetFormatExt(const char *container);
 std::string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite,
 			      const char *format);
 QObject *CreateShortcutFilter();
+QString GetFormatToolTip();
 
 struct BaseLexer {
 	lexer lex;

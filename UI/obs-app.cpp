@@ -1603,6 +1603,39 @@ static void get_last_log(bool has_prefix, const char *subdir_to_use, std::string
 	}
 }
 
+QString GetFormatToolTip()
+{
+	static const char *format_list[][2] = {
+		{"CCYY", "FilenameFormatting.TT.CCYY"}, {"YY", "FilenameFormatting.TT.YY"},
+		{"MM", "FilenameFormatting.TT.MM"},     {"DD", "FilenameFormatting.TT.DD"},
+		{"hh", "FilenameFormatting.TT.hh"},     {"mm", "FilenameFormatting.TT.mm"},
+		{"ss", "FilenameFormatting.TT.ss"},     {"%", "FilenameFormatting.TT.Percent"},
+		{"a", "FilenameFormatting.TT.a"},       {"A", "FilenameFormatting.TT.A"},
+		{"b", "FilenameFormatting.TT.b"},       {"B", "FilenameFormatting.TT.B"},
+		{"d", "FilenameFormatting.TT.d"},       {"H", "FilenameFormatting.TT.H"},
+		{"I", "FilenameFormatting.TT.I"},       {"m", "FilenameFormatting.TT.m"},
+		{"M", "FilenameFormatting.TT.M"},       {"p", "FilenameFormatting.TT.p"},
+		{"s", "FilenameFormatting.TT.s"},       {"S", "FilenameFormatting.TT.S"},
+		{"y", "FilenameFormatting.TT.y"},       {"Y", "FilenameFormatting.TT.Y"},
+		{"z", "FilenameFormatting.TT.z"},       {"Z", "FilenameFormatting.TT.Z"},
+		{"FPS", "FilenameFormatting.TT.FPS"},   {"CRES", "FilenameFormatting.TT.CRES"},
+		{"ORES", "FilenameFormatting.TT.ORES"}, {"VF", "FilenameFormatting.TT.VF"},
+	};
+
+	QString html = "<table>";
+
+	for (auto f : format_list) {
+		html += "<tr><th align='left'>%";
+		html += f[0];
+		html += "</th><td>";
+		html += QTStr(f[1]);
+		html += "</td></tr>";
+	}
+
+	html += "</table>";
+	return html;
+}
+
 string GenerateTimeDateFilename(const char *extension, bool noSpace)
 {
 	time_t now = time(0);
