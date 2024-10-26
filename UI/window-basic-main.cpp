@@ -2192,6 +2192,15 @@ void OBSBasic::OBSInit()
 			SetupNewSceneCollection(sceneCollectionName);
 			disableSaving++;
 		}
+
+		disableSaving--;
+		if (foundCollection || configuredCollection) {
+			OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+			OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+		}
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+		disableSaving++;
 	}
 
 	loaded = true;
