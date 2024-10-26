@@ -167,8 +167,6 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 	item->setData(static_cast<int>(QtDataRole::OBSRef), QVariant::fromValue(val));
 }
 
-constexpr std::string_view OBSProfilePath = "/obs-studio/basic/profiles/";
-
 static void AddExtraModulePaths()
 {
 	string plugins_path, plugins_data_path;
@@ -7618,13 +7616,14 @@ void OBSBasic::on_actionShowSettingsFolder_triggered()
 
 void OBSBasic::on_actionShowProfileFolder_triggered()
 {
-	std::string userProfilePath;
-	userProfilePath.reserve(App()->userProfilesLocation.u8string().size() + OBSProfilePath.size());
-	userProfilePath.append(App()->userProfilesLocation.u8string()).append(OBSProfilePath);
+	try {
+		const OBSProfile &currentProfile = GetCurrentProfile();
+		QString currentProfileLocation = QString::fromStdString(currentProfile.path.u8string());
 
-	const QString userProfileLocation = QString::fromStdString(userProfilePath);
-
-	QDesktopServices::openUrl(QUrl::fromLocalFile(userProfileLocation));
+		QDesktopServices::openUrl(QUrl::fromLocalFile(currentProfileLocation));
+	} catch (const std::invalid_argument &error) {
+		blog(LOG_ERROR, "%s", error.what());
+	}
 }
 
 int OBSBasic::GetTopSelectedSourceItem()
