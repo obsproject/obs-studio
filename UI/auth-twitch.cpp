@@ -92,10 +92,11 @@ bool TwitchAuth::MakeApiRequest(const char *path, Json &json_out)
 	if (error_code == 403) {
 		OBSMessageBox::warning(OBSBasic::Get(), Str("TwitchAuth.TwoFactorFail.Title"),
 				       Str("TwitchAuth.TwoFactorFail.Text"), true);
-		blog(LOG_WARNING, "%s: %s", __FUNCTION__,
+		blog(LOG_WARNING, "%s: %s. API response: %s", __FUNCTION__,
 		     "Got 403 from Twitch, user probably does not "
 		     "have two-factor authentication enabled on "
-		     "their account");
+		     "their account",
+		     output.empty() ? "<none>" : output.c_str());
 		return false;
 	}
 

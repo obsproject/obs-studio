@@ -35,6 +35,13 @@ target_sources(
 
 target_compile_definitions(obs-qsv11 PRIVATE $<$<PLATFORM_ID:Windows>:DX11_D3D>)
 
+target_compile_options(
+  obs-qsv11
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:C,GNU,Clang>:-Wno-error=switch>
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-error=switch>
+)
+
 target_link_libraries(
   obs-qsv11
   PRIVATE

@@ -33,6 +33,7 @@ set(
   -Wno-unused-function
   -Wno-unused-label
   -Wparentheses
+  -Wswitch
   -Wuninitialized
   -Wunreachable-code
   -Wunused-parameter

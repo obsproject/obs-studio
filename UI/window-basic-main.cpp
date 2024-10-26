@@ -68,6 +68,7 @@
 #include "window-youtube-actions.hpp"
 #include "youtube-api-wrappers.hpp"
 #endif
+#include "window-whats-new.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
 #include "display-helpers.hpp"
@@ -127,6 +128,8 @@ extern std::string opt_starting_collection;
 void DestroyPanelCookieManager();
 
 namespace {
+
+QPointer<OBSWhatsNew> obsWhatsNew;
 
 template<typename OBSRef> struct SignalContainer {
 	OBSRef ref;
@@ -2544,37 +2547,11 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 	if (closing)
 		return;
 
-	std::string info_url = QT_TO_UTF8(url);
-
-	QDialog *dlg = new QDialog(this);
-	dlg->setAttribute(Qt::WA_DeleteOnClose, true);
-	dlg->setWindowTitle("What's New");
-	dlg->resize(700, 600);
-
-	Qt::WindowFlags flags = dlg->windowFlags();
-	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
-	dlg->setWindowFlags(flags & (~helpFlag));
-
-	QCefWidget *cefWidget = cef->create_widget(nullptr, info_url);
-	if (!cefWidget) {
-		return;
+	if (obsWhatsNew) {
+		obsWhatsNew->close();
 	}
 
-	connect(cefWidget, &QCefWidget::titleChanged, dlg, &QDialog::setWindowTitle);
-
-	QPushButton *close = new QPushButton(QTStr("Close"));
-	connect(close, &QAbstractButton::clicked, dlg, &QDialog::accept);
-
-	QHBoxLayout *bottomLayout = new QHBoxLayout();
-	bottomLayout->addStretch();
-	bottomLayout->addWidget(close);
-	bottomLayout->addStretch();
-
-	QVBoxLayout *topLayout = new QVBoxLayout(dlg);
-	topLayout->addWidget(cefWidget);
-	topLayout->addLayout(bottomLayout);
-
-	dlg->show();
+	obsWhatsNew = new OBSWhatsNew(this, QT_TO_UTF8(url));
 #else
 	UNUSED_PARAMETER(url);
 #endif

@@ -271,7 +271,7 @@ endfunction()
 # Helper function to add a specific resource to a bundle
 function(target_add_resource target resource)
   get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
-  if(${ARGN})
+  if(ARGN)
     set(target_destination "${ARGN}")
   elseif(${target} IN_LIST obs_module_list)
     set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/${target}")
