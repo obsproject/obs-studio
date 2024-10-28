@@ -21,8 +21,12 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git
   endif()
 
   if(_obs_version_result EQUAL 0)
-    string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1;\\2;\\3" _obs_version_canonical ${_obs_version})
-  endif()
+      string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1;\\2;\\3" _obs_version_canonical ${_obs_version})
+      list(LENGTH _obs_version_canonical _obs_version_canonical_length)
+      if(_obs_version_canonical_length LESS 3)
+        message(FATAL_ERROR "Failed to parse OBS version from git describe output.")
+      endif()
+    endif()
 elseif(DEFINED OBS_VERSION_OVERRIDE)
   if(OBS_VERSION_OVERRIDE MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
     string(
@@ -45,9 +49,15 @@ elseif(_obs_version MATCHES "[0-9]+\\.[0-9]+\\.[0-9]+-beta[0-9]+")
   string(REGEX REPLACE "[0-9]+\\.[0-9]+\\.[0-9]+-beta([0-9]+).*$" "\\1" _obs_beta ${_obs_version})
 endif()
 
-list(GET _obs_version_canonical 0 OBS_VERSION_MAJOR)
-list(GET _obs_version_canonical 1 OBS_VERSION_MINOR)
-list(GET _obs_version_canonical 2 OBS_VERSION_PATCH)
+# Check if _obs_version_canonical has at least 3 elements
+list(LENGTH _obs_version_canonical _obs_version_canonical_length)
+if(_obs_version_canonical_length GREATER_EQUAL 3)
+  list(GET _obs_version_canonical 0 OBS_VERSION_MAJOR)
+  list(GET _obs_version_canonical 1 OBS_VERSION_MINOR)
+  list(GET _obs_version_canonical 2 OBS_VERSION_PATCH)
+else()
+  message(FATAL_ERROR "Version canonical list does not have enough elements.")
+endif()
 
 set(OBS_RELEASE_CANDIDATE ${_obs_release_candidate})
 set(OBS_BETA ${_obs_beta})

@@ -55,22 +55,13 @@ bool CardEntry::Initialize()
 	}
 
 	const NTV2DeviceID deviceID = mCard->GetDeviceID();
-
-	// Briefly enter Standard Tasks mode to reset card via AJA Daemon/Agent.
-	auto taskMode = NTV2_STANDARD_TASKS;
-	mCard->GetEveryFrameServices(taskMode);
-	if (taskMode != NTV2_STANDARD_TASKS) {
-		mCard->SetEveryFrameServices(NTV2_STANDARD_TASKS);
-		AJATime::Sleep(100);
-	}
-
+	mCard->SetEveryFrameServices(NTV2_STANDARD_TASKS);
+	AJATime::Sleep(100);
 	mCard->SetEveryFrameServices(NTV2_OEM_TASKS);
 
-	const int32_t obsPid = (int32_t)AJAProcess::GetPid();
-	mCard->AcquireStreamForApplicationWithReference((ULWord)kStreamingAppID, obsPid);
-
+	const int32_t obsPid = static_cast<int32_t>(AJAProcess::GetPid());
+	mCard->AcquireStreamForApplicationWithReference(kStreamingAppID, obsPid);
 	mCard->SetSuspendHostAudio(true);
-
 	mCard->ClearRouting();
 
 	if (NTV2DeviceCanDoMultiFormat(deviceID)) {
@@ -79,23 +70,20 @@ bool CardEntry::Initialize()
 
 	mCard->SetReference(NTV2_REFERENCE_FREERUN);
 
-	for (UWord i = 0; i < aja::CardNumAudioSystems(deviceID); i++) {
+	for (UWord i = 0; i < aja::CardNumAudioSystems(deviceID); ++i) {
 		mCard->SetAudioLoopBack(NTV2_AUDIO_LOOPBACK_OFF, static_cast<NTV2AudioSystem>(i));
 	}
 
-	auto numFramestores = aja::CardNumFramestores(deviceID);
-
-	for (UWord i = 0; i < NTV2DeviceGetNumVideoInputs(deviceID); i++) {
+	const UWord numFramestores = aja::CardNumFramestores(deviceID);
+	for (UWord i = 0; i < NTV2DeviceGetNumVideoInputs(deviceID); ++i) {
 		mCard->SetInputFrame(static_cast<NTV2Channel>(i), 0xff);
-		// Disable 3G Level B converter by default
 		if (NTV2DeviceCanDo3GLevelConversion(deviceID)) {
 			mCard->SetSDIInLevelBtoLevelAConversion(static_cast<NTV2Channel>(i), false);
 		}
 	}
 
-	// SDI Outputs Default State
-	for (UWord i = 0; i < NTV2DeviceGetNumVideoOutputs(deviceID); i++) {
-		auto channel = GetNTV2ChannelForIndex(i);
+	for (UWord i = 0; i < NTV2DeviceGetNumVideoOutputs(deviceID); ++i) {
+		const auto channel = GetNTV2ChannelForIndex(i);
 		if (NTV2DeviceCanDo3GOut(deviceID, i)) {
 			mCard->SetSDIOut3GEnable(channel, true);
 			mCard->SetSDIOut3GbEnable(channel, false);
@@ -106,25 +94,20 @@ bool CardEntry::Initialize()
 		}
 		if (NTV2DeviceCanDo3GLevelConversion(deviceID)) {
 			mCard->SetSDIOutLevelAtoLevelBConversion(i, false);
-			mCard->SetSDIOutRGBLevelAConversion(i, false);
 		}
 	}
 
-	for (UWord i = 0; i < numFramestores; i++) {
-		auto channel = GetNTV2ChannelForIndex(i);
-
+	for (UWord i = 0; i < numFramestores; ++i) {
+		const auto channel = GetNTV2ChannelForIndex(i);
 		if (isAutoCirculateRunning(channel)) {
 			mCard->AutoCirculateStop(channel, true);
 		}
-
 		mCard->SetVideoFormat(NTV2_FORMAT_1080p_5994_A, false, false, channel);
 		mCard->SetFrameBufferFormat(channel, NTV2_FBF_8BIT_YCBCR);
-
 		mCard->DisableChannel(channel);
 	}
 
 	blog(LOG_DEBUG, "NTV2 Card Initialized: %s", mCardID.c_str());
-
 	return true;
 }
 
@@ -186,35 +169,27 @@ bool CardEntry::ChannelReady(NTV2Channel chan, const std::string &owner) const
 
 bool CardEntry::AcquireChannel(NTV2Channel chan, NTV2Mode mode, const std::string &owner)
 {
-	bool acquired = false;
+	if (!ChannelReady(chan, owner)) {
+		return false;
+	}
 
-	if (ChannelReady(chan, owner)) {
-		const std::lock_guard<std::mutex> lock(mMutex);
-		if (mChannelPwnz.find(owner) != mChannelPwnz.end()) {
-			if (mChannelPwnz[owner] & (1 << static_cast<int32_t>(chan))) {
-				acquired = true;
-			} else {
-				mChannelPwnz[owner] |= (1 << static_cast<int32_t>(chan));
-				acquired = true;
-			}
-		} else {
-			mChannelPwnz[owner] |= (1 << static_cast<int32_t>(chan));
-			acquired = true;
-		}
+	std::lock_guard<std::mutex> lock(mMutex);
+	auto &ownerChannels = mChannelPwnz[owner];
+	if (!(ownerChannels & (1 << static_cast<int32_t>(chan)))) {
+		ownerChannels |= (1 << static_cast<int32_t>(chan));
+	}
 
-		// Acquire interrupt handles
-		if (acquired && mCard) {
-			if (mode == NTV2_MODE_CAPTURE) {
-				mCard->EnableInputInterrupt(chan);
-				mCard->SubscribeInputVerticalEvent(chan);
-			} else if (mode == NTV2_MODE_DISPLAY) {
-				mCard->EnableOutputInterrupt(chan);
-				mCard->SubscribeOutputVerticalEvent(chan);
-			}
+	if (mCard) {
+		if (mode == NTV2_MODE_CAPTURE) {
+			mCard->EnableInputInterrupt(chan);
+			mCard->SubscribeInputVerticalEvent(chan);
+		} else if (mode == NTV2_MODE_DISPLAY) {
+			mCard->EnableOutputInterrupt(chan);
+			mCard->SubscribeOutputVerticalEvent(chan);
 		}
 	}
 
-	return acquired;
+	return true;
 }
 
 bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode, const std::string &owner)
