@@ -1898,7 +1898,7 @@ bool OBSBasic::InitBasicConfig()
 		return false;
 	}
 
-	return InitBasicConfigDefaults();
+	return true;
 }
 
 void OBSBasic::InitOBSCallbacks()
@@ -2123,9 +2123,7 @@ void OBSBasic::OBSInit()
 		emit VirtualCamEnabled();
 	}
 
-	InitBasicConfigDefaults2();
-
-	CheckForSimpleModeX264Fallback();
+	UpdateProfileEncoders();
 
 	LogEncoders();
 
