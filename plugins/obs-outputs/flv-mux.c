@@ -85,6 +85,20 @@ static void s_wa4cc(struct serializer *s, enum audio_id_t id)
 		s_w8(s, '4');
 		s_w8(s, 'a');
 		break;
+
+	case AUDIO_CODEC_OPUS:
+		s_w8(s, 'O');
+		s_w8(s, 'p');
+		s_w8(s, 'u');
+		s_w8(s, 's');
+		break;
+
+	case AUDIO_CODEC_FLAC:
+		s_w8(s, 'f');
+		s_w8(s, 'L');
+		s_w8(s, 'a');
+		s_w8(s, 'C');
+		break;
 	}
 }
 
