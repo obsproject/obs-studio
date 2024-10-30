@@ -1301,6 +1301,7 @@ private:
 	void RefreshProfiles(bool refreshCache = false);
 
 	void ActivateProfile(const OBSProfile &profile, bool reset = false);
+	void UpdateProfileEncoders();
 	std::vector<std::string> GetRestartRequirements(const ConfigFile &config) const;
 	void ResetProfileData();
 	void CheckForSimpleModeX264Fallback();
