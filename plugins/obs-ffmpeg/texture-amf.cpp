@@ -1160,14 +1160,16 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, amf_codec_ty
 
 #include "texture-amf-opts.hpp"
 
-static void amf_defaults(obs_data_t *settings)
+/* These are initial recommended settings that may be lowered later once we know more info such as the resolution and
+ * frame rate. */
+static void amf_avc_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "cqp", 20);
-	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_string(settings, "preset", "quality");
 	obs_data_set_default_string(settings, "profile", "high");
-	obs_data_set_default_int(settings, "bf", 3);
+	obs_data_set_default_int(settings, "bf", 2);
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
@@ -1326,6 +1328,13 @@ static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 
 		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
 			set_avc_property(enc, FILLER_DATA_ENABLE, true);
+		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
+			   rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
+			set_avc_property(enc, PEAK_BITRATE, bitrate * 1.5);
+			set_avc_property(enc, VBV_BUFFER_SIZE, bitrate * 1.5);
+		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR) {
+			int64_t framerate = enc->fps_num / enc->fps_den;
+			set_avc_property(enc, VBV_BUFFER_SIZE, (bitrate / framerate) * 1.1);
 		}
 	} else {
 		set_avc_property(enc, QP_I, qp);
@@ -1366,6 +1375,21 @@ try {
 	amf_base *enc = (amf_base *)data;
 	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
 	return false;
+}
+
+static inline void adjust_recommended_avc_defaults(amf_base *enc, obs_data_t *settings)
+{
+	int64_t framerate = enc->fps_num / enc->fps_den;
+	if ((enc->cx * enc->cy > 1920 * 1088) || (framerate > 60)) {
+		// Recommended base defaults
+		obs_data_set_default_int(settings, "bitrate", 2500);
+		obs_data_set_default_int(settings, "cqp", 20);
+		obs_data_set_default_string(settings, "rate_control", "CBR");
+		obs_data_set_default_string(settings, "preset", "quality");
+		obs_data_set_default_string(settings, "profile", "high");
+		obs_data_set_default_int(settings, "bf", 0);
+		info("Original base default settings were used according to resolution and framerate.");
+	}
 }
 
 static void amf_set_codec_level(amf_base *enc)
@@ -1454,6 +1478,10 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
+	// Initial high perceptual quality settings are set in the UI.
+	// Adjust during init based on resolution and framerate.
+	adjust_recommended_avc_defaults(enc, settings);
+
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *preset = obs_data_get_string(settings, "preset");
@@ -1483,8 +1511,11 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	int rc = get_avc_rate_control(rc_str);
 
 	set_avc_property(enc, RATE_CONTROL_METHOD, rc);
-	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP)
+	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR &&
+	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
 		set_avc_property(enc, ENABLE_VBAQ, true);
+	}
 
 	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
@@ -1681,7 +1712,7 @@ static void register_avc()
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_avc_update;
 	amf_encoder_info.encode_texture = amf_encode_tex;
-	amf_encoder_info.get_defaults = amf_defaults;
+	amf_encoder_info.get_defaults = amf_avc_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
 	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
@@ -1748,6 +1779,13 @@ static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t
 
 		if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR) {
 			set_hevc_property(enc, FILLER_DATA_ENABLE, true);
+		} else if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
+			   rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
+			set_hevc_property(enc, PEAK_BITRATE, bitrate * 1.5);
+			set_hevc_property(enc, VBV_BUFFER_SIZE, bitrate * 1.5);
+		} else if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR) {
+			int64_t framerate = enc->fps_num / enc->fps_den;
+			set_hevc_property(enc, VBV_BUFFER_SIZE, (bitrate / framerate) * 1.1);
 		}
 	} else {
 		set_hevc_property(enc, QP_I, qp);
@@ -1789,9 +1827,26 @@ try {
 	return false;
 }
 
+static inline void adjust_recommended_hevc_defaults(amf_base *enc, obs_data_t *settings)
+{
+	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
+	const int64_t framerate = enc->fps_num / enc->fps_den;
+	if ((enc->cx * enc->cy > 1920 * 1088) || is10bit || (framerate > 60)) {
+		// Recommended base defaults
+		obs_data_set_default_int(settings, "bitrate", 2500);
+		obs_data_set_default_int(settings, "cqp", 20);
+		obs_data_set_default_string(settings, "preset", "quality");
+		info("Original base default settings were used according to resolution and framerate.");
+	}
+}
+
 static bool amf_hevc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
+
+	// Initial high perceptual quality settings are set in the UI.
+	// Adjust during init based on resolution and framerate.
+	adjust_recommended_hevc_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
@@ -1801,8 +1856,11 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	int rc = get_hevc_rate_control(rc_str);
 
 	set_hevc_property(enc, RATE_CONTROL_METHOD, rc);
-	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP)
+	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR &&
+	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
 		set_hevc_property(enc, ENABLE_VBAQ, true);
+	}
 
 	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
@@ -1903,6 +1961,7 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	const bool hlg = is_hlg(enc);
 	const bool is_hdr = pq || hlg;
 	const char *preset = obs_data_get_string(settings, "preset");
+	obs_data_set_string(settings, "profile", is10bit ? "main10" : "main");
 
 	set_hevc_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_hevc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
@@ -2013,6 +2072,16 @@ try {
 	return nullptr;
 }
 
+/* These are initial recommended settings that may be lowered later once we know more info such as the resolution and
+ * frame rate. */
+static void amf_hevc_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, "rate_control", "CBR");
+	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "cqp", 20);
+	obs_data_set_default_string(settings, "preset", "quality");
+}
+
 static void register_hevc()
 {
 	struct obs_encoder_info amf_encoder_info = {};
@@ -2024,7 +2093,7 @@ static void register_hevc()
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_hevc_update;
 	amf_encoder_info.encode_texture = amf_encode_tex;
-	amf_encoder_info.get_defaults = amf_defaults;
+	amf_encoder_info.get_defaults = amf_hevc_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
 	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
@@ -2108,6 +2177,10 @@ static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
 			   rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
 			set_av1_property(enc, PEAK_BITRATE, bitrate * 1.5);
+			set_av1_property(enc, VBV_BUFFER_SIZE, bitrate * 1.5);
+		} else if (rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR) {
+			int64_t framerate = enc->fps_num / enc->fps_den;
+			set_av1_property(enc, VBV_BUFFER_SIZE, (bitrate / framerate) * 1.1);
 		}
 	} else {
 		int64_t qp = cq_value * 4;
@@ -2151,20 +2224,50 @@ try {
 	return false;
 }
 
+static inline void adjust_recommended_av1_defaults(amf_base *enc, obs_data_t *settings)
+{
+	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
+	const int64_t framerate = enc->fps_num / enc->fps_den;
+	if ((enc->cx * enc->cy > 1920 * 1088) || is10bit || (framerate > 60)) {
+		// Recommended base defaults
+		obs_data_set_default_int(settings, "bitrate", 2500);
+		obs_data_set_default_int(settings, "cqp", 20);
+		obs_data_set_default_string(settings, "preset", "balanced");
+		obs_data_set_default_string(settings, "profile", "main");
+		obs_data_set_default_int(settings, "bf", 0);
+		info("Original base default settings were used according to resolution and framerate.");
+	}
+}
+
 static bool amf_av1_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
+
+	// Initial high perceptual quality settings are set in the UI.
+	// Adjust during init based on resolution and framerate.
+	adjust_recommended_av1_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
+	const bool screen_content_tools_enabled = obs_data_get_bool(settings, "screen_content_tools");
+	const bool palette_mode_enabled = obs_data_get_bool(settings, "palette_mode");
 	int64_t bf = obs_data_get_int(settings, "bf");
 
 	if (enc->bframes_supported) {
 		set_av1_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
 		set_av1_property(enc, B_PIC_PATTERN, bf);
+
+		/* AdaptiveMiniGOP is suggested for some types of content such
+		 * as those with high motion. This only takes effect if
+		 * Pre-Analysis is enabled.
+		 */
+		if (bf > 0) {
+			set_av1_property(enc, ADAPTIVE_MINIGOP, true);
+		}
+
 	} else if (bf != 0) {
 		warn("B-Frames set to %lld but b-frames are not supported by this device", bf);
 		bf = 0;
@@ -2172,6 +2275,11 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 
 	int rc = get_av1_rate_control(rc_str);
 	set_av1_property(enc, RATE_CONTROL_METHOD, rc);
+	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR &&
+	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
+		set_av1_property(enc, AQ_MODE, 1);
+	}
 
 	amf_av1_update_data(enc, rc, bitrate * 1000, qp);
 
@@ -2210,18 +2318,21 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	}
 
 	info("settings:\n"
-	     "\trate_control: %s\n"
-	     "\tbitrate:      %d\n"
-	     "\tcqp:          %d\n"
-	     "\tkeyint:       %d\n"
-	     "\tpreset:       %s\n"
-	     "\tprofile:      %s\n"
-	     "\tlevel:        %s\n"
-	     "\tb-frames:     %d\n"
-	     "\twidth:        %d\n"
-	     "\theight:       %d\n"
-	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy, ffmpeg_opts);
+	     "\trate_control:         %s\n"
+	     "\tbitrate:              %d\n"
+	     "\tcqp:                  %d\n"
+	     "\tkeyint:               %d\n"
+	     "\tpreset:               %s\n"
+	     "\tprofile:              %s\n"
+	     "\tlevel:                %s\n"
+	     "\tb-frames:             %d\n"
+	     "\twidth:                %d\n"
+	     "\theight:               %d\n"
+	     "\tscreen content tools: %s\n"
+	     "\tpalette mode:         %s\n"
+	     "\tparams:               %s",
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy,
+	     screen_content_tools_enabled ? "true" : "false", palette_mode_enabled ? "true" : "false", ffmpeg_opts);
 
 	return true;
 }
@@ -2245,6 +2356,11 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
 	const char *preset = obs_data_get_string(settings, "preset");
+	const bool enable_screen_content_tools = true;
+	const bool enable_palette_mode = true;
+	obs_data_set_string(settings, "profile", "main");
+	obs_data_set_bool(settings, "screen_content_tools", enable_screen_content_tools);
+	obs_data_set_bool(settings, "palette_mode", enable_palette_mode);
 
 	set_av1_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_av1_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
@@ -2258,6 +2374,8 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	set_av1_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_av1_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
 	set_av1_property(enc, FRAMERATE, enc->amf_frame_rate);
+	set_av1_property(enc, SCREEN_CONTENT_TOOLS, true);
+	set_av1_property(enc, PALETTE_MODE, true);
 
 	amf_av1_init(enc, settings);
 
@@ -2347,13 +2465,14 @@ try {
 	return nullptr;
 }
 
+/* These are initial recommended settings that may be lowered later once we know more info such as the resolution and
+ * frame rate. */
 static void amf_av1_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_string(settings, "preset", "quality");
-	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_string(settings, "preset", "highQuality");
 	obs_data_set_default_int(settings, "bf", 2);
 }
 
