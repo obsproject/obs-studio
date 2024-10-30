@@ -510,7 +510,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 		codec = "HEVC";
 		if (astrcmpi(profile, "main") == 0) {
 			obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_MAIN;
-			if (obs_p010_tex_active()) {
+			if (obs_encoder_video_tex_active(obsqsv->encoder, VIDEO_FORMAT_P010)) {
 				blog(LOG_WARNING, "[qsv encoder] Forcing main10 for P010");
 				obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_MAIN10;
 			}
@@ -862,10 +862,10 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings, obs_
 		return obs_encoder_create_rerouted(encoder, (const char *)fallback_id);
 	}
 
-	bool gpu_texture_active = obs_nv12_tex_active();
+	bool gpu_texture_active = obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12);
 
 	if (codec != QSV_CODEC_AVC)
-		gpu_texture_active = gpu_texture_active || obs_p010_tex_active();
+		gpu_texture_active = gpu_texture_active || obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010);
 
 	if (!gpu_texture_active) {
 		blog(LOG_INFO, ">>> gpu tex not active, fall back to old qsv encoder");
