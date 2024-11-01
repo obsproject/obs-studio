@@ -491,9 +491,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	QPoint newPos = curPos + statsDockPos;
 	statsDock->move(newPos);
 
-#ifdef HAVE_OBSCONFIG_H
 	ui->actionReleaseNotes->setVisible(true);
-#endif
 
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->enablePreviewButton, &QPushButton::clicked, this, &OBSBasic::TogglePreview);

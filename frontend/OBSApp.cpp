@@ -1119,12 +1119,7 @@ string OBSApp::GetVersionString(bool platform) const
 {
 	stringstream ver;
 
-#ifdef HAVE_OBSCONFIG_H
 	ver << obs_get_version_string();
-#else
-	ver << LIBOBS_API_MAJOR_VER << "." << LIBOBS_API_MINOR_VER << "." << LIBOBS_API_PATCH_VER;
-
-#endif
 
 	if (platform) {
 		ver << " (";
