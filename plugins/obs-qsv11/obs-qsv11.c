@@ -1062,15 +1062,15 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 
 	/* ------------------------------------ */
 
-	//bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
-	//bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
-	//bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
-	//int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
-	//int64_t interval = obsqsv->params.nbFrames + 1;
-
 	packet->dts = ts_mfx_to_obs(pBS->DecodeTimeStamp, voi);
 
 #if 0
+	bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
+	bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
+	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
+	int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
+	//int64_t interval = obsqsv->params.nbFrames + 1;
+
 	info("parse packet:\n"
 		"\tFrameType: %d\n"
 		"\tpts:       %d\n"
@@ -1154,13 +1154,13 @@ static void parse_packet_hevc(struct obs_qsv *obsqsv, struct encoder_packet *pac
 
 	/* ------------------------------------ */
 
-	//bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
-	//bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
-	//bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
-
 	packet->dts = ts_mfx_to_obs(pBS->DecodeTimeStamp, voi);
 
 #if 0
+	bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
+	bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
+	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
+
 	int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
 	int64_t interval = obsqsv->params.nbFrames + 1;
 
