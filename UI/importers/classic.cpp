@@ -24,11 +24,9 @@ using namespace json11;
 
 static bool source_name_exists(const Json::array &sources, const string &name)
 {
-	for (size_t i = 0; i < sources.size(); i++) {
-		Json source = sources[i];
+	for (const auto &source : sources)
 		if (name == source["name"].string_value())
 			return true;
-	}
 
 	return false;
 }
@@ -82,8 +80,7 @@ static Json::object translate_source(const Json &in, const Json &sources)
 	Json::array source_arr = sources.array_items();
 
 	if (id == "GlobalSource") {
-		for (size_t i = 0; i < source_arr.size(); i++) {
-			Json source = source_arr[i];
+		for (const auto &source : source_arr) {
 			if (name == source["name"].string_value()) {
 				Json::object obj = source.object_items();
 				obj["preexist"] = true;
@@ -263,9 +260,7 @@ static void translate_sc(const Json &in, Json &out)
 	Json::array global = in["globals"].array_items();
 
 	if (!in["globals"].is_null()) {
-		for (size_t i = 0; i < global.size(); i++) {
-			Json source = global[i];
-
+		for (const auto &source : global) {
 			Json out_source = translate_source(source, out_sources);
 			out_sources.push_back(out_source);
 		}
@@ -274,9 +269,7 @@ static void translate_sc(const Json &in, Json &out)
 	Json::array scenes = in["scenes"].array_items();
 	string first_name = "";
 
-	for (size_t i = 0; i < scenes.size(); i++) {
-		Json in_scene = scenes[i];
-
+	for (const auto &in_scene : scenes) {
 		if (first_name.empty())
 			first_name = in_scene["name"].string_value();
 

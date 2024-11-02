@@ -168,8 +168,8 @@ static Json::object parse_slideshow(QString &config)
 
 	Json::array files_out = Json::array{};
 
-	for (size_t i = 0; i < files.size(); i++) {
-		string file = files[i].string_value();
+	for (const auto &f : files) {
+		string file = f.string_value();
 		files_out.push_back(Json::object{{"value", file}});
 	}
 
@@ -188,8 +188,8 @@ static Json::object parse_slideshow(QString &config)
 
 static bool source_name_exists(const string &name, const Json::array &sources)
 {
-	for (size_t i = 0; i < sources.size(); i++) {
-		if (sources.at(i)["name"].string_value() == name)
+	for (const auto &source : sources) {
+		if (source["name"].string_value() == name)
 			return true;
 	}
 
@@ -198,9 +198,9 @@ static bool source_name_exists(const string &name, const Json::array &sources)
 
 static Json get_source_with_id(const string &src_id, const Json::array &sources)
 {
-	for (size_t i = 0; i < sources.size(); i++) {
-		if (sources.at(i)["src_id"].string_value() == src_id)
-			return sources.at(i);
+	for (const auto &source : sources) {
+		if (source["src_id"].string_value() == src_id)
+			return source;
 	}
 
 	return nullptr;

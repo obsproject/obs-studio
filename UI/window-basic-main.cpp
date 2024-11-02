@@ -720,9 +720,8 @@ void OBSBasic::UpdateVolumeControlsDecayRate()
 {
 	double meterDecayRate = config_get_double(activeConfiguration, "Audio", "MeterDecayRate");
 
-	for (size_t i = 0; i < volumes.size(); i++) {
-		volumes[i]->SetMeterDecayRate(meterDecayRate);
-	}
+	for (const auto &vol : volumes)
+		vol->SetMeterDecayRate(meterDecayRate);
 }
 
 void OBSBasic::UpdateVolumeControlsPeakMeterType()
@@ -742,9 +741,8 @@ void OBSBasic::UpdateVolumeControlsPeakMeterType()
 		break;
 	}
 
-	for (size_t i = 0; i < volumes.size(); i++) {
-		volumes[i]->setPeakMeterType(peakMeterType);
-	}
+	for (const auto &vol : volumes)
+		vol->setPeakMeterType(peakMeterType);
 }
 
 void OBSBasic::ClearVolumeControls()
@@ -810,8 +808,8 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 		obs_data_array_push_back(savedProjectors, data);
 	};
 
-	for (size_t i = 0; i < projectors.size(); i++)
-		saveProjector(static_cast<OBSProjector *>(projectors[i]));
+	for (const auto &proj : projectors)
+		saveProjector(static_cast<OBSProjector *>(proj));
 
 	return savedProjectors;
 }
@@ -2099,7 +2097,7 @@ void OBSBasic::OBSInit()
 	}
 
 	/* Modules can access frontend information (i.e. profile and scene collection data) during their initialization, and some modules (e.g. obs-websockets) are known to use the filesystem location of the current profile in their own code.
-     
+
      Thus the profile and scene collection discovery needs to happen before any access to that information (but after intializing global settings) to ensure legacy code gets valid path information.
      */
 	RefreshSceneCollections(true);
@@ -3711,8 +3709,8 @@ void OBSBasic::ToggleVolControlLayout()
 	// We need to store it so we can delete current and then add
 	// at the right order
 	vector<OBSSource> sources;
-	for (size_t i = 0; i != volumes.size(); i++)
-		sources.emplace_back(volumes[i]->GetSource());
+	for (const auto &vol : volumes)
+		sources.emplace_back(vol->GetSource());
 
 	ClearVolumeControls();
 
@@ -4620,8 +4618,8 @@ void OBSBasic::CloseDialogs()
 {
 	QList<QDialog *> childDialogs = this->findChildren<QDialog *>();
 	if (!childDialogs.isEmpty()) {
-		for (int i = 0; i < childDialogs.size(); ++i) {
-			childDialogs.at(i)->close();
+		for (const auto &dialog : childDialogs) {
+			dialog->close();
 		}
 	}
 
@@ -4656,10 +4654,9 @@ void OBSBasic::EnumDialogs()
 
 void OBSBasic::ClearProjectors()
 {
-	for (size_t i = 0; i < projectors.size(); i++) {
-		if (projectors[i])
-			delete projectors[i];
-	}
+	for (const auto &proj : projectors)
+		if (proj)
+			delete proj;
 
 	projectors.clear();
 }
@@ -9980,14 +9977,14 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 
 void OBSBasic::UpdateProjectorHideCursor()
 {
-	for (size_t i = 0; i < projectors.size(); i++)
-		projectors[i]->SetHideCursor();
+	for (const auto &proj : projectors)
+		proj->SetHideCursor();
 }
 
 void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
 {
-	for (size_t i = 0; i < projectors.size(); i++)
-		SetAlwaysOnTop(projectors[i], top);
+	for (const auto &proj : projectors)
+		SetAlwaysOnTop(proj, top);
 }
 
 void OBSBasic::ResetProjectors()

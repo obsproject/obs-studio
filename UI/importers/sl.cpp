@@ -110,8 +110,7 @@ static string translate_hotkey(const Json &hotkey, const string &source)
 
 static bool source_name_exists(const Json::array &sources, const string &name)
 {
-	for (size_t i = 0; i < sources.size(); i++) {
-		Json item = sources[i];
+	for (const auto &item : sources) {
 		string source_name = item["name"].string_value();
 
 		if (source_name == name)
@@ -123,8 +122,7 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 
 static string get_source_name_from_id(const Json &root, const Json::array &sources, const string &id)
 {
-	for (size_t i = 0; i < sources.size(); i++) {
-		Json item = sources[i];
+	for (const auto &item : sources) {
 		string source_id = item["sl_id"].string_value();
 
 		if (source_id == id)
@@ -133,8 +131,7 @@ static string get_source_name_from_id(const Json &root, const Json::array &sourc
 
 	Json::array scene_arr = root["scenes"]["items"].array_items();
 
-	for (size_t i = 0; i < scene_arr.size(); i++) {
-		Json item = scene_arr[i];
+	for (const auto &item : scene_arr) {
 		string source_id = item["id"].string_value();
 
 		if (source_id == id) {
@@ -156,15 +153,13 @@ static string get_source_name_from_id(const Json &root, const Json::array &sourc
 static void get_hotkey_bindings(Json::object &out_hotkeys, const Json &in_hotkeys, const string &name)
 {
 	Json::array hot_arr = in_hotkeys.array_items();
-	for (size_t i = 0; i < hot_arr.size(); i++) {
-		Json hotkey = hot_arr[i];
+	for (const auto &hotkey : hot_arr) {
 		Json::array bindings = hotkey["bindings"].array_items();
 		Json::array out_hotkey = Json::array{};
 
 		string hotkey_name = translate_hotkey(hotkey, name);
 
-		for (size_t x = 0; x < bindings.size(); x++) {
-			Json binding = bindings[x];
+		for (const auto &binding : bindings) {
 			Json modifiers = binding["modifiers"];
 
 			string key = translate_key(binding["key"].string_value());
@@ -191,9 +186,7 @@ static void get_scene_items(const Json &root, const Json::array &out_sources, Js
 	Json::object hotkeys = scene["hotkeys"].object_items();
 
 	Json::array out_items = Json::array{};
-	for (size_t i = 0; i < in.size(); i++) {
-		Json item = in[i];
-
+	for (const auto &item : in) {
 		Json in_crop = item["crop"];
 		string id = item["sourceId"].string_value();
 		string name = get_source_name_from_id(root, out_sources, id);
@@ -253,9 +246,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 	Json::array out_sources = Json::array{};
 	Json::array out_transitions = Json::array{};
 
-	for (size_t i = 0; i < source_arr.size(); i++) {
-		Json source = source_arr[i];
-
+	for (const auto &source : source_arr) {
 		Json in_hotkeys = source["hotkeys"];
 		Json::array hotkey_items = source["hotkeys"]["items"].array_items();
 		Json in_filters = source["filters"];
@@ -275,8 +266,8 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		get_hotkey_bindings(out_hotkeys, hotkey_items, "");
 
 		Json::array out_filters = Json::array{};
-		for (size_t x = 0; x < filter_items.size(); x++) {
-			Json::object filter = filter_items[x].object_items();
+		for (const auto &f : filter_items) {
+			Json::object filter = f.object_items();
 			string type = filter["type"].string_value();
 			filter["id"] = type;
 
@@ -310,9 +301,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 	string scene_name = "";
 
-	for (size_t i = 0; i < scenes_arr.size(); i++) {
-		Json scene = scenes_arr[i];
-
+	for (const auto &scene : scenes_arr) {
 		Json in_hotkeys = scene["hotkeys"];
 		Json::array hotkey_items = in_hotkeys["items"].array_items();
 		Json in_filters = scene["filters"];
@@ -326,8 +315,8 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		get_hotkey_bindings(out_hotkeys, hotkey_items, "");
 
 		Json::array out_filters = Json::array{};
-		for (size_t x = 0; x < filter_items.size(); x++) {
-			Json::object filter = filter_items[x].object_items();
+		for (const auto &f : filter_items) {
+			Json::object filter = f.object_items();
 			string type = filter["type"].string_value();
 			filter["id"] = type;
 
@@ -359,9 +348,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 	string transition_name = "";
 
-	for (size_t i = 0; i < t_arr.size(); i++) {
-		Json transition = t_arr[i];
-
+	for (const auto &transition : t_arr) {
 		Json in_settings = transition["settings"];
 
 		int duration = transition["duration"].int_value();

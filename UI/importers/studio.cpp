@@ -28,8 +28,8 @@ void TranslateOSStudio(Json &res)
 	Json::object out = res.object_items();
 	Json::array sources = out["sources"].array_items();
 
-	for (size_t i = 0; i < sources.size(); i++) {
-		Json::object source = sources[i].object_items();
+	for (auto &src : sources) {
+		Json::object source = src.object_items();
 		Json::object settings = source["settings"].object_items();
 
 		string id = source["id"].string_value();
@@ -131,7 +131,7 @@ void TranslateOSStudio(Json &res)
 		}
 #endif
 		source["settings"] = settings;
-		sources[i] = source;
+		src = source;
 #undef DirectTranslation
 #undef ClearTranslation
 	}
