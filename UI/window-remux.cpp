@@ -204,7 +204,7 @@ void RemuxEntryPathItemDelegate::handleBrowse(QWidget *container)
 		}
 	} else {
 		QStringList paths = OpenFiles(container, QTStr("Remux.SelectRecording"), currentPath,
-					      QTStr("Remux.OBSRecording") + QString(" ") + ExtensionPattern);
+					      QTStr("Remux.OBSRecording") + QStringLiteral(" ") + ExtensionPattern);
 
 		if (!paths.empty()) {
 			container->setProperty(PATH_LIST_PROP, paths);

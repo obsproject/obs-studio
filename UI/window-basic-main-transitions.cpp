@@ -47,7 +47,7 @@ static inline QString MakeQuickTransitionText(QuickTransition *qt)
 		name = QTStr("FadeToBlack");
 
 	if (!obs_transition_fixed(qt->source))
-		name += QString(" (%1ms)").arg(QString::number(qt->duration));
+		name += QStringLiteral(" (%1ms)").arg(QString::number(qt->duration));
 	return name;
 }
 

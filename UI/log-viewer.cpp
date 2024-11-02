@@ -86,13 +86,13 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 
 	switch (type) {
 	case LOG_WARNING:
-		msg = QString("<font color=\"#c08000\">%1</font>").arg(msg);
+		msg = QStringLiteral("<font color=\"#c08000\">%1</font>").arg(msg);
 		break;
 	case LOG_ERROR:
-		msg = QString("<font color=\"#c00000\">%1</font>").arg(msg);
+		msg = QStringLiteral("<font color=\"#c00000\">%1</font>").arg(msg);
 		break;
 	default:
-		msg = QString("<font>%1</font>").arg(msg);
+		msg = QStringLiteral("<font>%1</font>").arg(msg);
 		break;
 	}
 

@@ -47,7 +47,7 @@ static QString MakeTimeLeftText(int hours, int minutes)
 
 static QString MakeMissedFramesText(uint32_t total_lagged, uint32_t total_rendered, long double num)
 {
-	return QString("%1 / %2 (%3%)")
+	return QStringLiteral("%1 / %2 (%3%)")
 		.arg(QString::number(total_lagged), QString::number(total_rendered), QString::number(num, 'f', 1));
 }
 
@@ -372,7 +372,7 @@ void OBSBasicStats::Update()
 	num = total_encoded ? (long double)total_skipped / (long double)total_encoded : 0.0l;
 	num *= 100.0l;
 
-	str = QString("%1 / %2 (%3%)")
+	str = QStringLiteral("%1 / %2 (%3%)")
 		      .arg(QString::number(total_skipped), QString::number(total_encoded),
 			   QString::number(num, 'f', 1));
 	skippedFrames->setText(str);
@@ -526,7 +526,7 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 		num /= 1024;
 		unit = "GiB";
 	}
-	megabytesSent->setText(QString("%1 %2").arg(num, 0, 'f', 1).arg(unit));
+	megabytesSent->setText(QStringLiteral("%1 %2").arg(num, 0, 'f', 1).arg(unit));
 
 	num = kbps;
 	unit = "kb/s";
@@ -534,7 +534,7 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 		num /= 1000;
 		unit = "Mb/s";
 	}
-	bitrate->setText(QString("%1 %2").arg(num, 0, 'f', 0).arg(unit));
+	bitrate->setText(QStringLiteral("%1 %2").arg(num, 0, 'f', 0).arg(unit));
 
 	if (!rec) {
 		int total = output ? obs_output_get_total_frames(output) : 0;
@@ -550,7 +550,7 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 
 		num = total ? (long double)dropped / (long double)total * 100.0l : 0.0l;
 
-		str = QString("%1 / %2 (%3%)")
+		str = QStringLiteral("%1 / %2 (%3%)")
 			      .arg(QString::number(dropped), QString::number(total), QString::number(num, 'f', 1));
 		droppedFrames->setText(str);
 

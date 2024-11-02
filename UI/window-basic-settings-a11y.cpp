@@ -123,7 +123,7 @@ static void SetStyle(QLabel *label, uint32_t colorVal)
 	label->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	label->setText(color.name(QColor::HexRgb));
 	label->setPalette(palette);
-	label->setStyleSheet(QString("background-color: %1; color: %2;")
+	label->setStyleSheet(QStringLiteral("background-color: %1; color: %2;")
 				     .arg(palette.color(QPalette::Window).name(QColor::HexRgb))
 				     .arg(palette.color(QPalette::WindowText).name(QColor::HexRgb)));
 	label->setAutoFillBackground(true);

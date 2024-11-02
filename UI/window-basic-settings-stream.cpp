@@ -650,18 +650,18 @@ QString OBSBasicSettings::FindProtocol()
 {
 	if (IsCustomService()) {
 		if (ui->customServer->text().isEmpty())
-			return QString("RTMP");
+			return QStringLiteral("RTMP");
 
 		QString server = ui->customServer->text();
 
 		if (obs_is_output_protocol_registered("RTMPS") && server.startsWith("rtmps://"))
-			return QString("RTMPS");
+			return QStringLiteral("RTMPS");
 
 		if (server.startsWith("srt://"))
-			return QString("SRT");
+			return QStringLiteral("SRT");
 
 		if (server.startsWith("rist://"))
-			return QString("RIST");
+			return QStringLiteral("RIST");
 
 	} else {
 		obs_properties_t *props = obs_get_service_properties("rtmp_common");
@@ -679,7 +679,7 @@ QString OBSBasicSettings::FindProtocol()
 			return QT_UTF8(protocol);
 	}
 
-	return QString("RTMP");
+	return QStringLiteral("RTMP");
 }
 
 void OBSBasicSettings::UpdateServerList()
@@ -1045,7 +1045,8 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 			}
 		}
 
-		QString res_str = QString("%1x%2").arg(QString::number(best_res.cx), QString::number(best_res.cy));
+		QString res_str =
+			QStringLiteral("%1x%2").arg(QString::number(best_res.cx), QString::number(best_res.cy));
 		text += ENFORCE_TEXT("MaxResolution").arg(res_str);
 	}
 	if (fps) {
@@ -1221,7 +1222,7 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 		}
 	}
 
-	QString res_str = QString("%1x%2").arg(QString::number(cx), QString::number(cy));
+	QString res_str = QStringLiteral("%1x%2").arg(QString::number(cx), QString::number(cy));
 
 	/* ------------------------------------ */
 	/* Display message box if res/FPS bad   */
@@ -1281,7 +1282,7 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 
 		for (size_t i = 0; i < res_count; i++) {
 			obs_service_resolution val = res_list[i];
-			QString str = QString("%1x%2").arg(QString::number(val.cx), QString::number(val.cy));
+			QString str = QStringLiteral("%1x%2").arg(QString::number(val.cx), QString::number(val.cy));
 			ui->outputResolution->addItem(str);
 
 			if (val.cx == cx && val.cy == cy)

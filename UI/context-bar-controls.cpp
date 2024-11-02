@@ -524,7 +524,7 @@ void ColorSourceToolbar::UpdateColor()
 	ui->color->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	ui->color->setText(color.name(QColor::HexRgb));
 	ui->color->setPalette(palette);
-	ui->color->setStyleSheet(QString("background-color :%1; color: %2;")
+	ui->color->setStyleSheet(QStringLiteral("background-color :%1; color: %2;")
 					 .arg(palette.color(QPalette::Window).name(QColor::HexRgb))
 					 .arg(palette.color(QPalette::WindowText).name(QColor::HexRgb)));
 	ui->color->setAutoFillBackground(true);

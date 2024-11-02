@@ -508,15 +508,15 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(QWidget *parent, config_t
 		if (!setting)
 			return;
 
-		incompatible_settings += QString(" %1. %2\n").arg(num).arg(QTStr(name));
+		incompatible_settings += QStringLiteral(" %1. %2\n").arg(num).arg(QTStr(name));
 
-		where_to_disable += QString(" %1. [%2 → %3 → %4]\n")
+		where_to_disable += QStringLiteral(" %1. [%2 → %3 → %4]\n")
 					    .arg(num)
 					    .arg(QTStr("Settings"))
 					    .arg(QTStr("Basic.Settings.Advanced"))
 					    .arg(QTStr(section));
 
-		incompatible_settings_list += QString("%1, ").arg(name);
+		incompatible_settings_list += QStringLiteral("%1, ").arg(name);
 
 		num += 1;
 	};

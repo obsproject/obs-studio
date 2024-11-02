@@ -1098,10 +1098,10 @@ void AutoConfigTestPage::FinalizeResults()
 		}
 	}
 
-	QString baseRes =
-		QString("%1x%2").arg(QString::number(wiz->baseResolutionCX), QString::number(wiz->baseResolutionCY));
-	QString scaleRes =
-		QString("%1x%2").arg(QString::number(wiz->idealResolutionCX), QString::number(wiz->idealResolutionCY));
+	QString baseRes = QStringLiteral("%1x%2").arg(QString::number(wiz->baseResolutionCX),
+						      QString::number(wiz->baseResolutionCY));
+	QString scaleRes = QStringLiteral("%1x%2").arg(QString::number(wiz->idealResolutionCX),
+						       QString::number(wiz->idealResolutionCY));
 
 	if (wiz->recordingEncoder != AutoConfig::Encoder::Stream ||
 	    wiz->recordingQuality != AutoConfig::Quality::Stream)

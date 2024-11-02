@@ -224,7 +224,7 @@ static bool ParseCalc(CFParser &cfp, QStringList &calc, vector<OBSThemeVariable>
 			OBSThemeVariable var;
 			QStringList subcalc;
 
-			var.name = QString("__unnamed_%1").arg(QRandomGenerator::global()->generate64());
+			var.name = QStringLiteral("__unnamed_%1").arg(QRandomGenerator::global()->generate64());
 
 			if (!ParseCalc(cfp, subcalc, vars))
 				return false;

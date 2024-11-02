@@ -59,7 +59,7 @@ void VisibilityItemWidget::SetColor(const QColor &color, bool active_, bool sele
 	pal.setColor(QPalette::WindowText, color);
 	vis->setPalette(pal);
 
-	label->setStyleSheet(QString("color: %1;").arg(color.name()));
+	label->setStyleSheet(QStringLiteral("color: %1;").arg(color.name()));
 
 	active = active_;
 	selected = selected_;

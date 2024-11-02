@@ -151,7 +151,7 @@ void ImporterEntryPathItemDelegate::handleBrowse(QWidget *container)
 
 	bool isSet = false;
 	QStringList paths = OpenFiles(container, QTStr("Importer.SelectCollection"), currentPath,
-				      QTStr("Importer.Collection") + QString(" ") + Pattern);
+				      QTStr("Importer.Collection") + QStringLiteral(" ") + Pattern);
 
 	if (!paths.empty()) {
 		container->setProperty(PATH_LIST_PROP, paths);
@@ -471,7 +471,7 @@ void OBSImporter::browseImport()
 	QString Pattern = "(*.json *.bpres *.xml *.xconfig)";
 
 	QStringList paths = OpenFiles(this, QTStr("Importer.SelectCollection"), "",
-				      QTStr("Importer.Collection") + QString(" ") + Pattern);
+				      QTStr("Importer.Collection") + QStringLiteral(" ") + Pattern);
 
 	if (!paths.empty()) {
 		for (int i = 0; i < paths.count(); i++) {

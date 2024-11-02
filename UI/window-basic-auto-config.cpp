@@ -175,7 +175,7 @@ AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent) : QWizardPage(parent),
 
 	auto addRes = [&](int cx, int cy) {
 		encRes = (cx << 16) | cy;
-		QString str = QString("%1x%2").arg(QString::number(cx), QString::number(cy));
+		QString str = QStringLiteral("%1x%2").arg(QString::number(cx), QString::number(cy));
 		ui->canvasRes->addItem(str, encRes);
 	};
 
