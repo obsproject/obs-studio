@@ -711,6 +711,10 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+		NewYouTubeAppDock();
+#endif
 
 	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 
