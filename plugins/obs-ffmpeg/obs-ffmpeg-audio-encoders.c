@@ -135,8 +135,17 @@ static bool initialize_codec(struct enc_encoder *enc)
 		return false;
 	}
 	enc->aframe->format = enc->context->sample_fmt;
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
+	enc->aframe->channels = enc->context->channels;
+	channels = enc->context->channels;
+#else
 	channels = enc->context->ch_layout.nb_channels;
+#endif
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
+	enc->aframe->channel_layout = enc->context->channel_layout;
+#else
 	enc->aframe->ch_layout = enc->context->ch_layout;
+#endif
 	enc->aframe->sample_rate = enc->context->sample_rate;
 
 	enc->frame_size = enc->context->frame_size;
@@ -236,11 +245,18 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
 
-	if (enc->codec->sample_fmts) {
+	const enum AVSampleFormat *sample_fmts;
+	int num_sample_fmts;
+  int ret = avcodec_get_supported_config(enc->context, enc->codec, 
+																				AV_CODEC_CONFIG_SAMPLE_FORMAT, 0, 
+																				(const void **) &sample_fmts,
+                                       &num_sample_fmts);
+
+	if (ret >= 0) {
 		/* Check if the requested format is actually available for the specified
 		 * encoder. This may not always be the case due to FFmpeg changes or a
 		 * fallback being used (for example, when libopus is unavailable). */
-		const enum AVSampleFormat *fmt = enc->codec->sample_fmts;
+		const enum AVSampleFormat *fmt = sample_fmts;
 		while (*fmt != AV_SAMPLE_FMT_NONE) {
 			if (*fmt == sample_format) {
 				enc->context->sample_fmt = *fmt;
@@ -251,15 +267,22 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char
 
 		/* Fall back to default if requested format was not found. */
 		if (enc->context->sample_fmt == AV_SAMPLE_FMT_NONE)
-			enc->context->sample_fmt = enc->codec->sample_fmts[0];
+			enc->context->sample_fmt = sample_fmts[0];
 	} else {
 		/* Fall back to planar float if codec does not specify formats. */
 		enc->context->sample_fmt = AV_SAMPLE_FMT_FLTP;
 	}
 
+	const int *supported_samplerates;
+	int num_samplerates;
 	/* check to make sure sample rate is supported */
-	if (enc->codec->supported_samplerates) {
-		const int *rate = enc->codec->supported_samplerates;
+	ret = avcodec_get_supported_config(enc->context, enc->codec, 
+																			AV_CODEC_CONFIG_SAMPLE_RATE, 0,
+																			(const void **) &supported_samplerates,
+																			&num_samplerates);
+
+	if (ret >= 0) {
+		const int *rate = supported_samplerates;
 		int cur_rate = enc->context->sample_rate;
 		int closest = 0;
 
@@ -276,11 +299,18 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char
 			enc->context->sample_rate = closest;
 	}
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
+	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",
+	     (int64_t)enc->context->bit_rate / 1000,
+	     (int)enc->context->channels,
+	     (unsigned int)enc->context->channel_layout);
+#else
 	char buf[256];
 	av_channel_layout_describe(&enc->context->ch_layout, buf, 256);
 	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %s, track: %d\n",
 	     (int64_t)enc->context->bit_rate / 1000, (int)enc->context->ch_layout.nb_channels, buf,
 	     (int)obs_encoder_get_mixer_index(enc->encoder) + 1);
+#endif
 	init_sizes(enc, audio);
 
 	/* enable experimental FFmpeg encoder if the only one available */
@@ -342,8 +372,12 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet, bo
 	enc->aframe->nb_samples = enc->frame_size;
 	enc->aframe->pts =
 		av_rescale_q(enc->total_samples, (AVRational){1, enc->context->sample_rate}, enc->context->time_base);
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 24, 100)
 	enc->aframe->ch_layout = enc->context->ch_layout;
 	channels = enc->context->ch_layout.nb_channels;
+#else
+	channels = enc->context->channels;
+#endif
 	ret = avcodec_fill_audio_frame(enc->aframe, channels, enc->context->sample_fmt, enc->samples[0],
 				       enc->frame_size_bytes * channels, 1);
 	if (ret < 0) {
@@ -422,7 +456,11 @@ static void enc_audio_info(void *data, struct audio_convert_info *info)
 {
 	struct enc_encoder *enc = data;
 	int channels;
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 24, 100)
 	channels = enc->context->ch_layout.nb_channels;
+#else
+	channels = enc->context->channels;
+#endif
 	info->format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
 	info->samples_per_sec = (uint32_t)enc->context->sample_rate;
 	if (channels != 7 && channels <= 8)
