@@ -434,9 +434,8 @@ QDoubleSpinBox {
     margin-bottom: var(--spacing_input);
 }
 
-QListWidget QWidget,
-SceneTree QWidget,
-SourceTree QWidget {
+QListView QWidget,
+QListWidget QWidget {
     margin-top: 0;
     margin-bottom: 0;
 }
@@ -506,10 +505,9 @@ QListWidget::item {
     color: var(--text);
 }
 
+QListView,
 QListWidget,
-QMenu,
-SceneTree,
-SourceTree {
+QMenu {
     padding: var(--spacing_base);
 }
 
@@ -518,8 +516,7 @@ QMenu {
 }
 
 QListWidget::item,
-SourceTreeItem,
-SceneTree::item {
+SourceTreeItem {
     padding: var(--padding_large) var(--padding_large);
 }
 
@@ -528,62 +525,53 @@ QMenu::item {
     padding-right: 20px;
 }
 
+QListView::item,
 QListWidget::item,
-SourceTreeItem,
-QMenu::item,
-SceneTree::item {
+QMenu::item {
     border-radius: var(--border_radius);
     color: var(--text);
 }
 
-SourceTree::item {
+SourceTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
 }
 
 QMenu::item:selected,
-QListWidget::item:selected,
-SceneTree::item:selected,
-SourceTree::item:selected {
+QListView::item:selected,
+QListWidget::item:selected {
     background-color: var(--primary);
 }
 
 QMenu::item:hover,
+QListView::item:hover,
 QListWidget::item:hover,
-SceneTree::item:hover,
-SourceTree::item:hover,
 QMenu::item:selected:hover,
-QListWidget::item:selected:hover,
-SceneTree::item:selected:hover,
-SourceTree::item:selected:hover {
+QListView::item:selected:hover,
+QListWidget::item:selected:hover {
     background-color: var(--primary_light);
     color: var(--text);
 }
 
 QMenu::item:focus,
+QListView::item:focus,
 QListWidget::item:focus,
-SceneTree::item:focus,
-SourceTree::item:focus,
 QMenu::item:selected:focus,
-QListWidget::item:selected:focus,
-SceneTree::item:selected:focus,
-SourceTree::item:selected:focus {
+QListView::item:selected:focus,
+QListWidget::item:selected:focus {
     border: 1px solid var(--border_highlight);
 }
 
+QListView::item:disabled,
+QListView::item:disabled:hover,
 QListWidget::item:disabled,
-QListWidget::item:disabled:hover,
-SourceTree::item:disabled,
-SourceTree::item:disabled:hover,
-SceneTree::item:disabled,
-SceneTree::item:disabled:hover {
+QListWidget::item:disabled:hover {
     background: transparent;
     color: var(--text_disabled);
 }
 
-QListWidget QLineEdit,
-SceneTree QLineEdit,
-SourceTree QLineEdit {
+QListView QLineEdit,
+QListWidget QLineEdit {
     padding: 0;
     padding-bottom: 1px;
     margin: 0;
@@ -591,23 +579,12 @@ SourceTree QLineEdit {
     border-radius: var(--border_radius);
 }
 
-QListWidget QLineEdit:focus,
-SceneTree QLineEdit:focus,
-SourceTree QLineEdit:focus {
+QListView QLineEdit:focus,
+QListWidget QLineEdit:focus {
     border: 1px solid var(--grey1);
 }
 
 /* Settings QList */
-
-OBSBasicSettings QListWidget {
-    border-radius: var(--border_radius);
-    padding: var(--spacing_base);
-}
-
-OBSBasicSettings QListWidget::item {
-    border-radius: var(--border_radius);
-    padding: var(--padding_large);
-}
 
 OBSBasicSettings QScrollBar:vertical {
     width: var(--settings_scrollbar_size);
@@ -1504,16 +1481,6 @@ OBSQTDisplay {
 }
 
 /* Filters Window */
-
-OBSBasicFilters QListWidget {
-    border-radius: var(--border_radius_large);
-    padding: var(--spacing_base);
-}
-
-OBSBasicFilters QListWidget::item {
-    border-radius: var(--border_radius);
-    padding: var(--padding_base) var(--padding_large);
-}
 
 OBSBasicFilters #widget,
 OBSBasicFilters #widget_2 {
