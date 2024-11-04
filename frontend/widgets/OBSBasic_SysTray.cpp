@@ -48,10 +48,11 @@ void OBSBasic::SystemTrayInit()
 	exit = new QAction(QTStr("Exit"), trayIcon.data());
 
 	trayMenu = new QMenu;
-	previewProjector = new QMenu(QTStr("PreviewProjector"));
-	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
-	AddProjectorMenuMonitors(previewProjector, this, &OBSBasic::OpenPreviewProjector);
-	AddProjectorMenuMonitors(studioProgramProjector, this, &OBSBasic::OpenStudioProgramProjector);
+
+	previewProjector = new QMenu(QTStr("Projector.Open.Preview"));
+	studioProgramProjector = new QMenu(QTStr("Projector.Open.Program"));
+	OBSBasic::updateSysTrayProjectorMenu();
+
 	trayMenu->addAction(showHide);
 	trayMenu->addSeparator();
 	trayMenu->addMenu(previewProjector);
@@ -85,11 +86,7 @@ void OBSBasic::SystemTrayInit()
 
 void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 {
-	// Refresh projector list
-	previewProjector->clear();
-	studioProgramProjector->clear();
-	AddProjectorMenuMonitors(previewProjector, this, &OBSBasic::OpenPreviewProjector);
-	AddProjectorMenuMonitors(studioProgramProjector, this, &OBSBasic::OpenStudioProgramProjector);
+	OBSBasic::updateSysTrayProjectorMenu();
 
 #ifdef __APPLE__
 	UNUSED_PARAMETER(reason);
@@ -144,4 +141,16 @@ void OBSBasic::SystemTray(bool firstStarted)
 bool OBSBasic::sysTrayMinimizeToTray()
 {
 	return config_get_bool(App()->GetUserConfig(), "BasicWindow", "SysTrayMinimizeToTray");
+}
+
+void OBSBasic::updateSysTrayProjectorMenu()
+{
+	previewProjector->clear();
+	studioProgramProjector->clear();
+	AddProjectorMenuMonitors(previewProjector, this, &OBSBasic::OpenPreviewProjector);
+	previewProjector->addSeparator();
+	previewProjector->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenPreviewWindow);
+	AddProjectorMenuMonitors(studioProgramProjector, this, &OBSBasic::OpenStudioProgramProjector);
+	studioProgramProjector->addSeparator();
+	studioProgramProjector->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenStudioProgramWindow);
 }

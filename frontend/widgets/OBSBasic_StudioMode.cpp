@@ -363,11 +363,14 @@ void OBSBasic::ProgramViewContextMenuRequested()
 	QMenu popup(this);
 	QPointer<QMenu> studioProgramProjector;
 
-	studioProgramProjector = new QMenu(QTStr("StudioProgramProjector"));
+	studioProgramProjector = new QMenu(QTStr("Projector.Open.Program"));
 	AddProjectorMenuMonitors(studioProgramProjector, this, &OBSBasic::OpenStudioProgramProjector);
+	studioProgramProjector->addSeparator();
+	studioProgramProjector->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenStudioProgramWindow);
 
 	popup.addMenu(studioProgramProjector);
-	popup.addAction(QTStr("StudioProgramWindow"), this, &OBSBasic::OpenStudioProgramWindow);
+
+	popup.addSeparator();
 	popup.addAction(QTStr("Screenshot.StudioProgram"), this, &OBSBasic::ScreenshotProgram);
 
 	popup.exec(QCursor::pos());
