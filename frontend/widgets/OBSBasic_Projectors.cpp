@@ -80,10 +80,12 @@ void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
 	}
 }
 
-void OBSBasic::UpdateMultiviewProjectorMenu()
+void OBSBasic::updateMultiviewProjectorMenu()
 {
 	ui->multiviewProjectorMenu->clear();
 	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this, &OBSBasic::OpenMultiviewProjector);
+	ui->multiviewProjectorMenu->addSeparator();
+	ui->multiviewProjectorMenu->addAction(QTStr("Projector.Window"), this, &OBSBasic::openMultiviewWindow);
 }
 
 void OBSBasic::ClearProjectors()
@@ -256,7 +258,7 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 	}
 }
 
-void OBSBasic::on_multiviewProjectorWindowed_triggered()
+void OBSBasic::openMultiviewWindow()
 {
 	OpenProjector(nullptr, -1, ProjectorType::Multiview);
 }
