@@ -1069,7 +1069,6 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 	bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
 	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
 	int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
-	//int64_t interval = obsqsv->params.nbFrames + 1;
 
 	info("parse packet:\n"
 		"\tFrameType: %d\n"
@@ -1162,7 +1161,6 @@ static void parse_packet_hevc(struct obs_qsv *obsqsv, struct encoder_packet *pac
 	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
 
 	int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
-	int64_t interval = obsqsv->params.nbFrames + 1;
 
 	info("parse packet:\n"
 		"\tFrameType: %d\n"
