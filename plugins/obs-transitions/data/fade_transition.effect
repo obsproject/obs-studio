@@ -28,7 +28,7 @@ VertData VSDefault(VertData v_in)
 
 float srgb_nonlinear_to_linear_channel(float u)
 {
-	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+	return (u <= 0.04045) ? (u / 12.92) : pow(mad(u, 1. / 1.055, .055 / 1.055), 2.4);
 }
 
 float3 srgb_nonlinear_to_linear(float3 v)
