@@ -1157,7 +1157,7 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 #undef add_profile
 	}
 
-	if (amf_codec_type::AVC == codec) {
+	if (amf_codec_type::AVC == codec || amf_codec_type::AV1 == codec) {
 		obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, 5, 1);
 	}
 
@@ -1970,6 +1970,15 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
+	int64_t bf = obs_data_get_int(settings, "bf");
+
+	if (enc->bframes_supported) {
+		set_av1_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
+		set_av1_property(enc, B_PIC_PATTERN, bf);
+	} else if (bf != 0) {
+		warn("B-Frames set to %lld but b-frames are not supported by this device", bf);
+		bf = 0;
+	}
 
 	int rc = get_av1_rate_control(rc_str);
 	set_av1_property(enc, RATE_CONTROL_METHOD, rc);
@@ -2003,10 +2012,11 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tb-frames:     %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx, enc->cy, ffmpeg_opts);
 
 	return true;
 }
@@ -2021,6 +2031,7 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	AMFCapsPtr caps;
 	AMF_RESULT res = enc->amf_encoder->GetCaps(&caps);
 	if (res == AMF_OK) {
+		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_BFRAMES, &enc->bframes_supported);
 		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_MAX_THROUGHPUT, &enc->max_throughput);
 		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
 		/* For some reason there's no specific CAP for AV1, but should always be supported */
@@ -2053,6 +2064,17 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_AV1_EXTRA_DATA, &p);
 	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE)
 		enc->header = AMFBufferPtr(p.pInterface);
+
+	if (enc->bframes_supported) {
+		amf_int64 b_frames = 0;
+		amf_int64 b_max = 0;
+
+		if (get_av1_property(enc, B_PIC_PATTERN, &b_frames) &&
+		    get_av1_property(enc, MAX_CONSECUTIVE_BPICTURES, &b_max))
+			enc->dts_offset = b_frames + 1;
+		else
+			enc->dts_offset = 0;
+	}
 }
 
 static void *amf_av1_create_texencode(obs_data_t *settings, obs_encoder_t *encoder)
@@ -2127,6 +2149,7 @@ static void amf_av1_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_string(settings, "preset", "quality");
 	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_int(settings, "bf", 2);
 }
 
 static void register_av1()
