@@ -236,11 +236,24 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char
 
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
 
-	if (enc->codec->sample_fmts) {
+	const enum AVSampleFormat *sample_fmts = NULL;
+	const int *supported_samplerates = NULL;
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(61, 13, 100)
+	sample_fmts = enc->codec->sample_fmts;
+	supported_samplerates = enc->codec->supported_samplerates;
+#else
+	avcodec_get_supported_config(enc->context, enc->codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0,
+				     (const void **)&sample_fmts, NULL);
+	avcodec_get_supported_config(enc->context, enc->codec, AV_CODEC_CONFIG_SAMPLE_RATE, 0,
+				     (const void **)&supported_samplerates, NULL);
+#endif
+
+	if (sample_fmts) {
 		/* Check if the requested format is actually available for the specified
 		 * encoder. This may not always be the case due to FFmpeg changes or a
 		 * fallback being used (for example, when libopus is unavailable). */
-		const enum AVSampleFormat *fmt = enc->codec->sample_fmts;
+		const enum AVSampleFormat *fmt = sample_fmts;
 		while (*fmt != AV_SAMPLE_FMT_NONE) {
 			if (*fmt == sample_format) {
 				enc->context->sample_fmt = *fmt;
@@ -251,15 +264,15 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char
 
 		/* Fall back to default if requested format was not found. */
 		if (enc->context->sample_fmt == AV_SAMPLE_FMT_NONE)
-			enc->context->sample_fmt = enc->codec->sample_fmts[0];
+			enc->context->sample_fmt = sample_fmts[0];
 	} else {
 		/* Fall back to planar float if codec does not specify formats. */
 		enc->context->sample_fmt = AV_SAMPLE_FMT_FLTP;
 	}
 
 	/* check to make sure sample rate is supported */
-	if (enc->codec->supported_samplerates) {
-		const int *rate = enc->codec->supported_samplerates;
+	if (supported_samplerates) {
+		const int *rate = supported_samplerates;
 		int cur_rate = enc->context->sample_rate;
 		int closest = 0;
 
