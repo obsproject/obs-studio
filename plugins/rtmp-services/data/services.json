@@ -3446,8 +3446,11 @@
         {
             "name": "Dolby Millicast",
             "common": false,
-            "more_info_link": "https://docs.dolby.io/streaming-apis/docs/using-obs",
+            "more_info_link": "https://docs.optiview.dolby.com/millicast/using-obs/",
             "stream_key_link": "https://streaming.dolby.io",
+            "multitrack_video_configuration_url": "https://director.millicast.com/api/multitrackvideo/configuration",
+            "multitrack_video_name": "Enhanced Broadcasting",
+            "multitrack_video_learn_more_link": "https://docs.optiview.dolby.com/millicast/obs-enhanced-broadcasting-multitrack-video/",
             "servers": [
                 {
                     "name": "Global (RTMPS)",
