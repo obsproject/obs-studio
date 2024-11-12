@@ -79,6 +79,9 @@ static void stinger_update(void *data, obs_data_t *settings)
 	obs_data_set_bool(media_settings, "is_stinger", true);
 	obs_data_set_bool(media_settings, "is_track_matte", s->track_matte_enabled);
 
+	if (s->media_source && s->transitioning)
+		obs_source_remove_active_child(s->source, s->media_source);
+
 	obs_source_release(s->media_source);
 	struct dstr name;
 	dstr_init_copy(&name, obs_source_get_name(s->source));
@@ -86,6 +89,9 @@ static void stinger_update(void *data, obs_data_t *settings)
 	s->media_source = obs_source_create_private("ffmpeg_source", name.array, media_settings);
 	dstr_free(&name);
 	obs_data_release(media_settings);
+
+	if (s->media_source && s->transitioning)
+		obs_source_add_active_child(s->source, s->media_source);
 
 	int64_t point = obs_data_get_int(settings, "transition_point");
 
@@ -107,6 +113,9 @@ static void stinger_update(void *data, obs_data_t *settings)
 	s->do_texrender = s->track_matte_enabled && s->matte_layout < MATTE_LAYOUT_SEPARATE_FILE;
 
 	if (s->matte_source) {
+		if (s->transitioning)
+			obs_source_remove_active_child(s->source, s->matte_source);
+
 		obs_source_release(s->matte_source);
 		s->matte_source = NULL;
 	}
@@ -120,6 +129,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 
 		s->matte_source = obs_source_create_private("ffmpeg_source", NULL, tm_media_settings);
 		obs_data_release(tm_media_settings);
+		if (s->matte_source && s->transitioning)
+			obs_source_add_active_child(s->source, s->matte_source);
 
 		// no need to output sound from the matte video
 		obs_source_set_muted(s->matte_source, true);
@@ -476,7 +487,7 @@ static bool stinger_audio_render(void *data, uint64_t *ts_out, struct obs_source
 		return false;
 	}
 
-	if (!obs_source_audio_pending(s->media_source)) {
+	if (s->media_source && !obs_source_audio_pending(s->media_source)) {
 		ts = obs_source_get_audio_timestamp(s->media_source);
 		if (!ts)
 			return false;
