@@ -1493,10 +1493,11 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 		amf_int64 b_max = 0;
 
 		if (get_avc_property(enc, B_PIC_PATTERN, &b_frames) &&
-		    get_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, &b_max))
+		    get_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, &b_max)){
 			enc->dts_offset = b_frames + 1;
-		else
+		}else{
 			enc->dts_offset = 0;
+		}
 	}
 }
 
