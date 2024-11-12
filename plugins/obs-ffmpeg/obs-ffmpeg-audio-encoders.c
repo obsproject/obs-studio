@@ -214,7 +214,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char
 
 	if (codec_desc->props & AV_CODEC_PROP_LOSSLESS)
 		// Set by encoder on init, not known at this time
-		enc->context->bit_rate = -1;
+		enc->context->bit_rate = 0;
 	else
 		enc->context->bit_rate = bitrate * 1000;
 
