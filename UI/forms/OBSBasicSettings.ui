@@ -54,9 +54,6 @@
          <height>16</height>
         </size>
        </property>
-       <property name="spacing">
-        <number>1</number>
-       </property>
        <property name="currentRow">
         <number>0</number>
        </property>

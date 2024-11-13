@@ -510,9 +510,16 @@ SourceTree {
 }
 
 QListWidget::item,
+SourceTree::item,
+SceneTree::item {
+    height: 32px;
+}
+
+QListWidget::item,
 SourceTreeItem,
 SceneTree::item {
-    padding: var(--padding_large) var(--padding_large);
+    padding-left: var(--padding_large);
+    padding-right: var(--padding_large);
 }
 
 QMenu::item {
@@ -524,15 +531,15 @@ QMenu::item {
 }
 
 QListWidget::item,
-SourceTreeItem,
+SourceTree::item,
 QMenu::item,
 SceneTree::item {
     border-radius: var(--border_radius);
     color: var(--text);
-    border: 1px solid transparent;
+    margin-bottom: var(--spacing_base);
 }
 
-SourceTree::item {
+SourceTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
 }
@@ -593,18 +600,7 @@ SourceTree QLineEdit:focus {
     border: 1px solid var(--grey1);
 }
 
-/* Settings QList */
-
-OBSBasicSettings QListWidget {
-    border-radius: var(--border_radius);
-    padding: var(--spacing_base);
-}
-
-OBSBasicSettings QListWidget::item {
-    border-radius: var(--border_radius);
-    padding: var(--padding_large);
-}
-
+/* Settings scrollbar */
 OBSBasicSettings QScrollBar:vertical {
     width: var(--settings_scrollbar_size);
     margin-left: 9px;

@@ -8,7 +8,6 @@
 #include <QStaticText>
 #include <QSvgRenderer>
 #include <QAbstractListModel>
-#include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
 
@@ -191,12 +190,4 @@ protected:
 	virtual void paintEvent(QPaintEvent *event) override;
 
 	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
-};
-
-class SourceTreeDelegate : public QStyledItemDelegate {
-	Q_OBJECT
-
-public:
-	SourceTreeDelegate(QObject *parent);
-	virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };

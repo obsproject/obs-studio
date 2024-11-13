@@ -118,9 +118,35 @@ QDockWidget > QWidget {
     padding: var(--padding_xlarge);
 }
 
-SceneTree::item,
-SourceTreeItem {
-    border-width: 0px;
+QListWidget,
+SourceTree,
+SceneTree,
+SourceTree {
+    padding: 0;
+}
+
+SceneTree,
+SourceTree {
+    padding-top: 1px;
+}
+
+QListWidget::item,
+SourceTree::item,
+SceneTree::item {
+    height: 24px;
+    margin: 0;
+}
+
+QListWidget::item,
+SourceTreeItem,
+SceneTree::item {
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 0;
+}
+
+SourceTree::item {
+    border-radius: 0;
 }
 
 QMenu::item {
@@ -207,10 +233,6 @@ QDoubleSpinBox::down-button:off {
 
 OBSBasicSettings #PropertiesContainer {
     background-color: var(--bg_window);
-}
-
-OBSBasicSettings QListWidget::item {
-    padding: 4px;
 }
 
 QPushButton:checked {
