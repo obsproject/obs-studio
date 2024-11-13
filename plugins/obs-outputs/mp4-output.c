@@ -239,6 +239,8 @@ static int parse_custom_options(const char *opts_str)
 	return flags;
 }
 
+static void generate_filename(struct mp4_output *out, struct dstr *dst, bool overwrite);
+
 static bool mp4_output_start(void *data)
 {
 	struct mp4_output *out = data;
@@ -250,16 +252,21 @@ static bool mp4_output_start(void *data)
 
 	os_atomic_set_bool(&out->stopping, false);
 
-	/* get path */
 	obs_data_t *settings = obs_output_get_settings(out->output);
-	const char *path = obs_data_get_string(settings, "path");
-	dstr_copy(&out->path, path);
-
 	out->max_time = obs_data_get_int(settings, "max_time_sec") * 1000000LL;
 	out->max_size = obs_data_get_int(settings, "max_size_mb") * 1024 * 1024;
 	out->split_file_enabled = obs_data_get_bool(settings, "split_file");
 	out->allow_overwrite = obs_data_get_bool(settings, "allow_overwrite");
 	out->cur_size = 0;
+
+	/* Get path */
+	const char *path = obs_data_get_string(settings, "path");
+	if (path && *path) {
+		dstr_copy(&out->path, path);
+	} else {
+		generate_filename(out, &out->path, out->allow_overwrite);
+		info("Output path not specified. Using generated path '%s'", out->path.array);
+	}
 
 	/* Allow skipping the remux step for debugging purposes. */
 	const char *muxer_settings = obs_data_get_string(settings, "muxer_settings");
