@@ -1,4 +1,4 @@
-OBS Studio <https://obsproject.com>
+`OBS Studio <https://obsproject.com/>`_
 ===================================
 
 .. image:: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml/badge.svg?branch=master
@@ -25,19 +25,19 @@ version) - see the accompanying COPYING file for more details.
 Quick Links
 -----------
 
-- Website: https://obsproject.com
+- `Website <https://obsproject.com/>`_
 
-- Help/Documentation/Guides: https://github.com/obsproject/obs-studio/wiki
+- `Help/Documentation/Guides <https://github.com/obsproject/obs-studio/wiki/>`_
 
-- Forums: https://obsproject.com/forum/
+- `Forums <https://obsproject.com/forum/>`_
 
-- Build Instructions: https://github.com/obsproject/obs-studio/wiki/Install-Instructions
+- `Build Instructions <https://github.com/obsproject/obs-studio/wiki/Install-Instructions/>`_
 
-- Developer/API Documentation: https://obsproject.com/docs
+- `Developer/API Documentation <https://obsproject.com/docs/>`_
 
-- Donating/backing/sponsoring: https://obsproject.com/contribute
+- `Donating/backing/sponsoring <https://obsproject.com/contribute/>`_
 
-- Bug Tracker: https://github.com/obsproject/obs-studio/issues
+- `Bug Tracker <https://github.com/obsproject/obs-studio/issues/>`_
 
 Contributing
 ------------
