@@ -68,6 +68,7 @@
 #include "window-youtube-actions.hpp"
 #include "youtube-api-wrappers.hpp"
 #endif
+#include "window-whats-new.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
 #include "display-helpers.hpp"
@@ -128,6 +129,8 @@ void DestroyPanelCookieManager();
 
 namespace {
 
+QPointer<OBSWhatsNew> obsWhatsNew;
+
 template<typename OBSRef> struct SignalContainer {
 	OBSRef ref;
 	vector<shared_ptr<OBSSignal>> handlers;
@@ -163,8 +166,6 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 {
 	item->setData(static_cast<int>(QtDataRole::OBSRef), QVariant::fromValue(val));
 }
-
-constexpr std::string_view OBSProfilePath = "/obs-studio/basic/profiles/";
 
 static void AddExtraModulePaths()
 {
@@ -1897,7 +1898,7 @@ bool OBSBasic::InitBasicConfig()
 		return false;
 	}
 
-	return InitBasicConfigDefaults();
+	return true;
 }
 
 void OBSBasic::InitOBSCallbacks()
@@ -2122,9 +2123,7 @@ void OBSBasic::OBSInit()
 		emit VirtualCamEnabled();
 	}
 
-	InitBasicConfigDefaults2();
-
-	CheckForSimpleModeX264Fallback();
+	UpdateProfileEncoders();
 
 	LogEncoders();
 
@@ -2189,6 +2188,15 @@ void OBSBasic::OBSInit()
 			SetupNewSceneCollection(sceneCollectionName);
 			disableSaving++;
 		}
+
+		disableSaving--;
+		if (foundCollection || configuredCollection) {
+			OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+			OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+		}
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+		disableSaving++;
 	}
 
 	loaded = true;
@@ -2544,37 +2552,11 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 	if (closing)
 		return;
 
-	std::string info_url = QT_TO_UTF8(url);
-
-	QDialog *dlg = new QDialog(this);
-	dlg->setAttribute(Qt::WA_DeleteOnClose, true);
-	dlg->setWindowTitle("What's New");
-	dlg->resize(700, 600);
-
-	Qt::WindowFlags flags = dlg->windowFlags();
-	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
-	dlg->setWindowFlags(flags & (~helpFlag));
-
-	QCefWidget *cefWidget = cef->create_widget(nullptr, info_url);
-	if (!cefWidget) {
-		return;
+	if (obsWhatsNew) {
+		obsWhatsNew->close();
 	}
 
-	connect(cefWidget, &QCefWidget::titleChanged, dlg, &QDialog::setWindowTitle);
-
-	QPushButton *close = new QPushButton(QTStr("Close"));
-	connect(close, &QAbstractButton::clicked, dlg, &QDialog::accept);
-
-	QHBoxLayout *bottomLayout = new QHBoxLayout();
-	bottomLayout->addStretch();
-	bottomLayout->addWidget(close);
-	bottomLayout->addStretch();
-
-	QVBoxLayout *topLayout = new QVBoxLayout(dlg);
-	topLayout->addWidget(cefWidget);
-	topLayout->addLayout(bottomLayout);
-
-	dlg->show();
+	obsWhatsNew = new OBSWhatsNew(this, QT_TO_UTF8(url));
 #else
 	UNUSED_PARAMETER(url);
 #endif
@@ -7641,13 +7623,14 @@ void OBSBasic::on_actionShowSettingsFolder_triggered()
 
 void OBSBasic::on_actionShowProfileFolder_triggered()
 {
-	std::string userProfilePath;
-	userProfilePath.reserve(App()->userProfilesLocation.u8string().size() + OBSProfilePath.size());
-	userProfilePath.append(App()->userProfilesLocation.u8string()).append(OBSProfilePath);
+	try {
+		const OBSProfile &currentProfile = GetCurrentProfile();
+		QString currentProfileLocation = QString::fromStdString(currentProfile.path.u8string());
 
-	const QString userProfileLocation = QString::fromStdString(userProfilePath);
-
-	QDesktopServices::openUrl(QUrl::fromLocalFile(userProfileLocation));
+		QDesktopServices::openUrl(QUrl::fromLocalFile(currentProfileLocation));
+	} catch (const std::invalid_argument &error) {
+		blog(LOG_ERROR, "%s", error.what());
+	}
 }
 
 int OBSBasic::GetTopSelectedSourceItem()

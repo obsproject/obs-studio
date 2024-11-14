@@ -219,3 +219,13 @@ VolumeMeter {
     qproperty-majorTickColor: palette(window-text);
     qproperty-minorTickColor: palette(mid);
 }
+
+/* Primary Control Button Checked Coloring */
+#streamButton:!hover:!pressed:checked,
+#recordButton:!hover:!pressed:checked,
+#replayBufferButton:!hover:!pressed:checked,
+#virtualCamButton:!hover:!pressed:checked,
+#modeSwitch:!hover:!pressed:checked,
+#broadcastButton:!hover:!pressed:checked {
+    background: var(--primary_light);
+}

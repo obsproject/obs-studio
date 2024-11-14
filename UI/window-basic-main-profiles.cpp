@@ -699,13 +699,11 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 
 	InitBasicConfigDefaults();
-	InitBasicConfigDefaults2();
 
 	if (reset) {
+		UpdateProfileEncoders();
 		ResetProfileData();
 	}
-
-	CheckForSimpleModeX264Fallback();
 
 	RefreshProfiles();
 
@@ -713,6 +711,10 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
+#ifdef YOUTUBE_ENABLED
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+		NewYouTubeAppDock();
+#endif
 
 	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 
@@ -729,6 +731,12 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 			close();
 		}
 	}
+}
+
+void OBSBasic::UpdateProfileEncoders()
+{
+	InitBasicConfigDefaults2();
+	CheckForSimpleModeX264Fallback();
 }
 
 void OBSBasic::ResetProfileData()

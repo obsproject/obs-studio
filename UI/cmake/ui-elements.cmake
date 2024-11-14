@@ -48,8 +48,6 @@ target_sources(
     hotkey-edit.hpp
     item-widget-helpers.cpp
     item-widget-helpers.hpp
-    lineedit-autoresize.cpp
-    lineedit-autoresize.hpp
     log-viewer.cpp
     log-viewer.hpp
     media-controls.cpp

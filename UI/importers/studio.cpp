@@ -16,6 +16,9 @@
 ******************************************************************************/
 
 #include "importers.hpp"
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include <obs-nix-platform.h>
+#endif
 
 using namespace std;
 using namespace json11;
@@ -109,7 +112,13 @@ void TranslateOSStudio(Json &res)
 		ClearTranslation("av_capture_input", "v4l2_input");
 		ClearTranslation("dshow_input", "v4l2_input");
 
-		ClearTranslation("window_capture", "xcomposite_input");
+		if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL) {
+			ClearTranslation("game_capture", "xcomposite_input");
+			ClearTranslation("window_capture", "xcomposite_input");
+		} else {
+			ClearTranslation("game_capture", "pipewire-screen-capture-source");
+			ClearTranslation("window_capture", "pipewire-screen-capture-source");
+		}
 
 		if (id == "monitor_capture") {
 			source["id"] = "xshm_input";

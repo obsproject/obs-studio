@@ -98,8 +98,7 @@
             ],
             "post-install": [
                 "install -d /app/plugins",
-                "install -d /app/extensions/Plugins",
-                "rm -rf /app/cef # Skip stripping original CEF library"
+                "install -d /app/extensions/Plugins"
             ],
             "sources": [
                 {

@@ -123,6 +123,8 @@ bool RestreamAuth::LoadInternal()
 
 void RestreamAuth::LoadUI()
 {
+	if (!cef)
+		return;
 	if (uiLoaded)
 		return;
 	if (!GetChannelInfo())

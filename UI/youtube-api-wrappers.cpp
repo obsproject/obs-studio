@@ -29,7 +29,6 @@ using namespace json11;
 #define YOUTUBE_LIVE_TOKEN_URL "https://oauth2.googleapis.com/token"
 #define YOUTUBE_LIVE_VIDEOCATEGORIES_URL YOUTUBE_LIVE_API_URL "/videoCategories"
 #define YOUTUBE_LIVE_VIDEOS_URL YOUTUBE_LIVE_API_URL "/videos"
-#define YOUTUBE_LIVE_CHAT_MESSAGES_URL YOUTUBE_LIVE_API_URL "/liveChat/messages"
 #define YOUTUBE_LIVE_THUMBNAIL_URL "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
 
 #define DEFAULT_BROADCASTS_PER_QUERY "50" // acceptable values are 0 to 50, inclusive
@@ -246,7 +245,7 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 	return stream.id.isEmpty() ? false : true;
 }
 
-bool YoutubeApiWrappers::BindStream(const QString broadcast_id, const QString stream_id, json11::Json &json_out)
+bool YoutubeApiWrappers::BindStream(const QString broadcast_id, const QString stream_id)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
@@ -256,6 +255,7 @@ bool YoutubeApiWrappers::BindStream(const QString broadcast_id, const QString st
 	const QString url = url_template.arg(broadcast_id, stream_id);
 	const Json data = Json::object{};
 	this->broadcast_id = broadcast_id;
+	Json json_out;
 	return InsertCommand(QT_TO_UTF8(url), "application/json", "", data.dump().c_str(), json_out);
 }
 
@@ -517,19 +517,4 @@ bool YoutubeApiWrappers::FindStream(const QString &id, json11::Json &json_out)
 	}
 
 	return true;
-}
-
-bool YoutubeApiWrappers::SendChatMessage(const std::string &chat_id, const QString &message)
-{
-	QByteArray url = YOUTUBE_LIVE_CHAT_MESSAGES_URL "?part=snippet";
-
-	json11::Json json_in = Json::object{
-		{"snippet", Json::object{
-				    {"liveChatId", chat_id},
-				    {"type", "textMessageEvent"},
-				    {"textMessageDetails", Json::object{{"messageText", QT_TO_UTF8(message)}}},
-			    }}};
-
-	json11::Json json_out;
-	return InsertCommand(url, "application/json", "POST", json_in.dump().c_str(), json_out);
 }

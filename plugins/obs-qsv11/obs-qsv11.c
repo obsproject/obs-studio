@@ -107,9 +107,6 @@ struct obs_qsv {
 static pthread_mutex_t g_QsvLock = PTHREAD_MUTEX_INITIALIZER;
 static unsigned short g_verMajor;
 static unsigned short g_verMinor;
-static int64_t g_pts2dtsShift;
-static int64_t g_prevDts;
-static bool g_bFirst;
 
 static const char *obs_qsv_getname_v1(void *type_data)
 {
@@ -824,31 +821,12 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings, obs_enco
 	     "\tminor:          %d",
 	     g_verMajor, g_verMinor);
 
-	// MSDK 1.6 or less doesn't have automatic DTS calculation
-	// including early SandyBridge.
-	// Need to add manual DTS from PTS.
-	if (g_verMajor == 1 && g_verMinor < 7) {
-		int64_t interval = obsqsv->params.nbFrames + 1;
-		int64_t GopPicSize =
-			(int64_t)(obsqsv->params.nKeyIntSec * obsqsv->params.nFpsNum / (float)obsqsv->params.nFpsDen);
-		g_pts2dtsShift = GopPicSize - (GopPicSize / interval) * interval;
-
-		blog(LOG_INFO,
-		     "\tinterval:       %" PRId64 "\n"
-		     "\tGopPictSize:    %" PRId64 "\n"
-		     "\tg_pts2dtsShift: %" PRId64,
-		     interval, GopPicSize, g_pts2dtsShift);
-	} else
-		g_pts2dtsShift = -1;
-
 	if (!obsqsv->context) {
 		bfree(obsqsv);
 		return NULL;
 	}
 
 	obsqsv->performance_token = os_request_high_performance("qsv encoding");
-
-	g_bFirst = true;
 
 	return obsqsv;
 }
@@ -1084,29 +1062,14 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 
 	/* ------------------------------------ */
 
-	//bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
-	//bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
-	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
-	//int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
-	//int64_t interval = obsqsv->params.nbFrames + 1;
-
-	// In case MSDK doesn't support automatic DecodeTimeStamp, do manual
-	// calculation
-	if (g_pts2dtsShift >= 0) {
-		if (g_bFirst) {
-			packet->dts = packet->pts - 3 * obsqsv->params.nFpsDen;
-		} else if (pFrame) {
-			packet->dts = packet->pts - 10 * obsqsv->params.nFpsDen;
-			g_prevDts = packet->dts;
-		} else {
-			packet->dts = g_prevDts + obsqsv->params.nFpsDen;
-			g_prevDts = packet->dts;
-		}
-	} else {
-		packet->dts = ts_mfx_to_obs(pBS->DecodeTimeStamp, voi);
-	}
+	packet->dts = ts_mfx_to_obs(pBS->DecodeTimeStamp, voi);
 
 #if 0
+	bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
+	bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
+	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
+	int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
+
 	info("parse packet:\n"
 		"\tFrameType: %d\n"
 		"\tpts:       %d\n"
@@ -1116,8 +1079,6 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet, 
 
 	*received_packet = true;
 	pBS->DataLength = 0;
-
-	g_bFirst = false;
 }
 
 static void parse_packet_av1(struct obs_qsv *obsqsv, struct encoder_packet *packet, mfxBitstream *pBS,
@@ -1161,8 +1122,6 @@ static void parse_packet_av1(struct obs_qsv *obsqsv, struct encoder_packet *pack
 
 	*received_packet = true;
 	pBS->DataLength = 0;
-
-	g_bFirst = false;
 }
 
 static void parse_packet_hevc(struct obs_qsv *obsqsv, struct encoder_packet *packet, mfxBitstream *pBS,
@@ -1194,29 +1153,14 @@ static void parse_packet_hevc(struct obs_qsv *obsqsv, struct encoder_packet *pac
 
 	/* ------------------------------------ */
 
-	//bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
-	//bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
-	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
-
-	// In case MSDK doesn't support automatic DecodeTimeStamp, do manual
-	// calculation
-	if (g_pts2dtsShift >= 0) {
-		if (g_bFirst) {
-			packet->dts = packet->pts - 3 * obsqsv->params.nFpsDen;
-		} else if (pFrame) {
-			packet->dts = packet->pts - 10 * obsqsv->params.nFpsDen;
-			g_prevDts = packet->dts;
-		} else {
-			packet->dts = g_prevDts + obsqsv->params.nFpsDen;
-			g_prevDts = packet->dts;
-		}
-	} else {
-		packet->dts = ts_mfx_to_obs(pBS->DecodeTimeStamp, voi);
-	}
+	packet->dts = ts_mfx_to_obs(pBS->DecodeTimeStamp, voi);
 
 #if 0
+	bool iFrame = pBS->FrameType & MFX_FRAMETYPE_I;
+	bool bFrame = pBS->FrameType & MFX_FRAMETYPE_B;
+	bool pFrame = pBS->FrameType & MFX_FRAMETYPE_P;
+
 	int iType = iFrame ? 0 : (bFrame ? 1 : (pFrame ? 2 : -1));
-	int64_t interval = obsqsv->params.nbFrames + 1;
 
 	info("parse packet:\n"
 		"\tFrameType: %d\n"
@@ -1226,8 +1170,6 @@ static void parse_packet_hevc(struct obs_qsv *obsqsv, struct encoder_packet *pac
 #endif
 	*received_packet = true;
 	pBS->DataLength = 0;
-
-	g_bFirst = false;
 }
 
 static void roi_cb(void *param, struct obs_encoder_roi *roi)
