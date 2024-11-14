@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -247,15 +247,14 @@ static inline int get_sws_range(enum AVColorRange r)
 
 static bool mp_media_init_scaling(mp_media_t *m)
 {
-	int space = get_sws_colorspace(m->v.decoder->colorspace);
-	int range = get_sws_range(m->v.decoder->color_range);
+	int space = get_sws_colorspace(m->v.frame->colorspace);
+	int range = get_sws_range(m->v.frame->color_range);
 	const int *coeff = sws_getCoefficients(space);
 
-	m->swscale = sws_getCachedContext(NULL, m->v.decoder->width,
-					  m->v.decoder->height,
-					  m->v.decoder->pix_fmt,
-					  m->v.decoder->width,
-					  m->v.decoder->height, m->scale_format,
+	m->swscale = sws_getCachedContext(NULL, m->v.frame->width,
+					  m->v.frame->height,
+					  m->v.frame->format, m->v.frame->width,
+					  m->v.frame->height, m->scale_format,
 					  SWS_POINT, NULL, NULL, NULL);
 	if (!m->swscale) {
 		blog(LOG_WARNING, "MP: Failed to initialize scaler");
@@ -266,7 +265,7 @@ static bool mp_media_init_scaling(mp_media_t *m)
 				 FIXED_1_0, FIXED_1_0);
 
 	int ret = av_image_alloc(m->scale_pic, m->scale_linesizes,
-				 m->v.decoder->width, m->v.decoder->height,
+				 m->v.frame->width, m->v.frame->height,
 				 m->scale_format, 32);
 	if (ret < 0) {
 		blog(LOG_WARNING, "MP: Failed to create scale pic data");
@@ -430,7 +429,6 @@ void mp_media_next_audio(mp_media_t *m)
 	if (m->audio.index_eof < 0 || !m->enable_caching) {
 		if (!mp_media_can_play_frame(m, d))
 			return;
-
 		d->frame_ready = false;
 		if (!m->a_cb)
 			return;
@@ -466,7 +464,6 @@ void mp_media_next_audio(mp_media_t *m)
 							    m->start_ts +
 							    m->play_sys_ts -
 							    base_sys_ts;
-
 		audio->dec_frame_pts = d->frame_pts;
 
 		if (audio->format == AUDIO_FORMAT_UNKNOWN) {
@@ -606,9 +603,11 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 		if (current_frame->format == VIDEO_FORMAT_NONE)
 			return;
 
-		current_frame->timestamp = m->base_ts + d->frame_pts -
-					   m->start_ts + m->play_sys_ts -
-					   base_sys_ts;
+		current_frame->timestamp =
+			m->full_decode
+				? d->frame_pts
+				: (m->base_ts + d->frame_pts - m->start_ts +
+				   m->play_sys_ts - base_sys_ts);
 
 		current_frame->duration = d->last_duration;
 		current_frame->width = f->width;
@@ -637,7 +636,12 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 		}
 
 		if (!m->is_local_file && !d->got_first_keyframe) {
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(58, 29, 100)
 			if (!f->key_frame)
+#else
+			if (!(f->flags & AV_FRAME_FLAG_KEY))
+#endif
 				return;
 
 			d->got_first_keyframe = true;
@@ -1198,6 +1202,9 @@ static inline bool mp_media_init_internal(mp_media_t *m,
 	m->format_name = info->format ? bstrdup(info->format) : NULL;
 	m->hw = info->hardware_decoding;
 
+	if (info->full_decode)
+		return true;
+
 	m->video = (struct cached_data){0, -1, NULL, -1, 0};
 	m->audio = (struct cached_data){0, -1, NULL, -1, 0};
 	m->process_audio = true;
@@ -1252,10 +1259,6 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 
 	static bool initialized = false;
 	if (!initialized) {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-		av_register_all();
-		avcodec_register_all();
-#endif
 		avdevice_register_all();
 		avformat_network_init();
 		initialized = true;

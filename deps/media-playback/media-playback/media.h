@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -46,7 +46,6 @@ struct cached_data {
 	int64_t refresh_rate_ns;
 	uint64_t last_processed_ns;
 };
-
 struct mp_media {
 	AVFormatContext *fmt;
 

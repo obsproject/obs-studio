@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -136,8 +136,7 @@ class OBSRef : public OBSRefAutoRelease<T, release> {
 		return *this;
 	}
 
-	struct TakeOwnership {
-	};
+	struct TakeOwnership {};
 	inline OBSRef(T val_, TakeOwnership)
 		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(val_)
 	{
@@ -180,8 +179,7 @@ class OBSSafeRef : public OBSRefAutoRelease<T, release> {
 		return *this;
 	}
 
-	struct TakeOwnership {
-	};
+	struct TakeOwnership {};
 	inline OBSSafeRef(T val_, TakeOwnership)
 		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(val_)
 	{
@@ -310,6 +308,8 @@ public:
 
 using OBSDisplay = OBSPtr<obs_display_t *, obs_display_destroy>;
 using OBSView = OBSPtr<obs_view_t *, obs_view_destroy>;
+using OBSFader = OBSPtr<obs_fader_t *, obs_fader_destroy>;
+using OBSVolMeter = OBSPtr<obs_volmeter_t *, obs_volmeter_destroy>;
 
 /* signal handler connection */
 class OBSSignal {

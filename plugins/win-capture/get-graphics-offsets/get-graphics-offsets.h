@@ -2,7 +2,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef OBS_LEGACY
 #include "../graphics-hook-info.h"
+#else
+#include <graphics-hook-info.h>
+#endif
 
 #define DUMMY_WNDCLASS "get_addrs_wndclass"
 

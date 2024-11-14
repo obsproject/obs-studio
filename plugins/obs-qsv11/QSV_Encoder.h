@@ -56,10 +56,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <Windows.h>
-#include "mfxstructures.h"
-#include "mfxadapter.h"
+#include <vpl/mfxstructures.h>
+#include <vpl/mfxadapter.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include "common_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,41 +72,25 @@ struct qsv_rate_control_info {
 	bool haswell_or_greater;
 };
 
-static const struct qsv_rate_control_info qsv_ratecontrols[] = {
-	{"CBR", false},   {"VBR", false}, {"VCM", true},    {"CQP", false},
-	{"AVBR", false},  {"ICQ", true},  {"LA_ICQ", true}, {"LA_CBR", true},
-	{"LA_VBR", true}, {0, false}};
-
-static const struct qsv_rate_control_info qsv_av1_ratecontrols[] =
-	{{"CBR", false}, {"VBR", false}, {"CQP", false}, {0, false}};
+static const struct qsv_rate_control_info qsv_ratecontrols[] = {{"CBR", false},
+								{"VBR", false},
+								{"CQP", false},
+								{"ICQ", true},
+								{0, false}};
 
 static const char *const qsv_profile_names[] = {"high", "main", "baseline", 0};
 static const char *const qsv_profile_names_av1[] = {"main", 0};
 static const char *const qsv_profile_names_hevc[] = {"main", "main10", 0};
-static const char *const qsv_usage_names[] = {"quality",  "balanced", "speed",
-					      "veryslow", "slower",   "slow",
-					      "medium",   "fast",     "faster",
-					      "veryfast", 0};
+static const char *const qsv_usage_translation_keys[] = {
+	"TargetUsage.TU1", "TargetUsage.TU2",
+	"TargetUsage.TU3", "TargetUsage.TU4",
+	"TargetUsage.TU5", "TargetUsage.TU6",
+	"TargetUsage.TU7", 0};
+static const char *const qsv_usage_names[] = {"TU1", "TU2", "TU3", "TU4",
+					      "TU5", "TU6", "TU7", 0};
 static const char *const qsv_latency_names[] = {"ultra-low", "low", "normal",
 						0};
 typedef struct qsv_t qsv_t;
-
-struct adapter_info {
-	bool is_intel;
-	bool is_dgpu;
-	bool supports_av1;
-	bool supports_hevc;
-};
-
-enum qsv_codec {
-	QSV_CODEC_AVC,
-	QSV_CODEC_AV1,
-	QSV_CODEC_HEVC,
-};
-
-#define MAX_ADAPTERS 10
-extern struct adapter_info adapters[MAX_ADAPTERS];
-extern size_t adapter_count;
 
 typedef struct {
 	mfxU16 nTargetUsage; /* 1 through 7, 1 being best quality and 7
@@ -142,9 +128,8 @@ typedef struct {
 	mfxU32 MinDisplayMasteringLuminance;
 	mfxU16 MaxContentLightLevel;
 	mfxU16 MaxPicAverageLightLevel;
-	bool bMBBRC;
-	bool bCQM;
 	bool video_fmt_10bit;
+	bool bRepeatHeaders;
 } qsv_param_t;
 
 enum qsv_cpu_platform {
@@ -172,11 +157,12 @@ int qsv_param_default_preset(qsv_param_t *, const char *preset,
 			     const char *tune);
 int qsv_encoder_reconfig(qsv_t *, qsv_param_t *);
 void qsv_encoder_version(unsigned short *major, unsigned short *minor);
-qsv_t *qsv_encoder_open(qsv_param_t *, enum qsv_codec codec);
-bool qsv_encoder_is_dgpu(qsv_t *);
+qsv_t *qsv_encoder_open(qsv_param_t *, enum qsv_codec codec, bool useTexAlloc);
+void qsv_encoder_add_roi(qsv_t *, const struct obs_encoder_roi *roi);
+void qsv_encoder_clear_roi(qsv_t *pContext);
 int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t,
 		       uint32_t, mfxBitstream **pBS);
-int qsv_encoder_encode_tex(qsv_t *, uint64_t, uint32_t, uint64_t, uint64_t *,
+int qsv_encoder_encode_tex(qsv_t *, uint64_t, void *, uint64_t, uint64_t *,
 			   mfxBitstream **pBS);
 int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS,
 			uint16_t *pnSPS, uint16_t *pnPPS);

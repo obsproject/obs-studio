@@ -8,7 +8,9 @@
 
 #include "compat-helpers.h"
 #include "compat-format-ver.h"
+#ifdef OBS_LEGACY
 #include "compat-config.h"
+#endif
 
 #define WIN_CAPTURE_LOG_STRING "[win-capture plugin] "
 #define WIN_CAPTURE_VER_STRING "win-capture plugin (libobs " OBS_VERSION ")"
@@ -115,8 +117,10 @@ bool obs_module_load(void)
 	snprintf(update_url, sizeof(update_url), "%s/v%d", COMPAT_URL,
 		 COMPAT_FORMAT_VERSION);
 
-	struct win_version_info win1903 = {
-		.major = 10, .minor = 0, .build = 18362, .revis = 0};
+	struct win_version_info win1903 = {.major = 10,
+					   .minor = 0,
+					   .build = 18362,
+					   .revis = 0};
 
 	local_dir = obs_module_file(NULL);
 	config_dir = obs_module_config_path(NULL);

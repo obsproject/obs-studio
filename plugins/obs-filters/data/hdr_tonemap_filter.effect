@@ -4,8 +4,8 @@ uniform float4x4 ViewProj;
 uniform texture2d image;
 
 uniform float multiplier;
-uniform float hdr_input_maximum_nits;
-uniform float hdr_output_maximum_nits;
+uniform float input_maximum_nits;
+uniform float output_maximum_nits;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -50,10 +50,22 @@ float4 PSMaxrgb(FragData f_in) : TARGET
 	float4 rgba = image.Sample(textureSampler, f_in.uv);
 	rgba.rgb *= multiplier;
 	rgba.rgb = rec709_to_rec2020(rgba.rgb);
-	rgba.rgb = maxRGB_eetf_linear_to_linear(rgba.rgb, hdr_input_maximum_nits, hdr_output_maximum_nits);
+	rgba.rgb = maxRGB_eetf_linear_to_linear(rgba.rgb, input_maximum_nits, output_maximum_nits);
 	rgba.rgb = rec2020_to_rec709(rgba.rgb);
-	float multiplier_i = 1. / multiplier;
-	rgba.rgb *= multiplier_i;
+	rgba.rgb *= 1. / multiplier;
+	return rgba;
+}
+
+float4 PSMaxrgbSdr(FragData f_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, f_in.uv);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = maxRGB_eetf_linear_to_linear(rgba.rgb, input_maximum_nits, output_maximum_nits);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	rgba.rgb *= 10000. / output_maximum_nits;
+	rgba.rgb = pow(saturate(rgba.rgb), float3(1. / 2.4, 1. / 2.4, 1. / 2.4));
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
 	return rgba;
 }
 
@@ -72,5 +84,14 @@ technique MaxRGB
 	{
 		vertex_shader = VSHdrTonemap(v_in);
 		pixel_shader  = PSMaxrgb(f_in);
+	}
+}
+
+technique MaxRGBSDR
+{
+	pass
+	{
+		vertex_shader = VSHdrTonemap(v_in);
+		pixel_shader  = PSMaxrgbSdr(f_in);
 	}
 }

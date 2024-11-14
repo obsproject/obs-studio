@@ -141,12 +141,10 @@ static CFStringRef obs_to_vt_profile(CMVideoCodecType codec_type,
 		}
 		if (strcmp(profile, "main10") == 0)
 			return kVTProfileLevel_HEVC_Main10_AutoLevel;
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300 // macOS 12.3
 		if (__builtin_available(macOS 12.3, *)) {
 			if (strcmp(profile, "main42210") == 0)
 				return kVTProfileLevel_HEVC_Main42210_AutoLevel;
 		}
-#endif // macOS 12.3
 		return kVTProfileLevel_HEVC_Main_AutoLevel;
 #else
 		(void)format;
@@ -300,7 +298,6 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 		can_limit_bitrate = true;
 
 		if (__builtin_available(macOS 13.0, *)) {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
 			if (is_apple_silicon) {
 				compressionPropertyKey =
 					kVTCompressionPropertyKey_ConstantBitRate;
@@ -310,11 +307,6 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 				       "CBR support for VideoToolbox encoder requires Apple Silicon. "
 				       "Will use ABR instead.");
 			}
-#else
-			VT_LOG(LOG_WARNING,
-			       "CBR support for VideoToolbox not available in this build of OBS. "
-			       "Will use ABR instead.");
-#endif
 		} else {
 			VT_LOG(LOG_WARNING,
 			       "CBR support for VideoToolbox encoder requires macOS 13 or newer. "
@@ -545,7 +537,7 @@ static inline CFDictionaryRef create_pixbuf_spec(struct vt_encoder *enc)
 	return pixbuf_spec;
 }
 
-static bool create_encoder(struct vt_encoder *enc)
+static OSStatus create_encoder(struct vt_encoder *enc)
 {
 	OSStatus code;
 
@@ -596,18 +588,6 @@ static bool create_encoder(struct vt_encoder *enc)
 
 	if (enc->codec_type == kCMVideoCodecType_H264 ||
 	    enc->codec_type == kCMVideoCodecType_HEVC) {
-		/* Apple's documentation states that a keyframe interval of 0 will result in
-		 * the encoder automatically picking times to insert them; However, Apple's
-		 * encoder, when in CRF mode, will never actually insert any keyframes past
-		 * the very first one, rendering the files near-unusable in editors or
-		 * video players. So to avoid that happening, enforce a reasonable default
-		 * of 10 seconds in CRF mode. */
-		if (enc->keyint == 0 && strcmp(enc->rate_control, "CRF") == 0) {
-			VT_BLOG(LOG_INFO,
-				"Enforcing non-zero keyframe interval in CRF mode");
-			enc->keyint = 10;
-		}
-
 		// This can fail when using GPU hardware encoding
 		code = session_set_prop_int(
 			s,
@@ -698,15 +678,7 @@ static bool create_encoder(struct vt_encoder *enc)
 
 	enc->session = s;
 
-	return true;
-
-fail:
-	if (encoder_spec != NULL)
-		CFRelease(encoder_spec);
-	if (pixbuf_spec != NULL)
-		CFRelease(pixbuf_spec);
-
-	return false;
+	return noErr;
 }
 
 static void vt_destroy(void *data)
@@ -905,8 +877,10 @@ static void *vt_create(obs_data_t *settings, obs_encoder_t *encoder)
 		goto fail;
 	}
 
-	if (!create_encoder(enc))
+	code = create_encoder(enc);
+	if (code != noErr) {
 		goto fail;
+	}
 
 	dump_encoder_info(enc);
 
@@ -1061,6 +1035,10 @@ static bool convert_sample_to_annexb(struct vt_encoder *enc,
 			format_desc, 0, NULL, NULL, &param_count,
 			&nal_length_bytes);
 #endif
+	} else {
+		log_osstatus(LOG_ERROR, enc, "invalid codec type",
+			     kCMFormatDescriptionError_ValueNotAvailable);
+		return false;
 	}
 	// it is not clear what errors this function can return
 	// so we check the two most reasonable
@@ -1552,7 +1530,7 @@ static void vt_defaults(obs_data_t *settings, void *data)
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
 	obs_data_set_default_int(settings, "max_bitrate", 2500);
 	obs_data_set_default_double(settings, "max_bitrate_window", 1.5f);
-	obs_data_set_default_int(settings, "keyint_sec", 0);
+	obs_data_set_default_int(settings, "keyint_sec", 2);
 	obs_data_set_default_string(
 		settings, "profile",
 		type_data->codec_type == kCMVideoCodecType_H264 ? "high"
@@ -1592,40 +1570,10 @@ vt_add_prores_encoder_data_to_list(CFDictionaryRef encoder_dict,
 	encoder_data->codec_type = codec_type;
 }
 
-static CFComparisonResult compare_encoder_list(const void *left_val,
-					       const void *right_val,
-					       void *context __unused)
-{
-	CFDictionaryRef left = (CFDictionaryRef)left_val;
-	CFDictionaryRef right = (CFDictionaryRef)right_val;
-
-	CFNumberRef left_codec_num =
-		CFDictionaryGetValue(left, kVTVideoEncoderList_CodecType);
-	CFNumberRef right_codec_num =
-		CFDictionaryGetValue(right, kVTVideoEncoderList_CodecType);
-	CFComparisonResult result =
-		CFNumberCompare(left_codec_num, right_codec_num, NULL);
-
-	if (result != kCFCompareEqualTo)
-		return result;
-
-	CFBooleanRef left_hardware_accel = CFDictionaryGetValue(
-		left, kVTVideoEncoderList_IsHardwareAccelerated);
-	CFBooleanRef right_hardware_accel = CFDictionaryGetValue(
-		right, kVTVideoEncoderList_IsHardwareAccelerated);
-
-	if (left_hardware_accel == right_hardware_accel)
-		return kCFCompareEqualTo;
-	else if (left_hardware_accel == kCFBooleanTrue)
-		return kCFCompareGreaterThan;
-	else
-		return kCFCompareLessThan;
-}
-
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("mac-videotoolbox", "en-US")
 dispatch_group_t encoder_list_dispatch_group;
-CFArrayRef encoder_list_const;
+CFArrayRef encoder_list;
 
 bool obs_module_load(void)
 {
@@ -1633,7 +1581,7 @@ bool obs_module_load(void)
 		dispatch_queue_create("Encoder list load queue", NULL);
 	encoder_list_dispatch_group = dispatch_group_create();
 	dispatch_group_async(encoder_list_dispatch_group, queue, ^{
-		VTCopyVideoEncoderList(NULL, &encoder_list_const);
+		VTCopyVideoEncoderList(NULL, &encoder_list);
 	});
 	// The group dispatch keeps a reference until it's finished
 	dispatch_release(queue);
@@ -1664,14 +1612,7 @@ void obs_module_post_load(void)
 
 	dispatch_group_wait(encoder_list_dispatch_group, DISPATCH_TIME_FOREVER);
 	dispatch_release(encoder_list_dispatch_group);
-	CFIndex size = CFArrayGetCount(encoder_list_const);
-
-	CFMutableArrayRef encoder_list = CFArrayCreateMutableCopy(
-		kCFAllocatorDefault, size, encoder_list_const);
-	CFRelease(encoder_list_const);
-
-	CFArraySortValues(encoder_list, CFRangeMake(0, size),
-			  &compare_encoder_list, NULL);
+	CFIndex size = CFArrayGetCount(encoder_list);
 
 	for (CFIndex i = 0; i < size; i++) {
 		CFDictionaryRef encoder_dict =

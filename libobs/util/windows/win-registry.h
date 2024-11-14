@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  * Copyright (c) 2017 Ryan Foster <RytoEX@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any

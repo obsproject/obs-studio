@@ -82,9 +82,6 @@ using namespace Gdiplus;
 #define S_TRANSFORM_LOWERCASE 2
 #define S_TRANSFORM_STARTCASE 3
 
-#define S_ANTIALIASING_NONE 0
-#define S_ANTIALIASING_STANDARD 1
-
 #define T_(v) obs_module_text(v)
 #define T_FONT T_("Font")
 #define T_USE_FILE T_("ReadFromFile")
@@ -223,6 +220,7 @@ struct TextSource {
 	uint32_t outline_opacity = 100;
 
 	bool use_extents = false;
+	bool old_extents = false;
 	bool wrap = false;
 	uint32_t extents_cx = 0;
 	uint32_t extents_cy = 0;
@@ -234,10 +232,12 @@ struct TextSource {
 
 	/* --------------------------- */
 
-	inline TextSource(obs_source_t *source_, obs_data_t *settings)
+	inline TextSource(obs_source_t *source_, obs_data_t *settings,
+			  bool old_extents_)
 		: source(source_),
 		  hdc(CreateCompatibleDC(nullptr)),
-		  graphics(hdc)
+		  graphics(hdc),
+		  old_extents(old_extents_)
 	{
 		obs_source_update(source, settings);
 	}
@@ -297,8 +297,10 @@ void TextSource::UpdateFont()
 
 void TextSource::GetStringFormat(StringFormat &format)
 {
-	UINT flags = StringFormatFlagsNoFitBlackBox |
-		     StringFormatFlagsMeasureTrailingSpaces;
+	UINT flags = StringFormatFlagsNoFitBlackBox;
+
+	if (!use_extents || old_extents)
+		flags |= StringFormatFlagsMeasureTrailingSpaces;
 
 	if (vertical)
 		flags |= StringFormatFlagsDirectionVertical |
@@ -461,6 +463,24 @@ void TextSource::CalculateTextSizes(Font *font, const StringFormat &format,
 	if (use_extents) {
 		text_size.cx = extents_cx;
 		text_size.cy = extents_cy;
+
+		if (!old_extents && !wrap) {
+			if (align == Align::Center) {
+				bounding_box.X +=
+					(extents_cx - bounding_box.Width) / 2;
+			} else if (align == Align::Right) {
+				bounding_box.X +=
+					extents_cx - bounding_box.Width;
+			}
+
+			if (valign == VAlign::Center) {
+				bounding_box.Y +=
+					(extents_cy - bounding_box.Height) / 2;
+			} else if (valign == VAlign::Bottom) {
+				bounding_box.Y +=
+					extents_cy - bounding_box.Height;
+			}
+		}
 	}
 
 	text_size.cx += text_size.cx % 2;
@@ -529,7 +549,7 @@ void TextSource::RenderText()
 				    UnitPixel));
 	else {
 		/* I realize that we're not passing emSize here, unlike
-		 * above. Unfortunately, since we passed cell height 
+		 * above. Unfortunately, since we passed cell height
 		 * before, we still need to do so now for compatibility */
 		LOGFONT lf = {0};
 		lf.lfHeight = face_size;
@@ -1063,7 +1083,8 @@ static obs_properties_t *text_get_properties(void *data)
 
 void *text_create(obs_data_t *settings, obs_source_t *source)
 {
-	return reinterpret_cast<void *>(new TextSource(source, settings));
+	return reinterpret_cast<void *>(
+		new TextSource(source, settings, false));
 }
 
 void text_destroy(void *data)
@@ -1164,9 +1185,11 @@ bool obs_module_load(void)
 	si.get_properties = text_get_properties;
 	si.icon_type = OBS_ICON_TYPE_TEXT;
 
-	si.get_name = [](void *) { return obs_module_text("TextGDIPlus"); };
+	si.get_name = [](void *) {
+		return obs_module_text("TextGDIPlus");
+	};
 	si.create = [](obs_data_t *settings, obs_source_t *source) {
-		return (void *)new TextSource(source, settings);
+		return (void *)new TextSource(source, settings, true);
 	};
 	si.destroy = [](void *data) {
 		delete reinterpret_cast<TextSource *>(data);
@@ -1177,7 +1200,9 @@ bool obs_module_load(void)
 	si.get_height = [](void *data) {
 		return reinterpret_cast<TextSource *>(data)->cy;
 	};
-	si.get_defaults = [](obs_data_t *settings) { defaults(settings, 1); };
+	si.get_defaults = [](obs_data_t *settings) {
+		defaults(settings, 1);
+	};
 	si.update = [](void *data, obs_data_t *settings) {
 		reinterpret_cast<TextSource *>(data)->Update(settings);
 	};
@@ -1216,13 +1241,20 @@ bool obs_module_load(void)
 
 	obs_source_info si_v2 = si;
 	si_v2.version = 2;
-	si_v2.output_flags &= ~OBS_SOURCE_CAP_OBSOLETE;
 	si_v2.get_defaults = [](obs_data_t *settings) {
 		defaults(settings, 2);
 	};
 
+	obs_source_info si_v3 = si_v2;
+	si_v3.version = 3;
+	si_v3.output_flags &= ~OBS_SOURCE_CAP_OBSOLETE;
+	si_v3.create = [](obs_data_t *settings, obs_source_t *source) {
+		return (void *)new TextSource(source, settings, false);
+	};
+
 	obs_register_source(&si);
 	obs_register_source(&si_v2);
+	obs_register_source(&si_v3);
 
 	return true;
 }

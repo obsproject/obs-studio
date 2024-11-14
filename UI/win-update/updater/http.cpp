@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -333,6 +333,134 @@ bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url,
 					  responseCode))
 				return false;
 
+			int position = (int)(((float)completedFileSize /
+					      (float)totalFileSize) *
+					     100.0f);
+			if (position > lastPosition) {
+				lastPosition = position;
+				SendDlgItemMessage(hwndMain, IDC_PROGRESS,
+						   PBM_SETPOS, position, 0);
+			}
+		}
+
+		if (WaitForSingleObject(cancelRequested, 0) == WAIT_OBJECT_0) {
+			*responseCode = -14;
+			return false;
+		}
+
+	} while (dwSize > 0);
+
+	return true;
+}
+
+bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url,
+		   const wchar_t *extraHeaders, vector<std::byte> &out,
+		   int *responseCode)
+{
+	HttpHandle hRequest;
+
+	const wchar_t *acceptTypes[] = {L"*/*", nullptr};
+
+	URL_COMPONENTS urlComponents = {};
+	bool secure = false;
+
+	wchar_t hostName[256];
+	wchar_t path[1024];
+
+	/* -------------------------------------- *
+	 * get URL components                     */
+
+	urlComponents.dwStructSize = sizeof(urlComponents);
+
+	urlComponents.lpszHostName = hostName;
+	urlComponents.dwHostNameLength = _countof(hostName);
+
+	urlComponents.lpszUrlPath = path;
+	urlComponents.dwUrlPathLength = _countof(path);
+
+	WinHttpCrackUrl(url, 0, 0, &urlComponents);
+
+	if (urlComponents.nPort == 443)
+		secure = true;
+
+	/* -------------------------------------- *
+	 * request data                           */
+
+	hRequest = WinHttpOpenRequest(hConnect, L"GET", path, nullptr,
+				      WINHTTP_NO_REFERER, acceptTypes,
+				      secure ? WINHTTP_FLAG_SECURE |
+						       WINHTTP_FLAG_REFRESH
+					     : WINHTTP_FLAG_REFRESH);
+	if (!hRequest) {
+		*responseCode = -3;
+		return false;
+	}
+
+	bool bResults = !!WinHttpSendRequest(hRequest, extraHeaders,
+					     extraHeaders ? -1 : 0,
+					     WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+
+	/* -------------------------------------- *
+	 * end request                            */
+
+	if (bResults) {
+		bResults = !!WinHttpReceiveResponse(hRequest, nullptr);
+	} else {
+		*responseCode = GetLastError();
+		return false;
+	}
+
+	/* -------------------------------------- *
+	 * get headers                            */
+
+	wchar_t statusCode[8];
+	DWORD statusCodeLen;
+
+	statusCodeLen = sizeof(statusCode);
+	if (!WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE,
+				 WINHTTP_HEADER_NAME_BY_INDEX, &statusCode,
+				 &statusCodeLen, WINHTTP_NO_HEADER_INDEX)) {
+		*responseCode = -4;
+		return false;
+	} else {
+		statusCode[_countof(statusCode) - 1] = 0;
+	}
+
+	/* -------------------------------------- *
+	 * read data                              */
+
+	*responseCode = wcstoul(statusCode, nullptr, 10);
+
+	/* are we supposed to return true here? */
+	if (!bResults || *responseCode != 200)
+		return true;
+
+	BYTE buffer[READ_BUF_SIZE];
+	DWORD dwSize, outSize;
+	int lastPosition = 0;
+
+	do {
+		/* Check for available data. */
+		dwSize = 0;
+		if (!WinHttpQueryDataAvailable(hRequest, &dwSize)) {
+			*responseCode = -8;
+			return false;
+		}
+
+		dwSize = std::min(dwSize, (DWORD)sizeof(buffer));
+
+		if (!WinHttpReadData(hRequest, (void *)buffer, dwSize,
+				     &outSize)) {
+			*responseCode = -9;
+			return false;
+		} else {
+			if (!outSize)
+				break;
+
+			out.insert(out.end(), (std::byte *)buffer,
+				   (std::byte *)buffer + outSize);
+
+			completedFileSize += outSize;
 			int position = (int)(((float)completedFileSize /
 					      (float)totalFileSize) *
 					     100.0f);

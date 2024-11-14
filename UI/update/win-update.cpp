@@ -1,3 +1,4 @@
+#include "../win-update/updater/manifest.hpp"
 #include "update-helpers.hpp"
 #include "shared-update.hpp"
 #include "update-window.hpp"
@@ -17,14 +18,13 @@
 
 #include <util/windows/WinHandle.hpp>
 #include <util/util.hpp>
-#include <json11.hpp>
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 #endif
 
 using namespace std;
-using namespace json11;
+using namespace updater;
 
 /* ------------------------------------------------------------------------ */
 
@@ -50,91 +50,56 @@ using namespace json11;
 
 /* ------------------------------------------------------------------------ */
 
-#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
-#define CUR_VER                                                               \
-	((uint64_t)OBS_RELEASE_CANDIDATE_VER << 16ULL | OBS_RELEASE_CANDIDATE \
-								<< 8ULL)
-#define PRE_RELEASE true
-#elif OBS_BETA > 0
-#define CUR_VER ((uint64_t)OBS_BETA_VER << 16ULL | OBS_BETA)
-#define PRE_RELEASE true
-#elif defined(OBS_COMMIT)
-#define CUR_VER 1 << 16ULL
-#define CUR_COMMIT OBS_COMMIT
-#define PRE_RELEASE true
-#else
-#define CUR_VER ((uint64_t)LIBOBS_API_VER << 16ULL)
-#define PRE_RELEASE false
-#endif
-
-#ifndef CUR_COMMIT
-#define CUR_COMMIT "00000000"
-#endif
-
-static bool ParseUpdateManifest(const char *manifest, bool *updatesAvailable,
-				string &notes_str, uint64_t &updateVer,
-				string &branch)
+static bool ParseUpdateManifest(const char *manifest_data,
+				bool *updatesAvailable, string &notes,
+				string &updateVer, const string &branch)
 try {
+	constexpr uint64_t currentVersion = (uint64_t)LIBOBS_API_VER << 16ULL |
+					    OBS_RELEASE_CANDIDATE << 8ULL |
+					    OBS_BETA;
+	constexpr bool isPreRelease =
+		currentVersion & 0xffff ||
+		std::char_traits<char>::length(OBS_COMMIT);
 
-	string error;
-	Json root = Json::parse(manifest, error);
-	if (!error.empty())
-		throw strprintf("Failed reading json string: %s",
-				error.c_str());
+	json manifestContents = json::parse(manifest_data);
+	Manifest manifest = manifestContents.get<Manifest>();
 
-	if (!root.is_object())
-		throw string("Root of manifest is not an object");
+	if (manifest.version_major == 0 && manifest.commit.empty())
+		throw strprintf("Invalid version number: %d.%d.%d",
+				manifest.version_major, manifest.version_minor,
+				manifest.version_patch);
 
-	int major = root["version_major"].int_value();
-	int minor = root["version_minor"].int_value();
-	int patch = root["version_patch"].int_value();
-	int rc = root["rc"].int_value();
-	int beta = root["beta"].int_value();
-	string commit_hash = root["commit"].string_value();
+	notes = manifest.notes;
 
-	if (major == 0 && commit_hash.empty())
-		throw strprintf("Invalid version number: %d.%d.%d", major,
-				minor, patch);
-
-	const Json &notes = root["notes"];
-	if (!notes.is_string())
-		throw string("'notes' value invalid");
-
-	notes_str = notes.string_value();
-
-	const Json &packages = root["packages"];
-	if (!packages.is_array())
-		throw string("'packages' value invalid");
-
-	uint64_t cur_ver;
-	uint64_t new_ver;
-
-	if (commit_hash.empty()) {
-		cur_ver = CUR_VER;
-		new_ver = MAKE_SEMANTIC_VERSION(
-			(uint64_t)major, (uint64_t)minor, (uint64_t)patch);
+	if (manifest.commit.empty()) {
+		uint64_t new_ver =
+			MAKE_SEMANTIC_VERSION((uint64_t)manifest.version_major,
+					      (uint64_t)manifest.version_minor,
+					      (uint64_t)manifest.version_patch);
 		new_ver <<= 16;
 		/* RC builds are shifted so that rc1 and beta1 versions do not result
 		 * in the same new_ver. */
-		if (rc > 0)
-			new_ver |= (uint64_t)rc << 8;
-		else if (beta > 0)
-			new_ver |= (uint64_t)beta;
+		if (manifest.rc > 0)
+			new_ver |= (uint64_t)manifest.rc << 8;
+		else if (manifest.beta > 0)
+			new_ver |= (uint64_t)manifest.beta;
+
+		updateVer = to_string(new_ver);
+
+		/* When using a pre-release build or non-default branch we only check if
+		 * the manifest version is different, so that it can be rolled back. */
+		if (branch != WIN_DEFAULT_BRANCH || isPreRelease)
+			*updatesAvailable = new_ver != currentVersion;
+		else
+			*updatesAvailable = new_ver > currentVersion;
 	} else {
 		/* Test or nightly builds may not have a (valid) version number,
 		 * so compare commit hashes instead. */
-		cur_ver = stoul(CUR_COMMIT, nullptr, 16);
-		new_ver = stoul(commit_hash.substr(0, 8), nullptr, 16);
+		updateVer = manifest.commit.substr(0, 8);
+		*updatesAvailable = !currentVersion ||
+				    !manifest.commit.compare(
+					    0, strlen(OBS_COMMIT), OBS_COMMIT);
 	}
-
-	updateVer = new_ver;
-
-	/* When using a pre-release build or non-default branch we only check if
-	 * the manifest version is different, so that it can be rolled-back. */
-	if (branch != WIN_DEFAULT_BRANCH || PRE_RELEASE)
-		*updatesAvailable = new_ver != cur_ver;
-	else
-		*updatesAvailable = new_ver > cur_ver;
 
 	return true;
 
@@ -142,10 +107,6 @@ try {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
-
-#undef CUR_COMMIT
-#undef CUR_VER
-#undef PRE_RELEASE
 
 /* ------------------------------------------------------------------------ */
 
@@ -282,7 +243,7 @@ try {
 	 * check manifest for update           */
 
 	string notes;
-	uint64_t updateVer = 0;
+	string updateVer;
 
 	if (!ParseUpdateManifest(text.c_str(), &updatesAvailable, notes,
 				 updateVer, branch))
@@ -302,9 +263,10 @@ try {
 	/* ----------------------------------- *
 	 * skip this version if set to skip    */
 
-	uint64_t skipUpdateVer = config_get_uint(GetGlobalConfig(), "General",
-						 "SkipUpdateVersion");
-	if (!manualUpdate && updateVer == skipUpdateVer && !repairMode)
+	const char *skipUpdateVer = config_get_string(
+		GetGlobalConfig(), "General", "SkipUpdateVersion");
+	if (!manualUpdate && !repairMode && skipUpdateVer &&
+	    updateVer == skipUpdateVer)
 		return;
 
 	/* ----------------------------------- *
@@ -332,8 +294,9 @@ try {
 			return;
 
 		} else if (queryResult == OBSUpdate::Skip) {
-			config_set_uint(GetGlobalConfig(), "General",
-					"SkipUpdateVersion", updateVer);
+			config_set_string(GetGlobalConfig(), "General",
+					  "SkipUpdateVersion",
+					  updateVer.c_str());
 			return;
 		}
 	}
@@ -364,13 +327,25 @@ try {
 	execInfo.cbSize = sizeof(execInfo);
 	execInfo.lpFile = wUpdateFilePath;
 
-	string parameters = "";
-	if (App()->IsPortableMode())
-		parameters += "--portable";
-	if (branch != WIN_DEFAULT_BRANCH) {
+	string parameters;
+	if (branch != WIN_DEFAULT_BRANCH)
+		parameters += "--branch=" + branch;
+
+	obs_cmdline_args obs_args = obs_get_cmdline_args();
+	for (int idx = 1; idx < obs_args.argc; idx++) {
 		if (!parameters.empty())
 			parameters += " ";
-		parameters += "--branch=" + branch;
+
+		parameters += obs_args.argv[idx];
+	}
+
+	/* Portable mode can be enabled via sentinel files, so copying the
+	 * command line doesn't guarantee the flag to be there. */
+	if (App()->IsPortableMode() &&
+	    parameters.find("--portable") == string::npos) {
+		if (!parameters.empty())
+			parameters += " ";
+		parameters += "--portable";
 	}
 
 	BPtr<wchar_t> lpParameters;
@@ -392,7 +367,8 @@ try {
 	/* force OBS to perform another update check immediately after updating
 	 * in case of issues with the new version */
 	config_set_int(GetGlobalConfig(), "General", "LastUpdateCheck", 0);
-	config_set_int(GetGlobalConfig(), "General", "SkipUpdateVersion", 0);
+	config_set_string(GetGlobalConfig(), "General", "SkipUpdateVersion",
+			  "0");
 
 	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");
 

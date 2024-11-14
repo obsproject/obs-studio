@@ -21,6 +21,7 @@ public:
 	size_t audio_planes;
 	size_t audio_size;
 	int keyerMode;
+	bool force_sdr;
 
 	DeckLinkOutput(obs_output_t *output,
 		       DeckLinkDeviceDiscovery *discovery);

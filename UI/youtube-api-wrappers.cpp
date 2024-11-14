@@ -9,6 +9,7 @@
 
 #include "auth-youtube.hpp"
 #include "obs-app.hpp"
+#include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 #include "remote-text.hpp"
 #include "ui-config.h"
@@ -45,6 +46,18 @@ bool IsYouTubeService(const std::string &service)
 			  });
 	return it != youtubeServices.end();
 }
+bool IsUserSignedIntoYT()
+{
+	Auth *auth = OBSBasic::Get()->GetAuth();
+	if (auth) {
+		YoutubeApiWrappers *apiYouTube(
+			dynamic_cast<YoutubeApiWrappers *>(auth));
+		if (apiYouTube) {
+			return true;
+		}
+	}
+	return false;
+}
 
 bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
 {
@@ -77,7 +90,7 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 	std::string output;
 	std::string error;
 	// Increase timeout by the time it takes to transfer `data_size` at 1 Mbps
-	int timeout = 5 + data_size / 125000;
+	int timeout = 60 + data_size / 125000;
 	bool success = GetRemoteFile(url, output, error, &httpStatusCode,
 				     content_type, request_type, data,
 				     {"Authorization: Bearer " + token},

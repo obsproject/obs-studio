@@ -22,7 +22,7 @@ Quick Links for Contributing
 
 - To contribute language translations, do not make pull requests.
   Instead, use crowdin.  Read here for more information:
-  https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
+  https://github.com/obsproject/obs-studio/wiki/How-To-Contribute-Translations-For-OBS
 
 - To add a new service to OBS Studio please see the service submission guidelines:
   https://github.com/obsproject/obs-studio/wiki/Service-Submission-Guidelines
@@ -57,6 +57,8 @@ Coding Guidelines
 - 80 columns max
 
 - Comments and names of variables/functions/etc. must be in English
+
+- Formatting scripts (mac0S/Linux only) are available `here <./build-aux>`__
 
 Commit Guidelines
 -----------------

@@ -129,7 +129,10 @@ Structures/Enumerations
 
    - **OBS_FRONTEND_EVENT_EXIT**
 
-     Triggered when the program is about to exit.
+     Triggered when the program is about to exit. This is the last chance
+     to call any frontend API functions for any saving / cleanup / etc.
+     After returning from this event callback, it is not permitted to make
+     any further frontend API calls.
 
    - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING**
 
@@ -196,19 +199,25 @@ Structures/Enumerations
 
    Example usage:
 
-.. code:: cpp
+   .. code:: cpp
 
-   struct obs_frontend_source_list scenes = {0};
+      struct obs_frontend_source_list scenes = {0};
 
-   obs_frontend_get_scenes(&scenes);
+      obs_frontend_get_scenes(&scenes);
 
-   for (size_t i = 0; i < scenes.num; i++) {
-           obs_source_t *source = scenes.sources.array[i];
+      for (size_t i = 0; i < scenes.sources.num; i++) {
+            /* Do NOT call `obs_source_release` or `obs_scene_release`
+             * on these sources
+             */
+            obs_source_t *source = scenes.sources.array[i];
 
-           [...]
-   }
+            /* Convert to obs_scene_t if needed */
+            obs_scene_t *scene = obs_scene_from_source(source);
 
-   obs_frontend_source_list_free(&scenes);
+            [...]
+      }
+
+      obs_frontend_source_list_free(&scenes);
 
 .. type:: void (*obs_frontend_cb)(void *private_data)
 
@@ -266,11 +275,24 @@ Functions
 
 .. function:: void obs_frontend_get_scenes(struct obs_frontend_source_list *sources)
 
+   Populates ``sources`` with reference-incremented scenes in the same order as
+   the frontend displays it in the Scenes dock. Release with
+   :c:func:`obs_frontend_source_list_free`, which will automatically release all
+   scenes with :c:func:`obs_source_release`. Do not release a scene manually to
+   prevent double releasing, which may cause scenes to be deleted.
+
+   Use :c:func:`obs_scene_from_source` to access a source from the list as an
+   :c:type:`obs_scene_t` object.
+
+   If you wish to keep a reference to a certain scene, use
+   :c:func:`obs_source_get_ref` or :c:func:`obs_scene_get_ref` on that scene and
+   release it with either :c:func:`obs_source_release` or
+   :c:func:`obs_scene_release`. Use only one release function, as both releases
+   the same object.
+
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
-                   structure to receive the list of
-                   reference-incremented scenes.  Release with
-                   :c:func:`obs_frontend_source_list_free`. The order is same as
-                   the way the frontend displays it in the Scenes dock.
+                   structure to receive the list of reference-incremented
+                   scenes.
 
 ---------------------------------------
 
@@ -361,7 +383,7 @@ Functions
 
 .. function:: void obs_frontend_set_current_scene_collection(const char *collection)
 
-   :param profile: Name of the scene collection to activate
+   :param collection: Name of the scene collection to activate
 
 ---------------------------------------
 
@@ -446,6 +468,54 @@ Functions
 
    :param dock: QDockWidget to add/create
    :return: A pointer to the added QAction
+
+.. deprecated:: 30.0
+   Prefer :c:func:`obs_frontend_add_dock_by_id()` or
+   :c:func:`obs_frontend_add_custom_qdock()` instead.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
+
+   Adds a dock with the widget to the UI with a toggle in the Docks
+   menu.
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         and the id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param title: Window title of the dock
+   :param widget: QWidget to insert in the dock
+   :return: *true* if the dock was added, *false* if the id was already
+            used
+
+   .. versionadded:: 30.0
+
+---------------------------------------
+
+.. function:: void obs_frontend_remove_dock(const char *id)
+
+   Removes the dock with this id from the UI.
+
+   :param id: Unique identifier of the dock to remove.
+
+   .. versionadded:: 30.0
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_custom_qdock(const char *id, void *dock)
+
+   Adds a custom dock to the UI with no toggle.
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         reference and id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param dock: QDockWidget to add
+   :return: *true* if the dock was added, *false* if the id was already
+            used
+
+   .. versionadded:: 30.0
 
 ---------------------------------------
 
@@ -580,6 +650,17 @@ Functions
             does not mean that splitting has finished or guarantee that it
             split successfully), *false* if recording is inactive or paused
             or if file splitting is disabled.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_recording_add_chapter(const char *name)
+
+   Asks OBS to insert a chapter marker at the current output time into the recording.
+
+   :param name: The name for the chapter, may be *NULL* to use an automatically generated name ("Unnamed <Chapter number>" or localized equivalent).
+   :return: *true* if insertion was successful, *false* if recording is inactive, paused, or if chapter insertion is not supported by the current output.
+
+   .. versionadded:: 30.2
 
 ---------------------------------------
 
@@ -806,6 +887,8 @@ Functions
 
    :param item: The sceneitem to open the edit transform window of
 
+   .. versionadded:: 29.1
+
 ---------------------------------------
 
 .. function:: char *obs_frontend_get_current_record_output_path(void)
@@ -864,3 +947,5 @@ Functions
    :param redo_data: String with data for the redo callback
    :param repeatable: Allow multiple actions with the same name to be merged to 1 undo redo action.
                       This uses the undo action from the first and the redo action from the last action.
+
+   .. versionadded:: 29.1

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -176,12 +176,8 @@ void OBSBasicInteraction::closeEvent(QCloseEvent *event)
 					 this);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 bool OBSBasicInteraction::nativeEvent(const QByteArray &, void *message,
 				      qintptr *)
-#else
-bool OBSBasicInteraction::nativeEvent(const QByteArray &, void *message, long *)
-#endif
 {
 #ifdef _WIN32
 	const MSG &msg = *static_cast<MSG *>(message);
@@ -366,14 +362,9 @@ bool OBSBasicInteraction::HandleMouseWheelEvent(QWheelEvent *event)
 			yDelta = angleDelta.y();
 	}
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 	const QPointF position = event->position();
 	const int x = position.x();
 	const int y = position.y();
-#else
-	const int x = event->x();
-	const int y = event->y();
-#endif
 
 	if (GetSourceRelativeXY(x, y, mouseEvent.x, mouseEvent.y)) {
 		obs_source_send_mouse_wheel(source, &mouseEvent, xDelta,

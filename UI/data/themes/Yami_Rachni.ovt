@@ -1,0 +1,221 @@
+@OBSThemeMeta {
+    name: 'Rachni';
+    id: 'com.obsproject.Yami.Rachni';
+    extends: 'com.obsproject.Yami';
+    author: 'Warchamp7';
+    dark: 'true';
+}
+
+@OBSThemeVars {
+    --grey1: rgb(118,121,124);
+    --grey2: rgb(110,113,114);
+    --grey3: rgb(59,65,71);
+    --grey4: rgb(49,54,59);
+    --grey5: rgb(42,46,50);
+    --grey6: rgb(35,38,41);
+    --grey7: rgb(25,27,38);
+    --grey8: rgb(21,22,23);
+
+    --primary: rgb(0,188,212);
+    --primary_light: rgb(145,76,103);
+    --primary_lighter: rgb(240,96,146);
+    --primary_dark: rgb(89,66,79);
+    --primary_darker: rgb(25,27,38);
+
+    --bg_base: var(--grey6);
+    --bg_window: var(--grey4);
+    --bg_preview: rgb(34,37,40);
+
+    --border_color: var(--grey5);
+
+    --input_bg: var(--grey6);
+    --input_bg_hover: var(--grey7);
+    --input_bg_focus: var(--grey7);
+
+    --list_item_bg_selected: var(--primary);
+    --list_item_bg_hover: var(--primary_light);
+
+    --input_border: var(--grey1);
+    --input_border_hover: var(--primary);
+    --input_border_focus: var(--primary);
+
+    --spacing_input: var(--spacing_base);
+
+    --button_bg: var(--primary);
+    --button_bg_hover: var(--primary_light);
+    --button_bg_down: var(--primary_dark);
+    --button_bg_disabled: var(--grey6);
+
+    --button_bg_red: rgb(88,22,36);
+    --button_bg_red_hover: rgb(116,32,49);
+    --button_bg_red_down: rgb(63,21,30);
+
+    --button_border: var(--primary);
+    --button_border_hover: var(--button_bg_hover);
+    --button_border_focus: var(--button_bg_hover);
+
+    --tab_bg: var(--input_bg);
+    --tab_bg_hover: var(--grey3);
+    --tab_bg_down: var(--grey7);
+    --tab_bg_disabled: var(--grey6);
+
+    --tab_border: var(--grey3);
+    --tab_border_hover: var(--grey1);
+    --tab_border_focus: var(--grey1);
+    --tab_border_selected: var(--primary_light);
+
+    --scrollbar: var(--grey2);
+    --scrollbar_hover: var(--primary_light);
+    --scrollbar_down: var(--grey3);
+    --scrollbar_border: var(--primary_light);
+
+    --toolbutton_bg: var(--grey3);
+    --toolbutton_bg_hover: var(--primary_light);
+    --toolbutton_bg_down: var(--primary_dark);
+    --toolbutton_bg_disabled: var(--grey4);
+}
+
+QDockWidget::title {
+    background-color: var(--bg_base);
+}
+
+QDockWidget::close-button:hover,
+QDockWidget::float-button:hover {
+    background: var(--grey3);
+}
+
+QComboBox,
+QDateTimeEdit,
+QLineEdit,
+QPlainTextEdit,
+QTextEdit,
+QSpinBox,
+QDoubleSpinBox {
+    border-width: 2px;
+    border-color: var(--input_border);
+}
+
+QMenu::item:selected,
+QListWidget::item:selected,
+SceneTree::item:selected,
+SourceTree::item:selected {
+    background-color: var(--primary_dark);
+}
+
+QMenu::item:hover,
+QListWidget::item:hover,
+SceneTree::item:hover,
+SourceTree::item:hover,
+QMenu::item:selected:hover,
+QListWidget::item:selected:hover,
+SceneTree::item:selected:hover,
+SourceTree::item:selected:hover {
+    background-color: var(--primary);
+}
+
+QToolBar {
+    background-color: var(--grey4);
+    padding: var(--padding_large);
+    margin: 0;
+}
+
+QPushButton:disabled {
+    border-color: var(--grey3);
+}
+
+QToolButton,
+QPushButton[toolButton="true"] {
+    background-color: var(--toolbutton_bg);
+    border-color: var(--toolbutton_bg);
+}
+
+QToolButton:hover,
+QToolButton:focus {
+    border-color: var(--primary_light);
+    background-color: var(--primary_light);
+}
+
+QToolButton:pressed,
+QToolButton:pressed:hover {
+    background-color: var(--toolbutton_bg_down);
+    border-color: var(--toolbutton_bg_down);
+}
+
+MuteCheckBox::indicator,
+MuteCheckBox::indicator:unchecked,
+MuteCheckBox::indicator:focus {
+    background-color: var(--toolbutton_bg);
+    border: 1px solid var(--toolbutton_bg);
+}
+
+MuteCheckBox::indicator:hover,
+MuteCheckBox::indicator:unchecked:hover {
+    background-color: var(--toolbutton_bg_hover);
+    border: 1px solid var(--toolbutton_bg_hover);
+}
+
+MuteCheckBox::indicator:pressed,
+MuteCheckBox::indicator:pressed:hover {
+    background-color: var(--toolbutton_bg_down);
+    border-color: var(--toolbutton_bg_down);
+}
+
+#stackedMixerArea QPushButton,
+#stackedMixerArea QPushButton:!hover {
+    background-color: var(--toolbutton_bg);
+    border-color: var(--toolbutton_bg);
+}
+
+#stackedMixerArea QPushButton:hover {
+    background-color: var(--toolbutton_bg_hover);
+}
+
+#stackedMixerArea QPushButton:pressed {
+    background-color: var(--toolbutton_bg_down);
+}
+
+QToolButton:disabled,
+QPushButton[toolButton="true"]:disabled {
+    background-color: var(--toolbutton_bg_disabled);
+    border-color: transparent;
+}
+
+QTabBar::tab {
+    background-color: var(--grey5);
+}
+
+QTabBar::tab:top:selected {
+    border-bottom: 2px solid var(--primary_light);
+}
+
+QTabBar QToolButton {
+    background-color: var(--grey5);
+}
+
+QGroupBox {
+    background-color: var(--grey3);
+}
+
+OBSBasicSettings #PropertiesContainer {
+    background-color: var(--grey3);
+}
+
+QGroupBox::title {
+    color: var(--primary_lighter);
+}
+
+QSlider::groove {
+    background-color: var(--grey2);
+}
+
+VolumeMeter {
+    qproperty-backgroundNominalColor: rgb(0,128,79);
+    qproperty-backgroundWarningColor: rgb(128,57,0);
+    qproperty-backgroundErrorColor: rgb(128,9,0);
+    qproperty-foregroundNominalColor: rgb(119,255,143);
+    qproperty-foregroundWarningColor: rgb(255,157,76);
+    qproperty-foregroundErrorColor: rgb(255,89,76);
+    qproperty-magnitudeColor: palette(window);
+    qproperty-majorTickColor: palette(window-text);
+    qproperty-minorTickColor: palette(mid);
+}

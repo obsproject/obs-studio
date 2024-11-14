@@ -73,5 +73,7 @@ static inline void netif_saddr_data_free(struct netif_saddr_data *data)
 
 extern bool netif_str_to_addr(struct sockaddr_storage *out, int *addr_len,
 			      const char *addr);
+extern bool netif_addr_to_str(struct sockaddr_storage *in, char *addr,
+			      int addr_len);
 extern void netif_get_addrs(struct netif_saddr_data *ifaddrs);
 extern void netif_log_saddrs(struct netif_saddr_data *sd);

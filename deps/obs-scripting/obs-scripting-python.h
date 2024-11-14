@@ -1,6 +1,6 @@
 /******************************************************************************
     Copyright (C) 2015 by Andrew Skinner <obs@theandyroid.com>
-    Copyright (C) 2017 by Hugh Bailey <jim@obsproject.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -5,6 +5,7 @@
 #include <string>
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
+#include <util/dstr.hpp>
 #include "window-basic-preview.hpp"
 #include "window-basic-main.hpp"
 #include "obs-app.hpp"
@@ -13,7 +14,7 @@
 
 #define HANDLE_RADIUS 4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
-#define HELPER_ROT_BREAKPONT 45.0f
+#define HELPER_ROT_BREAKPOINT 45.0f
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -77,7 +78,8 @@ struct SceneFindData {
 	SceneFindData &operator=(SceneFindData &&) = delete;
 
 	inline SceneFindData(const vec2 &pos_, bool selectBelow_)
-		: pos(pos_), selectBelow(selectBelow_)
+		: pos(pos_),
+		  selectBelow(selectBelow_)
 	{
 	}
 };
@@ -93,7 +95,8 @@ struct SceneFindBoxData {
 	SceneFindBoxData &operator=(SceneFindData &&) = delete;
 
 	inline SceneFindBoxData(const vec2 &startPos_, const vec2 &pos_)
-		: startPos(startPos_), pos(pos_)
+		: startPos(startPos_),
+		  pos(pos_)
 	{
 	}
 };
@@ -314,7 +317,8 @@ struct HandleFindData {
 	HandleFindData &operator=(HandleFindData &&) = delete;
 
 	inline HandleFindData(const vec2 &pos_, float scale)
-		: pos(pos_), radius(HANDLE_SEL_RADIUS / scale)
+		: pos(pos_),
+		  radius(HANDLE_SEL_RADIUS / scale)
 	{
 		matrix4_identity(&parent_xform);
 	}
@@ -387,24 +391,24 @@ static bool FindHandleAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item,
 	TestHandle(0.5f, 1.0f, ItemHandle::BottomCenter);
 	TestHandle(1.0f, 1.0f, ItemHandle::BottomRight);
 
+	vec2 scale;
+	obs_sceneitem_get_scale(item, &scale);
+	obs_bounds_type boundsType = obs_sceneitem_get_bounds_type(item);
 	vec2 rotHandleOffset;
 	vec2_set(&rotHandleOffset, 0.0f,
 		 HANDLE_RADIUS * data.radius * 1.5 - data.radius);
-	RotatePos(&rotHandleOffset, atan2(transform.x.y, transform.x.x));
+	bool invertx = scale.x < 0.0f && boundsType == OBS_BOUNDS_NONE;
+	float angle = atan2(invertx ? transform.x.y * -1.0f : transform.x.y,
+			    invertx ? transform.x.x * -1.0f : transform.x.x);
+	RotatePos(&rotHandleOffset, angle);
 	RotatePos(&rotHandleOffset, RAD(data.angleOffset));
 
-	vec2 scale;
-	obs_sceneitem_get_scale(item, &scale);
-	bool invert = scale.y < 0.0f;
+	bool inverty = scale.y < 0.0f && boundsType == OBS_BOUNDS_NONE;
 	vec3 handlePos =
-		GetTransformedPos(0.5f, invert ? 1.0f : 0.0f, transform);
+		GetTransformedPos(0.5f, inverty ? 1.0f : 0.0f, transform);
 	vec3_transform(&handlePos, &handlePos, &data.parent_xform);
 	handlePos.x -= rotHandleOffset.x;
-
-	if (scale.x < 0.0f)
-		handlePos.y += rotHandleOffset.y;
-	else
-		handlePos.y -= rotHandleOffset.y;
+	handlePos.y -= rotHandleOffset.y;
 
 	float dist = vec3_dist(&handlePos, &pos3);
 	if (dist < data.radius) {
@@ -517,6 +521,8 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 							 &invGroupTransform);
 			matrix4_inv(&invGroupTransform, &invGroupTransform);
 			obs_sceneitem_defer_group_resize_begin(stretchGroup);
+		} else {
+			stretchGroup = nullptr;
 		}
 	}
 }
@@ -573,11 +579,7 @@ void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	QPointF pos = event->position();
-#else
-	QPointF pos = event->localPos();
-#endif
 
 	if (scrollMode && IsFixedScaling() &&
 	    event->button() == Qt::LeftButton) {
@@ -652,15 +654,54 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 {
-	if (obs_sceneitem_locked(stretchItem)) {
+	if (!stretchItem || obs_sceneitem_locked(stretchItem)) {
 		unsetCursor();
 		return;
 	}
 
 	if (!flags && (cursor().shape() != Qt::OpenHandCursor || !scrollMode))
 		unsetCursor();
-	if (cursor().shape() != Qt::ArrowCursor)
+	if ((cursor().shape() != Qt::ArrowCursor) || flags == 0)
 		return;
+
+	if (flags & ITEM_ROT) {
+		setCursor(Qt::OpenHandCursor);
+		return;
+	}
+
+	float rotation = obs_sceneitem_get_rot(stretchItem);
+	vec2 scale;
+	obs_sceneitem_get_scale(stretchItem, &scale);
+
+	if (rotation < 0.0f)
+		rotation = 360.0f + rotation;
+
+	int octant = int(std::round(rotation / 45.0f));
+	bool isCorner = (flags & (flags - 1)) != 0;
+
+	if ((scale.x < 0.0f) && isCorner)
+		flags ^= ITEM_LEFT | ITEM_RIGHT;
+	if ((scale.y < 0.0f) && isCorner)
+		flags ^= ITEM_TOP | ITEM_BOTTOM;
+
+	if (octant % 4 >= 2) {
+		if (isCorner) {
+			flags ^= ITEM_TOP | ITEM_BOTTOM;
+		} else {
+			flags = (flags >> 2) | (flags << 2);
+		}
+	}
+
+	if (octant % 2 == 1) {
+		if (isCorner) {
+			flags &= (flags % 3 == 0) ? ~ITEM_TOP & ~ITEM_BOTTOM
+						  : ~ITEM_LEFT & ~ITEM_RIGHT;
+		} else {
+			flags = (flags % 4 == 0)
+					? flags | flags >> ((flags / 2) - 1)
+					: flags | ((flags >> 2) | (flags << 2));
+		}
+	}
 
 	if ((flags & ITEM_LEFT && flags & ITEM_TOP) ||
 	    (flags & ITEM_RIGHT && flags & ITEM_BOTTOM))
@@ -672,8 +713,6 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 		setCursor(Qt::SizeHorCursor);
 	else if (flags & ITEM_TOP || flags & ITEM_BOTTOM)
 		setCursor(Qt::SizeVerCursor);
-	else if (flags & ITEM_ROT)
-		setCursor(Qt::OpenHandCursor);
 }
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item,
@@ -794,8 +833,8 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 	auto undo_redo = [](const std::string &data) {
 		OBSDataAutoRelease dat =
 			obs_data_create_from_json(data.c_str());
-		OBSSourceAutoRelease source = obs_get_source_by_name(
-			obs_data_get_string(dat, "scene_name"));
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(
+			obs_data_get_string(dat, "scene_uuid"));
 		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
 			->SetCurrentScene(source.Get(), true);
 
@@ -1361,9 +1400,13 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 	vec3_transform(&pos3, &pos3, &screenToItem);
 
 	obs_sceneitem_crop crop = startCrop;
-	vec2 scale;
+	vec2 scale, rawscale;
 
-	obs_sceneitem_get_scale(stretchItem, &scale);
+	obs_sceneitem_get_scale(stretchItem, &rawscale);
+	vec2_set(&scale,
+		 boundsType == OBS_BOUNDS_NONE ? rawscale.x : fabsf(rawscale.x),
+		 boundsType == OBS_BOUNDS_NONE ? rawscale.y
+					       : fabsf(rawscale.y));
 
 	vec2 max_tl;
 	vec2 max_br;
@@ -1375,10 +1418,18 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 
 	typedef std::function<float(float, float)> minmax_func_t;
 
-	minmax_func_t min_x = scale.x < 0.0f ? maxfunc : minfunc;
-	minmax_func_t min_y = scale.y < 0.0f ? maxfunc : minfunc;
-	minmax_func_t max_x = scale.x < 0.0f ? minfunc : maxfunc;
-	minmax_func_t max_y = scale.y < 0.0f ? minfunc : maxfunc;
+	minmax_func_t min_x = scale.x < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? maxfunc
+				      : minfunc;
+	minmax_func_t min_y = scale.y < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? maxfunc
+				      : minfunc;
+	minmax_func_t max_x = scale.x < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? minfunc
+				      : maxfunc;
+	minmax_func_t max_y = scale.y < 0.0f && boundsType == OBS_BOUNDS_NONE
+				      ? minfunc
+				      : maxfunc;
 
 	pos3.x = min_x(pos3.x, max_br.x);
 	pos3.x = max_x(pos3.x, max_tl.x);
@@ -1595,11 +1646,7 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	changed = true;
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	QPointF qtPos = event->position();
-#else
-	QPointF qtPos = event->localPos();
-#endif
 
 	float pixelRatio = main->GetDevicePixelRatio();
 
@@ -1711,13 +1758,16 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 
 	gs_render_start(true);
 
-	gs_vertex2f(x1, y1);
-	gs_vertex2f(x1 + (xSide * (thickness / scale.x)),
-		    y1 + (ySide * (thickness / scale.y)));
-	gs_vertex2f(x2 + (xSide * (thickness / scale.x)),
-		    y2 + (ySide * (thickness / scale.y)));
-	gs_vertex2f(x2, y2);
-	gs_vertex2f(x1, y1);
+	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2),
+		    y1 + (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x1 + (xSide * (thickness / scale.x) / 2),
+		    y1 - (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x2 + (xSide * (thickness / scale.x) / 2),
+		    y2 + (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x2 - (xSide * (thickness / scale.x) / 2),
+		    y2 - (ySide * (thickness / scale.y) / 2));
+	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2),
+		    y1 + (ySide * (thickness / scale.y) / 2));
 
 	gs_vertbuffer_t *line = gs_render_save();
 
@@ -1923,7 +1973,7 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawSelectedOverflow");
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_REPEAT);
 	gs_eparam_t *image = gs_effect_get_param_by_name(solid, "image");
@@ -1967,7 +2017,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 		matrix4 mat;
 		obs_transform_info groupInfo;
 		obs_sceneitem_get_draw_transform(item, &mat);
-		obs_sceneitem_get_info(item, &groupInfo);
+		obs_sceneitem_get_info2(item, &groupInfo);
 
 		prev->groupRot = groupInfo.rot;
 
@@ -2049,7 +2099,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 	boxScale.y *= curTransform.y.y;
 
 	obs_transform_info info;
-	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_info2(item, &info);
 
 	gs_matrix_push();
 	gs_matrix_mul(&boxTransform);
@@ -2121,7 +2171,8 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item,
 			prev->circleFill = gs_render_save();
 		}
 
-		bool invert = info.scale.y < 0.0f;
+		bool invert = info.scale.y < 0.0f &&
+			      info.bounds_type == OBS_BOUNDS_NONE;
 		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot,
 				   pixelRatio, invert);
 	}
@@ -2284,7 +2335,7 @@ OBSBasicPreview *OBSBasicPreview::Get()
 	return OBSBasic::Get()->ui->preview;
 }
 
-static obs_source_t *CreateLabel(float pixelRatio)
+static obs_source_t *CreateLabel(float pixelRatio, int i)
 {
 	OBSDataAutoRelease settings = obs_data_create();
 	OBSDataAutoRelease font = obs_data_create();
@@ -2310,7 +2361,9 @@ static obs_source_t *CreateLabel(float pixelRatio)
 	const char *text_source_id = "text_ft2_source";
 #endif
 
-	return obs_source_create_private(text_source_id, NULL, settings);
+	DStr name;
+	dstr_printf(name, "Preview spacing label %d", i);
+	return obs_source_create_private(text_source_id, name, settings);
 }
 
 static void SetLabelText(int sourceIndex, int px)
@@ -2451,12 +2504,13 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	vec2 s;
 	SceneFindBoxData data(s, s);
 
-	obs_scene_enum_items(main->GetCurrentScene(), FindSelected, &data);
+	OBSScene scene = main->GetCurrentScene();
+	obs_scene_enum_items(scene, FindSelected, &data);
 
-	if (data.sceneItems.size() > 1)
+	if (data.sceneItems.size() != 1)
 		return;
 
-	OBSSceneItem item = main->GetCurrentSceneItem();
+	OBSSceneItem item = data.sceneItems[0];
 	if (!item)
 		return;
 
@@ -2467,9 +2521,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	if (itemSize.x == 0.0f || itemSize.y == 0.0f)
 		return;
 
-	obs_sceneitem_t *parentGroup =
-		obs_sceneitem_get_group(main->GetCurrentScene(), item);
-
+	obs_sceneitem_t *parentGroup = obs_sceneitem_get_group(scene, item);
 	if (parentGroup && obs_sceneitem_locked(parentGroup))
 		return;
 
@@ -2477,7 +2529,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	obs_sceneitem_get_box_transform(item, &boxTransform);
 
 	obs_transform_info oti;
-	obs_sceneitem_get_info(item, &oti);
+	obs_sceneitem_get_info2(item, &oti);
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -2499,7 +2551,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 
 	if (parentGroup) {
 		obs_transform_info groupOti;
-		obs_sceneitem_get_info(parentGroup, &groupOti);
+		obs_sceneitem_get_info2(parentGroup, &groupOti);
 
 		//Correct the scene item rotation angle
 		rot = oti.rot + groupOti.rot;
@@ -2515,7 +2567,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	}
 
 	// Switch top/bottom or right/left if scale is negative
-	if (oti.scale.x < 0.0f) {
+	if (oti.scale.x < 0.0f && oti.bounds_type == OBS_BOUNDS_NONE) {
 		vec3 l = left;
 		vec3 r = right;
 
@@ -2523,7 +2575,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 		vec3_copy(&right, &l);
 	}
 
-	if (oti.scale.y < 0.0f) {
+	if (oti.scale.y < 0.0f && oti.bounds_type == OBS_BOUNDS_NONE) {
 		vec3 t = top;
 		vec3 b = bottom;
 
@@ -2531,8 +2583,8 @@ void OBSBasicPreview::DrawSpacingHelpers()
 		vec3_copy(&bottom, &t);
 	}
 
-	if (rot >= HELPER_ROT_BREAKPONT) {
-		for (float i = HELPER_ROT_BREAKPONT; i <= 360.0f; i += 90.0f) {
+	if (rot >= HELPER_ROT_BREAKPOINT) {
+		for (float i = HELPER_ROT_BREAKPOINT; i <= 360.0f; i += 90.0f) {
 			if (rot < i)
 				break;
 
@@ -2546,8 +2598,8 @@ void OBSBasicPreview::DrawSpacingHelpers()
 			vec3_copy(&bottom, &r);
 			vec3_copy(&left, &b);
 		}
-	} else if (rot <= -HELPER_ROT_BREAKPONT) {
-		for (float i = -HELPER_ROT_BREAKPONT; i >= -360.0f;
+	} else if (rot <= -HELPER_ROT_BREAKPOINT) {
+		for (float i = -HELPER_ROT_BREAKPOINT; i >= -360.0f;
 		     i -= 90.0f) {
 			if (rot > i)
 				break;
@@ -2593,7 +2645,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	float pixelRatio = main->GetDevicePixelRatio();
 	for (int i = 0; i < 4; i++) {
 		if (!spacerLabel[i])
-			spacerLabel[i] = CreateLabel(pixelRatio);
+			spacerLabel[i] = CreateLabel(pixelRatio, i);
 	}
 
 	vec3_set(&start, top.x, 0.0f, 1.0f);
@@ -2631,6 +2683,9 @@ void OBSBasicPreview::ClampScrollingOffsets()
 
 	vec3_mulf(&offset, &offset, 0.5f);
 	vec3_maxf(&offset, &offset, 0.0f);
+
+	vec3_divf(&target, &target, 2.0f);
+	vec3_add(&offset, &offset, &target);
 
 	scrollingOffset.x = std::clamp(scrollingOffset.x, -offset.x, offset.x);
 	scrollingOffset.y = std::clamp(scrollingOffset.y, -offset.y, offset.y);

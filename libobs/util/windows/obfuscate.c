@@ -6,7 +6,7 @@
 #include <windows.h>
 #include "obfuscate.h"
 
-#define LOWER_HALFBYTE(x) ((x)&0xF)
+#define LOWER_HALFBYTE(x) ((x) & 0xF)
 #define UPPER_HALFBYTE(x) (((x) >> 4) & 0xF)
 
 static void deobfuscate_str(char *str, uint64_t val)

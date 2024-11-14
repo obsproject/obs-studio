@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@
 
 using namespace std;
 
-static auto curl_deleter = [](CURL *curl) { curl_easy_cleanup(curl); };
+static auto curl_deleter = [](CURL *curl) {
+	curl_easy_cleanup(curl);
+};
 using Curl = unique_ptr<CURL, decltype(curl_deleter)>;
 
 static size_t string_write(char *ptr, size_t size, size_t nmemb, string &str)

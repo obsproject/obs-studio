@@ -30,6 +30,34 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 
-[plugins/rtmp-services/data/**/*.json]
+[plugins/{rtmp-services,win-capture}/data/**/*.json]
+indent_style = space
+indent_size = 4
+
+[*.qss]
+indent_style = space
+indent_size = 4
+
+[build-aux/**/*.json]
+indent_style = space
+indent_size = 4
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[*.yaml]
+indent_style = space
+indent_size = 2
+
+[{*.zsh,.*.zsh,build-aux/.functions/*,.github/scripts/utils.zsh/*}]
+indent_style = space
+indent_size = 2
+
+[*.ui]
+indent_style = space
+indent_size = 1
+
+[{*.obt,*.oha,*.ovt}]
 indent_style = space
 indent_size = 4

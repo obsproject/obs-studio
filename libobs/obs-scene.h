@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -76,6 +76,8 @@ struct obs_scene_item {
 	enum obs_bounds_type bounds_type;
 	uint32_t bounds_align;
 	struct vec2 bounds;
+	bool crop_to_bounds;
+	struct obs_sceneitem_crop bounds_crop;
 
 	obs_hotkey_pair_id toggle_visibility;
 
@@ -94,6 +96,15 @@ struct obs_scene_item {
 	struct obs_scene_item *next;
 };
 
+struct scene_source_mix {
+	obs_source_t *source;
+	obs_source_t *transition;
+	size_t pos;
+	size_t count;
+	bool apply_buf;
+	float buf[AUDIO_OUTPUT_FRAMES];
+};
+
 struct obs_scene {
 	struct obs_source *source;
 
@@ -107,4 +118,6 @@ struct obs_scene {
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
 	struct obs_scene_item *first_item;
+
+	DARRAY(struct scene_source_mix) mix_sources;
 };

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ enum obs_service_connect_info {
 	OBS_SERVICE_CONNECT_INFO_USERNAME = 4,
 	OBS_SERVICE_CONNECT_INFO_PASSWORD = 6,
 	OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE = 8,
+	OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN = 10,
 };
 
 struct obs_service_info {

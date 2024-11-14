@@ -133,6 +133,8 @@ static const char *get_protocol(json_t *service, obs_data_t *settings)
 	return "RTMP";
 }
 
+static void copy_info_to_settings(json_t *service, obs_data_t *settings);
+
 static void rtmp_common_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_common *service = data;
@@ -176,6 +178,8 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 		}
 
 		if (serv) {
+			copy_info_to_settings(serv, settings);
+
 			json_t *rec = json_object_get(serv, "recommended");
 			if (json_is_object(rec)) {
 				update_recommendations(service, rec);
@@ -489,23 +493,24 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 	}
 }
 
+static void copy_string_from_json_if_available(json_t *service,
+					       obs_data_t *settings,
+					       const char *name)
+{
+	const char *string = get_string_val(service, name);
+	if (string)
+		obs_data_set_string(settings, name, string);
+}
+
 static void fill_more_info_link(json_t *service, obs_data_t *settings)
 {
-	const char *more_info_link;
-
-	more_info_link = get_string_val(service, "more_info_link");
-	if (more_info_link)
-		obs_data_set_string(settings, "more_info_link", more_info_link);
+	copy_string_from_json_if_available(service, settings, "more_info_link");
 }
 
 static void fill_stream_key_link(json_t *service, obs_data_t *settings)
 {
-	const char *stream_key_link;
-
-	stream_key_link = get_string_val(service, "stream_key_link");
-	if (stream_key_link)
-		obs_data_set_string(settings, "stream_key_link",
-				    stream_key_link);
+	copy_string_from_json_if_available(service, settings,
+					   "stream_key_link");
 }
 
 static void update_protocol(json_t *service, obs_data_t *settings)
@@ -529,6 +534,46 @@ static void update_protocol(json_t *service, obs_data_t *settings)
 	}
 
 	obs_data_set_string(settings, "protocol", "RTMP");
+}
+
+static void copy_info_to_settings(json_t *service, obs_data_t *settings)
+{
+	const char *name = obs_data_get_string(settings, "service");
+
+	fill_more_info_link(service, settings);
+	fill_stream_key_link(service, settings);
+	copy_string_from_json_if_available(
+		service, settings, "multitrack_video_configuration_url");
+	copy_string_from_json_if_available(service, settings,
+					   "multitrack_video_name");
+	if (!obs_data_has_user_value(settings, "multitrack_video_name")) {
+		obs_data_set_string(settings, "multitrack_video_name",
+				    "Multitrack Video");
+	}
+
+	const char *learn_more_link_url =
+		get_string_val(service, "multitrack_video_learn_more_link");
+	struct dstr learn_more_link = {0};
+	if (learn_more_link_url) {
+		dstr_init_copy(
+			&learn_more_link,
+			obs_module_text("MultitrackVideo.LearnMoreLink"));
+		dstr_replace(&learn_more_link, "%1", learn_more_link_url);
+	}
+
+	struct dstr str;
+	dstr_init_copy(&str, obs_module_text("MultitrackVideo.Disclaimer"));
+	dstr_replace(&str, "%1",
+		     obs_data_get_string(settings, "multitrack_video_name"));
+	dstr_replace(&str, "%2", name);
+	if (learn_more_link.array) {
+		dstr_cat(&str, learn_more_link.array);
+	}
+	obs_data_set_string(settings, "multitrack_video_disclaimer", str.array);
+	dstr_free(&learn_more_link);
+	dstr_free(&str);
+
+	update_protocol(service, settings);
 }
 
 static inline json_t *find_service(json_t *root, const char *name,
@@ -597,9 +642,8 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 	}
 
 	fill_servers(obs_properties_get(props, "server"), service, name);
-	fill_more_info_link(service, settings);
-	fill_stream_key_link(service, settings);
-	update_protocol(service, settings);
+	copy_info_to_settings(service, settings);
+
 	return true;
 }
 
@@ -835,12 +879,6 @@ static const char *rtmp_common_key(void *data)
 		}
 	}
 	return service->key;
-}
-
-static bool supports_multitrack(void *data)
-{
-	struct rtmp_common *service = data;
-	return service->supports_additional_audio_track;
 }
 
 static void rtmp_common_get_supported_resolutions(
@@ -1086,6 +1124,8 @@ static const char *rtmp_common_get_connect_info(void *data, uint32_t type)
 
 		break;
 	}
+	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN:
+		return NULL;
 	}
 
 	return NULL;

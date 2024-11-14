@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.16...3.25)
+cmake_minimum_required(VERSION 3.22...3.25)
 
-if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake")
+if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
   project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
 
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+  if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Windows)" AND CMAKE_SIZEOF_VOID_P EQUAL 4)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/32bit/projects.cmake")
     return()
   endif()
@@ -14,7 +14,6 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   include(defaults)
   include(helpers)
 
-  option(ENABLE_RELEASE_BUILD "Enable all options for a release build" OFF)
   option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
   option(ENABLE_SCRIPTING "Enable scripting support" ON)
   option(ENABLE_HEVC "Enable HEVC encoders" ON)
@@ -26,11 +25,28 @@ if(OBS_CMAKE_VERSION VERSION_GREATER_EQUAL 3.0.0)
   endif()
   add_subdirectory(libobs-opengl)
   add_subdirectory(plugins)
+
+  add_subdirectory(test/test-input)
+
   add_subdirectory(UI)
 
   message_configuration()
   return()
 endif()
+
+message(
+  DEPRECATION
+    "\n"
+    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============"
+    "\n"
+    "You are using the legacy build system to build OBS Studio. "
+    "The legacy build system is unsupported and will be removed in the near future."
+    "\n"
+    "To migrate to the new build system, familiarize yourself with CMake presets "
+    "(https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) and create "
+    "a user preset with your customized build settings, inheriting from one of the default presets."
+    "\n"
+    "============ LEGACY BUILD SYSTEM IS DEPRECATED ============")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 include(VersionConfig)
@@ -142,8 +158,9 @@ if(WIN32)
 		-P "${CMAKE_SOURCE_DIR}/slobs_CI/check_libraries.cmake" )
 endif()
 
-# Configure 32-bit projects
+#Configure 32-bit projects
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+  #message(FATAL_ERROR "CURL_INCLUDE_DIR: ${CURL_INCLUDE_DIR}, CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}, PREFIX_PATH_X86: ${PREFIX_PATH_X86}, OBS_VERSION: ${OBS_VERSION}, OBS_VERSION_OVERRIDE: ${OBS_VERSION_OVERRIDE}")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     execute_process(
       COMMAND
@@ -172,7 +189,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
         -DVIRTUALCAM_GUID:STRING=${VIRTUALCAM_GUID}
         -DOBS_VERSION='${OBS_VERSION}'
         -DOBS_VERSION_OVERRIDE='${OBS_VERSION_OVERRIDE}'
-        -DCMAKE_MESSAGE_LOG_LEVEL=${CMAKE_MESSAGE_LOG_LEVEL}
+        -DCMAKE_MESSAGE_LOG_LEVEL='Trace'
       RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY)
   endif()
 endif()

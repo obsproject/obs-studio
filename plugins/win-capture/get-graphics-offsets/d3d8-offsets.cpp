@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <windows.h>
+#ifdef OBS_LEGACY
 #include "../d3d8-api/d3d8.h"
+#else
+#include <d3d8.h>
+#endif
 #include "get-graphics-offsets.h"
 
 typedef IDirect3D8 *(WINAPI *d3d8create_t)(UINT);

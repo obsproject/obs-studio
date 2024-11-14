@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
     "minor": 22,
@@ -7,169 +7,83 @@
   },
   "configurePresets": [
     {
-      "name": "macos",
+      "name": "environmentVars",
       "hidden": true,
+      "cacheVariables": {
+        "RESTREAM_CLIENTID": {"type": "STRING", "value": "$penv{RESTREAM_CLIENTID}"},
+        "RESTREAM_HASH": {"type": "STRING", "value": "$penv{RESTREAM_HASH}"},
+        "TWITCH_CLIENTID": {"type": "STRING", "value": "$penv{TWITCH_CLIENTID}"},
+        "TWITCH_HASH": {"type": "STRING", "value": "$penv{TWITCH_HASH}"},
+        "YOUTUBE_CLIENTID": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID}"},
+        "YOUTUBE_CLIENTID_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID_HASH}"},
+        "YOUTUBE_SECRET": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET}"},
+        "YOUTUBE_SECRET_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET_HASH}"}
+      }
+    },
+    {
+      "name": "macos",
+      "displayName": "macOS",
+      "description": "Default macOS build (single architecture only)",
+      "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Darwin"
       },
       "generator": "Xcode",
-      "warnings": {"dev": true, "deprecated": true},
+      "binaryDir": "${sourceDir}/build_macos",
       "cacheVariables": {
-        "QT_VERSION": "6",
-        "ENABLE_BROWSER": true,
-        "ENABLE_VLC": true,
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
-        "OBS_CODESIGN_IDENTITY": "-",
-        "OBS_CMAKE_VERSION": "3.0.0"
-      }
-    },
-    {
-      "name": "macos-arm64",
-      "inherits": "macos",
-      "displayName": "macOS Apple Silicon",
-      "description": "obs-studio for macOS 11.0+ (Apple Silicon)",
-      "binaryDir": "${sourceDir}/build_arm64",
-      "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "arm64"
-      }
-    },
-    {
-      "name": "macos-x86_64",
-      "inherits": "macos",
-      "displayName": "macOS Apple Intel",
-      "description": "obs-studio for macOS 11.0+ (Intel)",
-      "binaryDir": "${sourceDir}/build_x86_64",
-      "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "x86_64"
-      }
-    },
-    {
-      "name": "macos-ci-arm64",
-      "inherits": ["macos-arm64"],
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "macos-ci-x86_64",
-      "inherits": ["macos-x86_64"],
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "macos-release-arm64",
-      "displayName": "macOS Apple Silicon (Release)",
-      "description": "obs-studio for macOS (Apple) - Release Configuration",
-      "inherits": ["macos-arm64"],
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true
-      }
-    },
-    {
-      "name": "macos-release-x86_64",
-      "displayName": "macOS Intel (Release)",
-      "description": "obs-studio for macOS (Intel) - Release Configuration",
-      "inherits": ["macos-x86_64"],
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true
-      }
-    },
-    {
-      "name": "linux-aarch64",
-      "displayName": "Linux aarch64",
-      "description": "obs-studio for Linux (aarch64)",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      },
-      "binaryDir": "${sourceDir}/build_aarch64",
-      "generator": "Ninja",
-      "warnings": {"dev": true, "deprecated": true},
-      "cacheVariables": {
-        "ENABLE_WAYLAND": true,
-        "ENABLE_VLC": true,
-        "QT_VERSION": "6",
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OBS_CMAKE_VERSION": "2.0.0",
-        "CMAKE_PREFIX_PATH": {
-          "type": "PATH",
-          "value": ""
-        }
-      }
-    },
-    {
-      "name": "linux-ci-aarch64",
-      "inherits": ["linux-aarch64"],
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "linux-release-aarch64",
-      "displayName": "Linux aarch64 (Release)",
-      "description": "obs-studio for Linux (aarch64) - Release Configuration",
-      "inherits": "linux-aarch64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true
-      }
-    },
-    {
-      "name": "linux-x86_64",
-      "displayName": "Linux x86_64",
-      "description": "obs-studio for Linux (x86_64)",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      },
-      "binaryDir": "${sourceDir}/build_x86_64",
-      "generator": "Ninja",
-      "warnings": {"dev": true, "deprecated": true},
-      "cacheVariables": {
-        "ENABLE_WAYLAND": true,
-        "ENABLE_VLC": true,
-        "QT_VERSION": "6",
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OBS_CMAKE_VERSION": "2.0.0",
-        "CMAKE_PREFIX_PATH": {
-          "type": "PATH",
-          "value": ""
-        },
-        "CEF_ROOT_DIR": {
-          "type": "PATH",
-          "value": ""
-        }
-      }
-    },
-    {
-      "name": "linux-ci-x86_64",
-      "inherits": ["linux-x86_64"],
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "linux-release-x86_64",
-      "displayName": "Linux x86_64 (Release)",
-      "description": "obs-studio for Linux (x86_64) - Release Configuration",
-      "inherits": "linux-x86_64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true,
+        "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "11.0"},
         "ENABLE_BROWSER": true
+      }
+    },
+    {
+      "name": "macos-ci",
+      "displayName": "macOS (CI)",
+      "description": "CI macOS build (single architecture only)",
+      "inherits": ["macos"],
+      "warnings": {"dev": true, "deprecated": true},
+      "cacheVariables": {
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+      }
+    },
+    {
+      "name": "ubuntu",
+      "displayName": "Ubuntu",
+      "description": "obs-studio for Ubuntu",
+      "inherits": ["environmentVars"],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build_ubuntu",
+      "generator": "Ninja",
+      "warnings": {"dev": true, "deprecated": true},
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
+        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
+        "ENABLE_AJA": false,
+        "ENABLE_NATIVE_NVENC": false,
+        "ENABLE_VLC": true,
+        "ENABLE_WAYLAND": true,
+        "ENABLE_WEBRTC": false
+      }
+    },
+    {
+      "name": "ubuntu-ci",
+      "inherits": ["ubuntu"],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
     },
     {
       "name": "windows-x64",
       "displayName": "Windows x64",
-      "description": "obs-studio for Windows (x64)",
+      "description": "Default Windows build (x64)",
+      "inherits": ["environmentVars"],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -178,77 +92,27 @@
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build_x64",
       "generator": "Visual Studio 17 2022",
-      "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "QT_VERSION": "6",
-        "CMAKE_BUILD_TYPE": "Debug",
-        "OBS_WINDOWS_LEGACY_DIRS": true,
-        "CMAKE_SYSTEM_VERSION": "10.0.18363.657",
-        "OBS_CMAKE_VERSION": "2.0.0",
-        "CMAKE_PREFIX_PATH": {
-          "type": "PATH",
-          "value": ""
-        },
-        "CEF_ROOT_DIR": {
-          "type": "PATH",
-          "value": ""
-        },
-        "VLC_PATH": {
-          "type": "PATH",
-          "value": ""
-        }
+        "OBS_CMAKE_VERSION": {"type": "STRING", "value": "3.0.0"},
+        "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
+        "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
+        "ENABLE_BROWSER": true,
+        "ENABLE_CCACHE": false
       }
     },
     {
       "name": "windows-ci-x64",
-      "inherits": "windows-x64",
-      "hidden": true,
+      "displayName": "Windows x64 (CI)",
+      "description": "CI Windows build (x64)",
+      "inherits": ["windows-x64"],
+      "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "windows-release-x64",
-      "displayName": "Windowx x64 (Release)",
-      "description": "obs-studio for Windows (x64) - Release Configuration",
-      "inherits": "windows-x64",
-      "cacheVariables": {
-        "ENABLE_RELEASE_BUILD": true,
-        "ENABLE_BROWSER": true,
-        "ENABLE_VLC": true,
-        "VIRTUALCAM_GUID": { "type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"}
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "ENABLE_CCACHE": false
       }
     }
   ],
   "buildPresets": [
-    {
-      "name": "macos-arm64",
-      "configurePreset": "macos-arm64",
-      "displayName": "macOS Apple Silicon",
-      "description": "macOS build for Apple Silicon",
-      "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "macos-x86_64",
-      "configurePreset": "macos-x86_64",
-      "displayName": "macOS Intel",
-      "description": "macOS build for Intel",
-      "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "linux-aarch64",
-      "configurePreset": "linux-aarch64",
-      "displayName": "Linux aarch64",
-      "description": "Linux build for aarch64 (aka arm64)",
-      "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "linux-x86_64",
-      "configurePreset": "linux-x86_64",
-      "displayName": "Linux x86_64",
-      "description": "Linux build for x86_64 (aka amd64)",
-      "configuration": "RelWithDebInfo"
-    },
     {
       "name": "windows-x64",
       "configurePreset": "windows-x64",

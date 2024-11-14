@@ -244,6 +244,8 @@ Output Definition Structure (obs_output_info)
 
    Required only if **OBS_OUTPUT_SERVICE** flag is set.
 
+   .. versionadded:: 29.1
+
 .. _output_signal_handler_reference:
 
 Output Signals
@@ -681,10 +683,14 @@ General Output Functions
 .. function:: const char *obs_output_get_supported_video_codecs(const obs_output_t *output)
               const char *obs_get_output_supported_video_codecs(const char *id)
               const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
-              const char *obs_get_output_supported_video_codecs(const char *id)
+              const char *obs_get_output_supported_audio_codecs(const char *id)
 
    :return: Supported video/audio codecs of an encoded output, separated
             by semicolon
+
+   .. versionadded:: 29.1
+      :c:func:`obs_get_output_supported_video_codecs` and
+      :c:func:`obs_get_output_supported_audio_codecs`
 
 ---------------------
 
@@ -700,6 +706,8 @@ General Output Functions
    :return: Supported protocols, separated by semicolon. Always NULL if the
             output is not **OBS_OUTPUT_SERVICE**.
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: bool obs_is_output_protocol_registered(const char *protocol)
@@ -709,11 +717,15 @@ General Output Functions
    :return:                 A boolean showing if an output with the given
                             protocol is registered
 
+   .. versionadded:: 29.1
+
 ---------------------
 
 .. function:: bool obs_enum_output_protocols(size_t idx, char **protocol)
 
    Enumerates all registered protocol.
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -726,6 +738,8 @@ General Output Functions
    :param enum_cb:  Callback used when a matching output is found, the id
                     of the output is passed to the callback
    :return:         When all outputs are enumerated or if the callback return *false*
+
+   .. versionadded:: 29.1
 
 ---------------------
 
@@ -745,6 +759,9 @@ Functions used by outputs
 
    Optionally sets/gets the video conversion information.  Only used by
    raw outputs.
+
+   .. versionadded:: 29.1
+     :c:func:`obs_output_get_video_conversion`
 
    Relevant data types used with this function:
 
@@ -810,6 +827,9 @@ Functions used by outputs
 
            /* packed 4:2:2 format, 10 bpp */
            VIDEO_FORMAT_V210,
+
+           /* packed uncompressed 10-bit format */
+           VIDEO_FORMAT_R10L,
    };
 
    enum video_colorspace {
@@ -882,44 +902,41 @@ Functions used by outputs
 
 ---------------------
 
-.. function:: bool obs_output_can_begin_data_capture(const obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_can_begin_data_capture(const obs_output_t *output, int flags)
 
    Determines whether video/audio capture (encoded or raw) is able to
-   start.  Call this before initializing any output data to ensure that
+   start.  Call this before initializing any output state to ensure that
    the output can start.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if data capture can begin
 
 ---------------------
 
-.. function:: bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_initialize_encoders(obs_output_t *output, int flags)
 
    Initializes any encoders/services associated with the output.  This
    must be called for encoded outputs before calling
    :c:func:`obs_output_begin_data_capture()`.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if successful, *false* otherwise
 
 ---------------------
 
-.. function:: bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_begin_data_capture(obs_output_t *output, int flags)
 
    Begins data capture from raw media or encoders.  This is typically
    when the output actually activates (starts) internally.  Video/audio
    data will start being sent to the callbacks of the output.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if successful, *false* otherwise.  Typically the
                  return value does not need to be checked if
-                 :c:func:`obs_output_can_begin_data_capture()` was
+                 :c:func:`obs_output_can_begin_data_capture2()` was
                  called
 
 ---------------------

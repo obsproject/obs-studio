@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 struct glyph_info {
 	float u, v, u2, v2;
 	int32_t w, h, xoff, yoff;
-	int32_t xadv;
+	FT_Pos xadv;
 };
 
 struct ft2_source {
@@ -48,7 +48,6 @@ struct ft2_source {
 	uint32_t outline_width;
 	uint32_t texbuf_x, texbuf_y;
 	uint32_t color[2];
-	uint32_t *colorbuf;
 
 	int32_t cur_scroll, scroll_speed;
 

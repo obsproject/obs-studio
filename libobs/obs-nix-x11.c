@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
     Copyright (C) 2014 by Zachary Lund <admin@computerquip.com>
     Copyright (C) 2019 by Jason Francis <cycl0ps@tuta.io>
 

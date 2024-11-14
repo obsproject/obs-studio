@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -343,11 +343,8 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	oldFile.insert(0, path);
-	oldFile += ".json";
-
-	os_unlink(oldFile.c_str());
-	oldFile += ".bak";
-	os_unlink(oldFile.c_str());
+	/* os_rename() overwrites if necessary, only the .bak file will remain. */
+	os_rename((oldFile + ".json").c_str(), (oldFile + ".json.bak").c_str());
 
 	Load(newPath.c_str());
 	RefreshSceneCollections();

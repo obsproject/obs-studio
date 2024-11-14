@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 #include <cassert>
 #include <cinttypes>
+#include <optional>
 #include <util/base.h>
 #include <util/platform.h>
 #include <util/dstr.h>
@@ -53,7 +54,8 @@ static inline void LogD3D11ErrorDetails(HRError error, gs_device_t *device)
 }
 
 gs_obj::gs_obj(gs_device_t *device_, gs_type type)
-	: device(device_), obj_type(type)
+	: device(device_),
+	  obj_type(type)
 {
 	prev_next = &device->first_obj;
 	next = device->first_obj;
@@ -281,50 +283,6 @@ gs_swap_chain::~gs_swap_chain()
 		CloseHandle(hWaitable);
 }
 
-void gs_device::InitCompiler()
-{
-	char d3dcompiler[40] = {};
-	int ver = 49;
-
-	wchar_t *path;
-	if (SHGetKnownFolderPath(FOLDERID_SystemX86, 0, NULL, &path) != S_OK) {
-		throw "Could not retrieve system path";
-	}
-
-	SetDllDirectory(path);
-
-	while (ver > 30) {
-		snprintf(d3dcompiler, sizeof(d3dcompiler),
-			 "D3DCompiler_%02d.dll", ver);
-
-		HMODULE module = LoadLibraryA(d3dcompiler);
-		if (module) {
-			d3dCompile = (pD3DCompile)GetProcAddress(module,
-								 "D3DCompile");
-
-#ifdef DISASSEMBLE_SHADERS
-			d3dDisassemble = (pD3DDisassemble)GetProcAddress(
-				module, "D3DDisassemble");
-#endif
-			if (d3dCompile) {
-				CoTaskMemFree(path);
-				SetDllDirectory(nullptr);
-				return;
-			}
-
-			FreeLibrary(module);
-		}
-
-		ver--;
-	}
-
-	CoTaskMemFree(path);
-	SetDllDirectory(nullptr);
-	throw "Could not find any D3DCompiler libraries. Make sure you've "
-	      "installed the <a href=\"https://obsproject.com/go/dxwebsetup\">"
-	      "DirectX components</a> that OBS Studio requires.";
-}
-
 void gs_device::InitFactory()
 {
 	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
@@ -485,7 +443,7 @@ static bool increase_maximum_frame_latency(ID3D11Device *device)
 	return true;
 }
 
-#if USE_GPU_PRIORITY
+#ifdef USE_GPU_PRIORITY
 static bool set_priority(ID3D11Device *device, bool hags_enabled)
 {
 	ComQIPtr<IDXGIDevice> dxgiDevice(device);
@@ -516,18 +474,87 @@ static bool set_priority(ID3D11Device *device, bool hags_enabled)
 }
 #endif
 
-static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
-{
-	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
-	bool hags_enabled = false;
-	NTSTATUS res;
+struct HagsStatus {
+	enum DriverSupport {
+		ALWAYS_OFF,
+		ALWAYS_ON,
+		EXPERIMENTAL,
+		STABLE,
+		UNKNOWN
+	};
 
+	bool enabled;
+	bool enabled_by_default;
+	DriverSupport support;
+
+	explicit HagsStatus(const D3DKMT_WDDM_2_7_CAPS *caps)
+	{
+		enabled = caps->HwSchEnabled;
+		enabled_by_default = caps->HwSchEnabledByDefault;
+		support = caps->HwSchSupported ? DriverSupport::STABLE
+					       : DriverSupport::ALWAYS_OFF;
+	}
+
+	void SetDriverSupport(const UINT DXGKVal)
+	{
+		switch (DXGKVal) {
+		case DXGK_FEATURE_SUPPORT_ALWAYS_OFF:
+			support = ALWAYS_OFF;
+			break;
+		case DXGK_FEATURE_SUPPORT_ALWAYS_ON:
+			support = ALWAYS_ON;
+			break;
+		case DXGK_FEATURE_SUPPORT_EXPERIMENTAL:
+			support = EXPERIMENTAL;
+			break;
+		case DXGK_FEATURE_SUPPORT_STABLE:
+			support = STABLE;
+			break;
+		default:
+			support = UNKNOWN;
+		}
+	}
+
+	string ToString() const
+	{
+		string status = enabled ? "Enabled" : "Disabled";
+		status += " (Default: ";
+		status += enabled_by_default ? "Yes" : "No";
+		status += ", Driver status: ";
+		status += DriverSupportToString();
+		status += ")";
+
+		return status;
+	}
+
+private:
+	const char *DriverSupportToString() const
+	{
+		switch (support) {
+		case ALWAYS_OFF:
+			return "Unsupported";
+		case ALWAYS_ON:
+			return "Always On";
+		case EXPERIMENTAL:
+			return "Experimental";
+		case STABLE:
+			return "Supported";
+		default:
+			return "Unknown";
+		}
+	}
+};
+
+static optional<HagsStatus> GetAdapterHagsStatus(const DXGI_ADAPTER_DESC *desc)
+{
+	optional<HagsStatus> ret;
+	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
 	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
 
-	res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
+	NTSTATUS res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
 	if (FAILED(res)) {
 		blog(LOG_DEBUG, "Failed opening D3DKMT adapter: %x", res);
-		return hags_enabled;
+		return ret;
 	}
 
 	D3DKMT_WDDM_2_7_CAPS caps = {};
@@ -538,10 +565,28 @@ static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
 	args.PrivateDriverDataSize = sizeof(caps);
 	res = D3DKMTQueryAdapterInfo(&args);
 
-	/* On Windows 10 pre-2004 this will fail, but HAGS isn't supported
-	 * there anyway. */
-	if (SUCCEEDED(res))
-		hags_enabled = caps.HwSchEnabled;
+	/* If this still fails we're likely on Windows 10 pre-2004
+	 * where HAGS is not supported anyway. */
+	if (SUCCEEDED(res)) {
+		HagsStatus status(&caps);
+
+		/* Starting with Windows 10 21H2 we can query more detailed
+		 * support information (e.g. experimental status).
+		 * This Is optional and failure doesn't matter. */
+		D3DKMT_WDDM_2_9_CAPS ext_caps = {};
+		args.hAdapter = d3dkmt_openluid.hAdapter;
+		args.Type = KMTQAITYPE_WDDM_2_9_CAPS;
+		args.pPrivateDriverData = &ext_caps;
+		args.PrivateDriverDataSize = sizeof(ext_caps);
+		res = D3DKMTQueryAdapterInfo(&args);
+
+		if (SUCCEEDED(res))
+			status.SetDriverSupport(ext_caps.HwSchSupportState);
+
+		ret = status;
+	} else {
+		blog(LOG_WARNING, "Failed querying WDDM 2.7 caps: %x", res);
+	}
 
 	D3DKMT_CLOSEADAPTER d3dkmt_close = {d3dkmt_openluid.hAdapter};
 	res = D3DKMTCloseAdapter(&d3dkmt_close);
@@ -550,7 +595,7 @@ static bool adapter_hags_enabled(DXGI_ADAPTER_DESC *desc)
 		     d3dkmt_openluid.hAdapter, res);
 	}
 
-	return hags_enabled;
+	return ret;
 }
 
 static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
@@ -563,11 +608,28 @@ static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
 	       ((support & required) == required);
 }
 
+static bool FastClearSupported(UINT vendorId, uint64_t version)
+{
+	/* Always true for non-NVIDIA GPUs */
+	if (vendorId != 0x10de)
+		return true;
+
+	const uint16_t aa = (version >> 48) & 0xffff;
+	const uint16_t bb = (version >> 32) & 0xffff;
+	const uint16_t ccccc = (version >> 16) & 0xffff;
+	const uint16_t ddddd = version & 0xffff;
+
+	/* Check for NVIDIA driver version >= 31.0.15.2737 */
+	return aa >= 31 && bb >= 0 && ccccc >= 15 && ddddd >= 2737;
+}
+
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_10_0;
+	LARGE_INTEGER umd;
+	uint64_t driverVersion = 0;
 	HRESULT hr = 0;
 
 	adpIdx = adapterIdx;
@@ -584,6 +646,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	os_wcs_to_utf8_ptr(adapterName.c_str(), 0, &adapterNameUTF8);
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")",
 	     adapterNameUTF8.Get(), adapterIdx);
+
+	hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umd);
+	if (SUCCEEDED(hr))
+		driverVersion = umd.QuadPart;
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL,
 			       createFlags, featureLevels,
@@ -603,14 +669,17 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	}
 
 	/* Log HAGS status */
-	bool hags_enabled = adapter_hags_enabled(&desc);
+	bool hags_enabled = false;
+	if (auto hags_status = GetAdapterHagsStatus(&desc))
+		hags_enabled = hags_status->enabled;
+
 	if (hags_enabled) {
 		blog(LOG_WARNING,
 		     "Hardware-Accelerated GPU Scheduling enabled on adapter!");
 	}
 
 	/* adjust gpu thread priority on non-intel GPUs */
-#if USE_GPU_PRIORITY
+#ifdef USE_GPU_PRIORITY
 	if (desc.VendorId != 0x8086 && !set_priority(device, hags_enabled)) {
 		blog(LOG_INFO, "D3D11 GPU priority setup "
 			       "failed (not admin?)");
@@ -647,6 +716,8 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	nv12Supported = CheckFormat(device, DXGI_FORMAT_NV12) &&
 			!HasBadNV12Output();
 	p010Supported = nv12Supported && CheckFormat(device, DXGI_FORMAT_P010);
+
+	fastClearSupported = FastClearSupported(desc.VendorId, driverVersion);
 }
 
 static inline void ConvertStencilSide(D3D11_DEPTH_STENCILOP_DESC &desc,
@@ -893,7 +964,6 @@ gs_device::gs_device(uint32_t adapterIdx)
 		curSamplers[i] = NULL;
 	}
 
-	InitCompiler();
 	InitFactory();
 	InitAdapter(adapterIdx);
 	InitDevice(adapterIdx);
@@ -951,10 +1021,13 @@ EnumD3DAdapters(bool (*callback)(void *, const char *, uint32_t), void *param)
 	}
 }
 
-bool device_enum_adapters(bool (*callback)(void *param, const char *name,
+bool device_enum_adapters(gs_device_t *device,
+			  bool (*callback)(void *param, const char *name,
 					   uint32_t id),
 			  void *param)
 {
+	UNUSED_PARAMETER(device);
+
 	try {
 		EnumD3DAdapters(callback, param);
 		return true;
@@ -1245,6 +1318,12 @@ static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id,
 	}
 }
 
+static constexpr double DoubleTriangleArea(double ax, double ay, double bx,
+					   double by, double cx, double cy)
+{
+	return ax * (by - cy) + bx * (cy - ay) + cx * (ay - by);
+}
+
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
 	UINT i;
@@ -1286,6 +1365,8 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		UINT bits_per_color = 8;
 		DXGI_COLOR_SPACE_TYPE type =
 			DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		FLOAT primaries[4][2]{};
+		double gamut_size = 0.;
 		FLOAT min_luminance = 0.f;
 		FLOAT max_luminance = 0.f;
 		FLOAT max_full_frame_luminance = 0.f;
@@ -1293,6 +1374,18 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		if (GetOutputDesc1(output, &desc1)) {
 			bits_per_color = desc1.BitsPerColor;
 			type = desc1.ColorSpace;
+			primaries[0][0] = desc1.RedPrimary[0];
+			primaries[0][1] = desc1.RedPrimary[1];
+			primaries[1][0] = desc1.GreenPrimary[0];
+			primaries[1][1] = desc1.GreenPrimary[1];
+			primaries[2][0] = desc1.BluePrimary[0];
+			primaries[2][1] = desc1.BluePrimary[1];
+			primaries[3][0] = desc1.WhitePoint[0];
+			primaries[3][1] = desc1.WhitePoint[1];
+			gamut_size = DoubleTriangleArea(
+				desc1.RedPrimary[0], desc1.RedPrimary[1],
+				desc1.GreenPrimary[0], desc1.GreenPrimary[1],
+				desc1.BluePrimary[0], desc1.BluePrimary[1]);
 			min_luminance = desc1.MinLuminance;
 			max_luminance = desc1.MaxLuminance;
 			max_full_frame_luminance = desc1.MaxFullFrameLuminance;
@@ -1323,7 +1416,7 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		}
 
 		const RECT &rect = desc.DesktopCoordinates;
-		const ULONG nits = GetSdrMaxNits(desc.Monitor);
+		const ULONG sdr_white_nits = GetSdrMaxNits(desc.Monitor);
 
 		char *friendly_name;
 		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0,
@@ -1338,6 +1431,8 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     "\t    refresh=%u\n"
 		     "\t    bits_per_color=%u\n"
 		     "\t    space=%s\n"
+		     "\t    primaries=[r=(%f, %f), g=(%f, %f), b=(%f, %f), wp=(%f, %f)]\n"
+		     "\t    relative_gamut_area=[709=%f, P3=%f, 2020=%f]\n"
 		     "\t    sdr_white_nits=%lu\n"
 		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]\n"
 		     "\t    dpi=%u (%u%%)\n"
@@ -1346,10 +1441,24 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     i, friendly_name, rect.left, rect.top,
 		     rect.right - rect.left, rect.bottom - rect.top,
 		     desc.AttachedToDesktop ? "true" : "false", refresh,
-		     bits_per_color, space, nits, min_luminance, max_luminance,
+		     bits_per_color, space, primaries[0][0], primaries[0][1],
+		     primaries[1][0], primaries[1][1], primaries[2][0],
+		     primaries[2][1], primaries[3][0], primaries[3][1],
+		     gamut_size /
+			     DoubleTriangleArea(.64, .33, .3, .6, .15, .06),
+		     gamut_size /
+			     DoubleTriangleArea(.68, .32, .265, .69, .15, .060),
+		     gamut_size / DoubleTriangleArea(.708, .292, .17, .797,
+						     .131, .046),
+		     sdr_white_nits, min_luminance, max_luminance,
 		     max_full_frame_luminance, dpiX, scaling, id, alt_id);
 		bfree(friendly_name);
 	}
+}
+
+static inline double to_GiB(size_t bytes)
+{
+	return static_cast<double>(bytes) / (1 << 30);
 }
 
 static inline void LogD3DAdapters()
@@ -1379,12 +1488,20 @@ static inline void LogD3DAdapters()
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 		blog(LOG_INFO, "\tAdapter %u: %s", i, name);
-		blog(LOG_INFO, "\t  Dedicated VRAM: %" PRIu64,
-		     desc.DedicatedVideoMemory);
-		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64,
-		     desc.SharedSystemMemory);
-		blog(LOG_INFO, "\t  PCI ID:         %x:%x", desc.VendorId,
+		blog(LOG_INFO, "\t  Dedicated VRAM: %" PRIu64 " (%.01f GiB)",
+		     desc.DedicatedVideoMemory,
+		     to_GiB(desc.DedicatedVideoMemory));
+		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64 " (%.01f GiB)",
+		     desc.SharedSystemMemory, to_GiB(desc.SharedSystemMemory));
+		blog(LOG_INFO, "\t  PCI ID:         %x:%.4x", desc.VendorId,
 		     desc.DeviceId);
+
+		if (auto hags_support = GetAdapterHagsStatus(&desc)) {
+			blog(LOG_INFO, "\t  HAGS Status:    %s",
+			     hags_support->ToString().c_str());
+		} else {
+			blog(LOG_WARNING, "\t  HAGS Status:    Unknown");
+		}
 
 		/* driver version */
 		LARGE_INTEGER umd;
@@ -1409,6 +1526,17 @@ static inline void LogD3DAdapters()
 	}
 }
 
+static void CreateShaderCacheDirectory()
+{
+	BPtr cachePath =
+		os_get_program_data_path_ptr("obs-studio/shader-cache");
+
+	if (os_mkdirs(cachePath) == MKDIR_ERROR) {
+		blog(LOG_WARNING, "Failed to create shader cache directory, "
+				  "cache may not be available.");
+	}
+}
+
 int device_create(gs_device_t **p_device, uint32_t adapter)
 {
 	gs_device *device = NULL;
@@ -1418,6 +1546,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 		blog(LOG_INFO, "---------------------------------");
 		blog(LOG_INFO, "Initializing D3D11...");
 		LogD3DAdapters();
+		CreateShaderCacheDirectory();
 
 		device = new gs_device(adapter);
 
@@ -3484,4 +3613,9 @@ uint32_t gs_get_adapter_count(void)
 	}
 
 	return count;
+}
+
+extern "C" EXPORT bool device_can_adapter_fast_clear(gs_device_t *device)
+{
+	return device->fastClearSupported;
 }

@@ -1,17 +1,35 @@
 # OBS CMake macOS helper functions module
 
 # cmake-format: off
+# cmake-lint: disable=C0301
 # cmake-lint: disable=C0307
+# cmake-lint: disable=E1126
 # cmake-lint: disable=R0912
 # cmake-lint: disable=R0915
-# cmake-lint: disable=E1126
 # cmake-format: on
+
+include_guard(GLOBAL)
 
 include(helpers_common)
 
+# set_target_xcode_properties: Sets Xcode-specific target attributes
+function(set_target_xcode_properties target)
+  message(STATUS "[set_target_properties_obs] Setting target properties for ${target}...")
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs PROPERTIES)
+  cmake_parse_arguments(PARSE_ARGV 0 _STXP "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+  message(DEBUG "Setting Xcode properties for target ${target}...")
+
+  while(_STXP_PROPERTIES)
+    list(POP_FRONT _STXP_PROPERTIES key value)
+    set_property(TARGET ${target} PROPERTY XCODE_ATTRIBUTE_${key} "${value}")
+  endwhile()
+endfunction()
+
 # set_target_properties_obs: Set target properties for use in obs-studio
 function(set_target_properties_obs target)
-message(STATUS "[set_target_properties_obs] Setting target properties for ${target}...")
   set(options "")
   set(oneValueArgs "")
   set(multiValueArgs PROPERTIES)
@@ -23,35 +41,45 @@ message(STATUS "[set_target_properties_obs] Setting target properties for ${targ
     list(POP_FRONT _STPO_PROPERTIES key value)
     set_property(TARGET ${target} PROPERTY ${key} "${value}")
   endwhile()
+
   get_target_property(target_type ${target} TYPE)
+
+  string(TIMESTAMP CURRENT_YEAR "%Y")
 
   # Target is a GUI or CLI application
   if(target_type STREQUAL EXECUTABLE)
     if(target STREQUAL obs-studio)
-      _check_info_plist()
       set_target_properties(
         ${target}
         PROPERTIES OUTPUT_NAME OBS
                    MACOSX_BUNDLE TRUE
                    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
-                   XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-studio
-                   XCODE_ATTRIBUTE_PRODUCT_NAME OBS
-                   XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
                    XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY YES
                    XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY YES
                    XCODE_EMBED_PLUGINS_REMOVE_HEADERS_ON_COPY YES
-                   XCODE_EMBED_PLUGINS_CODE_SIGN_ON_COPY YES
-                   XCODE_ATTRIBUTE_COPY_PHASE_STRIP NO
-                   XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
-                   XCODE_ATTRIBUTE_SKIP_INSTALL NO
-                   XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)")
+                   XCODE_EMBED_PLUGINS_CODE_SIGN_ON_COPY YES)
+
+      # cmake-format: off
+      set_target_xcode_properties(
+        ${target}
+        PROPERTIES PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-studio
+                   PRODUCT_NAME OBS
+                   ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
+                   CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+                   MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+                   GENERATE_INFOPLIST_FILE YES
+                   COPY_PHASE_STRIP NO
+                   CLANG_ENABLE_OBJC_ARC YES
+                   SKIP_INSTALL NO
+                   INSTALL_PATH "$(LOCAL_APPS_DIR)"
+                   INFOPLIST_KEY_CFBundleDisplayName "OBS Studio"
+                   INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey"
+                   INFOPLIST_KEY_NSCameraUsageDescription "OBS needs to access the camera to enable camera sources to work."
+                   INFOPLIST_KEY_NSMicrophoneUsageDescription "OBS needs to access the microphone to enable audio input.")
+      # cmake-format: on
 
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
       add_dependencies(${target} ${obs_dependencies})
-
-      if(NOT XCODE)
-        return()
-      endif()
 
       get_property(obs_frameworks GLOBAL PROPERTY _OBS_FRAMEWORKS)
       set_property(
@@ -66,12 +94,19 @@ message(STATUS "[set_target_properties_obs] Setting target properties for ${targ
           PROPERTY XCODE_EMBED_FRAMEWORKS ${SPARKLE})
       endif()
 
+      if(TARGET mac-syphon)
+        set_property(
+          TARGET ${target}
+          APPEND
+          PROPERTY XCODE_EMBED_FRAMEWORKS ${SYPHON})
+      endif()
+
       get_property(obs_executables GLOBAL PROPERTY _OBS_EXECUTABLES)
       add_dependencies(${target} ${obs_executables})
       foreach(executable IN LISTS obs_executables)
-        set_property(
-          TARGET ${executable} PROPERTY XCODE_ATTRIBUTE_INSTALL_PATH
-                                        "$(LOCAL_APPS_DIR)/$<TARGET_BUNDLE_DIR_NAME:${target}>/Contents/MacOS")
+        set_target_xcode_properties(${executable} PROPERTIES INSTALL_PATH
+                                    "$(LOCAL_APPS_DIR)/$<TARGET_BUNDLE_DIR_NAME:${target}>/Contents/MacOS")
+
         add_custom_command(
           TARGET ${target}
           POST_BUILD
@@ -80,20 +115,37 @@ message(STATUS "[set_target_properties_obs] Setting target properties for ${targ
           COMMENT "Copy ${executable} to application bundle")
       endforeach()
 
-      _check_entitlements()
-      configure_file(cmake/macos/exportOptions.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+      if(VIRTUALCAM_DEVICE_UUID
+         AND VIRTUALCAM_SOURCE_UUID
+         AND VIRTUALCAM_SINK_UUID)
+        set(has_virtualcam_uuids TRUE)
+      else()
+        set(has_virtualcam_uuids FALSE)
+      endif()
 
-      add_custom_command(
-        TARGET ${target}
-        POST_BUILD
-        COMMAND
-          /usr/bin/sed -i '' 's/font-size: 10pt\;/font-size: 12pt\;/'
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Acri.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Grey.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Light.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Rachni.qss"
-          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Yami.qss"
-        COMMENT "Patch Qt stylesheets to use larger default font size on macOS")
+      if(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE STREQUAL Automatic)
+        if(has_virtualcam_uuids)
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements-extension.plist")
+        else()
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+        endif()
+      else()
+        if(has_virtualcam_uuids AND OBS_PROVISIONING_PROFILE)
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements-extension.plist")
+          set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER
+                                                     "${OBS_PROVISIONING_PROFILE}")
+          configure_file(cmake/macos/exportOptions-extension.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+        else()
+          set(entitlements_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+          configure_file(cmake/macos/exportOptions.plist.in ${CMAKE_BINARY_DIR}/exportOptions.plist)
+        endif()
+      endif()
+
+      if(NOT EXISTS "${entitlements_file}")
+        message(FATAL_ERROR "Target ${target} is missing an entitlements file in its cmake directory.")
+      endif()
+
+      set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${entitlements_file}")
 
       add_custom_command(
         TARGET ${target}
@@ -127,16 +179,40 @@ message(STATUS "[set_target_properties_obs] Setting target properties for ${targ
           COMMENT "Add OBS::python import module")
       endif()
 
+      if(TARGET mac-camera-extension AND (CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE STREQUAL Automatic
+                                          OR OBS_PROVISIONING_PROFILE))
+        target_enable_feature(mac-camera-extension "macOS CMIO Camera Extension")
+        add_custom_command(
+          TARGET ${target}
+          POST_BUILD
+          COMMAND
+            "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_BUNDLE_DIR:mac-camera-extension>"
+            "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Library/SystemExtensions/$<TARGET_BUNDLE_DIR_NAME:mac-camera-extension>"
+          COMMENT "Add Camera Extension to application bundle")
+      else()
+        target_disable_feature(mac-camera-extension "macOS CMIO Camera Extension")
+      endif()
+
       _bundle_dependencies(${target})
 
       install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT Application)
+    elseif(${target} STREQUAL mac-camera-extension)
+      set_target_properties(${target} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+      set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
+    elseif(${target} STREQUAL obs-ffmpeg-mux)
+      if(OBS_CODESIGN_IDENTITY STREQUAL "-")
+        set_target_xcode_properties(${target} PROPERTIES ENABLE_HARDENED_RUNTIME NO)
+      endif()
+
+      set_target_xcode_properties(${target} PROPERTIES SKIP_INSTALL NO)
+      set_property(GLOBAL APPEND PROPERTY _OBS_EXECUTABLES ${target})
+      set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
     else()
       set_property(TARGET ${target} PROPERTY XCODE_ATTRIBUTE_SKIP_INSTALL NO)
       set_property(GLOBAL APPEND PROPERTY _OBS_EXECUTABLES ${target})
       set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
+      _add_entitlements()
     endif()
-
-    _add_entitlements()
   elseif(target_type STREQUAL SHARED_LIBRARY)
     set_target_properties(
       ${target}
@@ -144,48 +220,75 @@ message(STATUS "[set_target_properties_obs] Setting target properties for ${targ
                  MACHO_COMPATIBILITY_VERSION 1.0
                  MACHO_CURRENT_VERSION ${OBS_VERSION_MAJOR}
                  SOVERSION 0
-                 VERSION 0
-                 XCODE_ATTRIBUTE_DYLIB_COMPATIBILITY_VERSION 1.0
-                 XCODE_ATTRIBUTE_DYLIB_CURRENT_VERSION ${OBS_VERSION_MAJOR}
-                 XCODE_ATTRIBUTE_PRODUCT_NAME ${target}
-                 XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target}
-                 XCODE_ATTRIBUTE_SKIP_INSTALL YES)
+                 VERSION 0)
+
+    # cmake-format: off
+    set_target_xcode_properties(
+      ${target}
+      PROPERTIES DYLIB_COMPATIBILITY_VERSION 1.0
+                 DYLIB_CURRENT_VERSION ${OBS_VERSION_MAJOR}
+                 PRODUCT_NAME ${target}
+                 PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target}
+                 SKIP_INSTALL YES)
+    # cmake-format: on
 
     get_target_property(is_framework ${target} FRAMEWORK)
     if(is_framework)
-      _check_info_plist()
-      set_target_properties(
-        ${target}
-        PROPERTIES FRAMEWORK_VERSION A
-                   MACOSX_FRAMEWORK_IDENTIFIER com.obsproject.${target}
-                   MACOSX_FRAMEWORK_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
-                   XCODE_ATTRIBUTE_SKIP_INSTALL YES)
-    endif()
+      set_target_properties(${target} PROPERTIES FRAMEWORK_VERSION A MACOSX_FRAMEWORK_IDENTIFIER
+                                                                     com.obsproject.${target})
 
-    _add_entitlements()
+      # cmake-format: off
+      set_target_xcode_properties(
+        ${target}
+        PROPERTIES CODE_SIGN_IDENTITY ""
+                   DEVELOPMENT_TEAM ""
+                   SKIP_INSTALL YES
+                   PRODUCT_NAME ${target}
+                   PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target}
+                   CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+                   MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+                   GENERATE_INFOPLIST_FILE YES
+                   INFOPLIST_FILE ""
+                   INFOPLIST_KEY_CFBundleDisplayName ${target}
+                   INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey")
+      # cmake-format: on
+    endif()
 
     set_property(GLOBAL APPEND PROPERTY _OBS_FRAMEWORKS ${target})
     set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
   elseif(target_type STREQUAL MODULE_LIBRARY)
     if(target STREQUAL obspython)
-      set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_PRODUCT_NAME ${target}
-                                                 XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target})
+      # cmake-format: off
+      set_target_xcode_properties(
+        ${target}
+        PROPERTIES PRODUCT_NAME ${target}
+                   PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target})
+      # cmake-format: on
     elseif(target STREQUAL obslua)
-      set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_PRODUCT_NAME ${target}
-                                                 XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target})
+      # cmake-format: off
+      set_target_xcode_properties(
+        ${target}
+        PROPERTIES PRODUCT_NAME ${target}
+                   PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target})
+      # cmake-format: on
     elseif(target STREQUAL obs-dal-plugin)
       set_target_properties(${target} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
       set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
       return()
     else()
-      _check_info_plist()
-      set_target_properties(
+      set_target_properties(${target} PROPERTIES BUNDLE TRUE BUNDLE_EXTENSION plugin)
+
+      # cmake-format: off
+      set_target_xcode_properties(
         ${target}
-        PROPERTIES BUNDLE TRUE
-                   BUNDLE_EXTENSION plugin
-                   MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
-                   XCODE_ATTRIBUTE_PRODUCT_NAME ${target}
-                   XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target})
+        PROPERTIES PRODUCT_NAME ${target}
+                   PRODUCT_BUNDLE_IDENTIFIER com.obsproject.${target}
+                   CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
+                   MARKETING_VERSION ${OBS_VERSION_CANONICAL}
+                   GENERATE_INFOPLIST_FILE YES
+                   INFOPLIST_KEY_CFBundleDisplayName ${target}
+                   INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey")
+      # cmake-format: on
 
       if(target STREQUAL obs-browser)
         # Good-enough for now as there are no other variants - in _theory_ we should only add the appropriate variant,
@@ -237,13 +340,6 @@ message(STATUS "[set_target_properties_obs] Setting target properties for ${targ
   endif()
 endfunction()
 
-# _check_info_plist: Macro to check if project ships with Info.plist template
-macro(_check_info_plist)
-  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in")
-    message(FATAL_ERROR "Target ${target} is missing an Info.plist template in its cmake directory.")
-  endif()
-endmacro()
-
 # _check_entitlements: Macro to check if project ships with entitlements plist
 macro(_check_entitlements)
   if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
@@ -254,8 +350,11 @@ endmacro()
 # _add_entitlements: Macro to add entitlements shipped with project
 macro(_add_entitlements)
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
-    set_target_properties(${target} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-                                               "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+    # cmake-format: off
+    set_target_xcode_properties(
+      ${target}
+      PROPERTIES CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/entitlements.plist")
+    # cmake-format: on
   endif()
 endmacro()
 
@@ -353,12 +452,11 @@ function(_bundle_dependencies target)
         continue()
       endif()
 
-      if(library MATCHES "Qt[56]?::.+")
+      if(library MATCHES "Qt6?::.+")
         find_qt_plugins(COMPONENT ${library} TARGET ${target} FOUND_VAR plugins_list)
       endif()
       list(APPEND library_paths ${library_location})
-    elseif(NOT imported AND library_type STREQUAL "SHARED_LIBRARY")
-      message(TRACE "${library} is a project target")
+    elseif(NOT is_imported AND library_type STREQUAL "SHARED_LIBRARY")
       list(APPEND library_paths ${library})
     endif()
   endforeach()

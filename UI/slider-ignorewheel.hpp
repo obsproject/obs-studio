@@ -4,7 +4,7 @@
 #include <QSlider>
 #include <QInputEvent>
 #include <QtCore/QObject>
-#include <QAccessibleWidget>
+#include <QStyleOptionSlider>
 #include <QStyleOptionSlider>
 
 class SliderIgnoreScroll : public QSlider {
@@ -19,36 +19,21 @@ protected:
 	virtual void wheelEvent(QWheelEvent *event) override;
 };
 
-class VolumeSlider : public SliderIgnoreScroll {
-	Q_OBJECT
-
+class SliderIgnoreClick : public SliderIgnoreScroll {
 public:
-	obs_fader_t *fad;
-
-	VolumeSlider(obs_fader_t *fader, QWidget *parent = nullptr);
-	VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation,
-		     QWidget *parent = nullptr);
-};
-
-class VolumeAccessibleInterface : public QAccessibleWidget {
-
-public:
-	VolumeAccessibleInterface(QWidget *w);
-
-	QVariant currentValue() const;
-	void setCurrentValue(const QVariant &value);
-
-	QVariant maximumValue() const;
-	QVariant minimumValue() const;
-
-	QVariant minimumStepSize() const;
-
-private:
-	VolumeSlider *slider() const;
+	inline SliderIgnoreClick(Qt::Orientation orientation,
+				 QWidget *parent = nullptr)
+		: SliderIgnoreScroll(orientation, parent)
+	{
+	}
 
 protected:
-	virtual QAccessible::Role role() const override;
-	virtual QString text(QAccessible::Text t) const override;
+	virtual void mousePressEvent(QMouseEvent *event) override;
+	virtual void mouseReleaseEvent(QMouseEvent *event) override;
+	virtual void mouseMoveEvent(QMouseEvent *event) override;
+
+private:
+	bool dragging = false;
 };
 
 class SliderIgnoreClick : public SliderIgnoreScroll {

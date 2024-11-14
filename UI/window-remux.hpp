@@ -96,7 +96,8 @@ class RemuxQueueModel : public QAbstractTableModel {
 
 public:
 	RemuxQueueModel(QObject *parent = 0)
-		: QAbstractTableModel(parent), isProcessing(false)
+		: QAbstractTableModel(parent),
+		  isProcessing(false)
 	{
 	}
 

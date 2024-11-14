@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -19,10 +19,20 @@
 #include "serializer.h"
 #include "darray.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct array_output_data {
 	DARRAY(uint8_t) bytes;
+	size_t cur_pos;
 };
 
 EXPORT void array_output_serializer_init(struct serializer *s,
 					 struct array_output_data *data);
 EXPORT void array_output_serializer_free(struct array_output_data *data);
+EXPORT void array_output_serializer_reset(struct array_output_data *data);
+
+#ifdef __cplusplus
+}
+#endif

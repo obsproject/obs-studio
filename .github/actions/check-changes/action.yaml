@@ -1,0 +1,77 @@
+name: Check For Changed Files
+description: Checks for changed files compared to specific git reference and glob expression
+inputs:
+  baseRef:
+    description: Git reference to check against
+    required: false
+  ref:
+    description: Git reference to check with
+    required: false
+    default: HEAD
+  checkGlob:
+    description: Glob expression to limit check to specific files
+    required: false
+  useFallback:
+    description: Use fallback compare against prior commit
+    required: false
+    default: 'true'
+  diffFilter:
+    description: git diff-filter string to use
+    required: false
+    default: ''
+outputs:
+  hasChangedFiles:
+    value: ${{ steps.checks.outputs.hasChangedFiles }}
+    description: True if specified files were changed in comparison to specified git reference
+  changedFiles:
+    value: ${{ steps.checks.outputs.changedFiles }}
+    description: List of changed files
+runs:
+  using: composite
+  steps:
+    - name: Check For Changed Files ✅
+      shell: bash
+      id: checks
+      env:
+        GIT_BASE_REF: ${{ inputs.baseRef }}
+        GIT_REF: ${{ inputs.ref }}
+        GITHUB_EVENT_FORCED: ${{ github.event.forced }}
+        GITHUB_REF_BEFORE: ${{ github.event.before }}
+        USE_FALLBACK: ${{ inputs.useFallback }}
+        DIFF_FILTER: ${{ inputs.diffFilter }}
+      run: |
+        : Check for Changed Files ✅
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+        shopt -s extglob
+        shopt -s dotglob
+
+        if [[ "${GIT_BASE_REF}" ]]; then
+          if ! git cat-file -e "${GIT_BASE_REF}" &> /dev/null; then
+            echo "::warning::Provided base reference ${GIT_BASE_REF} is invalid"
+            if [[ "${USE_FALLBACK}" == 'true' ]]; then
+              GIT_BASE_REF='HEAD~1'
+            fi
+          fi
+        else
+          if ! git cat-file -e ${GITHUB_REF_BEFORE} &> /dev/null; then
+            GITHUB_REF_BEFORE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+          fi
+
+          GIT_BASE_REF='HEAD~1'
+          case "${GITHUB_EVENT_NAME}" in
+            pull_request) GIT_BASE_REF="origin/${GITHUB_BASE_REF}" ;;
+            push) if [[ "${GITHUB_EVENT_FORCED}" != 'true' ]]; then GIT_BASE_REF="${GITHUB_REF_BEFORE}"; fi ;;
+            *) ;;
+          esac
+        fi
+
+        changes=($(git diff --name-only --diff-filter="${DIFF_FILTER}" ${GIT_BASE_REF} ${GIT_REF} -- ${{ inputs.checkGlob }}))
+
+        if (( ${#changes[@]} )); then
+          file_string="${changes[*]}"
+          echo "hasChangedFiles=true" >> $GITHUB_OUTPUT
+          echo "changedFiles=[\"${file_string// /\",\"}\"]" >> $GITHUB_OUTPUT
+        else
+          echo "hasChangedFiles=false" >> $GITHUB_OUTPUT
+          echo "changedFiles=[]" >> GITHUB_OUTPUT
+        fi

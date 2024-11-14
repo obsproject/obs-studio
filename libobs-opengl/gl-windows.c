@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ struct gl_platform {
 /* For now, only support basic 32bit formats for graphics output. */
 static inline int get_color_format_bits(enum gs_color_format format)
 {
-	switch ((uint32_t)format) {
+	switch (format) {
 	case GS_RGBA:
 	case GS_BGRA:
 		return 32;
@@ -50,7 +50,7 @@ static inline int get_color_format_bits(enum gs_color_format format)
 
 static inline int get_depth_format_bits(enum gs_zstencil_format zsformat)
 {
-	switch ((uint32_t)zsformat) {
+	switch (zsformat) {
 	case GS_Z16:
 		return 16;
 	case GS_Z24_S8:
@@ -62,7 +62,7 @@ static inline int get_depth_format_bits(enum gs_zstencil_format zsformat)
 
 static inline int get_stencil_format_bits(enum gs_zstencil_format zsformat)
 {
-	switch ((uint32_t)zsformat) {
+	switch (zsformat) {
 	case GS_Z24_S8:
 		return 8;
 	default:

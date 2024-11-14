@@ -52,19 +52,19 @@ jobs:
           submodules: 'recursive'
 
       - name: 'Install clang-format'
-        run: sudo apt-get install -y clang-format-13
+        run: sudo apt-get install -y clang-format-16
 
       - name: 'Run clang-format'
         run: |
-          ./CI/check-format.sh
-          ./CI/check-changes.sh
+          ./.github/scripts/check-format.sh
+          ./.github/scripts/check-changes.sh
 
       - name: 'Install cmake-format'
         run: sudo pip install cmakelang
 
       - name: 'Run cmake-format'
         run: |
-          ./CI/check-cmake.sh
+          ./.github/scripts/check-cmake.sh
 
   sl_config:
     name: '01 - Configure Build Jobs for Streamlabs'
@@ -106,142 +106,142 @@ jobs:
           fi
           echo "cache_date=$(date +"%Y-%m-%d")" >> $GITHUB_OUTPUT
 
-  macos_build:
-    name: '02 - macOS'
-    runs-on: [macos-13]
-    strategy:
-      matrix:
-        arch: ['x86_64', 'arm64']
-    if: always()
-    needs: [sl_config]
-    env:
-      BLOCKED_FORMULAS: 'speexdsp curl php composer'
-      CODESIGN_IDENT: '-'
-      HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: 'obs-studio'
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-          path: 'obs-studio'
-          fetch-depth: 0
-      - name: Print results of config job
-        run: |
-          echo "create_artifacts=${{ fromJSON(needs.sl_config.outputs.create_artifacts) }}"
-          echo "upload_libobs=${{ fromJSON(needs.sl_config.outputs.upload_libobs) }}"
-          echo "cache_date=${{ needs.sl_config.outputs.cache_date }}"
+  # macos_build:
+  #   name: '02 - macOS'
+  #   runs-on: [macos-13]
+  #   strategy:
+  #     matrix:
+  #       arch: ['x86_64', 'arm64']
+  #   if: always()
+  #   needs: [sl_config]
+  #   env:
+  #     BLOCKED_FORMULAS: 'speexdsp curl php composer'
+  #     CODESIGN_IDENT: '-'
+  #     HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #       working-directory: 'obs-studio'
+  #   steps:
+  #     - name: 'Checkout'
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: 'recursive'
+  #         path: 'obs-studio'
+  #         fetch-depth: 0
+  #     - name: Print results of config job
+  #       run: |
+  #         echo "create_artifacts=${{ fromJSON(needs.sl_config.outputs.create_artifacts) }}"
+  #         echo "upload_libobs=${{ fromJSON(needs.sl_config.outputs.upload_libobs) }}"
+  #         echo "cache_date=${{ needs.sl_config.outputs.cache_date }}"
 
-      - name: 'Check for GitHub Labels'
-        id: github-check
-        run: |
-          if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
-            if test -n "$(curl -H "Authorization: Bearer ${{ github.token }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
-              echo "generator=Xcode" >> $GITHUB_OUTPUT
-            else
-              echo "generator=Ninja" >> $GITHUB_OUTPUT
-            fi
-          elif [[ "${GITHUB_EVENT_NAME}" == 'push' ]]; then
-            if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then
-              echo "generator=Xcode" >> $GITHUB_OUTPUT
-            else
-              echo "generator=Ninja" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "generator=Ninja" >> $GITHUB_OUTPUT
-          fi
+  #     - name: 'Check for GitHub Labels'
+  #       id: github-check
+  #       run: |
+  #         if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
+  #           if test -n "$(curl -H "Authorization: Bearer ${{ github.token }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
+  #             echo "generator=Xcode" >> $GITHUB_OUTPUT
+  #           else
+  #             echo "generator=Ninja" >> $GITHUB_OUTPUT
+  #           fi
+  #         elif [[ "${GITHUB_EVENT_NAME}" == 'push' ]]; then
+  #           if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then
+  #             echo "generator=Xcode" >> $GITHUB_OUTPUT
+  #           else
+  #             echo "generator=Ninja" >> $GITHUB_OUTPUT
+  #           fi
+  #         else
+  #           echo "generator=Ninja" >> $GITHUB_OUTPUT
+  #         fi
 
-      - name: 'Restore ccache from cache'
-        id: ccache-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-${{ steps.github-check.outputs.generator }}-${{ matrix.arch }}-${{ github.event_name }}-${{ github.head_ref }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-${{ steps.github-check.outputs.generator }}-${{ matrix.arch }}-push-
+  #     - name: 'Restore ccache from cache'
+  #       id: ccache-cache
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ${{ github.workspace }}/.ccache
+  #         key: ${{ runner.os }}-ccache-${{ steps.github-check.outputs.generator }}-${{ matrix.arch }}-${{ github.event_name }}-${{ github.head_ref }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-ccache-${{ steps.github-check.outputs.generator }}-${{ matrix.arch }}-push-
 
-      - name: 'Setup build environment'
-        id: setup
-        run: |
-          REMOVE_FORMULAS=""
-          for FORMULA in ${{ env.BLOCKED_FORMULAS }}; do
-            if [ -d "/usr/local/opt/${FORMULA}" ]; then
-              REMOVE_FORMULAS="${REMOVE_FORMULAS}${FORMULA} "
-            fi
-          done
+  #     - name: 'Setup build environment'
+  #       id: setup
+  #       run: |
+  #         REMOVE_FORMULAS=""
+  #         for FORMULA in ${{ env.BLOCKED_FORMULAS }}; do
+  #           if [ -d "/usr/local/opt/${FORMULA}" ]; then
+  #             REMOVE_FORMULAS="${REMOVE_FORMULAS}${FORMULA} "
+  #           fi
+  #         done
 
-          if [ -n "${REMOVE_FORMULAS}" ]; then
-            brew uninstall ${REMOVE_FORMULAS}
-          fi
+  #         if [ -n "${REMOVE_FORMULAS}" ]; then
+  #           brew uninstall ${REMOVE_FORMULAS}
+  #         fi
 
-          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+  #         echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
-          sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
+  #         sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
 
-      - name: 'Install dependencies'
-        run: CI/macos/01_install_dependencies.sh --architecture "${{ matrix.arch }}"
+  #     - name: 'Install dependencies'
+  #       run: CI/macos/01_install_dependencies.sh --architecture "${{ matrix.arch }}"
 
-      - name: 'Install Apple Developer Certificate'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
-        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
-        with:
-          p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
-          p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+  #     - name: 'Install Apple Developer Certificate'
+  #       if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
+  #       uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
+  #       with:
+  #         p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
+  #         p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
 
-      - name: 'Set Signing Identity'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
-        run: |
-          echo "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_IDENTITY }}" >> $GITHUB_ENV
-          echo "BUILD_FOR_DISTRIBUTION=ON" >> $GITHUB_ENV
+  #     - name: 'Set Signing Identity'
+  #       if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
+  #       run: |
+  #         echo "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_IDENTITY }}" >> $GITHUB_ENV
+  #         echo "BUILD_FOR_DISTRIBUTION=ON" >> $GITHUB_ENV
 
-      - name: 'Build OBS'
-        run: |
-          if [[ '${{ steps.github-check.outputs.generator }}' == 'Xcode' ]]; then
-            SEEKING_TESTERS=1 CI/macos/02_build_obs.sh --codesign --quiet --architecture "${{ matrix.arch }}"
-          else
-            CI/macos/02_build_obs.sh --codesign --quiet --architecture "${{ matrix.arch }}"
-          fi
+  #     - name: 'Build OBS'
+  #       run: |
+  #         if [[ '${{ steps.github-check.outputs.generator }}' == 'Xcode' ]]; then
+  #           SEEKING_TESTERS=1 CI/macos/02_build_obs.sh --codesign --quiet --architecture "${{ matrix.arch }}"
+  #         else
+  #           CI/macos/02_build_obs.sh --codesign --quiet --architecture "${{ matrix.arch }}"
+  #         fi
 
-      - name: 'Create build artifact'
-        if: ${{ fromJSON(needs.sl_config.outputs.create_artifacts) }}
-        run: |
-          : ${PACKAGE:=}
-          case "${GITHUB_EVENT_NAME}" in
-              push) if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then PACKAGE=1; fi ;;
-              pull_request) PACKAGE=1 ;;
-          esac
+  #     - name: 'Create build artifact'
+  #       if: ${{ fromJSON(needs.sl_config.outputs.create_artifacts) }}
+  #       run: |
+  #         : ${PACKAGE:=}
+  #         case "${GITHUB_EVENT_NAME}" in
+  #             push) if [[ ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]]; then PACKAGE=1; fi ;;
+  #             pull_request) PACKAGE=1 ;;
+  #         esac
 
-          if [[ "${PACKAGE}" ]]; then
-            CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
-            ARTIFACT_NAME=$(basename $(/usr/bin/find build_${{ matrix.arch }} -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
-            echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
-          fi
+  #         if [[ "${PACKAGE}" ]]; then
+  #           CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
+  #           ARTIFACT_NAME=$(basename $(/usr/bin/find build_${{ matrix.arch }} -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
+  #           echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+  #         fi
 
-      - name: 'Upload build Artifact'
-        if: ${{ fromJSON(needs.sl_config.outputs.create_artifacts) && env.FILE_NAME != '' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
-          path: '${{ github.workspace }}/obs-studio/build_${{ matrix.arch }}/${{ env.FILE_NAME }}'
+  #     - name: 'Upload build Artifact'
+  #       if: ${{ fromJSON(needs.sl_config.outputs.create_artifacts) && env.FILE_NAME != '' }}
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+  #         path: '${{ github.workspace }}/obs-studio/build_${{ matrix.arch }}/${{ env.FILE_NAME }}'
 
-      # Archive using tar
-      - name: 'Prepare archive for deployment'
-        if: ${{ fromJSON(needs.sl_config.outputs.upload_libobs)}}
-        run: cd ${{env.AppInstallPath}} && tar -czvf ../../${{env.TARGET_ARTIFACT}}.tar.gz *
-        env:
-          AppInstallPath: ${{ github.workspace }}/obs-studio/build/
-          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-macos-release-${{ steps.setup.outputs.commitHash }}-${{ matrix.arch }}
+  #     # Archive using tar
+  #     - name: 'Prepare archive for deployment'
+  #       if: ${{ fromJSON(needs.sl_config.outputs.upload_libobs)}}
+  #       run: cd ${{env.AppInstallPath}} && tar -czvf ../../${{env.TARGET_ARTIFACT}}.tar.gz *
+  #       env:
+  #         AppInstallPath: ${{ github.workspace }}/obs-studio/build/
+  #         TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-macos-release-${{ steps.setup.outputs.commitHash }}-${{ matrix.arch }}
 
-      # Upload the artifact
-      - name: 'Upload build libobs'
-        if: ${{ fromJSON(needs.sl_config.outputs.upload_libobs)}}
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
-          path: ${{env.PACKAGE_NAME}}-macos-release-${{ steps.setup.outputs.commitHash }}-${{ matrix.arch }}.tar.gz
+  #     # Upload the artifact
+  #     - name: 'Upload build libobs'
+  #       if: ${{ fromJSON(needs.sl_config.outputs.upload_libobs)}}
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+  #         path: ${{env.PACKAGE_NAME}}-macos-release-${{ steps.setup.outputs.commitHash }}-${{ matrix.arch }}.tar.gz
 
 
   linux_build:
@@ -420,8 +420,8 @@ jobs:
       OS_TAG: "windows64"
       CEF_VERSION: 5060
       CEF_REVISION: v3
-      WIN_DEPS_VERSION: windows-deps-2023-08-31sl1-x64
-      WIN_DEPS_VERSION_X86: 2023-04-12
+      WIN_DEPS_VERSION: windows-deps-2024-05-08sl2-x64
+      WIN_DEPS_VERSION_X86: 2024-05-08
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
       VLC_VERSION: vlc_3.0.0-git
@@ -605,222 +605,222 @@ jobs:
           name: 'obs-studio-windows-installer'
           path: '${{ steps.unpack.outputs.filename }}'
 
-  macos_release:
-    name: '03 - macOS notarized image'
-    runs-on: [macos-12]
-    needs: [macos_build]
-    env:
-      HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
-      BUILD_FOR_DISTRIBUTION: 'ON'
-      HAVE_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
-    outputs:
-      run_sparkle: ${{ steps.sparkle_check.outputs.run_sparkle }}
-    if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && github.repository == 'obsproject/obs-studio'}}
-    strategy:
-      matrix:
-        arch: ['x86_64', 'arm64']
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: 'Checkout'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: actions/checkout@v3
+  # macos_release:
+  #   name: '03 - macOS notarized image'
+  #   runs-on: [macos-12]
+  #   needs: [macos_build]
+  #   env:
+  #     HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
+  #     BUILD_FOR_DISTRIBUTION: 'ON'
+  #     HAVE_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+  #   outputs:
+  #     run_sparkle: ${{ steps.sparkle_check.outputs.run_sparkle }}
+  #   if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && github.repository == 'obsproject/obs-studio'}}
+  #   strategy:
+  #     matrix:
+  #       arch: ['x86_64', 'arm64']
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #   steps:
+  #     - name: 'Checkout'
+  #       if: env.HAVE_CODESIGN_IDENTITY == 'true'
+  #       uses: actions/checkout@v3
 
-      - name: 'Setup build environment'
-        id: setup
-        run: |
-          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+  #     - name: 'Setup build environment'
+  #       id: setup
+  #       run: |
+  #         echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
-      - name: 'Determine if Sparkle should run'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        id: sparkle_check
-        run: |
-          echo 'run_sparkle=${{ env.HAVE_SPARKLE_KEY }}' >> $GITHUB_OUTPUT
+  #     - name: 'Determine if Sparkle should run'
+  #       if: env.HAVE_CODESIGN_IDENTITY == 'true'
+  #       id: sparkle_check
+  #       run: |
+  #         echo 'run_sparkle=${{ env.HAVE_SPARKLE_KEY }}' >> $GITHUB_OUTPUT
 
-      - name: 'Download artifact'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: actions/download-artifact@v3
-        with:
-          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+  #     - name: 'Download artifact'
+  #       if: env.HAVE_CODESIGN_IDENTITY == 'true'
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
 
-      - name: 'Install Apple Developer Certificate'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
-        with:
-          p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
-          p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+  #     - name: 'Install Apple Developer Certificate'
+  #       if: env.HAVE_CODESIGN_IDENTITY == 'true'
+  #       uses: apple-actions/import-codesign-certs@8f3fb608891dd2244cdab3d69cd68c0d37a7fe93
+  #       with:
+  #         p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
+  #         p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
 
-      - name: 'Create disk image for distribution'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        env:
-          CODESIGN_IDENT: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-          CODESIGN_IDENT_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
-          CODESIGN_IDENT_PASS: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
-        run: |
-          ARTIFACT_NAME=$(/usr/bin/find . -type f -name "obs-studio-*.dmg" -depth 1 | head -1)
-          CI/macos/03_package_obs.sh --notarize-image ${ARTIFACT_NAME}
+  #     - name: 'Create disk image for distribution'
+  #       if: env.HAVE_CODESIGN_IDENTITY == 'true'
+  #       env:
+  #         CODESIGN_IDENT: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+  #         CODESIGN_IDENT_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+  #         CODESIGN_IDENT_PASS: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+  #       run: |
+  #         ARTIFACT_NAME=$(/usr/bin/find . -type f -name "obs-studio-*.dmg" -depth 1 | head -1)
+  #         CI/macos/03_package_obs.sh --notarize-image ${ARTIFACT_NAME}
 
-          echo "FILE_NAME=$(basename ${ARTIFACT_NAME})" >> $GITHUB_ENV
+  #         echo "FILE_NAME=$(basename ${ARTIFACT_NAME})" >> $GITHUB_ENV
 
-      - name: 'Upload build Artifact'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
-          path: '${{ github.workspace }}/${{ env.FILE_NAME }}'
+  #     - name: 'Upload build Artifact'
+  #       if: env.HAVE_CODESIGN_IDENTITY == 'true'
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
+  #         path: '${{ github.workspace }}/${{ env.FILE_NAME }}'
 
-  macos_release_lib:
-    name: '03 - macOS libobs image'
-    runs-on: [macos-12]
-    needs: [macos_build, sl_config]
-    env:
-      OS_TAG: "osx"
-      BUILD_FOR_DISTRIBUTION: 'ON'
-    if: ${{ fromJSON(needs.sl_config.outputs.upload_libobs)}}
-    strategy:
-      matrix:
-        arch: ['x86_64', 'arm64']
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v3
-      - name: 'Setup build environment'
-        id: setup
-        run: |
-          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
-      - name: Get the version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: 'Download artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
-      - name: 'Extract artifact'
-        run: tar -xzvf ${{env.PACKAGE_NAME}}-macos-release-${{ steps.setup.outputs.commitHash }}-${{ matrix.arch }}.tar.gz
-      - name: Print downloaded artifact content for debugging
-        run: ls -la -R ${{ github.workspace }}
-      - name: Make an archive for release deployment
-        run: cd ${{env.AppInstallPath}} && 7z a -r ../${{env.TARGET_ARTIFACT}}.7z *
-        env:
-          AppInstallPath: ${{ github.workspace }}/${{ env.InstallPath}}
-          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-release-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
-          aws-region: us-west-2
-      - name: Deploy to S3
-        run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
-        env:
-          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-release-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
+  # macos_release_lib:
+  #   name: '03 - macOS libobs image'
+  #   runs-on: [macos-12]
+  #   needs: [macos_build, sl_config]
+  #   env:
+  #     OS_TAG: "osx"
+  #     BUILD_FOR_DISTRIBUTION: 'ON'
+  #   if: ${{ fromJSON(needs.sl_config.outputs.upload_libobs)}}
+  #   strategy:
+  #     matrix:
+  #       arch: ['x86_64', 'arm64']
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #   steps:
+  #     - name: 'Checkout'
+  #       uses: actions/checkout@v3
+  #     - name: 'Setup build environment'
+  #       id: setup
+  #       run: |
+  #         echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+  #     - name: Get the version
+  #       id: get_version
+  #       run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+  #       shell: bash
+  #     - name: 'Download artifact'
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+  #     - name: 'Extract artifact'
+  #       run: tar -xzvf ${{env.PACKAGE_NAME}}-macos-release-${{ steps.setup.outputs.commitHash }}-${{ matrix.arch }}.tar.gz
+  #     - name: Print downloaded artifact content for debugging
+  #       run: ls -la -R ${{ github.workspace }}
+  #     - name: Make an archive for release deployment
+  #       run: cd ${{env.AppInstallPath}} && 7z a -r ../${{env.TARGET_ARTIFACT}}.7z *
+  #       env:
+  #         AppInstallPath: ${{ github.workspace }}/${{ env.InstallPath}}
+  #         TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-release-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v2
+  #       with:
+  #         aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
+  #         aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
+  #         aws-region: us-west-2
+  #     - name: Deploy to S3
+  #       run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
+  #       env:
+  #         TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-release-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
 
-  macos_sparkle:
-    name: '04 - macOS Sparkle Updates'
-    runs-on: [macos-12]
-    needs: [macos_release]
-    if: fromJSON(needs.macos_release.outputs.run_sparkle)
-    strategy:
-      matrix:
-        arch: ['x86_64', 'arm64']
-    env:
-      SPARKLE_VERSION: '2.3.2'
-      SPARKLE_HASH: '2b3fe6918ca20a83729aad34f8f693a678b714a17d33b5f13ca2d25edfa7eed3'
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v3
-        with:
-          path: 'repo'
-          ref: ${{ github.ref }}
+  # macos_sparkle:
+  #   name: '04 - macOS Sparkle Updates'
+  #   runs-on: [macos-12]
+  #   needs: [macos_release]
+  #   if: fromJSON(needs.macos_release.outputs.run_sparkle)
+  #   strategy:
+  #     matrix:
+  #       arch: ['x86_64', 'arm64']
+  #   env:
+  #     SPARKLE_VERSION: '2.3.2'
+  #     SPARKLE_HASH: '2b3fe6918ca20a83729aad34f8f693a678b714a17d33b5f13ca2d25edfa7eed3'
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #   steps:
+  #     - name: 'Checkout'
+  #       uses: actions/checkout@v3
+  #       with:
+  #         path: 'repo'
+  #         ref: ${{ github.ref }}
 
-      - name: 'Download artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
-          path: 'artifacts'
+  #     - name: 'Download artifact'
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
+  #         path: 'artifacts'
 
-      - name: 'Install Python requirements'
-        run: pip3 install requests xmltodict
+  #     - name: 'Install Python requirements'
+  #       run: pip3 install requests xmltodict
 
-      - name: 'Install Brew requirements'
-        run: brew install coreutils pandoc
+  #     - name: 'Install Brew requirements'
+  #       run: brew install coreutils pandoc
 
-      - name: 'Setup Sparkle'
-        run: |
-          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.xz" -o Sparkle.tar.xz
+  #     - name: 'Setup Sparkle'
+  #       run: |
+  #         curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.xz" -o Sparkle.tar.xz
 
-          if [[ '${{ env.SPARKLE_HASH }}' != "$(sha256sum Sparkle.tar.xz | cut -d " " -f 1)" ]]; then
-              echo "Sparkle download hash does not match!"
-              exit 1
-          fi
+  #         if [[ '${{ env.SPARKLE_HASH }}' != "$(sha256sum Sparkle.tar.xz | cut -d " " -f 1)" ]]; then
+  #             echo "Sparkle download hash does not match!"
+  #             exit 1
+  #         fi
 
-          mkdir sparkle && cd sparkle
-          tar -xf ../Sparkle.tar.xz
+  #         mkdir sparkle && cd sparkle
+  #         tar -xf ../Sparkle.tar.xz
 
-      - name: 'Setup folder structure'
-        run: |
-          mkdir builds
-          mkdir -p output/appcasts/stable
-          mkdir -p output/sparkle_deltas/${{ matrix.arch }}
+  #     - name: 'Setup folder structure'
+  #       run: |
+  #         mkdir builds
+  #         mkdir -p output/appcasts/stable
+  #         mkdir -p output/sparkle_deltas/${{ matrix.arch }}
 
-      - name: 'Determine branch and tag'
-        id: branch
-        run: |
-          pushd repo
+  #     - name: 'Determine branch and tag'
+  #       id: branch
+  #       run: |
+  #         pushd repo
 
-          GIT_TAG="$(git describe --tags --abbrev=0)"
-          if [[ ${GIT_TAG} == *'beta'* || ${GIT_TAG} == *'rc'* ]]; then
-            echo "branch=beta" >> $GITHUB_OUTPUT
-            echo "deltas=1" >> $GITHUB_OUTPUT
-          else
-            echo "branch=stable" >> $GITHUB_OUTPUT
-            echo "deltas=1" >> $GITHUB_OUTPUT
-          fi
-          # Write tag description to file
-          git tag -l --format='%(contents)' ${GIT_TAG} >> ../notes.rst
+  #         GIT_TAG="$(git describe --tags --abbrev=0)"
+  #         if [[ ${GIT_TAG} == *'beta'* || ${GIT_TAG} == *'rc'* ]]; then
+  #           echo "branch=beta" >> $GITHUB_OUTPUT
+  #           echo "deltas=1" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "branch=stable" >> $GITHUB_OUTPUT
+  #           echo "deltas=1" >> $GITHUB_OUTPUT
+  #         fi
+  #         # Write tag description to file
+  #         git tag -l --format='%(contents)' ${GIT_TAG} >> ../notes.rst
 
-      - name: 'Download existing Appcast and builds'
-        run: python3 repo/CI/macos/appcast_download.py --branch "${{ steps.branch.outputs.branch }}" --max-old-versions ${{ steps.branch.outputs.deltas }}
+  #     - name: 'Download existing Appcast and builds'
+  #       run: python3 repo/CI/macos/appcast_download.py --branch "${{ steps.branch.outputs.branch }}" --max-old-versions ${{ steps.branch.outputs.deltas }}
 
-      - name: 'Prepare release notes'
-        run: |
-          # Insert underline at line 2 to turn first line into heading
-          sed -i '' '2i\'$'\n''###################################################' notes.rst
-          pandoc -f rst -t html notes.rst -o output/appcasts/notes_${{ steps.branch.outputs.branch }}.html
+  #     - name: 'Prepare release notes'
+  #       run: |
+  #         # Insert underline at line 2 to turn first line into heading
+  #         sed -i '' '2i\'$'\n''###################################################' notes.rst
+  #         pandoc -f rst -t html notes.rst -o output/appcasts/notes_${{ steps.branch.outputs.branch }}.html
 
-      - name: 'Setup Sparkle key'
-        run: echo -n "${{ secrets.SPARKLE_PRIVATE_KEY }}" >> eddsa_private.key
+  #     - name: 'Setup Sparkle key'
+  #       run: echo -n "${{ secrets.SPARKLE_PRIVATE_KEY }}" >> eddsa_private.key
 
-      - name: 'Generate Appcast'
-        run: |
-          mv artifacts/*.dmg builds/
-          ./sparkle/bin/generate_appcast \
-              --verbose \
-              --ed-key-file ./eddsa_private.key \
-              --download-url-prefix "https://cdn-fastly.obsproject.com/downloads/" \
-              --full-release-notes-url "https://obsproject.com/osx_update/notes_${{ steps.branch.outputs.branch }}.html" \
-              --maximum-versions 0 \
-              --maximum-deltas ${{ steps.branch.outputs.deltas }} \
-              --channel "${{ steps.branch.outputs.branch }}" builds/
-          # Move deltas, if any
-          if compgen -G "builds/*.delta" > /dev/null; then
-            mv builds/*.delta output/sparkle_deltas/${{ matrix.arch }}
-          fi
-          # Move appcasts
-          mv builds/*.xml output/appcasts/
+  #     - name: 'Generate Appcast'
+  #       run: |
+  #         mv artifacts/*.dmg builds/
+  #         ./sparkle/bin/generate_appcast \
+  #             --verbose \
+  #             --ed-key-file ./eddsa_private.key \
+  #             --download-url-prefix "https://cdn-fastly.obsproject.com/downloads/" \
+  #             --full-release-notes-url "https://obsproject.com/osx_update/notes_${{ steps.branch.outputs.branch }}.html" \
+  #             --maximum-versions 0 \
+  #             --maximum-deltas ${{ steps.branch.outputs.deltas }} \
+  #             --channel "${{ steps.branch.outputs.branch }}" builds/
+  #         # Move deltas, if any
+  #         if compgen -G "builds/*.delta" > /dev/null; then
+  #           mv builds/*.delta output/sparkle_deltas/${{ matrix.arch }}
+  #         fi
+  #         # Move appcasts
+  #         mv builds/*.xml output/appcasts/
 
-      - name: 'Create 1.x Appcast'
-        run: python3 repo/CI/macos/appcast_convert.py
+  #     - name: 'Create 1.x Appcast'
+  #       run: python3 repo/CI/macos/appcast_convert.py
 
-      - name: 'Upload Appcast and Deltas'
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'macos-sparkle-updates'
-          path: '${{ github.workspace }}/output'
+  #     - name: 'Upload Appcast and Deltas'
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: 'macos-sparkle-updates'
+  #         path: '${{ github.workspace }}/output'

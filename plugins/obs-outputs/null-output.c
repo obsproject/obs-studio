@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2017 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ static void null_output_data(void *data, struct encoder_packet *packet)
 
 struct obs_output_info null_output_info = {
 	.id = "null_output",
-	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED,
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK_AV,
 	.get_name = null_output_getname,
 	.create = null_output_create,
 	.destroy = null_output_destroy,

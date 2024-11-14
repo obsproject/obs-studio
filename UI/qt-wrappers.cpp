@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 
 static inline void OBSErrorBoxva(QWidget *parent, const char *msg, va_list args)
 {
-	char full_message[4096];
+	char full_message[8192];
 	vsnprintf(full_message, sizeof(full_message), msg, args);
 
 	QMessageBox::critical(parent, "Error", full_message);
@@ -203,6 +203,23 @@ QDataStream &operator>>(QDataStream &in, OBSScene &scene)
 
 	OBSSourceAutoRelease source = obs_get_source_by_uuid(QT_TO_UTF8(uuid));
 	scene = obs_scene_from_source(source);
+
+	return in;
+}
+
+QDataStream &operator<<(QDataStream &out, const OBSSource &source)
+{
+	return out << QString(obs_source_get_uuid(source));
+}
+
+QDataStream &operator>>(QDataStream &in, OBSSource &source)
+{
+	QString uuid;
+
+	in >> uuid;
+
+	OBSSourceAutoRelease source_ = obs_get_source_by_uuid(QT_TO_UTF8(uuid));
+	source = source_;
 
 	return in;
 }

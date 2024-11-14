@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -52,9 +52,9 @@
 #endif
 
 #ifdef _MSC_VER
-#define PRAGMA_WARN_PUSH __pragma(warning(push))
-#define PRAGMA_WARN_POP __pragma(warning(pop))
-#define PRAGMA_WARN_DEPRECATION
+#define PRAGMA_WARN_PUSH _Pragma("warning(push)")
+#define PRAGMA_WARN_POP _Pragma("warning(pop)")
+#define PRAGMA_WARN_DEPRECATION _Pragma("warning(disable: 4996)")
 #elif defined(__clang__)
 #define PRAGMA_WARN_PUSH _Pragma("clang diagnostic push")
 #define PRAGMA_WARN_POP _Pragma("clang diagnostic pop")

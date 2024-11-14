@@ -32,6 +32,7 @@
 #include "rtmp_sys.h"
 #include "log.h"
 
+#include "happy-eyeballs.h"
 #include <util/platform.h>
 
 #if !defined(MSG_NOSIGNAL)
@@ -314,42 +315,30 @@ RTMP_TLS_LoadCerts(RTMP *r) {
     CertFreeCertificateContext(pCertContext);
     CertCloseStore(hCertStore, 0);
 #elif defined(__APPLE__)
-    SecKeychainRef keychain_ref;
-    CFMutableDictionaryRef search_settings_ref;
-    CFArrayRef result_ref;
+    CFArrayRef anchors;
+    OSStatus code = SecTrustCopyAnchorCertificates(&anchors);
 
-    if (SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain",
-                        &keychain_ref)
-        != errSecSuccess) {
-      goto error;
+    if (code != noErr) {
+        goto error;
     }
 
-    search_settings_ref = CFDictionaryCreateMutable(NULL, 0, NULL, NULL);
-    CFDictionarySetValue(search_settings_ref, kSecClass, kSecClassCertificate);
-    CFDictionarySetValue(search_settings_ref, kSecMatchLimit, kSecMatchLimitAll);
-    CFDictionarySetValue(search_settings_ref, kSecReturnRef, kCFBooleanTrue);
-    CFDictionarySetValue(search_settings_ref, kSecMatchSearchList,
-                         CFArrayCreate(NULL, (const void **)&keychain_ref, 1, NULL));
+    for (CFIndex i = 0; i < CFArrayGetCount(anchors); i++) {
+        SecCertificateRef cert = (SecCertificateRef)CFArrayGetValueAtIndex(anchors, i);
 
-    if (SecItemCopyMatching(search_settings_ref, (CFTypeRef *)&result_ref)
-        != errSecSuccess) {
-      goto error;
+        CFDataRef der_data = SecCertificateCopyData(cert);
+
+        const UInt8 *data = CFDataGetBytePtr(der_data);
+        size_t length = CFDataGetLength(der_data);
+
+        if (data && length > 0) {
+            mbedtls_x509_crt_parse_der(chain, data, length);
+        }
+
+        CFRelease(der_data);
     }
 
-    for (CFIndex i = 0; i < CFArrayGetCount(result_ref); i++) {
-      SecCertificateRef item_ref = (SecCertificateRef)
-                                   CFArrayGetValueAtIndex(result_ref, i);
-      CFDataRef data_ref;
+    CFRelease(anchors);
 
-      if ((data_ref = SecCertificateCopyData(item_ref))) {
-        mbedtls_x509_crt_parse_der(chain,
-                                   (unsigned char *)CFDataGetBytePtr(data_ref),
-                                   CFDataGetLength(data_ref));
-        CFRelease(data_ref);
-      }
-    }
-
-    CFRelease(keychain_ref);
 #elif defined(__linux__)
     if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") < 0) {
         RTMP_Log(RTMP_LOGERROR, "mbedtls_x509_crt_parse_path: Couldn't parse "
@@ -753,6 +742,29 @@ int RTMP_AddStream(RTMP *r, const char *playpath)
     return idx;
 }
 
+/* Returns true if the string needs to be freed */
+static char* get_hostname(AVal *host, bool *should_free)
+{
+    if (should_free == NULL)
+        return NULL;
+
+    if (host->av_val[host->av_len] || host->av_val[0] == '[')
+    {
+        int v6 = host->av_val[0] == '[';
+        char* hostname = malloc(host->av_len+1 - v6 * 2);
+        if (hostname != NULL)
+        {
+            memcpy(hostname, host->av_val + v6, host->av_len - v6 * 2);
+            hostname[host->av_len - v6 * 2] = '\0';
+            *should_free = TRUE;
+        }
+        return hostname;
+    }
+
+    *should_free = FALSE;
+    return host->av_val;
+}
+
 static int
 add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, int port, socklen_t addrlen_hint, int *socket_error)
 {
@@ -854,68 +866,28 @@ finish:
 #define E_TIMEDOUT     WSAETIMEDOUT
 #define E_CONNREFUSED  WSAECONNREFUSED
 #define E_ACCES        WSAEACCES
+#define E_INVAL        WSAEINVAL
+#define E_HOSTUNREACH  WSAEHOSTUNREACH
 #else
 #define E_TIMEDOUT     ETIMEDOUT
 #define E_CONNREFUSED  ECONNREFUSED
 #define E_ACCES        EACCES
+#define E_INVAL        EINVAL
+#define E_HOSTUNREACH  EHOSTUNREACH
 #endif
 
 int
-RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
+RTMP_Connect0(RTMP *r, SOCKET socket_fd)
 {
     int on = 1;
     r->m_sb.sb_timedout = FALSE;
     r->m_pausing = 0;
     r->m_fDuration = 0.0;
 
-    //best to be explicit, we need overlapped socket
-#ifdef _WIN32
-    r->m_sb.sb_socket = WSASocket(service->sa_family, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-#else
-    r->m_sb.sb_socket = socket(service->sa_family, SOCK_STREAM, IPPROTO_TCP);
-#endif
+    r->m_sb.sb_socket = socket_fd;
 
     if (r->m_sb.sb_socket != INVALID_SOCKET)
     {
-#ifndef _WIN32
-#ifdef SO_NOSIGPIPE
-        setsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_NOSIGPIPE, &(int){ 1 }, sizeof(int));
-#endif
-#endif
-        if(r->m_bindIP.addrLen)
-        {
-            if (bind(r->m_sb.sb_socket, (const struct sockaddr *)&r->m_bindIP.addr, r->m_bindIP.addrLen) < 0)
-            {
-                int err = GetSockError();
-                RTMP_Log(RTMP_LOGERROR, "%s, failed to bind socket: %s (%d)",
-                         __FUNCTION__, socketerror(err), err);
-                r->last_error_code = err;
-                RTMP_Close(r);
-                return FALSE;
-            }
-        }
-
-        uint64_t connect_start = os_gettime_ns();
-
-        if (connect(r->m_sb.sb_socket, service, addrlen) < 0)
-        {
-            int err = GetSockError();
-            if (err == E_CONNREFUSED)
-                RTMP_Log(RTMP_LOGERROR, "%s is offline. Try a different server (ECONNREFUSED).", r->Link.hostname.av_val);
-            else if (err == E_ACCES)
-                RTMP_Log(RTMP_LOGERROR, "The connection is being blocked by a firewall or other security software (EACCES).");
-            else if (err == E_TIMEDOUT)
-                RTMP_Log(RTMP_LOGERROR, "The connection timed out. Try a different server, or check that the connection is not being blocked by a firewall or other security software (ETIMEDOUT).");
-            else
-                RTMP_Log(RTMP_LOGERROR, "%s, failed to connect socket: %s (%d)",
-                     __FUNCTION__, socketerror(err), err);
-            r->last_error_code = err;
-            RTMP_Close(r);
-            return FALSE;
-        }
-
-        r->connect_time_ms = (int)((os_gettime_ns() - connect_start) / 1000000);
-
         if (r->Link.socksport)
         {
             RTMP_Log(RTMP_LOGDEBUG, "%s ... SOCKS negotiation", __FUNCTION__);
@@ -1068,58 +1040,99 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
 int
 RTMP_Connect(RTMP *r, RTMPPacket *cp)
 {
-#ifdef _WIN32
-    HOSTENT *h;
-#endif
-    struct sockaddr_storage service;
-    socklen_t addrlen = 0;
-    socklen_t addrlen_hint = 0;
-    int socket_error = 0;
+    struct happy_eyeballs_ctx* happy_ctx = NULL;
+    bool free_hostname = FALSE;
+    char *hostname = NULL;
+    int port = 0;
+    int result = FALSE;
 
-    if (!r->Link.hostname.av_len)
-        return FALSE;
-
-#ifdef _WIN32
-    //COMODO security software sandbox blocks all DNS by returning "host not found"
-    h = gethostbyname("localhost");
-    if (!h && GetLastError() == WSAHOST_NOT_FOUND)
+    int he_result = happy_eyeballs_create(&happy_ctx);
+    if (he_result != 0)
     {
-        r->last_error_code = WSAHOST_NOT_FOUND;
-        RTMP_Log(RTMP_LOGERROR, "RTMP_Connect: Connection test failed. This error is likely caused by Comodo Internet Security running OBS in sandbox mode. Please add OBS to the Comodo automatic sandbox exclusion list, restart OBS and try again (11001).");
-        return FALSE;
+        /* did not successfully create the happy eyeballs context */
+        r->last_error_code = -he_result;
+        goto fail;
     }
-#endif
-
-    memset(&service, 0, sizeof(service));
-
-    if (r->m_bindIP.addrLen)
-        addrlen_hint = r->m_bindIP.addrLen;
 
     if (r->Link.socksport)
     {
         /* Connect via SOCKS */
-        if (!add_addr_info(&service, &addrlen, &r->Link.sockshost, r->Link.socksport, addrlen_hint, &socket_error))
-        {
-            r->last_error_code = socket_error;
-            return FALSE;
-        }
+        hostname = get_hostname(&r->Link.sockshost, &free_hostname);
+        port = r->Link.socksport;
     }
     else
     {
         /* Connect directly */
-        if (!add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port, addrlen_hint, &socket_error))
-        {
-            r->last_error_code = socket_error;
-            return FALSE;
-        }
+        hostname = get_hostname(&r->Link.hostname, &free_hostname);
+        port = r->Link.port;
     }
 
-    if (!RTMP_Connect0(r, (struct sockaddr *)&service, addrlen))
-        return FALSE;
+    /* Set local bind address (if present) */
+    happy_eyeballs_set_bind_addr(happy_ctx, r->m_bindIP.addrLen, &r->m_bindIP.addr);
 
-    r->m_bSendCounter = TRUE;
+    /* Attempt connection */
+    he_result = happy_eyeballs_connect(happy_ctx, hostname, port);
+    if (he_result == EAGAIN)
+    {
+        /* Connect returned with the connection process ongoing, let's wait for a few more seconds... */
+        he_result = happy_eyeballs_timedwait_default(happy_ctx);
+    }
 
-    return RTMP_Connect1(r, cp);
+    if (he_result == -E_INVAL)
+    {
+        /* Parameter error */
+        r->last_error_code = E_INVAL;
+        RTMP_Log(RTMP_LOGERROR, "Invalid connection parameters. Try to make sure you're using a valid server address and port.");
+        goto fail;
+
+    }
+    else if (he_result != 0)
+    {
+        /* Error while connecting */
+        int err = happy_eyeballs_get_error_code(happy_ctx);
+        if (err == E_CONNREFUSED)
+            RTMP_Log(RTMP_LOGERROR, "%s is offline. Try a different server (ECONNREFUSED).", r->Link.hostname.av_val);
+        else if (err == E_ACCES)
+            RTMP_Log(RTMP_LOGERROR, "The connection is being blocked by a firewall or other security software (EACCES).");
+        else if (err == E_TIMEDOUT)
+            RTMP_Log(RTMP_LOGERROR, "The connection timed out. Try a different server, or check that the connection is not being blocked by a firewall or other security software (ETIMEDOUT).");
+        else if (r->m_bindIP.addrLen > 0)
+        {
+            /* There are several different errors that platform network implementations can
+             * emit when a user attempts to connect to e.g. IPv6 on a device where it is
+             * disabled (EINVAL, EHOSTUNREACH) or vice-versa. Squash this down to EHOSTUNREACH
+             * in order to emit a more user-friendly error. */
+            RTMP_Log(RTMP_LOGERROR, "Invalid socket settings: %s (%d). Are you trying to use IPv6 on an IPv4-only interface?", socketerror(err), err);
+            err = E_HOSTUNREACH;
+        }
+        else
+            RTMP_Log(RTMP_LOGERROR, "%s, failed to connect socket: %s (%d)",
+                    __FUNCTION__, socketerror(err), err);
+        r->last_error_code = err;
+        goto fail;
+    }
+
+    happy_eyeballs_get_remote_addr(happy_ctx, &r->m_sb.sb_addr);
+    r->connect_time_ms = (int)(happy_eyeballs_get_connection_time_ns(happy_ctx) / 1000000);
+
+    /* Successful connection */
+    SOCKET socket_fd = happy_eyeballs_get_socket_fd(happy_ctx);
+    result = RTMP_Connect0(r, socket_fd);
+    if (result)
+    {
+        r->m_bSendCounter = TRUE;
+        result = RTMP_Connect1(r, cp);
+    }
+
+fail:
+    if (!result)
+        RTMP_Close(r);
+    if (happy_ctx)
+        happy_eyeballs_destroy(happy_ctx);
+    if (free_hostname)
+        free(hostname);
+
+    return result;
 }
 
 static int
@@ -4114,8 +4127,17 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
                 && packet->m_headerType == RTMP_PACKET_SIZE_MEDIUM)
             packet->m_headerType = RTMP_PACKET_SIZE_SMALL;
 
-        if (prevPacket->m_nTimeStamp == packet->m_nTimeStamp
-                && packet->m_headerType == RTMP_PACKET_SIZE_SMALL)
+        /* Per https://rtmp.veriskope.com/docs/spec/#53124-type-3 type 3 chunks/RTMP_PACKET_SIZE_MINIMUM
+         * always use the previously sent (delta) timestamp as their _delta_ timestamp, so we need to inspect
+         * whatever was previously sent, rather than just looking at the previous packet's absolute timestamp.
+         *
+         * The type 3 chunks/RTMP_PACKET_SIZE_MINIMUM packets produced here specify the beginning of a new
+         * message as opposed to message continuation type 3 chunks that are handled in the loop further down
+         * in this function.
+         */
+        uint32_t delta = packet->m_nTimeStamp - prevPacket->m_nTimeStamp;
+        if (delta == prevPacket->m_nLastWireTimeStamp
+            && packet->m_headerType == RTMP_PACKET_SIZE_SMALL)
             packet->m_headerType = RTMP_PACKET_SIZE_MINIMUM;
         last = prevPacket->m_nTimeStamp;
     }
@@ -4131,6 +4153,7 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
     hSize = nSize;
     cSize = 0;
     t = packet->m_nTimeStamp - last;
+    packet->m_nLastWireTimeStamp = t;
 
     if (packet->m_body)
     {
@@ -4241,6 +4264,7 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
         buffer += nChunkSize;
         hSize = 0;
 
+        // prepare to send off remaining data in Type 3 chunks
         if (nSize > 0)
         {
             header = buffer - 1;
@@ -4250,6 +4274,11 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
                 header -= cSize;
                 hSize += cSize;
             }
+            if (t >= 0xffffff)
+            {
+                hSize += 4;
+                header -= 4;
+            }
             *header = (0xc0 | c);
             if (cSize)
             {
@@ -4258,6 +4287,8 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
                 if (cSize == 2)
                     header[2] = tmp >> 8;
             }
+            if (t >= 0xffffff)
+                AMF_EncodeInt32(header+hSize-4, header+hSize, t);
         }
     }
     if (tbuf)

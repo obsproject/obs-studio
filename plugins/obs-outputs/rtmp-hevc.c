@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -852,7 +852,7 @@ size_t obs_parse_hevc_header(uint8_t **header, const uint8_t *data, size_t size)
 				OBS_HEVC_NAL_SEI_SUFFIX};
 
 			if (type == array_idx_to_type[i]) {
-				int ps_array_completeness = 0;
+				int ps_array_completeness = 1;
 				int ret = hvcc_add_nal_unit(
 					buf, len, ps_array_completeness, &hvcc,
 					i);

@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.24...3.25)
 
 option(ENABLE_VIRTUALCAM "Build OBS Virtualcam" ON)
 
@@ -19,3 +17,4 @@ target_include_directories(obs-mach-protocol INTERFACE "${CMAKE_CURRENT_SOURCE_D
 
 add_subdirectory(src/obs-plugin)
 add_subdirectory(src/dal-plugin)
+add_subdirectory(src/camera-extension)

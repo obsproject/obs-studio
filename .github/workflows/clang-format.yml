@@ -13,15 +13,22 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: 'recursive'
 
-      - name: Install clang format
+      - name: Install clang format 17
+        shell: bash
         run: |
-          sudo apt-get install -y clang-format-13
+          echo ::group::Install Dependencies
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+          echo "/home/linuxbrew/.linuxbrew/opt/clang-format@17/bin" >> $GITHUB_PATH
+          brew install --quiet obsproject/tools/clang-format@17
+          echo ::endgroup::
 
       - name: 'Run clang-format'
         run: |
-          ./CI/check-format.sh
-          ./CI/check-changes.sh
+          ./.github/scripts/check-format.sh
+          ./.github/scripts/check-changes.sh

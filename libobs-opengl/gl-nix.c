@@ -28,17 +28,17 @@ static void init_winsys(void)
 {
 	assert(gl_vtable == NULL);
 
-	switch (obs_get_nix_platform()) {
-	case OBS_NIX_PLATFORM_X11_EGL:
+	enum obs_nix_platform_type platform = obs_get_nix_platform();
+
+	if (platform == OBS_NIX_PLATFORM_X11_EGL)
 		gl_vtable = gl_x11_egl_get_winsys_vtable();
-		break;
+
 #ifdef ENABLE_WAYLAND
-	case OBS_NIX_PLATFORM_WAYLAND:
+	if (platform == OBS_NIX_PLATFORM_WAYLAND) {
 		gl_vtable = gl_wayland_egl_get_winsys_vtable();
 		blog(LOG_INFO, "Using EGL/Wayland");
-		break;
-#endif
 	}
+#endif
 
 	assert(gl_vtable != NULL);
 }
@@ -93,6 +93,14 @@ extern void device_leave_context(gs_device_t *device)
 	device->cur_swap = NULL;
 	device->cur_fbo = NULL;
 	gl_vtable->device_leave_context(device);
+}
+
+extern bool device_enum_adapters(gs_device_t *device,
+				 bool (*callback)(void *param, const char *name,
+						  uint32_t id),
+				 void *param)
+{
+	return gl_vtable->device_enum_adapters(device, callback, param);
 }
 
 extern void *device_get_device_obj(gs_device_t *device)

@@ -5,8 +5,13 @@
 #include <util/threading.h>
 
 #include "cursor-capture.h"
+#ifdef OBS_LEGACY
 #include "../../libobs/util/platform.h"
 #include "../../libobs-winrt/winrt-capture.h"
+#else
+#include <util/platform.h>
+#include <winrt-capture.h>
+#endif
 
 #define do_log(level, format, ...)                                \
 	blog(level, "[duplicator-monitor-capture: '%s'] " format, \
@@ -224,9 +229,34 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect,
 					       _countof(monitor->name));
 				monitor->rect = *rect;
 				monitor->handle = handle;
-				GetMonitorName(handle, monitor->name,
-					       _countof(monitor->name));
 			}
+		}
+	}
+
+	return !match;
+}
+
+static BOOL CALLBACK enum_monitor_fallback(HMONITOR handle, HDC hdc,
+					   LPRECT rect, LPARAM param)
+{
+	UNUSED_PARAMETER(hdc);
+
+	struct duplicator_monitor_info *monitor =
+		(struct duplicator_monitor_info *)param;
+
+	bool match = false;
+
+	MONITORINFOEXA mi;
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		match = strcmp(monitor->device_id, mi.szDevice) == 0;
+		if (match) {
+			strcpy_s(monitor->alt_id, _countof(monitor->alt_id),
+				 mi.szDevice);
+			GetMonitorName(handle, monitor->name,
+				       _countof(monitor->name));
+			monitor->rect = *rect;
+			monitor->handle = handle;
 		}
 	}
 
@@ -258,31 +288,6 @@ static BOOL CALLBACK enum_monitor_by_idx(HMONITOR handle, HDC hdc, LPRECT rect,
 				       _countof(monitor->name));
 		}
 		monitor->idx--;
-	}
-
-	return !match;
-}
-
-static BOOL CALLBACK enum_monitor_fallback(HMONITOR handle, HDC hdc,
-					   LPRECT rect, LPARAM param)
-{
-	UNUSED_PARAMETER(hdc);
-
-	struct duplicator_monitor_info *monitor =
-		(struct duplicator_monitor_info *)param;
-
-	bool match = false;
-
-	MONITORINFOEXA mi;
-	mi.cbSize = sizeof(mi);
-	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
-		match = strcmp(monitor->device_id, mi.szDevice) == 0;
-		if (match) {
-			monitor->rect = *rect;
-			monitor->handle = handle;
-			GetMonitorName(handle, monitor->name,
-				       _countof(monitor->name));
-		}
 	}
 
 	return !match;

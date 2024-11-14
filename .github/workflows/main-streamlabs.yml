@@ -19,87 +19,87 @@ env:
   PACKAGE_NAME: "libobs"
 
 jobs:
-  macos64:
-    name: 'macOS'
-    runs-on: [macos-13]
-    strategy:
-      matrix:
-        arch: ['x86_64', 'arm64']
-        ReleaseName: [release, debug]
-        include:
-        - ReleaseName: release
-          BUILD_CONFIG: RelWithDebInfo
-        - ReleaseName: debug
-          BUILD_CONFIG: Debug
-    env:
-      OS_TAG: "osx"
-      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
-      MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
-      CEF_BUILD_VERSION_MAC: '5060'
-      CEF_BUILD_REVISION_MAC: 'v4'
-      DEPS_VERSION_MAC: '2023-08-31sl1'
-      QT_DEPS_VERSION_MAC: '20c82a4193784cb321061394789c6d04aabb85e5'
-      VLC_VERSION_MAC: '3.0.8'
-      QT_VERSION_MAC: '6.3.1'
-      SPARKLE_VERSION: '1.26.0'
-      WEBRTC_VERSION_MAC: 'm94-b240115'
-      LIBMEDIASOUPCLIENT_VERSION_MAC: '0b76859-b240116'
+  # macos64:
+  #   name: 'macOS'
+  #   runs-on: [macos-13]
+  #   strategy:
+  #     matrix:
+  #       arch: ['x86_64', 'arm64']
+  #       ReleaseName: [release, debug]
+  #       include:
+  #       - ReleaseName: release
+  #         BUILD_CONFIG: RelWithDebInfo
+  #       - ReleaseName: debug
+  #         BUILD_CONFIG: Debug
+  #   env:
+  #     OS_TAG: "osx"
+  #     MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
+  #     MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
+  #     CEF_BUILD_VERSION_MAC: '5060'
+  #     CEF_BUILD_REVISION_MAC: 'v4'
+  #     DEPS_VERSION_MAC: '2023-08-31sl1'
+  #     QT_DEPS_VERSION_MAC: '20c82a4193784cb321061394789c6d04aabb85e5'
+  #     VLC_VERSION_MAC: '3.0.8'
+  #     QT_VERSION_MAC: '6.3.1'
+  #     SPARKLE_VERSION: '1.26.0'
+  #     WEBRTC_VERSION_MAC: 'm94-b240115'
+  #     LIBMEDIASOUPCLIENT_VERSION_MAC: '0b76859-b240116'
 
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-      - name: Get the version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: 'Setup build environment'
-        id: setup
-        run: |
-          REMOVE_FORMULAS=""
-          for FORMULA in ${{ env.BLOCKED_FORMULAS }}; do
-            if [ -d "/usr/local/opt/${FORMULA}" ]; then
-              REMOVE_FORMULAS="${REMOVE_FORMULAS}${FORMULA} "
-            fi
-          done
+  #   steps:
+  #     - name: 'Checkout'
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: 'recursive'
+  #     - name: Get the version
+  #       id: get_version
+  #       run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+  #       shell: bash
+  #     - name: 'Setup build environment'
+  #       id: setup
+  #       run: |
+  #         REMOVE_FORMULAS=""
+  #         for FORMULA in ${{ env.BLOCKED_FORMULAS }}; do
+  #           if [ -d "/usr/local/opt/${FORMULA}" ]; then
+  #             REMOVE_FORMULAS="${REMOVE_FORMULAS}${FORMULA} "
+  #           fi
+  #         done
 
-          if [ -n "${REMOVE_FORMULAS}" ]; then
-            brew uninstall ${REMOVE_FORMULAS}
-          fi
+  #         if [ -n "${REMOVE_FORMULAS}" ]; then
+  #           brew uninstall ${REMOVE_FORMULAS}
+  #         fi
 
-          echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
-          sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
-      - name: Configure / Build
-        run: ./slobs_CI/build-script-osx.sh
-        env:
-          ReleaseName: ${{matrix.ReleaseName}}
-          BuildConfig: ${{matrix.BuildConfig}}
-          CefBuildConfig: ${{matrix.CefBuildConfig}}
-          ARCH: ${{matrix.arch}}
-      - name: Tar artifact for deployment
-        if: startsWith(github.ref, 'refs/tags/')
-        run: cd ${{env.InstallPath}} && 7z a -r ../${{env.TARGET_ARTIFACT}}.7z *
-        env:
-          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
-      - name: Configure AWS credentials
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
-          aws-region: us-west-2
-      - name: Deploy
-        if: startsWith(github.ref, 'refs/tags/')
-        run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
-        env:
-          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
-      - name: 'Upload debug files to Sentry'
-        if: startsWith(github.ref, 'refs/tags/')
-        run: 'python ./slobs_CI/sentry-osx.py'
-        env:
-           SENTRY_AUTH_TOKEN: ${{secrets.SENTRY_AUTH_TOKEN}}
-           BUILDCONFIG: ${{matrix.BuildConfig}}
+  #         echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+  #         sudo xcode-select --switch /Applications/Xcode_15.1.app/Contents/Developer
+  #     - name: Configure / Build
+  #       run: ./slobs_CI/build-script-osx.sh
+  #       env:
+  #         ReleaseName: ${{matrix.ReleaseName}}
+  #         BuildConfig: ${{matrix.BuildConfig}}
+  #         CefBuildConfig: ${{matrix.CefBuildConfig}}
+  #         ARCH: ${{matrix.arch}}
+  #     - name: Tar artifact for deployment
+  #       if: startsWith(github.ref, 'refs/tags/')
+  #       run: cd ${{env.InstallPath}} && 7z a -r ../${{env.TARGET_ARTIFACT}}.7z *
+  #       env:
+  #         TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
+  #     - name: Configure AWS credentials
+  #       if: startsWith(github.ref, 'refs/tags/')
+  #       uses: aws-actions/configure-aws-credentials@v2
+  #       with:
+  #         aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
+  #         aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
+  #         aws-region: us-west-2
+  #     - name: Deploy
+  #       if: startsWith(github.ref, 'refs/tags/')
+  #       run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
+  #       env:
+  #         TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
+  #     - name: 'Upload debug files to Sentry'
+  #       if: startsWith(github.ref, 'refs/tags/')
+  #       run: 'python ./slobs_CI/sentry-osx.py'
+  #       env:
+  #          SENTRY_AUTH_TOKEN: ${{secrets.SENTRY_AUTH_TOKEN}}
+  #          BUILDCONFIG: ${{matrix.BuildConfig}}
 
   win64:
     name: 'Windows 64-bit'
@@ -118,8 +118,8 @@ jobs:
       OS_TAG: "windows64"
       CEF_VERSION: 5060
       CEF_REVISION: v3
-      WIN_DEPS_VERSION: windows-deps-2023-08-31sl1-x64
-      WIN_DEPS_VERSION_X86: 2023-04-12
+      WIN_DEPS_VERSION: windows-deps-2024-05-08sl2-x64
+      WIN_DEPS_VERSION_X86: 2024-05-08
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
       VLC_VERSION: vlc_3.0.0-git

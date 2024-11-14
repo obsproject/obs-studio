@@ -1,3 +1,4 @@
+#include "wasapi-notify.hpp"
 #include "enum-wasapi.hpp"
 
 #include <obs-module.h>
@@ -30,6 +31,7 @@ using namespace std;
 #define OPT_WINDOW "window"
 #define OPT_PRIORITY "priority"
 
+WASAPINotify *GetNotify();
 static void GetWASAPIDefaults(obs_data_t *settings);
 
 #define OBS_KSAUDIO_SPEAKER_4POINT1 \
@@ -156,7 +158,6 @@ protected:
 };
 
 class WASAPISource {
-	ComPtr<IMMNotificationClient> notify;
 	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<IAudioClient> client;
 	ComPtr<IAudioCaptureClient> capture;
@@ -164,6 +165,7 @@ class WASAPISource {
 	static const int MAX_RETRY_INIT_DEVICE_COUNTER = 3;
 
 	obs_source_t *source;
+	obs_weak_source_t *reroute_target = nullptr;
 	wstring default_id;
 	string device_id;
 	WinModule mmdevapi_module;
@@ -183,6 +185,8 @@ class WASAPISource {
 	const SourceType sourceType;
 	std::atomic<bool> useDeviceTiming = false;
 	std::atomic<bool> isDefaultDevice = false;
+	std::atomic<bool> sawBadTimestamp = false;
+	bool hooked = false;
 
 	bool previouslyFailed = false;
 	WinHandle reconnectThread = NULL;
@@ -251,6 +255,7 @@ class WASAPISource {
 	audio_format format;
 	uint32_t sampleRate;
 
+	vector<BYTE> silence;
 	static DWORD WINAPI ReconnectThread(LPVOID param);
 	static DWORD WINAPI CaptureThread(LPVOID param);
 
@@ -315,56 +320,14 @@ public:
 	void OnStartCapture();
 	void OnSampleReady();
 	void OnRestart();
-};
 
-class WASAPINotify : public IMMNotificationClient {
-	long refs = 0; /* auto-incremented to 1 by ComPtr */
-	WASAPISource *source;
+	bool GetHooked();
+	HWND GetHwnd();
 
-public:
-	WASAPINotify(WASAPISource *source_) : source(source_) {}
-
-	STDMETHODIMP_(ULONG) AddRef()
+	void SetRerouteTarget(obs_source_t *target)
 	{
-		return (ULONG)os_atomic_inc_long(&refs);
-	}
-
-	STDMETHODIMP_(ULONG) STDMETHODCALLTYPE Release()
-	{
-		long val = os_atomic_dec_long(&refs);
-		if (val == 0)
-			delete this;
-		return (ULONG)val;
-	}
-
-	STDMETHODIMP QueryInterface(REFIID riid, void **ptr)
-	{
-		if (riid == IID_IUnknown) {
-			*ptr = (IUnknown *)this;
-		} else if (riid == __uuidof(IMMNotificationClient)) {
-			*ptr = (IMMNotificationClient *)this;
-		} else {
-			*ptr = nullptr;
-			return E_NOINTERFACE;
-		}
-
-		os_atomic_inc_long(&refs);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role,
-					    LPCWSTR id)
-	{
-		source->SetDefaultDevice(flow, role, id);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDeviceAdded(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceRemoved(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceStateChanged(LPCWSTR, DWORD) { return S_OK; }
-	STDMETHODIMP OnPropertyValueChanged(LPCWSTR, const PROPERTYKEY)
-	{
-		return S_OK;
+		obs_weak_source_release(reroute_target);
+		reroute_target = obs_source_get_weak_source(target);
 	}
 };
 
@@ -421,19 +384,11 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	if (!reconnectSignal.Valid())
 		throw "Could not create reconnect signal";
 
-	notify = new WASAPINotify(this);
-	if (!notify)
-		throw "Could not create WASAPINotify";
-
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
 				      CLSCTX_ALL,
 				      IID_PPV_ARGS(enumerator.Assign()));
 	if (FAILED(hr))
 		throw HRError("Failed to create enumerator", hr);
-
-	hr = enumerator->RegisterEndpointNotificationCallback(notify);
-	if (FAILED(hr))
-		throw HRError("Failed to register endpoint callback", hr);
 
 	/* OBS will already load DLL on startup if it exists */
 	const HMODULE rtwq_module = GetModuleHandle(L"RTWorkQ.dll");
@@ -518,10 +473,17 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 					     WASAPISource::CaptureThread, this,
 					     0, nullptr);
 		if (!captureThread.Valid()) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
 			throw "Failed to create capture thread";
 		}
+	}
+
+	auto notify = GetNotify();
+	if (notify) {
+		notify->AddDefaultDeviceChangedCallback(
+			this,
+			std::bind(&WASAPISource::SetDefaultDevice, this,
+				  std::placeholders::_1, std::placeholders::_2,
+				  std::placeholders::_3));
 	}
 
 	Start();
@@ -571,12 +533,17 @@ void WASAPISource::Stop()
 		rtwq_unlock_work_queue(sampleReady.GetQueueId());
 	else
 		WaitForSingleObject(captureThread, INFINITE);
+
+	obs_weak_source_release(reroute_target);
 }
 
 WASAPISource::~WASAPISource()
 {
-	if (enumerator.Get() != nullptr && notify.Get() != nullptr)
-		enumerator->UnregisterEndpointNotificationCallback(notify);
+	auto notify = GetNotify();
+	if (notify) {
+		notify->RemoveDefaultDeviceChangedCallback(this);
+	}
+
 	Stop();
 }
 
@@ -1057,8 +1024,33 @@ void WASAPISource::Initialize()
 	}
 
 	blog(LOG_INFO,
-	     "[WASAPISource]: Device '%s' [%" PRIu32 " Hz] initialized",
-	     device_name.c_str(), sampleRate);
+	     "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized (source: %s)",
+	     device_name.c_str(), sampleRate, obs_source_get_name(source));
+
+	if (sourceType == SourceType::ProcessOutput && !hooked) {
+		hooked = true;
+
+		signal_handler_t *sh = obs_source_get_signal_handler(source);
+		calldata_t data = {0};
+		struct dstr title = {0};
+		struct dstr window_class = {0};
+		struct dstr executable = {0};
+
+		ms_get_window_title(&title, hwnd);
+		ms_get_window_class(&window_class, hwnd);
+		ms_get_window_exe(&executable, hwnd);
+
+		calldata_set_ptr(&data, "source", source);
+		calldata_set_string(&data, "title", title.array);
+		calldata_set_string(&data, "class", window_class.array);
+		calldata_set_string(&data, "executable", executable.array);
+		signal_handler_signal(sh, "hooked", &data);
+
+		dstr_free(&title);
+		dstr_free(&window_class);
+		dstr_free(&executable);
+		calldata_free(&data);
+	}
 }
 
 bool WASAPISource::TryInitialize()
@@ -1170,14 +1162,32 @@ bool WASAPISource::ProcessCaptureData()
 			return false;
 		}
 
+		if (!sawBadTimestamp &&
+		    flags & AUDCLNT_BUFFERFLAGS_TIMESTAMP_ERROR) {
+			blog(LOG_WARNING, "[WASAPISource::ProcessCaptureData]"
+					  " Timestamp error!");
+			sawBadTimestamp = true;
+		}
+
+		if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
+			/* buffer size = frame size * number of frames
+			 * frame size = channels * sample size
+			 * sample size = 4 bytes (always float per InitFormat) */
+			uint32_t requiredBufSize =
+				get_audio_channels(speakers) * frames * 4;
+			if (silence.size() < requiredBufSize)
+				silence.resize(requiredBufSize);
+
+			buffer = silence.data();
+		}
+
 		obs_source_audio data = {};
-		data.data[0] = (const uint8_t *)buffer;
-		data.frames = (uint32_t)frames;
+		data.data[0] = buffer;
+		data.frames = frames;
 		data.speakers = speakers;
 		data.samples_per_sec = sampleRate;
 		data.format = format;
 		if (sourceType == SourceType::ProcessOutput) {
-			// Using plain device timestamps to avoid static audio issue
 			data.timestamp = ts * 100;
 		} else {
 			data.timestamp = useDeviceTiming ? ts * 100
@@ -1189,7 +1199,17 @@ bool WASAPISource::ProcessCaptureData()
 					sampleRate);
 		}
 
-		obs_source_output_audio(source, &data);
+		if (reroute_target) {
+			obs_source_t *target =
+				obs_weak_source_get_source(reroute_target);
+
+			if (target) {
+				obs_source_output_audio(target, &data);
+				obs_source_release(target);
+			}
+		} else {
+			obs_source_output_audio(source, &data);
+		}
 
 		capture->ReleaseBuffer(frames);
 	}
@@ -1293,6 +1313,23 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 						     source->device_name.c_str(),
 						     obs_source_get_name(
 							     source->source));
+						if (source->sourceType ==
+							    SourceType::
+								    ProcessOutput &&
+						    source->hooked) {
+							source->hooked = false;
+							signal_handler_t *sh =
+								obs_source_get_signal_handler(
+									source->source);
+							calldata_t data = {0};
+							calldata_set_ptr(
+								&data, "source",
+								source->source);
+							signal_handler_signal(
+								sh, "unhooked",
+								&data);
+							calldata_free(&data);
+						}
 						stop = true;
 						reconnect = true;
 						source->reconnectDuration =
@@ -1328,6 +1365,18 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 			     "Device '%s' invalidated.  Retrying (source: %s)",
 			     source->device_name.c_str(),
 			     obs_source_get_name(source->source));
+			if (source->sourceType == SourceType::ProcessOutput &&
+			    source->hooked) {
+				source->hooked = false;
+				signal_handler_t *sh =
+					obs_source_get_signal_handler(
+						source->source);
+				calldata_t data = {0};
+				calldata_set_ptr(&data, "source",
+						 source->source);
+				signal_handler_signal(sh, "unhooked", &data);
+				calldata_free(&data);
+			}
 			SetEvent(source->reconnectSignal);
 		}
 	}
@@ -1442,6 +1491,15 @@ void WASAPISource::OnSampleReady()
 			     "Device '%s' invalidated.  Retrying (source: %s)",
 			     device_name.c_str(), obs_source_get_name(source));
 			SetEvent(reconnectSignal);
+			if (sourceType == SourceType::ProcessOutput && hooked) {
+				hooked = false;
+				signal_handler_t *sh =
+					obs_source_get_signal_handler(source);
+				calldata_t data = {0};
+				calldata_set_ptr(&data, "source", source);
+				signal_handler_signal(sh, "unhooked", &data);
+				calldata_free(&data);
+			}
 		} else {
 			SetEvent(idleSignal);
 		}
@@ -1451,6 +1509,16 @@ void WASAPISource::OnSampleReady()
 void WASAPISource::OnRestart()
 {
 	SetEvent(receiveSignal);
+}
+
+bool WASAPISource::GetHooked()
+{
+	return hooked;
+}
+
+HWND WASAPISource::GetHwnd()
+{
+	return hwnd;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1484,11 +1552,80 @@ static void GetWASAPIDefaultsDeviceOutput(obs_data_t *settings)
 
 static void GetWASAPIDefaultsProcessOutput(obs_data_t *) {}
 
+static void wasapi_get_hooked(void *data, calldata_t *cd)
+{
+	WASAPISource *wasapi_source = reinterpret_cast<WASAPISource *>(data);
+
+	if (!wasapi_source)
+		return;
+
+	bool hooked = wasapi_source->GetHooked();
+	HWND hwnd = wasapi_source->GetHwnd();
+
+	if (hooked && hwnd) {
+		calldata_set_bool(cd, "hooked", true);
+		struct dstr title = {0};
+		struct dstr window_class = {0};
+		struct dstr executable = {0};
+		ms_get_window_title(&title, hwnd);
+		ms_get_window_class(&window_class, hwnd);
+		ms_get_window_exe(&executable, hwnd);
+		calldata_set_string(cd, "title", title.array);
+		calldata_set_string(cd, "class", window_class.array);
+		calldata_set_string(cd, "executable", executable.array);
+		dstr_free(&title);
+		dstr_free(&window_class);
+		dstr_free(&executable);
+	} else {
+		calldata_set_bool(cd, "hooked", false);
+		calldata_set_string(cd, "title", "");
+		calldata_set_string(cd, "class", "");
+		calldata_set_string(cd, "executable", "");
+	}
+}
+
+static void wasapi_reroute_audio(void *data, calldata_t *cd)
+{
+	auto wasapi_source = static_cast<WASAPISource *>(data);
+	if (!wasapi_source)
+		return;
+
+	obs_source_t *target = nullptr;
+	calldata_get_ptr(cd, "target", &target);
+	wasapi_source->SetRerouteTarget(target);
+}
+
 static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 				SourceType type)
 {
 	try {
-		return new WASAPISource(settings, source, type);
+		if (type != SourceType::ProcessOutput) {
+			return new WASAPISource(settings, source, type);
+		} else {
+			WASAPISource *wasapi_source =
+				new WASAPISource(settings, source, type);
+
+			if (wasapi_source) {
+				signal_handler_t *sh =
+					obs_source_get_signal_handler(source);
+				signal_handler_add(sh,
+						   "void unhooked(ptr source)");
+				signal_handler_add(
+					sh,
+					"void hooked(ptr source, string title, string class, string executable)");
+
+				proc_handler_t *ph =
+					obs_source_get_proc_handler(source);
+				proc_handler_add(
+					ph,
+					"void get_hooked(out bool hooked, out string title, out string class, out string executable)",
+					wasapi_get_hooked, wasapi_source);
+				proc_handler_add(
+					ph, "void reroute_audio(in ptr target)",
+					wasapi_reroute_audio, wasapi_source);
+			}
+			return wasapi_source;
+		}
 	} catch (const char *error) {
 		blog(LOG_ERROR, "[WASAPISource][CreateWASAPISource] Catch %s",
 		     error);

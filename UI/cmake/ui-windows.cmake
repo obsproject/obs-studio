@@ -28,6 +28,7 @@ target_sources(
           window-basic-properties.cpp
           window-basic-properties.hpp
           window-basic-settings-a11y.cpp
+          window-basic-settings-appearance.cpp
           window-basic-settings-stream.cpp
           window-basic-settings.cpp
           window-basic-settings.hpp

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2018 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,8 +17,11 @@
 
 #include "obs-internal.h"
 
-static void *gpu_encode_thread(struct obs_core_video_mix *video)
+#define NBSP "\xC2\xA0"
+static const char *gpu_encode_frame_name = "gpu_encode_frame";
+static void *gpu_encode_thread(void *data)
 {
+	struct obs_core_video_mix *video = data;
 	blog(LOG_INFO, "gpu_encode_thread Begin (%p)", video);
 	uint64_t interval = video_output_get_frame_time(video->video);
 	DARRAY(obs_encoder_t *) encoders;
@@ -27,6 +30,10 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 	da_init(encoders);
 
 	os_set_thread_name("obs gpu encode thread");
+	const char *gpu_encode_thread_name = profile_store_name(
+		obs_get_profiler_name_store(),
+		"obs_gpu_encode_thread(%g" NBSP "ms)", interval / 1000000.);
+	profile_register_root(gpu_encode_thread_name, interval);
 
 	while (os_sem_wait(video->gpu_encode_semaphore) == 0) {
 		struct obs_tex_frame tf;
@@ -43,13 +50,15 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			continue;
 		}
 
+		profile_start(gpu_encode_thread_name);
+
 		os_event_reset(video->gpu_encode_inactive);
 
 		/* -------------- */
 
 		pthread_mutex_lock(&video->gpu_encoder_mutex);
 
-		circlebuf_pop_front(&video->gpu_encoder_queue, &tf, sizeof(tf));
+		deque_pop_front(&video->gpu_encoder_queue, &tf, sizeof(tf));
 		timestamp = tf.timestamp;
 		lock_key = tf.lock_key;
 		next_key = tf.lock_key;
@@ -70,20 +79,44 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 		for (size_t i = 0; i < encoders.num; i++) {
 			struct encoder_packet pkt = {0};
 			bool received = false;
-			bool success;
+			bool success = false;
+			uint32_t skip = 0;
 
 			obs_encoder_t *encoder = encoders.array[i];
-			struct obs_encoder *pair = encoder->paired_encoder;
+			struct obs_encoder **paired =
+				encoder->paired_encoders.array;
+			size_t num_paired = encoder->paired_encoders.num;
 
-			pkt.timebase_num = encoder->timebase_num;
+			pkt.timebase_num = encoder->timebase_num *
+					   encoder->frame_rate_divisor;
 			pkt.timebase_den = encoder->timebase_den;
 			pkt.encoder = encoder;
 
-			if (!encoder->first_received && pair) {
-				if (!pair->first_received ||
-				    pair->first_raw_ts > timestamp) {
+			if (encoder->encoder_group && !encoder->start_ts) {
+				struct obs_encoder_group *group =
+					encoder->encoder_group;
+				bool ready = false;
+				pthread_mutex_lock(&group->mutex);
+				ready = group->start_timestamp == timestamp;
+				pthread_mutex_unlock(&group->mutex);
+				if (!ready)
 					continue;
+			}
+
+			if (!encoder->first_received && num_paired) {
+				bool wait_for_audio = false;
+
+				for (size_t idx = 0; idx < num_paired; idx++) {
+					if (!paired[idx]->first_received ||
+					    paired[idx]->first_raw_ts >
+						    timestamp) {
+						wait_for_audio = true;
+						break;
+					}
 				}
+
+				if (wait_for_audio)
+					continue;
 			}
 
 			if (video_pause_check(&encoder->pause, timestamp))
@@ -95,6 +128,16 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 						     encoder->context.settings);
 			}
 
+			// an explicit counter is used instead of remainder calculation
+			// to allow multiple encoders started at the same time to start on
+			// the same frame
+			skip = encoder->frame_rate_divisor_counter++;
+			if (encoder->frame_rate_divisor_counter ==
+			    encoder->frame_rate_divisor)
+				encoder->frame_rate_divisor_counter = 0;
+			if (skip)
+				continue;
+
 			if (!encoder->start_ts)
 				encoder->start_ts = timestamp;
 
@@ -103,16 +146,33 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			else
 				next_key++;
 
-			success = encoder->info.encode_texture(
-				encoder->context.data, tf.handle,
-				encoder->cur_pts, lock_key, &next_key, &pkt,
-				&received);
+			profile_start(gpu_encode_frame_name);
+			if (encoder->info.encode_texture2) {
+				struct encoder_texture tex = {0};
+
+				tex.handle = tf.handle;
+				tex.tex[0] = tf.tex;
+				tex.tex[1] = tf.tex_uv;
+				tex.tex[2] = NULL;
+				success = encoder->info.encode_texture2(
+					encoder->context.data, &tex,
+					encoder->cur_pts, lock_key, &next_key,
+					&pkt, &received);
+			} else {
+				success = encoder->info.encode_texture(
+					encoder->context.data, tf.handle,
+					encoder->cur_pts, lock_key, &next_key,
+					&pkt, &received);
+			}
+			profile_end(gpu_encode_frame_name);
+
 			send_off_encoder_packet(encoder, success, received,
 						&pkt);
 
 			lock_key = next_key;
 
-			encoder->cur_pts += encoder->timebase_num;
+			encoder->cur_pts += encoder->timebase_num *
+					    encoder->frame_rate_divisor;
 		}
 
 		/* -------------- */
@@ -123,13 +183,13 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 		if (--tf.count) {
 			tf.timestamp += interval;
-			circlebuf_push_front(&video->gpu_encoder_queue, &tf,
-					     sizeof(tf));
+			deque_push_front(&video->gpu_encoder_queue, &tf,
+					 sizeof(tf));
 
 			video_output_inc_texture_skipped_frames(video->video);
 		} else {
-			circlebuf_push_back(&video->gpu_encoder_avail_queue,
-					    &tf, sizeof(tf));
+			deque_push_back(&video->gpu_encoder_avail_queue, &tf,
+					sizeof(tf));
 		}
 
 		pthread_mutex_unlock(&video->gpu_encoder_mutex);
@@ -142,6 +202,9 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			obs_encoder_release(encoders.array[i]);
 
 		da_resize(encoders, 0);
+
+		profile_end(gpu_encode_thread_name);
+		profile_reenable_thread();
 	}
 
 	da_free(encoders);
@@ -152,13 +215,12 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 bool init_gpu_encoding(struct obs_core_video_mix *video)
 {
 	blog(LOG_INFO, "init_gpu_encoding - begin (%p)", video);
-#ifdef _WIN32
 	const struct video_output_info *info =
 		video_output_get_info(video->video);
 
 	video->gpu_encode_stop = false;
 
-	circlebuf_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
+	deque_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
 	for (size_t i = 0; i < NUM_ENCODE_TEXTURES; i++) {
 		gs_texture_t *tex;
 		gs_texture_t *tex_uv;
@@ -176,13 +238,18 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 			return false;
 		}
 
+#ifdef _WIN32
 		uint32_t handle = gs_texture_get_shared_handle(tex);
+#else
+		uint32_t handle = (uint32_t)-1;
+#endif
 
-		struct obs_tex_frame frame = {
-			.tex = tex, .tex_uv = tex_uv, .handle = handle};
+		struct obs_tex_frame frame = {.tex = tex,
+					      .tex_uv = tex_uv,
+					      .handle = handle};
 
-		circlebuf_push_back(&video->gpu_encoder_avail_queue, &frame,
-				    sizeof(frame));
+		deque_push_back(&video->gpu_encoder_avail_queue, &frame,
+				sizeof(frame));
 	}
 
 	if (os_sem_init(&video->gpu_encode_semaphore, 0) != 0)
@@ -198,10 +265,6 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 
 	video->gpu_encode_thread_initialized = true;
 	return true;
-#else
-	UNUSED_PARAMETER(video);
-	return false;
-#endif
 }
 
 void stop_gpu_encoding_thread(struct obs_core_video_mix *video)
@@ -229,19 +292,19 @@ void free_gpu_encoding(struct obs_core_video_mix *video)
 		video->gpu_encode_inactive = NULL;
 	}
 
-#define free_circlebuf(x)                                               \
-	do {                                                            \
-		while (x.size) {                                        \
-			struct obs_tex_frame frame;                     \
-			circlebuf_pop_front(&x, &frame, sizeof(frame)); \
-			gs_texture_destroy(frame.tex);                  \
-			gs_texture_destroy(frame.tex_uv);               \
-		}                                                       \
-		circlebuf_free(&x);                                     \
+#define free_deque(x)                                               \
+	do {                                                        \
+		while (x.size) {                                    \
+			struct obs_tex_frame frame;                 \
+			deque_pop_front(&x, &frame, sizeof(frame)); \
+			gs_texture_destroy(frame.tex);              \
+			gs_texture_destroy(frame.tex_uv);           \
+		}                                                   \
+		deque_free(&x);                                     \
 	} while (false)
 
-	free_circlebuf(video->gpu_encoder_queue);
-	free_circlebuf(video->gpu_encoder_avail_queue);
-#undef free_circlebuf
+	free_deque(video->gpu_encoder_queue);
+	free_deque(video->gpu_encoder_avail_queue);
+#undef free_deque
 	blog(LOG_INFO, "free_gpu_encoding - end (%p)", video);
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CMIOExtension</key>
+    <dict>
+        <key>CMIOExtensionMachServiceName</key>
+        <string>$(TeamIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    </dict>
+    <key>OBSCameraDeviceUUID</key>
+    <string>${VIRTUALCAM_DEVICE_UUID}</string>
+    <key>OBSCameraSourceUUID</key>
+    <string>${VIRTUALCAM_SOURCE_UUID}</string>
+    <key>OBSCameraSinkUUID</key>
+    <string>${VIRTUALCAM_SINK_UUID}</string>
+</dict>
+</plist>
