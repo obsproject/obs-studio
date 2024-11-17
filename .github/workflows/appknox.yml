@@ -1,0 +1,54 @@
+# This workflow uses actions that are not certified by GitHub. They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support documentation.
+#
+# Appknox: Leader in Mobile Application Security Testing Solutions <https://www.appknox.com/>
+#
+# To use this workflow, you must be an existing Appknox customer with GitHub Advanced Security (GHAS) enabled for your
+# repository.
+#
+# If you *are not* an existing customer, click here to contact us for licensing and pricing details:
+# <https://www.appknox.com/free-trial>.
+#
+# Instructions:
+#
+# 1. In your repository settings, navigate to 'Secrets' and click on 'New repository secret.' Name the
+#    secret APPKNOX_ACCESS_TOKEN and paste your appknox user token into the value field. If you don't have a appknox token
+#    or need to generate a new one for GitHub, visit the Appknox Platform, go to Account Settings->Developer Settings
+#    and create a token labeled GitHub
+#
+# 2. Refer to the detailed workflow below, make any required adjustments, and then save it to your repository. After the
+#    action executes, check the 'Security' tab for results
+
+name: Appknox
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+jobs:
+  appknox:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build the app
+        run: ./gradlew build                                         # Update this to build your Android or iOS application
+
+      - name: Appknox GitHub action
+        uses: appknox/appknox-github-action@b7d2bfb2321d5544e97bffcba48557234ab953a4
+        with:
+          appknox_access_token: ${{ secrets.APPKNOX_ACCESS_TOKEN }}
+          file_path: app/build/outputs/apk/debug/app-debug.apk        # Specify the path to your .ipa or .apk here
+          risk_threshold: MEDIUM                                      # Update this to desired risk threshold [LOW, MEDIUM, HIGH, CRITICAL]
+          sarif: Enable
+
+      - name: Upload SARIF to GHAS
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: report.sarif
