@@ -2514,10 +2514,6 @@
             "stream_key_link": "https://masterstream.ir/managestreams.php",
             "servers": [
                 {
-                    "name": "Iran Server 1 - Bandwidth Required",
-                    "url": "rtmp://live-vip1.masterstream.ir/live"
-                },
-                {
                     "name": "Iran Server 2 - Bandwidth Required",
                     "url": "rtmp://live-vip2.masterstream.ir/live"
                 },
