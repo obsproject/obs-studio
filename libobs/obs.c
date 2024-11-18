@@ -802,7 +802,7 @@ static int obs_init_video()
 		if (!ovi->initialized)
 			continue;
 
-		if (!obs_view_add(&obs->data.main_view, ovi))
+		if (!obs_view_add2(&obs->data.main_view, ovi))
 			return OBS_VIDEO_FAIL;
 
 		if (!obs_stream_view_add(&obs->data.stream_view, ovi))
@@ -2724,6 +2724,15 @@ obs_core_video_mix_t *obs_video_mix_get(struct obs_video_info *ovi,
 		    mix->rendering_mode == mode)
 			return mix;
 	}
+	return NULL;
+}
+
+video_t *obs_video_mix_get_video(struct obs_core_video_mix *mix)
+{
+	if (mix) {
+		return mix->video;
+	}
+
 	return NULL;
 }
 

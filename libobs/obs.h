@@ -1061,7 +1061,7 @@ EXPORT obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel);
 EXPORT void obs_view_render(obs_view_t *view);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi);
+EXPORT video_t *obs_view_add(obs_view_t *view);
 
 /** Adds a view to the main render loop */
 EXPORT video_t *obs_stream_view_add(obs_view_t *view,
@@ -2308,8 +2308,8 @@ EXPORT proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output);
  * Sets the current audio/video media contexts associated with this output,
  * required for non-encoded outputs.  Can be null.
  */
-EXPORT void obs_output_set_media(obs_output_t *output,
-				 obs_core_video_mix_t *mix, audio_t *audio);
+EXPORT void obs_output_set_media(obs_output_t *output, video_t *video,
+				 audio_t *audio);
 
 /** Returns the video media context associated with this output */
 EXPORT video_t *obs_output_video(const obs_output_t *output);
@@ -2592,6 +2592,8 @@ EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 
 EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
 				      struct obs_core_video_mix *video);
+
+EXPORT video_t *obs_video_mix_get_video(struct obs_core_video_mix *mix);
 
 EXPORT obs_core_video_mix_t *
 obs_video_mix_get(struct obs_video_info *ovi,
