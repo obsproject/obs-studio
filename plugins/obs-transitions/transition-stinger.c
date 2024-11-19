@@ -125,8 +125,28 @@ static void stinger_update(void *data, obs_data_t *settings)
 		obs_source_set_muted(s->matte_source, true);
 	}
 
-	s->monitoring_type = (int)obs_data_get_int(settings, "audio_monitoring");
-	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
+	uint32_t flags = obs_source_get_flags(s->media_source);
+	bool forceMono = obs_data_get_bool(settings, "audio_force_mono");
+	if (forceMono)
+		flags |= OBS_SOURCE_FLAG_FORCE_MONO;
+	else
+		flags &= ~OBS_SOURCE_FLAG_FORCE_MONO;
+	obs_source_set_flags(s->media_source, flags);
+
+	float vol = (float)obs_data_get_double(settings, "audio_volume");
+	obs_source_set_volume(s->media_source, vol);
+
+	float bal = (float)obs_data_get_double(settings, "audio_balance");
+	obs_source_set_balance_value(s->media_source, bal);
+
+	int64_t offset = (int64_t)obs_data_get_int(settings, "audio_offset");
+	obs_source_set_sync_offset(s->media_source, offset);
+
+	int monitoring_type = (int)obs_data_get_int(settings, "audio_monitoring");
+	obs_source_set_monitoring_type(s->media_source, monitoring_type);
+
+	uint32_t mixers = (uint32_t)obs_data_get_int(settings, "audio_mixers");
+	obs_source_set_audio_mixers(s->media_source, mixers);
 
 	s->fade_style = (enum fade_style)obs_data_get_int(settings, "audio_fade_style");
 
@@ -159,6 +179,38 @@ static void stinger_update(void *data, obs_data_t *settings)
 	}
 }
 
+static void stinger_audio_update(void *data, calldata_t *cd)
+{
+	struct stinger_info *s = data;
+	obs_data_t *settings = obs_source_get_settings(s->source);
+	uint32_t flags = obs_source_get_flags(s->media_source);
+
+	bool forceMono = obs_data_get_bool(settings, "audio_force_mono");
+	if (forceMono)
+		flags |= OBS_SOURCE_FLAG_FORCE_MONO;
+	else
+		flags &= ~OBS_SOURCE_FLAG_FORCE_MONO;
+	obs_source_set_flags(s->media_source, flags);
+
+	float vol = (float)obs_data_get_double(settings, "audio_volume");
+	obs_source_set_volume(s->media_source, vol);
+
+	float bal = (float)obs_data_get_double(settings, "audio_balance");
+	obs_source_set_balance_value(s->media_source, bal);
+
+	int64_t offset = (int64_t)obs_data_get_int(settings, "audio_offset");
+	obs_source_set_sync_offset(s->media_source, offset);
+
+	int monitoring_type = (int)obs_data_get_int(settings, "audio_monitoring");
+	obs_source_set_monitoring_type(s->media_source, monitoring_type);
+
+	uint32_t mixers = (uint32_t)obs_data_get_int(settings, "audio_mixers");
+	obs_source_set_audio_mixers(s->media_source, mixers);
+
+	obs_data_release(settings);
+	UNUSED_PARAMETER(cd);
+}
+
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct stinger_info *s = bzalloc(sizeof(*s));
@@ -187,6 +239,9 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 	s->ep_matte_tex = gs_effect_get_param_by_name(s->matte_effect, "matte_tex");
 	s->ep_invert_matte = gs_effect_get_param_by_name(s->matte_effect, "invert_matte");
 
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(ph, "void transition_audio_update()", stinger_audio_update, s);
+
 	obs_transition_enable_fixed(s->source, true, 0);
 	obs_source_update(source, settings);
 	return s;
@@ -212,6 +267,11 @@ static void stinger_destroy(void *data)
 static void stinger_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "hw_decode", true);
+
+	obs_data_set_default_double(settings, "audio_volume", 1.0l);
+	obs_data_set_default_double(settings, "audio_balance", 0.5l);
+	obs_data_set_default_int(settings, "audio_monitoring", (long long)OBS_MONITORING_TYPE_NONE);
+	obs_data_set_default_int(settings, "audio_mixers", 0xFFll);
 }
 
 static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b, float t, uint32_t cx, uint32_t cy)
@@ -715,16 +775,6 @@ static obs_properties_t *stinger_properties(void *data)
 	}
 	dstr_free(&filter);
 
-	// audio output settings
-	obs_property_t *monitor_list = obs_properties_add_list(ppts, "audio_monitoring",
-							       obs_module_text("AudioMonitoring"), OBS_COMBO_TYPE_LIST,
-							       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.None"), OBS_MONITORING_TYPE_NONE);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.MonitorOnly"),
-				  OBS_MONITORING_TYPE_MONITOR_ONLY);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.Both"),
-				  OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-
 	// audio fade settings
 	obs_property_t *audio_fade_style = obs_properties_add_list(
 		ppts, "audio_fade_style", obs_module_text("AudioFadeStyle"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -800,6 +850,7 @@ static enum gs_color_space stinger_get_color_space(void *data, size_t count,
 struct obs_source_info stinger_transition = {
 	.id = "obs_stinger_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
+	.output_flags = OBS_TRANSITION_HAS_AUDIO,
 	.get_name = stinger_get_name,
 	.create = stinger_create,
 	.destroy = stinger_destroy,

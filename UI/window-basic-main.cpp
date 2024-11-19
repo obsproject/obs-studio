@@ -3065,6 +3065,21 @@ void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 	filters->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
+void OBSBasic::CreateTransitionAudioWindow(obs_source_t *source)
+{
+	bool closed = true;
+	if (transitionAudioWindow)
+		closed = transitionAudioWindow->close();
+
+	if (!closed)
+		return;
+
+	transitionAudioWindow = new OBSBasicTransitionAudio(this, source);
+
+	transitionAudioWindow->Init();
+	transitionAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+}
+
 /* Qt callbacks for invokeMethod */
 
 void OBSBasic::AddScene(OBSSource source)
