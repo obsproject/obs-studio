@@ -48,6 +48,7 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 	}
 
 	if (!extra_views.empty()) {
+		post_data.capabilities.extra_views.emplace();
 		auto &extra_views_capability = *post_data.capabilities.extra_views;
 		extra_views_capability.reserve(extra_views.size());
 		for (auto &view : extra_views) {
