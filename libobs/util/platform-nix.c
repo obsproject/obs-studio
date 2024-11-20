@@ -1032,11 +1032,6 @@ uint64_t os_get_proc_virtual_size(void)
 	return (uint64_t)kinfo.ki_size;
 }
 #else
-uint64_t os_get_sys_free_size(void)
-{
-	return 0;
-}
-
 typedef struct {
 	unsigned long virtual_size;
 	unsigned long resident_size;
@@ -1115,6 +1110,20 @@ uint64_t os_get_sys_total_size(void)
 		os_get_sys_total_size_internal();
 
 	return total_memory;
+}
+
+uint64_t os_get_sys_free_size(void)
+{
+	uint64_t free_memory = 0;
+#ifndef __OpenBSD__
+	struct sysinfo info;
+	if (sysinfo(&info) < 0)
+		return 0;
+
+	free_memory = ((uint64_t)info.freeram + (uint64_t)info.bufferram) * info.mem_unit;
+#endif
+
+	return free_memory;
 }
 #endif
 
