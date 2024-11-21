@@ -181,10 +181,16 @@ static void AddExtraModulePaths()
 		plugins_data_path = s;
 
 	if (!plugins_path.empty() && !plugins_data_path.empty()) {
+#if defined(__APPLE__)
+		plugins_path += "/%module%.plugin/Contents/MacOS";
+		plugins_data_path += "/%module%.plugin/Contents/Resources";
+		obs_add_module_path(plugins_path.c_str(), plugins_data_path.c_str());
+#else
 		string data_path_with_module_suffix;
 		data_path_with_module_suffix += plugins_data_path;
 		data_path_with_module_suffix += "/%module%";
 		obs_add_module_path(plugins_path.c_str(), data_path_with_module_suffix.c_str());
+#endif
 	}
 
 	if (portable_mode)
