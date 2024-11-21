@@ -49,15 +49,12 @@ Contributing
   <https://obsproject.com/contribute>`_ for more information.
 
 - If you wish to contribute code to the project, please make sure to
-  read the coding and commit guidelines:
-  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst
+  read the `contribution guidelines <https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst>`_.
 
-- Developer/API documentation can be found here:
-  https://obsproject.com/docs
+- Developer/API documentation `can be found here <https://obsproject.com/docs>`_.
 
 - If you wish to contribute translations, do not submit pull requests.
-  Instead, please use Crowdin.  For more information read this page:
-  https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
+  Instead, please use Crowdin. `For more information read this page <https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS>`_.
 
 - Other ways to contribute are by helping people out with support on
   our forums or in our community chat.  Please limit support to topics
