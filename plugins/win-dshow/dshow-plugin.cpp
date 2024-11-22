@@ -1,7 +1,9 @@
 #include <obs-module.h>
 #include <strsafe.h>
 #include <strmif.h>
+#ifdef VIRTUALCAM_AVAILABLE
 #include "virtualcam-guid.h"
+#endif
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("win-dshow", "en-US")
@@ -13,7 +15,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 extern void RegisterDShowSource();
 extern void RegisterDShowEncoders();
 
-#ifdef VIRTUALCAM_ENABLED
+#ifdef VIRTUALCAM_AVAILABLE
 extern "C" struct obs_output_info virtualcam_info;
 
 static bool vcam_installed(bool b64)
@@ -42,18 +44,10 @@ bool obs_module_load(void)
 {
 	RegisterDShowSource();
 	RegisterDShowEncoders();
-#ifdef VIRTUALCAM_ENABLED
-	obs_register_output(&virtualcam_info);
-
-	bool installed = vcam_installed(false);
-#else
-	bool installed = false;
+#ifdef VIRTUALCAM_AVAILABLE
+	if (vcam_installed(false))
+		obs_register_output(&virtualcam_info);
 #endif
-
-	obs_data_t *obs_settings = obs_data_create();
-	obs_data_set_bool(obs_settings, "vcamEnabled", installed);
-	obs_apply_private_data(obs_settings);
-	obs_data_release(obs_settings);
 
 	return true;
 }

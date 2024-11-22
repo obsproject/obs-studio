@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  * Copyright (c) 2017 Ryan Foster <RytoEX@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -30,8 +30,7 @@ struct reg_dword {
 	DWORD return_value;
 };
 
-EXPORT void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
-			  struct reg_dword *info);
+EXPORT void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, struct reg_dword *info);
 
 #ifdef __cplusplus
 }

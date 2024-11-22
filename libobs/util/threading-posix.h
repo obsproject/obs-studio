@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -46,18 +46,14 @@ static inline long os_atomic_load_long(const volatile long *ptr)
 	return __atomic_load_n(ptr, __ATOMIC_SEQ_CST);
 }
 
-static inline bool os_atomic_compare_swap_long(volatile long *val, long old_val,
-					       long new_val)
+static inline bool os_atomic_compare_swap_long(volatile long *val, long old_val, long new_val)
 {
-	return __atomic_compare_exchange_n(val, &old_val, new_val, false,
-					   __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+	return __atomic_compare_exchange_n(val, &old_val, new_val, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
-static inline bool os_atomic_compare_exchange_long(volatile long *val,
-						   long *old_val, long new_val)
+static inline bool os_atomic_compare_exchange_long(volatile long *val, long *old_val, long new_val)
 {
-	return __atomic_compare_exchange_n(val, old_val, new_val, false,
-					   __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+	return __atomic_compare_exchange_n(val, old_val, new_val, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 static inline void os_atomic_store_bool(volatile bool *ptr, bool val)

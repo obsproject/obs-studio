@@ -1,11 +1,11 @@
-#include "qt-display.hpp"
-#include "qt-wrappers.hpp"
+#include "moc_qt-display.cpp"
 #include "display-helpers.hpp"
 #include <QWindow>
 #include <QScreen>
 #include <QResizeEvent>
 #include <QShowEvent>
 
+#include <qt-wrappers.hpp>
 #include <obs-config.h>
 
 #ifdef _WIN32
@@ -13,15 +13,19 @@
 #include <Windows.h>
 #endif
 
-#ifdef ENABLE_WAYLAND
+#if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
+#endif
+
+#ifdef ENABLE_WAYLAND
+#include <qpa/qplatformnativeinterface.h>
+#endif
 
 class SurfaceEventFilter : public QObject {
 	OBSQTDisplay *display;
-	int mTimerId;
 
 public:
-	SurfaceEventFilter(OBSQTDisplay *src) : display(src), mTimerId(0) {}
+	SurfaceEventFilter(OBSQTDisplay *src) : QObject(src), display(src) {}
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override
@@ -31,19 +35,15 @@ protected:
 
 		switch (event->type()) {
 		case QEvent::PlatformSurface:
-			surfaceEvent =
-				static_cast<QPlatformSurfaceEvent *>(event);
-			if (surfaceEvent->surfaceEventType() !=
-			    QPlatformSurfaceEvent::SurfaceCreated)
-				return result;
+			surfaceEvent = static_cast<QPlatformSurfaceEvent *>(event);
 
-			if (display->windowHandle()->isExposed())
-				createOBSDisplay();
-			else
-				mTimerId = startTimer(67); // Arbitrary
-			break;
-		case QEvent::Expose:
-			createOBSDisplay();
+			switch (surfaceEvent->surfaceEventType()) {
+			case QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed:
+				display->DestroyDisplay();
+				break;
+			default:
+				break;
+			}
 			break;
 		default:
 			break;
@@ -51,21 +51,7 @@ protected:
 
 		return result;
 	}
-
-	void timerEvent(QTimerEvent *) { createOBSDisplay(true); }
-
-private:
-	void createOBSDisplay(bool force = false)
-	{
-		display->CreateDisplay(force);
-		if (mTimerId > 0) {
-			killTimer(mTimerId);
-			mTimerId = 0;
-		}
-	}
 };
-
-#endif
 
 static inline long long color_to_int(const QColor &color)
 {
@@ -73,18 +59,45 @@ static inline long long color_to_int(const QColor &color)
 		return ((val & 0xff) << shift);
 	};
 
-	return shift(color.red(), 0) | shift(color.green(), 8) |
-	       shift(color.blue(), 16) | shift(color.alpha(), 24);
+	return shift(color.red(), 0) | shift(color.green(), 8) | shift(color.blue(), 16) | shift(color.alpha(), 24);
 }
 
 static inline QColor rgba_to_color(uint32_t rgba)
 {
-	return QColor::fromRgb(rgba & 0xFF, (rgba >> 8) & 0xFF,
-			       (rgba >> 16) & 0xFF, (rgba >> 24) & 0xFF);
+	return QColor::fromRgb(rgba & 0xFF, (rgba >> 8) & 0xFF, (rgba >> 16) & 0xFF, (rgba >> 24) & 0xFF);
 }
 
-OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
-	: QWidget(parent, flags)
+static bool QTToGSWindow(QWindow *window, gs_window &gswindow)
+{
+	bool success = true;
+
+#ifdef _WIN32
+	gswindow.hwnd = (HWND)window->winId();
+#elif __APPLE__
+	gswindow.view = (id)window->winId();
+#else
+	switch (obs_get_nix_platform()) {
+	case OBS_NIX_PLATFORM_X11_EGL:
+		gswindow.id = window->winId();
+		gswindow.display = obs_get_nix_platform_display();
+		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_NIX_PLATFORM_WAYLAND: {
+		QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
+		gswindow.display = native->nativeResourceForWindow("surface", window);
+		success = gswindow.display != nullptr;
+		break;
+	}
+#endif
+	default:
+		success = false;
+		break;
+	}
+#endif
+	return success;
+}
+
+OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags) : QWidget(parent, flags)
 {
 	setAttribute(Qt::WA_PaintOnScreen);
 	setAttribute(Qt::WA_StaticContents);
@@ -105,8 +118,7 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 			CreateDisplay();
 		} else {
 			QSize size = GetPixelSize(this);
-			obs_display_resize(display, size.width(),
-					   size.height());
+			obs_display_resize(display, size.width(), size.height());
 		}
 	};
 
@@ -120,11 +132,7 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
 	connect(windowHandle(), &QWindow::screenChanged, screenChanged);
 
-#ifdef ENABLE_WAYLAND
-	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND)
-		windowHandle()->installEventFilter(
-			new SurfaceEventFilter(this));
-#endif
+	windowHandle()->installEventFilter(new SurfaceEventFilter(this));
 }
 
 QColor OBSQTDisplay::GetDisplayBackgroundColor() const
@@ -147,12 +155,15 @@ void OBSQTDisplay::UpdateDisplayBackgroundColor()
 	obs_display_set_background_color(display, backgroundColor);
 }
 
-void OBSQTDisplay::CreateDisplay(bool force)
+void OBSQTDisplay::CreateDisplay()
 {
 	if (display)
 		return;
 
-	if (!windowHandle()->isExposed() && !force)
+	if (destroying)
+		return;
+
+	if (!windowHandle()->isExposed())
 		return;
 
 	QSize size = GetPixelSize(this);
@@ -185,11 +196,7 @@ void OBSQTDisplay::moveEvent(QMoveEvent *event)
 	OnMove();
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, qintptr *)
-#else
-bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, long *)
-#endif
 {
 #ifdef _WIN32
 	const MSG &msg = *static_cast<MSG *>(message);
@@ -197,6 +204,8 @@ bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, long *)
 	case WM_DISPLAYCHANGE:
 		OnDisplayChange();
 	}
+#else
+	UNUSED_PARAMETER(message);
 #endif
 
 	return false;
@@ -221,6 +230,14 @@ QPaintEngine *OBSQTDisplay::paintEngine() const
 	return nullptr;
 }
 
-void OBSQTDisplay::OnMove() {}
+void OBSQTDisplay::OnMove()
+{
+	if (display)
+		obs_display_update_color_space(display);
+}
 
-void OBSQTDisplay::OnDisplayChange() {}
+void OBSQTDisplay::OnDisplayChange()
+{
+	if (display)
+		obs_display_update_color_space(display);
+}

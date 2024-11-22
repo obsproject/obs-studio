@@ -1,0 +1,7 @@
+if (( ! ${+_loglevel} )) typeset -g _loglevel=1
+
+if (( _loglevel > 0 )) {
+  local icon='  >'
+
+  print -PR "%F{2}  ${(r:5:)icon}%f ${@}"
+}

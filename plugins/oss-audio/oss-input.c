@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include "oss-platform.h"
+#include <sys/soundcard.h>
 
 #define blog(level, msg, ...) blog(level, "oss-audio: " msg, ##__VA_ARGS__)
 
@@ -75,10 +75,8 @@ struct rate_option {
 	int rate;
 	char *desc;
 } rate_table[] = {
-	{8000, "8000 Hz"},     {11025, "11025 Hz"}, {16000, "16000 Hz"},
-	{22050, "22050 Hz"},   {32000, "32000 Hz"}, {44100, "44100 Hz"},
-	{48000, "48000 Hz"},   {96000, "96000 Hz"}, {192000, "192000 Hz"},
-	{384000, "384000 Hz"},
+	{8000, "8000 Hz"},   {11025, "11025 Hz"}, {16000, "16000 Hz"}, {22050, "22050 Hz"},   {32000, "32000 Hz"},
+	{44100, "44100 Hz"}, {48000, "48000 Hz"}, {96000, "96000 Hz"}, {192000, "192000 Hz"}, {384000, "384000 Hz"},
 };
 
 static unsigned int oss_sample_size(unsigned int sample_fmt)
@@ -161,28 +159,24 @@ static int oss_setup_device(struct oss_input_data *handle)
 	int val = handle->channels;
 	err = ioctl(fd, SNDCTL_DSP_CHANNELS, &val);
 	if (err) {
-		blog(LOG_ERROR, "Failed to set number of channels on DSP '%s'.",
-		     handle->device);
+		blog(LOG_ERROR, "Failed to set number of channels on DSP '%s'.", handle->device);
 		goto failed_state;
 	}
 	val = handle->sample_fmt;
 	err = ioctl(fd, SNDCTL_DSP_SETFMT, &val);
 	if (err) {
-		blog(LOG_ERROR, "Failed to set format on DSP '%s'.",
-		     handle->device);
+		blog(LOG_ERROR, "Failed to set format on DSP '%s'.", handle->device);
 		goto failed_state;
 	}
 	val = handle->rate;
 	err = ioctl(fd, SNDCTL_DSP_SPEED, &val);
 	if (err) {
-		blog(LOG_ERROR, "Failed to set sample rate on DSP '%s'.",
-		     handle->device);
+		blog(LOG_ERROR, "Failed to set sample rate on DSP '%s'.", handle->device);
 		goto failed_state;
 	}
 	err = ioctl(fd, SNDCTL_DSP_GETISPACE, &bi);
 	if (err) {
-		blog(LOG_ERROR, "Failed to get fragment size on DSP '%s'.",
-		     handle->device);
+		blog(LOG_ERROR, "Failed to get fragment size on DSP '%s'.", handle->device);
 		goto failed_state;
 	}
 
@@ -238,32 +232,24 @@ static void *oss_reader_thr(void *vptr)
 			ssize_t nbytes;
 
 			do {
-				nbytes = read(handle->dsp_fd, handle->dsp_buf,
-					      handle->dsp_fragsize);
+				nbytes = read(handle->dsp_fd, handle->dsp_buf, handle->dsp_fragsize);
 			} while (nbytes < 0 && errno == EINTR);
 
 			if (nbytes < 0) {
-				blog(LOG_ERROR,
-				     "%s: Failed to read buffer on DSP '%s'. Errno %d",
-				     __func__, handle->device, errno);
+				blog(LOG_ERROR, "%s: Failed to read buffer on DSP '%s'. Errno %d", __func__,
+				     handle->device, errno);
 				break;
 			} else if (!nbytes) {
-				blog(LOG_ERROR,
-				     "%s: Unexpected EOF on DSP '%s'.",
-				     __func__, handle->device);
+				blog(LOG_ERROR, "%s: Unexpected EOF on DSP '%s'.", __func__, handle->device);
 				break;
 			}
 
 			out.data[0] = handle->dsp_buf;
-			out.format =
-				oss_fmt_to_obs_audio_format(handle->sample_fmt);
-			out.speakers =
-				oss_channels_to_obs_speakers(handle->channels);
+			out.format = oss_fmt_to_obs_audio_format(handle->sample_fmt);
+			out.speakers = oss_channels_to_obs_speakers(handle->channels);
 			out.samples_per_sec = handle->rate;
 			out.frames = nbytes / framesize;
-			out.timestamp = os_gettime_ns() -
-					util_mul_div64(out.frames, NSEC_PER_SEC,
-						       handle->rate);
+			out.timestamp = os_gettime_ns() - util_mul_div64(out.frames, NSEC_PER_SEC, handle->rate);
 			obs_source_output_audio(handle->source, &out);
 		}
 		if (fds[1].revents & POLLIN) {
@@ -416,8 +402,7 @@ static void oss_update(void *vptr, obs_data_t *settings)
 	oss_close_device(handle);
 
 	const char *dsp = obs_data_get_string(settings, OBS_PROPS_DSP);
-	const char *custom_dsp =
-		obs_data_get_string(settings, OBS_PROPS_CUSTOM_DSP);
+	const char *custom_dsp = obs_data_get_string(settings, OBS_PROPS_CUSTOM_DSP);
 	if (dsp == NULL) {
 		bfree(handle->device);
 		handle->device = NULL;
@@ -471,8 +456,7 @@ static void oss_prop_add_devices(obs_property_t *p)
 
 	fp = fopen(OSS_SNDSTAT_PATH, "r");
 	if (fp == NULL) {
-		blog(LOG_ERROR, "Failed to open sndstat at '%s'.",
-		     OSS_SNDSTAT_PATH);
+		blog(LOG_ERROR, "Failed to open sndstat at '%s'.", OSS_SNDSTAT_PATH);
 		return;
 	}
 
@@ -486,14 +470,12 @@ static void oss_prop_add_devices(obs_property_t *p)
 			skipall = true;
 			continue;
 		}
-		if (!strncmp(line, OSS_DEVICE_BEGIN,
-			     strlen(OSS_DEVICE_BEGIN))) {
+		if (!strncmp(line, OSS_DEVICE_BEGIN, strlen(OSS_DEVICE_BEGIN))) {
 			ud_matching = false;
 			skipall = false;
 			continue;
 		}
-		if (!strncmp(line, OSS_USERDEVICE_BEGIN,
-			     strlen(OSS_USERDEVICE_BEGIN))) {
+		if (!strncmp(line, OSS_USERDEVICE_BEGIN, strlen(OSS_USERDEVICE_BEGIN))) {
 			ud_matching = true;
 			skipall = false;
 			continue;
@@ -526,13 +508,11 @@ static void oss_prop_add_devices(obs_property_t *p)
 			goto free_all_str;
 		*ptr++ = '\0';
 		if (!isdigit(pmode[0])) {
-			if (strcmp(pmode, "rec") != 0 &&
-			    strcmp(pmode, "play/rec") != 0)
+			if (strcmp(pmode, "rec") != 0 && strcmp(pmode, "play/rec") != 0)
 				goto free_all_str;
 		} else {
 			int npcs, nrcs;
-			if (sscanf(pmode, "%dp:%*dv/%dr:%*dv", &npcs, &nrcs) !=
-			    2)
+			if (sscanf(pmode, "%dp:%*dv/%dr:%*dv", &npcs, &nrcs) != 2)
 				goto free_all_str;
 			if (nrcs < 1)
 				goto free_all_str;
@@ -567,8 +547,7 @@ static void oss_prop_add_devices(obs_property_t *p)
  */
 static void oss_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, OBS_PROPS_CHANNELS,
-				 OSS_CHANNELS_DEFAULT);
+	obs_data_set_default_int(settings, OBS_PROPS_CHANNELS, OSS_CHANNELS_DEFAULT);
 	obs_data_set_default_int(settings, OBS_PROPS_RATE, OSS_RATE_DEFAULT);
 	obs_data_set_default_int(settings, OBS_PROPS_SAMPLE_FMT, AFMT_S16_LE);
 	obs_data_set_default_string(settings, OBS_PROPS_DSP, OSS_DSP_DEFAULT);
@@ -579,8 +558,7 @@ static void oss_defaults(obs_data_t *settings)
  *
  * Fetch the engine information of the corresponding DSP
  */
-static bool oss_fill_device_info(obs_property_t *rate, obs_property_t *channels,
-				 const char *device)
+static bool oss_fill_device_info(obs_property_t *rate, obs_property_t *channels, const char *device)
 {
 	oss_audioinfo ai;
 	int fd = -1;
@@ -601,14 +579,11 @@ static bool oss_fill_device_info(obs_property_t *rate, obs_property_t *channels,
 	ai.dev = -1;
 	err = ioctl(fd, SNDCTL_ENGINEINFO, &ai);
 	if (err) {
-		blog(LOG_ERROR,
-		     "Failed to issue ioctl(SNDCTL_ENGINEINFO) on device '%s'. Errno: %d",
-		     device, errno);
+		blog(LOG_ERROR, "Failed to issue ioctl(SNDCTL_ENGINEINFO) on device '%s'. Errno: %d", device, errno);
 		goto cleanup;
 	}
 
-	for (int i = ai.min_channels;
-	     i <= ai.max_channels && i <= OSS_MAX_CHANNELS; i++) {
+	for (int i = ai.min_channels; i <= ai.max_channels && i <= OSS_MAX_CHANNELS; i++) {
 		enum speaker_layout layout = oss_channels_to_obs_speakers(i);
 
 		if (layout != SPEAKERS_UNKNOWN) {
@@ -618,12 +593,9 @@ static bool oss_fill_device_info(obs_property_t *rate, obs_property_t *channels,
 		}
 	}
 
-	for (size_t i = 0; i < sizeof(rate_table) / sizeof(rate_table[0]);
-	     i++) {
-		if (ai.min_rate <= rate_table[i].rate &&
-		    ai.max_rate >= rate_table[i].rate)
-			obs_property_list_add_int(rate, rate_table[i].desc,
-						  rate_table[i].rate);
+	for (size_t i = 0; i < sizeof(rate_table) / sizeof(rate_table[0]); i++) {
+		if (ai.min_rate <= rate_table[i].rate && ai.max_rate >= rate_table[i].rate)
+			obs_property_list_add_int(rate, rate_table[i].desc, rate_table[i].rate);
 	}
 
 cleanup:
@@ -639,8 +611,7 @@ cleanup:
 /**
  * Get plugin properties
  */
-static bool oss_on_devices_changed(obs_properties_t *props, obs_property_t *p,
-				   obs_data_t *settings)
+static bool oss_on_devices_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
 	obs_property_t *rate, *channels;
 	obs_property_t *custom_dsp;
@@ -681,35 +652,23 @@ static obs_properties_t *oss_properties(void *unused)
 
 	props = obs_properties_create();
 
-	devices = obs_properties_add_list(props, OBS_PROPS_DSP,
-					  obs_module_text("DSP"),
-					  OBS_COMBO_TYPE_LIST,
+	devices = obs_properties_add_list(props, OBS_PROPS_DSP, obs_module_text("DSP"), OBS_COMBO_TYPE_LIST,
 					  OBS_COMBO_FORMAT_STRING);
 
-	obs_property_list_add_string(devices, obs_module_text("Default"),
-				     OSS_DSP_DEFAULT);
-	obs_property_list_add_string(devices, obs_module_text("Custom"),
-				     OBS_PATH_DSP_CUSTOM);
+	obs_property_list_add_string(devices, obs_module_text("Default"), OSS_DSP_DEFAULT);
+	obs_property_list_add_string(devices, obs_module_text("Custom"), OBS_PATH_DSP_CUSTOM);
 	obs_property_set_modified_callback(devices, oss_on_devices_changed);
 
-	obs_properties_add_text(props, OBS_PROPS_CUSTOM_DSP,
-				obs_module_text("CustomDSPPath"),
-				OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, OBS_PROPS_CUSTOM_DSP, obs_module_text("CustomDSPPath"), OBS_TEXT_DEFAULT);
 
-	rate = obs_properties_add_list(props, OBS_PROPS_RATE,
-				       obs_module_text("SampleRate"),
-				       OBS_COMBO_TYPE_LIST,
+	rate = obs_properties_add_list(props, OBS_PROPS_RATE, obs_module_text("SampleRate"), OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
-	channels = obs_properties_add_list(props, OBS_PROPS_CHANNELS,
-					   obs_module_text("Channels"),
-					   OBS_COMBO_TYPE_LIST,
+	channels = obs_properties_add_list(props, OBS_PROPS_CHANNELS, obs_module_text("Channels"), OBS_COMBO_TYPE_LIST,
 					   OBS_COMBO_FORMAT_INT);
 	oss_fill_device_info(rate, channels, OSS_DSP_DEFAULT);
 
-	sample_fmt = obs_properties_add_list(props, OBS_PROPS_SAMPLE_FMT,
-					     obs_module_text("SampleFormat"),
-					     OBS_COMBO_TYPE_LIST,
-					     OBS_COMBO_FORMAT_INT);
+	sample_fmt = obs_properties_add_list(props, OBS_PROPS_SAMPLE_FMT, obs_module_text("SampleFormat"),
+					     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
 	obs_property_list_add_int(sample_fmt, "pcm8", AFMT_U8);
 	obs_property_list_add_int(sample_fmt, "pcm16le", AFMT_S16_LE);

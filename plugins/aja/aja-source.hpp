@@ -1,6 +1,7 @@
 #pragma once
 
 #include "aja-props.hpp"
+#include "audio-repack.hpp"
 
 #include <obs-module.h>
 
@@ -28,8 +29,7 @@ public:
 	void SetName(const std::string &name);
 	std::string GetName() const;
 
-	void GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
-				 NTV2TestPatternSelect ps);
+	void GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf, NTV2TestPatternSelect ps);
 
 	// Capture Thread stuff
 	static void CaptureThread(AJAThread *thread, void *data);
@@ -53,8 +53,7 @@ public:
 
 	bool ReadChannelVPIDs(NTV2Channel channel, VPIDData &vpids);
 
-	bool ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select,
-			     NTV2VideoFormat &vf, NTV2PixelFormat &pf,
+	bool ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select, NTV2VideoFormat &vf, NTV2PixelFormat &pf,
 			     VPIDDataList &vpids);
 
 	void ResetVideoBuffer(NTV2VideoFormat vf, NTV2PixelFormat pf);

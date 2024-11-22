@@ -1,0 +1,7 @@
+@OBSThemeMeta {
+    name: 'Default';
+    id: 'com.obsproject.Yami.Original';
+    extends: 'com.obsproject.Yami';
+    author: 'Warchamp7';
+    dark: 'true';
+}

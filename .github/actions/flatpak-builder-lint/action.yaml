@@ -1,0 +1,75 @@
+name: Run flatpak-builder-lint
+description: Runs flatpak-builder-lint with exceptions
+inputs:
+  artifact:
+    description: Type of artifact to lint (builddir, repo, manifest, appstream)
+    required: true
+  path:
+    description: Path to flatpak-builder manifest or Flatpak build directory
+    required: true
+  workingDirectory:
+    description: Working directory to clone flatpak-builder-lint
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check artifact type
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Check artifact input
+        if ! [[ "${{ inputs.artifact }}" =~ builddir|repo|manifest|appstream ]]; then
+          echo "::error::Given artifact type is incorrect"
+          exit 2
+        fi
+
+    - name: Run flatpak-builder-lint
+      id: result
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Run flatpak-builder-lint
+
+        return=0
+        result="$(flatpak-builder-lint --exceptions ${{ inputs.artifact }} ${{ inputs.path }})" || return=$?
+
+        if [[ ${return} != 0 && -z "${result}" ]]; then
+          echo "::error::Error while running flatpak-builder-lint"
+          exit 2
+        fi
+
+        if [[ "${{ inputs.artifact }}" == "appstream" ]]; then
+          echo "${result}"
+
+          if [[ ${return} != 0 ]]; then echo "::error::Flatpak appstream info is not valid"; fi
+
+          exit ${return}
+        fi
+
+        # This jq command selects any available array under the 'warnings' key in the JSON document
+        # or provides an empty array as a fallback if the key is not present. This array is then
+        # piped to the 'map' function to apply a transformation to every element in the array,
+        # converting it to a string prefixed with the output level, the actual element value, and
+        # finally the suffix string defined in 'template'.
+        #
+        # The result of this expression is concatenated with a similar expression doing the same
+        # but for the 'errors' key and its associated array.
+        #
+        # The second jq invocation then selects each element of the array and outputs it directly,
+        # which will be strings of the formats:
+        #
+        # * '::warning:: <original warning> <template text>'
+        # * '::error:: <original error> <template text>'
+        #
+        # If no warnings or errors were found, only empty arrays were used for 'map' and thus
+        # only an empty result array is generated.
+
+        template=" found in the Flatpak ${{ inputs.artifact }}"
+        while read -r log_line; do
+          if [[ "${log_line}" ]]; then echo "${log_line}"; fi
+        done <<< "$(echo "${result}" \
+          | jq -r '(.warnings // [] | try map("::warning:: " + . + "${template}")) + (.errors // [] | try map("::error:: " + . + "${template}"))' \
+          | jq -r '.[]')"
+
+        exit ${return}

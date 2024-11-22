@@ -20,7 +20,7 @@ specific transforms and/or filtering
 Scene Item Transform Structure (obs_transform_info)
 ---------------------------------------------------
 
-.. type:: struct obs_transform_info
+.. struct:: obs_transform_info
 
    Scene item transform structure.
 
@@ -80,7 +80,7 @@ Scene Item Transform Structure (obs_transform_info)
 Scene Item Crop Structure (obs_sceneitem_crop)
 ----------------------------------------------
 
-.. type:: struct obs_sceneitem_crop
+.. struct:: obs_sceneitem_crop
 
    Scene item crop structure.
 
@@ -104,7 +104,7 @@ Scene Item Crop Structure (obs_sceneitem_crop)
 Scene Item Order Info Structure (\*obs_sceneitem_order_info)
 ------------------------------------------------------------
 
-.. type:: struct obs_sceneitem_order_info
+.. struct:: obs_sceneitem_order_info
 
    Scene item order info structure.
 
@@ -129,11 +129,11 @@ Scene Signals
 
 **item_remove** (ptr scene, ptr item)
 
-   Called when a scene item has been removed from the scen.
+   Called when a scene item has been removed from the scene.
 
 **reorder** (ptr scene)
 
-   Called when scene items have been reoredered in the scene.
+   Called when scene items have been reordered in the scene.
 
 **refresh** (ptr scene)
 
@@ -149,6 +149,7 @@ Scene Signals
    Called when a scene item has been locked or unlocked.
 
 **item_select** (ptr scene, ptr item)
+
 **item_deselect** (ptr scene, ptr item)
 
    Called when a scene item has been selected/deselected.
@@ -196,19 +197,10 @@ General Scene Functions
 
 ---------------------
 
-.. function:: void obs_scene_addref(obs_scene_t *scene)
-
-   Adds a reference to a scene.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_scene_get_ref()` instead.
-
----------------------
-
 .. function:: obs_scene_t *obs_scene_get_ref(obs_scene_t *scene)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_scene_release()`.
 
 ---------------------
 
@@ -264,7 +256,16 @@ General Scene Functions
 
 .. function:: void obs_scene_enum_items(obs_scene_t *scene, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
 
-   Enumerates scene items within a scene.
+   Enumerates scene items within a scene in order of the bottommost scene item
+   to the topmost scene item.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_sceneitem_addref()` if you want to retain a
+   reference after obs_scene_enum_items finishes.
+
+   For scripting, use :py:func:`obs_scene_enum_items`.
 
 ---------------------
 
@@ -325,6 +326,11 @@ Scene Item Functions
 
    :return: The sceneitem associated with a source in a scene. Returns NULL if not found.
 
+   .. deprecated:: 31.0
+      This function is problematic because there can be multiple items of the same source in a scene.
+      In that case, which of those this function will return is undefined.
+      If this is the behavior you need, manually use :c:func:`obs_scene_enum_items` instead.
+
 ---------------------
 
 .. function:: void obs_sceneitem_set_id(obs_sceneitem_t *item);
@@ -343,9 +349,9 @@ Scene Item Functions
 ---------------------
 
 .. function:: obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
-.. function:: void obs_scene_load_transform_states(oconst char *states)
+.. function:: void obs_scene_load_transform_states(const char *states)
 
-   Saves all the transformation states for the sceneitms in scene. When all_items is false, it
+   Saves all the transformation states for the sceneitems in scene. When all_items is false, it
    will only save selected items
 
    :return: Data containing transformation states for all* sceneitems in scene
@@ -356,6 +362,18 @@ Scene Item Functions
               void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 
    Sets/gets the position of a scene item.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_relative_pos(obs_sceneitem_t *item, const struct vec2 *pos)
+              void obs_sceneitem_get_relative_pos(const obs_sceneitem_t *item, struct vec2 *pos)
+
+   Sets/gets the position of a scene item in relative coordinates.
+   In this system `(0.0, 0.0)` is the center of the screen, `(0, -1.0)` the bottom and `(0, 1.0)` the top.
+   The visible range of the horizontal axis depends on aspect ratio, for example, with 16:9 (1.7777...) this is `[-1.777.., -1.777..]`.
+   Positions are rounded to the nearest half-pixel when converting from relative to absolute pixel values to maintain backwards compaibility.
+
+   .. versionadded:: 31.0
 
 ---------------------
 
@@ -451,10 +469,40 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_relative_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
+              void obs_sceneitem_get_relative_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
+
+   Sets/gets the bounding box width/height of the scene item in relative sizes.
+   See :c:func:`obs_sceneitem_get_relative_pos()`/:c:func:`obs_sceneitem_set_relative_pos()` for details on the relative coordinate system.
+   
+   .. versionadded:: 31.0
+
+---------------------
+
 .. function:: void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info)
               void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info)
 
    Sets/gets the transform information of the scene item.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_info2(obs_sceneitem_t *item, const struct obs_transform_info *info)
+              void obs_sceneitem_get_info2(const obs_sceneitem_t *item, struct obs_transform_info *info)
+
+   Sets/gets the transform information of the scene item.
+   This version of the function also sets the `crop_to_bounds` member of `obs_transform_info`.
+
+   .. versionadded:: 30.1
+
+---------------------
+
+.. function:: void obs_sceneitem_set_info3(obs_sceneitem_t *item, const struct obs_transform_info *info)
+              void obs_sceneitem_get_info3(const obs_sceneitem_t *item, struct obs_transform_info *info)
+
+   Sets/gets the transform information of the scene item.
+   This version uses relative coordinates, see :c:func:`obs_sceneitem_get_relative_pos()`/:c:func:`obs_sceneitem_set_relative_pos()` for details.
+
+   .. versionadded:: 31.0
 
 ---------------------
 
@@ -469,6 +517,15 @@ Scene Item Functions
 
    Gets the transform matrix of the scene item used for the bounding box
    or edges of the scene item.
+
+---------------------
+
+.. function:: void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
+              bool obs_sceneitem_selected(const obs_sceneitem_t *item)
+
+   Sets/gets the selection state of the scene item. Note that toggling
+   the selected state will not affect the selected state of other scene items,
+   as multiple scene items can be selected.
 
 ---------------------
 
@@ -507,6 +564,17 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_blending_method(obs_sceneitem_t *item, enum obs_blending_method method)
+              enum obs_blending_method obs_sceneitem_get_blending_method(obs_sceneitem_t *item)
+
+   Sets/gets the blending method used for the scene item.
+
+   :param method: | Can be one of the following values:
+                  | OBS_BLEND_METHOD_DEFAULT
+                  | OBS_BLEND_METHOD_SRGB_OFF
+
+---------------------
+
 .. function:: void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item, enum obs_blending_type type)
               enum obs_blending_type obs_sceneitem_get_blending_mode(obs_sceneitem_t *item)
 
@@ -536,35 +604,52 @@ Scene Item Functions
 
    :return: An incremented reference to the private settings of the
             scene item.  Allows the front-end to set custom information
-            which is saved with the scene item
+            which is saved with the scene item. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
-.. function:: void obs_sceneitem_set_show_transition(obs_sceneitem_t *item, obs_source_t *transition)
-              void obs_sceneitem_set_hide_transition(obs_sceneitem_t *item, obs_source_t *transition)
+.. function:: void obs_sceneitem_set_transition(obs_sceneitem_t *item, bool show, obs_source_t *transition)
 
-   Set a transition for showing or hiding a scene item. Set *NULL* to remove the transition.
+   Sets a transition for showing or hiding a scene item.
 
----------------------
-
-.. function:: obs_source_t *obs_sceneitem_get_show_transition(obs_sceneitem_t *item)
-              obs_source_t *obs_sceneitem_get_hide_transition(obs_sceneitem_t *item)
-
-   :return: The transition for showing or hiding a scene item. *NULL* if no transition is set.
+   :param item:       The target scene item
+   :param show:       If *true*, this will set the show transition.
+                      If *false*, this will set the hide transition.
+   :param transition: The transition to set. Pass *NULL* to remove the transition.
 
 ---------------------
 
-.. function:: void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
-              void obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
+.. function:: obs_source_t *obs_sceneitem_get_transition(obs_sceneitem_t *item, bool show)
 
-   Set transition duration for showing or hiding a scene item.
+   :param item: The target scene item
+   :param show: If *true*, this will return the show transition.
+                If *false*, this will return the hide transition.
+   :return:     The transition for showing or hiding a scene item. *NULL* if no transition is set.
 
 ---------------------
 
-.. function:: uint32_t obs_sceneitem_get_show_transition_duration(obs_sceneitem_t *item)
-              uint32_t obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item)
+---------------------
 
-   :return: The transition duration in ms for showing or hiding a scene item.
+.. function:: void obs_sceneitem_set_transition_duration(obs_sceneitem_t *item, bool show, uint32_t duration_ms)
+
+   Sets the transition duration for showing or hiding a scene item.
+
+   :param item:        The target scene item
+   :param show:        If *true*, this will set the duration of the show transition.
+                       If *false*, this will set the duration of the hide transition.
+   :param duration_ms: The transition duration in milliseconds
+
+---------------------
+
+.. function:: uint32_t obs_sceneitem_get_transition_duration(obs_sceneitem_t *item, bool show)
+
+   Gets the transition duration for showing or hiding a scene item.
+
+   :param item: The target scene item
+   :param show: If *true*, this will return the duration of the show transition.
+                If *false*, this will return the duration of the hide transition.
+   :return:     The transition duration in milliseconds
 
 ---------------------
 
@@ -703,33 +788,27 @@ Scene Item Group Functions
 
 ---------------------
 
-.. function:: obs_sceneitem_t *obs_sceneitem_get_group(obs_sceneitem_t *item)
+.. function:: obs_sceneitem_t *obs_sceneitem_get_group(obs_scene_t *scene, obs_sceneitem_t *item)
 
    Returns the parent group of a scene item.
 
+   :param scene: Scene to find the group within
    :param item: Scene item to get the group of
    :return:     The parent group of the scene item, or *NULL* if not in
                 a group
 
 ---------------------
 
-.. function:: obs_sceneitem_t *obs_sceneitem_group_from_scene(obs_scene_t *scene)
-
-   :return: The group associated with the scene, or *NULL* if the
-            specified scene is not a group.
-
----------------------
-
-.. function:: obs_sceneitem_t *obs_sceneitem_group_from_source(obs_source_t *source)
-
-   :return: The group associated with the scene's source, or *NULL* if
-            the specified source is not a group.
-
----------------------
-
 .. function:: void obs_sceneitem_group_enum_items(obs_sceneitem_t *group, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
 
    Enumerates scene items within a group.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_sceneitem_addref()` if you want to retain a
+   reference after obs_sceneitem_group_enum_items finishes.
+
 
 ---------------------
 

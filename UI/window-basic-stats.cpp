@@ -1,11 +1,11 @@
 #include "obs-frontend-api/obs-frontend-api.h"
 
-#include "window-basic-stats.hpp"
+#include "moc_window-basic-stats.cpp"
 #include "window-basic-main.hpp"
 #include "platform.hpp"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -22,34 +22,37 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
 	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
 
-	switch ((int)event) {
+	switch (event) {
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		stats->StartRecTimeLeft();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 		stats->ResetRecTimeLeft();
 		break;
+	case OBS_FRONTEND_EVENT_EXIT:
+		// This is only reached when the non-closable (dock) stats
+		// window is being cleaned up. The closable stats window is
+		// already gone by this point as it's deleted on close.
+		obs_frontend_remove_event_callback(OBSFrontendEvent, stats);
+		break;
+	default:
+		break;
 	}
 }
 
 static QString MakeTimeLeftText(int hours, int minutes)
 {
-	return QString::asprintf("%d %s, %d %s", hours,
-				 QT_TO_UTF8(QTStr("Hours")), minutes,
-				 QT_TO_UTF8(QTStr("Minutes")));
+	return QString::asprintf("%d %s, %d %s", hours, Str("Hours"), minutes, Str("Minutes"));
 }
 
-static QString MakeMissedFramesText(uint32_t total_lagged,
-				    uint32_t total_rendered, long double num)
+static QString MakeMissedFramesText(uint32_t total_lagged, uint32_t total_rendered, long double num)
 {
 	return QString("%1 / %2 (%3%)")
-		.arg(QString::number(total_lagged),
-		     QString::number(total_rendered),
-		     QString::number(num, 'f', 1));
+		.arg(QString::number(total_lagged), QString::number(total_rendered), QString::number(num, 'f', 1));
 }
 
-OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
-	: QWidget(parent),
+OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
+	: QFrame(parent),
 	  cpu_info(os_cpu_usage_info_start()),
 	  timer(this),
 	  recTimeLeft(this)
@@ -108,13 +111,13 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 	/* --------------------------------------------- */
 	QPushButton *closeButton = nullptr;
-	if (closeable)
+	if (closable)
 		closeButton = new QPushButton(QTStr("Close"));
 	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addStretch();
 	buttonLayout->addWidget(resetButton);
-	if (closeable)
+	if (closable)
 		buttonLayout->addWidget(closeButton);
 
 	/* --------------------------------------------- */
@@ -158,9 +161,8 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	setLayout(mainLayout);
 
 	/* --------------------------------------------- */
-	if (closeable)
-		connect(closeButton, &QPushButton::clicked,
-			[this]() { close(); });
+	if (closable)
+		connect(closeButton, &QPushButton::clicked, [this]() { close(); });
 	connect(resetButton, &QPushButton::clicked, [this]() { Reset(); });
 
 	delete shortcutFilter;
@@ -171,8 +173,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 	setWindowTitle(QTStr("Basic.Stats"));
 #ifdef __APPLE__
-	setWindowIcon(
-		QIcon::fromTheme("obs", QIcon(":/res/images/obs_256x256.png")));
+	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs_256x256.png")));
 #else
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 #endif
@@ -180,8 +181,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
-	QObject::connect(&timer, &QTimer::timeout, this,
-			 &OBSBasicStats::Update);
+	QObject::connect(&timer, &QTimer::timeout, this, &OBSBasicStats::Update);
 	timer.setInterval(TIMER_INTERVAL);
 
 	if (isVisible())
@@ -189,26 +189,20 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 	Update();
 
-	QObject::connect(&recTimeLeft, &QTimer::timeout, this,
-			 &OBSBasicStats::RecordingTimeLeft);
+	QObject::connect(&recTimeLeft, &QTimer::timeout, this, &OBSBasicStats::RecordingTimeLeft);
 	recTimeLeft.setInterval(REC_TIME_LEFT_INTERVAL);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
-	const char *geometry =
-		config_get_string(main->Config(), "Stats", "geometry");
+	const char *geometry = config_get_string(main->Config(), "Stats", "geometry");
 	if (geometry != NULL) {
-		QByteArray byteArray =
-			QByteArray::fromBase64(QByteArray(geometry));
+		QByteArray byteArray = QByteArray::fromBase64(QByteArray(geometry));
 		restoreGeometry(byteArray);
 
 		QRect windowGeometry = normalGeometry();
 		if (!WindowPositionValid(windowGeometry)) {
-			QRect rect =
-				QGuiApplication::primaryScreen()->geometry();
-			setGeometry(QStyle::alignedRect(Qt::LeftToRight,
-							Qt::AlignCenter, size(),
-							rect));
+			QRect rect = QGuiApplication::primaryScreen()->geometry();
+			setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), rect));
 		}
 	}
 
@@ -222,18 +216,19 @@ void OBSBasicStats::closeEvent(QCloseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	if (isVisible()) {
-		config_set_string(main->Config(), "Stats", "geometry",
-				  saveGeometry().toBase64().constData());
+		config_set_string(main->Config(), "Stats", "geometry", saveGeometry().toBase64().constData());
 		config_save_safe(main->Config(), "tmp", nullptr);
 	}
+
+	// This code is only reached when the non-dockable stats window is
+	// manually closed or OBS is exiting.
+	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
 
 	QWidget::closeEvent(event);
 }
 
 OBSBasicStats::~OBSBasicStats()
 {
-	obs_frontend_remove_event_callback(OBSFrontendEvent, this);
-
 	delete shortcutFilter;
 	os_cpu_usage_info_destroy(cpu_info);
 }
@@ -246,13 +241,6 @@ void OBSBasicStats::AddOutputLabels(QString name)
 	ol.droppedFrames = new QLabel(this);
 	ol.megabytesSent = new QLabel(this);
 	ol.bitrate = new QLabel(this);
-
-	int newPointSize = ol.status->font().pointSize();
-	newPointSize *= 13;
-	newPointSize /= 10;
-	QString qss =
-		QString("font-size: %1pt").arg(QString::number(newPointSize));
-	ol.status->setStyleSheet(qss);
 
 	int col = 0;
 	int row = outputLabels.size() + 1;
@@ -303,11 +291,11 @@ void OBSBasicStats::Update()
 	fps->setText(str);
 
 	if (curFPS < (obsFPS * 0.8))
-		setThemeID(fps, "error");
+		setClasses(fps, "text-danger");
 	else if (curFPS < (obsFPS * 0.95))
-		setThemeID(fps, "warning");
+		setClasses(fps, "text-warning");
 	else
-		setThemeID(fps, "");
+		setClasses(fps, "");
 
 	/* ------------------ */
 
@@ -339,11 +327,11 @@ void OBSBasicStats::Update()
 	hddSpace->setText(str);
 
 	if (num_bytes < GBYTE)
-		setThemeID(hddSpace, "error");
+		setClasses(hddSpace, "text-danger");
 	else if (num_bytes < (5 * GBYTE))
-		setThemeID(hddSpace, "warning");
+		setClasses(hddSpace, "text-warning");
 	else
-		setThemeID(hddSpace, "");
+		setClasses(hddSpace, "");
 
 	/* ------------------ */
 
@@ -359,15 +347,14 @@ void OBSBasicStats::Update()
 	str = QString::number(num, 'f', 1) + QStringLiteral(" ms");
 	renderTime->setText(str);
 
-	long double fpsFrameTime =
-		(long double)ovi.fps_den * 1000.0l / (long double)ovi.fps_num;
+	long double fpsFrameTime = (long double)ovi.fps_den * 1000.0l / (long double)ovi.fps_num;
 
 	if (num > fpsFrameTime)
-		setThemeID(renderTime, "error");
+		setClasses(renderTime, "text-danger");
 	else if (num > fpsFrameTime * 0.75l)
-		setThemeID(renderTime, "warning");
+		setClasses(renderTime, "text-warning");
 	else
-		setThemeID(renderTime, "");
+		setClasses(renderTime, "");
 
 	/* ------------------ */
 
@@ -382,23 +369,20 @@ void OBSBasicStats::Update()
 	total_encoded -= first_encoded;
 	total_skipped -= first_skipped;
 
-	num = total_encoded
-		      ? (long double)total_skipped / (long double)total_encoded
-		      : 0.0l;
+	num = total_encoded ? (long double)total_skipped / (long double)total_encoded : 0.0l;
 	num *= 100.0l;
 
 	str = QString("%1 / %2 (%3%)")
-		      .arg(QString::number(total_skipped),
-			   QString::number(total_encoded),
+		      .arg(QString::number(total_skipped), QString::number(total_encoded),
 			   QString::number(num, 'f', 1));
 	skippedFrames->setText(str);
 
 	if (num > 5.0l)
-		setThemeID(skippedFrames, "error");
+		setClasses(skippedFrames, "text-danger");
 	else if (num > 1.0l)
-		setThemeID(skippedFrames, "warning");
+		setClasses(skippedFrames, "text-warning");
 	else
-		setThemeID(skippedFrames, "");
+		setClasses(skippedFrames, "");
 
 	/* ------------------ */
 
@@ -412,20 +396,18 @@ void OBSBasicStats::Update()
 	total_rendered -= first_rendered;
 	total_lagged -= first_lagged;
 
-	num = total_rendered
-		      ? (long double)total_lagged / (long double)total_rendered
-		      : 0.0l;
+	num = total_rendered ? (long double)total_lagged / (long double)total_rendered : 0.0l;
 	num *= 100.0l;
 
 	str = MakeMissedFramesText(total_lagged, total_rendered, num);
 	missedFrames->setText(str);
 
 	if (num > 5.0l)
-		setThemeID(missedFrames, "error");
+		setClasses(missedFrames, "text-danger");
 	else if (num > 1.0l)
-		setThemeID(missedFrames, "warning");
+		setClasses(missedFrames, "text-warning");
 	else
-		setThemeID(missedFrames, "");
+		setClasses(missedFrames, "");
 
 	/* ------------------------------------------- */
 	/* recording/streaming stats                   */
@@ -459,9 +441,13 @@ void OBSBasicStats::ResetRecTimeLeft()
 
 void OBSBasicStats::RecordingTimeLeft()
 {
-	long double averageBitrate =
-		accumulate(bitrates.begin(), bitrates.end(), 0.0) /
-		(long double)bitrates.size();
+	if (bitrates.empty())
+		return;
+
+	long double averageBitrate = accumulate(bitrates.begin(), bitrates.end(), 0.0) / (long double)bitrates.size();
+	if (averageBitrate == 0)
+		return;
+
 	long double bytesPerSec = (averageBitrate / 8.0l) * 1000.0l;
 	long double secondsUntilFull = (long double)num_bytes / bytesPerSec;
 
@@ -505,48 +491,54 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 		lastBytesSent = 0;
 
 	uint64_t bitsBetween = (bytesSent - lastBytesSent) * 8;
-	long double timePassed =
-		(long double)(curTime - lastBytesSentTime) / 1000000000.0l;
+	long double timePassed = (long double)(curTime - lastBytesSentTime) / 1000000000.0l;
 	kbps = (long double)bitsBetween / timePassed / 1000.0l;
 
 	if (timePassed < 0.01l)
 		kbps = 0.0l;
 
 	QString str = QTStr("Basic.Stats.Status.Inactive");
-	QString themeID;
+	QString styling;
 	bool active = output ? obs_output_active(output) : false;
 	if (rec) {
 		if (active)
 			str = QTStr("Basic.Stats.Status.Recording");
 	} else {
 		if (active) {
-			bool reconnecting =
-				output ? obs_output_reconnecting(output)
-				       : false;
+			bool reconnecting = output ? obs_output_reconnecting(output) : false;
 
 			if (reconnecting) {
 				str = QTStr("Basic.Stats.Status.Reconnecting");
-				themeID = "error";
+				styling = "text-danger";
 			} else {
 				str = QTStr("Basic.Stats.Status.Live");
-				themeID = "good";
+				styling = "text-success";
 			}
 		}
 	}
 
 	status->setText(str);
-	setThemeID(status, themeID);
+	setClasses(status, styling);
 
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
+	const char *unit = "MiB";
+	if (num > 1024) {
+		num /= 1024;
+		unit = "GiB";
+	}
+	megabytesSent->setText(QString("%1 %2").arg(num, 0, 'f', 1).arg(unit));
 
-	megabytesSent->setText(
-		QString("%1 MB").arg(QString::number(num, 'f', 1)));
-	bitrate->setText(QString("%1 kb/s").arg(QString::number(kbps, 'f', 0)));
+	num = kbps;
+	unit = "kb/s";
+	if (num >= 10'000) {
+		num /= 1000;
+		unit = "Mb/s";
+	}
+	bitrate->setText(QString("%1 %2").arg(num, 0, 'f', 0).arg(unit));
 
 	if (!rec) {
 		int total = output ? obs_output_get_total_frames(output) : 0;
-		int dropped = output ? obs_output_get_frames_dropped(output)
-				     : 0;
+		int dropped = output ? obs_output_get_frames_dropped(output) : 0;
 
 		if (total < first_total || dropped < first_dropped) {
 			first_total = 0;
@@ -556,21 +548,18 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 		total -= first_total;
 		dropped -= first_dropped;
 
-		num = total ? (long double)dropped / (long double)total * 100.0l
-			    : 0.0l;
+		num = total ? (long double)dropped / (long double)total * 100.0l : 0.0l;
 
 		str = QString("%1 / %2 (%3%)")
-			      .arg(QString::number(dropped),
-				   QString::number(total),
-				   QString::number(num, 'f', 1));
+			      .arg(QString::number(dropped), QString::number(total), QString::number(num, 'f', 1));
 		droppedFrames->setText(str);
 
 		if (num > 5.0l)
-			setThemeID(droppedFrames, "error");
+			setClasses(droppedFrames, "text-danger");
 		else if (num > 1.0l)
-			setThemeID(droppedFrames, "warning");
+			setClasses(droppedFrames, "text-warning");
 		else
-			setThemeID(droppedFrames, "");
+			setClasses(droppedFrames, "");
 	}
 
 	lastBytesSent = bytesSent;

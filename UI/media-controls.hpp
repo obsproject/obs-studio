@@ -4,7 +4,7 @@
 #include <QTimer>
 #include <vector>
 #include <obs.hpp>
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 
 class Ui_MediaControls;
 
@@ -33,6 +33,8 @@ private:
 	static void OBSMediaPlay(void *data, calldata_t *calldata);
 	static void OBSMediaPause(void *data, calldata_t *calldata);
 	static void OBSMediaStarted(void *data, calldata_t *calldata);
+	static void OBSMediaNext(void *data, calldata_t *calldata);
+	static void OBSMediaPrevious(void *data, calldata_t *calldata);
 
 	std::unique_ptr<Ui_MediaControls> ui;
 
@@ -43,10 +45,10 @@ private slots:
 	void on_previousButton_clicked();
 	void on_durationLabel_clicked();
 
-	void MediaSliderClicked();
-	void MediaSliderReleased();
-	void MediaSliderHovered(int val);
-	void MediaSliderMoved(int val);
+	void AbsoluteSliderClicked();
+	void AbsoluteSliderReleased();
+	void AbsoluteSliderHovered(int val);
+	void AbsoluteSliderMoved(int val);
 	void SetSliderPosition();
 	void SetPlayingState();
 	void SetPausedState();
@@ -60,6 +62,9 @@ private slots:
 
 	void MoveSliderFoward(int seconds = 5);
 	void MoveSliderBackwards(int seconds = 5);
+
+	void UpdateSlideCounter();
+	void UpdateLabels(int val);
 
 public slots:
 	void PlayMedia();

@@ -1,41 +1,31 @@
-project(libobs-winrt)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+add_library(libobs-winrt-headers INTERFACE)
+add_library(OBS::winrt-headers ALIAS libobs-winrt-headers)
 
-add_definitions(-DLIBOBS_EXPORTS)
+target_sources(libobs-winrt-headers INTERFACE winrt-capture.h)
+target_include_directories(libobs-winrt-headers INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+add_library(libobs-winrt MODULE)
+add_library(OBS::libobs-winrt ALIAS libobs-winrt)
 
-set(libobs-winrt_SOURCES
-	winrt-capture.cpp
-	winrt-dispatch.cpp)
+target_sources(libobs-winrt PRIVATE winrt-capture.cpp winrt-capture.h winrt-dispatch.cpp winrt-dispatch.h)
 
-set(libobs-winrt_HEADERS
-	winrt-capture.h
-	winrt-dispatch.h)
+target_precompile_headers(
+  libobs-winrt
+  PRIVATE
+    <d3d11.h>
+    <DispatcherQueue.h>
+    <dwmapi.h>
+    <obs-module.h>
+    <util/windows/ComPtr.hpp>
+    <Windows.Graphics.Capture.Interop.h>
+    <windows.graphics.directx.direct3d11.interop.h>
+    <winrt/Windows.Foundation.Metadata.h>
+    <winrt/Windows.Graphics.Capture.h>
+    <winrt/Windows.System.h>
+)
 
-add_library(libobs-winrt MODULE
-	${libobs-winrt_SOURCES}
-	${libobs-winrt_HEADERS})
-set_target_properties(libobs-winrt
-	PROPERTIES
-		FOLDER "core"
-		OUTPUT_NAME libobs-winrt
-		PREFIX "")
-target_precompile_headers(libobs-winrt
-	PRIVATE
-		[["../libobs/util/windows/ComPtr.hpp"]]
-		<obs-module.h>
-		<d3d11.h>
-		<DispatcherQueue.h>
-		<dwmapi.h>
-		<Windows.Graphics.Capture.Interop.h>
-		<winrt/Windows.Foundation.Metadata.h>
-		<winrt/Windows.Graphics.Capture.h>
-		<winrt/Windows.System.h>)
-target_link_libraries(libobs-winrt
-	libobs
-	Dwmapi
-	windowsapp)
+target_link_libraries(libobs-winrt PRIVATE OBS::libobs OBS::COMutils Dwmapi windowsapp)
 
-install_obs_core(libobs-winrt)
+set_target_properties_obs(libobs-winrt PROPERTIES FOLDER core)

@@ -79,11 +79,16 @@ struct AudioChannelLayout {
 };
 typedef struct AudioChannelLayout AudioChannelLayout;
 
-typedef OSStatus (*AudioConverterComplexInputDataProc)(
-	AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
-	AudioBufferList *ioData,
-	AudioStreamPacketDescription **outDataPacketDescription,
-	void *inUserData);
+struct AudioConverterPrimeInfo {
+	UInt32 leadingFrames;
+	UInt32 trailingFrames;
+};
+typedef struct AudioConverterPrimeInfo AudioConverterPrimeInfo;
+
+typedef OSStatus (*AudioConverterComplexInputDataProc)(AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
+						       AudioBufferList *ioData,
+						       AudioStreamPacketDescription **outDataPacketDescription,
+						       void *inUserData);
 
 enum {
 	kAudioCodecPropertyNameCFString = 'lnam',
@@ -315,46 +320,38 @@ enum {
 	kAudioConverterErr_OutputSampleRateOutOfRange = '!osr',
 };
 
-typedef OSStatus (*AudioConverterNew_t)(
-	const AudioStreamBasicDescription *inSourceFormat,
-	const AudioStreamBasicDescription *inDestinationFormat,
-	AudioConverterRef *outAudioConverter);
+typedef OSStatus (*AudioConverterNew_t)(const AudioStreamBasicDescription *inSourceFormat,
+					const AudioStreamBasicDescription *inDestinationFormat,
+					AudioConverterRef *outAudioConverter);
 
 typedef OSStatus (*AudioConverterDispose_t)(AudioConverterRef inAudioConverter);
 
 typedef OSStatus (*AudioConverterReset_t)(AudioConverterRef inAudioConverter);
 
-typedef OSStatus (*AudioConverterGetProperty_t)(
-	AudioConverterRef inAudioConverter,
-	AudioConverterPropertyID inPropertyID, UInt32 *ioPropertyDataSize,
-	void *outPropertyData);
+typedef OSStatus (*AudioConverterGetProperty_t)(AudioConverterRef inAudioConverter,
+						AudioConverterPropertyID inPropertyID, UInt32 *ioPropertyDataSize,
+						void *outPropertyData);
 
-typedef OSStatus (*AudioConverterGetPropertyInfo_t)(
-	AudioConverterRef inAudioConverter,
-	AudioConverterPropertyID inPropertyID, UInt32 *outSize,
-	Boolean *outWritable);
+typedef OSStatus (*AudioConverterGetPropertyInfo_t)(AudioConverterRef inAudioConverter,
+						    AudioConverterPropertyID inPropertyID, UInt32 *outSize,
+						    Boolean *outWritable);
 
-typedef OSStatus (*AudioConverterSetProperty_t)(
-	AudioConverterRef inAudioConverter,
-	AudioConverterPropertyID inPropertyID, UInt32 inPropertyDataSize,
-	const void *inPropertyData);
+typedef OSStatus (*AudioConverterSetProperty_t)(AudioConverterRef inAudioConverter,
+						AudioConverterPropertyID inPropertyID, UInt32 inPropertyDataSize,
+						const void *inPropertyData);
 
-typedef OSStatus (*AudioConverterFillComplexBuffer_t)(
-	AudioConverterRef inAudioConverter,
-	AudioConverterComplexInputDataProc inInputDataProc,
-	void *inInputDataProcUserData, UInt32 *ioOutputDataPacketSize,
-	AudioBufferList *outOutputData,
-	AudioStreamPacketDescription *outPacketDescription);
+typedef OSStatus (*AudioConverterFillComplexBuffer_t)(AudioConverterRef inAudioConverter,
+						      AudioConverterComplexInputDataProc inInputDataProc,
+						      void *inInputDataProcUserData, UInt32 *ioOutputDataPacketSize,
+						      AudioBufferList *outOutputData,
+						      AudioStreamPacketDescription *outPacketDescription);
 
-typedef OSStatus (*AudioFormatGetProperty_t)(AudioFormatPropertyID inPropertyID,
-					     UInt32 inSpecifierSize,
-					     const void *inSpecifier,
-					     UInt32 *ioPropertyDataSize,
+typedef OSStatus (*AudioFormatGetProperty_t)(AudioFormatPropertyID inPropertyID, UInt32 inSpecifierSize,
+					     const void *inSpecifier, UInt32 *ioPropertyDataSize,
 					     void *outPropertyData);
 
-typedef OSStatus (*AudioFormatGetPropertyInfo_t)(
-	AudioFormatPropertyID inPropertyID, UInt32 inSpecifierSize,
-	const void *inSpecifier, UInt32 *outPropertyDataSize);
+typedef OSStatus (*AudioFormatGetPropertyInfo_t)(AudioFormatPropertyID inPropertyID, UInt32 inSpecifierSize,
+						 const void *inSpecifier, UInt32 *outPropertyDataSize);
 
 static AudioConverterNew_t AudioConverterNew = NULL;
 static AudioConverterDispose_t AudioConverterDispose = NULL;
@@ -413,8 +410,7 @@ static bool load_lib(void)
 	};
 
 	path_list_t path_list[] = {
-		{FOLDERID_ProgramFilesCommon,
-		 L"Apple\\Apple Application Support"},
+		{FOLDERID_ProgramFilesCommon, L"Apple\\Apple Application Support"},
 		{FOLDERID_ProgramFiles, L"iTunes"},
 	};
 
@@ -451,17 +447,14 @@ static bool load_core_audio(void)
 	if (!load_lib())
 		return false;
 
-#define LOAD_SYM_FROM_LIB(sym, lib, dll)                                   \
-	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                 \
-		DWORD err = GetLastError();                                \
-		CA_LOG(LOG_ERROR,                                          \
-		       "Couldn't load " #sym " from " dll ": %lu (0x%lx)", \
-		       err, err);                                          \
-		goto unload_everything;                                    \
+#define LOAD_SYM_FROM_LIB(sym, lib, dll)                                                         \
+	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                       \
+		DWORD err = GetLastError();                                                      \
+		CA_LOG(LOG_ERROR, "Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
+		goto unload_everything;                                                          \
 	}
 
-#define LOAD_SYM(sym) \
-	LOAD_SYM_FROM_LIB(sym, audio_toolbox, "CoreAudioToolbox.dll")
+#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, audio_toolbox, "CoreAudioToolbox.dll")
 	LOAD_SYM(AudioConverterNew);
 	LOAD_SYM(AudioConverterDispose);
 	LOAD_SYM(AudioConverterReset);

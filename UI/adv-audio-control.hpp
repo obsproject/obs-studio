@@ -24,8 +24,6 @@ class OBSAdvAudioCtrl : public QObject {
 private:
 	OBSSource source;
 
-	QPointer<QWidget> activeContainer;
-	QPointer<QWidget> forceMonoContainer;
 	QPointer<QWidget> mixerContainer;
 	QPointer<QWidget> balanceContainer;
 
@@ -48,24 +46,17 @@ private:
 	QPointer<QCheckBox> mixer5;
 	QPointer<QCheckBox> mixer6;
 
-	OBSSignal volChangedSignal;
-	OBSSignal syncOffsetSignal;
-	OBSSignal flagsSignal;
-	OBSSignal monitoringTypeSignal;
-	OBSSignal mixersSignal;
-	OBSSignal activateSignal;
-	OBSSignal deactivateSignal;
-	OBSSignal balChangedSignal;
+	std::vector<OBSSignal> sigs;
 
 	static void OBSSourceActivated(void *param, calldata_t *calldata);
 	static void OBSSourceDeactivated(void *param, calldata_t *calldata);
 	static void OBSSourceFlagsChanged(void *param, calldata_t *calldata);
 	static void OBSSourceVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceSyncChanged(void *param, calldata_t *calldata);
-	static void OBSSourceMonitoringTypeChanged(void *param,
-						   calldata_t *calldata);
+	static void OBSSourceMonitoringTypeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceMixersChanged(void *param, calldata_t *calldata);
 	static void OBSSourceBalanceChanged(void *param, calldata_t *calldata);
+	static void OBSSourceRenamed(void *param, calldata_t *calldata);
 
 public:
 	OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_);
@@ -85,6 +76,7 @@ public slots:
 	void SourceMonitoringTypeChanged(int type);
 	void SourceMixersChanged(uint32_t mixers);
 	void SourceBalanceChanged(int balance);
+	void SetSourceName(QString newName);
 
 	void volumeChanged(double db);
 	void percentChanged(int percent);
@@ -92,11 +84,5 @@ public slots:
 	void balanceChanged(int val);
 	void syncOffsetChanged(int milliseconds);
 	void monitoringTypeChanged(int index);
-	void mixer1Changed(bool checked);
-	void mixer2Changed(bool checked);
-	void mixer3Changed(bool checked);
-	void mixer4Changed(bool checked);
-	void mixer5Changed(bool checked);
-	void mixer6Changed(bool checked);
 	void ResetBalance();
 };

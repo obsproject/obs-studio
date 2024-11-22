@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@ void vec4_from_vec3(struct vec4 *dst, const struct vec3 *v)
 	dst->w = 1.0f;
 }
 
-void vec4_transform(struct vec4 *dst, const struct vec4 *v,
-		    const struct matrix4 *m)
+void vec4_transform(struct vec4 *dst, const struct vec4 *v, const struct matrix4 *m)
 {
 	struct vec4 temp;
 	struct matrix4 transpose;

@@ -1,33 +1,22 @@
-project(mac-virtualcam)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-find_library(APPKIT AppKit)
-find_library(COREFOUNDATION CoreFoundation)
+add_library(mac-virtualcam MODULE)
+add_library(OBS::virtualcam ALIAS mac-virtualcam)
 
-include_directories(${APPKIT}
-					${COREFOUNDATION}
-					../common)
+target_sources(mac-virtualcam PRIVATE Defines.h plugin-main.mm OBSDALMachServer.mm OBSDALMachServer.h)
+target_compile_options(mac-virtualcam PRIVATE -fmodules -fcxx-modules)
 
-set(mac-virtualcam_HEADERS
-	Defines.h
-	OBSDALMachServer.h
-	../common/MachProtocol.h)
+target_link_libraries(mac-virtualcam PRIVATE OBS::mach-protocol OBS::libobs OBS::frontend-api)
 
-set(mac-virtualcam_SOURCES
-	plugin-main.mm
-	OBSDALMachServer.mm)
-
-add_library(mac-virtualcam MODULE
-	${mac-virtualcam_SOURCES}
-	${mac-virtualcam_HEADERS})
-
-target_link_libraries(mac-virtualcam
-	libobs
-	${APPKIT}
-	${COREFOUNDATION})
-
-set_target_properties(mac-virtualcam PROPERTIES
-	FOLDER "plugins"
-	COMPILE_FLAGS "-std=gnu++14 -stdlib=libc++ -fobjc-arc -fobjc-weak"
+set_target_properties_obs(
+  mac-virtualcam
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Info.plist.in"
+             LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../"
+             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES
+             XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES YES
+             XCODE_ATTRIBUTE_CLANG_MODULES_AUTOLINK YES
 )
-
-install_obs_plugin_with_data(mac-virtualcam data)

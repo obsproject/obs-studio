@@ -18,8 +18,7 @@
 #include "../util/c99defs.h"
 #include "video-io.h"
 
-#define MAKE_FOURCC(a, b, c, d) \
-	((uint32_t)(((d) << 24) | ((c) << 16) | ((b) << 8) | (a)))
+#define MAKE_FOURCC(a, b, c, d) ((uint32_t)(((d) << 24) | ((c) << 16) | ((b) << 8) | (a)))
 
 enum video_format video_format_from_fourcc(uint32_t fourcc)
 {

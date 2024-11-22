@@ -69,14 +69,9 @@ typedef ptrdiff_t GLsizeiptrARB;
 #define GL_COLOR_ATTACHMENT0 0x8CE0
 #define GL_COLOR_ATTACHMENT1 0x8CE1
 
-typedef void(WINAPI *GLTEXIMAGE2DPROC)(GLenum target, GLint level,
-				       GLint internal_format, GLsizei width,
-				       GLsizei height, GLint border,
-				       GLenum format, GLenum type,
-				       const GLvoid *data);
-typedef void(WINAPI *GLGETTEXIMAGEPROC)(GLenum target, GLint level,
-					GLenum format, GLenum type,
-					GLvoid *img);
+typedef void(WINAPI *GLTEXIMAGE2DPROC)(GLenum target, GLint level, GLint internal_format, GLsizei width, GLsizei height,
+				       GLint border, GLenum format, GLenum type, const GLvoid *data);
+typedef void(WINAPI *GLGETTEXIMAGEPROC)(GLenum target, GLint level, GLenum format, GLenum type, GLvoid *img);
 typedef void(WINAPI *GLREADBUFFERPROC)(GLenum);
 typedef void(WINAPI *GLDRAWBUFFERPROC)(GLenum mode);
 typedef void(WINAPI *GLGETINTEGERVPROC)(GLenum pname, GLint *params);
@@ -89,8 +84,7 @@ typedef BOOL(WINAPI *WGLMAKECURRENTPROC)(HDC, HGLRC);
 typedef HDC(WINAPI *WGLGETCURRENTDCPROC)();
 typedef HGLRC(WINAPI *WGLGETCURRENTCONTEXTPROC)();
 typedef HGLRC(WINAPI *WGLCREATECONTEXTPROC)(HDC);
-typedef void(WINAPI *GLBUFFERDATAARBPROC)(GLenum target, GLsizeiptrARB size,
-					  const GLvoid *data, GLenum usage);
+typedef void(WINAPI *GLBUFFERDATAARBPROC)(GLenum target, GLsizeiptrARB size, const GLvoid *data, GLenum usage);
 typedef void(WINAPI *GLDELETEBUFFERSARBPROC)(GLsizei n, const GLuint *buffers);
 typedef void(WINAPI *GLDELETETEXTURESPROC)(GLsizei n, const GLuint *buffers);
 typedef void(WINAPI *GLGENBUFFERSARBPROC)(GLsizei n, GLuint *buffers);
@@ -102,20 +96,14 @@ typedef void(WINAPI *GLBINDTEXTUREPROC)(GLenum target, GLuint texture);
 typedef void(WINAPI *GLGENFRAMEBUFFERSPROC)(GLsizei n, GLuint *buffers);
 typedef void(WINAPI *GLDELETEFRAMEBUFFERSPROC)(GLsizei n, GLuint *framebuffers);
 typedef void(WINAPI *GLBINDFRAMEBUFFERPROC)(GLenum target, GLuint framebuffer);
-typedef void(WINAPI *GLBLITFRAMEBUFFERPROC)(GLint srcX0, GLint srcY0,
-					    GLint srcX1, GLint srcY1,
-					    GLint dstX0, GLint dstY0,
-					    GLint dstX1, GLint dstY1,
-					    GLbitfield mask, GLenum filter);
-typedef void(WINAPI *GLFRAMEBUFFERTEXTURE2DPROC)(GLenum target,
-						 GLenum attachment,
-						 GLenum textarget,
-						 GLuint texture, GLint level);
+typedef void(WINAPI *GLBLITFRAMEBUFFERPROC)(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0,
+					    GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+typedef void(WINAPI *GLFRAMEBUFFERTEXTURE2DPROC)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture,
+						 GLint level);
 typedef BOOL(WINAPI *WGLSETRESOURCESHAREHANDLENVPROC)(void *, HANDLE);
 typedef HANDLE(WINAPI *WGLDXOPENDEVICENVPROC)(void *);
 typedef BOOL(WINAPI *WGLDXCLOSEDEVICENVPROC)(HANDLE);
-typedef HANDLE(WINAPI *WGLDXREGISTEROBJECTNVPROC)(HANDLE, void *, GLuint,
-						  GLenum, GLenum);
+typedef HANDLE(WINAPI *WGLDXREGISTEROBJECTNVPROC)(HANDLE, void *, GLuint, GLenum, GLenum);
 typedef BOOL(WINAPI *WGLDXUNREGISTEROBJECTNVPROC)(HANDLE, HANDLE);
 typedef BOOL(WINAPI *WGLDXOBJECTACCESSNVPROC)(HANDLE, GLenum);
 typedef BOOL(WINAPI *WGLDXLOCKOBJECTSNVPROC)(HANDLE, GLint, HANDLE *);
@@ -127,10 +115,10 @@ static GLREADBUFFERPROC glReadBuffer = NULL;
 static GLDRAWBUFFERPROC glDrawBuffer = NULL;
 static GLGETINTEGERVPROC glGetIntegerv = NULL;
 static GLGETERRORPROC glGetError = NULL;
-static WGLGETPROCADDRESSPROC jimglGetProcAddress = NULL;
-static WGLMAKECURRENTPROC jimglMakeCurrent = NULL;
-static WGLGETCURRENTDCPROC jimglGetCurrentDC = NULL;
-static WGLGETCURRENTCONTEXTPROC jimglGetCurrentContext = NULL;
+static WGLGETPROCADDRESSPROC obsglGetProcAddress = NULL;
+static WGLMAKECURRENTPROC obsglMakeCurrent = NULL;
+static WGLGETCURRENTDCPROC obsglGetCurrentDC = NULL;
+static WGLGETCURRENTCONTEXTPROC obsglGetCurrentContext = NULL;
 static GLBUFFERDATAARBPROC glBufferData = NULL;
 static GLDELETEBUFFERSARBPROC glDeleteBuffers = NULL;
 static GLDELETETEXTURESPROC glDeleteTextures = NULL;
@@ -146,11 +134,11 @@ static GLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
 static GLBLITFRAMEBUFFERPROC glBlitFramebuffer = NULL;
 static GLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
 
-static WGLSETRESOURCESHAREHANDLENVPROC jimglDXSetResourceShareHandleNV = NULL;
-static WGLDXOPENDEVICENVPROC jimglDXOpenDeviceNV = NULL;
-static WGLDXCLOSEDEVICENVPROC jimglDXCloseDeviceNV = NULL;
-static WGLDXREGISTEROBJECTNVPROC jimglDXRegisterObjectNV = NULL;
-static WGLDXUNREGISTEROBJECTNVPROC jimglDXUnregisterObjectNV = NULL;
-static WGLDXOBJECTACCESSNVPROC jimglDXObjectAccessNV = NULL;
-static WGLDXLOCKOBJECTSNVPROC jimglDXLockObjectsNV = NULL;
-static WGLDXUNLOCKOBJECTSNVPROC jimglDXUnlockObjectsNV = NULL;
+static WGLSETRESOURCESHAREHANDLENVPROC obsglDXSetResourceShareHandleNV = NULL;
+static WGLDXOPENDEVICENVPROC obsglDXOpenDeviceNV = NULL;
+static WGLDXCLOSEDEVICENVPROC obsglDXCloseDeviceNV = NULL;
+static WGLDXREGISTEROBJECTNVPROC obsglDXRegisterObjectNV = NULL;
+static WGLDXUNREGISTEROBJECTNVPROC obsglDXUnregisterObjectNV = NULL;
+static WGLDXOBJECTACCESSNVPROC obsglDXObjectAccessNV = NULL;
+static WGLDXLOCKOBJECTSNVPROC obsglDXLockObjectsNV = NULL;
+static WGLDXUNLOCKOBJECTSNVPROC obsglDXUnlockObjectsNV = NULL;

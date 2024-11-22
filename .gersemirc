@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/BlankSpruce/gersemi/master/gersemi/configuration.schema.json
+
+color: false
+definitions: []
+line_length: 120
+indent: 2
+list_expansion: favour-inlining
+quiet: false
+unsafe: false
+workers: 10
+warn_about_unknown_commands: false

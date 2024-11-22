@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ void gs_index_buffer::InitBuffer()
 		throw HRError("Failed to create buffer", hr);
 }
 
-gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type,
-				 void *indices, size_t num, uint32_t flags)
+gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type, void *indices, size_t num,
+				 uint32_t flags)
 	: gs_obj(device, gs_type::gs_index_buffer),
 	  dynamic((flags & GS_DYNAMIC) != 0),
 	  type(type),

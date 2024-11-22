@@ -1,8 +1,8 @@
-#include "window-extra-browsers.hpp"
+#include "moc_window-extra-browsers.cpp"
 #include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QLineEdit>
 #include <QHBoxLayout>
 #include <QUuid>
@@ -32,12 +32,9 @@ void ExtraBrowsersModel::Reset()
 	OBSBasic *main = OBSBasic::Get();
 
 	for (int i = 0; i < main->extraBrowserDocks.size(); i++) {
-		BrowserDock *dock = reinterpret_cast<BrowserDock *>(
-			main->extraBrowserDocks[i].data());
-
 		Item item;
 		item.prevIdx = i;
-		item.title = dock->windowTitle();
+		item.title = main->extraBrowserDockNames[i];
 		item.url = main->extraBrowserDockTargets[i];
 		items.push_back(item);
 	}
@@ -59,8 +56,7 @@ QVariant ExtraBrowsersModel::data(const QModelIndex &index, int role) const
 	int column = index.column();
 	int idx = index.row();
 	int count = items.size();
-	bool validRole = role == Qt::DisplayRole ||
-			 role == Qt::AccessibleTextRole;
+	bool validRole = role == Qt::DisplayRole || role == Qt::AccessibleTextRole;
 
 	if (!validRole)
 		return QVariant();
@@ -84,12 +80,9 @@ QVariant ExtraBrowsersModel::data(const QModelIndex &index, int role) const
 	return QVariant();
 }
 
-QVariant ExtraBrowsersModel::headerData(int section,
-					Qt::Orientation orientation,
-					int role) const
+QVariant ExtraBrowsersModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-	bool validRole = role == Qt::DisplayRole ||
-			 role == Qt::AccessibleTextRole;
+	bool validRole = role == Qt::DisplayRole || role == Qt::AccessibleTextRole;
 
 	if (validRole && orientation == Qt::Orientation::Horizontal) {
 		switch (section) {
@@ -122,10 +115,7 @@ public:
 
 class EditWidget : public QLineEdit {
 public:
-	inline EditWidget(QWidget *parent, QModelIndex index_)
-		: QLineEdit(parent), index(index_)
-	{
-	}
+	inline EditWidget(QWidget *parent, QModelIndex index_) : QLineEdit(parent), index(index_) {}
 
 	QPersistentModelIndex index;
 };
@@ -137,11 +127,10 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 	QModelIndex index = createIndex(idx, (int)Column::Delete, nullptr);
 
 	QPushButton *del = new DelButton(index);
-	del->setProperty("themeID", "trashIcon");
+	del->setProperty("class", "icon-trash");
 	del->setObjectName("extraPanelDelete");
 	del->setMinimumSize(QSize(20, 20));
-	connect(del, &QPushButton::clicked, this,
-		&ExtraBrowsersModel::DeleteItem);
+	connect(del, &QPushButton::clicked, this, &ExtraBrowsersModel::DeleteItem);
 
 	widget->setIndexWidget(index, del);
 	widget->setRowHeight(idx, 20);
@@ -175,12 +164,15 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	int idx = item.prevIdx;
 
 	OBSBasic *main = OBSBasic::Get();
-	BrowserDock *dock = reinterpret_cast<BrowserDock *>(
-		main->extraBrowserDocks[idx].data());
+	BrowserDock *dock = reinterpret_cast<BrowserDock *>(main->extraBrowserDocks[idx].get());
 	dock->setWindowTitle(item.title);
 	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
-	dock->setProperty("uuid", item.uuid);
-	main->extraBrowserDockActions[idx]->setText(item.title);
+
+	if (main->extraBrowserDockNames[idx] != item.title) {
+		main->extraBrowserDockNames[idx] = item.title;
+		dock->toggleViewAction()->setText(item.title);
+		dock->setTitle(item.title);
+	}
 
 	if (main->extraBrowserDockTargets[idx] != item.url) {
 		dock->cefWidget->setURL(QT_TO_UTF8(item.url));
@@ -226,17 +218,21 @@ void ExtraBrowsersModel::Apply()
 		if (item.prevIdx != -1) {
 			UpdateItem(item);
 		} else {
-			main->AddExtraBrowserDock(item.title, item.url,
-						  item.uuid, true);
+			QString uuid = QUuid::createUuid().toString();
+			uuid.replace(QRegularExpression("[{}-]"), "");
+			main->AddExtraBrowserDock(item.title, item.url, uuid, true);
 		}
 	}
 
 	for (int i = deleted.size() - 1; i >= 0; i--) {
 		int idx = deleted[i];
-		main->extraBrowserDockActions.removeAt(idx);
 		main->extraBrowserDockTargets.removeAt(idx);
+		main->extraBrowserDockNames.removeAt(idx);
 		main->extraBrowserDocks.removeAt(idx);
 	}
+
+	if (main->extraBrowserDocks.empty())
+		main->extraBrowserMenuDocksSeparator.clear();
 
 	deleted.clear();
 
@@ -289,20 +285,17 @@ void ExtraBrowsersModel::Init()
 
 /* ------------------------------------------------------------------------- */
 
-QWidget *ExtraBrowsersDelegate::createEditor(QWidget *parent,
-					     const QStyleOptionViewItem &,
+QWidget *ExtraBrowsersDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &,
 					     const QModelIndex &index) const
 {
 	QLineEdit *text = new EditWidget(parent, index);
 	text->installEventFilter(const_cast<ExtraBrowsersDelegate *>(this));
-	text->setSizePolicy(QSizePolicy(QSizePolicy::Policy::Expanding,
-					QSizePolicy::Policy::Expanding,
+	text->setSizePolicy(QSizePolicy(QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Expanding,
 					QSizePolicy::ControlType::LineEdit));
 	return text;
 }
 
-void ExtraBrowsersDelegate::setEditorData(QWidget *editor,
-					  const QModelIndex &index) const
+void ExtraBrowsersDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
 	QLineEdit *text = reinterpret_cast<QLineEdit *>(editor);
 	text->blockSignals(true);
@@ -377,8 +370,7 @@ bool ExtraBrowsersDelegate::UpdateText(QLineEdit *edit_)
 	}
 
 	if (col == (int)Column::Title) {
-		QString oldText = newItem ? model->newTitle
-					  : model->items[row].title;
+		QString oldText = newItem ? model->newTitle : model->items[row].title;
 		bool same = oldText.compare(text, Qt::CaseInsensitive) == 0;
 
 		if (!same && !ValidName(text)) {
@@ -417,8 +409,7 @@ bool ExtraBrowsersDelegate::UpdateText(QLineEdit *edit_)
 
 /* ------------------------------------------------------------------------- */
 
-OBSExtraBrowsers::OBSExtraBrowsers(QWidget *parent)
-	: QDialog(parent), ui(new Ui::OBSExtraBrowsers)
+OBSExtraBrowsers::OBSExtraBrowsers(QWidget *parent) : QDialog(parent), ui(new Ui::OBSExtraBrowsers)
 {
 	ui->setupUi(this);
 
@@ -428,16 +419,11 @@ OBSExtraBrowsers::OBSExtraBrowsers(QWidget *parent)
 	model = new ExtraBrowsersModel(ui->table);
 
 	ui->table->setModel(model);
-	ui->table->setItemDelegateForColumn((int)Column::Title,
-					    new ExtraBrowsersDelegate(model));
-	ui->table->setItemDelegateForColumn((int)Column::Url,
-					    new ExtraBrowsersDelegate(model));
-	ui->table->horizontalHeader()->setSectionResizeMode(
-		QHeaderView::ResizeMode::Stretch);
-	ui->table->horizontalHeader()->setSectionResizeMode(
-		(int)Column::Delete, QHeaderView::ResizeMode::Fixed);
-	ui->table->setEditTriggers(
-		QAbstractItemView::EditTrigger::CurrentChanged);
+	ui->table->setItemDelegateForColumn((int)Column::Title, new ExtraBrowsersDelegate(model));
+	ui->table->setItemDelegateForColumn((int)Column::Url, new ExtraBrowsersDelegate(model));
+	ui->table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::Stretch);
+	ui->table->horizontalHeader()->setSectionResizeMode((int)Column::Delete, QHeaderView::ResizeMode::Fixed);
+	ui->table->setEditTriggers(QAbstractItemView::EditTrigger::CurrentChanged);
 }
 
 OBSExtraBrowsers::~OBSExtraBrowsers() {}
@@ -458,14 +444,13 @@ void OBSExtraBrowsers::on_apply_clicked()
 void OBSBasic::ClearExtraBrowserDocks()
 {
 	extraBrowserDockTargets.clear();
-	extraBrowserDockActions.clear();
+	extraBrowserDockNames.clear();
 	extraBrowserDocks.clear();
 }
 
 void OBSBasic::LoadExtraBrowserDocks()
 {
-	const char *jsonStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "ExtraBrowserDocks");
+	const char *jsonStr = config_get_string(App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks");
 
 	std::string err;
 	Json json = Json::parse(jsonStr, err);
@@ -474,15 +459,14 @@ void OBSBasic::LoadExtraBrowserDocks()
 
 	Json::array array = json.array_items();
 	if (!array.empty())
-		ui->menuDocks->addSeparator();
+		extraBrowserMenuDocksSeparator = ui->menuDocks->addSeparator();
 
 	for (Json &item : array) {
 		std::string title = item["title"].string_value();
 		std::string url = item["url"].string_value();
 		std::string uuid = item["uuid"].string_value();
 
-		AddExtraBrowserDock(title.c_str(), url.c_str(), uuid.c_str(),
-				    false);
+		AddExtraBrowserDock(title.c_str(), url.c_str(), uuid.c_str(), false);
 	}
 }
 
@@ -490,11 +474,12 @@ void OBSBasic::SaveExtraBrowserDocks()
 {
 	Json::array array;
 	for (int i = 0; i < extraBrowserDocks.size(); i++) {
-		QAction *action = extraBrowserDockActions[i].data();
+		QDockWidget *dock = extraBrowserDocks[i].get();
+		QString title = extraBrowserDockNames[i];
 		QString url = extraBrowserDockTargets[i];
-		QString uuid = action->property("uuid").toString();
+		QString uuid = dock->property("uuid").toString();
 		Json::object obj{
-			{"title", QT_TO_UTF8(action->text())},
+			{"title", QT_TO_UTF8(title)},
 			{"url", QT_TO_UTF8(url)},
 			{"uuid", QT_TO_UTF8(uuid)},
 		};
@@ -502,8 +487,7 @@ void OBSBasic::SaveExtraBrowserDocks()
 	}
 
 	std::string output = Json(array).dump();
-	config_set_string(App()->GlobalConfig(), "BasicWindow",
-			  "ExtraBrowserDocks", output.c_str());
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks", output.c_str());
 }
 
 void OBSBasic::ManageExtraBrowserDocks()
@@ -518,15 +502,14 @@ void OBSBasic::ManageExtraBrowserDocks()
 	extraBrowsers->show();
 }
 
-void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
-				   const QString &uuid, bool firstCreate)
+void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url, const QString &uuid, bool firstCreate)
 {
 	static int panel_version = -1;
 	if (panel_version == -1) {
 		panel_version = obs_browser_qcef_version();
 	}
 
-	BrowserDock *dock = new BrowserDock();
+	BrowserDock *dock = new BrowserDock(title);
 	QString bId(uuid.isEmpty() ? QUuid::createUuid().toString() : uuid);
 	bId.replace(QRegularExpression("[{}-]"), "");
 	dock->setProperty("uuid", bId);
@@ -536,23 +519,20 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	QCefWidget *browser =
-		cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
+	QCefWidget *browser = cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
 	if (browser && panel_version >= 1)
 		browser->allowAllPopups(true);
 
 	dock->SetWidget(browser);
 
 	/* Add support for Twitch Dashboard panels */
-	if (url.contains("twitch.tv/popout") &&
-	    url.contains("dashboard/live")) {
+	if (url.contains("twitch.tv/popout") && url.contains("dashboard/live")) {
 		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
 		QRegularExpressionMatch match = re.match(url);
 		QString username = match.captured(1);
 		if (username.length() > 0) {
 			std::string script;
-			script =
-				"Object.defineProperty(document, 'referrer', { get: () => '";
+			script = "Object.defineProperty(document, 'referrer', { get: () => '";
 			script += "https://twitch.tv/";
 			script += QT_TO_UTF8(username);
 			script += "/dashboard/live";
@@ -561,7 +541,10 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		}
 	}
 
-	addDockWidget(Qt::RightDockWidgetArea, dock);
+	AddDockWidget(dock, Qt::RightDockWidgetArea, true);
+	extraBrowserDocks.push_back(std::shared_ptr<QDockWidget>(dock));
+	extraBrowserDockNames.push_back(title);
+	extraBrowserDockTargets.push_back(url);
 
 	if (firstCreate) {
 		dock->setFloating(true);
@@ -576,15 +559,4 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		dock->move(curPos);
 		dock->setVisible(true);
 	}
-
-	QAction *action = AddDockWidget(dock);
-	if (firstCreate) {
-		action->blockSignals(true);
-		action->setChecked(true);
-		action->blockSignals(false);
-	}
-
-	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
-	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
-	extraBrowserDockTargets.push_back(url);
 }

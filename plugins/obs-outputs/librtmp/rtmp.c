@@ -32,6 +32,7 @@
 #include "rtmp_sys.h"
 #include "log.h"
 
+#include "happy-eyeballs.h"
 #include <util/platform.h>
 
 #if !defined(MSG_NOSIGNAL)
@@ -81,12 +82,20 @@ static const char *my_dhm_G = "4";
 #include <nettle/md5.h>
 #else	/* USE_OPENSSL */
 #include <openssl/ssl.h>
-#include <openssl/rc4.h>
 #include <openssl/md5.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #endif
+#endif
 
+#if defined(TCP_USER_TIMEOUT)
+#define SOCKET_LEVEL IPPROTO_TCP
+#define SOCKET_TIMEOUT_OPT TCP_USER_TIMEOUT
+#define SOCKET_TIMEOUT_VAR(tv, s) int tv = s*1000
+#else
+#define SOCKET_LEVEL SOL_SOCKET
+#define SOCKET_TIMEOUT_OPT SO_SNDTIMEO
+#define SOCKET_TIMEOUT_VAR(tv, s) SET_RCVTIMEO(tv, s)
 #endif
 
 #define RTMP_SIG_SIZE 1536
@@ -306,43 +315,31 @@ RTMP_TLS_LoadCerts(RTMP *r) {
     CertFreeCertificateContext(pCertContext);
     CertCloseStore(hCertStore, 0);
 #elif defined(__APPLE__)
-    SecKeychainRef keychain_ref;
-    CFMutableDictionaryRef search_settings_ref;
-    CFArrayRef result_ref;
+    CFArrayRef anchors;
+    OSStatus code = SecTrustCopyAnchorCertificates(&anchors);
 
-    if (SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain",
-                        &keychain_ref)
-        != errSecSuccess) {
-      goto error;
+    if (code != noErr) {
+        goto error;
     }
 
-    search_settings_ref = CFDictionaryCreateMutable(NULL, 0, NULL, NULL);
-    CFDictionarySetValue(search_settings_ref, kSecClass, kSecClassCertificate);
-    CFDictionarySetValue(search_settings_ref, kSecMatchLimit, kSecMatchLimitAll);
-    CFDictionarySetValue(search_settings_ref, kSecReturnRef, kCFBooleanTrue);
-    CFDictionarySetValue(search_settings_ref, kSecMatchSearchList,
-                         CFArrayCreate(NULL, (const void **)&keychain_ref, 1, NULL));
+    for (CFIndex i = 0; i < CFArrayGetCount(anchors); i++) {
+        SecCertificateRef cert = (SecCertificateRef)CFArrayGetValueAtIndex(anchors, i);
 
-    if (SecItemCopyMatching(search_settings_ref, (CFTypeRef *)&result_ref)
-        != errSecSuccess) {
-      goto error;
+        CFDataRef der_data = SecCertificateCopyData(cert);
+
+        const UInt8 *data = CFDataGetBytePtr(der_data);
+        size_t length = CFDataGetLength(der_data);
+
+        if (data && length > 0) {
+            mbedtls_x509_crt_parse_der(chain, data, length);
+        }
+
+        CFRelease(der_data);
     }
 
-    for (CFIndex i = 0; i < CFArrayGetCount(result_ref); i++) {
-      SecCertificateRef item_ref = (SecCertificateRef)
-                                   CFArrayGetValueAtIndex(result_ref, i);
-      CFDataRef data_ref;
+    CFRelease(anchors);
 
-      if ((data_ref = SecCertificateCopyData(item_ref))) {
-        mbedtls_x509_crt_parse_der(chain,
-                                   (unsigned char *)CFDataGetBytePtr(data_ref),
-                                   CFDataGetLength(data_ref));
-        CFRelease(data_ref);
-      }
-    }
-
-    CFRelease(keychain_ref);
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__FreeBSD__)
     if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") < 0) {
         RTMP_Log(RTMP_LOGERROR, "mbedtls_x509_crt_parse_path: Couldn't parse "
             "/etc/ssl/certs");
@@ -421,7 +418,7 @@ RTMP_TLS_Init(RTMP *r)
 
 void
 RTMP_TLS_Free(RTMP *r) {
-#ifdef USE_MBEDTLS
+#if defined(CRYPTO) && defined(USE_MBEDTLS)
 
     if (!r->RTMP_TLS_ctx)
         return;
@@ -452,9 +449,7 @@ RTMP_Alloc()
 void
 RTMP_Free(RTMP *r)
 {
-#if defined(CRYPTO) && defined(USE_MBEDTLS)
     RTMP_TLS_Free(r);
-#endif
     free(r);
 }
 
@@ -464,11 +459,7 @@ RTMP_Init(RTMP *r)
     memset(r, 0, sizeof(RTMP));
     r->m_sb.sb_socket = -1;
     RTMP_Reset(r);
-
-#ifdef CRYPTO
     RTMP_TLS_Init(r);
-#endif
-
 }
 
 void
@@ -485,7 +476,8 @@ RTMP_Reset(RTMP *r)
     r->m_fVideoCodecs = 252.0;
     r->Link.curStreamIdx = 0;
     r->Link.nStreams = 0;
-    r->Link.timeout = 30;
+    r->Link.receiveTimeout = 30;
+    r->Link.sendTimeout = 15;
     r->Link.swfAge = 30;
 }
 
@@ -746,6 +738,29 @@ int RTMP_AddStream(RTMP *r, const char *playpath)
     return idx;
 }
 
+/* Returns true if the string needs to be freed */
+static char* get_hostname(AVal *host, bool *should_free)
+{
+    if (should_free == NULL)
+        return NULL;
+
+    if (host->av_val[host->av_len] || host->av_val[0] == '[')
+    {
+        int v6 = host->av_val[0] == '[';
+        char* hostname = malloc(host->av_len+1 - v6 * 2);
+        if (hostname != NULL)
+        {
+            memcpy(hostname, host->av_val + v6, host->av_len - v6 * 2);
+            hostname[host->av_len - v6 * 2] = '\0';
+            *should_free = TRUE;
+        }
+        return hostname;
+    }
+
+    *should_free = FALSE;
+    return host->av_val;
+}
+
 static int
 add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, int port, socklen_t addrlen_hint, int *socket_error)
 {
@@ -778,7 +793,7 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
 
     char portStr[8];
 
-    sprintf(portStr, "%d", port);
+    snprintf(portStr, sizeof(portStr), "%d", port);
 
     int err = getaddrinfo(hostname, portStr, &hints, &result);
 
@@ -847,68 +862,28 @@ finish:
 #define E_TIMEDOUT     WSAETIMEDOUT
 #define E_CONNREFUSED  WSAECONNREFUSED
 #define E_ACCES        WSAEACCES
+#define E_INVAL        WSAEINVAL
+#define E_HOSTUNREACH  WSAEHOSTUNREACH
 #else
 #define E_TIMEDOUT     ETIMEDOUT
 #define E_CONNREFUSED  ECONNREFUSED
 #define E_ACCES        EACCES
+#define E_INVAL        EINVAL
+#define E_HOSTUNREACH  EHOSTUNREACH
 #endif
 
 int
-RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
+RTMP_Connect0(RTMP *r, SOCKET socket_fd)
 {
     int on = 1;
     r->m_sb.sb_timedout = FALSE;
     r->m_pausing = 0;
     r->m_fDuration = 0.0;
 
-    //best to be explicit, we need overlapped socket
-#ifdef _WIN32
-    r->m_sb.sb_socket = WSASocket(service->sa_family, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-#else
-    r->m_sb.sb_socket = socket(service->sa_family, SOCK_STREAM, IPPROTO_TCP);
-#endif
+    r->m_sb.sb_socket = socket_fd;
 
     if (r->m_sb.sb_socket != INVALID_SOCKET)
     {
-#ifndef _WIN32
-#ifdef SO_NOSIGPIPE
-        setsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_NOSIGPIPE, &(int){ 1 }, sizeof(int));
-#endif
-#endif
-        if(r->m_bindIP.addrLen)
-        {
-            if (bind(r->m_sb.sb_socket, (const struct sockaddr *)&r->m_bindIP.addr, r->m_bindIP.addrLen) < 0)
-            {
-                int err = GetSockError();
-                RTMP_Log(RTMP_LOGERROR, "%s, failed to bind socket: %s (%d)",
-                         __FUNCTION__, socketerror(err), err);
-                r->last_error_code = err;
-                RTMP_Close(r);
-                return FALSE;
-            }
-        }
-
-        uint64_t connect_start = os_gettime_ns();
-
-        if (connect(r->m_sb.sb_socket, service, addrlen) < 0)
-        {
-            int err = GetSockError();
-            if (err == E_CONNREFUSED)
-                RTMP_Log(RTMP_LOGERROR, "%s is offline. Try a different server (ECONNREFUSED).", r->Link.hostname.av_val);
-            else if (err == E_ACCES)
-                RTMP_Log(RTMP_LOGERROR, "The connection is being blocked by a firewall or other security software (EACCES).");
-            else if (err == E_TIMEDOUT)
-                RTMP_Log(RTMP_LOGERROR, "The connection timed out. Try a different server, or check that the connection is not being blocked by a firewall or other security software (ETIMEDOUT).");
-            else
-                RTMP_Log(RTMP_LOGERROR, "%s, failed to connect socket: %s (%d)",
-                     __FUNCTION__, socketerror(err), err);
-            r->last_error_code = err;
-            RTMP_Close(r);
-            return FALSE;
-        }
-
-        r->connect_time_ms = (int)((os_gettime_ns() - connect_start) / 1000000);
-
         if (r->Link.socksport)
         {
             RTMP_Log(RTMP_LOGDEBUG, "%s ... SOCKS negotiation", __FUNCTION__);
@@ -929,13 +904,22 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
 
     /* set timeout */
     {
-        SET_RCVTIMEO(tv, r->Link.timeout);
+        SET_RCVTIMEO(tvr, r->Link.receiveTimeout);
         if (setsockopt
-                (r->m_sb.sb_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv)))
+                (r->m_sb.sb_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tvr, sizeof(tvr)))
         {
-            RTMP_Log(RTMP_LOGERROR, "%s, Setting socket timeout to %ds failed!",
-                     __FUNCTION__, r->Link.timeout);
+            RTMP_Log(RTMP_LOGERROR, "%s, Setting socket receive timeout to %ds failed!",
+                     __FUNCTION__, r->Link.receiveTimeout);
         }
+
+#if defined(SOCKET_TIMEOUT_OPT)
+		SOCKET_TIMEOUT_VAR(to, r->Link.sendTimeout);
+		if (setsockopt(r->m_sb.sb_socket, SOCKET_LEVEL, SOCKET_TIMEOUT_OPT, &to, sizeof(to)))
+        {
+                RTMP_Log(RTMP_LOGERROR, "%s, Setting socket SOCKET_TIMEOUT_OPT to %ds failed!",
+                     __FUNCTION__, r->Link.sendTimeout);
+        }
+#endif
     }
 
     if(!r->m_bUseNagle)
@@ -954,7 +938,11 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
 
 #if defined(USE_MBEDTLS)
         mbedtls_net_context *server_fd = &r->RTMP_TLS_ctx->net;
+#if MBEDTLS_VERSION_NUMBER == 0x03000000
+        server_fd->MBEDTLS_PRIVATE(fd) = r->m_sb.sb_socket;
+#else
         server_fd->fd = r->m_sb.sb_socket;
+#endif
         TLS_setfd(r->m_sb.sb_ssl, server_fd);
 
         // make sure we verify the certificate hostname
@@ -1048,58 +1036,99 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
 int
 RTMP_Connect(RTMP *r, RTMPPacket *cp)
 {
-#ifdef _WIN32
-    HOSTENT *h;
-#endif
-    struct sockaddr_storage service;
-    socklen_t addrlen = 0;
-    socklen_t addrlen_hint = 0;
-    int socket_error = 0;
+    struct happy_eyeballs_ctx* happy_ctx = NULL;
+    bool free_hostname = FALSE;
+    char *hostname = NULL;
+    int port = 0;
+    int result = FALSE;
 
-    if (!r->Link.hostname.av_len)
-        return FALSE;
-
-#ifdef _WIN32
-    //COMODO security software sandbox blocks all DNS by returning "host not found"
-    h = gethostbyname("localhost");
-    if (!h && GetLastError() == WSAHOST_NOT_FOUND)
+    int he_result = happy_eyeballs_create(&happy_ctx);
+    if (he_result != 0)
     {
-        r->last_error_code = WSAHOST_NOT_FOUND;
-        RTMP_Log(RTMP_LOGERROR, "RTMP_Connect: Connection test failed. This error is likely caused by Comodo Internet Security running OBS in sandbox mode. Please add OBS to the Comodo automatic sandbox exclusion list, restart OBS and try again (11001).");
-        return FALSE;
+        /* did not successfully create the happy eyeballs context */
+        r->last_error_code = -he_result;
+        goto fail;
     }
-#endif
-
-    memset(&service, 0, sizeof(service));
-
-    if (r->m_bindIP.addrLen)
-        addrlen_hint = r->m_bindIP.addrLen;
 
     if (r->Link.socksport)
     {
         /* Connect via SOCKS */
-        if (!add_addr_info(&service, &addrlen, &r->Link.sockshost, r->Link.socksport, addrlen_hint, &socket_error))
-        {
-            r->last_error_code = socket_error;
-            return FALSE;
-        }
+        hostname = get_hostname(&r->Link.sockshost, &free_hostname);
+        port = r->Link.socksport;
     }
     else
     {
         /* Connect directly */
-        if (!add_addr_info(&service, &addrlen, &r->Link.hostname, r->Link.port, addrlen_hint, &socket_error))
-        {
-            r->last_error_code = socket_error;
-            return FALSE;
-        }
+        hostname = get_hostname(&r->Link.hostname, &free_hostname);
+        port = r->Link.port;
     }
 
-    if (!RTMP_Connect0(r, (struct sockaddr *)&service, addrlen))
-        return FALSE;
+    /* Set local bind address (if present) */
+    happy_eyeballs_set_bind_addr(happy_ctx, r->m_bindIP.addrLen, &r->m_bindIP.addr);
 
-    r->m_bSendCounter = TRUE;
+    /* Attempt connection */
+    he_result = happy_eyeballs_connect(happy_ctx, hostname, port);
+    if (he_result == EAGAIN)
+    {
+        /* Connect returned with the connection process ongoing, let's wait for a few more seconds... */
+        he_result = happy_eyeballs_timedwait_default(happy_ctx);
+    }
 
-    return RTMP_Connect1(r, cp);
+    if (he_result == -E_INVAL)
+    {
+        /* Parameter error */
+        r->last_error_code = E_INVAL;
+        RTMP_Log(RTMP_LOGERROR, "Invalid connection parameters. Try to make sure you're using a valid server address and port.");
+        goto fail;
+
+    }
+    else if (he_result != 0)
+    {
+        /* Error while connecting */
+        int err = happy_eyeballs_get_error_code(happy_ctx);
+        if (err == E_CONNREFUSED)
+            RTMP_Log(RTMP_LOGERROR, "%s is offline. Try a different server (ECONNREFUSED).", r->Link.hostname.av_val);
+        else if (err == E_ACCES)
+            RTMP_Log(RTMP_LOGERROR, "The connection is being blocked by a firewall or other security software (EACCES).");
+        else if (err == E_TIMEDOUT)
+            RTMP_Log(RTMP_LOGERROR, "The connection timed out. Try a different server, or check that the connection is not being blocked by a firewall or other security software (ETIMEDOUT).");
+        else if (r->m_bindIP.addrLen > 0)
+        {
+            /* There are several different errors that platform network implementations can
+             * emit when a user attempts to connect to e.g. IPv6 on a device where it is
+             * disabled (EINVAL, EHOSTUNREACH) or vice-versa. Squash this down to EHOSTUNREACH
+             * in order to emit a more user-friendly error. */
+            RTMP_Log(RTMP_LOGERROR, "Invalid socket settings: %s (%d). Are you trying to use IPv6 on an IPv4-only interface?", socketerror(err), err);
+            err = E_HOSTUNREACH;
+        }
+        else
+            RTMP_Log(RTMP_LOGERROR, "%s, failed to connect socket: %s (%d)",
+                    __FUNCTION__, socketerror(err), err);
+        r->last_error_code = err;
+        goto fail;
+    }
+
+    happy_eyeballs_get_remote_addr(happy_ctx, &r->m_sb.sb_addr);
+    r->connect_time_ms = (int)(happy_eyeballs_get_connection_time_ns(happy_ctx) / 1000000);
+
+    /* Successful connection */
+    SOCKET socket_fd = happy_eyeballs_get_socket_fd(happy_ctx);
+    result = RTMP_Connect0(r, socket_fd);
+    if (result)
+    {
+        r->m_bSendCounter = TRUE;
+        result = RTMP_Connect1(r, cp);
+    }
+
+fail:
+    if (!result)
+        RTMP_Close(r);
+    if (happy_ctx)
+        happy_eyeballs_destroy(happy_ctx);
+    if (free_hostname)
+        free(hostname);
+
+    return result;
 }
 
 static int
@@ -1540,13 +1569,6 @@ ReadN(RTMP *r, char *buffer, int n)
         if (r->Link.protocol & RTMP_FEATURE_HTTP)
             r->m_resplen -= nBytes;
 
-#ifdef CRYPTO
-        if (r->Link.rc4keyIn)
-        {
-            RC4_encrypt(r->Link.rc4keyIn, nBytes, ptr);
-        }
-#endif
-
         n -= nBytes;
         ptr += nBytes;
     }
@@ -1558,20 +1580,7 @@ static int
 WriteN(RTMP *r, const char *buffer, int n)
 {
     const char *ptr = buffer;
-#ifdef CRYPTO
-    char *encrypted = 0;
-    char buf[RTMP_BUFFER_CACHE_SIZE];
-
-    if (r->Link.rc4keyOut)
-    {
-        if (n > (int)sizeof(buf))
-            encrypted = (char *)malloc(n);
-        else
-            encrypted = (char *)buf;
-        ptr = encrypted;
-        RC4_encrypt2(r->Link.rc4keyOut, n, buffer, ptr);
-    }
-#endif
+    struct linger l;
 
     while (n > 0)
     {
@@ -1596,6 +1605,15 @@ WriteN(RTMP *r, const char *buffer, int n)
 
             r->last_error_code = sockerr;
 
+            // Force-close the socket. Sometimes a send() error isn't fatal, so
+            // we could end up writing an unpublish message which some services
+            // treat as a clean shutdown. We need to disable lingering too so
+            // the remote side sees an abortive shutdown (RST).
+            l.l_onoff = 1;
+            l.l_linger = 0;
+            setsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
+            RTMPSockBuf_Close(&r->m_sb);
+
             RTMP_Close(r);
             n = 1;
             break;
@@ -1607,11 +1625,6 @@ WriteN(RTMP *r, const char *buffer, int n)
         n -= nBytes;
         ptr += nBytes;
     }
-
-#ifdef CRYPTO
-    if (encrypted && encrypted != buf)
-        free(encrypted);
-#endif
 
     return n == 0;
 }
@@ -2607,7 +2620,7 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
 #if defined(USE_MBEDTLS)
 typedef	mbedtls_md5_context MD5_CTX;
 
-#if MBEDTLS_VERSION_NUMBER >= 0x02070000
+#if MBEDTLS_VERSION_NUMBER >= 0x02070000 && MBEDTLS_VERSION_MAJOR < 3
 #define MD5_Init(ctx)	mbedtls_md5_init(ctx); mbedtls_md5_starts_ret(ctx)
 #define MD5_Update(ctx,data,len)	mbedtls_md5_update_ret(ctx,(unsigned char *)data,len)
 #define MD5_Final(dig,ctx)	mbedtls_md5_finish_ret(ctx,dig); mbedtls_md5_free(ctx)
@@ -2633,12 +2646,12 @@ typedef struct md5_ctx	MD5_CTX;
 static const AVal av_authmod_adobe = AVC("authmod=adobe");
 static const AVal av_authmod_llnw  = AVC("authmod=llnw");
 
-static void hexenc(unsigned char *inbuf, int len, char *dst)
+static void hexenc(unsigned char *inbuf, int len, char *dst, size_t size)
 {
     char *ptr = dst;
     while(len--)
     {
-        sprintf(ptr, "%02x", *inbuf++);
+        snprintf(ptr, size, "%02x", *inbuf++);
         ptr += 2;
     }
     *ptr = '\0';
@@ -2686,8 +2699,9 @@ PublisherAuth(RTMP *r, AVal *description)
             }
             else if(r->Link.pubUser.av_len && r->Link.pubPasswd.av_len)
             {
-                pubToken.av_val = malloc(r->Link.pubUser.av_len + av_authmod_adobe.av_len + 8);
-                pubToken.av_len = sprintf(pubToken.av_val, "?%s&user=%s",
+                size_t val_size = r->Link.pubUser.av_len + av_authmod_adobe.av_len + 8;
+                pubToken.av_val = malloc(val_size);
+                pubToken.av_len = snprintf(pubToken.av_val, val_size, "?%s&user=%s",
                                           av_authmod_adobe.av_val,
                                           r->Link.pubUser.av_val);
                 RTMP_Log(RTMP_LOGDEBUG, "%s, pubToken1: %s", __FUNCTION__, pubToken.av_val);
@@ -2787,8 +2801,9 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, b64(md5_2) = %s", __FUNCTION__, response);
 
             /* have all hashes, create auth token for the end of app */
-            pubToken.av_val = malloc(32 + B64INT_LEN + B64DIGEST_LEN + opaque.av_len);
-            pubToken.av_len = sprintf(pubToken.av_val,
+            size_t val_size = 32 + B64INT_LEN + B64DIGEST_LEN + opaque.av_len;
+            pubToken.av_val = malloc(val_size);
+            pubToken.av_len = snprintf(pubToken.av_val, val_size,
                                       "&challenge=%s&response=%s&opaque=%s",
                                       challenge2,
                                       response,
@@ -2855,8 +2870,9 @@ PublisherAuth(RTMP *r, AVal *description)
             }
             else if(r->Link.pubUser.av_len && r->Link.pubPasswd.av_len)
             {
-                pubToken.av_val = malloc(r->Link.pubUser.av_len + av_authmod_llnw.av_len + 8);
-                pubToken.av_len = sprintf(pubToken.av_val, "?%s&user=%s",
+                size_t val_size = r->Link.pubUser.av_len + av_authmod_llnw.av_len + 8;
+                pubToken.av_val = malloc(val_size);
+                pubToken.av_len = snprintf(pubToken.av_val, val_size, "?%s&user=%s",
                                           av_authmod_llnw.av_val,
                                           r->Link.pubUser.av_val);
                 RTMP_Log(RTMP_LOGDEBUG, "%s, pubToken1: %s", __FUNCTION__, pubToken.av_val);
@@ -2933,8 +2949,8 @@ PublisherAuth(RTMP *r, AVal *description)
 
             /* FIXME: handle case where user==NULL or nonce==NULL */
 
-            sprintf(nchex, "%08x", nc);
-            sprintf(cnonce, "%08x", rand());
+            snprintf(nchex, sizeof(nchex), "%08x", nc);
+            snprintf(cnonce, sizeof(cnonce), "%08x", rand());
 
             /* hash1 = hexenc(md5(user + ":" + realm + ":" + password)) */
             MD5_Init(&md5ctx);
@@ -2947,7 +2963,7 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, md5(%s:%s:%s) =>", __FUNCTION__,
                      user.av_val, realm, r->Link.pubPasswd.av_val);
             RTMP_LogHexString(RTMP_LOGDEBUG, md5sum_val, MD5_DIGEST_LENGTH);
-            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash1);
+            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash1, sizeof(hash1));
 
             /* hash2 = hexenc(md5(method + ":/" + app + "/" + appInstance)) */
             /* Extract appname + appinstance without query parameters */
@@ -2966,7 +2982,7 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, md5(%s:/%.*s) =>", __FUNCTION__,
                      method, apptmp.av_len, apptmp.av_val);
             RTMP_LogHexString(RTMP_LOGDEBUG, md5sum_val, MD5_DIGEST_LENGTH);
-            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash2);
+            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash2, sizeof(hash2));
 
             /* hash3 = hexenc(md5(hash1 + ":" + nonce + ":" + nchex + ":" + cnonce + ":" + qop + ":" + hash2)) */
             MD5_Init(&md5ctx);
@@ -2985,13 +3001,14 @@ PublisherAuth(RTMP *r, AVal *description)
             RTMP_Log(RTMP_LOGDEBUG, "%s, md5(%s:%s:%s:%s:%s:%s) =>", __FUNCTION__,
                      hash1, nonce.av_val, nchex, cnonce, qop, hash2);
             RTMP_LogHexString(RTMP_LOGDEBUG, md5sum_val, MD5_DIGEST_LENGTH);
-            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash3);
+            hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash3, sizeof(hash3));
 
             /* pubToken = &authmod=<authmod>&user=<username>&nonce=<nonce>&cnonce=<cnonce>&nc=<nchex>&response=<hash3> */
             /* Append nonces and response to query string which already contains
              * user + authmod */
-            pubToken.av_val = malloc(64 + sizeof(authmod)-1 + user.av_len + nonce.av_len + sizeof(cnonce)-1 + sizeof(nchex)-1 + HEXHASH_LEN);
-            sprintf(pubToken.av_val,
+            size_t token_size = 64 + sizeof(authmod)-1 + user.av_len + nonce.av_len + sizeof(cnonce)-1 + sizeof(nchex)-1 + HEXHASH_LEN;
+            pubToken.av_val = malloc(token_size);
+            snprintf(pubToken.av_val, token_size,
                     "&nonce=%s&cnonce=%s&nc=%s&response=%s",
                     nonce.av_val, cnonce, nchex, hash3);
             pubToken.av_len = (int)strlen(pubToken.av_val);
@@ -3497,23 +3514,23 @@ DumpMetaData(AMFObject *obj)
             DumpMetaData(&prop->p_vu.p_object);
             break;
         case AMF_NUMBER:
-            snprintf(str, 255, "%.2f", prop->p_vu.p_number);
+            snprintf(str, sizeof(str), "%.2f", prop->p_vu.p_number);
             break;
         case AMF_BOOLEAN:
-            snprintf(str, 255, "%s",
+            snprintf(str, sizeof(str), "%s",
                      prop->p_vu.p_number != 0. ? "TRUE" : "FALSE");
             break;
         case AMF_STRING:
-            len = snprintf(str, 255, "%.*s", prop->p_vu.p_aval.av_len,
+            len = snprintf(str, sizeof(str), "%.*s", prop->p_vu.p_aval.av_len,
                            prop->p_vu.p_aval.av_val);
             if (len >= 1 && str[len-1] == '\n')
                 str[len-1] = '\0';
             break;
         case AMF_DATE:
-            snprintf(str, 255, "timestamp:%.2f", prop->p_vu.p_number);
+            snprintf(str, sizeof(str), "timestamp:%.2f", prop->p_vu.p_number);
             break;
         default:
-            snprintf(str, 255, "INVALID TYPE 0x%02x",
+            snprintf(str, sizeof(str), "INVALID TYPE 0x%02x",
                      (unsigned char)prop->p_type);
         }
         if (str[0] && prop->p_name.av_len)
@@ -4106,8 +4123,17 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
                 && packet->m_headerType == RTMP_PACKET_SIZE_MEDIUM)
             packet->m_headerType = RTMP_PACKET_SIZE_SMALL;
 
-        if (prevPacket->m_nTimeStamp == packet->m_nTimeStamp
-                && packet->m_headerType == RTMP_PACKET_SIZE_SMALL)
+        /* Per https://rtmp.veriskope.com/docs/spec/#53124-type-3 type 3 chunks/RTMP_PACKET_SIZE_MINIMUM
+         * always use the previously sent (delta) timestamp as their _delta_ timestamp, so we need to inspect
+         * whatever was previously sent, rather than just looking at the previous packet's absolute timestamp.
+         *
+         * The type 3 chunks/RTMP_PACKET_SIZE_MINIMUM packets produced here specify the beginning of a new
+         * message as opposed to message continuation type 3 chunks that are handled in the loop further down
+         * in this function.
+         */
+        uint32_t delta = packet->m_nTimeStamp - prevPacket->m_nTimeStamp;
+        if (delta == prevPacket->m_nLastWireTimeStamp
+            && packet->m_headerType == RTMP_PACKET_SIZE_SMALL)
             packet->m_headerType = RTMP_PACKET_SIZE_MINIMUM;
         last = prevPacket->m_nTimeStamp;
     }
@@ -4123,6 +4149,7 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
     hSize = nSize;
     cSize = 0;
     t = packet->m_nTimeStamp - last;
+    packet->m_nLastWireTimeStamp = t;
 
     if (packet->m_body)
     {
@@ -4233,6 +4260,7 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
         buffer += nChunkSize;
         hSize = 0;
 
+        // prepare to send off remaining data in Type 3 chunks
         if (nSize > 0)
         {
             header = buffer - 1;
@@ -4242,6 +4270,11 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
                 header -= cSize;
                 hSize += cSize;
             }
+            if (t >= 0xffffff)
+            {
+                hSize += 4;
+                header -= 4;
+            }
             *header = (0xc0 | c);
             if (cSize)
             {
@@ -4250,6 +4283,8 @@ RTMP_SendPacket(RTMP *r, RTMPPacket *packet, int queue)
                 if (cSize == 2)
                     header[2] = tmp >> 8;
             }
+            if (t >= 0xffffff)
+                AMF_EncodeInt32(header+hSize-4, header+hSize, t);
         }
     }
     if (tbuf)
@@ -4408,22 +4443,6 @@ RTMP_Close(RTMP *r)
         r->Link.app.av_val = NULL;
         free(r->Link.tcUrl.av_val);
         r->Link.tcUrl.av_val = NULL;
-    }
-#elif defined(CRYPTO)
-    if (r->Link.dh)
-    {
-        MDH_free(r->Link.dh);
-        r->Link.dh = NULL;
-    }
-    if (r->Link.rc4keyIn)
-    {
-        RC4_free(r->Link.rc4keyIn);
-        r->Link.rc4keyIn = NULL;
-    }
-    if (r->Link.rc4keyOut)
-    {
-        RC4_free(r->Link.rc4keyOut);
-        r->Link.rc4keyOut = NULL;
     }
 #else
     for (int idx = 0; idx < r->Link.nStreams; idx++)

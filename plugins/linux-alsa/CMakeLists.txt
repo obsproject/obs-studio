@@ -1,35 +1,18 @@
-project(linux-alsa)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-if(DISABLE_ALSA)
-	message(STATUS "ALSA support disabled")
-	return()
+option(ENABLE_ALSA "Build OBS with ALSA support" ON)
+
+if(NOT ENABLE_ALSA)
+  target_disable(linux-alsa)
+  return()
 endif()
 
-find_package(ALSA)
-if(NOT ALSA_FOUND AND ENABLE_ALSA)
-	message(FATAL_ERROR "ALSA not found but set as enabled")
-elseif(NOT ALSA_FOUND)
-	message(STATUS "ALSA not found, disabling ALSA plugin")
-	return()
-endif()
+find_package(ALSA REQUIRED)
 
-include_directories(
-	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
-	${ALSA_INCLUDE_DIR}
-)
+add_library(linux-alsa MODULE)
+add_library(OBS::alsa ALIAS linux-alsa)
 
-set(linux-alsa_SOURCES
-	linux-alsa.c
-	alsa-input.c
-)
+target_sources(linux-alsa PRIVATE alsa-input.c linux-alsa.c)
+target_link_libraries(linux-alsa PRIVATE OBS::libobs ALSA::ALSA)
 
-add_library(linux-alsa MODULE
-	${linux-alsa_SOURCES}
-)
-target_link_libraries(linux-alsa
-	libobs
-	${ALSA_LIBRARY}
-)
-set_target_properties(linux-alsa PROPERTIES FOLDER "plugins")
-
-install_obs_plugin_with_data(linux-alsa data)
+set_target_properties_obs(linux-alsa PROPERTIES FOLDER plugins PREFIX "")

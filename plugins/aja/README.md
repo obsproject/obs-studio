@@ -1,6 +1,6 @@
 # AJA I/O Device Capture and Output Plugin for OBS
 
-A capture and outptu plugin for OBS for use with AJA NTV2 I/O devices. The plugin communicates with the AJA device driver via the open-source AJA NTV2 SDK (MIT license). See instructions below for installing the AJA device driver.
+A capture and output plugin for OBS for use with AJA NTV2 I/O devices. The plugin communicates with the AJA device driver via the open-source AJA NTV2 SDK (MIT license). See instructions below for installing the AJA device driver.
 
 ---
 
@@ -18,7 +18,7 @@ https://www.aja.com/support
 
 ### Method 2 - Build From Sources (Linux)
 
-The Linux verison of the AJA device driver can be built from the MIT-licensed AJA NTV2 SDK sources found here: 
+The Linux version of the AJA device driver can be built from the MIT-licensed AJA NTV2 SDK sources found here:
 
 https://github.com/aja-video/ntv2
 

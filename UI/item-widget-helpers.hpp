@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@ QListWidgetItem *TakeListItem(QListWidget *widget, int row);
 void DeleteListItem(QListWidget *widget, QListWidgetItem *item);
 void ClearListItems(QListWidget *widget);
 
-template<typename QObjectPtr>
-void InsertQObjectByName(std::vector<QObjectPtr> &controls, QObjectPtr control)
+template<typename QObjectPtr> void InsertQObjectByName(std::vector<QObjectPtr> &controls, QObjectPtr control)
 {
 	QString name = control->objectName();
 	auto finder = [name](QObjectPtr elem) {

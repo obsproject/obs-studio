@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Basic.Filters</string>
   </property>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,10">
@@ -66,6 +69,18 @@
             <property name="contextMenuPolicy">
              <enum>Qt::CustomContextMenu</enum>
             </property>
+            <property name="dragEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::InternalMove</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::TargetMoveAction</enum>
+            </property>
+            <property name="spacing">
+             <number>1</number>
+            </property>
            </widget>
           </item>
           <item>
@@ -101,7 +116,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -110,8 +125,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>addIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-plus</string>
                </property>
               </widget>
              </item>
@@ -130,7 +145,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -139,8 +154,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>removeIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-trash</string>
                </property>
               </widget>
              </item>
@@ -159,7 +174,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -168,8 +183,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>upArrowIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-up</string>
                </property>
               </widget>
              </item>
@@ -188,7 +203,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -197,8 +212,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>downArrowIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-down</string>
                </property>
               </widget>
              </item>
@@ -276,6 +291,18 @@
             <property name="contextMenuPolicy">
              <enum>Qt::CustomContextMenu</enum>
             </property>
+            <property name="dragEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::InternalMove</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::TargetMoveAction</enum>
+            </property>
+            <property name="spacing">
+             <number>1</number>
+            </property>
            </widget>
           </item>
           <item>
@@ -311,7 +338,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -320,8 +347,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>addIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-plus</string>
                </property>
               </widget>
              </item>
@@ -340,7 +367,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -349,8 +376,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>removeIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-trash</string>
                </property>
               </widget>
              </item>
@@ -369,7 +396,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -378,8 +405,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>upArrowIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-up</string>
                </property>
               </widget>
              </item>
@@ -398,7 +425,7 @@
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset>
+                <iconset resource="obs.qrc">
                  <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
                </property>
                <property name="autoDefault">
@@ -407,8 +434,8 @@
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <property name="themeID" stdset="0">
-                <string>downArrowIconSmall</string>
+               <property name="class" stdset="0">
+                <string notr="true">btn-tool icon-down</string>
                </property>
               </widget>
              </item>
@@ -563,22 +590,9 @@
            <enum>QLayout::SetMaximumSize</enum>
           </property>
           <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
            <widget class="QDialogButtonBox" name="buttonBox">
             <property name="standardButtons">
-             <set>QDialogButtonBox::Close|QDialogButtonBox::Reset</set>
+             <set>QDialogButtonBox::Close|QDialogButtonBox::RestoreDefaults</set>
             </property>
            </widget>
           </item>
@@ -592,7 +606,7 @@
   </layout>
   <action name="actionRemoveFilter">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
    </property>
    <property name="text">
@@ -601,10 +615,13 @@
    <property name="shortcut">
     <string>Del</string>
    </property>
+   <property name="iconVisibleInMenu">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionMoveUp">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
    </property>
    <property name="text">
@@ -616,7 +633,7 @@
   </action>
   <action name="actionMoveDown">
    <property name="icon">
-    <iconset>
+    <iconset resource="obs.qrc">
      <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
    </property>
    <property name="text">
@@ -624,6 +641,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Down</string>
+   </property>
+  </action>
+  <action name="actionRenameFilter">
+   <property name="text">
+    <string>Rename</string>
    </property>
   </action>
  </widget>

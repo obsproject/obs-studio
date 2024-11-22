@@ -6,18 +6,18 @@
 #include <mutex>
 #include <vector>
 #include <obs.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/windows/WinHandle.hpp>
 
 #include <fstream>
 
-class CircleBuf {
-	circlebuf buf = {};
+class Deque {
+	deque buf = {};
 
 public:
-	inline ~CircleBuf() { circlebuf_free(&buf); }
-	inline operator circlebuf *() { return &buf; }
-	inline circlebuf *operator->() { return &buf; }
+	inline ~Deque() { deque_free(&buf); }
+	inline operator deque *() { return &buf; }
+	inline deque *operator->() { return &buf; }
 };
 
 class mssapi_captions;
@@ -36,7 +36,7 @@ class CaptionStream : public ISpAudio {
 	std::vector<int16_t> temp_buf;
 	WAVEFORMATEX format = {};
 
-	CircleBuf buf;
+	Deque buf;
 	ULONG wait_size = 0;
 	DWORD samplerate = 0;
 	ULARGE_INTEGER pos = {};
@@ -55,38 +55,30 @@ public:
 
 	// ISequentialStream methods
 	STDMETHODIMP Read(void *data, ULONG bytes, ULONG *read_bytes) override;
-	STDMETHODIMP Write(const void *data, ULONG bytes,
-			   ULONG *written_bytes) override;
+	STDMETHODIMP Write(const void *data, ULONG bytes, ULONG *written_bytes) override;
 
 	// IStream methods
-	STDMETHODIMP Seek(LARGE_INTEGER move, DWORD origin,
-			  ULARGE_INTEGER *new_pos) override;
+	STDMETHODIMP Seek(LARGE_INTEGER move, DWORD origin, ULARGE_INTEGER *new_pos) override;
 	STDMETHODIMP SetSize(ULARGE_INTEGER new_size) override;
-	STDMETHODIMP CopyTo(IStream *stream, ULARGE_INTEGER bytes,
-			    ULARGE_INTEGER *read_bytes,
+	STDMETHODIMP CopyTo(IStream *stream, ULARGE_INTEGER bytes, ULARGE_INTEGER *read_bytes,
 			    ULARGE_INTEGER *written_bytes) override;
 	STDMETHODIMP Commit(DWORD commit_flags) override;
 	STDMETHODIMP Revert(void) override;
-	STDMETHODIMP LockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size,
-				DWORD type) override;
-	STDMETHODIMP UnlockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size,
-				  DWORD type) override;
+	STDMETHODIMP LockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size, DWORD type) override;
+	STDMETHODIMP UnlockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size, DWORD type) override;
 	STDMETHODIMP Stat(STATSTG *stg, DWORD flags) override;
 	STDMETHODIMP Clone(IStream **stream) override;
 
 	// ISpStreamFormat methods
-	STDMETHODIMP GetFormat(GUID *guid,
-			       WAVEFORMATEX **co_mem_wfex_out) override;
+	STDMETHODIMP GetFormat(GUID *guid, WAVEFORMATEX **co_mem_wfex_out) override;
 
 	// ISpAudio methods
 	STDMETHODIMP SetState(SPAUDIOSTATE state, ULONGLONG reserved) override;
-	STDMETHODIMP SetFormat(REFGUID guid_ref,
-			       const WAVEFORMATEX *wfex) override;
+	STDMETHODIMP SetFormat(REFGUID guid_ref, const WAVEFORMATEX *wfex) override;
 	STDMETHODIMP GetStatus(SPAUDIOSTATUS *status) override;
 	STDMETHODIMP SetBufferInfo(const SPAUDIOBUFFERINFO *buf_info) override;
 	STDMETHODIMP GetBufferInfo(SPAUDIOBUFFERINFO *buf_info) override;
-	STDMETHODIMP GetDefaultFormat(GUID *format,
-				      WAVEFORMATEX **co_mem_wfex_out) override;
+	STDMETHODIMP GetDefaultFormat(GUID *format, WAVEFORMATEX **co_mem_wfex_out) override;
 	STDMETHODIMP_(HANDLE) EventHandle(void) override;
 	STDMETHODIMP GetVolumeLevel(ULONG *level) override;
 	STDMETHODIMP SetVolumeLevel(ULONG level) override;

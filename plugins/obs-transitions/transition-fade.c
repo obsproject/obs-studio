@@ -48,29 +48,57 @@ static void fade_destroy(void *data)
 	bfree(fade);
 }
 
-static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t,
-			  uint32_t cx, uint32_t cy)
+static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t, uint32_t cx, uint32_t cy)
 {
-	struct fade_info *fade = data;
+	if (a || b) {
+		struct fade_info *fade = data;
 
-	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(true);
+		const bool previous = gs_framebuffer_srgb_enabled();
+		gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture(fade->a_param, a);
-	gs_effect_set_texture(fade->b_param, b);
-	gs_effect_set_float(fade->fade_param, t);
+		const char *tech_name = "Fade";
 
-	while (gs_effect_loop(fade->effect, "Fade"))
-		gs_draw_sprite(NULL, 0, cx, cy);
+		if (!a || !b) {
+			tech_name = "FadeSingle";
+			if (a) {
+				gs_effect_set_texture_srgb(fade->a_param, a);
+				t = 1.f - t;
+			} else {
+				gs_effect_set_texture_srgb(fade->a_param, b);
+			}
+		} else {
+			/* texture setters look reversed, but they aren't */
+			if (gs_get_color_space() == GS_CS_SRGB) {
+				/* users want nonlinear fade */
+				gs_effect_set_texture(fade->a_param, a);
+				gs_effect_set_texture(fade->b_param, b);
+			} else {
+				/* nonlinear fade is too wrong, so use linear fade */
+				gs_effect_set_texture_srgb(fade->a_param, a);
+				gs_effect_set_texture_srgb(fade->b_param, b);
+				tech_name = "FadeLinear";
+			}
+		}
 
-	gs_enable_framebuffer_srgb(previous);
+		gs_effect_set_float(fade->fade_param, t);
+
+		while (gs_effect_loop(fade->effect, tech_name))
+			gs_draw_sprite(NULL, 0, cx, cy);
+
+		gs_enable_framebuffer_srgb(previous);
+	}
 }
 
 static void fade_video_render(void *data, gs_effect_t *effect)
 {
-	struct fade_info *fade = data;
-	obs_transition_video_render(fade->source, fade_callback);
 	UNUSED_PARAMETER(effect);
+
+	const bool previous = gs_set_linear_srgb(true);
+
+	struct fade_info *fade = data;
+	obs_transition_video_render2(fade->source, fade_callback, NULL);
+
+	gs_set_linear_srgb(previous);
 }
 
 static float mix_a(void *data, float t)
@@ -85,14 +113,27 @@ static float mix_b(void *data, float t)
 	return t;
 }
 
-static bool fade_audio_render(void *data, uint64_t *ts_out,
-			      struct obs_source_audio_mix *audio,
-			      uint32_t mixers, size_t channels,
-			      size_t sample_rate)
+static bool fade_audio_render(void *data, uint64_t *ts_out, struct obs_source_audio_mix *audio, uint32_t mixers,
+			      size_t channels, size_t sample_rate)
 {
 	struct fade_info *fade = data;
-	return obs_transition_audio_render(fade->source, ts_out, audio, mixers,
-					   channels, sample_rate, mix_a, mix_b);
+	return obs_transition_audio_render(fade->source, ts_out, audio, mixers, channels, sample_rate, mix_a, mix_b);
+}
+
+static enum gs_color_space fade_video_get_color_space(void *data, size_t count,
+						      const enum gs_color_space *preferred_spaces)
+{
+	struct fade_info *const fade = data;
+	const enum gs_color_space transition_space = obs_transition_video_get_color_space(fade->source);
+
+	enum gs_color_space space = transition_space;
+	for (size_t i = 0; i < count; ++i) {
+		space = preferred_spaces[i];
+		if (space == transition_space)
+			break;
+	}
+
+	return space;
 }
 
 struct obs_source_info fade_transition = {
@@ -103,4 +144,5 @@ struct obs_source_info fade_transition = {
 	.destroy = fade_destroy,
 	.video_render = fade_video_render,
 	.audio_render = fade_audio_render,
+	.video_get_color_space = fade_video_get_color_space,
 };

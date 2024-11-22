@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QWidget>
+#include <QDialog>
 #include <QString>
 #include <memory>
 
 class Ui_ScriptsTool;
 
-class ScriptLogWindow : public QWidget {
+class ScriptLogWindow : public QDialog {
 	Q_OBJECT
 
 	QString lines;
@@ -25,11 +25,13 @@ public slots:
 	void ScrollChanged(int val);
 };
 
-class ScriptsTool : public QWidget {
+class ScriptsTool : public QDialog {
 	Q_OBJECT
 
 	std::unique_ptr<Ui_ScriptsTool> ui;
 	QWidget *propertiesView = nullptr;
+
+	void updatePythonVersionLabel();
 
 public:
 	ScriptsTool();

@@ -10,14 +10,7 @@ protected:
 	void keyPressEvent(QKeyEvent *event) override;
 
 public:
-	explicit inline MenuButton(QWidget *parent = nullptr)
-		: QPushButton(parent)
-	{
-	}
+	explicit inline MenuButton(QWidget *parent = nullptr) : QPushButton(parent) {}
 
-	explicit inline MenuButton(const QString &text,
-				   QWidget *parent = nullptr)
-		: QPushButton(text, parent)
-	{
-	}
+	explicit inline MenuButton(const QString &text, QWidget *parent = nullptr) : QPushButton(text, parent) {}
 };

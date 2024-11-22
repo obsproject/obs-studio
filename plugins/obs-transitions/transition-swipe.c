@@ -48,7 +48,6 @@ static void *swipe_create(obs_data_t *settings, obs_source_t *source)
 
 	obs_source_update(source, settings);
 
-	UNUSED_PARAMETER(settings);
 	return swipe;
 }
 
@@ -75,8 +74,7 @@ static void swipe_update(void *data, obs_data_t *settings)
 		swipe->dir = (struct vec2){1.0f, 0.0f};
 }
 
-static void swipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
-			   float t, uint32_t cx, uint32_t cy)
+static void swipe_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t, uint32_t cx, uint32_t cy)
 {
 	struct swipe_info *swipe = data;
 	struct vec2 swipe_val = swipe->dir;
@@ -91,8 +89,8 @@ static void swipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture(swipe->a_param, swipe->swipe_in ? b : a);
-	gs_effect_set_texture(swipe->b_param, swipe->swipe_in ? a : b);
+	gs_effect_set_texture_srgb(swipe->a_param, swipe->swipe_in ? b : a);
+	gs_effect_set_texture_srgb(swipe->b_param, swipe->swipe_in ? a : b);
 	gs_effect_set_vec2(swipe->swipe_param, &swipe_val);
 
 	while (gs_effect_loop(swipe->effect, "Swipe"))
@@ -120,14 +118,11 @@ static float mix_b(void *data, float t)
 	return cubic_ease_in_out(t);
 }
 
-static bool swipe_audio_render(void *data, uint64_t *ts_out,
-			       struct obs_source_audio_mix *audio,
-			       uint32_t mixers, size_t channels,
-			       size_t sample_rate)
+static bool swipe_audio_render(void *data, uint64_t *ts_out, struct obs_source_audio_mix *audio, uint32_t mixers,
+			       size_t channels, size_t sample_rate)
 {
 	struct swipe_info *swipe = data;
-	return obs_transition_audio_render(swipe->source, ts_out, audio, mixers,
-					   channels, sample_rate, mix_a, mix_b);
+	return obs_transition_audio_render(swipe->source, ts_out, audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
 static obs_properties_t *swipe_properties(void *data)
@@ -135,22 +130,27 @@ static obs_properties_t *swipe_properties(void *data)
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_list(ppts, S_DIRECTION,
-				    obs_module_text("Direction"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(ppts, S_DIRECTION, obs_module_text("Direction"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, obs_module_text("Direction.Left"),
-				     "left");
-	obs_property_list_add_string(p, obs_module_text("Direction.Right"),
-				     "right");
+	obs_property_list_add_string(p, obs_module_text("Direction.Left"), "left");
+	obs_property_list_add_string(p, obs_module_text("Direction.Right"), "right");
 	obs_property_list_add_string(p, obs_module_text("Direction.Up"), "up");
-	obs_property_list_add_string(p, obs_module_text("Direction.Down"),
-				     "down");
+	obs_property_list_add_string(p, obs_module_text("Direction.Down"), "down");
 
 	obs_properties_add_bool(ppts, S_SWIPE_IN, obs_module_text("SwipeIn"));
 
 	UNUSED_PARAMETER(data);
 	return ppts;
+}
+
+static enum gs_color_space swipe_video_get_color_space(void *data, size_t count,
+						       const enum gs_color_space *preferred_spaces)
+{
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
+	struct swipe_info *const swipe = data;
+	return obs_transition_video_get_color_space(swipe->source);
 }
 
 struct obs_source_info swipe_transition = {
@@ -163,4 +163,5 @@ struct obs_source_info swipe_transition = {
 	.video_render = swipe_video_render,
 	.audio_render = swipe_audio_render,
 	.get_properties = swipe_properties,
+	.video_get_color_space = swipe_video_get_color_space,
 };

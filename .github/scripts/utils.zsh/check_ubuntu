@@ -1,0 +1,54 @@
+autoload -Uz log_debug log_group
+
+log_group 'Check Ubuntu build requirements'
+log_debug 'Checking Ubuntu distribution name and version...'
+
+if [[ -f /etc/os-release ]] {
+  local dist_name
+  local dist_version
+  read -r dist_name dist_version <<< "$(source /etc/os-release; print "${NAME} ${VERSION_ID}")"
+
+  if [[ ${dist_name} != Ubuntu ]] {
+    log_error "Not running on an Ubuntu distribution. Aborting"
+    log_group
+    return 2
+  }
+
+  autoload -Uz is-at-least && if ! is-at-least 24.04 ${dist_version}; then
+    log_error "Not running on a recent-enough Ubuntu distribution. Aborting"
+    log_group
+    return 2
+  fi
+} else {
+  log_error "Unable to determine local Linux distribution, but Ubuntu is required. Aborting"
+  log_group
+  return 2
+}
+
+local -a dependencies=("${(fA)$(<${SCRIPT_HOME}/.Aptfile)}")
+local -a install_list
+local binary
+
+sudo apt-get update -qq
+
+for dependency (${dependencies}) {
+  local -a tokens=(${=dependency//(,|:|\')/})
+
+  if [[ ! ${tokens[1]} == package ]] continue
+
+  if [[ ${#tokens} -gt 2 && ${tokens[3]} == bin ]] {
+    binary=${tokens[4]}
+  } else {
+    binary=${tokens[2]}
+  }
+
+  if (( ! ${+commands[${binary}]} )) install_list+=(${tokens[2]})
+}
+
+log_debug "List of dependencies to install: ${install_list}"
+if (( #install_list )) {
+  sudo apt-get -y --no-install-recommends install ${install_list}
+}
+
+rehash
+log_group

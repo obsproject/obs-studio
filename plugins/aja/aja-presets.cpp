@@ -11,16 +11,14 @@ RoutingConfigurator::RoutingConfigurator()
 	build_preset_table();
 }
 
-void RoutingConfigurator::AddPreset(const std::string &name,
-				    const RoutingPreset &preset)
+void RoutingConfigurator::AddPreset(const std::string &name, const RoutingPreset &preset)
 {
 	if (m_presets.find(name) != m_presets.end())
 		return;
 	m_presets.insert(RoutingPresetPair{name, preset});
 }
 
-bool RoutingConfigurator::PresetByName(const std::string &name,
-				       RoutingPreset &preset) const
+bool RoutingConfigurator::PresetByName(const std::string &name, RoutingPreset &preset) const
 {
 	if (m_presets.find(name) != m_presets.end()) {
 		preset = m_presets.at(name);
@@ -33,8 +31,8 @@ void RoutingConfigurator::build_preset_table()
 {
 	static const RoutingPresetMap kRoutingPresets = {
 		/*
-        * HDMI RGB Capture
-        */
+		 * HDMI RGB Capture
+		 */
 		{"HDMI_HD_RGB_LFR_RGB_Capture",
 		 {"HDMI_HD_RGB_LFR_RGB_Capture",
 		  ConnectionKind::HDMI,
@@ -85,8 +83,8 @@ void RoutingConfigurator::build_preset_table()
 		  true,
 		  false}},
 		/*
-        * HDMI RGB Display
-        */
+		 * HDMI RGB Display
+		 */
 		{"HDMI_HD_RGB_LFR_RGB_Display",
 		 {"HDMI_HD_RGB_LFR_RGB_Display",
 		  ConnectionKind::HDMI,
@@ -150,8 +148,8 @@ void RoutingConfigurator::build_preset_table()
 		  true,
 		  false}},
 		/*
-        * HDMI YCbCr Capture
-        */
+		 * HDMI YCbCr Capture
+		 */
 		{"HDMI_HD_LFR_YCbCr_Capture",
 		 {"HDMI_HD_LFR_YCbCr_Capture",
 		  ConnectionKind::HDMI,
@@ -187,9 +185,30 @@ void RoutingConfigurator::build_preset_table()
 		  {DEVICE_ID_IO4KPLUS},
 		  false,
 		  false}},
+		{"HDMI_UHD_4K_YCbCr_Capture",
+		 {"HDMI_UHD_4K_YCbCr_Capture",
+		  ConnectionKind::HDMI,
+		  NTV2_MODE_CAPTURE,
+		  RasterDefinition::UHD_4K,
+		  HDMIWireFormat::UHD_4K_YCBCR,
+		  VPIDStandard_Unknown,
+		  1,
+		  2,
+		  kEnable4KTSI,
+		  "hdmi[{ch1}][0]->tsi[{ch1}][0];"
+		  "hdmi[{ch1}][1]->tsi[{ch1}][1];"
+		  "hdmi[{ch1}][2]->tsi[{ch2}][0];"
+		  "hdmi[{ch1}][3]->tsi[{ch2}][1];"
+		  "tsi[{ch1}][0]->fb[{ch1}][0];"
+		  "tsi[{ch1}][1]->fb[{ch1}][1];"
+		  "tsi[{ch2}][0]->fb[{ch2}][0];"
+		  "tsi[{ch2}][1]->fb[{ch2}][1];",
+		  {},
+		  false,
+		  false}},
 		/*
-        * HDMI YCbCr Display
-        */
+		 * HDMI YCbCr Display
+		 */
 		{"HDMI_HD_LFR_YCbCr_Display",
 		 {"HDMI_HD_LFR_YCbCr_Display",
 		  ConnectionKind::HDMI,
@@ -223,6 +242,20 @@ void RoutingConfigurator::build_preset_table()
 		  "tsi[{ch2}][0]->hdmi[{ch1}][2];"
 		  "tsi[{ch2}][1]->hdmi[{ch1}][3];",
 		  {},
+		  false,
+		  false}},
+		{"HDMI_UHD_4K_LFR_YCbCr_Display_Kona5_8K",
+		 {"HDMI_UHD_4K_LFR_YCbCr_Display_Kona5_8K",
+		  ConnectionKind::HDMI,
+		  NTV2_MODE_DISPLAY,
+		  RasterDefinition::UHD_4K,
+		  HDMIWireFormat::UHD_4K_YCBCR,
+		  VPIDStandard_Unknown,
+		  1,
+		  1,
+		  kEnable4KTSI,
+		  "fb[{ch1}][0]->hdmi[{ch1}][0];",
+		  {DEVICE_ID_KONA5_8K},
 		  false,
 		  false}},
 		{"HDMI_HD_LFR_YCbCr_Display (TTap Pro)",
@@ -286,8 +319,8 @@ void RoutingConfigurator::build_preset_table()
 		  false,
 		  false}},
 		/*
-        * SDI RGB Capture
-        */
+		 * SDI RGB Capture
+		 */
 		{"HD_720p_ST292_RGB_Capture",
 		 {"HD_720p_ST292_RGB_Capture",
 		  ConnectionKind::SDI,
@@ -660,8 +693,8 @@ void RoutingConfigurator::build_preset_table()
 		  true}},
 		/////////////////////////////////
 		/*
-        * SDI RGB Display
-        */
+		 * SDI RGB Display
+		 */
 		{"HD_720p_ST292_RGB_Display",
 		 {"HD_720p_ST292_RGB_Display",
 		  ConnectionKind::SDI,
@@ -1369,8 +1402,8 @@ void RoutingConfigurator::build_preset_table()
 		  false,
 		  false}},
 		/*
-        * SDI YCbCr Display
-        */
+		 * SDI YCbCr Display
+		 */
 		{"SD_ST352_YCbCr_Display",
 		 {"SD_ST352_YCbCr_Display",
 		  ConnectionKind::SDI,
@@ -1754,23 +1787,17 @@ RoutingPresetMap RoutingConfigurator::GetPresetTable() const
 	return m_presets;
 }
 
-bool RoutingConfigurator::FindFirstPreset(ConnectionKind kind, NTV2DeviceID id,
-					  NTV2Mode mode, NTV2VideoFormat vf,
-					  NTV2PixelFormat pf,
-					  VPIDStandard standard,
-					  HDMIWireFormat hwf,
+bool RoutingConfigurator::FindFirstPreset(ConnectionKind kind, NTV2DeviceID id, NTV2Mode mode, NTV2VideoFormat vf,
+					  NTV2PixelFormat pf, VPIDStandard standard, HDMIWireFormat hwf,
 					  RoutingPreset &preset)
 {
-	if (NTV2DeviceCanDoVideoFormat(id, vf) &&
-	    NTV2DeviceCanDoFrameBufferFormat(id, pf)) {
+	if (NTV2DeviceCanDoVideoFormat(id, vf) && NTV2DeviceCanDoFrameBufferFormat(id, pf)) {
 		const auto &rd = DetermineRasterDefinition(vf);
 		bool is_rgb = NTV2_IS_FBF_RGB(pf);
 		std::vector<RoutingPresetPair> query;
 		for (const auto &p : m_presets) {
-			if (p.second.kind == kind && p.second.mode == mode &&
-			    p.second.raster_def == rd &&
-			    p.second.is_rgb == is_rgb &&
-			    p.second.vpid_standard == standard &&
+			if (p.second.kind == kind && p.second.mode == mode && p.second.raster_def == rd &&
+			    p.second.is_rgb == is_rgb && p.second.vpid_standard == standard &&
 			    p.second.hdmi_wire_format == hwf) {
 				query.push_back(p);
 			}
@@ -1801,4 +1828,4 @@ bool RoutingConfigurator::FindFirstPreset(ConnectionKind kind, NTV2DeviceID id,
 	return false;
 }
 
-} // aja
+} // namespace aja

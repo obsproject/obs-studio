@@ -1,8 +1,8 @@
 #include "window-basic-main.hpp"
-#include "context-bar-controls.hpp"
-#include "qt-wrappers.hpp"
+#include "moc_context-bar-controls.cpp"
 #include "obs-app.hpp"
 
+#include <qt-wrappers.hpp>
 #include <QStandardItemModel>
 #include <QColorDialog>
 #include <QFontDialog>
@@ -40,7 +40,7 @@ void SourceToolbar::SaveOldProperties(obs_source_t *source)
 
 	OBSDataAutoRelease oldSettings = obs_source_get_settings(source);
 	obs_data_apply(oldData, oldSettings);
-	obs_data_set_string(oldData, "undo_sname", obs_source_get_name(source));
+	obs_data_set_string(oldData, "undo_suuid", obs_source_get_uuid(source));
 }
 
 void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
@@ -55,17 +55,13 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 	OBSSource currentSceneSource = main->GetCurrentSceneSource();
 	if (!currentSceneSource)
 		return;
-	std::string scene_name = obs_source_get_name(currentSceneSource);
-	auto undo_redo = [scene_name,
-			  main = std::move(main)](const std::string &data) {
-		OBSDataAutoRelease settings =
-			obs_data_create_from_json(data.c_str());
-		OBSSourceAutoRelease source = obs_get_source_by_name(
-			obs_data_get_string(settings, "undo_sname"));
+	std::string scene_uuid = obs_source_get_uuid(currentSceneSource);
+	auto undo_redo = [scene_uuid = std::move(scene_uuid), main](const std::string &data) {
+		OBSDataAutoRelease settings = obs_data_create_from_json(data.c_str());
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(obs_data_get_string(settings, "undo_suuid"));
 		obs_source_reset_settings(source, settings);
 
-		OBSSourceAutoRelease scene_source =
-			obs_get_source_by_name(scene_name.c_str());
+		OBSSourceAutoRelease scene_source = obs_get_source_by_uuid(scene_uuid.c_str());
 		main->SetCurrentScene(scene_source.Get(), true);
 
 		main->UpdateContextBar();
@@ -74,17 +70,14 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 	OBSDataAutoRelease new_settings = obs_data_create();
 	OBSDataAutoRelease curr_settings = obs_source_get_settings(source);
 	obs_data_apply(new_settings, curr_settings);
-	obs_data_set_string(new_settings, "undo_sname",
-			    obs_source_get_name(source));
+	obs_data_set_string(new_settings, "undo_suuid", obs_source_get_uuid(source));
 
 	std::string undo_data(obs_data_get_json(oldData));
 	std::string redo_data(obs_data_get_json(new_settings));
 
 	if (undo_data.compare(redo_data) != 0)
-		main->undo_s.add_action(
-			QTStr("Undo.Properties")
-				.arg(obs_source_get_name(source)),
-			undo_redo, undo_redo, undo_data, redo_data, repeatable);
+		main->undo_s.add_action(QTStr("Undo.Properties").arg(obs_source_get_name(source)), undo_redo, undo_redo,
+					undo_data, redo_data, repeatable);
 
 	oldData = nullptr;
 }
@@ -92,7 +85,8 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 /* ========================================================================= */
 
 BrowserToolbar::BrowserToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_BrowserSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_BrowserSourceToolbar)
 {
 	ui->setupUi(this);
 }
@@ -113,15 +107,15 @@ void BrowserToolbar::on_refresh_clicked()
 /* ========================================================================= */
 
 ComboSelectToolbar::ComboSelectToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_DeviceSelectToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_DeviceSelectToolbar)
 {
 	ui->setupUi(this);
 }
 
 ComboSelectToolbar::~ComboSelectToolbar() {}
 
-static int FillPropertyCombo(QComboBox *c, obs_property_t *p,
-			     const std::string &cur_id, bool is_int = false)
+static int FillPropertyCombo(QComboBox *c, obs_property_t *p, const std::string &cur_id, bool is_int = false)
 {
 	size_t count = obs_property_list_item_count(p);
 	int cur_idx = -1;
@@ -146,8 +140,7 @@ static int FillPropertyCombo(QComboBox *c, obs_property_t *p,
 	return cur_idx;
 }
 
-void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source,
-					obs_properties_t *props,
+void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source, obs_properties_t *props,
 					const char *prop_name, bool is_int)
 {
 	std::string cur_id;
@@ -166,9 +159,7 @@ void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source,
 
 	if (cur_idx == -1 || obs_property_list_item_disabled(p, cur_idx)) {
 		if (cur_idx == -1) {
-			combo->insertItem(
-				0,
-				QTStr("Basic.Settings.Audio.UnknownAudioDevice"));
+			combo->insertItem(0, QTStr("Basic.Settings.Audio.UnknownAudioDevice"));
 			cur_idx = 0;
 		}
 
@@ -186,12 +177,10 @@ void ComboSelectToolbar::Init()
 		return;
 	}
 
-	UpdateSourceComboToolbarProperties(ui->device, source, props.get(),
-					   prop_name, is_int);
+	UpdateSourceComboToolbarProperties(ui->device, source, props.get(), prop_name, is_int);
 }
 
-void UpdateSourceComboToolbarValue(QComboBox *combo, OBSSource source, int idx,
-				   const char *prop_name, bool is_int)
+void UpdateSourceComboToolbarValue(QComboBox *combo, OBSSource source, int idx, const char *prop_name, bool is_int)
 {
 	QString id = combo->itemData(idx).toString();
 
@@ -212,29 +201,22 @@ void ComboSelectToolbar::on_device_currentIndexChanged(int idx)
 	}
 
 	SaveOldProperties(source);
-	UpdateSourceComboToolbarValue(ui->device, source, idx, prop_name,
-				      is_int);
+	UpdateSourceComboToolbarValue(ui->device, source, idx, prop_name, is_int);
 	SetUndoProperties(source);
 }
 
-AudioCaptureToolbar::AudioCaptureToolbar(QWidget *parent, OBSSource source)
-	: ComboSelectToolbar(parent, source)
-{
-}
+AudioCaptureToolbar::AudioCaptureToolbar(QWidget *parent, OBSSource source) : ComboSelectToolbar(parent, source) {}
 
 void AudioCaptureToolbar::Init()
 {
 	delete ui->activateButton;
 	ui->activateButton = nullptr;
 
-	obs_module_t *mod =
-		get_os_module("win-wasapi", "mac-capture", "linux-pulseaudio");
-	if (!mod) {
+	obs_module_t *mod = get_os_module("win-wasapi", "mac-capture", "linux-pulseaudio");
+	if (!mod)
 		return;
-	}
 
-	const char *device_str =
-		get_os_text(mod, "Device", "CoreAudio.Device", "Device");
+	const char *device_str = get_os_text(mod, "Device", "CoreAudio.Device", "Device");
 	ui->deviceLabel->setText(device_str);
 
 	prop_name = "device_id";
@@ -242,20 +224,18 @@ void AudioCaptureToolbar::Init()
 	ComboSelectToolbar::Init();
 }
 
-WindowCaptureToolbar::WindowCaptureToolbar(QWidget *parent, OBSSource source)
-	: ComboSelectToolbar(parent, source)
-{
-}
+WindowCaptureToolbar::WindowCaptureToolbar(QWidget *parent, OBSSource source) : ComboSelectToolbar(parent, source) {}
 
 void WindowCaptureToolbar::Init()
 {
 	delete ui->activateButton;
 	ui->activateButton = nullptr;
 
-	obs_module_t *mod =
-		get_os_module("win-capture", "mac-capture", "linux-capture");
-	const char *device_str = get_os_text(mod, "WindowCapture.Window",
-					     "WindowUtils.Window", "Window");
+	obs_module_t *mod = get_os_module("win-capture", "mac-capture", "linux-capture");
+	if (!mod)
+		return;
+
+	const char *device_str = get_os_text(mod, "WindowCapture.Window", "WindowUtils.Window", "Window");
 	ui->deviceLabel->setText(device_str);
 
 #if !defined(_WIN32) && !defined(__APPLE__) //linux
@@ -271,28 +251,45 @@ void WindowCaptureToolbar::Init()
 	ComboSelectToolbar::Init();
 }
 
-DisplayCaptureToolbar::DisplayCaptureToolbar(QWidget *parent, OBSSource source)
+ApplicationAudioCaptureToolbar::ApplicationAudioCaptureToolbar(QWidget *parent, OBSSource source)
 	: ComboSelectToolbar(parent, source)
 {
 }
+
+void ApplicationAudioCaptureToolbar::Init()
+{
+	delete ui->activateButton;
+	ui->activateButton = nullptr;
+
+	obs_module_t *mod = obs_get_module("win-wasapi");
+	const char *device_str = obs_module_get_locale_text(mod, "Window");
+	ui->deviceLabel->setText(device_str);
+
+	prop_name = "window";
+
+	ComboSelectToolbar::Init();
+}
+
+DisplayCaptureToolbar::DisplayCaptureToolbar(QWidget *parent, OBSSource source) : ComboSelectToolbar(parent, source) {}
 
 void DisplayCaptureToolbar::Init()
 {
 	delete ui->activateButton;
 	ui->activateButton = nullptr;
 
-	obs_module_t *mod =
-		get_os_module("win-capture", "mac-capture", "linux-capture");
-	const char *device_str =
-		get_os_text(mod, "Monitor", "DisplayCapture.Display", "Screen");
+	obs_module_t *mod = get_os_module("win-capture", "mac-capture", "linux-capture");
+	if (!mod)
+		return;
+
+	const char *device_str = get_os_text(mod, "Monitor", "DisplayCapture.Display", "Screen");
 	ui->deviceLabel->setText(device_str);
-	is_int = true;
 
 #ifdef _WIN32
-	prop_name = "monitor";
+	prop_name = "monitor_id";
 #elif __APPLE__
-	prop_name = "display";
+	prop_name = "display_uuid";
 #else
+	is_int = true;
 	prop_name = "screen";
 #endif
 
@@ -359,7 +356,8 @@ void DeviceCaptureToolbar::on_activateButton_clicked()
 /* ========================================================================= */
 
 GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_GameCaptureToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_GameCaptureToolbar)
 {
 	obs_property_t *p;
 	int cur_idx;
@@ -371,8 +369,7 @@ GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
 		return;
 
 	ui->modeLabel->setText(obs_module_get_locale_text(mod, "Mode"));
-	ui->windowLabel->setText(
-		obs_module_get_locale_text(mod, "WindowCapture.Window"));
+	ui->windowLabel->setText(obs_module_get_locale_text(mod, "WindowCapture.Window"));
 
 	OBSDataAutoRelease settings = obs_source_get_settings(source);
 	std::string cur_mode = obs_data_get_string(settings, "capture_mode");
@@ -444,7 +441,8 @@ void GameCaptureToolbar::on_window_currentIndexChanged(int idx)
 /* ========================================================================= */
 
 ImageSourceToolbar::ImageSourceToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_ImageSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_ImageSourceToolbar)
 {
 	ui->setupUi(this);
 
@@ -471,7 +469,11 @@ void ImageSourceToolbar::on_browse_clicked()
 	const char *filter = obs_property_path_filter(p);
 	const char *default_path = obs_property_path_default_path(p);
 
-	QString path = OpenFile(this, desc, default_path, filter);
+	QString startDir = ui->path->text();
+	if (startDir.isEmpty())
+		startDir = default_path;
+
+	QString path = OpenFile(this, desc, startDir, filter);
 	if (path.isEmpty()) {
 		return;
 	}
@@ -489,8 +491,7 @@ void ImageSourceToolbar::on_browse_clicked()
 
 static inline QColor color_from_int(long long val)
 {
-	return QColor(val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff,
-		      (val >> 24) & 0xff);
+	return QColor(val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff, (val >> 24) & 0xff);
 }
 
 static inline long long color_to_int(QColor color)
@@ -499,12 +500,12 @@ static inline long long color_to_int(QColor color)
 		return ((val & 0xff) << shift);
 	};
 
-	return shift(color.red(), 0) | shift(color.green(), 8) |
-	       shift(color.blue(), 16) | shift(color.alpha(), 24);
+	return shift(color.red(), 0) | shift(color.green(), 8) | shift(color.blue(), 16) | shift(color.alpha(), 24);
 }
 
 ColorSourceToolbar::ColorSourceToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_ColorSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_ColorSourceToolbar)
 {
 	ui->setupUi(this);
 
@@ -523,12 +524,9 @@ void ColorSourceToolbar::UpdateColor()
 	ui->color->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	ui->color->setText(color.name(QColor::HexRgb));
 	ui->color->setPalette(palette);
-	ui->color->setStyleSheet(
-		QString("background-color :%1; color: %2;")
-			.arg(palette.color(QPalette::Window)
-				     .name(QColor::HexRgb))
-			.arg(palette.color(QPalette::WindowText)
-				     .name(QColor::HexRgb)));
+	ui->color->setStyleSheet(QString("background-color :%1; color: %2;")
+					 .arg(palette.color(QPalette::Window).name(QColor::HexRgb))
+					 .arg(palette.color(QPalette::WindowText).name(QColor::HexRgb)));
 	ui->color->setAutoFillBackground(true);
 	ui->color->setAlignment(Qt::AlignCenter);
 }
@@ -546,7 +544,8 @@ void ColorSourceToolbar::on_choose_clicked()
 	QColorDialog::ColorDialogOptions options;
 
 	options |= QColorDialog::ShowAlphaChannel;
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
@@ -572,7 +571,8 @@ void ColorSourceToolbar::on_choose_clicked()
 extern void MakeQFont(obs_data_t *font_obj, QFont &font, bool limit = false);
 
 TextSourceToolbar::TextSourceToolbar(QWidget *parent, OBSSource source)
-	: SourceToolbar(parent, source), ui(new Ui_TextSourceToolbar)
+	: SourceToolbar(parent, source),
+	  ui(new Ui_TextSourceToolbar)
 {
 	ui->setupUi(this);
 
@@ -580,25 +580,20 @@ TextSourceToolbar::TextSourceToolbar(QWidget *parent, OBSSource source)
 
 	const char *id = obs_source_get_unversioned_id(source);
 	bool ft2 = strcmp(id, "text_ft2_source") == 0;
-	bool read_from_file = obs_data_get_bool(
-		settings, ft2 ? "from_file" : "read_from_file");
+	bool read_from_file = obs_data_get_bool(settings, ft2 ? "from_file" : "read_from_file");
 
 	OBSDataAutoRelease font_obj = obs_data_get_obj(settings, "font");
 	MakeQFont(font_obj, font);
 
 	// Use "color1" if it's a freetype source and "color" elsewise
 	unsigned int val = (unsigned int)obs_data_get_int(
-		settings,
-		(strncmp(obs_source_get_id(source), "text_ft2_source", 15) == 0)
-			? "color1"
-			: "color");
+		settings, (strncmp(obs_source_get_id(source), "text_ft2_source", 15) == 0) ? "color1" : "color");
 
 	color = color_from_int(val);
 
 	const char *text = obs_data_get_string(settings, "text");
 
-	bool single_line = !read_from_file &&
-			   (!text || (strchr(text, '\n') == nullptr));
+	bool single_line = !read_from_file && (!text || (strchr(text, '\n') == nullptr));
 	ui->emptySpace->setVisible(!single_line);
 	ui->text->setVisible(single_line);
 	if (single_line)
@@ -622,7 +617,7 @@ void TextSourceToolbar::on_selectFont_clicked()
 	options = QFontDialog::DontUseNativeDialog;
 #endif
 
-	font = QFontDialog::getFont(&success, font, this, "Pick a Font",
+	font = QFontDialog::getFont(&success, font, this, QTStr("Basic.PropertiesWindow.SelectFont.WindowTitle"),
 				    options);
 	if (!success) {
 		return;
@@ -657,18 +652,17 @@ void TextSourceToolbar::on_selectColor_clicked()
 		return;
 	}
 
-	bool freetype =
-		strncmp(obs_source_get_id(source), "text_ft2_source", 15) == 0;
+	bool freetype = strncmp(obs_source_get_id(source), "text_ft2_source", 15) == 0;
 
-	obs_property_t *p =
-		obs_properties_get(props.get(), freetype ? "color1" : "color");
+	obs_property_t *p = obs_properties_get(props.get(), freetype ? "color1" : "color");
 
 	const char *desc = obs_property_description(p);
 
 	QColorDialog::ColorDialogOptions options;
 
 	options |= QColorDialog::ShowAlphaChannel;
-#ifndef _WIN32
+#ifdef __linux__
+	// TODO: Revisit hang on Ubuntu with native dialog
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
 
@@ -699,12 +693,15 @@ void TextSourceToolbar::on_text_textChanged()
 	if (!source) {
 		return;
 	}
-
+	std::string newText = QT_TO_UTF8(ui->text->text());
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	if (newText == obs_data_get_string(settings, "text")) {
+		return;
+	}
 	SaveOldProperties(source);
 
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_string(settings, "text", QT_TO_UTF8(ui->text->text()));
-	obs_source_update(source, settings);
+	obs_data_set_string(settings, "text", newText.c_str());
+	obs_source_update(source, nullptr);
 
 	SetUndoProperties(source, true);
 }

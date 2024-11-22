@@ -1,79 +1,81 @@
-project(graphics-hook)
-
-set(COMPILE_D3D12_HOOK FALSE CACHE BOOL "Compile D3D12 hook support (required windows 10 SDK)")
+cmake_minimum_required(VERSION 3.28...3.30)
 
 find_package(Detours REQUIRED)
 find_package(Vulkan REQUIRED)
-include_directories(${VULKAN_INCLUDE_DIR})
 
-configure_file(
-	"${CMAKE_CURRENT_SOURCE_DIR}/graphics-hook-config.h.in"
-	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config/graphics-hook-config.h")
-
-
-set(graphics-hook_HEADERS
-	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config/graphics-hook-config.h"
-	graphics-hook.h
-	../graphics-hook-ver.h
-	../graphics-hook-info.h
-	../hook-helpers.h
-	../obfuscate.h
-	gl-decs.h
-	d3d9-patches.hpp)
-
-set(graphics-hook_SOURCES
-	graphics-hook.c
-	../obfuscate.c
-	gl-capture.c
-	d3d8-capture.cpp
-	d3d9-capture.cpp
-	dxgi-capture.cpp
-	d3d10-capture.cpp
-	d3d11-capture.cpp
-	d3d12-capture.cpp)
-
-if(MSVC)
-	add_compile_options("$<IF:$<CONFIG:Debug>,/MTd,/MT>")
+if(NOT TARGET OBS::ipc-util)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/ipc-util" ipc-util)
 endif()
 
-if (VULKAN_FOUND)
-	list(APPEND graphics-hook_SOURCES
-		vulkan-capture.c)
-	list(APPEND graphics-hook_HEADERS
-		vulkan-capture.h)
+if(NOT TARGET OBS::obfuscate)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_BINARY_DIR}/libobs")
 endif()
 
-add_library(graphics-hook MODULE
-	graphics-hook.rc
-	${graphics-hook_SOURCES}
-	${graphics-hook_HEADERS})
+if(NOT TARGET OBS::d3d8-api)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-d3d8-api" obs-d3d8-api)
+endif()
 
-target_include_directories(graphics-hook PUBLIC
-	${DETOURS_INCLUDE_DIR}
-	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config")
+if(NOT TARGET OBS::hook-config)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-hook-config" obs-hook-config)
+endif()
 
-target_link_libraries(graphics-hook
-	dxguid
-	ipc-util
-	${DETOURS_LIBRARIES})
+add_library(graphics-hook MODULE)
+add_library(OBS::graphics-hook ALIAS graphics-hook)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(_output_suffix "64")
+target_sources(
+  graphics-hook
+  PRIVATE
+    d3d10-capture.cpp
+    d3d11-capture.cpp
+    d3d12-capture.cpp
+    d3d8-capture.cpp
+    d3d9-capture.cpp
+    d3d9-patches.hpp
+    dxgi-capture.cpp
+    gl-capture.c
+    gl-decs.h
+    graphics-hook.c
+    graphics-hook.h
+    graphics-hook.rc
+)
+
+target_compile_definitions(graphics-hook PRIVATE COMPILE_D3D12_HOOK)
+
+target_link_libraries(
+  graphics-hook
+  PRIVATE OBS::d3d8-api OBS::hook-config OBS::ipc-util OBS::obfuscate Detours::Detours dxguid
+)
+
+target_link_options(graphics-hook PRIVATE /IGNORE:4099)
+
+if(TARGET Vulkan::Vulkan)
+  target_sources(graphics-hook PRIVATE vulkan-capture.c vulkan-capture.h)
+  target_link_libraries(graphics-hook PRIVATE Vulkan::Vulkan)
+  target_compile_definitions(graphics-hook PRIVATE COMPILE_VULKAN_HOOK)
+endif()
+
+if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
+  if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
+    add_custom_command(
+      TARGET graphics-hook
+      POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x86 --config $<CONFIG> -t graphics-hook
+      COMMENT "Build x86 graphics-hook"
+    )
+  endif()
+
+  add_dependencies(win-capture graphics-hook)
+endif()
+
+if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
+  set(_OUTPUT_NAME graphics-hook64)
 else()
-	set(_output_suffix "32")
+  set(_OUTPUT_NAME graphics-hook32)
 endif()
 
-set_target_properties(graphics-hook
-	PROPERTIES
-		FOLDER "plugins/win-capture"
-		OUTPUT_NAME "graphics-hook${_output_suffix}")
-
-if (VULKAN_FOUND)
-	add_custom_command(TARGET graphics-hook POST_BUILD
-		COMMAND "${CMAKE_COMMAND}" -E copy
-			"${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-plugins/win-capture/obs-vulkan64.json"
-		COMMAND "${CMAKE_COMMAND}" -E copy
-			"${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json" "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-plugins/win-capture/obs-vulkan32.json"
-		VERBATIM)
-endif()
-install_obs_datatarget(graphics-hook "obs-plugins/win-capture")
+set_target_properties_obs(
+  graphics-hook PROPERTIES
+                FOLDER "plugins/win-capture"
+                OUTPUT_NAME ${_OUTPUT_NAME}
+                MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+)

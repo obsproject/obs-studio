@@ -1,7 +1,7 @@
 #include "obf.h"
 #include <stdbool.h>
 
-#define LOWER_HALFBYTE(x) ((x)&0xF)
+#define LOWER_HALFBYTE(x) ((x) & 0xF)
 #define UPPER_HALFBYTE(x) (((x) >> 4) & 0xF)
 
 void deobfuscate_str(char *str, uint64_t val)
@@ -13,8 +13,7 @@ void deobfuscate_str(char *str, uint64_t val)
 		int pos = i / 2;
 		bool bottom = (i % 2) == 0;
 		uint8_t *ch = (uint8_t *)str;
-		uint8_t xor = bottom ? LOWER_HALFBYTE(dec_val[pos])
-				     : UPPER_HALFBYTE(dec_val[pos]);
+		uint8_t xor = bottom ? LOWER_HALFBYTE(dec_val[pos]) : UPPER_HALFBYTE(dec_val[pos]);
 
 		*ch ^= xor;
 

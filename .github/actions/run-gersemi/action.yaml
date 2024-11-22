@@ -1,0 +1,59 @@
+name: Run gersemi
+description: Runs gersemi and checks for any changes introduced by it
+inputs:
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run
+    required: false
+    default: never
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::run-gersemi action requires a macOS-based or Linux-based runner."
+        exit 2
+
+    - name: Check for Changed Files ✅
+      uses: ./.github/actions/check-changes
+      id: checks
+      with:
+        checkGlob: "'*.cmake' '*CMakeLists.txt'"
+        diffFilter: 'ACM'
+
+    - name: Install Dependencies 🛍️
+      if: runner.os == 'Linux' && fromJSON(steps.checks.outputs.hasChangedFiles)
+      shell: bash
+      run: |
+        : Install Dependencies 🛍️
+        echo ::group::Install Dependencies
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew install --quiet zsh
+        echo ::endgroup::
+
+    - name: Run gersemi 🎛️
+      if: fromJSON(steps.checks.outputs.hasChangedFiles)
+      id: result
+      shell: zsh --no-rcs --errexit --pipefail {0}
+      working-directory: ${{ github.workspace }}
+      env:
+        CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
+      run: |
+        : Run gersemi 🎛️
+        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+        print ::group::Install gersemi
+        brew install --quiet obsproject/tools/gersemi
+        print ::endgroup::
+
+        print ::group::Run gersemi
+        local -a changes=(${(s:,:)CHANGED_FILES//[\[\]\'\"]/})
+        ./build-aux/run-gersemi --fail-${{ inputs.failCondition }} --check ${changes}
+        print ::endgroup::

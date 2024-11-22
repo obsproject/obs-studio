@@ -8,24 +8,39 @@
 #include "auth-oauth.hpp"
 
 #ifdef BROWSER_AVAILABLE
-class BrowserDock;
+#include "window-dock-browser.hpp"
+#include <QHBoxLayout>
+class YoutubeChatDock : public BrowserDock {
+	Q_OBJECT
+
+private:
+	bool isLoggedIn;
+
+public:
+	YoutubeChatDock(const QString &title) : BrowserDock(title) {}
+
+	inline void SetWidget(QCefWidget *widget_)
+	{
+		BrowserDock::SetWidget(widget_);
+		QWidget::connect(cefWidget.get(), &QCefWidget::urlChanged, this, &YoutubeChatDock::YoutubeCookieCheck);
+	}
+private slots:
+	void YoutubeCookieCheck();
+};
 #endif
 
-inline const std::vector<Auth::Def> youtubeServices = {
-	{"YouTube - RTMP", Auth::Type::OAuth_LinkedAccount, true, true},
-	{"YouTube - RTMPS", Auth::Type::OAuth_LinkedAccount, true, true},
-	{"YouTube - HLS", Auth::Type::OAuth_LinkedAccount, true, true}};
+inline const std::vector<Auth::Def> youtubeServices = {{"YouTube - RTMP", Auth::Type::OAuth_LinkedAccount, true, true},
+						       {"YouTube - RTMPS", Auth::Type::OAuth_LinkedAccount, true, true},
+						       {"YouTube - HLS", Auth::Type::OAuth_LinkedAccount, true, true}};
 
 class YoutubeAuth : public OAuthStreamKey {
 	Q_OBJECT
 
 	bool uiLoaded = false;
-	std::mt19937 randomSeed;
 	std::string section;
 
 #ifdef BROWSER_AVAILABLE
-	QSharedPointer<BrowserDock> chat;
-	QSharedPointer<QAction> chatMenu;
+	YoutubeChatDock *chat = nullptr;
 #endif
 
 	virtual bool RetryLogin() override;
@@ -37,10 +52,11 @@ class YoutubeAuth : public OAuthStreamKey {
 
 public:
 	YoutubeAuth(const Def &d);
+	~YoutubeAuth();
 
-	void SetChatId(QString &chat_id);
+	void SetChatId(const QString &chat_id);
 	void ResetChat();
+	void ReloadChat();
 
-	static std::shared_ptr<Auth> Login(QWidget *parent,
-					   const std::string &service);
+	static std::shared_ptr<Auth> Login(QWidget *parent, const std::string &service);
 };

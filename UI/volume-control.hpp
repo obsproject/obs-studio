@@ -3,120 +3,91 @@
 #include <obs.hpp>
 #include <QWidget>
 #include <QPaintEvent>
-#include <QSharedPointer>
 #include <QTimer>
 #include <QMutex>
 #include <QList>
 #include <QMenu>
+#include <QAccessibleWidget>
+#include "absolute-slider.hpp"
 
 class QPushButton;
 class VolumeMeterTimer;
+class VolumeSlider;
 
 class VolumeMeter : public QWidget {
 	Q_OBJECT
-	Q_PROPERTY(QColor backgroundNominalColor READ getBackgroundNominalColor
-			   WRITE setBackgroundNominalColor DESIGNABLE true)
-	Q_PROPERTY(QColor backgroundWarningColor READ getBackgroundWarningColor
-			   WRITE setBackgroundWarningColor DESIGNABLE true)
-	Q_PROPERTY(QColor backgroundErrorColor READ getBackgroundErrorColor
-			   WRITE setBackgroundErrorColor DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundNominalColor READ getForegroundNominalColor
-			   WRITE setForegroundNominalColor DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundWarningColor READ getForegroundWarningColor
-			   WRITE setForegroundWarningColor DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundErrorColor READ getForegroundErrorColor
-			   WRITE setForegroundErrorColor DESIGNABLE true)
-
-	Q_PROPERTY(QColor backgroundNominalColorDisabled READ
-			   getBackgroundNominalColorDisabled WRITE
-				   setBackgroundNominalColorDisabled
-					   DESIGNABLE true)
-	Q_PROPERTY(QColor backgroundWarningColorDisabled READ
-			   getBackgroundWarningColorDisabled WRITE
-				   setBackgroundWarningColorDisabled
-					   DESIGNABLE true)
-	Q_PROPERTY(
-		QColor backgroundErrorColorDisabled READ
-			getBackgroundErrorColorDisabled WRITE
-				setBackgroundErrorColorDisabled DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundNominalColorDisabled READ
-			   getForegroundNominalColorDisabled WRITE
-				   setForegroundNominalColorDisabled
-					   DESIGNABLE true)
-	Q_PROPERTY(QColor foregroundWarningColorDisabled READ
-			   getForegroundWarningColorDisabled WRITE
-				   setForegroundWarningColorDisabled
-					   DESIGNABLE true)
-	Q_PROPERTY(
-		QColor foregroundErrorColorDisabled READ
-			getForegroundErrorColorDisabled WRITE
-				setForegroundErrorColorDisabled DESIGNABLE true)
-
-	Q_PROPERTY(QColor clipColor READ getClipColor WRITE setClipColor
+	Q_PROPERTY(QColor backgroundNominalColor READ getBackgroundNominalColor WRITE setBackgroundNominalColor
 			   DESIGNABLE true)
-	Q_PROPERTY(QColor magnitudeColor READ getMagnitudeColor WRITE
-			   setMagnitudeColor DESIGNABLE true)
-	Q_PROPERTY(QColor majorTickColor READ getMajorTickColor WRITE
-			   setMajorTickColor DESIGNABLE true)
-	Q_PROPERTY(QColor minorTickColor READ getMinorTickColor WRITE
-			   setMinorTickColor DESIGNABLE true)
-	Q_PROPERTY(int meterThickness READ getMeterThickness WRITE
-			   setMeterThickness DESIGNABLE true)
-	Q_PROPERTY(qreal meterFontScaling READ getMeterFontScaling WRITE
-			   setMeterFontScaling DESIGNABLE true)
+	Q_PROPERTY(QColor backgroundWarningColor READ getBackgroundWarningColor WRITE setBackgroundWarningColor
+			   DESIGNABLE true)
+	Q_PROPERTY(
+		QColor backgroundErrorColor READ getBackgroundErrorColor WRITE setBackgroundErrorColor DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundNominalColor READ getForegroundNominalColor WRITE setForegroundNominalColor
+			   DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundWarningColor READ getForegroundWarningColor WRITE setForegroundWarningColor
+			   DESIGNABLE true)
+	Q_PROPERTY(
+		QColor foregroundErrorColor READ getForegroundErrorColor WRITE setForegroundErrorColor DESIGNABLE true)
+
+	Q_PROPERTY(QColor backgroundNominalColorDisabled READ getBackgroundNominalColorDisabled WRITE
+			   setBackgroundNominalColorDisabled DESIGNABLE true)
+	Q_PROPERTY(QColor backgroundWarningColorDisabled READ getBackgroundWarningColorDisabled WRITE
+			   setBackgroundWarningColorDisabled DESIGNABLE true)
+	Q_PROPERTY(QColor backgroundErrorColorDisabled READ getBackgroundErrorColorDisabled WRITE
+			   setBackgroundErrorColorDisabled DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundNominalColorDisabled READ getForegroundNominalColorDisabled WRITE
+			   setForegroundNominalColorDisabled DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundWarningColorDisabled READ getForegroundWarningColorDisabled WRITE
+			   setForegroundWarningColorDisabled DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundErrorColorDisabled READ getForegroundErrorColorDisabled WRITE
+			   setForegroundErrorColorDisabled DESIGNABLE true)
+
+	Q_PROPERTY(QColor clipColor READ getClipColor WRITE setClipColor DESIGNABLE true)
+	Q_PROPERTY(QColor magnitudeColor READ getMagnitudeColor WRITE setMagnitudeColor DESIGNABLE true)
+	Q_PROPERTY(QColor majorTickColor READ getMajorTickColor WRITE setMajorTickColor DESIGNABLE true)
+	Q_PROPERTY(QColor minorTickColor READ getMinorTickColor WRITE setMinorTickColor DESIGNABLE true)
+	Q_PROPERTY(int meterThickness READ getMeterThickness WRITE setMeterThickness DESIGNABLE true)
+	Q_PROPERTY(qreal meterFontScaling READ getMeterFontScaling WRITE setMeterFontScaling DESIGNABLE true)
 
 	// Levels are denoted in dBFS.
-	Q_PROPERTY(qreal minimumLevel READ getMinimumLevel WRITE setMinimumLevel
-			   DESIGNABLE true)
-	Q_PROPERTY(qreal warningLevel READ getWarningLevel WRITE setWarningLevel
-			   DESIGNABLE true)
-	Q_PROPERTY(qreal errorLevel READ getErrorLevel WRITE setErrorLevel
-			   DESIGNABLE true)
-	Q_PROPERTY(qreal clipLevel READ getClipLevel WRITE setClipLevel
-			   DESIGNABLE true)
-	Q_PROPERTY(qreal minimumInputLevel READ getMinimumInputLevel WRITE
-			   setMinimumInputLevel DESIGNABLE true)
+	Q_PROPERTY(qreal minimumLevel READ getMinimumLevel WRITE setMinimumLevel DESIGNABLE true)
+	Q_PROPERTY(qreal warningLevel READ getWarningLevel WRITE setWarningLevel DESIGNABLE true)
+	Q_PROPERTY(qreal errorLevel READ getErrorLevel WRITE setErrorLevel DESIGNABLE true)
+	Q_PROPERTY(qreal clipLevel READ getClipLevel WRITE setClipLevel DESIGNABLE true)
+	Q_PROPERTY(qreal minimumInputLevel READ getMinimumInputLevel WRITE setMinimumInputLevel DESIGNABLE true)
 
 	// Rates are denoted in dB/second.
-	Q_PROPERTY(qreal peakDecayRate READ getPeakDecayRate WRITE
-			   setPeakDecayRate DESIGNABLE true)
+	Q_PROPERTY(qreal peakDecayRate READ getPeakDecayRate WRITE setPeakDecayRate DESIGNABLE true)
 
 	// Time in seconds for the VU meter to integrate over.
-	Q_PROPERTY(
-		qreal magnitudeIntegrationTime READ getMagnitudeIntegrationTime
-			WRITE setMagnitudeIntegrationTime DESIGNABLE true)
+	Q_PROPERTY(qreal magnitudeIntegrationTime READ getMagnitudeIntegrationTime WRITE setMagnitudeIntegrationTime
+			   DESIGNABLE true)
 
 	// Duration is denoted in seconds.
-	Q_PROPERTY(qreal peakHoldDuration READ getPeakHoldDuration WRITE
-			   setPeakHoldDuration DESIGNABLE true)
-	Q_PROPERTY(qreal inputPeakHoldDuration READ getInputPeakHoldDuration
-			   WRITE setInputPeakHoldDuration DESIGNABLE true)
+	Q_PROPERTY(qreal peakHoldDuration READ getPeakHoldDuration WRITE setPeakHoldDuration DESIGNABLE true)
+	Q_PROPERTY(qreal inputPeakHoldDuration READ getInputPeakHoldDuration WRITE setInputPeakHoldDuration
+			   DESIGNABLE true)
 
 	friend class VolControl;
 
-private slots:
-	void ClipEnding();
-
 private:
 	obs_volmeter_t *obs_volmeter;
-	static QWeakPointer<VolumeMeterTimer> updateTimer;
-	QSharedPointer<VolumeMeterTimer> updateTimerRef;
+	static std::weak_ptr<VolumeMeterTimer> updateTimer;
+	std::shared_ptr<VolumeMeterTimer> updateTimerRef;
 
 	inline void resetLevels();
 	inline void doLayout();
 	inline bool detectIdle(uint64_t ts);
-	inline void calculateBallistics(uint64_t ts,
-					qreal timeSinceLastRedraw = 0.0);
-	inline void calculateBallisticsForChannel(int channelNr, uint64_t ts,
-						  qreal timeSinceLastRedraw);
+	inline void calculateBallistics(uint64_t ts, qreal timeSinceLastRedraw = 0.0);
+	inline void calculateBallisticsForChannel(int channelNr, uint64_t ts, qreal timeSinceLastRedraw);
 
-	void paintInputMeter(QPainter &painter, int x, int y, int width,
-			     int height, float peakHold);
-	void paintHMeter(QPainter &painter, int x, int y, int width, int height,
-			 float magnitude, float peak, float peakHold);
+	inline int convertToInt(float number);
+	void paintInputMeter(QPainter &painter, int x, int y, int width, int height, float peakHold);
+	void paintHMeter(QPainter &painter, int x, int y, int width, int height, float magnitude, float peak,
+			 float peakHold);
 	void paintHTicks(QPainter &painter, int x, int y, int width);
-	void paintVMeter(QPainter &painter, int x, int y, int width, int height,
-			 float magnitude, float peak, float peakHold);
+	void paintVMeter(QPainter &painter, int x, int y, int width, int height, float magnitude, float peak,
+			 float peakHold);
 	void paintVTicks(QPainter &painter, int x, int y, int height);
 
 	QMutex dataMutex;
@@ -168,6 +139,13 @@ private:
 	qreal peakHoldDuration;
 	qreal inputPeakHoldDuration;
 
+	QColor p_backgroundNominalColor;
+	QColor p_backgroundWarningColor;
+	QColor p_backgroundErrorColor;
+	QColor p_foregroundNominalColor;
+	QColor p_foregroundWarningColor;
+	QColor p_foregroundErrorColor;
+
 	uint64_t lastRedrawTime = 0;
 	int channels = 0;
 	bool clipping = false;
@@ -175,13 +153,10 @@ private:
 	bool muted = false;
 
 public:
-	explicit VolumeMeter(QWidget *parent = nullptr,
-			     obs_volmeter_t *obs_volmeter = nullptr,
-			     bool vertical = false);
+	explicit VolumeMeter(QWidget *parent = nullptr, obs_volmeter_t *obs_volmeter = nullptr, bool vertical = false);
 	~VolumeMeter();
 
-	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS],
-		       const float peak[MAX_AUDIO_CHANNELS],
+	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
 		       const float inputPeak[MAX_AUDIO_CHANNELS]);
 	QRect getBarRect() const;
 	bool needLayoutChange();
@@ -266,39 +241,41 @@ protected:
 };
 
 class QLabel;
-class QSlider;
+class VolumeSlider;
 class MuteCheckBox;
+class OBSSourceLabel;
 
-class VolControl : public QWidget {
+class VolControl : public QFrame {
 	Q_OBJECT
 
 private:
 	OBSSource source;
-	QLabel *nameLabel;
+	std::vector<OBSSignal> sigs;
+	OBSSourceLabel *nameLabel;
 	QLabel *volLabel;
 	VolumeMeter *volMeter;
-	QSlider *slider;
+	VolumeSlider *slider;
 	MuteCheckBox *mute;
 	QPushButton *config = nullptr;
 	float levelTotal;
 	float levelCount;
-	obs_fader_t *obs_fader;
-	obs_volmeter_t *obs_volmeter;
+	OBSFader obs_fader;
+	OBSVolMeter obs_volmeter;
 	bool vertical;
 	QMenu *contextMenu;
 
 	static void OBSVolumeChanged(void *param, float db);
-	static void OBSVolumeLevel(void *data,
-				   const float magnitude[MAX_AUDIO_CHANNELS],
-				   const float peak[MAX_AUDIO_CHANNELS],
-				   const float inputPeak[MAX_AUDIO_CHANNELS]);
+	static void OBSVolumeLevel(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
+				   const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS]);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
+	static void OBSMixersOrMonitoringChanged(void *data, calldata_t *);
 
 	void EmitConfigClicked();
 
 private slots:
 	void VolumeChanged();
 	void VolumeMuted(bool muted);
+	void MixersOrMonitoringChanged();
 
 	void SetMuted(bool checked);
 	void SliderChanged(int vol);
@@ -308,18 +285,57 @@ signals:
 	void ConfigClicked();
 
 public:
-	explicit VolControl(OBSSource source, bool showConfig = false,
-			    bool vertical = false);
+	explicit VolControl(OBSSource source, bool showConfig = false, bool vertical = false);
 	~VolControl();
 
 	inline obs_source_t *GetSource() const { return source; }
-
-	QString GetName() const;
-	void SetName(const QString &newName);
 
 	void SetMeterDecayRate(qreal q);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
 	void EnableSlider(bool enable);
 	inline void SetContextMenu(QMenu *cm) { contextMenu = cm; }
+
+	void refreshColors();
+};
+
+class VolumeSlider : public AbsoluteSlider {
+	Q_OBJECT
+
+public:
+	obs_fader_t *fad;
+
+	VolumeSlider(obs_fader_t *fader, QWidget *parent = nullptr);
+	VolumeSlider(obs_fader_t *fader, Qt::Orientation orientation, QWidget *parent = nullptr);
+
+	bool getDisplayTicks() const;
+	void setDisplayTicks(bool display);
+
+private:
+	bool displayTicks = false;
+	QColor tickColor;
+
+protected:
+	virtual void paintEvent(QPaintEvent *event) override;
+};
+
+class VolumeAccessibleInterface : public QAccessibleWidget {
+
+public:
+	VolumeAccessibleInterface(QWidget *w);
+
+	QVariant currentValue() const;
+	void setCurrentValue(const QVariant &value);
+
+	QVariant maximumValue() const;
+	QVariant minimumValue() const;
+
+	QVariant minimumStepSize() const;
+
+private:
+	VolumeSlider *slider() const;
+
+protected:
+	virtual QAccessible::Role role() const override;
+	virtual QString text(QAccessible::Text t) const override;
 };

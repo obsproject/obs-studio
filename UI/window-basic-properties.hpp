@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,13 +27,15 @@
 class OBSPropertiesView;
 class OBSBasic;
 
+#include "ui_OBSBasicProperties.h"
+
 class OBSBasicProperties : public QDialog {
 	Q_OBJECT
 
 private:
-	QPointer<OBSQTDisplay> preview;
-
 	OBSBasic *main;
+
+	std::unique_ptr<Ui::OBSBasicProperties> ui;
 	bool acceptClicked;
 
 	OBSSource source;
@@ -72,12 +74,6 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-	virtual bool nativeEvent(const QByteArray &eventType, void *message,
-				 qintptr *result) override;
-#else
-	virtual bool nativeEvent(const QByteArray &eventType, void *message,
-				 long *result) override;
-#endif
+	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void reject() override;
 };

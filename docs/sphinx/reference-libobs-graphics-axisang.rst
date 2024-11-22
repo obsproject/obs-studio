@@ -7,7 +7,7 @@ Provides a helper structure for conversion to quaternions.
 
    #include <graphics/axisang.h>
 
-.. type:: struct axisang
+.. struct:: axisang
 .. member:: float axisang.x
 
    X axis

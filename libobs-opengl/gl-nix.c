@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "gl-nix.h"
-#include "gl-x11-glx.h"
 #include "gl-x11-egl.h"
 
 #ifdef ENABLE_WAYLAND
@@ -29,26 +28,22 @@ static void init_winsys(void)
 {
 	assert(gl_vtable == NULL);
 
-	switch (obs_get_nix_platform()) {
-	case OBS_NIX_PLATFORM_X11_GLX:
-		gl_vtable = gl_x11_glx_get_winsys_vtable();
-		break;
-	case OBS_NIX_PLATFORM_X11_EGL:
+	enum obs_nix_platform_type platform = obs_get_nix_platform();
+
+	if (platform == OBS_NIX_PLATFORM_X11_EGL)
 		gl_vtable = gl_x11_egl_get_winsys_vtable();
-		break;
+
 #ifdef ENABLE_WAYLAND
-	case OBS_NIX_PLATFORM_WAYLAND:
+	if (platform == OBS_NIX_PLATFORM_WAYLAND) {
 		gl_vtable = gl_wayland_egl_get_winsys_vtable();
 		blog(LOG_INFO, "Using EGL/Wayland");
-		break;
-#endif
 	}
+#endif
 
 	assert(gl_vtable != NULL);
 }
 
-extern struct gl_windowinfo *
-gl_windowinfo_create(const struct gs_init_data *info)
+extern struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
 {
 	return gl_vtable->windowinfo_create(info);
 }
@@ -58,8 +53,7 @@ extern void gl_windowinfo_destroy(struct gl_windowinfo *info)
 	gl_vtable->windowinfo_destroy(info);
 }
 
-extern struct gl_platform *gl_platform_create(gs_device_t *device,
-					      uint32_t adapter)
+extern struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 {
 	init_winsys();
 
@@ -90,7 +84,19 @@ extern void device_enter_context(gs_device_t *device)
 
 extern void device_leave_context(gs_device_t *device)
 {
+	device->cur_render_target = NULL;
+	device->cur_zstencil_buffer = NULL;
+	device->cur_vertex_buffer = NULL;
+	device->cur_index_buffer = NULL;
+	device->cur_swap = NULL;
+	device->cur_fbo = NULL;
 	gl_vtable->device_leave_context(device);
+}
+
+extern bool device_enum_adapters(gs_device_t *device, bool (*callback)(void *param, const char *name, uint32_t id),
+				 void *param)
+{
+	return gl_vtable->device_enum_adapters(device, callback, param);
 }
 
 extern void *device_get_device_obj(gs_device_t *device)
@@ -98,8 +104,7 @@ extern void *device_get_device_obj(gs_device_t *device)
 	return gl_vtable->device_get_device_obj(device);
 }
 
-extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
-			     uint32_t *height)
+extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width, uint32_t *height)
 {
 	gl_vtable->getclientsize(swap, width, height);
 }
@@ -119,36 +124,49 @@ extern void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 	gl_vtable->device_load_swapchain(device, swap);
 }
 
+extern bool device_is_present_ready(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true;
+}
+
 extern void device_present(gs_device_t *device)
 {
 	gl_vtable->device_present(device);
 }
 
-extern struct gs_texture *device_texture_create_from_dmabuf(
-	gs_device_t *device, unsigned int width, unsigned int height,
-	uint32_t drm_format, enum gs_color_format color_format,
-	uint32_t n_planes, const int *fds, const uint32_t *strides,
-	const uint32_t *offsets, const uint64_t *modifiers)
+extern bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
-	return gl_vtable->device_texture_create_from_dmabuf(
-		device, width, height, drm_format, color_format, n_planes, fds,
-		strides, offsets, modifiers);
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(monitor);
+
+	return false;
 }
 
-extern bool device_query_dmabuf_capabilities(gs_device_t *device,
-					     enum gs_dmabuf_flags *dmabuf_flags,
-					     uint32_t **drm_formats,
-					     size_t *n_formats)
+extern struct gs_texture *device_texture_create_from_dmabuf(gs_device_t *device, unsigned int width,
+							    unsigned int height, uint32_t drm_format,
+							    enum gs_color_format color_format, uint32_t n_planes,
+							    const int *fds, const uint32_t *strides,
+							    const uint32_t *offsets, const uint64_t *modifiers)
 {
-	return gl_vtable->device_query_dmabuf_capabilities(
-		device, dmabuf_flags, drm_formats, n_formats);
+	return gl_vtable->device_texture_create_from_dmabuf(device, width, height, drm_format, color_format, n_planes,
+							    fds, strides, offsets, modifiers);
 }
 
-extern bool device_query_dmabuf_modifiers_for_format(gs_device_t *device,
-						     uint32_t drm_format,
-						     uint64_t **modifiers,
+extern bool device_query_dmabuf_capabilities(gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
+					     uint32_t **drm_formats, size_t *n_formats)
+{
+	return gl_vtable->device_query_dmabuf_capabilities(device, dmabuf_flags, drm_formats, n_formats);
+}
+
+extern bool device_query_dmabuf_modifiers_for_format(gs_device_t *device, uint32_t drm_format, uint64_t **modifiers,
 						     size_t *n_modifiers)
 {
-	return gl_vtable->device_query_dmabuf_modifiers_for_format(
-		device, drm_format, modifiers, n_modifiers);
+	return gl_vtable->device_query_dmabuf_modifiers_for_format(device, drm_format, modifiers, n_modifiers);
+}
+
+struct gs_texture *device_texture_create_from_pixmap(gs_device_t *device, uint32_t width, uint32_t height,
+						     enum gs_color_format color_format, uint32_t target, void *pixmap)
+{
+	return gl_vtable->device_texture_create_from_pixmap(device, width, height, color_format, target, pixmap);
 }

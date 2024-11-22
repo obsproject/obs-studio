@@ -1,13 +1,15 @@
 #pragma once
 
-#include "graphics-hook-config.h"
-
 #ifdef _MSC_VER
 /* conversion from data/function pointer */
 #pragma warning(disable : 4152)
 #endif
 
+#ifdef OBS_LEGACY
 #include "../graphics-hook-info.h"
+#else
+#include <graphics-hook-info.h>
+#endif
 #include <ipc-util/pipe.h>
 #include <psapi.h>
 
@@ -53,7 +55,7 @@ extern bool hook_d3d9(void);
 extern bool hook_d3d12(void);
 extern bool hook_dxgi(void);
 extern bool hook_gl(void);
-#if COMPILE_VULKAN_HOOK
+#ifdef COMPILE_VULKAN_HOOK
 extern bool hook_vulkan(void);
 #endif
 
@@ -62,18 +64,16 @@ extern void d3d10_free(void);
 extern void d3d11_capture(void *swap, void *backbuffer);
 extern void d3d11_free(void);
 
-#if COMPILE_D3D12_HOOK
+#ifdef COMPILE_D3D12_HOOK
 extern void d3d12_capture(void *swap, void *backbuffer);
 extern void d3d12_free(void);
 #endif
 
 extern bool rehook_gl(void);
 
-extern bool capture_init_shtex(struct shtex_data **data, HWND window,
-			       uint32_t cx, uint32_t cy, uint32_t format,
+extern bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t cx, uint32_t cy, uint32_t format,
 			       bool flip, uintptr_t handle);
-extern bool capture_init_shmem(struct shmem_data **data, HWND window,
-			       uint32_t cx, uint32_t cy, uint32_t pitch,
+extern bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t cx, uint32_t cy, uint32_t pitch,
 			       uint32_t format, bool flip);
 extern void capture_free(void);
 
@@ -90,8 +90,7 @@ struct vertex {
 
 static inline bool duplicate_handle(HANDLE *dst, HANDLE src)
 {
-	return !!DuplicateHandle(GetCurrentProcess(), src, GetCurrentProcess(),
-				 dst, 0, false, DUPLICATE_SAME_ACCESS);
+	return !!DuplicateHandle(GetCurrentProcess(), src, GetCurrentProcess(), dst, 0, false, DUPLICATE_SAME_ACCESS);
 }
 
 static inline void *get_offset_addr(HMODULE module, uint32_t offset)
@@ -131,8 +130,7 @@ static inline HMODULE get_system_module(const char *module)
 static inline uint32_t module_size(HMODULE module)
 {
 	MODULEINFO info;
-	bool success = !!GetModuleInformation(GetCurrentProcess(), module,
-					      &info, sizeof(info));
+	bool success = !!GetModuleInformation(GetCurrentProcess(), module, &info, sizeof(info));
 	return success ? info.SizeOfImage : 0;
 }
 
@@ -189,8 +187,7 @@ static inline bool frame_ready(uint64_t interval)
 
 static inline bool capture_ready(void)
 {
-	return capture_active() &&
-	       frame_ready(global_hook_info->frame_interval);
+	return capture_active() && frame_ready(global_hook_info->frame_interval);
 }
 
 static inline bool capture_stopped(void)
@@ -238,16 +235,27 @@ static inline bool capture_should_init(void)
 
 				should_init = true;
 			} else {
-				hlog_verbose(
-					"capture_should_init: inactive, restarted, not alive");
+				hlog_verbose("capture_should_init: inactive, restarted, not alive");
 			}
 		} else {
-			hlog_verbose(
-				"capture_should_init: inactive, not restarted");
+			hlog_verbose("capture_should_init: inactive, not restarted");
 		}
 	}
 
 	return should_init;
+}
+
+#if COMPILE_VULKAN_HOOK
+extern __declspec(thread) int vk_presenting;
+#endif
+
+static inline bool should_passthrough()
+{
+#if COMPILE_VULKAN_HOOK
+	return vk_presenting > 0;
+#else
+	return false;
+#endif
 }
 
 #ifdef __cplusplus

@@ -1,29 +1,28 @@
-project(test-input)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
+option(ENABLE_TEST_INPUT "Build test sources" OFF)
 
-if(MSVC)
-	set(test-input_PLATFORM_DEPS
-		w32-pthreads)
+if(NOT ENABLE_TEST_INPUT)
+  target_disable(test-input)
+  return()
 endif()
 
-set(test-input_SOURCES
-	${test-input_PLATFORM_SOURCES}
-	test-filter.c
-	test-input.c
-	test-sinewave.c
-	sync-async-source.c
-	sync-audio-buffering.c
-	sync-pair-vid.c
-	sync-pair-aud.c
-	test-random.c)
+add_library(test-input MODULE)
+add_library(OBS::test-input ALIAS test-input)
 
-add_library(test-input MODULE
-	${test-input_SOURCES})
+target_sources(
+  test-input
+  PRIVATE
+    sync-async-source.c
+    sync-audio-buffering.c
+    sync-pair-aud.c
+    sync-pair-vid.c
+    test-filter.c
+    test-input.c
+    test-random.c
+    test-sinewave.c
+)
 
-target_link_libraries(test-input
-	${test-input_PLATFORM_DEPS}
-	libobs)
-set_target_properties(test-input PROPERTIES FOLDER "tests and examples")
+target_link_libraries(test-input PRIVATE OBS::libobs)
 
-install_obs_plugin_with_data(test-input data)
+set_target_properties_obs(test-input PROPERTIES FOLDER "Tests and Examples" PREFIX "")

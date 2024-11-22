@@ -66,11 +66,9 @@ static void pulse_init_context()
 	pulse_lock();
 
 	pa_proplist *p = pulse_properties();
-	pulse_context = pa_context_new_with_proplist(
-		pa_threaded_mainloop_get_api(pulse_mainloop), "OBS", p);
+	pulse_context = pa_context_new_with_proplist(pa_threaded_mainloop_get_api(pulse_mainloop), "OBS", p);
 
-	pa_context_set_state_callback(pulse_context,
-				      pulse_context_state_changed, NULL);
+	pa_context_set_state_callback(pulse_context, pulse_context_state_changed, NULL);
 
 	pa_context_connect(pulse_context, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL);
 	pa_proplist_free(p);
@@ -170,8 +168,7 @@ int_fast32_t pulse_get_source_info_list(pa_source_info_cb_t cb, void *userdata)
 
 	pulse_lock();
 
-	pa_operation *op =
-		pa_context_get_source_info_list(pulse_context, cb, userdata);
+	pa_operation *op = pa_context_get_source_info_list(pulse_context, cb, userdata);
 	if (!op) {
 		pulse_unlock();
 		return -1;
@@ -192,8 +189,7 @@ int_fast32_t pulse_get_sink_info_list(pa_sink_info_cb_t cb, void *userdata)
 
 	pulse_lock();
 
-	pa_operation *op =
-		pa_context_get_sink_info_list(pulse_context, cb, userdata);
+	pa_operation *op = pa_context_get_sink_info_list(pulse_context, cb, userdata);
 	if (!op) {
 		pulse_unlock();
 		return -1;
@@ -207,16 +203,14 @@ int_fast32_t pulse_get_sink_info_list(pa_sink_info_cb_t cb, void *userdata)
 	return 0;
 }
 
-int_fast32_t pulse_get_source_info(pa_source_info_cb_t cb, const char *name,
-				   void *userdata)
+int_fast32_t pulse_get_source_info(pa_source_info_cb_t cb, const char *name, void *userdata)
 {
 	if (pulse_context_ready() < 0)
 		return -1;
 
 	pulse_lock();
 
-	pa_operation *op = pa_context_get_source_info_by_name(
-		pulse_context, name, cb, userdata);
+	pa_operation *op = pa_context_get_source_info_by_name(pulse_context, name, cb, userdata);
 	if (!op) {
 		pulse_unlock();
 		return -1;
@@ -237,8 +231,7 @@ int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void *userdata)
 
 	pulse_lock();
 
-	pa_operation *op =
-		pa_context_get_server_info(pulse_context, cb, userdata);
+	pa_operation *op = pa_context_get_server_info(pulse_context, cb, userdata);
 	if (!op) {
 		pulse_unlock();
 		return -1;
@@ -251,8 +244,7 @@ int_fast32_t pulse_get_server_info(pa_server_info_cb_t cb, void *userdata)
 	return 0;
 }
 
-pa_stream *pulse_stream_new(const char *name, const pa_sample_spec *ss,
-			    const pa_channel_map *map)
+pa_stream *pulse_stream_new(const char *name, const pa_sample_spec *ss, const pa_channel_map *map)
 {
 	if (pulse_context_ready() < 0)
 		return NULL;
@@ -260,8 +252,7 @@ pa_stream *pulse_stream_new(const char *name, const pa_sample_spec *ss,
 	pulse_lock();
 
 	pa_proplist *p = pulse_properties();
-	pa_stream *s =
-		pa_stream_new_with_proplist(pulse_context, name, ss, map, p);
+	pa_stream *s = pa_stream_new_with_proplist(pulse_context, name, ss, map, p);
 	pa_proplist_free(p);
 
 	pulse_unlock();

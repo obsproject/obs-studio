@@ -1,111 +1,72 @@
-project(aja)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-if(DISABLE_AJA)
-	message(STATUS "aja plugin disabled")
-	return()
+option(ENABLE_AJA "Build OBS with aja support" ON)
+
+if(NOT ENABLE_AJA)
+  set_property(GLOBAL APPEND PROPERTY OBS_MODULES_DISABLED aja)
+  return()
 endif()
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	find_package(LibAJANTV2)
-	if (NOT LIBAJANTV2_FOUND)
-		message(STATUS "aja plugin disabled (deps not found)")
-		return()
-	else()
-		message("aja plugin includes: ${LIBAJANTV2_INCLUDE_DIRS}")
-		message("aja plugin libs: ${LIBAJANTV2_LIBRARIES}")
-		message("aja plugin debug libs: ${LIBAJANTV2_DEBUG_LIBRARIES}")
-	endif()
-else()
-	message(STATUS "aja plugin disabled (32-bit not supported)")
-	return()
+find_package(LibAJANTV2 REQUIRED)
+
+add_library(aja MODULE)
+add_library(OBS::aja ALIAS aja)
+
+add_library(aja-support OBJECT)
+add_library(OBS::aja-support ALIAS aja-support)
+
+target_sources(
+  aja-support
+  PRIVATE
+    aja-card-manager.cpp
+    aja-common.cpp
+    aja-presets.cpp
+    aja-props.cpp
+    aja-routing.cpp
+    aja-vpid-data.cpp
+    aja-widget-io.cpp
+  PUBLIC
+    aja-card-manager.hpp
+    aja-common.hpp
+    aja-enums.hpp
+    aja-presets.hpp
+    aja-props.hpp
+    aja-routing.hpp
+    aja-ui-props.hpp
+    aja-vpid-data.hpp
+    aja-widget-io.hpp
+)
+
+target_link_libraries(aja-support PUBLIC OBS::libobs AJA::LibAJANTV2)
+
+set_target_properties(aja-support PROPERTIES FOLDER plugins/aja POSITION_INDEPENDENT_CODE TRUE)
+
+target_sources(
+  aja
+  PRIVATE
+    aja-output.cpp
+    aja-output.hpp
+    aja-source.cpp
+    aja-source.hpp
+    audio-repack.c
+    audio-repack.h
+    audio-repack.hpp
+    main.cpp
+)
+
+target_compile_options(
+  aja-support
+  PUBLIC
+    $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang,GNU>:-Wno-deprecated-declarations>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:-Wno-unused-variable>
+)
+
+target_link_libraries(aja PRIVATE OBS::aja-support)
+
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in win-aja.rc)
+  target_sources(aja PRIVATE win-aja.rc)
+  set_property(TARGET aja PROPERTY COMPILE_WARNING_AS_ERROR FALSE)
 endif()
 
-set(aja_INCLUDE_DIRS
-	${LIBAJANTV2_INCLUDE_DIRS})
-set(aja_LIBRARIES
-	$<IF:$<CONFIG:Debug>,${LIBAJANTV2_DEBUG_LIBRARIES},${LIBAJANTV2_LIBRARIES}>
-	libobs)
-
-set(aja_SOURCES
-	main.cpp
-	aja-card-manager.cpp
-	aja-common.cpp
-	aja-output.cpp
-	aja-presets.cpp
-	aja-props.cpp
-	aja-routing.cpp
-	aja-source.cpp
-	aja-vpid-data.cpp
-	aja-widget-io.cpp)
-
-set(aja_HEADERS
-	aja-card-manager.hpp
-	aja-common.hpp
-	aja-enums.hpp
-	aja-ui-props.hpp
-	aja-output.hpp
-	aja-presets.hpp
-	aja-props.hpp
-	aja-routing.hpp
-	aja-source.hpp
-	aja-vpid-data.hpp
-	aja-widget-io.hpp)
-
-# macOS
-if(APPLE)
-	set(aja_COMPILE_DEFS
-		AJAMac
-		AJA_MAC)
-
-	find_library(IOKIT_FRAMEWORK Iokit)
-	find_library(COREFOUNDATION_LIBRARY CoreFoundation)
-	find_library(APPKIT_FRAMEWORK AppKit)
-
-	list(APPEND aja_LIBRARIES
-		${IOKIT_FRAMEWORK}
-		${COREFOUNDATION_LIBRARY}
-		${APPKIT_FRAMEWORK})
-# Windows
-elseif(WIN32)
-	set(aja_COMPILE_DEFS
-		AJA_WINDOWS
-		_WINDOWS
-		WIN32
-		MSWindows)
-
-	if(CMAKE_BUILD_TYPE STREQUAL Debug)
-		list(APPEND aja_COMPILE_DEFS
-			_DEBUG)
-	else()
-		list(APPEND aja_COMPILE_DEFS
-			NDEBUG)
-	endif()
-
-	list(APPEND aja_LIBRARIES
-		ws2_32.lib
-		setupapi.lib
-		Winmm.lib
-		netapi32.lib
-		Shlwapi.lib)
-
-	set(MODULE_DESCRIPTION "OBS AJA Windows module")
-	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in win-aja.rc)
-	list(APPEND aja_SOURCES
-		win-aja.rc)
-# Linux
-elseif(UNIX AND NOT APPLE)
-	set(aja_COMPILE_DEFS
-		AJA_LINUX
-		AJALinux)
-endif()
-
-add_library(aja MODULE ${aja_SOURCES} ${aja_HEADERS})
-
-target_include_directories(aja PUBLIC ${aja_INCLUDE_DIRS})
-target_link_libraries(aja PUBLIC ${aja_LIBRARIES})
-target_compile_definitions(aja PUBLIC ${aja_COMPILE_DEFS})
-
-set_target_properties(aja PROPERTIES FOLDER
-		"plugins")
-
-install_obs_plugin_with_data(aja data)
+set_target_properties_obs(aja PROPERTIES FOLDER plugins/aja PREFIX "")

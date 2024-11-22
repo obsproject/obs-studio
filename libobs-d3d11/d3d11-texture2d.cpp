@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	td.Height = height;
 	td.MipLevels = genMipmaps ? 0 : levels;
 	td.ArraySize = type == GS_TEXTURE_CUBE ? 6 : 1;
-	td.Format = nv12 ? DXGI_FORMAT_NV12 : dxgiFormatResource;
+	td.Format = twoPlane ? ((format == GS_R16) ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12) : dxgiFormatResource;
 	td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	td.SampleDesc.Count = 1;
 	td.CPUAccessFlags = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
@@ -128,14 +128,12 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 		InitSRD(srd);
 	}
 
-	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL,
-					     texture.Assign());
+	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL, texture.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create 2D texture", hr);
 
 	if (isGDICompatible) {
-		hr = texture->QueryInterface(__uuidof(IDXGISurface1),
-					     (void **)gdiSurface.Assign());
+		hr = texture->QueryInterface(__uuidof(IDXGISurface1), (void **)gdiSurface.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create GDI surface", hr);
 	}
@@ -145,8 +143,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 		texture->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
-		hr = texture->QueryInterface(__uuidof(IDXGIResource),
-					     (void **)&dxgi_res);
+		hr = texture->QueryInterface(__uuidof(IDXGIResource), (void **)&dxgi_res);
 		if (FAILED(hr)) {
 			blog(LOG_WARNING,
 			     "InitTexture: Failed to query "
@@ -157,9 +154,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 			if (flags & GS_SHARED_KM_TEX) {
 				ComPtr<IDXGIKeyedMutex> km;
-				hr = texture->QueryInterface(
-					__uuidof(IDXGIKeyedMutex),
-					(void **)&km);
+				hr = texture->QueryInterface(__uuidof(IDXGIKeyedMutex), (void **)&km);
 				if (FAILED(hr)) {
 					throw HRError("Failed to query "
 						      "IDXGIKeyedMutex",
@@ -182,16 +177,13 @@ void gs_texture_2d::InitResourceView()
 
 	if (type == GS_TEXTURE_CUBE) {
 		viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-		viewDesc.TextureCube.MipLevels = genMipmaps || !levels ? -1
-								       : levels;
+		viewDesc.TextureCube.MipLevels = genMipmaps || !levels ? -1 : levels;
 	} else {
 		viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		viewDesc.Texture2D.MipLevels = genMipmaps || !levels ? -1
-								     : levels;
+		viewDesc.Texture2D.MipLevels = genMipmaps || !levels ? -1 : levels;
 	}
 
-	hr = device->device->CreateShaderResourceView(texture, &viewDesc,
-						      shaderRes.Assign());
+	hr = device->device->CreateShaderResourceView(texture, &viewDesc, shaderRes.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create SRV", hr);
 
@@ -201,8 +193,7 @@ void gs_texture_2d::InitResourceView()
 	if (dxgiFormatView == dxgiFormatViewLinear) {
 		shaderResLinear = shaderRes;
 	} else {
-		hr = device->device->CreateShaderResourceView(
-			texture, &viewDescLinear, shaderResLinear.Assign());
+		hr = device->device->CreateShaderResourceView(texture, &viewDescLinear, shaderResLinear.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create linear SRV", hr);
 	}
@@ -217,19 +208,16 @@ void gs_texture_2d::InitRenderTargets()
 		rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 		rtv.Texture2D.MipSlice = 0;
 
-		hr = device->device->CreateRenderTargetView(
-			texture, &rtv, renderTarget[0].Assign());
+		hr = device->device->CreateRenderTargetView(texture, &rtv, renderTarget[0].Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create RTV", hr);
 		if (dxgiFormatView == dxgiFormatViewLinear) {
 			renderTargetLinear[0] = renderTarget[0];
 		} else {
 			rtv.Format = dxgiFormatViewLinear;
-			hr = device->device->CreateRenderTargetView(
-				texture, &rtv, renderTargetLinear[0].Assign());
+			hr = device->device->CreateRenderTargetView(texture, &rtv, renderTargetLinear[0].Assign());
 			if (FAILED(hr))
-				throw HRError("Failed to create linear RTV",
-					      hr);
+				throw HRError("Failed to create linear RTV", hr);
 		}
 	} else {
 		D3D11_RENDER_TARGET_VIEW_DESC rtv;
@@ -240,21 +228,17 @@ void gs_texture_2d::InitRenderTargets()
 
 		for (UINT i = 0; i < 6; i++) {
 			rtv.Texture2DArray.FirstArraySlice = i;
-			hr = device->device->CreateRenderTargetView(
-				texture, &rtv, renderTarget[i].Assign());
+			hr = device->device->CreateRenderTargetView(texture, &rtv, renderTarget[i].Assign());
 			if (FAILED(hr))
 				throw HRError("Failed to create cube RTV", hr);
 			if (dxgiFormatView == dxgiFormatViewLinear) {
 				renderTargetLinear[i] = renderTarget[i];
 			} else {
 				rtv.Format = dxgiFormatViewLinear;
-				hr = device->device->CreateRenderTargetView(
-					texture, &rtv,
-					renderTargetLinear[i].Assign());
+				hr = device->device->CreateRenderTargetView(texture, &rtv,
+									    renderTargetLinear[i].Assign());
 				if (FAILED(hr))
-					throw HRError(
-						"Failed to create linear cube RTV",
-						hr);
+					throw HRError("Failed to create linear cube RTV", hr);
 			}
 		}
 	}
@@ -262,11 +246,9 @@ void gs_texture_2d::InitRenderTargets()
 
 #define SHARED_FLAGS (GS_SHARED_TEX | GS_SHARED_KM_TEX)
 
-gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
-			     uint32_t height, gs_color_format colorFormat,
-			     uint32_t levels, const uint8_t *const *data,
-			     uint32_t flags_, gs_texture_type type,
-			     bool gdiCompatible, bool nv12_)
+gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t height, gs_color_format colorFormat,
+			     uint32_t levels, const uint8_t *const *data, uint32_t flags_, gs_texture_type type,
+			     bool gdiCompatible, bool twoPlane_)
 	: gs_texture(device, gs_type::gs_texture_2d, type, levels, colorFormat),
 	  width(width),
 	  height(height),
@@ -280,7 +262,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
 	  sharedHandle(GS_INVALID_HANDLE),
-	  nv12(nv12_)
+	  twoPlane(twoPlane_)
 {
 	InitTexture(data);
 	InitResourceView();
@@ -289,37 +271,38 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width,
 		InitRenderTargets();
 }
 
-gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex,
-			     uint32_t flags_)
+gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex, uint32_t flags_)
 	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
 	  isRenderTarget((flags_ & GS_RENDER_TARGET) != 0),
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
-	  nv12(true),
+	  twoPlane(true),
 	  texture(nv12tex)
 {
 	texture->GetDesc(&td);
 
+	const bool p010 = td.Format == DXGI_FORMAT_P010;
+	const DXGI_FORMAT dxgi_format = p010 ? DXGI_FORMAT_R16G16_UNORM : DXGI_FORMAT_R8G8_UNORM;
+
 	this->type = GS_TEXTURE_2D;
-	this->format = GS_R8G8;
+	this->format = p010 ? GS_RG16 : GS_R8G8;
 	this->flags = flags_;
 	this->levels = 1;
 	this->device = device;
 	this->chroma = true;
 	this->width = td.Width / 2;
 	this->height = td.Height / 2;
-	this->dxgiFormatResource = DXGI_FORMAT_R8G8_UNORM;
-	this->dxgiFormatView = DXGI_FORMAT_R8G8_UNORM;
-	this->dxgiFormatViewLinear = DXGI_FORMAT_R8G8_UNORM;
+	this->dxgiFormatResource = dxgi_format;
+	this->dxgiFormatView = dxgi_format;
+	this->dxgiFormatViewLinear = dxgi_format;
 
 	InitResourceView();
 	if (isRenderTarget)
 		InitRenderTargets();
 }
 
-gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle,
-			     bool ntHandle)
+gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle)
 	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
 	  isShared(true),
 	  sharedHandle(handle)
@@ -327,13 +310,11 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle,
 	HRESULT hr;
 	if (ntHandle) {
 		ComQIPtr<ID3D11Device1> dev = device->device;
-		hr = dev->OpenSharedResource1((HANDLE)(uintptr_t)handle,
-					      __uuidof(ID3D11Texture2D),
+		hr = dev->OpenSharedResource1((HANDLE)(uintptr_t)handle, __uuidof(ID3D11Texture2D),
 					      (void **)texture.Assign());
 	} else {
-		hr = device->device->OpenSharedResource(
-			(HANDLE)(uintptr_t)handle, __uuidof(ID3D11Texture2D),
-			(void **)texture.Assign());
+		hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle, __uuidof(ID3D11Texture2D),
+							(void **)texture.Assign());
 	}
 
 	if (FAILED(hr))

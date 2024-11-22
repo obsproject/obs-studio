@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,8 +37,7 @@ void vec2_ceil(struct vec2 *dst, const struct vec2 *v)
 
 int vec2_close(const struct vec2 *v1, const struct vec2 *v2, float epsilon)
 {
-	return close_float(v1->x, v2->x, epsilon) &&
-	       close_float(v1->y, v2->y, epsilon);
+	return close_float(v1->x, v2->x, epsilon) && close_float(v1->y, v2->y, epsilon);
 }
 
 void vec2_norm(struct vec2 *dst, const struct vec2 *v)

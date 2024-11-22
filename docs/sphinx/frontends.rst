@@ -78,7 +78,7 @@ it's no longer needed.
 
 *(Important note: do not use more than one display widget within the
 hierarchy of the same base window; this will cause presentation stalls
-on Macs.)*
+on macOS.)*
 
 For an example of how displays are used with Qt, see
 `UI/qt-display.hpp`_ and `UI/qt-display.cpp`_.
@@ -247,6 +247,6 @@ translated error message stored that can be obtained via the
 
 .. --------------------------------------------------------------------
 
-.. _RTMP Output: https://github.com/jp9000/obs-studio/blob/master/plugins/obs-outputs/rtmp-stream.c
-.. _UI/qt-display.hpp: https://github.com/jp9000/obs-studio/blob/master/UI/qt-display.hpp
-.. _UI/qt-display.cpp: https://github.com/jp9000/obs-studio/blob/master/UI/qt-display.cpp
+.. _RTMP Output: https://github.com/obsproject/obs-studio/blob/master/plugins/obs-outputs/rtmp-stream.c
+.. _UI/qt-display.hpp: https://github.com/obsproject/obs-studio/blob/master/UI/qt-display.hpp
+.. _UI/qt-display.cpp: https://github.com/obsproject/obs-studio/blob/master/UI/qt-display.cpp

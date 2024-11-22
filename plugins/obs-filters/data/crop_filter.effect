@@ -1,8 +1,11 @@
+#include "color.effect"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
 uniform float2 mul_val;
 uniform float2 add_val;
+uniform float multiplier;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -29,11 +32,64 @@ float4 PSCrop(VertData v_in) : TARGET
 	return image.Sample(textureSampler, v_in.uv);
 }
 
+float4 PSCropMultiply(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSCropTonemap(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSCropMultiplyTonemap(VertData v_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSCrop(v_in);
 		pixel_shader  = PSCrop(v_in);
+	}
+}
+
+technique DrawMultiply
+{
+	pass
+	{
+		vertex_shader = VSCrop(v_in);
+		pixel_shader  = PSCropMultiply(v_in);
+	}
+}
+
+technique DrawTonemap
+{
+	pass
+	{
+		vertex_shader = VSCrop(v_in);
+		pixel_shader  = PSCropTonemap(v_in);
+	}
+}
+
+technique DrawMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSCrop(v_in);
+		pixel_shader  = PSCropMultiplyTonemap(v_in);
 	}
 }

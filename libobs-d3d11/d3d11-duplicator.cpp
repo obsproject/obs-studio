@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,8 +18,7 @@
 #include "d3d11-subsystem.hpp"
 #include <unordered_map>
 
-static inline bool get_monitor(gs_device_t *device, int monitor_idx,
-			       IDXGIOutput **dxgiOutput)
+static inline bool get_monitor(gs_device_t *device, int monitor_idx, IDXGIOutput **dxgiOutput)
 {
 	HRESULT hr;
 
@@ -45,24 +44,29 @@ void gs_duplicator::Start()
 		throw "Invalid monitor index";
 
 	hr = output->QueryInterface(IID_PPV_ARGS(output5.Assign()));
+	hdr = false;
+	sdr_white_nits = 80.f;
 	if (SUCCEEDED(hr)) {
 		constexpr DXGI_FORMAT supportedFormats[]{
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_B8G8R8A8_UNORM,
 		};
-		hr = output5->DuplicateOutput1(device->device, 0,
-					       _countof(supportedFormats),
-					       supportedFormats,
+		hr = output5->DuplicateOutput1(device->device, 0, _countof(supportedFormats), supportedFormats,
 					       duplicator.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to DuplicateOutput1", hr);
+		DXGI_OUTPUT_DESC desc;
+		if (SUCCEEDED(output->GetDesc(&desc))) {
+			gs_monitor_color_info info = device->GetMonitorColorInfo(desc.Monitor);
+			hdr = info.hdr;
+			sdr_white_nits = (float)info.sdr_white_nits;
+		}
 	} else {
 		hr = output->QueryInterface(IID_PPV_ARGS(output1.Assign()));
 		if (FAILED(hr))
 			throw HRError("Failed to query IDXGIOutput1", hr);
 
-		hr = output1->DuplicateOutput(device->device,
-					      duplicator.Assign());
+		hr = output1->DuplicateOutput(device->device, duplicator.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to DuplicateOutput", hr);
 	}
@@ -85,9 +89,7 @@ gs_duplicator::~gs_duplicator()
 
 extern "C" {
 
-EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
-					       int monitor_idx,
-					       struct gs_monitor_info *info)
+EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device, int monitor_idx, struct gs_monitor_info *info)
 {
 	DXGI_OUTPUT_DESC desc;
 	HRESULT hr;
@@ -137,8 +139,7 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 	return true;
 }
 
-EXPORT int device_duplicator_get_monitor_index(gs_device_t *device,
-					       void *monitor)
+EXPORT int device_duplicator_get_monitor_index(gs_device_t *device, void *monitor)
 {
 	const HMONITOR handle = (HMONITOR)monitor;
 
@@ -147,8 +148,7 @@ EXPORT int device_duplicator_get_monitor_index(gs_device_t *device,
 	UINT output = 0;
 	while (index == -1) {
 		IDXGIOutput *pOutput;
-		const HRESULT hr =
-			device->adapter->EnumOutputs(output, &pOutput);
+		const HRESULT hr = device->adapter->EnumOutputs(output, &pOutput);
 		if (hr == DXGI_ERROR_NOT_FOUND)
 			break;
 
@@ -187,8 +187,7 @@ void reset_duplicators(void)
 	}
 }
 
-EXPORT gs_duplicator_t *device_duplicator_create(gs_device_t *device,
-						 int monitor_idx)
+EXPORT gs_duplicator_t *device_duplicator_create(gs_device_t *device, int monitor_idx)
 {
 	gs_duplicator *duplicator = nullptr;
 
@@ -208,8 +207,7 @@ EXPORT gs_duplicator_t *device_duplicator_create(gs_device_t *device,
 		return nullptr;
 
 	} catch (const HRError &error) {
-		blog(LOG_DEBUG, "device_duplicator_create: %s (%08lX)",
-		     error.str, error.hr);
+		blog(LOG_DEBUG, "device_duplicator_create: %s (%08lX)", error.str, error.hr);
 		return nullptr;
 	}
 
@@ -231,13 +229,14 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 	const gs_color_format format = ConvertDXGITextureFormat(desc.Format);
 	const gs_color_format general_format = gs_generalize_format(format);
 
-	if (!d->texture || (d->texture->width != desc.Width) ||
-	    (d->texture->height != desc.Height) ||
+	if (!d->texture || (d->texture->width != desc.Width) || (d->texture->height != desc.Height) ||
 	    (d->texture->format != general_format)) {
 
 		delete d->texture;
-		d->texture = (gs_texture_2d *)gs_texture_create(
-			desc.Width, desc.Height, general_format, 1, nullptr, 0);
+		d->texture = (gs_texture_2d *)gs_texture_create(desc.Width, desc.Height, general_format, 1, nullptr, 0);
+		d->color_space =
+			d->hdr ? GS_CS_709_SCRGB
+			       : ((desc.Format == DXGI_FORMAT_R16G16B16A16_FLOAT) ? GS_CS_SRGB_16F : GS_CS_SRGB);
 	}
 
 	if (d->texture)
@@ -273,8 +272,7 @@ EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
 		return true;
 	}
 
-	hr = res->QueryInterface(__uuidof(ID3D11Texture2D),
-				 (void **)tex.Assign());
+	hr = res->QueryInterface(__uuidof(ID3D11Texture2D), (void **)tex.Assign());
 	if (FAILED(hr)) {
 		blog(LOG_ERROR,
 		     "gs_duplicator_update_frame: Failed to query "
@@ -293,5 +291,15 @@ EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
 EXPORT gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
 {
 	return duplicator->texture;
+}
+
+EXPORT enum gs_color_space gs_duplicator_get_color_space(gs_duplicator_t *duplicator)
+{
+	return duplicator->color_space;
+}
+
+EXPORT float gs_duplicator_get_sdr_white_level(gs_duplicator_t *duplicator)
+{
+	return duplicator->sdr_white_nits;
 }
 }

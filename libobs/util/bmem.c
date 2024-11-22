@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -28,7 +28,16 @@
 
 #define ALIGNMENT 32
 
-/* TODO: use memalign for non-windows systems */
+/*
+ * Attention, intrepid adventurers, exploring the depths of the libobs code!
+ *
+ * There used to be a TODO comment here saying that we should use memalign on
+ * non-Windows platforms. However, since *nix/POSIX systems do not provide an
+ * aligned realloc(), this is currently not (easily) achievable.
+ * So while the use of posix_memalign()/memalign() would be a fairly trivial
+ * change, it would also ruin our memory alignment for some reallocated memory
+ * on those platforms.
+ */
 #if defined(_WIN32)
 #define ALIGNED_MALLOC 1
 #else
@@ -87,23 +96,20 @@ static void a_free(void *ptr)
 #endif
 }
 
-static struct base_allocator alloc = {a_malloc, a_realloc, a_free};
 static long num_allocs = 0;
-
-void base_set_allocator(struct base_allocator *defs)
-{
-	memcpy(&alloc, defs, sizeof(struct base_allocator));
-}
 
 void *bmalloc(size_t size)
 {
-	void *ptr = alloc.malloc(size);
-	if (!ptr && !size)
-		ptr = alloc.malloc(1);
+	if (!size) {
+		os_breakpoint();
+		bcrash("bmalloc: Allocating 0 bytes is broken behavior, please fix your code!");
+	}
+
+	void *ptr = a_malloc(size);
+
 	if (!ptr) {
 		os_breakpoint();
-		bcrash("Out of memory while trying to allocate %lu bytes",
-		       (unsigned long)size);
+		bcrash("Out of memory while trying to allocate %lu bytes", (unsigned long)size);
 	}
 
 	os_atomic_inc_long(&num_allocs);
@@ -115,13 +121,16 @@ void *brealloc(void *ptr, size_t size)
 	if (!ptr)
 		os_atomic_inc_long(&num_allocs);
 
-	ptr = alloc.realloc(ptr, size);
-	if (!ptr && !size)
-		ptr = alloc.realloc(ptr, 1);
+	if (!size) {
+		os_breakpoint();
+		bcrash("brealloc: Allocating 0 bytes is broken behavior, please fix your code!");
+	}
+
+	ptr = a_realloc(ptr, size);
+
 	if (!ptr) {
 		os_breakpoint();
-		bcrash("Out of memory while trying to allocate %lu bytes",
-		       (unsigned long)size);
+		bcrash("Out of memory while trying to allocate %lu bytes", (unsigned long)size);
 	}
 
 	return ptr;
@@ -131,7 +140,7 @@ void bfree(void *ptr)
 {
 	if (ptr) {
 		os_atomic_dec_long(&num_allocs);
-		alloc.free(ptr);
+		a_free(ptr);
 	}
 }
 

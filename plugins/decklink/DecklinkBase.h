@@ -27,8 +27,7 @@ protected:
 
 public:
 	virtual bool Activate(DeckLinkDevice *device, long long modeId);
-	virtual bool Activate(DeckLinkDevice *device, long long modeId,
-			      BMDVideoConnection bmdVideoConnection,
+	virtual bool Activate(DeckLinkDevice *device, long long modeId, BMDVideoConnection bmdVideoConnection,
 			      BMDAudioConnection bmdAudioConnection);
 	virtual void Deactivate() = 0;
 

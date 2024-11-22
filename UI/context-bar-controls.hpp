@@ -18,8 +18,7 @@ class SourceToolbar : public QWidget {
 
 protected:
 	using properties_delete_t = decltype(&obs_properties_destroy);
-	using properties_t =
-		std::unique_ptr<obs_properties_t, properties_delete_t>;
+	using properties_t = std::unique_ptr<obs_properties_t, properties_delete_t>;
 
 	properties_t props;
 	OBSDataAutoRelease oldData;
@@ -79,6 +78,14 @@ class WindowCaptureToolbar : public ComboSelectToolbar {
 
 public:
 	WindowCaptureToolbar(QWidget *parent, OBSSource source);
+	void Init() override;
+};
+
+class ApplicationAudioCaptureToolbar : public ComboSelectToolbar {
+	Q_OBJECT
+
+public:
+	ApplicationAudioCaptureToolbar(QWidget *parent, OBSSource source);
 	void Init() override;
 };
 

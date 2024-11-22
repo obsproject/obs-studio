@@ -23,8 +23,7 @@ static const double rate = 261.63 / 48000.0;
 
 extern uint64_t starting_time;
 
-static inline bool whitelist_time(uint64_t ts, uint64_t interval,
-				  uint64_t fps_num, uint64_t fps_den)
+static inline bool whitelist_time(uint64_t ts, uint64_t interval, uint64_t fps_num, uint64_t fps_den)
 {
 	if (!starting_time)
 		return false;
@@ -44,8 +43,7 @@ static void *sync_pair_aud_thread(void *pdata)
 	float *samples = malloc(frames * sizeof(float));
 
 	uint64_t interval = video_output_get_frame_time(obs_get_video());
-	const struct video_output_info *voi =
-		video_output_get_info(obs_get_video());
+	const struct video_output_info *voi = video_output_get_info(obs_get_video());
 	uint64_t fps_num = voi->fps_num;
 	uint64_t fps_den = voi->fps_den;
 
@@ -54,9 +52,7 @@ static void *sync_pair_aud_thread(void *pdata)
 			last_time = obs_get_video_frame_time();
 
 		for (uint64_t i = 0; i < frames; i++) {
-			uint64_t ts =
-				last_time +
-				util_mul_div64(i, 1000000000ULL, sample_rate);
+			uint64_t ts = last_time + util_mul_div64(i, 1000000000ULL, sample_rate);
 
 			if (whitelist_time(ts, interval, fps_num, fps_den)) {
 				cos_val += rate * M_PI_X2;

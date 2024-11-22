@@ -74,6 +74,9 @@
      <property name="wordWrap">
       <bool>true</bool>
      </property>
+     <property name="class" stdset="0">
+      <string notr="true">text-warning</string>
+     </property>
     </widget>
    </item>
    <item>

@@ -8,6 +8,8 @@ plugin modules.
 
 Plugins can implement sources, outputs, encoders, and services.
 
+Writing your first plugin? We provide `a basic template plugin <https://github.com/obsproject/obs-plugintemplate#obs-plugin-template>`_
+to get you started.
 
 Plugin Module Headers
 ---------------------
@@ -177,11 +179,11 @@ Then, in my-plugin.c, you would call :c:func:`obs_register_source()` in
 
 Some simple examples of sources:
 
-- Synchronous video source: The `image source <https://github.com/jp9000/obs-studio/blob/master/plugins/image-source/image-source.c>`_
-- Asynchronous video source: The `random texture test source <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-random.c>`_
-- Audio source: The `sine wave test source <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-sinewave.c>`_
-- Video filter: The `test video filter <https://github.com/jp9000/obs-studio/blob/master/test/test-input/test-filter.c>`_
-- Audio filter: The `gain audio filter <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-filters/gain-filter.c>`_
+- Synchronous video source: The `image source <https://github.com/obsproject/obs-studio/blob/master/plugins/image-source/image-source.c>`_
+- Asynchronous video source: The `random texture test source <https://github.com/obsproject/obs-studio/blob/master/test/test-input/test-random.c>`_
+- Audio source: The `sine wave test source <https://github.com/obsproject/obs-studio/blob/master/test/test-input/test-sinewave.c>`_
+- Video filter: The `test video filter <https://github.com/obsproject/obs-studio/blob/master/test/test-input/test-filter.c>`_
+- Audio filter: The `gain audio filter <https://github.com/obsproject/obs-studio/blob/master/plugins/obs-filters/gain-filter.c>`_
 
 
 .. _plugins_outputs:
@@ -243,13 +245,13 @@ Some examples of outputs:
 
 - Encoded video/audio outputs:
 
-  - The `FLV output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-outputs/flv-output.c>`_
-  - The `FFmpeg muxer output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-mux.c>`_
-  - The `RTMP stream output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-outputs/rtmp-stream.c>`_
+  - The `FLV output <https://github.com/obsproject/obs-studio/blob/master/plugins/obs-outputs/flv-output.c>`_
+  - The `FFmpeg muxer output <https://github.com/obsproject/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-mux.c>`_
+  - The `RTMP stream output <https://github.com/obsproject/obs-studio/blob/master/plugins/obs-outputs/rtmp-stream.c>`_
 
 - Raw video/audio outputs:
 
-  - The `FFmpeg output <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-output.c>`_
+  - The `FFmpeg output <https://github.com/obsproject/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-output.c>`_
 
 
 .. _plugins_encoders:
@@ -322,13 +324,13 @@ Examples of encoders:
 
 - Video encoders:
 
-  - The `x264 encoder <https://github.com/jp9000/obs-studio/tree/master/plugins/obs-x264>`_
-  - The `FFmpeg NVENC encoder <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-nvenc.c>`_
-  - The `Quicksync encoder <https://github.com/jp9000/obs-studio/tree/master/plugins/obs-qsv11>`_
+  - The `x264 encoder <https://github.com/obsproject/obs-studio/tree/master/plugins/obs-x264>`_
+  - The `FFmpeg NVENC encoder <https://github.com/obsproject/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-nvenc.c>`_
+  - The `Quicksync encoder <https://github.com/obsproject/obs-studio/tree/master/plugins/obs-qsv11>`_
 
 - Audio encoders:
 
-  - The `FFmpeg AAC/Opus encoder <https://github.com/jp9000/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-audio-encoders.c>`_
+  - The `FFmpeg AAC/Opus encoder <https://github.com/obsproject/obs-studio/blob/master/plugins/obs-ffmpeg/obs-ffmpeg-audio-encoders.c>`_
 
 
 .. _plugins_services:
@@ -388,7 +390,7 @@ Then, in my-plugin.c, you would call :c:func:`obs_register_service()` in
 
 The only two existing services objects are the "common RTMP services"
 and "custom RTMP service" objects in `plugins/rtmp-services
-<https://github.com/jp9000/obs-studio/tree/master/plugins/rtmp-services>`_
+<https://github.com/obsproject/obs-studio/tree/master/plugins/rtmp-services>`_
 
 
 Settings
@@ -558,12 +560,12 @@ yourself instead of relying on the
 
 .. ---------------------------------------------------------------------------
 
-.. _libobs/obs-module.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-module.h
-.. _libobs/obs.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs.h
-.. _libobs/obs-source.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-source.h
-.. _libobs/obs-output.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-output.h
-.. _libobs/obs-encoder.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-encoder.h
-.. _libobs/obs-service.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-service.h
-.. _libobs/obs-data.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-data.h
-.. _libobs/obs-properties.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-properties.h
-.. _libobs/graphics/graphics.h: https://github.com/jp9000/obs-studio/blob/master/libobs/graphics/graphics.h
+.. _libobs/obs-module.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-module.h
+.. _libobs/obs.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs.h
+.. _libobs/obs-source.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-source.h
+.. _libobs/obs-output.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-output.h
+.. _libobs/obs-encoder.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-encoder.h
+.. _libobs/obs-service.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-service.h
+.. _libobs/obs-data.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-data.h
+.. _libobs/obs-properties.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-properties.h
+.. _libobs/graphics/graphics.h: https://github.com/obsproject/obs-studio/blob/master/libobs/graphics/graphics.h

@@ -11,7 +11,7 @@ The OBS Studio frontend API is the API specific to OBS Studio itself.
 Structures/Enumerations
 -----------------------
 
-.. type:: enum obs_frontend_event
+.. enum:: obs_frontend_event
 
    Specifies a front-end event.  Can be one of the following values:
 
@@ -79,7 +79,7 @@ Structures/Enumerations
    - **OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED**
 
      Triggered when the transition duration has been changed by the
-	 user.
+     user.
 
    - **OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED**
 
@@ -129,7 +129,10 @@ Structures/Enumerations
 
    - **OBS_FRONTEND_EVENT_EXIT**
 
-     Triggered when the program is about to exit.
+     Triggered when the program is about to exit. This is the last chance
+     to call any frontend API functions for any saving / cleanup / etc.
+     After returning from this event callback, it is not permitted to make
+     any further frontend API calls.
 
    - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING**
 
@@ -178,42 +181,63 @@ Structures/Enumerations
 
      Triggered when the virtual camera is stopped.
 
+   - **OBS_FRONTEND_EVENT_THEME_CHANGED**
 
-.. type:: struct obs_frontend_source_list
+     Triggered when the theme is changed.
+
+     .. versionadded:: 29.0.0
+
+   - **OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN**
+
+     Triggered when a screenshot is taken.
+
+     .. versionadded:: 29.0.0
+
+.. struct:: obs_frontend_source_list
 
    - DARRAY(obs_source_t*) **sources**
 
    Example usage:
 
-.. code:: cpp
+   .. code:: cpp
 
-   struct obs_frontend_source_list scenes = {0};
+      struct obs_frontend_source_list scenes = {0};
 
-   obs_frontend_get_scenes(&scenes);
+      obs_frontend_get_scenes(&scenes);
 
-   for (size_t i = 0; i < scenes.num; i++) {
-           obs_source_t *source = scenes.sources.array[i];
+      for (size_t i = 0; i < scenes.sources.num; i++) {
+            /* Do NOT call `obs_source_release` or `obs_scene_release`
+             * on these sources
+             */
+            obs_source_t *source = scenes.sources.array[i];
 
-           [...]
-   }
+            /* Convert to obs_scene_t if needed */
+            obs_scene_t *scene = obs_scene_from_source(source);
 
-   obs_frontend_source_list_free(&scenes);
+            [...]
+      }
 
-.. type:: typedef void (*obs_frontend_cb)(void *private_data)
+      obs_frontend_source_list_free(&scenes);
+
+.. type:: void (*obs_frontend_cb)(void *private_data)
 
    Frontend tool menu callback
 
-.. type:: typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event, void *private_data)
+.. type:: void (*obs_frontend_event_cb)(enum obs_frontend_event event, void *private_data)
 
    Frontend event callback
 
-.. type:: typedef void (*obs_frontend_save_cb)(obs_data_t *save_data, bool saving, void *private_data)
+.. type:: void (*obs_frontend_save_cb)(obs_data_t *save_data, bool saving, void *private_data)
 
    Frontend save/load callback
 
-.. type:: typedef bool (*obs_frontend_translate_ui_cb)(const char *text, const char **out)
+.. type:: bool (*obs_frontend_translate_ui_cb)(const char *text, const char **out)
 
    Translation callback
+
+.. type::  void (*undo_redo_cb)(const char *data)
+
+   Undo redo callback
 
 
 Functions
@@ -244,22 +268,38 @@ Functions
    :return: The scene name list, ending with NULL.  The list is stored
             within one contiguous segment of memory, so freeing the
             returned pointer with :c:func:`bfree()` will free the entire
-            list.
+            list. The order is same as the way the frontend displays it in
+            the Scenes dock.
 
 ---------------------------------------
 
 .. function:: void obs_frontend_get_scenes(struct obs_frontend_source_list *sources)
 
+   Populates ``sources`` with reference-incremented scenes in the same order as
+   the frontend displays it in the Scenes dock. Release with
+   :c:func:`obs_frontend_source_list_free`, which will automatically release all
+   scenes with :c:func:`obs_source_release`. Do not release a scene manually to
+   prevent double releasing, which may cause scenes to be deleted.
+
+   Use :c:func:`obs_scene_from_source` to access a source from the list as an
+   :c:type:`obs_scene_t` object.
+
+   If you wish to keep a reference to a certain scene, use
+   :c:func:`obs_source_get_ref` or :c:func:`obs_scene_get_ref` on that scene and
+   release it with either :c:func:`obs_source_release` or
+   :c:func:`obs_scene_release`. Use only one release function, as both releases
+   the same object.
+
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
-                   structure to receive the list of
-                   reference-incremented scenes.  Release with
-                   :c:func:`obs_frontend_source_list_free`
+                   structure to receive the list of reference-incremented
+                   scenes.
 
 ---------------------------------------
 
 .. function:: obs_source_t *obs_frontend_get_current_scene(void)
 
-   :return: A new reference to the currently active scene
+   :return: A new reference to the currently active scene. Release with
+            :c:func:`obs_source_release()`.
 
 ---------------------------------------
 
@@ -280,7 +320,8 @@ Functions
 
 .. function:: obs_source_t *obs_frontend_get_current_transition(void)
 
-   :return: A new reference to the currently active transition
+   :return: A new reference to the currently active transition.
+            Release with :c:func:`obs_source_release()`.
 
 ---------------------------------------
 
@@ -326,7 +367,7 @@ Functions
 
 .. function:: char **obs_frontend_get_scene_collections(void)
 
-   :return: The list of profile names, ending with NULL.  The list is
+   :return: The list of scene collection names, ending with NULL.  The list is
             stored within one contiguous segment of memory, so freeing
             the returned pointer with :c:func:`bfree()` will free the
             entire list.
@@ -342,7 +383,7 @@ Functions
 
 .. function:: void obs_frontend_set_current_scene_collection(const char *collection)
 
-   :param profile: Name of the scene collection to activate
+   :param collection: Name of the scene collection to activate
 
 ---------------------------------------
 
@@ -427,6 +468,60 @@ Functions
 
    :param dock: QDockWidget to add/create
    :return: A pointer to the added QAction
+
+.. deprecated:: 30.0
+   Prefer :c:func:`obs_frontend_add_dock_by_id()` or
+   :c:func:`obs_frontend_add_custom_qdock()` instead.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
+
+   Adds a dock with the widget to the UI with a toggle in the Docks
+   menu.
+
+   When the dock is closed, a custom QEvent of type `QEvent::User + QEvent::Close`
+   is sent to the widget to enable it to react to the event (e.g., unload elements
+   to save resources).
+   A generic QShowEvent is already sent by default when the widget is being
+   shown (e.g., dock opened).
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         and the id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param title: Window title of the dock
+   :param widget: QWidget to insert in the dock
+   :return: *true* if the dock was added, *false* if the id was already
+            used
+
+   .. versionadded:: 30.0
+
+---------------------------------------
+
+.. function:: void obs_frontend_remove_dock(const char *id)
+
+   Removes the dock with this id from the UI.
+
+   :param id: Unique identifier of the dock to remove.
+
+   .. versionadded:: 30.0
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_custom_qdock(const char *id, void *dock)
+
+   Adds a custom dock to the UI with no toggle.
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         reference and id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param dock: QDockWidget to add
+   :return: *true* if the dock was added, *false* if the id was already
+            used
+
+   .. versionadded:: 30.0
 
 ---------------------------------------
 
@@ -553,6 +648,28 @@ Functions
 
 ---------------------------------------
 
+.. function:: bool obs_frontend_recording_split_file(void)
+
+   Asks OBS to split the current recording file.
+
+   :return: *true* if splitting was successfully requested (this
+            does not mean that splitting has finished or guarantee that it
+            split successfully), *false* if recording is inactive or paused
+            or if file splitting is disabled.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_recording_add_chapter(const char *name)
+
+   Asks OBS to insert a chapter marker at the current output time into the recording.
+
+   :param name: The name for the chapter, may be *NULL* to use an automatically generated name ("Unnamed <Chapter number>" or localized equivalent).
+   :return: *true* if insertion was successful, *false* if recording is inactive, paused, or if chapter insertion is not supported by the current output.
+
+   .. versionadded:: 30.2
+
+---------------------------------------
+
 .. function:: void obs_frontend_replay_buffer_start(void)
 
    Starts the replay buffer.
@@ -594,19 +711,22 @@ Functions
 
 .. function:: obs_output_t *obs_frontend_get_streaming_output(void)
 
-   :return: A new reference to the current streaming output
+   :return: A new reference to the current streaming output.
+            Release with :c:func:`obs_output_release()`.
 
 ---------------------------------------
 
 .. function:: obs_output_t *obs_frontend_get_recording_output(void)
 
-   :return: A new reference to the current srecording output
+   :return: A new reference to the current recording output.
+            Release with :c:func:`obs_output_release()`.
 
 ---------------------------------------
 
 .. function:: obs_output_t *obs_frontend_get_replay_buffer_output(void)
 
-   :return: A new reference to the current replay buffer output
+   :return: A new reference to the current replay buffer output.
+            Release with :c:func:`obs_output_release()`.
 
 ---------------------------------------
 
@@ -616,9 +736,26 @@ Functions
 
 ---------------------------------------
 
+.. deprecated:: 31.0
 .. function:: config_t *obs_frontend_get_global_config(void)
 
    :return: The config_t* associated with the global config (global.ini)
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_app_config(void)
+
+   :return: The config_t* associated with system-wide settings (global.ini)
+
+   .. versionadded:: 31.0
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_user_config(void)
+
+   :return: The config_t* associated with user settings (user.ini)
+
+   .. versionadded:: 31.0
 
 ---------------------------------------
 
@@ -632,7 +769,8 @@ Functions
 
 .. function:: obs_service_t *obs_frontend_get_streaming_service(void)
 
-   :return: A new reference to the current streaming service object
+   :return: The current streaming service object. Does not increment the
+            reference.
 
 ---------------------------------------
 
@@ -666,7 +804,8 @@ Functions
 .. function:: obs_source_t *obs_frontend_get_current_preview_scene(void)
 
    :return: A new reference to the current preview scene if studio mode
-            is active, or *NULL* if studio mode is not active.
+            is active, or *NULL* if studio mode is not active. Release
+            with :c:func:`obs_source_release()`.
 
 ---------------------------------------
 
@@ -710,7 +849,8 @@ Functions
 
 .. function:: obs_output_t *obs_frontend_get_virtualcam_output(void)
 
-   :return: A new reference to the current virtual camera output
+   :return: A new reference to the current virtual camera output.
+            Release with :c:func:`obs_output_release()`.
 
 ---------------------------------------
 
@@ -764,6 +904,16 @@ Functions
 
 ---------------------------------------
 
+.. function:: void *obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
+
+   Opens the edit transform window of the specified sceneitem.
+
+   :param item: The sceneitem to open the edit transform window of
+
+   .. versionadded:: 29.1
+
+---------------------------------------
+
 .. function:: char *obs_frontend_get_current_record_output_path(void)
 
    :return: A new pointer to the current record output path.  Free
@@ -774,3 +924,51 @@ Functions
 .. function:: const char *obs_frontend_get_locale_string(const char *string)
 
    :return: Gets the frontend translation of a given string.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_theme_dark(void)
+
+   :return: Checks if the current theme is dark or light.
+
+   .. versionadded:: 29.0.0
+
+---------------------------------------
+
+.. function:: char *obs_frontend_get_last_recording(void)
+
+   :return: The file path of the last recording. Free with :c:func:`bfree()`
+
+   .. versionadded:: 29.0.0
+
+---------------------------------------
+
+.. function:: char *obs_frontend_get_last_screenshot(void)
+
+   :return: The file path of the last screenshot taken. Free with
+            :c:func:`bfree()`
+
+   .. versionadded:: 29.0.0
+
+---------------------------------------
+
+.. function:: char *obs_frontend_get_last_replay(void)
+
+   :return: The file path of the last replay buffer saved. Free with
+            :c:func:`bfree()`
+
+   .. versionadded:: 29.0.0
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo, const undo_redo_cb redo, const char *undo_data, const char *redo_data, bool repeatable)
+
+   :param name: The name of the undo redo action
+   :param undo: Callback to use for undo
+   :param redo: Callback to use for redo
+   :param undo_data: String with data for the undo callback
+   :param redo_data: String with data for the redo callback
+   :param repeatable: Allow multiple actions with the same name to be merged to 1 undo redo action.
+                      This uses the undo action from the first and the redo action from the last action.
+
+   .. versionadded:: 29.1

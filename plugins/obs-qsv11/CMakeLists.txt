@@ -1,111 +1,64 @@
+cmake_minimum_required(VERSION 3.28...3.30)
+
 option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
-
 if(NOT ENABLE_QSV11)
-	message(STATUS "NOT building Intel QSV11 Hardware Encoder.")
-	return()
+  target_disable_feature(obs-qsv11 "Intel QSV11 Hardware Encoder")
+  target_disable(obs-qsv11)
+  return()
 endif()
 
-project(obs-qsv11)
+add_library(obs-qsv11 MODULE)
+add_library(OBS::qsv11 ALIAS obs-qsv11)
 
-include_directories(libmfx/include/msdk/include)
-include_directories(libmfx/include)
+find_package(VPL 2.9 REQUIRED)
 
-set(obs-qsv11_libmfx_SOURCES
-	libmfx/src/main.cpp
-	libmfx/src/mfx_critical_section.cpp
-	libmfx/src/mfx_dispatcher.cpp
-	libmfx/src/mfx_dispatcher_log.cpp
-	libmfx/src/mfx_driver_store_loader.cpp
-	libmfx/src/mfx_dxva2_device.cpp
-	libmfx/src/mfx_function_table.cpp
-	libmfx/src/mfx_library_iterator.cpp
-	libmfx/src/mfx_load_dll.cpp
-	libmfx/src/mfx_load_plugin.cpp
-	libmfx/src/mfx_plugin_hive.cpp
-	libmfx/src/mfx_win_reg_key.cpp
-	)
-
-set(obs-qsv11_libmfx_HEADERS
-	libmfx/include/msdk/include/mfxadapter.h
-	libmfx/include/msdk/include/mfxastructures.h
-	libmfx/include/msdk/include/mfxaudio.h
-	libmfx/include/msdk/include/mfxaudio++.h
-	libmfx/include/msdk/include/mfxcommon.h
-	libmfx/include/msdk/include/mfxdefs.h
-	libmfx/include/msdk/include/mfxjpeg.h
-	libmfx/include/msdk/include/mfxmvc.h
-	libmfx/include/msdk/include/mfxplugin.h
-	libmfx/include/msdk/include/mfxplugin++.h
-	libmfx/include/msdk/include/mfxsession.h
-	libmfx/include/msdk/include/mfxstructures.h
-	libmfx/include/msdk/include/mfxvideo.h
-	libmfx/include/msdk/include/mfxvideo++.h
-	libmfx/include/msdk/include/mfxvstructures.h
-	libmfx/include/mfx_critical_section.h
-	libmfx/include/mfx_dispatcher.h
-	libmfx/include/mfx_dispatcher_defs.h
-	libmfx/include/mfx_dispatcher_log.h
-	libmfx/include/mfx_driver_store_loader.h
-	libmfx/include/mfx_dxva2_device.h
-	libmfx/include/mfx_exposed_functions_list.h
-	libmfx/include/mfx_library_iterator.h
-	libmfx/include/mfx_load_dll.h
-	libmfx/include/mfx_load_plugin.h
-	libmfx/include/mfx_plugin_hive.h
-	libmfx/include/mfx_vector.h
-	libmfx/include/mfx_win_reg_key.h
-	libmfx/include/mfxaudio_exposed_functions_list.h
-	)
-
-set(obs-qsv11_SOURCES
-	common_directx9.cpp
-	common_directx11.cpp
-	common_utils.cpp
-	common_utils_windows.cpp
-	device_directx9.cpp
-	QSV_Encoder.cpp
-	QSV_Encoder_Internal.cpp
-	obs-qsv11.c
-	obs-qsv11-plugin-main.c)
-
-if(WIN32)
-	set(MODULE_DESCRIPTION "OBS QSV encoder")
-	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obs-qsv11.rc)
-	list(APPEND obs-qsv11_SOURCES
-		obs-qsv11.rc)
+if(OS_LINUX)
+  find_package(Libva REQUIRED)
 endif()
 
-set(obs-qsv11_HEADERS
-	bits/linux_defs.h
-	bits/windows_defs.h
-	common_directx9.h
-	common_directx11.h
-	device_directx9.h
-	common_utils.h
-	QSV_Encoder.h
-	QSV_Encoder_Internal.h)
+target_sources(
+  obs-qsv11
+  PRIVATE
+    $<$<PLATFORM_ID:Linux>:common_utils_linux.cpp>
+    $<$<PLATFORM_ID:Windows>:common_directx11.cpp>
+    $<$<PLATFORM_ID:Windows>:common_directx11.h>
+    $<$<PLATFORM_ID:Windows>:common_utils_windows.cpp>
+    common_utils.cpp
+    common_utils.h
+    obs-qsv11-plugin-main.c
+    obs-qsv11.c
+    QSV_Encoder.cpp
+    QSV_Encoder.h
+    QSV_Encoder_Internal.cpp
+    QSV_Encoder_Internal.h
+)
 
-add_library(obs-qsv11 MODULE
-	${obs-qsv11_SOURCES}
-	${obs-qsv11_HEADERS}
-	${obs-qsv11_libmfx_SOURCES}
-	${obs-qsv11_libmfx_HEADERS}
-	)
-target_link_libraries(obs-qsv11
-	libobs
-	d3d9
-	d3d11
-	dxva2
-	dxgi
-	dxguid
-	)
+target_compile_options(
+  obs-qsv11
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:C,GNU,Clang>:-Wno-error=switch>
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-error=switch>
+)
 
-target_compile_definitions(obs-qsv11 PRIVATE DX11_D3D)
-set_target_properties(obs-qsv11 PROPERTIES FOLDER "plugins")
+target_link_libraries(
+  obs-qsv11
+  PRIVATE
+    OBS::libobs
+    VPL::VPL
+    $<$<PLATFORM_ID:Linux>:Libva::va>
+    $<$<PLATFORM_ID:Linux>:Libva::drm>
+    $<$<PLATFORM_ID:Windows>:d3d11>
+    $<$<PLATFORM_ID:Windows>:dxgi>
+    $<$<PLATFORM_ID:Windows>:dxguid>
+)
 
-source_group("obs-qsv11\\Source Files" FILES ${obs-qsv11_SOURCES})
-source_group("obs-qsv11\\Header Files" FILES ${obs-qsv11_HEADERS})
-source_group("libmfx\\Source Files" FILES ${obs-qsv11_libmfx_SOURCES})
-source_group("libmfx\\Header Files" FILES ${obs-qsv11_libmfx_HEADERS})
+target_link_options(obs-qsv11 PRIVATE $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
 
-install_obs_plugin_with_data(obs-qsv11 data)
+if(OS_WINDOWS)
+  add_subdirectory(obs-qsv-test)
+
+  configure_file(cmake/windows/obs-module.rc.in obs-qsv11.rc)
+  target_sources(obs-qsv11 PRIVATE obs-qsv11.rc)
+endif()
+
+set_target_properties_obs(obs-qsv11 PROPERTIES FOLDER plugins/obs-qsv11 PREFIX "")

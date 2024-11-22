@@ -25,7 +25,8 @@ General Functions
 
 .. function:: obs_data_t *obs_data_create()
 
-   :return: A new reference to a data object.
+   :return: A new reference to a data object. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -34,7 +35,8 @@ General Functions
    Creates a data object from a Json string.
 
    :param json_string: Json string
-   :return:            A new reference to a data object
+   :return:            A new reference to a data object. Release with
+                       :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -43,7 +45,8 @@ General Functions
    Creates a data object from a Json file.
 
    :param json_file: Json file path
-   :return:          A new reference to a data object
+   :return:          A new reference to a data object. Release with
+                     :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -54,7 +57,8 @@ General Functions
 
    :param json_file:  Json file path
    :param backup_ext: Backup file extension
-   :return:           A new reference to a data object
+   :return:           A new reference to a data object. Release with
+                       :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -69,6 +73,30 @@ General Functions
 
    Generates a new json string. The string allocation is stored within
    the data object itself, and does not need to be manually freed.
+
+   :return: Json string for this object
+
+---------------------
+
+.. function:: const char *obs_data_get_json_with_defaults(obs_data_t *data)
+
+   Same as :c:func:`obs_data_get_json()` but default values are also serialized.
+
+   :return: Json string for this object
+
+---------------------
+
+.. function:: const char *obs_data_get_json_pretty(obs_data_t *data)
+
+   Same as :c:func:`obs_data_get_json()` but the JSON data is pretty-printed.
+
+   :return: Json string for this object
+
+---------------------
+
+.. function:: const char *obs_data_get_json_pretty_with_defaults(obs_data_t *data)
+
+   Same as :c:func:`obs_data_get_json_pretty()` but default values are also serialized.
 
    :return: Json string for this object
 
@@ -176,13 +204,15 @@ Get Functions
 
 .. function:: obs_data_t *obs_data_get_obj(obs_data_t *data, const char *name)
 
-   :return: An incremented reference to a data object.
+   :return: An incremented reference to a data object. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
 .. function:: obs_data_array_t *obs_data_get_array(obs_data_t *data, const char *name)
 
-   :return: An incremented reference to a data array object.
+   :return: An incremented reference to a data array object. Release
+            with :c:func:`obs_data_array_release()`.
 
 ---------------------
 
@@ -224,7 +254,8 @@ is not set.
 .. function:: void obs_data_set_default_obj(obs_data_t *data, const char *name, obs_data_t *obj)
               obs_data_t *obs_data_get_default_obj(obs_data_t *data, const char *name)
 
-   :return: An incremented reference to a data object.
+   :return: An incremented reference to a data object. Release with
+            :c:func:`obs_data_release()`.
 
 ----------------------
 
@@ -262,7 +293,18 @@ inappropriate or invalid.
 .. function:: void obs_data_set_autoselect_obj(obs_data_t *data, const char *name, obs_data_t *obj)
               obs_data_t *obs_data_get_autoselect_obj(obs_data_t *data, const char *name)
 
-   :return: An incremented reference to a data object.
+   :return: An incremented reference to a data object. Release with
+            :c:func:`obs_data_release()`.
+
+---------------------
+
+.. function:: void obs_data_set_autoselect_array(obs_data_t *data, const char *name, obs_data_array_t *arr)
+              obs_data_array_t *obs_data_get_autoselect_array(obs_data_t *data, const char *name)
+
+   :return: An incremented reference to a data array object. Release
+             with :c:func:`obs_data_array_release()`.
+
+   .. versionadded:: 30.1
 
 ---------------------
 
@@ -272,7 +314,8 @@ Array Functions
 
 .. function:: obs_data_array_t *obs_data_array_create()
 
-   :return: A new reference to a data array object.
+   :return: A new reference to a data array object. Release
+            with :c:func:`obs_data_array_release()`.
 
 ---------------------
 
@@ -291,7 +334,7 @@ Array Functions
 .. function:: obs_data_t *obs_data_array_item(obs_data_array_t *array, size_t idx)
 
    :return: An incremented reference to the data object associated with
-            this array entry.
+            this array entry. Release with :c:func:`obs_data_release()`.
 
 ---------------------
 

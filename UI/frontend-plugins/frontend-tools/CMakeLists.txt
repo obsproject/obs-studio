@@ -1,128 +1,95 @@
-project(frontend-tools)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-if(APPLE)
-	find_library(COCOA Cocoa)
-	include_directories(${COCOA})
+find_package(Qt6 REQUIRED Widgets)
+
+if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
+  find_package(Qt6 REQUIRED Gui)
+  find_package(X11 REQUIRED)
 endif()
 
-if(UNIX AND NOT APPLE)
-	find_package(X11 REQUIRED)
-	link_libraries(${X11_LIBRARIES})
-	include_directories(${X11_INCLUDE_DIR})
+add_library(frontend-tools MODULE)
+add_library(OBS::frontend-tools ALIAS frontend-tools)
+
+if(NOT TARGET OBS::properties-view)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
 endif()
 
-include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/obs-scripting")
-
-configure_file(
-	"${CMAKE_CURRENT_SOURCE_DIR}/frontend-tools-config.h.in"
-	"${CMAKE_BINARY_DIR}/config/frontend-tools-config.h")
-
-set(frontend-tools_HEADERS
-	${frontend-tools_HEADERS}
-	"${CMAKE_BINARY_DIR}/config/frontend-tools-config.h"
-	auto-scene-switcher.hpp
-	output-timer.hpp
-	tool-helpers.hpp
-	../../properties-view.hpp
-	../../properties-view.moc.hpp
-	../../horizontal-scroll-area.hpp
-	../../vertical-scroll-area.hpp
-	../../double-slider.hpp
-	../../slider-ignorewheel.hpp
-	../../combobox-ignorewheel.hpp
-	../../spinbox-ignorewheel.hpp
-	../../qt-wrappers.hpp
-	)
-set(frontend-tools_SOURCES
-	${frontend-tools_SOURCES}
-	auto-scene-switcher.cpp
-	frontend-tools.c
-	output-timer.cpp
-	../../properties-view.cpp
-	../../horizontal-scroll-area.cpp
-	../../vertical-scroll-area.cpp
-	../../double-slider.cpp
-	../../slider-ignorewheel.cpp
-	../../combobox-ignorewheel.cpp
-	../../spinbox-ignorewheel.cpp
-	../../qt-wrappers.cpp
-	)
-set(frontend-tools_UI
-	${frontend-tools_UI}
-	forms/auto-scene-switcher.ui
-	forms/output-timer.ui
-	)
-
-if(SCRIPTING_ENABLED)
-	set(frontend-tools_HEADERS
-		${frontend-tools_HEADERS}
-		scripts.hpp
-		)
-	set(frontend-tools_SOURCES
-		${frontend-tools_SOURCES}
-		scripts.cpp
-		)
-	set(frontend-tools_UI
-		${frontend-tools_UI}
-		forms/scripts.ui
-		)
-	set(EXTRA_LIBS
-		${EXTRA_LIBS}
-		obs-scripting
-		)
+if(NOT TARGET OBS::qt-plain-text-edit)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/plain-text-edit" "${CMAKE_BINARY_DIR}/shared/qt/plain-text-edit")
 endif()
 
-if(WIN32)
-	set(MODULE_DESCRIPTION "OBS Frontend Tools")
-	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in frontend-tools.rc)
-	set(frontend-tools_PLATFORM_SOURCES
-		auto-scene-switcher-win.cpp
-		frontend-tools.rc)
-
-	set(frontend-tools_PLATFORM_SOURCES
-		${frontend-tools_PLATFORM_SOURCES}
-		captions.cpp
-		captions-handler.cpp
-		captions-mssapi.cpp
-		captions-mssapi-stream.cpp)
-	set(frontend-tools_PLATFORM_HEADERS
-		captions.hpp
-		captions-handler.hpp
-		captions-mssapi.hpp
-		captions-mssapi-stream.hpp)
-	set(frontend-tools_PLATFORM_UI
-		forms/captions.ui)
-elseif(APPLE)
-	set(frontend-tools_PLATFORM_SOURCES
-		auto-scene-switcher-osx.mm)
-	set_source_files_properties(auto-scene-switcher-osx.mm
-		PROPERTIES COMPILE_FLAGS "-fobjc-arc")
-
-	set(frontend-tools_PLATFORM_LIBS
-		${COCOA})
-else()
-	set(frontend-tools_PLATFORM_SOURCES
-		auto-scene-switcher-nix.cpp)
+if(NOT TARGET OBS::qt-wrappers)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/wrappers" "${CMAKE_BINARY_DIR}/shared/qt/wrappers")
 endif()
 
-qt5_wrap_ui(frontend-tools_UI_HEADERS
-	${frontend-tools_UI}
-	${frontend-tools_PLATFORM_UI})
+target_sources(
+  frontend-tools
+  PRIVATE
+    $<$<PLATFORM_ID:Darwin>:auto-scene-switcher-osx.mm>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:auto-scene-switcher-nix.cpp>
+    $<$<PLATFORM_ID:Windows>:auto-scene-switcher-win.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-handler.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-handler.hpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi-stream.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi-stream.hpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi.cpp>
+    $<$<PLATFORM_ID:Windows>:captions-mssapi.hpp>
+    $<$<PLATFORM_ID:Windows>:captions.cpp>
+    $<$<PLATFORM_ID:Windows>:captions.hpp>
+    auto-scene-switcher.cpp
+    auto-scene-switcher.hpp
+    frontend-tools.c
+    output-timer.cpp
+    output-timer.hpp
+    tool-helpers.hpp
+)
 
-add_library(frontend-tools MODULE
-	${frontend-tools_HEADERS}
-	${frontend-tools_SOURCES}
-	${frontend-tools_UI_HEADERS}
-	${frontend-tools_PLATFORM_SOURCES}
-	${frontend-tools_PLATFORM_HEADERS}
-	)
-target_link_libraries(frontend-tools
-	${frontend-tools_PLATFORM_LIBS}
-	${EXTRA_LIBS}
-	obs-frontend-api
-	Qt5::Widgets
-	libobs)
+target_sources(
+  frontend-tools
+  PRIVATE forms/auto-scene-switcher.ui forms/captions.ui forms/output-timer.ui forms/scripts.ui
+)
 
-set_target_properties(frontend-tools PROPERTIES FOLDER "frontend")
+target_compile_options(
+  frontend-tools
+  PRIVATE $<$<PLATFORM_ID:Darwin>:-Wno-quoted-include-in-framework-header> $<$<PLATFORM_ID:Darwin>:-Wno-comma>
+)
 
-install_obs_plugin_with_data(frontend-tools data)
+target_link_libraries(
+  frontend-tools
+  PRIVATE
+    OBS::frontend-api
+    OBS::libobs
+    OBS::properties-view
+    OBS::qt-plain-text-edit
+    OBS::qt-wrappers
+    Qt::Widgets
+    "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa>>"
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>
+)
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-scripting" "${CMAKE_BINARY_DIR}/shared/obs-scripting")
+
+if(ENABLE_SCRIPTING AND TARGET OBS::scripting)
+  target_sources(frontend-tools PRIVATE scripts.cpp scripts.hpp)
+  target_link_libraries(frontend-tools PRIVATE OBS::scripting)
+  target_enable_feature(frontend-tools "Scripting Support (Frontend)" ENABLE_SCRIPTING)
+endif()
+
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in frontend-tools.rc)
+  target_sources(frontend-tools PRIVATE frontend-tools.rc)
+
+  set_property(TARGET frontend-tools APPEND PROPERTY AUTORCC_OPTIONS --format-version 1)
+endif()
+
+set_target_properties_obs(
+  frontend-tools
+  PROPERTIES FOLDER frontend
+             PREFIX ""
+             AUTOMOC ON
+             AUTOUIC ON
+             AUTORCC ON
+             AUTOUIC_SEARCH_PATHS forms
+             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+)

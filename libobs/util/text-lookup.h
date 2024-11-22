@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,8 +20,8 @@
  * Text Lookup interface
  *
  *   Used for storing and looking up localized strings.  Stores localization
- * strings in a radix/trie tree to efficiently look up associated strings via a
- * unique string identifier name.
+ *   strings in a hashmap to efficiently look up associated strings via a
+ *   unique string identifier name.
  */
 
 #include "c99defs.h"
@@ -38,8 +38,7 @@ typedef struct text_lookup lookup_t;
 EXPORT lookup_t *text_lookup_create(const char *path);
 EXPORT bool text_lookup_add(lookup_t *lookup, const char *path);
 EXPORT void text_lookup_destroy(lookup_t *lookup);
-EXPORT bool text_lookup_getstr(lookup_t *lookup, const char *lookup_val,
-			       const char **out);
+EXPORT bool text_lookup_getstr(lookup_t *lookup, const char *lookup_val, const char **out);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,8 +37,7 @@
 		exports->func = os_dlsym(module, #func); \
 	} while (false)
 
-bool load_graphics_imports(struct gs_exports *exports, void *module,
-			   const char *module_name)
+bool load_graphics_imports(struct gs_exports *exports, void *module, const char *module_name)
 {
 	bool success = true;
 
@@ -53,6 +52,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_device_obj);
 	GRAPHICS_IMPORT(device_swapchain_create);
 	GRAPHICS_IMPORT(device_resize);
+	GRAPHICS_IMPORT(device_get_color_space);
+	GRAPHICS_IMPORT(device_update_color_space);
 	GRAPHICS_IMPORT(device_get_size);
 	GRAPHICS_IMPORT(device_get_width);
 	GRAPHICS_IMPORT(device_get_height);
@@ -81,6 +82,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_render_target);
 	GRAPHICS_IMPORT(device_get_zstencil_target);
 	GRAPHICS_IMPORT(device_set_render_target);
+	GRAPHICS_IMPORT(device_set_render_target_with_color_space);
 	GRAPHICS_IMPORT(device_set_cube_render_target);
 	GRAPHICS_IMPORT(device_enable_framebuffer_srgb);
 	GRAPHICS_IMPORT(device_framebuffer_srgb_enabled);
@@ -93,6 +95,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_load_swapchain);
 	GRAPHICS_IMPORT(device_end_scene);
 	GRAPHICS_IMPORT(device_clear);
+	GRAPHICS_IMPORT(device_is_present_ready);
 	GRAPHICS_IMPORT(device_present);
 	GRAPHICS_IMPORT(device_flush);
 	GRAPHICS_IMPORT(device_set_cull_mode);
@@ -190,16 +193,23 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_shader_set_next_sampler);
 
 	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_p010_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_nv12);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_p010);
+
+	GRAPHICS_IMPORT(device_is_monitor_hdr);
 
 	GRAPHICS_IMPORT(device_debug_marker_begin);
 	GRAPHICS_IMPORT(device_debug_marker_end);
 
+	GRAPHICS_IMPORT_OPTIONAL(gs_get_adapter_count);
+
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__
 	GRAPHICS_IMPORT(device_shared_texture_available);
-	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_shared);
-	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_from_iosurface);
-	GRAPHICS_IMPORT_OPTIONAL(gs_texture_rebind_iosurface);
+	GRAPHICS_IMPORT(device_texture_open_shared);
+	GRAPHICS_IMPORT(device_texture_create_from_iosurface);
+	GRAPHICS_IMPORT(gs_texture_rebind_iosurface);
 
 	/* win32 specific functions */
 #elif _WIN32
@@ -211,7 +221,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_update_frame);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_texture);
-	GRAPHICS_IMPORT_OPTIONAL(gs_get_adapter_count);
+	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_color_space);
+	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_sdr_white_level);
+	GRAPHICS_IMPORT_OPTIONAL(device_can_adapter_fast_clear);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_gdi);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_get_dc);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_release_dc);
@@ -221,14 +233,15 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_wrap_obj);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_acquire_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_release_sync);
-	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_nv12);
 	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_nv12);
+	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_p010);
 	GRAPHICS_IMPORT_OPTIONAL(device_register_loss_callbacks);
 	GRAPHICS_IMPORT_OPTIONAL(device_unregister_loss_callbacks);
-#elif __linux__
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 	GRAPHICS_IMPORT(device_texture_create_from_dmabuf);
 	GRAPHICS_IMPORT(device_query_dmabuf_capabilities);
 	GRAPHICS_IMPORT(device_query_dmabuf_modifiers_for_format);
+	GRAPHICS_IMPORT(device_texture_create_from_pixmap);
 #endif
 
 	return success;

@@ -15,6 +15,7 @@ struct cursor_data {
 	long x_hotspot;
 	long y_hotspot;
 	bool visible;
+	bool monochrome;
 
 	uint32_t last_cx;
 	uint32_t last_cy;
@@ -23,6 +24,5 @@ struct cursor_data {
 };
 
 extern void cursor_capture(struct cursor_data *data);
-extern void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
-			long width, long height);
+extern void cursor_draw(struct cursor_data *data, long x_offset, long y_offset, long width, long height);
 extern void cursor_data_free(struct cursor_data *data);

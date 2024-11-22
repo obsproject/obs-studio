@@ -13,12 +13,13 @@ SourceProps::SourceProps()
 	  pixelFormat{NTV2_FBF_INVALID},
 	  sdiTransport{SDITransport::SingleLink},
 	  sdi4kTransport{SDITransport4K::TwoSampleInterleave},
-	  audioNumChannels{8},
-	  audioSampleSize{4},
-	  audioSampleRate{48000},
+	  audioNumChannels{kDefaultAudioChannels},
+	  audioSampleSize{kDefaultAudioSampleSize},
+	  audioSampleRate{kDefaultAudioSampleRate},
 	  vpids{},
 	  autoDetect{false},
-	  deactivateWhileNotShowing{false}
+	  deactivateWhileNotShowing{false},
+	  swapFrontCenterLFE{false}
 {
 }
 
@@ -30,12 +31,13 @@ SourceProps::SourceProps(NTV2DeviceID devID)
 	  pixelFormat{NTV2_FBF_INVALID},
 	  sdiTransport{SDITransport::SingleLink},
 	  sdi4kTransport{SDITransport4K::TwoSampleInterleave},
-	  audioNumChannels{8},
-	  audioSampleSize{4},
-	  audioSampleRate{48000},
+	  audioNumChannels{kDefaultAudioChannels},
+	  audioSampleSize{kDefaultAudioSampleSize},
+	  audioSampleRate{kDefaultAudioSampleRate},
 	  vpids{},
 	  autoDetect{false},
-	  deactivateWhileNotShowing{false}
+	  deactivateWhileNotShowing{false},
+	  swapFrontCenterLFE{false}
 {
 }
 
@@ -54,6 +56,7 @@ SourceProps::SourceProps(const SourceProps &props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 SourceProps::SourceProps(SourceProps &&props)
@@ -71,6 +74,7 @@ SourceProps::SourceProps(SourceProps &&props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 void SourceProps::operator=(const SourceProps &props)
@@ -88,6 +92,7 @@ void SourceProps::operator=(const SourceProps &props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 void SourceProps::operator=(SourceProps &&props)
@@ -105,22 +110,20 @@ void SourceProps::operator=(SourceProps &&props)
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
 	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
+	swapFrontCenterLFE = props.swapFrontCenterLFE;
 }
 
 bool SourceProps::operator==(const SourceProps &props)
 {
 	return (deviceID == props.deviceID && ioSelect == props.ioSelect &&
 		// inputSource == props.inputSource &&
-		videoFormat == props.videoFormat &&
-		pixelFormat == props.pixelFormat &&
+		videoFormat == props.videoFormat && pixelFormat == props.pixelFormat &&
 		// vpid == props.vpid &&
-		autoDetect == props.autoDetect &&
-		sdiTransport == props.sdiTransport &&
-		sdi4kTransport == props.sdi4kTransport &&
-		audioNumChannels == props.audioNumChannels &&
-		audioSampleSize == props.audioSampleSize &&
-		audioSampleRate == props.audioSampleRate &&
-		deactivateWhileNotShowing == props.deactivateWhileNotShowing);
+		autoDetect == props.autoDetect && sdiTransport == props.sdiTransport &&
+		sdi4kTransport == props.sdi4kTransport && audioNumChannels == props.audioNumChannels &&
+		audioSampleSize == props.audioSampleSize && audioSampleRate == props.audioSampleRate &&
+		deactivateWhileNotShowing == props.deactivateWhileNotShowing &&
+		swapFrontCenterLFE == props.swapFrontCenterLFE);
 }
 
 bool SourceProps::operator!=(const SourceProps &props)
@@ -151,11 +154,10 @@ NTV2Channel SourceProps::Channel() const
 
 NTV2Channel SourceProps::Framestore() const
 {
-	if (deviceID == DEVICE_ID_KONAHDMI && ioSelect == IOSelection::HDMI2 &&
-	    NTV2_IS_4K_VIDEO_FORMAT(videoFormat)) {
+	if (deviceID == DEVICE_ID_KONAHDMI && ioSelect == IOSelection::HDMI2 && NTV2_IS_4K_VIDEO_FORMAT(videoFormat)) {
 		return NTV2_CHANNEL3;
 	}
-	return NTV2InputSourceToChannel(InitialInputSource());
+	return Channel();
 }
 
 NTV2AudioSystem SourceProps::AudioSystem() const
@@ -196,9 +198,19 @@ audio_format SourceProps::AudioFormat() const
 
 speaker_layout SourceProps::SpeakerLayout() const
 {
-	if (audioNumChannels == 2)
+	if (audioNumChannels == 1)
+		return SPEAKERS_MONO;
+	else if (audioNumChannels == 2)
 		return SPEAKERS_STEREO;
-	// NTV2 is always at least 8ch on modern boards
+	else if (audioNumChannels == 3)
+		return SPEAKERS_2POINT1;
+	else if (audioNumChannels == 4)
+		return SPEAKERS_4POINT0;
+	else if (audioNumChannels == 5)
+		return SPEAKERS_4POINT1;
+	else if (audioNumChannels == 6)
+		return SPEAKERS_5POINT1;
+	// NTV2 card is always set to at least 8ch
 	return SPEAKERS_7POINT1;
 }
 
@@ -213,8 +225,8 @@ OutputProps::OutputProps(NTV2DeviceID devID)
 	  pixelFormat{NTV2_FBF_INVALID},
 	  sdi4kTransport{SDITransport4K::TwoSampleInterleave},
 	  audioNumChannels{8},
-	  audioSampleSize{4},
-	  audioSampleRate{48000}
+	  audioSampleSize{kDefaultAudioSampleSize},
+	  audioSampleRate{kDefaultAudioSampleRate}
 {
 }
 
@@ -278,12 +290,9 @@ bool OutputProps::operator==(const OutputProps &props)
 {
 	return (deviceID == props.deviceID && ioSelect == props.ioSelect &&
 		// outputDest == props.outputDest &&
-		videoFormat == props.videoFormat &&
-		pixelFormat == props.pixelFormat &&
-		sdiTransport == props.sdiTransport &&
-		sdi4kTransport == props.sdi4kTransport &&
-		audioNumChannels == props.audioNumChannels &&
-		audioSampleSize == props.audioSampleSize &&
+		videoFormat == props.videoFormat && pixelFormat == props.pixelFormat &&
+		sdiTransport == props.sdiTransport && sdi4kTransport == props.sdi4kTransport &&
+		audioNumChannels == props.audioNumChannels && audioSampleSize == props.audioSampleSize &&
 		audioSampleRate == props.audioSampleRate);
 }
 
@@ -303,19 +312,16 @@ NTV2Channel OutputProps::Channel() const
 	// KONA1 -- Has 2 framestores but only 1 bi-directional SDI widget
 	if (deviceID == DEVICE_ID_KONA1) {
 		return NTV2_CHANNEL2;
-	} else if ((deviceID == DEVICE_ID_IO4K ||
-		    deviceID == DEVICE_ID_IO4KPLUS) &&
+	} else if ((deviceID == DEVICE_ID_IO4K || deviceID == DEVICE_ID_IO4KPLUS) &&
 		   outputDest == NTV2_OUTPUTDESTINATION_SDI5) {
 		// IO4K/IO4K+ SDI Monitor - Use framestore 4 but SDI5
 		return NTV2_CHANNEL4;
 	}
 
 	if (NTV2_OUTPUT_DEST_IS_HDMI(outputDest)) {
-		if (aja::CardCanDoHDMIMonitorOutput(deviceID) &&
-		    NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
+		if (aja::CardCanDoHDMIMonitorOutput(deviceID) && NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
 			return NTV2_CHANNEL3;
-		return static_cast<NTV2Channel>(
-			NTV2DeviceGetNumFrameStores(deviceID) - 1);
+		return static_cast<NTV2Channel>(NTV2DeviceGetNumFrameStores(deviceID) - 1);
 	}
 
 	return NTV2OutputDestinationToChannel(outputDest);
@@ -327,14 +333,15 @@ NTV2Channel OutputProps::Framestore() const
 		return NTV2_CHANNEL1;
 	} else if (deviceID == DEVICE_ID_KONA1) {
 		return NTV2_CHANNEL2;
-	} else if (deviceID == DEVICE_ID_IO4K ||
-		   deviceID == DEVICE_ID_IO4KPLUS) {
+	} else if (deviceID == DEVICE_ID_IO4K || deviceID == DEVICE_ID_IO4KPLUS) {
 		// SDI Monitor output uses framestore 4
 		if (ioSelect == IOSelection::SDI5)
 			return NTV2_CHANNEL4;
 	}
 	// HDMI Monitor output uses framestore 4
 	if (ioSelect == IOSelection::HDMIMonitorOut) {
+		if (deviceID == DEVICE_ID_KONA5_8K)
+			return NTV2_CHANNEL4;
 		if (NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
 			return NTV2_CHANNEL3;
 		else

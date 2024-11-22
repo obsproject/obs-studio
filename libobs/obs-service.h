@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,6 +31,17 @@ extern "C" {
 struct obs_service_resolution {
 	int cx;
 	int cy;
+};
+
+/* NOTE: Odd numbers are reserved for custom info from third-party protocols */
+enum obs_service_connect_info {
+	OBS_SERVICE_CONNECT_INFO_SERVER_URL = 0,
+	OBS_SERVICE_CONNECT_INFO_STREAM_ID = 2,
+	OBS_SERVICE_CONNECT_INFO_STREAM_KEY = 2, // Alias of OBS_SERVICE_CONNECT_INFO_STREAM_ID
+	OBS_SERVICE_CONNECT_INFO_USERNAME = 4,
+	OBS_SERVICE_CONNECT_INFO_PASSWORD = 6,
+	OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE = 8,
+	OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN = 10,
 };
 
 struct obs_service_info {
@@ -70,29 +81,34 @@ struct obs_service_info {
 
 	bool (*deprecated_1)();
 
-	void (*apply_encoder_settings)(void *data,
-				       obs_data_t *video_encoder_settings,
+	void (*apply_encoder_settings)(void *data, obs_data_t *video_encoder_settings,
 				       obs_data_t *audio_encoder_settings);
 
 	void *type_data;
 	void (*free_type_data)(void *type_data);
 
+	/* TODO: Rename to 'get_preferred_output_type' once a API/ABI break happen */
 	const char *(*get_output_type)(void *data);
 
-	void (*get_supported_resolutions)(
-		void *data, struct obs_service_resolution **resolutions,
-		size_t *count);
+	void (*get_supported_resolutions)(void *data, struct obs_service_resolution **resolutions, size_t *count);
 	void (*get_max_fps)(void *data, int *fps);
 
-	void (*get_max_bitrate)(void *data, int *video_bitrate,
-				int *audio_bitrate);
+	void (*get_max_bitrate)(void *data, int *video_bitrate, int *audio_bitrate);
+
+	const char **(*get_supported_video_codecs)(void *data);
+
+	const char *(*get_protocol)(void *data);
+
+	const char **(*get_supported_audio_codecs)(void *data);
+
+	const char *(*get_connect_info)(void *data, uint32_t type);
+
+	bool (*can_try_to_connect)(void *data);
 };
 
-EXPORT void obs_register_service_s(const struct obs_service_info *info,
-				   size_t size);
+EXPORT void obs_register_service_s(const struct obs_service_info *info, size_t size);
 
-#define obs_register_service(info) \
-	obs_register_service_s(info, sizeof(struct obs_service_info))
+#define obs_register_service(info) obs_register_service_s(info, sizeof(struct obs_service_info))
 
 #ifdef __cplusplus
 }

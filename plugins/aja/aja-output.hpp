@@ -38,12 +38,10 @@ public:
 	enum {
 		// min queue sizes computed in AJAOutput
 		kVideoQueueMaxSize = 15,
-		kAudioQueueMaxSize =
-			96, // ~(48000 / 1024 samples per audio_frame) * 2sec
+		kAudioQueueMaxSize = 96, // ~(48000 / 1024 samples per audio_frame) * 2sec
 	};
 
-	AJAOutput(CNTV2Card *card, const std::string &cardID,
-		  const std::string &outputID, UWord deviceIndex,
+	AJAOutput(CNTV2Card *card, const std::string &cardID, const std::string &outputID, UWord deviceIndex,
 		  const NTV2DeviceID deviceID);
 
 	~AJAOutput();
@@ -61,8 +59,8 @@ public:
 	void CacheConnections(const NTV2XptConnections &cnx);
 	void ClearConnections();
 
-	void GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
-				 NTV2TestPatternSelect pattern);
+	void GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf, NTV2TestPatternSelect pattern,
+				 uint32_t frameNum);
 
 	void QueueVideoFrame(struct video_data *frame, size_t size);
 	void QueueAudioFrames(struct audio_data *frames, size_t size);
@@ -71,8 +69,7 @@ public:
 	size_t VideoQueueSize();
 	size_t AudioQueueSize();
 
-	bool HaveEnoughAudio(size_t needAudioSize);
-	void DMAAudioFromQueue(NTV2AudioSystem audioSys);
+	void DMAAudioFromQueue(NTV2AudioSystem audioSys, uint32_t channels, uint32_t sampleRate, uint32_t sampleSize);
 	void DMAVideoFromQueue();
 
 	void CreateThread(bool enable = false);
@@ -88,11 +85,10 @@ public:
 	uint32_t mAudioPlayCursor;
 	uint32_t mAudioWriteCursor;
 	uint32_t mAudioWrapAddress;
-	uint32_t mAudioRate;
 
-	uint64_t mAudioQueueSamples;
-	uint64_t mAudioWriteSamples;
-	uint64_t mAudioPlaySamples;
+	uint64_t mAudioQueueBytes;
+	uint64_t mAudioWriteBytes;
+	uint64_t mAudioPlayBytes;
 
 	uint32_t mNumCardFrames;
 	uint32_t mFirstCardFrame;
@@ -112,9 +108,14 @@ public:
 	uint64_t mLastVideoTS;
 	uint64_t mLastAudioTS;
 
+	int64_t mOutputDelay;
+	int64_t mVideoMax;
 	int64_t mVideoDelay;
+	int64_t mVideoSync;
+	int64_t mVideoAdjust;
+	int64_t mAudioMax;
 	int64_t mAudioDelay;
-	int64_t mAudioVideoSync;
+	int64_t mAudioSync;
 	int64_t mAudioAdjust;
 	int64_t mLastStatTime;
 #ifdef AJA_WRITE_DEBUG_WAV
@@ -122,15 +123,11 @@ public:
 #endif
 
 private:
-	void calculate_card_frame_indices(uint32_t numFrames, NTV2DeviceID id,
-					  NTV2Channel channel,
-					  NTV2VideoFormat vf,
+	void reset_frame_counts();
+	void calculate_card_frame_indices(uint32_t numFrames, NTV2DeviceID id, NTV2Channel channel, NTV2VideoFormat vf,
 					  NTV2PixelFormat pf);
-
-	uint32_t get_frame_count();
-
-	void dma_audio_samples(NTV2AudioSystem audioSys, uint32_t *data,
-			       size_t size);
+	uint32_t get_card_play_count();
+	void dma_audio_samples(NTV2AudioSystem audioSys, uint32_t *data, size_t size);
 
 	CNTV2Card *mCard;
 

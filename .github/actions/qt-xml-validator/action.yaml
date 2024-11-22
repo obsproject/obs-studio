@@ -1,0 +1,61 @@
+name: Validate UI XML
+description: Validates Qt UI XML files
+inputs:
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run
+    required: false
+    default: never
+  workingDirectory:
+    description: Working directory for checks
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::qt-xml-validator action requires an Linux-based or macOS-based runner."
+        exit 2
+
+    - name: Install xmllint 🕵️
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        : Install xmllint 🕵️
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+        echo ::group::Installing libxml2-utils
+        sudo apt-get -qq update
+        sudo apt-get install --no-install-recommends -y libxml2-utils
+        echo ::endgroup::
+
+    - name: Register Annotations 📝
+      uses: korelstar/xmllint-problem-matcher@1bd292d642ddf3d369d02aaa8b262834d61198c0
+
+    - name: Check for Changed Files ✅
+      uses: ./.github/actions/check-changes
+      id: checks
+      with:
+        checkGlob: 'UI/forms/**/*.ui'
+
+    - name: Validate XML 💯
+      if: fromJSON(steps.checks.outputs.hasChangedFiles)
+      id: result
+      shell: bash
+      env:
+        CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
+      run: |
+        : Validate XML 💯
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+        CHANGED_FILES=($(echo "${CHANGED_FILES//[\[\]\'\"]/}" | tr "," "\n"))
+
+        if (( ${#CHANGED_FILES[@]} )); then
+          if [[ '${{ inputs.failCondition }}' == never ]]; then set +e; fi
+          xmllint \
+            --schema ${{ github.workspace }}/UI/forms/XML-Schema-Qt5.15.xsd \
+            --noout "${CHANGED_FILES[@]}"
+        fi

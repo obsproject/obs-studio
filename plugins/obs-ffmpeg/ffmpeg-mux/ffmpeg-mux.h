@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,6 +22,7 @@
 enum ffm_packet_type {
 	FFM_PACKET_VIDEO,
 	FFM_PACKET_AUDIO,
+	FFM_PACKET_CHANGE_FILE,
 };
 
 #define FFM_SUCCESS 0

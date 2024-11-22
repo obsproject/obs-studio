@@ -23,7 +23,7 @@ for implementing outputs
 Output Definition Structure (obs_output_info)
 ---------------------------------------------
 
-.. type:: struct obs_output_info
+.. struct:: obs_output_info
 
    Output definition structure.
 
@@ -234,7 +234,17 @@ Output Definition Structure (obs_output_info)
    This variable specifies which codecs are supported by an encoded
    output, separated by semicolon.
 
-   (Optional, though recommended)
+   Required if **OBS_OUTPUT_SERVICE** flag is set, otherwise
+   recommended.
+
+.. member:: const char *obs_output_info.protocols
+
+   This variable specifies which protocols are supported by an output,
+   separated by semicolon.
+
+   Required only if **OBS_OUTPUT_SERVICE** flag is set.
+
+   .. versionadded:: 29.1
 
 .. _output_signal_handler_reference:
 
@@ -316,7 +326,7 @@ General Output Functions
 .. function:: obs_output_t *obs_output_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 
    Creates an output with the specified settings.
-  
+
    The "output" context is used for anything related to outputting the
    final video/audio mix (E.g. streaming or recording).  Use
    obs_output_release to release it.
@@ -333,19 +343,10 @@ General Output Functions
 
 ---------------------
 
-.. function:: void obs_output_addref(obs_output_t *output)
-
-   Adds a reference to an output.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_output_get_ref()` instead.
-
----------------------
-
 .. function:: obs_output_t *obs_output_get_ref(obs_output_t *output)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_output_release()`.
 
 ---------------------
 
@@ -373,9 +374,23 @@ General Output Functions
 
 ---------------------
 
+.. function:: bool obs_weak_output_references_output(obs_weak_output_t *weak, obs_output_t *output)
+
+   Compares a weak output reference with an output.
+
+   :return: Whether the weak output reference ties back to the specified output
+
+---------------------
+
 .. function:: const char *obs_output_get_name(const obs_output_t *output)
 
    :return: The name of the output
+
+---------------------
+
+.. function:: const char *obs_output_get_id(const obs_output_t *output)
+
+   :return: The output's type identifier string
 
 ---------------------
 
@@ -403,7 +418,7 @@ General Output Functions
 .. function:: void obs_output_set_delay(obs_output_t *output, uint32_t delay_sec, uint32_t flags)
 
    Sets the current output delay, in seconds (if the output supports delay)
-  
+
    If delay is currently active, it will set the delay value, but will not
    affect the current delay, it will only affect the next time the output is
    activated.
@@ -443,7 +458,8 @@ General Output Functions
 
 .. function:: obs_data_t *obs_output_defaults(const char *id)
 
-   :return: An incremented reference to the output's default settings
+   :return: An incremented reference to the output's default settings.
+            Release with :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -488,19 +504,22 @@ General Output Functions
 
 .. function:: obs_data_t *obs_output_get_settings(const obs_output_t *output)
 
-   :return: An incremented reference to the output's settings
+   :return: An incremented reference to the output's settings. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
 .. function:: signal_handler_t *obs_output_get_signal_handler(const obs_output_t *output)
 
-   :return: The signal handler of the output
+   :return: The signal handler of the output. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
 .. function:: proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output)
 
-   :return: The procedure handler of the output
+   :return: The procedure handler of the output. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
@@ -603,7 +622,7 @@ General Output Functions
 
    Sets the preferred scaled resolution for this output.  Set width and height
    to 0 to disable scaling.
-  
+
    If this output uses an encoder, it will call obs_encoder_set_scaled_size on
    the encoder before the stream is started.  If the encoder is already active,
    then this function will trigger a warning and do nothing.
@@ -614,6 +633,18 @@ General Output Functions
               uint32_t obs_output_get_height(const obs_output_t *output)
 
    :return: The width/height of the output
+
+---------------------
+
+.. function:: void obs_output_output_caption_text1(obs_output_t *output, const char *text)
+              void obs_output_output_caption_text2(obs_output_t *output, const char *text, double display_duration)
+
+   Outputs captions from the specified text input. *text1* is the same as
+   *text2*, except that the *display_duration* is hardcoded to 2.0 seconds.
+
+   *display_duration* represents the minimum quantity of time that a given
+   caption can be displayed for before moving onto the next caption in the
+   queue.
 
 ---------------------
 
@@ -641,10 +672,16 @@ General Output Functions
 ---------------------
 
 .. function:: const char *obs_output_get_supported_video_codecs(const obs_output_t *output)
+              const char *obs_get_output_supported_video_codecs(const char *id)
               const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
+              const char *obs_get_output_supported_audio_codecs(const char *id)
 
    :return: Supported video/audio codecs of an encoded output, separated
-            by semicolen
+            by semicolon
+
+   .. versionadded:: 29.1
+      :c:func:`obs_get_output_supported_video_codecs` and
+      :c:func:`obs_get_output_supported_audio_codecs`
 
 ---------------------
 
@@ -654,6 +691,86 @@ General Output Functions
    :return: The output capability flags
 
 ---------------------
+
+.. function:: const char *obs_output_get_protocols(const obs_output_t *output)
+
+   :return: Supported protocols, separated by semicolon. Always NULL if the
+            output is not **OBS_OUTPUT_SERVICE**.
+
+   .. versionadded:: 29.1
+
+---------------------
+
+.. function:: bool obs_is_output_protocol_registered(const char *protocol)
+
+   Check if one of the registered output use the given protocol.
+
+   :return:                 A boolean showing if an output with the given
+                            protocol is registered
+
+   .. versionadded:: 29.1
+
+---------------------
+
+.. function:: bool obs_enum_output_protocols(size_t idx, char **protocol)
+
+   Enumerates all registered protocol.
+
+   .. versionadded:: 29.1
+
+---------------------
+
+.. function:: void obs_enum_output_types_with_protocol(const char *protocol, void *data, bool (*enum_cb)(void *data, const char *id))
+
+   Enumerates through a callback all available output types for the given protocol.
+
+   :param protocol: Protocol of the outputs to enumerate
+   :param data:     Data passed to the callback
+   :param enum_cb:  Callback used when a matching output is found, the id
+                    of the output is passed to the callback
+   :return:         When all outputs are enumerated or if the callback return *false*
+
+   .. versionadded:: 29.1
+
+---------------------
+
+.. function:: void obs_output_add_packet_callback(obs_output_t *output, void (*packet_cb)(obs_output_t *output,
+              struct encoder_packet *pkt, struct encoder_packet_time *pkt_time, void *param), void *param)
+
+   Register a packet callback function for the output. The callback is invoked for each compressed
+   packet just before sending to the service. This packet callback mechanism is the preferred method
+   for all packet-level processing that is not required to be implemented in libobs. Any reallocation
+   of the packet buffer, if necessary, must be done with functions in `libobs\util\bmem.h`, otherwise
+   a memory leak may occur. Never use `memset()` to clear the packet buffer, as the buffer data is
+   needed for subsequent callback processing.
+
+   :param output:     The output to register the packet_cb() function against
+   :param packet_cb:  Function pointer to the callback function
+   :param param:      Data passed to the callback
+   :return:           When the callback is added
+
+   packet_cb() arguments:
+   :param output:     The output associated with the invoked callback function
+   :param pkt:        Compressed data packet (audio or video)
+   :param pkt_time:   encoder_packet_time structure associated with the data packet
+   :param param:      Data passed to the callback
+
+   .. versionadded:: 31.0
+
+---------------------
+
+.. function:: void obs_output_remove_packet_callback(obs_output_t *output, void (*packet_cb)(obs_output_t *output,
+              struct encoder_packet *pkt, struct encoder_packet_time *pkt_time, void *param), void *param)
+
+   Remove a packet callback function for the output, that had been previously registered with
+   `obs_output_add_packet_callback()`.
+
+   :param output:     The output to remove the packet_cb() function against
+   :param packet_cb:  Function pointer to the callback function
+   :param param:      Data passed to the callback
+   :return:           When the callback is removed
+
+   .. versionadded:: 31.0
 
 Functions used by outputs
 -------------------------
@@ -667,9 +784,13 @@ Functions used by outputs
 ---------------------
 
 .. function:: void obs_output_set_video_conversion(obs_output_t *output, const struct video_scale_info *conversion)
+              const struct video_scale_info *obs_output_get_video_conversion(obs_output_t *output)
 
-   Optionally sets the video conversion information.  Only used by raw
-   outputs.
+   Optionally sets/gets the video conversion information.  Only used by
+   raw outputs.
+
+   .. versionadded:: 29.1
+     :c:func:`obs_output_get_video_conversion`
 
    Relevant data types used with this function:
 
@@ -677,39 +798,84 @@ Functions used by outputs
 
    enum video_format {
            VIDEO_FORMAT_NONE,
-   
-           /* planar 420 format */
+
+           /* planar 4:2:0 formats */
            VIDEO_FORMAT_I420, /* three-plane */
            VIDEO_FORMAT_NV12, /* two-plane, luma and packed chroma */
-   
-           /* packed 422 formats */
+
+           /* packed 4:2:2 formats */
            VIDEO_FORMAT_YVYU,
            VIDEO_FORMAT_YUY2, /* YUYV */
            VIDEO_FORMAT_UYVY,
-   
+
            /* packed uncompressed formats */
            VIDEO_FORMAT_RGBA,
            VIDEO_FORMAT_BGRA,
            VIDEO_FORMAT_BGRX,
            VIDEO_FORMAT_Y800, /* grayscale */
-   
+
            /* planar 4:4:4 */
            VIDEO_FORMAT_I444,
+
+           /* more packed uncompressed formats */
+           VIDEO_FORMAT_BGR3,
+
+           /* planar 4:2:2 */
+           VIDEO_FORMAT_I422,
+
+           /* planar 4:2:0 with alpha */
+           VIDEO_FORMAT_I40A,
+
+           /* planar 4:2:2 with alpha */
+           VIDEO_FORMAT_I42A,
+
+           /* planar 4:4:4 with alpha */
+           VIDEO_FORMAT_YUVA,
+
+           /* packed 4:4:4 with alpha */
+           VIDEO_FORMAT_AYUV,
+
+           /* planar 4:2:0 format, 10 bpp */
+           VIDEO_FORMAT_I010, /* three-plane */
+           VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+           /* planar 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_I210,
+
+           /* planar 4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_I412,
+
+           /* planar 4:4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_YA2L,
+
+           /* planar 4:2:2 format, 16 bpp */
+           VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+           /* planar 4:4:4 format, 16 bpp */
+           VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
+
+           /* packed 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_V210,
+
+           /* packed uncompressed 10-bit format */
+           VIDEO_FORMAT_R10L,
    };
-   
+
    enum video_colorspace {
            VIDEO_CS_DEFAULT,
            VIDEO_CS_601,
            VIDEO_CS_709,
            VIDEO_CS_SRGB,
+           VIDEO_CS_2100_PQ,
+           VIDEO_CS_2100_HLG,
    };
-   
+
    enum video_range_type {
            VIDEO_RANGE_DEFAULT,
            VIDEO_RANGE_PARTIAL,
            VIDEO_RANGE_FULL
    };
-   
+
    struct video_scale_info {
            enum video_format     format;
            uint32_t              width;
@@ -731,18 +897,18 @@ Functions used by outputs
 
    enum audio_format {
            AUDIO_FORMAT_UNKNOWN,
-   
+
            AUDIO_FORMAT_U8BIT,
            AUDIO_FORMAT_16BIT,
            AUDIO_FORMAT_32BIT,
            AUDIO_FORMAT_FLOAT,
-   
+
            AUDIO_FORMAT_U8BIT_PLANAR,
            AUDIO_FORMAT_16BIT_PLANAR,
            AUDIO_FORMAT_32BIT_PLANAR,
            AUDIO_FORMAT_FLOAT_PLANAR,
    };
-   
+
    enum speaker_layout {
            SPEAKERS_UNKNOWN,
            SPEAKERS_MONO,
@@ -756,7 +922,7 @@ Functions used by outputs
            SPEAKERS_7POINT1_SURROUND,
            SPEAKERS_SURROUND,
    };
-   
+
    struct audio_convert_info {
            uint32_t            samples_per_sec;
            enum audio_format   format;
@@ -765,44 +931,41 @@ Functions used by outputs
 
 ---------------------
 
-.. function:: bool obs_output_can_begin_data_capture(const obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_can_begin_data_capture(const obs_output_t *output, int flags)
 
    Determines whether video/audio capture (encoded or raw) is able to
-   start.  Call this before initializing any output data to ensure that
+   start.  Call this before initializing any output state to ensure that
    the output can start.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if data capture can begin
 
 ---------------------
 
-.. function:: bool obs_output_initialize_encoders(obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_initialize_encoders(obs_output_t *output, int flags)
 
    Initializes any encoders/services associated with the output.  This
    must be called for encoded outputs before calling
    :c:func:`obs_output_begin_data_capture()`.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if successful, *false* otherwise
 
 ---------------------
 
-.. function:: bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
+.. function:: bool obs_output_begin_data_capture(obs_output_t *output, int flags)
 
    Begins data capture from raw media or encoders.  This is typically
    when the output actually activates (starts) internally.  Video/audio
    data will start being sent to the callbacks of the output.
 
-   :param flags: Set to 0 to initialize both audio/video, otherwise a
-                 bitwise OR combination of OBS_OUTPUT_VIDEO and/or
-                 OBS_OUTPUT_AUDIO
+   :param output: The output
+   :param flags: Reserved. Set this to 0.
    :return:      *true* if successful, *false* otherwise.  Typically the
                  return value does not need to be checked if
-                 :c:func:`obs_output_can_begin_data_capture()` was
+                 :c:func:`obs_output_can_begin_data_capture2()` was
                  called
 
 ---------------------
@@ -853,4 +1016,4 @@ Functions used by outputs
 
 .. ---------------------------------------------------------------------------
 
-.. _libobs/obs-output.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-output.h
+.. _libobs/obs-output.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-output.h

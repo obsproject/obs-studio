@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -26,12 +26,10 @@
 
 #include "c99defs.h"
 
-#ifdef _MSC_VER
-#include "../../deps/w32-pthreads/pthread.h"
-#else
+#ifndef _MSC_VER
 #include <errno.h>
-#include <pthread.h>
 #endif
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,8 +17,7 @@
 
 #include "gl-subsystem.h"
 
-static bool gl_init_zsbuffer(struct gs_zstencil_buffer *zs, uint32_t width,
-			     uint32_t height)
+static bool gl_init_zsbuffer(struct gs_zstencil_buffer *zs, uint32_t width, uint32_t height)
 {
 	glGenRenderbuffers(1, &zs->buffer);
 	if (!gl_success("glGenRenderbuffers"))
@@ -53,8 +52,7 @@ static inline GLenum get_attachment(enum gs_zstencil_format format)
 	return 0;
 }
 
-gs_zstencil_t *device_zstencil_create(gs_device_t *device, uint32_t width,
-				      uint32_t height,
+gs_zstencil_t *device_zstencil_create(gs_device_t *device, uint32_t width, uint32_t height,
 				      enum gs_zstencil_format format)
 {
 	struct gs_zstencil_buffer *zs;

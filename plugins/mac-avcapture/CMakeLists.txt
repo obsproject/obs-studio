@@ -1,45 +1,64 @@
-project(mac-avcapture)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-find_library(AVFOUNDATION AVFoundation)
-find_library(COCOA Cocoa)
-find_library(COREFOUNDATION CoreFoundation)
-find_library(COREMEDIA CoreMedia)
-find_library(COREVIDEO CoreVideo)
-find_library(COCOA Cocoa)
-find_library(COREMEDIAIO CoreMediaIO)
+add_library(mac-avcapture-legacy MODULE)
+add_library(OBS::avcapture-legacy ALIAS mac-avcapture-legacy)
 
-include_directories(${AVFOUNDATION}
-                    ${COCOA}
-                    ${COREFOUNDATION}
-                    ${COREMEDIA}
-                    ${COREVIDEO}
-                    ${COREMEDIAIO}
-		    ${COCOA})
+target_sources(mac-avcapture-legacy PRIVATE legacy/av-capture.mm legacy/left-right.hpp legacy/scope-guard.hpp)
+target_include_directories(mac-avcapture-legacy PRIVATE legacy)
 
-set(mac-avcapture_HEADERS
-	left-right.hpp
-	scope-guard.hpp
-	)
+target_link_libraries(
+  mac-avcapture-legacy
+  PRIVATE
+    OBS::libobs
+    "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreFoundation.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,CoreMediaIO.framework>"
+)
 
-set(mac-avcapture_SOURCES
-	av-capture.mm)
+set_target_properties_obs(
+  mac-avcapture-legacy
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES
+)
 
-set_source_files_properties(av-capture.mm
-	PROPERTIES COMPILE_FLAGS "-fobjc-arc")
+add_library(mac-avcapture MODULE)
+add_library(OBS::avcapture ALIAS mac-avcapture)
 
-add_library(mac-avcapture MODULE
-	${mac-avcapture_SOURCES}
-	${mac-avcapture_HEADERS})
+target_sources(
+  mac-avcapture
+  PRIVATE
+    plugin-main.m
+    plugin-main.h
+    plugin-properties.m
+    plugin-properties.h
+    OBSAVCapture.m
+    OBSAVCapture.h
+    OBSAVCapturePresetInfo.m
+    OBSAVCapturePresetInfo.h
+)
 
-target_link_libraries(mac-avcapture
-	libobs
-	${AVFOUNDATION}
-	${COCOA}
-	${COREFOUNDATION}
-	${COREMEDIA}
-	${COREVIDEO}
-	${COREMEDIAIO}
-	${COCOA})
-set_target_properties(mac-avcapture PROPERTIES FOLDER "plugins")
+target_link_libraries(mac-avcapture PRIVATE OBS::libobs)
 
-install_obs_plugin_with_data(mac-avcapture data)
+set_target_properties_obs(
+  mac-avcapture
+  PROPERTIES FOLDER plugins
+             PREFIX ""
+             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES
+             XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
+             XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES
+             XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES YES
+             XCODE_ATTRIBUTE_CLANG_MODULES_AUTOLINK YES
+             XCODE_ATTRIBUTE_GCC_STRICT_ALIASING YES
+)
+
+string(TIMESTAMP CURRENT_YEAR "%Y")
+set_target_xcode_properties(
+  mac-avcapture
+  PROPERTIES INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2023-${CURRENT_YEAR} Patrick Heyer"
+)

@@ -1,4 +1,4 @@
-#include "ui-validation.hpp"
+#include "moc_ui-validation.cpp"
 
 #include <obs.hpp>
 #include <QString>
@@ -44,8 +44,7 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 	messageBox.setWindowTitle(QTStr("NoSources.Title"));
 	messageBox.setText(msg);
 
-	QAbstractButton *yesButton =
-		messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
+	QAbstractButton *yesButton = messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
 	messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
 	messageBox.setIcon(QMessageBox::Question);
 	messageBox.exec();
@@ -56,37 +55,31 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 		return true;
 }
 
-StreamSettingsAction
-UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
+StreamSettingsAction UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 {
-	// Custom services can user API key in URL or user/pass combo.
-	// So only check there is a URL
-	char const *serviceType = obs_service_get_type(service);
-	bool isCustomUrlService = (strcmp(serviceType, "rtmp_custom") == 0);
-
-	char const *streamUrl = obs_service_get_url(service);
-	char const *streamKey = obs_service_get_key(service);
-
-	bool hasStreamUrl = (streamUrl != NULL && streamUrl[0] != '\0');
-	bool hasStreamKey = ((streamKey != NULL && streamKey[0] != '\0') ||
-			     isCustomUrlService);
-
-	if (hasStreamUrl && hasStreamKey)
+	if (obs_service_can_try_to_connect(service))
 		return StreamSettingsAction::ContinueStream;
 
-	QString msg;
+	char const *serviceType = obs_service_get_type(service);
+	bool isCustomService = (strcmp(serviceType, "rtmp_custom") == 0);
 
-	if (!hasStreamUrl && !hasStreamKey) {
+	char const *streamUrl = obs_service_get_connect_info(service, OBS_SERVICE_CONNECT_INFO_SERVER_URL);
+	char const *streamKey = obs_service_get_connect_info(service, OBS_SERVICE_CONNECT_INFO_STREAM_KEY);
+
+	bool streamUrlMissing = !(streamUrl != NULL && streamUrl[0] != '\0');
+	bool streamKeyMissing = !(streamKey != NULL && streamKey[0] != '\0');
+
+	QString msg;
+	if (!isCustomService && streamUrlMissing && streamKeyMissing) {
 		msg = QTStr("Basic.Settings.Stream.MissingUrlAndApiKey");
-	} else if (!hasStreamKey) {
+	} else if (!isCustomService && streamKeyMissing) {
 		msg = QTStr("Basic.Settings.Stream.MissingStreamKey");
 	} else {
 		msg = QTStr("Basic.Settings.Stream.MissingUrl");
 	}
 
 	QMessageBox messageBox(parent);
-	messageBox.setWindowTitle(
-		QTStr("Basic.Settings.Stream.MissingSettingAlert"));
+	messageBox.setWindowTitle(QTStr("Basic.Settings.Stream.MissingSettingAlert"));
 	messageBox.setText(msg);
 
 	QPushButton *cancel;
@@ -99,9 +92,7 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 #define ACCEPT_BUTTON QMessageBox::NoRole
 #define REJECT_BUTTON QMessageBox::NoRole
 #endif
-	settings = messageBox.addButton(
-		QTStr("Basic.Settings.Stream.StreamSettingsWarning"),
-		ACCEPT_BUTTON);
+	settings = messageBox.addButton(QTStr("Basic.Settings.Stream.StreamSettingsWarning"), ACCEPT_BUTTON);
 	cancel = messageBox.addButton(QTStr("Cancel"), REJECT_BUTTON);
 
 	messageBox.setDefaultButton(settings);

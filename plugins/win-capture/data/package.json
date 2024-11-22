@@ -1,0 +1,11 @@
+{
+    "$schema": "schema/package-schema.json",
+    "url": "https://obsproject.com/obs2_update/win-capture/v1",
+    "version": 4,
+    "files": [
+        {
+            "name": "compatibility.json",
+            "version": 4
+        }
+    ]
+}

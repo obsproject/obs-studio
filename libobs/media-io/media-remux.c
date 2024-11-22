@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Ruwen Hahn <palana@stunned.de>
+    Copyright (C) 2023 by Ruwen Hahn <palana@stunned.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,15 +22,9 @@
 #include "../util/platform.h"
 
 #include <libavformat/avformat.h>
-
+#include <libavcodec/version.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#if LIBAVCODEC_VERSION_MAJOR >= 58
-#define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
-#else
-#define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
-#endif
 
 struct media_remux_job {
 	int64_t in_size;
@@ -53,8 +47,7 @@ static inline bool init_input(media_remux_job_t job, const char *in_filename)
 {
 	int ret = avformat_open_input(&job->ifmt_ctx, in_filename, NULL, NULL);
 	if (ret < 0) {
-		blog(LOG_ERROR, "media_remux: Could not open input file '%s'",
-		     in_filename);
+		blog(LOG_ERROR, "media_remux: Could not open input file '%s'", in_filename);
 		return false;
 	}
 
@@ -75,8 +68,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 {
 	int ret;
 
-	avformat_alloc_output_context2(&job->ofmt_ctx, NULL, NULL,
-				       out_filename);
+	avformat_alloc_output_context2(&job->ofmt_ctx, NULL, NULL, out_filename);
 	if (!job->ofmt_ctx) {
 		blog(LOG_ERROR, "media_remux: Could not create output context");
 		return false;
@@ -84,41 +76,43 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 
 	for (unsigned i = 0; i < job->ifmt_ctx->nb_streams; i++) {
 		AVStream *in_stream = job->ifmt_ctx->streams[i];
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 		AVStream *out_stream = avformat_new_stream(job->ofmt_ctx, NULL);
-#else
-		AVStream *out_stream = avformat_new_stream(
-			job->ofmt_ctx, in_stream->codec->codec);
-#endif
 		if (!out_stream) {
 			blog(LOG_ERROR, "media_remux: Failed to allocate output"
 					" stream");
 			return false;
 		}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-		ret = avcodec_parameters_copy(out_stream->codecpar,
-					      in_stream->codecpar);
-#else
-		ret = avcodec_copy_context(out_stream->codec, in_stream->codec);
-#endif
+		ret = avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar);
 
 		if (ret < 0) {
-			blog(LOG_ERROR,
-			     "media_remux: Failed to copy parameters");
+			blog(LOG_ERROR, "media_remux: Failed to copy parameters");
 			return false;
 		}
 
 		av_dict_copy(&out_stream->metadata, in_stream->metadata, 0);
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-		out_stream->codecpar->codec_tag = 0;
-#else
-		out_stream->codec->codec_tag = 0;
-		out_stream->time_base = out_stream->codec->time_base;
-		if (job->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_H;
-#endif
+		if (in_stream->codecpar->codec_id == AV_CODEC_ID_HEVC && job->ofmt_ctx->oformat->codec_tag &&
+		    av_codec_get_id(job->ofmt_ctx->oformat->codec_tag, MKTAG('h', 'v', 'c', '1')) ==
+			    out_stream->codecpar->codec_id) {
+			// Tag HEVC files with industry standard HVC1 tag for wider device compatibility
+			// when HVC1 tag is supported by out stream codec
+			out_stream->codecpar->codec_tag = MKTAG('h', 'v', 'c', '1');
+		} else {
+			// Otherwise tag 0 to let FFmpeg automatically select the appropriate tag
+			out_stream->codecpar->codec_tag = 0;
+		}
+
+		if (in_stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+
+			av_channel_layout_default(&out_stream->codecpar->ch_layout,
+						  in_stream->codecpar->ch_layout.nb_channels);
+			/* The avutil default channel layout for 5 channels is
+			 * 5.0, which OBS does not support. Manually set 5
+			 * channels to 4.1. */
+			if (in_stream->codecpar->ch_layout.nb_channels == 5)
+				out_stream->codecpar->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+		}
 	}
 
 #ifndef NDEBUG
@@ -126,8 +120,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 #endif
 
 	if (!(job->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
-		ret = avio_open(&job->ofmt_ctx->pb, out_filename,
-				AVIO_FLAG_WRITE);
+		ret = avio_open(&job->ofmt_ctx->pb, out_filename, AVIO_FLAG_WRITE);
 		if (ret < 0) {
 			blog(LOG_ERROR,
 			     "media_remux: Failed to open output"
@@ -140,8 +133,7 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 	return true;
 }
 
-bool media_remux_job_create(media_remux_job_t *job, const char *in_filename,
-			    const char *out_filename)
+bool media_remux_job_create(media_remux_job_t *job, const char *in_filename, const char *out_filename)
 {
 	if (!job)
 		return false;
@@ -159,10 +151,6 @@ bool media_remux_job_create(media_remux_job_t *job, const char *in_filename,
 
 	init_size(*job, in_filename);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	av_register_all();
-#endif
-
 	if (!init_input(*job, in_filename))
 		goto fail;
 
@@ -176,23 +164,17 @@ fail:
 	return false;
 }
 
-static inline void process_packet(AVPacket *pkt, AVStream *in_stream,
-				  AVStream *out_stream)
+static inline void process_packet(AVPacket *pkt, AVStream *in_stream, AVStream *out_stream)
 {
-	pkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base,
-				    out_stream->time_base,
+	pkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base, out_stream->time_base,
 				    AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-	pkt->dts = av_rescale_q_rnd(pkt->dts, in_stream->time_base,
-				    out_stream->time_base,
+	pkt->dts = av_rescale_q_rnd(pkt->dts, in_stream->time_base, out_stream->time_base,
 				    AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-	pkt->duration = (int)av_rescale_q(pkt->duration, in_stream->time_base,
-					  out_stream->time_base);
+	pkt->duration = (int)av_rescale_q(pkt->duration, in_stream->time_base, out_stream->time_base);
 	pkt->pos = -1;
 }
 
-static inline int process_packets(media_remux_job_t job,
-				  media_remux_progress_callback callback,
-				  void *data)
+static inline int process_packets(media_remux_job_t job, media_remux_progress_callback callback, void *data)
 {
 	AVPacket pkt;
 
@@ -222,8 +204,7 @@ static inline int process_packets(media_remux_job_t job,
 		av_packet_unref(&pkt);
 
 		if (ret < 0) {
-			blog(LOG_ERROR, "media_remux: Error muxing packet: %s",
-			     av_err2str(ret));
+			blog(LOG_ERROR, "media_remux: Error muxing packet: %s", av_err2str(ret));
 
 			/* Treat "Invalid data found when processing input" and
 			 * "Invalid argument" as non-fatal */
@@ -237,8 +218,7 @@ static inline int process_packets(media_remux_job_t job,
 	return ret;
 }
 
-bool media_remux_job_process(media_remux_job_t job,
-			     media_remux_progress_callback callback, void *data)
+bool media_remux_job_process(media_remux_job_t job, media_remux_progress_callback callback, void *data)
 {
 	int ret;
 	bool success = false;
@@ -248,8 +228,7 @@ bool media_remux_job_process(media_remux_job_t job,
 
 	ret = avformat_write_header(job->ofmt_ctx, NULL);
 	if (ret < 0) {
-		blog(LOG_ERROR, "media_remux: Error opening output file: %s",
-		     av_err2str(ret));
+		blog(LOG_ERROR, "media_remux: Error opening output file: %s", av_err2str(ret));
 		return success;
 	}
 
@@ -261,8 +240,7 @@ bool media_remux_job_process(media_remux_job_t job,
 
 	ret = av_write_trailer(job->ofmt_ctx);
 	if (ret < 0) {
-		blog(LOG_ERROR, "media_remux: av_write_trailer: %s",
-		     av_err2str(ret));
+		blog(LOG_ERROR, "media_remux: av_write_trailer: %s", av_err2str(ret));
 		success = false;
 	}
 

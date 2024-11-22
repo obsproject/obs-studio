@@ -92,10 +92,10 @@ typedef tls_ctx *TLS_CTX;
 #define TLS_client(ctx,s)	\
   s = malloc(sizeof(mbedtls_ssl_context));\
   mbedtls_ssl_init(s);\
-  mbedtls_ssl_setup(s, &ctx->conf);\
-	mbedtls_ssl_config_defaults(&ctx->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);\
+  mbedtls_ssl_config_defaults(&ctx->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);\
+  mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg);\
   mbedtls_ssl_conf_authmode(&ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
-	mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg)
+  mbedtls_ssl_setup(s, &ctx->conf)
 
 #define TLS_setfd(s,fd)	mbedtls_ssl_set_bio(s, fd, mbedtls_net_send, mbedtls_net_recv, NULL)
 #define TLS_connect(s)	mbedtls_ssl_handshake(s)
@@ -256,6 +256,7 @@ extern "C"
         uint8_t m_hasAbsTimestamp;	/* timestamp absolute or relative? */
         int m_nChannel;
         uint32_t m_nTimeStamp;	/* timestamp */
+        uint32_t m_nLastWireTimeStamp; /* timestamp that was encoded when sending */
         int32_t m_nInfoField2;	/* last 4 bytes in a long header */
         uint32_t m_nBodySize;
         uint32_t m_nBytesRead;
@@ -265,6 +266,7 @@ extern "C"
 
     typedef struct RTMPSockBuf
     {
+        struct sockaddr_storage sb_addr; /* address of remote */
         SOCKET sb_socket;
         int sb_size;		/* number of unprocessed bytes in buffer */
         char *sb_start;		/* pointer into sb_pBuffer of next byte to process */
@@ -328,7 +330,8 @@ extern "C"
         int swfAge;
 
         int protocol;
-        int timeout;		/* connection timeout in seconds */
+        int receiveTimeout;	/* connection receive timeout in seconds */
+        int sendTimeout;	/* connection send timeout in seconds */
 
 #define RTMP_PUB_NAME   0x0001  /* send login to server */
 #define RTMP_PUB_RESP   0x0002  /* send salted password hash */
@@ -342,10 +345,6 @@ extern "C"
 
 #ifdef CRYPTO
 #define RTMP_SWF_HASHLEN	32
-        void *dh;			/* for encryption */
-        void *rc4keyIn;
-        void *rc4keyOut;
-
         uint32_t SWFSize;
         uint8_t SWFHash[RTMP_SWF_HASHLEN];
         char SWFVerificationResponse[RTMP_SWF_HASHLEN+10];
@@ -491,7 +490,7 @@ extern "C"
 
     int RTMP_Connect(RTMP *r, RTMPPacket *cp);
     struct sockaddr;
-    int RTMP_Connect0(RTMP *r, struct sockaddr *svc, socklen_t addrlen);
+    int RTMP_Connect0(RTMP *r, SOCKET socket_fd);
     int RTMP_Connect1(RTMP *r, RTMPPacket *cp);
 
     int RTMP_ReadPacket(RTMP *r, RTMPPacket *packet);
@@ -513,6 +512,7 @@ extern "C"
     void RTMP_Reset(RTMP *r);
     void RTMP_Close(RTMP *r);
     RTMP *RTMP_Alloc(void);
+    void RTMP_TLS_Init(RTMP *r);
     void RTMP_TLS_Free(RTMP *r);
     void RTMP_Free(RTMP *r);
     void RTMP_EnableWrite(RTMP *r);

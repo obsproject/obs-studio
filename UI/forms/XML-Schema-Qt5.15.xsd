@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Includes modified casing due to Qt Creator 5.0.0: cursorshape -> cursorShape -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
     <xs:element name="ui" type="UI" />
@@ -456,7 +457,7 @@
             <xs:element name="color" type="Color" />
             <xs:element name="cstring" type="xs:string" />
             <xs:element name="cursor" type="xs:integer" />
-            <xs:element name="cursorshape" type="xs:string" />
+            <xs:element name="cursorShape" type="xs:string" />
             <xs:element name="enum" type="xs:string" />
             <xs:element name="font" type="Font" />
             <xs:element name="iconset" type="ResourceIcon" />

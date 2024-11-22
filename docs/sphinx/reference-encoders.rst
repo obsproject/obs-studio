@@ -22,7 +22,7 @@ is the dedicated header for implementing encoders
 Encoder Definition Structure (obs_encoder_info)
 -----------------------------------------------
 
-.. type:: struct obs_encoder_info
+.. struct:: obs_encoder_info
 
    Encoder definition structure.
 
@@ -77,7 +77,7 @@ Encoder Definition Structure (obs_encoder_info)
             number would be 1024
 
 .. member:: void (*obs_encoder_info.get_defaults)(obs_data_t *settings)
-            void (*obs_encoder_info.get_defaults2)(void *type_data, obs_data_t *settings)
+            void (*obs_encoder_info.get_defaults2)(obs_data_t *settings, void *type_data)
 
    Sets the default settings for this encoder.
 
@@ -89,6 +89,11 @@ Encoder Definition Structure (obs_encoder_info)
             obs_properties_t *(*obs_encoder_info.get_properties2)(void *data, void *type_data)
 
    Gets the property information of this encoder.
+
+   :param  data:  The implementation data associated with this encoder.
+                  This value can be null (e.g., when
+                  :c:func:`obs_get_encoder_properties()` is called on the
+                  encoder type), make sure to handle this gracefully.
 
    (Optional)
 
@@ -158,12 +163,15 @@ Encoder Definition Structure (obs_encoder_info)
    values:
 
    - **OBS_ENCODER_CAP_DEPRECATED** - Encoder is deprecated
+   - **OBS_ENCODER_CAP_ROI** - Encoder supports region of interest feature
+   - **OBS_ENCODER_CAP_SCALING** - Encoder implements its own scaling logic,
+                                   desiring to receive unscaled frames
 
 
 Encoder Packet Structure (encoder_packet)
 -----------------------------------------
 
-.. type:: struct encoder_packet
+.. struct:: encoder_packet
 
    Encoder packet structure.
 
@@ -239,7 +247,7 @@ Encoder Packet Structure (encoder_packet)
 Raw Frame Data Structure (encoder_frame)
 ----------------------------------------
 
-.. type:: struct encoder_frame
+.. struct:: encoder_frame
 
    Raw frame data structure.
 
@@ -259,6 +267,29 @@ Raw Frame Data Structure (encoder_frame)
 
    Presentation timestamp.
 
+
+Encoder Region of Interest Structure (obs_encoder_roi)
+------------------------------------------------------
+
+.. struct:: obs_encoder_roi
+
+   Encoder region of interest structure.
+
+   .. versionadded:: 30.1
+
+.. member:: uint32_t top
+            uint32_t bottom
+            uint32_t left
+            uint32_t right
+
+   The rectangle edges of the region are specified as number of pixels from the input video's top and left edges (i.e. row/column 0).
+
+.. member:: float priority
+
+   Priority is specified as a float value between *-1.0f* and *1*.
+   These are converted to encoder-specific values by the encoder.
+   Values above 0 tell the encoder to increase quality for that region, values below tell it to worsen it.
+   Not all encoders support negative values and they may be ignored.
 
 General Encoder Functions
 -------------------------
@@ -283,7 +314,7 @@ General Encoder Functions
 .. function:: obs_encoder_t *obs_video_encoder_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 
    Creates a video encoder with the specified settings.
-  
+
    The "encoder" context is used for encoding video/audio data.  Use
    obs_encoder_release to release it.
 
@@ -302,7 +333,7 @@ General Encoder Functions
 .. function:: obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name, obs_data_t *settings, size_t mixer_idx, obs_data_t *hotkey_data)
 
    Creates an audio encoder with the specified settings.
-  
+
    The "encoder" context is used for encoding video/audio data.  Use
    :c:func:`obs_encoder_release()` to release it.
 
@@ -320,19 +351,10 @@ General Encoder Functions
 
 ---------------------
 
-.. function:: void obs_encoder_addref(obs_encoder_t *encoder)
-
-   Adds a reference to an encoder.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_encoder_get_ref()` instead.
-
----------------------
-
 .. function:: obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_encoder_release()`.
 
 ---------------------
 
@@ -421,6 +443,12 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder)
+
+   :return: The mixer index for the audio track which is encoded by the encoder
+
+---------------------
+
 .. function:: void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder, enum video_format format)
               enum video_format obs_encoder_get_preferred_video_format(const obs_encoder_t *encoder)
 
@@ -428,7 +456,7 @@ General Encoder Functions
    Sets the preferred video format for a video encoder.  If the encoder can use
    the format specified, it will force a conversion to that format if the
    obs output format does not match the preferred format.
-  
+
    If the format is set to VIDEO_FORMAT_NONE, will revert to the default
    functionality of converting only when absolutely necessary.
 
@@ -437,7 +465,8 @@ General Encoder Functions
 .. function:: obs_data_t *obs_encoder_defaults(const char *id)
               obs_data_t *obs_encoder_get_defaults(const obs_encoder_t *encoder)
 
-   :return: An incremented reference to the encoder's default settings
+   :return: An incremented reference to the encoder's default settings.
+            Release with :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -461,19 +490,22 @@ General Encoder Functions
 
 .. function:: obs_data_t *obs_encoder_get_settings(const obs_encoder_t *encoder)
 
-   :return: An incremented reference to the encoder's settings
+   :return: An incremented reference to the encoder's settings. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
 .. function:: signal_handler_t *obs_encoder_get_signal_handler(const obs_encoder_t *encoder)
 
-   :return: The signal handler of the encoder
+   :return: The signal handler of the encoder. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
 .. function:: proc_handler_t *obs_encoder_get_proc_handler(const obs_encoder_t *encoder)
 
-   :return: The procedure handler of the encoder
+   :return: The procedure handler of the encoder. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
@@ -495,16 +527,66 @@ General Encoder Functions
 ---------------------
 
 .. function:: video_t *obs_encoder_video(const obs_encoder_t *encoder)
+              video_t *obs_encoder_parent_video(const obs_encoder_t *encoder)
               audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
 
    :return: The video/audio handler associated with this encoder, or
-            *NULL* if none or not a matching encoder type
+            *NULL* if none or not a matching encoder type.
+            *parent_video* returns the "original" video handler
+            associated with this encoder, regardless of whether an FPS
+            divisor is set.
 
 ---------------------
 
 .. function:: bool obs_encoder_active(const obs_encoder_t *encoder)
 
    :return: *true* if the encoder is active, *false* otherwise
+
+---------------------
+
+.. function:: bool obs_encoder_add_roi(obs_encoder_t *encoder, const struct obs_encoder_roi *roi)
+
+    Adds a new region of interest to the encoder if ROI feature is supported.
+
+   :return: *true* if adding succeeded, *false* otherwise.
+
+   .. versionadded:: 30.1
+
+---------------------
+
+.. function:: bool obs_encoder_has_roi(obs_encoder_t *encoder)
+
+   :return: *true* if encoder has ROI regions set, *false* otherwise.
+
+   .. versionadded:: 30.1
+
+---------------------
+
+.. function:: void obs_encoder_clear_roi(obs_encoder_t *encoder)
+
+    Clear region of interest list, if any.
+
+   .. versionadded:: 30.1
+
+---------------------
+
+.. function:: void obs_encoder_enum_roi(obs_encoder_t *encoder, void (*enum_proc)(void *, struct obs_encoder_roi *), void *param)
+
+    Enumerate currently configured ROIs by invoking callback for each entry, in reverse order of addition (i.e. most recent to oldest).
+
+    **Note:** If the encoder has scaling enabled the struct passed to the callback will be scaled accordingly.
+
+   .. versionadded:: 30.1
+
+---------------------
+
+.. function:: uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder)
+
+   Encoders shall refresh their ROI configuration if the increment value changes.
+
+   :return: Increment/revision of ROI list
+
+   .. versionadded:: 30.1
 
 ---------------------
 
@@ -519,4 +601,4 @@ Functions used by encoders
 
 .. ---------------------------------------------------------------------------
 
-.. _libobs/obs-encoder.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-encoder.h
+.. _libobs/obs-encoder.h: https://github.com/obsproject/obs-studio/blob/master/libobs/obs-encoder.h

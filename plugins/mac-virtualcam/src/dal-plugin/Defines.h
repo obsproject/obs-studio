@@ -17,5 +17,5 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
-#define PLUGIN_NAME @"mac-virtualcam"
+#define PLUGIN_NAME    @"mac-virtualcam"
 #define PLUGIN_VERSION @"1.3.0"

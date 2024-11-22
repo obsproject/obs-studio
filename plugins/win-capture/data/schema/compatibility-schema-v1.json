@@ -1,0 +1,99 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "format_version": {
+            "type": "integer",
+            "description": "Version identifier for parsing this file."
+        },
+        "entries": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of application affected by this entry."
+                    },
+                    "translation_key": {
+                        "type": "string",
+                        "description": "Translation key OBS should use to provide a localized message."
+                    },
+                    "executable": {
+                        "type": "string",
+                        "description": "Executable name to match."
+                    },
+                    "window_class": {
+                        "type": "string",
+                        "description": "Window class to match."
+                    },
+                    "window_title": {
+                        "type": "string",
+                        "description": "Window title to match."
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Message displayed to the user about the issue (if not translated)."
+                    },
+                    "url": {
+                        "$ref": "#/definitions/URL",
+                        "description": "Link that provides additional info about the compatibility issue."
+                    },
+                    "window_capture": {
+                        "type": "boolean",
+                        "description": "Whether or not the issue affects BitBlt window capture.",
+                        "default": false
+                    },
+                    "window_capture_wgc": {
+                        "type": "boolean",
+                        "description": "Whether or not the issue affects WGC window capture.",
+                        "default": false
+                    },
+                    "game_capture": {
+                        "type": "boolean",
+                        "description": "Whether or not the issue affects game capture.",
+                        "default": false
+                    },
+                    "severity": {
+                        "$ref": "#/definitions/severityLevels",
+                        "description": "Level of notice displayed to the user. 0 = Info, 1 = Warning, 2 = Error.\nError should be used if an application cannot be captured using the affected source type(s).\nWarning should be used for correctable errors (e.g., change a game or source setting)\nInfo should be used to provide tips in cases where there is no strict incompatibility.",
+                        "default": 0
+                    },
+                    "match_flags": {
+                        "$ref": "#/definitions/matchFlags",
+                        "description": "Match Flags: 1 = exe, 2 = title, 4 = class. Can be combined."
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "name",
+                    "message",
+                    "match_flags"
+                ]
+            },
+            "additionalItems": true
+        }
+    },
+    "additionalProperties": true,
+    "required": [
+        "format_version",
+        "entries"
+    ],
+    "definitions": {
+        "URL": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^(https?://.+)?"
+        },
+        "matchFlags": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+        },
+        "severityLevels": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2
+        }
+    }
+}

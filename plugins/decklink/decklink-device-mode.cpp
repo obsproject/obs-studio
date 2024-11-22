@@ -1,22 +1,16 @@
 #include "decklink-device-mode.hpp"
 
-DeckLinkDeviceMode::DeckLinkDeviceMode(IDeckLinkDisplayMode *mode, long long id)
-	: id(id), mode(mode)
+DeckLinkDeviceMode::DeckLinkDeviceMode(IDeckLinkDisplayMode *mode, long long id) : id(id), mode(mode)
 {
 	if (mode == nullptr)
 		return;
-
-	mode->AddRef();
 
 	decklink_string_t decklinkStringName;
 	if (mode->GetName(&decklinkStringName) == S_OK)
 		DeckLinkStringToStdString(decklinkStringName, name);
 }
 
-DeckLinkDeviceMode::DeckLinkDeviceMode(const std::string &name, long long id)
-	: id(id), mode(nullptr), name(name)
-{
-}
+DeckLinkDeviceMode::DeckLinkDeviceMode(const std::string &name, long long id) : id(id), mode(nullptr), name(name) {}
 
 DeckLinkDeviceMode::~DeckLinkDeviceMode(void) {}
 
@@ -42,6 +36,14 @@ int DeckLinkDeviceMode::GetHeight()
 		return mode->GetHeight();
 
 	return 0;
+}
+
+bool DeckLinkDeviceMode::GetFrameRate(BMDTimeValue *frameDuration, BMDTimeScale *timeScale)
+{
+	if (mode != nullptr)
+		return SUCCEEDED(mode->GetFrameRate(frameDuration, timeScale));
+
+	return false;
 }
 
 BMDDisplayModeFlags DeckLinkDeviceMode::GetDisplayModeFlags(void) const

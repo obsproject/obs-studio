@@ -7,6 +7,8 @@
 
 static void bitstream_test(void **state)
 {
+	UNUSED_PARAMETER(state);
+
 	struct bitstream_reader reader;
 	uint8_t data[6] = {0x34, 0xff, 0xe1, 0x23, 0x91, 0x45};
 

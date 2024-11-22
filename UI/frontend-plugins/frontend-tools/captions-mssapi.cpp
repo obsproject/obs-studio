@@ -1,7 +1,6 @@
 #include "captions-mssapi.hpp"
 
-#define do_log(type, format, ...) \
-	blog(type, "[Captions] " format, ##__VA_ARGS__)
+#define do_log(type, format, ...) blog(type, "[Captions] " format, ##__VA_ARGS__)
 
 #define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
@@ -29,8 +28,8 @@ try : captions_handler(callback, AUDIO_FORMAT_16BIT, 16000) {
 	if (FAILED(hr))
 		throw HRError("SpFindBestToken failed", hr);
 
-	hr = CoCreateInstance(CLSID_SpInprocRecognizer, nullptr, CLSCTX_ALL,
-			      __uuidof(ISpRecognizer), (void **)&recognizer);
+	hr = CoCreateInstance(CLSID_SpInprocRecognizer, nullptr, CLSCTX_ALL, __uuidof(ISpRecognizer),
+			      (void **)&recognizer);
 	if (FAILED(hr))
 		throw HRError("CoCreateInstance for recognizer failed", hr);
 
@@ -46,8 +45,7 @@ try : captions_handler(callback, AUDIO_FORMAT_16BIT, 16000) {
 	if (FAILED(hr))
 		throw HRError("CreateRecoContext failed", hr);
 
-	ULONGLONG interest = SPFEI(SPEI_RECOGNITION) |
-			     SPFEI(SPEI_END_SR_STREAM);
+	ULONGLONG interest = SPFEI(SPEI_RECOGNITION) | SPFEI(SPEI_END_SR_STREAM);
 	hr = context->SetInterest(interest, interest);
 	if (FAILED(hr))
 		throw HRError("SetInterest failed", hr);
@@ -130,8 +128,7 @@ try {
 				ISpRecoResult *result = event.RecoResult();
 
 				CoTaskMemPtr<wchar_t> text;
-				hr = result->GetText((ULONG)-1, (ULONG)-1, true,
-						     &text, nullptr);
+				hr = result->GetText((ULONG)-1, (ULONG)-1, true, &text, nullptr);
 				if (FAILED(hr))
 					continue;
 
@@ -164,8 +161,7 @@ void mssapi_captions::pcm_data(const void *data, size_t frames)
 		audio->PushAudio(data, frames);
 }
 
-captions_handler_info mssapi_info = {
-	[]() -> std::string { return "Microsoft Speech-to-Text"; },
-	[](captions_cb cb, const std::string &lang) -> captions_handler * {
-		return new mssapi_captions(cb, lang);
-	}};
+captions_handler_info mssapi_info = {[]() -> std::string { return "Microsoft Speech-to-Text"; },
+				     [](captions_cb cb, const std::string &lang) -> captions_handler * {
+					     return new mssapi_captions(cb, lang);
+				     }};

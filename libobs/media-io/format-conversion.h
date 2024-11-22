@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,34 +27,23 @@ extern "C" {
  * Functions for converting to and from packed 444 YUV
  */
 
-EXPORT void compress_uyvx_to_i420(const uint8_t *input, uint32_t in_linesize,
-				  uint32_t start_y, uint32_t end_y,
-				  uint8_t *output[],
-				  const uint32_t out_linesize[]);
+EXPORT void compress_uyvx_to_i420(const uint8_t *input, uint32_t in_linesize, uint32_t start_y, uint32_t end_y,
+				  uint8_t *output[], const uint32_t out_linesize[]);
 
-EXPORT void compress_uyvx_to_nv12(const uint8_t *input, uint32_t in_linesize,
-				  uint32_t start_y, uint32_t end_y,
-				  uint8_t *output[],
-				  const uint32_t out_linesize[]);
+EXPORT void compress_uyvx_to_nv12(const uint8_t *input, uint32_t in_linesize, uint32_t start_y, uint32_t end_y,
+				  uint8_t *output[], const uint32_t out_linesize[]);
 
-EXPORT void convert_uyvx_to_i444(const uint8_t *input, uint32_t in_linesize,
-				 uint32_t start_y, uint32_t end_y,
-				 uint8_t *output[],
-				 const uint32_t out_linesize[]);
+EXPORT void convert_uyvx_to_i444(const uint8_t *input, uint32_t in_linesize, uint32_t start_y, uint32_t end_y,
+				 uint8_t *output[], const uint32_t out_linesize[]);
 
-EXPORT void decompress_nv12(const uint8_t *const input[],
-			    const uint32_t in_linesize[], uint32_t start_y,
-			    uint32_t end_y, uint8_t *output,
-			    uint32_t out_linesize);
+EXPORT void decompress_nv12(const uint8_t *const input[], const uint32_t in_linesize[], uint32_t start_y,
+			    uint32_t end_y, uint8_t *output, uint32_t out_linesize);
 
-EXPORT void decompress_420(const uint8_t *const input[],
-			   const uint32_t in_linesize[], uint32_t start_y,
-			   uint32_t end_y, uint8_t *output,
-			   uint32_t out_linesize);
+EXPORT void decompress_420(const uint8_t *const input[], const uint32_t in_linesize[], uint32_t start_y, uint32_t end_y,
+			   uint8_t *output, uint32_t out_linesize);
 
-EXPORT void decompress_422(const uint8_t *input, uint32_t in_linesize,
-			   uint32_t start_y, uint32_t end_y, uint8_t *output,
-			   uint32_t out_linesize, bool leading_lum);
+EXPORT void decompress_422(const uint8_t *input, uint32_t in_linesize, uint32_t start_y, uint32_t end_y,
+			   uint8_t *output, uint32_t out_linesize, bool leading_lum);
 
 #ifdef __cplusplus
 }

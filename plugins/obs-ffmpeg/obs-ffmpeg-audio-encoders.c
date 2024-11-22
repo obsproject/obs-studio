@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2014 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,21 +16,19 @@
 ******************************************************************************/
 
 #include <util/base.h>
-#include <util/circlebuf.h>
+#include <util/deque.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-module.h>
 
 #include <libavutil/channel_layout.h>
-#include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 
 #include "obs-ffmpeg-formats.h"
 #include "obs-ffmpeg-compat.h"
 
-#define do_log(level, format, ...)                                  \
-	blog(level, "[FFmpeg %s encoder: '%s'] " format, enc->type, \
-	     obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[FFmpeg %s encoder: '%s'] " format, enc->type, obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -41,7 +39,7 @@ struct enc_encoder {
 
 	const char *type;
 
-	AVCodec *codec;
+	const AVCodec *codec;
 	AVCodecContext *context;
 
 	uint8_t *samples[MAX_AV_PLANES];
@@ -57,55 +55,6 @@ struct enc_encoder {
 	int frame_size_bytes;
 };
 
-static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
-{
-	switch (layout) {
-	case SPEAKERS_UNKNOWN:
-		return 0;
-	case SPEAKERS_MONO:
-		return AV_CH_LAYOUT_MONO;
-	case SPEAKERS_STEREO:
-		return AV_CH_LAYOUT_STEREO;
-	case SPEAKERS_2POINT1:
-		return AV_CH_LAYOUT_SURROUND;
-	case SPEAKERS_4POINT0:
-		return AV_CH_LAYOUT_4POINT0;
-	case SPEAKERS_4POINT1:
-		return AV_CH_LAYOUT_4POINT1;
-	case SPEAKERS_5POINT1:
-		return AV_CH_LAYOUT_5POINT1_BACK;
-	case SPEAKERS_7POINT1:
-		return AV_CH_LAYOUT_7POINT1;
-	}
-
-	/* shouldn't get here */
-	return 0;
-}
-
-static inline enum speaker_layout
-convert_ff_channel_layout(uint64_t channel_layout)
-{
-	switch (channel_layout) {
-	case AV_CH_LAYOUT_MONO:
-		return SPEAKERS_MONO;
-	case AV_CH_LAYOUT_STEREO:
-		return SPEAKERS_STEREO;
-	case AV_CH_LAYOUT_SURROUND:
-		return SPEAKERS_2POINT1;
-	case AV_CH_LAYOUT_4POINT0:
-		return SPEAKERS_4POINT0;
-	case AV_CH_LAYOUT_4POINT1:
-		return SPEAKERS_4POINT1;
-	case AV_CH_LAYOUT_5POINT1_BACK:
-		return SPEAKERS_5POINT1;
-	case AV_CH_LAYOUT_7POINT1:
-		return SPEAKERS_7POINT1;
-	}
-
-	/* shouldn't get here */
-	return SPEAKERS_UNKNOWN;
-}
-
 static const char *aac_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -118,14 +67,46 @@ static const char *opus_getname(void *unused)
 	return obs_module_text("FFmpegOpus");
 }
 
+static const char *pcm_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegPCM16Bit");
+}
+
+static const char *pcm24_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegPCM24Bit");
+}
+
+static const char *pcm32_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegPCM32BitFloat");
+}
+
+static const char *alac_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegALAC");
+}
+
+static const char *flac_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("FFmpegFLAC");
+}
+
 static void enc_destroy(void *data)
 {
 	struct enc_encoder *enc = data;
 
 	if (enc->samples[0])
 		av_freep(&enc->samples[0]);
+
 	if (enc->context)
-		avcodec_close(enc->context);
+		avcodec_free_context(&enc->context);
+
 	if (enc->aframe)
 		av_frame_free(&enc->aframe);
 
@@ -136,6 +117,7 @@ static void enc_destroy(void *data)
 static bool initialize_codec(struct enc_encoder *enc)
 {
 	int ret;
+	int channels;
 
 	enc->aframe = av_frame_alloc();
 	if (!enc->aframe) {
@@ -146,16 +128,15 @@ static bool initialize_codec(struct enc_encoder *enc)
 	ret = avcodec_open2(enc->context, enc->codec, NULL);
 	if (ret < 0) {
 		struct dstr error_message = {0};
-		dstr_printf(&error_message, "Failed to open AAC codec: %s",
-			    av_err2str(ret));
+		dstr_printf(&error_message, "Failed to open AAC codec: %s", av_err2str(ret));
 		obs_encoder_set_last_error(enc->encoder, error_message.array);
 		dstr_free(&error_message);
 		warn("Failed to open AAC codec: %s", av_err2str(ret));
 		return false;
 	}
 	enc->aframe->format = enc->context->sample_fmt;
-	enc->aframe->channels = enc->context->channels;
-	enc->aframe->channel_layout = enc->context->channel_layout;
+	channels = enc->context->ch_layout.nb_channels;
+	enc->aframe->ch_layout = enc->context->ch_layout;
 	enc->aframe->sample_rate = enc->context->sample_rate;
 
 	enc->frame_size = enc->context->frame_size;
@@ -164,8 +145,7 @@ static bool initialize_codec(struct enc_encoder *enc)
 
 	enc->frame_size_bytes = enc->frame_size * (int)enc->audio_size;
 
-	ret = av_samples_alloc(enc->samples, NULL, enc->context->channels,
-			       enc->frame_size, enc->context->sample_fmt, 0);
+	ret = av_samples_alloc(enc->samples, NULL, channels, enc->frame_size, enc->context->sample_fmt, 0);
 	if (ret < 0) {
 		warn("Failed to create audio buffer: %s", av_err2str(ret));
 		return false;
@@ -190,16 +170,12 @@ static void init_sizes(struct enc_encoder *enc, audio_t *audio)
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
-static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
-			const char *type, const char *alt)
+static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char *type, const char *alt,
+			enum AVSampleFormat sample_format)
 {
 	struct enc_encoder *enc;
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	audio_t *audio = obs_encoder_audio(encoder);
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
-	avcodec_register_all();
-#endif
 
 	enc = bzalloc(sizeof(struct enc_encoder));
 	enc->encoder = encoder;
@@ -218,9 +194,16 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 		goto fail;
 	}
 
-	if (!bitrate) {
+	const AVCodecDescriptor *codec_desc = avcodec_descriptor_get(enc->codec->id);
+
+	if (!codec_desc) {
+		warn("Failed to get codec descriptor");
+		goto fail;
+	}
+
+	if (!bitrate && !(codec_desc->props & AV_CODEC_PROP_LOSSLESS)) {
 		warn("Invalid bitrate specified");
-		return NULL;
+		goto fail;
 	}
 
 	enc->context = avcodec_alloc_context3(enc->codec);
@@ -229,15 +212,50 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 		goto fail;
 	}
 
-	enc->context->bit_rate = bitrate * 1000;
+	if (codec_desc->props & AV_CODEC_PROP_LOSSLESS)
+		// Set by encoder on init, not known at this time
+		enc->context->bit_rate = 0;
+	else
+		enc->context->bit_rate = bitrate * 1000;
+
 	const struct audio_output_info *aoi;
 	aoi = audio_output_get_info(audio);
-	enc->context->channels = (int)audio_output_get_channels(audio);
-	enc->context->channel_layout = convert_speaker_layout(aoi->speakers);
+
+	av_channel_layout_default(&enc->context->ch_layout, (int)audio_output_get_channels(audio));
+	/* The avutil default channel layout for 5 channels is 5.0, which OBS
+	 * does not support. Manually set 5 channels to 4.1. */
+	if (aoi->speakers == SPEAKERS_4POINT1)
+		enc->context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+	/* AAC, ALAC, & FLAC default to 3.0 for 3 channels instead of 2.1.
+	 * Tell the encoder to deal with 2.1 as if it were 3.0. */
+	if (aoi->speakers == SPEAKERS_2POINT1)
+		enc->context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_SURROUND;
+	// ALAC supports 7.1 wide instead of regular 7.1.
+	if (aoi->speakers == SPEAKERS_7POINT1 && astrcmpi(enc->type, "alac") == 0)
+		enc->context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_7POINT1_WIDE_BACK;
+
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
-	enc->context->sample_fmt = enc->codec->sample_fmts
-					   ? enc->codec->sample_fmts[0]
-					   : AV_SAMPLE_FMT_FLTP;
+
+	if (enc->codec->sample_fmts) {
+		/* Check if the requested format is actually available for the specified
+		 * encoder. This may not always be the case due to FFmpeg changes or a
+		 * fallback being used (for example, when libopus is unavailable). */
+		const enum AVSampleFormat *fmt = enc->codec->sample_fmts;
+		while (*fmt != AV_SAMPLE_FMT_NONE) {
+			if (*fmt == sample_format) {
+				enc->context->sample_fmt = *fmt;
+				break;
+			}
+			fmt++;
+		}
+
+		/* Fall back to default if requested format was not found. */
+		if (enc->context->sample_fmt == AV_SAMPLE_FMT_NONE)
+			enc->context->sample_fmt = enc->codec->sample_fmts[0];
+	} else {
+		/* Fall back to planar float if codec does not specify formats. */
+		enc->context->sample_fmt = AV_SAMPLE_FMT_FLTP;
+	}
 
 	/* check to make sure sample rate is supported */
 	if (enc->codec->supported_samplerates) {
@@ -258,21 +276,17 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 			enc->context->sample_rate = closest;
 	}
 
-	if (strcmp(enc->codec->name, "aac") == 0) {
-		av_opt_set(enc->context->priv_data, "aac_coder", "fast", 0);
-	}
-
-	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %x\n",
-	     (int64_t)enc->context->bit_rate / 1000,
-	     (int)enc->context->channels,
-	     (unsigned int)enc->context->channel_layout);
-
+	char buf[256];
+	av_channel_layout_describe(&enc->context->ch_layout, buf, 256);
+	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %s, track: %d\n",
+	     (int64_t)enc->context->bit_rate / 1000, (int)enc->context->ch_layout.nb_channels, buf,
+	     (int)obs_encoder_get_mixer_index(enc->encoder) + 1);
 	init_sizes(enc, audio);
 
 	/* enable experimental FFmpeg encoder if the only one available */
 	enc->context->strict_std_compliance = -2;
 
-	enc->context->flags = CODEC_FLAG_GLOBAL_H;
+	enc->context->flags = AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	if (initialize_codec(enc))
 		return enc;
@@ -284,31 +298,54 @@ fail:
 
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "aac", NULL);
+	return enc_create(settings, encoder, "aac", NULL, AV_SAMPLE_FMT_NONE);
 }
 
 static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "libopus", "opus");
+	return enc_create(settings, encoder, "libopus", "opus", AV_SAMPLE_FMT_FLT);
 }
 
-static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
-		      bool *received_packet)
+static void *pcm_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "pcm_s16le", NULL, AV_SAMPLE_FMT_NONE);
+}
+
+static void *pcm24_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "pcm_s24le", NULL, AV_SAMPLE_FMT_NONE);
+}
+
+static void *pcm32_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "pcm_f32le", NULL, AV_SAMPLE_FMT_NONE);
+}
+
+static void *alac_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "alac", NULL, AV_SAMPLE_FMT_S32P);
+}
+
+static void *flac_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return enc_create(settings, encoder, "flac", NULL, AV_SAMPLE_FMT_S16);
+}
+
+static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet, bool *received_packet)
 {
 	AVRational time_base = {1, enc->context->sample_rate};
 	AVPacket avpacket = {0};
 	int got_packet;
 	int ret;
+	int channels;
 
 	enc->aframe->nb_samples = enc->frame_size;
-	enc->aframe->pts = av_rescale_q(
-		enc->total_samples, (AVRational){1, enc->context->sample_rate},
-		enc->context->time_base);
-
-	ret = avcodec_fill_audio_frame(
-		enc->aframe, enc->context->channels, enc->context->sample_fmt,
-		enc->samples[0], enc->frame_size_bytes * enc->context->channels,
-		1);
+	enc->aframe->pts =
+		av_rescale_q(enc->total_samples, (AVRational){1, enc->context->sample_rate}, enc->context->time_base);
+	enc->aframe->ch_layout = enc->context->ch_layout;
+	channels = enc->context->ch_layout.nb_channels;
+	ret = avcodec_fill_audio_frame(enc->aframe, channels, enc->context->sample_fmt, enc->samples[0],
+				       enc->frame_size_bytes * channels, 1);
 	if (ret < 0) {
 		warn("avcodec_fill_audio_frame failed: %s", av_err2str(ret));
 		return false;
@@ -316,7 +353,6 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 
 	enc->total_samples += enc->frame_size;
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	ret = avcodec_send_frame(enc->context, enc->aframe);
 	if (ret == 0)
 		ret = avcodec_receive_packet(enc->context, &avpacket);
@@ -325,10 +361,6 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 
 	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 		ret = 0;
-#else
-	ret = avcodec_encode_audio2(enc->context, &avpacket, enc->aframe,
-				    &got_packet);
-#endif
 	if (ret < 0) {
 		warn("avcodec_encode_audio2 failed: %s", av_err2str(ret));
 		return false;
@@ -346,14 +378,14 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 	packet->data = enc->packet_buffer.array;
 	packet->size = avpacket.size;
 	packet->type = OBS_ENCODER_AUDIO;
+	packet->keyframe = true;
 	packet->timebase_num = 1;
 	packet->timebase_den = (int32_t)enc->context->sample_rate;
-	av_free_packet(&avpacket);
+	av_packet_unref(&avpacket);
 	return true;
 }
 
-static bool enc_encode(void *data, struct encoder_frame *frame,
-		       struct encoder_packet *packet, bool *received_packet)
+static bool enc_encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet)
 {
 	struct enc_encoder *enc = data;
 
@@ -373,8 +405,7 @@ static obs_properties_t *enc_properties(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-	obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"), 64,
-			       1024, 32);
+	obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"), 64, 1024, 32);
 	return props;
 }
 
@@ -390,10 +421,20 @@ static bool enc_extra_data(void *data, uint8_t **extra_data, size_t *size)
 static void enc_audio_info(void *data, struct audio_convert_info *info)
 {
 	struct enc_encoder *enc = data;
+	int channels;
+	channels = enc->context->ch_layout.nb_channels;
 	info->format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
 	info->samples_per_sec = (uint32_t)enc->context->sample_rate;
-	info->speakers =
-		convert_ff_channel_layout(enc->context->channel_layout);
+	if (channels != 7 && channels <= 8)
+		info->speakers = (enum speaker_layout)(channels);
+	else
+		info->speakers = SPEAKERS_UNKNOWN;
+}
+
+static void enc_audio_info_float(void *data, struct audio_convert_info *info)
+{
+	enc_audio_info(data, info);
+	info->allow_clipping = true;
 }
 
 static size_t enc_frame_size(void *data)
@@ -405,7 +446,7 @@ static size_t enc_frame_size(void *data)
 struct obs_encoder_info aac_encoder_info = {
 	.id = "ffmpeg_aac",
 	.type = OBS_ENCODER_AUDIO,
-	.codec = "AAC",
+	.codec = "aac",
 	.get_name = aac_getname,
 	.create = aac_create,
 	.destroy = enc_destroy,
@@ -423,6 +464,81 @@ struct obs_encoder_info opus_encoder_info = {
 	.codec = "opus",
 	.get_name = opus_getname,
 	.create = opus_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info pcm_encoder_info = {
+	.id = "ffmpeg_pcm_s16le",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "pcm_s16le",
+	.get_name = pcm_getname,
+	.create = pcm_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info pcm24_encoder_info = {
+	.id = "ffmpeg_pcm_s24le",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "pcm_s24le",
+	.get_name = pcm24_getname,
+	.create = pcm24_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info pcm32_encoder_info = {
+	.id = "ffmpeg_pcm_f32le",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "pcm_f32le",
+	.get_name = pcm32_getname,
+	.create = pcm32_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info_float,
+};
+
+struct obs_encoder_info alac_encoder_info = {
+	.id = "ffmpeg_alac",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "alac",
+	.get_name = alac_getname,
+	.create = alac_create,
+	.destroy = enc_destroy,
+	.encode = enc_encode,
+	.get_frame_size = enc_frame_size,
+	.get_defaults = enc_defaults,
+	.get_properties = enc_properties,
+	.get_extra_data = enc_extra_data,
+	.get_audio_info = enc_audio_info,
+};
+
+struct obs_encoder_info flac_encoder_info = {
+	.id = "ffmpeg_flac",
+	.type = OBS_ENCODER_AUDIO,
+	.codec = "flac",
+	.get_name = flac_getname,
+	.create = flac_create,
 	.destroy = enc_destroy,
 	.encode = enc_encode,
 	.get_frame_size = enc_frame_size,

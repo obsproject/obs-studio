@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Hugh Bailey <obs.jim@gmail.com>
+ * Copyright (c) 2023 Lain Bailey <lain@obsproject.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -77,10 +77,7 @@ class ConfigFile {
 
 public:
 	inline ConfigFile() : config(NULL) {}
-	inline ConfigFile(ConfigFile &&other) noexcept : config(other.config)
-	{
-		other.config = nullptr;
-	}
+	inline ConfigFile(ConfigFile &&other) noexcept : config(other.config) { other.config = nullptr; }
 	inline ~ConfigFile() { config_close(config); }
 
 	inline bool Create(const char *file)
@@ -97,6 +94,12 @@ public:
 		config = newConfig;
 	}
 
+	inline int OpenString(const char *str)
+	{
+		Close();
+		return config_open_string(&config, str);
+	}
+
 	inline int Open(const char *file, config_open_type openType)
 	{
 		Close();
@@ -105,8 +108,7 @@ public:
 
 	inline int Save() { return config_save(config); }
 
-	inline int SaveSafe(const char *temp_ext,
-			    const char *backup_ext = nullptr)
+	inline int SaveSafe(const char *temp_ext, const char *backup_ext = nullptr)
 	{
 		return config_save_safe(config, temp_ext, backup_ext);
 	}
@@ -129,10 +131,7 @@ class TextLookup {
 
 public:
 	inline TextLookup(lookup_t *lookup = nullptr) : lookup(lookup) {}
-	inline TextLookup(TextLookup &&other) noexcept : lookup(other.lookup)
-	{
-		other.lookup = nullptr;
-	}
+	inline TextLookup(TextLookup &&other) noexcept : lookup(other.lookup) { other.lookup = nullptr; }
 	inline ~TextLookup() { text_lookup_destroy(lookup); }
 
 	inline TextLookup &operator=(lookup_t *val)

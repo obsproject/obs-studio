@@ -1,21 +1,29 @@
 # $FreeBSD$
 
 freebsd_instance:
-  image: freebsd-12-1-release-amd64
+  image: freebsd-14-1-release-amd64-ufs
 
 env:
   CIRRUS_CLONE_DEPTH: 1
+  CIRRUS_CLONE_SUBMODULES: true
 
 task:
   install_script:
   - pkg install -y
-    v4l_compat swig ffmpeg curl dbus fdk-aac fontconfig
-    freetype2 jackit jansson luajit mbedtls pulseaudio speexdsp
-    libsysinfo libudev-devd libv4l libx264 cmake ninja
-    mesa-libs lua52 pkgconf
-    qt5-svg qt5-qmake qt5-buildtools qt5-x11extras qt5-xml
+    cmake ninja binutils pkgconf curl
+    ffmpeg qt6-base qt6-svg jansson libsysinfo e2fsprogs-libuuid pulseaudio
+    alsa-lib pipewire v4l_compat libpci librist srt nlohmann-json uthash
+    qr-code-generator websocketpp asio vlc swig luajit jackit sndio fdk-aac
+    libdatachannel
   script:
-  - mkdir build
-  - cd build
-  - cmake -DUNIX_STRUCTURE=1 -GNinja ..
-  - ninja
+  - cmake
+    -S $(pwd)
+    -B build
+    -G Ninja
+    -DOBS_CMAKE_VERSION=3.0
+    -DENABLE_JACK:BOOL=ON
+    -DENABLE_SNDIO:BOOL=ON
+    -DENABLE_LIBFDK:BOOL=ON
+  - cmake
+    --build build
+    --config RelWithDebInfo
