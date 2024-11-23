@@ -13,14 +13,35 @@
 
 #include "moc_OBSProjector.cpp"
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN 1
+#include <Windows.h>
+#endif
+
 static QList<OBSProjector *> multiviewProjectors;
 
 static bool updatingMultiview = false, mouseSwitching, transitionOnDoubleClick;
 
+static bool IsWayland()
+{
+	return QApplication::platformName().contains("wayland");
+}
+
 OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, ProjectorType type_)
-	: OBSQTDisplay(widget, Qt::Window),
+	: QWidget(widget, Qt::Window),
+	  display(this),
 	  weakSource(OBSGetWeakRef(source_))
 {
+	QVBoxLayout *layout = new QVBoxLayout(this);
+	layout->addWidget(&display);
+	layout->setContentsMargins(0, 0, 0, 0);
+	setLayout(layout);
+
 	OBSSource source = GetSource();
 	if (source) {
 		sigs.emplace_back(obs_source_get_signal_handler(source), "rename", OBSSourceRenamed, this);
@@ -34,7 +55,7 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 
 	// Mark the window as a projector so SetDisplayAffinity
 	// can skip it
-	windowHandle()->setProperty("isOBSProjectorWindow", true);
+	display.windowHandle()->setProperty("isOBSProjectorWindow", true);
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 	// Prevents resizing of projector windows
@@ -72,11 +93,11 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 
 	auto addDrawCallback = [this]() {
 		bool isMultiview = type == ProjectorType::Multiview;
-		obs_display_add_draw_callback(GetDisplay(), isMultiview ? OBSRenderMultiview : OBSRender, this);
-		obs_display_set_background_color(GetDisplay(), 0x000000);
+		obs_display_add_draw_callback(display.GetDisplay(), isMultiview ? OBSRenderMultiview : OBSRender, this);
+		obs_display_set_background_color(display.GetDisplay(), 0x000000);
 	};
 
-	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+	connect(&display, &OBSQTDisplay::DisplayCreated, addDrawCallback);
 	connect(App(), &QGuiApplication::screenRemoved, this, &OBSProjector::ScreenRemoved);
 
 	if (type == ProjectorType::Multiview) {
@@ -95,9 +116,6 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 	ready = true;
 
 	show();
-
-	// We need it here to allow keyboard input in X11 to listen to Escape
-	activateWindow();
 }
 
 OBSProjector::~OBSProjector()
@@ -105,7 +123,7 @@ OBSProjector::~OBSProjector()
 	sigs.clear();
 
 	bool isMultiview = type == ProjectorType::Multiview;
-	obs_display_remove_draw_callback(GetDisplay(), isMultiview ? OBSRenderMultiview : OBSRender, this);
+	obs_display_remove_draw_callback(display.GetDisplay(), isMultiview ? OBSRenderMultiview : OBSRender, this);
 
 	OBSSource source = GetSource();
 	if (source)
@@ -224,7 +242,7 @@ void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *)
 
 void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 {
-	OBSQTDisplay::mouseDoubleClickEvent(event);
+	QWidget::mouseDoubleClickEvent(event);
 
 	if (!mouseSwitching)
 		return;
@@ -253,29 +271,33 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 
 void OBSProjector::mousePressEvent(QMouseEvent *event)
 {
-	OBSQTDisplay::mousePressEvent(event);
+	QWidget::mousePressEvent(event);
+
+	QMenu popup(this);
 
 	if (event->button() == Qt::RightButton) {
-		QMenu *projectorMenu = new QMenu(QTStr("Fullscreen"));
-		OBSBasic::AddProjectorMenuMonitors(projectorMenu, this, &OBSProjector::OpenFullScreenProjector);
+		if (!IsWayland()) {
+			QMenu *projectorMenu = new QMenu(QTStr("Fullscreen"));
+			OBSBasic::AddProjectorMenuMonitors(projectorMenu, this, &OBSProjector::OpenFullScreenProjector);
 
-		QMenu popup(this);
-		popup.addMenu(projectorMenu);
+			popup.addMenu(projectorMenu);
 
-		if (GetMonitor() > -1) {
-			popup.addAction(QTStr("Windowed"), this, &OBSProjector::OpenWindowedProjector);
-
-		} else if (!this->isMaximized()) {
-			popup.addAction(QTStr("ResizeProjectorWindowToContent"), this, &OBSProjector::ResizeToContent);
+			if (GetMonitor() > -1)
+				popup.addAction(QTStr("Windowed"), this, &OBSProjector::OpenWindowedProjector);
 		}
 
-		QAction *alwaysOnTopButton = new QAction(QTStr("Basic.MainMenu.View.AlwaysOnTop"), this);
-		alwaysOnTopButton->setCheckable(true);
-		alwaysOnTopButton->setChecked(isAlwaysOnTop);
+		if (!isMaximized() && GetMonitor() == -1)
+			popup.addAction(QTStr("ResizeProjectorWindowToContent"), this, &OBSProjector::ResizeToContent);
 
-		connect(alwaysOnTopButton, &QAction::toggled, this, &OBSProjector::AlwaysOnTopToggled);
+		if (!IsWayland()) {
+			QAction *alwaysOnTopButton = new QAction(QTStr("Basic.MainMenu.AlwaysOnTop"), this);
+			alwaysOnTopButton->setCheckable(true);
+			alwaysOnTopButton->setChecked(isAlwaysOnTop);
 
-		popup.addAction(alwaysOnTopButton);
+			connect(alwaysOnTopButton, &QAction::toggled, this, &OBSProjector::AlwaysOnTopToggled);
+
+			popup.addAction(alwaysOnTopButton);
+		}
 
 		popup.addAction(QTStr("Close"), this, &OBSProjector::EscapeTriggered);
 		popup.exec(QCursor::pos());
@@ -415,7 +437,6 @@ void OBSProjector::OpenFullScreenProjector()
 
 void OBSProjector::OpenWindowedProjector()
 {
-	showFullScreen();
 	showNormal();
 	setCursor(Qt::ArrowCursor);
 
@@ -466,6 +487,24 @@ void OBSProjector::closeEvent(QCloseEvent *event)
 {
 	EscapeTriggered();
 	event->accept();
+}
+
+bool OBSProjector::nativeEvent(const QByteArray &, void *message, qintptr *)
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		display.OnMove();
+		break;
+	case WM_DISPLAYCHANGE:
+		display.OnDisplayChange();
+	}
+#else
+	UNUSED_PARAMETER(message);
+#endif
+
+	return false;
 }
 
 bool OBSProjector::IsAlwaysOnTop() const
