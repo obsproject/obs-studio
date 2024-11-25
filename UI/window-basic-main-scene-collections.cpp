@@ -56,6 +56,21 @@ void updateSortedSceneCollections(const OBSSceneCollectionCache &collections)
 
 	sortedSceneCollections.swap(newList);
 }
+
+void cleanBackupCollision(const OBSSceneCollection &collection)
+{
+	std::filesystem::path backupFilePath = collection.collectionFile;
+	backupFilePath.replace_extension(".json.bak");
+
+	if (std::filesystem::exists(backupFilePath)) {
+		try {
+			std::filesystem::remove(backupFilePath);
+		} catch (std::filesystem::filesystem_error &) {
+			throw std::logic_error("Failed to remove pre-existing scene collection backup file: " +
+					       backupFilePath.u8string());
+		}
+	}
+}
 } // namespace
 
 // MARK: - Main Scene Collection Management Functions
@@ -66,6 +81,7 @@ void OBSBasic::SetupNewSceneCollection(const std::string &collectionName)
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
+	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
 
 	blog(LOG_INFO, "Created scene collection '%s' (clean, %s)", newCollection.name.c_str(),
@@ -114,6 +130,7 @@ void OBSBasic::SetupDuplicateSceneCollection(const std::string &collectionName)
 
 	obs_data_save_json_safe(collection, newCollection.collectionFile.u8string().c_str(), "tmp", nullptr);
 
+	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
 
 	blog(LOG_INFO, "Created scene collection '%s' (duplicate, %s)", newCollection.name.c_str(),
@@ -145,6 +162,7 @@ void OBSBasic::SetupRenameSceneCollection(const std::string &collectionName)
 
 	obs_data_save_json_safe(collection, newCollection.collectionFile.u8string().c_str(), "tmp", nullptr);
 
+	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
 	RemoveSceneCollection(currentCollection);
 
