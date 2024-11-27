@@ -787,7 +787,7 @@
     </widget>
     <widget class="QMenu" name="multiviewProjectorMenu">
      <property name="title">
-      <string>MultiviewProjector</string>
+      <string>Projector.Open.Multiview</string>
      </property>
     </widget>
     <action name="resetUI">
@@ -815,7 +815,6 @@
     <addaction name="stats"/>
     <addaction name="separator"/>
     <addaction name="multiviewProjectorMenu"/>
-    <addaction name="multiviewProjectorWindowed"/>
     <addaction name="separator"/>
     <addaction name="actionAlwaysOnTop"/>
    </widget>
@@ -2045,11 +2044,6 @@
   <action name="stats">
    <property name="text">
     <string>Basic.Stats</string>
-   </property>
-  </action>
-  <action name="multiviewProjectorWindowed">
-   <property name="text">
-    <string>MultiviewWindowed</string>
    </property>
   </action>
   <action name="resetDocks">
