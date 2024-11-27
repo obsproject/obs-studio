@@ -465,12 +465,16 @@ QToolTip {
 
 /* Context Menu */
 
+QMenu::indicator {
+    left: var(--padding_large);
+}
+
 QMenu::icon {
-    left: 4px;
+    left: var(--padding_xlarge);
 }
 
 QMenu::separator {
-    background: var(--button_bg);
+    background: var(--border_color);
     height: 1px;
     margin: var(--spacing_base) var(--spacing_large);
 }
@@ -509,6 +513,10 @@ SourceTree {
     padding: var(--spacing_base);
 }
 
+QMenu {
+    border: 1px solid var(--border_color);
+}
+
 QListWidget::item,
 SourceTreeItem,
 SceneTree::item {
@@ -517,9 +525,6 @@ SceneTree::item {
 
 QMenu::item {
     padding: var(--padding_large) var(--padding_menu);
-}
-
-QMenu::item {
     padding-right: 20px;
 }
 
@@ -917,6 +922,16 @@ QDateTimeEdit {
     padding-left: 10px;
 }
 
+QComboBox QAbstractItemView {
+    padding: var(--spacing_base) var(--spacing_large);
+    border: 1px solid var(--border_color);
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: var(--padding_large) var(--padding_xlarge);
+}
+
 QComboBox QAbstractItemView::item:selected,
 QComboBox QAbstractItemView::item:hover {
     background-color: var(--list_item_bg_selected);
@@ -927,6 +942,11 @@ QComboBox:focus,
 QDateTimeEdit:hover,
 QDateTimeEdit:selected {
     border-color: var(--input_border_hover);
+}
+
+QComboBox:on {
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
 }
 
 QComboBox::drop-down,
@@ -1724,6 +1744,10 @@ OBSHotkeyWidget QPushButton {
 }
 
 /* Source Icons */
+
+.source-icon {
+    margin-right: var(--spacing_large);
+}
 
 OBSBasic {
     qproperty-imageIcon: url(theme:Dark/sources/image.svg);
