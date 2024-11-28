@@ -778,8 +778,11 @@ static enum obs_media_state vlcs_get_state(void *data)
 		return OBS_MEDIA_STATE_PAUSED;
 	case libvlc_Stopped:
 		return OBS_MEDIA_STATE_STOPPED;
-	case libvlc_Ended:
-		return OBS_MEDIA_STATE_ENDED;
+	// case libvlc_Ended:
+	// 	return OBS_MEDIA_STATE_ENDED;
+	case libvlc_Stopping:
+		// return OBS_MEDIA_STATE_STOPPING;
+		break; 
 	case libvlc_Error:
 		return OBS_MEDIA_STATE_ERROR;
 	}
@@ -956,7 +959,7 @@ static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 
 	libvlc_event_manager_t *event_manager;
 	event_manager = libvlc_media_player_event_manager_(c->media_player);
-	libvlc_event_attach_(event_manager, libvlc_MediaPlayerEndReached, vlcs_stopped, c);
+	libvlc_event_attach_(event_manager, libvlc_MediaPlayerStopped, vlcs_stopped, c);
 	libvlc_event_attach_(event_manager, libvlc_MediaPlayerOpening, vlcs_started, c);
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
