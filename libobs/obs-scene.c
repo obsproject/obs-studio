@@ -3567,6 +3567,9 @@ static void apply_group_transform(obs_sceneitem_t *item, obs_sceneitem_t *group)
 	vec4_set(&mat.t, 0.0f, 0.0f, 0.0f, 1.0f);
 	matrix4_mul(&mat, &mat, &transform);
 
+	scale_abs.x = vec4_len(&mat.x) * (scale_abs.x > 0.0f ? 1.0f : -1.0f);
+	scale_abs.y = vec4_len(&mat.y) * (scale_abs.y > 0.0f ? 1.0f : -1.0f);
+
 	if (item->absolute_coordinates) {
 		vec2_copy(&item->scale, &scale_abs);
 		vec2_copy(&item->pos, &pos_abs);
