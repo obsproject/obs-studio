@@ -223,10 +223,6 @@ QPushButton[toolButton="true"] {
     border-color: var(--bg_window);
 }
 
-#stackedMixerArea QScrollArea {
-  background: var(--bg_base);
-}
-
 #stackedMixerArea QPushButton {
     min-width: var(--icon_base);
     padding: var(--padding_large) var(--padding_large);
