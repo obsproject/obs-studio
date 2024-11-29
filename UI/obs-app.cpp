@@ -2447,6 +2447,15 @@ static bool vc_runtime_outdated()
 
 	return true;
 }
+
+void obs_invalid_parameter_handler(const wchar_t *, const wchar_t *,
+				   const wchar_t *, unsigned int, uintptr_t)
+{
+	/* In Release builds the parameters are all NULL, but not having a
+	 * handler would result in the program being terminated.
+	 * By having one that does not abort execution we let the caller handle
+	 * the error codes returned by the function that invoked this. */
+}
 #endif
 
 int main(int argc, char *argv[])
@@ -2475,6 +2484,9 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
+#ifndef _DEBUG
+	_set_invalid_parameter_handler(obs_invalid_parameter_handler);
+#endif
 	// Abort as early as possible if MSVC runtime is outdated
 	if (vc_runtime_outdated())
 		return 1;
