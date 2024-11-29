@@ -358,9 +358,14 @@ void OBSBasicStats::Update()
 
 	/* ------------------ */
 
-	video_t *video = obs_get_video();
-	uint32_t total_encoded = video_output_get_total_frames(video);
-	uint32_t total_skipped = video_output_get_skipped_frames(video);
+	const obs_encoder_t *encoder = obs_output_get_video_encoder(recOutput);
+	const video_t *encoder_video = obs_encoder_parent_video(encoder);
+	uint32_t total_encoded =
+		encoder_video ? video_output_get_total_frames(encoder_video)
+			      : 0;
+	uint32_t total_skipped =
+		encoder_video ? video_output_get_skipped_frames(encoder_video)
+			      : 0;
 
 	if (total_encoded < first_encoded || total_skipped < first_skipped) {
 		first_encoded = total_encoded;
