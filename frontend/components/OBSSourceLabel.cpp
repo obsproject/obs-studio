@@ -15,7 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "moc_source-label.cpp"
+#include "OBSSourceLabel.hpp"
+#include "moc_OBSSourceLabel.cpp"
 
 void OBSSourceLabel::SourceRenamed(void *data, calldata_t *params)
 {

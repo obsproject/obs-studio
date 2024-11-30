@@ -1,5 +1,8 @@
-#include "moc_focus-list.cpp"
+#include "FocusList.hpp"
+
 #include <QDragMoveEvent>
+
+#include "moc_FocusList.cpp"
 
 FocusList::FocusList(QWidget *parent) : QListWidget(parent) {}
 

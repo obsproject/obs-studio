@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <QLabel>
 #include <obs.hpp>
+
+#include <QLabel>
 
 class OBSSourceLabel : public QLabel {
 	Q_OBJECT;

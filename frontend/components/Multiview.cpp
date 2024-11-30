@@ -1,8 +1,9 @@
-#include "multiview.hpp"
-#include "window-basic-main.hpp"
-#include "obs-app.hpp"
-#include "platform.hpp"
-#include "display-helpers.hpp"
+#include "Multiview.hpp"
+
+#include <utility/display-helpers.hpp>
+#include <widgets/OBSBasic.hpp>
+
+#include <obs-frontend-api.h>
 
 Multiview::Multiview()
 {

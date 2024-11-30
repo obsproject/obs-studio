@@ -1,12 +1,11 @@
-#include "moc_ui-validation.cpp"
+#include "UIValidation.hpp"
 
-#include <obs.hpp>
-#include <QString>
+#include <OBSApp.hpp>
+
 #include <QMessageBox>
 #include <QPushButton>
 
-#include <obs-app.hpp>
-#include <obs-service.h>
+#include "moc_UIValidation.cpp"
 
 static int CountVideoSources()
 {

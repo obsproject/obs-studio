@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QSlider>
 #include <QMouseEvent>
+#include <QSlider>
 
 class BalanceSlider : public QSlider {
 	Q_OBJECT

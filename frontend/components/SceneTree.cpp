@@ -1,11 +1,9 @@
-#include "moc_scene-tree.cpp"
+#include "SceneTree.hpp"
 
-#include <QSizePolicy>
 #include <QScrollBar>
-#include <QDropEvent>
-#include <QPushButton>
 #include <QTimer>
-#include <cmath>
+
+#include "moc_SceneTree.cpp"
 
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {

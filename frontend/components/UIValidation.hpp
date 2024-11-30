@@ -1,9 +1,8 @@
 #pragma once
 
-#include <QObject>
-#include <QWidget>
-
 #include <obs.hpp>
+
+#include <QObject>
 
 enum class StreamSettingsAction {
 	OpenSettings,

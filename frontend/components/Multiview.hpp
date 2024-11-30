@@ -1,6 +1,7 @@
 #pragma once
 
 #include <obs.hpp>
+
 #include <vector>
 
 enum class MultiviewLayout : uint8_t {

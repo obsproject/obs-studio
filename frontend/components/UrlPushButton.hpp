@@ -1,7 +1,9 @@
 #pragma once
 
+#include <QMouseEvent>
 #include <QPushButton>
 #include <QUrl>
+#include <QWidget>
 
 class UrlPushButton : public QPushButton {
 	Q_OBJECT

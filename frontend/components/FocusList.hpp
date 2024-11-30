@@ -2,8 +2,6 @@
 
 #include <QListWidget>
 
-class QDragMoveEvent;
-
 class FocusList : public QListWidget {
 	Q_OBJECT
 

@@ -1,8 +1,8 @@
-#include "moc_url-push-button.cpp"
+#include "UrlPushButton.hpp"
 
-#include <QUrl>
-#include <QMouseEvent>
 #include <QDesktopServices>
+
+#include "moc_UrlPushButton.cpp"
 
 void UrlPushButton::setTargetUrl(QUrl url)
 {

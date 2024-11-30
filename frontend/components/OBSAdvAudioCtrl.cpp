@@ -1,14 +1,13 @@
-#include <QHBoxLayout>
-#include <QGridLayout>
-#include <QLabel>
-#include <QSpinBox>
-#include <QComboBox>
-#include <QCheckBox>
-#include <cmath>
+#include "OBSAdvAudioCtrl.hpp"
+
+#include <components/BalanceSlider.hpp>
+#include <widgets/OBSBasic.hpp>
+
 #include <qt-wrappers.hpp>
-#include "obs-app.hpp"
-#include "moc_adv-audio-control.cpp"
-#include "window-basic-main.hpp"
+
+#include <QCheckBox>
+
+#include "moc_OBSAdvAudioCtrl.cpp"
 
 #ifndef NSEC_PER_MSEC
 #define NSEC_PER_MSEC 1000000
@@ -16,6 +15,7 @@
 
 #define MIN_DB -96.0
 #define MAX_DB 26.0
+
 static inline void setMixer(obs_source_t *source, const int mixerIdx, const bool checked);
 
 OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(source_)

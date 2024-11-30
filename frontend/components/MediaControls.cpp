@@ -1,11 +1,11 @@
-#include "window-basic-main.hpp"
-#include "moc_media-controls.cpp"
-#include "obs-app.hpp"
-#include <QToolTip>
-#include <QStyle>
-#include <QMenu>
-
+#include "MediaControls.hpp"
 #include "ui_media-controls.h"
+
+#include <OBSApp.hpp>
+
+#include <QToolTip>
+
+#include "moc_MediaControls.cpp"
 
 void MediaControls::OBSMediaStopped(void *data, calldata_t *)
 {
