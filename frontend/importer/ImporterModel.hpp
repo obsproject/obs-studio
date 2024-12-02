@@ -17,35 +17,18 @@
 
 #pragma once
 
-#include "obs-app.hpp"
-#include "window-basic-main.hpp"
-#include <QPointer>
-#include <QStyledItemDelegate>
-#include <QFileInfo>
-#include "ui_OBSImporter.h"
+#include <QAbstractTableModel>
 
-class ImporterModel;
+enum ImporterColumn {
+	Selected,
+	Name,
+	Path,
+	Program,
 
-class OBSImporter : public QDialog {
-	Q_OBJECT
-
-	QPointer<ImporterModel> optionsModel;
-	std::unique_ptr<Ui::OBSImporter> ui;
-
-public:
-	explicit OBSImporter(QWidget *parent = nullptr);
-
-	void addImportOption(QString path, bool automatic);
-
-protected:
-	virtual void dropEvent(QDropEvent *ev) override;
-	virtual void dragEnterEvent(QDragEnterEvent *ev) override;
-
-public slots:
-	void browseImport();
-	void importCollections();
-	void dataChanged();
+	Count
 };
+
+enum ImporterEntryRole { EntryStateRole = Qt::UserRole, NewPath, AutoPath, CheckEmpty };
 
 class ImporterModel : public QAbstractTableModel {
 	Q_OBJECT
@@ -75,28 +58,4 @@ private:
 	QList<ImporterEntry> options;
 
 	void checkInputPath(int row);
-};
-
-class ImporterEntryPathItemDelegate : public QStyledItemDelegate {
-	Q_OBJECT
-
-public:
-	ImporterEntryPathItemDelegate();
-
-	virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
-				      const QModelIndex &index) const override;
-
-	virtual void setEditorData(QWidget *editor, const QModelIndex &index) const override;
-	virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
-	virtual void paint(QPainter *painter, const QStyleOptionViewItem &option,
-			   const QModelIndex &index) const override;
-
-private:
-	const char *PATH_LIST_PROP = "pathList";
-
-	void handleBrowse(QWidget *container);
-	void handleClear(QWidget *container);
-
-private slots:
-	void updateText();
 };
