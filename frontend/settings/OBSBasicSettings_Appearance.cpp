@@ -1,21 +1,9 @@
-#include "window-basic-settings.hpp"
-#include "window-basic-main.hpp"
-#include "obs-frontend-api.h"
-#include "qt-wrappers.hpp"
-#include "platform.hpp"
-#include "obs-app.hpp"
+#include "OBSBasicSettings.hpp"
 
-#include <QColorDialog>
-#include <QDirIterator>
-#include <QFile>
-#include <QMetaEnum>
-#include <QObject>
-#include <QRandomGenerator>
-#include <QPainter>
+#include <OBSApp.hpp>
+#include <utility/platform.hpp>
 
-#include "util/profiler.hpp"
-
-using namespace std;
+#include <qt-wrappers.hpp>
 
 void OBSBasicSettings::InitAppearancePage()
 {

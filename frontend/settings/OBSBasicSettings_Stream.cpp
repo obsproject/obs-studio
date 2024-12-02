@@ -1,25 +1,17 @@
-#include <QMessageBox>
-#include <QUrl>
-#include <QUuid>
-#include <qt-wrappers.hpp>
-
-#include "window-basic-settings.hpp"
-#include "obs-frontend-api.h"
-#include "obs-app.hpp"
-#include "window-basic-main.hpp"
-#include "url-push-button.hpp"
-
-#ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
-#endif
-
-#include "auth-oauth.hpp"
-
-#include "ui-config.h"
+#include "OBSBasicSettings.hpp"
 
 #ifdef YOUTUBE_ENABLED
-#include "youtube-api-wrappers.hpp"
+#include <docks/YouTubeAppDock.hpp>
 #endif
+#include <oauth/OAuth.hpp>
+#ifdef YOUTUBE_ENABLED
+#include <utility/YoutubeApiWrappers.hpp>
+#endif
+#include <widgets/OBSBasic.hpp>
+
+#include <qt-wrappers.hpp>
+
+#include <QUuid>
 
 static const QUuid &CustomServerUUID()
 {
@@ -32,6 +24,7 @@ struct QCefCookieManager;
 
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
+extern bool cef_js_avail;
 
 enum class ListOpt : int {
 	ShowAll = 1,

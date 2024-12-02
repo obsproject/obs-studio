@@ -1,8 +1,7 @@
-#include "window-basic-settings.hpp"
-#include "window-basic-main.hpp"
-#include "obs-frontend-api.h"
-#include "obs-app.hpp"
-#include <qt-wrappers.hpp>
+#include "OBSBasicSettings.hpp"
+
+#include <widgets/OBSBasic.hpp>
+
 #include <QColorDialog>
 
 enum ColorPreset {
