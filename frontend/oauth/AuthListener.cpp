@@ -1,12 +1,14 @@
-#include "moc_auth-listener.cpp"
+#include "AuthListener.hpp"
 
-#include <QRegularExpression>
-#include <QRegularExpressionMatch>
-#include <QString>
-#include <QtNetwork/QTcpSocket>
+#include <OBSApp.hpp>
+
 #include <qt-wrappers.hpp>
 
-#include "obs-app.hpp"
+#include <QRegularExpression>
+#include <QTcpServer>
+#include <QTcpSocket>
+
+#include "moc_AuthListener.cpp"
 
 #define LOGO_URL "https://obsproject.com/assets/images/new_icon_small-r.png"
 

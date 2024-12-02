@@ -1,8 +1,6 @@
 #pragma once
 
 #include <QObject>
-#include <functional>
-#include <memory>
 
 class Auth : public QObject {
 	Q_OBJECT

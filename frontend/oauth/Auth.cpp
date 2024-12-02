@@ -1,8 +1,8 @@
-#include "moc_auth-base.cpp"
-#include "window-basic-main.hpp"
+#include "Auth.hpp"
 
-#include <vector>
-#include <map>
+#include <widgets/OBSBasic.hpp>
+
+#include "moc_Auth.cpp"
 
 struct AuthInfo {
 	Auth::Def def;

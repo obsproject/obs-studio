@@ -1,7 +1,8 @@
 #pragma once
 
 #include <QObject>
-#include <QtNetwork/QTcpServer>
+
+class QTcpServer;
 
 class AuthListener : public QObject {
 	Q_OBJECT

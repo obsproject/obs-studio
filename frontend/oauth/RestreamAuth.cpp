@@ -1,19 +1,17 @@
-#include "moc_auth-restream.cpp"
+#include "RestreamAuth.hpp"
 
-#include <QPushButton>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
+#include <dialogs/OAuthLogin.hpp>
+#include <docks/BrowserDock.hpp>
+#include <utility/RemoteTextThread.hpp>
+#include <utility/obf.h>
+#include <widgets/OBSBasic.hpp>
+
 #include <qt-wrappers.hpp>
-#include <json11.hpp>
-#include <ctime>
-#include <sstream>
+#include <ui-config.h>
 
-#include <obs-app.hpp>
-#include "window-dock-browser.hpp"
-#include "window-basic-main.hpp"
-#include "remote-text.hpp"
-#include "ui-config.h"
-#include "obf.h"
+#include <json11.hpp>
+
+#include "moc_RestreamAuth.cpp"
 
 using namespace json11;
 

@@ -1,8 +1,6 @@
 #pragma once
 
-#include "auth-oauth.hpp"
-
-class BrowserDock;
+#include "OAuth.hpp"
 
 class RestreamAuth : public OAuthStreamKey {
 	Q_OBJECT

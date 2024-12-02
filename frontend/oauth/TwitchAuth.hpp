@@ -1,14 +1,10 @@
 #pragma once
 
-#include <QDialog>
-#include <QTimer>
-#include <string>
-#include <memory>
+#include "OAuth.hpp"
 
 #include <json11.hpp>
-#include "auth-oauth.hpp"
 
-class BrowserDock;
+#include <QTimer>
 
 class TwitchAuth : public OAuthStreamKey {
 	Q_OBJECT
