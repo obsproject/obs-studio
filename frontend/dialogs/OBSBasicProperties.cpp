@@ -15,26 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "obs-app.hpp"
-#include "moc_window-basic-properties.cpp"
-#include "window-basic-main.hpp"
-#include "display-helpers.hpp"
+#include "OBSBasicProperties.hpp"
 
-#include <qt-wrappers.hpp>
+#include <utility/display-helpers.hpp>
+#include <widgets/OBSBasic.hpp>
+
 #include <properties-view.hpp>
-#include <QCloseEvent>
-#include <QScreen>
-#include <QWindow>
-#include <QMessageBox>
-#include <obs-data.h>
-#include <obs.h>
-#include <qpointer.h>
-#include <util/c99defs.h>
+#include <qt-wrappers.hpp>
+#include <vertical-scroll-area.hpp>
+
+#include <QPushButton>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
 #endif
+
+#include "moc_OBSBasicProperties.cpp"
 
 using namespace std;
 

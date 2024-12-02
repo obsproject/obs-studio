@@ -2,6 +2,7 @@
 
 #include <QPointer>
 #include <QDialog>
+
 #include <string>
 
 class QCefWidget;

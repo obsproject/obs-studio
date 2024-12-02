@@ -1,9 +1,8 @@
 #pragma once
 
 #include <obs.hpp>
+
 #include <QDialog>
-#include <vector>
-#include <memory>
 
 class OBSAdvAudioCtrl;
 class Ui_OBSAdvAudio;

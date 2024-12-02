@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <memory>
 #include "ui_OBSLogReply.h"
+
+#include <QDialog>
 
 class OBSLogReply : public QDialog {
 	Q_OBJECT

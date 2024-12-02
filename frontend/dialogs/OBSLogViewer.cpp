@@ -1,16 +1,14 @@
-#include <QFile>
-#include <QTextStream>
-#include <QScrollBar>
-#include <QFont>
-#include <QFontDatabase>
-#include <QPushButton>
-#include <QCheckBox>
-#include <QLayout>
-#include <QDesktopServices>
-#include <string>
+#include "OBSLogViewer.hpp"
+
+#include <OBSApp.hpp>
+
 #include <qt-wrappers.hpp>
 
-#include "moc_log-viewer.cpp"
+#include <QDesktopServices>
+#include <QFile>
+#include <QScrollBar>
+
+#include "moc_OBSLogViewer.cpp"
 
 OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLogViewer)
 {

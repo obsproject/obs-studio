@@ -1,9 +1,8 @@
-#include <QMessageBox>
-#include "window-basic-transform.hpp"
-#include "window-basic-main.hpp"
+#include "OBSBasicTransform.hpp"
 
-Q_DECLARE_METATYPE(OBSScene);
-Q_DECLARE_METATYPE(OBSSceneItem);
+#include <widgets/OBSBasic.hpp>
+
+#include "moc_OBSBasicTransform.cpp"
 
 static bool find_sel(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {

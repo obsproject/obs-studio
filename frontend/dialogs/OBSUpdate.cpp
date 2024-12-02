@@ -1,5 +1,8 @@
-#include "update-window.hpp"
-#include "obs-app.hpp"
+#include "OBSUpdate.hpp"
+
+#include <OBSApp.hpp>
+
+#include "ui_OBSUpdate.h"
 
 OBSUpdate::OBSUpdate(QWidget *parent, bool manualUpdate, const QString &text)
 	: QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <obs.hpp>
-#include <memory>
-
 #include "ui_OBSBasicTransform.h"
+
+#include <obs.hpp>
+
+#include <QDialog>
 
 class OBSBasic;
 class QListWidgetItem;

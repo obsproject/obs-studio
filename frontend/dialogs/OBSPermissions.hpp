@@ -18,7 +18,10 @@
 #pragma once
 
 #include "ui_OBSPermissions.h"
-#include "platform.hpp"
+
+#include <utility/platform.hpp>
+
+#include <QDialog>
 
 #define MACOS_PERMISSIONS_DIALOG_VERSION 1
 

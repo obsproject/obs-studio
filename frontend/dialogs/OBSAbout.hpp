@@ -1,9 +1,8 @@
 #pragma once
 
-#include <memory>
-#include <QDialog>
-
 #include "ui_OBSAbout.h"
+
+#include <QDialog>
 
 class OBSAbout : public QDialog {
 	Q_OBJECT

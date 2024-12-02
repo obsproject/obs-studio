@@ -15,9 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <QLabel>
-#include "moc_window-permissions.cpp"
-#include "obs-app.hpp"
+#include "OBSPermissions.hpp"
+
+#include <OBSApp.hpp>
+
+#include "moc_OBSPermissions.cpp"
 
 OBSPermissions::OBSPermissions(QWidget *parent, MacPermissionStatus capture, MacPermissionStatus video,
 			       MacPermissionStatus audio, MacPermissionStatus accessibility)

@@ -1,14 +1,10 @@
 #pragma once
 
-#include <obs.hpp>
-#include <QDialog>
-#include <memory>
-
-#include "window-basic-vcam.hpp"
-
 #include "ui_OBSBasicVCamConfig.h"
 
-struct VCamConfig;
+#include <utility/VCamConfig.hpp>
+
+#include <QDialog>
 
 class OBSBasicVCamConfig : public QDialog {
 	Q_OBJECT

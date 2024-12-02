@@ -1,11 +1,8 @@
-#include "moc_window-basic-vcam-config.cpp"
-#include "window-basic-main.hpp"
+#include "OBSBasicVCamConfig.hpp"
 
-#include <qt-wrappers.hpp>
-#include <util/util.hpp>
-#include <util/platform.h>
+#include <OBSApp.hpp>
 
-#include <QStandardItem>
+#include "moc_OBSBasicVCamConfig.cpp"
 
 OBSBasicVCamConfig::OBSBasicVCamConfig(const VCamConfig &_config, bool _vcamActive, QWidget *parent)
 	: config(_config),

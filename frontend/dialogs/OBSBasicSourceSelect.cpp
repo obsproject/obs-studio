@@ -15,11 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <QMessageBox>
+#include "OBSBasicSourceSelect.hpp"
+
 #include <qt-wrappers.hpp>
-#include "window-basic-main.hpp"
-#include "moc_window-basic-source-select.cpp"
-#include "obs-app.hpp"
+
+#include "moc_OBSBasicSourceSelect.cpp"
 
 struct AddSourceData {
 	/* Input data */

@@ -17,17 +17,12 @@
 
 #pragma once
 
-#include <QDialog>
-#include <QDialogButtonBox>
-#include <QPointer>
-#include <QSplitter>
-#include "qt-display.hpp"
-#include <obs.hpp>
-
-class OBSPropertiesView;
-class OBSBasic;
-
 #include "ui_OBSBasicProperties.h"
+
+#include <QDialog>
+
+class OBSBasic;
+class OBSPropertiesView;
 
 class OBSBasicProperties : public QDialog {
 	Q_OBJECT

@@ -17,16 +17,12 @@
 
 #pragma once
 
+#include "ui_OBSBasicFilters.h"
+
 #include <QDialog>
-#include <QDialogButtonBox>
-#include <memory>
-#include <obs.hpp>
-#include <properties-view.hpp>
 
 class OBSBasic;
-class QMenu;
-
-#include "ui_OBSBasicFilters.h"
+class OBSPropertiesView;
 
 class OBSBasicFilters : public QDialog {
 	Q_OBJECT

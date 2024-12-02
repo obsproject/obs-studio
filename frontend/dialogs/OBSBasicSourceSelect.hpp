@@ -17,14 +17,14 @@
 
 #pragma once
 
-#include <obs.hpp>
-#include <memory>
-
 #include "ui_OBSBasicSourceSelect.h"
-#include "undo-stack-obs.hpp"
-#include "window-basic-main.hpp"
 
-class OBSBasic;
+#include <utility/undo_stack.hpp>
+#include <widgets/OBSBasic.hpp>
+
+#include <obs.hpp>
+
+#include <QDialog>
 
 class OBSBasicSourceSelect : public QDialog {
 	Q_OBJECT

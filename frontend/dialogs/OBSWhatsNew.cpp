@@ -1,17 +1,17 @@
-#include "moc_window-whats-new.cpp"
+#include "OBSWhatsNew.hpp"
 
-#include <QPushButton>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-
-#include "window-basic-main.hpp"
+#include <widgets/OBSBasic.hpp>
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 extern QCef *cef;
 #endif
 
-/* ------------------------------------------------------------------------- */
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QVBoxLayout>
+
+#include "moc_OBSWhatsNew.cpp"
 
 OBSWhatsNew::OBSWhatsNew(QWidget *parent, const std::string &url) : QDialog(parent)
 {

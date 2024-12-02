@@ -15,11 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "moc_window-namedialog.cpp"
-#include "obs-app.hpp"
+#include "NameDialog.hpp"
 
-#include <qt-wrappers.hpp>
+#include <OBSApp.hpp>
+
+#include <QCheckBox>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QLineEdit>
 #include <QVBoxLayout>
+
+#include "moc_NameDialog.cpp"
 
 NameDialog::NameDialog(QWidget *parent) : QDialog(parent)
 {

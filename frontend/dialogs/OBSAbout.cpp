@@ -1,13 +1,17 @@
-#include "moc_window-basic-about.cpp"
-#include "window-basic-main.hpp"
-#include "remote-text.hpp"
+#include "OBSAbout.hpp"
+
+#include <widgets/OBSBasic.hpp>
+#include <utility/RemoteTextThread.hpp>
+
 #include <qt-wrappers.hpp>
-#include <util/util.hpp>
-#include <util/platform.h>
-#include <platform.hpp>
+
 #include <json11.hpp>
 
+#include "moc_OBSAbout.cpp"
+
 using namespace json11;
+
+extern bool steam;
 
 OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 {

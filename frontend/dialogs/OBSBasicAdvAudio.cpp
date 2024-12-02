@@ -1,13 +1,11 @@
-#include "window-basic-adv-audio.hpp"
-#include "window-basic-main.hpp"
-#include "item-widget-helpers.hpp"
-#include "adv-audio-control.hpp"
-#include "obs-app.hpp"
-#include <qt-wrappers.hpp>
-
+#include "OBSBasicAdvAudio.hpp"
 #include "ui_OBSAdvAudio.h"
 
-Q_DECLARE_METATYPE(OBSSource);
+#include <components/OBSAdvAudioCtrl.hpp>
+#include <utility/item-widget-helpers.hpp>
+#include <widgets/OBSBasic.hpp>
+
+#include "moc_OBSBasicAdvAudio.cpp"
 
 OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAdvAudio), showInactive(false)
 {

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <QDialog>
-#include <QString>
-#include <QThread>
-
 #include "ui_OBSYoutubeActions.h"
-#include "youtube-api-wrappers.hpp"
+
+#include <utility/YoutubeApiWrappers.hpp>
+
+#include <QThread>
 
 class WorkerThread : public QThread {
 	Q_OBJECT

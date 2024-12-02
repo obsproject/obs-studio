@@ -15,12 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "OBSLogReply.hpp"
+
+#include <OBSApp.hpp>
+
 #include <QClipboard>
-#include <QUrl>
-#include <QUrlQuery>
 #include <QDesktopServices>
-#include "moc_window-log-reply.cpp"
-#include "obs-app.hpp"
+#include <QUrlQuery>
+
+#include "moc_OBSLogReply.cpp"
 
 OBSLogReply::OBSLogReply(QWidget *parent, const QString &url, const bool crash)
 	: QDialog(parent),

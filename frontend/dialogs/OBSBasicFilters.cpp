@@ -15,35 +15,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "properties-view.hpp"
-#include "window-namedialog.hpp"
-#include "window-basic-main.hpp"
-#include "window-basic-filters.hpp"
-#include "display-helpers.hpp"
-#include "visibility-item-widget.hpp"
-#include "item-widget-helpers.hpp"
-#include "obs-app.hpp"
-#include "undo-stack-obs.hpp"
+#include "OBSBasicFilters.hpp"
 
+#include <components/VisibilityItemDelegate.hpp>
+#include <components/VisibilityItemWidget.hpp>
+#include <dialogs/NameDialog.hpp>
+#include <utility/display-helpers.hpp>
+#include <utility/item-widget-helpers.hpp>
+#include <widgets/OBSBasic.hpp>
+
+#include <properties-view.hpp>
 #include <qt-wrappers.hpp>
-#include <QMessageBox>
-#include <QCloseEvent>
-#include <obs-data.h>
-#include <obs.h>
-#include <util/base.h>
-#include <vector>
-#include <string>
-#include <QMenu>
-#include <QVariant>
+
+#include <QLineEdit>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
 #endif
 
-using namespace std;
+#include "moc_OBSBasicFilters.cpp"
 
-Q_DECLARE_METATYPE(OBSSource);
+using namespace std;
 
 OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	: QDialog(parent),

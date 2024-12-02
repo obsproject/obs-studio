@@ -1,16 +1,17 @@
-#include "window-basic-main.hpp"
-#include "moc_window-youtube-actions.cpp"
+#include "OBSYoutubeActions.hpp"
 
-#include "obs-app.hpp"
-#include "youtube-api-wrappers.hpp"
+#include <docks/YouTubeAppDock.hpp>
+#include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
-#include <QToolTip>
-#include <QDateTime>
+
 #include <QDesktopServices>
 #include <QFileInfo>
-#include <QStandardPaths>
 #include <QImageReader>
+#include <QStandardPaths>
+#include <QToolTip>
+
+#include "moc_OBSYoutubeActions.cpp"
 
 const QString SchedulDateAndTimeFormat = "yyyy-MM-dd'T'hh:mm:ss'Z'";
 const QString RepresentSchedulDateAndTimeFormat = "dddd, MMMM d, yyyy h:m";

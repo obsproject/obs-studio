@@ -1,10 +1,8 @@
 #pragma once
 
-#include <QDialog>
-#include <QPlainTextEdit>
-#include "obs-app.hpp"
-
 #include "ui_OBSLogViewer.h"
+
+#include <QDialog>
 
 class OBSLogViewer : public QDialog {
 	Q_OBJECT
