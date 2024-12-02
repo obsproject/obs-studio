@@ -17,15 +17,12 @@
 
 #pragma once
 
-#include <QLineEdit>
-#include <QKeyEvent>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QWidget>
-#include <QPointer>
-#include <QLabel>
-
 #include <obs.hpp>
+
+#include <QLineEdit>
+
+class OBSBasicSettings;
+class QWidget;
 
 static inline bool operator!=(const obs_key_combination_t &c1, const obs_key_combination_t &c2)
 {
@@ -36,21 +33,6 @@ static inline bool operator==(const obs_key_combination_t &c1, const obs_key_com
 {
 	return !(c1 != c2);
 }
-
-class OBSBasicSettings;
-class OBSHotkeyWidget;
-
-class OBSHotkeyLabel : public QLabel {
-	Q_OBJECT
-
-public:
-	QPointer<OBSHotkeyLabel> pairPartner;
-	QPointer<OBSHotkeyWidget> widget;
-	void highlightPair(bool highlight);
-	void enterEvent(QEnterEvent *event) override;
-	void leaveEvent(QEvent *event) override;
-	void setToolTip(const QString &toolTip);
-};
 
 class OBSHotkeyEdit : public QLineEdit {
 	Q_OBJECT;
@@ -116,75 +98,5 @@ public slots:
 
 signals:
 	void KeyChanged(obs_key_combination_t);
-	void SearchKey(obs_key_combination_t);
-};
-
-class OBSHotkeyWidget : public QWidget {
-	Q_OBJECT;
-
-public:
-	OBSHotkeyWidget(QWidget *parent, obs_hotkey_id id, std::string name, OBSBasicSettings *settings,
-			const std::vector<obs_key_combination_t> &combos = {})
-		: QWidget(parent),
-		  id(id),
-		  name(name),
-		  bindingsChanged(obs_get_signal_handler(), "hotkey_bindings_changed",
-				  &OBSHotkeyWidget::BindingsChanged, this),
-		  settings(settings)
-	{
-		auto layout = new QVBoxLayout;
-		layout->setSpacing(0);
-		layout->setContentsMargins(0, 0, 0, 0);
-		setLayout(layout);
-
-		SetKeyCombinations(combos);
-	}
-
-	void SetKeyCombinations(const std::vector<obs_key_combination_t> &);
-
-	obs_hotkey_id id;
-	std::string name;
-
-	bool changed = false;
-	bool Changed() const;
-
-	QPointer<OBSHotkeyLabel> label;
-	std::vector<QPointer<OBSHotkeyEdit>> edits;
-
-	QString toolTip;
-	void setToolTip(const QString &toolTip_)
-	{
-		toolTip = toolTip_;
-		for (auto &edit : edits)
-			edit->setToolTip(toolTip_);
-	}
-
-	void Apply();
-	void GetCombinations(std::vector<obs_key_combination_t> &) const;
-	void Save();
-	void Save(std::vector<obs_key_combination_t> &combinations);
-
-	void enterEvent(QEnterEvent *event) override;
-	void leaveEvent(QEvent *event) override;
-
-private:
-	void AddEdit(obs_key_combination combo, int idx = -1);
-	void RemoveEdit(size_t idx, bool signal = true);
-
-	static void BindingsChanged(void *data, calldata_t *param);
-
-	std::vector<QPointer<QPushButton>> removeButtons;
-	std::vector<QPointer<QPushButton>> revertButtons;
-	OBSSignal bindingsChanged;
-	bool ignoreChangedBindings = false;
-	OBSBasicSettings *settings;
-
-	QVBoxLayout *layout() const { return dynamic_cast<QVBoxLayout *>(QWidget::layout()); }
-
-private slots:
-	void HandleChangedBindings(obs_hotkey_id id_);
-
-signals:
-	void KeyChanged();
 	void SearchKey(obs_key_combination_t);
 };

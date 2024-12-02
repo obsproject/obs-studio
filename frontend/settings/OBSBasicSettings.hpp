@@ -18,57 +18,22 @@
 
 #pragma once
 
-#include <util/util.hpp>
-#include <QDialog>
-#include <QPointer>
-#include <memory>
-#include <string>
-
-#include <obs.hpp>
-
-#include "auth-base.hpp"
-#include "ffmpeg-utils.hpp"
-#include "obs-app-theming.hpp"
-
-class OBSBasic;
-class QAbstractButton;
-class QRadioButton;
-class QComboBox;
-class QCheckBox;
-class QLabel;
-class QButtonGroup;
-class OBSPropertiesView;
-class OBSHotkeyWidget;
-
 #include "ui_OBSBasicSettings.h"
+
+#include <utility/FFmpegShared.hpp>
+
+#include <QPointer>
 
 #define VOLUME_METER_DECAY_FAST 23.53
 #define VOLUME_METER_DECAY_MEDIUM 11.76
 #define VOLUME_METER_DECAY_SLOW 8.57
 
-class SilentUpdateCheckBox : public QCheckBox {
-	Q_OBJECT
-
-public slots:
-	void setCheckedSilently(bool checked)
-	{
-		bool blocked = blockSignals(true);
-		setChecked(checked);
-		blockSignals(blocked);
-	}
-};
-
-class SilentUpdateSpinBox : public QSpinBox {
-	Q_OBJECT
-
-public slots:
-	void setValueSilently(int val)
-	{
-		bool blocked = blockSignals(true);
-		setValue(val);
-		blockSignals(blocked);
-	}
-};
+class Auth;
+class OBSBasic;
+class OBSHotkeyWidget;
+class OBSPropertiesView;
+struct FFmpegFormat;
+struct OBSTheme;
 
 std::string DeserializeConfigText(const char *value);
 

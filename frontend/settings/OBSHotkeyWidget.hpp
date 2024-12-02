@@ -17,107 +17,15 @@
 
 #pragma once
 
-#include <QLineEdit>
-#include <QKeyEvent>
+#include "OBSHotkeyEdit.hpp"
+
+#include <QPointer>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QPointer>
-#include <QLabel>
-
-#include <obs.hpp>
-
-static inline bool operator!=(const obs_key_combination_t &c1, const obs_key_combination_t &c2)
-{
-	return c1.modifiers != c2.modifiers || c1.key != c2.key;
-}
-
-static inline bool operator==(const obs_key_combination_t &c1, const obs_key_combination_t &c2)
-{
-	return !(c1 != c2);
-}
 
 class OBSBasicSettings;
-class OBSHotkeyWidget;
-
-class OBSHotkeyLabel : public QLabel {
-	Q_OBJECT
-
-public:
-	QPointer<OBSHotkeyLabel> pairPartner;
-	QPointer<OBSHotkeyWidget> widget;
-	void highlightPair(bool highlight);
-	void enterEvent(QEnterEvent *event) override;
-	void leaveEvent(QEvent *event) override;
-	void setToolTip(const QString &toolTip);
-};
-
-class OBSHotkeyEdit : public QLineEdit {
-	Q_OBJECT;
-
-public:
-	OBSHotkeyEdit(QWidget *parent, obs_key_combination_t original, OBSBasicSettings *settings)
-		: QLineEdit(parent),
-		  original(original),
-		  settings(settings)
-	{
-#ifdef __APPLE__
-		// disable the input cursor on OSX, focus should be clear
-		// enough with the default focus frame
-		setReadOnly(true);
-#endif
-		setAttribute(Qt::WA_InputMethodEnabled, false);
-		setAttribute(Qt::WA_MacShowFocusRect, true);
-		InitSignalHandler();
-		ResetKey();
-	}
-	OBSHotkeyEdit(QWidget *parent = nullptr) : QLineEdit(parent), original({}), settings(nullptr)
-	{
-#ifdef __APPLE__
-		// disable the input cursor on OSX, focus should be clear
-		// enough with the default focus frame
-		setReadOnly(true);
-#endif
-		setAttribute(Qt::WA_InputMethodEnabled, false);
-		setAttribute(Qt::WA_MacShowFocusRect, true);
-		InitSignalHandler();
-		ResetKey();
-	}
-
-	obs_key_combination_t original;
-	obs_key_combination_t key;
-	OBSBasicSettings *settings;
-	bool changed = false;
-
-	void UpdateDuplicationState();
-	bool hasDuplicate = false;
-	QVariant inputMethodQuery(Qt::InputMethodQuery) const override;
-
-protected:
-	OBSSignal layoutChanged;
-	QAction *dupeIcon = nullptr;
-
-	void InitSignalHandler();
-	void CreateDupeIcon();
-
-	void keyPressEvent(QKeyEvent *event) override;
-#ifdef __APPLE__
-	void keyReleaseEvent(QKeyEvent *event) override;
-#endif
-	void mousePressEvent(QMouseEvent *event) override;
-
-	void RenderKey();
-
-public slots:
-	void HandleNewKey(obs_key_combination_t new_key);
-	void ReloadKeyLayout();
-	void ResetKey();
-	void ClearKey();
-
-signals:
-	void KeyChanged(obs_key_combination_t);
-	void SearchKey(obs_key_combination_t);
-};
+class OBSHotkeyLabel;
 
 class OBSHotkeyWidget : public QWidget {
 	Q_OBJECT;

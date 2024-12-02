@@ -1,88 +1,60 @@
 /******************************************************************************
-    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
-                          Philippe Groarke <philippe.groarke@gmail.com>
+ Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
+ Philippe Groarke <philippe.groarke@gmail.com>
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
+#include "OBSBasicSettings.hpp"
+#include "OBSHotkeyLabel.hpp"
+#include "OBSHotkeyWidget.hpp"
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+#include <components/Multiview.hpp>
+#include <components/OBSSourceLabel.hpp>
+#include <components/SilentUpdateCheckBox.hpp>
+#include <components/SilentUpdateSpinBox.hpp>
+#ifdef YOUTUBE_ENABLED
+#include <docks/YouTubeAppDock.hpp>
+#endif
+#include <utility/audio-encoders.hpp>
+#include <utility/BaseLexer.hpp>
+#include <utility/FFmpegCodec.hpp>
+#include <utility/FFmpegFormat.hpp>
+#include <utility/SettingsEventFilter.hpp>
+#ifdef YOUTUBE_ENABLED
+#include <utility/YoutubeApiWrappers.hpp>
+#endif
+#include <widgets/OBSBasic.hpp>
+#include <widgets/OBSProjector.hpp>
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-******************************************************************************/
-
-#include <obs.hpp>
-#include <util/util.hpp>
-#include <util/lexer.h>
-#include <graphics/math-defs.h>
-#include <initializer_list>
-#include <sstream>
-#include <unordered_map>
-#include <unordered_set>
-#include <QCompleter>
-#include <QGuiApplication>
-#include <QLineEdit>
-#include <QMessageBox>
-#include <QCloseEvent>
-#include <QDirIterator>
-#include <QVariant>
-#include <QTreeView>
-#include <QScreen>
-#include <QStandardItemModel>
-#include <QSpacerItem>
+#include <properties-view.hpp>
 #include <qt-wrappers.hpp>
 
-#include "audio-encoders.hpp"
-#include "hotkey-edit.hpp"
-#include "source-label.hpp"
-#include "obs-app.hpp"
-#include "platform.hpp"
-#include "properties-view.hpp"
-#include "window-basic-main.hpp"
-#include "moc_window-basic-settings.cpp"
-#include "window-basic-main-outputs.hpp"
-#include "window-projector.hpp"
+#include <QCompleter>
+#include <QStandardItemModel>
 
-#ifdef YOUTUBE_ENABLED
-#include "youtube-api-wrappers.hpp"
-#endif
+#include <sstream>
 
-#include <util/platform.h>
-#include <util/dstr.hpp>
-#include "ui-config.h"
+#include "moc_OBSBasicSettings.cpp"
 
 using namespace std;
 
-class SettingsEventFilter : public QObject {
-	QScopedPointer<OBSEventFilter> shortcutFilter;
+extern const char *get_simple_output_encoder(const char *encoder);
 
-public:
-	inline SettingsEventFilter() : shortcutFilter((OBSEventFilter *)CreateShortcutFilter()) {}
-
-protected:
-	bool eventFilter(QObject *obj, QEvent *event) override
-	{
-		int key;
-
-		switch (event->type()) {
-		case QEvent::KeyPress:
-		case QEvent::KeyRelease:
-			key = static_cast<QKeyEvent *>(event)->key();
-			if (key == Qt::Key_Escape) {
-				return false;
-			}
-		default:
-			break;
-		}
-
-		return shortcutFilter->filter(obj, event);
-	}
-};
+extern bool restart;
+extern bool opt_allow_opengl;
+extern bool cef_js_avail;
 
 static inline bool ResTooHigh(uint32_t cx, uint32_t cy)
 {
