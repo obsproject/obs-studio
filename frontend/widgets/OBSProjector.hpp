@@ -1,8 +1,8 @@
 #pragma once
 
-#include <obs.hpp>
-#include "qt-display.hpp"
-#include "multiview.hpp"
+#include "OBSQTDisplay.hpp"
+
+class Multiview;
 
 enum class ProjectorType {
 	Source,
@@ -11,8 +11,6 @@ enum class ProjectorType {
 	StudioProgram,
 	Multiview,
 };
-
-class QMouseEvent;
 
 class OBSProjector : public OBSQTDisplay {
 	Q_OBJECT

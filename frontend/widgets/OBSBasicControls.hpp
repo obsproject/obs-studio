@@ -1,14 +1,14 @@
 #pragma once
 
-#include <memory>
+#include "ui_OBSBasicControls.h"
 
 #include <QFrame>
 #include <QPointer>
 #include <QScopedPointer>
 
-class OBSBasic;
+#include <memory>
 
-#include "ui_OBSBasicControls.h"
+class OBSBasic;
 
 class OBSBasicControls : public QFrame {
 	Q_OBJECT

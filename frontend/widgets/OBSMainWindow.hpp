@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QMainWindow>
-
 #include <util/config-file.h>
+
+#include <QMainWindow>
 
 class OBSMainWindow : public QMainWindow {
 	Q_OBJECT
@@ -12,6 +12,4 @@ public:
 
 	virtual config_t *Config() const = 0;
 	virtual void OBSInit() = 0;
-
-	virtual int GetProfilePath(char *path, size_t size, const char *file) const = 0;
 };

@@ -1,17 +1,10 @@
 #pragma once
 
-#include <obs.hpp>
-#include <graphics/vec2.h>
-#include <graphics/matrix4.h>
-#include <util/threading.h>
-#include <mutex>
-#include <vector>
-#include "qt-display.hpp"
-#include "obs-app.hpp"
-#include "preview-controls.hpp"
+#include "OBSQTDisplay.hpp"
 
-class OBSBasic;
-class QMouseEvent;
+#include <graphics/matrix4.h>
+
+#include <mutex>
 
 #define ITEM_LEFT (1 << 0)
 #define ITEM_RIGHT (1 << 1)

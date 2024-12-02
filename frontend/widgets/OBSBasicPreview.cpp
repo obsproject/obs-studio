@@ -1,16 +1,9 @@
-#include <QGuiApplication>
-#include <QMouseEvent>
+#include "OBSBasicPreview.hpp"
 
-#include <cmath>
-#include <string>
-#include <graphics/vec4.h>
-#include <graphics/matrix4.h>
-#include <util/dstr.hpp>
-#include "moc_window-basic-preview.cpp"
-#include "window-basic-main.hpp"
-#include "obs-app.hpp"
-#include "platform.hpp"
-#include "display-helpers.hpp"
+#include <utility/display-helpers.hpp>
+#include <widgets/OBSBasic.hpp>
+
+#include "moc_OBSBasicPreview.cpp"
 
 #define HANDLE_RADIUS 4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)

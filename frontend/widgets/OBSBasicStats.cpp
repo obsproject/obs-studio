@@ -1,19 +1,16 @@
-#include "obs-frontend-api/obs-frontend-api.h"
+#include "OBSBasicStats.hpp"
 
-#include "moc_window-basic-stats.cpp"
-#include "window-basic-main.hpp"
-#include "platform.hpp"
-#include "obs-app.hpp"
+#include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
+
+#include <QGridLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QGridLayout>
-#include <QScreen>
 
-#include <string>
+#include "moc_OBSBasicStats.cpp"
 
 #define TIMER_INTERVAL 2000
 #define REC_TIME_LEFT_INTERVAL 30000

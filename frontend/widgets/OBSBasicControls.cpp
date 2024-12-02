@@ -1,6 +1,7 @@
-#include "moc_basic-controls.cpp"
+#include "OBSBasicControls.hpp"
+#include "OBSBasic.hpp"
 
-#include "window-basic-main.hpp"
+#include "moc_OBSBasicControls.cpp"
 
 OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui::OBSBasicControls)
 {

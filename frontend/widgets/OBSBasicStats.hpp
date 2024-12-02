@@ -1,16 +1,15 @@
 #pragma once
 
+#include <obs-frontend-api.h>
 #include <obs.hpp>
 #include <util/platform.h>
-#include <obs-frontend-api.h>
-#include <QPointer>
-#include <QWidget>
-#include <QTimer>
-#include <QLabel>
-#include <QList>
 
+#include <QFrame>
+#include <QPointer>
+#include <QTimer>
+
+class QLabel;
 class QGridLayout;
-class QCloseEvent;
 
 class OBSBasicStats : public QFrame {
 	Q_OBJECT
