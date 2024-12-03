@@ -529,7 +529,6 @@ QMenu::item,
 SceneTree::item {
     border-radius: var(--border_radius);
     color: var(--text);
-    border: 1px solid transparent;
 }
 
 SourceTree::item {
