@@ -17,17 +17,13 @@
 
 #pragma once
 
-#include <QDialog>
-#include <memory>
-#include <functional>
-
-#include <obs.hpp>
-#include <properties-view.hpp>
-
-class OBSBasic;
-
 #include "ui_OBSBasicInteraction.h"
 
+#include <obs.hpp>
+
+#include <QDialog>
+
+class OBSBasic;
 class OBSEventFilter;
 
 class OBSBasicInteraction : public QDialog {
@@ -65,18 +61,4 @@ public:
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
-};
-
-typedef std::function<bool(QObject *, QEvent *)> EventFilterFunc;
-
-class OBSEventFilter : public QObject {
-	Q_OBJECT
-public:
-	OBSEventFilter(EventFilterFunc filter_) : filter(filter_) {}
-
-protected:
-	bool eventFilter(QObject *obj, QEvent *event) { return filter(obj, event); }
-
-public:
-	EventFilterFunc filter;
 };

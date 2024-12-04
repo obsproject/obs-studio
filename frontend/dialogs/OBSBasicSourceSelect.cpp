@@ -332,13 +332,6 @@ static inline const char *GetSourceDisplayName(const char *id)
 	return obs_source_get_display_name(v_id);
 }
 
-Q_DECLARE_METATYPE(OBSScene);
-
-template<typename T> static inline T GetOBSRef(QListWidgetItem *item)
-{
-	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
-}
-
 OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_, undo_stack &undo_s)
 	: QDialog(parent),
 	  ui(new Ui::OBSBasicSourceSelect),

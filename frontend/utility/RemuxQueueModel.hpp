@@ -17,68 +17,22 @@
 
 #pragma once
 
-#include <QFileInfo>
-#include <QMutex>
-#include <QPointer>
-#include <QThread>
-#include <QStyledItemDelegate>
-#include <memory>
-#include "ui_OBSRemux.h"
-
-#include <media-io/media-remux.h>
-#include <util/threading.h>
-
-class RemuxQueueModel;
-class RemuxWorker;
+#include <QAbstractTableModel>
+#include <QFileInfoList>
 
 enum RemuxEntryState { Empty, Ready, Pending, InProgress, Complete, InvalidPath, Error };
+
 Q_DECLARE_METATYPE(RemuxEntryState);
 
-class OBSRemux : public QDialog {
-	Q_OBJECT
+enum RemuxEntryColumn {
+	State,
+	InputPath,
+	OutputPath,
 
-	QPointer<RemuxQueueModel> queueModel;
-	QThread remuxer;
-	QPointer<RemuxWorker> worker;
-
-	std::unique_ptr<Ui::OBSRemux> ui;
-
-	const char *recPath;
-
-	virtual void closeEvent(QCloseEvent *event) override;
-	virtual void reject() override;
-
-	bool autoRemux;
-	QString autoRemuxFile;
-
-public:
-	explicit OBSRemux(const char *recPath, QWidget *parent = nullptr, bool autoRemux = false);
-	virtual ~OBSRemux() override;
-
-	using job_t = std::shared_ptr<struct media_remux_job>;
-
-	void AutoRemux(QString inFile, QString outFile);
-
-protected:
-	virtual void dropEvent(QDropEvent *ev) override;
-	virtual void dragEnterEvent(QDragEnterEvent *ev) override;
-
-	void remuxNextEntry();
-
-private slots:
-	void rowCountChanged(const QModelIndex &parent, int first, int last);
-
-public slots:
-	void updateProgress(float percent);
-	void remuxFinished(bool success);
-	void beginRemux();
-	bool stopRemux();
-	void clearFinished();
-	void clearAll();
-
-signals:
-	void remux(const QString &source, const QString &target);
+	Count
 };
+
+enum RemuxEntryRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
 
 class RemuxQueueModel : public QAbstractTableModel {
 	Q_OBJECT
@@ -121,53 +75,4 @@ private:
 	static QVariant getIcon(RemuxEntryState state);
 
 	void checkInputPath(int row);
-};
-
-class RemuxWorker : public QObject {
-	Q_OBJECT
-
-	QMutex updateMutex;
-
-	bool isWorking;
-
-	float lastProgress;
-	void UpdateProgress(float percent);
-
-	explicit RemuxWorker() : isWorking(false) {}
-	virtual ~RemuxWorker(){};
-
-private slots:
-	void remux(const QString &source, const QString &target);
-
-signals:
-	void updateProgress(float percent);
-	void remuxFinished(bool success);
-
-	friend class OBSRemux;
-};
-
-class RemuxEntryPathItemDelegate : public QStyledItemDelegate {
-	Q_OBJECT
-
-public:
-	RemuxEntryPathItemDelegate(bool isOutput, const QString &defaultPath);
-
-	virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
-				      const QModelIndex &index) const override;
-
-	virtual void setEditorData(QWidget *editor, const QModelIndex &index) const override;
-	virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
-	virtual void paint(QPainter *painter, const QStyleOptionViewItem &option,
-			   const QModelIndex &index) const override;
-
-private:
-	bool isOutput;
-	QString defaultPath;
-	const char *PATH_LIST_PROP = "pathList";
-
-	void handleBrowse(QWidget *container);
-	void handleClear(QWidget *container);
-
-private slots:
-	void updateText();
 };

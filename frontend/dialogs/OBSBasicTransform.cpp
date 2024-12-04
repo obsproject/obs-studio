@@ -351,11 +351,6 @@ void OBSBasicTransform::OnCropChanged()
 	ignoreTransformSignal = false;
 }
 
-template<typename T> static T GetOBSRef(QListWidgetItem *item)
-{
-	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
-}
-
 void OBSBasicTransform::OnSceneChanged(QListWidgetItem *current, QListWidgetItem *)
 {
 	if (!current)

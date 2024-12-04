@@ -15,21 +15,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "obs-app.hpp"
-#include "moc_window-basic-interaction.cpp"
-#include "window-basic-main.hpp"
-#include "display-helpers.hpp"
+#include "OBSBasicInteraction.hpp"
+
+#include <dialogs/OBSBasicProperties.hpp>
+#include <utility/OBSEventFilter.hpp>
+#include <utility/display-helpers.hpp>
+#include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
-#include <QKeyEvent>
-#include <QCloseEvent>
-#include <QScreen>
-#include <QWindow>
+
+#include <QInputEvent>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
 #endif
+
+#include "moc_OBSBasicInteraction.cpp"
 
 using namespace std;
 

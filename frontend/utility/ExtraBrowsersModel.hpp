@@ -1,31 +1,17 @@
 #pragma once
 
-#include <QDialog>
-#include <QScopedPointer>
 #include <QAbstractTableModel>
-#include <QStyledItemDelegate>
-#include <memory>
+#include <QUuid>
 
-class Ui_OBSExtraBrowsers;
-class ExtraBrowsersModel;
+enum class Column : int {
+	Title,
+	Url,
+	Delete,
 
-class QCefWidget;
-
-class OBSExtraBrowsers : public QDialog {
-	Q_OBJECT
-
-	std::unique_ptr<Ui_OBSExtraBrowsers> ui;
-	ExtraBrowsersModel *model;
-
-public:
-	OBSExtraBrowsers(QWidget *parent);
-	~OBSExtraBrowsers();
-
-	void closeEvent(QCloseEvent *event) override;
-
-public slots:
-	void on_apply_clicked();
+	Count,
 };
+
+#define OBJ_NAME_SUFFIX "_extraBrowser"
 
 class ExtraBrowsersModel : public QAbstractTableModel {
 	Q_OBJECT
@@ -66,23 +52,4 @@ public:
 
 public slots:
 	void Init();
-};
-
-class ExtraBrowsersDelegate : public QStyledItemDelegate {
-	Q_OBJECT
-
-public:
-	inline ExtraBrowsersDelegate(ExtraBrowsersModel *model_) : QStyledItemDelegate(nullptr), model(model_) {}
-
-	QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-			      const QModelIndex &index) const override;
-
-	void setEditorData(QWidget *editor, const QModelIndex &index) const override;
-
-	bool eventFilter(QObject *object, QEvent *event) override;
-	void RevertText(QLineEdit *edit);
-	bool UpdateText(QLineEdit *edit);
-	bool ValidName(const QString &text) const;
-
-	ExtraBrowsersModel *model;
 };
