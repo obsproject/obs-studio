@@ -1,9 +1,11 @@
-#include "moc_window-dock.cpp"
-#include "obs-app.hpp"
-#include "window-basic-main.hpp"
+#include "OBSDock.hpp"
 
-#include <QMessageBox>
+#include <widgets/OBSBasic.hpp>
+
 #include <QCheckBox>
+#include <QMessageBox>
+
+#include "moc_OBSDock.cpp"
 
 void OBSDock::closeEvent(QCloseEvent *event)
 {

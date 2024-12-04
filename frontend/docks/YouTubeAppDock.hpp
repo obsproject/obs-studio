@@ -1,10 +1,12 @@
 #pragma once
 
-#include "window-dock-browser.hpp"
-#include "youtube-api-wrappers.hpp"
+#include "BrowserDock.hpp"
+
+#include <QPointer>
 
 class QAction;
 class QCefWidget;
+class YoutubeApiWrappers;
 
 class YouTubeAppDock : public BrowserDock {
 	Q_OBJECT

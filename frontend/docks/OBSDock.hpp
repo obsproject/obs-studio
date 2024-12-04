@@ -2,6 +2,10 @@
 
 #include <QDockWidget>
 
+class QCloseEvent;
+class QShowEvent;
+class QString;
+
 class OBSDock : public QDockWidget {
 	Q_OBJECT
 

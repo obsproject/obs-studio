@@ -1,9 +1,9 @@
 #pragma once
 
-#include "window-dock.hpp"
-#include <QScopedPointer>
+#include "OBSDock.hpp"
 
 #include <browser-panel.hpp>
+
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 

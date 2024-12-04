@@ -1,14 +1,18 @@
+#include "YouTubeAppDock.hpp"
+
+#include <utility/YoutubeApiWrappers.hpp>
+#include <widgets/OBSBasic.hpp>
+
+#include <qt-wrappers.hpp>
+
 #include <QUuid>
-
-#include "window-basic-main.hpp"
-#include "youtube-api-wrappers.hpp"
-#include "moc_window-dock-youtube-app.cpp"
-
-#include "ui-config.h"
-#include "qt-wrappers.hpp"
-
 #include <nlohmann/json.hpp>
+
+#include "moc_YouTubeAppDock.cpp"
+
 using json = nlohmann::json;
+
+extern bool cef_js_avail;
 
 #ifdef YOUTUBE_WEBAPP_PLACEHOLDER
 static constexpr const char *YOUTUBE_WEBAPP_PLACEHOLDER_URL = YOUTUBE_WEBAPP_PLACEHOLDER;
