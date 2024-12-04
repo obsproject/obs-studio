@@ -17,22 +17,7 @@
 
 #pragma once
 
-#include <QLabel>
 #include <QComboBox>
-
-class OBSPreviewScalingLabel : public QLabel {
-	Q_OBJECT
-
-public:
-	OBSPreviewScalingLabel(QWidget *parent = nullptr) : QLabel(parent) {}
-
-public slots:
-	void PreviewScaleChanged(float scale);
-
-private:
-	float previewScale = 0.0f;
-	void UpdateScaleLabel();
-};
 
 class OBSPreviewScalingComboBox : public QComboBox {
 	Q_OBJECT

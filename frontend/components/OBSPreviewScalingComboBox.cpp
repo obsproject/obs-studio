@@ -15,23 +15,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "preview-controls.hpp"
-#include <obs-app.hpp>
+#include "OBSPreviewScalingComboBox.hpp"
 
-/* Preview Scale Label */
-void OBSPreviewScalingLabel::PreviewScaleChanged(float scale)
-{
-	previewScale = scale;
-	UpdateScaleLabel();
-}
+#include <OBSApp.hpp>
 
-void OBSPreviewScalingLabel::UpdateScaleLabel()
-{
-	float previewScalePercent = floor(100.0f * previewScale);
-	setText(QString::number(previewScalePercent) + "%");
-}
+#include "moc_OBSPreviewScalingComboBox.cpp"
 
-/* Preview Scaling ComboBox */
 void OBSPreviewScalingComboBox::PreviewFixedScalingChanged(bool fixed)
 {
 	if (fixedScaling == fixed)

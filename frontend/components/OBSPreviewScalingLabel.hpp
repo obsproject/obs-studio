@@ -18,7 +18,6 @@
 #pragma once
 
 #include <QLabel>
-#include <QComboBox>
 
 class OBSPreviewScalingLabel : public QLabel {
 	Q_OBJECT
@@ -32,48 +31,4 @@ public slots:
 private:
 	float previewScale = 0.0f;
 	void UpdateScaleLabel();
-};
-
-class OBSPreviewScalingComboBox : public QComboBox {
-	Q_OBJECT
-
-public:
-	OBSPreviewScalingComboBox(QWidget *parent = nullptr) : QComboBox(parent) {}
-
-	inline void SetCanvasSize(uint32_t width, uint32_t height)
-	{
-		canvas_width = width;
-		canvas_height = height;
-	};
-	inline void SetOutputSize(uint32_t width, uint32_t height)
-	{
-		output_width = width;
-		output_height = height;
-	};
-	void UpdateAllText();
-
-public slots:
-	void PreviewScaleChanged(float scale);
-	void PreviewFixedScalingChanged(bool fixed);
-	void CanvasResized(uint32_t width, uint32_t height);
-	void OutputResized(uint32_t width, uint32_t height);
-
-private:
-	uint32_t canvas_width = 0;
-	uint32_t canvas_height = 0;
-
-	uint32_t output_width = 0;
-	uint32_t output_height = 0;
-
-	float previewScale = 0.0f;
-
-	bool fixedScaling = false;
-
-	bool scaleOutputEnabled = false;
-	void SetScaleOutputEnabled(bool show);
-
-	void UpdateCanvasText();
-	void UpdateOutputText();
-	void UpdateScaledText();
-	void UpdateSelection();
 };

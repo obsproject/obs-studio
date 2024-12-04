@@ -1,130 +1,11 @@
 #pragma once
 
-#include <QList>
-#include <QVector>
-#include <QPointer>
+#include "SourceTreeItem.hpp"
+#include "SourceTreeModel.hpp"
+
 #include <QListView>
-#include <QCheckBox>
 #include <QStaticText>
 #include <QSvgRenderer>
-#include <QAbstractListModel>
-#include <QStyledItemDelegate>
-#include <obs.hpp>
-#include <obs-frontend-api.h>
-
-class QLabel;
-class OBSSourceLabel;
-class QCheckBox;
-class QLineEdit;
-class SourceTree;
-class QSpacerItem;
-class QHBoxLayout;
-class VisibilityItemWidget;
-
-class SourceTreeItem : public QFrame {
-	Q_OBJECT
-
-	friend class SourceTree;
-	friend class SourceTreeModel;
-
-	void mouseDoubleClickEvent(QMouseEvent *event) override;
-	void enterEvent(QEnterEvent *event) override;
-	void leaveEvent(QEvent *event) override;
-
-	virtual bool eventFilter(QObject *object, QEvent *event) override;
-
-	void Update(bool force);
-
-	enum class Type {
-		Unknown,
-		Item,
-		Group,
-		SubItem,
-	};
-
-	void DisconnectSignals();
-	void ReconnectSignals();
-
-	Type type = Type::Unknown;
-
-public:
-	explicit SourceTreeItem(SourceTree *tree, OBSSceneItem sceneitem);
-	bool IsEditing();
-
-private:
-	QSpacerItem *spacer = nullptr;
-	QCheckBox *expand = nullptr;
-	QLabel *iconLabel = nullptr;
-	QCheckBox *vis = nullptr;
-	QCheckBox *lock = nullptr;
-	QHBoxLayout *boxLayout = nullptr;
-	OBSSourceLabel *label = nullptr;
-
-	QLineEdit *editor = nullptr;
-
-	std::string newName;
-
-	SourceTree *tree;
-	OBSSceneItem sceneitem;
-	std::vector<OBSSignal> sigs;
-
-	virtual void paintEvent(QPaintEvent *event) override;
-
-	void ExitEditModeInternal(bool save);
-
-private slots:
-	void Clear();
-
-	void EnterEditMode();
-	void ExitEditMode(bool save);
-
-	void VisibilityChanged(bool visible);
-	void LockedChanged(bool locked);
-
-	void ExpandClicked(bool checked);
-
-	void Select();
-	void Deselect();
-};
-
-class SourceTreeModel : public QAbstractListModel {
-	Q_OBJECT
-
-	friend class SourceTree;
-	friend class SourceTreeItem;
-
-	SourceTree *st;
-	QVector<OBSSceneItem> items;
-	bool hasGroups = false;
-
-	static void OBSFrontendEvent(enum obs_frontend_event event, void *ptr);
-	void Clear();
-	void SceneChanged();
-	void ReorderItems();
-
-	void Add(obs_sceneitem_t *item);
-	void Remove(obs_sceneitem_t *item);
-	OBSSceneItem Get(int idx);
-	QString GetNewGroupName();
-	void AddGroup();
-
-	void GroupSelectedItems(QModelIndexList &indices);
-	void UngroupSelectedGroups(QModelIndexList &indices);
-
-	void ExpandGroup(obs_sceneitem_t *item);
-	void CollapseGroup(obs_sceneitem_t *item);
-
-	void UpdateGroupState(bool update);
-
-public:
-	explicit SourceTreeModel(SourceTree *st);
-
-	virtual int rowCount(const QModelIndex &parent) const override;
-	virtual QVariant data(const QModelIndex &index, int role) const override;
-
-	virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
-	virtual Qt::DropActions supportedDropActions() const override;
-};
 
 class SourceTree : public QListView {
 	Q_OBJECT
@@ -191,12 +72,4 @@ protected:
 	virtual void paintEvent(QPaintEvent *event) override;
 
 	virtual void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
-};
-
-class SourceTreeDelegate : public QStyledItemDelegate {
-	Q_OBJECT
-
-public:
-	SourceTreeDelegate(QObject *parent);
-	virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
