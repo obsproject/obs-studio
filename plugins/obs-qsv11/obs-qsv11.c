@@ -869,8 +869,8 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 
 	if (update_settings(obsqsv, settings)) {
 		pthread_mutex_lock(&g_QsvLock);
-		obsqsv->context =
-			qsv_encoder_open(&obsqsv->params, codec, useTexAlloc);
+		obsqsv->context = qsv_encoder_open(&obsqsv->params, codec,
+						   useTexAlloc, encoder);
 		pthread_mutex_unlock(&g_QsvLock);
 
 		if (obsqsv->context == NULL)

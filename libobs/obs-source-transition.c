@@ -1181,7 +1181,7 @@ bool obs_transition_audio_render_do(obs_source_t *transition, uint64_t *ts_out,
 	if (!transition_valid(transition, "obs_transition_audio_render"))
 		return false;
 
-	blog(LOG_INFO, "[AUDIO_CANVAS] obs_transition_audio_render_do started");
+	//blog(LOG_INFO, "[AUDIO_CANVAS] obs_transition_audio_render_do started");
 	lock_transition(transition);
 
 	sources[0] = transition->transition_sources[0];
