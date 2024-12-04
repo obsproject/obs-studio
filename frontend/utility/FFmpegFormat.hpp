@@ -17,35 +17,13 @@
 
 #pragma once
 
-#include <qmetatype.h>
-#include <string>
-#include <vector>
+#include "FFmpegShared.hpp"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
 }
-
-enum FFmpegCodecType { AUDIO, VIDEO, UNKNOWN };
-
-/* This needs to handle a few special cases due to how the format is used in the UI:
- * - strequal(nullptr, "") must be true
- * - strequal("", nullptr) must be true
- * - strequal(nullptr, nullptr) must be true
- */
-static bool strequal(const char *a, const char *b)
-{
-	if (!a && !b)
-		return true;
-	if (!a && *b == 0)
-		return true;
-	if (!b && *a == 0)
-		return true;
-	if (!a || !b)
-		return false;
-
-	return strcmp(a, b) == 0;
-}
+#include <qmetatype.h>
 
 struct FFmpegCodec;
 
@@ -95,52 +73,7 @@ struct FFmpegFormat {
 		return strequal(mime_type, format.mime_type);
 	}
 };
+
 Q_DECLARE_METATYPE(FFmpegFormat)
 
-struct FFmpegCodec {
-	const char *name;
-	const char *long_name;
-	int id;
-
-	FFmpegCodecType type;
-
-	FFmpegCodec() = default;
-
-	FFmpegCodec(const char *name, int id, FFmpegCodecType type = UNKNOWN)
-		: name(name),
-		  long_name(nullptr),
-		  id(id),
-		  type(type)
-	{
-	}
-
-	FFmpegCodec(const AVCodec *codec) : name(codec->name), long_name(codec->long_name), id(codec->id)
-	{
-		switch (codec->type) {
-		case AVMEDIA_TYPE_AUDIO:
-			type = AUDIO;
-			break;
-		case AVMEDIA_TYPE_VIDEO:
-			type = VIDEO;
-			break;
-		default:
-			type = UNKNOWN;
-		}
-	}
-
-	bool operator==(const FFmpegCodec &codec) const
-	{
-		if (id != codec.id)
-			return false;
-
-		return strequal(name, codec.name);
-	}
-};
-Q_DECLARE_METATYPE(FFmpegCodec)
-
 std::vector<FFmpegFormat> GetSupportedFormats();
-std::vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format, bool ignore_compatibility);
-
-bool FFCodecAndFormatCompatible(const char *codec, const char *format);
-bool IsBuiltinCodec(const char *codec);
-bool ContainerSupportsCodec(const std::string &container, const std::string &codec);

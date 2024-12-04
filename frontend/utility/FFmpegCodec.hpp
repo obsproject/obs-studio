@@ -17,85 +17,15 @@
 
 #pragma once
 
-#include <qmetatype.h>
-#include <string>
-#include <vector>
+#include "FFmpegShared.hpp"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
 }
+#include <qmetatype.h>
 
-enum FFmpegCodecType { AUDIO, VIDEO, UNKNOWN };
-
-/* This needs to handle a few special cases due to how the format is used in the UI:
- * - strequal(nullptr, "") must be true
- * - strequal("", nullptr) must be true
- * - strequal(nullptr, nullptr) must be true
- */
-static bool strequal(const char *a, const char *b)
-{
-	if (!a && !b)
-		return true;
-	if (!a && *b == 0)
-		return true;
-	if (!b && *a == 0)
-		return true;
-	if (!a || !b)
-		return false;
-
-	return strcmp(a, b) == 0;
-}
-
-struct FFmpegCodec;
-
-struct FFmpegFormat {
-	const char *name;
-	const char *long_name;
-	const char *mime_type;
-	const char *extensions;
-	AVCodecID audio_codec;
-	AVCodecID video_codec;
-	const AVCodecTag *const *codec_tags;
-
-	FFmpegFormat() = default;
-
-	FFmpegFormat(const char *name, const char *mime_type)
-		: name(name),
-		  long_name(nullptr),
-		  mime_type(mime_type),
-		  extensions(nullptr),
-		  audio_codec(AV_CODEC_ID_NONE),
-		  video_codec(AV_CODEC_ID_NONE),
-		  codec_tags(nullptr)
-	{
-	}
-
-	FFmpegFormat(const AVOutputFormat *av_format)
-		: name(av_format->name),
-		  long_name(av_format->long_name),
-		  mime_type(av_format->mime_type),
-		  extensions(av_format->extensions),
-		  audio_codec(av_format->audio_codec),
-		  video_codec(av_format->video_codec),
-		  codec_tags(av_format->codec_tag)
-	{
-	}
-
-	FFmpegCodec GetDefaultEncoder(FFmpegCodecType codec_type) const;
-
-	bool HasAudio() const { return audio_codec != AV_CODEC_ID_NONE; }
-	bool HasVideo() const { return video_codec != AV_CODEC_ID_NONE; }
-
-	bool operator==(const FFmpegFormat &format) const
-	{
-		if (!strequal(name, format.name))
-			return false;
-
-		return strequal(mime_type, format.mime_type);
-	}
-};
-Q_DECLARE_METATYPE(FFmpegFormat)
+struct FFmpegFormat;
 
 struct FFmpegCodec {
 	const char *name;
@@ -138,7 +68,6 @@ struct FFmpegCodec {
 };
 Q_DECLARE_METATYPE(FFmpegCodec)
 
-std::vector<FFmpegFormat> GetSupportedFormats();
 std::vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format, bool ignore_compatibility);
 
 bool FFCodecAndFormatCompatible(const char *codec, const char *format);

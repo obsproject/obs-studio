@@ -1,79 +1,37 @@
-#include "mac-update.hpp"
+/******************************************************************************
+ Copyright (C) 2024 by Patrick Heyer <opensource@patrickheyer.com>
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 
-#include <qaction.h>
+#pragma once
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 #import <Sparkle/Sparkle.h>
+
+#import <QAction>
 
 @interface OBSUpdateDelegate : NSObject <SPUUpdaterDelegate> {
 }
-@property (copy) NSString *branch;
-@property (nonatomic) SPUStandardUpdaterController *updaterController;
-@end
+@property (copy) NSString *_Nonnull branch;
+@property (nonatomic) SPUStandardUpdaterController *_Nonnull updaterController;
 
-@implementation OBSUpdateDelegate {
-}
-
-@synthesize branch;
-
-- (nonnull NSSet<NSString *> *)allowedChannelsForUpdater:(nonnull SPUUpdater *)updater
-{
-    return [NSSet setWithObject:branch];
-}
-
-- (void)observeCanCheckForUpdatesWithAction:(QAction *)action
-{
-    [_updaterController.updater addObserver:self forKeyPath:NSStringFromSelector(@selector(canCheckForUpdates))
-                                    options:(NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew)
-                                    context:(void *) action];
-}
-
-- (void)observeValueForKeyPath:(NSString *)keyPath
-                      ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change
-                       context:(void *)context
-{
-    if ([keyPath isEqualToString:NSStringFromSelector(@selector(canCheckForUpdates))]) {
-        QAction *menuAction = (QAction *) context;
-        menuAction->setEnabled(_updaterController.updater.canCheckForUpdates);
-    } else {
-        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-    }
-}
-
-- (void)dealloc
-{
-    @autoreleasepool {
-        [_updaterController.updater removeObserver:self forKeyPath:NSStringFromSelector(@selector(canCheckForUpdates))];
-    }
-}
+- (nonnull NSSet<NSString *> *)allowedChannelsForUpdater:(nonnull SPUUpdater *)updater;
+- (void)observeCanCheckForUpdatesWithAction:(nonnull QAction *)action;
+- (void)observeValueForKeyPath:(NSString *_Nullable)keyPath
+                      ofObject:(id _Nullable)object
+                        change:(NSDictionary<NSKeyValueChangeKey, id> *_Nullable)change
+                       context:(void *_Nullable)context;
 
 @end
-
-OBSSparkle::OBSSparkle(const char *branch, QAction *checkForUpdatesAction)
-{
-    @autoreleasepool {
-        updaterDelegate = [[OBSUpdateDelegate alloc] init];
-        updaterDelegate.branch = [NSString stringWithUTF8String:branch];
-        updaterDelegate.updaterController =
-            [[SPUStandardUpdaterController alloc] initWithStartingUpdater:YES updaterDelegate:updaterDelegate
-                                                       userDriverDelegate:nil];
-        [updaterDelegate observeCanCheckForUpdatesWithAction:checkForUpdatesAction];
-    }
-}
-
-void OBSSparkle::setBranch(const char *branch)
-{
-    updaterDelegate.branch = [NSString stringWithUTF8String:branch];
-}
-
-void OBSSparkle::checkForUpdates(bool manualCheck)
-{
-    @autoreleasepool {
-        if (manualCheck) {
-            [updaterDelegate.updaterController checkForUpdates:nil];
-        } else {
-            [updaterDelegate.updaterController.updater checkForUpdatesInBackground];
-        }
-    }
-}

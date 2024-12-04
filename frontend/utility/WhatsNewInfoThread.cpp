@@ -1,27 +1,17 @@
-#include "moc_shared-update.cpp"
-#include "crypto-helpers.hpp"
-#include "update-helpers.hpp"
-#include "obs-app.hpp"
-#include "remote-text.hpp"
-#include "platform.hpp"
+#include "WhatsNewInfoThread.hpp"
 
-#include <util/util.hpp>
-#include <blake2.h>
-
-#include <iostream>
-#include <fstream>
-#include <filesystem>
+#include <OBSApp.hpp>
+#include <utility/RemoteTextThread.hpp>
+#include <utility/crypto-helpers.hpp>
+#include <utility/platform.hpp>
+#include <utility/update-helpers.hpp>
 
 #include <QRandomGenerator>
-#include <QByteArray>
-#include <QString>
+#include <blake2.h>
 
-#ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
+#include <fstream>
 
-struct QCef;
-extern QCef *cef;
-#endif
+#include "moc_WhatsNewInfoThread.cpp"
 
 #ifndef MAC_WHATSNEW_URL
 #define MAC_WHATSNEW_URL "https://obsproject.com/update_studio/whatsnew.json"
@@ -282,14 +272,4 @@ try {
 	}
 } catch (std::string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
-}
-
-/* ------------------------------------------------------------------------ */
-
-void WhatsNewBrowserInitThread::run()
-{
-#ifdef BROWSER_AVAILABLE
-	cef->wait_for_browser_init();
-#endif
-	emit Result(url);
 }

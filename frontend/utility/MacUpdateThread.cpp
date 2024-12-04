@@ -1,19 +1,14 @@
-#include "update-helpers.hpp"
-#include "shared-update.hpp"
-#include "moc_mac-update.cpp"
-#include "obs-app.hpp"
+#include "MacUpdateThread.hpp"
 
-#include <string>
+#include <OBSApp.hpp>
+#include <utility/WhatsNewInfoThread.hpp>
 
 #include <qt-wrappers.hpp>
-#include <QMessageBox>
 
-/* ------------------------------------------------------------------------ */
+#include "moc_MacUpdateThread.cpp"
 
 static const char *MAC_BRANCHES_URL = "https://obsproject.com/update_studio/branches.json";
 static const char *MAC_DEFAULT_BRANCH = "stable";
-
-/* ------------------------------------------------------------------------ */
 
 bool GetBranch(std::string &selectedBranch)
 {
@@ -38,8 +33,6 @@ bool GetBranch(std::string &selectedBranch)
 
 	return found;
 }
-
-/* ------------------------------------------------------------------------ */
 
 void MacUpdateThread::infoMsg(const QString &title, const QString &text)
 {

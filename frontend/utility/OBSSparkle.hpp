@@ -1,33 +1,8 @@
-#ifndef MAC_UPDATER_H
-#define MAC_UPDATER_H
+#pragma once
 
-#include <string>
-
-#include <QThread>
-#include <QString>
-#include <QObject>
+#import <QObject>
 
 class QAction;
-
-class MacUpdateThread : public QThread {
-	Q_OBJECT
-
-	bool manualUpdate;
-
-	virtual void run() override;
-
-	void info(const QString &title, const QString &text);
-
-signals:
-	void Result(const QString &branch, bool manual);
-
-private slots:
-	void infoMsg(const QString &title, const QString &text);
-
-public:
-	MacUpdateThread(bool manual) : manualUpdate(manual) {}
-};
-
 #ifdef __OBJC__
 @class OBSUpdateDelegate;
 #endif
@@ -47,5 +22,3 @@ private:
 	void *updaterDelegate;
 #endif
 };
-
-#endif
