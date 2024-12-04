@@ -1,37 +1,14 @@
 #pragma once
 
-#include <QObject>
-#include <QString>
-#include <random>
-#include <string>
-
-#include "auth-oauth.hpp"
-
-#ifdef BROWSER_AVAILABLE
-#include "window-dock-browser.hpp"
-#include <QHBoxLayout>
-class YoutubeChatDock : public BrowserDock {
-	Q_OBJECT
-
-private:
-	bool isLoggedIn;
-
-public:
-	YoutubeChatDock(const QString &title) : BrowserDock(title) {}
-
-	inline void SetWidget(QCefWidget *widget_)
-	{
-		BrowserDock::SetWidget(widget_);
-		QWidget::connect(cefWidget.get(), &QCefWidget::urlChanged, this, &YoutubeChatDock::YoutubeCookieCheck);
-	}
-private slots:
-	void YoutubeCookieCheck();
-};
-#endif
+#include "OAuth.hpp"
 
 inline const std::vector<Auth::Def> youtubeServices = {{"YouTube - RTMP", Auth::Type::OAuth_LinkedAccount, true, true},
 						       {"YouTube - RTMPS", Auth::Type::OAuth_LinkedAccount, true, true},
 						       {"YouTube - HLS", Auth::Type::OAuth_LinkedAccount, true, true}};
+
+#ifdef BROWSER_AVAILABLE
+class YoutubeChatDock;
+#endif
 
 class YoutubeAuth : public OAuthStreamKey {
 	Q_OBJECT

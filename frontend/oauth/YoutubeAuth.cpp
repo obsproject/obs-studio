@@ -1,36 +1,21 @@
-#include "moc_auth-youtube.cpp"
-
-#include <iostream>
-#include <QMessageBox>
-#include <QThread>
-#include <vector>
-#include <QDesktopServices>
-#include <QHBoxLayout>
-#include <QUrl>
-#include <QRandomGenerator>
-#include <qt-wrappers.hpp>
-
-#ifdef WIN32
-#include <windows.h>
-#include <shellapi.h>
-
-#pragma comment(lib, "shell32")
-#endif
-
-#include "auth-listener.hpp"
-#include "obs-app.hpp"
-#include "ui-config.h"
-#include "youtube-api-wrappers.hpp"
-#include "window-basic-main.hpp"
-#include "obf.h"
+#include "YoutubeAuth.hpp"
 
 #ifdef BROWSER_AVAILABLE
-#include "window-dock-browser.hpp"
+#include <docks/YouTubeChatDock.hpp>
 #endif
+#include <oauth/AuthListener.hpp>
+#include <utility/YoutubeApiWrappers.hpp>
+#include <utility/obf.h>
+#include <widgets/OBSBasic.hpp>
 
-using namespace json11;
+#include <qt-wrappers.hpp>
+#include <ui-config.h>
 
-/* ------------------------------------------------------------------------- */
+#include <QDesktopServices>
+#include <QRandomGenerator>
+
+#include "moc_YoutubeAuth.cpp"
+
 #define YOUTUBE_AUTH_URL "https://accounts.google.com/o/oauth2/v2/auth"
 #define YOUTUBE_TOKEN_URL "https://www.googleapis.com/oauth2/v4/token"
 #define YOUTUBE_SCOPE_VERSION 1
@@ -318,26 +303,3 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner, const std::string &serv
 	config_save_safe(config, "tmp", nullptr);
 	return auth;
 }
-
-#ifdef BROWSER_AVAILABLE
-void YoutubeChatDock::YoutubeCookieCheck()
-{
-	QPointer<YoutubeChatDock> this_ = this;
-	auto cb = [this_](bool currentlyLoggedIn) {
-		bool previouslyLoggedIn = this_->isLoggedIn;
-		this_->isLoggedIn = currentlyLoggedIn;
-		bool loginStateChanged = (currentlyLoggedIn && !previouslyLoggedIn) ||
-					 (!currentlyLoggedIn && previouslyLoggedIn);
-		if (loginStateChanged) {
-			OBSBasic *main = OBSBasic::Get();
-			if (main->GetYouTubeAppDock() != nullptr) {
-				QMetaObject::invokeMethod(main->GetYouTubeAppDock(), "SettingsUpdated",
-							  Qt::QueuedConnection, Q_ARG(bool, !currentlyLoggedIn));
-			}
-		}
-	};
-	if (panel_cookies) {
-		panel_cookies->CheckForCookie("https://www.youtube.com", "SID", cb);
-	}
-}
-#endif
