@@ -517,6 +517,7 @@ private:
 	obs_hotkey_id transitionHotkey = 0;
 	obs_hotkey_id statsHotkey = 0;
 	obs_hotkey_id screenshotHotkey = 0;
+	obs_hotkey_id previewScreenshotHotkey = 0;
 	obs_hotkey_id sourceScreenshotHotkey = 0;
 	int quickTransitionIdCounter = 1;
 	bool overridingTransition = false;
