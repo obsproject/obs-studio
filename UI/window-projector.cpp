@@ -115,15 +115,12 @@ OBSProjector::~OBSProjector()
 	}
 
 	App()->DecrementSleepInhibition();
-
-	screen = nullptr;
 }
 
 void OBSProjector::SetMonitor(int monitor)
 {
 	savedMonitor = monitor;
-	screen = QGuiApplication::screens()[monitor];
-	setGeometry(screen->geometry());
+	setGeometry(QGuiApplication::screens()[monitor]->geometry());
 	showFullScreen();
 	SetHideCursor();
 }
@@ -426,7 +423,6 @@ void OBSProjector::OpenWindowedProjector()
 
 	OBSSource source = GetSource();
 	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
-	screen = nullptr;
 }
 
 void OBSProjector::ResizeToContent()
@@ -484,11 +480,11 @@ void OBSProjector::SetIsAlwaysOnTop(bool isAlwaysOnTop, bool isOverridden)
 	SetAlwaysOnTop(this, isAlwaysOnTop);
 }
 
-void OBSProjector::ScreenRemoved(QScreen *screen_)
+void OBSProjector::ScreenRemoved(QScreen *screen)
 {
-	if (GetMonitor() < 0 || !screen)
+	if (GetMonitor() < 0)
 		return;
 
-	if (screen == screen_)
+	if (screen == this->screen())
 		EscapeTriggered();
 }
