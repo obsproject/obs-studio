@@ -109,7 +109,7 @@ jobs:
       - name: Build Flatpak Manifest
         uses: flathub-infra/flatpak-github-actions/flatpak-builder@e5fa5a8fe51d76f770ad9d240e4ad5898b1c6a53
         with:
-          bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
+          build-bundle: false
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
           cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
           cache-key: ${{ steps.setup.outputs.cacheKey }}
