@@ -981,7 +981,7 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 }
 
 #define ENCODER_TEXT(x) "Basic.Settings.Output.Simple.Encoder." x
-#define ENCODER_SOFTWARE ENCODER_TEXT("Software")
+#define ENCODER_X264 ENCODER_TEXT("Software.X264.H264")
 #define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC.H264")
 #define ENCODER_QSV ENCODER_TEXT("Hardware.QSV.H264")
 #define ENCODER_AMD ENCODER_TEXT("Hardware.AMD.H264")
@@ -1020,7 +1020,7 @@ void AutoConfigTestPage::FinalizeResults()
 	auto encName = [](AutoConfig::Encoder enc) -> QString {
 		switch (enc) {
 		case AutoConfig::Encoder::x264:
-			return QTStr(ENCODER_SOFTWARE);
+			return QTStr(ENCODER_X264);
 		case AutoConfig::Encoder::NVENC:
 			return QTStr(ENCODER_NVENC);
 		case AutoConfig::Encoder::QSV:
@@ -1033,7 +1033,7 @@ void AutoConfigTestPage::FinalizeResults()
 			return QTStr(QUALITY_SAME);
 		}
 
-		return QTStr(ENCODER_SOFTWARE);
+		return QTStr(ENCODER_X264);
 	};
 
 	auto newLabel = [this](const char *str) -> QLabel * {
