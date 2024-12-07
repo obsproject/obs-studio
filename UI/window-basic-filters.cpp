@@ -515,7 +515,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		QString text{placeholder};
 		int i = 2;
 		while ((existing_filter = obs_source_get_filter_by_name(source, QT_TO_UTF8(text)))) {
-			text = QString("%1 %2").arg(placeholder).arg(i++);
+			text = QStringLiteral("%1 %2").arg(placeholder).arg(i++);
 		}
 
 		bool success = NameDialog::AskForName(this, QTStr("Basic.Filters.AddFilter.Title"),
@@ -894,7 +894,7 @@ void OBSBasicFilters::DuplicateItem(QListWidgetItem *item)
 	QString text{placeholder};
 	int i = 2;
 	while ((existing_filter = obs_source_get_filter_by_name(source, QT_TO_UTF8(text)))) {
-		text = QString("%1 %2").arg(placeholder).arg(i++);
+		text = QStringLiteral("%1 %2").arg(placeholder).arg(i++);
 	}
 
 	bool success = NameDialog::AskForName(this, QTStr("Basic.Filters.AddFilter.Title"),
