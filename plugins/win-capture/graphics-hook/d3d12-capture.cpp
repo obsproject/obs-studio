@@ -271,6 +271,10 @@ static inline void d3d12_copy_texture(ID3D11Resource *dst, ID3D11Resource *src)
 
 static inline void d3d12_shtex_capture(IDXGISwapChain *swap)
 {
+	if (!data.device11on12) {
+		return;
+	}
+
 	bool dxgi_1_4 = data.dxgi_1_4;
 	UINT cur_idx;
 

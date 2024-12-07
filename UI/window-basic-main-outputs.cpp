@@ -1060,7 +1060,7 @@ std::shared_future<void> SimpleOutput::SetupStreaming(obs_service_t *service, Se
 	auto audio_bitrate = GetAudioBitrate();
 	auto vod_track_mixer = IsVodTrackEnabled(service) ? std::optional{1} : std::nullopt;
 
-	auto handle_multitrack_video_result = [&](std::optional<bool> multitrackVideoResult) {
+	auto handle_multitrack_video_result = [=](std::optional<bool> multitrackVideoResult) {
 		if (multitrackVideoResult.has_value())
 			return multitrackVideoResult.value();
 
@@ -1100,7 +1100,7 @@ std::shared_future<void> SimpleOutput::SetupStreaming(obs_service_t *service, Se
 	};
 
 	return SetupMultitrackVideo(service, GetSimpleAACEncoderForBitrate(audio_bitrate), 0, vod_track_mixer,
-				    [&, continuation](std::optional<bool> res) {
+				    [=](std::optional<bool> res) {
 					    continuation(handle_multitrack_video_result(res));
 				    });
 }
@@ -2021,7 +2021,6 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 							SetupStreamingContinuation_t continuation)
 {
 	int multiTrackAudioMixes = config_get_int(main->Config(), "AdvOut", "StreamMultiTrackAudioMixes");
-	int idx = 0;
 
 	bool is_multitrack_output = allowsMultiTrack();
 
@@ -2049,7 +2048,7 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 	const char *audio_encoder_id = config_get_string(main->Config(), "AdvOut", "AudioEncoder");
 	int streamTrackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
 
-	auto handle_multitrack_video_result = [&](std::optional<bool> multitrackVideoResult) {
+	auto handle_multitrack_video_result = [=](std::optional<bool> multitrackVideoResult) {
 		if (multitrackVideoResult.has_value())
 			return multitrackVideoResult.value();
 
@@ -2088,6 +2087,7 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 		if (!is_multitrack_output) {
 			obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 		} else {
+			int idx = 0;
 			for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
 				if ((multiTrackAudioMixes & (1 << i)) != 0) {
 					obs_output_set_audio_encoder(streamOutput, streamTrack[i], idx);
@@ -2100,7 +2100,7 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 	};
 
 	return SetupMultitrackVideo(service, audio_encoder_id, static_cast<size_t>(streamTrackIndex),
-				    VodTrackMixerIdx(service), [&, continuation](std::optional<bool> res) {
+				    VodTrackMixerIdx(service), [=](std::optional<bool> res) {
 					    continuation(handle_multitrack_video_result(res));
 				    });
 }
@@ -2425,9 +2425,13 @@ std::shared_future<void> BasicOutputHandler::SetupMultitrackVideo(obs_service_t 
 	}
 
 	std::optional<std::string> custom_rtmp_url;
+	std::optional<bool> use_rtmps;
 	auto server = obs_data_get_string(settings, "server");
-	if (strcmp(server, "auto") != 0) {
+	if (strncmp(server, "auto", 4) != 0) {
 		custom_rtmp_url = server;
+	} else {
+		QString server_ = server;
+		use_rtmps = server_.contains("rtmps", Qt::CaseInsensitive);
 	}
 
 	auto service_custom_server = obs_data_get_bool(settings, "using_custom_server");
@@ -2485,7 +2489,7 @@ std::shared_future<void> BasicOutputHandler::SetupMultitrackVideo(obs_service_t 
 			multitrackVideo->PrepareStreaming(main, service_name.c_str(), service, custom_rtmp_url, key,
 							  audio_encoder_id.c_str(), maximum_aggregate_bitrate,
 							  maximum_video_tracks, custom_config, stream_dump_config,
-							  main_audio_mixer, vod_track_mixer);
+							  main_audio_mixer, vod_track_mixer, use_rtmps);
 		} catch (const MultitrackVideoError &error_) {
 			error.emplace(error_);
 		}

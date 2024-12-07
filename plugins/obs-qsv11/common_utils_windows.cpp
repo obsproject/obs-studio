@@ -1,12 +1,5 @@
 #include "common_utils.h"
-
-// ATTENTION: If D3D surfaces are used, DX9_D3D or DX11_D3D must be set in project settings or hardcoded here
-
-#ifdef DX9_D3D
-#include "common_directx.h"
-#elif DX11_D3D
 #include "common_directx11.h"
-#endif
 
 #include <util/windows/device-enum.h>
 #include <util/config-file.h>
@@ -129,9 +122,7 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pm
 
 void Release()
 {
-#if defined(DX9_D3D) || defined(DX11_D3D)
 	CleanupHWDevice();
-#endif
 }
 
 void ReleaseSessionData(void *) {}
@@ -241,15 +232,11 @@ fail:
 #if 0
 void ClearYUVSurfaceVMem(mfxMemId memId)
 {
-#if defined(DX9_D3D) || defined(DX11_D3D)
     ClearYUVSurfaceD3D(memId);
-#endif
 }
 
 void ClearRGBSurfaceVMem(mfxMemId memId)
 {
-#if defined(DX9_D3D) || defined(DX11_D3D)
     ClearRGBSurfaceD3D(memId);
-#endif
 }
 #endif

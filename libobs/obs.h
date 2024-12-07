@@ -1672,7 +1672,6 @@ EXPORT bool obs_sceneitem_set_locked(obs_sceneitem_t *item, bool lock);
 
 /* Functions for getting/setting specific orientation of a scene item */
 EXPORT void obs_sceneitem_set_pos(obs_sceneitem_t *item, const struct vec2 *pos);
-EXPORT void obs_sceneitem_set_relative_pos(obs_sceneitem_t *item, const struct vec2 *pos);
 EXPORT void obs_sceneitem_set_rot(obs_sceneitem_t *item, float rot_deg);
 EXPORT void obs_sceneitem_set_scale(obs_sceneitem_t *item, const struct vec2 *scale);
 EXPORT void obs_sceneitem_set_alignment(obs_sceneitem_t *item, uint32_t alignment);
@@ -1682,12 +1681,10 @@ EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item, enum obs_bounds
 EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item, uint32_t alignment);
 EXPORT void obs_sceneitem_set_bounds_crop(obs_sceneitem_t *item, bool crop);
 EXPORT void obs_sceneitem_set_bounds(obs_sceneitem_t *item, const struct vec2 *bounds);
-EXPORT void obs_sceneitem_set_relative_bounds(obs_sceneitem_t *item, const struct vec2 *bounds);
 
 EXPORT int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos);
-EXPORT void obs_sceneitem_get_relative_pos(const obs_sceneitem_t *item, struct vec2 *pos);
 EXPORT float obs_sceneitem_get_rot(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_scale(const obs_sceneitem_t *item, struct vec2 *scale);
 EXPORT uint32_t obs_sceneitem_get_alignment(const obs_sceneitem_t *item);
@@ -1696,14 +1693,11 @@ EXPORT enum obs_bounds_type obs_sceneitem_get_bounds_type(const obs_sceneitem_t 
 EXPORT uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_get_bounds_crop(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_bounds(const obs_sceneitem_t *item, struct vec2 *bounds);
-EXPORT void obs_sceneitem_get_relative_bounds(const obs_sceneitem_t *item, struct vec2 *bounds);
 
 OBS_DEPRECATED EXPORT void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info);
 OBS_DEPRECATED EXPORT void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info);
 EXPORT void obs_sceneitem_get_info2(const obs_sceneitem_t *item, struct obs_transform_info *info);
 EXPORT void obs_sceneitem_set_info2(obs_sceneitem_t *item, const struct obs_transform_info *info);
-EXPORT void obs_sceneitem_get_info3(const obs_sceneitem_t *item, struct obs_transform_info *info);
-EXPORT void obs_sceneitem_set_info3(obs_sceneitem_t *item, const struct obs_transform_info *info);
 
 EXPORT void obs_sceneitem_get_draw_transform(const obs_sceneitem_t *item, struct matrix4 *transform);
 EXPORT void obs_sceneitem_get_box_transform(const obs_sceneitem_t *item, struct matrix4 *transform);

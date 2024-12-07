@@ -33,8 +33,6 @@ target_sources(
     QSV_Encoder_Internal.h
 )
 
-target_compile_definitions(obs-qsv11 PRIVATE $<$<PLATFORM_ID:Windows>:DX11_D3D>)
-
 target_compile_options(
   obs-qsv11
   PRIVATE

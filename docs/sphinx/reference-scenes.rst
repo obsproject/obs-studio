@@ -365,18 +365,6 @@ Scene Item Functions
 
 ---------------------
 
-.. function:: void obs_sceneitem_set_relative_pos(obs_sceneitem_t *item, const struct vec2 *pos)
-              void obs_sceneitem_get_relative_pos(const obs_sceneitem_t *item, struct vec2 *pos)
-
-   Sets/gets the position of a scene item in relative coordinates.
-   In this system `(0.0, 0.0)` is the center of the screen, `(0, -1.0)` the bottom and `(0, 1.0)` the top.
-   The visible range of the horizontal axis depends on aspect ratio, for example, with 16:9 (1.7777...) this is `[-1.777.., -1.777..]`.
-   Positions are rounded to the nearest half-pixel when converting from relative to absolute pixel values to maintain backwards compaibility.
-
-   .. versionadded:: 31.0
-
----------------------
-
 .. function:: void obs_sceneitem_set_rot(obs_sceneitem_t *item, float rot_deg)
               float obs_sceneitem_get_rot(const obs_sceneitem_t *item)
 
@@ -469,16 +457,6 @@ Scene Item Functions
 
 ---------------------
 
-.. function:: void obs_sceneitem_set_relative_bounds(obs_sceneitem_t *item, const struct vec2 *bounds)
-              void obs_sceneitem_get_relative_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
-
-   Sets/gets the bounding box width/height of the scene item in relative sizes.
-   See :c:func:`obs_sceneitem_get_relative_pos()`/:c:func:`obs_sceneitem_set_relative_pos()` for details on the relative coordinate system.
-   
-   .. versionadded:: 31.0
-
----------------------
-
 .. function:: void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info)
               void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info)
 
@@ -493,16 +471,6 @@ Scene Item Functions
    This version of the function also sets the `crop_to_bounds` member of `obs_transform_info`.
 
    .. versionadded:: 30.1
-
----------------------
-
-.. function:: void obs_sceneitem_set_info3(obs_sceneitem_t *item, const struct obs_transform_info *info)
-              void obs_sceneitem_get_info3(const obs_sceneitem_t *item, struct obs_transform_info *info)
-
-   Sets/gets the transform information of the scene item.
-   This version uses relative coordinates, see :c:func:`obs_sceneitem_get_relative_pos()`/:c:func:`obs_sceneitem_set_relative_pos()` for details.
-
-   .. versionadded:: 31.0
 
 ---------------------
 
