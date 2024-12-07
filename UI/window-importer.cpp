@@ -417,8 +417,8 @@ OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new Im
 	if (autoSearch)
 		f = ImportersFindFiles();
 
-	for (size_t i = 0; i < f.size(); i++) {
-		QString path = f[i].c_str();
+	for (const auto &i : f) {
+		QString path = i.c_str();
 		path.replace("\\", "/");
 		addImportOption(path, true);
 	}

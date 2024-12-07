@@ -1143,8 +1143,8 @@ void SourceTree::dropEvent(QDropEvent *event)
 	/* determine if any base group is selected */
 
 	bool hasGroups = false;
-	for (int i = 0; i < indices.size(); i++) {
-		obs_sceneitem_t *item = items[indices[i].row()];
+	for (const auto &index : indices) {
+		obs_sceneitem_t *item = items[index.row()];
 		if (obs_sceneitem_is_group(item)) {
 			hasGroups = true;
 			break;
@@ -1180,8 +1180,8 @@ void SourceTree::dropEvent(QDropEvent *event)
 	/* --------------------------------------- */
 	/* save undo data                          */
 	std::vector<obs_source_t *> sources;
-	for (int i = 0; i < indices.size(); i++) {
-		obs_sceneitem_t *item = items[indices[i].row()];
+	for (const auto &index : indices) {
+		obs_sceneitem_t *item = items[index.row()];
 		if (obs_sceneitem_get_scene(item) != scene)
 			sources.push_back(obs_scene_get_source(obs_sceneitem_get_scene(item)));
 	}
