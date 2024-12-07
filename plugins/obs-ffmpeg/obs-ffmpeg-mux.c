@@ -131,6 +131,11 @@ bool active(struct ffmpeg_muxer *stream)
 	return os_atomic_load_bool(&stream->active);
 }
 
+bool flushing(struct ffmpeg_muxer *stream)
+{
+	return os_atomic_load_bool(&stream->flushing);
+}
+
 static void add_video_encoder_params(struct ffmpeg_muxer *stream, os_process_args_t *args, obs_encoder_t *vencoder)
 {
 	obs_data_t *settings = obs_encoder_get_settings(vencoder);
@@ -925,6 +930,12 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hot
 
 	if (os_atomic_load_bool(&stream->active)) {
 		obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
+
+		if (flushing(stream)) {
+			info("Could not save buffer while flushing");
+			return;
+		}
+
 		if (obs_encoder_paused(vencoder)) {
 			info("Could not save buffer because encoders paused");
 			return;
@@ -986,6 +997,7 @@ static bool replay_buffer_start(void *data)
 	obs_data_t *s = obs_output_get_settings(stream->output);
 	stream->max_time = obs_data_get_int(s, "max_time_sec") * 1000000LL;
 	stream->max_size = obs_data_get_int(s, "max_size_mb") * (1024 * 1024);
+	stream->save_flush = obs_data_get_bool(s, "save_flush");
 	obs_data_release(s);
 
 	os_atomic_set_bool(&stream->active, true);
@@ -1044,6 +1056,13 @@ static inline void purge(struct ffmpeg_muxer *stream)
 
 static inline void replay_buffer_purge(struct ffmpeg_muxer *stream, struct encoder_packet *pkt)
 {
+	if (flushing(stream)) {
+		while (stream->keyframes >= 2)
+			purge(stream);
+		os_atomic_set_bool(&stream->flushing, false);
+		return;
+	}
+
 	if (stream->max_size) {
 		if (!stream->packets.size || stream->keyframes <= 2)
 			return;
@@ -1114,6 +1133,9 @@ static void *replay_buffer_mux_thread(void *data)
 		}
 		obs_encoder_packet_release(pkt);
 	}
+
+	if (stream->save_flush)
+		os_atomic_set_bool(&stream->flushing, true);
 
 	info("Wrote replay buffer to '%s'", stream->path.array);
 
@@ -1234,6 +1256,8 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 
 	if (stream->save_ts && packet->sys_dts_usec >= stream->save_ts) {
 		if (os_atomic_load_bool(&stream->muxing))
+			return;
+		if (flushing(stream))
 			return;
 
 		if (stream->mux_thread_joinable) {
