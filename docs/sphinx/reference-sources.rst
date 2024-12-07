@@ -477,7 +477,15 @@ Source Definition Structure (obs_source_info)
    - **OBS_ICON_TYPE_TEXT**            - Text
    - **OBS_ICON_TYPE_MEDIA**           - Media
    - **OBS_ICON_TYPE_BROWSER**         - Browser
-   - **OBS_ICON_TYPE_CUSTOM**          - Custom (not implemented yet)
+   - **OBS_ICON_TYPE_CUSTOM**          - Custom
+
+.. member:: char *(*obs_source_info.get_dark_icon)(void *type_data)
+
+   Gets the icon file path used for dark themes. Make sure icon_type is set to OBS_ICON_TYPE_CUSTOM.
+
+.. member:: char *(*obs_source_info.get_light_icon)(void *type_data)
+
+   Gets the icon file path used for light themes. Make sure icon_type is set to OBS_ICON_TYPE_CUSTOM.
 
 .. member:: void (*obs_source_info.media_play_pause)(void *data, bool pause)
 
@@ -1432,6 +1440,18 @@ General Source Functions
 .. function:: enum obs_icon_type obs_source_get_icon_type(const char *id)
 
    Calls the :c:member:`obs_source_info.icon_type` to get the icon type.
+
+---------------------
+
+.. function:: char *obs_source_get_dark_icon(const char *id)
+
+   Calls the :c:member:`obs_source_info.get_dark_icon` to get the dark icon.
+
+---------------------
+
+.. function:: char *obs_source_get_light_icon(const char *id)
+
+   Calls the :c:member:`obs_source_info.get_light_icon` to get the light icon.
 
 ---------------------
 
