@@ -322,11 +322,6 @@ static bool hevc_vaapi_supported(void)
 #endif
 #endif
 
-#ifdef _WIN32
-extern void amf_load(void);
-extern void amf_unload(void);
-#endif
-
 #if ENABLE_FFMPEG_LOGGING
 extern void obs_ffmpeg_load_logging(void);
 extern void obs_ffmpeg_unload_logging(void);
@@ -372,10 +367,6 @@ bool obs_module_load(void)
 	}
 #endif
 
-#ifdef _WIN32
-	amf_load();
-#endif
-
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 	const char *libva_env = getenv("LIBVA_DRIVER_NAME");
 	if (!!libva_env)
@@ -419,9 +410,5 @@ void obs_module_unload(void)
 {
 #if ENABLE_FFMPEG_LOGGING
 	obs_ffmpeg_unload_logging();
-#endif
-
-#ifdef _WIN32
-	amf_unload();
 #endif
 }
