@@ -7,6 +7,7 @@ if(NOT ENABLE_PIPEWIRE)
 endif()
 
 find_package(PipeWire 0.3.33 REQUIRED)
+find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 find_package(Gio REQUIRED)
 find_package(Libdrm REQUIRED)
 get_target_property(libdrm_include_directories Libdrm::Libdrm INTERFACE_INCLUDE_DIRECTORIES)
@@ -26,6 +27,8 @@ target_sources(
   PRIVATE
     $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.c>
     $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.h>
+    $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:video-decoder.c>
+    $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:video-decoder.h>
     formats.c
     formats.h
     linux-pipewire.c
