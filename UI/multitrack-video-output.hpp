@@ -10,8 +10,6 @@
 
 #include <QObject>
 
-#define NOMINMAX
-
 class QString;
 
 void StreamStopHandler(void *arg, calldata_t *data);
