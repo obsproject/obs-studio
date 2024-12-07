@@ -221,6 +221,7 @@ static void camera_device_free(struct camera_device *device)
 
 	clear_params(&device->pending_list, SPA_ID_INVALID);
 	clear_params(&device->param_list, SPA_ID_INVALID);
+	g_clear_pointer(&device->info, pw_node_info_free);
 	g_clear_pointer(&device->proxy, pw_proxy_destroy);
 	g_clear_pointer(&device->properties, pw_properties_free);
 	bfree(device);

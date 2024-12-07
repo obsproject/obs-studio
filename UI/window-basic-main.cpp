@@ -167,8 +167,6 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 	item->setData(static_cast<int>(QtDataRole::OBSRef), QVariant::fromValue(val));
 }
 
-constexpr std::string_view OBSProfilePath = "/obs-studio/basic/profiles/";
-
 static void AddExtraModulePaths()
 {
 	string plugins_path, plugins_data_path;
@@ -183,10 +181,16 @@ static void AddExtraModulePaths()
 		plugins_data_path = s;
 
 	if (!plugins_path.empty() && !plugins_data_path.empty()) {
+#if defined(__APPLE__)
+		plugins_path += "/%module%.plugin/Contents/MacOS";
+		plugins_data_path += "/%module%.plugin/Contents/Resources";
+		obs_add_module_path(plugins_path.c_str(), plugins_data_path.c_str());
+#else
 		string data_path_with_module_suffix;
 		data_path_with_module_suffix += plugins_data_path;
 		data_path_with_module_suffix += "/%module%";
 		obs_add_module_path(plugins_path.c_str(), data_path_with_module_suffix.c_str());
+#endif
 	}
 
 	if (portable_mode)
@@ -1900,7 +1904,7 @@ bool OBSBasic::InitBasicConfig()
 		return false;
 	}
 
-	return InitBasicConfigDefaults();
+	return true;
 }
 
 void OBSBasic::InitOBSCallbacks()
@@ -2125,9 +2129,7 @@ void OBSBasic::OBSInit()
 		emit VirtualCamEnabled();
 	}
 
-	InitBasicConfigDefaults2();
-
-	CheckForSimpleModeX264Fallback();
+	UpdateProfileEncoders();
 
 	LogEncoders();
 
@@ -2192,6 +2194,15 @@ void OBSBasic::OBSInit()
 			SetupNewSceneCollection(sceneCollectionName);
 			disableSaving++;
 		}
+
+		disableSaving--;
+		if (foundCollection || configuredCollection) {
+			OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+			OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+		}
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+		OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+		disableSaving++;
 	}
 
 	loaded = true;
@@ -7618,13 +7629,14 @@ void OBSBasic::on_actionShowSettingsFolder_triggered()
 
 void OBSBasic::on_actionShowProfileFolder_triggered()
 {
-	std::string userProfilePath;
-	userProfilePath.reserve(App()->userProfilesLocation.u8string().size() + OBSProfilePath.size());
-	userProfilePath.append(App()->userProfilesLocation.u8string()).append(OBSProfilePath);
+	try {
+		const OBSProfile &currentProfile = GetCurrentProfile();
+		QString currentProfileLocation = QString::fromStdString(currentProfile.path.u8string());
 
-	const QString userProfileLocation = QString::fromStdString(userProfilePath);
-
-	QDesktopServices::openUrl(QUrl::fromLocalFile(userProfileLocation));
+		QDesktopServices::openUrl(QUrl::fromLocalFile(currentProfileLocation));
+	} catch (const std::invalid_argument &error) {
+		blog(LOG_ERROR, "%s", error.what());
+	}
 }
 
 int OBSBasic::GetTopSelectedSourceItem()

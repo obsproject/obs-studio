@@ -186,6 +186,11 @@ static blocked_module_t blocked_modules[] = {
 	// that results in crashes.
 	// Reference: https://github.com/obsproject/obs-studio/issues/10245
 	{L"\\streamdeckplugin.dll", 0, 1706745600, TS_LESS_THAN},
+
+	// TikTok Live Studio Virtual Camera, causes freezing and other issues during enumeration
+	// Different versions seem to be installed in different places, so we have to match on DLL only.
+	// Reference: https://www.hanselman.com/blog/webcam-randomly-pausing-in-obs-discord-and-websites-lsvcam-and-tiktok-studio
+	{L"\\lsvcam.dll", 0, 0, TS_IGNORE},
 };
 
 static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)

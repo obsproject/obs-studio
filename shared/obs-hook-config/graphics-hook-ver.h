@@ -13,7 +13,7 @@
 
 #define HOOK_VER_MAJOR 1
 #define HOOK_VER_MINOR 8
-#define HOOK_VER_PATCH 4
+#define HOOK_VER_PATCH 6
 
 #ifndef STRINGIFY
 #define STRINGIFY(s) #s

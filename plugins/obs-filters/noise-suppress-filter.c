@@ -295,7 +295,7 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 	if (ng->nvafx_enabled) {
 		const char *str1 = obs_source_get_name(filter);
 		char *str2 = "_ported";
-		char *new_name = (char *)malloc(1 + strlen(str1) + strlen(str2));
+		char *new_name = (char *)bmalloc(1 + strlen(str1) + strlen(str2));
 		strcpy(new_name, str1);
 		strcat(new_name, str2);
 		obs_data_t *new_settings = obs_data_create();
@@ -304,6 +304,7 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 		obs_data_set_double(new_settings, S_NVAFX_INTENSITY, intensity);
 		ng->migrated_filter = obs_source_create("nvidia_audiofx_filter", new_name, new_settings, NULL);
 		obs_data_release(new_settings);
+		bfree(new_name);
 	}
 #endif
 	noise_suppress_update(ng, settings);
@@ -443,6 +444,17 @@ static void reset_data(struct noise_suppress_data *ng)
 	clear_deque(&ng->info_buffer);
 }
 
+#ifdef LIBNVAFX_ENABLED
+static void noise_suppress_nvafx_migrate_task(void *param)
+{
+	struct noise_suppress_data *ng = param;
+	obs_source_t *parent = obs_filter_get_parent(ng->context);
+	obs_source_filter_add(parent, ng->migrated_filter);
+	obs_source_set_enabled(ng->migrated_filter, obs_source_enabled(ng->context));
+	obs_source_filter_remove(parent, ng->context);
+}
+#endif
+
 static struct obs_audio_data *noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct noise_suppress_data *ng = data;
@@ -456,9 +468,7 @@ static struct obs_audio_data *noise_suppress_filter_audio(void *data, struct obs
 	/* Migrate nvafx to new filter. */
 	if (ng->nvafx_enabled) {
 		if (!ng->nvafx_migrated) {
-			obs_source_filter_add(parent, ng->migrated_filter);
-			obs_source_set_enabled(ng->migrated_filter, true);
-			obs_source_filter_remove(parent, ng->context);
+			obs_queue_task(OBS_TASK_AUDIO, noise_suppress_nvafx_migrate_task, ng, false);
 			ng->nvafx_migrated = true;
 		}
 		return audio;

@@ -247,7 +247,9 @@ static inline void d3d11_copy_texture(ID3D11Resource *dst, ID3D11Resource *src)
 
 static inline void d3d11_shtex_capture(ID3D11Resource *backbuffer)
 {
-	d3d11_copy_texture(data.texture, backbuffer);
+	if (data.texture) {
+		d3d11_copy_texture(data.texture, backbuffer);
+	}
 }
 
 static void d3d11_shmem_capture_copy(int i)
@@ -301,7 +303,7 @@ void d3d11_capture(void *swap_ptr, void *backbuffer_ptr)
 	if (capture_should_init()) {
 		d3d11_init(swap);
 	}
-	if (capture_ready()) {
+	if (data.handle != nullptr && capture_ready()) {
 		ID3D11Resource *backbuffer;
 
 		hr = dxgi_backbuffer->QueryInterface(__uuidof(ID3D11Resource), (void **)&backbuffer);

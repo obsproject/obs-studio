@@ -16,7 +16,7 @@ endif()
 
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "obs-studio-${CPACK_PACKAGE_VERSION}-sources")
 set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/.git" "/.*build.*" "/.ccache" "/.deps")
+set(CPACK_SOURCE_IGNORE_FILES "/.git" "${CMAKE_BINARY_DIR}" "/.ccache" "/.deps")
 set(CPACK_ARCHIVE_THREADS 0)
 
 if(OS_LINUX)

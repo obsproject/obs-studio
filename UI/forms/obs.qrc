@@ -2,8 +2,10 @@
   <qresource prefix="/res">
     <file>images/save.svg</file>
     <file>images/media-pause.svg</file>
+    <file>images/trash.svg</file>
     <file>images/filter.svg</file>
     <file>images/mute.svg</file>
+    <file>images/unassigned.svg</file>
     <file>images/refresh.svg</file>
     <file>images/no_sources.svg</file>
     <file>images/minus.svg</file>
@@ -31,6 +33,7 @@
     <file>images/revert.svg</file>
     <file>images/alert.svg</file>
     <file>images/warning.svg</file>
+    <file>images/settings/general.svg</file>
     <file>images/sources/brush.svg</file>
     <file>images/sources/camera.svg</file>
     <file>images/sources/gamepad.svg</file>

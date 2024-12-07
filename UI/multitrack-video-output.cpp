@@ -58,7 +58,8 @@ bool MultitrackVideoDeveloperModeEnabled()
 }
 
 static OBSServiceAutoRelease create_service(const GoLiveApi::Config &go_live_config,
-					    const std::optional<std::string> &rtmp_url, const QString &in_stream_key)
+					    const std::optional<std::string> &rtmp_url, const QString &in_stream_key,
+					    std::optional<bool> use_rtmps)
 {
 	const char *url = nullptr;
 	QString stream_key = in_stream_key;
@@ -67,6 +68,9 @@ static OBSServiceAutoRelease create_service(const GoLiveApi::Config &go_live_con
 
 	for (auto &endpoint : ingest_endpoints) {
 		if (qstrnicmp("RTMP", endpoint.protocol.c_str(), 4))
+			continue;
+
+		if (use_rtmps.has_value() && *use_rtmps != (qstricmp("RTMPS", endpoint.protocol.c_str()) == 0))
 			continue;
 
 		url = endpoint.url_template.c_str();
@@ -292,11 +296,14 @@ static OBSOutputs SetupOBSOutput(QWidget *parent, const QString &multitrack_vide
 static void SetupSignalHandlers(bool recording, MultitrackVideoOutput *self, obs_output_t *output, OBSSignal &start,
 				OBSSignal &stop, OBSSignal &deactivate);
 
-void MultitrackVideoOutput::PrepareStreaming(
-	QWidget *parent, const char *service_name, obs_service_t *service, const std::optional<std::string> &rtmp_url,
-	const QString &stream_key, const char *audio_encoder_id, std::optional<uint32_t> maximum_aggregate_bitrate,
-	std::optional<uint32_t> maximum_video_tracks, std::optional<std::string> custom_config,
-	obs_data_t *dump_stream_to_file_config, size_t main_audio_mixer, std::optional<size_t> vod_track_mixer)
+void MultitrackVideoOutput::PrepareStreaming(QWidget *parent, const char *service_name, obs_service_t *service,
+					     const std::optional<std::string> &rtmp_url, const QString &stream_key,
+					     const char *audio_encoder_id,
+					     std::optional<uint32_t> maximum_aggregate_bitrate,
+					     std::optional<uint32_t> maximum_video_tracks,
+					     std::optional<std::string> custom_config,
+					     obs_data_t *dump_stream_to_file_config, size_t main_audio_mixer,
+					     std::optional<size_t> vod_track_mixer, std::optional<bool> use_rtmps)
 {
 	{
 		const std::lock_guard<std::mutex> current_lock{current_mutex};
@@ -396,7 +403,7 @@ void MultitrackVideoOutput::PrepareStreaming(
 		throw MultitrackVideoError::warning(
 			QTStr("FailedToStartStream.FallbackToDefault").arg(multitrack_video_name));
 
-	auto multitrack_video_service = create_service(service_config, rtmp_url, stream_key);
+	auto multitrack_video_service = create_service(service_config, rtmp_url, stream_key, use_rtmps);
 	if (!multitrack_video_service)
 		throw MultitrackVideoError::warning(
 			QTStr("FailedToStartStream.FallbackToDefault").arg(multitrack_video_name));

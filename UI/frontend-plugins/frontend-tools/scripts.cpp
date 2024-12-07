@@ -245,7 +245,7 @@ void ScriptsTool::ReloadScript(const char *path)
 		if (strcmp(script_path, path) == 0) {
 			obs_script_reload(script);
 
-			OBSDataAutoRelease settings = obs_data_create();
+			OBSDataAutoRelease settings = obs_script_get_settings(script);
 
 			obs_properties_t *prop = obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);
@@ -349,7 +349,7 @@ void ScriptsTool::on_addScripts_clicked()
 			item->setData(Qt::UserRole, QString(file));
 			ui->scripts->addItem(item);
 
-			OBSDataAutoRelease settings = obs_data_create();
+			OBSDataAutoRelease settings = obs_script_get_settings(script);
 
 			obs_properties_t *prop = obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);

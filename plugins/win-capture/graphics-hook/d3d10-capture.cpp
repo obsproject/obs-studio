@@ -279,7 +279,9 @@ static inline void d3d10_copy_texture(ID3D10Resource *dst, ID3D10Resource *src)
 
 static inline void d3d10_shtex_capture(ID3D10Resource *backbuffer)
 {
-	d3d10_copy_texture(data.texture, backbuffer);
+	if (data.texture) {
+		d3d10_copy_texture(data.texture, backbuffer);
+	}
 }
 
 static void d3d10_shmem_capture_copy(int i)
@@ -333,7 +335,7 @@ void d3d10_capture(void *swap_ptr, void *backbuffer_ptr)
 	if (capture_should_init()) {
 		d3d10_init(swap);
 	}
-	if (capture_ready()) {
+	if (data.handle != nullptr && capture_ready()) {
 		ID3D10Resource *backbuffer;
 
 		hr = dxgi_backbuffer->QueryInterface(__uuidof(ID3D10Resource), (void **)&backbuffer);

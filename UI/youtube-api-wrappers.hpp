@@ -55,7 +55,7 @@ public:
 	bool GetChannelDescription(ChannelDescription &channel_description);
 	bool InsertBroadcast(BroadcastDescription &broadcast);
 	bool InsertStream(StreamDescription &stream);
-	bool BindStream(const QString broadcast_id, const QString stream_id, json11::Json &json_out);
+	bool BindStream(const QString broadcast_id, const QString stream_id);
 	bool GetBroadcastsList(json11::Json &json_out, const QString &page, const QString &status);
 	bool GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out);
 	bool SetVideoCategory(const QString &video_id, const QString &video_title, const QString &video_description,
@@ -66,7 +66,6 @@ public:
 	bool ResetBroadcast(const QString &broadcast_id, json11::Json &json_out);
 	bool StartLatestBroadcast();
 	bool StopLatestBroadcast();
-	bool SendChatMessage(const std::string &chat_id, const QString &message);
 
 	void SetBroadcastId(QString &broadcast_id);
 	QString GetBroadcastId();

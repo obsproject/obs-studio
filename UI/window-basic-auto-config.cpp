@@ -427,17 +427,6 @@ bool AutoConfigStreamPage::validatePage()
 					multitrackVideoBitrate += bitrate;
 				}
 
-				// grab a streamkey from the go live config if we can
-				for (auto &endpoint : config.ingest_endpoints) {
-					const char *p = endpoint.protocol.c_str();
-					const char *auth = endpoint.authentication ? endpoint.authentication->c_str()
-										   : nullptr;
-					if (qstrnicmp("RTMP", p, 4) == 0 && auth && *auth) {
-						wiz->key = auth;
-						break;
-					}
-				}
-
 				if (multitrackVideoBitrate > 0) {
 					wiz->startingBitrate = multitrackVideoBitrate;
 					wiz->idealBitrate = multitrackVideoBitrate;
