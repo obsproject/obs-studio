@@ -1607,7 +1607,8 @@ bool obs_scripting_load_python(const char *python_path)
 	if (python_path && *python_path) {
 #ifdef __APPLE__
 		char temp[PATH_MAX];
-		snprintf(temp, sizeof(temp), "%s/Python.framework/Versions/Current", python_path);
+		snprintf(temp, sizeof(temp), "%s/Python.framework/Versions/%i.%i", python_path, python_version.major,
+			 python_version.minor);
 		os_utf8_to_wcs(temp, 0, home_path, PATH_MAX);
 		Py_SetPythonHome(home_path);
 #else
