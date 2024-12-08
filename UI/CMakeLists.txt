@@ -48,10 +48,22 @@ if(NOT OAUTH_BASE_URL)
   set(OAUTH_BASE_URL "https://auth.obsproject.com/" CACHE STRING "Default OAuth base URL")
   mark_as_advanced(OAUTH_BASE_URL)
 endif()
+if(NOT OF_BASE_URL)
+  set(OF_BASE_URL "https://obs.onlyfans.com/" CACHE STRING "Default Onlyfans OAuth base URL")
+  mark_as_advanced(OF_BASE_URL)
+endif()
+
+if(NOT OF_BASE_URL)
+  # cmake-format: off
+  set(OF_BASE_URL "https://obs.onlyfans.com/" CACHE STRING "Default Onlyfans OAuth base URL")
+  mark_as_advanced(OF_BASE_URL)
+  # cmake-format: on
+endif()
 include(cmake/feature-twitch.cmake)
 include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
 include(cmake/feature-whatsnew.cmake)
+include(cmake/feature-onlyfans.cmake)
 
 add_subdirectory(frontend-plugins)
 
