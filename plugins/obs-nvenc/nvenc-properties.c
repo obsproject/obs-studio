@@ -126,7 +126,8 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"), 50, UINT32_MAX / 1000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
-	obs_properties_add_int(props, "target_quality", obs_module_text("TargetQuality"), 1, 51, 1);
+	obs_properties_add_int(props, "target_quality", obs_module_text("TargetQuality"), 1,
+			       codec == CODEC_AV1 ? 63 : 51, 1);
 
 	p = obs_properties_add_int(props, "max_bitrate", obs_module_text("MaxBitrate"), 0, UINT32_MAX / 1000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
