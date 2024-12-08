@@ -5616,7 +5616,9 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 			ui->enableMultitrackVideo->setChecked(false);
 	}
 
-#ifndef _WIN32
+	// Enhanced Broadcasting works on Windows and Apple Silicon Macs.
+	// For other OS variants, only enable the GUI controls if developer mode was invoked.
+#if !defined(_WIN32) && !(defined(__APPLE__) && defined(__aarch64__))
 	available = available && MultitrackVideoDeveloperModeEnabled();
 #endif
 
