@@ -542,7 +542,13 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 	obs_output_signal_stop(stream->output, code);
 
 	os_atomic_set_bool(&stream->capturing, false);
-    
+    os_atomic_set_bool(&stream->active, false);
+    os_atomic_set_bool(&stream->stopping, false);
+    os_atomic_set_bool(&stream->sent_headers, false);
+
+	obs_output_end_data_capture(stream->output);
+	replay_buffer_clear(stream);
+
 }
 
 static void find_best_filename(struct dstr *path, bool space)
