@@ -24,6 +24,8 @@
 #include <xcb/xcb.h>
 #if defined(XCB_XINPUT_FOUND)
 #include <xcb/xinput.h>
+#include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 #endif
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
