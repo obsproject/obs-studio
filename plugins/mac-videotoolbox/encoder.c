@@ -56,6 +56,7 @@ struct vt_encoder {
 	const char *profile;
 	CMVideoCodecType codec_type;
 	bool bframes;
+	bool spatial_aq;
 
 	int vt_pix_fmt;
 	enum video_colorspace colorspace;
@@ -567,6 +568,20 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 		if (code != noErr) {
 			return code;
 		}
+
+		if (__builtin_available(macOS 15.0, *)) {
+			int spatialAq = enc->spatial_aq ? kVTQPModulationLevel_Default : kVTQPModulationLevel_Disable;
+			CFNumberRef SpatialAQ = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &spatialAq);
+
+			code = VTSessionSetProperty(s, kVTCompressionPropertyKey_SpatialAdaptiveQPLevel, SpatialAQ);
+
+			if (code != noErr) {
+				log_osstatus(LOG_WARNING, enc,
+					     "setting kVTCompressionPropertyKey_SpatialAdaptiveQPLevel failed", code);
+			}
+
+			CFRelease(SpatialAQ);
+		}
 	}
 
 	// This can fail depending on hardware configuration
@@ -723,6 +738,7 @@ static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 	enc->rc_max_bitrate = (uint32_t)obs_data_get_int(settings, "max_bitrate");
 	enc->rc_max_bitrate_window = obs_data_get_double(settings, "max_bitrate_window");
 	enc->bframes = obs_data_get_bool(settings, "bframes");
+	enc->spatial_aq = obs_data_get_bool(settings, "spatial_aq");
 
 	return true;
 }
@@ -1261,6 +1277,10 @@ static obs_properties_t *vt_properties_h26x(void *data __unused, void *type_data
 
 	obs_properties_add_bool(props, "bframes", obs_module_text("UseBFrames"));
 
+	if (__builtin_available(macOS 15.0, *)) {
+		obs_properties_add_bool(props, "spatial_aq", obs_module_text("UseSpatialAQ"));
+	}
+
 	return props;
 }
 
@@ -1346,6 +1366,7 @@ static void vt_defaults(obs_data_t *settings, void *data)
 				    type_data->codec_type == kCMVideoCodecType_H264 ? "high" : "main");
 	obs_data_set_default_int(settings, "codec_type", kCMVideoCodecType_AppleProRes422);
 	obs_data_set_default_bool(settings, "bframes", true);
+	obs_data_set_default_bool(settings, "spatial_aq", true);
 }
 
 static void vt_free_type_data(void *data)

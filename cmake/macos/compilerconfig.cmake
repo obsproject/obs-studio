@@ -21,8 +21,8 @@ endif()
 set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64)
 
 # Ensure recent enough Xcode and platform SDK
-set(_obs_macos_minimum_sdk 14.2) # Keep in sync with Xcode
-set(_obs_macos_minimum_xcode 15.1) # Keep in sync with SDK
+set(_obs_macos_minimum_sdk 15.0) # Keep in sync with SDK
+set(_obs_macos_minimum_xcode 16.0) # Keep in sync with Xcode
 message(DEBUG "macOS SDK Path: ${CMAKE_OSX_SYSROOT}")
 string(REGEX MATCH ".+/MacOSX.platform/Developer/SDKs/MacOSX([0-9]+\\.[0-9])+\\.sdk$" _ ${CMAKE_OSX_SYSROOT})
 set(_obs_macos_current_sdk ${CMAKE_MATCH_1})
