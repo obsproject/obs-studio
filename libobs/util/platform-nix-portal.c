@@ -21,6 +21,8 @@
 #include "dstr.h"
 
 #define PORTAL_NAME "org.freedesktop.portal.Desktop"
+#define PORTAL_PATH "/org/freedesktop/portal/desktop"
+#define INHIBIT_PORTAL_IFACE "org.freedesktop.portal.Inhibit"
 
 struct portal_inhibit_info {
 	GDBusConnection *c;
@@ -129,8 +131,7 @@ static void do_inhibit(struct portal_inhibit_info *info, const char *reason)
 	bfree(token);
 
 	info->cancellable = g_cancellable_new();
-	g_dbus_connection_call(info->c, PORTAL_NAME, "/org/freedesktop/portal/desktop",
-			       "org.freedesktop.portal.Inhibit", "Inhibit",
+	g_dbus_connection_call(info->c, PORTAL_NAME, PORTAL_PATH, INHIBIT_PORTAL_IFACE, "Inhibit",
 			       g_variant_new("(sua{sv})", "", flags, &options), NULL, G_DBUS_CALL_FLAGS_NONE, -1,
 			       info->cancellable, inhibited_cb, info);
 }
@@ -197,9 +198,9 @@ struct portal_inhibit_info *portal_inhibit_info_create(void)
 	while ((aux = strstr(info->sender_name, ".")) != NULL)
 		*aux = '_';
 
-	reply = g_dbus_connection_call_sync(info->c, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-					    "org.freedesktop.DBus", "GetNameOwner", g_variant_new("(s)", PORTAL_NAME),
-					    NULL, G_DBUS_CALL_FLAGS_NO_AUTO_START, -1, NULL, NULL);
+	reply = g_dbus_connection_call_sync(info->c, PORTAL_NAME, PORTAL_PATH, "org.freedesktop.DBus.Properties", "Get",
+					    g_variant_new("(ss)", INHIBIT_PORTAL_IFACE, "version"),
+					    G_VARIANT_TYPE("(v)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
 
 	if (reply != NULL) {
 		blog(LOG_DEBUG, "Found portal inhibitor");
