@@ -21,6 +21,7 @@
 
 #include <obs-avc.h>
 #include <obs-hevc.h>
+#include <obs-output.h>
 
 #ifdef _WIN32
 #include <util/windows/win-version.h>
@@ -1028,6 +1029,13 @@ static int init_send(struct rtmp_stream *stream)
 					stream->low_latency_mode = false;
 					bitrate = 10000;
 				}
+
+				if (stream->dbr_enabled && bitrate < stream->dbr_orig_bitrate) {
+					obs_output_log_warning(
+						stream->output,
+						"Recording bitrate adjusted to %d kbps to match streaming service limitations.",
+						bitrate);
+				}
 				total_bitrate += bitrate;
 				obs_data_release(params);
 			}
@@ -1542,6 +1550,11 @@ static void dbr_set_bitrate(struct rtmp_stream *stream)
 
 	obs_data_set_int(settings, "bitrate", stream->dbr_cur_bitrate);
 	obs_encoder_update(vencoder, settings);
+
+	if (stream->dbr_cur_bitrate < stream->dbr_orig_bitrate) {
+		obs_output_log_warning(stream->output, "Dynamic bitrate lowered to %ld kbps due to network conditions.",
+				       stream->dbr_cur_bitrate);
+	}
 
 	obs_data_release(settings);
 }
