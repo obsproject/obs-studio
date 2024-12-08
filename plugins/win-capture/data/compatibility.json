@@ -589,6 +589,20 @@
             "window_capture_wgc": false,
             "message": "Marvel Rivals may require OBS to be run as admin to use Game Capture.",
             "url": "https://obsproject.com/kb/game-capture-troubleshooting"
+        },
+        {
+            "name": "The Bazaar",
+            "translation_key": "Compatibility.GameCapture.Admin",
+            "severity": 1,
+            "executable": "TheBazaar.exe",
+            "window_class": "",
+            "window_title": "",
+            "match_flags": 1,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "The Bazaar may require OBS to be run as admin to use Game Capture.",
+            "url": "https://obsproject.com/kb/game-capture-troubleshooting"
         }
     ]
 }
