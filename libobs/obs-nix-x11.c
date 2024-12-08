@@ -1254,7 +1254,28 @@ static obs_key_t obs_nix_x11_key_from_virtual_key(int sym)
 		}
 	}
 
-	return OBS_KEY_NONE;
+	switch (sym) {
+	case XKB_KEY_KP_Home:
+		return OBS_KEY_HOME;
+	case XKB_KEY_KP_Up:
+		return OBS_KEY_UP;
+	case XKB_KEY_KP_Prior:
+		return OBS_KEY_PAGEUP;
+	case XKB_KEY_KP_Left:
+		return OBS_KEY_LEFT;
+	case XKB_KEY_KP_Begin:
+		return OBS_KEY_CLEAR;
+	case XKB_KEY_KP_Right:
+		return OBS_KEY_RIGHT;
+	case XKB_KEY_KP_End:
+		return OBS_KEY_END;
+	case XKB_KEY_KP_Down:
+		return OBS_KEY_DOWN;
+	case XKB_KEY_KP_Next:
+		return OBS_KEY_PAGEDOWN;
+	default:
+		return OBS_KEY_NONE;
+	}
 }
 
 static int obs_nix_x11_key_to_virtual_key(obs_key_t key)
