@@ -24,14 +24,49 @@
 #include <xcb/xcb.h>
 #if defined(XCB_XINPUT_FOUND)
 #include <xcb/xinput.h>
-#include <xkbcommon/xkbcommon.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 #endif
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
 #include <X11/XF86keysym.h>
 #include <X11/Sunkeysym.h>
+#include <X11/keysymdef.h>
+
+#ifndef XKB_KEY_KP_Home
+#define XKB_KEY_KP_Home XK_KP_Home
+#endif
+
+#ifndef XKB_KEY_KP_Up
+#define XKB_KEY_KP_Up XK_KP_Up
+#endif
+
+#ifndef XKB_KEY_KP_Prior
+#define XKB_KEY_KP_Prior XK_KP_Prior
+#endif
+
+#ifndef XKB_KEY_KP_Left
+#define XKB_KEY_KP_Left XK_KP_Left
+#endif
+
+#ifndef XKB_KEY_KP_Begin
+#define XKB_KEY_KP_Begin XK_KP_Begin
+#endif
+
+#ifndef XKB_KEY_KP_Right
+#define XKB_KEY_KP_Right XK_KP_Right
+#endif
+
+#ifndef XKB_KEY_KP_End
+#define XKB_KEY_KP_End XK_KP_End
+#endif
+
+#ifndef XKB_KEY_KP_Down
+#define XKB_KEY_KP_Down XK_KP_Down
+#endif
+
+#ifndef XKB_KEY_KP_Next
+#define XKB_KEY_KP_Next XK_KP_Next
+#endif
 
 void obs_nix_x11_log_info(void)
 {
