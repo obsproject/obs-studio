@@ -21,6 +21,7 @@
 
 #include <obs-avc.h>
 #include <obs-hevc.h>
+#include <obs-output.h>
 
 #ifdef _WIN32
 #include <util/windows/win-version.h>
@@ -997,7 +998,8 @@ static int init_send(struct rtmp_stream *stream)
 		if (ioctl(stream->rtmp.m_sb.sb_socket, FIONBIO, &one)) {
 			stream->rtmp.last_error_code = errno;
 #endif
-			warn("Failed to set non-blocking socket");
+			blog(LOG_WARNING, "Failed to set non-blocking socket");
+
 			return OBS_OUTPUT_ERROR;
 		}
 
@@ -1027,6 +1029,12 @@ static int init_send(struct rtmp_stream *stream)
 					     "Low latency mode disabled.");
 					stream->low_latency_mode = false;
 					bitrate = 10000;
+				}
+
+				if (stream->dbr_enabled && bitrate < stream->dbr_orig_bitrate) {
+					blog(LOG_WARNING,
+					     "Recording bitrate adjusted to %d kbps to match streaming service limitations.",
+					     bitrate);
 				}
 				total_bitrate += bitrate;
 				obs_data_release(params);
@@ -1542,6 +1550,11 @@ static void dbr_set_bitrate(struct rtmp_stream *stream)
 
 	obs_data_set_int(settings, "bitrate", stream->dbr_cur_bitrate);
 	obs_encoder_update(vencoder, settings);
+
+	if (stream->dbr_cur_bitrate < stream->dbr_orig_bitrate) {
+		blog(LOG_WARNING, "Dynamic bitrate lowered to %ld kbps due to network conditions.",
+		     stream->dbr_cur_bitrate);
+	}
 
 	obs_data_release(settings);
 }
