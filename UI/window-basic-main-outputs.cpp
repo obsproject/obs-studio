@@ -1280,7 +1280,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	int rbTime = config_get_int(main->Config(), "SimpleOutput", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
 	int tracks = config_get_int(main->Config(), "SimpleOutput", "RecTracks");
-
+	bool rbFlush = config_get_bool(main->Config(), "SimpleOutput", "FlushRBAfterSave");
 	bool is_fragmented = strncmp(format, "fragmented", 10) == 0;
 	bool is_lossless = videoQuality == "Lossless";
 
@@ -1296,6 +1296,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		obs_data_set_bool(settings, "allow_spaces", !noSpace);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb", usingRecordingPreset ? rbSize : 0);
+		obs_data_set_bool(settings, "save_flush", rbFlush);
 	} else {
 		f = GetFormatString(filenameFormat, nullptr, nullptr);
 		string strPath = GetRecordingFilename(path, ffmpegOutput ? "avi" : format, noSpace, overwriteIfExists,
@@ -2271,6 +2272,7 @@ bool AdvancedOutput::StartReplayBuffer()
 	const char *rbSuffix;
 	int rbTime;
 	int rbSize;
+	bool rbFlush;
 
 	if (!useStreamEncoder) {
 		if (!ffmpegOutput)
@@ -2295,6 +2297,8 @@ bool AdvancedOutput::StartReplayBuffer()
 		rbSuffix = config_get_string(main->Config(), "SimpleOutput", "RecRBSuffix");
 		rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 		rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
+		rbFlush = config_get_bool(main->Config(), "AdvOut",
+					  "FlushRBAfterSave");
 
 		string f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
 		string ext = GetFormatExt(recFormat);
@@ -2307,6 +2311,7 @@ bool AdvancedOutput::StartReplayBuffer()
 		obs_data_set_bool(settings, "allow_spaces", !noSpace);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb", usesBitrate ? 0 : rbSize);
+		obs_data_set_bool(settings, "save_flush", rbFlush);
 
 		obs_output_update(replayBuffer, settings);
 	}
