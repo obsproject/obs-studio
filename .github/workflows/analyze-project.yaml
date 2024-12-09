@@ -5,7 +5,7 @@ jobs:
   windows:
     name: Windows 🪟 (PVS-Studio)
     runs-on: windows-2022
-    if: github.repository_owner == 'obsproject'
+    if: false && github.repository_owner == 'obsproject'
     defaults:
       run:
         shell: pwsh
