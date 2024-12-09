@@ -32,6 +32,7 @@ target_sources(
     obs-ffmpeg-av1.c
     obs-ffmpeg-compat.h
     obs-ffmpeg-formats.h
+    obs-ffmpeg-h264.c
     obs-ffmpeg-hls-mux.c
     obs-ffmpeg-mux.c
     obs-ffmpeg-mux.h
