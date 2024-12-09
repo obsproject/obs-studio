@@ -5,7 +5,7 @@ include_guard(GLOBAL)
 include(cpackconfig_common)
 
 # Add GPLv2 license file to CPack
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/UI/data/license/gplv2.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/frontend/data/license/gplv2.txt")
 set(CPACK_PACKAGE_EXECUTABLES "obs")
 
 if(ENABLE_RELEASE_BUILD)
