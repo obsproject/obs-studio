@@ -5616,7 +5616,10 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 			ui->enableMultitrackVideo->setChecked(false);
 	}
 
-#ifndef _WIN32
+	// Enhanced Broadcasting works on Windows and Linux. For other
+	// OS variants, only enable the GUI controls if developer mode
+	// was invoked.
+#if (!defined(__linux__) && !defined(_WIN32))
 	available = available && MultitrackVideoDeveloperModeEnabled();
 #endif
 
