@@ -285,12 +285,12 @@
   <customwidget>
    <class>ClickableLabel</class>
    <extends>QLabel</extends>
-   <header>clickable-label.hpp</header>
+   <header>components/ClickableLabel.hpp</header>
   </customwidget>
   <customwidget>
    <class>AbsoluteSlider</class>
    <extends>QSlider</extends>
-   <header>absolute-slider.hpp</header>
+   <header>components/AbsoluteSlider.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

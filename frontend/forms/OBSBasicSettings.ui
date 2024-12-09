@@ -8472,12 +8472,12 @@
   <customwidget>
    <class>UrlPushButton</class>
    <extends>QPushButton</extends>
-   <header>url-push-button.hpp</header>
+   <header>components/UrlPushButton.hpp</header>
   </customwidget>
   <customwidget>
    <class>OBSHotkeyEdit</class>
    <extends>QLineEdit</extends>
-   <header>hotkey-edit.hpp</header>
+   <header>settings/OBSHotkeyEdit.hpp</header>
   </customwidget>
  </customwidgets>
  <tabstops>

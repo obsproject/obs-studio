@@ -393,7 +393,7 @@
   <customwidget>
    <class>NonCheckableButton</class>
    <extends>QPushButton</extends>
-   <header>noncheckable-button.hpp</header>
+   <header>components/NonCheckableButton.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

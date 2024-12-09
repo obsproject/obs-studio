@@ -687,7 +687,7 @@
   <customwidget>
    <class>ClickableLabel</class>
    <extends>QLabel</extends>
-   <header>clickable-label.hpp</header>
+   <header>components/ClickableLabel.hpp</header>
   </customwidget>
  </customwidgets>
  <resources/>

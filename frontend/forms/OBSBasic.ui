@@ -2218,18 +2218,18 @@
   <customwidget>
    <class>OBSBasicPreview</class>
    <extends>QWidget</extends>
-   <header>window-basic-preview.hpp</header>
+   <header>widgets/OBSBasicPreview.hpp</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>OBSBasicStatusBar</class>
    <extends>QStatusBar</extends>
-   <header>window-basic-status-bar.hpp</header>
+   <header>widgets/OBSBasicStatusBar.hpp</header>
   </customwidget>
   <customwidget>
    <class>HScrollArea</class>
    <extends>QScrollArea</extends>
-   <header>horizontal-scroll-area.hpp</header>
+   <header>components/HScrollArea.hpp</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -2241,28 +2241,28 @@
   <customwidget>
    <class>SourceTree</class>
    <extends>QListView</extends>
-   <header>source-tree.hpp</header>
+   <header>components/SourceTree.hpp</header>
   </customwidget>
   <customwidget>
    <class>SceneTree</class>
    <extends>QListWidget</extends>
-   <header>scene-tree.hpp</header>
+   <header>components/SceneTree.hpp</header>
   </customwidget>
   <customwidget>
    <class>OBSDock</class>
    <extends>QDockWidget</extends>
-   <header>window-dock.hpp</header>
+   <header>docks/OBSDock.hpp</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>OBSPreviewScalingLabel</class>
    <extends>QLabel</extends>
-   <header>preview-controls.hpp</header>
+   <header>components/OBSPreviewScalingLabel.hpp</header>
   </customwidget>
   <customwidget>
    <class>OBSPreviewScalingComboBox</class>
    <extends>QComboBox</extends>
-   <header>preview-controls.hpp</header>
+   <header>components/OBSPreviewScalingComboBox.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

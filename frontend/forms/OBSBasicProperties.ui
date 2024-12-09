@@ -121,7 +121,7 @@
   <customwidget>
    <class>OBSQTDisplay</class>
    <extends>QWidget</extends>
-   <header>qt-display.hpp</header>
+   <header>widgets/OBSQTDisplay.hpp</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

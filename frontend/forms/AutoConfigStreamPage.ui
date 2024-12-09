@@ -534,7 +534,7 @@
   <customwidget>
    <class>UrlPushButton</class>
    <extends>QPushButton</extends>
-   <header>url-push-button.hpp</header>
+   <header>components/UrlPushButton.hpp</header>
   </customwidget>
  </customwidgets>
  <resources/>
