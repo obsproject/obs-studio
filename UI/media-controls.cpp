@@ -528,5 +528,5 @@ void MediaControls::UpdateLabels(int val)
 	if (!countDownTimer)
 		ui->durationLabel->setText(FormatSeconds((int)(duration / 1000.0f)));
 	else
-		ui->durationLabel->setText(QString("-") + FormatSeconds((int)((duration - time) / 1000.0f)));
+		ui->durationLabel->setText(QStringLiteral("-") + FormatSeconds((int)((duration - time) / 1000.0f)));
 }

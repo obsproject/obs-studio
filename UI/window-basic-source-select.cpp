@@ -357,7 +357,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_, un
 	int i = 2;
 	OBSSourceAutoRelease source = nullptr;
 	while ((source = obs_get_source_by_name(QT_TO_UTF8(text)))) {
-		text = QString("%1 %2").arg(placeHolderText).arg(i++);
+		text = QStringLiteral("%1 %2").arg(placeHolderText).arg(i++);
 	}
 
 	ui->sourceName->setText(text);
