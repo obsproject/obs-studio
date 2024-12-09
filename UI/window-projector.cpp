@@ -35,8 +35,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 	windowHandle()->setProperty("isOBSProjectorWindow", true);
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
-	// Prevents resizing of projector windows
-	setAttribute(Qt::WA_PaintOnScreen, false);
+	if (!QApplication::platformName().contains("wayland")) {
+		// Prevents resizing of projector windows on X11
+		setAttribute(Qt::WA_PaintOnScreen, false);
+	}
 #endif
 
 	type = type_;
