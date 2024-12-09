@@ -8,14 +8,17 @@ if(
   target_sources(
     obs-studio
     PRIVATE
-      auth-youtube.cpp
-      auth-youtube.hpp
-      window-dock-youtube-app.cpp
-      window-dock-youtube-app.hpp
-      window-youtube-actions.cpp
-      window-youtube-actions.hpp
-      youtube-api-wrappers.cpp
-      youtube-api-wrappers.hpp
+      dialogs/OBSYoutubeActions.cpp
+      dialogs/OBSYoutubeActions.hpp
+      docks/YouTubeAppDock.cpp
+      docks/YouTubeAppDock.hpp
+      docks/YouTubeChatDock.cpp
+      docks/YouTubeChatDock.hpp
+      forms/OBSYoutubeActions.ui
+      oauth/YoutubeAuth.cpp
+      oauth/YoutubeAuth.hpp
+      utility/YoutubeApiWrappers.cpp
+      utility/YoutubeApiWrappers.hpp
   )
 
   target_enable_feature(obs-studio "YouTube API connection" YOUTUBE_ENABLED)

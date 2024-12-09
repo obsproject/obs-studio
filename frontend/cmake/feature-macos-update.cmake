@@ -9,14 +9,16 @@ endif()
 target_sources(
   obs-studio
   PRIVATE
-    update/crypto-helpers-mac.mm
-    update/crypto-helpers.hpp
-    update/models/branches.hpp
-    update/models/whatsnew.hpp
-    update/shared-update.cpp
-    update/shared-update.hpp
-    update/update-helpers.cpp
-    update/update-helpers.hpp
+    utility/crypto-helpers-mac.mm
+    utility/crypto-helpers.hpp
+    utility/models/branches.hpp
+    utility/models/whatsnew.hpp
+    utility/update-helpers.cpp
+    utility/update-helpers.hpp
+    utility/WhatsNewBrowserInitThread.cpp
+    utility/WhatsNewBrowserInitThread.hpp
+    utility/WhatsNewInfoThread.cpp
+    utility/WhatsNewInfoThread.hpp
 )
 
 target_link_libraries(

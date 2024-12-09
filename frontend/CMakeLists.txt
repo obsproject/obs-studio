@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
-add_subdirectory(obs-frontend-api)
+add_subdirectory(api)
 
-option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
+option(ENABLE_FRONTEND "Enable building with UI frontend (requires Qt6)" ON)
 
-if(NOT ENABLE_UI)
+if(NOT ENABLE_FRONTEND)
   target_disable_feature(obs "User Interface")
   return()
 else()
@@ -15,11 +15,15 @@ find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 find_package(CURL REQUIRED)
 
 if(NOT TARGET OBS::json11)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" "${CMAKE_BINARY_DIR}/deps/json11")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" json11)
+endif()
+
+if(NOT TARGET OBS::libobs)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/libobs" libobs)
 endif()
 
 if(NOT TARGET OBS::bpm)
-  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/bpm" "${CMAKE_BINARY_DIR}/shared/bpm")
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/bpm" bpm)
 endif()
 
 add_executable(obs-studio)
@@ -32,17 +36,23 @@ target_link_libraries(
     FFmpeg::avcodec
     FFmpeg::avutil
     FFmpeg::avformat
-    OBS::bpm
     OBS::libobs
     OBS::frontend-api
     OBS::json11
+    OBS::bpm
 )
 
-include(cmake/ui-qt.cmake)
-include(cmake/ui-elements.cmake)
-include(cmake/ui-windows.cmake)
+include(cmake/ui-components.cmake)
+include(cmake/ui-dialogs.cmake)
+include(cmake/ui-docks.cmake)
 include(cmake/feature-importers.cmake)
+include(cmake/ui-oauth.cmake)
 include(cmake/feature-browserpanels.cmake)
+include(cmake/ui-qt.cmake)
+include(cmake/ui-settings.cmake)
+include(cmake/ui-utility.cmake)
+include(cmake/ui-widgets.cmake)
+include(cmake/ui-wizards.cmake)
 
 if(NOT OAUTH_BASE_URL)
   set(OAUTH_BASE_URL "https://auth.obsproject.com/" CACHE STRING "Default OAuth base URL")
@@ -53,56 +63,13 @@ include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
 include(cmake/feature-whatsnew.cmake)
 
-add_subdirectory(frontend-plugins)
+add_subdirectory(plugins)
 
-configure_file(ui-config.h.in ui-config.h)
-
-target_sources(
-  obs-studio
-  PRIVATE
-    api-interface.cpp
-    auth-base.cpp
-    auth-base.hpp
-    auth-listener.cpp
-    auth-listener.hpp
-    auth-oauth.cpp
-    auth-oauth.hpp
-    display-helpers.hpp
-    ffmpeg-utils.cpp
-    ffmpeg-utils.hpp
-    multiview.cpp
-    multiview.hpp
-    obf.c
-    obf.h
-    obs-app-theming.cpp
-    obs-app-theming.hpp
-    obs-app.cpp
-    obs-app.hpp
-    obs-proxy-style.cpp
-    obs-proxy-style.hpp
-    platform.hpp
-    qt-display.cpp
-    qt-display.hpp
-    ui-config.h
-    ui-validation.cpp
-    ui-validation.hpp
-)
+configure_file(cmake/templates/ui-config.h.in ui-config.h)
 
 target_sources(
   obs-studio
-  PRIVATE
-    goliveapi-censoredjson.cpp
-    goliveapi-censoredjson.hpp
-    goliveapi-network.cpp
-    goliveapi-network.hpp
-    goliveapi-postdata.cpp
-    goliveapi-postdata.hpp
-    models/multitrack-video.hpp
-    multitrack-video-error.cpp
-    multitrack-video-error.hpp
-    multitrack-video-output.cpp
-    multitrack-video-output.hpp
-    system-info.hpp
+  PRIVATE obs-main.cpp OBSStudioAPI.cpp OBSStudioAPI.hpp OBSApp.cpp OBSApp.hpp OBSApp_Themes.cpp ui-config.h
 )
 
 if(OS_WINDOWS)
@@ -131,5 +98,19 @@ endforeach()
 get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
 list(JOIN obs_module_list "|" SAFE_MODULES)
 target_compile_definitions(obs-studio PRIVATE "SAFE_MODULES=\"${SAFE_MODULES}\"")
+
+get_target_property(target_sources obs-studio SOURCES)
+set(target_cpp_sources ${target_sources})
+set(target_hpp_sources ${target_sources})
+set(target_qt_sources ${target_sources})
+list(FILTER target_cpp_sources INCLUDE REGEX ".+\\.(cpp|mm|c|m)")
+list(SORT target_cpp_sources COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
+list(FILTER target_hpp_sources INCLUDE REGEX ".+\\.(hpp|h)")
+list(SORT target_hpp_sources COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
+list(FILTER target_qt_sources INCLUDE REGEX ".+\\.(ui|qrc)")
+list(SORT target_qt_sources COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Source Files" FILES ${target_cpp_sources})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Header Files" FILES ${target_hpp_sources})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Qt Files" FILES ${target_qt_sources})
 
 set_target_properties_obs(obs-studio PROPERTIES FOLDER frontend OUTPUT_NAME "$<IF:$<PLATFORM_ID:Windows>,obs64,obs>")
