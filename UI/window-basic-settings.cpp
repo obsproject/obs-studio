@@ -1059,7 +1059,7 @@ void OBSBasicSettings::LoadFormats()
 		if (audio || video) {
 			QString itemText(format.name);
 			if (audio ^ video)
-				itemText += QString(" (%1)").arg(audio ? AUDIO_STR : VIDEO_STR);
+				itemText += QStringLiteral(" (%1)").arg(audio ? AUDIO_STR : VIDEO_STR);
 
 			ui->advOutFFFormat->addItem(itemText, QVariant::fromValue(format));
 		}
@@ -1097,7 +1097,7 @@ static void AddCodec(QComboBox *combo, const FFmpegCodec &codec)
 {
 	QString itemText;
 	if (codec.long_name)
-		itemText = QString("%1 - %2").arg(codec.name, codec.long_name);
+		itemText = QStringLiteral("%1 - %2").arg(codec.name, codec.long_name);
 	else
 		itemText = codec.name;
 
@@ -1116,9 +1116,9 @@ static void AddDefaultCodec(QComboBox *combo, const FFmpegFormat &format, FFmpeg
 
 	QString itemText;
 	if (codec.long_name) {
-		itemText = QString("%1 - %2 (%3)").arg(codec.name, codec.long_name, AV_ENCODER_DEFAULT_STR);
+		itemText = QStringLiteral("%1 - %2 (%3)").arg(codec.name, codec.long_name, AV_ENCODER_DEFAULT_STR);
 	} else {
-		itemText = QString("%1 (%2)").arg(codec.name, AV_ENCODER_DEFAULT_STR);
+		itemText = QStringLiteral("%1 (%2)").arg(codec.name, AV_ENCODER_DEFAULT_STR);
 	}
 
 	combo->addItem(itemText, QVariant::fromValue(codec));
@@ -3323,7 +3323,7 @@ void OBSBasicSettings::SaveEncoder(QComboBox *combo, const char *section, const 
 	if (!v.isNull())
 		cd = v.value<FFmpegCodec>();
 
-	config_set_int(main->Config(), section, QT_TO_UTF8(QString("%1Id").arg(value)), cd.id);
+	config_set_int(main->Config(), section, QT_TO_UTF8(QStringLiteral("%1Id").arg(value)), cd.id);
 	if (cd.id != 0)
 		config_set_string(main->Config(), section, value, cd.name);
 	else
@@ -5382,8 +5382,8 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 	if (qual == "Lossless") {
 		QMessageBox::StandardButton button;
 
-		QString warningString =
-			SIMPLE_OUTPUT_WARNING("Lossless") + QString("\n\n") + SIMPLE_OUTPUT_WARNING("Lossless.Msg");
+		QString warningString = SIMPLE_OUTPUT_WARNING("Lossless") + QStringLiteral("\n\n") +
+					SIMPLE_OUTPUT_WARNING("Lossless.Msg");
 
 		button = OBSMessageBox::question(this, SIMPLE_OUTPUT_WARNING("Lossless.Title"), warningString);
 

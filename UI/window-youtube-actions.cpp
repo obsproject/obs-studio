@@ -90,7 +90,7 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 		if (thumbnailFile.isEmpty()) {
 			QString filePath = OpenFile(this, QTStr("YouTube.Actions.Thumbnail.SelectFile"),
 						    QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),
-						    QString("Images (*.png *.jpg *.jpeg *.gif)"));
+						    QStringLiteral("Images (*.png *.jpg *.jpeg *.gif)"));
 
 			if (!filePath.isEmpty()) {
 				QFileInfo tFile(filePath);
@@ -159,7 +159,7 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 	QLabel *loadingLabel = new QLabel();
 	loadingLabel->setTextFormat(Qt::RichText);
 	loadingLabel->setAlignment(Qt::AlignHCenter);
-	loadingLabel->setText(QString("<big>%1</big>").arg(QTStr("YouTube.Actions.EventsLoading")));
+	loadingLabel->setText(QStringLiteral("<big>%1</big>").arg(QTStr("YouTube.Actions.EventsLoading")));
 	ui->scrollAreaWidgetContents->layout()->addWidget(loadingLabel);
 
 	// Delete "loading..." label on completion
@@ -188,18 +188,18 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 
 			if (status == "live" || status == "testing") {
 				// Resumable stream
-				label->setText(QString("<big>%1</big><br/>%2")
+				label->setText(QStringLiteral("<big>%1</big><br/>%2")
 						       .arg(title, QTStr("YouTube.Actions.Stream.Resume")));
 
 			} else if (dateTimeString.isEmpty()) {
 				// The broadcast created by YouTube Studio has no start time.
 				// Yes this does violate the restrictions set in YouTube's API
 				// But why would YouTube care about consistency?
-				label->setText(QString("<big>%1</big><br/>%2")
+				label->setText(QStringLiteral("<big>%1</big><br/>%2")
 						       .arg(title, QTStr("YouTube.Actions.Stream.YTStudio")));
 			} else {
 				label->setText(
-					QString("<big>%1</big><br/>%2")
+					QStringLiteral("<big>%1</big><br/>%2")
 						.arg(title,
 						     QTStr("YouTube.Actions.Stream.ScheduledFor").arg(dateTimeString)));
 			}
@@ -309,8 +309,9 @@ void WorkerThread::run()
 				QDateTime dateTime = utcDTime.addSecs(utcDTime.offsetFromUtc());
 
 				QString dateTimeString = QLocale().toString(
-					dateTime, QString("%1  %2").arg(QLocale().dateFormat(QLocale::LongFormat),
-									QLocale().timeFormat(QLocale::ShortFormat)));
+					dateTime,
+					QStringLiteral("%1  %2").arg(QLocale().dateFormat(QLocale::LongFormat),
+								     QLocale().timeFormat(QLocale::ShortFormat)));
 
 				emit new_item(title, dateTimeString, broadcast, status, astart, astop);
 			}
@@ -709,7 +710,8 @@ void OBSYoutubeActions::OpenYouTubeDashboard()
 
 	//https://studio.youtube.com/channel/UCA9bSfH3KL186kyiUsvi3IA/videos/live?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D
 	QString uri =
-		QString("https://studio.youtube.com/channel/%1/videos/live?filter=[]&sort={\"columnType\"%3A\"date\"%2C\"sortOrder\"%3A\"DESCENDING\"}")
+		QStringLiteral(
+			"https://studio.youtube.com/channel/%1/videos/live?filter=[]&sort={\"columnType\"%3A\"date\"%2C\"sortOrder\"%3A\"DESCENDING\"}")
 			.arg(channel.id);
 	QDesktopServices::openUrl(uri);
 }

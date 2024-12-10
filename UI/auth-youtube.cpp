@@ -226,7 +226,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner, const std::string &serv
 	}
 	const auto auth = std::make_shared<YoutubeApiWrappers>(*it);
 
-	QString redirect_uri = QString("http://127.0.0.1:%1").arg(server.GetPort());
+	QString redirect_uri = QStringLiteral("http://127.0.0.1:%1").arg(server.GetPort());
 
 	QMessageBox dlg(owner);
 	dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowCloseButtonHint);
@@ -251,7 +251,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner, const std::string &serv
 	QString url = url_template.arg(YOUTUBE_AUTH_URL, clientid.c_str(), redirect_uri, state);
 
 	QString text = QTStr("YouTube.Auth.WaitingAuth.Text");
-	text = text.arg(QString("<a href='%1'>Google OAuth Service</a>").arg(url));
+	text = text.arg(QStringLiteral("<a href='%1'>Google OAuth Service</a>").arg(url));
 
 	dlg.setText(text);
 	dlg.setTextFormat(Qt::RichText);

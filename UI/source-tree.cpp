@@ -985,14 +985,14 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 {
 	SourceTreeModel *stm_ = new SourceTreeModel(this);
 	setModel(stm_);
-	setStyleSheet(QString("*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
-			      "*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
-			      "*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
-			      "*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
-			      "*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
-			      "*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
-			      "*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
-			      "*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
+	setStyleSheet(QStringLiteral("*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
+				     "*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
+				     "*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
+				     "*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
+				     "*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
+				     "*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
+				     "*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
+				     "*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
 	UpdateNoSourcesMessage();
 	connect(App(), &OBSApp::StyleChanged, this, &SourceTree::UpdateNoSourcesMessage);
