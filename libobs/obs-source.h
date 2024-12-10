@@ -546,6 +546,10 @@ struct obs_source_info {
 	 * @param  source  Source that the filter is being added to
 	 */
 	void (*filter_add)(void *data, obs_source_t *source);
+
+	/** Gets custom icons for dark and light themes */
+	char *(*get_dark_icon)(void *type_data);
+	char *(*get_light_icon)(void *type_data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info, size_t size);
