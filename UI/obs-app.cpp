@@ -2447,6 +2447,14 @@ static bool vc_runtime_outdated()
 
 	return true;
 }
+
+static void set_process_mitigation_policies()
+{
+	/* DLL planting protection - prefer system32 images  */
+	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {};
+	policy.PreferSystem32Images = 1;
+	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
+}
 #endif
 
 int main(int argc, char *argv[])
@@ -2478,11 +2486,17 @@ int main(int argc, char *argv[])
 	// Abort as early as possible if MSVC runtime is outdated
 	if (vc_runtime_outdated())
 		return 1;
+
 	// Try to keep this as early as possible
 	install_dll_blocklist_hook();
 
+	set_process_mitigation_policies();
+
 	obs_init_win32_crash_handler();
 	SetErrorMode(SEM_FAILCRITICALERRORS);
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	SetDllDirectoryW(L"");
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
 

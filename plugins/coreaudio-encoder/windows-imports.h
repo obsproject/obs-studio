@@ -382,12 +382,10 @@ static bool load_from_shell_path(REFKNOWNFOLDERID rfid, const wchar_t *subpath)
 	}
 
 	wchar_t path[MAX_PATH];
-	_snwprintf(path, MAX_PATH, L"%s\\%s", sh_path, subpath);
+	_snwprintf(path, MAX_PATH, L"%s\\%s\\CoreAudioToolbox.dll", sh_path, subpath);
 	CoTaskMemFree(sh_path);
 
-	SetDllDirectory(path);
-	audio_toolbox = LoadLibraryW(L"CoreAudioToolbox.dll");
-	SetDllDirectory(nullptr);
+	audio_toolbox = LoadLibraryExW(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
 	return !!audio_toolbox;
 }
@@ -397,7 +395,7 @@ static bool load_lib(void)
 	/* -------------------------------------------- */
 	/* attempt to load from path                    */
 
-	audio_toolbox = LoadLibraryW(L"CoreAudioToolbox.dll");
+	audio_toolbox = LoadLibraryExW(L"CoreAudioToolbox.dll", NULL, LOAD_LIBRARY_SAFE_CURRENT_DIRS);
 	if (!!audio_toolbox)
 		return true;
 

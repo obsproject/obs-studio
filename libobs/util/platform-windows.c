@@ -84,18 +84,20 @@ void *os_dlopen(const char *path)
 	 * dynamically loaded libraries on windows to search for dependent
 	 * libraries that are within the library's own directory */
 	wpath_slash = wcsrchr(wpath, L'/');
+
 	if (wpath_slash) {
-		*wpath_slash = 0;
-		SetDllDirectoryW(wpath);
-		*wpath_slash = L'/';
+		wchar_t fullpath[MAX_PATH];
+
+		/* FIXME: this should use the OBS install dir as a base and not rely on the current directory */
+		if (GetFullPathNameW(wpath, MAX_PATH, fullpath, NULL)) {
+			h_library = LoadLibraryExW(fullpath, NULL,
+						   LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+		}
+	} else {
+		h_library = LoadLibraryExW(wpath, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	}
 
-	h_library = LoadLibraryW(wpath);
-
 	bfree(wpath);
-
-	if (wpath_slash)
-		SetDllDirectoryW(NULL);
 
 	if (!h_library) {
 		DWORD error = GetLastError();
