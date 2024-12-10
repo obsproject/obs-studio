@@ -46,10 +46,6 @@ void MediaControls::OBSMediaPrevious(void *data, calldata_t *)
 MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::MediaControls)
 {
 	ui->setupUi(this);
-	ui->playPauseButton->setProperty("class", "icon-media-play");
-	ui->previousButton->setProperty("class", "icon-media-prev");
-	ui->nextButton->setProperty("class", "icon-media-next");
-	ui->stopButton->setProperty("class", "icon-media-stop");
 	setFocusPolicy(Qt::StrongFocus);
 
 	connect(&mediaTimer, &QTimer::timeout, this, &MediaControls::SetSliderPosition);

@@ -74,6 +74,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="class" stdset="0">
+      <string>icon-media-play</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -111,6 +114,9 @@
      </property>
      <property name="flat">
       <bool>true</bool>
+     </property>
+     <property name="class" stdset="0">
+      <string>icon-media-prev</string>
      </property>
     </widget>
    </item>
@@ -150,6 +156,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="class" stdset="0">
+      <string>icon-media-stop</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -187,6 +196,9 @@
      </property>
      <property name="flat">
       <bool>true</bool>
+     </property>
+     <property name="class" stdset="0">
+      <string>icon-media-next</string>
      </property>
     </widget>
    </item>
