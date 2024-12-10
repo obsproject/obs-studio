@@ -1609,6 +1609,23 @@ bool obs_get_audio_info(struct obs_audio_info *oai)
 	return true;
 }
 
+bool obs_get_audio_info2(struct obs_audio_info2 *oai2)
+{
+	struct obs_core_audio *audio = &obs->audio;
+	struct obs_audio_info oai;
+
+	if (!obs_get_audio_info(&oai) || !oai2 || !audio->audio) {
+		return false;
+	} else {
+		oai2->samples_per_sec = oai.samples_per_sec;
+		oai2->speakers = oai.speakers;
+		oai2->fixed_buffering = audio->fixed_buffer;
+		oai2->max_buffering_ms =
+			audio->max_buffering_ticks * AUDIO_OUTPUT_FRAMES * SEC_TO_MSEC / (int)oai2->samples_per_sec;
+		return true;
+	}
+}
+
 bool obs_enum_source_types(size_t idx, const char **id)
 {
 	if (idx >= obs->source_types.num)
