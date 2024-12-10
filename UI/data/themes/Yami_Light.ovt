@@ -307,3 +307,12 @@ QCalendarWidget #qt_calendar_prevmonth {
 QCalendarWidget #qt_calendar_nextmonth {
     qproperty-icon: url(theme:Light/right.svg);
 }
+
+/* Preview zoom controls */
+#previewZoomOutButton {
+    qproperty-icon: url(theme:Light/minus.svg);
+}
+
+#previewZoomInButton {
+    qproperty-icon: url(theme:Light/plus.svg);
+}
