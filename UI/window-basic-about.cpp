@@ -16,18 +16,13 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 	ui->setupUi(this);
 
 	QString bitness;
-	QString ver;
 
 	if (sizeof(void *) == 4)
 		bitness = " (32 bit)";
 	else if (sizeof(void *) == 8)
 		bitness = " (64 bit)";
 
-#ifdef HAVE_OBSCONFIG_H
-	ver += obs_get_version_string();
-#else
-	ver += LIBOBS_API_MAJOR_VER + "." + LIBOBS_API_MINOR_VER + "." + LIBOBS_API_PATCH_VER;
-#endif
+	QString ver = obs_get_version_string();
 
 	ui->version->setText(ver + bitness);
 
