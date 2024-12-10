@@ -449,7 +449,9 @@ static void noise_suppress_nvafx_migrate_task(void *param)
 {
 	struct noise_suppress_data *ng = param;
 	obs_source_t *parent = obs_filter_get_parent(ng->context);
+	int index = obs_source_filter_get_index(parent, ng->context);
 	obs_source_filter_add(parent, ng->migrated_filter);
+	obs_source_filter_set_index(parent, ng->migrated_filter, index);
 	obs_source_set_enabled(ng->migrated_filter, obs_source_enabled(ng->context));
 	obs_source_filter_remove(parent, ng->context);
 }
