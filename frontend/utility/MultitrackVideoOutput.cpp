@@ -8,6 +8,7 @@
 
 #include <bpm.h>
 #include <util/dstr.hpp>
+#include <libavformat/avformat.h>
 
 #include <QPushButton>
 #include <QMessageBox>
@@ -16,6 +17,14 @@
 #include <QUrlQuery>
 
 #include <cinttypes>
+
+// Codec profile strings
+static const char *h264_main = "Main";
+static const char *h264_high = "High";
+static const char *h264_cb = "Constrained Baseline";
+static const char *hevc_main = "Main";
+static const char *hevc_main10 = "Main 10";
+static const char *av1_main = "Main";
 
 Qt::ConnectionType BlockingConnectionTypeFor(QObject *object)
 {
@@ -224,6 +233,56 @@ static OBSEncoderAutoRelease create_video_encoder(DStr &name_buffer, size_t enco
 	dstr_printf(name_buffer, "multitrack video video encoder %zu", encoder_index);
 
 	OBSDataAutoRelease encoder_settings = obs_data_create_from_json(encoder_config.settings.dump().c_str());
+
+	/* VAAPI-based encoders unfortunately use an integer for "profile". Until a string-based "profile" can be used with
+	 * VAAPI, find the corresponding integer value and update the settings with an integer-based "profile".
+	 */
+	if (strstr(encoder_type, "vaapi")) {
+		// Move the "profile" string to "profile_str".
+		const char *profile_str = obs_data_get_string(encoder_settings, "profile");
+		obs_data_set_string(encoder_settings, "profile_str", profile_str);
+		obs_data_item_t *profile_item = obs_data_item_byname(encoder_settings, "profile");
+		obs_data_item_remove(&profile_item);
+		obs_data_item_release(&profile_item);
+
+		// Find the vaapi_profile integer based on codec type and "profile" string.
+		int vaapi_profile;
+		const char *codec = obs_get_encoder_codec(encoder_type);
+		if (strcmp(codec, "h264") == 0) {
+			if (astrcmpi(profile_str, h264_main) == 0) {
+				vaapi_profile = AV_PROFILE_H264_MAIN;
+			} else if (astrcmpi(profile_str, h264_high) == 0) {
+				vaapi_profile = AV_PROFILE_H264_HIGH;
+			} else if (astrcmpi(profile_str, h264_cb) == 0) {
+				vaapi_profile = AV_PROFILE_H264_CONSTRAINED_BASELINE;
+			} else {
+				blog(LOG_WARNING, "Unsupported H264 profile '%s', setting to Main profile",
+				     profile_str);
+				vaapi_profile = AV_PROFILE_H264_MAIN;
+			}
+		} else if (strcmp(codec, "hevc") == 0) {
+			if (astrcmpi(profile_str, hevc_main) == 0) {
+				vaapi_profile = AV_PROFILE_HEVC_MAIN;
+			} else if (astrcmpi(profile_str, hevc_main10) == 0) {
+				vaapi_profile = AV_PROFILE_HEVC_MAIN_10;
+			} else {
+				blog(LOG_WARNING, "Unsupported HEVC profile '%s', setting to Main profile",
+				     profile_str);
+				vaapi_profile = AV_PROFILE_HEVC_MAIN;
+			}
+		} else if (strcmp(codec, "av1") == 0) {
+			if (astrcmpi(profile_str, av1_main) == 0) {
+				vaapi_profile = AV_PROFILE_AV1_MAIN;
+			} else {
+				blog(LOG_WARNING, "Unsupported AV1 profile '%s', setting to Main profile", profile_str);
+				vaapi_profile = AV_PROFILE_AV1_MAIN;
+			}
+		} else {
+			vaapi_profile = AV_PROFILE_UNKNOWN;
+			blog(LOG_WARNING, "Unsupported codec '%s', setting profile to unknown", codec);
+		}
+		obs_data_set_int(encoder_settings, "profile", vaapi_profile);
+	}
 	obs_data_set_bool(encoder_settings, "disable_scenecut", true);
 
 	OBSEncoderAutoRelease video_encoder =
