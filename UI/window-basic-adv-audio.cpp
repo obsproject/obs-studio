@@ -37,8 +37,8 @@ OBSBasicAdvAudio::~OBSBasicAdvAudio()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(parent());
 
-	for (size_t i = 0; i < controls.size(); ++i)
-		delete controls[i];
+	for (const auto &control : controls)
+		delete control;
 
 	main->SaveProject();
 }
@@ -81,8 +81,8 @@ void OBSBasicAdvAudio::OBSSourceActivated(void *param, calldata_t *calldata)
 
 inline void OBSBasicAdvAudio::AddAudioSource(obs_source_t *source)
 {
-	for (size_t i = 0; i < controls.size(); i++) {
-		if (controls[i]->GetSource() == source)
+	for (const auto &control : controls) {
+		if (control->GetSource() == source)
 			return;
 	}
 	OBSAdvAudioCtrl *control = new OBSAdvAudioCtrl(ui->mainLayout, source);
@@ -129,8 +129,8 @@ void OBSBasicAdvAudio::on_usePercent_toggled(bool checked)
 	else
 		type = VolumeType::dB;
 
-	for (size_t i = 0; i < controls.size(); i++)
-		controls[i]->SetVolumeWidget(type);
+	for (const auto &control : controls)
+		control->SetVolumeWidget(type);
 
 	config_set_int(App()->GetUserConfig(), "BasicWindow", "AdvAudioVolumeType", (int)type);
 }
@@ -182,7 +182,7 @@ void OBSBasicAdvAudio::SetIconsVisible(bool visible)
 	QLabel *headerLabel = qobject_cast<QLabel *>(item->widget());
 	visible ? headerLabel->show() : headerLabel->hide();
 
-	for (size_t i = 0; i < controls.size(); i++) {
-		controls[i]->SetIconVisible(visible);
+	for (const auto &control : controls) {
+		control->SetIconVisible(visible);
 	}
 }

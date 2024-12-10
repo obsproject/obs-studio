@@ -38,9 +38,9 @@ int ImportSCFromProg(const string &path, string &name, const string &program, Js
 		return IMPORTER_FILE_NOT_FOUND;
 	}
 
-	for (size_t i = 0; i < importers.size(); i++) {
-		if (program == importers[i]->Prog()) {
-			return importers[i]->ImportScenes(path, name, res);
+	for (const auto &importer : importers) {
+		if (program == importer->Prog()) {
+			return importer->ImportScenes(path, name, res);
 		}
 	}
 
@@ -68,9 +68,9 @@ string DetectProgram(const string &path)
 		return "Null";
 	}
 
-	for (size_t i = 0; i < importers.size(); i++) {
-		if (importers[i]->Check(path)) {
-			return importers[i]->Prog();
+	for (const auto &importer : importers) {
+		if (importer->Check(path)) {
+			return importer->Prog();
 		}
 	}
 
@@ -79,9 +79,9 @@ string DetectProgram(const string &path)
 
 string GetSCName(const string &path, const string &prog)
 {
-	for (size_t i = 0; i < importers.size(); i++) {
-		if (importers[i]->Prog() == prog) {
-			return importers[i]->Name(path);
+	for (const auto &importer : importers) {
+		if (importer->Prog() == prog) {
+			return importer->Name(path);
 		}
 	}
 
@@ -92,8 +92,8 @@ OBSImporterFiles ImportersFindFiles()
 {
 	OBSImporterFiles f;
 
-	for (size_t i = 0; i < importers.size(); i++) {
-		OBSImporterFiles f2 = importers[i]->FindFiles();
+	for (const auto &importer : importers) {
+		OBSImporterFiles f2 = importer->FindFiles();
 		if (f2.size() != 0) {
 			f.insert(f.end(), f2.begin(), f2.end());
 		}
