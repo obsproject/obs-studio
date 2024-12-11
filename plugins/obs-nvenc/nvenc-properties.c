@@ -166,6 +166,7 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	add_tune("hq");
 	add_tune("ll");
 	add_tune("ull");
+	add_tune("lss");
 #undef add_tune
 
 	p = obs_properties_add_list(props, "multipass", obs_module_text("Multipass"), OBS_COMBO_TYPE_LIST,

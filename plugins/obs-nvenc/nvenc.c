@@ -190,6 +190,8 @@ static inline NV_ENC_TUNING_INFO get_nv_tuning(const char *tuning)
 #ifdef NVENC_12_2_OR_LATER
 	} else if (astrcmpi(tuning, "uhq") == 0) {
 		return NV_ENC_TUNING_INFO_ULTRA_HIGH_QUALITY;
+	} else if (astrcmpi(tuning, "lss") == 0) {
+		return NV_ENC_TUNING_INFO_LOSSLESS;
 #endif
 	} else {
 		return NV_ENC_TUNING_INFO_HIGH_QUALITY;
