@@ -1,25 +1,13 @@
 #pragma once
 
-#include <QStatusBar>
+#include "StatusBarWidget.hpp"
+
+#include <obs.hpp>
+
 #include <QPointer>
-#include <QTimer>
-#include <obs.h>
-#include <memory>
+#include <QStatusBar>
 
-class Ui_StatusBarWidget;
-
-class StatusBarWidget : public QWidget {
-	Q_OBJECT
-
-	friend class OBSBasicStatusBar;
-
-private:
-	std::unique_ptr<Ui_StatusBarWidget> ui;
-
-public:
-	StatusBarWidget(QWidget *parent = nullptr);
-	~StatusBarWidget();
-};
+class QTimer;
 
 class OBSBasicStatusBar : public QStatusBar {
 	Q_OBJECT

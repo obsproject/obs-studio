@@ -15,21 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <filesystem>
-#include <functional>
-#include <string>
-#include <map>
-#include <tuple>
-#include <obs.hpp>
-#include <util/platform.h>
-#include <util/util.hpp>
-#include <QMessageBox>
-#include <QVariant>
-#include <QFileDialog>
+#include "OBSBasic.hpp"
+
+#ifdef YOUTUBE_ENABLED
+#include <docks/YouTubeAppDock.hpp>
+#endif
+#include <wizards/AutoConfig.hpp>
+
 #include <qt-wrappers.hpp>
-#include "window-basic-main.hpp"
-#include "window-basic-auto-config.hpp"
-#include "window-namedialog.hpp"
+
+#include <QDir>
+#include <QFile>
 
 // MARK: Constant Expressions
 
@@ -37,6 +33,8 @@ constexpr std::string_view OBSProfilePath = "/obs-studio/basic/profiles/";
 constexpr std::string_view OBSProfileSettingsFile = "basic.ini";
 
 // MARK: Forward Declarations
+
+extern bool restart;
 
 extern void DestroyPanelCookieManager();
 extern void DuplicateCurrentCookieProfile(ConfigFile &config);

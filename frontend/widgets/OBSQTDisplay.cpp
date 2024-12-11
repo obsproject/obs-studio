@@ -1,57 +1,24 @@
-#include "moc_qt-display.cpp"
-#include "display-helpers.hpp"
-#include <QWindow>
-#include <QScreen>
-#include <QResizeEvent>
-#include <QShowEvent>
+#include "OBSQTDisplay.hpp"
 
-#include <qt-wrappers.hpp>
-#include <obs-config.h>
+#include <utility/display-helpers.hpp>
+#include <utility/SurfaceEventFilter.hpp>
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include <obs-nix-platform.h>
+#endif
+
+#include <QWindow>
+#ifdef ENABLE_WAYLAND
+#include <QApplication>
+#include <qpa/qplatformnativeinterface.h>
+#endif
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
 
-#if !defined(_WIN32) && !defined(__APPLE__)
-#include <obs-nix-platform.h>
-#endif
-
-#ifdef ENABLE_WAYLAND
-#include <qpa/qplatformnativeinterface.h>
-#endif
-
-class SurfaceEventFilter : public QObject {
-	OBSQTDisplay *display;
-
-public:
-	SurfaceEventFilter(OBSQTDisplay *src) : QObject(src), display(src) {}
-
-protected:
-	bool eventFilter(QObject *obj, QEvent *event) override
-	{
-		bool result = QObject::eventFilter(obj, event);
-		QPlatformSurfaceEvent *surfaceEvent;
-
-		switch (event->type()) {
-		case QEvent::PlatformSurface:
-			surfaceEvent = static_cast<QPlatformSurfaceEvent *>(event);
-
-			switch (surfaceEvent->surfaceEventType()) {
-			case QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed:
-				display->DestroyDisplay();
-				break;
-			default:
-				break;
-			}
-			break;
-		default:
-			break;
-		}
-
-		return result;
-	}
-};
+#include "moc_OBSQTDisplay.cpp"
 
 static inline long long color_to_int(const QColor &color)
 {

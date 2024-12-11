@@ -15,8 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "window-basic-main.hpp"
-#include "screenshot-obj.hpp"
+#include "ScreenshotObj.hpp"
+
+#include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
 
@@ -27,9 +28,9 @@
 #pragma comment(lib, "windowscodecs.lib")
 #endif
 
-static void ScreenshotTick(void *param, float);
+#include "moc_ScreenshotObj.cpp"
 
-/* ========================================================================= */
+static void ScreenshotTick(void *param, float);
 
 ScreenshotObj::ScreenshotObj(obs_source_t *source) : weakSource(OBSGetWeakRef(source))
 {
@@ -278,8 +279,6 @@ void ScreenshotObj::MuxAndFinish()
 	deleteLater();
 }
 
-/* ========================================================================= */
-
 #define STAGE_SCREENSHOT 0
 #define STAGE_DOWNLOAD 1
 #define STAGE_COPY_AND_SAVE 2
@@ -312,36 +311,4 @@ static void ScreenshotTick(void *param, float)
 	obs_leave_graphics();
 
 	data->stage++;
-}
-
-void OBSBasic::Screenshot(OBSSource source)
-{
-	if (!!screenshotData) {
-		blog(LOG_WARNING, "Cannot take new screenshot, "
-				  "screenshot currently in progress");
-		return;
-	}
-
-	screenshotData = new ScreenshotObj(source);
-}
-
-void OBSBasic::ScreenshotSelectedSource()
-{
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (item) {
-		Screenshot(obs_sceneitem_get_source(item));
-	} else {
-		blog(LOG_INFO, "Could not take a source screenshot: "
-			       "no source selected");
-	}
-}
-
-void OBSBasic::ScreenshotProgram()
-{
-	Screenshot(GetProgramSource());
-}
-
-void OBSBasic::ScreenshotScene()
-{
-	Screenshot(GetCurrentSceneSource());
 }

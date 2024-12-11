@@ -1,13 +1,9 @@
-#include <QPainter>
-#include <QPixmap>
-#include "obs-app.hpp"
-#include "window-basic-main.hpp"
-#include "moc_window-basic-status-bar.cpp"
-#include "window-basic-main-outputs.hpp"
-#include "qt-wrappers.hpp"
-#include "platform.hpp"
-
+#include "OBSBasicStatusBar.hpp"
 #include "ui_StatusBarWidget.h"
+
+#include <widgets/OBSBasic.hpp>
+
+#include "moc_OBSBasicStatusBar.cpp"
 
 static constexpr int bitrateUpdateSeconds = 2;
 static constexpr int congestionUpdateSeconds = 4;
@@ -15,13 +11,6 @@ static constexpr float excellentThreshold = 0.0f;
 static constexpr float goodThreshold = 0.3333f;
 static constexpr float mediocreThreshold = 0.6667f;
 static constexpr float badThreshold = 1.0f;
-
-StatusBarWidget::StatusBarWidget(QWidget *parent) : QWidget(parent), ui(new Ui::StatusBarWidget)
-{
-	ui->setupUi(this);
-}
-
-StatusBarWidget::~StatusBarWidget() {}
 
 OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	: QStatusBar(parent),

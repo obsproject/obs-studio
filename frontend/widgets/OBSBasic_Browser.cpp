@@ -15,23 +15,28 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <QDir>
-#include <QThread>
-#include <QMessageBox>
-#include <qt-wrappers.hpp>
-#include "window-basic-main.hpp"
-
-#include <random>
+#include "OBSBasic.hpp"
 
 #ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
+#include <dialogs/OBSExtraBrowsers.hpp>
+#include <docks/BrowserDock.hpp>
+
+#include <json11.hpp>
+#include <qt-wrappers.hpp>
+
+#include <QDir>
+
+using namespace json11;
 #endif
+
+#include <random>
 
 struct QCef;
 struct QCefCookieManager;
 
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
+QCef *cef = nullptr;
+QCefCookieManager *panel_cookies = nullptr;
+bool cef_js_avail = false;
 
 static std::string GenId()
 {

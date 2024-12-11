@@ -1,7 +1,8 @@
 #pragma once
 
-#include <QWidget>
 #include <obs.hpp>
+
+#include <QWidget>
 
 #define GREY_COLOR_BACKGROUND 0xFF4C4C4C
 

@@ -1,10 +1,15 @@
 #pragma once
 
-#include <future>
-#include <memory>
-#include <string>
+#include <utility/MultitrackVideoOutput.hpp>
 
-#include "multitrack-video-output.hpp"
+#include <obs.hpp>
+#include <util/dstr.hpp>
+
+#include <future>
+
+#define RTMP_PROTOCOL "rtmp"
+#define SRT_PROTOCOL "srt"
+#define RIST_PROTOCOL "rist"
 
 class OBSBasic;
 
@@ -58,7 +63,7 @@ struct BasicOutputHandler {
 	OBSSignal replayBufferStopping;
 	OBSSignal replayBufferSaved;
 
-	inline BasicOutputHandler(OBSBasic *main_);
+	BasicOutputHandler(OBSBasic *main_);
 
 	virtual ~BasicOutputHandler(){};
 
@@ -103,3 +108,39 @@ protected:
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main);
 BasicOutputHandler *CreateAdvancedOutputHandler(OBSBasic *main);
+
+void OBSStreamStarting(void *data, calldata_t *params);
+void OBSStreamStopping(void *data, calldata_t *params);
+void OBSStartStreaming(void *data, calldata_t *params);
+void OBSStopStreaming(void *data, calldata_t *params);
+void OBSStartRecording(void *data, calldata_t *params);
+void OBSStopRecording(void *data, calldata_t *params);
+void OBSRecordStopping(void *data, calldata_t *params);
+void OBSRecordFileChanged(void *data, calldata_t *params);
+void OBSStartReplayBuffer(void *data, calldata_t *params);
+void OBSStopReplayBuffer(void *data, calldata_t *params);
+void OBSReplayBufferStopping(void *data, calldata_t *params);
+void OBSReplayBufferSaved(void *data, calldata_t *params);
+
+inline bool can_use_output(const char *prot, const char *output, const char *prot_test1,
+			   const char *prot_test2 = nullptr)
+{
+	return (strcmp(prot, prot_test1) == 0 || (prot_test2 && strcmp(prot, prot_test2) == 0)) &&
+	       (obs_get_output_flags(output) & OBS_OUTPUT_SERVICE) != 0;
+}
+
+const char *GetStreamOutputType(const obs_service_t *service);
+
+inline bool ServiceSupportsVodTrack(const char *service)
+{
+	static const char *vodTrackServices[] = {"Twitch"};
+
+	for (const char *vodTrackService : vodTrackServices) {
+		if (astrcmpi(vodTrackService, service) == 0)
+			return true;
+	}
+
+	return false;
+}
+
+void clear_archive_encoder(obs_output_t *output, const char *expected_name);
