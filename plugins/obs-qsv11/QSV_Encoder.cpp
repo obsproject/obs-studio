@@ -180,16 +180,17 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 }
 
 qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec,
-			bool useTexAlloc)
+			bool useTexAlloc, obs_encoder_t *encoder)
 {
 	QSV_Encoder_Internal *pEncoder =
 		new QSV_Encoder_Internal(ver, useTexAlloc);
 	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
-#define WARN_ERR_IMPL(err, str, err_name)                   \
-	case err:                                           \
-		do_log(LOG_WARNING, str " (" err_name ")"); \
+#define WARN_ERR_IMPL(err, str, err_name)                                   \
+	case err:                                                           \
+		obs_encoder_set_last_error(encoder, str " (" err_name ")"); \
+		do_log(LOG_WARNING, str " (" err_name ")");                 \
 		break;
 #define WARN_ERR(err, str) WARN_ERR_IMPL(err, str, #err)
 

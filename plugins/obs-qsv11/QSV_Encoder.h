@@ -61,6 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <obs.h>
 #include "common_utils.h"
 
 #ifdef __cplusplus
@@ -157,7 +158,8 @@ int qsv_param_default_preset(qsv_param_t *, const char *preset,
 			     const char *tune);
 int qsv_encoder_reconfig(qsv_t *, qsv_param_t *);
 void qsv_encoder_version(unsigned short *major, unsigned short *minor);
-qsv_t *qsv_encoder_open(qsv_param_t *, enum qsv_codec codec, bool useTexAlloc);
+qsv_t *qsv_encoder_open(qsv_param_t *, enum qsv_codec codec, bool useTexAlloc,
+			obs_encoder_t *encoder);
 void qsv_encoder_add_roi(qsv_t *, const struct obs_encoder_roi *roi);
 void qsv_encoder_clear_roi(qsv_t *pContext);
 int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t,
