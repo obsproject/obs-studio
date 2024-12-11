@@ -160,9 +160,9 @@ static inline void set_main_mix()
 	obs->video.main_mix = mix;
 }
 
-video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi)
+video_t *obs_view_add(obs_view_t *view)
 {
-	return obs_view_add2(view, ovi);
+	return obs_view_add2(view, obs->video.main_mix->ovi);
 }
 
 video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi)
