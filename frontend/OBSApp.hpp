@@ -17,62 +17,29 @@
 
 #pragma once
 
-#include <QApplication>
-#include <QTranslator>
-#include <QPointer>
-#include <QFileSystemWatcher>
+#include <utility/OBSTheme.hpp>
+#include <widgets/OBSMainWindow.hpp>
 
-#ifndef _WIN32
-#include <QSocketNotifier>
-#else
-#include <QSessionManager>
-#endif
-#include <obs.hpp>
-#include <util/lexer.h>
-#include <util/profiler.h>
-#include <util/util.hpp>
-#include <util/platform.h>
 #include <obs-frontend-api.h>
+#include <util/platform.h>
+#include <util/profiler.hpp>
+#include <util/util.hpp>
+
+#include <QApplication>
+#include <QPalette>
+#include <QPointer>
+
+#include <deque>
 #include <functional>
 #include <string>
-#include <memory>
 #include <vector>
-#include <deque>
-#include <filesystem>
-
-#include "window-main.hpp"
-#include "obs-app-theming.hpp"
-
-std::string CurrentTimeString();
-std::string CurrentDateTimeString();
-std::string GenerateTimeDateFilename(const char *extension, bool noSpace = false);
-std::string GenerateSpecifiedFilename(const char *extension, bool noSpace, const char *format);
-std::string GetFormatString(const char *format, const char *prefix, const char *suffix);
-std::string GetFormatExt(const char *container);
-std::string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite,
-			      const char *format);
-QObject *CreateShortcutFilter();
-
-struct BaseLexer {
-	lexer lex;
-
-public:
-	inline BaseLexer() { lexer_init(&lex); }
-	inline ~BaseLexer() { lexer_free(&lex); }
-	operator lexer *() { return &lex; }
-};
-
-class OBSTranslator : public QTranslator {
-	Q_OBJECT
-
-public:
-	virtual bool isEmpty() const override { return false; }
-
-	virtual QString translate(const char *context, const char *sourceText, const char *disambiguation,
-				  int n) const override;
-};
 
 typedef std::function<void()> VoidFunc;
+
+Q_DECLARE_METATYPE(VoidFunc)
+
+class QFileSystemWatcher;
+class QSocketNotifier;
 
 struct UpdateBranch {
 	QString name;
@@ -233,9 +200,6 @@ signals:
 int GetAppConfigPath(char *path, size_t size, const char *name);
 char *GetAppConfigPathPtr(const char *name);
 
-int GetProgramDataPath(char *path, size_t size, const char *name);
-char *GetProgramDataPathPtr(const char *name);
-
 inline OBSApp *App()
 {
 	return static_cast<OBSApp *>(qApp);
@@ -251,30 +215,23 @@ inline QString QTStr(const char *lookupVal)
 	return QString::fromUtf8(Str(lookupVal));
 }
 
+int GetProgramDataPath(char *path, size_t size, const char *name);
+char *GetProgramDataPathPtr(const char *name);
+
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
-bool GetUnusedSceneCollectionFile(std::string &name, std::string &file);
 
 bool WindowPositionValid(QRect rect);
-
-extern bool portable_mode;
-extern bool steam;
-extern bool safe_mode;
-extern bool disable_3p_plugins;
-
-extern bool opt_start_streaming;
-extern bool opt_start_recording;
-extern bool opt_start_replaybuffer;
-extern bool opt_start_virtualcam;
-extern bool opt_minimize_tray;
-extern bool opt_studio_mode;
-extern bool opt_allow_opengl;
-extern bool opt_always_on_top;
-extern std::string opt_starting_scene;
-extern bool restart;
-extern bool restart_safe;
 
 #ifdef _WIN32
 extern "C" void install_dll_blocklist_hook(void);
 extern "C" void log_blocked_dlls(void);
 #endif
+
+std::string CurrentDateTimeString();
+std::string GetFormatString(const char *format, const char *prefix, const char *suffix);
+std::string GenerateTimeDateFilename(const char *extension, bool noSpace = false);
+std::string GetFormatExt(const char *container);
+std::string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite,
+			      const char *format);
+QObject *CreateShortcutFilter();

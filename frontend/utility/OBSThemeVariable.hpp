@@ -17,32 +17,8 @@
 
 #pragma once
 
+#include <QString>
 #include <QVariant>
-
-#include <filesystem>
-
-struct OBSThemeVariable;
-
-struct OBSTheme {
-	/* internal name, must be unique */
-	QString id;
-	QString name;
-	QString author;
-	QString extends;
-
-	/* First ancestor base theme */
-	QString parent;
-	/* Dependencies from root to direct ancestor */
-	QStringList dependencies;
-	/* File path */
-	std::filesystem::path location;
-	std::filesystem::path filename; /* Filename without extension */
-
-	bool isDark;
-	bool isVisible;      /* Whether it should be shown to the user */
-	bool isBaseTheme;    /* Whether it is a "style" or variant */
-	bool isHighContrast; /* Whether it is a high-contrast adjustment layer */
-};
 
 struct OBSThemeVariable {
 	enum VariableType {

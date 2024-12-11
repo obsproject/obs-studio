@@ -17,11 +17,10 @@
 
 #pragma once
 
-#include <QVariant>
+#include <QString>
+#include <QStringList>
 
 #include <filesystem>
-
-struct OBSThemeVariable;
 
 struct OBSTheme {
 	/* internal name, must be unique */
@@ -42,25 +41,4 @@ struct OBSTheme {
 	bool isVisible;      /* Whether it should be shown to the user */
 	bool isBaseTheme;    /* Whether it is a "style" or variant */
 	bool isHighContrast; /* Whether it is a high-contrast adjustment layer */
-};
-
-struct OBSThemeVariable {
-	enum VariableType {
-		Color,  /* RGB color value*/
-		Size,   /* Number with suffix denoting size (e.g. px, pt, em) */
-		Number, /* Number without suffix */
-		String, /* Raw string (e.g. color name, border style, etc.) */
-		Alias,  /* Points at another variable, value will be the key */
-		Calc,   /* Simple calculation with two operands */
-	};
-
-	/* Whether the variable should be editable in the UI */
-	bool editable = false;
-	/* Used for VariableType::Size only */
-	QString suffix;
-
-	VariableType type;
-	QString name;
-	QVariant value;
-	QVariant userValue; /* If overwritten by user, use this value instead */
 };
