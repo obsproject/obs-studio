@@ -41,7 +41,7 @@ jobs:
 
   macos:
     name: macOS 🍏 (clang-analyze)
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
@@ -50,6 +50,26 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+
+      - name: Set Up Environment 🔧
+        id: setup
+        run: |
+          : Set Up Environment 🔧
+          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          print '::group::Enable Xcode 16.1'
+          sudo xcode-select --switch /Applications/Xcode_16.1.0.app/Contents/Developer
+          print '::endgroup::'
+
+          print '::group::Clean Homebrew Environment'
+          local -a unwanted_formulas=()
+          local -a remove_formulas=()
+          for formula (${unwanted_formulas}) {
+            if [[ -d ${HOMEBREW_PREFIX}/Cellar/${formula} ]] remove_formulas+=(${formula})
+          }
+
+          if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
+          print '::endgroup::'
 
       - name: Set Up Code Signing 🔑
         uses: ./.github/actions/setup-macos-codesigning
@@ -89,6 +109,7 @@ jobs:
 
           git fetch origin --no-tags --no-recurse-submodules -q
           .github/scripts/build-macos ${build_args}
+
       - name: Compile Analytics Data 📊
         run: |
           : Compile Analytics Data 📊

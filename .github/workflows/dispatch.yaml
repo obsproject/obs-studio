@@ -39,7 +39,7 @@ jobs:
   services-validation:
     name: Validate Services 🕵️
     if: github.repository_owner == 'obsproject' && inputs.job == 'services'
-    runs-on: macos-14
+    runs-on: macos-15
     permissions:
       checks: write
       contents: write
@@ -73,7 +73,7 @@ jobs:
   steam-upload:
     name: Upload Steam Builds 🚂
     if: github.repository_owner == 'obsproject' && inputs.job == 'steam'
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/steam-upload

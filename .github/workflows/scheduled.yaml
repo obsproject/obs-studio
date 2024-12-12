@@ -12,7 +12,7 @@ jobs:
   services-availability:
     name: Check Service Availability 🛜
     if: github.repository_owner == 'obsproject'
-    runs-on: macos-14
+    runs-on: macos-15
     permissions:
       checks: write
       contents: write
@@ -49,7 +49,7 @@ jobs:
           # each item in the array with the 'actions_caches' key.
           # First it only selects objects whose 'ref' element has the value
           # 'refs/heads/master', of those objects only those whose 'key'
-          # value matches the specifies expression, before finally only
+          # value matches the specified expression, before finally only
           # selecting the 'id' and 'key' elements for a new object.
           # The final 'join' command combines both elements with a semicolon
           # into a raw string which can then be parsed directly.
@@ -124,7 +124,7 @@ jobs:
           if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
 
           # This 'gh' command retrieves the last 2 runs of the workflow defined
-          # by 'scheduled.yaml' and retrieve only the 'headSha' value of the
+          # by 'scheduled.yaml' and retrieves just the 'headSha' value of the
           # JSON response payload.
           #
           # As this job runs in context of the same workflow, the first element
@@ -162,7 +162,7 @@ jobs:
     name: Upload Steam Builds 🚂
     needs: [build-project]
     if: github.repository_owner == 'obsproject'
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
@@ -178,7 +178,7 @@ jobs:
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
           # This 'gh' command retrieves the last 2 runs of the workflow defined
-          # by 'scheduled.yaml' and retrieve only the 'headSha' value of the
+          # by 'scheduled.yaml' and retrieves just the 'headSha' value of the
           # JSON response payload.
           #
           # As this job runs in context of the same workflow, the first element
