@@ -738,7 +738,7 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 	enc->in_format = get_preferred_format(pref_format);
 
 	if (enc->in_format == VIDEO_FORMAT_I444 && !support_444) {
-		NV_FAIL(obs_module_text("NVENC.444Unsupported"));
+		NV_FAIL(obs_module_text("444Unsupported"));
 		return false;
 	}
 
