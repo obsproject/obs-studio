@@ -636,8 +636,6 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 		return;
 	}
 
-	OBSDataAutoRelease priv = obs_get_private_data();
-
 	if (!usingAbsoluteCoordinates && !migrationBaseResolution) {
 		OBSMessageBox::warning(
 			this, QTStr("Basic.Main.RemigrateSceneCollection.Title"),
@@ -691,12 +689,12 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 		ResetVideo();
 	}
 
-	ActivateSceneCollection(currentCollection);
+	ActivateSceneCollection(currentCollection, !usingAbsoluteCoordinates);
 }
 
 // MARK: - Scene Collection Management Helper Functions
 
-void OBSBasic::ActivateSceneCollection(const OBSSceneCollection &collection)
+void OBSBasic::ActivateSceneCollection(const OBSSceneCollection &collection, bool remigrate)
 {
 	const std::string currentCollectionName{config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
 
@@ -709,7 +707,7 @@ void OBSBasic::ActivateSceneCollection(const OBSSceneCollection &collection)
 	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection", collection.name.c_str());
 	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", collection.fileName.c_str());
 
-	Load(collection.collectionFile.u8string().c_str());
+	Load(collection.collectionFile.u8string().c_str(), remigrate);
 
 	RefreshSceneCollections();
 
