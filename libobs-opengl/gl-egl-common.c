@@ -353,6 +353,10 @@ static inline bool query_dmabuf_modifiers(EGLDisplay egl_display, EGLint drm_for
 		return false;
 	}
 
+	if (max_modifiers == 0) {
+		return false;
+	}
+
 	EGLuint64KHR *modifier_list = bzalloc(max_modifiers * sizeof(EGLuint64KHR));
 	EGLBoolean *external_only = NULL;
 	if (!modifier_list) {
@@ -364,6 +368,10 @@ static inline bool query_dmabuf_modifiers(EGLDisplay egl_display, EGLint drm_for
 					     &max_modifiers)) {
 		blog(LOG_ERROR, "Cannot query a list of modifiers: %s", gl_egl_error_to_string(eglGetError()));
 		bfree(modifier_list);
+		return false;
+	}
+
+	if (max_modifiers == 0) {
 		return false;
 	}
 
