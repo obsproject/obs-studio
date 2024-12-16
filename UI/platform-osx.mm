@@ -272,16 +272,14 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type, bool promp
 
             break;
         }
-        case kAccessibility: {
-            permissionResponse = (AXIsProcessTrusted() ? kPermissionAuthorized : kPermissionDenied);
+        case kInputMonitoring: {
+            permissionResponse = (CGPreflightListenEventAccess() ? kPermissionAuthorized : kPermissionDenied);
 
             if (permissionResponse != kPermissionAuthorized && prompt_for_permission) {
-                NSDictionary *options = @{(__bridge id) kAXTrustedCheckOptionPrompt: @YES};
-                permissionResponse = (AXIsProcessTrustedWithOptions((CFDictionaryRef) options) ? kPermissionAuthorized
-                                                                                               : kPermissionDenied);
+                permissionResponse = (CGRequestListenEventAccess() ? kPermissionAuthorized : kPermissionDenied);
             }
 
-            blog(LOG_INFO, "[macOS] Permission for accessibility %s.",
+            blog(LOG_INFO, "[macOS] Permission for input monitoring %s.",
                  permissionResponse == kPermissionAuthorized ? "granted" : "denied");
             break;
         }

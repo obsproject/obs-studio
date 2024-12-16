@@ -20,7 +20,7 @@
 #include "obs-app.hpp"
 
 OBSPermissions::OBSPermissions(QWidget *parent, MacPermissionStatus capture, MacPermissionStatus video,
-			       MacPermissionStatus audio, MacPermissionStatus accessibility)
+			       MacPermissionStatus audio, MacPermissionStatus inputMonitoring)
 	: QDialog(parent),
 	  ui(new Ui::OBSPermissions)
 {
@@ -28,7 +28,12 @@ OBSPermissions::OBSPermissions(QWidget *parent, MacPermissionStatus capture, Mac
 	SetStatus(ui->capturePermissionButton, capture, QTStr("MacPermissions.Item.ScreenRecording"));
 	SetStatus(ui->videoPermissionButton, video, QTStr("MacPermissions.Item.Camera"));
 	SetStatus(ui->audioPermissionButton, audio, QTStr("MacPermissions.Item.Microphone"));
-	SetStatus(ui->accessibilityPermissionButton, accessibility, QTStr("MacPermissions.Item.Accessibility"));
+	SetStatus(ui->inputMonitoringPermissionButton, inputMonitoring, QTStr("MacPermissions.Item.InputMonitoring"));
+
+	ui->accessibilityPermissionButton->setText(
+		QTStr("MacPermissions.OpenPreferences").arg(QTStr("MacPermissions.Item.Accessibility")));
+	ui->accessibilityPermissionButton->setVisible(inputMonitoring != kPermissionAuthorized);
+	ui->accessibilityPermissionLabel->setVisible(inputMonitoring != kPermissionAuthorized);
 }
 
 void OBSPermissions::SetStatus(QPushButton *btn, MacPermissionStatus status, const QString &preference)
@@ -72,10 +77,15 @@ void OBSPermissions::on_audioPermissionButton_clicked()
 	}
 }
 
+void OBSPermissions::on_inputMonitoringPermissionButton_clicked()
+{
+	OpenMacOSPrivacyPreferences("ListenEvent");
+	RequestPermission(kInputMonitoring);
+}
+
 void OBSPermissions::on_accessibilityPermissionButton_clicked()
 {
 	OpenMacOSPrivacyPreferences("Accessibility");
-	RequestPermission(kAccessibility);
 }
 
 void OBSPermissions::on_continueButton_clicked()
