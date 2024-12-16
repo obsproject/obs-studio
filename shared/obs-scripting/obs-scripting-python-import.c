@@ -35,7 +35,7 @@
 #define PATH_MAX MAX_PATH
 #elif __APPLE__
 #define VERSION_PATTERN "%d.%d"
-#define FILE_PATTERN "Python.framework/Versions/Current/lib/libpython%s.dylib"
+#define FILE_PATTERN "Python.framework/Versions/%s/lib/libpython%s.dylib"
 #endif
 
 #define PY_MAJOR_VERSION_MAX 3
@@ -71,7 +71,7 @@ bool import_python(const char *python_path, python_version_t *python_version)
 
 	struct dstr temp;
 	dstr_init(&temp);
-	dstr_printf(&temp, FILE_PATTERN, cur_version);
+	dstr_printf(&temp, FILE_PATTERN, cur_version, cur_version);
 
 	int minor_version = PY_MINOR_VERSION_MAX;
 	do {
