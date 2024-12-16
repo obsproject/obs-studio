@@ -1,0 +1,32 @@
+From d0facac679faf45d3356dff2e2cb382580d7a521 Mon Sep 17 00:00:00 2001
+From: David Rosca <nowrep@gmail.com>
+Date: Tue, 22 Oct 2024 17:26:59 +0200
+Subject: [PATCH 2/2] lavc/vaapi_encode_h265: Use surface alignment
+
+This is needed to correctly set conformance window crop with Mesa AMD.
+
+Signed-off-by: Timo Rothenpieler <timo@rothenpieler.org>
+---
+ libavcodec/vaapi_encode_h265.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/libavcodec/vaapi_encode_h265.c b/libavcodec/vaapi_encode_h265.c
+index 2283bcc0b4..44d9fdbbd5 100644
+--- a/libavcodec/vaapi_encode_h265.c
++++ b/libavcodec/vaapi_encode_h265.c
+@@ -951,8 +951,10 @@ static av_cold int vaapi_encode_h265_get_encoder_caps(AVCodecContext *avctx)
+            "min CB size %dx%d.\n", priv->ctu_size, priv->ctu_size,
+            priv->min_cb_size, priv->min_cb_size);
+ 
+-    base_ctx->surface_width  = FFALIGN(avctx->width,  priv->min_cb_size);
+-    base_ctx->surface_height = FFALIGN(avctx->height, priv->min_cb_size);
++    base_ctx->surface_width  = FFALIGN(avctx->width,
++        FFMAX(priv->min_cb_size, priv->common.surface_alignment_width));
++    base_ctx->surface_height = FFALIGN(avctx->height,
++        FFMAX(priv->min_cb_size, priv->common.surface_alignment_height));
+ 
+     base_ctx->slice_block_width = base_ctx->slice_block_height = priv->ctu_size;
+ 
+-- 
+2.43.0
+
