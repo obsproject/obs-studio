@@ -180,8 +180,10 @@ static bool apply_codec_opt(enum codec_type codec, struct obs_option *opt, NV_EN
 	return false;
 }
 
-void apply_user_args(struct nvenc_data *enc)
+bool apply_user_args(struct nvenc_data *enc)
 {
+	bool success = true;
+
 	for (size_t idx = 0; idx < enc->props.opts.count; idx++) {
 		struct obs_option *opt = &enc->props.opts.options[idx];
 
@@ -197,7 +199,10 @@ void apply_user_args(struct nvenc_data *enc)
 			continue;
 
 		warn("Unknown custom option: \"%s\"", opt->name);
+		success = false;
 	}
+
+	return success;
 }
 
 bool get_user_arg_int(struct nvenc_data *enc, const char *name, int *val)

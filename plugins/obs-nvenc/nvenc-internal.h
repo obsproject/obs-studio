@@ -202,5 +202,5 @@ obs_properties_t *hevc_nvenc_properties(void *);
 obs_properties_t *av1_nvenc_properties(void *);
 
 /* Custom argument parsing */
-void apply_user_args(struct nvenc_data *enc);
+bool apply_user_args(struct nvenc_data *enc);
 bool get_user_arg_int(struct nvenc_data *enc, const char *name, int *val);
