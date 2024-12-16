@@ -59,7 +59,7 @@ jobs:
 
   macos-build:
     name: macOS 🍏
-    runs-on: macos-14
+    runs-on: macos-15
     needs: check-event
     strategy:
       fail-fast: false
@@ -79,10 +79,6 @@ jobs:
         run: |
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
-
-          print '::group::Enable Xcode 15.4'
-          sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
-          print '::endgroup::'
 
           print '::group::Clean Homebrew Environment'
           local -a to_remove=()
