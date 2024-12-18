@@ -139,7 +139,7 @@ jobs:
   create-appcast:
     name: Create Sparkle Appcast 🎙️
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: macos-14
+    runs-on: macos-15
     needs: build-project
     strategy:
       fail-fast: false
