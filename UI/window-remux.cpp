@@ -496,9 +496,7 @@ void RemuxQueueModel::clearAll()
 
 void RemuxQueueModel::clearFinished()
 {
-	int index = 0;
-
-	for (index = 0; index < queue.size(); index++) {
+	for (int index = 0; index < queue.size(); index++) {
 		const RemuxQueueEntry &entry = queue[index];
 		if (entry.state == RemuxEntryState::Complete) {
 			beginRemoveRows(QModelIndex(), index, index);
