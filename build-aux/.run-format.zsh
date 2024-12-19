@@ -54,7 +54,7 @@ invoke_formatter() {
         exit 2
       fi
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|frontend|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
 
       source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|libdshowcapture)/*})
 
@@ -102,7 +102,7 @@ invoke_formatter() {
         fi
       }
 
-      if (( ! #source_files )) source_files=(CMakeLists.txt (libobs|libobs-*|UI|plugins|deps|shared|cmake|test)/**/(CMakeLists.txt|*.cmake)(.N))
+      if (( ! #source_files )) source_files=(CMakeLists.txt (libobs|libobs-*|frontend|plugins|deps|shared|cmake|test)/**/(CMakeLists.txt|*.cmake)(.N))
 
       source_files=(${source_files:#*/(jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|libdshowcapture)/*})
       source_files=(${source_files:#(cmake/Modules/*|*/legacy.cmake)})
@@ -150,7 +150,7 @@ invoke_formatter() {
         exit 2
       }
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins)/**/*.swift(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|frontend|plugins)/**/*.swift(.N))
 
       check_files() {
         local -i num_failures=0
