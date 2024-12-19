@@ -868,7 +868,7 @@ static void ss_video_tick(void *data, float seconds)
 	if (ssd->elapsed > ssd->slide_time) {
 		ssd->elapsed -= ssd->slide_time;
 
-		if (!ssd->loop && ssd->slides.cur.slide_idx == ssd->files.num - 1) {
+		if (!ssd->randomize && !ssd->loop && ssd->slides.cur.slide_idx == ssd->files.num - 1) {
 			if (ssd->hide)
 				do_transition(ss, true);
 			else
