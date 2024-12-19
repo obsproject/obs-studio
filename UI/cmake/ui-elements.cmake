@@ -56,6 +56,8 @@ target_sources(
     menu-button.hpp
     mute-checkbox.hpp
     noncheckable-button.hpp
+    output-obj.cpp
+    output-obj.hpp
     preview-controls.cpp
     preview-controls.hpp
     remote-text.cpp

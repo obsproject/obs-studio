@@ -5,6 +5,7 @@
 #include <string>
 
 #include "multitrack-video-output.hpp"
+#include "output-obj.hpp"
 
 class OBSBasic;
 
@@ -14,7 +15,7 @@ struct BasicOutputHandler {
 	OBSOutputAutoRelease fileOutput;
 	OBSOutputAutoRelease streamOutput;
 	OBSOutputAutoRelease replayBuffer;
-	OBSOutputAutoRelease virtualCam;
+	QScopedPointer<OutputObj> virtualCam;
 	bool streamingActive = false;
 	bool recordingActive = false;
 	bool delayActive = false;
@@ -32,11 +33,6 @@ struct BasicOutputHandler {
 			       : OBSOutputAutoRelease{obs_output_get_ref(streamOutput)};
 	}
 
-	obs_view_t *virtualCamView = nullptr;
-	video_t *virtualCamVideo = nullptr;
-	obs_scene_t *vCamSourceScene = nullptr;
-	obs_sceneitem_t *vCamSourceSceneItem = nullptr;
-
 	std::string outputType;
 	std::string lastError;
 
@@ -48,9 +44,6 @@ struct BasicOutputHandler {
 	OBSSignal stopReplayBuffer;
 	OBSSignal startStreaming;
 	OBSSignal stopStreaming;
-	OBSSignal startVirtualCam;
-	OBSSignal stopVirtualCam;
-	OBSSignal deactivateVirtualCam;
 	OBSSignal streamDelayStarting;
 	OBSSignal streamStopping;
 	OBSSignal recordStopping;
@@ -81,13 +74,11 @@ struct BasicOutputHandler {
 	virtual void SetupOutputs() = 0;
 
 	virtual void UpdateVirtualCamOutputSource();
-	virtual void DestroyVirtualCamView();
-	virtual void DestroyVirtualCameraScene();
 
 	inline bool Active() const
 	{
-		return streamingActive || recordingActive || delayActive || replayBufferActive || virtualCamActive ||
-		       multitrackVideoActive;
+		return streamingActive || recordingActive || delayActive || replayBufferActive ||
+		       (virtualCam && virtualCam->Active()) || multitrackVideoActive;
 	}
 
 protected:
