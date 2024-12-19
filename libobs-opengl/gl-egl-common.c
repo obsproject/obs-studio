@@ -297,26 +297,28 @@ static inline bool is_implicit_dmabuf_modifiers_supported(void)
 static inline bool query_dmabuf_formats(EGLDisplay egl_display, EGLint **formats, EGLint *num_formats)
 {
 	EGLint max_formats = 0;
-	EGLint *format_list = NULL;
 
 	if (!glad_eglQueryDmaBufFormatsEXT(egl_display, 0, NULL, &max_formats)) {
 		blog(LOG_ERROR, "Cannot query the number of formats: %s", gl_egl_error_to_string(eglGetError()));
 		return false;
 	}
 
-	format_list = bzalloc(max_formats * sizeof(EGLint));
-	if (!format_list) {
-		blog(LOG_ERROR, "Unable to allocate memory");
-		return false;
+	if (max_formats != 0) {
+		EGLint *format_list = bzalloc(max_formats * sizeof(EGLint));
+		if (!format_list) {
+			blog(LOG_ERROR, "Unable to allocate memory");
+			return false;
+		}
+
+		if (!glad_eglQueryDmaBufFormatsEXT(egl_display, max_formats, format_list, &max_formats)) {
+			blog(LOG_ERROR, "Cannot query a list of formats: %s", gl_egl_error_to_string(eglGetError()));
+			bfree(format_list);
+			return false;
+		}
+
+		*formats = format_list;
 	}
 
-	if (!glad_eglQueryDmaBufFormatsEXT(egl_display, max_formats, format_list, &max_formats)) {
-		blog(LOG_ERROR, "Cannot query a list of formats: %s", gl_egl_error_to_string(eglGetError()));
-		bfree(format_list);
-		return false;
-	}
-
-	*formats = format_list;
 	*num_formats = max_formats;
 	return true;
 }
@@ -353,21 +355,24 @@ static inline bool query_dmabuf_modifiers(EGLDisplay egl_display, EGLint drm_for
 		return false;
 	}
 
-	EGLuint64KHR *modifier_list = bzalloc(max_modifiers * sizeof(EGLuint64KHR));
-	EGLBoolean *external_only = NULL;
-	if (!modifier_list) {
-		blog(LOG_ERROR, "Unable to allocate memory");
-		return false;
+	if (max_modifiers != 0) {
+		EGLuint64KHR *modifier_list = bzalloc(max_modifiers * sizeof(EGLuint64KHR));
+		EGLBoolean *external_only = NULL;
+		if (!modifier_list) {
+			blog(LOG_ERROR, "Unable to allocate memory");
+			return false;
+		}
+
+		if (!glad_eglQueryDmaBufModifiersEXT(egl_display, drm_format, max_modifiers, modifier_list,
+						     external_only, &max_modifiers)) {
+			blog(LOG_ERROR, "Cannot query a list of modifiers: %s", gl_egl_error_to_string(eglGetError()));
+			bfree(modifier_list);
+			return false;
+		}
+
+		*modifiers = modifier_list;
 	}
 
-	if (!glad_eglQueryDmaBufModifiersEXT(egl_display, drm_format, max_modifiers, modifier_list, external_only,
-					     &max_modifiers)) {
-		blog(LOG_ERROR, "Cannot query a list of modifiers: %s", gl_egl_error_to_string(eglGetError()));
-		bfree(modifier_list);
-		return false;
-	}
-
-	*modifiers = modifier_list;
 	*n_modifiers = (EGLuint64KHR)max_modifiers;
 	return true;
 }
