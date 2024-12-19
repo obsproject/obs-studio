@@ -5139,9 +5139,9 @@ QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 		name = name.simplified();
 
 		if (name.length() == 0) {
-			name = QString("%1 %2").arg(QTStr("Display")).arg(QString::number(i + 1));
+			name = QStringLiteral("%1 %2").arg(QTStr("Display")).arg(QString::number(i + 1));
 		}
-		QString str = QString("%1: %2x%3 @ %4,%5")
+		QString str = QStringLiteral("%1: %2x%3 @ %4,%5")
 				      .arg(name, QString::number(screenGeometry.width() * ratio),
 					   QString::number(screenGeometry.height() * ratio),
 					   QString::number(screenGeometry.x()), QString::number(screenGeometry.y()));
@@ -5520,14 +5520,14 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 {
 	QAction *action;
 
-	menu->setStyleSheet(QString("*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
-				    "*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
-				    "*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
-				    "*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
-				    "*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
-				    "*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
-				    "*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
-				    "*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
+	menu->setStyleSheet(QStringLiteral("*[bgColor=\"1\"]{background-color:rgba(255,68,68,33%);}"
+					   "*[bgColor=\"2\"]{background-color:rgba(255,255,68,33%);}"
+					   "*[bgColor=\"3\"]{background-color:rgba(68,255,68,33%);}"
+					   "*[bgColor=\"4\"]{background-color:rgba(68,255,255,33%);}"
+					   "*[bgColor=\"5\"]{background-color:rgba(68,68,255,33%);}"
+					   "*[bgColor=\"6\"]{background-color:rgba(255,68,255,33%);}"
+					   "*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
+					   "*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
 	obs_data_t *privData = obs_sceneitem_get_private_settings(item);
 	obs_data_release(privData);
@@ -7615,7 +7615,7 @@ void OBSBasic::on_actionShowWhatsNew_triggered()
 void OBSBasic::on_actionReleaseNotes_triggered()
 {
 	QString addr("https://github.com/obsproject/obs-studio/releases");
-	QUrl url(QString("%1/%2").arg(addr, obs_get_version_string()), QUrl::TolerantMode);
+	QUrl url(QStringLiteral("%1/%2").arg(addr, obs_get_version_string()), QUrl::TolerantMode);
 	QDesktopServices::openUrl(url);
 }
 

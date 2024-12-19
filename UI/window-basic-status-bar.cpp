@@ -104,7 +104,7 @@ void OBSBasicStatusBar::Deactivate()
 		return;
 
 	if (!streamOutput) {
-		statusWidget->ui->streamTime->setText(QString("00:00:00"));
+		statusWidget->ui->streamTime->setText(QStringLiteral("00:00:00"));
 		statusWidget->ui->streamTime->setDisabled(true);
 		statusWidget->ui->streamIcon->setPixmap(streamingInactivePixmap);
 		statusWidget->ui->statusIcon->setPixmap(inactivePixmap);
@@ -118,7 +118,7 @@ void OBSBasicStatusBar::Deactivate()
 	}
 
 	if (!recordOutput) {
-		statusWidget->ui->recordTime->setText(QString("00:00:00"));
+		statusWidget->ui->recordTime->setText(QStringLiteral("00:00:00"));
 		statusWidget->ui->recordTime->setDisabled(true);
 		statusWidget->ui->recordIcon->setPixmap(recordingInactivePixmap);
 		totalRecordSeconds = 0;
@@ -197,7 +197,7 @@ void OBSBasicStatusBar::UpdateBandwidth()
 	double kbitsPerSec = double(bitsBetween) / timePassed / 1000.0;
 
 	QString text;
-	text += QString::number(kbitsPerSec, 'f', 0) + QString(" kbps");
+	text += QString::number(kbitsPerSec, 'f', 0) + QStringLiteral(" kbps");
 
 	statusWidget->ui->kbps->setText(text);
 	statusWidget->ui->kbps->setMinimumWidth(statusWidget->ui->kbps->width());
@@ -217,7 +217,7 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 		return;
 
 	QString text;
-	text += QString("CPU: ") + QString::number(main->GetCPUUsage(), 'f', 1) + QString("%");
+	text += QStringLiteral("CPU: ") + QString::number(main->GetCPUUsage(), 'f', 1) + QStringLiteral("%");
 
 	statusWidget->ui->cpuUsage->setText(text);
 	statusWidget->ui->cpuUsage->setMinimumWidth(statusWidget->ui->cpuUsage->width());
