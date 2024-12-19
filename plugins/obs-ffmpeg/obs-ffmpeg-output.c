@@ -170,6 +170,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	enum AVPixelFormat closest_format;
 	AVCodecContext *context;
 	struct obs_video_info ovi;
+	const enum AVPixelFormat *pix_fmts = NULL;
 
 	if (!obs_get_video_info(&ovi)) {
 		ffmpeg_log_error(LOG_WARNING, data, "No active video");
@@ -180,13 +181,6 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
-	closest_format = data->config.format;
-	if (data->vcodec->pix_fmts) {
-		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
-		closest_format =
-			avcodec_find_best_pix_fmt_of_list(data->vcodec->pix_fmts, closest_format, has_alpha, NULL);
-	}
-
 	context = avcodec_alloc_context3(data->vcodec);
 	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
@@ -194,13 +188,27 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
 	context->framerate = (AVRational){ovi.fps_num, ovi.fps_den};
 	context->gop_size = data->config.gop_size;
-	context->pix_fmt = closest_format;
 	context->color_range = data->config.color_range;
 	context->color_primaries = data->config.color_primaries;
 	context->color_trc = data->config.color_trc;
 	context->colorspace = data->config.colorspace;
-	context->chroma_sample_location = determine_chroma_location(closest_format, data->config.colorspace);
 	context->thread_count = 0;
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(61, 13, 100)
+	pix_fmts = data->vcodec->pix_fmts;
+#else
+	avcodec_get_supported_config(context, data->vcodec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts,
+				     NULL);
+#endif
+
+	closest_format = data->config.format;
+	if (pix_fmts) {
+		const int has_alpha = closest_format == AV_PIX_FMT_BGRA;
+		closest_format = avcodec_find_best_pix_fmt_of_list(pix_fmts, closest_format, has_alpha, NULL);
+	}
+
+	context->pix_fmt = closest_format;
+	context->chroma_sample_location = determine_chroma_location(closest_format, data->config.colorspace);
 
 	data->video->time_base = context->time_base;
 	data->video->avg_frame_rate = (AVRational){ovi.fps_num, ovi.fps_den};
@@ -305,6 +313,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	AVStream *stream;
 	struct obs_audio_info aoi;
 	int channels;
+	const enum AVSampleFormat *sample_fmts = NULL;
 
 	if (!obs_get_audio_info(&aoi)) {
 		ffmpeg_log_error(LOG_WARNING, data, "No active audio");
@@ -324,7 +333,14 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 
-	context->sample_fmt = data->acodec->sample_fmts ? data->acodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(61, 13, 100)
+	sample_fmts = data->acodec->sample_fmts;
+#else
+	avcodec_get_supported_config(context, data->acodec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0,
+				     (const void **)&sample_fmts, NULL);
+#endif
+
+	context->sample_fmt = sample_fmts ? sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 
 	stream->time_base = context->time_base;
 
