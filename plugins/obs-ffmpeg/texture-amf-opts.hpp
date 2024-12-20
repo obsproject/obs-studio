@@ -83,7 +83,7 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 		if (avc)
 			set_avc_opt(PROFILE_LEVEL, level);
 		else if (hevc)
-			set_hevc_opt(PROFILE_LEVEL, level);
+			set_hevc_opt(PROFILE_LEVEL, level * 3);
 		else
 			warn("Invalid value for %s: %s", opt->name, opt->value);
 
