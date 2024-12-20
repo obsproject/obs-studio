@@ -421,8 +421,7 @@ static const macOS_glyph_desc_t key_glyphs[(keyCodeMask >> 8)] = {
 
 struct obs_hotkeys_platform {
     volatile long refs;
-    CFTypeRef monitor;
-    CFTypeRef local_monitor;
+    CFMachPortRef eventTap;
     bool is_key_down[OBS_KEY_LAST_VALUE];
     TISInputSourceRef tis;
     CFDataRef layout_data;
@@ -456,14 +455,10 @@ static void hotkeys_release(obs_hotkeys_platform_t *platform)
             platform->layout_data = NULL;
         }
 
-        if (platform->monitor) {
-            [NSEvent removeMonitor:(__bridge id _Nonnull)(platform->monitor)];
-            platform->monitor = NULL;
-        }
-
-        if (platform->local_monitor) {
-            [NSEvent removeMonitor:(__bridge id _Nonnull)(platform->local_monitor)];
-            platform->local_monitor = NULL;
+        if (platform->eventTap) {
+            CGEventTapEnable(platform->eventTap, false);
+            CFRelease(platform->eventTap);
+            platform->eventTap = NULL;
         }
 
         bfree(platform);
@@ -521,20 +516,40 @@ static bool log_layout_name(TISInputSourceRef tis)
 
 // MARK: macOS Hotkey CoreFoundation Callbacks
 
-static void MonitorEventHandlerProc(obs_hotkeys_platform_t *platform, NSEvent *event)
+static CGEventRef KeyboardEventProc(CGEventTapProxy proxy __unused, CGEventType type, CGEventRef event, void *userInfo)
 {
-    NSEventModifierFlags flags = event.modifierFlags;
-    platform->is_key_down[OBS_KEY_CAPSLOCK] = !!(flags & NSEventModifierFlagCapsLock);
-    platform->is_key_down[OBS_KEY_SHIFT] = !!(flags & NSEventModifierFlagShift);
-    platform->is_key_down[OBS_KEY_ALT] = !!(flags & NSEventModifierFlagOption);
-    platform->is_key_down[OBS_KEY_META] = !!(flags & NSEventModifierFlagCommand);
-    platform->is_key_down[OBS_KEY_CONTROL] = !!(flags & NSEventModifierFlagControl);
+    obs_hotkeys_platform_t *platform = userInfo;
 
-    if (event.type == NSEventTypeKeyDown || event.type == NSEventTypeKeyUp) {
-        obs_key_t obsKey = obs_key_from_virtual_key(event.keyCode);
+    const CGEventFlags flags = CGEventGetFlags(event);
+    platform->is_key_down[OBS_KEY_SHIFT] = !!(flags & kCGEventFlagMaskShift);
+    platform->is_key_down[OBS_KEY_ALT] = !!(flags & kCGEventFlagMaskAlternate);
+    platform->is_key_down[OBS_KEY_META] = !!(flags & kCGEventFlagMaskCommand);
+    platform->is_key_down[OBS_KEY_CONTROL] = !!(flags & kCGEventFlagMaskControl);
 
-        platform->is_key_down[obsKey] = (event.type == NSEventTypeKeyDown);
+    switch (type) {
+        case kCGEventKeyDown: {
+            const int64_t keycode = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+            platform->is_key_down[obs_key_from_virtual_key(keycode)] = true;
+            break;
+        }
+        case kCGEventKeyUp: {
+            const int64_t keycode = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+            platform->is_key_down[obs_key_from_virtual_key(keycode)] = false;
+            break;
+        }
+        case kCGEventFlagsChanged: {
+            break;
+        }
+        case kCGEventTapDisabledByTimeout: {
+            blog(LOG_DEBUG, "[hotkeys-cocoa]: Hotkey event tap disabled by timeout. Reenabling...");
+            CGEventTapEnable(platform->eventTap, true);
+            break;
+        }
+        default: {
+            blog(LOG_WARNING, "[hotkeys-cocoa]: Received unexpected event with code '%d'", type);
+        }
     }
+    return event;
 }
 
 static void InputMethodChangedProc(CFNotificationCenterRef center __unused, void *observer,
@@ -575,19 +590,26 @@ bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 
     obs_hotkeys_platform_t *platform = bzalloc(sizeof(obs_hotkeys_platform_t));
 
-    platform->monitor =
-        (__bridge CFTypeRef)([NSEvent addGlobalMonitorForEventsMatchingMask:NSEventMaskKeyUp | NSEventMaskKeyDown
-                                                                    handler:^(NSEvent *_Nonnull event) {
-                                                                        MonitorEventHandlerProc(platform, event);
-                                                                    }]);
+    const bool has_event_access = CGPreflightListenEventAccess();
+    if (has_event_access) {
+        platform->eventTap = CGEventTapCreate(kCGHIDEventTap, kCGHeadInsertEventTap, kCGEventTapOptionListenOnly,
+                                              CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventKeyUp) |
+                                                  CGEventMaskBit(kCGEventFlagsChanged),
+                                              KeyboardEventProc, platform);
+        if (!platform->eventTap) {
+            blog(LOG_WARNING, "[hotkeys-cocoa]: Couldn't create hotkey event tap.");
+            hotkeys_release(platform);
+            platform = NULL;
+            return false;
+        }
+        CFRunLoopSourceRef source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, platform->eventTap, 0);
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopCommonModes);
+        CFRelease(source);
 
-    platform->local_monitor = (__bridge CFTypeRef)([NSEvent
-        addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp | NSEventMaskKeyDown
-                                     handler:^NSEvent *_Nullable(NSEvent *_Nonnull event) {
-                                         MonitorEventHandlerProc(platform, event);
-
-                                         return event;
-                                     }]);
+        CGEventTapEnable(platform->eventTap, true);
+    } else {
+        blog(LOG_WARNING, "[hotkeys-cocoa]: No event permissions, could not add global hotkeys.");
+    }
 
     platform->tis = TISCopyCurrentKeyboardLayoutInputSource();
     platform->layout_data = (CFDataRef) TISGetInputSourceProperty(platform->tis, kTISPropertyUnicodeKeyLayoutData);
