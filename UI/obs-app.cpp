@@ -2223,7 +2223,7 @@ static void load_debug_privilege(void)
 }
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux__)
 #define BASE_PATH ".."
 #else
 #define BASE_PATH "../.."
