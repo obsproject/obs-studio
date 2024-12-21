@@ -39,7 +39,7 @@ runs:
       uses: ./.github/actions/check-changes
       id: checks
       with:
-        checkGlob: 'UI/forms/**/*.ui'
+        checkGlob: 'frontend/forms/**/*.ui'
 
     - name: Validate XML 💯
       if: fromJSON(steps.checks.outputs.hasChangedFiles)
@@ -56,6 +56,6 @@ runs:
         if (( ${#CHANGED_FILES[@]} )); then
           if [[ '${{ inputs.failCondition }}' == never ]]; then set +e; fi
           xmllint \
-            --schema ${{ github.workspace }}/UI/forms/XML-Schema-Qt5.15.xsd \
+            --schema ${{ github.workspace }}/frontend/forms/XML-Schema-Qt5.15.xsd \
             --noout "${CHANGED_FILES[@]}"
         fi
