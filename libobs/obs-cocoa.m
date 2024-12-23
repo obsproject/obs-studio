@@ -563,6 +563,8 @@ static void InputMethodChangedProc(CFNotificationCenterRef center __unused, void
 
     CFRetain(platform->layout_data);
     platform->layout = (UCKeyboardLayout *) CFDataGetBytePtr(platform->layout_data);
+
+    pthread_mutex_unlock(&hotkeys->mutex);
 }
 
 // MARK: macOS Hotkey API Implementation
