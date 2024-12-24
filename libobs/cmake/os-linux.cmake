@@ -47,6 +47,7 @@ endif()
 target_link_libraries(
   libobs
   PRIVATE
+    X11::X11
     X11::x11-xcb
     xcb::xcb
     LibUUID::LibUUID
