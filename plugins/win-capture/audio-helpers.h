@@ -11,8 +11,7 @@
 #define TEXT_CAPTURE_AUDIO_SUFFIX obs_module_text("AudioSuffix")
 #define AUDIO_SOURCE_TYPE "wasapi_process_output_capture"
 
-void setup_audio_source(obs_source_t *parent, obs_source_t **child,
-			const char *window, bool enabled,
+void setup_audio_source(obs_source_t *parent, obs_source_t **child, const char *window, bool enabled,
 			enum window_priority priority);
 void reconfigure_audio_source(obs_source_t *source, HWND window);
 void rename_audio_source(void *param, calldata_t *data);

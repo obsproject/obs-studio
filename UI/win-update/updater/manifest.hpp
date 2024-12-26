@@ -61,8 +61,7 @@ struct Manifest {
 	/* Release notes in HTML format */
 	std::string notes;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Manifest, packages, version_major,
-				       version_minor, version_patch, beta, rc,
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Manifest, packages, version_major, version_minor, version_patch, beta, rc,
 				       commit, vc2019_redist_x64, notes)
 };
 

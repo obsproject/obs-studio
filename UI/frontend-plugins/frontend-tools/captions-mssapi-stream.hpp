@@ -55,38 +55,30 @@ public:
 
 	// ISequentialStream methods
 	STDMETHODIMP Read(void *data, ULONG bytes, ULONG *read_bytes) override;
-	STDMETHODIMP Write(const void *data, ULONG bytes,
-			   ULONG *written_bytes) override;
+	STDMETHODIMP Write(const void *data, ULONG bytes, ULONG *written_bytes) override;
 
 	// IStream methods
-	STDMETHODIMP Seek(LARGE_INTEGER move, DWORD origin,
-			  ULARGE_INTEGER *new_pos) override;
+	STDMETHODIMP Seek(LARGE_INTEGER move, DWORD origin, ULARGE_INTEGER *new_pos) override;
 	STDMETHODIMP SetSize(ULARGE_INTEGER new_size) override;
-	STDMETHODIMP CopyTo(IStream *stream, ULARGE_INTEGER bytes,
-			    ULARGE_INTEGER *read_bytes,
+	STDMETHODIMP CopyTo(IStream *stream, ULARGE_INTEGER bytes, ULARGE_INTEGER *read_bytes,
 			    ULARGE_INTEGER *written_bytes) override;
 	STDMETHODIMP Commit(DWORD commit_flags) override;
 	STDMETHODIMP Revert(void) override;
-	STDMETHODIMP LockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size,
-				DWORD type) override;
-	STDMETHODIMP UnlockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size,
-				  DWORD type) override;
+	STDMETHODIMP LockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size, DWORD type) override;
+	STDMETHODIMP UnlockRegion(ULARGE_INTEGER offset, ULARGE_INTEGER size, DWORD type) override;
 	STDMETHODIMP Stat(STATSTG *stg, DWORD flags) override;
 	STDMETHODIMP Clone(IStream **stream) override;
 
 	// ISpStreamFormat methods
-	STDMETHODIMP GetFormat(GUID *guid,
-			       WAVEFORMATEX **co_mem_wfex_out) override;
+	STDMETHODIMP GetFormat(GUID *guid, WAVEFORMATEX **co_mem_wfex_out) override;
 
 	// ISpAudio methods
 	STDMETHODIMP SetState(SPAUDIOSTATE state, ULONGLONG reserved) override;
-	STDMETHODIMP SetFormat(REFGUID guid_ref,
-			       const WAVEFORMATEX *wfex) override;
+	STDMETHODIMP SetFormat(REFGUID guid_ref, const WAVEFORMATEX *wfex) override;
 	STDMETHODIMP GetStatus(SPAUDIOSTATUS *status) override;
 	STDMETHODIMP SetBufferInfo(const SPAUDIOBUFFERINFO *buf_info) override;
 	STDMETHODIMP GetBufferInfo(SPAUDIOBUFFERINFO *buf_info) override;
-	STDMETHODIMP GetDefaultFormat(GUID *format,
-				      WAVEFORMATEX **co_mem_wfex_out) override;
+	STDMETHODIMP GetDefaultFormat(GUID *format, WAVEFORMATEX **co_mem_wfex_out) override;
 	STDMETHODIMP_(HANDLE) EventHandle(void) override;
 	STDMETHODIMP GetVolumeLevel(ULONG *level) override;
 	STDMETHODIMP SetVolumeLevel(ULONG level) override;

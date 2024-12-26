@@ -76,11 +76,8 @@
        <property name="flat">
         <bool>true</bool>
        </property>
-       <property name="themeID" stdset="0">
-        <string notr="true">addIconSmall</string>
-       </property>
-       <property name="toolButton" stdset="0">
-        <bool>true</bool>
+       <property name="class" stdset="0">
+        <string notr="true">icon-plus</string>
        </property>
       </widget>
      </item>
@@ -95,11 +92,8 @@
        <property name="flat">
         <bool>true</bool>
        </property>
-       <property name="themeID" stdset="0">
-        <string notr="true">removeIconSmall</string>
-       </property>
-       <property name="toolButton" stdset="0">
-        <bool>true</bool>
+       <property name="class" stdset="0">
+        <string notr="true">icon-trash</string>
        </property>
       </widget>
      </item>

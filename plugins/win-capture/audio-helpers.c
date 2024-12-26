@@ -2,24 +2,19 @@
 
 #include <util/dstr.h>
 
-static inline bool settings_changed(obs_data_t *old_settings,
-				    obs_data_t *new_settings)
+static inline bool settings_changed(obs_data_t *old_settings, obs_data_t *new_settings)
 {
 	const char *old_window = obs_data_get_string(old_settings, "window");
 	const char *new_window = obs_data_get_string(new_settings, "window");
 
-	enum window_priority old_priority =
-		obs_data_get_int(old_settings, "priority");
-	enum window_priority new_priority =
-		obs_data_get_int(new_settings, "priority");
+	enum window_priority old_priority = obs_data_get_int(old_settings, "priority");
+	enum window_priority new_priority = obs_data_get_int(new_settings, "priority");
 
 	// Changes to priority only matter if a window is set
-	return (old_priority != new_priority && *new_window) ||
-	       strcmp(old_window, new_window) != 0;
+	return (old_priority != new_priority && *new_window) || strcmp(old_window, new_window) != 0;
 }
 
-static inline void reroute_wasapi_source(obs_source_t *wasapi,
-					 obs_source_t *target)
+static inline void reroute_wasapi_source(obs_source_t *wasapi, obs_source_t *target)
 {
 	proc_handler_t *ph = obs_source_get_proc_handler(wasapi);
 	calldata_t cd = {0};
@@ -28,8 +23,7 @@ static inline void reroute_wasapi_source(obs_source_t *wasapi,
 	calldata_free(&cd);
 }
 
-void setup_audio_source(obs_source_t *parent, obs_source_t **child,
-			const char *window, bool enabled,
+void setup_audio_source(obs_source_t *parent, obs_source_t **child, const char *window, bool enabled,
 			enum window_priority priority)
 {
 	if (enabled) {
@@ -43,12 +37,9 @@ void setup_audio_source(obs_source_t *parent, obs_source_t **child,
 
 		if (!*child) {
 			struct dstr name = {0};
-			dstr_printf(&name, "%s (%s)",
-				    obs_source_get_name(parent),
-				    TEXT_CAPTURE_AUDIO_SUFFIX);
+			dstr_printf(&name, "%s (%s)", obs_source_get_name(parent), TEXT_CAPTURE_AUDIO_SUFFIX);
 
-			*child = obs_source_create_private(
-				AUDIO_SOURCE_TYPE, name.array, wasapi_settings);
+			*child = obs_source_create_private(AUDIO_SOURCE_TYPE, name.array, wasapi_settings);
 
 			// Ensure child gets activated/deactivated properly
 			obs_source_add_active_child(parent, *child);
@@ -59,8 +50,7 @@ void setup_audio_source(obs_source_t *parent, obs_source_t **child,
 
 			dstr_free(&name);
 		} else if (wasapi_settings) {
-			obs_data_t *old_settings =
-				obs_source_get_settings(*child);
+			obs_data_t *old_settings = obs_source_get_settings(*child);
 			// Only bother updating if settings changed
 			if (settings_changed(old_settings, wasapi_settings))
 				obs_source_update(*child, wasapi_settings);
@@ -128,8 +118,7 @@ void rename_audio_source(void *param, calldata_t *data)
 		return;
 
 	struct dstr name = {0};
-	dstr_printf(&name, "%s (%s)", calldata_string(data, "new_name"),
-		    TEXT_CAPTURE_AUDIO_SUFFIX);
+	dstr_printf(&name, "%s (%s)", calldata_string(data, "new_name"), TEXT_CAPTURE_AUDIO_SUFFIX);
 
 	obs_source_set_name(src, name.array);
 	dstr_free(&name);

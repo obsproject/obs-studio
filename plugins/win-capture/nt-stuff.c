@@ -52,16 +52,12 @@ typedef struct _OBS_SYSTEM_THREAD_INFORMATION {
 		(o)->SecurityQualityOfService = NULL; \
 	} while (false)
 
-typedef void(WINAPI *RTLINITUNICODESTRINGFUNC)(PCUNICODE_STRING pstr,
-					       const wchar_t *lpstrName);
-typedef NTSTATUS(WINAPI *NTOPENFUNC)(PHANDLE phandle, ACCESS_MASK access,
-				     POBJECT_ATTRIBUTES objattr);
-typedef NTSTATUS(WINAPI *NTCREATEMUTANT)(PHANDLE phandle, ACCESS_MASK access,
-					 POBJECT_ATTRIBUTES objattr,
+typedef void(WINAPI *RTLINITUNICODESTRINGFUNC)(PCUNICODE_STRING pstr, const wchar_t *lpstrName);
+typedef NTSTATUS(WINAPI *NTOPENFUNC)(PHANDLE phandle, ACCESS_MASK access, POBJECT_ATTRIBUTES objattr);
+typedef NTSTATUS(WINAPI *NTCREATEMUTANT)(PHANDLE phandle, ACCESS_MASK access, POBJECT_ATTRIBUTES objattr,
 					 BOOLEAN isowner);
 typedef ULONG(WINAPI *RTLNTSTATUSTODOSERRORFUNC)(NTSTATUS status);
-typedef NTSTATUS(WINAPI *NTQUERYSYSTEMINFORMATIONFUNC)(SYSTEM_INFORMATION_CLASS,
-						       PVOID, ULONG, PULONG);
+typedef NTSTATUS(WINAPI *NTQUERYSYSTEMINFORMATIONFUNC)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG, PULONG);
 
 FARPROC get_nt_func(const char *name)
 {
@@ -81,8 +77,7 @@ void nt_set_last_error(NTSTATUS status)
 	static RTLNTSTATUSTODOSERRORFUNC func = NULL;
 
 	if (!initialized) {
-		func = (RTLNTSTATUSTODOSERRORFUNC)get_nt_func(
-			"RtlNtStatusToDosError");
+		func = (RTLNTSTATUSTODOSERRORFUNC)get_nt_func("RtlNtStatusToDosError");
 		initialized = true;
 	}
 
@@ -96,8 +91,7 @@ void rtl_init_str(UNICODE_STRING *unistr, const wchar_t *str)
 	static RTLINITUNICODESTRINGFUNC func = NULL;
 
 	if (!initialized) {
-		func = (RTLINITUNICODESTRINGFUNC)get_nt_func(
-			"RtlInitUnicodeString");
+		func = (RTLINITUNICODESTRINGFUNC)get_nt_func("RtlInitUnicodeString");
 		initialized = true;
 	}
 
@@ -137,15 +131,13 @@ MAKE_NT_OPEN_FUNC(nt_open_mutex, NtOpenMutant, SYNCHRONIZE)
 MAKE_NT_OPEN_FUNC(nt_open_event, NtOpenEvent, EVENT_MODIFY_STATE | SYNCHRONIZE)
 MAKE_NT_OPEN_FUNC(nt_open_map, NtOpenSection, FILE_MAP_READ | FILE_MAP_WRITE)
 
-NTSTATUS nt_query_information(SYSTEM_INFORMATION_CLASS info_class, PVOID info,
-			      ULONG info_len, PULONG ret_len)
+NTSTATUS nt_query_information(SYSTEM_INFORMATION_CLASS info_class, PVOID info, ULONG info_len, PULONG ret_len)
 {
 	static bool initialized = false;
 	static NTQUERYSYSTEMINFORMATIONFUNC func = NULL;
 
 	if (!initialized) {
-		func = (NTQUERYSYSTEMINFORMATIONFUNC)get_nt_func(
-			"NtQuerySystemInformation");
+		func = (NTQUERYSYSTEMINFORMATIONFUNC)get_nt_func("NtQuerySystemInformation");
 		initialized = true;
 	}
 
@@ -163,8 +155,7 @@ bool thread_is_suspended(DWORD process_id, DWORD thread_id)
 		return false;
 
 	for (;;) {
-		NTSTATUS stat = nt_query_information(SystemProcessInformation,
-						     data, size, &size);
+		NTSTATUS stat = nt_query_information(SystemProcessInformation, data, size, &size);
 		if (NT_SUCCESS(stat))
 			break;
 

@@ -25,8 +25,7 @@ static size_t array_output_write(void *param, const void *data, size_t size)
 		size_t new_size = output->cur_pos + size;
 
 		if (new_size > output->bytes.num) {
-			darray_ensure_capacity(sizeof(uint8_t),
-					       &output->bytes.da, new_size);
+			darray_ensure_capacity(sizeof(uint8_t), &output->bytes.da, new_size);
 			output->bytes.num = new_size;
 		}
 
@@ -46,8 +45,7 @@ static int64_t array_output_get_pos(void *param)
 	return (int64_t)data->bytes.num;
 }
 
-static int64_t array_output_seek(void *param, int64_t offset,
-				 enum serialize_seek_type seek_type)
+static int64_t array_output_seek(void *param, int64_t offset, enum serialize_seek_type seek_type)
 {
 	struct array_output_data *output = param;
 
@@ -73,8 +71,7 @@ static int64_t array_output_seek(void *param, int64_t offset,
 	return (int64_t)new_pos;
 }
 
-void array_output_serializer_init(struct serializer *s,
-				  struct array_output_data *data)
+void array_output_serializer_init(struct serializer *s, struct array_output_data *data)
 {
 	memset(s, 0, sizeof(struct serializer));
 	memset(data, 0, sizeof(struct array_output_data));

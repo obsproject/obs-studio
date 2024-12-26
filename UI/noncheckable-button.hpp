@@ -11,13 +11,6 @@ class NonCheckableButton : public QPushButton {
 	inline void nextCheckState() override {}
 
 public:
-	inline NonCheckableButton(QWidget *parent = nullptr)
-		: QPushButton(parent)
-	{
-	}
-	inline NonCheckableButton(const QString &text,
-				  QWidget *parent = nullptr)
-		: QPushButton(text, parent)
-	{
-	}
+	inline NonCheckableButton(QWidget *parent = nullptr) : QPushButton(parent) {}
+	inline NonCheckableButton(const QString &text, QWidget *parent = nullptr) : QPushButton(text, parent) {}
 };

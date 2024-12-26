@@ -5,6 +5,6 @@ if(TARGET OBS::browser-panels)
 
   target_sources(
     obs-studio
-    PRIVATE # cmake-format: sortable
-            window-dock-browser.cpp window-dock-browser.hpp window-extra-browsers.cpp window-extra-browsers.hpp)
+    PRIVATE window-dock-browser.cpp window-dock-browser.hpp window-extra-browsers.cpp window-extra-browsers.hpp
+  )
 endif()

@@ -141,21 +141,21 @@ QToolButton:pressed:hover {
     border-color: var(--toolbutton_bg_down);
 }
 
-MuteCheckBox::indicator,
-MuteCheckBox::indicator:unchecked,
-MuteCheckBox::indicator:focus {
+.indicator-mute::indicator,
+.indicator-mute::indicator:unchecked,
+.indicator-mute::indicator:focus {
     background-color: var(--toolbutton_bg);
     border: 1px solid var(--toolbutton_bg);
 }
 
-MuteCheckBox::indicator:hover,
-MuteCheckBox::indicator:unchecked:hover {
+.indicator-mute::indicator:hover,
+.indicator-mute::indicator:unchecked:hover {
     background-color: var(--toolbutton_bg_hover);
     border: 1px solid var(--toolbutton_bg_hover);
 }
 
-MuteCheckBox::indicator:pressed,
-MuteCheckBox::indicator:pressed:hover {
+.indicator-mute::indicator:pressed,
+.indicator-mute::indicator:pressed:hover {
     background-color: var(--toolbutton_bg_down);
     border-color: var(--toolbutton_bg_down);
 }
@@ -218,4 +218,14 @@ VolumeMeter {
     qproperty-magnitudeColor: palette(window);
     qproperty-majorTickColor: palette(window-text);
     qproperty-minorTickColor: palette(mid);
+}
+
+/* Primary Control Button Checked Coloring */
+#streamButton:!hover:!pressed:checked,
+#recordButton:!hover:!pressed:checked,
+#replayBufferButton:!hover:!pressed:checked,
+#virtualCamButton:!hover:!pressed:checked,
+#modeSwitch:!hover:!pressed:checked,
+#broadcastButton:!hover:!pressed:checked {
+    background: var(--primary_light);
 }

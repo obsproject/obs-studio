@@ -36,11 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -54,14 +49,16 @@ find_path(
   HINTS ${PC_Xkbcommon_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
   PATH_SUFFIXES xkbcommon
-  DOC "xkbcommon include directory")
+  DOC "xkbcommon include directory"
+)
 
 find_library(
   Xkbcommon_LIBRARY
   NAMES xkbcommon libxkbcommon
   HINTS ${PC_Xkbcommon_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "xkbcommon location")
+  DOC "xkbcommon location"
+)
 
 if(PC_Xkbcommon_VERSION VERSION_GREATER 0)
   set(Xkbcommon_VERSION ${PC_Xkbcommon_VERSION})
@@ -75,7 +72,9 @@ endif()
 find_package_handle_standard_args(
   Xkbcommon
   REQUIRED_VARS Xkbcommon_LIBRARY Xkbcommon_INCLUDE_DIR
-  VERSION_VAR Xkbcommon_VERSION REASON_FAILURE_MESSAGE "Ensure that xkbcommon is installed on the system.")
+  VERSION_VAR Xkbcommon_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that xkbcommon is installed on the system."
+)
 mark_as_advanced(Xkbcommon_INCLUDE_DIR Xkbcommon_LIBRARY)
 
 if(Xkbcommon_FOUND)
@@ -90,16 +89,19 @@ if(Xkbcommon_FOUND)
 
     set_target_properties(
       xkbcommon::xkbcommon
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Xkbcommon_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Xkbcommon_INCLUDE_DIR}"
-                 VERSION ${Xkbcommon_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Xkbcommon_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Xkbcommon_INCLUDE_DIR}"
+        VERSION ${Xkbcommon_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Xkbcommon PROPERTIES
-  URL "https://www.xkbcommon.org"
-  DESCRIPTION
-    "A library for handling of keyboard descriptions, including loading them from disk, parsing them and handling their state."
+  Xkbcommon
+  PROPERTIES
+    URL "https://www.xkbcommon.org"
+    DESCRIPTION
+      "A library for handling of keyboard descriptions, including loading them from disk, parsing them and handling their state."
 )

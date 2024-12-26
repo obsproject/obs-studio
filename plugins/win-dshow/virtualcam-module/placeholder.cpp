@@ -31,12 +31,9 @@ static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
 		const int16_t g = *(in++);
 		const int16_t r = *(in++);
 
-		*(out++) = (uint8_t)(((66 * r + 129 * g + 25 * b + 128) >> 8) +
-				     16);
-		*(out++) = (uint8_t)(((-38 * r - 74 * g + 112 * b + 128) >> 8) +
-				     128);
-		*(out++) = (uint8_t)(((112 * r - 94 * g - 18 * b + 128) >> 8) +
-				     128);
+		*(out++) = (uint8_t)(((66 * r + 129 * g + 25 * b + 128) >> 8) + 16);
+		*(out++) = (uint8_t)(((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128);
+		*(out++) = (uint8_t)(((112 * r - 94 * g - 18 * b + 128) >> 8) + 128);
 	}
 
 	placeholder.resize(width * height * 3 / 2);

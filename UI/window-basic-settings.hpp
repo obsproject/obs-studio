@@ -74,37 +74,17 @@ std::string DeserializeConfigText(const char *value);
 
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
-	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon
-			   DESIGNABLE true)
-	Q_PROPERTY(QIcon appearanceIcon READ GetAppearanceIcon WRITE
-			   SetAppearanceIcon DESIGNABLE true)
-	Q_PROPERTY(QIcon streamIcon READ GetStreamIcon WRITE SetStreamIcon
-			   DESIGNABLE true)
-	Q_PROPERTY(QIcon outputIcon READ GetOutputIcon WRITE SetOutputIcon
-			   DESIGNABLE true)
-	Q_PROPERTY(QIcon audioIcon READ GetAudioIcon WRITE SetAudioIcon
-			   DESIGNABLE true)
-	Q_PROPERTY(QIcon videoIcon READ GetVideoIcon WRITE SetVideoIcon
-			   DESIGNABLE true)
-	Q_PROPERTY(QIcon hotkeysIcon READ GetHotkeysIcon WRITE SetHotkeysIcon
-			   DESIGNABLE true)
-	Q_PROPERTY(QIcon accessibilityIcon READ GetAccessibilityIcon WRITE
-			   SetAccessibilityIcon DESIGNABLE true)
-	Q_PROPERTY(QIcon advancedIcon READ GetAdvancedIcon WRITE SetAdvancedIcon
-			   DESIGNABLE true)
+	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon appearanceIcon READ GetAppearanceIcon WRITE SetAppearanceIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon streamIcon READ GetStreamIcon WRITE SetStreamIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon outputIcon READ GetOutputIcon WRITE SetOutputIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon audioIcon READ GetAudioIcon WRITE SetAudioIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon videoIcon READ GetVideoIcon WRITE SetVideoIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon hotkeysIcon READ GetHotkeysIcon WRITE SetHotkeysIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon accessibilityIcon READ GetAccessibilityIcon WRITE SetAccessibilityIcon DESIGNABLE true)
+	Q_PROPERTY(QIcon advancedIcon READ GetAdvancedIcon WRITE SetAdvancedIcon DESIGNABLE true)
 
-	enum Pages {
-		GENERAL,
-		APPEARANCE,
-		STREAM,
-		OUTPUT,
-		AUDIO,
-		VIDEO,
-		HOTKEYS,
-		ACCESSIBILITY,
-		ADVANCED,
-		NUM_PAGES
-	};
+	enum Pages { GENERAL, APPEARANCE, STREAM, OUTPUT, AUDIO, VIDEO, HOTKEYS, ACCESSIBILITY, ADVANCED, NUM_PAGES };
 
 private:
 	OBSBasic *main;
@@ -136,8 +116,7 @@ private:
 	int lastIgnoreRecommended = -1;
 	int lastChannelSetupIdx = 0;
 
-	static constexpr uint32_t ENCODER_HIDE_FLAGS =
-		(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL);
+	static constexpr uint32_t ENCODER_HIDE_FLAGS = (OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL);
 
 	OBSTheme *savedTheme = nullptr;
 
@@ -159,10 +138,8 @@ private:
 	QString curAdvStreamEncoder;
 	QString curAdvRecordEncoder;
 
-	using AudioSource_t =
-		std::tuple<OBSWeakSource, QPointer<QCheckBox>,
-			   QPointer<QSpinBox>, QPointer<QCheckBox>,
-			   QPointer<QSpinBox>>;
+	using AudioSource_t = std::tuple<OBSWeakSource, QPointer<QCheckBox>, QPointer<QSpinBox>, QPointer<QCheckBox>,
+					 QPointer<QSpinBox>>;
 	std::vector<AudioSource_t> audioSources;
 	std::vector<OBSSignal> audioSourceSignals;
 	OBSSignal sourceCreated;
@@ -183,40 +160,27 @@ private:
 
 	QIcon hotkeyConflictIcon;
 
-	void SaveCombo(QComboBox *widget, const char *section,
-		       const char *value);
-	void SaveComboData(QComboBox *widget, const char *section,
-			   const char *value);
-	void SaveCheckBox(QAbstractButton *widget, const char *section,
-			  const char *value, bool invert = false);
-	void SaveGroupBox(QGroupBox *widget, const char *section,
-			  const char *value);
-	void SaveEdit(QLineEdit *widget, const char *section,
-		      const char *value);
-	void SaveSpinBox(QSpinBox *widget, const char *section,
-			 const char *value);
-	void SaveText(QPlainTextEdit *widget, const char *section,
-		      const char *value);
+	void SaveCombo(QComboBox *widget, const char *section, const char *value);
+	void SaveComboData(QComboBox *widget, const char *section, const char *value);
+	void SaveCheckBox(QAbstractButton *widget, const char *section, const char *value, bool invert = false);
+	void SaveGroupBox(QGroupBox *widget, const char *section, const char *value);
+	void SaveEdit(QLineEdit *widget, const char *section, const char *value);
+	void SaveSpinBox(QSpinBox *widget, const char *section, const char *value);
+	void SaveText(QPlainTextEdit *widget, const char *section, const char *value);
 	void SaveFormat(QComboBox *combo);
-	void SaveEncoder(QComboBox *combo, const char *section,
-			 const char *value);
+	void SaveEncoder(QComboBox *combo, const char *section, const char *value);
 
-	bool ResFPSValid(obs_service_resolution *res_list, size_t res_count,
-			 int max_fps);
-	void ClosestResFPS(obs_service_resolution *res_list, size_t res_count,
-			   int max_fps, int &new_cx, int &new_cy, int &new_fps);
+	bool ResFPSValid(obs_service_resolution *res_list, size_t res_count, int max_fps);
+	void ClosestResFPS(obs_service_resolution *res_list, size_t res_count, int max_fps, int &new_cx, int &new_cy,
+			   int &new_fps);
 
 	inline bool Changed() const
 	{
-		return generalChanged || appearanceChanged || outputsChanged ||
-		       stream1Changed || audioChanged || videoChanged ||
-		       advancedChanged || hotkeysChanged || a11yChanged;
+		return generalChanged || appearanceChanged || outputsChanged || stream1Changed || audioChanged ||
+		       videoChanged || advancedChanged || hotkeysChanged || a11yChanged;
 	}
 
-	inline void EnableApplyButton(bool en)
-	{
-		ui->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(en);
-	}
+	inline void EnableApplyButton(bool en) { ui->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(en); }
 
 	inline void ClearChanged()
 	{
@@ -232,10 +196,8 @@ private:
 		EnableApplyButton(false);
 	}
 
-	template<typename Widget, typename WidgetParent, typename... SignalArgs,
-		 typename... SlotArgs>
-	void HookWidget(Widget *widget,
-			void (WidgetParent::*signal)(SignalArgs...),
+	template<typename Widget, typename WidgetParent, typename... SignalArgs, typename... SlotArgs>
+	void HookWidget(Widget *widget, void (WidgetParent::*signal)(SignalArgs...),
 			void (OBSBasicSettings::*slot)(SlotArgs...))
 	{
 		QObject::connect(widget, signal, this, slot);
@@ -259,16 +221,13 @@ private:
 	void LoadOutputSettings();
 	void LoadAudioSettings();
 	void LoadVideoSettings();
-	void
-	LoadHotkeySettings(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
+	void LoadHotkeySettings(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
 	void LoadA11ySettings(bool presetChange = false);
 	void LoadAppearanceSettings(bool reload = false);
 	void LoadAdvancedSettings();
 	void LoadSettings(bool changedOnly);
 
-	OBSPropertiesView *CreateEncoderPropertyView(const char *encoder,
-						     const char *path,
-						     bool changed = false);
+	OBSPropertiesView *CreateEncoderPropertyView(const char *encoder, const char *path, bool changed = false);
 
 	/* general */
 	void LoadLanguageList();
@@ -328,9 +287,7 @@ private:
 	void LoadAdvOutputRecordingEncoderProperties();
 	void LoadAdvOutputFFmpegSettings();
 	void LoadAdvOutputAudioSettings();
-	void SetAdvOutputFFmpegEnablement(FFmpegCodecType encoderType,
-					  bool enabled,
-					  bool enableEncode = false);
+	void SetAdvOutputFFmpegEnablement(FFmpegCodecType encoderType, bool enabled, bool enableEncode = false);
 
 	/* audio */
 	void LoadListValues(QComboBox *widget, obs_property_t *prop, int index);
@@ -339,8 +296,7 @@ private:
 
 	/* video */
 	void LoadRendererList();
-	void ResetDownscales(uint32_t cx, uint32_t cy,
-			     bool ignoreAllSignals = false);
+	void ResetDownscales(uint32_t cx, uint32_t cy, bool ignoreAllSignals = false);
 	void LoadDownscaleFilters();
 	void LoadResolutionLists();
 	void LoadFPSData();
@@ -372,8 +328,7 @@ private:
 	void SaveAdvancedSettings();
 	void SaveSettings();
 
-	void SearchHotkeys(const QString &text,
-			   obs_key_combination_t filterCombo);
+	void SearchHotkeys(const QString &text, obs_key_combination_t filterCombo);
 
 	void UpdateSimpleOutStreamDelayEstimate();
 	void UpdateAdvOutStreamDelayEstimate();
@@ -530,8 +485,5 @@ public:
 	OBSBasicSettings(QWidget *parent);
 	~OBSBasicSettings();
 
-	inline const QIcon &GetHotkeyConflictIcon() const
-	{
-		return hotkeyConflictIcon;
-	}
+	inline const QIcon &GetHotkeyConflictIcon() const { return hotkeyConflictIcon; }
 };

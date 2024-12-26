@@ -21,8 +21,7 @@
 #include "../util/dstr.h"
 #include "vec4.h"
 
-#define blog(level, format, ...) \
-	blog(level, "%s: " format, __FUNCTION__, __VA_ARGS__)
+#define blog(level, format, ...) blog(level, "%s: " format, __FUNCTION__, __VA_ARGS__)
 
 static void *bi_def_bitmap_create(int width, int height)
 {
@@ -58,12 +57,10 @@ static void bi_def_bitmap_modified(void *bitmap)
 
 static inline int get_full_decoded_gif_size(gs_image_file_t *image)
 {
-	return image->gif.width * image->gif.height * 4 *
-	       image->gif.frame_count;
+	return image->gif.width * image->gif.height * 4 * image->gif.frame_count;
 }
 
-static inline void *alloc_mem(gs_image_file_t *image, uint64_t *mem_usage,
-			      size_t size)
+static inline void *alloc_mem(gs_image_file_t *image, uint64_t *mem_usage, size_t size)
 {
 	UNUSED_PARAMETER(image);
 
@@ -72,8 +69,7 @@ static inline void *alloc_mem(gs_image_file_t *image, uint64_t *mem_usage,
 	return bzalloc(size);
 }
 
-static bool init_animated_gif(gs_image_file_t *image, const char *path,
-			      uint64_t *mem_usage,
+static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t *mem_usage,
 			      enum gs_image_alpha_mode alpha_mode)
 {
 	bool is_animated_gif = true;
@@ -120,17 +116,14 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path,
 	} while (result != GIF_OK);
 
 	if (image->gif.width > 4096 || image->gif.height > 4096) {
-		blog(LOG_WARNING, "Bad texture dimensions (%dx%d) in '%s'",
-		     image->gif.width, image->gif.height, path);
+		blog(LOG_WARNING, "Bad texture dimensions (%dx%d) in '%s'", image->gif.width, image->gif.height, path);
 		goto fail;
 	}
 
-	max_size = (uint64_t)image->gif.width * (uint64_t)image->gif.height *
-		   (uint64_t)image->gif.frame_count * 4LLU;
+	max_size = (uint64_t)image->gif.width * (uint64_t)image->gif.height * (uint64_t)image->gif.frame_count * 4LLU;
 
 	if ((uint64_t)get_full_decoded_gif_size(image) != max_size) {
-		blog(LOG_WARNING, "Gif '%s' overflowed maximum pointer size",
-		     path);
+		blog(LOG_WARNING, "Gif '%s' overflowed maximum pointer size", path);
 		goto fail;
 	}
 
@@ -138,11 +131,8 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path,
 	if (image->is_animated_gif) {
 		gif_decode_frame(&image->gif, 0);
 
-		image->animation_frame_cache =
-			alloc_mem(image, mem_usage,
-				  image->gif.frame_count * sizeof(uint8_t *));
-		image->animation_frame_data = alloc_mem(
-			image, mem_usage, get_full_decoded_gif_size(image));
+		image->animation_frame_cache = alloc_mem(image, mem_usage, image->gif.frame_count * sizeof(uint8_t *));
+		image->animation_frame_data = alloc_mem(image, mem_usage, get_full_decoded_gif_size(image));
 
 		for (unsigned int i = 0; i < image->gif.frame_count; i++) {
 			if (gif_decode_frame(&image->gif, i) != GIF_OK)
@@ -164,12 +154,9 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path,
 		}
 
 		if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
-			gs_premultiply_xyza_srgb_loop(image->gif.frame_image,
-						      (size_t)image->cx *
-							      image->cy);
+			gs_premultiply_xyza_srgb_loop(image->gif.frame_image, (size_t)image->cx * image->cy);
 		} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
-			gs_premultiply_xyza_loop(image->gif.frame_image,
-						 (size_t)image->cx * image->cy);
+			gs_premultiply_xyza_loop(image->gif.frame_image, (size_t)image->cx * image->cy);
 		}
 	} else {
 		gif_finalise(&image->gif);
@@ -191,10 +178,8 @@ not_animated:
 	return is_animated_gif;
 }
 
-static void gs_image_file_init_internal(gs_image_file_t *image,
-					const char *file, uint64_t *mem_usage,
-					enum gs_color_space *space,
-					enum gs_image_alpha_mode alpha_mode)
+static void gs_image_file_init_internal(gs_image_file_t *image, const char *file, uint64_t *mem_usage,
+					enum gs_color_space *space, enum gs_image_alpha_mode alpha_mode)
 {
 	size_t len;
 
@@ -215,12 +200,10 @@ static void gs_image_file_init_internal(gs_image_file_t *image,
 	}
 
 	image->texture_data =
-		gs_create_texture_file_data3(file, alpha_mode, &image->format,
-					     &image->cx, &image->cy, space);
+		gs_create_texture_file_data3(file, alpha_mode, &image->format, &image->cx, &image->cy, space);
 
 	if (mem_usage) {
-		*mem_usage += image->cx * image->cy *
-			      gs_get_format_bpp(image->format) / 8;
+		*mem_usage += image->cx * image->cy * gs_get_format_bpp(image->format) / 8;
 	}
 
 	image->loaded = !!image->texture_data;
@@ -233,8 +216,7 @@ static void gs_image_file_init_internal(gs_image_file_t *image,
 void gs_image_file_init(gs_image_file_t *image, const char *file)
 {
 	enum gs_color_space unused;
-	gs_image_file_init_internal(image, file, NULL, &unused,
-				    GS_IMAGE_ALPHA_STRAIGHT);
+	gs_image_file_init_internal(image, file, NULL, &unused, GS_IMAGE_ALPHA_STRAIGHT);
 }
 
 void gs_image_file_free(gs_image_file_t *image)
@@ -260,25 +242,19 @@ void gs_image_file_free(gs_image_file_t *image)
 void gs_image_file2_init(gs_image_file2_t *if2, const char *file)
 {
 	enum gs_color_space unused;
-	gs_image_file_init_internal(&if2->image, file, &if2->mem_usage, &unused,
-				    GS_IMAGE_ALPHA_STRAIGHT);
+	gs_image_file_init_internal(&if2->image, file, &if2->mem_usage, &unused, GS_IMAGE_ALPHA_STRAIGHT);
 }
 
-void gs_image_file3_init(gs_image_file3_t *if3, const char *file,
-			 enum gs_image_alpha_mode alpha_mode)
+void gs_image_file3_init(gs_image_file3_t *if3, const char *file, enum gs_image_alpha_mode alpha_mode)
 {
 	enum gs_color_space unused;
-	gs_image_file_init_internal(&if3->image2.image, file,
-				    &if3->image2.mem_usage, &unused,
-				    alpha_mode);
+	gs_image_file_init_internal(&if3->image2.image, file, &if3->image2.mem_usage, &unused, alpha_mode);
 	if3->alpha_mode = alpha_mode;
 }
 
-void gs_image_file4_init(gs_image_file4_t *if4, const char *file,
-			 enum gs_image_alpha_mode alpha_mode)
+void gs_image_file4_init(gs_image_file4_t *if4, const char *file, enum gs_image_alpha_mode alpha_mode)
 {
-	gs_image_file_init_internal(&if4->image3.image2.image, file,
-				    &if4->image3.image2.mem_usage, &if4->space,
+	gs_image_file_init_internal(&if4->image3.image2.image, file, &if4->image3.image2.mem_usage, &if4->space,
 				    alpha_mode);
 	if4->image3.alpha_mode = alpha_mode;
 }
@@ -289,14 +265,12 @@ void gs_image_file_init_texture(gs_image_file_t *image)
 		return;
 
 	if (image->is_animated_gif) {
-		image->texture = gs_texture_create(
-			image->cx, image->cy, image->format, 1,
-			(const uint8_t **)&image->gif.frame_image, GS_DYNAMIC);
+		image->texture = gs_texture_create(image->cx, image->cy, image->format, 1,
+						   (const uint8_t **)&image->gif.frame_image, GS_DYNAMIC);
 
 	} else {
-		image->texture = gs_texture_create(
-			image->cx, image->cy, image->format, 1,
-			(const uint8_t **)&image->texture_data, 0);
+		image->texture = gs_texture_create(image->cx, image->cy, image->format, 1,
+						   (const uint8_t **)&image->texture_data, 0);
 		bfree(image->texture_data);
 		image->texture_data = NULL;
 	}
@@ -310,8 +284,7 @@ static inline uint64_t get_time(gs_image_file_t *image, int i)
 	return val;
 }
 
-static inline int calculate_new_frame(gs_image_file_t *image,
-				      uint64_t elapsed_time_ns, int loops)
+static inline int calculate_new_frame(gs_image_file_t *image, uint64_t elapsed_time_ns, int loops)
 {
 	int new_frame = image->cur_frame;
 
@@ -335,16 +308,13 @@ static inline int calculate_new_frame(gs_image_file_t *image,
 	return new_frame;
 }
 
-static void decode_new_frame(gs_image_file_t *image, int new_frame,
-			     enum gs_image_alpha_mode alpha_mode)
+static void decode_new_frame(gs_image_file_t *image, int new_frame, enum gs_image_alpha_mode alpha_mode)
 {
 	if (!image->animation_frame_cache[new_frame]) {
 		int last_frame;
 
 		/* if looped, decode frame 0 */
-		last_frame = (new_frame < image->last_decoded_frame)
-				     ? 0
-				     : image->last_decoded_frame + 1;
+		last_frame = (new_frame < image->last_decoded_frame) ? 0 : image->last_decoded_frame + 1;
 
 		/* decode missed frames */
 		for (int i = last_frame; i < new_frame; i++) {
@@ -354,22 +324,17 @@ static void decode_new_frame(gs_image_file_t *image, int new_frame,
 
 		/* decode actual desired frame */
 		if (gif_decode_frame(&image->gif, new_frame) == GIF_OK) {
-			const size_t area =
-				(size_t)image->gif.width * image->gif.height;
+			const size_t area = (size_t)image->gif.width * image->gif.height;
 			size_t pos = new_frame * area * 4;
-			image->animation_frame_cache[new_frame] =
-				image->animation_frame_data + pos;
+			image->animation_frame_cache[new_frame] = image->animation_frame_data + pos;
 
 			if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
-				gs_premultiply_xyza_srgb_loop(
-					image->gif.frame_image, area);
+				gs_premultiply_xyza_srgb_loop(image->gif.frame_image, area);
 			} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
-				gs_premultiply_xyza_loop(image->gif.frame_image,
-							 area);
+				gs_premultiply_xyza_loop(image->gif.frame_image, area);
 			}
 
-			memcpy(image->animation_frame_cache[new_frame],
-			       image->gif.frame_image, area * 4);
+			memcpy(image->animation_frame_cache[new_frame], image->gif.frame_image, area * 4);
 
 			image->last_decoded_frame = new_frame;
 		}
@@ -378,8 +343,7 @@ static void decode_new_frame(gs_image_file_t *image, int new_frame,
 	image->cur_frame = new_frame;
 }
 
-static bool gs_image_file_tick_internal(gs_image_file_t *image,
-					uint64_t elapsed_time_ns,
+static bool gs_image_file_tick_internal(gs_image_file_t *image, uint64_t elapsed_time_ns,
 					enum gs_image_alpha_mode alpha_mode)
 {
 	int loops;
@@ -392,8 +356,7 @@ static bool gs_image_file_tick_internal(gs_image_file_t *image,
 		loops = 0;
 
 	if (!loops || image->cur_loop < loops) {
-		int new_frame =
-			calculate_new_frame(image, elapsed_time_ns, loops);
+		int new_frame = calculate_new_frame(image, elapsed_time_ns, loops);
 
 		if (new_frame != image->cur_frame) {
 			decode_new_frame(image, new_frame, alpha_mode);
@@ -416,20 +379,15 @@ bool gs_image_file2_tick(gs_image_file2_t *if2, uint64_t elapsed_time_ns)
 
 bool gs_image_file3_tick(gs_image_file3_t *if3, uint64_t elapsed_time_ns)
 {
-	return gs_image_file_tick_internal(&if3->image2.image, elapsed_time_ns,
-					   if3->alpha_mode);
+	return gs_image_file_tick_internal(&if3->image2.image, elapsed_time_ns, if3->alpha_mode);
 }
 
 bool gs_image_file4_tick(gs_image_file4_t *if4, uint64_t elapsed_time_ns)
 {
-	return gs_image_file_tick_internal(&if4->image3.image2.image,
-					   elapsed_time_ns,
-					   if4->image3.alpha_mode);
+	return gs_image_file_tick_internal(&if4->image3.image2.image, elapsed_time_ns, if4->image3.alpha_mode);
 }
 
-static void
-gs_image_file_update_texture_internal(gs_image_file_t *image,
-				      enum gs_image_alpha_mode alpha_mode)
+static void gs_image_file_update_texture_internal(gs_image_file_t *image, enum gs_image_alpha_mode alpha_mode)
 {
 	if (!image->is_animated_gif || !image->loaded)
 		return;
@@ -437,9 +395,8 @@ gs_image_file_update_texture_internal(gs_image_file_t *image,
 	if (!image->animation_frame_cache[image->cur_frame])
 		decode_new_frame(image, image->cur_frame, alpha_mode);
 
-	gs_texture_set_image(image->texture,
-			     image->animation_frame_cache[image->cur_frame],
-			     image->gif.width * 4, false);
+	gs_texture_set_image(image->texture, image->animation_frame_cache[image->cur_frame], image->gif.width * 4,
+			     false);
 }
 
 void gs_image_file_update_texture(gs_image_file_t *image)
@@ -454,12 +411,10 @@ void gs_image_file2_update_texture(gs_image_file2_t *if2)
 
 void gs_image_file3_update_texture(gs_image_file3_t *if3)
 {
-	gs_image_file_update_texture_internal(&if3->image2.image,
-					      if3->alpha_mode);
+	gs_image_file_update_texture_internal(&if3->image2.image, if3->alpha_mode);
 }
 
 void gs_image_file4_update_texture(gs_image_file4_t *if4)
 {
-	gs_image_file_update_texture_internal(&if4->image3.image2.image,
-					      if4->image3.alpha_mode);
+	gs_image_file_update_texture_internal(&if4->image3.image2.image, if4->image3.alpha_mode);
 }

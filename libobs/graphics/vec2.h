@@ -51,26 +51,22 @@ static inline void vec2_copy(struct vec2 *dst, const struct vec2 *v)
 	dst->y = v->y;
 }
 
-static inline void vec2_add(struct vec2 *dst, const struct vec2 *v1,
-			    const struct vec2 *v2)
+static inline void vec2_add(struct vec2 *dst, const struct vec2 *v1, const struct vec2 *v2)
 {
 	vec2_set(dst, v1->x + v2->x, v1->y + v2->y);
 }
 
-static inline void vec2_sub(struct vec2 *dst, const struct vec2 *v1,
-			    const struct vec2 *v2)
+static inline void vec2_sub(struct vec2 *dst, const struct vec2 *v1, const struct vec2 *v2)
 {
 	vec2_set(dst, v1->x - v2->x, v1->y - v2->y);
 }
 
-static inline void vec2_mul(struct vec2 *dst, const struct vec2 *v1,
-			    const struct vec2 *v2)
+static inline void vec2_mul(struct vec2 *dst, const struct vec2 *v1, const struct vec2 *v2)
 {
 	vec2_set(dst, v1->x * v2->x, v1->y * v2->y);
 }
 
-static inline void vec2_div(struct vec2 *dst, const struct vec2 *v1,
-			    const struct vec2 *v2)
+static inline void vec2_div(struct vec2 *dst, const struct vec2 *v1, const struct vec2 *v2)
 {
 	vec2_set(dst, v1->x / v2->x, v1->y / v2->y);
 }
@@ -123,8 +119,7 @@ static inline void vec2_minf(struct vec2 *dst, const struct vec2 *v, float val)
 	dst->y = (v->y < val) ? v->y : val;
 }
 
-static inline void vec2_min(struct vec2 *dst, const struct vec2 *v,
-			    const struct vec2 *min_v)
+static inline void vec2_min(struct vec2 *dst, const struct vec2 *v, const struct vec2 *min_v)
 {
 	dst->x = (v->x < min_v->x) ? v->x : min_v->x;
 	dst->y = (v->y < min_v->y) ? v->y : min_v->y;
@@ -136,8 +131,7 @@ static inline void vec2_maxf(struct vec2 *dst, const struct vec2 *v, float val)
 	dst->y = (v->y > val) ? v->y : val;
 }
 
-static inline void vec2_max(struct vec2 *dst, const struct vec2 *v,
-			    const struct vec2 *max_v)
+static inline void vec2_max(struct vec2 *dst, const struct vec2 *v, const struct vec2 *max_v)
 {
 	dst->x = (v->x > max_v->x) ? v->x : max_v->x;
 	dst->y = (v->y > max_v->y) ? v->y : max_v->y;
@@ -146,8 +140,7 @@ static inline void vec2_max(struct vec2 *dst, const struct vec2 *v,
 EXPORT void vec2_abs(struct vec2 *dst, const struct vec2 *v);
 EXPORT void vec2_floor(struct vec2 *dst, const struct vec2 *v);
 EXPORT void vec2_ceil(struct vec2 *dst, const struct vec2 *v);
-EXPORT int vec2_close(const struct vec2 *v1, const struct vec2 *v2,
-		      float epsilon);
+EXPORT int vec2_close(const struct vec2 *v1, const struct vec2 *v2, float epsilon);
 EXPORT void vec2_norm(struct vec2 *dst, const struct vec2 *v);
 
 #ifdef __cplusplus

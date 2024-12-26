@@ -1,4 +1,4 @@
-#include "auth-base.hpp"
+#include "moc_auth-base.cpp"
 #include "window-basic-main.hpp"
 
 #include <vector>
@@ -61,8 +61,7 @@ void Auth::Load()
 	if (main->auth) {
 		if (main->auth->LoadInternal()) {
 			main->auth->LoadUI();
-			main->SetBroadcastFlowEnabled(
-				main->auth->broadcastFlow());
+			main->SetBroadcastFlowEnabled(main->auth->broadcastFlow());
 		}
 	} else {
 		main->SetBroadcastFlowEnabled(false);

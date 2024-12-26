@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -52,14 +48,16 @@ find_path(
   NAMES libv4l2.h
   HINTS ${PC_Libv4l2_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include
-  DOC "Libv4l2 include directory")
+  DOC "Libv4l2 include directory"
+)
 
 find_library(
   Libv4l2_LIBRARY
   NAMES v4l2
   HINTS ${PC_Libv4l2_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
-  DOC "Libv4l2 location")
+  DOC "Libv4l2 location"
+)
 
 if(PC_Libv4l2_VERSION VERSION_GREATER 0)
   set(Libv4l2_VERSION ${PC_Libv4l2_VERSION})
@@ -73,7 +71,9 @@ endif()
 find_package_handle_standard_args(
   Libv4l2
   REQUIRED_VARS Libv4l2_LIBRARY Libv4l2_INCLUDE_DIR
-  VERSION_VAR Libv4l2_VERSION REASON_FAILURE_MESSAGE "Ensure that v4l-utils is installed on the system.")
+  VERSION_VAR Libv4l2_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that v4l-utils is installed on the system."
+)
 mark_as_advanced(Libv4l2_INCLUDE_DIR Libv4l2_LIBRARY)
 
 if(Libv4l2_FOUND)
@@ -88,14 +88,18 @@ if(Libv4l2_FOUND)
 
     set_target_properties(
       Libv4l2::Libv4l2
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Libv4l2_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Libv4l2_INCLUDE_DIR}"
-                 VERSION ${Libv4l2_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Libv4l2_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Libv4l2_INCLUDE_DIR}"
+        VERSION ${Libv4l2_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Lib4l2 PROPERTIES
-  URL "https://linuxtv.org/wiki/index.php/V4l-utils"
-  DESCRIPTION "The v4l-utils are a series of packages for handling media devices.")
+  Lib4l2
+  PROPERTIES
+    URL "https://linuxtv.org/wiki/index.php/V4l-utils"
+    DESCRIPTION "The v4l-utils are a series of packages for handling media devices."
+)

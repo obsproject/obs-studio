@@ -6,11 +6,8 @@
 
 #include "models/multitrack-video.hpp"
 
-GoLiveApi::PostData
-constructGoLivePost(QString streamKey,
-		    const std::optional<uint64_t> &maximum_aggregate_bitrate,
-		    const std::optional<uint32_t> &maximum_video_tracks,
-		    bool vod_track_enabled)
+GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<uint64_t> &maximum_aggregate_bitrate,
+					const std::optional<uint32_t> &maximum_video_tracks, bool vod_track_enabled)
 {
 	GoLiveApi::PostData post_data{};
 	post_data.service = "IVS";
@@ -25,8 +22,7 @@ constructGoLivePost(QString streamKey,
 	client.version = obs_get_version_string();
 
 	auto add_codec = [&](const char *codec) {
-		auto it = std::find(std::begin(client.supported_codecs),
-				    std::end(client.supported_codecs), codec);
+		auto it = std::find(std::begin(client.supported_codecs), std::end(client.supported_codecs), codec);
 		if (it != std::end(client.supported_codecs))
 			return;
 
@@ -67,8 +63,7 @@ constructGoLivePost(QString streamKey,
 	}
 
 	if (maximum_aggregate_bitrate.has_value())
-		preferences.maximum_aggregate_bitrate =
-			maximum_aggregate_bitrate.value();
+		preferences.maximum_aggregate_bitrate = maximum_aggregate_bitrate.value();
 	if (maximum_video_tracks.has_value())
 		preferences.maximum_video_tracks = maximum_video_tracks.value();
 

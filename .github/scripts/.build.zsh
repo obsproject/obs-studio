@@ -21,8 +21,8 @@ if (( ! ${+CI} )) {
   exit 1
 }
 
-autoload -Uz is-at-least && if ! is-at-least 5.2; then
-  print -u2 -PR "%F{1}${funcstack[1]##*/}:%f Running on Zsh version %B${ZSH_VERSION}%b, but Zsh %B5.2%b is the minimum supported version. Upgrade Zsh to fix this issue."
+autoload -Uz is-at-least && if ! is-at-least 5.9; then
+  print -u2 -PR "%F{1}${funcstack[1]##*/}:%f Running on Zsh version %B${ZSH_VERSION}%b, but Zsh %B5.9%b is the minimum supported version. Upgrade Zsh to fix this issue."
   exit 1
 fi
 
@@ -57,12 +57,12 @@ build() {
     macos-x86_64
     macos-arm64
     ubuntu-x86_64
-    ubuntu-aarch64
   )
 
   local config='RelWithDebInfo'
   local -r -a _valid_configs=(Debug RelWithDebInfo Release MinSizeRel)
   local -i codesign=0
+  local -i analyze=0
 
   local -a args
   while (( # )) {
@@ -76,6 +76,7 @@ build() {
     }
     case ${1} {
       --) shift; args+=($@); break ;;
+      -a|--analyze) analyze=1; shift ;;
       -t|--target)
         if (( ! ${_valid_targets[(Ie)${2}]} )) {
           log_error "Invalid value %B${2}%b for option %B${1}%b"
@@ -176,16 +177,32 @@ build() {
         -exportPath ${project_root}/build_macos
       )
 
-      pushd build_macos
-      if [[ ${GITHUB_EVENT_NAME} == push && ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]] {
-        run_xcodebuild ${archive_args}
-        run_xcodebuild ${export_args}
-      } else {
-        run_xcodebuild ${build_args}
+      local -a analyze_args=(
+        CLANG_ANALYZER_OUTPUT=sarif
+        CLANG_ANALYZER_OUTPUT_DIR=${project_root}/analytics
+        -project obs-studio.xcodeproj
+        -target obs-studio
+        -destination "generic/platform=macOS,name=Any Mac"
+        -configuration ${config}
+        -parallelizeTargets
+        -hideShellScriptEnvironment
+        analyze
+      )
 
-        rm -rf OBS.app
-        mkdir OBS.app
-        ditto UI/${config}/OBS.app OBS.app
+      pushd build_macos
+      if (( analyze )) {
+        run_xcodebuild ${analyze_args}
+      } else {
+        if [[ ${GITHUB_EVENT_NAME} == push && ${GITHUB_REF_NAME} =~ [0-9]+.[0-9]+.[0-9]+(-(rc|beta).+)? ]] {
+          run_xcodebuild ${archive_args}
+          run_xcodebuild ${export_args}
+        } else {
+          run_xcodebuild ${build_args}
+
+          rm -rf OBS.app
+          mkdir OBS.app
+          ditto UI/${config}/OBS.app OBS.app
+        }
       }
       popd
       ;;
@@ -193,16 +210,14 @@ build() {
       local cmake_bin='/usr/bin/cmake'
       cmake_args+=(
         --preset ubuntu-ci
-        --toolchain ${project_root}/cmake/linux/toolchain-${target##*-}-gcc.cmake
         -DENABLE_BROWSER:BOOL=ON
         -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//ubuntu-/linux_}"
       )
 
-      if (( ! UBUNTU_2210_OR_LATER )) cmake_args+=(-DENABLE_NEW_MPEGTS_OUTPUT:BOOL=OFF)
-      if [[ ${target##*-} == aarch64 ]] cmake-args+=(-DENABLE_QSV11:BOOL=OFF)
-
       cmake_build_args+=(build_${target%%-*} --config ${config} --parallel)
       cmake_install_args+=(build_${target%%-*} --prefix ${project_root}/build_${target%%-*}/install/${config})
+
+      export CLICOLOR_FORCE=1
 
       log_group "Configuring ${product_name}..."
       ${cmake_bin} -S ${project_root} ${cmake_args}

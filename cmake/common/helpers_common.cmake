@@ -1,10 +1,5 @@
 # OBS CMake common helper functions module
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=E1121
-# cmake-format: on
-
 include_guard(GLOBAL)
 
 # message_configuration: Function to print configuration outcome
@@ -22,14 +17,11 @@ function(message_configuration)
     "               | (_) | |_) \\__ \\_____\\__ \\ |_| |_| | (_| | | (_) |\n"
     "                \\___/|_.__/|___/     |___/\\__|\\__,_|\\__,_|_|\\___/ \n"
     "\nOBS:  Application Version: ${OBS_VERSION} - Build Number: ${OBS_BUILD_NUMBER}\n"
-    "==================================================================================\n\n")
+    "==================================================================================\n\n"
+  )
 
   get_property(OBS_FEATURES_ENABLED GLOBAL PROPERTY OBS_FEATURES_ENABLED)
-  list(
-    SORT OBS_FEATURES_ENABLED
-    COMPARE NATURAL
-    CASE SENSITIVE
-    ORDER ASCENDING)
+  list(SORT OBS_FEATURES_ENABLED COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
 
   if(OBS_FEATURES_ENABLED)
     message(NOTICE "------------------------       Enabled Features           ------------------------")
@@ -39,11 +31,7 @@ function(message_configuration)
   endif()
 
   get_property(OBS_FEATURES_DISABLED GLOBAL PROPERTY OBS_FEATURES_DISABLED)
-  list(
-    SORT OBS_FEATURES_DISABLED
-    COMPARE NATURAL
-    CASE SENSITIVE
-    ORDER ASCENDING)
+  list(SORT OBS_FEATURES_DISABLED COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
 
   if(OBS_FEATURES_DISABLED)
     message(NOTICE "------------------------       Disabled Features          ------------------------")
@@ -54,11 +42,7 @@ function(message_configuration)
 
   if(ENABLE_PLUGINS)
     get_property(OBS_MODULES_ENABLED GLOBAL PROPERTY OBS_MODULES_ENABLED)
-    list(
-      SORT OBS_MODULES_ENABLED
-      COMPARE NATURAL
-      CASE SENSITIVE
-      ORDER ASCENDING)
+    list(SORT OBS_MODULES_ENABLED COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
 
     if(OBS_MODULES_ENABLED)
       message(NOTICE "------------------------        Enabled Modules           ------------------------")
@@ -68,11 +52,7 @@ function(message_configuration)
     endif()
 
     get_property(OBS_MODULES_DISABLED GLOBAL PROPERTY OBS_MODULES_DISABLED)
-    list(
-      SORT OBS_MODULES_DISABLED
-      COMPARE NATURAL
-      CASE SENSITIVE
-      ORDER ASCENDING)
+    list(SORT OBS_MODULES_DISABLED COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
 
     if(OBS_MODULES_DISABLED)
       message(NOTICE "------------------------        Disabled Modules          ------------------------")
@@ -158,7 +138,7 @@ function(_handle_generator_expression_dependency library)
     if(TARGET ${gen_target})
       set(${var_FOUND_VAR} "${gen_target}")
     endif()
-  elseif(library MATCHES "\\$<.*Qt6::EntryPointPrivate>" OR library MATCHES "\\$<.*Qt6::QDarwin.+PermissionPlugin>")
+  elseif(library MATCHES "\\$<.*Qt6::(EntryPointPrivate|QDarwin.*PermissionPlugin)>")
     set(${var_FOUND_VAR} "${var_FOUND_VAR}-SKIP")
   else()
     # Unknown or unimplemented generator expression found. Abort script run to either add to ignore list or implement
@@ -167,9 +147,7 @@ function(_handle_generator_expression_dependency library)
   endif()
 
   if(CMAKE_VERSION VERSION_LESS 3.25)
-    set(${var_FOUND_VAR}
-        ${var_FOUND_VAR}
-        PARENT_SCOPE)
+    set(${var_FOUND_VAR} ${var_FOUND_VAR} PARENT_SCOPE)
   else()
     return(PROPAGATE ${var_FOUND_VAR})
   endif()
@@ -225,18 +203,14 @@ function(find_dependencies)
   endforeach()
 
   if(NOT is_root)
-    # cmake-format: off
-    set(found_libraries ${found_libraries} PARENT_SCOPE)
-    # cmake-format: on
     # Exit recursive branch
-    return()
+    return(PROPAGATE found_libraries)
   endif()
 
   list(REMOVE_DUPLICATES found_libraries)
   list(APPEND ${var_FOUND_VAR} ${found_libraries})
-  # cmake-format: off
-  set(${var_FOUND_VAR} ${${var_FOUND_VAR}} PARENT_SCOPE)
-  # cmake-format: on
+
+  return(PROPAGATE ${var_FOUND_VAR})
 endfunction()
 
 # find_qt_plugins: Find and add Qt plugin libraries associated with Qt component to target
@@ -252,9 +226,15 @@ function(find_qt_plugins)
     message(FATAL_ERROR "'find_qt_plugins' has to be called with a valid target from the Qt or Qt6 namespace.")
   endif()
 
-  # cmake-format: off
-  list(APPEND qt_plugins_Core platforms printsupport styles imageformats iconengines)
-  # cmake-format: on
+  list(
+    APPEND
+    qt_plugins_Core
+    platforms
+    printsupport
+    styles
+    imageformats
+    iconengines
+  )
   list(APPEND qt_plugins_Gui platforminputcontexts)
   list(APPEND qt_plugins_Sql sqldrivers)
   list(APPEND qt_plugins_3dRender sceneparsers geometryloaders)
@@ -285,7 +265,9 @@ function(find_qt_plugins)
           file(
             GLOB plugin_libraries
             RELATIVE "${plugins_location}/${plugin}"
-            "${plugins_location}/${plugin}/*.dylib" "${plugins_location}/${plugin}/*.dll")
+            "${plugins_location}/${plugin}/*.dylib"
+            "${plugins_location}/${plugin}/*.dll"
+          )
           message(DEBUG "Found Qt plugin ${plugin} libraries: ${plugin_libraries}")
           foreach(plugin_library IN ITEMS ${plugin_libraries})
             set(plugin_full_path "${plugins_location}/${plugin}/${plugin_library}")
@@ -296,9 +278,8 @@ function(find_qt_plugins)
     endforeach()
   endif()
 
-  # cmake-format: off
-  set(${var_FOUND_VAR} ${plugins_list} PARENT_SCOPE)
-  # cmake-format: on
+  set(${var_FOUND_VAR} ${plugins_list})
+  return(PROPAGATE ${var_FOUND_VAR})
 endfunction()
 
 # target_export: Helper function to export target as CMake package
@@ -312,31 +293,24 @@ function(target_export target)
     set(package_destination "Frameworks/${target}.framework/Resources/cmake")
     set(include_destination "Frameworks/${target}.framework/Headers")
   else()
-    set(package_destination "${OBS_CMAKE_DESTINATION}/${target}")
+    if(OS_WINDOWS)
+      set(package_destination "${OBS_CMAKE_DESTINATION}")
+    else()
+      set(package_destination "${OBS_CMAKE_DESTINATION}/${target}")
+    endif()
     set(include_destination "${OBS_INCLUDE_DESTINATION}")
   endif()
 
   install(
     TARGETS ${target}
     EXPORT ${target}Targets
-    RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
-            COMPONENT Development
-            ${exclude_variant}
-    LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}"
-            COMPONENT Development
-            ${exclude_variant}
-    ARCHIVE DESTINATION "${OBS_LIBRARY_DESTINATION}"
-            COMPONENT Development
-            ${exclude_variant}
-    FRAMEWORK DESTINATION Frameworks
-              COMPONENT Development
-              ${exclude_variant}
-    INCLUDES
-    DESTINATION "${include_destination}"
-    PUBLIC_HEADER
-      DESTINATION "${include_destination}"
-      COMPONENT Development
-      ${exclude_variant})
+    RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Development ${exclude_variant}
+    LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development ${exclude_variant}
+    ARCHIVE DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development ${exclude_variant}
+    FRAMEWORK DESTINATION Frameworks COMPONENT Development ${exclude_variant}
+    INCLUDES DESTINATION "${include_destination}"
+    PUBLIC_HEADER DESTINATION "${include_destination}" COMPONENT Development ${exclude_variant}
+  )
 
   get_target_property(obs_public_headers ${target} OBS_PUBLIC_HEADERS)
 
@@ -358,15 +332,12 @@ function(target_export target)
         FILES ${headers_${header_dir}}
         DESTINATION "${include_destination}/${header_dir}"
         COMPONENT Development
-        ${exclude_variant})
+        ${exclude_variant}
+      )
     endforeach()
 
     if(headers)
-      install(
-        FILES ${headers}
-        DESTINATION "${include_destination}"
-        COMPONENT Development
-        ${exclude_variant})
+      install(FILES ${headers} DESTINATION "${include_destination}" COMPONENT Development ${exclude_variant})
     endif()
   endif()
 
@@ -375,7 +346,8 @@ function(target_export target)
       FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
       DESTINATION "${include_destination}"
       COMPONENT Development
-      ${exclude_variant})
+      ${exclude_variant}
+    )
   endif()
 
   get_target_property(target_type ${target} TYPE)
@@ -386,30 +358,29 @@ function(target_export target)
     generate_export_header(${target} EXPORT_FILE_NAME "${target}_EXPORT.h")
     target_sources(${target} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h>)
 
-    set_property(
-      TARGET ${target}
-      APPEND
-      PROPERTY PUBLIC_HEADER "${target}_EXPORT.h")
+    set_property(TARGET ${target} APPEND PROPERTY PUBLIC_HEADER "${target}_EXPORT.h")
   endif()
 
   set(TARGETS_EXPORT_NAME ${target}Targets)
   message(
     DEBUG
-    "Generating CMake package configuration file ${target}Config.cmake with targets file ${TARGETS_EXPORT_NAME}...")
+    "Generating CMake package configuration file ${target}Config.cmake with targets file ${TARGETS_EXPORT_NAME}..."
+  )
   include(CMakePackageConfigHelpers)
-  configure_package_config_file(cmake/${target}Config.cmake.in ${target}Config.cmake
-                                INSTALL_DESTINATION "${package_destination}")
+  configure_package_config_file(
+    cmake/${target}Config.cmake.in
+    ${target}Config.cmake
+    INSTALL_DESTINATION "${package_destination}"
+  )
 
   message(DEBUG "Generating CMake package version configuration file ${target}ConfigVersion.cmake...")
   write_basic_package_version_file(
     "${target}ConfigVersion.cmake"
     VERSION ${OBS_VERSION_CANONICAL}
-    COMPATIBILITY SameMajorVersion)
+    COMPATIBILITY SameMajorVersion
+  )
 
-  export(
-    EXPORT ${target}Targets
-    FILE "${TARGETS_EXPORT_NAME}.cmake"
-    NAMESPACE OBS::)
+  export(EXPORT ${target}Targets FILE "${TARGETS_EXPORT_NAME}.cmake" NAMESPACE OBS::)
 
   export(PACKAGE ${target})
 
@@ -419,19 +390,23 @@ function(target_export target)
     NAMESPACE OBS::
     DESTINATION "${package_destination}"
     COMPONENT Development
-    ${exclude_variant})
+    ${exclude_variant}
+  )
 
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake"
     DESTINATION "${package_destination}"
     COMPONENT Development
-    ${exclude_variant})
+    ${exclude_variant}
+  )
 endfunction()
 
 # check_uuid: Helper function to check for valid UUID
 function(check_uuid uuid_string return_value)
   set(valid_uuid TRUE)
+  # gersemi: off
   set(uuid_token_lengths 8 4 4 4 12)
+  # gersemi: on
   set(token_num 0)
 
   string(REPLACE "-" ";" uuid_tokens ${uuid_string})
@@ -458,27 +433,23 @@ function(check_uuid uuid_string return_value)
     set(valid_uuid FALSE)
   endif()
   message(DEBUG "UUID ${uuid_string} valid: ${valid_uuid}")
-  # cmake-format: off
-  set(${return_value} ${valid_uuid} PARENT_SCOPE)
-  # cmake-format: on
+
+  set(${return_value} ${valid_uuid})
+  return(PROPAGATE ${return_value})
 endfunction()
 
-# legacy_check: Check if new CMake framework was not enabled and load legacy rules instead
-macro(legacy_check)
-  if(OBS_CMAKE_VERSION VERSION_LESS 3.0.0)
-    message(FATAL_ERROR "CMake version changed between CMakeLists.txt.")
-  endif()
-endmacro()
-
-# add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms
+# add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms and architectures
 function(add_obs_plugin target)
   set(options WITH_MESSAGE)
   set(oneValueArgs "")
-  set(multiValueArgs PLATFORMS)
+  set(multiValueArgs PLATFORMS ARCHITECTURES)
   cmake_parse_arguments(PARSE_ARGV 0 _AOP "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
   set(found_platform FALSE)
   list(LENGTH _AOP_PLATFORMS _AOP_NUM_PLATFORMS)
+
+  set(found_architecture FALSE)
+  list(LENGTH _AOP_ARCHITECTURES _AOP_NUM_ARCHITECTURES)
 
   if(_AOP_NUM_PLATFORMS EQUAL 0)
     set(found_platform TRUE)
@@ -492,7 +463,25 @@ function(add_obs_plugin target)
     endforeach()
   endif()
 
-  if(found_platform)
+  if(_AOP_NUM_ARCHITECTURES EQUAL 0)
+    set(found_architecture TRUE)
+  else()
+    foreach(architecture IN LISTS _AOP_ARCHITECTURES)
+      if(OS_WINDOWS)
+        if("${architecture}" STREQUAL CMAKE_VS_PLATFORM_NAME)
+          set(found_architecture TRUE)
+        endif()
+      elseif(OS_MACOS)
+        if("${architecture}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+          set(found_architecture TRUE)
+        endif()
+      elseif("${architecture}" STREQUAL CMAKE_SYSTEM_PROCESSOR)
+        set(found_architecture TRUE)
+      endif()
+    endforeach()
+  endif()
+
+  if(found_platform AND found_architecture)
     add_subdirectory(${target})
   elseif(_AOP_WITH_MESSAGE)
     add_custom_target(${target} COMMENT "Dummy target for unavailable module ${target}")

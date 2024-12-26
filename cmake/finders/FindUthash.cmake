@@ -31,25 +31,25 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
-find_path(
-  Uthash_INCLUDE_DIR
-  NAMES uthash.h
-  PATHS /usr/include /usr/local/include
-  DOC "uthash include directory")
+find_path(Uthash_INCLUDE_DIR NAMES uthash.h PATHS /usr/include /usr/local/include DOC "uthash include directory")
 
 if(EXISTS "${Uthash_INCLUDE_DIR}/uthash.h")
-  file(STRINGS "${Uthash_INCLUDE_DIR}/uthash.h" _version_string
-       REGEX "#define[ \t]+UTHASH_VERSION[ \t]+[0-9]+\\.[0-9]+\\.[0-9]+")
+  file(
+    STRINGS
+    "${Uthash_INCLUDE_DIR}/uthash.h"
+    _version_string
+    REGEX "#define[ \t]+UTHASH_VERSION[ \t]+[0-9]+\\.[0-9]+\\.[0-9]+"
+  )
 
-  string(REGEX REPLACE "#define[ \t]+UTHASH_VERSION[ \t]+([0-9]+\\.[0-9]+\\.[0-9]+)" "\\1" Uthash_VERSION
-                       "${_version_string}")
+  string(
+    REGEX REPLACE
+    "#define[ \t]+UTHASH_VERSION[ \t]+([0-9]+\\.[0-9]+\\.[0-9]+)"
+    "\\1"
+    Uthash_VERSION
+    "${_version_string}"
+  )
 else()
   if(NOT Uthash_FIND_QUIETLY)
     message(AUTHOR_WARNING "Failed to find uthash version.")
@@ -66,7 +66,9 @@ endif()
 find_package_handle_standard_args(
   Uthash
   REQUIRED_VARS Uthash_INCLUDE_DIR
-  VERSION_VAR Uthash_VERSION REASON_FAILURE_MESSAGE "${Uthash_ERROR_REASON}")
+  VERSION_VAR Uthash_VERSION
+  REASON_FAILURE_MESSAGE "${Uthash_ERROR_REASON}"
+)
 mark_as_advanced(Uthash_INCLUDE_DIR)
 unset(Uthash_ERROR_REASON)
 
@@ -79,6 +81,6 @@ endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Uthash PROPERTIES
-  URL "https://troydhanson.github.io/uthash"
-  DESCRIPTION "A hash table for C structures")
+  Uthash
+  PROPERTIES URL "https://troydhanson.github.io/uthash" DESCRIPTION "A hash table for C structures"
+)

@@ -11,8 +11,7 @@
 extern struct graphics_offsets offsets32;
 extern struct graphics_offsets offsets64;
 
-static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
-					    const char *str)
+static inline bool load_offsets_from_string(struct graphics_offsets *offsets, const char *str)
 {
 	config_t *config;
 
@@ -20,35 +19,24 @@ static inline bool load_offsets_from_string(struct graphics_offsets *offsets,
 		return false;
 	}
 
-	offsets->d3d8.present =
-		(uint32_t)config_get_uint(config, "d3d8", "present");
+	offsets->d3d8.present = (uint32_t)config_get_uint(config, "d3d8", "present");
 
-	offsets->d3d9.present =
-		(uint32_t)config_get_uint(config, "d3d9", "present");
-	offsets->d3d9.present_ex =
-		(uint32_t)config_get_uint(config, "d3d9", "present_ex");
-	offsets->d3d9.present_swap =
-		(uint32_t)config_get_uint(config, "d3d9", "present_swap");
-	offsets->d3d9.d3d9_clsoff =
-		(uint32_t)config_get_uint(config, "d3d9", "d3d9_clsoff");
-	offsets->d3d9.is_d3d9ex_clsoff =
-		(uint32_t)config_get_uint(config, "d3d9", "is_d3d9ex_clsoff");
+	offsets->d3d9.present = (uint32_t)config_get_uint(config, "d3d9", "present");
+	offsets->d3d9.present_ex = (uint32_t)config_get_uint(config, "d3d9", "present_ex");
+	offsets->d3d9.present_swap = (uint32_t)config_get_uint(config, "d3d9", "present_swap");
+	offsets->d3d9.d3d9_clsoff = (uint32_t)config_get_uint(config, "d3d9", "d3d9_clsoff");
+	offsets->d3d9.is_d3d9ex_clsoff = (uint32_t)config_get_uint(config, "d3d9", "is_d3d9ex_clsoff");
 
-	offsets->dxgi.present =
-		(uint32_t)config_get_uint(config, "dxgi", "present");
-	offsets->dxgi.present1 =
-		(uint32_t)config_get_uint(config, "dxgi", "present1");
-	offsets->dxgi.resize =
-		(uint32_t)config_get_uint(config, "dxgi", "resize");
-	offsets->dxgi2.release =
-		(uint32_t)config_get_uint(config, "dxgi", "release");
+	offsets->dxgi.present = (uint32_t)config_get_uint(config, "dxgi", "present");
+	offsets->dxgi.present1 = (uint32_t)config_get_uint(config, "dxgi", "present1");
+	offsets->dxgi.resize = (uint32_t)config_get_uint(config, "dxgi", "resize");
+	offsets->dxgi2.release = (uint32_t)config_get_uint(config, "dxgi", "release");
 
 	config_close(config);
 	return true;
 }
 
-static inline bool load_offsets_from_file(struct graphics_offsets *offsets,
-					  const char *file)
+static inline bool load_offsets_from_file(struct graphics_offsets *offsets, const char *file)
 {
 	char *str = os_quick_read_utf8_file(file);
 	bool success = false;
@@ -58,9 +46,7 @@ static inline bool load_offsets_from_file(struct graphics_offsets *offsets,
 	return success;
 }
 
-static inline bool config_ver_mismatch(config_t *ver_config,
-				       const char *section,
-				       struct win_version_info *ver)
+static inline bool config_ver_mismatch(config_t *ver_config, const char *section, struct win_version_info *ver)
 {
 	struct win_version_info config_ver;
 	bool mismatch = false;
@@ -79,11 +65,9 @@ static inline bool config_ver_mismatch(config_t *ver_config,
 	return mismatch;
 }
 
-static inline void write_config_ver(config_t *ver_config, const char *section,
-				    struct win_version_info *ver)
+static inline void write_config_ver(config_t *ver_config, const char *section, struct win_version_info *ver)
 {
-#define set_sub_ver(subver) \
-	config_set_int(ver_config, section, #subver, ver->subver);
+#define set_sub_ver(subver) config_set_int(ver_config, section, #subver, ver->subver);
 
 	set_sub_ver(major);
 	set_sub_ver(minor);
@@ -93,8 +77,7 @@ static inline void write_config_ver(config_t *ver_config, const char *section,
 #undef set_sub_ver
 }
 
-static bool get_32bit_system_dll_ver(const wchar_t *system_lib,
-				     struct win_version_info *ver)
+static bool get_32bit_system_dll_ver(const wchar_t *system_lib, struct win_version_info *ver)
 {
 	wchar_t path[MAX_PATH];
 	UINT ret;
@@ -156,8 +139,7 @@ failed:
 	return !ver_mismatch;
 }
 
-bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
-			   const char *config_path)
+bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache, const char *config_path)
 {
 	char *offset_exe_path = NULL;
 	struct dstr config_ini = {0};
@@ -184,14 +166,12 @@ bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
 
 	pp = os_process_pipe_create(cmd.array, "r");
 	if (!pp) {
-		blog(LOG_INFO, "load_graphics_offsets: Failed to start '%s'",
-		     offset_exe.array);
+		blog(LOG_INFO, "load_graphics_offsets: Failed to start '%s'", offset_exe.array);
 		goto error;
 	}
 
 	for (;;) {
-		size_t len =
-			os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
+		size_t len = os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
 		if (!len)
 			break;
 
@@ -210,13 +190,11 @@ bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
 		dstr_copy(&config_ini, config_path);
 		dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
 
-		os_quick_write_utf8_file_safe(config_ini.array, str.array,
-					      str.len, false, "tmp", NULL);
+		os_quick_write_utf8_file_safe(config_ini.array, str.array, str.len, false, "tmp", NULL);
 		dstr_free(&config_ini);
 	}
 
-	success = load_offsets_from_string(is32bit ? &offsets32 : &offsets64,
-					   str.array);
+	success = load_offsets_from_string(is32bit ? &offsets32 : &offsets64, str.array);
 	if (!success) {
 		blog(LOG_INFO, "load_graphics_offsets: Failed to load string");
 	}
@@ -237,8 +215,7 @@ bool load_cached_graphics_offsets(bool is32bit, const char *config_path)
 
 	dstr_copy(&config_ini, config_path);
 	dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
-	success = load_offsets_from_file(is32bit ? &offsets32 : &offsets64,
-					 config_ini.array);
+	success = load_offsets_from_file(is32bit ? &offsets32 : &offsets64, config_ini.array);
 	if (!success)
 		success = load_graphics_offsets(is32bit, true, config_path);
 

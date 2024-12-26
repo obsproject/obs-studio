@@ -74,17 +74,15 @@ static Json::object parse_text(QString &config)
 
 	Json font = Json::object{{"face", data["fontStyle"]}, {"size", 200}};
 
-	return Json::object{
-		{"text", data["text"]},
-		{"font", font},
-		{"outline", out > 0},
-		{"outline_size", out},
-		{"outline_color",
-		 hex_string_to_int(data["outlineColor"].string_value())},
-		{"color", hex_string_to_int(data["color"].string_value())},
-		{"align", data["textAlign"]},
-		{"valign", valign},
-		{"alpha", data["opacity"]}};
+	return Json::object{{"text", data["text"]},
+			    {"font", font},
+			    {"outline", out > 0},
+			    {"outline_size", out},
+			    {"outline_color", hex_string_to_int(data["outlineColor"].string_value())},
+			    {"color", hex_string_to_int(data["color"].string_value())},
+			    {"align", data["textAlign"]},
+			    {"valign", valign},
+			    {"alpha", data["opacity"]}};
 }
 
 static Json::array parse_playlist(QString &playlist)
@@ -107,8 +105,7 @@ static Json::array parse_playlist(QString &playlist)
 	return out;
 }
 
-static void parse_media_types(QDomNamedNodeMap &attr, Json::object &source,
-			      Json::object &settings)
+static void parse_media_types(QDomNamedNodeMap &attr, Json::object &source, Json::object &settings)
 {
 	QString playlist = attr.namedItem("FilePlaylist").nodeValue();
 
@@ -143,8 +140,7 @@ static void parse_media_types(QDomNamedNodeMap &attr, Json::object &source,
 			}
 		} else {
 			source["id"] = "ffmpeg_source";
-			settings["local_file"] =
-				url.replace("\\", "/").toStdString();
+			settings["local_file"] = url.replace("\\", "/").toStdString();
 			settings["is_local_file"] = true;
 		}
 	}
@@ -186,8 +182,7 @@ static Json::object parse_slideshow(QString &config)
 		return Json::object{};
 
 	return Json::object{{"randomize", opt["random"]},
-			    {"slide_time",
-			     opt["delay"].number_value() * 1000 + 700},
+			    {"slide_time", opt["delay"].number_value() * 1000 + 700},
 			    {"files", files_out}};
 }
 
@@ -211,8 +206,7 @@ static Json get_source_with_id(const string &src_id, const Json::array &sources)
 	return nullptr;
 }
 
-static void parse_items(QDomNode &item, Json::array &items,
-			Json::array &sources)
+static void parse_items(QDomNode &item, Json::array &items, Json::array &sources)
 {
 	while (!item.isNull()) {
 		QDomNamedNodeMap attr = item.attributes();
@@ -245,9 +239,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 		name = temp_name;
 
 		settings = Json::object{};
-		source = Json::object{{"name", name},
-				      {"src_id", srcid.toStdString()},
-				      {"volume", vol}};
+		source = Json::object{{"name", name}, {"src_id", srcid.toStdString()}, {"volume", vol}};
 
 		/** type=1     means Media of some kind (Video Playlist, RTSP,
 		               RTMP, NDI or Media File).
@@ -270,8 +262,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 				source["id"] = "wasapi_input_capture";
 				int dev = audio.indexOf("\\wave:") + 6;
 
-				QString res =
-					"{0.0.1.00000000}." + audio.mid(dev);
+				QString res = "{0.0.1.00000000}." + audio.mid(dev);
 				res = res.toLower();
 
 				settings["device_id"] = res.toStdString();
@@ -291,24 +282,18 @@ static void parse_items(QDomNode &item, Json::array &items,
 			QDomNode el = options.documentElement();
 
 			QDomNamedNodeMap o_attr = el.attributes();
-			QString display =
-				o_attr.namedItem("desktop").nodeValue();
+			QString display = o_attr.namedItem("desktop").nodeValue();
 
 			if (!display.isEmpty()) {
 				source["id"] = "monitor_capture";
-				int cursor = attr.namedItem("ScrCapShowMouse")
-						     .nodeValue()
-						     .toInt();
+				int cursor = attr.namedItem("ScrCapShowMouse").nodeValue().toInt();
 				settings["capture_cursor"] = cursor == 1;
 			} else {
 				source["id"] = "window_capture";
 
-				QString exec =
-					o_attr.namedItem("module").nodeValue();
-				QString window =
-					o_attr.namedItem("window").nodeValue();
-				QString _class =
-					o_attr.namedItem("class").nodeValue();
+				QString exec = o_attr.namedItem("module").nodeValue();
+				QString window = o_attr.namedItem("window").nodeValue();
+				QString _class = o_attr.namedItem("class").nodeValue();
 
 				int pos = exec.lastIndexOf('\\');
 
@@ -316,8 +301,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 					_class = "class";
 				}
 
-				QString res = window + ":" + _class + ":" +
-					      exec.mid(pos + 1);
+				QString res = window + ":" + _class + ":" + exec.mid(pos + 1);
 
 				settings["window"] = res.toStdString();
 				settings["priority"] = 2;
@@ -335,8 +319,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 			QDomNamedNodeMap o_attr = el.attributes();
 
 			QString name = o_attr.namedItem("wndname").nodeValue();
-			QString exec =
-				o_attr.namedItem("imagename").nodeValue();
+			QString exec = o_attr.namedItem("imagename").nodeValue();
 
 			QString res = name = "::" + exec;
 
@@ -346,8 +329,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 		} else if (type == 8) {
 			QString plugin = attr.namedItem("item").nodeValue();
 
-			if (plugin.startsWith(
-				    "html:plugin:imageslideshowplg*")) {
+			if (plugin.startsWith("html:plugin:imageslideshowplg*")) {
 				source["id"] = "slideshow";
 				settings = parse_slideshow(plugin);
 			} else if (plugin.startsWith("html:plugin:titleplg")) {
@@ -356,13 +338,11 @@ static void parse_items(QDomNode &item, Json::array &items,
 			} else if (plugin.startsWith("http")) {
 				source["id"] = "browser_source";
 				int end = plugin.indexOf('*');
-				settings["url"] =
-					plugin.left(end).toStdString();
+				settings["url"] = plugin.left(end).toStdString();
 			}
 		} else if (type == 11) {
 			QString id = attr.namedItem("item").nodeValue();
-			Json source =
-				get_source_with_id(id.toStdString(), sources);
+			Json source = get_source_with_id(id.toStdString(), sources);
 			name = source["name"].string_value();
 
 			goto skip;
@@ -378,26 +358,19 @@ static void parse_items(QDomNode &item, Json::array &items,
 		int width = ovi.base_width;
 		int height = ovi.base_height;
 
-		double pos_left =
-			attr.namedItem("pos_left").nodeValue().toDouble();
-		double pos_right =
-			attr.namedItem("pos_right").nodeValue().toDouble();
-		double pos_top =
-			attr.namedItem("pos_top").nodeValue().toDouble();
-		double pos_bottom =
-			attr.namedItem("pos_bottom").nodeValue().toDouble();
+		double pos_left = attr.namedItem("pos_left").nodeValue().toDouble();
+		double pos_right = attr.namedItem("pos_right").nodeValue().toDouble();
+		double pos_top = attr.namedItem("pos_top").nodeValue().toDouble();
+		double pos_bottom = attr.namedItem("pos_bottom").nodeValue().toDouble();
 
 		bool visible = attr.namedItem("visible").nodeValue() == "1";
 
-		Json out_item = Json::object{
-			{"bounds_type", 2},
-			{"pos", Json::object{{"x", pos_left * width},
-					     {"y", pos_top * height}}},
-			{"bounds",
-			 Json::object{{"x", (pos_right - pos_left) * width},
-				      {"y", (pos_bottom - pos_top) * height}}},
-			{"name", name},
-			{"visible", visible}};
+		Json out_item = Json::object{{"bounds_type", 2},
+					     {"pos", Json::object{{"x", pos_left * width}, {"y", pos_top * height}}},
+					     {"bounds", Json::object{{"x", (pos_right - pos_left) * width},
+								     {"y", (pos_bottom - pos_top) * height}}},
+					     {"name", name},
+					     {"visible", visible}};
 
 		items.push_back(out_item);
 
@@ -424,10 +397,9 @@ static Json::object parse_scenes(QDomElement &scenes)
 			if (first.isEmpty())
 				first = name;
 
-			Json out = Json::object{
-				{"id", "scene"},
-				{"name", name.toStdString().c_str()},
-				{"src_id", id.toStdString().c_str()}};
+			Json out = Json::object{{"id", "scene"},
+						{"name", name.toStdString().c_str()},
+						{"src_id", id.toStdString().c_str()}};
 
 			sources.push_back(out);
 		}
@@ -442,8 +414,7 @@ static Json::object parse_scenes(QDomElement &scenes)
 
 		parse_items(firstChild, items, sources);
 
-		Json settings = Json::object{{"items", items},
-					     {"id_counter", (int)items.size()}};
+		Json settings = Json::object{{"items", items}, {"id_counter", (int)items.size()}};
 
 		source["settings"] = settings;
 		sources[i] = source;
@@ -456,8 +427,7 @@ static Json::object parse_scenes(QDomElement &scenes)
 			    {"current_program_scene", first.toStdString()}};
 }
 
-int XSplitImporter::ImportScenes(const string &path, string &name,
-				 json11::Json &res)
+int XSplitImporter::ImportScenes(const string &path, string &name, json11::Json &res)
 {
 	if (name == "")
 		name = "XSplit Import";
@@ -516,8 +486,7 @@ OBSImporterFiles XSplitImporter::FindFiles()
 	OBSImporterFiles res;
 #ifdef _WIN32
 	char dst[512];
-	int found = os_get_program_data_path(
-		dst, 512, "SplitMediaLabs\\XSplit\\Presentation2.0\\");
+	int found = os_get_program_data_path(dst, 512, "SplitMediaLabs\\XSplit\\Presentation2.0\\");
 
 	if (found == -1)
 		return res;

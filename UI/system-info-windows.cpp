@@ -49,16 +49,14 @@ static std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 
 		/* driver version */
 		LARGE_INTEGER umd;
-		hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice),
-						    &umd);
+		hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umd);
 		if (SUCCEEDED(hr)) {
 			const uint64_t version = umd.QuadPart;
 			const uint16_t aa = (version >> 48) & 0xffff;
 			const uint16_t bb = (version >> 32) & 0xffff;
 			const uint16_t ccccc = (version >> 16) & 0xffff;
 			const uint16_t ddddd = version & 0xffff;
-			snprintf(driver_version, sizeof(driver_version),
-				 "%" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16,
+			snprintf(driver_version, sizeof(driver_version), "%" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16,
 				 aa, bb, ccccc, ddddd);
 			data.driver_version = driver_version;
 		}
@@ -78,15 +76,12 @@ static void get_processor_info(char **name, DWORD *speed)
 
 	memset(data, 0, sizeof(data));
 
-	status = RegOpenKeyW(
-		HKEY_LOCAL_MACHINE,
-		L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
+	status = RegOpenKeyW(HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
 	if (status != ERROR_SUCCESS)
 		return;
 
 	size = sizeof(data);
-	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL,
-				  (LPBYTE)data, &size);
+	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL, (LPBYTE)data, &size);
 	if (status == ERROR_SUCCESS) {
 		os_wcs_to_utf8_ptr(data, 0, name);
 	} else {
@@ -94,25 +89,20 @@ static void get_processor_info(char **name, DWORD *speed)
 	}
 
 	size = sizeof(*speed);
-	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)speed,
-				  &size);
+	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)speed, &size);
 	if (status != ERROR_SUCCESS)
 		*speed = 0;
 
 	RegCloseKey(key);
 }
 
-#define WIN10_GAME_BAR_REG_KEY \
-	L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
-#define WIN10_GAME_DVR_POLICY_REG_KEY \
-	L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
+#define WIN10_GAME_BAR_REG_KEY L"Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR"
+#define WIN10_GAME_DVR_POLICY_REG_KEY L"SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR"
 #define WIN10_GAME_DVR_REG_KEY L"System\\GameConfigStore"
 #define WIN10_GAME_MODE_REG_KEY L"Software\\Microsoft\\GameBar"
-#define WIN10_HAGS_REG_KEY \
-	L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
+#define WIN10_HAGS_REG_KEY L"SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers"
 
-static std::optional<GoLiveApi::GamingFeatures>
-get_gaming_features_data(const win_version_info &ver)
+static std::optional<GoLiveApi::GamingFeatures> get_gaming_features_data(const win_version_info &ver)
 {
 	uint32_t win_ver = (ver.major << 8) | ver.minor;
 	if (win_ver < 0xA00)
@@ -130,36 +120,29 @@ get_gaming_features_data(const win_version_info &ver)
 		DWORD disabled_value;
 	};
 	struct feature_mapping_s features[] = {
-		{&gaming_features.game_bar_enabled, HKEY_CURRENT_USER,
-		 WIN10_GAME_BAR_REG_KEY, L"AppCaptureEnabled", 0, false, 0},
-		{&gaming_features.game_dvr_allowed, HKEY_CURRENT_USER,
-		 WIN10_GAME_DVR_POLICY_REG_KEY, L"AllowGameDVR", 0, false, 0},
-		{&gaming_features.game_dvr_enabled, HKEY_CURRENT_USER,
-		 WIN10_GAME_DVR_REG_KEY, L"GameDVR_Enabled", 0, false, 0},
-		{&gaming_features.game_dvr_bg_recording, HKEY_CURRENT_USER,
-		 WIN10_GAME_BAR_REG_KEY, L"HistoricalCaptureEnabled", 0, false,
-		 0},
-		{&gaming_features.game_mode_enabled, HKEY_CURRENT_USER,
-		 WIN10_GAME_MODE_REG_KEY, L"AutoGameModeEnabled",
+		{&gaming_features.game_bar_enabled, HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY, L"AppCaptureEnabled", 0,
+		 false, 0},
+		{&gaming_features.game_dvr_allowed, HKEY_CURRENT_USER, WIN10_GAME_DVR_POLICY_REG_KEY, L"AllowGameDVR",
+		 0, false, 0},
+		{&gaming_features.game_dvr_enabled, HKEY_CURRENT_USER, WIN10_GAME_DVR_REG_KEY, L"GameDVR_Enabled", 0,
+		 false, 0},
+		{&gaming_features.game_dvr_bg_recording, HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
+		 L"HistoricalCaptureEnabled", 0, false, 0},
+		{&gaming_features.game_mode_enabled, HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY, L"AutoGameModeEnabled",
 		 L"AllowAutoGameMode", false, 0},
-		{&gaming_features.hags_enabled, HKEY_LOCAL_MACHINE,
-		 WIN10_HAGS_REG_KEY, L"HwSchMode", 0, true, 1}};
+		{&gaming_features.hags_enabled, HKEY_LOCAL_MACHINE, WIN10_HAGS_REG_KEY, L"HwSchMode", 0, true, 1}};
 
 	for (int i = 0; i < sizeof(features) / sizeof(*features); ++i) {
 		struct reg_dword info;
 
-		get_reg_dword(features[i].hkey, features[i].sub_key,
-			      features[i].value_name, &info);
+		get_reg_dword(features[i].hkey, features[i].sub_key, features[i].value_name, &info);
 
-		if (info.status != ERROR_SUCCESS &&
-		    features[i].backup_value_name) {
-			get_reg_dword(features[i].hkey, features[i].sub_key,
-				      features[i].backup_value_name, &info);
+		if (info.status != ERROR_SUCCESS && features[i].backup_value_name) {
+			get_reg_dword(features[i].hkey, features[i].sub_key, features[i].backup_value_name, &info);
 		}
 
 		if (info.status == ERROR_SUCCESS) {
-			*features[i].field = info.return_value !=
-					     features[i].disabled_value;
+			*features[i].field = info.return_value != features[i].disabled_value;
 		} else if (features[i].non_existence_is_false) {
 			*features[i].field = false;
 		}
@@ -168,11 +151,9 @@ get_gaming_features_data(const win_version_info &ver)
 	return gaming_features;
 }
 
-static inline bool get_reg_sz(HKEY key, const wchar_t *val, wchar_t *buf,
-			      DWORD size)
+static inline bool get_reg_sz(HKEY key, const wchar_t *val, wchar_t *buf, DWORD size)
 {
-	const LSTATUS status =
-		RegGetValueW(key, NULL, val, RRF_RT_REG_SZ, NULL, buf, &size);
+	const LSTATUS status = RegGetValueW(key, NULL, val, RRF_RT_REG_SZ, NULL, buf, &size);
 	return status == ERROR_SUCCESS;
 }
 
@@ -194,18 +175,15 @@ static inline void get_reg_ver(struct win_version_info *ver)
 
 	size = sizeof(dw_val);
 
-	status = RegQueryValueExW(key, L"CurrentMajorVersionNumber", NULL, NULL,
-				  (LPBYTE)&dw_val, &size);
+	status = RegQueryValueExW(key, L"CurrentMajorVersionNumber", NULL, NULL, (LPBYTE)&dw_val, &size);
 	if (status == ERROR_SUCCESS)
 		ver->major = (int)dw_val;
 
-	status = RegQueryValueExW(key, L"CurrentMinorVersionNumber", NULL, NULL,
-				  (LPBYTE)&dw_val, &size);
+	status = RegQueryValueExW(key, L"CurrentMinorVersionNumber", NULL, NULL, (LPBYTE)&dw_val, &size);
 	if (status == ERROR_SUCCESS)
 		ver->minor = (int)dw_val;
 
-	status = RegQueryValueExW(key, L"UBR", NULL, NULL, (LPBYTE)&dw_val,
-				  &size);
+	status = RegQueryValueExW(key, L"UBR", NULL, NULL, (LPBYTE)&dw_val, &size);
 	if (status == ERROR_SUCCESS)
 		ver->revis = (int)dw_val;
 
@@ -213,8 +191,7 @@ static inline void get_reg_ver(struct win_version_info *ver)
 		ver->build = wcstol(str, NULL, 10);
 	}
 
-	const wchar_t *release_key = ver->build > 19041 ? L"DisplayVersion"
-							: L"ReleaseId";
+	const wchar_t *release_key = ver->build > 19041 ? L"DisplayVersion" : L"ReleaseId";
 	if (get_reg_sz(key, release_key, str, sizeof(str))) {
 		os_wcs_to_utf8(str, 0, win_release_id, MAX_SZ_LEN);
 	}

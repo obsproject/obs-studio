@@ -8,8 +8,7 @@ public:
 
 	OBSProxyStyle(const QString &key) : QProxyStyle(key) {}
 
-	int styleHint(StyleHint hint, const QStyleOption *option,
-		      const QWidget *widget,
+	int styleHint(StyleHint hint, const QStyleOption *option, const QWidget *widget,
 		      QStyleHintReturn *returnData) const override;
 };
 

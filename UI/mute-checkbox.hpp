@@ -9,6 +9,7 @@ public:
 	MuteCheckBox(QWidget *parent = nullptr) : QCheckBox(parent)
 	{
 		setTristate(true);
+		setProperty("class", "indicator-mute");
 	}
 
 protected:

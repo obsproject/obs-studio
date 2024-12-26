@@ -22,10 +22,8 @@
 extern "C" {
 #endif
 
-EXPORT bool buffered_file_serializer_init_defaults(struct serializer *s,
-						   const char *path);
-EXPORT bool buffered_file_serializer_init(struct serializer *s,
-					  const char *path, size_t max_bufsize,
+EXPORT bool buffered_file_serializer_init_defaults(struct serializer *s, const char *path);
+EXPORT bool buffered_file_serializer_init(struct serializer *s, const char *path, size_t max_bufsize,
 					  size_t chunk_size);
 EXPORT void buffered_file_serializer_free(struct serializer *s);
 

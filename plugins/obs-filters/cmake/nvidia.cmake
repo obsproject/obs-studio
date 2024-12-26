@@ -1,15 +1,4 @@
-option(ENABLE_NVAFX "Enable building with NVIDIA Audio Effects SDK (requires redistributable to be installed)" ON)
-option(ENABLE_NVVFX "Enable building with NVIDIA Video Effects SDK (requires redistributable to be installed)" ON)
-
 if(ENABLE_NVAFX)
-  target_enable_feature(obs-filters "NVIDIA Audio FX support" LIBNVAFX_ENABLED HAS_NOISEREDUCTION)
-else()
-  target_disable_feature(obs-filters "NVIDIA Audio FX support")
-endif()
-
-if(ENABLE_NVVFX)
-  target_enable_feature(obs-filters "NVIDIA Video FX support" LIBNVVFX_ENABLED)
-  target_sources(obs-filters PRIVATE nvidia-greenscreen-filter.c)
-else()
-  target_disable_feature(obs-filters "NVIDIA Video FX support")
+  target_sources(obs-filters PRIVATE noise-suppress-filter.c)
+  target_compile_definitions(obs-filters PRIVATE LIBNVAFX_ENABLED HAS_NOISEREDUCTION)
 endif()

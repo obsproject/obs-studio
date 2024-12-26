@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_V4L2 "Build OBS with v4l2 support" ON)
 option(ENABLE_UDEV "Build linux-v4l2 with UDEV support" ON)
@@ -27,10 +25,15 @@ endif()
 add_library(linux-v4l2 MODULE)
 add_library(OBS::v4l2 ALIAS linux-v4l2)
 
-target_sources(linux-v4l2 PRIVATE # cmake-format: sortable
-                                  linux-v4l2.c v4l2-controls.c v4l2-decoder.c v4l2-helpers.c v4l2-input.c v4l2-output.c)
+target_sources(
+  linux-v4l2
+  PRIVATE linux-v4l2.c v4l2-controls.c v4l2-decoder.c v4l2-helpers.c v4l2-input.c v4l2-output.c
+)
 
-target_link_libraries(linux-v4l2 PRIVATE OBS::libobs Libv4l2::Libv4l2 FFmpeg::avcodec FFmpeg::avformat FFmpeg::avutil)
+target_link_libraries(
+  linux-v4l2
+  PRIVATE OBS::libobs Libv4l2::Libv4l2 FFmpeg::avcodec FFmpeg::avformat FFmpeg::avutil
+)
 
 if(ENABLE_UDEV)
   find_package(Libudev REQUIRED)

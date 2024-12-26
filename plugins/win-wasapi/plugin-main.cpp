@@ -46,8 +46,7 @@ bool obs_module_load(void)
 	minimum.minor = 0;
 	minimum.build = 19041;
 	minimum.revis = 0;
-	const bool process_filter_supported =
-		win_version_compare(&ver, &minimum) >= 0;
+	const bool process_filter_supported = win_version_compare(&ver, &minimum) >= 0;
 
 	RegisterWASAPIInput();
 	RegisterWASAPIDeviceOutput();
@@ -55,8 +54,7 @@ bool obs_module_load(void)
 		RegisterWASAPIProcessOutput();
 
 	notify = new WASAPINotify();
-	notify->AddDefaultDeviceChangedCallback(
-		obs_current_module(), default_device_changed_callback);
+	notify->AddDefaultDeviceChangedCallback(obs_current_module(), default_device_changed_callback);
 
 	return true;
 }

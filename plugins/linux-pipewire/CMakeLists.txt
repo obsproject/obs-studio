@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
 if(NOT ENABLE_PIPEWIRE)
@@ -25,18 +23,19 @@ endif()
 
 target_sources(
   linux-pipewire
-  PRIVATE # cmake-format: sortable
-          $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.c>
-          $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.h>
-          formats.c
-          formats.h
-          linux-pipewire.c
-          pipewire.c
-          pipewire.h
-          portal.c
-          portal.h
-          screencast-portal.c
-          screencast-portal.h)
+  PRIVATE
+    $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.c>
+    $<$<BOOL:${_HAS_PIPEWIRE_CAMERA}>:camera-portal.h>
+    formats.c
+    formats.h
+    linux-pipewire.c
+    pipewire.c
+    pipewire.h
+    portal.c
+    portal.h
+    screencast-portal.c
+    screencast-portal.h
+)
 
 target_include_directories(linux-pipewire PRIVATE ${libdrm_include_directories})
 

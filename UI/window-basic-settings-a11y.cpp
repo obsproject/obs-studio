@@ -2,7 +2,7 @@
 #include "window-basic-main.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 #include <QColorDialog>
 
 enum ColorPreset {
@@ -11,15 +11,9 @@ enum ColorPreset {
 	COLOR_PRESET_CUSTOM = 99,
 };
 
-static inline bool WidgetChanged(QWidget *widget)
-{
-	return widget->property("changed").toBool();
-}
-
 static inline QColor color_from_int(long long val)
 {
-	return QColor(val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff,
-		      (val >> 24) & 0xff);
+	return QColor(val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff, (val >> 24) & 0xff);
 }
 
 static inline long long color_to_int(QColor color)
@@ -28,8 +22,7 @@ static inline long long color_to_int(QColor color)
 		return ((val & 0xff) << shift);
 	};
 
-	return shift(color.red(), 0) | shift(color.green(), 8) |
-	       shift(color.blue(), 16) | shift(color.alpha(), 24);
+	return shift(color.red(), 0) | shift(color.green(), 8) | shift(color.blue(), 16) | shift(color.alpha(), 24);
 }
 
 QColor OBSBasicSettings::GetColor(uint32_t colorVal, QString label)
@@ -48,19 +41,17 @@ QColor OBSBasicSettings::GetColor(uint32_t colorVal, QString label)
 
 void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 {
-	config_t *config = GetGlobalConfig();
+	config_t *config = App()->GetUserConfig();
 
 	loading = true;
 	if (!presetChange) {
 		preset = config_get_int(config, "Accessibility", "ColorPreset");
 
 		bool block = ui->colorPreset->blockSignals(true);
-		ui->colorPreset->setCurrentIndex(std::min(
-			preset, (uint32_t)ui->colorPreset->count() - 1));
+		ui->colorPreset->setCurrentIndex(std::min(preset, (uint32_t)ui->colorPreset->count() - 1));
 		ui->colorPreset->blockSignals(block);
 
-		bool checked = config_get_bool(config, "Accessibility",
-					       "OverrideColors");
+		bool checked = config_get_bool(config, "Accessibility", "OverrideColors");
 
 		ui->colorsGroupBox->setChecked(checked);
 	}
@@ -86,25 +77,17 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 	} else if (preset == COLOR_PRESET_CUSTOM) {
 		SetDefaultColors();
 
-		selectRed =
-			config_get_int(config, "Accessibility", "SelectRed");
-		selectGreen =
-			config_get_int(config, "Accessibility", "SelectGreen");
-		selectBlue =
-			config_get_int(config, "Accessibility", "SelectBlue");
+		selectRed = config_get_int(config, "Accessibility", "SelectRed");
+		selectGreen = config_get_int(config, "Accessibility", "SelectGreen");
+		selectBlue = config_get_int(config, "Accessibility", "SelectBlue");
 
-		mixerGreen =
-			config_get_int(config, "Accessibility", "MixerGreen");
-		mixerYellow =
-			config_get_int(config, "Accessibility", "MixerYellow");
+		mixerGreen = config_get_int(config, "Accessibility", "MixerGreen");
+		mixerYellow = config_get_int(config, "Accessibility", "MixerYellow");
 		mixerRed = config_get_int(config, "Accessibility", "MixerRed");
 
-		mixerGreenActive = config_get_int(config, "Accessibility",
-						  "MixerGreenActive");
-		mixerYellowActive = config_get_int(config, "Accessibility",
-						   "MixerYellowActive");
-		mixerRedActive = config_get_int(config, "Accessibility",
-						"MixerRedActive");
+		mixerGreenActive = config_get_int(config, "Accessibility", "MixerGreenActive");
+		mixerYellowActive = config_get_int(config, "Accessibility", "MixerYellowActive");
+		mixerRedActive = config_get_int(config, "Accessibility", "MixerRedActive");
 	}
 
 	UpdateA11yColors();
@@ -114,10 +97,9 @@ void OBSBasicSettings::LoadA11ySettings(bool presetChange)
 
 void OBSBasicSettings::SaveA11ySettings()
 {
-	config_t *config = GetGlobalConfig();
+	config_t *config = App()->GetUserConfig();
 
-	config_set_bool(config, "Accessibility", "OverrideColors",
-			ui->colorsGroupBox->isChecked());
+	config_set_bool(config, "Accessibility", "OverrideColors", ui->colorsGroupBox->isChecked());
 	config_set_int(config, "Accessibility", "ColorPreset", preset);
 
 	config_set_int(config, "Accessibility", "SelectRed", selectRed);
@@ -126,12 +108,9 @@ void OBSBasicSettings::SaveA11ySettings()
 	config_set_int(config, "Accessibility", "MixerGreen", mixerGreen);
 	config_set_int(config, "Accessibility", "MixerYellow", mixerYellow);
 	config_set_int(config, "Accessibility", "MixerRed", mixerRed);
-	config_set_int(config, "Accessibility", "MixerGreenActive",
-		       mixerGreenActive);
-	config_set_int(config, "Accessibility", "MixerYellowActive",
-		       mixerYellowActive);
-	config_set_int(config, "Accessibility", "MixerRedActive",
-		       mixerRedActive);
+	config_set_int(config, "Accessibility", "MixerGreenActive", mixerGreenActive);
+	config_set_int(config, "Accessibility", "MixerYellowActive", mixerYellowActive);
+	config_set_int(config, "Accessibility", "MixerRedActive", mixerRedActive);
 
 	main->RefreshVolumeColors();
 }
@@ -145,10 +124,8 @@ static void SetStyle(QLabel *label, uint32_t colorVal)
 	label->setText(color.name(QColor::HexRgb));
 	label->setPalette(palette);
 	label->setStyleSheet(QString("background-color: %1; color: %2;")
-				     .arg(palette.color(QPalette::Window)
-						  .name(QColor::HexRgb))
-				     .arg(palette.color(QPalette::WindowText)
-						  .name(QColor::HexRgb)));
+				     .arg(palette.color(QPalette::Window).name(QColor::HexRgb))
+				     .arg(palette.color(QPalette::WindowText).name(QColor::HexRgb)));
 	label->setAutoFillBackground(true);
 	label->setAlignment(Qt::AlignCenter);
 }
@@ -168,25 +145,18 @@ void OBSBasicSettings::UpdateA11yColors()
 
 void OBSBasicSettings::SetDefaultColors()
 {
-	config_t *config = GetGlobalConfig();
+	config_t *config = App()->GetUserConfig();
 	config_set_default_int(config, "Accessibility", "SelectRed", selectRed);
-	config_set_default_int(config, "Accessibility", "SelectGreen",
-			       selectGreen);
-	config_set_default_int(config, "Accessibility", "SelectBlue",
-			       selectBlue);
+	config_set_default_int(config, "Accessibility", "SelectGreen", selectGreen);
+	config_set_default_int(config, "Accessibility", "SelectBlue", selectBlue);
 
-	config_set_default_int(config, "Accessibility", "MixerGreen",
-			       mixerGreen);
-	config_set_default_int(config, "Accessibility", "MixerYellow",
-			       mixerYellow);
+	config_set_default_int(config, "Accessibility", "MixerGreen", mixerGreen);
+	config_set_default_int(config, "Accessibility", "MixerYellow", mixerYellow);
 	config_set_default_int(config, "Accessibility", "MixerRed", mixerRed);
 
-	config_set_default_int(config, "Accessibility", "MixerGreenActive",
-			       mixerGreenActive);
-	config_set_default_int(config, "Accessibility", "MixerYellowActive",
-			       mixerYellowActive);
-	config_set_default_int(config, "Accessibility", "MixerRedActive",
-			       mixerRedActive);
+	config_set_default_int(config, "Accessibility", "MixerGreenActive", mixerGreenActive);
+	config_set_default_int(config, "Accessibility", "MixerYellowActive", mixerYellowActive);
+	config_set_default_int(config, "Accessibility", "MixerRedActive", mixerRedActive);
 }
 
 void OBSBasicSettings::ResetDefaultColors()
@@ -204,16 +174,13 @@ void OBSBasicSettings::ResetDefaultColors()
 
 void OBSBasicSettings::on_colorPreset_currentIndexChanged(int idx)
 {
-	preset = idx == ui->colorPreset->count() - 1 ? COLOR_PRESET_CUSTOM
-						     : idx;
+	preset = idx == ui->colorPreset->count() - 1 ? COLOR_PRESET_CUSTOM : idx;
 	LoadA11ySettings(true);
 }
 
 void OBSBasicSettings::on_choose1_clicked()
 {
-	QColor color = GetColor(
-		selectRed,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectRed"));
+	QColor color = GetColor(selectRed, QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectRed"));
 
 	if (!color.isValid())
 		return;
@@ -232,9 +199,7 @@ void OBSBasicSettings::on_choose1_clicked()
 
 void OBSBasicSettings::on_choose2_clicked()
 {
-	QColor color = GetColor(
-		selectGreen,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectGreen"));
+	QColor color = GetColor(selectGreen, QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectGreen"));
 
 	if (!color.isValid())
 		return;
@@ -253,9 +218,7 @@ void OBSBasicSettings::on_choose2_clicked()
 
 void OBSBasicSettings::on_choose3_clicked()
 {
-	QColor color = GetColor(
-		selectBlue,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectBlue"));
+	QColor color = GetColor(selectBlue, QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectBlue"));
 
 	if (!color.isValid())
 		return;
@@ -274,9 +237,7 @@ void OBSBasicSettings::on_choose3_clicked()
 
 void OBSBasicSettings::on_choose4_clicked()
 {
-	QColor color = GetColor(
-		mixerGreen,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerGreen"));
+	QColor color = GetColor(mixerGreen, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerGreen"));
 
 	if (!color.isValid())
 		return;
@@ -295,9 +256,7 @@ void OBSBasicSettings::on_choose4_clicked()
 
 void OBSBasicSettings::on_choose5_clicked()
 {
-	QColor color = GetColor(
-		mixerYellow,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerYellow"));
+	QColor color = GetColor(mixerYellow, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerYellow"));
 
 	if (!color.isValid())
 		return;
@@ -316,9 +275,7 @@ void OBSBasicSettings::on_choose5_clicked()
 
 void OBSBasicSettings::on_choose6_clicked()
 {
-	QColor color = GetColor(
-		mixerRed,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerRed"));
+	QColor color = GetColor(mixerRed, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerRed"));
 
 	if (!color.isValid())
 		return;
@@ -337,9 +294,8 @@ void OBSBasicSettings::on_choose6_clicked()
 
 void OBSBasicSettings::on_choose7_clicked()
 {
-	QColor color = GetColor(
-		mixerGreenActive,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerGreenActive"));
+	QColor color =
+		GetColor(mixerGreenActive, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerGreenActive"));
 
 	if (!color.isValid())
 		return;
@@ -358,9 +314,8 @@ void OBSBasicSettings::on_choose7_clicked()
 
 void OBSBasicSettings::on_choose8_clicked()
 {
-	QColor color = GetColor(
-		mixerYellowActive,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerYellowActive"));
+	QColor color =
+		GetColor(mixerYellowActive, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerYellowActive"));
 
 	if (!color.isValid())
 		return;
@@ -379,9 +334,7 @@ void OBSBasicSettings::on_choose8_clicked()
 
 void OBSBasicSettings::on_choose9_clicked()
 {
-	QColor color = GetColor(
-		mixerRedActive,
-		QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerRedActive"));
+	QColor color = GetColor(mixerRedActive, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerRedActive"));
 
 	if (!color.isValid())
 		return;

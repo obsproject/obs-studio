@@ -20,8 +20,7 @@
 #include <graphics/vec4.h>
 #include <graphics/matrix4.h>
 
-static inline void GetScaleAndCenterPos(int baseCX, int baseCY, int windowCX,
-					int windowCY, int &x, int &y,
+static inline void GetScaleAndCenterPos(int baseCX, int baseCY, int windowCX, int windowCY, int &x, int &y,
 					float &scale)
 {
 	double windowAspect, baseAspect;
@@ -44,9 +43,8 @@ static inline void GetScaleAndCenterPos(int baseCX, int baseCY, int windowCX,
 	y = windowCY / 2 - newCY / 2;
 }
 
-static inline void GetCenterPosFromFixedScale(int baseCX, int baseCY,
-					      int windowCX, int windowCY,
-					      int &x, int &y, float scale)
+static inline void GetCenterPosFromFixedScale(int baseCX, int baseCY, int windowCX, int windowCY, int &x, int &y,
+					      float scale)
 {
 	x = (float(windowCX) - float(baseCX) * scale) / 2.0f;
 	y = (float(windowCY) - float(baseCY) * scale) / 2.0f;
@@ -65,12 +63,9 @@ static inline QSize GetPixelSize(QWidget *widget)
 #define GRAPHICS_SAFE_PERCENT 0.05f      // 5.0%
 #define FOURBYTHREE_SAFE_PERCENT 0.1625f // 16.25%
 
-static inline void InitSafeAreas(gs_vertbuffer_t **actionSafeMargin,
-				 gs_vertbuffer_t **graphicsSafeMargin,
-				 gs_vertbuffer_t **fourByThreeSafeMargin,
-				 gs_vertbuffer_t **leftLine,
-				 gs_vertbuffer_t **topLine,
-				 gs_vertbuffer_t **rightLine)
+static inline void InitSafeAreas(gs_vertbuffer_t **actionSafeMargin, gs_vertbuffer_t **graphicsSafeMargin,
+				 gs_vertbuffer_t **fourByThreeSafeMargin, gs_vertbuffer_t **leftLine,
+				 gs_vertbuffer_t **topLine, gs_vertbuffer_t **rightLine)
 {
 	obs_enter_graphics();
 

@@ -22,40 +22,33 @@ public slots:
 	void run() override;
 signals:
 	void ready();
-	void new_item(const QString &title, const QString &dateTimeString,
-		      const QString &broadcast, const QString &status,
-		      bool astart, bool astop);
+	void new_item(const QString &title, const QString &dateTimeString, const QString &broadcast,
+		      const QString &status, bool astart, bool astop);
 	void failed();
 };
 
 class OBSYoutubeActions : public QDialog {
 	Q_OBJECT
-	Q_PROPERTY(QIcon thumbPlaceholder READ GetPlaceholder WRITE
-			   SetPlaceholder DESIGNABLE true)
+	Q_PROPERTY(QIcon thumbPlaceholder READ GetPlaceholder WRITE SetPlaceholder DESIGNABLE true)
 
 	std::unique_ptr<Ui::OBSYoutubeActions> ui;
 
 signals:
-	void ok(const QString &broadcast_id, const QString &stream_id,
-		const QString &key, bool autostart, bool autostop,
-		bool start_now);
+	void ok(const QString &broadcast_id, const QString &stream_id, const QString &key, bool autostart,
+		bool autostop, bool start_now);
 
 protected:
 	void showEvent(QShowEvent *event) override;
 	void UpdateOkButtonStatus();
 
-	bool CreateEventAction(YoutubeApiWrappers *api,
-			       BroadcastDescription &broadcast,
-			       StreamDescription &stream, bool stream_later,
-			       bool ready_broadcast = false);
-	bool ChooseAnEventAction(YoutubeApiWrappers *api,
-				 StreamDescription &stream);
+	bool CreateEventAction(YoutubeApiWrappers *api, BroadcastDescription &broadcast, StreamDescription &stream,
+			       bool stream_later, bool ready_broadcast = false);
+	bool ChooseAnEventAction(YoutubeApiWrappers *api, StreamDescription &stream);
 
 	void ShowErrorDialog(QWidget *parent, QString text);
 
 public:
-	explicit OBSYoutubeActions(QWidget *parent, Auth *auth,
-				   bool broadcastReady);
+	explicit OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcastReady);
 	virtual ~OBSYoutubeActions() override;
 
 	bool Valid() { return valid; };
