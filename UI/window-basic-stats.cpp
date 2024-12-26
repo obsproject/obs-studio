@@ -376,18 +376,17 @@ void OBSBasicStats::Update()
 	uint32_t total_encoded = 0;
 	uint32_t total_skipped = 0;
 
-	if (obs_output_active(recOutput)) {
-		const obs_encoder_t *record_encoder =
-			obs_output_get_video_encoder(recOutput);
-		const video_t *video = obs_encoder_video(record_encoder);
+	// Prioritize streaming output
+	if (obs_output_active(strOutput)) {
+		const obs_encoder_t *strEnc =
+			obs_output_get_video_encoder(strOutput);
+		const video_t *video = obs_encoder_video(strEnc);
 		total_encoded = video_output_get_total_frames(video);
 		total_skipped = video_output_get_skipped_frames(video);
-	}
-
-	if (obs_output_active(strOutput)) {
-		const obs_encoder_t *stream_encoder =
-			obs_output_get_video_encoder(strOutput);
-		const video_t *video = obs_encoder_video(stream_encoder);
+	} else if (obs_output_active(recOutput)) {
+		const obs_encoder_t *recEnc =
+			obs_output_get_video_encoder(recOutput);
+		const video_t *video = obs_encoder_video(recEnc);
 		total_encoded = video_output_get_total_frames(video);
 		total_skipped = video_output_get_skipped_frames(video);
 	}
