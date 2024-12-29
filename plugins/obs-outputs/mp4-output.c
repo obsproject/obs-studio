@@ -28,8 +28,9 @@
 
 #include <opts-parser.h>
 
-#define do_log(level, format, ...) \
-	blog(level, "[mp4 output: '%s'] " format, obs_output_get_name(out->output), ##__VA_ARGS__)
+#define do_log(level, format, ...)                                                                 \
+	blog(level, "[%s output: '%s'] " format, out->muxer_flavor == FLAVOR_MOV ? "mov" : "mp4", \
+	     obs_output_get_name(out->output), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -58,6 +59,7 @@ struct mp4_output {
 	pthread_mutex_t mutex;
 
 	struct mp4_mux *muxer;
+	enum mp4_flavor muxer_flavor;
 	int flags;
 
 	size_t chapter_ctr;
@@ -138,6 +140,12 @@ static const char *mp4_output_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("MP4Output");
+}
+
+static const char *mov_output_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("MOVOutput");
 }
 
 static void mp4_clear_chapters(struct mp4_output *out)
@@ -233,10 +241,11 @@ static void split_file_proc(void *data, calldata_t *cd)
 	os_atomic_set_bool(&out->manual_split, true);
 }
 
-static void *mp4_output_create(obs_data_t *settings, obs_output_t *output)
+static void *mp4_output_create_internal(obs_data_t *settings, obs_output_t *output, enum mp4_flavor flavor)
 {
 	struct mp4_output *out = bzalloc(sizeof(struct mp4_output));
 	out->output = output;
+	out->muxer_flavor = flavor;
 	pthread_mutex_init(&out->mutex, NULL);
 
 	signal_handler_t *sh = obs_output_get_signal_handler(output);
@@ -248,6 +257,16 @@ static void *mp4_output_create(obs_data_t *settings, obs_output_t *output)
 
 	UNUSED_PARAMETER(settings);
 	return out;
+}
+
+static void *mp4_output_create(obs_data_t *settings, obs_output_t *output)
+{
+	return mp4_output_create_internal(settings, output, FLAVOR_MP4);
+}
+
+static void *mov_output_create(obs_data_t *settings, obs_output_t *output)
+{
+	return mp4_output_create_internal(settings, output, FLAVOR_MOV);
 }
 
 static inline void apply_flag(int *flags, const char *value, int flag_value)
@@ -325,7 +344,7 @@ static bool mp4_output_start(void *data)
 	obs_data_release(settings);
 
 	if (!buffered_file_serializer_init(&out->serializer, out->path.array, out->buffer_size, out->chunk_size)) {
-		warn("Unable to open MP4 file '%s'", out->path.array);
+		warn("Unable to open file '%s'", out->path.array);
 		return false;
 	}
 
@@ -333,11 +352,11 @@ static bool mp4_output_start(void *data)
 	obs_output_add_packet_callback(out->output, mp4_pkt_callback, (void *)out);
 
 	/* Initialise muxer and start capture */
-	out->muxer = mp4_mux_create(out->output, &out->serializer, out->flags);
+	out->muxer = mp4_mux_create(out->output, &out->serializer, out->flags, out->muxer_flavor);
 	os_atomic_set_bool(&out->active, true);
 	obs_output_begin_data_capture(out->output, 0);
 
-	info("Writing Hybrid MP4 file '%s'...", out->path.array);
+	info("Writing Hybrid MP4/MOV file '%s'...", out->path.array);
 	return true;
 }
 
@@ -436,18 +455,18 @@ static bool change_file(struct mp4_output *out, struct encoder_packet *pkt)
 	mp4_mux_destroy(out->muxer);
 	mp4_clear_chapters(out);
 
-	info("MP4 file split complete. Finalization took %" PRIu64 " ms.", (os_gettime_ns() - start_time) / 1000000);
+	info("File split complete. Finalization took %" PRIu64 " ms.", (os_gettime_ns() - start_time) / 1000000);
 
 	/* open new file */
 	generate_filename(out, &out->path, out->allow_overwrite);
 	info("Changing output file to '%s'", out->path.array);
 
 	if (!buffered_file_serializer_init(&out->serializer, out->path.array, out->buffer_size, out->chunk_size)) {
-		warn("Unable to open MP4 file '%s'", out->path.array);
+		warn("Unable to open file '%s'", out->path.array);
 		return false;
 	}
 
-	out->muxer = mp4_mux_create(out->output, &out->serializer, out->flags);
+	out->muxer = mp4_mux_create(out->output, &out->serializer, out->flags, out->muxer_flavor);
 
 	calldata_t cd = {0};
 	signal_handler_t *sh = obs_output_get_signal_handler(out->output);
@@ -500,7 +519,7 @@ static void mp4_output_actual_stop(struct mp4_output *out, int code)
 	/* Clear chapter data */
 	mp4_clear_chapters(out);
 
-	info("MP4 file output complete. Finalization took %" PRIu64 " ms.", (os_gettime_ns() - start_time) / 1000000);
+	info("File output complete. Finalization took %" PRIu64 " ms.", (os_gettime_ns() - start_time) / 1000000);
 }
 
 static void push_back_packet(struct mp4_output *out, struct encoder_packet *packet)
@@ -624,9 +643,24 @@ struct obs_output_info mp4_output_info = {
 	.id = "mp4_output",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK_AV | OBS_OUTPUT_CAN_PAUSE,
 	.encoded_video_codecs = "h264;hevc;av1",
-	.encoded_audio_codecs = "aac",
+	.encoded_audio_codecs = "aac;alac;flac;opus",
 	.get_name = mp4_output_name,
 	.create = mp4_output_create,
+	.destroy = mp4_output_destroy,
+	.start = mp4_output_start,
+	.stop = mp4_output_stop,
+	.encoded_packet = mp4_output_packet,
+	.get_properties = mp4_output_properties,
+	.get_total_bytes = mp4_output_total_bytes,
+};
+
+struct obs_output_info mov_output_info = {
+	.id = "mov_output",
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK_AV | OBS_OUTPUT_CAN_PAUSE,
+	.encoded_video_codecs = "h264;hevc;prores",
+	.encoded_audio_codecs = "aac;alac",
+	.get_name = mov_output_name,
+	.create = mov_output_create,
 	.destroy = mp4_output_destroy,
 	.start = mp4_output_start,
 	.stop = mp4_output_stop,
