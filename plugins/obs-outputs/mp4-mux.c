@@ -2524,11 +2524,6 @@ static inline void add_track(struct mp4_mux *mux, obs_encoder_t *enc)
 		track->timebase_den = info->fps_num;
 
 		track->timescale = track->timebase_den;
-		/* FFmpeg does this to compensate for non-monotonic timestamps,
-		 * we probably don't need it, but let's stick to what they do
-		 * for maximum compatibility. */
-		while (track->timescale < 10000)
-			track->timescale *= 2;
 	} else {
 		uint32_t sample_rate = obs_encoder_get_sample_rate(enc);
 		/* Opus is always 48 kHz */
