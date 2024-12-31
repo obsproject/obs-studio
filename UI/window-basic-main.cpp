@@ -4516,6 +4516,8 @@ int OBSBasic::ResetVideo()
 							       migrationBaseResolution->second != ovi.base_height));
 		ui->actionRemigrateSceneCollection->setEnabled(canMigrate);
 
+		OnEvent(OBS_FRONTEND_EVENT_VIDEO_RESET);
+
 		emit CanvasResized(ovi.base_width, ovi.base_height);
 		emit OutputResized(ovi.output_width, ovi.output_height);
 	}
