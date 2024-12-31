@@ -30,6 +30,12 @@ static THREAD_LOCAL bool is_ui_thread = false;
 extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
+static inline void obs_video_dosignal(const char *signal_obs)
+{
+	struct calldata params = {0};
+	signal_handler_signal(obs->signals, signal_obs, &params);
+}
+
 static inline void make_video_info(struct video_output_info *vi, struct obs_video_info *ovi)
 {
 	vi->name = "video";
@@ -695,6 +701,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	video->thread_initialized = true;
 
+	obs_video_dosignal("core_video_ready");
 	return OBS_VIDEO_SUCCESS;
 }
 
@@ -820,6 +827,8 @@ static void obs_free_video(void)
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
 	deque_free(&obs->video.tasks);
+
+	obs_video_dosignal("core_video_released");
 }
 
 static void obs_free_graphics(void)
@@ -1052,6 +1061,9 @@ static const char *obs_signals[] = {
 	"void hotkey_register(ptr hotkey)",
 	"void hotkey_unregister(ptr hotkey)",
 	"void hotkey_bindings_changed(ptr hotkey)",
+
+	"void core_video_ready()",
+	"void core_video_released()",
 
 	NULL,
 };
