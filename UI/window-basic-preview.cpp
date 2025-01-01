@@ -2488,9 +2488,20 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	vec3 start, end;
 
 	float pixelRatio = main->GetDevicePixelRatio();
-	for (int i = 0; i < 4; i++) {
-		if (!spacerLabel[i])
-			spacerLabel[i] = CreateLabel(pixelRatio, i);
+	if (!labelCreated) {
+		QMetaObject::invokeMethod(this, [this, pixelRatio]() {
+			if (labelCreated)
+				return;
+
+			for (int i = 0; i < 4; i++) {
+				if (!spacerLabel[i])
+					spacerLabel[i] = CreateLabel(pixelRatio, i);
+			}
+
+			labelCreated = true;
+		});
+
+		return; // wait label source to be created
 	}
 
 	vec3_set(&start, top.x, 0.0f, 1.0f);
