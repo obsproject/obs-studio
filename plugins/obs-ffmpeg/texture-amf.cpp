@@ -422,6 +422,7 @@ static inline void check_preset_compatibility(amf_base *enc, const char *&preset
 	 * encoder properties. If the throughput is lower than the max
 	 * throughput, switch to a lower preset. */
 
+	refresh_throughput_caps(enc, preset);
 	if (astrcmpi(preset, "highQuality") == 0) {
 		if (!enc->max_throughput) {
 			preset = "quality";
@@ -447,9 +448,14 @@ static inline void check_preset_compatibility(amf_base *enc, const char *&preset
 	}
 
 	if (astrcmpi(preset, "balanced") == 0) {
-		if (enc->max_throughput && enc->max_throughput - enc->requested_throughput < enc->throughput) {
+		if (!enc->max_throughput) {
 			preset = "speed";
-			refresh_throughput_caps(enc, preset);
+			set_opt(QUALITY_PRESET, get_preset(enc, preset));
+		} else {
+			if (enc->max_throughput - enc->requested_throughput < enc->throughput) {
+				preset = "speed";
+				refresh_throughput_caps(enc, preset);
+			}
 		}
 	}
 }
