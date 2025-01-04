@@ -188,6 +188,7 @@ public:
 	static inline void operator delete(void *ptr) { bfree(ptr); }
 
 	OBSSourceAutoRelease spacerLabel[4];
+	bool labelCreated = false;
 	int spacerPx[4] = {0};
 
 	void DrawSpacingHelpers();
