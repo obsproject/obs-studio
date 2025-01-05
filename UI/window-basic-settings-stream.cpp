@@ -771,6 +771,22 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
+		if (strcmp(a->service(), "OnlyFans.com") == 0) {
+			bool validServer = !a->server().empty();
+
+			if (validServer) {
+				const auto customServerName = "CloudBeta";
+				auto index = ui->server->findText(customServerName);
+
+				if (index != -1) {
+					ui->server->setItemData(index, a->server().c_str());
+				} else {
+					ui->server->addItem(customServerName, a->server().c_str());
+					index = ui->server->findText(customServerName);
+				}
+				ui->server->setCurrentIndex(index);
+			}
+		}
 		bool validKey = !a->key().empty();
 
 		if (validKey)
