@@ -988,7 +988,7 @@ public:
 		auto projectors = GetProjectorMenuMonitorsFormatted();
 		for (int i = 0; i < projectors.size(); i++) {
 			QString str = projectors[i];
-			QAction *action = parent->addAction(str, target, slot);
+			QAction *action = parent->addAction(QTStr("Projector.Display").arg(str), target, slot);
 			action->setProperty("monitor", i);
 		}
 	}
@@ -1137,7 +1137,6 @@ private slots:
 	void on_resetUI_triggered();
 	void on_resetDocks_triggered(bool force = false);
 	void on_lockDocks_toggled(bool lock);
-	void on_multiviewProjectorWindowed_triggered();
 	void on_sideDocks_toggled(bool side);
 
 	void logUploadFinished(const QString &text, const QString &error);
@@ -1172,6 +1171,7 @@ private slots:
 	void OpenStudioProgramWindow();
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
+	void OpenMultiviewWindow();
 	void OpenSceneWindow();
 
 	void StackedMixerAreaContextMenuRequested();
