@@ -546,7 +546,9 @@ void SimpleOutput::LoadStreamingPreset_Lossy(const char *encoderId)
 /* mistakes have been made to lead us to this. */
 const char *get_simple_output_encoder(const char *encoder)
 {
-	if (strcmp(encoder, SIMPLE_ENCODER_X264) == 0) {
+	if (strcmp(encoder, SIMPLE_ENCODER_OPENH264) == 0) {
+		return "ffmpeg_openh264";
+	} else if (strcmp(encoder, SIMPLE_ENCODER_X264) == 0) {
 		return "obs_x264";
 	} else if (strcmp(encoder, SIMPLE_ENCODER_X264_LOWCPU) == 0) {
 		return "obs_x264";
@@ -578,7 +580,7 @@ const char *get_simple_output_encoder(const char *encoder)
 #endif
 	}
 
-	return "obs_x264";
+	return "ffmpeg_openh264";
 }
 
 void SimpleOutput::LoadRecordingPreset()
