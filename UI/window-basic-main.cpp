@@ -1738,6 +1738,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(activeConfiguration, "SimpleOutput", "RecRB", false);
 	config_set_default_int(activeConfiguration, "SimpleOutput", "RecRBTime", 20);
 	config_set_default_int(activeConfiguration, "SimpleOutput", "RecRBSize", 512);
+	config_set_default_bool(activeConfiguration, "SimpleOutput", "FlushRBAfterSave", false);
 	config_set_default_string(activeConfiguration, "SimpleOutput", "RecRBPrefix", "Replay");
 	config_set_default_string(activeConfiguration, "SimpleOutput", "StreamAudioEncoder", "aac");
 	config_set_default_string(activeConfiguration, "SimpleOutput", "RecAudioEncoder", "aac");
@@ -1781,6 +1782,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_bool(activeConfiguration, "AdvOut", "RecRB", false);
 	config_set_default_uint(activeConfiguration, "AdvOut", "RecRBTime", 20);
 	config_set_default_int(activeConfiguration, "AdvOut", "RecRBSize", 512);
+	config_set_default_bool(activeConfiguration, "AdvOut", "FlushRBAfterSave", false);
 
 	config_set_default_uint(activeConfiguration, "Video", "BaseCX", cx);
 	config_set_default_uint(activeConfiguration, "Video", "BaseCY", cy);
