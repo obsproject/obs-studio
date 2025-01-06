@@ -83,6 +83,10 @@ void cleanBackupCollision(const OBSSceneCollection &collection)
 
 void OBSBasic::SetupNewSceneCollection(const std::string &collectionName)
 {
+	if (collectionName.empty()) {
+		throw std::logic_error("Cannot create new scene collection with empty collection name");
+	}
+
 	const OBSSceneCollection &newCollection = CreateSceneCollection(collectionName);
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
