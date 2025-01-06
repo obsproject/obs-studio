@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "window-basic-settings.hpp"
 #include "window-basic-main.hpp"
 #include "obs-frontend-api.h"
