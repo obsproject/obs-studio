@@ -239,6 +239,14 @@ Structures/Enumerations
 
    Undo redo callback
 
+.. type:: video_t *(*obs_frontend_multitrack_video_start_cb)(const char *name, void *private_data)
+
+   Multitrack video start callback
+
+.. type:: void (*obs_frontend_multitrack_video_stop_cb)(const char *name, video_t *video, void *private_data)
+
+   Multitrack video stop callback
+
 
 Functions
 ---------
@@ -972,3 +980,22 @@ Functions
                       This uses the undo action from the first and the redo action from the last action.
 
    .. versionadded:: 29.1
+
+---------------------------------------
+
+.. function:: void obs_frontend_multitrack_video_register(const char *name, obs_frontend_multitrack_video_start_cb start_video, obs_frontend_multitrack_video_stop_cb stop_video, void *private_data)
+
+   :param name: Name to register
+   :param start_video: Callback to get video to use
+   :param stop_video: Callback to stop usage of video
+   :param param: Param for the start video and stop video callbacks
+
+   .. versionadded:: 30.2
+
+---------------------------------------
+
+.. function:: void obs_frontend_multitrack_video_unregister(const char *name)
+
+   :param name: name to unregister
+
+   .. versionadded:: 30.2

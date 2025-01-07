@@ -124,14 +124,24 @@ struct System {
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(System, version, name, build, release, revision, bits, arm, armEmulation)
 };
 
+struct ExtraView {
+	string name;
+	uint32_t canvas_width;
+	uint32_t canvas_height;
+	media_frames_per_second framerate;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(ExtraView, name, canvas_width, canvas_height, framerate)
+};
+
 struct Capabilities {
 	Cpu cpu;
 	Memory memory;
 	optional<GamingFeatures> gaming_features;
 	System system;
 	optional<std::vector<Gpu>> gpu;
+	optional<std::vector<ExtraView>> extra_views;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Capabilities, cpu, memory, gaming_features, system, gpu)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Capabilities, cpu, memory, gaming_features, system, gpu, extra_views)
 };
 
 struct Preferences {
@@ -206,10 +216,11 @@ struct VideoEncoderConfiguration {
 	uint32_t height;
 	optional<media_frames_per_second> framerate;
 	optional<obs_scale_type> gpu_scale_type;
+	optional<string> view;
 	json settings;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(VideoEncoderConfiguration, type, width, height, framerate,
-						    gpu_scale_type, settings)
+						    gpu_scale_type, view, settings)
 };
 
 struct AudioEncoderConfiguration {
