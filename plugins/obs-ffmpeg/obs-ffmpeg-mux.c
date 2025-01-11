@@ -399,7 +399,6 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream, obs_da
 		stream->max_time = obs_data_get_int(settings, "max_time_sec") * 1000000LL;
 		stream->max_size = obs_data_get_int(settings, "max_size_mb") * (1024 * 1024);
 		stream->split_file = obs_data_get_bool(settings, "split_file");
-		stream->allow_overwrite = obs_data_get_bool(settings, "allow_overwrite");
 		stream->cur_size = 0;
 		stream->sent_headers = false;
 	}
@@ -570,13 +569,14 @@ static void find_best_filename(struct dstr *path, bool space)
 	}
 }
 
-static void generate_filename(struct ffmpeg_muxer *stream, struct dstr *dst, bool overwrite)
+static void generate_filename(struct ffmpeg_muxer *stream, struct dstr *dst)
 {
 	obs_data_t *settings = obs_output_get_settings(stream->output);
 	const char *dir = obs_data_get_string(settings, "directory");
 	const char *fmt = obs_data_get_string(settings, "format");
 	const char *ext = obs_data_get_string(settings, "extension");
 	bool space = obs_data_get_bool(settings, "allow_spaces");
+	bool overwrite = obs_data_get_bool(settings, "allow_overwrite");
 
 	char *filename = os_generate_formatted_filename(ext, space, fmt);
 
@@ -734,7 +734,7 @@ static bool send_new_filename(struct ffmpeg_muxer *stream, const char *filename)
 
 static bool prepare_split_file(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 {
-	generate_filename(stream, &stream->path, stream->allow_overwrite);
+	generate_filename(stream, &stream->path);
 	info("Changing output file to '%s'", stream->path.array);
 
 	if (!send_new_filename(stream, stream->path.array)) {
@@ -1175,7 +1175,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			      audio_dts_offsets);
 	}
 
-	generate_filename(stream, &stream->path, true);
+	generate_filename(stream, &stream->path);
 
 	os_atomic_set_bool(&stream->muxing, true);
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL, replay_buffer_mux_thread, stream) == 0;
