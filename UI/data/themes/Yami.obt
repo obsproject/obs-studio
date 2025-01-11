@@ -1993,3 +1993,13 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 #previewYScrollBar {
     width: 16px;
 }
+
+#previewZoomOutButton {
+    qproperty-icon: url(theme:Dark/minus.svg);
+    margin: 1px;
+}
+
+#previewZoomInButton {
+    qproperty-icon: url(theme:Dark/plus.svg);
+    margin: 1px;
+}

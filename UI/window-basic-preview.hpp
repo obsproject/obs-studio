@@ -126,6 +126,9 @@ private:
 private slots:
 	void XScrollBarMoved(int value);
 	void YScrollBarMoved(int value);
+	void ResetZoom();
+	void ZoomOut();
+	void ZoomIn();
 
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = Qt::WindowFlags());
@@ -198,4 +201,6 @@ public:
 signals:
 	void scalingChanged(float scalingAmount);
 	void fixedScalingChanged(bool isFixed);
+	void ZoomIsMinimum();
+	void ZoomIsMaximum();
 };

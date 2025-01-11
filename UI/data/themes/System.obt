@@ -379,3 +379,12 @@ QCalendarWidget #qt_calendar_nextmonth {
 StatusBarWidget > QFrame {
     padding: 0px 12px 8px;
 }
+
+/* Preview zoom controls */
+#previewZoomOutButton {
+    qproperty-icon: url(:/res/images/minus.svg);
+}
+
+#previewZoomInButton {
+    qproperty-icon: url(:/res/images/plus.svg);
+}
