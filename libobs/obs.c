@@ -2254,7 +2254,6 @@ obs_source_t *obs_load_private_source(obs_data_t *source_data)
 
 void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb, void *private_data)
 {
-	struct obs_core_data *data = &obs->data;
 	DARRAY(obs_source_t *) sources;
 	size_t count;
 	size_t i;
@@ -2263,8 +2262,6 @@ void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb, void *priv
 
 	count = obs_data_array_count(array);
 	da_reserve(sources, count);
-
-	pthread_mutex_lock(&data->sources_mutex);
 
 	for (i = 0; i < count; i++) {
 		obs_data_t *source_data = obs_data_array_item(array, i);
@@ -2291,8 +2288,6 @@ void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb, void *priv
 
 	for (i = 0; i < sources.num; i++)
 		obs_source_release(sources.array[i]);
-
-	pthread_mutex_unlock(&data->sources_mutex);
 
 	da_free(sources);
 }
