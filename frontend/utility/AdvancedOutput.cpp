@@ -200,7 +200,22 @@ void AdvancedOutput::UpdateStreamSettings()
 		int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 		obs_service_apply_encoder_settings(main->GetService(), settings, nullptr);
 		if (!enforceBitrate) {
-			blog(LOG_INFO, "User is ignoring service bitrate limits.");
+			int maxVideoBitrate;
+			int maxAudioBitrate;
+			obs_service_get_max_bitrate(main->GetService(), &maxVideoBitrate, &maxAudioBitrate);
+
+			std::string videoBitRateLogString = maxVideoBitrate > 0 ? std::to_string(maxVideoBitrate)
+										: "None";
+			std::string audioBitRateLogString = maxAudioBitrate > 0 ? std::to_string(maxAudioBitrate)
+										: "None";
+
+			blog(LOG_INFO,
+			     "User is ignoring service bitrate limits.\n"
+			     "Service Recommendations:\n"
+			     "\tvideo bitrate: %s\n"
+			     "\taudio bitrate: %s",
+			     videoBitRateLogString.c_str(), audioBitRateLogString.c_str());
+
 			obs_data_set_int(settings, "bitrate", bitrate);
 		}
 
