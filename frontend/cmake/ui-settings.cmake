@@ -1,0 +1,15 @@
+target_sources(
+  obs-studio
+  PRIVATE
+    settings/OBSBasicSettings_A11y.cpp
+    settings/OBSBasicSettings_Appearance.cpp
+    settings/OBSBasicSettings_Stream.cpp
+    settings/OBSBasicSettings.cpp
+    settings/OBSBasicSettings.hpp
+    settings/OBSHotkeyEdit.cpp
+    settings/OBSHotkeyEdit.hpp
+    settings/OBSHotkeyLabel.cpp
+    settings/OBSHotkeyLabel.hpp
+    settings/OBSHotkeyWidget.cpp
+    settings/OBSHotkeyWidget.hpp
+)
