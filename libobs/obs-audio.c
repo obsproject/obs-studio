@@ -89,6 +89,9 @@ static void mix_audio(struct audio_data_mixes_outputs *mixes,
 								    canvas_idx,
 								    mix_idx,
 								    ch);
+				if (!aud) {
+					continue;
+				}
 				register float *end;
 
 				mix += start_point;
