@@ -388,12 +388,12 @@ void OBSBasic::RefreshSceneCollectionCache()
 			obs_data_create_from_json_file_safe(entry.path().u8string().c_str(), "bak");
 
 		std::string candidateName;
-		const char *collectionName = obs_data_get_string(collectionData, "name");
+		std::string collectionName = obs_data_get_string(collectionData, "name");
 
-		if (!collectionName) {
-			candidateName = entry.path().filename().u8string();
+		if (collectionName.empty()) {
+			candidateName = entry.path().stem().u8string();
 		} else {
-			candidateName = collectionName;
+			candidateName = std::move(collectionName);
 		}
 
 		foundCollections.try_emplace(candidateName,
