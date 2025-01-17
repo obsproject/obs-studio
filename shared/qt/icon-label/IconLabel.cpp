@@ -15,32 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "IconLabel.hpp"
 
-#include <QIcon>
-#include <QLabel>
+void IconLabel::setIcon(const QIcon &icon)
+{
+	m_icon = icon;
+	QLabel::setPixmap(icon.pixmap(m_iconSize));
+}
 
-/**
- * Widget to be used if a label is to be supplied a QIcon instead of a QPixmap,
- * specifically so that qproperty-icon QSS styling works on it without having to
- * first convert the icon to a fixed size PNG and then setting qproperty-pixmap
- * in addition to the qproperty-icon statements.
- */
-class IconLabel : public QLabel {
-	Q_OBJECT
-	Q_PROPERTY(QIcon icon READ icon WRITE setIcon)
-	Q_PROPERTY(int iconSize READ iconSize WRITE setIconSize)
+void IconLabel::setIconSize(int newSize)
+{
+	m_iconSize = newSize;
+}
 
-public:
-	inline IconLabel(QWidget *parent = nullptr) : QLabel(parent), m_icon(), m_iconSize(16) {}
-
-	inline QIcon icon() const { return m_icon; }
-	void setIcon(const QIcon &icon);
-
-	inline int iconSize() const { return m_iconSize; }
-	void setIconSize(int newSize);
-
-private:
-	QIcon m_icon;
-	int m_iconSize;
-};
+#include "moc_IconLabel.cpp"
