@@ -81,10 +81,9 @@ static QString ReadWindowsURLFile(const QString &file)
 }
 #endif
 
-void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings, const obs_video_info &ovi)
+void OBSBasic::AddDropURL(QUrl url, QString &name, obs_data_t *settings, const obs_video_info &ovi)
 {
-	QUrl path = QString::fromUtf8(url);
-	QUrlQuery query = QUrlQuery(path.query(QUrl::FullyEncoded));
+	QUrlQuery query = QUrlQuery(url.query(QUrl::FullyEncoded));
 
 	int cx = (int)ovi.base_width;
 	int cy = (int)ovi.base_height;
@@ -109,15 +108,15 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings, 
 	obs_data_set_int(settings, "width", cx);
 	obs_data_set_int(settings, "height", cy);
 
-	name = query.hasQueryItem("layer-name") ? query.queryItemValue("layer-name", QUrl::FullyDecoded) : path.host();
+	name = query.hasQueryItem("layer-name") ? query.queryItemValue("layer-name", QUrl::FullyDecoded) : url.host();
 
 	query.removeQueryItem("layer-width");
 	query.removeQueryItem("layer-height");
 	query.removeQueryItem("layer-name");
 	query.removeQueryItem("layer-css");
-	path.setQuery(query);
+	url.setQuery(query);
 
-	obs_data_set_string(settings, "url", QT_TO_UTF8(path.url()));
+	obs_data_set_string(settings, "url", QT_TO_UTF8(url.url()));
 }
 
 void OBSBasic::AddDropSource(const char *data, DropType image)
@@ -170,7 +169,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		type = "browser_source";
 		break;
 	case DropType_Url:
-		AddDropURL(data, name, settings, ovi);
+		AddDropURL(QUrl(data), name, settings, ovi);
 		type = "browser_source";
 		break;
 	}
