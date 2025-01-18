@@ -733,7 +733,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop, QFormLayout *layou
 		/* for backwards compatibility */
 		if (uuid.isEmpty()) {
 			uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
-			obs_data_set_string(item, "uuid", uuid.toUtf8());
+			obs_data_set_string(item, "uuid", QT_TO_UTF8(uuid));
 		}
 		list_item->setData(Qt::UserRole, uuid);
 	}
