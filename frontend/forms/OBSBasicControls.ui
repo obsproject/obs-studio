@@ -47,7 +47,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item>
-         <widget class="NonCheckableButton" name="streamButton">
+         <widget class="QPushButton" name="streamButton">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -66,13 +66,10 @@
           <property name="text">
            <string>Basic.Main.StartStreaming</string>
           </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
          </widget>
         </item>
         <item>
-         <widget class="NonCheckableButton" name="broadcastButton">
+         <widget class="QPushButton" name="broadcastButton">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -90,9 +87,6 @@
           </property>
           <property name="text">
            <string>Basic.Main.StartBroadcast</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -116,7 +110,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="NonCheckableButton" name="recordButton">
+         <widget class="QPushButton" name="recordButton">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -134,9 +128,6 @@
           </property>
           <property name="text">
            <string>Basic.Main.StartRecording</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -160,9 +151,6 @@
           <property name="icon">
            <iconset resource="obs.qrc">
             <normaloff>:/res/images/media-pause.svg</normaloff>:/res/images/media-pause.svg</iconset>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
           </property>
           <property name="class" stdset="0">
            <string>icon-media-pause</string>
@@ -189,7 +177,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="NonCheckableButton" name="replayBufferButton">
+         <widget class="QPushButton" name="replayBufferButton">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -207,9 +195,6 @@
           </property>
           <property name="text">
            <string>Basic.Main.StartReplayBuffer</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -259,7 +244,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="NonCheckableButton" name="virtualCamButton">
+         <widget class="QPushButton" name="virtualCamButton">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -277,9 +262,6 @@
           </property>
           <property name="text">
            <string>Basic.Main.StartVirtualCam</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -312,7 +294,7 @@
        </layout>
       </item>
       <item>
-       <widget class="NonCheckableButton" name="modeSwitch">
+       <widget class="QPushButton" name="modeSwitch">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -327,9 +309,6 @@
         </property>
         <property name="text">
          <string>Basic.TogglePreviewProgramMode</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -370,13 +349,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>NonCheckableButton</class>
-   <extends>QPushButton</extends>
-   <header>components/NonCheckableButton.hpp</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="obs.qrc"/>
  </resources>
