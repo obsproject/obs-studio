@@ -484,17 +484,28 @@ static void init_format_info_sync(obs_pipewire_stream *obs_pw_stream)
 	bfree(drm_formats);
 }
 
-static void init_format_info(obs_pipewire_stream *obs_pw_stream)
+static void init_format_info(obs_pipewire_stream *obs_pw_stream, const struct obs_pw_video_format *selected_format)
 {
-	uint32_t output_flags;
+	if (selected_format) {
+		struct format_info *info;
 
-	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+		da_init(obs_pw_stream->format_info);
 
-	if (output_flags & OBS_SOURCE_VIDEO) {
-		if (output_flags & OBS_SOURCE_ASYNC)
-			init_format_info_async(obs_pw_stream);
-		else
-			init_format_info_sync(obs_pw_stream);
+		info = da_push_back_new(obs_pw_stream->format_info);
+		da_init(info->modifiers);
+		info->spa_format = selected_format->spa_format;
+		info->drm_format = selected_format->drm_format;
+	} else {
+		uint32_t output_flags;
+
+		output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+
+		if (output_flags & OBS_SOURCE_VIDEO) {
+			if (output_flags & OBS_SOURCE_ASYNC)
+				init_format_info_async(obs_pw_stream);
+			else
+				init_format_info_sync(obs_pw_stream);
+		}
 	}
 }
 
@@ -1179,7 +1190,7 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 }
 
 obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
-						 const struct obs_pipwire_connect_stream_info *connect_info)
+						 const struct obs_pipewire_connect_stream_info *connect_info)
 {
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod **params = NULL;
@@ -1204,7 +1215,7 @@ obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_sourc
 	if (obs_pw_stream->resolution.set)
 		obs_pw_stream->resolution.rect = *connect_info->video.resolution;
 
-	init_format_info(obs_pw_stream);
+	init_format_info(obs_pw_stream, connect_info->video.format);
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
