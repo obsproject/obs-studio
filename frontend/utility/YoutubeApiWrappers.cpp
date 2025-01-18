@@ -51,7 +51,8 @@ bool IsUserSignedIntoYT()
 
 bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
 {
-	QString translated = QTStr("YouTube.Errors." + lastErrorReason.toUtf8());
+	const QString errorKey = "YouTube.Errors." + lastErrorReason.toUtf8();
+	const QString translated = QTStr(QT_TO_UTF8(errorKey));
 	// No translation found
 	if (translated.startsWith("YouTube.Errors."))
 		return false;
