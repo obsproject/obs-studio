@@ -76,10 +76,10 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	installEventFilter(CreateShortcutFilter());
 
-	connect(ui->asyncFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor,
+	connect(ui->asyncFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor, this,
 		[this](QWidget *editor) { FilterNameEdited(editor, ui->asyncFilters); });
 
-	connect(ui->effectFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor,
+	connect(ui->effectFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor, this,
 		[this](QWidget *editor) { FilterNameEdited(editor, ui->effectFilters); });
 
 	QPushButton *close = ui->buttonBox->button(QDialogButtonBox::Close);
@@ -133,7 +133,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		ui->rightLayout->setContentsMargins(0, 0, 0, 0);
 		ui->preview->show();
 		if (drawable_type)
-			connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+			connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
 	} else {
 		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
 		ui->preview->hide();
@@ -486,7 +486,7 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 
 		QAction *popupItem = new QAction(QT_UTF8(type.name.c_str()), this);
 		popupItem->setData(QT_UTF8(type.type.c_str()));
-		connect(popupItem, &QAction::triggered, [this, type]() { AddNewFilter(type.type.c_str()); });
+		connect(popupItem, &QAction::triggered, this, [this, type]() { AddNewFilter(type.type.c_str()); });
 		popup->addAction(popupItem);
 
 		foundValues = true;

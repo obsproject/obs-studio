@@ -133,7 +133,7 @@ void addOutputUI(void)
 
 	obs_frontend_add_save_callback(save_decklink_caption_data, nullptr);
 
-	action->connect(action, &QAction::triggered, cb);
+	QObject::connect(action, &QAction::triggered, action, cb);
 }
 
 bool obs_module_load(void)

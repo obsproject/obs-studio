@@ -159,8 +159,8 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 
 	/* --------------------------------------------- */
 	if (closable)
-		connect(closeButton, &QPushButton::clicked, [this]() { close(); });
-	connect(resetButton, &QPushButton::clicked, [this]() { Reset(); });
+		connect(closeButton, &QPushButton::clicked, this, [this]() { close(); });
+	connect(resetButton, &QPushButton::clicked, this, [this]() { Reset(); });
 
 	delete shortcutFilter;
 	shortcutFilter = CreateShortcutFilter();

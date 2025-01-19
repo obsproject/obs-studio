@@ -207,7 +207,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 		connect(monitoringType, &QComboBox::currentIndexChanged, this, &OBSAdvAudioCtrl::monitoringTypeChanged);
 
 	auto connectMixer = [this](QCheckBox *mixer, int num) {
-		connect(mixer, &QCheckBox::clicked, [this, num](bool checked) { setMixer(source, num, checked); });
+		connect(mixer, &QCheckBox::clicked, this,
+			[this, num](bool checked) { setMixer(source, num, checked); });
 	};
 	connectMixer(mixer1, 0);
 	connectMixer(mixer2, 1);
