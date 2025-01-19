@@ -485,7 +485,7 @@ void OBSBasic::on_transitionAdd_clicked()
 			const char *name = obs_source_get_display_name(id);
 			QAction *action = new QAction(name, this);
 
-			connect(action, &QAction::triggered, [this, id]() { AddTransition(id); });
+			connect(action, &QAction::triggered, this, [this, id]() { AddTransition(id); });
 
 			menu.addAction(action);
 			foundConfigurableTransitions = true;
@@ -593,11 +593,11 @@ void OBSBasic::on_transitionProps_clicked()
 	QMenu menu(this);
 
 	QAction *action = new QAction(QTStr("Rename"), &menu);
-	connect(action, &QAction::triggered, [this, source]() { RenameTransition(source); });
+	connect(action, &QAction::triggered, this, [this, source]() { RenameTransition(source); });
 	menu.addAction(action);
 
 	action = new QAction(QTStr("Properties"), &menu);
-	connect(action, &QAction::triggered, properties);
+	connect(action, &QAction::triggered, this, properties);
 	menu.addAction(action);
 
 	menu.exec(QCursor::pos());
@@ -821,7 +821,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 		obs_data_set_int(data, "transition_duration", duration);
 	};
 
-	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged, setDuration);
+	connect(duration, &QSpinBox::valueChanged, this, setDuration);
 
 	auto addAction = [&](const std::string &uuid = "") {
 		const char *name = "";
@@ -845,7 +845,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 		action->setCheckable(true);
 		action->setChecked(match);
 
-		connect(action, &QAction::triggered, std::bind(setTransition, action));
+		connect(action, &QAction::triggered, this, std::bind(setTransition, action));
 	};
 
 	addAction();
@@ -987,13 +987,13 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		OBSSceneItem item = main->GetCurrentSceneItem();
 		obs_sceneitem_set_transition_duration(item, visible, duration);
 	};
-	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged, setDuration);
+	connect(duration, &QSpinBox::valueChanged, duration, setDuration);
 
 	action = menu->addAction(QT_UTF8(Str("None")));
 	action->setProperty("transition_id", QT_UTF8(""));
 	action->setCheckable(true);
 	action->setChecked(!curId);
-	connect(action, &QAction::triggered, std::bind(setTransition, action, visible));
+	connect(action, &QAction::triggered, this, std::bind(setTransition, action, visible));
 	size_t idx = 0;
 	const char *id;
 	while (obs_enum_transition_types(idx++, &id)) {
@@ -1003,7 +1003,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		action->setProperty("transition_id", QT_UTF8(id));
 		action->setCheckable(true);
 		action->setChecked(match);
-		connect(action, &QAction::triggered, std::bind(setTransition, action, visible));
+		connect(action, &QAction::triggered, this, std::bind(setTransition, action, visible));
 	}
 
 	QWidgetAction *durationAction = new QWidgetAction(menu);
@@ -1028,7 +1028,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	menu->addSeparator();
 	action = menu->addAction(QT_UTF8(Str("Copy")));
 	action->setEnabled(curId != nullptr);
-	connect(action, &QAction::triggered, std::bind(copyTransition, action, visible));
+	connect(action, &QAction::triggered, this, std::bind(copyTransition, action, visible));
 
 	auto pasteTransition = [this](QAction *, bool show) {
 		OBSBasic *main = OBSBasic::Get();
@@ -1048,7 +1048,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 
 	action = menu->addAction(QT_UTF8(Str("Paste")));
 	action->setEnabled(!!OBSGetStrongRef(copySourceTransition));
-	connect(action, &QAction::triggered, std::bind(pasteTransition, action, visible));
+	connect(action, &QAction::triggered, this, std::bind(pasteTransition, action, visible));
 	return menu;
 }
 

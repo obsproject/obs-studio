@@ -427,7 +427,7 @@ void addOutputUI(void)
 		doUI->ShowHideDialog();
 	};
 
-	action->connect(action, &QAction::triggered, cb);
+	QObject::connect(action, &QAction::triggered, action, cb);
 }
 
 static void OBSEvent(enum obs_frontend_event event, void *)

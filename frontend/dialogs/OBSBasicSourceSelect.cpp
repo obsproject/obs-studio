@@ -359,18 +359,18 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_, un
 
 	installEventFilter(CreateShortcutFilter());
 
-	connect(ui->createNew, &QRadioButton::pressed, [&]() {
+	connect(ui->createNew, &QRadioButton::pressed, this, [&]() {
 		QPushButton *button = ui->buttonBox->button(QDialogButtonBox::Ok);
 		if (!button->isEnabled())
 			button->setEnabled(true);
 	});
-	connect(ui->selectExisting, &QRadioButton::pressed, [&]() {
+	connect(ui->selectExisting, &QRadioButton::pressed, this, [&]() {
 		QPushButton *button = ui->buttonBox->button(QDialogButtonBox::Ok);
 		bool enabled = ui->sourceList->selectedItems().size() != 0;
 		if (button->isEnabled() != enabled)
 			button->setEnabled(enabled);
 	});
-	connect(ui->sourceList, &QListWidget::itemSelectionChanged, [&]() {
+	connect(ui->sourceList, &QListWidget::itemSelectionChanged, this, [&]() {
 		QPushButton *button = ui->buttonBox->button(QDialogButtonBox::Ok);
 		if (!button->isEnabled())
 			button->setEnabled(true);

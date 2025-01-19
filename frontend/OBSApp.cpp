@@ -1254,7 +1254,7 @@ bool OBSApp::OBSInit()
 	connect(OBSBasic::Get(), &OBSBasic::mainWindowClosed, crashHandler_.get(),
 		&OBS::CrashHandler::applicationShutdownHandler);
 
-	connect(this, &QGuiApplication::applicationStateChanged,
+	connect(this, &QGuiApplication::applicationStateChanged, this,
 		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 

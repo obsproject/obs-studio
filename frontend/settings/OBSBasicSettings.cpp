@@ -2403,9 +2403,9 @@ void OBSBasicSettings::LoadAudioSources()
 		TruncateLabel(label, label->text());
 		label->setMinimumSize(QSize(170, 0));
 		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-		connect(label, &OBSSourceLabel::Removed,
+		connect(label, &OBSSourceLabel::Removed, this,
 			[=]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
-		connect(label, &OBSSourceLabel::Destroyed,
+		connect(label, &OBSSourceLabel::Destroyed, this,
 			[=]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
 
 		layout->addRow(label, form);
@@ -2838,7 +2838,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 			HotkeysChanged();
 			ScanDuplicateHotkeys(hotkeysLayout);
 		});
-		connect(hw, &OBSHotkeyWidget::SearchKey, [=](obs_key_combination_t combo) {
+		connect(hw, &OBSHotkeyWidget::SearchKey, this, [=](obs_key_combination_t combo) {
 			ui->hotkeyFilterSearch->setText("");
 			ui->hotkeyFilterInput->HandleNewKey(combo);
 			ui->hotkeyFilterInput->KeyChanged(combo);

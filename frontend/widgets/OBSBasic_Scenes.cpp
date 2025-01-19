@@ -596,7 +596,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			OBSProjector::UpdateMultiviewProjectors();
 		};
 
-		connect(multiviewAction, &QAction::triggered, std::bind(showInMultiview, data.Get()));
+		connect(multiviewAction, &QAction::triggered, multiviewAction, std::bind(showInMultiview, data.Get()));
 
 		copyFilters->setEnabled(obs_source_filter_count(source) > 0);
 	}
