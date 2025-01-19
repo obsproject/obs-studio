@@ -1220,7 +1220,7 @@ bool OBSApp::OBSInit()
 
 	mainWindow->OBSInit();
 
-	connect(this, &QGuiApplication::applicationStateChanged,
+	connect(this, &QGuiApplication::applicationStateChanged, this,
 		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 
