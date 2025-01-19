@@ -74,7 +74,7 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 		obs_display_set_background_color(GetDisplay(), 0x000000);
 	};
 
-	connect(this, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+	connect(this, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
 	connect(App(), &QGuiApplication::screenRemoved, this, &OBSProjector::ScreenRemoved);
 
 	if (type == ProjectorType::Multiview) {

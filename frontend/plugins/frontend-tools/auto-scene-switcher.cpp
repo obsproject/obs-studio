@@ -503,5 +503,5 @@ extern "C" void InitSceneSwitcher()
 	obs_frontend_add_save_callback(SaveSceneSwitcher, nullptr);
 	obs_frontend_add_event_callback(OBSEvent, nullptr);
 
-	action->connect(action, &QAction::triggered, cb);
+	QObject::connect(action, &QAction::triggered, action, cb);
 }
