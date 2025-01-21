@@ -14,9 +14,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
 #include <inttypes.h>
 #include "obs-internal.h"
+#include <string.h> // For memset
 
 static inline bool delay_active(const struct obs_output *output)
 {
@@ -43,6 +43,57 @@ static inline bool log_flag_encoded(const struct obs_output *output, const char 
 	return ret;
 }
 
+static void generate_blank_video_frame(struct encoder_packet *packet, struct obs_output *output)
+{
+	video_t *video = obs_output_video(output);
+	if (!video) {
+		blog(LOG_ERROR, "Failed to retrieve video output for blank frame generation");
+		return;
+	}
+
+	uint32_t width = video_output_get_width(video);
+	uint32_t height = video_output_get_height(video);
+	size_t frame_size = width * height * 3 / 2;
+	uint8_t *frame_data = bmalloc(frame_size);
+	memset(frame_data, 0, frame_size);
+
+	packet->data = frame_data;
+	packet->size = frame_size;
+	packet->type = OBS_ENCODER_VIDEO;
+	packet->pts = os_gettime_ns();
+	packet->dts = packet->pts;
+	packet->keyframe = true;
+	packet->priority = 1;
+	packet->encoder = obs_output_get_video_encoder(output); // Use the associated video encoder
+
+	blog(LOG_DEBUG, "Generated blank video frame (%ux%u)", width, height);
+}
+
+static void generate_silent_audio_packet(struct encoder_packet *packet, struct obs_output *output)
+{
+	audio_t *audio = obs_output_audio(output);
+	if (!audio) {
+		blog(LOG_ERROR, "Failed to retrieve audio output for silent packet generation");
+		return;
+	}
+
+	uint32_t sample_rate = audio_output_get_sample_rate(audio);
+	size_t channels = audio_output_get_channels(audio);
+	size_t frame_size = sample_rate * channels * sizeof(float) / 100;
+	uint8_t *frame_data = bmalloc(frame_size);
+	memset(frame_data, 0, frame_size);
+
+	packet->data = frame_data;
+	packet->size = frame_size;
+	packet->type = OBS_ENCODER_AUDIO;
+	packet->pts = os_gettime_ns();
+	packet->dts = packet->pts;
+	packet->encoder = obs_output_get_audio_encoder(output, 1);
+
+
+	blog(LOG_DEBUG, "Generated silent audio frame (%uHz, %u channels)", sample_rate, channels);
+}
+
 static inline void push_packet(struct obs_output *output, struct encoder_packet *packet,
 			       struct encoder_packet_time *packet_time, uint64_t t)
 {
@@ -59,6 +110,23 @@ static inline void push_packet(struct obs_output *output, struct encoder_packet 
 	deque_push_back(&output->delay_data, &dd, sizeof(dd));
 	pthread_mutex_unlock(&output->delay_mutex);
 }
+
+
+static inline void push_blank_packet(struct obs_output *output)
+{
+	struct encoder_packet blank_packet = {0};
+
+	if (obs_output_video(output)) {
+		generate_blank_video_frame(&blank_packet, output);
+		push_packet(output, &blank_packet, NULL, os_gettime_ns());
+	}
+
+	/* if (obs_output_audio(output)) {
+		generate_silent_audio_packet(&blank_packet, output);
+		push_packet(output, &blank_packet, NULL, os_gettime_ns());
+	}*/
+}
+
 
 static inline void process_delay_data(struct obs_output *output, struct delay_data *dd)
 {
@@ -99,29 +167,37 @@ static inline bool pop_packet(struct obs_output *output, uint64_t t)
 	struct delay_data dd;
 	bool popped = false;
 	bool preserve;
+	bool blanks = false;
 
 	/* ------------------------------------------------ */
 
 	preserve = (output->delay_cur_flags & OBS_OUTPUT_DELAY_PRESERVE) != 0;
-
 	pthread_mutex_lock(&output->delay_mutex);
 
 	if (output->delay_data.size) {
 		deque_peek_front(&output->delay_data, &dd, sizeof(dd));
 		elapsed_time = (t - dd.ts);
-
 		if (preserve && output->reconnecting) {
 			output->active_delay_ns = elapsed_time;
-
 		} else if (elapsed_time > output->active_delay_ns) {
 			deque_pop_front(&output->delay_data, NULL, sizeof(dd));
 			popped = true;
+		} else {
+			blanks = true;
+			// push_blank_packet(output);
 		}
 	}
 
 	pthread_mutex_unlock(&output->delay_mutex);
 
-	/* ------------------------------------------------ */
+	// Fix blank packets, error with discarding unsued audio packets
+	// possible issue is how the packets are being interleaved,
+	// didnt have time to study the encoder pipeline and hoping an expert
+	// can answer this question relatively easy.
+	//
+	// 
+	//if (blanks)
+	//	push_blank_packet(output);
 
 	if (popped)
 		process_delay_data(output, &dd);
@@ -195,7 +271,11 @@ void obs_output_set_delay(obs_output_t *output, uint32_t delay_sec, uint32_t fla
 
 	output->delay_sec = delay_sec;
 	output->delay_flags = flags;
+	output->active_delay_ns = (uint64_t)delay_sec * 1000000000ULL;
+
+	blog(LOG_INFO, "Delay set for output '%s' to %u seconds", output->context.name, delay_sec);
 }
+
 
 uint32_t obs_output_get_delay(const obs_output_t *output)
 {
@@ -207,3 +287,4 @@ uint32_t obs_output_get_active_delay(const obs_output_t *output)
 	return obs_output_valid(output, "obs_output_set_delay") ? (uint32_t)(output->active_delay_ns / 1000000000ULL)
 								: 0;
 }
+
