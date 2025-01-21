@@ -507,7 +507,6 @@ bool MultitrackVideoOutput::HandleIncompatibleSettings(QWidget *parent, config_t
 		num += 1;
 	};
 
-	check_setting(useDelay, "Basic.Settings.Advanced.StreamDelay", "Basic.Settings.Advanced.StreamDelay");
 #ifdef _WIN32
 	check_setting(enableNewSocketLoop, "Basic.Settings.Advanced.Network.EnableNewSocketLoop",
 		      "Basic.Settings.Advanced.Network");
