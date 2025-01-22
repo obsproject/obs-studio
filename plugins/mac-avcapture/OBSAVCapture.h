@@ -25,6 +25,7 @@ typedef struct obs_source_frame OBSAVCaptureVideoFrame;
 typedef struct obs_source_audio OBSAVCaptureAudioFrame;
 typedef struct gs_texture OBSAVCaptureTexture;
 typedef struct gs_effect OBSAVCaptureEffect;
+typedef struct media_frames_per_second OBSAVCaptureMediaFPS;
 
 /// C struct for errors encountered in capture callback
 typedef enum : NSUInteger {
@@ -151,6 +152,17 @@ typedef struct av_capture_info {
 /// - Parameter settings: Pointer to settings struct used by ``libobs``
 /// - Returns: [CMVideoDimensions](https://developer.apple.com/documentation/coremedia/cmvideodimensions?language=objc) struct with resolution from user settings
 + (CMVideoDimensions)legacyDimensionsFromSettings:(void *)settings;
+
+/// Generates an appropriate frame rate value to fall back to (based on OBS's configured output framerate) when the user selects a format that does not support their previously configured frame rate.
+///
+/// This function fetches OBS's configured output frame rate and uses it to determine the appropriate default frame rate supported by the format. It will return:
+///
+/// * The frame rate nearest up to and including OBS's configured output frame rate.
+/// * If that does not exist on the format, the frame rate nearest above OBS's configured output frame rate.
+/// * If that does not exist, a struct representing an invalid frame rate.
+/// - Parameter format: [AVCaptureDeviceFormat](https://developer.apple.com/documentation/avfoundation/avcapturedevice/format?language=objc) instance that we are determining a fallback FPS for.
+/// - Returns: Struct representing a frames per second value as defined in ``libobs``.
++ (OBSAVCaptureMediaFPS)fallbackFrameRateForFormat:(AVCaptureDeviceFormat *)format;
 
 /// Generates a new [NSString](https://developer.apple.com/documentation/foundation/nsstring?language=objc) instance containing a human-readable aspect ratio for a given pixel width and height.
 /// - Parameter dimensions: [CMVideoDimensions](https://developer.apple.com/documentation/coremedia/cmvideodimensions?language=objc) struct containing the width and height in pixels.

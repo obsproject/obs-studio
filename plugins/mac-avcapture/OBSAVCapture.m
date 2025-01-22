@@ -411,7 +411,7 @@
 
 - (BOOL)configureSession:(NSError *__autoreleasing *)error
 {
-    struct media_frames_per_second fps;
+    OBSAVCaptureMediaFPS fps;
     if (!obs_data_get_frames_per_second(self.captureInfo->settings, "frame_rate", &fps, NULL)) {
         [self AVCaptureLog:LOG_DEBUG withFormat:@"No valid framerate found in settings"];
         return NO;
@@ -477,9 +477,23 @@
     }
 
     if (!fpsSupported) {
-        [self AVCaptureLog:LOG_WARNING withFormat:@"Frame rate is not supported: %g FPS (%u/%u)",
-                                                  media_frames_per_second_to_fps(fps), fps.numerator, fps.denominator];
-        return NO;
+        OBSAVCaptureMediaFPS fallbackFPS = [OBSAVCapture fallbackFrameRateForFormat:format];
+        if (fallbackFPS.denominator > 0 && fallbackFPS.numerator > 0) {
+            [self AVCaptureLog:LOG_WARNING withFormat:@"Frame rate is not supported: %g FPS (%u/%u), \n"
+                                                       " falling back to value supported by device: %G FPS (%u/%u)",
+                                                      media_frames_per_second_to_fps(fps), fps.numerator,
+                                                      fps.denominator, media_frames_per_second_to_fps(fallbackFPS),
+                                                      fallbackFPS.numerator, fallbackFPS.denominator];
+            obs_data_set_frames_per_second(self.captureInfo->settings, "frame_rate", fallbackFPS, NULL);
+            time.value = fallbackFPS.denominator;
+            time.timescale = fallbackFPS.numerator;
+        } else {
+            [self AVCaptureLog:LOG_WARNING
+                    withFormat:@"Frame rate is not supported: %g FPS (%u/%u), \n"
+                                " no supported fallback FPS found",
+                               media_frames_per_second_to_fps(fps), fps.numerator, fps.denominator];
+            return NO;
+        }
     }
 
     [self.session beginConfiguration];
@@ -641,6 +655,37 @@
     CMVideoDimensions dimensions = {.width = (int32_t) clamp_Uint(width, 0, UINT32_MAX),
                                     .height = (int32_t) clamp_Uint(height, 0, UINT32_MAX)};
     return dimensions;
+}
+
++ (OBSAVCaptureMediaFPS)fallbackFrameRateForFormat:(AVCaptureDeviceFormat *)format
+{
+    struct obs_video_info video_info;
+    bool result = obs_get_video_info(&video_info);
+
+    double outputFPS = result ? ((double) video_info.fps_num / (double) video_info.fps_den) : 0;
+
+    double closestUpTo = 0;
+    double closestAbove = DBL_MAX;
+    OBSAVCaptureMediaFPS closestUpToMFPS = {};
+    OBSAVCaptureMediaFPS closestAboveMFPS = {};
+
+    for (AVFrameRateRange *range in format.videoSupportedFrameRateRanges) {
+        if (range.maxFrameRate > closestUpTo && range.maxFrameRate <= outputFPS) {
+            closestUpTo = range.maxFrameRate;
+            closestUpToMFPS.numerator = (uint32_t) clamp_Uint(range.minFrameDuration.timescale, 0, UINT32_MAX);
+            closestUpToMFPS.denominator = (uint32_t) clamp_Uint(range.minFrameDuration.value, 0, UINT32_MAX);
+        }
+        if (range.minFrameRate > outputFPS && range.minFrameRate < closestAbove) {
+            closestAbove = range.minFrameRate;
+            closestAboveMFPS.numerator = (uint32_t) clamp_Uint(range.maxFrameDuration.timescale, 0, UINT32_MAX);
+            closestAboveMFPS.denominator = (uint32_t) clamp_Uint(range.maxFrameDuration.value, 0, UINT32_MAX);
+        }
+    }
+    if (closestUpTo > 0) {
+        return closestUpToMFPS;
+    } else {
+        return closestAboveMFPS;
+    }
 }
 
 + (NSString *)aspectRatioStringFromDimensions:(CMVideoDimensions)dimensions
