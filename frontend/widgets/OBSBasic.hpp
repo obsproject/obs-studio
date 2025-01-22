@@ -63,6 +63,11 @@ class QMessageBox;
 class QWidgetAction;
 struct QuickTransition;
 
+namespace OBS {
+class SceneCollection;
+struct Rect;
+} // namespace OBS
+
 #define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
 #define DESKTOP_AUDIO_2 Str("DesktopAudioDevice2")
 #define AUX_AUDIO_1 Str("AuxAudioDevice1")
@@ -117,12 +122,6 @@ struct OBSProfile {
 	std::filesystem::path profileFile;
 };
 
-struct OBSSceneCollection {
-	std::string name;
-	std::string fileName;
-	std::filesystem::path collectionFile;
-};
-
 struct OBSPromptResult {
 	bool success;
 	std::string promptValue;
@@ -141,7 +140,8 @@ struct OBSPromptRequest {
 using OBSPromptCallback = std::function<bool(const OBSPromptResult &result)>;
 
 using OBSProfileCache = std::map<std::string, OBSProfile>;
-using OBSSceneCollectionCache = std::map<std::string, OBSSceneCollection>;
+using SceneCollection = OBS::SceneCollection;
+using OBSSceneCollectionCache = std::unordered_map<std::string, SceneCollection>;
 
 template<typename T> static T GetOBSRef(QListWidgetItem *item)
 {
@@ -250,6 +250,7 @@ class OBSBasic : public OBSMainWindow {
 		Vertical,
 		Horizontal,
 	};
+
 	/* -------------------------------------
 	 * MARK: - General
 	 * -------------------------------------
@@ -1047,16 +1048,14 @@ private:
 	bool clearingFailed = false;
 
 	QPointer<OBSMissingFiles> missDialog;
-	std::optional<std::pair<uint32_t, uint32_t>> migrationBaseResolution;
-	bool usingAbsoluteCoordinates = false;
 
-	OBSSceneCollectionCache collections{};
+	OBSSceneCollectionCache collections;
 
 	void DisableRelativeCoordinates(bool disable);
 	void CreateDefaultScene(bool firstStart);
-	void Save(const char *file);
-	void LoadData(obs_data_t *data, const char *file, bool remigrate = false);
-	void Load(const char *file, bool remigrate = false);
+	void Save(SceneCollection &collection);
+	void LoadData(obs_data_t *data, SceneCollection &collection);
+	void Load(SceneCollection &collection);
 
 	void ClearSceneData();
 	void LogScenes();
@@ -1067,8 +1066,8 @@ private:
 	void SetupDuplicateSceneCollection(const std::string &collectionName);
 	void SetupRenameSceneCollection(const std::string &collectionName);
 
-	const OBSSceneCollection &CreateSceneCollection(const std::string &collectionName);
-	void RemoveSceneCollection(OBSSceneCollection collection);
+	SceneCollection &CreateSceneCollection(const std::string &collectionName);
+	void RemoveSceneCollection(SceneCollection collection);
 
 	bool CreateDuplicateSceneCollection(const QString &name);
 	void DeleteSceneCollection(const QString &name);
@@ -1077,7 +1076,7 @@ private:
 	void RefreshSceneCollectionCache();
 
 	void RefreshSceneCollections(bool refreshCache = false);
-	void ActivateSceneCollection(const OBSSceneCollection &collection);
+	void ActivateSceneCollection(SceneCollection &collection);
 
 public slots:
 	void DeferSaveBegin();
@@ -1104,10 +1103,10 @@ public:
 
 	inline const OBSSceneCollectionCache &GetSceneCollectionCache() const noexcept { return collections; };
 
-	const OBSSceneCollection &GetCurrentSceneCollection() const;
+	SceneCollection &GetCurrentSceneCollection();
 
-	std::optional<OBSSceneCollection> GetSceneCollectionByName(const std::string &collectionName) const;
-	std::optional<OBSSceneCollection> GetSceneCollectionByFileName(const std::string &fileName) const;
+	std::optional<SceneCollection> GetSceneCollectionByName(const std::string &collectionName) const;
+	std::optional<SceneCollection> GetSceneCollectionByFileName(const std::string &fileName) const;
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_SceneItems
