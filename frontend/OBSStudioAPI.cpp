@@ -1,5 +1,6 @@
 #include "OBSStudioAPI.hpp"
 
+#include <models/SceneCollection.hpp>
 #include <widgets/OBSBasic.hpp>
 #include <widgets/OBSProjector.hpp>
 
@@ -129,8 +130,14 @@ void OBSStudioAPI::obs_frontend_get_scene_collections(std::vector<std::string> &
 
 char *OBSStudioAPI::obs_frontend_get_current_scene_collection()
 {
-	const OBSSceneCollection &currentCollection = main->GetCurrentSceneCollection();
-	return bstrdup(currentCollection.name.c_str());
+	try {
+		const OBS::SceneCollection &currentCollection = main->GetCurrentSceneCollection();
+		return bstrdup(currentCollection.getName().c_str());
+	} catch (const std::exception &error) {
+		blog(LOG_DEBUG, "%s", error.what());
+		blog(LOG_ERROR, "Failed to get current scene collection name");
+		return nullptr;
+	}
 }
 
 void OBSStudioAPI::obs_frontend_set_current_scene_collection(const char *collection)
