@@ -20,6 +20,7 @@
 #include "ImporterModel.hpp"
 
 #include <importers/importers.hpp>
+#include <models/SceneCollection.hpp>
 #include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
