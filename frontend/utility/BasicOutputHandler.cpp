@@ -236,6 +236,9 @@ BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 
 	if (multitrack_enabled)
 		multitrackVideo = make_unique<MultitrackVideoOutput>();
+
+	if (config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers") > 1)
+		whipSimulcastEncoders = make_unique<WHIPSimulcastEncoders>();
 }
 
 extern void log_vcam_changed(const VCamConfig &config, bool starting);

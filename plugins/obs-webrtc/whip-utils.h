@@ -83,3 +83,25 @@ static inline std::string generate_user_agent()
 
 	return ua.str();
 }
+
+static size_t simulcast_layers_in_answer(std::string answer)
+{
+	auto layersStart = answer.find("a=simulcast");
+	if (layersStart == std::string::npos) {
+		return 0;
+	}
+
+	auto layersEnd = answer.find("\r\n", layersStart);
+	if (layersEnd == std::string::npos) {
+		return 0;
+	}
+
+	size_t layersAccepted = 1;
+	for (auto i = layersStart; i < layersEnd; i++) {
+		if (answer[i] == ';') {
+			layersAccepted++;
+		}
+	}
+
+	return layersAccepted;
+}
