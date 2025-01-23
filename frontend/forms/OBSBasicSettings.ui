@@ -2083,6 +2083,100 @@
                </widget>
               </item>
               <item>
+               <widget class="QGroupBox" name="whipSimulcastGroupBox">
+                <property name="title">
+                 <string>Basic.Settings.Stream.WHIPSimulcastLabel</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_35">
+                 <property name="leftMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>2</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>9</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>9</number>
+                 </property>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_33">
+                   <item>
+                    <spacer name="horizontalSpacer_33">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>10</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="whipSimulcastInfo">
+                     <property name="text">
+                      <string>Basic.Settings.Stream.WHIPSimulcastInfo</string>
+                     </property>
+                     <property name="textFormat">
+                      <enum>Qt::RichText</enum>
+                     </property>
+                     <property name="wordWrap">
+                      <bool>true</bool>
+                     </property>
+                     <property name="openExternalLinks">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QFormLayout" name="formLayout_39">
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="whipSimulcastTotalLayersLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Stream.WHIPSimulcastTotalLayers</string>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>170</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_34" stretch="0,0">
+                     <item>
+                      <widget class="QSpinBox" name="whipSimulcastTotalLayers">
+                       <property name="minimum">
+                        <number>1</number>
+                       </property>
+                       <property name="maximum">
+                        <number>4</number>
+                       </property>
+                       <property name="value">
+                        <number>1</number>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+               </item>
+              <item>
                <widget class="QGroupBox" name="serviceAdvancedOptionsGroupBox">
                 <property name="title">
                  <string>Basic.Settings.Stream.AdvancedOptions</string>

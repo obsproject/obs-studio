@@ -132,6 +132,12 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create streaming video encoder "
 		      "(advanced output)";
 	obs_encoder_release(videoStreaming);
+	if (whipSimulcastEncoders != nullptr) {
+		whipSimulcastEncoders->Create(streamEncoder, config_get_int(main->Config(), "AdvOut", "RescaleFilter"),
+					      config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers"),
+					      video_output_get_width(obs_get_video()),
+					      video_output_get_height(obs_get_video()));
+	}
 
 	const char *rate_control =
 		obs_data_get_string(useStreamEncoder ? streamEncSettings : recordEncSettings, "rate_control");
@@ -247,6 +253,9 @@ void AdvancedOutput::UpdateStreamSettings()
 	}
 
 	obs_encoder_update(videoStreaming, settings);
+	if (whipSimulcastEncoders != nullptr) {
+		whipSimulcastEncoders->Update(settings, obs_data_get_int(settings, "bitrate"));
+	}
 }
 
 inline void AdvancedOutput::UpdateRecordingSettings()
@@ -649,6 +658,9 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 		}
 
 		obs_output_set_video_encoder(streamOutput, videoStreaming);
+		if (whipSimulcastEncoders != nullptr) {
+			whipSimulcastEncoders->SetStreamOutput(streamOutput);
+		}
 		obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 
 		if (!is_multitrack_output) {
