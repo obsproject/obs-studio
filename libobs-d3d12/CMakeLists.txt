@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.29)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(libobs-d3d12 MODULE)
 add_library(OBS::libobs-d3d12 ALIAS libobs-d3d12)
@@ -15,7 +15,7 @@ target_compile_definitions(
     "$<IF:$<BOOL:${GPU_PRIORITY_VAL}>,GPU_PRIORITY_VAL=${GPU_PRIORITY_VAL},GPU_PRIORITY_VAL=0>"
 )
 
-target_link_libraries(libobs-d3d12 PRIVATE OBS::libobs)
+target_link_libraries(libobs-d3d12 PRIVATE OBS::libobs d3d12 dxgi)
 
 set_target_properties_obs(
   libobs-d3d12
