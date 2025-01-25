@@ -137,6 +137,14 @@ struct _obs_pipewire_stream {
 		struct spa_fraction fraction;
 		bool set;
 	} framerate;
+
+	struct {
+		int acquire_syncobj_fd;
+		int release_syncobj_fd;
+		uint64_t acquire_point;
+		uint64_t release_point;
+		bool set;
+	} sync;
 };
 
 /* auxiliary methods */
@@ -545,6 +553,20 @@ static void renegotiate_format(void *data, uint64_t expirations)
 
 /* ------------------------------------------------- */
 
+static void return_unused_pw_buffer(struct pw_stream *stream, struct pw_buffer *b)
+{
+#if PW_CHECK_VERSION(1, 2, 0)
+	struct spa_buffer *buffer = b->buffer;
+	struct spa_data *last_data = &buffer->datas[buffer->n_datas - 1];
+	struct spa_meta_sync_timeline *synctimeline =
+		spa_buffer_find_meta_data(buffer, SPA_META_SyncTimeline, sizeof(struct spa_meta_sync_timeline));
+
+	if (synctimeline && (last_data->type == SPA_DATA_SyncObj))
+		gs_sync_signal_syncobj_timeline_point(last_data->fd, synctimeline->release_point);
+#endif
+	pw_stream_queue_buffer(stream, b);
+}
+
 static inline struct pw_buffer *find_latest_buffer(struct pw_stream *stream)
 {
 	struct pw_buffer *b;
@@ -556,11 +578,25 @@ static inline struct pw_buffer *find_latest_buffer(struct pw_stream *stream)
 		if (!aux)
 			break;
 		if (b)
-			pw_stream_queue_buffer(stream, b);
+			return_unused_pw_buffer(stream, b);
 		b = aux;
 	}
 
 	return b;
+}
+
+static uint32_t get_spa_buffer_plane_count(const struct spa_buffer *buffer)
+{
+	uint32_t plane_count = 0;
+
+	while (plane_count < buffer->n_datas) {
+		if (buffer->datas[plane_count].type == SPA_DATA_DmaBuf)
+			plane_count++;
+		else
+			break;
+	}
+
+	return plane_count;
 }
 
 static enum video_colorspace video_colorspace_from_spa_color_matrix(enum spa_video_color_matrix matrix)
@@ -681,7 +717,7 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 	header = spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(*header));
 	if (header && (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) > 0) {
 		blog(LOG_ERROR, "[pipewire] buffer is corrupt");
-		pw_stream_queue_buffer(obs_pw_stream->stream, b);
+		return_unused_pw_buffer(obs_pw_stream->stream, b);
 		return;
 	}
 
@@ -695,13 +731,17 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		goto read_metadata;
 
 	if (buffer->datas[0].type == SPA_DATA_DmaBuf) {
-		uint32_t planes = buffer->n_datas;
+		uint32_t planes = get_spa_buffer_plane_count(buffer);
 		uint32_t *offsets = alloca(sizeof(uint32_t) * planes);
 		uint32_t *strides = alloca(sizeof(uint32_t) * planes);
 		uint64_t *modifiers = alloca(sizeof(uint64_t) * planes);
 		int *fds = alloca(sizeof(int) * planes);
 		bool use_modifiers;
 		bool corrupt = false;
+#if PW_CHECK_VERSION(1, 2, 0)
+		struct spa_meta_sync_timeline *synctimeline =
+			spa_buffer_find_meta_data(buffer, SPA_META_SyncTimeline, sizeof(struct spa_meta_sync_timeline));
+#endif
 
 #ifdef DEBUG_PIPEWIRE
 		blog(LOG_DEBUG, "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
@@ -723,6 +763,25 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 			modifiers[plane] = obs_pw_stream->format.info.raw.modifier;
 			corrupt |= (buffer->datas[plane].chunk->flags & SPA_CHUNK_FLAG_CORRUPTED) > 0;
 		}
+
+#if PW_CHECK_VERSION(1, 2, 0)
+		if (synctimeline && (buffer->n_datas == (planes + 2))) {
+			assert(buffer->datas[planes].type == SPA_DATA_SyncObj);
+			assert(buffer->datas[planes + 1].type == SPA_DATA_SyncObj);
+
+			obs_pw_stream->sync.acquire_syncobj_fd = buffer->datas[planes].fd;
+			obs_pw_stream->sync.acquire_point = synctimeline->acquire_point;
+
+			obs_pw_stream->sync.release_syncobj_fd = buffer->datas[planes + 1].fd;
+			obs_pw_stream->sync.release_point = synctimeline->release_point;
+
+			obs_pw_stream->sync.set = true;
+		} else {
+			obs_pw_stream->sync.set = false;
+		}
+#else
+		obs_pw_stream->sync.set = false;
+#endif
 
 		if (corrupt) {
 			blog(LOG_DEBUG, "[pipewire] buffer contains corrupted data");
@@ -861,13 +920,16 @@ static void on_param_changed_cb(void *user_data, uint32_t id, const struct spa_p
 	obs_pipewire_stream *obs_pw_stream = user_data;
 	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_pod_builder pod_builder;
-	const struct spa_pod *params[5];
+	const struct spa_pod *params[7];
 	const char *format_name;
 	uint32_t n_params = 0;
 	uint32_t buffer_types;
 	uint32_t output_flags;
 	uint8_t params_buffer[1024];
 	int result;
+#if PW_CHECK_VERSION(1, 2, 0)
+	bool supports_explicit_sync = false;
+#endif
 
 	if (!param || id != SPA_PARAM_Format)
 		return;
@@ -887,8 +949,14 @@ static void on_param_changed_cb(void *user_data, uint32_t id, const struct spa_p
 	buffer_types = 1 << SPA_DATA_MemPtr;
 	bool has_modifier = spa_pod_find_prop(param, NULL, SPA_FORMAT_VIDEO_modifier) != NULL;
 	if ((has_modifier || check_pw_version(&obs_pw->server_version, 0, 3, 24)) &&
-	    (output_flags & OBS_SOURCE_ASYNC_VIDEO) != OBS_SOURCE_ASYNC_VIDEO)
+	    (output_flags & OBS_SOURCE_ASYNC_VIDEO) != OBS_SOURCE_ASYNC_VIDEO) {
 		buffer_types |= 1 << SPA_DATA_DmaBuf;
+#if PW_CHECK_VERSION(1, 2, 0)
+		obs_enter_graphics();
+		supports_explicit_sync = gs_query_sync_capabilities();
+		obs_leave_graphics();
+#endif
+	}
 
 	blog(LOG_INFO, "[pipewire] Negotiated format:");
 
@@ -921,8 +989,32 @@ static void on_param_changed_cb(void *user_data, uint32_t id, const struct spa_p
 								    CURSOR_META_SIZE(1024, 1024)));
 
 	/* Buffer options */
+#if PW_CHECK_VERSION(1, 2, 0)
+	if (supports_explicit_sync) {
+		struct spa_pod_frame dmabuf_explicit_sync_frame;
+
+		spa_pod_builder_push_object(&pod_builder, &dmabuf_explicit_sync_frame, SPA_TYPE_OBJECT_ParamBuffers,
+					    SPA_PARAM_Buffers);
+		spa_pod_builder_add(&pod_builder, SPA_PARAM_BUFFERS_dataType, SPA_POD_Int(1 << SPA_DATA_DmaBuf), 0);
+		spa_pod_builder_prop(&pod_builder, SPA_PARAM_BUFFERS_metaType, SPA_POD_PROP_FLAG_MANDATORY);
+		spa_pod_builder_int(&pod_builder, 1 << SPA_META_SyncTimeline);
+
+		params[n_params++] = spa_pod_builder_pop(&pod_builder, &dmabuf_explicit_sync_frame);
+	}
+#endif
+
 	params[n_params++] = spa_pod_builder_add_object(&pod_builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
 							SPA_PARAM_BUFFERS_dataType, SPA_POD_Int(buffer_types));
+
+	/* Sync timeline */
+#if PW_CHECK_VERSION(1, 2, 0)
+	if (supports_explicit_sync) {
+		params[n_params++] = spa_pod_builder_add_object(&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+								SPA_PARAM_META_type, SPA_POD_Id(SPA_META_SyncTimeline),
+								SPA_PARAM_META_size,
+								SPA_POD_Int(sizeof(struct spa_meta_sync_timeline)));
+	}
+#endif
 
 	/* Meta header */
 	params[n_params++] = spa_pod_builder_add_object(&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
@@ -1211,6 +1303,13 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	if (!obs_pw_stream->texture)
 		return;
 
+	if (obs_pw_stream->sync.set) {
+		gs_sync_t *acquire_sync = gs_sync_create_from_syncobj_timeline_point(
+			obs_pw_stream->sync.acquire_syncobj_fd, obs_pw_stream->sync.acquire_point);
+		gs_sync_wait(acquire_sync);
+		gs_sync_destroy(acquire_sync);
+	}
+
 	image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, obs_pw_stream->texture);
 
@@ -1253,6 +1352,13 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	}
 
 	gs_blend_state_pop();
+
+	if (obs_pw_stream->sync.set) {
+		gs_sync_t *release_sync = gs_sync_create();
+		gs_sync_export_syncobj_timeline_point(release_sync, obs_pw_stream->sync.release_syncobj_fd,
+						      obs_pw_stream->sync.release_point);
+		gs_sync_destroy(release_sync);
+	}
 }
 
 void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream, bool cursor_visible)
