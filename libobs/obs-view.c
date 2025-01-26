@@ -150,21 +150,11 @@ static inline size_t find_mix_for_view(obs_view_t *view)
 	return DARRAY_INVALID;
 }
 
-static inline void set_main_mix()
-{
-	size_t idx = find_mix_for_view(&obs->data.main_view);
-
-	struct obs_core_video_mix *mix = NULL;
-	if (idx != DARRAY_INVALID)
-		mix = obs->video.mixes.array[idx];
-	obs->video.main_mix = mix;
-}
-
 video_t *obs_view_add(obs_view_t *view)
 {
-	if (!obs->video.main_mix)
+	if (!obs->data.main_canvas->mix)
 		return NULL;
-	return obs_view_add2(view, &obs->video.main_mix->ovi);
+	return obs_view_add2(view, &obs->data.main_canvas->mix->ovi);
 }
 
 video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi)
@@ -180,7 +170,6 @@ video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi)
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	da_push_back(obs->video.mixes, &mix);
-	set_main_mix();
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	return mix->video;
@@ -196,7 +185,6 @@ void obs_view_remove(obs_view_t *view)
 		if (obs->video.mixes.array[i]->view == view)
 			obs->video.mixes.array[i]->view = NULL;
 	}
-	set_main_mix();
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 }
 

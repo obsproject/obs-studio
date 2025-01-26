@@ -512,7 +512,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 			obs_source_enum_active_tree(source, push_audio_tree, audio);
 			push_audio_tree(NULL, source, audio);
 
-			if (obs->video.mixes.array[j] == obs->video.main_mix)
+			if (obs->video.mixes.array[j]->mix_audio)
 				da_push_back(audio->root_nodes, &source);
 		}
 		pthread_mutex_unlock(&view->channels_mutex);
