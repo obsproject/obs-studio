@@ -36,12 +36,14 @@ using OBSDataArray = OBSRef<obs_data_array_t *, obs_data_array_addref, obs_data_
 using OBSOutput = OBSSafeRef<obs_output_t *, obs_output_get_ref, obs_output_release>;
 using OBSEncoder = OBSSafeRef<obs_encoder_t *, obs_encoder_get_ref, obs_encoder_release>;
 using OBSService = OBSSafeRef<obs_service_t *, obs_service_get_ref, obs_service_release>;
+using OBSCanvas = OBSSafeRef<obs_canvas_t *, obs_canvas_get_ref, obs_canvas_release>;
 
 using OBSWeakObject = OBSRef<obs_weak_object_t *, obs_weak_object_addref, obs_weak_object_release>;
 using OBSWeakSource = OBSRef<obs_weak_source_t *, obs_weak_source_addref, obs_weak_source_release>;
 using OBSWeakOutput = OBSRef<obs_weak_output_t *, obs_weak_output_addref, obs_weak_output_release>;
 using OBSWeakEncoder = OBSRef<obs_weak_encoder_t *, obs_weak_encoder_addref, obs_weak_encoder_release>;
 using OBSWeakService = OBSRef<obs_weak_service_t *, obs_weak_service_addref, obs_weak_service_release>;
+using OBSWeakCanvas = OBSRef<obs_weak_canvas_t *, obs_weak_canvas_addref, obs_weak_canvas_release>;
 
 #define OBS_AUTORELEASE
 using OBSObjectAutoRelease = OBSRefAutoRelease<obs_object_t *, obs_object_release>;
@@ -53,12 +55,14 @@ using OBSDataArrayAutoRelease = OBSRefAutoRelease<obs_data_array_t *, obs_data_a
 using OBSOutputAutoRelease = OBSRefAutoRelease<obs_output_t *, obs_output_release>;
 using OBSEncoderAutoRelease = OBSRefAutoRelease<obs_encoder_t *, obs_encoder_release>;
 using OBSServiceAutoRelease = OBSRefAutoRelease<obs_service_t *, obs_service_release>;
+using OBSCanvasAutoRelease = OBSRefAutoRelease<obs_canvas_t *, obs_canvas_release>;
 
 using OBSWeakObjectAutoRelease = OBSRefAutoRelease<obs_weak_object_t *, obs_weak_object_release>;
 using OBSWeakSourceAutoRelease = OBSRefAutoRelease<obs_weak_source_t *, obs_weak_source_release>;
 using OBSWeakOutputAutoRelease = OBSRefAutoRelease<obs_weak_output_t *, obs_weak_output_release>;
 using OBSWeakEncoderAutoRelease = OBSRefAutoRelease<obs_weak_encoder_t *, obs_weak_encoder_release>;
 using OBSWeakServiceAutoRelease = OBSRefAutoRelease<obs_weak_service_t *, obs_weak_service_release>;
+using OBSWeakCanvasAutoRelease = OBSRefAutoRelease<obs_weak_canvas_t *, obs_weak_canvas_release>;
 
 template<typename T, void release(T)> class OBSRefAutoRelease {
 protected:
@@ -126,6 +130,7 @@ public:
 	friend OBSWeakOutput OBSGetWeakRef(obs_output_t *output);
 	friend OBSWeakEncoder OBSGetWeakRef(obs_encoder_t *encoder);
 	friend OBSWeakService OBSGetWeakRef(obs_service_t *service);
+	friend OBSWeakCanvas OBSGetWeakRef(obs_canvas_t *canvas);
 };
 
 template<typename T, T getref(T), void release(T)> class OBSSafeRef : public OBSRefAutoRelease<T, release> {
@@ -160,6 +165,7 @@ public:
 	friend OBSOutput OBSGetStrongRef(obs_weak_output_t *weak);
 	friend OBSEncoder OBSGetStrongRef(obs_weak_encoder_t *weak);
 	friend OBSService OBSGetStrongRef(obs_weak_service_t *weak);
+	friend OBSCanvas OBSGetStrongRef(obs_weak_canvas_t *weak);
 };
 
 inline OBSObject OBSGetStrongRef(obs_weak_object_t *weak)
@@ -210,6 +216,16 @@ inline OBSService OBSGetStrongRef(obs_weak_service_t *weak)
 inline OBSWeakService OBSGetWeakRef(obs_service_t *service)
 {
 	return {obs_service_get_weak_service(service), OBSWeakService::TakeOwnership()};
+}
+
+inline OBSCanvas OBSGetStrongRef(obs_weak_canvas_t *canvas)
+{
+	return {obs_weak_canvas_get_canvas(canvas), OBSCanvas::TakeOwnership()};
+}
+
+inline OBSWeakCanvas OBSGetWeakRef(obs_canvas_t *canvas)
+{
+	return {obs_canvas_get_weak_canvas(canvas), OBSWeakCanvas::TakeOwnership()};
 }
 
 /* objects that are not meant to be instanced */
