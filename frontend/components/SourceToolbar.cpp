@@ -27,7 +27,7 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 		return;
 	}
 
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 
 	OBSSource currentSceneSource = main->GetCurrentSceneSource();
 	if (!currentSceneSource)

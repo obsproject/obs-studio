@@ -8,7 +8,7 @@
 
 static inline OBSScene GetCurrentScene()
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 	return main->GetCurrentScene();
 }
 
