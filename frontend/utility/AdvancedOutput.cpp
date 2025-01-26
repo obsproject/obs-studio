@@ -10,7 +10,7 @@ using namespace std;
 
 static OBSData GetDataFromJsonFile(const char *jsonFile)
 {
-	const OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	const OBSBasic *basic = OBSBasic::Get();
 
 	const OBSProfile &currentProfile = basic->GetCurrentProfile();
 

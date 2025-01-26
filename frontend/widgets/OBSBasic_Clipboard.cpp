@@ -39,13 +39,13 @@ void OBSBasic::on_actionCopyTransform_triggered()
 void OBSBasic::on_actionPasteTransform_triggered()
 {
 	OBSDataAutoRelease wrapper = obs_scene_save_transform_states(GetCurrentScene(), false);
-	auto func = [](obs_scene_t *, obs_sceneitem_t *item, void *data) {
+	auto func = [](obs_scene_t *, obs_sceneitem_t *item, void *) {
 		if (!obs_sceneitem_selected(item))
 			return true;
 		if (obs_sceneitem_locked(item))
 			return true;
 
-		OBSBasic *main = reinterpret_cast<OBSBasic *>(data);
+		OBSBasic *main = OBSBasic::Get();
 
 		obs_sceneitem_defer_update_begin(item);
 		obs_sceneitem_set_info2(item, &main->copiedTransformInfo);
@@ -55,7 +55,7 @@ void OBSBasic::on_actionPasteTransform_triggered()
 		return true;
 	};
 
-	obs_scene_enum_items(GetCurrentScene(), func, this);
+	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
 
 	OBSDataAutoRelease rwrapper = obs_scene_save_transform_states(GetCurrentScene(), false);
 

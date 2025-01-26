@@ -99,7 +99,7 @@ QVariant MissingFilesModel::data(const QModelIndex &index, int role) const
 			break;
 		}
 	} else if (role == Qt::DecorationRole && index.column() == MissingFilesColumn::Source) {
-		OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		OBSBasic *main = OBSBasic::Get();
 		OBSSourceAutoRelease source = obs_get_source_by_name(files[index.row()].source.toStdString().c_str());
 
 		if (source) {

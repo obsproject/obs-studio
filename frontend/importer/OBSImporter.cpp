@@ -144,7 +144,7 @@ void OBSImporter::browseImport()
 
 bool GetUnusedName(std::string &name)
 {
-	OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *basic = OBSBasic::Get();
 
 	if (!basic->GetSceneCollectionByName(name)) {
 		return false;

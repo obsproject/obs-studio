@@ -122,7 +122,7 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings, 
 
 void OBSBasic::AddDropSource(const char *data, DropType image)
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 	OBSDataAutoRelease settings = obs_data_create();
 	const char *type = nullptr;
 	QString name;
