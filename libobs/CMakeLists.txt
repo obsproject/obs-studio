@@ -38,6 +38,7 @@ target_sources(
     obs-av1.h
     obs-avc.c
     obs-avc.h
+    obs-canvas.c
     obs-config.h
     obs-data.c
     obs-data.h
