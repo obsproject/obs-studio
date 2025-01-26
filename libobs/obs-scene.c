@@ -2627,8 +2627,9 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item, void *vp_p
 		obs_data_array_t *nids = obs_data_array_create();
 
 		obs_data_set_string(temp, "scene_name", obs_source_get_name(item_source));
+		obs_data_set_string(temp, "scene_uuid", obs_source_get_uuid(item_source));
 		obs_data_set_bool(temp, "is_group", true);
-		obs_data_set_string(temp, "group_parent", obs_source_get_name(obs_scene_get_source(scene)));
+		obs_data_set_string(temp, "group_parent", obs_source_get_uuid(obs_scene_get_source(scene)));
 
 		struct passthrough npass = {nids, pass->scenes_and_groups, pass->all_items};
 		obs_sceneitem_group_enum_items(item, save_transform_states, (void *)&npass);
@@ -2704,11 +2705,11 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 void iterate_scenes_and_groups_transform_states(obs_data_t *data, void *vp)
 {
 	obs_data_array_t *items = obs_data_get_array(data, "items");
-	obs_source_t *scene_source = obs_get_source_by_name(obs_data_get_string(data, "scene_name"));
+	obs_source_t *scene_source = obs_get_source_by_uuid(obs_data_get_string(data, "scene_uuid"));
 	obs_scene_t *scene = obs_scene_from_source(scene_source);
 
 	if (obs_data_get_bool(data, "is_group")) {
-		obs_source_t *parent_source = obs_get_source_by_name(obs_data_get_string(data, "group_parent"));
+		obs_source_t *parent_source = obs_get_source_by_uuid(obs_data_get_string(data, "group_parent"));
 		obs_scene_t *parent = obs_scene_from_source(parent_source);
 		obs_sceneitem_t *group = obs_scene_get_group(parent, obs_data_get_string(data, "scene_name"));
 		scene = obs_sceneitem_group_get_scene(group);
