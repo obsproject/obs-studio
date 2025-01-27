@@ -842,7 +842,7 @@ void OBSBasic::InitOBSCallbacks()
 {
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
-	signalHandlers.reserve(signalHandlers.size() + 9);
+	signalHandlers.reserve(signalHandlers.size() + 10);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create", OBSBasic::SourceCreated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove", OBSBasic::SourceRemoved, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_activate", OBSBasic::SourceActivated, this);
@@ -866,6 +866,7 @@ void OBSBasic::InitOBSCallbacks()
 						  Qt::QueuedConnection);
 		},
 		this);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "canvas_remove", OBSBasic::CanvasRemoved, this);
 }
 
 #define STARTUP_SEPARATOR "==== Startup complete ==============================================="
