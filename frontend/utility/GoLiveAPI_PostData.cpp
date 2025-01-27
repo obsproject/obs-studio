@@ -61,6 +61,14 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 		preferences.composition_gpu_index = ovi.adapter;
 	}
 
+	obs_audio_info2 oai2;
+	if (obs_get_audio_info2(&oai2)) {
+		preferences.audio_samples_per_sec = oai2.samples_per_sec;
+		preferences.audio_channels = get_audio_channels(oai2.speakers);
+		preferences.audio_fixed_buffering = oai2.fixed_buffering;
+		preferences.audio_max_buffering_ms = oai2.max_buffering_ms;
+	}
+
 	if (maximum_aggregate_bitrate.has_value())
 		preferences.maximum_aggregate_bitrate = maximum_aggregate_bitrate.value();
 	if (maximum_video_tracks.has_value())
