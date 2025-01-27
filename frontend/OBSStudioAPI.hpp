@@ -224,6 +224,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
 					       const char *undo_data, const char *redo_data, bool repeatable) override;
 
+	void obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_list) override;
+
+	obs_canvas_t *obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags) override;
+
+	bool obs_frontend_remove_canvas(obs_canvas_t *canvas) override;
+
 	void on_load(obs_data_t *settings) override;
 
 	void on_preload(obs_data_t *settings) override;
