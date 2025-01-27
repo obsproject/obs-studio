@@ -1087,6 +1087,7 @@ static const char *obs_signals[] = {
 	"void canvas_create(ptr canvas)",
 	"void canvas_remove(ptr canvas)",
 	"void canvas_destroy(ptr canvas)",
+	"void canvas_video_reset(ptr canvas)",
 	"void canvas_rename(ptr canvas, string new_name, string prev_name)",
 
 	"void video_reset()",
