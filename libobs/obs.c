@@ -695,6 +695,9 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	video->thread_initialized = true;
 
+	calldata_t parameters = {0};
+	signal_handler_signal(obs->signals, "video_reset", &parameters);
+
 	return OBS_VIDEO_SUCCESS;
 }
 
@@ -1052,6 +1055,8 @@ static const char *obs_signals[] = {
 	"void hotkey_register(ptr hotkey)",
 	"void hotkey_unregister(ptr hotkey)",
 	"void hotkey_bindings_changed(ptr hotkey)",
+
+	"void video_reset()",
 
 	NULL,
 };
