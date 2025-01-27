@@ -101,7 +101,7 @@ void OBSBasic::AddScene(OBSSource source)
 	obs_hotkey_register_source(
 		source, "OBSBasic.SelectScene", Str("Basic.Hotkeys.SelectScene"),
 		[](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-			OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+			OBSBasic *main = OBSBasic::Get();
 
 			auto potential_source = static_cast<obs_source_t *>(data);
 			OBSSourceAutoRelease source = obs_source_get_ref(potential_source);

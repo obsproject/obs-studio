@@ -9,7 +9,7 @@
 
 static inline OBSScene GetCurrentScene()
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 	return main->GetCurrentScene();
 }
 
@@ -560,7 +560,7 @@ bool SourceTree::GroupedItemsSelected() const
 
 void SourceTree::Remove(OBSSceneItem item, OBSScene scene)
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 	GetStm()->Remove(item);
 	main->SaveProject();
 

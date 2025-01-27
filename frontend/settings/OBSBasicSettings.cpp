@@ -1852,7 +1852,7 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(const char *encod
 	OBSPropertiesView *view;
 
 	if (path) {
-		const OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		const OBSBasic *basic = OBSBasic::Get();
 		const OBSProfile &currentProfile = basic->GetCurrentProfile();
 
 		const std::filesystem::path jsonFilePath = currentProfile.path / std::filesystem::u8path(path);
@@ -3233,7 +3233,7 @@ static void WriteJsonData(OBSPropertiesView *view, const char *path)
 	if (!view || !WidgetChanged(view))
 		return;
 
-	const OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	const OBSBasic *basic = OBSBasic::Get();
 	const OBSProfile &currentProfile = basic->GetCurrentProfile();
 
 	const std::filesystem::path jsonFilePath = currentProfile.path / std::filesystem::u8path(path);

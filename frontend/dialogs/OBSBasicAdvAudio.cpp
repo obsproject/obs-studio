@@ -33,7 +33,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent) : QDialog(parent), ui(new Ui
 
 OBSBasicAdvAudio::~OBSBasicAdvAudio()
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(parent());
+	OBSBasic *main = OBSBasic::Get();
 
 	for (size_t i = 0; i < controls.size(); ++i)
 		delete controls[i];
