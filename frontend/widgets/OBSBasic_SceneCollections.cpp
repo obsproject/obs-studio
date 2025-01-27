@@ -748,7 +748,8 @@ static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent, v
 
 static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array_t *quickTransitionData,
 				    int transitionDuration, obs_data_array_t *transitions, OBSScene &scene,
-				    OBSSource &curProgramScene, obs_data_array_t *savedProjectorList)
+				    OBSSource &curProgramScene, obs_data_array_t *savedProjectorList,
+				    obs_data_array_t *savedCanvases)
 {
 	obs_data_t *saveData = obs_data_create();
 
@@ -805,6 +806,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array
 	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
 	obs_data_set_array(saveData, "transitions", transitions);
 	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
+	obs_data_set_array(saveData, "canvases", savedCanvases);
 	obs_data_array_release(sourcesArray);
 	obs_data_array_release(groupsArray);
 
@@ -825,8 +827,10 @@ void OBSBasic::Save(const char *file)
 	OBSDataArrayAutoRelease transitions = SaveTransitions();
 	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
+	OBSDataArrayAutoRelease savedCanvases = SaveCanvases();
 	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, ui->transitionDuration->value(),
-						       transitions, scene, curProgramScene, savedProjectorList);
+						       transitions, scene, curProgramScene, savedProjectorList,
+						       savedCanvases);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
@@ -1130,6 +1134,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 	OBSDataArrayAutoRelease sources = obs_data_get_array(data, "sources");
 	OBSDataArrayAutoRelease groups = obs_data_get_array(data, "groups");
 	OBSDataArrayAutoRelease transitions = obs_data_get_array(data, "transitions");
+	OBSDataArrayAutoRelease canvases = obs_data_get_array(data, "canvases");
 	const char *sceneName = obs_data_get_string(data, "current_scene");
 	const char *programSceneName = obs_data_get_string(data, "current_program_scene");
 	const char *transitionName = obs_data_get_string(data, "current_transition");
@@ -1165,6 +1170,9 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 	LoadAudioDevice(AUX_AUDIO_2, 4, data);
 	LoadAudioDevice(AUX_AUDIO_3, 5, data);
 	LoadAudioDevice(AUX_AUDIO_4, 6, data);
+
+	if (canvases)
+		LoadSavedCanvases(canvases);
 
 	if (!sources) {
 		sources = std::move(groups);
@@ -1471,6 +1479,12 @@ void OBSBasic::ClearSceneData()
 
 	obs_enum_scenes(cb, nullptr);
 	obs_enum_sources(cb, nullptr);
+
+	for (const auto &fc : canvases) {
+		obs_canvas_enum_scenes(fc.canvas, cb, nullptr);
+	}
+
+	ClearCanvases();
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP);
 
