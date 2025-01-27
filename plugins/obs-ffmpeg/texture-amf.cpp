@@ -1055,9 +1055,10 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, amf_codec_ty
 		throw "Encoder scaling is active";
 
 	if (hevc || av1) {
-		if (!obs_nv12_tex_active() && !obs_p010_tex_active())
+		if (!obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
+		    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010))
 			throw "NV12/P010 textures aren't active";
-	} else if (!obs_nv12_tex_active()) {
+	} else if (!obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12)) {
 		throw "NV12 textures aren't active";
 	}
 

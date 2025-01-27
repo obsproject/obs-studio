@@ -99,7 +99,7 @@ void cuda_ctx_free(struct nvenc_data *enc)
 
 static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nvsurf)
 {
-	const bool p010 = obs_p010_tex_active();
+	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
 	CUDA_ARRAY3D_DESCRIPTOR desc;
 	desc.Width = enc->cx;
 	desc.Height = enc->cy;
