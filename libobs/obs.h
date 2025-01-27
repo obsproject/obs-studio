@@ -699,10 +699,10 @@ EXPORT obs_source_t *obs_get_source_by_name(const char *name);
 EXPORT obs_source_t *obs_get_source_by_uuid(const char *uuid);
 
 /** Get a transition source by its name. */
-EXPORT obs_source_t *obs_get_transition_by_name(const char *name);
+OBS_DEPRECATED EXPORT obs_source_t *obs_get_transition_by_name(const char *name);
 
 /** Get a transition source by its UUID. */
-EXPORT obs_source_t *obs_get_transition_by_uuid(const char *uuid);
+OBS_DEPRECATED EXPORT obs_source_t *obs_get_transition_by_uuid(const char *uuid);
 
 /** Gets an output by its name. */
 EXPORT obs_output_t *obs_get_output_by_name(const char *name);
