@@ -30,6 +30,7 @@ static const uint32_t REMOVED = 1u << 31;
 static const char *canvas_signals[] = {
 	"void destroy(ptr canvas)",
 	"void remove(ptr canvas)",
+	"void video_reset(ptr canvas)",
 
 	"void source_add(ptr canvas, ptr source)",
 	"void source_remove(ptr canvas, ptr source)",
@@ -308,6 +309,8 @@ bool obs_canvas_reset_video_internal(obs_canvas_t *canvas, struct obs_video_info
 		da_push_back(obs->video.mixes, &canvas->mix);
 		pthread_mutex_unlock(&obs->video.mixes_mutex);
 	}
+
+	canvas_dosignal(canvas, "canvas_video_reset", "video_reset");
 
 	return !!canvas->mix;
 }
