@@ -37,7 +37,7 @@ static inline QString MakeQuickTransitionText(QuickTransition *qt)
 
 void QuickTransition::SourceRenamed(void *param, calldata_t *)
 {
-	QuickTransition *qt = reinterpret_cast<QuickTransition *>(param);
+	QuickTransition *qt = static_cast<QuickTransition *>(param);
 
 	QString hotkeyName = QTStr("QuickTransitions.HotkeyName").arg(MakeQuickTransitionText(qt));
 

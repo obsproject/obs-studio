@@ -331,7 +331,7 @@ void OBSStudioAPI::obs_frontend_add_tools_menu_item(const char *name, obs_fronte
 
 void *OBSStudioAPI::obs_frontend_add_dock(void *dock)
 {
-	QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+	QDockWidget *d = static_cast<QDockWidget *>(dock);
 
 	QString name = d->objectName();
 	if (name.isEmpty() || main->IsDockObjectNameUsed(name)) {
@@ -387,7 +387,7 @@ bool OBSStudioAPI::obs_frontend_add_custom_qdock(const char *id, void *dock)
 		return false;
 	}
 
-	QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+	QDockWidget *d = static_cast<QDockWidget *>(dock);
 	d->setObjectName(QT_UTF8(id));
 
 	main->AddCustomDockWidget(d);

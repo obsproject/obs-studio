@@ -294,7 +294,7 @@ static bool nudge_callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
 	if (obs_sceneitem_locked(item))
 		return true;
 
-	struct vec2 &offset = *reinterpret_cast<struct vec2 *>(param);
+	struct vec2 &offset = *static_cast<struct vec2 *>(param);
 	struct vec2 pos;
 
 	if (!obs_sceneitem_selected(item)) {

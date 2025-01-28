@@ -113,7 +113,7 @@ static bool CloseFloat(float a, float b, float epsilon = 0.01)
 
 static bool FindItemAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SceneFindData *data = reinterpret_cast<SceneFindData *>(param);
+	SceneFindData *data = static_cast<SceneFindData *>(param);
 	matrix4 transform;
 	matrix4 invTransform;
 	vec3 transformedPos;
@@ -230,7 +230,7 @@ OBSSceneItem OBSBasicPreview::GetItemAtPos(const vec2 &pos, bool selectBelow)
 
 static bool CheckItemSelected(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SceneFindData *data = reinterpret_cast<SceneFindData *>(param);
+	SceneFindData *data = static_cast<SceneFindData *>(param);
 	matrix4 transform;
 	vec3 transformedPos;
 	vec3 pos3;
@@ -322,7 +322,7 @@ struct HandleFindData {
 
 static bool FindHandleAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	HandleFindData &data = *reinterpret_cast<HandleFindData *>(param);
+	HandleFindData &data = *static_cast<HandleFindData *>(param);
 
 	if (!obs_sceneitem_selected(item)) {
 		if (obs_sceneitem_is_group(item)) {
@@ -673,7 +673,7 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	obs_sceneitem_t *selectedItem = reinterpret_cast<obs_sceneitem_t *>(param);
+	obs_sceneitem_t *selectedItem = static_cast<obs_sceneitem_t *>(param);
 	if (obs_sceneitem_is_group(item))
 		obs_sceneitem_group_enum_items(item, select_one, param);
 
@@ -805,7 +805,7 @@ struct SelectedItemBounds {
 
 static bool AddItemBounds(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SelectedItemBounds *data = reinterpret_cast<SelectedItemBounds *>(param);
+	SelectedItemBounds *data = static_cast<SelectedItemBounds *>(param);
 	vec3 t[4];
 
 	auto add_bounds = [data, &t]() {
@@ -862,7 +862,7 @@ struct OffsetData {
 
 static bool GetSourceSnapOffset(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	OffsetData *data = reinterpret_cast<OffsetData *>(param);
+	OffsetData *data = static_cast<OffsetData *>(param);
 
 	if (obs_sceneitem_selected(item))
 		return true;
@@ -957,7 +957,7 @@ static bool move_items(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *p
 		return true;
 
 	bool selected = obs_sceneitem_selected(item);
-	vec2 *offset = reinterpret_cast<vec2 *>(param);
+	vec2 *offset = static_cast<vec2 *>(param);
 
 	if (obs_sceneitem_is_group(item) && !selected) {
 		matrix4 transform;
@@ -1058,7 +1058,7 @@ static bool IntersectBox(matrix4 transform, float x1, float x2, float y1, float 
 
 bool OBSBasicPreview::FindSelected(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
-	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
+	SceneFindBoxData *data = static_cast<SceneFindBoxData *>(param);
 
 	if (obs_sceneitem_selected(item))
 		data->sceneItems.push_back(item);
@@ -1068,7 +1068,7 @@ bool OBSBasicPreview::FindSelected(obs_scene_t *, obs_sceneitem_t *item, void *p
 
 static bool FindItemsInBox(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
+	SceneFindBoxData *data = static_cast<SceneFindBoxData *>(param);
 	matrix4 transform;
 	matrix4 invTransform;
 	vec3 transformedPos;
@@ -1788,7 +1788,7 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	if (!SceneItemHasVideo(item))
 		return true;
 
-	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
+	OBSBasicPreview *prev = static_cast<OBSBasicPreview *>(param);
 
 	if (!prev->GetOverflowSelectionHidden() && !obs_sceneitem_visible(item))
 		return true;
@@ -1868,7 +1868,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	if (!SceneItemHasVideo(item))
 		return true;
 
-	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
+	OBSBasicPreview *prev = static_cast<OBSBasicPreview *>(param);
 
 	if (obs_sceneitem_is_group(item)) {
 		matrix4 mat;

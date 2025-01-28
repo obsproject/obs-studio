@@ -365,7 +365,7 @@ void OBSBasicStatusBar::UpdateDroppedFrames()
 
 void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)
 {
-	OBSBasicStatusBar *statusBar = reinterpret_cast<OBSBasicStatusBar *>(data);
+	OBSBasicStatusBar *statusBar = static_cast<OBSBasicStatusBar *>(data);
 
 	int seconds = (int)calldata_int(params, "timeout_sec");
 	QMetaObject::invokeMethod(statusBar, "Reconnect", Q_ARG(int, seconds));
@@ -373,7 +373,7 @@ void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)
 
 void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data, calldata_t *)
 {
-	OBSBasicStatusBar *statusBar = reinterpret_cast<OBSBasicStatusBar *>(data);
+	OBSBasicStatusBar *statusBar = static_cast<OBSBasicStatusBar *>(data);
 
 	QMetaObject::invokeMethod(statusBar, "ReconnectSuccess");
 }
