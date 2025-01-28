@@ -286,7 +286,7 @@ void ScreenshotObj::MuxAndFinish()
 
 static void ScreenshotTick(void *param, float)
 {
-	ScreenshotObj *data = reinterpret_cast<ScreenshotObj *>(param);
+	ScreenshotObj *data = static_cast<ScreenshotObj *>(param);
 
 	if (data->stage == STAGE_FINISH) {
 		return;

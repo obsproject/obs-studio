@@ -16,7 +16,7 @@ static int CountVideoSources()
 
 		uint32_t flags = obs_source_get_output_flags(source);
 		if ((flags & OBS_SOURCE_VIDEO) != 0)
-			(*reinterpret_cast<int *>(param))++;
+			(*static_cast<int *>(param))++;
 
 		return true;
 	};

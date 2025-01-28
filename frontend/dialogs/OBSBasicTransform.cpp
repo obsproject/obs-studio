@@ -6,7 +6,7 @@
 
 static bool find_sel(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
-	OBSSceneItem &dst = *reinterpret_cast<OBSSceneItem *>(param);
+	OBSSceneItem &dst = *static_cast<OBSSceneItem *>(param);
 
 	if (obs_sceneitem_selected(item)) {
 		dst = item;
@@ -138,7 +138,7 @@ void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
 
 void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
 {
-	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform *>(param);
+	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	uint32_t channel = (uint32_t)calldata_int(data, "channel");
 	OBSSource source = (obs_source_t *)calldata_ptr(data, "source");
 
@@ -155,7 +155,7 @@ void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
 
 void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)
 {
-	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform *>(param);
+	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item == window->item && !window->ignoreTransformSignal)
@@ -164,7 +164,7 @@ void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)
 
 void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
 {
-	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform *>(param);
+	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(data, "scene");
 	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
@@ -174,7 +174,7 @@ void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
 
 void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t *data)
 {
-	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform *>(param);
+	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item != window->item)
@@ -183,7 +183,7 @@ void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t *data)
 
 void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 {
-	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform *>(param);
+	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(data, "scene");
 	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
@@ -195,7 +195,7 @@ void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 
 void OBSBasicTransform::OBSSceneItemLocked(void *param, calldata_t *data)
 {
-	OBSBasicTransform *window = reinterpret_cast<OBSBasicTransform *>(param);
+	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	bool locked = calldata_bool(data, "locked");
 
 	QMetaObject::invokeMethod(window, "SetEnabled", Q_ARG(bool, !locked));

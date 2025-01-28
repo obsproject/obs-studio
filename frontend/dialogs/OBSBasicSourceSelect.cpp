@@ -256,7 +256,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			obs_scene_t *scene = obs_get_scene_by_name(scene_name);
 			OBSSceneItem item;
 			auto cb = [](obs_scene_t *, obs_sceneitem_t *sceneitem, void *data) {
-				OBSSceneItem &last = *reinterpret_cast<OBSSceneItem *>(data);
+				OBSSceneItem &last = *static_cast<OBSSceneItem *>(data);
 				last = sceneitem;
 				return true;
 			};

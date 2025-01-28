@@ -174,7 +174,7 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 
 void FilterChangeUndoRedo(void *vp, obs_data_t *nd_old_settings, obs_data_t *new_settings)
 {
-	obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
+	obs_source_t *source = static_cast<obs_source_t *>(vp);
 	const char *source_uuid = obs_source_get_uuid(source);
 	const char *name = obs_source_get_name(source);
 	OBSBasic *main = OBSBasic::Get();
@@ -250,7 +250,7 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 	auto disabled_undo = [](void *vp, obs_data_t *settings) {
 		OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		main->undo_s.disable();
-		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
+		obs_source_t *source = static_cast<obs_source_t *>(vp);
 		obs_source_update(source, settings);
 	};
 
@@ -363,7 +363,7 @@ void OBSBasicFilters::ReorderFilters()
 	obs_source_enum_filters(
 		source,
 		[](obs_source_t *, obs_source_t *filter, void *p) {
-			FilterOrderInfo *info = reinterpret_cast<FilterOrderInfo *>(p);
+			FilterOrderInfo *info = static_cast<FilterOrderInfo *>(p);
 			uint32_t flags;
 			bool async;
 
@@ -390,7 +390,7 @@ void OBSBasicFilters::UpdateFilters()
 	obs_source_enum_filters(
 		source,
 		[](obs_source_t *, obs_source_t *filter, void *p) {
-			OBSBasicFilters *window = reinterpret_cast<OBSBasicFilters *>(p);
+			OBSBasicFilters *window = static_cast<OBSBasicFilters *>(p);
 
 			window->AddFilter(filter, false);
 		},
@@ -619,7 +619,7 @@ bool OBSBasicFilters::nativeEvent(const QByteArray &, void *message, qintptr *)
 
 void OBSBasicFilters::OBSSourceFilterAdded(void *param, calldata_t *data)
 {
-	OBSBasicFilters *window = reinterpret_cast<OBSBasicFilters *>(param);
+	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(param);
 	obs_source_t *filter = (obs_source_t *)calldata_ptr(data, "filter");
 
 	QMetaObject::invokeMethod(window, "AddFilter", Q_ARG(OBSSource, OBSSource(filter)));
@@ -627,7 +627,7 @@ void OBSBasicFilters::OBSSourceFilterAdded(void *param, calldata_t *data)
 
 void OBSBasicFilters::OBSSourceFilterRemoved(void *param, calldata_t *data)
 {
-	OBSBasicFilters *window = reinterpret_cast<OBSBasicFilters *>(param);
+	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(param);
 	obs_source_t *filter = (obs_source_t *)calldata_ptr(data, "filter");
 
 	QMetaObject::invokeMethod(window, "RemoveFilter", Q_ARG(OBSSource, OBSSource(filter)));
@@ -635,7 +635,7 @@ void OBSBasicFilters::OBSSourceFilterRemoved(void *param, calldata_t *data)
 
 void OBSBasicFilters::OBSSourceReordered(void *param, calldata_t *)
 {
-	QMetaObject::invokeMethod(reinterpret_cast<OBSBasicFilters *>(param), "ReorderFilters");
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), "ReorderFilters");
 }
 
 void OBSBasicFilters::SourceRemoved(void *param, calldata_t *)
