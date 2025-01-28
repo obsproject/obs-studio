@@ -24,29 +24,23 @@
     --primary_light: rgb(33,71,109);
 
     /* Layout */
-    --font_base_value: 9;
-    --spacing_base_value: 2;
-    --padding_base_value: 0.25;
+    --font_small: max(7pt, calc(0.5pt * var(--font_base_value)));
 
-    /* OS Fixes */
-    --os_mac_font_base_value: 11;
+    --padding_large: min(max(0px, calc(1px * var(--padding_base_value))), 5px);
 
-    --font_small: calc(0.75pt * var(--font_base_value));
+    --padding_container: max(2px, var(--padding_base));
 
-    --icon_base: calc(6px + var(--font_base_value));
-
-    --padding_xlarge: calc(2px + calc(0.5px * var(--padding_base_value)));
-
-    --padding_wide: calc(18px + calc(0.25 * var(--padding_base_value)));
-    --padding_menu: calc(8px + calc(1 * var(--padding_base_value)));
-
-    --input_height_base: calc(1px + calc(var(--input_font_scale) + var(--input_font_padding)));
+    /* Inputs / Controls */
 
     --border_color: var(--grey6);
 
     --border_radius: 2px;
     --border_radius_small: 1px;
     --border_radius_large: 2px;
+
+    --input_height_base: max(calc(var(--input_font_scale) + var(--input_font_padding)), 20);
+    --input_padding: calc(0px + var(--padding_base));
+    --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey1);
@@ -263,7 +257,6 @@ QPushButton[toolButton="true"] {
 
 #vMixerScrollArea QLabel {
   font-size: var(--font_small);
-  margin: var(--padding_xlarge) 0px;
 }
 
 #vMixerScrollArea #volLabel {

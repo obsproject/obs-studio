@@ -28,6 +28,8 @@ struct OBSThemeVariable {
 		String, /* Raw string (e.g. color name, border style, etc.) */
 		Alias,  /* Points at another variable, value will be the key */
 		Calc,   /* Simple calculation with two operands */
+		Min,    /* Get the smallest of two Size or Number */
+		Max,    /* Get the largest of two Size or Number */
 	};
 
 	/* Whether the variable should be editable in the UI */
