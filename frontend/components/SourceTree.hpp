@@ -29,13 +29,13 @@ class SourceTree : public QListView {
 	void UpdateWidget(const QModelIndex &idx, obs_sceneitem_t *item);
 	void UpdateWidgets(bool force = false);
 
-	inline SourceTreeModel *GetStm() const { return reinterpret_cast<SourceTreeModel *>(model()); }
+	inline SourceTreeModel *GetStm() const { return qobject_cast<SourceTreeModel *>(model()); }
 
 public:
 	inline SourceTreeItem *GetItemWidget(int idx)
 	{
 		QWidget *widget = indexWidget(GetStm()->createIndex(idx, 0));
-		return reinterpret_cast<SourceTreeItem *>(widget);
+		return qobject_cast<SourceTreeItem *>(widget);
 	}
 
 	explicit SourceTree(QWidget *parent = nullptr);
