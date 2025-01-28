@@ -11,6 +11,8 @@ class OBSQTDisplay : public QWidget {
 	Q_PROPERTY(QColor displayBackgroundColor MEMBER backgroundColor READ GetDisplayBackgroundColor WRITE
 			   SetDisplayBackgroundColor)
 
+	friend class OBSProjector;
+
 	OBSDisplay display;
 	bool destroying = false;
 
