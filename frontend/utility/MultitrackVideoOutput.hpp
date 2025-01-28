@@ -14,12 +14,11 @@
 class QString;
 class QWidget;
 
+void StreamStartHandler(void *arg, calldata_t *);
 void StreamStopHandler(void *arg, calldata_t *data);
-void StreamDeactivateHandler(void *arg, calldata_t *data);
 
 void RecordingStartHandler(void *arg, calldata_t *data);
-void RecordingStopHandler(void *arg, calldata_t *data);
-void RecordingDeactivateHandler(void *arg, calldata_t *data);
+void RecordingStopHandler(void *arg, calldata_t *);
 
 bool MultitrackVideoDeveloperModeEnabled();
 
@@ -43,13 +42,15 @@ public:
 		return current ? obs_output_get_ref(current->output_) : nullptr;
 	}
 
+	bool RestartOnError() { return restart_on_error; }
+
 private:
 	struct OBSOutputObjects {
 		OBSOutputAutoRelease output_;
 		std::shared_ptr<obs_encoder_group_t> video_encoder_group_;
 		std::vector<OBSEncoderAutoRelease> audio_encoders_;
 		OBSServiceAutoRelease multitrack_video_service_;
-		OBSSignal start_signal, stop_signal, deactivate_signal;
+		OBSSignal start_signal, stop_signal;
 	};
 
 	std::optional<OBSOutputObjects> take_current();
@@ -63,9 +64,10 @@ private:
 	std::mutex current_stream_dump_mutex;
 	std::optional<OBSOutputObjects> current_stream_dump;
 
+	bool restart_on_error = false;
+
+	friend void StreamStartHandler(void *arg, calldata_t *data);
 	friend void StreamStopHandler(void *arg, calldata_t *data);
-	friend void StreamDeactivateHandler(void *arg, calldata_t *data);
 	friend void RecordingStartHandler(void *arg, calldata_t *data);
-	friend void RecordingStopHandler(void *arg, calldata_t *data);
-	friend void RecordingDeactivateHandler(void *arg, calldata_t *data);
+	friend void RecordingStopHandler(void *arg, calldata_t *);
 };

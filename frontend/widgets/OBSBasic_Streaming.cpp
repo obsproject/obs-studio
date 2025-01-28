@@ -281,6 +281,14 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	DStr errorMessage;
 	bool use_last_error = false;
 	bool encode_error = false;
+	bool should_reconnect = false;
+
+	/* Ignore stream key error for multitrack output if its internal reconnect handling is active. */
+	if (code == OBS_OUTPUT_INVALID_STREAM && outputHandler->multitrackVideo &&
+	    outputHandler->multitrackVideo->RestartOnError()) {
+		code = OBS_OUTPUT_SUCCESS;
+		should_reconnect = true;
+	}
 
 	switch (code) {
 	case OBS_OUTPUT_BAD_PATH:
@@ -358,6 +366,8 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	// Reset broadcast button state/text
 	if (!broadcastActive)
 		SetBroadcastFlowEnabled(auth && auth->broadcastFlow());
+	if (should_reconnect)
+		QMetaObject::invokeMethod(this, "StartStreaming", Qt::QueuedConnection);
 }
 
 void OBSBasic::StreamActionTriggered()
