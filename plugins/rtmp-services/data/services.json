@@ -3530,6 +3530,33 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "bump.live",
+            "more_info_link": "https://help.bump.live/en/articles/10364182-streaming-on-bump",
+            "stream_key_link": "https://bump.live/dashboard/stream",
+            "servers": [
+                {
+                    "name": "Global",
+                    "url": "rtmps://fa46d4725148.global-contribute.live-video.net/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480",
+                    "640x360"
+                ],
+                "max fps": 60,
+                "max video bitrate": 8000,
+                "max audio bitrate": 160,
+                "x264opts": "scenecut=0"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
