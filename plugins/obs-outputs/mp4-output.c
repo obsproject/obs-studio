@@ -42,6 +42,9 @@ struct mp4_output {
 	obs_output_t *output;
 	struct dstr path;
 
+	/* File serializer buffer configuration */
+	size_t buffer_size;
+	size_t chunk_size;
 	struct serializer serializer;
 
 	volatile bool active;
@@ -212,7 +215,7 @@ static inline void apply_flag(int *flags, const char *value, int flag_value)
 		*flags &= ~flag_value;
 }
 
-static int parse_custom_options(const char *opts_str)
+static void parse_custom_options(struct mp4_output *out, const char *opts_str)
 {
 	int flags = MP4_USE_NEGATIVE_CTS;
 
@@ -229,6 +232,10 @@ static int parse_custom_options(const char *opts_str)
 			apply_flag(&flags, opt.value, MP4_USE_MDTA_KEY_VALUE);
 		} else if (strcmp(opt.name, "use_negative_cts") == 0) {
 			apply_flag(&flags, opt.value, MP4_USE_NEGATIVE_CTS);
+		} else if (strcmp(opt.name, "buffer_size") == 0) {
+			out->buffer_size = strtoull(opt.value, 0, 10) * 1048576ULL;
+		} else if (strcmp(opt.name, "chunk_size") == 0) {
+			out->chunk_size = strtoull(opt.value, 0, 10) * 1048576ULL;
 		} else {
 			blog(LOG_WARNING, "Unknown muxer option: %s = %s", opt.name, opt.value);
 		}
@@ -236,7 +243,7 @@ static int parse_custom_options(const char *opts_str)
 
 	obs_free_options(opts);
 
-	return flags;
+	out->flags = flags;
 }
 
 static void generate_filename(struct mp4_output *out, struct dstr *dst, bool overwrite);
@@ -270,11 +277,11 @@ static bool mp4_output_start(void *data)
 
 	/* Allow skipping the remux step for debugging purposes. */
 	const char *muxer_settings = obs_data_get_string(settings, "muxer_settings");
-	out->flags = parse_custom_options(muxer_settings);
+	parse_custom_options(out, muxer_settings);
 
 	obs_data_release(settings);
 
-	if (!buffered_file_serializer_init_defaults(&out->serializer, out->path.array)) {
+	if (!buffered_file_serializer_init(&out->serializer, out->path.array, out->buffer_size, out->chunk_size)) {
 		warn("Unable to open MP4 file '%s'", out->path.array);
 		return false;
 	}
@@ -398,7 +405,7 @@ static bool change_file(struct mp4_output *out, struct encoder_packet *pkt)
 	generate_filename(out, &out->path, out->allow_overwrite);
 	info("Changing output file to '%s'", out->path.array);
 
-	if (!buffered_file_serializer_init_defaults(&out->serializer, out->path.array)) {
+	if (!buffered_file_serializer_init(&out->serializer, out->path.array, out->buffer_size, out->chunk_size)) {
 		warn("Unable to open MP4 file '%s'", out->path.array);
 		return false;
 	}
