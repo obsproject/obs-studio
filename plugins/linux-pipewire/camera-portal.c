@@ -296,6 +296,13 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 		const char *format_name;
 		struct spa_rectangle resolution;
 
+		const struct spa_pod_prop *framerate_prop = NULL;
+		struct spa_pod *framerate_pod;
+		uint32_t n_framerates;
+		enum spa_choice_type framerate_choice;
+		const struct spa_fraction *framerate_values;
+		g_autoptr(GArray) framerates = NULL;
+
 		if (p->id != SPA_PARAM_EnumFormat || p->param == NULL)
 			continue;
 
@@ -333,7 +340,54 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 		obs_data_set_int(data, "width", resolution.width);
 		obs_data_set_int(data, "height", resolution.height);
 
-		dstr_printf(&str, "%ux%u - %s", resolution.width, resolution.height, format_name);
+		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
+		if (!framerate_prop)
+			continue;
+
+		framerate_pod = spa_pod_get_values(&framerate_prop->value, &n_framerates, &framerate_choice);
+		if (framerate_pod->type != SPA_TYPE_Fraction) {
+			blog(LOG_WARNING, "Framerate is not a fraction");
+			continue;
+		}
+
+		framerate_values = SPA_POD_BODY(framerate_pod);
+		framerates = g_array_new(FALSE, FALSE, sizeof(struct spa_fraction));
+
+		switch (framerate_choice) {
+		case SPA_CHOICE_None:
+			g_array_append_val(framerates, framerate_values[0]);
+			break;
+		case SPA_CHOICE_Range:
+			blog(LOG_WARNING, "Ranged framerates not supported");
+			continue;
+		case SPA_CHOICE_Step:
+			blog(LOG_WARNING, "Stepped framerates not supported");
+			continue;
+		case SPA_CHOICE_Enum:
+			/* i=0 is the default framerate, skip it */
+			for (uint32_t i = 1; i < n_framerates; i++)
+				g_array_append_val(framerates, framerate_values[i]);
+			break;
+		default:
+			continue;
+		}
+
+		dstr_printf(&str, "%ux%u - ", resolution.width, resolution.height);
+
+		for (int i = framerates->len - 1; i >= 0; i--) {
+			const struct spa_fraction *framerate = &g_array_index(framerates, struct spa_fraction, i);
+
+			if (i != (int)framerates->len - 1)
+				dstr_cat(&str, ", ");
+
+			if (framerate->denom == 1)
+				dstr_catf(&str, "%u", framerate->num);
+			else
+				dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
+		}
+
+		dstr_catf(&str, " FPS - %s", format_name);
+
 		obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
 		dstr_free(&str);
 	}
