@@ -76,6 +76,9 @@ void OBSBasic::ResizeOutputSizeOfSource()
 	int width = obs_source_get_width(source);
 	int height = obs_source_get_height(source);
 
+	width = ((width + 3) / 4) * 4;   // Round width up to the nearest multiple of 4
+	height = ((height + 1) / 2) * 2; // Round height up to the nearest multiple of 2
+
 	config_set_uint(activeConfiguration, "Video", "BaseCX", width);
 	config_set_uint(activeConfiguration, "Video", "BaseCY", height);
 	config_set_uint(activeConfiguration, "Video", "OutputCX", width);
