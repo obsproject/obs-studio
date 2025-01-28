@@ -296,6 +296,9 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "MultiviewDrawAreas", true);
 
 	config_set_default_bool(userConfig, "BasicWindow", "MediaControlsCountdownTimer", true);
+
+	config_set_default_int(userConfig, "Appearance", "FontScale", 10);
+	config_set_default_int(userConfig, "Appearance", "Density", 1);
 }
 
 static bool do_mkdir(const char *path)
