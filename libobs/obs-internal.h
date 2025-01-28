@@ -1382,5 +1382,15 @@ extern uint64_t source_profiler_source_render_begin(gs_timer_t **timer);
 /* Submit start timestamp and GPU timer after rendering source */
 extern void source_profiler_source_render_end(obs_source_t *source, uint64_t start, gs_timer_t *timer);
 
+/* Get timestamp for start of audio */
+extern uint64_t source_profiler_source_audio_render_start(void);
+/* Submit start timestamp for source */
+extern void source_profiler_source_audio_render_end(obs_source_t *source, uint64_t start, uint32_t frames);
+
+/* Get timestamp for start of async audio */
+extern uint64_t source_profiler_source_audio_async_render_start(void);
+/* Submit start timestamp for source */
+extern void source_profiler_source_audio_async_render_end(obs_source_t *source, uint64_t start, uint32_t frames);
+
 /* Remove source from profiler hashmaps */
 extern void source_profiler_remove_source(obs_source_t *source);
