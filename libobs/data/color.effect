@@ -10,7 +10,7 @@ float3 srgb_linear_to_nonlinear(float3 v)
 
 float srgb_nonlinear_to_linear_channel(float u)
 {
-	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+	return (u <= 0.04045) ? (u / 12.92) : pow(mad(u, 1. / 1.055, .055 / 1.055), 2.4);
 }
 
 float3 srgb_nonlinear_to_linear(float3 v)
@@ -148,7 +148,7 @@ float3 linear_to_hlg(float3 rgb, float Lw)
 
 	float Yd = dot(rgb, float3(0.2627, 0.678, 0.0593));
 
-	// pow(0., exponent) can lead to NaN, use smallest positive normal number
+	// avoid inf from pow(0., negative) by using smallest positive normal number
 	Yd = max(6.10352e-5, Yd);
 
 	rgb *= pow(Yd, -1. / 6.);
