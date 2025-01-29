@@ -353,6 +353,7 @@ static void log_flatpak_info(void)
 
 	const char *branch = config_get_string(fp_info, "Instance", "branch");
 	const char *arch = config_get_string(fp_info, "Instance", "arch");
+	const char *commit = config_get_string(fp_info, "Instance", "app-commit");
 
 	const char *runtime = config_get_string(fp_info, "Application", "runtime");
 
@@ -363,6 +364,7 @@ static void log_flatpak_info(void)
 
 	blog(LOG_INFO, "Flatpak Branch: %s", branch ? branch : "none");
 	blog(LOG_INFO, "Flatpak Arch: %s", arch ? arch : "unknown");
+	blog(LOG_INFO, "Flatpak Commit: %s", commit ? commit : "unknown");
 
 	blog(LOG_INFO, "Flatpak Runtime: %s", runtime ? runtime : "none");
 
