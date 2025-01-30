@@ -25,6 +25,7 @@
 #include <util/dstr.h>
 #include <util/threading.h>
 #include <util/buffered-file-serializer.h>
+#include <bpm.h>
 
 #include <opts-parser.h>
 
@@ -48,6 +49,8 @@ struct mp4_output {
 	size_t buffer_size;
 	size_t chunk_size;
 	struct serializer serializer;
+
+	bool enable_bpm;
 
 	volatile bool active;
 	volatile bool stopping;
@@ -298,6 +301,8 @@ static void parse_custom_options(struct mp4_output *out, const char *opts_str)
 			out->buffer_size = strtoull(opt.value, 0, 10) * 1048576ULL;
 		} else if (strcmp(opt.name, "chunk_size") == 0) {
 			out->chunk_size = strtoull(opt.value, 0, 10) * 1048576ULL;
+		} else if (strcmp(opt.name, "bpm") == 0) {
+			out->enable_bpm = !!atoi(opt.value);
 		} else {
 			blog(LOG_WARNING, "Unknown muxer option: %s = %s", opt.name, opt.value);
 		}
@@ -342,6 +347,11 @@ static bool mp4_output_start(void *data)
 	parse_custom_options(out, muxer_settings);
 
 	obs_data_release(settings);
+
+	if (out->enable_bpm) {
+		info("Enabling BPM");
+		obs_output_add_packet_callback(out->output, bpm_inject, NULL);
+	}
 
 	if (!buffered_file_serializer_init(&out->serializer, out->path.array, out->buffer_size, out->chunk_size)) {
 		warn("Unable to open file '%s'", out->path.array);
@@ -502,6 +512,11 @@ static void mp4_output_actual_stop(struct mp4_output *out, int code)
 	uint64_t start_time = os_gettime_ns();
 
 	mp4_mux_finalise(out->muxer);
+
+	if (out->enable_bpm) {
+		obs_output_remove_packet_callback(out->output, bpm_inject, NULL);
+		bpm_destroy(out->output);
+	}
 
 	if (code) {
 		obs_output_signal_stop(out->output, code);
