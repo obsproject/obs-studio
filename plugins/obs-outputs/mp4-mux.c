@@ -157,10 +157,12 @@ static size_t mp4_write_mvhd(struct mp4_mux *mux)
 			break;
 		}
 	}
+	bool extended_ts = duration > UINT32_MAX || mux->creation_time > UINT32_MAX;
+	uint8_t version = extended_ts ? 1 : 0;
 
-	write_fullbox(s, 0, "mvhd", 0, 0);
+	write_fullbox(s, 0, "mvhd", version, 0);
 
-	if (duration > UINT32_MAX || mux->creation_time > UINT32_MAX) {
+	if (extended_ts) {
 		s_wb64(s, mux->creation_time); // creation time
 		s_wb64(s, mux->creation_time); // modification time
 		s_wb32(s, 1000);               // timescale
@@ -203,12 +205,14 @@ static size_t mp4_write_tkhd(struct mp4_mux *mux, struct mp4_track *track)
 	size_t start = serializer_get_pos(s);
 
 	uint64_t duration = util_mul_div64(track->duration, 1000, track->timebase_den);
+	bool extended_ts = duration > UINT32_MAX || mux->creation_time > UINT32_MAX;
+	uint8_t version = extended_ts ? 1 : 0;
 
 	/* Flags are 0x1 (enabled) | 0x2 (in movie) */
 	static const uint32_t flags = 0x1 | 0x2;
-	write_fullbox(s, 0, "tkhd", 0, flags);
+	write_fullbox(s, 0, "tkhd", version, flags);
 
-	if (duration > UINT32_MAX || mux->creation_time > UINT32_MAX) {
+	if (extended_ts) {
 		s_wb64(s, mux->creation_time); // creation time
 		s_wb64(s, mux->creation_time); // modification time
 		s_wb32(s, track->track_id);    // track_id
