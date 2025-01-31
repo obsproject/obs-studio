@@ -1563,14 +1563,6 @@
                 {
                     "name": "CloudBeta",
                     "url": "rtmp://cloudbetastreaming.onlyfans.com/live"
-                },
-                {
-                    "name": "Backup (USA)",
-                    "url": "rtmp://route0.onlyfans.com/live"
-                },
-                {
-                    "name": "Backup (Europe)",
-                    "url": "rtmp://route0-dc2.onlyfans.com/live"
                 }
             ],
             "recommended": {
