@@ -57,7 +57,7 @@ runs:
       env:
         MACOS_SIGNING_IDENTITY: ${{ inputs.codesignIdentity }}
         MACOS_SIGNING_CERT: ${{ inputs.codesignCertificate }}
-        MAOCS_SIGNING_CERT_PASSWORD: ${{ inputs.certificatePassword }}
+        MACOS_SIGNING_CERT_PASSWORD: ${{ inputs.certificatePassword }}
         MACOS_KEYCHAIN_PASSWORD: ${{ inputs.keychainPassword }}
       run: |
         : macOS Code Signing ✍️
@@ -78,7 +78,7 @@ runs:
           security set-keychain-settings -lut 21600 ${keychain_path}
           security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" ${keychain_path}
 
-          security import "${certificate_path}" -P "${MAOCS_SIGNING_CERT_PASSWORD}" -A \
+          security import "${certificate_path}" -P "${MACOS_SIGNING_CERT_PASSWORD}" -A \
             -t cert -f pkcs12 -k ${keychain_path} \
             -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcrun
 
