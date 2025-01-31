@@ -16,7 +16,12 @@ static void render_metrics_time(struct metrics_time *m_time)
 static bool update_metrics(obs_output_t *output, const struct encoder_packet *pkt,
 			   const struct encoder_packet_time *ept, struct metrics_data *m_track)
 {
-	if (!output || !pkt || !ept || !m_track) {
+	if (!pkt) {
+		blog(LOG_DEBUG, "%s: Null encoder_packet pointer", __FUNCTION__);
+		return false;
+	}
+
+	if (!output || !ept || !m_track) {
 		blog(LOG_DEBUG, "%s: Null arguments for track %lu", __FUNCTION__, pkt->track_idx);
 		return false;
 	}
