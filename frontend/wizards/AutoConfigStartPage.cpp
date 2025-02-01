@@ -6,7 +6,7 @@
 
 #include "moc_AutoConfigStartPage.cpp"
 
-#define wiz reinterpret_cast<AutoConfig *>(wizard())
+#define wiz qobject_cast<AutoConfig *>(wizard())
 
 AutoConfigStartPage::AutoConfigStartPage(QWidget *parent) : QWizardPage(parent), ui(new Ui_AutoConfigStartPage)
 {
@@ -18,7 +18,7 @@ AutoConfigStartPage::AutoConfigStartPage(QWidget *parent) : QWizardPage(parent),
 	if (main->VCamEnabled()) {
 		QRadioButton *prioritizeVCam =
 			new QRadioButton(QTStr("Basic.AutoConfig.StartPage.PrioritizeVirtualCam"), this);
-		QBoxLayout *box = reinterpret_cast<QBoxLayout *>(layout());
+		QBoxLayout *box = qobject_cast<QBoxLayout *>(layout());
 		box->insertWidget(2, prioritizeVCam);
 
 		connect(prioritizeVCam, &QPushButton::clicked, this, &AutoConfigStartPage::PrioritizeVCam);
