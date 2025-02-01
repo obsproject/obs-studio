@@ -21,6 +21,7 @@
 #include "pipewire.h"
 
 #include "formats.h"
+#include "video-decoder.h"
 
 #include <util/darray.h>
 
@@ -127,6 +128,8 @@ struct _obs_pipewire_stream {
 	bool negotiated;
 
 	DARRAY(struct format_info) format_info;
+
+	obs_pipewire_decoder *decoder;
 
 	struct {
 		struct spa_rectangle rect;
@@ -263,6 +266,7 @@ static bool push_rotation(obs_pipewire_stream *obs_pw_stream)
 static const uint32_t supported_formats_async[] = {
 	SPA_VIDEO_FORMAT_RGBA,
 	SPA_VIDEO_FORMAT_YUY2,
+	SPA_VIDEO_FORMAT_ENCODED,
 };
 
 #define N_SUPPORTED_FORMATS_ASYNC (sizeof(supported_formats_async) / sizeof(supported_formats_async[0]))
@@ -325,7 +329,12 @@ static inline struct spa_pod *build_format(obs_pipewire_stream *obs_pw_stream, s
 	spa_pod_builder_push_object(b, &format_frame, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat);
 	/* add media type and media subtype properties */
 	spa_pod_builder_add(b, SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video), 0);
-	spa_pod_builder_add(b, SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw), 0);
+	if (format != SPA_VIDEO_FORMAT_ENCODED) {
+		spa_pod_builder_add(b, SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw), 0);
+	} else {
+		// TODO: Add EnumFormat for H264
+		spa_pod_builder_add(b, SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_mjpg), 0);
+	}
 
 	/* formats */
 	spa_pod_builder_add(b, SPA_FORMAT_VIDEO_format, SPA_POD_Id(format), 0);
@@ -589,23 +598,49 @@ static enum video_range_type video_color_range_from_spa_color_range(enum spa_vid
 	}
 }
 
-static bool prepare_obs_frame(obs_pipewire_stream *obs_pw_stream, struct obs_source_frame *frame)
+static bool prepare_obs_frame(obs_pipewire_stream *obs_pw_stream, struct spa_buffer *buffer,
+			      struct obs_source_frame *frame)
 {
 	struct obs_pw_video_format obs_pw_video_format;
 
-	frame->width = obs_pw_stream->format.info.raw.size.width;
-	frame->height = obs_pw_stream->format.info.raw.size.height;
+	switch (obs_pw_stream->format.media_subtype) {
+	case SPA_MEDIA_SUBTYPE_raw:
+		frame->width = obs_pw_stream->format.info.raw.size.width;
+		frame->height = obs_pw_stream->format.info.raw.size.height;
 
-	video_format_get_parameters(video_colorspace_from_spa_color_matrix(obs_pw_stream->format.info.raw.color_matrix),
-				    video_color_range_from_spa_color_range(obs_pw_stream->format.info.raw.color_range),
-				    frame->color_matrix, frame->color_range_min, frame->color_range_max);
+		video_format_get_parameters(
+			video_colorspace_from_spa_color_matrix(obs_pw_stream->format.info.raw.color_matrix),
+			video_color_range_from_spa_color_range(obs_pw_stream->format.info.raw.color_range),
+			frame->color_matrix, frame->color_range_min, frame->color_range_max);
 
-	if (!obs_pw_video_format_from_spa_format(obs_pw_stream->format.info.raw.format, &obs_pw_video_format) ||
-	    obs_pw_video_format.video_format == VIDEO_FORMAT_NONE)
+		if (!obs_pw_video_format_from_spa_format(obs_pw_stream->format.info.raw.format, &obs_pw_video_format) ||
+		    obs_pw_video_format.video_format == VIDEO_FORMAT_NONE)
+			return false;
+
+		frame->format = obs_pw_video_format.video_format;
+		frame->linesize[0] = SPA_ROUND_UP_N(frame->width * obs_pw_video_format.bpp, 4);
+
+		for (uint32_t i = 0; i < buffer->n_datas && i < MAX_AV_PLANES; i++) {
+			frame->data[i] = buffer->datas[i].data;
+			if (frame->data[i] == NULL) {
+				blog(LOG_ERROR, "[pipewire] Failed to access data");
+				return false;
+			}
+		}
+
+		break;
+	case SPA_MEDIA_SUBTYPE_mjpg:
+	case SPA_MEDIA_SUBTYPE_h264:
+		if (obs_pipewire_decoder_decode_frame(obs_pw_stream->decoder, frame, buffer->datas[0].data,
+						      buffer->datas[0].chunk->size) < 0) {
+			blog(LOG_ERROR, "failed to unpack jpeg or h264");
+			return false;
+		}
+		break;
+	default:
 		return false;
+	}
 
-	frame->format = obs_pw_video_format.video_format;
-	frame->linesize[0] = SPA_ROUND_UP_N(frame->width * obs_pw_video_format.bpp, 4);
 	return true;
 }
 
@@ -632,17 +667,9 @@ static void process_video_async(obs_pipewire_stream *obs_pw_stream)
 #endif
 
 	struct obs_source_frame out = {0};
-	if (!prepare_obs_frame(obs_pw_stream, &out)) {
+	if (!prepare_obs_frame(obs_pw_stream, buffer, &out)) {
 		blog(LOG_ERROR, "[pipewire] Couldn't prepare frame");
 		goto done;
-	}
-
-	for (uint32_t i = 0; i < buffer->n_datas && i < MAX_AV_PLANES; i++) {
-		out.data[i] = buffer->datas[i].data;
-		if (out.data[i] == NULL) {
-			blog(LOG_ERROR, "[pipewire] Failed to access data");
-			goto done;
-		}
 	}
 
 #ifdef DEBUG_PIPEWIRE
@@ -876,35 +903,71 @@ static void on_param_changed_cb(void *user_data, uint32_t id, const struct spa_p
 	if (result < 0)
 		return;
 
-	if (obs_pw_stream->format.media_type != SPA_MEDIA_TYPE_video ||
-	    obs_pw_stream->format.media_subtype != SPA_MEDIA_SUBTYPE_raw)
+	if (obs_pw_stream->format.media_type != SPA_MEDIA_TYPE_video)
 		return;
 
-	spa_format_video_raw_parse(param, &obs_pw_stream->format.info.raw);
+	switch (obs_pw_stream->format.media_subtype) {
+	case SPA_MEDIA_SUBTYPE_raw: {
+		spa_format_video_raw_parse(param, &obs_pw_stream->format.info.raw);
 
-	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+		output_flags = obs_source_get_output_flags(obs_pw_stream->source);
 
-	buffer_types = 1 << SPA_DATA_MemPtr;
-	bool has_modifier = spa_pod_find_prop(param, NULL, SPA_FORMAT_VIDEO_modifier) != NULL;
-	if ((has_modifier || check_pw_version(&obs_pw->server_version, 0, 3, 24)) &&
-	    (output_flags & OBS_SOURCE_ASYNC_VIDEO) != OBS_SOURCE_ASYNC_VIDEO)
-		buffer_types |= 1 << SPA_DATA_DmaBuf;
+		buffer_types = 1 << SPA_DATA_MemPtr;
+		bool has_modifier = spa_pod_find_prop(param, NULL, SPA_FORMAT_VIDEO_modifier) != NULL;
+		if ((has_modifier || check_pw_version(&obs_pw->server_version, 0, 3, 24)) &&
+		    (output_flags & OBS_SOURCE_ASYNC_VIDEO) != OBS_SOURCE_ASYNC_VIDEO)
+			buffer_types |= 1 << SPA_DATA_DmaBuf;
 
-	blog(LOG_INFO, "[pipewire] Negotiated format:");
+		blog(LOG_INFO, "[pipewire] Negotiated format:");
 
-	format_name = spa_debug_type_find_name(spa_type_video_format, obs_pw_stream->format.info.raw.format);
-	blog(LOG_INFO, "[pipewire]     Format: %d (%s)", obs_pw_stream->format.info.raw.format,
-	     format_name ? format_name : "unknown format");
+		format_name = spa_debug_type_find_name(spa_type_video_format, obs_pw_stream->format.info.raw.format);
+		blog(LOG_INFO, "[pipewire]     Format: %d (%s)", obs_pw_stream->format.info.raw.format,
+		     format_name ? format_name : "unknown format");
 
-	if (has_modifier) {
-		blog(LOG_INFO, "[pipewire]     Modifier: 0x%" PRIx64, obs_pw_stream->format.info.raw.modifier);
+		if (has_modifier) {
+			blog(LOG_INFO, "[pipewire]     Modifier: 0x%" PRIx64, obs_pw_stream->format.info.raw.modifier);
+		}
+
+		blog(LOG_INFO, "[pipewire]     Size: %dx%d", obs_pw_stream->format.info.raw.size.width,
+		     obs_pw_stream->format.info.raw.size.height);
+
+		blog(LOG_INFO, "[pipewire]     Framerate: %d/%d", obs_pw_stream->format.info.raw.framerate.num,
+		     obs_pw_stream->format.info.raw.framerate.denom);
+
+		break;
+	}
+	case SPA_MEDIA_SUBTYPE_mjpg:
+		if (spa_format_video_mjpg_parse(param, &obs_pw_stream->format.info.mjpg) < 0)
+			return;
+		blog(LOG_INFO, "[pipewire] Negotiated format:");
+		blog(LOG_INFO, "[pipewire]     Format: (MJPG)");
+		blog(LOG_INFO, "[pipewire]     Size: %dx%d", obs_pw_stream->format.info.mjpg.size.width,
+		     obs_pw_stream->format.info.mjpg.size.height);
+		blog(LOG_INFO, "[pipewire]     Framerate: %d/%d", obs_pw_stream->format.info.mjpg.framerate.num,
+		     obs_pw_stream->format.info.mjpg.framerate.denom);
+		break;
+	case SPA_MEDIA_SUBTYPE_h264:
+		if (spa_format_video_h264_parse(param, &obs_pw_stream->format.info.h264) < 0)
+			return;
+		blog(LOG_INFO, "[pipewire] Negotiated format:");
+		blog(LOG_INFO, "[pipewire]     Format: (H264)");
+		blog(LOG_INFO, "[pipewire]     Size: %dx%d", obs_pw_stream->format.info.h264.size.width,
+		     obs_pw_stream->format.info.h264.size.height);
+		blog(LOG_INFO, "[pipewire]     Framerate: %d/%d", obs_pw_stream->format.info.h264.framerate.num,
+		     obs_pw_stream->format.info.h264.framerate.denom);
+		break;
+	default:
+		return;
 	}
 
-	blog(LOG_INFO, "[pipewire]     Size: %dx%d", obs_pw_stream->format.info.raw.size.width,
-	     obs_pw_stream->format.info.raw.size.height);
+	if (obs_pw_stream->format.media_subtype != SPA_MEDIA_SUBTYPE_raw && obs_pw_stream->decoder == NULL) {
+		obs_pw_stream->decoder = obs_pipewire_decoder_new(obs_pw_stream->format.media_subtype);
 
-	blog(LOG_INFO, "[pipewire]     Framerate: %d/%d", obs_pw_stream->format.info.raw.framerate.num,
-	     obs_pw_stream->format.info.raw.framerate.denom);
+		if (obs_pw_stream->decoder == NULL) {
+			blog(LOG_ERROR, "Failed to initialize decoder");
+			return;
+		}
+	}
 
 	/* Video crop */
 	pod_builder = SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
@@ -1153,6 +1216,8 @@ void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw_stream)
 
 uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw_stream)
 {
+	uint32_t negotiated_height;
+	uint32_t negotiated_width;
 	bool has_crop;
 
 	if (!obs_pw_stream->negotiated)
@@ -1160,17 +1225,34 @@ uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw_stream)
 
 	has_crop = has_effective_crop(obs_pw_stream);
 
+	switch (obs_pw_stream->format.media_subtype) {
+	case SPA_MEDIA_SUBTYPE_raw:
+		negotiated_height = obs_pw_stream->format.info.raw.size.height;
+		negotiated_width = obs_pw_stream->format.info.raw.size.width;
+		break;
+	case SPA_MEDIA_SUBTYPE_mjpg:
+		negotiated_height = obs_pw_stream->format.info.mjpg.size.height;
+		negotiated_width = obs_pw_stream->format.info.mjpg.size.width;
+		break;
+	case SPA_MEDIA_SUBTYPE_h264:
+		negotiated_height = obs_pw_stream->format.info.h264.size.height;
+		negotiated_width = obs_pw_stream->format.info.h264.size.width;
+		break;
+	default:
+		return 0;
+	}
+
 	switch (obs_pw_stream->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_None:
 	case SPA_META_TRANSFORMATION_Flipped180:
 	case SPA_META_TRANSFORMATION_180:
-		return has_crop ? obs_pw_stream->crop.width : obs_pw_stream->format.info.raw.size.width;
+		return has_crop ? obs_pw_stream->crop.width : negotiated_width;
 	case SPA_META_TRANSFORMATION_Flipped90:
 	case SPA_META_TRANSFORMATION_90:
 	case SPA_META_TRANSFORMATION_Flipped270:
 	case SPA_META_TRANSFORMATION_270:
-		return has_crop ? obs_pw_stream->crop.height : obs_pw_stream->format.info.raw.size.height;
+		return has_crop ? obs_pw_stream->crop.height : negotiated_height;
 	default:
 		return 0;
 	}
@@ -1178,6 +1260,8 @@ uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw_stream)
 
 uint32_t obs_pipewire_stream_get_height(obs_pipewire_stream *obs_pw_stream)
 {
+	uint32_t negotiated_height;
+	uint32_t negotiated_width;
 	bool has_crop;
 
 	if (!obs_pw_stream->negotiated)
@@ -1185,17 +1269,34 @@ uint32_t obs_pipewire_stream_get_height(obs_pipewire_stream *obs_pw_stream)
 
 	has_crop = has_effective_crop(obs_pw_stream);
 
+	switch (obs_pw_stream->format.media_subtype) {
+	case SPA_MEDIA_SUBTYPE_raw:
+		negotiated_height = obs_pw_stream->format.info.raw.size.height;
+		negotiated_width = obs_pw_stream->format.info.raw.size.width;
+		break;
+	case SPA_MEDIA_SUBTYPE_mjpg:
+		negotiated_height = obs_pw_stream->format.info.mjpg.size.height;
+		negotiated_width = obs_pw_stream->format.info.mjpg.size.width;
+		break;
+	case SPA_MEDIA_SUBTYPE_h264:
+		negotiated_height = obs_pw_stream->format.info.h264.size.height;
+		negotiated_width = obs_pw_stream->format.info.h264.size.width;
+		break;
+	default:
+		return 0;
+	}
+
 	switch (obs_pw_stream->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_None:
 	case SPA_META_TRANSFORMATION_Flipped180:
 	case SPA_META_TRANSFORMATION_180:
-		return has_crop ? obs_pw_stream->crop.height : obs_pw_stream->format.info.raw.size.height;
+		return has_crop ? obs_pw_stream->crop.height : negotiated_height;
 	case SPA_META_TRANSFORMATION_Flipped90:
 	case SPA_META_TRANSFORMATION_90:
 	case SPA_META_TRANSFORMATION_Flipped270:
 	case SPA_META_TRANSFORMATION_270:
-		return has_crop ? obs_pw_stream->crop.width : obs_pw_stream->format.info.raw.size.width;
+		return has_crop ? obs_pw_stream->crop.width : negotiated_width;
 	default:
 		return 0;
 	}
@@ -1270,6 +1371,8 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
 	if (output_flags & OBS_SOURCE_ASYNC_VIDEO)
 		obs_source_output_video(obs_pw_stream->source, NULL);
+
+	g_clear_pointer(&obs_pw_stream->decoder, obs_pipewire_decoder_destroy);
 
 	g_ptr_array_remove(obs_pw_stream->obs_pw->streams, obs_pw_stream);
 
