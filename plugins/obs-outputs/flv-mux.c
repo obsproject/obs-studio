@@ -198,11 +198,21 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t 
 	char *end = enc + sizeof(buf);
 	struct dstr encoder_name = {0};
 
+	bool is_multivideotrack = false;
+	for (int i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		obs_encoder_t *vencoder_multi =
+			obs_output_get_video_encoder2(context, i);
+		if (vencoder_multi && vencoder != vencoder_multi) {
+			is_multivideotrack = true;
+			break;
+		}
+	}
+
 	enc_str(&enc, end, "@setDataFrame");
 	enc_str(&enc, end, "onMetaData");
 
 	*enc++ = AMF_ECMA_ARRAY;
-	enc = AMF_EncodeInt32(enc, end, 20);
+	enc = AMF_EncodeInt32(enc, end, is_multivideotrack ? 21 : 20);
 
 	enc_num_val(&enc, end, "duration", 0.0);
 	enc_num_val(&enc, end, "fileSize", 0.0);
@@ -228,6 +238,41 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t 
 	enc_bool_val(&enc, end, "5.1", audio_output_get_channels(audio) == 6);
 	enc_bool_val(&enc, end, "7.1", audio_output_get_channels(audio) == 8);
 
+	// Add metadata info for multivideotrack encoders
+	if (is_multivideotrack) {
+		enc_obj_start_val(&enc, end, "videoTrackIdInfoMap");
+		for (int i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			obs_encoder_t *vencoder_multi =
+				obs_output_get_video_encoder2(context, i);
+			if (vencoder_multi && vencoder != vencoder_multi) {
+				video_t *video_multi =
+					obs_encoder_video(vencoder_multi);
+
+				char track_id[2];
+				snprintf(track_id, sizeof(track_id), "%d", i);
+				enc_obj_start_val(&enc, end, track_id);
+
+				enc_num_val(&enc, end, "width",
+					    (double)obs_encoder_get_width(
+						    vencoder_multi));
+				enc_num_val(&enc, end, "height",
+					    (double)obs_encoder_get_height(
+						    vencoder_multi));
+				enc_num_val(
+					&enc, end, "videocodecid",
+					encoder_video_codec(vencoder_multi));
+				enc_num_val(&enc, end, "videodatarate",
+					    encoder_bitrate(vencoder_multi));
+				enc_num_val(&enc, end, "framerate",
+					    video_output_get_frame_rate(
+						    video_multi));
+
+				enc_obj_end(&enc, end);
+			}
+		}
+		enc_obj_end(&enc, end);
+	}
+
 	dstr_printf(&encoder_name, "%s (libobs version ", MODULE_NAME);
 
 #ifdef HAVE_OBSCONFIG_H
@@ -241,9 +286,7 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t 
 	enc_str_val(&enc, end, "encoder", encoder_name.array);
 	dstr_free(&encoder_name);
 
-	*enc++ = 0;
-	*enc++ = 0;
-	*enc++ = AMF_OBJECT_END;
+	enc_obj_end(&enc, end);
 
 	*size = enc - buf;
 	*output = bmemdup(buf, *size);
