@@ -313,7 +313,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	using insertCollapsed_t = decltype(insertCollapsed);
 
 	auto preInsertCollapsed = [](obs_scene_t *, obs_sceneitem_t *item, void *param) {
-		(*reinterpret_cast<insertCollapsed_t *>(param))(item);
+		(*static_cast<insertCollapsed_t *>(param))(item);
 		return true;
 	};
 
@@ -373,7 +373,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	using updateScene_t = decltype(updateScene);
 
 	auto preUpdateScene = [](void *data, obs_scene_t *) {
-		(*reinterpret_cast<updateScene_t *>(data))();
+		(*static_cast<updateScene_t *>(data))();
 	};
 
 	ignoreReorder = true;
