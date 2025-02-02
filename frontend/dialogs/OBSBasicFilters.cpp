@@ -42,15 +42,15 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
 	  ui(new Ui::OBSBasicFilters),
 	  source(source_),
-	  addSignal(obs_source_get_signal_handler(source), "filter_add", OBSBasicFilters::OBSSourceFilterAdded, this),
-	  removeSignal(obs_source_get_signal_handler(source), "filter_remove", OBSBasicFilters::OBSSourceFilterRemoved,
-		       this),
-	  reorderSignal(obs_source_get_signal_handler(source), "reorder_filters", OBSBasicFilters::OBSSourceReordered,
-			this),
-	  removeSourceSignal(obs_source_get_signal_handler(source), "remove", OBSBasicFilters::SourceRemoved, this),
-	  renameSourceSignal(obs_source_get_signal_handler(source), "rename", OBSBasicFilters::SourceRenamed, this),
 	  noPreviewMargin(13)
 {
+	signal_handler_t *handler = obs_source_get_signal_handler(source);
+	sigs.emplace_back(handler, "filter_add", OBSBasicFilters::OBSSourceFilterAdded, this);
+	sigs.emplace_back(handler, "filter_remove", OBSBasicFilters::OBSSourceFilterRemoved, this);
+	sigs.emplace_back(handler, "reorder_filters", OBSBasicFilters::OBSSourceReordered, this);
+	sigs.emplace_back(handler, "remove", OBSBasicFilters::SourceRemoved, this);
+	sigs.emplace_back(handler, "rename", OBSBasicFilters::SourceRenamed, this);
+
 	main = reinterpret_cast<OBSBasic *>(parent);
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
