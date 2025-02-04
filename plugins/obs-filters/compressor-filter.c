@@ -26,7 +26,7 @@
 
 /* clang-format off */
 
-#define S_RATIO                         "ratio"
+#define S_FILTER_RATIO                  "ratio"
 #define S_FILTER_THRESHOLD              "threshold"
 #define S_ATTACK_TIME                   "attack_time"
 #define S_RELEASE_TIME                  "release_time"
@@ -189,7 +189,7 @@ static void compressor_update(void *data, obs_data_t *s)
 	const float output_gain_db = (float)obs_data_get_double(s, S_OUTPUT_GAIN);
 	const char *sidechain_name = obs_data_get_string(s, S_SIDECHAIN_SOURCE);
 
-	cd->ratio = (float)obs_data_get_double(s, S_RATIO);
+	cd->ratio = (float)obs_data_get_double(s, S_FILTER_RATIO);
 	cd->threshold = (float)obs_data_get_double(s, S_FILTER_THRESHOLD);
 	cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
 	cd->release_gain = gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
@@ -437,7 +437,7 @@ static struct obs_audio_data *compressor_filter_audio(void *data, struct obs_aud
 
 static void compressor_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_RATIO, 10.0f);
+	obs_data_set_default_double(s, S_FILTER_RATIO, 10.0f);
 	obs_data_set_default_double(s, S_FILTER_THRESHOLD, -18.0f);
 	obs_data_set_default_int(s, S_ATTACK_TIME, 6);
 	obs_data_set_default_int(s, S_RELEASE_TIME, 60);
@@ -475,7 +475,7 @@ static obs_properties_t *compressor_properties(void *data)
 	if (cd)
 		parent = obs_filter_get_parent(cd->context);
 
-	p = obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO, MIN_RATIO, MAX_RATIO, 0.5);
+	p = obs_properties_add_float_slider(props, S_FILTER_RATIO, TEXT_RATIO, MIN_RATIO, MAX_RATIO, 0.5);
 	obs_property_float_set_suffix(p, ":1");
 	p = obs_properties_add_float_slider(props, S_FILTER_THRESHOLD, TEXT_THRESHOLD, MIN_THRESHOLD_DB,
 					    MAX_THRESHOLD_DB, 0.1);
