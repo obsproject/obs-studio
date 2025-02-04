@@ -519,3 +519,8 @@ bool obs_canvas_has_video(obs_canvas_t *canvas)
 {
 	return canvas->mix != NULL;
 }
+
+void obs_canvas_render(obs_canvas_t *canvas)
+{
+	obs_view_render(&canvas->view);
+}
