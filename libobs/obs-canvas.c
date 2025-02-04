@@ -327,6 +327,26 @@ void obs_canvas_insert_source(obs_canvas_t *canvas, obs_source_t *source)
 	canvas_dosignal_source("source_add", canvas, source);
 }
 
+static bool remove_groups_items_cb(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
+{
+	UNUSED_PARAMETER(scene);
+
+	obs_source_t *source = param;
+	if (item->source == source)
+		obs_sceneitem_remove(item);
+
+	return true;
+}
+
+static bool remove_groups_enum_cb(void *param, obs_source_t *scene_source)
+{
+	obs_source_t *source = param;
+	obs_scene_t *scene = obs_scene_from_source(scene_source);
+
+	obs_scene_enum_items(scene, remove_groups_items_cb, source);
+	return true;
+}
+
 void obs_canvas_remove_source(obs_source_t *source)
 {
 	obs_canvas_t *canvas = obs_weak_canvas_get_canvas(source->canvas);
@@ -337,6 +357,10 @@ void obs_canvas_remove_source(obs_source_t *source)
 		canvas_dosignal_source("source_remove", canvas, source);
 		if (canvas->flags & SCENE_REF && obs_source_is_scene(source))
 			obs_source_release(source);
+
+		/* If source is a group, also remove it from all other scenes in the old canvas */
+		if (obs_source_is_group(source))
+			obs_canvas_enum_scenes(canvas, remove_groups_enum_cb, source);
 
 		obs_canvas_release(canvas);
 	}
