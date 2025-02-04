@@ -1189,14 +1189,6 @@ bool load_nvidia_vfx(void)
 	LOAD_SYM(NvCVImage_FromD3DColorSpace);
 #undef LOAD_SYM
 
-#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cudart, "cudart64_110.dll")
-	LOAD_SYM(cudaMalloc);
-	LOAD_SYM(cudaStreamSynchronize);
-	LOAD_SYM(cudaFree);
-	LOAD_SYM(cudaMemcpy);
-	LOAD_SYM(cudaMemsetAsync);
-#undef LOAD_SYM
-
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
 	LOAD_SYM(NvVFX_SetStateObjectHandleArray);
 	LOAD_SYM(NvVFX_AllocateState);

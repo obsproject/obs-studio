@@ -670,15 +670,6 @@ static inline void release_nv_vfx()
 		FreeLibrary(nv_cvimage);
 		nv_cvimage = NULL;
 	}
-	cudaMalloc = NULL;
-	cudaStreamSynchronize = NULL;
-	cudaFree = NULL;
-	cudaMemcpy = NULL;
-	cudaMemsetAsync = NULL;
-	if (nv_cudart) {
-		FreeLibrary(nv_cudart);
-		nv_cudart = NULL;
-	}
 }
 
 static inline void nvvfx_get_sdk_path(char *buffer, const size_t len)
@@ -702,9 +693,8 @@ static inline bool load_nv_vfx_libs()
 
 	nv_videofx = LoadLibrary(L"NVVideoEffects.dll");
 	nv_cvimage = LoadLibrary(L"NVCVImage.dll");
-	nv_cudart = LoadLibrary(L"cudart64_110.dll");
 	SetDllDirectoryA(NULL);
-	return !!nv_videofx && !!nv_cvimage && !!nv_cudart;
+	return !!nv_videofx && !!nv_cvimage;
 }
 
 static unsigned int get_lib_version(void)
