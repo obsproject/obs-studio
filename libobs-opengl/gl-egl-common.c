@@ -26,6 +26,9 @@
 
 #include <linux/types.h>
 #include <asm/ioctl.h>
+#include <xf86drm.h>
+#include <unistd.h>
+#include <fcntl.h>
 typedef unsigned int drm_handle_t;
 
 #else
@@ -392,6 +395,95 @@ bool gl_egl_query_dmabuf_modifiers_for_format(EGLDisplay egl_display, uint32_t d
 	return true;
 }
 
+bool gl_egl_query_sync_capabilities(int drm_fd)
+{
+	uint64_t syncobjCap = 0;
+	uint64_t syncobjTimelineCap = 0;
+
+	drmGetCap(drm_fd, DRM_CAP_SYNCOBJ, &syncobjCap);
+	drmGetCap(drm_fd, DRM_CAP_SYNCOBJ_TIMELINE, &syncobjTimelineCap);
+	return syncobjCap && syncobjTimelineCap && (EGL_ANDROID_native_fence_sync > 0);
+}
+
+gs_sync_t *gl_egl_create_sync(EGLDisplay egl_display)
+{
+	gs_sync_t *sync = eglCreateSync(egl_display, EGL_SYNC_NATIVE_FENCE_ANDROID, NULL);
+	glFlush();
+	return sync;
+}
+
+gs_sync_t *gl_egl_create_sync_from_syncobj_timeline_point(EGLDisplay egl_display, int drm_fd, int syncobj_fd,
+							  uint64_t timeline_point)
+{
+	EGLSync sync;
+	int syncfile_fd = -1;
+	uint32_t syncobj_handle = 0;
+	uint32_t temp_handle = 0;
+
+	drmSyncobjFDToHandle(drm_fd, syncobj_fd, &syncobj_handle);
+	drmSyncobjTimelineWait(drm_fd, &syncobj_handle, &timeline_point, 1, INT64_MAX,
+			       DRM_SYNCOBJ_WAIT_FLAGS_WAIT_AVAILABLE, NULL);
+	drmSyncobjCreate(drm_fd, 0, &temp_handle);
+	drmSyncobjTransfer(drm_fd, temp_handle, 0, syncobj_handle, timeline_point, 0);
+	drmSyncobjExportSyncFile(drm_fd, temp_handle, &syncfile_fd);
+	drmSyncobjDestroy(drm_fd, temp_handle);
+	drmSyncobjDestroy(drm_fd, syncobj_handle);
+
+	const EGLAttrib attributes[] = {EGL_SYNC_NATIVE_FENCE_FD_ANDROID, syncfile_fd, EGL_NONE};
+
+	sync = eglCreateSync(egl_display, EGL_SYNC_NATIVE_FENCE_ANDROID, attributes);
+	if (sync == EGL_NO_SYNC) {
+		blog(LOG_ERROR, "Unable to create an EGLSync object from a syncfile fd");
+		close(syncfile_fd);
+	}
+
+	return sync;
+}
+
+bool gl_egl_sync_export_syncobj_timeline_point(EGLDisplay egl_display, gs_sync_t *sync, int drm_fd, int syncobj_fd,
+					       uint64_t timeline_point)
+{
+	uint32_t syncobj_handle = 0;
+	uint32_t temp_handle = 0;
+
+	int gs_sync_fd = eglDupNativeFenceFDANDROID(egl_display, sync);
+	if (gs_sync_fd == EGL_NO_NATIVE_FENCE_FD_ANDROID) {
+		return false;
+	}
+
+	drmSyncobjFDToHandle(drm_fd, syncobj_fd, &syncobj_handle);
+	drmSyncobjCreate(drm_fd, 0, &temp_handle);
+	drmSyncobjImportSyncFile(drm_fd, temp_handle, gs_sync_fd);
+	drmSyncobjTransfer(drm_fd, syncobj_handle, timeline_point, temp_handle, 0, 0);
+	drmSyncobjDestroy(drm_fd, temp_handle);
+	drmSyncobjDestroy(drm_fd, syncobj_handle);
+	close(gs_sync_fd);
+
+	return true;
+}
+
+bool gl_egl_sync_signal_syncobj_timeline_point(int drm_fd, int syncobj_fd, uint64_t timeline_point)
+{
+	uint32_t syncobj_handle = 0;
+	bool result;
+
+	drmSyncobjFDToHandle(drm_fd, syncobj_fd, &syncobj_handle);
+	result = drmSyncobjTimelineSignal(drm_fd, &syncobj_handle, &timeline_point, 1) == 0;
+	drmSyncobjDestroy(drm_fd, syncobj_handle);
+
+	return result;
+}
+
+void gl_egl_device_sync_destroy(EGLDisplay egl_display, gs_sync_t *sync)
+{
+	eglDestroySync(egl_display, sync);
+}
+
+bool gl_egl_sync_wait(EGLDisplay egl_display, gs_sync_t *sync)
+{
+	return eglWaitSync(egl_display, sync, 0);
+}
+
 const char *gl_egl_error_to_string(EGLint error_number)
 {
 	switch (error_number) {
@@ -444,4 +536,27 @@ const char *gl_egl_error_to_string(EGLint error_number)
 		return "Unknown error";
 		break;
 	}
+}
+
+int get_drm_render_node_fd(EGLDisplay egl_display)
+{
+	EGLAttrib attrib;
+	EGLDeviceEXT device;
+	const char *drm_render_node_path;
+
+	if (eglQueryDisplayAttribEXT(egl_display, EGL_DEVICE_EXT, &attrib) != EGL_TRUE) {
+		return -1;
+	}
+	device = (EGLDeviceEXT)attrib;
+	drm_render_node_path = eglQueryDeviceStringEXT(device, EGL_DRM_RENDER_NODE_FILE_EXT);
+	if (drm_render_node_path == NULL) {
+		return -1;
+	}
+
+	return open(drm_render_node_path, O_RDWR | O_CLOEXEC);
+}
+
+void close_drm_render_node_fd(int fd)
+{
+	close(fd);
 }

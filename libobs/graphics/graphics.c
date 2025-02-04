@@ -1371,6 +1371,58 @@ gs_texture_t *gs_texture_create_from_pixmap(uint32_t width, uint32_t height, enu
 								   target, pixmap);
 }
 
+bool gs_query_sync_capabilities(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_query_sync_capabilities(graphics->device);
+}
+
+gs_sync_t *gs_sync_create(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_sync_create(graphics->device);
+}
+
+gs_sync_t *gs_sync_create_from_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_sync_create_from_syncobj_timeline_point(graphics->device, syncobj_fd,
+										timeline_point);
+}
+
+void gs_sync_destroy(gs_sync_t *sync)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_sync_destroy(graphics->device, sync);
+}
+
+bool gs_sync_export_syncobj_timeline_point(gs_sync_t *sync, int syncobj_fd, uint64_t timeline_point)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_sync_export_syncobj_timeline_point(graphics->device, sync, syncobj_fd,
+									   timeline_point);
+}
+
+bool gs_sync_signal_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_sync_signal_syncobj_timeline_point(graphics->device, syncobj_fd,
+									   timeline_point);
+}
+
+bool gs_sync_wait(gs_sync_t *sync)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_sync_wait(graphics->device, sync);
+}
+
 #endif
 
 gs_texture_t *gs_cubetexture_create(uint32_t size, enum gs_color_format color_format, uint32_t levels,
