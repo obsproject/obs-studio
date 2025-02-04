@@ -1,5 +1,5 @@
 #pragma once
-
+#define NOMINMAX
 #include <obs.hpp>
 
 #include <QMutex>
