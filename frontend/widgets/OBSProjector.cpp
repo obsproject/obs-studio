@@ -157,7 +157,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	if (!window->ready)
 		return;
 
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 	OBSSource source = window->GetSource();
 
 	uint32_t targetCX;
@@ -297,7 +297,7 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 void OBSProjector::EscapeTriggered()
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 	main->DeleteProjector(this);
 }
 
