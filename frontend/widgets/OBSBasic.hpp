@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #pragma once
+#define NOMINMAX
 
 #include "ui_OBSBasic.h"
 #include "OBSMainWindow.hpp"

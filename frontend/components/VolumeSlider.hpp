@@ -1,5 +1,5 @@
 #pragma once
-
+#define NOMINMAX
 #include <components/AbsoluteSlider.hpp>
 
 #include <obs.hpp>
