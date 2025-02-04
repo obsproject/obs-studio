@@ -758,6 +758,12 @@ EXPORT void obs_render_main_texture(void);
 /** Renders the last main output texture ignoring background color */
 EXPORT void obs_render_main_texture_src_color_only(void);
 
+/** Renders the last canvas output texture */
+EXPORT void obs_render_canvas_texture(obs_canvas_t *canvas);
+
+/** Renders the last main output texture ignoring background color */
+EXPORT void obs_render_canvas_texture_src_color_only(obs_canvas_t *canvas);
+
 /** Returns the last main output texture.  This can return NULL if the texture
  * is unavailable. */
 EXPORT gs_texture_t *obs_get_main_texture(void);
@@ -2583,6 +2589,8 @@ EXPORT bool obs_canvas_has_video(obs_canvas_t *canvas);
 EXPORT video_t *obs_canvas_get_video(const obs_canvas_t *canvas);
 /** Get canvas video info (if it exists) */
 EXPORT bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info *ovi);
+/** Renders the sources of this canvas's view context */
+EXPORT void obs_canvas_render(obs_canvas_t *canvas);
 
 #ifdef __cplusplus
 }
