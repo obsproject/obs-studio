@@ -280,6 +280,7 @@ target_include_directories(
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 )
 
+# TODO: Remove for 32.0
 target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 
 set(
