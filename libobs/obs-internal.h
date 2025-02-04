@@ -210,12 +210,19 @@ void obs_hotkey_name_map_free(void);
 /* ------------------------------------------------------------------------- */
 /* views */
 
+enum view_type {
+	INVALID_VIEW,
+	MAIN_VIEW,
+	AUX_VIEW,
+};
+
 struct obs_view {
 	pthread_mutex_t channels_mutex;
 	obs_source_t *channels[MAX_CHANNELS];
+	enum view_type type;
 };
 
-extern bool obs_view_init(struct obs_view *view);
+extern bool obs_view_init(struct obs_view *view, enum view_type type);
 extern void obs_view_free(struct obs_view *view);
 
 /* ------------------------------------------------------------------------- */
@@ -905,11 +912,6 @@ extern obs_source_t *obs_source_create_set_last_ver(const char *id, const char *
 						    uint32_t last_obs_ver, bool is_private);
 extern void obs_source_destroy(struct obs_source *source);
 extern void obs_source_addref(obs_source_t *source);
-
-enum view_type {
-	MAIN_VIEW,
-	AUX_VIEW,
-};
 
 static inline void obs_source_dosignal(struct obs_source *source, const char *signal_obs, const char *signal_source)
 {
