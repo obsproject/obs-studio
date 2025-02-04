@@ -2124,7 +2124,7 @@ proc_handler_t *obs_get_proc_handler(void)
 	return obs->procs;
 }
 
-static void obs_render_main_texture_internal(enum gs_blend_type src_c, enum gs_blend_type dest_c,
+static void obs_render_main_texture_internal(obs_canvas_t *canvas, enum gs_blend_type src_c, enum gs_blend_type dest_c,
 					     enum gs_blend_type src_a, enum gs_blend_type dest_a)
 {
 	struct obs_core_video_mix *video;
@@ -2132,8 +2132,8 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c, enum gs_b
 	gs_effect_t *effect;
 	gs_eparam_t *param;
 
-	video = obs->data.main_canvas->mix;
-	if (!video->texture_rendered)
+	video = canvas->mix;
+	if (!video || !video->texture_rendered)
 		return;
 
 	const enum gs_color_space source_space = video->render_space;
@@ -2177,12 +2177,25 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c, enum gs_b
 
 void obs_render_main_texture(void)
 {
-	obs_render_main_texture_internal(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA, GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	obs_render_main_texture_internal(obs->data.main_canvas, GS_BLEND_ONE, GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
+					 GS_BLEND_INVSRCALPHA);
 }
 
 void obs_render_main_texture_src_color_only(void)
 {
-	obs_render_main_texture_internal(GS_BLEND_ONE, GS_BLEND_ZERO, GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	obs_render_main_texture_internal(obs->data.main_canvas, GS_BLEND_ONE, GS_BLEND_ZERO, GS_BLEND_ONE,
+					 GS_BLEND_INVSRCALPHA);
+}
+
+void obs_render_canvas_texture(obs_canvas_t *canvas)
+{
+	obs_render_main_texture_internal(canvas, GS_BLEND_ONE, GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
+					 GS_BLEND_INVSRCALPHA);
+}
+
+void obs_render_canvas_texture_src_color_only(obs_canvas_t *canvas)
+{
+	obs_render_main_texture_internal(canvas, GS_BLEND_ONE, GS_BLEND_ZERO, GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 }
 
 gs_texture_t *obs_get_main_texture(void)
