@@ -10,7 +10,7 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 {
 	GoLiveApi::PostData post_data{};
 	post_data.service = "IVS";
-	post_data.schema_version = "2024-06-04";
+	post_data.schema_version = "2025-01-25";
 	post_data.authentication = streamKey.toStdString();
 
 	system_info(post_data.capabilities);
@@ -50,15 +50,12 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 
 	obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
-		preferences.width = ovi.output_width;
-		preferences.height = ovi.output_height;
-		preferences.framerate.numerator = ovi.fps_num;
-		preferences.framerate.denominator = ovi.fps_den;
-
-		preferences.canvas_width = ovi.base_width;
-		preferences.canvas_height = ovi.base_height;
-
 		preferences.composition_gpu_index = ovi.adapter;
+		preferences.canvases.emplace_back(GoLiveApi::Canvas{ovi.output_width,
+								    ovi.output_height,
+								    ovi.base_width,
+								    ovi.base_height,
+								    {ovi.fps_num, ovi.fps_den}});
 	}
 
 	obs_audio_info2 oai2;
