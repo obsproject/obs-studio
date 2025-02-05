@@ -57,7 +57,7 @@ function(set_target_properties_obs target)
   elseif(target_type STREQUAL MODULE_LIBRARY)
     set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_VERSION_CANONICAL})
 
-    if(target STREQUAL libobs-d3d11 OR target STREQUAL libobs-opengl OR target STREQUAL libobs-winrt)
+    if(target STREQUAL libobs-d3d11 OR target STREQUAL libobs-d3d12 OR target STREQUAL libobs-opengl OR target STREQUAL libobs-winrt)
       set(target_destination "${OBS_EXECUTABLE_DESTINATION}")
     elseif(target STREQUAL "obspython" OR target STREQUAL "obslua")
       set(target_destination "${OBS_SCRIPT_PLUGIN_DESTINATION}")

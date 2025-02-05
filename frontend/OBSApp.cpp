@@ -961,7 +961,7 @@ void OBSApp::AppInit()
 const char *OBSApp::GetRenderModule() const
 {
 	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
-
+	return "libobs-d3d12.dll";
 	return (astrcmpi(renderer, "Direct3D 11") == 0) ? DL_D3D11 : DL_OPENGL;
 }
 

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
+    Copyright (C) 2025 by hongqingwan <hongqingwan@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,7 +35,10 @@
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/HRError.hpp>
 
-// TODO(wanhongqing) libobs-d3d11 and libobs-d3d12 need clean
+struct shader_var;
+struct shader_sampler;
+struct gs_vertex_shader;
+
 static inline uint32_t GetWinVer()
 {
 	struct win_version_info ver;
@@ -112,8 +115,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormatView(gs_color_format format)
 	}
 }
 
-static inline DXGI_FORMAT
-ConvertGSTextureFormatViewLinear(gs_color_format format)
+static inline DXGI_FORMAT ConvertGSTextureFormatViewLinear(gs_color_format format)
 {
 	switch (format) {
 	case GS_RGBA:
@@ -321,7 +323,6 @@ static inline D3D12_PRIMITIVE_TOPOLOGY ConvertGSTopology(gs_draw_mode mode)
 	return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
 }
 
-/* exception-safe RAII wrapper for vertex buffer data (NOTE: not copy-safe) */
 struct VBDataPtr {
 	gs_vb_data *data;
 
@@ -357,97 +358,17 @@ struct gs_obj {
 	virtual ~gs_obj();
 };
 
-struct gs_vertex_buffer : gs_obj {
-	// todo
-	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
-			 uint32_t flags);
-};
-
-/* exception-safe RAII wrapper for index buffer data (NOTE: not copy-safe) */
-struct DataPtr {
-	void *data;
-
-	inline DataPtr(void *data) : data(data) {}
-	inline ~DataPtr() { bfree(data); }
-};
-
-struct gs_index_buffer : gs_obj {
-	// todo
-	gs_index_buffer(gs_device_t *device, enum gs_index_type type,
-			void *indices, size_t num, uint32_t flags);
-};
-
-struct gs_timer : gs_obj {
-	// todo
-	gs_timer(gs_device_t *device);
-};
-
-struct gs_timer_range : gs_obj {
-	// todo
-	gs_timer_range(gs_device_t *device);
-};
-
-struct gs_texture : gs_obj {
-	gs_texture_type type;
-	uint32_t levels;
-	gs_color_format format;
-	// todo
-	inline gs_texture(gs_texture_type type, uint32_t levels,
-			  gs_color_format format)
-		: type(type),
-		  levels(levels),
-		  format(format)
-	{
-	}
-
-	inline gs_texture(gs_device *device, gs_type obj_type,
-			  gs_texture_type type)
-		: gs_obj(device, obj_type),
-		  type(type)
-	{
-	}
-
-	inline gs_texture(gs_device *device, gs_type obj_type,
-			  gs_texture_type type, uint32_t levels,
-			  gs_color_format format)
-		: gs_obj(device, obj_type),
-		  type(type),
-		  levels(levels),
-		  format(format)
-	{
-	}
-};
-
-struct gs_texture_2d : gs_texture {
-	// todo
-};
-
-struct gs_texture_3d : gs_texture {
-	// todo
-};
-
-struct gs_zstencil_buffer : gs_obj {
-	uint32_t width, height;
-	gs_zstencil_format format;
-	DXGI_FORMAT dxgiFormat;
-	// todo
-	gs_zstencil_buffer(gs_device_t *device, uint32_t width, uint32_t height,
-			   gs_zstencil_format format);
-};
-
-struct gs_stage_surface : gs_obj {
-	uint32_t width, height;
-	gs_color_format format;
-	DXGI_FORMAT dxgiFormat;
-	// todo
-	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height,
-			 gs_color_format colorFormat);
-	gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t height,
-			 bool p010);
-};
-
 struct gs_sampler_state : gs_obj {
-	// todo
+	// ComPtr<ID3D11SamplerState> state;
+	// D3D11_SAMPLER_DESC sd = {};
+	gs_sampler_info info;
+
+	// void Rebuild(ID3D11Device *dev);
+
+	inline void Release() {
+		// state.Release();
+	}
+
 	gs_sampler_state(gs_device_t *device, const gs_sampler_info *info);
 };
 
@@ -465,28 +386,33 @@ struct gs_shader_param {
 	std::vector<uint8_t> curValue;
 	std::vector<uint8_t> defaultValue;
 	bool changed;
+
+	gs_shader_param(shader_var &var, uint32_t &texCounter);
 };
 
 struct ShaderError {
 	ComPtr<ID3D10Blob> errors;
 	HRESULT hr;
 
-	inline ShaderError(const ComPtr<ID3D10Blob> &errors, HRESULT hr)
-		: errors(errors),
-		  hr(hr)
-	{
-	}
+	inline ShaderError(const ComPtr<ID3D10Blob> &errors, HRESULT hr) : errors(errors), hr(hr) {}
 };
 
 struct gs_shader : gs_obj {
 	gs_shader_type type;
 	std::vector<gs_shader_param> params;
+	std::vector<uint8_t> constants;
 	size_t constantSize;
-	void Compile(const char *shaderStr, const char *file,
-		     const char *target, ID3D10Blob **shader);
 
-	inline gs_shader(gs_device_t *device, gs_type obj_type,
-			 gs_shader_type type)
+	// D3D11_BUFFER_DESC bd = {};
+	std::vector<uint8_t> data;
+
+	inline void UpdateParam(std::vector<uint8_t> &constData, gs_shader_param &param, bool &upload);
+	void UploadParams();
+
+	void BuildConstantBuffer();
+	void Compile(const char *shaderStr, const char *file, const char *target, ID3D10Blob **shader);
+
+	inline gs_shader(gs_device_t *device, gs_type obj_type, gs_shader_type type)
 		: gs_obj(device, obj_type),
 		  type(type),
 		  constantSize(0)
@@ -500,211 +426,161 @@ struct ShaderSampler {
 	std::string name;
 	gs_sampler_state sampler;
 
-	inline ShaderSampler(const char *name, gs_device_t *device,
-			     gs_sampler_info *info)
+	inline ShaderSampler(const char *name, gs_device_t *device, gs_sampler_info *info)
 		: name(name),
 		  sampler(device, info)
 	{
 	}
 };
 
+
 struct gs_vertex_shader : gs_shader {
-	gs_vertex_shader(gs_device_t *device, const char *file,
-			 const char *shaderString);
+	gs_shader_param *world, *viewProj;
+
+	std::vector<D3D12_INPUT_ELEMENT_DESC> layoutData;
+
+	bool hasNormals;
+	bool hasColors;
+	bool hasTangents;
+	uint32_t nTexUnits;
+
+	// void Rebuild(ID3D11Device *dev);
+
+	inline void Release()
+	{
+		// shader.Release();
+		// layout.Release();
+		// constants.Release();
+	}
+
+	inline uint32_t NumBuffersExpected() const
+	{
+		uint32_t count = nTexUnits + 1;
+		if (hasNormals)
+			count++;
+		if (hasColors)
+			count++;
+		if (hasTangents)
+			count++;
+
+		return count;
+	}
+
+	void GetBuffersExpected(const std::vector<D3D12_INPUT_ELEMENT_DESC> &inputs);
+
+	gs_vertex_shader(gs_device_t *device, const char *file, const char *shaderString);
 };
+
 
 struct gs_pixel_shader : gs_shader {
-	gs_pixel_shader(gs_device_t *device, const char *file,
-			const char *shaderString);
-};
+	// ComPtr<ID3D11PixelShader> shader;
+	std::vector<std::unique_ptr<ShaderSampler>> samplers;
 
-struct gs_swap_chain : gs_obj {
-	HWND hwnd;
-	gs_init_data initData;
-	DXGI_SWAP_CHAIN_DESC1 swapDesc = {};
-	gs_color_space space;
+	// void Rebuild(ID3D11Device *dev);
 
-	gs_texture_2d target;
-	gs_zstencil_buffer zs;
-	ComPtr<IDXGISwapChain4> swap;
-	HANDLE hWaitable = NULL;
-
-	void InitTarget(uint32_t cx, uint32_t cy);
-	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
-	void Resize(uint32_t cx, uint32_t cy, gs_color_format format);
-	void Init();
-	// todo
-
-	gs_swap_chain(gs_device *device, const gs_init_data *data);
-	virtual ~gs_swap_chain();
-};
-
-struct BlendState {
-	bool blendEnabled;
-	gs_blend_type srcFactorC;
-	gs_blend_type destFactorC;
-	gs_blend_type srcFactorA;
-	gs_blend_type destFactorA;
-	gs_blend_op_type op;
-
-	bool redEnabled;
-	bool greenEnabled;
-	bool blueEnabled;
-	bool alphaEnabled;
-
-	inline BlendState()
-		: blendEnabled(true),
-		srcFactorC(GS_BLEND_SRCALPHA),
-		destFactorC(GS_BLEND_INVSRCALPHA),
-		srcFactorA(GS_BLEND_ONE),
-		destFactorA(GS_BLEND_INVSRCALPHA),
-		op(GS_BLEND_OP_ADD),
-		redEnabled(true),
-		greenEnabled(true),
-		blueEnabled(true),
-		alphaEnabled(true)
+	inline void Release()
 	{
+		// shader.Release();
+		// constants.Release();
 	}
 
-	inline BlendState(const BlendState& state)
+	//inline void GetSamplerStates(ID3D11SamplerState **states)
+	//{
+	//	size_t i;
+	//	for (i = 0; i < samplers.size(); i++)
+	//		states[i] = samplers[i]->sampler.state;
+	//	for (; i < GS_MAX_TEXTURES; i++)
+	//		states[i] = NULL;
+	//}
+
+	gs_pixel_shader(gs_device_t *device, const char *file, const char *shaderString);
+};
+
+
+struct gs_vertex_buffer : gs_obj {
+	ComPtr<ID3D12Resource> vertexBuffer;
+	ComPtr<ID3D12Resource> normalBuffer;
+	ComPtr<ID3D12Resource> colorBuffer;
+	ComPtr<ID3D12Resource> tangentBuffer;
+	std::vector<ComPtr<ID3D12Resource>> uvBuffers;
+
+	bool dynamic;
+	VBDataPtr vbd;
+	size_t numVerts;
+	std::vector<size_t> uvSizes;
+
+	void FlushBuffer(ID3D12Resource *buffer, void *array, size_t elementSize);
+
+	UINT MakeBufferList(gs_vertex_shader *shader, ID3D12Resource **buffers, uint32_t *strides);
+
+	void InitBuffer(const size_t elementSize, const size_t numVerts, void *array, ID3D12Resource **buffer);
+
+	void BuildBuffers();
+
+	inline void Release()
 	{
-		memcpy(this, &state, sizeof(BlendState));
-	}
-};
-
-
-struct StencilSide {
-	gs_depth_test test;
-	gs_stencil_op_type fail;
-	gs_stencil_op_type zfail;
-	gs_stencil_op_type zpass;
-
-	inline StencilSide()
-		: test(GS_ALWAYS),
-		fail(GS_KEEP),
-		zfail(GS_KEEP),
-		zpass(GS_KEEP)
-	{
-	}
-};
-
-struct ZStencilState {
-	bool depthEnabled;
-	bool depthWriteEnabled;
-	gs_depth_test depthFunc;
-
-	bool stencilEnabled;
-	bool stencilWriteEnabled;
-	StencilSide stencilFront;
-	StencilSide stencilBack;
-
-	inline ZStencilState()
-		: depthEnabled(true),
-		depthWriteEnabled(true),
-		depthFunc(GS_LESS),
-		stencilEnabled(false),
-		stencilWriteEnabled(true)
-	{
+		vertexBuffer.Release();
+		normalBuffer.Release();
+		colorBuffer.Release();
+		tangentBuffer.Release();
+		uvBuffers.clear();
 	}
 
-	inline ZStencilState(const ZStencilState& state)
-	{
-		memcpy(this, &state, sizeof(ZStencilState));
-	}
+	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data, uint32_t flags);
 };
 
-struct RasterState {
-	gs_cull_mode cullMode;
-	bool scissorEnabled;
 
-	inline RasterState() : cullMode(GS_BACK), scissorEnabled(false) {}
+/* exception-safe RAII wrapper for index buffer data (NOTE: not copy-safe) */
+struct DataPtr {
+	void *data;
 
-	inline RasterState(const RasterState& state)
-	{
-		memcpy(this, &state, sizeof(RasterState));
-	}
+	inline DataPtr(void *data) : data(data) {}
+	inline ~DataPtr() { bfree(data); }
 };
 
-struct mat4float {
-	float mat[16];
+struct gs_index_buffer : gs_obj {
+	ComPtr<ID3D12Resource> indexBuffer;
+	bool dynamic;
+	gs_index_type type;
+	size_t indexSize;
+	size_t num;
+	DataPtr indices;
+
+	void InitBuffer();
+
+	inline void Release() { indexBuffer.Release(); }
+
+	gs_index_buffer(gs_device_t *device, enum gs_index_type type, void *indices, size_t num, uint32_t flags);
 };
 
-struct gs_monitor_color_info {
-	bool hdr;
-	UINT bits_per_color;
-	ULONG sdr_white_nits;
-
-	gs_monitor_color_info(bool hdr, int bits_per_color,
-			      ULONG sdr_white_nits)
-		: hdr(hdr),
-		  bits_per_color(bits_per_color),
-		  sdr_white_nits(sdr_white_nits)
-	{
-	}
-};
-
-struct SavedPipelineState {
-	ComPtr<ID3D12PipelineState> pipeline_state;
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc;
-};
 
 struct gs_device {
 	ComPtr<IDXGIFactory6> factory;
-	ComPtr<IDXGIAdapter4> adapter;
-	ComPtr<ID3D12Device1> device;
-	ComPtr<ID3D12CommandQueue> commandQueue;
-	ComPtr<ID3D12GraphicsCommandList2> context;
+	ComPtr<ID3D12Device> device;
+	ComPtr<IDXGIAdapter> adapter;
+	ComPtr<ID3D12GraphicsCommandList> context;
 	uint32_t adpIdx = 0;
-	bool nv12Supported = false;
-	bool p010Supported = false;
-	bool fastClearSupported = false;
 
-	gs_texture_2d *curRenderTarget = nullptr;
-	gs_zstencil_buffer *curZStencilBuffer = nullptr;
-	int curRenderSide = 0;
 	enum gs_color_space curColorSpace = GS_CS_SRGB;
-	bool curFramebufferSrgb = false;
-	bool curFramebufferInvalidate = false;
-	gs_texture *curTextures[GS_MAX_TEXTURES];
-	gs_sampler_state *curSamplers[GS_MAX_TEXTURES];
-	gs_vertex_buffer *curVertexBuffer = nullptr;
-	gs_index_buffer *curIndexBuffer = nullptr;
-	gs_vertex_shader *curVertexShader = nullptr;
-	gs_pixel_shader *curPixelShader = nullptr;
-	gs_swap_chain *curSwapChain = nullptr;
-
-	gs_vertex_buffer *lastVertexBuffer = nullptr;
-	gs_vertex_shader *lastVertexShader = nullptr;
-
-	// pipeline state
-	bool zstencilStateChanged = true;
-	bool rasterStateChanged = true;
-	bool blendStateChanged = true;
-	ZStencilState zstencilState;
-	RasterState rasterState;
-	BlendState blendState;
-	std::vector<SavedPipelineState> SavedPipelineState;
-	D3D_PRIMITIVE_TOPOLOGY curToplogy;
-	ComPtr<ID3D12PipelineState> currentPipelineState;
 
 	gs_rect viewport;
-
-	std::vector<mat4float> projStack;
-
+	gs_obj *first_obj = nullptr;
+	//gs_texture *curTextures[GS_MAX_TEXTURES];
+	//gs_sampler_state *curSamplers[GS_MAX_TEXTURES];
 	matrix4 curProjMatrix;
 	matrix4 curViewMatrix;
 	matrix4 curViewProjMatrix;
 
-	std::vector<gs_device_loss> loss_callbacks;
-	gs_obj *first_obj = nullptr;
-
-	std::vector<std::pair<HMONITOR, gs_monitor_color_info>> monitor_to_hdr;
+	gs_vertex_shader *lastVertexShader = nullptr;
+	gs_vertex_buffer *lastVertexBuffer = nullptr;
 
 	void InitFactory();
 	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 
-	void UpdatePipelineState();
+	void UpdateZStencilState();
+	void UpdateRasterState();
+	void UpdateBlendState();
 
 	void LoadVertexBufferData();
 
@@ -712,15 +588,6 @@ struct gs_device {
 
 	void FlushOutputViews();
 
-	void RebuildDevice();
-
-	bool HasBadNV12Output();
-
-	gs_monitor_color_info GetMonitorColorInfo(HMONITOR hMonitor);
-
 	gs_device(uint32_t adapterIdx);
 	~gs_device();
 };
-
-extern "C" EXPORT int device_texture_acquire_sync(gs_texture_t *tex,
-						  uint64_t key, uint32_t ms);
