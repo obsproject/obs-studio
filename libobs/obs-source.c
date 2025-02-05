@@ -394,7 +394,7 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	source->enabled = true;
 
 	obs_source_init_finalize(source, canvas);
-	if (!private) {
+	if (!private && (!canvas || canvas == obs->data.main_canvas)) {
 		obs_source_dosignal(source, "source_create", NULL);
 	}
 
