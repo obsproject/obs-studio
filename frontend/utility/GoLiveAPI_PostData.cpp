@@ -6,7 +6,8 @@
 #include <nlohmann/json.hpp>
 
 GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<uint64_t> &maximum_aggregate_bitrate,
-					const std::optional<uint32_t> &maximum_video_tracks, bool vod_track_enabled)
+					const std::optional<uint32_t> &maximum_video_tracks, bool vod_track_enabled,
+					const std::vector<OBSCanvasAutoRelease> &canvases)
 {
 	GoLiveApi::PostData post_data{};
 	post_data.service = "IVS";
@@ -49,13 +50,17 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 	preferences.vod_track_audio = vod_track_enabled;
 
 	obs_video_info ovi;
-	if (obs_get_video_info(&ovi)) {
+	if (obs_get_video_info(&ovi))
 		preferences.composition_gpu_index = ovi.adapter;
-		preferences.canvases.emplace_back(GoLiveApi::Canvas{ovi.output_width,
-								    ovi.output_height,
-								    ovi.base_width,
-								    ovi.base_height,
-								    {ovi.fps_num, ovi.fps_den}});
+
+	for (const auto &canvas : canvases) {
+		if (obs_canvas_get_video_info(canvas, &ovi)) {
+			preferences.canvases.emplace_back(GoLiveApi::Canvas{ovi.output_width,
+									    ovi.output_height,
+									    ovi.base_width,
+									    ovi.base_height,
+									    {ovi.fps_num, ovi.fps_den}});
+		}
 	}
 
 	obs_audio_info2 oai2;
