@@ -1,0 +1,24 @@
+name: Commit Message Check
+
+on: [pull_request]
+
+jobs:
+  commit-message-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup environment
+        run: |
+          pip3 install -U gitpython
+
+      - name: Fetch commits
+        run: |
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.number }}/commits > commits.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Check the log messages
+        run: |
+          ./CI/check-log-msg.py --verbose --json commits.json
