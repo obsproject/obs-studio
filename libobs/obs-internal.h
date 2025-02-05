@@ -972,6 +972,21 @@ static inline void obs_source_dosignal(struct obs_source *source, const char *si
 		signal_handler_signal(source->context.signals, signal_source, &data);
 }
 
+static inline void obs_source_dosignal_canvas(struct obs_source *source, struct obs_canvas *canvas,
+					      const char *signal_obs, const char *signal_source)
+{
+	struct calldata data;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&data, stack, sizeof(stack));
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_ptr(&data, "canvas", canvas);
+	if (signal_obs && !source->context.private)
+		signal_handler_signal(obs->signals, signal_obs, &data);
+	if (signal_source)
+		signal_handler_signal(source->context.signals, signal_source, &data);
+}
+
 /* maximum timestamp variance in nanoseconds */
 #define MAX_TS_VAR 2000000000ULL
 
