@@ -147,6 +147,8 @@ macro(Wayland_find_component component)
     endif()
   else()
     list(APPEND Wayland_COMPONENTS Wayland::${COMPONENT_NAME})
+    list(APPEND Wayland_INCLUDE_DIRS ${Wayland_${COMPONENT_NAME}_INCLUDE_DIR})
+    list(APPEND Wayland_LIBRARIES ${Wayland_${COMPONENT_NAME}_LIBRARY})
   endif()
 endmacro()
 
