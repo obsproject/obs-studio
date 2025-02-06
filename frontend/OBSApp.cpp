@@ -66,6 +66,9 @@ extern bool opt_disable_updater;
 extern bool opt_disable_missing_files_check;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
+extern string opt_user_config_location;
+extern string opt_user_scenes_location;
+extern string opt_user_profiles_location;
 
 extern QPointer<OBSLogViewer> obsLogViewer;
 
@@ -458,6 +461,18 @@ bool OBSApp::InitGlobalConfig()
 		userScenesLocation =
 			std::filesystem::u8path(config_get_string(appConfig, "Locations", "SceneCollections"));
 		userProfilesLocation = std::filesystem::u8path(config_get_string(appConfig, "Locations", "Profiles"));
+	}
+
+	if (!opt_user_config_location.empty()) {
+		userConfigLocation = opt_user_config_location;
+	}
+
+	if (!opt_user_scenes_location.empty()) {
+		userScenesLocation = opt_user_scenes_location;
+	}
+
+	if (!opt_user_profiles_location.empty()) {
+		userProfilesLocation = opt_user_profiles_location;
 	}
 
 	bool userConfigResult = InitUserConfig(userConfigLocation, lastVersion);

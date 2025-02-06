@@ -77,6 +77,9 @@ bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+string opt_user_config_location;
+string opt_user_scenes_location;
+string opt_user_profiles_location;
 
 bool restart = false;
 bool restart_safe = false;
@@ -1033,6 +1036,18 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--steam", nullptr)) {
 			steam = true;
 
+		} else if (arg_is(argv[i], "--user-config-location", nullptr)) {
+			if (++i < argc)
+				opt_user_config_location = argv[i];
+
+		} else if (arg_is(argv[i], "--user-scenes-location", nullptr)) {
+			if (++i < argc)
+				opt_user_scenes_location = argv[i];
+
+		} else if (arg_is(argv[i], "--user-profiles-location", nullptr)) {
+			if (++i < argc)
+				opt_user_profiles_location = argv[i];
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::string help =
 				"--help, -h: Get list of available commands.\n\n"
@@ -1053,6 +1068,9 @@ int main(int argc, char *argv[])
 				"--safe-mode: Run in Safe Mode (disables third-party plugins, scripting, and WebSockets).\n"
 				"--only-bundled-plugins: Only load included (first-party) plugins\n"
 				"--disable-shutdown-check: Disable unclean shutdown detection.\n"
+				"--user-config-location: Set the location of the user configuration.\n"
+				"--user-scenes-location: Set the location of the user scenes.\n"
+				"--user-profiles-location: Set the location of the user profiles.\n"
 				"--verbose: Make log more verbose.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"
 				"--unfiltered_log: Make log unfiltered.\n\n"
