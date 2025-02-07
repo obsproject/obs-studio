@@ -28,5 +28,5 @@ target_sources(
 
 target_compile_options(libobs PUBLIC -Wno-strict-prototypes -Wno-shorten-64-to-32)
 
-set_property(SOURCE obs-cocoa.m util/platform-cocoa.m PROPERTY COMPILE_FLAGS -fobjc-arc)
+set_property(SOURCE obs-cocoa.m util/platform-cocoa.m PROPERTY COMPILE_OPTIONS -fobjc-arc)
 set_property(TARGET libobs PROPERTY FRAMEWORK TRUE)
