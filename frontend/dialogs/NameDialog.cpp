@@ -51,6 +51,9 @@ NameDialog::NameDialog(QWidget *parent) : QDialog(parent)
 	QDialogButtonBox *buttonbox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 	layout->addWidget(buttonbox);
 	buttonbox->setCenterButtons(true);
+
+	userText->setFocus();
+
 	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
