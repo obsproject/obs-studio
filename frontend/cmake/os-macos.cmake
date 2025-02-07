@@ -11,7 +11,7 @@ target_sources(
 )
 target_compile_options(obs-studio PRIVATE -Wno-quoted-include-in-framework-header -Wno-comma)
 
-set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
+set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_OPTIONS -fobjc-arc)
 
 if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.3)
   target_compile_options(obs-studio PRIVATE -Wno-error=unqualified-std-cast-call)
