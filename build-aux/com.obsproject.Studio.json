@@ -1,8 +1,8 @@
 {
     "id": "com.obsproject.Studio",
-    "runtime": "org.kde.Platform",
-    "runtime-version": "6.8",
-    "sdk": "org.kde.Sdk",
+    "runtime": "org.freedesktop.Platform",
+    "runtime-version": "24.08",
+    "sdk": "org.freedesktop.Sdk",
     "command": "obs",
     "finish-args": [
         "--socket=wayland",
@@ -83,6 +83,21 @@
                     "dest-filename": "devtools.tar.xz",
                     "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2025-10-03/flatpak-devtools-x86_64-2025-10-03.tar.xz",
                     "sha256": "db1e9b7804c3f9f08b3a4321166abfb53462c9f6e6d6ca5a26eb36b8cfa23df3"
+                }
+            ]
+        },
+        {
+            "name": "qt",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf qt.tar.xz -C /"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "qt.tar.xz",
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2025-10-03/flatpak-qt-x86_64-2025-10-03.tar.xz",
+                    "sha256": "79d7377da42e1eea2a18ed76407c1db716a80778fe34ef1f68b9eb7ca6d89cbf"
                 }
             ]
         },
