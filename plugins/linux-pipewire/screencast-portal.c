@@ -57,6 +57,9 @@ struct screencast_portal_capture {
 
 	obs_pipewire *obs_pw;
 	obs_pipewire_stream *obs_pw_stream;
+
+	// P4694
+	bool capture_freeze_detected;
 };
 
 /* ------------------------------------------------- */

@@ -145,6 +145,9 @@ struct _obs_pipewire_stream {
 		uint64_t release_point;
 		bool set;
 	} sync;
+
+	// Pec80
+	bool capture_freeze_detected;
 };
 
 /* auxiliary methods */
@@ -212,11 +215,10 @@ static int get_buffer_flip(obs_pipewire_stream *obs_pw_stream)
 		flip = GS_FLIP_U;
 		break;
 	case SPA_META_TRANSFORMATION_Flipped90:
-	case SPA_META_TRANSFORMATION_Flipped270:
+	case SPA_META_TRANSFORMATION_90:
 		flip = GS_FLIP_V;
 		break;
 	case SPA_META_TRANSFORMATION_None:
-	case SPA_META_TRANSFORMATION_90:
 	case SPA_META_TRANSFORMATION_180:
 	case SPA_META_TRANSFORMATION_270:
 		break;
@@ -913,6 +915,13 @@ static void on_process_cb(void *user_data)
 		else
 			process_video_sync(obs_pw_stream);
 	}
+
+	// P3b82
+	if (obs_pw_stream->capture_freeze_detected) {
+		blog(LOG_WARNING, "[pipewire] Capture freeze detected, attempting to recover");
+		obs_pw_stream->capture_freeze_detected = false;
+		renegotiate_format(obs_pw_stream, 0);
+	}
 }
 
 static void on_param_changed_cb(void *user_data, uint32_t id, const struct spa_pod *param)
@@ -1045,6 +1054,11 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old, enum 
 
 	blog(LOG_INFO, "[pipewire] Stream %p state: \"%s\" (error: %s)", obs_pw_stream->stream,
 	     pw_stream_state_as_string(state), error ? error : "none");
+
+	// Pec80
+	if (state == PW_STREAM_STATE_ERROR) {
+		obs_pw_stream->capture_freeze_detected = true;
+	}
 }
 
 static const struct pw_stream_events stream_events = {
