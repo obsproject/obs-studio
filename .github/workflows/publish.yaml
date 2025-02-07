@@ -87,7 +87,7 @@ jobs:
       YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
       YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
       options: --privileged
     strategy:
       matrix:
