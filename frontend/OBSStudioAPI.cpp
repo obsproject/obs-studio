@@ -73,14 +73,9 @@ void OBSStudioAPI::obs_frontend_set_current_scene(obs_source_t *scene)
 
 void OBSStudioAPI::obs_frontend_get_transitions(struct obs_frontend_source_list *sources)
 {
-	for (int i = 0; i < main->ui->transitions->count(); i++) {
-		OBSSource tr = main->ui->transitions->itemData(i).value<OBSSource>();
-
-		if (!tr)
-			continue;
-
-		if (obs_source_get_ref(tr) != nullptr)
-			da_push_back(sources->sources, &tr);
+	for (const auto &[uuid, transition] : main->transitions) {
+		if (obs_source_get_ref(transition) != nullptr)
+			da_push_back(sources->sources, transition.Get());
 	}
 }
 
