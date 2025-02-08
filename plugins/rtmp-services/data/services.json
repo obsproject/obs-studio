@@ -3522,6 +3522,81 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "SOOP Global",
+            "common": false, 
+            "more_info_link": "https://sooplive.helpshift.com/hc/en/3-soop/faq/20",
+            "stream_key_link": "https://www.sooplive.com/dashboard",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://global-stream.sooplive.com/app"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "main",
+                "bframes": 0,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "960x540",
+                    "640x360"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "640x360",
+                        "fps": 30,
+                        "max bitrate": 500
+                    },
+                    {
+                        "res": "640x360",
+                        "fps": 60,
+                        "max bitrate": 1000
+                    },
+                    {
+                        "res": "960x540",
+                        "fps": 30,
+                        "max bitrate": 2000
+                    },
+                    {
+                        "res": "960x540",
+                        "fps": 60,
+                        "max bitrate": 2000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 4000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 8000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 8000
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 8000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
