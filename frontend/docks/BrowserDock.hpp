@@ -8,6 +8,8 @@ extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 
 class BrowserDock : public OBSDock {
+	Q_OBJECT
+
 private:
 	QString title;
 
