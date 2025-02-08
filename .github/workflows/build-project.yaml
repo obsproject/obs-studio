@@ -329,6 +329,9 @@ jobs:
 
   windows-build:
     name: Windows 🪟
+    strategy:
+      matrix:
+        architecture: [x64, arm64]
     runs-on: windows-2022
     needs: check-event
     defaults:
@@ -353,18 +356,18 @@ jobs:
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
           GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
         with:
-          target: x64
+          target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
         with:
-          target: x64
+          target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v4
         with:
-          name: obs-studio-windows-x64-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_x64/obs-studio-*-windows-x64.zip
+          name: obs-studio-windows-${{ matrix.architecture }}-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.zip
