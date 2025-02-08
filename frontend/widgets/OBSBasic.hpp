@@ -1476,6 +1476,13 @@ private:
 	std::vector<OBSDataAutoRelease> safeModeTransitions;
 	QPointer<QPushButton> transitionButton;
 	QPointer<QMenu> perSceneTransitionMenu;
+
+	std::unordered_map<std::string, OBSSource> transitions;
+	// TODO: Reduce usages of an index to identify a transition
+	std::vector<std::string> transitionUuids;
+	// FIXME: Replace usages of a name to identify a transition
+	std::unordered_map<std::string, std::string> transitionNameToUuids;
+	std::string currentTransitionUuid;
 	obs_source_t *fadeTransition;
 	obs_source_t *cutTransition;
 	std::vector<QuickTransition> quickTransitions;
@@ -1529,6 +1536,8 @@ private:
 
 	void PasteShowHideTransition(obs_sceneitem_t *item, bool show, obs_source_t *tr, int duration);
 
+	void UpdateCurrentTransition(const std::string &uuid, bool setTransition);
+
 public slots:
 	void SetCurrentScene(OBSSource scene, bool force = false);
 
@@ -1537,6 +1546,8 @@ public slots:
 	void TransitionToScene(OBSScene scene, bool force = false);
 	void TransitionToScene(OBSSource scene, bool force = false, bool quickTransition = false, int quickDuration = 0,
 			       bool black = false, bool manual = false);
+
+	void SetCurrentTransition(const QString &uuid);
 
 private slots:
 	void AddTransition(const char *id);
@@ -1550,7 +1561,6 @@ private slots:
 	void TBarChanged(int value);
 	void TBarReleased();
 
-	void on_transitions_currentIndexChanged(int index);
 	void on_transitionAdd_clicked();
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
@@ -1558,6 +1568,14 @@ private slots:
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
+
+signals:
+	void TransitionAdded(const QString &name, const QString &uuid);
+	void TransitionRenamed(const QString &uuid, const QString &newName);
+	void TransitionRemoved(const QString &uuid);
+	void TransitionsCleared();
+
+	void CurrentTransitionChanged(const QString &uuid);
 
 public:
 	int GetTransitionDuration();
