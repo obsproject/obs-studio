@@ -27,6 +27,10 @@ function(set_target_properties_obs target)
       set(OBS_EXECUTABLE_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture")
 
       _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} x64)
+      endif()
     endif()
 
     _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION})
@@ -67,10 +71,18 @@ function(set_target_properties_obs target)
       target_add_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json" "${target_destination}")
 
       _target_install_obs(${target} DESTINATION ${target_destination} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${target_destination} x64)
+      endif()
     elseif(target STREQUAL obs-virtualcam-module)
       set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow")
 
       _target_install_obs(${target} DESTINATION ${target_destination} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${target_destination} x64)
+      endif()
     else()
       set(target_destination "${OBS_PLUGIN_DESTINATION}")
     endif()
@@ -206,13 +218,13 @@ function(_target_install_obs target)
 
     cmake_path(RELATIVE_PATH CMAKE_CURRENT_SOURCE_DIR BASE_DIRECTORY "${OBS_SOURCE_DIR}" OUTPUT_VARIABLE project_path)
 
-    set(32bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
-    set(target_file "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}")
-    set(target_pdb_file "${32bit_project_path}/$<CONFIG>/${target}64.pdb")
+    set(64bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
+    set(target_file "${64bit_project_path}/$<CONFIG>/${target}64.${suffix}")
+    set(target_pdb_file "${64bit_project_path}/$<CONFIG>/${target}64.pdb")
     set(comment "Copy ${target} (x64) to destination")
 
     install(
-      FILES "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}"
+      FILES "${64bit_project_path}/$<CONFIG>/${target}64.${suffix}"
       DESTINATION "${_TIO_DESTINATION}"
       COMPONENT Runtime
       OPTIONAL

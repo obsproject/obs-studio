@@ -105,7 +105,16 @@ target_link_libraries(
 )
 
 if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
-  if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
+  if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+    add_custom_command(
+      TARGET obs-virtualcam-module
+      POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x64 --config $<CONFIG> -t obs-virtualcam-module
+      COMMENT "Build x64 obs-virtualcam-module"
+    )
+  endif()
+
+  if(CMAKE_VS_PLATFORM_NAME MATCHES "(ARM64|x64)")
     add_custom_command(
       TARGET obs-virtualcam-module
       POST_BUILD
@@ -117,7 +126,9 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   add_dependencies(win-dshow obs-virtualcam-module)
 endif()
 
-if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
+if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+  set(_OUTPUT_NAME virtualcam-module-arm64)
+elseif(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
   set(_OUTPUT_NAME virtualcam-module64)
 else()
   set(_OUTPUT_NAME virtualcam-module32)
