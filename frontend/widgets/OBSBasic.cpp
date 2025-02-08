@@ -287,6 +287,33 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	connect(controls, &OBSBasicControls::SettingsButtonClicked, this, &OBSBasic::on_action_Settings_triggered);
 
+	/* Set up transitions combobox connections */
+	connect(this, &OBSBasic::TransitionAdded, this, [this](const QString &name, const QString &uuid) {
+		QSignalBlocker sb(ui->transitions);
+
+		ui->transitions->addItem(name, uuid);
+	});
+	connect(this, &OBSBasic::TransitionRenamed, this, [this](const QString &uuid, const QString &newName) {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->setItemText(ui->transitions->findData(uuid), newName);
+	});
+	connect(this, &OBSBasic::TransitionRemoved, this, [this](const QString &uuid) {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->removeItem(ui->transitions->findData(uuid));
+	});
+	connect(this, &OBSBasic::TransitionsCleared, this, [this]() {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->clear();
+	});
+
+	connect(this, &OBSBasic::CurrentTransitionChanged, this, [this](const QString &uuid) {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->setCurrentIndex(ui->transitions->findData(uuid));
+	});
+
+	connect(ui->transitions, &QComboBox::currentIndexChanged, this,
+		[this]() { SetCurrentTransition(ui->transitions->currentData().toString()); });
+
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();
