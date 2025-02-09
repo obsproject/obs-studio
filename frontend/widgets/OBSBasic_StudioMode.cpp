@@ -76,8 +76,8 @@ void OBSBasic::CreateProgramOptions()
 	transitionButton = new QPushButton(QTStr("Transition"));
 	transitionButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
-	QHBoxLayout *quickTransitions = new QHBoxLayout();
-	quickTransitions->setSpacing(2);
+	QHBoxLayout *quickTransitionsLayout = new QHBoxLayout();
+	quickTransitionsLayout->setSpacing(2);
 
 	QPushButton *addQuickTransition = new QPushButton();
 	addQuickTransition->setProperty("class", "icon-plus");
@@ -85,8 +85,8 @@ void OBSBasic::CreateProgramOptions()
 	QLabel *quickTransitionsLabel = new QLabel(QTStr("QuickTransitions"));
 	quickTransitionsLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
-	quickTransitions->addWidget(quickTransitionsLabel);
-	quickTransitions->addWidget(addQuickTransition);
+	quickTransitionsLayout->addWidget(quickTransitionsLabel);
+	quickTransitionsLayout->addWidget(addQuickTransition);
 
 	mainButtonLayout->addWidget(transitionButton);
 	mainButtonLayout->addWidget(configTransitions);
@@ -102,7 +102,7 @@ void OBSBasic::CreateProgramOptions()
 
 	layout->addStretch(0);
 	layout->addLayout(mainButtonLayout);
-	layout->addLayout(quickTransitions);
+	layout->addLayout(quickTransitionsLayout);
 	layout->addWidget(tBar);
 	layout->addStretch(0);
 
