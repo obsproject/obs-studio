@@ -47,7 +47,7 @@ static inline QString MakeQuickTransitionText(QuickTransition *qt)
 
 void OBSBasic::InitDefaultTransitions()
 {
-	std::vector<OBSSource> transitions;
+	std::vector<OBSSource> defaultTransitions;
 	size_t idx = 0;
 	const char *id;
 
@@ -59,7 +59,7 @@ void OBSBasic::InitDefaultTransitions()
 
 			OBSSourceAutoRelease tr = obs_source_create_private(id, name, NULL);
 			InitTransition(tr);
-			transitions.emplace_back(tr);
+			defaultTransitions.emplace_back(tr);
 
 			if (strcmp(id, "fade_transition") == 0)
 				fadeTransition = tr;
@@ -68,7 +68,7 @@ void OBSBasic::InitDefaultTransitions()
 		}
 	}
 
-	for (OBSSource &tr : transitions) {
+	for (OBSSource &tr : defaultTransitions) {
 		ui->transitions->addItem(QT_UTF8(obs_source_get_name(tr)), QVariant::fromValue(OBSSource(tr)));
 	}
 }
@@ -1280,7 +1280,7 @@ void OBSBasic::EnableTransitionWidgets(bool enable)
 
 obs_data_array_t *OBSBasic::SaveTransitions()
 {
-	obs_data_array_t *transitions = obs_data_array_create();
+	obs_data_array_t *transitionsData = obs_data_array_create();
 
 	for (int i = 0; i < ui->transitions->count(); i++) {
 		OBSSource tr = ui->transitions->itemData(i).value<OBSSource>();
@@ -1294,23 +1294,23 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 		obs_data_set_string(sourceData, "id", obs_obj_get_id(tr));
 		obs_data_set_obj(sourceData, "settings", settings);
 
-		obs_data_array_push_back(transitions, sourceData);
+		obs_data_array_push_back(transitionsData, sourceData);
 	}
 
 	for (const OBSDataAutoRelease &transition : safeModeTransitions) {
-		obs_data_array_push_back(transitions, transition);
+		obs_data_array_push_back(transitionsData, transition);
 	}
 
-	return transitions;
+	return transitionsData;
 }
 
-void OBSBasic::LoadTransitions(obs_data_array_t *transitions, obs_load_source_cb cb, void *private_data)
+void OBSBasic::LoadTransitions(obs_data_array_t *transitionsData, obs_load_source_cb cb, void *private_data)
 {
-	size_t count = obs_data_array_count(transitions);
+	size_t count = obs_data_array_count(transitionsData);
 
 	safeModeTransitions.clear();
 	for (size_t i = 0; i < count; i++) {
-		OBSDataAutoRelease item = obs_data_array_item(transitions, i);
+		OBSDataAutoRelease item = obs_data_array_item(transitionsData, i);
 		const char *name = obs_data_get_string(item, "name");
 		const char *id = obs_data_get_string(item, "id");
 		OBSDataAutoRelease settings = obs_data_get_obj(item, "settings");

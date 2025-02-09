@@ -822,11 +822,11 @@ void OBSBasic::Save(const char *file)
 		curProgramScene = obs_scene_get_source(scene);
 
 	OBSDataArrayAutoRelease sceneOrder = SaveSceneListOrder();
-	OBSDataArrayAutoRelease transitions = SaveTransitions();
+	OBSDataArrayAutoRelease transitionsData = SaveTransitions();
 	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
 	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, ui->transitionDuration->value(),
-						       transitions, scene, curProgramScene, savedProjectorList);
+						       transitionsData, scene, curProgramScene, savedProjectorList);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
@@ -1129,7 +1129,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 	OBSDataArrayAutoRelease sceneOrder = obs_data_get_array(data, "scene_order");
 	OBSDataArrayAutoRelease sources = obs_data_get_array(data, "sources");
 	OBSDataArrayAutoRelease groups = obs_data_get_array(data, "groups");
-	OBSDataArrayAutoRelease transitions = obs_data_get_array(data, "transitions");
+	OBSDataArrayAutoRelease transitionsData = obs_data_get_array(data, "transitions");
 	const char *sceneName = obs_data_get_string(data, "current_scene");
 	const char *programSceneName = obs_data_get_string(data, "current_program_scene");
 	const char *transitionName = obs_data_get_string(data, "current_transition");
@@ -1230,8 +1230,8 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 
 	if (resetVideo)
 		ResetVideo();
-	if (transitions)
-		LoadTransitions(transitions, AddMissingFiles, files);
+	if (transitionsData)
+		LoadTransitions(transitionsData, AddMissingFiles, files);
 	if (sceneOrder)
 		LoadSceneListOrder(sceneOrder);
 
