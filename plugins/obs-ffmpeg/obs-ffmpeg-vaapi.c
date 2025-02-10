@@ -229,7 +229,7 @@ static const rc_mode_t *get_rc_mode(const char *name)
 
 	const rc_mode_t *rc_mode = RC_MODES;
 
-	while (!!rc_mode->name && strcmp(rc_mode->name, name) != 0)
+	while (!!rc_mode->name && astrcmpi(rc_mode->name, name) != 0)
 		rc_mode++;
 
 	return rc_mode ? rc_mode : RC_MODES;
