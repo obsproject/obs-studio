@@ -70,95 +70,80 @@ include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
 
-list(APPEND _Wayland_DEFAULT_COMPONENTS Client Server EGL Cursor)
-list(APPEND _Wayland_LIBRARIES wayland-client wayland-server wayland-egl wayland-cursor)
+set(_DEFAULT_COMPONENTS Client Server EGL Cursor)
+
+set(component_Client wayland-client wayland-client.h)
+set(component_Server wayland-server wayland-server.h)
+set(component_EGL wayland-egl wayland-egl.h)
+set(component_Cursor wayland-cursor wayland-cursor.h)
 
 if(NOT Wayland_FIND_COMPONENTS)
-  set(Wayland_FIND_COMPONENTS ${_Wayland_DEFAULT_COMPONENTS})
+  set(Wayland_FIND_COMPONENTS ${_DEFAULT_COMPONENTS})
 endif()
 
 # Wayland_find_component: Macro to setup targets for specified Wayland component
 macro(Wayland_find_component component)
-  list(GET _Wayland_DEFAULT_COMPONENTS ${component} COMPONENT_NAME)
-  list(GET _Wayland_LIBRARIES ${component} COMPONENT_LIBRARY)
+  list(GET component_${component} 0 component_libname)
+  list(GET component_${component} 1 component_header)
 
-  if(NOT TARGET Wayland::${COMPONENT_NAME})
-    if(PKG_CONFIG_FOUND)
-      pkg_search_module(PC_Wayland_${COMPONENT_NAME} QUIET ${COMPONENT_LIBRARY})
-    endif()
+  find_package(PkgConfig QUIET)
+  if(PKG_CONFIG_FOUND)
+    pkg_search_module(PC_Wayland_${component} QUIET ${component_libname})
+  endif()
 
-    find_path(
-      Wayland_${COMPONENT_NAME}_INCLUDE_DIR
-      NAMES ${COMPONENT_LIBRARY}.h
-      HINTS ${PC_Wayland_${COMPONENT_NAME}_INCLUDE_DIRS}
-      PATHS /usr/include /usr/local/include
-      DOC "Wayland ${COMPONENT_NAME} include directory"
-    )
+  find_path(
+    Wayland_${component}_INCLUDE_DIR
+    NAMES ${component_header}
+    HINTS ${PC_Wayland_${component}_INCLUDE_DIRS}
+    PATHS /usr/include /usr/local/include
+    DOC "Wayland ${component} include directory"
+  )
 
-    find_library(
-      Wayland_${COMPONENT_NAME}_LIBRARY
-      NAMES ${COMPONENT_LIBRARY}
-      HINTS ${PC_Wayland_${COMPONENT_NAME}_LIBRARY_DIRS}
-      PATHS /usr/lib /usr/local/lib
-      DOC "Wayland ${COMPONENT_NAME} location"
-    )
+  find_library(
+    Wayland_${component}_LIBRARY
+    NAMES ${component_libname}
+    HINTS ${PC_Wayland_${component}_LIBRARY_DIRS}
+    PATHS /usr/lib /usr/local/lib
+    DOC "Wayland ${component} location"
+  )
 
-    if(PC_Wayland_${COMPONENT_NAME}_VERSION VERSION_GREATER 0)
-      set(Wayland_${COMPONENT_NAME}_VERSION ${PC_Wayland_${COMPONENT_NAME}_VERSION})
-    else()
-      if(NOT Wayland_FIND_QUIETLY)
-        message(AUTHOR_WARNING "Failed to find Wayland ${COMPONENT_NAME} version.")
-      endif()
-      set(Wayland_${COMPONENT_NAME}_VERSION 0.0.0)
-    endif()
-
-    if(Wayland_${COMPONENT_NAME}_LIBRARY AND Wayland_${COMPONENT_NAME}_INCLUDE_DIR)
-      set(Wayland_${COMPONENT_NAME}_FOUND TRUE)
-      set(Wayland_${COMPONENT_NAME}_LIBRARIES ${Wayland_${COMPONENT_NAME}_LIBRARY})
-      set(Wayland_${COMPONENT_NAME}_INCLUDE_DIRS ${Wayland_${COMPONENT_NAME}_INCLUDE_DIR})
-      set(Wayland_${COMPONENT_NAME}_DEFINITIONS ${PC_Wayland_${COMPONENT_NAME}_CFLAGS_OTHER})
-      mark_as_advanced(Wayland_${COMPONENT_NAME}_LIBRARY Wayland_${COMPONENT_NAME}_INCLUDE_DIR)
-
-      if(IS_ABSOLUTE "${Wayland_${COMPONENT_NAME}_LIBRARY}")
-        add_library(Wayland::${COMPONENT_NAME} UNKNOWN IMPORTED)
-        set_property(
-          TARGET Wayland::${COMPONENT_NAME}
-          PROPERTY IMPORTED_LOCATION "${Wayland_${COMPONENT_NAME}_LIBRARY}"
-        )
-      else()
-        add_library(Wayland::${COMPONENT_NAME} INTERFACE IMPORTED)
-        set_property(TARGET Wayland::${COMPONENT_NAME} PROPERTY IMPORTED_LIBNAME "${Wayland_${COMPONENT_NAME}_LIBRARY}")
-      endif()
-
-      set_target_properties(
-        Wayland::${COMPONENT_NAME}
-        PROPERTIES
-          INTERFACE_COMPILE_OPTIONS "${PC_Wayland_${COMPONENT_NAME}_CFLAGS_OTHER}"
-          INTERFACE_INCLUDE_DIRECTORIES "${Wayland_${COMPONENT_NAME}_INCLUDE_DIR}"
-          VERSION ${Wayland_${COMPONENT_NAME}_VERSION}
-      )
-      list(APPEND Wayland_COMPONENTS Wayland::${COMPONENT_NAME})
-      list(APPEND Wayland_INCLUDE_DIRS ${Wayland_${COMPONENT_NAME}_INCLUDE_DIR})
-      list(APPEND Wayland_LIBRARIES ${Wayland_${COMPONENT_NAME}_LIBRARY})
-
-      if(NOT Wayland_VERSION)
-        set(Wayland_VERSION ${Wayland_${COMPONENT_NAME}_VERSION})
-      endif()
-    endif()
+  if(PC_Wayland_${component}_VERSION VERSION_GREATER 0)
+    set(Wayland_${component}_VERSION ${PC_Wayland_${component}_VERSION})
   else()
-    list(APPEND Wayland_COMPONENTS Wayland::${COMPONENT_NAME})
+    if(NOT Wayland_FIND_QUIETLY)
+      message(AUTHOR_WARNING "Failed to find Wayland ${component} version.")
+    endif()
+    set(Wayland_${component}_VERSION 0.0.0)
+  endif()
+
+  if(Wayland_${component}_LIBRARY AND Wayland_${component}_INCLUDE_DIR)
+    set(Wayland_${component}_FOUND TRUE)
+    set(Wayland_${component}_LIBRARIES ${${_library_var}})
+    set(Wayland_${component}_INCLUDE_DIRS ${Wayland_${component}_INCLUDE_DIR})
+    set(Wayland_${component}_DEFINITIONS ${PC_Wayland_${component}_CFLAGS_OTHER})
+    mark_as_advanced(Wayland_${component}_LIBRARY Wayland_${component}_INCLUDE_DIR)
   endif()
 endmacro()
 
 foreach(component IN LISTS Wayland_FIND_COMPONENTS)
-  list(FIND _Wayland_DEFAULT_COMPONENTS "${component}" valid_component)
+  if(NOT component IN_LIST _DEFAULT_COMPONENTS)
+    message(FATAL_ERROR "Unknown Wayland component specified: ${component}.")
+  endif()
 
-  if(valid_component GREATER_EQUAL 0)
-    wayland_find_component(${valid_component})
-  else()
-    message(FATAL_ERROR "Unknown Wayland component required: ${component}.")
+  if(NOT Wayland_${component}_FOUND)
+    wayland_find_component(${component})
+  endif()
+
+  if(Wayland_${component}_FOUND)
+    list(APPEND Wayland_LIBRARIES ${Wayland_${component}_LIBRARY})
+    list(APPEND Wayland_DEFINITIONS ${Wayland_${component}_DEFINITIONS})
+    list(APPEND Wayland_INCLUDE_DIRS ${Wayland_${component}_INCLUDE_DIR})
   endif()
 endforeach()
+
+list(REMOVE_DUPLICATES Wayland_INCLUDE_DIRS)
+list(REMOVE_DUPLICATES Wayland_LIBRARIES)
+list(REMOVE_DUPLICATES Wayland_DEFINITIONS)
 
 find_package_handle_standard_args(
   Wayland
@@ -168,8 +153,24 @@ find_package_handle_standard_args(
   REASON_FAILURE_MESSAGE "Ensure that Wayland is installed on the system."
 )
 
-unset(_Wayland_DEFAULT_COMPONENTS)
-unset(_Wayland_LIBRARIES)
+foreach(component IN LISTS Wayland_FIND_COMPONENTS)
+  if(Wayland_${component}_FOUND AND NOT TARGET Wayland::${component})
+    if(IS_ABSOLUTE "${Wayland_${component}_LIBRARY}")
+      add_library(Wayland::${component} SHARED IMPORTED)
+      set_property(TARGET Wayland::${component} PROPERTY IMPORTED_LOCATION "${Wayland_${component}_LIBRARY}")
+    else()
+      add_library(Wayland::${component} INTERFACE IMPORTED)
+      set_property(TARGET Wayland::${component} PROPERTY IMPORTED_LIBNAME "${Wayland_${component}_LIBRARY}")
+    endif()
+  endif()
+  set_target_properties(
+    Wayland::${component}
+    PROPERTIES
+      INTERFACE_COMPILE_OPTIONS "${PC_Wayland_${component}_CFLAGS_OTHER}"
+      INTERFACE_INCLUDE_DIRECTORIES "${Wayland_${component}_INCLUDE_DIR}"
+      VERSION ${Wayland_${component}_VERSION}
+  )
+endforeach()
 
 include(FeatureSummary)
 set_package_properties(
