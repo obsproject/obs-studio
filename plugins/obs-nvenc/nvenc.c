@@ -393,7 +393,8 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 	dstr_catf(&log, "\theight:       %d\n", enc->cy);
 	dstr_catf(&log, "\tb-frames:     %ld\n", enc->props.bf);
 	dstr_catf(&log, "\tb-ref-mode:   %ld\n", enc->props.bframe_ref_mode);
-	dstr_catf(&log, "\tlookahead:    %s (%d frames)\n", lookahead ? "true" : "false", rc_lookahead);
+	dstr_catf(&log, "\tlookahead:    %s (%d frames)\n", lookahead ? "true" : "false",
+		  config->rcParams.lookaheadDepth);
 	dstr_catf(&log, "\taq:           %s\n", enc->props.adaptive_quantization ? "true" : "false");
 
 	if (enc->props.split_encode) {
