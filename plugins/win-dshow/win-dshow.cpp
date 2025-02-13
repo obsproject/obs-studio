@@ -936,6 +936,12 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 		return false;
 	}
 
+	if (!videoConfig.cx || !videoConfig.cy_abs) {
+		blog(LOG_ERROR, "%s: Frame width or height are zero (%" PRIu32 "x%" PRIu32 ")",
+		     obs_source_get_name(source), videoConfig.cx, videoConfig.cy_abs);
+		return false;
+	}
+
 	DStr formatName = GetVideoFormatName(videoConfig.internalFormat);
 
 	double fps = 0.0;
