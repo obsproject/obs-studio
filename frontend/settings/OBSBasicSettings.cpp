@@ -866,8 +866,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	UpdateAutomaticReplayBufferCheckboxes();
 
-	App()->DisableHotkeys();
-
 	channelIndex = ui->channelSetup->currentIndex();
 	sampleRateIndex = ui->sampleRate->currentIndex();
 	llBufferingEnabled = ui->lowLatencyBuffering->isChecked();
@@ -900,8 +898,6 @@ OBSBasicSettings::~OBSBasicSettings()
 {
 	delete ui->filenameFormatting->completer();
 	main->EnableOutputs(true);
-
-	App()->UpdateHotkeyFocusSetting();
 
 	EnableThreadedMessageBoxes(false);
 }
