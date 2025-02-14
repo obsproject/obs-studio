@@ -1,0 +1,141 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.hpp"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_EFFECT_CONTROL DIALOGEX 0, 0, 235, 144
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Effect Control"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,92,123,50,14
+    CONTROL         "Auto Framing",IDC_CHECK_AUTOFRAMING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,34,65,59,10
+    CONTROL         "Eye Gaze Correction",IDC_CHECK_EYEGAZE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,34,82,81,10
+    CONTROL         "Portrait Blur",IDC_RADIO_BLUR_PORTRAIT,"Button",BS_AUTORADIOBUTTON,34,38,54,10
+    CONTROL         "Standard Blur",IDC_RADIO_BLUR_STANDARD,"Button",BS_AUTORADIOBUTTON,99,38,59,10
+    GROUPBOX        "Blur",IDC_STATIC,18,20,199,40
+    CONTROL         "None",IDC_RADIO_NOBLUR,"Button",BS_AUTORADIOBUTTON,169,38,33,10
+    CONTROL         "Background Transparent",IDC_CHECK_BK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,34,99,95,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG_EFFECT_CONTROL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 230
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 137
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_EFFECT_CONTROL AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 30,0,1,0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+	BLOCK "040904B0"
+	BEGIN
+	    VALUE "CompanyName", "Intel Corporation"
+	    VALUE "FileDescription", "OBS Video Capture module"
+	    VALUE "FileVersion", "30.0.1"
+	    VALUE "ProductName", "OBS Studio"
+	    VALUE "ProductVersion", "30.0.1"
+	    VALUE "LegalCopyright", "Copyright (C) 2023, Intel Corporation"
+	    VALUE "InternalName", "win-mf"
+	    VALUE "OriginalFilename", "win-mf"
+	END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+	VALUE "Translation", 0x409,1200
+    END
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
