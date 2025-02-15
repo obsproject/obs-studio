@@ -2,9 +2,8 @@
 #include <media-io/audio-math.h>
 #include <math.h>
 
-#define do_log(level, format, ...)                 \
-	blog(level, "[gain filter: '%s'] " format, \
-	     obs_source_get_name(gf->context), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[gain filter: '%s'] " format, obs_source_get_name(gf->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -48,8 +47,7 @@ static void *gain_create(obs_data_t *settings, obs_source_t *filter)
 	return gf;
 }
 
-static struct obs_audio_data *gain_filter_audio(void *data,
-						struct obs_audio_data *audio)
+static struct obs_audio_data *gain_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct gain_data *gf = data;
 	const size_t channels = gf->channels;
@@ -76,8 +74,7 @@ static obs_properties_t *gain_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
 
-	obs_property_t *p = obs_properties_add_float_slider(
-		ppts, S_GAIN_DB, TEXT_GAIN_DB, -30.0, 30.0, 0.1);
+	obs_property_t *p = obs_properties_add_float_slider(ppts, S_GAIN_DB, TEXT_GAIN_DB, -30.0, 30.0, 0.1);
 	obs_property_float_set_suffix(p, " dB");
 
 	UNUSED_PARAMETER(data);

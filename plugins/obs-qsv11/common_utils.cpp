@@ -6,6 +6,7 @@
 
 struct adapter_info adapters[MAX_ADAPTERS] = {0};
 size_t adapter_count = 0;
+size_t adapter_index = 0;
 
 void PrintErrString(int err, const char *filestr, int line)
 {
@@ -17,12 +18,10 @@ void PrintErrString(int err, const char *filestr, int line)
 		printf("\n Unknown error: %s %d\n", filestr, line);
 		break;
 	case -2:
-		printf("\n Null pointer.  Check filename/path + permissions? %s %d\n",
-		       filestr, line);
+		printf("\n Null pointer.  Check filename/path + permissions? %s %d\n", filestr, line);
 		break;
 	case -3:
-		printf("\n Unsupported feature/library load error. %s %d\n",
-		       filestr, line);
+		printf("\n Unsupported feature/library load error. %s %d\n", filestr, line);
 		break;
 	case -4:
 		printf("\n Could not allocate memory. %s %d\n", filestr, line);
@@ -37,8 +36,7 @@ void PrintErrString(int err, const char *filestr, int line)
 		printf("\n Memory lock failure. %s %d\n", filestr, line);
 		break;
 	case -8:
-		printf("\n Function called before initialization. %s %d\n",
-		       filestr, line);
+		printf("\n Function called before initialization. %s %d\n", filestr, line);
 		break;
 	case -9:
 		printf("\n Specified object not found. %s %d\n", filestr, line);
@@ -47,8 +45,7 @@ void PrintErrString(int err, const char *filestr, int line)
 		printf("\n More input data expected. %s %d\n", filestr, line);
 		break;
 	case -11:
-		printf("\n More output surfaces expected. %s %d\n", filestr,
-		       line);
+		printf("\n More output surfaces expected. %s %d\n", filestr, line);
 		break;
 	case -12:
 		printf("\n Operation aborted. %s %d\n", filestr, line);
@@ -57,8 +54,7 @@ void PrintErrString(int err, const char *filestr, int line)
 		printf("\n HW device lost. %s %d\n", filestr, line);
 		break;
 	case -14:
-		printf("\n Incompatible video parameters. %s %d\n", filestr,
-		       line);
+		printf("\n Incompatible video parameters. %s %d\n", filestr, line);
 		break;
 	case -15:
 		printf("\n Invalid video parameters. %s %d\n", filestr, line);
@@ -70,12 +66,10 @@ void PrintErrString(int err, const char *filestr, int line)
 		printf("\n Device operation failure. %s %d\n", filestr, line);
 		break;
 	case -18:
-		printf("\n More bitstream data expected. %s %d\n", filestr,
-		       line);
+		printf("\n More bitstream data expected. %s %d\n", filestr, line);
 		break;
 	case -19:
-		printf("\n Incompatible audio parameters. %s %d\n", filestr,
-		       line);
+		printf("\n Incompatible audio parameters. %s %d\n", filestr, line);
 		break;
 	case -20:
 		printf("\n Invalid audio parameters. %s %d\n", filestr, line);
@@ -85,8 +79,7 @@ void PrintErrString(int err, const char *filestr, int line)
 	}
 }
 
-mfxStatus ReadPlaneData(mfxU16 w, mfxU16 h, mfxU8 *buf, mfxU8 *ptr,
-			mfxU16 pitch, mfxU16 offset, FILE *fSource)
+mfxStatus ReadPlaneData(mfxU16 w, mfxU16 h, mfxU8 *buf, mfxU8 *ptr, mfxU16 pitch, mfxU16 offset, FILE *fSource)
 {
 	mfxU32 nBytesRead;
 	for (mfxU16 i = 0; i < h; i++) {
@@ -178,8 +171,7 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1 *pSurface, FILE *fSource)
 	}
 
 	for (mfxU16 i = 0; i < h; i++) {
-		nBytesRead = fread(pSurface->Data.B + i * pSurface->Data.Pitch,
-				   1, w * 4, fSource);
+		nBytesRead = fread(pSurface->Data.B + i * pSurface->Data.Pitch, 1, w * 4, fSource);
 		if ((size_t)(w * 4) != nBytesRead)
 			return MFX_ERR_MORE_DATA;
 	}
@@ -190,8 +182,7 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1 *pSurface, FILE *fSource)
 mfxStatus WriteBitStreamFrame(mfxBitstream *pMfxBitstream, FILE *fSink)
 {
 	mfxU32 nBytesWritten =
-		(mfxU32)fwrite(pMfxBitstream->Data + pMfxBitstream->DataOffset,
-			       1, pMfxBitstream->DataLength, fSink);
+		(mfxU32)fwrite(pMfxBitstream->Data + pMfxBitstream->DataOffset, 1, pMfxBitstream->DataLength, fSink);
 	if (nBytesWritten != pMfxBitstream->DataLength)
 		return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -205,9 +196,7 @@ mfxStatus ReadBitStreamData(mfxBitstream *pBS, FILE *fSource)
 	memmove(pBS->Data, pBS->Data + pBS->DataOffset, pBS->DataLength);
 	pBS->DataOffset = 0;
 
-	mfxU32 nBytesRead = (mfxU32)fread(pBS->Data + pBS->DataLength, 1,
-					  pBS->MaxLength - pBS->DataLength,
-					  fSource);
+	mfxU32 nBytesRead = (mfxU32)fread(pBS->Data + pBS->DataLength, 1, pBS->MaxLength - pBS->DataLength, fSource);
 
 	if (0 == nBytesRead)
 		return MFX_ERR_MORE_DATA;
@@ -217,15 +206,11 @@ mfxStatus ReadBitStreamData(mfxBitstream *pBS, FILE *fSource)
 	return MFX_ERR_NONE;
 }
 
-mfxStatus WriteSection(mfxU8 *plane, mfxU16 factor, mfxU16 chunksize,
-		       mfxFrameInfo *pInfo, mfxFrameData *pData, mfxU32 i,
-		       mfxU32 j, FILE *fSink)
+mfxStatus WriteSection(mfxU8 *plane, mfxU16 factor, mfxU16 chunksize, mfxFrameInfo *pInfo, mfxFrameData *pData,
+		       mfxU32 i, mfxU32 j, FILE *fSink)
 {
-	if (chunksize != fwrite(plane +
-					(pInfo->CropY * pData->Pitch / factor +
-					 pInfo->CropX) +
-					i * pData->Pitch + j,
-				1, chunksize, fSink))
+	if (chunksize != fwrite(plane + (pInfo->CropY * pData->Pitch / factor + pInfo->CropX) + i * pData->Pitch + j, 1,
+				chunksize, fSink))
 		return MFX_ERR_UNDEFINED_BEHAVIOR;
 	return MFX_ERR_NONE;
 }
@@ -238,19 +223,16 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE *fSink)
 	mfxStatus sts = MFX_ERR_NONE;
 
 	for (i = 0; i < pInfo->CropH; i++)
-		sts = WriteSection(pData->Y, 1, pInfo->CropW, pInfo, pData, i,
-				   0, fSink);
+		sts = WriteSection(pData->Y, 1, pInfo->CropW, pInfo, pData, i, 0, fSink);
 
 	h = pInfo->CropH / 2;
 	w = pInfo->CropW;
 	for (i = 0; i < h; i++)
 		for (j = 0; j < w; j += 2)
-			sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j,
-					   fSink);
+			sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
 	for (i = 0; i < h; i++)
 		for (j = 1; j < w; j += 2)
-			sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j,
-					   fSink);
+			sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
 
 	return sts;
 }

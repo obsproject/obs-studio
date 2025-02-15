@@ -19,9 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "headers/VSTPlugin.h"
 #include <util/platform.h>
 
-intptr_t VSTPlugin::hostCallback_static(AEffect *effect, int32_t opcode,
-					int32_t index, intptr_t value,
-					void *ptr, float opt)
+intptr_t VSTPlugin::hostCallback_static(AEffect *effect, int32_t opcode, int32_t index, intptr_t value, void *ptr,
+					float opt)
 {
 	UNUSED_PARAMETER(opt);
 
@@ -80,9 +79,7 @@ float VSTPlugin::GetSampleRate()
 	return mTimeInfo.sampleRate;
 }
 
-VSTPlugin::VSTPlugin(obs_source_t *sourceContext) : sourceContext{sourceContext}
-{
-}
+VSTPlugin::VSTPlugin(obs_source_t *sourceContext) : sourceContext{sourceContext} {}
 
 VSTPlugin::~VSTPlugin()
 {
@@ -96,17 +93,15 @@ void VSTPlugin::createChannelBuffers(size_t count)
 	cleanupChannelBuffers();
 
 	int blocksize = BLOCK_SIZE;
-	numChannels = (std::max)((size_t)0, count);
+	numChannels = std::max((size_t)0, count);
 
 	if (numChannels > 0) {
 		inputs = (float **)bmalloc(sizeof(float *) * numChannels);
 		outputs = (float **)bmalloc(sizeof(float *) * numChannels);
 		channelrefs = (float **)bmalloc(sizeof(float *) * numChannels);
 		for (size_t channel = 0; channel < numChannels; channel++) {
-			inputs[channel] =
-				(float *)bmalloc(sizeof(float) * blocksize);
-			outputs[channel] =
-				(float *)bmalloc(sizeof(float) * blocksize);
+			inputs[channel] = (float *)bmalloc(sizeof(float) * blocksize);
+			outputs[channel] = (float *)bmalloc(sizeof(float) * blocksize);
 		}
 	}
 }
@@ -142,8 +137,7 @@ void VSTPlugin::loadEffectFromPath(const std::string &path)
 {
 	if (this->pluginPath.compare(path) != 0) {
 		unloadEffect();
-		blog(LOG_INFO, "User selected new VST plugin: '%s'",
-		     path.c_str());
+		blog(LOG_INFO, "User selected new VST plugin: '%s'", path.c_str());
 	}
 
 	if (!effect) {
@@ -170,29 +164,22 @@ void VSTPlugin::loadEffectFromPath(const std::string &path)
 			return;
 		}
 
-		int maxchans =
-			(std::max)(effect->numInputs, effect->numOutputs);
+		int maxchans = std::max(effect->numInputs, effect->numOutputs);
 		// sanity check
 		if (maxchans < 0 || maxchans > 256) {
-			blog(LOG_WARNING,
-			     "VST Plug-in has invalid number of channels");
+			blog(LOG_WARNING, "VST Plug-in has invalid number of channels");
 			return;
 		}
 
 		createChannelBuffers(maxchans);
 
 		// It is better to invoke this code after checking magic number
-		effect->dispatcher(effect, effGetEffectName, 0, 0, effectName,
-				   0);
-		effect->dispatcher(effect, effGetVendorString, 0, 0,
-				   vendorString, 0);
+		effect->dispatcher(effect, effGetEffectName, 0, 0, effectName, 0);
+		effect->dispatcher(effect, effGetVendorString, 0, 0, vendorString, 0);
 
 		// This check logic is refer to open source project : Audacity
-		if ((effect->flags & effFlagsIsSynth) ||
-		    !(effect->flags & effFlagsCanReplacing)) {
-			blog(LOG_WARNING,
-			     "VST Plug-in can't support replacing. '%s'",
-			     path.c_str());
+		if ((effect->flags & effFlagsIsSynth) || !(effect->flags & effFlagsCanReplacing)) {
+			blog(LOG_WARNING, "VST Plug-in can't support replacing. '%s'", path.c_str());
 			return;
 		}
 
@@ -202,8 +189,7 @@ void VSTPlugin::loadEffectFromPath(const std::string &path)
 		effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
 
 		// Set some default properties
-		size_t sampleRate =
-			audio_output_get_sample_rate(obs_get_audio());
+		size_t sampleRate = audio_output_get_sample_rate(obs_get_audio());
 
 		// Initialize time info
 		memset(&mTimeInfo, 0, sizeof(mTimeInfo));
@@ -212,14 +198,11 @@ void VSTPlugin::loadEffectFromPath(const std::string &path)
 		mTimeInfo.tempo = 120.0;
 		mTimeInfo.timeSigNumerator = 4;
 		mTimeInfo.timeSigDenominator = 4;
-		mTimeInfo.flags = kVstTempoValid | kVstNanosValid |
-				  kVstTransportPlaying;
+		mTimeInfo.flags = kVstTempoValid | kVstNanosValid | kVstTransportPlaying;
 
-		effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr,
-				   sampleRate);
+		effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, sampleRate);
 		int blocksize = BLOCK_SIZE;
-		effect->dispatcher(effect, effSetBlockSize, 0, blocksize,
-				   nullptr, 0.0f);
+		effect->dispatcher(effect, effSetBlockSize, 0, blocksize, nullptr, 0.0f);
 
 		effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0);
 
@@ -231,8 +214,7 @@ void VSTPlugin::loadEffectFromPath(const std::string &path)
 	}
 }
 
-static void silenceChannel(float **channelData, size_t numChannels,
-			   long numFrames)
+static void silenceChannel(float **channelData, size_t numChannels, long numFrames)
 {
 	for (size_t channel = 0; channel < numChannels; ++channel) {
 		for (long frame = 0; frame < numFrames; ++frame) {
@@ -255,32 +237,24 @@ obs_audio_data *VSTPlugin::process(struct obs_audio_data *audio)
 		uint passes = (audio->frames + BLOCK_SIZE - 1) / BLOCK_SIZE;
 		uint extra = audio->frames % BLOCK_SIZE;
 		for (uint pass = 0; pass < passes; pass++) {
-			uint frames = pass == passes - 1 && extra ? extra
-								  : BLOCK_SIZE;
+			uint frames = pass == passes - 1 && extra ? extra : BLOCK_SIZE;
 			silenceChannel(outputs, numChannels, BLOCK_SIZE);
 
 			for (size_t d = 0; d < numChannels; d++) {
-				if (d < MAX_AV_PLANES &&
-				    audio->data[d] != nullptr) {
-					channelrefs[d] =
-						((float *)audio->data[d]) +
-						(pass * BLOCK_SIZE);
+				if (d < MAX_AV_PLANES && audio->data[d] != nullptr) {
+					channelrefs[d] = ((float *)audio->data[d]) + (pass * BLOCK_SIZE);
 				} else {
 					channelrefs[d] = inputs[d];
 				}
 			};
 
-			effect->processReplacing(effect, channelrefs, outputs,
-						 frames);
+			effect->processReplacing(effect, channelrefs, outputs, frames);
 
 			// only copy back the channels the plugin may have generated
-			for (size_t c = 0; c < (size_t)effect->numOutputs &&
-					   c < MAX_AV_PLANES;
-			     c++) {
+			for (size_t c = 0; c < (size_t)effect->numOutputs && c < MAX_AV_PLANES; c++) {
 				if (audio->data[c]) {
 					for (size_t i = 0; i < frames; i++) {
-						channelrefs[c][i] =
-							outputs[c][i];
+						channelrefs[c][i] = outputs[c][i];
 					}
 				}
 			}
@@ -301,10 +275,8 @@ void VSTPlugin::unloadEffect()
 		effectReady = false;
 
 		if (effect) {
-			effect->dispatcher(effect, effMainsChanged, 0, 0,
-					   nullptr, 0);
-			effect->dispatcher(effect, effClose, 0, 0, nullptr,
-					   0.0f);
+			effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0);
+			effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
 		}
 
 		effect = nullptr;
@@ -339,9 +311,7 @@ void VSTPlugin::openEditor()
 	if (effect && !editorWidget) {
 		// This check logic is refer to open source project : Audacity
 		if (!(effect->flags & effFlagsHasEditor)) {
-			blog(LOG_WARNING,
-			     "VST Plug-in: Can't support edit feature. '%s'",
-			     pluginPath.c_str());
+			blog(LOG_WARNING, "VST Plug-in: Can't support edit feature. '%s'", pluginPath.c_str());
 			return;
 		}
 
@@ -354,13 +324,10 @@ void VSTPlugin::openEditor()
 		}
 
 		if (filterName.empty()) {
-			editorWidget->setWindowTitle(QString("%1 - %2").arg(
-				sourceName.c_str(), effectName));
+			editorWidget->setWindowTitle(QString("%1 - %2").arg(sourceName.c_str(), effectName));
 		} else {
 			editorWidget->setWindowTitle(
-				QString("%1: %2 - %3")
-					.arg(sourceName.c_str(),
-					     filterName.c_str(), effectName));
+				QString("%1: %2 - %3").arg(sourceName.c_str(), filterName.c_str(), effectName));
 		}
 		editorWidget->show();
 	}
@@ -386,8 +353,7 @@ std::string VSTPlugin::getChunk()
 	if (effect->flags & effFlagsProgramChunks) {
 		void *buf = nullptr;
 
-		intptr_t chunkSize = effect->dispatcher(effect, effGetChunk, 1,
-							0, &buf, 0.0);
+		intptr_t chunkSize = effect->dispatcher(effect, effGetChunk, 1, 0, &buf, 0.0);
 
 		QByteArray data = QByteArray((char *)buf, chunkSize);
 		return QString(data.toBase64()).toStdString();
@@ -399,8 +365,7 @@ std::string VSTPlugin::getChunk()
 		}
 
 		const char *bytes = reinterpret_cast<const char *>(&params[0]);
-		QByteArray data =
-			QByteArray(bytes, (int)(sizeof(float) * params.size()));
+		QByteArray data = QByteArray(bytes, (int)(sizeof(float) * params.size()));
 		std::string encoded = QString(data.toBase64()).toStdString();
 		return encoded;
 	}
@@ -413,21 +378,17 @@ void VSTPlugin::setChunk(const std::string &data)
 	}
 
 	if (effect->flags & effFlagsProgramChunks) {
-		QByteArray base64Data =
-			QByteArray(data.c_str(), (int)data.length());
+		QByteArray base64Data = QByteArray(data.c_str(), (int)data.length());
 		QByteArray chunkData = QByteArray::fromBase64(base64Data);
 		void *buf = nullptr;
 		buf = chunkData.data();
-		effect->dispatcher(effect, effSetChunk, 1, chunkData.length(),
-				   buf, 0);
+		effect->dispatcher(effect, effSetChunk, 1, chunkData.length(), buf, 0);
 	} else {
-		QByteArray base64Data =
-			QByteArray(data.c_str(), (int)data.length());
+		QByteArray base64Data = QByteArray(data.c_str(), (int)data.length());
 		QByteArray paramData = QByteArray::fromBase64(base64Data);
 
 		const char *p_chars = paramData.data();
-		const float *p_floats =
-			reinterpret_cast<const float *>(p_chars);
+		const float *p_floats = reinterpret_cast<const float *>(p_chars);
 
 		const size_t size = paramData.length() / sizeof(float);
 
@@ -446,11 +407,9 @@ void VSTPlugin::setChunk(const std::string &data)
 void VSTPlugin::setProgram(const int programNumber)
 {
 	if (programNumber < effect->numPrograms) {
-		effect->dispatcher(effect, effSetProgram, 0, programNumber,
-				   NULL, 0.0f);
+		effect->dispatcher(effect, effSetProgram, 0, programNumber, NULL, 0.0f);
 	} else {
-		blog(LOG_ERROR,
-		     "Failed to load program, number was outside possible program range.");
+		blog(LOG_ERROR, "Failed to load program, number was outside possible program range.");
 	}
 }
 

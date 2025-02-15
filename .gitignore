@@ -7,14 +7,15 @@
 !/cmake
 !/deps
 !/docs
+!/frontend
 !/libobs*
 !/plugins
+!/shared
 !/test
-!/UI
 !.cirrus.xml
 !.clang-format
-!.cmake-format.json
 !.editorconfig
+!.gersemirc
 !.git-blame-ignore-devs
 !.gitmodules
 !.gitignore

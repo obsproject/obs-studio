@@ -3,12 +3,9 @@
 
 /* ========================================================================= */
 
-static const REGPINTYPES AMSMediaTypesV = {&MEDIATYPE_Video,
-					   &MEDIASUBTYPE_NV12};
+static const REGPINTYPES AMSMediaTypesV = {&MEDIATYPE_Video, &MEDIASUBTYPE_NV12};
 
-static const REGFILTERPINS AMSPinVideo = {nullptr, false, true,
-					  false,   false, &CLSID_NULL,
-					  nullptr, 1,     &AMSMediaTypesV};
+static const REGFILTERPINS AMSPinVideo = {nullptr, false, true, false, false, &CLSID_NULL, nullptr, 1, &AMSMediaTypesV};
 
 HINSTANCE dll_inst = nullptr;
 volatile long locks = 0;
@@ -28,8 +25,7 @@ public:
 	STDMETHODIMP_(ULONG) Release();
 
 	// IClassFactory
-	STDMETHODIMP CreateInstance(LPUNKNOWN parent, REFIID riid,
-				    void **p_ptr);
+	STDMETHODIMP CreateInstance(LPUNKNOWN parent, REFIID riid, void **p_ptr);
 	STDMETHODIMP LockServer(BOOL lock);
 };
 
@@ -104,8 +100,7 @@ static inline DWORD string_size(const wchar_t *str)
 	return (DWORD)(wcslen(str) + 1) * sizeof(wchar_t);
 }
 
-static bool RegServer(const CLSID &cls, const wchar_t *desc,
-		      const wchar_t *file, const wchar_t *model = L"Both",
+static bool RegServer(const CLSID &cls, const wchar_t *desc, const wchar_t *file, const wchar_t *model = L"Both",
 		      const wchar_t *type = L"InprocServer32")
 {
 	wchar_t cls_str[CHARS_IN_GUID];
@@ -129,8 +124,7 @@ static bool RegServer(const CLSID &cls, const wchar_t *desc,
 	}
 
 	RegSetValueW(subkey, nullptr, REG_SZ, file, string_size(file));
-	RegSetValueExW(subkey, L"ThreadingModel", 0, REG_SZ,
-		       (const BYTE *)model, string_size(model));
+	RegSetValueExW(subkey, L"ThreadingModel", 0, REG_SZ, (const BYTE *)model, string_size(model));
 
 	success = true;
 
@@ -165,8 +159,7 @@ static bool RegServers(bool reg)
 	}
 
 	if (reg) {
-		return RegServer(CLSID_OBS_VirtualVideo, L"OBS Virtual Camera",
-				 file);
+		return RegServer(CLSID_OBS_VirtualVideo, L"OBS Virtual Camera", file);
 	} else {
 		return UnregServer(CLSID_OBS_VirtualVideo);
 	}
@@ -177,9 +170,7 @@ static bool RegFilters(bool reg)
 	ComPtr<IFilterMapper2> fm;
 	HRESULT hr;
 
-	hr = CoCreateInstance(CLSID_FilterMapper2, nullptr,
-			      CLSCTX_INPROC_SERVER, IID_IFilterMapper2,
-			      (void **)&fm);
+	hr = CoCreateInstance(CLSID_FilterMapper2, nullptr, CLSCTX_INPROC_SERVER, IID_IFilterMapper2, (void **)&fm);
 	if (FAILED(hr)) {
 		return false;
 	}
@@ -192,16 +183,13 @@ static bool RegFilters(bool reg)
 		rf2.cPins = 1;
 		rf2.rgPins = &AMSPinVideo;
 
-		hr = fm->RegisterFilter(CLSID_OBS_VirtualVideo,
-					L"OBS Virtual Camera", &moniker,
-					&CLSID_VideoInputDeviceCategory,
-					nullptr, &rf2);
+		hr = fm->RegisterFilter(CLSID_OBS_VirtualVideo, L"OBS Virtual Camera", &moniker,
+					&CLSID_VideoInputDeviceCategory, nullptr, &rf2);
 		if (FAILED(hr)) {
 			return false;
 		}
 	} else {
-		hr = fm->UnregisterFilter(&CLSID_VideoInputDeviceCategory, 0,
-					  CLSID_OBS_VirtualVideo);
+		hr = fm->UnregisterFilter(&CLSID_VideoInputDeviceCategory, 0, CLSID_OBS_VirtualVideo);
 		if (FAILED(hr)) {
 			return false;
 		}

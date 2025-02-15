@@ -164,6 +164,8 @@ Encoder Definition Structure (obs_encoder_info)
 
    - **OBS_ENCODER_CAP_DEPRECATED** - Encoder is deprecated
    - **OBS_ENCODER_CAP_ROI** - Encoder supports region of interest feature
+   - **OBS_ENCODER_CAP_SCALING** - Encoder implements its own scaling logic,
+                                   desiring to receive unscaled frames
 
 
 Encoder Packet Structure (encoder_packet)
@@ -273,6 +275,8 @@ Encoder Region of Interest Structure (obs_encoder_roi)
 
    Encoder region of interest structure.
 
+   .. versionadded:: 30.1
+
 .. member:: uint32_t top
             uint32_t bottom
             uint32_t left
@@ -344,15 +348,6 @@ General Encoder Functions
                             if none
    :return:                 A reference to the newly created encoder, or
                             *NULL* if failed
-
----------------------
-
-.. function:: void obs_encoder_addref(obs_encoder_t *encoder)
-
-   Adds a reference to an encoder.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_encoder_get_ref()` instead.
 
 ---------------------
 
@@ -448,6 +443,12 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder)
+
+   :return: The mixer index for the audio track which is encoded by the encoder
+
+---------------------
+
 .. function:: void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder, enum video_format format)
               enum video_format obs_encoder_get_preferred_video_format(const obs_encoder_t *encoder)
 
@@ -526,10 +527,14 @@ General Encoder Functions
 ---------------------
 
 .. function:: video_t *obs_encoder_video(const obs_encoder_t *encoder)
+              video_t *obs_encoder_parent_video(const obs_encoder_t *encoder)
               audio_t *obs_encoder_audio(const obs_encoder_t *encoder)
 
    :return: The video/audio handler associated with this encoder, or
-            *NULL* if none or not a matching encoder type
+            *NULL* if none or not a matching encoder type.
+            *parent_video* returns the "original" video handler
+            associated with this encoder, regardless of whether an FPS
+            divisor is set.
 
 ---------------------
 
@@ -545,17 +550,23 @@ General Encoder Functions
 
    :return: *true* if adding succeeded, *false* otherwise.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 .. function:: bool obs_encoder_has_roi(obs_encoder_t *encoder)
 
    :return: *true* if encoder has ROI regions set, *false* otherwise.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 .. function:: void obs_encoder_clear_roi(obs_encoder_t *encoder)
 
     Clear region of interest list, if any.
+
+   .. versionadded:: 30.1
 
 ---------------------
 
@@ -565,6 +576,8 @@ General Encoder Functions
 
     **Note:** If the encoder has scaling enabled the struct passed to the callback will be scaled accordingly.
 
+   .. versionadded:: 30.1
+
 ---------------------
 
 .. function:: uint32_t obs_encoder_get_roi_increment(const obs_encoder_t *encoder)
@@ -572,6 +585,8 @@ General Encoder Functions
    Encoders shall refresh their ROI configuration if the increment value changes.
 
    :return: Increment/revision of ROI list
+
+   .. versionadded:: 30.1
 
 ---------------------
 

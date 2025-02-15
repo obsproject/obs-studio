@@ -501,36 +501,10 @@ Video, Audio, and Graphics
 
 ---------------------
 
-.. function:: void obs_render_main_view(void)
-
-   Renders the main view.
-
-   Note: This function is deprecated.
-
----------------------
-
 .. function:: void obs_render_main_texture(void)
 
    Renders the main output texture.  Useful for rendering a preview pane
    of the main output.
-
----------------------
-
-.. function:: void obs_set_master_volume(float volume)
-
-   No-op, only exists to keep ABI compatibility.
-
-   .. deprecated:: 29.0
-
----------------------
-
-.. function:: float obs_get_master_volume(void)
-
-   No-op, only exists to keep ABI compatibility.
-
-   :return: Always returns 1
-
-   .. deprecated:: 29.0
 
 ---------------------
 
@@ -543,6 +517,8 @@ Video, Audio, and Graphics
 .. function:: void obs_reset_audio_monitoring(void)
 
    Resets all audio monitoring devices.
+
+   .. versionadded:: 30.1
 
 ---------------------
 
@@ -701,6 +677,14 @@ Core OBS Signals
 **source_audio_deactivate** (ptr source)
 
    Called when a source's audio becomes inactive.
+
+**source_filter_add** (ptr source, ptr filter)
+
+   Called when a filter is added to a source.
+
+**source_filter_remove** (ptr source, ptr filter)
+
+   Called when a filter is removed from a source.
 
 **source_transition_start** (ptr source)
 
@@ -914,3 +898,5 @@ Views
 .. function:: void obs_view_enum_video_info(obs_view_t *view, bool (*enum_proc)(void *, struct obs_video_info *), void *param)
 
    Enumerates all the video info of all mixes that use the specified mix.
+
+   .. versionadded:: 30.1

@@ -32,6 +32,7 @@ struct obs_scene_item {
 	volatile bool removed;
 
 	bool is_group;
+	bool is_scene;
 	bool update_transform;
 	bool update_group_resize;
 
@@ -50,8 +51,10 @@ struct obs_scene_item {
 	gs_texrender_t *item_render;
 	struct obs_sceneitem_crop crop;
 
+	bool absolute_coordinates;
 	struct vec2 pos;
 	struct vec2 scale;
+	struct vec2 scale_ref;
 	float rot;
 	uint32_t align;
 
@@ -93,6 +96,15 @@ struct obs_scene_item {
 	struct obs_scene_item *next;
 };
 
+struct scene_source_mix {
+	obs_source_t *source;
+	obs_source_t *transition;
+	size_t pos;
+	size_t count;
+	bool apply_buf;
+	float buf[AUDIO_OUTPUT_FRAMES];
+};
+
 struct obs_scene {
 	struct obs_source *source;
 
@@ -101,9 +113,15 @@ struct obs_scene {
 	uint32_t cx;
 	uint32_t cy;
 
+	bool absolute_coordinates;
+	uint32_t last_width;
+	uint32_t last_height;
+
 	int64_t id_counter;
 
 	pthread_mutex_t video_mutex;
 	pthread_mutex_t audio_mutex;
 	struct obs_scene_item *first_item;
+
+	DARRAY(struct scene_source_mix) mix_sources;
 };

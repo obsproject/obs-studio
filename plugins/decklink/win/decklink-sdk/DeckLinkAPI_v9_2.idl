@@ -59,7 +59,7 @@
     HRESULT StopStreams(void);
     HRESULT PauseStreams(void);
     HRESULT FlushStreams(void);
-    HRESULT SetCallback([in] IDeckLinkInputCallback *theCallback);
+    HRESULT SetCallback([in] IDeckLinkInputCallback_v11_5_1 *theCallback);
 
     /* Hardware Timing */
 

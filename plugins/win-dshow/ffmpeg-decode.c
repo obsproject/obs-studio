@@ -37,8 +37,7 @@ static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type)
 			break;
 		}
 
-		if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
-		    config->device_type == type)
+		if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == type)
 			return true;
 	}
 
@@ -52,8 +51,7 @@ static void init_hw_decoder(struct ffmpeg_decode *d)
 
 	while (*priority != AV_HWDEVICE_TYPE_NONE) {
 		if (has_hw_type(d->codec, *priority)) {
-			int ret = av_hwdevice_ctx_create(&hw_ctx, *priority,
-							 NULL, NULL, 0);
+			int ret = av_hwdevice_ctx_create(&hw_ctx, *priority, NULL, NULL, 0);
 			if (ret == 0)
 				break;
 		}
@@ -68,8 +66,7 @@ static void init_hw_decoder(struct ffmpeg_decode *d)
 	}
 }
 
-int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id,
-		       bool use_hw)
+int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id, bool use_hw)
 {
 	int ret;
 
@@ -91,11 +88,6 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id,
 		ffmpeg_decode_free(decode);
 		return ret;
 	}
-
-#if LIBAVCODEC_VERSION_MAJOR < 60
-	if (decode->codec->capabilities & CODEC_CAP_TRUNC)
-		decode->decoder->flags |= CODEC_FLAG_TRUNC;
-#endif
 
 	return 0;
 }
@@ -206,14 +198,12 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 	}
 }
 
-static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
-			     size_t size)
+static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data, size_t size)
 {
 	size_t new_size = size + INPUT_BUFFER_PADDING_SIZE;
 
 	if (decode->packet_size < new_size) {
-		decode->packet_buffer =
-			brealloc(decode->packet_buffer, new_size);
+		decode->packet_buffer = brealloc(decode->packet_buffer, new_size);
 		decode->packet_size = new_size;
 	}
 
@@ -221,8 +211,7 @@ static inline void copy_data(struct ffmpeg_decode *decode, uint8_t *data,
 	memcpy(decode->packet_buffer, data, size);
 }
 
-bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
-			 size_t size, struct obs_source_audio *audio,
+bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data, size_t size, struct obs_source_audio *audio,
 			 bool *got_output)
 {
 	int got_frame = false;
@@ -265,8 +254,7 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 
 	audio->samples_per_sec = decode->frame->sample_rate;
 	audio->format = convert_sample_format(decode->frame->format);
-	audio->speakers =
-		convert_speaker_layout((uint8_t)decode->decoder->channels);
+	audio->speakers = convert_speaker_layout((uint8_t)decode->decoder->ch_layout.nb_channels);
 
 	audio->frames = decode->frame->nb_samples;
 
@@ -277,35 +265,29 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 	return true;
 }
 
-static enum video_colorspace
-convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc,
-		    enum AVColorPrimaries color_primaries)
+static enum video_colorspace convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc,
+						 enum AVColorPrimaries color_primaries)
 {
 	switch (s) {
 	case AVCOL_SPC_BT709:
-		return (trc == AVCOL_TRC_IEC61966_2_1) ? VIDEO_CS_SRGB
-						       : VIDEO_CS_709;
+		return (trc == AVCOL_TRC_IEC61966_2_1) ? VIDEO_CS_SRGB : VIDEO_CS_709;
 	case AVCOL_SPC_FCC:
 	case AVCOL_SPC_BT470BG:
 	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_SMPTE240M:
 		return VIDEO_CS_601;
 	case AVCOL_SPC_BT2020_NCL:
-		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
-						       : VIDEO_CS_2100_PQ;
+		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG : VIDEO_CS_2100_PQ;
 	default:
 		return (color_primaries == AVCOL_PRI_BT2020)
-			       ? ((trc == AVCOL_TRC_ARIB_STD_B67)
-					  ? VIDEO_CS_2100_HLG
-					  : VIDEO_CS_2100_PQ)
+			       ? ((trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG : VIDEO_CS_2100_PQ)
 			       : VIDEO_CS_DEFAULT;
 	}
 }
 
-bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
-			 size_t size, long long *ts, enum video_colorspace cs,
-			 enum video_range_type range,
-			 struct obs_source_frame2 *frame, bool *got_output)
+bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data, size_t size, long long *ts,
+			 enum video_colorspace cs, enum video_range_type range, struct obs_source_frame2 *frame,
+			 bool *got_output)
 {
 	int got_frame = false;
 	AVFrame *out_frame;
@@ -375,25 +357,20 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 		frame->linesize[i] = decode->frame->linesize[i];
 	}
 
-	const enum video_format format =
-		convert_pixel_format(decode->frame->format);
+	const enum video_format format = convert_pixel_format(decode->frame->format);
 	frame->format = format;
 
 	if (range == VIDEO_RANGE_DEFAULT) {
-		range = (decode->frame->color_range == AVCOL_RANGE_JPEG)
-				? VIDEO_RANGE_FULL
-				: VIDEO_RANGE_PARTIAL;
+		range = (decode->frame->color_range == AVCOL_RANGE_JPEG) ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
 	}
 
 	if (cs == VIDEO_CS_DEFAULT) {
-		cs = convert_color_space(decode->frame->colorspace,
-					 decode->frame->color_trc,
+		cs = convert_color_space(decode->frame->colorspace, decode->frame->color_trc,
 					 decode->frame->color_primaries);
 	}
 
-	const bool success = video_format_get_parameters_for_format(
-		cs, range, format, frame->color_matrix, frame->color_range_min,
-		frame->color_range_max);
+	const bool success = video_format_get_parameters_for_format(cs, range, format, frame->color_matrix,
+								    frame->color_range_min, frame->color_range_max);
 	if (!success) {
 		blog(LOG_ERROR,
 		     "Failed to get video format "

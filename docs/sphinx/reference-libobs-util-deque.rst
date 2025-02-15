@@ -8,6 +8,8 @@ as data is pushed to the front or back.
 
    #include <util/deque.h>
 
+.. versionadded:: 30.1
+
 
 Deque Structure (struct deque)
 --------------------------------------------

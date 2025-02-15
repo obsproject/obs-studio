@@ -20,8 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "v4l2-decoder.h"
 
-#define blog(level, msg, ...) \
-	blog(level, "v4l2-input: decoder: " msg, ##__VA_ARGS__)
+#define blog(level, msg, ...) blog(level, "v4l2-input: decoder: " msg, ##__VA_ARGS__)
 
 int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt)
 {
@@ -78,13 +77,14 @@ void v4l2_destroy_decoder(struct v4l2_decoder *decoder)
 	}
 
 	if (decoder->context) {
+#if LIBAVCODEC_VERSION_MAJOR < 61
 		avcodec_close(decoder->context);
+#endif
 		avcodec_free_context(&decoder->context);
 	}
 }
 
-int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data,
-		      size_t length, struct v4l2_decoder *decoder)
+int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data, size_t length, struct v4l2_decoder *decoder)
 {
 	decoder->packet->data = data;
 	decoder->packet->size = length;

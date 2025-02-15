@@ -1,0 +1,135 @@
+name: Analyze Project
+on:
+  workflow_call:
+jobs:
+  windows:
+    name: Windows 🪟 (PVS-Studio)
+    runs-on: windows-2022
+    if: false && github.repository_owner == 'obsproject'
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build OBS Studio 🧱
+        uses: ./.github/actions/build-obs
+        env:
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+          GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
+        with:
+          target: x64
+          config: Debug
+
+      - name: Run PVS-Studio Analysis
+        uses: ./.github/actions/windows-analysis
+        with:
+          pvsUsername: ${{ secrets.PVS_NAME }}
+          pvsKey: ${{ secrets.PVS_KEY }}
+          target: x64
+          config: Debug
+
+  macos:
+    name: macOS 🍏 (clang-analyze)
+    runs-on: macos-15
+    defaults:
+      run:
+        shell: zsh --no-rcs --errexit --pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set Up Environment 🔧
+        id: setup
+        run: |
+          : Set Up Environment 🔧
+          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          print '::group::Enable Xcode 16.1'
+          sudo xcode-select --switch /Applications/Xcode_16.1.0.app/Contents/Developer
+          print '::endgroup::'
+
+          print '::group::Clean Homebrew Environment'
+          local -a unwanted_formulas=()
+          local -a remove_formulas=()
+          for formula (${unwanted_formulas}) {
+            if [[ -d ${HOMEBREW_PREFIX}/Cellar/${formula} ]] remove_formulas+=(${formula})
+          }
+
+          if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
+          print '::endgroup::'
+
+      - name: Set Up Code Signing 🔑
+        uses: ./.github/actions/setup-macos-codesigning
+        id: codesign
+        with:
+          codesignIdentity: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          codesignCertificate: ${{ secrets.MACOS_SIGNING_CERT }}
+          certificatePassword: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          keychainPassword: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+          provisioningProfile: ${{ secrets.MACOS_SIGNING_PROVISIONING_PROFILE }}
+          notarizationUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          notarizationPassword: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+
+      - name: Build OBS Studio 🧱
+        env:
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+          CODESIGN_IDENT: ${{ steps.codesign.outputs.codesignIdent }}
+          CODESIGN_TEAM: ${{ steps.codesign.outputs.codesignTeam }}
+          PROVISIONING_PROFILE: ${{ steps.codesign.outputs.provisioningProfileUUID }}
+        run: |
+          : Run macOS Build
+
+          local -a build_args=(
+            --config Debug
+            --target macos-arm64
+            --codesign
+            --analyze
+          )
+          if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
+
+          git fetch origin --no-tags --no-recurse-submodules -q
+          .github/scripts/build-macos ${build_args}
+
+      - name: Compile Analytics Data 📊
+        run: |
+          : Compile Analytics Data 📊
+
+          local analytics_root='${{ github.workspace }}/analytics'
+
+          local -a analytics_files=(${analytics_root}/StaticAnalyzer/obs-studio/**/*.plist)
+
+          for file (${analytics_files}) {
+            mv ${file} ${analytics_root}/${${file:t}//plist/sarif}
+          }
+
+          pushd ${analytics_root}
+
+          npx @microsoft/sarif-multitool merge *.sarif
+
+          popd
+
+      - name: Upload SARIF report files 📦
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "${{ github.workspace }}/analytics/merged.sarif"
+          category: 'clang-analyze (macOS Apple Silicon)'

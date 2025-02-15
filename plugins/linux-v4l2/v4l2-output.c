@@ -103,8 +103,7 @@ static int loopback_module_load()
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
 {
-	struct virtualcam_data *vcam =
-		(struct virtualcam_data *)bzalloc(sizeof(*vcam));
+	struct virtualcam_data *vcam = (struct virtualcam_data *)bzalloc(sizeof(*vcam));
 	vcam->output = output;
 
 	UNUSED_PARAMETER(settings);
@@ -167,8 +166,7 @@ static bool try_connect(void *data, const char *device)
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
 	if (ioctl(vcam->device, VIDIOC_STREAMON, &parm) < 0) {
-		blog(LOG_ERROR, "Failed to start streaming on '%s' (%s)",
-		     device, strerror(errno));
+		blog(LOG_ERROR, "Failed to start streaming on '%s' (%s)", device, strerror(errno));
 		goto fail_close_device;
 	}
 
@@ -216,9 +214,8 @@ static bool virtualcam_start(void *data)
 		// Use the return value of snprintf to prevent truncation warning.
 		int written = snprintf(device, 32, "/dev/%s", list[i]->d_name);
 		if (written >= 32)
-			blog(LOG_DEBUG,
-			     "v4l2-output: A format truncation may have occurred."
-			     " This can be ignored since it is quite improbable.");
+			blog(LOG_DEBUG, "v4l2-output: A format truncation may have occurred."
+					" This can be ignored since it is quite improbable.");
 
 		if (try_connect(vcam, device)) {
 			success = true;
@@ -245,9 +242,7 @@ static void virtualcam_stop(void *data, uint64_t ts)
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
 	if (ioctl(vcam->device, VIDIOC_STREAMOFF, &parm) < 0) {
-		blog(LOG_WARNING,
-		     "Failed to stop streaming on video device %d (%s)",
-		     vcam->device, strerror(errno));
+		blog(LOG_WARNING, "Failed to stop streaming on video device %d (%s)", vcam->device, strerror(errno));
 	}
 
 	close(vcam->device);
@@ -261,8 +256,7 @@ static void virtual_video(void *param, struct video_data *frame)
 	struct virtualcam_data *vcam = (struct virtualcam_data *)param;
 	uint32_t frame_size = vcam->frame_size;
 	while (frame_size > 0) {
-		ssize_t written =
-			write(vcam->device, frame->data[0], vcam->frame_size);
+		ssize_t written = write(vcam->device, frame->data[0], vcam->frame_size);
 		if (written == -1)
 			break;
 		frame_size -= written;

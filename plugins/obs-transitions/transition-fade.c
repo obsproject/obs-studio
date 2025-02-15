@@ -48,8 +48,7 @@ static void fade_destroy(void *data)
 	bfree(fade);
 }
 
-static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t,
-			  uint32_t cx, uint32_t cy)
+static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t, uint32_t cx, uint32_t cy)
 {
 	if (a || b) {
 		struct fade_info *fade = data;
@@ -114,23 +113,18 @@ static float mix_b(void *data, float t)
 	return t;
 }
 
-static bool fade_audio_render(void *data, uint64_t *ts_out,
-			      struct obs_source_audio_mix *audio,
-			      uint32_t mixers, size_t channels,
-			      size_t sample_rate)
+static bool fade_audio_render(void *data, uint64_t *ts_out, struct obs_source_audio_mix *audio, uint32_t mixers,
+			      size_t channels, size_t sample_rate)
 {
 	struct fade_info *fade = data;
-	return obs_transition_audio_render(fade->source, ts_out, audio, mixers,
-					   channels, sample_rate, mix_a, mix_b);
+	return obs_transition_audio_render(fade->source, ts_out, audio, mixers, channels, sample_rate, mix_a, mix_b);
 }
 
-static enum gs_color_space
-fade_video_get_color_space(void *data, size_t count,
-			   const enum gs_color_space *preferred_spaces)
+static enum gs_color_space fade_video_get_color_space(void *data, size_t count,
+						      const enum gs_color_space *preferred_spaces)
 {
 	struct fade_info *const fade = data;
-	const enum gs_color_space transition_space =
-		obs_transition_video_get_color_space(fade->source);
+	const enum gs_color_space transition_space = obs_transition_video_get_color_space(fade->source);
 
 	enum gs_color_space space = transition_space;
 	for (size_t i = 0; i < count; ++i) {

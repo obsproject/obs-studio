@@ -26,14 +26,12 @@ extern "C" {
 
 static inline float gs_srgb_nonlinear_to_linear(float u)
 {
-	return (u <= 0.04045f) ? (u / 12.92f)
-			       : powf((u + 0.055f) / 1.055f, 2.4f);
+	return (u <= 0.04045f) ? (u / 12.92f) : powf((u + 0.055f) / 1.055f, 2.4f);
 }
 
 static inline float gs_srgb_linear_to_nonlinear(float u)
 {
-	return (u <= 0.0031308f) ? (12.92f * u)
-				 : ((1.055f * powf(u, 1.0f / 2.4f)) - 0.055f);
+	return (u <= 0.0031308f) ? (12.92f * u) : ((1.055f * powf(u, 1.0f / 2.4f)) - 0.055f);
 }
 
 static inline float gs_u8_to_float(uint8_t u)
@@ -114,8 +112,7 @@ static inline void gs_premultiply_xyza_srgb(uint8_t *data)
 	memcpy(data, &u, sizeof(u));
 }
 
-static inline void gs_premultiply_xyza_restrict(uint8_t *__restrict dst,
-						const uint8_t *__restrict src)
+static inline void gs_premultiply_xyza_restrict(uint8_t *__restrict dst, const uint8_t *__restrict src)
 {
 	uint8_t u[4];
 	float f[4];
@@ -126,9 +123,7 @@ static inline void gs_premultiply_xyza_restrict(uint8_t *__restrict dst,
 	memcpy(dst, &u, sizeof(u));
 }
 
-static inline void
-gs_premultiply_xyza_srgb_restrict(uint8_t *__restrict dst,
-				  const uint8_t *__restrict src)
+static inline void gs_premultiply_xyza_srgb_restrict(uint8_t *__restrict dst, const uint8_t *__restrict src)
 {
 	uint8_t u[4];
 	float f[4];
@@ -149,8 +144,7 @@ static inline void gs_premultiply_xyza_loop(uint8_t *data, size_t texel_count)
 	}
 }
 
-static inline void gs_premultiply_xyza_srgb_loop(uint8_t *data,
-						 size_t texel_count)
+static inline void gs_premultiply_xyza_srgb_loop(uint8_t *data, size_t texel_count)
 {
 	for (size_t i = 0; i < texel_count; ++i) {
 		gs_premultiply_xyza_srgb(data);
@@ -158,10 +152,8 @@ static inline void gs_premultiply_xyza_srgb_loop(uint8_t *data,
 	}
 }
 
-static inline void
-gs_premultiply_xyza_loop_restrict(uint8_t *__restrict dst,
-				  const uint8_t *__restrict src,
-				  size_t texel_count)
+static inline void gs_premultiply_xyza_loop_restrict(uint8_t *__restrict dst, const uint8_t *__restrict src,
+						     size_t texel_count)
 {
 	for (size_t i = 0; i < texel_count; ++i) {
 		gs_premultiply_xyza_restrict(dst, src);
@@ -170,10 +162,8 @@ gs_premultiply_xyza_loop_restrict(uint8_t *__restrict dst,
 	}
 }
 
-static inline void
-gs_premultiply_xyza_srgb_loop_restrict(uint8_t *__restrict dst,
-				       const uint8_t *__restrict src,
-				       size_t texel_count)
+static inline void gs_premultiply_xyza_srgb_loop_restrict(uint8_t *__restrict dst, const uint8_t *__restrict src,
+							  size_t texel_count)
 {
 	for (size_t i = 0; i < texel_count; ++i) {
 		gs_premultiply_xyza_srgb_restrict(dst, src);

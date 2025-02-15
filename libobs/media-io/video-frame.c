@@ -14,362 +14,133 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
+#include <assert.h>
 #include "video-frame.h"
 
-#define ALIGN_SIZE(size, align) size = (((size) + (align - 1)) & (~(align - 1)))
+#define HALF(size) ((size + 1) / 2)
+#define ALIGN(size, alignment) *size = (*size + alignment - 1) & (~(alignment - 1));
 
-/* messy code alarm */
-void video_frame_init(struct video_frame *frame, enum video_format format,
-		      uint32_t width, uint32_t height)
+static inline void align_size(size_t *size, size_t alignment)
 {
-	size_t size;
-	size_t offsets[MAX_AV_PLANES];
-	int alignment = base_get_alignment();
+	ALIGN(size, alignment);
+}
 
-	if (!frame)
-		return;
+static inline void align_uint32(uint32_t *size, size_t alignment)
+{
+	ALIGN(size, (uint32_t)alignment);
+}
 
-	memset(frame, 0, sizeof(struct video_frame));
-	memset(offsets, 0, sizeof(offsets));
-
+/* assumes already-zeroed array */
+void video_frame_get_linesizes(uint32_t linesize[MAX_AV_PLANES], enum video_format format, uint32_t width)
+{
 	switch (format) {
+	default:
 	case VIDEO_FORMAT_NONE:
-		return;
-
-	case VIDEO_FORMAT_I420: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
 		break;
-	}
-
-	case VIDEO_FORMAT_NV12: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-		size += cbcr_width * ((height + 1) / 2);
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->linesize[0] = width;
-		frame->linesize[1] = cbcr_width;
+	case VIDEO_FORMAT_BGR3: /* one plane: triple width */
+		linesize[0] = width * 3;
 		break;
-	}
-
-	case VIDEO_FORMAT_Y800:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = width;
-		break;
-
-	case VIDEO_FORMAT_YVYU:
-	case VIDEO_FORMAT_YUY2:
-	case VIDEO_FORMAT_UYVY: {
-		const uint32_t double_width =
-			((width + 1) & (UINT32_MAX - 1)) * 2;
-		size = double_width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = double_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBA: /* one plane: quadruple width */
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_AYUV:
-		size = width * height * 4;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = width * 4;
-		break;
-
-	case VIDEO_FORMAT_I444:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size * 3);
-		frame->data[1] = (uint8_t *)frame->data[0] + size;
-		frame->data[2] = (uint8_t *)frame->data[1] + size;
-		frame->linesize[0] = width;
-		frame->linesize[1] = width;
-		frame->linesize[2] = width;
-		break;
-
-	case VIDEO_FORMAT_I412:
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size * 3);
-		frame->data[1] = (uint8_t *)frame->data[0] + size;
-		frame->data[2] = (uint8_t *)frame->data[1] + size;
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = width * 2;
-		frame->linesize[2] = width * 2;
-		break;
-
-	case VIDEO_FORMAT_BGR3:
-		size = width * height * 3;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = width * 3;
-		break;
-
-	case VIDEO_FORMAT_I422: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		break;
-	}
-
-	case VIDEO_FORMAT_I210: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		const uint32_t half_area_size = 2 * half_area;
-		size += half_area_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area_size;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = half_width * 2;
-		frame->linesize[2] = half_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_I40A: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		frame->linesize[3] = width;
-		break;
-	}
-
-	case VIDEO_FORMAT_I42A: {
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_area = half_width * height;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += half_area;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[0] = width;
-		frame->linesize[1] = half_width;
-		frame->linesize[2] = half_width;
-		frame->linesize[3] = width;
-		break;
-	}
-
-	case VIDEO_FORMAT_YUVA:
-		size = width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[0] = width;
-		frame->linesize[1] = width;
-		frame->linesize[2] = width;
-		frame->linesize[3] = width;
-		break;
-
-	case VIDEO_FORMAT_YA2L: {
-		const uint32_t linesize = width * 2;
-		const uint32_t plane_size = linesize * height;
-		size = plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		offsets[2] = size;
-		size += plane_size;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
-		frame->linesize[0] = linesize;
-		frame->linesize[1] = linesize;
-		frame->linesize[2] = linesize;
-		frame->linesize[3] = linesize;
-		break;
-	}
-
-	case VIDEO_FORMAT_I010: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t half_width = (width + 1) / 2;
-		const uint32_t half_height = (height + 1) / 2;
-		const uint32_t quarter_area = half_width * half_height;
-		size += quarter_area * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[1] = size;
-		size += quarter_area * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = half_width * 2;
-		frame->linesize[2] = half_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_P010: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-		size += cbcr_width * ((height + 1) / 2) * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = cbcr_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_P216: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
-		size += cbcr_width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = cbcr_width * 2;
-		break;
-	}
-
-	case VIDEO_FORMAT_P416: {
-		size = width * height * 2;
-		ALIGN_SIZE(size, alignment);
-		offsets[0] = size;
-		size += width * height * 4;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
-		frame->linesize[0] = width * 2;
-		frame->linesize[1] = width * 4;
-		break;
-	}
-
-	case VIDEO_FORMAT_V210: {
-		const uint32_t adjusted_width = ((width + 5) / 6) * 16;
-		size = adjusted_width * height;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = adjusted_width;
-		break;
-	}
-
 	case VIDEO_FORMAT_R10L:
-		size = width * height * 4;
-		ALIGN_SIZE(size, alignment);
-		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = width * 4;
+		linesize[0] = width * 4;
 		break;
+	case VIDEO_FORMAT_P416: /* two planes: double width, quadruple width */
+		linesize[0] = width * 2;
+		linesize[1] = width * 4;
+		break;
+	case VIDEO_FORMAT_I420: /* three planes: full width, half width, half width */
+	case VIDEO_FORMAT_I422:
+		linesize[0] = width;
+		linesize[1] = HALF(width);
+		linesize[2] = HALF(width);
+		break;
+	case VIDEO_FORMAT_I210: /* three planes: double width, full width, full width */
+	case VIDEO_FORMAT_I010:
+		linesize[0] = width * 2;
+		linesize[1] = width;
+		linesize[2] = width;
+		break;
+	case VIDEO_FORMAT_I40A: /* four planes: full width, half width, half width, full width */
+	case VIDEO_FORMAT_I42A:
+		linesize[0] = width;
+		linesize[1] = HALF(width);
+		linesize[2] = HALF(width);
+		linesize[3] = width;
+		break;
+
+	case VIDEO_FORMAT_YVYU: /* one plane: double width */
+	case VIDEO_FORMAT_YUY2:
+	case VIDEO_FORMAT_UYVY:
+		linesize[0] = width * 2;
+		break;
+	case VIDEO_FORMAT_P010: /* two planes: all double width */
+	case VIDEO_FORMAT_P216:
+		linesize[0] = width * 2;
+		linesize[1] = width * 2;
+		break;
+	case VIDEO_FORMAT_I412: /* three planes: all double width */
+		linesize[0] = width * 2;
+		linesize[1] = width * 2;
+		linesize[2] = width * 2;
+		break;
+	case VIDEO_FORMAT_YA2L: /* four planes: all double width */
+		linesize[0] = width * 2;
+		linesize[1] = width * 2;
+		linesize[2] = width * 2;
+		linesize[3] = width * 2;
+		break;
+
+	case VIDEO_FORMAT_Y800: /* one plane: full width */
+		linesize[0] = width;
+		break;
+	case VIDEO_FORMAT_NV12: /* two planes: all full width */
+		linesize[0] = width;
+		linesize[1] = width;
+		break;
+	case VIDEO_FORMAT_I444: /* three planes: all full width */
+		linesize[0] = width;
+		linesize[1] = width;
+		linesize[2] = width;
+		break;
+	case VIDEO_FORMAT_YUVA: /* four planes: all full width */
+		linesize[0] = width;
+		linesize[1] = width;
+		linesize[2] = width;
+		linesize[3] = width;
+		break;
+
+	case VIDEO_FORMAT_V210: { /* one plane: bruh (Little Endian Compressed) */
+		align_uint32(&width, 48);
+		linesize[0] = ((width + 5) / 6) * 16;
+		break;
+	}
 	}
 }
 
-void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
-		      enum video_format format, uint32_t cy)
+void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES], enum video_format format, uint32_t height)
 {
 	switch (format) {
+	default:
 	case VIDEO_FORMAT_NONE:
 		return;
 
-	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_I420: /* three planes: full height, half height, half height */
 	case VIDEO_FORMAT_I010:
-		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
-		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy / 2);
-		memcpy(dst->data[2], src->data[2], src->linesize[2] * cy / 2);
+		heights[0] = height;
+		heights[1] = HALF(height);
+		heights[2] = HALF(height);
 		break;
 
-	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_NV12: /* two planes: full height, half height */
 	case VIDEO_FORMAT_P010:
-		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
-		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy / 2);
+		heights[0] = height;
+		heights[1] = HALF(height);
 		break;
 
-	case VIDEO_FORMAT_Y800:
+	case VIDEO_FORMAT_Y800: /* one plane: full height */
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
@@ -380,38 +151,113 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 	case VIDEO_FORMAT_AYUV:
 	case VIDEO_FORMAT_V210:
 	case VIDEO_FORMAT_R10L:
-		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
+		heights[0] = height;
 		break;
 
-	case VIDEO_FORMAT_I444:
+	case VIDEO_FORMAT_I444: /* three planes: all full height */
 	case VIDEO_FORMAT_I422:
 	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_I412:
-		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
-		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy);
-		memcpy(dst->data[2], src->data[2], src->linesize[2] * cy);
+		heights[0] = height;
+		heights[1] = height;
+		heights[2] = height;
 		break;
 
-	case VIDEO_FORMAT_I40A:
-		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
-		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy / 2);
-		memcpy(dst->data[2], src->data[2], src->linesize[2] * cy / 2);
-		memcpy(dst->data[3], src->data[3], src->linesize[3] * cy);
+	case VIDEO_FORMAT_I40A: /* four planes: full height, half height, half height, full height */
+		heights[0] = height;
+		heights[1] = HALF(height);
+		heights[2] = HALF(height);
+		heights[3] = height;
 		break;
 
-	case VIDEO_FORMAT_I42A:
+	case VIDEO_FORMAT_I42A: /* four planes: all full height */
 	case VIDEO_FORMAT_YUVA:
 	case VIDEO_FORMAT_YA2L:
-		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
-		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy);
-		memcpy(dst->data[2], src->data[2], src->linesize[2] * cy);
-		memcpy(dst->data[3], src->data[3], src->linesize[3] * cy);
+		heights[0] = height;
+		heights[1] = height;
+		heights[2] = height;
+		heights[3] = height;
 		break;
 
-	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P216: /* two planes: all full height */
 	case VIDEO_FORMAT_P416:
-		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
-		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy);
+		heights[0] = height;
+		heights[1] = height;
 		break;
+	}
+}
+
+void video_frame_init(struct video_frame *frame, enum video_format format, uint32_t width, uint32_t height)
+{
+	size_t size = 0;
+	uint32_t linesizes[MAX_AV_PLANES];
+	uint32_t heights[MAX_AV_PLANES];
+	size_t offsets[MAX_AV_PLANES];
+	int alignment = base_get_alignment();
+
+	if (!frame)
+		return;
+
+	memset(frame, 0, sizeof(struct video_frame));
+	memset(linesizes, 0, sizeof(linesizes));
+	memset(heights, 0, sizeof(heights));
+	memset(offsets, 0, sizeof(offsets));
+
+	/* determine linesizes for each plane */
+	video_frame_get_linesizes(linesizes, format, width);
+
+	/* determine line count for each plane */
+	video_frame_get_plane_heights(heights, format, height);
+
+	/* calculate total buffer required */
+	for (uint32_t i = 0; i < MAX_AV_PLANES; i++) {
+		if (!linesizes[i] || !heights[i])
+			continue;
+		size_t plane_size = (size_t)linesizes[i] * (size_t)heights[i];
+		align_size(&plane_size, alignment);
+		size += plane_size;
+		offsets[i] = size;
+	}
+
+	/* allocate memory */
+	frame->data[0] = bmalloc(size);
+	frame->linesize[0] = linesizes[0];
+
+	/* apply plane data pointers according to offsets */
+	for (uint32_t i = 1; i < MAX_AV_PLANES; i++) {
+		if (!linesizes[i] || !heights[i])
+			continue;
+		frame->data[i] = frame->data[0] + offsets[i - 1];
+		frame->linesize[i] = linesizes[i];
+	}
+}
+
+void video_frame_copy(struct video_frame *dst, const struct video_frame *src, enum video_format format, uint32_t cy)
+{
+	uint32_t heights[MAX_AV_PLANES];
+
+	memset(heights, 0, sizeof(heights));
+
+	/* determine line count for each plane */
+	video_frame_get_plane_heights(heights, format, cy);
+
+	/* copy each plane */
+	for (uint32_t i = 0; i < MAX_AV_PLANES; i++) {
+		if (!heights[i])
+			continue;
+
+		if (src->linesize[i] == dst->linesize[i]) {
+			memcpy(dst->data[i], src->data[i], src->linesize[i] * heights[i]);
+		} else { /* linesizes which do not match must be copied line-by-line */
+			size_t src_linesize = src->linesize[i];
+			size_t dst_linesize = dst->linesize[i];
+			/* determine how much we can write (frames with different line sizes require more )*/
+			size_t linesize = src_linesize < dst_linesize ? src_linesize : dst_linesize;
+			for (uint32_t y = 0; y < heights[i]; y++) {
+				uint8_t *src_pos = src->data[i] + (src_linesize * y);
+				uint8_t *dst_pos = dst->data[i] + (dst_linesize * y);
+				memcpy(dst_pos, src_pos, linesize);
+			}
+		}
 	}
 }

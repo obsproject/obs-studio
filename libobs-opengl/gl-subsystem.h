@@ -330,8 +330,7 @@ static inline GLenum convert_shader_type(enum gs_shader_type type)
 	return GL_VERTEX_SHADER;
 }
 
-static inline void convert_filter(enum gs_sample_filter filter,
-				  GLint *min_filter, GLint *mag_filter)
+static inline void convert_filter(enum gs_sample_filter filter, GLint *min_filter, GLint *mag_filter)
 {
 	switch (filter) {
 	case GS_FILTER_POINT:
@@ -412,8 +411,7 @@ static inline GLenum convert_gs_topology(enum gs_draw_mode mode)
 	return GL_POINTS;
 }
 
-extern void convert_sampler_info(struct gs_sampler_state *sampler,
-				 const struct gs_sampler_info *info);
+extern void convert_sampler_info(struct gs_sampler_state *sampler, const struct gs_sampler_info *info);
 
 struct gs_sampler_state {
 	gs_device_t *device;
@@ -461,14 +459,7 @@ struct gs_shader_param {
 	bool changed;
 };
 
-enum attrib_type {
-	ATTRIB_POSITION,
-	ATTRIB_NORMAL,
-	ATTRIB_TANGENT,
-	ATTRIB_COLOR,
-	ATTRIB_TEXCOORD,
-	ATTRIB_TARGET
-};
+enum attrib_type { ATTRIB_POSITION, ATTRIB_NORMAL, ATTRIB_TANGENT, ATTRIB_COLOR, ATTRIB_TEXCOORD, ATTRIB_TARGET };
 
 struct shader_attrib {
 	char *name;
@@ -526,9 +517,7 @@ struct gs_vertex_buffer {
 	struct gs_vb_data *data;
 };
 
-extern bool load_vb_buffers(struct gs_program *program,
-			    struct gs_vertex_buffer *vb,
-			    struct gs_index_buffer *ib);
+extern bool load_vb_buffers(struct gs_program *program, struct gs_vertex_buffer *vb, struct gs_index_buffer *ib);
 
 struct gs_index_buffer {
 	GLuint buffer;
@@ -669,22 +658,20 @@ struct gs_device {
 	struct fbo_info *cur_fbo;
 };
 
-extern struct fbo_info *get_fbo(gs_texture_t *tex, uint32_t width,
-				uint32_t height);
+typedef void *gs_sync;
+
+extern struct fbo_info *get_fbo(gs_texture_t *tex, uint32_t width, uint32_t height);
 
 extern void gl_update(gs_device_t *device);
 extern void gl_clear_context(gs_device_t *device);
 
-extern struct gl_platform *gl_platform_create(gs_device_t *device,
-					      uint32_t adapter);
+extern struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter);
 extern void gl_platform_destroy(struct gl_platform *platform);
 
 extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap);
 extern void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap);
 
-extern struct gl_windowinfo *
-gl_windowinfo_create(const struct gs_init_data *info);
+extern struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info);
 extern void gl_windowinfo_destroy(struct gl_windowinfo *wi);
 
-extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
-			     uint32_t *height);
+extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width, uint32_t *height);

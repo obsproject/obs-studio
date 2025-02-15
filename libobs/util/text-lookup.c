@@ -88,8 +88,8 @@ static bool lookup_gettoken(struct lexer *lex, struct strref *str)
 		if (!str->array) {
 			/* comments are designated with a #, and end at LF */
 			if (ch == '#') {
-				while (ch != '\n' && ch != 0)
-					ch = *(++lex->offset);
+				while (*lex->offset != '\n' && *lex->offset != 0)
+					++lex->offset;
 			} else if (temp.type == BASETOKEN_WHITESPACE) {
 				strref_copy(str, &temp.text);
 				break;
@@ -103,8 +103,7 @@ static bool lookup_gettoken(struct lexer *lex, struct strref *str)
 				}
 			}
 		} else {
-			if (temp.type == BASETOKEN_WHITESPACE ||
-			    *temp.text.array == '=') {
+			if (temp.type == BASETOKEN_WHITESPACE || *temp.text.array == '=') {
 				lex->offset -= temp.text.len;
 				break;
 			}
@@ -155,8 +154,7 @@ static char *convert_string(const char *str, size_t len)
 	return out.array;
 }
 
-static void lookup_addfiledata(struct text_lookup *lookup,
-			       const char *file_data)
+static void lookup_addfiledata(struct text_lookup *lookup, const char *file_data)
 {
 	struct lexer lex;
 	struct strref name, value;
@@ -199,8 +197,7 @@ static void lookup_addfiledata(struct text_lookup *lookup,
 	lexer_free(&lex);
 }
 
-static inline bool lookup_getstring(const char *lookup_val, const char **out,
-				    struct text_lookup *lookup)
+static inline bool lookup_getstring(const char *lookup_val, const char **out, struct text_lookup *lookup)
 {
 	struct text_item *item;
 
@@ -266,8 +263,7 @@ void text_lookup_destroy(lookup_t *lookup)
 	}
 }
 
-bool text_lookup_getstr(lookup_t *lookup, const char *lookup_val,
-			const char **out)
+bool text_lookup_getstr(lookup_t *lookup, const char *lookup_val, const char **out)
 {
 	if (lookup)
 		return lookup_getstring(lookup_val, out, lookup);

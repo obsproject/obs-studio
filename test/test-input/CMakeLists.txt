@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_TEST_INPUT "Build test sources" OFF)
 
@@ -14,15 +12,16 @@ add_library(OBS::test-input ALIAS test-input)
 
 target_sources(
   test-input
-  PRIVATE # cmake-format: sortable
-          sync-async-source.c
-          sync-audio-buffering.c
-          sync-pair-aud.c
-          sync-pair-vid.c
-          test-filter.c
-          test-input.c
-          test-random.c
-          test-sinewave.c)
+  PRIVATE
+    sync-async-source.c
+    sync-audio-buffering.c
+    sync-pair-aud.c
+    sync-pair-vid.c
+    test-filter.c
+    test-input.c
+    test-random.c
+    test-sinewave.c
+)
 
 target_link_libraries(test-input PRIVATE OBS::libobs)
 

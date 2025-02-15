@@ -4,7 +4,7 @@ on:
 jobs:
   check-event:
     name: Event Data 🔎
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -59,7 +59,7 @@ jobs:
 
   macos-build:
     name: macOS 🍏
-    runs-on: macos-14
+    runs-on: macos-15
     needs: check-event
     strategy:
       fail-fast: false
@@ -80,18 +80,18 @@ jobs:
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          print '::group::Enable Xcode 15.2'
-          sudo xcode-select --switch /Applications/Xcode_15.2.app/Contents/Developer
+          print '::group::Enable Xcode 16.1'
+          sudo xcode-select --switch /Applications/Xcode_16.1.0.app/Contents/Developer
           print '::endgroup::'
 
           print '::group::Clean Homebrew Environment'
-          local -a to_remove=()
-
-          for formula (curl) {
-            if [[ -d ${HOMEBREW_PREFIX}/opt/${formula} ]] to_remove+=(${formula})
+          local -a unwanted_formulas=()
+          local -a remove_formulas=()
+          for formula (${unwanted_formulas}) {
+            if [[ -d ${HOMEBREW_PREFIX}/Cellar/${formula} ]] remove_formulas+=(${formula})
           }
 
-          if (( #to_remove )) brew uninstall --ignore-dependencies ${to_remove}
+          if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
           print '::endgroup::'
 
           local -A arch_names=(x86_64 intel arm64 apple)
@@ -170,7 +170,10 @@ jobs:
 
   ubuntu-build:
     name: Ubuntu 🐧
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
     needs: check-event
     defaults:
       run:
@@ -185,9 +188,9 @@ jobs:
         id: ccache-cache
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          key: ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
           restore-keys: |
-            ${{ runner.os }}-ccache-x86_64-
+            ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-
 
       - name: Build OBS Studio 🧱
         uses: ./.github/actions/build-obs
@@ -213,33 +216,32 @@ jobs:
 
       - name: Upload Source Tarball 🗜️
         uses: actions/upload-artifact@v4
-        if: ${{ ! always() }}
         with:
-          name: obs-studio-*-sources-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_x86_64/obs-studio-*-sources.*
+          name: obs-studio-${{ matrix.os }}-sources-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-sources.*
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v4
         with:
-          name: obs-studio-ubuntu-22.04-x86_64-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_x86_64/obs-studio-*-x86_64-linux-gnu.*
+          name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu.*
 
       - name: Upload Debug Symbol Artifacts 🪲
         uses: actions/upload-artifact@v4
         if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
-          name: obs-studio-ubuntu-22.04-x86_64-${{ needs.check-event.outputs.commitHash }}-dbgsym
-          path: ${{ github.workspace }}/build_x86_64/obs-studio-*-x86_64-linux-gnu-dbgsym.ddeb
+          name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}-dbgsym
+          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb
 
       - uses: actions/cache/save@v4
         if: github.event_name != 'pull_request' && steps.ccache-cache.outputs.cache-hit != 'true'
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          key: ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
 
   flatpak-build:
     name: Flatpak 📦
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: check-event
     defaults:
       run:
@@ -290,7 +292,7 @@ jobs:
           path: build-aux/com.obsproject.Studio.json
 
       - name: Build Flatpak Manifest 🧾
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@23796715b3dfa4c86ddf50cf29c3cc8b3c82dca8
+        uses: flathub-infra/flatpak-github-actions/flatpak-builder@e5fa5a8fe51d76f770ad9d240e4ad5898b1c6a53
         with:
           build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
           bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
@@ -337,15 +339,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
-      - uses: actions/cache@v4
-        id: ccache-cache
-        if: github.event_name == 'pull_request'
-        with:
-          path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-x86_64-
 
       - name: Build OBS Studio 🧱
         uses: ./.github/actions/build-obs

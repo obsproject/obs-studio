@@ -23,6 +23,7 @@ struct adapter_info {
 #define MAX_ADAPTERS 10
 extern struct adapter_info adapters[MAX_ADAPTERS];
 extern size_t adapter_count;
+extern size_t adapter_index;
 
 void util_cpuid(int cpuinfo[4], int flags);
 void check_adapters(struct adapter_info *adapters, size_t *adapter_count);
@@ -110,14 +111,12 @@ constexpr inline int INTEL_VENDOR_ID = 0x8086;
 // =================================================================
 // Intel VPL memory allocator entrypoints....
 // Implementation of this functions is OS/Memory type specific.
-mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
-		       mfxFrameAllocResponse *response);
+mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
 mfxStatus simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr);
 mfxStatus simple_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr);
 mfxStatus simple_gethdl(mfxHDL pthis, mfxMemId mid, mfxHDL *handle);
 mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse *response);
-mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, mfxU32 tex_handle,
-			 mfxU64 lock_key, mfxU64 *next_key);
+mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, void *tex, mfxU64 lock_key, mfxU64 *next_key);
 
 // =================================================================
 // Utility functions, not directly tied to VPL functionality
@@ -159,10 +158,8 @@ typedef struct {
 int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 
 // Initialize Intel VPL Session, device/display and memory manager
-mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
-		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
-		     bool bCreateSharedHandles, enum qsv_codec codec,
-		     void **data); //vpl change
+mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
+		     bool bCreateSharedHandles, enum qsv_codec codec, void **data);
 
 // Release global shared resources (device/display)
 void Release();

@@ -1,37 +1,40 @@
-project(linux-capture)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 find_package(X11 REQUIRED)
-find_package(XCB COMPONENTS XCB XFIXES RANDR SHM XINERAMA COMPOSITE)
-if(NOT TARGET XCB::COMPOSITE)
-  obs_status(FATAL_ERROR "xcb composite library not found")
-endif()
+
+find_package(
+  Xcb
+  REQUIRED xcb xcb-xfixes xcb-randr xcb-shm xcb-xinerama xcb-composite
+)
 
 add_library(linux-capture MODULE)
 add_library(OBS::capture ALIAS linux-capture)
 
 target_sources(
   linux-capture
-  PRIVATE linux-capture.c
-          xcursor-xcb.c
-          xcursor-xcb.h
-          xhelpers.c
-          xhelpers.h
-          xshm-input.c
-          xcomposite-input.c
-          xcomposite-input.h)
+  PRIVATE
+    linux-capture.c
+    xcomposite-input.c
+    xcomposite-input.h
+    xcursor-xcb.c
+    xcursor-xcb.h
+    xhelpers.c
+    xhelpers.h
+    xshm-input.c
+)
 
 target_link_libraries(
   linux-capture
-  PRIVATE OBS::libobs
-          OBS::obsglad
-          X11::X11
-          XCB::XCB
-          XCB::XFIXES
-          XCB::RANDR
-          XCB::SHM
-          XCB::XINERAMA
-          XCB::COMPOSITE)
+  PRIVATE
+    OBS::libobs
+    OBS::glad
+    X11::X11
+    xcb::xcb
+    xcb::xcb-xfixes
+    xcb::xcb-randr
+    xcb::xcb-shm
+    xcb::xcb-xinerama
+    xcb::xcb-composite
+)
 
-set_target_properties(linux-capture PROPERTIES FOLDER "plugins")
-
-setup_plugin_target(linux-capture)
+set_target_properties_obs(linux-capture PROPERTIES FOLDER plugins PREFIX "")

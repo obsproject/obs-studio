@@ -65,10 +65,8 @@ static inline bool strref_is_empty(const struct strref *str)
 
 EXPORT int strref_cmp(const struct strref *str1, const char *str2);
 EXPORT int strref_cmpi(const struct strref *str1, const char *str2);
-EXPORT int strref_cmp_strref(const struct strref *str1,
-			     const struct strref *str2);
-EXPORT int strref_cmpi_strref(const struct strref *str1,
-			      const struct strref *str2);
+EXPORT int strref_cmp_strref(const struct strref *str1, const struct strref *str2);
+EXPORT int strref_cmpi_strref(const struct strref *str1, const struct strref *str2);
 
 /* ------------------------------------------------------------------------- */
 
@@ -144,8 +142,7 @@ static inline void base_token_clear(struct base_token *t)
 	memset(t, 0, sizeof(struct base_token));
 }
 
-static inline void base_token_copy(struct base_token *dst,
-				   struct base_token *src)
+static inline void base_token_copy(struct base_token *dst, struct base_token *src)
 {
 	memcpy(dst, src, sizeof(struct base_token));
 }
@@ -197,16 +194,14 @@ static inline void error_data_free(struct error_data *data)
 	da_free(data->errors);
 }
 
-static inline const struct error_item *error_data_item(struct error_data *ed,
-						       size_t idx)
+static inline const struct error_item *error_data_item(struct error_data *ed, size_t idx)
 {
 	return ed->errors.array + idx;
 }
 
 EXPORT char *error_data_buildstring(struct error_data *ed);
 
-EXPORT void error_data_add(struct error_data *ed, const char *file,
-			   uint32_t row, uint32_t column, const char *msg,
+EXPORT void error_data_add(struct error_data *ed, const char *file, uint32_t row, uint32_t column, const char *msg,
 			   int level);
 
 static inline size_t error_data_type_count(struct error_data *ed, int type)
@@ -269,11 +264,9 @@ static inline void lexer_reset(struct lexer *lex)
 
 enum ignore_whitespace { PARSE_WHITESPACE, IGNORE_WHITESPACE };
 
-EXPORT bool lexer_getbasetoken(struct lexer *lex, struct base_token *t,
-			       enum ignore_whitespace iws);
+EXPORT bool lexer_getbasetoken(struct lexer *lex, struct base_token *t, enum ignore_whitespace iws);
 
-EXPORT void lexer_getstroffset(const struct lexer *lex, const char *str,
-			       uint32_t *row, uint32_t *col);
+EXPORT void lexer_getstroffset(const struct lexer *lex, const char *str, uint32_t *row, uint32_t *col);
 
 #ifdef __cplusplus
 }

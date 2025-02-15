@@ -95,8 +95,7 @@ struct video_output {
 
 /* ------------------------------------------------------------------------- */
 
-static inline bool scale_video_output(struct video_input *input,
-				      struct video_data *data)
+static inline bool scale_video_output(struct video_input *input, struct video_data *data)
 {
 	bool success = true;
 
@@ -108,10 +107,8 @@ static inline bool scale_video_output(struct video_input *input,
 
 		frame = &input->frame[input->cur_frame];
 
-		success = video_scaler_scale(input->scaler, frame->data,
-					     frame->linesize,
-					     (const uint8_t *const *)data->data,
-					     data->linesize);
+		success = video_scaler_scale(input->scaler, frame->data, frame->linesize,
+					     (const uint8_t *const *)data->data, data->linesize);
 
 		if (success) {
 			for (size_t i = 0; i < MAX_AV_PLANES; i++) {
@@ -152,8 +149,7 @@ static inline bool video_output_cur_frame(struct video_output *video)
 		// to allow multiple encoders started at the same time to start on
 		// the same frame
 		uint32_t skip = input->frame_rate_divisor_counter++;
-		if (input->frame_rate_divisor_counter ==
-		    input->frame_rate_divisor)
+		if (input->frame_rate_divisor_counter == input->frame_rate_divisor)
 			input->frame_rate_divisor_counter = 0;
 
 		if (skip)
@@ -198,8 +194,7 @@ static void *video_thread(void *param)
 	os_set_thread_name("video-io: video thread");
 
 	const char *video_thread_name =
-		profile_store_name(obs_get_profiler_name_store(),
-				   "video_thread(%s)", video->info.name);
+		profile_store_name(obs_get_profiler_name_store(), "video_thread(%s)", video->info.name);
 
 	while (os_sem_wait(video->update_semaphore) == 0) {
 		if (video->stop)
@@ -223,8 +218,7 @@ static void *video_thread(void *param)
 
 static inline bool valid_video_params(const struct video_output_info *info)
 {
-	return info->height != 0 && info->width != 0 && info->fps_den != 0 &&
-	       info->fps_num != 0;
+	return info->height != 0 && info->width != 0 && info->fps_den != 0 && info->fps_num != 0;
 }
 
 static inline void init_cache(struct video_output *video)
@@ -236,8 +230,7 @@ static inline void init_cache(struct video_output *video)
 		struct video_frame *frame;
 		frame = (struct video_frame *)&video->cache[i];
 
-		video_frame_init(frame, video->info.format, video->info.width,
-				 video->info.height);
+		video_frame_init(frame, video->info.format, video->info.width, video->info.height);
 	}
 
 	video->available_frames = video->info.cache_size;
@@ -255,8 +248,7 @@ int video_output_open(video_t **video, struct video_output_info *info)
 		goto fail0;
 
 	memcpy(&out->info, info, sizeof(struct video_output_info));
-	out->frame_time =
-		util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
+	out->frame_time = util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
 
 	if (pthread_mutex_init_recursive(&out->data_mutex) != 0)
 		goto fail0;
@@ -307,9 +299,7 @@ void video_output_close(video_t *video)
 	bfree(video);
 }
 
-static size_t video_get_input_idx(const video_t *video,
-				  void (*callback)(void *param,
-						   struct video_data *frame),
+static size_t video_get_input_idx(const video_t *video, void (*callback)(void *param, struct video_data *frame),
 				  void *param)
 {
 	for (size_t i = 0; i < video->inputs.num; i++) {
@@ -344,29 +334,22 @@ static enum video_colorspace collapse_space(enum video_colorspace cs)
 
 static bool match_space(enum video_colorspace a, enum video_colorspace b)
 {
-	return (a == VIDEO_CS_DEFAULT) || (b == VIDEO_CS_DEFAULT) ||
-	       (collapse_space(a) == collapse_space(b));
+	return (a == VIDEO_CS_DEFAULT) || (b == VIDEO_CS_DEFAULT) || (collapse_space(a) == collapse_space(b));
 }
 
-static inline bool video_input_init(struct video_input *input,
-				    struct video_output *video)
+static inline bool video_input_init(struct video_input *input, struct video_output *video)
 {
-	if (input->conversion.width != video->info.width ||
-	    input->conversion.height != video->info.height ||
+	if (input->conversion.width != video->info.width || input->conversion.height != video->info.height ||
 	    input->conversion.format != video->info.format ||
 	    !match_range(input->conversion.range, video->info.range) ||
-	    !match_space(input->conversion.colorspace,
-			 video->info.colorspace)) {
+	    !match_space(input->conversion.colorspace, video->info.colorspace)) {
 		struct video_scale_info from = {.format = video->info.format,
 						.width = video->info.width,
 						.height = video->info.height,
 						.range = video->info.range,
-						.colorspace =
-							video->info.colorspace};
+						.colorspace = video->info.colorspace};
 
-		int ret = video_scaler_create(&input->scaler,
-					      &input->conversion, &from,
-					      VIDEO_SCALE_FAST_BILINEAR);
+		int ret = video_scaler_create(&input->scaler, &input->conversion, &from, VIDEO_SCALE_FAST_BILINEAR);
 		if (ret != VIDEO_SCALER_SUCCESS) {
 			if (ret == VIDEO_SCALER_BAD_CONVERSION)
 				blog(LOG_ERROR, "video_input_init: Bad "
@@ -379,9 +362,7 @@ static inline bool video_input_init(struct video_input *input,
 		}
 
 		for (size_t i = 0; i < MAX_CONVERT_BUFFERS; i++)
-			video_frame_init(&input->frame[i],
-					 input->conversion.format,
-					 input->conversion.width,
+			video_frame_init(&input->frame[i], input->conversion.format, input->conversion.width,
 					 input->conversion.height);
 	}
 
@@ -408,17 +389,14 @@ static video_t *get_root(video_t *video)
 	return video;
 }
 
-bool video_output_connect(
-	video_t *video, const struct video_scale_info *conversion,
-	void (*callback)(void *param, struct video_data *frame), void *param)
+bool video_output_connect(video_t *video, const struct video_scale_info *conversion,
+			  void (*callback)(void *param, struct video_data *frame), void *param)
 {
 	return video_output_connect2(video, conversion, 1, callback, param);
 }
 
-bool video_output_connect2(
-	video_t *video, const struct video_scale_info *conversion,
-	uint32_t frame_rate_divisor,
-	void (*callback)(void *param, struct video_data *frame), void *param)
+bool video_output_connect2(video_t *video, const struct video_scale_info *conversion, uint32_t frame_rate_divisor,
+			   void (*callback)(void *param, struct video_data *frame), void *param)
 {
 	bool success = false;
 
@@ -473,9 +451,7 @@ bool video_output_connect2(
 static void log_skipped(video_t *video)
 {
 	long skipped = os_atomic_load_long(&video->skipped_frames);
-	double percentage_skipped =
-		(double)skipped /
-		(double)os_atomic_load_long(&video->total_frames) * 100.0;
+	double percentage_skipped = (double)skipped / (double)os_atomic_load_long(&video->total_frames) * 100.0;
 
 	if (skipped)
 		blog(LOG_INFO,
@@ -483,17 +459,18 @@ static void log_skipped(video_t *video)
 		     "skipped frames due "
 		     "to encoding lag: "
 		     "%ld/%ld (%0.1f%%)",
-		     video->skipped_frames, video->total_frames,
-		     percentage_skipped);
+		     video->skipped_frames, video->total_frames, percentage_skipped);
 }
 
-void video_output_disconnect(video_t *video,
-			     void (*callback)(void *param,
-					      struct video_data *frame),
-			     void *param)
+void video_output_disconnect(video_t *video, void (*callback)(void *param, struct video_data *frame), void *param)
+{
+	video_output_disconnect2(video, callback, param);
+}
+
+bool video_output_disconnect2(video_t *video, void (*callback)(void *param, struct video_data *frame), void *param)
 {
 	if (!video || !callback)
-		return;
+		return false;
 
 	video = get_root(video);
 
@@ -513,6 +490,8 @@ void video_output_disconnect(video_t *video,
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
+
+	return idx != DARRAY_INVALID;
 }
 
 bool video_output_active(const video_t *video)
@@ -527,8 +506,7 @@ const struct video_output_info *video_output_get_info(const video_t *video)
 	return video ? &video->info : NULL;
 }
 
-bool video_output_lock_frame(video_t *video, struct video_frame *frame,
-			     int count, uint64_t timestamp)
+bool video_output_lock_frame(video_t *video, struct video_frame *frame, int count, uint64_t timestamp)
 {
 	struct cached_frame_info *cfi;
 	bool locked;
@@ -637,14 +615,12 @@ double video_output_get_frame_rate(const video_t *video)
 
 uint32_t video_output_get_skipped_frames(const video_t *video)
 {
-	return (uint32_t)os_atomic_load_long(
-		&get_const_root(video)->skipped_frames);
+	return (uint32_t)os_atomic_load_long(&get_const_root(video)->skipped_frames);
 }
 
 uint32_t video_output_get_total_frames(const video_t *video)
 {
-	return (uint32_t)os_atomic_load_long(
-		&get_const_root(video)->total_frames);
+	return (uint32_t)os_atomic_load_long(&get_const_root(video)->total_frames);
 }
 
 /* Note: These four functions below are a very slight bit of a hack.  If the
@@ -657,8 +633,7 @@ void video_output_inc_texture_encoders(video_t *video)
 {
 	video = get_root(video);
 
-	if (os_atomic_inc_long(&video->gpu_refs) == 1 &&
-	    !os_atomic_load_bool(&video->raw_active)) {
+	if (os_atomic_inc_long(&video->gpu_refs) == 1 && !os_atomic_load_bool(&video->raw_active)) {
 		reset_frames(video);
 	}
 }
@@ -667,8 +642,7 @@ void video_output_dec_texture_encoders(video_t *video)
 {
 	video = get_root(video);
 
-	if (os_atomic_dec_long(&video->gpu_refs) == 0 &&
-	    !os_atomic_load_bool(&video->raw_active)) {
+	if (os_atomic_dec_long(&video->gpu_refs) == 0 && !os_atomic_load_bool(&video->raw_active)) {
 		log_skipped(video);
 	}
 }
@@ -683,8 +657,7 @@ void video_output_inc_texture_skipped_frames(video_t *video)
 	os_atomic_inc_long(&get_root(video)->skipped_frames);
 }
 
-video_t *video_output_create_with_frame_rate_divisor(video_t *video,
-						     uint32_t divisor)
+video_t *video_output_create_with_frame_rate_divisor(video_t *video, uint32_t divisor)
 {
 	// `divisor == 1` would result in the same frame rate,
 	// resulting in an unnecessary additional video output

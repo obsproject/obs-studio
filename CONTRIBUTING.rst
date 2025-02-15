@@ -54,7 +54,7 @@ Coding Guidelines
 - Tabs for indentation, spaces for alignment.  Tabs are treated as 8
   columns wide.
 
-- 80 columns max
+- 120 columns max
 
 - Comments and names of variables/functions/etc. must be in English
 

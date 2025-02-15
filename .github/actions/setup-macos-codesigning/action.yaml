@@ -27,13 +27,13 @@ outputs:
     value: ${{ steps.codesign.outputs.haveCodesignIdent }}
   haveProvisioningProfile:
     description: True if necessary provisioning profile credentials were found
-    value: ${{ steps.provisioning.outputs.haveProvisioningProfile }}
+    value: ${{ steps.provisioning.outputs.haveProvisioningProfile || steps.codesign.outputs.haveProvisioningProfile }}
   provisioningProfileUUID:
     description: UUID of imported provisioning profile
     value: ${{ steps.provisioning.outputs.provisioningProfileUUID }}
   haveNotarizationUser:
     description: True if necessary notarization credentials were found
-    value: ${{ steps.notarization.outputs.haveNotarizationUser }}
+    value: ${{ steps.notarization.outputs.haveNotarizationUser || steps.codesign.outputs.haveNotarizationUser }}
   codesignIdent:
     description: Code signing identity
     value: ${{ steps.codesign.outputs.codesignIdent }}
@@ -57,7 +57,7 @@ runs:
       env:
         MACOS_SIGNING_IDENTITY: ${{ inputs.codesignIdentity }}
         MACOS_SIGNING_CERT: ${{ inputs.codesignCertificate }}
-        MAOCS_SIGNING_CERT_PASSWORD: ${{ inputs.certificatePassword }}
+        MACOS_SIGNING_CERT_PASSWORD: ${{ inputs.certificatePassword }}
         MACOS_KEYCHAIN_PASSWORD: ${{ inputs.keychainPassword }}
       run: |
         : macOS Code Signing ✍️
@@ -78,7 +78,7 @@ runs:
           security set-keychain-settings -lut 21600 ${keychain_path}
           security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" ${keychain_path}
 
-          security import "${certificate_path}" -P "${MAOCS_SIGNING_CERT_PASSWORD}" -A \
+          security import "${certificate_path}" -P "${MACOS_SIGNING_CERT_PASSWORD}" -A \
             -t cert -f pkcs12 -k ${keychain_path} \
             -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcrun
 
@@ -95,6 +95,8 @@ runs:
           print "codesignTeam=${team_id}" >> $GITHUB_OUTPUT
         } else {
           print 'haveCodesignIdent=false' >> $GITHUB_OUTPUT
+          print 'haveProvisioningProfile=false' >> $GITHUB_OUTPUT
+          print 'haveNotarizationUser=false' >> $GITHUB_OUTPUT
         }
 
     - name: Provisioning Profile 👤

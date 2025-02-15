@@ -1,11 +1,9 @@
 #include "whip-service.h"
 
-const char *audio_codecs[MAX_CODECS] = {"opus"};
-const char *video_codecs[MAX_CODECS] = {"h264", "av1"};
+const char *audio_codecs[] = {"opus", nullptr};
+const char *video_codecs[] = {"h264", "hevc", "av1", nullptr};
 
-WHIPService::WHIPService(obs_data_t *settings, obs_service_t *)
-	: server(),
-	  bearer_token()
+WHIPService::WHIPService(obs_data_t *settings, obs_service_t *) : server(), bearer_token()
 {
 	Update(settings);
 }
@@ -21,9 +19,7 @@ obs_properties_t *WHIPService::Properties()
 	obs_properties_t *ppts = obs_properties_create();
 
 	obs_properties_add_text(ppts, "server", "URL", OBS_TEXT_DEFAULT);
-	obs_properties_add_text(ppts, "bearer_token",
-				obs_module_text("Service.BearerToken"),
-				OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "bearer_token", obs_module_text("Service.BearerToken"), OBS_TEXT_PASSWORD);
 
 	return ppts;
 }
@@ -62,8 +58,7 @@ void register_whip_service()
 	info.get_name = [](void *) -> const char * {
 		return obs_module_text("Service.Name");
 	};
-	info.create = [](obs_data_t *settings,
-			 obs_service_t *service) -> void * {
+	info.create = [](obs_data_t *settings, obs_service_t *service) -> void * {
 		return new WHIPService(settings, service);
 	};
 	info.destroy = [](void *priv_data) {
@@ -84,10 +79,8 @@ void register_whip_service()
 	info.get_output_type = [](void *) -> const char * {
 		return "whip_output";
 	};
-	info.apply_encoder_settings = [](void *, obs_data_t *video_settings,
-					 obs_data_t *audio_settings) {
-		WHIPService::ApplyEncoderSettings(video_settings,
-						  audio_settings);
+	info.apply_encoder_settings = [](void *, obs_data_t *video_settings, obs_data_t *audio_settings) {
+		WHIPService::ApplyEncoderSettings(video_settings, audio_settings);
 	};
 	info.get_supported_video_codecs = [](void *) -> const char ** {
 		return video_codecs;
@@ -98,10 +91,8 @@ void register_whip_service()
 	info.can_try_to_connect = [](void *priv_data) -> bool {
 		return static_cast<WHIPService *>(priv_data)->CanTryToConnect();
 	};
-	info.get_connect_info = [](void *priv_data,
-				   uint32_t type) -> const char * {
-		return static_cast<WHIPService *>(priv_data)->GetConnectInfo(
-			(enum obs_service_connect_info)type);
+	info.get_connect_info = [](void *priv_data, uint32_t type) -> const char * {
+		return static_cast<WHIPService *>(priv_data)->GetConnectInfo((enum obs_service_connect_info)type);
 	};
 	obs_register_service(&info);
 }

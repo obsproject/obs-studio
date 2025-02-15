@@ -34,8 +34,7 @@ float vec3_plane_dist(const struct vec3 *v, const struct plane *p)
 	return vec3_dot(v, &p->dir) - p->dist;
 }
 
-void vec3_rotate(struct vec3 *dst, const struct vec3 *v,
-		 const struct matrix3 *m)
+void vec3_rotate(struct vec3 *dst, const struct vec3 *v, const struct matrix3 *m)
 {
 	struct vec3 temp;
 	vec3_copy(&temp, v);
@@ -46,8 +45,7 @@ void vec3_rotate(struct vec3 *dst, const struct vec3 *v,
 	dst->w = 0.0f;
 }
 
-void vec3_transform(struct vec3 *dst, const struct vec3 *v,
-		    const struct matrix4 *m)
+void vec3_transform(struct vec3 *dst, const struct vec3 *v, const struct matrix4 *m)
 {
 	struct vec4 v4;
 	vec4_from_vec3(&v4, v);
@@ -55,8 +53,7 @@ void vec3_transform(struct vec3 *dst, const struct vec3 *v,
 	vec3_from_vec4(dst, &v4);
 }
 
-void vec3_transform3x4(struct vec3 *dst, const struct vec3 *v,
-		       const struct matrix3 *m)
+void vec3_transform3x4(struct vec3 *dst, const struct vec3 *v, const struct matrix3 *m)
 {
 	struct vec3 temp;
 	vec3_sub(&temp, v, &m->t);
@@ -74,8 +71,7 @@ void vec3_mirror(struct vec3 *dst, const struct vec3 *v, const struct plane *p)
 	vec3_sub(dst, v, &temp);
 }
 
-void vec3_mirrorv(struct vec3 *dst, const struct vec3 *v,
-		  const struct vec3 *vec)
+void vec3_mirrorv(struct vec3 *dst, const struct vec3 *v, const struct vec3 *vec)
 {
 	struct vec3 temp;
 	vec3_mulf(&temp, vec, vec3_dot(v, vec) * 2.0f);

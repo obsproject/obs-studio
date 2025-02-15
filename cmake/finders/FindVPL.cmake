@@ -37,11 +37,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# cmake-lint: disable=C0103
-# cmake-lint: disable=C0301
-# cmake-format: on
-
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
   pkg_search_module(_VPL QUIET vpl)
@@ -52,21 +47,24 @@ find_path(
   NAMES vpl/mfxstructures.h
   HINTS ${_VPL_INCLUDE_DIRS} ${_VPL_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include /opt/local/include /sw/include
-  DOC "VPL include directory")
+  DOC "VPL include directory"
+)
 
 find_library(
   VPL_LIBRARY_RELEASE
   NAMES ${_VPL_LIBRARIES} ${_VPL_LIBRARIES} vpl
   HINTS ${_VPL_LIBRARY_DIRS} ${_VPL_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib
-  DOC "VPL library location")
+  DOC "VPL library location"
+)
 
 find_library(
   VPL_LIBRARY_DEBUG
   NAMES ${_VPL_LIBRARIES} ${_VPL_LIBRARIES} vpld
   HINTS ${_VPL_LIBRARY_DIRS} ${_VPL_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib
-  DOC "VPL debug library location")
+  DOC "VPL debug library location"
+)
 
 include(SelectLibraryConfigurations)
 select_library_configurations(VPL)
@@ -75,7 +73,9 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   VPL
   REQUIRED_VARS VPL_LIBRARY VPL_INCLUDE_DIR
-  VERSION_VAR VPL_VERSION REASON_FAILURE_MESSAGE "${VPL_ERROR_REASON}")
+  VERSION_VAR VPL_VERSION
+  REASON_FAILURE_MESSAGE "${VPL_ERROR_REASON}"
+)
 mark_as_advanced(VPL_INCLUDE_DIR VPL_LIBRARY)
 unset(VPL_ERROR_REASON)
 
@@ -116,9 +116,11 @@ if(VPL_FOUND)
 
     set_target_properties(
       VPL::VPL
-      PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${VPL_INCLUDE_DIRS}"
-                 VERSION ${VPL_VERSION}
-                 IMPORTED_CONFIGURATIONS Release)
+      PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${VPL_INCLUDE_DIRS}"
+        VERSION ${VPL_VERSION}
+        IMPORTED_CONFIGURATIONS Release
+    )
 
     if(VPL_LIBRARY_DEBUG)
       if(IS_ABSOLUTE "${VPL_LIBRARY_DEBUG}")
@@ -126,18 +128,16 @@ if(VPL_FOUND)
       else()
         set_target_properties(VPL::VPL PROPERTIES IMPORTED_LIBNAME_DEBUG "${VPL_LIBRARY_DEBUG}")
       endif()
-      set_property(
-        TARGET VPL::VPL
-        APPEND
-        PROPERTY IMPORTED_CONFIGURATIONS Debug)
+      set_property(TARGET VPL::VPL APPEND PROPERTY IMPORTED_CONFIGURATIONS Debug)
     endif()
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  VPL PROPERTIES
-  URL "https://github.com/oneapi-src/oneVPL"
-  DESCRIPTION
-    "Intel® oneAPI Video Processing Library (oneVPL) supports AI visual inference, media delivery, cloud gaming, and virtual desktop infrastructure use cases by providing access to hardware accelerated video decode, encode, and frame processing capabilities on Intel® GPUs."
+  VPL
+  PROPERTIES
+    URL "https://github.com/oneapi-src/oneVPL"
+    DESCRIPTION
+      "Intel® oneAPI Video Processing Library (oneVPL) supports AI visual inference, media delivery, cloud gaming, and virtual desktop infrastructure use cases by providing access to hardware accelerated video decode, encode, and frame processing capabilities on Intel® GPUs."
 )

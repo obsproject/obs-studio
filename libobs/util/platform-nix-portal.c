@@ -21,6 +21,8 @@
 #include "dstr.h"
 
 #define PORTAL_NAME "org.freedesktop.portal.Desktop"
+#define PORTAL_PATH "/org/freedesktop/portal/desktop"
+#define INHIBIT_PORTAL_IFACE "org.freedesktop.portal.Inhibit"
 
 struct portal_inhibit_info {
 	GDBusConnection *c;
@@ -31,8 +33,7 @@ struct portal_inhibit_info {
 	bool active;
 };
 
-static void new_request(struct portal_inhibit_info *info, char **out_token,
-			char **out_path)
+static void new_request(struct portal_inhibit_info *info, char **out_token, char **out_path)
 {
 	struct dstr token;
 	struct dstr path;
@@ -45,8 +46,7 @@ static void new_request(struct portal_inhibit_info *info, char **out_token,
 	*out_token = token.array;
 
 	dstr_init(&path);
-	dstr_printf(&path, "/org/freedesktop/portal/desktop/request/%s/%s",
-		    info->sender_name, token.array);
+	dstr_printf(&path, "/org/freedesktop/portal/desktop/request/%s/%s", info->sender_name, token.array);
 	*out_path = path.array;
 }
 
@@ -64,11 +64,8 @@ static inline void remove_inhibit_data(struct portal_inhibit_info *info)
 	info->active = false;
 }
 
-static void response_received(GDBusConnection *bus, const char *sender_name,
-			      const char *object_path,
-			      const char *interface_name,
-			      const char *signal_name, GVariant *parameters,
-			      gpointer data)
+static void response_received(GDBusConnection *bus, const char *sender_name, const char *object_path,
+			      const char *interface_name, const char *signal_name, GVariant *parameters, gpointer data)
 {
 	UNUSED_PARAMETER(bus);
 	UNUSED_PARAMETER(sender_name);
@@ -92,8 +89,7 @@ static void response_received(GDBusConnection *bus, const char *sender_name,
 	unsubscribe_from_request(info);
 }
 
-static void inhibited_cb(GObject *source_object, GAsyncResult *result,
-			 gpointer user_data)
+static void inhibited_cb(GObject *source_object, GAsyncResult *result, gpointer user_data)
 {
 	UNUSED_PARAMETER(source_object);
 
@@ -105,8 +101,7 @@ static void inhibited_cb(GObject *source_object, GAsyncResult *result,
 
 	if (error != NULL) {
 		if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			blog(LOG_ERROR, "Failed to inhibit: %s",
-			     error->message);
+			blog(LOG_ERROR, "Failed to inhibit: %s", error->message);
 		unsubscribe_from_request(info);
 		remove_inhibit_data(info);
 	}
@@ -124,31 +119,24 @@ static void do_inhibit(struct portal_inhibit_info *info, const char *reason)
 
 	new_request(info, &token, &info->request_path);
 
-	info->signal_id = g_dbus_connection_signal_subscribe(
-		info->c, PORTAL_NAME, "org.freedesktop.portal.Request",
-		"Response", info->request_path, NULL,
-		G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE, response_received, info,
-		NULL);
+	info->signal_id = g_dbus_connection_signal_subscribe(info->c, PORTAL_NAME, "org.freedesktop.portal.Request",
+							     "Response", info->request_path, NULL,
+							     G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE, response_received, info,
+							     NULL);
 
 	g_variant_builder_init(&options, G_VARIANT_TYPE_VARDICT);
-	g_variant_builder_add(&options, "{sv}", "handle_token",
-			      g_variant_new_string(token));
-	g_variant_builder_add(&options, "{sv}", "reason",
-			      g_variant_new_string(reason));
+	g_variant_builder_add(&options, "{sv}", "handle_token", g_variant_new_string(token));
+	g_variant_builder_add(&options, "{sv}", "reason", g_variant_new_string(reason));
 
 	bfree(token);
 
 	info->cancellable = g_cancellable_new();
-	g_dbus_connection_call(info->c, PORTAL_NAME,
-			       "/org/freedesktop/portal/desktop",
-			       "org.freedesktop.portal.Inhibit", "Inhibit",
-			       g_variant_new("(sua{sv})", "", flags, &options),
-			       NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+	g_dbus_connection_call(info->c, PORTAL_NAME, PORTAL_PATH, INHIBIT_PORTAL_IFACE, "Inhibit",
+			       g_variant_new("(sua{sv})", "", flags, &options), NULL, G_DBUS_CALL_FLAGS_NONE, -1,
 			       info->cancellable, inhibited_cb, info);
 }
 
-static void uninhibited_cb(GObject *source_object, GAsyncResult *result,
-			   gpointer user_data)
+static void uninhibited_cb(GObject *source_object, GAsyncResult *result, gpointer user_data)
 {
 	UNUSED_PARAMETER(source_object);
 
@@ -171,12 +159,9 @@ static void do_uninhibit(struct portal_inhibit_info *info)
 		g_cancellable_cancel(info->cancellable);
 		g_clear_object(&info->cancellable);
 	} else {
-		g_dbus_connection_call(info->c, PORTAL_NAME, info->request_path,
-				       "org.freedesktop.portal.Request",
-				       "Close", g_variant_new("()"),
-				       G_VARIANT_TYPE_UNIT,
-				       G_DBUS_CALL_FLAGS_NONE, -1, NULL,
-				       uninhibited_cb, info);
+		g_dbus_connection_call(info->c, PORTAL_NAME, info->request_path, "org.freedesktop.portal.Request",
+				       "Close", g_variant_new("()"), G_VARIANT_TYPE_UNIT, G_DBUS_CALL_FLAGS_NONE, -1,
+				       NULL, uninhibited_cb, info);
 	}
 
 	remove_inhibit_data(info);
@@ -204,22 +189,18 @@ struct portal_inhibit_info *portal_inhibit_info_create(void)
 
 	info->c = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
 	if (!info->c) {
-		blog(LOG_ERROR, "Could not create dbus connection: %s",
-		     error->message);
+		blog(LOG_ERROR, "Could not create dbus connection: %s", error->message);
 		bfree(info);
 		return NULL;
 	}
 
-	info->sender_name =
-		bstrdup(g_dbus_connection_get_unique_name(info->c) + 1);
+	info->sender_name = bstrdup(g_dbus_connection_get_unique_name(info->c) + 1);
 	while ((aux = strstr(info->sender_name, ".")) != NULL)
 		*aux = '_';
 
-	reply = g_dbus_connection_call_sync(
-		info->c, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-		"org.freedesktop.DBus", "GetNameOwner",
-		g_variant_new("(s)", PORTAL_NAME), NULL,
-		G_DBUS_CALL_FLAGS_NO_AUTO_START, -1, NULL, NULL);
+	reply = g_dbus_connection_call_sync(info->c, PORTAL_NAME, PORTAL_PATH, "org.freedesktop.DBus.Properties", "Get",
+					    g_variant_new("(ss)", INHIBIT_PORTAL_IFACE, "version"),
+					    G_VARIANT_TYPE("(v)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
 
 	if (reply != NULL) {
 		blog(LOG_DEBUG, "Found portal inhibitor");
@@ -230,8 +211,7 @@ struct portal_inhibit_info *portal_inhibit_info_create(void)
 	return NULL;
 }
 
-void portal_inhibit(struct portal_inhibit_info *info, const char *reason,
-		    bool active)
+void portal_inhibit(struct portal_inhibit_info *info, const char *reason, bool active)
 {
 	if (active == info->active)
 		return;

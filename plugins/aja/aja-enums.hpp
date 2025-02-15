@@ -59,20 +59,8 @@ enum class SDITransport {
 
 enum class SDITransport4K { Squares = 0, TwoSampleInterleave = 1, Unknown = 2 };
 
-enum class RasterDefinition {
-	SD = 0,
-	HD = 1,
-	UHD_4K = 2,
-	UHD2_8K = 3,
-	Unknown
-};
+enum class RasterDefinition { SD = 0, HD = 1, UHD_4K = 2, UHD2_8K = 3, Unknown };
 
-enum class HDMIWireFormat {
-	SD_HD_YCBCR = 0,
-	SD_HD_RGB = 1,
-	UHD_4K_YCBCR = 2,
-	UHD_4K_RGB = 3,
-	Unknown
-};
+enum class HDMIWireFormat { SD_HD_YCBCR = 0, SD_HD_RGB = 1, UHD_4K_YCBCR = 2, UHD_4K_RGB = 3, Unknown };
 
 using VPIDSpec = std::pair<RasterDefinition, VPIDStandard>;

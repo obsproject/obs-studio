@@ -37,8 +37,7 @@
 		exports->func = os_dlsym(module, #func); \
 	} while (false)
 
-bool load_graphics_imports(struct gs_exports *exports, void *module,
-			   const char *module_name)
+bool load_graphics_imports(struct gs_exports *exports, void *module, const char *module_name)
 {
 	bool success = true;
 
@@ -243,6 +242,13 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_query_dmabuf_capabilities);
 	GRAPHICS_IMPORT(device_query_dmabuf_modifiers_for_format);
 	GRAPHICS_IMPORT(device_texture_create_from_pixmap);
+	GRAPHICS_IMPORT(device_query_sync_capabilities);
+	GRAPHICS_IMPORT(device_sync_create);
+	GRAPHICS_IMPORT(device_sync_create_from_syncobj_timeline_point);
+	GRAPHICS_IMPORT(device_sync_destroy);
+	GRAPHICS_IMPORT(device_sync_export_syncobj_timeline_point);
+	GRAPHICS_IMPORT(device_sync_signal_syncobj_timeline_point);
+	GRAPHICS_IMPORT(device_sync_wait);
 #endif
 
 	return success;

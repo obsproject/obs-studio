@@ -1,26 +1,23 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 macro(check_vlc_path)
-  if(OS_WINDOWS OR OS_MACOS)
-    if(NOT EXISTS "${VLC_PATH}/include/vlc/libvlc.h")
-      message(FATAL_ERROR "Unable to find libvlc.h. Check if VLC_PATH set correctly.")
-    endif()
+  find_package(PkgConfig QUIET)
+  if(PKG_CONFIG_FOUND)
+    pkg_check_modules(PC_Libvlc QUIET libvlc)
+  endif()
 
-    target_include_directories(vlc-video PRIVATE "${VLC_PATH}/include/vlc")
-  elseif(
-    OS_LINUX
-    OR OS_FREEBSD
-    OR OS_OPENBSD)
-    find_package(PkgConfig QUIET)
-    if(PKG_CONFIG_FOUND)
-      pkg_check_modules(PC_Libvlc QUIET libvlc)
-    endif()
+  find_path(
+    LibVLC_INCLUDE_DIR
+    NAMES vlc/libvlc.h
+    HINTS ${PC_Libvlc_INCLUDEDIR} ${VLC_PATH}/include
+    PATHS /usr/include /usr/local/include
+    DOC "LibVLC include directory"
+  )
 
-    if(PC_Libvlc_INCLUDEDIR)
-      target_include_directories(vlc-video PRIVATE "${PC_Libvlc_INCLUDEDIR}/vlc")
-    endif()
+  if(LibVLC_INCLUDE_DIR)
+    target_include_directories(vlc-video PRIVATE "${LibVLC_INCLUDE_DIR}")
+  else()
+    message(FATAL_ERROR "Required system header <vlc/libvlc.h> not found.")
   endif()
 endmacro()
 
@@ -46,6 +43,4 @@ if(OS_WINDOWS)
   target_sources(vlc-video PRIVATE vlc-video.rc)
 endif()
 
-# cmake-format: off
 set_target_properties_obs(vlc-video PROPERTIES FOLDER plugins PREFIX "")
-# cmake-format: on

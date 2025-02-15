@@ -12,6 +12,7 @@ on:
           - services
           - translations
           - documentation
+          - patches
       ref:
         description: GitHub reference to use for job
         type: string
@@ -28,13 +29,17 @@ on:
         description: Custom macOS Intel build for Steam Upload
         type: string
         required: false
+      channel:
+        description: Channel to use when generating Windows update files
+        type: string
+        required: false
 permissions:
   contents: write
 jobs:
   services-validation:
     name: Validate Services 🕵️
     if: github.repository_owner == 'obsproject' && inputs.job == 'services'
-    runs-on: macos-14
+    runs-on: macos-15
     permissions:
       checks: write
       contents: write
@@ -54,7 +59,7 @@ jobs:
   download-language-files:
     name: Download Language Files 🌐
     if: github.repository_owner == 'obsproject' && inputs.job == 'translations'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
     steps:
@@ -63,12 +68,12 @@ jobs:
           submodules: recursive
           token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
           fetch-depth: 0
-      - uses: obsproject/obs-crowdin-sync/download@30b5446e3b5eb19595aa68a81ddf896a857302cf
+      - uses: obsproject/obs-crowdin-sync/download@84628cad04d2423e02443c64965cb834b4c5a245
 
   steam-upload:
     name: Upload Steam Builds 🚂
     if: github.repository_owner == 'obsproject' && inputs.job == 'steam'
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/steam-upload
@@ -86,7 +91,7 @@ jobs:
   update-documentation:
     name: Update Documentation 📖
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
@@ -94,7 +99,7 @@ jobs:
   update-documentation-cloudflare:
     name: Update Documentation for Cloudflare ☁️
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/generate-docs
@@ -104,7 +109,7 @@ jobs:
   deploy-documentation:
     name: Deploy Documentation to Cloudflare ☁️
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: update-documentation-cloudflare
     defaults:
       run:
@@ -130,3 +135,17 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'
+
+  windows-patches:
+    name: Create Windows Patches 🩹
+    if: github.repository_owner == 'obsproject' && inputs.job == 'patches'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-patches
+        with:
+          tagName: ${{ inputs.ref }}
+          workflowSecret: ${{ github.token }}
+          channel: ${{ inputs.channel }}
+          gcsAccessKeyId: ${{ secrets.GCS_ACCESS_KEY_ID }}
+          gcsAccessKeySecret: ${{ secrets.GCS_ACCESS_KEY_SECRET }}

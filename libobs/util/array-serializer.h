@@ -25,11 +25,12 @@ extern "C" {
 
 struct array_output_data {
 	DARRAY(uint8_t) bytes;
+	size_t cur_pos;
 };
 
-EXPORT void array_output_serializer_init(struct serializer *s,
-					 struct array_output_data *data);
+EXPORT void array_output_serializer_init(struct serializer *s, struct array_output_data *data);
 EXPORT void array_output_serializer_free(struct array_output_data *data);
+EXPORT void array_output_serializer_reset(struct array_output_data *data);
 
 #ifdef __cplusplus
 }

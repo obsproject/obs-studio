@@ -101,19 +101,15 @@ static long num_allocs = 0;
 void *bmalloc(size_t size)
 {
 	if (!size) {
-		blog(LOG_ERROR,
-		     "bmalloc: Allocating 0 bytes is broken behavior, please "
-		     "fix your code! This will crash in future versions of "
-		     "OBS.");
-		size = 1;
+		os_breakpoint();
+		bcrash("bmalloc: Allocating 0 bytes is broken behavior, please fix your code!");
 	}
 
 	void *ptr = a_malloc(size);
 
 	if (!ptr) {
 		os_breakpoint();
-		bcrash("Out of memory while trying to allocate %lu bytes",
-		       (unsigned long)size);
+		bcrash("Out of memory while trying to allocate %lu bytes", (unsigned long)size);
 	}
 
 	os_atomic_inc_long(&num_allocs);
@@ -126,19 +122,15 @@ void *brealloc(void *ptr, size_t size)
 		os_atomic_inc_long(&num_allocs);
 
 	if (!size) {
-		blog(LOG_ERROR,
-		     "brealloc: Allocating 0 bytes is broken behavior, please "
-		     "fix your code! This will crash in future versions of "
-		     "OBS.");
-		size = 1;
+		os_breakpoint();
+		bcrash("brealloc: Allocating 0 bytes is broken behavior, please fix your code!");
 	}
 
 	ptr = a_realloc(ptr, size);
 
 	if (!ptr) {
 		os_breakpoint();
-		bcrash("Out of memory while trying to allocate %lu bytes",
-		       (unsigned long)size);
+		bcrash("Out of memory while trying to allocate %lu bytes", (unsigned long)size);
 	}
 
 	return ptr;
@@ -169,9 +161,4 @@ void *bmemdup(const void *ptr, size_t size)
 		memcpy(out, ptr, size);
 
 	return out;
-}
-
-OBS_DEPRECATED void base_set_allocator(struct base_allocator *defs)
-{
-	UNUSED_PARAMETER(defs);
 }

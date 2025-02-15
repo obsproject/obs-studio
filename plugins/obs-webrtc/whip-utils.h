@@ -6,9 +6,8 @@
 #include <random>
 #include <sstream>
 
-#define do_log(level, format, ...)                              \
-	blog(level, "[obs-webrtc] [whip_output: '%s'] " format, \
-	     obs_output_get_name(output), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[obs-webrtc] [whip_output: '%s'] " format, obs_output_get_name(output), ##__VA_ARGS__)
 
 static uint32_t generate_random_u32()
 {
@@ -26,8 +25,21 @@ static std::string trim_string(const std::string &source)
 	return ret;
 }
 
-static size_t curl_writefunction(char *data, size_t size, size_t nmemb,
-				 void *priv_data)
+static std::string value_for_header(const std::string &header, const std::string &val)
+{
+	if (val.size() <= header.size() || astrcmpi_n(header.c_str(), val.c_str(), header.size()) != 0) {
+		return "";
+	}
+
+	auto delimiter = val.find_first_of(" ");
+	if (delimiter == std::string::npos) {
+		return "";
+	}
+
+	return val.substr(delimiter + 1);
+}
+
+static size_t curl_writefunction(char *data, size_t size, size_t nmemb, void *priv_data)
 {
 	auto read_buffer = static_cast<std::string *>(priv_data);
 
@@ -37,28 +49,11 @@ static size_t curl_writefunction(char *data, size_t size, size_t nmemb,
 	return real_size;
 }
 
-#define LOCATION_HEADER_LENGTH 10
-
-static size_t curl_header_location_function(char *data, size_t size,
-					    size_t nmemb, void *priv_data)
+static size_t curl_header_function(char *data, size_t size, size_t nmemb, void *priv_data)
 {
 	auto header_buffer = static_cast<std::vector<std::string> *>(priv_data);
-
-	size_t real_size = size * nmemb;
-
-	if (real_size < LOCATION_HEADER_LENGTH)
-		return real_size;
-
-	if (!astrcmpi_n(data, "location: ", LOCATION_HEADER_LENGTH)) {
-		char *val = data + LOCATION_HEADER_LENGTH;
-		auto header_temp =
-			std::string(val, real_size - LOCATION_HEADER_LENGTH);
-
-		header_temp = trim_string(header_temp);
-		header_buffer->push_back(header_temp);
-	}
-
-	return real_size;
+	header_buffer->push_back(trim_string(std::string(data, size * nmemb)));
+	return size * nmemb;
 }
 
 static inline std::string generate_user_agent()

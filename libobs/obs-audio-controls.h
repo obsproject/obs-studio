@@ -177,11 +177,8 @@ EXPORT void obs_fader_detach_source(obs_fader_t *fader);
 
 typedef void (*obs_fader_changed_t)(void *param, float db);
 
-EXPORT void obs_fader_add_callback(obs_fader_t *fader,
-				   obs_fader_changed_t callback, void *param);
-EXPORT void obs_fader_remove_callback(obs_fader_t *fader,
-				      obs_fader_changed_t callback,
-				      void *param);
+EXPORT void obs_fader_add_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param);
+EXPORT void obs_fader_remove_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param);
 
 /**
  * @brief Create a volume meter
@@ -213,8 +210,7 @@ EXPORT void obs_volmeter_destroy(obs_volmeter_t *volmeter);
  * volume updates on the source and after preparing the data emit its own
  * signal.
  */
-EXPORT bool obs_volmeter_attach_source(obs_volmeter_t *volmeter,
-				       obs_source_t *source);
+EXPORT bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source);
 
 /**
  * @brief Detach the volume meter from the currently attached source
@@ -227,39 +223,7 @@ EXPORT void obs_volmeter_detach_source(obs_volmeter_t *volmeter);
  * @param volmeter pointer to the volume meter object
  * @param peak_meter_type set if true-peak needs to be measured.
  */
-EXPORT void
-obs_volmeter_set_peak_meter_type(obs_volmeter_t *volmeter,
-				 enum obs_peak_meter_type peak_meter_type);
-
-/**
- * @brief Set the update interval for the volume meter
- * @param volmeter pointer to the volume meter object
- * @param ms update interval in ms
- *
- * This sets the update interval in milliseconds that should be processed before
- * the resulting values are emitted by the levels_updated signal. The resulting
- * number of audio samples is rounded to an integer.
- *
- * Please note that due to way obs does receive audio data from the sources
- * this is no hard guarantee for the timing of the signal itself. When the
- * volume meter receives a chunk of data that is multiple the size of the sample
- * interval, all data will be sampled and the values updated accordingly, but
- * only the signal for the last segment is actually emitted.
- * On the other hand data might be received in a way that will cause the signal
- * to be emitted in shorter intervals than specified here under some
- * circumstances.
- */
-OBS_DEPRECATED
-EXPORT void obs_volmeter_set_update_interval(obs_volmeter_t *volmeter,
-					     const unsigned int ms);
-
-/**
- * @brief Get the update interval currently used for the volume meter
- * @param volmeter pointer to the volume meter object
- * @return update interval in ms
- */
-OBS_DEPRECATED
-EXPORT unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter);
+EXPORT void obs_volmeter_set_peak_meter_type(obs_volmeter_t *volmeter, enum obs_peak_meter_type peak_meter_type);
 
 /**
  * @brief Get the number of channels which are configured for this source.
@@ -267,20 +231,19 @@ EXPORT unsigned int obs_volmeter_get_update_interval(obs_volmeter_t *volmeter);
  */
 EXPORT int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter);
 
-typedef void (*obs_volmeter_updated_t)(
-	void *param, const float magnitude[MAX_AUDIO_CHANNELS],
-	const float peak[MAX_AUDIO_CHANNELS],
-	const float input_peak[MAX_AUDIO_CHANNELS]);
+typedef void (*obs_volmeter_updated_t)(void *param, const float magnitude[MAX_AUDIO_CHANNELS],
+				       const float peak[MAX_AUDIO_CHANNELS],
+				       const float input_peak[MAX_AUDIO_CHANNELS]);
 
-EXPORT void obs_volmeter_add_callback(obs_volmeter_t *volmeter,
-				      obs_volmeter_updated_t callback,
-				      void *param);
-EXPORT void obs_volmeter_remove_callback(obs_volmeter_t *volmeter,
-					 obs_volmeter_updated_t callback,
-					 void *param);
+EXPORT void obs_volmeter_add_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param);
+EXPORT void obs_volmeter_remove_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param);
 
 EXPORT float obs_mul_to_db(float mul);
 EXPORT float obs_db_to_mul(float db);
+
+typedef float (*obs_fader_conversion_t)(const float val);
+
+EXPORT obs_fader_conversion_t obs_fader_db_to_def(obs_fader_t *fader);
 
 #ifdef __cplusplus
 }

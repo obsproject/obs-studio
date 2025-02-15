@@ -36,10 +36,6 @@ The following cache variables may also be set:
 
 #]=======================================================================]
 
-# cmake-format: off
-# bmake-lint: disable=C0103
-# cmake-format: on
-
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
@@ -47,26 +43,14 @@ if(PKG_CONFIG_FOUND)
   pkg_check_modules(PC_Detours QUIET detours)
 endif()
 
-find_path(
-  Detours_INCLUDE_DIR
-  NAMES detours.h
-  HINTS ${PC_Detours_INCLUDE_DIRS}
-  DOC "Detours include directory")
+find_path(Detours_INCLUDE_DIR NAMES detours.h HINTS ${PC_Detours_INCLUDE_DIRS} DOC "Detours include directory")
 
-find_library(
-  Detours_IMPLIB
-  NAMES detours
-  HINTS ${PC_Detours_LIBRARY_DIRS}
-  DOC "Detours location")
+find_library(Detours_IMPLIB NAMES detours HINTS ${PC_Detours_LIBRARY_DIRS} DOC "Detours location")
 
 cmake_path(GET Detours_IMPLIB PARENT_PATH _implib_path)
 cmake_path(SET _bin_path NORMALIZE "${_implib_path}/../bin")
 
-find_program(
-  Detours_LIBRARY
-  NAMES detours.dll
-  HINTS ${_implib_path} ${_bin_path}
-  DOC "Detours DLL location")
+find_program(Detours_LIBRARY NAMES detours.dll HINTS ${_implib_path} ${_bin_path} DOC "Detours DLL location")
 
 if(NOT Detours_LIBRARY)
   set(Detours_LIBRARY "${Detours_IMPLIB}")
@@ -86,7 +70,9 @@ endif()
 find_package_handle_standard_args(
   Detours
   REQUIRED_VARS Detours_LIBRARY Detours_INCLUDE_DIR
-  VERSION_VAR Detours_VERSION REASON_FAILURE_MESSAGE "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH.")
+  VERSION_VAR Detours_VERSION
+  REASON_FAILURE_MESSAGE "Ensure that obs-deps is provided as part of CMAKE_PREFIX_PATH."
+)
 mark_as_advanced(Detours_INCLUDE_DIR Detours_LIBRARY)
 
 if(Detours_FOUND)
@@ -111,14 +97,18 @@ if(Detours_FOUND)
 
     set_target_properties(
       Detours::Detours
-      PROPERTIES INTERFACE_COMPILE_OPTIONS "${PC_Detours_CFLAGS_OTHER}"
-                 INTERFACE_INCLUDE_DIRECTORIES "${Detours_INCLUDE_DIR}"
-                 VERSION ${Detours_VERSION})
+      PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "${PC_Detours_CFLAGS_OTHER}"
+        INTERFACE_INCLUDE_DIRECTORIES "${Detours_INCLUDE_DIR}"
+        VERSION ${Detours_VERSION}
+    )
   endif()
 endif()
 
 include(FeatureSummary)
 set_package_properties(
-  Detours PROPERTIES
-  URL "https://github.com/microsoft/detours"
-  DESCRIPTION "Detours is a software package for monitoring and instrumenting API calls on Windows.")
+  Detours
+  PROPERTIES
+    URL "https://github.com/microsoft/detours"
+    DESCRIPTION "Detours is a software package for monitoring and instrumenting API calls on Windows."
+)

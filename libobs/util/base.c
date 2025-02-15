@@ -24,10 +24,9 @@ static int crashing = 0;
 static void *log_param = NULL;
 static void *crash_param = NULL;
 
-static void def_log_handler(int log_level, const char *format, va_list args,
-			    void *param)
+static void def_log_handler(int log_level, const char *format, va_list args, void *param)
 {
-	char out[4096];
+	char out[8192];
 	vsnprintf(out, sizeof(out), format, args);
 
 	switch (log_level) {
@@ -54,8 +53,7 @@ static void def_log_handler(int log_level, const char *format, va_list args,
 	UNUSED_PARAMETER(param);
 }
 
-OBS_NORETURN static void def_crash_handler(const char *format, va_list args,
-					   void *param)
+OBS_NORETURN static void def_crash_handler(const char *format, va_list args, void *param)
 {
 	vfprintf(stderr, format, args);
 	exit(0);
@@ -83,8 +81,7 @@ void base_set_log_handler(log_handler_t handler, void *param)
 	log_handler = handler;
 }
 
-void base_set_crash_handler(void (*handler)(const char *, va_list, void *),
-			    void *param)
+void base_set_crash_handler(void (*handler)(const char *, va_list, void *), void *param)
 {
 	crash_param = param;
 	crash_handler = handler;

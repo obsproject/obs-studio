@@ -67,8 +67,7 @@ bool CardEntry::Initialize()
 	mCard->SetEveryFrameServices(NTV2_OEM_TASKS);
 
 	const int32_t obsPid = (int32_t)AJAProcess::GetPid();
-	mCard->AcquireStreamForApplicationWithReference((ULWord)kStreamingAppID,
-							obsPid);
+	mCard->AcquireStreamForApplicationWithReference((ULWord)kStreamingAppID, obsPid);
 
 	mCard->SetSuspendHostAudio(true);
 
@@ -81,8 +80,7 @@ bool CardEntry::Initialize()
 	mCard->SetReference(NTV2_REFERENCE_FREERUN);
 
 	for (UWord i = 0; i < aja::CardNumAudioSystems(deviceID); i++) {
-		mCard->SetAudioLoopBack(NTV2_AUDIO_LOOPBACK_OFF,
-					static_cast<NTV2AudioSystem>(i));
+		mCard->SetAudioLoopBack(NTV2_AUDIO_LOOPBACK_OFF, static_cast<NTV2AudioSystem>(i));
 	}
 
 	auto numFramestores = aja::CardNumFramestores(deviceID);
@@ -91,8 +89,7 @@ bool CardEntry::Initialize()
 		mCard->SetInputFrame(static_cast<NTV2Channel>(i), 0xff);
 		// Disable 3G Level B converter by default
 		if (NTV2DeviceCanDo3GLevelConversion(deviceID)) {
-			mCard->SetSDIInLevelBtoLevelAConversion(
-				static_cast<NTV2Channel>(i), false);
+			mCard->SetSDIInLevelBtoLevelAConversion(static_cast<NTV2Channel>(i), false);
 		}
 	}
 
@@ -120,8 +117,7 @@ bool CardEntry::Initialize()
 			mCard->AutoCirculateStop(channel, true);
 		}
 
-		mCard->SetVideoFormat(NTV2_FORMAT_1080p_5994_A, false, false,
-				      channel);
+		mCard->SetVideoFormat(NTV2_FORMAT_1080p_5994_A, false, false, channel);
 		mCard->SetFrameBufferFormat(channel, NTV2_FBF_8BIT_YCBCR);
 
 		mCard->DisableChannel(channel);
@@ -146,8 +142,7 @@ std::string CardEntry::GetDisplayName() const
 {
 	if (mCard) {
 		std::ostringstream oss;
-		oss << mCard->GetIndexNumber() << " - "
-		    << mCard->GetModelName();
+		oss << mCard->GetIndexNumber() << " - " << mCard->GetModelName();
 		const std::string &serial = GetSerial();
 		if (!serial.empty())
 			oss << " (" << serial << ")";
@@ -189,25 +184,21 @@ bool CardEntry::ChannelReady(NTV2Channel chan, const std::string &owner) const
 	return true;
 }
 
-bool CardEntry::AcquireChannel(NTV2Channel chan, NTV2Mode mode,
-			       const std::string &owner)
+bool CardEntry::AcquireChannel(NTV2Channel chan, NTV2Mode mode, const std::string &owner)
 {
 	bool acquired = false;
 
 	if (ChannelReady(chan, owner)) {
 		const std::lock_guard<std::mutex> lock(mMutex);
 		if (mChannelPwnz.find(owner) != mChannelPwnz.end()) {
-			if (mChannelPwnz[owner] &
-			    (1 << static_cast<int32_t>(chan))) {
+			if (mChannelPwnz[owner] & (1 << static_cast<int32_t>(chan))) {
 				acquired = true;
 			} else {
-				mChannelPwnz[owner] |=
-					(1 << static_cast<int32_t>(chan));
+				mChannelPwnz[owner] |= (1 << static_cast<int32_t>(chan));
 				acquired = true;
 			}
 		} else {
-			mChannelPwnz[owner] |=
-				(1 << static_cast<int32_t>(chan));
+			mChannelPwnz[owner] |= (1 << static_cast<int32_t>(chan));
 			acquired = true;
 		}
 
@@ -226,29 +217,22 @@ bool CardEntry::AcquireChannel(NTV2Channel chan, NTV2Mode mode,
 	return acquired;
 }
 
-bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode,
-			       const std::string &owner)
+bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode, const std::string &owner)
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
 	for (const auto &pwn : mChannelPwnz) {
 		if (pwn.first == owner) {
-			if (mChannelPwnz[owner] &
-			    (1 << static_cast<int32_t>(chan))) {
-				mChannelPwnz[owner] ^=
-					(1 << static_cast<int32_t>(chan));
+			if (mChannelPwnz[owner] & (1 << static_cast<int32_t>(chan))) {
+				mChannelPwnz[owner] ^= (1 << static_cast<int32_t>(chan));
 
 				// Release interrupt handles
 				if (mCard) {
 					if (mode == NTV2_MODE_CAPTURE) {
-						mCard->DisableInputInterrupt(
-							chan);
-						mCard->UnsubscribeInputVerticalEvent(
-							chan);
+						mCard->DisableInputInterrupt(chan);
+						mCard->UnsubscribeInputVerticalEvent(chan);
 					} else if (mode == NTV2_MODE_DISPLAY) {
-						mCard->DisableOutputInterrupt(
-							chan);
-						mCard->UnsubscribeOutputVerticalEvent(
-							chan);
+						mCard->DisableOutputInterrupt(chan);
+						mCard->UnsubscribeOutputVerticalEvent(chan);
 					}
 				}
 
@@ -260,8 +244,7 @@ bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode,
 	return false;
 }
 
-bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id,
-				    const std::string &owner) const
+bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id, const std::string &owner) const
 {
 	if (id == DEVICE_ID_KONA1 && io == IOSelection::SDI1) {
 		return true;
@@ -283,20 +266,17 @@ bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id,
 	return false;
 }
 
-bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id,
-				     const std::string &owner) const
+bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id, const std::string &owner) const
 {
 	/* Handle checking special case outputs before all other outputs.
 	 * 1. HDMI Monitor uses framestore 4
 	 * 2. SDI Monitor on Io 4K/Io 4K Plus, etc. uses framestore 4.
 	 * 3. Everything else...
 	 */
-	if (aja::CardCanDoHDMIMonitorOutput(id) &&
-	    io == IOSelection::HDMIMonitorOut) {
+	if (aja::CardCanDoHDMIMonitorOutput(id) && io == IOSelection::HDMIMonitorOut) {
 		NTV2Channel hdmiMonChannel = NTV2_CHANNEL4;
 		return ChannelReady(hdmiMonChannel, owner);
-	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
-		   io == IOSelection::SDI5) {
+	} else if (aja::CardCanDoSDIMonitorOutput(id) && io == IOSelection::SDI5) {
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		return ChannelReady(sdiMonChannel, owner);
 	} else if (id == DEVICE_ID_KONA1 && io == IOSelection::SDI1) {
@@ -307,8 +287,7 @@ bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id,
 		if (outputDests.size() > 0) {
 			size_t channelsReady = 0;
 			for (auto &&dst : outputDests) {
-				auto channel =
-					NTV2OutputDestinationToChannel(dst);
+				auto channel = NTV2OutputDestinationToChannel(dst);
 				if (ChannelReady(channel, owner))
 					channelsReady++;
 			}
@@ -320,8 +299,7 @@ bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id,
 	return false;
 }
 
-bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
-				      const std::string &owner)
+bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id, const std::string &owner)
 {
 	UNUSED_PARAMETER(id);
 
@@ -332,14 +310,11 @@ bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
 	for (auto &&src : inputSources) {
 		auto acqChan = NTV2InputSourceToChannel(src);
 		if (AcquireChannel(acqChan, NTV2_MODE_CAPTURE, owner)) {
-			blog(LOG_DEBUG, "Source %s acquired channel %s",
-			     owner.c_str(),
+			blog(LOG_DEBUG, "Source %s acquired channel %s", owner.c_str(),
 			     NTV2ChannelToString(acqChan).c_str());
 			acquiredChannels.push_back(acqChan);
 		} else {
-			blog(LOG_DEBUG,
-			     "Source %s could not acquire channel %s",
-			     owner.c_str(),
+			blog(LOG_DEBUG, "Source %s could not acquire channel %s", owner.c_str(),
 			     NTV2ChannelToString(acqChan).c_str());
 		}
 	}
@@ -354,8 +329,7 @@ bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
 	return acquiredChannels.size() == inputSources.size();
 }
 
-bool CardEntry::ReleaseInputSelection(IOSelection io, NTV2DeviceID id,
-				      const std::string &owner)
+bool CardEntry::ReleaseInputSelection(IOSelection io, NTV2DeviceID id, const std::string &owner)
 {
 	UNUSED_PARAMETER(id);
 
@@ -365,16 +339,14 @@ bool CardEntry::ReleaseInputSelection(IOSelection io, NTV2DeviceID id,
 	for (auto &&src : currentInputSources) {
 		auto relChan = NTV2InputSourceToChannel(src);
 		if (ReleaseChannel(relChan, NTV2_MODE_CAPTURE, owner)) {
-			blog(LOG_DEBUG, "Released Channel %s",
-			     NTV2ChannelToString(relChan).c_str());
+			blog(LOG_DEBUG, "Released Channel %s", NTV2ChannelToString(relChan).c_str());
 			releasedCount++;
 		}
 	}
 	return releasedCount == currentInputSources.size();
 }
 
-bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
-				       const std::string &owner)
+bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id, const std::string &owner)
 {
 	std::vector<NTV2Channel> acquiredChannels;
 	NTV2OutputDestinations outputDests;
@@ -382,33 +354,25 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 
 	// Handle acquiring special case outputs --
 	// HDMI Monitor uses framestore 4
-	if (aja::CardCanDoHDMIMonitorOutput(id) &&
-	    io == IOSelection::HDMIMonitorOut) {
+	if (aja::CardCanDoHDMIMonitorOutput(id) && io == IOSelection::HDMIMonitorOut) {
 		NTV2Channel hdmiMonChannel = NTV2_CHANNEL4;
 		if (AcquireChannel(hdmiMonChannel, NTV2_MODE_DISPLAY, owner)) {
-			blog(LOG_DEBUG, "Output %s acquired channel %s",
-			     owner.c_str(),
+			blog(LOG_DEBUG, "Output %s acquired channel %s", owner.c_str(),
 			     NTV2ChannelToString(hdmiMonChannel).c_str());
 			acquiredChannels.push_back(hdmiMonChannel);
 		} else {
-			blog(LOG_DEBUG,
-			     "Output %s could not acquire channel %s",
-			     owner.c_str(),
+			blog(LOG_DEBUG, "Output %s could not acquire channel %s", owner.c_str(),
 			     NTV2ChannelToString(hdmiMonChannel).c_str());
 		}
-	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
-		   io == IOSelection::SDI5) {
+	} else if (aja::CardCanDoSDIMonitorOutput(id) && io == IOSelection::SDI5) {
 		// SDI Monitor on io4K/io4K+/etc. uses framestore 4
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		if (AcquireChannel(sdiMonChannel, NTV2_MODE_DISPLAY, owner)) {
-			blog(LOG_DEBUG, "Output %s acquired channel %s",
-			     owner.c_str(),
+			blog(LOG_DEBUG, "Output %s acquired channel %s", owner.c_str(),
 			     NTV2ChannelToString(sdiMonChannel).c_str());
 			acquiredChannels.push_back(sdiMonChannel);
 		} else {
-			blog(LOG_DEBUG,
-			     "Output %s could not acquire channel %s",
-			     owner.c_str(),
+			blog(LOG_DEBUG, "Output %s could not acquire channel %s", owner.c_str(),
 			     NTV2ChannelToString(sdiMonChannel).c_str());
 		}
 	} else {
@@ -417,13 +381,10 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 			auto acqChan = NTV2OutputDestinationToChannel(dst);
 			if (AcquireChannel(acqChan, NTV2_MODE_DISPLAY, owner)) {
 				acquiredChannels.push_back(acqChan);
-				blog(LOG_DEBUG, "Output %s acquired channel %s",
-				     owner.c_str(),
+				blog(LOG_DEBUG, "Output %s acquired channel %s", owner.c_str(),
 				     NTV2ChannelToString(acqChan).c_str());
 			} else {
-				blog(LOG_DEBUG,
-				     "Output %s could not acquire channel %s",
-				     owner.c_str(),
+				blog(LOG_DEBUG, "Output %s could not acquire channel %s", owner.c_str(),
 				     NTV2ChannelToString(acqChan).c_str());
 			}
 		}
@@ -439,8 +400,7 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 	return acquiredChannels.size() == outputDests.size();
 }
 
-bool CardEntry::ReleaseOutputSelection(IOSelection io, NTV2DeviceID id,
-				       const std::string &owner)
+bool CardEntry::ReleaseOutputSelection(IOSelection io, NTV2DeviceID id, const std::string &owner)
 {
 	NTV2OutputDestinations currentOutputDests;
 	aja::IOSelectionToOutputDests(io, currentOutputDests);
@@ -448,21 +408,17 @@ bool CardEntry::ReleaseOutputSelection(IOSelection io, NTV2DeviceID id,
 
 	// Handle releasing special case outputs --
 	// HDMI Monitor uses framestore 4
-	if (aja::CardCanDoHDMIMonitorOutput(id) &&
-	    io == IOSelection::HDMIMonitorOut) {
+	if (aja::CardCanDoHDMIMonitorOutput(id) && io == IOSelection::HDMIMonitorOut) {
 		NTV2Channel hdmiMonChannel = NTV2_CHANNEL4;
 		if (ReleaseChannel(hdmiMonChannel, NTV2_MODE_DISPLAY, owner)) {
-			blog(LOG_DEBUG, "Released Channel %s",
-			     NTV2ChannelToString(hdmiMonChannel).c_str());
+			blog(LOG_DEBUG, "Released Channel %s", NTV2ChannelToString(hdmiMonChannel).c_str());
 			releasedCount++;
 		}
-	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
-		   io == IOSelection::SDI5) {
+	} else if (aja::CardCanDoSDIMonitorOutput(id) && io == IOSelection::SDI5) {
 		// SDI Monitor on io4K/io4K+/etc. uses framestore 4
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		if (ReleaseChannel(sdiMonChannel, NTV2_MODE_DISPLAY, owner)) {
-			blog(LOG_DEBUG, "Released Channel %s",
-			     NTV2ChannelToString(sdiMonChannel).c_str());
+			blog(LOG_DEBUG, "Released Channel %s", NTV2ChannelToString(sdiMonChannel).c_str());
 			releasedCount++;
 		}
 	} else {
@@ -470,8 +426,7 @@ bool CardEntry::ReleaseOutputSelection(IOSelection io, NTV2DeviceID id,
 		for (auto &&dst : currentOutputDests) {
 			auto relChan = NTV2OutputDestinationToChannel(dst);
 			if (ReleaseChannel(relChan, NTV2_MODE_DISPLAY, owner)) {
-				blog(LOG_DEBUG, "Released Channel %s",
-				     NTV2ChannelToString(relChan).c_str());
+				blog(LOG_DEBUG, "Released Channel %s", NTV2ChannelToString(relChan).c_str());
 				releasedCount++;
 			}
 		}
@@ -479,14 +434,12 @@ bool CardEntry::ReleaseOutputSelection(IOSelection io, NTV2DeviceID id,
 	return releasedCount == currentOutputDests.size();
 }
 
-bool CardEntry::UpdateChannelOwnerName(const std::string &oldName,
-				       const std::string &newName)
+bool CardEntry::UpdateChannelOwnerName(const std::string &oldName, const std::string &newName)
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
 	for (const auto &pwn : mChannelPwnz) {
 		if (pwn.first == oldName) {
-			mChannelPwnz.insert(std::pair<std::string, int32_t>{
-				newName, pwn.second});
+			mChannelPwnz.insert(std::pair<std::string, int32_t>{newName, pwn.second});
 
 			mChannelPwnz.erase(oldName);
 
@@ -504,10 +457,8 @@ bool CardEntry::isAutoCirculateRunning(NTV2Channel chan)
 
 	AUTOCIRCULATE_STATUS acStatus;
 	if (mCard->AutoCirculateGetStatus(chan, acStatus)) {
-		if (acStatus.acState != NTV2_AUTOCIRCULATE_RUNNING &&
-		    acStatus.acState != NTV2_AUTOCIRCULATE_STARTING &&
-		    acStatus.acState != NTV2_AUTOCIRCULATE_PAUSED &&
-		    acStatus.acState != NTV2_AUTOCIRCULATE_INIT) {
+		if (acStatus.acState != NTV2_AUTOCIRCULATE_RUNNING && acStatus.acState != NTV2_AUTOCIRCULATE_STARTING &&
+		    acStatus.acState != NTV2_AUTOCIRCULATE_PAUSED && acStatus.acState != NTV2_AUTOCIRCULATE_INIT) {
 			return false;
 		}
 	}
@@ -525,16 +476,12 @@ void CardManager::ClearCardEntries()
 			card->SetEveryFrameServices(NTV2_STANDARD_TASKS);
 			// Workaround for AJA internal bug #11378
 			// Set HDMI output back to Audio System 1 on card release
-			if (NTV2DeviceGetNumHDMIVideoOutputs(
-				    card->GetDeviceID()) > 0) {
-				card->SetHDMIOutAudioSource8Channel(
-					NTV2_AudioChannel1_8,
-					NTV2_AUDIOSYSTEM_1);
+			if (NTV2DeviceGetNumHDMIVideoOutputs(card->GetDeviceID()) > 0) {
+				card->SetHDMIOutAudioSource8Channel(NTV2_AudioChannel1_8, NTV2_AUDIOSYSTEM_1);
 			}
 
 			int32_t pid = (int32_t)AJAProcess::GetPid();
-			card->ReleaseStreamForApplicationWithReference(
-				(ULWord)kStreamingAppID, pid);
+			card->ReleaseStreamForApplicationWithReference((ULWord)kStreamingAppID, pid);
 		}
 	}
 
@@ -551,25 +498,18 @@ void CardManager::EnumerateCards()
 
 		// New Card Entry
 		if (mCardEntries.find(cardID) == mCardEntries.end()) {
-			CardEntryPtr cardEntry = std::make_shared<CardEntry>(
-				iter.deviceIndex, cardID);
+			CardEntryPtr cardEntry = std::make_shared<CardEntry>(iter.deviceIndex, cardID);
 			if (cardEntry && cardEntry->Initialize())
 				mCardEntries.emplace(cardID, cardEntry);
 		} else {
 			// Card fell off of the bus and came back with a new physical index?
 			auto currEntry = mCardEntries[cardID];
 			if (currEntry) {
-				if (currEntry->GetCardIndex() !=
-				    iter.deviceIndex) {
+				if (currEntry->GetCardIndex() != iter.deviceIndex) {
 					mCardEntries.erase(cardID);
-					CardEntryPtr cardEntry =
-						std::make_shared<CardEntry>(
-							iter.deviceIndex,
-							cardID);
-					if (cardEntry &&
-					    cardEntry->Initialize())
-						mCardEntries.emplace(cardID,
-								     cardEntry);
+					CardEntryPtr cardEntry = std::make_shared<CardEntry>(iter.deviceIndex, cardID);
+					if (cardEntry && cardEntry->Initialize())
+						mCardEntries.emplace(cardID, cardEntry);
 				}
 			}
 		}

@@ -30,15 +30,12 @@
 
 #include <x264.h>
 
-#define do_log_enc(level, encoder, format, ...)     \
-	blog(level, "[x264 encoder: '%s'] " format, \
-	     obs_encoder_get_name(encoder), ##__VA_ARGS__)
-#define do_log(level, format, ...) \
-	do_log_enc(level, obsx264->encoder, format, ##__VA_ARGS__)
+#define do_log_enc(level, encoder, format, ...) \
+	blog(level, "[x264 encoder: '%s'] " format, obs_encoder_get_name(encoder), ##__VA_ARGS__)
+#define do_log(level, format, ...) do_log_enc(level, obsx264->encoder, format, ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
-#define warn_enc(encoder, format, ...) \
-	do_log_enc(LOG_WARNING, encoder, format, ##__VA_ARGS__)
+#define warn_enc(encoder, format, ...) do_log_enc(LOG_WARNING, encoder, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
@@ -73,8 +70,6 @@ static const char *obs_x264_getname(void *unused)
 	UNUSED_PARAMETER(unused);
 	return "x264";
 }
-
-static void obs_x264_stop(void *data);
 
 static void clear_data(struct obs_x264 *obsx264)
 {
@@ -142,8 +137,7 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_NONE obs_module_text("None")
 #define TEXT_X264_OPTS obs_module_text("EncoderOptions")
 
-static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p,
-				 obs_data_t *settings)
+static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
 {
 	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
 	const char *rc = obs_data_get_string(settings, "rate_control");
@@ -154,8 +148,7 @@ static bool use_bufsize_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
-				  obs_data_t *settings)
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool use_bufsize = obs_data_get_bool(settings, "use_bufsize");
@@ -183,8 +176,7 @@ static obs_properties_t *obs_x264_props(void *unused)
 	obs_property_t *p;
 	obs_property_t *headers;
 
-	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
-				       OBS_COMBO_TYPE_LIST,
+	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL, OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(list, "CBR", "CBR");
 	obs_property_list_add_string(list, "ABR", "ABR");
@@ -193,37 +185,28 @@ static obs_properties_t *obs_x264_props(void *unused)
 
 	obs_property_set_modified_callback(list, rate_control_modified);
 
-	p = obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000,
-				   50);
+	p = obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
 	p = obs_properties_add_bool(props, "use_bufsize", TEXT_CUSTOM_BUF);
 	obs_property_set_modified_callback(p, use_bufsize_modified);
-	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 0, 10000000,
-			       1);
+	obs_properties_add_int(props, "buffer_size", TEXT_BUF_SIZE, 0, 10000000, 1);
 
 	obs_properties_add_int(props, "crf", TEXT_CRF, 0, 51, 1);
 
-	p = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20,
-				   1);
+	p = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
 	obs_property_int_set_suffix(p, " s");
 
-	list = obs_properties_add_list(props, "preset", TEXT_PRESET,
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_STRING);
+	list = obs_properties_add_list(props, "preset", TEXT_PRESET, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	add_strings(list, x264_preset_names);
 
-	list = obs_properties_add_list(props, "profile", TEXT_PROFILE,
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_STRING);
+	list = obs_properties_add_list(props, "profile", TEXT_PROFILE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(list, TEXT_NONE, "");
 	obs_property_list_add_string(list, "baseline", "baseline");
 	obs_property_list_add_string(list, "main", "main");
 	obs_property_list_add_string(list, "high", "high");
 
-	list = obs_properties_add_list(props, "tune", TEXT_TUNE,
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_STRING);
+	list = obs_properties_add_list(props, "tune", TEXT_TUNE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(list, TEXT_NONE, "");
 	add_strings(list, x264_tune_names);
 
@@ -231,18 +214,15 @@ static obs_properties_t *obs_x264_props(void *unused)
 	obs_properties_add_bool(props, "vfr", TEXT_VFR);
 #endif
 
-	obs_properties_add_text(props, "x264opts", TEXT_X264_OPTS,
-				OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "x264opts", TEXT_X264_OPTS, OBS_TEXT_DEFAULT);
 
-	headers = obs_properties_add_bool(props, "repeat_headers",
-					  "repeat_headers");
+	headers = obs_properties_add_bool(props, "repeat_headers", "repeat_headers");
 	obs_property_set_visible(headers, false);
 
 	return props;
 }
 
-static const char *validate(struct obs_x264 *obsx264, const char *val,
-			    const char *name, const char *const *list)
+static const char *validate(struct obs_x264 *obsx264, const char *val, const char *name, const char *const *list)
 {
 	if (!val || !*val)
 		return val;
@@ -258,31 +238,27 @@ static const char *validate(struct obs_x264 *obsx264, const char *val,
 	return NULL;
 }
 
-static void override_base_param(struct obs_x264 *obsx264,
-				struct obs_option option, char **preset,
-				char **profile, char **tune)
+static void override_base_param(struct obs_x264 *obsx264, struct obs_option option, char **preset, char **profile,
+				char **tune)
 {
 	const char *name = option.name;
 	const char *val = option.value;
 	if (astrcmpi(name, "preset") == 0) {
-		const char *valid_name =
-			validate(obsx264, val, "preset", x264_preset_names);
+		const char *valid_name = validate(obsx264, val, "preset", x264_preset_names);
 		if (valid_name) {
 			bfree(*preset);
 			*preset = bstrdup(val);
 		}
 
 	} else if (astrcmpi(name, "profile") == 0) {
-		const char *valid_name =
-			validate(obsx264, val, "profile", x264_profile_names);
+		const char *valid_name = validate(obsx264, val, "profile", x264_profile_names);
 		if (valid_name) {
 			bfree(*profile);
 			*profile = bstrdup(val);
 		}
 
 	} else if (astrcmpi(name, "tune") == 0) {
-		const char *valid_name =
-			validate(obsx264, val, "tune", x264_tune_names);
+		const char *valid_name = validate(obsx264, val, "tune", x264_tune_names);
 		if (valid_name) {
 			bfree(*tune);
 			*tune = bstrdup(val);
@@ -290,14 +266,11 @@ static void override_base_param(struct obs_x264 *obsx264,
 	}
 }
 
-static inline void override_base_params(struct obs_x264 *obsx264,
-					const struct obs_options *options,
-					char **preset, char **profile,
-					char **tune)
+static inline void override_base_params(struct obs_x264 *obsx264, const struct obs_options *options, char **preset,
+					char **profile, char **tune)
 {
 	for (size_t i = 0; i < options->count; ++i)
-		override_base_param(obsx264, options->options[i], preset,
-				    profile, tune);
+		override_base_param(obsx264, options->options[i], preset, profile, tune);
 }
 
 #define OPENCL_ALIAS "opencl_is_experimental_and_potentially_unstable"
@@ -306,10 +279,10 @@ static inline void set_param(struct obs_x264 *obsx264, struct obs_option option)
 {
 	const char *name = option.name;
 	const char *val = option.value;
-	if (strcmp(name, "preset") != 0 && strcmp(name, "profile") != 0 &&
-	    strcmp(name, "tune") != 0 && strcmp(name, "fps") != 0 &&
-	    strcmp(name, "force-cfr") != 0 && strcmp(name, "width") != 0 &&
-	    strcmp(name, "height") != 0 && strcmp(name, "opencl") != 0) {
+	if (strcmp(name, "preset") != 0 && strcmp(name, "profile") != 0 && strcmp(name, "tune") != 0 &&
+	    strcmp(name, "fps") != 0 && strcmp(name, "force-cfr") != 0 && strcmp(name, "width") != 0 &&
+	    strcmp(name, "height") != 0 && strcmp(name, "opencl") != 0 && strcmp(name, "stats") != 0 &&
+	    strcmp(name, "qpfile") != 0 && strcmp(name, "pass") != 0) {
 		if (strcmp(option.name, OPENCL_ALIAS) == 0)
 			name = "opencl";
 		if (x264_param_parse(&obsx264->params, name, val) != 0)
@@ -317,8 +290,7 @@ static inline void set_param(struct obs_x264 *obsx264, struct obs_option option)
 	}
 }
 
-static inline void apply_x264_profile(struct obs_x264 *obsx264,
-				      const char *profile)
+static inline void apply_x264_profile(struct obs_x264 *obsx264, const char *profile)
 {
 	if (!obsx264->context && profile && *profile) {
 		int ret = x264_param_apply_profile(&obsx264->params, profile);
@@ -327,20 +299,16 @@ static inline void apply_x264_profile(struct obs_x264 *obsx264,
 	}
 }
 
-static inline const char *validate_preset(struct obs_x264 *obsx264,
-					  const char *preset)
+static inline const char *validate_preset(struct obs_x264 *obsx264, const char *preset)
 {
-	const char *new_preset =
-		validate(obsx264, preset, "preset", x264_preset_names);
+	const char *new_preset = validate(obsx264, preset, "preset", x264_preset_names);
 	return new_preset ? new_preset : "veryfast";
 }
 
-static bool reset_x264_params(struct obs_x264 *obsx264, const char *preset,
-			      const char *tune)
+static bool reset_x264_params(struct obs_x264 *obsx264, const char *preset, const char *tune)
 {
-	int ret = x264_param_default_preset(
-		&obsx264->params, validate_preset(obsx264, preset),
-		validate(obsx264, tune, "tune", x264_tune_names));
+	int ret = x264_param_default_preset(&obsx264->params, validate_preset(obsx264, preset),
+					    validate(obsx264, tune, "tune", x264_tune_names));
 	return ret == 0;
 }
 
@@ -362,8 +330,7 @@ static void log_x264(void *param, int level, const char *format, va_list args)
 	blogva(level_map[level], format, args);
 }
 
-static inline int get_x264_cs_val(const char *const name,
-				  const char *const names[])
+static inline int get_x264_cs_val(const char *const name, const char *const names[])
 {
 	int idx = 0;
 	do {
@@ -376,15 +343,10 @@ static inline int get_x264_cs_val(const char *const name,
 
 static void obs_x264_video_info(void *data, struct video_scale_info *info);
 
-enum rate_control {
-	RATE_CONTROL_CBR,
-	RATE_CONTROL_VBR,
-	RATE_CONTROL_ABR,
-	RATE_CONTROL_CRF
-};
+enum rate_control { RATE_CONTROL_CBR, RATE_CONTROL_VBR, RATE_CONTROL_ABR, RATE_CONTROL_CRF };
 
-static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
-			  const struct obs_options *options, bool update)
+static void update_params(struct obs_x264 *obsx264, obs_data_t *settings, const struct obs_options *options,
+			  bool update)
 {
 	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -396,8 +358,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	obs_x264_video_info(obsx264, &info);
 
-	const char *rate_control =
-		obs_data_get_string(settings, "rate_control");
+	const char *rate_control = obs_data_get_string(settings, "rate_control");
 
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	int buffer_size = (int)obs_data_get_int(settings, "buffer_size");
@@ -442,8 +403,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	}
 
 	if (keyint_sec)
-		obsx264->params.i_keyint_max =
-			keyint_sec * voi->fps_num / voi->fps_den;
+		obsx264->params.i_keyint_max = keyint_sec * voi->fps_num / voi->fps_den;
 
 	if (!use_bufsize)
 		buffer_size = bitrate;
@@ -498,12 +458,9 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	obsx264->params.vui.i_sar_height = 1;
 	obsx264->params.vui.i_sar_width = 1;
 	obsx264->params.vui.b_fullrange = info.range == VIDEO_RANGE_FULL;
-	obsx264->params.vui.i_colorprim =
-		get_x264_cs_val(colorprim, x264_colorprim_names);
-	obsx264->params.vui.i_transfer =
-		get_x264_cs_val(transfer, x264_transfer_names);
-	obsx264->params.vui.i_colmatrix =
-		get_x264_cs_val(colmatrix, x264_colmatrix_names);
+	obsx264->params.vui.i_colorprim = get_x264_cs_val(colorprim, x264_colorprim_names);
+	obsx264->params.vui.i_transfer = get_x264_cs_val(transfer, x264_transfer_names);
+	obsx264->params.vui.i_colmatrix = get_x264_cs_val(colmatrix, x264_colmatrix_names);
 
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
@@ -532,8 +489,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		obsx264->params.i_csp = X264_CSP_NV12;
 
 	for (size_t i = 0; i < options->ignored_word_count; ++i)
-		warn("ignoring invalid x264 option: %s",
-		     options->ignored_words[i]);
+		warn("ignoring invalid x264 option: %s", options->ignored_words[i]);
 	for (size_t i = 0; i < options->count; ++i)
 		set_param(obsx264, options->options[i]);
 
@@ -548,31 +504,26 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		     "\twidth:        %d\n"
 		     "\theight:       %d\n"
 		     "\tkeyint:       %d\n",
-		     rate_control, obsx264->params.rc.i_vbv_max_bitrate,
-		     obsx264->params.rc.i_vbv_buffer_size,
-		     (int)obsx264->params.rc.f_rf_constant, voi->fps_num,
-		     voi->fps_den, width, height, obsx264->params.i_keyint_max);
+		     rate_control, obsx264->params.rc.i_vbv_max_bitrate, obsx264->params.rc.i_vbv_buffer_size,
+		     (int)obsx264->params.rc.f_rf_constant, voi->fps_num, voi->fps_den, width, height,
+		     obsx264->params.i_keyint_max);
 	}
 }
 
-static void log_custom_options(struct obs_x264 *obsx264,
-			       const struct obs_options *options)
+static void log_custom_options(struct obs_x264 *obsx264, const struct obs_options *options)
 {
 	if (options->count == 0) {
 		return;
 	}
 	size_t settings_string_length = 0;
 	for (size_t i = 0; i < options->count; ++i)
-		settings_string_length += strlen(options->options[i].name) +
-					  strlen(options->options[i].value) + 5;
+		settings_string_length += strlen(options->options[i].name) + strlen(options->options[i].value) + 5;
 	size_t buffer_size = settings_string_length + 1;
 	char *settings_string = bmalloc(settings_string_length + 1);
 	char *p = settings_string;
 	size_t remaining_buffer_size = buffer_size;
 	for (size_t i = 0; i < options->count; ++i) {
-		int chars_written = snprintf(p, remaining_buffer_size,
-					     "\n\t%s = %s",
-					     options->options[i].name,
+		int chars_written = snprintf(p, remaining_buffer_size, "\n\t%s = %s", options->options[i].name,
 					     options->options[i].value);
 		assert(chars_written >= 0);
 		assert((size_t)chars_written <= remaining_buffer_size);
@@ -585,14 +536,12 @@ static void log_custom_options(struct obs_x264 *obsx264,
 	bfree(settings_string);
 }
 
-static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
-			    bool update)
+static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings, bool update)
 {
 	char *preset = bstrdup(obs_data_get_string(settings, "preset"));
 	char *profile = bstrdup(obs_data_get_string(settings, "profile"));
 	char *tune = bstrdup(obs_data_get_string(settings, "tune"));
-	struct obs_options options =
-		obs_parse_options(obs_data_get_string(settings, "x264opts"));
+	struct obs_options options = obs_parse_options(obs_data_get_string(settings, "x264opts"));
 	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
 
 	bool success = true;
@@ -601,8 +550,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 		blog(LOG_INFO, "---------------------------------");
 
 	if (!obsx264->context) {
-		override_base_params(obsx264, &options, &preset, &profile,
-				     &tune);
+		override_base_params(obsx264, &options, &preset, &profile, &tune);
 
 		if (preset && *preset)
 			info("preset: %s", preset);
@@ -672,8 +620,7 @@ static void load_headers(struct obs_x264 *obsx264)
 		if (nal->i_type == NAL_SEI)
 			da_push_back_array(sei, nal->p_payload, nal->i_payload);
 		else
-			da_push_back_array(header, nal->p_payload,
-					   nal->i_payload);
+			da_push_back_array(header, nal->p_payload, nal->i_payload);
 	}
 
 	obsx264->extra_data = header.array;
@@ -691,20 +638,13 @@ static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 	case VIDEO_FORMAT_P010:
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
-		obs_encoder_set_last_error(
-			encoder, obs_module_text("HighPrecisionUnsupported"));
-		warn_enc(
-			encoder,
-			"OBS does not support using x264 with high-precision formats");
+		obs_encoder_set_last_error(encoder, obs_module_text("HighPrecisionUnsupported"));
+		warn_enc(encoder, "OBS does not support using x264 with high-precision formats");
 		return NULL;
 	default:
-		if (voi->colorspace == VIDEO_CS_2100_PQ ||
-		    voi->colorspace == VIDEO_CS_2100_HLG) {
-			obs_encoder_set_last_error(
-				encoder, obs_module_text("HdrUnsupported"));
-			warn_enc(
-				encoder,
-				"OBS does not support using x264 with Rec. 2100");
+		if (voi->colorspace == VIDEO_CS_2100_PQ || voi->colorspace == VIDEO_CS_2100_HLG) {
+			obs_encoder_set_last_error(encoder, obs_module_text("HdrUnsupported"));
+			warn_enc(encoder, "OBS does not support using x264 with Rec. 2100");
 			return NULL;
 		}
 		break;
@@ -729,15 +669,13 @@ static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 		return NULL;
 	}
 
-	obsx264->performance_token =
-		os_request_high_performance("x264 encoding");
+	obsx264->performance_token = os_request_high_performance("x264 encoding");
 
 	return obsx264;
 }
 
-static void parse_packet(struct obs_x264 *obsx264,
-			 struct encoder_packet *packet, x264_nal_t *nals,
-			 int nal_count, x264_picture_t *pic_out)
+static void parse_packet(struct obs_x264 *obsx264, struct encoder_packet *packet, x264_nal_t *nals, int nal_count,
+			 x264_picture_t *pic_out)
 {
 	if (!nal_count)
 		return;
@@ -746,8 +684,7 @@ static void parse_packet(struct obs_x264 *obsx264,
 
 	for (int i = 0; i < nal_count; i++) {
 		x264_nal_t *nal = nals + i;
-		da_push_back_array(obsx264->packet_data, nal->p_payload,
-				   nal->i_payload);
+		da_push_back_array(obsx264->packet_data, nal->p_payload, nal->i_payload);
 	}
 
 	packet->data = obsx264->packet_data.array;
@@ -758,8 +695,7 @@ static void parse_packet(struct obs_x264 *obsx264,
 	packet->keyframe = pic_out->b_keyframe != 0;
 }
 
-static inline void init_pic_data(struct obs_x264 *obsx264, x264_picture_t *pic,
-				 struct encoder_frame *frame)
+static inline void init_pic_data(struct obs_x264 *obsx264, x264_picture_t *pic, struct encoder_frame *frame)
 {
 	x264_picture_init(pic);
 
@@ -814,8 +750,7 @@ static void roi_cb(void *param, struct obs_encoder_roi *roi)
 
 static void add_roi(struct obs_x264 *obsx264, x264_picture_t *pic)
 {
-	const uint32_t increment =
-		obs_encoder_get_roi_increment(obsx264->encoder);
+	const uint32_t increment = obs_encoder_get_roi_increment(obsx264->encoder);
 
 	if (obsx264->quant_offsets && obsx264->roi_increment == increment) {
 		pic->prop.quant_offsets = obsx264->quant_offsets;
@@ -839,8 +774,7 @@ static void add_roi(struct obs_x264 *obsx264, x264_picture_t *pic)
 	obsx264->roi_increment = increment;
 }
 
-static bool obs_x264_encode(void *data, struct encoder_frame *frame,
-			    struct encoder_packet *packet,
+static bool obs_x264_encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet,
 			    bool *received_packet)
 {
 	struct obs_x264 *obsx264 = data;
@@ -858,8 +792,7 @@ static bool obs_x264_encode(void *data, struct encoder_frame *frame,
 	if (obs_encoder_has_roi(obsx264->encoder))
 		add_roi(obsx264, &pic);
 
-	ret = x264_encoder_encode(obsx264->context, &nals, &nal_count,
-				  (frame ? &pic : NULL), &pic_out);
+	ret = x264_encoder_encode(obsx264->context, &nals, &nal_count, (frame ? &pic : NULL), &pic_out);
 	if (ret < 0) {
 		warn("encode failed");
 		return false;
@@ -897,8 +830,7 @@ static bool obs_x264_sei(void *data, uint8_t **sei, size_t *size)
 
 static inline bool valid_format(enum video_format format)
 {
-	return format == VIDEO_FORMAT_I420 || format == VIDEO_FORMAT_NV12 ||
-	       format == VIDEO_FORMAT_I444;
+	return format == VIDEO_FORMAT_I420 || format == VIDEO_FORMAT_NV12 || format == VIDEO_FORMAT_I444;
 }
 
 static void obs_x264_video_info(void *data, struct video_scale_info *info)
@@ -909,8 +841,7 @@ static void obs_x264_video_info(void *data, struct video_scale_info *info)
 	pref_format = obs_encoder_get_preferred_video_format(obsx264->encoder);
 
 	if (!valid_format(pref_format)) {
-		pref_format = valid_format(info->format) ? info->format
-							 : VIDEO_FORMAT_NV12;
+		pref_format = valid_format(info->format) ? info->format : VIDEO_FORMAT_NV12;
 	}
 
 	info->format = pref_format;

@@ -65,13 +65,14 @@ struct alsa_data {
 };
 
 static const char *alsa_get_name(void *);
-static bool alsa_devices_changed(obs_properties_t *props, obs_property_t *p,
-				 obs_data_t *settings);
+static bool alsa_devices_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings);
 static obs_properties_t *alsa_get_properties(void *);
 static void *alsa_create(obs_data_t *, obs_source_t *);
 static void alsa_destroy(void *);
+#if SHUTDOWN_ON_DEACTIVATE
 static void alsa_activate(void *);
 static void alsa_deactivate(void *);
+#endif
 static void alsa_get_defaults(obs_data_t *);
 static void alsa_update(void *, obs_data_t *);
 
@@ -232,8 +233,7 @@ void alsa_get_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "rate", 44100);
 }
 
-static bool alsa_devices_changed(obs_properties_t *props, obs_property_t *p,
-				 obs_data_t *settings)
+static bool alsa_devices_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 	bool visible = false;
@@ -266,19 +266,14 @@ obs_properties_t *alsa_get_properties(void *unused)
 
 	props = obs_properties_create();
 
-	devices = obs_properties_add_list(props, "device_id",
-					  obs_module_text("Device"),
-					  OBS_COMBO_TYPE_LIST,
+	devices = obs_properties_add_list(props, "device_id", obs_module_text("Device"), OBS_COMBO_TYPE_LIST,
 					  OBS_COMBO_FORMAT_STRING);
 
-	obs_property_list_add_string(devices, obs_module_text("Default"),
-				     "default");
+	obs_property_list_add_string(devices, obs_module_text("Default"), "default");
 
-	obs_properties_add_text(props, "custom_pcm", obs_module_text("PCM"),
-				OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "custom_pcm", obs_module_text("PCM"), OBS_TEXT_DEFAULT);
 
-	rate = obs_properties_add_list(props, "rate", obs_module_text("Rate"),
-				       OBS_COMBO_TYPE_LIST,
+	rate = obs_properties_add_list(props, "rate", obs_module_text("Rate"), OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 
 	obs_property_set_modified_callback(devices, alsa_devices_changed);
@@ -317,19 +312,24 @@ obs_properties_t *alsa_get_properties(void *unused)
 		obs_property_list_add_string(devices, descr, name);
 
 	next:
-		if (name != NULL)
-			free(name), name = NULL;
+		if (name != NULL) {
+			free(name);
+			name = NULL;
+		}
 
-		if (descr != NULL)
-			free(descr), descr = NULL;
+		if (descr != NULL) {
+			free(descr);
+			descr = NULL;
+		}
 
-		if (io != NULL)
-			free(io), io = NULL;
+		if (io != NULL) {
+			free(io);
+			io = NULL;
+		}
 
 		++hint;
 	}
-	obs_property_list_add_string(devices, obs_module_text("Custom"),
-				     "__custom__");
+	obs_property_list_add_string(devices, obs_module_text("Custom"), "__custom__");
 
 	snd_device_name_free_hint(hints);
 
@@ -355,11 +355,9 @@ bool _alsa_open(struct alsa_data *data)
 	pthread_attr_t attr;
 	int err;
 
-	err = snd_pcm_open(&data->handle, data->device, SND_PCM_STREAM_CAPTURE,
-			   0);
+	err = snd_pcm_open(&data->handle, data->device, SND_PCM_STREAM_CAPTURE, 0);
 	if (err < 0) {
-		blog(LOG_ERROR, "Failed to open '%s': %s", data->device,
-		     snd_strerror(err));
+		blog(LOG_ERROR, "Failed to open '%s': %s", data->device, snd_strerror(err));
 		return false;
 	}
 
@@ -375,8 +373,7 @@ bool _alsa_open(struct alsa_data *data)
 
 	err = snd_pcm_start(data->handle);
 	if (err < 0) {
-		blog(LOG_ERROR, "Failed to start '%s': %s", data->device,
-		     snd_strerror(err));
+		blog(LOG_ERROR, "Failed to start '%s': %s", data->device, snd_strerror(err));
 		goto cleanup;
 	}
 
@@ -388,9 +385,7 @@ bool _alsa_open(struct alsa_data *data)
 	err = pthread_create(&data->listen_thread, &attr, _alsa_listen, data);
 	if (err) {
 		pthread_attr_destroy(&attr);
-		blog(LOG_ERROR,
-		     "Failed to create capture thread for device '%s'.",
-		     data->device);
+		blog(LOG_ERROR, "Failed to create capture thread for device '%s'.", data->device);
 		goto cleanup;
 	}
 
@@ -412,11 +407,14 @@ void _alsa_close(struct alsa_data *data)
 
 	if (data->handle) {
 		snd_pcm_drop(data->handle);
-		snd_pcm_close(data->handle), data->handle = NULL;
+		snd_pcm_close(data->handle);
+		data->handle = NULL;
 	}
 
-	if (data->buffer)
-		bfree(data->buffer), data->buffer = NULL;
+	if (data->buffer) {
+		bfree(data->buffer);
+		data->buffer = NULL;
+	}
 }
 
 bool _alsa_configure(struct alsa_data *data)
@@ -429,29 +427,23 @@ bool _alsa_configure(struct alsa_data *data)
 
 	err = snd_pcm_hw_params_any(data->handle, hwparams);
 	if (err < 0) {
-		blog(LOG_ERROR, "snd_pcm_hw_params_any failed: %s",
-		     snd_strerror(err));
+		blog(LOG_ERROR, "snd_pcm_hw_params_any failed: %s", snd_strerror(err));
 		return false;
 	}
 
-	err = snd_pcm_hw_params_set_access(data->handle, hwparams,
-					   SND_PCM_ACCESS_RW_INTERLEAVED);
+	err = snd_pcm_hw_params_set_access(data->handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED);
 	if (err < 0) {
-		blog(LOG_ERROR, "snd_pcm_hw_params_set_access failed: %s",
-		     snd_strerror(err));
+		blog(LOG_ERROR, "snd_pcm_hw_params_set_access failed: %s", snd_strerror(err));
 		return false;
 	}
 
 #define FORMAT_SIZE 4
-	snd_pcm_format_t formats[FORMAT_SIZE] = {SND_PCM_FORMAT_S16_LE,
-						 SND_PCM_FORMAT_S32_LE,
-						 SND_PCM_FORMAT_FLOAT_LE,
+	snd_pcm_format_t formats[FORMAT_SIZE] = {SND_PCM_FORMAT_S16_LE, SND_PCM_FORMAT_S32_LE, SND_PCM_FORMAT_FLOAT_LE,
 						 SND_PCM_FORMAT_U8};
 	bool format_found = false;
 	for (int i = 0; i < FORMAT_SIZE; ++i) {
 		data->format = formats[i];
-		err = snd_pcm_hw_params_test_format(data->handle, hwparams,
-						    data->format);
+		err = snd_pcm_hw_params_test_format(data->handle, hwparams, data->format);
 		if (err == 0) {
 			format_found = true;
 			break;
@@ -464,16 +456,13 @@ bool _alsa_configure(struct alsa_data *data)
 	}
 	snd_pcm_hw_params_set_format(data->handle, hwparams, data->format);
 	if (err < 0) {
-		blog(LOG_ERROR, "snd_pcm_hw_params_set_format failed: %s",
-		     snd_strerror(err));
+		blog(LOG_ERROR, "snd_pcm_hw_params_set_format failed: %s", snd_strerror(err));
 		return false;
 	}
 
-	err = snd_pcm_hw_params_set_rate_near(data->handle, hwparams,
-					      &data->rate, 0);
+	err = snd_pcm_hw_params_set_rate_near(data->handle, hwparams, &data->rate, 0);
 	if (err < 0) {
-		blog(LOG_ERROR, "snd_pcm_hw_params_set_rate_near failed: %s",
-		     snd_strerror(err));
+		blog(LOG_ERROR, "snd_pcm_hw_params_set_rate_near failed: %s", snd_strerror(err));
 		return false;
 	}
 	blog(LOG_INFO, "PCM '%s' rate set to %d", data->device, data->rate);
@@ -482,35 +471,26 @@ bool _alsa_configure(struct alsa_data *data)
 	if (err < 0)
 		data->channels = 2;
 
-	err = snd_pcm_hw_params_set_channels_near(data->handle, hwparams,
-						  &data->channels);
+	err = snd_pcm_hw_params_set_channels_near(data->handle, hwparams, &data->channels);
 	if (err < 0) {
-		blog(LOG_ERROR,
-		     "snd_pcm_hw_params_set_channels_near failed: %s",
-		     snd_strerror(err));
+		blog(LOG_ERROR, "snd_pcm_hw_params_set_channels_near failed: %s", snd_strerror(err));
 		return false;
 	}
-	blog(LOG_INFO, "PCM '%s' channels set to %d", data->device,
-	     data->channels);
+	blog(LOG_INFO, "PCM '%s' channels set to %d", data->device, data->channels);
 
 	err = snd_pcm_hw_params(data->handle, hwparams);
 	if (err < 0) {
-		blog(LOG_ERROR, "snd_pcm_hw_params failed: %s",
-		     snd_strerror(err));
+		blog(LOG_ERROR, "snd_pcm_hw_params failed: %s", snd_strerror(err));
 		return false;
 	}
 
-	err = snd_pcm_hw_params_get_period_size(hwparams, &data->period_size,
-						&dir);
+	err = snd_pcm_hw_params_get_period_size(hwparams, &data->period_size, &dir);
 	if (err < 0) {
-		blog(LOG_ERROR, "snd_pcm_hw_params_get_period_size failed: %s",
-		     snd_strerror(err));
+		blog(LOG_ERROR, "snd_pcm_hw_params_get_period_size failed: %s", snd_strerror(err));
 		return false;
 	}
 
-	data->sample_size =
-		(data->channels * snd_pcm_format_physical_width(data->format)) /
-		8;
+	data->sample_size = (data->channels * snd_pcm_format_physical_width(data->format)) / 8;
 
 	if (data->buffer)
 		bfree(data->buffer);
@@ -532,9 +512,7 @@ void _alsa_start_reopen(struct alsa_data *data)
 
 	err = pthread_create(&data->reopen_thread, &attr, _alsa_reopen, data);
 	if (err) {
-		blog(LOG_ERROR,
-		     "Failed to create reopen thread for device '%s'.",
-		     data->device);
+		blog(LOG_ERROR, "Failed to create reopen thread for device '%s'.", data->device);
 	}
 
 	pthread_attr_destroy(&attr);
@@ -568,8 +546,7 @@ void *_alsa_listen(void *attr)
 	os_atomic_set_bool(&data->listen, true);
 
 	do {
-		snd_pcm_sframes_t frames = snd_pcm_readi(
-			data->handle, data->buffer, data->period_size);
+		snd_pcm_sframes_t frames = snd_pcm_readi(data->handle, data->buffer, data->period_size);
 
 		if (!os_atomic_load_bool(&data->listen))
 			break;
@@ -583,9 +560,7 @@ void *_alsa_listen(void *attr)
 		}
 
 		out.frames = frames;
-		out.timestamp =
-			os_gettime_ns() -
-			util_mul_div64(frames, NSEC_PER_SEC, data->rate);
+		out.timestamp = os_gettime_ns() - util_mul_div64(frames, NSEC_PER_SEC, data->rate);
 
 		if (!data->first_ts)
 			data->first_ts = out.timestamp + STARTUP_TIMEOUT_NS;

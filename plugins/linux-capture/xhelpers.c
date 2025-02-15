@@ -59,8 +59,7 @@ int xinerama_screen_count(xcb_connection_t *xcb)
 	return screens;
 }
 
-int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
-			int_fast32_t *x, int_fast32_t *y, int_fast32_t *w,
+int xinerama_screen_geo(xcb_connection_t *xcb, int_fast32_t screen, int_fast32_t *x, int_fast32_t *y, int_fast32_t *w,
 			int_fast32_t *h)
 {
 	if (!xcb)
@@ -109,8 +108,7 @@ static bool randr_has_monitors(xcb_connection_t *xcb)
 	xcb_randr_query_version_cookie_t ver_c;
 	xcb_randr_query_version_reply_t *ver_r;
 
-	ver_c = xcb_randr_query_version(xcb, XCB_RANDR_MAJOR_VERSION,
-					XCB_RANDR_MINOR_VERSION);
+	ver_c = xcb_randr_query_version(xcb, XCB_RANDR_MAJOR_VERSION, XCB_RANDR_MINOR_VERSION);
 	ver_r = xcb_randr_query_version_reply(xcb, ver_c, 0);
 	if (!ver_r)
 		return 0;
@@ -151,8 +149,7 @@ int randr_screen_count(xcb_connection_t *xcb)
 	return xcb_randr_get_screen_resources_crtcs_length(res_r);
 }
 
-int randr_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
-		     int_fast32_t *x, int_fast32_t *y, int_fast32_t *w,
+int randr_screen_geo(xcb_connection_t *xcb, int_fast32_t screen, int_fast32_t *x, int_fast32_t *y, int_fast32_t *w,
 		     int_fast32_t *h, xcb_screen_t **rscreen, char **name)
 {
 	xcb_screen_t *xscreen;
@@ -196,9 +193,7 @@ int randr_screen_geo(xcb_connection_t *xcb, int_fast32_t screen,
 			atom_c = xcb_get_atom_name(xcb, mon->name);
 			atom_r = xcb_get_atom_name_reply(xcb, atom_c, 0);
 			if (atom_r) {
-				*name = strndup(
-					xcb_get_atom_name_name(atom_r),
-					xcb_get_atom_name_name_length(atom_r));
+				*name = strndup(xcb_get_atom_name_name(atom_r), xcb_get_atom_name_name_length(atom_r));
 				free(atom_r);
 			}
 		}
@@ -242,8 +237,7 @@ fail:
 	return -1;
 }
 
-int x11_screen_geo(xcb_connection_t *xcb, int_fast32_t screen, int_fast32_t *w,
-		   int_fast32_t *h)
+int x11_screen_geo(xcb_connection_t *xcb, int_fast32_t screen, int_fast32_t *w, int_fast32_t *h)
 {
 	if (!xcb)
 		goto fail;
@@ -322,8 +316,7 @@ xcb_screen_t *xcb_get_screen(xcb_connection_t *xcb, int screen)
 
 int xcb_get_screen_for_root(xcb_connection_t *conn, xcb_window_t root)
 {
-	xcb_screen_iterator_t iter =
-		xcb_setup_roots_iterator(xcb_get_setup(conn));
+	xcb_screen_iterator_t iter = xcb_setup_roots_iterator(xcb_get_setup(conn));
 	for (int i = 0; iter.rem > 0; xcb_screen_next(&iter)) {
 		if (iter.data->root == root)
 			return i;

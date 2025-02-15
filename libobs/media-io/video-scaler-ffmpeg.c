@@ -30,8 +30,7 @@ struct video_scaler {
 	int dst_linesizes[4];
 };
 
-static inline enum AVPixelFormat
-get_ffmpeg_video_format(enum video_format format)
+static inline enum AVPixelFormat get_ffmpeg_video_format(enum video_format format)
 {
 	switch (format) {
 	case VIDEO_FORMAT_I420:
@@ -68,20 +67,16 @@ get_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_YUVA422P;
 	case VIDEO_FORMAT_YUVA:
 		return AV_PIX_FMT_YUVA444P;
-#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
 	case VIDEO_FORMAT_YA2L:
 		return AV_PIX_FMT_YUVA444P12LE;
-#endif
 	case VIDEO_FORMAT_I010:
 		return AV_PIX_FMT_YUV420P10LE;
 	case VIDEO_FORMAT_P010:
 		return AV_PIX_FMT_P010LE;
-#if LIBAVUTIL_BUILD >= AV_VERSION_INT(57, 17, 100)
 	case VIDEO_FORMAT_P216:
 		return AV_PIX_FMT_P216LE;
 	case VIDEO_FORMAT_P416:
 		return AV_PIX_FMT_P416LE;
-#endif
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_AYUV:
 	default:
@@ -145,10 +140,8 @@ static inline int get_ffmpeg_range_type(enum video_range_type type)
 
 #define FIXED_1_0 (1 << 16)
 
-int video_scaler_create(video_scaler_t **scaler_out,
-			const struct video_scale_info *dst,
-			const struct video_scale_info *src,
-			enum video_scale_type type)
+int video_scaler_create(video_scaler_t **scaler_out, const struct video_scale_info *dst,
+			const struct video_scale_info *src, enum video_scale_type type)
 {
 	enum AVPixelFormat format_src = get_ffmpeg_video_format(src->format);
 	enum AVPixelFormat format_dst = get_ffmpeg_video_format(dst->format);
@@ -177,17 +170,14 @@ int video_scaler_create(video_scaler_t **scaler_out,
 	scaler->dst_heights[0] = dst->height;
 	for (size_t i = 1; i < 4; ++i) {
 		if (has_plane[i]) {
-			const int s = (i == 1 || i == 2) ? desc->log2_chroma_h
-							 : 0;
+			const int s = (i == 1 || i == 2) ? desc->log2_chroma_h : 0;
 			scaler->dst_heights[i] = dst->height >> s;
 		}
 	}
 
-	ret = av_image_alloc(scaler->dst_pointers, scaler->dst_linesizes,
-			     dst->width, dst->height, format_dst, 32);
+	ret = av_image_alloc(scaler->dst_pointers, scaler->dst_linesizes, dst->width, dst->height, format_dst, 32);
 	if (ret < 0) {
-		blog(LOG_WARNING,
-		     "video_scaler_create: av_image_alloc failed: %d", ret);
+		blog(LOG_WARNING, "video_scaler_create: av_image_alloc failed: %d", ret);
 		goto fail;
 	}
 
@@ -212,8 +202,7 @@ int video_scaler_create(video_scaler_t **scaler_out,
 		goto fail;
 	}
 
-	ret = sws_setColorspaceDetails(scaler->swscale, coeff_src, range_src,
-				       coeff_dst, range_dst, 0, FIXED_1_0,
+	ret = sws_setColorspaceDetails(scaler->swscale, coeff_src, range_src, coeff_dst, range_dst, 0, FIXED_1_0,
 				       FIXED_1_0);
 	if (ret < 0) {
 		blog(LOG_DEBUG, "video_scaler_create: "
@@ -240,20 +229,16 @@ void video_scaler_destroy(video_scaler_t *scaler)
 	}
 }
 
-bool video_scaler_scale(video_scaler_t *scaler, uint8_t *output[],
-			const uint32_t out_linesize[],
-			const uint8_t *const input[],
-			const uint32_t in_linesize[])
+bool video_scaler_scale(video_scaler_t *scaler, uint8_t *output[], const uint32_t out_linesize[],
+			const uint8_t *const input[], const uint32_t in_linesize[])
 {
 	if (!scaler)
 		return false;
 
-	int ret = sws_scale(scaler->swscale, input, (const int *)in_linesize, 0,
-			    scaler->src_height, scaler->dst_pointers,
-			    scaler->dst_linesizes);
+	int ret = sws_scale(scaler->swscale, input, (const int *)in_linesize, 0, scaler->src_height,
+			    scaler->dst_pointers, scaler->dst_linesizes);
 	if (ret <= 0) {
-		blog(LOG_ERROR, "video_scaler_scale: sws_scale failed: %d",
-		     ret);
+		blog(LOG_ERROR, "video_scaler_scale: sws_scale failed: %d", ret);
 		return false;
 	}
 

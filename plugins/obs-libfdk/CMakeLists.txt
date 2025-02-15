@@ -1,9 +1,8 @@
-project(obs-libfdk)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_LIBFDK "Enable FDK AAC support" OFF)
-
 if(NOT ENABLE_LIBFDK)
-  obs_status(DISABLED "obs-libfdk")
+  target_disable(obs-libfdk)
   return()
 endif()
 
@@ -14,8 +13,6 @@ add_library(OBS::libfdk ALIAS obs-libfdk)
 
 target_sources(obs-libfdk PRIVATE obs-libfdk.c)
 
-target_link_libraries(obs-libfdk PRIVATE OBS::libobs LibFDK::LibFDK)
+target_link_libraries(obs-libfdk PRIVATE OBS::libobs Libfdk::Libfdk)
 
-set_target_properties(obs-libfdk PROPERTIES FOLDER "plugins" PREFIX "")
-
-setup_plugin_target(obs-libfdk)
+set_target_properties_obs(obs-libfdk PROPERTIES FOLDER plugins PREFIX "")

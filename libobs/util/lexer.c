@@ -190,8 +190,8 @@ bool valid_float_str(const char *str, size_t n)
 
 /* ------------------------------------------------------------------------- */
 
-void error_data_add(struct error_data *data, const char *file, uint32_t row,
-		    uint32_t column, const char *msg, int level)
+void error_data_add(struct error_data *data, const char *file, uint32_t row, uint32_t column, const char *msg,
+		    int level)
 {
 	struct error_item item;
 
@@ -216,8 +216,7 @@ char *error_data_buildstring(struct error_data *ed)
 	dstr_init(&str);
 	for (i = 0; i < ed->errors.num; i++) {
 		struct error_item *item = items + i;
-		dstr_catf(&str, "%s (%u, %u): %s\n", item->file, item->row,
-			  item->column, item->error);
+		dstr_catf(&str, "%s (%u, %u): %s\n", item->file, item->row, item->column, item->error);
 	}
 
 	return str.array;
@@ -237,8 +236,7 @@ static inline enum base_token_type get_char_token_type(const char ch)
 	return BASETOKEN_OTHER;
 }
 
-bool lexer_getbasetoken(struct lexer *lex, struct base_token *token,
-			enum ignore_whitespace iws)
+bool lexer_getbasetoken(struct lexer *lex, struct base_token *token, enum ignore_whitespace iws)
 {
 	const char *offset = lex->offset;
 	const char *token_start = NULL;
@@ -253,17 +251,14 @@ bool lexer_getbasetoken(struct lexer *lex, struct base_token *token,
 		enum base_token_type new_type = get_char_token_type(ch);
 
 		if (type == BASETOKEN_NONE) {
-			if (new_type == BASETOKEN_WHITESPACE &&
-			    ignore_whitespace)
+			if (new_type == BASETOKEN_WHITESPACE && ignore_whitespace)
 				continue;
 
 			token_start = offset - 1;
 			type = new_type;
 
-			if (type != BASETOKEN_DIGIT &&
-			    type != BASETOKEN_ALPHA) {
-				if (is_newline(ch) &&
-				    is_newline_pair(ch, *offset)) {
+			if (type != BASETOKEN_DIGIT && type != BASETOKEN_ALPHA) {
+				if (is_newline(ch) && is_newline_pair(ch, *offset)) {
 					offset++;
 				}
 				break;
@@ -285,8 +280,7 @@ bool lexer_getbasetoken(struct lexer *lex, struct base_token *token,
 	return false;
 }
 
-void lexer_getstroffset(const struct lexer *lex, const char *str, uint32_t *row,
-			uint32_t *col)
+void lexer_getstroffset(const struct lexer *lex, const char *str, uint32_t *row, uint32_t *col)
 {
 	uint32_t cur_col = 1, cur_row = 1;
 	const char *text = lex->text;

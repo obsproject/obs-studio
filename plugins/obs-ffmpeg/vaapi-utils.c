@@ -25,8 +25,7 @@ inline static VADisplay vaapi_open_display_drm(int *fd, const char *device_path)
 
 	*fd = open(device_path, O_RDWR);
 	if (*fd < 0) {
-		blog(LOG_ERROR, "VAAPI: Failed to open device '%s'",
-		     device_path);
+		blog(LOG_ERROR, "VAAPI: Failed to open device '%s'", device_path);
 		return NULL;
 	}
 
@@ -77,8 +76,7 @@ static void vaapi_log_error_cb(void *user_context, const char *message)
 	dstr_free(&m);
 }
 
-VADisplay vaapi_open_device(int *fd, const char *device_path,
-			    const char *func_name)
+VADisplay vaapi_open_device(int *fd, const char *device_path, const char *func_name)
 {
 	VADisplay va_dpy;
 	VAStatus va_status;
@@ -97,8 +95,8 @@ VADisplay vaapi_open_device(int *fd, const char *device_path,
 	va_status = vaInitialize(va_dpy, &major, &minor);
 
 	if (va_status != VA_STATUS_SUCCESS) {
-		blog(LOG_ERROR, "VAAPI: Failed to initialize display in %s",
-		     func_name);
+		blog(LOG_ERROR, "VAAPI: Failed to initialize display in %s", func_name);
+		vaapi_close_device(fd, va_dpy);
 		return NULL;
 	}
 
@@ -111,8 +109,7 @@ VADisplay vaapi_open_device(int *fd, const char *device_path,
 
 	driver = vaQueryVendorString(va_dpy);
 
-	blog(LOG_DEBUG, "VAAPI: '%s' in use for device '%s'", driver,
-	     device_path);
+	blog(LOG_DEBUG, "VAAPI: '%s' in use for device '%s'", driver, device_path);
 
 	return va_dpy;
 }
@@ -123,12 +120,9 @@ void vaapi_close_device(int *fd, VADisplay dpy)
 	vaapi_close_display_drm(fd);
 }
 
-static uint32_t vaapi_display_ep_combo_rate_controls(VAProfile profile,
-						     VAEntrypoint entrypoint,
-						     VADisplay dpy,
+static uint32_t vaapi_display_ep_combo_rate_controls(VAProfile profile, VAEntrypoint entrypoint, VADisplay dpy,
 						     const char *device_path)
 {
-	bool ret = false;
 	VAStatus va_status;
 	VAConfigAttrib attrib[1];
 	attrib->type = VAConfigAttribRateControl;
@@ -139,55 +133,42 @@ static uint32_t vaapi_display_ep_combo_rate_controls(VAProfile profile,
 	case VA_STATUS_SUCCESS:
 		return attrib->value;
 	case VA_STATUS_ERROR_UNSUPPORTED_PROFILE:
-		blog(LOG_DEBUG, "VAAPI: %s is not supported by the device '%s'",
-		     vaProfileStr(profile), device_path);
+		blog(LOG_DEBUG, "VAAPI: %s is not supported by the device '%s'", vaProfileStr(profile), device_path);
 		return 0;
 	case VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT:
-		blog(LOG_DEBUG,
-		     "VAAPI: %s %s is not supported by the device '%s'",
-		     vaProfileStr(profile), vaEntrypointStr(entrypoint),
-		     device_path);
+		blog(LOG_DEBUG, "VAAPI: %s %s is not supported by the device '%s'", vaProfileStr(profile),
+		     vaEntrypointStr(entrypoint), device_path);
 		return 0;
 	default:
-		blog(LOG_ERROR,
-		     "VAAPI: Fail to get RC attribute from the %s %s of the device '%s'",
-		     vaProfileStr(profile), vaEntrypointStr(entrypoint),
-		     device_path);
+		blog(LOG_ERROR, "VAAPI: Fail to get RC attribute from the %s %s of the device '%s'",
+		     vaProfileStr(profile), vaEntrypointStr(entrypoint), device_path);
 		return 0;
 	}
 }
 
-static bool vaapi_display_ep_combo_supported(VAProfile profile,
-					     VAEntrypoint entrypoint,
-					     VADisplay dpy,
+static bool vaapi_display_ep_combo_supported(VAProfile profile, VAEntrypoint entrypoint, VADisplay dpy,
 					     const char *device_path)
 {
-	uint32_t ret = vaapi_display_ep_combo_rate_controls(profile, entrypoint,
-							    dpy, device_path);
+	uint32_t ret = vaapi_display_ep_combo_rate_controls(profile, entrypoint, dpy, device_path);
 	if (ret & VA_RC_CBR || ret & VA_RC_CQP || ret & VA_RC_VBR)
 		return true;
 
 	return false;
 }
 
-bool vaapi_device_rc_supported(VAProfile profile, VADisplay dpy, uint32_t rc,
-			       const char *device_path)
+bool vaapi_device_rc_supported(VAProfile profile, VADisplay dpy, uint32_t rc, const char *device_path)
 {
-	uint32_t ret = vaapi_display_ep_combo_rate_controls(
-		profile, VAEntrypointEncSlice, dpy, device_path);
+	uint32_t ret = vaapi_display_ep_combo_rate_controls(profile, VAEntrypointEncSlice, dpy, device_path);
 	if (ret & rc)
 		return true;
-	ret = vaapi_display_ep_combo_rate_controls(
-		profile, VAEntrypointEncSliceLP, dpy, device_path);
+	ret = vaapi_display_ep_combo_rate_controls(profile, VAEntrypointEncSliceLP, dpy, device_path);
 	if (ret & rc)
 		return true;
 
 	return false;
 }
 
-static bool vaapi_display_ep_bframe_supported(VAProfile profile,
-					      VAEntrypoint entrypoint,
-					      VADisplay dpy)
+static bool vaapi_display_ep_bframe_supported(VAProfile profile, VAEntrypoint entrypoint, VADisplay dpy)
 {
 	VAStatus va_status;
 	VAConfigAttrib attrib[1];
@@ -195,8 +176,7 @@ static bool vaapi_display_ep_bframe_supported(VAProfile profile,
 
 	va_status = vaGetConfigAttributes(dpy, profile, entrypoint, attrib, 1);
 
-	if (va_status == VA_STATUS_SUCCESS &&
-	    attrib->value != VA_ATTRIB_NOT_SUPPORTED)
+	if (va_status == VA_STATUS_SUCCESS && attrib->value != VA_ATTRIB_NOT_SUPPORTED)
 		return attrib->value >> 16;
 
 	return false;
@@ -204,32 +184,26 @@ static bool vaapi_display_ep_bframe_supported(VAProfile profile,
 
 bool vaapi_device_bframe_supported(VAProfile profile, VADisplay dpy)
 {
-	bool ret = vaapi_display_ep_bframe_supported(profile,
-						     VAEntrypointEncSlice, dpy);
+	bool ret = vaapi_display_ep_bframe_supported(profile, VAEntrypointEncSlice, dpy);
 	if (ret)
 		return true;
-	ret = vaapi_display_ep_bframe_supported(profile, VAEntrypointEncSliceLP,
-						dpy);
+	ret = vaapi_display_ep_bframe_supported(profile, VAEntrypointEncSliceLP, dpy);
 	if (ret)
 		return true;
 
 	return false;
 }
 
-#define CHECK_PROFILE(ret, profile, va_dpy, device_path)                      \
-	if (vaapi_display_ep_combo_supported(profile, VAEntrypointEncSlice,   \
-					     va_dpy, device_path)) {          \
-		blog(LOG_DEBUG, "'%s' support encoding with %s", device_path, \
-		     vaProfileStr(profile));                                  \
-		ret |= true;                                                  \
+#define CHECK_PROFILE(ret, profile, va_dpy, device_path)                                              \
+	if (vaapi_display_ep_combo_supported(profile, VAEntrypointEncSlice, va_dpy, device_path)) {   \
+		blog(LOG_DEBUG, "'%s' support encoding with %s", device_path, vaProfileStr(profile)); \
+		ret |= true;                                                                          \
 	}
 
-#define CHECK_PROFILE_LP(ret, profile, va_dpy, device_path)                   \
-	if (vaapi_display_ep_combo_supported(profile, VAEntrypointEncSliceLP, \
-					     va_dpy, device_path)) {          \
-		blog(LOG_DEBUG, "'%s' support low power encoding with %s",    \
-		     device_path, vaProfileStr(profile));                     \
-		ret |= true;                                                  \
+#define CHECK_PROFILE_LP(ret, profile, va_dpy, device_path)                                                     \
+	if (vaapi_display_ep_combo_supported(profile, VAEntrypointEncSliceLP, va_dpy, device_path)) {           \
+		blog(LOG_DEBUG, "'%s' support low power encoding with %s", device_path, vaProfileStr(profile)); \
+		ret |= true;                                                                                    \
 	}
 
 bool vaapi_display_h264_supported(VADisplay dpy, const char *device_path)
@@ -241,8 +215,7 @@ bool vaapi_display_h264_supported(VADisplay dpy, const char *device_path)
 	CHECK_PROFILE(ret, VAProfileH264High, dpy, device_path);
 
 	if (!ret) {
-		CHECK_PROFILE_LP(ret, VAProfileH264ConstrainedBaseline, dpy,
-				 device_path);
+		CHECK_PROFILE_LP(ret, VAProfileH264ConstrainedBaseline, dpy, device_path);
 		CHECK_PROFILE_LP(ret, VAProfileH264Main, dpy, device_path);
 		CHECK_PROFILE_LP(ret, VAProfileH264High, dpy, device_path);
 	}
@@ -257,8 +230,7 @@ bool vaapi_device_h264_supported(const char *device_path)
 
 	int drm_fd = -1;
 
-	va_dpy = vaapi_open_device(&drm_fd, device_path,
-				   "vaapi_device_h264_supported");
+	va_dpy = vaapi_open_device(&drm_fd, device_path, "vaapi_device_h264_supported");
 	if (!va_dpy)
 		return false;
 
@@ -312,8 +284,7 @@ bool vaapi_device_av1_supported(const char *device_path)
 
 	int drm_fd = -1;
 
-	va_dpy = vaapi_open_device(&drm_fd, device_path,
-				   "vaapi_device_av1_supported");
+	va_dpy = vaapi_open_device(&drm_fd, device_path, "vaapi_device_av1_supported");
 	if (!va_dpy)
 		return false;
 
@@ -371,8 +342,7 @@ bool vaapi_device_hevc_supported(const char *device_path)
 
 	int drm_fd = -1;
 
-	va_dpy = vaapi_open_device(&drm_fd, device_path,
-				   "vaapi_device_hevc_supported");
+	va_dpy = vaapi_open_device(&drm_fd, device_path, "vaapi_device_hevc_supported");
 	if (!va_dpy)
 		return false;
 

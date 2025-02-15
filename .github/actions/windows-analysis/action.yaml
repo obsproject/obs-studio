@@ -1,0 +1,90 @@
+name: Run PVS-Studio Analysis
+inputs:
+  pvsUsername:
+    description: PVS-Studio License Username
+    required: true
+  pvsKey:
+    description: PVS-Studio License Key
+    required: true
+  target:
+    description: Build Target
+    required: true
+  config:
+    description: Build Configuration
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup PVS-Studio
+      shell: pwsh
+      run: |
+        choco install pvs-studio --version=7.30.81185.980 -y --no-progress
+
+    - name: Activate PVS-Studio
+      shell: pwsh
+      run: |
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        Invoke-External "C:\Program Files (x86)\PVS-Studio\PVS-Studio_Cmd.exe" credentials -u ${{ inputs.pvsUsername }} -n ${{ inputs.pvsKey }}
+
+    - name: Run PVS-Studio Analysis
+      shell: pwsh
+      run: |
+        [flags()] Enum PVSErrorCodes {
+            Success = 0
+            AnalyzerCrash = 1
+            GenericError = 2
+            InvalidCommandLine = 4
+            FileNotFound = 8
+            ConfigurationNotFound = 16
+            InvalidProject = 32
+            InvalidExtension = 64
+            LicenseInvalid = 128
+            CodeErrorsFound = 256
+            SuppressionFailed = 512
+            LicenseExpiringSoon = 1024
+        }
+        
+        $pvsParams = @(
+            "--progress"
+            "--disableLicenseExpirationCheck"
+            "-p", "${{ inputs.target }}"
+            "-c", "${{ inputs.config }}"
+            "-t", "${{ github.workspace }}\build_x64\obs-studio.sln"
+            "-o", "${{ github.workspace }}\analysis.plog"
+            "-C", "${env:GITHUB_ACTION_PATH}\obs.pvsconfig"
+        )
+        & "C:\Program Files (x86)\PVS-Studio\PVS-Studio_Cmd.exe" @pvsParams
+        
+        # Success, LicenseExpiringSoon, and CodeErrorsFound are fine as error codes, we only care if it is anything but those
+        $pvs_result = $LASTEXITCODE -band (-bnot ([PVSErrorCodes]::CodeErrorsFound -bor [PVSErrorCodes]::LicenseExpiringSoon))
+        if ($pvs_result -ne 0) {
+            Write-Output "PVS-Studio Errors: $([PVSErrorCodes]$pvs_result)"
+        }
+        exit $pvs_result
+
+    - name: Convert Analysis to SARIF
+      shell: pwsh
+      run: |
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        
+        $conversionParams = @(
+            "-a", "GA:1,2",
+            "-d", "V1042,Renew"
+            "-t", "Sarif"
+            "${{ github.workspace }}\analysis.plog"
+        )
+        Invoke-External "C:\Program Files (x86)\PVS-Studio\PlogConverter.exe" @conversionParams
+
+    - name: Upload PVS-Studio Logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: 'pvs-analysis-log'
+        path: |
+          ${{ github.workspace }}/analysis.plog
+          ${{ github.workspace }}/analysis.plog.sarif
+
+    - name: Upload PVS-Studio Report
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: "${{ github.workspace }}/analysis.plog.sarif"
+        category: 'PVS-Studio (Windows)'
