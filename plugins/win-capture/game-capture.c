@@ -356,6 +356,7 @@ static void stop_capture(struct game_capture *gc)
 
 	// if it was previously capturing, send an unhooked signal
 	if (gc->capturing) {
+		gc->capturing = false;
 		signal_handler_t *sh = obs_source_get_signal_handler(gc->source);
 		calldata_t data = {0};
 		calldata_set_ptr(&data, "source", gc->source);
@@ -370,7 +371,6 @@ static void stop_capture(struct game_capture *gc)
 	gc->copy_texture = NULL;
 	gc->wait_for_target_startup = false;
 	gc->active = false;
-	gc->capturing = false;
 
 	if (gc->retrying)
 		gc->retrying--;
