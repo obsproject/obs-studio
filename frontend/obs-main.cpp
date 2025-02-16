@@ -733,7 +733,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	return ret;
 }
 
-#define MAX_CRASH_REPORT_SIZE (150 * 1024)
+#define MAX_CRASH_REPORT_SIZE (200 * 1024)
 
 #ifdef _WIN32
 
