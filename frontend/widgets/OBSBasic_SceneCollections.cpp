@@ -825,8 +825,8 @@ void OBSBasic::Save(const char *file)
 	OBSDataArrayAutoRelease transitionsData = SaveTransitions();
 	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
-	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, ui->transitionDuration->value(),
-						       transitionsData, scene, curProgramScene, savedProjectorList);
+	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, transitionDuration, transitionsData,
+						       scene, curProgramScene, savedProjectorList);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
@@ -941,7 +941,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ClearSceneData();
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
-	ui->transitionDuration->setValue(300);
+	transitionDuration = 300;
 	SetTransition(fadeTransition);
 
 	DisableRelativeCoordinates(false);
@@ -1239,7 +1239,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 	if (!curTransition)
 		curTransition = fadeTransition;
 
-	ui->transitionDuration->setValue(newDuration);
+	transitionDuration = newDuration;
 	SetTransition(curTransition);
 
 retryScene:
