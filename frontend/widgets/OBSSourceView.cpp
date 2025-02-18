@@ -179,6 +179,7 @@ void OBSSourceWidgetView::OBSRender(void *data, uint32_t cx, uint32_t cy)
 	widget->setSourceHeight(sourceCY);
 }
 
-void OBSSourceWidgetView::setSource(obs_source_t *source) {
+void OBSSourceWidgetView::setSource(obs_source_t *source)
+{
 	weakSource = OBSGetWeakRef(source);
 }
