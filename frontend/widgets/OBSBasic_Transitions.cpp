@@ -70,7 +70,6 @@ void OBSBasic::InitDefaultTransitions()
 		}
 	}
 
-	/* FIXME: Reduce SetCurrentTransition calls */
 	for (OBSSource &tr : defaultTransitions) {
 		std::string uuid = obs_source_get_uuid(tr);
 
@@ -79,9 +78,9 @@ void OBSBasic::InitDefaultTransitions()
 		transitionUuids.push_back(uuid);
 
 		emit TransitionAdded(QT_UTF8(obs_source_get_name(tr)), QString::fromStdString(uuid));
-
-		SetCurrentTransition(uuid);
 	}
+
+	SetCurrentTransition(transitionUuids.back());
 }
 
 void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
@@ -1355,7 +1354,6 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitionsData, obs_load_sourc
 	size_t count = obs_data_array_count(transitionsData);
 
 	safeModeTransitions.clear();
-	/* FIXME: Reduce SetCurrentTransition calls */
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease item = obs_data_array_item(transitionsData, i);
 		const char *name = obs_data_get_string(item, "name");
@@ -1373,13 +1371,14 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitionsData, obs_load_sourc
 
 			emit TransitionAdded(QT_UTF8(name), QString::fromStdString(uuid));
 
-			SetCurrentTransition(uuid);
 			if (cb)
 				cb(private_data, source);
 		} else if (safe_mode || disable_3p_plugins) {
 			safeModeTransitions.push_back(std::move(item));
 		}
 	}
+
+	SetCurrentTransition(transitionUuids.back());
 }
 
 OBSSource OBSBasic::GetOverrideTransition(OBSSource source)
