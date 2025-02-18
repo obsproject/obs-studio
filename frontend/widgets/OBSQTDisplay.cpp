@@ -160,7 +160,6 @@ void OBSQTDisplay::moveEvent(QMoveEvent *event)
 {
 	QWidget::moveEvent(event);
 
-
 	OnMove();
 }
 
