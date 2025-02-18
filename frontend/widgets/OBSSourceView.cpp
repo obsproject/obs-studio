@@ -46,6 +46,10 @@ void OBSSourceWidget::resizeSourceView()
 		return;
 	}
 
+	// ToDo: Find a better fix
+	sourceView->move(0, 1);
+	sourceView->move(0, 0);
+
 	double aspectRatio = fixedAspectRatio > 0
 				     ? fixedAspectRatio
 				     : (double)sourceView->sourceWidth() / (double)sourceView->sourceHeight();

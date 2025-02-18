@@ -160,12 +160,6 @@ void OBSQTDisplay::moveEvent(QMoveEvent *event)
 {
 	QWidget::moveEvent(event);
 
-	if (isVisible() && display) {
-		QSize size = GetPixelSize(this);
-		obs_display_resize(display, size.width(), size.height());
-	}
-
-	emit DisplayResized();
 
 	OnMove();
 }
@@ -190,6 +184,13 @@ void OBSQTDisplay::resizeEvent(QResizeEvent *event)
 	QWidget::resizeEvent(event);
 
 	CreateDisplay();
+
+	if (isVisible() && display) {
+		QSize size = GetPixelSize(this);
+		obs_display_resize(display, size.width(), size.height());
+	}
+
+	emit DisplayResized();
 }
 
 QPaintEngine *OBSQTDisplay::paintEngine() const
