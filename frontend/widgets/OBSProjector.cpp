@@ -32,8 +32,7 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 	if (isAlwaysOnTop)
 		setWindowFlag(Qt::WindowStaysOnTopHint, isAlwaysOnTop);
 
-	hideFrame = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				    "HideProjectorFrame");
+	hideFrame = config_get_bool(App()->GetUserConfig(), "BasicWindow", "HideProjectorFrame");
 
 	if (hideFrame)
 		setWindowFlag(Qt::FramelessWindowHint, hideFrame);
@@ -168,10 +167,8 @@ void OBSProjector::SetHideFrame(bool hideFrame)
 		if (hideFrame) {
 			move(contentPos.x(), contentPos.y());
 		} else {
-			QPoint offset = QPoint(contentPos.x() - geometry().x(),
-					       contentPos.y() - geometry().y());
-			move(contentPos.x() + offset.x(),
-			     contentPos.y() + offset.y());
+			QPoint offset = QPoint(contentPos.x() - geometry().x(), contentPos.y() - geometry().y());
+			move(contentPos.x() + offset.x(), contentPos.y() + offset.y());
 		}
 	}
 
@@ -304,16 +301,14 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 			popup.addAction(QTStr("ResizeProjectorWindowToContent"), this, &OBSProjector::ResizeToContent);
 		}
 
-		QAction *hideFrameAction =
-			new QAction(QTStr("HideProjectorFrame"), this);
+		QAction *hideFrameAction = new QAction(QTStr("HideProjectorFrame"), this);
 		hideFrameAction->setCheckable(true);
 		hideFrameAction->setChecked(hideFrame);
 		if (isFullScreen()) {
 			hideFrameAction->setDisabled(true);
 		}
 
-		connect(hideFrameAction, &QAction::toggled, this,
-			&OBSProjector::SetHideFrame);
+		connect(hideFrameAction, &QAction::toggled, this, &OBSProjector::SetHideFrame);
 
 		popup.addAction(hideFrameAction);
 

@@ -1306,8 +1306,7 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool hideProjectorCursor = config_get_bool(App()->GetUserConfig(), "BasicWindow", "HideProjectorCursor");
 	ui->hideProjectorCursor->setChecked(hideProjectorCursor);
 
-	bool hideProjectorFrame = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "HideProjectorFrame");
+	bool hideProjectorFrame = config_get_bool(App()->GetUserConfig(), "BasicWindow", "HideProjectorFrame");
 	ui->hideProjectorFrame->setChecked(hideProjectorFrame);
 
 	bool projectorAlwaysOnTop = config_get_bool(App()->GetUserConfig(), "BasicWindow", "ProjectorAlwaysOnTop");
@@ -3004,11 +3003,9 @@ void OBSBasicSettings::SaveGeneralSettings()
 	}
 
 	if (WidgetChanged(ui->hideProjectorFrame)) {
-		config_set_bool(GetGlobalConfig(), "BasicWindow",
-				"HideProjectorFrame",
+		config_set_bool(App()->GetUserConfig(), "BasicWindow", "HideProjectorFrame",
 				ui->hideProjectorFrame->isChecked());
-		main->UpdateProjectorHideFrame(
-			ui->hideProjectorFrame->isChecked());
+		main->UpdateProjectorHideFrame(ui->hideProjectorFrame->isChecked());
 	}
 
 	if (WidgetChanged(ui->projectorAlwaysOnTop)) {
