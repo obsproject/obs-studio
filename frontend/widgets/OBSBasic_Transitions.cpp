@@ -334,7 +334,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		obs_transition_set(transition, source);
 		OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 	} else {
-		int duration = ui->transitionDuration->value();
+		int duration = GetTransitionDuration();
 
 		/* check for scene override */
 		OBSSource trOverride = GetOverrideTransition(source);
@@ -599,11 +599,6 @@ void OBSBasic::on_transitionProps_clicked()
 	menu.addAction(action);
 
 	menu.exec(QCursor::pos());
-}
-
-void OBSBasic::on_transitionDuration_valueChanged()
-{
-	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
 }
 
 QuickTransition *OBSBasic::GetQuickTransition(int id)
@@ -1417,7 +1412,7 @@ int OBSBasic::GetOverrideTransitionDuration(OBSSource source)
 
 int OBSBasic::GetTransitionDuration()
 {
-	return ui->transitionDuration->value();
+	return transitionDuration;
 }
 
 void OBSBasic::SetCurrentTransition(const std::string &uuid)
@@ -1436,4 +1431,19 @@ void OBSBasic::SetCurrentTransition(const QString &uuid)
 
 	currentTransitionUuid = uuid.toStdString();
 	emit CurrentTranstionChanged(uuid);
+}
+
+void OBSBasic::SetTransitionDuration(int duration)
+{
+	duration = std::max(duration, 50);
+	duration = std::min(duration, 20000);
+
+	if (duration == transitionDuration)
+		return;
+
+	transitionDuration = duration;
+
+	emit TransitionDurationChanged(transitionDuration);
+
+	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
 }

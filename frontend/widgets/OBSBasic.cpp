@@ -313,6 +313,14 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	connect(ui->transitions, &QComboBox::currentIndexChanged, this,
 		[this]() { SetCurrentTransition(ui->transitions->currentData().toString()); });
 
+	connect(this, &OBSBasic::TransitionDurationChanged, this, [this](int duration) {
+		QSignalBlocker sb(ui->transitionDuration);
+		ui->transitionDuration->setValue(duration);
+	});
+
+	connect(ui->transitionDuration, &QSpinBox::valueChanged, this,
+		[this](int value) { SetTransitionDuration(value); });
+
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();
