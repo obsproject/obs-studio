@@ -95,12 +95,12 @@ void OBSStudioAPI::obs_frontend_set_current_transition(obs_source_t *transition)
 
 int OBSStudioAPI::obs_frontend_get_transition_duration()
 {
-	return main->ui->transitionDuration->value();
+	return main->GetTransitionDuration();
 }
 
 void OBSStudioAPI::obs_frontend_set_transition_duration(int duration)
 {
-	QMetaObject::invokeMethod(main->ui->transitionDuration, "setValue", Q_ARG(int, duration));
+	QMetaObject::invokeMethod(main, "SetTransitionDuration", Q_ARG(int, duration));
 }
 
 void OBSStudioAPI::obs_frontend_release_tbar()
