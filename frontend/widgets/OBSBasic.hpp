@@ -1476,6 +1476,7 @@ private:
 	std::vector<std::string> transitionUuids;
 	// FIXME: Replace usages of a name to identify a transition
 	std::unordered_map<std::string, std::string> transitionNameToUuids;
+	int transitionDuration;
 	std::string currentTransitionUuid;
 	obs_source_t *fadeTransition;
 	obs_source_t *cutTransition;
@@ -1543,6 +1544,8 @@ public slots:
 
 	void SetCurrentTransition(const QString &uuid);
 
+	void SetTransitionDuration(int duration);
+
 private slots:
 	void AddTransition(const char *id);
 	void RenameTransition(OBSSource transition);
@@ -1558,7 +1561,6 @@ private slots:
 	void on_transitionAdd_clicked();
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
-	void on_transitionDuration_valueChanged();
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
@@ -1570,6 +1572,8 @@ signals:
 	void TransitionsCleared();
 
 	void CurrentTransitionChanged(const QString &uuid);
+
+	void TransitionDurationChanged(const int &duration);
 
 public:
 	int GetTransitionDuration();

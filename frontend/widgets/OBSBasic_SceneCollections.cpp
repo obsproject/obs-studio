@@ -888,9 +888,8 @@ void OBSBasic::Save(SceneCollection &collection)
 	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
 	OBSDataArrayAutoRelease savedCanvases = OBS::Canvas::SaveCanvases(canvases);
-	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, ui->transitionDuration->value(),
-						       transitionsData, scene, curProgramScene, savedProjectorList,
-						       savedCanvases);
+	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, transitionDuration, transitionsData,
+						       scene, curProgramScene, savedProjectorList, savedCanvases);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
@@ -1006,7 +1005,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ClearSceneData();
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
-	ui->transitionDuration->setValue(300);
+	transitionDuration = 300;
 	SetTransition(fadeTransition);
 
 	updateRemigrationMenuItem(SceneCoordinateMode::Relative, ui->actionRemigrateSceneCollection);
@@ -1306,7 +1305,7 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	if (!curTransition)
 		curTransition = fadeTransition;
 
-	ui->transitionDuration->setValue(newDuration);
+	transitionDuration = newDuration;
 	SetTransition(curTransition);
 
 retryScene:
