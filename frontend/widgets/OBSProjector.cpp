@@ -157,19 +157,20 @@ void OBSProjector::SetHideFrame(bool hideFrame)
 	QPoint contentPos = pos();
 
 	// Only update window if setting changed.
-	if (this->hideFrame != hideFrame) {
-		setWindowFlag(Qt::FramelessWindowHint, hideFrame);
+	if (this->hideFrame == hideFrame)
+		return;
 
-		// Restore the window.
-		showNormal();
+	setWindowFlag(Qt::FramelessWindowHint, hideFrame);
 
-		// Keep content in the same screen location.
-		if (hideFrame) {
-			move(contentPos.x(), contentPos.y());
-		} else {
-			QPoint offset = QPoint(contentPos.x() - geometry().x(), contentPos.y() - geometry().y());
-			move(contentPos.x() + offset.x(), contentPos.y() + offset.y());
-		}
+	// Restore the window.
+	showNormal();
+
+	// Keep content in the same screen location.
+	if (hideFrame) {
+		move(contentPos.x(), contentPos.y());
+	} else {
+		QPoint offset = QPoint(contentPos.x() - contentBox.x(), contentPos.y() - contentBox.y());
+		move(contentPos.x() + offset.x(), contentPos.y() + offset.y());
 	}
 
 	this->hideFrame = hideFrame;
