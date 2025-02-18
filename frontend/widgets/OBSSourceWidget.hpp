@@ -11,21 +11,21 @@ class OBSSourceWidget : public QFrame {
 	Q_OBJECT
 
 private:
-	OBSSourceWidgetView *sourceView;
+	OBSSourceWidgetView *sourceView = nullptr;
 	QVBoxLayout *layout;
 
 	double fixedAspectRatio;
-
-	void handleViewReady();
 
 	void moveEvent(QMoveEvent *event);
 	void resizeEvent(QResizeEvent *event);
 
 public:
-	OBSSourceWidget(QWidget *parent, obs_source_t *source_);
+	OBSSourceWidget(QWidget *parent);
+	OBSSourceWidget(QWidget *parent, obs_source_t *source);
 	~OBSSourceWidget();
 
 	void setFixedAspectRatio(double ratio);
+	void setSource(obs_source_t *source);
 
 	void resizeSourceView();
 };
@@ -39,17 +39,19 @@ private:
 	static void OBSRender(void *data, uint32_t cx, uint32_t cy);
 
 	QRect prevGeometry;
-	int32_t _sourceWidth;
-	int32_t _sourceHeight;
+
+	int32_t sourceWidth_;
+	int32_t sourceHeight_;
 
 public:
-	OBSSourceWidgetView(OBSSourceWidget *parent, obs_source_t *source_);
+	OBSSourceWidgetView(OBSSourceWidget *parent, obs_source_t *source);
 	~OBSSourceWidgetView();
 
+	void setSource(obs_source_t *source);
 	void setSourceWidth(int width);
 	void setSourceHeight(int height);
-	int sourceWidth() { return _sourceWidth; }
-	int sourceHeight() { return _sourceHeight; }
+	int sourceWidth() { return sourceWidth_; }
+	int sourceHeight() { return sourceHeight_; }
 
 	OBSSource GetSource();
 

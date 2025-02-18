@@ -12,20 +12,18 @@
 
 #include "moc_OBSSourceView.cpp"
 
-OBSSourceWidget::OBSSourceWidget(QWidget *parent, obs_source_t *source_) : QFrame(parent), fixedAspectRatio(0.0)
+OBSSourceWidget::OBSSourceWidget(QWidget *parent) : QFrame(parent), fixedAspectRatio(0.0)
 {
 	layout = new QVBoxLayout();
 	setLayout(layout);
 
 	layout->setContentsMargins(0, 0, 0, 0);
-
-	sourceView = new OBSSourceWidgetView(this, source_);
-
 	setMinimumSize(QSize(240, 135));
+}
 
-	layout->addWidget(sourceView);
-
-	connect(sourceView, &OBSSourceWidgetView::viewReady, this, &OBSSourceWidget::handleViewReady);
+OBSSourceWidget::OBSSourceWidget(QWidget *parent, obs_source_t *source) : OBSSourceWidget(parent)
+{
+	setSource(source);
 }
 
 void OBSSourceWidget::setFixedAspectRatio(double ratio)
@@ -37,8 +35,24 @@ void OBSSourceWidget::setFixedAspectRatio(double ratio)
 	}
 }
 
+void OBSSourceWidget::setSource(obs_source_t *source)
+{
+	if (!sourceView) {
+		sourceView = new OBSSourceWidgetView(this, source);
+		layout->addWidget(sourceView);
+
+		connect(sourceView, &OBSSourceWidgetView::viewReady, this, &OBSSourceWidget::resizeSourceView);
+	}
+
+	sourceView->setSource(source);
+}
+
 void OBSSourceWidget::resizeSourceView()
 {
+	if (!sourceView) {
+		return;
+	}
+
 	if (sourceView->sourceWidth() <= 0 || sourceView->sourceHeight() <= 0) {
 		return;
 	}
@@ -69,15 +83,20 @@ void OBSSourceWidget::resizeSourceView()
 	}
 }
 
-void OBSSourceWidget::handleViewReady()
-{
-	setSizePolicy(sizePolicy().horizontalPolicy(), sizePolicy().verticalPolicy());
-	resizeSourceView();
-}
-
 void OBSSourceWidget::moveEvent(QMoveEvent *event)
 {
 	resizeSourceView();
+
+	if (sourceView) {
+		QWindow *nativeWindow = sourceView->windowHandle();
+
+		if (nativeWindow) {
+			QPoint position = sourceView->mapTo(sourceView->nativeParentWidget(), QPoint());
+
+			nativeWindow->setGeometry(QRect(position, sourceView->geometry().size()));
+		}
+	}
+
 	QFrame::moveEvent(event);
 }
 
@@ -93,7 +112,7 @@ OBSSourceWidgetView::OBSSourceWidgetView(OBSSourceWidget *widget, obs_source_t *
 	: OBSQTDisplay(widget, Qt::Widget),
 	  weakSource(OBSGetWeakRef(source_))
 {
-	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+	//setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
 	OBSSource source = GetSource();
 	if (source)
@@ -130,7 +149,7 @@ void OBSSourceWidgetView::setSourceWidth(int width)
 	if (sourceWidth() == width)
 		return;
 
-	_sourceWidth = width;
+	sourceWidth_ = width;
 	emit viewReady();
 }
 
@@ -139,7 +158,7 @@ void OBSSourceWidgetView::setSourceHeight(int height)
 	if (sourceHeight() == height)
 		return;
 
-	_sourceHeight = height;
+	sourceHeight_ = height;
 	emit viewReady();
 }
 
@@ -180,4 +199,9 @@ void OBSSourceWidgetView::OBSRender(void *data, uint32_t cx, uint32_t cy)
 
 	widget->setSourceWidth(sourceCX);
 	widget->setSourceHeight(sourceCY);
+}
+
+void OBSSourceWidgetView::setSource(obs_source_t *source)
+{
+	weakSource = OBSGetWeakRef(source);
 }
