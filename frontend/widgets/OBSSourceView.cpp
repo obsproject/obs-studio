@@ -46,10 +46,6 @@ void OBSSourceWidget::resizeSourceView()
 		return;
 	}
 
-	// ToDo: Find a better fix
-	sourceView->move(0, 1);
-	sourceView->move(0, 0);
-
 	double aspectRatio = fixedAspectRatio > 0
 				     ? fixedAspectRatio
 				     : (double)sourceView->sourceWidth() / (double)sourceView->sourceHeight();
@@ -79,6 +75,15 @@ void OBSSourceWidget::resizeSourceView()
 void OBSSourceWidget::moveEvent(QMoveEvent *event)
 {
 	resizeSourceView();
+
+	QWindow *nativeWindow = sourceView->windowHandle();
+
+	if (nativeWindow) {
+		QPoint position = sourceView->mapTo(sourceView->nativeParentWidget(), QPoint());
+
+		nativeWindow->setGeometry(QRect(position, sourceView->geometry().size()));
+	}
+
 	QFrame::moveEvent(event);
 }
 
