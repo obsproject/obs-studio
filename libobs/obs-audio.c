@@ -78,6 +78,9 @@ static void mix_audio(struct audio_data_mixes_outputs *mixes,
 	}
 	for (size_t canvas_idx = 0; canvas_idx < mixes->outputs.num;
 	     canvas_idx++) {
+		size_t active_canvas_idx =
+			source->info.audio_render ? canvas_idx : 0;
+
 		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 			for (size_t ch = 0; ch < channels; ch++) {
 				register float *mix =
@@ -85,10 +88,9 @@ static void mix_audio(struct audio_data_mixes_outputs *mixes,
 						.output[mix_idx]
 						.data[ch];
 				register float *aud =
-					get_source_audio_output_buf(source,
-								    canvas_idx,
-								    mix_idx,
-								    ch);
+					get_source_audio_output_buf(
+						source, active_canvas_idx,
+						mix_idx, ch);
 				if (!aud) {
 					continue;
 				}
