@@ -31,12 +31,7 @@ OBSBasicPreview::~OBSBasicPreview()
 	obs_leave_graphics();
 }
 
-void OBSBasicPreview::Init()
-{
-	OBSBasic *main = OBSBasic::Get();
-	connect(main, &OBSBasic::PreviewXScrollBarMoved, this, &OBSBasicPreview::XScrollBarMoved);
-	connect(main, &OBSBasic::PreviewYScrollBarMoved, this, &OBSBasicPreview::YScrollBarMoved);
-}
+void OBSBasicPreview::Init() {}
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
@@ -525,10 +520,9 @@ void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 		const int delta = event->angleDelta().y();
 		if (delta != 0) {
 			if (delta > 0)
-				SetScalingLevel(scalingLevel + 1);
+				increaseScalingLevel();
 			else
-				SetScalingLevel(scalingLevel - 1);
-			emit DisplayResized();
+				decreaseScalingLevel();
 		}
 	}
 
@@ -2171,6 +2165,10 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 
 	scalingAmount = newScalingAmountVal;
 	emit scalingChanged(scalingAmount);
+
+	if (!fixedScaling) {
+		scalingLevel = std::round(log(scalingAmount) / log(ZOOM_SENSITIVITY));
+	}
 }
 
 void OBSBasicPreview::SetScalingLevelAndAmount(int32_t newScalingLevelVal, float newScalingAmountVal)
@@ -2178,6 +2176,30 @@ void OBSBasicPreview::SetScalingLevelAndAmount(int32_t newScalingLevelVal, float
 	newScalingLevelVal = std::clamp(newScalingLevelVal, -MAX_SCALING_LEVEL, MAX_SCALING_LEVEL);
 	scalingLevel = newScalingLevelVal;
 	SetScalingAmount(newScalingAmountVal);
+}
+
+void OBSBasicPreview::increaseScalingLevel()
+{
+	SetFixedScaling(true);
+	SetScalingLevel(scalingLevel + 1);
+
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::decreaseScalingLevel()
+{
+	SetFixedScaling(true);
+	SetScalingLevel(scalingLevel - 1);
+
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::resetScalingLevel()
+{
+	SetScalingLevel(0);
+	ResetScrollingOffset();
+
+	emit DisplayResized();
 }
 
 OBSBasicPreview *OBSBasicPreview::Get()
@@ -2531,22 +2553,22 @@ void OBSBasicPreview::ClampScrollingOffsets()
 	UpdateYScrollBar(offset.y);
 }
 
-void OBSBasicPreview::XScrollBarMoved(int value)
+void OBSBasicPreview::xScrollBarChanged(int value)
 {
 	updatingXScrollBar = true;
 	scrollingOffset.x = float(-value);
 
-	emit DisplayResized();
 	updatingXScrollBar = false;
+	emit DisplayResized();
 }
 
-void OBSBasicPreview::YScrollBarMoved(int value)
+void OBSBasicPreview::yScrollBarChanged(int value)
 {
 	updatingYScrollBar = true;
 	scrollingOffset.y = float(-value);
 
-	emit DisplayResized();
 	updatingYScrollBar = false;
+	emit DisplayResized();
 }
 
 void OBSBasicPreview::UpdateXScrollBar(float cx)
