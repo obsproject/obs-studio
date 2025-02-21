@@ -203,6 +203,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES (1 << 16)
 
+/**
+ * Source type is tied to a canvas, and can only be moved between canvases, but not added to more than one.
+ */
+#define OBS_SOURCE_CANVAS_LOCKED (1 << 17)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent, obs_source_t *child, void *param);
