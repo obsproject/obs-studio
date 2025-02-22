@@ -11,7 +11,7 @@
         {
             "type": "git",
             "url": "https://luajit.org/git/luajit-2.0.git",
-            "commit": "f725e44cda8f359869bf8f92ce71787ddca45618",
+            "commit": "a4f56a459a588ae768801074b46ba0adcfb49eb1",
             "disable-shallow-clone": true
         },
         {
