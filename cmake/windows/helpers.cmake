@@ -109,8 +109,8 @@ function(set_target_properties_obs target)
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${imported_location}" "${cef_location}/chrome_elf.dll"
-              "${cef_location}/libEGL.dll" "${cef_location}/libGLESv2.dll" "${cef_location}/snapshot_blob.bin"
-              "${cef_location}/v8_context_snapshot.bin" "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+              "${cef_location}/libEGL.dll" "${cef_location}/libGLESv2.dll" "${cef_location}/v8_context_snapshot.bin"
+              "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak" "${cef_root_location}/Resources/icudtl.dat"
@@ -127,7 +127,6 @@ function(set_target_properties_obs target)
               "${cef_location}/chrome_elf.dll"
               "${cef_location}/libEGL.dll"
               "${cef_location}/libGLESv2.dll"
-              "${cef_location}/snapshot_blob.bin"
               "${cef_location}/v8_context_snapshot.bin"
               "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak"
