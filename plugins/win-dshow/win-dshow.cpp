@@ -602,6 +602,12 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data, siz
 		return;
 	}
 
+	if (!frame.width || !frame.height) {
+		blog(LOG_ERROR, "%s: Frame width or height are zero (%" PRIu32 "x%" PRIu32 ")",
+		     obs_source_get_name(source), frame.width, frame.height);
+		return;
+	}
+
 	obs_source_output_video2(source, &frame);
 
 	UNUSED_PARAMETER(endTime); /* it's the enndd tiimmes! */
