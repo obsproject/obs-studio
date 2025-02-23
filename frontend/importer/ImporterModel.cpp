@@ -138,6 +138,8 @@ bool ImporterModel::setData(const QModelIndex &index, const QVariant &value, int
 				for (QString path : list) {
 					ImporterEntry entry;
 					entry.path = path;
+					entry.selected = true;
+					entry.empty = true;
 
 					options.insert(row, entry);
 
