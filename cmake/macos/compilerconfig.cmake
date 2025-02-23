@@ -23,8 +23,21 @@ set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64)
 # Ensure recent enough Xcode and platform SDK
 set(_obs_macos_minimum_sdk 15.0) # Keep in sync with Xcode
 set(_obs_macos_minimum_xcode 16.0) # Keep in sync with SDK
-message(DEBUG "macOS SDK Path: ${CMAKE_OSX_SYSROOT}")
-string(REGEX MATCH ".+/MacOSX.platform/Developer/SDKs/MacOSX([0-9]+\\.[0-9])+\\.sdk$" _ ${CMAKE_OSX_SYSROOT})
+execute_process(
+  COMMAND xcrun --sdk macosx --show-sdk-path
+  OUTPUT_VARIABLE _obs_macos_sdk_path
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(NOT IS_DIRECTORY "${_obs_macos_sdk_path}")
+  message(
+    FATAL_ERROR
+    "Failed to resolve macOS SDK path. "
+    "Ensure you have installed Xcode and that xcode-select points at the Xcode developer directory."
+  )
+endif()
+message(DEBUG "macOS SDK Path: ${_obs_macos_sdk_path}")
+
+string(REGEX MATCH ".+/MacOSX.platform/Developer/SDKs/MacOSX([0-9]+\\.[0-9])+\\.sdk$" _ ${_obs_macos_sdk_path})
 set(_obs_macos_current_sdk ${CMAKE_MATCH_1})
 message(DEBUG "macOS SDK version: ${_obs_macos_current_sdk}")
 if(_obs_macos_current_sdk VERSION_LESS _obs_macos_minimum_sdk)
@@ -34,6 +47,7 @@ if(_obs_macos_current_sdk VERSION_LESS _obs_macos_minimum_sdk)
     "The macOS ${_obs_macos_minimum_sdk} SDK (Xcode ${_obs_macos_minimum_xcode}) is required to build OBS."
   )
 endif()
+unset(_obs_macos_sdk_path)
 unset(_obs_macos_current_sdk)
 unset(_obs_macos_minimum_sdk)
 unset(_obs_macos_minimum_xcode)
