@@ -1,8 +1,8 @@
 {
     "id": "com.obsproject.Studio",
-    "runtime": "org.kde.Platform",
-    "runtime-version": "6.6",
-    "sdk": "org.kde.Sdk",
+    "runtime": "org.freedesktop.Platform",
+    "runtime-version": "24.08",
+    "sdk": "org.freedesktop.Sdk",
     "command": "obs",
     "finish-args": [
         "--socket=wayland",
@@ -31,43 +31,93 @@
         },
         "org.freedesktop.LinuxAudio.Plugins": {
             "directory": "extensions/Plugins",
-            "version": "23.08",
+            "version": "24.08",
             "add-ld-path": "lib",
             "merge-dirs": "vst",
             "subdirectories": true,
             "no-autodownload": true
         }
     },
-    "cleanup": [
-        "/share/man",
-        "*.la"
-    ],
     "modules": [
-        "modules/10-mbedtls.json",
-        "modules/20-librist.json",
-        "modules/20-nv-codec.json",
-        "modules/20-srt.json",
-        "modules/20-svt-av1.json",
-        "modules/20-x264.json",
-        "modules/30-ffmpeg.json",
-        "modules/40-luajit.json",
-        "modules/40-plog.json",
-        "modules/40-usrsctp.json",
-        "modules/50-intel-media-sdk.json",
-        "modules/50-jansson.json",
-        "modules/50-libdatachannel.json",
-        "modules/50-libqrcodegencpp.json",
-        "modules/50-libvpl.json",
-        "modules/50-ntv2.json",
-        "modules/50-rnnoise.json",
-        "modules/50-swig.json",
-        "modules/50-v4l-utils.json",
-        "modules/50-vpl-gpu-rt.json",
-        "modules/90-asio.json",
-        "modules/90-nlohmann-json.json",
-        "modules/90-uthash.json",
-        "modules/90-websocketpp.json",
-        "modules/99-cef.json",
+        {
+            "name": "obs-deps-base",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf base.tar.xz -C /"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "base.tar.xz",
+                    "url": "https://github.com/tytan652/obs-deps-bst/releases/download/2025-02-07/flatpak-base-x86_64-2025-02-07.tar.xz",
+                    "sha256": "31170a6a6dec34c73187e4e7260139c950192c258f248272294f922147dfeb82"
+                }
+            ]
+        },
+        {
+            "name": "obs-deps-devels",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf devel.tar.xz -C /",
+                "tar -xvf devtools.tar.xz -C /"
+            ],
+            "cleanup": [
+                "*"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "devel.tar.xz",
+                    "url": "https://github.com/tytan652/obs-deps-bst/releases/download/2025-02-07/flatpak-devel-x86_64-2025-02-07.tar.xz",
+                    "sha256": "3a20bbab7fd2efefcf8bf8ee677ee145143d365d18492f31b1c10b7710f65c1a"
+                },
+                {
+                    "type": "file",
+                    "dest-filename": "devtools.tar.xz",
+                    "url": "https://github.com/tytan652/obs-deps-bst/releases/download/2025-02-07/flatpak-devtools-x86_64-2025-02-07.tar.xz",
+                    "sha256": "7864064f4e624b4bb44d34d172a7b357fef0e3b2cd85de4d7104a54439f70a25"
+                }
+            ]
+        },
+        {
+            "name": "qt",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf qt.tar.xz -C /"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "qt.tar.xz",
+                    "url": "https://github.com/tytan652/obs-deps-bst/releases/download/2025-02-07/flatpak-qt-x86_64-2025-02-07.tar.xz",
+                    "sha256": "0959b3ff42d1e745f9ff65d8f3366ac78034e48ef5fca166971ae9b14cc2c279"
+                }
+            ]
+        },
+        {
+            "name": "cef",
+            "build-options": {
+                "no-debuginfo": true
+            },
+            "buildsystem": "simple",
+            "build-commands": [
+                "mkdir -p /app/cef/libcef_dll_wrapper",
+                "cp -R ./include /app/cef",
+                "cp -R ./Release /app/cef",
+                "cp -R ./Resources /app/cef",
+                "cp -R ./build/libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
+            ],
+            "cleanup": [
+                "*"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_6533_linux_x86_64.tar.xz",
+                    "sha256": "fab66dfc9cfd2e26fb87798f855aef30c2004edc8e19570d37af555644ae1655"
+                }
+            ]
+        },
         {
             "name": "obs",
             "buildsystem": "cmake-ninja",
