@@ -20,6 +20,12 @@
 #include <QAbstractTableModel>
 #include <QIcon>
 
+// TODO: Fix redefinition error of due to clash with enums defined in importer code.
+enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
+
+// TODO: Fix redefinition error of due to clash with enums defined in importer code.
+enum MissingFilesColumn { Source, OriginalPath, NewPath, State, Count };
+
 enum MissingFilesState { Missing, Found, Replaced, Cleared };
 
 Q_DECLARE_METATYPE(MissingFilesState);
@@ -40,7 +46,8 @@ public:
 	Qt::ItemFlags flags(const QModelIndex &index) const;
 	bool setData(const QModelIndex &index, const QVariant &value, int role);
 
-	bool loop = true;
+	bool allFilesFound = false;
+	int recursionLevel = 0;
 
 	QIcon warningIcon;
 
@@ -56,5 +63,6 @@ private:
 
 	QList<MissingFileEntry> files;
 
-	void fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt);
+	void findAllFilesInPath(const QString &path, bool skipPrompt);
+	void fileCheckLoop(const QString &path, bool skipPrompt, int depth);
 };

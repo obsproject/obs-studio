@@ -124,6 +124,12 @@ void MissingFilesPathItemDelegate::paint(QPainter *painter, const QStyleOptionVi
 	QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &localOption, painter);
 }
 
+void MissingFilesPathItemDelegate::initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const
+{
+	QStyledItemDelegate::initStyleOption(option, index);
+	option->textElideMode = Qt::ElideMiddle;
+}
+
 void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 {
 
