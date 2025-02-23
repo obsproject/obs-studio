@@ -162,11 +162,17 @@ Qt::ItemFlags MissingFilesModel::flags(const QModelIndex &index) const
 
 void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt)
 {
-	loop = false;
+	fileCheckLoop(files, path, skipPrompt, 0);
+}
+
+void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt, int depth)
+{
+	fileLoopCounter += 1;
 	QUrl url = QUrl().fromLocalFile(path);
 	QString dir = url.toDisplayString(QUrl::RemoveScheme | QUrl::RemoveFilename | QUrl::PreferLocalFile);
 
 	bool prompted = skipPrompt;
+	int depthWithoutFile = depth + 1;
 
 	for (int i = 0; i < files.length(); i++) {
 		if (files[i].state != MissingFilesState::Missing)
@@ -177,6 +183,8 @@ void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString pat
 		QString testFile = dir + filename;
 
 		if (os_file_exists(testFile.toStdString().c_str())) {
+			depthWithoutFile = 0;
+
 			if (!prompted) {
 				QMessageBox::StandardButton button =
 					QMessageBox::question(nullptr, QTStr("MissingFiles.AutoSearch"),
@@ -191,7 +199,21 @@ void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString pat
 			setData(in, testFile, 0);
 		}
 	}
-	loop = true;
+
+	if (depthWithoutFile <= 2) {
+		os_dir_t *folder = os_opendir(dir.toStdString().c_str());
+		struct os_dirent *ent;
+		while ((ent = os_readdir(folder)) != NULL) {
+			if (!ent->directory || *ent->d_name == '.')
+				continue;
+
+			QString directoryPath = dir + QString(ent->d_name) + "/";
+			fileCheckLoop(files, directoryPath, true, depthWithoutFile);
+		}
+
+		os_closedir(folder);
+	}
+	fileLoopCounter -= 1;
 }
 
 bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -228,12 +250,12 @@ bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value,
 			} else if (fileName.compare(origFileName) == 0) {
 				files[index.row()].state = MissingFilesState::Found;
 
-				if (loop)
+				if (fileLoopCounter == 0)
 					fileCheckLoop(files, path, false);
 			} else {
 				files[index.row()].state = MissingFilesState::Replaced;
 
-				if (loop)
+				if (fileLoopCounter == 0)
 					fileCheckLoop(files, path, false);
 			}
 
