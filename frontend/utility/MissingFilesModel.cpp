@@ -236,32 +236,32 @@ bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value,
 		endInsertRows();
 
 		success = true;
-	} else {
+	} else if (index.column() == MissingFilesColumn::NewPath && files[index.row()].newPath != value.toString()) {
+
 		QString path = value.toString();
-		if (index.column() == MissingFilesColumn::NewPath) {
-			files[index.row()].newPath = value.toString();
-			QString fileName = QUrl(path).fileName();
-			QString origFileName = QUrl(files[index.row()].originalPath).fileName();
+		files[index.row()].newPath = value.toString();
+		QString fileName = QUrl(path).fileName();
+		QString origFileName = QUrl(files[index.row()].originalPath).fileName();
 
-			if (path.isEmpty()) {
-				files[index.row()].state = MissingFilesState::Missing;
-			} else if (path.compare(QTStr("MissingFiles.Clear")) == 0) {
-				files[index.row()].state = MissingFilesState::Cleared;
-			} else if (fileName.compare(origFileName) == 0) {
-				files[index.row()].state = MissingFilesState::Found;
+		if (path.isEmpty()) {
+			files[index.row()].state = MissingFilesState::Missing;
+		} else if (path.compare(QTStr("MissingFiles.Clear")) == 0) {
+			files[index.row()].state = MissingFilesState::Cleared;
+		} else if (fileName.compare(origFileName) == 0) {
+			files[index.row()].state = MissingFilesState::Found;
 
-				if (fileLoopCounter == 0)
-					fileCheckLoop(files, path, false);
-			} else {
-				files[index.row()].state = MissingFilesState::Replaced;
+			if (fileLoopCounter == 0)
+				fileCheckLoop(files, path, false);
+		} else {
+			files[index.row()].state = MissingFilesState::Replaced;
 
-				if (fileLoopCounter == 0)
-					fileCheckLoop(files, path, false);
-			}
-
-			emit dataChanged(index, index);
-			success = true;
+			if (fileLoopCounter == 0)
+				fileCheckLoop(files, path, false);
 		}
+
+		emit dataChanged(index, index);
+
+		success = true;
 	}
 
 	return success;
