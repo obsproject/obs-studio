@@ -41,17 +41,14 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 	ui->setupUi(this);
 
 	ui->tableView->setModel(filesModel);
-	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::OriginalPath,
-						new MissingFilesPathItemDelegate(false, ""));
 	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::NewPath,
 						new MissingFilesPathItemDelegate(true, ""));
-	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::Stretch);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::Source,
-								QHeaderView::ResizeMode::ResizeToContents);
-	ui->tableView->horizontalHeader()->setMaximumSectionSize(width() / 3);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::State,
-								QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->horizontalHeader()->setMaximumSectionSize(width() / 4);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::NewPath,
+								QHeaderView::ResizeMode::Stretch);
 	ui->tableView->setEditTriggers(QAbstractItemView::EditTrigger::CurrentChanged);
+	ui->tableView->setWordWrap(false);
 
 	ui->warningIcon->setPixmap(filesModel->warningIcon.pixmap(QSize(32, 32)));
 
