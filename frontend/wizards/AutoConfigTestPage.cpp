@@ -295,12 +295,12 @@ void AutoConfigTestPage::TestBandwidthThread()
 	using on_stopped_t = decltype(on_stopped);
 
 	auto pre_on_started = [](void *data, calldata_t *) {
-		on_started_t &on_started = *reinterpret_cast<on_started_t *>(data);
+		on_started_t &on_started = *static_cast<on_started_t *>(data);
 		on_started();
 	};
 
 	auto pre_on_stopped = [](void *data, calldata_t *) {
-		on_stopped_t &on_stopped = *reinterpret_cast<on_stopped_t *>(data);
+		on_stopped_t &on_stopped = *static_cast<on_stopped_t *>(data);
 		on_stopped();
 	};
 
@@ -529,7 +529,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	using on_stopped_t = decltype(on_stopped);
 
 	auto pre_on_stopped = [](void *data, calldata_t *) {
-		on_stopped_t &on_stopped = *reinterpret_cast<on_stopped_t *>(data);
+		on_stopped_t &on_stopped = *static_cast<on_stopped_t *>(data);
 		on_stopped();
 	};
 

@@ -257,62 +257,57 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 
 void OBSAdvAudioCtrl::OBSSourceActivated(void *param, calldata_t *)
 {
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceActiveChanged", Q_ARG(bool, true));
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceActiveChanged", Q_ARG(bool, true));
 }
 
 void OBSAdvAudioCtrl::OBSSourceDeactivated(void *param, calldata_t *)
 {
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceActiveChanged",
-				  Q_ARG(bool, false));
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceActiveChanged", Q_ARG(bool, false));
 }
 
 void OBSAdvAudioCtrl::OBSSourceFlagsChanged(void *param, calldata_t *calldata)
 {
 	uint32_t flags = (uint32_t)calldata_int(calldata, "flags");
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceFlagsChanged",
-				  Q_ARG(uint32_t, flags));
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceFlagsChanged", Q_ARG(uint32_t, flags));
 }
 
 void OBSAdvAudioCtrl::OBSSourceVolumeChanged(void *param, calldata_t *calldata)
 {
 	float volume = (float)calldata_float(calldata, "volume");
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceVolumeChanged",
-				  Q_ARG(float, volume));
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceVolumeChanged", Q_ARG(float, volume));
 }
 
 void OBSAdvAudioCtrl::OBSSourceSyncChanged(void *param, calldata_t *calldata)
 {
 	int64_t offset = calldata_int(calldata, "offset");
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceSyncChanged",
-				  Q_ARG(int64_t, offset));
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceSyncChanged", Q_ARG(int64_t, offset));
 }
 
 void OBSAdvAudioCtrl::OBSSourceMonitoringTypeChanged(void *param, calldata_t *calldata)
 {
 	int type = calldata_int(calldata, "type");
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceMonitoringTypeChanged",
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceMonitoringTypeChanged",
 				  Q_ARG(int, type));
 }
 
 void OBSAdvAudioCtrl::OBSSourceMixersChanged(void *param, calldata_t *calldata)
 {
 	uint32_t mixers = (uint32_t)calldata_int(calldata, "mixers");
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceMixersChanged",
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceMixersChanged",
 				  Q_ARG(uint32_t, mixers));
 }
 
 void OBSAdvAudioCtrl::OBSSourceBalanceChanged(void *param, calldata_t *calldata)
 {
 	int balance = (float)calldata_float(calldata, "balance") * 100.0f;
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SourceBalanceChanged",
-				  Q_ARG(int, balance));
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SourceBalanceChanged", Q_ARG(int, balance));
 }
 
 void OBSAdvAudioCtrl::OBSSourceRenamed(void *param, calldata_t *calldata)
 {
 	QString newName = QT_UTF8(calldata_string(calldata, "new_name"));
 
-	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param), "SetSourceName", Q_ARG(QString, newName));
+	QMetaObject::invokeMethod(static_cast<OBSAdvAudioCtrl *>(param), "SetSourceName", Q_ARG(QString, newName));
 }
 
 /* ------------------------------------------------------------------------- */
