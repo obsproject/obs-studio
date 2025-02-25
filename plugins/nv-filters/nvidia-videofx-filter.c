@@ -407,7 +407,9 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 		vfxErr = NvVFX_Load(filter->handle);
 		if (NVCV_SUCCESS != vfxErr)
 			error("Error loading NVIDIA Video FX %i", vfxErr);
-		vfxErr = NvVFX_ResetState(filter->handle, filter->stateObjectHandle);
+		// reallocate state object
+		vfxErr = NvVFX_AllocateState(filter->handle, &filter->stateObjectHandle);
+		vfxErr = NvVFX_SetStateObjectHandleArray(filter->handle, NVVFX_STATE, &filter->stateObjectHandle);
 	}
 	if (filter->filter_id != S_FX_AIGS) {
 		vfxErr = NvVFX_SetF32(filter->handle_blur, NVVFX_STRENGTH, filter->strength);
