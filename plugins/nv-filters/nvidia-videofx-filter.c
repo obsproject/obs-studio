@@ -23,6 +23,8 @@
 #define S_MODE "mode"
 #define S_MODE_QUALITY 0
 #define S_MODE_PERF 1
+#define S_MODE_QUALITY_CHAIR 2
+#define S_MODE_PERF_CHAIR 3
 #define S_THRESHOLDFX "threshold"
 #define S_THRESHOLDFX_DEFAULT 1.0
 #define S_PROCESSING "processing_interval"
@@ -31,6 +33,8 @@
 #define TEXT_MODE MT_("Nvvfx.Method.Greenscreen.Mode")
 #define TEXT_MODE_QUALITY MT_("Nvvfx.Method.Greenscreen.Quality")
 #define TEXT_MODE_PERF MT_("Nvvfx.Method.Greenscreen.Performance")
+#define TEXT_MODE_QUALITY_CHAIR MT_("Nvvfx.Method.Greenscreen.Quality.Chair")
+#define TEXT_MODE_PERF_CHAIR MT_("Nvvfx.Method.Greenscreen.Performance.Chair")
 #define TEXT_MODE_THRESHOLD MT_("Nvvfx.Method.Greenscreen.Threshold")
 #define TEXT_DEPRECATION MT_("Nvvfx.OutdatedSDK")
 #define TEXT_PROCESSING MT_("Nvvfx.Method.Greenscreen.Processing")
@@ -1074,6 +1078,8 @@ static obs_properties_t *nvvfx_filter_properties(void *data)
 			obs_properties_add_list(props, S_MODE, TEXT_MODE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(mode, TEXT_MODE_QUALITY, S_MODE_QUALITY);
 		obs_property_list_add_int(mode, TEXT_MODE_PERF, S_MODE_PERF);
+		obs_property_list_add_int(mode, TEXT_MODE_QUALITY_CHAIR, S_MODE_QUALITY_CHAIR);
+		obs_property_list_add_int(mode, TEXT_MODE_PERF_CHAIR, S_MODE_PERF_CHAIR);
 		obs_property_t *threshold =
 			obs_properties_add_float_slider(props, S_THRESHOLDFX, TEXT_MODE_THRESHOLD, 0, 1, 0.05);
 		obs_property_t *partial = obs_properties_add_int_slider(props, S_PROCESSING, TEXT_PROCESSING, 1, 4, 1);
