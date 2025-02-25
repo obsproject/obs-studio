@@ -606,9 +606,9 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 		OBSSource actualLastScene = OBSGetStrongRef(lastScene);
 		if (actualLastScene != scene) {
 			if (scene)
-				obs_source_inc_showing(scene);
+				obs_source_inc_preview(scene);
 			if (actualLastScene)
-				obs_source_dec_showing(actualLastScene);
+				obs_source_dec_preview(actualLastScene);
 			lastScene = OBSGetWeakRef(scene);
 		}
 	}

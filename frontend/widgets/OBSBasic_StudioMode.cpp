@@ -209,7 +209,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		if (curScene) {
 			obs_source_t *source = obs_scene_get_source(curScene);
-			obs_source_inc_showing(source);
+			obs_source_inc_preview(source);
 			lastScene = OBSGetWeakRef(source);
 			programScene = OBSGetWeakRef(source);
 		}
