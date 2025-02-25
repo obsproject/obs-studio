@@ -275,6 +275,12 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 	return true;
 }
 
+static void nvvfx_logger_callback(void *data, const char *msg)
+{
+	UNUSED_PARAMETER(data);
+	blog(LOG_ERROR, "[NVIDIA Video Effect: '%s']", msg);
+}
+
 static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, enum nvvfx_fx_id id)
 {
 	struct nvvfx_data *filter = (struct nvvfx_data *)bzalloc(sizeof(*filter));
@@ -348,6 +354,10 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	}
 
 	nvvfx_filter_update(filter, settings);
+
+	/* Setup NVIDIA logger */
+	if (nvvfx_new_sdk)
+		vfxErr = NvVFX_ConfigureLogger(NVCV_LOG_ERROR, NULL, &nvvfx_logger_callback, filter);
 
 	return filter;
 }
@@ -1151,6 +1161,10 @@ bool load_nvidia_vfx(void)
 	LOAD_SYM(NvVFX_Load);
 	LOAD_SYM(NvVFX_CudaStreamCreate);
 	LOAD_SYM(NvVFX_CudaStreamDestroy);
+	LOAD_SYM(NvVFX_SetStateObjectHandleArray);
+	LOAD_SYM(NvVFX_AllocateState);
+	LOAD_SYM(NvVFX_DeallocateState);
+	LOAD_SYM(NvVFX_ResetState);
 	old_sdk_loaded = true;
 #undef LOAD_SYM
 
@@ -1183,10 +1197,7 @@ bool load_nvidia_vfx(void)
 #undef LOAD_SYM
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
-	LOAD_SYM(NvVFX_SetStateObjectHandleArray);
-	LOAD_SYM(NvVFX_AllocateState);
-	LOAD_SYM(NvVFX_DeallocateState);
-	LOAD_SYM(NvVFX_ResetState);
+	LOAD_SYM(NvVFX_ConfigureLogger);
 	if (!nvvfx_new_sdk) {
 		blog(LOG_INFO, "[NVIDIA VIDEO FX]: sdk loaded but old redistributable detected; please upgrade.");
 	}
