@@ -1138,6 +1138,9 @@ EXPORT void obs_source_enum_full_tree(obs_source_t *source, obs_source_enum_proc
 /** Returns true if active, false if not */
 EXPORT bool obs_source_active(const obs_source_t *source);
 
+/** Returns true if being previewed, false if not */
+EXPORT bool obs_source_preview(const obs_source_t *source);
+
 /**
  * Returns true if currently displayed somewhere (active or not), false if not
  */
@@ -1203,6 +1206,20 @@ EXPORT void obs_source_dec_showing(obs_source_t *source);
  * used instead.
  */
 EXPORT void obs_source_dec_active(obs_source_t *source);
+
+/**
+ * Increments the preview reference counter to indicate that the source is
+ * in preview.  If the reference counter was 0, will call the preview
+ * callback.
+ */
+EXPORT void obs_source_inc_preview(obs_source_t *source);
+
+/**
+ * Decrements the preview reference counter to indicate that the source is no
+ * longer in preview. If the reference counter is set to 0, will call the
+ * depreview callback
+ */
+EXPORT void obs_source_dec_preview(obs_source_t *source);
 
 /** Enumerates filters assigned to the source */
 EXPORT void obs_source_enum_filters(obs_source_t *source, obs_source_enum_proc_t callback, void *param);

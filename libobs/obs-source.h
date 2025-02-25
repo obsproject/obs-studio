@@ -302,6 +302,12 @@ struct obs_source_info {
 	 */
 	void (*deactivate)(void *data);
 
+	/** Called when the source has been previewed */
+	void (*preview)(void *data);
+
+	/* Called when the source has been removed or hidden from preview */
+	void (*depreview)(void *data);
+
 	/** Called when the source is visible */
 	void (*show)(void *data);
 
