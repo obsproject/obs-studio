@@ -49,6 +49,7 @@ static HMODULE nv_cuda = NULL;
 #define NVAFX_PARAM_NUM_INPUT_CHANNELS "num_input_channels"
 #define NVAFX_PARAM_NUM_OUTPUT_CHANNELS "num_output_channels"
 #define NVAFX_PARAM_INTENSITY_RATIO "intensity_ratio"
+#define NVAFX_PARAM_ENABLE_VAD "enable_vad"
 
 #pragma deprecated(NVAFX_PARAM_DENOISER_MODEL_PATH)
 #define NVAFX_PARAM_DENOISER_MODEL_PATH NVAFX_PARAM_MODEL_PATH
