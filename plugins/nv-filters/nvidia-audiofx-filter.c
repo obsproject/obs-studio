@@ -47,6 +47,8 @@
 #define ssize_t intptr_t
 #endif
 
+bool nvafx_new_sdk = false;
+
 struct nvidia_audio_data {
 	obs_source_t *context;
 
@@ -125,7 +127,7 @@ static void nvidia_audio_destroy(void *data)
 
 	if (ng->nvidia_sdk_dir_found)
 		pthread_mutex_lock(&ng->nvafx_mutex);
-
+	NvAFX_UninitializeLogger();
 	for (size_t i = 0; i < ng->channels; i++) {
 		if (ng->handle[0]) {
 			if (NvAFX_DestroyEffect) {
@@ -226,11 +228,20 @@ bool load_nvidia_afx(void)
 
 	nvidia_afx_initializer_mutex_initialized = pthread_mutex_init(&nvidia_afx_initializer_mutex, NULL) == 0;
 
-#define LOAD_SYM_FROM_LIB(sym, lib, dll)                                                                \
-	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                              \
-		DWORD err = GetLastError();                                                             \
-		printf("[noise suppress]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
-		goto unload_everything;                                                                 \
+#define LOAD_SYM_FROM_LIB(sym, lib, dll)                                                                       \
+	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                                     \
+		DWORD err = GetLastError();                                                                    \
+		printf("[NVIDIA Audio Effects:]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
+		goto unload_everything;                                                                        \
+	}
+
+#define LOAD_SYM_FROM_LIB2(sym, lib, dll)                                                                      \
+	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                                     \
+		DWORD err = GetLastError();                                                                    \
+		printf("[NVIDIA Audio Effects:]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
+		nvafx_new_sdk = false;                                                                         \
+	} else {                                                                                               \
+		nvafx_new_sdk = true;                                                                          \
 	}
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_audiofx, "NVAudioEffects.dll")
@@ -259,7 +270,15 @@ bool load_nvidia_afx(void)
 	LOAD_SYM(cuCtxPopCurrent);
 	LOAD_SYM(cuInit);
 #undef LOAD_SYM
-
+#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_audiofx, "NVAudioEffects.dll")
+	LOAD_SYM(NvAFX_InitializeLogger);
+	bool new_sdk = nvafx_new_sdk;
+	LOAD_SYM(NvAFX_UninitializeLogger);
+	if (!nvafx_new_sdk || !new_sdk) {
+		blog(LOG_INFO, "[NVIDIA AUDIO FX]: sdk loaded but old redistributable detected; please upgrade.");
+		nvafx_new_sdk = false;
+	}
+#undef LOAD_SYM
 	NvAFX_Status err;
 	CUresult cudaerr;
 
@@ -402,7 +421,7 @@ static void *nvidia_audio_disable(void *data)
 }
 
 static void *nvidia_audio_initialize(void *data)
-	{
+{
 	struct nvidia_audio_data *ng = data;
 	NvAFX_Status err;
 
@@ -559,6 +578,12 @@ static void nvidia_audio_update(void *data, obs_data_t *s)
 	}
 }
 
+static void nvafx_logger_callback(void *data, const char *msg)
+{
+	UNUSED_PARAMETER(data);
+	blog(LOG_ERROR, "[NVIDIA Audio Effects: Error - '%s'] ", msg);
+}
+
 static void *nvidia_audio_create(obs_data_t *settings, obs_source_t *filter)
 {
 	struct nvidia_audio_data *ng = bzalloc(sizeof(struct nvidia_audio_data));
@@ -633,6 +658,16 @@ static void *nvidia_audio_create(obs_data_t *settings, obs_source_t *filter)
 	}
 
 	nvidia_audio_update(ng, settings);
+
+	/* Setup NVIDIA logger */
+	if (nvafx_new_sdk) {
+		NvAFX_Status err = NvAFX_InitializeLogger(NVAFX_LOG_LEVEL_ERROR, LOG_TARGET_CALLBACK, NULL,
+							  &nvafx_logger_callback, ng);
+		if (err != NVAFX_STATUS_SUCCESS) {
+			warn("NvAFX logger failed to initialize.");
+		}
+	}
+
 	return ng;
 }
 
