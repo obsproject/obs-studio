@@ -26,6 +26,7 @@
 #define S_METHOD_NVAFX_DENOISER NVAFX_EFFECT_DENOISER
 #define S_METHOD_NVAFX_DEREVERB NVAFX_EFFECT_DEREVERB
 #define S_METHOD_NVAFX_DEREVERB_DENOISER NVAFX_EFFECT_DEREVERB_DENOISER
+#define S_NVAFX_VAD "vad"
 
 #define MT_ obs_module_text
 #define TEXT_NVAFX_INTENSITY MT_("Nvafx.Intensity")
@@ -34,6 +35,7 @@
 #define TEXT_METHOD_NVAFX_DEREVERB MT_("Nvafx.Method.Dereverb")
 #define TEXT_METHOD_NVAFX_DEREVERB_DENOISER MT_("Nvafx.Method.DenoiserPlusDereverb")
 #define TEXT_METHOD_NVAFX_DEPRECATION MT_("Nvafx.OutdatedSDK")
+#define TEXT_NVAFX_VAD MT_("Nvafx.VAD")
 
 #define MAX_PREPROC_CHANNELS 8
 #define BUFFER_SIZE_MSEC 10
@@ -113,6 +115,9 @@ struct nvidia_audio_data {
 	/* output data */
 	struct obs_audio_data output_audio;
 	DARRAY(float) output_data;
+
+	/* Optimization for Voice Audio Data (VAD) ; requires SDK >= 0.7.6 */
+	bool vad;
 };
 
 static const char *nvidia_audio_name(void *unused)
@@ -388,6 +393,15 @@ static bool nvidia_audio_initialize_internal(void *data)
 				goto failure;
 			}
 
+			// Set VAD (Voice Audio Data)
+			if (nvafx_new_sdk) {
+				err = NvAFX_SetU32(ng->handle[i], NVAFX_PARAM_ENABLE_VAD, ng->vad);
+				if (err != NVAFX_STATUS_SUCCESS) {
+					do_log(LOG_ERROR, "NvAFX_SetU32(VAD: %i) failed, error %i", ng->vad, err);
+					goto failure;
+				}
+			}
+
 			// Set AI models path
 			err = NvAFX_SetString(ng->handle[i], NVAFX_PARAM_MODEL_PATH, ng->model);
 			if (err != NVAFX_STATUS_SUCCESS) {
@@ -525,12 +539,15 @@ static void nvidia_audio_update(void *data, obs_data_t *s)
 	ng->latency = 1000000000LL / (1000 / BUFFER_SIZE_MSEC);
 
 	float intensity = (float)obs_data_get_double(s, S_NVAFX_INTENSITY);
+	bool vad = obs_data_get_bool(s, S_NVAFX_VAD);
+
 	/*-------------------------------------------------------------------*/
 	/* STAGE 1 : the following is run only when the filter is created. */
 
 	/* If the DLL hasn't been loaded & isn't loading, start the side loading. */
 	if (!ng->nvafx_initialized && !ng->nvafx_loading) {
 		ng->intensity_ratio = intensity;
+		ng->vad = vad;
 		ng->nvafx_loading = true;
 		pthread_create(&ng->nvafx_thread, NULL, nvidia_audio_initialize, ng);
 	}
@@ -553,12 +570,30 @@ static void nvidia_audio_update(void *data, obs_data_t *s)
 			}
 			pthread_mutex_unlock(&ng->nvafx_mutex);
 		}
+		/* updating for VAD toggled on or off */
+		if (nvafx_new_sdk) {
+			if (vad != ng->vad && (strcmp(ng->fx, method) == 0)) {
+				NvAFX_Status err;
+				ng->vad = vad;
+				pthread_mutex_lock(&ng->nvafx_mutex);
+				for (size_t i = 0; i < ng->channels; i++) {
+					err = NvAFX_SetU32(ng->handle[i], NVAFX_PARAM_ENABLE_VAD, ng->vad);
+					if (err != NVAFX_STATUS_SUCCESS) {
+						do_log(LOG_ERROR, "NvAFX_SetU32(VAD: %i) failed, error %i", ng->vad,
+						       err);
+						nvidia_audio_disable(ng);
+					}
+				}
+				pthread_mutex_unlock(&ng->nvafx_mutex);
+			}
+		}
 		/* swapping to a new FX requires a reinitialization */
 		if ((strcmp(ng->fx, method) != 0)) {
 			pthread_mutex_lock(&ng->nvafx_mutex);
 			bfree((void *)ng->fx);
 			ng->fx = bstrdup(method);
 			ng->intensity_ratio = intensity;
+			ng->vad = vad;
 			set_nv_model(ng, method);
 			os_atomic_set_bool(&ng->reinit_done, false);
 			for (int i = 0; i < (int)ng->channels; i++) {
@@ -656,6 +691,9 @@ static void *nvidia_audio_create(obs_data_t *settings, obs_source_t *filter)
 		ng->nvafx_resampler = audio_resampler_create(&dst, &src);
 		ng->nvafx_resampler_back = audio_resampler_create(&src, &dst);
 	}
+
+	/* VAD */
+	ng->vad = 1;
 
 	nvidia_audio_update(ng, settings);
 
@@ -857,6 +895,8 @@ static void nvidia_audio_defaults(obs_data_t *s)
 {
 	obs_data_set_default_double(s, S_NVAFX_INTENSITY, 1.0);
 	obs_data_set_default_string(s, S_METHOD, S_METHOD_NVAFX_DENOISER);
+	if (nvafx_new_sdk)
+		obs_data_set_default_bool(s, S_NVAFX_VAD, 1);
 }
 
 static obs_properties_t *nvidia_audio_properties(void *data)
@@ -872,6 +912,9 @@ static obs_properties_t *nvidia_audio_properties(void *data)
 					     S_METHOD_NVAFX_DEREVERB_DENOISER);
 		obs_property_t *slider = obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY,
 									 0.0f, 1.0f, 0.01f);
+		obs_property_t *vad = obs_properties_add_bool(ppts, S_NVAFX_VAD, TEXT_NVAFX_VAD);
+		if (!nvafx_new_sdk)
+			obs_property_set_visible(vad, 0);
 
 		unsigned int version = get_lib_version();
 		obs_property_t *warning = obs_properties_add_text(ppts, "deprecation", NULL, OBS_TEXT_INFO);
