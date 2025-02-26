@@ -445,12 +445,15 @@ static struct obs_audio_data *compressor_filter_audio(void *data, struct obs_aud
 			break;
 		}
 	}
-	pthread_mutex_unlock(&cd->sidechain_update_mutex);
 
-	if (has_sidechain)
+	if (has_sidechain) {
 		analyze_sidechain(cd, num_samples);
-	else
+		pthread_mutex_unlock(&cd->sidechain_update_mutex);
+	} else {
+		// non-dependent on sidechain data and so no lock required.
+		pthread_mutex_unlock(&cd->sidechain_update_mutex);
 		analyze_envelope(cd, samples, num_samples);
+	}
 
 	process_compression(cd, samples, num_samples);
 	return audio;
