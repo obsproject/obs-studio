@@ -834,7 +834,7 @@ static void draw_greenscreen_blur(struct nvvfx_data *filter, bool has_blur)
 			gs_effect_set_texture_srgb(filter->blur_param, filter->blur_texture);
 		} else {
 			gs_effect_set_texture(filter->mask_param, filter->alpha_texture);
-			gs_effect_set_float(filter->threshold_param, filter->threshold);
+			gs_effect_set_float(filter->threshold_param, min(filter->threshold, 0.95f));
 		}
 		gs_effect_set_texture_srgb(filter->image_param, gs_texrender_get_texture(filter->render));
 
