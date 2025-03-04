@@ -1710,6 +1710,12 @@ static void DrawStripedLine(float x1, float y1, float x2, float y2, float thickn
 	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 
 	float dist = sqrt(pow((x1 - x2) * scale.x, 2) + pow((y1 - y2) * scale.y, 2));
+	if (dist > 1000000.0f) {
+		// too many stripes to draw, draw it as a line as fallback
+		DrawLine(x1, y1, x2, y2, thickness, scale);
+		return;
+	}
+
 	float offX = (x2 - x1) / dist;
 	float offY = (y2 - y1) / dist;
 
