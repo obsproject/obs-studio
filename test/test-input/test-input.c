@@ -1,4 +1,4 @@
-#include <obs-module.h>
+#include <obs-module.h>//新增一条注释
 
 OBS_DECLARE_MODULE()
 
