@@ -2897,6 +2897,8 @@ void obs_output_signal_stop(obs_output_t *output, int code)
 	} else {
 		if (delay_active(output))
 			os_atomic_set_bool(&output->delay_active, false);
+		if (reconnecting(output))
+			os_atomic_set_bool(&output->reconnecting, false);
 		obs_output_end_data_capture(output);
 	}
 }
