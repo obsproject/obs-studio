@@ -2878,8 +2878,8 @@ static inline bool can_reconnect(const obs_output_t *output, int code)
 {
 	bool reconnect_active = output->reconnect_retry_max != 0;
 
-	return code != OBS_OUTPUT_INVALID_STREAM && ((reconnecting(output) && code != OBS_OUTPUT_SUCCESS) ||
-						     (reconnect_active && code == OBS_OUTPUT_DISCONNECTED));
+	return (reconnecting(output) && code != OBS_OUTPUT_SUCCESS) ||
+	       (reconnect_active && code == OBS_OUTPUT_DISCONNECTED);
 }
 
 void obs_output_signal_stop(obs_output_t *output, int code)
