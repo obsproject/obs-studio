@@ -2074,6 +2074,12 @@ EXPORT void obs_output_remove_packet_callback(obs_output_t *output,
 								struct encoder_packet_time *pkt_time, void *param),
 					      void *param);
 
+/* Sets a callback to be called when the output checks if it should attempt to reconnect.
+ * If the callback returns false, the output will not attempt to reconnect. */
+EXPORT void obs_output_set_reconnect_callback(obs_output_t *output,
+					      bool (*reconnect_cb)(void *data, obs_output_t *output, int code),
+					      void *param);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 

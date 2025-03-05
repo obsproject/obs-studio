@@ -78,6 +78,11 @@ struct packet_callback {
 	void *param;
 };
 
+struct reconnect_callback {
+	bool (*reconnect_cb)(void *data, obs_output_t *output, int code);
+	void *param;
+};
+
 /* ------------------------------------------------------------------------- */
 /* validity checks */
 
@@ -1149,6 +1154,8 @@ struct obs_output {
 	/* Packet callbacks */
 	pthread_mutex_t pkt_callbacks_mutex;
 	DARRAY(struct packet_callback) pkt_callbacks;
+
+	struct reconnect_callback reconnect_callback;
 
 	bool valid;
 

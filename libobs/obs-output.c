@@ -2874,9 +2874,20 @@ static void output_reconnect(struct obs_output *output)
 	}
 }
 
-static inline bool can_reconnect(const obs_output_t *output, int code)
+static inline bool check_reconnect_cb(obs_output_t *output, int code)
+{
+	if (!output->reconnect_callback.reconnect_cb)
+		return true;
+
+	return output->reconnect_callback.reconnect_cb(output->reconnect_callback.param, output, code);
+}
+
+static inline bool can_reconnect(obs_output_t *output, int code)
 {
 	bool reconnect_active = output->reconnect_retry_max != 0;
+
+	if (reconnect_active && !check_reconnect_cb(output, code))
+		return false;
 
 	return (reconnecting(output) && code != OBS_OUTPUT_SUCCESS) ||
 	       (reconnect_active && code == OBS_OUTPUT_DISCONNECTED);
@@ -3189,4 +3200,16 @@ void obs_output_remove_packet_callback(obs_output_t *output,
 	pthread_mutex_lock(&output->pkt_callbacks_mutex);
 	da_erase_item(output->pkt_callbacks, &data);
 	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
+}
+
+void obs_output_set_reconnect_callback(obs_output_t *output,
+				       bool (*reconnect_cb)(void *data, obs_output_t *output, int code), void *param)
+{
+	if (!reconnect_cb) {
+		output->reconnect_callback.reconnect_cb = NULL;
+		output->reconnect_callback.param = NULL;
+	} else {
+		output->reconnect_callback.reconnect_cb = reconnect_cb;
+		output->reconnect_callback.param = param;
+	}
 }
