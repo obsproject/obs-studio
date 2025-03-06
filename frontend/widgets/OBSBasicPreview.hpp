@@ -55,6 +55,8 @@ private:
 	gs_texture_t *overflow = nullptr;
 	gs_vertbuffer_t *rectFill = nullptr;
 	gs_vertbuffer_t *circleFill = nullptr;
+	gs_effect_t *solidEffect = nullptr;
+	gs_effect_t *stripedLineEffect = nullptr;
 
 	vec2 startPos;
 	vec2 mousePos;
@@ -112,6 +114,8 @@ private:
 	void BoxItems(const vec2 &startPos, const vec2 &pos);
 
 	void ProcessClick(const vec2 &pos);
+
+	void DrawStripedLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale);
 
 	OBSDataAutoRelease wrapper = nullptr;
 	bool changed;
