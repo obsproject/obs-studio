@@ -8,7 +8,7 @@ target_sources(
   PRIVATE
     audio-device-enum.c
     audio-device-enum.h
-    mac-audio.c
+    mac-audio.m
     mac-display-capture.m
     mac-sck-audio-capture.m
     mac-sck-common.h
