@@ -1,25 +1,28 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2024-09-12",
+            "version": "2025-03-06",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "c857b211ee378772994b632036e1e5befe66b37e85286cb8e3cefc1435d5220a",
-                "windows-x64": "d4a4f194591766891ad3c0b267deec3c4b85239c8fe557273559927456aeedbb",
-                "windows-x86": "b7f1c46f0206d724f2edf73f74201e921a2652fa3f465ed47b949df08b6d48fe"
+                "macos-universal": "e32bd7dbfef37931147781d8d657a4328bdcf1148008980539c07d4a18b54965",
+                "windows-x64": "22d9f923eb6d2cbdde1ff64efb9638a88629ba23a4b70ed7a52e98a81b740275",
+                "windows-x86": "deb4c08514be0b1b1e155305ddd9cb936d906b389b3a54b3a9e748ea842904af",
+                "windows-arm64": "80e6776c7501a1b06d804ad80e55718fe24e1aa3eae736cbb8955b884ecd5c8a"
             }
         },
         "qt6": {
-            "version": "2024-09-12",
+            "version": "2025-03-06",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "34a2de6b7f4d4d58fc5a15a4dba49a61d81a4045d0cedfc1a1f08c0dfb8047cf",
-                "windows-x64": "4d15ce13dbb0a8a2cabcce5ae0da5e80ee589b482a61b2025378465c1da32c4f"
+                "macos-universal": "51bb5e2e546443ae442f74870a2c0973f1c07d2b5628cd1d530d53ff3f668f04",
+                "windows-x64": "84f83f1c3656b53a7c4ba8f8248818ba8684786e3e47123b679406e42d8b6a54",
+                "windows-arm64": "f03bd8f9df6f6d668e1f3a0bbf8c35a5f80ca27c28a5bfe4549ff230791ecb1b"
             },
             "debugSymbols": {
-                "windows-x64": "dad2351a5c9cd438168e1ed8fb453a2534532252edb555f1001a5e8eb3f1bbd4"
+                "windows-x64": "32afba76af47f6fb2d8aa1b90b981b56cc2f2b9a5552934ad5446ddc20dec2a9",
+                "windows-arm64": "36bfa31109da5273e93e68faa62b0cf4a89092147c5203f1a17d2ec7d1c814b4"
             }
         },
         "cef": {
