@@ -1,6 +1,7 @@
 #include <AudioUnit/AudioUnit.h>
 #include <CoreFoundation/CFString.h>
 #include <CoreAudio/CoreAudio.h>
+#include <AVFoundation/AVCaptureDevice.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -50,6 +51,8 @@ struct coreaudio_data {
     enum audio_format format;
     enum speaker_layout speakers;
     bool enable_downmix;
+
+    char *effect_warning;
 
     pthread_t reconnect_thread;
     os_event_t *exit_event;
@@ -995,6 +998,27 @@ static obs_properties_t *coreaudio_properties(bool input, void *data)
     }
 
     obs_property_set_modified_callback2(property, coreaudio_device_changed, ca);
+
+    // This file is compiled as Objective-C so that we may more easily check this class property
+    if (@available(macOS 12.0, *)) {
+        AVCaptureMicrophoneMode activeMicrophoneMode = AVCaptureDevice.activeMicrophoneMode;
+        NSString *effectWarningKey = nil;
+        switch (activeMicrophoneMode) {
+            case AVCaptureMicrophoneModeStandard:
+                break;
+            case AVCaptureMicrophoneModeWideSpectrum:
+                effectWarningKey = @"Warning.Effect.Audio.WideSpectrum";
+                break;
+            case AVCaptureMicrophoneModeVoiceIsolation:
+                effectWarningKey = @"Warning.Effect.Audio.VoiceIsolation";
+                break;
+        }
+        if (effectWarningKey) {
+            property = obs_properties_add_text(props, "effect_warning", obs_module_text(effectWarningKey.UTF8String),
+                                               OBS_TEXT_INFO);
+            obs_property_text_set_info_type(property, OBS_TEXT_INFO_WARNING);
+        }
+    }
 
     property = obs_properties_add_bool(props, "enable_downmix", obs_module_text("CoreAudio.Downmix"));
     obs_property_set_modified_callback2(property, coreaudio_downmix_changed, ca);
