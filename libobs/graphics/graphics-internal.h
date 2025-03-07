@@ -23,6 +23,10 @@
 #include "matrix3.h"
 #include "matrix4.h"
 
+/* ========================================================================= *
+ * Exports                                                                   *
+ * ========================================================================= */
+
 struct gs_exports {
 	const char *(*device_get_name)(void);
 	const char *(*gpu_get_driver_version)(void);
@@ -279,6 +283,10 @@ struct gs_exports {
 	bool (*device_sync_wait)(gs_device_t *device, gs_sync_t *sync);
 #endif
 };
+
+/* ========================================================================= *
+ * Graphics Subsystem Data                                                   *
+ * ========================================================================= */
 
 struct blend_state {
 	bool enabled;
