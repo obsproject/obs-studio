@@ -365,7 +365,7 @@ bool obs_transition_start(obs_source_t *transition, enum obs_transition_mode mod
 		transition->transitioning_audio = true;
 	}
 
-	obs_source_dosignal(transition, "source_transition_start", "transition_start");
+	obs_transition_dosignal(transition, "source_transition_start", "transition_start");
 
 	recalculate_transition_size(transition);
 	recalculate_transition_matrices(transition);
@@ -637,7 +637,7 @@ static inline void handle_stop(obs_source_t *transition)
 {
 	if (transition->info.transition_stop)
 		transition->info.transition_stop(transition->context.data);
-	obs_source_dosignal(transition, "source_transition_stop", "transition_stop");
+	obs_transition_dosignal(transition, "source_transition_stop", "transition_stop");
 }
 
 void obs_transition_force_stop(obs_source_t *transition)
@@ -737,7 +737,7 @@ void obs_transition_video_render2(obs_source_t *transition, obs_transition_video
 	obs_source_release(state.s[1]);
 
 	if (video_stopped)
-		obs_source_dosignal(transition, "source_transition_video_stop", "transition_video_stop");
+		obs_transition_dosignal(transition, "source_transition_video_stop", "transition_video_stop");
 	if (stopped)
 		handle_stop(transition);
 }
@@ -825,7 +825,7 @@ bool obs_transition_video_render_direct(obs_source_t *transition, enum obs_trans
 	obs_source_release(state.s[1]);
 
 	if (video_stopped)
-		obs_source_dosignal(transition, "source_transition_video_stop", "transition_video_stop");
+		obs_transition_dosignal(transition, "source_transition_video_stop", "transition_video_stop");
 	if (stopped)
 		handle_stop(transition);
 
