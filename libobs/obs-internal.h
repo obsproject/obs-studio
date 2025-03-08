@@ -711,6 +711,9 @@ struct obs_source {
 	/* ensures activate/deactivate are only called once */
 	volatile long activate_refs;
 
+	/* ensures preview/depreview are only called once */
+	volatile long preview_refs;
+
 	/* source is in the process of being destroyed */
 	volatile long destroying;
 
@@ -724,6 +727,7 @@ struct obs_source {
 
 	bool active;
 	bool showing;
+	bool preview;
 
 	/* used to temporarily disable sources if needed */
 	bool enabled;
@@ -906,10 +910,7 @@ extern obs_source_t *obs_source_create_set_last_ver(const char *id, const char *
 extern void obs_source_destroy(struct obs_source *source);
 extern void obs_source_addref(obs_source_t *source);
 
-enum view_type {
-	MAIN_VIEW,
-	AUX_VIEW,
-};
+enum view_type { MAIN_VIEW, AUX_VIEW, SHOW_VIEW };
 
 static inline void obs_source_dosignal(struct obs_source *source, const char *signal_obs, const char *signal_source)
 {
