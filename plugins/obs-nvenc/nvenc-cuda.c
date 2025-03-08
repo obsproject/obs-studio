@@ -118,9 +118,8 @@ static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nv
 			desc.Height += enc->cy / 2;
 			break;
 		case NV_ENC_BUFFER_FORMAT_YUV420_10BIT:
-			desc.Format = CU_AD_FORMAT_UNSIGNED_INT16;
+			desc.Format = CU_AD_FORMAT_UNSIGNED_INT16; // 2 bytes per element
 			desc.Height += enc->cy / 2;
-			desc.NumChannels = 2; // number of bytes per element
 			break;
 		case NV_ENC_BUFFER_FORMAT_YUV444:
 			desc.Format = CU_AD_FORMAT_UNSIGNED_INT8;
