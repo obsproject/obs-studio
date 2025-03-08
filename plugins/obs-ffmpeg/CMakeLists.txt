@@ -26,8 +26,6 @@ target_sources(
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:obs-ffmpeg-vaapi.c>
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:vaapi-utils.c>
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:vaapi-utils.h>
-    $<$<PLATFORM_ID:Windows>:texture-amf-opts.hpp>
-    $<$<PLATFORM_ID:Windows>:texture-amf.cpp>
     obs-ffmpeg-audio-encoders.c
     obs-ffmpeg-av1.c
     obs-ffmpeg-compat.h
@@ -65,7 +63,6 @@ target_link_libraries(
     FFmpeg::swscale
     FFmpeg::swresample
     $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
-    $<$<PLATFORM_ID:Windows>:AMF::AMF>
     $<$<PLATFORM_ID:Windows>:ws2_32>
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::va>
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::drm>
