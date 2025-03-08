@@ -17,7 +17,7 @@
 
 void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
-	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
+	OBSBasicStats *stats = static_cast<OBSBasicStats *>(ptr);
 
 	switch (event) {
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
