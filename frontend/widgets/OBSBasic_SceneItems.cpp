@@ -111,7 +111,7 @@ void OBSBasic::RenameSources(OBSSource source, QString newName, QString prevName
 
 void OBSBasic::GetAudioSourceFilters()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
@@ -120,7 +120,7 @@ void OBSBasic::GetAudioSourceFilters()
 
 void OBSBasic::GetAudioSourceProperties()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
@@ -129,7 +129,7 @@ void OBSBasic::GetAudioSourceProperties()
 
 void OBSBasic::MixerRenameSource()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	OBSSource source = vol->GetSource();
 
@@ -364,7 +364,7 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 
 void OBSBasic::SetDeinterlacingMode()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	obs_deinterlace_mode mode = (obs_deinterlace_mode)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
@@ -374,7 +374,7 @@ void OBSBasic::SetDeinterlacingMode()
 
 void OBSBasic::SetDeinterlacingOrder()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	obs_deinterlace_field_order order = (obs_deinterlace_field_order)action->property("order").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
@@ -422,7 +422,7 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 
 void OBSBasic::SetScaleFilter()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	obs_scale_type mode = (obs_scale_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
@@ -453,7 +453,7 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 
 void OBSBasic::SetBlendingMethod()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	obs_blending_method method = (obs_blending_method)action->property("method").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
@@ -480,7 +480,7 @@ QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
 
 void OBSBasic::SetBlendingMode()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	obs_blending_type mode = (obs_blending_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
