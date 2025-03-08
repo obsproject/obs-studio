@@ -1628,11 +1628,17 @@
             ]
         },
         {
-            "name": "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+            "name": "niconico(ニコニコ生放送)",
+            "more_info_link": "https://live.nicovideo.jp",
+            "stream_key_link": "https://qa.nicovideo.jp/faq/show/701",
+            "alt_names": [
+                "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+                "niconico, free member (ニコニコ生放送 一般会員)"
+            ],
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
+                    "url": "rtmp://liveorigin.dlive.nicovideo.jp/live/input"
                 }
             ],
             "recommended": {
@@ -1640,25 +1646,6 @@
                 "profile": "high",
                 "max audio bitrate": 192,
                 "max video bitrate": 5808,
-                "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "niconico, free member (ニコニコ生放送 一般会員)",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "high",
-                "max audio bitrate": 96,
-                "max video bitrate": 904,
                 "x264opts": "tune=zerolatency"
             },
             "supported video codecs": [
