@@ -18,6 +18,10 @@
 #define NVENC_12_2_OR_LATER
 #endif
 
+#if NVENCAPI_MAJOR_VERSION >= 13
+#define NVENC_13_0_OR_LATER
+#endif
+
 enum codec_type {
 	CODEC_H264,
 	CODEC_HEVC,
@@ -54,10 +58,12 @@ struct encoder_caps {
 	bool lookahead;
 	bool lossless;
 	bool temporal_aq;
+	bool uhq;
 
 	/* Yeah... */
 	bool ten_bit;
 	bool four_four_four;
+	bool four_two_two;
 };
 
 typedef NVENCSTATUS(NVENCAPI *NV_CREATE_INSTANCE_FUNC)(NV_ENCODE_API_FUNCTION_LIST *);
