@@ -55,7 +55,6 @@ struct nvvfx_data {
 	bool processed_frame;
 	bool target_valid;
 	bool got_new_frame;
-	signal_handler_t *handler;
 
 	/* RTX SDK vars */
 	NvVFX_Handle handle;
@@ -295,7 +294,6 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	filter->height = 0;
 	filter->initial_render = false;
 	os_atomic_set_bool(&filter->processing_stop, false);
-	filter->handler = NULL;
 	filter->processing_interval = 1;
 	filter->processing_counter = 0;
 	// set nvvfx_fx_id
@@ -874,11 +872,6 @@ static void nvvfx_filter_render(void *data, gs_effect_t *effect, bool has_blur)
 	if (filter->processed_frame) {
 		draw_greenscreen_blur(filter, has_blur);
 		return;
-	}
-
-	if (parent && !filter->handler) {
-		filter->handler = obs_source_get_signal_handler(parent);
-		signal_handler_connect(filter->handler, "update", nvvfx_filter_reset, filter);
 	}
 
 	/* 1. Render to retrieve texture. */
