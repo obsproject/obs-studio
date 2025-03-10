@@ -634,7 +634,7 @@ static bool process_texture(struct nvvfx_data *filter)
 	}
 
 	/* 2. Convert to BGR. */
-	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, filter->stream_blur, filter->stage);
+	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, process_stream, filter->stage);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 		error("Error converting src to BGR img; error %i: %s", vfxErr, errString);
