@@ -18,6 +18,8 @@
 #include "OBSApp.hpp"
 
 #include <components/Multiview.hpp>
+#include <dialogs/OBSLogReply.hpp>
+#include <utility/CrashHandler.hpp>
 #include <utility/OBSEventFilter.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <utility/models/branches.hpp>
@@ -29,6 +31,8 @@
 #endif
 #include <qt-wrappers.hpp>
 
+#include <QCheckBox>
+#include <QDesktopServices>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <QFile>
 #endif
@@ -41,6 +45,8 @@
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <qpa/qplatformnativeinterface.h>
 #endif
+
+#include <chrono>
 
 #ifdef _WIN32
 #include <sstream>
@@ -61,6 +67,7 @@ string lastCrashLogFile;
 
 extern bool portable_mode;
 extern bool safe_mode;
+extern bool multi;
 extern bool disable_3p_plugins;
 extern bool opt_disable_updater;
 extern bool opt_disable_missing_files_check;
@@ -78,6 +85,57 @@ int OBSApp::sigintFd[2];
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
+
+namespace {
+
+typedef struct UncleanLaunchAction {
+	bool useSafeMode = false;
+	bool sendCrashReport = false;
+
+} UncleanLaunchAction;
+
+UncleanLaunchAction handleUncleanShutdown()
+{
+	UncleanLaunchAction launchAction;
+
+	blog(LOG_WARNING, "Crash or unclean shutdown detected");
+
+	QMessageBox crashWarning = QMessageBox(QMessageBox::Warning, QTStr("CrashHandling.Dialog.Title"),
+					       QTStr("CrashHandling.Dialog.Text"));
+
+	QCheckBox *sendCrashReportCheckbox = new QCheckBox(QTStr("CrashHandling.Dialog.SendReport"));
+	crashWarning.setCheckBox(sendCrashReportCheckbox);
+
+	QPushButton *launchSafeButton =
+		crashWarning.addButton(QTStr("CrashHandling.Dialog.LaunchSafe"), QMessageBox::AcceptRole);
+	QPushButton *launchNormalButton =
+		crashWarning.addButton(QTStr("CrashHandling.Dialog.LaunchNormal"), QMessageBox::RejectRole);
+
+	crashWarning.setDefaultButton(launchNormalButton);
+
+	crashWarning.exec();
+
+	bool useSafeMode = crashWarning.clickedButton() == launchSafeButton;
+
+	if (useSafeMode) {
+		launchAction.useSafeMode = true;
+
+		blog(LOG_INFO, "[Safe Mode] Safe mode launch selected, loading 3rd party plugins is disabled");
+	} else {
+		blog(LOG_WARNING, "[Safe Mode] Normal launch selected, loading 3rd party plugins is enabled");
+	}
+
+	bool sendCrashReport = crashWarning.checkBox()->isChecked();
+
+	if (sendCrashReport) {
+		launchAction.sendCrashReport = true;
+
+		blog(LOG_INFO, "User selected to send crash report");
+	}
+
+	return launchAction;
+}
+} // namespace
 
 QObject *CreateShortcutFilter()
 {
@@ -751,7 +809,8 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv),
-	  profilerNameStore(store)
+	  profilerNameStore(store),
+	  appLaunchUUID_(QUuid::createUuid())
 {
 	/* fix float handling */
 #if defined(Q_OS_UNIX)
@@ -767,6 +826,11 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 #else
 	connect(qApp, &QGuiApplication::commitDataRequest, this, &OBSApp::commitData);
 #endif
+	if (multi) {
+		crashHandler_ = std::make_unique<OBS::CrashHandler>();
+	} else {
+		crashHandler_ = std::make_unique<OBS::CrashHandler>(appLaunchUUID_);
+	}
 
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
 
@@ -958,6 +1022,21 @@ void OBSApp::AppInit()
 		throw "Failed to create profile directories";
 }
 
+void OBSApp::checkForPriorCrash()
+{
+	bool crashDetected = crashHandler_->didOBSCrashBefore();
+
+	if (crashDetected) {
+		UncleanLaunchAction launchAction = handleUncleanShutdown();
+
+		safe_mode = launchAction.useSafeMode;
+
+		if (launchAction.sendCrashReport) {
+			crashHandler_->uploadLastCrashLog();
+		}
+	}
+}
+
 const char *OBSApp::GetRenderModule() const
 {
 	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
@@ -1090,6 +1169,24 @@ bool OBSApp::OBSInit()
 	connect(this, &QGuiApplication::applicationStateChanged,
 		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
+
+	connect(crashHandler_.get(), &OBS::CrashHandler::crashLogUploadFailed, this, [this](QString errorMessage) {
+		OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
+
+		OBSMessageBox::critical(basicWindow, QTStr("CrashHandling.Errors.Title"), errorMessage);
+
+		emit this->crashLogUploadFailed();
+	});
+
+	connect(crashHandler_.get(), &OBS::CrashHandler::crashLogUploadFinished, this, [this](QString crashLogURL) {
+		OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
+
+		OBSLogReply logReplyDialog = OBSLogReply(basicWindow, crashLogURL, true);
+		logReplyDialog.exec();
+
+		emit this->crashLogUploadFinished();
+	});
+
 	return true;
 }
 
@@ -1173,9 +1270,23 @@ const char *OBSApp::GetCurrentLog() const
 	return currentLogFile.c_str();
 }
 
-const char *OBSApp::GetLastCrashLog() const
+void OBSApp::openCrashLogDirectory() const
 {
-	return lastCrashLogFile.c_str();
+	std::filesystem::path crashLogDirectory = crashHandler_->getCrashLogDirectory();
+
+	if (crashLogDirectory.empty()) {
+		return;
+	}
+
+	QString crashLogDirectoryString = QString::fromStdString(crashLogDirectory.u8string());
+
+	QUrl crashLogDirectoryURL = QUrl::fromLocalFile(crashLogDirectoryString);
+	QDesktopServices::openUrl(crashLogDirectoryURL);
+}
+
+void OBSApp::uploadLastCrashLog()
+{
+	crashHandler_->uploadLastCrashLog();
 }
 
 bool OBSApp::TranslateString(const char *lookupVal, const char **out) const

@@ -28,6 +28,7 @@
 #include <QApplication>
 #include <QPalette>
 #include <QPointer>
+#include <QUuid>
 
 #include <deque>
 #include <functional>
@@ -41,6 +42,10 @@ Q_DECLARE_METATYPE(VoidFunc)
 class QFileSystemWatcher;
 class QSocketNotifier;
 
+namespace OBS {
+class CrashHandler;
+}
+
 struct UpdateBranch {
 	QString name;
 	QString display_name;
@@ -53,6 +58,9 @@ class OBSApp : public QApplication {
 	Q_OBJECT
 
 private:
+	QUuid appLaunchUUID_;
+	std::unique_ptr<OBS::CrashHandler> crashHandler_;
+
 	std::string locale;
 
 	ConfigFile appConfig;
@@ -115,6 +123,7 @@ public:
 	~OBSApp();
 
 	void AppInit();
+	void checkForPriorCrash();
 	bool OBSInit();
 
 	void UpdateHotkeyFocusSetting(bool reset = true);
@@ -152,7 +161,8 @@ public:
 	const char *GetLastLog() const;
 	const char *GetCurrentLog() const;
 
-	const char *GetLastCrashLog() const;
+	void openCrashLogDirectory() const;
+	void uploadLastCrashLog();
 
 	std::string GetVersionString(bool platform = true) const;
 	bool IsPortableMode();
@@ -195,6 +205,9 @@ public slots:
 
 signals:
 	void StyleChanged();
+
+	void crashLogUploadFinished();
+	void crashLogUploadFailed();
 };
 
 int GetAppConfigPath(char *path, size_t size, const char *name);

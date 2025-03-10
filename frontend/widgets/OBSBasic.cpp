@@ -221,6 +221,9 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
 
+	// Set up main menu item state handlers
+	setupMenuItemStateHandlers();
+
 	/* Set up streaming connections */
 	connect(
 		this, &OBSBasic::StreamingStarting, this, [this] { this->streamingStarting = true; },
@@ -1212,16 +1215,16 @@ void OBSBasic::OBSInit()
 	ui->sources->UpdateIcons();
 
 #if !defined(_WIN32)
+	delete ui->actionRepair;
+	ui->actionRepair = nullptr;
+#if !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
 	delete ui->menuCrashLogs;
-	delete ui->actionRepair;
+	delete ui->actionCheckForUpdates;
 	ui->actionShowCrashLogs = nullptr;
 	ui->actionUploadLastCrashLog = nullptr;
 	ui->menuCrashLogs = nullptr;
-	ui->actionRepair = nullptr;
-#if !defined(__APPLE__)
-	delete ui->actionCheckForUpdates;
 	ui->actionCheckForUpdates = nullptr;
 #endif
 #endif
