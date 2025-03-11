@@ -677,12 +677,6 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 #endif
 	bool enableDynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
-	if (multitrackVideo && multitrackVideoActive &&
-	    !multitrackVideo->HandleIncompatibleSettings(main, main->Config(), service, enableDynBitrate)) {
-		multitrackVideoActive = false;
-		return false;
-	}
-
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
 	obs_data_set_string(settings, "ip_family", ipFamily);
