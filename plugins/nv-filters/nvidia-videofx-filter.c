@@ -183,10 +183,6 @@ static void nvvfx_filter_actual_destroy(void *data)
 			NvCVImage_Destroy(filter->blur_dst_img);
 		}
 	}
-	if (filter->stream)
-		NvVFX_CudaStreamDestroy(filter->stream);
-	if (filter->stream_blur)
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
 
 	if (filter->handle) {
 		if (filter->stateObjectHandle) {
@@ -197,6 +193,10 @@ static void nvvfx_filter_actual_destroy(void *data)
 	if (filter->handle_blur) {
 		NvVFX_DestroyEffect(filter->handle_blur);
 	}
+	if (filter->stream)
+		NvVFX_CudaStreamDestroy(filter->stream);
+	if (filter->stream_blur)
+		NvVFX_CudaStreamDestroy(filter->stream_blur);
 
 	if (filter->effect) {
 		obs_enter_graphics();
@@ -378,12 +378,6 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 
 	os_atomic_set_bool(&filter->processing_stop, true);
 	// [A] first destroy
-	if (filter->stream) {
-		NvVFX_CudaStreamDestroy(filter->stream);
-	}
-	if (filter->stream_blur) {
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
-	}
 	if (filter->handle) {
 		if (filter->stateObjectHandle) {
 			NvVFX_DeallocateState(filter->handle, filter->stateObjectHandle);
@@ -392,6 +386,12 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 	}
 	if (filter->handle_blur) {
 		NvVFX_DestroyEffect(filter->handle_blur);
+	}
+	if (filter->stream) {
+		NvVFX_CudaStreamDestroy(filter->stream);
+	}
+	if (filter->stream_blur) {
+		NvVFX_CudaStreamDestroy(filter->stream_blur);
 	}
 	// [B] recreate
 	/* 1. Create FX */
