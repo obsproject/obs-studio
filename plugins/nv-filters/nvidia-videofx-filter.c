@@ -135,7 +135,7 @@ static void nvvfx_filter_update(void *data, obs_data_t *settings)
 	filter->processing_interval = (int)obs_data_get_int(settings, S_PROCESSING);
 	float strength = (float)obs_data_get_double(settings, S_STRENGTH);
 	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
-		int mode = id == S_FX_BG_BLUR ? (int)S_MODE_QUALITY : (int)obs_data_get_int(settings, S_MODE);
+		int mode = id == S_FX_BG_BLUR ? (int)S_MODE_PERF : (int)obs_data_get_int(settings, S_MODE);
 		if (filter->mode != mode) {
 			filter->mode = mode;
 			vfxErr = NvVFX_SetU32(filter->handle, NVVFX_MODE, mode);
