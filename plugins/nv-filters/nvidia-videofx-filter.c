@@ -144,10 +144,8 @@ static void nvvfx_filter_update(void *data, obs_data_t *settings)
 		if (filter->strength != strength) {
 			filter->strength = strength;
 			vfxErr = NvVFX_SetF32(filter->handle_blur, NVVFX_STRENGTH, filter->strength);
+			vfxErr = NvVFX_Load(filter->handle_blur);
 		}
-		vfxErr = NvVFX_Load(filter->handle_blur);
-		if (NVCV_SUCCESS != vfxErr)
-			error("Error loading blur FX %i", vfxErr);
 	}
 }
 
