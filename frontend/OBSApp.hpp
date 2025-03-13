@@ -117,6 +117,7 @@ private slots:
 
 private slots:
 	void themeFileChanged(const QString &);
+	void applicationShutdown() noexcept;
 
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);

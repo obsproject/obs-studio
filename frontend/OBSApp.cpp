@@ -812,6 +812,8 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	  profilerNameStore(store),
 	  appLaunchUUID_(QUuid::createUuid())
 {
+	connect(this, &QCoreApplication::aboutToQuit, this, &OBSApp::applicationShutdown);
+
 	/* fix float handling */
 #if defined(Q_OS_UNIX)
 	if (!setlocale(LC_NUMERIC, "C"))
@@ -841,31 +843,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	setDesktopFileName("com.obsproject.Studio");
 }
 
-OBSApp::~OBSApp()
-{
-#ifdef _WIN32
-	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
-	if (disableAudioDucking)
-		DisableAudioDucking(false);
-#else
-	delete snInt;
-	close(sigintFd[0]);
-	close(sigintFd[1]);
-#endif
-
-#ifdef __APPLE__
-	bool vsyncDisabled = config_get_bool(appConfig, "Video", "DisableOSXVSync");
-	bool resetVSync = config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
-	if (vsyncDisabled && resetVSync)
-		EnableOSXVSync(true);
-#endif
-
-	os_inhibit_sleep_set_active(sleepInhibitor, false);
-	os_inhibit_sleep_destroy(sleepInhibitor);
-
-	if (libobs_initialized)
-		obs_shutdown();
-}
+OBSApp::~OBSApp(){};
 
 static void move_basic_to_profiles(void)
 {
@@ -1684,3 +1662,30 @@ void OBSApp::commitData(QSessionManager &manager)
 	}
 }
 #endif
+
+void OBSApp::applicationShutdown() noexcept
+{
+#ifdef _WIN32
+	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
+	if (disableAudioDucking)
+		DisableAudioDucking(false);
+#else
+	delete snInt;
+	close(sigintFd[0]);
+	close(sigintFd[1]);
+#endif
+
+#ifdef __APPLE__
+	bool vsyncDisabled = config_get_bool(appConfig, "Video", "DisableOSXVSync");
+	bool resetVSync = config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
+	if (vsyncDisabled && resetVSync)
+		EnableOSXVSync(true);
+#endif
+
+	os_inhibit_sleep_set_active(sleepInhibitor, false);
+	os_inhibit_sleep_destroy(sleepInhibitor);
+
+	if (libobs_initialized) {
+		obs_shutdown();
+	}
+}
