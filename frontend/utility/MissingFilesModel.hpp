@@ -40,7 +40,7 @@ public:
 	Qt::ItemFlags flags(const QModelIndex &index) const;
 	bool setData(const QModelIndex &index, const QVariant &value, int role);
 
-	bool loop = true;
+	int fileLoopCounter = 0;
 
 	QIcon warningIcon;
 
@@ -57,4 +57,5 @@ private:
 	QList<MissingFileEntry> files;
 
 	void fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt);
+	void fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt, int depth);
 };
