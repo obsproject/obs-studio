@@ -1536,7 +1536,8 @@ OBSBasicSettings {
 /* Checkboxes */
 
 QCheckBox::indicator,
-QGroupBox::indicator {
+QGroupBox::indicator,
+QTableView::indicator {
     width: var(--icon_base);
     height: var(--icon_base);
 }
@@ -1546,33 +1547,39 @@ QGroupBox::indicator {
 }
 
 QCheckBox::indicator:unchecked,
-QGroupBox::indicator:unchecked {
+QGroupBox::indicator:unchecked,
+QTableView::indicator:unchecked {
     image: url(theme:Yami/checkbox_unchecked.svg);
 }
 
 QCheckBox::indicator:unchecked:hover,
-QGroupBox::indicator:unchecked:hover {
+QGroupBox::indicator:unchecked:hover,
+QTableView::indicator:unchecked:hover {
     border: none;
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
 
 QCheckBox::indicator:checked,
-QGroupBox::indicator:checked {
+QGroupBox::indicator:checked,
+QTableView::indicator:checked {
     image: url(theme:Yami/checkbox_checked.svg);
 }
 
 QCheckBox::indicator:checked:hover,
-QGroupBox::indicator:checked:hover {
+QGroupBox::indicator:checked:hover,
+QTableView::indicator:checked:hover {
     image: url(theme:Yami/checkbox_checked_focus.svg);
 }
 
 QCheckBox::indicator:checked:disabled,
-QGroupBox::indicator:checked:disabled {
+QGroupBox::indicator:checked:disabled,
+QTableView::indicator:checked:disabled {
     image: url(theme:Yami/checkbox_checked_disabled.svg);
 }
 
 QCheckBox::indicator:unchecked:disabled,
-QGroupBox::indicator:unchecked:disabled {
+QGroupBox::indicator:unchecked:disabled,
+QTableView::indicator:unchecked:disabled {
     image: url(theme:Yami/checkbox_unchecked_disabled.svg);
 }
 
