@@ -107,31 +107,7 @@ CrashHandler::CrashHandler(QUuid appLaunchUUID) : appLaunchUUID_(appLaunchUUID)
 CrashHandler::~CrashHandler()
 {
 	if (isActiveCrashHandler_) {
-		std::filesystem::path crashSentinelPath = crashSentinelFile_.parent_path();
-
-		if (!std::filesystem::exists(crashSentinelPath)) {
-			blog(LOG_ERROR, "Crash sentinel location '%s' does not exist",
-			     crashSentinelPath.u8string().c_str());
-			return;
-		}
-
-		for (const auto &entry : std::filesystem::directory_iterator(crashSentinelPath)) {
-			if (entry.is_directory()) {
-				continue;
-			}
-
-			std::string entryFileName = entry.path().filename().u8string();
-
-			if (entryFileName.rfind(crashSentinelPrefix.data(), 0) != 0) {
-				continue;
-			}
-
-			try {
-				std::filesystem::remove(entry.path());
-			} catch (const std::filesystem::filesystem_error &error) {
-				blog(LOG_ERROR, "Failed to delete crash sentinel file:\n%s", error.what());
-			}
-		}
+		applicationShutdownHandler();
 	}
 }
 
@@ -224,6 +200,10 @@ void CrashHandler::setupSentinel()
 	crashSentinelFilePath.append("/").append(crashSentinelPrefix).append(appLaunchUUIDString);
 
 	crashSentinelFile_ = std::filesystem::u8path(crashSentinelFilePath);
+
+	OBSApp *app = App();
+
+	connect(app, &OBSApp::aboutToQuit, this, &CrashHandler::applicationShutdownHandler);
 
 	isActiveCrashHandler_ = true;
 }
@@ -329,5 +309,40 @@ void CrashHandler::crashLogUploadResultHandler(const QString &uploadResult, cons
 		QString jsonErrorMessage = QTStr("CrashHandling.Errors.UploadJSONError");
 		emit crashLogUploadFailed(jsonErrorMessage);
 	}
+}
+
+void CrashHandler::applicationShutdownHandler() noexcept
+{
+	if (crashSentinelFile_.empty()) {
+		blog(LOG_ERROR, "No crash sentinel location set for crash handler");
+		return;
+	}
+
+	const std::filesystem::path crashSentinelPath = crashSentinelFile_.parent_path();
+
+	if (!std::filesystem::exists(crashSentinelPath)) {
+		blog(LOG_ERROR, "Crash sentinel location '%s' does not exist", crashSentinelPath.u8string().c_str());
+		return;
+	}
+
+	for (const auto &entry : std::filesystem::directory_iterator(crashSentinelPath)) {
+		if (entry.is_directory()) {
+			continue;
+		}
+
+		std::string entryFileName = entry.path().filename().u8string();
+
+		if (entryFileName.rfind(crashSentinelPrefix.data(), 0) != 0) {
+			continue;
+		}
+
+		try {
+			std::filesystem::remove(entry.path());
+		} catch (const std::filesystem::filesystem_error &error) {
+			blog(LOG_ERROR, "Failed to delete crash sentinel file:\n%s", error.what());
+		}
+	}
+
+	isActiveCrashHandler_ = false;
 }
 } // namespace OBS

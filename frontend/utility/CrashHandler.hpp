@@ -76,8 +76,11 @@ private:
 	void handleExistingCrashLogUpload();
 
 	PlatformType getPlatformType() const;
+
 private slots:
 	void crashLogUploadResultHandler(const QString &uploadResult, const QString &error);
+	void applicationShutdownHandler() noexcept;
+
 signals:
 	void crashLogUploadStarted() const;
 	void crashLogUploadFailed(QString errorMessage) const;
