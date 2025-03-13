@@ -1479,7 +1479,6 @@ static void apply_scene_item_audio_actions(struct obs_scene_item *item, float *b
 {
 	bool cur_visible = item->visible;
 	uint64_t frame_num = 0;
-	size_t deref_count = 0;
 
 	pthread_mutex_lock(&item->actions_mutex);
 
@@ -1499,8 +1498,6 @@ static void apply_scene_item_audio_actions(struct obs_scene_item *item, float *b
 		da_erase(item->audio_actions, i--);
 
 		item->visible = action.visible;
-		if (!item->visible)
-			deref_count++;
 
 		if (buf && new_frame_num > frame_num) {
 			for (; frame_num < new_frame_num; frame_num++)
@@ -1516,12 +1513,6 @@ static void apply_scene_item_audio_actions(struct obs_scene_item *item, float *b
 	}
 
 	pthread_mutex_unlock(&item->actions_mutex);
-
-	while (deref_count--) {
-		if (os_atomic_dec_long(&item->active_refs) == 0) {
-			obs_source_remove_active_child(item->parent->source, item->source);
-		}
-	}
 }
 
 static bool apply_scene_item_volume(struct obs_scene_item *item, float *buf, uint64_t ts, size_t sample_rate)
@@ -3115,6 +3106,10 @@ bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 				os_atomic_dec_long(&item->active_refs);
 				return false;
 			}
+		}
+	} else {
+		if (os_atomic_dec_long(&item->active_refs) == 0) {
+			obs_source_remove_active_child(item->parent->source, item->source);
 		}
 	}
 
