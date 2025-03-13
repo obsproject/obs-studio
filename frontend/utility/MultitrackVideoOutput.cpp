@@ -394,6 +394,12 @@ void MultitrackVideoOutput::PrepareStreaming(QWidget *parent, const char *servic
 	// Register the BPM (Broadcast Performance Metrics) callback
 	obs_output_add_packet_callback(output, bpm_inject, NULL);
 
+	// Set callback to prevent reconnection attempts once the stream key has become invalid
+	static auto reconnect_cb = [](void *, obs_output_t *, int code) -> bool {
+		return code != OBS_OUTPUT_INVALID_STREAM;
+	};
+	obs_output_set_reconnect_callback(output, reconnect_cb, nullptr);
+
 	OBSSignal start_streaming;
 	OBSSignal stop_streaming;
 	SetupSignalHandlers(false, this, output, start_streaming, stop_streaming);
