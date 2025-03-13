@@ -55,6 +55,8 @@ target_sources(
     widgets/OBSProjector.hpp
     widgets/OBSQTDisplay.cpp
     widgets/OBSQTDisplay.hpp
+    widgets/OBSSourceView.cpp
+    widgets/OBSSourceView.hpp
     widgets/StatusBarWidget.cpp
     widgets/StatusBarWidget.hpp
     widgets/VolControl.cpp
