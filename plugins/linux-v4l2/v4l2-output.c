@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 struct virtualcam_data {
 	obs_output_t *output;
@@ -95,6 +96,38 @@ bool loopback_module_available()
 	return false;
 }
 
+bool use_vcam_restart_workaround()
+{
+	static int version = -1;
+	FILE *fp;
+	size_t result = 0;
+	int v_major;
+	int v_minor;
+	int v_bugfix;
+
+	if (version >= 0)
+		return version <= 0x0D02;
+
+	fp = fopen("/sys/module/v4l2loopback/version", "r");
+
+	if (!fp) {
+		blog(LOG_WARNING, "Failed to read loopback module version");
+		return true;
+	}
+
+	result = fscanf(fp, "%u.%u.%u", &v_major, &v_minor, &v_bugfix);
+	fclose(fp);
+
+	if (result != 3) {
+		blog(LOG_WARNING, "Failed to read loopback module version");
+		return true;
+	}
+
+	version = ((v_major & 0xFF) << 16) + ((v_minor & 0xFF) << 8) + (v_bugfix & 0xFF);
+
+	return version <= 0x0D02;
+}
+
 static int loopback_module_load()
 {
 	return run_command(
@@ -162,12 +195,13 @@ static bool try_connect(void *data, const char *device)
 	vsi.height = height;
 	obs_output_set_video_conversion(vcam->output, &vsi);
 
-	memset(&parm, 0, sizeof(parm));
-	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-
-	if (ioctl(vcam->device, VIDIOC_STREAMON, &parm) < 0) {
-		blog(LOG_ERROR, "Failed to start streaming on '%s' (%s)", device, strerror(errno));
-		goto fail_close_device;
+	if (use_vcam_restart_workaround()) {
+		memset(&parm, 0, sizeof(parm));
+		parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+		if (ioctl(vcam->device, VIDIOC_STREAMON, &parm) < 0) {
+			blog(LOG_ERROR, "Failed to start streaming on '%s' (%s)", device, strerror(errno));
+			goto fail_close_device;
+		}
 	}
 
 	blog(LOG_INFO, "Virtual camera started");
@@ -241,7 +275,7 @@ static void virtualcam_stop(void *data, uint64_t ts)
 	struct v4l2_streamparm parm = {0};
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-	if (ioctl(vcam->device, VIDIOC_STREAMOFF, &parm) < 0) {
+	if (use_vcam_restart_workaround() && ioctl(vcam->device, VIDIOC_STREAMOFF, &parm) < 0) {
 		blog(LOG_WARNING, "Failed to stop streaming on video device %d (%s)", vcam->device, strerror(errno));
 	}
 
