@@ -66,6 +66,9 @@ typedef struct av_capture_info {
     bool isValid;
 } OBSAVCaptureVideoInfo;
 
+/// Defines the maximum number of frame rate ranges to show complete information for inside of a device format description before providing a more generic description of the supported frame rates.
+static const UInt32 kMaxFrameRateRangesInDescription = 10;
+
 #pragma mark - OBSAVCapture Class
 
 /// Video Capture implementation for [CoreMediaIO](https://developer.apple.com/documentation/coremediaio?language=objc)-based devices

@@ -1035,9 +1035,25 @@
 
 + (NSString *)frameRateDescription:(NSArray<AVFrameRateRange *> *)ranges
 {
+    // The videoSupportedFrameRateRanges property seems to provide frame rate ranges in this order, but since that
+    // ordering does not seem to be guaranteed, ensure they are sorted anyway.
+    NSArray<AVFrameRateRange *> *sortedRangesDescending = [ranges
+        sortedArrayUsingComparator:^NSComparisonResult(AVFrameRateRange *_Nonnull lhs, AVFrameRateRange *_Nonnull rhs) {
+            if (lhs.maxFrameRate > rhs.maxFrameRate) {
+                return NSOrderedAscending;
+            } else if (lhs.maxFrameRate < rhs.maxFrameRate) {
+                return NSOrderedDescending;
+            }
+            if (lhs.minFrameRate > rhs.minFrameRate) {
+                return NSOrderedAscending;
+            } else if (lhs.minFrameRate < rhs.minFrameRate) {
+                return NSOrderedDescending;
+            }
+            return NSOrderedSame;
+        }];
     NSString *frameRateDescription = @"";
     NSMutableArray *frameRateDescriptions = [[NSMutableArray alloc] initWithCapacity:ranges.count];
-    for (AVFrameRateRange *range in ranges) {
+    for (AVFrameRateRange *range in sortedRangesDescending) {
         double minFrameRate = round(range.minFrameRate * 100) / 100;
         double maxFrameRate = round(range.maxFrameRate * 100) / 100;
         if (minFrameRate == maxFrameRate) {
@@ -1048,15 +1064,19 @@
             }
         } else {
             if (fmod(minFrameRate, 1.0) == 0 && fmod(maxFrameRate, 1.0) == 0) {
-                [frameRateDescriptions addObject: [NSString stringWithFormat:@"%.0f-%.0f", minFrameRate, maxFrameRate]];
+                [frameRateDescriptions addObject:[NSString stringWithFormat:@"%.0f-%.0f", minFrameRate, maxFrameRate]];
             } else {
-                [frameRateDescriptions addObject: [NSString stringWithFormat:@"%.2f-%.2f", minFrameRate, maxFrameRate]];
+                [frameRateDescriptions addObject:[NSString stringWithFormat:@"%.2f-%.2f", minFrameRate, maxFrameRate]];
             }
         }
     }
-    if (frameRateDescriptions.count > 0) {
+    if (frameRateDescriptions.count > 0 && frameRateDescriptions.count <= kMaxFrameRateRangesInDescription) {
         frameRateDescription = [frameRateDescriptions componentsJoinedByString:@", "];
         frameRateDescription = [frameRateDescription stringByAppendingString:@" FPS"];
+    } else if (frameRateDescriptions.count > kMaxFrameRateRangesInDescription) {
+        frameRateDescription = [NSString stringWithFormat:@"%.0f - %.0f FPS (%lu values)",
+                                                          ranges.lastObject.minFrameRate,
+                                                          ranges.firstObject.maxFrameRate, ranges.count];
     }
     return frameRateDescription;
 }
