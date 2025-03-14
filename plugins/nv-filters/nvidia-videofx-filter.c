@@ -55,7 +55,6 @@ struct nvvfx_data {
 	bool processed_frame;
 	bool target_valid;
 	bool got_new_frame;
-	signal_handler_t *handler;
 
 	/* RTX SDK vars */
 	NvVFX_Handle handle;
@@ -145,10 +144,8 @@ static void nvvfx_filter_update(void *data, obs_data_t *settings)
 		if (filter->strength != strength) {
 			filter->strength = strength;
 			vfxErr = NvVFX_SetF32(filter->handle_blur, NVVFX_STRENGTH, filter->strength);
+			vfxErr = NvVFX_Load(filter->handle_blur);
 		}
-		vfxErr = NvVFX_Load(filter->handle_blur);
-		if (NVCV_SUCCESS != vfxErr)
-			error("Error loading blur FX %i", vfxErr);
 	}
 }
 
@@ -183,10 +180,6 @@ static void nvvfx_filter_actual_destroy(void *data)
 			NvCVImage_Destroy(filter->blur_dst_img);
 		}
 	}
-	if (filter->stream)
-		NvVFX_CudaStreamDestroy(filter->stream);
-	if (filter->stream_blur)
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
 
 	if (filter->handle) {
 		if (filter->stateObjectHandle) {
@@ -197,6 +190,10 @@ static void nvvfx_filter_actual_destroy(void *data)
 	if (filter->handle_blur) {
 		NvVFX_DestroyEffect(filter->handle_blur);
 	}
+	if (filter->stream)
+		NvVFX_CudaStreamDestroy(filter->stream);
+	if (filter->stream_blur)
+		NvVFX_CudaStreamDestroy(filter->stream_blur);
 
 	if (filter->effect) {
 		obs_enter_graphics();
@@ -295,7 +292,6 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	filter->height = 0;
 	filter->initial_render = false;
 	os_atomic_set_bool(&filter->processing_stop, false);
-	filter->handler = NULL;
 	filter->processing_interval = 1;
 	filter->processing_counter = 0;
 	// set nvvfx_fx_id
@@ -378,12 +374,6 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 
 	os_atomic_set_bool(&filter->processing_stop, true);
 	// [A] first destroy
-	if (filter->stream) {
-		NvVFX_CudaStreamDestroy(filter->stream);
-	}
-	if (filter->stream_blur) {
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
-	}
 	if (filter->handle) {
 		if (filter->stateObjectHandle) {
 			NvVFX_DeallocateState(filter->handle, filter->stateObjectHandle);
@@ -392,6 +382,12 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 	}
 	if (filter->handle_blur) {
 		NvVFX_DestroyEffect(filter->handle_blur);
+	}
+	if (filter->stream) {
+		NvVFX_CudaStreamDestroy(filter->stream);
+	}
+	if (filter->stream_blur) {
+		NvVFX_CudaStreamDestroy(filter->stream_blur);
 	}
 	// [B] recreate
 	/* 1. Create FX */
@@ -407,7 +403,9 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 		vfxErr = NvVFX_Load(filter->handle);
 		if (NVCV_SUCCESS != vfxErr)
 			error("Error loading NVIDIA Video FX %i", vfxErr);
-		vfxErr = NvVFX_ResetState(filter->handle, filter->stateObjectHandle);
+		// reallocate state object
+		vfxErr = NvVFX_AllocateState(filter->handle, &filter->stateObjectHandle);
+		vfxErr = NvVFX_SetStateObjectHandleArray(filter->handle, NVVFX_STATE, &filter->stateObjectHandle);
 	}
 	if (filter->filter_id != S_FX_AIGS) {
 		vfxErr = NvVFX_SetF32(filter->handle_blur, NVVFX_STRENGTH, filter->strength);
@@ -632,7 +630,7 @@ static bool process_texture(struct nvvfx_data *filter)
 	}
 
 	/* 2. Convert to BGR. */
-	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, filter->stream_blur, filter->stage);
+	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, process_stream, filter->stage);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 		error("Error converting src to BGR img; error %i: %s", vfxErr, errString);
@@ -834,7 +832,7 @@ static void draw_greenscreen_blur(struct nvvfx_data *filter, bool has_blur)
 			gs_effect_set_texture_srgb(filter->blur_param, filter->blur_texture);
 		} else {
 			gs_effect_set_texture(filter->mask_param, filter->alpha_texture);
-			gs_effect_set_float(filter->threshold_param, filter->threshold);
+			gs_effect_set_float(filter->threshold_param, min(filter->threshold, 0.95f));
 		}
 		gs_effect_set_texture_srgb(filter->image_param, gs_texrender_get_texture(filter->render));
 
@@ -872,11 +870,6 @@ static void nvvfx_filter_render(void *data, gs_effect_t *effect, bool has_blur)
 	if (filter->processed_frame) {
 		draw_greenscreen_blur(filter, has_blur);
 		return;
-	}
-
-	if (parent && !filter->handler) {
-		filter->handler = obs_source_get_signal_handler(parent);
-		signal_handler_connect(filter->handler, "update", nvvfx_filter_reset, filter);
 	}
 
 	/* 1. Render to retrieve texture. */
