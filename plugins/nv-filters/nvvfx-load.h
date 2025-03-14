@@ -252,7 +252,7 @@ typedef struct
 #ifdef _MSC_VER
 	__declspec(dllexport)
 #endif // _MSC_VER
-		NvCVImage {
+	NvCVImage {
 	unsigned int width;                    //!< The number of pixels horizontally in the image.
 	unsigned int height;                   //!< The number of pixels  vertically  in the image.
 	signed int pitch;                      //!< The byte stride between pixels vertically.
