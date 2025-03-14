@@ -1,6 +1,7 @@
 name: Scheduled
 run-name: Scheduled Repository Actions ⏰
 on:
+  workflow_dispatch:
   schedule:
     - cron: 17 0 * * *
 permissions:
