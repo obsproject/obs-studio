@@ -323,17 +323,14 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 void OBSBasic::on_actionShowCrashLogs_triggered()
 {
-	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
-		return;
-
-	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
-	QDesktopServices::openUrl(url);
+	App()->openCrashLogDirectory();
 }
 
 void OBSBasic::on_actionUploadLastCrashLog_triggered()
 {
-	UploadLog("obs-studio/crashes", App()->GetLastCrashLog(), true);
+	ui->menuCrashLogs->setEnabled(false);
+
+	App()->uploadLastCrashLog();
 }
 
 void OBSBasic::on_actionCheckForUpdates_triggered()
