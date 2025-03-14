@@ -206,6 +206,7 @@ target_sources(
     graphics/graphics-ffmpeg.c
     graphics/graphics-imports.c
     graphics/graphics-internal.h
+    graphics/graphics-vertex-buffer-cache.c
     graphics/graphics.c
     graphics/graphics.h
     graphics/half.h

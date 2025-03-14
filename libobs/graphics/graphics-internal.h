@@ -22,6 +22,11 @@
 #include "graphics.h"
 #include "matrix3.h"
 #include "matrix4.h"
+#include "vec2.h"
+
+/* ========================================================================= *
+ * Exports                                                                   *
+ * ========================================================================= */
 
 struct gs_exports {
 	const char *(*device_get_name)(void);
@@ -276,6 +281,40 @@ struct gs_exports {
 #endif
 };
 
+/* ========================================================================= *
+ * Vertex Buffer Cache                                                       *
+ * ========================================================================= */
+
+struct vertex_buffer_cache_ref {
+	gs_vertbuffer_t *vb;
+	struct vertex_buffer_cache_ref **p_prev;
+	struct vertex_buffer_cache_ref *next;
+};
+
+#define MAX_CACHABLE_VERTS 16
+
+struct cached_verts {
+	size_t size;
+	bool has_uvs;
+
+	struct vec3 verts[MAX_CACHABLE_VERTS];
+	struct vec2 uvs[MAX_CACHABLE_VERTS];
+};
+
+struct gs_vertex_buffer_cache_item {
+	gs_vertbuffer_t *vb;
+	uint64_t last_used_ts;
+	struct cached_verts data;
+};
+
+struct gs_vertex_buffer_cache {
+	DARRAY(struct gs_vertex_buffer_cache_item) items;
+};
+
+/* ========================================================================= *
+ * Graphics Subsystem Data                                                   *
+ * ========================================================================= */
+
 struct blend_state {
 	bool enabled;
 	enum gs_blend_type src_c;
@@ -298,8 +337,6 @@ struct graphics_subsystem {
 	struct matrix4 projection;
 	struct gs_effect *cur_effect;
 
-	gs_vertbuffer_t *sprite_buffer;
-
 	bool using_immediate;
 	struct gs_vb_data *vbd;
 	gs_vertbuffer_t *immediate_vertbuffer;
@@ -307,6 +344,8 @@ struct graphics_subsystem {
 	DARRAY(struct vec3) norms;
 	DARRAY(uint32_t) colors;
 	DARRAY(struct vec2) texverts[16];
+
+	gs_vertexbuffer_cache_t *sprite_vb_cache;
 
 	pthread_mutex_t effect_mutex;
 	struct gs_effect *first_effect;
@@ -319,3 +358,8 @@ struct graphics_subsystem {
 
 	bool linear_srgb;
 };
+
+extern THREAD_LOCAL graphics_t *thread_graphics;
+
+extern bool try_cache_verts(graphics_t *graphics, struct gs_vertex_buffer_cache *cache, size_t size);
+extern void gs_render_stop_internal(gs_vertexbuffer_cache_t *cache, enum gs_draw_mode mode);

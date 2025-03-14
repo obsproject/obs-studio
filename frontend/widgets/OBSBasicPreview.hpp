@@ -55,6 +55,7 @@ private:
 	gs_texture_t *overflow = nullptr;
 	gs_vertbuffer_t *rectFill = nullptr;
 	gs_vertbuffer_t *circleFill = nullptr;
+	gs_vertexbuffer_cache_t *vbCache = nullptr;
 
 	vec2 startPos;
 	vec2 mousePos;

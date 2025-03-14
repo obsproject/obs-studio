@@ -268,6 +268,7 @@ struct gs_texture;
 struct gs_stage_surface;
 struct gs_zstencil_buffer;
 struct gs_vertex_buffer;
+struct gs_vertex_buffer_cache;
 struct gs_index_buffer;
 struct gs_sampler_state;
 struct gs_shader;
@@ -286,6 +287,7 @@ typedef struct gs_texture gs_texture_t;
 typedef struct gs_stage_surface gs_stagesurf_t;
 typedef struct gs_zstencil_buffer gs_zstencil_t;
 typedef struct gs_vertex_buffer gs_vertbuffer_t;
+typedef struct gs_vertex_buffer_cache gs_vertexbuffer_cache_t;
 typedef struct gs_index_buffer gs_indexbuffer_t;
 typedef struct gs_sampler_state gs_samplerstate_t;
 typedef struct gs_swap_chain gs_swapchain_t;
@@ -301,6 +303,13 @@ typedef struct gs_effect_param gs_eparam_t;
 typedef struct gs_device gs_device_t;
 typedef void gs_sync_t;
 typedef struct graphics_subsystem graphics_t;
+
+/* ---------------------------------------------------
+ * vertex buffer cache functions
+ * --------------------------------------------------- */
+
+EXPORT gs_vertexbuffer_cache_t *gs_vertexbuffer_cache_create(size_t size);
+EXPORT void gs_vertexbuffer_cache_destroy(gs_vertexbuffer_cache_t *cache);
 
 /* ---------------------------------------------------
  * shader functions
@@ -531,6 +540,7 @@ EXPORT void gs_matrix_scale3f(float x, float y, float z);
 
 EXPORT void gs_render_start(bool b_new);
 EXPORT void gs_render_stop(enum gs_draw_mode mode);
+EXPORT void gs_render_stop_cached(gs_vertexbuffer_cache_t *cache, enum gs_draw_mode mode);
 EXPORT gs_vertbuffer_t *gs_render_save(void);
 EXPORT void gs_vertex2f(float x, float y);
 EXPORT void gs_vertex3f(float x, float y, float z);

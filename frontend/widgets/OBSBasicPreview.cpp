@@ -15,6 +15,8 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags) : OBSQT
 {
 	ResetScrollingOffset();
 	setMouseTracking(true);
+
+	vbCache = gs_vertexbuffer_cache_create(128);
 }
 
 OBSBasicPreview::~OBSBasicPreview()
@@ -27,6 +29,8 @@ OBSBasicPreview::~OBSBasicPreview()
 		gs_vertexbuffer_destroy(rectFill);
 	if (circleFill)
 		gs_vertexbuffer_destroy(circleFill);
+	if (vbCache)
+		gs_vertexbuffer_cache_destroy(vbCache);
 
 	obs_leave_graphics();
 }
@@ -1624,12 +1628,13 @@ void OBSBasicPreview::leaveEvent(QEvent *)
 		hoveredPreviewItems.clear();
 }
 
-static void DrawLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
+static void DrawLine(gs_vertexbuffer_cache_t *cache, float x1, float y1, float x2, float y2, float thickness,
+		     vec2 scale)
 {
 	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 
-	gs_render_start(true);
+	gs_render_start(false);
 
 	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2), y1 + (ySide * (thickness / scale.y) / 2));
 	gs_vertex2f(x1 + (xSide * (thickness / scale.x) / 2), y1 - (ySide * (thickness / scale.y) / 2));
@@ -1637,11 +1642,7 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness, ve
 	gs_vertex2f(x2 - (xSide * (thickness / scale.x) / 2), y2 - (ySide * (thickness / scale.y) / 2));
 	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2), y1 + (ySide * (thickness / scale.y) / 2));
 
-	gs_vertbuffer_t *line = gs_render_save();
-
-	gs_load_vertexbuffer(line);
-	gs_draw(GS_TRISTRIP, 0, 0);
-	gs_vertexbuffer_destroy(line);
+	gs_render_stop_cached(cache, GS_TRISTRIP);
 }
 
 static void DrawSquareAtPos(float x, float y, float pixelRatio)
@@ -1664,7 +1665,8 @@ static void DrawSquareAtPos(float x, float y, float pixelRatio)
 	gs_matrix_pop();
 }
 
-static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRatio, bool invert)
+static void DrawRotationHandle(gs_vertexbuffer_cache_t *cache, gs_vertbuffer_t *circle, float rot, float pixelRatio,
+			       bool invert)
 {
 	struct vec3 pos;
 	vec3_set(&pos, 0.5f, invert ? 1.0f : 0.0f, 0.0f);
@@ -1673,17 +1675,13 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_matrix_get(&matrix);
 	vec3_transform(&pos, &pos, &matrix);
 
-	gs_render_start(true);
+	gs_render_start(false);
 
 	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, 0.5f);
 	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, -2.0f);
 	gs_vertex2f(0.5f + 0.34f / HANDLE_RADIUS, -2.0f);
 	gs_vertex2f(0.5f + 0.34f / HANDLE_RADIUS, 0.5f);
 	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, 0.5f);
-
-	gs_vertbuffer_t *line = gs_render_save();
-
-	gs_load_vertexbuffer(line);
 
 	gs_matrix_push();
 	gs_matrix_identity();
@@ -1693,7 +1691,7 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_matrix_translate3f(-HANDLE_RADIUS * 1.5 * pixelRatio, -HANDLE_RADIUS * 1.5 * pixelRatio, 0.0f);
 	gs_matrix_scale3f(HANDLE_RADIUS * 3 * pixelRatio, HANDLE_RADIUS * 3 * pixelRatio, 1.0f);
 
-	gs_draw(GS_TRISTRIP, 0, 0);
+	gs_render_stop_cached(cache, GS_TRISTRIP);
 
 	gs_matrix_translate3f(0.0f, -HANDLE_RADIUS * 2 / 3, 0.0f);
 
@@ -1701,10 +1699,10 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_matrix_pop();
-	gs_vertexbuffer_destroy(line);
 }
 
-static void DrawStripedLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
+static void DrawStripedLine(gs_vertexbuffer_cache_t *cache, float x1, float y1, float x2, float y2, float thickness,
+			    vec2 scale)
 {
 	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
 	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
@@ -1713,8 +1711,13 @@ static void DrawStripedLine(float x1, float y1, float x2, float y2, float thickn
 	float offX = (x2 - x1) / dist;
 	float offY = (y2 - y1) / dist;
 
-	for (int i = 0, l = ceil(dist / 15); i < l; i++) {
-		gs_render_start(true);
+	int stripe_count = (int)ceil(dist / 15);
+	if (stripe_count > 1000) {
+		stripe_count = 1000;
+	}
+
+	for (int i = 0; i < stripe_count; i++) {
+		gs_render_start(false);
 
 		float xx1 = x1 + i * 15 * offX;
 		float yy1 = y1 + i * 15 * offY;
@@ -1739,17 +1742,13 @@ static void DrawStripedLine(float x1, float y1, float x2, float y2, float thickn
 		gs_vertex2f(dx, dy);
 		gs_vertex2f(dx + (xSide * (thickness / scale.x)), dy + (ySide * (thickness / scale.y)));
 
-		gs_vertbuffer_t *line = gs_render_save();
-
-		gs_load_vertexbuffer(line);
-		gs_draw(GS_TRISTRIP, 0, 0);
-		gs_vertexbuffer_destroy(line);
+		gs_render_stop_cached(cache, GS_TRISTRIP);
 	}
 }
 
-static void DrawRect(float thickness, vec2 scale)
+static void DrawRect(gs_vertexbuffer_cache_t *cache, float thickness, vec2 scale)
 {
-	gs_render_start(true);
+	gs_render_start(false);
 
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(0.0f + (thickness / scale.x), 0.0f);
@@ -1765,11 +1764,7 @@ static void DrawRect(float thickness, vec2 scale)
 	gs_vertex2f(0.0f, 0.0f);
 	gs_vertex2f(0.0f, 0.0f + (thickness / scale.y));
 
-	gs_vertbuffer_t *rect = gs_render_save();
-
-	gs_load_vertexbuffer(rect);
-	gs_draw(GS_TRISTRIP, 0, 0);
-	gs_vertexbuffer_destroy(rect);
+	gs_render_stop_cached(cache, GS_TRISTRIP);
 }
 
 static inline bool crop_enabled(const obs_sceneitem_crop *crop)
@@ -1963,16 +1958,16 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	gs_effect_set_vec4(colParam, &red);
 
 	if (info.bounds_type == OBS_BOUNDS_NONE && crop_enabled(&crop)) {
-#define DRAW_SIDE(side, x1, y1, x2, y2)                                                   \
-	if (hovered && !selected) {                                                       \
-		gs_effect_set_vec4(colParam, &blue);                                      \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
-	} else if (crop.side > 0) {                                                       \
-		gs_effect_set_vec4(colParam, &green);                                     \
-		DrawStripedLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale); \
-	} else {                                                                          \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
-	}                                                                                 \
+#define DRAW_SIDE(side, x1, y1, x2, y2)                                                                  \
+	if (hovered && !selected) {                                                                      \
+		gs_effect_set_vec4(colParam, &blue);                                                     \
+		DrawLine(prev->vbCache, x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
+	} else if (crop.side > 0) {                                                                      \
+		gs_effect_set_vec4(colParam, &green);                                                    \
+		DrawStripedLine(prev->vbCache, x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale); \
+	} else {                                                                                         \
+		DrawLine(prev->vbCache, x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
+	}                                                                                                \
 	gs_effect_set_vec4(colParam, &red);
 
 		DRAW_SIDE(left, 0.0f, 0.0f, 0.0f, 1.0f);
@@ -1983,9 +1978,9 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	} else {
 		if (!selected) {
 			gs_effect_set_vec4(colParam, &blue);
-			DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			DrawRect(prev->vbCache, HANDLE_RADIUS * pixelRatio / 2, boxScale);
 		} else {
-			DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			DrawRect(prev->vbCache, HANDLE_RADIUS * pixelRatio / 2, boxScale);
 		}
 	}
 
@@ -2017,7 +2012,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 		}
 
 		bool invert = info.scale.y < 0.0f && info.bounds_type == OBS_BOUNDS_NONE;
-		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot, pixelRatio, invert);
+		DrawRotationHandle(prev->vbCache, prev->circleFill, info.rot + prev->groupRot, pixelRatio, invert);
 	}
 
 	gs_matrix_pop();
@@ -2030,6 +2025,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 bool OBSBasicPreview::DrawSelectionBox(float x1, float y1, float x2, float y2, gs_vertbuffer_t *rectFill)
 {
 	OBSBasic *main = OBSBasic::Get();
+	auto *preview = OBSBasicPreview::Get();
 
 	float pixelRatio = main->GetDevicePixelRatio();
 
@@ -2061,7 +2057,7 @@ bool OBSBasicPreview::DrawSelectionBox(float x1, float y1, float x2, float y2, g
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_effect_set_vec4(colParam, &borderColor);
-	DrawRect(HANDLE_RADIUS * pixelRatio / 2, scale);
+	DrawRect(preview->vbCache, HANDLE_RADIUS * pixelRatio / 2, scale);
 
 	gs_matrix_pop();
 
@@ -2248,7 +2244,7 @@ static void DrawLabel(OBSSource source, vec3 &pos, vec3 &viewport)
 	gs_matrix_pop();
 }
 
-static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport, float pixelRatio)
+static void DrawSpacingLine(gs_vertexbuffer_cache_t *cache, vec3 &start, vec3 &end, vec3 &viewport, float pixelRatio)
 {
 	OBSBasic *main = OBSBasic::Get();
 
@@ -2275,7 +2271,7 @@ static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport, float pixelR
 	vec2 scale;
 	vec2_set(&scale, viewport.x, viewport.y);
 
-	DrawLine(start.x, start.y, end.x, end.y, pixelRatio * (HANDLE_RADIUS / 2), scale);
+	DrawLine(cache, start.x, start.y, end.x, end.y, pixelRatio * (HANDLE_RADIUS / 2), scale);
 
 	gs_matrix_pop();
 
@@ -2285,7 +2281,8 @@ static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport, float pixelR
 	gs_technique_end(tech);
 }
 
-static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end, vec3 &viewport, float pixelRatio)
+static void RenderSpacingHelper(gs_vertexbuffer_cache_t *cache, int sourceIndex, vec3 &start, vec3 &end, vec3 &viewport,
+				float pixelRatio)
 {
 	bool horizontal = (sourceIndex == 2 || sourceIndex == 3);
 
@@ -2331,7 +2328,7 @@ static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end, vec3 &v
 		labelPos.x += labelMargin.x;
 	}
 
-	DrawSpacingLine(start, end, viewport, pixelRatio);
+	DrawSpacingLine(cache, start, end, viewport, pixelRatio);
 	SetLabelText(sourceIndex, (int)px);
 	DrawLabel(source, labelPos, viewport);
 }
@@ -2342,6 +2339,7 @@ void OBSBasicPreview::DrawSpacingHelpers()
 		return;
 
 	OBSBasic *main = OBSBasic::Get();
+	auto *preview = OBSBasicPreview::Get();
 
 	vec2 s;
 	SceneFindBoxData data(s, s);
@@ -2488,19 +2486,19 @@ void OBSBasicPreview::DrawSpacingHelpers()
 
 	vec3_set(&start, top.x, 0.0f, 1.0f);
 	vec3_set(&end, top.x, top.y, 1.0f);
-	RenderSpacingHelper(0, start, end, viewport, pixelRatio);
+	RenderSpacingHelper(preview->vbCache, 0, start, end, viewport, pixelRatio);
 
 	vec3_set(&start, bottom.x, 1.0f - bottom.y, 1.0f);
 	vec3_set(&end, bottom.x, 1.0f, 1.0f);
-	RenderSpacingHelper(1, start, end, viewport, pixelRatio);
+	RenderSpacingHelper(preview->vbCache, 1, start, end, viewport, pixelRatio);
 
 	vec3_set(&start, 0.0f, left.y, 1.0f);
 	vec3_set(&end, left.x, left.y, 1.0f);
-	RenderSpacingHelper(2, start, end, viewport, pixelRatio);
+	RenderSpacingHelper(preview->vbCache, 2, start, end, viewport, pixelRatio);
 
 	vec3_set(&start, 1.0f - right.x, right.y, 1.0f);
 	vec3_set(&end, 1.0f, right.y, 1.0f);
-	RenderSpacingHelper(3, start, end, viewport, pixelRatio);
+	RenderSpacingHelper(preview->vbCache, 3, start, end, viewport, pixelRatio);
 }
 
 void OBSBasicPreview::ClampScrollingOffsets()

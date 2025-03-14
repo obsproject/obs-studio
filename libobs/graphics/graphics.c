@@ -35,7 +35,7 @@
 #undef far
 #endif
 
-static THREAD_LOCAL graphics_t *thread_graphics = NULL;
+THREAD_LOCAL graphics_t *thread_graphics = NULL;
 
 static inline bool gs_obj_valid(const void *obj, const char *f, const char *name)
 {
@@ -114,26 +114,10 @@ static bool graphics_init_immediate_vb(struct graphics_subsystem *graphics)
 	return true;
 }
 
-static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
+static inline bool graphics_init_sprite_vb_cache(struct graphics_subsystem *graphics)
 {
-	struct gs_vb_data *vbd;
-
-	vbd = gs_vbdata_create();
-	vbd->num = 4;
-	vbd->points = bmalloc(sizeof(struct vec3) * 4);
-	vbd->num_tex = 1;
-	vbd->tvarray = bmalloc(sizeof(struct gs_tvertarray));
-	vbd->tvarray[0].width = 2;
-	vbd->tvarray[0].array = bmalloc(sizeof(struct vec2) * 4);
-
-	memset(vbd->points, 0, sizeof(struct vec3) * 4);
-	memset(vbd->tvarray[0].array, 0, sizeof(struct vec2) * 4);
-
-	graphics->sprite_buffer = graphics->exports.device_vertexbuffer_create(graphics->device, vbd, GS_DYNAMIC);
-	if (!graphics->sprite_buffer)
-		return false;
-
-	return true;
+	graphics->sprite_vb_cache = gs_vertexbuffer_cache_create(128);
+	return !!graphics->sprite_vb_cache;
 }
 
 static bool graphics_init(struct graphics_subsystem *graphics)
@@ -147,11 +131,11 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	if (!graphics_init_immediate_vb(graphics))
 		return false;
-	if (!graphics_init_sprite_vb(graphics))
-		return false;
 	if (pthread_mutex_init(&graphics->mutex, NULL) != 0)
 		return false;
 	if (pthread_mutex_init(&graphics->effect_mutex, NULL) != 0)
+		return false;
+	if (!graphics_init_sprite_vb_cache(graphics))
 		return false;
 
 	graphics->exports.device_blend_function_separate(graphics->device, GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA,
@@ -227,7 +211,7 @@ void gs_destroy(graphics_t *graphics)
 			effect = next;
 		}
 
-		graphics->exports.gs_vertexbuffer_destroy(graphics->sprite_buffer);
+		gs_vertexbuffer_cache_destroy(graphics->sprite_vb_cache);
 		graphics->exports.gs_vertexbuffer_destroy(graphics->immediate_vertbuffer);
 		graphics->exports.device_destroy(graphics->device);
 
@@ -528,7 +512,7 @@ static inline size_t min_size(const size_t a, const size_t b)
 	return (a < b) ? a : b;
 }
 
-void gs_render_stop(enum gs_draw_mode mode)
+void gs_render_stop_internal(gs_vertexbuffer_cache_t *cache, enum gs_draw_mode mode)
 {
 	graphics_t *graphics = thread_graphics;
 	size_t i, num;
@@ -569,9 +553,11 @@ void gs_render_stop(enum gs_draw_mode mode)
 	}
 
 	if (graphics->using_immediate) {
-		gs_vertexbuffer_flush(graphics->immediate_vertbuffer);
+		if (cache && !try_cache_verts(graphics, cache, num)) {
+			gs_vertexbuffer_flush(graphics->immediate_vertbuffer);
+			gs_load_vertexbuffer(graphics->immediate_vertbuffer);
+		}
 
-		gs_load_vertexbuffer(graphics->immediate_vertbuffer);
 		gs_load_indexbuffer(NULL);
 		gs_draw(mode, 0, (uint32_t)num);
 
@@ -587,6 +573,11 @@ void gs_render_stop(enum gs_draw_mode mode)
 	}
 
 	graphics->vbd = NULL;
+}
+
+void gs_render_stop(enum gs_draw_mode mode)
+{
+	gs_render_stop_internal(NULL, mode);
 }
 
 gs_vertbuffer_t *gs_render_save(void)
@@ -631,10 +622,6 @@ gs_vertbuffer_t *gs_render_save(void)
 void gs_vertex2f(float x, float y)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_verte"))
-		return;
-
 	vec3_set(&v3, x, y, 0.0f);
 	gs_vertex3v(&v3);
 }
@@ -642,10 +629,6 @@ void gs_vertex2f(float x, float y)
 void gs_vertex3f(float x, float y, float z)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_vertex3f"))
-		return;
-
 	vec3_set(&v3, x, y, z);
 	gs_vertex3v(&v3);
 }
@@ -653,10 +636,6 @@ void gs_vertex3f(float x, float y, float z)
 void gs_normal3f(float x, float y, float z)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_normal3f"))
-		return;
-
 	vec3_set(&v3, x, y, z);
 	gs_normal3v(&v3);
 }
@@ -689,10 +668,6 @@ void gs_color(uint32_t color)
 void gs_texcoord(float x, float y, int unit)
 {
 	struct vec2 v2;
-
-	if (!gs_valid("gs_texcoord"))
-		return;
-
 	vec2_set(&v2, x, y);
 	gs_texcoord2v(&v2, unit);
 }
@@ -700,10 +675,6 @@ void gs_texcoord(float x, float y, int unit)
 void gs_vertex2v(const struct vec2 *v)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_vertex2v"))
-		return;
-
 	vec3_set(&v3, v->x, v->y, 0.0f);
 	gs_vertex3v(&v3);
 }
@@ -916,33 +887,30 @@ static inline void assign_sprite_uv(float *start, float *end, bool flip)
 	}
 }
 
-static void build_sprite(struct gs_vb_data *data, float fcx, float fcy, float start_u, float end_u, float start_v,
-			 float end_v)
+static void build_sprite(float fcx, float fcy, float start_u, float end_u, float start_v, float end_v)
 {
-	struct vec2 *tvarray = data->tvarray[0].array;
-
-	vec3_zero(data->points);
-	vec3_set(data->points + 1, fcx, 0.0f, 0.0f);
-	vec3_set(data->points + 2, 0.0f, fcy, 0.0f);
-	vec3_set(data->points + 3, fcx, fcy, 0.0f);
-	vec2_set(tvarray, start_u, start_v);
-	vec2_set(tvarray + 1, end_u, start_v);
-	vec2_set(tvarray + 2, start_u, end_v);
-	vec2_set(tvarray + 3, end_u, end_v);
+	gs_vertex2f(0.0f, 0.0f);
+	gs_vertex2f(fcx, 0.0f);
+	gs_vertex2f(0.0f, fcy);
+	gs_vertex2f(fcx, fcy);
+	gs_texcoord(start_u, start_v, 0);
+	gs_texcoord(end_u, start_v, 0);
+	gs_texcoord(start_u, end_v, 0);
+	gs_texcoord(end_u, end_v, 0);
 }
 
-static inline void build_sprite_norm(struct gs_vb_data *data, float fcx, float fcy, uint32_t flip)
+static inline void build_sprite_norm(float fcx, float fcy, uint32_t flip)
 {
 	float start_u, end_u;
 	float start_v, end_v;
 
 	assign_sprite_uv(&start_u, &end_u, (flip & GS_FLIP_U) != 0);
 	assign_sprite_uv(&start_v, &end_v, (flip & GS_FLIP_V) != 0);
-	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
+	build_sprite(fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
-static inline void build_subsprite_norm(struct gs_vb_data *data, float fsub_x, float fsub_y, float fsub_cx,
-					float fsub_cy, float fcx, float fcy, uint32_t flip)
+static inline void build_subsprite_norm(float fsub_x, float fsub_y, float fsub_cx, float fsub_cy, float fcx, float fcy,
+					uint32_t flip)
 {
 	float start_u, end_u;
 	float start_v, end_v;
@@ -963,10 +931,10 @@ static inline void build_subsprite_norm(struct gs_vb_data *data, float fsub_x, f
 		end_v = fsub_y / fcy;
 	}
 
-	build_sprite(data, fsub_cx, fsub_cy, start_u, end_u, start_v, end_v);
+	build_sprite(fsub_cx, fsub_cy, start_u, end_u, start_v, end_v);
 }
 
-static inline void build_sprite_rect(struct gs_vb_data *data, gs_texture_t *tex, float fcx, float fcy, uint32_t flip)
+static inline void build_sprite_rect(gs_texture_t *tex, float fcx, float fcy, uint32_t flip)
 {
 	float start_u, end_u;
 	float start_v, end_v;
@@ -975,14 +943,14 @@ static inline void build_sprite_rect(struct gs_vb_data *data, gs_texture_t *tex,
 
 	assign_sprite_rect(&start_u, &end_u, width, (flip & GS_FLIP_U) != 0);
 	assign_sprite_rect(&start_v, &end_v, height, (flip & GS_FLIP_V) != 0);
-	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
+	build_sprite(fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
 void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height)
 {
 	graphics_t *graphics = thread_graphics;
 	float fcx, fcy;
-	struct gs_vb_data *data;
+	bool texture_rect = tex && gs_texture_is_rect(tex);
 
 	if (tex) {
 		if (gs_get_texture_type(tex) != GS_TEXTURE_2D) {
@@ -1000,17 +968,16 @@ void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t h
 	fcx = width ? (float)width : (float)gs_texture_get_width(tex);
 	fcy = height ? (float)height : (float)gs_texture_get_height(tex);
 
-	data = gs_vertexbuffer_get_data(graphics->sprite_buffer);
-	if (tex && gs_texture_is_rect(tex))
-		build_sprite_rect(data, tex, fcx, fcy, flip);
-	else
-		build_sprite_norm(data, fcx, fcy, flip);
-
-	gs_vertexbuffer_flush(graphics->sprite_buffer);
-	gs_load_vertexbuffer(graphics->sprite_buffer);
-	gs_load_indexbuffer(NULL);
-
-	gs_draw(GS_TRISTRIP, 0, 0);
+	gs_matrix_push();
+	gs_matrix_scale3f(fcx, fcy, 1.0f);
+	gs_render_start(false);
+	if (texture_rect) {
+		build_sprite_rect(tex, 1.0f, 1.0f, flip);
+	} else {
+		build_sprite_norm(1.0f, 1.0f, flip);
+	}
+	gs_render_stop_cached(graphics->sprite_vb_cache, GS_TRISTRIP);
+	gs_matrix_pop();
 }
 
 void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t sub_x, uint32_t sub_y, uint32_t sub_cx,
@@ -1018,7 +985,6 @@ void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t sub_x, 
 {
 	graphics_t *graphics = thread_graphics;
 	float fcx, fcy;
-	struct gs_vb_data *data;
 
 	if (tex) {
 		if (gs_get_texture_type(tex) != GS_TEXTURE_2D) {
@@ -1030,14 +996,9 @@ void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t sub_x, 
 	fcx = (float)gs_texture_get_width(tex);
 	fcy = (float)gs_texture_get_height(tex);
 
-	data = gs_vertexbuffer_get_data(graphics->sprite_buffer);
-	build_subsprite_norm(data, (float)sub_x, (float)sub_y, (float)sub_cx, (float)sub_cy, fcx, fcy, flip);
-
-	gs_vertexbuffer_flush(graphics->sprite_buffer);
-	gs_load_vertexbuffer(graphics->sprite_buffer);
-	gs_load_indexbuffer(NULL);
-
-	gs_draw(GS_TRISTRIP, 0, 0);
+	gs_render_start(false);
+	build_subsprite_norm((float)sub_x, (float)sub_y, (float)sub_cx, (float)sub_cy, fcx, fcy, flip);
+	gs_render_stop_cached(graphics->sprite_vb_cache, GS_TRISTRIP);
 }
 
 void gs_draw_cube_backdrop(gs_texture_t *cubetex, const struct quat *rot, float left, float right, float top,
