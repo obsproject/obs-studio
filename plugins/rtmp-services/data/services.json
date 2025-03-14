@@ -708,16 +708,56 @@
                     "url": "rtmp://qc.castr.io/static"
                 },
                 {
-                    "name": "SA (Sao Paulo, BR)",
+                    "name": "Mexico",
+                    "url": "rtmp://mexico.castr.io/static"
+                },
+                {
+                    "name": "Sao Paulo, BR",
                     "url": "rtmp://br.castr.io/static"
+                },
+                {
+                    "name": "Colombia",
+                    "url": "rtmp://bogota.castr.io/static"
+                },
+                {
+                    "name": "Santiago, Chile",
+                    "url": "rtmp://santiago.castr.io/static"
+                },
+                {
+                    "name": "Istanbul, TR",
+                    "url": "rtmp://istanbul.castr.io/static"
+                },
+                {
+                    "name": "Tel Aviv, IL",
+                    "url": "rtmp://telaviv.castr.io/static"
                 },
                 {
                     "name": "EU-West (London, UK)",
                     "url": "rtmp://uk.castr.io/static"
                 },
                 {
+                    "name": "EU-West (Paris, FR)",
+                    "url": "rtmp://paris.castr.io/static"
+                },
+                {
+                    "name": "EU-West (Madrid, ES)",
+                    "url": "rtmp://madrid.castr.io/static"
+                },
+                {
                     "name": "EU-Central (Frankfurt, DE)",
                     "url": "rtmp://fr.castr.io/static"
+                },
+                {
+                    "name": "EU-Central (Milan, IT)",
+                    "url": "rtmp://milan.castr.io/static"
+                },
+                {
+                    "name": "EU-North (Stockholm, SE)",
+                    "url": "rtmp://stockholm.castr.io/static"
+                },
+                {
+                    "name": "EU-North (Copenhagen, DK)",
+                    "url": "rtmp://copenhagen.castr.io/static"
                 },
                 {
                     "name": "Russia (Moscow)",
@@ -728,12 +768,28 @@
                     "url": "rtmp://sg.castr.io/static"
                 },
                 {
+                    "name": "Asia (Hong Kong, HK)",
+                    "url": "rtmp://hongkong.castr.io/static"
+                },
+                {
                     "name": "Asia (India)",
                     "url": "rtmp://in.castr.io/static"
                 },
                 {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.castr.io/static"
+                },
+                {
+                    "name": "UAE (Dubai)",
+                    "url": "rtmp://dubai.castr.io/static"
+                },
+                {
+                    "name": "Africa (Johannesburg, ZA)",
+                    "url": "rtmp://southafrica.castr.io/static"
+                },
+                {
+                    "name": "Africa (Lagos, NG)",
+                    "url": "rtmp://lagos.castr.io/static"
                 },
                 {
                     "name": "US Central",
