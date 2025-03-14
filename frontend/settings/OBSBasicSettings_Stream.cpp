@@ -95,6 +95,7 @@ void OBSBasicSettings::InitStreamPage()
 void OBSBasicSettings::LoadStream1Settings()
 {
 	bool ignoreRecommended = config_get_bool(main->Config(), "Stream1", "IgnoreRecommended");
+	int whipSimulcastTotalLayers = config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers");
 
 	obs_service_t *service_obj = main->GetService();
 	const char *type = obs_service_get_type(service_obj);
@@ -191,10 +192,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	if (use_custom_server)
 		ui->serviceCustomServer->setText(server);
 
-	if (is_whip)
+	if (is_whip) {
 		ui->key->setText(bearer_token);
-	else
+		ui->whipSimulcastGroupBox->show();
+	} else {
 		ui->key->setText(key);
+		ui->whipSimulcastGroupBox->hide();
+	}
 
 	ServiceChanged(true);
 
@@ -208,6 +212,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->streamPage->setEnabled(!streamActive);
 
 	ui->ignoreRecommended->setChecked(ignoreRecommended);
+	ui->whipSimulcastTotalLayers->setValue(whipSimulcastTotalLayers);
 
 	loading = false;
 
@@ -309,6 +314,9 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 
+	auto oldWHIPSimulcastTotalLayers = config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers");
+	SaveSpinBox(ui->whipSimulcastTotalLayers, "Stream1", "WHIPSimulcastTotalLayers");
+
 	auto oldMultitrackVideoSetting = config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo");
 
 	if (!IsCustomService()) {
@@ -336,7 +344,8 @@ void OBSBasicSettings::SaveStream1Settings()
 	SaveCheckBox(ui->multitrackVideoConfigOverrideEnable, "Stream1", "MultitrackVideoConfigOverrideEnabled");
 	SaveText(ui->multitrackVideoConfigOverride, "Stream1", "MultitrackVideoConfigOverride");
 
-	if (oldMultitrackVideoSetting != ui->enableMultitrackVideo->isChecked())
+	if (oldMultitrackVideoSetting != ui->enableMultitrackVideo->isChecked() ||
+	    oldWHIPSimulcastTotalLayers != ui->whipSimulcastTotalLayers->value())
 		main->ResetOutputs();
 
 	SwapMultiTrack(QT_TO_UTF8(protocol));
@@ -568,6 +577,12 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 		ui->advStreamTrackWidget->setCurrentWidget(ui->streamSingleTracks);
 	} else {
 		SwapMultiTrack(QT_TO_UTF8(protocol));
+	}
+
+	if (IsWHIP()) {
+		ui->whipSimulcastGroupBox->show();
+	} else {
+		ui->whipSimulcastGroupBox->hide();
 	}
 }
 
