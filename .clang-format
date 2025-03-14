@@ -81,6 +81,7 @@ PenaltyReturnTypeOnItsOwnLine: 60
 
 PointerAlignment: Right
 ReflowComments: false
+SkipMacroDefinitionBody: true
 SortIncludes: false
 SortUsingDeclarations: false
 SpaceAfterCStyleCast: false
