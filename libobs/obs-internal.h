@@ -748,6 +748,8 @@ struct obs_source {
 	bool audio_active;
 	bool user_muted;
 	bool muted;
+	bool async_compensation;
+	bool last_async_compensation;
 	struct obs_source *next_audio_source;
 	struct obs_source **prev_next_audio_source;
 	uint64_t audio_ts;
