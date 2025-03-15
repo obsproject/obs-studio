@@ -16,27 +16,53 @@ add_compile_options("$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-fopenmp-simd>")
 
 # Enable selection between arm64 and x86_64 targets
 if(NOT CMAKE_OSX_ARCHITECTURES)
-  set(CMAKE_OSX_ARCHITECTURES
-      arm64
-      CACHE STRING "Build architectures for macOS" FORCE)
+  set(CMAKE_OSX_ARCHITECTURES arm64 CACHE STRING "Build architectures for macOS" FORCE)
 endif()
 set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64)
 
 # Ensure recent enough Xcode and platform SDK
-set(_obs_macos_minimum_sdk 14.2) # Keep in sync with Xcode
-set(_obs_macos_minimum_xcode 15.1) # Keep in sync with SDK
-message(DEBUG "macOS SDK Path: ${CMAKE_OSX_SYSROOT}")
-string(REGEX MATCH ".+/MacOSX.platform/Developer/SDKs/MacOSX([0-9]+\\.[0-9])+\\.sdk$" _ ${CMAKE_OSX_SYSROOT})
-set(_obs_macos_current_sdk ${CMAKE_MATCH_1})
-message(DEBUG "macOS SDK version: ${_obs_macos_current_sdk}")
-if(_obs_macos_current_sdk VERSION_LESS _obs_macos_minimum_sdk)
-  message(
-    FATAL_ERROR "Your macOS SDK version (${_obs_macos_current_sdk}) is too low. "
-                "The macOS ${_obs_macos_minimum_sdk} SDK (Xcode ${_obs_macos_minimum_xcode}) is required to build OBS.")
-endif()
-unset(_obs_macos_current_sdk)
-unset(_obs_macos_minimum_sdk)
-unset(_obs_macos_minimum_xcode)
+function(check_sdk_requirements)
+  set(obs_macos_minimum_sdk 15.0) # Keep in sync with Xcode
+  set(obs_macos_minimum_xcode 16.0) # Keep in sync with SDK
+  execute_process(
+    COMMAND xcrun --sdk macosx --show-sdk-platform-version
+    OUTPUT_VARIABLE obs_macos_current_sdk
+    RESULT_VARIABLE result
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(NOT result EQUAL 0)
+    message(
+      FATAL_ERROR
+      "Failed to fetch macOS SDK version. "
+      "Ensure that the macOS SDK is installed and that xcode-select points at the Xcode developer directory."
+    )
+  endif()
+  message(DEBUG "macOS SDK version: ${obs_macos_current_sdk}")
+  if(obs_macos_current_sdk VERSION_LESS obs_macos_minimum_sdk)
+    message(
+      FATAL_ERROR
+      "Your macOS SDK version (${obs_macos_current_sdk}) is too low. "
+      "The macOS ${obs_macos_minimum_sdk} SDK (Xcode ${obs_macos_minimum_xcode}) is required to build OBS."
+    )
+  endif()
+  execute_process(COMMAND xcrun --find xcodebuild OUTPUT_VARIABLE obs_macos_xcodebuild RESULT_VARIABLE result)
+  if(NOT result EQUAL 0)
+    message(
+      FATAL_ERROR
+      "Xcode was not found. "
+      "Ensure you have installed Xcode and that xcode-select points at the Xcode developer directory."
+    )
+  endif()
+  message(DEBUG "Path to xcodebuild binary: ${obs_macos_xcodebuild}")
+  if(XCODE_VERSION VERSION_LESS obs_macos_minimum_xcode)
+    message(
+      FATAL_ERROR
+      "Your Xcode version (${XCODE_VERSION}) is too low. Xcode ${obs_macos_minimum_xcode} is required to build OBS."
+    )
+  endif()
+endfunction()
+
+check_sdk_requirements()
 
 # Enable dSYM generator for release builds
 string(APPEND CMAKE_C_FLAGS_RELEASE " -g")
@@ -69,12 +95,15 @@ string(APPEND CMAKE_OBJCXX_FLAGS_RELEASE " -g")
 
 add_compile_definitions(
   $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:DEBUG>>
-  $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:_DEBUG>> $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:SIMDE_ENABLE_OPENMP>)
+  $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:_DEBUG>>
+  $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:SIMDE_ENABLE_OPENMP>
+)
 
 if(ENABLE_COMPILER_TRACE)
   add_compile_options(
     $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-ftime-trace>
     "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -debug-time-expression-type-checking>"
-    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -debug-time-function-bodies>")
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -debug-time-function-bodies>"
+  )
   add_link_options(LINKER:-print_statistics)
 endif()
