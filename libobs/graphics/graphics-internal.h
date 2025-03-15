@@ -311,6 +311,8 @@ struct graphics_subsystem {
 	struct gs_effect *cur_effect;
 
 	gs_vertbuffer_t *sprite_buffer;
+	gs_vertbuffer_t *flipped_sprite_buffer;
+	gs_vertbuffer_t *subregion_buffer;
 
 	bool using_immediate;
 	struct gs_vb_data *vbd;
