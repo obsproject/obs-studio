@@ -20,8 +20,8 @@ static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
     capture_data->isFastPath = false;
     capture_data->settings = settings;
     capture_data->source = source;
-    capture_data->videoFrame = bmalloc(sizeof(OBSAVCaptureVideoFrame));
-    capture_data->audioFrame = bmalloc(sizeof(OBSAVCaptureAudioFrame));
+    capture_data->videoFrame = bzalloc(sizeof(OBSAVCaptureVideoFrame));
+    capture_data->audioFrame = bzalloc(sizeof(OBSAVCaptureAudioFrame));
 
     OBSAVCapture *capture = [[OBSAVCapture alloc] initWithCaptureInfo:capture_data];
 
