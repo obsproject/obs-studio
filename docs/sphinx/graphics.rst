@@ -85,7 +85,7 @@ effects:  **ViewProj**, and **image**.  The **ViewProj** parameter
 combination.  The **image** parameter (which is a texture2d) is a
 commonly used parameter for the main texture; this parameter will be
 used with the functions :c:func:`obs_source_draw()`,
-:c:func:`gs_draw_sprite()`, and
+:c:func:`gs_draw_sprite()`, :c:func:`gs_draw_quadf()`, and
 :c:func:`obs_source_process_filter_end()`.
 
 Here is an example of effect parameters:

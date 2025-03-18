@@ -1004,7 +1004,7 @@ static inline void build_sprite_rect(struct gs_vb_data *data, gs_texture_t *tex,
 	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
-void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height)
+void gs_draw_quadf(gs_texture_t *tex, uint32_t flip, float width, float height)
 {
 	graphics_t *graphics = thread_graphics;
 	float fcx, fcy;
@@ -1016,15 +1016,15 @@ void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t h
 			return;
 		}
 	} else {
-		if (!width || !height) {
+		if (width == 0.0f || height == 0.0f) {
 			blog(LOG_ERROR, "A sprite cannot be drawn without "
 					"a width/height");
 			return;
 		}
 	}
 
-	fcx = width ? (float)width : (float)gs_texture_get_width(tex);
-	fcy = height ? (float)height : (float)gs_texture_get_height(tex);
+	fcx = width != 0.0f ? width : (float)gs_texture_get_width(tex);
+	fcy = height != 0.0f ? height : (float)gs_texture_get_height(tex);
 
 	gs_matrix_push();
 	gs_matrix_scale3f(fcx, fcy, 1.0f);
@@ -1043,6 +1043,11 @@ void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t h
 	}
 
 	gs_matrix_pop();
+}
+
+void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height)
+{
+	gs_draw_quadf(tex, flip, (float)width, (float)height);
 }
 
 void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t sub_x, uint32_t sub_y, uint32_t sub_cx,
