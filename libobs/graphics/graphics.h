@@ -581,6 +581,7 @@ EXPORT uint8_t *gs_create_texture_file_data3(const char *file, enum gs_image_alp
  * axis with GS_FLIP_U and GS_FLIP_V.
  */
 EXPORT void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height);
+EXPORT void gs_draw_quadf(gs_texture_t *tex, uint32_t flip, float width, float height);
 
 EXPORT void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t x, uint32_t y, uint32_t cx,
 				     uint32_t cy);
