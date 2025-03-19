@@ -82,4 +82,22 @@ target_sources(
     components/VolumeSlider.hpp
     components/WindowCaptureToolbar.cpp
     components/WindowCaptureToolbar.hpp
+    components/idian/OBSActionRow.cpp
+    components/idian/OBSActionRow.hpp
+    components/idian/OBSCheckBox.cpp
+    components/idian/OBSCheckBox.hpp
+    components/idian/OBSComboBox.cpp
+    components/idian/OBSComboBox.hpp
+    components/idian/OBSDoubleSpinBox.cpp
+    components/idian/OBSDoubleSpinBox.hpp
+    components/idian/OBSGroupBox.cpp
+    components/idian/OBSGroupBox.hpp
+    components/idian/OBSIdianWidget.hpp
+    components/idian/OBSPropertiesList.cpp
+    components/idian/OBSPropertiesList.hpp
+    components/idian/OBSSpinBox.cpp
+    components/idian/OBSSpinBox.hpp
+    components/idian/OBSToggleSwitch.cpp
+    components/idian/OBSToggleSwitch.hpp
+    components/idian/obs-widgets.hpp
 )
