@@ -252,7 +252,7 @@ void obs_view_enum_video_info(obs_view_t *view,
 		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
 		if (mix->view != view)
 			continue;
-		if (!enum_proc(param, &mix->ovi))
+		if (!enum_proc(param, mix->ovi))
 			break;
 	}
 

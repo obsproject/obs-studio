@@ -210,7 +210,6 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 {
 	struct obs_core_video_mix *mix, *current_mix;
 	bool create_mix = true;
-	struct obs_video_info ovi;
 	const struct video_output_info *info;
 
 	if (!encoder->media)
@@ -262,19 +261,20 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		return;
 	}
 
-	ovi = *current_mix->ovi;
+	struct obs_video_info *ovi = bzalloc(sizeof(struct obs_video_info));
+	*ovi = *current_mix->ovi;
 
-	ovi.output_format = info->format;
-	ovi.colorspace = info->colorspace;
-	ovi.range = info->range;
+	ovi->output_format = info->format;
+	ovi->colorspace = info->colorspace;
+	ovi->range = info->range;
 
-	ovi.output_height = encoder->scaled_height;
-	ovi.output_width = encoder->scaled_width;
-	ovi.scale_type = encoder->gpu_scale_type;
+	ovi->output_height = encoder->scaled_height;
+	ovi->output_width = encoder->scaled_width;
+	ovi->scale_type = encoder->gpu_scale_type;
 
-	ovi.gpu_conversion = true;
+	ovi->gpu_conversion = true;
 
-	mix = obs_create_video_mix(&ovi);
+	mix = obs_create_video_mix(ovi);
 	if (!mix)
 		return;
 
@@ -289,6 +289,7 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		struct obs_core_video_mix *current = obs->video.mixes.array[i];
 		const struct video_output_info *voi =
 			video_output_get_info(current->video);
+
 		if (current->view != current_mix->view)
 			continue;
 
@@ -1179,7 +1180,6 @@ size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
 
 void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 {
-
 	if (!obs_encoder_valid(encoder, "obs_encoder_set_video"))
 		return;
 	if (encoder->info.type != OBS_ENCODER_VIDEO) {
