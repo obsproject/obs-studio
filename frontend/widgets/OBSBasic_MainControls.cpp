@@ -42,6 +42,10 @@
 #endif
 #include <wizards/AutoConfig.hpp>
 
+#ifdef ENABLE_WIDGET_PLAYGROUND
+#include "dialogs/OBSIdianPlayground.hpp"
+#endif
+
 #include <qt-wrappers.hpp>
 
 #include <QDesktopServices>
@@ -645,6 +649,16 @@ void OBSBasic::on_stats_triggered()
 	statsDlg = new OBSBasicStats(nullptr);
 	statsDlg->show();
 	stats = statsDlg;
+}
+
+void OBSBasic::on_widgetPlayground_triggered()
+{
+#ifdef ENABLE_WIDGET_PLAYGROUND
+	OBSIdianPlayground playground(this);
+	playground.setModal(true);
+	playground.show();
+	playground.exec();
+#endif
 }
 
 void OBSBasic::on_actionShowAbout_triggered()
