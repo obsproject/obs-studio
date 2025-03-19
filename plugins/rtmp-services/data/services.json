@@ -2667,20 +2667,8 @@
                     "url": "rtmp://live-us-lax-stream.shareplay.tv"
                 },
                 {
-                    "name": "Seattle, Washington, USA",
-                    "url": "rtmp://live-us-sea-stream.shareplay.tv"
-                },
-                {
-                    "name": "Paris, France",
-                    "url": "rtmp://live-fr-par-stream.shareplay.tv"
-                },
-                {
                     "name": "Milan, Italy",
                     "url": "rtmp://live-it-mil-stream.shareplay.tv"
-                },
-                {
-                    "name": "Sydney, Australia",
-                    "url": "rtmp://live-au-syd-stream.shareplay.tv"
                 },
                 {
                     "name": "Toronto, Canada",
