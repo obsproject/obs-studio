@@ -218,11 +218,14 @@ static inline gs_effect_t *get_scale_effect_internal(struct obs_core_video_mix *
 {
 	struct obs_core_video *video = &obs->video;
 	const struct video_output_info *info = video_output_get_info(mix->video);
+	gs_effect_t *effect = NULL;
 
 	/* if the dimension is under half the size of the original image,
 	 * bicubic/lanczos can't sample enough pixels to create an accurate
-	 * image, so use the bilinear low resolution effect instead */
-	if (info->width < (mix->ovi.base_width / 2) && info->height < (mix->ovi.base_height / 2)) {
+	 * image, so use the bilinear low resolution effect instead, unless
+	 * point scaling has been chosen. */
+	if ((mix->ovi.scale_type != OBS_SCALE_POINT) &&
+	    (info->width < (mix->ovi.base_width / 2) && info->height < (mix->ovi.base_height / 2))) {
 		return video->bilinear_lowres_effect;
 	}
 
@@ -233,6 +236,11 @@ static inline gs_effect_t *get_scale_effect_internal(struct obs_core_video_mix *
 		return video->lanczos_effect;
 	case OBS_SCALE_AREA:
 		return video->area_effect;
+	case OBS_SCALE_POINT:
+		effect = obs->video.default_effect;
+		gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+		gs_effect_set_next_sampler(image, obs->video.point_sampler);
+		return effect;
 	case OBS_SCALE_BICUBIC:
 	default:;
 	}
