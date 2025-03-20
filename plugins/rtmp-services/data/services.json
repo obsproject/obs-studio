@@ -3566,6 +3566,21 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "VRCDN - Live",
+            "more_info_link": "https://vrcdn.live",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://ingest.vrcdn.live/live"
+                }
+            ],
+            "supported video codecs": ["h264"],
+            "recommended": {
+                "keyint": 1,
+                "max video bitrate": 6000
+            }
         }
     ]
 }
