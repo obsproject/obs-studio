@@ -42,7 +42,6 @@ extern "C" {
 #define MIN_VFX_SDK_VERSION (0 << 24 | 7 << 16 | 2 << 8 | 0 << 0)
 static HMODULE nv_videofx = NULL;
 static HMODULE nv_cvimage = NULL;
-static HMODULE nv_cudart = NULL;
 static HMODULE nv_cuda = NULL;
 
 //! Status codes returned from APIs.
@@ -633,16 +632,6 @@ typedef enum cudaMemcpyKind {
 
 typedef enum cudaError cudaError_t;
 
-typedef cudaError_t CUDARTAPI (*cudaMalloc_t)(void **devPtr, size_t size);
-typedef cudaError_t CUDARTAPI (*cudaStreamSynchronize_t)(CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaFree_t)(void *devPtr);
-typedef cudaError_t CUDARTAPI (*cudaMemsetAsync_t)(void *devPtr, int value,
-						   size_t count,
-						   CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaMemcpy_t)(void *dst, const void *src,
-					      size_t count,
-					      enum cudaMemcpyKind kind);
-
 /* nvvfx */
 static NvVFX_GetVersion_t NvVFX_GetVersion = NULL;
 static NvVFX_CreateEffect_t NvVFX_CreateEffect = NULL;
@@ -704,13 +693,6 @@ static NvCVImage_FromD3DColorSpace_t NvCVImage_FromD3DColorSpace = NULL;
 static NvCVImage_InitFromD3D11Texture_t NvCVImage_InitFromD3D11Texture = NULL;
 /* error codes */
 static NvCV_GetErrorStringFromCode_t NvCV_GetErrorStringFromCode = NULL;
-
-/* cuda runtime */
-static cudaMalloc_t cudaMalloc = NULL;
-static cudaStreamSynchronize_t cudaStreamSynchronize = NULL;
-static cudaFree_t cudaFree = NULL;
-static cudaMemcpy_t cudaMemcpy = NULL;
-static cudaMemsetAsync_t cudaMemsetAsync = NULL;
 
 static inline void release_nv_vfx()
 {
@@ -776,15 +758,6 @@ static inline void release_nv_vfx()
 		FreeLibrary(nv_cvimage);
 		nv_cvimage = NULL;
 	}
-	cudaMalloc = NULL;
-	cudaStreamSynchronize = NULL;
-	cudaFree = NULL;
-	cudaMemcpy = NULL;
-	cudaMemsetAsync = NULL;
-	if (nv_cudart) {
-		FreeLibrary(nv_cudart);
-		nv_cudart = NULL;
-	}
 }
 
 static inline void nvvfx_get_sdk_path(char *buffer, const size_t len)
@@ -810,9 +783,8 @@ static inline bool load_nv_vfx_libs()
 
 	nv_videofx = LoadLibrary(L"NVVideoEffects.dll");
 	nv_cvimage = LoadLibrary(L"NVCVImage.dll");
-	nv_cudart = LoadLibrary(L"cudart64_110.dll");
 	SetDllDirectoryA(NULL);
-	return !!nv_videofx && !!nv_cvimage && !!nv_cudart;
+	return !!nv_videofx && !!nv_cvimage;
 }
 
 static unsigned int get_lib_version(void)
