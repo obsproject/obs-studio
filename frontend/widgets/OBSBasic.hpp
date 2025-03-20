@@ -651,6 +651,13 @@ public:
 	void CreatePropertiesWindow(obs_source_t *source);
 
 	/* -------------------------------------
+	 * MARK: - OBSBasic_MainMenu
+	 * -------------------------------------
+	 */
+private:
+	void setupMenuItemStateHandlers();
+
+	/* -------------------------------------
 	 * MARK: - OBSBasic_OutputHandler
 	 * -------------------------------------
 	 */
