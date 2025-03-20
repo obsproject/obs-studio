@@ -513,6 +513,7 @@ void OBSBasic::on_actionFullscreenInterface_triggered()
 void OBSBasic::on_resetUI_triggered()
 {
 	on_resetDocks_triggered();
+	setPreviewScalingWindow();
 
 	ui->toggleListboxToolbars->setChecked(true);
 	ui->toggleContextBar->setChecked(true);
