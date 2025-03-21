@@ -14,10 +14,13 @@ target_sources(
     mf-h264-encoder.cpp
     mf-hevc.cpp
     mf-hevc-encoder.cpp
+    mf-aac.cpp
+    mf-aac-encoder.cpp
     mf-common.hpp
     mf-encoder-descriptor.hpp
     mf-h264-encoder.hpp
     mf-hevc-encoder.hpp
+    mf-aac-encoder.hpp
 )
 
 target_include_directories(win-mf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
