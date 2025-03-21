@@ -9,4 +9,5 @@
 #include <optional>
 
 GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<uint64_t> &maximum_aggregate_bitrate,
-					const std::optional<uint32_t> &maximum_video_tracks, bool vod_track_enabled);
+					const std::optional<uint32_t> &maximum_video_tracks, bool vod_track_enabled,
+					const std::vector<OBSCanvasAutoRelease> &canvases);
