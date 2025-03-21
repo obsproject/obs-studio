@@ -381,7 +381,7 @@ YoutubeApiWrappers *YouTubeAppDock::GetYTApi()
 {
 	Auth *auth = OBSBasic::Get()->GetAuth();
 	if (auth) {
-		YoutubeApiWrappers *apiYouTube(dynamic_cast<YoutubeApiWrappers *>(auth));
+		YoutubeApiWrappers *apiYouTube(qobject_cast<YoutubeApiWrappers *>(auth));
 		if (apiYouTube) {
 			return apiYouTube;
 		} else {
