@@ -53,6 +53,8 @@ target_sources(
     widgets/OBSMainWindow.hpp
     widgets/OBSProjector.cpp
     widgets/OBSProjector.hpp
+    widgets/OBSProjectorCustomSizeSetting.cpp
+    widgets/OBSProjectorCustomSizeSetting.hpp
     widgets/OBSQTDisplay.cpp
     widgets/OBSQTDisplay.hpp
     widgets/StatusBarWidget.cpp

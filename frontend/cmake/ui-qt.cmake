@@ -46,6 +46,7 @@ target_sources(
     forms/OBSLogReply.ui
     forms/OBSLogReply.ui
     forms/OBSMissingFiles.ui
+    forms/OBSProjectorCustomSizeSetting.ui
     forms/OBSRemux.ui
     forms/source-toolbar/browser-source-toolbar.ui
     forms/source-toolbar/color-source-toolbar.ui
