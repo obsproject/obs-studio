@@ -2,9 +2,16 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 project(win-mf)
 
-set(win-mf_SOURCES mf-plugin.cpp mf-common.cpp mf-encoder-descriptor.cpp)
+set(
+  win-mf_SOURCES
+  mf-plugin.cpp
+  mf-common.cpp
+  mf-encoder-descriptor.cpp
+  mf-h264.cpp
+  mf-h264-encoder.cpp
+)
 
-set(win-mf_HEADERS mf-common.hpp mf-encoder-descriptor.hpp)
+set(win-mf_HEADERS mf-common.hpp mf-encoder-descriptor.hpp mf-h264-encoder.hpp)
 
 add_library(win-mf MODULE)
 
