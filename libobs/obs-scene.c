@@ -2908,7 +2908,6 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item, int position)
 		return;
 
 	struct obs_scene *scene = obs_scene_get_ref(item->parent);
-	struct obs_scene_item *next;
 
 	if (!scene)
 		return;
@@ -2916,11 +2915,12 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item, int position)
 	full_lock(scene);
 
 	detach_sceneitem(item);
-	next = scene->first_item;
 
-	if (position == 0) {
+	if (!scene->first_item || position == 0) {
 		attach_sceneitem(scene, item, NULL);
 	} else {
+		struct obs_scene_item *next = scene->first_item;
+
 		for (int i = position; i > 1; --i) {
 			if (next->next == NULL)
 				break;
