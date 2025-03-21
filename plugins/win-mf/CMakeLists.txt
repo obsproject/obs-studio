@@ -9,6 +9,8 @@ set(
   mf-h264-encoder.cpp
   mf-hevc.cpp
   mf-hevc-encoder.cpp
+  mf-aac.cpp
+  mf-aac-encoder.cpp
 )
 
 set(
@@ -17,6 +19,7 @@ set(
   mf-encoder-descriptor.hpp
   mf-h264-encoder.hpp
   mf-hevc-encoder.hpp
+  mf-aac-encoder.hpp
 )
 
 add_library(win-mf MODULE ${win-mf_SOURCES} ${win-mf_HEADERS})
