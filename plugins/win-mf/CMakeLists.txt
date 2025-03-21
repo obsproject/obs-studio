@@ -10,8 +10,11 @@ target_sources(
     mf-plugin.cpp
     mf-common.cpp
     mf-encoder-descriptor.cpp
+    mf-h264.cpp
+    mf-h264-encoder.cpp
     mf-common.hpp
     mf-encoder-descriptor.hpp
+    mf-h264-encoder.hpp
 )
 
 target_include_directories(win-mf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
