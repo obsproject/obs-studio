@@ -23,6 +23,7 @@
 #include <utility/display-helpers.hpp>
 #include <utility/item-widget-helpers.hpp>
 #include <widgets/OBSBasic.hpp>
+#include <widgets/OBSSourceView.hpp>
 
 #include <properties-view.hpp>
 #include <qt-wrappers.hpp>
@@ -146,6 +147,25 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 #endif
 
 	UpdateFilters();
+
+	/* -------------------- */
+	// ToDo: REMOVE THESE LINES
+	// TESTING PURPOSES ONLY
+	ui->preview->hide();
+
+	OBSSourceWidget *testView = new OBSSourceWidget(this, source_);
+	testView->setObjectName("mainFiltersPreview");
+	testView->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+	ui->verticalLayout_7->addWidget(testView);
+
+	// Sidebar
+	OBSSourceWidget *testView2 = new OBSSourceWidget(this, source_);
+	testView2->setObjectName("sidebarPreview");
+	testView2->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+	testView2->setFixedAspectRatio(16.0 / 9.0);
+	ui->verticalLayout_2->addWidget(testView2);
+	// END TODO
+	/* -------------------- */
 }
 
 OBSBasicFilters::~OBSBasicFilters()
