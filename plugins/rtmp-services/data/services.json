@@ -2134,7 +2134,8 @@
                 }
             ],
             "supported video codecs": [
-                "h264"
+                "h264",
+                "hevc"
             ]
         },
         {
