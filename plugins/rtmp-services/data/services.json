@@ -3581,6 +3581,27 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
+        }, 
+        {
+            "name": "Strim FUN",
+            "common": false,
+            "more_info_link": "https://strim.fun/info/setup",
+            "stream_key_link": "https://strim.fun/channel-settings",
+            "protocol": "RTMPS",
+            "supported video codecs": [
+                "h264"
+            ],
+            "servers": [
+                {
+                    "name": "Strim FUN RTMPS Ingest server 1",
+                    "url": "rtmps://strim.fun:1936/"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "max video bitrate": 7200,
+                "max audio bitrate": 224
+            }
         }
     ]
 }
