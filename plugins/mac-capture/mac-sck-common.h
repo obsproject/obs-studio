@@ -18,6 +18,7 @@ typedef enum {
     ScreenCaptureDisplayStream = 0,
     ScreenCaptureWindowStream = 1,
     ScreenCaptureApplicationStream = 2,
+    ScreenCaptureAutomaticStream = 3,
 } ScreenCaptureStreamType;
 
 typedef enum {
@@ -31,6 +32,20 @@ API_AVAILABLE(macos(12.5))
 @interface ScreenCaptureDelegate : NSObject <SCStreamOutput, SCStreamDelegate>
 
 @property struct screen_capture *sc;
+
+@end
+
+API_AVAILABLE(macos(14.0))
+@interface OBSSharingPickerObserver : NSObject <SCContentSharingPickerObserver>
+
+@property (assign) SCContentSharingPicker *picker;
+@property struct screen_capture *sc;
+@property bool observerAdded;
+
+- (void)enable;
+- (void)disable;
+- (void)showPicker;
+- (void)showPicker:(SCStream *)stream;
 
 @end
 
@@ -64,11 +79,15 @@ struct API_AVAILABLE(macos(12.5)) screen_capture {
     CGDirectDisplayID display;
     CGWindowID window;
     NSString *application_id;
+
+    id picker_observer;
+    SCContentFilter *picked_filter;
 };
 
 bool is_screen_capture_available(void);
 
-API_AVAILABLE(macos(12.5)) void screen_capture_build_content_list(struct screen_capture *sc, bool display_capture);
+API_AVAILABLE(macos(12.5))
+void screen_capture_build_content_list(struct screen_capture *sc, ScreenCaptureStreamType captureType);
 
 API_AVAILABLE(macos(12.5)) bool build_display_list(struct screen_capture *sc, obs_properties_t *props);
 
