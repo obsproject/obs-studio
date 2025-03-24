@@ -764,6 +764,16 @@ static int obs_init_video()
 			obs_free_graphics();
 			return errorcode;
 		}
+
+		// As graphics is initialized only once, here is the perfect place to init mutexes
+		if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
+			return OBS_VIDEO_FAIL;
+		if (pthread_mutex_init(&video->encoder_group_mutex, NULL) < 0)
+			return OBS_VIDEO_FAIL;
+		if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
+			return OBS_VIDEO_FAIL;
+		if (pthread_mutex_init(&video->canvases_mutex, NULL) < 0)
+			return OBS_VIDEO_FAIL;
 	}
 
 	blog(LOG_INFO, "[VIDEO_CANVAS] wait obs_graphics_thread to stop");
@@ -788,12 +798,6 @@ static int obs_init_video()
 	video->video_half_frame_interval_ns =
 		util_mul_div64(500000000ULL, max_fps_den, max_fps_num);
 
-	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
-		return OBS_VIDEO_FAIL;
-	if (pthread_mutex_init(&video->encoder_group_mutex, NULL) < 0)
-		return OBS_VIDEO_FAIL;
-	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
-		return OBS_VIDEO_FAIL;
 	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %zu",
 	     obs->video.canvases.num);
 	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++) {
@@ -924,6 +928,12 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 
 static void obs_free_video(bool full_clean)
 {
+	if (!obs->video.graphics) {
+		blog(LOG_INFO,
+		     "obs_free_video - video is not initialized yet, skipping");
+		return;
+	}
+
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	size_t num_views = 0;
 	for (size_t i = 0; i < obs->video.mixes.num; i++) {
@@ -940,8 +950,10 @@ static void obs_free_video(bool full_clean)
 	obs->video.main_mix = NULL;
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
-	pthread_mutex_destroy(&obs->video.mixes_mutex);
-	pthread_mutex_init_value(&obs->video.mixes_mutex);
+	if (full_clean) {
+		pthread_mutex_destroy(&obs->video.mixes_mutex);
+		pthread_mutex_init_value(&obs->video.mixes_mutex);
+	}
 
 	for (size_t i = 0; i < obs->video.ready_encoder_groups.num; i++) {
 		obs_weak_encoder_release(
@@ -949,10 +961,11 @@ static void obs_free_video(bool full_clean)
 	}
 	da_free(obs->video.ready_encoder_groups);
 
-	pthread_mutex_destroy(&obs->video.encoder_group_mutex);
-	pthread_mutex_init_value(&obs->video.encoder_group_mutex);
-
 	if (full_clean) {
+		pthread_mutex_destroy(&obs->video.encoder_group_mutex);
+		pthread_mutex_init_value(&obs->video.encoder_group_mutex);
+
+		pthread_mutex_lock(&obs->video.canvases_mutex);
 		size_t num = obs->video.canvases.num;
 		for (size_t i = 0; i < num; i++) {
 			bfree(obs->video.canvases.array[i]);
@@ -964,9 +977,14 @@ static void obs_free_video(bool full_clean)
 		pthread_mutex_init_value(&obs->video.canvases_mutex);
 	}
 
-	pthread_mutex_destroy(&obs->video.task_mutex);
-	pthread_mutex_init_value(&obs->video.task_mutex);
+	pthread_mutex_lock(&obs->video.task_mutex);
 	deque_free(&obs->video.tasks);
+	pthread_mutex_unlock(&obs->video.task_mutex);
+
+	if (full_clean) {
+		pthread_mutex_destroy(&obs->video.task_mutex);
+		pthread_mutex_init_value(&obs->video.task_mutex);
+	}
 }
 
 static void obs_free_graphics(void)
