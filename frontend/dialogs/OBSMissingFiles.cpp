@@ -25,12 +25,6 @@
 
 #include "moc_OBSMissingFiles.cpp"
 
-// TODO: Fix redefinition error of due to clash with enums defined in importer code.
-enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
-
-// TODO: Fix redefinition error of due to clash with enums defined in importer code.
-enum MissingFilesColumn { Source, OriginalPath, NewPath, State, Count };
-
 OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 	: QDialog(parent),
 	  filesModel(new MissingFilesModel),
@@ -123,7 +117,7 @@ void OBSMissingFiles::browseFolders()
 
 	if (dir != "") {
 		dir += "/";
-		filesModel->fileCheckLoop(filesModel->files, dir, true);
+		filesModel->findAllFilesInPath(filesModel->files, dir, true);
 	}
 }
 

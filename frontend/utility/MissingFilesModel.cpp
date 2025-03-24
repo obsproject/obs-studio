@@ -24,12 +24,6 @@
 
 #include "moc_MissingFilesModel.cpp"
 
-// TODO: Fix redefinition error of due to clash with enums defined in importer code.
-enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
-
-// TODO: Fix redefinition error of due to clash with enums defined in importer code.
-enum MissingFilesColumn { Source, OriginalPath, NewPath, State, Count };
-
 MissingFilesModel::MissingFilesModel(QObject *parent) : QAbstractTableModel(parent)
 {
 	QStyle *style = QApplication::style();
@@ -160,47 +154,63 @@ Qt::ItemFlags MissingFilesModel::flags(const QModelIndex &index) const
 	return flags;
 }
 
-void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt)
+void MissingFilesModel::findAllFilesInPath(QList<MissingFileEntry> files, QString path, bool skipPrompt)
 {
+	allFilesFound = false;
 	fileCheckLoop(files, path, skipPrompt, 0);
 }
 
-void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString path, bool skipPrompt, int depth)
+void MissingFilesModel::fileCheckLoop(const QList<MissingFileEntry> &files, const QString &path, bool skipPrompt,
+				      int depth)
 {
-	fileLoopCounter += 1;
-	QUrl url = QUrl().fromLocalFile(path);
+	if (allFilesFound) {
+		return;
+	}
+
+	if (files.length() == found()) {
+		allFilesFound = true;
+		return;
+	}
+
+	recursionLevel += 1;
+	QUrl url = QUrl::fromLocalFile(path);
 	QString dir = url.toDisplayString(QUrl::RemoveScheme | QUrl::RemoveFilename | QUrl::PreferLocalFile);
 
 	bool prompted = skipPrompt;
-	int depthWithoutFile = depth + 1;
+	int depthWithoutFileMatch = depth + 1;
 
-	for (int i = 0; i < files.length(); i++) {
-		if (files[i].state != MissingFilesState::Missing)
+	int loopIndex = -1;
+	for (const MissingFileEntry &file : files) {
+		loopIndex++;
+
+		if (file.state != MissingFilesState::Missing) {
 			continue;
+		}
 
-		QUrl origFile = QUrl().fromLocalFile(files[i].originalPath);
+		QUrl origFile = QUrl::fromLocalFile(file.originalPath);
 		QString filename = origFile.fileName();
 		QString testFile = dir + filename;
 
 		if (os_file_exists(testFile.toStdString().c_str())) {
-			depthWithoutFile = 0;
+			depthWithoutFileMatch = 0;
 
 			if (!prompted) {
 				QMessageBox::StandardButton button =
 					QMessageBox::question(nullptr, QTStr("MissingFiles.AutoSearch"),
 							      QTStr("MissingFiles.AutoSearchText"));
 
-				if (button == QMessageBox::No)
+				if (button == QMessageBox::No) {
 					break;
+				}
 
 				prompted = true;
 			}
-			QModelIndex in = index(i, MissingFilesColumn::NewPath);
-			setData(in, testFile, 0);
+			QModelIndex in = index(loopIndex, MissingFilesColumn::NewPath);
+			setData(in, testFile, Qt::DisplayRole);
 		}
 	}
 
-	if (depthWithoutFile <= 2) {
+	if (depthWithoutFileMatch <= 2) {
 		os_dir_t *folder = os_opendir(dir.toStdString().c_str());
 		struct os_dirent *ent;
 		while ((ent = os_readdir(folder)) != NULL) {
@@ -208,55 +218,59 @@ void MissingFilesModel::fileCheckLoop(QList<MissingFileEntry> files, QString pat
 				continue;
 
 			QString directoryPath = dir + QString(ent->d_name) + "/";
-			fileCheckLoop(files, directoryPath, true, depthWithoutFile);
+			fileCheckLoop(files, directoryPath, true, depthWithoutFileMatch);
 		}
 
 		os_closedir(folder);
 	}
-	fileLoopCounter -= 1;
+	recursionLevel -= 1;
 }
 
 bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
 	bool success = false;
 
+	int row = index.row();
+	QString valueString = value.toString();
+
 	if (role == MissingFilesRole::NewPathsToProcessRole) {
 		QStringList list = value.toStringList();
 
-		int row = index.row() + 1;
-		beginInsertRows(QModelIndex(), row, row);
+		int newRow = index.row() + 1;
+		beginInsertRows(QModelIndex(), newRow, newRow);
 
 		MissingFileEntry entry;
 		entry.originalPath = list[0].replace("\\", "/");
 		entry.source = list[1];
 
-		files.insert(row, entry);
-		row++;
+		files.insert(newRow, entry);
 
 		endInsertRows();
 
 		success = true;
-	} else if (index.column() == MissingFilesColumn::NewPath && files[index.row()].newPath != value.toString()) {
+	} else if (index.column() == MissingFilesColumn::NewPath && files[row].newPath != valueString) {
 
-		QString path = value.toString();
-		files[index.row()].newPath = value.toString();
+		QString path = valueString;
+		files[row].newPath = valueString;
 		QString fileName = QUrl(path).fileName();
-		QString origFileName = QUrl(files[index.row()].originalPath).fileName();
+		QString origFileName = QUrl(files[row].originalPath).fileName();
 
 		if (path.isEmpty()) {
-			files[index.row()].state = MissingFilesState::Missing;
+			files[row].state = MissingFilesState::Missing;
 		} else if (path.compare(QTStr("MissingFiles.Clear")) == 0) {
-			files[index.row()].state = MissingFilesState::Cleared;
+			files[row].state = MissingFilesState::Cleared;
 		} else if (fileName.compare(origFileName) == 0) {
-			files[index.row()].state = MissingFilesState::Found;
+			files[row].state = MissingFilesState::Found;
 
-			if (fileLoopCounter == 0)
-				fileCheckLoop(files, path, false);
+			if (recursionLevel == 0) {
+				findAllFilesInPath(files, path, false);
+			}
 		} else {
-			files[index.row()].state = MissingFilesState::Replaced;
+			files[row].state = MissingFilesState::Replaced;
 
-			if (fileLoopCounter == 0)
-				fileCheckLoop(files, path, false);
+			if (recursionLevel == 0) {
+				findAllFilesInPath(files, path, false);
+			}
 		}
 
 		emit dataChanged(index, index);
