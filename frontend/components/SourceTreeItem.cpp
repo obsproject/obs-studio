@@ -98,10 +98,6 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	boxLayout->addWidget(label);
 	boxLayout->addWidget(vis);
 	boxLayout->addWidget(lock);
-#ifdef __APPLE__
-	/* Hack: Fixes a bug where scrollbars would be above the lock icon */
-	boxLayout->addSpacing(16);
-#endif
 
 	Update(false);
 
