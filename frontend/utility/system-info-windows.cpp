@@ -173,7 +173,7 @@ static std::optional<GoLiveApi::GamingFeatures> get_gaming_features_data(const w
 		 L"HistoricalCaptureEnabled", 0, false, 0},
 		{&gaming_features.game_mode_enabled, HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY, L"AutoGameModeEnabled",
 		 L"AllowAutoGameMode", false, 0},
-		{&gaming_features.hags_enabled, HKEY_LOCAL_MACHINE, WIN10_HAGS_REG_KEY, L"HwSchMode", 0, true, 1}};
+	};
 
 	for (int i = 0; i < sizeof(features) / sizeof(*features); ++i) {
 		struct reg_dword info;
