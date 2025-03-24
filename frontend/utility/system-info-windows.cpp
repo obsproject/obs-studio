@@ -275,6 +275,14 @@ void system_info(GoLiveApi::Capabilities &capabilities)
 	// Gaming features
 	capabilities.gaming_features = get_gaming_features_data(ver);
 
+	// Update HAGS status from GPU info if available
+	obs_video_info ovi;
+	if (capabilities.gpu && capabilities.gaming_features && obs_get_video_info(&ovi)) {
+		const auto &gpu = capabilities.gpu->at(ovi.adapter);
+		if (gpu.hags)
+			capabilities.gaming_features->hags_enabled = gpu.hags->hags_enabled;
+	}
+
 	{
 		auto &system_data = capabilities.system;
 
