@@ -65,6 +65,7 @@ private:
 	std::optional<OBSOutputObjects> current_stream_dump;
 
 	bool restart_on_error = false;
+	uint8_t reconnect_attempts = 0;
 
 	friend void StreamStartHandler(void *arg, calldata_t *data);
 	friend void StreamStopHandler(void *arg, calldata_t *data);
