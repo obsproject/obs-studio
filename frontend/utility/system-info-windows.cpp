@@ -8,8 +8,48 @@
 
 #include <cinttypes>
 
+#include <winternl.h>
 #include <dxgi.h>
+#include <d3dkmthk.h>
 #include <shlobj.h>
+
+static std::optional<GoLiveApi::Hags> GetAdapterHagsStatus(const DXGI_ADAPTER_DESC *desc)
+{
+	std::optional<GoLiveApi::Hags> ret;
+	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
+	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
+
+	NTSTATUS res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
+	if (FAILED(res)) {
+		blog(LOG_DEBUG, "Failed opening D3DKMT adapter: %x", res);
+		return ret;
+	}
+
+	D3DKMT_WDDM_2_7_CAPS caps = {};
+	D3DKMT_QUERYADAPTERINFO args = {};
+	args.hAdapter = d3dkmt_openluid.hAdapter;
+	args.Type = KMTQAITYPE_WDDM_2_7_CAPS;
+	args.pPrivateDriverData = &caps;
+	args.PrivateDriverDataSize = sizeof(caps);
+	res = D3DKMTQueryAdapterInfo(&args);
+
+	/* If this still fails we're likely on Windows 10 pre-2004
+	 * where HAGS is not supported anyway. */
+	if (SUCCEEDED(res)) {
+		ret = GoLiveApi::Hags{static_cast<bool>(caps.HwSchSupported), static_cast<bool>(caps.HwSchEnabled),
+				      static_cast<bool>(caps.HwSchEnabledByDefault)};
+	} else {
+		blog(LOG_ERROR, "Failed querying WDDM 2.7 caps: %x", res);
+	}
+
+	D3DKMT_CLOSEADAPTER d3dkmt_close = {d3dkmt_openluid.hAdapter};
+	res = D3DKMTCloseAdapter(&d3dkmt_close);
+	if (FAILED(res)) {
+		blog(LOG_WARNING, "Failed closing D3DKMT adapter %x: %x", d3dkmt_openluid.hAdapter, res);
+	}
+
+	return ret;
+}
 
 static std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 {
@@ -47,6 +87,8 @@ static std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 
 		data.dedicated_video_memory = desc.DedicatedVideoMemory;
 		data.shared_system_memory = desc.SharedSystemMemory;
+
+		data.hags = GetAdapterHagsStatus(&desc);
 
 		/* driver version */
 		LARGE_INTEGER umd;
