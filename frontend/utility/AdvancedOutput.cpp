@@ -689,7 +689,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	bool enableDynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
 	if (multitrackVideo && multitrackVideoActive &&
-	    !multitrackVideo->HandleIncompatibleSettings(main, main->Config(), service, useDelay, enableNewSocketLoop,
+	    !multitrackVideo->HandleIncompatibleSettings(main, main->Config(), service, enableNewSocketLoop,
 							 enableDynBitrate)) {
 		multitrackVideoActive = false;
 		return false;
