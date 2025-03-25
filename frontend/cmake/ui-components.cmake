@@ -45,7 +45,6 @@ target_sources(
     components/Multiview.cpp
     components/Multiview.hpp
     components/MuteCheckBox.hpp
-    components/NonCheckableButton.hpp
     components/OBSAdvAudioCtrl.cpp
     components/OBSAdvAudioCtrl.hpp
     components/OBSPreviewScalingComboBox.cpp
