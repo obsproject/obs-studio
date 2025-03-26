@@ -67,6 +67,7 @@ private:
 	bool cropping = false;
 	bool locked = false;
 	bool scrollMode = false;
+	bool zoomItemsMode = false;
 	bool fixedScaling = false;
 	bool selectionBox = false;
 	bool overflowHidden = false;
@@ -110,6 +111,7 @@ private:
 	static void SnapItemMovement(vec2 &offset);
 	void MoveItems(const vec2 &pos);
 	void BoxItems(const vec2 &startPos, const vec2 &pos);
+	void ZoomItems(const vec3 &mouseData);
 
 	void ProcessClick(const vec2 &pos);
 
