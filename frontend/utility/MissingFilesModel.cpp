@@ -154,14 +154,13 @@ Qt::ItemFlags MissingFilesModel::flags(const QModelIndex &index) const
 	return flags;
 }
 
-void MissingFilesModel::findAllFilesInPath(QList<MissingFileEntry> files, QString path, bool skipPrompt)
+void MissingFilesModel::findAllFilesInPath(const QString &path, bool skipPrompt)
 {
 	allFilesFound = false;
-	fileCheckLoop(files, path, skipPrompt, 0);
+	fileCheckLoop(path, skipPrompt, 0);
 }
 
-void MissingFilesModel::fileCheckLoop(const QList<MissingFileEntry> &files, const QString &path, bool skipPrompt,
-				      int depth)
+void MissingFilesModel::fileCheckLoop(const QString &path, bool skipPrompt, int depth)
 {
 	if (allFilesFound) {
 		return;
@@ -218,7 +217,7 @@ void MissingFilesModel::fileCheckLoop(const QList<MissingFileEntry> &files, cons
 				continue;
 
 			QString directoryPath = dir + QString(ent->d_name) + "/";
-			fileCheckLoop(files, directoryPath, true, depthWithoutFileMatch);
+			fileCheckLoop(directoryPath, true, depthWithoutFileMatch);
 		}
 
 		os_closedir(folder);
@@ -236,7 +235,7 @@ bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value,
 	if (role == MissingFilesRole::NewPathsToProcessRole) {
 		QStringList list = value.toStringList();
 
-		int newRow = index.row() + 1;
+		int newRow = row + 1;
 		beginInsertRows(QModelIndex(), newRow, newRow);
 
 		MissingFileEntry entry;
@@ -263,13 +262,13 @@ bool MissingFilesModel::setData(const QModelIndex &index, const QVariant &value,
 			files[row].state = MissingFilesState::Found;
 
 			if (recursionLevel == 0) {
-				findAllFilesInPath(files, path, false);
+				findAllFilesInPath(path, false);
 			}
 		} else {
 			files[row].state = MissingFilesState::Replaced;
 
 			if (recursionLevel == 0) {
-				findAllFilesInPath(files, path, false);
+				findAllFilesInPath(path, false);
 			}
 		}
 

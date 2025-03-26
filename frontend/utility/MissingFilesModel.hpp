@@ -63,6 +63,6 @@ private:
 
 	QList<MissingFileEntry> files;
 
-	void findAllFilesInPath(QList<MissingFileEntry> files, QString path, bool skipPrompt);
-	void fileCheckLoop(const QList<MissingFileEntry> &files, const QString &path, bool skipPrompt, int depth);
+	void findAllFilesInPath(const QString &path, bool skipPrompt);
+	void fileCheckLoop(const QString &path, bool skipPrompt, int depth);
 };

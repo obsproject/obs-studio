@@ -117,7 +117,7 @@ void OBSMissingFiles::browseFolders()
 
 	if (dir != "") {
 		dir += "/";
-		filesModel->findAllFilesInPath(filesModel->files, dir, true);
+		filesModel->findAllFilesInPath(dir, true);
 	}
 }
 
