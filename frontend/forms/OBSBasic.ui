@@ -920,7 +920,7 @@
            <enum>Qt::TargetMoveAction</enum>
           </property>
           <property name="spacing">
-           <number>0</number>
+           <number>1</number>
           </property>
           <addaction name="actionRemoveScene"/>
          </widget>
@@ -1042,7 +1042,7 @@
            <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
           <property name="spacing">
-           <number>0</number>
+           <number>1</number>
           </property>
           <addaction name="actionRemoveSource"/>
          </widget>
