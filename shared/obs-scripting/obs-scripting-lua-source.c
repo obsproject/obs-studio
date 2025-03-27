@@ -131,6 +131,8 @@ struct obs_lua_source {
 	int func_update;
 	int func_activate;
 	int func_deactivate;
+	int func_preview;
+	int func_depreview;
 	int func_show;
 	int func_hide;
 	int func_video_tick;
@@ -392,6 +394,8 @@ fail:
 	}
 DEFINE_VOID_DATA_CALLBACK(activate)
 DEFINE_VOID_DATA_CALLBACK(deactivate)
+DEFINE_VOID_DATA_CALLBACK(preview)
+DEFINE_VOID_DATA_CALLBACK(depreview)
 DEFINE_VOID_DATA_CALLBACK(show)
 DEFINE_VOID_DATA_CALLBACK(hide)
 #undef DEFINE_VOID_DATA_CALLBACK
@@ -503,6 +507,8 @@ static void source_type_unload(struct obs_lua_source *ls)
 	unref(ls->func_update);
 	unref(ls->func_activate);
 	unref(ls->func_deactivate);
+	unref(ls->func_preview);
+	unref(ls->func_depreview);
 	unref(ls->func_show);
 	unref(ls->func_hide);
 	unref(ls->func_video_tick);
@@ -612,6 +618,8 @@ static int obs_lua_register_source(lua_State *script)
 	get_callback(update);
 	get_callback(activate);
 	get_callback(deactivate);
+	get_callback(preview);
+	get_callback(depreview);
 	get_callback(show);
 	get_callback(hide);
 	get_callback(video_tick);
