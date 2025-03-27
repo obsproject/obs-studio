@@ -164,6 +164,11 @@ static inline bool is_composite_source(const struct obs_source *source)
 	return source->info.output_flags & OBS_SOURCE_COMPOSITE;
 }
 
+static inline bool requires_canvas(const struct obs_source *source)
+{
+	return source->info.output_flags & OBS_SOURCE_REQUIRES_CANVAS;
+}
+
 extern char *find_libobs_data_file(const char *file);
 
 /* internal initialization */
@@ -218,7 +223,7 @@ static bool obs_source_init(struct obs_source *source)
 	return true;
 }
 
-static void obs_source_init_finalize(struct obs_source *source)
+static void obs_source_init_finalize(struct obs_source *source, obs_canvas_t *canvas)
 {
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&obs->data.audio_sources_mutex);
@@ -233,7 +238,12 @@ static void obs_source_init_finalize(struct obs_source *source)
 	}
 
 	if (!source->context.private) {
-		obs_context_data_insert_name(&source->context, &obs->data.sources_mutex, &obs->data.public_sources);
+		if (requires_canvas(source)) {
+			obs_canvas_insert_source(canvas, source);
+		} else {
+			obs_context_data_insert_name(&source->context, &obs->data.sources_mutex,
+						     &obs->data.public_sources);
+		}
 	}
 	obs_context_data_insert_uuid(&source->context, &obs->data.sources_mutex, &obs->data.sources);
 }
@@ -320,7 +330,7 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 
 static obs_source_t *obs_source_create_internal(const char *id, const char *name, const char *uuid,
 						obs_data_t *settings, obs_data_t *hotkey_data, bool private,
-						uint32_t last_obs_ver)
+						uint32_t last_obs_ver, obs_canvas_t *canvas)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 
@@ -362,6 +372,12 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	if (!obs_source_init(source))
 		goto fail;
 
+	/* Scenes need canvases, fall back to using default canvas if none provided here. */
+	if (requires_canvas(source) && !canvas) {
+		blog(LOG_WARNING, "Attempted to add Scene without specifying a canvas! Using default canvas instead.");
+		canvas = obs->data.main_canvas;
+	}
+
 	if (!private)
 		obs_source_init_audio_hotkeys(source);
 
@@ -377,9 +393,12 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	source->flags = source->default_flags;
 	source->enabled = true;
 
-	obs_source_init_finalize(source);
+	obs_source_init_finalize(source, canvas);
 	if (!private) {
-		obs_source_dosignal(source, "source_create", NULL);
+		if (canvas)
+			obs_source_dosignal_canvas(source, canvas, "source_create_canvas", NULL);
+		if (!canvas || canvas == obs->data.main_canvas)
+			obs_source_dosignal(source, "source_create", NULL);
 	}
 
 	return source;
@@ -392,18 +411,25 @@ fail:
 
 obs_source_t *obs_source_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 {
-	return obs_source_create_internal(id, name, NULL, settings, hotkey_data, false, LIBOBS_API_VER);
+	return obs_source_create_internal(id, name, NULL, settings, hotkey_data, false, LIBOBS_API_VER, NULL);
 }
 
 obs_source_t *obs_source_create_private(const char *id, const char *name, obs_data_t *settings)
 {
-	return obs_source_create_internal(id, name, NULL, settings, NULL, true, LIBOBS_API_VER);
+	return obs_source_create_internal(id, name, NULL, settings, NULL, true, LIBOBS_API_VER, NULL);
 }
 
-obs_source_t *obs_source_create_set_last_ver(const char *id, const char *name, const char *uuid, obs_data_t *settings,
-					     obs_data_t *hotkey_data, uint32_t last_obs_ver, bool is_private)
+obs_source_t *obs_source_create_canvas(obs_canvas_t *canvas, const char *id, const char *name, obs_data_t *settings,
+				       obs_data_t *hotkey_data)
 {
-	return obs_source_create_internal(id, name, uuid, settings, hotkey_data, is_private, last_obs_ver);
+	return obs_source_create_internal(id, name, NULL, settings, hotkey_data, false, LIBOBS_API_VER, canvas);
+}
+
+obs_source_t *obs_source_create_set_last_ver(obs_canvas_t *canvas, const char *id, const char *name, const char *uuid,
+					     obs_data_t *settings, obs_data_t *hotkey_data, uint32_t last_obs_ver,
+					     bool is_private)
+{
+	return obs_source_create_internal(id, name, uuid, settings, hotkey_data, is_private, last_obs_ver, canvas);
 }
 
 static char *get_new_filter_name(obs_source_t *dst, const char *name)
@@ -612,9 +638,15 @@ void obs_source_destroy(struct obs_source *source)
 	while (source->filters.num)
 		obs_source_filter_remove(source, source->filters.array[0]);
 
-	obs_context_data_remove_uuid(&source->context, &obs->data.sources);
-	if (!source->context.private)
-		obs_context_data_remove_name(&source->context, &obs->data.public_sources);
+	obs_context_data_remove_uuid(&source->context, &obs->data.sources_mutex, &obs->data.sources);
+	if (!source->context.private) {
+		if (requires_canvas(source)) {
+			obs_canvas_remove_source(source);
+		} else {
+			obs_context_data_remove_name(&source->context, &obs->data.sources_mutex,
+						     &obs->data.public_sources);
+		}
+	}
 
 	source_profiler_remove_source(source);
 
@@ -794,6 +826,10 @@ void obs_source_remove(obs_source_t *source)
 		if (s) {
 			s->removed = true;
 			obs_source_dosignal(s, "source_remove", "remove");
+			/* Remove from canvas if there is one. */
+			if (source->canvas)
+				obs_canvas_remove_source(s);
+
 			obs_source_release(s);
 		}
 	}
@@ -5828,4 +5864,9 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 uint64_t obs_source_get_last_async_ts(const obs_source_t *source)
 {
 	return source->async_last_rendered_ts;
+}
+
+obs_canvas_t *obs_source_get_canvas(const obs_source_t *source)
+{
+	return obs_weak_canvas_get_canvas(source->canvas);
 }
