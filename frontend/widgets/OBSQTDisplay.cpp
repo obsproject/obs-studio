@@ -10,7 +10,11 @@
 #include <QWindow>
 #ifdef ENABLE_WAYLAND
 #include <QApplication>
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
 #include <qpa/qplatformnativeinterface.h>
+#else
+#include <qpa/qplatformwindow_p.h>
+#endif
 #endif
 
 #ifdef _WIN32
@@ -50,8 +54,13 @@ static bool QTToGSWindow(QWindow *window, gs_window &gswindow)
 		break;
 #ifdef ENABLE_WAYLAND
 	case OBS_NIX_PLATFORM_WAYLAND: {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+		auto waylandWindow = window->nativeInterface<QNativeInterface::Private::QWaylandWindow>();
+		gswindow.display = waylandWindow->surface();
+#else
 		QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
 		gswindow.display = native->nativeResourceForWindow("surface", window);
+#endif
 		success = gswindow.display != nullptr;
 		break;
 	}
