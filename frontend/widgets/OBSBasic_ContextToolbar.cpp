@@ -72,10 +72,10 @@ void OBSBasic::copyActionsDynamicProperties()
 
 void OBSBasic::ClearContextBar()
 {
-	QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
+	QLayoutItem *la = ui->contextControlsContainer->layout()->itemAt(0);
 	if (la) {
 		delete la->widget();
-		ui->emptySpace->layout()->removeItem(la);
+		ui->contextControlsContainer->layout()->removeItem(la);
 	}
 }
 
@@ -154,7 +154,7 @@ void OBSBasic::UpdateContextBar(bool force)
 		obs_source_t *source = obs_sceneitem_get_source(item);
 
 		bool updateNeeded = true;
-		QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
+		QLayoutItem *la = ui->contextControlsContainer->layout()->itemAt(0);
 		if (la) {
 			if (SourceToolbar *toolbar = dynamic_cast<SourceToolbar *>(la->widget())) {
 				if (toolbar->GetSource() == source)
@@ -168,20 +168,21 @@ void OBSBasic::UpdateContextBar(bool force)
 		const char *id = obs_source_get_unversioned_id(source);
 		uint32_t flags = obs_source_get_output_flags(source);
 
-		ui->sourceInteractButton->setVisible(flags & OBS_SOURCE_INTERACTION);
-
 		if (contextBarSize >= ContextBarSize_Reduced && (updateNeeded || force)) {
 			ClearContextBar();
 			if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
 				if (!is_network_media_source(source, id)) {
-					MediaControls *mediaControls = new MediaControls(ui->emptySpace);
+					MediaControls *mediaControls = new MediaControls(ui->contextControlsContainer);
 					mediaControls->SetSource(source);
 
-					ui->emptySpace->layout()->addWidget(mediaControls);
+					ui->contextControlsContainer->layout()->addWidget(mediaControls);
 				}
 			} else if (strcmp(id, "browser_source") == 0) {
-				BrowserToolbar *c = new BrowserToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+				BrowserToolbar *c = new BrowserToolbar(ui->contextControlsContainer, source);
+				ui->contextControlsContainer->layout()->addWidget(c);
+
+				connect(c, &BrowserToolbar::interactClicked, this,
+					&OBSBasic::on_actionInteract_triggered);
 
 			} else if (strcmp(id, "wasapi_input_capture") == 0 ||
 				   strcmp(id, "wasapi_output_capture") == 0 ||
@@ -189,46 +190,49 @@ void OBSBasic::UpdateContextBar(bool force)
 				   strcmp(id, "coreaudio_output_capture") == 0 ||
 				   strcmp(id, "pulse_input_capture") == 0 || strcmp(id, "pulse_output_capture") == 0 ||
 				   strcmp(id, "alsa_input_capture") == 0) {
-				AudioCaptureToolbar *c = new AudioCaptureToolbar(ui->emptySpace, source);
+				AudioCaptureToolbar *c = new AudioCaptureToolbar(ui->contextControlsContainer, source);
 				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "wasapi_process_output_capture") == 0) {
 				ApplicationAudioCaptureToolbar *c =
-					new ApplicationAudioCaptureToolbar(ui->emptySpace, source);
+					new ApplicationAudioCaptureToolbar(ui->contextControlsContainer, source);
 				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "window_capture") == 0 || strcmp(id, "xcomposite_input") == 0) {
-				WindowCaptureToolbar *c = new WindowCaptureToolbar(ui->emptySpace, source);
+				WindowCaptureToolbar *c =
+					new WindowCaptureToolbar(ui->contextControlsContainer, source);
 				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "monitor_capture") == 0 || strcmp(id, "display_capture") == 0 ||
 				   strcmp(id, "xshm_input") == 0) {
-				DisplayCaptureToolbar *c = new DisplayCaptureToolbar(ui->emptySpace, source);
+				DisplayCaptureToolbar *c =
+					new DisplayCaptureToolbar(ui->contextControlsContainer, source);
 				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "dshow_input") == 0) {
-				DeviceCaptureToolbar *c = new DeviceCaptureToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+				DeviceCaptureToolbar *c =
+					new DeviceCaptureToolbar(ui->contextControlsContainer, source);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "game_capture") == 0) {
-				GameCaptureToolbar *c = new GameCaptureToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+				GameCaptureToolbar *c = new GameCaptureToolbar(ui->contextControlsContainer, source);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "image_source") == 0) {
-				ImageSourceToolbar *c = new ImageSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+				ImageSourceToolbar *c = new ImageSourceToolbar(ui->contextControlsContainer, source);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "color_source") == 0) {
-				ColorSourceToolbar *c = new ColorSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+				ColorSourceToolbar *c = new ColorSourceToolbar(ui->contextControlsContainer, source);
+				ui->contextControlsContainer->layout()->addWidget(c);
 
 			} else if (strcmp(id, "text_ft2_source") == 0 || strcmp(id, "text_gdiplus") == 0) {
-				TextSourceToolbar *c = new TextSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+				TextSourceToolbar *c = new TextSourceToolbar(ui->contextControlsContainer, source);
+				ui->contextControlsContainer->layout()->addWidget(c);
 			}
 		} else if (contextBarSize == ContextBarSize_Minimized) {
 			ClearContextBar();
@@ -243,35 +247,45 @@ void OBSBasic::UpdateContextBar(bool force)
 		else
 			icon = GetSourceIcon(id);
 
+		ui->contextContainer->setEnabled(true);
+		toggleClass(ui->contextSubContainer, "context-frame", true);
+
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 		ui->contextSourceIcon->setPixmap(pixmap);
-		ui->contextSourceIconSpacer->hide();
 		ui->contextSourceIcon->show();
+		ui->contextSubContainer->hide();
 
 		const char *name = obs_source_get_name(source);
 		ui->contextSourceLabel->setText(name);
+		ui->contextSourceLabel->setAlignment(Qt::AlignLeft);
+
+		ui->contextControlsContainer->show();
 
 		ui->sourceFiltersButton->setEnabled(true);
 		ui->sourcePropertiesButton->setEnabled(obs_source_configurable(source));
+		ui->contextButtonsContainer->show();
 	} else {
 		ClearContextBar();
+		ui->contextContainer->setEnabled(false);
+		toggleClass(ui->contextSubContainer, "context-frame", false);
+		ui->contextSubContainer->show();
 		ui->contextSourceIcon->hide();
-		ui->contextSourceIconSpacer->show();
+		ui->contextSourceLabel->setAlignment(Qt::AlignHCenter);
 		ui->contextSourceLabel->setText(QTStr("ContextBar.NoSelectedSource"));
+
+		ui->contextControlsContainer->hide();
 
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
-		ui->sourceInteractButton->setVisible(false);
+		ui->contextButtonsContainer->hide();
 	}
 
 	if (contextBarSize == ContextBarSize_Normal) {
 		ui->sourcePropertiesButton->setText(QTStr("Properties"));
 		ui->sourceFiltersButton->setText(QTStr("Filters"));
-		ui->sourceInteractButton->setText(QTStr("Interact"));
 	} else {
 		ui->sourcePropertiesButton->setText("");
 		ui->sourceFiltersButton->setText("");
-		ui->sourceInteractButton->setText("");
 	}
 }
 

@@ -85,7 +85,11 @@ bool LineEditChanged(QEvent *event);
 
 void SetComboItemEnabled(QComboBox *c, int idx, bool enabled);
 
+void repolish(QWidget *widget);
 void setClasses(QWidget *widget, const QString &newClasses);
+void addClass(QWidget *widget, const QString className);
+void removeClass(QWidget *widget, const QString className);
+void toggleClass(QWidget *widget, const QString className, bool toggle);
 
 QString SelectDirectory(QWidget *parent, QString title, QString path);
 QString SaveFile(QWidget *parent, QString title, QString path, QString extensions);
