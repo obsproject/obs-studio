@@ -42,6 +42,10 @@ bool load_graphics_imports(struct gs_exports *exports, void *module, const char 
 	bool success = true;
 
 	GRAPHICS_IMPORT(device_get_name);
+	GRAPHICS_IMPORT_OPTIONAL(gpu_get_driver_version);
+	GRAPHICS_IMPORT_OPTIONAL(gpu_get_renderer);
+	GRAPHICS_IMPORT_OPTIONAL(gpu_get_dmem);
+	GRAPHICS_IMPORT_OPTIONAL(gpu_get_smem);
 	GRAPHICS_IMPORT(device_get_type);
 	GRAPHICS_IMPORT_OPTIONAL(device_enum_adapters);
 	GRAPHICS_IMPORT(device_preprocessor_name);
