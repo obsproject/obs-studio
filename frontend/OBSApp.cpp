@@ -18,6 +18,8 @@
 #include "OBSApp.hpp"
 
 #include <components/Multiview.hpp>
+#include <dialogs/LogUploadDialog.hpp>
+#include <utility/CrashHandler.hpp>
 #include <utility/OBSEventFilter.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <utility/models/branches.hpp>
@@ -29,6 +31,8 @@
 #endif
 #include <qt-wrappers.hpp>
 
+#include <QCheckBox>
+#include <QDesktopServices>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <QFile>
 #endif
@@ -41,6 +45,8 @@
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <qpa/qplatformnativeinterface.h>
 #endif
+
+#include <chrono>
 
 #ifdef _WIN32
 #include <sstream>
@@ -61,6 +67,7 @@ string lastCrashLogFile;
 
 extern bool portable_mode;
 extern bool safe_mode;
+extern bool multi;
 extern bool disable_3p_plugins;
 extern bool opt_disable_updater;
 extern bool opt_disable_missing_files_check;
@@ -78,6 +85,67 @@ int OBSApp::sigintFd[2];
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
+
+namespace {
+
+typedef struct UncleanLaunchAction {
+	bool useSafeMode = false;
+	bool sendCrashReport = false;
+
+} UncleanLaunchAction;
+
+UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
+{
+	UncleanLaunchAction launchAction;
+
+	blog(LOG_WARNING, "Crash or unclean shutdown detected");
+
+	QMessageBox crashWarning;
+
+	crashWarning.setIcon(QMessageBox::Warning);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+	crashWarning.setOption(QMessageBox::Option::DontUseNativeDialog);
+#endif
+	crashWarning.setWindowTitle(QTStr("CrashHandling.Dialog.Title"));
+	crashWarning.setText(QTStr("CrashHandling.Dialog.Text"));
+
+	if (enableCrashUpload) {
+		crashWarning.setInformativeText(QTStr("CrashHandling.Dialog.PrivacyNotice"));
+
+		QCheckBox *sendCrashReportCheckbox = new QCheckBox(QTStr("CrashHandling.Dialog.SendReport"));
+		crashWarning.setCheckBox(sendCrashReportCheckbox);
+	}
+
+	QPushButton *launchSafeButton =
+		crashWarning.addButton(QTStr("CrashHandling.Dialog.LaunchSafe"), QMessageBox::AcceptRole);
+	QPushButton *launchNormalButton =
+		crashWarning.addButton(QTStr("CrashHandling.Dialog.LaunchNormal"), QMessageBox::RejectRole);
+
+	crashWarning.setDefaultButton(launchNormalButton);
+
+	crashWarning.exec();
+
+	bool useSafeMode = crashWarning.clickedButton() == launchSafeButton;
+
+	if (useSafeMode) {
+		launchAction.useSafeMode = true;
+
+		blog(LOG_INFO, "[Safe Mode] Safe mode launch selected, loading 3rd party plugins is disabled");
+	} else {
+		blog(LOG_WARNING, "[Safe Mode] Normal launch selected, loading 3rd party plugins is enabled");
+	}
+
+	bool sendCrashReport = (enableCrashUpload) ? crashWarning.checkBox()->isChecked() : false;
+
+	if (sendCrashReport) {
+		launchAction.sendCrashReport = true;
+
+		blog(LOG_INFO, "User selected to send crash report");
+	}
+
+	return launchAction;
+}
+} // namespace
 
 QObject *CreateShortcutFilter()
 {
@@ -751,8 +819,11 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv),
-	  profilerNameStore(store)
+	  profilerNameStore(store),
+	  appLaunchUUID_(QUuid::createUuid())
 {
+	connect(this, &QCoreApplication::aboutToQuit, this, &OBSApp::applicationShutdown);
+
 	/* fix float handling */
 #if defined(Q_OS_UNIX)
 	if (!setlocale(LC_NUMERIC, "C"))
@@ -767,6 +838,11 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 #else
 	connect(qApp, &QGuiApplication::commitDataRequest, this, &OBSApp::commitData);
 #endif
+	if (multi) {
+		crashHandler_ = std::make_unique<OBS::CrashHandler>();
+	} else {
+		crashHandler_ = std::make_unique<OBS::CrashHandler>(appLaunchUUID_);
+	}
 
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
 
@@ -777,31 +853,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	setDesktopFileName("com.obsproject.Studio");
 }
 
-OBSApp::~OBSApp()
-{
-#ifdef _WIN32
-	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
-	if (disableAudioDucking)
-		DisableAudioDucking(false);
-#else
-	delete snInt;
-	close(sigintFd[0]);
-	close(sigintFd[1]);
-#endif
-
-#ifdef __APPLE__
-	bool vsyncDisabled = config_get_bool(appConfig, "Video", "DisableOSXVSync");
-	bool resetVSync = config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
-	if (vsyncDisabled && resetVSync)
-		EnableOSXVSync(true);
-#endif
-
-	os_inhibit_sleep_set_active(sleepInhibitor, false);
-	os_inhibit_sleep_destroy(sleepInhibitor);
-
-	if (libobs_initialized)
-		obs_shutdown();
-}
+OBSApp::~OBSApp(){};
 
 static void move_basic_to_profiles(void)
 {
@@ -958,6 +1010,22 @@ void OBSApp::AppInit()
 		throw "Failed to create profile directories";
 }
 
+void OBSApp::checkForUncleanShutdown()
+{
+	bool hasUncleanShutdown = crashHandler_->hasUncleanShutdown();
+	bool hasNewCrashLog = crashHandler_->hasNewCrashLog();
+
+	if (hasUncleanShutdown) {
+		UncleanLaunchAction launchAction = handleUncleanShutdown(hasNewCrashLog);
+
+		safe_mode = launchAction.useSafeMode;
+
+		if (launchAction.sendCrashReport) {
+			crashHandler_->uploadLastCrashLog();
+		}
+	}
+}
+
 const char *OBSApp::GetRenderModule() const
 {
 	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
@@ -1090,6 +1158,15 @@ bool OBSApp::OBSInit()
 	connect(this, &QGuiApplication::applicationStateChanged,
 		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
+
+	connect(crashHandler_.get(), &OBS::CrashHandler::crashLogUploadFailed, this,
+		[this](const QString &errorMessage) {
+			emit this->logUploadFailed(OBS::LogFileType::CrashLog, errorMessage);
+		});
+
+	connect(crashHandler_.get(), &OBS::CrashHandler::crashLogUploadFinished, this,
+		[this](const QString &fileUrl) { emit this->logUploadFinished(OBS::LogFileType::CrashLog, fileUrl); });
+
 	return true;
 }
 
@@ -1173,9 +1250,53 @@ const char *OBSApp::GetCurrentLog() const
 	return currentLogFile.c_str();
 }
 
-const char *OBSApp::GetLastCrashLog() const
+void OBSApp::openCrashLogDirectory() const
 {
-	return lastCrashLogFile.c_str();
+	std::filesystem::path crashLogDirectory = crashHandler_->getCrashLogDirectory();
+
+	if (crashLogDirectory.empty()) {
+		return;
+	}
+
+	QString crashLogDirectoryString = QString::fromStdString(crashLogDirectory.u8string());
+
+	QUrl crashLogDirectoryURL = QUrl::fromLocalFile(crashLogDirectoryString);
+	QDesktopServices::openUrl(crashLogDirectoryURL);
+}
+
+void OBSApp::uploadLastAppLog() const
+{
+	OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
+
+	basicWindow->UploadLog("obs-studio/logs", GetLastLog(), OBS::LogFileType::LastAppLog);
+}
+
+void OBSApp::uploadCurrentAppLog() const
+{
+	OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
+
+	basicWindow->UploadLog("obs-studio/logs", GetCurrentLog(), OBS::LogFileType::CurrentAppLog);
+}
+
+void OBSApp::uploadLastCrashLog()
+{
+	crashHandler_->uploadLastCrashLog();
+}
+
+OBS::LogFileState OBSApp::getLogFileState(OBS::LogFileType type) const
+{
+	switch (type) {
+	case OBS::LogFileType::CrashLog: {
+		bool hasNewCrashLog = crashHandler_->hasNewCrashLog();
+
+		return (hasNewCrashLog) ? OBS::LogFileState::New : OBS::LogFileState::Uploaded;
+	}
+	case OBS::LogFileType::CurrentAppLog:
+	case OBS::LogFileType::LastAppLog:
+		return OBS::LogFileState::New;
+	default:
+		return OBS::LogFileState::NoState;
+	}
 }
 
 bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
@@ -1573,3 +1694,30 @@ void OBSApp::commitData(QSessionManager &manager)
 	}
 }
 #endif
+
+void OBSApp::applicationShutdown() noexcept
+{
+#ifdef _WIN32
+	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
+	if (disableAudioDucking)
+		DisableAudioDucking(false);
+#else
+	delete snInt;
+	close(sigintFd[0]);
+	close(sigintFd[1]);
+#endif
+
+#ifdef __APPLE__
+	bool vsyncDisabled = config_get_bool(appConfig, "Video", "DisableOSXVSync");
+	bool resetVSync = config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
+	if (vsyncDisabled && resetVSync)
+		EnableOSXVSync(true);
+#endif
+
+	os_inhibit_sleep_set_active(sleepInhibitor, false);
+	os_inhibit_sleep_destroy(sleepInhibitor);
+
+	if (libobs_initialized) {
+		obs_shutdown();
+	}
+}
