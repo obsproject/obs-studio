@@ -29,8 +29,6 @@ target_sources(
     dialogs/OBSBasicTransform.hpp
     dialogs/OBSBasicVCamConfig.cpp
     dialogs/OBSBasicVCamConfig.hpp
-    dialogs/OBSLogReply.cpp
-    dialogs/OBSLogReply.hpp
     dialogs/OBSLogViewer.cpp
     dialogs/OBSLogViewer.hpp
     dialogs/OBSMissingFiles.cpp
