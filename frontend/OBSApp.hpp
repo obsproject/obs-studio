@@ -41,6 +41,12 @@ Q_DECLARE_METATYPE(VoidFunc)
 class QFileSystemWatcher;
 class QSocketNotifier;
 
+namespace OBS {
+
+enum class LogFileType { NoType, CurrentAppLog, LastAppLog, CrashLog };
+
+enum class LogFileState { NoState, New, Uploaded };
+} // namespace OBS
 struct UpdateBranch {
 	QString name;
 	QString display_name;
@@ -154,6 +160,8 @@ public:
 
 	const char *GetLastCrashLog() const;
 
+	OBS::LogFileState getLogFileState(OBS::LogFileType type) const;
+
 	std::string GetVersionString(bool platform = true) const;
 	bool IsPortableMode();
 	bool IsUpdaterDisabled();
@@ -195,6 +203,9 @@ public slots:
 
 signals:
 	void StyleChanged();
+
+	void logUploadFinished(OBS::LogFileType, const QString &fileUrl);
+	void logUploadFailed(OBS::LogFileType, const QString &errorMessage);
 };
 
 int GetAppConfigPath(char *path, size_t size, const char *name);
