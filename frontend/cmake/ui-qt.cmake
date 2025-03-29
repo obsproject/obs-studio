@@ -31,6 +31,7 @@ target_sources(
     forms/AutoConfigVideoPage.ui
     forms/ColorSelect.ui
     forms/obs.qrc
+    forms/LogUploadDialog.ui
     forms/OBSAbout.ui
     forms/OBSAdvAudio.ui
     forms/OBSBasic.ui
