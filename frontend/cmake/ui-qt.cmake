@@ -44,8 +44,6 @@ target_sources(
     forms/OBSBasicVCamConfig.ui
     forms/OBSExtraBrowsers.ui
     forms/OBSImporter.ui
-    forms/OBSLogReply.ui
-    forms/OBSLogReply.ui
     forms/OBSMissingFiles.ui
     forms/OBSRemux.ui
     forms/source-toolbar/browser-source-toolbar.ui
