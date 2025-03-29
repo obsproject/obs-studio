@@ -64,6 +64,7 @@ struct QuickTransition;
 namespace OBS {
 class SceneCollection;
 struct Rect;
+enum class LogFileType;
 } // namespace OBS
 
 #define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
@@ -259,6 +260,7 @@ private:
 
 	bool loaded = false;
 	bool closing = false;
+	bool handledShutdown = false;
 
 	// TODO: Remove, orphaned variable
 	bool copyVisible = true;
@@ -300,6 +302,7 @@ private:
 public slots:
 	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
+	void applicationShutdown() noexcept;
 
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
@@ -579,7 +582,6 @@ private:
 
 	QList<QPoint> visDlgPositions;
 
-	void UploadLog(const char *subdir, const char *file, const bool crash);
 	void CloseDialogs();
 	void EnumDialogs();
 
@@ -631,9 +633,7 @@ private slots:
 
 	void on_resetUI_triggered();
 
-	void logUploadFinished(const QString &text, const QString &error);
-	void crashUploadFinished(const QString &text, const QString &error);
-	void openLogDialog(const QString &text, const bool crash);
+	void logUploadFinished(const QString &text, const QString &error, OBS::LogFileType uploadType);
 
 	void updateCheckFinished();
 
@@ -644,6 +644,15 @@ public:
 	void CreateFiltersWindow(obs_source_t *source);
 	void CreateEditTransformWindow(obs_sceneitem_t *item);
 	void CreatePropertiesWindow(obs_source_t *source);
+
+	void UploadLog(const char *subdir, const char *file, OBS::LogFileType uploadType);
+
+	/* -------------------------------------
+	 * MARK: - OBSBasic_MainMenu
+	 * -------------------------------------
+	 */
+private:
+	void setupMenuItemStateHandlers();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_OutputHandler
