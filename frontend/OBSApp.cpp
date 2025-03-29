@@ -1213,6 +1213,33 @@ const char *OBSApp::GetLastCrashLog() const
 	return lastCrashLogFile.c_str();
 }
 
+void OBSApp::uploadLastAppLog() const
+{
+	return;
+}
+
+void OBSApp::uploadCurrentAppLog() const
+{
+	return;
+}
+
+void OBSApp::uploadLastCrashLog()
+{
+	return;
+}
+
+OBS::LogFileState OBSApp::getLogFileState(OBS::LogFileType type) const
+{
+	switch (type) {
+	case OBS::LogFileType::CrashLog:
+	case OBS::LogFileType::CurrentAppLog:
+	case OBS::LogFileType::LastAppLog:
+		return OBS::LogFileState::New;
+	default:
+		return OBS::LogFileState::NoState;
+	}
+}
+
 bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 {
 	for (obs_frontend_translate_ui_cb cb : translatorHooks) {
