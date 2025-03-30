@@ -28,7 +28,14 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 
 	setLayout(itemLayout);
 
-	connect(vis, &QCheckBox::clicked, [this](bool visible) { obs_source_set_enabled(source, visible); });
+	connect(vis, &QCheckBox::clicked, [this](bool visible) {
+		obs_source_set_enabled(source, visible);
+		const char *enabled = visible ? "en" : "dis";
+		const char *filter_name = obs_source_get_name(source);
+		obs_source_t *parent = obs_filter_get_parent(source);
+		const char *source_name = obs_source_get_name(parent);
+		blog(LOG_INFO, "User set filter '%s' on source '%s' to %sabled", filter_name, source_name, enabled);
+	});
 }
 
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
