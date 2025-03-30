@@ -188,6 +188,8 @@ Get Functions
 
 .. function:: const char *obs_data_get_string(obs_data_t *data, const char *name)
 
+   `Note` : If the data object was generated from a OBS_COMBO_TYPE_EDITABLE property, the property's ``name`` will be returned instead of its ``val``.
+
 ---------------------
 
 .. function:: long long obs_data_get_int(obs_data_t *data, const char *name)
