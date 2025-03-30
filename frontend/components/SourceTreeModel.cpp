@@ -14,7 +14,7 @@ static inline OBSScene GetCurrentScene()
 
 void SourceTreeModel::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
-	SourceTreeModel *stm = reinterpret_cast<SourceTreeModel *>(ptr);
+	SourceTreeModel *stm = static_cast<SourceTreeModel *>(ptr);
 
 	switch (event) {
 	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
@@ -43,7 +43,7 @@ void SourceTreeModel::Clear()
 
 static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 {
-	QVector<OBSSceneItem> &items = *reinterpret_cast<QVector<OBSSceneItem> *>(ptr);
+	QVector<OBSSceneItem> &items = *static_cast<QVector<OBSSceneItem> *>(ptr);
 
 	obs_source_t *src = obs_sceneitem_get_source(item);
 	if (obs_source_removed(src)) {
