@@ -56,5 +56,12 @@ runs:
 
         print ::group::Run clang-format-17
         local -a changes=(${(s:,:)CHANGED_FILES//[\[\]\'\"]/})
-        ./build-aux/run-clang-format --fail-${{ inputs.failCondition }} --check ${changes}
+        local issues
+        issues=$(./build-aux/run-clang-format --fail-${{ inputs.failCondition }} --check ${changes} || true)
+
+        if [[ -n "$issues" ]]; then
+          echo "::error::clang-format issues found:\n$issues"
+        else
+          echo "No formatting issues detected."
+        fi
         print ::endgroup::

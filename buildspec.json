@@ -12,7 +12,7 @@
             }
         },
         "qt6": {
-            "version": "2023-08-31sl1",
+            "version": "2024-09-10v4",
             "baseUrl": "https://obs-studio-deployment.s3-us-west-2.amazonaws.com",
             "label": "Pre-Built Qt6",
             "hashes": {
@@ -27,18 +27,19 @@
         },
         "cef": {
             "version": "5060",
-            "baseUrl": "https://cdn-fastly.obsproject.com/downloads",
+            "baseUrl": "https://streamlabs-cef-dist.s3.us-west-2.amazonaws.com",
             "label": "Chromium Embedded Framework",
             "hashes": {
-                "macos-x86_64": "7ef71717ff2e4ff4212274c33f0993729f47c109c464e499544fd3f63586a069",
-                "macos-arm64": "a9da8909202aefc8f35509d03eff9a7c837b5d3b2ed3afb39b67121cb16d457b",
+                "macos-x86_64": "4B3AC2FF135C2858FE8ECAB19D936A0DD95D9374373946CB5528CB2FD8E0A89F",
+                "macos-arm64": "B554146651D8E3823A2708FC738F720CA9D373263D6896CF4B4A51E2DA82C439",
                 "linux-x86_64": "bf4aa9388bab7e94fa945cc3bba16b6da63b6a30f9c0342d42235468b39d84bf",
                 "linux-aarch64": "68d915c9ba2639cba762a54cd3430fce2527aa6355d831d3cfcb6157664206b0",
-                "windows-x64": "c1b47beb7ee42e98f1a41b6d694c26842a4a3d452e44bdf6f758c9785696533d"
+                "windows-x64": "7480e9ed5688e09919db67237d130eef9a4c24df32ba2a7b8a5587de45ff8e69"
             },
             "revision": {
-                "macos-x86_64": 2,
-                "macos-arm64": 2
+                "macos-x86_64": 3,
+                "macos-arm64": 3,
+                "windows-x64": 3
             }
         },
         "vlc": {
@@ -49,13 +50,22 @@
                 "windows-x64": "91f589ef69fce51645a3ecbb215b405c98db7b891479474ec3b5ed3b63c25e4a"
             }
         },
+        "openssl": {
+            "version": "1.1.1c",
+            "baseUrl": "https://streamlabs-obs-updater-deps.s3.us-west-2.amazonaws.com",
+            "label": "openssl",
+            "hashes": {
+                "windows-x64": "801CE178E86CB13A1485878DE053B6089C32941800CFD2440F33158117A58860"
+            }
+        },
         "libmediasoupclient": {
             "version": "3.4.3",
             "baseUrl": "https://obs-studio-deployment.s3-us-west-2.amazonaws.com",
             "label": "libmediasoupclient",
             "hashes": {
                 "macos-x86_64": "D06CF8593EBFA2DAE3AB6A59EA889A931C1EE77586D76EB890AF93DB936D18C5",
-                "macos-arm64": "DC4424D32A86306172C57E9D8D7EDD2CB3897C364A56F46318DEE5395B68474B"
+                "macos-arm64": "DC4424D32A86306172C57E9D8D7EDD2CB3897C364A56F46318DEE5395B68474B",
+                "windows-x64": "03E25130EDF6B49009404B6FE4B75D5DDC92885F1DAD2DF3ED0FB3068D98C682"
             }
         },
         "webrtc": {
@@ -64,8 +74,18 @@
             "label": "webrtc",
             "hashes": {
                 "macos-x86_64": "5FAD4805BC81256BD3B7E06EE75FFF9BD2A8983DCCD5F31C1F500A214A3B08B2",
-                "macos-arm64": "5D9FA128386DA4ADA0FF0AD2D092C2F9DD2B93A93FD85A50EE04358855680473"
+                "macos-arm64": "5D9FA128386DA4ADA0FF0AD2D092C2F9DD2B93A93FD85A50EE04358855680473",
+                "windows-x64": "0FCE7305A5C1D2A026157B2BEFFFABA25A4202CE403614F6A98965CECA15E2B0"
             }
+        },
+        "grpc": {
+            "version": "v1.47.0",
+            "baseUrl": "https://obs-studio-deployment.s3-us-west-2.amazonaws.com",
+            "label": "gRPC",
+            "hashes": {
+                "windows-x64": "C83815ACCCAE80F07E545B569582E548EE6E4575B2E329B7B739509BD49D811C"
+            },
+            "distPath": "grpc_dist"
         }
     },
     "platformConfig": {

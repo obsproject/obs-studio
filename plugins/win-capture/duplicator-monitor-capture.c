@@ -106,7 +106,7 @@ struct duplicator_monitor_info {
 	char id[128];
 	char alt_id[128];
 	char name[128];
-	int idx;
+	long long idx;
 	RECT rect;
 	HMONITOR handle;
 };
@@ -356,7 +356,7 @@ static struct duplicator_monitor_info find_monitor(const char *monitor_id)
 	return monitor;
 }
 
-static struct duplicator_monitor_info find_monitor_by_idx(int monitor_idx)
+static struct duplicator_monitor_info find_monitor_by_idx(long long monitor_idx)
 {
 	struct duplicator_monitor_info monitor = {0};
 	monitor.idx = monitor_idx;
@@ -375,7 +375,7 @@ static inline void update_settings(struct duplicator_capture *capture,
 	pthread_mutex_lock(&capture->update_mutex);
 
 	struct duplicator_monitor_info monitor;
-	int monitor_idx = obs_data_get_int(settings, "monitor_idx");
+	long long monitor_idx = obs_data_get_int(settings, "monitor_idx");
 	if (monitor_idx < 0)
 		monitor = find_monitor(
 			obs_data_get_string(settings, "monitor_id"));

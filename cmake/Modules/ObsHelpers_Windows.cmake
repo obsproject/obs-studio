@@ -189,12 +189,12 @@ function(setup_obs_app target)
     if(MSVC)
       target_compile_options(obs-browser PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
 
-      target_compile_options(obs-browser-page PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
+      target_compile_options(obs-browser-helper PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
     endif()
 
     target_link_options(obs-browser PRIVATE "LINKER:/IGNORE:4099")
 
-    target_link_options(obs-browser-page PRIVATE "LINKER:/IGNORE:4099" "LINKER:/SUBSYSTEM:WINDOWS")
+    target_link_options(obs-browser-helper PRIVATE "LINKER:/IGNORE:4099" "LINKER:/SUBSYSTEM:WINDOWS")
   endif()
 
   _setup_obs_app(${ARGV})

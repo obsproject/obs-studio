@@ -18,10 +18,12 @@ function(_check_dependencies_macos)
   set(qt6_destination "obs-deps-qt6-VERSION-ARCH")
   set(cef_filename "cef_binary_VERSION_macos_ARCH_REVISION.tar.xz")
   set(cef_destination "cef_binary_VERSION_macos_ARCH")
+
   set(libmediasoupclient_filename "libmediasoupclient-VERSION-osx-ARCH.zip")
   set(libmediasoupclient_destination "libmediasoupclient-VERSION-osx-ARCH")
   set(webrtc_filename "webrtc-VERSION-osx-ARCH.zip")
   set(webrtc_destination "webrtc-VERSION-osx-ARCH")
+
   set(dependencies_list prebuilt qt6 cef libmediasoupclient webrtc)
 
   _check_dependencies()

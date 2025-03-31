@@ -99,16 +99,20 @@ configure_file(virtualcam-uninstall.bat.in virtualcam-uninstall.bat)
 target_add_resource(obs-virtualcam-module "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat"
                     "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow")
 
+if(ENABLE_32_TARGETS)
 include(cmake/32bit.cmake)
+endif()
 
 # cmake-format: off
 set_target_properties_obs(obs-virtualcam-module PROPERTIES FOLDER plugins/win-dshow OUTPUT_NAME obs-virtualcam-module64)
 # cmake-format: on
 
+if(ENABLE_32_TARGETS)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   add_custom_command(
     TARGET obs-virtualcam-module
     POST_BUILD
     COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x86 --config $<CONFIG> -t obs-virtualcam-module
     COMMENT "Build 32-bit obs-virtualcam")
+endif()
 endif()

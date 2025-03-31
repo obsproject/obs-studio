@@ -162,6 +162,15 @@ jobs:
           name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}-dSYMs
           path: ${{ github.workspace }}/build_macos/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}-dSYMs.tar.xz
 
+      - name: Symbol Server and Sentry Integration
+        uses: ./.github/actions/upload-debug-symbols
+        with:
+          githubWorkspace: ${{ github.workspace }}
+          repoUserId: stream-labs
+          repoName: obs-studio
+          repoBranch: ${{ github.sha }}
+          buildConfig: RelWithDebInfo
+  
       - uses: actions/cache/save@v4
         if: github.event_name != 'pull_request' && steps.ccache-cache.outputs.cache-hit != 'true'
         with:
@@ -170,6 +179,7 @@ jobs:
 
   ubuntu-build:
     name: Ubuntu 🐧
+    if: github.repository == 'obsproject/obs-studio'
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
@@ -228,7 +238,7 @@ jobs:
 
       - name: Upload Debug Symbol Artifacts 🪲
         uses: actions/upload-artifact@v4
-        if: ${{ fromJSON(needs.check-event.outputs.package) }}
+        if: github.repository == 'obsproject/obs-studio' && fromJSON(needs.check-event.outputs.package)
         with:
           name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}-dbgsym
           path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb
@@ -241,6 +251,7 @@ jobs:
 
   flatpak-build:
     name: Flatpak 📦
+    if: github.repository == 'obsproject/obs-studio'
     runs-on: ubuntu-22.04
     needs: check-event
     defaults:
@@ -331,6 +342,13 @@ jobs:
     name: Windows 🪟
     runs-on: windows-2022
     needs: check-event
+    env:
+      PACKAGE_NAME: libobs
+      OS_TAG: windows64
+      InstallDir: "install"
+      BuildDir: "build_x64"
+      RELEASE_BUCKET: "obsstudios3.streamlabs.com"
+      ReleaseName: release
     defaults:
       run:
         shell: pwsh
@@ -339,7 +357,24 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1
+      - name: Install build components
+        run: |
+          # For versions update see here: https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2022
+          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          $componentsToInstall= @(
+          "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
+          "Microsoft.VisualStudio.Component.VC.14.39.17.9.x86.x64"
+          "Microsoft.VisualStudio.Component.VC.14.39.17.9.ATL"
+          )
+          [string]$workloadArgs = $componentsToInstall | ForEach-Object {" --add " +  $_}
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
+          # should be run twice
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+        shell: powershell
       - uses: actions/cache@v4
         id: ccache-cache
         if: github.event_name == 'pull_request'
@@ -365,7 +400,20 @@ jobs:
           target: x64
           config: ${{ needs.check-event.outputs.config }}
 
+      - name: Symbol Server and Sentry Integration 🪲
+        uses: ./.github/actions/upload-debug-symbols
+        with:
+          githubWorkspace: ${{ github.workspace }}
+          repoUserId: stream-labs
+          repoName: obs-studio
+          repoBranch: ${{ github.sha }}
+          buildConfig: RelWithDebInfo
+          awsSymbAccessKeyId: ${{ secrets.AWS_SYMB_ACCESS_KEY_ID }}
+          awsSymbSecretAccessKey: ${{ secrets.AWS_SYMB_SECRET_ACCESS_KEY }}
+          sentryAuthToken: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
       - name: Package OBS Studio 📀
+        if: github.repository == 'obsproject/obs-studio'
         uses: ./.github/actions/package-obs
         with:
           target: x64
@@ -373,7 +421,35 @@ jobs:
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
 
       - name: Upload Artifacts 📡
+        if: github.repository == 'obsproject/obs-studio'
         uses: actions/upload-artifact@v4
         with:
           name: obs-studio-windows-x64-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_x64/obs-studio-*-windows-x64.zip
+
+      - name: Get the version
+        id: get_version
+        run: |
+          $version = "${{ github.ref }}".Replace("refs/tags/", "")
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+      - name: Package OBS lib 🗜️
+        run: |
+          cd ${{env.BuildDir}}
+          7z a -r ../${{env.TARGET_ARTIFACT}}.7z ${{env.InstallDir}}
+          cd ..
+        env:
+          TARGET_ARTIFACT: ${{ env.PACKAGE_NAME }}-${{ env.OS_TAG }}-${{ env.ReleaseName }}-${{ steps.get_version.outputs.VERSION }}
+
+      - name: Configure AWS credentials
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
+          aws-region: us-west-2
+      - name: Deploy
+        if: startsWith(github.ref, 'refs/tags/')
+        run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
+        env:
+          TARGET_ARTIFACT: ${{ env.PACKAGE_NAME }}-${{ env.OS_TAG }}-${{ env.ReleaseName }}-${{ steps.get_version.outputs.VERSION }}
+  

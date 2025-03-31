@@ -30,6 +30,7 @@ endfunction()
 
 # set_target_properties_obs: Set target properties for use in obs-studio
 function(set_target_properties_obs target)
+  message(STATUS "[set_target_properties_obs] Setting target properties for ${target}...")
   set(options "")
   set(oneValueArgs "")
   set(multiValueArgs PROPERTIES)
@@ -103,6 +104,7 @@ function(set_target_properties_obs target)
 
       get_property(obs_executables GLOBAL PROPERTY _OBS_EXECUTABLES)
       add_dependencies(${target} ${obs_executables})
+
       foreach(executable IN LISTS obs_executables)
         set_target_xcode_properties(${executable} PROPERTIES INSTALL_PATH
                                     "$(LOCAL_APPS_DIR)/$<TARGET_BUNDLE_DIR_NAME:${target}>/Contents/MacOS")
@@ -111,7 +113,7 @@ function(set_target_properties_obs target)
           TARGET ${target}
           POST_BUILD
           COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${executable}>"
-                  "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/MacOS/"
+          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/MacOS/"
           COMMENT "Copy ${executable} to application bundle")
       endforeach()
 
@@ -166,7 +168,7 @@ function(set_target_properties_obs target)
           TARGET ${target}
           POST_BUILD
           COMMAND "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_BUNDLE_DIR:obs-dal-plugin>"
-                  "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/$<TARGET_BUNDLE_DIR_NAME:obs-dal-plugin>"
+          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/$<TARGET_BUNDLE_DIR_NAME:obs-dal-plugin>"
           COMMENT "Add OBS DAL plugin to application bundle")
       endif()
 
@@ -175,7 +177,7 @@ function(set_target_properties_obs target)
           TARGET ${target}
           POST_BUILD
           COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE_DIR:obspython>/obspython.py"
-                  "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources"
+          "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources"
           COMMENT "Add OBS::python import module")
       endif()
 
@@ -233,6 +235,7 @@ function(set_target_properties_obs target)
     # cmake-format: on
 
     get_target_property(is_framework ${target} FRAMEWORK)
+
     if(is_framework)
       set_target_properties(${target} PROPERTIES FRAMEWORK_VERSION A MACOSX_FRAMEWORK_IDENTIFIER
                                                                      com.obsproject.${target})
@@ -294,6 +297,7 @@ function(set_target_properties_obs target)
         # Good-enough for now as there are no other variants - in _theory_ we should only add the appropriate variant,
         # but that is only known at project generation and not build system configuration.
         get_target_property(imported_location CEF::Library IMPORTED_LOCATION_RELEASE)
+
         if(imported_location)
           list(APPEND cef_items "${imported_location}")
         endif()
@@ -314,6 +318,7 @@ function(set_target_properties_obs target)
   endif()
 
   target_install_resources(${target})
+  target_install_ffmpeg_and_ffprobe(${target})
 
   get_target_property(target_sources ${target} SOURCES)
   set(target_ui_files ${target_sources})
@@ -361,7 +366,7 @@ endmacro()
 # target_export: Helper function to export target as CMake package
 function(target_export target)
   # Exclude CMake package from 'ALL' target
-  #set(exclude_variant EXCLUDE_FROM_ALL)
+  # set(exclude_variant EXCLUDE_FROM_ALL)
   set(exclude_variant "")
   _target_export(${target})
 endfunction()
@@ -369,11 +374,13 @@ endfunction()
 # target_install_resources: Helper function to add resources into bundle
 function(target_install_resources target)
   message(DEBUG "Installing resources for target ${target}...")
+
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/data")
     file(GLOB_RECURSE data_files "${CMAKE_CURRENT_SOURCE_DIR}/data/*")
+
     foreach(data_file IN LISTS data_files)
       cmake_path(RELATIVE_PATH data_file BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/" OUTPUT_VARIABLE
-                 relative_path)
+        relative_path)
       cmake_path(GET relative_path PARENT_PATH relative_path)
       target_sources(${target} PRIVATE "${data_file}")
       set_property(SOURCE "${data_file}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources/${relative_path}")
@@ -381,6 +388,55 @@ function(target_install_resources target)
     endforeach()
   endif()
 endfunction()
+# Function to install ffmpeg and ffprobe binaries
+function(target_install_ffmpeg_and_ffprobe target)
+  if(TARGET OBS::ffmpeg)
+    # Adjust the path relative to FFmpeg_INCLUDE_DIRS
+    get_filename_component(ffmpeg_bin_dir "${FFmpeg_INCLUDE_DIRS}/../bin" REALPATH)
+    set(ffmpeg_path "${ffmpeg_bin_dir}/ffmpeg")
+    set(ffprobe_path "${ffmpeg_bin_dir}/ffprobe")
+    set(destination "${CMAKE_INSTALL_PREFIX}/OBS.app/Contents/Frameworks")
+    set(FINAL_FFMPEG_PATH "${destination}/ffmpeg")
+    set(FINAL_FFPROBE_PATH "${destination}/ffprobe")
+
+    # Install ffmpeg
+    if(EXISTS "${ffmpeg_path}")
+      message(STATUS "Found ffmpeg at ${ffmpeg_path}")
+      install(
+        FILES "${ffmpeg_path}"
+        DESTINATION "${destination}"
+        PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      )
+
+      # Run the fix_deps_paths.sh script at install time with the full absolute path
+      install(CODE "
+        message(\"Running fix_deps_paths.sh on ${FINAL_FFMPEG_PATH}\")
+        execute_process(COMMAND bash \"${CMAKE_SOURCE_DIR}/CI/macos/fix_deps_paths.sh\" \"${FINAL_FFMPEG_PATH}\")
+      ")
+    else()
+      message(WARNING "ffmpeg not found at ${ffmpeg_path}")
+    endif()
+
+    # Install ffprobe
+    if(EXISTS "${ffprobe_path}")
+      message(STATUS "Found ffprobe at ${ffprobe_path}")
+      install(
+        FILES "${ffprobe_path}"
+        DESTINATION "${destination}"
+        PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      )
+
+      # Run the fix_deps_paths.sh script for ffprobe with the full absolute path
+      install(CODE "
+        message(\"Running fix_deps_paths.sh on ${FINAL_FFPROBE_PATH}\")
+        execute_process(COMMAND bash \"${CMAKE_SOURCE_DIR}/CI/macos/fix_deps_paths.sh\" \"${FINAL_FFPROBE_PATH}\")
+      ")
+    else()
+      message(WARNING "ffprobe not found at ${ffprobe_path}")
+    endif()
+  endif()
+endfunction()
+
 
 # target_add_resource: Helper function to add a specific resource to a bundle
 function(target_add_resource target resource)
@@ -398,12 +454,14 @@ function(_bundle_dependencies target)
 
   get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
   list(LENGTH obs_module_list num_modules)
+
   if(num_modules GREATER 0)
     add_dependencies(${target} ${obs_module_list})
     set_property(
       TARGET ${target}
       APPEND
       PROPERTY XCODE_EMBED_PLUGINS ${obs_module_list})
+
     foreach(module IN LISTS obs_module_list)
       find_dependencies(TARGET ${module} FOUND_VAR found_dependencies)
     endforeach()
@@ -423,6 +481,7 @@ function(_bundle_dependencies target)
 
     if(is_imported)
       get_target_property(imported_location ${library} LOCATION)
+
       if(NOT imported_location)
         continue()
       endif()
@@ -434,8 +493,10 @@ function(_bundle_dependencies target)
         if(is_xcode_framework)
           break()
         endif()
+
         cmake_path(IS_PREFIX sdk_library_path "${imported_location}" is_xcode_framework)
       endforeach()
+
       cmake_path(IS_PREFIX system_library_path "${imported_location}" is_system_framework)
 
       if(is_system_framework OR is_xcode_framework)
@@ -455,6 +516,7 @@ function(_bundle_dependencies target)
       if(library MATCHES "Qt6?::.+")
         find_qt_plugins(COMPONENT ${library} TARGET ${target} FOUND_VAR plugins_list)
       endif()
+
       list(APPEND library_paths ${library_location})
     elseif(NOT is_imported AND library_type STREQUAL "SHARED_LIBRARY")
       list(APPEND library_paths ${library})
@@ -462,6 +524,7 @@ function(_bundle_dependencies target)
   endforeach()
 
   list(REMOVE_DUPLICATES plugins_list)
+
   foreach(plugin IN LISTS plugins_list)
     cmake_path(GET plugin PARENT_PATH plugin_path)
     set(plugin_base_dir "${plugin_path}/../")
@@ -469,7 +532,7 @@ function(_bundle_dependencies target)
     cmake_path(RELATIVE_PATH plugin_path BASE_DIRECTORY "${plugin_stem_dir}" OUTPUT_VARIABLE plugin_file_name)
     target_sources(${target} PRIVATE "${plugin}")
     set_source_files_properties("${plugin}" PROPERTIES MACOSX_PACKAGE_LOCATION "plugins/${plugin_file_name}"
-                                                       XCODE_FILE_ATTRIBUTES "CodeSignOnCopy")
+      XCODE_FILE_ATTRIBUTES "CodeSignOnCopy")
     source_group("Qt plugins" FILES "${plugin}")
   endforeach()
 

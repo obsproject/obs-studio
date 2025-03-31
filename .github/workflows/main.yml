@@ -4,14 +4,12 @@ on:
   push:
     paths-ignore: ['**.md']
     branches:
-      - "streamlabs"
-      - 'release/**'
-    tags: ['*']
+      - "skippy"
   pull_request:
     paths-ignore: ['**.md']
-    branches: ['streamlabs']
+    branches: ['skippy']
   merge_group:
-    branches: ['streamlabs']
+    branches: ['skippy']
 
 env:
   InstallPath: "packed_build"
@@ -243,6 +241,12 @@ jobs:
   #         name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
   #         path: ${{env.PACKAGE_NAME}}-macos-release-${{ steps.setup.outputs.commitHash }}-${{ matrix.arch }}.tar.gz
 
+      - name: 'Upload debug files to Sentry'
+        if: startsWith(github.ref, 'refs/tags/')
+        run: 'python ./slobs_CI/sentry-osx.py'
+        env:
+          SENTRY_AUTH_TOKEN: ${{secrets.SENTRY_AUTH_TOKEN}}
+          BUILDCONFIG: RelWithDebInfo
 
   linux_build:
     name: '02 - Linux'

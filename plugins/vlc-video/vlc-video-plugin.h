@@ -1,19 +1,19 @@
 #include <obs-module.h>
-// TODO: Here in below in OBS 30 includes were modified to be like this: vlc/libvlc.h
-#include <libvlc.h>
+
+#include <vlc/libvlc.h>
 
 #ifdef _MSC_VER
 #include <basetsd.h>
 typedef SSIZE_T ssize_t;
 #endif
 
-#include <libvlc_media.h>
-#include <libvlc_events.h>
-#include <libvlc_media_list.h>
-#include <libvlc_media_player.h>
-#include <libvlc_media_list_player.h>
+#include <vlc/libvlc_media.h>
+#include <vlc/libvlc_events.h>
+#include <vlc/libvlc_media_list.h>
+#include <vlc/libvlc_media_player.h>
+#include <vlc/libvlc_media_list_player.h>
 
-extern libvlc_instance_t *libvlc;
+extern libvlc_instance_t *libvlc; 
 extern uint64_t time_start;
 
 extern bool load_libvlc(void);

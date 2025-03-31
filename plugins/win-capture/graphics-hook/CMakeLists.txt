@@ -49,7 +49,9 @@ add_library(OBS::graphics-hook ALIAS graphics-hook)
 
 target_link_libraries(graphics-hook PRIVATE _graphics-hook)
 
+if(ENABLE_32_TARGETS)
 include(cmake/32bit.cmake)
+endif()
 
 # cmake-format: off
 set_target_properties_obs(graphics-hook PROPERTIES FOLDER "plugins/win-capture" OUTPUT_NAME graphics-hook64 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

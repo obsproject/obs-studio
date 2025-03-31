@@ -91,7 +91,7 @@ runs:
         ${{ inputs.workingDirectory }}/.github/scripts/package-ubuntu ${package_args}
 
     - name: Run Windows packaging
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && github.repository == 'obsproject/obs-studio'
       shell: pwsh
       working-directory: ${{ inputs.workingDirectory }}
       run: |
@@ -112,3 +112,11 @@ runs:
         }
 
         .github/scripts/Package-windows.ps1 @PackageArgs
+
+    - name: Run Windows lib packaging
+      if: runner.os == 'Windows'
+      shell: pwsh
+      working-directory: ${{ inputs.workingDirectory }}
+      run: 7z a -r ${{env.TARGET_ARTIFACT}}.7z ${{env.InstallPath}}
+      env:
+        TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}

@@ -459,9 +459,9 @@ static bool capture_source_update(struct screen_capture *context,
 		return false;
 	}
 
-	context->base_width =
+	context->base_width = (int)
 		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_WIDTH);
-	context->base_height =
+	context->base_height = (int)
 		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_HEIGHT);
 
 	if (dstr_cmp(&context->prev_line, capture_source_string) == 0) {

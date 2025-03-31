@@ -3261,8 +3261,8 @@ void obs_sceneitem_get_pos(const obs_sceneitem_t *item, struct vec2 *pos)
 void obs_sceneitem_get_size(const obs_sceneitem_t *item, struct vec2 *size)
 {
 	if (item) {
-		size->x = item->last_width;
-		size->y = item->last_height;
+		size->x = (float)item->last_width;
+		size->y = (float)item->last_height;
 	}
 }
 

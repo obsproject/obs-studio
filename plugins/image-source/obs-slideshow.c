@@ -669,7 +669,7 @@ static void ss_destroy(void *data)
 		obs_source_release(ss->transition);
 	}
 
-	free_files(&ss->files.da);
+	free_files(&ss->files);
 	pthread_mutex_destroy(&ss->mutex);
 	calldata_free(&ss->cd);
 	bfree(ss);

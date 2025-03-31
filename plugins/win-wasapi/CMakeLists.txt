@@ -11,7 +11,7 @@ target_sources(win-wasapi PRIVATE win-wasapi.cpp wasapi-notify.cpp wasapi-notify
 configure_file(cmake/windows/obs-module.rc.in win-wasapi.rc)
 target_sources(win-wasapi PRIVATE win-wasapi.rc)
 
-target_link_libraries(win-wasapi PRIVATE OBS::libobs Avrt Jansson::Jansson)
+target_link_libraries(win-wasapi PRIVATE OBS::libobs Avrt jansson::jansson)
 
 # cmake-format: off
 set_target_properties_obs(win-wasapi PROPERTIES FOLDER plugins PREFIX "")

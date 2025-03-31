@@ -189,6 +189,24 @@ macro(FFmpeg_find_dll)
     set(FFmpeg_${component}_LIBRARY "${FFmpeg_${component}_IMPLIB}")
   endif()
 
+  if(NOT FFmpeg_FFMPEG_EXECUTABLE)
+    find_program(
+      FFmpeg_FFMPEG_EXECUTABLE
+      NAMES ffmpeg.exe
+      HINTS ${_implib_path} ${_bin_path}
+      DOC "Path to ffmpeg.exe"
+    )
+  endif()
+
+  if(NOT FFmpeg_FFPROBE_EXECUTABLE)
+    find_program(
+      FFmpeg_FFPROBE_EXECUTABLE
+      NAMES ffprobe.exe
+      HINTS ${_implib_path} ${_bin_path}
+      DOC "Path to ffprobe.exe"
+    )
+  endif()
+
   unset(_implib_path)
   unset(_bin_path)
   unset(_dll_version)
@@ -275,6 +293,42 @@ if(NOT FFmpeg_avutil_FOUND)
   ffmpeg_find_component(avutil)
 endif()
 
+if(NOT WIN32)
+  if(NOT FFmpeg_FFMPEG_EXECUTABLE)
+    find_program(
+      FFmpeg_FFMPEG_EXECUTABLE
+      NAMES ffmpeg
+      DOC "Path to ffmpeg (non-Windows fallback)"
+    )
+  endif()
+
+  if(NOT FFmpeg_FFPROBE_EXECUTABLE)
+    find_program(
+      FFmpeg_FFPROBE_EXECUTABLE
+      NAMES ffprobe
+      DOC "Path to ffprobe (non-Windows fallback)"
+    )
+  endif()
+endif()
+
+if(FFmpeg_FFMPEG_EXECUTABLE AND NOT TARGET FFmpeg::ffmpegexe)
+  add_executable(FFmpeg::ffmpegexe IMPORTED)
+  set_target_properties(FFmpeg::ffmpegexe
+    PROPERTIES
+      IMPORTED_LOCATION "${FFmpeg_FFMPEG_EXECUTABLE}"
+  )
+endif()
+
+if(FFmpeg_FFPROBE_EXECUTABLE AND NOT TARGET FFmpeg::ffprobeexe)
+  add_executable(FFmpeg::ffprobeexe IMPORTED)
+  set_target_properties(FFmpeg::ffprobeexe
+    PROPERTIES
+      IMPORTED_LOCATION "${FFmpeg_FFPROBE_EXECUTABLE}"
+  )
+endif()
+
+mark_as_advanced(FFmpeg_FFMPEG_EXECUTABLE FFmpeg_FFPROBE_EXECUTABLE)
+
 if(EXISTS "${FFmpeg_avutil_INCLUDE_DIR}/libavutil/ffversion.h")
   file(STRINGS "${FFmpeg_avutil_INCLUDE_DIR}/libavutil/ffversion.h" _version_string
        REGEX "^.*FFMPEG_VERSION[ \t]+\"n?[0-9a-z\\~.-]+\"[ \t]*$")
@@ -342,4 +396,4 @@ include(FeatureSummary)
 set_package_properties(
   FFmpeg PROPERTIES
   URL "https://www.ffmpeg.org"
-  DESCRIPTION "A complete, cross-platform solution to record, convert and stream audio and video.")
+  DESCRIPTION "A complete, cross-platform solution to record, convert, and stream audio/video.")

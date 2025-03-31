@@ -29,6 +29,22 @@ if(CMAKE_HOST_SYSTEM_NAME MATCHES "(Darwin)" OR OBS_CMAKE_VERSION VERSION_GREATE
   add_subdirectory(test/test-input)
 
   add_subdirectory(UI)
+  
+  if(WIN32)
+    include(FetchContent)
+
+    # Compare current linked libs with prev
+    FetchContent_Declare(deps_checker URL "https://raw.githubusercontent.com/stream-labs/obs-studio-node/staging/dependency_checker/check_dependencies.cmd" DOWNLOAD_NO_EXTRACT true)
+    FetchContent_MakeAvailable(deps_checker)
+
+    add_custom_target(check_dependencies COMMAND ${CMAKE_COMMAND}
+      "-Ddeps_checker_SOURCE_DIR=${deps_checker_SOURCE_DIR}"
+      "-Ddeps_CONFIGURATION=$<CONFIGURATION>"
+      "-Ddeps_CONFIG=$<CONFIG>"
+      "-Ddeps_CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}"
+
+      -P "${CMAKE_SOURCE_DIR}/slobs_CI/check_libraries.cmake" )
+  endif()
 
   message_configuration()
   return()
@@ -158,7 +174,8 @@ if(WIN32)
 		-P "${CMAKE_SOURCE_DIR}/slobs_CI/check_libraries.cmake" )
 endif()
 
-#Configure 32-bit projects
+if(ENABLE_32_TARGETS)
+ #Configure 32-bit projects
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   #message(FATAL_ERROR "CURL_INCLUDE_DIR: ${CURL_INCLUDE_DIR}, CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}, PREFIX_PATH_X86: ${PREFIX_PATH_X86}, OBS_VERSION: ${OBS_VERSION}, OBS_VERSION_OVERRIDE: ${OBS_VERSION_OVERRIDE}")
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -192,4 +209,5 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
         -DCMAKE_MESSAGE_LOG_LEVEL='Trace'
       RESULT_VARIABLE _process_result COMMAND_ERROR_IS_FATAL ANY)
   endif()
+endif()
 endif()

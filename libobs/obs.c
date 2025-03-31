@@ -3229,6 +3229,7 @@ obs_context_data_init_wrap(struct obs_context_data *context,
 	context->name = dup_name(name, private);
 	context->settings = obs_data_newref(settings);
 	context->hotkey_data = obs_data_newref(hotkey_data);
+	context->mutex = &obs->data.sources_mutex;
 	return true;
 }
 
@@ -3395,8 +3396,12 @@ void obs_context_data_remove_name(struct obs_context_data *context, void *phead)
 	if (!context)
 		return;
 
+	struct obs_context_data *item = NULL;
 	pthread_mutex_lock(context->mutex);
-	HASH_DELETE(hh, *head, context);
+	HASH_FIND_STR(*head, context->name, item);
+	if (item) {
+		HASH_DELETE(hh, *head, context);
+	}
 	pthread_mutex_unlock(context->mutex);
 }
 
@@ -3410,8 +3415,14 @@ void obs_context_data_remove_uuid(struct obs_context_data *context,
 	if (!context || !context->uuid || !uuid_head)
 		return;
 
+	struct obs_context_data *item = NULL;
+
 	pthread_mutex_lock(context->mutex);
-	HASH_DELETE(hh_uuid, *uuid_head, context);
+	HASH_FIND_UUID(*uuid_head, context->uuid, item);
+	if (item) {
+		HASH_DELETE(hh_uuid, *uuid_head, context);
+	}
+
 	pthread_mutex_unlock(context->mutex);
 }
 

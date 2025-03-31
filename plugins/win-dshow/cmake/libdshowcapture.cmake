@@ -23,6 +23,8 @@ target_sources(
             libdshowcapture/source/dshow-media-type.hpp
             libdshowcapture/source/dshowcapture.cpp
             libdshowcapture/source/dshowencode.cpp
+            libdshowcapture/source/dshow-dialogbox.cpp
+            libdshowcapture/source/dshow-dialogbox.hpp
             libdshowcapture/source/encoder.cpp
             libdshowcapture/source/encoder.hpp
             libdshowcapture/source/external/IVideoCaptureFilter.h

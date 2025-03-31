@@ -15,7 +15,9 @@ legacy_check()
 add_executable(inject-helper)
 target_link_libraries(inject-helper PRIVATE _inject-helper)
 
+if(ENABLE_32_TARGETS)
 include(cmake/32bit.cmake)
+endif()
 
 # cmake-format: off
 set_target_properties_obs(inject-helper PROPERTIES FOLDER plugins/win-capture OUTPUT_NAME inject-helper64 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

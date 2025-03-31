@@ -305,9 +305,9 @@ if(OS_WINDOWS)
             util/windows/window-helpers.c
             util/windows/window-helpers.h
             util/windows/ComPtr.hpp
-            util/windows/CoTaskMemPtr.hpp
-            util/windows/HRError.hpp
-            util/windows/WinHandle.hpp
+            # util/windows/CoTaskMemPtr.hpp
+            # util/windows/HRError.hpp
+            # util/windows/WinHandle.hpp
             libobs.rc
             audio-monitoring/win32/wasapi-output.c
             audio-monitoring/win32/wasapi-enum-devices.c

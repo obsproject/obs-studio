@@ -11,12 +11,12 @@ target_include_directories(obs-obfuscate INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}"
 
 add_library(obs-comutils INTERFACE)
 add_library(OBS::COMutils ALIAS obs-comutils)
-target_sources(obs-comutils INTERFACE util/windows/ComPtr.hpp)
+target_sources(obs-comutils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/util/windows/ComPtr.hpp)
 target_include_directories(obs-comutils INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(obs-winhandle INTERFACE)
 add_library(OBS::winhandle ALIAS obs-winhandle)
-target_sources(obs-winhandle INTERFACE util/windows/WinHandle.hpp)
+target_sources(obs-winhandle INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/util/windows/WinHandle.hpp)
 target_include_directories(obs-winhandle INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_sources(
@@ -33,7 +33,6 @@ target_sources(
           util/platform-windows.c
           util/threading-windows.c
           util/threading-windows.h
-          util/windows/CoTaskMemPtr.hpp
           util/windows/device-enum.c
           util/windows/device-enum.h
           util/windows/HRError.hpp
@@ -44,11 +43,11 @@ target_sources(
           util/windows/window-helpers.c
           util/windows/window-helpers.h)
 
-target_sources(
+target_include_directories(
   libobs
-  PUBLIC  util/windows/CoTaskMemPtr.hpp
-          util/windows/HRError.hpp
-          util/windows/WinHandle.hpp
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/util/windows>
+#  $<INSTALL_INTERFACE:util/windows>
 )
 
 target_compile_options(libobs PRIVATE $<$<COMPILE_LANGUAGE:C,CXX>:/EHc->)
@@ -71,3 +70,48 @@ target_link_libraries(
 target_link_options(libobs PRIVATE /IGNORE:4098 /SAFESEH:NO)
 
 set_target_properties(libobs PROPERTIES PREFIX "" OUTPUT_NAME "obs")
+
+find_package(LibDataChannel 0.20 REQUIRED)
+
+if(NOT ENABLE_UI)
+  set(DEPENDENCY_DLLS
+    $<TARGET_FILE:FFmpeg::avcodec>
+    $<TARGET_FILE:FFmpeg::avformat>
+    $<TARGET_FILE:FFmpeg::avutil>
+    $<TARGET_FILE:FFmpeg::swscale>
+    $<TARGET_FILE:FFmpeg::swresample>
+    $<TARGET_FILE:FFmpeg::avfilter>
+    $<TARGET_FILE:FFmpeg::avdevice>
+    $<TARGET_FILE:FFmpeg::ffmpegexe>
+    $<TARGET_FILE:FFmpeg::ffprobeexe>
+    $<TARGET_FILE:Libx264::Libx264>
+
+    "$<TARGET_FILE_DIR:ZLIB::ZLIB>/../bin/zlib.dll"
+    "$<TARGET_FILE_DIR:Librist::Librist>/../bin/librist.dll"
+    "$<TARGET_FILE_DIR:Libsrt::Libsrt>/../bin/srt.dll"
+
+    "$<TARGET_FILE_DIR:CURL::libcurl>/../bin/libcurl.dll"
+    "$<TARGET_FILE_DIR:LibDataChannel::LibDataChannel>/../bin/datachannel.dll"
+  )
+
+  set(DEPENDENCY_LIBS
+    $<TARGET_FILE:Libsrt::Libsrt>
+    $<TARGET_FILE:Librist::Librist>
+    $<TARGET_FILE:ZLIB::ZLIB>
+    $<TARGET_FILE:CURL::libcurl>
+    $<TARGET_FILE:LibDataChannel::LibDataChannel>
+  )
+
+  # foreach(DEP_BINARY ${DEPENDENCY_DLLS})
+  # message(STATUS "Adding custom command to copy ${DEP_BINARY} to ${OBS_EXECUTABLE_DESTINATION}")
+
+  # add_custom_command(TARGET libobs POST_BUILD
+  # COMMAND "${CMAKE_COMMAND}" -E echo "Copying dependencies binaries ${DEP_BINARY} to ${OBS_EXECUTABLE_DESTINATION}"
+  # COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${DEP_BINARY}" "${OBS_EXECUTABLE_DESTINATION}"
+  # COMMENT "."
+  # VERBATIM COMMAND_EXPAND_LISTS
+  # )
+  # endforeach()
+  install(FILES ${DEPENDENCY_DLLS} DESTINATION ${OBS_EXECUTABLE_DESTINATION})
+  install(FILES ${DEPENDENCY_LIBS} DESTINATION ${OBS_LIBRARY_DESTINATION})
+endif()

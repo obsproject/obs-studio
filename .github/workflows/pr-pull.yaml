@@ -5,7 +5,7 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
-    branches: [master]
+    branches: [streamlabs]
     types: [ opened, synchronize, reopened ]
 permissions:
   contents: read
@@ -28,7 +28,7 @@ jobs:
 
   compatibility-validation:
     name: Validate Compatibility 🕵️
-    if: github.base_ref == 'master'
+    if: github.base_ref == 'streamlabs'
     runs-on: ubuntu-22.04
     permissions:
       checks: write
@@ -50,7 +50,7 @@ jobs:
 
   services-validation:
     name: Validate Services 🕵️
-    if: github.base_ref == 'master'
+    if: github.base_ref == 'streamlabs'
     runs-on: ubuntu-22.04
     permissions:
       checks: write

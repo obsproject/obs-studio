@@ -1263,11 +1263,11 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 	auto handle_bitrate = [&](UInt32 bitrate) {
 		if (find(begin(bitrates), end(bitrates), bitrate) ==
 		    end(bitrates)) {
-			log_to_dstr(log, ca, "Adding bitrate %u\n",
+			log_to_dstr(log, ca, "Add %u, ",
 				    static_cast<uint32_t>(bitrate));
 			bitrates.push_back(bitrate);
 		} else {
-			log_to_dstr(log, ca, "Bitrate %u already added\n",
+			log_to_dstr(log, ca, "Has %u, ",
 				    static_cast<uint32_t>(bitrate));
 		}
 	};
@@ -1278,7 +1278,7 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		if (min_ == max_)
 			return;
 
-		log_to_dstr(log, ca, "Got actual bitrate range: %u<->%u\n",
+		log_to_dstr(log, ca, "Range %u<->%u, ",
 			    static_cast<uint32_t>(min_),
 			    static_cast<uint32_t>(max_));
 
@@ -1289,7 +1289,7 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 		return bitrates;
 
 	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats)) {
-		log_to_dstr(log, ca, "Trying %s (0x%x) at %g" NBSP "hz\n",
+		log_to_dstr(log, ca, "Try %s (0x%x) at %g" NBSP "hz, ",
 			    format_id_to_str(format_id),
 			    static_cast<uint32_t>(format_id), samplerate);
 

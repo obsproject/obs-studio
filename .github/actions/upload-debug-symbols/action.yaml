@@ -1,0 +1,53 @@
+inputs:
+  githubWorkspace:
+    description: "GitHub workspace path."
+    required: true
+  repoUserId:
+    description: "Repository user ID."
+    required: true
+  repoName:
+    description: "Repository name."
+    required: true
+  repoBranch:
+    description: "Repository branch."
+    required: true
+  buildConfig:
+    description: "Build configuration for Sentry upload (macOS only)."
+    required: false
+    default: "RelWithDebInfo"
+  awsSymbAccessKeyId:
+    description: "AWS Access Key ID used for symbol uploads."
+    required: false
+  awsSymbSecretAccessKey:
+    description: "AWS Secret Access Key used for symbol uploads."
+    required: false
+  sentryAuthToken:
+    description: "Auth token used for Sentry symbol uploads."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Fetch symsrv-scripts
+      if: runner.os != 'macOS'
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+        repository: ${{ inputs.repoUserId }}/symsrv-scripts
+        path: symsrv-scripts
+
+    - name: Run symbol server scripts
+      if: runner.os != 'macOS'
+      shell: powershell
+      run: ./symsrv-scripts/main.bat "${{ inputs.githubWorkspace }}/symsrv-scripts" ".\main.ps1 -localSourceDir '${{ inputs.githubWorkspace }}' -repo_userId '${{ inputs.repoUserId }}' -repo_name '${{ inputs.repoName }}' -repo_branch '${{ inputs.repoBranch }}' -subModules 'plugins/mediasoup-connector,stream-labs,mediasoup-connector,streamlabs;plugins/enc-amf,stream-labs,obs-amd-encoder,streamlabs;plugins/motion-effect,stream-labs,motion-effect,master;plugins/obs-browser,stream-labs,obs-browser,streamlabs;plugins/obs-ndi,stream-labs,obs-ndi,streamlabs;plugins/obs-ndi,stream-labs,obs-amd-encoder,streamlabs;plugins/obs-openvr,stream-labs,OBS-OpenVR-Input-Plugin,master;plugins/sl-vst,stream-labs,sl-vst,streamlabs;plugins/slobs-virtual-cam,stream-labs,slobs-virtual-cam,streamlabs;plugins/win-dshow/libdshowcapture,stream-labs,libdshowcapture,streamlabs'"
+      env:
+        AWS_SYMB_ACCESS_KEY_ID: ${{ inputs.awsSymbAccessKeyId }}
+        AWS_SYMB_SECRET_ACCESS_KEY: ${{ inputs.awsSymbSecretAccessKey }}
+
+    - name: Upload debug files to Sentry (macOS only)
+      if: runner.os == 'macOS'
+      shell: python
+      run: python ./slobs_CI/sentry-osx.py
+      env:
+        SENTRY_AUTH_TOKEN: ${{ inputs.sentryAuthToken }}
+        BUILDCONFIG: ${{ inputs.buildConfig }}

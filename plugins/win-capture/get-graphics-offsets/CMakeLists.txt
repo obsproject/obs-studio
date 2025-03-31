@@ -11,7 +11,9 @@ legacy_check()
 add_executable(get-graphics-offsets)
 target_link_libraries(get-graphics-offsets PRIVATE _get-graphics-offsets)
 
+if(ENABLE_32_TARGETS)
 include(cmake/32bit.cmake)
+endif()
 
 # cmake-format: off
 set_target_properties_obs(get-graphics-offsets PROPERTIES FOLDER plugins/win-capture OUTPUT_NAME get-graphics-offsets64 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

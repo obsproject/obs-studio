@@ -609,9 +609,9 @@ static inline void get_config(struct game_capture_config *cfg,
 		       "2100pq") == 0;
 	cfg->capture_audio = obs_data_get_bool(settings, SETTING_CAPTURE_AUDIO);
 
-	cfg->base_width =
+	cfg->base_width = (int)
 		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_WIDTH);
-	cfg->base_height =
+	cfg->base_height = (int)
 		obs_data_get_int(settings, SETTING_WINDOW_DEFAULT_HEIGHT);
 	if (cfg->base_width < 1 || cfg->base_height < 1) {
 		struct obs_video_info ovi;

@@ -355,7 +355,7 @@ static void generate_filename(struct mp4_output *out, struct dstr *dst,
 	bool space = obs_data_get_bool(settings, "allow_spaces");
 
 	struct obs_video_info ovi;
-	obs_get_video_info_for_output(out, &ovi, 0);
+	obs_get_video_info_for_output(out->output, &ovi, 0);
 	char *filename = os_generate_formatted_filename(ext, space, fmt, &ovi);
 
 	dstr_copy(dst, dir);

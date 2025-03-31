@@ -9,6 +9,36 @@
 
 include_guard(GLOBAL)
 
+function(extract_archive file destination)
+  # Check if the file exists
+  if(NOT EXISTS "${file}")
+    message(FATAL_ERROR "File not found: ${file}")
+  endif()
+
+  # Determine the file extension
+  get_filename_component(extension "${file}" EXT)
+
+  # If it's a .7z file, use 7z to extract
+  if("${extension}" STREQUAL ".7z")
+    message(STATUS "Extracting .7z archive: ${file}")
+    execute_process(
+      COMMAND 7z x "${file}" -o"${destination}" -y
+      RESULT_VARIABLE _result
+      OUTPUT_QUIET
+      ERROR_QUIET
+    )
+    if(NOT _result EQUAL 0)
+      message(FATAL_ERROR "Failed to extract .7z archive: ${file}")
+    endif()
+  else()
+    # For other archive types, use file(ARCHIVE_EXTRACT)
+    message(STATUS "Extracting archive using CMake: ${file}")
+    file(ARCHIVE_EXTRACT INPUT "${file}" DESTINATION "${destination}")
+  endif()
+
+  message(STATUS "Extraction complete: ${file} -> ${destination}")
+endfunction()
+
 # _check_deps_version: Checks for obs-deps VERSION file in prefix paths
 function(_check_deps_version version)
   set(found
@@ -102,7 +132,7 @@ function(_check_dependencies)
     endif()
 
     set(skip FALSE)
-    message(STATUS "Version var before _check_deps_version ${version}")
+    message(STATUS "Working on dependency and version ${dependency} ${version}")
     if(dependency STREQUAL prebuilt OR dependency STREQUAL qt6)
       if(OBS_DEPENDENCY_${dependency}_${arch}_HASH STREQUAL ${hash})
         _check_deps_version(${version})
@@ -118,7 +148,7 @@ function(_check_dependencies)
         set(skip TRUE)
       endif()
     endif()
-    message(STATUS "Version var after _check_deps_version ${version}")
+
     if(skip)
       message(STATUS "Setting up ${label} (${arch}) - skipped")
       continue()
@@ -130,9 +160,17 @@ function(_check_dependencies)
       set(url ${url}/${file})
     elseif(dependency STREQUAL webrtc)
       set(url ${url}/${file})
+    elseif(dependency STREQUAL grpc)
+      set(file "grpc-release-${version}.7z")
+      set(url ${url}/${file})
+    elseif(dependency STREQUAL openssl)
+      set(file "${dependency}-${version}-${arch}.7z")
+      set(url ${url}/${file})
     else()
       set(url ${url}/${version}/${file})
     endif()
+    
+    message(STATUS "Working on url ${url}, file ${file}")
 
     if(NOT EXISTS "${dependencies_dir}/${file}")
       message(STATUS "Downloading ${url}")
@@ -183,30 +221,75 @@ function(_check_dependencies)
           "${dependencies_dir}/${destination}"
           CACHE PATH "CEF root directory" FORCE)
     elseif(dependency STREQUAL libmediasoupclient)
-      set(libmediasoupclient_subdir "libmediasoupclient-VERSION-osx-ARCH")
-      string(REPLACE "VERSION" "${version}" libmediasoupclient_subdir "${libmediasoupclient_subdir}")
-      string(REPLACE "ARCH" "${arch}" libmediasoupclient_subdir "${libmediasoupclient_subdir}")
-
+      if(WIN32)
+        set(libmediasoupclient_subdir "libmediasoupclient_dist")
+      else()
+        set(libmediasoupclient_subdir "libmediasoupclient-VERSION-osx-ARCH")
+        string(REPLACE "VERSION" "${version}" libmediasoupclient_subdir "${libmediasoupclient_subdir}")
+        string(REPLACE "ARCH" "${arch}" libmediasoupclient_subdir "${libmediasoupclient_subdir}")
+      endif()
       set(LIBMEDIASOUPCLIENT_PATH
           "${dependencies_dir}/${libmediasoupclient_subdir}"
           CACHE PATH "libmediasoupclient directory" FORCE)
-      set(MEDIASOUP_INCLUDE_PATH "${dependencies_dir}/${libmediasoupclient_subdir}/include/mediasoupclient/" CACHE PATH "libmediasoupclient include directory" FORCE)
-      set(MEDIASOUP_LIB_PATH "${dependencies_dir}/${libmediasoupclient_subdir}/lib/libmediasoupclient.a" CACHE PATH "libmediasoupclient lib directory" FORCE)
-      set(MEDIASOUP_SDP_LIB_PATH "${dependencies_dir}/${libmediasoupclient_subdir}/lib/libsdptransform.a" CACHE PATH "libmediasoupclient sdp lib directory" FORCE)
+
+          set(MEDIASOUP_INCLUDE_PATH "${dependencies_dir}/${libmediasoupclient_subdir}/include/mediasoupclient/" CACHE PATH "libmediasoupclient include directory" FORCE)
+      set(MEDIASOUP_LIB_PATH "${dependencies_dir}/${libmediasoupclient_subdir}/lib/mediasoupclient.lib" CACHE PATH "libmediasoupclient lib directory" FORCE)
+
       set(MEDIASOUP_SDP_INCLUDE_PATH "${dependencies_dir}/${libmediasoupclient_subdir}/include/sdptransform" CACHE PATH "libmediasoupclient sdp include directory" FORCE)
+      set(MEDIASOUP_SDP_LIB_PATH "${dependencies_dir}/${libmediasoupclient_subdir}/lib/sdptransform.lib" CACHE PATH "libmediasoupclient sdp lib directory" FORCE)
       list(APPEND CMAKE_PREFIX_PATH "${dependencies_dir}/${libmediasoupclient_subdir}")
     elseif(dependency STREQUAL webrtc)
-      set(webrtc_subdir "webrtc-VERSION-osx-ARCH")
-      string(REPLACE "VERSION" "${version}" webrtc_subdir "${webrtc_subdir}")
-      string(REPLACE "ARCH" "${arch}" webrtc_subdir "${webrtc_subdir}")
+      if(WIN32)
+        set(webrtc_subdir "webrtc_dist")
+      elseif(APPLE)
+        set(webrtc_subdir "webrtc-VERSION-osx-ARCH")
+        string(REPLACE "VERSION" "${version}" webrtc_subdir "${webrtc_subdir}")
+        string(REPLACE "ARCH" "${arch}" webrtc_subdir "${webrtc_subdir}")
+      endif()
 
       set(WEBRTC_PATH
           "${dependencies_dir}/${webrtc_subdir}"
           CACHE PATH "webrtc directory" FORCE)
 
       set(WEBRTC_INCLUDE_PATH "${dependencies_dir}/${webrtc_subdir}" CACHE PATH "webrtc include directory" FORCE)
-      set(WEBRTC_LIB_PATH "${dependencies_dir}/${webrtc_subdir}/libwebrtc.a" CACHE PATH "webrtc lib path" FORCE)
+      set(WEBRTC_LIB_PATH "${dependencies_dir}/${webrtc_subdir}/webrtc.lib" CACHE PATH "webrtc lib path" FORCE)
       list(APPEND CMAKE_PREFIX_PATH "${dependencies_dir}/${webrtc_subdir}")
+    elseif(dependency STREQUAL grpc)
+      set(grpc_subdir "grpc-release-${version}")
+      set(Protobuf_DIR "${dependencies_dir}/${grpc_subdir}/cmake" CACHE PATH "Protobuf directory" FORCE)
+      set(GRPC_PATH "${dependencies_dir}/${grpc_subdir}" CACHE PATH "GRPC directory" FORCE)
+
+      list(APPEND CMAKE_PREFIX_PATH "${GRPC_PATH}")
+
+      message(STATUS "Setting up GRPC_PATH ${GRPC_PATH}")
+      message(STATUS "Setting up Protobuf_DIR ${Protobuf_DIR}")
+      message(STATUS "Setting up CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH}")
+    elseif(dependency STREQUAL openssl)
+      set(openssl_subdir "openssl-VERSION-ARCH")
+      string(REPLACE "VERSION" "${version}" openssl_subdir "${openssl_subdir}")
+      string(REPLACE "ARCH" "${arch}" openssl_subdir "${openssl_subdir}")
+
+      set(OPENSSL_PATH
+        "${dependencies_dir}/${openssl_subdir}"
+        CACHE PATH "openssl directory" FORCE)
+
+      set(OPENSSL_INCLUDE_PATH "${OPENSSL_PATH}/include" CACHE PATH "openssl include directory" FORCE)
+      set(OPENSSL_LIB_PATH "${OPENSSL_PATH}/lib/libssl.a" CACHE PATH "openssl SSL library path" FORCE)
+      set(OPENSSL_CRYPTO_LIB_PATH "${OPENSSL_PATH}/lib/libcrypto.a" CACHE PATH "openssl Crypto library path" FORCE)
+
+      # Explicitly set CMake variables for OpenSSL
+      set(OPENSSL_ROOT_DIR "${OPENSSL_PATH}" CACHE PATH "OpenSSL root directory" FORCE)
+      set(OPENSSL_INCLUDE_DIR "${OPENSSL_INCLUDE_PATH}" CACHE PATH "OpenSSL include directory" FORCE)
+      set(OPENSSL_LIBRARIES "${OPENSSL_LIB_PATH};${OPENSSL_CRYPTO_LIB_PATH}" CACHE PATH "OpenSSL libraries" FORCE)
+
+      list(APPEND CMAKE_PREFIX_PATH "${OPENSSL_PATH}")
+
+      message(STATUS "Setting up OPENSSL_PATH ${OPENSSL_PATH}")
+      message(STATUS "Setting up OPENSSL_INCLUDE_PATH ${OPENSSL_INCLUDE_PATH}")
+      message(STATUS "Setting up OPENSSL_LIB_PATH ${OPENSSL_LIB_PATH}")
+      message(STATUS "Setting up OPENSSL_CRYPTO_LIB_PATH ${OPENSSL_CRYPTO_LIB_PATH}")
+      message(STATUS "Setting up OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
+      message(STATUS "Setting up OPENSSL_LIBRARIES ${OPENSSL_LIBRARIES}")
     endif()
 
     message(STATUS "Finished with file and destination ${file} ${destination}")
