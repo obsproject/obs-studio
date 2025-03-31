@@ -1,4 +1,4 @@
-target_sources(obs-studio PRIVATE utility/platform-x11.cpp utility/system-info-posix.cpp)
+target_sources(obs-studio PRIVATE utility/platform-x11.cpp utility/system-info-posix.cpp utility/CrashHandler_Linux.cpp)
 target_compile_definitions(
   obs-studio
   PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}" $<$<BOOL:${ENABLE_PORTABLE_CONFIG}>:ENABLE_PORTABLE_CONFIG>
