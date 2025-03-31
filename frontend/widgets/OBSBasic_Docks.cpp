@@ -235,7 +235,7 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 
 void OBSBasic::RepairOldExtraDockName()
 {
-	QDockWidget *dock = reinterpret_cast<QDockWidget *>(sender());
+	QDockWidget *dock = qobject_cast<QDockWidget *>(sender());
 	int idx = oldExtraDocks.indexOf(dock);
 	QSignalBlocker block(dock);
 
@@ -336,7 +336,7 @@ void OBSBasic::AddCustomDockWidget(QDockWidget *dock)
 
 void OBSBasic::RepairCustomExtraDockName()
 {
-	QDockWidget *dock = reinterpret_cast<QDockWidget *>(sender());
+	QDockWidget *dock = qobject_cast<QDockWidget *>(sender());
 	int idx = extraCustomDocks.indexOf(dock);
 	QSignalBlocker block(dock);
 
