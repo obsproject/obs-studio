@@ -46,7 +46,7 @@ runs:
 
     - name: Upload debug files to Sentry (macOS only)
       if: runner.os == 'macOS'
-      shell: python
+      shell: bash
       run: python ./slobs_CI/sentry-osx.py
       env:
         SENTRY_AUTH_TOKEN: ${{ inputs.sentryAuthToken }}
