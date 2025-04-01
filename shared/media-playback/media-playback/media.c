@@ -382,6 +382,12 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 	enum video_range_type new_range;
 	AVFrame *f = d->frame;
 
+	if (!f->width || !f->height) {
+		blog(LOG_ERROR, "MP: media frame width or height are zero ('%s': %" PRIu32 "x%" PRIu32 ")", m->path,
+		     f->width, f->height);
+		return;
+	}
+
 	if (!preload) {
 		if (!mp_media_can_play_frame(m, d))
 			return;
