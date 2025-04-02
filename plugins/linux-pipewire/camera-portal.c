@@ -281,6 +281,42 @@ static void stream_camera(struct camera_portal_source *camera_source)
 		obs_pipewire_connect_stream(connection->obs_pw, camera_source->source, device->id, &connect_info);
 }
 
+static double gcd(uint32_t m, uint32_t n)
+{
+	if (n == 0)
+		return m;
+
+	return gcd(n, m % n);
+}
+
+static struct dstr aspect_ratio_from_spa_rectangle(struct spa_rectangle rect)
+{
+	struct dstr str = {};
+	double divisor = gcd(rect.width, rect.height);
+
+	if (divisor <= 50) {
+		if (rect.width > rect.height) {
+			double x = (double)rect.width / (double)rect.height;
+			dstr_printf(&str, "%.2f:1", x);
+		} else {
+			double y = (double)rect.height / (double)rect.width;
+			dstr_printf(&str, "1:%.2f", y);
+		}
+	} else {
+		uint32_t x = rect.width / (uint32_t)divisor;
+		uint32_t y = rect.height / (uint32_t)divisor;
+
+		if (x == 8 && y == 5) {
+			x = 16;
+			y = 10;
+		}
+
+		dstr_printf(&str, "%u:%u", x, y);
+	}
+
+	return str;
+}
+
 static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 {
 	struct param *p;
@@ -291,6 +327,7 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 	spa_list_for_each(p, &dev->param_list, link)
 	{
 		struct dstr str = {};
+		struct dstr aspect_ratio;
 		uint32_t media_type, media_subtype;
 		uint32_t format = 0;
 		const char *format_name;
@@ -372,7 +409,15 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			continue;
 		}
 
-		dstr_printf(&str, "%ux%u - ", resolution.width, resolution.height);
+		dstr_printf(&str, "%ux%u", resolution.width, resolution.height);
+
+		aspect_ratio = aspect_ratio_from_spa_rectangle(resolution);
+		if (aspect_ratio.len != 0) {
+			dstr_catf(&str, " (%s)", aspect_ratio.array);
+			dstr_free(&aspect_ratio);
+		}
+
+		dstr_cat(&str, " - ");
 
 		for (int i = framerates->len - 1; i >= 0; i--) {
 			const struct spa_fraction *framerate = &g_array_index(framerates, struct spa_fraction, i);
