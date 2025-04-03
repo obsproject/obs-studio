@@ -324,6 +324,19 @@ Libobs Objects
 
 ---------------------
 
+.. function:: void obs_enum_canvases(bool (*enum_proc)(void*, obs_canvas_t*), void *param)
+
+   Enumerates canvases.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_canvas_get_ref()` or
+   :c:func:`obs_canvas_get_weak_encoder()` if you want to retain a
+   reference after obs_enum_canvases finishes.
+
+---------------------
+
 .. function:: obs_source_t *obs_get_source_by_name(const char *name)
 
    Gets a source by its name.
@@ -351,6 +364,9 @@ Libobs Objects
    Increments the source reference counter, use
    :c:func:`obs_source_release()` to release it when complete.
 
+   .. deprecated:: 31.1
+      Use :c:func:`obs_frontend_get_transitions` from the Frontend API or :c:func:`obs_get_source_by_uuid` instead.
+
 ---------------------
 
 .. function:: obs_source_t *obs_get_transition_by_uuid(const char *uuid)
@@ -361,6 +377,9 @@ Libobs Objects
    :c:func:`obs_source_release()` to release it when complete.
 
    .. versionadded:: 29.1
+
+   .. deprecated:: 31.1
+      Use :c:func:`obs_get_source_by_uuid` instead.
 
 ---------------------
 
@@ -397,6 +416,24 @@ Libobs Objects
 
    Increments the service reference counter, use
    :c:func:`obs_service_release()` to release it when complete.
+
+---------------------
+
+.. function:: obs_canvas_t *obs_get_canvas_by_name(const char *name)
+
+   Get a canvas by its name.
+   
+   Increments the canvas reference counter, use
+   :c:func:`obs_canvas_release()` to release it when complete.
+
+---------------------
+
+.. function:: obs_canvas_t *obs_get_canvas_by_uuid(const char *uuid)
+
+   Get a canvas by its UUID.
+
+   Increments the canvas reference counter, use
+   :c:func:`obs_canvas_release()` to release it when complete.
 
 ---------------------
 
@@ -717,6 +754,31 @@ Core OBS Signals
 **hotkey_bindings_changed** (ptr hotkey)
 
    Called when a hotkey's bindings has changed.
+
+**canvas_create** (ptr canvas)
+
+   Called when a new public canvas has been created.
+
+**canvas_remove** (ptr canvas)
+
+   Called when the :c:func:`obs_canvas_remove()` function is called on a public canvas.
+
+**canvas_destroy** (ptr canvas)
+
+   Called when a public canvas is about to be destroyed.
+
+**canvas_video_reset** (ptr canvas)
+
+   Called when a public canvas's video mix has been reset after a call to
+   :c:func:`obs_reset_video()` or :c:func:`obs_canvas_reset_video()`.
+
+**canvas_rename** (ptr canvas, string new_name, string prev_name)
+
+   Called when a public canvas has been renamed.
+
+**video_reset** ()
+
+   Called when a the main OBS video has been reset.
 
 ---------------------
 

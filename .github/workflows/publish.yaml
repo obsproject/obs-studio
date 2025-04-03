@@ -84,12 +84,10 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          gh extension install actions/gh-actions-cache
-
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
           cache_ref='master'
-          read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+          read -r id key size unit created accessed <<< \
+            "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
 
           if [[ "${key}" ]]; then
             echo "cacheHit=true" >> $GITHUB_OUTPUT

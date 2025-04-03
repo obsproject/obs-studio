@@ -67,12 +67,9 @@ bool properties_update_device(OBSAVCapture *capture, obs_property_t *property, o
 /// Updates available values for all properties required in manual device configuration.
 ///
 /// Properties updated by this call include:
-/// * Resolutions
+/// * Device formats
 /// * Frame rates and frame rate ranges
-/// * Color formats
-/// * Color range
-///
-///  In CoreMediaIO color format, resolution and frame rate ranges are always coupled into a single format, while color range is always contained in the color format. The formats are thus compiled and de-duplicated to create a selection of all properties.
+/// * Effects warnings
 ///
 ///  Frame rate ranges will be limited to ranges only available for a specific combination of resolution and color format.
 ///
