@@ -44,9 +44,6 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	connect(
 		ui->settingsButton, &QPushButton::clicked, this, [this]() { emit this->SettingsButtonClicked(); },
 		Qt::DirectConnection);
-	connect(
-		ui->exitButton, &QPushButton::clicked, this, [this]() { emit this->ExitButtonClicked(); },
-		Qt::DirectConnection);
 
 	/* Transfer menu actions signals as OBSBasicControls signals */
 	connect(

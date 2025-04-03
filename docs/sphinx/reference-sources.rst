@@ -176,6 +176,8 @@ Source Definition Structure (obs_source_info)
      to have its properties shown on creation (prefers to rely on
      defaults first)
 
+   - **OBS_SOURCE_REQUIRES_CANVAS** - Source type requires a canvas.
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.
@@ -1500,6 +1502,11 @@ General Source Functions
 
 ---------------------
 
+.. function:: obs_canvas_t *obs_source_get_canvas(const obs_source_t *source)
+
+   Get canvas this source belongs to (reference incremented)
+
+---------------------
 
 Functions used by sources
 -------------------------

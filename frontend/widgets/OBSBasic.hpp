@@ -813,7 +813,7 @@ private:
 	float GetDevicePixelRatio();
 
 	void UpdatePreviewOverflowSettings();
-	void UpdatePreviewScrollbars();
+	void UpdatePreviewControls();
 
 	/* OBS Callbacks */
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
@@ -821,9 +821,6 @@ private:
 	void ResizePreview(uint32_t cx, uint32_t cy);
 
 private slots:
-	void on_previewXScrollBar_valueChanged(int value);
-	void on_previewYScrollBar_valueChanged(int value);
-
 	void PreviewScalingModeChanged(int value);
 
 	void ColorChange();
@@ -831,12 +828,13 @@ private slots:
 	void EnablePreview();
 	void DisablePreview();
 
+	void setPreviewScalingWindow();
+	void setPreviewScalingCanvas();
+	void setPreviewScalingOutput();
+
 	void on_actionLockPreview_triggered();
 
 	void on_scalingMenu_aboutToShow();
-	void on_actionScaleWindow_triggered();
-	void on_actionScaleCanvas_triggered();
-	void on_actionScaleOutput_triggered();
 
 	void on_preview_customContextMenuRequested();
 	void on_previewDisabledWidget_customContextMenuRequested();
@@ -860,8 +858,9 @@ signals:
 	void OutputResized(uint32_t width, uint32_t height);
 
 	/* Preview signals */
-	void PreviewXScrollBarMoved(int value);
-	void PreviewYScrollBarMoved(int value);
+	void PreviewZoomIn();
+	void PreviewZoomOut();
+	void PreviewResetZoom();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Profiles
