@@ -186,6 +186,7 @@ struct amf_base {
 	bool bframes_supported = false;
 	bool first_update = true;
 	bool roi_supported = false;
+	bool force_idr;
 
 	inline amf_base(bool fallback) : fallback(fallback) {}
 	virtual ~amf_base() = default;
@@ -713,6 +714,26 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf, encoder_packet 
 	AMF_RESULT res;
 
 	*received_packet = false;
+
+	/* -------------------------------------- */
+	/* Force an IDR or Key frame if signalled */
+
+	if (enc->force_idr) {
+		enc->force_idr = false;
+		switch (enc->codec) {
+		case amf_codec_type::AVC:
+			amf_surf->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
+			break;
+		case amf_codec_type::HEVC:
+			amf_surf->SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE,
+					      AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_IDR);
+			break;
+		case amf_codec_type::AV1:
+			amf_surf->SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE,
+					      AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE_KEY);
+			break;
+		}
+	}
 
 	bool waiting = true;
 	while (waiting) {
@@ -1316,8 +1337,14 @@ static inline int get_avc_profile(obs_data_t *settings)
 	return AMF_VIDEO_ENCODER_PROFILE_HIGH;
 }
 
-static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
+static bool amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
 {
+	/* Return a flag indicating if a pipeline flush is needed. Changing the bitrate (or any other dynamic property)
+	 * is updated with the next SubmitInput() call. For CBR mode, flushing the pipeline is not needed and could
+	 * cause unaligned IDRs in an encoder group.
+	 */
+	bool pipeline_flush = true;
+
 	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_avc_property(enc, TARGET_BITRATE, bitrate);
@@ -1326,6 +1353,7 @@ static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 
 		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
 			set_avc_property(enc, FILLER_DATA_ENABLE, true);
+			pipeline_flush = false;
 		}
 	} else {
 		set_avc_property(enc, QP_I, qp);
@@ -1333,6 +1361,7 @@ static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 		set_avc_property(enc, QP_B, qp);
 		set_avc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
+	return pipeline_flush;
 }
 
 static bool amf_avc_update(void *data, obs_data_t *settings)
@@ -1350,15 +1379,19 @@ try {
 	int rc = get_avc_rate_control(rc_str);
 	AMF_RESULT res = AMF_OK;
 
-	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
+	if (amf_avc_update_data(enc, rc, bitrate * 1000, qp)) {
+		// Flush the pipeline only when needed
+		res = enc->amf_encoder->Flush();
+		if (res != AMF_OK)
+			throw amf_error("AMFComponent::Flush failed", res);
 
-	res = enc->amf_encoder->Flush();
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Flush failed", res);
-
-	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::ReInit failed", res);
+		res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+		if (res != AMF_OK)
+			throw amf_error("AMFComponent::ReInit failed", res);
+	} else {
+		// A pipeline flush was not requested, however force an IDR frame to align with the bitrate change.
+		enc->force_idr = true;
+	}
 
 	return true;
 
@@ -1738,8 +1771,14 @@ static inline int get_hevc_rate_control(const char *rc_str)
 	return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
 }
 
-static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
+static bool amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
 {
+	/* Return a flag indicating if a pipeline flush is needed. Changing the bitrate (or any other dynamic property)
+	 * is updated with the next SubmitInput() call. For CBR mode, flushing the pipeline is not needed and could
+	 * cause unaligned IDRs in an encoder group.
+	 */
+	bool pipeline_flush = true;
+
 	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_hevc_property(enc, TARGET_BITRATE, bitrate);
@@ -1748,12 +1787,14 @@ static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t
 
 		if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR) {
 			set_hevc_property(enc, FILLER_DATA_ENABLE, true);
+			pipeline_flush = false;
 		}
 	} else {
 		set_hevc_property(enc, QP_I, qp);
 		set_hevc_property(enc, QP_P, qp);
 		set_hevc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
+	return pipeline_flush;
 }
 
 static bool amf_hevc_update(void *data, obs_data_t *settings)
@@ -1771,15 +1812,19 @@ try {
 	int rc = get_hevc_rate_control(rc_str);
 	AMF_RESULT res = AMF_OK;
 
-	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
+	if (amf_hevc_update_data(enc, rc, bitrate * 1000, qp)) {
+		// Flush the pipeline only when needed
+		res = enc->amf_encoder->Flush();
+		if (res != AMF_OK)
+			throw amf_error("AMFComponent::Flush failed", res);
 
-	res = enc->amf_encoder->Flush();
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Flush failed", res);
-
-	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::ReInit failed", res);
+		res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+		if (res != AMF_OK)
+			throw amf_error("AMFComponent::ReInit failed", res);
+	} else {
+		// A pipeline flush was not requested, however force an IDR frame to align with the bitrate change.
+		enc->force_idr = true;
+	}
 
 	return true;
 
@@ -2095,8 +2140,14 @@ static inline int get_av1_profile(obs_data_t *settings)
 	return AMF_VIDEO_ENCODER_AV1_PROFILE_MAIN;
 }
 
-static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t cq_value)
+static bool amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t cq_value)
 {
+	/* Return a flag indicating if a pipeline flush is needed. Changing the bitrate (or any other dynamic property)
+	 * is updated with the next SubmitInput() call. For CBR mode, flushing the pipeline is not needed and could
+	 * cause unaligned IDRs in an encoder group.
+	 */
+	bool pipeline_flush = true;
+
 	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_av1_property(enc, TARGET_BITRATE, bitrate);
@@ -2105,6 +2156,7 @@ static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 
 		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
 			set_av1_property(enc, FILLER_DATA, true);
+			pipeline_flush = false;
 		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
 			   rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
 			set_av1_property(enc, PEAK_BITRATE, bitrate * 1.5);
@@ -2115,6 +2167,7 @@ static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 		set_av1_property(enc, Q_INDEX_INTRA, qp);
 		set_av1_property(enc, Q_INDEX_INTER, qp);
 	}
+	return pipeline_flush;
 }
 
 static bool amf_av1_update(void *data, obs_data_t *settings)
@@ -2132,15 +2185,19 @@ try {
 	int rc = get_av1_rate_control(rc_str);
 	AMF_RESULT res = AMF_OK;
 
-	amf_av1_update_data(enc, rc, bitrate * 1000, cq_level);
+	if (amf_av1_update_data(enc, rc, bitrate * 1000, cq_level)) {
+		// Flush the pipeline only when needed
+		res = enc->amf_encoder->Flush();
+		if (res != AMF_OK)
+			throw amf_error("AMFComponent::Flush failed", res);
 
-	res = enc->amf_encoder->Flush();
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Flush failed", res);
-
-	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::ReInit failed", res);
+		res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+		if (res != AMF_OK)
+			throw amf_error("AMFComponent::ReInit failed", res);
+	} else {
+		// A pipeline flush was not requested, however force an IDR frame to align with the bitrate change.
+		enc->force_idr = true;
+	}
 
 	return true;
 
