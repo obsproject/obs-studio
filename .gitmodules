@@ -1,40 +1,40 @@
 [submodule "plugins/win-dshow/libdshowcapture"]
 	path = plugins/win-dshow/libdshowcapture
-	url = https://github.com/stream-labs/libdshowcapture.git
+	url = https://github.com/streamlabs/libdshowcapture.git
 [submodule "plugins/mac-syphon/syphon-framework"]
 	path = plugins/mac-syphon/syphon-framework
 	url = https://github.com/palana/Syphon-Framework.git
 [submodule "plugins/enc-amf"]
 	path = plugins/enc-amf
-	url = https://github.com/stream-labs/obs-amd-encoder.git
+	url = https://github.com/streamlabs/obs-amd-encoder.git
 [submodule "plugins/obs-browser"]
 	path = plugins/obs-browser
-	url = https://github.com/stream-labs/obs-browser.git
+	url = https://github.com/streamlabs/obs-browser.git
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
 [submodule "plugins/obs-ndi"]
 	path = plugins/obs-ndi
-	url = https://github.com/stream-labs/obs-ndi.git
+	url = https://github.com/streamlabs/obs-ndi.git
 	branch = streamlabs-obs
 [submodule "plugins/slobs-virtual-cam"]
 	path = plugins/slobs-virtual-cam
-	url = https://github.com/stream-labs/slobs-virtual-cam.git
+	url = https://github.com/streamlabs/slobs-virtual-cam.git
 [submodule "plugins/obs-openvr"]
 	path = plugins/obs-openvr
-	url = https://github.com/stream-labs/OBS-OpenVR-Input-Plugin.git
+	url = https://github.com/streamlabs/OBS-OpenVR-Input-Plugin.git
 [submodule "plugins/motion-effect"]
 	path = plugins/motion-effect
-	url = https://github.com/stream-labs/motion-effect.git
+	url = https://github.com/streamlabs/motion-effect.git
 [submodule "plugins/mediasoup-connector"]
 	path = plugins/mediasoup-connector
-	url = https://github.com/stream-labs/mediasoup-connector.git
+	url = https://github.com/streamlabs/mediasoup-connector.git
 [submodule "plugins/obs-vst"]
 	path = plugins/sl-vst
-	url = https://github.com/stream-labs/obs-vst.git
+	url = https://github.com/streamlabs/obs-vst.git
 [submodule "plugins/win-spout"]
 	path = plugins/win-spout
-	url = https://github.com/stream-labs/obs-spout2-plugin.git
+	url = https://github.com/streamlabs/obs-spout2-plugin.git
 [submodule "plugins/obs-websocket"]
 	path = plugins/obs-websocket
-	url = https://github.com/stream-labs/obs-websocket.git
+	url = https://github.com/streamlabs/obs-websocket.git
