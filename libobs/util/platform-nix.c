@@ -134,6 +134,7 @@ bool has_qt5_dependency(const char *path)
 {
 	pid_t pid = fork();
 	if (pid == 0) {
+		base_set_log_handler(NULL, NULL);
 		_exit(module_has_qt5_check(path));
 	}
 	if (pid < 0) {
