@@ -1,0 +1,115 @@
+From bcfbf2bac8f9eeeedc407b40596f5c7aaa0d5b47 Mon Sep 17 00:00:00 2001
+From: David Rosca <nowrep@gmail.com>
+Date: Tue, 22 Oct 2024 17:26:58 +0200
+Subject: [PATCH 1/2] lavc/vaapi_encode: Query surface alignment
+
+It needs to create temporary config to query surface attribute.
+
+Signed-off-by: Timo Rothenpieler <timo@rothenpieler.org>
+---
+ libavcodec/vaapi_encode.c | 66 +++++++++++++++++++++++++++++++++++++++
+ libavcodec/vaapi_encode.h |  4 +++
+ 2 files changed, 70 insertions(+)
+
+diff --git a/libavcodec/vaapi_encode.c b/libavcodec/vaapi_encode.c
+index b593d976ef..8960e6b20a 100644
+--- a/libavcodec/vaapi_encode.c
++++ b/libavcodec/vaapi_encode.c
+@@ -1133,6 +1133,68 @@ fail:
+     return err;
+ }
+ 
++static av_cold int vaapi_encode_surface_alignment(av_unused AVCodecContext *avctx)
++{
++#if VA_CHECK_VERSION(1, 21, 0)
++    VAAPIEncodeContext *ctx = avctx->priv_data;
++    VASurfaceAttrib *attr_list = NULL;
++    unsigned int attr_count = 0;
++    VAConfigID va_config;
++    VAStatus vas;
++    int err = 0;
++
++    vas = vaCreateConfig(ctx->hwctx->display,
++                         ctx->va_profile, ctx->va_entrypoint,
++                         NULL, 0, &va_config);
++    if (vas != VA_STATUS_SUCCESS) {
++        av_log(avctx, AV_LOG_ERROR, "Failed to create temp encode pipeline "
++               "configuration: %d (%s).\n", vas, vaErrorStr(vas));
++        return AVERROR(EIO);
++    }
++
++    vas = vaQuerySurfaceAttributes(ctx->hwctx->display, va_config,
++                                   0, &attr_count);
++    if (vas != VA_STATUS_SUCCESS) {
++        av_log(avctx, AV_LOG_ERROR, "Failed to query surface attributes: "
++               "%d (%s).\n", vas, vaErrorStr(vas));
++        err = AVERROR_EXTERNAL;
++        goto fail;
++    }
++
++    attr_list = av_malloc(attr_count * sizeof(*attr_list));
++    if (!attr_list) {
++        err = AVERROR(ENOMEM);
++        goto fail;
++    }
++
++    vas = vaQuerySurfaceAttributes(ctx->hwctx->display, va_config,
++                                   attr_list, &attr_count);
++    if (vas != VA_STATUS_SUCCESS) {
++        av_log(avctx, AV_LOG_ERROR, "Failed to query surface attributes: "
++               "%d (%s).\n", vas, vaErrorStr(vas));
++        err = AVERROR_EXTERNAL;
++        goto fail;
++    }
++
++    for (unsigned int i = 0; i < attr_count; i++) {
++        if (attr_list[i].type == VASurfaceAttribAlignmentSize) {
++            ctx->surface_alignment_width =
++                1 << (attr_list[i].value.value.i & 0xf);
++            ctx->surface_alignment_height =
++                1 << ((attr_list[i].value.value.i & 0xf0) >> 4);
++            break;
++        }
++    }
++
++fail:
++    av_freep(&attr_list);
++    vaDestroyConfig(ctx->hwctx->display, va_config);
++    return err;
++#else
++    return 0;
++#endif
++}
++
+ static const VAAPIEncodeRCMode vaapi_encode_rc_modes[] = {
+     //                                  Bitrate   Quality
+     //                                     | Maxrate | HRD/VBV
+@@ -2111,6 +2173,10 @@ av_cold int ff_vaapi_encode_init(AVCodecContext *avctx)
+     if (err < 0)
+         goto fail;
+ 
++    err = vaapi_encode_surface_alignment(avctx);
++    if (err < 0)
++        goto fail;
++
+     if (ctx->codec->get_encoder_caps) {
+         err = ctx->codec->get_encoder_caps(avctx);
+         if (err < 0)
+diff --git a/libavcodec/vaapi_encode.h b/libavcodec/vaapi_encode.h
+index 40a3f4e064..8e3eab9f27 100644
+--- a/libavcodec/vaapi_encode.h
++++ b/libavcodec/vaapi_encode.h
+@@ -260,6 +260,10 @@ typedef struct VAAPIEncodeContext {
+      * This is a RefStruct reference.
+      */
+     VABufferID     *coded_buffer_ref;
++
++    // Surface alignment required by driver.
++    int             surface_alignment_width;
++    int             surface_alignment_height;
+ } VAAPIEncodeContext;
+ 
+ typedef struct VAAPIEncodeType {
+-- 
+2.43.0
+

@@ -37,6 +37,13 @@
             "commit": "45b7d2cfac0e2ac256d458c7466a925b0a94de35"
         },
         {
+            "type": "patch",
+            "paths": [
+                "patches/ffmpeg/0001-lavc-vaapi_encode-Query-surface-alignment.patch",
+                "patches/ffmpeg/0002-lavc-vaapi_encode_h265-Use-surface-alignment.patch"
+            ]
+        },
+        {
             "type": "shell",
             "commands": [
                 "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-flvdec-handle-unknown.patch",
