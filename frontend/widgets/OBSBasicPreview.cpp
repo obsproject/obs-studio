@@ -27,11 +27,22 @@ OBSBasicPreview::~OBSBasicPreview()
 		gs_vertexbuffer_destroy(rectFill);
 	if (circleFill)
 		gs_vertexbuffer_destroy(circleFill);
+	if (stripedLineEffect)
+		gs_effect_destroy(stripedLineEffect);
 
 	obs_leave_graphics();
 }
 
-void OBSBasicPreview::Init() {}
+void OBSBasicPreview::Init()
+{
+	std::string effect_path;
+	GetDataFilePath("striped_line.effect", effect_path);
+
+	obs_enter_graphics();
+	stripedLineEffect = gs_effect_create_from_file(effect_path.c_str(), nullptr);
+	solidEffect = obs_get_base_effect(OBS_EFFECT_SOLID);
+	obs_leave_graphics();
+}
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
@@ -1620,22 +1631,31 @@ void OBSBasicPreview::leaveEvent(QEvent *)
 
 static void DrawLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
 {
-	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
-	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
+	float cx;
+	float cy;
+	vec2 thickness_relative;
+	bool is_x_axis = !close_float(x1, x2, TINY_EPSILON) || close_float(y1, y2, TINY_EPSILON);
 
-	gs_render_start(true);
+	vec2_abs(&scale, &scale);
 
-	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2), y1 + (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x1 + (xSide * (thickness / scale.x) / 2), y1 - (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x2 + (xSide * (thickness / scale.x) / 2), y2 + (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x2 - (xSide * (thickness / scale.x) / 2), y2 - (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2), y1 + (ySide * (thickness / scale.y) / 2));
+	thickness_relative.x = thickness / scale.x;
+	thickness_relative.y = thickness / scale.y;
 
-	gs_vertbuffer_t *line = gs_render_save();
+	if (is_x_axis) {
+		cx = fabsf(x2 - x1) + thickness_relative.x;
+		cy = thickness_relative.y;
+	} else {
+		cy = fabsf(y2 - y1) + thickness_relative.y;
+		cx = thickness_relative.x;
+	}
 
-	gs_load_vertexbuffer(line);
-	gs_draw(GS_TRISTRIP, 0, 0);
-	gs_vertexbuffer_destroy(line);
+	x1 -= thickness_relative.x * 0.5f;
+	y1 -= thickness_relative.y * 0.5f;
+
+	gs_matrix_push();
+	gs_matrix_translate3f(x1, y1, 0.0f);
+	gs_draw_quadf(NULL, 0, cx, cy);
+	gs_matrix_pop();
 }
 
 static void DrawSquareAtPos(float x, float y, float pixelRatio)
@@ -1667,17 +1687,7 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_matrix_get(&matrix);
 	vec3_transform(&pos, &pos, &matrix);
 
-	gs_render_start(true);
-
-	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, 0.5f);
-	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, -2.0f);
-	gs_vertex2f(0.5f + 0.34f / HANDLE_RADIUS, -2.0f);
-	gs_vertex2f(0.5f + 0.34f / HANDLE_RADIUS, 0.5f);
-	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, 0.5f);
-
-	gs_vertbuffer_t *line = gs_render_save();
-
-	gs_load_vertexbuffer(line);
+	constexpr float thickness = 0.68f;
 
 	gs_matrix_push();
 	gs_matrix_identity();
@@ -1687,7 +1697,10 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_matrix_translate3f(-HANDLE_RADIUS * 1.5 * pixelRatio, -HANDLE_RADIUS * 1.5 * pixelRatio, 0.0f);
 	gs_matrix_scale3f(HANDLE_RADIUS * 3 * pixelRatio, HANDLE_RADIUS * 3 * pixelRatio, 1.0f);
 
-	gs_draw(GS_TRISTRIP, 0, 0);
+	gs_matrix_push();
+	gs_matrix_translate3f(0.5f - thickness / 2.0f / HANDLE_RADIUS, -2.0f, 0.0f);
+	gs_draw_quadf(NULL, 0, thickness / HANDLE_RADIUS, 2.5f);
+	gs_matrix_pop();
 
 	gs_matrix_translate3f(0.0f, -HANDLE_RADIUS * 2 / 3, 0.0f);
 
@@ -1695,75 +1708,70 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_matrix_pop();
-	gs_vertexbuffer_destroy(line);
 }
 
-static void DrawStripedLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
+void OBSBasicPreview::DrawStripedLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
 {
-	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
-	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
+	float cx;
+	float cy;
+	float dist;
+	float dist_scaled;
+	vec2 thickness_relative;
+	bool is_x_axis = !close_float(x1, x2, TINY_EPSILON) || close_float(y1, y2, TINY_EPSILON);
 
-	float dist = sqrt(pow((x1 - x2) * scale.x, 2) + pow((y1 - y2) * scale.y, 2));
-	float offX = (x2 - x1) / dist;
-	float offY = (y2 - y1) / dist;
+	vec2_abs(&scale, &scale);
 
-	for (int i = 0, l = ceil(dist / 15); i < l; i++) {
-		gs_render_start(true);
+	thickness_relative.x = thickness / scale.x;
+	thickness_relative.y = thickness / scale.y;
 
-		float xx1 = x1 + i * 15 * offX;
-		float yy1 = y1 + i * 15 * offY;
-
-		float dx;
-		float dy;
-
-		if (x1 < x2) {
-			dx = std::min(xx1 + 7.5f * offX, x2);
-		} else {
-			dx = std::max(xx1 + 7.5f * offX, x2);
-		}
-
-		if (y1 < y2) {
-			dy = std::min(yy1 + 7.5f * offY, y2);
-		} else {
-			dy = std::max(yy1 + 7.5f * offY, y2);
-		}
-
-		gs_vertex2f(xx1, yy1);
-		gs_vertex2f(xx1 + (xSide * (thickness / scale.x)), yy1 + (ySide * (thickness / scale.y)));
-		gs_vertex2f(dx, dy);
-		gs_vertex2f(dx + (xSide * (thickness / scale.x)), dy + (ySide * (thickness / scale.y)));
-
-		gs_vertbuffer_t *line = gs_render_save();
-
-		gs_load_vertexbuffer(line);
-		gs_draw(GS_TRISTRIP, 0, 0);
-		gs_vertexbuffer_destroy(line);
+	if (is_x_axis) {
+		dist = fabsf(x2 - x1);
+		dist_scaled = dist * scale.x;
+		cx = dist + thickness_relative.x;
+		cy = thickness_relative.y;
+	} else {
+		dist = fabsf(y2 - y1);
+		dist_scaled = dist * scale.y;
+		cy = dist + thickness_relative.y;
+		cx = thickness_relative.x;
 	}
+
+	x1 -= thickness_relative.x * 0.5f;
+	y1 -= thickness_relative.y * 0.5f;
+
+	float stripe_length = dist_scaled / 15.0f;
+	float f_stripes_inv = 1.0f / (dist_scaled / stripe_length);
+
+	struct vec2 size;
+	struct vec2 count_inv;
+	if (is_x_axis) {
+		vec2_set(&size, dist_scaled, 0.0f);
+		vec2_set(&count_inv, f_stripes_inv, 0.0f);
+	} else {
+		vec2_set(&size, 0.0f, dist_scaled);
+		vec2_set(&count_inv, 0.0f, f_stripes_inv);
+	}
+
+	gs_eparam_t *size_param = gs_effect_get_param_by_name(stripedLineEffect, "size");
+	gs_eparam_t *count_inv_param = gs_effect_get_param_by_name(stripedLineEffect, "count_inv");
+
+	gs_effect_set_vec2(size_param, &size);
+	gs_effect_set_vec2(count_inv_param, &count_inv);
+
+	gs_matrix_push();
+	gs_matrix_translate3f(x1, y1, 0.0f);
+	while (gs_effect_loop(stripedLineEffect, "StripedLine")) {
+		gs_draw_quadf(nullptr, 0, cx, cy);
+	}
+	gs_matrix_pop();
 }
 
 static void DrawRect(float thickness, vec2 scale)
 {
-	gs_render_start(true);
-
-	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(0.0f + (thickness / scale.x), 0.0f);
-	gs_vertex2f(0.0f, 1.0f);
-	gs_vertex2f(0.0f + (thickness / scale.x), 1.0f);
-	gs_vertex2f(0.0f, 1.0f - (thickness / scale.y));
-	gs_vertex2f(1.0f, 1.0f);
-	gs_vertex2f(1.0f, 1.0f - (thickness / scale.y));
-	gs_vertex2f(1.0f - (thickness / scale.x), 1.0f);
-	gs_vertex2f(1.0f, 0.0f);
-	gs_vertex2f(1.0f - (thickness / scale.x), 0.0f);
-	gs_vertex2f(1.0f, 0.0f + (thickness / scale.y));
-	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(0.0f, 0.0f + (thickness / scale.y));
-
-	gs_vertbuffer_t *rect = gs_render_save();
-
-	gs_load_vertexbuffer(rect);
-	gs_draw(GS_TRISTRIP, 0, 0);
-	gs_vertexbuffer_destroy(rect);
+	DrawLine(0.0f, 0.0f, 0.0f, 1.0f, thickness, scale);
+	DrawLine(0.0f, 0.0f, 1.0f, 0.0f, thickness, scale);
+	DrawLine(1.0f, 0.0f, 1.0f, 1.0f, thickness, scale);
+	DrawLine(0.0f, 1.0f, 1.0f, 1.0f, thickness, scale);
 }
 
 static inline bool crop_enabled(const obs_sceneitem_crop *crop)
@@ -1951,23 +1959,25 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	obs_sceneitem_crop crop;
 	obs_sceneitem_get_crop(item, &crop);
 
-	gs_effect_t *eff = gs_get_effect();
-	gs_eparam_t *colParam = gs_effect_get_param_by_name(eff, "color");
-
-	gs_effect_set_vec4(colParam, &red);
-
 	if (info.bounds_type == OBS_BOUNDS_NONE && crop_enabled(&crop)) {
-#define DRAW_SIDE(side, x1, y1, x2, y2)                                                   \
-	if (hovered && !selected) {                                                       \
-		gs_effect_set_vec4(colParam, &blue);                                      \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
-	} else if (crop.side > 0) {                                                       \
-		gs_effect_set_vec4(colParam, &green);                                     \
-		DrawStripedLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale); \
-	} else {                                                                          \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
-	}                                                                                 \
-	gs_effect_set_vec4(colParam, &red);
+#define DRAW_SIDE(side, x1, y1, x2, y2)                                                                \
+	if (hovered && !selected) {                                                                    \
+		gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");       \
+		gs_effect_set_vec4(colParam, &blue);                                                   \
+		while (gs_effect_loop(prev->solidEffect, "Solid")) {                                   \
+			DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);             \
+		}                                                                                      \
+	} else if (crop.side > 0) {                                                                    \
+		gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->stripedLineEffect, "color"); \
+		gs_effect_set_vec4(colParam, &green);                                                  \
+		prev->DrawStripedLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
+	} else {                                                                                       \
+		gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");       \
+		gs_effect_set_vec4(colParam, &red);                                                    \
+		while (gs_effect_loop(prev->solidEffect, "Solid")) {                                   \
+			DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);             \
+		}                                                                                      \
+	}
 
 		DRAW_SIDE(left, 0.0f, 0.0f, 0.0f, 1.0f);
 		DRAW_SIDE(top, 0.0f, 0.0f, 1.0f, 0.0f);
@@ -1976,12 +1986,25 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 #undef DRAW_SIDE
 	} else {
 		if (!selected) {
+			gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");
 			gs_effect_set_vec4(colParam, &blue);
-			DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			while (gs_effect_loop(prev->solidEffect, "Solid")) {
+				DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			}
 		} else {
-			DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");
+			gs_effect_set_vec4(colParam, &red);
+			while (gs_effect_loop(prev->solidEffect, "Solid")) {
+				DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			}
 		}
 	}
+
+	gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");
+
+	gs_technique_t *tech = gs_effect_get_technique(prev->solidEffect, "Solid");
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
 
 	gs_load_vertexbuffer(main->box);
 	gs_effect_set_vec4(colParam, &red);
@@ -2015,6 +2038,9 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	}
 
 	gs_matrix_pop();
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 
 	GS_DEBUG_MARKER_END();
 
@@ -2103,12 +2129,6 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	OBSBasic *main = OBSBasic::Get();
 
-	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
-	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
-
-	gs_technique_begin(tech);
-	gs_technique_begin_pass(tech, 0);
-
 	OBSScene scene = main->GetCurrentScene();
 
 	if (scene) {
@@ -2130,14 +2150,13 @@ void OBSBasicPreview::DrawSceneEditing()
 			rectFill = gs_render_save();
 		}
 
-		DrawSelectionBox(startPos.x * main->previewScale, startPos.y * main->previewScale,
-				 mousePos.x * main->previewScale, mousePos.y * main->previewScale, rectFill);
+		while (gs_effect_loop(solidEffect, "Solid")) {
+			DrawSelectionBox(startPos.x * main->previewScale, startPos.y * main->previewScale,
+					 mousePos.x * main->previewScale, mousePos.y * main->previewScale, rectFill);
+		}
 	}
 
 	gs_load_vertexbuffer(nullptr);
-
-	gs_technique_end_pass(tech);
-	gs_technique_end(tech);
 
 	GS_DEBUG_MARKER_END();
 }

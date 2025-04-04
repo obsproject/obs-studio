@@ -1,0 +1,38 @@
+uniform float4x4 ViewProj;
+uniform float4 color = {1.0, 1.0, 1.0, 1.0};
+uniform float2 size;
+uniform float2 count_inv;
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv : TEXCOORD0;
+};
+
+VertInOut VSStripedLine(VertInOut vert_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv = vert_in.uv;
+	return vert_out;
+}
+
+float4 PSStripedLine(VertInOut vert_in) : TARGET
+{
+	float2 multiplier = floor(fmod(vert_in.uv * size * count_inv, float2(2.0, 2.0)));
+	if (size.x == 0.0) {
+		multiplier.x = 1.0;
+	} else {
+		multiplier.y = 1.0;
+	}
+
+	return color * multiplier.xxxx * multiplier.yyyy;
+}
+
+technique StripedLine
+{
+	pass
+	{
+		vertex_shader = VSStripedLine(vert_in);
+		pixel_shader = PSStripedLine(vert_in);
+	}
+}
