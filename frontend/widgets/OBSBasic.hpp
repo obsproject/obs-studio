@@ -138,6 +138,10 @@ struct OBSPromptRequest {
 	bool optionValue;
 };
 
+struct OBSFrontendCanvas {
+	OBSCanvasAutoRelease canvas;
+};
+
 using OBSPromptCallback = std::function<bool(const OBSPromptResult &result)>;
 
 using OBSProfileCache = std::map<std::string, OBSProfile>;
@@ -1108,6 +1112,27 @@ public:
 
 	std::optional<OBSSceneCollection> GetSceneCollectionByName(const std::string &collectionName) const;
 	std::optional<OBSSceneCollection> GetSceneCollectionByFileName(const std::string &fileName) const;
+
+	/* -------------------------------------
+	 * MARK: - OBSBasic_Canvases
+	 * -------------------------------------
+	 */
+private:
+	std::vector<OBSFrontendCanvas> canvases;
+
+	obs_data_array_t *SaveCanvases() const;
+	void LoadSavedCanvases(obs_data_array_t *canvases);
+	void ClearCanvases();
+
+	static void CanvasRemoved(void *data, calldata_t *params);
+
+public:
+	const std::vector<OBSFrontendCanvas> &GetCanvases() const noexcept { return canvases; }
+
+	OBSCanvas AddCanvas(const std::string &name, obs_video_info *ovi = nullptr, int flags = 0);
+
+public slots:
+	bool RemoveCanvas(OBSCanvas canvas);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_SceneItems

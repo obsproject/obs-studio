@@ -597,3 +597,19 @@ void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo
 	if (callbacks_valid())
 		c->obs_frontend_add_undo_redo_action(name, undo, redo, undo_data, redo_data, repeatable);
 }
+
+void obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_list)
+{
+	if (callbacks_valid())
+		c->obs_frontend_get_canvases(canvas_list);
+}
+
+obs_canvas_t *obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags)
+{
+	return !!callbacks_valid() ? c->obs_frontend_add_canvas(name, ovi, flags) : nullptr;
+}
+
+bool obs_frontend_remove_canvas(obs_canvas_t *canvas)
+{
+	return !!callbacks_valid() ? c->obs_frontend_remove_canvas(canvas) : false;
+}
