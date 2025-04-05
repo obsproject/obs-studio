@@ -1033,8 +1033,9 @@
           <property name="defaultDropAction">
            <enum>Qt::TargetMoveAction</enum>
           </property>
+          <!-- Spacing must be 0 due to QTBUG-106395 -->
           <property name="spacing">
-           <number>1</number>
+           <number>0</number>
           </property>
           <addaction name="actionRemoveScene"/>
          </widget>
@@ -1155,8 +1156,9 @@
           <property name="selectionMode">
            <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
+          <!-- Spacing must be 0 due to QTBUG-106395 -->
           <property name="spacing">
-           <number>1</number>
+           <number>0</number>
           </property>
           <addaction name="actionRemoveSource"/>
          </widget>
