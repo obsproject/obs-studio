@@ -3581,6 +3581,30 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
+        },
+        {
+            "name": "Streamplace",
+            "protocol": "WHIP",
+            "more_info_link": "https://stream.place/about",
+            "stream_key_link": "https://stream.place/live",
+            "common": false,
+            "servers": [
+                {
+                    "name": "Global",
+                    "url": "https://stream.place/api/ingest/webrtc"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0
+            },
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "opus"
+            ]
         }
     ]
 }
