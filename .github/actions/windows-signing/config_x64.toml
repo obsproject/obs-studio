@@ -35,15 +35,6 @@ exclude = [
     "obs.pdb",
 ]
 
-## Delta patch generation
-[generate]
-patch_type = "zstd"
-compress_files = true
-
-exclude_from_parallel = [
-    "libcef.dll"
-]
-
 [package]
 [package.installer]
 nsis_script = "bouf/nsis/mp-installer.nsi"
@@ -53,5 +44,4 @@ name = "OBS-Studio-{version}-x64.zip"
 pdb_name = "OBS-Studio-{version}-pdbs.zip"
 
 [package.updater]
-vc_redist_path = "bouf/nsis/VC_redist.x64.exe"
 skip_sign = true

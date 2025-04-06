@@ -4,6 +4,9 @@ on:
 jobs:
   create-windows-update:
     name: Sign Windows Build 🥩
+    strategy:
+      matrix:
+        architecture: [x64, arm64]
     runs-on: windows-2022
     environment:
       name: bouf
@@ -41,7 +44,7 @@ jobs:
       - name: Download Artifact 📥
         uses: actions/download-artifact@v4
         with:
-          name: obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}
+          name: obs-studio-windows-${{ matrix.architecture }}-${{ steps.setup.outputs.commitHash }}
           path: ${{ github.workspace }}/build
 
       - name: Run bouf 🥩
@@ -51,29 +54,31 @@ jobs:
           gcpServiceAccountName: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
           version: ${{ github.ref_name }}
           channel: ${{ steps.setup.outputs.channel }}
+          architecture: ${{ matrix.architecture }}
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: ${{ github.workspace }}/output/*-x64.zip
+          subject-path: ${{ github.workspace }}/output/*-${{ matrix.architecture }}.zip
 
       - name: Upload Signed Build
         uses: actions/upload-artifact@v4
         with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-signed
+          name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-signed
           compression-level: 0
-          path: ${{ github.workspace }}/output/*-x64.zip
+          path: ${{ github.workspace }}/output/*-${{ matrix.architecture }}.zip
 
       - name: Upload PDBs
         uses: actions/upload-artifact@v4
         with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-pdbs
+          name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-pdbs
           compression-level: 0
           path: ${{ github.workspace }}/output/*-pdbs.zip
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
+        if: matrix.architecture == 'x64'
         with:
-          name: obs-studio-windows-x64-${{ github.ref_name }}-installer
+          name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-installer
           compression-level: 0
           path: ${{ github.workspace }}/output/*.exe
