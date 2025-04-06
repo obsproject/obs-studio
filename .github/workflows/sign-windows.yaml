@@ -3,7 +3,7 @@ on:
   workflow_call:
 jobs:
   create-windows-update:
-    name: Create Windows Update 🥩
+    name: Sign Windows Build 🥩
     runs-on: windows-2022
     environment:
       name: bouf
