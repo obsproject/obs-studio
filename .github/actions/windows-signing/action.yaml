@@ -90,6 +90,22 @@ runs:
         Ensure-Location "${{ github.workspace }}/old_builds"
         rclone copy --transfers 100 ":gcs:obs-latest/${{ inputs.channel }}" .
 
+    - name: Sign Game Capture with RSA cert
+      shell: pwsh
+      run: |
+        . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
+        $SignToolExe = "C:\Program Files (x86)\Windows Kits\10\App Certification Kit\signtool.exe"
+        $signArgs = @(
+           "sign"
+           "/fd",   "sha256"
+           "/t",    "http://timestamp.digicert.com"
+           "/f",    "repo/.github/actions/windows-signing/prod-gc.crt"
+           "/csp",  "Google Cloud KMS Provider"
+           "/kc",   "projects/ci-signing/locations/global/keyRings/production/cryptoKeys/game-capture-release-sign-hsm/cryptoKeyVersions/1"
+           "${{ github.workspace }}/build/data/obs-plugins/win-capture/*.dll"
+        )
+        Invoke-External $SignToolExe @signArgs
+
     - name: Run bouf
       shell: pwsh
       run: |
