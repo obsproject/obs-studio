@@ -1748,9 +1748,11 @@ bool obs_reset_audio2(const struct obs_audio_info2 *oai)
 	if (!obs || (audio->audio && audio_output_active(audio->audio)))
 		return false;
 
-	obs_free_audio();
 	if (!oai)
 		return true;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	obs_free_audio();
 
 	if (oai->max_buffering_ms) {
 		uint32_t max_frames = oai->max_buffering_ms *
@@ -1782,7 +1784,10 @@ bool obs_reset_audio2(const struct obs_audio_info2 *oai)
 	     (int)ai.samples_per_sec, (int)ai.speakers, max_buffering_ms,
 	     oai->fixed_buffering ? "fixed" : "dynamically increasing");
 
-	return obs_init_audio(&ai);
+	bool init_complited = obs_init_audio(&ai);
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	return init_complited;
 }
 
 bool obs_reset_audio(const struct obs_audio_info *oai)

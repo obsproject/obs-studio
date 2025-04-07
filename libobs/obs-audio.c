@@ -557,6 +557,40 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 	da_resize(audio->render_order, 0);
 	da_resize(audio->root_nodes, 0);
 
+	/* ------------------------------------------------ */
+	/* build audio render order */
+	if (pthread_mutex_trylock(&obs->video.mixes_mutex) == 0) {
+		for (size_t j = 0; j < obs->video.mixes.num; j++) {
+			struct obs_view *view = obs->video.mixes.array[j]->view;
+			if (!view)
+				continue;
+
+			pthread_mutex_lock(&view->channels_mutex);
+
+			/* NOTE: these are source channels, not audio channels */
+			for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
+				obs_source_t *source = view->channels[i];
+				if (!source)
+					continue;
+				if (!obs_source_active(source))
+					continue;
+
+				obs_source_enum_active_tree(source, push_audio_tree,
+								audio);
+				push_audio_tree(NULL, source, audio);
+
+				if (obs->video.mixes.array[j] == obs->video.main_mix)
+					da_push_back(audio->root_nodes, &source);
+			}
+			pthread_mutex_unlock(&view->channels_mutex);
+		}
+		pthread_mutex_unlock(&obs->video.mixes_mutex);
+	} else {
+		return false;
+	}
+
+	pthread_mutex_lock(&data->audio_sources_mutex);
+
 	deque_push_back(&audio->buffered_timestamps, &ts, sizeof(ts));
 	deque_peek_front(&audio->buffered_timestamps, &ts, sizeof(ts));
 	min_ts = ts.start;
@@ -566,38 +600,6 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 #if DEBUG_AUDIO == 1
 	blog(LOG_DEBUG, "ts %llu-%llu", ts.start, ts.end);
 #endif
-
-	/* ------------------------------------------------ */
-	/* build audio render order */
-
-	pthread_mutex_lock(&obs->video.mixes_mutex);
-	for (size_t j = 0; j < obs->video.mixes.num; j++) {
-		struct obs_view *view = obs->video.mixes.array[j]->view;
-		if (!view)
-			continue;
-
-		pthread_mutex_lock(&view->channels_mutex);
-
-		/* NOTE: these are source channels, not audio channels */
-		for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
-			obs_source_t *source = view->channels[i];
-			if (!source)
-				continue;
-			if (!obs_source_active(source))
-				continue;
-
-			obs_source_enum_active_tree(source, push_audio_tree,
-						    audio);
-			push_audio_tree(NULL, source, audio);
-
-			if (obs->video.mixes.array[j] == obs->video.main_mix)
-				da_push_back(audio->root_nodes, &source);
-		}
-		pthread_mutex_unlock(&view->channels_mutex);
-	}
-	pthread_mutex_unlock(&obs->video.mixes_mutex);
-
-	pthread_mutex_lock(&data->audio_sources_mutex);
 
 	source = data->first_audio_source;
 	while (source) {
