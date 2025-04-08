@@ -176,7 +176,7 @@ void SourceTreeItem::ReconnectSignals()
 	/* --------------------------------------------------------- */
 
 	auto removeItem = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 		obs_scene_t *curScene = (obs_scene_t *)calldata_ptr(cd, "scene");
 
@@ -190,7 +190,7 @@ void SourceTreeItem::ReconnectSignals()
 	};
 
 	auto itemVisible = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 		bool visible = calldata_bool(cd, "visible");
 
@@ -199,7 +199,7 @@ void SourceTreeItem::ReconnectSignals()
 	};
 
 	auto itemLocked = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 		bool locked = calldata_bool(cd, "locked");
 
@@ -208,7 +208,7 @@ void SourceTreeItem::ReconnectSignals()
 	};
 
 	auto itemSelect = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
@@ -216,7 +216,7 @@ void SourceTreeItem::ReconnectSignals()
 	};
 
 	auto itemDeselect = [](void *data, calldata_t *cd) {
-		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
@@ -224,7 +224,7 @@ void SourceTreeItem::ReconnectSignals()
 	};
 
 	auto reorderGroup = [](void *data, calldata_t *) {
-		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		QMetaObject::invokeMethod(this_->tree, "ReorderItems");
 	};
 
@@ -249,7 +249,7 @@ void SourceTreeItem::ReconnectSignals()
 	/* --------------------------------------------------------- */
 
 	auto removeSource = [](void *data, calldata_t *) {
-		SourceTreeItem *this_ = reinterpret_cast<SourceTreeItem *>(data);
+		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		this_->DisconnectSignals();
 		this_->sceneitem = nullptr;
 		QMetaObject::invokeMethod(this_->tree, "RefreshItems");
