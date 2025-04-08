@@ -33,7 +33,7 @@
 #include <qt-wrappers.hpp>
 #include <plain-text-edit.hpp>
 #include <slider-ignorewheel.hpp>
-#include <icon-label.hpp>
+#include <IconLabel.hpp>
 #include <cstdlib>
 #include <initializer_list>
 #include <obs-data.h>
