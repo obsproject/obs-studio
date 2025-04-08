@@ -431,7 +431,7 @@ bool OBSApp::InitGlobalConfig()
 
 	uint32_t lastVersion = config_get_int(appConfig, "General", "LastVersion");
 
-	if (lastVersion < MAKE_SEMANTIC_VERSION(31, 0, 0)) {
+	if (lastVersion && lastVersion < MAKE_SEMANTIC_VERSION(31, 0, 0)) {
 		bool migratedUserSettings = config_get_bool(appConfig, "General", "Pre31Migrated");
 
 		if (!migratedUserSettings) {
@@ -445,19 +445,34 @@ bool OBSApp::InitGlobalConfig()
 	InitGlobalConfigDefaults();
 	InitGlobalLocationDefaults();
 
+	std::filesystem::path defaultUserConfigLocation =
+		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Configuration"));
+	std::filesystem::path defaultUserScenesLocation =
+		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "SceneCollections"));
+	std::filesystem::path defaultUserProfilesLocation =
+		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Profiles"));
+
 	if (IsPortableMode()) {
-		userConfigLocation =
-			std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Configuration"));
-		userScenesLocation =
-			std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "SceneCollections"));
-		userProfilesLocation =
-			std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Profiles"));
+		userConfigLocation = std::move(defaultUserConfigLocation);
+		userScenesLocation = std::move(defaultUserScenesLocation);
+		userProfilesLocation = std::move(defaultUserProfilesLocation);
 	} else {
-		userConfigLocation =
+		std::filesystem::path currentUserConfigLocation =
 			std::filesystem::u8path(config_get_string(appConfig, "Locations", "Configuration"));
-		userScenesLocation =
+		std::filesystem::path currentUserScenesLocation =
 			std::filesystem::u8path(config_get_string(appConfig, "Locations", "SceneCollections"));
-		userProfilesLocation = std::filesystem::u8path(config_get_string(appConfig, "Locations", "Profiles"));
+		std::filesystem::path currentUserProfilesLocation =
+			std::filesystem::u8path(config_get_string(appConfig, "Locations", "Profiles"));
+
+		userConfigLocation = (std::filesystem::exists(currentUserConfigLocation))
+					     ? std::move(currentUserConfigLocation)
+					     : std::move(defaultUserConfigLocation);
+		userScenesLocation = (std::filesystem::exists(currentUserScenesLocation))
+					     ? std::move(currentUserScenesLocation)
+					     : std::move(defaultUserScenesLocation);
+		userProfilesLocation = (std::filesystem::exists(currentUserProfilesLocation))
+					       ? std::move(currentUserProfilesLocation)
+					       : std::move(defaultUserProfilesLocation);
 	}
 
 	bool userConfigResult = InitUserConfig(userConfigLocation, lastVersion);
