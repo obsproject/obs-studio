@@ -299,15 +299,92 @@ void SetComboItemEnabled(QComboBox *c, int idx, bool enabled)
 	item->setFlags(enabled ? Qt::ItemIsSelectable | Qt::ItemIsEnabled : Qt::NoItemFlags);
 }
 
+void repolish(QWidget *widget)
+{
+	widget->style()->unpolish(widget);
+	widget->style()->polish(widget);
+}
+
 void setClasses(QWidget *widget, const QString &newClasses)
 {
 	if (widget->property("class").toString() != newClasses) {
 		widget->setProperty("class", newClasses);
+	}
+}
 
-		/* force style sheet recalculation */
-		QString qss = widget->styleSheet();
-		widget->setStyleSheet("/* */");
-		widget->setStyleSheet(qss);
+void addClass(QWidget *widget, const QString className)
+{
+	QString existingClasses = widget->property("class").toString();
+	QStringList classList = existingClasses.split(" ", Qt::SkipEmptyParts);
+
+	classList.removeDuplicates();
+
+	if (classList.indexOf(className) < 0) {
+		classList.append(className);
+	}
+
+	existingClasses = classList.join(" ");
+	setClasses(widget, existingClasses);
+}
+
+void removeClass(QWidget *widget, const QString className)
+{
+	QString existingClasses = widget->property("class").toString();
+	QStringList classList = existingClasses.split(" ", Qt::SkipEmptyParts);
+
+	classList.removeDuplicates();
+
+	if (classList.indexOf(className) >= 0) {
+		classList.removeAt(classList.indexOf(className));
+	}
+
+	existingClasses = classList.join(" ");
+	setClasses(widget, existingClasses);
+}
+
+void toggleClass(QWidget *widget, const QString className, bool toggle)
+{
+	if (toggle) {
+		addClass(widget, className);
+	} else {
+		removeClass(widget, className);
+	}
+}
+
+void updateFirstLastClasses(QWidget *widget)
+{
+	QList<QWidget *> childWidgets = widget->findChildren<QWidget *>(Qt::FindDirectChildrenOnly);
+	int index = 0;
+	for (QWidget *child : childWidgets) {
+		if (!child->property("class").isValid()) {
+			child->setProperty("class", "");
+		}
+
+		QString existingClasses = child->property("class").toString();
+		QStringList classList = existingClasses.split(" ", Qt::SkipEmptyParts);
+
+		classList.removeDuplicates();
+
+		if (classList.indexOf("first") >= 0) {
+			classList.removeAt(classList.indexOf("first"));
+		}
+
+		if (classList.indexOf("last") >= 0) {
+			classList.removeAt(classList.indexOf("last"));
+		}
+
+		if (index == 0) {
+			classList.append("first");
+		}
+
+		if (index == childWidgets.length() - 1) {
+			classList.append("last");
+		}
+
+		existingClasses = classList.join(" ");
+
+		setClasses(child, existingClasses);
+		index++;
 	}
 }
 

@@ -66,58 +66,6 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/filter.svg);
 }
 
-.icon-plus {
-    qproperty-icon: url(theme:Light/plus.svg);
-}
-
-.icon-minus {
-    qproperty-icon: url(theme:Light/minus.svg);
-}
-
-.icon-trash {
-    qproperty-icon: url(theme:Light/trash.svg);
-}
-
-.icon-clear {
-    qproperty-icon: url(theme:Light/entry-clear.svg);
-}
-
-.icon-gear {
-    qproperty-icon: url(theme:Light/settings/general.svg);
-}
-
-.icon-dots-vert {
-    qproperty-icon: url(theme:Light/dots-vert.svg);
-}
-
-.icon-refresh {
-    qproperty-icon: url(theme:Light/refresh.svg);
-}
-
-.icon-cogs {
-    qproperty-icon: url(theme:Light/cogs.svg);
-}
-
-.icon-touch {
-    qproperty-icon: url(theme:Light/interact.svg);
-}
-
-.icon-up {
-    qproperty-icon: url(theme:Light/up.svg);
-}
-
-.icon-down {
-    qproperty-icon: url(theme:Light/down.svg);
-}
-
-.icon-filter {
-    qproperty-icon: url(theme:Light/filter.svg);
-}
-
-.icon-revert {
-    qproperty-icon: url(theme:Light/revert.svg);
-}
-
 QToolBarExtension {
     qproperty-icon: url(theme:Light/dots-vert.svg);
 }
@@ -264,8 +212,64 @@ OBSBasic {
     qproperty-audioProcessOutputIcon: url(theme:Light/sources/windowaudio.svg);
 }
 
+.icon-plus {
+    qproperty-icon: url(theme:Light/plus.svg);
+}
+
+.icon-minus {
+    qproperty-icon: url(theme:Light/minus.svg);
+}
+
+.icon-trash {
+    qproperty-icon: url(theme:Light/trash.svg);
+}
+
+.icon-clear {
+    qproperty-icon: url(theme:Light/entry-clear.svg);
+}
+
+.icon-gear {
+    qproperty-icon: url(theme:Light/settings/general.svg);
+}
+
+.icon-dots-vert {
+    qproperty-icon: url(theme:Light/dots-vert.svg);
+}
+
+.icon-refresh {
+    qproperty-icon: url(theme:Light/refresh.svg);
+}
+
+.icon-cogs {
+    qproperty-icon: url(theme:Light/cogs.svg);
+}
+
+.icon-touch {
+    qproperty-icon: url(theme:Light/interact.svg);
+}
+
+.icon-up {
+    qproperty-icon: url(theme:Light/up.svg);
+}
+
+.icon-down {
+    qproperty-icon: url(theme:Light/down.svg);
+}
+
+.icon-filter {
+    qproperty-icon: url(theme:Light/filter.svg);
+}
+
+.icon-revert {
+    qproperty-icon: url(theme:Light/revert.svg);
+}
+
 .icon-save {
     qproperty-icon: url(theme:Light/save.svg);
+}
+
+.icon-edit {
+    qproperty-icon: url(theme:Light/edit.svg);
 }
 
 /* Media icons */
