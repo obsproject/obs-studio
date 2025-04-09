@@ -131,7 +131,9 @@ bool obs_module_load(void)
 	win8_or_above = ver.major > 6 || (ver.major == 6 && ver.minor >= 2);
 
 	obs_enter_graphics();
-	graphics_uses_d3d11 = gs_get_device_type() == GS_DEVICE_DIRECT3D_11;
+	// D3D12 duplicator capture maybe have issue, use shared D3D11 device instead
+	graphics_uses_d3d11 = gs_get_device_type() == GS_DEVICE_DIRECT3D_11 ||
+			      gs_get_device_type() == GS_DEVICE_DIRECT3D_12;
 	obs_leave_graphics();
 
 	if (graphics_uses_d3d11)
