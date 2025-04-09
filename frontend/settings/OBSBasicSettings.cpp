@@ -1397,6 +1397,9 @@ void OBSBasicSettings::LoadRendererList()
 	const char *renderer = config_get_string(App()->GetAppConfig(), "Video", "Renderer");
 #ifdef _WIN32
 	ui->renderer->addItem(QString("Direct3D 11"), QString("Direct3D 11"));
+#if 0
+	ui->renderer->addItem(QString("Direct3D 12"), QString("Direct3D 12"));
+#endif
 	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0) {
 		ui->renderer->addItem(QString("OpenGL"), QString("OpenGL"));
 	}
