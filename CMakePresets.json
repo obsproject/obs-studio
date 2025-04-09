@@ -183,6 +183,13 @@
       "displayName": "Windows 64-bit",
       "description": "Windows build for 64-bit (aka x64)",
       "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "macos",
+      "configurePreset": "macos",
+      "displayName": "MacOS",
+      "description": "Default macOS build (single architecture only)",
+      "configuration": "RelWithDebInfo"
     }
   ]
 }
