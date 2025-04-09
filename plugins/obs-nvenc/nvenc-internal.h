@@ -11,6 +11,7 @@
 #include <dxgi.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#include <d3d12.h>
 #else
 #include <glad/glad.h>
 #endif
@@ -176,6 +177,13 @@ void d3d11_free_textures(struct nvenc_data *enc);
 
 bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 		  struct encoder_packet *packet, bool *received_packet);
+
+bool d3d12_init();
+void d3d12_free();
+
+bool d3d12_init_textures();
+bool d3d12_encode();
+
 #endif
 
 /** CUDA **/
