@@ -276,9 +276,8 @@ void gs_device::InitAdapter(uint32_t adapterIdx)
 }
 
 const static D3D_FEATURE_LEVEL featureLevels[] = {
-	D3D_FEATURE_LEVEL_11_0,
-	D3D_FEATURE_LEVEL_10_1,
-	D3D_FEATURE_LEVEL_10_0,
+	D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_11_1,
+	D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -588,7 +587,6 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
-	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_10_0;
 	LARGE_INTEGER umd;
 	uint64_t driverVersion = 0;
 	HRESULT hr = 0;
@@ -597,7 +595,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
-	//createFlags |= D3D11_CREATE_DEVICE_DEBUG;
+	createFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
 	adapterName = (adapter->GetDesc(&desc) == S_OK) ? desc.Description : L"<unknown>";
@@ -610,9 +608,37 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (SUCCEEDED(hr))
 		driverVersion = umd.QuadPart;
 
-	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, createFlags, featureLevels,
-			       sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL), D3D11_SDK_VERSION, device.Assign(),
-			       &levelUsed, context.Assign());
+	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_12_0;
+	hr = D3D12CreateDevice(adapter, levelUsed, IID_PPV_ARGS(&d3d12device));
+	if (d3d12device) {
+		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+		d3d12device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue));
+
+		if (commandQueue) {
+			hr = D3D11On12CreateDevice(d3d12device, createFlags, nullptr, 0,
+						   reinterpret_cast<IUnknown **>(commandQueue.Get()), 1, 0, &device,
+						   &context, nullptr);
+			if (device && context) {
+				blog(LOG_INFO,
+				     "D3D11On12 device created successfully, current d3d11 device is running on top of d3d12 device");
+			} else {
+				levelUsed = D3D_FEATURE_LEVEL_10_0;
+				hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, createFlags,
+						       featureLevels, sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL),
+						       D3D11_SDK_VERSION, device.Assign(), &levelUsed,
+						       context.Assign());
+			}
+		}
+	} else {
+		levelUsed = D3D_FEATURE_LEVEL_10_0;
+		hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, createFlags, featureLevels,
+				       sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL), D3D11_SDK_VERSION,
+				       device.Assign(), &levelUsed, context.Assign());
+	}
+
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
@@ -1468,6 +1494,7 @@ static void device_resize_internal(gs_device_t *device, uint32_t cx, uint32_t cy
 	} catch (const HRError &error) {
 		blog(LOG_ERROR, "device_resize_internal (D3D11): %s (%08lX)", error.str, error.hr);
 		LogD3D11ErrorDetails(error, device);
+		__debugbreak();
 	}
 }
 
@@ -2188,6 +2215,8 @@ void device_begin_frame(gs_device_t *device)
 
 	reset_duplicators();
 }
+
+void device_end_frame(gs_device_t *device) {}
 
 void device_begin_scene(gs_device_t *device)
 {

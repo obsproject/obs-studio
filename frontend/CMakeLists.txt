@@ -85,7 +85,7 @@ elseif(OS_FREEBSD OR OS_OPENBSD)
   include(cmake/os-freebsd.cmake)
 endif()
 
-foreach(graphics_library IN ITEMS opengl metal d3d11)
+foreach(graphics_library IN ITEMS opengl metal d3d11 d3d12)
   string(TOUPPER ${graphics_library} graphics_library_U)
   if(TARGET OBS::libobs-${graphics_library})
     target_compile_definitions(

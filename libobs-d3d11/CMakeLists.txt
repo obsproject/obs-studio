@@ -34,7 +34,7 @@ target_compile_definitions(
 
 target_link_libraries(
   libobs-d3d11
-  PRIVATE OBS::libobs d3d9 d3d11 d3dcompiler dxgi shcore
+  PRIVATE OBS::libobs d3d9 d3d11 d3d12 d3dcompiler dxgi shcore
 )
 
 target_enable_feature(libobs "Direct3D 11 renderer")
