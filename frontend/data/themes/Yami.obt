@@ -530,6 +530,7 @@ QListWidget::item,
 QMenu::item {
     border-radius: var(--border_radius);
     color: var(--text);
+    border: 1px solid transparent;
 }
 
 SourceTreeItem {
