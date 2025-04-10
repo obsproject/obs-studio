@@ -23,7 +23,7 @@ class MissingFilesPathItemDelegate : public QStyledItemDelegate {
 	Q_OBJECT
 
 public:
-	MissingFilesPathItemDelegate(bool isOutput, const QString &defaultPath);
+	MissingFilesPathItemDelegate();
 
 	virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
 				      const QModelIndex &index) const override;
@@ -37,8 +37,6 @@ protected:
 	void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override;
 
 private:
-	bool isOutput;
-	QString defaultPath;
 	const char *PATH_LIST_PROP = "pathList";
 
 	void handleBrowse(QWidget *container);
