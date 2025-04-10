@@ -118,6 +118,10 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/revert.svg);
 }
 
+.icon-close {
+    qproperty-icon: url(theme:Light/close.svg);
+}
+
 QToolBarExtension {
     qproperty-icon: url(theme:Light/dots-vert.svg);
 }
