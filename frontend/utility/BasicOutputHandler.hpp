@@ -65,7 +65,7 @@ struct BasicOutputHandler {
 
 	BasicOutputHandler(OBSBasic *main_);
 
-	virtual ~BasicOutputHandler(){};
+	virtual ~BasicOutputHandler() {};
 
 	virtual std::shared_future<void> SetupStreaming(obs_service_t *service,
 							SetupStreamingContinuation_t continuation) = 0;

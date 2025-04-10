@@ -1599,7 +1599,7 @@ bool obs_scripting_load_python(const char *python_path)
 	if (python_loaded)
 		return true;
 
-		/* Use external python on windows and mac */
+	/* Use external python on windows and mac */
 #if RUNTIME_LINK
 	if (!import_python(python_path, &python_version))
 		return false;

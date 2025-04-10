@@ -243,7 +243,7 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 	}
 	if (NVCV_SUCCESS != vfxErr)
 		log_nverror_destroy(filter, vfxErr);
-		/* debug */
+	/* debug */
 #ifdef _DEBUG
 	const char *info;
 	vfxErr = NvVFX_GetString(filter->handle_blur, NVVFX_INFO, &info);
