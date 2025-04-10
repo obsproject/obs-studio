@@ -91,6 +91,7 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	QList<QDockWidget *> bottomDocks{ui->mixerDock, ui->transitionsDock, controlsDock};
 
+	resizeDocks({ui->previewDock}, {height() * 750 / 100}, Qt::Vertical);
 	resizeDocks(bottomDocks, {bottomDocksHeight, bottomDocksHeight, bottomDocksHeight}, Qt::Vertical);
 	resizeDocks(bottomDocks, {cx * 45 / 100, cx * 14 / 100, cx * 16 / 100}, Qt::Horizontal);
 
