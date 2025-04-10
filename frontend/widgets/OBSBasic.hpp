@@ -919,7 +919,7 @@ private:
 	QPointer<QMenu> previewProjectorSource;
 	QPointer<QMenu> previewProjectorMain;
 
-	void UpdateMultiviewProjectorMenu();
+	void updateMultiviewProjectorMenu();
 	void ClearProjectors();
 	OBSProjector *OpenProjector(obs_source_t *source, int monitor, ProjectorType type);
 
@@ -928,7 +928,6 @@ private:
 
 private slots:
 	void OpenSavedProjector(SavedProjectorInfo *info);
-	void on_multiviewProjectorWindowed_triggered();
 
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
@@ -938,6 +937,7 @@ private slots:
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
 	void OpenSceneWindow();
+	void openMultiviewWindow();
 
 public:
 	void DeleteProjector(OBSProjector *projector);
@@ -1437,6 +1437,7 @@ private:
 	QPointer<QMenu> trayMenu;
 
 	bool sysTrayMinimizeToTray();
+	void updateSysTrayProjectorMenu();
 
 private slots:
 	void IconActivated(QSystemTrayIcon::ActivationReason reason);

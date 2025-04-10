@@ -1220,8 +1220,8 @@ void OBSBasic::OBSInit()
 
 	ui->viewMenu->addSeparator();
 
-	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this, &OBSBasic::OpenMultiviewProjector);
-	connect(ui->viewMenu->menuAction(), &QAction::hovered, this, &OBSBasic::UpdateMultiviewProjectorMenu);
+	connect(ui->viewMenu->menuAction(), &QAction::hovered, this, &OBSBasic::updateMultiviewProjectorMenu);
+	OBSBasic::updateMultiviewProjectorMenu();
 
 	ui->sources->UpdateIcons();
 
