@@ -12,12 +12,16 @@ enum class ProjectorType {
 	Multiview,
 };
 
-class OBSProjector : public OBSQTDisplay {
+class QMouseEvent;
+
+class OBSProjector : public QWidget {
 	Q_OBJECT
 
 private:
+	OBSQTDisplay display;
 	OBSWeakSourceAutoRelease weakSource;
 	std::vector<OBSSignal> sigs;
+	bool qtFullscreenNativeWorks;
 
 	static void OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy);
 	static void OBSRender(void *data, uint32_t cx, uint32_t cy);
@@ -27,6 +31,7 @@ private:
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void closeEvent(QCloseEvent *event) override;
+	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 
 	bool isAlwaysOnTop;
 	bool isAlwaysOnTopOverridden = false;
