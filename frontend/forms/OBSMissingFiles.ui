@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>666</width>
-    <height>310</height>
+    <width>700</width>
+    <height>320</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>700</width>
+    <height>320</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>MissingFiles</string>
