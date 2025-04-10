@@ -352,6 +352,10 @@
     qproperty-icon: url(theme:Dark/save.svg);
 }
 
+.icon-close {
+    qproperty-icon: url(theme:Dark/close.svg);
+}
+
 /* Media icons */
 
 .icon-media-play {

@@ -35,8 +35,7 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 	ui->setupUi(this);
 
 	ui->tableView->setModel(filesModel);
-	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::NewPath,
-						new MissingFilesPathItemDelegate(true, ""));
+	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::NewPath, new MissingFilesPathItemDelegate());
 	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
 	ui->tableView->horizontalHeader()->setMaximumSectionSize(width() / 4);
 	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::NewPath,
