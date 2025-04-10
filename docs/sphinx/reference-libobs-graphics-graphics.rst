@@ -420,13 +420,33 @@ Draw Functions
 .. function:: void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height)
 
    Draws a 2D sprite.  Sets the "image" parameter of the current effect
-   to the texture and renders a quad.
+   to the texture and renders a quad. Can be omitted if drawing without
+   a texture.
 
    If width or height is 0, the width or height of the texture will be
    used.  The flip value specifies whether the texture should be flipped
    on the U or V axis with GS_FLIP_U and GS_FLIP_V.
 
-   :param tex:    Texture to draw
+   :param tex:    Texture to draw (can be NULL if drawing without a
+                  texture)
+   :param flip:   Can be 0 or a bitwise-OR combination of one of the
+                  following values:
+
+                  - GS_FLIP_U - Flips the texture horizontally
+                  - GS_FLIP_V - Flips the texture vertically
+
+   :param width:  Width
+   :param height: Height
+
+---------------------
+
+.. function:: void gs_draw_quadf(gs_texture_t *tex, uint32_t flip, float width, float height)
+
+   Same as :c:func:`gs_draw_sprite()`, but with floating point width/height
+   values instead of integer width/height values.
+
+   :param tex:    Texture to draw (can be NULL if drawing without a
+                  texture)
    :param flip:   Can be 0 or a bitwise-OR combination of one of the
                   following values:
 

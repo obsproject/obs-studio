@@ -23,6 +23,10 @@
 #include "matrix3.h"
 #include "matrix4.h"
 
+/* ========================================================================= *
+ * Exports                                                                   *
+ * ========================================================================= */
+
 struct gs_exports {
 	const char *(*device_get_name)(void);
 	const char *(*gpu_get_driver_version)(void);
@@ -280,6 +284,10 @@ struct gs_exports {
 #endif
 };
 
+/* ========================================================================= *
+ * Graphics Subsystem Data                                                   *
+ * ========================================================================= */
+
 struct blend_state {
 	bool enabled;
 	enum gs_blend_type src_c;
@@ -303,6 +311,8 @@ struct graphics_subsystem {
 	struct gs_effect *cur_effect;
 
 	gs_vertbuffer_t *sprite_buffer;
+	gs_vertbuffer_t *flipped_sprite_buffer;
+	gs_vertbuffer_t *subregion_buffer;
 
 	bool using_immediate;
 	struct gs_vb_data *vbd;
