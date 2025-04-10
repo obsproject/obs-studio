@@ -33,6 +33,8 @@ target_sources(
     utility/MultitrackVideoOutput.hpp
     utility/obf.c
     utility/obf.h
+    utility/OBSCanvas.cpp
+    utility/OBSCanvas.hpp
     utility/OBSEventFilter.hpp
     utility/OBSProxyStyle.cpp
     utility/OBSProxyStyle.hpp

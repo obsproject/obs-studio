@@ -23,6 +23,7 @@
 #include <OBSApp.hpp>
 #include <oauth/Auth.hpp>
 #include <utility/BasicOutputHandler.hpp>
+#include <utility/OBSCanvas.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
 #include <utility/undo_stack.hpp>
@@ -1108,6 +1109,23 @@ public:
 
 	std::optional<OBSSceneCollection> GetSceneCollectionByName(const std::string &collectionName) const;
 	std::optional<OBSSceneCollection> GetSceneCollectionByFileName(const std::string &fileName) const;
+
+	/* -------------------------------------
+	 * MARK: - OBSBasic_Canvases
+	 * -------------------------------------
+	 */
+private:
+	std::vector<OBS::Canvas> canvases;
+
+	static void CanvasRemoved(void *data, calldata_t *params);
+
+public:
+	const std::vector<OBS::Canvas> &GetCanvases() const noexcept { return canvases; }
+
+	OBSCanvas AddCanvas(const std::string &name, obs_video_info *ovi = nullptr, int flags = 0);
+
+public slots:
+	bool RemoveCanvas(obs_canvas_t *canvas);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_SceneItems
