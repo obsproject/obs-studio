@@ -14,11 +14,7 @@ if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
   find_package(X11-xcb REQUIRED)
 
   if(ENABLE_WAYLAND)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(EGL REQUIRED egl)
-    target_link_libraries(libobs-opengl PRIVATE ${EGL_LIBRARIES})
-    target_include_directories(libobs-opengl PRIVATE ${EGL_INCLUDE_DIRS})
-    target_compile_options(libobs-opengl PRIVATE ${EGL_CFLAGS_OTHER})
+    find_package(OpenGL REQUIRED EGL)
     find_package(Wayland REQUIRED)
   endif()
 endif()
@@ -62,6 +58,7 @@ target_link_libraries(
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libdrm::Libdrm>
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:xcb::xcb>
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::x11-xcb>
+    $<$<AND:$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>,$<BOOL:${ENABLE_WAYLAND}>>:OpenGL::EGL>
     $<$<AND:$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>,$<BOOL:${ENABLE_WAYLAND}>>:Wayland::EGL>
 )
 
