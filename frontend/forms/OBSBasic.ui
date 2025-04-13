@@ -1622,7 +1622,7 @@
     <string>Add</string>
    </property>
    <property name="toolTip">
-    <string>Basic.Main.AddSceneDlg.Title</string>
+    <string>AddScene</string>
    </property>
    <property name="class" stdset="0">
     <string notr="true">icon-plus</string>
@@ -2022,7 +2022,7 @@
   </action>
   <action name="actionImportSceneCollection">
    <property name="text">
-    <string>Import</string>
+    <string>Basic.MainMenu.Import</string>
    </property>
   </action>
   <action name="actionExportSceneCollection">
@@ -2062,7 +2062,7 @@
   </action>
   <action name="actionImportProfile">
    <property name="text">
-    <string>Import</string>
+    <string>Basic.MainMenu.Import</string>
    </property>
   </action>
   <action name="actionExportProfile">
