@@ -58,6 +58,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 
 		iconLabel = new QLabel();
+		iconLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 		iconLabel->setPixmap(pixmap);
 		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
@@ -77,8 +78,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	lock->setAccessibleDescription(QTStr("Basic.Main.Sources.LockDescription").arg(name));
 
 	label = new OBSSourceLabel(source);
-	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-	label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 	label->setAttribute(Qt::WA_TranslucentBackground);
 	label->setEnabled(sourceVisible);
 
