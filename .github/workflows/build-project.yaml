@@ -189,7 +189,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run:  |
             : Add items into tar file
-            ls
             cd build_macos/${{env.InstallPath}}
             7z a -r ../../${{env.TARGET_ARTIFACT}}.7z *
             cd ../..
