@@ -543,6 +543,11 @@ SourceTreeItem {
     color: var(--text);
 }
 
+SourceTreeItem .checkbox-icon {
+    margin-right: 0;
+    margin-left: var(--spacing_large);
+}
+
 QMenu::item:selected,
 QListView::item:selected,
 QListWidget::item:selected {
