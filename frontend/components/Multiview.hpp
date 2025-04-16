@@ -28,7 +28,7 @@ public:
 private:
 	bool drawLabel, drawSafeArea;
 	MultiviewLayout multiviewLayout;
-	size_t maxSrcs, numSrcs;
+	size_t maxSrcs;
 	gs_vertbuffer_t *actionSafeMargin = nullptr;
 	gs_vertbuffer_t *graphicsSafeMargin = nullptr;
 	gs_vertbuffer_t *fourByThreeSafeMargin = nullptr;
