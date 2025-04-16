@@ -349,7 +349,7 @@ bool gl_egl_query_dmabuf_capabilities(EGLDisplay egl_display, enum gs_dmabuf_fla
 }
 
 static inline bool query_dmabuf_modifiers(EGLDisplay egl_display, EGLint drm_format, EGLuint64KHR **modifiers,
-					  EGLuint64KHR *n_modifiers)
+					  EGLint *n_modifiers)
 {
 	EGLint max_modifiers;
 
@@ -376,22 +376,25 @@ static inline bool query_dmabuf_modifiers(EGLDisplay egl_display, EGLint drm_for
 		*modifiers = modifier_list;
 	}
 
-	*n_modifiers = (EGLuint64KHR)max_modifiers;
+	*n_modifiers = max_modifiers;
 	return true;
 }
 
 bool gl_egl_query_dmabuf_modifiers_for_format(EGLDisplay egl_display, uint32_t drm_format, uint64_t **modifiers,
 					      size_t *n_modifiers)
 {
+	EGLint max_modifiers = 0;
+
 	if (!glad_eglQueryDmaBufModifiersEXT) {
 		blog(LOG_ERROR, "Unable to load eglQueryDmaBufModifiersEXT");
 		return false;
 	}
-	if (!query_dmabuf_modifiers(egl_display, drm_format, modifiers, n_modifiers)) {
+	if (!query_dmabuf_modifiers(egl_display, drm_format, modifiers, &max_modifiers)) {
 		*n_modifiers = 0;
 		*modifiers = NULL;
 		return false;
 	}
+	*n_modifiers = max_modifiers;
 	return true;
 }
 
