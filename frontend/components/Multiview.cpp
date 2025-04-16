@@ -70,9 +70,6 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool dra
 	this->drawLabel = drawLabel;
 	this->drawSafeArea = drawSafeArea;
 
-	multiviewScenes.clear();
-	multiviewLabels.clear();
-
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
@@ -84,9 +81,6 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool dra
 
 	struct obs_frontend_source_list scenes = {};
 	obs_frontend_get_scenes(&scenes);
-
-	multiviewLabels.emplace_back(CreateLabel(Str("StudioMode.Preview"), h / 2));
-	multiviewLabels.emplace_back(CreateLabel(Str("StudioMode.Program"), h / 2));
 
 	switch (multiviewLayout) {
 	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
@@ -155,9 +149,14 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool dra
 	siScaleX = (scenesCX - thicknessx2) / fw;
 	siScaleY = (scenesCY - thicknessx2) / fh;
 
-	numSrcs = 0;
+	std::vector<OBSWeakSource> updatedScenes;
+	std::vector<OBSSource> updatedLabels;
+
+	updatedLabels.emplace_back(CreateLabel(Str("StudioMode.Preview"), h / 2));
+	updatedLabels.emplace_back(CreateLabel(Str("StudioMode.Program"), h / 2));
+
 	size_t i = 0;
-	while (i < scenes.sources.num && numSrcs < maxSrcs) {
+	while (i < scenes.sources.num && updatedScenes.size() < maxSrcs) {
 		obs_source_t *src = scenes.sources.array[i++];
 		OBSDataAutoRelease data = obs_source_get_private_settings(src);
 
@@ -165,16 +164,22 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool dra
 		if (!obs_data_get_bool(data, "show_in_multiview"))
 			continue;
 
-		// We have a displayable source.
-		numSrcs++;
-
-		multiviewScenes.emplace_back(OBSGetWeakRef(src));
+		updatedScenes.emplace_back(OBSGetWeakRef(src));
 		obs_source_inc_showing(src);
 
-		multiviewLabels.emplace_back(CreateLabel(obs_source_get_name(src), h / 3));
+		updatedLabels.emplace_back(CreateLabel(obs_source_get_name(src), h / 3));
 	}
 
 	obs_frontend_source_list_free(&scenes);
+
+	for (OBSWeakSource &weakSrc : multiviewScenes) {
+		OBSSource src = OBSGetStrongRef(weakSrc);
+		if (src)
+			obs_source_dec_showing(src);
+	}
+
+	multiviewScenes = std::move(updatedScenes);
+	multiviewLabels = std::move(updatedLabels);
 }
 
 static inline uint32_t labelOffset(MultiviewLayout multiviewLayout, obs_source_t *label, uint32_t cx)
@@ -388,7 +393,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		// Handle all the offsets
 		calcBaseSource(i);
 
-		if (i >= numSrcs) {
+		if (i >= multiviewScenes.size()) {
 			// Just paint the background and continue
 			paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY, outerColor);
 			paintAreaWithColor(siX, siY, siCX, siCY, backgroundColor);
@@ -741,7 +746,8 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 			pos += 4;
 	}
 
-	if (pos < 0 || pos >= (int)numSrcs)
+	if (pos < 0 || pos >= (int)multiviewScenes.size())
 		return nullptr;
+
 	return OBSGetStrongRef(multiviewScenes[pos]);
 }
