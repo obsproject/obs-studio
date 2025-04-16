@@ -25,12 +25,6 @@
 
 #include "moc_OBSMissingFiles.cpp"
 
-// TODO: Fix redefinition error of due to clash with enums defined in importer code.
-enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
-
-// TODO: Fix redefinition error of due to clash with enums defined in importer code.
-enum MissingFilesColumn { Source, OriginalPath, NewPath, State, Count };
-
 OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 	: QDialog(parent),
 	  filesModel(new MissingFilesModel),
@@ -41,17 +35,13 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 	ui->setupUi(this);
 
 	ui->tableView->setModel(filesModel);
-	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::OriginalPath,
-						new MissingFilesPathItemDelegate(false, ""));
-	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::NewPath,
-						new MissingFilesPathItemDelegate(true, ""));
-	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::Stretch);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::Source,
-								QHeaderView::ResizeMode::ResizeToContents);
-	ui->tableView->horizontalHeader()->setMaximumSectionSize(width() / 3);
-	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::State,
-								QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->setItemDelegateForColumn(MissingFilesColumn::NewPath, new MissingFilesPathItemDelegate());
+	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->horizontalHeader()->setMaximumSectionSize(width() / 4);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(MissingFilesColumn::NewPath,
+								QHeaderView::ResizeMode::Stretch);
 	ui->tableView->setEditTriggers(QAbstractItemView::EditTrigger::CurrentChanged);
+	ui->tableView->setWordWrap(false);
 
 	ui->warningIcon->setPixmap(filesModel->warningIcon.pixmap(QSize(32, 32)));
 
@@ -126,7 +116,7 @@ void OBSMissingFiles::browseFolders()
 
 	if (dir != "") {
 		dir += "/";
-		filesModel->fileCheckLoop(filesModel->files, dir, true);
+		filesModel->findAllFilesInPath(dir, true);
 	}
 }
 
