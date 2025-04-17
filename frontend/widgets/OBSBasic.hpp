@@ -63,6 +63,10 @@ class QMessageBox;
 class QWidgetAction;
 struct QuickTransition;
 
+namespace OBS {
+enum class LogFileType;
+}
+
 #define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
 #define DESKTOP_AUDIO_2 Str("DesktopAudioDevice2")
 #define AUX_AUDIO_1 Str("AuxAudioDevice1")
@@ -584,7 +588,6 @@ private:
 
 	QList<QPoint> visDlgPositions;
 
-	void UploadLog(const char *subdir, const char *file, const bool crash);
 	void CloseDialogs();
 	void EnumDialogs();
 
@@ -636,9 +639,7 @@ private slots:
 
 	void on_resetUI_triggered();
 
-	void logUploadFinished(const QString &text, const QString &error);
-	void crashUploadFinished(const QString &text, const QString &error);
-	void openLogDialog(const QString &text, const bool crash);
+	void logUploadFinished(const QString &text, const QString &error, OBS::LogFileType uploadType);
 
 	void updateCheckFinished();
 
@@ -649,6 +650,15 @@ public:
 	void CreateFiltersWindow(obs_source_t *source);
 	void CreateEditTransformWindow(obs_sceneitem_t *item);
 	void CreatePropertiesWindow(obs_source_t *source);
+
+	void UploadLog(const char *subdir, const char *file, OBS::LogFileType uploadType);
+
+	/* -------------------------------------
+	 * MARK: - OBSBasic_MainMenu
+	 * -------------------------------------
+	 */
+private:
+	void setupMenuItemStateHandlers();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_OutputHandler
