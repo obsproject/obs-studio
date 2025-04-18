@@ -161,7 +161,7 @@ void obs_scripting_unload(void)
 	if (!scripting_loaded)
 		return;
 
-		/* ---------------------- */
+	/* ---------------------- */
 
 #if defined(LUAJIT_FOUND)
 	obs_lua_unload();

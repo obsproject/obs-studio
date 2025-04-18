@@ -31,7 +31,7 @@ class RemuxWorker : public QObject {
 	void UpdateProgress(float percent);
 
 	explicit RemuxWorker() : isWorking(false) {}
-	virtual ~RemuxWorker(){};
+	virtual ~RemuxWorker() {};
 
 private slots:
 	void remux(const QString &source, const QString &target);
