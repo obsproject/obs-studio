@@ -146,6 +146,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 #endif
 
 	UpdateFilters();
+
 }
 
 OBSBasicFilters::~OBSBasicFilters()
