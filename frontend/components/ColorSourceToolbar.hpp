@@ -17,5 +17,5 @@ public:
 	~ColorSourceToolbar();
 
 public slots:
-	void on_choose_clicked();
+	void on_colorEdit_clicked();
 };

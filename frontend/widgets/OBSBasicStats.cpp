@@ -294,6 +294,8 @@ void OBSBasicStats::Update()
 	else
 		setClasses(fps, "");
 
+	repolish(fps);
+
 	/* ------------------ */
 
 	double usage = os_cpu_usage_info_query(cpu_info);
@@ -330,6 +332,8 @@ void OBSBasicStats::Update()
 	else
 		setClasses(hddSpace, "");
 
+	repolish(hddSpace);
+
 	/* ------------------ */
 
 	num = (long double)os_get_proc_resident_size() / (1024.0l * 1024.0l);
@@ -352,6 +356,8 @@ void OBSBasicStats::Update()
 		setClasses(renderTime, "text-warning");
 	else
 		setClasses(renderTime, "");
+
+	repolish(renderTime);
 
 	/* ------------------ */
 
@@ -381,6 +387,8 @@ void OBSBasicStats::Update()
 	else
 		setClasses(skippedFrames, "");
 
+	repolish(skippedFrames);
+
 	/* ------------------ */
 
 	uint32_t total_rendered = obs_get_total_frames();
@@ -405,6 +413,8 @@ void OBSBasicStats::Update()
 		setClasses(missedFrames, "text-warning");
 	else
 		setClasses(missedFrames, "");
+
+	repolish(missedFrames);
 
 	/* ------------------------------------------- */
 	/* recording/streaming stats                   */
@@ -516,6 +526,7 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 
 	status->setText(str);
 	setClasses(status, styling);
+	repolish(status);
 
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
 	const char *unit = "MiB";
@@ -557,6 +568,8 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 			setClasses(droppedFrames, "text-warning");
 		else
 			setClasses(droppedFrames, "");
+
+		repolish(droppedFrames);
 	}
 
 	lastBytesSent = bytesSent;

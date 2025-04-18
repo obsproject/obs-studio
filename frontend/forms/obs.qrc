@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="/res">
     <file>images/save.svg</file>
+    <file>images/edit.svg</file>
     <file>images/media-pause.svg</file>
     <file>images/trash.svg</file>
     <file>images/filter.svg</file>
@@ -85,7 +86,7 @@
     <file>images/settings/accessibility.svg</file>
     <file>images/settings/appearance.svg</file>
   </qresource>
-  <qresource prefix="">
+  <qresource>
     <file>fonts/OpenSans-Regular.ttf</file>
     <file>fonts/OpenSans-Bold.ttf</file>
     <file>fonts/OpenSans-Italic.ttf</file>

@@ -2,6 +2,7 @@
 #include "ui_color-source-toolbar.h"
 
 #include <QColorDialog>
+#include <QStyle>
 
 #include "moc_ColorSourceToolbar.cpp"
 
@@ -37,17 +38,19 @@ ColorSourceToolbar::~ColorSourceToolbar() {}
 void ColorSourceToolbar::UpdateColor()
 {
 	QPalette palette = QPalette(color);
-	ui->color->setFrameStyle(QFrame::Sunken | QFrame::Panel);
-	ui->color->setText(color.name(QColor::HexRgb));
-	ui->color->setPalette(palette);
-	ui->color->setStyleSheet(QString("background-color :%1; color: %2;")
-					 .arg(palette.color(QPalette::Window).name(QColor::HexRgb))
-					 .arg(palette.color(QPalette::WindowText).name(QColor::HexRgb)));
-	ui->color->setAutoFillBackground(true);
-	ui->color->setAlignment(Qt::AlignCenter);
+	ui->colorPreview->setText(color.name(QColor::HexRgb));
+	ui->colorPreview->setPalette(palette);
+	ui->colorPreview->setStyleSheet(QString("background-color :%1; color: %2;")
+						.arg(palette.color(QPalette::Window).name(QColor::HexRgb))
+						.arg(palette.color(QPalette::WindowText).name(QColor::HexRgb)));
+	ui->colorPreview->setAutoFillBackground(true);
+	//ui->colorPreview->setAlignment(Qt::AlignCenter);
+
+	ui->colorPreview->style()->unpolish(ui->colorPreview);
+	ui->colorPreview->style()->polish(ui->colorPreview);
 }
 
-void ColorSourceToolbar::on_choose_clicked()
+void ColorSourceToolbar::on_colorEdit_clicked()
 {
 	OBSSource source = GetSource();
 	if (!source) {

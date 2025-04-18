@@ -86,8 +86,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 
 	bool isActive = obs_source_active(source) && obs_source_audio_active(source);
 	active->setText(isActive ? QTStr("Basic.Stats.Status.Active") : QTStr("Basic.Stats.Status.Inactive"));
-	if (isActive)
+	if (isActive) {
 		setClasses(active, "text-danger");
+		repolish(active);
+	}
 	active->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
 	volume->setMinimum(MIN_DB - 0.1);
@@ -334,6 +336,8 @@ void OBSAdvAudioCtrl::SourceActiveChanged(bool isActive)
 		active->setText(QTStr("Basic.Stats.Status.Inactive"));
 		setClasses(active, "");
 	}
+
+	repolish(active);
 }
 
 void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
