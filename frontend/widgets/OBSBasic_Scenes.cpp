@@ -516,7 +516,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 	QMenu popup(this);
 	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
 
-	popup.addAction(QTStr("Add"), this, &OBSBasic::on_actionAddScene_triggered);
+	popup.addAction(QTStr("AddScene") + "...", this, &OBSBasic::on_actionAddScene_triggered);
 
 	if (item) {
 		QAction *copyFilters = new QAction(QTStr("Copy.Filters"), this);

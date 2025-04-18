@@ -786,7 +786,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	bool foundDeprecated = false;
 	size_t idx = 0;
 
-	QMenu *popup = new QMenu(QTStr("Add"), this);
+	QMenu *popup = new QMenu(QTStr("AddSource"), this);
 	QMenu *deprecated = new QMenu(QTStr("Deprecated"), popup);
 
 	auto getActionAfter = [](QMenu *menu, const QString &name) {
