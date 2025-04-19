@@ -105,7 +105,7 @@ jobs:
           path: build-aux/com.obsproject.Studio.json
 
       - name: Build Flatpak Manifest
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@42d281a5cf2ad1d0882a66af700a62cdad7686c6
+        uses: flatpak/flatpak-github-actions/flatpak-builder@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         with:
           build-bundle: false
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
@@ -140,7 +140,7 @@ jobs:
           path: repo
 
       - name: Publish to Flathub Beta
-        uses: flathub-infra/flatpak-github-actions/flat-manager@42d281a5cf2ad1d0882a66af700a62cdad7686c6
+        uses: flatpak/flatpak-github-actions/flat-manager@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         if: ${{ matrix.branch == 'beta' }}
         with:
           flat-manager-url: https://hub.flathub.org/
@@ -149,7 +149,7 @@ jobs:
           build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Publish to Flathub
-        uses: flathub-infra/flatpak-github-actions/flat-manager@42d281a5cf2ad1d0882a66af700a62cdad7686c6
+        uses: flatpak/flatpak-github-actions/flat-manager@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         if: ${{ matrix.branch == 'stable' }}
         with:
           flat-manager-url: https://hub.flathub.org/
