@@ -106,9 +106,13 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			replayBufferSaved.Connect(signal, "saved", OBSReplayBufferSaved, this);
 		}
 
-		bool native_muxer = strcmp(recFormat, "hybrid_mp4") == 0;
-		fileOutput = obs_output_create(native_muxer ? "mp4_output" : "ffmpeg_muxer", "adv_file_output", nullptr,
-					       nullptr);
+		const char *mux = "ffmpeg_muxer";
+		if (strcmp(recFormat, "hybrid_mp4") == 0)
+			mux = "mp4_output";
+		else if (strcmp(recFormat, "hybrid_mov") == 0)
+			mux = "mov_output";
+
+		fileOutput = obs_output_create(mux, "adv_file_output", nullptr, nullptr);
 		if (!fileOutput)
 			throw "Failed to create recording output "
 			      "(advanced output)";
