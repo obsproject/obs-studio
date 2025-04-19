@@ -292,7 +292,7 @@ jobs:
           path: build-aux/com.obsproject.Studio.json
 
       - name: Build Flatpak Manifest 🧾
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@42d281a5cf2ad1d0882a66af700a62cdad7686c6
+        uses: flatpak/flatpak-github-actions/flatpak-builder@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         with:
           build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
           bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
