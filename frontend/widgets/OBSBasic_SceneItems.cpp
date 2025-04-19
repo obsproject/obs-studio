@@ -880,7 +880,7 @@ void OBSBasic::on_actionAddSource_triggered()
 
 static bool remove_items(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
-	vector<OBSSceneItem> &items = *reinterpret_cast<vector<OBSSceneItem> *>(param);
+	vector<OBSSceneItem> &items = *static_cast<vector<OBSSceneItem> *>(param);
 
 	if (obs_sceneitem_selected(item)) {
 		items.emplace_back(item);
@@ -1120,7 +1120,7 @@ static bool RotateSelectedSources(obs_scene_t * /* scene */, obs_sceneitem_t *it
 	if (obs_sceneitem_locked(item))
 		return true;
 
-	float rot = *reinterpret_cast<float *>(param);
+	float rot = *static_cast<float *>(param);
 
 	vec3 tl = GetItemTL(item);
 
@@ -1182,7 +1182,7 @@ void OBSBasic::on_actionRotate180_triggered()
 
 static bool MultiplySelectedItemScale(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	vec2 &mul = *reinterpret_cast<vec2 *>(param);
+	vec2 &mul = *static_cast<vec2 *>(param);
 
 	if (obs_sceneitem_is_group(item))
 		obs_sceneitem_group_enum_items(item, MultiplySelectedItemScale, param);
@@ -1237,7 +1237,7 @@ void OBSBasic::on_actionFlipVertical_triggered()
 
 static bool CenterAlignSelectedItems(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	obs_bounds_type boundsType = *reinterpret_cast<obs_bounds_type *>(param);
+	obs_bounds_type boundsType = *static_cast<obs_bounds_type *>(param);
 
 	if (obs_sceneitem_is_group(item))
 		obs_sceneitem_group_enum_items(item, CenterAlignSelectedItems, param);
