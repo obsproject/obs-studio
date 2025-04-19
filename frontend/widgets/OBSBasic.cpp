@@ -419,6 +419,10 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->actionE_xit->setShortcut(Qt::CTRL | Qt::Key_Q);
 #endif
 
+#ifndef ENABLE_WIDGET_PLAYGROUND
+	ui->widgetPlayground->setVisible(false);
+#endif
+
 	auto addNudge = [this](const QKeySequence &seq, MoveDir direction, int distance) {
 		QAction *nudge = new QAction(ui->preview);
 		nudge->setShortcut(seq);
