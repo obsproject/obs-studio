@@ -7,7 +7,7 @@
 #undef DEBUG
 #endif
 
-#include <fdk-aac/aacenc_lib.h>
+#include "libfdk-aac-wrapper.h"
 
 static const char *libfdk_get_error(AACENC_ERROR err)
 {
@@ -250,11 +250,7 @@ static bool libfdk_encode(void *data, struct encoder_frame *frame, struct encode
 	}
 
 	*received_packet = true;
-#if (AACENCODER_LIB_VL0 >= 4)
 	encoderDelay = enc->info.nDelay;
-#else
-	encoderDelay = enc->info.encoderDelay;
-#endif
 	packet->pts = enc->total_samples - encoderDelay;
 	packet->dts = enc->total_samples - encoderDelay;
 	packet->data = enc->packet_buffer;
@@ -307,6 +303,8 @@ struct obs_encoder_info obs_libfdk_encoder = {
 
 bool obs_module_load(void)
 {
+	if (!load_libfdk_aac())
+		return false;
 	obs_register_encoder(&obs_libfdk_encoder);
 	return true;
 }
