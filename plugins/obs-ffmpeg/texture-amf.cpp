@@ -1419,6 +1419,37 @@ static void amf_set_codec_level(amf_base *enc)
 	}
 }
 
+static bool amf_get_level_str(amf_base *enc, amf_int64 level, char const **level_str)
+{
+	bool found = false;
+	std::vector<codec_level_entry> *levels;
+
+	if (enc->codec == amf_codec_type::AVC) {
+		levels = &avc_levels;
+	} else if (enc->codec == amf_codec_type::HEVC) {
+		levels = &hevc_levels;
+	} else if (enc->codec == amf_codec_type::AV1) {
+		levels = &av1_levels;
+	} else {
+		blog(LOG_ERROR, "%s: Unknown amf_codec_type", __FUNCTION__);
+		return false;
+	}
+
+	for (auto level_it = levels->begin(); level_it != levels->end(); ++level_it) {
+		if (level == level_it->amf_level) {
+			found = true;
+			*level_str = level_it->level_str;
+			break;
+		}
+	}
+
+	if (!found) {
+		*level_str = "unknown";
+	}
+
+	return found;
+}
+
 static bool amf_avc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
@@ -1488,6 +1519,17 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	if (!ffmpeg_opts || !*ffmpeg_opts)
 		ffmpeg_opts = "(none)";
 
+	/* The ffmpeg_opts just above may have explicitly set the AVC level to a value different than what was
+	 * determined by amf_set_codec_level(). Query the final AVC level then lookup the matching string. Warn if not
+	 * found, because ffmpeg_opts is free-form and may have set something bogus.
+	 */
+	amf_int64 final_level;
+	get_avc_property(enc, PROFILE_LEVEL, &final_level);
+	const char *level_str = nullptr;
+	if (!amf_get_level_str(enc, final_level, &level_str)) {
+		warn("AVC level string not found. Level %d may be incorrect.", final_level);
+	}
+
 	info("settings:\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
@@ -1495,11 +1537,12 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tlevel:        %s\n"
 	     "\tb-frames:     %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy, ffmpeg_opts);
 
 	return true;
 }
@@ -1788,6 +1831,17 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	if (!ffmpeg_opts || !*ffmpeg_opts)
 		ffmpeg_opts = "(none)";
 
+	/* The ffmpeg_opts just above may have explicitly set the HEVC level to a value different than what was
+	 * determined by amf_set_codec_level(). Query the final HEVC level then lookup the matching string. Warn if not
+	 * found, because ffmpeg_opts is free-form and may have set something bogus.
+	 */
+	amf_int64 final_level;
+	get_hevc_property(enc, PROFILE_LEVEL, &final_level);
+	char const *level_str = nullptr;
+	if (!amf_get_level_str(enc, final_level, &level_str)) {
+		warn("HEVC level string not found. Level %d may be incorrect.", final_level);
+	}
+
 	info("settings:\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
@@ -1795,10 +1849,11 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tlevel:        %s\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, enc->cx, enc->cy, ffmpeg_opts);
 
 	return true;
 }
@@ -2142,6 +2197,17 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	if (!ffmpeg_opts || !*ffmpeg_opts)
 		ffmpeg_opts = "(none)";
 
+	/* The ffmpeg_opts just above may have explicitly set the AV1 level to a value different than what was
+	 * determined by amf_set_codec_level(). Query the final AV1 level then lookup the matching string. Warn if not
+	 * found, because ffmpeg_opts is free-form and may have set something bogus.
+	 */
+	amf_int64 final_level;
+	get_av1_property(enc, LEVEL, &final_level);
+	char const *level_str = nullptr;
+	if (!amf_get_level_str(enc, final_level, &level_str)) {
+		warn("AV1 level string not found. Level %d may be incorrect.", final_level);
+	}
+
 	info("settings:\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
@@ -2149,11 +2215,12 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tlevel:        %s\n"
 	     "\tb-frames:     %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy, ffmpeg_opts);
 
 	return true;
 }
