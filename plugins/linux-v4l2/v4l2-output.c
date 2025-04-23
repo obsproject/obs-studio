@@ -11,6 +11,10 @@
 #include <errno.h>
 #include <string.h>
 
+#define OBS_V4L2_CARD_LABEL "OBS Virtual Camera"
+
+static int v4l2loopback_ctl_available = 0;
+
 struct virtualcam_data {
 	obs_output_t *output;
 	int device;
@@ -84,6 +88,10 @@ static bool loopback_module_loaded()
 
 bool loopback_module_available()
 {
+	if (run_command("v4l2loopback-ctl -v >/dev/null 2>&1") == 0) {
+		v4l2loopback_ctl_available = 1;
+	}
+
 	if (loopback_module_loaded()) {
 		return true;
 	}
@@ -98,7 +106,15 @@ bool loopback_module_available()
 static int loopback_module_load()
 {
 	return run_command(
-		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
+		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='" OBS_V4L2_CARD_LABEL
+		"' && sleep 0.5");
+}
+
+static int loopback_module_add_card()
+{
+	return run_command(
+		"pkexec v4l2loopback-ctl add -x 1 -n '" OBS_V4L2_CARD_LABEL
+		"' && sleep 0.5");
 }
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
@@ -110,25 +126,30 @@ static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
 	return vcam;
 }
 
-static bool try_connect(void *data, const char *device)
+static bool try_connect(void *data, const char *device, const char *name)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
-	struct v4l2_format format;
-	struct v4l2_capability capability;
-	struct v4l2_streamparm parm;
-
-	uint32_t width = obs_output_get_width(vcam->output);
-	uint32_t height = obs_output_get_height(vcam->output);
-
-	vcam->frame_size = width * height * 2;
+	struct v4l2_format format = {0};
+	struct v4l2_capability capability = {0};
+	struct v4l2_streamparm parm = {0};
 
 	vcam->device = open(device, O_RDWR);
 
 	if (vcam->device < 0)
 		return false;
 
-	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) < 0)
+	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) < 0) {
+		blog(LOG_WARNING,
+		     "v4l2-output: VIDIOC_QUERYCAP failed: device:%s (%s)",
+		     device, strerror(errno));
 		goto fail_close_device;
+	}
+
+	blog(LOG_DEBUG, "v4l2-output: found device: '%s'", capability.card);
+	if (name &&
+	    strncmp((const char *)capability.card, name, strlen(name)) != 0) {
+		goto fail_close_device;
+	}
 
 	format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
@@ -138,15 +159,17 @@ static bool try_connect(void *data, const char *device)
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
-	memset(&parm, 0, sizeof(parm));
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-
 	parm.parm.output.capability = V4L2_CAP_TIMEPERFRAME;
 	parm.parm.output.timeperframe.numerator = ovi.fps_den;
 	parm.parm.output.timeperframe.denominator = ovi.fps_num;
 
 	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) < 0)
 		goto fail_close_device;
+
+	uint32_t width = obs_output_get_width(vcam->output);
+	uint32_t height = obs_output_get_height(vcam->output);
+	vcam->frame_size = width * height * 2;
 
 	format.fmt.pix.width = width;
 	format.fmt.pix.height = height;
@@ -170,13 +193,14 @@ static bool try_connect(void *data, const char *device)
 		goto fail_close_device;
 	}
 
-	blog(LOG_INFO, "Virtual camera started");
-	obs_output_begin_data_capture(vcam->output, 0);
+	blog(LOG_INFO, "v4l2-output: Using device '%s' at '%s'",
+	     capability.card, device);
 
 	return true;
 
 fail_close_device:
 	close(vcam->device);
+	vcam->device = 0;
 	return false;
 }
 
@@ -185,17 +209,11 @@ static int scanfilter(const struct dirent *entry)
 	return !astrcmp_n(entry->d_name, "video", 5);
 }
 
-static bool virtualcam_start(void *data)
+static bool loopback_card_open(void *data, const char *name)
 {
-	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 	struct dirent **list;
 	bool success = false;
 	int n;
-
-	if (!loopback_module_loaded()) {
-		if (loopback_module_load() != 0)
-			return false;
-	}
 
 	n = scandir("/dev", &list, scanfilter,
 #if defined(__linux__)
@@ -217,7 +235,7 @@ static bool virtualcam_start(void *data)
 			blog(LOG_DEBUG, "v4l2-output: A format truncation may have occurred."
 					" This can be ignored since it is quite improbable.");
 
-		if (try_connect(vcam, device)) {
+		if (try_connect(data, device, name)) {
 			success = true;
 			break;
 		}
@@ -227,8 +245,43 @@ static bool virtualcam_start(void *data)
 		free(list[n]);
 	free(list);
 
-	if (!success)
+	return success;
+}
+
+static bool virtualcam_start(void *data)
+{
+	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
+
+	if (!loopback_module_loaded()) {
+		if (loopback_module_load() != 0) {
+			return false;
+		}
+	}
+
+	bool success = loopback_card_open(data, OBS_V4L2_CARD_LABEL);
+
+	if (!success && v4l2loopback_ctl_available) {
+		/* Try to dynamically add a new device using the `v4l2loopback-ctl`
+		 * utility, if available and if possible. Only try this once. */
+
+		// TODO: Parse the output of add command and connect directly
+		if (loopback_module_add_card() == 0) {
+			success = loopback_card_open(data, OBS_V4L2_CARD_LABEL);
+		} else {
+			v4l2loopback_ctl_available = 0;
+		}
+	}
+
+	if (!success) {
+		success = loopback_card_open(data, NULL);
+	}
+
+	if (success) {
+		blog(LOG_INFO, "Virtual camera started");
+		obs_output_begin_data_capture(vcam->output, 0);
+	} else {
 		blog(LOG_WARNING, "Failed to start virtual camera");
+	}
 
 	return success;
 }
