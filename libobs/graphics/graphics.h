@@ -900,6 +900,8 @@ EXPORT void gs_debug_marker_end(void);
 EXPORT gs_texture_t *gs_texture_create_from_iosurface(void *iosurf);
 EXPORT bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf);
 EXPORT uint32_t gs_create_iosurface(uint32_t width, uint32_t height);
+EXPORT uint32_t create_iosurface(gs_device_t *dev, uint32_t width,
+				    uint32_t height);
 EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
 EXPORT bool gs_shared_texture_available(void);
 
