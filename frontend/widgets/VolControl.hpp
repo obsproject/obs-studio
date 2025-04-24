@@ -8,50 +8,59 @@ class OBSSourceLabel;
 class VolumeMeter;
 class VolumeSlider;
 class MuteCheckBox;
+class QCheckBox;
 class QLabel;
 class QPushButton;
+class QGridLayout;
+class OBSSourceLabel;
 
 class VolControl : public QFrame {
 	Q_OBJECT
 
 private:
+	QScopedPointer<QFrame> controlContainer;
+
 	OBSSource source;
 	std::vector<OBSSignal> sigs;
+	QGridLayout *controlLayout;
 	OBSSourceLabel *nameLabel;
-	QLabel *volLabel;
-	VolumeMeter *volMeter;
-	VolumeSlider *slider;
-	MuteCheckBox *mute;
-	QPushButton *config = nullptr;
+	QScopedPointer<QLabel> volLabel;
+	QScopedPointer<VolumeMeter> volMeter;
+	QScopedPointer<VolumeSlider> slider;
+	QScopedPointer<MuteCheckBox> mute;
+	QScopedPointer<QPushButton> config;
+
 	float levelTotal;
 	float levelCount;
 	OBSFader obs_fader;
 	OBSVolMeter obs_volmeter;
-	bool vertical;
+	bool vertical = false;
 	QMenu *contextMenu;
+	enum obs_peak_meter_type peakMeterType = SAMPLE_PEAK_METER;
+	qreal peakDecayRate;
+	bool sliderEnabled = true;
 
 	static void OBSVolumeChanged(void *param, float db);
 	static void OBSVolumeLevel(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
 				   const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS]);
-	static void OBSVolumeMuted(void *data, calldata_t *calldata);
-	static void OBSMixersOrMonitoringChanged(void *data, calldata_t *);
+	static void OBSAudioChanged(void *data, calldata_t *);
 
 	void EmitConfigClicked();
 
 private slots:
 	void VolumeChanged();
-	void VolumeMuted(bool muted);
-	void MixersOrMonitoringChanged();
+	void AudioChanged();
 
 	void SetMuted(bool checked);
 	void SliderChanged(int vol);
 	void updateText();
+	void ResetControls(bool visible);
 
 signals:
 	void ConfigClicked();
 
 public:
-	explicit VolControl(OBSSource source, bool showConfig = false, bool vertical = false);
+	explicit VolControl(OBSSource source, bool vertical = false, bool hidden = false);
 	~VolControl();
 
 	inline obs_source_t *GetSource() const { return source; }

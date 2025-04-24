@@ -73,6 +73,8 @@ target_sources(
     components/UIValidation.hpp
     components/UrlPushButton.cpp
     components/UrlPushButton.hpp
+    components/VerticalLabel.cpp
+    components/VerticalLabel.hpp
     components/VisibilityItemDelegate.cpp
     components/VisibilityItemDelegate.hpp
     components/VisibilityItemWidget.cpp

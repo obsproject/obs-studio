@@ -161,15 +161,13 @@ void OBSBasic::MixerRenameSource()
 
 void OBSBasic::ActivateAudioSource(OBSSource source)
 {
-	if (SourceMixerHidden(source))
-		return;
 	if (!obs_source_active(source))
 		return;
 	if (!obs_source_audio_active(source))
 		return;
 
 	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
-	VolControl *vol = new VolControl(source, true, vertical);
+	VolControl *vol = new VolControl(source, vertical, SourceMixerHidden(source));
 
 	vol->EnableSlider(!SourceVolumeLocked(source));
 
@@ -653,12 +651,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			colorSelect = new ColorSelect(colorMenu);
 			popup.addMenu(AddBackgroundColorMenu(colorMenu, colorWidgetAction, colorSelect, sceneItem));
 
-			if (hasAudio) {
-				QAction *actionHideMixer =
-					popup.addAction(QTStr("HideMixer"), this, &OBSBasic::ToggleHideMixer);
-				actionHideMixer->setCheckable(true);
-				actionHideMixer->setChecked(SourceMixerHidden(source));
-			}
 			popup.addSeparator();
 		}
 

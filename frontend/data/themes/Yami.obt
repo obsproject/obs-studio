@@ -1341,7 +1341,6 @@ QSlider::handle:disabled {
     height: var(--icon_base);
     background-color: var(--button_bg);
     padding: var(--padding_base_border) var(--padding_base_border);
-    margin: 0px;
     border: 1px solid var(--button_border);
     border-radius: var(--border_radius);
     icon-size: var(--icon_base);
@@ -1373,24 +1372,17 @@ VolControl {
 
 VolControl QLabel {
     font-size: var(--font_small);
-    margin: var(--spacing_small) 0px;
 }
 
 VolControl #volLabel {
-    padding: var(--padding_base) 0px var(--padding_base);
-    text-align: center;
     font-size: var(--font_base);
     color: var(--text_muted);
 }
 
 /* Horizontal Mixer */
 #hMixerScrollArea VolControl {
-    padding: 0px var(--padding_xlarge) var(--padding_base);
     border-bottom: 1px solid var(--border_color);
-}
-
-#hMixerScrollArea VolControl QSlider {
-    margin: 0px 0px var(--padding_base);
+    padding: var(--padding_container);
 }
 
 #hMixerScrollArea VolControl QSlider::groove:horizontal {
@@ -1404,20 +1396,12 @@ VolControl #volLabel {
 }
 
 #vMixerScrollArea VolControl {
-    padding: var(--padding_container) 0px var(--padding_container);
     border-right: 1px solid var(--border_color);
+    padding: var(--padding_container);
 }
 
 #vMixerScrollArea VolControl QSlider {
     width: var(--volume_slider_box);
-    margin: 0px var(--padding_xlarge);
-}
-
-#vMixerScrollArea VolControl #volLabel {
-    padding: var(--padding_base) 0px var(--padding_base);
-    min-width: var(--volume_slider_label);
-    margin-left: var(--padding_xlarge);
-    text-align: center;
 }
 
 #vMixerScrollArea VolControl QSlider::groove:vertical {
@@ -1425,25 +1409,16 @@ VolControl #volLabel {
     width: var(--volume_slider);
 }
 
-#vMixerScrollArea VolControl #volMeterFrame {
-    padding: var(--padding_large) var(--padding_xlarge) var(--padding_large) 0px;
-}
-
-#vMixerScrollArea VolControl QLabel {
-    padding: 0px var(--padding_large);
-}
-
-#vMixerScrollArea VolControl QPushButton {
-    margin-left: var(--spacing_base);
-    margin-right: var(--padding_xlarge);
-}
-
-#vMixerScrollArea VolControl .indicator-mute {
-    margin-left: var(--padding_xlarge);
-}
-
 VolumeMeter {
     background: transparent;
+}
+
+VolControl QWidget {
+    margin: 0px;
+}
+
+VolControl .indicator-expand {
+    margin: 0px;
 }
 
 VolumeMeter {

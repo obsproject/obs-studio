@@ -1628,10 +1628,6 @@ private:
 	void ToggleMixerLayout(bool vertical);
 
 private slots:
-	void HideAudioControl();
-	void UnhideAllAudioControls();
-	void ToggleHideMixer();
-
 	void on_vMixerScrollArea_customContextMenuRequested();
 	void on_hMixerScrollArea_customContextMenuRequested();
 

@@ -19,9 +19,9 @@
 
 #include <obs.hpp>
 
-#include <QLabel>
+#include <components/VerticalLabel.hpp>
 
-class OBSSourceLabel : public QLabel {
+class OBSSourceLabel : public VerticalLabel {
 	Q_OBJECT;
 
 public:
@@ -29,8 +29,8 @@ public:
 	OBSSignal removedSignal;
 	OBSSignal destroyedSignal;
 
-	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags())
-		: QLabel(obs_source_get_name(source), parent, f),
+	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr)
+		: VerticalLabel(QString(obs_source_get_name(source)), parent),
 		  renamedSignal(obs_source_get_signal_handler(source), "rename", &OBSSourceLabel::SourceRenamed, this),
 		  removedSignal(obs_source_get_signal_handler(source), "remove", &OBSSourceLabel::SourceRemoved, this),
 		  destroyedSignal(obs_source_get_signal_handler(source), "destroy", &OBSSourceLabel::SourceDestroyed,

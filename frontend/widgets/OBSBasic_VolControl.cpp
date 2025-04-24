@@ -69,56 +69,6 @@ void OBSBasic::RefreshVolumeColors()
 	}
 }
 
-void OBSBasic::HideAudioControl()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
-
-	if (!SourceMixerHidden(source)) {
-		SetSourceMixerHidden(source, true);
-		DeactivateAudioSource(source);
-	}
-}
-
-void OBSBasic::UnhideAllAudioControls()
-{
-	auto UnhideAudioMixer = [this](obs_source_t *source) /* -- */
-	{
-		if (!obs_source_active(source))
-			return true;
-		if (!SourceMixerHidden(source))
-			return true;
-
-		SetSourceMixerHidden(source, false);
-		ActivateAudioSource(source);
-		return true;
-	};
-
-	using UnhideAudioMixer_t = decltype(UnhideAudioMixer);
-
-	auto PreEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{
-		return (*reinterpret_cast<UnhideAudioMixer_t *>(data))(source);
-	};
-
-	obs_enum_sources(PreEnum, &UnhideAudioMixer);
-}
-
-void OBSBasic::ToggleHideMixer()
-{
-	OBSSceneItem item = GetCurrentSceneItem();
-	OBSSource source = obs_sceneitem_get_source(item);
-
-	if (!SourceMixerHidden(source)) {
-		SetSourceMixerHidden(source, true);
-		DeactivateAudioSource(source);
-	} else {
-		SetSourceMixerHidden(source, false);
-		ActivateAudioSource(source);
-	}
-}
-
 void OBSBasic::LockVolumeControl(bool lock)
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
@@ -141,8 +91,6 @@ void OBSBasic::VolControlContextMenu()
 	lockAction.setCheckable(true);
 	lockAction.setChecked(SourceVolumeLocked(vol->GetSource()));
 
-	QAction hideAction(QTStr("Hide"), this);
-	QAction unhideAllAction(QTStr("UnhideAll"), this);
 	QAction mixerRenameAction(QTStr("Rename"), this);
 
 	QAction copyFiltersAction(QTStr("Copy.Filters"), this);
@@ -159,8 +107,6 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
-	connect(&hideAction, &QAction::triggered, this, &OBSBasic::HideAudioControl, Qt::DirectConnection);
-	connect(&unhideAllAction, &QAction::triggered, this, &OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
 	connect(&lockAction, &QAction::toggled, this, &OBSBasic::LockVolumeControl, Qt::DirectConnection);
 	connect(&mixerRenameAction, &QAction::triggered, this, &OBSBasic::MixerRenameSource, Qt::DirectConnection);
 
@@ -181,7 +127,6 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
-	hideAction.setProperty("volControl", QVariant::fromValue<VolControl *>(vol));
 	lockAction.setProperty("volControl", QVariant::fromValue<VolControl *>(vol));
 	mixerRenameAction.setProperty("volControl", QVariant::fromValue<VolControl *>(vol));
 
@@ -200,8 +145,6 @@ void OBSBasic::VolControlContextMenu()
 	vol->SetContextMenu(&popup);
 	popup.addAction(&lockAction);
 	popup.addSeparator();
-	popup.addAction(&unhideAllAction);
-	popup.addAction(&hideAction);
 	popup.addAction(&mixerRenameAction);
 	popup.addSeparator();
 	popup.addAction(&copyFiltersAction);
@@ -231,8 +174,6 @@ void OBSBasic::on_vMixerScrollArea_customContextMenuRequested()
 
 void OBSBasic::StackedMixerAreaContextMenuRequested()
 {
-	QAction unhideAllAction(QTStr("UnhideAll"), this);
-
 	QAction advPropAction(QTStr("Basic.MainMenu.Edit.AdvAudio"), this);
 
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
@@ -241,8 +182,6 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 
 	/* ------------------- */
-
-	connect(&unhideAllAction, &QAction::triggered, this, &OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
 
 	connect(&advPropAction, &QAction::triggered, this, &OBSBasic::on_actionAdvAudioProperties_triggered,
 		Qt::DirectConnection);
@@ -255,7 +194,6 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	/* ------------------- */
 
 	QMenu popup;
-	popup.addAction(&unhideAllAction);
 	popup.addSeparator();
 	popup.addAction(&toggleControlLayoutAction);
 	popup.addSeparator();
@@ -299,9 +237,6 @@ void OBSBasic::on_actionMixerToolbarAdvAudio_triggered()
 
 void OBSBasic::on_actionMixerToolbarMenu_triggered()
 {
-	QAction unhideAllAction(QTStr("UnhideAll"), this);
-	connect(&unhideAllAction, &QAction::triggered, this, &OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
-
 	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
 	toggleControlLayoutAction.setCheckable(true);
 	toggleControlLayoutAction.setChecked(
@@ -310,7 +245,6 @@ void OBSBasic::on_actionMixerToolbarMenu_triggered()
 		Qt::DirectConnection);
 
 	QMenu popup;
-	popup.addAction(&unhideAllAction);
 	popup.addSeparator();
 	popup.addAction(&toggleControlLayoutAction);
 	popup.exec(QCursor::pos());
