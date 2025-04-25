@@ -29,6 +29,8 @@ target_sources(
   PRIVATE # cmake-format: sortable
           $<$<AND:$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>,$<BOOL:${ENABLE_WAYLAND}>>:gl-wayland-egl.c>
           $<$<PLATFORM_ID:Darwin>:gl-cocoa.m>
+          $<$<PLATFORM_ID:Darwin>:IOSurfaceHelper.h>
+          $<$<PLATFORM_ID:Darwin>:IOSurfaceHelper.m>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:gl-egl-common.c>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:gl-nix.c>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:gl-x11-egl.c>
@@ -58,6 +60,7 @@ target_link_libraries(
           OBS::glad
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa.framework>>"
           "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>>"
+          "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,CoreImage.framework>>"
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:xcb::xcb>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::x11-xcb>
           $<$<AND:$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>,$<BOOL:${ENABLE_WAYLAND}>>:OpenGL::EGL>

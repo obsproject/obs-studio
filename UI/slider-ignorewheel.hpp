@@ -36,19 +36,3 @@ private:
 	bool dragging = false;
 };
 
-class SliderIgnoreClick : public SliderIgnoreScroll {
-public:
-	inline SliderIgnoreClick(Qt::Orientation orientation,
-				 QWidget *parent = nullptr)
-		: SliderIgnoreScroll(orientation, parent)
-	{
-	}
-
-protected:
-	virtual void mousePressEvent(QMouseEvent *event) override;
-	virtual void mouseReleaseEvent(QMouseEvent *event) override;
-	virtual void mouseMoveEvent(QMouseEvent *event) override;
-
-private:
-	bool dragging = false;
-};

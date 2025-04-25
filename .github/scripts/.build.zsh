@@ -122,7 +122,7 @@ build() {
 
   case ${target} {
     macos-*)
-      cmake_args+=(--preset 'macos-ci' -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-})
+      cmake_args+=(--preset 'macos-ci' -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-} -DCMAKE_INSTALL_PREFIX:STRING=${InstallPath})
 
       typeset -gx NSUnbufferedIO=YES
 
@@ -133,6 +133,10 @@ build() {
 
       log_group "Configuring ${product_name}..."
       cmake -S ${project_root} ${cmake_args}
+      log_group "Build/Install preset ${product_name}..."
+      # Run the install target to construct a packed_build that will be consumed by obs-studio-node.
+      cmake --build --target install --preset macos
+      exit 0 # Do not execute the steps below. streamlabs/obs-studio uses the cmake install target.
 
       log_group "Building ${product_name}..."
       run_xcodebuild() {
