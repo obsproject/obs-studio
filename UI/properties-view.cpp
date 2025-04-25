@@ -1585,6 +1585,8 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 	case OBS_PROPERTY_GROUP:
 		AddGroup(property, layout);
 		break;
+	case OBS_PROPERTY_CAPTURE:
+		break;
 	case OBS_PROPERTY_COLOR_ALPHA:
 		AddColorAlpha(property, layout, label);
 	}
@@ -2130,6 +2132,8 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_COLOR_ALPHA:
 		if (!ColorAlphaChanged(setting))
 			return;
+		break;
+	case OBS_PROPERTY_CAPTURE:
 		break;
 	}
 

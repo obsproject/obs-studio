@@ -29,8 +29,6 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 		stats->ResetRecTimeLeft();
 		break;
-	default:
-		break;
 	case OBS_FRONTEND_EVENT_EXIT:
 		// This is only reached when the non-closable (dock) stats
 		// window is being cleaned up. The closable stats window is
