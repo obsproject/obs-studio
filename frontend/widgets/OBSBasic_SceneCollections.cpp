@@ -882,11 +882,11 @@ void OBSBasic::Save(SceneCollection &collection)
 		curProgramScene = obs_scene_get_source(scene);
 
 	OBSDataArrayAutoRelease sceneOrder = SaveSceneListOrder();
-	OBSDataArrayAutoRelease transitions = SaveTransitions();
+	OBSDataArrayAutoRelease transitionsData = SaveTransitions();
 	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
-	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, ui->transitionDuration->value(),
-						       transitions, scene, curProgramScene, savedProjectorList);
+	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, transitionDuration, transitionsData,
+						       scene, curProgramScene, savedProjectorList);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
@@ -1002,7 +1002,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ClearSceneData();
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
-	ui->transitionDuration->setValue(300);
+	transitionDuration = 300;
 	SetTransition(fadeTransition);
 
 	updateRemigrationMenuItem(SceneCoordinateMode::Relative, ui->actionRemigrateSceneCollection);
@@ -1170,7 +1170,7 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	OBSDataArrayAutoRelease sceneOrder = obs_data_get_array(data, "scene_order");
 	OBSDataArrayAutoRelease sources = obs_data_get_array(data, "sources");
 	OBSDataArrayAutoRelease groups = obs_data_get_array(data, "groups");
-	OBSDataArrayAutoRelease transitions = obs_data_get_array(data, "transitions");
+	OBSDataArrayAutoRelease transitionsData = obs_data_get_array(data, "transitions");
 	const char *sceneName = obs_data_get_string(data, "current_scene");
 	const char *programSceneName = obs_data_get_string(data, "current_program_scene");
 	const char *transitionName = obs_data_get_string(data, "current_transition");
@@ -1289,8 +1289,8 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 
 	if (resetVideo)
 		ResetVideo();
-	if (transitions)
-		LoadTransitions(transitions, AddMissingFiles, files);
+	if (transitionsData)
+		LoadTransitions(transitionsData, AddMissingFiles, files);
 	if (sceneOrder)
 		LoadSceneListOrder(sceneOrder);
 
@@ -1298,7 +1298,7 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	if (!curTransition)
 		curTransition = fadeTransition;
 
-	ui->transitionDuration->setValue(newDuration);
+	transitionDuration = newDuration;
 	SetTransition(curTransition);
 
 retryScene:
@@ -1493,7 +1493,12 @@ void OBSBasic::ClearSceneData()
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
-	ui->transitions->clear();
+
+	currentTransitionUuid.clear();
+	transitions.clear();
+	transitionNameToUuids.clear();
+	transitionUuids.clear();
+	emit TransitionsCleared();
 
 	ClearProjectors();
 
