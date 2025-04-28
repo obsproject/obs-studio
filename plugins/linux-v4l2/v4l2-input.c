@@ -252,11 +252,14 @@ static void *v4l2_thread(void *vptr)
 		out.timestamp -= first_ts;
 
 		start = (uint8_t *)data->buffers.info[buf.index].start;
-
 		if (data->pixfmt == V4L2_PIX_FMT_MJPEG || data->pixfmt == V4L2_PIX_FMT_H264) {
 			if (v4l2_decode_frame(&out, start, buf.bytesused, &data->decoder) < 0) {
-				blog(LOG_ERROR, "failed to unpack jpeg or h264");
-				break;
+				blog(LOG_INFO, "No packet to/from codec. Skipping... ");
+				if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
+					blog(LOG_ERROR, "failed to unpack jpeg or h264");
+					break;
+				}
+				continue;
 			}
 		} else {
 			for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
