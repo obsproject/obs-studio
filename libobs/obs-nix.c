@@ -74,8 +74,8 @@ void add_default_module_paths(void)
 		char *abs_module_bin_path = os_get_abs_path_ptr(module_bin_path);
 		char *abs_module_install_path = os_get_abs_path_ptr(OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION);
 
-		if (abs_module_bin_path && abs_module_install_path &&
-		    strcmp(abs_module_bin_path, abs_module_install_path) != 0) {
+		if (abs_module_bin_path &&
+		    (!abs_module_install_path || strcmp(abs_module_bin_path, abs_module_install_path) != 0)) {
 			obs_add_module_path(module_bin_path, module_data_path);
 		}
 		bfree(abs_module_install_path);
