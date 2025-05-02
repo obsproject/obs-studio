@@ -683,6 +683,7 @@ extern void obs_free_canvas_mixes(void);
 extern bool obs_canvas_reset_video_internal(obs_canvas_t *canvas, struct obs_video_info *ovi);
 extern void obs_canvas_insert_source(obs_canvas_t *canvas, obs_source_t *source);
 extern void obs_canvas_remove_source(obs_source_t *source);
+extern void obs_canvas_rename_source(obs_source_t *source, const char *name);
 
 /* ------------------------------------------------------------------------- */
 /* sources  */

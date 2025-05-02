@@ -34,6 +34,7 @@ static const char *canvas_signals[] = {
 
 	"void source_add(ptr canvas, ptr source)",
 	"void source_remove(ptr canvas, ptr source)",
+	"void source_rename(ptr source, string new_name, string prev_name)",
 
 	"void rename(ptr source, string new_name, string prev_name)",
 
@@ -365,6 +366,32 @@ void obs_canvas_remove_source(obs_source_t *source)
 		obs_canvas_release(canvas);
 	}
 	source->canvas = NULL;
+}
+
+void obs_canvas_rename_source(obs_source_t *source, const char *name)
+{
+	obs_canvas_t *canvas = obs_weak_canvas_get_canvas(source->canvas);
+	if (canvas) {
+		struct calldata data;
+		char *prev_name = bstrdup(source->context.name);
+
+		obs_context_data_setname_ht(&source->context, name, &canvas->sources);
+
+		calldata_init(&data);
+		calldata_set_ptr(&data, "source", source);
+		calldata_set_string(&data, "new_name", source->context.name);
+		calldata_set_string(&data, "prev_name", prev_name);
+
+		signal_handler_signal(source->context.signals, "rename", &data);
+		signal_handler_signal(canvas->context.signals, "source_rename", &data);
+		if (canvas->flags & MAIN)
+			signal_handler_signal(obs->signals, "source_rename", &data);
+
+		calldata_free(&data);
+		bfree(prev_name);
+
+		obs_canvas_release(canvas);
+	}
 }
 
 /*** Public Canvas Object API ***/
