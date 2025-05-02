@@ -3,6 +3,8 @@
 #include <QProxyStyle>
 
 class OBSProxyStyle : public QProxyStyle {
+	Q_OBJECT
+
 public:
 	OBSProxyStyle() : QProxyStyle() {}
 
