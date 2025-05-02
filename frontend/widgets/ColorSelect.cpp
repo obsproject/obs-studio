@@ -18,6 +18,7 @@
 ******************************************************************************/
 
 #include "ColorSelect.hpp"
+#include "moc_ColorSelect.cpp"
 
 ColorSelect::ColorSelect(QWidget *parent) : QWidget(parent), ui(new Ui::ColorSelect)
 {

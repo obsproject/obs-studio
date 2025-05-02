@@ -1,6 +1,7 @@
 #include "OBSProxyStyle.hpp"
 
 #include <QStyleOption>
+#include "moc_OBSProxyStyle.cpp"
 
 static inline uint qt_intensity(uint r, uint g, uint b)
 {
