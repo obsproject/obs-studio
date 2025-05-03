@@ -570,15 +570,7 @@ private:
 	QPointer<QWidget> importer;
 	QPointer<QAction> showHide;
 	QPointer<QAction> exit;
-
-	QPointer<QMenu> scaleFilteringMenu;
-	QPointer<QMenu> blendingMethodMenu;
-	QPointer<QMenu> blendingModeMenu;
-	QPointer<QMenu> colorMenu;
-	QPointer<QMenu> deinterlaceMenu;
-
-	QPointer<QWidgetAction> colorWidgetAction;
-	QPointer<ColorSelect> colorSelect;
+	QScopedPointer<QMenu> multiviewMenu;
 
 	QList<QDialog *> visDialogs;
 	QList<QDialog *> modalDialogs;
@@ -643,6 +635,8 @@ private slots:
 	void openLogDialog(const QString &text, const bool crash);
 
 	void updateCheckFinished();
+
+	void on_viewMenu_aboutToShow();
 
 public:
 	void ResetUI();
@@ -825,7 +819,9 @@ private:
 private slots:
 	void PreviewScalingModeChanged(int value);
 
-	void ColorChange();
+	void ColorButtonClicked(QPushButton *button, int preset);
+	void CustomColorSelected();
+	void ClearColors();
 
 	void EnablePreview();
 	void DisablePreview();
@@ -917,11 +913,7 @@ public slots:
 	 */
 private:
 	std::vector<OBSProjector *> projectors;
-	QPointer<QMenu> previewProjector;
-	QPointer<QMenu> previewProjectorSource;
-	QPointer<QMenu> previewProjectorMain;
 
-	void updateMultiviewProjectorMenu();
 	void ClearProjectors();
 	OBSProjector *OpenProjector(obs_source_t *source, int monitor, ProjectorType type);
 
@@ -931,30 +923,26 @@ private:
 private slots:
 	void OpenSavedProjector(SavedProjectorInfo *info);
 
-	void OpenPreviewProjector();
-	void OpenSourceProjector();
-	void OpenMultiviewProjector();
-	void OpenSceneProjector();
-
-	void OpenPreviewWindow();
-	void OpenSourceWindow();
-	void OpenSceneWindow();
-	void openMultiviewWindow();
-
 public:
 	void DeleteProjector(OBSProjector *projector);
 
 	static QList<QString> GetProjectorMenuMonitorsFormatted();
 	template<typename Receiver, typename... Args>
-	static void AddProjectorMenuMonitors(QMenu *parent, Receiver *target, void (Receiver::*slot)(Args...))
+	static QMenu *CreateProjectorMenu(const QString &name, Receiver *target, void (Receiver::*slot)(Args...))
 	{
+		QMenu *menu = new QMenu(name);
+
 		auto projectors = GetProjectorMenuMonitorsFormatted();
 		for (int i = 0; i < projectors.size(); i++) {
 			QString str = projectors[i];
-			QAction *action = parent->addAction(str, target, slot);
+			QAction *action = menu->addAction(str, target, slot);
 			action->setProperty("monitor", i);
 		}
+
+		return menu;
 	}
+
+	QMenu *CreateProjectorMenu(const QString &name, OBSSource source, ProjectorType type);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Recording
@@ -1131,7 +1119,6 @@ public slots:
 	 * -------------------------------------
 	 */
 private:
-	QPointer<QMenu> sourceProjector;
 	QPointer<QAction> renameSource;
 
 	void CreateFirstRunSources();
@@ -1172,14 +1159,6 @@ private slots:
 
 	void ReorderSources(OBSScene scene);
 	void RefreshSources(OBSScene scene);
-
-	void SetDeinterlacingMode();
-	void SetDeinterlacingOrder();
-
-	void SetScaleFilter();
-
-	void SetBlendingMethod();
-	void SetBlendingMode();
 
 	void MixerRenameSource();
 
@@ -1225,12 +1204,11 @@ private slots:
 public:
 	void ResetAudioDevice(const char *sourceId, const char *deviceId, const char *deviceDesc, int channel);
 
-	QMenu *AddDeinterlacingMenu(QMenu *menu, obs_source_t *source);
-	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
-	QMenu *AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item);
-	QMenu *AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item);
-	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction, ColorSelect *select,
-				      obs_sceneitem_t *item);
+	QMenu *CreateDeinterlacingMenu(OBSSource source);
+	QMenu *CreateScaleFilteringMenu(OBSSceneItem item);
+	QMenu *CreateBlendingMethodMenu(OBSSceneItem item);
+	QMenu *CreateBlendingModeMenu(OBSSceneItem item);
+	QMenu *CreateBackgroundColorMenu(OBSSceneItem item);
 	void CreateSourcePopupMenu(int idx, bool preview);
 
 	/* -------------------------------------
@@ -1238,7 +1216,6 @@ public:
 	 * -------------------------------------
 	 */
 private:
-	QPointer<QMenu> sceneProjectorMenu;
 	QPointer<QAction> renameScene;
 	std::atomic<obs_scene_t *> currentScene = nullptr;
 	OBSWeakSource lastScene;
@@ -1392,7 +1369,6 @@ signals:
 	 * -------------------------------------
 	 */
 private:
-	QPointer<QMenu> studioProgramProjector;
 	QPointer<QWidget> programWidget;
 	QPointer<QVBoxLayout> programLayout;
 	QPointer<QLabel> programLabel;
@@ -1452,9 +1428,10 @@ private:
 	QPointer<QAction> sysTrayReplayBuffer;
 	QPointer<QAction> sysTrayVirtualCam;
 	QPointer<QMenu> trayMenu;
+	QScopedPointer<QMenu> previewProjector;
+	QScopedPointer<QMenu> studioProgramProjector;
 
 	bool sysTrayMinimizeToTray();
-	void updateSysTrayProjectorMenu();
 
 private slots:
 	void IconActivated(QSystemTrayIcon::ActivationReason reason);
