@@ -344,7 +344,7 @@ static uint32_t canvas_getheight(obs_weak_canvas_t *weak);
 static inline void get_scene_dimensions(const obs_sceneitem_t *item, float *x, float *y)
 {
 	obs_scene_t *parent = item->parent;
-	if (!parent) {
+	if (!parent || (parent->is_group && !parent->source->canvas)) {
 		*x = (float)obs->data.main_canvas->mix->ovi.base_width;
 		*y = (float)obs->data.main_canvas->mix->ovi.base_height;
 	} else if (parent->is_group) {
