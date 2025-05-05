@@ -405,6 +405,9 @@ struct obs_core_audio {
 
 	pthread_mutex_t task_mutex;
 	struct deque tasks;
+
+	volatile bool prevent_monitoring_duplication;
+	struct obs_source *monitoring_duplicating_source;
 };
 
 /* user sources, output channels, and displays */
