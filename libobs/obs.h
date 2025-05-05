@@ -450,6 +450,18 @@ EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);
 EXPORT bool obs_get_audio_info2(struct obs_audio_info2 *oai2);
 
 /**
+ * Passes the channel index for a Desktop Audio (1 or 2) when its device coincides w/ the monitoring device.
+ * Passes 0 if Destop Audio device and monitoring device are not the same.
+ * Sets a bool warning core audio that monitoring device coincides with one of DesktopAudio devices.
+ */
+EXPORT void obs_set_prevent_monitoring_duplication(int enable);
+
+/**
+ * Sets a bypass bool to avoid rendering of monitored sources while the monitoring device is captured.
+ */
+EXPORT void obs_set_monitor_duplication_bypass(bool bypass);
+
+/**
  * Opens a plugin module directly from a specific path.
  *
  * If the module already exists then the function will return successful, and

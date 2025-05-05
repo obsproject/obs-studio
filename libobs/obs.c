@@ -899,6 +899,7 @@ static bool obs_init_audio(struct audio_output_info *ai)
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
+	audio->bypass_monitored_sources = false;
 
 	errorcode = audio_output_open(&audio->audio, ai);
 	if (errorcode == AUDIO_OUTPUT_SUCCESS)
@@ -1672,6 +1673,27 @@ bool obs_get_audio_info2(struct obs_audio_info2 *oai2)
 			audio->max_buffering_ticks * AUDIO_OUTPUT_FRAMES * SEC_TO_MSEC / (int)oai2->samples_per_sec;
 		return true;
 	}
+}
+
+void obs_set_prevent_monitoring_duplication(int index)
+{
+	struct obs_core_audio *audio = &obs->audio;
+
+	if (audio)
+		os_atomic_set_bool(&audio->prevent_monitoring_duplication, !!index);
+	if (index == 1 || index == 2) {
+		obs_source_t *global_audio = obs_get_output_source(index);
+		global_audio->captures_mon_device = true;
+		obs_source_release(global_audio);
+	}
+}
+
+void obs_set_monitor_duplication_bypass(bool bypass)
+{
+	struct obs_core_audio *audio = &obs->audio;
+
+	if (audio)
+		os_atomic_set_bool(&audio->bypass_monitored_sources, bypass);
 }
 
 bool obs_enum_source_types(size_t idx, const char **id)
