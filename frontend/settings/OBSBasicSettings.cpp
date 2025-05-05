@@ -3168,6 +3168,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	if (obs_audio_monitoring_available()) {
 		SaveCombo(ui->monitoringDevice, "Audio", "MonitoringDeviceName");
 		SaveComboData(ui->monitoringDevice, "Audio", "MonitoringDeviceId");
+		main->PreventMonitoringDuplication();
 	}
 
 #ifdef _WIN32
@@ -3555,6 +3556,7 @@ void OBSBasicSettings::SaveAudioSettings()
 	UpdateAudioDevice(true, ui->auxAudioDevice3, "Basic.AuxDevice3", 5);
 	UpdateAudioDevice(true, ui->auxAudioDevice4, "Basic.AuxDevice4", 6);
 	main->SaveProject();
+	main->PreventMonitoringDuplication();
 }
 
 void OBSBasicSettings::SaveHotkeySettings()

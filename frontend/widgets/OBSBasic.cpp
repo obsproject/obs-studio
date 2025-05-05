@@ -906,6 +906,56 @@ static inline void LogEncoders()
 	list_encoders(OBS_ENCODER_AUDIO);
 }
 
+bool GetDesktopAudioMute(int index)
+{
+	OBSSourceAutoRelease source = obs_get_output_source(index);
+	if (source)
+		return obs_source_muted(source);
+	return true;
+}
+
+QString GetDesktopAudioId(int index)
+{
+	OBSSourceAutoRelease source = obs_get_output_source(index);
+	const char *devId = nullptr;
+	OBSDataAutoRelease settings = nullptr;
+
+	if (source) {
+		settings = obs_source_get_settings(source);
+		if (settings)
+			devId = obs_data_get_string(settings, "device_id");
+	}
+
+	return QString(devId);
+}
+
+int OBSBasic::MonDeviceIsDesktopAudioDevice()
+{
+	QString monDevId = config_get_string(Config(), "Audio", "MonitoringDeviceId");
+	QString desktopAudioDevice1 = GetDesktopAudioId(1);
+	QString desktopAudioDevice2 = GetDesktopAudioId(2);
+	if (!monDevId.isEmpty()) {
+		if (desktopAudioDevice1 == monDevId)
+			return 1;
+		else if (desktopAudioDevice2 == monDevId)
+			return 2;
+		else
+			return 0;
+	}
+	return 0;
+}
+
+void OBSBasic::PreventMonitoringDuplication()
+{
+	int index = MonDeviceIsDesktopAudioDevice();
+	obs_set_prevent_monitoring_duplication(index);
+	bool bypass = false;
+	if (index)
+		bypass = !GetDesktopAudioMute(index);
+
+	obs_set_monitor_duplication_bypass(bypass);
+}
+
 void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");
@@ -1061,6 +1111,9 @@ void OBSBasic::OBSInit()
 	}
 
 	loaded = true;
+
+	/* Ignore monitored sources in the audio mix if the mon device is captured as Desktop Audio */
+	PreventMonitoringDuplication();
 
 	previewEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled");
 
