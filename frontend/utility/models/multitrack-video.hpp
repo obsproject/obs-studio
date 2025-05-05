@@ -243,10 +243,12 @@ struct VideoEncoderConfiguration {
 	optional<video_colorspace> colorspace;
 	optional<video_range_type> range;
 	optional<video_format> format;
+	optional<json> bitrate_interpolation_points;
 	json settings;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(VideoEncoderConfiguration, type, width, height, framerate,
-						    gpu_scale_type, colorspace, range, format, settings)
+						    gpu_scale_type, colorspace, range, format,
+						    bitrate_interpolation_points, settings)
 };
 
 struct AudioEncoderConfiguration {
