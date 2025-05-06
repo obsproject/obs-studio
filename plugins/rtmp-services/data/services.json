@@ -2690,44 +2690,8 @@
             "stream_key_link": "https://playstudio.shareplay.tv/stream/settings",
             "servers": [
                 {
-                    "name": "Default (Auto Detect)",
-                    "url": "rtmp://stream.shareplay.tv"
-                },
-                {
-                    "name": "Miami, Florida, USA",
-                    "url": "rtmp://live-us-mia-stream.shareplay.tv"
-                },
-                {
-                    "name": "Chicago, Illinois, USA",
-                    "url": "rtmp://live-us-ord-stream.shareplay.tv"
-                },
-                {
-                    "name": "Washington D.C., USA",
-                    "url": "rtmp://live-us-iad-stream.shareplay.tv"
-                },
-                {
-                    "name": "Los Angeles, California, USA",
-                    "url": "rtmp://live-us-lax-stream.shareplay.tv"
-                },
-                {
-                    "name": "Milan, Italy",
-                    "url": "rtmp://live-it-mil-stream.shareplay.tv"
-                },
-                {
-                    "name": "Toronto, Canada",
-                    "url": "rtmp://live-ca-yyz-stream.shareplay.tv"
-                },
-                {
-                    "name": "London, UK",
-                    "url": "rtmp://live-uk-lhr-stream.shareplay.tv"
-                },
-                {
                     "name": "Atlanta, Georgia, USA",
                     "url": "rtmp://live-us-atl-stream.shareplay.tv"
-                },
-                {
-                    "name": "Dallas, Texas, USA",
-                    "url": "rtmp://live-us-dfw-stream.shareplay.tv"
                 }
             ],
             "supported video codecs": [
@@ -3566,7 +3530,9 @@
                     "url": "rtmp://ingest.vrcdn.live/live"
                 }
             ],
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "recommended": {
                 "keyint": 1,
                 "max video bitrate": 6000
