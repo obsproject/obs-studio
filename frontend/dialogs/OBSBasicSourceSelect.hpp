@@ -19,36 +19,72 @@
 
 #include "ui_OBSBasicSourceSelect.h"
 
+#include <QButtonGroup>
+#include <components/FlowLayout.hpp>
+#include <components/SourceSelectButton.hpp>
 #include <utility/undo_stack.hpp>
 #include <widgets/OBSBasic.hpp>
 
-#include <obs.hpp>
+#include "OBSApp.hpp"
 
 #include <QDialog>
+
+enum SourceTypeRoles {
+	UNVERSIONED_ID = Qt::UserRole + 1,
+};
 
 class OBSBasicSourceSelect : public QDialog {
 	Q_OBJECT
 
 private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
-	const char *id;
+	QString sourceTypeId;
 	undo_stack &undo_s;
 
-	static bool EnumSources(void *data, obs_source_t *source);
-	static bool EnumGroups(void *data, obs_source_t *source);
+	QPointer<QButtonGroup> sourceButtons;
+
+	std::vector<obs_source_t *> sources;
+	std::vector<obs_source_t *> groups;
+
+	FlowLayout *existingFlowLayout = nullptr;
+
+	void getSources();
+	void updateExistingSources(int limit = 0);
+
+	static bool enumSourcesCallback(void *data, obs_source_t *source);
+	static bool enumGroupsCallback(void *data, obs_source_t *source);
 
 	static void OBSSourceRemoved(void *data, calldata_t *calldata);
 	static void OBSSourceAdded(void *data, calldata_t *calldata);
 
-private slots:
-	void on_buttonBox_accepted();
-	void on_buttonBox_rejected();
+	//static int getSortedButtonPosition(const QList<QPushButton *> *list, const char *name);
+	//QPointer<QPushButton> createTypeButton(const char *type, const char *name);
 
-	void SourceAdded(OBSSource source);
-	void SourceRemoved(OBSSource source);
+	void getSourceTypes();
+	void setSelectedSourceType(QListWidgetItem *item);
+
+	SourceSelectButton *selectedSource = nullptr;
+	void setSelectedSource(SourceSelectButton *button);
+
+	void createNewSource();
+
+signals:
+	void sourcesUpdated();
+
+private slots:
+	void on_createNewSource_clicked(bool checked);
+	void addExistingSource();
+
+	// void SourceAdded(OBSSource source);
+	// void SourceRemoved(OBSSource source);
+	void sourceTypeSelected(QListWidgetItem *current, QListWidgetItem *previous);
+	void sourceTypeClicked(QListWidgetItem *clicked);
+
+	void sourceButtonClicked(QAbstractButton *button);
 
 public:
-	OBSBasicSourceSelect(OBSBasic *parent, const char *id, undo_stack &undo_s);
+	OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s);
+	~OBSBasicSourceSelect();
 
 	OBSSource newSource;
 
