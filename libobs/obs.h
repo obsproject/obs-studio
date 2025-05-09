@@ -2566,6 +2566,9 @@ EXPORT obs_weak_canvas_t *obs_canvas_get_weak_canvas(obs_canvas_t *canvas);
 /** Get strong reference from weak reference */
 EXPORT obs_canvas_t *obs_weak_canvas_get_canvas(obs_weak_canvas_t *weak);
 
+/** Returns the signal handler for a canvas */
+EXPORT signal_handler_t *obs_canvas_get_signal_handler(obs_canvas_t *canvas);
+
 /* Channels */
 /** Sets the source to be used for this canvas. */
 EXPORT void obs_canvas_set_channel(obs_canvas_t *canvas, uint32_t channel, obs_source_t *source);
