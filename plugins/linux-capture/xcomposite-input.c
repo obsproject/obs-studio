@@ -387,7 +387,11 @@ void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s, int log_lev
 	name_cookie = xcb_composite_name_window_pixmap_checked(conn, s->win, s->pixmap);
 
 	if ((err = xcb_request_check(conn, name_cookie)) != NULL) {
-		blog(log_level, "xcb_composite_name_window_pixmap failed");
+		if (err->error_code == XCB_MATCH) {
+			blog(log_level, "could not get pixmap due to window being unviewable");
+		} else {
+			blog(log_level, "xcb_composite_name_window_pixmap failed");
+		}
 		s->pixmap = 0;
 		return;
 	}
