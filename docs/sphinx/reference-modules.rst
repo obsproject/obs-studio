@@ -94,6 +94,22 @@ to communicate with libobs and front-ends.
 
 ---------------------
 
+.. function:: uint32_t obs_module_version(void)
+
+   (Optional)
+
+   :return: The semantic version of the module ((major << 24) | (minor << 16) | patch)
+
+---------------------
+
+.. function:: const char *obs_module_version_string(void)
+
+   (Optional)
+
+   :return: The version string of the module
+
+---------------------
+
 
 Module Externs
 --------------
@@ -228,6 +244,24 @@ plugin modules.
 .. function:: const char *obs_get_module_data_path(obs_module_t *module)
 
    :return: The module data path
+
+---------------------
+
+.. function:: uint32_t obs_get_module_api_version(obs_module_t *module)
+
+   :return: The module semantic API version ((major << 24) | (minor << 16) | patch)
+
+---------------------
+
+.. function:: uint32_t obs_get_module_version(obs_module_t *module)
+
+   :return: The module semantic version ((major << 24) | (minor << 16) | patch)
+
+---------------------
+
+.. function:: const char *obs_get_module_version_string(obs_module_t *module)
+
+   :return: The module version string
 
 ---------------------
 
