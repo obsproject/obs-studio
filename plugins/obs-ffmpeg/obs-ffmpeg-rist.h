@@ -156,7 +156,21 @@ static int librist_open(URLContext *h, const char *uri)
 	s->logging_settings = (struct rist_logging_settings)LOGGING_SETTINGS_INITIALIZER;
 	s->statsinterval = 60000; // log stats every 60 seconds
 
+	// Initialisation du logging global librist (safe guard contre crash callback non initialisé)
+	static bool rist_logging_global_initialized = false;
+	if (!rist_logging_global_initialized) {
+		struct rist_logging_settings global_logging_settings = {0};
+		global_logging_settings.log_level = RIST_LOG_DISABLE;
+		global_logging_settings.log_cb = NULL;
+		global_logging_settings.log_cb_arg = NULL;
+		rist_logging_set_global(&global_logging_settings);
+		rist_logging_global_initialized = true;
+	}
+
+	blog(LOG_ERROR, ">>> AVANT rist_logging_set");
 	ret = rist_logging_set(&logging_settings, s->log_level, log_cb, h, NULL, NULL);
+	blog(LOG_ERROR, ">>> APRES rist_logging_set, ret=%d", ret);
+
 	if (ret < 0) {
 		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / librist]: Failed to initialize logging settings");
 		return OBS_OUTPUT_CONNECT_FAILED;

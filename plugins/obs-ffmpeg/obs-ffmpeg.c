@@ -3,6 +3,7 @@
 #include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <librist/logging.h>
 
 #ifdef _WIN32
 #define INITGUID
@@ -343,6 +344,16 @@ static void register_encoder_if_available(struct obs_encoder_info *info, const c
 
 bool obs_module_load(void)
 {
+	static bool rist_logging_global_initialized = false;
+	if (!rist_logging_global_initialized) {
+		struct rist_logging_settings global_logging_settings = {0};
+		global_logging_settings.log_level = RIST_LOG_DISABLE;
+		global_logging_settings.log_cb = NULL;
+		global_logging_settings.log_cb_arg = NULL;
+		rist_logging_set_global(&global_logging_settings);
+		rist_logging_global_initialized = true;
+	}
+
 	obs_register_source(&ffmpeg_source);
 	obs_register_output(&ffmpeg_output);
 	obs_register_output(&ffmpeg_muxer);
