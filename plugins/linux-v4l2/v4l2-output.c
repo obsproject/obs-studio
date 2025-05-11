@@ -105,27 +105,8 @@ static int loopback_module_load()
 #else
 bool loopback_module_available()
 {
-	struct v4l2_capability capability;
-	char new_device[16];
-	int fd;
-	int i;
-
-	for (i = 0; i != 32; i++) {
-		snprintf(new_device, 16, "/dev/video%d", i);
-		fd = open(new_device, O_RDWR);
-		if (fd < 0)
-			continue;
-		if (ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0) {
-			close(fd);
-			continue;
-		}
-		if (capability.capabilities & V4L2_CAP_VIDEO_OUTPUT) {
-			close(fd);
-			return true;
-		}
-		close(fd);
-	}
-	return false;
+	// Short-circuit; will use virtualcam_start to find an output device.
+	return true;
 }
 #endif
 
