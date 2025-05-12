@@ -154,7 +154,7 @@ jobs:
 
       - name: Upload US English Language Files 🇺🇸
         if: steps.checks.outcome == 'success' && fromJSON(steps.checks.outputs.hasChangedFiles)
-        uses: obsproject/obs-crowdin-sync/upload@84628cad04d2423e02443c64965cb834b4c5a245
+        uses: obsproject/obs-crowdin-sync/upload@6066f54d3615e39a228b6ccd1a9884953ba3ab05
         env:
           CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
           GITHUB_EVENT_BEFORE: ${{ steps.nightly-checks.outputs.lastNightly }}
