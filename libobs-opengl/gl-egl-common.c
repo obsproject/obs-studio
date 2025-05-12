@@ -281,7 +281,7 @@ struct gs_texture *gl_egl_create_texture_from_pixmap(EGLDisplay egl_display, uin
 
 	EGLImage image = eglCreateImage(egl_display, EGL_NO_CONTEXT, EGL_NATIVE_PIXMAP_KHR, pixmap, pixmap_attrs);
 	if (image == EGL_NO_IMAGE) {
-		blog(LOG_DEBUG, "Cannot create EGLImage: %s", gl_egl_error_to_string(eglGetError()));
+		blog(LOG_ERROR, "Cannot create EGLImage: %s", gl_egl_error_to_string(eglGetError()));
 		return NULL;
 	}
 
