@@ -506,7 +506,9 @@ static void mp_media_calc_next_ns(mp_media_t *m)
 		m->seek_next_ts = false;
 	} else {
 #ifdef _DEBUG
-		assert(delta >= 0);
+		if (delta < 0) {
+			blog(LOG_WARNING, "MP: delta < 0 in mp_media_calc_next_ns: %" PRId64, delta);
+		}
 #endif
 		if (delta < 0)
 			delta = 0;
