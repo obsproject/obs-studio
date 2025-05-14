@@ -33,10 +33,45 @@ static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 
 	if (da_find(audio->render_order, &source, 0) == DARRAY_INVALID) {
 		obs_source_t *s = obs_source_get_ref(source);
-		if (s)
+		if (s) {
 			da_push_back(audio->render_order, &s);
+			s->audio_is_duplicated = false;
+		}
 	}
 
+	UNUSED_PARAMETER(parent);
+}
+
+static inline bool is_individual_audio_source(obs_source_t *source)
+{
+	return source->info.type == OBS_SOURCE_TYPE_INPUT && (source->info.output_flags & OBS_SOURCE_AUDIO) &&
+	       !(source->info.output_flags & OBS_SOURCE_COMPOSITE);
+}
+
+/*
+ * This version of push_audio_tree has the purpose of detecting sources which appear several times in the audio tree.
+ * They are then tagged as such to avoid their mixing in scenes and transitions and mixed directly as root_nodes.
+ */
+static void push_audio_tree2(obs_source_t *parent, obs_source_t *source, void *p)
+{
+	struct obs_core_audio *audio = p;
+	size_t idx = da_find(audio->render_order, &source, 0);
+
+	if (idx == DARRAY_INVALID) {
+		/* First time we see this source → add to render order */
+		obs_source_t *s = obs_source_get_ref(source);
+		if (s) {
+			da_push_back(audio->render_order, &s);
+			s->audio_is_duplicated = false;
+		}
+	} else {
+		/* Source already present in tree → mark as duplicated if applicable */
+		obs_source_t *s = audio->render_order.array[idx];
+		if (is_individual_audio_source(s) && !s->audio_is_duplicated) {
+			da_push_back(audio->root_nodes, &source);
+			s->audio_is_duplicated = true;
+		}
+	}
 	UNUSED_PARAMETER(parent);
 }
 
@@ -508,12 +543,13 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 				continue;
 			if (!obs_source_active(source))
 				continue;
-
-			obs_source_enum_active_tree(source, push_audio_tree, audio);
-			push_audio_tree(NULL, source, audio);
-
+			/* first, add top - level sources as root_nodes */
 			if (obs->video.mixes.array[j]->mix_audio)
 				da_push_back(audio->root_nodes, &source);
+			/* build audio tree and tag duplicate individual sources */
+			obs_source_enum_active_tree(source, push_audio_tree2, audio);
+			/* add top - level sources to audio tree */
+			push_audio_tree(NULL, source, audio);
 		}
 		pthread_mutex_unlock(&view->channels_mutex);
 	}
