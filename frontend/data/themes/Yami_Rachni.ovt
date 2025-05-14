@@ -16,8 +16,8 @@
     --grey7: rgb(25,27,38);
     --grey8: rgb(21,22,23);
 
-    --primary: rgb(0,188,212);
-    --primary_light: rgb(145,76,103);
+    --primary: rgb(145,76,103);
+    --primary_light: rgb(0,188,212);
     --primary_lighter: rgb(240,96,146);
     --primary_dark: rgb(89,66,79);
     --primary_darker: rgb(25,27,38);
@@ -32,17 +32,17 @@
     --input_bg_hover: var(--grey7);
     --input_bg_focus: var(--grey7);
 
-    --list_item_bg_selected: var(--primary);
-    --list_item_bg_hover: var(--primary_light);
+    --list_item_bg_selected: var(--primary_light);
+    --list_item_bg_hover: var(--primary);
 
     --input_border: var(--grey1);
-    --input_border_hover: var(--primary);
-    --input_border_focus: var(--primary);
+    --input_border_hover: var(--primary_light);
+    --input_border_focus: var(--primary_light);
 
     --spacing_input: var(--spacing_base);
 
-    --button_bg: var(--primary);
-    --button_bg_hover: var(--primary_light);
+    --button_bg: var(--primary_light);
+    --button_bg_hover: var(--primary);
     --button_bg_down: var(--primary_dark);
     --button_bg_disabled: var(--grey6);
 
@@ -50,7 +50,7 @@
     --button_bg_red_hover: rgb(116,32,49);
     --button_bg_red_down: rgb(63,21,30);
 
-    --button_border: var(--primary);
+    --button_border: var(--primary_light);
     --button_border_hover: var(--button_bg_hover);
     --button_border_focus: var(--button_bg_hover);
 
@@ -62,15 +62,15 @@
     --tab_border: var(--grey3);
     --tab_border_hover: var(--grey1);
     --tab_border_focus: var(--grey1);
-    --tab_border_selected: var(--primary_light);
+    --tab_border_selected: var(--primary);
 
     --scrollbar: var(--grey2);
-    --scrollbar_hover: var(--primary_light);
+    --scrollbar_hover: var(--primary);
     --scrollbar_down: var(--grey3);
-    --scrollbar_border: var(--primary_light);
+    --scrollbar_border: var(--primary);
 
     --toolbutton_bg: var(--grey3);
-    --toolbutton_bg_hover: var(--primary_light);
+    --toolbutton_bg_hover: var(--primary);
     --toolbutton_bg_down: var(--primary_dark);
     --toolbutton_bg_disabled: var(--grey4);
 }
@@ -95,6 +95,10 @@ QDoubleSpinBox {
     border-color: var(--input_border);
 }
 
+QPushButton {
+    border-width: 2px;
+}
+
 QMenu::item:selected,
 QListWidget::item:selected,
 SceneTree::item:selected,
@@ -110,7 +114,7 @@ QMenu::item:selected:hover,
 QListWidget::item:selected:hover,
 SceneTree::item:selected:hover,
 SourceTree::item:selected:hover {
-    background-color: var(--primary);
+    background-color: var(--primary_light);
 }
 
 QToolBar {
@@ -123,6 +127,16 @@ QPushButton:disabled {
     border-color: var(--grey3);
 }
 
+QPushButton:checked,
+QPushButton.state-active {
+    border-color: var(--primary_lighter);
+}
+
+QPushButton:checked:hover,
+QPushButton:checked:focus {
+    border-color: var(--primary_light);
+}
+
 QToolButton,
 QPushButton[toolButton="true"] {
     background-color: var(--toolbutton_bg);
@@ -131,8 +145,8 @@ QPushButton[toolButton="true"] {
 
 QToolButton:hover,
 QToolButton:focus {
-    border-color: var(--primary_light);
-    background-color: var(--primary_light);
+    border-color: var(--primary);
+    background-color: var(--primary);
 }
 
 QToolButton:pressed,
@@ -185,7 +199,7 @@ QTabBar::tab {
 }
 
 QTabBar::tab:top:selected {
-    border-bottom: 2px solid var(--primary_light);
+    border-bottom: 2px solid var(--primary);
 }
 
 QTabBar QToolButton {
@@ -218,15 +232,4 @@ VolumeMeter {
     qproperty-magnitudeColor: palette(window);
     qproperty-majorTickColor: palette(window-text);
     qproperty-minorTickColor: palette(mid);
-}
-
-/* Primary Control Button Checked Coloring */
-#streamButton:!hover:!pressed.state-active,
-#recordButton:!hover:!pressed.state-active,
-#pauseRecordButton:!hover:!pressed.state-active,
-#replayBufferButton:!hover:!pressed.state-active,
-#virtualCamButton:!hover:!pressed.state-active,
-#modeSwitch:!hover:!pressed.state-active,
-#broadcastButton:!hover:!pressed.state-active {
-    background: var(--primary_light);
 }
