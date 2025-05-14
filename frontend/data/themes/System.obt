@@ -197,6 +197,8 @@ OBSBasicSettings QListWidget::item {
 .checkbox-icon {
     outline: none;
     background: transparent;
+    max-width: 20px;
+    padding: 1px;
 }
 
 /* Locked CheckBox */
