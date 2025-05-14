@@ -394,6 +394,10 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	source->enabled = true;
 
 	/* audio deduplication initialization */
+	source->audio_is_duplicated = false;
+	source->is_individual_audio_src = source->info.type == OBS_SOURCE_TYPE_INPUT &&
+					  source->info.output_flags & OBS_SOURCE_AUDIO &&
+					  !obs_source_is_scene(source) && !obs_source_is_group(source);
 	source->is_global_audio_src = false;
 	source->captures_mon_device = false;
 

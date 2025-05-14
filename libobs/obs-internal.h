@@ -943,8 +943,12 @@ struct obs_source {
 	obs_weak_canvas_t *canvas;
 
 	/* audio deduplication */
-	/* is_global_audio_src: tracks whether the audio source is a global Desktop Audio source */
+	/* audio_is_duplicated: tracks whether a source appears multiple times in the audio tree during this tick */
+	/* is_individual_audio_src: tracks whether the audio source is not a scene nor a group, nor a global audio */
+	/* is_global_audio_src: tracks whether the audio source is a global audio */
 	/* captures_mon_device: tracks whether the desktop audio and monitoring device are the same */
+	bool audio_is_duplicated;
+	bool is_individual_audio_src;
 	bool is_global_audio_src;
 	bool captures_mon_device;
 };
