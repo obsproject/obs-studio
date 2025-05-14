@@ -24,6 +24,12 @@ inline size_t GetCallbackIdx(vector<OBSStudioCallback<T>> &callbacks, T callback
 	return (size_t)-1;
 }
 
+void OBSStudioAPI::obs_frontend_close_main_window()
+{
+	blog(LOG_INFO, "Closing main window via the API...");
+	QMetaObject::invokeMethod(main, "close");
+}
+
 void *OBSStudioAPI::obs_frontend_get_main_window()
 {
 	return (void *)main;
