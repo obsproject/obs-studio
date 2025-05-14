@@ -334,7 +334,7 @@ void OBSProjector::UpdateProjectorTitle(QString name)
 		title = QTStr("Projector.Title") + " - " + QTStr("StudioMode.Program");
 		break;
 	case ProjectorType::Multiview:
-		title = QTStr("Projector.Title") + " - " + QTStr("Multiview");
+		title = QTStr("Projector.Title") + " - " + QTStr("Projector.Title.Multiview");
 		break;
 	default:
 		title = name;
