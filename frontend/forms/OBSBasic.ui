@@ -2027,7 +2027,7 @@
   </action>
   <action name="actionExportSceneCollection">
    <property name="text">
-    <string>Export</string>
+    <string>Basic.MainMenu.Export</string>
    </property>
   </action>
   <action name="actionShowMissingFiles">
@@ -2067,7 +2067,7 @@
   </action>
   <action name="actionExportProfile">
    <property name="text">
-    <string>Export</string>
+    <string>Basic.MainMenu.Export</string>
    </property>
   </action>
   <action name="actionShowSettingsFolder">
