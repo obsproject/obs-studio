@@ -156,7 +156,7 @@ static int librist_open(URLContext *h, const char *uri)
 	s->logging_settings = (struct rist_logging_settings)LOGGING_SETTINGS_INITIALIZER;
 	s->statsinterval = 60000; // log stats every 60 seconds
 
-	// Initialisation du logging global librist (safe guard contre crash callback non initialisé)
+	// Initialization of global librist logging (safeguard against uninitialized crash callback)
 	static bool rist_logging_global_initialized = false;
 	if (!rist_logging_global_initialized) {
 		struct rist_logging_settings global_logging_settings = {0};
