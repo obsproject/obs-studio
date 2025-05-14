@@ -1236,6 +1236,9 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 #undef add_profile
 	}
 
+	p = obs_properties_add_bool(props, "pre_analysis", obs_module_text("AMF.PreAnalysis"));
+	obs_property_set_long_description(p, obs_module_text("AMF.PreAnalysis.ToolTip"));
+
 	if (amf_codec_type::AVC == codec || amf_codec_type::AV1 == codec) {
 		obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, 5, 1);
 	}
@@ -1488,6 +1491,11 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int64_t bf = obs_data_get_int(settings, "bf");
+	const bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+
+	if (pa_enabled) {
+		set_avc_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+	}
 
 	if (enc->bframes_supported) {
 		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
@@ -1497,7 +1505,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 		 * as those with high motion. This only takes effect if
 		 * Pre-Analysis is enabled.
 		 */
-		if (bf > 0) {
+		if (bf > 0 && pa_enabled == true) {
 			set_avc_property(enc, ADAPTIVE_MINIGOP, true);
 		}
 
@@ -1572,8 +1580,10 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	     "\tb-frames:     %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
+	     "\tpre-analysis: %s\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy,
+	     pa_enabled ? "true" : "false", ffmpeg_opts);
 
 	return true;
 }
@@ -1854,6 +1864,11 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_hevc_rate_control(rc_str);
+	const bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+
+	if (pa_enabled) {
+		set_hevc_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+	}
 
 	set_hevc_property(enc, RATE_CONTROL_METHOD, rc);
 	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
@@ -1910,8 +1925,10 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	     "\tlevel:        %s\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
+	     "\tpre-analysis: %s\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, enc->cx, enc->cy, pa_enabled ? "true" : "false",
+	     ffmpeg_opts);
 
 	return true;
 }
@@ -2252,9 +2269,14 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
+	const bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
 	const bool screen_content_tools_enabled = obs_data_get_bool(settings, "screen_content_tools");
 	const bool palette_mode_enabled = obs_data_get_bool(settings, "palette_mode");
 	int64_t bf = obs_data_get_int(settings, "bf");
+
+	if (pa_enabled) {
+		set_av1_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+	}
 
 	if (enc->bframes_supported) {
 		set_av1_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
@@ -2264,7 +2286,7 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 		 * as those with high motion. This only takes effect if
 		 * Pre-Analysis is enabled.
 		 */
-		if (bf > 0) {
+		if (bf > 0 && pa_enabled == true) {
 			set_av1_property(enc, ADAPTIVE_MINIGOP, true);
 		}
 
@@ -2330,9 +2352,11 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	     "\theight:               %d\n"
 	     "\tscreen content tools: %s\n"
 	     "\tpalette mode:         %s\n"
+	     "\tpre-analysis:         %s\n"
 	     "\tparams:               %s",
 	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy,
-	     screen_content_tools_enabled ? "true" : "false", palette_mode_enabled ? "true" : "false", ffmpeg_opts);
+	     screen_content_tools_enabled ? "true" : "false", palette_mode_enabled ? "true" : "false",
+	     pa_enabled ? "true" : "false", ffmpeg_opts);
 
 	return true;
 }
