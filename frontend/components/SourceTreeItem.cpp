@@ -70,12 +70,14 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	vis->setChecked(sourceVisible);
 	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
 	vis->setAccessibleDescription(QTStr("Basic.Main.Sources.VisibilityDescription").arg(name));
+	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
 	lock = new QCheckBox();
 	lock->setProperty("class", "checkbox-icon indicator-lock");
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
 	lock->setAccessibleName(QTStr("Basic.Main.Sources.Lock"));
 	lock->setAccessibleDescription(QTStr("Basic.Main.Sources.LockDescription").arg(name));
+	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
 	label = new OBSSourceLabel(source);
 	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
