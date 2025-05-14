@@ -824,6 +824,8 @@ struct obs_source {
 	int64_t sync_offset;
 	int64_t last_sync_offset;
 	float balance;
+	/* audio_is_duplicated: tracks whether a source appears multiple times in the audio tree during this tick */
+	bool audio_is_duplicated;
 
 	/* async video data */
 	gs_texture_t *async_textures[MAX_AV_PLANES];
