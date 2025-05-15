@@ -115,6 +115,14 @@ struct Memory {
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Memory, total, free)
 };
 
+struct Hags {
+	bool hags_supported;
+	bool hags_enabled;
+	bool hags_default;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Hags, hags_enabled, hags_supported, hags_default);
+};
+
 struct Gpu {
 	string model;
 	uint32_t vendor_id;
@@ -122,9 +130,10 @@ struct Gpu {
 	uint64_t dedicated_video_memory;
 	uint64_t shared_system_memory;
 	optional<string> driver_version;
+	optional<Hags> hags;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Gpu, model, vendor_id, device_id, dedicated_video_memory, shared_system_memory,
-				       driver_version)
+				       driver_version, hags)
 };
 
 struct GamingFeatures {
