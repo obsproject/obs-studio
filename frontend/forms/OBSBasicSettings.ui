@@ -1023,7 +1023,7 @@
                    <item row="2" column="0">
                     <widget class="QLabel" name="appearanceSettingLabelFontScale">
                      <property name="text">
-                      <string>Font Size</string>
+                      <string>Basic.Settings.Appearance.FontScale</string>
                      </property>
                      <property name="buddy">
                       <cstring>appearanceFontScale</cstring>
@@ -1116,7 +1116,7 @@
                    <item row="3" column="0">
                     <widget class="QLabel" name="label_20">
                      <property name="text">
-                      <string>Density</string>
+                      <string>Basic.Settings.Appearance.Density</string>
                      </property>
                     </widget>
                    </item>
@@ -1147,7 +1147,7 @@
                       <item>
                        <widget class="QPushButton" name="appearanceDensity1">
                         <property name="text">
-                         <string>Classic</string>
+                         <string>Basic.Settings.Appearance.Classic</string>
                         </property>
                         <property name="checkable">
                          <bool>true</bool>
@@ -1163,7 +1163,7 @@
                       <item>
                        <widget class="QPushButton" name="appearanceDensity2">
                         <property name="text">
-                         <string>Compact</string>
+                         <string>Basic.Settings.Appearance.Compact</string>
                         </property>
                         <property name="checkable">
                          <bool>true</bool>
@@ -1179,7 +1179,7 @@
                       <item>
                        <widget class="QPushButton" name="appearanceDensity3">
                         <property name="text">
-                         <string>Normal</string>
+                         <string>Basic.Settings.Appearance.Normal</string>
                         </property>
                         <property name="checkable">
                          <bool>true</bool>
@@ -1198,7 +1198,7 @@
                       <item>
                        <widget class="QPushButton" name="appearanceDensity4">
                         <property name="text">
-                         <string>Comfortable</string>
+                         <string>Basic.Settings.Appearance.Comfortable</string>
                         </property>
                         <property name="checkable">
                          <bool>true</bool>
@@ -1258,7 +1258,7 @@
                    <item>
                     <widget class="QLabel" name="appearanceOptionsWarningLabel">
                      <property name="text">
-                      <string>Some appearance options are not available for this style.</string>
+                      <string>Basic.Settings.Appearance.OptionsWarning</string>
                      </property>
                      <property name="class" stdset="0">
                       <string>text-warning</string>
