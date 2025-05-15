@@ -113,6 +113,7 @@
     --font_heading: calc(2.5pt * var(--font_base_value));
 
     --icon_base: calc(calc(max(2, var(--obsPadding)) * 1px) + 12px);
+    --icon_small: calc(4px + var(--font_base_value));
 
     --spacing_base: min(max(1px, calc(0.4 * var(--spacing_base_value))), 2px);
     --spacing_large: min(max(2px, calc(1px * var(--spacing_base_value))), 4px);
@@ -137,7 +138,6 @@
     --volume_slider_label: calc(var(--volume_slider_box) * 2);
 
     --scrollbar_size: 12px;
-    --settings_scrollbar_size: calc(var(--scrollbar_size) + 9px);
 
     /* Inputs / Controls */
     --border_color: var(--grey4);
@@ -187,9 +187,10 @@
     --tab_border_focus: var(--button_border_focus);
     --tab_border_selected: var(--primary);
 
+    --scrollbar_bg: var(--grey6);
     --scrollbar: var(--grey4);
     --scrollbar_hover: var(--grey3);
-    --scrollbar_down: var(--grey8);
+    --scrollbar_down: var(--grey2);
     --scrollbar_border: var(--grey2);
 
     --preview_scale_width: calc(calc(var(--input_text_padding) * 3.5) * calc(var(--font_base_value) / 10));
@@ -598,13 +599,11 @@ QListWidget QLineEdit:focus {
 /* Settings QList */
 
 OBSBasicSettings QScrollBar:vertical {
-    width: var(--settings_scrollbar_size);
-    margin-left: 9px;
+    width: var(--scrollbar_size);
 }
 
 OBSBasicSettings QScrollBar:horizontal {
-    height: var(--settings_scrollbar_size);
-    margin-top: 9px;
+    height: var(--scrollbar_size);
 }
 
 /* Settings properties view */
@@ -619,6 +618,38 @@ OBSDock > QWidget {
     border-bottom-right-radius: var(--border_radius);
     border: 1px solid var(--border_color);
     border-top: none;
+}
+
+OBSDock QToolBar {
+    padding: 1px;
+    margin: 0px;
+    border-top: 1px solid var(--border_color);
+    spacing: 0;
+}
+
+OBSDock QToolBar::separator {
+    background: transparent;
+    width: var(--spacing_large);
+    border: none;
+}
+
+OBSDock QToolBar QToolButton {
+    background: transparent;
+    border: 1px solid transparent;
+    margin: 1px;
+    margin-top: 2px;
+    padding: var(--padding_large);
+    padding: var(--padding_large);
+    max-width: var(--icon_small);
+    max-height: var(--icon_small);
+}
+
+OBSDock QToolBar QToolButton:hover {
+    border-color: var(--grey1);
+}
+
+OBSDock QToolBar QToolButton:disabled {
+    background: var(--grey7);
 }
 
 #transitionsFrame {
@@ -663,7 +694,7 @@ QDockWidget::float-button:pressed {
     padding: 1px -1px -1px 1px;
 }
 
-QScrollArea {
+QAbstractScrollArea {
     border-radius: var(--border_radius);
 }
 
@@ -703,9 +734,10 @@ QGroupBox::title {
 /* ScrollBars */
 
 QScrollBar {
-    background-color: var(--grey6);
+    background-color: var(--scrollbar_bg);
     margin: 0px;
     border-radius: var(--border_radius);
+    border: 1px solid var(--grey6);
 }
 
 ::corner {
@@ -781,6 +813,32 @@ QScrollBar::handle:horizontal {
 QScrollBar::handle:disabled {
     background: transparent;
     border-color: transparent;
+}
+
+OBSDock QListWidget {
+    padding: 0;
+}
+
+OBSDock QListWidget::item {
+    margin: 0 var(--spacing_base);
+}
+
+OBSDock QScrollBar {
+    border-radius: 0;
+}
+
+OBSDock QListWidget::corner {
+    background: transparent;
+    border-top: 1px solid var(--border_color);
+    border-left: 1px solid var(--border_color);
+}
+
+OBSDock QScrollBar:horizontal {
+    border-top: 1px solid var(--border_color);
+}
+
+OBSDock QScrollBar:vertical {
+    border-left: 1px solid var(--border_color);
 }
 
 /* Source Context Bar */
@@ -1364,7 +1422,6 @@ QSlider::handle:disabled {
 #stackedMixerArea {
     border: none;
     padding: 0px;
-    border-bottom: 1px solid #3c404b;
 }
 
 VolControl {
@@ -1399,10 +1456,6 @@ VolControl #volLabel {
 }
 
 /* Vertical Mixer */
-#stackedMixerArea QScrollBar:vertical {
-    border-left: 1px solid var(--border_color);
-}
-
 #vMixerScrollArea VolControl {
     padding: var(--padding_container) 0px var(--padding_container);
     border-right: 1px solid var(--border_color);
