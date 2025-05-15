@@ -249,6 +249,11 @@
     background-color: var(--bg_base);
 }
 
+.text-title {
+    font-size: var(--font_large);
+    font-weight: bold;
+}
+
 .text-heading {
     font-size: var(--font_heading);
     font-weight: bold;
@@ -286,6 +291,37 @@
 
 .frame-notice QLabel {
     padding: var(--padding_large) 0px;
+}
+
+.dialog-container {
+    padding: var(--padding_large) var(--padding_xlarge);
+}
+
+.dialog-frame {
+    background-color: var(--grey6);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--border_color);
+    margin: var(--spacing_base);
+}
+
+.dialog-frame > QWidget {
+    margin: var(--spacing_base) 0;
+}
+
+.button-primary {
+    background-color: var(--primary_dark);
+    border-color: var(--primary);
+    outline: none;
+}
+
+.button-primary:hover,
+.button-primary:focus {
+    background-color: var(--primary);
+    border-color: var(--white3);
+}
+
+.button-primary:hover {
+    border-color: var(--primary_light);
 }
 
 /* Icon Overrides */
@@ -598,6 +634,7 @@ QListWidget QLineEdit:focus {
 /* Settings QList */
 
 OBSBasicSettings QScrollBar:vertical {
+    background-color: var(--grey6);
     width: var(--settings_scrollbar_size);
     margin-left: 9px;
 }
@@ -665,6 +702,11 @@ QDockWidget::float-button:pressed {
 
 QScrollArea {
     border-radius: var(--border_radius);
+}
+
+/* ScrollAreaContents */
+QScrollArea > QWidget > QWidget {
+    background: transparent;
 }
 
 /* Qt enforces a padding inside its status bar, so we
@@ -2053,4 +2095,83 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 #previewZoomInButton:focus,
 #previewZoomOutButton:focus {
     border: 1px solid var(--input_border_hover);
+}
+
+/* Add Source Dialog */
+
+#sourceTypeList {
+    outline: none;
+    padding: var(--padding_base) var(--padding_large);
+}
+
+#sourceTypeList::item {
+    padding: var(--padding_large) var(--padding_large);
+    border: 1px solid transparent;
+    margin-bottom: var(--spacing_base);
+}
+
+#sourceTypeList::item:hover {
+    background: var(--grey4);
+    border: 1px solid var(--grey3);
+}
+
+#sourceTypeList::item:selected {
+    background: var(--primary_dark);
+    border: 1px solid var(--primary);
+}
+
+#sourceTypeList::item:selected:hover {
+    background: var(--primary);
+    border: 1px solid var(--primary_light);
+}
+
+#sourceTypeList::item:focus {
+    border: 1px solid var(--white3);
+}
+
+SourceSelectButton {
+    text-align: center;
+    padding: var(--padding_base) var(--padding_base);
+    margin: var(--spacing_base);
+}
+
+SourceSelectButton QLabel {
+    padding: var(--padding_large) 0;
+    text-align: center;
+}
+
+SourceSelectButton #thumbnail {
+    background: var(--grey6);
+    border: 1px solid var(--grey4);
+    min-width: 160px;
+    min-height: 90px;
+    padding: 0;
+    margin-top: var(--spacing_base);
+}
+
+SourceSelectButton QPushButton {
+    background: var(--grey5);
+    outline: none;
+}
+
+SourceSelectButton QPushButton:pressed,
+SourceSelectButton QPushButton:checked {
+    
+}
+
+#createNewSource {
+    margin-left: var(--spacing_large);
+    background-color: var(--primary_dark);
+    border-color: var(--primary);
+    outline: none;
+}
+
+#createNewSource:hover,
+#createNewSource:focus {
+    background-color: var(--primary);
+    border-color: var(--white3);
+}
+
+#createNewSource:hover {
+    border-color: var(--primary_light);
 }
