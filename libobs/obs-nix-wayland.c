@@ -995,8 +995,8 @@ static obs_key_t obs_nix_wayland_key_from_virtual_key(int sym)
 	case XKB_KEY_Page_Down:
 		return OBS_KEY_PAGEDOWN;
 
-	case XKB_KEY_KP_Equal:
-		return OBS_KEY_NUMEQUAL;
+	case XKB_KEY_KP_End:
+		return OBS_KEY_NUMEND;
 	case XKB_KEY_KP_Multiply:
 		return OBS_KEY_NUMASTERISK;
 	case XKB_KEY_KP_Add:
