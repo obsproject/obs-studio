@@ -230,11 +230,13 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 #ifdef _WIN32
 	config_set_default_bool(appConfig, "Audio", "DisableAudioDucking", true);
+#endif
+
+#if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	config_set_default_bool(appConfig, "General", "BrowserHWAccel", true);
 #endif
 
 #ifdef __APPLE__
-	config_set_default_bool(appConfig, "General", "BrowserHWAccel", true);
 	config_set_default_bool(appConfig, "Video", "DisableOSXVSync", true);
 	config_set_default_bool(appConfig, "Video", "ResetOSXVSyncOnExit", true);
 #endif
@@ -1091,7 +1093,7 @@ bool OBSApp::OBSInit()
 
 	obs_set_ui_task_handler(ui_task_handler);
 
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	bool browserHWAccel = config_get_bool(appConfig, "General", "BrowserHWAccel");
 
 	OBSDataAutoRelease settings = obs_data_create();
