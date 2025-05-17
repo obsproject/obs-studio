@@ -34,7 +34,8 @@
                 "macos-arm64": "1bb59dbb759150e170796f641a4a84c59c0dea4ffef89477e9d811520af5d15a",
                 "ubuntu-x86_64": "cb7225c7a937ac4cdc9c41700061f45cccc640d696902357782e57f8250bf43a",
                 "ubuntu-aarch64": "f92df7f076bdc8cac2e3c77e27be418008b7168723201cb73fdbc2f6d91bc778",
-                "windows-x64": "922efbda1f2f8be9e5b2754d878a14d90afc81f04e94fc9101a7513e2b5cecc1"
+                "windows-x64": "922efbda1f2f8be9e5b2754d878a14d90afc81f04e94fc9101a7513e2b5cecc1",
+                "windows-arm64": "df9df4bd85826b4c071c6db404fd59cf93efd9c58ec3ab64e204466ae19bb02a"
             },
             "revision": {
                 "macos-x86_64": 3,
