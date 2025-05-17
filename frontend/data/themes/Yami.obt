@@ -651,6 +651,10 @@ QDockWidget::float-button {
     border-radius: var(--border_radius);
     background: transparent;
     margin-right: 1px;
+    min-width: var(--icon_base);
+    min-height: var(--icon_base);
+    icon-size: var(--icon_base);
+    padding: var(--padding_base);
 }
 
 QDockWidget::close-button:hover,
@@ -660,6 +664,7 @@ QDockWidget::float-button:hover {
 
 QDockWidget::close-button:pressed,
 QDockWidget::float-button:pressed {
+    background: var(--button_bg_down);
     padding: 1px -1px -1px 1px;
 }
 
