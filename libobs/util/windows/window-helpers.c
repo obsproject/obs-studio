@@ -474,8 +474,7 @@ static int window_rating(HWND window, enum window_priority priority, const char 
 		val = exe_matches ? title_val : 0x7FFFFFFF;
 	}
 
-	if (hwnd_in_use(window))
-	{
+	if (hwnd_in_use(window)) {
 		val = INT_MAX;
 	}
 
@@ -509,7 +508,6 @@ static bool is_uwp_class(const char *window_class)
 	return strcmp(window_class, "Windows.UI.Core.CoreWindow") == 0 ||
 	       strcmp(window_class, "WinUIDesktopWin32WindowClass") == 0;
 }
-
 
 static void add_to_captured_list(HWND hwnd)
 {
