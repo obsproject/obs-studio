@@ -1124,7 +1124,7 @@ public:
 	const OBS::Canvas &AddCanvas(const std::string &name, obs_video_info *ovi = nullptr, int flags = 0);
 
 public slots:
-	bool RemoveCanvas(obs_canvas_t *canvas);
+	bool RemoveCanvas(OBSCanvas canvas);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_SceneItems

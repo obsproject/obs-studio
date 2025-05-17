@@ -31,7 +31,7 @@ const OBS::Canvas &OBSBasic::AddCanvas(const std::string &name, obs_video_info *
 	return it;
 }
 
-bool OBSBasic::RemoveCanvas(obs_canvas_t *canvas)
+bool OBSBasic::RemoveCanvas(OBSCanvas canvas)
 {
 	if (!canvas)
 		return false;
