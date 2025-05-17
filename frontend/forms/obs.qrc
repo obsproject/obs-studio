@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/res">
+    <file>images/close.svg</file>
     <file>images/save.svg</file>
     <file>images/media-pause.svg</file>
     <file>images/trash.svg</file>

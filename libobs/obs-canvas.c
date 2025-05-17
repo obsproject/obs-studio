@@ -65,7 +65,7 @@ static inline void canvas_dosignal_source(const char *signal, obs_canvas_t *canv
 	calldata_set_ptr(&data, "canvas", canvas);
 	calldata_set_ptr(&data, "source", source);
 
-	signal_handler_signal(source->context.signals, signal, &data);
+	signal_handler_signal(canvas->context.signals, signal, &data);
 }
 
 /*** Reference Counting ***/
@@ -416,6 +416,11 @@ bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info
 
 	*ovi = canvas->ovi;
 	return true;
+}
+
+signal_handler_t *obs_canvas_get_signal_handler(obs_canvas_t *canvas)
+{
+	return canvas->context.signals;
 }
 
 void obs_canvas_set_channel(obs_canvas_t *canvas, uint32_t channel, obs_source_t *source)

@@ -198,7 +198,7 @@ Initialization, Shutdown, and Information
 
 ---------------------
 
-.. function:: void obs_set_video_sdr_white_level(float sdr_white_level, float hdr_nominal_peak_level)
+.. function:: void obs_set_video_levels(float sdr_white_level, float hdr_nominal_peak_level)
 
    Sets the current video levels.
 
