@@ -495,6 +495,7 @@ QMenu::right-arrow {
 /* Top Menu Bar Items */
 QMenuBar::item {
     background-color: transparent;
+    padding: var(--padding_large) var(--padding_xlarge);
 }
 
 QMenuBar::item:selected {
