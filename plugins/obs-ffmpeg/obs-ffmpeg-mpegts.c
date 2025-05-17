@@ -598,9 +598,9 @@ fail:
 
 /* ------------------------------------------------------------------------- */
 
-static inline bool stopping(struct ffmpeg_output *output)
+static inline bool stopping(struct ffmpeg_output *stream)
 {
-	return os_atomic_load_bool(&output->stopping);
+	return os_atomic_load_bool(&stream->stopping);
 }
 
 static const char *ffmpeg_mpegts_getname(void *unused)
@@ -661,36 +661,36 @@ static void ffmpeg_mpegts_destroy(void *data)
 	}
 }
 
-static uint64_t get_packet_sys_dts(struct ffmpeg_output *output, AVPacket *packet)
+static uint64_t get_packet_sys_dts(struct ffmpeg_output *stream, AVPacket *packet)
 {
-	struct ffmpeg_data *data = &output->ff_data;
-	uint64_t pause_offset = obs_output_get_pause_offset(output->output);
+	struct ffmpeg_data *data = &stream->ff_data;
+	uint64_t pause_offset = obs_output_get_pause_offset(stream->output);
 	uint64_t start_ts;
 
 	AVRational time_base;
 
 	if (data->video && data->video->index == packet->stream_index) {
 		time_base = data->video->time_base;
-		start_ts = output->video_start_ts;
+		start_ts = stream->video_start_ts;
 	} else {
 		time_base = data->audio_infos[0].stream->time_base;
-		start_ts = output->audio_start_ts;
+		start_ts = stream->audio_start_ts;
 	}
 
 	return start_ts + pause_offset + (uint64_t)av_rescale_q(packet->dts, time_base, (AVRational){1, 1000000000});
 }
 
-static int mpegts_process_packet(struct ffmpeg_output *output)
+static int mpegts_process_packet(struct ffmpeg_output *stream)
 {
 	AVPacket *packet = NULL;
 	int ret = 0;
 
-	pthread_mutex_lock(&output->write_mutex);
-	if (output->packets.num) {
-		packet = output->packets.array[0];
-		da_erase(output->packets, 0);
+	pthread_mutex_lock(&stream->write_mutex);
+	if (stream->packets.num) {
+		packet = stream->packets.array[0];
+		da_erase(stream->packets, 0);
 	}
-	pthread_mutex_unlock(&output->write_mutex);
+	pthread_mutex_unlock(&stream->write_mutex);
 
 	if (!packet)
 		return 0;
@@ -701,20 +701,20 @@ static int mpegts_process_packet(struct ffmpeg_output *output)
 	//     packet->size, packet->flags, packet->stream_index,
 	//     output->packets.num);
 
-	if (stopping(output)) {
-		uint64_t sys_ts = get_packet_sys_dts(output, packet);
-		if (sys_ts >= output->stop_ts) {
+	if (stopping(stream)) {
+		uint64_t sys_ts = get_packet_sys_dts(stream, packet);
+		if (sys_ts >= stream->stop_ts) {
 			ret = 0;
 			goto end;
 		}
 	}
-	output->total_bytes += packet->size;
+	stream->total_bytes += packet->size;
 	uint8_t *buf = packet->data;
-	ret = av_interleaved_write_frame(output->ff_data.output, packet);
+	ret = av_interleaved_write_frame(stream->ff_data.output, packet);
 	av_freep(&buf);
 
 	if (ret < 0) {
-		ffmpeg_mpegts_log_error(LOG_WARNING, &output->ff_data, "process_packet: Error writing packet: %s",
+		ffmpeg_mpegts_log_error(LOG_WARNING, &stream->ff_data, "process_packet: Error writing packet: %s",
 					av_err2str(ret));
 
 		/* Treat "Invalid data found when processing input" and
@@ -728,16 +728,17 @@ end:
 	return ret;
 }
 
+static void ffmpeg_mpegts_stop_internal(void *data, uint64_t ts, bool signal);
 static void *write_thread(void *data)
 {
-	struct ffmpeg_output *output = data;
+	struct ffmpeg_output *stream = data;
 
-	while (os_sem_wait(output->write_sem) == 0) {
+	while (os_sem_wait(stream->write_sem) == 0) {
 		/* check to see if shutting down */
-		if (os_event_try(output->stop_event) == 0)
+		if (os_event_try(stream->stop_event) == 0)
 			break;
 
-		int ret = mpegts_process_packet(output);
+		int ret = mpegts_process_packet(stream);
 		if (ret != 0) {
 			int code = OBS_OUTPUT_DISCONNECTED;
 
@@ -1023,8 +1024,8 @@ static void ffmpeg_mpegts_deactivate(struct ffmpeg_output *output)
 
 static uint64_t ffmpeg_mpegts_total_bytes(void *data)
 {
-	struct ffmpeg_output *output = data;
-	return output->total_bytes;
+	struct ffmpeg_output *stream = data;
+	return stream->total_bytes;
 }
 
 static inline int64_t rescale_ts2(AVStream *stream, AVRational codec_time_base, int64_t val)
