@@ -55,6 +55,8 @@ target_sources(
     components/OBSSourceLabel.hpp
     components/SceneTree.cpp
     components/SceneTree.hpp
+    components/SceneTreeItem.cpp
+    components/SceneTreeItem.hpp
     components/SilentUpdateCheckBox.hpp
     components/SilentUpdateSpinBox.hpp
     components/SourceToolbar.cpp

@@ -21,6 +21,7 @@
 #include "OBSProjector.hpp"
 
 #include <dialogs/NameDialog.hpp>
+#include <components/SceneTreeItem.hpp>
 
 #include <qt-wrappers.hpp>
 
@@ -49,8 +50,12 @@ obs_data_array_t *OBSBasic::SaveSceneListOrder()
 	obs_data_array_t *sceneOrder = obs_data_array_create();
 
 	for (int i = 0; i < ui->scenes->count(); i++) {
+		QListWidgetItem *item = ui->scenes->item(i);
+		OBSScene scene = GetOBSRef<OBSScene>(item);
+		OBSSource source = obs_scene_get_source(scene);
+
 		OBSDataAutoRelease data = obs_data_create();
-		obs_data_set_string(data, "name", QT_TO_UTF8(ui->scenes->item(i)->text()));
+		obs_data_set_string(data, "name", obs_source_get_name(source));
 		obs_data_array_push_back(sceneOrder, data);
 	}
 
@@ -61,11 +66,15 @@ static void ReorderItemByName(QListWidget *lw, const char *name, int newIndex)
 {
 	for (int i = 0; i < lw->count(); i++) {
 		QListWidgetItem *item = lw->item(i);
+		OBSScene scene = GetOBSRef<OBSScene>(item);
+		OBSSource source = obs_scene_get_source(scene);
 
-		if (strcmp(name, QT_TO_UTF8(item->text())) == 0) {
+		if (strcmp(name, obs_source_get_name(source)) == 0) {
 			if (newIndex != i) {
 				item = lw->takeItem(i);
+				SceneTreeItem *widget = new SceneTreeItem(scene);
 				lw->insertItem(newIndex, item);
+				lw->setItemWidget(item, widget);
 			}
 			break;
 		}
@@ -91,12 +100,15 @@ OBSScene OBSBasic::GetCurrentScene()
 
 void OBSBasic::AddScene(OBSSource source)
 {
-	const char *name = obs_source_get_name(source);
 	obs_scene_t *scene = obs_scene_from_source(source);
 
-	QListWidgetItem *item = new QListWidgetItem(QT_UTF8(name));
+	QListWidgetItem *item = new QListWidgetItem();
+	SceneTreeItem *widget = new SceneTreeItem(scene);
+	item->setSizeHint(QSize(widget->sizeHint()));
+
 	SetOBSRef(item, OBSScene(scene));
 	ui->scenes->insertItem(ui->scenes->currentRow() + 1, item);
+	ui->scenes->setItemWidget(item, widget);
 
 	obs_hotkey_register_source(
 		source, "OBSBasic.SelectScene", Str("Basic.Hotkeys.SelectScene"),
@@ -421,7 +433,9 @@ void OBSBasic::RemoveSelectedScene()
 		ui->scenes->blockSignals(true);
 		int curIndex = ui->scenes->currentRow();
 		QListWidgetItem *item = ui->scenes->takeItem(curIndex);
+		SceneTreeItem *widget = new SceneTreeItem(scene);
 		ui->scenes->insertItem(savedIndex, item);
+		ui->scenes->setItemWidget(item, widget);
 		ui->scenes->setCurrentRow(savedIndex);
 		currentScene = scene.Get();
 		ui->scenes->blockSignals(false);
@@ -500,13 +514,7 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current, QListWidge
 
 void OBSBasic::EditSceneName()
 {
-	ui->scenesDock->removeAction(renameScene);
-	QListWidgetItem *item = ui->scenes->currentItem();
-	Qt::ItemFlags flags = item->flags();
-
-	item->setFlags(flags | Qt::ItemIsEditable);
-	ui->scenes->editItem(item);
-	item->setFlags(flags);
+	ui->scenes->Edit(ui->scenes->currentRow());
 }
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
@@ -688,11 +696,13 @@ void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
 
 	ui->scenes->blockSignals(true);
 	QListWidgetItem *item = ui->scenes->takeItem(idx);
+	SceneTreeItem *widget = new SceneTreeItem(GetCurrentScene());
 
 	if (!relative)
 		idx = 0;
 
 	ui->scenes->insertItem(idx + offset, item);
+	ui->scenes->setItemWidget(item, widget);
 	ui->scenes->setCurrentRow(idx + offset);
 	item->setSelected(true);
 	currentScene = GetOBSRef<OBSScene>(item).Get();
@@ -839,59 +849,6 @@ void OBSBasic::MoveSceneItem(enum obs_order_movement movement, const QString &ac
 
 	OBSData redo_data = BackupScene(scene, &sources);
 	CreateSceneUndoRedoAction(action_name.arg(source_name, scene_name), undo_data, redo_data);
-}
-
-static void RenameListItem(OBSBasic *parent, QListWidget *listWidget, obs_source_t *source, const string &name)
-{
-	const char *prevName = obs_source_get_name(source);
-	if (name == prevName)
-		return;
-
-	OBSSourceAutoRelease foundSource = obs_get_source_by_name(name.c_str());
-	QListWidgetItem *listItem = listWidget->currentItem();
-
-	if (foundSource || name.empty()) {
-		listItem->setText(QT_UTF8(prevName));
-
-		if (foundSource) {
-			OBSMessageBox::warning(parent, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
-		} else if (name.empty()) {
-			OBSMessageBox::warning(parent, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
-		}
-	} else {
-		auto undo = [prev = std::string(prevName)](const std::string &data) {
-			OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
-			obs_source_set_name(source, prev.c_str());
-		};
-
-		auto redo = [name](const std::string &data) {
-			OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
-			obs_source_set_name(source, name.c_str());
-		};
-
-		std::string source_uuid(obs_source_get_uuid(source));
-		parent->undo_s.add_action(QTStr("Undo.Rename").arg(name.c_str()), undo, redo, source_uuid, source_uuid);
-
-		listItem->setText(QT_UTF8(name.c_str()));
-		obs_source_set_name(source, name.c_str());
-	}
-}
-
-void OBSBasic::SceneNameEdited(QWidget *editor)
-{
-	OBSScene scene = GetCurrentScene();
-	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
-	string text = QT_TO_UTF8(edit->text().trimmed());
-
-	if (!scene)
-		return;
-
-	obs_source_t *source = obs_scene_get_source(scene);
-	RenameListItem(this, ui->scenes, source, text);
-
-	ui->scenesDock->addAction(renameScene);
-
-	OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
 void OBSBasic::OpenSceneFilters()

@@ -82,18 +82,8 @@ OBSSceneItem OBSBasic::GetCurrentSceneItem()
 	return ui->sources->Get(GetTopSelectedSourceItem());
 }
 
-static void RenameListValues(QListWidget *listWidget, const QString &newName, const QString &prevName)
-{
-	QList<QListWidgetItem *> items = listWidget->findItems(prevName, Qt::MatchExactly);
-
-	for (int i = 0; i < items.count(); i++)
-		items[i]->setText(newName);
-}
-
 void OBSBasic::RenameSources(OBSSource source, QString newName, QString prevName)
 {
-	RenameListValues(ui->scenes, newName, prevName);
-
 	if (vcamConfig.type == VCamOutputType::SourceOutput && prevName == QString::fromStdString(vcamConfig.source))
 		vcamConfig.source = newName.toStdString();
 	if (vcamConfig.type == VCamOutputType::SceneOutput && prevName == QString::fromStdString(vcamConfig.scene))
@@ -102,8 +92,10 @@ void OBSBasic::RenameSources(OBSSource source, QString newName, QString prevName
 	SaveProject();
 
 	obs_scene_t *scene = obs_scene_from_source(source);
-	if (scene)
+	if (scene) {
 		OBSProjector::UpdateMultiviewProjectors();
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
+	}
 
 	UpdateContextBar();
 	UpdatePreviewProgramIndicators();

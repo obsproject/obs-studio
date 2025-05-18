@@ -63,6 +63,7 @@ class YouTubeAppDock;
 class QMessageBox;
 class QWidgetAction;
 struct QuickTransition;
+class IconLabel;
 
 namespace OBS {
 class SceneCollection;
@@ -1288,7 +1289,6 @@ private slots:
 	void EditSceneName();
 	void EditSceneItemName();
 
-	void SceneNameEdited(QWidget *editor);
 	void OpenSceneFilters();
 
 public:
@@ -1395,7 +1395,9 @@ private:
 	QPointer<QMenu> studioProgramProjector;
 	QPointer<QWidget> programWidget;
 	QPointer<QVBoxLayout> programLayout;
+	QPointer<QHBoxLayout> programIndicatorLayout;
 	QPointer<QLabel> programLabel;
+	QPointer<IconLabel> programIcon;
 	QPointer<QWidget> programOptions;
 	QPointer<OBSQTDisplay> program;
 	OBSWeakSource lastProgramScene;
@@ -1440,6 +1442,7 @@ public:
 signals:
 	/* Studio Mode signal */
 	void PreviewProgramModeChanged(bool enabled);
+	void StudioModeIndicatorsUpdated();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_SysTray

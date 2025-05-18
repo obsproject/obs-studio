@@ -354,6 +354,14 @@
     qproperty-icon: url(theme:Dark/close.svg);
 }
 
+.icon-edit {
+    qproperty-icon: url(theme:Dark/edit.svg);
+}
+
+.icon-stream {
+    qproperty-icon: url(theme:Dark/settings/stream.svg);
+}
+
 /* Media icons */
 
 .icon-media-play {
@@ -521,8 +529,17 @@ QMenu {
 }
 
 QListWidget::item,
-SourceTreeItem {
+SourceTreeItem,
+SceneTreeItem {
     padding: var(--padding_large) var(--padding_large);
+}
+
+SceneTreeItem QLabel {
+     padding: var(--padding_base);
+}
+
+SceneTree::item {
+    padding: 0;
 }
 
 QMenu::item {
@@ -538,7 +555,8 @@ QMenu::item {
     border: 1px solid transparent;
 }
 
-SourceTreeItem {
+SourceTreeItem,
+SceneTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
 }

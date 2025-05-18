@@ -84,6 +84,14 @@
     qproperty-icon: url(:res/images/revert.svg);
 }
 
+.icon-edit {
+    qproperty-icon: url(:res/images/edit.svg);
+}
+
+.icon-stream {
+    qproperty-icon: url(:settings/images/settings/stream.svg);
+}
+
 .indicator-mute {
     outline: none;
 }

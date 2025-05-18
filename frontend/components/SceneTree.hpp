@@ -25,6 +25,9 @@ public:
 
 	explicit SceneTree(QWidget *parent = nullptr);
 
+public slots:
+	bool Edit(int row);
+
 private:
 	void RepositionGrid(QDragMoveEvent *event = nullptr);
 
