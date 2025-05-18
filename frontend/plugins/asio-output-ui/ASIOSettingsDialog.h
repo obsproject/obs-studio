@@ -19,9 +19,9 @@
 #pragma once
 #include <obs.hpp>
 #include <properties-view.hpp>
+#include <memory>
 #include <QDialog>
 #include "./forms/ui_output.h"
-
 
 class ASIOSettingsDialog : public QDialog {
 	Q_OBJECT
@@ -29,15 +29,15 @@ class ASIOSettingsDialog : public QDialog {
 public:
 	explicit ASIOSettingsDialog(QWidget *parent = 0, obs_output_t *output = nullptr, OBSData settings = nullptr);
 	std::unique_ptr<Ui_Output> ui;
-	void ShowHideDialog();
-	void SetupPropertiesView();
-	void SaveSettings();
+	void showHideDialog(bool enabled);
+	void setupPropertiesView(bool enabled);
+	void saveSettings();
 	OBSData settings_;
 	obs_output_t *output_;
 	std::string currentDeviceName;
 
 public slots:
-	void PropertiesChanged();
+	void propertiesChanged();
 
 private:
 	OBSPropertiesView *propertiesView;

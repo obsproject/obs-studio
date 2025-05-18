@@ -20,6 +20,7 @@
 #include <obs-module.h>
 #include <util/platform.h>
 #include <util/util.hpp>
+#include <QLabel>
 
 extern void output_start();
 extern void output_stop();
@@ -39,13 +40,13 @@ ASIOSettingsDialog::ASIOSettingsDialog(QWidget *parent, obs_output_t *output, OB
 	propertiesView = nullptr;
 }
 
-void ASIOSettingsDialog::ShowHideDialog()
+void ASIOSettingsDialog::showHideDialog(bool enabled)
 {
-	SetupPropertiesView();
+	setupPropertiesView(enabled);
 	setVisible(!isVisible());
 }
 
-void ASIOSettingsDialog::SetupPropertiesView()
+void ASIOSettingsDialog::setupPropertiesView(bool enabled)
 {
 	if (propertiesView)
 		delete propertiesView;
@@ -53,13 +54,21 @@ void ASIOSettingsDialog::SetupPropertiesView()
 	propertiesView = new OBSPropertiesView(settings_, "asio_output",
 					       (PropertiesReloadCallback)obs_get_output_properties, 170);
 
-	ui->propertiesLayout->addWidget(propertiesView);
-	currentDeviceName = g_currentDeviceName;
+	if (enabled) {
+		ui->propertiesLayout->addWidget(propertiesView);
+		currentDeviceName = g_currentDeviceName;
+	} else {
+		QLabel *noAsioLabel = new QLabel(obs_module_text("AsioOutput.Disabled"), this);
+		noAsioLabel->setWordWrap(true);
+		noAsioLabel->setAlignment(Qt::AlignCenter);
+		ui->propertiesLayout->addWidget(noAsioLabel);
+		adjustSize();
+	}
 
-	connect(propertiesView, &OBSPropertiesView::Changed, this, &ASIOSettingsDialog::PropertiesChanged);
+	connect(propertiesView, &OBSPropertiesView::Changed, this, &ASIOSettingsDialog::propertiesChanged);
 }
 
-void ASIOSettingsDialog::SaveSettings()
+void ASIOSettingsDialog::saveSettings()
 {
 	BPtr<char> modulePath = obs_module_get_config_path(obs_current_module(), "");
 	os_mkdirs(modulePath);
@@ -70,10 +79,10 @@ void ASIOSettingsDialog::SaveSettings()
 		obs_data_save_json_safe(settings, path, "tmp", "bak");
 }
 
-void ASIOSettingsDialog::PropertiesChanged()
+void ASIOSettingsDialog::propertiesChanged()
 {
 	obs_output_update(output_, settings_);
-	SaveSettings();
+	saveSettings();
 	const char *dev = obs_data_get_string(settings_, "device_name");
 	const std::string newDevice = (dev && *dev) ? dev : std::string{};
 
