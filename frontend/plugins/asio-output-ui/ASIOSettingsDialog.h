@@ -31,6 +31,7 @@
 #include <QDialog>
 #include <QAction>
 #include <QMainWindow>
+#include <QLabel>
 
 #include "./forms/ui_output.h"
 
@@ -42,8 +43,8 @@ class ASIOSettingsDialog : public QDialog {
 public:
 	explicit ASIOSettingsDialog(QWidget *parent = 0, obs_output_t *output = nullptr, OBSData settings = nullptr);
 	std::unique_ptr<Ui_Output> ui;
-	void ShowHideDialog();
-	void SetupPropertiesView();
+	void ShowHideDialog(bool enabled);
+	void SetupPropertiesView(bool enabled);
 	void SaveSettings();
 	OBSData settings_;
 	obs_output_t *output_;
