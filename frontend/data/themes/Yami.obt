@@ -1465,6 +1465,12 @@ QPushButton::menu-indicator {
     right: -2px;
 }
 
+QWidget QFormLayout > QToolButton#asioMonitoring {
+  min-width: 0px;
+  max-width: 16777215px;
+  text-align: center;
+}
+
 QToolButton {
     border: 1px solid var(--button_border);
 }
