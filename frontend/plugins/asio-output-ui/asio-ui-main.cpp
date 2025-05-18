@@ -20,6 +20,8 @@
 #include <obs-frontend-api.h>
 #include <QMainWindow>
 #include <QAction>
+#include <QScreen>
+
 #include <util/util.hpp>
 #include <util/platform.h>
 #include "ASIOSettingsDialog.h"
@@ -86,21 +88,49 @@ void output_start()
 	}
 }
 
+void callback()
+{
+	QMainWindow *mainWindow = (QMainWindow *)obs_frontend_get_main_window();
+	QWidget *obsSettingsDialog = nullptr;
+	const auto topLevels = QApplication::topLevelWidgets();
+	for (QWidget *widget : topLevels) {
+		if (widget->isVisible() && QString(widget->metaObject()->className()).contains("OBSBasicSettings")) {
+			obsSettingsDialog = widget;
+			break;
+		}
+	}
+	if (!settingsDialog_) {
+		if (!obsSettingsDialog)
+			settingsDialog_ = new ASIOSettingsDialog(mainWindow, context.output, context.settings);
+		else
+			settingsDialog_ = new ASIOSettingsDialog(obsSettingsDialog, context.output, context.settings);
+		settingsDialog_->setAttribute(Qt::WA_DeleteOnClose);
+		QObject::connect(settingsDialog_, &QObject::destroyed, []() { settingsDialog_ = nullptr; });
+	}
+
+	settingsDialog_->ShowHideDialog(context.enabled);
+	if (obsSettingsDialog) {
+		QRect settingsRect = obsSettingsDialog->geometry();
+		QRect asioRect = settingsDialog_->geometry();
+		QPoint newPos(settingsRect.right() + 100, settingsRect.top());
+		QScreen *screen = obsSettingsDialog->screen();
+		QRect desktopRect = screen->availableGeometry();
+		if (newPos.x() + asioRect.width() > desktopRect.right())
+			newPos.setX(desktopRect.right() - asioRect.width());
+		settingsDialog_->move(newPos);
+	}
+}
+
 void addOutputUI(void)
 {
 	QAction *action = (QAction *)obs_frontend_add_tools_menu_qaction(obs_module_text("AsioOutput.Menu"));
-
-	QMainWindow *mainWindow = (QMainWindow *)obs_frontend_get_main_window();
+	action->setObjectName("asioOutputSetupAction");
 
 	obs_frontend_push_ui_translation(obs_module_get_string);
-	settingsDialog_ = new ASIOSettingsDialog(mainWindow, context.output, context.settings);
 	obs_frontend_pop_ui_translation();
-
-	auto cb = []() {
-		settingsDialog_->ShowHideDialog();
-	};
-
-	action->connect(action, &QAction::triggered, cb);
+	// the UI is added through the callback, which is triggered in OBS Audio Settings
+	action->connect(action, &QAction::triggered, callback);
+	action->setVisible(false);
 }
 
 static void OBSEvent(enum obs_frontend_event event, void *)
@@ -131,10 +161,15 @@ void obs_module_unload(void)
 	if (output_running)
 		output_stop();
 
-	obs_output_release(context.output);
-	context.output = nullptr;
-	obs_data_release(context.settings);
-	context.settings = nullptr;
+	if (context.output) {
+		obs_output_release(context.output);
+		context.output = nullptr;
+	}
+
+	if (context.settings) {
+		obs_data_release(context.settings);
+		context.settings = nullptr;
+	}
 	obs_frontend_remove_event_callback(OBSEvent, nullptr);
 }
 
@@ -144,8 +179,11 @@ void obs_module_post_load(void)
 		return;
 
 	context.settings = load_settings();
+
 	obs_output_t *const output = obs_output_create("asio_output", "asio_output", context.settings, NULL);
+
 	if (output != nullptr) {
+		context.enabled = true;
 		context.output = output;
 
 		if (!context.settings) {
@@ -156,5 +194,7 @@ void obs_module_post_load(void)
 		obs_frontend_add_event_callback(OBSEvent, nullptr);
 	} else {
 		blog(LOG_INFO, "Failed to create ASIO output");
+		// we add the UI even if there is no output to display a text saying ASIO is disabled
+		addOutputUI();
 	}
 }
