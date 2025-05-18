@@ -16,13 +16,17 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
+
 #include "ASIOSettingsDialog.h"
+
 #include <obs-module.h>
 #include <util/platform.h>
 #include <util/util.hpp>
 
+#include <QLabel>
+
 extern void output_start();
-extern void output_stop();
+extern bool output_stop_and_wait();
 extern bool output_running;
 extern std::string g_currentDeviceName;
 
@@ -39,13 +43,13 @@ ASIOSettingsDialog::ASIOSettingsDialog(QWidget *parent, obs_output_t *output, OB
 	propertiesView = nullptr;
 }
 
-void ASIOSettingsDialog::ShowHideDialog()
+void ASIOSettingsDialog::showHideDialog(bool enabled)
 {
-	SetupPropertiesView();
+	setupPropertiesView(enabled);
 	setVisible(!isVisible());
 }
 
-void ASIOSettingsDialog::SetupPropertiesView()
+void ASIOSettingsDialog::setupPropertiesView(bool enabled)
 {
 	if (propertiesView) {
 		delete propertiesView;
@@ -54,13 +58,21 @@ void ASIOSettingsDialog::SetupPropertiesView()
 	propertiesView = new OBSPropertiesView(settings_, "asio_output",
 					       (PropertiesReloadCallback)obs_get_output_properties, 170);
 
-	ui->propertiesLayout->addWidget(propertiesView);
-	currentDeviceName = g_currentDeviceName;
+	if (enabled) {
+		ui->propertiesLayout->addWidget(propertiesView);
+		currentDeviceName = g_currentDeviceName;
+	} else {
+		QLabel *noAsioLabel = new QLabel(obs_module_text("AsioOutput.Disabled"), this);
+		noAsioLabel->setWordWrap(true);
+		noAsioLabel->setAlignment(Qt::AlignCenter);
+		ui->propertiesLayout->addWidget(noAsioLabel);
+		adjustSize();
+	}
 
-	connect(propertiesView, &OBSPropertiesView::Changed, this, &ASIOSettingsDialog::PropertiesChanged);
+	connect(propertiesView, &OBSPropertiesView::Changed, this, &ASIOSettingsDialog::propertiesChanged);
 }
 
-void ASIOSettingsDialog::SaveSettings()
+void ASIOSettingsDialog::saveSettings()
 {
 	BPtr<char> modulePath = obs_module_get_config_path(obs_current_module(), "");
 	os_mkdirs(modulePath);
@@ -72,28 +84,27 @@ void ASIOSettingsDialog::SaveSettings()
 	}
 }
 
-void ASIOSettingsDialog::PropertiesChanged()
+void ASIOSettingsDialog::propertiesChanged()
 {
-	obs_output_update(output_, settings_);
-	SaveSettings();
 	const char *dev = obs_data_get_string(settings_, "device_name");
 	const std::string newDevice = (dev && *dev) ? dev : std::string{};
+	const bool deviceChanged = newDevice != currentDeviceName;
 
-	const bool wasEmpty = currentDeviceName.empty();
-	const bool nowEmpty = newDevice.empty();
+	if (deviceChanged && obs_output_active(output_)) {
+		if (!output_stop_and_wait()) {
+			blog(LOG_ERROR, "[asio_output_ui] Timed out while stopping the output");
 
-	if (wasEmpty && !nowEmpty) {
-		// No device swapped to a valid device: start if not running
-		if (!output_running) {
-			output_start();
+			obs_data_set_string(settings_, "device_name", currentDeviceName.c_str());
+			propertiesView->ReloadProperties();
+			return;
 		}
-	} else if (!wasEmpty && nowEmpty) {
-		// Valid device swapped to None: stop if running
-		if (output_running) {
-			output_stop();
-		}
-	} else if (!nowEmpty && newDevice != currentDeviceName) {
-		// Output was already started so do nothing
+	}
+
+	obs_output_update(output_, settings_);
+	saveSettings();
+
+	if (deviceChanged && !newDevice.empty() && !output_running) {
+		output_start();
 	}
 
 	currentDeviceName = newDevice;
