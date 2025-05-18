@@ -38,13 +38,13 @@ ASIOSettingsDialog::ASIOSettingsDialog(QWidget *parent, obs_output_t *output, OB
 	propertiesView = nullptr;
 }
 
-void ASIOSettingsDialog::ShowHideDialog()
+void ASIOSettingsDialog::ShowHideDialog(bool enabled)
 {
-	SetupPropertiesView();
+	SetupPropertiesView(enabled);
 	setVisible(!isVisible());
 }
 
-void ASIOSettingsDialog::SetupPropertiesView()
+void ASIOSettingsDialog::SetupPropertiesView(bool enabled)
 {
 	if (propertiesView)
 		delete propertiesView;
@@ -52,8 +52,16 @@ void ASIOSettingsDialog::SetupPropertiesView()
 	propertiesView = new OBSPropertiesView(settings_, "asio_output",
 					       (PropertiesReloadCallback)obs_get_output_properties, 170);
 
-	ui->propertiesLayout->addWidget(propertiesView);
-	currentDeviceName = g_currentDeviceName;
+	if (enabled) {
+		ui->propertiesLayout->addWidget(propertiesView);
+		currentDeviceName = g_currentDeviceName;
+	} else {
+		QLabel *noAsioLabel = new QLabel(obs_module_text("AsioOutput.Disabled"), this);
+		noAsioLabel->setWordWrap(true);
+		noAsioLabel->setAlignment(Qt::AlignCenter);
+		ui->propertiesLayout->addWidget(noAsioLabel);
+		adjustSize();
+	}
 
 	connect(propertiesView, &OBSPropertiesView::Changed, this, &ASIOSettingsDialog::PropertiesChanged);
 }
