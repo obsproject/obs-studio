@@ -1336,7 +1336,7 @@ static void GetWASAPIDefaultsProcessOutput(obs_data_t *) {}
 
 static void wasapi_get_hooked(void *data, calldata_t *cd)
 {
-	WASAPISource *wasapi_source = reinterpret_cast<WASAPISource *>(data);
+	WASAPISource *wasapi_source = static_cast<WASAPISource *>(data);
 
 	if (!wasapi_source)
 		return;
