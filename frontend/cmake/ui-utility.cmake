@@ -42,6 +42,8 @@ target_sources(
     utility/OBSThemeVariable.hpp
     utility/OBSTranslator.cpp
     utility/OBSTranslator.hpp
+    utility/OutputObj.cpp
+    utility/OutputObj.hpp
     utility/platform.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
