@@ -96,6 +96,7 @@ add_core_module(
     PLATFORMS WINDOWS MACOS LINUX
     WITH_MESSAGE
 )
+add_core_module(obs-vst3 PLATFORMS WINDOWS MACOS LINUX)
 add_core_module(obs-webrtc)
 
 check_obs_websocket()
