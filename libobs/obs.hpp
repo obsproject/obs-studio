@@ -64,6 +64,35 @@ using OBSWeakEncoderAutoRelease = OBSRefAutoRelease<obs_weak_encoder_t *, obs_we
 using OBSWeakServiceAutoRelease = OBSRefAutoRelease<obs_weak_service_t *, obs_weak_service_release>;
 using OBSWeakCanvasAutoRelease = OBSRefAutoRelease<obs_weak_canvas_t *, obs_weak_canvas_release>;
 
+#include <memory>
+namespace RAIIv2 {
+
+template<typename T, void release(T *)> struct DeleterWraper final {
+	void operator()(T *p) const { release(p); };
+};
+
+template<class T, void release(T *)> using UniquePtr = std::unique_ptr<T, DeleterWraper<T, release>>;
+
+using OBSObjectAutoRelease = UniquePtr<obs_object_t, obs_object_release>;
+using OBSSourceAutoRelease = UniquePtr<obs_source_t, obs_source_release>;
+using OBSSceneAutoRelease = UniquePtr<obs_scene_t, obs_scene_release>;
+using OBSSceneItemAutoRelease = UniquePtr<obs_sceneitem_t, obs_sceneitem_release>;
+using OBSDataAutoRelease = UniquePtr<obs_data_t, obs_data_release>;
+using OBSDataArrayAutoRelease = UniquePtr<obs_data_array_t, obs_data_array_release>;
+using OBSOutputAutoRelease = UniquePtr<obs_output_t, obs_output_release>;
+using OBSEncoderAutoRelease = UniquePtr<obs_encoder_t, obs_encoder_release>;
+using OBSServiceAutoRelease = UniquePtr<obs_service_t, obs_service_release>;
+using OBSCanvasAutoRelease = UniquePtr<obs_canvas_t, obs_canvas_release>;
+
+using OBSWeakObjectAutoRelease = UniquePtr<obs_weak_object_t, obs_weak_object_release>;
+using OBSWeakSourceAutoRelease = UniquePtr<obs_weak_source_t, obs_weak_source_release>;
+using OBSWeakOutputAutoRelease = UniquePtr<obs_weak_output_t, obs_weak_output_release>;
+using OBSWeakEncoderAutoRelease = UniquePtr<obs_weak_encoder_t, obs_weak_encoder_release>;
+using OBSWeakServiceAutoRelease = UniquePtr<obs_weak_service_t, obs_weak_service_release>;
+using OBSWeakCanvasAutoRelease = UniquePtr<obs_weak_canvas_t, obs_weak_canvas_release>;
+
+} // namespace RAIIv2
+
 template<typename T, void release(T)> class OBSRefAutoRelease {
 protected:
 	T val;
