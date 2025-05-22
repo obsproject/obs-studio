@@ -216,9 +216,19 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		RefreshQuickTransitions();
 
+		programIndicatorLayout = new QHBoxLayout();
+		programIndicatorLayout->setContentsMargins(0, 0, 0, 0);
+
 		programLabel = new QLabel(QTStr("StudioMode.ProgramSceneLabel"), this);
 		programLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 		programLabel->setProperty("class", "label-preview-title");
+
+		programIcon = new IconLabel();
+		programIcon->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+		programIcon->setProperty("class", "icon-stream");
+
+		programIndicatorLayout->addWidget(programIcon);
+		programIndicatorLayout->addWidget(programLabel);
 
 		programWidget = new QWidget();
 		programLayout = new QVBoxLayout();
@@ -226,7 +236,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		programLayout->setContentsMargins(0, 0, 0, 0);
 		programLayout->setSpacing(0);
 
-		programLayout->addWidget(programLabel);
+		programLayout->addLayout(programIndicatorLayout);
 		programLayout->addWidget(program);
 
 		programWidget->setLayout(programLayout);
@@ -251,6 +261,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		delete programOptions;
 		delete program;
 		delete programLabel;
+		delete programIcon;
+		delete programIndicatorLayout;
 		delete programWidget;
 
 		if (lastScene) {
@@ -334,9 +346,13 @@ void OBSBasic::UpdatePreviewProgramIndicators()
 					 : false;
 
 	ui->previewLabel->setVisible(labels);
+	ui->previewIcon->setVisible(labels);
 
 	if (programLabel)
 		programLabel->setVisible(labels);
+
+	if (programIcon)
+		programIcon->setVisible(labels);
 
 	if (!labels)
 		return;
@@ -351,6 +367,8 @@ void OBSBasic::UpdatePreviewProgramIndicators()
 
 	if (programLabel && programLabel->text() != program)
 		programLabel->setText(program);
+
+	emit StudioModeIndicatorsUpdated();
 }
 
 OBSSource OBSBasic::GetProgramSource()

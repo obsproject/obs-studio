@@ -122,6 +122,14 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/close.svg);
 }
 
+.icon-edit {
+    qproperty-icon: url(theme:Light/edit.svg);
+}
+
+.icon-stream {
+    qproperty-icon: url(theme:Light/settings/stream.svg);
+}
+
 QToolBarExtension {
     qproperty-icon: url(theme:Light/dots-vert.svg);
 }

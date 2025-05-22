@@ -37,7 +37,6 @@
 #include <models/SceneCollection.hpp>
 #include <settings/OBSBasicSettings.hpp>
 #include <utility/QuickTransition.hpp>
-#include <utility/SceneRenameDelegate.hpp>
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
@@ -320,8 +319,6 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	else
 		ui->actionSceneListMode->setChecked(true);
 
-	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
-
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;
 
@@ -381,8 +378,6 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	blog(LOG_INFO, "---------------------------------");
 
 	UpdateTitleBar();
-
-	connect(ui->scenes->itemDelegate(), &QAbstractItemDelegate::closeEditor, this, &OBSBasic::SceneNameEdited);
 
 	cpuUsageInfo = os_cpu_usage_info_start();
 	cpuUsageTimer = new QTimer(this);

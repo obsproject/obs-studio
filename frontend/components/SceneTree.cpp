@@ -1,4 +1,5 @@
 #include "SceneTree.hpp"
+#include "SceneTreeItem.hpp"
 
 #include <QScrollBar>
 #include <QTimer>
@@ -62,6 +63,21 @@ bool SceneTree::eventFilter(QObject *obj, QEvent *event)
 	return QObject::eventFilter(obj, event);
 }
 
+bool SceneTree::Edit(int row)
+{
+	SceneTreeItem *widget = qobject_cast<SceneTreeItem *>(itemWidget(item(row)));
+	if (widget->IsEditing()) {
+#ifdef __APPLE__
+		widget->ExitEditMode(true);
+#endif
+		return false;
+	}
+
+	widget->EnterEditMode();
+
+	return true;
+}
+
 void SceneTree::resizeEvent(QResizeEvent *event)
 {
 	if (gridMode) {
@@ -88,7 +104,10 @@ void SceneTree::resizeEvent(QResizeEvent *event)
 	} else {
 		setGridSize(QSize());
 		for (int i = 0; i < count(); i++) {
-			item(i)->setData(Qt::SizeHintRole, QVariant());
+			QWidget *widget = itemWidget(item(i));
+
+			if (widget)
+				item(i)->setSizeHint(QSize(widget->sizeHint()));
 		}
 	}
 
