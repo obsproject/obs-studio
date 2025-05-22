@@ -111,7 +111,7 @@ void YouTubeAppDock::AddYouTubeAppDock()
 	this->setMinimumSize(400, 300);
 	this->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	OBSBasic::Get()->AddDockWidget(this, Qt::RightDockWidgetArea);
+	OBSBasic::Get()->createDockWidget(Qt::RightDockWidgetArea, this);
 
 	if (IsYTServiceSelected()) {
 		const std::string url = InitYTUserUrl();

@@ -139,7 +139,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url, con
 		}
 	}
 
-	AddDockWidget(dock, Qt::RightDockWidgetArea, true);
+	createDockWidget(Qt::BottomDockWidgetArea, dock, true);
 	extraBrowserDocks.push_back(std::shared_ptr<QDockWidget>(dock));
 	extraBrowserDockNames.push_back(title);
 	extraBrowserDockTargets.push_back(url);

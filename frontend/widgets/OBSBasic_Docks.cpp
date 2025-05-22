@@ -74,7 +74,6 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 #undef RESET_DOCKLIST
 
 	restoreState(startingDockLayout);
-	ui->sideDocks->setChecked(true);
 
 	int cx = width();
 	int bottomDocksHeight = height();
@@ -91,6 +90,7 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	QList<QDockWidget *> bottomDocks{ui->mixerDock, ui->transitionsDock, controlsDock};
 
+	resizeDocks({ui->previewDock}, {height() * 750 / 100}, Qt::Vertical);
 	resizeDocks(bottomDocks, {bottomDocksHeight, bottomDocksHeight, bottomDocksHeight}, Qt::Vertical);
 	resizeDocks(bottomDocks, {cx * 45 / 100, cx * 14 / 100, cx * 16 / 100}, Qt::Horizontal);
 
@@ -129,14 +129,7 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 #endif
 }
 
-void OBSBasic::on_sideDocks_toggled(bool side)
-{
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks", side);
-
-	setDockCornersVertical(side);
-}
-
-void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool extraBrowser)
+void OBSBasic::createDockWidget(Qt::DockWidgetArea area, QDockWidget *dock, bool extraBrowser)
 {
 	if (dock->objectName().isEmpty())
 		return;

@@ -103,7 +103,7 @@ try {
 void RestreamAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "DockState", main->saveState().toBase64().constData());
+	config_set_string(main->Config(), service(), "DockState2", main->saveState().toBase64().constData());
 	OAuthStreamKey::SaveInternal();
 }
 
@@ -152,7 +152,7 @@ void RestreamAuth::LoadUI()
 	browser = cef->create_widget(chat, url, panel_cookies);
 	chat->SetWidget(browser);
 
-	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
+	main->createDockWidget(Qt::RightDockWidgetArea, chat);
 
 	/* ----------------------------------- */
 
@@ -168,7 +168,7 @@ void RestreamAuth::LoadUI()
 	browser = cef->create_widget(info, url, panel_cookies);
 	info->SetWidget(browser);
 
-	main->AddDockWidget(info, Qt::LeftDockWidgetArea);
+	main->createDockWidget(Qt::BottomDockWidgetArea, info);
 
 	/* ----------------------------------- */
 
@@ -184,7 +184,7 @@ void RestreamAuth::LoadUI()
 	browser = cef->create_widget(channels, url, panel_cookies);
 	channels->SetWidget(browser);
 
-	main->AddDockWidget(channels, Qt::LeftDockWidgetArea);
+	main->createDockWidget(Qt::BottomDockWidgetArea, channels);
 
 	/* ----------------------------------- */
 
@@ -201,7 +201,7 @@ void RestreamAuth::LoadUI()
 		info->setVisible(true);
 		channels->setVisible(true);
 	} else {
-		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState");
+		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState2");
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);
 	}

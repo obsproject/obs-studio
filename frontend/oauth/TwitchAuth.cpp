@@ -154,7 +154,7 @@ void TwitchAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "UUID", uuid.c_str());
 
 	if (uiLoaded) {
-		config_set_string(main->Config(), service(), "DockState", main->saveState().toBase64().constData());
+		config_set_string(main->Config(), service(), "DockState2", main->saveState().toBase64().constData());
 	}
 	OAuthStreamKey::SaveInternal();
 }
@@ -261,7 +261,7 @@ void TwitchAuth::LoadUI()
 
 	browser->setStartupScript(script);
 
-	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
+	main->createDockWidget(Qt::RightDockWidgetArea, chat);
 
 	/* ----------------------------------- */
 
@@ -271,7 +271,7 @@ void TwitchAuth::LoadUI()
 	if (firstLoad) {
 		chat->setVisible(true);
 	} else {
-		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState");
+		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState2");
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);
 	}
@@ -328,7 +328,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	info->SetWidget(browser);
 	browser->setStartupScript(script);
 
-	main->AddDockWidget(info, Qt::RightDockWidgetArea);
+	main->createDockWidget(Qt::RightDockWidgetArea, info);
 
 	/* ----------------------------------- */
 
@@ -347,7 +347,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	stats->SetWidget(browser);
 	browser->setStartupScript(script);
 
-	main->AddDockWidget(stats, Qt::RightDockWidgetArea);
+	main->createDockWidget(Qt::RightDockWidgetArea, stats);
 
 	/* ----------------------------------- */
 
@@ -367,7 +367,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	feed->SetWidget(browser);
 	browser->setStartupScript(script);
 
-	main->AddDockWidget(feed, Qt::RightDockWidgetArea);
+	main->createDockWidget(Qt::RightDockWidgetArea, feed);
 
 	/* ----------------------------------- */
 
@@ -393,7 +393,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 			feed->setVisible(false);
 		}
 
-		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState");
+		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState2");
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
 
 		if (main->isVisible() || !main->isMaximized())

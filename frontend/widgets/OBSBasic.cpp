@@ -285,6 +285,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	controlsDock->setWindowTitle(QTStr("Basic.Main.Controls"));
 	/* Parenting is done there so controls will be deleted alongside controlsDock */
 	controlsDock->setWidget(controls);
+	controlsDock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
 	connect(controls, &OBSBasicControls::StreamButtonClicked, this, &OBSBasic::StreamActionTriggered);
 
@@ -346,11 +347,17 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	/* Scenes and Sources dock on left
 	 * This specific arrangement can't be set up in Qt Designer */
-	addDockWidget(Qt::LeftDockWidgetArea, ui->scenesDock);
+
+	splitDockWidget(ui->scenesDock, ui->previewDock, Qt::Horizontal);
 	splitDockWidget(ui->scenesDock, ui->sourcesDock, Qt::Vertical);
+
+	splitDockWidget(ui->previewDock, ui->mixerDock, Qt::Vertical);
+
+	splitDockWidget(ui->mixerDock, ui->transitionsDock, Qt::Horizontal);
+	splitDockWidget(ui->transitionsDock, controlsDock, Qt::Horizontal);
+
 	int sideDockWidth = std::min(width() * 30 / 100, 320);
 	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
-	addDockWidget(Qt::BottomDockWidgetArea, controlsDock);
 
 	startingDockLayout = saveState();
 
@@ -579,6 +586,9 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
 	UpdatePreviewOverflowSettings();
+
+	QWidget *emptyTitle = new QWidget();
+	ui->previewDock->setTitleBarWidget(emptyTitle);
 }
 
 static const double scaled_vals[] = {1.0, 1.25, (1.0 / 0.75), 1.5, (1.0 / 0.6), 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 0.0};
@@ -1215,7 +1225,7 @@ void OBSBasic::OBSInit()
 		NewYouTubeAppDock();
 #endif
 
-	const char *dockStateStr = config_get_string(App()->GetUserConfig(), "BasicWindow", "DockState");
+	const char *dockStateStr = config_get_string(App()->GetUserConfig(), "BasicWindow", "DockState2");
 
 	if (!dockStateStr) {
 		on_resetDocks_triggered(true);
@@ -1241,9 +1251,7 @@ void OBSBasic::OBSInit()
 	ui->lockDocks->setChecked(docksLocked);
 	ui->lockDocks->blockSignals(false);
 
-	bool sideDocks = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks");
-	ui->sideDocks->setChecked(sideDocks);
-	setDockCornersVertical(sideDocks);
+	setDockCornersVertical(true);
 
 	SystemTray(true);
 
@@ -1859,7 +1867,6 @@ void OBSBasic::saveAll()
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "EditPropertiesMode", editPropertiesMode);
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewProgramMode", IsPreviewProgramMode());
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "DocksLocked", ui->lockDocks->isChecked());
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks", ui->sideDocks->isChecked());
 	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 }
 
