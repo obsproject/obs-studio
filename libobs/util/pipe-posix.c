@@ -24,6 +24,8 @@
 #include "bmem.h"
 #include "pipe.h"
 
+extern char **environ;
+
 struct os_process_pipe {
 	bool read_pipe;
 	int pid;
@@ -88,7 +90,7 @@ os_process_pipe_t *os_process_pipe_create_internal(const char *bin, char **argv,
 	posix_spawn_file_actions_adddup2(&file_actions, errfds[1], STDERR_FILENO);
 
 	int pid;
-	int ret = posix_spawn(&pid, bin, &file_actions, NULL, (char *const *)argv, NULL);
+	int ret = posix_spawn(&pid, bin, &file_actions, NULL, (char *const *)argv, environ);
 
 	posix_spawn_file_actions_destroy(&file_actions);
 
