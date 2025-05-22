@@ -49,4 +49,7 @@ public:
 
 public slots:
 	void Save();
+
+signals:
+	void screenshotTaken(const QString &path);
 };
