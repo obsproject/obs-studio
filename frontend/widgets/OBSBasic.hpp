@@ -456,6 +456,7 @@ public:
 	void RemoveDockWidget(const QString &name);
 	bool IsDockObjectNameUsed(const QString &name);
 	void AddCustomDockWidget(QDockWidget *dock);
+	void setDockCornersVertical(bool vertical);
 
 private slots:
 	void on_resetDocks_triggered(bool force = false);
