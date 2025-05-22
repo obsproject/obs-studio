@@ -250,63 +250,6 @@
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="QPushButton" name="previewZoomInButton">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>20</width>
-                    <height>16</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>20</width>
-                    <height>16</height>
-                   </size>
-                  </property>
-                  <property name="toolTip">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
-                  </property>
-                  <property name="accessibleName">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="icon">
-                   <iconset resource="obs.qrc">
-                    <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
-                  </property>
-                  <property name="iconSize">
-                   <size>
-                    <width>8</width>
-                    <height>8</height>
-                   </size>
-                  </property>
-                  <property name="toolButton" stdset="0">
-                   <bool>true</bool>
-                  </property>
-                  <property name="class" stdset="0">
-                   <string>icon-plus</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="OBSPreviewScalingLabel" name="previewScalePercent">
-                  <property name="text">
-                   <string>100%</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
                  <widget class="QPushButton" name="previewZoomOutButton">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -327,10 +270,10 @@
                    </size>
                   </property>
                   <property name="toolTip">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
                   </property>
                   <property name="accessibleName">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
                   </property>
                   <property name="text">
                    <string/>
@@ -350,6 +293,63 @@
                   </property>
                   <property name="class" stdset="0">
                    <string>icon-minus</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="OBSPreviewScalingLabel" name="previewScalePercent">
+                  <property name="text">
+                   <string>100%</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="previewZoomInButton">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>20</width>
+                    <height>16</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>20</width>
+                    <height>16</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                  </property>
+                  <property name="accessibleName">
+                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="obs.qrc">
+                    <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>8</width>
+                    <height>8</height>
+                   </size>
+                  </property>
+                  <property name="toolButton" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="class" stdset="0">
+                   <string>icon-plus</string>
                   </property>
                  </widget>
                 </item>
