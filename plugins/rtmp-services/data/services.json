@@ -3537,6 +3537,23 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
-        }
+        },
+        {
+            "name": "Rumble",
+            "stream_key_link": "https://rumble.com/account/static-stream-key",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.rumble.com/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000
+            }
+        },
     ]
 }
