@@ -549,6 +549,11 @@ SourceTreeItem .checkbox-icon {
     margin-left: var(--spacing_large);
 }
 
+SourceTree .indicator-expand {
+    margin-right: var(--spacing_large);
+    margin-left: 0;
+}
+
 QMenu::item:selected,
 QListView::item:selected,
 QListWidget::item:selected {
