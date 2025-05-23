@@ -39,14 +39,14 @@ target_sources(
     auto-scene-switcher.cpp
     auto-scene-switcher.hpp
     frontend-tools.c
-    output-timer.cpp
-    output-timer.hpp
+    OutputTimer.cpp
+    OutputTimer.hpp
     tool-helpers.hpp
 )
 
 target_sources(
   frontend-tools
-  PRIVATE forms/auto-scene-switcher.ui forms/captions.ui forms/output-timer.ui forms/scripts.ui
+  PRIVATE forms/auto-scene-switcher.ui forms/captions.ui forms/OutputTimer.ui forms/scripts.ui
 )
 
 target_compile_options(

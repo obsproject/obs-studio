@@ -11,8 +11,8 @@ void InitCaptions();
 void FreeCaptions();
 #endif
 
-void InitOutputTimer();
-void FreeOutputTimer();
+void initOutputTimer();
+void freeOutputTimer();
 
 #if defined(ENABLE_SCRIPTING)
 void InitScripts();
@@ -25,7 +25,7 @@ bool obs_module_load(void)
 	InitCaptions();
 #endif
 	InitSceneSwitcher();
-	InitOutputTimer();
+	initOutputTimer();
 #if defined(ENABLE_SCRIPTING)
 	InitScripts();
 #endif
@@ -38,7 +38,7 @@ void obs_module_unload(void)
 	FreeCaptions();
 #endif
 	FreeSceneSwitcher();
-	FreeOutputTimer();
+	freeOutputTimer();
 #if defined(ENABLE_SCRIPTING)
 	FreeScripts();
 #endif
