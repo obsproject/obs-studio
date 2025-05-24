@@ -880,16 +880,32 @@ bool OBSApp::SetTheme(const QString &name)
 	/* Check if OBS appearance settings are used in the theme */
 	currentTheme->usesFontScale = false;
 	currentTheme->usesDensity = false;
-	for (const OBSThemeVariable &var_ : vars) {
-		if (var_.type != OBSThemeVariable::Alias)
+	for (const OBSThemeVariable &var : vars) {
+		switch (var.type) {
+		case OBSThemeVariable::Color:
+		case OBSThemeVariable::Size:
+		case OBSThemeVariable::Number:
+		case OBSThemeVariable::String:
 			continue;
+		case OBSThemeVariable::Alias:
+			if (var.value.toString() == "obsFontScale") {
+				currentTheme->usesFontScale = true;
+			}
 
-		if (var_.value.toString() == "obsFontScale") {
-			currentTheme->usesFontScale = true;
-		}
-
-		if (var_.value.toString() == "obsPadding") {
-			currentTheme->usesDensity = true;
+			if (var.value.toString() == "obsPadding") {
+				currentTheme->usesDensity = true;
+			}
+			break;
+		case OBSThemeVariable::Calc:
+		case OBSThemeVariable::Max:
+		case OBSThemeVariable::Min:
+			if (var.value.toStringList().contains("obsFontScale")) {
+				currentTheme->usesFontScale = true;
+			}
+			if (var.value.toStringList().contains("obsPadding")) {
+				currentTheme->usesDensity = true;
+			}
+			break;
 		}
 	}
 
