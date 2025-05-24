@@ -287,7 +287,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "ShowContextToolbars", true);
 	config_set_default_bool(userConfig, "BasicWindow", "StudioModeLabels", true);
 
-	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolControl", false);
+	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolControl", true);
 
 	config_set_default_bool(userConfig, "BasicWindow", "MultiviewMouseSwitch", true);
 

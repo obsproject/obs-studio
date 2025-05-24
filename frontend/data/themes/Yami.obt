@@ -627,6 +627,21 @@ OBSDock > QWidget {
     border-top: none;
 }
 
+/* Reset styling for the preview dock */
+#previewDock > QWidget {
+    background: var(--bg_base);
+    border-radius: var(--border_radius);
+    border: none;
+    border: 1px solid var(--border_color);
+    
+}
+
+#previewFrame {
+    background: var(--grey7);
+    margin-top: var(--spacing_large);
+    border: 1px solid var(--grey7);
+}
+
 #transitionsFrame {
     padding: var(--padding_container);
 }
@@ -800,6 +815,9 @@ QScrollBar::handle:disabled {
     background-color: var(--bg_base);
     margin-top: 4px;
     border-radius: var(--border_radius);
+    margin-bottom: var(--spacing_base);
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
 }
 
 #contextContainer QPushButton {
@@ -1981,34 +1999,70 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     background: var(--bg_base);
 }
 
-#previewScalePercent,
+#previewXContainer {
+    border-top: 1px solid var(--grey6);
+    max-height: var(--input_height_half);
+    padding: 0;
+    color: var(--text_muted);
+}
+
+#previewZoomOutButton,
+#previewZoomInButton,
 #previewScalingMode {
     background: transparent;
     color: var(--text_muted);
     font-size: var(--font_xsmall);
-    height: 14px;
-    max-height: 14px;
+    height: var(--input_height_half);
+    max-height: var(--input_height_half);
     padding: 0px;
     margin: 0;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 0;
 }
 
-#previewXContainer {
-    border: 1px solid var(--grey6);
+#previewScalingMode,
+#previewScalePercent {
+    color: var(--text_muted);
+    font-size: var(--font_xsmall);
 }
 
-#previewScalePercent {
-    padding: 0px var(--input_text_padding);
-    min-width: var(--preview_scale_width);
+#previewZoomOutButton,
+#previewZoomInButton {
+    padding: 0px var(--padding_large);
 }
 
 #previewScalingMode {
     padding: 0px var(--input_text_padding);
-    border: 1px solid var(--grey6);
+    border-left-color: var(--grey6);
+    border-right-color: var(--grey6);
 }
 
-#previewScalingMode:hover,
+#previewScalingMode QAbstractItemView {
+    padding: 0;
+}
+
+#previewScalingMode QAbstractItemView::item {
+    height: var(--input_height_half);
+    padding: var(--padding_base) var(--padding_large);
+    border-radius: var(--border_radius_small);
+}
+
+#previewZoomOutButton:hover,
+#previewZoomInButton:hover,
+#previewScalingMode:hover {
+    background-color: var(--grey6);
+    border-color: transparent;
+    color: var(--white3);
+}
+
+#previewZoomOutButton:pressed,
+#previewZoomInButton:pressed,
+#previewScalingMode:pressed {
+    background-color: var(--button_down);
+}
+
+#previewZoomOutButton:focus,
+#previewZoomInButton:focus,
 #previewScalingMode:focus {
     border-color: var(--input_border_hover);
 }
@@ -2018,50 +2072,31 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     border-color: var(--input_border_focus);
 }
 
-#previewXScrollBar,
-#previewYScrollBar {
+#previewScalePercent {
+    padding: 0px var(--input_text_padding);
+    min-width: var(--preview_scale_width);
+}
+
+#previewContainer QScrollBar {
     background: transparent;
-    border: 1px solid var(--grey6);
+    border: none;
     border-radius: 0;
+    margin: 0;
 }
 
-#previewXScrollBar {
-    border-left: none;
-    height: 16px;
-}
-
-#previewXScrollBar::handle,
-#previewYScrollBar::handle {
+#previewContainer QScrollBar::handle {
     margin: 3px;
 }
 
-#previewYScrollBar {
+#previewContainer QScrollBar::handle:pressed {
+    background-color: var(--grey6);
+}
+
+#previewContainer #previewXScrollBar {
+    height: 16px;
+}
+
+#previewContainer #previewYScrollBar {
     width: 16px;
-}
-
-#previewZoomInButton {
-    border: none;
-    border-radius: 0px;
-    outline: none;
-}
-
-#previewZoomOutButton {
-    border: none;
-    border-radius: 0px;
-    outline: none;
-}
-
-#previewZoomInButton:!hover,
-#previewZoomOutButton:!hover {
-    background-color: transparent;
-}
-
-#previewZoomInButton:pressed,
-#previewZoomOutButton:pressed {
-    background-color: var(--button_bg);
-}
-
-#previewZoomInButton:focus,
-#previewZoomOutButton:focus {
-    border: 1px solid var(--input_border_hover);
+    border-left: 1px solid var(--grey6);
 }
