@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
-legacy_check()
-
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 find_package(MbedTLS REQUIRED)
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 find_package(ZLIB REQUIRED)
 
 if(NOT TARGET happy-eyeballs)
@@ -73,7 +73,7 @@ target_link_libraries(
     OBS::libobs
     OBS::happy-eyeballs
     OBS::opts-parser
-    MbedTLS::MbedTLS
+    MbedTLS::mbedtls
     ZLIB::ZLIB
     $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
     $<$<PLATFORM_ID:Windows>:crypt32>
@@ -85,7 +85,10 @@ target_link_libraries(
 )
 
 # Remove once jansson has been fixed on obs-deps
-target_link_options(obs-outputs PRIVATE $<$<PLATFORM_ID:Windows>:/IGNORE:4098>)
+target_link_options(
+  obs-outputs
+  PRIVATE $<$<PLATFORM_ID:Windows>:/IGNORE:4098> $<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:DEBUG>>:/NODEFAULTLIB:MSVCRT>
+)
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-outputs.rc)

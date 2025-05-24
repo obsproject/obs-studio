@@ -37,8 +37,7 @@ AEffect *VSTPlugin::loadEffect()
 	mainEntryPoint = (vstPluginMain)os_dlsym(soHandle, "VSTPluginMain");
 
 	if (mainEntryPoint == nullptr) {
-		mainEntryPoint =
-			(vstPluginMain)os_dlsym(soHandle, "VstPluginMain()");
+		mainEntryPoint = (vstPluginMain)os_dlsym(soHandle, "VstPluginMain()");
 	}
 
 	if (mainEntryPoint == nullptr) {

@@ -8,8 +8,7 @@
 
 class DeckLinkDevice;
 
-typedef void (*DeviceChangeCallback)(void *param, DeckLinkDevice *device,
-				     bool added);
+typedef void (*DeviceChangeCallback)(void *param, DeckLinkDevice *device, bool added);
 
 struct DeviceChangeInfo {
 	DeviceChangeCallback callback;
@@ -58,8 +57,7 @@ public:
 		for (size_t i = 0; i < callbacks.size(); i++) {
 			DeviceChangeInfo &curCB = callbacks[i];
 
-			if (curCB.callback == callback &&
-			    curCB.param == param) {
+			if (curCB.callback == callback && curCB.param == param) {
 				callbacks.erase(callbacks.begin() + i);
 				return;
 			}
@@ -70,10 +68,7 @@ public:
 
 	inline void Lock() { deviceMutex.lock(); }
 	inline void Unlock() { deviceMutex.unlock(); }
-	inline const std::vector<DeckLinkDevice *> &GetDevices() const
-	{
-		return devices;
-	}
+	inline const std::vector<DeckLinkDevice *> &GetDevices() const { return devices; }
 
 	ULONG STDMETHODCALLTYPE AddRef(void);
 	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);

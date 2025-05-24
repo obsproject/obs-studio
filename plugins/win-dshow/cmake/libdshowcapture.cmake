@@ -45,7 +45,7 @@ target_include_directories(
 )
 
 target_compile_definitions(libdshowcapture INTERFACE _UP_WINDOWS=1)
-target_compile_options(libdshowcapture INTERFACE /wd4018)
+target_compile_options(libdshowcapture INTERFACE /wd4005 /wd4018)
 
 get_target_property(target_sources libdshowcapture INTERFACE_SOURCES)
 set(target_headers ${target_sources})

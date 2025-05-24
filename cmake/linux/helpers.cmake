@@ -19,6 +19,7 @@ function(set_target_properties_obs target)
   endwhile()
 
   get_target_property(target_type ${target} TYPE)
+  set(OBS_SOVERSION 30)
 
   if(target_type STREQUAL EXECUTABLE)
     install(TARGETS ${target} RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Runtime)
@@ -59,8 +60,8 @@ function(set_target_properties_obs target)
     set_target_properties(
       ${target}
       PROPERTIES
-        VERSION ${OBS_VERSION_CANONICAL}
-        SOVERSION ${OBS_VERSION_MAJOR}
+        VERSION ${OBS_SOVERSION}
+        SOVERSION ${OBS_SOVERSION}
         BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
         INSTALL_RPATH "${OBS_LIBRARY_RPATH}"
     )
@@ -96,7 +97,7 @@ function(set_target_properties_obs target)
         POST_BUILD
         COMMAND
           "${CMAKE_COMMAND}" -E create_symlink
-          "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.${OBS_VERSION_MAJOR}"
+          "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.${OBS_SOVERSION}"
           "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.0"
         COMMAND
           "${CMAKE_COMMAND}" -E copy_if_different
@@ -107,13 +108,13 @@ function(set_target_properties_obs target)
     endif()
   elseif(target_type STREQUAL MODULE_LIBRARY)
     if(target STREQUAL obs-browser)
-      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_VERSION_MAJOR})
+      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_SOVERSION})
     else()
       set_target_properties(
         ${target}
         PROPERTIES
           VERSION 0
-          SOVERSION ${OBS_VERSION_MAJOR}
+          SOVERSION ${OBS_SOVERSION}
           BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
           INSTALL_RPATH "${OBS_MODULE_RPATH}"
       )
@@ -173,9 +174,8 @@ function(set_target_properties_obs target)
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${imported_location}" "${cef_location}/chrome-sandbox"
               "${cef_location}/libEGL.so" "${cef_location}/libGLESv2.so" "${cef_location}/libvk_swiftshader.so"
-              "${cef_location}/libvulkan.so.1" "${cef_location}/snapshot_blob.bin"
-              "${cef_location}/v8_context_snapshot.bin" "${cef_location}/vk_swiftshader_icd.json"
-              "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/"
+              "${cef_location}/libvulkan.so.1" "${cef_location}/v8_context_snapshot.bin"
+              "${cef_location}/vk_swiftshader_icd.json" "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak" "${cef_root_location}/Resources/icudtl.dat"
@@ -194,7 +194,6 @@ function(set_target_properties_obs target)
               "${cef_location}/libGLESv2.so"
               "${cef_location}/libvk_swiftshader.so"
               "${cef_location}/libvulkan.so.1"
-              "${cef_location}/snapshot_blob.bin"
               "${cef_location}/v8_context_snapshot.bin"
               "${cef_location}/vk_swiftshader_icd.json"
               "${cef_root_location}/Resources/chrome_100_percent.pak"
@@ -270,7 +269,7 @@ endfunction()
 # Helper function to add a specific resource to a bundle
 function(target_add_resource target resource)
   get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
-  if(${ARGN})
+  if(ARGN)
     set(target_destination "${ARGN}")
   elseif(${target} IN_LIST obs_module_list)
     set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/${target}")

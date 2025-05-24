@@ -79,8 +79,7 @@ int happy_eyeballs_create(struct happy_eyeballs_ctx **context);
  *
  * This function will return -EINVAL if context, hostname, or port are not set.
  */
-int happy_eyeballs_connect(struct happy_eyeballs_ctx *context,
-			   const char *hostname, int port);
+int happy_eyeballs_connect(struct happy_eyeballs_ctx *context, const char *hostname, int port);
 
 /**
  * Optionally set the interface address. You may pass 0 and NULL for these
@@ -89,8 +88,7 @@ int happy_eyeballs_connect(struct happy_eyeballs_ctx *context,
  *
  * Returns 0 on success or -EINVAL if context is not set.
  */
-int happy_eyeballs_set_bind_addr(struct happy_eyeballs_ctx *context,
-				 socklen_t addr_len,
+int happy_eyeballs_set_bind_addr(struct happy_eyeballs_ctx *context, socklen_t addr_len,
 				 struct sockaddr_storage *addr_storage);
 
 /**
@@ -113,8 +111,7 @@ SOCKET happy_eyeballs_get_socket_fd(const struct happy_eyeballs_ctx *context);
  * On success, returns the address length of the sockaddr or -EINVAL if context
  * is not set.
  */
-int happy_eyeballs_get_remote_addr(const struct happy_eyeballs_ctx *context,
-				   struct sockaddr_storage *addr);
+int happy_eyeballs_get_remote_addr(const struct happy_eyeballs_ctx *context, struct sockaddr_storage *addr);
 
 /**
  * Returns the current error code for the context or -EINVAL if context is not
@@ -126,21 +123,18 @@ int happy_eyeballs_get_error_code(const struct happy_eyeballs_ctx *context);
  * Returns the current error message for the context. The returned value may be
  * NULL if there is no error message.
  */
-const char *
-happy_eyeballs_get_error_message(const struct happy_eyeballs_ctx *context);
+const char *happy_eyeballs_get_error_message(const struct happy_eyeballs_ctx *context);
 
 /**
  * Returns the amount of time domain name resolution took, in nanoseconds
  */
-uint64_t happy_eyeballs_get_name_resolution_time_ns(
-	const struct happy_eyeballs_ctx *context);
+uint64_t happy_eyeballs_get_name_resolution_time_ns(const struct happy_eyeballs_ctx *context);
 
 /**
  * Returns the amount of time connection (or failure) took, in nanoseconds, or
  * 0 if happy eyeballs has not yet completed.
  */
-uint64_t
-happy_eyeballs_get_connection_time_ns(const struct happy_eyeballs_ctx *context);
+uint64_t happy_eyeballs_get_connection_time_ns(const struct happy_eyeballs_ctx *context);
 
 /**
  * Test if the process has completed without blocking. This function will
@@ -169,8 +163,7 @@ int happy_eyeballs_try(struct happy_eyeballs_ctx *context);
  * continue to wait by calling this function again, or call
  * happy_eyeballs_destroy to close the session.
  */
-int happy_eyeballs_timedwait(struct happy_eyeballs_ctx *context,
-			     unsigned long time_in_millis);
+int happy_eyeballs_timedwait(struct happy_eyeballs_ctx *context, unsigned long time_in_millis);
 
 /**
  * Call timedwait with a default wait duration of 25 seconds.

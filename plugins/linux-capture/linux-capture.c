@@ -26,6 +26,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 }
 
 extern struct obs_source_info xshm_input;
+extern struct obs_source_info xshm_input_v2;
 
 bool obs_module_load(void)
 {
@@ -33,6 +34,7 @@ bool obs_module_load(void)
 
 	if (platform == OBS_NIX_PLATFORM_X11_EGL) {
 		obs_register_source(&xshm_input);
+		obs_register_source(&xshm_input_v2);
 		xcomposite_load();
 	}
 

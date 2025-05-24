@@ -58,28 +58,24 @@ static inline void vec3_copy(struct vec3 *dst, const struct vec3 *v)
 
 EXPORT void vec3_from_vec4(struct vec3 *dst, const struct vec4 *v);
 
-static inline void vec3_add(struct vec3 *dst, const struct vec3 *v1,
-			    const struct vec3 *v2)
+static inline void vec3_add(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2)
 {
 	dst->m = _mm_add_ps(v1->m, v2->m);
 	dst->w = 0.0f;
 }
 
-static inline void vec3_sub(struct vec3 *dst, const struct vec3 *v1,
-			    const struct vec3 *v2)
+static inline void vec3_sub(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2)
 {
 	dst->m = _mm_sub_ps(v1->m, v2->m);
 	dst->w = 0.0f;
 }
 
-static inline void vec3_mul(struct vec3 *dst, const struct vec3 *v1,
-			    const struct vec3 *v2)
+static inline void vec3_mul(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2)
 {
 	dst->m = _mm_mul_ps(v1->m, v2->m);
 }
 
-static inline void vec3_div(struct vec3 *dst, const struct vec3 *v1,
-			    const struct vec3 *v2)
+static inline void vec3_div(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2)
 {
 	dst->m = _mm_div_ps(v1->m, v2->m);
 	dst->w = 0.0f;
@@ -117,8 +113,7 @@ static inline float vec3_dot(const struct vec3 *v1, const struct vec3 *v2)
 	return add.x;
 }
 
-static inline void vec3_cross(struct vec3 *dst, const struct vec3 *v1,
-			      const struct vec3 *v2)
+static inline void vec3_cross(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2)
 {
 	__m128 s1v1 = _mm_shuffle_ps(v1->m, v1->m, _MM_SHUFFLE(3, 0, 2, 1));
 	__m128 s1v2 = _mm_shuffle_ps(v2->m, v2->m, _MM_SHUFFLE(3, 1, 0, 2));
@@ -154,21 +149,17 @@ static inline float vec3_dist(const struct vec3 *v1, const struct vec3 *v2)
 static inline void vec3_norm(struct vec3 *dst, const struct vec3 *v)
 {
 	float dot_val = vec3_dot(v, v);
-	dst->m = (dot_val > 0.0f)
-			 ? _mm_mul_ps(v->m, _mm_set1_ps(1.0f / sqrtf(dot_val)))
-			 : _mm_setzero_ps();
+	dst->m = (dot_val > 0.0f) ? _mm_mul_ps(v->m, _mm_set1_ps(1.0f / sqrtf(dot_val))) : _mm_setzero_ps();
 }
 
-static inline bool vec3_close(const struct vec3 *v1, const struct vec3 *v2,
-			      float epsilon)
+static inline bool vec3_close(const struct vec3 *v1, const struct vec3 *v2, float epsilon)
 {
 	struct vec3 test;
 	vec3_sub(&test, v1, v2);
 	return test.x < epsilon && test.y < epsilon && test.z < epsilon;
 }
 
-static inline void vec3_min(struct vec3 *dst, const struct vec3 *v1,
-			    const struct vec3 *v2)
+static inline void vec3_min(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2)
 {
 	dst->m = _mm_min_ps(v1->m, v2->m);
 	dst->w = 0.0f;
@@ -180,8 +171,7 @@ static inline void vec3_minf(struct vec3 *dst, const struct vec3 *v, float f)
 	dst->w = 0.0f;
 }
 
-static inline void vec3_max(struct vec3 *dst, const struct vec3 *v1,
-			    const struct vec3 *v2)
+static inline void vec3_max(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2)
 {
 	dst->m = _mm_max_ps(v1->m, v2->m);
 	dst->w = 0.0f;
@@ -219,18 +209,13 @@ static inline void vec3_ceil(struct vec3 *dst, const struct vec3 *v)
 
 EXPORT float vec3_plane_dist(const struct vec3 *v, const struct plane *p);
 
-EXPORT void vec3_transform(struct vec3 *dst, const struct vec3 *v,
-			   const struct matrix4 *m);
+EXPORT void vec3_transform(struct vec3 *dst, const struct vec3 *v, const struct matrix4 *m);
 
-EXPORT void vec3_rotate(struct vec3 *dst, const struct vec3 *v,
-			const struct matrix3 *m);
-EXPORT void vec3_transform3x4(struct vec3 *dst, const struct vec3 *v,
-			      const struct matrix3 *m);
+EXPORT void vec3_rotate(struct vec3 *dst, const struct vec3 *v, const struct matrix3 *m);
+EXPORT void vec3_transform3x4(struct vec3 *dst, const struct vec3 *v, const struct matrix3 *m);
 
-EXPORT void vec3_mirror(struct vec3 *dst, const struct vec3 *v,
-			const struct plane *p);
-EXPORT void vec3_mirrorv(struct vec3 *dst, const struct vec3 *v,
-			 const struct vec3 *vec);
+EXPORT void vec3_mirror(struct vec3 *dst, const struct vec3 *v, const struct plane *p);
+EXPORT void vec3_mirrorv(struct vec3 *dst, const struct vec3 *v, const struct vec3 *vec);
 
 EXPORT void vec3_rand(struct vec3 *dst, int positive_only);
 

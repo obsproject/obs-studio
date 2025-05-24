@@ -29,17 +29,16 @@ static void os_get_path_extension_test(void **state)
 {
 	UNUSED_PARAMETER(state);
 
-	static struct testcase testcases[] = {
-		{"/home/user/a.txt", ".txt"},
-		{"C:\\Users\\user\\Documents\\video.mp4", ".mp4"},
-		{"./\\", NULL},
-		{".\\/", NULL},
-		{"/.\\", NULL},
-		{"/\\.", "."},
-		{"\\/.", "."},
-		{"\\./", NULL},
-		{"", NULL},
-		{NULL, NULL}};
+	static struct testcase testcases[] = {{"/home/user/a.txt", ".txt"},
+					      {"C:\\Users\\user\\Documents\\video.mp4", ".mp4"},
+					      {"./\\", NULL},
+					      {".\\/", NULL},
+					      {"/.\\", NULL},
+					      {"/\\.", "."},
+					      {"\\/.", "."},
+					      {"\\./", NULL},
+					      {"", NULL},
+					      {NULL, NULL}};
 
 	run_testcases(testcases);
 }

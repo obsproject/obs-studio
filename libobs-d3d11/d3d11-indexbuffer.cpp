@@ -35,8 +35,8 @@ void gs_index_buffer::InitBuffer()
 		throw HRError("Failed to create buffer", hr);
 }
 
-gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type,
-				 void *indices, size_t num, uint32_t flags)
+gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type, void *indices, size_t num,
+				 uint32_t flags)
 	: gs_obj(device, gs_type::gs_index_buffer),
 	  dynamic((flags & GS_DYNAMIC) != 0),
 	  type(type),

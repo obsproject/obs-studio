@@ -4,7 +4,7 @@ on:
 jobs:
   check-event:
     name: Event Data 🔎
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -59,7 +59,7 @@ jobs:
 
   macos-build:
     name: macOS 🍏
-    runs-on: macos-14
+    runs-on: macos-15
     needs: check-event
     strategy:
       fail-fast: false
@@ -80,18 +80,18 @@ jobs:
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          print '::group::Enable Xcode 15.2'
-          sudo xcode-select --switch /Applications/Xcode_15.2.app/Contents/Developer
+          print '::group::Enable Xcode 16.1'
+          sudo xcode-select --switch /Applications/Xcode_16.1.0.app/Contents/Developer
           print '::endgroup::'
 
           print '::group::Clean Homebrew Environment'
-          local -a to_remove=()
-
-          for formula (curl) {
-            if [[ -d ${HOMEBREW_PREFIX}/opt/${formula} ]] to_remove+=(${formula})
+          local -a unwanted_formulas=()
+          local -a remove_formulas=()
+          for formula (${unwanted_formulas}) {
+            if [[ -d ${HOMEBREW_PREFIX}/Cellar/${formula} ]] remove_formulas+=(${formula})
           }
 
-          if (( #to_remove )) brew uninstall --ignore-dependencies ${to_remove}
+          if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
           print '::endgroup::'
 
           local -A arch_names=(x86_64 intel arm64 apple)
@@ -172,7 +172,7 @@ jobs:
     name: Ubuntu 🐧
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
+        os: [ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     needs: check-event
     defaults:
@@ -241,7 +241,7 @@ jobs:
 
   flatpak-build:
     name: Flatpak 📦
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: check-event
     defaults:
       run:
@@ -249,7 +249,7 @@ jobs:
     env:
       FLATPAK_BUILD_SHARE_PATH: flatpak_app/files/share
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.6
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
       options: --privileged
     steps:
       - uses: actions/checkout@v4
@@ -268,14 +268,10 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          echo '::group::Install actions/gh-actions-cache'
-          gh extension install actions/gh-actions-cache
-          echo '::endgroup::'
-
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
           cache_ref='master'
-          read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+          read -r id key size unit created accessed <<< \
+            "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
 
           if [[ "${key}" ]]; then
             echo "cacheHit=true" >> $GITHUB_OUTPUT
@@ -292,7 +288,7 @@ jobs:
           path: build-aux/com.obsproject.Studio.json
 
       - name: Build Flatpak Manifest 🧾
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@23796715b3dfa4c86ddf50cf29c3cc8b3c82dca8
+        uses: flatpak/flatpak-github-actions/flatpak-builder@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         with:
           build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
           bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
@@ -329,6 +325,9 @@ jobs:
 
   windows-build:
     name: Windows 🪟
+    strategy:
+      matrix:
+        architecture: [x64, arm64]
     runs-on: windows-2022
     needs: check-event
     defaults:
@@ -339,15 +338,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
-      - uses: actions/cache@v4
-        id: ccache-cache
-        if: github.event_name == 'pull_request'
-        with:
-          path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-x86_64-
 
       - name: Build OBS Studio 🧱
         uses: ./.github/actions/build-obs
@@ -362,18 +352,18 @@ jobs:
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
           GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
         with:
-          target: x64
+          target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
         with:
-          target: x64
+          target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v4
         with:
-          name: obs-studio-windows-x64-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_x64/obs-studio-*-windows-x64.zip
+          name: obs-studio-windows-${{ matrix.architecture }}-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.zip

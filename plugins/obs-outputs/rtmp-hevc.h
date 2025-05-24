@@ -20,5 +20,4 @@
 #include <stdint.h>
 #include <stddef.h>
 
-extern size_t obs_parse_hevc_header(uint8_t **header, const uint8_t *data,
-				    size_t size);
+extern size_t obs_parse_hevc_header(uint8_t **header, const uint8_t *data, size_t size);

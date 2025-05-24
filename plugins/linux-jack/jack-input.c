@@ -135,10 +135,8 @@ static obs_properties_t *jack_input_properties(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_int(props, "channels", obs_module_text("Channels"),
-			       1, 8, 1);
-	obs_properties_add_bool(props, "startjack",
-				obs_module_text("StartJACKServer"));
+	obs_properties_add_int(props, "channels", obs_module_text("Channels"), 1, 8, 1);
+	obs_properties_add_bool(props, "startjack", obs_module_text("StartJACKServer"));
 
 	return props;
 }

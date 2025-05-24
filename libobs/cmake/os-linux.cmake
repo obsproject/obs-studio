@@ -1,7 +1,7 @@
 find_package(LibUUID REQUIRED)
 find_package(X11 REQUIRED)
-find_package(X11-xcb REQUIRED)
-find_package(Xcb REQUIRED xcb OPTIONAL_COMPONENTS xcb-xinput)
+find_package(X11_XCB REQUIRED)
+find_package(XCB REQUIRED XCB OPTIONAL_COMPONENTS XINPUT)
 find_package(Gio)
 
 target_sources(
@@ -20,7 +20,6 @@ target_sources(
 target_compile_definitions(
   libobs
   PRIVATE
-    USE_XDG
     OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}"
     $<$<COMPILE_LANG_AND_ID:C,GNU>:ENABLE_DARRAY_TYPE_TEST>
     $<$<COMPILE_LANG_AND_ID:CXX,GNU>:ENABLE_DARRAY_TYPE_TEST>
@@ -48,12 +47,13 @@ endif()
 target_link_libraries(
   libobs
   PRIVATE
-    X11::x11-xcb
-    xcb::xcb
+    X11::X11
+    X11::XCB
+    XCB::XCB
     LibUUID::LibUUID
     ${CMAKE_DL_LIBS}
     $<$<NOT:$<BOOL:${HAVE_MATH_IN_STD_LIB}>>:m>
-    $<$<TARGET_EXISTS:xcb::xcb-input>:xcb::xcb-input>
+    $<$<TARGET_EXISTS:XCB::XINPUT>:XCB::XINPUT>
 )
 
 if(ENABLE_PULSEAUDIO)

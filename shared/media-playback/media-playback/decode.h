@@ -36,11 +36,6 @@ extern "C" {
 #pragma warning(pop)
 #endif
 
-#if LIBAVCODEC_VERSION_MAJOR < 60
-#define CODEC_CAP_TRUNC AV_CODEC_CAP_TRUNCATED
-#define CODEC_FLAG_TRUNC AV_CODEC_FLAG_TRUNCATED
-#endif
-
 struct mp_media;
 
 struct mp_decode {
@@ -72,8 +67,7 @@ struct mp_decode {
 	struct deque packets;
 };
 
-extern bool mp_decode_init(struct mp_media *media, enum AVMediaType type,
-			   bool hw);
+extern bool mp_decode_init(struct mp_media *media, enum AVMediaType type, bool hw);
 extern void mp_decode_free(struct mp_decode *decode);
 
 extern void mp_decode_clear_packets(struct mp_decode *decode);

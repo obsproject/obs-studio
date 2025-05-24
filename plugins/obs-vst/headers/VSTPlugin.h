@@ -79,9 +79,8 @@ class VSTPlugin : public QObject {
 
 	void unloadLibrary();
 
-	static intptr_t hostCallback_static(AEffect *effect, int32_t opcode,
-					    int32_t index, intptr_t value,
-					    void *ptr, float opt);
+	static intptr_t hostCallback_static(AEffect *effect, int32_t opcode, int32_t index, intptr_t value, void *ptr,
+					    float opt);
 	VstTimeInfo *GetTimeInfo();
 	float GetSampleRate();
 

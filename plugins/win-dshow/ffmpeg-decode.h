@@ -49,19 +49,14 @@ struct ffmpeg_decode {
 	size_t packet_size;
 };
 
-extern int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id,
-			      bool use_hw);
+extern int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id, bool use_hw);
 extern void ffmpeg_decode_free(struct ffmpeg_decode *decode);
 
-extern bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
-				size_t size, struct obs_source_audio *audio,
-				bool *got_output);
+extern bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data, size_t size,
+				struct obs_source_audio *audio, bool *got_output);
 
-extern bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
-				size_t size, long long *ts,
-				enum video_colorspace cs,
-				enum video_range_type range,
-				struct obs_source_frame2 *frame,
+extern bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data, size_t size, long long *ts,
+				enum video_colorspace cs, enum video_range_type range, struct obs_source_frame2 *frame,
 				bool *got_output);
 
 static inline bool ffmpeg_decode_valid(struct ffmpeg_decode *decode)

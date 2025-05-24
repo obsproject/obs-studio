@@ -60,15 +60,13 @@ error:
 	return NULL;
 }
 
-static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe,
-						 const char *name)
+static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe, const char *name)
 {
 	SECURITY_ATTRIBUTES sa;
 	char new_name[512];
 	void *sd;
 	const DWORD access = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
-	const DWORD flags = PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE |
-			    PIPE_WAIT;
+	const DWORD flags = PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT;
 
 	strcpy_s(new_name, sizeof(new_name), "\\\\.\\pipe\\");
 	strcat_s(new_name, sizeof(new_name), name);
@@ -82,16 +80,13 @@ static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe,
 	sa.lpSecurityDescriptor = sd;
 	sa.bInheritHandle = false;
 
-	pipe->handle = CreateNamedPipeA(new_name, access, flags, 1,
-					IPC_PIPE_BUF_SIZE, IPC_PIPE_BUF_SIZE, 0,
-					&sa);
+	pipe->handle = CreateNamedPipeA(new_name, access, flags, 1, IPC_PIPE_BUF_SIZE, IPC_PIPE_BUF_SIZE, 0, &sa);
 	free(sd);
 
 	return pipe->handle != INVALID_HANDLE_VALUE;
 }
 
-static inline void ipc_pipe_internal_ensure_capacity(ipc_pipe_server_t *pipe,
-						     size_t new_size)
+static inline void ipc_pipe_internal_ensure_capacity(ipc_pipe_server_t *pipe, size_t new_size)
 {
 	if (pipe->capacity >= new_size) {
 		return;
@@ -101,8 +96,7 @@ static inline void ipc_pipe_internal_ensure_capacity(ipc_pipe_server_t *pipe,
 	pipe->capacity = new_size;
 }
 
-static inline void ipc_pipe_internal_append_bytes(ipc_pipe_server_t *pipe,
-						  uint8_t *bytes, size_t size)
+static inline void ipc_pipe_internal_append_bytes(ipc_pipe_server_t *pipe, uint8_t *bytes, size_t size)
 {
 	size_t new_size = pipe->size + size;
 	ipc_pipe_internal_ensure_capacity(pipe, new_size);
@@ -132,20 +126,17 @@ static DWORD CALLBACK ipc_pipe_internal_server_thread(LPVOID param)
 		DWORD bytes = 0;
 		bool success;
 
-		success = !!ReadFile(pipe->handle, buf, IPC_PIPE_BUF_SIZE, NULL,
-				     &pipe->overlap);
+		success = !!ReadFile(pipe->handle, buf, IPC_PIPE_BUF_SIZE, NULL, &pipe->overlap);
 		if (!success && !ipc_pipe_internal_io_pending()) {
 			break;
 		}
 
-		DWORD wait = WaitForMultipleObjects(_countof(handles), handles,
-						    FALSE, INFINITE);
+		DWORD wait = WaitForMultipleObjects(_countof(handles), handles, FALSE, INFINITE);
 		if (wait != WAIT_OBJECT_0) {
 			break;
 		}
 
-		success = !!GetOverlappedResult(pipe->handle, &pipe->overlap,
-						&bytes, true);
+		success = !!GetOverlappedResult(pipe->handle, &pipe->overlap, &bytes, true);
 		if (!success || !bytes) {
 			break;
 		}
@@ -153,8 +144,7 @@ static DWORD CALLBACK ipc_pipe_internal_server_thread(LPVOID param)
 		ipc_pipe_internal_append_bytes(pipe, buf, (size_t)bytes);
 
 		if (success) {
-			pipe->read_callback(pipe->param, pipe->read_data,
-					    pipe->size);
+			pipe->read_callback(pipe->param, pipe->read_data, pipe->size);
 			pipe->size = 0;
 		}
 	}
@@ -163,16 +153,13 @@ static DWORD CALLBACK ipc_pipe_internal_server_thread(LPVOID param)
 	return 0;
 }
 
-static inline bool
-ipc_pipe_internal_start_server_thread(ipc_pipe_server_t *pipe)
+static inline bool ipc_pipe_internal_start_server_thread(ipc_pipe_server_t *pipe)
 {
-	pipe->thread = CreateThread(NULL, 0, ipc_pipe_internal_server_thread,
-				    pipe, 0, NULL);
+	pipe->thread = CreateThread(NULL, 0, ipc_pipe_internal_server_thread, pipe, 0, NULL);
 	return pipe->thread != NULL;
 }
 
-static inline bool
-ipc_pipe_internal_wait_for_connection(ipc_pipe_server_t *pipe)
+static inline bool ipc_pipe_internal_wait_for_connection(ipc_pipe_server_t *pipe)
 {
 	bool success;
 
@@ -181,8 +168,7 @@ ipc_pipe_internal_wait_for_connection(ipc_pipe_server_t *pipe)
 	return success || (!success && ipc_pipe_internal_io_pending());
 }
 
-static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe,
-					       const char *name)
+static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe, const char *name)
 {
 	DWORD mode = PIPE_READMODE_MESSAGE;
 	char new_name[512];
@@ -190,8 +176,7 @@ static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe,
 	strcpy_s(new_name, sizeof(new_name), "\\\\.\\pipe\\");
 	strcat_s(new_name, sizeof(new_name), name);
 
-	pipe->handle = CreateFileA(new_name, GENERIC_READ | GENERIC_WRITE, 0,
-				   NULL, OPEN_EXISTING, 0, NULL);
+	pipe->handle = CreateFileA(new_name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if (pipe->handle == INVALID_HANDLE_VALUE) {
 		return false;
 	}
@@ -201,8 +186,7 @@ static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe,
 
 /* ------------------------------------------------------------------------- */
 
-bool ipc_pipe_server_start(ipc_pipe_server_t *pipe, const char *name,
-			   ipc_pipe_read_t read_callback, void *param)
+bool ipc_pipe_server_start(ipc_pipe_server_t *pipe, const char *name, ipc_pipe_read_t read_callback, void *param)
 {
 	pipe->read_callback = read_callback;
 	pipe->param = param;
@@ -271,8 +255,7 @@ void ipc_pipe_client_free(ipc_pipe_client_t *pipe)
 	memset(pipe, 0, sizeof(*pipe));
 }
 
-bool ipc_pipe_client_write(ipc_pipe_client_t *pipe, const void *data,
-			   size_t size)
+bool ipc_pipe_client_write(ipc_pipe_client_t *pipe, const void *data, size_t size)
 {
 	DWORD bytes;
 

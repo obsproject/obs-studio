@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(mac-avcapture MODULE)
 add_library(OBS::avcapture ALIAS mac-avcapture)
@@ -6,7 +6,7 @@ add_library(OBS::avcapture ALIAS mac-avcapture)
 target_sources(mac-avcapture PRIVATE av-capture.mm left-right.hpp scope-guard.hpp)
 
 if(NOT XCODE)
-  set_source_files_properties(av-capture.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
+  set_source_files_properties(av-capture.mm PROPERTIES COMPILE_OPTIONS -fobjc-arc)
 endif()
 
 target_link_libraries(

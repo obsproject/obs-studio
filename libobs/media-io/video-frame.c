@@ -18,8 +18,7 @@
 #include "video-frame.h"
 
 #define HALF(size) ((size + 1) / 2)
-#define ALIGN(size, alignment) \
-	*size = (*size + alignment - 1) & (~(alignment - 1));
+#define ALIGN(size, alignment) *size = (*size + alignment - 1) & (~(alignment - 1));
 
 static inline void align_size(size_t *size, size_t alignment)
 {
@@ -32,8 +31,7 @@ static inline void align_uint32(uint32_t *size, size_t alignment)
 }
 
 /* assumes already-zeroed array */
-void video_frame_get_linesizes(uint32_t linesize[MAX_AV_PLANES],
-			       enum video_format format, uint32_t width)
+void video_frame_get_linesizes(uint32_t linesize[MAX_AV_PLANES], enum video_format format, uint32_t width)
 {
 	switch (format) {
 	default:
@@ -122,8 +120,7 @@ void video_frame_get_linesizes(uint32_t linesize[MAX_AV_PLANES],
 	}
 }
 
-void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES],
-				   enum video_format format, uint32_t height)
+void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES], enum video_format format, uint32_t height)
 {
 	switch (format) {
 	default:
@@ -190,8 +187,7 @@ void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES],
 	}
 }
 
-void video_frame_init(struct video_frame *frame, enum video_format format,
-		      uint32_t width, uint32_t height)
+void video_frame_init(struct video_frame *frame, enum video_format format, uint32_t width, uint32_t height)
 {
 	size_t size = 0;
 	uint32_t linesizes[MAX_AV_PLANES];
@@ -236,8 +232,7 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 	}
 }
 
-void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
-		      enum video_format format, uint32_t cy)
+void video_frame_copy(struct video_frame *dst, const struct video_frame *src, enum video_format format, uint32_t cy)
 {
 	uint32_t heights[MAX_AV_PLANES];
 
@@ -252,20 +247,15 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 			continue;
 
 		if (src->linesize[i] == dst->linesize[i]) {
-			memcpy(dst->data[i], src->data[i],
-			       src->linesize[i] * heights[i]);
+			memcpy(dst->data[i], src->data[i], src->linesize[i] * heights[i]);
 		} else { /* linesizes which do not match must be copied line-by-line */
 			size_t src_linesize = src->linesize[i];
 			size_t dst_linesize = dst->linesize[i];
 			/* determine how much we can write (frames with different line sizes require more )*/
-			size_t linesize = src_linesize < dst_linesize
-						  ? src_linesize
-						  : dst_linesize;
+			size_t linesize = src_linesize < dst_linesize ? src_linesize : dst_linesize;
 			for (uint32_t y = 0; y < heights[i]; y++) {
-				uint8_t *src_pos =
-					src->data[i] + (src_linesize * y);
-				uint8_t *dst_pos =
-					dst->data[i] + (dst_linesize * y);
+				uint8_t *src_pos = src->data[i] + (src_linesize * y);
+				uint8_t *dst_pos = dst->data[i] + (dst_linesize * y);
 				memcpy(dst_pos, src_pos, linesize);
 			}
 		}

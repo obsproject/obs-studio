@@ -10,9 +10,8 @@
 
 /* -------------------------------------------------------- */
 
-#define do_log(level, format, ...)                                     \
-	blog(level, "[expander/gate/upward compressor: '%s'] " format, \
-	     obs_source_get_name(cd->context), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[expander/gate/upward compressor: '%s'] " format, obs_source_get_name(cd->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -28,7 +27,7 @@
 /* clang-format off */
 
 #define S_RATIO                         "ratio"
-#define S_THRESHOLD                     "threshold"
+#define S_FILTER_THRESHOLD              "threshold"
 #define S_ATTACK_TIME                   "attack_time"
 #define S_RELEASE_TIME                  "release_time"
 #define S_OUTPUT_GAIN                   "output_gain"
@@ -111,17 +110,14 @@ static void resize_env_buffer(struct expander_data *cd, size_t len)
 {
 	cd->envelope_buf_len = len;
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		cd->envelope_buf[i] =
-			brealloc(cd->envelope_buf[i],
-				 cd->envelope_buf_len * sizeof(float));
+		cd->envelope_buf[i] = brealloc(cd->envelope_buf[i], cd->envelope_buf_len * sizeof(float));
 }
 
 static void resize_runaverage_buffer(struct expander_data *cd, size_t len)
 {
 	cd->runaverage_len = len;
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		cd->runaverage[i] = brealloc(
-			cd->runaverage[i], cd->runaverage_len * sizeof(float));
+		cd->runaverage[i] = brealloc(cd->runaverage[i], cd->runaverage_len * sizeof(float));
 }
 
 static void resize_env_in_buffer(struct expander_data *cd, size_t len)
@@ -134,8 +130,7 @@ static void resize_gain_db_buffer(struct expander_data *cd, size_t len)
 {
 	cd->gain_db_len = len;
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		cd->gain_db[i] = brealloc(cd->gain_db[i],
-					  cd->gain_db_len * sizeof(float));
+		cd->gain_db[i] = brealloc(cd->gain_db[i], cd->gain_db_len * sizeof(float));
 }
 
 static inline float gain_coefficient(uint32_t sample_rate, float time)
@@ -161,14 +156,11 @@ static void expander_defaults(obs_data_t *s)
 	bool is_expander_preset = true;
 	if (strcmp(presets, "gate") == 0)
 		is_expander_preset = false;
-	obs_data_set_default_string(s, S_PRESETS,
-				    is_expander_preset ? "expander" : "gate");
-	obs_data_set_default_double(s, S_RATIO,
-				    is_expander_preset ? 2.0 : 10.0);
-	obs_data_set_default_double(s, S_THRESHOLD, -40.0f);
+	obs_data_set_default_string(s, S_PRESETS, is_expander_preset ? "expander" : "gate");
+	obs_data_set_default_double(s, S_RATIO, is_expander_preset ? 2.0 : 10.0);
+	obs_data_set_default_double(s, S_FILTER_THRESHOLD, -40.0f);
 	obs_data_set_default_int(s, S_ATTACK_TIME, 10);
-	obs_data_set_default_int(s, S_RELEASE_TIME,
-				 is_expander_preset ? 50 : 125);
+	obs_data_set_default_int(s, S_RELEASE_TIME, is_expander_preset ? 50 : 125);
 	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0);
 	obs_data_set_default_string(s, S_DETECTOR, "RMS");
 }
@@ -176,7 +168,7 @@ static void expander_defaults(obs_data_t *s)
 static void upward_compressor_defaults(obs_data_t *s)
 {
 	obs_data_set_default_double(s, S_RATIO, 0.5);
-	obs_data_set_default_double(s, S_THRESHOLD, -20.0f);
+	obs_data_set_default_double(s, S_FILTER_THRESHOLD, -20.0f);
 	obs_data_set_default_int(s, S_ATTACK_TIME, 10);
 	obs_data_set_default_int(s, S_RELEASE_TIME, 50);
 	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0);
@@ -203,24 +195,18 @@ static void expander_update(void *data, obs_data_t *s)
 		}
 	}
 
-	const uint32_t sample_rate =
-		audio_output_get_sample_rate(obs_get_audio());
+	const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
 	const size_t num_channels = audio_output_get_channels(obs_get_audio());
 	const float attack_time_ms = (float)obs_data_get_int(s, S_ATTACK_TIME);
-	const float release_time_ms =
-		(float)obs_data_get_int(s, S_RELEASE_TIME);
-	const float output_gain_db =
-		(float)obs_data_get_double(s, S_OUTPUT_GAIN);
-	const float knee = cd->is_upwcomp ? (float)obs_data_get_int(s, S_KNEE)
-					  : 0.0f;
+	const float release_time_ms = (float)obs_data_get_int(s, S_RELEASE_TIME);
+	const float output_gain_db = (float)obs_data_get_double(s, S_OUTPUT_GAIN);
+	const float knee = cd->is_upwcomp ? (float)obs_data_get_int(s, S_KNEE) : 0.0f;
 
 	cd->ratio = (float)obs_data_get_double(s, S_RATIO);
 
-	cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
-	cd->attack_gain =
-		gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
-	cd->release_gain =
-		gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
+	cd->threshold = (float)obs_data_get_double(s, S_FILTER_THRESHOLD);
+	cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
+	cd->release_gain = gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
 	cd->output_gain = db_to_mul(output_gain_db);
 	cd->num_channels = num_channels;
 	cd->sample_rate = sample_rate;
@@ -244,9 +230,7 @@ static void expander_update(void *data, obs_data_t *s)
 		resize_gain_db_buffer(cd, sample_len);
 }
 
-static void *compressor_expander_create(obs_data_t *settings,
-					obs_source_t *filter,
-					bool is_compressor)
+static void *compressor_expander_create(obs_data_t *settings, obs_source_t *filter, bool is_compressor)
 {
 	struct expander_data *cd = bzalloc(sizeof(struct expander_data));
 	cd->context = filter;
@@ -269,8 +253,7 @@ static void *expander_create(obs_data_t *settings, obs_source_t *filter)
 	return compressor_expander_create(settings, filter, false);
 }
 
-static void *upward_compressor_create(obs_data_t *settings,
-				      obs_source_t *filter)
+static void *upward_compressor_create(obs_data_t *settings, obs_source_t *filter)
 {
 	return compressor_expander_create(settings, filter, true);
 }
@@ -289,8 +272,7 @@ static void expander_destroy(void *data)
 }
 
 // detection stage
-static void analyze_envelope(struct expander_data *cd, float **samples,
-			     const uint32_t num_samples)
+static void analyze_envelope(struct expander_data *cd, float **samples, const uint32_t num_samples)
 {
 	if (cd->envelope_buf_len < num_samples)
 		resize_env_buffer(cd, num_samples);
@@ -303,10 +285,8 @@ static void analyze_envelope(struct expander_data *cd, float **samples,
 	const float rmscoef = exp2f(-100.0f / cd->sample_rate);
 
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
-		memset(cd->envelope_buf[i], 0,
-		       num_samples * sizeof(cd->envelope_buf[i][0]));
-		memset(cd->runaverage[i], 0,
-		       num_samples * sizeof(cd->runaverage[i][0]));
+		memset(cd->envelope_buf[i], 0, num_samples * sizeof(cd->envelope_buf[i][0]));
+		memset(cd->runaverage[i], 0, num_samples * sizeof(cd->runaverage[i][0]));
 	}
 	memset(cd->env_in, 0, num_samples * sizeof(cd->env_in[0]));
 
@@ -319,15 +299,10 @@ static void analyze_envelope(struct expander_data *cd, float **samples,
 		float *env_in = cd->env_in;
 
 		if (cd->detector == RMS_DETECT) {
-			runave[0] =
-				rmscoef * cd->runave[chan] +
-				(1 - rmscoef) * powf(samples[chan][0], 2.0f);
+			runave[0] = rmscoef * cd->runave[chan] + (1 - rmscoef) * powf(samples[chan][0], 2.0f);
 			env_in[0] = sqrtf(fmaxf(runave[0], 0));
 			for (uint32_t i = 1; i < num_samples; ++i) {
-				runave[i] =
-					rmscoef * runave[i - 1] +
-					(1 - rmscoef) *
-						powf(samples[chan][i], 2.0f);
+				runave[i] = rmscoef * runave[i - 1] + (1 - rmscoef) * powf(samples[chan][i], 2.0f);
 				env_in[i] = sqrtf(runave[i]);
 			}
 		} else if (cd->detector == PEAK_DETECT) {
@@ -344,12 +319,9 @@ static void analyze_envelope(struct expander_data *cd, float **samples,
 	}
 }
 
-static inline void process_sample(size_t idx, float *samples, float *env_buf,
-				  float *gain_db, bool is_upwcomp,
-				  float channel_gain, float threshold,
-				  float slope, float attack_gain,
-				  float inv_attack_gain, float release_gain,
-				  float inv_release_gain, float output_gain,
+static inline void process_sample(size_t idx, float *samples, float *env_buf, float *gain_db, bool is_upwcomp,
+				  float channel_gain, float threshold, float slope, float attack_gain,
+				  float inv_attack_gain, float release_gain, float inv_release_gain, float output_gain,
 				  float knee)
 {
 	/* --------------------------------- */
@@ -366,8 +338,7 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	// Note that the gain is always >= 0 for the upward compressor
 	// but is always <=0 for the expander.
 	if (is_upwcomp) {
-		prev_gain = idx > 0 ? fmaxf(gain_db[idx - 1], 0)
-				    : fmaxf(channel_gain, 0);
+		prev_gain = idx > 0 ? fmaxf(gain_db[idx - 1], 0) : fmaxf(channel_gain, 0);
 		// gain above knee (included for clarity):
 		if (env_db >= threshold + knee / 2)
 			gain = 0.0f;
@@ -375,8 +346,7 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 		if (threshold - knee / 2 >= env_db)
 			gain = slope * diff;
 		// gain in knee:
-		if (env_db > threshold - knee / 2 &&
-		    threshold + knee / 2 > env_db)
+		if (env_db > threshold - knee / 2 && threshold + knee / 2 > env_db)
 			gain = slope * powf(diff + knee / 2, 2) / (2.0f * knee);
 	} else {
 		prev_gain = idx > 0 ? gain_db[idx - 1] : channel_gain;
@@ -389,8 +359,7 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	if (gain > prev_gain)
 		gain_db[idx] = attack_gain * prev_gain + inv_attack_gain * gain;
 	else
-		gain_db[idx] =
-			release_gain * prev_gain + inv_release_gain * gain;
+		gain_db[idx] = release_gain * prev_gain + inv_release_gain * gain;
 
 	/* --------------------------------- */
 	/* output                            */
@@ -405,8 +374,7 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 }
 
 // gain stage and ballistics in dB domain
-static inline void process_expansion(struct expander_data *cd, float **samples,
-				     uint32_t num_samples)
+static inline void process_expansion(struct expander_data *cd, float **samples, uint32_t num_samples)
 {
 	const float attack_gain = cd->attack_gain;
 	const float release_gain = cd->release_gain;
@@ -422,8 +390,7 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 		resize_gain_db_buffer(cd, num_samples);
 
 	for (size_t i = 0; i < cd->num_channels; i++)
-		memset(cd->gain_db[i], 0,
-		       num_samples * sizeof(cd->gain_db[i][0]));
+		memset(cd->gain_db[i], 0, num_samples * sizeof(cd->gain_db[i][0]));
 
 	for (size_t chan = 0; chan < cd->num_channels; chan++) {
 		float *channel_samples = samples[chan];
@@ -432,18 +399,14 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 		float channel_gain = cd->gain_db_buf[chan];
 
 		for (size_t i = 0; i < num_samples; ++i) {
-			process_sample(i, channel_samples, env_buf, gain_db,
-				       is_upwcomp, channel_gain, threshold,
-				       slope, attack_gain, inv_attack_gain,
-				       release_gain, inv_release_gain,
-				       output_gain, knee);
+			process_sample(i, channel_samples, env_buf, gain_db, is_upwcomp, channel_gain, threshold, slope,
+				       attack_gain, inv_attack_gain, release_gain, inv_release_gain, output_gain, knee);
 		}
 		cd->gain_db_buf[chan] = gain_db[num_samples - 1];
 	}
 }
 
-static struct obs_audio_data *
-expander_filter_audio(void *data, struct obs_audio_data *audio)
+static struct obs_audio_data *expander_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct expander_data *cd = data;
 
@@ -458,8 +421,7 @@ expander_filter_audio(void *data, struct obs_audio_data *audio)
 	return audio;
 }
 
-static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
-			    obs_data_t *settings)
+static bool presets_changed(obs_properties_t *props, obs_property_t *prop, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(props);
 	UNUSED_PARAMETER(prop);
@@ -473,47 +435,33 @@ static obs_properties_t *expander_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 	if (!cd->is_upwcomp) {
-		obs_property_t *presets = obs_properties_add_list(
-			props, S_PRESETS, TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
-		obs_property_list_add_string(presets, TEXT_PRESETS_EXP,
-					     "expander");
-		obs_property_list_add_string(presets, TEXT_PRESETS_GATE,
-					     "gate");
+		obs_property_t *presets = obs_properties_add_list(props, S_PRESETS, TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
+								  OBS_COMBO_FORMAT_STRING);
+		obs_property_list_add_string(presets, TEXT_PRESETS_EXP, "expander");
+		obs_property_list_add_string(presets, TEXT_PRESETS_GATE, "gate");
 		obs_property_set_modified_callback(presets, presets_changed);
 	}
 
-	p = obs_properties_add_float_slider(
-		props, S_RATIO, TEXT_RATIO,
-		!cd->is_upwcomp ? MIN_RATIO : MIN_RATIO_UPW,
-		!cd->is_upwcomp ? MAX_RATIO : MAX_RATIO_UPW, 0.1);
+	p = obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO, !cd->is_upwcomp ? MIN_RATIO : MIN_RATIO_UPW,
+					    !cd->is_upwcomp ? MAX_RATIO : MAX_RATIO_UPW, 0.1);
 	obs_property_float_set_suffix(p, ":1");
-	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					    0.1);
+	p = obs_properties_add_float_slider(props, S_FILTER_THRESHOLD, TEXT_THRESHOLD, MIN_THRESHOLD_DB,
+					    MAX_THRESHOLD_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
-	p = obs_properties_add_int_slider(props, S_ATTACK_TIME,
-					  TEXT_ATTACK_TIME, MIN_ATK_RLS_MS,
-					  MAX_ATK_MS, 1);
+	p = obs_properties_add_int_slider(props, S_ATTACK_TIME, TEXT_ATTACK_TIME, MIN_ATK_RLS_MS, MAX_ATK_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
-					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
-					  MAX_RLS_MS, 1);
+	p = obs_properties_add_int_slider(props, S_RELEASE_TIME, TEXT_RELEASE_TIME, MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
-					    TEXT_OUTPUT_GAIN,
-					    MIN_OUTPUT_GAIN_DB,
+	p = obs_properties_add_float_slider(props, S_OUTPUT_GAIN, TEXT_OUTPUT_GAIN, MIN_OUTPUT_GAIN_DB,
 					    MAX_OUTPUT_GAIN_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
 	if (!cd->is_upwcomp) {
-		obs_property_t *detect = obs_properties_add_list(
-			props, S_DETECTOR, TEXT_DETECTOR, OBS_COMBO_TYPE_LIST,
-			OBS_COMBO_FORMAT_STRING);
+		obs_property_t *detect = obs_properties_add_list(props, S_DETECTOR, TEXT_DETECTOR, OBS_COMBO_TYPE_LIST,
+								 OBS_COMBO_FORMAT_STRING);
 		obs_property_list_add_string(detect, TEXT_RMS, "RMS");
 		obs_property_list_add_string(detect, TEXT_PEAK, "peak");
 	} else {
-		p = obs_properties_add_int_slider(props, S_KNEE, TEXT_KNEE, 0,
-						  20, 1);
+		p = obs_properties_add_int_slider(props, S_KNEE, TEXT_KNEE, 0, 20, 1);
 		obs_property_float_set_suffix(p, " dB");
 	}
 	return props;

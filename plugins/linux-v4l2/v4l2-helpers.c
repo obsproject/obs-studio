@@ -73,26 +73,22 @@ int_fast32_t v4l2_reset_capture(int_fast32_t dev, struct v4l2_buffer_data *buf)
 }
 
 #ifdef _DEBUG
-int_fast32_t v4l2_query_all_buffers(int_fast32_t dev,
-				    struct v4l2_buffer_data *buf_data)
+int_fast32_t v4l2_query_all_buffers(int_fast32_t dev, struct v4l2_buffer_data *buf_data)
 {
 	struct v4l2_buffer buf;
 
-	blog(LOG_DEBUG, "attempting to read buffer data for %ld buffers",
-	     buf_data->count);
+	blog(LOG_DEBUG, "attempting to read buffer data for %ld buffers", buf_data->count);
 
 	for (uint_fast32_t i = 0; i < buf_data->count; i++) {
 		buf.index = i;
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		buf.memory = V4L2_MEMORY_MMAP;
 		if (v4l2_ioctl(dev, VIDIOC_QUERYBUF, &buf) < 0) {
-			blog(LOG_DEBUG,
-			     "failed to read buffer data for buffer #%ld", i);
+			blog(LOG_DEBUG, "failed to read buffer data for buffer #%ld", i);
 		} else {
 			blog(LOG_DEBUG,
-			     "query buf #%ld info: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
-			     i, buf.timestamp.tv_usec, buf.index, buf.flags,
-			     buf.sequence, buf.length, buf.bytesused);
+			     "query buf #%ld info: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d", i,
+			     buf.timestamp.tv_usec, buf.index, buf.flags, buf.sequence, buf.length, buf.bytesused);
 		}
 	}
 
@@ -135,8 +131,7 @@ int_fast32_t v4l2_create_mmap(int_fast32_t dev, struct v4l2_buffer_data *buf)
 
 		buf->info[map.index].length = map.length;
 		buf->info[map.index].start =
-			v4l2_mmap(NULL, map.length, PROT_READ | PROT_WRITE,
-				  MAP_SHARED, dev, map.m.offset);
+			v4l2_mmap(NULL, map.length, PROT_READ | PROT_WRITE, MAP_SHARED, dev, map.m.offset);
 
 		if (buf->info[map.index].start == MAP_FAILED) {
 			blog(LOG_ERROR, "mmap for buffer failed");
@@ -167,8 +162,7 @@ int_fast32_t v4l2_set_input(int_fast32_t dev, int *input)
 	if (!dev || !input)
 		return -1;
 
-	return (*input == -1) ? v4l2_ioctl(dev, VIDIOC_G_INPUT, input)
-			      : v4l2_ioctl(dev, VIDIOC_S_INPUT, input);
+	return (*input == -1) ? v4l2_ioctl(dev, VIDIOC_G_INPUT, input) : v4l2_ioctl(dev, VIDIOC_S_INPUT, input);
 }
 
 int_fast32_t v4l2_get_input_caps(int_fast32_t dev, int input, uint32_t *caps)
@@ -192,8 +186,7 @@ int_fast32_t v4l2_get_input_caps(int_fast32_t dev, int input, uint32_t *caps)
 	return 0;
 }
 
-int_fast32_t v4l2_set_format(int_fast32_t dev, int64_t *resolution,
-			     int *pixelformat, int *bytesperline)
+int_fast32_t v4l2_set_format(int_fast32_t dev, int64_t *resolution, int *pixelformat, int *bytesperline)
 {
 	bool set = false;
 	int width, height;
@@ -254,8 +247,8 @@ int_fast32_t v4l2_set_framerate(int_fast32_t dev, int64_t *framerate)
 	if (set && (v4l2_ioctl(dev, VIDIOC_S_PARM, &par) < 0))
 		return -1;
 
-	*framerate = v4l2_pack_tuple(par.parm.capture.timeperframe.numerator,
-				     par.parm.capture.timeperframe.denominator);
+	*framerate =
+		v4l2_pack_tuple(par.parm.capture.timeperframe.numerator, par.parm.capture.timeperframe.denominator);
 	return 0;
 }
 
@@ -275,8 +268,7 @@ int_fast32_t v4l2_set_standard(int_fast32_t dev, int *standard)
 	return 0;
 }
 
-int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
-				 int index)
+int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt, int index)
 {
 #if !defined(VIDIOC_ENUM_DV_TIMINGS) || !defined(V4L2_IN_CAP_DV_TIMINGS)
 	UNUSED_PARAMETER(dev);

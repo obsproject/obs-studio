@@ -343,15 +343,6 @@ General Output Functions
 
 ---------------------
 
-.. function:: void obs_output_addref(obs_output_t *output)
-
-   Adds a reference to an output.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_output_get_ref()` instead.
-
----------------------
-
 .. function:: obs_output_t *obs_output_get_ref(obs_output_t *output)
 
    Returns an incremented reference if still valid, otherwise returns
@@ -742,6 +733,66 @@ General Output Functions
    .. versionadded:: 29.1
 
 ---------------------
+
+.. function:: void obs_output_add_packet_callback(obs_output_t *output, void (*packet_cb)(obs_output_t *output,
+              struct encoder_packet *pkt, struct encoder_packet_time *pkt_time, void *param), void *param)
+
+   Register a packet callback function for the output. The callback is invoked for each compressed
+   packet just before sending to the service. This packet callback mechanism is the preferred method
+   for all packet-level processing that is not required to be implemented in libobs. Any reallocation
+   of the packet buffer, if necessary, must be done with functions in `libobs\util\bmem.h`, otherwise
+   a memory leak may occur. Never use `memset()` to clear the packet buffer, as the buffer data is
+   needed for subsequent callback processing.
+
+   :param output:     The output to register the packet_cb() function against
+   :param packet_cb:  Function pointer to the callback function
+   :param param:      Data passed to the callback
+   :return:           When the callback is added
+
+   packet_cb() arguments:
+   :param output:     The output associated with the invoked callback function
+   :param pkt:        Compressed data packet (audio or video)
+   :param pkt_time:   encoder_packet_time structure associated with the data packet
+   :param param:      Data passed to the callback
+
+   .. versionadded:: 31.0
+
+---------------------
+
+.. function:: void obs_output_remove_packet_callback(obs_output_t *output, void (*packet_cb)(obs_output_t *output,
+              struct encoder_packet *pkt, struct encoder_packet_time *pkt_time, void *param), void *param)
+
+   Remove a packet callback function for the output, that had been previously registered with
+   `obs_output_add_packet_callback()`.
+
+   :param output:     The output to remove the packet_cb() function against
+   :param packet_cb:  Function pointer to the callback function
+   :param param:      Data passed to the callback
+   :return:           When the callback is removed
+
+   .. versionadded:: 31.0
+
+---------------------
+
+.. function:: void obs_output_set_reconnect_callback(obs_output_t *output, bool (*reconnect_cb)(void *data, obs_output_t *output, int code), void *param)
+
+   Sets a callback that can be used to decide whether or not to attempt reconnecting.
+   Can also be used to reconfigure the output within the callback before continuing the reconnection attempts,
+   e.g., to update the stream key after the previous one has expired.
+   
+   Passing in a `NULL` pointer removes the callback.
+
+   :param output:        The output to register the reconnect_cb() function against
+   :param reconnect_cb:  Function pointer to the callback function
+   :param param:         Data passed to the callback
+
+   reconnect_cb() arguments:
+   :param data:    Data passed to the callback
+   :param output:  The output associated with the invoked callback function
+   :param code:    Error code the output was stopped with
+   :return:        Whether or not to continue attempting to reconnect
+
+   .. versionadded:: 31.1
 
 Functions used by outputs
 -------------------------

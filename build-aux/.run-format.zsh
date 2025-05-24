@@ -33,30 +33,30 @@ invoke_formatter() {
 
   case ${formatter} {
     clang)
-      if (( ${+commands[clang-format-17]} )) {
-        local formatter=clang-format-17
+      if (( ${+commands[clang-format-19]} )) {
+        local formatter=clang-format-19
       } elif (( ${+commands[clang-format]} )) {
         local formatter=clang-format
       } else {
-        log_error "No viable clang-format version found (required 17.0.3)"
+        log_error "No viable clang-format version found (required 19.1.1)"
         exit 2
       }
 
       local -a formatter_version=($(${formatter} --version))
 
-      if ! is-at-least 17.0.3 ${formatter_version[-1]}; then
-        log_error "clang-format is not version 17.0.3 or above (found ${formatter_version[-1]}."
+      if ! is-at-least 19.1.1 ${formatter_version[-1]}; then
+        log_error "clang-format is not version 19.1.1 or above (found ${formatter_version[-1]}."
         exit 2
       fi
 
-      if ! is-at-least ${formatter_version[-1]} 17.0.3; then
-        log_error "clang-format is more recent than version 17.0.3 (found ${formatter_version[-1]})."
+      if ! is-at-least ${formatter_version[-1]} 19.1.1; then
+        log_error "clang-format is more recent than version 19.1.1 (found ${formatter_version[-1]})."
         exit 2
       fi
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|frontend|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
 
-      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|libdshowcapture)/*})
 
       local -a format_args=(-style=file -fallback-style=none)
       if (( _loglevel > 2 )) format_args+=(--verbose)
@@ -102,9 +102,9 @@ invoke_formatter() {
         fi
       }
 
-      if (( ! #source_files )) source_files=(CMakeLists.txt (libobs|libobs-*|UI|plugins|deps|shared|cmake|test)/**/(CMakeLists.txt|*.cmake)(.N))
+      if (( ! #source_files )) source_files=(CMakeLists.txt (libobs|libobs-*|frontend|plugins|deps|shared|cmake|test)/**/(CMakeLists.txt|*.cmake)(.N))
 
-      source_files=(${source_files:#*/(jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|win-dshow/libdshowcapture)/*})
+      source_files=(${source_files:#*/(jansson|decklink/*/decklink-sdk|obs-websocket|obs-browser|libdshowcapture)/*})
       source_files=(${source_files:#(cmake/Modules/*|*/legacy.cmake)})
 
       check_files() {
@@ -150,7 +150,7 @@ invoke_formatter() {
         exit 2
       }
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|UI|plugins)/**/*.swift(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|frontend|plugins)/**/*.swift(.N))
 
       check_files() {
         local -i num_failures=0

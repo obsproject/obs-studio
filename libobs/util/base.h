@@ -72,9 +72,7 @@ typedef void (*log_handler_t)(int lvl, const char *msg, va_list args, void *p);
 EXPORT void base_get_log_handler(log_handler_t *handler, void **param);
 EXPORT void base_set_log_handler(log_handler_t handler, void *param);
 
-EXPORT void base_set_crash_handler(void (*handler)(const char *, va_list,
-						   void *),
-				   void *param);
+EXPORT void base_set_crash_handler(void (*handler)(const char *, va_list, void *), void *param);
 
 EXPORT void blogva(int log_level, const char *format, va_list args);
 

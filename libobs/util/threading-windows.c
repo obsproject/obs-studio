@@ -163,8 +163,7 @@ struct vs_threadname_info {
 };
 #pragma pack(pop)
 
-#define THREADNAME_INFO_SIZE \
-	(sizeof(struct vs_threadname_info) / sizeof(ULONG_PTR))
+#define THREADNAME_INFO_SIZE (sizeof(struct vs_threadname_info) / sizeof(ULONG_PTR))
 
 void os_set_thread_name(const char *name)
 {
@@ -183,11 +182,11 @@ void os_set_thread_name(const char *name)
 #else
 	__try {
 #endif
-		RaiseException(VC_EXCEPTION, 0, THREADNAME_INFO_SIZE,
-			       (ULONG_PTR *)&info);
+		RaiseException(VC_EXCEPTION, 0, THREADNAME_INFO_SIZE, (ULONG_PTR *)&info);
 #ifdef NO_SEH_MINGW
 	}
-	__except1{
+	__except1
+	{
 #else
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 #endif
@@ -196,12 +195,10 @@ void os_set_thread_name(const char *name)
 
 	const HMODULE hModule = LoadLibrary(L"KernelBase.dll");
 	if (hModule) {
-		typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE,
-								   PCWSTR);
+		typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE, PCWSTR);
 
 		const set_thread_description_t std =
-			(set_thread_description_t)GetProcAddress(
-				hModule, "SetThreadDescription");
+			(set_thread_description_t)GetProcAddress(hModule, "SetThreadDescription");
 		if (std) {
 			wchar_t *wname;
 			os_utf8_to_wcs_ptr(name, 0, &wname);

@@ -6,6 +6,7 @@ option(ENABLE_PULSEAUDIO "Enable PulseAudio support" ON)
 option(ENABLE_WAYLAND "Enable building with support for Wayland" ON)
 
 option(ENABLE_RELOCATABLE "Enable relocatable build" OFF)
+option(ENABLE_PORTABLE_CONFIG "Enable support for portable config file location" OFF)
 
 # Set default installation directories
 include(GNUInstallDirs)
@@ -39,3 +40,4 @@ set(OBS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL TRUE)
 
 include(cpackconfig)
+include(ecmconfig)

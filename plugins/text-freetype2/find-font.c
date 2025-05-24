@@ -11,8 +11,7 @@ static inline bool read_data(struct serializer *s, void *data, size_t size)
 	return s_read(s, data, size) == size;
 }
 
-static inline bool write_data(struct serializer *s, const void *data,
-			      size_t size)
+static inline bool write_data(struct serializer *s, const void *data, size_t size)
 {
 	return s_write(s, data, size) == size;
 }
@@ -81,8 +80,7 @@ static bool load_cached_font_list(struct serializer *s)
 
 		if (info->num_sizes) {
 			info->sizes = bmalloc(sizeof(int) * info->num_sizes);
-			success = read_data(s, info->sizes,
-					    sizeof(int) * info->num_sizes);
+			success = read_data(s, info->sizes, sizeof(int) * info->num_sizes);
 			if (!success)
 				break;
 		}
@@ -156,8 +154,7 @@ void save_font_list(void)
 	bool success = false;
 
 	if (font_checksum)
-		success =
-			file_output_serializer_init_safe(&s, file_name, "tmp");
+		success = file_output_serializer_init_safe(&s, file_name, "tmp");
 	bfree(file_name);
 
 	if (!success)
@@ -191,8 +188,7 @@ void save_font_list(void)
 		do_write(info->num_sizes);
 
 		if (info->num_sizes) {
-			success = write_data(&s, info->sizes,
-					     sizeof(int) * info->num_sizes);
+			success = write_data(&s, info->sizes, sizeof(int) * info->num_sizes);
 			if (!success)
 				break;
 		}
@@ -234,8 +230,7 @@ static void create_bitmap_sizes(struct font_path_info *info, FT_Face face)
 	info->num_sizes = (uint32_t)face->num_fixed_sizes;
 }
 
-static void add_font_path(FT_Face face, FT_Long idx, const char *family_in,
-			  const char *style_in, const char *path)
+static void add_font_path(FT_Face face, FT_Long idx, const char *family_in, const char *style_in, const char *path)
 {
 	struct dstr face_and_style = {0};
 	struct font_path_info info;
@@ -314,8 +309,7 @@ void build_font_path_info(FT_Face face, FT_Long idx, const char *path)
 	}
 
 	for (size_t i = 0; i < family_names.num; i++) {
-		add_font_path(face, idx, family_names.array[i],
-			      face->style_name, path);
+		add_font_path(face, idx, family_names.array[i], face->style_name, path);
 
 		/* first item isn't our allocation */
 		if (i > 0)
@@ -351,8 +345,7 @@ static inline size_t get_rating(struct font_path_info *info, struct dstr *cmp)
 	return num;
 }
 
-const char *get_font_path(const char *family, uint16_t size, const char *style,
-			  uint32_t flags, FT_Long *idx)
+const char *get_font_path(const char *family, uint16_t size, const char *style, uint32_t flags, FT_Long *idx)
 {
 	const char *best_path = NULL;
 	double best_rating = 0.0;

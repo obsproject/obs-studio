@@ -96,8 +96,7 @@ static void gl_free(void)
 
 	if (data.using_shtex) {
 		if (data.gl_dxobj)
-			obsglDXUnregisterObjectNV(data.gl_device,
-						  data.gl_dxobj);
+			obsglDXUnregisterObjectNV(data.gl_device, data.gl_dxobj);
 		if (data.gl_device)
 			obsglDXCloseDeviceNV(data.gl_device);
 		if (data.texture)
@@ -116,8 +115,7 @@ static void gl_free(void)
 		for (size_t i = 0; i < NUM_BUFFERS; i++) {
 			if (data.pbos[i]) {
 				if (data.texture_mapped[i]) {
-					glBindBuffer(GL_PIXEL_PACK_BUFFER,
-						     data.pbos[i]);
+					glBindBuffer(GL_PIXEL_PACK_BUFFER, data.pbos[i]);
 					glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 					glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 				}
@@ -161,8 +159,7 @@ static inline void *get_proc(const char *name)
 
 static void init_nv_functions(void)
 {
-	obsglDXSetResourceShareHandleNV =
-		get_proc("wglDXSetResourceShareHandleNV");
+	obsglDXSetResourceShareHandleNV = get_proc("wglDXSetResourceShareHandleNV");
 	obsglDXOpenDeviceNV = get_proc("wglDXOpenDeviceNV");
 	obsglDXCloseDeviceNV = get_proc("wglDXCloseDeviceNV");
 	obsglDXRegisterObjectNV = get_proc("wglDXRegisterObjectNV");
@@ -171,24 +168,21 @@ static void init_nv_functions(void)
 	obsglDXLockObjectsNV = get_proc("wglDXLockObjectsNV");
 	obsglDXUnlockObjectsNV = get_proc("wglDXUnlockObjectsNV");
 
-	nv_capture_available =
-		!!obsglDXSetResourceShareHandleNV && !!obsglDXOpenDeviceNV &&
-		!!obsglDXCloseDeviceNV && !!obsglDXRegisterObjectNV &&
-		!!obsglDXUnregisterObjectNV && !!obsglDXObjectAccessNV &&
-		!!obsglDXLockObjectsNV && !!obsglDXUnlockObjectsNV;
+	nv_capture_available = !!obsglDXSetResourceShareHandleNV && !!obsglDXOpenDeviceNV && !!obsglDXCloseDeviceNV &&
+			       !!obsglDXRegisterObjectNV && !!obsglDXUnregisterObjectNV && !!obsglDXObjectAccessNV &&
+			       !!obsglDXLockObjectsNV && !!obsglDXUnlockObjectsNV;
 
 	if (nv_capture_available)
 		hlog("Shared-texture OpenGL capture available");
 }
 
-#define GET_PROC(cur_func, ptr, func)                                      \
-	do {                                                               \
-		ptr = get_proc(#func);                                     \
-		if (!ptr) {                                                \
-			hlog("%s: failed to get function '%s'", #cur_func, \
-			     #func);                                       \
-			success = false;                                   \
-		}                                                          \
+#define GET_PROC(cur_func, ptr, func)                                              \
+	do {                                                                       \
+		ptr = get_proc(#func);                                             \
+		if (!ptr) {                                                        \
+			hlog("%s: failed to get function '%s'", #cur_func, #func); \
+			success = false;                                           \
+		}                                                                  \
 	} while (false)
 
 static bool init_gl_functions(void)
@@ -203,8 +197,7 @@ static bool init_gl_functions(void)
 
 	GET_PROC(init_gl_functions, obsglMakeCurrent, wglMakeCurrent);
 	GET_PROC(init_gl_functions, obsglGetCurrentDC, wglGetCurrentDC);
-	GET_PROC(init_gl_functions, obsglGetCurrentContext,
-		 wglGetCurrentContext);
+	GET_PROC(init_gl_functions, obsglGetCurrentContext, wglGetCurrentContext);
 	GET_PROC(init_gl_functions, glTexImage2D, glTexImage2D);
 	GET_PROC(init_gl_functions, glReadBuffer, glReadBuffer);
 	GET_PROC(init_gl_functions, glGetTexImage, glGetTexImage);
@@ -224,8 +217,7 @@ static bool init_gl_functions(void)
 	GET_PROC(init_gl_functions, glDeleteFramebuffers, glDeleteFramebuffers);
 	GET_PROC(init_gl_functions, glBindFramebuffer, glBindFramebuffer);
 	GET_PROC(init_gl_functions, glBlitFramebuffer, glBlitFramebuffer);
-	GET_PROC(init_gl_functions, glFramebufferTexture2D,
-		 glFramebufferTexture2D);
+	GET_PROC(init_gl_functions, glFramebufferTexture2D, glFramebufferTexture2D);
 
 	init_nv_functions();
 	return success;
@@ -248,13 +240,11 @@ static void get_window_size(HDC hdc, uint32_t *cx, uint32_t *cy)
 
 static inline bool gl_shtex_init_window(void)
 {
-	data.hwnd = CreateWindowExW(
-		0, DUMMY_WINDOW_CLASS_NAME, L"Dummy GL window, ignore",
-		WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 2, 2, NULL,
-		NULL, GetModuleHandle(NULL), NULL);
+	data.hwnd = CreateWindowExW(0, DUMMY_WINDOW_CLASS_NAME, L"Dummy GL window, ignore",
+				    WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 2, 2, NULL, NULL,
+				    GetModuleHandle(NULL), NULL);
 	if (!data.hwnd) {
-		hlog("gl_shtex_init_window: failed to create window: %d",
-		     GetLastError());
+		hlog("gl_shtex_init_window: failed to create window: %d", GetLastError());
 		return false;
 	}
 
@@ -278,15 +268,13 @@ static inline bool gl_shtex_init_d3d11(void)
 
 	HMODULE d3d11 = load_system_library("d3d11.dll");
 	if (!d3d11) {
-		hlog("gl_shtex_init_d3d11: failed to load D3D11.dll: %d",
-		     GetLastError());
+		hlog("gl_shtex_init_d3d11: failed to load D3D11.dll: %d", GetLastError());
 		return false;
 	}
 
 	HMODULE dxgi = load_system_library("dxgi.dll");
 	if (!dxgi) {
-		hlog("gl_shtex_init_d3d11: failed to load DXGI.dll: %d",
-		     GetLastError());
+		hlog("gl_shtex_init_d3d11: failed to load DXGI.dll: %d", GetLastError());
 		return false;
 	}
 
@@ -300,8 +288,7 @@ static inline bool gl_shtex_init_d3d11(void)
 	desc.Windowed = true;
 	desc.OutputWindow = data.hwnd;
 
-	create_dxgi_factory1_t create_factory =
-		(void *)GetProcAddress(dxgi, "CreateDXGIFactory1");
+	create_dxgi_factory1_t create_factory = (void *)GetProcAddress(dxgi, "CreateDXGIFactory1");
 	if (!create_factory) {
 		hlog("gl_shtex_init_d3d11: failed to load CreateDXGIFactory1 "
 		     "procedure: %d",
@@ -309,8 +296,7 @@ static inline bool gl_shtex_init_d3d11(void)
 		return false;
 	}
 
-	PFN_D3D11_CREATE_DEVICE_AND_SWAP_CHAIN create =
-		(void *)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
+	PFN_D3D11_CREATE_DEVICE_AND_SWAP_CHAIN create = (void *)GetProcAddress(d3d11, "D3D11CreateDeviceAndSwapChain");
 	if (!create) {
 		hlog("gl_shtex_init_d3d11: failed to load "
 		     "D3D11CreateDeviceAndSwapChain procedure: %d",
@@ -324,8 +310,7 @@ static inline bool gl_shtex_init_d3d11(void)
 		return false;
 	}
 
-	hr = IDXGIFactory1_EnumAdapters1(factory, 0,
-					 (IDXGIAdapter1 **)&adapter);
+	hr = IDXGIFactory1_EnumAdapters1(factory, 0, (IDXGIAdapter1 **)&adapter);
 	IDXGIFactory1_Release(factory);
 
 	if (FAILED(hr)) {
@@ -334,8 +319,7 @@ static inline bool gl_shtex_init_d3d11(void)
 	}
 
 	hr = create(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, feature_levels,
-		    sizeof(feature_levels) / sizeof(D3D_FEATURE_LEVEL),
-		    D3D11_SDK_VERSION, &desc, &data.dxgi_swap,
+		    sizeof(feature_levels) / sizeof(D3D_FEATURE_LEVEL), D3D11_SDK_VERSION, &desc, &data.dxgi_swap,
 		    &data.d3d11_device, &level_used, &data.d3d11_context);
 	IDXGIAdapter_Release(adapter);
 
@@ -363,19 +347,15 @@ static inline bool gl_shtex_init_d3d11_tex(void)
 	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-	hr = ID3D11Device_CreateTexture2D(data.d3d11_device, &desc, NULL,
-					  &data.d3d11_tex);
+	hr = ID3D11Device_CreateTexture2D(data.d3d11_device, &desc, NULL, &data.d3d11_tex);
 	if (FAILED(hr)) {
-		hlog_hr("gl_shtex_init_d3d11_tex: failed to create texture",
-			hr);
+		hlog_hr("gl_shtex_init_d3d11_tex: failed to create texture", hr);
 		return false;
 	}
 
-	hr = ID3D11Device_QueryInterface(data.d3d11_tex, &GUID_IDXGIResource,
-					 (void **)&dxgi_res);
+	hr = ID3D11Device_QueryInterface(data.d3d11_tex, &GUID_IDXGIResource, (void **)&dxgi_res);
 	if (FAILED(hr)) {
-		hlog_hr("gl_shtex_init_d3d11_tex: failed to get IDXGIResource",
-			hr);
+		hlog_hr("gl_shtex_init_d3d11_tex: failed to get IDXGIResource", hr);
 		return false;
 	}
 
@@ -383,8 +363,7 @@ static inline bool gl_shtex_init_d3d11_tex(void)
 	IDXGIResource_Release(dxgi_res);
 
 	if (FAILED(hr)) {
-		hlog_hr("gl_shtex_init_d3d11_tex: failed to get shared handle",
-			hr);
+		hlog_hr("gl_shtex_init_d3d11_tex: failed to get shared handle", hr);
 		return false;
 	}
 
@@ -404,8 +383,7 @@ static inline bool gl_shtex_init_gl_tex(void)
 		return false;
 	}
 
-	data.gl_dxobj = obsglDXRegisterObjectNV(data.gl_device, data.d3d11_tex,
-						data.texture, GL_TEXTURE_2D,
+	data.gl_dxobj = obsglDXRegisterObjectNV(data.gl_device, data.d3d11_tex, data.texture, GL_TEXTURE_2D,
 						WGL_ACCESS_WRITE_DISCARD_NV);
 	if (!data.gl_dxobj) {
 		hlog("gl_shtex_init_gl_tex: failed to register object");
@@ -438,8 +416,8 @@ static bool gl_shtex_init(HWND window)
 	if (!gl_init_fbo()) {
 		return false;
 	}
-	if (!capture_init_shtex(&data.shtex_info, window, data.cx, data.cy,
-				data.format, true, (uintptr_t)data.handle)) {
+	if (!capture_init_shtex(&data.shtex_info, window, data.cx, data.cy, data.format, true,
+				(uintptr_t)data.handle)) {
 		return false;
 	}
 
@@ -464,8 +442,7 @@ static inline bool gl_shmem_init_data(size_t idx, size_t size)
 		return false;
 	}
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.cx, data.cy, 0, GL_BGRA,
-		     GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.cx, data.cy, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 	if (gl_error("gl_shmem_init_data", "failed to set texture data")) {
 		return false;
 	}
@@ -490,8 +467,7 @@ static inline bool gl_shmem_init_buffers(void)
 	}
 
 	glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &last_pbo);
-	if (gl_error("gl_shmem_init_buffers",
-		     "failed to save pixel pack buffer")) {
+	if (gl_error("gl_shmem_init_buffers", "failed to save pixel pack buffer")) {
 		return false;
 	}
 
@@ -519,8 +495,7 @@ static bool gl_shmem_init(HWND window)
 	if (!gl_init_fbo()) {
 		return false;
 	}
-	if (!capture_init_shmem(&data.shmem_info, window, data.cx, data.cy,
-				data.cx * 4, data.format, true)) {
+	if (!capture_init_shmem(&data.shmem_info, window, data.cx, data.cy, data.cx * 4, data.format, true)) {
 		return false;
 	}
 
@@ -550,9 +525,7 @@ static int gl_init(HDC hdc)
 
 	data.hdc = hdc;
 	data.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	data.using_shtex = nv_capture_available &&
-			   !global_hook_info->force_shmem &&
-			   !data.shmem_fallback;
+	data.using_shtex = nv_capture_available && !global_hook_info->force_shmem && !data.shmem_fallback;
 
 	if (data.using_shtex) {
 		success = gl_shtex_init(window);
@@ -582,8 +555,7 @@ static void gl_copy_backbuffer(GLuint dst)
 		return;
 	}
 
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-			       GL_TEXTURE_2D, dst, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst, 0);
 	if (gl_error("gl_copy_backbuffer", "failed to set frame buffer")) {
 		return;
 	}
@@ -591,16 +563,14 @@ static void gl_copy_backbuffer(GLuint dst)
 	glReadBuffer(GL_BACK);
 
 	/* darkest dungeon fix */
-	darkest_dungeon_fix = glGetError() == GL_INVALID_OPERATION &&
-			      _strcmpi(process_name, "Darkest.exe") == 0;
+	darkest_dungeon_fix = glGetError() == GL_INVALID_OPERATION && _strcmpi(process_name, "Darkest.exe") == 0;
 
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	if (gl_error("gl_copy_backbuffer", "failed to set draw buffer")) {
 		return;
 	}
 
-	glBlitFramebuffer(0, 0, data.cx, data.cy, 0, 0, data.cx, data.cy,
-			  GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	glBlitFramebuffer(0, 0, data.cx, data.cy, 0, 0, data.cx, data.cy, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	gl_error("gl_copy_backbuffer", "failed to blit");
 }
 
@@ -639,8 +609,7 @@ static void gl_shmem_capture_copy(int i)
 		data.texture_ready[i] = false;
 
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, data.pbos[i]);
-		if (gl_error("gl_shmem_capture_queue_copy",
-			     "failed to bind pbo")) {
+		if (gl_error("gl_shmem_capture_queue_copy", "failed to bind pbo")) {
 			return;
 		}
 
@@ -699,16 +668,14 @@ static void gl_shmem_capture(void)
 		data.copy_wait++;
 	} else {
 		if (shmem_texture_data_lock(data.cur_tex)) {
-			glBindBuffer(GL_PIXEL_PACK_BUFFER,
-				     data.pbos[data.cur_tex]);
+			glBindBuffer(GL_PIXEL_PACK_BUFFER, data.pbos[data.cur_tex]);
 			glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 			data.texture_mapped[data.cur_tex] = false;
 			shmem_texture_data_unlock(data.cur_tex);
 		}
 
 		gl_copy_backbuffer(data.textures[data.cur_tex]);
-		gl_shmem_capture_stage(data.pbos[data.cur_tex],
-				       data.textures[data.cur_tex]);
+		gl_shmem_capture_stage(data.pbos[data.cur_tex], data.textures[data.cur_tex]);
 		data.texture_ready[data.cur_tex] = true;
 	}
 
@@ -840,8 +807,7 @@ static bool gl_register_window(void)
 	wc.lpszClassName = DUMMY_WINDOW_CLASS_NAME;
 
 	if (!RegisterClassW(&wc)) {
-		hlog("gl_register_window: failed to register window class: %d",
-		     GetLastError());
+		hlog("gl_register_window: failed to register window class: %d", GetLastError());
 		return false;
 	}
 
@@ -862,8 +828,7 @@ bool hook_gl(void)
 	/* "life is feudal: your own" somehow uses both opengl and directx at
 	 * the same time, so blacklist it from capturing opengl */
 	const char *process_name = get_process_name();
-	if (_strcmpi(process_name, "yo_cm_client.exe") == 0 ||
-	    _strcmpi(process_name, "cm_client.exe") == 0) {
+	if (_strcmpi(process_name, "yo_cm_client.exe") == 0 || _strcmpi(process_name, "cm_client.exe") == 0) {
 		hlog("Ignoring opengl for game: %s", process_name);
 		return true;
 	}
@@ -882,18 +847,15 @@ bool hook_gl(void)
 	DetourAttach((PVOID *)&RealSwapBuffers, hook_swap_buffers);
 	if (wgl_dc_proc) {
 		RealWglDeleteContext = (PFN_WglDeleteContext)wgl_dc_proc;
-		DetourAttach((PVOID *)&RealWglDeleteContext,
-			     hook_wgl_delete_context);
+		DetourAttach((PVOID *)&RealWglDeleteContext, hook_wgl_delete_context);
 	}
 	if (wgl_slb_proc) {
 		RealWglSwapLayerBuffers = (PFN_WglSwapLayerBuffers)wgl_slb_proc;
-		DetourAttach((PVOID *)&RealWglSwapLayerBuffers,
-			     hook_wgl_swap_layer_buffers);
+		DetourAttach((PVOID *)&RealWglSwapLayerBuffers, hook_wgl_swap_layer_buffers);
 	}
 	if (wgl_sb_proc) {
 		RealWglSwapBuffers = (PFN_WglSwapBuffers)wgl_sb_proc;
-		DetourAttach((PVOID *)&RealWglSwapBuffers,
-			     hook_wgl_swap_buffers);
+		DetourAttach((PVOID *)&RealWglSwapBuffers, hook_wgl_swap_buffers);
 	}
 
 	const LONG error = DetourTransactionCommit();

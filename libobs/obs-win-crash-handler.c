@@ -27,44 +27,33 @@
 #include "util/platform.h"
 #include "util/windows/win-version.h"
 
-typedef BOOL(WINAPI *ENUMERATELOADEDMODULES64)(
-	HANDLE process,
-	PENUMLOADED_MODULES_CALLBACK64 enum_loaded_modules_callback,
-	PVOID user_context);
+typedef BOOL(WINAPI *ENUMERATELOADEDMODULES64)(HANDLE process,
+					       PENUMLOADED_MODULES_CALLBACK64 enum_loaded_modules_callback,
+					       PVOID user_context);
 typedef DWORD(WINAPI *SYMSETOPTIONS)(DWORD sym_options);
-typedef BOOL(WINAPI *SYMINITIALIZE)(HANDLE process, PCTSTR user_search_path,
-				    BOOL invade_process);
+typedef BOOL(WINAPI *SYMINITIALIZE)(HANDLE process, PCTSTR user_search_path, BOOL invade_process);
 typedef BOOL(WINAPI *SYMCLEANUP)(HANDLE process);
-typedef BOOL(WINAPI *STACKWALK64)(
-	DWORD machine_type, HANDLE process, HANDLE thread,
-	LPSTACKFRAME64 stack_frame, PVOID context_record,
-	PREAD_PROCESS_MEMORY_ROUTINE64 read_memory_routine,
-	PFUNCTION_TABLE_ACCESS_ROUTINE64 function_table_access_routine,
-	PGET_MODULE_BASE_ROUTINE64 get_module_base_routine,
-	PTRANSLATE_ADDRESS_ROUTINE64 translate_address);
+typedef BOOL(WINAPI *STACKWALK64)(DWORD machine_type, HANDLE process, HANDLE thread, LPSTACKFRAME64 stack_frame,
+				  PVOID context_record, PREAD_PROCESS_MEMORY_ROUTINE64 read_memory_routine,
+				  PFUNCTION_TABLE_ACCESS_ROUTINE64 function_table_access_routine,
+				  PGET_MODULE_BASE_ROUTINE64 get_module_base_routine,
+				  PTRANSLATE_ADDRESS_ROUTINE64 translate_address);
 typedef BOOL(WINAPI *SYMREFRESHMODULELIST)(HANDLE process);
 
-typedef PVOID(WINAPI *SYMFUNCTIONTABLEACCESS64)(HANDLE process,
-						DWORD64 addr_base);
+typedef PVOID(WINAPI *SYMFUNCTIONTABLEACCESS64)(HANDLE process, DWORD64 addr_base);
 typedef DWORD64(WINAPI *SYMGETMODULEBASE64)(HANDLE process, DWORD64 addr);
-typedef BOOL(WINAPI *SYMFROMADDR)(HANDLE process, DWORD64 address,
-				  PDWORD64 displacement, PSYMBOL_INFOW symbol);
-typedef BOOL(WINAPI *SYMGETMODULEINFO64)(HANDLE process, DWORD64 addr,
-					 PIMAGEHLP_MODULE64 module_info);
+typedef BOOL(WINAPI *SYMFROMADDR)(HANDLE process, DWORD64 address, PDWORD64 displacement, PSYMBOL_INFOW symbol);
+typedef BOOL(WINAPI *SYMGETMODULEINFO64)(HANDLE process, DWORD64 addr, PIMAGEHLP_MODULE64 module_info);
 
-typedef DWORD64(WINAPI *SYMLOADMODULE64)(HANDLE process, HANDLE file,
-					 PSTR image_name, PSTR module_name,
-					 DWORD64 base_of_dll,
-					 DWORD size_of_dll);
+typedef DWORD64(WINAPI *SYMLOADMODULE64)(HANDLE process, HANDLE file, PSTR image_name, PSTR module_name,
+					 DWORD64 base_of_dll, DWORD size_of_dll);
 
-typedef BOOL(WINAPI *MINIDUMPWRITEDUMP)(
-	HANDLE process, DWORD process_id, HANDLE file, MINIDUMP_TYPE dump_type,
-	PMINIDUMP_EXCEPTION_INFORMATION exception_param,
-	PMINIDUMP_USER_STREAM_INFORMATION user_stream_param,
-	PMINIDUMP_CALLBACK_INFORMATION callback_param);
+typedef BOOL(WINAPI *MINIDUMPWRITEDUMP)(HANDLE process, DWORD process_id, HANDLE file, MINIDUMP_TYPE dump_type,
+					PMINIDUMP_EXCEPTION_INFORMATION exception_param,
+					PMINIDUMP_USER_STREAM_INFORMATION user_stream_param,
+					PMINIDUMP_CALLBACK_INFORMATION callback_param);
 
-typedef HINSTANCE(WINAPI *SHELLEXECUTEA)(HWND hwnd, LPCTSTR operation,
-					 LPCTSTR file, LPCTSTR parameters,
+typedef HINSTANCE(WINAPI *SHELLEXECUTEA)(HWND hwnd, LPCTSTR operation, LPCTSTR file, LPCTSTR parameters,
 					 LPCTSTR directory, INT show_flags);
 
 typedef HRESULT(WINAPI *GETTHREADDESCRIPTION)(HANDLE thread, PWSTR *desc);
@@ -104,8 +93,7 @@ struct exception_handler_data {
 	struct dstr module_list;
 };
 
-static inline void
-exception_handler_data_free(struct exception_handler_data *data)
+static inline void exception_handler_data_free(struct exception_handler_data *data)
 {
 	LocalFree(data->sym_info);
 	dstr_free(&data->str);
@@ -136,15 +124,13 @@ static inline bool get_dbghelp_imports(struct exception_handler_data *data)
 	GET_DBGHELP_IMPORT(sym_initialize, "SymInitialize");
 	GET_DBGHELP_IMPORT(sym_cleanup, "SymCleanup");
 	GET_DBGHELP_IMPORT(sym_set_options, "SymSetOptions");
-	GET_DBGHELP_IMPORT(sym_function_table_access64,
-			   "SymFunctionTableAccess64");
+	GET_DBGHELP_IMPORT(sym_function_table_access64, "SymFunctionTableAccess64");
 	GET_DBGHELP_IMPORT(sym_get_module_base64, "SymGetModuleBase64");
 	GET_DBGHELP_IMPORT(sym_from_addr, "SymFromAddrW");
 	GET_DBGHELP_IMPORT(sym_get_module_info64, "SymGetModuleInfo64");
 	GET_DBGHELP_IMPORT(sym_refresh_module_list, "SymRefreshModuleList");
 	GET_DBGHELP_IMPORT(stack_walk64, "StackWalk64");
-	GET_DBGHELP_IMPORT(enumerate_loaded_modules64,
-			   "EnumerateLoadedModulesW64");
+	GET_DBGHELP_IMPORT(enumerate_loaded_modules64, "EnumerateLoadedModulesW64");
 	GET_DBGHELP_IMPORT(minidump_write_dump, "MiniDumpWriteDump");
 
 	return true;
@@ -152,7 +138,13 @@ static inline bool get_dbghelp_imports(struct exception_handler_data *data)
 
 static inline void init_instruction_data(struct stack_trace *trace)
 {
-#ifdef _WIN64
+#if defined(_M_ARM64)
+	trace->instruction_ptr = trace->context.Pc;
+	trace->frame.AddrPC.Offset = trace->instruction_ptr;
+	trace->frame.AddrFrame.Offset = trace->context.Fp;
+	trace->frame.AddrStack.Offset = trace->context.Sp;
+	trace->image_type = IMAGE_FILE_MACHINE_ARM64;
+#elif defined(_WIN64)
 	trace->instruction_ptr = trace->context.Rip;
 	trace->frame.AddrPC.Offset = trace->instruction_ptr;
 	trace->frame.AddrFrame.Offset = trace->context.Rbp;
@@ -175,8 +167,7 @@ extern bool sym_initialize_called;
 
 static inline void init_sym_info(struct exception_handler_data *data)
 {
-	data->sym_set_options(SYMOPT_UNDNAME | SYMOPT_FAIL_CRITICAL_ERRORS |
-			      SYMOPT_LOAD_ANYTHING);
+	data->sym_set_options(SYMOPT_UNDNAME | SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_LOAD_ANYTHING);
 
 	if (!sym_initialize_called)
 		data->sym_initialize(data->process, NULL, true);
@@ -208,8 +199,7 @@ static inline void init_cpu_info(struct exception_handler_data *data)
 		wchar_t str[1024];
 		DWORD size = 1024;
 
-		status = RegQueryValueExW(key, L"ProcessorNameString", NULL,
-					  NULL, (LPBYTE)str, &size);
+		status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL, (LPBYTE)str, &size);
 		if (status == ERROR_SUCCESS)
 			dstr_from_wcs(&data->cpu_info, str);
 		else
@@ -219,8 +209,7 @@ static inline void init_cpu_info(struct exception_handler_data *data)
 	}
 }
 
-static BOOL CALLBACK enum_all_modules(PCTSTR module_name, DWORD64 module_base,
-				      ULONG module_size,
+static BOOL CALLBACK enum_all_modules(PCTSTR module_name, DWORD64 module_base, ULONG module_size,
 				      struct exception_handler_data *data)
 {
 	char name_utf8[MAX_PATH];
@@ -234,20 +223,18 @@ static BOOL CALLBACK enum_all_modules(PCTSTR module_name, DWORD64 module_base,
 	}
 
 #ifdef _WIN64
-	dstr_catf(&data->module_list, "%016" PRIX64 "-%016" PRIX64 " %s\r\n",
-		  module_base, module_base + module_size, name_utf8);
+	dstr_catf(&data->module_list, "%016" PRIX64 "-%016" PRIX64 " %s\r\n", module_base, module_base + module_size,
+		  name_utf8);
 #else
-	dstr_catf(&data->module_list, "%08" PRIX64 "-%08" PRIX64 " %s\r\n",
-		  module_base, module_base + module_size, name_utf8);
+	dstr_catf(&data->module_list, "%08" PRIX64 "-%08" PRIX64 " %s\r\n", module_base, module_base + module_size,
+		  name_utf8);
 #endif
 	return true;
 }
 
 static inline void init_module_info(struct exception_handler_data *data)
 {
-	data->enumerate_loaded_modules64(
-		data->process, (PENUMLOADED_MODULES_CALLBACK64)enum_all_modules,
-		data);
+	data->enumerate_loaded_modules64(data->process, (PENUMLOADED_MODULES_CALLBACK64)enum_all_modules, data);
 }
 
 extern const char *get_win_release_id();
@@ -276,11 +263,10 @@ static inline void write_header(struct exception_handler_data *data)
 		  "Windows version: %d.%d build %d (release: %s; revision: %d; "
 		  "%s-bit)\r\n"
 		  "CPU: %s\r\n\r\n",
-		  data->exception->ExceptionRecord->ExceptionCode, date_time,
-		  data->main_trace.instruction_ptr, data->module_name.array,
-		  obs_bitness, data->win_version.major, data->win_version.minor,
-		  data->win_version.build, release_id, data->win_version.revis,
-		  is_64_bit_windows() ? "64" : "32", data->cpu_info.array);
+		  data->exception->ExceptionRecord->ExceptionCode, date_time, data->main_trace.instruction_ptr,
+		  data->module_name.array, obs_bitness, data->win_version.major, data->win_version.minor,
+		  data->win_version.build, release_id, data->win_version.revis, is_64_bit_windows() ? "64" : "32",
+		  data->cpu_info.array);
 }
 
 struct module_info {
@@ -288,11 +274,9 @@ struct module_info {
 	char name_utf8[MAX_PATH];
 };
 
-static BOOL CALLBACK enum_module(PCTSTR module_name, DWORD64 module_base,
-				 ULONG module_size, struct module_info *info)
+static BOOL CALLBACK enum_module(PCTSTR module_name, DWORD64 module_base, ULONG module_size, struct module_info *info)
 {
-	if (info->addr >= module_base &&
-	    info->addr < module_base + module_size) {
+	if (info->addr >= module_base && info->addr < module_base + module_size) {
 
 		os_wcs_to_utf8(module_name, 0, info->name_utf8, MAX_PATH);
 		strlwr(info->name_utf8);
@@ -302,27 +286,20 @@ static BOOL CALLBACK enum_module(PCTSTR module_name, DWORD64 module_base,
 	return true;
 }
 
-static inline void get_module_name(struct exception_handler_data *data,
-				   struct module_info *info)
+static inline void get_module_name(struct exception_handler_data *data, struct module_info *info)
 {
-	data->enumerate_loaded_modules64(
-		data->process, (PENUMLOADED_MODULES_CALLBACK64)enum_module,
-		info);
+	data->enumerate_loaded_modules64(data->process, (PENUMLOADED_MODULES_CALLBACK64)enum_module, info);
 }
 
-static inline bool walk_stack(struct exception_handler_data *data,
-			      HANDLE thread, struct stack_trace *trace)
+static inline bool walk_stack(struct exception_handler_data *data, HANDLE thread, struct stack_trace *trace)
 {
 	struct module_info module_info = {0};
 	DWORD64 func_offset;
 	char sym_name[256];
 	char *p;
 
-	bool success = data->stack_walk64(trace->image_type, data->process,
-					  thread, &trace->frame,
-					  &trace->context, NULL,
-					  data->sym_function_table_access64,
-					  data->sym_get_module_base64, NULL);
+	bool success = data->stack_walk64(trace->image_type, data->process, thread, &trace->frame, &trace->context,
+					  NULL, data->sym_function_table_access64, data->sym_get_module_base64, NULL);
 	if (!success)
 		return false;
 
@@ -338,9 +315,8 @@ static inline bool walk_stack(struct exception_handler_data *data,
 	}
 
 	if (data->sym_info) {
-		success = !!data->sym_from_addr(data->process,
-						trace->frame.AddrPC.Offset,
-						&func_offset, data->sym_info);
+		success =
+			!!data->sym_from_addr(data->process, trace->frame.AddrPC.Offset, &func_offset, data->sym_info);
 
 		if (success)
 			os_wcs_to_utf8(data->sym_info->Name, 0, sym_name, 256);
@@ -372,18 +348,13 @@ static inline bool walk_stack(struct exception_handler_data *data,
 #endif
 
 	if (success && (data->sym_info->Flags & SYMFLAG_EXPORT) == 0) {
-		dstr_catf(&data->str, SUCCESS_FORMAT,
-			  trace->frame.AddrStack.Offset,
-			  trace->frame.AddrPC.Offset, trace->frame.Params[0],
-			  trace->frame.Params[1], trace->frame.Params[2],
+		dstr_catf(&data->str, SUCCESS_FORMAT, trace->frame.AddrStack.Offset, trace->frame.AddrPC.Offset,
+			  trace->frame.Params[0], trace->frame.Params[1], trace->frame.Params[2],
 			  trace->frame.Params[3], p, sym_name, func_offset);
 	} else {
-		dstr_catf(&data->str, FAIL_FORMAT,
-			  trace->frame.AddrStack.Offset,
-			  trace->frame.AddrPC.Offset, trace->frame.Params[0],
-			  trace->frame.Params[1], trace->frame.Params[2],
-			  trace->frame.Params[3], p,
-			  trace->frame.AddrPC.Offset);
+		dstr_catf(&data->str, FAIL_FORMAT, trace->frame.AddrStack.Offset, trace->frame.AddrPC.Offset,
+			  trace->frame.Params[0], trace->frame.Params[1], trace->frame.Params[2],
+			  trace->frame.Params[3], p, trace->frame.AddrPC.Offset);
 	}
 
 	return true;
@@ -410,8 +381,7 @@ static inline char *get_thread_name(HANDLE thread)
 		}
 
 		HMODULE k32 = LoadLibraryW(L"kernel32.dll");
-		get_thread_desc = (GETTHREADDESCRIPTION)GetProcAddress(
-			k32, "GetThreadDescription");
+		get_thread_desc = (GETTHREADDESCRIPTION)GetProcAddress(k32, "GetThreadDescription");
 		if (!get_thread_desc) {
 			failed = true;
 			return NULL;
@@ -433,8 +403,7 @@ static inline char *get_thread_name(HANDLE thread)
 	return name.array;
 }
 
-static inline void write_thread_trace(struct exception_handler_data *data,
-				      THREADENTRY32 *entry, bool first_thread)
+static inline void write_thread_trace(struct exception_handler_data *data, THREADENTRY32 *entry, bool first_thread)
 {
 	bool crash_thread = entry->th32ThreadID == GetCurrentThreadId();
 	struct stack_trace trace = {0};
@@ -458,8 +427,7 @@ static inline void write_thread_trace(struct exception_handler_data *data,
 
 	thread_name = get_thread_name(thread);
 
-	dstr_catf(&data->str, "\r\nThread %lX:%s%s\r\n" TRACE_TOP,
-		  entry->th32ThreadID, thread_name ? thread_name : "",
+	dstr_catf(&data->str, "\r\nThread %lX:%s%s\r\n" TRACE_TOP, entry->th32ThreadID, thread_name ? thread_name : "",
 		  crash_thread ? " (Crashed)" : "");
 
 	bfree(thread_name);
@@ -475,8 +443,7 @@ static inline void write_thread_trace(struct exception_handler_data *data,
 static inline void write_thread_traces(struct exception_handler_data *data)
 {
 	THREADENTRY32 entry = {0};
-	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD,
-						   GetCurrentProcessId());
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, GetCurrentProcessId());
 	bool success;
 
 	if (snapshot == INVALID_HANDLE_VALUE)
@@ -512,8 +479,7 @@ static inline void write_module_list(struct exception_handler_data *data)
 
 /* ------------------------------------------------------------------------- */
 
-static inline void handle_exception(struct exception_handler_data *data,
-				    PEXCEPTION_POINTERS exception)
+static inline void handle_exception(struct exception_handler_data *data, PEXCEPTION_POINTERS exception)
 {
 	if (!get_dbghelp_imports(data))
 		return;

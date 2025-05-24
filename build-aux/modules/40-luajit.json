@@ -10,8 +10,8 @@
     "sources": [
         {
             "type": "git",
-            "url": "https://luajit.org/git/luajit-2.0.git",
-            "commit": "5790d253972c9d78a0c2aece527eda5b134bbbf7",
+            "url": "https://github.com/LuaJIT/LuaJIT.git",
+            "commit": "a4f56a459a588ae768801074b46ba0adcfb49eb1",
             "disable-shallow-clone": true
         },
         {

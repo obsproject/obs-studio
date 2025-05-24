@@ -107,15 +107,11 @@ void *os_dlopen(const char *path)
 
 		char *message = NULL;
 
-		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
-				       FORMAT_MESSAGE_IGNORE_INSERTS |
+		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
 				       FORMAT_MESSAGE_ALLOCATE_BUFFER,
-			       NULL, error,
-			       MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
-			       (LPSTR)&message, 0, NULL);
+			       NULL, error, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPSTR)&message, 0, NULL);
 
-		blog(LOG_INFO, "LoadLibrary failed for '%s': %s (%lu)", path,
-		     message, error);
+		blog(LOG_INFO, "LoadLibrary failed for '%s': %s (%lu)", path, message, error);
 
 		if (message)
 			LocalFree(message);
@@ -142,9 +138,7 @@ static bool has_qt5_import(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 {
 	__try {
 		PIMAGE_DATA_DIRECTORY data_dir;
-		data_dir =
-			&nt_headers->OptionalHeader
-				 .DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+		data_dir = &nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 
 		if (data_dir->Size == 0)
 			return false;
@@ -156,8 +150,7 @@ static bool has_qt5_import(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 		/* find the section that contains the export directory */
 		int i;
 		for (i = 0; i < nt_headers->FileHeader.NumberOfSections; i++) {
-			if (section->VirtualAddress <=
-			    data_dir->VirtualAddress) {
+			if (section->VirtualAddress <= data_dir->VirtualAddress) {
 				last_section = section;
 				section++;
 				continue;
@@ -175,14 +168,11 @@ static bool has_qt5_import(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 
 		/* get a pointer to the import directory */
 		PIMAGE_IMPORT_DESCRIPTOR import;
-		import = (PIMAGE_IMPORT_DESCRIPTOR)((byte *)base +
-						    data_dir->VirtualAddress -
-						    section->VirtualAddress +
+		import = (PIMAGE_IMPORT_DESCRIPTOR)((byte *)base + data_dir->VirtualAddress - section->VirtualAddress +
 						    section->PointerToRawData);
 
 		while (import->Name != 0) {
-			char *name = (char *)((byte *)base + import->Name -
-					      section->VirtualAddress +
+			char *name = (char *)((byte *)base + import->Name - section->VirtualAddress +
 					      section->PointerToRawData);
 
 			/* qt5? bingo, reject this library */
@@ -205,9 +195,7 @@ static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 {
 	__try {
 		PIMAGE_DATA_DIRECTORY data_dir;
-		data_dir =
-			&nt_headers->OptionalHeader
-				 .DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+		data_dir = &nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
 
 		if (data_dir->Size == 0)
 			return false;
@@ -219,8 +207,7 @@ static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 		/* find the section that contains the export directory */
 		int i;
 		for (i = 0; i < nt_headers->FileHeader.NumberOfSections; i++) {
-			if (section->VirtualAddress <=
-			    data_dir->VirtualAddress) {
+			if (section->VirtualAddress <= data_dir->VirtualAddress) {
 				last_section = section;
 				section++;
 				continue;
@@ -238,9 +225,7 @@ static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 
 		/* get a pointer to the export directory */
 		PIMAGE_EXPORT_DIRECTORY export;
-		export = (PIMAGE_EXPORT_DIRECTORY)((byte *)base +
-						   data_dir->VirtualAddress -
-						   section->VirtualAddress +
+		export = (PIMAGE_EXPORT_DIRECTORY)((byte *)base + data_dir->VirtualAddress - section->VirtualAddress +
 						   section->PointerToRawData);
 
 		if (export->NumberOfNames == 0)
@@ -248,8 +233,7 @@ static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 
 		/* get a pointer to the export directory names */
 		DWORD *names_ptr;
-		names_ptr = (DWORD *)((byte *)base + export->AddressOfNames -
-				      section->VirtualAddress +
+		names_ptr = (DWORD *)((byte *)base + export->AddressOfNames - section->VirtualAddress +
 				      section->PointerToRawData);
 
 		/* iterate through each name and see if its an obs plugin */
@@ -257,9 +241,7 @@ static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 		size_t j;
 		for (j = 0; j < export->NumberOfNames; j++) {
 
-			name = (CHAR *)base + names_ptr[j] -
-			       section->VirtualAddress +
-			       section->PointerToRawData;
+			name = (CHAR *)base + names_ptr[j] - section->VirtualAddress + section->PointerToRawData;
 
 			if (!strcmp(name, "obs_module_load")) {
 				return true;
@@ -300,16 +282,14 @@ void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
 
 	dstr_free(&dll_name);
 
-	hFile = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL,
-			    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	hFile = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 	bfree(wpath);
 
 	if (hFile == INVALID_HANDLE_VALUE)
 		goto cleanup;
 
-	hFileMapping =
-		CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	hFileMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
 	if (hFileMapping == NULL)
 		goto cleanup;
 
@@ -325,8 +305,7 @@ void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
 		if (dos_header->e_magic != IMAGE_DOS_SIGNATURE)
 			goto cleanup;
 
-		nt_headers = (PIMAGE_NT_HEADERS)((byte *)dos_header +
-						 dos_header->e_lfanew);
+		nt_headers = (PIMAGE_NT_HEADERS)((byte *)dos_header + dos_header->e_lfanew);
 
 		if (nt_headers->Signature != IMAGE_NT_SIGNATURE)
 			goto cleanup;
@@ -384,8 +363,7 @@ os_cpu_usage_info_t *os_cpu_usage_info_start(void)
 
 	GetSystemInfo(&si);
 	GetSystemTimeAsFileTime(&info->last_time.ft);
-	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy,
-			&info->last_sys_time.ft, &info->last_user_time.ft);
+	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy, &info->last_sys_time.ft, &info->last_user_time.ft);
 	info->core_count = si.dwNumberOfProcessors;
 
 	return info;
@@ -401,11 +379,9 @@ double os_cpu_usage_info_query(os_cpu_usage_info_t *info)
 		return 0.0;
 
 	GetSystemTimeAsFileTime(&cur_time.ft);
-	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy, &cur_sys_time.ft,
-			&cur_user_time.ft);
+	GetProcessTimes(GetCurrentProcess(), &dummy, &dummy, &cur_sys_time.ft, &cur_user_time.ft);
 
-	percent = (double)(cur_sys_time.val - info->last_sys_time.val +
-			   (cur_user_time.val - info->last_user_time.val));
+	percent = (double)(cur_sys_time.val - info->last_sys_time.val + (cur_user_time.val - info->last_user_time.val));
 	percent /= (double)(cur_time.val - info->last_time.val);
 	percent /= (double)info->core_count;
 
@@ -425,17 +401,14 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 bool os_sleepto_ns(uint64_t time_target)
 {
 	const uint64_t freq = get_clockfreq();
-	const LONGLONG count_target =
-		util_mul_div64(time_target, freq, 1000000000);
+	const LONGLONG count_target = util_mul_div64(time_target, freq, 1000000000);
 
 	LARGE_INTEGER count;
 	QueryPerformanceCounter(&count);
 
 	const bool stall = count.QuadPart < count_target;
 	if (stall) {
-		const DWORD milliseconds =
-			(DWORD)(((count_target - count.QuadPart) * 1000.0) /
-				freq);
+		const DWORD milliseconds = (DWORD)(((count_target - count.QuadPart) * 1000.0) / freq);
 		if (milliseconds > 1)
 			Sleep(milliseconds - 1);
 
@@ -482,13 +455,11 @@ uint64_t os_gettime_ns(void)
 {
 	LARGE_INTEGER current_time;
 	QueryPerformanceCounter(&current_time);
-	return util_mul_div64(current_time.QuadPart, 1000000000,
-			      get_clockfreq());
+	return util_mul_div64(current_time.QuadPart, 1000000000, get_clockfreq());
 }
 
 /* returns [folder]\[name] on windows */
-static int os_get_path_internal(char *dst, size_t size, const char *name,
-				int folder)
+static int os_get_path_internal(char *dst, size_t size, const char *name, int folder)
 {
 	wchar_t path_utf16[MAX_PATH];
 
@@ -669,8 +640,7 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 			return NULL;
 	}
 
-	os_wcs_to_utf8(dir->wfd.cFileName, 0, dir->out.d_name,
-		       sizeof(dir->out.d_name));
+	os_wcs_to_utf8(dir->wfd.cFileName, 0, dir->out.d_name, sizeof(dir->out.d_name));
 
 	dir->out.directory = is_dir(&dir->wfd);
 
@@ -693,9 +663,7 @@ int64_t os_get_free_space(const char *path)
 
 	if (os_get_abs_path(path, abs_path, 512) > 0) {
 		if (os_utf8_to_wcs(abs_path, 0, w_abs_path, 512) > 0) {
-			BOOL success = GetDiskFreeSpaceExW(
-				w_abs_path, (PULARGE_INTEGER)&remainingSpace,
-				NULL, NULL);
+			BOOL success = GetDiskFreeSpaceExW(w_abs_path, (PULARGE_INTEGER)&remainingSpace, NULL, NULL);
 			if (success)
 				return (int64_t)remainingSpace.QuadPart;
 		}
@@ -704,8 +672,7 @@ int64_t os_get_free_space(const char *path)
 	return -1;
 }
 
-static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd,
-			 const char *pattern)
+static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd, const char *pattern)
 {
 	struct dstr name = {0};
 	struct dstr path = {0};
@@ -818,8 +785,7 @@ int os_mkdir(const char *path)
 	bfree(path_utf16);
 
 	if (!success)
-		return (GetLastError() == ERROR_ALREADY_EXISTS) ? MKDIR_EXISTS
-								: MKDIR_ERROR;
+		return (GetLastError() == ERROR_ALREADY_EXISTS) ? MKDIR_EXISTS : MKDIR_ERROR;
 
 	return MKDIR_SUCCESS;
 }
@@ -837,10 +803,7 @@ int os_rename(const char *old_path, const char *new_path)
 		goto error;
 	}
 
-	code = MoveFileExW(old_path_utf16, new_path_utf16,
-			   MOVEFILE_REPLACE_EXISTING)
-		       ? 0
-		       : -1;
+	code = MoveFileExW(old_path_utf16, new_path_utf16, MOVEFILE_REPLACE_EXISTING) ? 0 : -1;
 
 error:
 	bfree(old_path_utf16);
@@ -867,9 +830,7 @@ int os_safe_replace(const char *target, const char *from, const char *backup)
 	if (ReplaceFileW(wtarget, wfrom, wbackup, 0, NULL, NULL)) {
 		code = 0;
 	} else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-		code = MoveFileExW(wfrom, wtarget, MOVEFILE_REPLACE_EXISTING)
-			       ? 0
-			       : -1;
+		code = MoveFileExW(wfrom, wtarget, MOVEFILE_REPLACE_EXISTING) ? 0 : -1;
 	}
 
 fail:
@@ -980,12 +941,9 @@ int os_chdir(const char *path)
 	return ret;
 }
 
-typedef DWORD(WINAPI *get_file_version_info_size_w_t)(LPCWSTR module,
-						      LPDWORD unused);
-typedef BOOL(WINAPI *get_file_version_info_w_t)(LPCWSTR module, DWORD unused,
-						DWORD len, LPVOID data);
-typedef BOOL(WINAPI *ver_query_value_w_t)(LPVOID data, LPCWSTR subblock,
-					  LPVOID *buf, PUINT sizeout);
+typedef DWORD(WINAPI *get_file_version_info_size_w_t)(LPCWSTR module, LPDWORD unused);
+typedef BOOL(WINAPI *get_file_version_info_w_t)(LPCWSTR module, DWORD unused, DWORD len, LPVOID data);
+typedef BOOL(WINAPI *ver_query_value_w_t)(LPVOID data, LPCWSTR subblock, LPVOID *buf, PUINT sizeout);
 
 static get_file_version_info_size_w_t get_file_version_info_size = NULL;
 static get_file_version_info_w_t get_file_version_info = NULL;
@@ -1008,16 +966,11 @@ static bool initialize_version_functions(void)
 		}
 	}
 
-	get_file_version_info_size =
-		(get_file_version_info_size_w_t)GetProcAddress(
-			ver, "GetFileVersionInfoSizeW");
-	get_file_version_info = (get_file_version_info_w_t)GetProcAddress(
-		ver, "GetFileVersionInfoW");
-	ver_query_value =
-		(ver_query_value_w_t)GetProcAddress(ver, "VerQueryValueW");
+	get_file_version_info_size = (get_file_version_info_size_w_t)GetProcAddress(ver, "GetFileVersionInfoSizeW");
+	get_file_version_info = (get_file_version_info_w_t)GetProcAddress(ver, "GetFileVersionInfoW");
+	ver_query_value = (ver_query_value_w_t)GetProcAddress(ver, "VerQueryValueW");
 
-	if (!get_file_version_info_size || !get_file_version_info ||
-	    !ver_query_value) {
+	if (!get_file_version_info_size || !get_file_version_info || !ver_query_value) {
 		blog(LOG_ERROR, "Failed to load windows version "
 				"functions");
 		return false;
@@ -1058,8 +1011,7 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 
 	success = ver_query_value(data, L"\\", (LPVOID *)&info, &len);
 	if (!success || !info || !len) {
-		blog(LOG_ERROR, "Failed to get %s version info value",
-		     utf8_lib);
+		blog(LOG_ERROR, "Failed to get %s version info value", utf8_lib);
 		bfree(data);
 		return false;
 	}
@@ -1090,8 +1042,7 @@ bool is_arm64_windows(void)
 #else
 	USHORT processMachine;
 	USHORT nativeMachine;
-	bool result = IsWow64Process2(GetCurrentProcess(), &processMachine,
-				      &nativeMachine);
+	bool result = IsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine);
 	return (result && (nativeMachine == IMAGE_FILE_MACHINE_ARM64));
 #endif
 }
@@ -1105,8 +1056,7 @@ bool os_get_emulation_status(void)
 #endif
 }
 
-void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
-		   struct reg_dword *info)
+void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, struct reg_dword *info)
 {
 	struct reg_dword reg = {0};
 	HKEY key;
@@ -1123,8 +1073,7 @@ void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
 
 	reg.size = sizeof(reg.return_value);
 
-	reg.status = RegQueryValueExW(key, value_name, NULL, NULL,
-				      (LPBYTE)&reg.return_value, &reg.size);
+	reg.status = RegQueryValueExW(key, value_name, NULL, NULL, (LPBYTE)&reg.return_value, &reg.size);
 
 	RegCloseKey(key);
 
@@ -1140,8 +1089,7 @@ static inline void rtl_get_ver(struct win_version_info *ver)
 		return;
 
 	NTSTATUS(WINAPI * get_ver)
-	(RTL_OSVERSIONINFOEXW *) =
-		(void *)GetProcAddress(ntdll, "RtlGetVersion");
+	(RTL_OSVERSIONINFOEXW *) = (void *)GetProcAddress(ntdll, "RtlGetVersion");
 	if (!get_ver) {
 		return;
 	}
@@ -1159,11 +1107,9 @@ static inline void rtl_get_ver(struct win_version_info *ver)
 	ver->revis = 0;
 }
 
-static inline bool get_reg_sz(HKEY key, const wchar_t *val, wchar_t *buf,
-			      DWORD size)
+static inline bool get_reg_sz(HKEY key, const wchar_t *val, wchar_t *buf, DWORD size)
 {
-	const LSTATUS status =
-		RegGetValueW(key, NULL, val, RRF_RT_REG_SZ, NULL, buf, &size);
+	const LSTATUS status = RegGetValueW(key, NULL, val, RRF_RT_REG_SZ, NULL, buf, &size);
 	return status == ERROR_SUCCESS;
 }
 
@@ -1180,18 +1126,15 @@ static inline void get_reg_ver(struct win_version_info *ver)
 
 	size = sizeof(dw_val);
 
-	status = RegQueryValueExW(key, L"CurrentMajorVersionNumber", NULL, NULL,
-				  (LPBYTE)&dw_val, &size);
+	status = RegQueryValueExW(key, L"CurrentMajorVersionNumber", NULL, NULL, (LPBYTE)&dw_val, &size);
 	if (status == ERROR_SUCCESS)
 		ver->major = (int)dw_val;
 
-	status = RegQueryValueExW(key, L"CurrentMinorVersionNumber", NULL, NULL,
-				  (LPBYTE)&dw_val, &size);
+	status = RegQueryValueExW(key, L"CurrentMinorVersionNumber", NULL, NULL, (LPBYTE)&dw_val, &size);
 	if (status == ERROR_SUCCESS)
 		ver->minor = (int)dw_val;
 
-	status = RegQueryValueExW(key, L"UBR", NULL, NULL, (LPBYTE)&dw_val,
-				  &size);
+	status = RegQueryValueExW(key, L"UBR", NULL, NULL, (LPBYTE)&dw_val, &size);
 	if (status == ERROR_SUCCESS)
 		ver->revis = (int)dw_val;
 
@@ -1199,8 +1142,7 @@ static inline void get_reg_ver(struct win_version_info *ver)
 		ver->build = wcstol(str, NULL, 10);
 	}
 
-	const wchar_t *release_key = ver->build > 19041 ? L"DisplayVersion"
-							: L"ReleaseId";
+	const wchar_t *release_key = ver->build > 19041 ? L"DisplayVersion" : L"ReleaseId";
 	if (get_reg_sz(key, release_key, str, sizeof(str))) {
 		os_wcs_to_utf8(str, 0, win_release_id, MAX_SZ_LEN);
 	}
@@ -1208,8 +1150,7 @@ static inline void get_reg_ver(struct win_version_info *ver)
 	RegCloseKey(key);
 }
 
-static inline bool version_higher(struct win_version_info *cur,
-				  struct win_version_info *new)
+static inline bool version_higher(struct win_version_info *cur, struct win_version_info *new)
 {
 	if (new->major > cur->major) {
 		return true;
@@ -1232,8 +1173,7 @@ static inline bool version_higher(struct win_version_info *cur,
 	return false;
 }
 
-static inline void use_higher_ver(struct win_version_info *cur,
-				  struct win_version_info *new)
+static inline void use_higher_ver(struct win_version_info *cur, struct win_version_info *new)
 {
 	if (version_higher(cur, new))
 		*cur = *new;
@@ -1294,8 +1234,7 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 		return false;
 
 	if (active) {
-		SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED |
-					ES_AWAYMODE_REQUIRED |
+		SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED |
 					ES_DISPLAY_REQUIRED);
 	} else {
 		SetThreadExecutionState(ES_CONTINUOUS);
@@ -1358,13 +1297,11 @@ static void os_get_cores_internal(void)
 			temp = info;
 
 			for (DWORD i = 0; i < num; i++) {
-				if (temp->Relationship ==
-				    RelationProcessorCore) {
+				if (temp->Relationship == RelationProcessorCore) {
 					ULONG_PTR mask = temp->ProcessorMask;
 
 					physical_cores++;
-					logical_cores +=
-						num_logical_cores(mask);
+					logical_cores += num_logical_cores(mask);
 				}
 
 				temp++;
@@ -1426,8 +1363,7 @@ uint64_t os_get_sys_total_size(void)
 	return total_memory;
 }
 
-static inline bool
-os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
+static inline bool os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
 {
 	if (!GetProcessMemoryInfo(GetCurrentProcess(), pmc, sizeof(*pmc)))
 		return false;
@@ -1484,11 +1420,9 @@ char *os_generate_uuid(void)
 		bcrash("Failed to get UUID, RPC_STATUS: %l", res);
 
 	struct dstr uuid_str = {0};
-	dstr_printf(&uuid_str,
-		    "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-		    uuid.Data1, uuid.Data2, uuid.Data3, uuid.Data4[0],
-		    uuid.Data4[1], uuid.Data4[2], uuid.Data4[3], uuid.Data4[4],
-		    uuid.Data4[5], uuid.Data4[6], uuid.Data4[7]);
+	dstr_printf(&uuid_str, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x", uuid.Data1, uuid.Data2, uuid.Data3,
+		    uuid.Data4[0], uuid.Data4[1], uuid.Data4[2], uuid.Data4[3], uuid.Data4[4], uuid.Data4[5],
+		    uuid.Data4[6], uuid.Data4[7]);
 
 	return uuid_str.array;
 }

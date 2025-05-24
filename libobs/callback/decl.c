@@ -17,17 +17,14 @@
 #include "../util/cf-parser.h"
 #include "decl.h"
 
-static inline void err_specifier_exists(struct cf_parser *cfp,
-					const char *storage)
+static inline void err_specifier_exists(struct cf_parser *cfp, const char *storage)
 {
-	cf_adderror(cfp, "'$1' specifier already exists", LEX_ERROR, storage,
-		    NULL, NULL);
+	cf_adderror(cfp, "'$1' specifier already exists", LEX_ERROR, storage, NULL, NULL);
 }
 
 static inline void err_reserved_name(struct cf_parser *cfp, const char *name)
 {
-	cf_adderror(cfp, "'$1' is a reserved name", LEX_ERROR, name, NULL,
-		    NULL);
+	cf_adderror(cfp, "'$1' is a reserved name", LEX_ERROR, name, NULL, NULL);
 }
 
 static inline void err_existing_name(struct cf_parser *cfp, const char *name)
@@ -35,8 +32,7 @@ static inline void err_existing_name(struct cf_parser *cfp, const char *name)
 	cf_adderror(cfp, "'$1' already exists", LEX_ERROR, name, NULL, NULL);
 }
 
-static bool is_in_out_specifier(struct cf_parser *cfp, struct strref *name,
-				uint32_t *type)
+static bool is_in_out_specifier(struct cf_parser *cfp, struct strref *name, uint32_t *type)
 {
 	if (strref_cmp(name, "in") == 0) {
 		if (*type & CALL_PARAM_IN)
@@ -59,8 +55,7 @@ static bool is_in_out_specifier(struct cf_parser *cfp, struct strref *name,
 
 #define TYPE_OR_STORAGE "type or storage specifier"
 
-static bool get_type(struct strref *ref, enum call_param_type *type,
-		     bool is_return)
+static bool get_type(struct strref *ref, enum call_param_type *type, bool is_return)
 {
 	if (strref_cmp(ref, "int") == 0)
 		*type = CALL_PARAM_TYPE_INT;
@@ -82,9 +77,8 @@ static bool get_type(struct strref *ref, enum call_param_type *type,
 
 static bool is_reserved_name(const char *str)
 {
-	return (strcmp(str, "int") == 0) || (strcmp(str, "float") == 0) ||
-	       (strcmp(str, "bool") == 0) || (strcmp(str, "ptr") == 0) ||
-	       (strcmp(str, "string") == 0) || (strcmp(str, "void") == 0) ||
+	return (strcmp(str, "int") == 0) || (strcmp(str, "float") == 0) || (strcmp(str, "bool") == 0) ||
+	       (strcmp(str, "ptr") == 0) || (strcmp(str, "string") == 0) || (strcmp(str, "void") == 0) ||
 	       (strcmp(str, "return") == 0);
 }
 
@@ -176,8 +170,7 @@ static void print_errors(struct cf_parser *cfp, const char *decl_string)
 	char *errors = error_data_buildstring(&cfp->error_list);
 
 	if (errors) {
-		blog(LOG_WARNING, "Errors/warnings for '%s':\n\n%s",
-		     decl_string, errors);
+		blog(LOG_WARNING, "Errors/warnings for '%s':\n\n%s", decl_string, errors);
 
 		bfree(errors);
 	}
@@ -189,7 +182,7 @@ bool parse_decl_string(struct decl_info *decl, const char *decl_string)
 	struct strref ret_type;
 	struct decl_param ret_param = {0};
 	int code;
-	bool success;
+	bool success = false;
 
 	decl->decl_string = decl_string;
 	ret_param.flags = CALL_PARAM_OUT;
@@ -217,9 +210,11 @@ bool parse_decl_string(struct decl_info *decl, const char *decl_string)
 		goto fail;
 
 	parse_params(&cfp, decl);
+	success = true;
 
 fail:
-	success = !error_data_has_errors(&cfp.error_list);
+	if (error_data_has_errors(&cfp.error_list))
+		success = false;
 
 	if (success && ret_param.type != CALL_PARAM_TYPE_VOID) {
 		ret_param.name = bstrdup("return");

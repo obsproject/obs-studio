@@ -18,8 +18,7 @@ bool obs_module_load(void)
 	CNTV2DeviceScanner scanner;
 	auto numDevices = scanner.GetNumDevices();
 	if (numDevices == 0) {
-		blog(LOG_WARNING,
-		     "No AJA devices found, skipping loading AJA plugin");
+		blog(LOG_WARNING, "No AJA devices found, skipping loading AJA plugin");
 		return false;
 	}
 

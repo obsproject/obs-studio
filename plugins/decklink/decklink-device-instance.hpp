@@ -1,7 +1,6 @@
 #pragma once
 
-#define LOG(level, message, ...) \
-	blog(level, "%s: " message, "decklink", ##__VA_ARGS__)
+#define LOG(level, message, ...) blog(level, "%s: " message, "decklink", ##__VA_ARGS__)
 
 #include <obs-module.h>
 #include <media-io/video-scaler.h>
@@ -13,8 +12,7 @@
 class AudioRepacker;
 class DecklinkBase;
 
-template<typename T>
-class RenderDelegate : public IDeckLinkVideoOutputCallback {
+template<typename T> class RenderDelegate : public IDeckLinkVideoOutputCallback {
 private:
 	std::atomic<unsigned long> m_refCount = 1;
 	T *m_pOwner;
@@ -25,15 +23,13 @@ public:
 	RenderDelegate(T *pOwner);
 
 	// IUnknown
-	virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,
-							 LPVOID *ppv);
+	virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);
 	virtual ULONG STDMETHODCALLTYPE AddRef();
 	virtual ULONG STDMETHODCALLTYPE Release();
 
 	// IDeckLinkVideoOutputCallback
-	virtual HRESULT STDMETHODCALLTYPE
-	ScheduledFrameCompleted(IDeckLinkVideoFrame *completedFrame,
-				BMDOutputFrameCompletionResult result);
+	virtual HRESULT STDMETHODCALLTYPE ScheduledFrameCompleted(IDeckLinkVideoFrame *completedFrame,
+								  BMDOutputFrameCompletionResult result);
 	virtual HRESULT STDMETHODCALLTYPE ScheduledPlaybackHasStopped();
 };
 
@@ -94,8 +90,7 @@ public:
 	void reset()
 	{
 		for (size_t i = 0; i < FrameQueueFrameCount; ++i) {
-			cache[i].node.next.store(&cache[i + 1].node,
-						 std::memory_order_relaxed);
+			cache[i].node.next.store(&cache[i + 1].node, std::memory_order_relaxed);
 		}
 
 		Node &last = cache[FrameQueueFrameCount].node;
@@ -124,8 +119,7 @@ public:
 	{
 		uint8_t *frame = nullptr;
 
-		Node *const n_front =
-			front->next.load(std::memory_order_consume);
+		Node *const n_front = front->next.load(std::memory_order_consume);
 		if (n_front != nullptr) {
 			frame = n_front->frame;
 			front = n_front;
@@ -175,64 +169,38 @@ protected:
 	void FinalizeStream();
 	void SetupVideoFormat(DeckLinkDeviceMode *mode_);
 
-	void HandleAudioPacket(IDeckLinkAudioInputPacket *audioPacket,
-			       const uint64_t timestamp);
-	void HandleVideoFrame(IDeckLinkVideoInputFrame *videoFrame,
-			      const uint64_t timestamp);
+	void HandleAudioPacket(IDeckLinkAudioInputPacket *audioPacket, const uint64_t timestamp);
+	void HandleVideoFrame(IDeckLinkVideoInputFrame *videoFrame, const uint64_t timestamp);
 
 public:
 	DeckLinkDeviceInstance(DecklinkBase *decklink, DeckLinkDevice *device);
 	virtual ~DeckLinkDeviceInstance();
 
 	inline DeckLinkDevice *GetDevice() const { return device; }
-	inline long long GetActiveModeId() const
-	{
-		return mode ? mode->GetId() : 0;
-	}
+	inline long long GetActiveModeId() const { return mode ? mode->GetId() : 0; }
 
-	inline BMDPixelFormat GetActivePixelFormat() const
-	{
-		return pixelFormat;
-	}
-	inline video_colorspace GetActiveColorSpace() const
-	{
-		return colorSpace;
-	}
-	inline video_range_type GetActiveColorRange() const
-	{
-		return colorRange;
-	}
-	inline speaker_layout GetActiveChannelFormat() const
-	{
-		return channelFormat;
-	}
+	inline BMDPixelFormat GetActivePixelFormat() const { return pixelFormat; }
+	inline video_colorspace GetActiveColorSpace() const { return colorSpace; }
+	inline video_range_type GetActiveColorRange() const { return colorRange; }
+	inline speaker_layout GetActiveChannelFormat() const { return channelFormat; }
 	inline bool GetActiveSwapState() const { return swap; }
-	inline BMDVideoConnection GetVideoConnection() const
-	{
-		return videoConnection;
-	}
-	inline BMDAudioConnection GetAudioConnection() const
-	{
-		return audioConnection;
-	}
+	inline BMDVideoConnection GetVideoConnection() const { return videoConnection; }
+	inline BMDAudioConnection GetAudioConnection() const { return audioConnection; }
 
 	inline DeckLinkDeviceMode *GetMode() const { return mode; }
 
-	bool StartCapture(DeckLinkDeviceMode *mode, bool allow10Bit,
-			  BMDVideoConnection bmdVideoConnection,
+	bool StartCapture(DeckLinkDeviceMode *mode, bool allow10Bit, BMDVideoConnection bmdVideoConnection,
 			  BMDAudioConnection bmdAudioConnection);
 	bool StopCapture(void);
 
 	bool StartOutput(DeckLinkDeviceMode *mode_);
 	bool StopOutput(void);
 
-	HRESULT STDMETHODCALLTYPE
-	VideoInputFrameArrived(IDeckLinkVideoInputFrame *videoFrame,
-			       IDeckLinkAudioInputPacket *audioPacket);
-	HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(
-		BMDVideoInputFormatChangedEvents events,
-		IDeckLinkDisplayMode *newMode,
-		BMDDetectedVideoInputFormatFlags detectedSignalFlags);
+	HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(IDeckLinkVideoInputFrame *videoFrame,
+							 IDeckLinkAudioInputPacket *audioPacket);
+	HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(BMDVideoInputFormatChangedEvents events,
+							  IDeckLinkDisplayMode *newMode,
+							  BMDDetectedVideoInputFormatFlags detectedSignalFlags);
 
 	ULONG STDMETHODCALLTYPE AddRef(void);
 	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);
@@ -241,6 +209,5 @@ public:
 	void UpdateVideoFrame(video_data *frame);
 	void ScheduleVideoFrame(IDeckLinkVideoFrame *frame);
 	void WriteAudio(audio_data *frames);
-	void HandleCaptionPacket(IDeckLinkAncillaryPacket *packet,
-				 const uint64_t timestamp);
+	void HandleCaptionPacket(IDeckLinkAncillaryPacket *packet, const uint64_t timestamp);
 };

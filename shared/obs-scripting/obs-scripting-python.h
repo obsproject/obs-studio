@@ -52,8 +52,7 @@
 #include <util/threading.h>
 #include <util/base.h>
 
-#define do_log(level, format, ...) \
-	blog(level, "[Python] " format, ##__VA_ARGS__)
+#define do_log(level, format, ...) blog(level, "[Python] " format, ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -90,43 +89,36 @@ struct python_obs_callback {
 	PyObject *func;
 };
 
-static inline struct python_obs_callback *
-add_python_obs_callback_extra(struct obs_python_script *script, PyObject *func,
-			      size_t extra_size)
+static inline struct python_obs_callback *add_python_obs_callback_extra(struct obs_python_script *script,
+									PyObject *func, size_t extra_size)
 {
-	struct python_obs_callback *cb = add_script_callback(
-		&script->first_callback, (obs_script_t *)script,
-		sizeof(*cb) + extra_size);
+	struct python_obs_callback *cb =
+		add_script_callback(&script->first_callback, (obs_script_t *)script, sizeof(*cb) + extra_size);
 
 	Py_XINCREF(func);
 	cb->func = func;
 	return cb;
 }
 
-static inline struct python_obs_callback *
-add_python_obs_callback(struct obs_python_script *script, PyObject *func)
+static inline struct python_obs_callback *add_python_obs_callback(struct obs_python_script *script, PyObject *func)
 {
 	return add_python_obs_callback_extra(script, func, 0);
 }
 
-static inline void *
-python_obs_callback_extra_data(struct python_obs_callback *cb)
+static inline void *python_obs_callback_extra_data(struct python_obs_callback *cb)
 {
 	return (void *)&cb[1];
 }
 
-static inline struct obs_python_script *
-python_obs_callback_script(struct python_obs_callback *cb)
+static inline struct obs_python_script *python_obs_callback_script(struct python_obs_callback *cb)
 {
 	return (struct obs_python_script *)cb->base.script;
 }
 
-static inline struct python_obs_callback *
-find_next_python_obs_callback(struct obs_python_script *script,
-			      struct python_obs_callback *cb, PyObject *func)
+static inline struct python_obs_callback *find_next_python_obs_callback(struct obs_python_script *script,
+									struct python_obs_callback *cb, PyObject *func)
 {
-	cb = cb ? (struct python_obs_callback *)cb->base.next
-		: (struct python_obs_callback *)script->first_callback;
+	cb = cb ? (struct python_obs_callback *)cb->base.next : (struct python_obs_callback *)script->first_callback;
 
 	while (cb) {
 		if (cb->func == func)
@@ -137,8 +129,7 @@ find_next_python_obs_callback(struct obs_python_script *script,
 	return cb;
 }
 
-static inline struct python_obs_callback *
-find_python_obs_callback(struct obs_python_script *script, PyObject *func)
+static inline struct python_obs_callback *find_python_obs_callback(struct obs_python_script *script, PyObject *func)
 {
 	return find_next_python_obs_callback(script, NULL, func);
 }
@@ -163,8 +154,7 @@ static inline void free_python_obs_callback(struct python_obs_callback *cb)
 
 /* ------------------------------------------------------------ */
 
-static int parse_args_(PyObject *args, const char *func, const char *format,
-		       ...)
+static int parse_args_(PyObject *args, const char *func, const char *format, ...)
 {
 	char new_format[128];
 	va_list va_args;
@@ -179,8 +169,7 @@ static int parse_args_(PyObject *args, const char *func, const char *format,
 	return ret;
 }
 
-#define parse_args(args, format, ...) \
-	parse_args_(args, __FUNCTION__, format, ##__VA_ARGS__)
+#define parse_args(args, format, ...) parse_args_(args, __FUNCTION__, format, ##__VA_ARGS__)
 
 static inline bool py_error_(const char *func, int line)
 {
@@ -208,18 +197,16 @@ extern struct obs_python_script *cur_python_script;
 extern void py_to_obs_source_info(py_source_t *py_info);
 extern PyObject *py_obs_register_source(PyObject *self, PyObject *args);
 extern PyObject *py_obs_get_script_config_path(PyObject *self, PyObject *args);
-extern void add_functions_to_py_module(PyObject *module,
-				       PyMethodDef *method_list);
+extern void add_functions_to_py_module(PyObject *module, PyMethodDef *method_list);
 
 /* ------------------------------------------------------------ */
 /* Warning: the following functions expect python to be locked! */
 
-extern bool py_to_libobs_(const char *type, PyObject *py_in, void *libobs_out,
-			  const char *id, const char *func, int line);
-
-extern bool libobs_to_py_(const char *type, void *libobs_in, bool ownership,
-			  PyObject **py_out, const char *id, const char *func,
+extern bool py_to_libobs_(const char *type, PyObject *py_in, void *libobs_out, const char *id, const char *func,
 			  int line);
+
+extern bool libobs_to_py_(const char *type, void *libobs_in, bool ownership, PyObject **py_out, const char *id,
+			  const char *func, int line);
 
 extern bool py_call(PyObject *call, PyObject **ret, const char *arg_def, ...);
 extern bool py_import_script(const char *name);

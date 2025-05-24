@@ -14,9 +14,9 @@ Components
 
 This module contains provides several components:
 
-``MbedCrypto``
-``MbedTLS``
-``MbedX509``
+``mbedcrypto``
+``mbedtls``
+``mbedx509``
 
 Import targets exist for each component.
 
@@ -27,13 +27,13 @@ Imported Targets
 
 This module defines the :prop_tgt:`IMPORTED` targets:
 
-``MbedTLS::MbedCrypto``
+``MbedTLS::mbedcrypto``
   Crypto component
 
-``MbedTLS::MbedTLS``
+``MbedTLS::mbedtls``
   TLS component
 
-``MbedTLS::MbedX509``
+``MbedTLS::mbedX509``
   X509 component
 
 Result Variables
@@ -78,7 +78,7 @@ macro(MbedTLS_set_soname component)
     )
 
     if(_result EQUAL 0 AND _output MATCHES "^@rpath/")
-      set_property(TARGET MbedTLS::Mbed${component} PROPERTY IMPORTED_SONAME "${_output}")
+      set_property(TARGET MbedTLS::mbed${component} PROPERTY IMPORTED_SONAME "${_output}")
     endif()
   elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
     execute_process(
@@ -89,7 +89,7 @@ macro(MbedTLS_set_soname component)
 
     if(_result EQUAL 0)
       string(REGEX REPLACE "[ \t]+SONAME[ \t]+([^ \t]+)" "\\1" _soname "${_output}")
-      set_property(TARGET MbedTLS::Mbed${component} PROPERTY IMPORTED_SONAME "${_soname}")
+      set_property(TARGET MbedTLS::mbed${component} PROPERTY IMPORTED_SONAME "${_soname}")
       unset(_soname)
     endif()
   endif()
@@ -142,8 +142,15 @@ else()
   set(MbedTLS_VERSION 0.0.0)
 endif()
 
+if(MbedTLS_VERSION VERSION_GREATER_EQUAL 3.6.0)
+  message(
+    DEPRECATION
+    "Use of the custom CMake find module for MbedTLS versions >= 3.6.0 is not supported - build errors might occur!"
+  )
+endif()
+
 find_library(
-  MbedTLS_LIBRARY
+  Mbedtls_LIBRARY
   NAMES libmbedtls mbedtls
   HINTS "${PC_MbedTLS_LIBRARY_DIRS}"
   PATHS /usr/lib /usr/local/lib
@@ -151,7 +158,7 @@ find_library(
 )
 
 find_library(
-  MbedCrypto_LIBRARY
+  Mbedcrypto_LIBRARY
   NAMES libmbedcrypto mbedcrypto
   HINTS "${PC_MbedTLS_LIBRARY_DIRS}"
   PATHS /usr/lib /usr/local/lib
@@ -159,14 +166,14 @@ find_library(
 )
 
 find_library(
-  MbedX509_LIBRARY
+  Mbedx509_LIBRARY
   NAMES libmbedx509 mbedx509
   HINTS "${PC_MbedTLS_LIBRARY_DIRS}"
   PATHS /usr/lib /usr/local/lib
   DOC "MbedX509 location"
 )
 
-if(MbedTLS_LIBRARY AND NOT MbedCrypto_LIBRARY AND NOT MbedX509_LIBRARY)
+if(Mbedtls_LIBRARY AND NOT Mbedcrypto_LIBRARY AND NOT Mbedx509_LIBRARY)
   set(CMAKE_REQUIRED_LIBRARIES "${MbedTLS_LIBRARY}")
   set(CMAKE_REQUIRED_INCLUDES "${MbedTLS_INCLUDE_DIR}")
 
@@ -185,38 +192,38 @@ endif()
 if(MbedTLS_INCLUDES_X509 AND MbedTLS_INCLUDES_CRYPTO)
   find_package_handle_standard_args(
     MbedTLS
-    REQUIRED_VARS MbedTLS_LIBRARY MbedTLS_INCLUDE_DIR
+    REQUIRED_VARS Mbedtls_LIBRARY MbedTLS_INCLUDE_DIR
     VERSION_VAR MbedTLS_VERSION
     REASON_FAILURE_MESSAGE "${MbedTLS_ERROR_REASON}"
   )
-  mark_as_advanced(MbedTLS_LIBRARY MbedTLS_INCLUDE_DIR)
-  list(APPEND _COMPONENTS TLS)
+  mark_as_advanced(Mbedtls_LIBRARY MbedTLS_INCLUDE_DIR)
+  list(APPEND _COMPONENTS tls)
 else()
   find_package_handle_standard_args(
     MbedTLS
-    REQUIRED_VARS MbedTLS_LIBRARY MbedCrypto_LIBRARY MbedX509_LIBRARY MbedTLS_INCLUDE_DIR
+    REQUIRED_VARS Mbedtls_LIBRARY Mbedcrypto_LIBRARY Mbedx509_LIBRARY MbedTLS_INCLUDE_DIR
     VERSION_VAR MbedTLS_VERSION
     REASON_FAILURE_MESSAGE "${MbedTLS_ERROR_REASON}"
   )
-  mark_as_advanced(MbedTLS_LIBRARY MbedCrypto_LIBRARY MbedX509_LIBRARY MbedTLS_INCLUDE_DIR)
-  list(APPEND _COMPONENTS TLS Crypto X509)
+  mark_as_advanced(Mbedtls_LIBRARY Mbedcrypto_LIBRARY Mbedx509_LIBRARY MbedTLS_INCLUDE_DIR)
+  list(APPEND _COMPONENTS tls crypto x509)
 endif()
 unset(MbedTLS_ERROR_REASON)
 
 if(MbedTLS_FOUND)
   foreach(component IN LISTS _COMPONENTS)
-    if(NOT TARGET MbedTLS::Mbed${component})
+    if(NOT TARGET MbedTLS::mbed${component})
       if(IS_ABSOLUTE "${Mbed${component}_LIBRARY}")
-        add_library(MbedTLS::Mbed${component} UNKNOWN IMPORTED)
-        set_property(TARGET MbedTLS::Mbed${component} PROPERTY IMPORTED_LOCATION "${Mbed${component}_LIBRARY}")
+        add_library(MbedTLS::mbed${component} UNKNOWN IMPORTED)
+        set_property(TARGET MbedTLS::mbed${component} PROPERTY IMPORTED_LOCATION "${Mbed${component}_LIBRARY}")
       else()
-        add_library(MbedTLS::Mbed${component} INTERFACE IMPORTED)
-        set_property(TARGET MbedTLS::Mbed${component} PROPERTY IMPORTED_LIBNAME "${Mbed${component}_LIBRARY}")
+        add_library(MbedTLS::mbed${component} INTERFACE IMPORTED)
+        set_property(TARGET MbedTLS::mbed${component} PROPERTY IMPORTED_LIBNAME "${Mbed${component}_LIBRARY}")
       endif()
 
       mbedtls_set_soname(${component})
       set_target_properties(
-        MbedTLS::MbedTLS
+        MbedTLS::mbedtls
         PROPERTIES
           INTERFACE_COMPILE_OPTIONS "${PC_MbedTLS_CFLAGS_OTHER}"
           INTERFACE_INCLUDE_DIRECTORIES "${MbedTLS_INCLUDE_DIR}"
@@ -230,7 +237,7 @@ if(MbedTLS_FOUND)
     set(MbedTLS_LIBRARIES ${MbedTLS_LIBRARY})
   else()
     set(MbedTLS_LIBRARIES ${MbedTLS_LIBRARY} ${MbedCrypto_LIBRARY} ${MbedX509_LIBRARY})
-    set_property(TARGET MbedTLS::MbedTLS PROPERTY INTERFACE_LINK_LIBRARIES MbedTLS::MbedCrypto MbedTLS::MbedX509)
+    set_property(TARGET MbedTLS::mbedtls PROPERTY INTERFACE_LINK_LIBRARIES MbedTLS::mbedcrypto MbedTLS::mbedx509)
   endif()
 endif()
 

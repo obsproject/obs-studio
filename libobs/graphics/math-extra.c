@@ -64,8 +64,7 @@ void polar_to_norm(struct vec3 *dst, const struct vec2 *polar)
 	dst->z = cosf(polar->x);
 }
 
-float calc_torquef(float val1, float val2, float torque, float min_adjust,
-		   float t)
+float calc_torquef(float val1, float val2, float torque, float min_adjust, float t)
 {
 	float out = val1;
 	float dist;
@@ -94,8 +93,8 @@ float calc_torquef(float val1, float val2, float torque, float min_adjust,
 	return out;
 }
 
-void calc_torque(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2,
-		 float torque, float min_adjust, float t)
+void calc_torque(struct vec3 *dst, const struct vec3 *v1, const struct vec3 *v2, float torque, float min_adjust,
+		 float t)
 {
 	struct vec3 line, dir;
 	float orig_dist, torque_dist, adjust_dist;

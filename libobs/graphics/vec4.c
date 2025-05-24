@@ -25,8 +25,7 @@ void vec4_from_vec3(struct vec4 *dst, const struct vec3 *v)
 	dst->w = 1.0f;
 }
 
-void vec4_transform(struct vec4 *dst, const struct vec4 *v,
-		    const struct matrix4 *m)
+void vec4_transform(struct vec4 *dst, const struct vec4 *v, const struct matrix4 *m)
 {
 	struct vec4 temp;
 	struct matrix4 transpose;

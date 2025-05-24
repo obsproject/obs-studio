@@ -39,30 +39,23 @@ struct obs_pipwire_connect_stream_info {
 	} video;
 };
 
-obs_pipewire *
-obs_pipewire_connect_fd(int pipewire_fd,
-			const struct pw_registry_events *registry_events,
-			void *user_data);
+obs_pipewire *obs_pipewire_connect_fd(int pipewire_fd, const struct pw_registry_events *registry_events,
+				      void *user_data);
 struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw);
 void obs_pipewire_roundtrip(obs_pipewire *obs_pw);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
 
-obs_pipewire_stream *obs_pipewire_connect_stream(
-	obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
-	const struct obs_pipwire_connect_stream_info *connect_info);
+obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
+						 const struct obs_pipwire_connect_stream_info *connect_info);
 
 void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw_stream);
 void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw_stream);
 uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw_stream);
 uint32_t obs_pipewire_stream_get_height(obs_pipewire_stream *obs_pw_stream);
-void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream,
-				      gs_effect_t *effect);
+void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_effect_t *effect);
 
-void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream,
-					    bool cursor_visible);
+void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream, bool cursor_visible);
 void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream);
 
-void obs_pipewire_stream_set_framerate(obs_pipewire_stream *obs_pw_stream,
-				       const struct spa_fraction *framerate);
-void obs_pipewire_stream_set_resolution(obs_pipewire_stream *obs_pw,
-					const struct spa_rectangle *resolution);
+void obs_pipewire_stream_set_framerate(obs_pipewire_stream *obs_pw_stream, const struct spa_fraction *framerate);
+void obs_pipewire_stream_set_resolution(obs_pipewire_stream *obs_pw, const struct spa_rectangle *resolution);

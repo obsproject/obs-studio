@@ -39,8 +39,7 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 			else if (hevc)
 				set_hevc_enum(USAGE, ULTRA_LOW_LATENCY);
 			else
-				warn("Invalid value for %s: %s", opt->name,
-				     opt->value);
+				warn("Invalid value for %s: %s", opt->name, opt->value);
 		} else if (strcmp(opt->value, "lowlatency") == 0) {
 			set_enum_opt(USAGE, LOW_LATENCY);
 		} else if (strcmp(opt->value, "webcam") == 0) {
@@ -49,8 +48,7 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 			else if (hevc)
 				set_hevc_enum(USAGE, WEBCAM);
 			else
-				warn("Invalid value for %s: %s", opt->name,
-				     opt->value);
+				warn("Invalid value for %s: %s", opt->name, opt->value);
 		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
 		}
@@ -67,11 +65,9 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 		if (strcmp(opt->value, "high") == 0) {
 			set_opt(PROFILE, AMF_VIDEO_ENCODER_PROFILE_HIGH);
 		} else if (strcmp(opt->value, "constrained_baseline") == 0) {
-			set_opt(PROFILE,
-				AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_BASELINE);
+			set_opt(PROFILE, AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_BASELINE);
 		} else if (strcmp(opt->value, "constrained_high") == 0) {
-			set_opt(PROFILE,
-				AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_HIGH);
+			set_opt(PROFILE, AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_HIGH);
 		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
 		}
@@ -112,8 +108,7 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 		} else if (strcmp(opt->value, "vbr_peak") == 0) {
 			set_enum_opt(RATE_CONTROL_METHOD, PEAK_CONSTRAINED_VBR);
 		} else if (strcmp(opt->value, "vbr_latency") == 0) {
-			set_enum_opt(RATE_CONTROL_METHOD,
-				     LATENCY_CONSTRAINED_VBR);
+			set_enum_opt(RATE_CONTROL_METHOD, LATENCY_CONSTRAINED_VBR);
 		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
 		}

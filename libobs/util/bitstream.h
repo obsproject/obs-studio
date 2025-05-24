@@ -18,8 +18,7 @@ struct bitstream_reader {
 	size_t len;
 };
 
-EXPORT void bitstream_reader_init(struct bitstream_reader *r, uint8_t *data,
-				  size_t len);
+EXPORT void bitstream_reader_init(struct bitstream_reader *r, uint8_t *data, size_t len);
 EXPORT uint8_t bitstream_reader_read_bits(struct bitstream_reader *r, int bits);
 EXPORT uint8_t bitstream_reader_r8(struct bitstream_reader *r);
 EXPORT uint16_t bitstream_reader_r16(struct bitstream_reader *r);

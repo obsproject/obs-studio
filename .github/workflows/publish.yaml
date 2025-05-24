@@ -16,7 +16,7 @@ jobs:
   check-tag:
     name: Check Release Tag
     if: github.repository_owner == 'obsproject'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       validTag: ${{ steps.check.outputs.validTag }}
       flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
@@ -47,7 +47,7 @@ jobs:
     name: Flathub 📦
     needs: check-tag
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -62,7 +62,7 @@ jobs:
       YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
       YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.6
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
       options: --privileged
     strategy:
       matrix:
@@ -84,12 +84,10 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          gh extension install actions/gh-actions-cache
-
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
           cache_ref='master'
-          read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+          read -r id key size unit created accessed <<< \
+            "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
 
           if [[ "${key}" ]]; then
             echo "cacheHit=true" >> $GITHUB_OUTPUT
@@ -107,9 +105,9 @@ jobs:
           path: build-aux/com.obsproject.Studio.json
 
       - name: Build Flatpak Manifest
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@23796715b3dfa4c86ddf50cf29c3cc8b3c82dca8
+        uses: flatpak/flatpak-github-actions/flatpak-builder@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         with:
-          bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
+          build-bundle: false
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
           cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
           cache-key: ${{ steps.setup.outputs.cacheKey }}
@@ -142,7 +140,7 @@ jobs:
           path: repo
 
       - name: Publish to Flathub Beta
-        uses: flathub-infra/flatpak-github-actions/flat-manager@23796715b3dfa4c86ddf50cf29c3cc8b3c82dca8
+        uses: flatpak/flatpak-github-actions/flat-manager@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         if: ${{ matrix.branch == 'beta' }}
         with:
           flat-manager-url: https://hub.flathub.org/
@@ -151,7 +149,7 @@ jobs:
           build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Publish to Flathub
-        uses: flathub-infra/flatpak-github-actions/flat-manager@23796715b3dfa4c86ddf50cf29c3cc8b3c82dca8
+        uses: flatpak/flatpak-github-actions/flat-manager@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         if: ${{ matrix.branch == 'stable' }}
         with:
           flat-manager-url: https://hub.flathub.org/

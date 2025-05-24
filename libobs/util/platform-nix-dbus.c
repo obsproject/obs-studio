@@ -66,8 +66,7 @@ static const struct service_info services[] = {
 		},
 };
 
-static const size_t num_services =
-	(sizeof(services) / sizeof(struct service_info));
+static const size_t num_services = (sizeof(services) / sizeof(struct service_info));
 
 struct dbus_sleep_info {
 	const struct service_info *service;
@@ -91,8 +90,7 @@ struct dbus_sleep_info *dbus_sleep_info_create(void)
 
 	info->c = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
 	if (!info->c) {
-		blog(LOG_ERROR, "Could not create dbus connection: %s",
-		     error->message);
+		blog(LOG_ERROR, "Could not create dbus connection: %s", error->message);
 		bfree(info);
 		return NULL;
 	}
@@ -104,15 +102,13 @@ struct dbus_sleep_info *dbus_sleep_info_create(void)
 		if (!service->name)
 			continue;
 
-		reply = g_dbus_connection_call_sync(
-			info->c, "org.freedesktop.DBus",
-			"/org/freedesktop/DBus", "org.freedesktop.DBus",
-			"GetNameOwner", g_variant_new("(s)", service->name),
-			NULL, G_DBUS_CALL_FLAGS_NO_AUTO_START, -1, NULL, NULL);
+		reply = g_dbus_connection_call_sync(info->c, "org.freedesktop.DBus", "/org/freedesktop/DBus",
+						    "org.freedesktop.DBus", "GetNameOwner",
+						    g_variant_new("(s)", service->name), NULL,
+						    G_DBUS_CALL_FLAGS_NO_AUTO_START, -1, NULL, NULL);
 
 		if (reply != NULL) {
-			blog(LOG_DEBUG, "Found dbus service: %s",
-			     service->name);
+			blog(LOG_DEBUG, "Found dbus service: %s", service->name);
 			info->service = service;
 			info->type = (enum service_type)i;
 			return info;
@@ -123,8 +119,7 @@ struct dbus_sleep_info *dbus_sleep_info_create(void)
 	return NULL;
 }
 
-void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
-			bool active)
+void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason, bool active)
 {
 	g_autoptr(GVariant) reply = NULL;
 	g_autoptr(GError) error = NULL;
@@ -146,9 +141,7 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 		switch (info->type) {
 		case MATE_SM:
 		case GNOME_SM:
-			params = g_variant_new("(s@usu)", program,
-					       g_variant_new_uint32(xid),
-					       reason, flags);
+			params = g_variant_new("(s@usu)", program, g_variant_new_uint32(xid), reason, flags);
 			break;
 		default:
 			params = g_variant_new("(ss)", program, reason);
@@ -158,14 +151,11 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 		params = g_variant_new("(u)", info->cookie);
 	}
 
-	reply = g_dbus_connection_call_sync(
-		info->c, info->service->name, info->service->path,
-		info->service->interface, method, params, NULL,
-		G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
+	reply = g_dbus_connection_call_sync(info->c, info->service->name, info->service->path, info->service->interface,
+					    method, params, NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
 
 	if (error != NULL) {
-		blog(LOG_ERROR, "Failed to call %s: %s", method,
-		     error->message);
+		blog(LOG_ERROR, "Failed to call %s: %s", method, error->message);
 		return;
 	}
 

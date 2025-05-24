@@ -736,9 +736,26 @@ Functions
 
 ---------------------------------------
 
+.. deprecated:: 31.0
 .. function:: config_t *obs_frontend_get_global_config(void)
 
    :return: The config_t* associated with the global config (global.ini)
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_app_config(void)
+
+   :return: The config_t* associated with system-wide settings (global.ini)
+
+   .. versionadded:: 31.0
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_user_config(void)
+
+   :return: The config_t* associated with user settings (user.ini)
+
+   .. versionadded:: 31.0
 
 ---------------------------------------
 

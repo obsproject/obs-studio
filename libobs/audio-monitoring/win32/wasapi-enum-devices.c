@@ -24,8 +24,8 @@
 					 k,                        \
 				 }},                               \
 				l};
-DEFINE_PROPERTYKEY(PKEY_Device_FriendlyName, 0xa45c254e, 0xdf1c, 0x4efd, 0x80,
-		   0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0, 14);
+DEFINE_PROPERTYKEY(PKEY_Device_FriendlyName, 0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0,
+		   14);
 
 #else
 
@@ -33,8 +33,7 @@ DEFINE_PROPERTYKEY(PKEY_Device_FriendlyName, 0xa45c254e, 0xdf1c, 0x4efd, 0x80,
 
 #endif
 
-static bool get_device_info(obs_enum_audio_device_cb cb, void *data,
-			    IMMDeviceCollection *collection, UINT idx)
+static bool get_device_info(obs_enum_audio_device_cb cb, void *data, IMMDeviceCollection *collection, UINT idx)
 {
 	IPropertyStore *store = NULL;
 	IMMDevice *device = NULL;
@@ -61,8 +60,7 @@ static bool get_device_info(obs_enum_audio_device_cb cb, void *data,
 	}
 
 	PropVariantInit(&name_var);
-	hr = store->lpVtbl->GetValue(store, &PKEY_Device_FriendlyName,
-				     &name_var);
+	hr = store->lpVtbl->GetValue(store, &PKEY_Device_FriendlyName, &name_var);
 	if (FAILED(hr)) {
 		goto fail;
 	}
@@ -88,14 +86,12 @@ void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 	UINT count;
 	HRESULT hr;
 
-	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,
-			      &IID_IMMDeviceEnumerator, &enumerator);
+	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, &IID_IMMDeviceEnumerator, &enumerator);
 	if (FAILED(hr)) {
 		goto fail;
 	}
 
-	hr = enumerator->lpVtbl->EnumAudioEndpoints(
-		enumerator, eRender, DEVICE_STATE_ACTIVE, &collection);
+	hr = enumerator->lpVtbl->EnumAudioEndpoints(enumerator, eRender, DEVICE_STATE_ACTIVE, &collection);
 	if (FAILED(hr)) {
 		goto fail;
 	}
@@ -126,14 +122,12 @@ static void get_default_id(char **p_id)
 	if (*p_id)
 		return;
 
-	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL,
-			      &IID_IMMDeviceEnumerator, &immde);
+	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, &IID_IMMDeviceEnumerator, &immde);
 	if (FAILED(hr)) {
 		goto fail;
 	}
 
-	hr = immde->lpVtbl->GetDefaultAudioEndpoint(immde, eRender, eConsole,
-						    &device);
+	hr = immde->lpVtbl->GetDefaultAudioEndpoint(immde, eRender, eConsole, &device);
 	if (FAILED(hr)) {
 		goto fail;
 	}

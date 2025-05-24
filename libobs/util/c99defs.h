@@ -58,13 +58,11 @@
 #elif defined(__clang__)
 #define PRAGMA_WARN_PUSH _Pragma("clang diagnostic push")
 #define PRAGMA_WARN_POP _Pragma("clang diagnostic pop")
-#define PRAGMA_WARN_DEPRECATION \
-	_Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"")
+#define PRAGMA_WARN_DEPRECATION _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"")
 #elif defined(__GNUC__)
 #define PRAGMA_WARN_PUSH _Pragma("GCC diagnostic push")
 #define PRAGMA_WARN_POP _Pragma("GCC diagnostic pop")
-#define PRAGMA_WARN_DEPRECATION \
-	_Pragma("GCC diagnostic warning \"-Wdeprecated-declarations\"")
+#define PRAGMA_WARN_DEPRECATION _Pragma("GCC diagnostic warning \"-Wdeprecated-declarations\"")
 #else
 #define PRAGMA_WARN_PUSH
 #define PRAGMA_WARN_POP

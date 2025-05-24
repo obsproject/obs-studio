@@ -164,8 +164,9 @@ Encoder Definition Structure (obs_encoder_info)
 
    - **OBS_ENCODER_CAP_DEPRECATED** - Encoder is deprecated
    - **OBS_ENCODER_CAP_ROI** - Encoder supports region of interest feature
+   - **OBS_ENCODER_CAP_SCALING** - Encoder implements its own scaling logic,
+                                   desiring to receive unscaled frames
 
-      .. versionadded:: 30.1
 
 Encoder Packet Structure (encoder_packet)
 -----------------------------------------
@@ -350,15 +351,6 @@ General Encoder Functions
 
 ---------------------
 
-.. function:: void obs_encoder_addref(obs_encoder_t *encoder)
-
-   Adds a reference to an encoder.
-
-.. deprecated:: 27.2.0
-   Use :c:func:`obs_encoder_get_ref()` instead.
-
----------------------
-
 .. function:: obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
 
    Returns an incremented reference if still valid, otherwise returns
@@ -448,6 +440,12 @@ General Encoder Functions
 .. function:: size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
 
    :return: The frame size of the audio packet
+
+---------------------
+
+.. function:: size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder)
+
+   :return: The mixer index for the audio track which is encoded by the encoder
 
 ---------------------
 

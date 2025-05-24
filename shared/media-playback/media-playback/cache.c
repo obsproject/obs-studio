@@ -78,8 +78,7 @@ static inline bool mp_cache_sleep(mp_cache_t *c)
 	} else {
 		const uint64_t t = os_gettime_ns();
 		if (c->next_ns > t) {
-			const uint32_t delta_ms =
-				(uint32_t)((c->next_ns - t + 500000) / 1000000);
+			const uint32_t delta_ms = (uint32_t)((c->next_ns - t + 500000) / 1000000);
 			if (delta_ms > 0) {
 				static const uint32_t timeout_ms = 200;
 				timeout = delta_ms > timeout_ms;
@@ -164,11 +163,9 @@ static void seek_to(mp_cache_t *c, int64_t pos)
 
 		size_t next_idx = new_v_idx + 1;
 		if (next_idx == c->video_frames.num) {
-			c->next_v_ts =
-				(int64_t)v->timestamp + c->final_v_duration;
+			c->next_v_ts = (int64_t)v->timestamp + c->final_v_duration;
 		} else {
-			struct obs_source_frame *next =
-				&c->video_frames.array[next_idx];
+			struct obs_source_frame *next = &c->video_frames.array[next_idx];
 			c->next_v_ts = (int64_t)next->timestamp;
 		}
 	}
@@ -184,11 +181,9 @@ static void seek_to(mp_cache_t *c, int64_t pos)
 
 		size_t next_idx = new_a_idx + 1;
 		if (next_idx == c->audio_segments.num) {
-			c->next_a_ts =
-				(int64_t)a->timestamp + c->final_a_duration;
+			c->next_a_ts = (int64_t)a->timestamp + c->final_a_duration;
 		} else {
-			struct obs_source_audio *next =
-				&c->audio_segments.array[next_idx];
+			struct obs_source_audio *next = &c->audio_segments.array[next_idx];
 			c->next_a_ts = (int64_t)next->timestamp;
 		}
 	}
@@ -202,22 +197,19 @@ static void seek_to(mp_cache_t *c, int64_t pos)
 
 static inline bool mp_media_can_play_video(mp_cache_t *c)
 {
-	return !v_eof(c) && (c->next_v_ts <= c->next_pts_ns ||
-			     (c->next_v_ts - c->next_pts_ns > MAX_TS_VAR));
+	return !v_eof(c) && (c->next_v_ts <= c->next_pts_ns || (c->next_v_ts - c->next_pts_ns > MAX_TS_VAR));
 }
 
 static inline bool mp_media_can_play_audio(mp_cache_t *c)
 {
-	return !a_eof(c) && (c->next_a_ts <= c->next_pts_ns ||
-			     (c->next_a_ts - c->next_pts_ns > MAX_TS_VAR));
+	return !a_eof(c) && (c->next_a_ts <= c->next_pts_ns || (c->next_a_ts - c->next_pts_ns > MAX_TS_VAR));
 }
 
 static inline void calc_next_v_ts(mp_cache_t *c, struct obs_source_frame *frame)
 {
 	int64_t offset;
 	if (c->next_v_idx < c->video_frames.num) {
-		struct obs_source_frame *next =
-			&c->video_frames.array[c->next_v_idx];
+		struct obs_source_frame *next = &c->video_frames.array[c->next_v_idx];
 		offset = (int64_t)(next->timestamp - frame->timestamp);
 	} else {
 		offset = c->final_v_duration;
@@ -230,8 +222,7 @@ static inline void calc_next_a_ts(mp_cache_t *c, struct obs_source_audio *audio)
 {
 	int64_t offset;
 	if (c->next_a_idx < c->audio_segments.num) {
-		struct obs_source_audio *next =
-			&c->audio_segments.array[c->next_a_idx];
+		struct obs_source_audio *next = &c->audio_segments.array[c->next_a_idx];
 		offset = (int64_t)(next->timestamp - audio->timestamp);
 	} else {
 		offset = c->final_a_duration;
@@ -252,8 +243,7 @@ static void mp_cache_next_video(mp_cache_t *c, bool preload)
 	struct obs_source_frame *frame = &c->video_frames.array[c->next_v_idx];
 	struct obs_source_frame dup = *frame;
 
-	dup.timestamp = c->base_ts + dup.timestamp - c->start_ts +
-			c->play_sys_ts - base_sys_ts;
+	dup.timestamp = c->base_ts + dup.timestamp - c->start_ts + c->play_sys_ts - base_sys_ts;
 
 	if (!preload) {
 		if (!mp_media_can_play_video(c))
@@ -287,12 +277,10 @@ static void mp_cache_next_audio(mp_cache_t *c)
 	if (!mp_media_can_play_audio(c))
 		return;
 
-	struct obs_source_audio *audio =
-		&c->audio_segments.array[c->next_a_idx];
+	struct obs_source_audio *audio = &c->audio_segments.array[c->next_a_idx];
 	struct obs_source_audio dup = *audio;
 
-	dup.timestamp = c->base_ts + dup.timestamp - c->start_ts +
-			c->play_sys_ts - base_sys_ts;
+	dup.timestamp = c->base_ts + dup.timestamp - c->start_ts + c->play_sys_ts - base_sys_ts;
 	if (c->a_cb)
 		c->a_cb(c->opaque, &dup);
 
@@ -386,8 +374,7 @@ static inline bool mp_cache_thread(mp_cache_t *c)
 	}
 
 	for (;;) {
-		bool reset, kill, is_active, seek, pause, reset_time,
-			preload_frame;
+		bool reset, kill, is_active, seek, pause, reset_time, preload_frame;
 		int64_t seek_pos;
 		bool timeout = false;
 
@@ -498,8 +485,7 @@ static void fill_audio(void *data, struct obs_source_audio *audio)
 	mp_cache_t *c = data;
 	struct obs_source_audio dup = *audio;
 
-	size_t size =
-		get_total_audio_size(dup.format, dup.speakers, dup.frames);
+	size_t size = get_total_audio_size(dup.format, dup.speakers, dup.frames);
 	dup.data[0] = bmalloc(size);
 
 	size_t planes = get_audio_planes(dup.format, dup.speakers);
@@ -523,8 +509,7 @@ static void fill_audio(void *data, struct obs_source_audio *audio)
 	da_push_back(c->audio_segments, &dup);
 }
 
-static inline bool mp_cache_init_internal(mp_cache_t *c,
-					  const struct mp_media_info *info)
+static inline bool mp_cache_init_internal(mp_cache_t *c, const struct mp_media_info *info)
 {
 	if (pthread_mutex_init(&c->mutex, NULL) != 0) {
 		blog(LOG_WARNING, "MP: Failed to init mutex");

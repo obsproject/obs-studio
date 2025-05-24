@@ -21,8 +21,7 @@
 static scripting_log_handler_t callback = NULL;
 static void *param = NULL;
 
-void script_log_va(obs_script_t *script, int level, const char *format,
-		   va_list args)
+void script_log_va(obs_script_t *script, int level, const char *format, va_list args)
 {
 	char msg[2048];
 	const char *lang = "(Unknown)";
@@ -41,8 +40,7 @@ void script_log_va(obs_script_t *script, int level, const char *format,
 			break;
 		}
 
-		start_len = snprintf(msg, sizeof(msg), "[%s: %s] ", lang,
-				     script->file.array);
+		start_len = snprintf(msg, sizeof(msg), "[%s: %s] ", lang, script->file.array);
 	} else {
 		start_len = snprintf(msg, sizeof(msg), "[Unknown Script] ");
 	}
@@ -62,8 +60,7 @@ void script_log(obs_script_t *script, int level, const char *format, ...)
 	va_end(args);
 }
 
-void obs_scripting_set_log_callback(scripting_log_handler_t handler,
-				    void *log_param)
+void obs_scripting_set_log_callback(scripting_log_handler_t handler, void *log_param)
 {
 	callback = handler;
 	param = log_param;

@@ -107,16 +107,14 @@ static bool create_d3d10_stage_surface(ID3D10Texture2D **tex)
 
 	hr = data.device->CreateTexture2D(&desc, nullptr, tex);
 	if (FAILED(hr)) {
-		hlog_hr("create_d3d10_stage_surface: failed to create texture",
-			hr);
+		hlog_hr("create_d3d10_stage_surface: failed to create texture", hr);
 		return false;
 	}
 
 	return true;
 }
 
-static bool create_d3d10_tex(uint32_t cx, uint32_t cy, ID3D10Texture2D **tex,
-			     HANDLE *handle)
+static bool create_d3d10_tex(uint32_t cx, uint32_t cy, ID3D10Texture2D **tex, HANDLE *handle)
 {
 	HRESULT hr;
 
@@ -125,8 +123,7 @@ static bool create_d3d10_tex(uint32_t cx, uint32_t cy, ID3D10Texture2D **tex,
 	desc.Height = cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = apply_dxgi_format_typeless(
-		data.format, global_hook_info->allow_srgb_alias);
+	desc.Format = apply_dxgi_format_typeless(data.format, global_hook_info->allow_srgb_alias);
 	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D10_USAGE_DEFAULT;
@@ -140,8 +137,7 @@ static bool create_d3d10_tex(uint32_t cx, uint32_t cy, ID3D10Texture2D **tex,
 
 	if (!!handle) {
 		IDXGIResource *dxgi_res;
-		hr = (*tex)->QueryInterface(__uuidof(IDXGIResource),
-					    (void **)&dxgi_res);
+		hr = (*tex)->QueryInterface(__uuidof(IDXGIResource), (void **)&dxgi_res);
 		if (FAILED(hr)) {
 			hlog_hr("create_d3d10_tex: failed to query "
 				"IDXGIResource interface from texture",
@@ -152,8 +148,7 @@ static bool create_d3d10_tex(uint32_t cx, uint32_t cy, ID3D10Texture2D **tex,
 		hr = dxgi_res->GetSharedHandle(handle);
 		dxgi_res->Release();
 		if (FAILED(hr)) {
-			hlog_hr("create_d3d10_tex: failed to get shared handle",
-				hr);
+			hlog_hr("create_d3d10_tex: failed to get shared handle", hr);
 			return false;
 		}
 	}
@@ -221,8 +216,7 @@ static bool d3d10_shmem_init(HWND window)
 			return false;
 		}
 	}
-	if (!capture_init_shmem(&data.shmem_info, window, data.cx, data.cy,
-				data.pitch, data.format, false)) {
+	if (!capture_init_shmem(&data.shmem_info, window, data.cx, data.cy, data.pitch, data.format, false)) {
 		return false;
 	}
 
@@ -236,15 +230,14 @@ static bool d3d10_shtex_init(HWND window)
 
 	data.using_shtex = true;
 
-	success =
-		create_d3d10_tex(data.cx, data.cy, &data.texture, &data.handle);
+	success = create_d3d10_tex(data.cx, data.cy, &data.texture, &data.handle);
 
 	if (!success) {
 		hlog("d3d10_shtex_init: failed to create texture");
 		return false;
 	}
-	if (!capture_init_shtex(&data.shtex_info, window, data.cx, data.cy,
-				data.format, false, (uintptr_t)data.handle)) {
+	if (!capture_init_shtex(&data.shtex_info, window, data.cx, data.cy, data.format, false,
+				(uintptr_t)data.handle)) {
 		return false;
 	}
 
@@ -270,9 +263,7 @@ static void d3d10_init(IDXGISwapChain *swap)
 		return;
 	}
 
-	const bool success = global_hook_info->force_shmem
-				     ? d3d10_shmem_init(window)
-				     : d3d10_shtex_init(window);
+	const bool success = global_hook_info->force_shmem ? d3d10_shmem_init(window) : d3d10_shtex_init(window);
 	if (!success)
 		d3d10_free();
 }
@@ -288,7 +279,9 @@ static inline void d3d10_copy_texture(ID3D10Resource *dst, ID3D10Resource *src)
 
 static inline void d3d10_shtex_capture(ID3D10Resource *backbuffer)
 {
-	d3d10_copy_texture(data.texture, backbuffer);
+	if (data.texture) {
+		d3d10_copy_texture(data.texture, backbuffer);
+	}
 }
 
 static void d3d10_shmem_capture_copy(int i)
@@ -323,8 +316,7 @@ static inline void d3d10_shmem_capture(ID3D10Resource *backbuffer)
 			shmem_texture_data_unlock(data.cur_tex);
 		}
 
-		d3d10_copy_texture(data.copy_surfaces[data.cur_tex],
-				   backbuffer);
+		d3d10_copy_texture(data.copy_surfaces[data.cur_tex], backbuffer);
 		data.texture_ready[data.cur_tex] = true;
 	}
 
@@ -343,11 +335,10 @@ void d3d10_capture(void *swap_ptr, void *backbuffer_ptr)
 	if (capture_should_init()) {
 		d3d10_init(swap);
 	}
-	if (capture_ready()) {
+	if (data.handle != nullptr && capture_ready()) {
 		ID3D10Resource *backbuffer;
 
-		hr = dxgi_backbuffer->QueryInterface(__uuidof(ID3D10Resource),
-						     (void **)&backbuffer);
+		hr = dxgi_backbuffer->QueryInterface(__uuidof(ID3D10Resource), (void **)&backbuffer);
 		if (FAILED(hr)) {
 			hlog_hr("d3d10_shtex_capture: failed to get "
 				"backbuffer",

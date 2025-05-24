@@ -32,8 +32,7 @@ static update_info_t *update_info = NULL;
 
 extern bool cached_versions_match(void);
 extern bool load_cached_graphics_offsets(bool is32bit, const char *config_path);
-extern bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
-				  const char *config_path);
+extern bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache, const char *config_path);
 
 /* temporary, will eventually be erased once we figure out how to create both
  * 32bit and 64bit versions of the helpers/hook */
@@ -49,16 +48,13 @@ static DWORD WINAPI init_hooks(LPVOID param)
 {
 	char *config_path = param;
 
-	if (use_hook_address_cache && cached_versions_match() &&
-	    load_cached_graphics_offsets(IS32BIT, config_path)) {
+	if (use_hook_address_cache && cached_versions_match() && load_cached_graphics_offsets(IS32BIT, config_path)) {
 
 		load_cached_graphics_offsets(!IS32BIT, config_path);
 		obs_register_source(&game_capture_info);
 
-	} else if (load_graphics_offsets(IS32BIT, use_hook_address_cache,
-					 config_path)) {
-		load_graphics_offsets(!IS32BIT, use_hook_address_cache,
-				      config_path);
+	} else if (load_graphics_offsets(IS32BIT, use_hook_address_cache, config_path)) {
+		load_graphics_offsets(!IS32BIT, use_hook_address_cache, config_path);
 	}
 
 	bfree(config_path);
@@ -113,13 +109,9 @@ bool obs_module_load(void)
 	char *config_dir;
 
 	char update_url[128];
-	snprintf(update_url, sizeof(update_url), "%s/v%d", COMPAT_URL,
-		 COMPAT_FORMAT_VERSION);
+	snprintf(update_url, sizeof(update_url), "%s/v%d", COMPAT_URL, COMPAT_FORMAT_VERSION);
 
-	struct win_version_info win1903 = {.major = 10,
-					   .minor = 0,
-					   .build = 18362,
-					   .revis = 0};
+	struct win_version_info win1903 = {.major = 10, .minor = 0, .build = 18362, .revis = 0};
 
 	local_dir = obs_module_file(NULL);
 	config_dir = obs_module_config_path(NULL);
@@ -127,10 +119,8 @@ bool obs_module_load(void)
 		os_mkdirs(config_dir);
 
 		if (local_dir) {
-			update_info = update_info_create(
-				WIN_CAPTURE_LOG_STRING, WIN_CAPTURE_VER_STRING,
-				update_url, local_dir, config_dir,
-				confirm_compat_file, NULL);
+			update_info = update_info_create(WIN_CAPTURE_LOG_STRING, WIN_CAPTURE_VER_STRING, update_url,
+							 local_dir, config_dir, confirm_compat_file, NULL);
 		}
 	}
 	bfree(config_dir);
@@ -157,8 +147,7 @@ bool obs_module_load(void)
 	char *config_path = obs_module_config_path(NULL);
 
 	init_hook_files();
-	init_hooks_thread =
-		CreateThread(NULL, 0, init_hooks, config_path, 0, NULL);
+	init_hooks_thread = CreateThread(NULL, 0, init_hooks, config_path, 0, NULL);
 	obs_register_source(&game_capture_info);
 
 	return true;

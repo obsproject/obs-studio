@@ -19,8 +19,7 @@
 #include <intrin.h>
 #include <string.h>
 
-#if !defined(_M_IX86) && !defined(_M_X64) && !defined(_M_ARM) && \
-	!defined(_M_ARM64)
+#if !defined(_M_IX86) && !defined(_M_X64) && !defined(_M_ARM) && !defined(_M_ARM64)
 #error Processor not supported
 #endif
 
@@ -76,18 +75,15 @@ static inline long os_atomic_load_long(const volatile long *ptr)
 	return val;
 }
 
-static inline bool os_atomic_compare_swap_long(volatile long *val, long old_val,
-					       long new_val)
+static inline bool os_atomic_compare_swap_long(volatile long *val, long old_val, long new_val)
 {
 	return _InterlockedCompareExchange(val, new_val, old_val) == old_val;
 }
 
-static inline bool os_atomic_compare_exchange_long(volatile long *val,
-						   long *old_ptr, long new_val)
+static inline bool os_atomic_compare_exchange_long(volatile long *val, long *old_ptr, long new_val)
 {
 	const long old_val = *old_ptr;
-	const long previous =
-		_InterlockedCompareExchange(val, new_val, old_val);
+	const long previous = _InterlockedCompareExchange(val, new_val, old_val);
 	*old_ptr = previous;
 	return previous == old_val;
 }

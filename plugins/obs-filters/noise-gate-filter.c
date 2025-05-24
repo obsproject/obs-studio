@@ -2,9 +2,8 @@
 #include <obs-module.h>
 #include <math.h>
 
-#define do_log(level, format, ...)                \
-	blog(level, "[noise gate: '%s'] " format, \
-	     obs_source_get_name(ng->context), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[noise gate: '%s'] " format, obs_source_get_name(ng->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -108,8 +107,7 @@ static void *noise_gate_create(obs_data_t *settings, obs_source_t *filter)
 	return ng;
 }
 
-static struct obs_audio_data *
-noise_gate_filter_audio(void *data, struct obs_audio_data *audio)
+static struct obs_audio_data *noise_gate_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct noise_gate_data *ng = data;
 
@@ -140,13 +138,11 @@ noise_gate_filter_audio(void *data, struct obs_audio_data *audio)
 		ng->level = fmaxf(ng->level, cur_level) - decay_rate;
 
 		if (ng->is_open) {
-			ng->attenuation =
-				fminf(1.0f, ng->attenuation + attack_rate);
+			ng->attenuation = fminf(1.0f, ng->attenuation + attack_rate);
 		} else {
 			ng->held_time += sample_rate_i;
 			if (ng->held_time > hold_time) {
-				ng->attenuation = fmaxf(
-					0.0f, ng->attenuation - release_rate);
+				ng->attenuation = fmaxf(0.0f, ng->attenuation - release_rate);
 			}
 		}
 
@@ -171,22 +167,15 @@ static obs_properties_t *noise_gate_properties(void *data)
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_float_slider(ppts, S_CLOSE_THRESHOLD,
-					    TEXT_CLOSE_THRESHOLD, VOL_MIN,
-					    VOL_MAX, 1.0);
+	p = obs_properties_add_float_slider(ppts, S_CLOSE_THRESHOLD, TEXT_CLOSE_THRESHOLD, VOL_MIN, VOL_MAX, 1.0);
 	obs_property_float_set_suffix(p, " dB");
-	p = obs_properties_add_float_slider(ppts, S_OPEN_THRESHOLD,
-					    TEXT_OPEN_THRESHOLD, VOL_MIN,
-					    VOL_MAX, 1.0);
+	p = obs_properties_add_float_slider(ppts, S_OPEN_THRESHOLD, TEXT_OPEN_THRESHOLD, VOL_MIN, VOL_MAX, 1.0);
 	obs_property_float_set_suffix(p, " dB");
-	p = obs_properties_add_int(ppts, S_ATTACK_TIME, TEXT_ATTACK_TIME, 0,
-				   10000, 1);
+	p = obs_properties_add_int(ppts, S_ATTACK_TIME, TEXT_ATTACK_TIME, 0, 10000, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_int(ppts, S_HOLD_TIME, TEXT_HOLD_TIME, 0, 10000,
-				   1);
+	p = obs_properties_add_int(ppts, S_HOLD_TIME, TEXT_HOLD_TIME, 0, 10000, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_int(ppts, S_RELEASE_TIME, TEXT_RELEASE_TIME, 0,
-				   10000, 1);
+	p = obs_properties_add_int(ppts, S_RELEASE_TIME, TEXT_RELEASE_TIME, 0, 10000, 1);
 	obs_property_int_set_suffix(p, " ms");
 
 	UNUSED_PARAMETER(data);

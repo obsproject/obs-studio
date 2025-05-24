@@ -33,8 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "sndio-input.h"
 
-#define blog(level, msg, ...) \
-	blog(level, "sndio-input: %s: " msg, __func__, ##__VA_ARGS__);
+#define blog(level, msg, ...) blog(level, "sndio-input: %s: " msg, __func__, ##__VA_ARGS__);
 
 #define berr(level, msg, ...)                                   \
 	do {                                                    \
@@ -109,8 +108,7 @@ static void *sndio_thread(void *attr)
 
 	bufsz = thrdata->par.appbufsz * thrdata->par.bps * 2;
 	if ((buf = bmalloc(bufsz * 2)) == NULL) {
-		blog(LOG_ERROR, "could not allocate record buffer of %zu bytes",
-		     bufsz);
+		blog(LOG_ERROR, "could not allocate record buffer of %zu bytes", bufsz);
 		goto finish;
 	}
 
@@ -130,24 +128,20 @@ static void *sndio_thread(void *attr)
 		}
 
 		if ((pfd[0].revents & POLLHUP) == POLLHUP) {
-			blog(LOG_INFO,
-			     "exiting upon receiving EOF at IPC socket");
+			blog(LOG_INFO, "exiting upon receiving EOF at IPC socket");
 			goto finish;
 		}
 		if ((pfd[0].revents & POLLIN) == POLLIN) {
-			nread = read(pfd[0].fd, ((uint8_t *)&par) + msgread,
-				     sizeof(par) - msgread);
+			nread = read(pfd[0].fd, ((uint8_t *)&par) + msgread, sizeof(par) - msgread);
 			switch (nread) {
 			case -1:
 				if (errno == EAGAIN)
 					goto proceed_sio;
-				berr(LOG_ERROR,
-				     "reading from IPC socket failed");
+				berr(LOG_ERROR, "reading from IPC socket failed");
 				goto finish;
 
 			case 0:
-				blog(LOG_INFO,
-				     "exiting upon receiving EOF at IPC socket");
+				blog(LOG_INFO, "exiting upon receiving EOF at IPC socket");
 				goto finish;
 
 			default:
@@ -159,21 +153,14 @@ static void *sndio_thread(void *attr)
 					msgread = 0;
 					sio_stop(thrdata->hdl);
 					if (!sio_setpar(thrdata->hdl, &par)) {
-						blog(LOG_WARNING,
-						     "sio_setpar failed, keeping old params");
+						blog(LOG_WARNING, "sio_setpar failed, keeping old params");
 					}
-					blog(LOG_INFO,
-					     "after sio_setpar(): appbufsz=%u bps=%u",
-					     par.appbufsz, par.bps);
-					memcpy(&thrdata->par, &par,
-					       sizeof(struct sio_par));
+					blog(LOG_INFO, "after sio_setpar(): appbufsz=%u bps=%u", par.appbufsz, par.bps);
+					memcpy(&thrdata->par, &par, sizeof(struct sio_par));
 
-					tbufsz = thrdata->par.appbufsz *
-						 thrdata->par.bps * 2;
-					if ((tbuf = brealloc(buf, tbufsz)) ==
-					    NULL) {
-						blog(LOG_ERROR,
-						     "could not reallocate record buffer of %zu bytes",
+					tbufsz = thrdata->par.appbufsz * thrdata->par.bps * 2;
+					if ((tbuf = brealloc(buf, tbufsz)) == NULL) {
+						blog(LOG_ERROR, "could not reallocate record buffer of %zu bytes",
 						     tbufsz);
 						goto finish;
 					}
@@ -181,8 +168,7 @@ static void *sndio_thread(void *attr)
 					bufsz = tbufsz;
 
 					if (!sio_start(thrdata->hdl)) {
-						blog(LOG_ERROR,
-						     "sio_start failed, exiting");
+						blog(LOG_ERROR, "sio_start failed, exiting");
 						goto finish;
 					}
 					ts = os_gettime_ns();
@@ -206,8 +192,7 @@ static void *sndio_thread(void *attr)
 			nread = (ssize_t)sio_read(thrdata->hdl, buf, bufsz);
 			if (nread == 0) {
 				if (sio_eof(thrdata->hdl)) {
-					blog(LOG_ERROR,
-					     "sndio device EOF happened, exiting");
+					blog(LOG_ERROR, "sndio device EOF happened, exiting");
 					goto finish;
 				}
 				continue;
@@ -219,13 +204,11 @@ static void *sndio_thread(void *attr)
 			out.data[0] = buf;
 			out.frames = nframes;
 			out.format = sndio_to_obs_audio_format(&thrdata->par);
-			out.speakers = sndio_channels_to_obs_speakers(
-				thrdata->par.rchan);
+			out.speakers = sndio_channels_to_obs_speakers(thrdata->par.rchan);
 			out.samples_per_sec = thrdata->par.rate;
 			out.timestamp = ts;
 
-			ts += util_mul_div64(nframes, NSEC_PER_SEC,
-					     thrdata->par.rate);
+			ts += util_mul_div64(nframes, NSEC_PER_SEC, thrdata->par.rate);
 
 			obs_source_output_audio(thrdata->source, &out);
 		}
@@ -271,8 +254,7 @@ static void sndio_apply(struct sndio_data *data, obs_data_t *settings)
 		blog(LOG_ERROR, "malloc");
 		return;
 	}
-	if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0,
-		       socks) == -1) {
+	if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0, socks) == -1) {
 		berr(LOG_ERROR, "socketpair");
 		goto error;
 	}
@@ -298,16 +280,13 @@ static void sndio_apply(struct sndio_data *data, obs_data_t *settings)
 	thrdata->par.rchan = obs_data_get_int(settings, "channels");
 	thrdata->par.xrun = SIO_SYNC; // makes timestamping easy
 	if (!sio_setpar(thrdata->hdl, &thrdata->par)) {
-		berr(LOG_ERROR, "could not set parameters for %s sndio device",
-		     devname);
+		berr(LOG_ERROR, "could not set parameters for %s sndio device", devname);
 		goto error;
 	}
-	blog(LOG_INFO, "after initial sio_setpar(): appbufsz=%u bps=%u",
-	     thrdata->par.appbufsz, thrdata->par.bps);
+	blog(LOG_INFO, "after initial sio_setpar(): appbufsz=%u bps=%u", thrdata->par.appbufsz, thrdata->par.bps);
 
 	if (!sio_start(thrdata->hdl)) {
-		berr(LOG_ERROR, "could not start recording on %s sndio device",
-		     devname);
+		berr(LOG_ERROR, "could not start recording on %s sndio device", devname);
 		goto error;
 	}
 
@@ -372,11 +351,9 @@ static obs_properties_t *sndio_input_properties(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_text(props, "device", obs_module_text("Device"),
-				OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "device", obs_module_text("Device"), OBS_TEXT_DEFAULT);
 
-	rate = obs_properties_add_list(props, "rate", obs_module_text("Rate"),
-				       OBS_COMBO_TYPE_LIST,
+	rate = obs_properties_add_list(props, "rate", obs_module_text("Rate"), OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(rate, "11025 Hz", 11025);
 	obs_property_list_add_int(rate, "22050 Hz", 22050);
@@ -386,16 +363,13 @@ static obs_properties_t *sndio_input_properties(void *unused)
 	obs_property_list_add_int(rate, "96000 Hz", 96000);
 	obs_property_list_add_int(rate, "192000 Hz", 192000);
 
-	bits = obs_properties_add_list(props, "bits",
-				       obs_module_text("BitsPerSample"),
-				       OBS_COMBO_TYPE_LIST,
+	bits = obs_properties_add_list(props, "bits", obs_module_text("BitsPerSample"), OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(bits, "8", 8);
 	obs_property_list_add_int(bits, "16", 16);
 	obs_property_list_add_int(bits, "32", 32);
 
-	obs_properties_add_int(props, "channels", obs_module_text("Channels"),
-			       1, 8, 1);
+	obs_properties_add_int(props, "channels", obs_module_text("Channels"), 1, 8, 1);
 
 	return props;
 }

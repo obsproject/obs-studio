@@ -38,8 +38,7 @@ os_task_queue_t *os_task_queue_create(void)
 		goto fail2;
 	if (os_event_init(&tq->wait_event, OS_EVENT_TYPE_AUTO) != 0)
 		goto fail3;
-	if (pthread_create(&tq->thread, NULL, tiny_tubular_task_thread, tq) !=
-	    0)
+	if (pthread_create(&tq->thread, NULL, tiny_tubular_task_thread, tq) != 0)
 		goto fail4;
 
 	return tq;

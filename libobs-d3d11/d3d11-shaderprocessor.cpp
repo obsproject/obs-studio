@@ -21,10 +21,8 @@
 #include <sstream>
 using namespace std;
 
-static const char *semanticInputNames[] = {"POSITION", "NORMAL",   "COLOR",
-					   "TANGENT",  "TEXCOORD", "VERTEXID"};
-static const char *semanticOutputNames[] = {
-	"SV_Position", "NORMAL", "COLOR", "TANGENT", "TEXCOORD", "VERTEXID"};
+static const char *semanticInputNames[] = {"POSITION", "NORMAL", "COLOR", "TANGENT", "TEXCOORD", "VERTEXID"};
+static const char *semanticOutputNames[] = {"SV_Position", "NORMAL", "COLOR", "TANGENT", "TEXCOORD", "VERTEXID"};
 
 static const char *ConvertSemanticName(const char *name)
 {
@@ -51,8 +49,7 @@ static void GetSemanticInfo(shader_var *var, const char *&name, uint32_t &index)
 	name = ConvertSemanticName(nameStr.c_str());
 }
 
-static void AddInputLayoutVar(shader_var *var,
-			      vector<D3D11_INPUT_ELEMENT_DESC> &layout)
+static void AddInputLayoutVar(shader_var *var, vector<D3D11_INPUT_ELEMENT_DESC> &layout)
 {
 	D3D11_INPUT_ELEMENT_DESC ied;
 	const char *semanticName;
@@ -68,8 +65,7 @@ static void AddInputLayoutVar(shader_var *var,
 	if (strcmp(var->mapping, "COLOR") == 0) {
 		ied.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-	} else if (strcmp(var->mapping, "POSITION") == 0 ||
-		   strcmp(var->mapping, "NORMAL") == 0 ||
+	} else if (strcmp(var->mapping, "POSITION") == 0 || strcmp(var->mapping, "NORMAL") == 0 ||
 		   strcmp(var->mapping, "TANGENT") == 0) {
 		ied.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
@@ -92,13 +88,12 @@ static void AddInputLayoutVar(shader_var *var,
 	layout.push_back(ied);
 }
 
-static inline bool SetSlot(vector<D3D11_INPUT_ELEMENT_DESC> &layout,
-			   const char *name, uint32_t index, uint32_t &slotIdx)
+static inline bool SetSlot(vector<D3D11_INPUT_ELEMENT_DESC> &layout, const char *name, uint32_t index,
+			   uint32_t &slotIdx)
 {
 	for (size_t i = 0; i < layout.size(); i++) {
 		D3D11_INPUT_ELEMENT_DESC &input = layout[i];
-		if (input.SemanticIndex == index &&
-		    strcmpi(input.SemanticName, name) == 0) {
+		if (input.SemanticIndex == index && strcmpi(input.SemanticName, name) == 0) {
 			layout[i].InputSlot = slotIdx++;
 			return true;
 		}
@@ -107,8 +102,7 @@ static inline bool SetSlot(vector<D3D11_INPUT_ELEMENT_DESC> &layout,
 	return false;
 }
 
-static void BuildInputLayoutFromVars(shader_parser *parser, darray *vars,
-				     vector<D3D11_INPUT_ELEMENT_DESC> &layout)
+static void BuildInputLayoutFromVars(shader_parser *parser, darray *vars, vector<D3D11_INPUT_ELEMENT_DESC> &layout)
 {
 	shader_var *array = (shader_var *)vars->array;
 
@@ -119,11 +113,9 @@ static void BuildInputLayoutFromVars(shader_parser *parser, darray *vars,
 			if (strcmp(var->mapping, "VERTEXID") != 0)
 				AddInputLayoutVar(var, layout);
 		} else {
-			shader_struct *st =
-				shader_parser_getstruct(parser, var->type);
+			shader_struct *st = shader_parser_getstruct(parser, var->type);
 			if (st)
-				BuildInputLayoutFromVars(parser, &st->vars.da,
-							 layout);
+				BuildInputLayoutFromVars(parser, &st->vars.da, layout);
 		}
 	}
 
@@ -168,11 +160,9 @@ gs_shader_param::gs_shader_param(shader_var &var, uint32_t &texCounter)
 		textureID = 0;
 }
 
-static inline void AddParam(shader_var &var, vector<gs_shader_param> &params,
-			    uint32_t &texCounter)
+static inline void AddParam(shader_var &var, vector<gs_shader_param> &params, uint32_t &texCounter)
 {
-	if (var.var_type != SHADER_VAR_UNIFORM ||
-	    strcmp(var.type, "sampler") == 0)
+	if (var.var_type != SHADER_VAR_UNIFORM || strcmp(var.type, "sampler") == 0)
 		return;
 
 	params.push_back(gs_shader_param(var, texCounter));
@@ -186,8 +176,7 @@ void ShaderProcessor::BuildParams(vector<gs_shader_param> &params)
 		AddParam(parser.params.array[i], params, texCounter);
 }
 
-static inline void AddSampler(gs_device_t *device, shader_sampler &sampler,
-			      vector<unique_ptr<ShaderSampler>> &samplers)
+static inline void AddSampler(gs_device_t *device, shader_sampler &sampler, vector<unique_ptr<ShaderSampler>> &samplers)
 {
 	gs_sampler_info si;
 	shader_sampler_convert(&sampler, &si);

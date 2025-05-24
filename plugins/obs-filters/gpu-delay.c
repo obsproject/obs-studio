@@ -45,8 +45,7 @@ static size_t num_frames(struct deque *buf)
 	return buf->size / sizeof(struct frame);
 }
 
-static void update_interval(struct gpu_delay_filter_data *f,
-			    uint64_t new_interval_ns)
+static void update_interval(struct gpu_delay_filter_data *f, uint64_t new_interval_ns)
 {
 	if (!f->target_valid) {
 		free_textures(f);
@@ -64,10 +63,8 @@ static void update_interval(struct gpu_delay_filter_data *f,
 		deque_upsize(&f->frames, num * sizeof(struct frame));
 
 		for (size_t i = prev_num; i < num; i++) {
-			struct frame *frame =
-				deque_data(&f->frames, i * sizeof(*frame));
-			frame->render =
-				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+			struct frame *frame = deque_data(&f->frames, i * sizeof(*frame));
+			frame->render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 		}
 
 		obs_leave_graphics();
@@ -149,16 +146,14 @@ static obs_properties_t *gpu_delay_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *p = obs_properties_add_int(props, S_DELAY_MS,
-						   T_DELAY_MS, 0, 500, 1);
+	obs_property_t *p = obs_properties_add_int(props, S_DELAY_MS, T_DELAY_MS, 0, 500, 1);
 	obs_property_int_set_suffix(p, " ms");
 
 	UNUSED_PARAMETER(data);
 	return props;
 }
 
-static void *gpu_delay_filter_create(obs_data_t *settings,
-				     obs_source_t *context)
+static void *gpu_delay_filter_create(obs_data_t *settings, obs_source_t *context)
 {
 	struct gpu_delay_filter_data *f = bzalloc(sizeof(*f));
 	f->context = context;
@@ -188,10 +183,8 @@ static void gpu_delay_filter_tick(void *data, float t)
 	check_interval(f);
 }
 
-static const char *
-get_tech_name_and_multiplier(enum gs_color_space current_space,
-			     enum gs_color_space source_space,
-			     float *multiplier)
+static const char *get_tech_name_and_multiplier(enum gs_color_space current_space, enum gs_color_space source_space,
+						float *multiplier)
 {
 	const char *tech_name = "Draw";
 	*multiplier = 1.f;
@@ -244,8 +237,7 @@ static void draw_frame(struct gpu_delay_filter_data *f)
 
 	const enum gs_color_space current_space = gs_get_color_space();
 	float multiplier;
-	const char *technique = get_tech_name_and_multiplier(
-		current_space, frame.space, &multiplier);
+	const char *technique = get_tech_name_and_multiplier(current_space, frame.space, &multiplier);
 
 	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_texture_t *tex = gs_texrender_get_texture(frame.render);
@@ -253,11 +245,8 @@ static void draw_frame(struct gpu_delay_filter_data *f)
 		const bool previous = gs_framebuffer_srgb_enabled();
 		gs_enable_framebuffer_srgb(true);
 
-		gs_effect_set_texture_srgb(
-			gs_effect_get_param_by_name(effect, "image"), tex);
-		gs_effect_set_float(gs_effect_get_param_by_name(effect,
-								"multiplier"),
-				    multiplier);
+		gs_effect_set_texture_srgb(gs_effect_get_param_by_name(effect, "image"), tex);
+		gs_effect_set_float(gs_effect_get_param_by_name(effect, "multiplier"), multiplier);
 
 		while (gs_effect_loop(effect, technique))
 			gs_draw_sprite(tex, 0, f->cx, f->cy);
@@ -290,8 +279,8 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 		GS_CS_SRGB_16F,
 		GS_CS_709_EXTENDED,
 	};
-	const enum gs_color_space space = obs_source_get_color_space(
-		target, OBS_COUNTOF(preferred_spaces), preferred_spaces);
+	const enum gs_color_space space =
+		obs_source_get_color_space(target, OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	const enum gs_color_format format = gs_get_format_from_space(space);
 	if (gs_texrender_get_format(frame.render) != format) {
 		gs_texrender_destroy(frame.render);
@@ -303,8 +292,7 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
 
-	if (gs_texrender_begin_with_color_space(frame.render, f->cx, f->cy,
-						space)) {
+	if (gs_texrender_begin_with_color_space(frame.render, f->cx, f->cy, space)) {
 		uint32_t parent_flags = obs_source_get_output_flags(target);
 		bool custom_draw = (parent_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 		bool async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
@@ -312,8 +300,7 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 
 		vec4_zero(&clear_color);
 		gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
-		gs_ortho(0.0f, (float)f->cx, 0.0f, (float)f->cy, -100.0f,
-			 100.0f);
+		gs_ortho(0.0f, (float)f->cx, 0.0f, (float)f->cy, -100.0f, 100.0f);
 
 		if (target == parent && !custom_draw && !async)
 			obs_source_default_render(target);
@@ -334,9 +321,8 @@ static void gpu_delay_filter_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
-static enum gs_color_space
-gpu_delay_filter_get_color_space(void *data, size_t count,
-				 const enum gs_color_space *preferred_spaces)
+static enum gs_color_space gpu_delay_filter_get_color_space(void *data, size_t count,
+							    const enum gs_color_space *preferred_spaces)
 {
 	struct gpu_delay_filter_data *const f = data;
 	obs_source_t *target = obs_filter_get_target(f->context);

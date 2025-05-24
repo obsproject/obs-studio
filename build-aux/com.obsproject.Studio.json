@@ -1,12 +1,12 @@
 {
     "id": "com.obsproject.Studio",
     "runtime": "org.kde.Platform",
-    "runtime-version": "6.6",
+    "runtime-version": "6.8",
     "sdk": "org.kde.Sdk",
     "command": "obs",
     "finish-args": [
         "--socket=wayland",
-        "--socket=x11",
+        "--socket=fallback-x11",
         "--socket=pulseaudio",
         "--device=all",
         "--share=network",
@@ -31,7 +31,7 @@
         },
         "org.freedesktop.LinuxAudio.Plugins": {
             "directory": "extensions/Plugins",
-            "version": "23.08",
+            "version": "24.08",
             "add-ld-path": "lib",
             "merge-dirs": "vst",
             "subdirectories": true,
@@ -74,11 +74,9 @@
             "builddir": true,
             "config-opts": [
                 "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
-                "-DOBS_CMAKE_VERSION=3",
                 "-DENABLE_WAYLAND=ON",
                 "-DENABLE_BROWSER=ON",
                 "-DCEF_ROOT_DIR=/app/cef",
-                "-DUSE_XDG=ON",
                 "-DENABLE_ALSA=OFF",
                 "-DENABLE_PULSEAUDIO=ON",
                 "-DENABLE_JACK=ON",

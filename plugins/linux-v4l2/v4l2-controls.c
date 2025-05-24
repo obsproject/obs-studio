@@ -32,11 +32,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define POINTER_TO_UINT(p) ((unsigned int)(unsigned int)(p))
 #endif
 
-static bool v4l2_control_changed(void *data, obs_properties_t *props,
-				 obs_property_t *prop, obs_data_t *settings)
+static bool v4l2_control_changed(void *data, obs_properties_t *props, obs_property_t *prop, obs_data_t *settings)
 {
-	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
-			    O_RDWR | O_NONBLOCK);
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"), O_RDWR | O_NONBLOCK);
 	bool ret = false;
 
 	(void)props;
@@ -49,17 +47,14 @@ static bool v4l2_control_changed(void *data, obs_properties_t *props,
 
 	switch (obs_property_get_type(prop)) {
 	case OBS_PROPERTY_BOOL:
-		control.value =
-			obs_data_get_bool(settings, obs_property_name(prop));
+		control.value = obs_data_get_bool(settings, obs_property_name(prop));
 		break;
 	case OBS_PROPERTY_INT:
 	case OBS_PROPERTY_LIST:
-		control.value =
-			obs_data_get_int(settings, obs_property_name(prop));
+		control.value = obs_data_get_int(settings, obs_property_name(prop));
 		break;
 	default:
-		blog(LOG_ERROR, "unknown property type for %s",
-		     obs_property_name(prop));
+		blog(LOG_ERROR, "unknown property type for %s", obs_property_name(prop));
 		v4l2_close(dev);
 		return ret;
 	}
@@ -73,28 +68,22 @@ static bool v4l2_control_changed(void *data, obs_properties_t *props,
 	return ret;
 }
 
-static bool v4l2_update_controls_menu(int_fast32_t dev, obs_properties_t *props,
-				      struct v4l2_queryctrl *qctrl)
+static bool v4l2_update_controls_menu(int_fast32_t dev, obs_properties_t *props, struct v4l2_queryctrl *qctrl)
 {
 	obs_property_t *prop;
 	struct v4l2_querymenu qmenu;
 
-	prop = obs_properties_add_list(props, (char *)qctrl->name,
-				       (char *)qctrl->name, OBS_COMBO_TYPE_LIST,
+	prop = obs_properties_add_list(props, (char *)qctrl->name, (char *)qctrl->name, OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 
-	obs_property_set_modified_callback2(prop, v4l2_control_changed,
-					    UINT_TO_POINTER(qctrl->id));
+	obs_property_set_modified_callback2(prop, v4l2_control_changed, UINT_TO_POINTER(qctrl->id));
 
 	memset(&qmenu, 0, sizeof(qmenu));
 	qmenu.id = qctrl->id;
 
-	for (qmenu.index = qctrl->minimum;
-	     qmenu.index <= (uint32_t)qctrl->maximum;
-	     qmenu.index += qctrl->step) {
+	for (qmenu.index = qctrl->minimum; qmenu.index <= (uint32_t)qctrl->maximum; qmenu.index += qctrl->step) {
 		if (0 == v4l2_ioctl(dev, VIDIOC_QUERYMENU, &qmenu)) {
-			obs_property_list_add_int(prop, (char *)qmenu.name,
-						  qmenu.index);
+			obs_property_list_add_int(prop, (char *)qmenu.name, qmenu.index);
 		}
 	}
 
@@ -106,17 +95,14 @@ static bool v4l2_update_controls_menu(int_fast32_t dev, obs_properties_t *props,
 	return true;
 }
 
-#define INVALID_CONTROL_FLAGS                                 \
-	(V4L2_CTRL_FLAG_DISABLED | V4L2_CTRL_FLAG_READ_ONLY | \
-	 V4L2_CTRL_FLAG_VOLATILE)
+#define INVALID_CONTROL_FLAGS (V4L2_CTRL_FLAG_DISABLED | V4L2_CTRL_FLAG_READ_ONLY | V4L2_CTRL_FLAG_VOLATILE)
 
 static inline bool valid_control(struct v4l2_queryctrl *qctrl)
 {
 	return (qctrl->flags & INVALID_CONTROL_FLAGS) == 0;
 }
 
-static inline void add_control_property(obs_properties_t *props,
-					obs_data_t *settings, int_fast32_t dev,
+static inline void add_control_property(obs_properties_t *props, obs_data_t *settings, int_fast32_t dev,
 					struct v4l2_queryctrl *qctrl)
 {
 	obs_property_t *prop = NULL;
@@ -127,36 +113,27 @@ static inline void add_control_property(obs_properties_t *props,
 
 	switch (qctrl->type) {
 	case V4L2_CTRL_TYPE_INTEGER:
-		prop = obs_properties_add_int_slider(
-			props, (char *)qctrl->name, (char *)qctrl->name,
-			qctrl->minimum, qctrl->maximum, qctrl->step);
-		obs_data_set_default_int(settings, (char *)qctrl->name,
-					 qctrl->default_value);
-		obs_property_set_modified_callback2(prop, v4l2_control_changed,
-						    UINT_TO_POINTER(qctrl->id));
+		prop = obs_properties_add_int_slider(props, (char *)qctrl->name, (char *)qctrl->name, qctrl->minimum,
+						     qctrl->maximum, qctrl->step);
+		obs_data_set_default_int(settings, (char *)qctrl->name, qctrl->default_value);
+		obs_property_set_modified_callback2(prop, v4l2_control_changed, UINT_TO_POINTER(qctrl->id));
 		break;
 	case V4L2_CTRL_TYPE_BOOLEAN:
-		prop = obs_properties_add_bool(props, (char *)qctrl->name,
-					       (char *)qctrl->name);
-		obs_data_set_default_bool(settings, (char *)qctrl->name,
-					  qctrl->default_value);
-		obs_property_set_modified_callback2(prop, v4l2_control_changed,
-						    UINT_TO_POINTER(qctrl->id));
+		prop = obs_properties_add_bool(props, (char *)qctrl->name, (char *)qctrl->name);
+		obs_data_set_default_bool(settings, (char *)qctrl->name, qctrl->default_value);
+		obs_property_set_modified_callback2(prop, v4l2_control_changed, UINT_TO_POINTER(qctrl->id));
 		break;
 	case V4L2_CTRL_TYPE_MENU:
 	case V4L2_CTRL_TYPE_INTEGER_MENU:
 		if (v4l2_update_controls_menu(dev, props, qctrl)) {
-			obs_data_set_default_int(settings, (char *)qctrl->name,
-						 qctrl->default_value);
-			blog(LOG_INFO, "setting default for %s to %d",
-			     (char *)qctrl->name, qctrl->default_value);
+			obs_data_set_default_int(settings, (char *)qctrl->name, qctrl->default_value);
+			blog(LOG_INFO, "setting default for %s to %d", (char *)qctrl->name, qctrl->default_value);
 		}
 		break;
 	}
 }
 
-int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props,
-				  obs_data_t *settings)
+int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props, obs_data_t *settings)
 {
 	struct v4l2_queryctrl qctrl;
 

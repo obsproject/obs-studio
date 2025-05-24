@@ -16,9 +16,7 @@ public:
 
 	explicit ScopeGuard(FunctionType &&fn) : function_(std::move(fn)) {}
 
-	ScopeGuard(ScopeGuard &&other)
-		: dismissed_(other.dismissed_),
-		  function_(std::move(other.function_))
+	ScopeGuard(ScopeGuard &&other) : dismissed_(other.dismissed_), function_(std::move(other.function_))
 	{
 		other.dismissed_ = true;
 	}
@@ -38,12 +36,9 @@ private:
 	FunctionType function_;
 };
 
-template<typename FunctionType>
-ScopeGuard<typename std::decay<FunctionType>::type>
-make_guard(FunctionType &&fn)
+template<typename FunctionType> ScopeGuard<typename std::decay<FunctionType>::type> make_guard(FunctionType &&fn)
 {
-	return ScopeGuard<typename std::decay<FunctionType>::type>{
-		std::forward<FunctionType>(fn)};
+	return ScopeGuard<typename std::decay<FunctionType>::type>{std::forward<FunctionType>(fn)};
 }
 
 namespace detail {
@@ -51,11 +46,9 @@ namespace detail {
 enum class ScopeGuardOnExit {};
 
 template<typename FunctionType>
-ScopeGuard<typename std::decay<FunctionType>::type>
-operator+(detail::ScopeGuardOnExit, FunctionType &&fn)
+ScopeGuard<typename std::decay<FunctionType>::type> operator+(detail::ScopeGuardOnExit, FunctionType &&fn)
 {
-	return ScopeGuard<typename std::decay<FunctionType>::type>(
-		std::forward<FunctionType>(fn));
+	return ScopeGuard<typename std::decay<FunctionType>::type>(std::forward<FunctionType>(fn));
 }
 
 } // namespace detail

@@ -19,8 +19,7 @@
 
 #include "c99defs.h"
 
-#if (defined(_MSC_VER) || defined(__MINGW32__)) && \
-	((defined(_M_X64) && !defined(_M_ARM64EC)) || defined(_M_IX86))
+#if (defined(_MSC_VER) || defined(__MINGW32__)) && ((defined(_M_X64) && !defined(_M_ARM64EC)) || defined(_M_IX86))
 #include <emmintrin.h>
 #else
 #ifndef WIN32_LEAN_AND_MEAN

@@ -3,13 +3,12 @@
 #include <string.h>
 #include <opts-parser.h>
 
-#define CHECK(condition)                                                    \
-	do {                                                                \
-		if (!(condition)) {                                         \
-			fprintf(stderr, "%s:%d: error: check failed: %s\n", \
-				__FILE__, __LINE__, #condition);            \
-			exit(1);                                            \
-		}                                                           \
+#define CHECK(condition)                                                                                     \
+	do {                                                                                                 \
+		if (!(condition)) {                                                                          \
+			fprintf(stderr, "%s:%d: error: check failed: %s\n", __FILE__, __LINE__, #condition); \
+			exit(1);                                                                             \
+		}                                                                                            \
 	} while (0)
 
 static void test_obs_parse_options()
@@ -43,16 +42,14 @@ static void test_obs_parse_options()
 	obs_free_options(options);
 
 	// Invalid options are ignored.
-	options = obs_parse_options(
-		"ref=3 option_with_no_equal_sign bframes=8 1234");
+	options = obs_parse_options("ref=3 option_with_no_equal_sign bframes=8 1234");
 	CHECK(options.count == 2);
 	CHECK(strcmp(options.options[0].name, "ref") == 0);
 	CHECK(strcmp(options.options[0].value, "3") == 0);
 	CHECK(strcmp(options.options[1].name, "bframes") == 0);
 	CHECK(strcmp(options.options[1].value, "8") == 0);
 	CHECK(options.ignored_word_count == 2);
-	CHECK(strcmp(options.ignored_words[0], "option_with_no_equal_sign") ==
-	      0);
+	CHECK(strcmp(options.ignored_words[0], "option_with_no_equal_sign") == 0);
 	CHECK(strcmp(options.ignored_words[1], "1234") == 0);
 	obs_free_options(options);
 

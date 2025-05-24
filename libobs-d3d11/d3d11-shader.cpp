@@ -28,8 +28,7 @@
 #include <fstream>
 #include <d3dcompiler.h>
 
-void gs_vertex_shader::GetBuffersExpected(
-	const vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
+void gs_vertex_shader::GetBuffersExpected(const vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
 {
 	for (size_t i = 0; i < inputs.size(); i++) {
 		const D3D11_INPUT_ELEMENT_DESC &input = inputs[i];
@@ -44,8 +43,7 @@ void gs_vertex_shader::GetBuffersExpected(
 	}
 }
 
-gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
-				   const char *shaderString)
+gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file, const char *shaderString)
 	: gs_shader(device, gs_type::gs_vertex_shader, GS_SHADER_VERTEX),
 	  hasNormals(false),
 	  hasColors(false),
@@ -69,16 +67,13 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 	data.resize(shaderBlob->GetBufferSize());
 	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
 
-	hr = device->device->CreateVertexShader(data.data(), data.size(), NULL,
-						shader.Assign());
+	hr = device->device->CreateVertexShader(data.data(), data.size(), NULL, shader.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create vertex shader", hr);
 
 	const UINT layoutSize = (UINT)layoutData.size();
 	if (layoutSize > 0) {
-		hr = device->device->CreateInputLayout(layoutData.data(),
-						       (UINT)layoutSize,
-						       data.data(), data.size(),
+		hr = device->device->CreateInputLayout(layoutData.data(), (UINT)layoutSize, data.data(), data.size(),
 						       layout.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create input layout", hr);
@@ -88,8 +83,7 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 	world = gs_shader_get_param_by_name(this, "World");
 }
 
-gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file,
-				 const char *shaderString)
+gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file, const char *shaderString)
 	: gs_shader(device, gs_type::gs_pixel_shader, GS_SHADER_PIXEL)
 {
 	ShaderProcessor processor(device);
@@ -108,8 +102,7 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file,
 	data.resize(shaderBlob->GetBufferSize());
 	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
 
-	hr = device->device->CreatePixelShader(data.data(), data.size(), NULL,
-					       shader.Assign());
+	hr = device->device->CreatePixelShader(data.data(), data.size(), NULL, shader.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create pixel shader", hr);
 }
@@ -196,8 +189,7 @@ void gs_shader::BuildConstantBuffer()
 		bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-		hr = device->device->CreateBuffer(&bd, NULL,
-						  constants.Assign());
+		hr = device->device->CreateBuffer(&bd, NULL, constants.Assign());
 		if (FAILED(hr))
 			throw HRError("Failed to create constant buffer", hr);
 	}
@@ -218,8 +210,7 @@ static uint64_t fnv1a_hash(const char *str, size_t len)
 	return hash;
 }
 
-void gs_shader::Compile(const char *shaderString, const char *file,
-			const char *target, ID3D10Blob **shader)
+void gs_shader::Compile(const char *shaderString, const char *file, const char *target, ID3D10Blob **shader)
 {
 	ComPtr<ID3D10Blob> errorsBlob;
 	HRESULT hr;
@@ -234,8 +225,7 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 	uint64_t hash = fnv1a_hash(shaderString, shaderStrLen);
 	snprintf(hashstr, sizeof(hashstr), "%02llx", hash);
 
-	BPtr program_data =
-		os_get_program_data_path_ptr("obs-studio/shader-cache");
+	BPtr program_data = os_get_program_data_path_ptr("obs-studio/shader-cache");
 	auto cachePath = filesystem::u8path(program_data.Get()) / hashstr;
 	// Increment if on-disk format changes
 	cachePath += ".v2";
@@ -259,10 +249,8 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 
 			len -= sizeof(checksum);
 			D3DCreateBlob(len, shader);
-			cacheFile.read((char *)(*shader)->GetBufferPointer(),
-				       len);
-			uint64_t calculated_checksum = fnv1a_hash(
-				(char *)(*shader)->GetBufferPointer(), len);
+			cacheFile.read((char *)(*shader)->GetBufferPointer(), len);
+			uint64_t calculated_checksum = fnv1a_hash((char *)(*shader)->GetBufferPointer(), len);
 
 			cacheFile.read((char *)&checksum, sizeof(checksum));
 			if (calculated_checksum != checksum)
@@ -271,19 +259,15 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 			is_cached = true;
 		} catch (const exception &e) {
 			// Something went wrong reading the cache file, delete it
-			blog(LOG_WARNING,
-			     "Loading shader cache file failed with \"%s\": %s",
-			     e.what(), file);
+			blog(LOG_WARNING, "Loading shader cache file failed with \"%s\": %s", e.what(), file);
 			cacheFile.close();
 			filesystem::remove(cachePath);
 		}
 	}
 
 	if (!is_cached) {
-		hr = D3DCompile(shaderString, shaderStrLen, file, NULL, NULL,
-				"main", target,
-				D3D10_SHADER_OPTIMIZATION_LEVEL3, 0, shader,
-				errorsBlob.Assign());
+		hr = D3DCompile(shaderString, shaderStrLen, file, NULL, NULL, "main", target,
+				D3D10_SHADER_OPTIMIZATION_LEVEL3, 0, shader, errorsBlob.Assign());
 		if (FAILED(hr)) {
 			if (errorsBlob != NULL && errorsBlob->GetBufferSize())
 				throw ShaderError(errorsBlob, hr);
@@ -294,19 +278,13 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 		cacheFile.open(cachePath, ios::out | ios::binary);
 		if (cacheFile.is_open()) {
 			try {
-				uint64_t calculated_checksum = fnv1a_hash(
-					(char *)(*shader)->GetBufferPointer(),
-					(*shader)->GetBufferSize());
+				uint64_t calculated_checksum =
+					fnv1a_hash((char *)(*shader)->GetBufferPointer(), (*shader)->GetBufferSize());
 
-				cacheFile.write(
-					(char *)(*shader)->GetBufferPointer(),
-					(*shader)->GetBufferSize());
-				cacheFile.write((char *)&calculated_checksum,
-						sizeof(calculated_checksum));
+				cacheFile.write((char *)(*shader)->GetBufferPointer(), (*shader)->GetBufferSize());
+				cacheFile.write((char *)&calculated_checksum, sizeof(calculated_checksum));
 			} catch (const exception &e) {
-				blog(LOG_WARNING,
-				     "Writing shader cache file failed with \"%s\": %s",
-				     e.what(), file);
+				blog(LOG_WARNING, "Writing shader cache file failed with \"%s\": %s", e.what(), file);
 				cacheFile.close();
 				filesystem::remove(cachePath);
 			}
@@ -316,19 +294,16 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 #ifdef DISASSEMBLE_SHADERS
 	ComPtr<ID3D10Blob> asmBlob;
 
-	hr = D3DDisassemble((*shader)->GetBufferPointer(),
-			    (*shader)->GetBufferSize(), 0, nullptr, &asmBlob);
+	hr = D3DDisassemble((*shader)->GetBufferPointer(), (*shader)->GetBufferSize(), 0, nullptr, &asmBlob);
 
 	if (SUCCEEDED(hr) && !!asmBlob && asmBlob->GetBufferSize()) {
 		blog(LOG_INFO, "=============================================");
-		blog(LOG_INFO, "Disassembly output for shader '%s':\n%s", file,
-		     asmBlob->GetBufferPointer());
+		blog(LOG_INFO, "Disassembly output for shader '%s':\n%s", file, asmBlob->GetBufferPointer());
 	}
 #endif
 }
 
-inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
-				   gs_shader_param &param, bool &upload)
+inline void gs_shader::UpdateParam(vector<uint8_t> &constData, gs_shader_param &param, bool &upload)
 {
 	if (param.type != GS_SHADER_PARAM_TEXTURE) {
 		if (!param.curValue.size())
@@ -339,12 +314,10 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 		if (param.pos > constData.size()) {
 			uint8_t zero = 0;
 
-			constData.insert(constData.end(),
-					 param.pos - constData.size(), zero);
+			constData.insert(constData.end(), param.pos - constData.size(), zero);
 		}
 
-		constData.insert(constData.end(), param.curValue.begin(),
-				 param.curValue.end());
+		constData.insert(constData.end(), param.curValue.begin(), param.curValue.end());
 
 		if (param.changed) {
 			upload = true;
@@ -355,16 +328,13 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 		struct gs_shader_texture shader_tex;
 		memcpy(&shader_tex, param.curValue.data(), sizeof(shader_tex));
 		if (shader_tex.srgb)
-			device_load_texture_srgb(device, shader_tex.tex,
-						 param.textureID);
+			device_load_texture_srgb(device, shader_tex.tex, param.textureID);
 		else
-			device_load_texture(device, shader_tex.tex,
-					    param.textureID);
+			device_load_texture(device, shader_tex.tex, param.textureID);
 
 		if (param.nextSampler) {
 			ID3D11SamplerState *state = param.nextSampler->state;
-			device->context->PSSetSamplers(param.textureID, 1,
-						       &state);
+			device->context->PSSetSamplers(param.textureID, 1, &state);
 			param.nextSampler = nullptr;
 		}
 	}
@@ -387,8 +357,7 @@ void gs_shader::UploadParams()
 		D3D11_MAPPED_SUBRESOURCE map;
 		HRESULT hr;
 
-		hr = device->context->Map(constants, 0, D3D11_MAP_WRITE_DISCARD,
-					  0, &map);
+		hr = device->context->Map(constants, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
 		if (FAILED(hr))
 			throw HRError("Could not lock constant buffer", hr);
 
@@ -441,8 +410,7 @@ gs_sparam_t *gs_shader_get_world_matrix(const gs_shader_t *shader)
 	return static_cast<const gs_vertex_shader *>(shader)->world;
 }
 
-void gs_shader_get_param_info(const gs_sparam_t *param,
-			      struct gs_shader_param_info *info)
+void gs_shader_get_param_info(const gs_sparam_t *param, struct gs_shader_param_info *info)
 {
 	if (!param)
 		return;
@@ -451,8 +419,7 @@ void gs_shader_get_param_info(const gs_sparam_t *param,
 	info->type = param->type;
 }
 
-static inline void shader_setval_inline(gs_shader_param *param,
-					const void *data, size_t size)
+static inline void shader_setval_inline(gs_shader_param *param, const void *data, size_t size)
 {
 	assert(param);
 	if (!param)
@@ -524,8 +491,7 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 void gs_shader_set_default(gs_sparam_t *param)
 {
 	if (param->defaultValue.size())
-		shader_setval_inline(param, param->defaultValue.data(),
-				     param->defaultValue.size());
+		shader_setval_inline(param, param->defaultValue.data(), param->defaultValue.size());
 }
 
 void gs_shader_set_next_sampler(gs_sparam_t *param, gs_samplerstate_t *sampler)

@@ -30,8 +30,7 @@ enum {
 	OBS_NAL_PRIORITY_HIGHEST = 3,
 };
 
-EXPORT const uint8_t *obs_nal_find_startcode(const uint8_t *p,
-					     const uint8_t *end);
+EXPORT const uint8_t *obs_nal_find_startcode(const uint8_t *p, const uint8_t *end);
 
 #ifdef __cplusplus
 }

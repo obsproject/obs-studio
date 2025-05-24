@@ -21,8 +21,7 @@ static inline bool d3d8_init(d3d8_info &info)
 	d3d8create_t create;
 	HRESULT hr;
 
-	info.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "d3d8 get-addr window",
-				    WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
+	info.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "d3d8 get-addr window", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
 				    GetModuleHandleA(nullptr), nullptr);
 	if (!info.hwnd) {
 		return false;
@@ -52,10 +51,8 @@ static inline bool d3d8_init(d3d8_info &info)
 	pp.BackBufferCount = 1;
 	pp.hDeviceWindow = info.hwnd;
 
-	hr = info.d3d8->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,
-				     info.hwnd,
-				     D3DCREATE_HARDWARE_VERTEXPROCESSING, &pp,
-				     &info.device);
+	hr = info.d3d8->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, info.hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING,
+				     &pp, &info.device);
 	if (FAILED(hr)) {
 		return false;
 	}

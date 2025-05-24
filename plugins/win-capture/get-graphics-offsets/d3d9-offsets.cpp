@@ -18,8 +18,7 @@ static inline bool d3d9_init(d3d9_info &info)
 	d3d9createex_t create;
 	HRESULT hr;
 
-	info.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "d3d9 get-offset window",
-				    WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
+	info.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "d3d9 get-offset window", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
 				    GetModuleHandleA(nullptr), nullptr);
 	if (!info.hwnd) {
 		return false;
@@ -30,8 +29,7 @@ static inline bool d3d9_init(d3d9_info &info)
 		return false;
 	}
 
-	create = (d3d9createex_t)GetProcAddress(info.module,
-						"Direct3DCreate9Ex");
+	create = (d3d9createex_t)GetProcAddress(info.module, "Direct3DCreate9Ex");
 	if (!create) {
 		return false;
 	}
@@ -51,10 +49,9 @@ static inline bool d3d9_init(d3d9_info &info)
 	pp.hDeviceWindow = info.hwnd;
 	pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 
-	hr = info.d3d9ex->CreateDeviceEx(
-		D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, info.hwnd,
-		D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES,
-		&pp, nullptr, &info.device);
+	hr = info.d3d9ex->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, info.hwnd,
+					 D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES, &pp, nullptr,
+					 &info.device);
 	if (FAILED(hr)) {
 		return false;
 	}
@@ -276,8 +273,7 @@ static const uint32_t code_offsets[][2] = {
 
 #define MAX_FUNC_SCAN_BYTES 200
 
-static inline bool pattern_matches(uint8_t *byte, uint32_t *offset1,
-				   uint32_t *offset2)
+static inline bool pattern_matches(uint8_t *byte, uint32_t *offset1, uint32_t *offset2)
 {
 	for (size_t j = 0; j < sizeof(mask) / sizeof(mask[0]); j++) {
 		for (size_t i = 0; i < MAX_CMP_SIZE; i++) {
@@ -306,10 +302,8 @@ void get_d3d9_offsets(struct d3d9_offsets *offsets)
 		uint8_t *crr = vt[125];
 
 		offsets->present = vtable_offset(info.module, info.device, 17);
-		offsets->present_ex =
-			vtable_offset(info.module, info.device, 121);
-		offsets->present_swap =
-			vtable_offset(info.module, info.swap, 3);
+		offsets->present_ex = vtable_offset(info.module, info.device, 121);
+		offsets->present_swap = vtable_offset(info.module, info.swap, 3);
 
 		uint32_t offset1, offset2;
 		for (size_t i = 0; i < MAX_FUNC_SCAN_BYTES; i++) {
@@ -329,13 +323,11 @@ void get_d3d9_offsets(struct d3d9_offsets *offsets)
 				__try {
 					uint8_t *ptr = (uint8_t *)(info.device);
 
-					uint8_t *d3d9_ptr =
-						*(uint8_t **)(ptr + off1);
+					uint8_t *d3d9_ptr = *(uint8_t **)(ptr + off1);
 					if (d3d9_ptr != (uint8_t *)info.d3d9ex)
 						break;
 
-					BOOL &is_d3d9ex =
-						*(BOOL *)(d3d9_ptr + off2);
+					BOOL &is_d3d9ex = *(BOOL *)(d3d9_ptr + off2);
 					if (is_d3d9ex != TRUE)
 						break;
 

@@ -29,7 +29,7 @@ function(_check_deps_version version)
         )
         list(REMOVE_ITEM CMAKE_PREFIX_PATH "${path}")
         list(APPEND CMAKE_PREFIX_PATH "${path}")
-        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} PARENT_SCOPE)
+
         continue()
       else()
         message(
@@ -42,6 +42,8 @@ function(_check_deps_version version)
       endif()
     endif()
   endforeach()
+
+  return(PROPAGATE found CMAKE_PREFIX_PATH)
 endfunction()
 
 # _check_dependencies: Fetch and extract pre-built OBS build dependencies
@@ -51,6 +53,9 @@ function(_check_dependencies)
   string(JSON dependency_data GET ${buildspec} dependencies)
 
   foreach(dependency IN LISTS dependencies_list)
+    if(dependency STREQUAL cef AND NOT ENABLE_BROWSER)
+      continue()
+    endif()
     if(dependency STREQUAL cef AND arch STREQUAL universal)
       if(CMAKE_OSX_ARCHITECTURES MATCHES ".+;.+")
         continue()

@@ -9,3 +9,5 @@ find_dependency(Threads REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/@TARGETS_EXPORT_NAME@.cmake")
 check_required_components("@PROJECT_NAME@")
+
+set_property(TARGET OBS::libobs APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS HAVE_OBSCONFIG_H)

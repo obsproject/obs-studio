@@ -48,15 +48,13 @@ void obs_nix_x11_log_info(void)
 		blog(LOG_INFO,
 		     "Window System: X%d.%d, Vendor: %s, Version: %d"
 		     ".%d.%d",
-		     protocol_version, protocol_revision, vendor_name,
-		     vendor_release / 10000000, (vendor_release / 100000) % 100,
-		     (vendor_release / 1000) % 100);
+		     protocol_version, protocol_revision, vendor_name, vendor_release / 10000000,
+		     (vendor_release / 100000) % 100, (vendor_release / 1000) % 100);
 	} else {
 		blog(LOG_INFO,
 		     "Window System: X%d.%d - vendor string: %s - "
 		     "vendor release: %d",
-		     protocol_version, protocol_revision, vendor_name,
-		     vendor_release);
+		     protocol_version, protocol_revision, vendor_name, vendor_release);
 	}
 }
 
@@ -700,8 +698,7 @@ static inline void fill_base_keysyms(struct obs_core_hotkeys *hotkeys)
 		hotkeys->platform_context->base_keysyms[i] = get_keysym(i);
 }
 
-static obs_key_t key_from_base_keysym(obs_hotkeys_platform_t *context,
-				      xcb_keysym_t code)
+static obs_key_t key_from_base_keysym(obs_hotkeys_platform_t *context, xcb_keysym_t code)
 {
 	for (size_t i = 0; i < OBS_KEY_LAST_VALUE; i++) {
 		if (context->base_keysyms[i] == (xcb_keysym_t)code) {
@@ -721,8 +718,7 @@ static obs_key_t key_from_base_keysym(obs_hotkeys_platform_t *context,
 	return OBS_KEY_NONE;
 }
 
-static inline void add_key(obs_hotkeys_platform_t *context, obs_key_t key,
-			   int code)
+static inline void add_key(obs_hotkeys_platform_t *context, obs_key_t key, int code)
 {
 	xcb_keycode_t kc = (xcb_keycode_t)code;
 	da_push_back(context->keycodes[key].list, &kc);
@@ -731,8 +727,7 @@ static inline void add_key(obs_hotkeys_platform_t *context, obs_key_t key,
 		blog(LOG_DEBUG,
 		     "found alternate keycode %d for %s "
 		     "which already has keycode %d",
-		     code, obs_key_to_name(key),
-		     (int)context->keycodes[key].list.array[0]);
+		     code, obs_key_to_name(key), (int)context->keycodes[key].list.array[0]);
 	}
 }
 
@@ -751,8 +746,7 @@ static inline bool fill_keycodes(struct obs_core_hotkeys *hotkeys)
 
 	context->min_keycode = setup->min_keycode;
 
-	cookie = xcb_get_keyboard_mapping(connection, mincode,
-					  maxcode - mincode + 1);
+	cookie = xcb_get_keyboard_mapping(connection, mincode, maxcode - mincode + 1);
 
 	reply = xcb_get_keyboard_mapping_reply(connection, cookie, &error);
 
@@ -766,8 +760,7 @@ static inline bool fill_keycodes(struct obs_core_hotkeys *hotkeys)
 
 	context->num_keysyms = (maxcode - mincode + 1) * syms_per_code;
 	context->syms_per_code = syms_per_code;
-	context->keysyms =
-		bmemdup(keysyms, sizeof(xcb_keysym_t) * context->num_keysyms);
+	context->keysyms = bmemdup(keysyms, sizeof(xcb_keysym_t) * context->num_keysyms);
 
 	for (code = mincode; code <= maxcode; code++) {
 		const xcb_keysym_t *sym;
@@ -803,8 +796,7 @@ error1:
 	return error != NULL || reply == NULL;
 }
 
-static xcb_screen_t *default_screen(obs_hotkeys_platform_t *context,
-				    xcb_connection_t *connection)
+static xcb_screen_t *default_screen(obs_hotkeys_platform_t *context, xcb_connection_t *connection)
 {
 	int def_screen_idx = XDefaultScreen(context->display);
 	xcb_screen_iterator_t iter;
@@ -820,8 +812,7 @@ static xcb_screen_t *default_screen(obs_hotkeys_platform_t *context,
 	return NULL;
 }
 
-static inline xcb_window_t root_window(obs_hotkeys_platform_t *context,
-				       xcb_connection_t *connection)
+static inline xcb_window_t root_window(obs_hotkeys_platform_t *context, xcb_connection_t *connection)
 {
 	xcb_screen_t *screen = default_screen(context, connection);
 	if (screen)
@@ -842,8 +833,7 @@ static inline void registerMouseEvents(struct obs_core_hotkeys *hotkeys)
 	} mask;
 	mask.head.deviceid = XCB_INPUT_DEVICE_ALL_MASTER;
 	mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
-	mask.mask = XCB_INPUT_XI_EVENT_MASK_RAW_BUTTON_PRESS |
-		    XCB_INPUT_XI_EVENT_MASK_RAW_BUTTON_RELEASE;
+	mask.mask = XCB_INPUT_XI_EVENT_MASK_RAW_BUTTON_PRESS | XCB_INPUT_XI_EVENT_MASK_RAW_BUTTON_RELEASE;
 
 	xcb_input_xi_select_events(connection, window, 1, &mask.head);
 	xcb_flush(connection);
@@ -884,8 +874,7 @@ static void obs_nix_x11_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 	hotkeys->platform_context = NULL;
 }
 
-static bool mouse_button_pressed(xcb_connection_t *connection,
-				 obs_hotkeys_platform_t *context, obs_key_t key)
+static bool mouse_button_pressed(xcb_connection_t *connection, obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	bool ret = false;
 
@@ -901,8 +890,7 @@ static bool mouse_button_pressed(xcb_connection_t *connection,
 				xcb_input_raw_button_press_event_t *mot;
 				mot = (xcb_input_raw_button_press_event_t *)ev;
 				if (mot->detail < XINPUT_MOUSE_LEN) {
-					context->pressed[mot->detail - 1] =
-						true;
+					context->pressed[mot->detail - 1] = true;
 					context->update[mot->detail - 1] = true;
 				} else {
 					blog(LOG_WARNING, "Unsupported button");
@@ -1055,22 +1043,19 @@ static bool mouse_button_pressed(xcb_connection_t *connection,
 	return ret;
 }
 
-static inline bool keycode_pressed(xcb_query_keymap_reply_t *reply,
-				   xcb_keycode_t code)
+static inline bool keycode_pressed(xcb_query_keymap_reply_t *reply, xcb_keycode_t code)
 {
 	return (reply->keys[code / 8] & (1 << (code % 8))) != 0;
 }
 
-static bool key_pressed(xcb_connection_t *connection,
-			obs_hotkeys_platform_t *context, obs_key_t key)
+static bool key_pressed(xcb_connection_t *connection, obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	struct keycode_list *codes = &context->keycodes[key];
 	xcb_generic_error_t *error = NULL;
 	xcb_query_keymap_reply_t *reply;
 	bool pressed = false;
 
-	reply = xcb_query_keymap_reply(connection, xcb_query_keymap(connection),
-				       &error);
+	reply = xcb_query_keymap_reply(connection, xcb_query_keymap(connection), &error);
 	if (error) {
 		blog(LOG_WARNING, "xcb_query_keymap failed");
 
@@ -1092,9 +1077,7 @@ static bool key_pressed(xcb_connection_t *connection,
 	return pressed;
 }
 
-static bool
-obs_nix_x11_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
-					obs_key_t key)
+static bool obs_nix_x11_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	xcb_connection_t *conn = XGetXCBConnection(context->display);
 
@@ -1137,8 +1120,7 @@ static void obs_nix_x11_key_to_str(obs_key_t key, struct dstr *dstr)
 		if (obs->hotkeys.translations[key]) {
 			dstr_copy(dstr, obs->hotkeys.translations[key]);
 		} else {
-			dstr_printf(dstr, "Mouse %d",
-				    (int)(key - OBS_KEY_MOUSE1 + 1));
+			dstr_printf(dstr, "Mouse %d", (int)(key - OBS_KEY_MOUSE1 + 1));
 		}
 		return;
 	}
@@ -1147,14 +1129,12 @@ static void obs_nix_x11_key_to_str(obs_key_t key, struct dstr *dstr)
 		if (obs->hotkeys.translations[key]) {
 			dstr_copy(dstr, obs->hotkeys.translations[key]);
 		} else {
-			dstr_printf(dstr, "Numpad %d",
-				    (int)(key - OBS_KEY_NUM0));
+			dstr_printf(dstr, "Numpad %d", (int)(key - OBS_KEY_NUM0));
 		}
 		return;
 	}
 
-#define translate_key(key, def) \
-	dstr_copy(dstr, obs_get_hotkey_translation(key, def))
+#define translate_key(key, def) dstr_copy(dstr, obs_get_hotkey_translation(key, def))
 
 	switch (key) {
 	case OBS_KEY_INSERT:
@@ -1239,8 +1219,7 @@ static void obs_nix_x11_key_to_str(obs_key_t key, struct dstr *dstr)
 	}
 }
 
-static obs_key_t key_from_keycode(obs_hotkeys_platform_t *context,
-				  xcb_keycode_t code)
+static obs_key_t key_from_keycode(obs_hotkeys_platform_t *context, xcb_keycode_t code)
 {
 	for (size_t i = 0; i < OBS_KEY_LAST_VALUE; i++) {
 		struct keycode_list *codes = &context->keycodes[i];

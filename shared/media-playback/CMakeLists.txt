@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 find_package(FFmpeg REQUIRED avcodec avdevice avutil avformat)
 
@@ -20,10 +20,5 @@ target_sources(
 )
 
 target_include_directories(media-playback INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-if(OBS_CMAKE_VERSION VERSION_LESS 3.0)
-  target_compile_options(media-playback INTERFACE ${ARCH_SIMD_FLAGS})
-  target_compile_definitions(media-playback INTERFACE ${ARCH_SIMD_DEFINES})
-endif()
 
 target_link_libraries(media-playback INTERFACE FFmpeg::avcodec FFmpeg::avdevice FFmpeg::avutil FFmpeg::avformat)

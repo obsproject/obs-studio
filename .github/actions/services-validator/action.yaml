@@ -118,7 +118,7 @@ runs:
         path: ${{ inputs.workingDirectory }}/other/*
 
     - name: Create pull request 🔧
-      uses: peter-evans/create-pull-request@b1ddad2c994a25fbc81a28b3ec0e368bb2021c50
+      uses: peter-evans/create-pull-request@d121e62763d8cc35b5fb1710e887d6e69a52d3a4
       if: fromJSON(inputs.createPullRequest) && fromJSON(inputs.runServiceChecks) && fromJSON(steps.services-check.outputs.make_pr)
       with:
         author: 'Service Checker <commits@obsproject.com>'

@@ -71,8 +71,7 @@ static void *sync_pair_vid_create(obs_data_t *settings, obs_source_t *source)
 	return spv;
 }
 
-static inline bool whitelist_time(uint64_t ts, uint64_t interval,
-				  uint64_t fps_num, uint64_t fps_den)
+static inline bool whitelist_time(uint64_t ts, uint64_t interval, uint64_t fps_num, uint64_t fps_den)
 {
 	if (!starting_time)
 		return false;
@@ -92,8 +91,7 @@ static void sync_pair_vid_render(void *data, gs_effect_t *effect)
 		starting_time = ts;
 
 	uint64_t interval = video_output_get_frame_time(obs_get_video());
-	const struct video_output_info *voi =
-		video_output_get_info(obs_get_video());
+	const struct video_output_info *voi = video_output_get_info(obs_get_video());
 	uint64_t fps_num = voi->fps_num;
 	uint64_t fps_den = voi->fps_den;
 

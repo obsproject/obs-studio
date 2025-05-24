@@ -6,10 +6,7 @@ class AudioRepacker {
 	struct audio_repack arepack;
 
 public:
-	inline AudioRepacker(audio_repack_mode_t repack_mode)
-	{
-		audio_repack_init(&arepack, repack_mode, 16);
-	}
+	inline AudioRepacker(audio_repack_mode_t repack_mode) { audio_repack_init(&arepack, repack_mode, 16); }
 	inline ~AudioRepacker() { audio_repack_free(&arepack); }
 
 	inline int repack(const uint8_t *src, uint32_t frame_size)

@@ -32,6 +32,7 @@ struct obs_scene_item {
 	volatile bool removed;
 
 	bool is_group;
+	bool is_scene;
 	bool update_transform;
 	bool update_group_resize;
 
@@ -50,8 +51,10 @@ struct obs_scene_item {
 	gs_texrender_t *item_render;
 	struct obs_sceneitem_crop crop;
 
+	bool absolute_coordinates;
 	struct vec2 pos;
 	struct vec2 scale;
+	struct vec2 scale_ref;
 	float rot;
 	uint32_t align;
 
@@ -109,6 +112,10 @@ struct obs_scene {
 	bool custom_size;
 	uint32_t cx;
 	uint32_t cy;
+
+	bool absolute_coordinates;
+	uint32_t last_width;
+	uint32_t last_height;
 
 	int64_t id_counter;
 

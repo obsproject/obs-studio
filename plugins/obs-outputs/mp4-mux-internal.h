@@ -211,9 +211,7 @@ static inline size_t min(size_t a, size_t b)
 }
 #endif
 
-static inline void get_speaker_positions(enum speaker_layout layout,
-					 uint8_t *arr, uint8_t *size,
-					 uint8_t *iso_layout)
+static inline void get_speaker_positions(enum speaker_layout layout, uint8_t *arr, uint8_t *size, uint8_t *iso_layout)
 {
 	switch (layout) {
 	case SPEAKERS_MONO:
@@ -274,8 +272,7 @@ static inline void get_speaker_positions(enum speaker_layout layout,
 	}
 }
 
-static inline void get_colour_information(obs_encoder_t *enc, uint16_t *pri,
-					  uint16_t *trc, uint16_t *spc,
+static inline void get_colour_information(obs_encoder_t *enc, uint16_t *pri, uint16_t *trc, uint16_t *spc,
 					  uint8_t *full_range)
 {
 	video_t *video = obs_encoder_video(enc);

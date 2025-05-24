@@ -1,10 +1,8 @@
-cmake_minimum_required(VERSION 3.24...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_executable(obs-qsv-test)
 
-find_package(VPL 2.6 REQUIRED)
+find_package(VPL 2.9 REQUIRED)
 
 target_sources(obs-qsv-test PRIVATE obs-qsv-test.cpp)
 

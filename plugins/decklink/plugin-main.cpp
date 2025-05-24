@@ -27,21 +27,17 @@ bool log_sdk_version()
 		return false;
 	}
 
-	result = deckLinkIterator->QueryInterface(
-		IID_IDeckLinkAPIInformation, (void **)&deckLinkAPIInformation);
+	result = deckLinkIterator->QueryInterface(IID_IDeckLinkAPIInformation, (void **)&deckLinkAPIInformation);
 	if (result == S_OK) {
 		decklink_string_t deckLinkVersion;
-		deckLinkAPIInformation->GetString(BMDDeckLinkAPIVersion,
-						  &deckLinkVersion);
+		deckLinkAPIInformation->GetString(BMDDeckLinkAPIVersion, &deckLinkVersion);
 
-		blog(LOG_INFO, "Decklink API Compiled version %s",
-		     BLACKMAGIC_DECKLINK_API_VERSION_STRING);
+		blog(LOG_INFO, "Decklink API Compiled version %s", BLACKMAGIC_DECKLINK_API_VERSION_STRING);
 
 		std::string versionString;
 		DeckLinkStringToStdString(deckLinkVersion, versionString);
 
-		blog(LOG_INFO, "Decklink API Installed version %s",
-		     versionString.c_str());
+		blog(LOG_INFO, "Decklink API Installed version %s", versionString.c_str());
 	}
 
 	return true;

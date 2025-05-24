@@ -1,3 +1,4 @@
+#define ONEVPL_EXPERIMENTAL
 #include <vpl/mfxstructures.h>
 #include <vpl/mfxadapter.h>
 #include <vpl/mfxvideo++.h>
@@ -56,8 +57,7 @@ static inline uint32_t get_adapter_idx(uint32_t adapter_idx, LUID luid)
 	return adapter_idx;
 }
 
-static bool get_adapter_caps(IDXGIFactory *factory, mfxLoader loader,
-			     mfxSession m_session, uint32_t adapter_idx)
+static bool get_adapter_caps(IDXGIFactory *factory, mfxLoader loader, mfxSession m_session, uint32_t adapter_idx)
 {
 	HRESULT hr;
 	static uint32_t idx_adjustment = 0;
@@ -80,10 +80,8 @@ static bool get_adapter_caps(IDXGIFactory *factory, mfxLoader loader,
 	caps.is_intel = true;
 
 	mfxImplDescription *idesc;
-	mfxStatus sts =
-		MFXEnumImplementations(loader, adapter_idx - idx_adjustment,
-				       MFX_IMPLCAPS_IMPLDESCSTRUCTURE,
-				       reinterpret_cast<mfxHDL *>(&idesc));
+	mfxStatus sts = MFXEnumImplementations(loader, adapter_idx - idx_adjustment, MFX_IMPLCAPS_IMPLDESCSTRUCTURE,
+					       reinterpret_cast<mfxHDL *>(&idesc));
 
 	if (sts != MFX_ERR_NONE)
 		return false;
@@ -138,13 +136,11 @@ try {
 	HRESULT hr;
 
 	HANDLE hMainThread;
-	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-			GetCurrentProcess(), &hMainThread, 0, FALSE,
+	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &hMainThread, 0, FALSE,
 			DUPLICATE_SAME_ACCESS);
 	DWORD threadId;
 	HANDLE hThread;
-	hThread =
-		CreateThread(NULL, 0, TimeoutThread, hMainThread, 0, &threadId);
+	hThread = CreateThread(NULL, 0, TimeoutThread, hMainThread, 0, &threadId);
 	CloseHandle(hThread);
 
 	/* --------------------------------------------------------- */
@@ -174,8 +170,7 @@ try {
 	// Low latency is disabled due to encoding capabilities not being provided before TGL for VPL
 	impl.Type = MFX_VARIANT_TYPE_U32;
 	impl.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.Impl", impl);
+	MFXSetConfigFilterProperty(cfg, (const mfxU8 *)"mfxImplDescription.Impl", impl);
 
 	mfxSession m_session = nullptr;
 	mfxStatus sts = MFXCreateSession(loader, 0, &m_session);
@@ -193,10 +188,8 @@ try {
 		printf("[%u]\n", idx);
 		printf("is_intel=%s\n", caps.is_intel ? "true" : "false");
 		printf("is_dgpu=%s\n", caps.is_dgpu ? "true" : "false");
-		printf("supports_av1=%s\n",
-		       caps.supports_av1 ? "true" : "false");
-		printf("supports_hevc=%s\n",
-		       caps.supports_hevc ? "true" : "false");
+		printf("supports_av1=%s\n", caps.supports_av1 ? "true" : "false");
+		printf("supports_hevc=%s\n", caps.supports_hevc ? "true" : "false");
 	}
 
 	return 0;

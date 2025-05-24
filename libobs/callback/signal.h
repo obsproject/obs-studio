@@ -39,11 +39,9 @@ typedef void (*signal_callback_t)(void *, calldata_t *);
 EXPORT signal_handler_t *signal_handler_create(void);
 EXPORT void signal_handler_destroy(signal_handler_t *handler);
 
-EXPORT bool signal_handler_add(signal_handler_t *handler,
-			       const char *signal_decl);
+EXPORT bool signal_handler_add(signal_handler_t *handler, const char *signal_decl);
 
-static inline bool signal_handler_add_array(signal_handler_t *handler,
-					    const char **signal_decls)
+static inline bool signal_handler_add_array(signal_handler_t *handler, const char **signal_decls)
 {
 	bool success = true;
 	if (!signal_decls)
@@ -56,27 +54,19 @@ static inline bool signal_handler_add_array(signal_handler_t *handler,
 	return success;
 }
 
-EXPORT void signal_handler_connect(signal_handler_t *handler,
-				   const char *signal,
-				   signal_callback_t callback, void *data);
-EXPORT void signal_handler_connect_ref(signal_handler_t *handler,
-				       const char *signal,
-				       signal_callback_t callback, void *data);
-EXPORT void signal_handler_disconnect(signal_handler_t *handler,
-				      const char *signal,
-				      signal_callback_t callback, void *data);
+EXPORT void signal_handler_connect(signal_handler_t *handler, const char *signal, signal_callback_t callback,
+				   void *data);
+EXPORT void signal_handler_connect_ref(signal_handler_t *handler, const char *signal, signal_callback_t callback,
+				       void *data);
+EXPORT void signal_handler_disconnect(signal_handler_t *handler, const char *signal, signal_callback_t callback,
+				      void *data);
 
-EXPORT void signal_handler_connect_global(signal_handler_t *handler,
-					  global_signal_callback_t callback,
-					  void *data);
-EXPORT void signal_handler_disconnect_global(signal_handler_t *handler,
-					     global_signal_callback_t callback,
-					     void *data);
+EXPORT void signal_handler_connect_global(signal_handler_t *handler, global_signal_callback_t callback, void *data);
+EXPORT void signal_handler_disconnect_global(signal_handler_t *handler, global_signal_callback_t callback, void *data);
 
 EXPORT void signal_handler_remove_current(void);
 
-EXPORT void signal_handler_signal(signal_handler_t *handler, const char *signal,
-				  calldata_t *params);
+EXPORT void signal_handler_signal(signal_handler_t *handler, const char *signal, calldata_t *params);
 
 #ifdef __cplusplus
 }

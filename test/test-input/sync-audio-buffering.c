@@ -24,8 +24,7 @@ static const double aud_rates[CYCLE_COUNT] = {
 };
 
 #define MAKE_COL_CHAN(x, y) (((0xFF / 7) * x) << (y * 8))
-#define MAKE_GRAYSCALE(x) \
-	(MAKE_COL_CHAN(x, 0) | MAKE_COL_CHAN(x, 1) | MAKE_COL_CHAN(x, 2))
+#define MAKE_GRAYSCALE(x) (MAKE_COL_CHAN(x, 0) | MAKE_COL_CHAN(x, 1) | MAKE_COL_CHAN(x, 2))
 
 static const uint32_t vid_colors[CYCLE_COUNT] = {
 	0xFF000000,
@@ -120,8 +119,7 @@ static void *video_thread(void *data)
 		/* should cause approximately 750 milliseconds of audio
 		 * buffering */
 		frame.timestamp = cur_time - start_time;
-		audio.timestamp = cur_time - start_time -
-				  (audio_buffering_enabled ? 1000000000 : 0);
+		audio.timestamp = cur_time - start_time - (audio_buffering_enabled ? 1000000000 : 0);
 
 		const double rate = aud_rates[cur_aud_pos];
 
@@ -150,8 +148,7 @@ static void *video_thread(void *data)
 	return NULL;
 }
 
-static void bast_buffer_audio(void *data, obs_hotkey_id id,
-			      obs_hotkey_t *hotkey, bool pressed)
+static void bast_buffer_audio(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
 {
 	struct buffering_async_sync_test *bast = data;
 
@@ -177,8 +174,7 @@ static void *bast_create(obs_data_t *settings, obs_source_t *source)
 		return NULL;
 	}
 
-	obs_hotkey_register_source(source, "AudioBufferingSyncTest.Buffer",
-				   "Buffer Audio", bast_buffer_audio, bast);
+	obs_hotkey_register_source(source, "AudioBufferingSyncTest.Buffer", "Buffer Audio", bast_buffer_audio, bast);
 
 	bast->initialized = true;
 

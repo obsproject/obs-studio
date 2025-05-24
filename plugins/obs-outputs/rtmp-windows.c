@@ -9,14 +9,12 @@ static void fatal_sock_shutdown(struct rtmp_stream *stream)
 	os_event_signal(stream->buffer_space_available_event);
 }
 
-static bool socket_event(struct rtmp_stream *stream, bool *can_write,
-			 uint64_t last_send_time)
+static bool socket_event(struct rtmp_stream *stream, bool *can_write, uint64_t last_send_time)
 {
 	WSANETWORKEVENTS net_events;
 	bool success;
 
-	success = !WSAEnumNetworkEvents(stream->rtmp.m_sb.sb_socket, NULL,
-					&net_events);
+	success = !WSAEnumNetworkEvents(stream->rtmp.m_sb.sb_socket, NULL, &net_events);
 	if (!success) {
 		blog(LOG_ERROR,
 		     "socket_thread_windows: Aborting due to "
@@ -31,15 +29,13 @@ static bool socket_event(struct rtmp_stream *stream, bool *can_write,
 
 	if (net_events.lNetworkEvents & FD_CLOSE) {
 		if (last_send_time) {
-			uint32_t diff =
-				(os_gettime_ns() / 1000000) - last_send_time;
+			uint32_t diff = (os_gettime_ns() / 1000000) - last_send_time;
 
 			blog(LOG_ERROR,
 			     "socket_thread_windows: Received "
 			     "FD_CLOSE, %u ms since last send "
 			     "(buffer: %d / %d)",
-			     diff, stream->write_buf_len,
-			     stream->write_buf_size);
+			     diff, stream->write_buf_len, stream->write_buf_size);
 		}
 
 		if (os_event_try(stream->stop_event) != EAGAIN)
@@ -47,8 +43,7 @@ static bool socket_event(struct rtmp_stream *stream, bool *can_write,
 			     "socket_thread_windows: Aborting due "
 			     "to FD_CLOSE during shutdown, "
 			     "%d bytes lost, error %d",
-			     stream->write_buf_len,
-			     net_events.iErrorCode[FD_CLOSE_BIT]);
+			     stream->write_buf_len, net_events.iErrorCode[FD_CLOSE_BIT]);
 		else
 			blog(LOG_ERROR,
 			     "socket_thread_windows: Aborting due "
@@ -65,8 +60,7 @@ static bool socket_event(struct rtmp_stream *stream, bool *can_write,
 		bool fatal = false;
 
 		for (;;) {
-			int ret = recv(stream->rtmp.m_sb.sb_socket, discard,
-				       sizeof(discard), 0);
+			int ret = recv(stream->rtmp.m_sb.sb_socket, discard, sizeof(discard), 0);
 			if (ret == -1) {
 				err_code = WSAGetLastError();
 				if (err_code == WSAEWOULDBLOCK)
@@ -94,34 +88,28 @@ static bool socket_event(struct rtmp_stream *stream, bool *can_write,
 	return true;
 }
 
-static void ideal_send_backlog_event(struct rtmp_stream *stream,
-				     bool *can_write)
+static void ideal_send_backlog_event(struct rtmp_stream *stream, bool *can_write)
 {
 	ULONG ideal_send_backlog;
 	int ret;
 
-	ret = idealsendbacklogquery(stream->rtmp.m_sb.sb_socket,
-				    &ideal_send_backlog);
+	ret = idealsendbacklogquery(stream->rtmp.m_sb.sb_socket, &ideal_send_backlog);
 	if (ret == 0) {
 		int cur_tcp_bufsize;
 		int size = sizeof(cur_tcp_bufsize);
 
-		ret = getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET,
-				 SO_SNDBUF, (char *)&cur_tcp_bufsize, &size);
+		ret = getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF, (char *)&cur_tcp_bufsize, &size);
 		if (ret == 0) {
 			if (cur_tcp_bufsize < (int)ideal_send_backlog) {
 				int bufsize = (int)ideal_send_backlog;
-				setsockopt(stream->rtmp.m_sb.sb_socket,
-					   SOL_SOCKET, SO_SNDBUF,
-					   (const char *)&bufsize,
+				setsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF, (const char *)&bufsize,
 					   sizeof(bufsize));
 
 				blog(LOG_INFO,
 				     "socket_thread_windows: "
 				     "Increasing send buffer to "
 				     "ISB %d (buffer: %d / %d)",
-				     ideal_send_backlog, stream->write_buf_len,
-				     stream->write_buf_size);
+				     ideal_send_backlog, stream->write_buf_len, stream->write_buf_size);
 			}
 		} else {
 			blog(LOG_ERROR,
@@ -141,8 +129,7 @@ static void ideal_send_backlog_event(struct rtmp_stream *stream,
 
 enum data_ret { RET_BREAK, RET_FATAL, RET_CONTINUE };
 
-static enum data_ret write_data(struct rtmp_stream *stream, bool *can_write,
-				uint64_t *last_send_time,
+static enum data_ret write_data(struct rtmp_stream *stream, bool *can_write, uint64_t *last_send_time,
 				size_t latency_packet_size, int delay_time)
 {
 	bool exit_loop = false;
@@ -162,22 +149,16 @@ static enum data_ret write_data(struct rtmp_stream *stream, bool *can_write,
 
 	int ret;
 	if (stream->low_latency_mode) {
-		size_t send_len =
-			min(latency_packet_size, stream->write_buf_len);
+		size_t send_len = min(latency_packet_size, stream->write_buf_len);
 
-		ret = RTMPSockBuf_Send(&stream->rtmp.m_sb,
-				       (const char *)stream->write_buf,
-				       (int)send_len);
+		ret = RTMPSockBuf_Send(&stream->rtmp.m_sb, (const char *)stream->write_buf, (int)send_len);
 	} else {
-		ret = RTMPSockBuf_Send(&stream->rtmp.m_sb,
-				       (const char *)stream->write_buf,
-				       (int)stream->write_buf_len);
+		ret = RTMPSockBuf_Send(&stream->rtmp.m_sb, (const char *)stream->write_buf, (int)stream->write_buf_len);
 	}
 
 	if (ret > 0) {
 		if (stream->write_buf_len - ret)
-			memmove(stream->write_buf, stream->write_buf + ret,
-				stream->write_buf_len - ret);
+			memmove(stream->write_buf, stream->write_buf + ret, stream->write_buf_len - ret);
 		stream->write_buf_len -= ret;
 
 		*last_send_time = os_gettime_ns() / 1000000;
@@ -245,27 +226,22 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
-	WSAEventSelect(stream->rtmp.m_sb.sb_socket,
-		       stream->socket_available_event,
-		       FD_READ | FD_WRITE | FD_CLOSE);
+	WSAEventSelect(stream->rtmp.m_sb.sb_socket, stream->socket_available_event, FD_READ | FD_WRITE | FD_CLOSE);
 
 	send_backlog_event = CreateEvent(NULL, true, false, NULL);
 
 	if (stream->low_latency_mode) {
 		delay_time = 1000 / LATENCY_FACTOR;
-		latency_packet_size =
-			stream->write_buf_size / (LATENCY_FACTOR - 2);
+		latency_packet_size = stream->write_buf_size / (LATENCY_FACTOR - 2);
 	} else {
 		latency_packet_size = stream->write_buf_size;
 		delay_time = 0;
 	}
 
 	if (!stream->disable_send_window_optimization) {
-		memset(&send_backlog_overlapped, 0,
-		       sizeof(send_backlog_overlapped));
+		memset(&send_backlog_overlapped, 0, sizeof(send_backlog_overlapped));
 		send_backlog_overlapped.hEvent = send_backlog_event;
-		idealsendbacklognotify(stream->rtmp.m_sb.sb_socket,
-				       &send_backlog_overlapped, NULL);
+		idealsendbacklognotify(stream->rtmp.m_sb.sb_socket, &send_backlog_overlapped, NULL);
 	} else {
 		blog(LOG_INFO, "socket_thread_windows: Send window "
 			       "optimization disabled by user.");
@@ -283,8 +259,7 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 			if (stream->write_buf_len == 0) {
 				//blog(LOG_DEBUG, "Exiting on empty buffer");
 				pthread_mutex_unlock(&stream->write_buf_mutex);
-				os_event_reset(
-					stream->send_thread_signaled_exit);
+				os_event_reset(stream->send_thread_signaled_exit);
 				break;
 			}
 
@@ -309,16 +284,14 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 			ideal_send_backlog_event(stream, &can_write);
 
 			ResetEvent(send_backlog_event);
-			idealsendbacklognotify(stream->rtmp.m_sb.sb_socket,
-					       &send_backlog_overlapped, NULL);
+			idealsendbacklognotify(stream->rtmp.m_sb.sb_socket, &send_backlog_overlapped, NULL);
 			continue;
 		}
 
 		if (can_write) {
 			for (;;) {
-				enum data_ret ret = write_data(
-					stream, &can_write, &last_send_time,
-					latency_packet_size, delay_time);
+				enum data_ret ret = write_data(stream, &can_write, &last_send_time, latency_packet_size,
+							       delay_time);
 
 				switch (ret) {
 				case RET_BREAK:
@@ -333,8 +306,7 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 	}
 
 	if (stream->rtmp.m_sb.sb_socket != INVALID_SOCKET)
-		WSAEventSelect(stream->rtmp.m_sb.sb_socket,
-			       stream->socket_available_event, 0);
+		WSAEventSelect(stream->rtmp.m_sb.sb_socket, stream->socket_available_event, 0);
 
 	blog(LOG_INFO, "socket_thread_windows: Normal exit");
 }

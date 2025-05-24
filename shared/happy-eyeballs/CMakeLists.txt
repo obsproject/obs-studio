@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(happy-eyeballs OBJECT)
 add_library(OBS::happy-eyeballs ALIAS happy-eyeballs)

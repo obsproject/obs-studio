@@ -22,9 +22,8 @@
 
 #include "obs-ffmpeg-video-encoders.h"
 
-#define do_log(level, format, ...)                          \
-	blog(level, "[FFmpeg NVENC encoder: '%s'] " format, \
-	     obs_encoder_get_name(enc->ffve.encoder), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[FFmpeg NVENC encoder: '%s'] " format, obs_encoder_get_name(enc->ffve.encoder), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -79,8 +78,7 @@ static void nvenc_video_info(void *data, struct video_scale_info *info)
 	pref_format = obs_encoder_get_preferred_video_format(enc->ffve.encoder);
 
 	if (!valid_format(pref_format)) {
-		pref_format = valid_format(info->format) ? info->format
-							 : VIDEO_FORMAT_NV12;
+		pref_format = valid_format(info->format) ? info->format : VIDEO_FORMAT_NV12;
 	}
 
 	info->format = pref_format;
@@ -88,14 +86,11 @@ static void nvenc_video_info(void *data, struct video_scale_info *info)
 
 static void set_psycho_aq(struct nvenc_encoder *enc, bool psycho_aq)
 {
-	av_opt_set_int(enc->ffve.context->priv_data, "spatial-aq", psycho_aq,
-		       0);
-	av_opt_set_int(enc->ffve.context->priv_data, "temporal-aq", psycho_aq,
-		       0);
+	av_opt_set_int(enc->ffve.context->priv_data, "spatial-aq", psycho_aq, 0);
+	av_opt_set_int(enc->ffve.context->priv_data, "temporal-aq", psycho_aq, 0);
 }
 
-static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
-			 bool psycho_aq)
+static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings, bool psycho_aq)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -134,8 +129,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	av_opt_set_int(enc->ffve.context->priv_data, "cbr", false, 0);
 	av_opt_set(enc->ffve.context->priv_data, "profile", profile, 0);
 
-	if (obs_data_has_user_value(settings, "preset") &&
-	    !obs_data_has_user_value(settings, "preset2")) {
+	if (obs_data_has_user_value(settings, "preset") && !obs_data_has_user_value(settings, "preset2")) {
 
 		if (astrcmpi(preset, "mq") == 0) {
 			preset = "hq";
@@ -144,8 +138,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	} else {
 		av_opt_set(enc->ffve.context->priv_data, "preset", preset2, 0);
 		av_opt_set(enc->ffve.context->priv_data, "tune", tuning, 0);
-		av_opt_set(enc->ffve.context->priv_data, "multipass", multipass,
-			   0);
+		av_opt_set(enc->ffve.context->priv_data, "multipass", multipass, 0);
 	}
 
 	if (astrcmpi(rc, "cqp") == 0) {
@@ -157,8 +150,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 		cqp = 0;
 
 		av_opt_set(enc->ffve.context->priv_data, "tune", "lossless", 0);
-		av_opt_set(enc->ffve.context->priv_data, "multipass",
-			   "disabled", 0);
+		av_opt_set(enc->ffve.context->priv_data, "multipass", "disabled", 0);
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		av_opt_set_int(enc->ffve.context->priv_data, "cbr", true, 0);
@@ -171,8 +163,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	av_opt_set(enc->ffve.context->priv_data, "level", "auto", 0);
 	av_opt_set_int(enc->ffve.context->priv_data, "gpu", gpu, 0);
 
-	av_opt_set_int(enc->ffve.context->priv_data, "no-scenecut",
-		       disable_scenecut, 0);
+	av_opt_set_int(enc->ffve.context->priv_data, "no-scenecut", disable_scenecut, 0);
 
 	// This is ugly but ffmpeg wipes priv_data on error and we need
 	// to know this to show a proper error message.
@@ -183,8 +174,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	enc->ffve.context->max_b_frames = bf;
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
-	ffmpeg_video_encoder_update(&enc->ffve, bitrate, keyint_sec, voi, &info,
-				    ffmpeg_opts);
+	ffmpeg_video_encoder_update(&enc->ffve, bitrate, keyint_sec, voi, &info, ffmpeg_opts);
 
 	info("settings:\n"
 	     "\tencoder:      %s\n"
@@ -201,9 +191,8 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	     "\tb-frames:     %d\n"
 	     "\tpsycho-aq:    %d\n"
 	     "\tGPU:          %d\n",
-	     enc->ffve.enc_name, rc, bitrate, cqp, enc->ffve.context->gop_size,
-	     preset2, tuning, multipass, profile, enc->ffve.context->width,
-	     enc->ffve.height, enc->ffve.context->max_b_frames, psycho_aq, gpu);
+	     enc->ffve.enc_name, rc, bitrate, cqp, enc->ffve.context->gop_size, preset2, tuning, multipass, profile,
+	     enc->ffve.context->width, enc->ffve.height, enc->ffve.context->max_b_frames, psycho_aq, gpu);
 
 	return ffmpeg_video_encoder_init_codec(&enc->ffve);
 }
@@ -269,23 +258,18 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 	darray_free(da);
 #ifdef ENABLE_HEVC
 	if (enc->hevc) {
-		obs_extract_hevc_headers(pkt->data, pkt->size,
-					 (uint8_t **)&da->array, &da->num,
-					 &enc->header.array, &enc->header.num,
-					 &enc->sei.array, &enc->sei.num);
+		obs_extract_hevc_headers(pkt->data, pkt->size, (uint8_t **)&da->array, &da->num, &enc->header.array,
+					 &enc->header.num, &enc->sei.array, &enc->sei.num);
 	} else
 #endif
 	{
-		obs_extract_avc_headers(pkt->data, pkt->size,
-					(uint8_t **)&da->array, &da->num,
-					&enc->header.array, &enc->header.num,
-					&enc->sei.array, &enc->sei.num);
+		obs_extract_avc_headers(pkt->data, pkt->size, (uint8_t **)&da->array, &da->num, &enc->header.array,
+					&enc->header.num, &enc->sei.array, &enc->sei.num);
 	}
 	da->capacity = da->num;
 
 	if (enc->ffve.context->max_b_frames != 0) {
-		int64_t expected_dts = -(enc->ffve.context->max_b_frames *
-					 enc->ffve.context->time_base.num);
+		int64_t expected_dts = -(enc->ffve.context->max_b_frames * enc->ffve.context->time_base.num);
 		if (pkt->dts != expected_dts) { // Unpatched FFmpeg
 			enc->dts_offset = expected_dts - pkt->dts;
 			info("Applying DTS value corrections");
@@ -293,28 +277,23 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 	}
 }
 
-static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
-				   bool psycho_aq, bool hevc)
+static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder, bool psycho_aq, bool hevc)
 {
 	struct nvenc_encoder *enc = bzalloc(sizeof(*enc));
 
 #ifdef ENABLE_HEVC
 	enc->hevc = hevc;
 	if (hevc) {
-		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder,
-					       "hevc_nvenc", "nvenc_hevc",
-					       ENCODER_NAME_HEVC, on_init_error,
-					       on_first_packet))
+		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder, "hevc_nvenc", "nvenc_hevc", ENCODER_NAME_HEVC,
+					       on_init_error, on_first_packet))
 			goto fail;
 	} else
 #else
 	UNUSED_PARAMETER(hevc);
 #endif
 	{
-		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder,
-					       "h264_nvenc", "nvenc_h264",
-					       ENCODER_NAME_H264, on_init_error,
-					       on_first_packet))
+		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder, "h264_nvenc", "nvenc_h264", ENCODER_NAME_H264,
+					       on_init_error, on_first_packet))
 			goto fail;
 	}
 
@@ -335,25 +314,21 @@ static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	switch (voi->format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010: {
-		const char *const text =
-			obs_module_text("NVENC.10bitUnsupported");
+		const char *const text = obs_module_text("NVENC.10bitUnsupported");
 		obs_encoder_set_last_error(encoder, text);
 		blog(LOG_ERROR, "[NVENC encoder] %s", text);
 		return NULL;
 	}
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416: {
-		const char *const text =
-			obs_module_text("NVENC.16bitUnsupported");
+		const char *const text = obs_module_text("NVENC.16bitUnsupported");
 		obs_encoder_set_last_error(encoder, text);
 		blog(LOG_ERROR, "[NVENC encoder] %s", text);
 		return NULL;
 	}
 	default:
-		if (voi->colorspace == VIDEO_CS_2100_PQ ||
-		    voi->colorspace == VIDEO_CS_2100_HLG) {
-			const char *const text =
-				obs_module_text("NVENC.8bitUnsupportedHdr");
+		if (voi->colorspace == VIDEO_CS_2100_PQ || voi->colorspace == VIDEO_CS_2100_HLG) {
+			const char *const text = obs_module_text("NVENC.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			blog(LOG_ERROR, "[NVENC encoder] %s", text);
 			return NULL;
@@ -364,9 +339,8 @@ static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, false);
 	if ((enc == NULL) && psycho_aq) {
-		blog(LOG_WARNING,
-		     "[NVENC encoder] nvenc_create_internal failed, "
-		     "trying again without Psycho Visual Tuning");
+		blog(LOG_WARNING, "[NVENC encoder] nvenc_create_internal failed, "
+				  "trying again without Psycho Visual Tuning");
 		enc = nvenc_create_internal(settings, encoder, false, false);
 	}
 
@@ -380,8 +354,7 @@ static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	const struct video_output_info *voi = video_output_get_info(video);
 	switch (voi->format) {
 	case VIDEO_FORMAT_I010: {
-		const char *const text =
-			obs_module_text("NVENC.I010Unsupported");
+		const char *const text = obs_module_text("NVENC.I010Unsupported");
 		obs_encoder_set_last_error(encoder, text);
 		blog(LOG_ERROR, "[NVENC encoder] %s", text);
 		return NULL;
@@ -390,17 +363,14 @@ static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		break;
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416: {
-		const char *const text =
-			obs_module_text("NVENC.16bitUnsupported");
+		const char *const text = obs_module_text("NVENC.16bitUnsupported");
 		obs_encoder_set_last_error(encoder, text);
 		blog(LOG_ERROR, "[NVENC encoder] %s", text);
 		return NULL;
 	}
 	default:
-		if (voi->colorspace == VIDEO_CS_2100_PQ ||
-		    voi->colorspace == VIDEO_CS_2100_HLG) {
-			const char *const text =
-				obs_module_text("NVENC.8bitUnsupportedHdr");
+		if (voi->colorspace == VIDEO_CS_2100_PQ || voi->colorspace == VIDEO_CS_2100_HLG) {
+			const char *const text = obs_module_text("NVENC.8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			blog(LOG_ERROR, "[NVENC encoder] %s", text);
 			return NULL;
@@ -411,9 +381,8 @@ static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, true);
 	if ((enc == NULL) && psycho_aq) {
-		blog(LOG_WARNING,
-		     "[NVENC encoder] nvenc_create_internal failed, "
-		     "trying again without Psycho Visual Tuning");
+		blog(LOG_WARNING, "[NVENC encoder] nvenc_create_internal failed, "
+				  "trying again without Psycho Visual Tuning");
 		enc = nvenc_create_internal(settings, encoder, false, true);
 	}
 
@@ -421,8 +390,7 @@ static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 }
 #endif
 
-static bool nvenc_encode(void *data, struct encoder_frame *frame,
-			 struct encoder_packet *packet, bool *received_packet)
+static bool nvenc_encode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet)
 {
 	struct nvenc_encoder *enc = data;
 
@@ -449,8 +417,7 @@ static void nvenc_defaults_base(enum codec_type codec, obs_data_t *settings)
 	obs_data_set_default_string(settings, "preset2", "p5");
 	obs_data_set_default_string(settings, "multipass", "qres");
 	obs_data_set_default_string(settings, "tune", "hq");
-	obs_data_set_default_string(settings, "profile",
-				    codec != CODEC_H264 ? "main" : "high");
+	obs_data_set_default_string(settings, "profile", codec != CODEC_H264 ? "main" : "high");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
@@ -472,8 +439,7 @@ void av1_nvenc_defaults(obs_data_t *settings)
 	nvenc_defaults_base(CODEC_AV1, settings);
 }
 
-static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
-				  obs_data_t *settings)
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = astrcmpi(rc, "CQP") == 0;
@@ -499,41 +465,29 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_list(props, "rate_control",
-				    obs_module_text("RateControl"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "rate_control", obs_module_text("RateControl"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQP", "CQP");
 	obs_property_list_add_string(p, "VBR", "VBR");
-	obs_property_list_add_string(p, obs_module_text("Lossless"),
-				     "lossless");
+	obs_property_list_add_string(p, obs_module_text("Lossless"), "lossless");
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 
-	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
-				   50, 300000, 50);
+	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"), 50, 300000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
-	p = obs_properties_add_int(props, "max_bitrate",
-				   obs_module_text("MaxBitrate"), 50, 300000,
-				   50);
+	p = obs_properties_add_int(props, "max_bitrate", obs_module_text("MaxBitrate"), 50, 300000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
-	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
-			       1, codec == CODEC_AV1 ? 63 : 51, 1);
+	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"), 1, codec == CODEC_AV1 ? 63 : 51, 1);
 
-	p = obs_properties_add_int(props, "keyint_sec",
-				   obs_module_text("KeyframeIntervalSec"), 0,
-				   10, 1);
+	p = obs_properties_add_int(props, "keyint_sec", obs_module_text("KeyframeIntervalSec"), 0, 10, 1);
 	obs_property_int_set_suffix(p, " s");
 
-	p = obs_properties_add_list(props, "preset2", obs_module_text("Preset"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "preset2", obs_module_text("Preset"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_preset(val)                                                        \
-	obs_property_list_add_string(p, obs_module_text("NVENC.Preset2." val), \
-				     val)
+#define add_preset(val) obs_property_list_add_string(p, obs_module_text("NVENC.Preset2." val), val)
 
 	add_preset("p1");
 	add_preset("p2");
@@ -544,34 +498,25 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	add_preset("p7");
 #undef add_preset
 
-	p = obs_properties_add_list(props, "tune", obs_module_text("Tuning"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "tune", obs_module_text("Tuning"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_tune(val)                                                         \
-	obs_property_list_add_string(p, obs_module_text("NVENC.Tuning." val), \
-				     val)
+#define add_tune(val) obs_property_list_add_string(p, obs_module_text("NVENC.Tuning." val), val)
 	add_tune("hq");
 	add_tune("ll");
 	add_tune("ull");
 #undef add_tune
 
-	p = obs_properties_add_list(props, "multipass",
-				    obs_module_text("NVENC.Multipass"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "multipass", obs_module_text("NVENC.Multipass"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_multipass(val)            \
-	obs_property_list_add_string( \
-		p, obs_module_text("NVENC.Multipass." val), val)
+#define add_multipass(val) obs_property_list_add_string(p, obs_module_text("NVENC.Multipass." val), val)
 	add_multipass("disabled");
 	add_multipass("qres");
 	add_multipass("fullres");
 #undef add_multipass
 
-	p = obs_properties_add_list(props, "profile",
-				    obs_module_text("Profile"),
-				    OBS_COMBO_TYPE_LIST,
+	p = obs_properties_add_list(props, "profile", obs_module_text("Profile"), OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
 #define add_profile(val) obs_property_list_add_string(p, val, val)
@@ -587,16 +532,12 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	}
 #undef add_profile
 
-	p = obs_properties_add_bool(
-		props, "psycho_aq",
-		obs_module_text("NVENC.PsychoVisualTuning"));
-	obs_property_set_long_description(
-		p, obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
+	p = obs_properties_add_bool(props, "psycho_aq", obs_module_text("NVENC.PsychoVisualTuning"));
+	obs_property_set_long_description(p, obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
 
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
-	obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, 4,
-			       1);
+	obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, 4, 1);
 
 	return props;
 }

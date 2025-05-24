@@ -18,8 +18,7 @@ static const int cy = 600;
 
 template<typename T, typename D_T, D_T D> struct OBSUniqueHandle : std::unique_ptr<T, std::function<D_T>> {
     using base = std::unique_ptr<T, std::function<D_T>>;
-    explicit OBSUniqueHandle(T *obj = nullptr) : base(obj, D)
-    {}
+    explicit OBSUniqueHandle(T *obj = nullptr) : base(obj, D) {}
     operator T *()
     {
         return base::get();

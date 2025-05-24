@@ -58,10 +58,7 @@ public:
 			ptr->AddRef();
 	}
 	inline ComPtr(ComPtr<T> &&c) noexcept : ptr(c.ptr) { c.ptr = nullptr; }
-	template<class U>
-	inline ComPtr(ComPtr<U> &&c) noexcept : ptr(c.Detach())
-	{
-	}
+	template<class U> inline ComPtr(ComPtr<U> &&c) noexcept : ptr(c.Detach()) {}
 	inline ~ComPtr() { Kill(); }
 
 	inline void Clear()

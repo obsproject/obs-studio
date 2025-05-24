@@ -13,9 +13,7 @@ API_AVAILABLE(macos(13.0)) static void destroy_audio_screen_stream(struct screen
                 MACCAP_ERR("destroy_audio_screen_stream: Failed to stop stream with error %s\n",
                            [[error localizedFailureReason] cStringUsingEncoding:NSUTF8StringEncoding]);
             }
-            os_event_signal(sc->disp_finished);
         }];
-        os_event_wait(sc->disp_finished);
     }
 
     if (sc->stream_properties) {
@@ -28,7 +26,6 @@ API_AVAILABLE(macos(13.0)) static void destroy_audio_screen_stream(struct screen
         sc->disp = NULL;
     }
 
-    os_event_destroy(sc->disp_finished);
     os_event_destroy(sc->stream_start_completed);
 }
 
@@ -152,7 +149,6 @@ API_AVAILABLE(macos(13.0)) static bool init_audio_screen_stream(struct screen_ca
         sc->disp = NULL;
         return !did_add_output;
     }
-    os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
     os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
 
     __block BOOL did_stream_start = false;
@@ -187,7 +183,7 @@ API_AVAILABLE(macos(13.0)) static void *sck_audio_capture_create(obs_data_t *set
     sc->audio_capture_type = (unsigned int) obs_data_get_int(settings, "type");
 
     os_sem_init(&sc->shareable_content_available, 1);
-    screen_capture_build_content_list(sc, sc->capture_type == ScreenCaptureAudioDesktopStream);
+    screen_capture_build_content_list(sc, sc->audio_capture_type == ScreenCaptureAudioDesktopStream);
 
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;

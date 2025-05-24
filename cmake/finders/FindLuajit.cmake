@@ -94,7 +94,7 @@ endif()
 
 find_library(
   Luajit_LIBRARY
-  NAMES luajit luajit-51 luajit-5.1 lua51
+  NAMES luajit-5.1 luajit-51 luajit lua51
   HINTS ${PC_Luajit_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib
   DOC "Luajit location"

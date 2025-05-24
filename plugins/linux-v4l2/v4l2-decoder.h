@@ -61,8 +61,7 @@ void v4l2_destroy_decoder(struct v4l2_decoder *decoder);
  * @param decoder the decoder as initialized by v4l2_init_decoder
  * @return non-zero on failure
  */
-int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data,
-		      size_t length, struct v4l2_decoder *decoder);
+int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data, size_t length, struct v4l2_decoder *decoder);
 
 #ifdef __cplusplus
 }

@@ -22,6 +22,7 @@
 #include "json11.hpp"
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <cstdio>
 #include <limits>

@@ -1,7 +1,6 @@
 #include "OBSVideoFrame.h"
 
-OBSVideoFrame::OBSVideoFrame(long width, long height,
-			     BMDPixelFormat pixelFormat)
+OBSVideoFrame::OBSVideoFrame(long width, long height, BMDPixelFormat pixelFormat)
 {
 	int bpp = 2;
 	this->width = width;
@@ -22,8 +21,7 @@ HRESULT OBSVideoFrame::SetFlags(BMDFrameFlags newFlags)
 	return S_OK;
 }
 
-HRESULT OBSVideoFrame::SetTimecode(BMDTimecodeFormat format,
-				   IDeckLinkTimecode *timecode)
+HRESULT OBSVideoFrame::SetTimecode(BMDTimecodeFormat format, IDeckLinkTimecode *timecode)
 {
 	UNUSED_PARAMETER(format);
 	UNUSED_PARAMETER(timecode);
@@ -31,10 +29,8 @@ HRESULT OBSVideoFrame::SetTimecode(BMDTimecodeFormat format,
 }
 
 HRESULT
-OBSVideoFrame::SetTimecodeFromComponents(BMDTimecodeFormat format,
-					 uint8_t hours, uint8_t minutes,
-					 uint8_t seconds, uint8_t frames,
-					 BMDTimecodeFlags flags)
+OBSVideoFrame::SetTimecodeFromComponents(BMDTimecodeFormat format, uint8_t hours, uint8_t minutes, uint8_t seconds,
+					 uint8_t frames, BMDTimecodeFlags flags)
 {
 	UNUSED_PARAMETER(format);
 	UNUSED_PARAMETER(hours);
@@ -51,8 +47,7 @@ HRESULT OBSVideoFrame::SetAncillaryData(IDeckLinkVideoFrameAncillary *ancillary)
 	return 0;
 }
 
-HRESULT OBSVideoFrame::SetTimecodeUserBits(BMDTimecodeFormat format,
-					   BMDTimecodeUserBits userBits)
+HRESULT OBSVideoFrame::SetTimecodeUserBits(BMDTimecodeFormat format, BMDTimecodeUserBits userBits)
 {
 	UNUSED_PARAMETER(format);
 	UNUSED_PARAMETER(userBits);
@@ -92,11 +87,7 @@ HRESULT OBSVideoFrame::GetBytes(void **buffer)
 
 #define CompareREFIID(iid1, iid2) (memcmp(&iid1, &iid2, sizeof(REFIID)) == 0)
 
-HDRVideoFrame::HDRVideoFrame(IDeckLinkMutableVideoFrame *frame)
-	: m_videoFrame(frame),
-	  m_refCount(1)
-{
-}
+HDRVideoFrame::HDRVideoFrame(IDeckLinkMutableVideoFrame *frame) : m_videoFrame(frame), m_refCount(1) {}
 
 HRESULT HDRVideoFrame::QueryInterface(REFIID iid, LPVOID *ppv)
 {
@@ -109,8 +100,7 @@ HRESULT HDRVideoFrame::QueryInterface(REFIID iid, LPVOID *ppv)
 	else if (CompareREFIID(iid, IID_IDeckLinkVideoFrame))
 		*ppv = static_cast<IDeckLinkVideoFrame *>(this);
 	else if (CompareREFIID(iid, IID_IDeckLinkVideoFrameMetadataExtensions))
-		*ppv = static_cast<IDeckLinkVideoFrameMetadataExtensions *>(
-			this);
+		*ppv = static_cast<IDeckLinkVideoFrameMetadataExtensions *>(this);
 	else {
 		*ppv = nullptr;
 		return E_NOINTERFACE;
@@ -135,8 +125,7 @@ ULONG HDRVideoFrame::Release(void)
 	return newRefValue;
 }
 
-HRESULT HDRVideoFrame::GetInt(BMDDeckLinkFrameMetadataID metadataID,
-			      int64_t *value)
+HRESULT HDRVideoFrame::GetInt(BMDDeckLinkFrameMetadataID metadataID, int64_t *value)
 {
 	HRESULT result = S_OK;
 
@@ -157,8 +146,7 @@ HRESULT HDRVideoFrame::GetInt(BMDDeckLinkFrameMetadataID metadataID,
 	return result;
 }
 
-HRESULT HDRVideoFrame::GetFloat(BMDDeckLinkFrameMetadataID metadataID,
-				double *value)
+HRESULT HDRVideoFrame::GetFloat(BMDDeckLinkFrameMetadataID metadataID, double *value)
 {
 	HRESULT result = S_OK;
 
@@ -200,7 +188,7 @@ HRESULT HDRVideoFrame::GetFloat(BMDDeckLinkFrameMetadataID metadataID,
 		break;
 
 	case bmdDeckLinkFrameMetadataHDRMinDisplayMasteringLuminance:
-		*value = 0.00001;
+		*value = 0.0001;
 		break;
 
 	case bmdDeckLinkFrameMetadataHDRMaximumContentLightLevel:
@@ -224,15 +212,13 @@ HRESULT HDRVideoFrame::GetFlag(BMDDeckLinkFrameMetadataID, decklink_bool_t *)
 	return E_INVALIDARG;
 }
 
-HRESULT HDRVideoFrame::GetString(BMDDeckLinkFrameMetadataID,
-				 decklink_string_t *)
+HRESULT HDRVideoFrame::GetString(BMDDeckLinkFrameMetadataID, decklink_string_t *)
 {
 	// Not expecting GetString
 	return E_INVALIDARG;
 }
 
-HRESULT HDRVideoFrame::GetBytes(BMDDeckLinkFrameMetadataID, void *,
-				uint32_t *bufferSize)
+HRESULT HDRVideoFrame::GetBytes(BMDDeckLinkFrameMetadataID, void *, uint32_t *bufferSize)
 {
 	*bufferSize = 0;
 	// Not expecting GetBytes

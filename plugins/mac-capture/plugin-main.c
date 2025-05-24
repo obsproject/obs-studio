@@ -20,12 +20,9 @@ bool obs_module_load(void)
 		extern struct obs_source_info sck_video_capture_info;
 		obs_register_source(&sck_video_capture_info);
 		if (__builtin_available(macOS 13.0, *)) {
-			display_capture_info.output_flags |=
-				OBS_SOURCE_DEPRECATED;
-			window_capture_info.output_flags |=
-				OBS_SOURCE_DEPRECATED;
-			coreaudio_output_capture_info.output_flags |=
-				OBS_SOURCE_DEPRECATED;
+			display_capture_info.output_flags |= OBS_SOURCE_DEPRECATED;
+			window_capture_info.output_flags |= OBS_SOURCE_DEPRECATED;
+			coreaudio_output_capture_info.output_flags |= OBS_SOURCE_DEPRECATED;
 			extern struct obs_source_info sck_audio_capture_info;
 			obs_register_source(&sck_audio_capture_info);
 		}

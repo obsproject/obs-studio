@@ -7,6 +7,9 @@ static uint8_t *get_bitmap_data(HBITMAP hbmp, BITMAP *bmp)
 	if (GetObject(hbmp, sizeof(*bmp), bmp) != 0) {
 		uint8_t *output;
 		unsigned int size = bmp->bmHeight * bmp->bmWidthBytes;
+		if (!size) {
+			return NULL;
+		}
 
 		output = bmalloc(size);
 		GetBitmapBits(hbmp, size, output);
@@ -46,14 +49,12 @@ static inline void apply_mask(uint8_t *color, uint8_t *mask, BITMAP *bmp_mask)
 	for (long y = 0; y < bmp_mask->bmHeight; y++) {
 		for (long x = 0; x < bmp_mask->bmWidth; x++) {
 			mask_pix_offs = y * (bmp_mask->bmWidthBytes * 8) + x;
-			color[(y * bmp_mask->bmWidth + x) * 4 + 3] =
-				bit_to_alpha(mask, mask_pix_offs, false);
+			color[(y * bmp_mask->bmWidth + x) * 4 + 3] = bit_to_alpha(mask, mask_pix_offs, false);
 		}
 	}
 }
 
-static inline uint8_t *copy_from_color(ICONINFO *ii, uint32_t *width,
-				       uint32_t *height)
+static inline uint8_t *copy_from_color(ICONINFO *ii, uint32_t *width, uint32_t *height)
 {
 	BITMAP bmp_color;
 	BITMAP bmp_mask;
@@ -85,8 +86,7 @@ static inline uint8_t *copy_from_color(ICONINFO *ii, uint32_t *width,
 	return color;
 }
 
-static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
-				      uint32_t *height)
+static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width, uint32_t *height)
 {
 	uint8_t *output;
 	uint8_t *mask;
@@ -102,6 +102,9 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
 	bmp.bmHeight /= 2;
 
 	pixels = bmp.bmHeight * bmp.bmWidth;
+	if (!pixels) {
+		return NULL;
+	}
 	output = bzalloc(pixels * 4);
 
 	bottom = bmp.bmWidthBytes * bmp.bmHeight;
@@ -112,14 +115,12 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
 
 		if (!andMask) {
 			// black in the AND mask
-			*(uint32_t *)&output[i * 4] =
-				!!xorMask ? 0x00FFFFFF /*always white*/
-					  : 0xFF000000 /*always black*/;
+			*(uint32_t *)&output[i * 4] = !!xorMask ? 0x00FFFFFF /*always white*/
+								: 0xFF000000 /*always black*/;
 		} else {
 			// white in the AND mask
-			*(uint32_t *)&output[i * 4] =
-				!!xorMask ? 0xFFFFFFFF /*source inverted*/
-					  : 0 /*transparent*/;
+			*(uint32_t *)&output[i * 4] = !!xorMask ? 0xFFFFFFFF /*source inverted*/
+								: 0 /*transparent*/;
 		}
 	}
 
@@ -130,9 +131,7 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width,
 	return output;
 }
 
-static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii, uint32_t *width,
-						  uint32_t *height,
-						  bool *monochrome)
+static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii, uint32_t *width, uint32_t *height, bool *monochrome)
 {
 	uint8_t *output;
 	*monochrome = false;
@@ -145,8 +144,7 @@ static inline uint8_t *cursor_capture_icon_bitmap(ICONINFO *ii, uint32_t *width,
 	return output;
 }
 
-static gs_texture_t *get_cached_texture(struct cursor_data *data, uint32_t cx,
-					uint32_t cy)
+static gs_texture_t *get_cached_texture(struct cursor_data *data, uint32_t cx, uint32_t cy)
 {
 	struct cached_cursor cc;
 
@@ -178,8 +176,7 @@ static inline bool cursor_capture_icon(struct cursor_data *data, HICON icon)
 		return false;
 	}
 
-	bitmap = cursor_capture_icon_bitmap(&ii, &width, &height,
-					    &data->monochrome);
+	bitmap = cursor_capture_icon_bitmap(&ii, &width, &height, &data->monochrome);
 	if (bitmap) {
 		if (data->last_cx != width || data->last_cy != height) {
 			data->texture = get_cached_texture(data, width, height);
@@ -224,8 +221,7 @@ void cursor_capture(struct cursor_data *data)
 	DestroyIcon(icon);
 }
 
-void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
-		 long width, long height)
+void cursor_draw(struct cursor_data *data, long x_offset, long y_offset, long width, long height)
 {
 	long x = data->cursor_pos.x + x_offset;
 	long y = data->cursor_pos.y + y_offset;
@@ -237,12 +233,9 @@ void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
 
 	if (data->visible && !!data->texture) {
 		gs_blend_state_push();
-		enum gs_blend_type blendMode = data->monochrome
-						       ? GS_BLEND_INVDSTCOLOR
-						       : GS_BLEND_SRCALPHA;
+		enum gs_blend_type blendMode = data->monochrome ? GS_BLEND_INVDSTCOLOR : GS_BLEND_SRCALPHA;
 		gs_blend_function_separate(blendMode, /*src_color*/
-					   GS_BLEND_INVSRCALPHA /*dest_color*/,
-					   GS_BLEND_ONE /*src_alpha*/,
+					   GS_BLEND_INVSRCALPHA /*dest_color*/, GS_BLEND_ONE /*src_alpha*/,
 					   GS_BLEND_INVSRCALPHA /*dest_alpha*/);
 
 		gs_matrix_push();

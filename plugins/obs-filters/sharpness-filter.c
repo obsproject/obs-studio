@@ -52,12 +52,9 @@ static void *sharpness_create(obs_data_t *settings, obs_source_t *context)
 
 	filter->effect = gs_effect_create_from_file(effect_path, NULL);
 	if (filter->effect) {
-		filter->sharpness_param = gs_effect_get_param_by_name(
-			filter->effect, "sharpness");
-		filter->texture_width = gs_effect_get_param_by_name(
-			filter->effect, "texture_width");
-		filter->texture_height = gs_effect_get_param_by_name(
-			filter->effect, "texture_height");
+		filter->sharpness_param = gs_effect_get_param_by_name(filter->effect, "sharpness");
+		filter->texture_width = gs_effect_get_param_by_name(filter->effect, "texture_width");
+		filter->texture_height = gs_effect_get_param_by_name(filter->effect, "texture_height");
 	}
 
 	obs_leave_graphics();
@@ -86,33 +83,24 @@ static void sharpness_render(void *data, gs_effect_t *effect)
 	};
 
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_target(filter->context),
-		OBS_COUNTOF(preferred_spaces), preferred_spaces);
+		obs_filter_get_target(filter->context), OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	if (source_space == GS_CS_709_EXTENDED) {
 		obs_source_skip_video_filter(filter->context);
 	} else {
-		const enum gs_color_format format =
-			gs_get_format_from_space(source_space);
-		if (obs_source_process_filter_begin_with_color_space(
-			    filter->context, format, source_space,
-			    OBS_ALLOW_DIRECT_RENDERING)) {
-			filter->texwidth = (float)obs_source_get_width(
-				obs_filter_get_target(filter->context));
-			filter->texheight = (float)obs_source_get_height(
-				obs_filter_get_target(filter->context));
+		const enum gs_color_format format = gs_get_format_from_space(source_space);
+		if (obs_source_process_filter_begin_with_color_space(filter->context, format, source_space,
+								     OBS_ALLOW_DIRECT_RENDERING)) {
+			filter->texwidth = (float)obs_source_get_width(obs_filter_get_target(filter->context));
+			filter->texheight = (float)obs_source_get_height(obs_filter_get_target(filter->context));
 
-			gs_effect_set_float(filter->sharpness_param,
-					    filter->sharpness);
-			gs_effect_set_float(filter->texture_width,
-					    filter->texwidth);
-			gs_effect_set_float(filter->texture_height,
-					    filter->texheight);
+			gs_effect_set_float(filter->sharpness_param, filter->sharpness);
+			gs_effect_set_float(filter->texture_width, filter->texwidth);
+			gs_effect_set_float(filter->texture_height, filter->texheight);
 
 			gs_blend_state_push();
 			gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-			obs_source_process_filter_end(filter->context,
-						      filter->effect, 0, 0);
+			obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
 			gs_blend_state_pop();
 		}
@@ -123,11 +111,8 @@ static obs_properties_t *sharpness_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_text(props, "sdr_only_info",
-				obs_module_text("SdrOnlyInfo"), OBS_TEXT_INFO);
-	obs_properties_add_float_slider(props, "sharpness",
-					obs_module_text("Sharpness"), 0.0, 1.0,
-					0.01);
+	obs_properties_add_text(props, "sdr_only_info", obs_module_text("SdrOnlyInfo"), OBS_TEXT_INFO);
+	obs_properties_add_float_slider(props, "sharpness", obs_module_text("Sharpness"), 0.0, 1.0, 0.01);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -138,9 +123,8 @@ static void sharpness_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, "sharpness", 0.08);
 }
 
-static enum gs_color_space
-sharpness_get_color_space(void *data, size_t count,
-			  const enum gs_color_space *preferred_spaces)
+static enum gs_color_space sharpness_get_color_space(void *data, size_t count,
+						     const enum gs_color_space *preferred_spaces)
 {
 	UNUSED_PARAMETER(count);
 	UNUSED_PARAMETER(preferred_spaces);
@@ -153,8 +137,7 @@ sharpness_get_color_space(void *data, size_t count,
 
 	struct sharpness_data *const filter = data;
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_target(filter->context),
-		OBS_COUNTOF(potential_spaces), potential_spaces);
+		obs_filter_get_target(filter->context), OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	return source_space;
 }

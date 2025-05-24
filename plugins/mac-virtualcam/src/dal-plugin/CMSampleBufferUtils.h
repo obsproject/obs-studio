@@ -7,6 +7,5 @@
 
 #include <CoreMediaIO/CMIOSampleBuffer.h>
 
-CMSampleTimingInfo CMSampleTimingInfoForTimestamp(uint64_t timestampNanos,
-						  uint32_t fpsNumerator,
+CMSampleTimingInfo CMSampleTimingInfoForTimestamp(uint64_t timestampNanos, uint32_t fpsNumerator,
 						  uint32_t fpsDenominator);

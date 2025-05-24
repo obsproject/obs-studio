@@ -473,8 +473,7 @@ void dstr_insert(struct dstr *dst, const size_t idx, const char *array)
 	dst->len = new_len;
 }
 
-void dstr_insert_dstr(struct dstr *dst, const size_t idx,
-		      const struct dstr *str)
+void dstr_insert_dstr(struct dstr *dst, const size_t idx, const struct dstr *str)
 {
 	size_t new_len;
 	if (!str->len)
@@ -488,8 +487,7 @@ void dstr_insert_dstr(struct dstr *dst, const size_t idx,
 
 	dstr_ensure_capacity(dst, (new_len + 1));
 
-	memmove(dst->array + idx + str->len, dst->array + idx,
-		dst->len - idx + 1);
+	memmove(dst->array + idx + str->len, dst->array + idx, dst->len - idx + 1);
 	memcpy(dst->array + idx, str->array, str->len);
 
 	dst->len = new_len;
@@ -586,8 +584,8 @@ void dstr_vcatf(struct dstr *dst, const char *format, va_list args)
 	dst->len += len < 0 ? strlen(dst->array + dst->len) : (size_t)len;
 }
 
-void dstr_safe_printf(struct dstr *dst, const char *format, const char *val1,
-		      const char *val2, const char *val3, const char *val4)
+void dstr_safe_printf(struct dstr *dst, const char *format, const char *val1, const char *val2, const char *val3,
+		      const char *val4)
 {
 	dstr_copy(dst, format);
 	if (val1)
@@ -692,8 +690,7 @@ void dstr_left(struct dstr *dst, const struct dstr *str, const size_t pos)
 		memcpy(dst->array, str->array, pos);
 }
 
-void dstr_mid(struct dstr *dst, const struct dstr *str, const size_t start,
-	      const size_t count)
+void dstr_mid(struct dstr *dst, const struct dstr *str, const size_t start, const size_t count)
 {
 	struct dstr temp;
 	dstr_init(&temp);

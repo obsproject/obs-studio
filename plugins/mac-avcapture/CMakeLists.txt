@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24...3.25)
+cmake_minimum_required(VERSION 3.28...3.30)
 
 add_library(mac-avcapture-legacy MODULE)
 add_library(OBS::avcapture-legacy ALIAS mac-avcapture-legacy)
@@ -33,6 +33,8 @@ add_library(OBS::avcapture ALIAS mac-avcapture)
 target_sources(
   mac-avcapture
   PRIVATE
+    AVCaptureDeviceFormat+OBSListable.m
+    AVCaptureDeviceFormat+OBSListable.h
     plugin-main.m
     plugin-main.h
     plugin-properties.m

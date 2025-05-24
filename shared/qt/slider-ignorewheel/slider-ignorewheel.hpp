@@ -1,6 +1,5 @@
 #pragma once
 
-#include <obs.hpp>
 #include <QSlider>
 #include <QInputEvent>
 #include <QtCore/QObject>
@@ -11,8 +10,7 @@ class SliderIgnoreScroll : public QSlider {
 
 public:
 	SliderIgnoreScroll(QWidget *parent = nullptr);
-	SliderIgnoreScroll(Qt::Orientation orientation,
-			   QWidget *parent = nullptr);
+	SliderIgnoreScroll(Qt::Orientation orientation, QWidget *parent = nullptr);
 
 protected:
 	virtual void wheelEvent(QWheelEvent *event) override;
@@ -20,8 +18,7 @@ protected:
 
 class SliderIgnoreClick : public SliderIgnoreScroll {
 public:
-	inline SliderIgnoreClick(Qt::Orientation orientation,
-				 QWidget *parent = nullptr)
+	inline SliderIgnoreClick(Qt::Orientation orientation, QWidget *parent = nullptr)
 		: SliderIgnoreScroll(orientation, parent)
 	{
 	}

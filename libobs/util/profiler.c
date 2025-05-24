@@ -93,16 +93,13 @@ static inline uint64_t diff_ns_to_usec(uint64_t prev, uint64_t next)
 
 static inline void update_max_probes(profile_times_table *map, size_t val)
 {
-	map->max_probe_count =
-		map->max_probe_count < val ? val : map->max_probe_count;
+	map->max_probe_count = map->max_probe_count < val ? val : map->max_probe_count;
 }
 
 static void migrate_old_entries(profile_times_table *map, bool limit_items);
-static void grow_hashmap(profile_times_table *map, uint64_t usec,
-			 uint64_t count);
+static void grow_hashmap(profile_times_table *map, uint64_t usec, uint64_t count);
 
-static void add_hashmap_entry(profile_times_table *map, uint64_t usec,
-			      uint64_t count)
+static void add_hashmap_entry(profile_times_table *map, uint64_t usec, uint64_t count)
 {
 	size_t probes = 1;
 
@@ -176,19 +173,16 @@ static void migrate_old_entries(profile_times_table *map, bool limit_items)
 		if (!map->old_occupied)
 			return;
 
-		profile_times_table_entry *entry =
-			&map->old_entries[map->old_start_index];
+		profile_times_table_entry *entry = &map->old_entries[map->old_start_index];
 		if (!entry->probes)
 			continue;
 
-		add_hashmap_entry(map, entry->entry.time_delta,
-				  entry->entry.count);
+		add_hashmap_entry(map, entry->entry.time_delta, entry->entry.count);
 		map->old_occupied -= 1;
 	}
 }
 
-static void grow_hashmap(profile_times_table *map, uint64_t usec,
-			 uint64_t count)
+static void grow_hashmap(profile_times_table *map, uint64_t usec, uint64_t count)
 {
 	migrate_old_entries(map, false);
 
@@ -228,8 +222,7 @@ static profile_entry *get_child(profile_entry *parent, const char *name)
 	return init_entry(da_push_back_new(parent->children), name);
 }
 
-static void merge_call(profile_entry *entry, profile_call *call,
-		       profile_call *prev_call)
+static void merge_call(profile_entry *entry, profile_call *call, profile_call *prev_call)
 {
 	const size_t num = call->children.num;
 	for (size_t i = 0; i < num; i++) {
@@ -239,8 +232,7 @@ static void merge_call(profile_entry *entry, profile_call *call,
 
 	if (entry->expected_time_between_calls != 0 && prev_call) {
 		migrate_old_entries(&entry->times_between_calls, true);
-		uint64_t usec = diff_ns_to_usec(prev_call->start_time,
-						call->start_time);
+		uint64_t usec = diff_ns_to_usec(prev_call->start_time, call->start_time);
 		add_hashmap_entry(&entry->times_between_calls, usec, 1);
 	}
 
@@ -323,14 +315,12 @@ static profile_root_entry *get_root_entry(const char *name)
 	return r_entry;
 }
 
-void profile_register_root(const char *name,
-			   uint64_t expected_time_between_calls)
+void profile_register_root(const char *name, uint64_t expected_time_between_calls)
 {
 	if (!lock_root())
 		return;
 
-	get_root_entry(name)->entry->expected_time_between_calls =
-		(expected_time_between_calls + 500) / 1000;
+	get_root_entry(name)->entry->expected_time_between_calls = (expected_time_between_calls + 500) / 1000;
 	pthread_mutex_unlock(&root_mutex);
 }
 
@@ -441,14 +431,12 @@ void profile_end(const char *name)
 
 static int profiler_time_entry_compare(const void *first, const void *second)
 {
-	int64_t diff = ((profiler_time_entry *)second)->time_delta -
-		       ((profiler_time_entry *)first)->time_delta;
+	int64_t diff = ((profiler_time_entry *)second)->time_delta - ((profiler_time_entry *)first)->time_delta;
 	return diff < 0 ? -1 : (diff > 0 ? 1 : 0);
 }
 
-static uint64_t copy_map_to_array(profile_times_table *map,
-				  profiler_time_entries_t *entry_buffer,
-				  uint64_t *min_, uint64_t *max_)
+static uint64_t copy_map_to_array(profile_times_table *map, profiler_time_entries_t *entry_buffer, uint64_t *min_,
+				  uint64_t *max_)
 {
 	migrate_old_entries(map, false);
 
@@ -480,10 +468,8 @@ static uint64_t copy_map_to_array(profile_times_table *map,
 	return calls;
 }
 
-typedef void (*profile_entry_print_func)(profiler_snapshot_entry_t *entry,
-					 struct dstr *indent_buffer,
-					 struct dstr *output_buffer,
-					 unsigned indent, uint64_t active,
+typedef void (*profile_entry_print_func)(profiler_snapshot_entry_t *entry, struct dstr *indent_buffer,
+					 struct dstr *output_buffer, unsigned indent, uint64_t active,
 					 uint64_t parent_calls);
 
 /* UTF-8 characters */
@@ -491,8 +477,7 @@ typedef void (*profile_entry_print_func)(profiler_snapshot_entry_t *entry,
 #define VPIPE " \xe2\x94\x83"
 #define DOWN_RIGHT " \xe2\x94\x97"
 
-static void make_indent_string(struct dstr *indent_buffer, unsigned indent,
-			       uint64_t active)
+static void make_indent_string(struct dstr *indent_buffer, unsigned indent, uint64_t active)
 {
 	indent_buffer->len = 0;
 
@@ -513,10 +498,8 @@ static void make_indent_string(struct dstr *indent_buffer, unsigned indent,
 	}
 }
 
-static void gather_stats(uint64_t expected_time_between_calls,
-			 profiler_time_entries_t *entries, uint64_t calls,
-			 uint64_t *percentile99, uint64_t *median,
-			 double *percent_within_bounds)
+static void gather_stats(uint64_t expected_time_between_calls, profiler_time_entries_t *entries, uint64_t calls,
+			 uint64_t *percentile99, uint64_t *median, double *percent_within_bounds)
 {
 	if (!entries->num) {
 		*percentile99 = 0;
@@ -561,10 +544,8 @@ static void gather_stats(uint64_t expected_time_between_calls,
 
 #define G_MS "g\xC2\xA0ms"
 
-static void profile_print_entry(profiler_snapshot_entry_t *entry,
-				struct dstr *indent_buffer,
-				struct dstr *output_buffer, unsigned indent,
-				uint64_t active, uint64_t parent_calls)
+static void profile_print_entry(profiler_snapshot_entry_t *entry, struct dstr *indent_buffer,
+				struct dstr *output_buffer, unsigned indent, uint64_t active, uint64_t parent_calls)
 {
 	uint64_t calls = entry->overall_count;
 	uint64_t min_ = entry->min_time;
@@ -572,34 +553,30 @@ static void profile_print_entry(profiler_snapshot_entry_t *entry,
 	uint64_t percentile99 = 0;
 	uint64_t median = 0;
 	double percent_within_bounds = 0.;
-	gather_stats(entry->expected_time_between_calls, &entry->times, calls,
-		     &percentile99, &median, &percent_within_bounds);
+	gather_stats(entry->expected_time_between_calls, &entry->times, calls, &percentile99, &median,
+		     &percent_within_bounds);
 
 	make_indent_string(indent_buffer, indent, active);
 
 	if (min_ == max_) {
-		dstr_printf(output_buffer, "%s%s: %" G_MS, indent_buffer->array,
-			    entry->name, min_ / 1000.);
+		dstr_printf(output_buffer, "%s%s: %" G_MS, indent_buffer->array, entry->name, min_ / 1000.);
 	} else {
 		dstr_printf(output_buffer,
 			    "%s%s: min=%" G_MS ", median=%" G_MS ", "
 			    "max=%" G_MS ", 99th percentile=%" G_MS,
-			    indent_buffer->array, entry->name, min_ / 1000.,
-			    median / 1000., max_ / 1000., percentile99 / 1000.);
+			    indent_buffer->array, entry->name, min_ / 1000., median / 1000., max_ / 1000.,
+			    percentile99 / 1000.);
 
 		if (entry->expected_time_between_calls) {
-			double expected_ms =
-				entry->expected_time_between_calls / 1000.;
-			dstr_catf(output_buffer, ", %g%% below %" G_MS,
-				  percent_within_bounds, expected_ms);
+			double expected_ms = entry->expected_time_between_calls / 1000.;
+			dstr_catf(output_buffer, ", %g%% below %" G_MS, percent_within_bounds, expected_ms);
 		}
 	}
 
 	if (parent_calls && calls != parent_calls) {
 		double calls_per_parent = (double)calls / parent_calls;
 		if (lround(calls_per_parent * 10) != 10)
-			dstr_catf(output_buffer, ", %g calls per parent call",
-				  calls_per_parent);
+			dstr_catf(output_buffer, ", %g calls per parent call", calls_per_parent);
 	}
 
 	blog(LOG_INFO, "%s", output_buffer->array);
@@ -608,16 +585,13 @@ static void profile_print_entry(profiler_snapshot_entry_t *entry,
 	for (size_t i = 0; i < entry->children.num; i++) {
 		if ((i + 1) == entry->children.num)
 			active &= (1 << indent) - 1;
-		profile_print_entry(&entry->children.array[i], indent_buffer,
-				    output_buffer, indent + 1, active, calls);
+		profile_print_entry(&entry->children.array[i], indent_buffer, output_buffer, indent + 1, active, calls);
 	}
 }
 
-static void gather_stats_between(profiler_time_entries_t *entries,
-				 uint64_t calls, uint64_t lower_bound,
-				 uint64_t upper_bound, uint64_t min_,
-				 uint64_t max_, uint64_t *median,
-				 double *percent, double *lower, double *higher)
+static void gather_stats_between(profiler_time_entries_t *entries, uint64_t calls, uint64_t lower_bound,
+				 uint64_t upper_bound, uint64_t min_, uint64_t max_, uint64_t *median, double *percent,
+				 double *lower, double *higher)
 {
 	*median = 0;
 	*percent = 0.;
@@ -680,10 +654,8 @@ static void gather_stats_between(profiler_time_entries_t *entries,
 	}
 }
 
-static void profile_print_entry_expected(profiler_snapshot_entry_t *entry,
-					 struct dstr *indent_buffer,
-					 struct dstr *output_buffer,
-					 unsigned indent, uint64_t active,
+static void profile_print_entry_expected(profiler_snapshot_entry_t *entry, struct dstr *indent_buffer,
+					 struct dstr *output_buffer, unsigned indent, uint64_t active,
 					 uint64_t parent_calls)
 {
 	UNUSED_PARAMETER(parent_calls);
@@ -699,10 +671,8 @@ static void profile_print_entry_expected(profiler_snapshot_entry_t *entry,
 	double percent = 0.;
 	double lower = 0.;
 	double higher = 0.;
-	gather_stats_between(&entry->times_between_calls,
-			     entry->overall_between_calls_count,
-			     (uint64_t)(expected_time * 0.98),
-			     (uint64_t)(expected_time * 1.02 + 0.5), min_, max_,
+	gather_stats_between(&entry->times_between_calls, entry->overall_between_calls_count,
+			     (uint64_t)(expected_time * 0.98), (uint64_t)(expected_time * 1.02 + 0.5), min_, max_,
 			     &median, &percent, &lower, &higher);
 
 	make_indent_string(indent_buffer, indent, active);
@@ -710,21 +680,19 @@ static void profile_print_entry_expected(profiler_snapshot_entry_t *entry,
 	blog(LOG_INFO,
 	     "%s%s: min=%" G_MS ", median=%" G_MS ", max=%" G_MS ", %g%% "
 	     "within ±2%% of %" G_MS " (%g%% lower, %g%% higher)",
-	     indent_buffer->array, entry->name, min_ / 1000., median / 1000.,
-	     max_ / 1000., percent, expected_time / 1000., lower, higher);
+	     indent_buffer->array, entry->name, min_ / 1000., median / 1000., max_ / 1000., percent,
+	     expected_time / 1000., lower, higher);
 
 	active |= (uint64_t)1 << indent;
 	for (size_t i = 0; i < entry->children.num; i++) {
 		if ((i + 1) == entry->children.num)
 			active &= (1 << indent) - 1;
-		profile_print_entry_expected(&entry->children.array[i],
-					     indent_buffer, output_buffer,
-					     indent + 1, active, 0);
+		profile_print_entry_expected(&entry->children.array[i], indent_buffer, output_buffer, indent + 1,
+					     active, 0);
 	}
 }
 
-void profile_print_func(const char *intro, profile_entry_print_func print,
-			profiler_snapshot_t *snap)
+void profile_print_func(const char *intro, profile_entry_print_func print, profiler_snapshot_t *snap)
 {
 	struct dstr indent_buffer = {0};
 	struct dstr output_buffer = {0};
@@ -735,8 +703,7 @@ void profile_print_func(const char *intro, profile_entry_print_func print,
 
 	blog(LOG_INFO, "%s", intro);
 	for (size_t i = 0; i < snap->roots.num; i++) {
-		print(&snap->roots.array[i], &indent_buffer, &output_buffer, 0,
-		      0, 0);
+		print(&snap->roots.array[i], &indent_buffer, &output_buffer, 0, 0, 0);
 	}
 	blog(LOG_INFO, "=================================================");
 
@@ -749,14 +716,12 @@ void profile_print_func(const char *intro, profile_entry_print_func print,
 
 void profiler_print(profiler_snapshot_t *snap)
 {
-	profile_print_func("== Profiler Results =============================",
-			   profile_print_entry, snap);
+	profile_print_func("== Profiler Results =============================", profile_print_entry, snap);
 }
 
 void profiler_print_time_between_calls(profiler_snapshot_t *snap)
 {
-	profile_print_func("== Profiler Time Between Calls ==================",
-			   profile_print_entry_expected, snap);
+	profile_print_func("== Profiler Time Between Calls ==================", profile_print_entry_expected, snap);
 }
 
 static void free_call_children(profile_call *call)
@@ -866,8 +831,7 @@ void profiler_name_store_free(profiler_name_store_t *store)
 	bfree(store);
 }
 
-const char *profile_store_name(profiler_name_store_t *store, const char *format,
-			       ...)
+const char *profile_store_name(profiler_name_store_t *store, const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -890,38 +854,30 @@ const char *profile_store_name(profiler_name_store_t *store, const char *format,
 /* ------------------------------------------------------------------------- */
 /* Profiler data access */
 
-static void add_entry_to_snapshot(profile_entry *entry,
-				  profiler_snapshot_entry_t *s_entry)
+static void add_entry_to_snapshot(profile_entry *entry, profiler_snapshot_entry_t *s_entry)
 {
 	s_entry->name = entry->name;
 
 	s_entry->overall_count =
-		copy_map_to_array(&entry->times, &s_entry->times,
-				  &s_entry->min_time, &s_entry->max_time);
+		copy_map_to_array(&entry->times, &s_entry->times, &s_entry->min_time, &s_entry->max_time);
 
-	if ((s_entry->expected_time_between_calls =
-		     entry->expected_time_between_calls))
+	if ((s_entry->expected_time_between_calls = entry->expected_time_between_calls))
 		s_entry->overall_between_calls_count =
-			copy_map_to_array(&entry->times_between_calls,
-					  &s_entry->times_between_calls,
-					  &s_entry->min_time_between_calls,
-					  &s_entry->max_time_between_calls);
+			copy_map_to_array(&entry->times_between_calls, &s_entry->times_between_calls,
+					  &s_entry->min_time_between_calls, &s_entry->max_time_between_calls);
 
 	da_reserve(s_entry->children, entry->children.num);
 	for (size_t i = 0; i < entry->children.num; i++)
-		add_entry_to_snapshot(&entry->children.array[i],
-				      da_push_back_new(s_entry->children));
+		add_entry_to_snapshot(&entry->children.array[i], da_push_back_new(s_entry->children));
 }
 
 static void sort_snapshot_entry(profiler_snapshot_entry_t *entry)
 {
-	qsort(entry->times.array, entry->times.num, sizeof(profiler_time_entry),
-	      profiler_time_entry_compare);
+	qsort(entry->times.array, entry->times.num, sizeof(profiler_time_entry), profiler_time_entry_compare);
 
 	if (entry->expected_time_between_calls)
-		qsort(entry->times_between_calls.array,
-		      entry->times_between_calls.num,
-		      sizeof(profiler_time_entry), profiler_time_entry_compare);
+		qsort(entry->times_between_calls.array, entry->times_between_calls.num, sizeof(profiler_time_entry),
+		      profiler_time_entry_compare);
 
 	for (size_t i = 0; i < entry->children.num; i++)
 		sort_snapshot_entry(&entry->children.array[i]);
@@ -935,8 +891,7 @@ profiler_snapshot_t *profile_snapshot_create(void)
 	da_reserve(snap->roots, root_entries.num);
 	for (size_t i = 0; i < root_entries.num; i++) {
 		pthread_mutex_lock(root_entries.array[i].mutex);
-		add_entry_to_snapshot(root_entries.array[i].entry,
-				      da_push_back_new(snap->roots));
+		add_entry_to_snapshot(root_entries.array[i].entry, da_push_back_new(snap->roots));
 		pthread_mutex_unlock(root_entries.array[i].mutex);
 	}
 	pthread_mutex_unlock(&root_mutex);
@@ -970,10 +925,8 @@ void profile_snapshot_free(profiler_snapshot_t *snap)
 }
 
 typedef void (*dump_csv_func)(void *data, struct dstr *buffer);
-static void entry_dump_csv(struct dstr *buffer,
-			   const profiler_snapshot_entry_t *parent,
-			   const profiler_snapshot_entry_t *entry,
-			   dump_csv_func func, void *data)
+static void entry_dump_csv(struct dstr *buffer, const profiler_snapshot_entry_t *parent,
+			   const profiler_snapshot_entry_t *entry, dump_csv_func func, void *data)
 {
 	const char *parent_name = parent ? parent->name : NULL;
 
@@ -981,8 +934,7 @@ static void entry_dump_csv(struct dstr *buffer,
 		dstr_printf(buffer,
 			    "%p,%p,%p,%p,%s,0,"
 			    "%" PRIu64 ",%" PRIu64 "\n",
-			    entry, parent, entry->name, parent_name,
-			    entry->name, entry->times.array[i].time_delta,
+			    entry, parent, entry->name, parent_name, entry->name, entry->times.array[i].time_delta,
 			    entry->times.array[i].count);
 		func(data, buffer);
 	}
@@ -991,20 +943,16 @@ static void entry_dump_csv(struct dstr *buffer,
 		dstr_printf(buffer,
 			    "%p,%p,%p,%p,%s,"
 			    "%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n",
-			    entry, parent, entry->name, parent_name,
-			    entry->name, entry->expected_time_between_calls,
-			    entry->times_between_calls.array[i].time_delta,
-			    entry->times_between_calls.array[i].count);
+			    entry, parent, entry->name, parent_name, entry->name, entry->expected_time_between_calls,
+			    entry->times_between_calls.array[i].time_delta, entry->times_between_calls.array[i].count);
 		func(data, buffer);
 	}
 
 	for (size_t i = 0; i < entry->children.num; i++)
-		entry_dump_csv(buffer, entry, &entry->children.array[i], func,
-			       data);
+		entry_dump_csv(buffer, entry, &entry->children.array[i], func, data);
 }
 
-static void profiler_snapshot_dump(const profiler_snapshot_t *snap,
-				   dump_csv_func func, void *data)
+static void profiler_snapshot_dump(const profiler_snapshot_t *snap, dump_csv_func func, void *data)
 {
 	struct dstr buffer = {0};
 
@@ -1013,8 +961,7 @@ static void profiler_snapshot_dump(const profiler_snapshot_t *snap,
 	func(data, &buffer);
 
 	for (size_t i = 0; i < snap->roots.num; i++)
-		entry_dump_csv(&buffer, NULL, &snap->roots.array[i], func,
-			       data);
+		entry_dump_csv(&buffer, NULL, &snap->roots.array[i], func, data);
 
 	dstr_free(&buffer);
 }
@@ -1024,8 +971,7 @@ static void dump_csv_fwrite(void *data, struct dstr *buffer)
 	fwrite(buffer->array, 1, buffer->len, data);
 }
 
-bool profiler_snapshot_dump_csv(const profiler_snapshot_t *snap,
-				const char *filename)
+bool profiler_snapshot_dump_csv(const profiler_snapshot_t *snap, const char *filename)
 {
 	FILE *f = os_fopen(filename, "wb+");
 	if (!f)
@@ -1042,8 +988,7 @@ static void dump_csv_gzwrite(void *data, struct dstr *buffer)
 	gzwrite(data, buffer->array, (unsigned)buffer->len);
 }
 
-bool profiler_snapshot_dump_csv_gz(const profiler_snapshot_t *snap,
-				   const char *filename)
+bool profiler_snapshot_dump_csv_gz(const profiler_snapshot_t *snap, const char *filename)
 {
 	gzFile gz;
 #ifdef _WIN32
@@ -1076,9 +1021,7 @@ size_t profiler_snapshot_num_roots(profiler_snapshot_t *snap)
 	return snap ? snap->roots.num : 0;
 }
 
-void profiler_snapshot_enumerate_roots(profiler_snapshot_t *snap,
-				       profiler_entry_enum_func func,
-				       void *context)
+void profiler_snapshot_enumerate_roots(profiler_snapshot_t *snap, profiler_entry_enum_func func, void *context)
 {
 	if (!snap)
 		return;
@@ -1088,8 +1031,7 @@ void profiler_snapshot_enumerate_roots(profiler_snapshot_t *snap,
 			break;
 }
 
-void profiler_snapshot_filter_roots(profiler_snapshot_t *snap,
-				    profiler_name_filter_func func, void *data)
+void profiler_snapshot_filter_roots(profiler_snapshot_t *snap, profiler_name_filter_func func, void *data)
 {
 	for (size_t i = 0; i < snap->roots.num;) {
 		bool remove = false;
@@ -1113,8 +1055,7 @@ size_t profiler_snapshot_num_children(profiler_snapshot_entry_t *entry)
 	return entry ? entry->children.num : 0;
 }
 
-void profiler_snapshot_enumerate_children(profiler_snapshot_entry_t *entry,
-					  profiler_entry_enum_func func,
+void profiler_snapshot_enumerate_children(profiler_snapshot_entry_t *entry, profiler_entry_enum_func func,
 					  void *context)
 {
 	if (!entry)
@@ -1130,8 +1071,7 @@ const char *profiler_snapshot_entry_name(profiler_snapshot_entry_t *entry)
 	return entry ? entry->name : NULL;
 }
 
-profiler_time_entries_t *
-profiler_snapshot_entry_times(profiler_snapshot_entry_t *entry)
+profiler_time_entries_t *profiler_snapshot_entry_times(profiler_snapshot_entry_t *entry)
 {
 	return entry ? &entry->times : NULL;
 }
@@ -1151,32 +1091,27 @@ uint64_t profiler_snapshot_entry_max_time(profiler_snapshot_entry_t *entry)
 	return entry ? entry->max_time : 0;
 }
 
-profiler_time_entries_t *
-profiler_snapshot_entry_times_between_calls(profiler_snapshot_entry_t *entry)
+profiler_time_entries_t *profiler_snapshot_entry_times_between_calls(profiler_snapshot_entry_t *entry)
 {
 	return entry ? &entry->times_between_calls : NULL;
 }
 
-uint64_t profiler_snapshot_entry_expected_time_between_calls(
-	profiler_snapshot_entry_t *entry)
+uint64_t profiler_snapshot_entry_expected_time_between_calls(profiler_snapshot_entry_t *entry)
 {
 	return entry ? entry->expected_time_between_calls : 0;
 }
 
-uint64_t
-profiler_snapshot_entry_min_time_between_calls(profiler_snapshot_entry_t *entry)
+uint64_t profiler_snapshot_entry_min_time_between_calls(profiler_snapshot_entry_t *entry)
 {
 	return entry ? entry->min_time_between_calls : 0;
 }
 
-uint64_t
-profiler_snapshot_entry_max_time_between_calls(profiler_snapshot_entry_t *entry)
+uint64_t profiler_snapshot_entry_max_time_between_calls(profiler_snapshot_entry_t *entry)
 {
 	return entry ? entry->max_time_between_calls : 0;
 }
 
-uint64_t profiler_snapshot_entry_overall_between_calls_count(
-	profiler_snapshot_entry_t *entry)
+uint64_t profiler_snapshot_entry_overall_between_calls_count(profiler_snapshot_entry_t *entry)
 {
 	return entry ? entry->overall_between_calls_count : 0;
 }

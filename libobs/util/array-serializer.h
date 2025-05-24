@@ -28,8 +28,7 @@ struct array_output_data {
 	size_t cur_pos;
 };
 
-EXPORT void array_output_serializer_init(struct serializer *s,
-					 struct array_output_data *data);
+EXPORT void array_output_serializer_init(struct serializer *s, struct array_output_data *data);
 EXPORT void array_output_serializer_free(struct array_output_data *data);
 EXPORT void array_output_serializer_reset(struct array_output_data *data);
 

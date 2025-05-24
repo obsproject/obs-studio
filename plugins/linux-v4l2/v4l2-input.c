@@ -53,14 +53,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define V4L2_DATA(voidptr) struct v4l2_data *data = voidptr;
 
-#define timeval2ns(tv) \
-	(((uint64_t)tv.tv_sec * 1000000000) + ((uint64_t)tv.tv_usec * 1000))
+#define timeval2ns(tv) (((uint64_t)tv.tv_sec * 1000000000) + ((uint64_t)tv.tv_usec * 1000))
 
-#define V4L2_FOURCC_STR(code)                                         \
-	(char[5])                                                     \
-	{                                                             \
-		code & 0xFF, (code >> 8) & 0xFF, (code >> 16) & 0xFF, \
-			(code >> 24) & 0xFF, 0                        \
+#define V4L2_FOURCC_STR(code)                                                                \
+	(char[5])                                                                            \
+	{                                                                                    \
+		code & 0xFF, (code >> 8) & 0xFF, (code >> 16) & 0xFF, (code >> 24) & 0xFF, 0 \
 	}
 
 #define blog(level, msg, ...) blog(level, "v4l2-input: " msg, ##__VA_ARGS__)
@@ -116,9 +114,7 @@ static void v4l2_update(void *vptr, obs_data_t *settings);
  * pointers for the individual planes.
  *
  */
-static void v4l2_prep_obs_frame(struct v4l2_data *data,
-				struct obs_source_frame *frame,
-				size_t *plane_offsets)
+static void v4l2_prep_obs_frame(struct v4l2_data *data, struct obs_source_frame *frame, size_t *plane_offsets)
 {
 	memset(frame, 0, sizeof(struct obs_source_frame));
 	memset(plane_offsets, 0, sizeof(size_t) * MAX_AV_PLANES);
@@ -129,11 +125,8 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 	frame->width = data->width;
 	frame->height = data->height;
 	frame->format = format;
-	video_format_get_parameters_for_format(VIDEO_CS_DEFAULT,
-					       data->color_range, format,
-					       frame->color_matrix,
-					       frame->color_range_min,
-					       frame->color_range_max);
+	video_format_get_parameters_for_format(VIDEO_CS_DEFAULT, data->color_range, format, frame->color_matrix,
+					       frame->color_range_min, frame->color_range_max);
 
 	switch (data->pixfmt) {
 	case V4L2_PIX_FMT_NV12:
@@ -189,9 +182,8 @@ static void *v4l2_thread(void *vptr)
 	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
 	/* Timeout set to 5 frame periods. */
 	timeout_usec = (1000000 * data->timeout_frames) / ffps;
-	blog(LOG_INFO,
-	     "%s: select timeout set to %" PRIu64 " (%dx frame periods)",
-	     data->device_id, timeout_usec, data->timeout_frames);
+	blog(LOG_INFO, "%s: select timeout set to %" PRIu64 " (%dx frame periods)", data->device_id, timeout_usec,
+	     data->timeout_frames);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
@@ -219,27 +211,21 @@ static void *v4l2_thread(void *vptr)
 			blog(LOG_ERROR, "%s: select failed", data->device_id);
 			break;
 		} else if (r == 0) {
-			blog(LOG_ERROR, "%s: select timed out",
-			     data->device_id);
+			blog(LOG_ERROR, "%s: select timed out", data->device_id);
 
 #ifdef _DEBUG
 			v4l2_query_all_buffers(data->dev, &data->buffers);
 #endif
 
 			if (v4l2_ioctl(data->dev, VIDIOC_LOG_STATUS) < 0) {
-				blog(LOG_ERROR, "%s: failed to log status",
-				     data->device_id);
+				blog(LOG_ERROR, "%s: failed to log status", data->device_id);
 			}
 
 			if (data->auto_reset) {
-				if (v4l2_reset_capture(data->dev,
-						       &data->buffers) == 0)
-					blog(LOG_INFO,
-					     "%s: stream reset successful",
-					     data->device_id);
+				if (v4l2_reset_capture(data->dev, &data->buffers) == 0)
+					blog(LOG_INFO, "%s: stream reset successful", data->device_id);
 				else
-					blog(LOG_ERROR, "%s: failed to reset",
-					     data->device_id);
+					blog(LOG_ERROR, "%s: failed to reset", data->device_id);
 			}
 
 			continue;
@@ -250,19 +236,20 @@ static void *v4l2_thread(void *vptr)
 
 		if (v4l2_ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
 			if (errno == EAGAIN) {
-				blog(LOG_DEBUG, "%s: ioctl dqbuf eagain",
-				     data->device_id);
+				blog(LOG_DEBUG, "%s: ioctl dqbuf eagain", data->device_id);
 				continue;
 			}
-			blog(LOG_ERROR, "%s: failed to dequeue buffer",
-			     data->device_id);
+			blog(LOG_ERROR, "%s: failed to dequeue buffer", data->device_id);
 			break;
 		}
 
-		blog(LOG_DEBUG,
-		     "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
-		     data->device_id, buf.timestamp.tv_usec, buf.index,
-		     buf.flags, buf.sequence, buf.length, buf.bytesused);
+		blog(LOG_DEBUG, "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d", data->device_id,
+		     buf.timestamp.tv_usec, buf.index, buf.flags, buf.sequence, buf.length, buf.bytesused);
+
+		if (buf.flags & V4L2_BUF_FLAG_ERROR) {
+			blog(LOG_DEBUG, "skipping decoding of buffer with recoverable error-flag set");
+			goto continue_queue_buffer;
+		}
 
 		out.timestamp = timeval2ns(buf.timestamp);
 		if (!frames)
@@ -271,12 +258,9 @@ static void *v4l2_thread(void *vptr)
 
 		start = (uint8_t *)data->buffers.info[buf.index].start;
 
-		if (data->pixfmt == V4L2_PIX_FMT_MJPEG ||
-		    data->pixfmt == V4L2_PIX_FMT_H264) {
-			if (v4l2_decode_frame(&out, start, buf.bytesused,
-					      &data->decoder) < 0) {
-				blog(LOG_ERROR,
-				     "failed to unpack jpeg or h264");
+		if (data->pixfmt == V4L2_PIX_FMT_MJPEG || data->pixfmt == V4L2_PIX_FMT_H264) {
+			if (v4l2_decode_frame(&out, start, buf.bytesused, &data->decoder) < 0) {
+				blog(LOG_ERROR, "failed to unpack jpeg or h264");
 				break;
 			}
 		} else {
@@ -285,17 +269,16 @@ static void *v4l2_thread(void *vptr)
 		}
 		obs_source_output_video(data->source, &out);
 
+	continue_queue_buffer:
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_ERROR, "%s: failed to enqueue buffer",
-			     data->device_id);
+			blog(LOG_ERROR, "%s: failed to enqueue buffer", data->device_id);
 			break;
 		}
 
 		frames++;
 	}
 
-	blog(LOG_INFO, "%s: Stopped capture after %" PRIu64 " frames",
-	     data->device_id, frames);
+	blog(LOG_INFO, "%s: Stopped capture after %" PRIu64 " frames", data->device_id, frames);
 
 exit:
 	v4l2_stop_capture(data->dev);
@@ -331,14 +314,12 @@ static void v4l2_defaults(obs_data_t *settings)
  * @param ignore ignore this property
  * @param enable enable/disable all properties
  */
-static void v4l2_props_set_enabled(obs_properties_t *props,
-				   obs_property_t *ignore, bool enable)
+static void v4l2_props_set_enabled(obs_properties_t *props, obs_property_t *ignore, bool enable)
 {
 	if (!props)
 		return;
 
-	for (obs_property_t *prop = obs_properties_first(props); prop != NULL;
-	     obs_property_next(&prop)) {
+	for (obs_property_t *prop = obs_properties_first(props); prop != NULL; obs_property_next(&prop)) {
 		if (prop == ignore)
 			continue;
 
@@ -395,8 +376,7 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		}
 
 		if (v4l2_ioctl(fd, VIDIOC_QUERYCAP, &video_cap) == -1) {
-			blog(LOG_INFO, "Failed to query capabilities for %s",
-			     device.array);
+			blog(LOG_INFO, "Failed to query capabilities for %s", device.array);
 			v4l2_close(fd);
 			continue;
 		}
@@ -405,32 +385,25 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 		caps = video_cap.capabilities;
 #else
 		/* ... since Linux 3.3 */
-		caps = (video_cap.capabilities & V4L2_CAP_DEVICE_CAPS)
-			       ? video_cap.device_caps
-			       : video_cap.capabilities;
+		caps = (video_cap.capabilities & V4L2_CAP_DEVICE_CAPS) ? video_cap.device_caps : video_cap.capabilities;
 #endif
 
 		if (!(caps & V4L2_CAP_VIDEO_CAPTURE)) {
-			blog(LOG_INFO, "%s seems to not support video capture",
-			     device.array);
+			blog(LOG_INFO, "%s seems to not support video capture", device.array);
 			v4l2_close(fd);
 			continue;
 		}
 
 		/* make sure device names are unique */
 		char unique_device_name[68];
-		int ret = snprintf(unique_device_name,
-				   sizeof(unique_device_name), "%s (%s)",
-				   video_cap.card, video_cap.bus_info);
+		int ret = snprintf(unique_device_name, sizeof(unique_device_name), "%s (%s)", video_cap.card,
+				   video_cap.bus_info);
 		if (ret >= (int)sizeof(unique_device_name))
-			blog(LOG_DEBUG,
-			     "linux-v4l2: A format truncation may have occurred."
-			     " This can be ignored since it is quite improbable.");
+			blog(LOG_DEBUG, "linux-v4l2: A format truncation may have occurred."
+					" This can be ignored since it is quite improbable.");
 
-		obs_property_list_add_string(prop, unique_device_name,
-					     device.array);
-		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
-		     device.array);
+		obs_property_list_add_string(prop, unique_device_name, device.array);
+		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card, device.array);
 
 		/* check if this is the currently used device */
 		if (cur_device_name && !strcmp(cur_device_name, device.array))
@@ -441,8 +414,7 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 
 	/* add currently selected device if not present, but disable it ... */
 	if (!cur_device_found && cur_device_name && strlen(cur_device_name)) {
-		cur_device_index = obs_property_list_add_string(
-			prop, cur_device_name, cur_device_name);
+		cur_device_index = obs_property_list_add_string(prop, cur_device_name, cur_device_name);
 		obs_property_list_item_disable(prop, cur_device_index, true);
 	}
 
@@ -462,8 +434,7 @@ static void v4l2_input_list(int_fast32_t dev, obs_property_t *prop)
 
 	while (v4l2_ioctl(dev, VIDIOC_ENUMINPUT, &in) == 0) {
 		obs_property_list_add_int(prop, (char *)in.name, in.index);
-		blog(LOG_INFO, "Found input '%s' (Index %d)", in.name,
-		     in.index);
+		blog(LOG_INFO, "Found input '%s' (Index %d)", in.name, in.index);
 		in.index++;
 	}
 }
@@ -486,17 +457,12 @@ static void v4l2_format_list(int dev, obs_property_t *prop)
 		if (fmt.flags & V4L2_FMT_FLAG_EMULATED)
 			dstr_cat(&buffer, " (Emulated)");
 
-		if (v4l2_to_obs_video_format(fmt.pixelformat) !=
-			    VIDEO_FORMAT_NONE ||
-		    fmt.pixelformat == V4L2_PIX_FMT_MJPEG ||
-		    fmt.pixelformat == V4L2_PIX_FMT_H264) {
-			obs_property_list_add_int(prop, buffer.array,
-						  fmt.pixelformat);
-			blog(LOG_INFO, "Pixelformat: %s (available)",
-			     buffer.array);
+		if (v4l2_to_obs_video_format(fmt.pixelformat) != VIDEO_FORMAT_NONE ||
+		    fmt.pixelformat == V4L2_PIX_FMT_MJPEG || fmt.pixelformat == V4L2_PIX_FMT_H264) {
+			obs_property_list_add_int(prop, buffer.array, fmt.pixelformat);
+			blog(LOG_INFO, "Pixelformat: %s (available)", buffer.array);
 		} else {
-			blog(LOG_INFO, "Pixelformat: %s (unavailable)",
-			     buffer.array);
+			blog(LOG_INFO, "Pixelformat: %s (unavailable)", buffer.array);
 		}
 		fmt.index++;
 	}
@@ -538,17 +504,13 @@ static void v4l2_dv_timing_list(int dev, obs_property_t *prop)
 
 	while (v4l2_enum_dv_timing(dev, &dvt, index) == 0) {
 		/* i do not pretend to understand, this is from qv4l2 ... */
-		double h = (double)dvt.bt.height + dvt.bt.vfrontporch +
-			   dvt.bt.vsync + dvt.bt.vbackporch +
-			   dvt.bt.il_vfrontporch + dvt.bt.il_vsync +
-			   dvt.bt.il_vbackporch;
-		double w = (double)dvt.bt.width + dvt.bt.hfrontporch +
-			   dvt.bt.hsync + dvt.bt.hbackporch;
+		double h = (double)dvt.bt.height + dvt.bt.vfrontporch + dvt.bt.vsync + dvt.bt.vbackporch +
+			   dvt.bt.il_vfrontporch + dvt.bt.il_vsync + dvt.bt.il_vbackporch;
+		double w = (double)dvt.bt.width + dvt.bt.hfrontporch + dvt.bt.hsync + dvt.bt.hbackporch;
 		double i = (dvt.bt.interlaced) ? 2.0f : 1.0f;
 		double rate = (double)dvt.bt.pixelclock / (w * (h / i));
 
-		dstr_printf(&buf, "%ux%u%c %.2f", dvt.bt.width, dvt.bt.height,
-			    (dvt.bt.interlaced) ? 'i' : 'p', rate);
+		dstr_printf(&buf, "%ux%u%c %.2f", dvt.bt.width, dvt.bt.height, (dvt.bt.interlaced) ? 'i' : 'p', rate);
 
 		obs_property_list_add_int(prop, buf.array, index);
 
@@ -561,8 +523,7 @@ static void v4l2_dv_timing_list(int dev, obs_property_t *prop)
 /*
  * List resolutions for device and format
  */
-static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
-				 obs_property_t *prop)
+static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat, obs_property_t *prop)
 {
 	struct v4l2_frmsizeenum frmsize;
 	frmsize.pixel_format = pixelformat;
@@ -579,12 +540,9 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 	switch (frmsize.type) {
 	case V4L2_FRMSIZE_TYPE_DISCRETE:
 		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0) {
-			dstr_printf(&buffer, "%dx%d", frmsize.discrete.width,
-				    frmsize.discrete.height);
-			obs_property_list_add_int(
-				prop, buffer.array,
-				v4l2_pack_tuple(frmsize.discrete.width,
-						frmsize.discrete.height));
+			dstr_printf(&buffer, "%dx%d", frmsize.discrete.width, frmsize.discrete.height);
+			obs_property_list_add_int(prop, buffer.array,
+						  v4l2_pack_tuple(frmsize.discrete.width, frmsize.discrete.height));
 			frmsize.index++;
 		}
 		break;
@@ -592,8 +550,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framesizes "
 			       "are currently hardcoded");
 
-		for (const int64_t *packed = v4l2_framesizes; *packed;
-		     ++packed) {
+		for (const int64_t *packed = v4l2_framesizes; *packed; ++packed) {
 			int width;
 			int height;
 			v4l2_unpack_tuple(&width, &height, *packed);
@@ -609,8 +566,7 @@ static void v4l2_resolution_list(int dev, uint_fast32_t pixelformat,
 /*
  * List framerates for device and resolution
  */
-static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
-				uint_fast32_t width, uint_fast32_t height,
+static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat, uint_fast32_t width, uint_fast32_t height,
 				obs_property_t *prop)
 {
 	struct v4l2_frmivalenum frmival;
@@ -629,13 +585,9 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 
 	switch (frmival.type) {
 	case V4L2_FRMIVAL_TYPE_DISCRETE:
-		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) ==
-		       0) {
-			float fps = (float)frmival.discrete.denominator /
-				    frmival.discrete.numerator;
-			int pack =
-				v4l2_pack_tuple(frmival.discrete.numerator,
-						frmival.discrete.denominator);
+		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) == 0) {
+			float fps = (float)frmival.discrete.denominator / frmival.discrete.numerator;
+			int pack = v4l2_pack_tuple(frmival.discrete.numerator, frmival.discrete.denominator);
 			dstr_printf(&buffer, "%.2f", fps);
 			obs_property_list_add_int(prop, buffer.array, pack);
 			frmival.index++;
@@ -645,8 +597,7 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 		blog(LOG_INFO, "Stepwise and Continuous framerates "
 			       "are currently hardcoded");
 
-		for (const int64_t *packed = v4l2_framerates; *packed;
-		     ++packed) {
+		for (const int64_t *packed = v4l2_framerates; *packed; ++packed) {
 			int num;
 			int denom;
 			v4l2_unpack_tuple(&num, &denom, *packed);
@@ -663,11 +614,9 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat,
 /*
  * Device selected callback
  */
-static bool device_selected(obs_properties_t *props, obs_property_t *p,
-			    obs_data_t *settings)
+static bool device_selected(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
-	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
-			    O_RDWR | O_NONBLOCK);
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"), O_RDWR | O_NONBLOCK);
 
 	v4l2_props_set_enabled(props, p, (dev == -1) ? false : true);
 
@@ -683,9 +632,7 @@ static bool device_selected(obs_properties_t *props, obs_property_t *p,
 	v4l2_update_controls(dev, ctrl_props_new, settings);
 	v4l2_close(dev);
 
-	obs_properties_add_group(props, "controls",
-				 obs_module_text("CameraCtrls"),
-				 OBS_GROUP_NORMAL, ctrl_props_new);
+	obs_properties_add_group(props, "controls", obs_module_text("CameraCtrls"), OBS_GROUP_NORMAL, ctrl_props_new);
 
 	obs_property_modified(prop, settings);
 
@@ -695,12 +642,10 @@ static bool device_selected(obs_properties_t *props, obs_property_t *p,
 /*
  * Input selected callback
  */
-static bool input_selected(obs_properties_t *props, obs_property_t *p,
-			   obs_data_t *settings)
+static bool input_selected(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
-			    O_RDWR | O_NONBLOCK);
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"), O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
 
@@ -716,12 +661,10 @@ static bool input_selected(obs_properties_t *props, obs_property_t *p,
 /*
  * Format selected callback
  */
-static bool format_selected(obs_properties_t *props, obs_property_t *p,
-			    obs_data_t *settings)
+static bool format_selected(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
-	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
-			    O_RDWR | O_NONBLOCK);
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"), O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
 
@@ -738,15 +681,11 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 
 	obs_property_set_visible(resolution, (!caps) ? true : false);
 	obs_property_set_visible(framerate, (!caps) ? true : false);
-	obs_property_set_visible(standard,
-				 (caps & V4L2_IN_CAP_STD) ? true : false);
-	obs_property_set_visible(
-		dv_timing, (caps & V4L2_IN_CAP_DV_TIMINGS) ? true : false);
+	obs_property_set_visible(standard, (caps & V4L2_IN_CAP_STD) ? true : false);
+	obs_property_set_visible(dv_timing, (caps & V4L2_IN_CAP_DV_TIMINGS) ? true : false);
 
 	if (!caps) {
-		v4l2_resolution_list(dev,
-				     obs_data_get_int(settings, "pixelformat"),
-				     resolution);
+		v4l2_resolution_list(dev, obs_data_get_int(settings, "pixelformat"), resolution);
 	}
 	if (caps & V4L2_IN_CAP_STD)
 		v4l2_standard_list(dev, standard);
@@ -768,21 +707,17 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 /*
  * Resolution selected callback
  */
-static bool resolution_selected(obs_properties_t *props, obs_property_t *p,
-				obs_data_t *settings)
+static bool resolution_selected(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(p);
 	int width, height;
-	int dev = v4l2_open(obs_data_get_string(settings, "device_id"),
-			    O_RDWR | O_NONBLOCK);
+	int dev = v4l2_open(obs_data_get_string(settings, "device_id"), O_RDWR | O_NONBLOCK);
 	if (dev == -1)
 		return false;
 
 	obs_property_t *prop = obs_properties_get(props, "framerate");
-	v4l2_unpack_tuple(&width, &height,
-			  obs_data_get_int(settings, "resolution"));
-	v4l2_framerate_list(dev, obs_data_get_int(settings, "pixelformat"),
-			    width, height, prop);
+	v4l2_unpack_tuple(&width, &height, obs_data_get_int(settings, "resolution"));
+	v4l2_framerate_list(dev, obs_data_get_int(settings, "pixelformat"), width, height, prop);
 	v4l2_close(dev);
 
 	obs_property_modified(prop, settings);
@@ -843,64 +778,44 @@ static obs_properties_t *v4l2_properties(void *vptr)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *device_list = obs_properties_add_list(
-		props, "device_id", obs_module_text("Device"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_t *device_list = obs_properties_add_list(props, "device_id", obs_module_text("Device"),
+							      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
-	obs_property_t *input_list = obs_properties_add_list(
-		props, "input", obs_module_text("Input"), OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_INT);
+	obs_property_t *input_list = obs_properties_add_list(props, "input", obs_module_text("Input"),
+							     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_property_t *format_list = obs_properties_add_list(
-		props, "pixelformat", obs_module_text("VideoFormat"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *format_list = obs_properties_add_list(props, "pixelformat", obs_module_text("VideoFormat"),
+							      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_property_t *standard_list = obs_properties_add_list(
-		props, "standard", obs_module_text("VideoStandard"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *standard_list = obs_properties_add_list(props, "standard", obs_module_text("VideoStandard"),
+								OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_visible(standard_list, false);
 
-	obs_property_t *dv_timing_list = obs_properties_add_list(
-		props, "dv_timing", obs_module_text("DVTiming"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *dv_timing_list = obs_properties_add_list(props, "dv_timing", obs_module_text("DVTiming"),
+								 OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_set_visible(dv_timing_list, false);
 
-	obs_property_t *resolution_list = obs_properties_add_list(
-		props, "resolution", obs_module_text("Resolution"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *resolution_list = obs_properties_add_list(props, "resolution", obs_module_text("Resolution"),
+								  OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	obs_properties_add_list(props, "framerate",
-				obs_module_text("FrameRate"),
-				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_properties_add_list(props, "framerate", obs_module_text("FrameRate"), OBS_COMBO_TYPE_LIST,
+				OBS_COMBO_FORMAT_INT);
 
-	obs_property_t *color_range_list = obs_properties_add_list(
-		props, "color_range", obs_module_text("ColorRange"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(color_range_list,
-				  obs_module_text("ColorRange.Default"),
-				  VIDEO_RANGE_DEFAULT);
-	obs_property_list_add_int(color_range_list,
-				  obs_module_text("ColorRange.Partial"),
-				  VIDEO_RANGE_PARTIAL);
-	obs_property_list_add_int(color_range_list,
-				  obs_module_text("ColorRange.Full"),
-				  VIDEO_RANGE_FULL);
+	obs_property_t *color_range_list = obs_properties_add_list(props, "color_range", obs_module_text("ColorRange"),
+								   OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(color_range_list, obs_module_text("ColorRange.Default"), VIDEO_RANGE_DEFAULT);
+	obs_property_list_add_int(color_range_list, obs_module_text("ColorRange.Partial"), VIDEO_RANGE_PARTIAL);
+	obs_property_list_add_int(color_range_list, obs_module_text("ColorRange.Full"), VIDEO_RANGE_FULL);
 
-	obs_properties_add_bool(props, "buffering",
-				obs_module_text("UseBuffering"));
+	obs_properties_add_bool(props, "buffering", obs_module_text("UseBuffering"));
 
-	obs_properties_add_bool(props, "auto_reset",
-				obs_module_text("AutoresetOnTimeout"));
+	obs_properties_add_bool(props, "auto_reset", obs_module_text("AutoresetOnTimeout"));
 
-	obs_properties_add_int(props, "timeout_frames",
-			       obs_module_text("FramesUntilTimeout"), 2, 120,
-			       1);
+	obs_properties_add_int(props, "timeout_frames", obs_module_text("FramesUntilTimeout"), 2, 120, 1);
 
 	// a group to contain the camera control
 	obs_properties_t *ctrl_props = obs_properties_create();
-	obs_properties_add_group(props, "controls",
-				 obs_module_text("CameraCtrls"),
-				 OBS_GROUP_NORMAL, ctrl_props);
+	obs_properties_add_group(props, "controls", obs_module_text("CameraCtrls"), OBS_GROUP_NORMAL, ctrl_props);
 
 	obs_data_t *settings = obs_source_get_settings(data->source);
 	v4l2_device_list(device_list, settings);
@@ -909,8 +824,7 @@ static obs_properties_t *v4l2_properties(void *vptr)
 	obs_property_set_modified_callback(device_list, device_selected);
 	obs_property_set_modified_callback(input_list, input_selected);
 	obs_property_set_modified_callback(format_list, format_selected);
-	obs_property_set_modified_callback(resolution_list,
-					   resolution_selected);
+	obs_property_set_modified_callback(resolution_list, resolution_selected);
 
 	return props;
 }
@@ -924,8 +838,7 @@ static void v4l2_terminate(struct v4l2_data *data)
 		data->thread = 0;
 	}
 
-	if (data->pixfmt == V4L2_PIX_FMT_MJPEG ||
-	    data->pixfmt == V4L2_PIX_FMT_H264) {
+	if (data->pixfmt == V4L2_PIX_FMT_MJPEG || data->pixfmt == V4L2_PIX_FMT_H264) {
 		v4l2_destroy_decoder(&data->decoder);
 	}
 	v4l2_destroy_mmap(&data->buffers);
@@ -1013,13 +926,11 @@ static void v4l2_init(struct v4l2_data *data)
 	}
 
 	/* set pixel format and resolution */
-	if (v4l2_set_format(data->dev, &data->resolution, &data->pixfmt,
-			    &data->linesize) < 0) {
+	if (v4l2_set_format(data->dev, &data->resolution, &data->pixfmt, &data->linesize) < 0) {
 		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
-	if (v4l2_to_obs_video_format(data->pixfmt) == VIDEO_FORMAT_NONE &&
-	    data->pixfmt != V4L2_PIX_FMT_MJPEG &&
+	if (v4l2_to_obs_video_format(data->pixfmt) == VIDEO_FORMAT_NONE && data->pixfmt != V4L2_PIX_FMT_MJPEG &&
 	    data->pixfmt != V4L2_PIX_FMT_H264) {
 		blog(LOG_ERROR, "Selected video format not supported");
 		goto fail;
@@ -1035,8 +946,7 @@ static void v4l2_init(struct v4l2_data *data)
 		goto fail;
 	}
 	if (data->framerate == 0) {
-		blog(LOG_ERROR, "Framerate is not set, falling back to %i",
-		     FALLBACK_FRAMERATE);
+		blog(LOG_ERROR, "Framerate is not set, falling back to %i", FALLBACK_FRAMERATE);
 		data->framerate = v4l2_pack_tuple(1, FALLBACK_FRAMERATE);
 	}
 	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
@@ -1048,8 +958,7 @@ static void v4l2_init(struct v4l2_data *data)
 		goto fail;
 	}
 
-	if (data->pixfmt == V4L2_PIX_FMT_MJPEG ||
-	    data->pixfmt == V4L2_PIX_FMT_H264) {
+	if (data->pixfmt == V4L2_PIX_FMT_MJPEG || data->pixfmt == V4L2_PIX_FMT_H264) {
 		if (v4l2_init_decoder(&data->decoder, data->pixfmt) < 0) {
 			blog(LOG_ERROR, "Failed to initialize decoder");
 			goto fail;
@@ -1068,11 +977,9 @@ fail:
 }
 
 /** Update source flags depending on the settings */
-static void v4l2_update_source_flags(struct v4l2_data *data,
-				     obs_data_t *settings)
+static void v4l2_update_source_flags(struct v4l2_data *data, obs_data_t *settings)
 {
-	obs_source_set_async_unbuffered(
-		data->source, !obs_data_get_bool(settings, "buffering"));
+	obs_source_set_async_unbuffered(data->source, !obs_data_get_bool(settings, "buffering"));
 }
 
 /**
@@ -1083,47 +990,36 @@ static bool v4l2_settings_changed(struct v4l2_data *data, obs_data_t *settings)
 {
 	bool res = false;
 
-	if (obs_data_get_string(settings, "device_id") != NULL &&
-	    data->device_id != NULL) {
-		res |= strcmp(data->device_id,
-			      obs_data_get_string(settings, "device_id")) != 0;
+	if (obs_data_get_string(settings, "device_id") != NULL && data->device_id != NULL) {
+		res |= strcmp(data->device_id, obs_data_get_string(settings, "device_id")) != 0;
 		res |= data->input != obs_data_get_int(settings, "input");
-		res |= data->pixfmt !=
-		       obs_data_get_int(settings, "pixelformat");
+		res |= data->pixfmt != obs_data_get_int(settings, "pixelformat");
 		res |= data->standard != obs_data_get_int(settings, "standard");
-		res |= data->dv_timing !=
-		       obs_data_get_int(settings, "dv_timing");
+		res |= data->dv_timing != obs_data_get_int(settings, "dv_timing");
 
-		if (obs_data_get_int(settings, "resolution") == -1 &&
-		    !data->resolution_unchanged) {
+		if (obs_data_get_int(settings, "resolution") == -1 && !data->resolution_unchanged) {
 			data->resolution_unchanged = true;
 			res |= true;
-		} else if (obs_data_get_int(settings, "resolution") == -1 &&
-			   data->resolution_unchanged) {
+		} else if (obs_data_get_int(settings, "resolution") == -1 && data->resolution_unchanged) {
 			res |= false;
 		} else {
 			data->resolution_unchanged = false;
-			res |= (data->resolution !=
-				obs_data_get_int(settings, "resolution")) &&
+			res |= (data->resolution != obs_data_get_int(settings, "resolution")) &&
 			       (obs_data_get_int(settings, "resolution") != -1);
 		}
 
-		if (obs_data_get_int(settings, "framerate") == -1 &&
-		    !data->framerate_unchanged) {
+		if (obs_data_get_int(settings, "framerate") == -1 && !data->framerate_unchanged) {
 			data->framerate_unchanged = true;
 			res |= true;
-		} else if (obs_data_get_int(settings, "framerate") == -1 &&
-			   data->framerate_unchanged) {
+		} else if (obs_data_get_int(settings, "framerate") == -1 && data->framerate_unchanged) {
 			res |= false;
 		} else {
 			data->framerate_unchanged = false;
-			res |= (data->framerate !=
-				obs_data_get_int(settings, "framerate")) &&
+			res |= (data->framerate != obs_data_get_int(settings, "framerate")) &&
 			       (obs_data_get_int(settings, "framerate") != -1);
 		}
 
-		res |= data->color_range !=
-		       obs_data_get_int(settings, "color_range");
+		res |= data->color_range != obs_data_get_int(settings, "color_range");
 	} else {
 		res = true;
 	}

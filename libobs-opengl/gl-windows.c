@@ -81,8 +81,7 @@ static inline void init_dummy_pixel_format(PIXELFORMATDESCRIPTOR *pfd)
 	pfd->cDepthBits = 24;
 	pfd->cStencilBits = 8;
 	pfd->iLayerType = PFD_MAIN_PLANE;
-	pfd->dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
-		       PFD_DOUBLEBUFFER;
+	pfd->dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
 }
 
 static const char *dummy_window_class = "GLDummyWindow";
@@ -118,8 +117,7 @@ static bool gl_register_dummy_window_class(void)
 
 static inline HWND gl_create_dummy_window(void)
 {
-	HWND hwnd = CreateWindowExA(0, dummy_window_class, "Dummy GL Window",
-				    WS_POPUP, 0, 0, 2, 2, NULL, NULL,
+	HWND hwnd = CreateWindowExA(0, dummy_window_class, "Dummy GL Window", WS_POPUP, 0, 0, 2, 2, NULL, NULL,
 				    GetModuleHandle(NULL), NULL);
 	if (!hwnd)
 		blog(LOG_ERROR, "Could not create dummy context window");
@@ -205,14 +203,12 @@ static bool gl_dummy_context_init(struct dummy_context *dummy)
 	init_dummy_pixel_format(&pfd);
 	format_index = ChoosePixelFormat(dummy->hdc, &pfd);
 	if (!format_index) {
-		blog(LOG_ERROR, "Dummy ChoosePixelFormat failed, %lu",
-		     GetLastError());
+		blog(LOG_ERROR, "Dummy ChoosePixelFormat failed, %lu", GetLastError());
 		return false;
 	}
 
 	if (!SetPixelFormat(dummy->hdc, format_index, &pfd)) {
-		blog(LOG_ERROR, "Dummy SetPixelFormat failed, %lu",
-		     GetLastError());
+		blog(LOG_ERROR, "Dummy SetPixelFormat failed, %lu", GetLastError());
 		return false;
 	}
 
@@ -297,11 +293,9 @@ static int gl_choose_pixel_format(HDC hdc, const struct gs_init_data *info)
 	add_attrib(&attribs, WGL_STENCIL_BITS_ARB, stencil_bits);
 	add_attrib(&attribs, 0, 0);
 
-	success = wglChoosePixelFormatARB(hdc, attribs.array, NULL, 1, &format,
-					  &num_formats);
+	success = wglChoosePixelFormatARB(hdc, attribs.array, NULL, 1, &format, &num_formats);
 	if (!success || !num_formats) {
-		blog(LOG_ERROR, "wglChoosePixelFormatARB failed, %lu",
-		     GetLastError());
+		blog(LOG_ERROR, "wglChoosePixelFormatARB failed, %lu", GetLastError());
 		format = 0;
 	}
 
@@ -310,8 +304,7 @@ static int gl_choose_pixel_format(HDC hdc, const struct gs_init_data *info)
 	return format;
 }
 
-static inline bool gl_getpixelformat(HDC hdc, const struct gs_init_data *info,
-				     int *format, PIXELFORMATDESCRIPTOR *pfd)
+static inline bool gl_getpixelformat(HDC hdc, const struct gs_init_data *info, int *format, PIXELFORMATDESCRIPTOR *pfd)
 {
 	if (!format)
 		return false;
@@ -319,16 +312,14 @@ static inline bool gl_getpixelformat(HDC hdc, const struct gs_init_data *info,
 	*format = gl_choose_pixel_format(hdc, info);
 
 	if (!DescribePixelFormat(hdc, *format, sizeof(*pfd), pfd)) {
-		blog(LOG_ERROR, "DescribePixelFormat failed, %lu",
-		     GetLastError());
+		blog(LOG_ERROR, "DescribePixelFormat failed, %lu", GetLastError());
 		return false;
 	}
 
 	return true;
 }
 
-static inline bool gl_setpixelformat(HDC hdc, int format,
-				     PIXELFORMATDESCRIPTOR *pfd)
+static inline bool gl_setpixelformat(HDC hdc, int format, PIXELFORMATDESCRIPTOR *pfd)
 {
 	if (!SetPixelFormat(hdc, format, pfd)) {
 		blog(LOG_ERROR, "SetPixelFormat failed, %lu", GetLastError());
@@ -369,8 +360,7 @@ static bool register_dummy_class(void)
 		return true;
 
 	if (!RegisterClassA(&wc)) {
-		blog(LOG_ERROR, "Failed to register dummy GL window class, %lu",
-		     GetLastError());
+		blog(LOG_ERROR, "Failed to register dummy GL window class, %lu", GetLastError());
 		return false;
 	}
 
@@ -380,28 +370,24 @@ static bool register_dummy_class(void)
 
 static bool create_dummy_window(struct gl_platform *plat)
 {
-	plat->window.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS,
-					    "OpenGL Dummy Window", WS_POPUP, 0,
-					    0, 1, 1, NULL, NULL,
+	plat->window.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "OpenGL Dummy Window", WS_POPUP, 0, 0, 1, 1, NULL, NULL,
 					    GetModuleHandleW(NULL), NULL);
 	if (!plat->window.hwnd) {
-		blog(LOG_ERROR, "Failed to create dummy GL window, %lu",
-		     GetLastError());
+		blog(LOG_ERROR, "Failed to create dummy GL window, %lu", GetLastError());
 		return false;
 	}
 
 	plat->window.hdc = GetDC(plat->window.hwnd);
 	if (!plat->window.hdc) {
-		blog(LOG_ERROR, "Failed to get dummy GL window DC (%lu)",
-		     GetLastError());
+		blog(LOG_ERROR, "Failed to get dummy GL window DC (%lu)", GetLastError());
 		return false;
 	}
 
 	return true;
 }
 
-static bool init_default_swap(struct gl_platform *plat, gs_device_t *device,
-			      int pixel_format, PIXELFORMATDESCRIPTOR *pfd)
+static bool init_default_swap(struct gl_platform *plat, gs_device_t *device, int pixel_format,
+			      PIXELFORMATDESCRIPTOR *pfd)
 {
 	if (!gl_setpixelformat(plat->window.hdc, pixel_format, pfd))
 		return false;
@@ -590,8 +576,7 @@ void device_present(gs_device_t *device)
 	}
 }
 
-extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
-			     uint32_t *height)
+extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width, uint32_t *height)
 {
 	RECT rc;
 	if (swap) {

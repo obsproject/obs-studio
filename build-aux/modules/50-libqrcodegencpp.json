@@ -20,8 +20,8 @@
         },
         {
             "type": "archive",
-            "url": "https://github.com/EasyCoding/qrcodegen-cmake/archive/refs/tags/v1.8.0-cmake2.tar.gz",
-            "sha256": "04e0dc2d7b19457928172e338b5b22216ad23a9dee8d26be4fb05fc39ea59904"
+            "url": "https://github.com/EasyCoding/qrcodegen-cmake/archive/refs/tags/v1.8.0-cmake3.tar.gz",
+            "sha256": "2037b0596e5651ce020f4d36e958d24672dbee75631bdb09ae8a45659121f4d0"
         }
     ]
 }

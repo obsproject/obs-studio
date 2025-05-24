@@ -11,7 +11,7 @@ endif()
 if(CCACHE_PROGRAM)
   message(DEBUG "Trying to find ccache on build host - done")
   message(DEBUG "Ccache found as ${CCACHE_PROGRAM}")
-  option(ENABLE_CCACHE "Enable compiler acceleration with ccache" ON)
+  option(ENABLE_CCACHE "Enable compiler acceleration with ccache" OFF)
 
   if(ENABLE_CCACHE)
     set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")

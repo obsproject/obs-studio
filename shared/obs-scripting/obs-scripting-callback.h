@@ -41,8 +41,7 @@ static inline bool script_callback_removed(struct script_callback *cb)
 	return os_atomic_load_bool(&cb->removed);
 }
 
-static inline void *add_script_callback(struct script_callback **first,
-					obs_script_t *script, size_t extra_size)
+static inline void *add_script_callback(struct script_callback **first, obs_script_t *script, size_t extra_size)
 {
 	struct script_callback *cb = bzalloc(sizeof(*cb) + extra_size);
 	cb->script = script;

@@ -62,17 +62,14 @@ static unsigned int get_mac_code(uint16_t encoding_id, uint16_t language_id)
 	for (size_t i = 0; i < mac_code_count; i++) {
 		const struct mac_font_mapping *mac_code = &mac_codes[i];
 
-		if (mac_code->encoding_id == encoding_id &&
-		    mac_code->language_id == language_id)
+		if (mac_code->encoding_id == encoding_id && mac_code->language_id == language_id)
 			return mac_code->code_page;
 	}
 
 	return 0;
 }
 
-static unsigned int get_code_page_for_font(uint16_t platform_id,
-					   uint16_t encoding_id,
-					   uint16_t language_id)
+static unsigned int get_code_page_for_font(uint16_t platform_id, uint16_t encoding_id, uint16_t language_id)
 {
 	unsigned int ret;
 
@@ -102,13 +99,10 @@ static char *wide_to_utf8(const wchar_t *str, size_t len)
 	size_t utf8_len;
 	char *utf8_str = NULL;
 
-	utf8_len = (size_t)WideCharToMultiByte(CP_UTF8, 0, str, (int)len, NULL,
-					       0, NULL, false);
+	utf8_len = (size_t)WideCharToMultiByte(CP_UTF8, 0, str, (int)len, NULL, 0, NULL, false);
 	if (utf8_len) {
 		utf8_str = bzalloc(utf8_len + 1);
-		utf8_len = (size_t)WideCharToMultiByte(CP_UTF8, 0, str,
-						       (int)len, utf8_str,
-						       (int)utf8_len + 1, NULL,
+		utf8_len = (size_t)WideCharToMultiByte(CP_UTF8, 0, str, (int)len, utf8_str, (int)utf8_len + 1, NULL,
 						       false);
 
 		if (!utf8_len) {
@@ -144,9 +138,8 @@ static char *convert_utf16_be_to_utf8(FT_SfntName *sfnt_name)
 
 char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 {
-	unsigned int code_page = get_code_page_for_font(sfnt_name->platform_id,
-							sfnt_name->encoding_id,
-							sfnt_name->language_id);
+	unsigned int code_page =
+		get_code_page_for_font(sfnt_name->platform_id, sfnt_name->encoding_id, sfnt_name->language_id);
 
 	char *utf8_str = NULL;
 	wchar_t *utf16_str;
@@ -157,13 +150,10 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 	else if (code_page == 0)
 		return NULL;
 
-	utf16_len = MultiByteToWideChar(code_page, 0, (char *)sfnt_name->string,
-					sfnt_name->string_len, NULL, 0);
+	utf16_len = MultiByteToWideChar(code_page, 0, (char *)sfnt_name->string, sfnt_name->string_len, NULL, 0);
 	if (utf16_len) {
 		utf16_str = malloc((utf16_len + 1) * sizeof(wchar_t));
-		utf16_len = MultiByteToWideChar(code_page, 0,
-						(char *)sfnt_name->string,
-						sfnt_name->string_len,
+		utf16_len = MultiByteToWideChar(code_page, 0, (char *)sfnt_name->string, sfnt_name->string_len,
 						utf16_str, (int)utf16_len);
 
 		if (utf16_len) {
@@ -186,8 +176,7 @@ uint32_t get_font_checksum(void)
 
 	dstr_reserve(&path, MAX_PATH);
 
-	HRESULT res = SHGetFolderPathA(NULL, CSIDL_FONTS, NULL,
-				       SHGFP_TYPE_CURRENT, path.array);
+	HRESULT res = SHGetFolderPathA(NULL, CSIDL_FONTS, NULL, SHGFP_TYPE_CURRENT, path.array);
 	if (res != S_OK) {
 		blog(LOG_WARNING, "Error finding windows font folder");
 		return 0;
@@ -203,10 +192,8 @@ uint32_t get_font_checksum(void)
 	dstr_resize(&path, path.len - 4);
 
 	do {
-		checksum = calc_crc32(checksum, &wfd.ftLastWriteTime,
-				      sizeof(FILETIME));
-		checksum = calc_crc32(checksum, wfd.cFileName,
-				      strlen(wfd.cFileName));
+		checksum = calc_crc32(checksum, &wfd.ftLastWriteTime, sizeof(FILETIME));
+		checksum = calc_crc32(checksum, wfd.cFileName, strlen(wfd.cFileName));
 	} while (FindNextFileA(handle, &wfd));
 
 	FindClose(handle);
@@ -224,8 +211,7 @@ void load_os_font_list(void)
 
 	dstr_reserve(&path, MAX_PATH);
 
-	HRESULT res = SHGetFolderPathA(NULL, CSIDL_FONTS, NULL,
-				       SHGFP_TYPE_CURRENT, path.array);
+	HRESULT res = SHGetFolderPathA(NULL, CSIDL_FONTS, NULL, SHGFP_TYPE_CURRENT, path.array);
 	if (res != S_OK) {
 		blog(LOG_WARNING, "Error finding windows font folder");
 		return;
@@ -254,8 +240,7 @@ void load_os_font_list(void)
 		dstr_cat(&full_path, wfd.cFileName);
 
 		while (idx < max_faces) {
-			FT_Error ret = FT_New_Face(ft2_lib, full_path.array,
-						   idx, &face);
+			FT_Error ret = FT_New_Face(ft2_lib, full_path.array, idx, &face);
 			if (ret != 0)
 				break;
 

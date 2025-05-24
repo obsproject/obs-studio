@@ -55,8 +55,7 @@ static inline void quat_identity(struct quat *q)
 	q->w = 1.0f;
 }
 
-static inline void quat_set(struct quat *dst, float x, float y, float z,
-			    float w)
+static inline void quat_set(struct quat *dst, float x, float y, float z, float w)
 {
 	dst->m = _mm_set_ps(x, y, z, w);
 }
@@ -66,20 +65,17 @@ static inline void quat_copy(struct quat *dst, const struct quat *q)
 	dst->m = q->m;
 }
 
-static inline void quat_add(struct quat *dst, const struct quat *q1,
-			    const struct quat *q2)
+static inline void quat_add(struct quat *dst, const struct quat *q1, const struct quat *q2)
 {
 	dst->m = _mm_add_ps(q1->m, q2->m);
 }
 
-static inline void quat_sub(struct quat *dst, const struct quat *q1,
-			    const struct quat *q2)
+static inline void quat_sub(struct quat *dst, const struct quat *q1, const struct quat *q2)
 {
 	dst->m = _mm_sub_ps(q1->m, q2->m);
 }
 
-EXPORT void quat_mul(struct quat *dst, const struct quat *q1,
-		     const struct quat *q2);
+EXPORT void quat_mul(struct quat *dst, const struct quat *q1, const struct quat *q2);
 
 static inline void quat_addf(struct quat *dst, const struct quat *q, float f)
 {
@@ -144,18 +140,14 @@ static inline float quat_dist(const struct quat *q1, const struct quat *q2)
 static inline void quat_norm(struct quat *dst, const struct quat *q)
 {
 	float dot_val = quat_dot(q, q);
-	dst->m = (dot_val > 0.0f)
-			 ? _mm_mul_ps(q->m, _mm_set1_ps(1.0f / sqrtf(dot_val)))
-			 : _mm_setzero_ps();
+	dst->m = (dot_val > 0.0f) ? _mm_mul_ps(q->m, _mm_set1_ps(1.0f / sqrtf(dot_val))) : _mm_setzero_ps();
 }
 
-static inline bool quat_close(const struct quat *q1, const struct quat *q2,
-			      float epsilon)
+static inline bool quat_close(const struct quat *q1, const struct quat *q2, float epsilon)
 {
 	struct quat test;
 	quat_sub(&test, q1, q2);
-	return test.x < epsilon && test.y < epsilon && test.z < epsilon &&
-	       test.w < epsilon;
+	return test.x < epsilon && test.y < epsilon && test.z < epsilon && test.w < epsilon;
 }
 
 EXPORT void quat_from_axisang(struct quat *dst, const struct axisang *aa);
@@ -168,13 +160,10 @@ EXPORT void quat_set_look_dir(struct quat *dst, const struct vec3 *dir);
 EXPORT void quat_log(struct quat *dst, const struct quat *q);
 EXPORT void quat_exp(struct quat *dst, const struct quat *q);
 
-EXPORT void quat_interpolate(struct quat *dst, const struct quat *q1,
-			     const struct quat *q2, float t);
-EXPORT void quat_get_tangent(struct quat *dst, const struct quat *prev,
-			     const struct quat *q, const struct quat *next);
-EXPORT void quat_interpolate_cubic(struct quat *dst, const struct quat *q1,
-				   const struct quat *q2, const struct quat *m1,
-				   const struct quat *m2, float t);
+EXPORT void quat_interpolate(struct quat *dst, const struct quat *q1, const struct quat *q2, float t);
+EXPORT void quat_get_tangent(struct quat *dst, const struct quat *prev, const struct quat *q, const struct quat *next);
+EXPORT void quat_interpolate_cubic(struct quat *dst, const struct quat *q1, const struct quat *q2,
+				   const struct quat *m1, const struct quat *m2, float t);
 
 #ifdef __cplusplus
 }

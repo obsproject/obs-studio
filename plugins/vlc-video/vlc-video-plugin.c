@@ -161,14 +161,12 @@ static bool load_libvlc_module(void)
 
 	memset(path, 0, 1024 * sizeof(wchar_t));
 
-	status = RegOpenKeyW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\VideoLAN\\VLC",
-			     &key);
+	status = RegOpenKeyW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\VideoLAN\\VLC", &key);
 	if (status != ERROR_SUCCESS)
 		return false;
 
 	size = 1024;
-	status = RegQueryValueExW(key, L"InstallDir", NULL, NULL, (LPBYTE)path,
-				  &size);
+	status = RegQueryValueExW(key, L"InstallDir", NULL, NULL, (LPBYTE)path, &size);
 	if (status == ERROR_SUCCESS) {
 		wcscat(path, L"\\libvlc.dll");
 		os_wcs_to_utf8_ptr(path, 0, &path_utf8);
@@ -227,8 +225,7 @@ bool obs_module_load(void)
 	if (!load_vlc_funcs())
 		return true;
 
-	blog(LOG_INFO, "[vlc-video]: VLC %s found, VLC video source enabled",
-	     libvlc_get_version_());
+	blog(LOG_INFO, "[vlc-video]: VLC %s found, VLC video source enabled", libvlc_get_version_());
 
 	obs_register_source(&vlc_source_info);
 	return true;

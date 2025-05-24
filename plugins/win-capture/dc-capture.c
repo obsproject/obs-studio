@@ -1,22 +1,18 @@
 #include "dc-capture.h"
 
-#define WIN32_MEAN_AND_LEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 static inline void init_textures(struct dc_capture *capture)
 {
 	if (capture->compatibility) {
-		capture->texture = gs_texture_create(capture->width,
-						     capture->height, GS_BGRA,
-						     1, NULL, GS_DYNAMIC);
+		capture->texture = gs_texture_create(capture->width, capture->height, GS_BGRA, 1, NULL, GS_DYNAMIC);
 	} else {
-		capture->texture =
-			gs_texture_create_gdi(capture->width, capture->height);
+		capture->texture = gs_texture_create_gdi(capture->width, capture->height);
 
 		if (capture->texture) {
-			capture->extra_texture = gs_texture_create(
-				capture->width, capture->height, GS_BGRA, 1,
-				NULL, 0);
+			capture->extra_texture =
+				gs_texture_create(capture->width, capture->height, GS_BGRA, 1, NULL, 0);
 			if (!capture->extra_texture) {
 				blog(LOG_WARNING, "[dc_capture_init] Failed to "
 						  "create textures");
@@ -35,8 +31,8 @@ static inline void init_textures(struct dc_capture *capture)
 	capture->valid = true;
 }
 
-void dc_capture_init(struct dc_capture *capture, int x, int y, uint32_t width,
-		     uint32_t height, bool cursor, bool compatibility)
+void dc_capture_init(struct dc_capture *capture, int x, int y, uint32_t width, uint32_t height, bool cursor,
+		     bool compatibility)
 {
 	memset(capture, 0, sizeof(struct dc_capture));
 
@@ -71,14 +67,12 @@ void dc_capture_init(struct dc_capture *capture, int x, int y, uint32_t width,
 
 		const HDC hdc = CreateCompatibleDC(NULL);
 		if (hdc) {
-			const HBITMAP bmp = CreateDIBSection(
-				capture->hdc, &bi, DIB_RGB_COLORS,
-				(void **)&capture->bits, NULL, 0);
+			const HBITMAP bmp =
+				CreateDIBSection(capture->hdc, &bi, DIB_RGB_COLORS, (void **)&capture->bits, NULL, 0);
 			if (bmp) {
 				capture->hdc = hdc;
 				capture->bmp = bmp;
-				capture->old_bmp = SelectObject(capture->hdc,
-								capture->bmp);
+				capture->old_bmp = SelectObject(capture->hdc, capture->bmp);
 			} else {
 				DeleteDC(hdc);
 			}
@@ -148,8 +142,7 @@ static inline HDC dc_capture_get_dc(struct dc_capture *capture)
 static inline void dc_capture_release_dc(struct dc_capture *capture)
 {
 	if (capture->compatibility) {
-		gs_texture_set_image(capture->texture, capture->bits,
-				     capture->width * 4, false);
+		gs_texture_set_image(capture->texture, capture->bits, capture->width * 4, false);
 	} else {
 		gs_texture_release_dc(capture->texture);
 	}
@@ -175,8 +168,7 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 
 	hdc_target = GetDC(window);
 
-	BitBlt(hdc, 0, 0, capture->width, capture->height, hdc_target,
-	       capture->x, capture->y, SRCCOPY);
+	BitBlt(hdc, 0, 0, capture->width, capture->height, hdc_target, capture->x, capture->y, SRCCOPY);
 
 	ReleaseDC(NULL, hdc_target);
 
@@ -195,8 +187,7 @@ void dc_capture_render(struct dc_capture *capture, bool texcoords_centered)
 		const bool compatibility = capture->compatibility;
 		bool linear_sample = compatibility;
 		if (!linear_sample && !texcoords_centered) {
-			gs_texture_t *const extra_texture =
-				capture->extra_texture;
+			gs_texture_t *const extra_texture = capture->extra_texture;
 			gs_copy_texture(extra_texture, texture);
 			texture = extra_texture;
 			linear_sample = true;
@@ -219,10 +210,8 @@ void dc_capture_render(struct dc_capture *capture, bool texcoords_centered)
 		}
 
 		gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
-		gs_technique_t *tech =
-			gs_effect_get_technique(effect, tech_name);
-		gs_eparam_t *image =
-			gs_effect_get_param_by_name(effect, "image");
+		gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
+		gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 
 		const bool previous = gs_framebuffer_srgb_enabled();
 		gs_enable_framebuffer_srgb(linear_sample);
@@ -233,8 +222,7 @@ void dc_capture_render(struct dc_capture *capture, bool texcoords_centered)
 		else
 			gs_effect_set_texture(image, texture);
 
-		gs_eparam_t *multiplier_param =
-			gs_effect_get_param_by_name(effect, "multiplier");
+		gs_eparam_t *multiplier_param = gs_effect_get_param_by_name(effect, "multiplier");
 		gs_effect_set_float(multiplier_param, multiplier);
 
 		const uint32_t flip = compatibility ? GS_FLIP_V : 0;

@@ -70,8 +70,7 @@ static inline void wait_for_dll_main_finish(HANDLE thread_handle)
 bool init_pipe(void)
 {
 	char new_name[64];
-	snprintf(new_name, sizeof(new_name), "%s%lu", PIPE_NAME,
-		 GetCurrentProcessId());
+	snprintf(new_name, sizeof(new_name), "%s%lu", PIPE_NAME, GetCurrentProcessId());
 
 	const bool success = ipc_pipe_client_open(&pipe, new_name);
 	if (!success) {
@@ -159,12 +158,10 @@ static inline bool init_system_path(void)
 
 static inline void log_current_process(void)
 {
-	DWORD len = GetModuleBaseNameA(GetCurrentProcess(), NULL, process_name,
-				       MAX_PATH);
+	DWORD len = GetModuleBaseNameA(GetCurrentProcess(), NULL, process_name, MAX_PATH);
 	if (len > 0) {
 		process_name[len] = 0;
-		hlog("graphics-hook.dll loaded against process: %s",
-		     process_name);
+		hlog("graphics-hook.dll loaded against process: %s", process_name);
 	} else {
 		hlog("graphics-hook.dll loaded");
 	}
@@ -176,16 +173,13 @@ static inline bool init_hook_info(void)
 {
 	filemap_hook_info = create_hook_info(GetCurrentProcessId());
 	if (!filemap_hook_info) {
-		hlog("Failed to create hook info file mapping: %lu",
-		     GetLastError());
+		hlog("Failed to create hook info file mapping: %lu", GetLastError());
 		return false;
 	}
 
-	global_hook_info = MapViewOfFile(filemap_hook_info, FILE_MAP_ALL_ACCESS,
-					 0, 0, sizeof(struct hook_info));
+	global_hook_info = MapViewOfFile(filemap_hook_info, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct hook_info));
 	if (!global_hook_info) {
-		hlog("Failed to map the hook info file mapping: %lu",
-		     GetLastError());
+		hlog("Failed to map the hook info file mapping: %lu", GetLastError());
 		return false;
 	}
 
@@ -207,13 +201,11 @@ static DWORD WINAPI dummy_window_thread(LPVOID *unused)
 	wc.lpszClassName = dummy_window_class;
 
 	if (!RegisterClass(&wc)) {
-		hlog("Failed to create temp D3D window class: %lu",
-		     GetLastError());
+		hlog("Failed to create temp D3D window class: %lu", GetLastError());
 		return 0;
 	}
 
-	dummy_window = CreateWindowExW(0, dummy_window_class, L"Temp Window",
-				       DEF_FLAGS, 0, 0, 1, 1, NULL, NULL,
+	dummy_window = CreateWindowExW(0, dummy_window_class, L"Temp Window", DEF_FLAGS, 0, 0, 1, 1, NULL, NULL,
 				       dll_inst, NULL);
 	if (!dummy_window) {
 		hlog("Failed to create temp D3D window: %lu", GetLastError());
@@ -231,11 +223,9 @@ static DWORD WINAPI dummy_window_thread(LPVOID *unused)
 
 static inline void init_dummy_window_thread(void)
 {
-	HANDLE thread =
-		CreateThread(NULL, 0, dummy_window_thread, NULL, 0, NULL);
+	HANDLE thread = CreateThread(NULL, 0, dummy_window_thread, NULL, 0, NULL);
 	if (!thread) {
-		hlog("Failed to create temp D3D window thread: %lu",
-		     GetLastError());
+		hlog("Failed to create temp D3D window thread: %lu", GetLastError());
 		return;
 	}
 
@@ -246,8 +236,8 @@ static inline bool init_hook(HANDLE thread_handle)
 {
 	wait_for_dll_main_finish(thread_handle);
 
-	_snwprintf(keepalive_name, sizeof(keepalive_name) / sizeof(wchar_t),
-		   L"%s%lu", WINDOW_HOOK_KEEPALIVE, GetCurrentProcessId());
+	_snwprintf(keepalive_name, sizeof(keepalive_name) / sizeof(wchar_t), L"%s%lu", WINDOW_HOOK_KEEPALIVE,
+		   GetCurrentProcessId());
 
 	init_dummy_window_thread();
 	log_current_process();
@@ -292,27 +282,22 @@ static inline bool d3d8_hookable(void)
 
 static inline bool ddraw_hookable(void)
 {
-	return !!global_hook_info->offsets.ddraw.surface_create &&
-	       !!global_hook_info->offsets.ddraw.surface_restore &&
-	       !!global_hook_info->offsets.ddraw.surface_release &&
-	       !!global_hook_info->offsets.ddraw.surface_unlock &&
-	       !!global_hook_info->offsets.ddraw.surface_blt &&
-	       !!global_hook_info->offsets.ddraw.surface_flip &&
+	return !!global_hook_info->offsets.ddraw.surface_create && !!global_hook_info->offsets.ddraw.surface_restore &&
+	       !!global_hook_info->offsets.ddraw.surface_release && !!global_hook_info->offsets.ddraw.surface_unlock &&
+	       !!global_hook_info->offsets.ddraw.surface_blt && !!global_hook_info->offsets.ddraw.surface_flip &&
 	       !!global_hook_info->offsets.ddraw.surface_set_palette &&
 	       !!global_hook_info->offsets.ddraw.palette_set_entries;
 }
 
 static inline bool d3d9_hookable(void)
 {
-	return !!global_hook_info->offsets.d3d9.present &&
-	       !!global_hook_info->offsets.d3d9.present_ex &&
+	return !!global_hook_info->offsets.d3d9.present && !!global_hook_info->offsets.d3d9.present_ex &&
 	       !!global_hook_info->offsets.d3d9.present_swap;
 }
 
 static inline bool dxgi_hookable(void)
 {
-	return !!global_hook_info->offsets.dxgi.present &&
-	       !!global_hook_info->offsets.dxgi.resize;
+	return !!global_hook_info->offsets.dxgi.present && !!global_hook_info->offsets.dxgi.resize;
 }
 
 static inline bool attempt_hook(void)
@@ -470,11 +455,8 @@ void hlog_hr(const char *text, HRESULT hr)
 {
 	LPSTR buffer = NULL;
 
-	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
-			       FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			       FORMAT_MESSAGE_IGNORE_INSERTS,
-		       NULL, hr, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
-		       (LPSTR)&buffer, 0, NULL);
+	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
+		       NULL, hr, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPSTR)&buffer, 0, NULL);
 
 	if (buffer) {
 		hlog("%s (0x%08lX): %s", text, hr, buffer);
@@ -540,31 +522,24 @@ static inline bool init_shared_info(size_t size, HWND window)
 	wchar_t name[64];
 	HWND top = GetAncestor(window, GA_ROOT);
 
-	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_%u",
-		 (uint64_t)(uintptr_t)top, ++shmem_id_counter);
+	swprintf(name, 64, SHMEM_TEXTURE "_%" PRIu64 "_%u", (uint64_t)(uintptr_t)top, ++shmem_id_counter);
 
-	shmem_file_handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
-					       PAGE_READWRITE, 0, (DWORD)size,
-					       name);
+	shmem_file_handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, (DWORD)size, name);
 	if (!shmem_file_handle) {
-		hlog("init_shared_info: Failed to create shared memory: %d",
-		     GetLastError());
+		hlog("init_shared_info: Failed to create shared memory: %d", GetLastError());
 		return false;
 	}
 
-	shmem_info = MapViewOfFile(shmem_file_handle, FILE_MAP_ALL_ACCESS, 0, 0,
-				   size);
+	shmem_info = MapViewOfFile(shmem_file_handle, FILE_MAP_ALL_ACCESS, 0, 0, size);
 	if (!shmem_info) {
-		hlog("init_shared_info: Failed to map shared memory: %d",
-		     GetLastError());
+		hlog("init_shared_info: Failed to map shared memory: %d", GetLastError());
 		return false;
 	}
 
 	return true;
 }
 
-bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t cx,
-			uint32_t cy, uint32_t format, bool flip,
+bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t cx, uint32_t cy, uint32_t format, bool flip,
 			uintptr_t handle)
 {
 	if (!init_shared_info(sizeof(struct shtex_data), window)) {
@@ -589,8 +564,7 @@ bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t cx,
 	global_hook_info->UNUSED_base_cy = cy;
 
 	if (!SetEvent(signal_ready)) {
-		hlog("capture_init_shtex: Failed to signal ready: %d",
-		     GetLastError());
+		hlog("capture_init_shtex: Failed to signal ready: %d", GetLastError());
 		return false;
 	}
 
@@ -606,14 +580,12 @@ static DWORD CALLBACK copy_thread(LPVOID unused)
 	int shmem_id = 0;
 
 	if (!duplicate_handle(&events[0], thread_data.copy_event)) {
-		hlog_hr("copy_thread: Failed to duplicate copy event: %d",
-			GetLastError());
+		hlog_hr("copy_thread: Failed to duplicate copy event: %d", GetLastError());
 		return 0;
 	}
 
 	if (!duplicate_handle(&events[1], thread_data.stop_event)) {
-		hlog_hr("copy_thread: Failed to duplicate stop event: %d",
-			GetLastError());
+		hlog_hr("copy_thread: Failed to duplicate stop event: %d", GetLastError());
 		goto finish;
 	}
 
@@ -636,12 +608,10 @@ static DWORD CALLBACK copy_thread(LPVOID unused)
 
 			int lock_id = try_lock_shmem_tex(shmem_id);
 			if (lock_id != -1) {
-				memcpy(thread_data.shmem_textures[lock_id],
-				       cur_data, (size_t)pitch * (size_t)cy);
+				memcpy(thread_data.shmem_textures[lock_id], cur_data, (size_t)pitch * (size_t)cy);
 
 				unlock_shmem_tex(lock_id);
-				((struct shmem_data *)shmem_info)->last_tex =
-					lock_id;
+				((struct shmem_data *)shmem_info)->last_tex = lock_id;
 
 				shmem_id = lock_id == 0 ? 1 : 0;
 			}
@@ -708,15 +678,13 @@ static inline bool init_shmem_thread(uint32_t pitch, uint32_t cy)
 
 	thread_data.copy_event = CreateEvent(NULL, false, false, NULL);
 	if (!thread_data.copy_event) {
-		hlog("init_shmem_thread: Failed to create copy event: %d",
-		     GetLastError());
+		hlog("init_shmem_thread: Failed to create copy event: %d", GetLastError());
 		return false;
 	}
 
 	thread_data.stop_event = CreateEvent(NULL, true, false, NULL);
 	if (!thread_data.stop_event) {
-		hlog("init_shmem_thread: Failed to create stop event: %d",
-		     GetLastError());
+		hlog("init_shmem_thread: Failed to create stop event: %d", GetLastError());
 		return false;
 	}
 
@@ -726,11 +694,9 @@ static inline bool init_shmem_thread(uint32_t pitch, uint32_t cy)
 
 	InitializeCriticalSection(&thread_data.data_mutex);
 
-	thread_data.copy_thread =
-		CreateThread(NULL, 0, copy_thread, NULL, 0, NULL);
+	thread_data.copy_thread = CreateThread(NULL, 0, copy_thread, NULL, 0, NULL);
 	if (!thread_data.copy_thread) {
-		hlog("init_shmem_thread: Failed to create thread: %d",
-		     GetLastError());
+		hlog("init_shmem_thread: Failed to create thread: %d", GetLastError());
 		return false;
 	}
 	return true;
@@ -740,8 +706,8 @@ static inline bool init_shmem_thread(uint32_t pitch, uint32_t cy)
 #define ALIGN(bytes, align) (((bytes) + ((align)-1)) & ~((align)-1))
 #endif
 
-bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t cx,
-			uint32_t cy, uint32_t pitch, uint32_t format, bool flip)
+bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t cx, uint32_t cy, uint32_t pitch,
+			uint32_t format, bool flip)
 {
 	uint32_t tex_size = cy * pitch;
 	uint32_t aligned_header = ALIGN(sizeof(struct shmem_data), 32);
@@ -788,8 +754,7 @@ bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t cx,
 	}
 
 	if (!SetEvent(signal_ready)) {
-		hlog("capture_init_shmem: Failed to signal ready: %d",
-		     GetLastError());
+		hlog("capture_init_shmem: Failed to signal ready: %d", GetLastError());
 		return false;
 	}
 
@@ -873,10 +838,8 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		}
 
 		HANDLE cur_thread;
-		bool success = DuplicateHandle(GetCurrentProcess(),
-					       GetCurrentThread(),
-					       GetCurrentProcess(), &cur_thread,
-					       SYNCHRONIZE, false, 0);
+		bool success = DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(),
+					       &cur_thread, SYNCHRONIZE, false, 0);
 
 		if (!success)
 			DbgOut("[OBS] Failed to get current thread handle");
@@ -899,9 +862,8 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		GetModuleFileNameW(hinst, name, MAX_PATH);
 		LoadLibraryW(name);
 
-		capture_thread = CreateThread(
-			NULL, 0, (LPTHREAD_START_ROUTINE)main_capture_thread,
-			(LPVOID)cur_thread, 0, 0);
+		capture_thread =
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)main_capture_thread, (LPVOID)cur_thread, 0, 0);
 		if (!capture_thread) {
 			CloseHandle(cur_thread);
 			return false;
@@ -925,8 +887,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 	return true;
 }
 
-__declspec(dllexport) LRESULT CALLBACK
-	dummy_debug_proc(int code, WPARAM wparam, LPARAM lparam)
+__declspec(dllexport) LRESULT CALLBACK dummy_debug_proc(int code, WPARAM wparam, LPARAM lparam)
 {
 	static bool hooking = true;
 	MSG *msg = (MSG *)lparam;
@@ -935,8 +896,7 @@ __declspec(dllexport) LRESULT CALLBACK
 		HMODULE user32 = GetModuleHandleW(L"USER32");
 		BOOL(WINAPI * unhook_windows_hook_ex)(HHOOK) = NULL;
 
-		unhook_windows_hook_ex = ms_get_obfuscated_func(
-			user32, "VojeleY`bdgxvM`hhDz", 0x7F55F80C9EE3A213ULL);
+		unhook_windows_hook_ex = ms_get_obfuscated_func(user32, "VojeleY`bdgxvM`hhDz", 0x7F55F80C9EE3A213ULL);
 
 		if (unhook_windows_hook_ex)
 			unhook_windows_hook_ex((HHOOK)msg->lParam);

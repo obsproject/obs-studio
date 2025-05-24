@@ -8,9 +8,8 @@
 
 /* -------------------------------------------------------- */
 
-#define do_log(level, format, ...)             \
-	blog(level, "[limiter: '%s'] " format, \
-	     obs_source_get_name(cd->context), ##__VA_ARGS__)
+#define do_log(level, format, ...) \
+	blog(level, "[limiter: '%s'] " format, obs_source_get_name(cd->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -25,7 +24,7 @@
 
 /* clang-format off */
 
-#define S_THRESHOLD                     "threshold"
+#define S_FILTER_THRESHOLD              "threshold"
 #define S_RELEASE_TIME                  "release_time"
 
 #define MT_ obs_module_text
@@ -84,21 +83,17 @@ static void limiter_update(void *data, obs_data_t *s)
 {
 	struct limiter_data *cd = data;
 
-	const uint32_t sample_rate =
-		audio_output_get_sample_rate(obs_get_audio());
+	const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
 	const size_t num_channels = audio_output_get_channels(obs_get_audio());
 	float attack_time_ms = ATK_TIME;
 
-	const float release_time_ms =
-		(float)obs_data_get_int(s, S_RELEASE_TIME);
+	const float release_time_ms = (float)obs_data_get_int(s, S_RELEASE_TIME);
 	const float output_gain_db = 0;
 
-	cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
+	cd->threshold = (float)obs_data_get_double(s, S_FILTER_THRESHOLD);
 
-	cd->attack_gain =
-		gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
-	cd->release_gain =
-		gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
+	cd->attack_gain = gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
+	cd->release_gain = gain_coefficient(sample_rate, release_time_ms / MS_IN_S_F);
 	cd->output_gain = db_to_mul(output_gain_db);
 	cd->num_channels = num_channels;
 	cd->sample_rate = sample_rate;
@@ -126,8 +121,7 @@ static void limiter_destroy(void *data)
 	bfree(cd);
 }
 
-static void analyze_envelope(struct limiter_data *cd, float **samples,
-			     const uint32_t num_samples)
+static void analyze_envelope(struct limiter_data *cd, float **samples, const uint32_t num_samples)
 {
 	if (cd->envelope_buf_len < num_samples) {
 		resize_env_buffer(cd, num_samples);
@@ -156,8 +150,7 @@ static void analyze_envelope(struct limiter_data *cd, float **samples,
 	cd->envelope = cd->envelope_buf[num_samples - 1];
 }
 
-static inline void process_compression(const struct limiter_data *cd,
-				       float **samples, uint32_t num_samples)
+static inline void process_compression(const struct limiter_data *cd, float **samples, uint32_t num_samples)
 {
 	for (size_t i = 0; i < num_samples; ++i) {
 		const float env_db = mul_to_db(cd->envelope_buf[i]);
@@ -172,8 +165,7 @@ static inline void process_compression(const struct limiter_data *cd,
 	}
 }
 
-static struct obs_audio_data *limiter_filter_audio(void *data,
-						   struct obs_audio_data *audio)
+static struct obs_audio_data *limiter_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct limiter_data *cd = data;
 
@@ -189,7 +181,7 @@ static struct obs_audio_data *limiter_filter_audio(void *data,
 
 static void limiter_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_THRESHOLD, -6.0f);
+	obs_data_set_default_double(s, S_FILTER_THRESHOLD, -6.0f);
 	obs_data_set_default_int(s, S_RELEASE_TIME, 60);
 }
 
@@ -198,13 +190,10 @@ static obs_properties_t *limiter_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					    0.1);
+	p = obs_properties_add_float_slider(props, S_FILTER_THRESHOLD, TEXT_THRESHOLD, MIN_THRESHOLD_DB,
+					    MAX_THRESHOLD_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
-	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
-					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
-					  MAX_RLS_MS, 1);
+	p = obs_properties_add_int_slider(props, S_RELEASE_TIME, TEXT_RELEASE_TIME, MIN_ATK_RLS_MS, MAX_RLS_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
 
 	UNUSED_PARAMETER(data);

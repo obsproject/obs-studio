@@ -35,8 +35,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "VST 2.x Plug-in filter";
 }
 
-static bool open_editor_button_clicked(obs_properties_t *props,
-				       obs_property_t *property, void *data)
+static bool open_editor_button_clicked(obs_properties_t *props, obs_property_t *property, void *data)
 {
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 
@@ -44,10 +43,8 @@ static bool open_editor_button_clicked(obs_properties_t *props,
 
 		QMetaObject::invokeMethod(vstPlugin, "openEditor");
 
-		obs_property_set_visible(
-			obs_properties_get(props, OPEN_VST_SETTINGS), false);
-		obs_property_set_visible(
-			obs_properties_get(props, CLOSE_VST_SETTINGS), true);
+		obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS), false);
+		obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS), true);
 	}
 
 	UNUSED_PARAMETER(props);
@@ -57,8 +54,7 @@ static bool open_editor_button_clicked(obs_properties_t *props,
 	return true;
 }
 
-static bool close_editor_button_clicked(obs_properties_t *props,
-					obs_property_t *property, void *data)
+static bool close_editor_button_clicked(obs_properties_t *props, obs_property_t *property, void *data)
 {
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 
@@ -66,10 +62,8 @@ static bool close_editor_button_clicked(obs_properties_t *props,
 
 		QMetaObject::invokeMethod(vstPlugin, "closeEditor");
 
-		obs_property_set_visible(
-			obs_properties_get(props, OPEN_VST_SETTINGS), true);
-		obs_property_set_visible(
-			obs_properties_get(props, CLOSE_VST_SETTINGS), false);
+		obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS), true);
+		obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS), false);
 	}
 
 	UNUSED_PARAMETER(property);
@@ -106,20 +100,16 @@ static void vst_update(void *data, obs_data_t *settings)
 {
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 
-	vstPlugin->openInterfaceWhenActive =
-		obs_data_get_bool(settings, OPEN_WHEN_ACTIVE_VST_SETTINGS);
+	vstPlugin->openInterfaceWhenActive = obs_data_get_bool(settings, OPEN_WHEN_ACTIVE_VST_SETTINGS);
 
 	const char *path = obs_data_get_string(settings, "plugin_path");
 
 #ifdef __linux__
 	// Migrate freedesktop.org Flatpak runtime 21.08 VST paths to 22.08.
-	if (QFile::exists("/.flatpak-info") &&
-	    QString(path).startsWith("/app/extensions/Plugins/lxvst")) {
+	if (QFile::exists("/.flatpak-info") && QString(path).startsWith("/app/extensions/Plugins/lxvst")) {
 		QString newPath(path);
-		newPath.replace("/app/extensions/Plugins/lxvst",
-				"/app/extensions/Plugins/vst");
-		obs_data_set_string(settings, "plugin_path",
-				    newPath.toStdString().c_str());
+		newPath.replace("/app/extensions/Plugins/lxvst", "/app/extensions/Plugins/vst");
+		obs_data_set_string(settings, "plugin_path", newPath.toStdString().c_str());
 		path = obs_data_get_string(settings, "plugin_path");
 	}
 #endif
@@ -134,10 +124,8 @@ static void vst_update(void *data, obs_data_t *settings)
 	const char *chunkHash = obs_data_get_string(settings, "chunk_hash");
 	const char *chunkData = obs_data_get_string(settings, "chunk_data");
 
-	bool chunkHashesMatch = chunkHash && *chunkHash &&
-				hash.compare(chunkHash) == 0;
-	if (chunkData && *chunkData &&
-	    (chunkHashesMatch || !chunkHash || !*chunkHash)) {
+	bool chunkHashesMatch = chunkHash && *chunkHash && hash.compare(chunkHash) == 0;
+	if (chunkData && *chunkData && (chunkHashesMatch || !chunkHash || !*chunkHash)) {
 		vstPlugin->setChunk(std::string(chunkData));
 	}
 }
@@ -153,15 +141,11 @@ static void *vst_create(obs_data_t *settings, obs_source_t *filter)
 static void vst_save(void *data, obs_data_t *settings)
 {
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
-	obs_data_set_string(settings, "chunk_data",
-			    vstPlugin->getChunk().c_str());
-	obs_data_set_string(
-		settings, "chunk_hash",
-		getFileMD5(vstPlugin->getEffectPath().c_str()).c_str());
+	obs_data_set_string(settings, "chunk_data", vstPlugin->getChunk().c_str());
+	obs_data_set_string(settings, "chunk_hash", getFileMD5(vstPlugin->getEffectPath().c_str()).c_str());
 }
 
-static struct obs_audio_data *vst_filter_audio(void *data,
-					       struct obs_audio_data *audio)
+static struct obs_audio_data *vst_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 	vstPlugin->process(audio);
@@ -192,29 +176,19 @@ static void fill_out_plugins(obs_property_t *list)
 
 	if (!isWow64) {
 #endif
-		dir_list << qEnvironmentVariable("ProgramFiles") +
-				    "/Steinberg/VstPlugins/"
-			 << qEnvironmentVariable("CommonProgramFiles") +
-				    "/Steinberg/Shared Components/"
+		dir_list << qEnvironmentVariable("ProgramFiles") + "/Steinberg/VstPlugins/"
+			 << qEnvironmentVariable("CommonProgramFiles") + "/Steinberg/Shared Components/"
 			 << qEnvironmentVariable("CommonProgramFiles") + "/VST2"
-			 << qEnvironmentVariable("CommonProgramFiles") +
-				    "/Steinberg/VST2"
-			 << qEnvironmentVariable("CommonProgramFiles") +
-				    "/VSTPlugins/"
-			 << qEnvironmentVariable("ProgramFiles") +
-				    "/VSTPlugins/";
+			 << qEnvironmentVariable("CommonProgramFiles") + "/Steinberg/VST2"
+			 << qEnvironmentVariable("CommonProgramFiles") + "/VSTPlugins/"
+			 << qEnvironmentVariable("ProgramFiles") + "/VSTPlugins/";
 #ifndef _WIN64
 	} else {
-		dir_list << qEnvironmentVariable("ProgramFiles(x86)") +
-				    "/Steinberg/VstPlugins/"
-			 << qEnvironmentVariable("CommonProgramFiles(x86)") +
-				    "/Steinberg/Shared Components/"
-			 << qEnvironmentVariable("CommonProgramFiles(x86)") +
-				    "/VST2"
-			 << qEnvironmentVariable("CommonProgramFiles(x86)") +
-				    "/VSTPlugins/"
-			 << qEnvironmentVariable("ProgramFiles(x86)") +
-				    "/VSTPlugins/";
+		dir_list << qEnvironmentVariable("ProgramFiles(x86)") + "/Steinberg/VstPlugins/"
+			 << qEnvironmentVariable("CommonProgramFiles(x86)") + "/Steinberg/Shared Components/"
+			 << qEnvironmentVariable("CommonProgramFiles(x86)") + "/VST2"
+			 << qEnvironmentVariable("CommonProgramFiles(x86)") + "/VSTPlugins/"
+			 << qEnvironmentVariable("ProgramFiles(x86)") + "/VSTPlugins/";
 	}
 #endif
 #elif __linux__
@@ -263,9 +237,7 @@ static void fill_out_plugins(obs_property_t *list)
 	for (int a = 0; a < dir_list.size(); ++a) {
 		QDir search_dir(dir_list[a]);
 		search_dir.setNameFilters(filters);
-		QDirIterator it(search_dir,
-				QDirIterator::Subdirectories |
-					QDirIterator::FollowSymlinks);
+		QDirIterator it(search_dir, QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
 		while (it.hasNext()) {
 			QString path = it.next();
 			QString name = it.fileName();
@@ -285,27 +257,18 @@ static void fill_out_plugins(obs_property_t *list)
 	}
 
 	// Now sort list alphabetically (still case-sensitive though).
-	std::stable_sort(vst_list.begin(), vst_list.end(),
-			 std::less<QString>());
+	std::stable_sort(vst_list.begin(), vst_list.end(), std::less<QString>());
 
 	// Now add said list to the plug-in list of OBS
-	obs_property_list_add_string(list, "{Please select a plug-in}",
-				     nullptr);
+	obs_property_list_add_string(list, "{Please select a plug-in}", nullptr);
 	for (int b = 0; b < vst_list.size(); ++b) {
 		QString vst_sorted = vst_list[b];
-		obs_property_list_add_string(
-			list,
-			vst_sorted.left(vst_sorted.indexOf('='))
-				.toStdString()
-				.c_str(),
-			vst_sorted.mid(vst_sorted.indexOf('=') + 1)
-				.toStdString()
-				.c_str());
+		obs_property_list_add_string(list, vst_sorted.left(vst_sorted.indexOf('=')).toStdString().c_str(),
+					     vst_sorted.mid(vst_sorted.indexOf('=') + 1).toStdString().c_str());
 	}
 }
 
-static bool vst_changed(void *data, obs_properties_t *props,
-			obs_property_t *list, obs_data_t *settings)
+static bool vst_changed(void *data, obs_properties_t *props, obs_property_t *list, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(settings);
 	UNUSED_PARAMETER(list);
@@ -325,10 +288,8 @@ static bool vst_changed(void *data, obs_properties_t *props,
 		}
 	}
 
-	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS),
-				 open_settings_vis);
-	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS),
-				 close_settings_vis);
+	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS), open_settings_vis);
+	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS), close_settings_vis);
 
 	return true;
 }
@@ -336,17 +297,13 @@ static bool vst_changed(void *data, obs_properties_t *props,
 static obs_properties_t *vst_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
-	obs_property_t *list = obs_properties_add_list(props, "plugin_path",
-						       PLUG_IN_NAME,
-						       OBS_COMBO_TYPE_LIST,
+	obs_property_t *list = obs_properties_add_list(props, "plugin_path", PLUG_IN_NAME, OBS_COMBO_TYPE_LIST,
 						       OBS_COMBO_FORMAT_STRING);
 
 	fill_out_plugins(list);
 
-	obs_properties_add_button(props, OPEN_VST_SETTINGS, OPEN_VST_TEXT,
-				  open_editor_button_clicked);
-	obs_properties_add_button(props, CLOSE_VST_SETTINGS, CLOSE_VST_TEXT,
-				  close_editor_button_clicked);
+	obs_properties_add_button(props, OPEN_VST_SETTINGS, OPEN_VST_TEXT, open_editor_button_clicked);
+	obs_properties_add_button(props, CLOSE_VST_SETTINGS, CLOSE_VST_TEXT, close_editor_button_clicked);
 
 	bool open_settings_vis = true;
 	bool close_settings_vis = false;
@@ -363,13 +320,10 @@ static obs_properties_t *vst_properties(void *data)
 		}
 	}
 
-	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS),
-				 open_settings_vis);
-	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS),
-				 close_settings_vis);
+	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS), open_settings_vis);
+	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS), close_settings_vis);
 
-	obs_properties_add_bool(props, OPEN_WHEN_ACTIVE_VST_SETTINGS,
-				OPEN_WHEN_ACTIVE_VST_TEXT);
+	obs_properties_add_bool(props, OPEN_WHEN_ACTIVE_VST_SETTINGS, OPEN_WHEN_ACTIVE_VST_TEXT);
 
 	obs_property_set_modified_callback2(list, vst_changed, data);
 

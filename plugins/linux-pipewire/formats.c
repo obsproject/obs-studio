@@ -103,11 +103,9 @@ static const struct obs_pw_video_format supported_formats[] = {
 #endif
 };
 
-#define N_SUPPORTED_FORMATS \
-	(sizeof(supported_formats) / sizeof(supported_formats[0]))
+#define N_SUPPORTED_FORMATS (sizeof(supported_formats) / sizeof(supported_formats[0]))
 
-bool obs_pw_video_format_from_spa_format(
-	uint32_t spa_format, struct obs_pw_video_format *out_video_format)
+bool obs_pw_video_format_from_spa_format(uint32_t spa_format, struct obs_pw_video_format *out_video_format)
 {
 	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
 		if (supported_formats[i].spa_format != spa_format)

@@ -854,12 +854,11 @@ DXGI_FORMAT vk_format_to_dxgi(VkFormat format)
 
 #ifdef DEBUG_PRINT
 #include <stdio.h>
-#define debug(format, ...)                                        \
-	do {                                                      \
-		char str[256];                                    \
-		snprintf(str, sizeof(str) - 1, "%s " format "\n", \
-			 "[OBS graphics-hook]", ##__VA_ARGS__);   \
-		OutputDebugStringA(str);                          \
+#define debug(format, ...)                                                                               \
+	do {                                                                                             \
+		char str[256];                                                                           \
+		snprintf(str, sizeof(str) - 1, "%s " format "\n", "[OBS graphics-hook]", ##__VA_ARGS__); \
+		OutputDebugStringA(str);                                                                 \
 	} while (false)
 
 #define debug_res(x, y) debug("%s result: %s", x, result_to_str(y))

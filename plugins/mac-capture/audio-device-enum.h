@@ -25,8 +25,7 @@ static inline void device_list_free(struct device_list *list)
 	da_free(list->items);
 }
 
-static inline void device_list_add(struct device_list *list,
-				   struct device_item *item)
+static inline void device_list_add(struct device_list *list, struct device_item *item)
 {
 	da_push_back(list->items, item);
 	memset(item, 0, sizeof(struct device_item));

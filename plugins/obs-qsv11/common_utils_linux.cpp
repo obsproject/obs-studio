@@ -44,11 +44,9 @@ struct surface_info {
 	gs_texture_t *tex_uv;
 };
 
-mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
-		       mfxFrameAllocResponse *response)
+mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
-	if (request->Type & (MFX_MEMTYPE_SYSTEM_MEMORY |
-			     MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+	if (request->Type & (MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
 		return MFX_ERR_UNSUPPORTED;
 
 	response->mids = (mfxMemId *)nullptr;
@@ -56,8 +54,7 @@ mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 
 	mfxSession *session = (mfxSession *)pthis;
 	VADisplay display;
-	mfxStatus sts =
-		MFXVideoCORE_GetHandle(*session, DEVICE_MGR_TYPE, &display);
+	mfxStatus sts = MFXVideoCORE_GetHandle(*session, DEVICE_MGR_TYPE, &display);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	// https://ffmpeg.org/doxygen/5.1/hwcontext__vaapi_8c_source.html#l00109
@@ -77,44 +74,38 @@ mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 	}
 
 	int num_attrs = 2;
-	VASurfaceAttrib attrs[2] = {
-		{
-			.type = VASurfaceAttribMemoryType,
-			.flags = VA_SURFACE_ATTRIB_SETTABLE,
-			.value =
-				{
-					.type = VAGenericValueTypeInteger,
-					.value =
-						{.i = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2},
-				},
-		},
-		{
-			.type = VASurfaceAttribPixelFormat,
-			.flags = VA_SURFACE_ATTRIB_SETTABLE,
-			.value =
-				{
-					.type = VAGenericValueTypeInteger,
-					.value = {.i = (int)pix_format},
-				},
-		}};
+	VASurfaceAttrib attrs[2] = {{
+					    .type = VASurfaceAttribMemoryType,
+					    .flags = VA_SURFACE_ATTRIB_SETTABLE,
+					    .value =
+						    {
+							    .type = VAGenericValueTypeInteger,
+							    .value = {.i = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2},
+						    },
+				    },
+				    {
+					    .type = VASurfaceAttribPixelFormat,
+					    .flags = VA_SURFACE_ATTRIB_SETTABLE,
+					    .value =
+						    {
+							    .type = VAGenericValueTypeInteger,
+							    .value = {.i = (int)pix_format},
+						    },
+				    }};
 
 	unsigned int num_surfaces = request->NumFrameSuggested;
 	VASurfaceID temp_surfaces[MAX_ALLOCABLE_SURFACES] = {0};
 	assert(num_surfaces < MAX_ALLOCABLE_SURFACES);
 	VAStatus vasts;
-	if ((vasts = vaCreateSurfaces(display, rt_format, request->Info.Width,
-				      request->Info.Height, temp_surfaces,
-				      num_surfaces, attrs, num_attrs)) !=
-	    VA_STATUS_SUCCESS) {
+	if ((vasts = vaCreateSurfaces(display, rt_format, request->Info.Width, request->Info.Height, temp_surfaces,
+				      num_surfaces, attrs, num_attrs)) != VA_STATUS_SUCCESS) {
 		blog(LOG_ERROR, "failed to create surfaces: %d", vasts);
 		return MFX_ERR_MEMORY_ALLOC;
 	}
 
 	// Follow the FFmpeg trick and stuff our pointer at the end.
-	mfxMemId *mids =
-		(mfxMemId *)bmalloc(sizeof(mfxMemId) * num_surfaces + 1);
-	struct surface_info *surfaces = (struct surface_info *)bmalloc(
-		sizeof(struct surface_info) * num_surfaces);
+	mfxMemId *mids = (mfxMemId *)bmalloc(sizeof(mfxMemId) * num_surfaces + 1);
+	struct surface_info *surfaces = (struct surface_info *)bmalloc(sizeof(struct surface_info) * num_surfaces);
 
 	mids[num_surfaces] = surfaces; // stuff it
 	for (uint64_t i = 0; i < num_surfaces; i++) {
@@ -124,10 +115,8 @@ mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 		mids[i] = &surfaces[i];
 
 		VADRMPRIMESurfaceDescriptor surfDesc = {0};
-		if (vaExportSurfaceHandle(display, surfaces[i].id,
-					  VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
-					  VA_EXPORT_SURFACE_READ_WRITE,
-					  &surfDesc) != VA_STATUS_SUCCESS)
+		if (vaExportSurfaceHandle(display, surfaces[i].id, VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
+					  VA_EXPORT_SURFACE_READ_WRITE, &surfDesc) != VA_STATUS_SUCCESS)
 			return MFX_ERR_MEMORY_ALLOC;
 
 		obs_enter_graphics();
@@ -137,29 +126,21 @@ mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 		uint32_t strides[4] = {0};
 		uint32_t offsets[4] = {0};
 		uint64_t modifiers[4] = {0};
-		fds[0] =
-			surfDesc.objects[surfDesc.layers[0].object_index[0]].fd;
-		fds[1] =
-			surfDesc.objects[surfDesc.layers[1].object_index[0]].fd;
+		fds[0] = surfDesc.objects[surfDesc.layers[0].object_index[0]].fd;
+		fds[1] = surfDesc.objects[surfDesc.layers[1].object_index[0]].fd;
 		strides[0] = surfDesc.layers[0].pitch[0];
 		strides[1] = surfDesc.layers[1].pitch[0];
 		offsets[0] = surfDesc.layers[0].offset[0];
 		offsets[1] = surfDesc.layers[1].offset[0];
-		modifiers[0] =
-			surfDesc.objects[surfDesc.layers[0].object_index[0]]
-				.drm_format_modifier;
-		modifiers[1] =
-			surfDesc.objects[surfDesc.layers[1].object_index[0]]
-				.drm_format_modifier;
+		modifiers[0] = surfDesc.objects[surfDesc.layers[0].object_index[0]].drm_format_modifier;
+		modifiers[1] = surfDesc.objects[surfDesc.layers[1].object_index[0]].drm_format_modifier;
 
-		surfaces[i].tex_y = gs_texture_create_from_dmabuf(
-			surfDesc.width, surfDesc.height,
-			surfDesc.layers[0].drm_format, GS_R8, 1, fds, strides,
-			offsets, modifiers);
-		surfaces[i].tex_uv = gs_texture_create_from_dmabuf(
-			surfDesc.width / 2, surfDesc.height,
-			surfDesc.layers[1].drm_format, GS_R8G8, 1, fds + 1,
-			strides + 1, offsets + 1, modifiers + 1);
+		surfaces[i].tex_y = gs_texture_create_from_dmabuf(surfDesc.width, surfDesc.height,
+								  surfDesc.layers[0].drm_format, GS_R8, 1, fds, strides,
+								  offsets, modifiers);
+		surfaces[i].tex_uv = gs_texture_create_from_dmabuf(surfDesc.width / 2, surfDesc.height,
+								   surfDesc.layers[1].drm_format, GS_R8G8, 1, fds + 1,
+								   strides + 1, offsets + 1, modifiers + 1);
 		obs_leave_graphics();
 
 		close(surfDesc.objects[surfDesc.layers[0].object_index[0]].fd);
@@ -218,12 +199,10 @@ mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 
 	mfxSession *session = (mfxSession *)pthis;
 	VADisplay display;
-	mfxStatus sts =
-		MFXVideoCORE_GetHandle(*session, DEVICE_MGR_TYPE, &display);
+	mfxStatus sts = MFXVideoCORE_GetHandle(*session, DEVICE_MGR_TYPE, &display);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	struct surface_info *surfs =
-		(struct surface_info *)response->mids[response->NumFrameActual];
+	struct surface_info *surfs = (struct surface_info *)response->mids[response->NumFrameActual];
 	VASurfaceID temp_surfaces[MAX_ALLOCABLE_SURFACES] = {0};
 	obs_enter_graphics();
 	for (int i = 0; i < response->NumFrameActual; i++) {
@@ -235,15 +214,13 @@ mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 
 	bfree(surfs);
 	bfree(response->mids);
-	if (vaDestroySurfaces(display, temp_surfaces,
-			      response->NumFrameActual) != VA_STATUS_SUCCESS)
+	if (vaDestroySurfaces(display, temp_surfaces, response->NumFrameActual) != VA_STATUS_SUCCESS)
 		return MFX_ERR_MEMORY_ALLOC;
 
 	return MFX_ERR_NONE;
 }
 
-mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, void *tex, mfxU64 lock_key,
-			 mfxU64 *next_key)
+mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, void *tex, mfxU64 lock_key, mfxU64 *next_key)
 {
 	UNUSED_PARAMETER(lock_key);
 	UNUSED_PARAMETER(next_key);
@@ -252,8 +229,7 @@ mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, void *tex, mfxU64 lock_key,
 
 	mfxSession *session = (mfxSession *)pthis;
 	VADisplay display;
-	mfxStatus sts =
-		MFXVideoCORE_GetHandle(*session, DEVICE_MGR_TYPE, &display);
+	mfxStatus sts = MFXVideoCORE_GetHandle(*session, DEVICE_MGR_TYPE, &display);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	struct encoder_texture *ptex = (struct encoder_texture *)tex;
@@ -284,10 +260,8 @@ bool get_drm_device(void *param, const char *node, uint32_t idx)
 }
 
 // Initialize Intel VPL Session, device/display and memory manager
-mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
-		     mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
-		     bool bCreateSharedHandles, enum qsv_codec codec,
-		     void **data)
+mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pmfxAllocator, mfxHDL *deviceHandle,
+		     bool bCreateSharedHandles, enum qsv_codec codec, void **data)
 {
 	UNUSED_PARAMETER(ver);
 	UNUSED_PARAMETER(deviceHandle);
@@ -301,27 +275,22 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 
 	impl.Type = MFX_VARIANT_TYPE_U32;
 	impl.Data.U32 = MFX_IMPL_TYPE_HARDWARE;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.Impl", impl);
+	MFXSetConfigFilterProperty(cfg, (const mfxU8 *)"mfxImplDescription.Impl", impl);
 
 	impl.Type = MFX_VARIANT_TYPE_U32;
 	impl.Data.U32 = INTEL_VENDOR_ID;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.VendorID", impl);
+	MFXSetConfigFilterProperty(cfg, (const mfxU8 *)"mfxImplDescription.VendorID", impl);
 
 	impl.Type = MFX_VARIANT_TYPE_U32;
 	impl.Data.U32 = MFX_ACCEL_MODE_VIA_VAAPI_DRM_RENDER_NODE;
-	MFXSetConfigFilterProperty(
-		cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode",
-		impl);
+	MFXSetConfigFilterProperty(cfg, (const mfxU8 *)"mfxImplDescription.AccelerationMode", impl);
 
 	const char *device_path = NULL;
 	int fd = -1;
 	if (pmfxAllocator) {
 		obs_video_info ovi;
 		obs_get_video_info(&ovi);
-		struct get_drm_device_params params = {&device_path,
-						       (uint32_t)ovi.adapter};
+		struct get_drm_device_params params = {&device_path, (uint32_t)ovi.adapter};
 		obs_enter_graphics();
 		gs_enum_adapters(get_drm_device, &params);
 		obs_leave_graphics();
@@ -378,8 +347,7 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession,
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 
-	struct linux_data *d =
-		(struct linux_data *)bmalloc(sizeof(struct linux_data));
+	struct linux_data *d = (struct linux_data *)bmalloc(sizeof(struct linux_data));
 	d->fd = fd;
 	d->vaDisplay = (VADisplay)vaDisplay;
 	*data = d;
@@ -415,8 +383,7 @@ double TimeDiffMsec(mfxTime tfinish, mfxTime tstart)
 
 extern "C" void util_cpuid(int cpuinfo[4], int level)
 {
-	__get_cpuid(level, (unsigned int *)&cpuinfo[0],
-		    (unsigned int *)&cpuinfo[1], (unsigned int *)&cpuinfo[2],
+	__get_cpuid(level, (unsigned int *)&cpuinfo[0], (unsigned int *)&cpuinfo[1], (unsigned int *)&cpuinfo[2],
 		    (unsigned int *)&cpuinfo[3]);
 }
 
@@ -453,8 +420,7 @@ static void vaapi_open(const char *device_path, struct vaapi_device *device)
 
 	const char *driver = vaQueryVendorString(display);
 	if (strstr(driver, "Intel i965 driver") != nullptr) {
-		blog(LOG_WARNING,
-		     "Legacy intel-vaapi-driver detected, incompatible with QSV");
+		blog(LOG_WARNING, "Legacy intel-vaapi-driver detected, incompatible with QSV");
 		vaTerminate(display);
 		close(fd);
 		return;
@@ -471,14 +437,12 @@ static void vaapi_close(struct vaapi_device *device)
 	close(device->fd);
 }
 
-static uint32_t vaapi_check_support(VADisplay display, VAProfile profile,
-				    VAEntrypoint entrypoint)
+static uint32_t vaapi_check_support(VADisplay display, VAProfile profile, VAEntrypoint entrypoint)
 {
 	VAConfigAttrib attrib[1];
 	attrib->type = VAConfigAttribRateControl;
 
-	VAStatus va_status =
-		vaGetConfigAttributes(display, profile, entrypoint, attrib, 1);
+	VAStatus va_status = vaGetConfigAttributes(display, profile, entrypoint, attrib, 1);
 
 	uint32_t rc = 0;
 	switch (va_status) {
@@ -498,20 +462,16 @@ static bool vaapi_supports_av1(VADisplay display)
 {
 	bool ret = false;
 	// Are there any devices with non-LowPower entrypoints?
-	ret |= vaapi_check_support(display, VAProfileAV1Profile0,
-				   VAEntrypointEncSlice);
-	ret |= vaapi_check_support(display, VAProfileAV1Profile0,
-				   VAEntrypointEncSliceLP);
+	ret |= vaapi_check_support(display, VAProfileAV1Profile0, VAEntrypointEncSlice);
+	ret |= vaapi_check_support(display, VAProfileAV1Profile0, VAEntrypointEncSliceLP);
 	return ret;
 }
 
 static bool vaapi_supports_hevc(VADisplay display)
 {
 	bool ret = false;
-	ret |= vaapi_check_support(display, VAProfileHEVCMain,
-				   VAEntrypointEncSlice);
-	ret |= vaapi_check_support(display, VAProfileHEVCMain,
-				   VAEntrypointEncSliceLP);
+	ret |= vaapi_check_support(display, VAProfileHEVCMain, VAEntrypointEncSlice);
+	ret |= vaapi_check_support(display, VAProfileHEVCMain, VAEntrypointEncSliceLP);
 	return ret;
 }
 
@@ -534,12 +494,10 @@ bool check_adapter(void *param, const char *node, uint32_t idx)
 	if (adapter->is_intel && default_h264_device == nullptr)
 		default_h264_device = strdup(node);
 
-	if (adapter->is_intel && adapter->supports_av1 &&
-	    default_av1_device == nullptr)
+	if (adapter->is_intel && adapter->supports_av1 && default_av1_device == nullptr)
 		default_av1_device = strdup(node);
 
-	if (adapter->is_intel && adapter->supports_hevc &&
-	    default_hevc_device == nullptr)
+	if (adapter->is_intel && adapter->supports_hevc && default_hevc_device == nullptr)
 		default_hevc_device = strdup(node);
 
 	vaapi_close(&device);
@@ -551,8 +509,7 @@ void check_adapters(struct adapter_info *adapters, size_t *adapter_count)
 	obs_enter_graphics();
 	uint32_t gs_count = gs_get_adapter_count();
 	if (*adapter_count < gs_count) {
-		blog(LOG_WARNING, "Too many video adapters: %ld < %d",
-		     *adapter_count, gs_count);
+		blog(LOG_WARNING, "Too many video adapters: %ld < %d", *adapter_count, gs_count);
 		obs_leave_graphics();
 		return;
 	}

@@ -17,10 +17,8 @@
 
 #include "gl-subsystem.h"
 
-static bool gl_init_volume(GLenum type, uint32_t num_levels, GLenum format,
-			   GLint internal_format, bool compressed,
-			   uint32_t width, uint32_t height, uint32_t depth,
-			   const uint8_t *const **p_data)
+static bool gl_init_volume(GLenum type, uint32_t num_levels, GLenum format, GLint internal_format, bool compressed,
+			   uint32_t width, uint32_t height, uint32_t depth, const uint8_t *const **p_data)
 {
 	bool success = true;
 	const uint8_t *const *data = p_data ? *p_data : NULL;
@@ -30,16 +28,13 @@ static bool gl_init_volume(GLenum type, uint32_t num_levels, GLenum format,
 	for (i = 0; i < num_levels; i++) {
 		if (compressed) {
 			uint32_t mip_size = width * height * depth * bpp / 8;
-			glCompressedTexImage3D(GL_TEXTURE_3D, i,
-					       internal_format, width, height,
-					       depth, 0, mip_size,
+			glCompressedTexImage3D(GL_TEXTURE_3D, i, internal_format, width, height, depth, 0, mip_size,
 					       data ? *data : NULL);
 			if (!gl_success("glCompressedTexImage3D"))
 				success = false;
 
 		} else {
-			glTexImage3D(GL_TEXTURE_3D, i, internal_format, width,
-				     height, depth, 0, format, type,
+			glTexImage3D(GL_TEXTURE_3D, i, internal_format, width, height, depth, 0, format, type,
 				     data ? *data : NULL);
 			if (!gl_success("glTexImage3D"))
 				success = false;
@@ -61,27 +56,22 @@ static bool gl_init_volume(GLenum type, uint32_t num_levels, GLenum format,
 	return success;
 }
 
-static bool upload_texture_3d(struct gs_texture_3d *tex,
-			      const uint8_t *const *data)
+static bool upload_texture_3d(struct gs_texture_3d *tex, const uint8_t *const *data)
 {
 	uint32_t num_levels = tex->base.levels;
 	bool compressed = gs_is_compressed_format(tex->base.format);
 	bool success;
 
 	if (!num_levels)
-		num_levels = gs_get_total_levels(tex->width, tex->height,
-						 tex->depth);
+		num_levels = gs_get_total_levels(tex->width, tex->height, tex->depth);
 
 	if (!gl_bind_texture(GL_TEXTURE_3D, tex->base.texture))
 		return false;
 
-	success = gl_init_volume(tex->base.gl_type, num_levels,
-				 tex->base.gl_format,
-				 tex->base.gl_internal_format, compressed,
-				 tex->width, tex->height, tex->depth, &data);
+	success = gl_init_volume(tex->base.gl_type, num_levels, tex->base.gl_format, tex->base.gl_internal_format,
+				 compressed, tex->width, tex->height, tex->depth, &data);
 
-	if (!gl_tex_param_i(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL,
-			    num_levels - 1))
+	if (!gl_tex_param_i(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, num_levels - 1))
 		success = false;
 	if (!gl_bind_texture(GL_TEXTURE_3D, 0))
 		success = false;
@@ -122,11 +112,8 @@ static bool create_pixel_unpack_buffer(struct gs_texture_3d *tex)
 	return success;
 }
 
-gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
-				       uint32_t height, uint32_t depth,
-				       enum gs_color_format color_format,
-				       uint32_t levels,
-				       const uint8_t *const *data,
+gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width, uint32_t height, uint32_t depth,
+				       enum gs_color_format color_format, uint32_t levels, const uint8_t *const *data,
 				       uint32_t flags)
 {
 	struct gs_texture_3d *tex = bzalloc(sizeof(struct gs_texture_3d));
@@ -159,13 +146,9 @@ gs_texture_t *device_voltexture_create(gs_device_t *device, uint32_t width,
 			goto fail;
 
 		bool compressed = gs_is_compressed_format(tex->base.format);
-		bool did_init = gl_init_volume(tex->base.gl_type, 1,
-					       tex->base.gl_format,
-					       tex->base.gl_internal_format,
-					       compressed, tex->width,
-					       tex->height, tex->depth, NULL);
-		did_init =
-			gl_tex_param_i(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
+		bool did_init = gl_init_volume(tex->base.gl_type, 1, tex->base.gl_format, tex->base.gl_internal_format,
+					       compressed, tex->width, tex->height, tex->depth, NULL);
+		did_init = gl_tex_param_i(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
 
 		bool did_unbind = gl_bind_texture(GL_TEXTURE_3D, 0);
 		if (!did_init || !did_unbind)

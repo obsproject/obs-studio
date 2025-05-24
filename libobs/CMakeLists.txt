@@ -1,18 +1,15 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
+cmake_minimum_required(VERSION 3.28...3.30)
 
 include(cmake/obs-version.cmake)
 
-find_package(Threads REQUIRED)
-
-if(OS_WINDOWS OR OS_MACOS)
-  set(ffmpeg_version 6)
-else()
-  set(ffmpeg_version 4.4)
+if(OS_WINDOWS AND NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
+  include(cmake/os-windows.cmake)
+  return()
 endif()
 
-find_package(FFmpeg ${ffmpeg_version} REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
+find_package(Threads REQUIRED)
+
+find_package(FFmpeg 6.1 REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
 
 find_package(ZLIB REQUIRED)
 find_package(Uthash REQUIRED)
@@ -41,6 +38,7 @@ target_sources(
     obs-av1.h
     obs-avc.c
     obs-avc.h
+    obs-canvas.c
     obs-config.h
     obs-data.c
     obs-data.h
@@ -283,8 +281,6 @@ target_include_directories(
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 )
 
-target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
-
 set(
   public_headers
   callback/calldata.h
@@ -374,6 +370,7 @@ set(
   util/simde/x86/mmx.h
   util/simde/x86/sse.h
   util/simde/x86/sse2.h
+  util/source-profiler.h
   util/sse-intrin.h
   util/task.h
   util/text-lookup.h

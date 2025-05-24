@@ -37,8 +37,7 @@ struct obs_service_resolution {
 enum obs_service_connect_info {
 	OBS_SERVICE_CONNECT_INFO_SERVER_URL = 0,
 	OBS_SERVICE_CONNECT_INFO_STREAM_ID = 2,
-	OBS_SERVICE_CONNECT_INFO_STREAM_KEY =
-		2, // Alias of OBS_SERVICE_CONNECT_INFO_STREAM_ID
+	OBS_SERVICE_CONNECT_INFO_STREAM_KEY = 2, // Alias of OBS_SERVICE_CONNECT_INFO_STREAM_ID
 	OBS_SERVICE_CONNECT_INFO_USERNAME = 4,
 	OBS_SERVICE_CONNECT_INFO_PASSWORD = 6,
 	OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE = 8,
@@ -82,8 +81,7 @@ struct obs_service_info {
 
 	bool (*deprecated_1)();
 
-	void (*apply_encoder_settings)(void *data,
-				       obs_data_t *video_encoder_settings,
+	void (*apply_encoder_settings)(void *data, obs_data_t *video_encoder_settings,
 				       obs_data_t *audio_encoder_settings);
 
 	void *type_data;
@@ -92,13 +90,10 @@ struct obs_service_info {
 	/* TODO: Rename to 'get_preferred_output_type' once a API/ABI break happen */
 	const char *(*get_output_type)(void *data);
 
-	void (*get_supported_resolutions)(
-		void *data, struct obs_service_resolution **resolutions,
-		size_t *count);
+	void (*get_supported_resolutions)(void *data, struct obs_service_resolution **resolutions, size_t *count);
 	void (*get_max_fps)(void *data, int *fps);
 
-	void (*get_max_bitrate)(void *data, int *video_bitrate,
-				int *audio_bitrate);
+	void (*get_max_bitrate)(void *data, int *video_bitrate, int *audio_bitrate);
 
 	const char **(*get_supported_video_codecs)(void *data);
 
@@ -111,11 +106,9 @@ struct obs_service_info {
 	bool (*can_try_to_connect)(void *data);
 };
 
-EXPORT void obs_register_service_s(const struct obs_service_info *info,
-				   size_t size);
+EXPORT void obs_register_service_s(const struct obs_service_info *info, size_t size);
 
-#define obs_register_service(info) \
-	obs_register_service_s(info, sizeof(struct obs_service_info))
+#define obs_register_service(info) obs_register_service_s(info, sizeof(struct obs_service_info))
 
 #ifdef __cplusplus
 }

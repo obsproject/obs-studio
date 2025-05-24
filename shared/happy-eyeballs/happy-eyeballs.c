@@ -172,12 +172,11 @@ static int check_comodo(struct happy_eyeballs_ctx *context)
 	HOSTENT *h = gethostbyname("localhost");
 	if (!h && GetLastError() == WSAHOST_NOT_FOUND) {
 		context->error = WSAHOST_NOT_FOUND;
-		context->error_message =
-			"happy-eyeballs: Connection test failed. "
-			"This error is likely caused by Comodo Internet "
-			"Security running OBS in sandbox mode. Please add "
-			"OBS to the Comodo automatic sandbox exclusion list, "
-			"restart OBS and try again (11001).";
+		context->error_message = "happy-eyeballs: Connection test failed. "
+					 "This error is likely caused by Comodo Internet "
+					 "Security running OBS in sandbox mode. Please add "
+					 "OBS to the Comodo automatic sandbox exclusion list, "
+					 "restart OBS and try again (11001).";
 		return STATUS_FAILURE;
 	}
 #else
@@ -186,8 +185,7 @@ static int check_comodo(struct happy_eyeballs_ctx *context)
 	return STATUS_SUCCESS;
 }
 
-static int build_addr_list(const char *hostname, int port,
-			   struct happy_eyeballs_ctx *context)
+static int build_addr_list(const char *hostname, int port, struct happy_eyeballs_ctx *context)
 {
 	struct addrinfo hints = {0};
 
@@ -206,8 +204,7 @@ static int build_addr_list(const char *hostname, int port,
 	dstr_printf(&port_str, "%d", port);
 
 	uint64_t start_time = os_gettime_ns();
-	int err = getaddrinfo(hostname, port_str.array, &hints,
-			      &context->addresses);
+	int err = getaddrinfo(hostname, port_str.array, &hints, &context->addresses);
 	context->name_resolution_time_ns = os_gettime_ns() - start_time;
 	dstr_free(&port_str);
 	if (err) {
@@ -221,12 +218,10 @@ static int build_addr_list(const char *hostname, int port,
 	struct addrinfo *cur = prev->ai_next;
 
 	while (cur) {
-		if (prev->ai_family == cur->ai_family &&
-		    (cur->ai_family == AF_INET || cur->ai_family == AF_INET6)) {
+		if (prev->ai_family == cur->ai_family && (cur->ai_family == AF_INET || cur->ai_family == AF_INET6)) {
 			/* If the current protocol family matches the previous
 			 * one, look for the next instance of the other kind */
-			const int target_family =
-				prev->ai_family == AF_INET ? AF_INET6 : AF_INET;
+			const int target_family = prev->ai_family == AF_INET ? AF_INET6 : AF_INET;
 			struct addrinfo *it = cur->ai_next;
 			struct addrinfo *prev_it = cur;
 
@@ -334,8 +329,7 @@ static int coalesce_errors(struct happy_eyeballs_ctx *context)
 
 static void *happy_connect_worker(void *arg)
 {
-	struct happy_connect_worker_args *args =
-		(struct happy_connect_worker_args *)arg;
+	struct happy_connect_worker_args *args = (struct happy_connect_worker_args *)arg;
 	struct happy_eyeballs_ctx *context = args->context;
 
 	if (args->sockfd == INVALID_SOCKET) {
@@ -347,17 +341,14 @@ static void *happy_connect_worker(void *arg)
 	}
 
 #if !defined(_WIN32) && defined(SO_NOSIGPIPE)
-	setsockopt(args->sockfd, SOL_SOCKET, SO_NOSIGPIPE, &(int){1},
-		   sizeof(int));
+	setsockopt(args->sockfd, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
 #endif
 	if (context->bind_addr.ss_family != 0 &&
-	    bind(args->sockfd, (const struct sockaddr *)&context->bind_addr,
-		 context->bind_addr_len) < 0) {
+	    bind(args->sockfd, (const struct sockaddr *)&context->bind_addr, context->bind_addr_len) < 0) {
 		goto failure;
 	}
 
-	if (connect(args->sockfd, args->address->ai_addr,
-		    (int)args->address->ai_addrlen) == 0) {
+	if (connect(args->sockfd, args->address->ai_addr, (int)args->address->ai_addrlen) == 0) {
 
 		/* success, check if we're the winner. */
 		pthread_mutex_lock(&context->winner_mutex);
@@ -366,10 +357,8 @@ static void *happy_connect_worker(void *arg)
 		if (os_event_try(context->race_completed_event) == EAGAIN) {
 			/* We are the winner. */
 			context->socket_fd = args->sockfd;
-			memcpy(&context->winner_addr, args->address->ai_addr,
-			       args->address->ai_addrlen);
-			context->winner_addr_len =
-				(socklen_t)args->address->ai_addrlen;
+			memcpy(&context->winner_addr, args->address->ai_addr, args->address->ai_addrlen);
+			context->winner_addr_len = (socklen_t)args->address->ai_addrlen;
 			signal_end(context);
 		}
 
@@ -391,9 +380,7 @@ failure:
 	 * status and signal the completion event. */
 	pthread_mutex_lock(&context->candidate_mutex);
 	for (size_t i = 0; i < context->candidates.num && !active; i++) {
-		active = os_event_try(context->candidates.array[i]
-					      .socket_completed_event) ==
-			 EAGAIN;
+		active = os_event_try(context->candidates.array[i].socket_completed_event) == EAGAIN;
 	}
 
 	pthread_mutex_unlock(&context->candidate_mutex);
@@ -414,12 +401,10 @@ success:
 	return NULL;
 }
 
-static int launch_worker(struct happy_eyeballs_ctx *context,
-			 struct addrinfo *addr)
+static int launch_worker(struct happy_eyeballs_ctx *context, struct addrinfo *addr)
 {
 #ifdef _WIN32
-	SOCKET fd = WSASocket(addr->ai_family, SOCK_STREAM, IPPROTO_TCP, NULL,
-			      0, WSA_FLAG_OVERLAPPED);
+	SOCKET fd = WSASocket(addr->ai_family, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 #else
 	SOCKET fd = socket(addr->ai_family, SOCK_STREAM, IPPROTO_TCP);
 #endif
@@ -430,12 +415,10 @@ static int launch_worker(struct happy_eyeballs_ctx *context,
 
 	pthread_mutex_lock(&context->candidate_mutex);
 
-	struct happy_eyeballs_candidate *candidate =
-		da_push_back_new(context->candidates);
+	struct happy_eyeballs_candidate *candidate = da_push_back_new(context->candidates);
 	candidate->sockfd = fd;
 	struct happy_connect_worker_args *args =
-		(struct happy_connect_worker_args *)malloc(
-			sizeof(struct happy_connect_worker_args));
+		(struct happy_connect_worker_args *)malloc(sizeof(struct happy_connect_worker_args));
 	if (args == NULL) {
 		context->error = ENOMEM;
 		context->error_message = "happy-eyeballs: Failed to allocate "
@@ -444,8 +427,7 @@ static int launch_worker(struct happy_eyeballs_ctx *context,
 		return STATUS_FAILURE;
 	}
 
-	int result = os_event_init(&candidate->socket_completed_event,
-				   OS_EVENT_TYPE_MANUAL);
+	int result = os_event_init(&candidate->socket_completed_event, OS_EVENT_TYPE_MANUAL);
 	if (result != 0) {
 		/* failure to create the socket completed event */
 		context->error = result;
@@ -463,8 +445,7 @@ static int launch_worker(struct happy_eyeballs_ctx *context,
 	pthread_mutex_unlock(&context->candidate_mutex);
 
 	/* Launch worker thread; `args` ownership is passed to this thread */
-	result = pthread_create(&candidate->thread, NULL, happy_connect_worker,
-				args);
+	result = pthread_create(&candidate->thread, NULL, happy_connect_worker, args);
 	if (result != 0) {
 		/* failure to start the worker thread */
 		context->error = result;
@@ -488,8 +469,7 @@ int happy_eyeballs_create(struct happy_eyeballs_ctx **context)
 	if (context == NULL)
 		return STATUS_INVALID_ARGUMENT;
 
-	struct happy_eyeballs_ctx *ctx = (struct happy_eyeballs_ctx *)malloc(
-		sizeof(struct happy_eyeballs_ctx));
+	struct happy_eyeballs_ctx *ctx = (struct happy_eyeballs_ctx *)malloc(sizeof(struct happy_eyeballs_ctx));
 
 	if (ctx == NULL)
 		return -ENOMEM;
@@ -502,8 +482,7 @@ int happy_eyeballs_create(struct happy_eyeballs_ctx **context)
 
 	/* race_completed_event will be signalled when there is a winner or all
 	 * attempts have failed */
-	int result =
-		os_event_init(&ctx->race_completed_event, OS_EVENT_TYPE_MANUAL);
+	int result = os_event_init(&ctx->race_completed_event, OS_EVENT_TYPE_MANUAL);
 
 	/* this mutex is used to avoid the situation where we may have two
 	 * simultaneous winners and inconsistent values set to the context. */
@@ -541,8 +520,7 @@ int happy_eyeballs_create(struct happy_eyeballs_ctx **context)
 	return -abs(result);
 }
 
-int happy_eyeballs_connect(struct happy_eyeballs_ctx *context,
-			   const char *hostname, int port)
+int happy_eyeballs_connect(struct happy_eyeballs_ctx *context, const char *hostname, int port)
 {
 	if (hostname == NULL || context == NULL || port == 0)
 		return STATUS_INVALID_ARGUMENT;
@@ -564,9 +542,7 @@ int happy_eyeballs_connect(struct happy_eyeballs_ctx *context,
 	 *      null)
 	 *   3. We have seen two candidates of the same family in a row, stop
 	 *      happy eyeballs and let the previous attempt go it alone. */
-	for (int i = 0; i < HAPPY_EYEBALLS_MAX_ATTEMPTS && next &&
-			next->ai_family != prev_family;
-	     i++) {
+	for (int i = 0; i < HAPPY_EYEBALLS_MAX_ATTEMPTS && next && next->ai_family != prev_family; i++) {
 		/* Launch a worker thread for this address */
 		int result = launch_worker(context, next);
 		if (result != STATUS_SUCCESS)
@@ -574,8 +550,7 @@ int happy_eyeballs_connect(struct happy_eyeballs_ctx *context,
 
 		/* Wait until the delay between attempts times out or we get
 		 * signalled... */
-		result = os_event_timedwait(context->race_completed_event,
-					    HAPPY_EYEBALLS_DELAY_MS);
+		result = os_event_timedwait(context->race_completed_event, HAPPY_EYEBALLS_DELAY_MS);
 		if (result == 0) {
 			/* signalled. Break out of the loop. */
 			break;
@@ -598,13 +573,8 @@ int happy_eyeballs_connect(struct happy_eyeballs_ctx *context,
 	if (happy_eyeballs_try(context) == EAGAIN) {
 		int active_count = 0;
 		for (size_t i = 0; i < context->candidates.num; i++)
-			active_count +=
-				(os_event_try(
-					 context->candidates.array[i]
-						 .socket_completed_event) ==
-				 EAGAIN);
-		if (active_count == 0 &&
-		    coalesce_errors(context) == STATUS_SUCCESS)
+			active_count += (os_event_try(context->candidates.array[i].socket_completed_event) == EAGAIN);
+		if (active_count == 0 && coalesce_errors(context) == STATUS_SUCCESS)
 			signal_end(context);
 	}
 
@@ -628,18 +598,15 @@ int happy_eyeballs_try(struct happy_eyeballs_ctx *context)
 
 int happy_eyeballs_timedwait_default(struct happy_eyeballs_ctx *context)
 {
-	return happy_eyeballs_timedwait(context,
-					HAPPY_EYEBALLS_CONNECTION_TIMEOUT_MS);
+	return happy_eyeballs_timedwait(context, HAPPY_EYEBALLS_CONNECTION_TIMEOUT_MS);
 }
 
-int happy_eyeballs_timedwait(struct happy_eyeballs_ctx *context,
-			     unsigned long time_in_millis)
+int happy_eyeballs_timedwait(struct happy_eyeballs_ctx *context, unsigned long time_in_millis)
 {
 	if (context == NULL)
 		return STATUS_INVALID_ARGUMENT;
 
-	int status = os_event_timedwait(context->race_completed_event,
-					time_in_millis);
+	int status = os_event_timedwait(context->race_completed_event, time_in_millis);
 
 	if (context->error != 0)
 		return STATUS_FAILURE;
@@ -671,16 +638,14 @@ static void *destroy_thread(void *param)
 	for (size_t i = 0; i < context->candidates.num; i++) {
 		if (context->candidates.array[i].sockfd != INVALID_SOCKET &&
 		    context->candidates.array[i].sockfd != context->socket_fd) {
-			shutdown(context->candidates.array[i].sockfd,
-				 SHUT_RDWR);
+			shutdown(context->candidates.array[i].sockfd, SHUT_RDWR);
 		}
 	}
 
 	/* Join threads */
 	for (size_t i = 0; i < context->candidates.num; i++) {
 		pthread_join(context->candidates.array[i].thread, NULL);
-		os_event_destroy(
-			context->candidates.array[i].socket_completed_event);
+		os_event_destroy(context->candidates.array[i].socket_completed_event);
 	}
 
 	/* Close sockets */
@@ -720,16 +685,14 @@ int happy_eyeballs_destroy(struct happy_eyeballs_ctx *context)
 /* ------------------------------------------------------------------------- */
 /* Setters & Getters                                                         */
 
-int happy_eyeballs_set_bind_addr(struct happy_eyeballs_ctx *context,
-				 socklen_t addr_len,
+int happy_eyeballs_set_bind_addr(struct happy_eyeballs_ctx *context, socklen_t addr_len,
 				 struct sockaddr_storage *addr_storage)
 {
 	if (!context)
 		return STATUS_INVALID_ARGUMENT;
 
 	if (addr_storage && addr_len > 0) {
-		memcpy(&context->bind_addr, addr_storage,
-		       sizeof(struct sockaddr_storage));
+		memcpy(&context->bind_addr, addr_storage, sizeof(struct sockaddr_storage));
 		context->bind_addr_len = addr_len;
 	} else {
 		context->bind_addr_len = 0;
@@ -743,8 +706,7 @@ SOCKET happy_eyeballs_get_socket_fd(const struct happy_eyeballs_ctx *context)
 	return context ? context->socket_fd : STATUS_INVALID_ARGUMENT;
 }
 
-int happy_eyeballs_get_remote_addr(const struct happy_eyeballs_ctx *context,
-				   struct sockaddr_storage *addr)
+int happy_eyeballs_get_remote_addr(const struct happy_eyeballs_ctx *context, struct sockaddr_storage *addr)
 {
 	if (!context || !addr)
 		return STATUS_INVALID_ARGUMENT;
@@ -758,23 +720,19 @@ int happy_eyeballs_get_error_code(const struct happy_eyeballs_ctx *context)
 	return context ? context->error : STATUS_INVALID_ARGUMENT;
 }
 
-const char *
-happy_eyeballs_get_error_message(const struct happy_eyeballs_ctx *context)
+const char *happy_eyeballs_get_error_message(const struct happy_eyeballs_ctx *context)
 {
 	return context ? context->error_message : NULL;
 }
 
-uint64_t happy_eyeballs_get_name_resolution_time_ns(
-	const struct happy_eyeballs_ctx *context)
+uint64_t happy_eyeballs_get_name_resolution_time_ns(const struct happy_eyeballs_ctx *context)
 {
 	return context ? context->name_resolution_time_ns : 0;
 }
 
-uint64_t
-happy_eyeballs_get_connection_time_ns(const struct happy_eyeballs_ctx *context)
+uint64_t happy_eyeballs_get_connection_time_ns(const struct happy_eyeballs_ctx *context)
 {
-	if (!context ||
-	    context->connection_time_start > context->connection_time_end)
+	if (!context || context->connection_time_start > context->connection_time_end)
 		return 0;
 
 	return context->connection_time_end - context->connection_time_start;
