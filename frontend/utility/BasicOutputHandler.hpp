@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility/MultitrackVideoOutput.hpp>
+#include <utility/OutputObj.hpp>
 #include <utility/WHIPSimulcastEncoders.hpp>
 
 #include <obs.hpp>
@@ -94,8 +95,8 @@ struct BasicOutputHandler {
 
 	inline bool Active() const
 	{
-		return streamingActive || recordingActive || delayActive || replayBufferActive || virtualCamActive ||
-		       multitrackVideoActive;
+		return streamingActive || recordingActive || delayActive || replayBufferActive ||
+		       multitrackVideoActive || OutputObj::outputsActive();
 	}
 
 protected:
