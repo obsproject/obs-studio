@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1086</width>
-    <height>729</height>
+    <width>1280</width>
+    <height>960</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -703,7 +703,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1086</width>
+     <width>1280</width>
      <height>22</height>
     </rect>
    </property>
@@ -1275,7 +1275,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>323</width>
+              <width>380</width>
               <height>16</height>
              </rect>
             </property>
@@ -2183,7 +2183,7 @@
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Basic.MainMenu.Docks.SideDocks</string>
