@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include <OBSApp.hpp>
-#include <dialogs/OBSLogViewer.hpp>
 #ifdef __APPLE__
 #include <dialogs/OBSPermissions.hpp>
 #endif
@@ -33,7 +32,9 @@
 #include <util/windows/win-version.h>
 #endif
 
+#include <QFontDatabase>
 #include <QProcess>
+#include <QPushButton>
 #include <curl/curl.h>
 
 #include <fstream>
@@ -80,8 +81,6 @@ bool restart = false;
 bool restart_safe = false;
 static QStringList arguments;
 
-QPointer<OBSLogViewer> obsLogViewer;
-
 string CurrentTimeString()
 {
 	using namespace std::chrono;
@@ -115,9 +114,8 @@ static void LogString(fstream &logFile, const char *timeString, char *str, int l
 	logFile << msg << endl;
 	logfile_mutex.unlock();
 
-	if (!!obsLogViewer)
-		QMetaObject::invokeMethod(obsLogViewer.data(), "AddLine", Qt::QueuedConnection, Q_ARG(int, log_level),
-					  Q_ARG(QString, QString(msg.c_str())));
+	QMetaObject::invokeMethod(App(), "addLogLine", Qt::QueuedConnection, Q_ARG(int, log_level),
+				  Q_ARG(QString, QString(msg.c_str())));
 }
 
 static inline void LogStringChunk(fstream &logFile, char *str, int log_level)

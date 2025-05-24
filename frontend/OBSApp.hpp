@@ -119,6 +119,7 @@ private slots:
 #endif
 
 private slots:
+	void addLogLine(int logLevel, const QString &message);
 	void themeFileChanged(const QString &);
 	void applicationShutdown() noexcept;
 
@@ -212,6 +213,7 @@ public slots:
 	void ProcessSigInt();
 
 signals:
+	void logLineAdded(int logLevel, const QString &message);
 	void StyleChanged();
 
 	void logUploadFinished(OBS::LogFileType, const QString &fileUrl);
