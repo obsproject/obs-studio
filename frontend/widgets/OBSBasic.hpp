@@ -219,7 +219,6 @@ class OBSBasic : public OBSMainWindow {
 	Q_PROPERTY(QIcon audioProcessOutputIcon READ GetAudioProcessOutputIcon WRITE SetAudioProcessOutputIcon
 			   DESIGNABLE true)
 
-	friend class OBSAbout;
 	friend class OBSBasicPreview;
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
@@ -272,9 +271,6 @@ private:
 
 	ConfigFile activeConfiguration;
 
-	QScopedPointer<QThread> patronJsonThread;
-	std::string patronJson;
-
 	std::unique_ptr<Ui::OBSBasic> ui;
 
 	void OnEvent(enum obs_frontend_event event);
@@ -301,7 +297,6 @@ private:
 	void LoadProject();
 
 public slots:
-	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
 
 public:
