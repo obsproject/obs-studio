@@ -111,7 +111,7 @@ Naming Conventions
 - Ensure a consistent use of capitalisation across the codebase (Avoid having 
   both Youtube and YouTube)
 
-- Make the purpose of functions explicit by their name itself, e.g. 
+- Make the purpose of functions explicit by their name itself, e.g., 
   nudgePreviewItem() or isOutputActive(). Avoid ambiguous method names like 
   Active() or Nudge()
 
