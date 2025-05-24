@@ -327,6 +327,9 @@ public:
 
 	inline bool Closing() { return closing; }
 
+	void PreventMonitoringDuplication();
+	int MonDeviceIsDesktopAudioDevice();
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;

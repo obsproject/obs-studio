@@ -393,6 +393,19 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	source->flags = source->default_flags;
 	source->enabled = true;
 
+	/* audio deduplication initialization */
+	source->audio_is_duplicated = false;
+	source->is_individual_audio_src = source->info.type == OBS_SOURCE_TYPE_INPUT &&
+					  source->info.output_flags & OBS_SOURCE_AUDIO &&
+					  !obs_source_is_scene(source) && !obs_source_is_group(source);
+	source->is_global_audio_src = false;
+	source->captures_mon_device = false;
+
+	if (strcmp(name, "Desktop Audio") == 0 || strcmp(name, "Desktop Audio 2") == 0) {
+		source->is_individual_audio_src = false;
+		source->is_global_audio_src = true;
+	}
+
 	obs_source_init_finalize(source, canvas);
 	if (!private) {
 		if (canvas)
@@ -4939,6 +4952,14 @@ void obs_source_set_muted(obs_source_t *source, bool muted)
 	pthread_mutex_lock(&source->audio_actions_mutex);
 	da_push_back(source->audio_actions, &action);
 	pthread_mutex_unlock(&source->audio_actions_mutex);
+
+	if (source->is_global_audio_src && source->captures_mon_device) {
+		struct obs_core_audio *audio = &obs->audio;
+		if (audio) {
+			if (os_atomic_load_bool(&audio->prevent_monitoring_duplication))
+				os_atomic_set_bool(&audio->bypass_monitored_sources, !muted);
+		}
+	}
 }
 
 static void source_signal_push_to_changed(obs_source_t *source, const char *signal, bool enabled)
