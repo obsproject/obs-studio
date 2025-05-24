@@ -102,7 +102,7 @@
     --border_highlight: "transparent";
 
     /* OS Fixes */
-    --os_mac_font_base_value: 12;
+    --os_mac_font_base_value: calc(1.2 * var(--obsFontScale));
 
     --font_base: calc(1pt * var(--font_base_value));
     --font_small: max(7pt, calc(0.8pt * var(--font_base_value)));
