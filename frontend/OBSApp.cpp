@@ -74,8 +74,6 @@ extern bool opt_disable_missing_files_check;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
 
-extern QPointer<OBSLogViewer> obsLogViewer;
-
 #ifndef _WIN32
 int OBSApp::sigintFd[2];
 #endif
@@ -1756,4 +1754,9 @@ void OBSApp::applicationShutdown() noexcept
 		obs_shutdown();
 		libobs_initialized = false;
 	}
+}
+
+void OBSApp::addLogLine(int logLevel, const QString &message)
+{
+	emit logLineAdded(logLevel, message);
 }
