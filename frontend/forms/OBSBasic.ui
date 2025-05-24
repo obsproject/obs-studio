@@ -899,11 +899,6 @@
      <addaction name="actionSceneListMode"/>
      <addaction name="actionSceneGridMode"/>
     </widget>
-    <widget class="QMenu" name="multiviewProjectorMenu">
-     <property name="title">
-      <string>Projector.Open.Multiview</string>
-     </property>
-    </widget>
     <action name="resetUI">
      <property name="text">
       <string>Basic.MainMenu.View.ResetUI</string>
@@ -928,7 +923,6 @@
     <addaction name="separator"/>
     <addaction name="stats"/>
     <addaction name="separator"/>
-    <addaction name="multiviewProjectorMenu"/>
     <addaction name="separator"/>
     <addaction name="actionAlwaysOnTop"/>
    </widget>
