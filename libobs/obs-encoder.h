@@ -344,6 +344,9 @@ struct obs_encoder_info {
 
 	bool (*encode_texture2)(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key,
 				uint64_t *next_key, struct encoder_packet *packet, bool *received_packet);
+
+	/** Pointer to module that generated this source **/
+	obs_module_t* module;
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size);

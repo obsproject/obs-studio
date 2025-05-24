@@ -937,6 +937,7 @@
      <string>Basic.MainMenu.Tools</string>
     </property>
     <addaction name="autoConfigure"/>
+    <addaction name="actionOpenPluginManager"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
@@ -2155,6 +2156,11 @@
   <action name="autoConfigure">
    <property name="text">
     <string>Basic.AutoConfig</string>
+   </property>
+  </action>
+  <action name="actionOpenPluginManager">
+   <property name="text">
+    <string>Basic.OpenPluginManager</string>
    </property>
   </action>
   <action name="stats">

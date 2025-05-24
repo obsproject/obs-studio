@@ -104,6 +104,9 @@ struct obs_service_info {
 	const char *(*get_connect_info)(void *data, uint32_t type);
 
 	bool (*can_try_to_connect)(void *data);
+
+	/* Pointer to module that generated this source */
+	obs_module_t* module;
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info, size_t size);
