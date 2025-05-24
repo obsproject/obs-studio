@@ -105,7 +105,7 @@ code:
 Naming Conventions
 ^^^^^^^^^^^^^^^^^^
 
-- Clearly spell out words and avoid unnecessary abbreviations (e.g. no 
+- Clearly spell out words and avoid unnecessary abbreviations (e.g., no 
   AdvAudio, but AdvancedAudio).
 
 - Ensure a consistent use of capitalisation across the codebase (Avoid having 
