@@ -141,31 +141,6 @@ void OBSReplayBufferSaved(void *data, calldata_t * /* params */)
 	QMetaObject::invokeMethod(output->main, "ReplayBufferSaved", Qt::QueuedConnection);
 }
 
-static void OBSStartVirtualCam(void *data, calldata_t * /* params */)
-{
-	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
-
-	output->virtualCamActive = true;
-	os_atomic_set_bool(&virtualcam_active, true);
-	QMetaObject::invokeMethod(output->main, "OnVirtualCamStart");
-}
-
-static void OBSStopVirtualCam(void *data, calldata_t *params)
-{
-	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
-	int code = (int)calldata_int(params, "code");
-
-	output->virtualCamActive = false;
-	os_atomic_set_bool(&virtualcam_active, false);
-	QMetaObject::invokeMethod(output->main, "OnVirtualCamStop", Q_ARG(int, code));
-}
-
-static void OBSDeactivateVirtualCam(void *data, calldata_t * /* params */)
-{
-	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
-	output->DestroyVirtualCamView();
-}
-
 bool return_first_id(void *data, const char *id)
 {
 	const char **output = (const char **)data;
@@ -220,12 +195,9 @@ const char *GetStreamOutputType(const obs_service_t *service)
 BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 {
 	if (main->vcamEnabled) {
-		virtualCam = obs_output_create(VIRTUAL_CAM_ID, "virtualcam_output", nullptr, nullptr);
-
-		signal_handler_t *signal = obs_output_get_signal_handler(virtualCam);
-		startVirtualCam.Connect(signal, "start", OBSStartVirtualCam, this);
-		stopVirtualCam.Connect(signal, "stop", OBSStopVirtualCam, this);
-		deactivateVirtualCam.Connect(signal, "deactivate", OBSDeactivateVirtualCam, this);
+		virtualCam.reset(new OutputObj(VIRTUAL_CAM_ID, "virtualcam_output", nullptr));
+		QObject::connect(virtualCam.data(), &OutputObj::Started, main, &OBSBasic::OnVirtualCamStart);
+		QObject::connect(virtualCam.data(), &OutputObj::Stopped, main, &OBSBasic::OnVirtualCamStop);
 	}
 
 	auto multitrack_enabled = config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo");
@@ -245,29 +217,14 @@ bool BasicOutputHandler::StartVirtualCam()
 	if (!main->vcamEnabled)
 		return false;
 
-	bool typeIsProgram = main->vcamConfig.type == VCamOutputType::ProgramView;
-
-	if (!virtualCamView && !typeIsProgram)
-		virtualCamView = obs_view_create();
-
-	UpdateVirtualCamOutputSource();
-
-	if (!virtualCamVideo) {
-		virtualCamVideo = typeIsProgram ? obs_get_video() : obs_view_add(virtualCamView);
-
-		if (!virtualCamVideo)
-			return false;
-	}
-
-	obs_output_set_media(virtualCam, virtualCamVideo, obs_get_audio());
 	if (!Active())
 		SetupOutputs();
 
-	bool success = obs_output_start(virtualCam);
+	bool success = virtualCam->Start();
 	if (!success) {
 		QString errorReason;
 
-		const char *error = obs_output_get_last_error(virtualCam);
+		const char *error = obs_output_get_last_error(virtualCam->GetOutput());
 		if (error) {
 			errorReason = QT_UTF8(error);
 		} else {
@@ -275,8 +232,6 @@ bool BasicOutputHandler::StartVirtualCam()
 		}
 
 		QMessageBox::critical(main, QTStr("Output.StartVirtualCamFailed"), errorReason);
-
-		DestroyVirtualCamView();
 	}
 
 	log_vcam_changed(main->vcamConfig, true);
@@ -286,22 +241,21 @@ bool BasicOutputHandler::StartVirtualCam()
 
 void BasicOutputHandler::StopVirtualCam()
 {
-	if (main->vcamEnabled) {
-		obs_output_stop(virtualCam);
-	}
+	if (main->vcamEnabled)
+		virtualCam->Stop();
 }
 
 bool BasicOutputHandler::VirtualCamActive() const
 {
-	if (main->vcamEnabled) {
-		return obs_output_active(virtualCam);
-	}
+	if (main->vcamEnabled)
+		return virtualCam->Active();
+
 	return false;
 }
 
 void BasicOutputHandler::UpdateVirtualCamOutputSource()
 {
-	if (!main->vcamEnabled || !virtualCamView)
+	if (!main->vcamEnabled)
 		return;
 
 	OBSSourceAutoRelease source;
@@ -309,76 +263,24 @@ void BasicOutputHandler::UpdateVirtualCamOutputSource()
 	switch (main->vcamConfig.type) {
 	case VCamOutputType::Invalid:
 	case VCamOutputType::ProgramView:
-		DestroyVirtualCameraScene();
-		return;
+		virtualCam->SetType(OutputType::Program);
+		break;
 	case VCamOutputType::PreviewOutput: {
-		DestroyVirtualCameraScene();
-		OBSSource s = main->GetCurrentSceneSource();
-		obs_source_get_ref(s);
-		source = s.Get();
+		virtualCam->SetType(OutputType::Preview);
 		break;
 	}
 	case VCamOutputType::SceneOutput:
-		DestroyVirtualCameraScene();
+		virtualCam->SetType(OutputType::Scene);
 		source = obs_get_source_by_name(main->vcamConfig.scene.c_str());
 		break;
 	case VCamOutputType::SourceOutput:
-		OBSSourceAutoRelease s = obs_get_source_by_name(main->vcamConfig.source.c_str());
-
-		if (!vCamSourceScene)
-			vCamSourceScene = obs_scene_create_private("vcam_source");
-		source = obs_source_get_ref(obs_scene_get_source(vCamSourceScene));
-
-		if (vCamSourceSceneItem && (obs_sceneitem_get_source(vCamSourceSceneItem) != s)) {
-			obs_sceneitem_remove(vCamSourceSceneItem);
-			vCamSourceSceneItem = nullptr;
-		}
-
-		if (!vCamSourceSceneItem) {
-			vCamSourceSceneItem = obs_scene_add(vCamSourceScene, s);
-
-			obs_sceneitem_set_bounds_type(vCamSourceSceneItem, OBS_BOUNDS_SCALE_INNER);
-			obs_sceneitem_set_bounds_alignment(vCamSourceSceneItem, OBS_ALIGN_CENTER);
-
-			const struct vec2 size = {
-				(float)obs_source_get_width(source),
-				(float)obs_source_get_height(source),
-			};
-			obs_sceneitem_set_bounds(vCamSourceSceneItem, &size);
-		}
+		virtualCam->SetType(OutputType::Source);
+		source = obs_get_source_by_name(main->vcamConfig.source.c_str());
 		break;
 	}
 
-	OBSSourceAutoRelease current = obs_view_get_source(virtualCamView, 0);
-	if (source != current)
-		obs_view_set_source(virtualCamView, 0, source);
-}
-
-void BasicOutputHandler::DestroyVirtualCamView()
-{
-	if (main->vcamConfig.type == VCamOutputType::ProgramView) {
-		virtualCamVideo = nullptr;
-		return;
-	}
-
-	obs_view_remove(virtualCamView);
-	obs_view_set_source(virtualCamView, 0, nullptr);
-	virtualCamVideo = nullptr;
-
-	obs_view_destroy(virtualCamView);
-	virtualCamView = nullptr;
-
-	DestroyVirtualCameraScene();
-}
-
-void BasicOutputHandler::DestroyVirtualCameraScene()
-{
-	if (!vCamSourceScene)
-		return;
-
-	obs_scene_release(vCamSourceScene);
-	vCamSourceScene = nullptr;
-	vCamSourceSceneItem = nullptr;
+	virtualCam->SetSource(source.Get());
+	virtualCam->Update();
 }
 
 const char *FindAudioEncoderFromCodec(const char *type)
