@@ -182,6 +182,7 @@ send_offer(std::string bearer_token, std::string endpoint_url,
 	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&read_buffer);
 	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
 	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
+	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
 	curl_easy_setopt(c, CURLOPT_POST, 1L);
 	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, offer_sdp.c_str());
