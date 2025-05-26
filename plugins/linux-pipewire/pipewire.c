@@ -1309,7 +1309,7 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 		gs_sync_destroy(acquire_sync);
 	}
 
-	effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_technique_t *tech = gs_effect_get_technique(effect, "DrawSrgbDecompress");
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
