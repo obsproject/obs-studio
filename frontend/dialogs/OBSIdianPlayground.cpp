@@ -17,7 +17,7 @@
 
 #include "OBSIdianPlayground.hpp"
 
-#include "components/idian/obs-widgets.hpp"
+#include <Idian/obs-widgets.hpp>
 
 #include <QTimer>
 

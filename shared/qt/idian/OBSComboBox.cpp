@@ -18,9 +18,6 @@
 #include "OBSActionRow.hpp"
 #include "OBSComboBox.hpp"
 #include <QTimer>
-#include <util/base.h>
-
-#define UNUSED_PARAMETER(param) (void)param
 
 OBSComboBox::OBSComboBox(QWidget *parent) : QComboBox(parent), OBSIdianUtils(this) {}
 
@@ -51,7 +48,6 @@ void OBSComboBox::hidePopup()
 
 void OBSComboBox::mousePressEvent(QMouseEvent *event)
 {
-	blog(LOG_INFO, "OBSComboBox::mousePressEvent");
 	QComboBox::mousePressEvent(event);
 }
 

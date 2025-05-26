@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "components/idian/obs-widgets.hpp"
-
 #include <QDialog>
 
 #include <memory>

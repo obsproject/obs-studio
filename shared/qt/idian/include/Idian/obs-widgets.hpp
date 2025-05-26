@@ -21,14 +21,14 @@
 //
 // (OBS Idian, get it?)
 
-#include "OBSActionRow.hpp"
-#include "OBSCheckBox.hpp"
-#include "OBSComboBox.hpp"
-#include "OBSDoubleSpinBox.hpp"
-#include "OBSGroupBox.hpp"
-#include "OBSPropertiesList.hpp"
-#include "OBSSpinBox.hpp"
-#include "OBSToggleSwitch.hpp"
+#include "../../OBSActionRow.hpp"
+#include "../../OBSCheckBox.hpp"
+#include "../../OBSComboBox.hpp"
+#include "../../OBSDoubleSpinBox.hpp"
+#include "../../OBSGroupBox.hpp"
+#include "../../OBSPropertiesList.hpp"
+#include "../../OBSSpinBox.hpp"
+#include "../../OBSToggleSwitch.hpp"
 
 /// Note: This file serves as an all-in-one include for custom OBS widgets.
 ///       It is not intended to define any widgets by itself.
