@@ -20,7 +20,6 @@
 #include <QSizePolicy>
 
 #include "OBSActionRow.hpp"
-#include <util/base.h>
 #include <QSvgRenderer>
 
 OBSActionRowWidget::OBSActionRowWidget(QWidget *parent) : OBSActionRow(parent)
@@ -240,10 +239,8 @@ OBSActionRowExpandButton::OBSActionRowExpandButton(QWidget *parent) : QAbstractB
 	setCheckable(true);
 }
 
-void OBSActionRowExpandButton::paintEvent(QPaintEvent *event)
+void OBSActionRowExpandButton::paintEvent(QPaintEvent *)
 {
-	UNUSED_PARAMETER(event);
-
 	QStyleOptionButton opt;
 	opt.initFrom(this);
 	QPainter p(this);
