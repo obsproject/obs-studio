@@ -20,8 +20,6 @@
 #include <QDialog>
 #include <memory>
 
-#include "components/idian/obs-widgets.hpp"
-
 #include <ui_OBSIdianPlayground.h>
 
 // QDialog including a bunch of custom widgets for demoing

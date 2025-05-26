@@ -16,9 +16,6 @@
 ******************************************************************************/
 
 #include "OBSToggleSwitch.hpp"
-#include <util/base.h>
-
-#define UNUSED_PARAMETER(param) (void)param
 
 static QColor blendColors(const QColor &color1, const QColor &color2, float ratio)
 {
@@ -100,10 +97,8 @@ void OBSToggleSwitch::changeEvent(QEvent *event)
 	}
 }
 
-void OBSToggleSwitch::paintEvent(QPaintEvent *e)
+void OBSToggleSwitch::paintEvent(QPaintEvent *)
 {
-	UNUSED_PARAMETER(e);
-
 	QStyleOptionButton opt;
 	opt.initFrom(this);
 	QPainter p(this);
