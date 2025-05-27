@@ -169,7 +169,7 @@ static std::string GenId()
 	uint64_t id = dist(e2);
 
 	char id_str[20];
-	snprintf(id_str, sizeof(id_str), "%16llX", (unsigned long long)id);
+	snprintf(id_str, sizeof(id_str), "%016llX", (unsigned long long)id);
 	return std::string(id_str);
 }
 
