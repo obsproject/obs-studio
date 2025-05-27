@@ -1041,6 +1041,12 @@
         </item>
         <item>
          <widget class="QToolBar" name="scenesToolbar">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
@@ -1164,6 +1170,12 @@
         </item>
         <item>
          <widget class="QToolBar" name="sourcesToolbar">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
@@ -1275,7 +1287,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>323</width>
+              <width>322</width>
               <height>16</height>
              </rect>
             </property>
@@ -1361,6 +1373,12 @@
         </item>
         <item>
          <widget class="QToolBar" name="mixerToolbar">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
