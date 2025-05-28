@@ -24,6 +24,8 @@
 #include "OBSBasicStats.hpp"
 #include "VolControl.hpp"
 
+#include <obs-module.h>
+
 #ifdef YOUTUBE_ENABLED
 #include <docks/YouTubeAppDock.hpp>
 #endif
@@ -191,6 +193,24 @@ static void SetSafeModuleNames()
 		 * "unsafe" bundled modules to the safe list. */
 		if (disable_3p_plugins || !unsafe_modules.count(module))
 			obs_add_safe_module(module.c_str());
+	}
+#endif
+}
+
+static void SetCoreModuleNames()
+{
+#ifndef SAFE_MODULES
+	return;
+#else
+	string module;
+	stringstream modules(SAFE_MODULES);
+
+	while (getline(modules, module, '|')) {
+		// TODO: Figure this out.
+		/* Is SAFE_MODULES actually CORE_MODULES in disguise?*/
+		/* Exeldro says "yes!" "it is indeed all modules that are build with obs" */
+		/* Barry however, says "no" */
+		obs_add_core_module(module.c_str());
 	}
 #endif
 }
@@ -952,13 +972,17 @@ void OBSBasic::OBSInit()
 #endif
 	struct obs_module_failure_info mfi;
 
-	/* Safe Mode disables third-party plugins so we don't need to add earch
-	 * paths outside the OBS bundle/installation. */
+	/* Safe Mode disables third-party plugins so we don't need to add each
+	 * path outside the OBS bundle/installation. */
 	if (safe_mode || disable_3p_plugins) {
 		SetSafeModuleNames();
 	} else {
 		AddExtraModulePaths();
 	}
+
+	/* Core modules are not allowed to be disabled by the user via plugin
+	 * manager. */
+	SetCoreModuleNames();
 
 	/* Modules can access frontend information (i.e. profile and scene collection data) during their initialization, and some modules (e.g. obs-websockets) are known to use the filesystem location of the current profile in their own code.
      
@@ -966,12 +990,21 @@ void OBSBasic::OBSInit()
      */
 	RefreshSceneCollections(true);
 
+	PMLoadModules();
+	PMDisableModules();
+
 	blog(LOG_INFO, "---------------------------------");
 	obs_load_all_modules2(&mfi);
 	blog(LOG_INFO, "---------------------------------");
 	obs_log_loaded_modules();
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
+
+	// Find any new modules and add to Plugin Manager.
+	obs_enum_modules(OBSBasic::PMAddNewModule, this);
+	// Get list of valid module types.
+	PMAddModuleTypes();
+	PMSaveModules();
 
 	BPtr<char *> failed_modules = mfi.failed_modules;
 

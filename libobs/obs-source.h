@@ -551,6 +551,9 @@ struct obs_source_info {
 	 * @param  source  Source that the filter is being added to
 	 */
 	void (*filter_add)(void *data, obs_source_t *source);
+
+	/** Pointer to module that generated this source **/
+	obs_module_t* module;
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info, size_t size);
