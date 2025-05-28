@@ -17,41 +17,41 @@
 
 #pragma once
 
+#include "../OBSIdianWidget.hpp"
+
 #include <QFrame>
-#include <QWidget>
 #include <QLayout>
+#include <QWidget>
 
-#include "OBSIdianWidget.hpp"
+namespace idian {
+class GenericRow;
 
-class OBSActionRow;
-
-class OBSPropertiesList : public QFrame {
+class PropertiesList : public QFrame {
 	Q_OBJECT
 
 public:
-	OBSPropertiesList(QWidget *parent = nullptr);
+	PropertiesList(QWidget *parent = nullptr);
 
-	void addRow(OBSActionRow *actionRow);
+	void addRow(GenericRow *row);
 	void clear();
 
-	QList<OBSActionRow *> rows() const { return rowsList; }
+	QList<GenericRow *> rows() const { return rowsList; }
 
 private:
-	OBSActionRow *first = nullptr;
-	OBSActionRow *last = nullptr;
+	GenericRow *first = nullptr;
+	GenericRow *last = nullptr;
 
 	QVBoxLayout *layout;
-	QList<OBSActionRow *> rowsList;
+	QList<GenericRow *> rowsList;
 };
 
-/**
-* Spacer with only cosmetic functionality
-*/
-class OBSPropertiesListSpacer : public QFrame {
+// Spacer with only cosmetic functionality
+class PropertiesListSpacer : public QFrame {
 	Q_OBJECT
 public:
-	OBSPropertiesListSpacer(QWidget *parent = nullptr) : QFrame(parent)
+	PropertiesListSpacer(QWidget *parent = nullptr) : QFrame(parent)
 	{
 		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 	}
 };
+} // namespace idian

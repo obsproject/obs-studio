@@ -2180,7 +2180,7 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 }
 
 /* Idian Widgets */
-OBSGroupBox {
+idian--Group {
     border-radius: var(--border_radius);
     font-weight: bold;
     margin: 0 0 var(--spacing_base);
@@ -2188,56 +2188,56 @@ OBSGroupBox {
     max-width: 600px;
 }
 
-OBSGroupBox .header .title {
+idian--Group .header .title {
     font-weight: bold;
     padding: var(--padding_large) 0;
 }
 
-OBSGroupBox .header .description {
+idian--Group .header .description {
     color: var(--text_muted);
     padding: var(--spacing_small) 0;
 }
 
-OBSPropertiesList {
+idian--PropertiesList {
     border-width: 0;
     padding: 0;
     margin: var(--spacing_base) 0;
 }
 
-OBSActionRowWidget {
+idian--Row {
     background: var(--grey5);
     margin: 0;
     padding: var(--action_row_padding) var(--action_row_padding_x);
 }
 
-OBSActionRowWidget.keyFocus {
+idian--Row.keyFocus {
     background: var(--grey4);
     border: var(--highlight_width) solid var(--grey4);
 }
 
-OBSActionRowWidget.cursor-pointer.hover {
+idian--Row.cursor-pointer.hover {
     background: var(--grey4);
     border: var(--highlight_width) solid var(--grey1);
 }
 
-OBSActionRowWidget.first {
+idian--Row.first {
     border-top-left-radius: var(--border_radius);
     border-top-right-radius: var(--border_radius);
 }
 
-OBSActionRowWidget.last {
+idian--Row.last {
     border-bottom-left-radius: var(--border_radius);
     border-bottom-right-radius: var(--border_radius);
 }
 
-OBSActionRowWidget > QWidget QLabel {
+idian--Row > QWidget QLabel {
     background: red;
     margin: 4px;
     font-weight: 500;
     max-height: var(--input_height);
 }
 
-OBSActionRowWidget > QLabel.description {
+idian--Row > QLabel.description {
     font-size: var(--font_small);
     color: var(--text_muted);
 }
@@ -2271,17 +2271,17 @@ OBSToggleSwitch.keyFocus {
     border-color: var(--highlight_color);
 }
 
-OBSActionRowWidget OBSToggleSwitch:hover,
-OBSActionRowWidget.hover > OBSToggleSwitch.row-buddy {
+idian--Row OBSToggleSwitch:hover,
+idian--Row.hover > OBSToggleSwitch.row-buddy {
     border-color: var(--grey1);
 }
 
-OBSActionRowWidget OBSToggleSwitch:checked:hover,
-OBSActionRowWidget.hover OBSToggleSwitch.row-buddy:checked {
+idian--Row OBSToggleSwitch:checked:hover,
+idian--Row.hover OBSToggleSwitch.row-buddy:checked {
     border-color: var(--white1);
 }
 
-OBSActionRowWidget QComboBox {
+idian--Row QComboBox {
     background-color: transparent;
     min-height: var(--action_row_base);
     max-height: var(--action_row_base);
@@ -2292,98 +2292,98 @@ OBSActionRowWidget QComboBox {
     margin: 0;
 }
 
-OBSActionRowWidget QComboBox:focus {
+idian--Row QComboBox:focus {
     border-color: transparent;
 }
 
-OBSActionRowWidget QComboBox:hover {
+idian--Row QComboBox:hover {
     border-color: var(--grey1);
 }
 
-OBSActionRowWidget QComboBox.keyFocus {
+idian--Row QComboBox.keyFocus {
     border-color: var(--highlight_color);
 }
 
-OBSActionRowWidget QComboBox::drop-down {
+idian--Row QComboBox::drop-down {
     border: none;
 }
 
-OBSActionRowWidget QComboBox::down-arrow {
+idian--Row QComboBox::down-arrow {
     image: url(theme:Dark/collapse.svg);
 }
 
-OBSActionRowWidget QComboBox QAbstractItemView {
+idian--Row QComboBox QAbstractItemView {
     outline: none;
 }
 
-OBSActionRowWidget QComboBox QAbstractItemView::item {
+idian--Row QComboBox QAbstractItemView::item {
     background-color: var(--bg_base);
     padding: var(--padding_base) var(--padding_large);
 }
 
-OBSActionRowWidget QComboBox QAbstractItemView::item:hover,
-OBSActionRowWidget QComboBox QAbstractItemView::item:selected {
+idian--Row QComboBox QAbstractItemView::item:hover,
+idian--Row QComboBox QAbstractItemView::item:selected {
     background-color: var(--list_item_bg_selected);
     padding: var(--padding_base) var(--padding_large);
 }
 
-OBSActionRowWidget QPushButton,
-OBSActionRowWidget QSpinBox,
-OBSActionRowWidget QDoubleSpinBox {
+idian--Row QPushButton,
+idian--Row QSpinBox,
+idian--Row QDoubleSpinBox {
     margin: 0;
     padding: var(--padding_base) var(--action_row_padding_x);
 }
 
-OBSPropertiesListSpacer {
+idian--PropertiesListSpacer {
     max-height: var(--spacing_small);
     min-height: var(--spacing_small);
     background-color: var(--bg_window);
 }
 
-OBSActionRowWidget OBSCheckBox {
+idian--Row OBSCheckBox {
     outline: none;
 }
 
-OBSActionRowWidget OBSCheckBox::indicator,
-OBSActionRowWidget OBSCheckBox::indicator:unchecked:hover {
+idian--Row OBSCheckBox::indicator,
+idian--Row OBSCheckBox::indicator:unchecked:hover {
     border: var(--highlight_width) solid transparent;
     border-radius: var(--border_radius);
 }
 
-OBSActionRowWidget.hover > OBSCheckBox.row-buddy::indicator,
-OBSActionRowWidget > OBSCheckBox::indicator:unchecked:hover,
-OBSActionRowWidget > OBSCheckBox::indicator:hover {
+idian--Row.hover > OBSCheckBox.row-buddy::indicator,
+idian--Row > OBSCheckBox::indicator:unchecked:hover,
+idian--Row > OBSCheckBox::indicator:hover {
     border-color: var(--grey1);
 }
 
-OBSActionRowWidget.hover > OBSCheckBox.row-buddy::indicator:unchecked,
+idian--Row.hover > OBSCheckBox.row-buddy::indicator:unchecked,
 OBSCheckBox.keyFocus::indicator:unchecked {
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
 
-OBSActionRowWidget OBSCheckBox.keyFocus::indicator,
-OBSActionRowWidget.hover > OBSCheckBox::indicator {
+idian--Row OBSCheckBox.keyFocus::indicator,
+idian--Row.hover > OBSCheckBox::indicator {
     image: url(theme:Yami/checkbox_checked_focus.svg);
 }
 
-OBSActionRowWidget OBSCheckBox.keyFocus::indicator,
-OBSActionRowWidget OBSCheckBox.keyFocus::indicator:unchecked,
-OBSActionRowWidget OBSCheckBox.keyFocus::indicator:hover,
-OBSActionRowWidget OBSCheckBox.keyFocus::indicator:unchecked:hover {
+idian--Row OBSCheckBox.keyFocus::indicator,
+idian--Row OBSCheckBox.keyFocus::indicator:unchecked,
+idian--Row OBSCheckBox.keyFocus::indicator:hover,
+idian--Row OBSCheckBox.keyFocus::indicator:unchecked:hover {
     border-color: var(--highlight_color);
 }
 
-OBSCollapsibleRowWidget {
+idian--CollapsibleRow {
     margin: 0;
     padding: 0;
     border: none;
 }
 
-OBSCollapsibleRowWidget.keyFocus {
+idian--CollapsibleRow.keyFocus {
     border: var(--highlight_width) solid var(--highlight_color);
 }
 
-OBSCollapsibleRowWidget OBSPropertiesList {
+idian--CollapsibleRow idian--PropertiesList {
     border-radius: 0;
     border-left: 1px solid var(--grey5);
     border-right: 1px solid var(--grey5);
@@ -2391,22 +2391,22 @@ OBSCollapsibleRowWidget OBSPropertiesList {
     margin: var(--spacing_small) 0px 0px;
 }
 
-OBSCollapsibleRowWidget OBSPropertiesList OBSActionRowWidget {
+idian--CollapsibleRow idian--PropertiesList idian--Row {
     background-color: var(--grey6);
     padding-left: var(--action_row_padding_nested);
 }
 
-OBSCollapsibleRowWidget OBSActionRowWidget.first,
-OBSCollapsibleRowWidget OBSActionRowWidget.last {
+idian--CollapsibleRow idian--Row.first,
+idian--CollapsibleRow idian--Row.last {
     border-radius: 0;
 }
 
-OBSCollapsibleRowWidget OBSPropertiesList OBSToggleSwitch {
+idian--CollapsibleRow idian--PropertiesList OBSToggleSwitch {
     qproperty-background: var(--grey7);
     qproperty-background_hover: var(--grey6);
 }
 
-OBSActionRowExpandButton {
+idian--ExpandButton {
     background: transparent;
     min-width: var(--action_row_collapse);
     max-width: var(--action_row_collapse);
@@ -2415,7 +2415,7 @@ OBSActionRowExpandButton {
     border: none;
 }
 
-OBSActionRowExpandButton::indicator {
+idian--ExpandButton::indicator {
     background: var(--grey5);
     border-radius: var(--action_row_collapse_radius);
     padding: var(--padding_large);
@@ -2423,37 +2423,37 @@ OBSActionRowExpandButton::indicator {
     border: var(--highlight_width) solid var(--grey5);
 }
 
-OBSActionRowExpandButton::indicator:checked {
+idian--ExpandButton::indicator:checked {
     image: url(theme:Dark/up.svg);
 }
 
-OBSActionRowExpandButton.keyFocus,
-OBSActionRowExpandButton.keyFocus::indicator {
+idian--ExpandButton.keyFocus,
+idian--ExpandButton.keyFocus::indicator {
     border-color: var(--highlight_color);
 }
 
-OBSCollapsibleRowFrame .btn-frame {
+idian--RowFrame .btn-frame {
     background: var(--grey5);
     padding: var(--action_row_padding) var(--action_row_padding_x);
 }
 
-OBSCollapsibleRowFrame.hover .btn-frame {
+idian--RowFrame.hover .btn-frame {
     background: var(--grey4);
 }
 
-OBSCollapsibleRowFrame.hover OBSActionRowWidget,
-OBSCollapsibleRowFrame.hover OBSActionRowWidget.hover {
+idian--RowFrame.hover idian--Row,
+idian--RowFrame.hover idian--Row.hover {
     background: var(--grey4);
     border: 2px solid var(--grey1);
     border-right: none;
 }
 
-OBSCollapsibleRowFrame.hover .row-buddy {
+idian--RowFrame.hover .row-buddy {
     background: var(--grey4);
     border: 2px solid var(--grey1);
     border-left: none;
 }
 
-OBSCollapsibleRowFrame.hover OBSActionRowExpandButton::indicator {
+idian--RowFrame.hover idian--ExpandButton::indicator {
     border-color: var(--grey1);
 }

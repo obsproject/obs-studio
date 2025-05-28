@@ -15,10 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "OBSIdianWidget.hpp"
-#include "OBSGroupBox.hpp"
+#include <Idian/Group.hpp>
 
-OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
+#include "../OBSIdianWidget.hpp"
+
+#include <Idian/moc_Group.cpp>
+
+using idian::Group;
+
+Group::Group(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
 {
 	layout = new QVBoxLayout(this);
 	layout->setSpacing(0);
@@ -57,12 +62,11 @@ OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
 	layout->addWidget(headerContainer);
 	layout->addWidget(contentsContainer);
 
-	propertyList = new OBSPropertiesList(this);
+	propertyList = new PropertiesList(this);
 
 	setLayout(layout);
 
 	contentsLayout->addWidget(propertyList);
-	/*contentsContainer->setSizePolicy(policy);*/
 
 	nameLabel = new QLabel();
 	OBSIdianUtils::addClass(nameLabel, "title");
@@ -75,36 +79,36 @@ OBSGroupBox::OBSGroupBox(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
 	labelLayout->addWidget(descriptionLabel);
 }
 
-void OBSGroupBox::addRow(OBSActionRow *actionRow) const
+void Group::addRow(GenericRow *row) const
 {
-	propertyList->addRow(actionRow);
+	propertyList->addRow(row);
 }
 
-void OBSGroupBox::setTitle(QString name)
+void Group::setTitle(QString name)
 {
 	nameLabel->setText(name);
 	setAccessibleName(name);
 	showTitle(true);
 }
 
-void OBSGroupBox::setDescription(QString desc)
+void Group::setDescription(QString desc)
 {
 	descriptionLabel->setText(desc);
 	setAccessibleDescription(desc);
 	showDescription(true);
 }
 
-void OBSGroupBox::showTitle(bool visible)
+void Group::showTitle(bool visible)
 {
 	nameLabel->setVisible(visible);
 }
 
-void OBSGroupBox::showDescription(bool visible)
+void Group::showDescription(bool visible)
 {
 	descriptionLabel->setVisible(visible);
 }
 
-void OBSGroupBox::setCheckable(bool check)
+void Group::setCheckable(bool check)
 {
 	checkable = check;
 
