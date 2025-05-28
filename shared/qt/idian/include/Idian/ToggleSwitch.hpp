@@ -17,19 +17,21 @@
 
 #pragma once
 
-#include <QWidget>
-#include <QEvent>
-#include <QBrush>
-#include <QPropertyAnimation>
-#include <QPainter>
-#include <QMouseEvent>
+#include "../OBSIdianWidget.hpp"
+
 #include <QAbstractButton>
-#include <QStyleOptionButton>
 #include <QAccessibleWidget>
+#include <QBrush>
+#include <QEvent>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPropertyAnimation>
+#include <QStyleOptionButton>
+#include <QWidget>
 
-#include "OBSIdianWidget.hpp"
+namespace idian {
 
-class OBSToggleSwitch : public QAbstractButton, public OBSIdianUtils {
+class ToggleSwitch : public QAbstractButton, public OBSIdianUtils {
 	Q_OBJECT
 	Q_PROPERTY(int xpos MEMBER xPos WRITE setPos)
 	Q_PROPERTY(QColor background MEMBER backgroundInactive DESIGNABLE true)
@@ -41,8 +43,8 @@ class OBSToggleSwitch : public QAbstractButton, public OBSIdianUtils {
 	Q_PROPERTY(float blend MEMBER blend WRITE setBlend DESIGNABLE false)
 
 public:
-	OBSToggleSwitch(QWidget *parent = nullptr);
-	OBSToggleSwitch(bool defaultState, QWidget *parent = nullptr);
+	ToggleSwitch(QWidget *parent = nullptr);
+	ToggleSwitch(bool defaultState, QWidget *parent = nullptr);
 
 	QSize sizeHint() const override;
 
@@ -119,3 +121,5 @@ private:
 	QPropertyAnimation *animHandle = nullptr;
 	QPropertyAnimation *animBgColor = nullptr;
 };
+
+} // namespace idian
