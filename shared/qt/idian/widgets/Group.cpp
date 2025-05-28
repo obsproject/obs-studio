@@ -15,13 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "../OBSIdianWidget.hpp"
+#include <Idian/Utils.hpp>
 
 #include <Idian/moc_Group.cpp>
 
 using idian::Group;
 
-Group::Group(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
+Group::Group(QWidget *parent) : QFrame(parent), Utils(this)
 {
 	layout = new QVBoxLayout(this);
 	layout->setSpacing(0);
@@ -32,7 +32,7 @@ Group::Group(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
 	headerLayout->setSpacing(0);
 	headerLayout->setContentsMargins(0, 0, 0, 0);
 	headerContainer->setLayout(headerLayout);
-	OBSIdianUtils::addClass(headerContainer, "header");
+	Utils::addClass(headerContainer, "header");
 
 	labelContainer = new QWidget();
 	labelLayout = new QVBoxLayout();
@@ -55,7 +55,7 @@ Group::Group(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
 	contentsLayout->setSpacing(0);
 	contentsLayout->setContentsMargins(0, 0, 0, 0);
 	contentsContainer->setLayout(contentsLayout);
-	OBSIdianUtils::addClass(contentsContainer, "contents");
+	Utils::addClass(contentsContainer, "contents");
 
 	layout->addWidget(headerContainer);
 	layout->addWidget(contentsContainer);
@@ -68,12 +68,12 @@ Group::Group(QWidget *parent) : QFrame(parent), OBSIdianUtils(this)
 	/*contentsContainer->setSizePolicy(policy);*/
 
 	nameLabel = new QLabel();
-	OBSIdianUtils::addClass(nameLabel, "title");
+	Utils::addClass(nameLabel, "title");
 	nameLabel->setVisible(false);
 	labelLayout->addWidget(nameLabel);
 
 	descriptionLabel = new QLabel();
-	OBSIdianUtils::addClass(descriptionLabel, "description");
+	Utils::addClass(descriptionLabel, "description");
 	descriptionLabel->setVisible(false);
 	labelLayout->addWidget(descriptionLabel);
 }

@@ -23,12 +23,11 @@
 
 using idian::ComboBox;
 
-ComboBox::ComboBox(QWidget *parent) : QComboBox(parent), OBSIdianUtils(this) {}
+ComboBox::ComboBox(QWidget *parent) : QComboBox(parent), Utils(this) {}
 
 void ComboBox::showPopup()
 {
 	if (allowOpeningPopup) {
-		allowOpeningPopup = false;
 		QComboBox::showPopup();
 	}
 }

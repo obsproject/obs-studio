@@ -21,7 +21,7 @@
 #include <QWidget>
 #include <QLayout>
 
-#include "../OBSIdianWidget.hpp"
+#include <Idian/Utils.hpp>
 
 namespace idian {
 class GenericRow;
