@@ -44,11 +44,11 @@ Row::Row(QWidget *parent) : GenericRow(parent)
 
 	nameLabel = new QLabel();
 	nameLabel->setVisible(false);
-	OBSIdianUtils::addClass(nameLabel, "title");
+	Utils::addClass(nameLabel, "title");
 
 	descriptionLabel = new QLabel();
 	descriptionLabel->setVisible(false);
-	OBSIdianUtils::addClass(descriptionLabel, "description");
+	Utils::addClass(descriptionLabel, "description");
 
 	labelLayout->addWidget(nameLabel);
 	labelLayout->addWidget(descriptionLabel);
@@ -137,13 +137,13 @@ void Row::showDescription(bool visible)
 void Row::setBuddy(QWidget *widget)
 {
 	buddyWidget = widget;
-	OBSIdianUtils::addClass(widget, "row-buddy");
+	Utils::addClass(widget, "row-buddy");
 }
 
 void Row::setChangeCursor(bool change)
 {
 	changeCursor = change;
-	OBSIdianUtils::toggleClass("cursor-pointer", change);
+	Utils::toggleClass("cursor-pointer", change);
 }
 
 void Row::enterEvent(QEnterEvent *event)
@@ -155,13 +155,13 @@ void Row::enterEvent(QEnterEvent *event)
 		setCursor(Qt::PointingHandCursor);
 	}
 
-	OBSIdianUtils::addClass("hover");
+	Utils::addClass("hover");
 
 	if (buddyWidget)
-		OBSIdianUtils::repolish(buddyWidget);
+		Utils::repolish(buddyWidget);
 
 	if (hasPrefix() || hasSuffix()) {
-		OBSIdianUtils::polishChildren();
+		Utils::polishChildren();
 	}
 
 	GenericRow::enterEvent(event);
@@ -169,13 +169,13 @@ void Row::enterEvent(QEnterEvent *event)
 
 void Row::leaveEvent(QEvent *event)
 {
-	OBSIdianUtils::removeClass("hover");
+	Utils::removeClass("hover");
 
 	if (buddyWidget)
-		OBSIdianUtils::repolish(buddyWidget);
+		Utils::repolish(buddyWidget);
 
 	if (hasPrefix() || hasSuffix()) {
-		OBSIdianUtils::polishChildren();
+		Utils::polishChildren();
 	}
 
 	GenericRow::leaveEvent(event);
@@ -236,7 +236,7 @@ void Row::connectBuddyWidget(QWidget *widget)
 /*
  * Button for expanding a collapsible ActionRow
  */
-ExpandButton::ExpandButton(QWidget *parent) : QAbstractButton(parent), OBSIdianUtils(this)
+ExpandButton::ExpandButton(QWidget *parent) : QAbstractButton(parent), Utils(this)
 {
 	setCheckable(true);
 }
@@ -291,7 +291,7 @@ CollapsibleRow::CollapsibleRow(const QString &name, QWidget *parent) : GenericRo
 	btnLayout->setContentsMargins(0, 0, 0, 0);
 	btnLayout->setSpacing(0);
 	expandFrame->setLayout(btnLayout);
-	OBSIdianUtils::addClass(expandFrame, "btn-frame");
+	Utils::addClass(expandFrame, "btn-frame");
 	actionRow->setBuddy(expandFrame);
 
 	expandButton = new ExpandButton(this);
@@ -320,7 +320,7 @@ void CollapsibleRow::setCheckable(bool check)
 
 	if (checkable && !toggleSwitch) {
 		propertyList->setEnabled(false);
-		OBSIdianUtils::polishChildren(propertyList);
+		Utils::polishChildren(propertyList);
 
 		toggleSwitch = new ToggleSwitch(false);
 
@@ -330,7 +330,7 @@ void CollapsibleRow::setCheckable(bool check)
 
 	if (!checkable && toggleSwitch) {
 		propertyList->setEnabled(true);
-		OBSIdianUtils::polishChildren(propertyList);
+		Utils::polishChildren(propertyList);
 
 		actionRow->suffix()->deleteLater();
 	}
@@ -349,22 +349,22 @@ void CollapsibleRow::addRow(GenericRow *actionRow)
 	propertyList->addRow(actionRow);
 }
 
-RowFrame::RowFrame(QWidget *parent) : QFrame(parent), OBSIdianUtils(this) {}
+RowFrame::RowFrame(QWidget *parent) : QFrame(parent), Utils(this) {}
 
 void RowFrame::enterEvent(QEnterEvent *event)
 {
 	setCursor(Qt::PointingHandCursor);
 
-	OBSIdianUtils::addClass("hover");
-	OBSIdianUtils::polishChildren();
+	Utils::addClass("hover");
+	Utils::polishChildren();
 
 	QWidget::enterEvent(event);
 }
 
 void RowFrame::leaveEvent(QEvent *event)
 {
-	OBSIdianUtils::removeClass("hover");
-	OBSIdianUtils::polishChildren();
+	Utils::removeClass("hover");
+	Utils::polishChildren();
 
 	QWidget::leaveEvent(event);
 }
