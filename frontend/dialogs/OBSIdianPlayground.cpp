@@ -34,7 +34,7 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	Group *test;
 	Row *tmp;
 
-	OBSComboBox *cbox = new OBSComboBox;
+	ComboBox *cbox = new ComboBox;
 	cbox->addItem("Test 1");
 	cbox->addItem("Test 2");
 
@@ -46,7 +46,7 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	tmp->setSuffix(cbox);
 	test->properties()->addRow(tmp);
 
-	cbox = new OBSComboBox;
+	cbox = new ComboBox;
 	cbox->addItem("Test 3");
 	cbox->addItem("Test 4");
 	tmp = new Row();
@@ -57,20 +57,20 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 
 	tmp = new Row();
 	tmp->setTitle("Toggle Switch");
-	tmp->setSuffix(new OBSToggleSwitch());
+	tmp->setSuffix(new ToggleSwitch());
 	test->properties()->addRow(tmp);
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);
 
 	tmp = new Row();
 	tmp->setTitle("Delayed toggle switch");
 	tmp->setDescription("The state can be set separately");
-	auto tswitch = new OBSToggleSwitch;
+	auto tswitch = new ToggleSwitch;
 	tswitch->setDelayed(true);
-	connect(tswitch, &OBSToggleSwitch::pendingChecked, this, [=]() {
+	connect(tswitch, &ToggleSwitch::pendingChecked, this, [=]() {
 		// Do async enable stuff, then set toggle status when complete
 		QTimer::singleShot(1000, [=]() { tswitch->setStatus(true); });
 	});
-	connect(tswitch, &OBSToggleSwitch::pendingUnchecked, this, [=]() {
+	connect(tswitch, &ToggleSwitch::pendingUnchecked, this, [=]() {
 		// Do async disable stuff, then set toggle status when complete
 		QTimer::singleShot(1000, [=]() { tswitch->setStatus(false); });
 	});
@@ -85,12 +85,12 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 
 	tmp = new Row();
 	tmp->setTitle("Box 1");
-	tmp->setPrefix(new OBSCheckBox);
+	tmp->setPrefix(new CheckBox);
 	test->properties()->addRow(tmp);
 
 	tmp = new Row();
 	tmp->setTitle("Box 2");
-	tmp->setPrefix(new OBSCheckBox);
+	tmp->setPrefix(new CheckBox);
 	test->properties()->addRow(tmp);
 
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);
@@ -102,7 +102,7 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 
 	tmp = new Row();
 	tmp->setTitle("Placeholder");
-	tmp->setSuffix(new OBSToggleSwitch);
+	tmp->setSuffix(new ToggleSwitch);
 	test->properties()->addRow(tmp);
 
 	CollapsibleRow *tmp2 = new CollapsibleRow("A Collapsible row!", this);
@@ -111,17 +111,17 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 
 	tmp = new Row();
 	tmp->setTitle("Spin box demo");
-	tmp->setSuffix(new OBSDoubleSpinBox());
+	tmp->setSuffix(new DoubleSpinBox());
 	tmp2->addRow(tmp);
 
 	tmp = new Row();
 	tmp->setTitle("Just another placeholder");
-	tmp->setSuffix(new OBSToggleSwitch(true));
+	tmp->setSuffix(new ToggleSwitch(true));
 	tmp2->addRow(tmp);
 
 	tmp = new Row();
 	tmp->setTitle("Placeholder 2");
-	tmp->setSuffix(new OBSToggleSwitch);
+	tmp->setSuffix(new ToggleSwitch);
 	test->properties()->addRow(tmp);
 
 	ui->scrollAreaWidgetContents->setContentsMargins(0, 0, 0, 0);
