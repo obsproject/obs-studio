@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2024 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,26 +17,26 @@
 
 #pragma once
 
-#include <QCheckBox>
+#include <QFrame>
+#include <QLayout>
+#include <QPushButton>
+#include <QSpinBox>
 
-#include "OBSIdianWidget.hpp"
+namespace idian {
 
-class OBSCheckBox : public QCheckBox, public OBSIdianUtils {
+class SpinBox : public QFrame {
 	Q_OBJECT;
 
 public:
-	OBSCheckBox(QWidget *parent = nullptr);
+	SpinBox(QWidget *parent = nullptr);
 
-protected:
-	void focusInEvent(QFocusEvent *e) override
-	{
-		OBSIdianUtils::showKeyFocused(e);
-		QAbstractButton::focusInEvent(e);
-	}
+	QSpinBox *spinBox() const { return sbox; }
 
-	void focusOutEvent(QFocusEvent *e) override
-	{
-		OBSIdianUtils::hideKeyFocused(e);
-		QAbstractButton::focusOutEvent(e);
-	}
+private:
+	QHBoxLayout *layout;
+	QPushButton *decr;
+	QPushButton *incr;
+	QSpinBox *sbox;
 };
+
+} // namespace idian

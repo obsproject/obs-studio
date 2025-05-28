@@ -15,13 +15,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <Idian/ComboBox.hpp>
+
 #include <Idian/Row.hpp>
-#include "OBSComboBox.hpp"
+
 #include <QTimer>
 
-OBSComboBox::OBSComboBox(QWidget *parent) : QComboBox(parent), OBSIdianUtils(this) {}
+#include <Idian/moc_ComboBox.cpp>
 
-void OBSComboBox::showPopup()
+using idian::ComboBox;
+
+ComboBox::ComboBox(QWidget *parent) : QComboBox(parent), OBSIdianUtils(this) {}
+
+void ComboBox::showPopup()
 {
 	if (allowOpeningPopup) {
 		allowOpeningPopup = false;
@@ -29,7 +35,7 @@ void OBSComboBox::showPopup()
 	}
 }
 
-void OBSComboBox::hidePopup()
+void ComboBox::hidePopup()
 {
 	// It would be nice to find a better way to do this.
 	//
@@ -46,16 +52,16 @@ void OBSComboBox::hidePopup()
 	QComboBox::hidePopup();
 }
 
-void OBSComboBox::mousePressEvent(QMouseEvent *event)
+void ComboBox::mousePressEvent(QMouseEvent *event)
 {
 	QComboBox::mousePressEvent(event);
 }
 
-void OBSComboBox::togglePopup()
+void ComboBox::togglePopup()
 {
 	if (view()->isVisible()) {
-		OBSComboBox::hidePopup();
+		ComboBox::hidePopup();
 	} else {
-		OBSComboBox::showPopup();
+		ComboBox::showPopup();
 	}
 }

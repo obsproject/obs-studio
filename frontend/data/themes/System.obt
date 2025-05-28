@@ -380,7 +380,7 @@ StatusBarWidget > QFrame {
     padding: 0px 12px 8px;
 }
 
-OBSToggleSwitch {
+idian--ToggleSwitch {
     qproperty-handle: rgb(255, 255, 255);
     qproperty-backgroundActive: #284cb8;
     qproperty-backgroundInactive: #3c404b;

@@ -113,9 +113,9 @@ void Group::setCheckable(bool check)
 	checkable = check;
 
 	if (checkable && !toggleSwitch) {
-		toggleSwitch = new OBSToggleSwitch(true);
+		toggleSwitch = new ToggleSwitch(true);
 		controlLayout->addWidget(toggleSwitch);
-		connect(toggleSwitch, &OBSToggleSwitch::toggled, this,
+		connect(toggleSwitch, &ToggleSwitch::toggled, this,
 			[=](bool checked) { propertyList->setEnabled(checked); });
 	}
 

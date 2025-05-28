@@ -2242,7 +2242,7 @@ idian--Row > QLabel.description {
     color: var(--text_muted);
 }
 
-OBSToggleSwitch {
+idian--ToggleSwitch {
     qproperty-background: var(--grey6);
     qproperty-background_hover: var(--grey7);
     qproperty-background_checked: var(--primary);
@@ -2259,25 +2259,25 @@ OBSToggleSwitch {
     border: var(--highlight_width) solid transparent;
 }
 
-OBSToggleSwitch:hover {
+idian--ToggleSwitch:hover {
     border-color: var(--grey4);
 }
 
-OBSToggleSwitch:checked:hover {
+idian--ToggleSwitch:checked:hover {
     border-color: var(--white1);
 }
 
-OBSToggleSwitch.keyFocus {
+idian--ToggleSwitch.keyFocus {
     border-color: var(--highlight_color);
 }
 
-idian--Row OBSToggleSwitch:hover,
-idian--Row.hover > OBSToggleSwitch.row-buddy {
+idian--Row idian--ToggleSwitch:hover,
+idian--Row.hover > idian--ToggleSwitch.row-buddy {
     border-color: var(--grey1);
 }
 
-idian--Row OBSToggleSwitch:checked:hover,
-idian--Row.hover OBSToggleSwitch.row-buddy:checked {
+idian--Row idian--ToggleSwitch:checked:hover,
+idian--Row.hover idian--ToggleSwitch.row-buddy:checked {
     border-color: var(--white1);
 }
 
@@ -2340,36 +2340,36 @@ idian--PropertiesListSpacer {
     background-color: var(--bg_window);
 }
 
-idian--Row OBSCheckBox {
+idian--Row idian--CheckBox {
     outline: none;
 }
 
-idian--Row OBSCheckBox::indicator,
-idian--Row OBSCheckBox::indicator:unchecked:hover {
+idian--Row idian--CheckBox::indicator,
+idian--Row idian--CheckBox::indicator:unchecked:hover {
     border: var(--highlight_width) solid transparent;
     border-radius: var(--border_radius);
 }
 
-idian--Row.hover > OBSCheckBox.row-buddy::indicator,
-idian--Row > OBSCheckBox::indicator:unchecked:hover,
-idian--Row > OBSCheckBox::indicator:hover {
+idian--Row.hover > idian--CheckBox.row-buddy::indicator,
+idian--Row > idian--CheckBox::indicator:unchecked:hover,
+idian--Row > idian--CheckBox::indicator:hover {
     border-color: var(--grey1);
 }
 
-idian--Row.hover > OBSCheckBox.row-buddy::indicator:unchecked,
-OBSCheckBox.keyFocus::indicator:unchecked {
+idian--Row.hover > idian--CheckBox.row-buddy::indicator:unchecked,
+idian--CheckBox.keyFocus::indicator:unchecked {
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
 
-idian--Row OBSCheckBox.keyFocus::indicator,
-idian--Row.hover > OBSCheckBox::indicator {
+idian--Row idian--CheckBox.keyFocus::indicator,
+idian--Row.hover > idian--CheckBox::indicator {
     image: url(theme:Yami/checkbox_checked_focus.svg);
 }
 
-idian--Row OBSCheckBox.keyFocus::indicator,
-idian--Row OBSCheckBox.keyFocus::indicator:unchecked,
-idian--Row OBSCheckBox.keyFocus::indicator:hover,
-idian--Row OBSCheckBox.keyFocus::indicator:unchecked:hover {
+idian--Row idian--CheckBox.keyFocus::indicator,
+idian--Row idian--CheckBox.keyFocus::indicator:unchecked,
+idian--Row idian--CheckBox.keyFocus::indicator:hover,
+idian--Row idian--CheckBox.keyFocus::indicator:unchecked:hover {
     border-color: var(--highlight_color);
 }
 
@@ -2401,7 +2401,7 @@ idian--CollapsibleRow idian--Row.last {
     border-radius: 0;
 }
 
-idian--CollapsibleRow idian--PropertiesList OBSToggleSwitch {
+idian--CollapsibleRow idian--PropertiesList idian--ToggleSwitch {
     qproperty-background: var(--grey7);
     qproperty-background_hover: var(--grey6);
 }

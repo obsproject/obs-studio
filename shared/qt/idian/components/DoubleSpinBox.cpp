@@ -15,9 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "OBSSpinBox.hpp"
+#include <Idian/DoubleSpinBox.hpp>
 
-OBSSpinBox::OBSSpinBox(QWidget *parent) : QFrame(parent)
+#include <Idian/moc_DoubleSpinBox.cpp>
+
+using idian::DoubleSpinBox;
+
+DoubleSpinBox::DoubleSpinBox(QWidget *parent) : QFrame(parent)
 {
 	layout = new QHBoxLayout();
 	setLayout(layout);
@@ -28,15 +32,18 @@ OBSSpinBox::OBSSpinBox(QWidget *parent) : QFrame(parent)
 	decr->setObjectName("obsSpinBoxButton");
 	layout->addWidget(decr);
 
-	sbox = new QSpinBox();
+	setFocusProxy(decr);
+
+	sbox = new QDoubleSpinBox();
 	sbox->setObjectName("obsSpinBox");
 	sbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	sbox->setAlignment(Qt::AlignCenter);
 	layout->addWidget(sbox);
 
 	incr = new QPushButton("+");
 	incr->setObjectName("obsSpinBoxButton");
 	layout->addWidget(incr);
 
-	connect(decr, &QPushButton::pressed, sbox, &QSpinBox::stepDown);
-	connect(incr, &QPushButton::pressed, sbox, &QSpinBox::stepUp);
+	connect(decr, &QPushButton::pressed, sbox, &QDoubleSpinBox::stepDown);
+	connect(incr, &QPushButton::pressed, sbox, &QDoubleSpinBox::stepUp);
 }

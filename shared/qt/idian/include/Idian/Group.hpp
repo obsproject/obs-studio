@@ -19,7 +19,7 @@
 
 #include <Idian/PropertiesList.hpp>
 #include <Idian/Row.hpp>
-#include "../../OBSToggleSwitch.hpp"
+#include <Idian/ToggleSwitch.hpp>
 
 #include <QLabel>
 #include <QLayout>
@@ -65,7 +65,7 @@ private:
 
 	PropertiesList *propertyList = nullptr;
 
-	OBSToggleSwitch *toggleSwitch = nullptr;
+	ToggleSwitch *toggleSwitch = nullptr;
 	bool checkable = false;
 };
 } // namespace idian

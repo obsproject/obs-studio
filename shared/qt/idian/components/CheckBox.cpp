@@ -15,6 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "OBSCheckBox.hpp"
+#include <Idian/CheckBox.hpp>
 
-OBSCheckBox::OBSCheckBox(QWidget *parent) : QCheckBox(parent), OBSIdianUtils(this) {}
+#include <Idian/moc_CheckBox.cpp>
+
+using idian::CheckBox;
+
+CheckBox::CheckBox(QWidget *parent) : QCheckBox(parent), OBSIdianUtils(this) {}

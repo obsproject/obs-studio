@@ -17,12 +17,12 @@
 
 #pragma once
 
+#include <Idian/ComboBox.hpp>
+#include <Idian/DoubleSpinBox.hpp>
 #include <Idian/PropertiesList.hpp>
+#include <Idian/SpinBox.hpp>
+#include <Idian/ToggleSwitch.hpp>
 #include "../../OBSIdianWidget.hpp"
-#include "../../OBSToggleSwitch.hpp"
-#include "../../OBSComboBox.hpp"
-#include "../../OBSSpinBox.hpp"
-#include "../../OBSDoubleSpinBox.hpp"
 
 #include <QCheckBox>
 #include <QFrame>
@@ -195,7 +195,7 @@ private:
 	ExpandButton *expandButton;
 	PropertiesList *propertyList;
 
-	OBSToggleSwitch *toggleSwitch = nullptr;
+	ToggleSwitch *toggleSwitch = nullptr;
 	bool checkable = false;
 };
 

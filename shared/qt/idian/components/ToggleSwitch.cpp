@@ -15,9 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "OBSToggleSwitch.hpp"
+#include <Idian/ToggleSwitch.hpp>
 
-static QColor blendColors(const QColor &color1, const QColor &color2, float ratio)
+#include <Idian/moc_ToggleSwitch.cpp>
+
+using idian::ToggleSwitch;
+
+namespace {
+QColor blendColors(const QColor &color1, const QColor &color2, float ratio)
 {
 	int r = color1.red() * (1 - ratio) + color2.red() * ratio;
 	int g = color1.green() * (1 - ratio) + color2.green() * ratio;
@@ -25,8 +30,9 @@ static QColor blendColors(const QColor &color1, const QColor &color2, float rati
 
 	return QColor(r, g, b, 255);
 }
+} // namespace
 
-OBSToggleSwitch::OBSToggleSwitch(QWidget *parent)
+ToggleSwitch::ToggleSwitch(QWidget *parent)
 	: QAbstractButton(parent),
 	  animHandle(new QPropertyAnimation(this, "xpos", this)),
 	  animBgColor(new QPropertyAnimation(this, "blend", this)),
@@ -42,13 +48,13 @@ OBSToggleSwitch::OBSToggleSwitch(QWidget *parent)
 
 	installEventFilter(this);
 
-	connect(this, &OBSToggleSwitch::clicked, this, &OBSToggleSwitch::onClicked);
+	connect(this, &ToggleSwitch::clicked, this, &ToggleSwitch::onClicked);
 
-	connect(animHandle, &QVariantAnimation::valueChanged, this, &OBSToggleSwitch::updateBackgroundColor);
-	connect(animBgColor, &QVariantAnimation::valueChanged, this, &OBSToggleSwitch::updateBackgroundColor);
+	connect(animHandle, &QVariantAnimation::valueChanged, this, &ToggleSwitch::updateBackgroundColor);
+	connect(animBgColor, &QVariantAnimation::valueChanged, this, &ToggleSwitch::updateBackgroundColor);
 }
 
-OBSToggleSwitch::OBSToggleSwitch(bool defaultState, QWidget *parent) : OBSToggleSwitch(parent)
+ToggleSwitch::ToggleSwitch(bool defaultState, QWidget *parent) : ToggleSwitch(parent)
 {
 	setChecked(defaultState);
 	if (defaultState) {
@@ -56,7 +62,7 @@ OBSToggleSwitch::OBSToggleSwitch(bool defaultState, QWidget *parent) : OBSToggle
 	}
 }
 
-void OBSToggleSwitch::animateHandlePosition()
+void ToggleSwitch::animateHandlePosition()
 {
 	animHandle->setStartValue(xPos);
 
@@ -71,7 +77,7 @@ void OBSToggleSwitch::animateHandlePosition()
 	animHandle->start();
 }
 
-void OBSToggleSwitch::updateBackgroundColor()
+void ToggleSwitch::updateBackgroundColor()
 {
 	QColor offColor = underMouse() ? backgroundInactiveHover : backgroundInactive;
 	QColor onColor = underMouse() ? backgroundActiveHover : backgroundActive;
@@ -89,7 +95,7 @@ void OBSToggleSwitch::updateBackgroundColor()
 	setStyleSheet("background: " + bg.name());
 }
 
-void OBSToggleSwitch::changeEvent(QEvent *event)
+void ToggleSwitch::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::EnabledChange) {
 		OBSIdianUtils::toggleClass("disabled", !isEnabled());
@@ -97,7 +103,7 @@ void OBSToggleSwitch::changeEvent(QEvent *event)
 	}
 }
 
-void OBSToggleSwitch::paintEvent(QPaintEvent *)
+void ToggleSwitch::paintEvent(QPaintEvent *)
 {
 	QStyleOptionButton opt;
 	opt.initFrom(this);
@@ -121,7 +127,7 @@ void OBSToggleSwitch::paintEvent(QPaintEvent *)
 	p.drawEllipse(QRectF(xPos, margin, handleSize, handleSize));
 }
 
-void OBSToggleSwitch::showEvent(QShowEvent *e)
+void ToggleSwitch::showEvent(QShowEvent *e)
 {
 	margin = (rect().height() - handleSize) / 2;
 
@@ -136,7 +142,7 @@ void OBSToggleSwitch::showEvent(QShowEvent *e)
 	QAbstractButton::showEvent(e);
 }
 
-void OBSToggleSwitch::click()
+void ToggleSwitch::click()
 {
 	if (!isDelayed())
 		QAbstractButton::click();
@@ -145,7 +151,7 @@ void OBSToggleSwitch::click()
 		setPending(!isChecked());
 }
 
-void OBSToggleSwitch::onClicked(bool checked)
+void ToggleSwitch::onClicked(bool checked)
 {
 	if (delayed)
 		return;
@@ -153,7 +159,7 @@ void OBSToggleSwitch::onClicked(bool checked)
 	setPending(checked);
 }
 
-void OBSToggleSwitch::setStatus(bool status)
+void ToggleSwitch::setStatus(bool status)
 {
 	if (status == isChecked() && status == pendingStatus)
 		return;
@@ -174,7 +180,7 @@ void OBSToggleSwitch::setStatus(bool status)
 	animBgColor->start();
 }
 
-void OBSToggleSwitch::setPending(bool pending)
+void ToggleSwitch::setPending(bool pending)
 {
 	pendingStatus = pending;
 	animateHandlePosition();
@@ -189,26 +195,26 @@ void OBSToggleSwitch::setPending(bool pending)
 	}
 }
 
-void OBSToggleSwitch::setDelayed(bool state)
+void ToggleSwitch::setDelayed(bool state)
 {
 	delayed = state;
 	pendingStatus = isChecked();
 }
 
-void OBSToggleSwitch::enterEvent(QEnterEvent *e)
+void ToggleSwitch::enterEvent(QEnterEvent *e)
 {
 	setCursor(Qt::PointingHandCursor);
 	updateBackgroundColor();
 	QAbstractButton::enterEvent(e);
 }
 
-void OBSToggleSwitch::leaveEvent(QEvent *e)
+void ToggleSwitch::leaveEvent(QEvent *e)
 {
 	updateBackgroundColor();
 	QAbstractButton::leaveEvent(e);
 }
 
-void OBSToggleSwitch::keyReleaseEvent(QKeyEvent *e)
+void ToggleSwitch::keyReleaseEvent(QKeyEvent *e)
 {
 	if (!isDelayed()) {
 		QAbstractButton::keyReleaseEvent(e);
@@ -222,7 +228,7 @@ void OBSToggleSwitch::keyReleaseEvent(QKeyEvent *e)
 	click();
 }
 
-void OBSToggleSwitch::mouseReleaseEvent(QMouseEvent *e)
+void ToggleSwitch::mouseReleaseEvent(QMouseEvent *e)
 {
 	if (!isDelayed()) {
 		QAbstractButton::mouseReleaseEvent(e);
@@ -236,7 +242,7 @@ void OBSToggleSwitch::mouseReleaseEvent(QMouseEvent *e)
 	click();
 }
 
-QSize OBSToggleSwitch::sizeHint() const
+QSize ToggleSwitch::sizeHint() const
 {
 	return QSize(2 * handleSize, handleSize);
 }

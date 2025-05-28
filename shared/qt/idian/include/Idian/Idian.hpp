@@ -21,11 +21,11 @@
 //
 // (OBS Idian, get it?)
 
-#include "../../OBSCheckBox.hpp"
-#include "../../OBSComboBox.hpp"
-#include "../../OBSDoubleSpinBox.hpp"
-#include "../../OBSSpinBox.hpp"
-#include "../../OBSToggleSwitch.hpp"
+#include <Idian/CheckBox.hpp>
+#include <Idian/ComboBox.hpp>
+#include <Idian/DoubleSpinBox.hpp>
 #include <Idian/Group.hpp>
 #include <Idian/PropertiesList.hpp>
 #include <Idian/Row.hpp>
+#include <Idian/SpinBox.hpp>
+#include <Idian/ToggleSwitch.hpp>
