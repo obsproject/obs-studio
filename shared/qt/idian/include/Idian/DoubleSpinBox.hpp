@@ -22,11 +22,13 @@
 #include <QSpinBox>
 #include <QPushButton>
 
-class OBSDoubleSpinBox : public QFrame {
+namespace idian {
+
+class DoubleSpinBox : public QFrame {
 	Q_OBJECT;
 
 public:
-	OBSDoubleSpinBox(QWidget *parent = nullptr);
+	DoubleSpinBox(QWidget *parent = nullptr);
 
 	QDoubleSpinBox *spinBox() const { return sbox; }
 
@@ -36,3 +38,5 @@ private:
 	QPushButton *incr;
 	QDoubleSpinBox *sbox;
 };
+
+} // namespace idian

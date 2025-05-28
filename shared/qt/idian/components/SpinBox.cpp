@@ -15,24 +15,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include <Idian/moc_SpinBox.cpp>
 
-#include <QFrame>
-#include <QLayout>
-#include <QSpinBox>
-#include <QPushButton>
+using idian::SpinBox;
 
-class OBSSpinBox : public QFrame {
-	Q_OBJECT;
+SpinBox::SpinBox(QWidget *parent) : QFrame(parent)
+{
+	layout = new QHBoxLayout();
+	setLayout(layout);
 
-public:
-	OBSSpinBox(QWidget *parent = nullptr);
+	layout->setContentsMargins(0, 0, 0, 0);
 
-	QSpinBox *spinBox() const { return sbox; }
+	decr = new QPushButton("-");
+	decr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(decr);
 
-private:
-	QHBoxLayout *layout;
-	QPushButton *decr;
-	QPushButton *incr;
-	QSpinBox *sbox;
-};
+	sbox = new QSpinBox();
+	sbox->setObjectName("obsSpinBox");
+	sbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	layout->addWidget(sbox);
+
+	incr = new QPushButton("+");
+	incr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(incr);
+
+	connect(decr, &QPushButton::pressed, sbox, &QSpinBox::stepDown);
+	connect(incr, &QPushButton::pressed, sbox, &QSpinBox::stepUp);
+}

@@ -15,13 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <Idian/Row.hpp>
-#include "OBSComboBox.hpp"
 #include <QTimer>
 
-OBSComboBox::OBSComboBox(QWidget *parent) : QComboBox(parent), OBSIdianUtils(this) {}
+#include <Idian/Row.hpp>
 
-void OBSComboBox::showPopup()
+#include <Idian/moc_ComboBox.cpp>
+
+using idian::ComboBox;
+
+ComboBox::ComboBox(QWidget *parent) : QComboBox(parent), OBSIdianUtils(this) {}
+
+void ComboBox::showPopup()
 {
 	if (allowOpeningPopup) {
 		allowOpeningPopup = false;
@@ -29,7 +33,7 @@ void OBSComboBox::showPopup()
 	}
 }
 
-void OBSComboBox::hidePopup()
+void ComboBox::hidePopup()
 {
 	/* ToDo: Find a better way to do this
 	 * When the dropdown is closed, block attempts to open it
@@ -37,7 +41,7 @@ void OBSComboBox::hidePopup()
 	 * with the dropdown open doesn't immediately close and re-open it.
 	 * 
 	 * I have tried all sorts of things involving handling mouse events
-	 * and event filters on both GenericRow and OBSComboBox.
+	 * and event filters on both GenericRow and ComboBox.
 	 * All my efforts have failed so we get this instead.
 	 */
 	allowOpeningPopup = false;
@@ -46,16 +50,16 @@ void OBSComboBox::hidePopup()
 	QComboBox::hidePopup();
 }
 
-void OBSComboBox::mousePressEvent(QMouseEvent *event)
+void ComboBox::mousePressEvent(QMouseEvent *event)
 {
 	QComboBox::mousePressEvent(event);
 }
 
-void OBSComboBox::togglePopup()
+void ComboBox::togglePopup()
 {
 	if (view()->isVisible()) {
-		OBSComboBox::hidePopup();
+		ComboBox::hidePopup();
 	} else {
-		OBSComboBox::showPopup();
+		ComboBox::showPopup();
 	}
 }

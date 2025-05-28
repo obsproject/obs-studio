@@ -20,13 +20,15 @@
 #include <QComboBox>
 #include <QAbstractItemView>
 
-#include "OBSIdianWidget.hpp"
+#include "../OBSIdianWidget.hpp"
 
-class OBSComboBox : public QComboBox, public OBSIdianUtils {
+namespace idian {
+
+class ComboBox : public QComboBox, public OBSIdianUtils {
 	Q_OBJECT
 
 public:
-	OBSComboBox(QWidget *parent = nullptr);
+	ComboBox(QWidget *parent = nullptr);
 
 public Q_SLOTS:
 	void togglePopup();
@@ -52,3 +54,5 @@ protected:
 		QComboBox::focusOutEvent(e);
 	}
 };
+
+} // namespace idian

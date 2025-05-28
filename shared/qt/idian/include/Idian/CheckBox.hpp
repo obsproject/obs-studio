@@ -19,13 +19,15 @@
 
 #include <QCheckBox>
 
-#include "OBSIdianWidget.hpp"
+#include "../OBSIdianWidget.hpp"
 
-class OBSCheckBox : public QCheckBox, public OBSIdianUtils {
+namespace idian {
+
+class CheckBox : public QCheckBox, public OBSIdianUtils {
 	Q_OBJECT;
 
 public:
-	OBSCheckBox(QWidget *parent = nullptr);
+	CheckBox(QWidget *parent = nullptr);
 
 protected:
 	void focusInEvent(QFocusEvent *e) override
@@ -40,3 +42,5 @@ protected:
 		QAbstractButton::focusOutEvent(e);
 	}
 };
+
+} // namespace idian
