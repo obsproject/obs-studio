@@ -36,7 +36,7 @@ ToggleSwitch::ToggleSwitch(QWidget *parent)
 	: QAbstractButton(parent),
 	  animHandle(new QPropertyAnimation(this, "xpos", this)),
 	  animBgColor(new QPropertyAnimation(this, "blend", this)),
-	  OBSIdianUtils(this)
+	  Utils(this)
 {
 	offPos = rect().width() / 2 - 18;
 	onPos = rect().width() / 2 + 18;
@@ -98,7 +98,7 @@ void ToggleSwitch::updateBackgroundColor()
 void ToggleSwitch::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::EnabledChange) {
-		OBSIdianUtils::toggleClass("disabled", !isEnabled());
+		Utils::toggleClass("disabled", !isEnabled());
 		updateBackgroundColor();
 	}
 }

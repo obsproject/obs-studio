@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "../OBSIdianWidget.hpp"
+#include <Idian/Utils.hpp>
 
 #include <QFrame>
 #include <QLayout>

@@ -17,34 +17,29 @@
 
 #pragma once
 
-#include <QWidget>
-#include <QStyle>
 #include <QFocusEvent>
 #include <QRegularExpression>
+#include <QStyle>
+#include <QWidget>
 
-/*
- * Helpers for OBS Idian widgets
- */
+namespace idian {
 
-static const QRegularExpression classRegex = QRegularExpression("^[a-zA-Z][a-zA-Z0-9_-]*$");
-
-class OBSIdianUtils {
+// Helpers for OBS Idian widgets
+class Utils {
 
 	static bool classNameIsValid(const QString &name)
 	{
-		QRegularExpressionMatch match = classRegex.match(name);
+		static const QRegularExpression classRegex("^[a-zA-Z][a-zA-Z0-9_-]*$");
+		const QRegularExpressionMatch match = classRegex.match(name);
 		return match.hasMatch();
 	}
 
 public:
 	QWidget *parent = nullptr;
 
-	OBSIdianUtils(QWidget *w) { parent = w; }
+	Utils(QWidget *w) { parent = w; }
 
-	/*
-	 * Set a custom property whenever the widget has
-	 * keyboard focus specifically
-	 */
+	// Set a custom property whenever the widget has keyboard focus specifically
 	void showKeyFocused(QFocusEvent *e)
 	{
 		if (e->reason() != Qt::MouseFocusReason && e->reason() != Qt::PopupFocusReason) {
@@ -61,9 +56,7 @@ public:
 		}
 	}
 
-	/*
-	 * Force all children widgets to repaint
-	 */
+	// Force all children widgets to repaint
 	void polishChildren() { polishChildren(parent); }
 
 	static void polishChildren(QWidget *widget)
@@ -81,9 +74,7 @@ public:
 		widget->style()->polish(widget);
 	}
 
-	/*
-	 * Adds a style class to the widget
-	 */
+	// Adds a style class to the widget
 	void addClass(const QString &classname) { addClass(parent, classname); }
 
 	static void addClass(QWidget *widget, const QString &classname)
@@ -107,9 +98,7 @@ public:
 		repolish(widget);
 	}
 
-	/*
-	 * Removes a style class from a widget
-	 */
+	// Removes a style class from a widget
 	void removeClass(const QString &classname) { removeClass(parent, classname); }
 
 	static void removeClass(QWidget *widget, const QString &classname)
@@ -136,9 +125,7 @@ public:
 		repolish(widget);
 	}
 
-	/*
-	 * Forces the addition or removal of a style class from a widget
-	 */
+	// Forces the addition or removal of a style class from a widget
 	void toggleClass(const QString &classname, bool toggle) { toggleClass(parent, classname, toggle); }
 
 	static void toggleClass(QWidget *widget, const QString &classname, bool toggle)
@@ -150,3 +137,5 @@ public:
 		}
 	}
 };
+
+} // namespace idian

@@ -48,16 +48,16 @@ void PropertiesList::addRow(GenericRow *row)
 
 	// Custom properties to work around :first and :last not existing.
 	if (!first) {
-		OBSIdianUtils::addClass(row, "first");
+		Utils::addClass(row, "first");
 		first = row;
 	}
 
 	// Remove last property from existing last item
 	if (last)
-		OBSIdianUtils::removeClass(last, "last");
+		Utils::removeClass(last, "last");
 
 	// Most recently added item is also always last
-	OBSIdianUtils::addClass(row, "last");
+	Utils::addClass(row, "last");
 	last = row;
 
 	row->setParent(this);

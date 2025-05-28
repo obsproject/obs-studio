@@ -22,7 +22,7 @@ target_sources(
     include/Idian/Row.hpp
     include/Idian/SpinBox.hpp
     include/Idian/ToggleSwitch.hpp
-    OBSIdianWidget.hpp
+    include/Idian/Utils.hpp
     widgets/Group.cpp
     widgets/PropertiesList.cpp
     widgets/Row.cpp

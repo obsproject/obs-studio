@@ -21,4 +21,4 @@
 
 using idian::CheckBox;
 
-CheckBox::CheckBox(QWidget *parent) : QCheckBox(parent), OBSIdianUtils(this) {}
+CheckBox::CheckBox(QWidget *parent) : QCheckBox(parent), Utils(this) {}
