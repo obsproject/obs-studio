@@ -28,7 +28,7 @@
 
 namespace idian {
 
-class Group : public QFrame, public OBSIdianUtils {
+class Group : public QFrame, public Utils {
 	Q_OBJECT
 
 public:

@@ -17,13 +17,13 @@
 
 #pragma once
 
-#include "../OBSIdianWidget.hpp"
+#include <Idian/Utils.hpp>
 
 #include <QCheckBox>
 
 namespace idian {
 
-class CheckBox : public QCheckBox, public OBSIdianUtils {
+class CheckBox : public QCheckBox, public Utils {
 	Q_OBJECT;
 
 public:
@@ -32,13 +32,13 @@ public:
 protected:
 	void focusInEvent(QFocusEvent *e) override
 	{
-		OBSIdianUtils::showKeyFocused(e);
+		Utils::showKeyFocused(e);
 		QAbstractButton::focusInEvent(e);
 	}
 
 	void focusOutEvent(QFocusEvent *e) override
 	{
-		OBSIdianUtils::hideKeyFocused(e);
+		Utils::hideKeyFocused(e);
 		QAbstractButton::focusOutEvent(e);
 	}
 };
