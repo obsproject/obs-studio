@@ -22,23 +22,25 @@
 #include <QWidget>
 #include <QMouseEvent>
 
-#include "OBSActionRow.hpp"
-#include "OBSPropertiesList.hpp"
-#include "OBSToggleSwitch.hpp"
+#include <Idian/PropertiesList.hpp>
+#include <Idian/Row.hpp>
+#include "../../OBSToggleSwitch.hpp"
 
-class OBSGroupBox : public QFrame, public OBSIdianUtils {
+namespace idian {
+
+class Group : public QFrame, public OBSIdianUtils {
 	Q_OBJECT
 
 public:
-	OBSGroupBox(QWidget *parent = nullptr);
+	Group(QWidget *parent = nullptr);
 
-	OBSPropertiesList *properties() const { return propertyList; }
+	PropertiesList *properties() const { return propertyList; }
 
 	// ToDo add event for checkable group being enabled/disabled
 	// ToDo allow setting enabled state
 	// (Maybe) ToDo add option for hiding properties list when disabled
 
-	void addRow(OBSActionRow *actionRow) const;
+	void addRow(GenericRow *row) const;
 
 	void setTitle(QString name);
 	void setDescription(QString desc);
@@ -65,8 +67,9 @@ private:
 	QLabel *nameLabel = nullptr;
 	QLabel *descriptionLabel = nullptr;
 
-	OBSPropertiesList *propertyList = nullptr;
+	PropertiesList *propertyList = nullptr;
 
 	OBSToggleSwitch *toggleSwitch = nullptr;
 	bool checkable = false;
 };
+} // namespace idian

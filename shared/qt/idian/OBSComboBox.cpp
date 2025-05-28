@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "OBSActionRow.hpp"
+#include <Idian/Row.hpp>
 #include "OBSComboBox.hpp"
 #include <QTimer>
 
@@ -33,11 +33,11 @@ void OBSComboBox::hidePopup()
 {
 	/* ToDo: Find a better way to do this
 	 * When the dropdown is closed, block attempts to open it
-	 * again for a short time. This is so clicking an OBSActionRow
+	 * again for a short time. This is so clicking a GenericRow
 	 * with the dropdown open doesn't immediately close and re-open it.
 	 * 
 	 * I have tried all sorts of things involving handling mouse events
-	 * and event filters on both OBSActionRow and OBSComboBox.
+	 * and event filters on both GenericRow and OBSComboBox.
 	 * All my efforts have failed so we get this instead.
 	 */
 	allowOpeningPopup = false;
