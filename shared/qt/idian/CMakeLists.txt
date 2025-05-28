@@ -8,8 +8,9 @@ add_library(OBS::idian ALIAS idian)
 target_sources(
   idian
   PRIVATE
-    OBSActionRow.cpp
-    OBSActionRow.hpp
+    include/Idian/Group.hpp
+    include/Idian/PropertiesList.hpp
+    include/Idian/Row.hpp
     OBSCheckBox.cpp
     OBSCheckBox.hpp
     OBSComboBox.cpp
@@ -17,14 +18,13 @@ target_sources(
     OBSDoubleSpinBox.cpp
     OBSDoubleSpinBox.hpp
     OBSIdianWidget.hpp
-    OBSGroupBox.cpp
-    OBSGroupBox.hpp
-    OBSPropertiesList.cpp
-    OBSPropertiesList.hpp
     OBSSpinBox.cpp
     OBSSpinBox.hpp
     OBSToggleSwitch.cpp
     OBSToggleSwitch.hpp
+    widgets/Group.cpp
+    widgets/PropertiesList.cpp
+    widgets/Row.cpp
 )
 target_sources(idian PUBLIC include/Idian/Idian.hpp)
 

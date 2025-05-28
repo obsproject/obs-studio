@@ -21,23 +21,25 @@
 
 #include <QTimer>
 
+using namespace idian;
+
 OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(new Ui_OBSIdianPlayground)
 {
 	ui->setupUi(this);
 
 	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
 
-	OBSGroupBox *test;
-	OBSActionRowWidget *tmp;
+	Group *test;
+	Row *tmp;
 
 	OBSComboBox *cbox = new OBSComboBox;
 	cbox->addItem("Test 1");
 	cbox->addItem("Test 2");
 
 	// Group box 1
-	test = new OBSGroupBox(this);
+	test = new Group(this);
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Row with a dropdown");
 	tmp->setSuffix(cbox);
 	test->properties()->addRow(tmp);
@@ -45,19 +47,19 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	cbox = new OBSComboBox;
 	cbox->addItem("Test 3");
 	cbox->addItem("Test 4");
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Row with a dropdown");
 	tmp->setDescription("And a subtitle!");
 	tmp->setSuffix(cbox);
 	test->properties()->addRow(tmp);
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Toggle Switch");
 	tmp->setSuffix(new OBSToggleSwitch());
 	test->properties()->addRow(tmp);
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Delayed toggle switch");
 	tmp->setDescription("The state can be set separately");
 	auto tswitch = new OBSToggleSwitch;
@@ -74,15 +76,15 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	test->properties()->addRow(tmp);
 
 	// Group box 2
-	test = new OBSGroupBox();
+	test = new Group();
 	test->setTitle("Just a few checkboxes");
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Box 1");
 	tmp->setPrefix(new OBSCheckBox);
 	test->properties()->addRow(tmp);
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Box 2");
 	tmp->setPrefix(new OBSCheckBox);
 	test->properties()->addRow(tmp);
@@ -90,30 +92,30 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	ui->scrollAreaWidgetContents->layout()->addWidget(test);
 
 	// Group box 2
-	test = new OBSGroupBox();
+	test = new Group();
 	test->setTitle("Another Group");
 	test->setDescription("With a subtitle");
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Placeholder");
 	tmp->setSuffix(new OBSToggleSwitch);
 	test->properties()->addRow(tmp);
 
-	OBSCollapsibleRowWidget *tmp2 = new OBSCollapsibleRowWidget("A Collapsible row!", this);
+	CollapsibleRow *tmp2 = new CollapsibleRow("A Collapsible row!", this);
 	tmp2->setCheckable(true);
 	test->addRow(tmp2);
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Spin box demo");
 	tmp->setSuffix(new OBSDoubleSpinBox());
 	tmp2->addRow(tmp);
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Just another placeholder");
 	tmp->setSuffix(new OBSToggleSwitch(true));
 	tmp2->addRow(tmp);
 
-	tmp = new OBSActionRowWidget();
+	tmp = new Row();
 	tmp->setTitle("Placeholder 2");
 	tmp->setSuffix(new OBSToggleSwitch);
 	test->properties()->addRow(tmp);
@@ -124,7 +126,7 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	ui->scrollAreaWidgetContents->layout()->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
 
 	// Test Checkable Group
-	OBSGroupBox *test2 = new OBSGroupBox();
+	Group *test2 = new Group();
 	test2->setTitle("Checkable Group");
 	test2->setDescription("Description goes here");
 	test2->setCheckable(true);

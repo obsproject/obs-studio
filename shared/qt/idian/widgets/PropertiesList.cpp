@@ -15,36 +15,41 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <Idian/PropertiesList.hpp>
+
+#include <Idian/Row.hpp>
+
 #include <QStyle>
 
-#include "OBSPropertiesList.hpp"
-#include "OBSActionRow.hpp"
+#include <Idian/moc_PropertiesList.cpp>
 
-OBSPropertiesList::OBSPropertiesList(QWidget *parent) : QFrame(parent)
+using idian::PropertiesList;
+
+PropertiesList::PropertiesList(QWidget *parent) : QFrame(parent)
 {
 	layout = new QVBoxLayout();
 	layout->setSpacing(0);
 	layout->setContentsMargins(0, 0, 0, 0);
 	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
 
-	rowsList = QList<OBSActionRow *>();
+	rowsList = QList<GenericRow *>();
 
 	setLayout(layout);
 }
 
-/* Note: This function takes ownership of the added widget
- * and it may be deleted when the properties list is destroyed
- * or the clear() method is called! */
-void OBSPropertiesList::addRow(OBSActionRow *actionRow)
+// Note: This function takes ownership of the added widget
+// and it may be deleted when the properties list is destroyed
+// or the clear() method is called!
+void PropertiesList::addRow(GenericRow *row)
 {
 	// Add custom spacer once more than one element exists
 	if (layout->count() > 0)
-		layout->addWidget(new OBSPropertiesListSpacer(this));
+		layout->addWidget(new PropertiesListSpacer(this));
 
 	// Custom properties to work around :first and :last not existing.
 	if (!first) {
-		OBSIdianUtils::addClass(actionRow, "first");
-		first = actionRow;
+		OBSIdianUtils::addClass(row, "first");
+		first = row;
 	}
 
 	// Remove last property from existing last item
@@ -52,16 +57,16 @@ void OBSPropertiesList::addRow(OBSActionRow *actionRow)
 		OBSIdianUtils::removeClass(last, "last");
 
 	// Most recently added item is also always last
-	OBSIdianUtils::addClass(actionRow, "last");
-	last = actionRow;
+	OBSIdianUtils::addClass(row, "last");
+	last = row;
 
-	actionRow->setParent(this);
-	rowsList.append(actionRow);
-	layout->addWidget(actionRow);
+	row->setParent(this);
+	rowsList.append(row);
+	layout->addWidget(row);
 	adjustSize();
 }
 
-void OBSPropertiesList::clear()
+void PropertiesList::clear()
 {
 	rowsList.clear();
 	first = nullptr;
