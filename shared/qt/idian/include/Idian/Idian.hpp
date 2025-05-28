@@ -29,9 +29,3 @@
 #include "../../OBSPropertiesList.hpp"
 #include "../../OBSSpinBox.hpp"
 #include "../../OBSToggleSwitch.hpp"
-
-/// Note: This file serves as an all-in-one include for custom OBS widgets.
-///       It is not intended to define any widgets by itself.
-
-/// Note 2: These widgets are still heavily work in progress. They should not
-///         yet be used outside of the demo and scene collection dialogues.
