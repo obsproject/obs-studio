@@ -30,18 +30,18 @@
 #include <Idian/PropertiesList.hpp>
 #include <Idian/SpinBox.hpp>
 #include <Idian/ToggleSwitch.hpp>
-#include "../../OBSIdianWidget.hpp"
+#include <Idian/Utils.hpp>
 
 namespace idian {
 
 /**
  * Base class mostly so adding stuff to a list is easier
  */
-class GenericRow : public QFrame, public OBSIdianUtils {
+class GenericRow : public QFrame, public Utils {
 	Q_OBJECT
 
 public:
-	GenericRow(QWidget *parent = nullptr) : QFrame(parent), OBSIdianUtils(this) { setAccessibleName(""); };
+	GenericRow(QWidget *parent = nullptr) : QFrame(parent), Utils(this) { setAccessibleName(""); };
 };
 
 /**
@@ -87,13 +87,13 @@ protected:
 
 	void focusInEvent(QFocusEvent *event) override
 	{
-		OBSIdianUtils::showKeyFocused(event);
+		Utils::showKeyFocused(event);
 		QFrame::focusInEvent(event);
 	}
 
 	void focusOutEvent(QFocusEvent *event) override
 	{
-		OBSIdianUtils::hideKeyFocused(event);
+		Utils::hideKeyFocused(event);
 		QFrame::focusOutEvent(event);
 	}
 
@@ -117,7 +117,7 @@ private:
 /**
  * Collapsible row expand button
  */
-class ExpandButton : public QAbstractButton, public OBSIdianUtils {
+class ExpandButton : public QAbstractButton, public Utils {
 	Q_OBJECT
 
 private:
@@ -133,18 +133,18 @@ protected:
 
 	void focusInEvent(QFocusEvent *event) override
 	{
-		OBSIdianUtils::showKeyFocused(event);
+		Utils::showKeyFocused(event);
 		QAbstractButton::focusInEvent(event);
 	}
 
 	void focusOutEvent(QFocusEvent *event) override
 	{
-		OBSIdianUtils::hideKeyFocused(event);
+		Utils::hideKeyFocused(event);
 		QAbstractButton::focusOutEvent(event);
 	}
 };
 
-class RowFrame : protected QFrame, protected OBSIdianUtils {
+class RowFrame : protected QFrame, protected Utils {
 	Q_OBJECT
 
 signals:
@@ -158,13 +158,13 @@ protected:
 
 	void focusInEvent(QFocusEvent *event) override
 	{
-		OBSIdianUtils::showKeyFocused(event);
+		Utils::showKeyFocused(event);
 		QWidget::focusInEvent(event);
 	}
 
 	void focusOutEvent(QFocusEvent *event) override
 	{
-		OBSIdianUtils::hideKeyFocused(event);
+		Utils::hideKeyFocused(event);
 		QWidget::focusOutEvent(event);
 	}
 

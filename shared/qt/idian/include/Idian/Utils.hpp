@@ -22,24 +22,25 @@
 #include <QFocusEvent>
 #include <QRegularExpression>
 
+namespace idian {
+
 /*
  * Helpers for OBS Idian widgets
  */
 
-static const QRegularExpression classRegex = QRegularExpression("^[a-zA-Z][a-zA-Z0-9_-]*$");
-
-class OBSIdianUtils {
+class Utils {
 
 	static bool classNameIsValid(const QString &name)
 	{
-		QRegularExpressionMatch match = classRegex.match(name);
+		static const QRegularExpression classRegex("^[a-zA-Z][a-zA-Z0-9_-]*$");
+		const QRegularExpressionMatch match = classRegex.match(name);
 		return match.hasMatch();
 	}
 
 public:
 	QWidget *parent = nullptr;
 
-	OBSIdianUtils(QWidget *w) { parent = w; }
+	Utils(QWidget *w) { parent = w; }
 
 	/*
 	 * Set a custom property whenever the widget has
@@ -150,3 +151,5 @@ public:
 		}
 	}
 };
+
+} // namespace idian

@@ -20,11 +20,11 @@
 #include <QComboBox>
 #include <QAbstractItemView>
 
-#include "../OBSIdianWidget.hpp"
+#include <Idian/Utils.hpp>
 
 namespace idian {
 
-class ComboBox : public QComboBox, public OBSIdianUtils {
+class ComboBox : public QComboBox, public Utils {
 	Q_OBJECT
 
 public:
@@ -44,13 +44,13 @@ protected:
 
 	void focusInEvent(QFocusEvent *e) override
 	{
-		OBSIdianUtils::showKeyFocused(e);
+		Utils::showKeyFocused(e);
 		QComboBox::focusInEvent(e);
 	}
 
 	void focusOutEvent(QFocusEvent *e) override
 	{
-		OBSIdianUtils::hideKeyFocused(e);
+		Utils::hideKeyFocused(e);
 		QComboBox::focusOutEvent(e);
 	}
 };

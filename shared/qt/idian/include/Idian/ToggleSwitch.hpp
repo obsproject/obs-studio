@@ -27,11 +27,11 @@
 #include <QStyleOptionButton>
 #include <QAccessibleWidget>
 
-#include "../OBSIdianWidget.hpp"
+#include <Idian/Utils.hpp>
 
 namespace idian {
 
-class ToggleSwitch : public QAbstractButton, public OBSIdianUtils {
+class ToggleSwitch : public QAbstractButton, public Utils {
 	Q_OBJECT
 	Q_PROPERTY(int xpos MEMBER xPos WRITE setPos)
 	Q_PROPERTY(QColor background MEMBER backgroundInactive DESIGNABLE true)
@@ -84,13 +84,13 @@ protected:
 
 	void focusInEvent(QFocusEvent *e) override
 	{
-		OBSIdianUtils::showKeyFocused(e);
+		Utils::showKeyFocused(e);
 		QAbstractButton::focusInEvent(e);
 	}
 
 	void focusOutEvent(QFocusEvent *e) override
 	{
-		OBSIdianUtils::hideKeyFocused(e);
+		Utils::hideKeyFocused(e);
 		QAbstractButton::focusOutEvent(e);
 	}
 
