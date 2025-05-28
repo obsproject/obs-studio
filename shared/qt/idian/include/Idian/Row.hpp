@@ -25,40 +25,33 @@
 #include <QMouseEvent>
 #include <QCheckBox>
 
-#include "OBSIdianWidget.hpp"
-#include "OBSPropertiesList.hpp"
-#include "OBSToggleSwitch.hpp"
-#include "OBSComboBox.hpp"
-#include "OBSSpinBox.hpp"
-#include "OBSDoubleSpinBox.hpp"
+#include <Idian/PropertiesList.hpp>
+#include "../../OBSIdianWidget.hpp"
+#include "../../OBSToggleSwitch.hpp"
+#include "../../OBSComboBox.hpp"
+#include "../../OBSSpinBox.hpp"
+#include "../../OBSDoubleSpinBox.hpp"
+
+namespace idian {
 
 /**
-* Base class mostly so adding stuff to a list is easier
-*/
-class OBSActionRow : public QFrame, public OBSIdianUtils {
+ * Base class mostly so adding stuff to a list is easier
+ */
+class GenericRow : public QFrame, public OBSIdianUtils {
 	Q_OBJECT
 
 public:
-	OBSActionRow(QWidget *parent = nullptr) : QFrame(parent), OBSIdianUtils(this) { setAccessibleName(""); };
+	GenericRow(QWidget *parent = nullptr) : QFrame(parent), OBSIdianUtils(this) { setAccessibleName(""); };
 };
 
 /**
-* Proxy for QScrollArea for QSS styling
-*/
-class OBSScrollArea : public QScrollArea {
-	Q_OBJECT
-public:
-	OBSScrollArea(QWidget *parent = nullptr) : QScrollArea(parent) {}
-};
-
-/**
-* Generic OBS row widget containing one or more controls
-*/
-class OBSActionRowWidget : public OBSActionRow {
+ * Row widget containing one or more controls
+ */
+class Row : public GenericRow {
 	Q_OBJECT
 
 public:
-	OBSActionRowWidget(QWidget *parent = nullptr);
+	Row(QWidget *parent = nullptr);
 
 	void setPrefix(QWidget *w, bool autoConnect = true);
 	void setSuffix(QWidget *w, bool autoConnect = true);
@@ -122,19 +115,19 @@ private:
 };
 
 /**
-* Collapsible row expand button
-*/
-class OBSActionRowExpandButton : public QAbstractButton, public OBSIdianUtils {
+ * Collapsible row expand button
+ */
+class ExpandButton : public QAbstractButton, public OBSIdianUtils {
 	Q_OBJECT
 
 private:
 	QPixmap extendDown;
 	QPixmap extendUp;
 
-	friend class OBSCollapsibleRowWidget;
+	friend class CollapsibleRow;
 
 protected:
-	explicit OBSActionRowExpandButton(QWidget *parent = nullptr);
+	explicit ExpandButton(QWidget *parent = nullptr);
 
 	void paintEvent(QPaintEvent *) override;
 
@@ -151,14 +144,14 @@ protected:
 	}
 };
 
-class OBSCollapsibleRowFrame : protected QFrame, protected OBSIdianUtils {
+class RowFrame : protected QFrame, protected OBSIdianUtils {
 	Q_OBJECT
 
 signals:
 	void clicked();
 
 protected:
-	explicit OBSCollapsibleRowFrame(QWidget *parent = nullptr);
+	explicit RowFrame(QWidget *parent = nullptr);
 
 	void enterEvent(QEnterEvent *) override;
 	void leaveEvent(QEvent *) override;
@@ -176,24 +169,24 @@ protected:
 	}
 
 private:
-	friend class OBSCollapsibleRowWidget;
+	friend class CollapsibleRow;
 };
 
 /**
-* Collapsible Generic OBS property container
-*/
-class OBSCollapsibleRowWidget : public OBSActionRow {
+ * Collapsible Generic OBS property container
+ */
+class CollapsibleRow : public GenericRow {
 	Q_OBJECT
 
 public:
 	// ToDo: Figure out a better way to handle those options
-	OBSCollapsibleRowWidget(const QString &name, QWidget *parent = nullptr);
-	OBSCollapsibleRowWidget(const QString &name, const QString &desc = nullptr, QWidget *parent = nullptr);
+	CollapsibleRow(const QString &name, QWidget *parent = nullptr);
+	CollapsibleRow(const QString &name, const QString &desc = nullptr, QWidget *parent = nullptr);
 
 	void setCheckable(bool check);
 	bool isCheckable() { return checkable; }
 
-	void addRow(OBSActionRow *actionRow);
+	void addRow(GenericRow *actionRow);
 
 private:
 	void toggleVisibility();
@@ -202,15 +195,17 @@ private:
 	QPixmap extendUp;
 
 	QVBoxLayout *layout;
-	OBSCollapsibleRowFrame *rowWidget;
+	RowFrame *rowWidget;
 	QHBoxLayout *rowLayout;
 
-	OBSActionRowWidget *actionRow;
+	Row *actionRow;
 	QFrame *expandFrame;
 	QHBoxLayout *btnLayout;
-	OBSActionRowExpandButton *expandButton;
-	OBSPropertiesList *propertyList;
+	ExpandButton *expandButton;
+	PropertiesList *propertyList;
 
 	OBSToggleSwitch *toggleSwitch = nullptr;
 	bool checkable = false;
 };
+
+} // namespace idian
