@@ -6,4 +6,6 @@ if(ENABLE_WIDGET_PLAYGROUND)
     PRIVATE forms/OBSIdianPlayground.ui dialogs/OBSIdianPlayground.hpp dialogs/OBSIdianPlayground.cpp
   )
   target_enable_feature(obs-studio "Widget Playground" ENABLE_WIDGET_PLAYGROUND)
+else()
+  target_disable_feature(obs-studio "Widget Playground")
 endif()
