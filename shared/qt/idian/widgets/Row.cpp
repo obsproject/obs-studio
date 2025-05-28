@@ -203,13 +203,13 @@ void Row::connectBuddyWidget(QWidget *widget)
 	setFocusProxy(widget);
 	setBuddy(widget);
 
-	/* If element is an OBSToggleSwitch and checkable, forward
+	/* If element is a ToggleSwitch and checkable, forward
 	 * clicks to the widget */
-	OBSToggleSwitch *obsToggle = dynamic_cast<OBSToggleSwitch *>(widget);
+	ToggleSwitch *obsToggle = dynamic_cast<ToggleSwitch *>(widget);
 	if (obsToggle && obsToggle->isCheckable()) {
 		setChangeCursor(true);
 
-		connect(this, &Row::clicked, obsToggle, &OBSToggleSwitch::click);
+		connect(this, &Row::clicked, obsToggle, &ToggleSwitch::click);
 		return;
 	}
 
@@ -223,12 +223,12 @@ void Row::connectBuddyWidget(QWidget *widget)
 		return;
 	}
 
-	/* If element is an OBSComboBox, clicks toggle the dropdown. */
-	OBSComboBox *obsCombo = dynamic_cast<OBSComboBox *>(widget);
+	/* If element is an ComboBox, clicks toggle the dropdown. */
+	ComboBox *obsCombo = dynamic_cast<ComboBox *>(widget);
 	if (obsCombo) {
 		setChangeCursor(true);
 
-		connect(this, &Row::clicked, obsCombo, &OBSComboBox::togglePopup);
+		connect(this, &Row::clicked, obsCombo, &ComboBox::togglePopup);
 		return;
 	}
 }
@@ -322,10 +322,10 @@ void CollapsibleRow::setCheckable(bool check)
 		propertyList->setEnabled(false);
 		OBSIdianUtils::polishChildren(propertyList);
 
-		toggleSwitch = new OBSToggleSwitch(false);
+		toggleSwitch = new ToggleSwitch(false);
 
 		actionRow->setSuffix(toggleSwitch, false);
-		connect(toggleSwitch, &OBSToggleSwitch::toggled, propertyList, &PropertiesList::setEnabled);
+		connect(toggleSwitch, &ToggleSwitch::toggled, propertyList, &PropertiesList::setEnabled);
 	}
 
 	if (!checkable && toggleSwitch) {

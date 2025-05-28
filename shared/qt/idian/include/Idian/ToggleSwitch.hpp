@@ -27,9 +27,11 @@
 #include <QStyleOptionButton>
 #include <QAccessibleWidget>
 
-#include "OBSIdianWidget.hpp"
+#include "../OBSIdianWidget.hpp"
 
-class OBSToggleSwitch : public QAbstractButton, public OBSIdianUtils {
+namespace idian {
+
+class ToggleSwitch : public QAbstractButton, public OBSIdianUtils {
 	Q_OBJECT
 	Q_PROPERTY(int xpos MEMBER xPos WRITE setPos)
 	Q_PROPERTY(QColor background MEMBER backgroundInactive DESIGNABLE true)
@@ -41,8 +43,8 @@ class OBSToggleSwitch : public QAbstractButton, public OBSIdianUtils {
 	Q_PROPERTY(float blend MEMBER blend WRITE setBlend DESIGNABLE false)
 
 public:
-	OBSToggleSwitch(QWidget *parent = nullptr);
-	OBSToggleSwitch(bool defaultState, QWidget *parent = nullptr);
+	ToggleSwitch(QWidget *parent = nullptr);
+	ToggleSwitch(bool defaultState, QWidget *parent = nullptr);
 
 	QSize sizeHint() const override;
 
@@ -119,3 +121,5 @@ private:
 	QPropertyAnimation *animHandle = nullptr;
 	QPropertyAnimation *animBgColor = nullptr;
 };
+
+} // namespace idian

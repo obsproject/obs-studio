@@ -15,9 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "OBSDoubleSpinBox.hpp"
+#include <Idian/moc_DoubleSpinBox.cpp>
 
-OBSDoubleSpinBox::OBSDoubleSpinBox(QWidget *parent) : QFrame(parent)
+using idian::DoubleSpinBox;
+
+DoubleSpinBox::DoubleSpinBox(QWidget *parent) : QFrame(parent)
 {
 	layout = new QHBoxLayout();
 	setLayout(layout);
