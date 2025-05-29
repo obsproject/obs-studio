@@ -7,6 +7,8 @@ target_link_libraries(obs-studio PRIVATE OBS::properties-view)
 target_sources(
   obs-studio
   PRIVATE
+    dialogs/LogUploadDialog.cpp
+    dialogs/LogUploadDialog.hpp
     dialogs/NameDialog.cpp
     dialogs/NameDialog.hpp
     dialogs/OAuthLogin.cpp
@@ -27,8 +29,6 @@ target_sources(
     dialogs/OBSBasicTransform.hpp
     dialogs/OBSBasicVCamConfig.cpp
     dialogs/OBSBasicVCamConfig.hpp
-    dialogs/OBSLogReply.cpp
-    dialogs/OBSLogReply.hpp
     dialogs/OBSLogViewer.cpp
     dialogs/OBSLogViewer.hpp
     dialogs/OBSMissingFiles.cpp
