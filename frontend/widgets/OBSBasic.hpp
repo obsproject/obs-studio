@@ -56,6 +56,7 @@ class OBSBasicTransform;
 class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
+class ScreenshotObj;
 class VolControl;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
@@ -231,7 +232,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSYoutubeActions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
-	friend class ScreenshotObj;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -1314,7 +1314,7 @@ public:
 	 * -------------------------------------
 	 */
 private:
-	QPointer<QObject> screenshotData;
+	QPointer<ScreenshotObj> screenshotData;
 	std::string lastScreenshot;
 
 private slots:
