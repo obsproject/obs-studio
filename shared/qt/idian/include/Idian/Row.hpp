@@ -179,10 +179,16 @@ public:
 	void setCheckable(bool check);
 	bool isCheckable() { return checkable; }
 
+	void setChecked(bool checked);
+	bool isChecked() { return toggleSwitch->isChecked(); };
+
 	virtual void setTitle(const QString &title) override;
 	virtual void setDescription(const QString &description) override;
 
 	void addRow(GenericRow *actionRow);
+
+signals:
+	void toggled(bool checked);
 
 private:
 	void toggleVisibility();
