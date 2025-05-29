@@ -34,8 +34,8 @@ class LogUploadDialog : public QDialog {
 
 private:
 	std::unique_ptr<Ui::LogUploadDialog> ui;
-    std::unique_ptr<QTimer> uploadStatusTimer_;
-    
+	std::unique_ptr<QTimer> uploadStatusTimer_;
+
 	LogFileType uploadType_;
 
 public:

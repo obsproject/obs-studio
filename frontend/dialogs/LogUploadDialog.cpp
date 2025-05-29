@@ -26,6 +26,12 @@
 
 #include "moc_LogUploadDialog.cpp"
 
+struct DialogPage {
+	static constexpr int Start = 0;
+	static constexpr int Success = 1;
+	static constexpr int Error = 2;
+};
+
 namespace OBS {
 LogUploadDialog::LogUploadDialog(QWidget *parent, LogFileType uploadType)
 	: QDialog(parent),
@@ -37,7 +43,10 @@ LogUploadDialog::LogUploadDialog(QWidget *parent, LogFileType uploadType)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);
 
-	ui->stackedWidget->setCurrentIndex(0);
+	ui->stackedWidget->setCurrentIndex(DialogPage::Start);
+
+	ui->privacyNotice->setText(
+		QTStr("LogUploadDialog.Labels.PrivacyNotice").arg(QTStr("LogUploadDialog.Buttons.ConfirmUpload")));
 
 	if (uploadType_ == LogFileType::CrashLog) {
 		ui->analyzeURL->hide();
@@ -48,6 +57,8 @@ LogUploadDialog::LogUploadDialog(QWidget *parent, LogFileType uploadType)
 	connect(ui->retryButton, &QPushButton::clicked, this, &LogUploadDialog::startLogUpload);
 	connect(ui->copyURL, &QPushButton::clicked, this, &LogUploadDialog::copyToClipBoard);
 	connect(ui->analyzeURL, &QPushButton::clicked, this, &LogUploadDialog::openAnalyzeURL);
+	connect(ui->closeButton, &QPushButton::clicked, this, &QDialog::reject);
+	connect(ui->retryCloseButton, &QPushButton::clicked, this, &QDialog::reject);
 
 	OBSApp *app = App();
 	connect(app, &OBSApp::logUploadFinished, this, &LogUploadDialog::handleUploadSuccess);
@@ -106,7 +117,7 @@ void LogUploadDialog::handleUploadSuccess(LogFileType, const QString &fileURL)
 	ui->uploadProgress->setText("");
 
 	ui->urlEdit->setText(fileURL);
-	ui->stackedWidget->setCurrentIndex(1);
+	ui->stackedWidget->setCurrentIndex(DialogPage::Success);
 }
 
 void LogUploadDialog::handleUploadFailure(LogFileType, const QString &errorMessage)
@@ -118,7 +129,7 @@ void LogUploadDialog::handleUploadFailure(LogFileType, const QString &errorMessa
 
 	QString errorDescription = QTStr("LogUploadDialog.Errors.Template").arg(errorMessage);
 	ui->uploadErrorMessage->setText(errorDescription);
-	ui->stackedWidget->setCurrentIndex(2);
+	ui->stackedWidget->setCurrentIndex(DialogPage::Error);
 }
 
 void LogUploadDialog::copyToClipBoard() const
