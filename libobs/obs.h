@@ -321,13 +321,15 @@ struct obs_cmdline_args {
  */
 EXPORT char *obs_find_data_file(const char *file);
 
+// TODO: Remove after deprecation grace period
 /**
  * Add a path to search libobs data files in.
  * @param path Full path to directory to look in.
  *             The string is copied.
  */
-EXPORT void obs_add_data_path(const char *path);
+OBS_DEPRECATED EXPORT void obs_add_data_path(const char *path);
 
+// TODO: Remove after deprecation grace period
 /**
  * Remove a path from libobs core data paths.
  * @param path The path to compare to currently set paths.
@@ -336,7 +338,7 @@ EXPORT void obs_add_data_path(const char *path);
  * @return Whether or not the path was successfully removed.
  *         If false, the path could not be found.
  */
-EXPORT bool obs_remove_data_path(const char *path);
+OBS_DEPRECATED EXPORT bool obs_remove_data_path(const char *path);
 
 /**
  * Initializes OBS
