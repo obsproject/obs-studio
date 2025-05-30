@@ -195,6 +195,9 @@
     --tab_border_focus: var(--button_border_focus);
     --tab_border_selected: var(--primary);
 
+    --tab_padding_base: calc(5px + var(--padding_base));
+    --tab_padding_large: calc(9px + var(--padding_base));
+
     --preview_scale_width: calc(calc(var(--input_text_padding) * 3.5) * calc(var(--font_base_value) / 10));
 
     --separator_hover: var(--white1);
@@ -926,7 +929,7 @@ QTabBar::tab {
     background: var(--tab_bg);
     color: var(--text);
     border: none;
-    padding: 8px 12px;
+    padding: var(--tab_padding_base) var(--tab_padding_large);
     min-width: 50px;
     margin: 1px 0px;
     margin-right: 2px;
