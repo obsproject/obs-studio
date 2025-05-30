@@ -405,6 +405,9 @@ struct obs_core_audio {
 
 	pthread_mutex_t task_mutex;
 	struct deque tasks;
+
+	volatile bool prevent_monitoring_duplication;
+	struct obs_source *monitoring_duplicating_source;
 };
 
 /* user sources, output channels, and displays */
@@ -938,6 +941,12 @@ struct obs_source {
 
 	/* canvas this source belongs to (only used for scenes) */
 	obs_weak_canvas_t *canvas;
+
+	/* audio deduplication */
+	/* audio_is_duplicated: tracks whether a source appears multiple times in the audio tree during this tick */
+	/* is_individual_audio_src: tracks whether the audio source is not a scene nor a group */
+	bool audio_is_duplicated;
+	bool is_individual_audio_src;
 };
 
 extern struct obs_source_info *get_source_info(const char *id);

@@ -33,8 +33,63 @@ static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 
 	if (da_find(audio->render_order, &source, 0) == DARRAY_INVALID) {
 		obs_source_t *s = obs_source_get_ref(source);
-		if (s)
+		if (s) {
 			da_push_back(audio->render_order, &s);
+			s->audio_is_duplicated = false;
+		}
+	}
+
+	UNUSED_PARAMETER(parent);
+}
+
+static void check_audio_output_source_is_monitoring_device(obs_source_t *s, void *p)
+{
+	struct obs_core_audio *audio = p;
+	if (!audio->monitoring_device_name)
+		return;
+	if (strcmp(s->info.id, "wasapi_output_capture") == 0 || strcmp(s->info.id, "pulse_output_capture") == 0) {
+		const char *dev_id = NULL;
+		obs_data_t *settings = obs_source_get_settings(s);
+		if (settings) {
+			dev_id = obs_data_get_string(settings, "device_id");
+			if (strcmp(dev_id, audio->monitoring_device_id) == 0) {
+				audio->prevent_monitoring_duplication = true;
+				audio->monitoring_duplicating_source = s;
+			}
+			obs_data_release(settings);
+		}
+	}
+}
+
+/* This version of push_audio_tree has the purpose of detecting sources which appear several times in the audio tree.
+ * They are then tagged as such to avoid their mixing in scenes and transitions and are mixed directly as root_nodes.
+ * Additionally, it checks whether any source is an Audio Output Capture source ('Desktop Audio',
+ * 'wasapi_output_capture' on windows, 'pulse_output_capture' on linux), & if the corresponding device is the 
+ * monitoringdevice. It then sets the core audio bool 'prevent_monitoring_duplication' to true,
+ * which will silence all monitored sources (unless the Audio Output Capture source is muted).
+ */
+static void push_audio_tree2(obs_source_t *parent, obs_source_t *source, void *p)
+{
+	struct obs_core_audio *audio = p;
+	size_t idx = da_find(audio->render_order, &source, 0);
+
+	if (idx == DARRAY_INVALID) {
+		/* First time we see this source → add to render order */
+		obs_source_t *s = obs_source_get_ref(source);
+		if (s) {
+			da_push_back(audio->render_order, &s);
+			s->audio_is_duplicated = false;
+			check_audio_output_source_is_monitoring_device(s, audio);
+		}
+	} else {
+		/* Source already present in tree → mark as duplicated if source is neither a scene nor a group */
+		obs_source_t *s = audio->render_order.array[idx];
+		if (s->is_individual_audio_src && !s->audio_is_duplicated) {
+			bool already_in_root = da_find(audio->root_nodes, &source, 0) != DARRAY_INVALID;
+			if (!already_in_root)
+				da_push_back(audio->root_nodes, &source);
+			s->audio_is_duplicated = true;
+		}
 	}
 
 	UNUSED_PARAMETER(parent);
@@ -465,6 +520,34 @@ static inline void execute_audio_tasks(void)
 	}
 }
 
+/* In case of monitoring and Audio Output Capture having same device, one silences all the monitored sources if the
+ * audio output source is not muted nor user_muted.
+ */
+static inline bool should_silence_monitored_source(obs_source_t *source, struct obs_core_audio *audio)
+{
+	if (!audio->monitoring_duplicating_source)
+		return false;
+	bool output_capture_unmuted = !audio->monitoring_duplicating_source->user_muted;
+
+	if (audio->prevent_monitoring_duplication && output_capture_unmuted) {
+		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static inline void clear_audio_output_buf(obs_source_t *source)
+{
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		for (size_t ch = 0; ch < MAX_AUDIO_CHANNELS; ch++) {
+			float *buf = source->audio_output_buf[mix][ch];
+			if (buf)
+				memset(buf, 0, AUDIO_OUTPUT_FRAMES * sizeof(float));
+		}
+	}
+}
+
 bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts, uint32_t mixers,
 		    struct audio_output_data *mixes)
 {
@@ -479,6 +562,8 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 
 	da_resize(audio->render_order, 0);
 	da_resize(audio->root_nodes, 0);
+	audio->prevent_monitoring_duplication = false;
+	audio->monitoring_duplicating_source = NULL;
 
 	deque_push_back(&audio->buffered_timestamps, &ts, sizeof(ts));
 	deque_peek_front(&audio->buffered_timestamps, &ts, sizeof(ts));
@@ -508,12 +593,15 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 				continue;
 			if (!obs_source_active(source))
 				continue;
-
-			obs_source_enum_active_tree(source, push_audio_tree, audio);
-			push_audio_tree(NULL, source, audio);
-
+			// first, add top-level sources as root_nodes
 			if (obs->video.mixes.array[j]->mix_audio)
 				da_push_back(audio->root_nodes, &source);
+			// build audio tree and tag duplicate individual sources
+			obs_source_enum_active_tree(source, push_audio_tree2, audio);
+			// add top-level sources to audio tree
+			push_audio_tree(NULL, source, audio);
+			// check whether the source is a 'Desktop Audio' & coincides with monitoring device
+			check_audio_output_source_is_monitoring_device(source, audio);
 		}
 		pthread_mutex_unlock(&view->channels_mutex);
 	}
@@ -534,6 +622,8 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 	for (size_t i = 0; i < audio->render_order.num; i++) {
 		obs_source_t *source = audio->render_order.array[i];
 		obs_source_audio_render(source, mixers, channels, sample_rate, audio_size);
+		if (should_silence_monitored_source(source, audio))
+			clear_audio_output_buf(source);
 
 		/* if a source has gone backward in time and we can no
 		 * longer buffer, drop some or all of its audio */
