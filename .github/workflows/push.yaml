@@ -269,6 +269,8 @@ jobs:
           windows_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
           windows_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
           windows_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
+          windows_arm64_artifact_name="obs-studio-windows-arm64-${{ steps.check.outputs.version }}-signed"
+          windows_arm64_debug_name="obs-studio-windows-arm64-${{ steps.check.outputs.version }}-pdbs"
 
           echo '::group::Renaming Artifacts'
           mv -v "${macos_arm64_artifact_name}/"obs-studio-*-macos-apple.dmg \
@@ -291,6 +293,10 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
           mv -v "${windows_debug_name}/"OBS-Studio-*-pdbs.zip \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
+          mv -v "${windows_arm64_artifact_name}/"OBS-Studio-*.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64.zip
+          mv -v "${windows_arm64_debug_name}/"OBS-Studio-*-pdbs.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64-PDBs.zip
           echo '::endgroup::'
 
       - name: Generate Checksums 🪪
@@ -324,3 +330,5 @@ jobs:
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64-PDBs.zip
