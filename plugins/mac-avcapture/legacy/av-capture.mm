@@ -1012,21 +1012,6 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev, obs_data_t *s
     auto input_format = obs_data_get_int(settings, "input_format");
     FourCharCode actual_format = static_cast<FourCharCode>(input_format);
 
-    SCOPE_EXIT
-    {
-        bool refresh = false;
-        if (input_format != actual_format) {
-            refresh = obs_data_get_autoselect_int(settings, "input_format") != actual_format;
-            obs_data_set_autoselect_int(settings, "input_format", actual_format);
-        } else {
-            refresh = obs_data_has_autoselect_value(settings, "input_format");
-            obs_data_unset_autoselect_value(settings, "input_format");
-        }
-
-        if (refresh)
-            obs_source_update_properties(capture->source);
-    };
-
     capture->requested_colorspace = static_cast<int>(obs_data_get_int(settings, "color_space"));
     if (!color_space_valid(capture->requested_colorspace)) {
         AVLOG(LOG_WARNING, "Unsupported color space: %d", capture->requested_colorspace);
@@ -1421,27 +1406,6 @@ static bool check_preset(AVCaptureDevice *dev, obs_property_t *list, obs_data_t 
     return true;
 }
 
-static bool autoselect_preset(AVCaptureDevice *dev, obs_data_t *settings)
-{
-    NSString *preset = get_string(settings, "preset");
-    if (!dev || [dev supportsAVCaptureSessionPreset:preset]) {
-        if (obs_data_has_autoselect_value(settings, "preset")) {
-            obs_data_unset_autoselect_value(settings, "preset");
-            return true;
-        }
-
-    } else {
-        preset = select_preset(dev, preset);
-        const char *autoselect = obs_data_get_autoselect_string(settings, "preset");
-        if (![preset isEqualToString:@(autoselect)]) {
-            obs_data_set_autoselect_string(settings, "preset", preset.UTF8String);
-            return true;
-        }
-    }
-
-    return false;
-}
-
 static CMVideoDimensions get_dimensions(AVCaptureDeviceFormat *format)
 {
     auto desc = format.formatDescription;
@@ -1796,9 +1760,9 @@ static bool update_int_list_property(obs_property_t *p, const int *val, const si
 }
 
 template<typename Func>
-static bool update_int_list_property(const char *prop_name, const char *localization_name, size_t count, int auto_val,
+static bool update_int_list_property(const char *prop_name, const char *localization_name, size_t count, int,
                                      bool (*valid_func)(int), obs_properties_t *props, const config_helper &conf,
-                                     obs_property_t *p, Func get_val)
+                                     obs_property_t *p, Func)
 {
     auto ref = get_ref(props);
     if (!p)
@@ -1813,7 +1777,6 @@ static bool update_int_list_property(const char *prop_name, const char *localiza
     bool params_valid = vi.video_params_valid;
     bool enabled = obs_property_enabled(p);
     bool should_enable = false;
-    bool has_autoselect = obs_data_has_autoselect_value(conf.settings, prop_name);
 
     if ((params_valid && format_is_yuv(ref->frame.format)) || !valid_func(val))
         should_enable = true;
@@ -1824,21 +1787,7 @@ static bool update_int_list_property(const char *prop_name, const char *localiza
     updated = update_int_list_property(p, valid_func(val) ? nullptr : &val, count, localization_name) || updated;
 
     if (!should_enable) {
-        if (has_autoselect)
-            obs_data_unset_autoselect_value(conf.settings, prop_name);
-        return updated || has_autoselect;
-    }
-
-    bool use_autoselect = ref && val == auto_val;
-    if (!use_autoselect) {
-        if (has_autoselect)
-            obs_data_unset_autoselect_value(conf.settings, prop_name);
-        return updated || has_autoselect;
-    }
-
-    if (params_valid && get_val(vi) != obs_data_get_autoselect_int(conf.settings, prop_name)) {
-        obs_data_set_autoselect_int(conf.settings, prop_name, get_val(vi));
-        return true;
+        return updated;
     }
 
     return updated;
@@ -1870,14 +1819,13 @@ static bool properties_device_changed(obs_properties_t *props, obs_property_t *p
 
     p = obs_properties_get(props, "preset");
     bool preset_list_changed = check_preset(dev, p, settings);
-    bool autoselect_changed = autoselect_preset(dev, settings);
 
     config_helper conf {settings};
     bool res_changed = update_resolution_property(props, conf);
     bool fps_changed = update_frame_rate_property(props, conf);
     bool if_changed = update_input_format_property(props, conf);
 
-    return preset_list_changed || autoselect_changed || dev_list_updated || res_changed || fps_changed || if_changed;
+    return preset_list_changed || dev_list_updated || res_changed || fps_changed || if_changed;
 }
 
 static bool properties_use_preset_changed(obs_properties_t *props, obs_property_t *, obs_data_t *settings)
@@ -1917,9 +1865,8 @@ static bool properties_preset_changed(obs_properties_t *, obs_property_t *p, obs
     AVCaptureDevice *dev = [AVCaptureDevice deviceWithUniqueID:uid];
 
     bool preset_list_changed = check_preset(dev, p, settings);
-    bool autoselect_changed = autoselect_preset(dev, settings);
 
-    return preset_list_changed || autoselect_changed;
+    return preset_list_changed;
 }
 
 static bool properties_resolution_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
