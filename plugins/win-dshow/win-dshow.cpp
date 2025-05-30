@@ -1,5 +1,8 @@
 #include <objbase.h>
 
+#define OBS_DATA_TOLERATE_AUTOSELECT
+#include <obs-data.h>
+#undef OBS_DATA_TOLERATE_AUTOSELECT
 #include <obs-module.h>
 #include <obs.hpp>
 #include <util/dstr.hpp>
