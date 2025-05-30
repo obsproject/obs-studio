@@ -24,8 +24,6 @@
 
 #include <qt-wrappers.hpp>
 
-#include <QColorDialog>
-
 #include <sstream>
 
 extern void undo_redo(const std::string &data);
@@ -242,19 +240,12 @@ void OBSBasic::on_preview_customContextMenuRequested()
 void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 {
 	QMenu popup(this);
-	delete previewProjectorMain;
 
 	QAction *action = popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this, &OBSBasic::TogglePreview);
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
-	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
-	AddProjectorMenuMonitors(previewProjectorMain, this, &OBSBasic::OpenPreviewProjector);
-
-	QAction *previewWindow = popup.addAction(QTStr("PreviewWindow"), this, &OBSBasic::OpenPreviewWindow);
-
-	popup.addMenu(previewProjectorMain);
-	popup.addAction(previewWindow);
+	popup.addMenu(CreateProjectorMenu(QTStr("Projector.Open.Preview"), nullptr, ProjectorType::Preview));
 	popup.exec(QCursor::pos());
 }
 
@@ -426,127 +417,6 @@ void OBSBasic::setPreviewScalingOutput()
 	int32_t approxScalingLevel = int32_t(round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
 	ui->preview->SetScalingLevelAndAmount(approxScalingLevel, scalingAmount);
 	emit ui->preview->DisplayResized();
-}
-
-static void ConfirmColor(SourceTree *sources, const QColor &color, QModelIndexList selectedItems)
-{
-	for (int x = 0; x < selectedItems.count(); x++) {
-		SourceTreeItem *treeItem = sources->GetItemWidget(selectedItems[x].row());
-		treeItem->setStyleSheet("background: " + color.name(QColor::HexArgb));
-		treeItem->style()->unpolish(treeItem);
-		treeItem->style()->polish(treeItem);
-
-		OBSSceneItem sceneItem = sources->Get(selectedItems[x].row());
-		OBSDataAutoRelease privData = obs_sceneitem_get_private_settings(sceneItem);
-		obs_data_set_int(privData, "color-preset", 1);
-		obs_data_set_string(privData, "color", QT_TO_UTF8(color.name(QColor::HexArgb)));
-	}
-}
-
-void OBSBasic::ColorChange()
-{
-	QModelIndexList selectedItems = ui->sources->selectionModel()->selectedIndexes();
-	QAction *action = qobject_cast<QAction *>(sender());
-	QPushButton *colorButton = qobject_cast<QPushButton *>(sender());
-
-	if (selectedItems.count() == 0)
-		return;
-
-	if (colorButton) {
-		int preset = colorButton->property("bgColor").value<int>();
-
-		for (int x = 0; x < selectedItems.count(); x++) {
-			SourceTreeItem *treeItem = ui->sources->GetItemWidget(selectedItems[x].row());
-			treeItem->setStyleSheet("");
-			treeItem->setProperty("bgColor", preset);
-			treeItem->style()->unpolish(treeItem);
-			treeItem->style()->polish(treeItem);
-
-			OBSSceneItem sceneItem = ui->sources->Get(selectedItems[x].row());
-			OBSDataAutoRelease privData = obs_sceneitem_get_private_settings(sceneItem);
-			obs_data_set_int(privData, "color-preset", preset + 1);
-			obs_data_set_string(privData, "color", "");
-		}
-
-		for (int i = 1; i < 9; i++) {
-			stringstream button;
-			button << "preset" << i;
-			QPushButton *cButton =
-				colorButton->parentWidget()->findChild<QPushButton *>(button.str().c_str());
-			cButton->setStyleSheet("border: 1px solid black");
-		}
-
-		colorButton->setStyleSheet("border: 2px solid black");
-	} else if (action) {
-		int preset = action->property("bgColor").value<int>();
-
-		if (preset == 1) {
-			OBSSceneItem curSceneItem = GetCurrentSceneItem();
-			SourceTreeItem *curTreeItem = GetItemWidgetFromSceneItem(curSceneItem);
-			OBSDataAutoRelease curPrivData = obs_sceneitem_get_private_settings(curSceneItem);
-
-			int oldPreset = obs_data_get_int(curPrivData, "color-preset");
-			const QString oldSheet = curTreeItem->styleSheet();
-
-			auto liveChangeColor = [=](const QColor &color) {
-				if (color.isValid()) {
-					curTreeItem->setStyleSheet("background: " + color.name(QColor::HexArgb));
-				}
-			};
-
-			auto changedColor = [=](const QColor &color) {
-				if (color.isValid()) {
-					ConfirmColor(ui->sources, color, selectedItems);
-				}
-			};
-
-			auto rejected = [=]() {
-				if (oldPreset == 1) {
-					curTreeItem->setStyleSheet(oldSheet);
-					curTreeItem->setProperty("bgColor", 0);
-				} else if (oldPreset == 0) {
-					curTreeItem->setStyleSheet("background: none");
-					curTreeItem->setProperty("bgColor", 0);
-				} else {
-					curTreeItem->setStyleSheet("");
-					curTreeItem->setProperty("bgColor", oldPreset - 1);
-				}
-
-				curTreeItem->style()->unpolish(curTreeItem);
-				curTreeItem->style()->polish(curTreeItem);
-			};
-
-			QColorDialog::ColorDialogOptions options = QColorDialog::ShowAlphaChannel;
-
-			const char *oldColor = obs_data_get_string(curPrivData, "color");
-			const char *customColor = *oldColor != 0 ? oldColor : "#55FF0000";
-#ifdef __linux__
-			// TODO: Revisit hang on Ubuntu with native dialog
-			options |= QColorDialog::DontUseNativeDialog;
-#endif
-
-			QColorDialog *colorDialog = new QColorDialog(this);
-			colorDialog->setOptions(options);
-			colorDialog->setCurrentColor(QColor(customColor));
-			connect(colorDialog, &QColorDialog::currentColorChanged, liveChangeColor);
-			connect(colorDialog, &QColorDialog::colorSelected, changedColor);
-			connect(colorDialog, &QColorDialog::rejected, rejected);
-			colorDialog->open();
-		} else {
-			for (int x = 0; x < selectedItems.count(); x++) {
-				SourceTreeItem *treeItem = ui->sources->GetItemWidget(selectedItems[x].row());
-				treeItem->setStyleSheet("background: none");
-				treeItem->setProperty("bgColor", preset);
-				treeItem->style()->unpolish(treeItem);
-				treeItem->style()->polish(treeItem);
-
-				OBSSceneItem sceneItem = ui->sources->Get(selectedItems[x].row());
-				OBSDataAutoRelease privData = obs_sceneitem_get_private_settings(sceneItem);
-				obs_data_set_int(privData, "color-preset", preset);
-				obs_data_set_string(privData, "color", "");
-			}
-		}
-	}
 }
 
 void OBSBasic::UpdateProjectorHideCursor()
