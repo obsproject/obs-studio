@@ -1669,21 +1669,6 @@
             ]
         },
         {
-            "name": "LOCO",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://ivory-ingest.getloconow.com:1935/stream"
-                }
-            ],
-            "recommended": {
-                "keyint": 2
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "niconico (ニコニコ生放送)",
             "more_info_link": "https://qa.nicovideo.jp/faq/show/701",
             "alt_names": [
