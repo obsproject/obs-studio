@@ -409,7 +409,7 @@ void SimpleOutput::UpdateRecordingSettings_x264_crf(int crf)
 
 static bool icq_available(obs_encoder_t *encoder)
 {
-	obs_properties_t *props = obs_encoder_properties(encoder);
+	OBSProperties props = obs_encoder_properties(encoder);
 	obs_property_t *p = obs_properties_get(props, "rate_control");
 	bool icq_found = false;
 
@@ -422,7 +422,6 @@ static bool icq_available(obs_encoder_t *encoder)
 		}
 	}
 
-	obs_properties_destroy(props);
 	return icq_found;
 }
 
