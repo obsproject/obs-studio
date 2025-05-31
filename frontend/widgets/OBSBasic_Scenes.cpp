@@ -37,6 +37,19 @@ template<typename OBSRef> struct SignalContainer {
 	OBSRef ref;
 	vector<shared_ptr<OBSSignal>> handlers;
 };
+
+QDataStream &operator<<(QDataStream &out, const SignalContainer<OBSScene> &v)
+{
+	out << v.ref;
+	return out;
+}
+
+QDataStream &operator>>(QDataStream &in, SignalContainer<OBSScene> &v)
+{
+	in >> v.ref;
+	return in;
+}
+
 } // namespace
 
 Q_DECLARE_METATYPE(obs_order_movement);
