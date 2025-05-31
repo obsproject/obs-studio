@@ -31,10 +31,6 @@
 #include <obs-frontend-internal.hpp>
 #include <obs.hpp>
 
-Q_DECLARE_METATYPE(OBSScene);
-Q_DECLARE_METATYPE(OBSSceneItem);
-Q_DECLARE_METATYPE(OBSSource);
-
 #include <graphics/matrix4.h>
 #include <util/platform.h>
 #include <util/threading.h>

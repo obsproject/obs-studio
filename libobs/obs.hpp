@@ -340,3 +340,9 @@ public:
 		return *this;
 	}
 };
+
+#ifdef Q_DECLARE_METATYPE
+Q_DECLARE_METATYPE(OBSScene);
+Q_DECLARE_METATYPE(OBSSceneItem);
+Q_DECLARE_METATYPE(OBSSource);
+#endif
