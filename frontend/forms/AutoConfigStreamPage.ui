@@ -457,6 +457,12 @@
        </item>
        <item row="9" column="1">
         <widget class="QLabel" name="multitrackVideoInfo">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="text">
           <string>MultitrackVideo.Info</string>
          </property>
@@ -468,9 +474,6 @@
          </property>
          <property name="openExternalLinks">
           <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <enum>QSizePolicy::MinimumExpanding, QSizePolicy::Minimum</enum>
          </property>
         </widget>
        </item>
