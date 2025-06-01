@@ -834,7 +834,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array
 	};
 	using FilterAudioSources_t = decltype(FilterAudioSources);
 
-	obs_data_array_t *sourcesArray = obs_save_sources_filtered(
+	OBSDataArrayAutoRelease sourcesArray = obs_save_sources_filtered(
 		[](void *data, obs_source_t *source) {
 			auto &func = *static_cast<FilterAudioSources_t *>(data);
 			return func(source);
@@ -845,7 +845,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array
 	/* save group sources separately    */
 
 	/* saving separately ensures they won't be loaded in older versions */
-	obs_data_array_t *groupsArray = obs_save_sources_filtered(
+	OBSDataArrayAutoRelease groupsArray = obs_save_sources_filtered(
 		[](void *, obs_source_t *source) { return obs_source_is_group(source); }, nullptr);
 
 	/* -------------------------------- */
@@ -861,14 +861,12 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array
 	obs_data_set_string(saveData, "current_program_scene", programName);
 	obs_data_set_array(saveData, "scene_order", sceneOrder);
 	obs_data_set_string(saveData, "name", sceneCollection);
-	obs_data_set_array(saveData, "sources", sourcesArray);
-	obs_data_set_array(saveData, "groups", groupsArray);
+	obs_data_set_array(saveData, "sources", sourcesArray.Get());
+	obs_data_set_array(saveData, "groups", groupsArray.Get());
 	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
 	obs_data_set_array(saveData, "transitions", transitions);
 	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
 	obs_data_set_array(saveData, "canvases", savedCanvases);
-	obs_data_array_release(sourcesArray);
-	obs_data_array_release(groupsArray);
 
 	obs_data_set_string(saveData, "current_transition", obs_source_get_name(transition));
 	obs_data_set_int(saveData, "transition_duration", transitionDuration);
