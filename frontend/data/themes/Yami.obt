@@ -128,6 +128,7 @@
     --padding_container: max(4px, var(--padding_base));
     --padding_wide: min(calc(12px + max(var(--padding_base_value), 4)), 24px);
     --padding_menu: calc(4px + calc(2 * var(--padding_base_value)));
+    --padding_menubar: max(6px, calc(2px + calc(1.25 * var(--padding_base_value))));
 
     --padding_base_border: calc(var(--padding_base) + 1px);
 
@@ -497,7 +498,7 @@ QMenu::right-arrow {
 /* Top Menu Bar Items */
 QMenuBar::item {
     background-color: transparent;
-    padding: var(--padding_large) var(--padding_xlarge);
+    padding: var(--padding_large) var(--padding_menubar);
 }
 
 QMenuBar::item:selected {
