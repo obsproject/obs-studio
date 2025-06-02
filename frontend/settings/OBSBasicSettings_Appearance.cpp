@@ -83,6 +83,8 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 
 void OBSBasicSettings::LoadAppearanceSettings(bool reload)
 {
+	loading = true;
+
 	LoadThemeList(reload);
 
 	if (reload) {
@@ -102,6 +104,8 @@ void OBSBasicSettings::LoadAppearanceSettings(bool reload)
 		densityButton->setChecked(true);
 	}
 	updateAppearanceControls();
+
+	loading = false;
 }
 
 void OBSBasicSettings::SaveAppearanceSettings()
