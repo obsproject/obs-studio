@@ -24,8 +24,6 @@
     --primary_light: rgb(33,71,109);
 
     /* Layout */
-    --font_small: max(7pt, calc(0.5pt * var(--font_base_value)));
-
     --padding_large: min(max(0px, calc(1px * var(--padding_base_value))), 5px);
 
     --padding_container: max(2px, var(--padding_base));
@@ -90,8 +88,8 @@ QStatusBar {
 }
 
 OBSDock > QWidget {
-  border-top: 1px solid var(--border_color);
-  padding-top: var(--spacing_large);
+    border-top: 1px solid var(--border_color);
+    padding-top: var(--spacing_large);
 }
 
 QDockWidget {
@@ -238,16 +236,12 @@ QPushButton[toolButton="true"] {
 }
 
 #hMixerScrollArea VolControl {
-    padding: 0px 2px;
+    padding: 0px var(--padding_container);
     margin-bottom: 1px;
 }
 
-#hMixerScrollArea QLabel {
-  margin: var(--padding_xlarge) 0px;
-}
-
 #hMixerScrollArea #volMeterFrame {
-  margin-top: var(--spacing_large);
+    margin-top: var(--spacing_large);
 }
 
 #vMixerScrollArea VolControl {
@@ -256,11 +250,11 @@ QPushButton[toolButton="true"] {
 }
 
 #vMixerScrollArea QLabel {
-  font-size: var(--font_small);
+    font-size: var(--font_small);
 }
 
 #vMixerScrollArea #volLabel {
-  font-size: var(--font_base);
+    font-size: var(--font_base);
 }
 
 .indicator-mute::indicator,
