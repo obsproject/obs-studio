@@ -61,43 +61,6 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 	return savedProjectors;
 }
 
-void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
-{
-	size_t num = obs_data_array_count(array);
-
-	for (size_t i = 0; i < num; i++) {
-		OBSDataAutoRelease data = obs_data_array_item(array, i);
-		SavedProjectorInfo info = {};
-
-		info.monitor = obs_data_get_int(data, "monitor");
-		info.type = static_cast<ProjectorType>(obs_data_get_int(data, "type"));
-		info.geometry = std::string(obs_data_get_string(data, "geometry"));
-		info.name = std::string(obs_data_get_string(data, "name"));
-		info.alwaysOnTop = obs_data_get_bool(data, "alwaysOnTop");
-		info.alwaysOnTopOverridden = obs_data_get_bool(data, "alwaysOnTopOverridden");
-
-		OpenSavedProjector(&info);
-	}
-}
-
-void OBSBasic::updateMultiviewProjectorMenu()
-{
-	ui->multiviewProjectorMenu->clear();
-	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this, &OBSBasic::OpenMultiviewProjector);
-	ui->multiviewProjectorMenu->addSeparator();
-	ui->multiviewProjectorMenu->addAction(QTStr("Projector.Window"), this, &OBSBasic::openMultiviewWindow);
-}
-
-void OBSBasic::ClearProjectors()
-{
-	for (size_t i = 0; i < projectors.size(); i++) {
-		if (projectors[i])
-			delete projectors[i];
-	}
-
-	projectors.clear();
-}
-
 QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 {
 	QList<QString> projectorsFormatted;
@@ -127,6 +90,35 @@ QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 		projectorsFormatted.push_back(str);
 	}
 	return projectorsFormatted;
+}
+
+void OBSBasic::LoadSavedProjectors(obs_data_array_t *array)
+{
+	size_t num = obs_data_array_count(array);
+
+	for (size_t i = 0; i < num; i++) {
+		OBSDataAutoRelease data = obs_data_array_item(array, i);
+		SavedProjectorInfo info = {};
+
+		info.monitor = obs_data_get_int(data, "monitor");
+		info.type = static_cast<ProjectorType>(obs_data_get_int(data, "type"));
+		info.geometry = std::string(obs_data_get_string(data, "geometry"));
+		info.name = std::string(obs_data_get_string(data, "name"));
+		info.alwaysOnTop = obs_data_get_bool(data, "alwaysOnTop");
+		info.alwaysOnTopOverridden = obs_data_get_bool(data, "alwaysOnTopOverridden");
+
+		OpenSavedProjector(&info);
+	}
+}
+
+void OBSBasic::ClearProjectors()
+{
+	for (size_t i = 0; i < projectors.size(); i++) {
+		if (projectors[i])
+			delete projectors[i];
+	}
+
+	projectors.clear();
 }
 
 void OBSBasic::DeleteProjector(OBSProjector *projector)
@@ -161,65 +153,6 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor, Project
 	projectors.emplace_back(projector);
 
 	return projector;
-}
-
-void OBSBasic::OpenPreviewProjector()
-{
-	int monitor = sender()->property("monitor").toInt();
-	OpenProjector(nullptr, monitor, ProjectorType::Preview);
-}
-
-void OBSBasic::OpenSourceProjector()
-{
-	int monitor = sender()->property("monitor").toInt();
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (!item)
-		return;
-
-	OpenProjector(obs_sceneitem_get_source(item), monitor, ProjectorType::Source);
-}
-
-void OBSBasic::OpenMultiviewProjector()
-{
-	int monitor = sender()->property("monitor").toInt();
-	OpenProjector(nullptr, monitor, ProjectorType::Multiview);
-}
-
-void OBSBasic::OpenSceneProjector()
-{
-	int monitor = sender()->property("monitor").toInt();
-	OBSScene scene = GetCurrentScene();
-	if (!scene)
-		return;
-
-	OpenProjector(obs_scene_get_source(scene), monitor, ProjectorType::Scene);
-}
-
-void OBSBasic::OpenPreviewWindow()
-{
-	OpenProjector(nullptr, -1, ProjectorType::Preview);
-}
-
-void OBSBasic::OpenSourceWindow()
-{
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (!item)
-		return;
-
-	OBSSource source = obs_sceneitem_get_source(item);
-
-	OpenProjector(obs_sceneitem_get_source(item), -1, ProjectorType::Source);
-}
-
-void OBSBasic::OpenSceneWindow()
-{
-	OBSScene scene = GetCurrentScene();
-	if (!scene)
-		return;
-
-	OBSSource source = obs_scene_get_source(scene);
-
-	OpenProjector(obs_scene_get_source(scene), -1, ProjectorType::Scene);
 }
 
 void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
@@ -258,7 +191,19 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 	}
 }
 
-void OBSBasic::openMultiviewWindow()
+QMenu *OBSBasic::CreateProjectorMenu(const QString &name, OBSSource source, ProjectorType type)
 {
-	OpenProjector(nullptr, -1, ProjectorType::Multiview);
+	QMenu *menu = new QMenu(name);
+
+	auto projectors = GetProjectorMenuMonitorsFormatted();
+	for (int i = 0; i < projectors.size(); i++) {
+		QString str = projectors[i];
+		menu->addAction(str, this, [this, source, i, type]() { OpenProjector(source, i, type); });
+	}
+
+	menu->addSeparator();
+
+	menu->addAction(QTStr("Projector.Window"), this, [this, source, type]() { OpenProjector(source, -1, type); });
+
+	return menu;
 }
