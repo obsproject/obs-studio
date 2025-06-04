@@ -1221,6 +1221,9 @@ static void async_tick(obs_source_t *source)
 {
 	uint64_t sys_time = obs->video.video_time;
 
+	/* gs should be requested before async_mutex
+	   Here we request gs because set_async_texture_size may be called */
+	gs_enter_context(obs->video.graphics);
 	pthread_mutex_lock(&source->async_mutex);
 
 	if (deinterlacing_enabled(source)) {
@@ -1244,6 +1247,7 @@ static void async_tick(obs_source_t *source)
 		source->async_update_texture = set_async_texture_size(source, source->cur_async_frame);
 
 	pthread_mutex_unlock(&source->async_mutex);
+	gs_leave_context();
 }
 
 void obs_source_video_tick(obs_source_t *source, float seconds)
