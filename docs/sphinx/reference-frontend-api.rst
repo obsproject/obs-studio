@@ -251,6 +251,13 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_close_main_window(void)
+
+   Closes the main window. If there are active outputs, the user will be
+   prompted to confirm before closing.
+
+---------------------------------------
+
 .. function:: void *obs_frontend_get_main_window(void)
 
    :return: The QMainWindow pointer to the OBS Studio window
