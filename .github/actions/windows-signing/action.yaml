@@ -75,7 +75,6 @@ runs:
         Invoke-External msiexec /i $msiPath /qn /norestart
 
     - name: Install rclone
-      if: inputs.architecture == 'x64'
       shell: pwsh
       run: |
         choco install rclone --version=1.64.2 -y --no-progress
@@ -86,15 +85,7 @@ runs:
         workload_identity_provider: ${{ inputs.gcpWorkloadIdentityProvider }}
         service_account: ${{ inputs.gcpServiceAccountName }}
 
-    - name: Ensure previous build directory exists
-      if: inputs.architecture != 'x64'
-      shell: pwsh
-      run: |
-        . ${env:GITHUB_ACTION_PATH}\Ensure-Location.ps1
-        Ensure-Location "${{ github.workspace }}/old_builds"
-
     - name: Download Previous Build
-      if: inputs.architecture == 'x64'
       shell: pwsh
       env:
         RCLONE_GCS_ENV_AUTH: 'true'
@@ -135,7 +126,6 @@ runs:
         Invoke-External "${{ github.workspace }}\bouf\bin\bouf.exe" @boufArgs
 
     - name: Sync Latest Build
-      if: inputs.architecture == 'x64'
       shell: pwsh
       env:
         RCLONE_INCLUDE: '**/${{ inputs.version }}/**'
@@ -145,7 +135,6 @@ runs:
         rclone sync --delete-excluded --transfers 100 "${{ github.workspace }}/old_builds" ":gcs:obs-latest/${{ inputs.architecture }}/${{ inputs.channel }}"
 
     - name: Upload Build to Archive
-      if: inputs.architecture == 'x64'
       shell: pwsh
       env:
         RCLONE_GCS_ENV_AUTH: 'true'
