@@ -84,7 +84,7 @@ runs:
         RCLONE_S3_SECRET_ACCESS_KEY: '${{ inputs.gcsAccessKeySecret }}'
         RCLONE_S3_ENDPOINT: 'https://storage.googleapis.com'
       run: |
-        rclone -q copy ":s3:obs-builds" "${{ github.workspace }}/old_builds"
+        rclone -q copy ":s3:obs-builds/${{ inputs.architecture }}" "${{ github.workspace }}/old_builds"
 
     - name: Prepare Release Notes
       shell: pwsh
