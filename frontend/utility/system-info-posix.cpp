@@ -1,5 +1,4 @@
 #include "system-info.hpp"
-#include "util/dstr.hpp"
 #include "util/platform.h"
 #include <sys/utsname.h>
 #include <unistd.h>
@@ -15,35 +14,6 @@ extern "C" {
 
 // Anonymous namespace ensures internal linkage
 namespace {
-struct drm_card_info {
-	uint16_t vendor_id;
-	uint16_t device_id;
-	uint16_t subsystem_vendor;
-	uint16_t subsystem_device;
-
-	/* match_count is the number of matches between
-	 * the tokenized GPU identification string and
-	 * the device_name and vendor_name supplied by
-	 * libpci. It is used to associate the GPU that
-	 * OBS is using and the cards found in a bus scan
-	 * using libpci.
-	 */
-	uint16_t match_count;
-
-	/* The following 2 fields are easily
-	 * obtained for AMD GPUs. Reporting
-	 * for NVIDIA GPUs is not working at
-	 * the moment.
-	 */
-	uint64_t dedicated_vram_total;
-	uint64_t shared_system_memory_total;
-
-	// PCI domain:bus:slot:function
-	std::string dbsf;
-	std::string device_name;
-	std::string vendor_name;
-};
-
 constexpr std::string_view WHITE_SPACE = " \f\n\r\t\v";
 
 // trim_ws() will remove leading and trailing
@@ -59,11 +29,6 @@ void trim_ws(std::string &s)
 	pos = s.find_last_not_of(WHITE_SPACE);
 	if (pos != std::string::npos)
 		s = s.substr(0, pos + 1);
-}
-
-bool compare_match_strength(const drm_card_info &a, const drm_card_info &b)
-{
-	return a.match_count > b.match_count;
 }
 
 void adjust_gpu_model(std::string &model)
@@ -262,144 +227,78 @@ bool get_cpu_freq(uint32_t &cpu_freq)
 	return true;
 }
 
-/* get_drm_cards() will find all render-capable cards
- * in /sys/class/drm and populate a vector of drm_card_info.
- */
-void get_drm_cards(std::vector<drm_card_info> &cards)
+GoLiveApi::Gpu get_card_info(struct pci_access *pacc, std::string_view name)
 {
-	struct drm_card_info dci;
-	char *file_str = NULL;
+	uint32_t domain, bus, device, function;
+	int len;
 	char buf[256];
-	int len = 0;
-	uint val = 0;
-
+	std::string dbdf;
+	char *file_str;
 	std::string base_path = "/sys/class/drm/";
 	std::string drm_path = base_path;
-	size_t base_len = base_path.length();
-	size_t node_len = 0;
 
-	os_dir_t *dir = os_opendir(base_path.c_str());
-	struct os_dirent *ent;
+	GoLiveApi::Gpu gpu;
+	drm_path += name;
+	drm_path += "/device";
+	size_t node_len = drm_path.length();
 
-	while ((ent = os_readdir(dir)) != NULL) {
-		std::string entry_name = ent->d_name;
-		if (ent->directory && (entry_name.find("renderD") != std::string::npos)) {
-			dci = {0};
-			drm_path.resize(base_len);
-			drm_path += ent->d_name;
-			drm_path += "/device";
+	/* Get the PCI domain,bus,device,function by reading the device symlink.
+	 */
+	if ((len = readlink(drm_path.c_str(), buf, sizeof(buf) - 1)) != -1) {
+		// readlink() doesn't null terminate strings, so do it explicitly
+		buf[len] = '\0';
+		dbdf = buf;
 
-			/* Get the PCI D:B:S:F (domain:bus:slot:function) in string form
-			 * by reading the device symlink.
-			 */
-			if ((len = readlink(drm_path.c_str(), buf, sizeof(buf) - 1)) != -1) {
-				// readlink() doesn't null terminate strings, so do it explicitly
-				buf[len] = '\0';
-				dci.dbsf = buf;
+		/* The DBDF string is of the form: "../../../0000:65:00.0/".
+		* Remove all the '/' characters, and
+		* remove all the leading '.' characters.
+		*/
+		dbdf.erase(std::remove(dbdf.begin(), dbdf.end(), '/'), dbdf.end());
+		dbdf.erase(0, dbdf.find_first_not_of("."));
 
-				/* The DBSF string is of the form: "../../../0000:65:00.0/".
-				* Remove all the '/' characters, and
-				* remove all the leading '.' characters.
-				*/
-				dci.dbsf.erase(std::remove(dci.dbsf.begin(), dci.dbsf.end(), '/'), dci.dbsf.end());
-				dci.dbsf.erase(0, dci.dbsf.find_first_not_of("."));
+		// Extract the integer values for libpci.
+		std::string sdomain = dbdf.substr(0, 4);
+		std::string sbus = dbdf.substr(5, 2);
+		std::string sdevice = dbdf.substr(8, 2);
+		std::string sfunction = dbdf.substr(11, 2); // Let cpp clamp it.
+		sscanf(sdomain.c_str(), "%x", &domain);
+		sscanf(sbus.c_str(), "%x", &bus);
+		sscanf(sdevice.c_str(), "%x", &device);
+		sscanf(sfunction.c_str(), "%x", &function);
 
-				node_len = drm_path.length();
+		struct pci_dev *dev = pci_get_dev(pacc, domain, bus, device, function);
+		pci_fill_info(dev, PCI_FILL_IDENT);
 
-				// Get the device_id
-				drm_path += "/device";
-				file_str = os_quick_read_utf8_file(drm_path.c_str());
-				if (!file_str) {
-					blog(LOG_ERROR, "Could not read from '%s'", drm_path.c_str());
-					dci.device_id = 0;
-				} else {
-					// Skip over the "0x" and convert
-					sscanf(file_str + 2, "%x", &val);
-					dci.device_id = val;
-					bfree(file_str);
-				}
+		gpu.vendor_id = dev->vendor_id;
+		gpu.device_id = dev->device_id;
+		gpu.model = pci_lookup_name(pacc, buf, sizeof(buf),
+					    PCI_LOOKUP_DEVICE | PCI_LOOKUP_CACHE | PCI_LOOKUP_NETWORK, dev->vendor_id,
+					    dev->device_id);
+		adjust_gpu_model(gpu.model);
 
-				// Get the vendor_id
-				drm_path.resize(node_len);
-				drm_path += "/vendor";
-				file_str = os_quick_read_utf8_file(drm_path.c_str());
-				if (!file_str) {
-					blog(LOG_ERROR, "Could not read from '%s'", drm_path.c_str());
-					dci.vendor_id = 0;
-				} else {
-					// Skip over the "0x" and convert
-					sscanf(file_str + 2, "%x", &val);
-					dci.vendor_id = val;
-					bfree(file_str);
-				}
+		// Get the GPU total vram memory, if available
+		drm_path.resize(node_len);
+		drm_path += "/mem_info_vram_total";
+		file_str = os_quick_read_utf8_file(drm_path.c_str());
+		if (!file_str) {
+			gpu.dedicated_video_memory = 0;
+		} else {
+			sscanf(file_str, "%lu", &gpu.dedicated_video_memory);
+			bfree(file_str);
+		}
 
-				// Get the subsystem_vendor
-				drm_path.resize(node_len);
-				drm_path += "/subsystem_vendor";
-				file_str = os_quick_read_utf8_file(drm_path.c_str());
-				if (!file_str) {
-					dci.subsystem_vendor = 0;
-				} else {
-					// Skip over the "0x" and convert
-					sscanf(file_str + 2, "%x", &val);
-					dci.subsystem_vendor = val;
-					bfree(file_str);
-				}
-
-				// Get the subsystem_device
-				drm_path.resize(node_len);
-				drm_path += "/subsystem_device";
-				file_str = os_quick_read_utf8_file(drm_path.c_str());
-				if (!file_str) {
-					dci.subsystem_device = 0;
-				} else {
-					// Skip over the "0x" and convert
-					sscanf(file_str + 2, "%x", &val);
-					dci.subsystem_device = val;
-					bfree(file_str);
-				}
-
-				/* The amdgpu driver exports the GPU memory information
-				 * via sysfs nodes. Sadly NVIDIA doesn't have the same
-				 * information via sysfs. Read the amdgpu-based nodes
-				 * if present and get the required fields.
-				 *
-				 * Get the GPU total dedicated VRAM, if available
-				 */
-				drm_path.resize(node_len);
-				drm_path += "/mem_info_vram_total";
-				file_str = os_quick_read_utf8_file(drm_path.c_str());
-				if (!file_str) {
-					dci.dedicated_vram_total = 0;
-				} else {
-					sscanf(file_str, "%lu", &dci.dedicated_vram_total);
-					bfree(file_str);
-				}
-
-				// Get the GPU total shared system memory, if available
-				drm_path.resize(node_len);
-				drm_path += "/mem_info_gtt_total";
-				file_str = os_quick_read_utf8_file(drm_path.c_str());
-				if (!file_str) {
-					dci.shared_system_memory_total = 0;
-				} else {
-					sscanf(file_str, "%lu", &dci.shared_system_memory_total);
-					bfree(file_str);
-				}
-
-				cards.push_back(dci);
-				blog(LOG_DEBUG,
-				     "%s: drm_adapter_info: PCI B:D:S:F: %s, device_id:0x%x,"
-				     "vendor_id:0x%x, sub_device:0x%x, sub_vendor:0x%x,"
-				     "vram_total: %lu, sys_memory: %lu",
-				     __FUNCTION__, dci.dbsf.c_str(), dci.device_id, dci.vendor_id, dci.subsystem_device,
-				     dci.subsystem_vendor, dci.dedicated_vram_total, dci.shared_system_memory_total);
-			} else {
-				blog(LOG_DEBUG, "%s: Failed to read symlink for %s", __FUNCTION__, drm_path.c_str());
-			}
+		// Get the GPU total shared system memory, if available
+		drm_path.resize(node_len);
+		drm_path += "/mem_info_gtt_total";
+		file_str = os_quick_read_utf8_file(drm_path.c_str());
+		if (!file_str) {
+			gpu.shared_system_memory = 0;
+		} else {
+			sscanf(file_str, "%lu", &gpu.shared_system_memory);
+			bfree(file_str);
 		}
 	}
-	os_closedir(dir);
+	return gpu;
 }
 
 /* system_gpu_data() returns a sorted vector of GoLiveApi::Gpu
@@ -412,175 +311,46 @@ void get_drm_cards(std::vector<drm_card_info> &cards)
  * is set to to ovi.adapter which is always 0 apparently.
  *
  * system_gpu_data() does the following:
- *   1. Gather information about the GPU being used by OBS
- *   2. Scan the PCIe bus to identify all GPUs
- *   3. Find a best match of the GPU in-use in the list found in 2
- *   4. Generate the sorted list of GoLiveAPI::Gpu entries
- *
- * Note that the PCIe device_id and vendor_id are not available
- * via OpenGL calls, hence the need to match the in-use GPU with
- * the libpci scanned results and extract the PCIe information.
+ *   1. Gather information about the GPUs available to OBS
  */
 std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 {
 	std::vector<GoLiveApi::Gpu> adapter_info;
-	GoLiveApi::Gpu gpu;
-	std::string gs_driver_version;
-	std::string gs_device_renderer;
-	uint64_t dedicated_video_memory = 0;
-	uint64_t shared_system_memory = 0;
-
-	std::vector<drm_card_info> drm_cards;
-	struct pci_access *pacc;
-	pacc = pci_alloc();
+	std::string renderer_name;
+	struct pci_access *pacc = pci_alloc();
 	pci_init(pacc);
-	char slot[256];
 
 	// Obtain GPU information by querying graphics API
 	obs_enter_graphics();
-	gs_driver_version = gs_get_driver_version();
-	gs_device_renderer = gs_get_renderer();
-	dedicated_video_memory = gs_get_gpu_dmem() * 1024;
-	shared_system_memory = gs_get_gpu_smem() * 1024;
-	obs_leave_graphics();
-
-	/* Split the GPU renderer string into tokens with
-	 * a regex of one or more white-space characters.
-	 */
-	std::regex ws_reg("[\\s]+");
-	vector<std::string> gpu_tokens(sregex_token_iterator(gs_device_renderer.begin(), gs_device_renderer.end(),
-							     ws_reg, -1),
-				       sregex_token_iterator());
-
-	// Remove extraneous characters from the tokens
-	constexpr std::string_view EXTRA_CHARS = ",()[]{}";
-	for (auto token = begin(gpu_tokens); token != end(gpu_tokens); ++token) {
-		for (unsigned int i = 0; i < EXTRA_CHARS.size(); ++i) {
-			token->erase(std::remove(token->begin(), token->end(), EXTRA_CHARS[i]), token->end());
+	auto lambda = [&](const char *name, uint32_t id) -> bool {
+		if (id != 0 && name == renderer_name) {
+			// The render device will show up twice, see gs_enum_adapters for info why.
+			return true;
 		}
-		// Convert tokens to lower-case
-		std::transform(token->begin(), token->end(), token->begin(), ::tolower);
-		blog(LOG_DEBUG, "%s: gpu_token: '%s'", __FUNCTION__, token->c_str());
-	}
+		std::string_view vname = name;
+		std::string node = &name[vname.rfind("/")];
+		GoLiveApi::Gpu gpu = get_card_info(pacc, node);
 
-	// Scan the PCI bus once
-	pci_scan_bus(pacc);
-
-	// Discover the set of DRM render-capable GPUs
-	get_drm_cards(drm_cards);
-	blog(LOG_DEBUG, "Number of GPUs detected: %lu", drm_cards.size());
-
-	// Iterate through drm_cards to get the device and vendor names via libpci
-	for (auto card = begin(drm_cards); card != end(drm_cards); ++card) {
-		struct pci_dev *pdev;
-		struct pci_filter pfilter;
-		char namebuf[1024];
-
-		/* Get around the 'const char*' vs 'char*'
-		 * type issue with pci_filter_parse_slot().
-		 */
-		strncpy(slot, card->dbsf.c_str(), sizeof(slot));
-
-		// Validate the "slot" string according to libpci
-		pci_filter_init(pacc, &pfilter);
-		if (pci_filter_parse_slot(&pfilter, slot)) {
-			blog(LOG_DEBUG, "%s: pci_filter_parse_slot() failed", __FUNCTION__);
-			continue;
-		}
-
-		// Get the device name and vendor name from libpci
-		for (pdev = pacc->devices; pdev; pdev = pdev->next) {
-			if (pci_filter_match(&pfilter, pdev)) {
-				pci_fill_info(pdev, PCI_FILL_IDENT);
-				card->device_name =
-					pci_lookup_name(pacc, namebuf, sizeof(namebuf),
-							PCI_LOOKUP_DEVICE | PCI_LOOKUP_CACHE | PCI_LOOKUP_NETWORK,
-							pdev->vendor_id, pdev->device_id);
-				card->vendor_name =
-					pci_lookup_name(pacc, namebuf, sizeof(namebuf),
-							PCI_LOOKUP_VENDOR | PCI_LOOKUP_CACHE | PCI_LOOKUP_NETWORK,
-							pdev->vendor_id, pdev->device_id);
-				blog(LOG_DEBUG, "libpci lookup: device_name: %s, vendor_name: %s",
-				     card->device_name.c_str(), card->vendor_name.c_str());
-				break;
-			}
-		}
-	}
-	pci_cleanup(pacc);
-
-	/* Iterate through drm_cards to determine a string match count
-	 * against the GPU string tokens from the OpenGL identification.
-	 */
-	for (auto card = begin(drm_cards); card != end(drm_cards); ++card) {
-		card->match_count = 0;
-		for (auto token = begin(gpu_tokens); token != end(gpu_tokens); ++token) {
-			std::string card_device_name = card->device_name;
-			std::string card_gpu_vendor = card->vendor_name;
-			std::transform(card_device_name.begin(), card_device_name.end(), card_device_name.begin(),
-				       ::tolower);
-			std::transform(card_gpu_vendor.begin(), card_gpu_vendor.end(), card_gpu_vendor.begin(),
-				       ::tolower);
-
-			// Compare GPU string tokens to PCI device name
-			std::size_t found = card_device_name.find(*token);
-			if (found != std::string::npos) {
-				card->match_count++;
-				blog(LOG_DEBUG, "Found %s in PCI device name", (*token).c_str());
-			}
-			// Compare GPU string tokens to PCI vendor name
-			found = card_gpu_vendor.find(*token);
-			if (found != std::string::npos) {
-				card->match_count++;
-				blog(LOG_DEBUG, "Found %s in PCI vendor name", (*token).c_str());
-			}
-		}
-	}
-
-	/* Sort the cards based on the highest match strength.
-	 * In the case of multiple cards and the first one is not a higher
-	 * match, there is ambiguity and all we can do is log a warning.
-	 * The chance of this happening is low, but not impossible.
-	 */
-	std::sort(drm_cards.begin(), drm_cards.end(), compare_match_strength);
-	if ((drm_cards.size() > 1) && (std::next(begin(drm_cards))->match_count) >= begin(drm_cards)->match_count) {
-		blog(LOG_WARNING, "%s: Ambiguous GPU association. Possible incorrect sort order.", __FUNCTION__);
-		for (auto card = begin(drm_cards); card != end(drm_cards); ++card) {
-			blog(LOG_DEBUG, "Total matches for card %s: %u", card->device_name.c_str(), card->match_count);
-		}
-	}
-
-	/* Iterate through the sorted list of cards and generate
-	 * the GoLiveApi GPU list.
-	 */
-	for (auto card = begin(drm_cards); card != end(drm_cards); ++card) {
-		gpu.device_id = card->device_id;
-		gpu.vendor_id = card->vendor_id;
-		gpu.model = card->device_name;
-		adjust_gpu_model(gpu.model);
-
-		if (card == begin(drm_cards)) {
-			/* The first card in the list corresponds to the
-			 * driver version and GPU memory information obtained
-			 * previously by OpenGL calls into the GPU.
-			 */
-			gpu.driver_version = gs_driver_version;
-			gpu.dedicated_video_memory = dedicated_video_memory;
-			gpu.shared_system_memory = shared_system_memory;
+		if (id == 0) {
+			// The render device, so we can read from OpenGL.
+			gpu.driver_version = gs_get_driver_version();
+			gpu.dedicated_video_memory = gs_get_gpu_dmem() * 1024;
+			gpu.shared_system_memory = gs_get_gpu_smem() * 1024;
+			renderer_name = name;
 		} else {
 			/* The driver version for the other device(s)
 			 * is not accessible easily in a common location.
 			 */
 			gpu.driver_version = "Unknown";
-
-			/* Use the GPU memory info discovered with get_drm_card_info()
-			 * stored in drm_cards. amdgpu driver exposes the GPU memory
-			 * info via sysfs, NVIDIA does not.
-			 */
-			gpu.dedicated_video_memory = card->dedicated_vram_total;
-			gpu.shared_system_memory = card->shared_system_memory_total;
 		}
 		adapter_info.push_back(gpu);
-	}
+		return true;
+	};
+	gs_enum_adapters([](void *p, const char *name,
+			    uint32_t id) -> bool { return (*(decltype(lambda) *)p)(name, id); },
+			 &lambda);
+	obs_leave_graphics();
+	pci_cleanup(pacc);
 
 	return adapter_info;
 }
