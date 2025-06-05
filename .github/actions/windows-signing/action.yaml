@@ -101,7 +101,7 @@ runs:
       run: |
         . ${env:GITHUB_ACTION_PATH}\Ensure-Location.ps1
         Ensure-Location "${{ github.workspace }}/old_builds"
-        rclone copy --transfers 100 ":gcs:obs-latest/${{ inputs.channel }}" .
+        rclone copy --transfers 100 ":gcs:obs-latest/${{ inputs.architecture }}/${{ inputs.channel }}" .
 
     - name: Sign Game Capture with RSA cert
       shell: pwsh
@@ -142,7 +142,7 @@ runs:
         RCLONE_GCS_ENV_AUTH: 'true'
         RCLONE_GCS_BUCKET_POLICY_ONLY: 'true'
       run: |
-        rclone sync --delete-excluded --transfers 100 "${{ github.workspace }}/old_builds" ":gcs:obs-latest/${{ inputs.channel }}"
+        rclone sync --delete-excluded --transfers 100 "${{ github.workspace }}/old_builds" ":gcs:obs-latest/${{ inputs.architecture }}/${{ inputs.channel }}"
 
     - name: Upload Build to Archive
       if: inputs.architecture == 'x64'
@@ -151,4 +151,4 @@ runs:
         RCLONE_GCS_ENV_AUTH: 'true'
         RCLONE_GCS_BUCKET_POLICY_ONLY: 'true'
       run: |
-        rclone copy --transfers 100 "${{ github.workspace }}/old_builds" ":gcs:obs-builds"
+        rclone copy --transfers 100 "${{ github.workspace }}/old_builds" ":gcs:obs-builds/${{ inputs.architecture }}"
