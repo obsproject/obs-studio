@@ -77,7 +77,7 @@ runs:
     - name: Install rclone
       shell: pwsh
       run: |
-        choco install rclone --version=1.64.2 -y --no-progress
+        choco install rclone --version=1.69.3 -y --no-progress
     
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@5a50e581162a13f4baa8916d01180d2acbc04363'
