@@ -196,7 +196,7 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM 
 		DISPLAY_DEVICEA device;
 		device.cb = sizeof(device);
 		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			match = strcmp(monitor->device_id, device.DeviceID) == 0;
+			match = strcmp(monitor->device_id, device.DeviceName) == 0;
 			if (match) {
 				strcpy_s(monitor->id, _countof(monitor->id), device.DeviceID);
 				strcpy_s(monitor->alt_id, _countof(monitor->alt_id), mi.szDevice);
@@ -745,7 +745,13 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect, L
 		DISPLAY_DEVICEA device;
 		device.cb = sizeof(device);
 		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			obs_property_list_add_string(monitor_list, monitor_desc.array, device.DeviceID);
+			/* device.DeviceID, provided by EnumDisplayDevicesA, is same for identical monitors.
+			   identical monitors means monitor from same manufacturer, same model.
+			   We should add the value to obs properties as "monitor_id" which uniquely identifies
+			   the monitor, and use it to update/create the monitor capture.
+			   Using "device.DeviceName" works.
+			*/
+			obs_property_list_add_string(monitor_list, monitor_desc.array, device.DeviceName);
 		} else {
 			blog(LOG_WARNING,
 			     "[duplicator-monitor-capture] EnumDisplayDevices failed for monitor (%s), falling back to szDevice",
