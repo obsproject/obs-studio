@@ -49,6 +49,7 @@ struct obs_encoder;
 struct obs_encoder_group;
 struct obs_service;
 struct obs_module;
+struct obs_module_metadata;
 struct obs_fader;
 struct obs_volmeter;
 struct obs_canvas;
@@ -64,6 +65,7 @@ typedef struct obs_encoder obs_encoder_t;
 typedef struct obs_encoder_group obs_encoder_group_t;
 typedef struct obs_service obs_service_t;
 typedef struct obs_module obs_module_t;
+typedef struct obs_module_metadata obs_module_metadata_t;
 typedef struct obs_fader obs_fader_t;
 typedef struct obs_volmeter obs_volmeter_t;
 typedef struct obs_canvas obs_canvas_t;
@@ -533,6 +535,15 @@ EXPORT void obs_add_module_path(const char *bin, const char *data);
  */
 EXPORT void obs_add_safe_module(const char *name);
 
+/**
+ * Adds a module to the list of core modules (which cannot be disabled).
+ * If the list is empty, all modules are allowed.
+ *
+ * @param  name  Specifies the module's name (filename sans extension).
+ */
+EXPORT void obs_add_core_module(const char* name);
+
+
 /** Automatically loads all modules from module paths (convenience function) */
 EXPORT void obs_load_all_modules(void);
 
@@ -590,6 +601,23 @@ EXPORT lookup_t *obs_module_load_locale(obs_module_t *module, const char *defaul
  * @return         Path string, or NULL if not found.  Use bfree to free string.
  */
 EXPORT char *obs_find_module_file(obs_module_t *module, const char *file);
+
+// TODO: Document this api call better.
+/**
+ * Adds a module name to the disabled modules list.
+ *
+ * @param  name    The name of the module to disable.
+ */
+EXPORT void obs_add_disabled_module(const char* name);
+
+// TODO: Document this api call better.
+/**
+ * Returns if a module can be disabled.
+ *
+ * @param  name    The name of the module to check.
+ * @return         Boolean to indicate disableableness
+ */
+EXPORT bool obs_get_module_allow_disable(const char* name);
 
 /**
  * Returns the path of a plugin module config file (whether it exists or not)
@@ -977,6 +1005,9 @@ EXPORT void obs_display_size(obs_display_t *display, uint32_t *width, uint32_t *
 
 /** Returns the translated display name of a source */
 EXPORT const char *obs_source_get_display_name(const char *id);
+
+/** Returns a pointer to the module which provides the source */
+EXPORT obs_module_t* obs_source_get_module(const char* id);
 
 /**
  * Creates a source of the specified type with the specified settings.
