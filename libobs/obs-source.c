@@ -393,6 +393,12 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	source->flags = source->default_flags;
 	source->enabled = true;
 
+	/* audio deduplication initialization */
+	source->audio_is_duplicated = false;
+	source->is_individual_audio_src = source->info.type == OBS_SOURCE_TYPE_INPUT &&
+					  source->info.output_flags & OBS_SOURCE_AUDIO &&
+					  !obs_source_is_scene(source) && !obs_source_is_group(source);
+
 	obs_source_init_finalize(source, canvas);
 	if (!private) {
 		if (canvas)
