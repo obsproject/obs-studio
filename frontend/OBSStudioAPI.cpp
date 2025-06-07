@@ -314,7 +314,9 @@ bool OBSStudioAPI::obs_frontend_replay_buffer_active()
 void *OBSStudioAPI::obs_frontend_add_tools_menu_qaction(const char *name)
 {
 	main->ui->menuTools->setEnabled(true);
-	return (void *)main->ui->menuTools->addAction(QT_UTF8(name));
+	QAction *action = main->ui->menuTools->addAction(QT_UTF8(name));
+	action->setMenuRole(QAction::NoRole);
+	return static_cast<void *>(action);
 }
 
 void OBSStudioAPI::obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback, void *private_data)
@@ -326,6 +328,7 @@ void OBSStudioAPI::obs_frontend_add_tools_menu_item(const char *name, obs_fronte
 	};
 
 	QAction *action = main->ui->menuTools->addAction(QT_UTF8(name));
+	action->setMenuRole(QAction::NoRole);
 	QObject::connect(action, &QAction::triggered, func);
 }
 
