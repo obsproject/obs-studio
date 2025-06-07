@@ -108,6 +108,7 @@ private slots:
 #endif
 
 private slots:
+	void addLogLine(int logLevel, const QString &message);
 	void themeFileChanged(const QString &);
 
 public:
@@ -194,6 +195,7 @@ public slots:
 	void ProcessSigInt();
 
 signals:
+	void logLineAdded(int logLevel, const QString &message);
 	void StyleChanged();
 };
 
