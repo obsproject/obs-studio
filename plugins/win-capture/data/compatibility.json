@@ -617,6 +617,20 @@
             "window_capture_wgc": false,
             "message": "FragPunk may require OBS to be run as admin to use Game Capture.",
             "url": "https://obsproject.com/kb/game-capture-troubleshooting"
+        },
+        {
+            "name": "Wuthering Waves",
+            "translation_key": "Compatibility.GameCapture.Admin",
+            "severity": 1,
+            "executable": "Client-Win64-Shipping.exe",
+            "window_class": "",
+            "window_title": "Wuthering Waves",
+            "match_flags": 3,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "Wuthering Waves may require OBS to be run as admin to use Game Capture.",
+            "url": "https://obsproject.com/kb/game-capture-troubleshooting"
         }
     ]
 }
