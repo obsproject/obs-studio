@@ -28,13 +28,6 @@ private:
 	void SetScene(OBSScene scene);
 	int64_t GetSliderTime(int val);
 
-	static void OBSMediaStopped(void *data, calldata_t *calldata);
-	static void OBSMediaPlay(void *data, calldata_t *calldata);
-	static void OBSMediaPause(void *data, calldata_t *calldata);
-	static void OBSMediaStarted(void *data, calldata_t *calldata);
-	static void OBSMediaNext(void *data, calldata_t *calldata);
-	static void OBSMediaPrevious(void *data, calldata_t *calldata);
-
 	std::unique_ptr<Ui_MediaControls> ui;
 
 private slots:
