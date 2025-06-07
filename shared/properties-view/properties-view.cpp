@@ -1,3 +1,7 @@
+#define OBS_DATA_TOLERATE_AUTOSELECT
+#include <obs-data.h>
+#undef OBS_DATA_TOLERATE_AUTOSELECT
+
 #include <QFormLayout>
 #include <QScrollBar>
 #include <QLabel>
@@ -36,7 +40,6 @@
 #include <icon-label.hpp>
 #include <cstdlib>
 #include <initializer_list>
-#include <obs-data.h>
 #include <obs.h>
 #include <qtimer.h>
 #include <string>
