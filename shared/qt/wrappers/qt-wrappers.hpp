@@ -27,6 +27,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <typeinfo>
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
@@ -99,3 +100,42 @@ QStringList OpenFiles(QWidget *parent, QString title, QString path, QString exte
 void TruncateLabel(QLabel *label, QString newText, int length = MAX_LABEL_LENGTH);
 
 void RefreshToolBarStyling(QToolBar *toolBar);
+
+// Template for Qt invokeMethod for OBS signals
+template<typename> struct memberTraits;
+
+template<typename Return, typename Object, typename... Args> struct memberTraits<Return (Object::*)(Args...)> {
+	using objectType = Object;
+};
+
+template<auto Slot, typename... Args> static inline void qtMethod(void *data, calldata_t *params)
+{
+	using Receiver = typename memberTraits<decltype(Slot)>::objectType;
+	Receiver *object = static_cast<Receiver *>(data);
+
+	if constexpr (sizeof...(Args) == 0) {
+		QMetaObject::invokeMethod(object, [=]() { (object->*Slot)(); });
+	} else {
+		if constexpr (std::is_same_v<std::tuple_element_t<0, std::tuple<Args...>>, OBSSource>) {
+			OBSSource source = static_cast<obs_source_t *>(calldata_ptr(params, "source"));
+
+			QMetaObject::invokeMethod(object, [=]() { (object->*Slot)(source); });
+		} else if constexpr (std::is_same_v<std::tuple_element_t<0, std::tuple<Args...>>, OBSScene>) {
+			OBSScene scene = static_cast<obs_sceneitem_t *>(calldata_ptr(params, "scene"));
+
+			QMetaObject::invokeMethod(object, [=]() { (object->*Slot)(scene); });
+		} else if constexpr (std::is_same_v<std::tuple_element_t<0, std::tuple<Args...>>, OBSSceneItem>) {
+			OBSSceneItem item = static_cast<obs_sceneitem_t *>(calldata_ptr(params, "item"));
+
+			QMetaObject::invokeMethod(object, [=]() { (object->*Slot)(item); });
+		} else if constexpr (std::is_same_v<std::tuple_element_t<0, std::tuple<Args...>>, OBSOutput>) {
+			OBSOutput output = static_cast<obs_output_t *>(calldata_ptr(params, "output"));
+
+			QMetaObject::invokeMethod(object, [=]() { (object->*Slot)(output); });
+		} else if constexpr (std::is_same_v<std::tuple_element_t<0, std::tuple<Args...>>, OBSCanvas>) {
+			OBSCanvas canvas = static_cast<obs_canvas_t *>(calldata_ptr(params, "canvas"));
+
+			QMetaObject::invokeMethod(object, [=]() { (object->*Slot)(canvas); });
+		}
+	}
+}

@@ -1,47 +1,12 @@
 #include "MediaControls.hpp"
 #include "ui_media-controls.h"
+#include <qt-wrappers.hpp>
 
 #include <OBSApp.hpp>
 
 #include <QToolTip>
 
 #include "moc_MediaControls.cpp"
-
-void MediaControls::OBSMediaStopped(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetRestartState");
-}
-
-void MediaControls::OBSMediaPlay(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPlayingState");
-}
-
-void MediaControls::OBSMediaPause(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPausedState");
-}
-
-void MediaControls::OBSMediaStarted(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPlayingState");
-}
-
-void MediaControls::OBSMediaNext(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "UpdateSlideCounter");
-}
-
-void MediaControls::OBSMediaPrevious(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "UpdateSlideCounter");
-}
 
 MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::MediaControls)
 {
@@ -306,14 +271,14 @@ void MediaControls::SetSource(OBSSource source)
 	if (source) {
 		weakSource = OBSGetWeakRef(source);
 		signal_handler_t *sh = obs_source_get_signal_handler(source);
-		sigs.emplace_back(sh, "media_play", OBSMediaPlay, this);
-		sigs.emplace_back(sh, "media_pause", OBSMediaPause, this);
-		sigs.emplace_back(sh, "media_restart", OBSMediaPlay, this);
-		sigs.emplace_back(sh, "media_stopped", OBSMediaStopped, this);
-		sigs.emplace_back(sh, "media_started", OBSMediaStarted, this);
-		sigs.emplace_back(sh, "media_ended", OBSMediaStopped, this);
-		sigs.emplace_back(sh, "media_next", OBSMediaNext, this);
-		sigs.emplace_back(sh, "media_previous", OBSMediaPrevious, this);
+		sigs.emplace_back(sh, "media_play", qtMethod<&MediaControls::SetPlayingState>, this);
+		sigs.emplace_back(sh, "media_pause", qtMethod<&MediaControls::SetPausedState>, this);
+		sigs.emplace_back(sh, "media_restart", qtMethod<&MediaControls::SetPlayingState>, this);
+		sigs.emplace_back(sh, "media_stopped", qtMethod<&MediaControls::SetRestartState>, this);
+		sigs.emplace_back(sh, "media_started", qtMethod<&MediaControls::SetPlayingState>, this);
+		sigs.emplace_back(sh, "media_ended", qtMethod<&MediaControls::SetRestartState>, this);
+		sigs.emplace_back(sh, "media_next", qtMethod<&MediaControls::UpdateSlideCounter>, this);
+		sigs.emplace_back(sh, "media_previous", qtMethod<&MediaControls::UpdateSlideCounter>, this);
 	} else {
 		weakSource = nullptr;
 	}
