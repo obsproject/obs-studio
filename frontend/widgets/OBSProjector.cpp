@@ -263,6 +263,49 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 			popup.addAction(QTStr("Windowed"), this, &OBSProjector::OpenWindowedProjector);
 
 		} else if (!this->isMaximized()) {
+			/* Query desktop work area size */
+			QSize as = this->screen()->availableSize();
+			int as_width = std::max(as.width(), 1);
+			int as_height = std::max(as.height(), 1);
+			/* Query output size for aspect ratio calculation use */
+			OBSSource source = GetSource();
+			uint32_t sourceCX;
+			uint32_t sourceCY;
+			/* Create a submenu for preset window sizes */
+			QMenu *resSubMenu = new QMenu(QTStr("Projector.SetWindowSize"));
+			if (source) {
+				sourceCX = std::max(obs_source_get_width(source), 1u);
+				sourceCY = std::max(obs_source_get_height(source), 1u);
+			} else {
+				struct obs_video_info ovi;
+				obs_get_video_info(&ovi);
+				sourceCX = ovi.base_width;
+				sourceCY = ovi.base_height;
+			}
+			/* Preset window heights */
+			const int presetHeights[] = {2160, 1440, 1080, 720, 540, 480, 360, 270};
+			for (int height : presetHeights) {
+				if (height > as_height)
+					continue;
+				/* Calculate width based on aspect ratio */
+				int width = static_cast<int>((height * sourceCX + sourceCY / 2) / sourceCY);
+				if (width > as_width)
+					continue;
+				resSubMenu->addAction(
+					QString("%1x%2").arg(width).arg(height), this, [this, width, height]() {
+						QRect currentRect = geometry();
+						setGeometry(currentRect.x() + (currentRect.width() - width) / 2,
+							    currentRect.y() + (currentRect.height() - height) / 2,
+							    width, height);
+					});
+			}
+			/* If no preset height was added, do not add the submenu */
+			if (resSubMenu->isEmpty()) {
+				delete resSubMenu;
+			} else {
+				popup.addMenu(resSubMenu);
+			}
+
 			popup.addAction(QTStr("Projector.ResizeWindowToContent"), this, &OBSProjector::ResizeToContent);
 		}
 
