@@ -1025,13 +1025,14 @@ static void LogFilter(obs_source_t *, obs_source_t *filter, void *v_val)
 {
 	const char *name = obs_source_get_name(filter);
 	const char *id = obs_source_get_id(filter);
+	const char *enabled = obs_source_enabled(filter) ? "" : "(disabled)";
 	int val = (int)(intptr_t)v_val;
 	string indent;
 
 	for (int i = 0; i < val; i++)
 		indent += "    ";
 
-	blog(LOG_INFO, "%s- filter: '%s' (%s)", indent.c_str(), name, id);
+	blog(LOG_INFO, "%s- filter: '%s' (%s) %s", indent.c_str(), name, id, enabled);
 }
 
 static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
@@ -1039,13 +1040,14 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	const char *name = obs_source_get_name(source);
 	const char *id = obs_source_get_id(source);
+	const char *enabled = obs_sceneitem_visible(item) ? "" : "(disabled)";
 	int indent_count = (int)(intptr_t)v_val;
 	string indent;
 
 	for (int i = 0; i < indent_count; i++)
 		indent += "    ";
 
-	blog(LOG_INFO, "%s- source: '%s' (%s)", indent.c_str(), name, id);
+	blog(LOG_INFO, "%s- source: '%s' (%s) %s", indent.c_str(), name, id, enabled);
 
 	obs_monitoring_type monitoring_type = obs_source_get_monitoring_type(source);
 
