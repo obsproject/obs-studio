@@ -243,7 +243,9 @@ static void image_source_tick(void *data, float seconds)
 			time_t t = get_modified_timestamp(context->file);
 			context->update_time_elapsed = 0.0f;
 
-			if (context->file_timestamp != t) {
+			if (context->file_timestamp != t ||
+			    (!context->if4.image3.image2.image.loaded &&
+			     t != -1)) {
 				image_source_load(context);
 			}
 		}
