@@ -723,6 +723,8 @@ Property Modification Functions
    :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
    :returns: The index of the list item.
 
+   `Note` : If ``p`` is of type OBS_COMBO_TYPE_EDITABLE, :c:func:`obs_data_get_string` will return ``name`` instead of ``val``.
+
 ---------------------
 
 .. function:: size_t obs_property_list_add_int(obs_property_t *p, const char *name, long long val)
@@ -752,6 +754,8 @@ Property Modification Functions
    :param    idx:  The index of the list item
    :param    name: Localized name shown to user
    :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
+
+   `Note` : If ``p`` is of type OBS_COMBO_TYPE_EDITABLE, :c:func:`obs_data_get_string` will return ``name`` instead of ``val``.
 
 ---------------------
 
