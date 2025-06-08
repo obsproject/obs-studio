@@ -27,7 +27,7 @@
 #define TEST_RESULT_SE TEST_STR("Result.StreamingEncoder")
 #define TEST_RESULT_RE TEST_STR("Result.RecordingEncoder")
 
-#define wiz reinterpret_cast<AutoConfig *>(wizard())
+#define wiz qobject_cast<AutoConfig *>(wizard())
 
 using namespace std;
 

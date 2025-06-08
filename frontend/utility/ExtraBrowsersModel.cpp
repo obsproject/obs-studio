@@ -92,7 +92,7 @@ Qt::ItemFlags ExtraBrowsersModel::flags(const QModelIndex &index) const
 }
 void ExtraBrowsersModel::AddDeleteButton(int idx)
 {
-	QTableView *widget = reinterpret_cast<QTableView *>(parent());
+	QTableView *widget = qobject_cast<QTableView *>(parent());
 
 	QModelIndex index = createIndex(idx, (int)Column::Delete, nullptr);
 
@@ -134,7 +134,7 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	int idx = item.prevIdx;
 
 	OBSBasic *main = OBSBasic::Get();
-	BrowserDock *dock = reinterpret_cast<BrowserDock *>(main->extraBrowserDocks[idx].get());
+	BrowserDock *dock = qobject_cast<BrowserDock *>(main->extraBrowserDocks[idx].get());
 	dock->setWindowTitle(item.title);
 	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
 
@@ -152,9 +152,9 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 
 void ExtraBrowsersModel::DeleteItem()
 {
-	QTableView *widget = reinterpret_cast<QTableView *>(parent());
+	QTableView *widget = qobject_cast<QTableView *>(parent());
 
-	DelButton *del = reinterpret_cast<DelButton *>(sender());
+	DelButton *del = qobject_cast<DelButton *>(sender());
 	int row = del->index.row();
 
 	/* there's some sort of internal bug in Qt and deleting certain index
@@ -211,7 +211,7 @@ void ExtraBrowsersModel::Apply()
 
 void ExtraBrowsersModel::TabSelection(bool forward)
 {
-	QListView *widget = reinterpret_cast<QListView *>(parent());
+	QListView *widget = qobject_cast<QListView *>(parent());
 	QItemSelectionModel *selModel = widget->selectionModel();
 
 	QModelIndex sel = selModel->currentIndex();

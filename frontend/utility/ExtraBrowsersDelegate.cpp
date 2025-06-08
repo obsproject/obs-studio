@@ -21,7 +21,7 @@ QWidget *ExtraBrowsersDelegate::createEditor(QWidget *parent, const QStyleOption
 
 void ExtraBrowsersDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-	QLineEdit *text = reinterpret_cast<QLineEdit *>(editor);
+	QLineEdit *text = qobject_cast<QLineEdit *>(editor);
 	text->blockSignals(true);
 	text->setText(index.data().toString());
 	text->blockSignals(false);
@@ -65,7 +65,7 @@ bool ExtraBrowsersDelegate::ValidName(const QString &name) const
 
 void ExtraBrowsersDelegate::RevertText(QLineEdit *edit_)
 {
-	EditWidget *edit = reinterpret_cast<EditWidget *>(edit_);
+	EditWidget *edit = qobject_cast<EditWidget *>(edit_);
 	int row = edit->index.row();
 	int col = edit->index.column();
 	bool newItem = (row == model->items.size());
@@ -82,7 +82,7 @@ void ExtraBrowsersDelegate::RevertText(QLineEdit *edit_)
 
 bool ExtraBrowsersDelegate::UpdateText(QLineEdit *edit_)
 {
-	EditWidget *edit = reinterpret_cast<EditWidget *>(edit_);
+	EditWidget *edit = qobject_cast<EditWidget *>(edit_);
 	int row = edit->index.row();
 	int col = edit->index.column();
 	bool newItem = (row == model->items.size());
