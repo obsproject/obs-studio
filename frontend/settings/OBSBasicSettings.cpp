@@ -788,7 +788,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connectScaleFilter(ui->advOutRecRescaleFilter, ui->advOutRecRescale);
 
 	// Get Bind to IP Addresses
-	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
+	OBSProperties ppts = obs_get_output_properties("rtmp_output");
 	obs_property_t *p = obs_properties_get(ppts, "bind_ip");
 
 	size_t count = obs_property_list_item_count(p);
@@ -809,8 +809,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 		ui->ipFamily->addItem(QT_UTF8(name), val);
 	}
-
-	obs_properties_destroy(ppts);
 
 	ui->multitrackVideoNoticeBox->setVisible(false);
 
@@ -2264,8 +2262,8 @@ void OBSBasicSettings::LoadAudioDevices()
 	const char *input_id = App()->InputAudioSource();
 	const char *output_id = App()->OutputAudioSource();
 
-	obs_properties_t *input_props = obs_get_source_properties(input_id);
-	obs_properties_t *output_props = obs_get_source_properties(output_id);
+	OBSProperties input_props = obs_get_source_properties(input_id);
+	OBSProperties output_props = obs_get_source_properties(output_id);
 
 	if (input_props) {
 		obs_property_t *inputs = obs_properties_get(input_props, "device_id");
@@ -2273,14 +2271,12 @@ void OBSBasicSettings::LoadAudioDevices()
 		LoadListValues(ui->auxAudioDevice2, inputs, 4);
 		LoadListValues(ui->auxAudioDevice3, inputs, 5);
 		LoadListValues(ui->auxAudioDevice4, inputs, 6);
-		obs_properties_destroy(input_props);
 	}
 
 	if (output_props) {
 		obs_property_t *outputs = obs_properties_get(output_props, "device_id");
 		LoadListValues(ui->desktopAudioDevice1, outputs, 1);
 		LoadListValues(ui->desktopAudioDevice2, outputs, 2);
-		obs_properties_destroy(output_props);
 	}
 
 	if (obs_video_active()) {
@@ -4823,7 +4819,7 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		const char *name = get_simple_output_encoder(QT_TO_UTF8(encoder));
 		const bool isFFmpegEncoder = strncmp(name, "ffmpeg_", 7) == 0;
-		obs_properties_t *props = obs_get_encoder_properties(name);
+		OBSProperties props = obs_get_encoder_properties(name);
 
 		obs_property_t *p = obs_properties_get(props, isFFmpegEncoder ? "preset2" : "preset");
 		size_t num = obs_property_list_item_count(p);
@@ -4833,8 +4829,6 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 			ui->simpleOutPreset->addItem(QT_UTF8(name), val);
 		}
-
-		obs_properties_destroy(props);
 
 		defaultPreset = "default";
 		preset = curNVENCPreset;
@@ -5729,15 +5723,13 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 			auto service_name = ui->service->currentText();
 			auto custom_server = ui->customServer->text().trimmed();
 
-			obs_properties_t *props = obs_get_service_properties("rtmp_common");
+			OBSProperties props = obs_get_service_properties("rtmp_common");
 			obs_property_t *service = obs_properties_get(props, "service");
 
 			settings = obs_data_create();
 
 			obs_data_set_string(settings, "service", QT_TO_UTF8(service_name));
 			obs_property_modified(service, settings);
-
-			obs_properties_destroy(props);
 		}
 
 		auto multitrack_video_name = QTStr("Basic.Settings.Stream.MultitrackVideoLabel");
