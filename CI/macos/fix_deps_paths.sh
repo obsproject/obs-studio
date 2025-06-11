@@ -2,12 +2,22 @@
 
 # Check if a file path is passed as an argument
 if [ -z "$1" ]; then
-    echo "Usage: $0 <path_to_binary>"
+    echo "Usage: $0 <path_to_binary> <destination path>"
     exit 1
 fi
 
-BINARY_PATH=$1
+SOURCE_FILE=$1
+BINARY_PATH=$2
 
+if [ ! -e "$BINARY_PATH" ]; then
+  echo "fix_deps_paths.sh: creating the path: $BINARY_PATH."
+  mkdir -p "$BINARY_PATH"
+fi
+
+cp -v "$SOURCE_FILE" "$BINARY_PATH" 
+
+filename=$(basename "$SOURCE_FILE")
+BINARY_PATH="$BINARY_PATH/$filename"
 # Use otool to get the list of linked libraries
 LIB_PATHS=$(otool -L "$BINARY_PATH" | grep "obs-deps" | awk '{print $1}')
 
