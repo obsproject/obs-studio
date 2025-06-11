@@ -169,9 +169,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	resize(800, 280);
 
 	setWindowTitle(QTStr("Basic.Stats"));
-#ifdef __APPLE__
-	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs_256x256.png")));
-#else
+#ifndef __APPLE__
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 #endif
 

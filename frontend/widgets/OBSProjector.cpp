@@ -42,9 +42,7 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 #endif
 
 	type = type_;
-#ifdef __APPLE__
-	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs_256x256.png")));
-#else
+#ifndef __APPLE__
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 #endif
 
