@@ -31,6 +31,7 @@ target_sources(
     forms/AutoConfigVideoPage.ui
     forms/ColorSelect.ui
     forms/obs.qrc
+    forms/LogUploadDialog.ui
     forms/OBSAbout.ui
     forms/OBSAdvAudio.ui
     forms/OBSBasic.ui
@@ -43,8 +44,6 @@ target_sources(
     forms/OBSBasicVCamConfig.ui
     forms/OBSExtraBrowsers.ui
     forms/OBSImporter.ui
-    forms/OBSLogReply.ui
-    forms/OBSLogReply.ui
     forms/OBSMissingFiles.ui
     forms/OBSRemux.ui
     forms/source-toolbar/browser-source-toolbar.ui
