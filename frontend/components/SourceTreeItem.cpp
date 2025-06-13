@@ -497,6 +497,7 @@ void SourceTreeItem::Update(bool force)
 	} else if (type == Type::Group) {
 		expand = new QCheckBox();
 		expand->setProperty("class", "checkbox-icon indicator-expand");
+		expand->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 #ifdef __APPLE__
 		expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 #endif
