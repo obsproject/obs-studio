@@ -138,6 +138,11 @@ struct OBSPromptRequest {
 	bool optionValue;
 };
 
+struct OBSAudioCaptureInfo {
+	QString device_id;
+	obs_source_t *source;
+};
+
 using OBSPromptCallback = std::function<bool(const OBSPromptResult &result)>;
 
 using OBSProfileCache = std::map<std::string, OBSProfile>;
@@ -326,6 +331,13 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	inline bool Closing() { return closing; }
+
+	int MonDeviceUsedAsAudioCaptureDevice();
+	void PreventMonitoringDuplication();
+
+	std::vector<OBSAudioCaptureInfo> AudioCaptureList;
+	void UpdateAudioCaptureList(obs_source_t *src);
+	void SceneUpdateAudioCaptureList();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
