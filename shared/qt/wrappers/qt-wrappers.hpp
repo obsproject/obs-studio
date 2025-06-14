@@ -63,6 +63,10 @@ QDataStream &operator>>(QDataStream &in, OBSScene &scene);
 QDataStream &operator<<(QDataStream &out, const OBSSource &source);
 QDataStream &operator>>(QDataStream &in, OBSSource &source);
 
+Q_DECLARE_METATYPE(OBSScene);
+Q_DECLARE_METATYPE(OBSSceneItem);
+Q_DECLARE_METATYPE(OBSSource);
+
 QThread *CreateQThread(std::function<void()> func);
 
 void ExecuteFuncSafeBlock(std::function<void()> func);
