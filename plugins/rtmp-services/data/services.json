@@ -1669,21 +1669,6 @@
             ]
         },
         {
-            "name": "LOCO",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://ivory-ingest.getloconow.com:1935/stream"
-                }
-            ],
-            "recommended": {
-                "keyint": 2
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "niconico (ニコニコ生放送)",
             "more_info_link": "https://qa.nicovideo.jp/faq/show/701",
             "alt_names": [
@@ -2122,32 +2107,6 @@
             "supported video codecs": [
                 "h264",
                 "hevc"
-            ]
-        },
-        {
-            "name": "Volume.com",
-            "stream_key_link": "https://volume.com/b?show_key=1&webrtc=0",
-            "servers": [
-                {
-                    "name": "Default - Recommended",
-                    "url": "rtmp://live.volume.com/live-origin"
-                },
-                {
-                    "name": "US - West",
-                    "url": "rtmp://live-pdx.volume.com/live-origin"
-                },
-                {
-                    "name": "US - East",
-                    "url": "rtmp://live-ash.volume.com/live-origin"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 20000,
-                "max fps": 60
-            },
-            "supported video codecs": [
-                "h264"
             ]
         },
         {
