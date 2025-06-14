@@ -257,6 +257,7 @@ bool OBSApp::InitGlobalLocationDefaults()
 	config_set_default_string(appConfig, "Locations", "Configuration", path);
 	config_set_default_string(appConfig, "Locations", "SceneCollections", path);
 	config_set_default_string(appConfig, "Locations", "Profiles", path);
+	config_set_default_string(appConfig, "Locations", "PluginManager", path);
 
 	return true;
 }
@@ -356,6 +357,7 @@ static bool MakeUserDirs()
 
 constexpr std::string_view OBSProfileSubDirectory = "obs-studio/basic/profiles";
 constexpr std::string_view OBSScenesSubDirectory = "obs-studio/basic/scenes";
+constexpr std::string_view OBSPluginManagerSubDirectory = "obs-studio/basic/plugin-manager";
 
 static bool MakeUserProfileDirs()
 {
@@ -363,6 +365,8 @@ static bool MakeUserProfileDirs()
 		App()->userProfilesLocation / std::filesystem::u8path(OBSProfileSubDirectory);
 	const std::filesystem::path userScenesPath =
 		App()->userScenesLocation / std::filesystem::u8path(OBSScenesSubDirectory);
+	const std::filesystem::path userPluginManagerPath =
+		App()->userPluginManagerLocation / std::filesystem::u8path(OBSPluginManagerSubDirectory);
 
 	if (!std::filesystem::exists(userProfilePath)) {
 		try {
@@ -380,6 +384,16 @@ static bool MakeUserProfileDirs()
 		} catch (const std::filesystem::filesystem_error &error) {
 			blog(LOG_ERROR, "Failed to create user scene collection directory '%s'\n%s",
 			     userScenesPath.u8string().c_str(), error.what());
+			return false;
+		}
+	}
+
+	if (!std::filesystem::exists(userPluginManagerPath)) {
+		try {
+			std::filesystem::create_directories(userPluginManagerPath);
+		} catch (const std::filesystem::filesystem_error &error) {
+			blog(LOG_ERROR, "Failed to create user plugin manager directory '%s'\n%s",
+			     userPluginManagerPath.u8string().c_str(), error.what());
 			return false;
 		}
 	}
@@ -456,11 +470,14 @@ bool OBSApp::InitGlobalConfig()
 		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "SceneCollections"));
 	std::filesystem::path defaultUserProfilesLocation =
 		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Profiles"));
+	std::filesystem::path defaultPluginManagerLocation =
+		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "PluginManager"));
 
 	if (IsPortableMode()) {
 		userConfigLocation = std::move(defaultUserConfigLocation);
 		userScenesLocation = std::move(defaultUserScenesLocation);
 		userProfilesLocation = std::move(defaultUserProfilesLocation);
+		userPluginManagerLocation = std::move(defaultPluginManagerLocation);
 	} else {
 		std::filesystem::path currentUserConfigLocation =
 			std::filesystem::u8path(config_get_string(appConfig, "Locations", "Configuration"));
@@ -468,6 +485,8 @@ bool OBSApp::InitGlobalConfig()
 			std::filesystem::u8path(config_get_string(appConfig, "Locations", "SceneCollections"));
 		std::filesystem::path currentUserProfilesLocation =
 			std::filesystem::u8path(config_get_string(appConfig, "Locations", "Profiles"));
+		std::filesystem::path currentUserPluginManagerLocation =
+			std::filesystem::u8path(config_get_string(appConfig, "Locations", "PluginManager"));
 
 		userConfigLocation = (std::filesystem::exists(currentUserConfigLocation))
 					     ? std::move(currentUserConfigLocation)
@@ -478,6 +497,9 @@ bool OBSApp::InitGlobalConfig()
 		userProfilesLocation = (std::filesystem::exists(currentUserProfilesLocation))
 					       ? std::move(currentUserProfilesLocation)
 					       : std::move(defaultUserProfilesLocation);
+		userPluginManagerLocation = (std::filesystem::exists(currentUserPluginManagerLocation))
+						    ? std::move(currentUserPluginManagerLocation)
+						    : std::move(defaultPluginManagerLocation);
 	}
 
 	bool userConfigResult = InitUserConfig(userConfigLocation, lastVersion);
