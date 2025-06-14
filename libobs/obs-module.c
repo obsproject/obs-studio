@@ -131,6 +131,11 @@ int obs_open_module(obs_module_t **module, const char *path, const char *data_pa
 	mod.data_path = bstrdup(data_path);
 	mod.next = obs->first_module;
 
+	if (obs_get_module(mod.mod_name)) {
+		blog(LOG_WARNING, "Module %s already exists", mod.mod_name);
+		return MODULE_ERROR;
+	}
+
 	if (mod.file) {
 		blog(LOG_DEBUG, "Loading module: %s", mod.file);
 	}
