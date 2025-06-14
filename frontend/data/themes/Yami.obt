@@ -2230,13 +2230,6 @@ idian--Row.last {
     border-bottom-right-radius: var(--border_radius);
 }
 
-idian--Row > QWidget QLabel {
-    background: red;
-    margin: 4px;
-    font-weight: 500;
-    max-height: var(--input_height);
-}
-
 idian--Row > QLabel.description {
     font-size: var(--font_small);
     color: var(--text_muted);
