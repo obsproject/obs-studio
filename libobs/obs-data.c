@@ -15,6 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#define OBS_DATA_TOLERATE_AUTOSELECT
+#include "obs-data.h"
+#undef OBS_DATA_TOLERATE_AUTOSELECT
+
 #include "util/bmem.h"
 #include "util/threading.h"
 #include "util/dstr.h"
@@ -25,7 +29,6 @@
 #include "graphics/vec3.h"
 #include "graphics/vec4.h"
 #include "graphics/quat.h"
-#include "obs-data.h"
 
 #include <jansson.h>
 
