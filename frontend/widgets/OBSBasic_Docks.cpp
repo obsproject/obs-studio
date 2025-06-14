@@ -210,6 +210,7 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 	QAction *action = ui->menuDocks->addAction(dock->windowTitle());
 #endif
 	action->setCheckable(true);
+	action->setMenuRole(QAction::NoRole);
 	assignDockToggle(dock, action);
 	oldExtraDocks.push_back(dock);
 	oldExtraDockNames.push_back(dock->objectName());
