@@ -270,10 +270,10 @@
                    </size>
                   </property>
                   <property name="toolTip">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
                   </property>
                   <property name="accessibleName">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
                   </property>
                   <property name="text">
                    <string/>
@@ -327,10 +327,10 @@
                    </size>
                   </property>
                   <property name="toolTip">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
                   </property>
                   <property name="accessibleName">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
                   </property>
                   <property name="text">
                    <string/>
