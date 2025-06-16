@@ -60,7 +60,6 @@
 #include <sstream>
 #endif
 #include <string>
-#include <unordered_set>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -102,98 +101,6 @@ extern bool cef_js_avail;
 
 extern void DestroyPanelCookieManager();
 extern void CheckExistingCookieId();
-
-static void AddExtraModulePaths()
-{
-	string plugins_path, plugins_data_path;
-	char *s;
-
-	s = getenv("OBS_PLUGINS_PATH");
-	if (s)
-		plugins_path = s;
-
-	s = getenv("OBS_PLUGINS_DATA_PATH");
-	if (s)
-		plugins_data_path = s;
-
-	if (!plugins_path.empty() && !plugins_data_path.empty()) {
-#if defined(__APPLE__)
-		plugins_path += "/%module%.plugin/Contents/MacOS";
-		plugins_data_path += "/%module%.plugin/Contents/Resources";
-		obs_add_module_path(plugins_path.c_str(), plugins_data_path.c_str());
-#else
-		string data_path_with_module_suffix;
-		data_path_with_module_suffix += plugins_data_path;
-		data_path_with_module_suffix += "/%module%";
-		obs_add_module_path(plugins_path.c_str(), data_path_with_module_suffix.c_str());
-#endif
-	}
-
-	if (portable_mode)
-		return;
-
-	char base_module_dir[512];
-#if defined(_WIN32)
-	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir), "obs-studio/plugins/%module%");
-#elif defined(__APPLE__)
-	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir), "obs-studio/plugins/%module%.plugin");
-#else
-	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir), "obs-studio/plugins/%module%");
-#endif
-
-	if (ret <= 0)
-		return;
-
-	string path = base_module_dir;
-#if defined(__APPLE__)
-	/* User Application Support Search Path */
-	obs_add_module_path((path + "/Contents/MacOS").c_str(), (path + "/Contents/Resources").c_str());
-
-#ifndef __aarch64__
-	/* Legacy System Library Search Path */
-	char system_legacy_module_dir[PATH_MAX];
-	GetProgramDataPath(system_legacy_module_dir, sizeof(system_legacy_module_dir), "obs-studio/plugins/%module%");
-	std::string path_system_legacy = system_legacy_module_dir;
-	obs_add_module_path((path_system_legacy + "/bin").c_str(), (path_system_legacy + "/data").c_str());
-
-	/* Legacy User Application Support Search Path */
-	char user_legacy_module_dir[PATH_MAX];
-	GetAppConfigPath(user_legacy_module_dir, sizeof(user_legacy_module_dir), "obs-studio/plugins/%module%");
-	std::string path_user_legacy = user_legacy_module_dir;
-	obs_add_module_path((path_user_legacy + "/bin").c_str(), (path_user_legacy + "/data").c_str());
-#endif
-#else
-#if ARCH_BITS == 64
-	obs_add_module_path((path + "/bin/64bit").c_str(), (path + "/data").c_str());
-#else
-	obs_add_module_path((path + "/bin/32bit").c_str(), (path + "/data").c_str());
-#endif
-#endif
-}
-
-/* First-party modules considered to be potentially unsafe to load in Safe Mode
- * due to them allowing external code (e.g. scripts) to modify OBS's state. */
-static const unordered_set<string> unsafe_modules = {
-	"frontend-tools", // Scripting
-	"obs-websocket",  // Allows outside modifications
-};
-
-static void SetSafeModuleNames()
-{
-#ifndef SAFE_MODULES
-	return;
-#else
-	string module;
-	stringstream modules(SAFE_MODULES);
-
-	while (getline(modules, module, '|')) {
-		/* When only disallowing third-party plugins, still add
-		 * "unsafe" bundled modules to the safe list. */
-		if (disable_3p_plugins || !unsafe_modules.count(module))
-			obs_add_safe_module(module.c_str());
-	}
-#endif
-}
 
 extern void setupDockAction(QDockWidget *dock);
 
@@ -951,14 +858,6 @@ void OBSBasic::OBSInit()
 	LoadLibraryW(L"Qt6Network");
 #endif
 	struct obs_module_failure_info mfi;
-
-	/* Safe Mode disables third-party plugins so we don't need to add earch
-	 * paths outside the OBS bundle/installation. */
-	if (safe_mode || disable_3p_plugins) {
-		SetSafeModuleNames();
-	} else {
-		AddExtraModulePaths();
-	}
 
 	/* Modules can access frontend information (i.e. profile and scene collection data) during their initialization, and some modules (e.g. obs-websockets) are known to use the filesystem location of the current profile in their own code.
      
