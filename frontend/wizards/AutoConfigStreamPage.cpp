@@ -23,7 +23,7 @@ enum class ListOpt : int {
 struct QCef;
 extern QCef *cef;
 
-#define wiz reinterpret_cast<AutoConfig *>(wizard())
+#define wiz qobject_cast<AutoConfig *>(wizard())
 
 AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent) : QWizardPage(parent), ui(new Ui_AutoConfigStreamPage)
 {
@@ -253,7 +253,7 @@ void AutoConfigStreamPage::on_show_clicked()
 
 void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 {
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	OAuthStreamKey *a = qobject_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
 		bool validKey = !a->key().empty();
@@ -279,7 +279,7 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 
 			ui->connectedAccountText->setText(QTStr("Auth.LoadingChannel.Title"));
 
-			YoutubeApiWrappers *ytAuth = reinterpret_cast<YoutubeApiWrappers *>(a);
+			YoutubeApiWrappers *ytAuth = qobject_cast<YoutubeApiWrappers *>(a);
 			ChannelDescription cd;
 			if (ytAuth->GetChannelDescription(cd)) {
 				ui->connectedAccountText->setText(cd.title);
@@ -393,7 +393,7 @@ void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 {
 #ifdef YOUTUBE_ENABLED
 	// when account is already connected:
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	OAuthStreamKey *a = qobject_cast<OAuthStreamKey *>(auth.get());
 	if (a && service == a->service() && IsYouTubeService(a->service())) {
 		ui->connectedAccountLabel->setVisible(true);
 		ui->connectedAccountText->setVisible(true);
