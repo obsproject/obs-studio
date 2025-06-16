@@ -143,7 +143,11 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id, std::string cn
 	video_description.addSSRC(ssrc, cname, media_stream_id, media_stream_track_id);
 
 	auto rtp_config = std::make_shared<rtc::RtpPacketizationConfig>(ssrc, cname, video_payload_type,
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 22 || RTC_VERSION_MAJOR > 0
+									rtc::H264RtpPacketizer::ClockRate);
+#else
 									rtc::H264RtpPacketizer::defaultClockRate);
+#endif
 
 	const obs_encoder_t *encoder = obs_output_get_video_encoder2(output, 0);
 	if (!encoder)
@@ -218,7 +222,7 @@ bool WHIPOutput::Setup()
 {
 	rtc::Configuration cfg;
 
-#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 1
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
 	cfg.disableAutoGathering = true;
 #endif
 
@@ -501,7 +505,7 @@ bool WHIPOutput::Connect()
 	}
 	cleanup();
 
-#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 1
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
 	peer_connection->gatherLocalCandidates(iceServers);
 #endif
 
@@ -629,12 +633,14 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, std::shared
 	// Set new timestamp
 	rtp_config->timestamp = rtp_config->timestamp + elapsed_timestamp;
 
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR < 23
 	// Get elapsed time in clock rate from last RTCP sender report
 	auto report_elapsed_timestamp = rtp_config->timestamp - rtcp_sr_reporter->lastReportedTimestamp();
 
 	// Check if last report was at least 1 second ago
 	if (rtp_config->timestampToSeconds(report_elapsed_timestamp) > 1)
 		rtcp_sr_reporter->setNeedsToReport();
+#endif
 
 	try {
 		track->send(sample);
