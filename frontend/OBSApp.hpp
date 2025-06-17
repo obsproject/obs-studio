@@ -28,6 +28,7 @@
 #include <QApplication>
 #include <QPalette>
 #include <QPointer>
+#include <QUuid>
 
 #include <deque>
 #include <functional>
@@ -41,6 +42,13 @@ Q_DECLARE_METATYPE(VoidFunc)
 class QFileSystemWatcher;
 class QSocketNotifier;
 
+namespace OBS {
+class CrashHandler;
+
+enum class LogFileType { NoType, CurrentAppLog, LastAppLog, CrashLog };
+enum class LogFileState { NoState, New, Uploaded };
+} // namespace OBS
+
 struct UpdateBranch {
 	QString name;
 	QString display_name;
@@ -53,6 +61,9 @@ class OBSApp : public QApplication {
 	Q_OBJECT
 
 private:
+	QUuid appLaunchUUID_;
+	std::unique_ptr<OBS::CrashHandler> crashHandler_;
+
 	std::string locale;
 
 	ConfigFile appConfig;
@@ -109,12 +120,14 @@ private slots:
 
 private slots:
 	void themeFileChanged(const QString &);
+	void applicationShutdown() noexcept;
 
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
 	~OBSApp();
 
 	void AppInit();
+	void checkForUncleanShutdown();
 	bool OBSInit();
 
 	void UpdateHotkeyFocusSetting(bool reset = true);
@@ -152,7 +165,12 @@ public:
 	const char *GetLastLog() const;
 	const char *GetCurrentLog() const;
 
-	const char *GetLastCrashLog() const;
+	void openCrashLogDirectory() const;
+	void uploadLastAppLog() const;
+	void uploadCurrentAppLog() const;
+	void uploadLastCrashLog();
+
+	OBS::LogFileState getLogFileState(OBS::LogFileType type) const;
 
 	std::string GetVersionString(bool platform = true) const;
 	bool IsPortableMode();
@@ -195,6 +213,9 @@ public slots:
 
 signals:
 	void StyleChanged();
+
+	void logUploadFinished(OBS::LogFileType, const QString &fileUrl);
+	void logUploadFailed(OBS::LogFileType, const QString &errorMessage);
 };
 
 int GetAppConfigPath(char *path, size_t size, const char *name);
