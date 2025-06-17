@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
   pull_request:
     paths-ignore:
-      - '**.md'
-    branches: [master]
-    types: [ opened, synchronize, reopened ]
+      - "**.md"
+    branches: [master, feature/plugin-manager-base]
+    types: [opened, synchronize, reopened]
 permissions:
   contents: read
 concurrency:
-  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
   cancel-in-progress: true
 jobs:
   check-format:
