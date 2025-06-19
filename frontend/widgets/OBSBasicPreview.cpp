@@ -9,6 +9,19 @@
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
 #define HELPER_ROT_BREAKPOINT 45.0f
 
+namespace {
+bool checkEdgeSnap(float moveAxis, float checkAxis, float clampDistance, float &offset)
+{
+	double dist = fabsf(checkAxis - moveAxis);
+	if (dist < clampDistance && fabsf(offset) < EPSILON && (fabsf(offset) > dist || offset < EPSILON)) {
+		offset = checkAxis - moveAxis;
+		return true;
+	}
+
+	return false;
+}
+} // namespace
+
 /* TODO: make C++ math classes and clean up code here later */
 
 OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags) : OBSQTDisplay(parent, flags)
@@ -124,6 +137,8 @@ static bool FindItemAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item, void
 		return true;
 	if (obs_sceneitem_locked(item))
 		return true;
+	if (!obs_sceneitem_visible(item))
+		return true;
 
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
@@ -170,6 +185,11 @@ static inline vec2 GetOBSScreenSize()
 	return size;
 }
 
+void OBSBasicPreview::addSnapGuide(SnapGuide guide)
+{
+	snapGuides.push_back(guide);
+}
+
 vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 {
 	OBSBasic *main = OBSBasic::Get();
@@ -190,27 +210,43 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	const float centerX = br.x - (br.x - tl.x) / 2.0f;
 	const float centerY = br.y - (br.y - tl.y) / 2.0f;
 
-	// Left screen edge.
-	if (screenSnap && fabsf(tl.x) < clampDist)
-		clampOffset.x = -tl.x;
-	// Right screen edge.
-	if (screenSnap && fabsf(clampOffset.x) < EPSILON && fabsf(screenSize.x - br.x) < clampDist)
-		clampOffset.x = screenSize.x - br.x;
-	// Horizontal center.
-	if (centerSnap && fabsf(screenSize.x - (br.x - tl.x)) > clampDist &&
-	    fabsf(screenSize.x / 2.0f - centerX) < clampDist)
-		clampOffset.x = screenSize.x / 2.0f - centerX;
+	if (screenSnap) {
+		// Left screen edge.
+		if (checkEdgeSnap(tl.x, 0, clampDist, clampOffset.x)) {
+			main->addSnapGuide(SnapGuide(0, 0, 0, screenSize.y));
+		}
 
-	// Top screen edge.
-	if (screenSnap && fabsf(tl.y) < clampDist)
-		clampOffset.y = -tl.y;
-	// Bottom screen edge.
-	if (screenSnap && fabsf(clampOffset.y) < EPSILON && fabsf(screenSize.y - br.y) < clampDist)
-		clampOffset.y = screenSize.y - br.y;
-	// Vertical center.
-	if (centerSnap && fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
-	    fabsf(screenSize.y / 2.0f - centerY) < clampDist)
-		clampOffset.y = screenSize.y / 2.0f - centerY;
+		// Right screen edge.
+		if (checkEdgeSnap(br.x, screenSize.x, clampDist, clampOffset.x)) {
+			main->addSnapGuide(SnapGuide(screenSize.x, 0, screenSize.x, screenSize.y));
+		}
+
+		// Top screen edge.
+		if (checkEdgeSnap(tl.y, 0, clampDist, clampOffset.y)) {
+			main->addSnapGuide(SnapGuide(0, 0, screenSize.x, 0));
+		}
+
+		// Bottom screen edge.
+		if (checkEdgeSnap(br.y, screenSize.y, clampDist, clampOffset.y)) {
+			main->addSnapGuide(SnapGuide(0, screenSize.y, screenSize.x, screenSize.y));
+		}
+	}
+
+	if (centerSnap) {
+		// Horizontal center.
+		if (fabsf(screenSize.x - (br.x - tl.x)) > clampDist &&
+		    fabsf(screenSize.x / 2.0f - centerX) < clampDist) {
+			clampOffset.x = screenSize.x / 2.0f - centerX;
+			main->addSnapGuide(SnapGuide(screenSize.x / 2.0f, 0, screenSize.x / 2.0f, screenSize.y));
+		}
+
+		// Vertical center.
+		if (fabsf(screenSize.y - (br.y - tl.y)) > clampDist &&
+		    fabsf(screenSize.y / 2.0f - centerY) < clampDist) {
+			clampOffset.y = screenSize.y / 2.0f - centerY;
+			main->addSnapGuide(SnapGuide(0, screenSize.y / 2.0f, screenSize.x, screenSize.y / 2.0f));
+		}
+	}
 
 	return clampOffset;
 }
@@ -722,6 +758,7 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		return;
 	}
 
+	OBSBasic *main = OBSBasic::Get();
 	if (mouseDown) {
 		vec2 pos = GetMouseEventPos(event);
 
@@ -774,8 +811,9 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		hoveredPreviewItems.clear();
 		hoveredPreviewItems.push_back(item);
 		selectedItems.clear();
+		snapGuides.clear();
 	}
-	OBSBasic *main = OBSBasic::Get();
+
 	OBSDataAutoRelease rwrapper = obs_scene_save_transform_states(main->GetCurrentScene(), true);
 
 	auto undo_redo = [](const std::string &data) {
@@ -858,14 +896,33 @@ static bool AddItemBounds(obs_scene_t * /* scene */, obs_sceneitem_t *item, void
 struct OffsetData {
 	float clampDist;
 	vec3 tl, br, offset;
+
+	float left() { return tl.x; }
+	float top() { return tl.y; }
+	float right() { return br.x; }
+	float bottom() { return br.y; }
+
+	vec2 center()
+	{
+		const float centerX = right() - (right() - left()) / 2.0f;
+		const float centerY = bottom() - (bottom() - top()) / 2.0f;
+
+		return {centerX, centerY};
+	}
 };
 
 static bool GetSourceSnapOffset(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
+	OBSBasic *main = OBSBasic::Get();
 	OffsetData *data = static_cast<OffsetData *>(param);
 
-	if (obs_sceneitem_selected(item))
+	if (obs_sceneitem_selected(item)) {
 		return true;
+	}
+
+	if (!obs_sceneitem_visible(item)) {
+		return true;
+	}
 
 	matrix4 boxTransform;
 	obs_sceneitem_get_box_transform(item, &boxTransform);
@@ -888,20 +945,58 @@ static bool GetSourceSnapOffset(obs_scene_t * /* scene */, obs_sceneitem_t *item
 		}
 	}
 
-	// Snap to other source edges
-#define EDGE_SNAP(l, r, x, y)                                                                         \
-	do {                                                                                          \
-		double dist = fabsf(l.x - data->r.x);                                                 \
-		if (dist < data->clampDist && fabsf(data->offset.x) < EPSILON && data->tl.y < br.y && \
-		    data->br.y > tl.y && (fabsf(data->offset.x) > dist || data->offset.x < EPSILON))  \
-			data->offset.x = l.x - data->r.x;                                             \
-	} while (false)
+	const auto screen = GetOBSScreenSize();
 
-	EDGE_SNAP(tl, br, x, y);
-	EDGE_SNAP(tl, br, y, x);
-	EDGE_SNAP(br, tl, x, y);
-	EDGE_SNAP(br, tl, y, x);
-#undef EDGE_SNAP
+	QRectF moveRect{data->left(), data->top(), data->right() - data->left(), data->bottom() - data->top()};
+	QRectF itemRect{tl.x, tl.y, br.x - tl.x, br.y - tl.y};
+
+	const QPointF centerDelta{moveRect.center().x() - itemRect.center().x(),
+				  moveRect.center().y() - itemRect.center().y()};
+
+	QPoint itemEdge{};
+	QPoint movingEdge{};
+
+	itemEdge.rx() = centerDelta.x() < 0 ? itemRect.left() : itemRect.right();
+	movingEdge.rx() = centerDelta.x() < 0 ? moveRect.left() : moveRect.right();
+
+	itemEdge.ry() = centerDelta.y() < 0 ? itemRect.top() : itemRect.bottom();
+	movingEdge.ry() = centerDelta.y() < 0 ? moveRect.top() : moveRect.bottom();
+
+	// Horizontal snapping
+	// Check if the delta between centers is larger than the sum of half widths minus the clamp distance.
+	// Subtracting the clamp distance allows snapping from the "inner" edges when overlapping.
+	if (std::fabs(centerDelta.x()) > (moveRect.width() + itemRect.width() - (data->clampDist * 2)) / 2) {
+		// Moving item is not overlapping
+		movingEdge.rx() = centerDelta.x() < 0 ? moveRect.right() : moveRect.left();
+	} else if (moveRect.width() > itemRect.width()) {
+		// Moving item is overlapping but larger, invert checked edges
+		itemEdge.rx() = centerDelta.x() > 0 ? itemRect.left() : itemRect.right();
+		movingEdge.rx() = centerDelta.x() > 0 ? moveRect.left() : moveRect.right();
+	}
+
+	// Vertical snapping
+	// Check if the delta between centers is larger than the sum of half widths minus the clamp distance.
+	// Subtracting the clamp distance allows snapping from the "inner" edges when overlapping.
+	if (std::fabs(centerDelta.y()) > (moveRect.height() + itemRect.height() - (data->clampDist * 2)) / 2) {
+		// Moving item is not overlapping
+		movingEdge.ry() = centerDelta.y() < 0 ? moveRect.bottom() : moveRect.top();
+	} else if (moveRect.height() > itemRect.height()) {
+		// Moving item is overlapping but larger, invert checked edges
+		itemEdge.ry() = centerDelta.y() > 0 ? itemRect.top() : itemRect.bottom();
+		movingEdge.ry() = centerDelta.y() > 0 ? moveRect.top() : moveRect.bottom();
+	}
+
+	if (checkEdgeSnap(movingEdge.x(), itemEdge.x(), data->clampDist, data->offset.x)) {
+		main->addSnapGuide(SnapGuide(itemEdge.x(), 0.0f, itemEdge.x(), screen.y));
+	} else if (checkEdgeSnap(moveRect.center().x(), itemRect.center().x(), data->clampDist, data->offset.x)) {
+		main->addSnapGuide(SnapGuide(itemRect.center().x(), 0.0f, itemRect.center().x(), screen.y));
+	}
+
+	if (checkEdgeSnap(movingEdge.y(), itemEdge.y(), data->clampDist, data->offset.y)) {
+		main->addSnapGuide(SnapGuide(0.0f, itemEdge.y(), screen.x, itemEdge.y()));
+	} else if (checkEdgeSnap(moveRect.center().y(), itemRect.center().y(), data->clampDist, data->offset.y)) {
+		main->addSnapGuide(SnapGuide(0.0f, itemRect.center().y(), screen.x, itemRect.center().y()));
+	}
 
 	return true;
 }
@@ -991,8 +1086,9 @@ void OBSBasicPreview::MoveItems(const vec2 &pos)
 	vec2_sub(&offset, &pos, &startPos);
 	vec2_sub(&moveOffset, &offset, &lastMoveOffset);
 
-	if (!(modifiers & Qt::ControlModifier))
+	if (!(modifiers & Qt::ControlModifier)) {
 		SnapItemMovement(moveOffset);
+	}
 
 	vec2_add(&lastMoveOffset, &lastMoveOffset, &moveOffset);
 
@@ -1559,6 +1655,8 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		pos.x = std::round(pos.x);
 		pos.y = std::round(pos.y);
 
+		snapGuides.clear();
+
 		if (stretchHandle != ItemHandle::None) {
 			if (obs_sceneitem_locked(stretchItem))
 				return;
@@ -2087,6 +2185,58 @@ bool OBSBasicPreview::DrawSelectionBox(float x1, float y1, float x2, float y2, g
 	gs_matrix_pop();
 
 	return true;
+}
+
+void OBSBasicPreview::DrawSnapGuides()
+{
+	if (snapGuides.empty()) {
+		return;
+	}
+
+	OBSBasic *main = OBSBasic::Get();
+
+	vec2 viewport;
+	vec2_set(&viewport, main->previewCX, main->previewCY);
+
+	float pixelRatio = main->GetDevicePixelRatio();
+
+	matrix4 transform;
+	matrix4_identity(&transform);
+	transform.x.x = viewport.x;
+	transform.y.y = viewport.y;
+
+	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
+	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
+
+	vec4 snapColor;
+	vec4_set(&snapColor, 0.0f, 1.0f, 1.0f, 0.8f);
+
+	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &snapColor);
+
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
+
+	gs_matrix_push();
+	gs_matrix_mul(&transform);
+
+	for (const SnapGuide &guide : snapGuides) {
+		vec2 start, end;
+
+		vec2_div(&start, &guide.start, &viewport);
+		vec2_div(&end, &guide.end, &viewport);
+
+		vec2_mulf(&start, &start, main->previewScale);
+		vec2_mulf(&end, &end, main->previewScale);
+
+		DrawLine(start.x, start.y, end.x, end.y, HANDLE_RADIUS * pixelRatio / 2, viewport);
+	}
+
+	gs_matrix_pop();
+
+	gs_load_vertexbuffer(nullptr);
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 }
 
 void OBSBasicPreview::DrawOverflow()
