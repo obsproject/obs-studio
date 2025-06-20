@@ -8,5 +8,16 @@
     "maximumBlankLines": 1,
     "respectsExistingLineBreaks": true,
     "lineBreakBeforeControlFlowKeywords": false,
-    "lineBreakBeforeEachArgument": false
+    "lineBreakBeforeEachArgument": false,
+    "lineBreakBeforeEachGenericRequirement": false,
+    "lineBreakBetweenDeclarationAttributes": false,
+    "prioritizeKeepingFunctionOutputTogether": false,
+    "indentConditionalCompilationBlocks": true,
+    "lineBreakAroundMultilineExpressionChainComponents": false,
+    "fileScopedDeclarationPrivacy": {"accessLevel": "private"},
+    "indentSwitchCaseLabels": false,
+    "spacesAroundRangeFormationOperators": false,
+    "noAssignmentInExpressions": { "allowedFunctions" : ["XCTAssertNoThrow"] },
+    "multiElementCollectionTrailingCommas": true,
+    "indentBlankLines": false,
 }
