@@ -26,6 +26,34 @@ static const char *hevc_main = "Main";
 static const char *hevc_main10 = "Main 10";
 static const char *av1_main = "Main";
 
+#if !defined(AV_PROFILE_H264_MAIN) && defined(FF_PROFILE_H264_MAIN)
+#define AV_PROFILE_H264_MAIN FF_PROFILE_H264_MAIN
+#endif
+
+#if !defined(AV_PROFILE_H264_HIGH) && defined(FF_PROFILE_H264_HIGH)
+#define AV_PROFILE_H264_HIGH FF_PROFILE_H264_HIGH
+#endif
+
+#if !defined(AV_PROFILE_H264_CONSTRAINED_BASELINE) && defined(FF_PROFILE_H264_CONSTRAINED_BASELINE)
+#define AV_PROFILE_H264_CONSTRAINED_BASELINE FF_PROFILE_H264_CONSTRAINED_BASELINE
+#endif
+
+#if !defined(AV_PROFILE_HEVC_MAIN) && defined(FF_PROFILE_HEVC_MAIN)
+#define AV_PROFILE_HEVC_MAIN FF_PROFILE_HEVC_MAIN
+#endif
+
+#if !defined(AV_PROFILE_HEVC_MAIN_10) && defined(FF_PROFILE_HEVC_MAIN_10)
+#define AV_PROFILE_HEVC_MAIN_10 FF_PROFILE_HEVC_MAIN_10
+#endif
+
+#if !defined(AV_PROFILE_AV1_MAIN) && defined(FF_PROFILE_AV1_MAIN)
+#define AV_PROFILE_AV1_MAIN FF_PROFILE_AV1_MAIN
+#endif
+
+#if !defined(AV_PROFILE_UNKNOWN) && defined(FF_PROFILE_UNKNOWN)
+#define AV_PROFILE_UNKNOWN FF_PROFILE_UNKNOWN
+#endif
+
 // Maximum reconnect attempts with an invalid key error before giving up (roughly 30 seconds with default start value)
 static constexpr uint8_t MAX_RECONNECT_ATTEMPTS = 5;
 
