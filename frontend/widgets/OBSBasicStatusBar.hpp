@@ -104,4 +104,7 @@ public:
 	void RecordingUnpaused();
 
 	void ReconnectClear();
+
+signals:
+	void notificationBellClicked();
 };
