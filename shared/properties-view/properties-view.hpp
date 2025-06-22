@@ -73,6 +73,7 @@ public slots:
 	void EditListAddText();
 	void EditListAddFiles();
 	void EditListAddDir();
+	void EditListAddCombo();
 	void EditListRemove();
 	void EditListEdit();
 	void EditListUp();
