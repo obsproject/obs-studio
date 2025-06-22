@@ -171,7 +171,7 @@ bool build_application_list(struct screen_capture *sc, obs_properties_t *props)
     os_sem_wait(sc->shareable_content_available);
 
     obs_property_t *application_list = obs_properties_get(props, "application");
-    obs_property_list_clear(application_list);
+    obs_property_editable_list_clear(application_list);
 
     NSArray<SCRunningApplication *> *filteredApplications;
     filteredApplications = [sc->shareable_content.applications
@@ -189,7 +189,7 @@ bool build_application_list(struct screen_capture *sc, obs_properties_t *props)
     for (SCRunningApplication *application in sortedApplications) {
         const char *name = [application.applicationName UTF8String];
         const char *bundle_id = [application.bundleIdentifier UTF8String];
-        obs_property_list_add_string(application_list, name, bundle_id);
+        obs_property_editable_list_add_item(application_list, name, bundle_id);
     }
 
     os_sem_post(sc->shareable_content_available);
@@ -334,4 +334,19 @@ void screen_stream_audio_update(struct screen_capture *sc, CMSampleBufferRef sam
     audio_data.timestamp = (uint64_t) (CMTimeGetSeconds(presentation_time) * NSEC_PER_SEC);
     audio_data.format = AUDIO_FORMAT_FLOAT_PLANAR;
     obs_source_output_audio(sc->source, &audio_data);
+}
+
+NSArray<NSString *> *strings_from_array(obs_data_array_t *array)
+{
+    NSMutableArray<NSString *> *strings = [[NSMutableArray alloc] init];
+
+    const size_t count = obs_data_array_count(array);
+    for (size_t i = 0; i < count; ++i) {
+        obs_data_t *item = obs_data_array_item(array, i);
+        const char *value = obs_data_get_string(item, "value");
+        NSString *string = [[NSString alloc] initWithUTF8String:value];
+        [strings addObject:string];
+    }
+
+    return [[NSArray alloc] initWithArray:strings];
 }
