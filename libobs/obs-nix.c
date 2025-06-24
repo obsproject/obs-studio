@@ -86,7 +86,7 @@ void add_default_module_paths(void)
 	bfree(module_data_path);
 
 	for (int i = 0; i < module_patterns_size; i++) {
-		obs_add_module_path(module_bin[i], module_data[i]);
+		obs_add_default_module_path(module_bin[i], module_data[i]);
 	}
 }
 

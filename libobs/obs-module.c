@@ -264,6 +264,20 @@ void obs_add_module_path(const char *bin, const char *data)
 
 	omp.bin = bstrdup(bin);
 	omp.data = bstrdup(data);
+	omp.is_default = false;
+	da_push_back(obs->module_paths, &omp);
+}
+
+void obs_add_default_module_path(const char *bin, const char *data)
+{
+	struct obs_module_path omp;
+
+	if (!obs || !bin || !data)
+		return;
+
+	omp.bin = bstrdup(bin);
+	omp.data = bstrdup(data);
+	omp.is_default = true;
 	da_push_back(obs->module_paths, &omp);
 }
 
@@ -274,6 +288,15 @@ void obs_add_safe_module(const char *name)
 
 	char *item = bstrdup(name);
 	da_push_back(obs->safe_modules, &item);
+}
+
+void obs_add_default_module(const char *name)
+{
+	if (!obs || !name)
+		return;
+
+	char *item = bstrdup(name);
+	da_push_back(obs->default_modules, &item);
 }
 
 extern void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load);
@@ -296,6 +319,30 @@ static bool is_safe_module(const char *name)
 	return false;
 }
 
+static bool is_default_module(const char *name)
+{
+	if (!obs->default_modules.num)
+		return true;
+
+	for (size_t i = 0; i < obs->default_modules.num; i++) {
+		if (strcmp(name, obs->default_modules.array[i]) == 0)
+			return true;
+	}
+
+	return false;
+}
+
+static bool is_default_path(const char *name)
+{
+	for (size_t i = 0; i < obs->module_paths.num; i++) {
+		if (strstr(name, obs->module_paths.array[i].bin) != NULL &&
+		    obs->module_paths.array[i].is_default == true)
+			return true;
+	}
+
+	return false;
+}
+
 static void load_all_callback(void *param, const struct obs_module_info2 *info)
 {
 	struct fail_info *fail_info = param;
@@ -308,6 +355,11 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 
 	if (!is_obs_plugin) {
 		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin", info->bin_path);
+		return;
+	}
+
+	if (is_default_path(info->bin_path) && !is_default_module(info->name)) {
+		blog(LOG_WARNING, "Skipping module '%s', not a default plugin in the default directory", info->name);
 		return;
 	}
 

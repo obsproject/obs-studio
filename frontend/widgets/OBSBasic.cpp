@@ -195,6 +195,19 @@ static void SetSafeModuleNames()
 #endif
 }
 
+static void SetDefaultModuleNames()
+{
+#ifndef SAFE_MODULES
+	return;
+#else
+	string module;
+	stringstream modules(SAFE_MODULES);
+
+	while (getline(modules, module, '|'))
+		obs_add_default_module(module.c_str());
+#endif
+}
+
 extern void setupDockAction(QDockWidget *dock);
 
 OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
@@ -951,6 +964,9 @@ void OBSBasic::OBSInit()
 	LoadLibraryW(L"Qt6Network");
 #endif
 	struct obs_module_failure_info mfi;
+
+	if (!portable_mode)
+		SetDefaultModuleNames();
 
 	/* Safe Mode disables third-party plugins so we don't need to add earch
 	 * paths outside the OBS bundle/installation. */

@@ -43,7 +43,7 @@ static const int module_patterns_size = sizeof(module_bin) / sizeof(module_bin[0
 void add_default_module_paths(void)
 {
 	for (int i = 0; i < module_patterns_size; i++)
-		obs_add_module_path(module_bin[i], module_data[i]);
+		obs_add_default_module_path(module_bin[i], module_data[i]);
 }
 
 /* on windows, points to [base directory]/data/libobs */

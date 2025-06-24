@@ -133,6 +133,7 @@ extern void free_module(struct obs_module *mod);
 struct obs_module_path {
 	char *bin;
 	char *data;
+	bool is_default;
 };
 
 static inline void free_module_path(struct obs_module_path *omp)
@@ -489,6 +490,7 @@ struct obs_core {
 	struct obs_module *first_module;
 	DARRAY(struct obs_module_path) module_paths;
 	DARRAY(char *) safe_modules;
+	DARRAY(char *) default_modules;
 
 	obs_source_info_array_t source_types;
 	obs_source_info_array_t input_types;

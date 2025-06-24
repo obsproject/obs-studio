@@ -526,12 +526,27 @@ EXPORT const char *obs_get_module_data_path(obs_module_t *module);
 EXPORT void obs_add_module_path(const char *bin, const char *data);
 
 /**
+ * Adds a search path for default modules.
+ *
+ * @param  bin   Specifies the default module's binary directory search path.
+ * @param  data  Specifies the default module's data directory search path.
+ */
+EXPORT void obs_add_default_module_path(const char *bin, const char *data);
+
+/**
  * Adds a module to the list of modules allowed to load in Safe Mode.
  * If the list is empty, all modules are allowed.
  *
  * @param  name  Specifies the module's name (filename sans extension).
  */
 EXPORT void obs_add_safe_module(const char *name);
+
+/**
+ * Adds a module to the list of default modules
+ *
+ * @param  name  Specifies the module's name (filename sans extension).
+ */
+EXPORT void obs_add_default_module(const char *name);
 
 /** Automatically loads all modules from module paths (convenience function) */
 EXPORT void obs_load_all_modules(void);
