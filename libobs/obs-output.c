@@ -1650,12 +1650,6 @@ static inline void send_interleaved(struct obs_output *output)
 	struct encoder_packet_time ept_local = {0};
 	bool found_ept = false;
 
-	/* do not send an interleaved packet if there's no packet of the
-	 * opposing type of a higher timestamp in the interleave buffer.
-	 * this ensures that the timestamps are monotonic */
-	if (!has_higher_opposing_ts(output, &out))
-		return;
-
 	da_erase(output->interleaved_packets, 0);
 
 	if (out.type == OBS_ENCODER_VIDEO) {
@@ -2153,6 +2147,24 @@ static void apply_ept_offsets(struct obs_output *output)
 	}
 }
 
+static inline size_t count_streamable_frames(struct obs_output *output)
+{
+	size_t eligible = 0;
+
+	for (size_t idx = 0; idx < output->interleaved_packets.num; idx++) {
+		struct encoder_packet *pkt = &output->interleaved_packets.array[idx];
+
+		/* Only count an interleaved packet as streamable if there are packets of the opposing type and of a
+		 * higher timestamp in the interleave buffer. This ensures that the timestamps are monotonic. */
+		if (!has_higher_opposing_ts(output, pkt))
+			break;
+
+		eligible++;
+	}
+
+	return eligible;
+}
+
 static void interleave_packets(void *data, struct encoder_packet *packet, struct encoder_packet_time *packet_time)
 {
 	struct obs_output *output = data;
@@ -2225,7 +2237,15 @@ static void interleave_packets(void *data, struct encoder_packet *packet, struct
 		} else {
 			set_higher_ts(output, &out);
 
-			send_interleaved(output);
+			size_t streamable = count_streamable_frames(output);
+			if (streamable) {
+				send_interleaved(output);
+
+				/* If we have more eligible packets queued than we normally should have,
+				 * send one additional packet until we're back below the limit. */
+				if (--streamable > output->interleaver_max_batch_size)
+					send_interleaved(output);
+			}
 		}
 	}
 
@@ -2634,6 +2654,53 @@ static void reset_raw_output(obs_output_t *output)
 	pause_reset(&output->pause);
 }
 
+static void calculate_batch_size(struct obs_output *output)
+{
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	DARRAY(uint64_t) intervals;
+	da_init(intervals);
+
+	uint64_t largest_interval = 0;
+
+	/* Step 1: Calculate the largest interval between packets of any encoder. */
+	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+		if (!output->video_encoders[i])
+			continue;
+
+		uint32_t den = ovi.fps_den * obs_encoder_get_frame_rate_divisor(output->video_encoders[i]);
+		uint64_t encoder_interval = util_mul_div64(1000000000ULL, den, ovi.fps_num);
+		da_push_back(intervals, &encoder_interval);
+
+		largest_interval = encoder_interval > largest_interval ? encoder_interval : largest_interval;
+	}
+
+	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+		if (!output->audio_encoders[i])
+			continue;
+
+		uint32_t sample_rate = obs_encoder_get_sample_rate(output->audio_encoders[i]);
+		size_t frame_size = obs_encoder_get_frame_size(output->audio_encoders[i]);
+		uint64_t encoder_interval = util_mul_div64(1000000000ULL, frame_size, sample_rate);
+		da_push_back(intervals, &encoder_interval);
+
+		largest_interval = encoder_interval > largest_interval ? encoder_interval : largest_interval;
+	}
+
+	/* Step 2: Calculate how many packets would fit into double that interval given each encoder's packet rate.
+	 * The doubling is done to provide some amount of wiggle room as the largest interval may not be evenly
+	 * divisible by all smaller ones. For example, 33.3... ms video (30 FPS) and 21.3... ms audio (48 kHz AAC). */
+	for (size_t i = 0; i < intervals.num; i++) {
+		uint64_t num = (largest_interval * 2) / intervals.array[i];
+		output->interleaver_max_batch_size += num;
+	}
+
+	blog(LOG_DEBUG, "Maximum interleaver batch size for '%s' calculated to be %zu packets",
+	     obs_output_get_name(output), output->interleaver_max_batch_size);
+
+	da_free(intervals);
+}
+
 bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 {
 	UNUSED_PARAMETER(flags);
@@ -2659,6 +2726,8 @@ bool obs_output_begin_data_capture(obs_output_t *output, uint32_t flags)
 
 	os_atomic_set_bool(&output->data_active, true);
 	hook_data_capture(output);
+
+	calculate_batch_size(output);
 
 	if (flag_service(output))
 		obs_service_activate(output->service);
