@@ -33,7 +33,7 @@
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build_macos",
       "cacheVariables": {
-        "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "11.0"},
+        "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "12.0"},
         "OBS_CODESIGN_IDENTITY": {"type": "STRING", "value": "$penv{CODESIGN_IDENT}"},
         "OBS_CODESIGN_TEAM": {"type": "STRING", "value": "$penv{CODESIGN_TEAM}"},
         "OBS_PROVISIONING_PROFILE": {"type": "STRING", "value": "$penv{PROVISIONING_PROFILE}"},
