@@ -24,7 +24,7 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
 
     if (self) {
         CMIOObjectPropertyAddress propertyAddress = {kCMIOHardwarePropertyAllowScreenCaptureDevices,
-                                                     kCMIOObjectPropertyScopeGlobal, kCMIOObjectPropertyElementMaster};
+                                                     kCMIOObjectPropertyScopeGlobal, kCMIOObjectPropertyElementMain};
 
         UInt32 allow = 1;
         CMIOObjectSetPropertyData(kCMIOObjectSystemObject, &propertyAddress, 0, NULL, sizeof(allow), &allow);
