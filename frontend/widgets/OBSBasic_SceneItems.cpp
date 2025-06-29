@@ -936,8 +936,13 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	/* ----------------------------------------------- */
 	/* remove items                                    */
 
-	for (auto &item : items)
+	for (auto &item : items) {
+		obs_sceneitem_t *group = obs_sceneitem_get_group(scene, item);
+		if (group)
+			obs_sceneitem_group_remove_item(group, item);
+
 		obs_sceneitem_remove(item);
+	}
 
 	/* ----------------------------------------------- */
 	/* save redo data                                  */
