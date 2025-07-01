@@ -617,6 +617,34 @@
             "window_capture_wgc": false,
             "message": "FragPunk may require OBS to be run as admin to use Game Capture.",
             "url": "https://obsproject.com/kb/game-capture-troubleshooting"
+        },
+        {
+            "name": "Roblox",
+            "translation_key": "Compatibility.WindowCapture.BitBlt",
+            "severity": 1,
+            "executable": "RobloxPlayerBeta.exe",
+            "window_class": "",
+            "window_title": "",
+            "match_flags": 1,
+            "game_capture": false,
+            "window_capture": true,
+            "window_capture_wgc": false,
+            "message": "Roblox can not be captured by using the selected Capture Method (BitBlt).",
+            "url": ""
+        },
+        {
+            "name": "Roblox",
+            "translation_key": "Compatibility.GameCapture.Blocked",
+            "severity": 1,
+            "executable": "RobloxPlayerBeta.exe",
+            "window_class": "",
+            "window_title": "",
+            "match_flags": 1,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "Roblox cannot be captured using Game Capture. Use Window Capture or Display Capture instead.",
+            "url": ""
         }
     ]
 }
