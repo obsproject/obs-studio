@@ -3719,8 +3719,7 @@ bool OBSBasicSettings::QueryAllowedToClose()
 	bool invalidFormat = false;
 	bool invalidTracks = false;
 	if (simple) {
-		if (ui->simpleOutRecEncoder->currentIndex() == -1 || ui->simpleOutStrEncoder->currentIndex() == -1 ||
-		    ui->simpleOutRecAEncoder->currentIndex() == -1 || ui->simpleOutStrAEncoder->currentIndex() == -1)
+		if (ui->simpleOutStrEncoder->currentIndex() == -1 || ui->simpleOutStrAEncoder->currentIndex() == -1)
 			invalidEncoder = true;
 
 		if (ui->simpleOutRecFormat->currentIndex() == -1)
@@ -3730,6 +3729,10 @@ bool OBSBasicSettings::QueryAllowedToClose()
 		QString format = ui->simpleOutRecFormat->currentData().toString();
 		if (SimpleOutGetSelectedAudioTracks() == 0 && qual != "Stream" && format != "flv")
 			invalidTracks = true;
+
+		if (qual != "Stream" &&
+		    (ui->simpleOutRecEncoder->currentIndex() == -1 || ui->simpleOutRecAEncoder->currentIndex() == -1))
+			invalidEncoder = true;
 	} else {
 		if (ui->advOutRecEncoder->currentIndex() == -1 || ui->advOutEncoder->currentIndex() == -1 ||
 		    ui->advOutRecAEncoder->currentIndex() == -1 || ui->advOutAEncoder->currentIndex() == -1)
