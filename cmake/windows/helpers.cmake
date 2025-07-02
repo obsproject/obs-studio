@@ -29,6 +29,8 @@ function(set_target_properties_obs target)
   if(target_type STREQUAL EXECUTABLE)
     if(target STREQUAL obs-browser-helper)
       set(OBS_EXECUTABLE_DESTINATION "${OBS_PLUGIN_DESTINATION}")
+    elseif(target STREQUAL win-streamlabs-vst)
+      set(OBS_EXECUTABLE_DESTINATION "${OBS_PLUGIN_DESTINATION}")    
     elseif(target STREQUAL inject-helper OR target STREQUAL get-graphics-offsets)
       set(OBS_EXECUTABLE_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture")
 
