@@ -9,6 +9,8 @@
 #include <QLineEdit>
 #include <QPainter>
 
+#include "plugin-manager/PluginManager.hpp"
+
 #include "moc_SourceTreeItem.cpp"
 
 static inline OBSScene GetCurrentScene()
@@ -83,6 +85,17 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 	label->setAttribute(Qt::WA_TranslucentBackground);
 	label->setEnabled(sourceVisible);
+
+	// For WarChamp: to determine if a source is disabled, call
+	//               main->PMSourceDisabled(source).  The same
+	//               functions exist for PMEncoderDisabled,
+	//               PMOutputDisabled, and PMServiceDisabled.
+	//               The following code is just a simple call to
+	//               turn the disabled source red in the source
+	//               list.
+	if (App()->pluginManagerSourceDisabled(source)) {
+		label->setStyleSheet("QLabel {color: #FF0000;}");
+	}
 
 #ifdef __APPLE__
 	vis->setAttribute(Qt::WA_LayoutUsesWidgetRect);
