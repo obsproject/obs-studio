@@ -33,6 +33,7 @@ struct BroadcastDescription {
 	bool auto_start;
 	bool auto_stop;
 	bool dvr;
+	bool use_obs_captions;
 	bool schedul_for_later;
 	QString schedul_date_time;
 	QString projection;
