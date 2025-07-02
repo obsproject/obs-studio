@@ -393,6 +393,9 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	source->flags = source->default_flags;
 	source->enabled = true;
 
+	/* audio deduplication initialization */
+	source->captures_mon_device = false;
+
 	obs_source_init_finalize(source, canvas);
 	if (!private) {
 		if (canvas)
@@ -4737,6 +4740,12 @@ uint32_t obs_source_get_audio_mixers(const obs_source_t *source)
 		return 0;
 
 	return source->audio_mixers;
+}
+
+void obs_source_set_monitoring_capture_flag(bool flag, obs_source_t *source)
+{
+	if (source)
+		source->captures_mon_device = flag;
 }
 
 void obs_source_draw_set_color_matrix(const struct matrix4 *color_matrix, const struct vec3 *color_range_min,
