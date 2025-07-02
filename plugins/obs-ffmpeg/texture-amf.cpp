@@ -63,6 +63,11 @@ struct adapter_caps {
 	bool supports_av1 = false;
 };
 
+static const GUID SHARED_TEXTURE_CACHE_GUID = {0xe8cd2e6f,
+					       0x64aa,
+					       0x4df0,
+					       {0xa4, 0x6f, 0x53, 0xd1, 0x6b, 0x8a, 0x9c, 0x19}};
+
 /* ------------------------------------------------------------------------- */
 
 static std::map<uint32_t, adapter_caps> caps;
@@ -152,13 +157,55 @@ enum class amf_codec_type {
 	AV1,
 };
 
+/* Hardware may have several encoding units (also called VCNs) which can process several encoders in parallel.
+ * AMF_VIDEO_ENCODER_CAP_NUM_OF_HW_INSTANCES caps property returns number of VCNs, AMF_VIDEO_ENCODER_INSTANCE_INDEX component property sets VCN id to run on.
+ * vcn_controller is to balance load on VCNs */
+struct vcn_controller {
+private:
+	std::mutex mutex;
+	amf_uint32 vcn_num = 0;
+	std::vector<amf_uint32> vcn_load;
+
+public:
+	vcn_controller() {}
+
+	amf_uint32 get_vcn_num() { return vcn_num; }
+
+	void set_vcn_num(amf_uint32 vcn_num)
+	{
+		std::scoped_lock lock(mutex);
+		if (this->vcn_num == 0 && vcn_num != 0) {
+			this->vcn_num = vcn_num;
+			vcn_load.resize(vcn_num, 0);
+		}
+	}
+
+	amf_uint32 get_next_vcn_id()
+	{
+		std::scoped_lock lock(mutex);
+		auto it = std::min_element(vcn_load.begin(), vcn_load.end());
+		amf_uint32 id = (amf_uint32)std::distance(vcn_load.begin(), it);
+		vcn_load[id]++;
+		return id;
+	}
+
+	void enc_ends(amf_uint32 vcn_id)
+	{
+		std::scoped_lock lock(mutex);
+		vcn_load[vcn_id]--;
+	}
+};
+
 struct amf_base {
 	obs_encoder_t *encoder;
 	const char *encoder_str;
 	amf_codec_type codec;
 	bool fallback;
 
-	AMFContextPtr amf_context;
+	static std::mutex context_mutex;
+	static AMFContextPtr amf_context;
+	static unsigned enc_instance_counter;
+
 	AMFComponentPtr amf_encoder;
 	AMFBufferPtr packet_data;
 	AMFRate amf_frame_rate;
@@ -186,11 +233,55 @@ struct amf_base {
 	bool bframes_supported = false;
 	bool first_update = true;
 	bool roi_supported = false;
+	amf_uint32 hw_enc_id = 0;
 
-	inline amf_base(bool fallback) : fallback(fallback) {}
-	virtual ~amf_base() = default;
-	virtual void init() = 0;
+	inline amf_base(bool fallback) : fallback(fallback)
+	{
+		std::scoped_lock lock(context_mutex);
+		enc_instance_counter++;
+	}
+
+	virtual ~amf_base() { vcn_ctrl[codec].enc_ends(hw_enc_id); }
+
+	virtual void init()
+	{
+		vcn_ctrl.try_emplace(amf_codec_type::AVC);
+		vcn_ctrl.try_emplace(amf_codec_type::HEVC);
+		vcn_ctrl.try_emplace(amf_codec_type::AV1);
+	}
+
+	virtual amf_uint32 get_vcn_num() { return vcn_ctrl[codec].get_vcn_num(); }
+	virtual void set_vcn_num(amf_uint32 vcn_num) { vcn_ctrl[codec].set_vcn_num(vcn_num); }
+	virtual amf_uint32 get_next_vcn_id() { return vcn_ctrl[codec].get_next_vcn_id(); }
+
+protected:
+	virtual void terminate()
+	{
+		packet_data = nullptr;
+		header = nullptr;
+		roi_map = nullptr;
+		queued_packets.clear();
+
+		amf_encoder->Terminate();
+		amf_encoder = nullptr;
+
+		std::scoped_lock lock(context_mutex);
+		enc_instance_counter--;
+		if (enc_instance_counter == 0) {
+			amf_context->Terminate();
+			amf_context = nullptr;
+		}
+	}
+
+private:
+	// Different codecs may have different number of VCNs, so separate controllers
+	static std::map<amf_codec_type, vcn_controller> vcn_ctrl;
 };
+
+std::mutex amf_base::context_mutex;
+AMFContextPtr amf_base::amf_context;
+unsigned amf_base::enc_instance_counter = 0;
+std::map<amf_codec_type, vcn_controller> amf_base::vcn_ctrl;
 
 using d3dtex_t = ComPtr<ID3D11Texture2D>;
 using buf_t = std::vector<uint8_t>;
@@ -204,11 +295,17 @@ struct amf_texencode : amf_base, public AMFSurfaceObserver {
 	std::vector<d3dtex_t> available_textures;
 	std::unordered_map<AMFSurface *, d3dtex_t> active_textures;
 
-	ComPtr<ID3D11Device> device;
-	ComPtr<ID3D11DeviceContext> context;
+	ComPtr<ID3D11Query> sync_query;
+
+	static ComPtr<ID3D11Device> device;
+	static ComPtr<ID3D11DeviceContext> context;
 
 	inline amf_texencode() : amf_base(false) {}
-	~amf_texencode() { os_atomic_set_bool(&destroying, true); }
+	~amf_texencode()
+	{
+		os_atomic_set_bool(&destroying, true);
+		terminate();
+	}
 
 	void AMF_STD_CALL OnSurfaceDataRelease(amf::AMFSurface *surf) override
 	{
@@ -226,11 +323,36 @@ struct amf_texencode : amf_base, public AMFSurfaceObserver {
 
 	void init() override
 	{
+		amf_base::init();
 		AMF_RESULT res = amf_context->InitDX11(device, AMF_DX11_1);
 		if (res != AMF_OK)
 			throw amf_error("InitDX11 failed", res);
 	}
+
+protected:
+	void terminate() override
+	{
+		packet_data = nullptr;
+		header = nullptr;
+		roi_map = nullptr;
+		queued_packets.clear();
+
+		amf_encoder->Terminate();
+		amf_encoder = nullptr;
+
+		std::scoped_lock lock(context_mutex);
+		enc_instance_counter--;
+		if (enc_instance_counter == 0) {
+			amf_context->Terminate();
+			amf_context = nullptr;
+			device = nullptr;
+			context = nullptr;
+		}
+	}
 };
+
+ComPtr<ID3D11Device> amf_texencode::device;
+ComPtr<ID3D11DeviceContext> amf_texencode::context;
 
 struct amf_fallback : amf_base, public AMFSurfaceObserver {
 	volatile bool destroying = false;
@@ -240,7 +362,11 @@ struct amf_fallback : amf_base, public AMFSurfaceObserver {
 	std::unordered_map<AMFSurface *, buf_t> active_buffers;
 
 	inline amf_fallback() : amf_base(true) {}
-	~amf_fallback() { os_atomic_set_bool(&destroying, true); }
+	~amf_fallback()
+	{
+		os_atomic_set_bool(&destroying, true);
+		terminate();
+	}
 
 	void AMF_STD_CALL OnSurfaceDataRelease(amf::AMFSurface *surf) override
 	{
@@ -258,6 +384,7 @@ struct amf_fallback : amf_base, public AMFSurfaceObserver {
 
 	void init() override
 	{
+		amf_base::init();
 		AMF_RESULT res = amf_context->InitDX11(nullptr, AMF_DX11_1);
 		if (res != AMF_OK)
 			throw amf_error("InitDX11 failed", res);
@@ -320,50 +447,63 @@ typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static bool amf_init_d3d11(amf_texencode *enc)
 try {
-	HMODULE dxgi = get_lib("DXGI.dll");
-	HMODULE d3d11 = get_lib("D3D11.dll");
-	CREATEDXGIFACTORY1PROC create_dxgi;
-	PFN_D3D11_CREATE_DEVICE create_device;
-	ComPtr<IDXGIFactory> factory;
 	ComPtr<ID3D11Device> device;
 	ComPtr<ID3D11DeviceContext> context;
-	ComPtr<IDXGIAdapter> adapter;
-	DXGI_ADAPTER_DESC desc;
-	HRESULT hr;
 
-	if (!dxgi || !d3d11)
-		throw "Couldn't get D3D11/DXGI libraries? "
-		      "That definitely shouldn't be possible.";
+	// If texture encoder is created after some fallback encoders were started
+	// then AMF already created device internally, we need to get it
+	if (enc->amf_context) {
+		device = (ID3D11Device *)enc->amf_context->GetDX11Device();
+	}
 
-	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(dxgi, "CreateDXGIFactory1");
-	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(d3d11, "D3D11CreateDevice");
+	if (device) {
+		device->GetImmediateContext(&context);
+		enc->device = device;
+		enc->context = context;
+	} else {
+		HMODULE dxgi = get_lib("DXGI.dll");
+		HMODULE d3d11 = get_lib("D3D11.dll");
+		CREATEDXGIFACTORY1PROC create_dxgi;
+		PFN_D3D11_CREATE_DEVICE create_device;
+		ComPtr<IDXGIFactory> factory;
+		ComPtr<IDXGIAdapter> adapter;
+		DXGI_ADAPTER_DESC desc;
+		HRESULT hr;
 
-	if (!create_dxgi || !create_device)
-		throw "Failed to load D3D11/DXGI procedures";
+		if (!dxgi || !d3d11)
+			throw "Couldn't get D3D11/DXGI libraries? "
+			      "That definitely shouldn't be possible.";
 
-	hr = create_dxgi(__uuidof(IDXGIFactory2), (void **)&factory);
-	if (FAILED(hr))
-		throw HRError("CreateDXGIFactory1 failed", hr);
+		create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(dxgi, "CreateDXGIFactory1");
+		create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(d3d11, "D3D11CreateDevice");
 
-	obs_video_info ovi;
-	obs_get_video_info(&ovi);
+		if (!create_dxgi || !create_device)
+			throw "Failed to load D3D11/DXGI procedures";
 
-	hr = factory->EnumAdapters(ovi.adapter, &adapter);
-	if (FAILED(hr))
-		throw HRError("EnumAdapters failed", hr);
+		hr = create_dxgi(__uuidof(IDXGIFactory2), (void **)&factory);
+		if (FAILED(hr))
+			throw HRError("CreateDXGIFactory1 failed", hr);
 
-	adapter->GetDesc(&desc);
-	if (desc.VendorId != AMD_VENDOR_ID)
-		throw "Seems somehow AMF is trying to initialize "
-		      "on a non-AMD adapter";
+		obs_video_info ovi;
+		obs_get_video_info(&ovi);
 
-	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device,
-			   nullptr, &context);
-	if (FAILED(hr))
-		throw HRError("D3D11CreateDevice failed", hr);
+		hr = factory->EnumAdapters(ovi.adapter, &adapter);
+		if (FAILED(hr))
+			throw HRError("EnumAdapters failed", hr);
 
-	enc->device = device;
-	enc->context = context;
+		adapter->GetDesc(&desc);
+		if (desc.VendorId != AMD_VENDOR_ID)
+			throw "Seems somehow AMF is trying to initialize "
+			      "on a non-AMD adapter";
+
+		hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device,
+				   nullptr, &context);
+		if (FAILED(hr))
+			throw HRError("D3D11CreateDevice failed", hr);
+
+		enc->device = device;
+		enc->context = context;
+	}
 	return true;
 
 } catch (const HRError &err) {
@@ -383,11 +523,13 @@ static void add_output_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_t
 	D3D11_TEXTURE2D_DESC desc;
 	from->GetDesc(&desc);
 	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	desc.MiscFlags = 0;
+	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
 
 	hr = device->CreateTexture2D(&desc, nullptr, &output_tex);
 	if (FAILED(hr))
 		throw HRError("Failed to create texture", hr);
+
+	output_tex->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
 }
 
 static inline bool get_available_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_tex)
@@ -800,10 +942,12 @@ try {
 	/* ------------------------------------ */
 	/* copy to output tex                   */
 
+	enc->context_mutex.lock();
 	km->AcquireSync(lock_key, INFINITE);
 	context->CopyResource((ID3D11Resource *)output_tex.Get(), (ID3D11Resource *)input_tex.Get());
 	context->Flush();
 	km->ReleaseSync(*next_key);
+	enc->context_mutex.unlock();
 
 	/* ------------------------------------ */
 	/* map output tex to amf surface        */
@@ -826,6 +970,159 @@ try {
 	/* ------------------------------------ */
 	/* do actual encode                     */
 
+	amf_encode_base(enc, amf_surf, packet, received_packet);
+	return true;
+
+} catch (const char *err) {
+	amf_texencode *enc = (amf_texencode *)data;
+	error("%s: %s", __FUNCTION__, err);
+	return false;
+
+} catch (const amf_error &err) {
+	amf_texencode *enc = (amf_texencode *)data;
+	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	*received_packet = false;
+	return false;
+
+} catch (const HRError &err) {
+	amf_texencode *enc = (amf_texencode *)data;
+	error("%s: %s: 0x%lX", __FUNCTION__, err.str, err.hr);
+	*received_packet = false;
+	return false;
+}
+
+static void copy_on_obs_device(amf_texencode *enc, ID3D11Device *obs_device, ID3D11Texture2D *tex_input,
+			       ID3D11Texture2D *tex_output, uint64_t lock_key, uint64_t next_key)
+{
+	/* This function is made to avoid using KeyedMutex and Copy on encoder's d3d device
+	 * because doing so causes excessive sync objects put to encoder's gpu queues
+	 * causing performance degradation when more than one encoder hw instance is used.
+	 * The copy is done on d3d device used by OBS, where input tex was created.
+	 * For this, output texture is created as shared and opened on OBS device through shared handle.
+	 * For output texture on encoder's device CPU synchronization is used via ID3D11Query */
+
+	HANDLE handle;
+	HRESULT hr;
+	ComPtr<ID3D11Texture2D> tex_output_obs;
+	ComPtr<IDXGIResource> resource;
+	ComPtr<ID3D11DeviceContext> context;
+	obs_device->GetImmediateContext(&context);
+
+	UINT data_size = sizeof(ID3D11Texture2D *);
+	ComPtr<IUnknown> tmp;
+	hr = tex_output->GetPrivateData(SHARED_TEXTURE_CACHE_GUID, &data_size, (void *)&tmp);
+
+	if (tmp) {
+		tex_output_obs = ComQIPtr<ID3D11Texture2D>(tmp);
+	} else {
+		hr = tex_output->QueryInterface(__uuidof(IDXGIResource), (void **)&resource);
+		if (FAILED(hr))
+			throw HRError("QueryInterface(IDXGIResource) failed", hr);
+
+		hr = resource->GetSharedHandle(&handle);
+		if (FAILED(hr))
+			throw HRError("GetSharedHandle failed", hr);
+
+		hr = obs_device->OpenSharedResource((HANDLE)(uintptr_t)handle, __uuidof(ID3D11Resource),
+						    (void **)&tex_output_obs);
+		if (FAILED(hr))
+			throw HRError("OpenSharedResource failed", hr);
+
+		tex_output_obs->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
+
+		hr = tex_output->SetPrivateDataInterface(SHARED_TEXTURE_CACHE_GUID, tex_output_obs.Get());
+	}
+
+	ComPtr<IDXGIKeyedMutex> km;
+	hr = tex_input->QueryInterface(__uuidof(IDXGIKeyedMutex), (void **)&km);
+	if (FAILED(hr))
+		throw HRError("QueryInterface(IDXGIKeyedMutex) failed", hr);
+
+	km->AcquireSync(lock_key, INFINITE);
+	context->CopyResource((ID3D11Resource *)tex_output_obs, (ID3D11Resource *)tex_input);
+	context->Flush();
+	km->ReleaseSync(next_key);
+
+	if (enc->sync_query == nullptr) {
+		D3D11_QUERY_DESC query_desc;
+		query_desc.Query = D3D11_QUERY_EVENT;
+		query_desc.MiscFlags = 0;
+		hr = obs_device->CreateQuery(&query_desc, &enc->sync_query);
+		if (FAILED(hr))
+			throw HRError("CreateQuery failed", hr);
+	}
+
+	// Wait until copy is done and output texture is ready to go into encoder
+
+	context->End(enc->sync_query);
+
+	BOOL data = FALSE;
+	int count = 0;
+	HRESULT result = context->GetData(enc->sync_query, &data, sizeof(BOOL), 0);
+
+	while (((S_FALSE == result) || (data == FALSE)) && (DXGI_ERROR_DEVICE_REMOVED != result)) {
+		count++;
+		if ((count % 100000) == 0) {
+			os_sleep_ms(1); // need to reduce CPU load –
+		}
+
+		result = context->GetData(enc->sync_query, &data, sizeof(BOOL), 0);
+	}
+}
+
+static bool amf_encode_tex2(void *data, encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
+			    encoder_packet *packet, bool *received_packet)
+try {
+	amf_texencode *enc = (amf_texencode *)data;
+	ComPtr<ID3D11Texture2D> output_tex;
+	ComPtr<ID3D11Texture2D> input_tex;
+	ComPtr<IDXGIKeyedMutex> km;
+	AMFSurfacePtr amf_surf;
+	AMF_RESULT res;
+
+	if (texture->handle == GS_INVALID_HANDLE) {
+		*next_key = lock_key;
+		throw "Encode failed: bad texture handle";
+	}
+
+	/* ------------------------------------ */
+	/* get the input tex and device used to create it */
+
+	obs_enter_graphics();
+	ComPtr<ID3D11Device> obs_device = (ID3D11Device *)gs_get_device_obj();
+	input_tex = (ID3D11Texture2D *)gs_texture_get_obj(texture->tex[0]);
+
+	/* ------------------------------------ */
+	/* get an output tex                    */
+
+	get_output_tex(enc, output_tex, input_tex);
+
+	/* ------------------------------------ */
+	/* copy to output tex                   */
+
+	copy_on_obs_device(enc, obs_device, input_tex, output_tex, lock_key, *next_key);
+	obs_leave_graphics();
+
+	/* ------------------------------------ */
+	/* map output tex to amf surface        */
+
+	res = enc->amf_context->CreateSurfaceFromDX11Native(output_tex, &amf_surf, enc);
+	if (res != AMF_OK)
+		throw amf_error("CreateSurfaceFromDX11Native failed", res);
+
+	int64_t last_ts = convert_to_amf_ts(enc, pts - 1);
+	int64_t cur_ts = convert_to_amf_ts(enc, pts);
+
+	amf_surf->SetPts(cur_ts);
+	amf_surf->SetProperty(L"PTS", pts);
+
+	{
+		std::scoped_lock lock(enc->textures_mutex);
+		enc->active_textures[amf_surf.GetPtr()] = output_tex;
+	}
+
+	/* ------------------------------------ */
+	/* do actual encode                     */
 	amf_encode_base(enc, amf_surf, packet, received_packet);
 	return true;
 
@@ -1082,11 +1379,13 @@ try {
 	/* ------------------------------------ */
 	/* create encoder                       */
 
-	res = amf_factory->CreateContext(&enc->amf_context);
-	if (res != AMF_OK)
-		throw amf_error("CreateContext failed", res);
+	if (enc->amf_context == nullptr) {
+		res = amf_factory->CreateContext(&enc->amf_context);
+		if (res != AMF_OK)
+			throw amf_error("CreateContext failed", res);
 
-	enc->init();
+		enc->init();
+	}
 
 	const wchar_t *codec = nullptr;
 	switch (enc->codec) {
@@ -1564,6 +1863,12 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_MAX_THROUGHPUT, &enc->max_throughput);
 		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
 		caps->GetProperty(AMF_VIDEO_ENCODER_CAP_ROI, &enc->roi_supported);
+
+		if (enc->get_vcn_num() == 0) {
+			amf_uint32 vcn_num;
+			caps->GetProperty(AMF_VIDEO_ENCODER_CAP_NUM_OF_HW_INSTANCES, &vcn_num);
+			enc->set_vcn_num(vcn_num);
+		}
 	}
 
 	const char *preset = obs_data_get_string(settings, "preset");
@@ -1580,6 +1885,7 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 	set_avc_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
 	set_avc_property(enc, FULL_RANGE_COLOR, enc->full_range);
 	set_avc_property(enc, FRAMERATE, enc->amf_frame_rate);
+	set_avc_property(enc, INSTANCE_INDEX, enc->hw_enc_id = enc->get_next_vcn_id());
 
 	amf_avc_init(enc, settings);
 
@@ -1611,8 +1917,12 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-h264";
 
-	if (!amf_init_d3d11(enc.get()))
-		throw "Failed to create D3D11";
+	enc->context_mutex.lock();
+	if (enc->device == nullptr) {
+		if (!amf_init_d3d11(enc.get()))
+			throw "Failed to create D3D11";
+	}
+	enc->context_mutex.unlock();
 
 	amf_avc_create_internal(enc.get(), settings);
 	return enc.release();
@@ -1680,7 +1990,7 @@ static void register_avc()
 	amf_encoder_info.create = amf_avc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_avc_update;
-	amf_encoder_info.encode_texture = amf_encode_tex;
+	amf_encoder_info.encode_texture2 = amf_encode_tex2;
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
@@ -1896,6 +2206,12 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_MAX_THROUGHPUT, &enc->max_throughput);
 		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
 		caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_ROI, &enc->roi_supported);
+
+		if (enc->get_vcn_num() == 0) {
+			amf_uint32 vcn_num;
+			caps->GetProperty(AMF_VIDEO_ENCODER_HEVC_CAP_NUM_OF_HW_INSTANCES, &vcn_num);
+			enc->set_vcn_num(vcn_num);
+		}
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
@@ -1916,6 +2232,7 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	set_hevc_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
 	set_hevc_property(enc, NOMINAL_RANGE, enc->full_range);
 	set_hevc_property(enc, FRAMERATE, enc->amf_frame_rate);
+	set_hevc_property(enc, INSTANCE_INDEX, enc->hw_enc_id = enc->get_next_vcn_id());
 
 	if (is_hdr) {
 		const int hdr_nominal_peak_level = pq ? (int)obs_get_video_hdr_nominal_peak_level() : (hlg ? 1000 : 0);
@@ -1957,8 +2274,12 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-h265";
 
-	if (!amf_init_d3d11(enc.get()))
-		throw "Failed to create D3D11";
+	enc->context_mutex.lock();
+	if (enc->device == nullptr) {
+		if (!amf_init_d3d11(enc.get()))
+			throw "Failed to create D3D11";
+	}
+	enc->context_mutex.unlock();
 
 	amf_hevc_create_internal(enc.get(), settings);
 	return enc.release();
@@ -2023,7 +2344,7 @@ static void register_hevc()
 	amf_encoder_info.create = amf_hevc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_hevc_update;
-	amf_encoder_info.encode_texture = amf_encode_tex;
+	amf_encoder_info.encode_texture2 = amf_encode_tex2;
 	amf_encoder_info.get_defaults = amf_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
@@ -2241,6 +2562,12 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
 		/* For some reason there's no specific CAP for AV1, but should always be supported */
 		enc->roi_supported = true;
+
+		if (enc->get_vcn_num() == 0) {
+			amf_uint32 vcn_num;
+			caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_NUM_OF_HW_INSTANCES, &vcn_num);
+			enc->set_vcn_num(vcn_num);
+		}
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
@@ -2258,6 +2585,7 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	set_av1_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_av1_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
 	set_av1_property(enc, FRAMERATE, enc->amf_frame_rate);
+	set_av1_property(enc, ENCODER_INSTANCE_INDEX, enc->hw_enc_id = enc->get_next_vcn_id());
 
 	amf_av1_init(enc, settings);
 
@@ -2290,8 +2618,12 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-av1";
 
-	if (!amf_init_d3d11(enc.get()))
-		throw "Failed to create D3D11";
+	enc->context_mutex.lock();
+	if (enc->device == nullptr) {
+		if (!amf_init_d3d11(enc.get()))
+			throw "Failed to create D3D11";
+	}
+	enc->context_mutex.unlock();
 
 	amf_av1_create_internal(enc.get(), settings);
 	return enc.release();
@@ -2367,7 +2699,7 @@ static void register_av1()
 	amf_encoder_info.create = amf_av1_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_av1_update;
-	amf_encoder_info.encode_texture = amf_encode_tex;
+	amf_encoder_info.encode_texture2 = amf_encode_tex2;
 	amf_encoder_info.get_defaults = amf_av1_defaults;
 	amf_encoder_info.get_properties = amf_av1_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
