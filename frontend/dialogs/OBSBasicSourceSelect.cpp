@@ -34,6 +34,14 @@ struct AddSourceData {
 	obs_sceneitem_t *scene_item = nullptr;
 };
 
+struct FindSceneItemData {
+	/* Input data */
+	obs_source_t *source = nullptr;
+
+	/* Return data */
+	obs_sceneitem_t *sceneItem = nullptr;
+};
+
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 {
 	if (obs_source_is_hidden(source))
@@ -131,6 +139,33 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	data->scene_item = sceneitem;
 }
 
+static bool FindSceneItem(obs_scene_t *, obs_sceneitem_t *sceneItem, void *_data)
+{
+	FindSceneItemData *data = (FindSceneItemData *)(_data);
+	if (obs_sceneitem_get_source(sceneItem) == data->source) {
+		data->sceneItem = sceneItem;
+		return false;
+	}
+	return true;
+}
+
+static void DuplicateTransition(obs_sceneitem_t *originSceneItem, obs_sceneitem_t *destinationSceneItem, bool visible)
+{
+	if (!originSceneItem || !destinationSceneItem)
+		return;
+
+	obs_source_t *tr = obs_sceneitem_get_transition(originSceneItem, visible);
+	int trDur = obs_sceneitem_get_transition_duration(originSceneItem, visible);
+
+	if (!tr)
+		return;
+
+	OBSSourceAutoRelease dupTr = obs_source_duplicate(tr, obs_source_get_name(tr), visible);
+
+	obs_sceneitem_set_transition(destinationSceneItem, visible, dupTr);
+	obs_sceneitem_set_transition_duration(destinationSceneItem, visible, trDur);
+}
+
 char *get_new_source_name(const char *name, const char *format)
 {
 	struct dstr new_name = {0};
@@ -157,6 +192,13 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate, obs_tran
 	if (!scene)
 		return;
 
+	FindSceneItemData findSceneItemData;
+	findSceneItemData.source = source;
+
+	obs_scene_enum_items(scene, FindSceneItem, &findSceneItemData);
+
+	obs_sceneitem_t *originSceneItem = findSceneItemData.sceneItem;
+
 	if (duplicate) {
 		OBSSource from = source;
 		char *new_name = get_new_source_name(obs_source_get_name(source), "%s %d");
@@ -179,6 +221,11 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate, obs_tran
 	obs_enter_graphics();
 	obs_scene_atomic_update(scene, AddSource, &data);
 	obs_leave_graphics();
+
+	if (duplicate) {
+		DuplicateTransition(originSceneItem, data.scene_item, true);
+		DuplicateTransition(originSceneItem, data.scene_item, false);
+	}
 }
 
 static void AddExisting(const char *name, bool visible, bool duplicate, obs_transform_info *transform,
