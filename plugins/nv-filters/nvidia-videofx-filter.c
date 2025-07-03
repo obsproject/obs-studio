@@ -23,6 +23,8 @@
 #define S_MODE "mode"
 #define S_MODE_QUALITY 0
 #define S_MODE_PERF 1
+#define S_MODE_QUALITY_CHAIR 2
+#define S_MODE_PERF_CHAIR 3
 #define S_THRESHOLDFX "threshold"
 #define S_THRESHOLDFX_DEFAULT 1.0
 #define S_PROCESSING "processing_interval"
@@ -31,6 +33,8 @@
 #define TEXT_MODE MT_("Nvvfx.Method.Greenscreen.Mode")
 #define TEXT_MODE_QUALITY MT_("Nvvfx.Method.Greenscreen.Quality")
 #define TEXT_MODE_PERF MT_("Nvvfx.Method.Greenscreen.Performance")
+#define TEXT_MODE_QUALITY_CHAIR MT_("Nvvfx.Method.Greenscreen.Quality.Chair")
+#define TEXT_MODE_PERF_CHAIR MT_("Nvvfx.Method.Greenscreen.Performance.Chair")
 #define TEXT_MODE_THRESHOLD MT_("Nvvfx.Method.Greenscreen.Threshold")
 #define TEXT_DEPRECATION MT_("Nvvfx.OutdatedSDK")
 #define TEXT_PROCESSING MT_("Nvvfx.Method.Greenscreen.Processing")
@@ -131,7 +135,7 @@ static void nvvfx_filter_update(void *data, obs_data_t *settings)
 	filter->processing_interval = (int)obs_data_get_int(settings, S_PROCESSING);
 	float strength = (float)obs_data_get_double(settings, S_STRENGTH);
 	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
-		int mode = id == S_FX_BG_BLUR ? (int)S_MODE_QUALITY : (int)obs_data_get_int(settings, S_MODE);
+		int mode = id == S_FX_BG_BLUR ? (int)S_MODE_PERF : (int)obs_data_get_int(settings, S_MODE);
 		if (filter->mode != mode) {
 			filter->mode = mode;
 			vfxErr = NvVFX_SetU32(filter->handle, NVVFX_MODE, mode);
@@ -275,6 +279,12 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 	return true;
 }
 
+static void nvvfx_logger_calback(void *data, const char *msg)
+{
+	UNUSED_PARAMETER(data);
+	blog(LOG_ERROR, "[NVIDIA Video Effect: '%s']", msg);
+}
+
 static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, enum nvvfx_fx_id id)
 {
 	struct nvvfx_data *filter = (struct nvvfx_data *)bzalloc(sizeof(*filter));
@@ -348,7 +358,8 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	}
 
 	nvvfx_filter_update(filter, settings);
-
+	/* Setup NVIDIA logger */
+	vfxErr = NvVFX_ConfigureLogger(NVCV_LOG_ERROR, NULL, &nvvfx_logger_calback, filter);
 	return filter;
 }
 
@@ -1064,6 +1075,8 @@ static obs_properties_t *nvvfx_filter_properties(void *data)
 			obs_properties_add_list(props, S_MODE, TEXT_MODE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(mode, TEXT_MODE_QUALITY, S_MODE_QUALITY);
 		obs_property_list_add_int(mode, TEXT_MODE_PERF, S_MODE_PERF);
+		obs_property_list_add_int(mode, TEXT_MODE_QUALITY_CHAIR, S_MODE_QUALITY_CHAIR);
+		obs_property_list_add_int(mode, TEXT_MODE_PERF_CHAIR, S_MODE_PERF_CHAIR);
 		obs_property_t *threshold =
 			obs_properties_add_float_slider(props, S_THRESHOLDFX, TEXT_MODE_THRESHOLD, 0, 1, 0.05);
 		obs_property_t *partial = obs_properties_add_int_slider(props, S_PROCESSING, TEXT_PROCESSING, 1, 4, 1);
@@ -1187,6 +1200,7 @@ bool load_nvidia_vfx(void)
 	LOAD_SYM(NvVFX_AllocateState);
 	LOAD_SYM(NvVFX_DeallocateState);
 	LOAD_SYM(NvVFX_ResetState);
+	LOAD_SYM(NvVFX_ConfigureLogger);
 	if (!nvvfx_new_sdk) {
 		blog(LOG_INFO, "[NVIDIA VIDEO FX]: sdk loaded but old redistributable detected; please upgrade.");
 	}
