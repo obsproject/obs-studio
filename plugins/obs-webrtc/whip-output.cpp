@@ -682,7 +682,7 @@ void register_whip_output()
 		return obs_properties_create();
 	};
 	info.get_total_bytes = [](void *priv_data) -> uint64_t {
-		return (uint64_t) static_cast<WHIPOutput *>(priv_data)->GetTotalBytes();
+		return (uint64_t)static_cast<WHIPOutput *>(priv_data)->GetTotalBytes();
 	};
 	info.get_connect_time_ms = [](void *priv_data) -> int {
 		return static_cast<WHIPOutput *>(priv_data)->GetConnectTime();

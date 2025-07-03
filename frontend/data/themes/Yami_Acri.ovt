@@ -145,33 +145,36 @@ QTabBar QToolButton {
 }
 
 /* Primary Control Button Checked Coloring */
-#streamButton:!hover:!pressed:checked,
-#recordButton:!hover:!pressed:checked,
-#replayBufferButton:!hover:!pressed:checked,
-#virtualCamButton:!hover:!pressed:checked,
-#modeSwitch:!hover:!pressed:checked,
-#broadcastButton:!hover:!pressed:checked {
+#streamButton:!hover:!pressed.state-active,
+#recordButton:!hover:!pressed.state-active,
+#pauseRecordButton:!hover:!pressed.state-active,
+#replayBufferButton:!hover:!pressed.state-active,
+#virtualCamButton:!hover:!pressed.state-active,
+#modeSwitch:!hover:!pressed.state-active,
+#broadcastButton:!hover:!pressed.state-active {
     background: var(--button_bg_red);
     border-color: var(--button_bg_red);
 }
 
 /* Primary Control Button Hover Coloring */
-#streamButton:hover:!pressed:checked,
-#recordButton:hover:!pressed:checked,
-#replayBufferButton:hover:!pressed:checked,
-#virtualCamButton:hover:!pressed:checked,
-#modeSwitch:hover:!pressed:checked,
-#broadcastButton:hover:!pressed:checked {
+#streamButton:hover:!pressed.state-active,
+#recordButton:hover:!pressed.state-active,
+#pauseRecordButton:hover:!pressed.state-active,
+#replayBufferButton:hover:!pressed.state-active,
+#virtualCamButton:hover:!pressed.state-active,
+#modeSwitch:hover:!pressed.state-active,
+#broadcastButton:hover:!pressed.state-active {
     background: var(--button_bg_red_hover);
 }
 
 /* Primary Control Button Checked + Pressed Coloring */
-#streamButton:pressed:checked,
-#recordButton:pressed:checked,
-#replayBufferButton:pressed:checked,
-#virtualCamButton:pressed:checked,
-#modeSwitch:pressed:checked,
-#broadcastButton:pressed:checked {
+#streamButton:pressed.state-active,
+#recordButton:pressed.state-active,
+#pauseRecordButton:pressed.state-active,
+#replayBufferButton:pressed.state-active,
+#virtualCamButton:pressed.state-active,
+#modeSwitch:pressed.state-active,
+#broadcastButton:pressed.state-active {
     background: var(--button_bg_red_down);
 }
 

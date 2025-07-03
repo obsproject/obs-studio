@@ -27,6 +27,10 @@ function(set_target_properties_obs target)
       set(OBS_EXECUTABLE_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture")
 
       _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} x64)
+      endif()
     endif()
 
     _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION})
@@ -67,10 +71,18 @@ function(set_target_properties_obs target)
       target_add_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json" "${target_destination}")
 
       _target_install_obs(${target} DESTINATION ${target_destination} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${target_destination} x64)
+      endif()
     elseif(target STREQUAL obs-virtualcam-module)
       set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow")
 
       _target_install_obs(${target} DESTINATION ${target_destination} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${target_destination} x64)
+      endif()
     else()
       set(target_destination "${OBS_PLUGIN_DESTINATION}")
     endif()
@@ -109,8 +121,8 @@ function(set_target_properties_obs target)
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${imported_location}" "${cef_location}/chrome_elf.dll"
-              "${cef_location}/libEGL.dll" "${cef_location}/libGLESv2.dll" "${cef_location}/snapshot_blob.bin"
-              "${cef_location}/v8_context_snapshot.bin" "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+              "${cef_location}/libEGL.dll" "${cef_location}/libGLESv2.dll" "${cef_location}/v8_context_snapshot.bin"
+              "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak" "${cef_root_location}/Resources/icudtl.dat"
@@ -127,7 +139,6 @@ function(set_target_properties_obs target)
               "${cef_location}/chrome_elf.dll"
               "${cef_location}/libEGL.dll"
               "${cef_location}/libGLESv2.dll"
-              "${cef_location}/snapshot_blob.bin"
               "${cef_location}/v8_context_snapshot.bin"
               "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak"
@@ -207,13 +218,13 @@ function(_target_install_obs target)
 
     cmake_path(RELATIVE_PATH CMAKE_CURRENT_SOURCE_DIR BASE_DIRECTORY "${OBS_SOURCE_DIR}" OUTPUT_VARIABLE project_path)
 
-    set(32bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
-    set(target_file "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}")
-    set(target_pdb_file "${32bit_project_path}/$<CONFIG>/${target}64.pdb")
+    set(64bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
+    set(target_file "${64bit_project_path}/$<CONFIG>/${target}64.${suffix}")
+    set(target_pdb_file "${64bit_project_path}/$<CONFIG>/${target}64.pdb")
     set(comment "Copy ${target} (x64) to destination")
 
     install(
-      FILES "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}"
+      FILES "${64bit_project_path}/$<CONFIG>/${target}64.${suffix}"
       DESTINATION "${_TIO_DESTINATION}"
       COMPONENT Runtime
       OPTIONAL
@@ -470,6 +481,7 @@ function(_bundle_dependencies target)
     COMPONENT Runtime
   )
 
+  set(debug_dll_exceptions qdirect2d qcertonlybackend qopensslbackend qschannelbackend)
   list(REMOVE_DUPLICATES plugins_list)
   foreach(plugin IN LISTS plugins_list)
     message(TRACE "Adding Qt plugin ${plugin}...")
@@ -479,12 +491,13 @@ function(_bundle_dependencies target)
 
     list(APPEND plugin_stems ${plugin_stem})
 
-    if(plugin MATCHES ".+d\\.dll$")
+    if(plugin MATCHES "(.+d)\\.dll$" AND CMAKE_MATCH_COUNT EQUAL 1 AND NOT CMAKE_MATCH_1 IN_LIST debug_dll_exceptions)
       list(APPEND plugin_${plugin_stem}_debug ${plugin})
     else()
       list(APPEND plugin_${plugin_stem} ${plugin})
     endif()
   endforeach()
+  unset(debug_exceptions)
 
   list(REMOVE_DUPLICATES plugin_stems)
   foreach(stem IN LISTS plugin_stems)

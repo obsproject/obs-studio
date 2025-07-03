@@ -34,29 +34,19 @@
  *
  * Reset to zero each major version
  */
-#define LIBOBS_API_MINOR_VER 0
+#define LIBOBS_API_MINOR_VER 1
 
 /*
  * Increment if backward-compatible bug fix
  *
  * Reset to zero each major or minor version
  */
-#define LIBOBS_API_PATCH_VER 1
+#define LIBOBS_API_PATCH_VER 0
 
 #define MAKE_SEMANTIC_VERSION(major, minor, patch) ((major << 24) | (minor << 16) | patch)
 
 #define LIBOBS_API_VER MAKE_SEMANTIC_VERSION(LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER)
 
-#ifdef HAVE_OBSCONFIG_H
 #include "obsconfig.h"
-#else
-#define OBS_VERSION "unknown"
-#define OBS_DATA_PATH "../../data"
-#define OBS_INSTALL_PREFIX ""
-#define OBS_PLUGIN_DESTINATION "obs-plugins"
-#define OBS_RELATIVE_PREFIX "../../"
-#define OBS_RELEASE_CANDIDATE 0
-#define OBS_BETA 0
-#endif
 
 #define OBS_INSTALL_DATA_PATH OBS_INSTALL_PREFIX "/" OBS_DATA_PATH

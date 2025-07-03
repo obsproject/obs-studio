@@ -250,12 +250,106 @@
                  <number>0</number>
                 </property>
                 <item>
+                 <widget class="QPushButton" name="previewZoomOutButton">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>20</width>
+                    <height>16</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>20</width>
+                    <height>16</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                  </property>
+                  <property name="accessibleName">
+                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="obs.qrc">
+                    <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>8</width>
+                    <height>8</height>
+                   </size>
+                  </property>
+                  <property name="toolButton" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="class" stdset="0">
+                   <string>icon-minus</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="OBSPreviewScalingLabel" name="previewScalePercent">
                   <property name="text">
                    <string>100%</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="previewZoomInButton">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>20</width>
+                    <height>16</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>20</width>
+                    <height>16</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                  </property>
+                  <property name="accessibleName">
+                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="obs.qrc">
+                    <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>8</width>
+                    <height>8</height>
+                   </size>
+                  </property>
+                  <property name="toolButton" stdset="0">
+                   <bool>true</bool>
+                  </property>
+                  <property name="class" stdset="0">
+                   <string>icon-plus</string>
                   </property>
                  </widget>
                 </item>
@@ -272,6 +366,22 @@
                    </property>
                   </item>
                  </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_5">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>4</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </spacer>
                 </item>
                 <item>
                  <widget class="QScrollBar" name="previewXScrollBar">
@@ -690,6 +800,10 @@
      <addaction name="actionScaleWindow"/>
      <addaction name="actionScaleCanvas"/>
      <addaction name="actionScaleOutput"/>
+     <addaction name="separator"/>
+     <addaction name="actionPreviewZoomIn"/>
+     <addaction name="actionPreviewZoomOut"/>
+     <addaction name="actionPreviewResetZoom"/>
     </widget>
     <action name="actionCopySource">
      <property name="text">
@@ -787,7 +901,7 @@
     </widget>
     <widget class="QMenu" name="multiviewProjectorMenu">
      <property name="title">
-      <string>MultiviewProjector</string>
+      <string>Projector.Open.Multiview</string>
      </property>
     </widget>
     <action name="resetUI">
@@ -815,7 +929,6 @@
     <addaction name="stats"/>
     <addaction name="separator"/>
     <addaction name="multiviewProjectorMenu"/>
-    <addaction name="multiviewProjectorWindowed"/>
     <addaction name="separator"/>
     <addaction name="actionAlwaysOnTop"/>
    </widget>
@@ -919,6 +1032,7 @@
           <property name="defaultDropAction">
            <enum>Qt::TargetMoveAction</enum>
           </property>
+          <!-- Spacing must be 0 due to QTBUG-106395 -->
           <property name="spacing">
            <number>0</number>
           </property>
@@ -927,6 +1041,12 @@
         </item>
         <item>
          <widget class="QToolBar" name="scenesToolbar">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
@@ -1041,6 +1161,7 @@
           <property name="selectionMode">
            <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
+          <!-- Spacing must be 0 due to QTBUG-106395 -->
           <property name="spacing">
            <number>0</number>
           </property>
@@ -1049,6 +1170,12 @@
         </item>
         <item>
          <widget class="QToolBar" name="sourcesToolbar">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
@@ -1160,7 +1287,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>225</width>
+              <width>322</width>
               <height>16</height>
              </rect>
             </property>
@@ -1214,7 +1341,7 @@
               <x>0</x>
               <y>0</y>
               <width>16</width>
-              <height>192</height>
+              <height>28</height>
              </rect>
             </property>
             <property name="sizePolicy">
@@ -1246,6 +1373,12 @@
         </item>
         <item>
          <widget class="QToolBar" name="mixerToolbar">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="iconSize">
            <size>
             <width>16</width>
@@ -1507,7 +1640,7 @@
     <string>Add</string>
    </property>
    <property name="toolTip">
-    <string>Basic.Main.AddSceneDlg.Title</string>
+    <string>AddScene</string>
    </property>
    <property name="class" stdset="0">
     <string notr="true">icon-plus</string>
@@ -1907,12 +2040,12 @@
   </action>
   <action name="actionImportSceneCollection">
    <property name="text">
-    <string>Import</string>
+    <string>Basic.MainMenu.Import</string>
    </property>
   </action>
   <action name="actionExportSceneCollection">
    <property name="text">
-    <string>Export</string>
+    <string>Basic.MainMenu.Export</string>
    </property>
   </action>
   <action name="actionShowMissingFiles">
@@ -1947,12 +2080,12 @@
   </action>
   <action name="actionImportProfile">
    <property name="text">
-    <string>Import</string>
+    <string>Basic.MainMenu.Import</string>
    </property>
   </action>
   <action name="actionExportProfile">
    <property name="text">
-    <string>Export</string>
+    <string>Basic.MainMenu.Export</string>
    </property>
   </action>
   <action name="actionShowSettingsFolder">
@@ -2045,11 +2178,6 @@
   <action name="stats">
    <property name="text">
     <string>Basic.Stats</string>
-   </property>
-  </action>
-  <action name="multiviewProjectorWindowed">
-   <property name="text">
-    <string>MultiviewWindowed</string>
    </property>
   </action>
   <action name="resetDocks">
@@ -2211,6 +2339,35 @@
    </property>
    <property name="text">
     <string>List</string>
+   </property>
+  </action>
+  <action name="actionPreview">
+   <property name="text">
+    <string>Preview</string>
+   </property>
+  </action>
+  <action name="actionPreviewZoomIn">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+   </property>
+  </action>
+  <action name="actionPreviewZoomOut">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+   </property>
+  </action>
+  <action name="actionPreviewResetZoom">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Scale.ResetZoom</string>
    </property>
   </action>
  </widget>

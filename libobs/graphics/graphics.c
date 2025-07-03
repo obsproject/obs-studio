@@ -114,23 +114,44 @@ static bool graphics_init_immediate_vb(struct graphics_subsystem *graphics)
 	return true;
 }
 
-static bool graphics_init_sprite_vb(struct graphics_subsystem *graphics)
+static bool graphics_init_sprite_vbs(struct graphics_subsystem *graphics)
 {
 	struct gs_vb_data *vbd;
 
 	vbd = gs_vbdata_create();
 	vbd->num = 4;
-	vbd->points = bmalloc(sizeof(struct vec3) * 4);
+	vbd->points = bzalloc(sizeof(struct vec3) * 4);
 	vbd->num_tex = 1;
-	vbd->tvarray = bmalloc(sizeof(struct gs_tvertarray));
+	vbd->tvarray = bzalloc(sizeof(struct gs_tvertarray));
 	vbd->tvarray[0].width = 2;
-	vbd->tvarray[0].array = bmalloc(sizeof(struct vec2) * 4);
+	vbd->tvarray[0].array = bzalloc(sizeof(struct vec2) * 4);
 
-	memset(vbd->points, 0, sizeof(struct vec3) * 4);
-	memset(vbd->tvarray[0].array, 0, sizeof(struct vec2) * 4);
+	vbd->points[1].x = 1.0f;
+	vbd->points[2].y = 1.0f;
+	vbd->points[3].x = 1.0f;
+	vbd->points[3].y = 1.0f;
 
-	graphics->sprite_buffer = graphics->exports.device_vertexbuffer_create(graphics->device, vbd, GS_DYNAMIC);
+	struct vec2 *uvs = vbd->tvarray[0].array;
+	uvs[1].x = 1.0f;
+	uvs[2].y = 1.0f;
+	uvs[3].x = 1.0f;
+	uvs[3].y = 1.0f;
+
+	graphics->sprite_buffer = gs_vertexbuffer_create(vbd, GS_DUP_BUFFER);
 	if (!graphics->sprite_buffer)
+		return false;
+
+	graphics->subregion_buffer = gs_vertexbuffer_create(vbd, GS_DUP_BUFFER | GS_DYNAMIC);
+	if (!graphics->subregion_buffer)
+		return false;
+
+	uvs[0].y = 1.0f;
+	uvs[1].y = 1.0f;
+	uvs[2].y = 0.0f;
+	uvs[3].y = 0.0f;
+
+	graphics->flipped_sprite_buffer = gs_vertexbuffer_create(vbd, 0);
+	if (!graphics->flipped_sprite_buffer)
 		return false;
 
 	return true;
@@ -145,9 +166,11 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 
 	graphics->exports.device_enter_context(graphics->device);
 
+	thread_graphics = graphics;
+
 	if (!graphics_init_immediate_vb(graphics))
 		return false;
-	if (!graphics_init_sprite_vb(graphics))
+	if (!graphics_init_sprite_vbs(graphics))
 		return false;
 	if (pthread_mutex_init(&graphics->mutex, NULL) != 0)
 		return false;
@@ -168,6 +191,7 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	graphics->exports.device_leave_context(graphics->device);
 
 	gs_init_image_deps();
+	thread_graphics = NULL;
 	return true;
 }
 
@@ -227,6 +251,8 @@ void gs_destroy(graphics_t *graphics)
 			effect = next;
 		}
 
+		graphics->exports.gs_vertexbuffer_destroy(graphics->subregion_buffer);
+		graphics->exports.gs_vertexbuffer_destroy(graphics->flipped_sprite_buffer);
 		graphics->exports.gs_vertexbuffer_destroy(graphics->sprite_buffer);
 		graphics->exports.gs_vertexbuffer_destroy(graphics->immediate_vertbuffer);
 		graphics->exports.device_destroy(graphics->device);
@@ -295,6 +321,58 @@ void *gs_get_device_obj(void)
 const char *gs_get_device_name(void)
 {
 	return gs_valid("gs_get_device_name") ? thread_graphics->exports.device_get_name() : NULL;
+}
+
+const char *gs_get_driver_version(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_driver_version"))
+		return NULL;
+
+	if (graphics->exports.gpu_get_driver_version)
+		return (graphics->exports.gpu_get_driver_version());
+	else
+		return NULL;
+}
+
+const char *gs_get_renderer(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_renderer"))
+		return NULL;
+
+	if (graphics->exports.gpu_get_renderer)
+		return (graphics->exports.gpu_get_renderer());
+	else
+		return NULL;
+}
+
+uint64_t gs_get_gpu_dmem(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_gpu_dmem"))
+		return 0;
+
+	if (graphics->exports.gpu_get_dmem)
+		return (graphics->exports.gpu_get_dmem());
+	else
+		return 0;
+}
+
+uint64_t gs_get_gpu_smem(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_gpu_smem"))
+		return 0;
+
+	if (graphics->exports.gpu_get_smem)
+		return (graphics->exports.gpu_get_smem());
+	else
+		return 0;
 }
 
 int gs_get_device_type(void)
@@ -631,10 +709,6 @@ gs_vertbuffer_t *gs_render_save(void)
 void gs_vertex2f(float x, float y)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_verte"))
-		return;
-
 	vec3_set(&v3, x, y, 0.0f);
 	gs_vertex3v(&v3);
 }
@@ -642,10 +716,6 @@ void gs_vertex2f(float x, float y)
 void gs_vertex3f(float x, float y, float z)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_vertex3f"))
-		return;
-
 	vec3_set(&v3, x, y, z);
 	gs_vertex3v(&v3);
 }
@@ -653,10 +723,6 @@ void gs_vertex3f(float x, float y, float z)
 void gs_normal3f(float x, float y, float z)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_normal3f"))
-		return;
-
 	vec3_set(&v3, x, y, z);
 	gs_normal3v(&v3);
 }
@@ -689,10 +755,6 @@ void gs_color(uint32_t color)
 void gs_texcoord(float x, float y, int unit)
 {
 	struct vec2 v2;
-
-	if (!gs_valid("gs_texcoord"))
-		return;
-
 	vec2_set(&v2, x, y);
 	gs_texcoord2v(&v2, unit);
 }
@@ -700,10 +762,6 @@ void gs_texcoord(float x, float y, int unit)
 void gs_vertex2v(const struct vec2 *v)
 {
 	struct vec3 v3;
-
-	if (!gs_valid("gs_vertex2v"))
-		return;
-
 	vec3_set(&v3, v->x, v->y, 0.0f);
 	gs_vertex3v(&v3);
 }
@@ -978,7 +1036,7 @@ static inline void build_sprite_rect(struct gs_vb_data *data, gs_texture_t *tex,
 	build_sprite(data, fcx, fcy, start_u, end_u, start_v, end_v);
 }
 
-void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height)
+void gs_draw_quadf(gs_texture_t *tex, uint32_t flip, float width, float height)
 {
 	graphics_t *graphics = thread_graphics;
 	float fcx, fcy;
@@ -990,33 +1048,45 @@ void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t h
 			return;
 		}
 	} else {
-		if (!width || !height) {
+		if (width == 0.0f || height == 0.0f) {
 			blog(LOG_ERROR, "A sprite cannot be drawn without "
 					"a width/height");
 			return;
 		}
 	}
 
-	fcx = width ? (float)width : (float)gs_texture_get_width(tex);
-	fcy = height ? (float)height : (float)gs_texture_get_height(tex);
+	fcx = width != 0.0f ? width : (float)gs_texture_get_width(tex);
+	fcy = height != 0.0f ? height : (float)gs_texture_get_height(tex);
 
-	data = gs_vertexbuffer_get_data(graphics->sprite_buffer);
-	if (tex && gs_texture_is_rect(tex))
-		build_sprite_rect(data, tex, fcx, fcy, flip);
-	else
-		build_sprite_norm(data, fcx, fcy, flip);
+	gs_matrix_push();
+	gs_matrix_scale3f(fcx, fcy, 1.0f);
 
-	gs_vertexbuffer_flush(graphics->sprite_buffer);
-	gs_load_vertexbuffer(graphics->sprite_buffer);
 	gs_load_indexbuffer(NULL);
 
-	gs_draw(GS_TRISTRIP, 0, 0);
+	if (tex && gs_texture_is_rect(tex)) {
+		data = gs_vertexbuffer_get_data(graphics->subregion_buffer);
+		build_sprite_rect(data, tex, 1.0f, 1.0f, flip);
+		gs_vertexbuffer_flush(graphics->subregion_buffer);
+		gs_load_vertexbuffer(graphics->subregion_buffer);
+		gs_draw(GS_TRISTRIP, 0, 0);
+	} else {
+		gs_load_vertexbuffer(flip ? graphics->flipped_sprite_buffer : graphics->sprite_buffer);
+		gs_draw(GS_TRISTRIP, 0, 0);
+	}
+
+	gs_matrix_pop();
+}
+
+void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height)
+{
+	gs_draw_quadf(tex, flip, (float)width, (float)height);
 }
 
 void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t sub_x, uint32_t sub_y, uint32_t sub_cx,
 			      uint32_t sub_cy)
 {
 	graphics_t *graphics = thread_graphics;
+	uint32_t cx, cy;
 	float fcx, fcy;
 	struct gs_vb_data *data;
 
@@ -1027,14 +1097,22 @@ void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t sub_x, 
 		}
 	}
 
-	fcx = (float)gs_texture_get_width(tex);
-	fcy = (float)gs_texture_get_height(tex);
+	cx = gs_texture_get_width(tex);
+	cy = gs_texture_get_height(tex);
 
-	data = gs_vertexbuffer_get_data(graphics->sprite_buffer);
+	if (sub_x == 0 && sub_y == 0 && sub_cx == cx && sub_cy == cy) {
+		gs_draw_sprite(tex, flip, 0, 0);
+		return;
+	}
+
+	fcx = (float)cx;
+	fcy = (float)cy;
+
+	data = gs_vertexbuffer_get_data(graphics->subregion_buffer);
 	build_subsprite_norm(data, (float)sub_x, (float)sub_y, (float)sub_cx, (float)sub_cy, fcx, fcy, flip);
 
-	gs_vertexbuffer_flush(graphics->sprite_buffer);
-	gs_load_vertexbuffer(graphics->sprite_buffer);
+	gs_vertexbuffer_flush(graphics->subregion_buffer);
+	gs_load_vertexbuffer(graphics->subregion_buffer);
 	gs_load_indexbuffer(NULL);
 
 	gs_draw(GS_TRISTRIP, 0, 0);

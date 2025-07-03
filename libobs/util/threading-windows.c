@@ -185,7 +185,8 @@ void os_set_thread_name(const char *name)
 		RaiseException(VC_EXCEPTION, 0, THREADNAME_INFO_SIZE, (ULONG_PTR *)&info);
 #ifdef NO_SEH_MINGW
 	}
-	__except1{
+	__except1
+	{
 #else
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 #endif

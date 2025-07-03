@@ -152,7 +152,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 {
-	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
+	OBSProjector *window = static_cast<OBSProjector *>(data);
 
 	if (!window->ready)
 		return;
@@ -206,7 +206,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 
 void OBSProjector::OBSSourceRenamed(void *data, calldata_t *params)
 {
-	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
+	OBSProjector *window = static_cast<OBSProjector *>(data);
 	QString oldName = calldata_string(params, "prev_name");
 	QString newName = calldata_string(params, "new_name");
 
@@ -215,7 +215,7 @@ void OBSProjector::OBSSourceRenamed(void *data, calldata_t *params)
 
 void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *)
 {
-	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
+	OBSProjector *window = static_cast<OBSProjector *>(data);
 	QMetaObject::invokeMethod(window, "EscapeTriggered");
 }
 
@@ -263,7 +263,7 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 			popup.addAction(QTStr("Windowed"), this, &OBSProjector::OpenWindowedProjector);
 
 		} else if (!this->isMaximized()) {
-			popup.addAction(QTStr("ResizeProjectorWindowToContent"), this, &OBSProjector::ResizeToContent);
+			popup.addAction(QTStr("Projector.ResizeWindowToContent"), this, &OBSProjector::ResizeToContent);
 		}
 
 		QAction *alwaysOnTopButton = new QAction(QTStr("Basic.MainMenu.View.AlwaysOnTop"), this);
@@ -319,39 +319,22 @@ void OBSProjector::UpdateMultiview()
 
 void OBSProjector::UpdateProjectorTitle(QString name)
 {
-	bool window = (GetMonitor() == -1);
-
 	QString title = nullptr;
 	switch (type) {
 	case ProjectorType::Scene:
-		if (!window)
-			title = QTStr("SceneProjector") + " - " + name;
-		else
-			title = QTStr("SceneWindow") + " - " + name;
+		title = QTStr("Projector.Title") + " - " + QTStr("Projector.Title.Scene").arg(name);
 		break;
 	case ProjectorType::Source:
-		if (!window)
-			title = QTStr("SourceProjector") + " - " + name;
-		else
-			title = QTStr("SourceWindow") + " - " + name;
+		title = QTStr("Projector.Title") + " - " + QTStr("Projector.Title.Source").arg(name);
 		break;
 	case ProjectorType::Preview:
-		if (!window)
-			title = QTStr("PreviewProjector");
-		else
-			title = QTStr("PreviewWindow");
+		title = QTStr("Projector.Title") + " - " + QTStr("StudioMode.Preview");
 		break;
 	case ProjectorType::StudioProgram:
-		if (!window)
-			title = QTStr("StudioProgramProjector");
-		else
-			title = QTStr("StudioProgramWindow");
+		title = QTStr("Projector.Title") + " - " + QTStr("StudioMode.Program");
 		break;
 	case ProjectorType::Multiview:
-		if (!window)
-			title = QTStr("MultiviewProjector");
-		else
-			title = QTStr("MultiviewWindowed");
+		title = QTStr("Projector.Title") + " - " + QTStr("Projector.Title.Multiview");
 		break;
 	default:
 		title = name;

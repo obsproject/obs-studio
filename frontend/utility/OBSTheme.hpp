@@ -41,4 +41,7 @@ struct OBSTheme {
 	bool isVisible;      /* Whether it should be shown to the user */
 	bool isBaseTheme;    /* Whether it is a "style" or variant */
 	bool isHighContrast; /* Whether it is a high-contrast adjustment layer */
+
+	bool usesFontScale = false; /* Whether the generated QSS uses the font scale option */
+	bool usesDensity = false;   /* Whether the generated QSS uses the density option */
 };

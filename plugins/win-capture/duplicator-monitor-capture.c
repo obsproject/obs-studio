@@ -130,6 +130,9 @@ static bool GetMonitorTarget(LPCWSTR device, DISPLAYCONFIG_TARGET_DEVICE_NAME *t
 
 	UINT32 numPath, numMode;
 	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath, &numMode) == ERROR_SUCCESS) {
+		if (!numPath || !numMode) {
+			return false;
+		}
 		DISPLAYCONFIG_PATH_INFO *paths = bmalloc(numPath * sizeof(DISPLAYCONFIG_PATH_INFO));
 		DISPLAYCONFIG_MODE_INFO *modes = bmalloc(numMode * sizeof(DISPLAYCONFIG_MODE_INFO));
 		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths, &numMode, modes, NULL) ==
@@ -762,7 +765,7 @@ static void update_settings_visibility(obs_properties_t *props, struct duplicato
 {
 	pthread_mutex_lock(&capture->update_mutex);
 
-	const enum window_capture_method method = capture->method;
+	const enum display_capture_method method = capture->method;
 	const bool dxgi_options = method == METHOD_DXGI;
 	const bool wgc_options = method == METHOD_WGC;
 

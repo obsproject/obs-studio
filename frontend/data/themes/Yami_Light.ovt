@@ -34,7 +34,14 @@
     --input_bg_hover: var(--grey3);
     --input_bg_focus: var(--grey3);
 
+    --button_bg_disabled: var(--grey7);
+
     --separator_hover: var(--black1);
+
+    --scrollbar_handle: var(--grey7);
+    --scrollbar_hover: var(--grey6);
+    --scrollbar_down: var(--grey8);
+    --scrollbar_border: var(--grey7);
 }
 
 VolumeMeter {
@@ -118,6 +125,10 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/revert.svg);
 }
 
+.icon-close {
+    qproperty-icon: url(theme:Light/close.svg);
+}
+
 QToolBarExtension {
     qproperty-icon: url(theme:Light/dots-vert.svg);
 }
@@ -157,32 +168,38 @@ OBSBasicSettings {
 }
 
 QCheckBox::indicator:unchecked,
-QGroupBox::indicator:unchecked {
+QGroupBox::indicator:unchecked,
+QTableView::indicator:unchecked {
     image: url(theme:Light/checkbox_unchecked.svg);
 }
 
 QCheckBox::indicator:unchecked:hover,
-QGroupBox::indicator:unchecked:hover {
+QGroupBox::indicator:unchecked:hover,
+QTableView::indicator:unchecked:hover {
     image: url(theme:Light/checkbox_unchecked_focus.svg);
 }
 
 QCheckBox::indicator:checked,
-QGroupBox::indicator:checked {
+QGroupBox::indicator:checked,
+QTableView::indicator:checked {
     image: url(theme:Light/checkbox_checked.svg);
 }
 
 QCheckBox::indicator:checked:hover,
-QGroupBox::indicator:checked:hover {
+QGroupBox::indicator:checked:hover,
+QTableView::indicator:checked:hover {
     image: url(theme:Light/checkbox_checked_focus.svg);
 }
 
 QCheckBox::indicator:checked:disabled,
-QGroupBox::indicator:checked:disabled {
+QGroupBox::indicator:checked:disabled,
+QTableView::indicator:checked:disabled {
     image: url(theme:Light/checkbox_checked_disabled.svg);
 }
 
 QCheckBox::indicator:unchecked:disabled,
-QGroupBox::indicator:unchecked:disabled {
+QGroupBox::indicator:unchecked:disabled,
+QTableView::indicator:unchecked:disabled {
     image: url(theme:Light/checkbox_unchecked_disabled.svg);
 }
 

@@ -27,15 +27,21 @@ OBSBasicPreview::~OBSBasicPreview()
 		gs_vertexbuffer_destroy(rectFill);
 	if (circleFill)
 		gs_vertexbuffer_destroy(circleFill);
+	if (stripedLineEffect)
+		gs_effect_destroy(stripedLineEffect);
 
 	obs_leave_graphics();
 }
 
 void OBSBasicPreview::Init()
 {
-	OBSBasic *main = OBSBasic::Get();
-	connect(main, &OBSBasic::PreviewXScrollBarMoved, this, &OBSBasicPreview::XScrollBarMoved);
-	connect(main, &OBSBasic::PreviewYScrollBarMoved, this, &OBSBasicPreview::YScrollBarMoved);
+	std::string effect_path;
+	GetDataFilePath("striped_line.effect", effect_path);
+
+	obs_enter_graphics();
+	stripedLineEffect = gs_effect_create_from_file(effect_path.c_str(), nullptr);
+	solidEffect = obs_get_base_effect(OBS_EFFECT_SOLID);
+	obs_leave_graphics();
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -107,7 +113,7 @@ static bool CloseFloat(float a, float b, float epsilon = 0.01)
 
 static bool FindItemAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SceneFindData *data = reinterpret_cast<SceneFindData *>(param);
+	SceneFindData *data = static_cast<SceneFindData *>(param);
 	matrix4 transform;
 	matrix4 invTransform;
 	vec3 transformedPos;
@@ -224,7 +230,7 @@ OBSSceneItem OBSBasicPreview::GetItemAtPos(const vec2 &pos, bool selectBelow)
 
 static bool CheckItemSelected(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SceneFindData *data = reinterpret_cast<SceneFindData *>(param);
+	SceneFindData *data = static_cast<SceneFindData *>(param);
 	matrix4 transform;
 	vec3 transformedPos;
 	vec3 pos3;
@@ -316,7 +322,7 @@ struct HandleFindData {
 
 static bool FindHandleAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	HandleFindData &data = *reinterpret_cast<HandleFindData *>(param);
+	HandleFindData &data = *static_cast<HandleFindData *>(param);
 
 	if (!obs_sceneitem_selected(item)) {
 		if (obs_sceneitem_is_group(item)) {
@@ -419,8 +425,9 @@ static vec2 GetItemSize(obs_sceneitem_t *item)
 
 		obs_sceneitem_get_scale(item, &scale);
 		obs_sceneitem_get_crop(item, &crop);
-		size.x = float(obs_source_get_width(source) - crop.left - crop.right) * scale.x;
-		size.y = float(obs_source_get_height(source) - crop.top - crop.bottom) * scale.y;
+		size.x = fmaxf(float((int)obs_source_get_width(source) - crop.left - crop.right), 0.0f);
+		size.y = fmaxf(float((int)obs_source_get_height(source) - crop.top - crop.bottom), 0.0f);
+		vec2_mul(&size, &size, &scale);
 	}
 
 	return size;
@@ -525,10 +532,9 @@ void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 		const int delta = event->angleDelta().y();
 		if (delta != 0) {
 			if (delta > 0)
-				SetScalingLevel(scalingLevel + 1);
+				increaseScalingLevel();
 			else
-				SetScalingLevel(scalingLevel - 1);
-			emit DisplayResized();
+				decreaseScalingLevel();
 		}
 	}
 
@@ -667,7 +673,7 @@ void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	obs_sceneitem_t *selectedItem = reinterpret_cast<obs_sceneitem_t *>(param);
+	obs_sceneitem_t *selectedItem = static_cast<obs_sceneitem_t *>(param);
 	if (obs_sceneitem_is_group(item))
 		obs_sceneitem_group_enum_items(item, select_one, param);
 
@@ -799,7 +805,7 @@ struct SelectedItemBounds {
 
 static bool AddItemBounds(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SelectedItemBounds *data = reinterpret_cast<SelectedItemBounds *>(param);
+	SelectedItemBounds *data = static_cast<SelectedItemBounds *>(param);
 	vec3 t[4];
 
 	auto add_bounds = [data, &t]() {
@@ -856,7 +862,7 @@ struct OffsetData {
 
 static bool GetSourceSnapOffset(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	OffsetData *data = reinterpret_cast<OffsetData *>(param);
+	OffsetData *data = static_cast<OffsetData *>(param);
 
 	if (obs_sceneitem_selected(item))
 		return true;
@@ -951,7 +957,7 @@ static bool move_items(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *p
 		return true;
 
 	bool selected = obs_sceneitem_selected(item);
-	vec2 *offset = reinterpret_cast<vec2 *>(param);
+	vec2 *offset = static_cast<vec2 *>(param);
 
 	if (obs_sceneitem_is_group(item) && !selected) {
 		matrix4 transform;
@@ -1052,7 +1058,7 @@ static bool IntersectBox(matrix4 transform, float x1, float x2, float y1, float 
 
 bool OBSBasicPreview::FindSelected(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
-	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
+	SceneFindBoxData *data = static_cast<SceneFindBoxData *>(param);
 
 	if (obs_sceneitem_selected(item))
 		data->sceneItems.push_back(item);
@@ -1062,7 +1068,7 @@ bool OBSBasicPreview::FindSelected(obs_scene_t *, obs_sceneitem_t *item, void *p
 
 static bool FindItemsInBox(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	SceneFindBoxData *data = reinterpret_cast<SceneFindBoxData *>(param);
+	SceneFindBoxData *data = static_cast<SceneFindBoxData *>(param);
 	matrix4 transform;
 	matrix4 invTransform;
 	vec3 transformedPos;
@@ -1626,22 +1632,31 @@ void OBSBasicPreview::leaveEvent(QEvent *)
 
 static void DrawLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
 {
-	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
-	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
+	float cx;
+	float cy;
+	vec2 thickness_relative;
+	bool is_x_axis = !close_float(x1, x2, TINY_EPSILON) || close_float(y1, y2, TINY_EPSILON);
 
-	gs_render_start(true);
+	vec2_abs(&scale, &scale);
 
-	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2), y1 + (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x1 + (xSide * (thickness / scale.x) / 2), y1 - (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x2 + (xSide * (thickness / scale.x) / 2), y2 + (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x2 - (xSide * (thickness / scale.x) / 2), y2 - (ySide * (thickness / scale.y) / 2));
-	gs_vertex2f(x1 - (xSide * (thickness / scale.x) / 2), y1 + (ySide * (thickness / scale.y) / 2));
+	thickness_relative.x = thickness / scale.x;
+	thickness_relative.y = thickness / scale.y;
 
-	gs_vertbuffer_t *line = gs_render_save();
+	if (is_x_axis) {
+		cx = fabsf(x2 - x1) + thickness_relative.x;
+		cy = thickness_relative.y;
+	} else {
+		cy = fabsf(y2 - y1) + thickness_relative.y;
+		cx = thickness_relative.x;
+	}
 
-	gs_load_vertexbuffer(line);
-	gs_draw(GS_TRISTRIP, 0, 0);
-	gs_vertexbuffer_destroy(line);
+	x1 -= thickness_relative.x * 0.5f;
+	y1 -= thickness_relative.y * 0.5f;
+
+	gs_matrix_push();
+	gs_matrix_translate3f(x1, y1, 0.0f);
+	gs_draw_quadf(NULL, 0, cx, cy);
+	gs_matrix_pop();
 }
 
 static void DrawSquareAtPos(float x, float y, float pixelRatio)
@@ -1673,17 +1688,7 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_matrix_get(&matrix);
 	vec3_transform(&pos, &pos, &matrix);
 
-	gs_render_start(true);
-
-	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, 0.5f);
-	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, -2.0f);
-	gs_vertex2f(0.5f + 0.34f / HANDLE_RADIUS, -2.0f);
-	gs_vertex2f(0.5f + 0.34f / HANDLE_RADIUS, 0.5f);
-	gs_vertex2f(0.5f - 0.34f / HANDLE_RADIUS, 0.5f);
-
-	gs_vertbuffer_t *line = gs_render_save();
-
-	gs_load_vertexbuffer(line);
+	constexpr float thickness = 0.68f;
 
 	gs_matrix_push();
 	gs_matrix_identity();
@@ -1693,7 +1698,10 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_matrix_translate3f(-HANDLE_RADIUS * 1.5 * pixelRatio, -HANDLE_RADIUS * 1.5 * pixelRatio, 0.0f);
 	gs_matrix_scale3f(HANDLE_RADIUS * 3 * pixelRatio, HANDLE_RADIUS * 3 * pixelRatio, 1.0f);
 
-	gs_draw(GS_TRISTRIP, 0, 0);
+	gs_matrix_push();
+	gs_matrix_translate3f(0.5f - thickness / 2.0f / HANDLE_RADIUS, -2.0f, 0.0f);
+	gs_draw_quadf(NULL, 0, thickness / HANDLE_RADIUS, 2.5f);
+	gs_matrix_pop();
 
 	gs_matrix_translate3f(0.0f, -HANDLE_RADIUS * 2 / 3, 0.0f);
 
@@ -1701,75 +1709,70 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_matrix_pop();
-	gs_vertexbuffer_destroy(line);
 }
 
-static void DrawStripedLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
+void OBSBasicPreview::DrawStripedLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
 {
-	float ySide = (y1 == y2) ? (y1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
-	float xSide = (x1 == x2) ? (x1 < 0.5f ? 1.0f : -1.0f) : 0.0f;
+	float cx;
+	float cy;
+	float dist;
+	float dist_scaled;
+	vec2 thickness_relative;
+	bool is_x_axis = !close_float(x1, x2, TINY_EPSILON) || close_float(y1, y2, TINY_EPSILON);
 
-	float dist = sqrt(pow((x1 - x2) * scale.x, 2) + pow((y1 - y2) * scale.y, 2));
-	float offX = (x2 - x1) / dist;
-	float offY = (y2 - y1) / dist;
+	vec2_abs(&scale, &scale);
 
-	for (int i = 0, l = ceil(dist / 15); i < l; i++) {
-		gs_render_start(true);
+	thickness_relative.x = thickness / scale.x;
+	thickness_relative.y = thickness / scale.y;
 
-		float xx1 = x1 + i * 15 * offX;
-		float yy1 = y1 + i * 15 * offY;
-
-		float dx;
-		float dy;
-
-		if (x1 < x2) {
-			dx = std::min(xx1 + 7.5f * offX, x2);
-		} else {
-			dx = std::max(xx1 + 7.5f * offX, x2);
-		}
-
-		if (y1 < y2) {
-			dy = std::min(yy1 + 7.5f * offY, y2);
-		} else {
-			dy = std::max(yy1 + 7.5f * offY, y2);
-		}
-
-		gs_vertex2f(xx1, yy1);
-		gs_vertex2f(xx1 + (xSide * (thickness / scale.x)), yy1 + (ySide * (thickness / scale.y)));
-		gs_vertex2f(dx, dy);
-		gs_vertex2f(dx + (xSide * (thickness / scale.x)), dy + (ySide * (thickness / scale.y)));
-
-		gs_vertbuffer_t *line = gs_render_save();
-
-		gs_load_vertexbuffer(line);
-		gs_draw(GS_TRISTRIP, 0, 0);
-		gs_vertexbuffer_destroy(line);
+	if (is_x_axis) {
+		dist = fabsf(x2 - x1);
+		dist_scaled = dist * scale.x;
+		cx = dist + thickness_relative.x;
+		cy = thickness_relative.y;
+	} else {
+		dist = fabsf(y2 - y1);
+		dist_scaled = dist * scale.y;
+		cy = dist + thickness_relative.y;
+		cx = thickness_relative.x;
 	}
+
+	x1 -= thickness_relative.x * 0.5f;
+	y1 -= thickness_relative.y * 0.5f;
+
+	float stripe_length = dist_scaled / 15.0f;
+	float f_stripes_inv = 1.0f / (dist_scaled / stripe_length);
+
+	struct vec2 size;
+	struct vec2 count_inv;
+	if (is_x_axis) {
+		vec2_set(&size, dist_scaled, 0.0f);
+		vec2_set(&count_inv, f_stripes_inv, 0.0f);
+	} else {
+		vec2_set(&size, 0.0f, dist_scaled);
+		vec2_set(&count_inv, 0.0f, f_stripes_inv);
+	}
+
+	gs_eparam_t *size_param = gs_effect_get_param_by_name(stripedLineEffect, "size");
+	gs_eparam_t *count_inv_param = gs_effect_get_param_by_name(stripedLineEffect, "count_inv");
+
+	gs_effect_set_vec2(size_param, &size);
+	gs_effect_set_vec2(count_inv_param, &count_inv);
+
+	gs_matrix_push();
+	gs_matrix_translate3f(x1, y1, 0.0f);
+	while (gs_effect_loop(stripedLineEffect, "StripedLine")) {
+		gs_draw_quadf(nullptr, 0, cx, cy);
+	}
+	gs_matrix_pop();
 }
 
 static void DrawRect(float thickness, vec2 scale)
 {
-	gs_render_start(true);
-
-	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(0.0f + (thickness / scale.x), 0.0f);
-	gs_vertex2f(0.0f, 1.0f);
-	gs_vertex2f(0.0f + (thickness / scale.x), 1.0f);
-	gs_vertex2f(0.0f, 1.0f - (thickness / scale.y));
-	gs_vertex2f(1.0f, 1.0f);
-	gs_vertex2f(1.0f, 1.0f - (thickness / scale.y));
-	gs_vertex2f(1.0f - (thickness / scale.x), 1.0f);
-	gs_vertex2f(1.0f, 0.0f);
-	gs_vertex2f(1.0f - (thickness / scale.x), 0.0f);
-	gs_vertex2f(1.0f, 0.0f + (thickness / scale.y));
-	gs_vertex2f(0.0f, 0.0f);
-	gs_vertex2f(0.0f, 0.0f + (thickness / scale.y));
-
-	gs_vertbuffer_t *rect = gs_render_save();
-
-	gs_load_vertexbuffer(rect);
-	gs_draw(GS_TRISTRIP, 0, 0);
-	gs_vertexbuffer_destroy(rect);
+	DrawLine(0.0f, 0.0f, 0.0f, 1.0f, thickness, scale);
+	DrawLine(0.0f, 0.0f, 1.0f, 0.0f, thickness, scale);
+	DrawLine(1.0f, 0.0f, 1.0f, 1.0f, thickness, scale);
+	DrawLine(0.0f, 1.0f, 1.0f, 1.0f, thickness, scale);
 }
 
 static inline bool crop_enabled(const obs_sceneitem_crop *crop)
@@ -1785,7 +1788,7 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	if (!SceneItemHasVideo(item))
 		return true;
 
-	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
+	OBSBasicPreview *prev = static_cast<OBSBasicPreview *>(param);
 
 	if (!prev->GetOverflowSelectionHidden() && !obs_sceneitem_visible(item))
 		return true;
@@ -1865,7 +1868,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	if (!SceneItemHasVideo(item))
 		return true;
 
-	OBSBasicPreview *prev = reinterpret_cast<OBSBasicPreview *>(param);
+	OBSBasicPreview *prev = static_cast<OBSBasicPreview *>(param);
 
 	if (obs_sceneitem_is_group(item)) {
 		matrix4 mat;
@@ -1957,23 +1960,25 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	obs_sceneitem_crop crop;
 	obs_sceneitem_get_crop(item, &crop);
 
-	gs_effect_t *eff = gs_get_effect();
-	gs_eparam_t *colParam = gs_effect_get_param_by_name(eff, "color");
-
-	gs_effect_set_vec4(colParam, &red);
-
 	if (info.bounds_type == OBS_BOUNDS_NONE && crop_enabled(&crop)) {
-#define DRAW_SIDE(side, x1, y1, x2, y2)                                                   \
-	if (hovered && !selected) {                                                       \
-		gs_effect_set_vec4(colParam, &blue);                                      \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
-	} else if (crop.side > 0) {                                                       \
-		gs_effect_set_vec4(colParam, &green);                                     \
-		DrawStripedLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale); \
-	} else {                                                                          \
-		DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
-	}                                                                                 \
-	gs_effect_set_vec4(colParam, &red);
+#define DRAW_SIDE(side, x1, y1, x2, y2)                                                                \
+	if (hovered && !selected) {                                                                    \
+		gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");       \
+		gs_effect_set_vec4(colParam, &blue);                                                   \
+		while (gs_effect_loop(prev->solidEffect, "Solid")) {                                   \
+			DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);             \
+		}                                                                                      \
+	} else if (crop.side > 0) {                                                                    \
+		gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->stripedLineEffect, "color"); \
+		gs_effect_set_vec4(colParam, &green);                                                  \
+		prev->DrawStripedLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);        \
+	} else {                                                                                       \
+		gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");       \
+		gs_effect_set_vec4(colParam, &red);                                                    \
+		while (gs_effect_loop(prev->solidEffect, "Solid")) {                                   \
+			DrawLine(x1, y1, x2, y2, HANDLE_RADIUS *pixelRatio / 2, boxScale);             \
+		}                                                                                      \
+	}
 
 		DRAW_SIDE(left, 0.0f, 0.0f, 0.0f, 1.0f);
 		DRAW_SIDE(top, 0.0f, 0.0f, 1.0f, 0.0f);
@@ -1982,12 +1987,25 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 #undef DRAW_SIDE
 	} else {
 		if (!selected) {
+			gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");
 			gs_effect_set_vec4(colParam, &blue);
-			DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			while (gs_effect_loop(prev->solidEffect, "Solid")) {
+				DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			}
 		} else {
-			DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");
+			gs_effect_set_vec4(colParam, &red);
+			while (gs_effect_loop(prev->solidEffect, "Solid")) {
+				DrawRect(HANDLE_RADIUS * pixelRatio / 2, boxScale);
+			}
 		}
 	}
+
+	gs_eparam_t *colParam = gs_effect_get_param_by_name(prev->solidEffect, "color");
+
+	gs_technique_t *tech = gs_effect_get_technique(prev->solidEffect, "Solid");
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
 
 	gs_load_vertexbuffer(main->box);
 	gs_effect_set_vec4(colParam, &red);
@@ -2021,6 +2039,9 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	}
 
 	gs_matrix_pop();
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 
 	GS_DEBUG_MARKER_END();
 
@@ -2109,12 +2130,6 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	OBSBasic *main = OBSBasic::Get();
 
-	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
-	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
-
-	gs_technique_begin(tech);
-	gs_technique_begin_pass(tech, 0);
-
 	OBSScene scene = main->GetCurrentScene();
 
 	if (scene) {
@@ -2136,14 +2151,13 @@ void OBSBasicPreview::DrawSceneEditing()
 			rectFill = gs_render_save();
 		}
 
-		DrawSelectionBox(startPos.x * main->previewScale, startPos.y * main->previewScale,
-				 mousePos.x * main->previewScale, mousePos.y * main->previewScale, rectFill);
+		while (gs_effect_loop(solidEffect, "Solid")) {
+			DrawSelectionBox(startPos.x * main->previewScale, startPos.y * main->previewScale,
+					 mousePos.x * main->previewScale, mousePos.y * main->previewScale, rectFill);
+		}
 	}
 
 	gs_load_vertexbuffer(nullptr);
-
-	gs_technique_end_pass(tech);
-	gs_technique_end(tech);
 
 	GS_DEBUG_MARKER_END();
 }
@@ -2171,6 +2185,10 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 
 	scalingAmount = newScalingAmountVal;
 	emit scalingChanged(scalingAmount);
+
+	if (!fixedScaling) {
+		scalingLevel = std::round(log(scalingAmount) / log(ZOOM_SENSITIVITY));
+	}
 }
 
 void OBSBasicPreview::SetScalingLevelAndAmount(int32_t newScalingLevelVal, float newScalingAmountVal)
@@ -2178,6 +2196,30 @@ void OBSBasicPreview::SetScalingLevelAndAmount(int32_t newScalingLevelVal, float
 	newScalingLevelVal = std::clamp(newScalingLevelVal, -MAX_SCALING_LEVEL, MAX_SCALING_LEVEL);
 	scalingLevel = newScalingLevelVal;
 	SetScalingAmount(newScalingAmountVal);
+}
+
+void OBSBasicPreview::increaseScalingLevel()
+{
+	SetFixedScaling(true);
+	SetScalingLevel(scalingLevel + 1);
+
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::decreaseScalingLevel()
+{
+	SetFixedScaling(true);
+	SetScalingLevel(scalingLevel - 1);
+
+	emit DisplayResized();
+}
+
+void OBSBasicPreview::resetScalingLevel()
+{
+	SetScalingLevel(0);
+	ResetScrollingOffset();
+
+	emit DisplayResized();
 }
 
 OBSBasicPreview *OBSBasicPreview::Get()
@@ -2531,22 +2573,22 @@ void OBSBasicPreview::ClampScrollingOffsets()
 	UpdateYScrollBar(offset.y);
 }
 
-void OBSBasicPreview::XScrollBarMoved(int value)
+void OBSBasicPreview::xScrollBarChanged(int value)
 {
 	updatingXScrollBar = true;
 	scrollingOffset.x = float(-value);
 
-	emit DisplayResized();
 	updatingXScrollBar = false;
+	emit DisplayResized();
 }
 
-void OBSBasicPreview::YScrollBarMoved(int value)
+void OBSBasicPreview::yScrollBarChanged(int value)
 {
 	updatingYScrollBar = true;
 	scrollingOffset.y = float(-value);
 
-	emit DisplayResized();
 	updatingYScrollBar = false;
+	emit DisplayResized();
 }
 
 void OBSBasicPreview::UpdateXScrollBar(float cx)

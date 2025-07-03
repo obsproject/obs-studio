@@ -297,6 +297,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 #define SCROLL_CHANGED  &QSpinBox::valueChanged
 #define DSCROLL_CHANGED &QDoubleSpinBox::valueChanged
 #define TEXT_CHANGED    &QPlainTextEdit::textChanged
+#define SLIDER_CHANGED  &QSlider::valueChanged
 
 #define GENERAL_CHANGED &OBSBasicSettings::GeneralChanged
 #define STREAM1_CHANGED &OBSBasicSettings::Stream1Changed
@@ -368,6 +369,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->themeVariant,	     COMBO_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->appearanceFontScale,  SLIDER_CHANGED, APPEAR_CHANGED);
+	HookWidget(ui->appearanceDensity1,   CHECK_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->appearanceDensity2,   CHECK_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->appearanceDensity3,   CHECK_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->appearanceDensity4,   CHECK_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->service,              COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->server,               COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->customServer,         EDIT_CHANGED,   STREAM1_CHANGED);
@@ -387,6 +393,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multitrackVideoStreamDumpEnable,            CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoConfigOverrideEnable,        CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoConfigOverride,              TEXT_CHANGED,   STREAM1_CHANGED);
+	HookWidget(ui->multitrackVideoAdditionalCanvas,            COMBO_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -523,7 +530,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #ifdef _WIN32
 	HookWidget(ui->disableAudioDucking,  CHECK_CHANGED,  ADV_CHANGED);
 #endif
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	HookWidget(ui->browserHWAccel,       CHECK_CHANGED,  ADV_RESTART);
 #endif
 	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
@@ -611,7 +618,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->enableNewSocketLoop;
 	delete ui->enableLowLatencyMode;
 	delete ui->hideOBSFromCapture;
-#ifdef __linux__
+#if !defined(__APPLE__) && !defined(__linux__)
 	delete ui->browserHWAccel;
 	delete ui->sourcesGroup;
 #endif
@@ -626,7 +633,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->enableNewSocketLoop = nullptr;
 	ui->enableLowLatencyMode = nullptr;
 	ui->hideOBSFromCapture = nullptr;
-#ifdef __linux__
+#if !defined(__APPLE__) && !defined(__linux__)
 	ui->browserHWAccel = nullptr;
 	ui->sourcesGroup = nullptr;
 #endif
@@ -2586,7 +2593,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->enableLowLatencyMode->setChecked(enableLowLatencyMode);
 	ui->enableLowLatencyMode->setToolTip(QTStr("Basic.Settings.Advanced.Network.TCPPacing.Tooltip"));
 #endif
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	bool browserHWAccel = config_get_bool(App()->GetAppConfig(), "General", "BrowserHWAccel");
 	ui->browserHWAccel->setChecked(browserHWAccel);
 	prevBrowserAccel = ui->browserHWAccel->isChecked();
@@ -3133,7 +3140,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->enableNewSocketLoop, "Output", "NewSocketLoopEnable");
 	SaveCheckBox(ui->enableLowLatencyMode, "Output", "LowLatencyEnable");
 #endif
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	bool browserHWAccel = ui->browserHWAccel->isChecked();
 	config_set_bool(App()->GetAppConfig(), "General", "BrowserHWAccel", browserHWAccel);
 #endif
@@ -5588,9 +5595,9 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 			ui->enableMultitrackVideo->setChecked(false);
 	}
 
-	// Enhanced Broadcasting works on Windows and Apple Silicon Macs.
+	// Enhanced Broadcasting works on Windows, Apple Silicon Macs, and Linux.
 	// For other OS variants, only enable the GUI controls if developer mode was invoked.
-#if !defined(_WIN32) && !(defined(__APPLE__) && defined(__aarch64__))
+#if !defined(_WIN32) && !(defined(__APPLE__) && defined(__aarch64__)) && !defined(__linux__)
 	available = available && MultitrackVideoDeveloperModeEnabled();
 #endif
 
@@ -5615,6 +5622,7 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 							      ui->enableMultitrackVideo->isChecked());
 	ui->multitrackVideoMaximumVideoTracks->setEnabled(toggle_available && ui->enableMultitrackVideo->isChecked() &&
 							  !ui->multitrackVideoMaximumVideoTracksAuto->isChecked());
+	ui->multitrackVideoAdditionalCanvas->setEnabled(toggle_available && ui->enableMultitrackVideo->isChecked());
 
 	ui->multitrackVideoStreamDumpEnable->setVisible(available && MultitrackVideoDeveloperModeEnabled());
 	ui->multitrackVideoConfigOverrideEnable->setVisible(available && MultitrackVideoDeveloperModeEnabled());

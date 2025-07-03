@@ -17,6 +17,10 @@ inputs:
     description: Update channel
     required: false
     default: 'stable'
+  architecture:
+    description: OBS build architecture
+    required: false
+    default: 'x64'
 
 runs:
   using: composite
@@ -34,16 +38,16 @@ runs:
       run: |
         # Download OBS release
         . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
-        Invoke-External gh release download "${{ inputs.tagName }}" -p "OBS-Studio-${{ inputs.tagName }}-Windows.zip"
-        Invoke-External gh attestation verify "OBS-Studio-${{ inputs.tagName }}-Windows.zip" --owner obsproject
-        Expand-Archive -Path "OBS-Studio-${{ inputs.tagName }}-Windows.zip" -DestinationPath "${{ github.workspace }}/build"
+        Invoke-External gh release download "${{ inputs.tagName }}" -p "OBS-Studio-${{ inputs.tagName }}-Windows-${{ inputs.architecture }}.zip"
+        Invoke-External gh attestation verify "OBS-Studio-${{ inputs.tagName }}-Windows-${{ inputs.architecture }}.zip" --owner obsproject
+        Expand-Archive -Path "OBS-Studio-${{ inputs.tagName }}-Windows-${{ inputs.architecture }}.zip" -DestinationPath "${{ github.workspace }}/build"
 
     - name: Setup bouf
       shell: pwsh
       env:
-        BOUF_TAG: 'v0.6.4'
-        BOUF_HASH: 'aca6810e741dc38ff843fab7b25a0ad8570ee84f5595132cf0cc4a5b0131b4c4'
-        BOUF_NSIS_HASH: 'ed453784486556bd959d56743a8478ad3f68fe0305e9b43ac19d8771d0515257'
+        BOUF_TAG: 'v0.6.5'
+        BOUF_HASH: '2e16d5116415579b5dd8cd68b3fe6edaa7513938427567121942f592292605d5'
+        BOUF_NSIS_HASH: 'e323043627cfeebd237d306afc001c8c36a3c37f6ecef2b349a19a3209ae3450'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download bouf release
@@ -80,7 +84,7 @@ runs:
         RCLONE_S3_SECRET_ACCESS_KEY: '${{ inputs.gcsAccessKeySecret }}'
         RCLONE_S3_ENDPOINT: 'https://storage.googleapis.com'
       run: |
-        rclone -q copy ":s3:obs-builds" "${{ github.workspace }}/old_builds"
+        rclone -q copy ":s3:obs-builds/${{ inputs.architecture }}" "${{ github.workspace }}/old_builds"
 
     - name: Prepare Release Notes
       shell: pwsh
@@ -109,7 +113,7 @@ runs:
         Invoke-External "${{ github.workspace }}\bouf\bin\bouf.exe" @boufArgs
 
     - name: Upload Outputs
-      uses: actions/upload-artifact@v4.3.5
+      uses: actions/upload-artifact@v4
       with:
         name: windows-updater-files
         compression-level: 0

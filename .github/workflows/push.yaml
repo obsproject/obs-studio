@@ -207,7 +207,7 @@ jobs:
 
   sign-windows-build:
     name: Windows Signing ✍️
-    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@dc7a58484d3ef2c610a5184dd05d1d02dbd3e549
+    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@68c01125d2300a236a93ec693376b491f1173744
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
     needs: build-project
     permissions:
@@ -266,9 +266,11 @@ jobs:
           ubuntu_2404_x86_64_artifact_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}"
           ubuntu_2404_x86_64_debug_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}-dbgsym"
           ubuntu_2404_sources_name="obs-studio-ubuntu-24.04-sources-${commit_hash}"
-          windows_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
-          windows_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
-          windows_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
+          windows_x64_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
+          windows_x64_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
+          windows_x64_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
+          windows_arm64_artifact_name="obs-studio-windows-arm64-${{ steps.check.outputs.version }}-signed"
+          windows_arm64_debug_name="obs-studio-windows-arm64-${{ steps.check.outputs.version }}-pdbs"
 
           echo '::group::Renaming Artifacts'
           mv -v "${macos_arm64_artifact_name}/"obs-studio-*-macos-apple.dmg \
@@ -285,12 +287,16 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64-dbsym.ddeb
           mv -v "${ubuntu_2404_sources_name}/"obs-studio-*-sources.tar.gz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
-          mv -v "${windows_installer_name}/"OBS-Studio-*.exe \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe
-          mv -v "${windows_artifact_name}/"OBS-Studio-*.zip \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
-          mv -v "${windows_debug_name}/"OBS-Studio-*-pdbs.zip \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
+          mv -v "${windows_x64_artifact_name}/"OBS-Studio-*.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64.zip
+          mv -v "${windows_x64_installer_name}/"OBS-Studio-*.exe \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-Installer.exe
+          mv -v "${windows_x64_debug_name}/"OBS-Studio-*-pdbs.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-PDBs.zip
+          mv -v "${windows_arm64_artifact_name}/"OBS-Studio-*.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64.zip
+          mv -v "${windows_arm64_debug_name}/"OBS-Studio-*-pdbs.zip \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64-PDBs.zip
           echo '::endgroup::'
 
       - name: Generate Checksums 🪪
@@ -321,6 +327,8 @@ jobs:
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.deb
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.ddeb
             ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows.zip
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-PDBs.zip
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-Installer.exe
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-Installer.exe
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-PDBs.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64.zip
+            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64-PDBs.zip

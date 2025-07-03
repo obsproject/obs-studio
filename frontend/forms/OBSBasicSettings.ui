@@ -979,7 +979,7 @@
                 <item>
                  <widget class="QGroupBox" name="appearanceGeneral">
                   <property name="title">
-                   <string>Basic.Settings.Appearance.General</string>
+                   <string>Basic.Settings.Appearance</string>
                   </property>
                   <property name="checkable">
                    <bool>false</bool>
@@ -1021,6 +1021,200 @@
                     <widget class="QComboBox" name="themeVariant"/>
                    </item>
                    <item row="2" column="0">
+                    <widget class="QLabel" name="appearanceSettingLabelFontScale">
+                     <property name="text">
+                      <string>Basic.Settings.Appearance.FontScale</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>appearanceFontScale</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QFrame" name="frame_2">
+                     <property name="frameShape">
+                      <enum>QFrame::NoFrame</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Plain</enum>
+                     </property>
+                     <property name="lineWidth">
+                      <number>0</number>
+                     </property>
+                     <layout class="QHBoxLayout" name="horizontalLayout_23" stretch="0,5">
+                      <property name="leftMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="rightMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <widget class="QLineEdit" name="appearanceFontScaleText">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="focusPolicy">
+                         <enum>Qt::NoFocus</enum>
+                        </property>
+                        <property name="text">
+                         <string>10</string>
+                        </property>
+                        <property name="alignment">
+                         <set>Qt::AlignCenter</set>
+                        </property>
+                        <property name="readOnly">
+                         <bool>true</bool>
+                        </property>
+                        <property name="clearButtonEnabled">
+                         <bool>false</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="AbsoluteSlider" name="appearanceFontScale">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="minimum">
+                         <number>8</number>
+                        </property>
+                        <property name="maximum">
+                         <number>12</number>
+                        </property>
+                        <property name="pageStep">
+                         <number>2</number>
+                        </property>
+                        <property name="value">
+                         <number>10</number>
+                        </property>
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="tickPosition">
+                         <enum>QSlider::TicksBothSides</enum>
+                        </property>
+                        <property name="tickInterval">
+                         <number>1</number>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_20">
+                     <property name="text">
+                      <string>Basic.Settings.Appearance.Density</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QFrame" name="frame_5">
+                     <property name="frameShape">
+                      <enum>QFrame::NoFrame</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Plain</enum>
+                     </property>
+                     <property name="lineWidth">
+                      <number>0</number>
+                     </property>
+                     <layout class="QHBoxLayout" name="horizontalLayout_34">
+                      <property name="leftMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="rightMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <widget class="QPushButton" name="appearanceDensity1">
+                        <property name="text">
+                         <string>Basic.Settings.Appearance.Classic</string>
+                        </property>
+                        <property name="checkable">
+                         <bool>true</bool>
+                        </property>
+                        <property name="autoExclusive">
+                         <bool>true</bool>
+                        </property>
+                        <attribute name="buttonGroup">
+                         <string notr="true">appearanceDensityButtonGroup</string>
+                        </attribute>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="appearanceDensity2">
+                        <property name="text">
+                         <string>Basic.Settings.Appearance.Compact</string>
+                        </property>
+                        <property name="checkable">
+                         <bool>true</bool>
+                        </property>
+                        <property name="autoExclusive">
+                         <bool>true</bool>
+                        </property>
+                        <attribute name="buttonGroup">
+                         <string notr="true">appearanceDensityButtonGroup</string>
+                        </attribute>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="appearanceDensity3">
+                        <property name="text">
+                         <string>Basic.Settings.Appearance.Normal</string>
+                        </property>
+                        <property name="checkable">
+                         <bool>true</bool>
+                        </property>
+                        <property name="checked">
+                         <bool>true</bool>
+                        </property>
+                        <property name="autoExclusive">
+                         <bool>true</bool>
+                        </property>
+                        <attribute name="buttonGroup">
+                         <string notr="true">appearanceDensityButtonGroup</string>
+                        </attribute>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="appearanceDensity4">
+                        <property name="text">
+                         <string>Basic.Settings.Appearance.Comfortable</string>
+                        </property>
+                        <property name="checkable">
+                         <bool>true</bool>
+                        </property>
+                        <property name="autoExclusive">
+                         <bool>true</bool>
+                        </property>
+                        <attribute name="buttonGroup">
+                         <string notr="true">appearanceDensityButtonGroup</string>
+                        </attribute>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="4" column="0">
                     <spacer name="horizontalSpacer_17">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -1028,7 +1222,7 @@
                      <property name="sizeHint" stdset="0">
                       <size>
                        <width>170</width>
-                       <height>0</height>
+                       <height>10</height>
                       </size>
                      </property>
                     </spacer>
@@ -1048,6 +1242,31 @@
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item>
+                 <widget class="QFrame" name="appearanceOptionsWarning">
+                  <property name="frameShape">
+                   <enum>QFrame::NoFrame</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Plain</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>0</number>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_35">
+                   <item>
+                    <widget class="QLabel" name="appearanceOptionsWarningLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Appearance.OptionsWarning</string>
+                     </property>
+                     <property name="class" stdset="0">
+                      <string>text-warning</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -1688,6 +1907,29 @@
                    <property name="fieldGrowthPolicy">
                     <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
                    </property>
+                   <item row="0" column="0">
+                    <spacer name="horizontalSpacer_30">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>10</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QCheckBox" name="enableMultitrackVideo">
+                     <property name="text">
+                      <string>Basic.Settings.Stream.EnableMultitrackVideo</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="1" column="0">
                     <widget class="QLabel" name="multitrackVideoMaximumAggregateBitrateLabel">
                      <property name="text">
@@ -1774,7 +2016,14 @@
                      </item>
                     </layout>
                    </item>
-                   <item row="3" column="0">
+                   <item row="3" column="1">
+                    <widget class="QComboBox" name="multitrackVideoAdditionalCanvas">
+                     <property name="placeholderText">
+                      <string>None</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="0">
                     <spacer name="horizontalSpacer_32">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -1790,28 +2039,28 @@
                      </property>
                     </spacer>
                    </item>
-                   <item row="3" column="1">
+                   <item row="4" column="1">
                     <widget class="QCheckBox" name="multitrackVideoStreamDumpEnable">
                      <property name="text">
                       <string>Basic.Settings.Stream.MultitrackVideoStreamDumpEnable</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="4" column="1">
+                   <item row="5" column="1">
                     <widget class="QCheckBox" name="multitrackVideoConfigOverrideEnable">
                      <property name="text">
                       <string>Basic.Settings.Stream.MultitrackVideoConfigOverrideEnable</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="5" column="0">
+                   <item row="6" column="0">
                     <widget class="QLabel" name="multitrackVideoConfigOverrideLabel">
                      <property name="text">
                       <string>Basic.Settings.Stream.MultitrackVideoConfigOverride</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="5" column="1">
+                   <item row="6" column="1">
                     <widget class="QPlainTextEdit" name="multitrackVideoConfigOverride">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -1821,28 +2070,12 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
-                    <widget class="QCheckBox" name="enableMultitrackVideo">
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="multitrackVideoAdditionalCanvasLabel">
                      <property name="text">
-                      <string>Basic.Settings.Stream.EnableMultitrackVideo</string>
+                      <string>Basic.Settings.Stream.MultitrackVideoExtraCanvas</string>
                      </property>
                     </widget>
-                   </item>
-                   <item row="0" column="0">
-                    <spacer name="horizontalSpacer_30">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>170</width>
-                       <height>10</height>
-                      </size>
-                     </property>
-                    </spacer>
                    </item>
                   </layout>
                  </item>
@@ -2898,8 +3131,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>766</width>
-                         <height>592</height>
+                         <width>424</width>
+                         <height>175</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_14">
@@ -3304,8 +3537,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>766</width>
-                             <height>558</height>
+                             <width>509</width>
+                             <height>371</height>
                             </rect>
                            </property>
                            <property name="sizePolicy">
@@ -3945,8 +4178,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>766</width>
-                             <height>558</height>
+                             <width>625</width>
+                             <height>489</height>
                             </rect>
                            </property>
                            <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -4495,8 +4728,8 @@
                            <rect>
                             <x>0</x>
                             <y>0</y>
-                            <width>766</width>
-                            <height>592</height>
+                            <width>258</width>
+                            <height>510</height>
                            </rect>
                           </property>
                           <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -8479,6 +8712,11 @@
    <extends>QLineEdit</extends>
    <header>settings/OBSHotkeyEdit.hpp</header>
   </customwidget>
+  <customwidget>
+   <class>AbsoluteSlider</class>
+   <extends>QSlider</extends>
+   <header>components/AbsoluteSlider.hpp</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>listWidget</tabstop>
@@ -9058,4 +9296,7 @@
    </hints>
   </connection>
  </connections>
+ <buttongroups>
+  <buttongroup name="appearanceDensityButtonGroup"/>
+ </buttongroups>
 </ui>

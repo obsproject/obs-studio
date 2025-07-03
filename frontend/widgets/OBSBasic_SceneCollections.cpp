@@ -19,6 +19,7 @@
 
 #include <dialogs/OBSMissingFiles.hpp>
 #include <importer/OBSImporter.hpp>
+#include <models/SceneCollection.hpp>
 #include <utility/item-widget-helpers.hpp>
 
 #include <qt-wrappers.hpp>
@@ -36,9 +37,22 @@ extern bool opt_start_virtualcam;
 extern bool opt_start_replaybuffer;
 extern std::string opt_starting_scene;
 
+using SceneCoordinateMode = OBS::SceneCoordinateMode;
+using SceneCollection = OBS::SceneCollection;
+
 // MARK: Constant Expressions
 
-constexpr std::string_view OBSSceneCollectionPath = "/obs-studio/basic/scenes/";
+static constexpr std::string_view SceneCollectionPath = "/obs-studio/basic/scenes/";
+
+namespace DataKeys {
+static constexpr std::string_view AbsoluteCoordinates = "AbsoluteCoordinates";
+static constexpr std::string_view MigrationResolution = "migration_resolution";
+} // namespace DataKeys
+
+namespace L10N {
+static constexpr std::string_view Migrate = "Basic.MainMenu.SceneCollection.Migrate";
+static constexpr std::string_view Remigrate = "Basic.MainMenu.SceneCollection.Remigrate";
+} // namespace L10N
 
 // MARK: - Anonymous Namespace
 namespace {
@@ -63,9 +77,9 @@ void updateSortedSceneCollections(const OBSSceneCollectionCache &collections)
 	sortedSceneCollections.swap(newList);
 }
 
-void cleanBackupCollision(const OBSSceneCollection &collection)
+void cleanBackupCollision(const SceneCollection &collection)
 {
-	std::filesystem::path backupFilePath = collection.collectionFile;
+	std::filesystem::path backupFilePath = collection.getFilePath();
 	backupFilePath.replace_extension(".json.bak");
 
 	if (std::filesystem::exists(backupFilePath)) {
@@ -77,6 +91,49 @@ void cleanBackupCollision(const OBSSceneCollection &collection)
 		}
 	}
 }
+
+void updateRemigrationMenuItem(SceneCoordinateMode mode, QAction *menuItem)
+{
+	bool isAbsoluteCoordinateMode = mode == SceneCoordinateMode::Absolute;
+
+	OBSDataAutoRelease privateData = obs_get_private_data();
+	obs_data_set_bool(privateData, DataKeys::AbsoluteCoordinates.data(), isAbsoluteCoordinateMode);
+
+	if (isAbsoluteCoordinateMode) {
+		menuItem->setText(QTStr(L10N::Migrate.data()));
+	} else {
+		menuItem->setText(QTStr(L10N::Remigrate.data()));
+	}
+
+	menuItem->setEnabled(isAbsoluteCoordinateMode);
+}
+
+void removeRelativePositionData(obs_data_t *settings)
+{
+	OBSDataArrayAutoRelease sources = obs_data_get_array(settings, "sources");
+
+	auto iterateCallback = [](obs_data_t *data, void *) {
+		const std::string_view id{obs_data_get_string(data, "id")};
+		if (id != "scene" && id != "group") {
+			return;
+		}
+
+		OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
+		OBSDataArrayAutoRelease items = obs_data_get_array(settings, "items");
+
+		auto cleanupCallback = [](obs_data_t *data, void *) {
+			obs_data_unset_user_value(data, "pos_rel");
+			obs_data_unset_user_value(data, "scale_rel");
+			obs_data_unset_user_value(data, "scale_ref");
+			obs_data_unset_user_value(data, "bounds_rel");
+		};
+
+		obs_data_array_enum(items, cleanupCallback, nullptr);
+	};
+
+	obs_data_array_enum(sources, iterateCallback, nullptr);
+}
+
 } // namespace
 
 // MARK: - Main Scene Collection Management Functions
@@ -87,37 +144,37 @@ void OBSBasic::SetupNewSceneCollection(const std::string &collectionName)
 		throw std::logic_error("Cannot create new scene collection with empty collection name");
 	}
 
-	const OBSSceneCollection &newCollection = CreateSceneCollection(collectionName);
+	SceneCollection &newCollection = CreateSceneCollection(collectionName);
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
 
-	blog(LOG_INFO, "Created scene collection '%s' (clean, %s)", newCollection.name.c_str(),
-	     newCollection.fileName.c_str());
+	blog(LOG_INFO, "Created scene collection '%s' (clean, %s)", newCollection.getName().c_str(),
+	     newCollection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
 void OBSBasic::SetupDuplicateSceneCollection(const std::string &collectionName)
 {
-	const OBSSceneCollection &newCollection = CreateSceneCollection(collectionName);
-	const OBSSceneCollection &currentCollection = GetCurrentSceneCollection();
+	const SceneCollection &currentCollection = GetCurrentSceneCollection();
+	SceneCollection &newCollection = CreateSceneCollection(collectionName);
 
 	SaveProjectNow();
 
 	const auto copyOptions = std::filesystem::copy_options::overwrite_existing;
 
 	try {
-		std::filesystem::copy(currentCollection.collectionFile, newCollection.collectionFile, copyOptions);
+		std::filesystem::copy(currentCollection.getFilePath(), newCollection.getFilePath(), copyOptions);
 	} catch (const std::filesystem::filesystem_error &error) {
 		blog(LOG_DEBUG, "%s", error.what());
-		throw std::logic_error("Failed to copy file for cloned scene collection: " + newCollection.name);
+		throw std::logic_error("Failed to copy file for cloned scene collection: " + newCollection.getName());
 	}
 
-	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.collectionFile.u8string().c_str());
+	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.getFileName().c_str());
 
-	obs_data_set_string(collection, "name", newCollection.name.c_str());
+	obs_data_set_string(collection, "name", newCollection.getName().c_str());
 
 	OBSDataArrayAutoRelease sources = obs_data_get_array(collection, "sources");
 
@@ -138,46 +195,45 @@ void OBSBasic::SetupDuplicateSceneCollection(const std::string &collectionName)
 		obs_data_set_array(collection, "sources", sources);
 	}
 
-	obs_data_save_json_safe(collection, newCollection.collectionFile.u8string().c_str(), "tmp", nullptr);
+	obs_data_save_json_safe(collection, newCollection.getFileName().c_str(), "tmp", nullptr);
 
 	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
 
-	blog(LOG_INFO, "Created scene collection '%s' (duplicate, %s)", newCollection.name.c_str(),
-	     newCollection.fileName.c_str());
+	blog(LOG_INFO, "Created scene collection '%s' (duplicate, %s)", newCollection.getName().c_str(),
+	     newCollection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
 void OBSBasic::SetupRenameSceneCollection(const std::string &collectionName)
 {
-	const OBSSceneCollection &newCollection = CreateSceneCollection(collectionName);
-	const OBSSceneCollection currentCollection = GetCurrentSceneCollection();
+	const SceneCollection currentCollection = GetCurrentSceneCollection();
+	SceneCollection &newCollection = CreateSceneCollection(collectionName);
 
 	SaveProjectNow();
 
 	const auto copyOptions = std::filesystem::copy_options::overwrite_existing;
 
 	try {
-		std::filesystem::copy(currentCollection.collectionFile, newCollection.collectionFile, copyOptions);
+		std::filesystem::copy(currentCollection.getFilePath(), newCollection.getFilePath(), copyOptions);
 	} catch (const std::filesystem::filesystem_error &error) {
 		blog(LOG_DEBUG, "%s", error.what());
-		throw std::logic_error("Failed to copy file for scene collection: " + currentCollection.name);
+		throw std::logic_error("Failed to copy file for scene collection: " + currentCollection.getName());
 	}
 
-	collections.erase(currentCollection.name);
+	collections.erase(currentCollection.getName());
 
-	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.collectionFile.u8string().c_str());
+	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.getFileName().c_str());
+	obs_data_set_string(collection, "name", newCollection.getName().c_str());
 
-	obs_data_set_string(collection, "name", newCollection.name.c_str());
-
-	obs_data_save_json_safe(collection, newCollection.collectionFile.u8string().c_str(), "tmp", nullptr);
+	obs_data_save_json_safe(collection, newCollection.getFileName().c_str(), "tmp", nullptr);
 
 	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
 	RemoveSceneCollection(currentCollection);
 
-	blog(LOG_INFO, "Renamed scene collection '%s' to '%s' (%s)", currentCollection.name.c_str(),
-	     newCollection.name.c_str(), newCollection.fileName.c_str());
+	blog(LOG_INFO, "Renamed scene collection '%s' to '%s' (%s)", currentCollection.getName().c_str(),
+	     newCollection.getName().c_str(), newCollection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED);
@@ -185,7 +241,7 @@ void OBSBasic::SetupRenameSceneCollection(const std::string &collectionName)
 
 // MARK: - Scene Collection File Management Functions
 
-const OBSSceneCollection &OBSBasic::CreateSceneCollection(const std::string &collectionName)
+SceneCollection &OBSBasic::CreateSceneCollection(const std::string &collectionName)
 {
 	if (const auto &foundCollection = GetSceneCollectionByName(collectionName)) {
 		throw std::invalid_argument("Scene collection already exists: " + collectionName);
@@ -198,33 +254,33 @@ const OBSSceneCollection &OBSBasic::CreateSceneCollection(const std::string &col
 	}
 
 	std::string collectionFile;
-	collectionFile.reserve(App()->userScenesLocation.u8string().size() + OBSSceneCollectionPath.size() +
+	collectionFile.reserve(App()->userScenesLocation.u8string().size() + SceneCollectionPath.size() +
 			       fileName.size());
-	collectionFile.append(App()->userScenesLocation.u8string()).append(OBSSceneCollectionPath).append(fileName);
+	collectionFile.append(App()->userScenesLocation.u8string()).append(SceneCollectionPath).append(fileName);
 
 	if (!GetClosestUnusedFileName(collectionFile, "json")) {
 		throw std::invalid_argument("Failed to get closest file name for new scene collection: " + fileName);
 	}
 
-	const std::filesystem::path collectionFilePath = std::filesystem::u8path(collectionFile);
+	std::filesystem::path collectionFilePath = std::filesystem::u8path(collectionFile);
 
-	auto [iterator, success] = collections.try_emplace(
-		collectionName,
-		OBSSceneCollection{collectionName, collectionFilePath.filename().u8string(), collectionFilePath});
+	auto [iterator, success] =
+		collections.try_emplace(collectionName, collectionName, std::move(collectionFilePath));
 
 	return iterator->second;
 }
 
-void OBSBasic::RemoveSceneCollection(OBSSceneCollection collection)
+void OBSBasic::RemoveSceneCollection(SceneCollection collection)
 {
 	try {
-		std::filesystem::remove(collection.collectionFile);
+		std::filesystem::remove(collection.getFilePath());
 	} catch (const std::filesystem::filesystem_error &error) {
 		blog(LOG_DEBUG, "%s", error.what());
-		throw std::logic_error("Failed to remove scene collection file: " + collection.fileName);
+		throw std::logic_error("Failed to remove scene collection file: " + collection.getFileName());
 	}
 
-	blog(LOG_INFO, "Removed scene collection '%s' (%s)", collection.name.c_str(), collection.fileName.c_str());
+	blog(LOG_INFO, "Removed scene collection '%s' (%s)", collection.getName().c_str(),
+	     collection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
@@ -268,7 +324,7 @@ void OBSBasic::DeleteSceneCollection(const QString &name)
 		return;
 	}
 
-	OBSSceneCollection currentCollection = GetCurrentSceneCollection();
+	SceneCollection currentCollection = GetCurrentSceneCollection();
 
 	RemoveSceneCollection(currentCollection);
 
@@ -297,7 +353,7 @@ void OBSBasic::ChangeSceneCollection()
 		return;
 	}
 
-	const std::optional<OBSSceneCollection> foundCollection = GetSceneCollectionByName(selectedCollectionName);
+	auto foundCollection = GetSceneCollectionByName(selectedCollectionName);
 
 	if (!foundCollection) {
 		const std::string errorMessage{"Selected scene collection not found: "};
@@ -305,14 +361,14 @@ void OBSBasic::ChangeSceneCollection()
 		throw std::invalid_argument(errorMessage + currentCollectionName.data());
 	}
 
-	const OBSSceneCollection &selectedCollection = foundCollection.value();
+	SceneCollection &selectedCollection = foundCollection.value();
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	ActivateSceneCollection(selectedCollection);
 
-	blog(LOG_INFO, "Switched to scene collection '%s' (%s)", selectedCollection.name.c_str(),
-	     selectedCollection.fileName.c_str());
+	blog(LOG_INFO, "Switched to scene collection '%s' (%s)", selectedCollection.getName().c_str(),
+	     selectedCollection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
@@ -339,12 +395,12 @@ void OBSBasic::RefreshSceneCollections(bool refreshCache)
 	for (auto &name : sortedSceneCollections) {
 		const std::string collectionName = name.toStdString();
 		try {
-			const OBSSceneCollection &collection = collections.at(collectionName);
+			const SceneCollection &collection = collections.at(collectionName);
 			const QString qCollectionName = QString().fromStdString(collectionName);
 
 			QAction *action = new QAction(qCollectionName, this);
 			action->setProperty("collection_name", qCollectionName);
-			action->setProperty("file_name", QString().fromStdString(collection.fileName));
+			action->setProperty("file_name", QString().fromStdString(collection.getFileName()));
 			connect(action, &QAction::triggered, this, &OBSBasic::ChangeSceneCollection);
 			action->setCheckable(true);
 			action->setChecked(collectionName == currentCollectionName);
@@ -374,7 +430,7 @@ void OBSBasic::RefreshSceneCollectionCache()
 	OBSSceneCollectionCache foundCollections{};
 
 	const std::filesystem::path collectionsPath =
-		App()->userScenesLocation / std::filesystem::u8path(OBSSceneCollectionPath.substr(1));
+		App()->userScenesLocation / std::filesystem::u8path(SceneCollectionPath.substr(1));
 
 	if (!std::filesystem::exists(collectionsPath)) {
 		blog(LOG_WARNING, "Failed to get scene collections config path");
@@ -402,15 +458,13 @@ void OBSBasic::RefreshSceneCollectionCache()
 			candidateName = std::move(collectionName);
 		}
 
-		foundCollections.try_emplace(candidateName,
-					     OBSSceneCollection{candidateName, entry.path().filename().u8string(),
-								entry.path()});
+		foundCollections.try_emplace(candidateName, candidateName, entry.path());
 	}
 
 	collections.swap(foundCollections);
 }
 
-const OBSSceneCollection &OBSBasic::GetCurrentSceneCollection() const
+SceneCollection &OBSBasic::GetCurrentSceneCollection()
 {
 	std::string currentCollectionName{config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
 
@@ -427,7 +481,7 @@ const OBSSceneCollection &OBSBasic::GetCurrentSceneCollection() const
 	}
 }
 
-std::optional<OBSSceneCollection> OBSBasic::GetSceneCollectionByName(const std::string &collectionName) const
+std::optional<SceneCollection> OBSBasic::GetSceneCollectionByName(const std::string &collectionName) const
 {
 	auto foundCollection = collections.find(collectionName);
 
@@ -438,10 +492,10 @@ std::optional<OBSSceneCollection> OBSBasic::GetSceneCollectionByName(const std::
 	}
 }
 
-std::optional<OBSSceneCollection> OBSBasic::GetSceneCollectionByFileName(const std::string &fileName) const
+std::optional<SceneCollection> OBSBasic::GetSceneCollectionByFileName(const std::string &fileName) const
 {
 	for (auto &[iterator, collection] : collections) {
-		if (collection.fileName == fileName) {
+		if (collection.getFileName() == fileName) {
 			return collection;
 		}
 	}
@@ -509,7 +563,7 @@ void OBSBasic::on_actionDupSceneCollection_triggered()
 
 void OBSBasic::on_actionRenameSceneCollection_triggered()
 {
-	const OBSSceneCollection &currentCollection = GetCurrentSceneCollection();
+	const SceneCollection &currentCollection = GetCurrentSceneCollection();
 
 	const OBSPromptCallback sceneCollectionCallback = [this](const OBSPromptResult &result) {
 		if (GetSceneCollectionByName(result.promptValue)) {
@@ -520,7 +574,7 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 	};
 
 	const OBSPromptRequest request{Str("Basic.Main.RenameSceneCollection.Title"),
-				       Str("Basic.Main.AddSceneCollection.Text"), currentCollection.name};
+				       Str("Basic.Main.AddSceneCollection.Text"), currentCollection.getName()};
 
 	OBSPromptResult result = PromptForName(request, sceneCollectionCallback);
 
@@ -543,14 +597,14 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered(bool skipConfirmation)
 		return;
 	}
 
-	OBSSceneCollection currentCollection;
+	SceneCollection currentCollection;
 
 	try {
 		currentCollection = GetCurrentSceneCollection();
 
 		if (!skipConfirmation) {
 			const QString confirmationText =
-				QTStr("ConfirmRemove.Text").arg(QString::fromStdString(currentCollection.name));
+				QTStr("ConfirmRemove.Text").arg(QString::fromStdString(currentCollection.getName()));
 			const QMessageBox::StandardButton button =
 				OBSMessageBox::question(this, QTStr("ConfirmRemove.Title"), confirmationText);
 
@@ -561,20 +615,20 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered(bool skipConfirmation)
 
 		OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
-		collections.erase(currentCollection.name);
+		collections.erase(currentCollection.getName());
 	} catch (const std::invalid_argument &error) {
 		blog(LOG_ERROR, "%s", error.what());
 	} catch (const std::logic_error &error) {
 		blog(LOG_ERROR, "%s", error.what());
 	}
 
-	const OBSSceneCollection &newCollection = collections.begin()->second;
+	SceneCollection &newCollection = collections.begin()->second;
 
 	ActivateSceneCollection(newCollection);
 	RemoveSceneCollection(currentCollection);
 
-	blog(LOG_INFO, "Switched to scene collection '%s' (%s)", newCollection.name.c_str(),
-	     newCollection.fileName.c_str());
+	blog(LOG_INFO, "Switched to scene collection '%s' (%s)", newCollection.getName().c_str(),
+	     newCollection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
@@ -590,16 +644,16 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 {
 	SaveProjectNow();
 
-	const OBSSceneCollection &currentCollection = GetCurrentSceneCollection();
+	const SceneCollection &currentCollection = GetCurrentSceneCollection();
 
 	const QString home = QDir::homePath();
 
 	const QString destinationFileName = SaveFile(this, QTStr("Basic.MainMenu.SceneCollection.Export"),
-						     home + "/" + currentCollection.fileName.c_str(),
+						     home + "/" + currentCollection.getFileName().c_str(),
 						     "JSON Files (*.json)");
 
 	if (!destinationFileName.isEmpty() && !destinationFileName.isNull()) {
-		const std::filesystem::path sourceFile = currentCollection.collectionFile;
+		const std::filesystem::path sourceFile = currentCollection.getFilePath();
 		const std::filesystem::path destinationFile =
 			std::filesystem::u8path(destinationFileName.toStdString());
 
@@ -646,9 +700,11 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 		return;
 	}
 
-	OBSDataAutoRelease priv = obs_get_private_data();
+	SceneCollection &currentCollection = GetCurrentSceneCollection();
+	SceneCoordinateMode currentCoordinateMode = currentCollection.getCoordinateMode();
+	OBS::Rect currentMigrationResolution = currentCollection.getMigrationResolution();
 
-	if (!usingAbsoluteCoordinates && !migrationBaseResolution) {
+	if (currentCoordinateMode == SceneCoordinateMode::Relative && currentMigrationResolution.isZero()) {
 		OBSMessageBox::warning(
 			this, QTStr("Basic.Main.RemigrateSceneCollection.Title"),
 			QTStr("Basic.Main.RemigrateSceneCollection.CannotMigrate.UnknownBaseResolution"));
@@ -658,17 +714,16 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
-	if (!usingAbsoluteCoordinates && migrationBaseResolution->first == ovi.base_width &&
-	    migrationBaseResolution->second == ovi.base_height) {
+	OBS::Rect videoResolution = OBS::Rect(ovi.base_width, ovi.base_height);
+
+	if (currentCoordinateMode == SceneCoordinateMode::Relative && currentMigrationResolution == videoResolution) {
 		OBSMessageBox::warning(
 			this, QTStr("Basic.Main.RemigrateSceneCollection.Title"),
 			QTStr("Basic.Main.RemigrateSceneCollection.CannotMigrate.BaseResolutionMatches"));
 		return;
 	}
 
-	const OBSSceneCollection &currentCollection = GetCurrentSceneCollection();
-
-	QString name = QString::fromStdString(currentCollection.name);
+	QString name = QString::fromStdString(currentCollection.getName());
 	QString message =
 		QTStr("Basic.Main.RemigrateSceneCollection.Text").arg(name).arg(ovi.base_width).arg(ovi.base_height);
 
@@ -678,11 +733,10 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 		return;
 
 	lastOutputResolution = {ovi.base_width, ovi.base_height};
-
-	if (!usingAbsoluteCoordinates) {
+	if (currentCoordinateMode == SceneCoordinateMode::Relative) {
 		/* Temporarily change resolution to migration resolution */
-		ovi.base_width = migrationBaseResolution->first;
-		ovi.base_height = migrationBaseResolution->second;
+		ovi.base_width = currentMigrationResolution.getWidth<uint32_t>();
+		ovi.base_height = currentMigrationResolution.getHeight<uint32_t>();
 
 		if (obs_reset_video(&ovi) != OBS_VIDEO_SUCCESS) {
 			OBSMessageBox::critical(
@@ -694,10 +748,16 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
-	/* Save and immediately reload to (re-)run migrations. */
+	// Temporarily switch the coordinate mode of the current scene collection to "absolute" mode to force the
+	// collection to be saved as a "version 1" variant. By resetting the coordinate mode to its original mode after
+	// saving the collection, the activation process will migrate it automatically.
+
+	currentCollection.setCoordinateMode(SceneCoordinateMode::Absolute);
 	SaveProjectNow();
+	currentCollection.setCoordinateMode(currentCoordinateMode);
+
 	/* Reset video if we potentially changed to a temporary resolution */
-	if (!usingAbsoluteCoordinates) {
+	if (currentCoordinateMode == SceneCoordinateMode::Relative) {
 		ResetVideo();
 	}
 
@@ -706,20 +766,20 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 
 // MARK: - Scene Collection Management Helper Functions
 
-void OBSBasic::ActivateSceneCollection(const OBSSceneCollection &collection)
+void OBSBasic::ActivateSceneCollection(SceneCollection &collection)
 {
 	const std::string currentCollectionName{config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
 
 	if (auto foundCollection = GetSceneCollectionByName(currentCollectionName)) {
-		if (collection.name != foundCollection.value().name) {
+		if (collection.getName() != foundCollection.value().getName()) {
 			SaveProjectNow();
 		}
 	}
 
-	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection", collection.name.c_str());
-	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", collection.fileName.c_str());
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection", collection.getName().c_str());
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", collection.getFileName().c_str());
 
-	Load(collection.collectionFile.u8string().c_str());
+	Load(collection);
 
 	RefreshSceneCollections();
 
@@ -748,7 +808,8 @@ static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent, v
 
 static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array_t *quickTransitionData,
 				    int transitionDuration, obs_data_array_t *transitions, OBSScene &scene,
-				    OBSSource &curProgramScene, obs_data_array_t *savedProjectorList)
+				    OBSSource &curProgramScene, obs_data_array_t *savedProjectorList,
+				    obs_data_array_t *savedCanvases)
 {
 	obs_data_t *saveData = obs_data_create();
 
@@ -805,6 +866,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array
 	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
 	obs_data_set_array(saveData, "transitions", transitions);
 	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
+	obs_data_set_array(saveData, "canvases", savedCanvases);
 	obs_data_array_release(sourcesArray);
 	obs_data_array_release(groupsArray);
 
@@ -814,7 +876,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array
 	return saveData;
 }
 
-void OBSBasic::Save(const char *file)
+void OBSBasic::Save(SceneCollection &collection)
 {
 	OBSScene scene = GetCurrentScene();
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
@@ -825,8 +887,10 @@ void OBSBasic::Save(const char *file)
 	OBSDataArrayAutoRelease transitions = SaveTransitions();
 	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
+	OBSDataArrayAutoRelease savedCanvases = OBS::Canvas::SaveCanvases(canvases);
 	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, ui->transitionDuration->value(),
-						       transitions, scene, curProgramScene, savedProjectorList);
+						       transitions, scene, curProgramScene, savedProjectorList,
+						       savedCanvases);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
@@ -869,17 +933,31 @@ void OBSBasic::Save(const char *file)
 		obs_data_set_obj(saveData, "resolution", res);
 	}
 
-	obs_data_set_int(saveData, "version", usingAbsoluteCoordinates ? 1 : 2);
+	int sceneCollectionVersion = collection.getVersion();
+	obs_data_set_int(saveData, "version", sceneCollectionVersion);
 
-	if (migrationBaseResolution && !usingAbsoluteCoordinates) {
-		OBSDataAutoRelease res = obs_data_create();
-		obs_data_set_int(res, "x", migrationBaseResolution->first);
-		obs_data_set_int(res, "y", migrationBaseResolution->second);
-		obs_data_set_obj(saveData, "migration_resolution", res);
+	OBS::Rect migrationResolution = collection.getMigrationResolution();
+	SceneCoordinateMode coordinateMode = collection.getCoordinateMode();
+
+	if (coordinateMode == SceneCoordinateMode::Absolute) {
+		removeRelativePositionData(saveData);
 	}
 
-	if (!obs_data_save_json_pretty_safe(saveData, file, "tmp", "bak"))
-		blog(LOG_ERROR, "Could not save scene data to %s", file);
+	if (!migrationResolution.isZero() && coordinateMode == SceneCoordinateMode::Relative) {
+		OBSDataAutoRelease resolutionData = obs_data_create();
+
+		obs_data_set_int(resolutionData, "x", migrationResolution.getWidth<long long>());
+		obs_data_set_int(resolutionData, "y", migrationResolution.getHeight<long long>());
+
+		obs_data_set_obj(saveData, DataKeys::MigrationResolution.data(), resolutionData);
+	}
+
+	const std::string collectionFileName = collection.getFilePathString();
+	bool success = obs_data_save_json_pretty_safe(saveData, collectionFileName.c_str(), "tmp", "bak");
+
+	if (!success) {
+		blog(LOG_ERROR, "Could not save scene data to %s", collectionFileName.c_str());
+	}
 }
 
 void OBSBasic::DeferSaveBegin()
@@ -921,19 +999,6 @@ static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
 	}
 }
 
-void OBSBasic::DisableRelativeCoordinates(bool enable)
-{
-	/* Allow disabling relative positioning to allow loading collections
-	 * that cannot yet be migrated. */
-	OBSDataAutoRelease priv = obs_get_private_data();
-	obs_data_set_bool(priv, "AbsoluteCoordinates", enable);
-	usingAbsoluteCoordinates = enable;
-
-	ui->actionRemigrateSceneCollection->setText(enable ? QTStr("Basic.MainMenu.SceneCollection.Migrate")
-							   : QTStr("Basic.MainMenu.SceneCollection.Remigrate"));
-	ui->actionRemigrateSceneCollection->setEnabled(enable);
-}
-
 void OBSBasic::CreateDefaultScene(bool firstStart)
 {
 	disableSaving++;
@@ -944,7 +1009,8 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ui->transitionDuration->setValue(300);
 	SetTransition(fadeTransition);
 
-	DisableRelativeCoordinates(false);
+	updateRemigrationMenuItem(SceneCoordinateMode::Relative, ui->actionRemigrateSceneCollection);
+
 	OBSSceneAutoRelease scene = obs_scene_create(Str("Basic.Scene"));
 
 	if (firstStart)
@@ -1026,33 +1092,32 @@ void OBSBasic::LogScenes()
 	blog(LOG_INFO, "------------------------------------------------");
 }
 
-void OBSBasic::Load(const char *file, bool remigrate)
+void OBSBasic::Load(SceneCollection &collection)
 {
 	disableSaving++;
-	lastOutputResolution.reset();
-	migrationBaseResolution.reset();
 
-	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
+	lastOutputResolution.reset();
+	collection.setMigrationResolution(0, 0);
+
+	obs_data_t *data = obs_data_create_from_json_file_safe(collection.getFilePathString().c_str(), "bak");
+
 	if (!data) {
 		disableSaving--;
-		const auto path = filesystem::u8path(file);
-		const string name = path.stem().u8string();
-		/* Check if file exists but failed to load. */
-		if (filesystem::exists(path)) {
-			/* Assume the file is corrupt and rename it to allow
-			 * for manual recovery if possible. */
-			auto newPath = path;
-			newPath.concat(".invalid");
+		const std::filesystem::path filePath = collection.getFilePath();
+
+		if (std::filesystem::exists(filePath)) {
+			std::filesystem::path backupFilePath = filePath;
+			backupFilePath.replace_extension(".json.invalid");
 
 			blog(LOG_WARNING,
 			     "File exists but appears to be corrupt, renaming "
 			     "to \"%s\" before continuing.",
-			     newPath.filename().u8string().c_str());
+			     backupFilePath.filename().u8string().c_str());
 
-			error_code ec;
-			filesystem::rename(path, newPath, ec);
-			if (ec) {
-				blog(LOG_ERROR, "Failed renaming corrupt file with %d", ec.value());
+			try {
+				std::filesystem::rename(filePath, backupFilePath);
+			} catch (const std::filesystem::filesystem_error &error) {
+				blog(LOG_ERROR, "Failed renaming corrupt file:\n%s", error.what());
 			}
 		}
 
@@ -1065,7 +1130,7 @@ void OBSBasic::Load(const char *file, bool remigrate)
 		return;
 	}
 
-	LoadData(data, file, remigrate);
+	LoadData(data, collection);
 }
 
 static inline void AddMissingFiles(void *data, obs_source_t *source)
@@ -1077,27 +1142,7 @@ static inline void AddMissingFiles(void *data, obs_source_t *source)
 	obs_missing_files_destroy(sf);
 }
 
-static void ClearRelativePosCb(obs_data_t *data, void *)
-{
-	const string_view id = obs_data_get_string(data, "id");
-	if (id != "scene" && id != "group")
-		return;
-
-	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
-	OBSDataArrayAutoRelease items = obs_data_get_array(settings, "items");
-
-	obs_data_array_enum(
-		items,
-		[](obs_data_t *data, void *) {
-			obs_data_unset_user_value(data, "pos_rel");
-			obs_data_unset_user_value(data, "scale_rel");
-			obs_data_unset_user_value(data, "scale_ref");
-			obs_data_unset_user_value(data, "bounds_rel");
-		},
-		nullptr);
-}
-
-void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
+void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 {
 	ClearSceneData();
 	ClearContextBar();
@@ -1130,6 +1175,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 	OBSDataArrayAutoRelease sources = obs_data_get_array(data, "sources");
 	OBSDataArrayAutoRelease groups = obs_data_get_array(data, "groups");
 	OBSDataArrayAutoRelease transitions = obs_data_get_array(data, "transitions");
+	OBSDataArrayAutoRelease collection_canvases = obs_data_get_array(data, "canvases");
 	const char *sceneName = obs_data_get_string(data, "current_scene");
 	const char *programSceneName = obs_data_get_string(data, "current_program_scene");
 	const char *transitionName = obs_data_get_string(data, "current_transition");
@@ -1166,64 +1212,85 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file, bool remigrate)
 	LoadAudioDevice(AUX_AUDIO_3, 5, data);
 	LoadAudioDevice(AUX_AUDIO_4, 6, data);
 
+	if (collection_canvases)
+		canvases = OBS::Canvas::LoadCanvases(collection_canvases);
+
 	if (!sources) {
 		sources = std::move(groups);
 	} else {
 		obs_data_array_push_back_array(sources, groups);
 	}
 
-	/* Reset relative coordinate data if forcefully remigrating. */
-	if (remigrate) {
-		obs_data_set_int(data, "version", 1);
-		obs_data_array_enum(sources, ClearRelativePosCb, nullptr);
-	}
-
 	bool resetVideo = false;
-	bool disableRelativeCoords = false;
 	obs_video_info ovi;
 
 	int64_t version = obs_data_get_int(data, "version");
 	OBSDataAutoRelease res = obs_data_get_obj(data, "resolution");
+
+	OBS::Rect collectionSize{};
+
 	if (res) {
-		lastOutputResolution = {obs_data_get_int(res, "x"), obs_data_get_int(res, "y")};
+		collectionSize.setWidth(obs_data_get_int(res, "x"));
+		collectionSize.setHeight(obs_data_get_int(res, "y"));
 	}
 
 	/* Only migrate legacy collection if resolution is saved. */
-	if (version < 2 && lastOutputResolution) {
+	if (version < 2 && !collectionSize.isZero()) {
 		obs_get_video_info(&ovi);
 
-		uint32_t width = obs_data_get_int(res, "x");
-		uint32_t height = obs_data_get_int(res, "y");
+		collection.setMigrationResolution(collectionSize);
 
-		migrationBaseResolution = {width, height};
+		OBS::Rect outputSize{ovi.base_width, ovi.base_height};
 
-		if (ovi.base_height != height || ovi.base_width != width) {
-			ovi.base_width = width;
-			ovi.base_height = height;
+		if (outputSize != collectionSize) {
+			ovi.base_width = collectionSize.getWidth<uint32_t>();
+			ovi.base_height = collectionSize.getHeight<uint32_t>();
 
 			/* Attempt to reset to last known canvas resolution for migration. */
 			resetVideo = obs_reset_video(&ovi) == OBS_VIDEO_SUCCESS;
-			disableRelativeCoords = !resetVideo;
+
+			if (!resetVideo) {
+				collection.setCoordinateMode(OBS::SceneCoordinateMode::Absolute);
+			}
 		}
 
-		/* If migration is possible, and it wasn't forced, back up the original file. */
-		if (!disableRelativeCoords && !remigrate) {
-			auto path = filesystem::u8path(file);
-			auto backupPath = path.concat(".v1");
-			if (!filesystem::exists(backupPath)) {
-				if (!obs_data_save_json_pretty_safe(data, backupPath.u8string().c_str(), "tmp", NULL)) {
+		// If migration is necessary, attempt to back up version 1 variant of the scene ecollection.
+		if (collection.getCoordinateMode() == SceneCoordinateMode::Absolute) {
+			std::filesystem::path backupFilePath = collection.getFilePath();
+			backupFilePath.replace_extension(".json.v1");
+
+			if (!std::filesystem::exists(backupFilePath)) {
+				bool success = obs_data_save_json_pretty_safe(data, backupFilePath.u8string().c_str(),
+									      "tmp", nullptr);
+
+				if (!success) {
 					blog(LOG_WARNING,
-					     "Failed to create a backup of existing scene collection data!");
+					     "Failed to create a backup of existing scene collection data");
 				}
 			}
 		}
+		collection.setCoordinateMode(SceneCoordinateMode::Relative);
 	} else if (version < 2) {
-		disableRelativeCoords = true;
-	} else if (OBSDataAutoRelease migration_res = obs_data_get_obj(data, "migration_resolution")) {
-		migrationBaseResolution = {obs_data_get_int(migration_res, "x"), obs_data_get_int(migration_res, "y")};
+		collection.setCoordinateMode(SceneCoordinateMode::Absolute);
+	} else {
+		OBSDataAutoRelease migrationResolution = obs_data_get_obj(data, "migration_resolution");
+
+		if (migrationResolution) {
+			collection.setMigrationResolution(obs_data_get_int(migrationResolution, "x"),
+							  obs_data_get_int(migrationResolution, "y"));
+		}
 	}
 
-	DisableRelativeCoordinates(disableRelativeCoords);
+	// FIXME: Migrate to actual SceneCollection container with reference-based API
+	// The collection passed as function argument might be a copy generated via std::optional and thus
+	// might not represent the actual collection within the collection, meaning all changes would be lost after
+	// the function stack is unwound (i.e., the change would not be written into the scene collection file
+	// during OBS shutdown).
+	// Explicitly updating the collection inside the container ensures the changes "stick".
+
+	collections[collection.getName()] = collection;
+
+	updateRemigrationMenuItem(collection.getCoordinateMode(), ui->actionRemigrateSceneCollection);
 
 	obs_missing_files_t *files = obs_missing_files_create();
 	obs_load_sources(sources, AddMissingFiles, files);
@@ -1285,11 +1352,8 @@ retryScene:
 
 	/* ------------------- */
 
-	std::string file_base = strrchr(file, '/') + 1;
-	file_base.erase(file_base.size() - 5, 5);
-
-	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection", name);
-	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", file_base.c_str());
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection", collection.getName().c_str());
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", collection.getFileName().c_str());
 
 	OBSDataArrayAutoRelease quickTransitionData = obs_data_get_array(data, "quick_transitions");
 	LoadQuickTransitions(quickTransitionData);
@@ -1338,11 +1402,8 @@ retryScene:
 		vcamConfig.source = obs_data_get_string(obj, "source");
 	}
 
-	if (obs_data_has_user_value(data, "resolution")) {
-		OBSDataAutoRelease res = obs_data_get_obj(data, "resolution");
-		if (obs_data_has_user_value(res, "x") && obs_data_has_user_value(res, "y")) {
-			lastOutputResolution = {obs_data_get_int(res, "x"), obs_data_get_int(res, "y")};
-		}
+	if (!collectionSize.isZero()) {
+		lastOutputResolution = {collectionSize.getWidth<uint32_t>(), collectionSize.getHeight<uint32_t>()};
 	}
 
 	/* ---------------------- */
@@ -1420,9 +1481,9 @@ void OBSBasic::SaveProjectDeferred()
 	projectChanged = false;
 
 	try {
-		const OBSSceneCollection &currentCollection = GetCurrentSceneCollection();
+		OBS::SceneCollection &currentCollection = GetCurrentSceneCollection();
 
-		Save(currentCollection.collectionFile.u8string().c_str());
+		Save(currentCollection);
 	} catch (const std::invalid_argument &error) {
 		blog(LOG_ERROR, "%s", error.what());
 	}
@@ -1471,6 +1532,12 @@ void OBSBasic::ClearSceneData()
 
 	obs_enum_scenes(cb, nullptr);
 	obs_enum_sources(cb, nullptr);
+
+	for (const auto &canvas : canvases) {
+		obs_canvas_enum_scenes(canvas, cb, nullptr);
+	}
+
+	canvases.clear();
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP);
 

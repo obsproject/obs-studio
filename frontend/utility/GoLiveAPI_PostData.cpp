@@ -6,11 +6,12 @@
 #include <nlohmann/json.hpp>
 
 GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<uint64_t> &maximum_aggregate_bitrate,
-					const std::optional<uint32_t> &maximum_video_tracks, bool vod_track_enabled)
+					const std::optional<uint32_t> &maximum_video_tracks, bool vod_track_enabled,
+					const std::vector<OBSCanvasAutoRelease> &canvases)
 {
 	GoLiveApi::PostData post_data{};
 	post_data.service = "IVS";
-	post_data.schema_version = "2024-06-04";
+	post_data.schema_version = "2025-01-25";
 	post_data.authentication = streamKey.toStdString();
 
 	system_info(post_data.capabilities);
@@ -49,16 +50,17 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 	preferences.vod_track_audio = vod_track_enabled;
 
 	obs_video_info ovi;
-	if (obs_get_video_info(&ovi)) {
-		preferences.width = ovi.output_width;
-		preferences.height = ovi.output_height;
-		preferences.framerate.numerator = ovi.fps_num;
-		preferences.framerate.denominator = ovi.fps_den;
-
-		preferences.canvas_width = ovi.base_width;
-		preferences.canvas_height = ovi.base_height;
-
+	if (obs_get_video_info(&ovi))
 		preferences.composition_gpu_index = ovi.adapter;
+
+	for (const auto &canvas : canvases) {
+		if (obs_canvas_get_video_info(canvas, &ovi)) {
+			preferences.canvases.emplace_back(GoLiveApi::Canvas{ovi.output_width,
+									    ovi.output_height,
+									    ovi.base_width,
+									    ovi.base_height,
+									    {ovi.fps_num, ovi.fps_den}});
+		}
 	}
 
 	obs_audio_info2 oai2;
@@ -73,6 +75,12 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 		preferences.maximum_aggregate_bitrate = maximum_aggregate_bitrate.value();
 	if (maximum_video_tracks.has_value())
 		preferences.maximum_video_tracks = maximum_video_tracks.value();
+
+	/* Always cap to maximum number of output encoders. */
+	if (!preferences.maximum_video_tracks.has_value() ||
+	    preferences.maximum_video_tracks.value() > MAX_OUTPUT_VIDEO_ENCODERS) {
+		preferences.maximum_video_tracks = MAX_OUTPUT_VIDEO_ENCODERS;
+	}
 
 	return post_data;
 }

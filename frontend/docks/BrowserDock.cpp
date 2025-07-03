@@ -1,6 +1,7 @@
 #include "BrowserDock.hpp"
 
 #include <QCloseEvent>
+#include "moc_BrowserDock.cpp"
 
 void BrowserDock::closeEvent(QCloseEvent *event)
 {

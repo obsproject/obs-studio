@@ -502,6 +502,10 @@ struct gs_init_data {
 #define GS_DEVICE_DIRECT3D_11 2
 
 EXPORT const char *gs_get_device_name(void);
+EXPORT const char *gs_get_driver_version(void);
+EXPORT const char *gs_get_renderer(void);
+EXPORT uint64_t gs_get_gpu_dmem(void);
+EXPORT uint64_t gs_get_gpu_smem(void);
 EXPORT int gs_get_device_type(void);
 EXPORT uint32_t gs_get_adapter_count(void);
 EXPORT void gs_enum_adapters(bool (*callback)(void *param, const char *name, uint32_t id), void *param);
@@ -577,6 +581,7 @@ EXPORT uint8_t *gs_create_texture_file_data3(const char *file, enum gs_image_alp
  * axis with GS_FLIP_U and GS_FLIP_V.
  */
 EXPORT void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height);
+EXPORT void gs_draw_quadf(gs_texture_t *tex, uint32_t flip, float width, float height);
 
 EXPORT void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t x, uint32_t y, uint32_t cx,
 				     uint32_t cy);

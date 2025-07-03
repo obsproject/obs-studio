@@ -708,16 +708,56 @@
                     "url": "rtmp://qc.castr.io/static"
                 },
                 {
-                    "name": "SA (Sao Paulo, BR)",
+                    "name": "Mexico",
+                    "url": "rtmp://mexico.castr.io/static"
+                },
+                {
+                    "name": "Sao Paulo, BR",
                     "url": "rtmp://br.castr.io/static"
+                },
+                {
+                    "name": "Colombia",
+                    "url": "rtmp://bogota.castr.io/static"
+                },
+                {
+                    "name": "Santiago, Chile",
+                    "url": "rtmp://santiago.castr.io/static"
+                },
+                {
+                    "name": "Istanbul, TR",
+                    "url": "rtmp://istanbul.castr.io/static"
+                },
+                {
+                    "name": "Tel Aviv, IL",
+                    "url": "rtmp://telaviv.castr.io/static"
                 },
                 {
                     "name": "EU-West (London, UK)",
                     "url": "rtmp://uk.castr.io/static"
                 },
                 {
+                    "name": "EU-West (Paris, FR)",
+                    "url": "rtmp://paris.castr.io/static"
+                },
+                {
+                    "name": "EU-West (Madrid, ES)",
+                    "url": "rtmp://madrid.castr.io/static"
+                },
+                {
                     "name": "EU-Central (Frankfurt, DE)",
                     "url": "rtmp://fr.castr.io/static"
+                },
+                {
+                    "name": "EU-Central (Milan, IT)",
+                    "url": "rtmp://milan.castr.io/static"
+                },
+                {
+                    "name": "EU-North (Stockholm, SE)",
+                    "url": "rtmp://stockholm.castr.io/static"
+                },
+                {
+                    "name": "EU-North (Copenhagen, DK)",
+                    "url": "rtmp://copenhagen.castr.io/static"
                 },
                 {
                     "name": "Russia (Moscow)",
@@ -728,12 +768,28 @@
                     "url": "rtmp://sg.castr.io/static"
                 },
                 {
+                    "name": "Asia (Hong Kong, HK)",
+                    "url": "rtmp://hongkong.castr.io/static"
+                },
+                {
                     "name": "Asia (India)",
                     "url": "rtmp://in.castr.io/static"
                 },
                 {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.castr.io/static"
+                },
+                {
+                    "name": "UAE (Dubai)",
+                    "url": "rtmp://dubai.castr.io/static"
+                },
+                {
+                    "name": "Africa (Johannesburg, ZA)",
+                    "url": "rtmp://southafrica.castr.io/static"
+                },
+                {
+                    "name": "Africa (Lagos, NG)",
+                    "url": "rtmp://lagos.castr.io/static"
                 },
                 {
                     "name": "US Central",
@@ -1628,11 +1684,16 @@
             ]
         },
         {
-            "name": "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+            "name": "niconico (ニコニコ生放送)",
+            "more_info_link": "https://qa.nicovideo.jp/faq/show/701",
+            "alt_names": [
+                "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+                "niconico, free member (ニコニコ生放送 一般会員)"
+            ],
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
+                    "url": "rtmp://liveorigin.dlive.nicovideo.jp/live/input"
                 }
             ],
             "recommended": {
@@ -1640,25 +1701,6 @@
                 "profile": "high",
                 "max audio bitrate": 192,
                 "max video bitrate": 5808,
-                "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "niconico, free member (ニコニコ生放送 一般会員)",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "high",
-                "max audio bitrate": 96,
-                "max video bitrate": 904,
                 "x264opts": "tune=zerolatency"
             },
             "supported video codecs": [
@@ -2078,7 +2120,8 @@
                 }
             ],
             "supported video codecs": [
-                "h264"
+                "h264",
+                "hevc"
             ]
         },
         {
@@ -2647,56 +2690,8 @@
             "stream_key_link": "https://playstudio.shareplay.tv/stream/settings",
             "servers": [
                 {
-                    "name": "Default (Auto Detect)",
-                    "url": "rtmp://stream.shareplay.tv"
-                },
-                {
-                    "name": "Miami, Florida, USA",
-                    "url": "rtmp://live-us-mia-stream.shareplay.tv"
-                },
-                {
-                    "name": "Chicago, Illinois, USA",
-                    "url": "rtmp://live-us-ord-stream.shareplay.tv"
-                },
-                {
-                    "name": "Washington D.C., USA",
-                    "url": "rtmp://live-us-iad-stream.shareplay.tv"
-                },
-                {
-                    "name": "Los Angeles, California, USA",
-                    "url": "rtmp://live-us-lax-stream.shareplay.tv"
-                },
-                {
-                    "name": "Seattle, Washington, USA",
-                    "url": "rtmp://live-us-sea-stream.shareplay.tv"
-                },
-                {
-                    "name": "Paris, France",
-                    "url": "rtmp://live-fr-par-stream.shareplay.tv"
-                },
-                {
-                    "name": "Milan, Italy",
-                    "url": "rtmp://live-it-mil-stream.shareplay.tv"
-                },
-                {
-                    "name": "Sydney, Australia",
-                    "url": "rtmp://live-au-syd-stream.shareplay.tv"
-                },
-                {
-                    "name": "Toronto, Canada",
-                    "url": "rtmp://live-ca-yyz-stream.shareplay.tv"
-                },
-                {
-                    "name": "London, UK",
-                    "url": "rtmp://live-uk-lhr-stream.shareplay.tv"
-                },
-                {
                     "name": "Atlanta, Georgia, USA",
                     "url": "rtmp://live-us-atl-stream.shareplay.tv"
-                },
-                {
-                    "name": "Dallas, Texas, USA",
-                    "url": "rtmp://live-us-dfw-stream.shareplay.tv"
                 }
             ],
             "supported video codecs": [
@@ -3415,8 +3410,11 @@
         {
             "name": "Dolby Millicast",
             "common": false,
-            "more_info_link": "https://docs.dolby.io/streaming-apis/docs/using-obs",
+            "more_info_link": "https://docs.optiview.dolby.com/millicast/using-obs/",
             "stream_key_link": "https://streaming.dolby.io",
+            "multitrack_video_configuration_url": "https://director.millicast.com/api/multitrackvideo/configuration",
+            "multitrack_video_name": "Enhanced Broadcasting",
+            "multitrack_video_learn_more_link": "https://docs.optiview.dolby.com/millicast/obs-enhanced-broadcasting-multitrack-video/",
             "servers": [
                 {
                     "name": "Global (RTMPS)",
@@ -3522,6 +3520,23 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "VRCDN - Live",
+            "more_info_link": "https://vrcdn.live",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://ingest.vrcdn.live/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "max video bitrate": 6000
+            }
         }
     ]
 }

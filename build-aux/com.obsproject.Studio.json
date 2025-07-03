@@ -1,7 +1,7 @@
 {
     "id": "com.obsproject.Studio",
     "runtime": "org.kde.Platform",
-    "runtime-version": "6.6",
+    "runtime-version": "6.8",
     "sdk": "org.kde.Sdk",
     "command": "obs",
     "finish-args": [
@@ -31,7 +31,7 @@
         },
         "org.freedesktop.LinuxAudio.Plugins": {
             "directory": "extensions/Plugins",
-            "version": "23.08",
+            "version": "24.08",
             "add-ld-path": "lib",
             "merge-dirs": "vst",
             "subdirectories": true,

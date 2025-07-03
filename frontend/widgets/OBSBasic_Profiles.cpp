@@ -554,7 +554,7 @@ void OBSBasic::on_actionImportProfile_triggered()
 
 	if (!sourceDirectory.isEmpty() && !sourceDirectory.isNull()) {
 		const std::filesystem::path sourcePath = std::filesystem::u8path(sourceDirectory.toStdString());
-		const std::string directoryName = sourcePath.filename().string();
+		const std::string directoryName = sourcePath.filename().u8string();
 
 		if (auto profile = GetProfileByDirectoryName(directoryName)) {
 			OBSMessageBox::warning(this, QTStr("Basic.MainMenu.Profile.Import"),

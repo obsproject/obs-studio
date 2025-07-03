@@ -35,6 +35,7 @@ extern struct obs_encoder_info pcm24_encoder_info;
 extern struct obs_encoder_info pcm32_encoder_info;
 extern struct obs_encoder_info alac_encoder_info;
 extern struct obs_encoder_info flac_encoder_info;
+extern struct obs_encoder_info openh264_encoder_info;
 #ifdef ENABLE_FFMPEG_NVENC
 extern struct obs_encoder_info h264_nvenc_encoder_info;
 #ifdef ENABLE_HEVC
@@ -322,7 +323,7 @@ static bool hevc_vaapi_supported(void)
 #endif
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_M_ARM64)
 extern void amf_load(void);
 extern void amf_unload(void);
 #endif
@@ -349,6 +350,7 @@ bool obs_module_load(void)
 	obs_register_output(&ffmpeg_hls_muxer);
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
+	register_encoder_if_available(&openh264_encoder_info, "libopenh264");
 	register_encoder_if_available(&svt_av1_encoder_info, "libsvtav1");
 	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
@@ -372,7 +374,7 @@ bool obs_module_load(void)
 	}
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_M_ARM64)
 	amf_load();
 #endif
 
@@ -421,7 +423,7 @@ void obs_module_unload(void)
 	obs_ffmpeg_unload_logging();
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_M_ARM64)
 	amf_unload();
 #endif
 }

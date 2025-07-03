@@ -144,7 +144,7 @@ struct System {
 	string name;
 	int build;
 	string release;
-	int revision;
+	string revision;
 	int bits;
 	bool arm;
 	bool armEmulation;
@@ -162,25 +162,30 @@ struct Capabilities {
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Capabilities, cpu, memory, gaming_features, system, gpu)
 };
 
+struct Canvas {
+	uint32_t width;
+	uint32_t height;
+	uint32_t canvas_width;
+	uint32_t canvas_height;
+	media_frames_per_second framerate;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Canvas, width, height, canvas_width, canvas_height, framerate)
+};
+
 struct Preferences {
 	optional<uint64_t> maximum_aggregate_bitrate;
 	optional<uint32_t> maximum_video_tracks;
 	bool vod_track_audio;
-	uint32_t width;
-	uint32_t height;
-	media_frames_per_second framerate;
-	uint32_t canvas_width;
-	uint32_t canvas_height;
 	optional<uint32_t> composition_gpu_index;
 	uint32_t audio_samples_per_sec;
 	uint32_t audio_channels;
 	uint32_t audio_max_buffering_ms;
 	bool audio_fixed_buffering;
+	std::vector<Canvas> canvases;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Preferences, maximum_aggregate_bitrate, maximum_video_tracks, vod_track_audio,
-				       width, height, framerate, canvas_width, canvas_height, composition_gpu_index,
-				       audio_samples_per_sec, audio_channels, audio_max_buffering_ms,
-				       audio_fixed_buffering)
+				       composition_gpu_index, audio_samples_per_sec, audio_channels,
+				       audio_max_buffering_ms, audio_fixed_buffering, canvases)
 };
 
 struct PostData {
@@ -244,9 +249,10 @@ struct VideoEncoderConfiguration {
 	optional<video_range_type> range;
 	optional<video_format> format;
 	json settings;
+	uint32_t canvas_index;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(VideoEncoderConfiguration, type, width, height, framerate,
-						    gpu_scale_type, colorspace, range, format, settings)
+						    gpu_scale_type, colorspace, range, format, settings, canvas_index)
 };
 
 struct AudioEncoderConfiguration {

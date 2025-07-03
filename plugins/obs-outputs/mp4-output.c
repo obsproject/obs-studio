@@ -139,7 +139,7 @@ static const char *mp4_output_name(void *unused)
 	return obs_module_text("MP4Output");
 }
 
-static void mp4_output_destory(void *data)
+static void mp4_output_destroy(void *data)
 {
 	struct mp4_output *out = data;
 
@@ -601,7 +601,7 @@ struct obs_output_info mp4_output_info = {
 	.encoded_audio_codecs = "aac",
 	.get_name = mp4_output_name,
 	.create = mp4_output_create,
-	.destroy = mp4_output_destory,
+	.destroy = mp4_output_destroy,
 	.start = mp4_output_start,
 	.stop = mp4_output_stop,
 	.encoded_packet = mp4_output_packet,

@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.28...3.30)
 find_package(X11 REQUIRED)
 
 find_package(
-  Xcb
-  REQUIRED xcb xcb-xfixes xcb-randr xcb-shm xcb-xinerama xcb-composite
+  XCB
+  REQUIRED XCB XFIXES RANDR SHM XINERAMA COMPOSITE
 )
 
 add_library(linux-capture MODULE)
@@ -25,16 +25,7 @@ target_sources(
 
 target_link_libraries(
   linux-capture
-  PRIVATE
-    OBS::libobs
-    OBS::glad
-    X11::X11
-    xcb::xcb
-    xcb::xcb-xfixes
-    xcb::xcb-randr
-    xcb::xcb-shm
-    xcb::xcb-xinerama
-    xcb::xcb-composite
+  PRIVATE OBS::libobs OBS::glad X11::X11 XCB::XCB XCB::XFIXES XCB::RANDR XCB::SHM XCB::XINERAMA XCB::COMPOSITE
 )
 
 set_target_properties_obs(linux-capture PROPERTIES FOLDER plugins PREFIX "")

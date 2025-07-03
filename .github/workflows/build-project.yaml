@@ -249,7 +249,7 @@ jobs:
     env:
       FLATPAK_BUILD_SHARE_PATH: flatpak_app/files/share
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.6
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
       options: --privileged
     steps:
       - uses: actions/checkout@v4
@@ -268,14 +268,10 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          echo '::group::Install actions/gh-actions-cache'
-          gh extension install actions/gh-actions-cache
-          echo '::endgroup::'
-
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
           cache_ref='master'
-          read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+          read -r id key size unit created accessed <<< \
+            "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
 
           if [[ "${key}" ]]; then
             echo "cacheHit=true" >> $GITHUB_OUTPUT
@@ -292,7 +288,7 @@ jobs:
           path: build-aux/com.obsproject.Studio.json
 
       - name: Build Flatpak Manifest 🧾
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@e5fa5a8fe51d76f770ad9d240e4ad5898b1c6a53
+        uses: flatpak/flatpak-github-actions/flatpak-builder@10a3c29f0162516f0f68006be14c92f34bd4fa6c
         with:
           build-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
           bundle: obs-studio-flatpak-${{ needs.check-event.outputs.commitHash }}.flatpak
@@ -329,6 +325,9 @@ jobs:
 
   windows-build:
     name: Windows 🪟
+    strategy:
+      matrix:
+        architecture: [x64, arm64]
     runs-on: windows-2022
     needs: check-event
     defaults:
@@ -353,18 +352,18 @@ jobs:
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
           GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
         with:
-          target: x64
+          target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
         with:
-          target: x64
+          target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v4
         with:
-          name: obs-studio-windows-x64-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_x64/obs-studio-*-windows-x64.zip
+          name: obs-studio-windows-${{ matrix.architecture }}-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.zip

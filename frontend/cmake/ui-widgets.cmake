@@ -15,6 +15,7 @@ target_sources(
     widgets/OBSBasic.cpp
     widgets/OBSBasic.hpp
     widgets/OBSBasic_Browser.cpp
+    widgets/OBSBasic_Canvases.cpp
     widgets/OBSBasic_Clipboard.cpp
     widgets/OBSBasic_ContextToolbar.cpp
     widgets/OBSBasic_Docks.cpp

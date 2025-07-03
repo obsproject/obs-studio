@@ -84,7 +84,7 @@ try {
 		/* Test or nightly builds may not have a (valid) version number,
 		 * so compare commit hashes instead. */
 		updateVer = manifest.commit.substr(0, 8);
-		*updatesAvailable = !currentVersion || !manifest.commit.compare(0, strlen(OBS_COMMIT), OBS_COMMIT);
+		*updatesAvailable = !currentVersion || manifest.commit.compare(0, strlen(OBS_COMMIT), OBS_COMMIT) != 0;
 	}
 
 	return true;

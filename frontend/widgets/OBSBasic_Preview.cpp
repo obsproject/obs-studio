@@ -248,13 +248,12 @@ void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
-	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
+	previewProjectorMain = new QMenu(QTStr("Projector.Open.Preview"));
 	AddProjectorMenuMonitors(previewProjectorMain, this, &OBSBasic::OpenPreviewProjector);
-
-	QAction *previewWindow = popup.addAction(QTStr("PreviewWindow"), this, &OBSBasic::OpenPreviewWindow);
+	previewProjectorMain->addSeparator();
+	previewProjectorMain->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenPreviewWindow);
 
 	popup.addMenu(previewProjectorMain);
-	popup.addAction(previewWindow);
 	popup.exec(QCursor::pos());
 }
 
@@ -294,7 +293,7 @@ static bool nudge_callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
 	if (obs_sceneitem_locked(item))
 		return true;
 
-	struct vec2 &offset = *reinterpret_cast<struct vec2 *>(param);
+	struct vec2 &offset = *static_cast<struct vec2 *>(param);
 	struct vec2 pos;
 
 	if (!obs_sceneitem_selected(item)) {
@@ -399,7 +398,7 @@ void OBSBasic::on_scalingMenu_aboutToShow()
 	UpdatePreviewScalingMenu();
 }
 
-void OBSBasic::on_actionScaleWindow_triggered()
+void OBSBasic::setPreviewScalingWindow()
 {
 	ui->preview->SetFixedScaling(false);
 	ui->preview->ResetScrollingOffset();
@@ -407,7 +406,7 @@ void OBSBasic::on_actionScaleWindow_triggered()
 	emit ui->preview->DisplayResized();
 }
 
-void OBSBasic::on_actionScaleCanvas_triggered()
+void OBSBasic::setPreviewScalingCanvas()
 {
 	ui->preview->SetFixedScaling(true);
 	ui->preview->SetScalingLevel(0);
@@ -415,7 +414,7 @@ void OBSBasic::on_actionScaleCanvas_triggered()
 	emit ui->preview->DisplayResized();
 }
 
-void OBSBasic::on_actionScaleOutput_triggered()
+void OBSBasic::setPreviewScalingOutput()
 {
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -626,35 +625,42 @@ float OBSBasic::GetDevicePixelRatio()
 	return dpi;
 }
 
-void OBSBasic::UpdatePreviewScrollbars()
+void OBSBasic::UpdatePreviewControls()
 {
+	const int scalingLevel = ui->preview->GetScalingLevel();
+
 	if (!ui->preview->IsFixedScaling()) {
 		ui->previewXScrollBar->setRange(0, 0);
 		ui->previewYScrollBar->setRange(0, 0);
+
+		ui->actionPreviewResetZoom->setEnabled(false);
+
+		return;
 	}
-}
 
-void OBSBasic::on_previewXScrollBar_valueChanged(int value)
-{
-	emit PreviewXScrollBarMoved(value);
-}
+	const bool minZoom = scalingLevel == MAX_SCALING_LEVEL;
+	const bool maxZoom = scalingLevel == -MAX_SCALING_LEVEL;
 
-void OBSBasic::on_previewYScrollBar_valueChanged(int value)
-{
-	emit PreviewYScrollBarMoved(value);
+	ui->actionPreviewZoomIn->setEnabled(!minZoom);
+	ui->previewZoomInButton->setEnabled(!minZoom);
+
+	ui->actionPreviewZoomOut->setEnabled(!maxZoom);
+	ui->previewZoomOutButton->setEnabled(!maxZoom);
+
+	ui->actionPreviewResetZoom->setEnabled(scalingLevel != 0);
 }
 
 void OBSBasic::PreviewScalingModeChanged(int value)
 {
 	switch (value) {
 	case 0:
-		on_actionScaleWindow_triggered();
+		setPreviewScalingWindow();
 		break;
 	case 1:
-		on_actionScaleCanvas_triggered();
+		setPreviewScalingCanvas();
 		break;
 	case 2:
-		on_actionScaleOutput_triggered();
+		setPreviewScalingOutput();
 		break;
 	};
 }

@@ -1,7 +1,7 @@
 find_package(LibUUID REQUIRED)
 find_package(X11 REQUIRED)
-find_package(X11-xcb REQUIRED)
-find_package(Xcb REQUIRED xcb OPTIONAL_COMPONENTS xcb-xinput)
+find_package(X11_XCB REQUIRED)
+find_package(XCB REQUIRED XCB OPTIONAL_COMPONENTS XINPUT)
 find_package(Gio)
 find_package(Sysinfo REQUIRED)
 
@@ -42,13 +42,13 @@ target_compile_definitions(
 target_link_libraries(
   libobs
   PRIVATE
-    X11::x11-xcb
-    xcb::xcb
+    X11::XCB
+    XCB::XCB
     LibUUID::LibUUID
     Sysinfo::Sysinfo
     ${CMAKE_DL_LIBS}
     $<$<NOT:$<BOOL:${HAVE_MATH_IN_STD_LIB}>>:m>
-    $<$<TARGET_EXISTS:xcb::xcb-input>:xcb::xcb-input>
+    $<$<TARGET_EXISTS:XCB::XINPUT>:XCB::XINPUT>
 )
 
 if(ENABLE_PULSEAUDIO)

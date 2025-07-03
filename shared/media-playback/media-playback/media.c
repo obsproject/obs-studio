@@ -394,6 +394,12 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 		return;
 	}
 
+	if (!f->width || !f->height) {
+		blog(LOG_ERROR, "MP: media frame width or height are zero ('%s': %" PRIu32 "x%" PRIu32 ")", m->path,
+		     f->width, f->height);
+		return;
+	}
+
 	bool flip = false;
 	if (m->swscale) {
 		int ret = sws_scale(m->swscale, (const uint8_t *const *)f->data, f->linesize, 0, f->height,

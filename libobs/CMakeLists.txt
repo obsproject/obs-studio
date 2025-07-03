@@ -38,6 +38,7 @@ target_sources(
     obs-av1.h
     obs-avc.c
     obs-avc.h
+    obs-canvas.c
     obs-config.h
     obs-data.c
     obs-data.h
@@ -279,8 +280,6 @@ target_include_directories(
   libobs
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 )
-
-target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 
 set(
   public_headers
