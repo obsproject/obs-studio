@@ -28,6 +28,10 @@ if(NOT TARGET OBS::qt-icon-label)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/icon-label" "${CMAKE_BINARY_DIR}/shared/qt/icon-label")
 endif()
 
+if(NOT TARGET OBS::qt-obs-spinbox)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/obs-spinbox" "${CMAKE_BINARY_DIR}/shared/qt/obs-spinbox")
+endif()
+
 add_library(properties-view INTERFACE)
 add_library(OBS::properties-view ALIAS properties-view)
 
@@ -51,6 +55,7 @@ target_link_libraries(
     OBS::libobs
     OBS::qt-wrappers
     OBS::qt-plain-text-edit
+    OBS::qt-obs-spinbox
     OBS::qt-vertical-scroll-area
     OBS::qt-slider-ignorewheel
     OBS::qt-icon-label
