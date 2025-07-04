@@ -489,7 +489,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QDoubleSpinBox" name="snapDistance">
+                    <widget class="ClampedDoubleSpinBox" name="snapDistance">
                      <property name="decimals">
                       <number>1</number>
                      </property>
@@ -8703,9 +8703,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>UrlPushButton</class>
-   <extends>QPushButton</extends>
-   <header>components/UrlPushButton.hpp</header>
+   <class>ClampedDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>ClampedDoubleSpinBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>AbsoluteSlider</class>
+   <extends>QSlider</extends>
+   <header>components/AbsoluteSlider.hpp</header>
   </customwidget>
   <customwidget>
    <class>OBSHotkeyEdit</class>
@@ -8713,9 +8718,9 @@
    <header>settings/OBSHotkeyEdit.hpp</header>
   </customwidget>
   <customwidget>
-   <class>AbsoluteSlider</class>
-   <extends>QSlider</extends>
-   <header>components/AbsoluteSlider.hpp</header>
+   <class>UrlPushButton</class>
+   <extends>QPushButton</extends>
+   <header>components/UrlPushButton.hpp</header>
   </customwidget>
  </customwidgets>
  <tabstops>
