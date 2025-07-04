@@ -550,6 +550,13 @@ SourceTreeItem {
     color: var(--text);
 }
 
+/* Temporary fix for plugins affected by fix in #11555 */
+QListView::item,
+QListWidget::item,
+SourceTreeItem {
+    min-height: var(--padding_menu);
+}
+
 SourceTreeItem .checkbox-icon {
     margin-right: 0;
     margin-left: var(--spacing_large);
