@@ -27,9 +27,6 @@ bool obs_display_init(struct obs_display *display, const struct gs_init_data *gr
 #if defined(_WIN32)
 	/* Conservative test for NVIDIA flickering in multi-GPU setups */
 	display->use_clear_workaround = gs_get_adapter_count() > 1 && !gs_can_adapter_fast_clear();
-#elif defined(__APPLE__)
-	/* Apple Silicon GL driver doesn't seem to track SRGB clears correctly */
-	display->use_clear_workaround = true;
 #else
 	display->use_clear_workaround = false;
 #endif
@@ -188,10 +185,21 @@ static inline bool render_display_begin(struct obs_display *display, uint32_t cx
 	if (success) {
 		gs_begin_scene();
 
+		/* Metal and D3D12 will automatically engamma the clear color when the frame buffer uses sRGB gamma. Thus
+           the clear color has to use linear RGB values which will then automatically be "engamma'd" when written into
+           the frame buffer much like a fragment shader return value would.
+         
+           For Apple Silicon Macs this affects OpenGL as well as Metal, as the clear color will be applied in linear
+           gamma as a load command for the render target.
+        */
+#if defined(__APPLE__) && defined(__aarch64__)
+		vec4_from_rgba_srgb(&clear_color, display->background_color);
+#else
 		if (gs_get_color_space() == GS_CS_SRGB)
 			vec4_from_rgba(&clear_color, display->background_color);
 		else
 			vec4_from_rgba_srgb(&clear_color, display->background_color);
+#endif
 		clear_color.w = 1.0f;
 
 		const bool use_clear_workaround = display->use_clear_workaround;
