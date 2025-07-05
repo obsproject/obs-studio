@@ -78,6 +78,7 @@ enum obs_editable_list_type {
 	OBS_EDITABLE_LIST_TYPE_STRINGS,
 	OBS_EDITABLE_LIST_TYPE_FILES,
 	OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS,
+	OBS_EDITABLE_LIST_TYPE_COMBO,
 };
 
 enum obs_path_type {
@@ -331,6 +332,16 @@ EXPORT bool obs_property_list_item_bool(obs_property_t *p, size_t idx);
 EXPORT enum obs_editable_list_type obs_property_editable_list_type(obs_property_t *p);
 EXPORT const char *obs_property_editable_list_filter(obs_property_t *p);
 EXPORT const char *obs_property_editable_list_default_path(obs_property_t *p);
+
+EXPORT void obs_property_editable_list_clear(obs_property_t *p);
+EXPORT void obs_property_editable_list_item_remove(obs_property_t *p, size_t idx);
+
+EXPORT size_t obs_property_editable_list_add_item(obs_property_t *p, const char *name, const char *val);
+EXPORT void obs_property_editable_list_insert_item(obs_property_t *p, size_t idx, const char *name, const char *val);
+
+EXPORT size_t obs_property_editable_list_item_count(obs_property_t *p);
+EXPORT const char *obs_property_editable_list_item_name(obs_property_t *p, size_t idx);
+EXPORT const char *obs_property_editable_list_item_value(obs_property_t *p, size_t idx);
 
 EXPORT void obs_property_frame_rate_clear(obs_property_t *p);
 EXPORT void obs_property_frame_rate_options_clear(obs_property_t *p);
