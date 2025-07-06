@@ -59,8 +59,8 @@ Contributing
   Instead, please use Crowdin.  For more information read this page:
   https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
 
-- Other ways to contribute are by helping people out with support on
-  our forums or in our community chat.  Please limit support to topics
+- Other ways to contribute are by helping people out with support through
+  our forums or community chat.Please limit support to topics
   you fully understand -- bad advice is worse than no advice.  When it
   comes to something that you don't fully know or understand, please
   defer to the official help or official channels.
