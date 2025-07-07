@@ -10,7 +10,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE("mac-virtualcam", "en-US")
 
 MODULE_EXPORT const char *obs_module_description(void)
 {
-    return "macOS virtual webcam output";
+    return "UVC Camera Output";
 }
 
 NSString *const OBSDalDestination = @"/Library/CoreMediaIO/Plug-Ins/DAL";

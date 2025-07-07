@@ -59,11 +59,11 @@ set_target_xcode_properties(
   PROPERTIES CLANG_ENABLE_OBJC_ARC YES
              CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
              GCC_WARN_SHADOW YES
-             PRODUCT_NAME obs-mac-virtualcam
-             PRODUCT_BUNDLE_IDENTIFIER com.obsproject.obs-mac-virtualcam
+             PRODUCT_NAME uvc-camera
+             PRODUCT_BUNDLE_IDENTIFIER com.obsproject.uvc-camera
              CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER}
              MARKETING_VERSION ${OBS_VERSION_CANONICAL}
              GENERATE_INFOPLIST_FILE YES
-             INFOPLIST_KEY_CFBundleDisplayName obs-mac-virtualcam
+             INFOPLIST_KEY_CFBundleDisplayName uvc-camera
              INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2020-${CURRENT_YEAR} John Boiles, Patrick Heyer, Sebastian Beckmann"
 )
