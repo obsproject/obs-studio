@@ -1011,14 +1011,46 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 
 	updateRemigrationMenuItem(SceneCoordinateMode::Relative, ui->actionRemigrateSceneCollection);
 
-	OBSSceneAutoRelease scene = obs_scene_create(Str("Basic.Scene"));
+	if (App()->IsDualOutputActive()) {
+		OBSSceneAutoRelease h_scene = obs_scene_create("H_Scene");
+		obs_source_t *h_scene_source = nullptr;
+		if (h_scene) {
+			h_scene_source = obs_scene_get_source(h_scene);
+			App()->SetCurrentHorizontalScene(h_scene_source);
+			SetCurrentScene(h_scene_source, true); // Make H_Scene active in UI
+		}
 
-	if (firstStart)
-		CreateFirstRunSources();
+		OBSSceneAutoRelease v_scene = obs_scene_create("V_Scene");
+		if (v_scene) {
+			App()->SetCurrentVerticalScene(obs_scene_get_source(v_scene));
+		}
 
-	SetCurrentScene(scene, true);
+		if (firstStart && h_scene_source) { // Add default sources to H_Scene
+			CreateFirstRunSources();
+		}
+		// If activePreviewPane was Vertical, we might want to call SetCurrentScene(v_scene) here instead.
+		// However, RefreshSceneListDisplay will be called later, and user can switch.
+		// Defaulting UI focus to Horizontal scene seems reasonable.
+
+	} else {
+		OBSSceneAutoRelease scene = obs_scene_create(Str("Basic.Scene"));
+		obs_source_t *scene_source = obs_scene_get_source(scene);
+
+		if (firstStart && scene_source) {
+			// SetCurrentScene needs to be called before CreateFirstRunSources if it relies on GetCurrentScene
+			SetCurrentScene(scene_source, true);
+			CreateFirstRunSources();
+		} else if (scene_source) {
+			SetCurrentScene(scene_source, true);
+		}
+
+		// Ensure App's scenes are also set correctly in non-dual mode
+		App()->SetCurrentHorizontalScene(scene_source);
+		App()->SetCurrentVerticalScene(nullptr);
+	}
 
 	disableSaving--;
+	// RefreshSceneListDisplay(); // This will be called by ActivateSceneCollection or when OBSBasic::OBSInit finishes scene setup
 }
 
 static void LogFilter(obs_source_t *, obs_source_t *filter, void *v_val)

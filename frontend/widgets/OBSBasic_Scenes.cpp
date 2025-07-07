@@ -99,7 +99,22 @@ void OBSBasic::LoadSceneListOrder(obs_data_array_t *array)
 
 OBSScene OBSBasic::GetCurrentScene()
 {
-	return currentScene.load();
+	// If dual output is active, return the scene corresponding to the active preview pane.
+	// Otherwise, fall back to the single 'currentScene' or a primary scene.
+	if (App()->IsDualOutputActive()) {
+		if (activePreviewPane == ActivePreview::HORIZONTAL) {
+			return obs_scene_from_source(App()->GetCurrentHorizontalScene());
+		} else {
+			return obs_scene_from_source(App()->GetCurrentVerticalScene());
+		}
+	} else {
+		// Fallback to original behavior or always horizontal if not dual.
+		// obs_frontend_get_current_preview_scene() might be what original currentScene was tracking.
+		// For now, let's assume if not dual, horizontal is the one.
+		return obs_scene_from_source(App()->GetCurrentHorizontalScene());
+		// Or, if 'currentScene' member is still maintained for single mode:
+		// return currentScene.load();
+	}
 }
 
 void OBSBasic::AddScene(OBSSource source)
@@ -198,6 +213,94 @@ void OBSBasic::RemoveScene(OBSSource source)
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
+void OBSBasic::RefreshSceneListDisplay()
+{
+	blog(LOG_INFO, "OBSBasic::RefreshSceneListDisplay called. Active pane: %s",
+	     (activePreviewPane == ActivePreview::HORIZONTAL) ? "Horizontal" : "Vertical");
+
+	QString currentSelectedSceneName;
+	if (ui->scenes->currentItem()) {
+		currentSelectedSceneName = ui->scenes->currentItem()->text();
+	}
+
+	// Block signals during modification
+	ui->scenes->blockSignals(true);
+
+	// Store existing item data to avoid re-creating hotkeys and signals unnecessarily
+	// This is a simplified approach; a more robust one might map names to existing items/data.
+	std::vector<QListWidgetItem*> existingItems;
+	for(int i = 0; i < ui->scenes->count(); ++i) {
+		existingItems.push_back(ui->scenes->item(i));
+	}
+	ui->scenes->clear(); // Clear the display list
+
+	struct obs_frontend_source_list scenes_sources;
+	obs_frontend_get_scenes(&scenes_sources);
+
+	for (size_t i = 0; i < scenes_sources.num; ++i) {
+		obs_source_t *scene_source = scenes_sources.sources[i];
+		const char *scene_name_char = obs_source_get_name(scene_source);
+		QString scene_name = QString::fromUtf8(scene_name_char);
+		bool add_this_scene = false;
+
+		if (App()->IsDualOutputActive()) {
+			if (activePreviewPane == ActivePreview::HORIZONTAL) {
+				// Show H_ scenes or scenes not starting with V_
+				if (scene_name.startsWith("H_", Qt::CaseInsensitive) || !scene_name.startsWith("V_", Qt::CaseInsensitive)) {
+					add_this_scene = true;
+				}
+			} else { // ActivePreview::VERTICAL
+				// Show only V_ scenes
+				if (scene_name.startsWith("V_", Qt::CaseInsensitive)) {
+					add_this_scene = true;
+				}
+			}
+		} else {
+			// If not dual output, show all scenes (original behavior)
+			add_this_scene = true;
+		}
+
+		if (add_this_scene) {
+			// Try to find if this item already existed to reuse QListWidgetItem and its data
+			// This avoids re-registering hotkeys etc. unnecessarily if AddScene does that.
+			// For a simpler first pass, we can just call a simplified AddScene.
+			// The current AddScene also saves project and emits events, which we might not want during a refresh.
+
+			// Simplified add:
+			QListWidgetItem *item = new QListWidgetItem(scene_name);
+			SetOBSRef(item, OBSScene(obs_scene_from_source(scene_source)));
+			// TODO: Need to re-attach signal handlers (SignalContainer) if not reusing items.
+			// For now, this is a basic re-population. A proper AddScene should be used or refactored.
+			ui->scenes->addItem(item);
+
+			if (scene_name == currentSelectedSceneName) {
+				ui->scenes->setCurrentItem(item);
+			}
+		}
+	}
+
+	obs_frontend_source_list_free(&scenes_sources);
+
+	if (!ui->scenes->currentItem() && ui->scenes->count() > 0) {
+		ui->scenes->setCurrentRow(0);
+	}
+
+	// Unblock signals
+	ui->scenes->blockSignals(false);
+
+	// Trigger a selection change to update sources list etc.
+	if (ui->scenes->currentItem()) {
+		on_scenes_currentItemChanged(ui->scenes->currentItem(), nullptr);
+	} else {
+		on_scenes_currentItemChanged(nullptr, nullptr); // Clear sources if no scene
+	}
+
+	UpdateContextBar();
+	// OBSProjector::UpdateMultiviewProjectors(); // May also be needed
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED); // Notify that the displayed list changed
+}
+
+
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
 	obs_sceneitem_t *selectedItem = static_cast<obs_sceneitem_t *>(param);
@@ -236,56 +339,107 @@ void OBSBasic::DuplicateSelectedScene()
 		return;
 
 	OBSSource curSceneSource = obs_scene_get_source(curScene);
-	QString format{obs_source_get_name(curSceneSource)};
-	format += " %1";
+	QString originalName = QString::fromUtf8(obs_source_get_name(curSceneSource));
+	QString baseName = originalName;
+	QString prefix = "";
 
-	int i = 2;
-	QString placeHolderText = format.arg(i);
-	OBSSourceAutoRelease source = nullptr;
-	while ((source = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {
-		placeHolderText = format.arg(++i);
+	if (App()->IsDualOutputActive()) {
+		if (originalName.startsWith("V_", Qt::CaseInsensitive)) {
+			prefix = "V_";
+			baseName = originalName.mid(2);
+		} else if (originalName.startsWith("H_", Qt::CaseInsensitive)) {
+			prefix = "H_";
+			baseName = originalName.mid(2);
+		} else { // Unprefixed, treat as horizontal for duplication prefixing
+			prefix = "H_";
+		}
 	}
 
+	QString format = baseName + " %1";
+	int i = 2;
+	QString suggestedNewNameWithoutPrefix = format.arg(i);
+	QString placeHolderText = prefix + suggestedNewNameWithoutPrefix;
+
+	OBSSourceAutoRelease source_check_placeholder = nullptr;
+	while ((source_check_placeholder = obs_get_source_by_name(QT_TO_UTF8(placeHolderText)))) {
+		suggestedNewNameWithoutPrefix = format.arg(++i);
+		placeHolderText = prefix + suggestedNewNameWithoutPrefix;
+		obs_source_release(source_check_placeholder); // Release the ref from obs_get_source_by_name
+	}
+
+
 	for (;;) {
-		string name;
-		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.AddSceneDlg.Title"),
-						       QTStr("Basic.Main.AddSceneDlg.Text"), name, placeHolderText);
+		string name_std; // Name entered by user, potentially without prefix
+		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.DuplicateSceneDlg.Title"),
+						       QTStr("Basic.Main.DuplicateSceneDlg.Text"), name_std, placeHolderText);
 		if (!accepted)
 			return;
 
-		if (name.empty()) {
+		if (name_std.empty()) {
 			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
 			continue;
 		}
 
-		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		QString finalName = QString::fromStdString(name_std);
+		// Ensure the final name has the correct prefix if user removed/changed it,
+		// based on the source scene's type or current context.
+		if (App()->IsDualOutputActive()) {
+			if (!prefix.isEmpty()) { // If original had a prefix (or was unprefixed, getting H_ default)
+				if (!finalName.startsWith(prefix, Qt::CaseInsensitive)) {
+					// If user provided a name that doesn't start with the expected prefix,
+					// we should decide: either force prefix, or if they used the OTHER prefix, warn/adjust.
+					// For now, let's assume they might have typed the full desired name.
+					// If it doesn't start with EITHER H_ or V_, then apply the determined prefix.
+					if (!finalName.startsWith("H_", Qt::CaseInsensitive) && !finalName.startsWith("V_", Qt::CaseInsensitive)) {
+						finalName = prefix + finalName;
+					}
+					// If they typed "V_NewName" when duplicating an "H_" scene, finalName is "V_NewName".
+					// This allows cross-type duplication if desired, scene list filtering will handle visibility.
+				}
+			} else { // Original was unprefixed, and dual output is active (so prefix should be H_)
+				 if (!finalName.startsWith("H_", Qt::CaseInsensitive) && !finalName.startsWith("V_", Qt::CaseInsensitive)) {
+					finalName = "H_" + finalName;
+				 }
+			}
+		}
+		std::string finalNameStd = finalName.toStdString();
+
+
+		obs_source_t *source = obs_get_source_by_name(finalNameStd.c_str());
 		if (source) {
 			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
-
 			obs_source_release(source);
+			placeHolderText = finalName; // Suggest the failed name again
 			continue;
 		}
 
-		OBSSceneAutoRelease scene = obs_scene_duplicate(curScene, name.c_str(), OBS_SCENE_DUP_REFS);
+		OBSSceneAutoRelease scene = obs_scene_duplicate(curScene, finalNameStd.c_str(), OBS_SCENE_DUP_REFS);
 		source = obs_scene_get_source(scene);
-		SetCurrentScene(source, true);
+		SetCurrentScene(source, true); // SetCurrentScene is context-aware
 
 		auto undo = [](const std::string &data) {
 			OBSSourceAutoRelease source = obs_get_source_by_name(data.c_str());
 			obs_source_remove(source);
 		};
 
-		auto redo = [this, name](const std::string &data) {
-			OBSSourceAutoRelease source = obs_get_source_by_name(data.c_str());
-			obs_scene_t *scene = obs_scene_from_source(source);
-			scene = obs_scene_duplicate(scene, name.c_str(), OBS_SCENE_DUP_REFS);
-			source = obs_scene_get_source(scene);
-			SetCurrentScene(source.Get(), true);
+		// Redo for duplicate needs to know the source of duplication for obs_scene_duplicate
+		std::string originalSceneNameStd = originalName.toStdString();
+		auto redo = [this, finalNameStd, originalSceneNameStd](const std::string &/*data is new name, not needed here*/) {
+			OBSSourceAutoRelease originalDupSource = obs_get_source_by_name(originalSceneNameStd.c_str());
+			if (originalDupSource) {
+				obs_scene_t* originalDupScene = obs_scene_from_source(originalDupSource);
+				if (originalDupScene) {
+					OBSSceneAutoRelease scene = obs_scene_duplicate(originalDupScene, finalNameStd.c_str(), OBS_SCENE_DUP_REFS);
+					obs_source_t *source = obs_scene_get_source(scene);
+					SetCurrentScene(source, true);
+				}
+			}
 		};
 
-		undo_s.add_action(QTStr("Undo.Scene.Duplicate").arg(obs_source_get_name(source)), undo, redo,
-				  obs_source_get_name(source), obs_source_get_name(obs_scene_get_source(curScene)));
+		undo_s.add_action(QTStr("Undo.Scene.Duplicate").arg(finalName), undo, redo,
+				  finalNameStd, originalSceneNameStd); // Pass original name for redo context
 
+		RefreshSceneListDisplay();
 		break;
 	}
 }
@@ -655,15 +809,34 @@ void OBSBasic::on_actionAddScene_triggered()
 	if (accepted) {
 		if (name.empty()) {
 			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
-			on_actionAddScene_triggered();
+			on_actionAddScene_triggered(); // Re-trigger to prompt again
 			return;
 		}
 
-		OBSSourceAutoRelease source = obs_get_source_by_name(name.c_str());
-		if (source) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
+		QString finalSceneName = QString::fromStdString(name);
+		if (App()->IsDualOutputActive()) {
+			if (activePreviewPane == ActivePreview::VERTICAL) {
+				if (!finalSceneName.startsWith("V_", Qt::CaseInsensitive)) {
+					finalSceneName = "V_" + finalSceneName;
+				}
+			} else { // HORIZONTAL or if we want to enforce H_ prefix for horizontal too in dual mode
+				if (!finalSceneName.startsWith("H_", Qt::CaseInsensitive) && !finalSceneName.startsWith("V_", Qt::CaseInsensitive)) {
+					finalSceneName = "H_" + finalSceneName;
+				} else if (finalSceneName.startsWith("V_", Qt::CaseInsensitive)) {
+					// User might be trying to create a V_ scene in H_ context. Forbid or warn?
+					// For now, let's allow it but it won't show in H list by default. Or force H_?
+					// Let's adjust placeHolderText generation to suggest prefixed name.
+				}
+			}
+		}
+		// If not dual output active, no prefix is strictly needed unless desired for future-proofing.
 
-			on_actionAddScene_triggered();
+		std::string finalSceneNameStd = finalSceneName.toStdString();
+		OBSSourceAutoRelease source_check = obs_get_source_by_name(finalSceneNameStd.c_str());
+		if (source_check) {
+			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
+			obs_source_release(source_check);
+			on_actionAddScene_triggered(); // Re-trigger
 			return;
 		}
 
@@ -678,13 +851,17 @@ void OBSBasic::on_actionAddScene_triggered()
 		auto redo_fn = [this](const std::string &data) {
 			OBSSceneAutoRelease scene = obs_scene_create(data.c_str());
 			obs_source_t *source = obs_scene_get_source(scene);
+			// SetCurrentScene needs to be context aware of which pane this new scene belongs to
+			// If activePreviewPane was Vertical, this new scene is a V_ scene.
+			// SetCurrentScene will handle setting it in App() for the correct pane.
 			SetCurrentScene(source, true);
 		};
-		undo_s.add_action(QTStr("Undo.Add").arg(QString(name.c_str())), undo_fn, redo_fn, name, name);
+		undo_s.add_action(QTStr("Undo.Add").arg(finalSceneName), undo_fn, redo_fn, finalSceneNameStd, finalSceneNameStd);
 
-		OBSSceneAutoRelease scene = obs_scene_create(name.c_str());
+		OBSSceneAutoRelease scene = obs_scene_create(finalSceneNameStd.c_str());
 		obs_source_t *scene_source = obs_scene_get_source(scene);
-		SetCurrentScene(scene_source);
+		SetCurrentScene(scene_source); // This will set it for the active pane context
+		RefreshSceneListDisplay(); // Refresh the list to show the new scene if it matches current filter
 	}
 }
 
@@ -900,10 +1077,50 @@ void OBSBasic::SceneNameEdited(QWidget *editor)
 		return;
 
 	obs_source_t *source = obs_scene_get_source(scene);
-	RenameListItem(this, ui->scenes, source, text);
+	QString originalName = QString::fromUtf8(obs_source_get_name(source));
+	QString newNameProposed = QString::fromStdString(text);
+	QString finalName = newNameProposed;
+
+	if (App()->IsDualOutputActive()) {
+		QString originalPrefix = "";
+		if (originalName.startsWith("H_", Qt::CaseInsensitive)) originalPrefix = "H_";
+		else if (originalName.startsWith("V_", Qt::CaseInsensitive)) originalPrefix = "V_";
+
+		bool newNameHasHPrefix = newNameProposed.startsWith("H_", Qt::CaseInsensitive);
+		bool newNameHasVPrefix = newNameProposed.startsWith("V_", Qt::CaseInsensitive);
+
+		if (!originalPrefix.isEmpty()) { // Original had a prefix
+			if (!newNameHasHPrefix && !newNameHasVPrefix) {
+				// User removed prefix, re-apply original or context-based one
+				finalName = originalPrefix + newNameProposed;
+			} // Else, user specified a prefix (or kept original), let it be.
+		} else { // Original was unprefixed (classic scene or non-dual mode previously)
+			// If now in dual mode, and user didn't add a prefix, apply H_ by default.
+			if (!newNameHasHPrefix && !newNameHasVPrefix) {
+				finalName = "H_" + newNameProposed;
+			}
+		}
+	}
+
+	if (finalName.isEmpty()) { // Reverted if text is empty by RenameListItem
+		 RenameListItem(this, ui->scenes, source, finalName.toStdString()); // Will set to old name
+	} else if (originalName != finalName) {
+		OBSSourceAutoRelease existingSource = obs_get_source_by_name(finalName.toStdString().c_str());
+		if (existingSource && obs_source_get_uuid(existingSource) != obs_source_get_uuid(source)) {
+			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
+			listItem->setText(originalName); // Revert UI
+			obs_source_release(existingSource);
+		} else {
+			RenameListItem(this, ui->scenes, source, finalName.toStdString());
+		}
+		if(existingSource) obs_source_release(existingSource);
+	} else { // Name didn't actually change after prefix logic, or wasn't changed by user
+		listItem->setText(originalName); // Ensure UI is correct if only case changed etc.
+	}
+
 
 	ui->scenesDock->addAction(renameScene);
-
+	RefreshSceneListDisplay(); // Refresh to apply filter if prefix changed
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 

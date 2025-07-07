@@ -128,22 +128,30 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 	GS_DEBUG_MARKER_END();
 }
 
-void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
+void OBSBasic::RenderHorizontalMain(void *data, uint32_t, uint32_t)
 {
-	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderMain");
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderHorizontalMain");
 
 	OBSBasic *window = static_cast<OBSBasic *>(data);
 	obs_video_info ovi;
 
-	obs_get_video_info(&ovi);
+	const obs_video_info* h_ovi_ptr = App()->GetHorizontalVideoInfo();
+	if (h_ovi_ptr && h_ovi_ptr->base_width > 0) {
+		ovi = *h_ovi_ptr;
+	} else {
+		// Fallback if App's OVI isn't ready (should ideally not happen at render time)
+		obs_get_video_info(&ovi);
+		blog(LOG_WARNING, "RenderHorizontalMain: Using fallback OVI.");
+	}
 
+	// Assuming previewScale, previewX, previewY are for horizontal preview (ui->preview which is mainPreview_h)
 	window->previewCX = int(window->previewScale * float(ovi.base_width));
 	window->previewCY = int(window->previewScale * float(ovi.base_height));
 
 	gs_viewport_push();
 	gs_projection_push();
 
-	obs_display_t *display = window->ui->preview->GetDisplay();
+	obs_display_t *display = window->ui->preview->GetDisplay(); // This is mainPreview_h
 	uint32_t width, height;
 	obs_display_size(display, &width, &height);
 	float right = float(width) - window->previewX;
@@ -158,15 +166,22 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height), -100.0f, 100.0f);
 	gs_set_viewport(window->previewX, window->previewY, window->previewCX, window->previewCY);
 
-	if (window->IsPreviewProgramMode()) {
+	if (window->IsPreviewProgramMode() && !App()->IsDualOutputActive()) { // Original logic if not dual output
 		window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
-
-		OBSScene scene = window->GetCurrentScene();
+		OBSScene scene = window->GetCurrentScene(); // This will need to be context aware
 		obs_source_t *source = obs_scene_get_source(scene);
 		if (source)
 			obs_source_video_render(source);
 	} else {
-		obs_render_main_texture_src_color_only();
+		// If Dual Output is active, or not in studio mode, render the current horizontal scene
+		obs_source_t *h_scene = App()->GetCurrentHorizontalScene();
+		if (h_scene) {
+			obs_source_video_render(h_scene);
+		} else {
+			// Fallback: render main texture or backdrop if no specific horizontal scene
+			obs_render_main_texture_src_color_only();
+			// window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
+		}
 	}
 	gs_load_vertexbuffer(nullptr);
 
@@ -199,6 +214,111 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 
 	GS_DEBUG_MARKER_END();
 }
+
+void OBSBasic::RenderVerticalMain(void *data, uint32_t, uint32_t)
+{
+{
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderVerticalMain");
+
+	OBSBasic *window = static_cast<OBSBasic *>(data);
+	obs_video_info ovi;
+
+	if (!App()->IsDualOutputActive()) {
+		// If dual output is not active, don't render anything in the vertical preview
+		// or draw a clear backdrop.
+		uint32_t display_cx, display_cy;
+		obs_display_size(window->ui->mainPreview_v->GetDisplay(), &display_cx, &display_cy);
+		window->DrawBackdrop(display_cx, display_cy); // Draw black backdrop
+		GS_DEBUG_MARKER_END();
+		return;
+	}
+
+	const obs_video_info* v_ovi_ptr = App()->GetVerticalVideoInfo();
+	if (v_ovi_ptr && v_ovi_ptr->base_width > 0) {
+		ovi = *v_ovi_ptr;
+	} else {
+		// Fallback, but should be configured if dual output is active
+		blog(LOG_WARNING, "RenderVerticalMain: Vertical OVI not properly configured, using fallback.");
+		obs_get_video_info(&ovi); // Fallback to main OVI, will look wrong
+		// Or, set a default vertical OVI
+		// ovi.base_width = 1080; ovi.base_height = 1920; // etc.
+	}
+
+	// TODO: Vertical preview needs its own scaling (previewScale_v, previewX_v etc.) and
+	// viewport calculation (previewCX_v, previewCY_v) if it is to be independently pannable/zoomable.
+	// For now, using horizontal's scaling properties but applying to vertical's base dimensions.
+	// This will likely not be correct for independent scaling.
+	// A new set of members (e.g., previewScale_v) and a new ResizePreview_V method would be needed.
+	// int previewCX_v = int(window->previewScale * float(ovi.base_width)); // Calculated by ResizePreview_V
+	// int previewCY_v = int(window->previewScale * float(ovi.base_height)); // Calculated by ResizePreview_V
+	// int previewX_v = window->previewX; // Placeholder // Calculated by ResizePreview_V
+	// int previewY_v = window->previewY; // Placeholder // Calculated by ResizePreview_V
+
+
+	gs_viewport_push();
+	gs_projection_push();
+
+	obs_display_t *display = window->ui->mainPreview_v->GetDisplay();
+	uint32_t width, height; // Display widget dimensions
+	obs_display_size(display, &width, &height);
+
+	// Use the _v members calculated by ResizePreview_V
+	float right = float(width) - window->previewX_v;
+	float bottom = float(height) - window->previewY_v;
+
+	gs_ortho(-window->previewX_v, right, -window->previewY_v, bottom, -100.0f, 100.0f);
+
+	window->ui->mainPreview_v->DrawOverflow();
+
+	/* --------------------------------------- */
+
+	// Set projection for the actual scene rendering based on vertical OVI base dimensions
+	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height), -100.0f, 100.0f);
+	// Set viewport using the calculated _v dimensions for the scaled preview
+	gs_set_viewport(window->previewX_v, window->previewY_v, window->previewCX_v, window->previewCY_v);
+
+	obs_source_t *v_scene = App()->GetCurrentVerticalScene();
+	if (v_scene) {
+		obs_source_video_render(v_scene);
+	} else {
+		// Fallback: render a clear backdrop if no vertical scene
+		window->DrawBackdrop(float(ovi.base_width), float(ovi.base_height));
+		blog(LOG_INFO, "RenderVerticalMain: No vertical scene set to render.");
+	}
+	gs_load_vertexbuffer(nullptr);
+
+	/* --------------------------------------- */
+
+	gs_ortho(-previewX_v, right, -previewY_v, bottom, -100.0f, 100.0f);
+	gs_reset_viewport();
+
+	uint32_t targetCX = previewCX_v;
+	uint32_t targetCY = previewCY_v;
+
+	// Assuming drawSafeAreas and drawSpacingHelpers are global toggles.
+	// If they need to be per-preview, OBSBasic would need separate bools.
+	if (window->drawSafeAreas) {
+		RenderSafeAreas(window->actionSafeMargin, targetCX, targetCY);
+		RenderSafeAreas(window->graphicsSafeMargin, targetCX, targetCY);
+		RenderSafeAreas(window->fourByThreeSafeMargin, targetCX, targetCY);
+		RenderSafeAreas(window->leftLine, targetCX, targetCY);
+		RenderSafeAreas(window->topLine, targetCX, targetCY);
+		RenderSafeAreas(window->rightLine, targetCX, targetCY);
+	}
+
+	window->ui->mainPreview_v->DrawSceneEditing();
+
+	if (window->drawSpacingHelpers)
+		window->ui->mainPreview_v->DrawSpacingHelpers();
+
+	/* --------------------------------------- */
+
+	gs_projection_pop();
+	gs_viewport_pop();
+
+	GS_DEBUG_MARKER_END();
+}
+
 
 void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 {
@@ -233,6 +353,64 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	previewX += float(PREVIEW_EDGE_SIZE);
 	previewY += float(PREVIEW_EDGE_SIZE);
 }
+
+void OBSBasic::ResizePreview_V(uint32_t cx, uint32_t cy)
+{
+	QSize targetSize;
+	obs_video_info ovi_v; // Used to get base dimensions for scaling calculations
+
+	if (!ui || !ui->mainPreview_v || !App() || !App()->IsDualOutputActive()) {
+		return;
+	}
+
+	const obs_video_info* v_ovi_ptr = App()->GetVerticalVideoInfo();
+	if (!v_ovi_ptr || v_ovi_ptr->base_width == 0) {
+		blog(LOG_WARNING, "ResizePreview_V: Vertical OVI not available or invalid.");
+		return;
+	}
+	ovi_v = *v_ovi_ptr;
+
+	// If cx or cy are 0, use the base dimensions from the vertical OVI
+	if (cx == 0 || cy == 0) {
+		cx = ovi_v.base_width;
+		cy = ovi_v.base_height;
+	}
+
+	targetSize = GetPixelSize(ui->mainPreview_v);
+
+	// Use the independent scaling mode for vertical preview, directly from its own UI state
+	bool isFixedScaling_v = ui->mainPreview_v->IsFixedScaling();
+
+	if (isFixedScaling_v) {
+		// Get the scaling amount directly from the vertical preview widget
+		previewScale_v = ui->mainPreview_v->GetScalingAmount();
+
+		// Clamp scrolling offsets specific to the vertical preview
+		ui->mainPreview_v->ClampScrollingOffsets();
+
+		GetCenterPosFromFixedScale(int(cx), int(cy), targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+					   targetSize.height() - PREVIEW_EDGE_SIZE * 2, previewX_v, previewY_v,
+					   previewScale_v);
+		// Add scroll offsets specific to the vertical preview
+		previewX_v += ui->mainPreview_v->GetScrollX();
+		previewY_v += ui->mainPreview_v->GetScrollY();
+
+	} else { // Not fixed scaling (fit to window) for vertical preview
+		GetScaleAndCenterPos(int(cx), int(cy), targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+				     targetSize.height() - PREVIEW_EDGE_SIZE * 2, previewX_v, previewY_v, previewScale_v);
+	}
+
+	// Set the scaling amount back to the vertical preview widget (might be redundant if GetScalingAmount already reflects user choice)
+	ui->mainPreview_v->SetScalingAmount(previewScale_v);
+
+	previewX_v += float(PREVIEW_EDGE_SIZE);
+	previewY_v += float(PREVIEW_EDGE_SIZE);
+
+	if (ui->mainPreview_v->isVisible()) {
+		ui->mainPreview_v->update();
+	}
+}
+
 
 void OBSBasic::on_preview_customContextMenuRequested()
 {
@@ -650,6 +828,33 @@ void OBSBasic::UpdatePreviewControls()
 	ui->actionPreviewResetZoom->setEnabled(scalingLevel != 0);
 }
 
+void OBSBasic::UpdatePreviewControls_V()
+{
+	if (!ui || !ui->mainPreview_v) return;
+
+	const int scalingLevel_v = ui->mainPreview_v->GetScalingLevel();
+
+	if (!ui->mainPreview_v->IsFixedScaling()) {
+		ui->previewXScrollBar_v->setRange(0, 0);
+		ui->previewYScrollBar_v->setRange(0, 0);
+		// ui->actionPreviewResetZoom_v->setEnabled(false); // If a separate action exists
+		return;
+	}
+
+	const bool minZoom_v = scalingLevel_v == MAX_SCALING_LEVEL;
+	const bool maxZoom_v = scalingLevel_v == -MAX_SCALING_LEVEL;
+
+	// Assuming actions like ui->actionPreviewZoomIn_v exist or these are handled contextually
+	// ui->actionPreviewZoomIn_v->setEnabled(!minZoom_v);
+	ui->previewZoomInButton_v->setEnabled(!minZoom_v);
+
+	// ui->actionPreviewZoomOut_v->setEnabled(!maxZoom_v);
+	ui->previewZoomOutButton_v->setEnabled(!maxZoom_v);
+
+	// ui->actionPreviewResetZoom_v->setEnabled(scalingLevel_v != 0);
+}
+
+
 void OBSBasic::PreviewScalingModeChanged(int value)
 {
 	switch (value) {
@@ -663,4 +868,107 @@ void OBSBasic::PreviewScalingModeChanged(int value)
 		setPreviewScalingOutput();
 		break;
 	};
+}
+
+void OBSBasic::PreviewScalingModeChanged_V(int value)
+{
+	if (!ui || !ui->mainPreview_v || loading) return;
+
+	QString scaleType;
+	switch (value) {
+	case 0: // Scale to Window
+		setPreviewScalingWindow_V();
+		scaleType = "Window";
+		break;
+	case 1: // Scale to Canvas
+		setPreviewScalingCanvas_V();
+		scaleType = "Canvas";
+		break;
+	case 2: // Scale to Output
+		setPreviewScalingOutput_V();
+		scaleType = "Output";
+		break;
+	default: // Scale to Window (same as case 0)
+		setPreviewScalingWindow_V();
+		scaleType = "Window";
+	}
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "PreviewVScaleType", scaleType.toUtf8().constData());
+	SetWidgetChanged(ui->previewScalingMode_v);
+	UpdatePreviewControls_V();
+}
+
+void OBSBasic::PreviewScalePercentChanged_V(int value)
+{
+	if (!ui || !ui->mainPreview_v || loading) return;
+
+	// This slot is intended if ui->previewScalePercent_v were a QSpinBox.
+	// Currently, it's a QLabel updated by OBSBasicPreview::scalingChanged signal.
+	// If it were a QSpinBox, the logic would be:
+	// float scaleValue = static_cast<float>(value) / 100.0f;
+	// ui->mainPreview_v->SetScalingAmount(scaleValue); // This might trigger scalingChanged from OBSBasicPreview
+	// config_set_double(App()->GetUserConfig(), "BasicWindow", "PreviewVFixedScale", scaleValue);
+	// SetWidgetChanged(ui->previewScalePercent_v); // Assuming previewScalePercent_v is the QSpinBox
+	// ResizePreview_V(); // Trigger a resize to apply the new scale
+	// UpdatePreviewControls_V();
+
+	UNUSED_PARAMETER(value); // Keep if it's a label
+}
+
+void OBSBasic::setPreviewScalingWindow_V()
+{
+	if (!ui || !ui->mainPreview_v) return;
+	ui->mainPreview_v->SetFixedScaling(false);
+	ui->mainPreview_v->ResetScrollingOffset();
+	emit ui->mainPreview_v->DisplayResized(); // Force redraw and recalculation
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "PreviewVScaleType", "Window");
+}
+
+void OBSBasic::setPreviewScalingCanvas_V()
+{
+	if (!ui || !ui->mainPreview_v) return;
+	ui->mainPreview_v->SetFixedScaling(true);
+	ui->mainPreview_v->SetScalingLevel(0); // Resets to 100% of canvas
+	emit ui->mainPreview_v->DisplayResized();
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "PreviewVScaleType", "Canvas");
+}
+
+void OBSBasic::setPreviewScalingOutput_V()
+{
+	if (!ui || !ui->mainPreview_v || !App()) return;
+	const obs_video_info* v_ovi = App()->GetVerticalVideoInfo();
+	if (!v_ovi || v_ovi->base_width == 0) return;
+
+	ui->mainPreview_v->SetFixedScaling(true);
+	float scalingAmount = float(v_ovi->output_width) / float(v_ovi->base_width);
+	int32_t approxScalingLevel = int32_t(round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
+	ui->mainPreview_v->SetScalingLevelAndAmount(approxScalingLevel, scalingAmount);
+	emit ui->mainPreview_v->DisplayResized();
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "PreviewVScaleType", "Output");
+}
+
+void OBSBasic::UpdatePreviewScalingMenu_V()
+{
+    if (!ui || !ui->mainPreview_v) return;
+
+    bool fixedScaling = ui->mainPreview_v->IsFixedScaling();
+    float scalingAmount = ui->mainPreview_v->GetScalingAmount();
+
+    // Assuming similar QActions (actionScaleWindow_v, etc.) would exist for a vertical preview context menu
+    // For now, this function might not be directly used if there's no separate context menu for vertical scaling.
+    // If ui->previewScalingMode_v (the QComboBox) is the primary control, this menu update logic might be less critical.
+
+    // Example if actions existed:
+    // if (!fixedScaling) {
+    //     ui->actionScaleWindow_v->setChecked(true);
+    //     ui->actionScaleCanvas_v->setChecked(false);
+    //     ui->actionScaleOutput_v->setChecked(false);
+    //     return;
+    // }
+    // const obs_video_info* ovi_v = App()->GetVerticalVideoInfo();
+    // if (!ovi_v || ovi_v->base_width == 0) return;
+    // ui->actionScaleWindow_v->setChecked(false);
+    // ui->actionScaleCanvas_v->setChecked(scalingAmount == 1.0f);
+    // ui->actionScaleOutput_v->setChecked(scalingAmount == float(ovi_v->output_width) / float(ovi_v->base_width));
+	UNUSED_PARAMETER(fixedScaling);
+	UNUSED_PARAMETER(scalingAmount);
 }

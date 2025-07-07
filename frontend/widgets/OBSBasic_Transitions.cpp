@@ -598,49 +598,104 @@ void OBSBasic::SetCurrentScene(obs_scene_t *scene, bool force)
 	SetCurrentScene(source, force);
 }
 
-void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
+void OBSBasic::SetCurrentScene(OBSSource sceneSource, bool force)
 {
-	if (!IsPreviewProgramMode()) {
-		TransitionToScene(scene, force);
-	} else {
-		OBSSource actualLastScene = OBSGetStrongRef(lastScene);
-		if (actualLastScene != scene) {
-			if (scene)
-				obs_source_inc_showing(scene);
-			if (actualLastScene)
-				obs_source_dec_showing(actualLastScene);
-			lastScene = OBSGetWeakRef(scene);
+	// Determine which "stage" or pipeline this scene change applies to
+	bool setHorizontally = false;
+	bool setVertically = false;
+
+	if (App()->IsDualOutputActive()) {
+		if (activePreviewPane == ActivePreview::HORIZONTAL) {
+			App()->SetCurrentHorizontalScene(sceneSource);
+			setHorizontally = true;
+		} else { // ActivePreview::VERTICAL
+			App()->SetCurrentVerticalScene(sceneSource);
+			setVertically = true;
 		}
+	} else {
+		// Default to horizontal if dual output is not active
+		App()->SetCurrentHorizontalScene(sceneSource);
+		setHorizontally = true;
 	}
 
-	if (obs_scene_get_source(GetCurrentScene()) != scene) {
-		for (int i = 0; i < ui->scenes->count(); i++) {
-			QListWidgetItem *item = ui->scenes->item(i);
-			OBSScene itemScene = GetOBSRef<OBSScene>(item);
-			obs_source_t *source = obs_scene_get_source(itemScene);
-
-			if (source == scene) {
-				ui->scenes->blockSignals(true);
-				currentScene = itemScene.Get();
-				ui->scenes->setCurrentItem(item);
-				ui->scenes->blockSignals(false);
-
-				if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
-					outputHandler->UpdateVirtualCamOutputSource();
-
-				OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
-				break;
+	if (setHorizontally) {
+		// Logic for the main/horizontal preview and output
+		if (!IsPreviewProgramMode()) {
+			TransitionToScene(sceneSource, force); // This transitions the main output
+		} else { // Studio Mode logic for horizontal/preview
+			OBSSource actualLastScene = OBSGetStrongRef(lastScene); // lastScene is for preview
+			if (actualLastScene != sceneSource) {
+				if (sceneSource)
+					obs_source_inc_showing(sceneSource); // Increment showing for preview
+				if (actualLastScene)
+					obs_source_dec_showing(actualLastScene);
+				lastScene = OBSGetWeakRef(sceneSource);
 			}
 		}
+		// Update currentScene atomic for horizontal/main context if still used directly elsewhere
+		// This might need to be deprecated in favor of App()->GetCurrentHorizontalScene()
+		currentScene = obs_scene_from_source(sceneSource);
+		// Also ensure the OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED is emitted for horizontal changes
+		OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+	} else if (setVertically) {
+		// If only the vertical scene changed, we might want a specific event or UI update
+		// For now, RenderVerticalMain will pick it up.
+		// Consider if OBSBasic::currentScene should reflect the active pane's scene if dual mode is on.
+		// Current GetCurrentScene() already does this.
+		// No direct update to OBSBasic::currentScene here to keep it tied to main output's preview.
+		blog(LOG_INFO, "Vertical scene set in App. Main preview/transitions unaffected.");
+	}
+	// If setVertically, the vertical preview will update on its next render cycle
+	// No separate transition is invoked for the vertical preview itself for now.
+
+	// Update UI list selection if the scene is in the currently visible list
+	// This part needs to be aware of which list (H or V) is being displayed
+	// For now, assume ui->scenes shows the list for the activePreviewPane
+	bool sceneFoundInList = false;
+	for (int i = 0; i < ui->scenes->count(); i++) {
+		QListWidgetItem *item = ui->scenes->item(i);
+		OBSScene itemScene = GetOBSRef<OBSScene>(item);
+		if (obs_scene_get_source(itemScene) == sceneSource) {
+			if (ui->scenes->currentItem() != item) {
+				ui->scenes->blockSignals(true);
+				ui->scenes->setCurrentItem(item);
+				ui->scenes->blockSignals(false);
+			}
+			sceneFoundInList = true;
+			break;
+		}
 	}
 
-	UpdateContextBar(true);
-	UpdatePreviewProgramIndicators();
+	// If the scene set wasn't found in the current list (e.g. set programmatically or H/V list mismatch)
+	// and it matches the active pane, we might still need to update currentScene for OBSBasic internal state.
+	if (!sceneFoundInList && setHorizontally && activePreviewPane == ActivePreview::HORIZONTAL) {
+		// currentScene already updated above for horizontal
+	} else if (!sceneFoundInList && setVertically && activePreviewPane == ActivePreview::VERTICAL) {
+		// If we had a separate OBSBasic::currentVerticalSceneMember, update it here.
+		// For now, GetCurrentScene() handles retrieving from App()
+	}
 
-	if (scene) {
+
+	if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput && setHorizontally) {
+		outputHandler->UpdateVirtualCamOutputSource(); // VCam likely follows horizontal
+	}
+
+	// This event might need to be context-specific too if listeners expect H or V scene change.
+	// For now, assume it relates to the main (horizontal) preview scene change.
+	if (setHorizontally) {
+		OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+	}
+	// TODO: Consider if a new OBS_FRONTEND_EVENT_VERTICAL_PREVIEW_SCENE_CHANGED is needed.
+
+
+	UpdateContextBar(true); // Context bar might need to be context-aware
+	UpdatePreviewProgramIndicators(); // Primarily for horizontal/main studio mode
+
+	if (sceneSource) {
 		bool userSwitched = (!force && !disableSaving);
-		blog(LOG_INFO, "%s to scene '%s'", userSwitched ? "User switched" : "Switched",
-		     obs_source_get_name(scene));
+		const char* target_pane = setHorizontally ? "horizontal" : (setVertically ? "vertical" : "unknown");
+		blog(LOG_INFO, "%s to %s scene '%s'", userSwitched ? "User switched" : "Switched", target_pane,
+		     obs_source_get_name(sceneSource));
 	}
 }
 

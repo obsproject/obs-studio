@@ -221,6 +221,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_int(appConfig, "General", "InfoIncrement", -1);
 	config_set_default_string(appConfig, "General", "ProcessPriority", "Normal");
 	config_set_default_bool(appConfig, "General", "EnableAutoUpdates", true);
+	config_set_default_bool(appConfig, "General", "DualOutputActive", false);
 
 #if _WIN32
 	config_set_default_string(appConfig, "Video", "Renderer", "Direct3D 11");
@@ -449,6 +450,8 @@ bool OBSApp::InitGlobalConfig()
 
 	InitGlobalConfigDefaults();
 	InitGlobalLocationDefaults();
+
+	dualOutputActive = config_get_bool(appConfig, "General", "DualOutputActive");
 
 	std::filesystem::path defaultUserConfigLocation =
 		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Configuration"));
@@ -744,6 +747,351 @@ void OBSApp::SetBranchData(const string &data)
 #else
 	UNUSED_PARAMETER(data);
 #endif
+}
+
+void OBSApp::SetDualOutputActive(bool active)
+{
+	if (dualOutputActive == active)
+		return;
+
+	dualOutputActive = active;
+	config_set_bool(appConfig, "General", "DualOutputActive", active); // Save to global config
+	config_save_safe(appConfig, "tmp", nullptr);
+
+	blog(LOG_INFO, "Dual Output mode %s.", active ? "activated" : "deactivated");
+
+	// TODO: Trigger a video system reset if OBS is initialized.
+	// This would typically involve calling something like OBSBasic::Get()->ResetVideo()
+	// or a dedicated function in OBSApp that manages video re-initialization.
+	// This reset needs to happen *after* the main window and settings are loaded
+	// so that horizontal_ovi and vertical_ovi can be correctly populated from config.
+	if (libobs_initialized && mainWindow) {
+		blog(LOG_INFO, "TODO: Request video system reset due to DualOutputActive change.");
+		// Example: OBSBasic::Get()->ResetVideo(); // This needs to be callable and safe
+		// For now, this is a placeholder. The actual reset should be triggered
+		// after settings are applied and OBS is ready.
+		// A signal/slot mechanism or a deferred call might be appropriate.
+		QMetaObject::invokeMethod(OBSBasic::Get(), "ResetVideo", Qt::QueuedConnection);
+	}
+}
+
+const obs_video_info* OBSApp::GetHorizontalVideoInfo() const
+{
+	return &horizontal_ovi;
+}
+
+const obs_video_info* OBSApp::GetVerticalVideoInfo() const
+{
+	return &vertical_ovi;
+}
+
+void OBSApp::UpdateHorizontalVideoInfo(const obs_video_info& ovi)
+{
+	horizontal_ovi = ovi;
+	// TODO: Potentially save this to config or mark config dirty if app manages saving directly
+	blog(LOG_INFO, "Horizontal video info updated: %dx%d @ %d/%d fps", ovi.base_width, ovi.base_height, ovi.fps_num, ovi.fps_den);
+}
+
+void OBSApp::UpdateVerticalVideoInfo(const obs_video_info& ovi)
+{
+	vertical_ovi = ovi;
+	// TODO: Potentially save this to config or mark config dirty
+	blog(LOG_INFO, "Vertical video info updated: %dx%d @ %d/%d fps", ovi.base_width, ovi.base_height, ovi.fps_num, ovi.fps_den);
+}
+
+obs_source_t* OBSApp::GetCurrentHorizontalScene() const
+{
+	return current_horizontal_scene;
+}
+
+void OBSApp::SetCurrentHorizontalScene(obs_source_t *scene)
+{
+	obs_source_t *old_scene = current_horizontal_scene;
+	current_horizontal_scene = scene;
+	if (current_horizontal_scene)
+		obs_source_addref(current_horizontal_scene);
+	if (old_scene)
+		obs_source_release(old_scene);
+
+	blog(LOG_INFO, "Current horizontal scene set.");
+
+	// If horizontal stream output is active, update its video source
+	// Note: The main OBS video pipeline (obs_get_video()) is what's typically fed to outputs
+	// that don't have a specific source set. Transitions update the source feeding into obs_get_video().
+	// Explicitly setting the source on the output here might override transitions if not handled carefully.
+	// However, for direct scene-to-output mapping without main transitions, this would be needed.
+	// Given current transition logic updates obs_core_video()->output_source, this explicit call might
+	// conflict or be redundant for the horizontal output if it's meant to follow main transitions.
+	// For now, let's assume the main output follows the core transition mechanism.
+	// If direct control is needed:
+	// if (horizontal_stream_output && obs_output_active(horizontal_stream_output)) {
+	// 	obs_output_set_video_source(horizontal_stream_output, current_horizontal_scene);
+	// 	blog(LOG_INFO, "Updated active horizontal stream output video source to: %s",
+	// 	     current_horizontal_scene ? obs_source_get_name(current_horizontal_scene) : "(none)");
+	// }
+
+	// TODO: Emit a signal or have a callback mechanism if OBSBasic needs to know the scene changed.
+}
+
+obs_source_t* OBSApp::GetCurrentVerticalScene() const
+{
+	return current_vertical_scene;
+}
+
+void OBSApp::SetCurrentVerticalScene(obs_source_t *scene)
+{
+	obs_source_t *old_scene = current_vertical_scene;
+	current_vertical_scene = scene;
+	if (current_vertical_scene)
+		obs_source_addref(current_vertical_scene);
+	if (old_scene)
+		obs_source_release(old_scene);
+
+	blog(LOG_INFO, "Current vertical scene set.");
+
+	// If vertical stream output is active, update its video source
+	if (vertical_stream_output && obs_output_active(vertical_stream_output)) {
+		obs_output_set_video_source(vertical_stream_output, current_vertical_scene);
+		blog(LOG_INFO, "Updated active vertical stream output video source to: %s",
+		     current_vertical_scene ? obs_source_get_name(current_vertical_scene) : "(none)");
+	}
+
+	// TODO: Emit a signal for vertical scene change if needed by other UI components.
+}
+
+void OBSApp::SetupOutputs()
+{
+	blog(LOG_INFO, "OBSApp::SetupOutputs: Initializing outputs.");
+
+	// Ensure existing resources are released before creating new ones
+	obs_output_release(horizontal_stream_output); horizontal_stream_output = nullptr;
+	obs_service_release(horizontal_stream_service); horizontal_stream_service = nullptr;
+	obs_output_release(vertical_stream_output); vertical_stream_output = nullptr;
+	obs_service_release(vertical_stream_service); vertical_stream_service = nullptr;
+
+	config_t *profile_config = OBSBasic::Get()->Config();
+	bool simple_mode = config_get_bool(profile_config, "Output", "ModeSimple");
+
+	// --------------------- HORIZONTAL STREAM ---------------------
+	const char *h_service_type_from_stream_page = config_get_string(profile_config, "Stream", "Service");
+	if (h_service_type_from_stream_page && *h_service_type_from_stream_page) {
+		OBSDataAutoRelease h_service_settings = obs_data_create();
+		// obs_data_set_string(h_service_settings, "service", h_service_type_from_stream_page); // This is not how obs_service_create works; type is passed directly.
+		obs_data_set_string(h_service_settings, "server", config_get_string(profile_config, "Stream", "Server"));
+		obs_data_set_string(h_service_settings, "key", config_get_string(profile_config, "Stream", "Key"));
+		if (config_get_bool(profile_config, "Stream", "UseAuth")) {
+			obs_data_set_bool(h_service_settings, "use_auth", true);
+			obs_data_set_string(h_service_settings, "username", config_get_string(profile_config, "Stream", "Username"));
+			obs_data_set_string(h_service_settings, "password", config_get_string(profile_config, "Stream", "Password"));
+		}
+
+
+		horizontal_stream_service = obs_service_create(h_service_type_from_stream_page, "horizontal_stream_service_internal", h_service_settings, nullptr);
+
+		if (horizontal_stream_service) {
+			// obs_service_apply_settings(horizontal_stream_service, h_service_settings); // Settings are applied during creation or via obs_service_update
+
+			const char *h_encoder_id = nullptr;
+			OBSDataAutoRelease h_encoder_settings = obs_data_create();
+
+			if (simple_mode) {
+				h_encoder_id = config_get_string(profile_config, "Output", "StreamEncoder");
+				obs_data_set_int(h_encoder_settings, "bitrate", config_get_int(profile_config, "Output", "VBitrate"));
+				// TODO: Apply other simple mode encoder settings (preset, tune, custom from "Output" section)
+				if (config_get_bool(profile_config, "Output", "UseAdvanced")) {
+					const char* preset = config_get_string(profile_config, "Output", "Preset");
+					if (preset && *preset) obs_data_set_string(h_encoder_settings, "preset", preset);
+					const char* tune = config_get_string(profile_config, "Output", "Tune");
+					if (tune && *tune && strcmp(tune, Str("None")) != 0) obs_data_set_string(h_encoder_settings, "tune", tune);
+					// Custom settings are usually encoder-specific and might not fit generic obs_data_set_string easily
+				}
+			} else { // Advanced mode
+				h_encoder_id = config_get_string(profile_config, "AdvOut", "Encoder");
+				BPtr<char> profile_config_path = obs_frontend_get_profile_config_path();
+				std::string json_settings_path = profile_config_path.Get();
+				json_settings_path += "/streamEncoder.json";
+
+				OBSDataAutoRelease loaded_json_settings = obs_data_create_from_json_file_safe(json_settings_path.c_str(), nullptr);
+				if (loaded_json_settings) {
+					obs_data_apply(h_encoder_settings, loaded_json_settings);
+					blog(LOG_INFO, "Horizontal Adv. Encoder: %s. Loaded settings from %s.", h_encoder_id, json_settings_path.c_str());
+				} else {
+					blog(LOG_WARNING, "Horizontal Adv. Encoder: %s. Failed to load settings from %s.", h_encoder_id, json_settings_path.c_str());
+				}
+			}
+
+			if (h_encoder_id && *h_encoder_id) {
+				horizontal_stream_output = obs_output_create(h_encoder_id, "horizontal_stream_output_internal", h_encoder_settings, nullptr);
+				if (horizontal_stream_output) {
+					obs_output_set_service(horizontal_stream_output, horizontal_stream_service);
+					obs_output_set_media(horizontal_stream_output, obs_get_video(), obs_get_audio());
+					blog(LOG_INFO, "Horizontal stream output '%s' created for service '%s'.", h_encoder_id, h_service_type_from_stream_page);
+				} else {
+					blog(LOG_WARNING, "Failed to create horizontal stream output with encoder '%s'.", h_encoder_id);
+					obs_service_release(horizontal_stream_service); horizontal_stream_service = nullptr;
+				}
+			} else {
+				blog(LOG_WARNING, "Horizontal stream encoder ID is missing or invalid.");
+				obs_service_release(horizontal_stream_service); horizontal_stream_service = nullptr;
+			}
+		} else {
+			blog(LOG_WARNING, "Failed to create horizontal stream service type '%s'.", h_service_type_from_stream_page);
+		}
+	} else {
+		blog(LOG_INFO, "Horizontal stream service type not configured (from main Stream page).");
+	}
+
+
+	// --------------------- VERTICAL STREAM ---------------------
+	if (IsDualOutputActive()) {
+		const char *v_service_type = nullptr;
+		OBSDataAutoRelease v_service_settings = obs_data_create();
+
+		if (simple_mode) {
+			v_service_type = config_get_string(profile_config, "Output", "Service_V_Stream"); // This key needs to be saved by Simple Output settings
+			obs_data_set_string(v_service_settings, "server", config_get_string(profile_config, "Output", "Server_V_Stream"));
+			obs_data_set_string(v_service_settings, "key", config_get_string(profile_config, "Output", "Key_V_Stream"));
+			// Note: Simple mode UI for vertical stream doesn't have separate auth. Assumes key-based or no auth.
+		} else { // Advanced mode for vertical stream
+			v_service_type = config_get_string(profile_config, "AdvOut", "VStream_ServiceType");
+			obs_data_set_string(v_service_settings, "server", config_get_string(profile_config, "AdvOut", "VStream_Server"));
+			obs_data_set_string(v_service_settings, "key", config_get_string(profile_config, "AdvOut", "VStream_Key"));
+			if (config_get_bool(profile_config, "AdvOut", "VStream_UseAuth")) {
+				obs_data_set_bool(v_service_settings, "use_auth", true);
+				obs_data_set_string(v_service_settings, "username", config_get_string(profile_config, "AdvOut", "VStream_Username"));
+				obs_data_set_string(v_service_settings, "password", config_get_string(profile_config, "AdvOut", "VStream_Password"));
+			}
+		}
+
+		if (v_service_type && *v_service_type) {
+			vertical_stream_service = obs_service_create(v_service_type, "vertical_stream_service_internal", v_service_settings, nullptr);
+
+			if (vertical_stream_service) {
+				// obs_service_apply_settings(vertical_stream_service, v_service_settings); // Applied at creation
+
+				const char *v_encoder_id = nullptr;
+				OBSDataAutoRelease v_encoder_settings = obs_data_create();
+
+				if (simple_mode) {
+					v_encoder_id = config_get_string(profile_config, "Output", "StreamEncoder_V_Stream");
+					obs_data_set_int(v_encoder_settings, "bitrate", config_get_int(profile_config, "Output", "VBitrate_V_Stream"));
+					// TODO: Apply other simple mode encoder settings for vertical (preset, tune, custom from "Output" section with _V_Stream suffix)
+					if (config_get_bool(profile_config, "Output", "UseAdvanced_V_Stream")) {
+						const char* preset_v = config_get_string(profile_config, "Output", "Preset_V_Stream");
+						if (preset_v && *preset_v) obs_data_set_string(v_encoder_settings, "preset", preset_v);
+						const char* tune_v = config_get_string(profile_config, "Output", "Tune_V_Stream");
+						if (tune_v && *tune_v && strcmp(tune_v, Str("None")) != 0) obs_data_set_string(v_encoder_settings, "tune", tune_v);
+						// Custom settings for vertical simple
+					}
+				} else { // Advanced mode for vertical stream
+					v_encoder_id = config_get_string(profile_config, "AdvOut", "Encoder_V_Stream");
+					BPtr<char> profile_config_path = obs_frontend_get_profile_config_path();
+					std::string v_json_settings_path = profile_config_path.Get();
+					v_json_settings_path += "/streamEncoder_v_stream.json";
+
+					OBSDataAutoRelease v_loaded_json_settings = obs_data_create_from_json_file_safe(v_json_settings_path.c_str(), nullptr);
+					if (v_loaded_json_settings) {
+						obs_data_apply(v_encoder_settings, v_loaded_json_settings);
+						blog(LOG_INFO, "Vertical Adv. Encoder: %s. Loaded settings from %s.", v_encoder_id, v_json_settings_path.c_str());
+					} else {
+						blog(LOG_WARNING, "Vertical Adv. Encoder: %s. Failed to load settings from %s.", v_encoder_id, v_json_settings_path.c_str());
+						// Fallback for bitrate if JSON is missing/empty and encoder ID is valid
+						if (v_encoder_id && *v_encoder_id && !obs_data_has_user_value(v_encoder_settings, "bitrate")) {
+							// Try to get a bitrate from a general advanced vertical stream bitrate field if one exists,
+							// or fallback to a sensible default. This part is tricky without a dedicated UI field.
+							// For now, we rely on the JSON or encoder defaults.
+						}
+					}
+				}
+
+				if (v_encoder_id && *v_encoder_id) {
+					vertical_stream_output = obs_output_create(v_encoder_id, "vertical_stream_output_internal", v_encoder_settings, nullptr);
+					if (vertical_stream_output) {
+						obs_output_set_service(vertical_stream_output, vertical_stream_service);
+
+						const obs_video_info* v_ovi = App()->GetVerticalVideoInfo();
+						if (v_ovi && v_ovi->base_width > 0) {
+							obs_output_override_video_settings(vertical_stream_output, v_ovi);
+							blog(LOG_INFO, "Vertical output video settings overridden to: %dx%d @ %d/%d fps",
+								v_ovi->output_width, v_ovi->output_height, v_ovi->fps_num, v_ovi->fps_den);
+						} else {
+							blog(LOG_WARNING, "Vertical OVI not valid for overriding output settings. Output may fail or use unexpected defaults.");
+						}
+
+						obs_source_t *vertical_scene_to_stream = App()->GetCurrentVerticalScene();
+						if (vertical_scene_to_stream) {
+							obs_output_set_video_source(vertical_stream_output, vertical_scene_to_stream);
+							blog(LOG_INFO, "Vertical stream output video source set to: %s", obs_source_get_name(vertical_scene_to_stream));
+						} else {
+							obs_output_set_video_source(vertical_stream_output, nullptr);
+							blog(LOG_WARNING, "No current vertical scene set for vertical stream output.");
+						}
+						obs_output_set_audio_source(vertical_stream_output, obs_get_audio());
+
+						blog(LOG_INFO, "Vertical stream output '%s' created for service '%s'.", v_encoder_id, v_service_type);
+					} else {
+						blog(LOG_WARNING, "Failed to create vertical stream output with encoder '%s'.", v_encoder_id);
+						obs_service_release(vertical_stream_service); vertical_stream_service = nullptr;
+					}
+				} else {
+					blog(LOG_WARNING, "Vertical stream encoder ID is missing or invalid.");
+					obs_service_release(vertical_stream_service); vertical_stream_service = nullptr;
+				}
+			} else {
+				blog(LOG_WARNING, "Failed to create vertical stream service type '%s'.", v_service_type);
+			}
+		} else {
+			blog(LOG_INFO, "Vertical stream service type not configured (dual output is active).");
+		}
+	}
+	blog(LOG_INFO, "OBSApp::SetupOutputs finished processing.");
+}
+
+bool OBSApp::StartStreamingInternal()
+{
+	blog(LOG_INFO, "OBSApp::StartStreamingInternal called");
+	bool success_h = false;
+	bool success_v = false;
+
+	if (horizontal_stream_output) {
+		if (obs_output_start(horizontal_stream_output)) {
+			success_h = true;
+			blog(LOG_INFO, "Horizontal stream started successfully.");
+		} else {
+			blog(LOG_WARNING, "Failed to start horizontal stream: %s", obs_output_get_last_error(horizontal_stream_output));
+		}
+	} else {
+		blog(LOG_WARNING, "Horizontal stream output not configured.");
+	}
+
+	if (IsDualOutputActive()) {
+		if (vertical_stream_output) {
+			if (obs_output_start(vertical_stream_output)) {
+				success_v = true;
+				blog(LOG_INFO, "Vertical stream started successfully.");
+			} else {
+				blog(LOG_WARNING, "Failed to start vertical stream: %s", obs_output_get_last_error(vertical_stream_output));
+			}
+		} else {
+			blog(LOG_WARNING, "Vertical stream output not configured (dual output is active).");
+		}
+		return success_h && success_v; // Both must succeed if dual is active and configured
+	}
+
+	return success_h; // Only horizontal matters if not dual or vertical not configured
+}
+
+void OBSApp::StopStreamingInternal(bool force)
+{
+	blog(LOG_INFO, "OBSApp::StopStreamingInternal called (force: %s)", force ? "true" : "false");
+	if (horizontal_stream_output) {
+		obs_output_stop(horizontal_stream_output); // obs_output_stop handles force internally if needed by type
+		blog(LOG_INFO, "Horizontal stream stopped.");
+	}
+	if (vertical_stream_output) { // Only stop if it exists
+		obs_output_stop(vertical_stream_output);
+		blog(LOG_INFO, "Vertical stream stopped.");
+	}
 }
 
 std::vector<UpdateBranch> OBSApp::GetBranches()
@@ -1090,6 +1438,31 @@ bool OBSApp::OBSInit()
 		return false;
 
 	libobs_initialized = true;
+
+	// 이전 obs_reset_video 호출을 로드된 설정으로 채워진 obs_video_info 구조체를 사용하여 OBSBasic::ResetVideoLogic()과 같은 새로운 함수로 옮기거나 래핑하는 것을 고려해 보세요.
+	// OBSBasic::Init()에서 해당 정보를 로드한 후 OBSBasic::ResetVideoLogic()을 호출할 수 있습니다.
+	// 지금은 App()->horizontal_ovi 및 App()->vertical_ovi가 설정 UI에서 로드된 값으로 채워졌다고 가정합니다.
+
+	if (dualOutputActive) {
+		blog(LOG_INFO, "Dual output mode active. Initializing both video pipelines.");
+		// 여기에 libobs에 두 개의 비디오 파이프라인을 설정하도록 지시하는 가상 코드가 들어갑니다.
+		// 예: obs_reset_video_dual(&horizontal_ovi, &vertical_ovi);
+		// 또는 obs_graphics_context_create_secondary() 같은 것 다음 obs_reset_video()를 두 번 호출합니다.
+		// 이 부분은 libobs의 상당한 변경이 필요합니다.
+		// 임시로, 기본 파이프라인만 초기화될 것이라고 가정하고 로그를 남깁니다.
+		blog(LOG_INFO, "Conceptual: obs_reset_video_dual(&horizontal_ovi, &vertical_ovi) called here.");
+		// 실제로는 OBSBasic::ResetVideo() 또는 obs_reset_video()를 horizontal_ovi로 호출하는 로직이 여기에 오거나 아래 공통 경로로 이동합니다.
+		// 지금은 핵심 로직이 OBSBasic::ResetVideo()에 있다고 가정하고, 해당 함수가 dualOutputActive를 확인해야 합니다.
+	} else {
+		blog(LOG_INFO, "Single output mode active. Initializing primary video pipeline.");
+		// 기존 로직: obs_reset_video(&horizontal_ovi);
+		// 이 또한 OBSBasic::ResetVideo()로 옮겨질 수 있습니다.
+		blog(LOG_INFO, "Conceptual: obs_reset_video(&horizontal_ovi) called here.");
+	}
+	// obs_reset_video()에 대한 실제 호출은 OBSBasic::LoadConfig() 또는 유사한 함수에서 수행될 가능성이 높습니다.
+	// OVI 구조체가 채워진 후입니다. OBSApp::OBSInit()는 너무 이를 수 있습니다.
+	// 이 단계에서는 dualOutputActive 플래그를 설정하고 로깅하는 데 중점을 둡니다.
+	// 실제 비디오 재설정은 OBSBasic에서 처리되어야 합니다.
 
 	obs_set_ui_task_handler(ui_task_handler);
 

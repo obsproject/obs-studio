@@ -63,6 +63,24 @@ private:
 	std::vector<UpdateBranch> updateBranches;
 	bool branches_loaded = false;
 
+	obs_video_info horizontal_ovi;
+	obs_video_info vertical_ovi;
+
+	bool dualOutputActive = false;
+	obs_source_t *current_horizontal_scene = nullptr; // Added for Dual Output
+	obs_source_t *current_vertical_scene = nullptr;   // Added for Dual Output
+
+	// Dual Output Streaming
+	obs_service_t *horizontal_stream_service = nullptr;
+	obs_output_t *horizontal_stream_output = nullptr;
+	obs_service_t *vertical_stream_service = nullptr;
+	obs_output_t *vertical_stream_output = nullptr;
+
+	// TODO: Consider if recording outputs also need duplication here
+	// obs_output_t *horizontal_record_output = nullptr;
+	// obs_output_t *vertical_record_output = nullptr;
+
+
 	bool libobs_initialized = false;
 
 	os_inhibit_t *sleepInhibitor = nullptr;
@@ -137,6 +155,27 @@ public:
 	OBSTheme *GetTheme(const QString &name);
 	bool SetTheme(const QString &name);
 	bool IsThemeDark() const { return currentTheme ? currentTheme->isDark : false; }
+
+	inline bool IsDualOutputActive() const { return dualOutputActive; }
+	void SetDualOutputActive(bool active); // Implementation will ensure video system is re-evaluated
+
+	const obs_video_info* GetHorizontalVideoInfo() const;
+	const obs_video_info* GetVerticalVideoInfo() const;
+	void UpdateHorizontalVideoInfo(const obs_video_info& ovi);
+	void UpdateVerticalVideoInfo(const obs_video_info& ovi);
+
+	// Scene Management for Dual Output
+	obs_source_t *GetCurrentHorizontalScene() const;
+	void SetCurrentHorizontalScene(obs_source_t *scene);
+	obs_source_t *GetCurrentVerticalScene() const;
+	void SetCurrentVerticalScene(obs_source_t *scene);
+	// TODO: Need to decide how these scenes are stored (e.g., as part of profile or separate lists)
+
+	// Output Management
+	void SetupOutputs(); // Creates and configures horizontal and vertical outputs
+	bool StartStreamingInternal(); // Starts the configured stream(s)
+	void StopStreamingInternal(bool force = false);  // Stops the configured stream(s)
+	// TODO: Add similar for recording if dual recording is implemented
 
 	void SetBranchData(const std::string &data);
 	std::vector<UpdateBranch> GetBranches();

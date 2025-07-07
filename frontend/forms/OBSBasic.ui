@@ -167,260 +167,522 @@
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="previewContainer" native="true">
-          <layout class="QVBoxLayout" name="previewTextLayout">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="previewLabel">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>StudioMode.PreviewSceneName</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-             </property>
-             <property name="class" stdset="0">
-              <string>label-preview-title</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QGridLayout" name="gridLayout">
-             <property name="spacing">
-              <number>0</number>
-             </property>
-             <item row="1" column="0" colspan="2">
-              <widget class="OBSBasicPreview" name="preview" native="true">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>32</width>
-                 <height>32</height>
-                </size>
-               </property>
-               <property name="focusPolicy">
-                <enum>Qt::ClickFocus</enum>
-               </property>
-               <property name="contextMenuPolicy">
-                <enum>Qt::CustomContextMenu</enum>
-               </property>
-               <addaction name="actionRemoveSource"/>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QWidget" name="previewXContainer" native="true">
-               <layout class="QHBoxLayout" name="horizontalLayout_7">
-                <property name="spacing">
-                 <number>0</number>
+         <widget class="QSplitter" name="previewSplitter">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="handleWidth">
+           <number>2</number>
+          </property>
+          <widget class="QWidget" name="previewContainer" native="true">
+           <layout class="QVBoxLayout" name="previewTextLayout_h">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="previewLabel_h">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>StudioMode.PreviewSceneName</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="class" stdset="0">
+               <string>label-preview-title</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QGridLayout" name="gridLayout_h">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <item row="1" column="0" colspan="2">
+               <widget class="OBSBasicPreview" name="mainPreview_h" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
                 </property>
-                <property name="leftMargin">
-                 <number>0</number>
+                <property name="minimumSize">
+                 <size>
+                  <width>32</width>
+                  <height>32</height>
+                 </size>
                 </property>
-                <property name="topMargin">
-                 <number>0</number>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
                 </property>
-                <property name="rightMargin">
-                 <number>0</number>
+                <property name="contextMenuPolicy">
+                 <enum>Qt::CustomContextMenu</enum>
                 </property>
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <widget class="QPushButton" name="previewZoomOutButton">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>20</width>
-                    <height>16</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>20</width>
-                    <height>16</height>
-                   </size>
-                  </property>
-                  <property name="toolTip">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
-                  </property>
-                  <property name="accessibleName">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="icon">
-                   <iconset resource="obs.qrc">
-                    <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
-                  </property>
-                  <property name="iconSize">
-                   <size>
-                    <width>8</width>
-                    <height>8</height>
-                   </size>
-                  </property>
-                  <property name="toolButton" stdset="0">
-                   <bool>true</bool>
-                  </property>
-                  <property name="class" stdset="0">
-                   <string>icon-minus</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="OBSPreviewScalingLabel" name="previewScalePercent">
-                  <property name="text">
-                   <string>100%</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="previewZoomInButton">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>20</width>
-                    <height>16</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>20</width>
-                    <height>16</height>
-                   </size>
-                  </property>
-                  <property name="toolTip">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
-                  </property>
-                  <property name="accessibleName">
-                   <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="icon">
-                   <iconset resource="obs.qrc">
-                    <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
-                  </property>
-                  <property name="iconSize">
-                   <size>
-                    <width>8</width>
-                    <height>8</height>
-                   </size>
-                  </property>
-                  <property name="toolButton" stdset="0">
-                   <bool>true</bool>
-                  </property>
-                  <property name="class" stdset="0">
-                   <string>icon-plus</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="OBSPreviewScalingComboBox" name="previewScalingMode">
-                  <item>
-                   <property name="text">
-                    <string>Basic.MainMenu.Edit.Scale.Window</string>
+                <addaction name="actionRemoveSource"/>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QWidget" name="previewXContainer_h" native="true">
+                <layout class="QHBoxLayout" name="horizontalLayout_7_h">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="previewZoomOutButton_h">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
                    </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Basic.MainMenu.Edit.Scale.Canvas</string>
+                   <property name="minimumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
                    </property>
-                  </item>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_5">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>4</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QScrollBar" name="previewXScrollBar">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimum">
-                   <number>-200</number>
-                  </property>
-                  <property name="maximum">
-                   <number>200</number>
-                  </property>
-                  <property name="singleStep">
-                   <number>10</number>
-                  </property>
-                  <property name="pageStep">
-                   <number>100</number>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QScrollBar" name="previewYScrollBar">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
+                   <property name="maximumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   </property>
+                   <property name="accessibleName">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="obs.qrc">
+                     <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>8</width>
+                     <height>8</height>
+                    </size>
+                   </property>
+                   <property name="toolButton" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <property name="class" stdset="0">
+                    <string>icon-minus</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="OBSPreviewScalingLabel" name="previewScalePercent_h">
+                   <property name="text">
+                    <string>100%</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="previewZoomInButton_h">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                   </property>
+                   <property name="accessibleName">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="obs.qrc">
+                     <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>8</width>
+                     <height>8</height>
+                    </size>
+                   </property>
+                   <property name="toolButton" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <property name="class" stdset="0">
+                    <string>icon-plus</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="OBSPreviewScalingComboBox" name="previewScalingMode_h">
+                   <item>
+                    <property name="text">
+                     <string>Basic.MainMenu.Edit.Scale.Window</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Basic.MainMenu.Edit.Scale.Canvas</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_5_h">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>4</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QScrollBar" name="previewXScrollBar_h">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimum">
+                    <number>-200</number>
+                   </property>
+                   <property name="maximum">
+                    <number>200</number>
+                   </property>
+                   <property name="singleStep">
+                    <number>10</number>
+                   </property>
+                   <property name="pageStep">
+                    <number>100</number>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QScrollBar" name="previewYScrollBar_h">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="verticalPreviewContainer" native="true">
+           <layout class="QVBoxLayout" name="previewTextLayout_v">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="previewLabel_v">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Vertical Output</string> <!-- Placeholder text -->
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+              <property name="class" stdset="0">
+               <string>label-preview-title</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QGridLayout" name="gridLayout_v">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <item row="1" column="0" colspan="2">
+               <widget class="OBSBasicPreview" name="mainPreview_v" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>32</width>
+                  <height>32</height>
+                 </size>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::ClickFocus</enum>
+                </property>
+                <property name="contextMenuPolicy">
+                 <enum>Qt::CustomContextMenu</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QWidget" name="previewXContainer_v" native="true">
+                <layout class="QHBoxLayout" name="horizontalLayout_7_v">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="previewZoomOutButton_v">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   </property>
+                   <property name="accessibleName">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomOut</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="obs.qrc">
+                     <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>8</width>
+                     <height>8</height>
+                    </size>
+                   </property>
+                   <property name="toolButton" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <property name="class" stdset="0">
+                    <string>icon-minus</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="OBSPreviewScalingLabel" name="previewScalePercent_v">
+                   <property name="text">
+                    <string>100%</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="previewZoomInButton_v">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                   </property>
+                   <property name="accessibleName">
+                    <string>Basic.MainMenu.Edit.Scale.ZoomIn</string>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="obs.qrc">
+                     <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>8</width>
+                     <height>8</height>
+                    </size>
+                   </property>
+                   <property name="toolButton" stdset="0">
+                    <bool>true</bool>
+                   </property>
+                   <property name="class" stdset="0">
+                    <string>icon-plus</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="OBSPreviewScalingComboBox" name="previewScalingMode_v">
+                   <item>
+                    <property name="text">
+                     <string>Basic.MainMenu.Edit.Scale.Window</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Basic.MainMenu.Edit.Scale.Canvas</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_5_v">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>4</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QScrollBar" name="previewXScrollBar_v">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimum">
+                    <number>-200</number>
+                   </property>
+                   <property name="maximum">
+                    <number>200</number>
+                   </property>
+                   <property name="singleStep">
+                    <number>10</number>
+                   </property>
+                   <property name="pageStep">
+                    <number>100</number>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QScrollBar" name="previewYScrollBar_v">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>

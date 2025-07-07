@@ -88,8 +88,14 @@ private:
 	std::vector<FFmpegFormat> formats;
 
 	OBSPropertiesView *streamProperties = nullptr;
-	OBSPropertiesView *streamEncoderProps = nullptr;
-	OBSPropertiesView *recordEncoderProps = nullptr;
+	OBSPropertiesView *streamEncoderProps = nullptr; // Horizontal Stream
+	OBSPropertiesView *recordEncoderProps = nullptr; // Horizontal Record Standard
+
+	OBSPropertiesView *streamEncoderProps_v_stream = nullptr; // Vertical Stream
+	OBSPropertiesView *recordEncoderProps_v_rec = nullptr;    // Vertical Record Standard
+	// Note: FFmpeg settings are within recording tabs, so new OBSPropertiesView for vertical FFmpeg might be needed if they have specific encoder props.
+	// For now, assuming FFmpeg settings are mostly direct config values, not full properties views for the encoder itself,
+	// but if FFVEncoder/FFAEncoder for vertical need their own properties, those would be new members too.
 
 	QPointer<QLabel> advOutRecWarning;
 	QPointer<QLabel> simpleOutRecWarning;
@@ -102,6 +108,8 @@ private:
 
 	QString curAdvStreamEncoder;
 	QString curAdvRecordEncoder;
+	QString curAdvStreamEncoder_v_stream; // For vertical stream tab
+	QString curAdvRecordEncoder_v_rec;    // For vertical record tab
 
 	using AudioSource_t = std::tuple<OBSWeakSource, QPointer<QCheckBox>, QPointer<QSpinBox>, QPointer<QCheckBox>,
 					 QPointer<QSpinBox>>;
@@ -114,8 +122,19 @@ private:
 	OBSSignal hotkeyRegistered;
 	OBSSignal hotkeyUnregistered;
 
+	uint32_t baseCX = 0; // Added to match cpp convention
+	uint32_t baseCY = 0; // Added to match cpp convention
 	uint32_t outputCX = 0;
 	uint32_t outputCY = 0;
+	bool customBase = false; // Added to match cpp convention
+	bool customOutput = false; // Added to match cpp convention
+
+	uint32_t baseCX_v = 0; // Added for vertical video
+	uint32_t baseCY_v = 0; // Added for vertical video
+	uint32_t outputCX_v = 0;
+	uint32_t outputCY_v = 0;
+	bool customBase_v = false; // Added for vertical video
+	bool customOutput_v = false; // Added for vertical video
 
 	QPointer<QCheckBox> simpleVodTrack;
 
@@ -338,6 +357,12 @@ private:
 
 	OBSService GetStream1Service();
 
+	// Helpers for Vertical Advanced Stream Service Configuration
+	void UpdateVerticalAdvancedAuthMethod();
+	void PopulateVStreamServiceList(bool showAll = false);
+	void UpdateVStreamServerList();
+	void UpdateVStreamKeyAuthWidgets(); // Combines key and auth widget updates for vertical
+
 	bool ServiceAndVCodecCompatible();
 	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
@@ -360,11 +385,15 @@ private slots:
 	void on_advOutFFPathBrowse_clicked();
 	void on_advOutEncoder_currentIndexChanged();
 	void on_advOutRecEncoder_currentIndexChanged(int idx);
+	void on_advOutEncoder_v_stream_currentIndexChanged();    // New for vertical stream
+	void on_advOutRecEncoder_v_rec_currentIndexChanged(int idx); // New for vertical record
 	void on_advOutFFIgnoreCompat_stateChanged(int state);
 	void on_advOutFFFormat_currentIndexChanged(int idx);
 	void on_advOutFFAEncoder_currentIndexChanged(int idx);
 	void on_advOutFFVEncoder_currentIndexChanged(int idx);
 	void on_advOutFFType_currentIndexChanged(int idx);
+	void on_advOutFFVEncoder_v_currentIndexChanged(int idx); // Added for vertical FFmpeg Video Encoder
+	void on_advOutFFAEncoder_v_currentIndexChanged(int idx); // Added for vertical FFmpeg Audio Encoder
 
 	void on_colorFormat_currentIndexChanged(int idx);
 	void on_colorSpace_currentIndexChanged(int idx);
@@ -387,6 +416,17 @@ private slots:
 	void on_colorPreset_currentIndexChanged(int idx);
 
 	void GeneralChanged();
+	void on_useDualOutputCheckBox_stateChanged(int state);
+	void on_fpsType_v_currentIndexChanged(int index);
+	void on_baseResolution_v_editTextChanged(const QString &text);
+	void on_outputResolution_v_editTextChanged(const QString &text);
+
+	// Slots for Vertical Advanced Stream Service Configuration
+	void on_advOutVStreamService_currentIndexChanged();
+	void on_advOutVStreamUseAuth_clicked();
+	void on_advOutVStreamShowAll_clicked();
+	// void on_advOutVStreamConnectAccount_clicked(); // If implemented
+	// void on_advOutVStreamDisconnectAccount_clicked(); // If implemented
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	void HideOBSWindowWarning(Qt::CheckState state);

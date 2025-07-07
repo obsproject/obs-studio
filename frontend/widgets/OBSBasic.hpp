@@ -249,6 +249,11 @@ class OBSBasic : public OBSMainWindow {
 		Horizontal,
 	};
 
+	enum class ActivePreview { // Added for Dual Output
+		HORIZONTAL,
+		VERTICAL
+	};
+
 	/* -------------------------------------
 	 * MARK: - General
 	 * -------------------------------------
@@ -273,6 +278,8 @@ private:
 	std::string patronJson;
 
 	std::unique_ptr<Ui::OBSBasic> ui;
+
+	ActivePreview activePreviewPane = ActivePreview::HORIZONTAL; // Added for Dual Output
 
 	void OnEvent(enum obs_frontend_event event);
 
@@ -301,6 +308,11 @@ public slots:
 	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
 
+public slots: // Added for Dual Output
+	void SetHorizontalPreviewActive();
+	void SetVerticalPreviewActive();
+	void RefreshSceneListDisplay(); // Added for Dual Output - Scene List Update
+
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
 	 * warning for `ui` while initializing `undo_s`. */
@@ -323,6 +335,9 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	inline bool Closing() { return closing; }
+
+protected: // Added for event filter
+	bool eventFilter(QObject *obj, QEvent *event) override;
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
@@ -782,6 +797,12 @@ private:
 	int previewX = 0, previewY = 0;
 	int previewCX = 0, previewCY = 0;
 	float previewScale = 0.0f;
+
+	// Vertical Preview scaling/panning state
+	int previewX_v = 0, previewY_v = 0;
+	int previewCX_v = 0, previewCY_v = 0;
+	float previewScale_v = 0.0f;
+
 	bool drawSafeAreas = false;
 
 	QColor selectionColor;
@@ -795,6 +816,7 @@ private:
 	void DrawBackdrop(float cx, float cy);
 	void InitPrimitives();
 	void UpdatePreviewScalingMenu();
+	void UpdatePreviewScalingMenu_V(); // Added for Vertical Preview
 
 	void Nudge(int dist, MoveDir dir);
 
@@ -813,14 +835,23 @@ private:
 
 	void UpdatePreviewOverflowSettings();
 	void UpdatePreviewControls();
+	void UpdatePreviewControls_V(); // Added for Vertical Preview
 
 	/* OBS Callbacks */
-	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
+	static void RenderHorizontalMain(void *data, uint32_t cx, uint32_t cy); // Renamed
+	static void RenderVerticalMain(void *data, uint32_t cx, uint32_t cy);   // Added
 
 	void ResizePreview(uint32_t cx, uint32_t cy);
+	void ResizePreview_V(uint32_t cx, uint32_t cy); // Added
 
 private slots:
 	void PreviewScalingModeChanged(int value);
+	void PreviewScalingModeChanged_V(int value); // Added for Vertical Preview
+	void PreviewScalePercentChanged_V(int value); // Added for Vertical Preview
+	void setPreviewScalingWindow_V(); // Added for Vertical Preview
+	void setPreviewScalingCanvas_V(); // Added for Vertical Preview
+	void setPreviewScalingOutput_V(); // Added for Vertical Preview
+
 
 	void ColorChange();
 
