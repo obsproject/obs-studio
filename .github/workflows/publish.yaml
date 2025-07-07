@@ -29,26 +29,16 @@ jobs:
           if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
           shopt -s extglob
 
+          read -r is_last_tag_newer_prerelease <<< \
+            "$(gh release list --exclude-drafts --limit 2 --json "isPrerelease,tagName" \
+              --jq '.[] | select((.tagName | contains("${GITHUB_REF_NAME%%-*}") | not) and (.isPrerelease == true))')"
           case "${GITHUB_REF_NAME}" in
             +([0-9]).+([0-9]).+([0-9]) )
-              lastPreRelease="$(gh release list --exclude-drafts --limit 10 --json "publishedAt,tagName,isPrerelease" \
-                --jq '[.[] | select(.isPrerelease == true)] | first | .tagName')"
-              currentRelease="${GITHUB_REF_NAME}"
-              isPreReleaseAhead=false
-
-              printf '%s\n%s\n' "${currentRelease}" "${lastPreRelease}" | sort --version-sort --reverse --check=quiet &&
-                isPreReleaseAhead=false || isPreReleaseAhead=true
-
-              # Edge case: Sort considers the non-suffixed version older than a suffixed one
-              if ${isPreReleaseAhead} && [[ "${currentRelease}" == "${lastPreRelease//-*}" ]]; then
-                isPreReleaseAhead=false
-              fi
-
               echo 'validTag=true' >> $GITHUB_OUTPUT
-              if ! ${isPreReleaseAhead}; then
-                echo 'flatpakMatrix=["beta", "stable"]' >> $GITHUB_OUTPUT
-              else
+              if [[ "${is_last_tag_newer_prerelease}" ]]; then
                 echo 'flatpakMatrix=["stable"]' >> $GITHUB_OUTPUT
+              else
+                echo 'flatpakMatrix=["beta", "stable"]' >> $GITHUB_OUTPUT
               fi
               echo 'updateChannel=stable' >> $GITHUB_OUTPUT
               ;;
