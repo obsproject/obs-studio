@@ -772,6 +772,8 @@ void OBSApp::SetDualOutputActive(bool active)
 		// after settings are applied and OBS is ready.
 		// A signal/slot mechanism or a deferred call might be appropriate.
 		QMetaObject::invokeMethod(OBSBasic::Get(), "ResetVideo", Qt::QueuedConnection);
+		// Also need to re-evaluate and setup outputs based on the new state
+		QMetaObject::invokeMethod(OBSBasic::Get(), "ResetOutputs", Qt::QueuedConnection);
 	}
 }
 
@@ -789,14 +791,34 @@ void OBSApp::UpdateHorizontalVideoInfo(const obs_video_info& ovi)
 {
 	horizontal_ovi = ovi;
 	// TODO: Potentially save this to config or mark config dirty if app manages saving directly
+	// For now, horizontal_ovi is typically derived from profile config loaded by OBSBasic
+	// and set via OBSBasic::ResetVideo -> App()->UpdateHorizontalVideoInfo.
+	// If it needs to be saved directly from here, similar logic to UpdateVerticalVideoInfo would apply.
 	blog(LOG_INFO, "Horizontal video info updated: %dx%d @ %d/%d fps", ovi.base_width, ovi.base_height, ovi.fps_num, ovi.fps_den);
 }
 
 void OBSApp::UpdateVerticalVideoInfo(const obs_video_info& ovi)
 {
 	vertical_ovi = ovi;
-	// TODO: Potentially save this to config or mark config dirty
-	blog(LOG_INFO, "Vertical video info updated: %dx%d @ %d/%d fps", ovi.base_width, ovi.base_height, ovi.fps_num, ovi.fps_den);
+	if (OBSBasic::Get() && OBSBasic::Get()->Config()) {
+		config_t *profile_config = OBSBasic::Get()->Config();
+		config_set_uint(profile_config, "Video", "V_BaseCX", vertical_ovi.base_width);
+		config_set_uint(profile_config, "Video", "V_BaseCY", vertical_ovi.base_height);
+		config_set_uint(profile_config, "Video", "V_OutputCX", vertical_ovi.output_width);
+		config_set_uint(profile_config, "Video", "V_OutputCY", vertical_ovi.output_height);
+		// Assuming FPS and Color settings might be shared or handled by UI separately for now.
+		// If they need to be distinct and saved:
+		// config_set_string(profile_config, "Video", "V_FPSCommon", ...); // Needs conversion from num/den
+		// config_set_string(profile_config, "Video", "V_ScaleType", ...); // Needs conversion to string
+		// config_set_string(profile_config, "Video", "V_ColorFormat", ...); // Needs conversion to string
+
+		OBSBasic::Get()->SaveProjectDeferred(); // Mark profile as dirty
+		blog(LOG_INFO, "Vertical video info updated and saved to profile: %dx%d @ %d/%d fps",
+			 vertical_ovi.base_width, vertical_ovi.base_height, vertical_ovi.fps_num, vertical_ovi.fps_den);
+	} else {
+		blog(LOG_WARNING, "Vertical video info updated, but profile config not available for saving: %dx%d @ %d/%d fps",
+			 vertical_ovi.base_width, vertical_ovi.base_height, vertical_ovi.fps_num, vertical_ovi.fps_den);
+	}
 }
 
 obs_source_t* OBSApp::GetCurrentHorizontalScene() const
@@ -830,7 +852,7 @@ void OBSApp::SetCurrentHorizontalScene(obs_source_t *scene)
 	// 	     current_horizontal_scene ? obs_source_get_name(current_horizontal_scene) : "(none)");
 	// }
 
-	// TODO: Emit a signal or have a callback mechanism if OBSBasic needs to know the scene changed.
+	emit horizontalSceneChanged(current_horizontal_scene);
 }
 
 obs_source_t* OBSApp::GetCurrentVerticalScene() const
@@ -856,7 +878,7 @@ void OBSApp::SetCurrentVerticalScene(obs_source_t *scene)
 		     current_vertical_scene ? obs_source_get_name(current_vertical_scene) : "(none)");
 	}
 
-	// TODO: Emit a signal for vertical scene change if needed by other UI components.
+	emit verticalSceneChanged(current_vertical_scene);
 }
 
 void OBSApp::SetupOutputs()

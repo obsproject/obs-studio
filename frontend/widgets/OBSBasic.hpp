@@ -307,6 +307,9 @@ private:
 public slots:
 	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
+	// Slots for OBSApp signals
+	void HandleHorizontalSceneChanged(obs_source_t *new_scene);
+	void HandleVerticalSceneChanged(obs_source_t *new_scene);
 
 public slots: // Added for Dual Output
 	void SetHorizontalPreviewActive();

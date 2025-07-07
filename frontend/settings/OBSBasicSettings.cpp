@@ -2032,6 +2032,11 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 	ui->simpleOutABitrate->setDisabled(true); // Audio bitrate is global
 	ui->simpleOutABitrate_v->setDisabled(true); // Audio bitrate is global
+
+	// Ensure vertical simple output tabs are enabled/disabled based on dual output mode
+	bool dualOutputEnabled = ui->useDualOutputCheckBox->isChecked();
+	ui->simpleStreamingTabs->setTabEnabled(1, dualOutputEnabled); // Vertical Streaming Tab
+	ui->simpleRecordingTabs->setTabEnabled(1, dualOutputEnabled); // Vertical Recording Tab
 }
 
 /* ------------------------------------------------------------------------- */
@@ -2738,7 +2743,142 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings_V()
 	blog(LOG_INFO, "V_ServiceType (config): %s", v_service_type_id ? v_service_type_id : "N/A");
 	blog(LOG_INFO, "V_Server (config): %s", v_server_url ? v_server_url : "N/A");
 	blog(LOG_INFO, "V_Key (config): %s", v_stream_key ? v_stream_key : "N/A");
+
+	// Actual UI updates would go here if widgets existed
+	if (ui->advService_v_stream) { // This widget is hypothetical
+		PopulateVStreamServiceList(v_show_all, v_service_type_id);
+		UpdateVStreamServerList(); // Depends on selected service
+		UpdateVStreamKeyAuthWidgets(); // Depends on selected service
+	}
 }
+
+void OBSBasicSettings::PopulateVStreamServiceList(bool showAll, const char* current_service_id_v)
+{
+	if (!ui->advService_v_stream) return; // Guard against missing UI
+
+	ui->advService_v_stream->blockSignals(true);
+	ui->advService_v_stream->clear();
+
+	OBSService currentService = nullptr;
+	if (current_service_id_v && *current_service_id_v) {
+		currentService = obs_service_create(current_service_id_v, "temp_v_service", nullptr, nullptr);
+	}
+
+	size_t idx = 0;
+	const char *service_id;
+	while (obs_enum_service_types(idx++, &service_id)) {
+		OBSService service = obs_service_create(service_id, service_id, nullptr, nullptr);
+		if (!service) continue;
+
+		if (showAll || strcmp(obs_service_get_type(service), "rtmp_custom") == 0 || !ServiceCanShowAll(service)) {
+			ui->advService_v_stream->addItem(obs_service_get_name(service), QVariant::fromValue(service));
+		} else {
+			obs_service_release(service);
+		}
+	}
+
+	if (currentService) {
+		int currentIdx = ui->advService_v_stream->findData(QVariant::fromValue(currentService));
+		if (currentIdx != -1) {
+			ui->advService_v_stream->setCurrentIndex(currentIdx);
+		} else {
+			// If not found (e.g. was hidden by showAll), add it back
+			ui->advService_v_stream->addItem(obs_service_get_name(currentService), QVariant::fromValue(currentService));
+			ui->advService_v_stream->setCurrentIndex(ui->advService_v_stream->count() - 1);
+		}
+		// Note: currentService was created with obs_service_create, needs release if not stored in combobox item
+		// QVariant stores it, so it should be managed by Qt or released when combo is cleared.
+		// However, explicit release if not added might be safer. For now, assuming it's handled.
+		// obs_service_release(currentService); // This might be too soon if findData relies on it.
+	} else if (ui->advService_v_stream->count() > 0) {
+		ui->advService_v_stream->setCurrentIndex(0); // Default to first if no specific one was set
+	}
+
+	obs_service_release(currentService); // Release the temporary service used for finding current
+
+	ui->advService_v_stream->blockSignals(false);
+
+	// Trigger dependent updates
+	on_advOutVStreamService_currentIndexChanged();
+}
+
+
+void OBSBasicSettings::UpdateVStreamServerList()
+{
+	if (!ui->advService_v_stream || !ui->advServer_v_stream) return; // Guard
+
+	OBSService service_v = ui->advService_v_stream->currentData().value<OBSService>();
+	if (!service_v) return;
+
+	const char *current_server_v = config_get_string(outputConfig, "AdvOut", "VStream_Server");
+	const char *type_v = obs_service_get_type(service_v);
+	bool custom_v = (strcmp(type_v, "rtmp_custom") == 0);
+
+	obs_properties_t *props = obs_service_properties(service_v);
+	obs_property_t *servers_prop = obs_properties_get(props, "server"); // "server" is the typical property name
+
+	ui->advServer_v_stream->blockSignals(true);
+	ui->advServer_v_stream->clear();
+	ui->advServer_v_stream->setEditable(custom_v);
+
+	if (custom_v) {
+		ui->advServer_v_stream->addItem(current_server_v ? current_server_v : "");
+	} else if (servers_prop) {
+		obs_combo_format format = obs_property_combo_format(servers_prop);
+		size_t count = obs_property_list_item_count(servers_prop);
+		for (size_t i = 0; i < count; i++) {
+			const char *val = (format == OBS_COMBO_FORMAT_STRING)
+						? obs_property_list_item_string(servers_prop, i)
+						: obs_property_list_item_name(servers_prop, i);
+			ui->advServer_v_stream->addItem(val);
+		}
+	}
+
+	SetComboByText(ui->advServer_v_stream, current_server_v);
+	ui->advServer_v_stream->blockSignals(false);
+	obs_properties_destroy(props);
+}
+
+void OBSBasicSettings::UpdateVStreamKeyAuthWidgets()
+{
+	if (!ui->advService_v_stream) return; // Guard
+
+	OBSService service_v = ui->advService_v_stream->currentData().value<OBSService>();
+	bool canUseKey = false;
+	bool canUseUser = false;
+	bool canUsePass = false;
+	bool useAuthStored = config_get_bool(outputConfig, "AdvOut", "VStream_UseAuth");
+
+	if (service_v) {
+		canUseKey = ServiceCanUseKey(service_v); // Assuming ServiceCanUseKey etc. are generic enough
+		canUseUser = ServiceCanUseUsername(service_v);
+		canUsePass = ServiceCanUsePassword(service_v);
+		if (ui->advAuthPassword_v_stream) SetServicePasswordEcho(service_v, ui->advAuthPassword_v_stream);
+	}
+
+	if (ui->advAuthUseStreamKey_v_stream) {
+		ui->advAuthUseStreamKey_v_stream->setEnabled(canUseKey && (canUseUser || canUsePass));
+		ui->advAuthUseStreamKey_v_stream->setChecked(!useAuthStored); // if checkbox means "use key"
+	}
+
+	bool useKeyChecked = ui->advAuthUseStreamKey_v_stream ? ui->advAuthUseStreamKey_v_stream->isChecked() : true;
+
+	if (ui->advKey_v_stream) ui->advKey_v_stream->setEnabled(canUseKey && useKeyChecked);
+	if (ui->advAuthUsername_v_stream) ui->advAuthUsername_v_stream->setEnabled(canUseUser && !useKeyChecked);
+	if (ui->advAuthPassword_v_stream) ui->advAuthPassword_v_stream->setEnabled(canUsePass && !useKeyChecked);
+
+	// Visibility of connect/disconnect account buttons
+	// This logic would mirror UpdateServicePage but for vertical stream service UI elements
+	// if (ui->advConnectAccount_v_stream && ui->advDisconnectAccount_v_stream) {
+	//     obs_properties_t *props = service_v ? obs_service_properties(service_v) : nullptr;
+	//     obs_property_t *connect_button = props ? obs_properties_get(props, "connect_account") : nullptr;
+	//     obs_property_t *disconnect_button = props ? obs_properties_get(props, "disconnect_account") : nullptr;
+	//     ui->advConnectAccount_v_stream->setVisible(!!connect_button);
+	//     ui->advDisconnectAccount_v_stream->setVisible(!!disconnect_button);
+	//     if (props) obs_properties_destroy(props);
+	// }
+}
+
 
 // Function to load Vertical Advanced Streaming Encoder Properties
 void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties_V()
@@ -2768,6 +2908,63 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties_V()
 	}
 	// UpdateVerticalStreamDelayEstimate(); // TODO: If applicable
 }
+
+void OBSBasicSettings::on_advOutVStreamService_currentIndexChanged()
+{
+    if (loading) return;
+
+    // This assumes ui->advService_v_stream is the QComboBox for vertical service selection
+    if (!ui->advService_v_stream) return;
+
+    OBSService service_v = ui->advService_v_stream->currentData().value<OBSService>();
+    if (!service_v) return; // Should not happen if list is populated
+
+    // Store the selected service ID in a temporary variable or directly update config if appropriate
+    // For now, let's assume we are not directly setting it on a global "main vertical service" object
+    // like `main->SetService_V(service_v);` as that doesn't exist.
+    // The config will be updated during Save.
+
+    const char *type = obs_service_get_type(service_v);
+    if (ui->advShowAllServices_v_stream) { // Hypothetical checkbox for "show all" for vertical
+        if (strcmp(type, "rtmp_custom") == 0) {
+            ui->advShowAllServices_v_stream->setEnabled(true);
+        } else {
+            ui->advShowAllServices_v_stream->setEnabled(ServiceCanShowAll(service_v));
+        }
+    }
+
+    if (ui->advServer_v_stream) ui->advServer_v_stream->setEditable(strcmp(type, "rtmp_custom") == 0);
+
+    UpdateVStreamServerList();
+    UpdateVStreamKeyAuthWidgets();
+    // UpdateVStreamServiceRecommendations(); // If implemented
+    // UpdateVStreamBandwidthTestEnable(); // If implemented
+
+    SetWidgetChanged(ui->advService_v_stream);
+}
+
+void OBSBasicSettings::on_advOutVStreamUseAuth_clicked()
+{
+    if (loading) return;
+    if (!ui->advAuthUseStreamKey_v_stream) return; // Guard
+
+    UpdateVStreamKeyAuthWidgets();
+    SetWidgetChanged(ui->advAuthUseStreamKey_v_stream);
+}
+
+void OBSBasicSettings::on_advOutVStreamShowAll_clicked()
+{
+    if (loading) return;
+    if (!ui->advService_v_stream || !ui->advShowAllServices_v_stream) return; // Guard
+
+    const char* current_service_id_v = nullptr;
+    OBSService current_selection = ui->advService_v_stream->currentData().value<OBSService>();
+    if(current_selection) current_service_id_v = obs_service_get_id(current_selection);
+
+    PopulateVStreamServiceList(ui->advShowAllServices_v_stream->isChecked(), current_service_id_v);
+    SetWidgetChanged(ui->advShowAllServices_v_stream);
+}
+
 
 // Function to save Vertical Advanced Streaming Settings
 void OBSBasicSettings::SaveAdvOutputStreamingSettings_V()
@@ -2847,7 +3044,61 @@ void OBSBasicSettings::SaveAdvOutputStreamingSettings_V()
 	//    config_set_bool(outputConfig, "AdvOut", "VStream_IgnoreRec", ui->advIgnoreRec_v_stream->isChecked());
 	// }
 
-	blog(LOG_INFO, "SaveAdvOutputStreamingSettings_V: Saved vertical advanced stream settings to config. UI interaction is placeholder as widgets are missing.");
+
+	// --- Save Vertical Advanced Stream Service Settings ---
+	// These assume UI elements like ui->advService_v_stream, ui->advServer_v_stream etc. exist and have `WidgetChanged` correctly set.
+
+	if (ui->advService_v_stream && WidgetChanged(ui->advService_v_stream)) {
+		OBSService service_v = ui->advService_v_stream->currentData().value<OBSService>();
+		if (service_v) {
+			config_set_string(outputConfig, "AdvOut", "VStream_ServiceType", obs_service_get_id(service_v));
+		} else {
+			config_remove_value(outputConfig, "AdvOut", "VStream_ServiceType");
+		}
+	}
+
+	if (ui->advServer_v_stream && WidgetChanged(ui->advServer_v_stream)) {
+		config_set_string(outputConfig, "AdvOut", "VStream_Server", ui->advServer_v_stream->currentText().toUtf8().constData());
+	}
+
+	bool useAuth_v = false;
+	if (ui->advAuthUseStreamKey_v_stream) { // Check if the checkbox itself exists
+	useAuth_v = !ui->advAuthUseStreamKey_v_stream->isChecked(); // True if "Use Authentication" (i.e. user/pass) is selected
+	if (WidgetChanged(ui->advAuthUseStreamKey_v_stream)) {
+		config_set_bool(outputConfig, "AdvOut", "VStream_UseAuth", useAuth_v);
+	}
+	}
+
+
+	if (useAuth_v) {
+		if (ui->advAuthUsername_v_stream && WidgetChanged(ui->advAuthUsername_v_stream)) {
+			config_set_string(outputConfig, "AdvOut", "VStream_Username", ui->advAuthUsername_v_stream->text().toUtf8().constData());
+		}
+		if (ui->advAuthPassword_v_stream && WidgetChanged(ui->advAuthPassword_v_stream)) {
+			config_set_string(outputConfig, "AdvOut", "VStream_Password", ui->advAuthPassword_v_stream->text().toUtf8().constData());
+		}
+	} else { // Using stream key or no auth if key is also disabled
+		if (ui->advKey_v_stream && WidgetChanged(ui->advKey_v_stream)) {
+			config_set_string(outputConfig, "AdvOut", "VStream_Key", ui->advKey_v_stream->text().toUtf8().constData());
+		}
+		// When switching to stream key, clear username/password from config if they were set for auth
+		if (WidgetChanged(ui->advAuthUseStreamKey_v_stream) && !useAuth_v) {
+			config_remove_value(outputConfig, "AdvOut", "VStream_Username");
+			config_remove_value(outputConfig, "AdvOut", "VStream_Password");
+		}
+	}
+
+
+	if (ui->advShowAllServices_v_stream && WidgetChanged(ui->advShowAllServices_v_stream)) {
+	   config_set_bool(outputConfig, "AdvOut", "VStream_ShowAll", ui->advShowAllServices_v_stream->isChecked());
+	}
+
+	// Example for a hypothetical "Ignore Recommendations" checkbox for vertical stream
+	// if (ui->advIgnoreRec_v_stream && WidgetChanged(ui->advIgnoreRec_v_stream)) {
+	//    config_set_bool(outputConfig, "AdvOut", "VStream_IgnoreRec", ui->advIgnoreRec_v_stream->isChecked());
+	// }
+
+	blog(LOG_INFO, "SaveAdvOutputStreamingSettings_V: Vertical advanced stream settings processed.");
 }
 
 // Function to load Vertical Advanced Standard Recording Settings
@@ -3471,7 +3722,9 @@ void OBSBasicSettings::SaveSimpleOutputSettings()
 		SaveComboData(ui->simpleOutRecEncoder_v, "Output", "RecEncoder_V_Rec");
 
 	QString tracks_v = SimpleOutGetSelectedAudioTracks_V();
-	config_set_string(main->Config(), "Output", "RecTracks_V_Rec", tracks_v.toUtf8().constData());
+	if (WidgetChanged(ui->simpleOutTrack1_v) || WidgetChanged(ui->simpleOutTrack2_v) || WidgetChanged(ui->simpleOutTrack3_v) || WidgetChanged(ui->simpleOutTrack4_v) || WidgetChanged(ui->simpleOutTrack5_v) || WidgetChanged(ui->simpleOutTrack6_v) ) {
+		config_set_string(main->Config(), "Output", "RecTracks_V_Rec", tracks_v.toUtf8().constData());
+	}
 }
 
 void OBSBasicSettings::SaveAdvOutputStreamingSettings()

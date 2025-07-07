@@ -67,8 +67,8 @@ private:
 	obs_video_info vertical_ovi;
 
 	bool dualOutputActive = false;
-	obs_source_t *current_horizontal_scene = nullptr; // Added for Dual Output
-	obs_source_t *current_vertical_scene = nullptr;   // Added for Dual Output
+	obs_source_t *current_horizontal_scene = nullptr;
+	obs_source_t *current_vertical_scene = nullptr;
 
 	// Dual Output Streaming
 	obs_service_t *horizontal_stream_service = nullptr;
@@ -234,6 +234,8 @@ public slots:
 
 signals:
 	void StyleChanged();
+	void horizontalSceneChanged(obs_source_t *new_scene); // Added for Dual Output
+	void verticalSceneChanged(obs_source_t *new_scene);   // Added for Dual Output
 };
 
 int GetAppConfigPath(char *path, size_t size, const char *name);

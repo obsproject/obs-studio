@@ -61,9 +61,23 @@ private:
 	float lastCongestion = 0.0f;
 
 	QPointer<QTimer> refreshTimer;
-	QPointer<QTimer> messageTimer;
+	QPointer<QTimer> messageTimer; // For general messages
+	QPointer<QTimer> verticalStreamTimer; // For updating vertical stream time
 
-	obs_output_t *GetOutput();
+	// Vertical Stream specific members
+	OBSWeakOutputAutoRelease verticalStreamOutput_; // Suffix to avoid clash if base class uses it
+	std::vector<OBSSignal> verticalStreamSigs;
+	bool verticalStreamingActive_ = false;
+	bool verticalStreamDisconnected_ = false;
+	int verticalStreamTotalSeconds_ = 0;
+	int verticalStreamReconnectTimeout_ = 0;
+	int verticalStreamRetries_ = 0;
+	uint64_t verticalStreamLastBytesSent_ = 0;
+	uint64_t verticalStreamLastBytesSentTime_ = 0;
+	int verticalStreamSecondsCounter_ = 0; // For periodic bandwidth update
+	// Add pixmaps for vertical stream status if different icons are desired
+
+	obs_output_t *GetOutput(); // This likely refers to the main (horizontal) stream output
 
 	void Activate();
 	void Deactivate();
@@ -104,4 +118,12 @@ public:
 	void RecordingUnpaused();
 
 	void ReconnectClear();
+
+public slots: // Slots for Vertical Streaming
+	void VerticalStreamStarted(obs_output_t *output);
+	void VerticalStreamStopped(int code, QString last_error);
+	void UpdateVerticalStreamTime();
+	void VerticalStreamDelayStarting(int seconds);
+	void VerticalStreamStopping();
+	// TODO: Add slots for vertical recording status if implemented
 };
