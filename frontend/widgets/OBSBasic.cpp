@@ -335,7 +335,27 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	dpi = devicePixelRatioF();
 
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
-	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
+	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize); // For horizontal
+
+	// Connect DisplayResized for Vertical Preview
+	auto displayResizeVertical = [this]() {
+		if (App()->IsDualOutputActive()) {
+			const obs_video_info* v_ovi = App()->GetVerticalVideoInfo();
+			if (v_ovi && v_ovi->base_width > 0) {
+				ResizePreview_V(v_ovi->base_width, v_ovi->base_height);
+			} else if (v_ovi) { // OVI exists but might be zeroed, use current graphics output
+				struct obs_video_info temp_ovi;
+				obs_get_video_info(&temp_ovi); // Fallback, might not be ideal for vertical
+				ResizePreview_V(temp_ovi.base_width, temp_ovi.base_height);
+			}
+		}
+	};
+	if (ui->mainPreview_v) {
+		connect(ui->mainPreview_v, &OBSQTDisplay::DisplayResized, displayResizeVertical);
+		// Also connect screenChanged to potentially update vertical preview if its size depends on screen
+		connect(windowHandle(), &QWindow::screenChanged, displayResizeVertical);
+	}
+
 
 	/* TODO: Move these into window-basic-preview */
 	/* Preview Scaling label */
@@ -370,6 +390,32 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	connect(this, &OBSBasic::CanvasResized, ui->previewScalingMode, &OBSPreviewScalingComboBox::CanvasResized);
 	connect(this, &OBSBasic::OutputResized, ui->previewScalingMode, &OBSPreviewScalingComboBox::OutputResized);
+
+	// Connections for Vertical Preview controls
+	if (ui->mainPreview_v) {
+		connect(ui->previewXScrollBar_v, &QScrollBar::sliderMoved, ui->mainPreview_v, &OBSBasicPreview::xScrollBarChanged);
+		connect(ui->previewYScrollBar_v, &QScrollBar::valueChanged, ui->mainPreview_v, &OBSBasicPreview::yScrollBarChanged);
+		connect(ui->previewZoomInButton_v, &QPushButton::clicked, ui->mainPreview_v, &OBSBasicPreview::increaseScalingLevel);
+		connect(ui->previewZoomOutButton_v, &QPushButton::clicked, ui->mainPreview_v, &OBSBasicPreview::decreaseScalingLevel);
+
+		// Connect vertical preview scaling controls to their new slots
+		connect(ui->previewScalingMode_v, &OBSPreviewScalingComboBox::currentIndexChanged, this, &OBSBasic::PreviewScalingModeChanged_V);
+		// Assuming previewScalePercent_v is a QSpinBox or similar that emits valueChanged(int)
+		// connect(ui->previewScalePercent_v, SIGNAL(valueChanged(int)), this, SLOT(PreviewScalePercentChanged_V(int))); // This widget might not exist or is a label
+
+		// Connect actions for vertical preview scaling if they exist (e.g. in a context menu for vertical preview)
+		// For now, we assume the main preview scaling actions might be conditionally used or new ones are needed.
+		// If using the same actions, their triggered slots would need to check 'activePreviewPane'.
+		// Example if new actions specific to vertical preview context menu were added:
+		// connect(ui->actionScaleWindow_v, &QAction::triggered, this, &OBSBasic::setPreviewScalingWindow_V);
+		// connect(ui->actionScaleCanvas_v, &QAction::triggered, this, &OBSBasic::setPreviewScalingCanvas_V);
+		// connect(ui->actionScaleOutput_v, &QAction::triggered, this, &OBSBasic::setPreviewScalingOutput_V);
+
+		// Connect the scaling label for vertical preview
+		connect(ui->mainPreview_v, &OBSBasicPreview::scalingChanged, ui->previewScalePercent_v, &OBSPreviewScalingLabel::PreviewScaleChanged);
+		connect(ui->mainPreview_v, &OBSBasicPreview::fixedScalingChanged, ui->previewScalingMode_v, &OBSPreviewScalingComboBox::PreviewFixedScalingChanged);
+
+	}
 
 	delete shortcutFilter;
 	shortcutFilter = CreateShortcutFilter();
@@ -507,6 +553,27 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
 	UpdatePreviewOverflowSettings();
+
+	// Install event filters for preview panes
+	if (ui->mainPreview_h) { // Renamed from ui->preview
+		ui->mainPreview_h->installEventFilter(this);
+	}
+	if (ui->mainPreview_v) {
+		ui->mainPreview_v->installEventFilter(this);
+	}
+
+	// Load ActivePreviewPane state
+	int savedPaneIndex = config_get_int(App()->GetUserConfig(), "BasicWindow", "ActivePreviewPane", 0);
+	activePreviewPane = (savedPaneIndex == 1) ? ActivePreview::VERTICAL : ActivePreview::HORIZONTAL;
+	// RefreshSceneListDisplay(); // Will be called later in OBSInit after scenes are loaded.
+
+	// Restore splitter state
+	if (ui->previewSplitter) {
+		QByteArray splitterState = QByteArray::fromBase64(config_get_string(App()->GetUserConfig(), "BasicWindow", "PreviewSplitterState", ""));
+		if (!splitterState.isEmpty()) {
+			ui->previewSplitter->restoreState(splitterState);
+		}
+	}
 }
 
 static const double scaled_vals[] = {1.0, 1.25, (1.0 / 0.75), 1.5, (1.0 / 0.6), 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 0.0};
@@ -1060,6 +1127,36 @@ void OBSBasic::OBSInit()
 		}
 	}
 
+	// Load last active Horizontal and Vertical scenes
+	const char *lastHSceneName = config_get_string(App()->GetUserConfig(), "BasicWindow", "CurrentHScene");
+	if (lastHSceneName && *lastHSceneName) {
+		obs_source_t *scene = obs_get_source_by_name(lastHSceneName);
+		if (scene) {
+			App()->SetCurrentHorizontalScene(scene);
+			// If not dual active, or if horizontal pane is active, make this the UI selected one too
+			if (!App()->IsDualOutputActive() || activePreviewPane == ActivePreview::HORIZONTAL) {
+				SetCurrentScene(scene); // This updates UI selection and OBSBasic::currentScene
+			}
+			obs_source_release(scene);
+		}
+	}
+	if (App()->IsDualOutputActive()) {
+		const char *lastVSceneName = config_get_string(App()->GetUserConfig(), "BasicWindow", "CurrentVScene");
+		if (lastVSceneName && *lastVSceneName) {
+			obs_source_t *scene = obs_get_source_by_name(lastVSceneName);
+			if (scene) {
+				App()->SetCurrentVerticalScene(scene);
+				if (activePreviewPane == ActivePreview::VERTICAL) {
+					SetCurrentScene(scene); // This updates UI selection
+				}
+				obs_source_release(scene);
+			}
+		}
+	}
+	// If no specific scenes were set (e.g. first run or cleared config), select first available in active pane
+	RefreshSceneListDisplay(); // This will also handle initial selection if currentItem is null
+
+
 	loaded = true;
 
 	previewEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled");
@@ -1072,15 +1169,60 @@ void OBSBasic::OBSInit()
 
 	disableSaving--;
 
-	auto addDisplay = [this](OBSQTDisplay *window) {
-		obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderMain, this);
+	auto addDisplayHorizontal = [this](OBSQTDisplay *window) { // Renamed lambda
+		obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderHorizontalMain, this); // Changed to RenderHorizontalMain
 
 		struct obs_video_info ovi;
-		if (obs_get_video_info(&ovi))
+		if (obs_get_video_info(&ovi)) // This ResizePreview might need to be specific if previews can have different base aspect ratios
 			ResizePreview(ovi.base_width, ovi.base_height);
 	};
 
-	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
+	// Connect for mainPreview_h (renamed original ui->preview)
+	// Note: ui->preview in the .ui file was renamed to mainPreview_h
+	// The object name in OBSBasic.ui for the horizontal preview is 'preview'.
+	// So we connect to ui->preview here.
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplayHorizontal);
+
+
+	// Setup for mainPreview_v
+	if (ui->mainPreview_v) {
+		auto addVerticalDisplay = [this](OBSQTDisplay *window) {
+			obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderVerticalMain, this); // Changed to RenderVerticalMain
+
+			// TODO: Set the source for the vertical display.
+			// This depends on how OBSApp exposes the vertical video pipeline output.
+			// Example:
+			if (App()->IsDualOutputActive()) {
+			//    obs_source_t *vertical_pipeline_source = App()->GetVerticalVideoSource(); // Placeholder
+			//    if (vertical_pipeline_source) {
+			//        obs_display_set_source(window->GetDisplay(), vertical_pipeline_source);
+			//    } else {
+			//        obs_display_set_source(window->GetDisplay(), nullptr);
+			//    }
+				blog(LOG_INFO, "Dual Output Active: Vertical display created. TODO: Set obs_source for vertical display.");
+			} else {
+			   obs_display_set_source(window->GetDisplay(), nullptr); // Clear source if not dual output
+			   window->setVisible(false); // Optionally hide it
+			   blog(LOG_INFO, "Dual Output Inactive: Vertical display source cleared and hidden.");
+			}
+
+			// TODO: Potentially a different ResizePreview_V if vertical preview has different scaling logic or base dimensions
+			struct obs_video_info ovi_v;
+			if (obs_get_video_info(&ovi_v)) { // This should get vertical pipeline's info
+				// ResizePreview_V(ovi_v.base_width, ovi_v.base_height);
+				blog(LOG_INFO, "Vertical display created. TODO: Call appropriate resize logic for vertical preview.");
+			}
+
+		};
+		connect(ui->mainPreview_v, &OBSQTDisplay::DisplayCreated, addVerticalDisplay);
+		if (App()->IsDualOutputActive()) {
+			ui->mainPreview_v->Init();
+			ui->mainPreview_v->setVisible(true);
+		} else {
+			ui->mainPreview_v->setVisible(false); // Hide if not dual output mode
+		}
+	}
+
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
@@ -1274,6 +1416,13 @@ void OBSBasic::OBSInit()
 
 	if (!hideWindowOnStart)
 		activateWindow();
+
+	// TODO: Connect ui->mainPreview_h and ui->mainPreview_v to SetHorizontalPreviewActive / SetVerticalPreviewActive
+	// This might require installing an event filter on these widgets to capture mouse press or focus events.
+	// For now, let's assume direct connection or will be handled by event filter later.
+	// Example: connect(ui->mainPreview_h, &SomeSignalEmitter::clicked, this, &OBSBasic::SetHorizontalPreviewActive);
+	// Example: connect(ui->mainPreview_v, &SomeSignalEmitter::clicked, this, &OBSBasic::SetVerticalPreviewActive);
+
 
 	/* ------------------------------------------- */
 	/* display warning message for failed modules  */
@@ -1485,78 +1634,112 @@ int OBSBasic::ResetVideo()
 
 	ProfileScope("OBSBasic::ResetVideo");
 
-	struct obs_video_info ovi;
+	obs_video_info ovi_to_reset; // This will be the one passed to obs_reset_video
 	int ret;
 
-	GetConfigFPS(ovi.fps_num, ovi.fps_den);
+	// Always get horizontal settings first, as it's the primary for obs_reset_video
+	const obs_video_info* h_ovi_ptr = App()->GetHorizontalVideoInfo();
+	if (!h_ovi_ptr || h_ovi_ptr->base_width == 0) { // Check if it's initialized
+		// Fallback to reading directly from config if App's version isn't ready
+		// This path might be taken on initial startup before settings dialog is first saved.
+		blog(LOG_INFO, "Horizontal OVI in App is not ready, reading from current profile config for ResetVideo.");
+		struct obs_video_info temp_h_ovi;
+		GetConfigFPS(temp_h_ovi.fps_num, temp_h_ovi.fps_den); // Reads from activeConfiguration (profile)
+		const char *colorFormat = config_get_string(activeConfiguration, "Video", "ColorFormat");
+		const char *colorSpace = config_get_string(activeConfiguration, "Video", "ColorSpace");
+		const char *colorRange = config_get_string(activeConfiguration, "Video", "ColorRange");
 
-	const char *colorFormat = config_get_string(activeConfiguration, "Video", "ColorFormat");
-	const char *colorSpace = config_get_string(activeConfiguration, "Video", "ColorSpace");
-	const char *colorRange = config_get_string(activeConfiguration, "Video", "ColorRange");
-
-	ovi.graphics_module = App()->GetRenderModule();
-	ovi.base_width = (uint32_t)config_get_uint(activeConfiguration, "Video", "BaseCX");
-	ovi.base_height = (uint32_t)config_get_uint(activeConfiguration, "Video", "BaseCY");
-	ovi.output_width = (uint32_t)config_get_uint(activeConfiguration, "Video", "OutputCX");
-	ovi.output_height = (uint32_t)config_get_uint(activeConfiguration, "Video", "OutputCY");
-	ovi.output_format = GetVideoFormatFromName(colorFormat);
-	ovi.colorspace = GetVideoColorSpaceFromName(colorSpace);
-	ovi.range = astrcmpi(colorRange, "Full") == 0 ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
-	ovi.adapter = config_get_uint(App()->GetUserConfig(), "Video", "AdapterIdx");
-	ovi.gpu_conversion = true;
-	ovi.scale_type = GetScaleType(activeConfiguration);
-
-	if (ovi.base_width < 32 || ovi.base_height < 32) {
-		ovi.base_width = 1920;
-		ovi.base_height = 1080;
-		config_set_uint(activeConfiguration, "Video", "BaseCX", 1920);
-		config_set_uint(activeConfiguration, "Video", "BaseCY", 1080);
+		temp_h_ovi.graphics_module = App()->GetRenderModule();
+		temp_h_ovi.base_width = (uint32_t)config_get_uint(activeConfiguration, "Video", "BaseCX");
+		temp_h_ovi.base_height = (uint32_t)config_get_uint(activeConfiguration, "Video", "BaseCY");
+		temp_h_ovi.output_width = (uint32_t)config_get_uint(activeConfiguration, "Video", "OutputCX");
+		temp_h_ovi.output_height = (uint32_t)config_get_uint(activeConfiguration, "Video", "OutputCY");
+		temp_h_ovi.output_format = GetVideoFormatFromName(colorFormat);
+		temp_h_ovi.colorspace = GetVideoColorSpaceFromName(colorSpace);
+		temp_h_ovi.range = astrcmpi(colorRange, "Full") == 0 ? VIDEO_RANGE_FULL : VIDEO_RANGE_PARTIAL;
+		temp_h_ovi.adapter = config_get_uint(App()->GetUserConfig(), "Video", "AdapterIdx");
+		temp_h_ovi.gpu_conversion = true;
+		temp_h_ovi.scale_type = GetScaleType(activeConfiguration); // Reads from activeConfiguration
+		ovi_to_reset = temp_h_ovi;
+	} else {
+		ovi_to_reset = *h_ovi_ptr;
 	}
 
-	if (ovi.output_width < 32 || ovi.output_height < 32) {
-		ovi.output_width = ovi.base_width;
-		ovi.output_height = ovi.base_height;
-		config_set_uint(activeConfiguration, "Video", "OutputCX", ovi.base_width);
-		config_set_uint(activeConfiguration, "Video", "OutputCY", ovi.base_height);
+	// Validate and clamp resolutions for the primary reset
+	if (ovi_to_reset.base_width < 32 || ovi_to_reset.base_height < 32) {
+		ovi_to_reset.base_width = 1920;
+		ovi_to_reset.base_height = 1080;
+		// Also update config if this was a fallback read, though ideally settings dialog handles this.
+	}
+	if (ovi_to_reset.output_width < 32 || ovi_to_reset.output_height < 32) {
+		ovi_to_reset.output_width = ovi_to_reset.base_width;
+		ovi_to_reset.output_height = ovi_to_reset.base_height;
 	}
 
-	ret = AttemptToResetVideo(&ovi);
+	blog(LOG_INFO, "ResetVideo: Using Horizontal/Primary OVI: %dx%d -> %dx%d @ %d/%d fps",
+		ovi_to_reset.base_width, ovi_to_reset.base_height,
+		ovi_to_reset.output_width, ovi_to_reset.output_height,
+		ovi_to_reset.fps_num, ovi_to_reset.fps_den);
+
+	ret = AttemptToResetVideo(&ovi_to_reset);
 	if (ret == OBS_VIDEO_CURRENTLY_ACTIVE) {
-		blog(LOG_WARNING, "Tried to reset when already active");
+		blog(LOG_WARNING, "Tried to reset video when already active");
 		return ret;
 	}
 
 	if (ret == OBS_VIDEO_SUCCESS) {
-		ResizePreview(ovi.base_width, ovi.base_height);
-		if (program)
-			ResizeProgram(ovi.base_width, ovi.base_height);
+		ResizePreview(ovi_to_reset.base_width, ovi_to_reset.base_height); // Resizes horizontal preview
+		if (program) // Handle studio mode program view
+			ResizeProgram(ovi_to_reset.base_width, ovi_to_reset.base_height);
 
 		const float sdr_white_level = (float)config_get_uint(activeConfiguration, "Video", "SdrWhiteLevel");
 		const float hdr_nominal_peak_level =
 			(float)config_get_uint(activeConfiguration, "Video", "HdrNominalPeakLevel");
 		obs_set_video_levels(sdr_white_level, hdr_nominal_peak_level);
+
 		OBSBasicStats::InitializeValues();
 		OBSProjector::UpdateMultiviewProjectors();
 
 		if (!collections.empty()) {
 			const OBS::SceneCollection currentSceneCollection = OBSBasic::GetCurrentSceneCollection();
-
-			bool usingAbsoluteCoordinates = currentSceneCollection.getCoordinateMode() ==
-							OBS::SceneCoordinateMode::Absolute;
+			bool usingAbsoluteCoordinates = currentSceneCollection.getCoordinateMode() == OBS::SceneCoordinateMode::Absolute;
 			OBS::Rect migrationResolution = currentSceneCollection.getMigrationResolution();
-
-			OBS::Rect videoResolution = OBS::Rect(ovi.base_width, ovi.base_height);
-
-			bool canMigrate = usingAbsoluteCoordinates ||
-					  (!migrationResolution.isZero() && migrationResolution != videoResolution);
-
+			OBS::Rect videoResolution = OBS::Rect(ovi_to_reset.base_width, ovi_to_reset.base_height);
+			bool canMigrate = usingAbsoluteCoordinates || (!migrationResolution.isZero() && migrationResolution != videoResolution);
 			ui->actionRemigrateSceneCollection->setEnabled(canMigrate);
 		} else {
 			ui->actionRemigrateSceneCollection->setEnabled(false);
 		}
 
-		emit CanvasResized(ovi.base_width, ovi.base_height);
-		emit OutputResized(ovi.output_width, ovi.output_height);
+		emit CanvasResized(ovi_to_reset.base_width, ovi_to_reset.base_height);       // For horizontal
+		emit OutputResized(ovi_to_reset.output_width, ovi_to_reset.output_height); // For horizontal
+
+		// Handle vertical pipeline/preview visibility and setup
+		if (App()->IsDualOutputActive()) {
+			const obs_video_info* v_ovi_ptr = App()->GetVerticalVideoInfo();
+			if (v_ovi_ptr && v_ovi_ptr->base_width > 0) { // Check if vertical_ovi is valid
+				blog(LOG_INFO, "Dual Output Active: Vertical OVI: %dx%d -> %dx%d @ %d/%d fps",
+					v_ovi_ptr->base_width, v_ovi_ptr->base_height,
+					v_ovi_ptr->output_width, v_ovi_ptr->output_height,
+					v_ovi_ptr->fps_num, v_ovi_ptr->fps_den);
+
+				if (ui->mainPreview_v) {
+					ui->mainPreview_v->setVisible(true);
+					// TODO: Potentially call a ResizePreview_V(v_ovi_ptr->base_width, v_ovi_ptr->base_height)
+					// TODO: Ensure vertical display source is set correctly after video reset.
+					// obs_display_set_source(ui->mainPreview_v->GetDisplay(), App()->GetVerticalVideoRenderSource());
+					blog(LOG_INFO, "TODO: Resize vertical preview and set its source.");
+				}
+			} else {
+				blog(LOG_WARNING, "Dual Output Active, but vertical video info is not properly initialized.");
+				if (ui->mainPreview_v) ui->mainPreview_v->setVisible(false);
+			}
+		} else {
+			if (ui->mainPreview_v) {
+				ui->mainPreview_v->setVisible(false);
+				obs_display_set_source(ui->mainPreview_v->GetDisplay(), nullptr); // Clear source
+			}
+		}
 	}
 
 	return ret;
@@ -1693,6 +1876,31 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	delete extraBrowsers;
 
 	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState", saveState().toBase64().constData());
+
+	// Save ActivePreviewPane state
+	config_set_int(App()->GetUserConfig(), "BasicWindow", "ActivePreviewPane", static_cast<int>(activePreviewPane));
+
+	// Save current horizontal and vertical scene names
+	obs_source_t *h_scene = App()->GetCurrentHorizontalScene();
+	if (h_scene) {
+		config_set_string(App()->GetUserConfig(), "BasicWindow", "CurrentHScene", obs_source_get_name(h_scene));
+	} else {
+		config_remove_value(App()->GetUserConfig(), "BasicWindow", "CurrentHScene");
+	}
+
+	obs_source_t *v_scene = App()->GetCurrentVerticalScene();
+	if (v_scene && App()->IsDualOutputActive()) { // Only save VScene if dual output is active
+		config_set_string(App()->GetUserConfig(), "BasicWindow", "CurrentVScene", obs_source_get_name(v_scene));
+	} else {
+		config_remove_value(App()->GetUserConfig(), "BasicWindow", "CurrentVScene");
+	}
+
+	// Save splitter state
+	if (ui->previewSplitter) {
+		QByteArray splitterState = ui->previewSplitter->saveState();
+		config_set_string(App()->GetUserConfig(), "BasicWindow", "PreviewSplitterState", splitterState.toBase64().constData());
+	}
+
 
 #ifdef BROWSER_AVAILABLE
 	if (cef)
@@ -2016,4 +2224,61 @@ OBSPromptResult OBSBasic::PromptForName(const OBSPromptRequest &request, const O
 	}
 
 	return result;
+}
+
+void OBSBasic::SetHorizontalPreviewActive()
+{
+	if (activePreviewPane == ActivePreview::HORIZONTAL && !App()->IsDualOutputActive()) // Only refresh if actually changed or dual output just enabled/disabled
+		return;
+
+	activePreviewPane = ActivePreview::HORIZONTAL;
+	blog(LOG_INFO, "Horizontal preview activated");
+
+	// TODO: Update UI styling if necessary (e.g., border highlight)
+	// ui->mainPreview_h->setProperty("active", true);
+	// ui->mainPreview_v->setProperty("active", false);
+	// style()->unpolish(ui->mainPreview_h); style()->polish(ui->mainPreview_h);
+	// style()->unpolish(ui->mainPreview_v); style()->polish(ui->mainPreview_v);
+
+
+	// TODO: Refresh scene list for horizontal scenes
+	RefreshSceneListDisplay();
+
+	// TODO: Refresh source list for the currently selected horizontal scene
+	// RefreshSources(GetCurrentScene()); // GetCurrentScene will also need to be context-aware
+}
+
+void OBSBasic::SetVerticalPreviewActive()
+{
+	if (!App()->IsDualOutputActive()) // Cannot activate vertical if dual output is off
+		return;
+	if (activePreviewPane == ActivePreview::VERTICAL)
+		return;
+
+	activePreviewPane = ActivePreview::VERTICAL;
+	blog(LOG_INFO, "Vertical preview activated");
+
+	// TODO: Update UI styling if necessary
+	// ui->mainPreview_h->setProperty("active", false);
+	// ui->mainPreview_v->setProperty("active", true);
+	// style()->unpolish(ui->mainPreview_h); style()->polish(ui->mainPreview_h);
+	// style()->unpolish(ui->mainPreview_v); style()->polish(ui->mainPreview_v);
+
+	// TODO: Refresh scene list for vertical scenes
+	RefreshSceneListDisplay();
+
+	// TODO: Refresh source list for the currently selected vertical scene
+	// RefreshSources(GetCurrentScene());
+}
+
+bool OBSBasic::eventFilter(QObject *obj, QEvent *event)
+{
+	if (event->type() == QEvent::MouseButtonPress) {
+		if (obj == ui->mainPreview_h) {
+			SetHorizontalPreviewActive();
+		} else if (obj == ui->mainPreview_v) {
+			SetVerticalPreviewActive();
+		}
+	}
+	return QMainWindow::eventFilter(obj, event);
 }
