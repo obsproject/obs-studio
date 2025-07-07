@@ -5,9 +5,18 @@
 struct SimpleOutput : BasicOutputHandler {
 	OBSEncoder audioStreaming;
 	OBSEncoder videoStreaming;
+
+	// Vertical Stream Encoders (Simple Mode)
+	OBSEncoder videoStreaming_v;
+	// Audio for vertical stream will use main audioStreaming or audioArchive if VOD track is different
+	// No separate audio encoder object needed here unless audio processing differs significantly.
+
 	OBSEncoder audioRecording;
 	OBSEncoder audioArchive;
 	OBSEncoder videoRecording;
+	// Vertical Recording Encoders (Simple Mode)
+	// OBSEncoder videoRecording_v; // if vertical recording is added
+	// OBSEncoder audioRecording_v; // if vertical recording is added
 	OBSEncoder audioTrack[MAX_AUDIO_MIXES];
 
 	std::string videoEncoder;
@@ -60,4 +69,12 @@ struct SimpleOutput : BasicOutputHandler {
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
 	virtual bool ReplayBufferActive() const override;
+
+	// Vertical Output Control
+	virtual bool StartVerticalStreaming(obs_service_t *service) override;
+	virtual void StopVerticalStreaming(bool force = false) override;
+	virtual bool VerticalStreamingActive() const override;
+	// virtual bool StartVerticalRecording() override; // If implementing
+	// virtual void StopVerticalRecording(bool force = false) override; // If implementing
+	// virtual bool VerticalRecordingActive() const override; // If implementing
 };

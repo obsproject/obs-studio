@@ -43,5 +43,14 @@ struct AdvancedOutput : BasicOutputHandler {
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
 	virtual bool ReplayBufferActive() const override;
+
+	// Vertical Output Control
+	virtual bool StartVerticalStreaming(obs_service_t *service) override;
+	virtual void StopVerticalStreaming(bool force = false) override;
+	virtual bool VerticalStreamingActive() const override;
+	// virtual bool StartVerticalRecording() override; // If implementing
+	// virtual void StopVerticalRecording(bool force = false) override; // If implementing
+	// virtual bool VerticalRecordingActive() const override; // If implementing
+
 	bool allowsMultiTrack();
 };

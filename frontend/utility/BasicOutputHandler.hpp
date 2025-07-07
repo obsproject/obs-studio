@@ -59,6 +59,15 @@ struct BasicOutputHandler {
 	OBSSignal streamDelayStarting;
 	OBSSignal streamStopping;
 	OBSSignal recordStopping;
+	// Vertical Output Signals
+	OBSSignal startVerticalStreaming;
+	OBSSignal stopVerticalStreaming;
+	OBSSignal verticalStreamDelayStarting; // If vertical stream has independent delay
+	OBSSignal verticalStreamStopping;
+	// OBSSignal startVerticalRecording; // If implementing vertical recording
+	// OBSSignal stopVerticalRecording;  // If implementing vertical recording
+	// OBSSignal verticalRecordStopping; // If implementing vertical recording
+	// OBSSignal verticalRecordFileChanged; // If implementing vertical recording
 	OBSSignal recordFileChanged;
 	OBSSignal replayBufferStopping;
 	OBSSignal replayBufferSaved;
@@ -81,6 +90,15 @@ struct BasicOutputHandler {
 	virtual bool RecordingActive() const = 0;
 	virtual bool ReplayBufferActive() const { return false; }
 	virtual bool VirtualCamActive() const;
+
+	// Vertical Output Control
+	virtual bool StartVerticalStreaming(obs_service_t *service) = 0;
+	virtual void StopVerticalStreaming(bool force = false) = 0;
+	virtual bool VerticalStreamingActive() const = 0;
+	// TODO: Add virtual functions for vertical recording if/when fully implemented
+	// virtual bool StartVerticalRecording() = 0;
+	// virtual void StopVerticalRecording(bool force = false) = 0;
+	// virtual bool VerticalRecordingActive() const = 0;
 
 	virtual void Update() = 0;
 	virtual void SetupOutputs() = 0;

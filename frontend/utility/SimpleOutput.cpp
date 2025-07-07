@@ -198,6 +198,22 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!success)
 		throw "Failed to create audio archive encoder (simple output)";
 
+	// Vertical Stream Video Encoder
+	// TODO: Add UI in OBSBasicSettings Simple Output for Service_V_Stream, Server_V_Stream, Key_V_Stream
+	// For now, encoder settings are assumed to be in "Output" section with _V_Stream suffix
+	const char *encoder_v = config_get_string(main->Config(), "Output", "StreamEncoder_V_Stream");
+	if (encoder_v && *encoder_v) {
+		videoStreaming_v = obs_video_encoder_create(get_simple_output_encoder(encoder_v), "simple_video_stream_v", nullptr, nullptr);
+		if (!videoStreaming_v) {
+			blog(LOG_WARNING, "Failed to create vertical video streaming encoder (simple output): %s", encoder_v);
+			// Not throwing an error, as vertical stream might be optional or not fully configured.
+		} else {
+			obs_encoder_release(videoStreaming_v);
+		}
+	} else {
+		blog(LOG_INFO, "Vertical stream encoder not configured in Simple Output mode.");
+	}
+
 	LoadRecordingPreset();
 
 	if (!ffmpegOutput) {
@@ -352,6 +368,61 @@ void SimpleOutput::Update()
 	obs_encoder_update(videoStreaming, videoSettings);
 	obs_encoder_update(audioStreaming, audioSettings);
 	obs_encoder_update(audioArchive, audioSettings);
+
+	// Update Vertical Video Stream Encoder if it exists
+	if (videoStreaming_v) {
+		OBSDataAutoRelease videoSettings_v = obs_data_create();
+		int videoBitrate_v = config_get_uint(main->Config(), "Output", "VBitrate_V_Stream");
+		bool advanced_v = config_get_bool(main->Config(), "Output", "UseAdvanced_V_Stream");
+		const char *custom_v = config_get_string(main->Config(), "Output", "StreamCustom_V_Stream");
+		const char *encoder_v_cfg = config_get_string(main->Config(), "Output", "StreamEncoder_V_Stream");
+		const char *encoder_id_v = obs_encoder_get_id(videoStreaming_v); // Use actual current encoder ID
+		const char *presetType_v;
+		const char *preset_v;
+
+		if (strcmp(encoder_v_cfg, SIMPLE_ENCODER_QSV) == 0 || strcmp(encoder_v_cfg, SIMPLE_ENCODER_QSV_AV1) == 0) {
+			presetType_v = "QSVPreset_V_Stream"; // Assuming specific config keys for vertical presets
+		} else if (strcmp(encoder_v_cfg, SIMPLE_ENCODER_AMD) == 0 || strcmp(encoder_v_cfg, SIMPLE_ENCODER_AMD_HEVC) == 0 || strcmp(encoder_v_cfg, SIMPLE_ENCODER_AMD_AV1) == 0) {
+			presetType_v = "AMDPreset_V_Stream";
+		} else if (strcmp(encoder_v_cfg, SIMPLE_ENCODER_NVENC) == 0 || strcmp(encoder_v_cfg, SIMPLE_ENCODER_NVENC_HEVC) == 0 || strcmp(encoder_v_cfg, SIMPLE_ENCODER_NVENC_AV1) == 0) {
+			presetType_v = "NVENCPreset2_V_Stream";
+		} else {
+			presetType_v = "Preset_V_Stream";
+		}
+		preset_v = config_get_string(main->Config(), "Output", presetType_v);
+		// Fallback if specific vertical preset key doesn't exist
+		if (!preset_v || !*preset_v) preset_v = config_get_string(main->Config(), "Output", config_get_string(main->Config(), "Output", "Preset_V_Stream"));
+
+
+		if (strncmp(encoder_id_v, "ffmpeg_", 7) == 0 && (strcmp(presetType_v, "NVENCPreset2_V_Stream") == 0 || strcmp(presetType_v, "NVENCPreset2") == 0)) {
+			obs_data_set_string(videoSettings_v, "preset2", preset_v);
+		} else {
+			obs_data_set_string(videoSettings_v, "preset", preset_v);
+		}
+
+		const char* tune_v = config_get_string(main->Config(), "Output", "Tune_V_Stream");
+		if (tune_v && *tune_v && strcmp(tune_v, Str("None")) != 0) {
+			obs_data_set_string(videoSettings_v, "tune", tune_v);
+		}
+
+		obs_data_set_string(videoSettings_v, "rate_control", "CBR");
+		obs_data_set_int(videoSettings_v, "bitrate", videoBitrate_v);
+
+		if (advanced_v) {
+			obs_data_set_string(videoSettings_v, "x264opts", custom_v);
+		}
+
+		// Apply service settings for vertical stream - this might need a separate vertical service object
+		// For now, assuming same service or that service settings are generic enough
+		// obs_service_apply_encoder_settings(main->GetService(), videoSettings_v, audioSettings); // audioSettings is shared
+
+		// TODO: Handle preferred video format for vertical encoder if different
+		// enum video_format format_v = App()->GetVerticalVideoInfo()->output_format; (conceptual)
+		// obs_encoder_set_preferred_video_format(videoStreaming_v, format_v);
+
+		obs_encoder_update(videoStreaming_v, videoSettings_v);
+		blog(LOG_INFO, "Updated vertical simple stream encoder settings.");
+	}
 }
 
 void SimpleOutput::UpdateRecordingAudioSettings()
@@ -548,9 +619,18 @@ inline void SimpleOutput::SetupOutputs()
 	obs_encoder_set_video(videoStreaming, obs_get_video());
 	obs_encoder_set_audio(audioStreaming, obs_get_audio());
 	obs_encoder_set_audio(audioArchive, obs_get_audio());
+
+	if (App()->IsDualOutputActive() && videoStreaming_v) {
+		obs_encoder_set_video(videoStreaming_v, obs_get_video());
+		// Audio for verticalStreamOutput will be set in OBSApp::SetupOutputs,
+		// typically using audioStreaming or audioArchive.
+		blog(LOG_INFO, "SimpleOutput::SetupOutputs - Configured video for vertical stream encoder.");
+	}
+
 	int tracks = config_get_int(main->Config(), "SimpleOutput", "RecTracks");
 	const char *recFormat = config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
 	bool flv = strcmp(recFormat, "flv") == 0;
+	const char *quality = config_get_string(main->Config(), "SimpleOutput", "RecQuality");
 
 	if (usingRecordingPreset) {
 		if (ffmpegOutput) {
@@ -661,6 +741,7 @@ void SimpleOutput::SetupVodTrack(obs_service_t *service)
 		clear_archive_encoder(streamOutput, SIMPLE_ARCHIVE_NAME);
 }
 
+// Replace existing SimpleOutput::StartStreaming
 bool SimpleOutput::StartStreaming(obs_service_t *service)
 {
 	bool reconnect = config_get_bool(main->Config(), "Output", "Reconnect");
@@ -692,151 +773,96 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 #endif
 	obs_data_set_bool(settings, "dyn_bitrate", enableDynBitrate);
 
-	auto streamOutput = StreamingOutput(); // shadowing is sort of bad, but also convenient
-
-	obs_output_update(streamOutput, settings);
-
-	if (!reconnect)
-		maxRetries = 0;
-
-	obs_output_set_delay(streamOutput, useDelay ? delaySec : 0, preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
-
-	obs_output_set_reconnect_settings(streamOutput, maxRetries, retryDelay);
-
-	if (!multitrackVideo || !multitrackVideoActive)
-		SetupVodTrack(service);
-
-	if (obs_output_start(streamOutput)) {
-		if (multitrackVideo && multitrackVideoActive)
-			multitrackVideo->StartedStreaming();
-		return true;
+	// Horizontal Stream Output
+	OBSOutputAutoRelease h_stream_output = StreamingOutput(); // This is effectively 'this->streamOutput' or from multitrack
+	if (h_stream_output) {
+		obs_output_update(h_stream_output, settings);
+		if (!reconnect) maxRetries = 0;
+		obs_output_set_delay(h_stream_output, useDelay ? delaySec : 0, preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
+		obs_output_set_reconnect_settings(h_stream_output, maxRetries, retryDelay);
+		if (!multitrackVideo || !multitrackVideoActive) {
+			SetupVodTrack(service); // Setup VOD track for horizontal output if not multitrack
+		}
+	} else {
+		blog(LOG_WARNING, "Horizontal stream output (SimpleOutput) is not available for configuration.");
 	}
 
-	if (multitrackVideo && multitrackVideoActive)
-		multitrackVideoActive = false;
+	bool horizontalStarted = false;
+	if (h_stream_output && obs_output_start(h_stream_output)) {
+		if (multitrackVideo && multitrackVideoActive)
+			multitrackVideo->StartedStreaming();
+		horizontalStarted = true;
+		blog(LOG_INFO, "Horizontal stream started successfully (SimpleOutput).");
+	} else {
+		if (multitrackVideo && multitrackVideoActive)
+			multitrackVideoActive = false;
+		const char *error = h_stream_output ? obs_output_get_last_error(h_stream_output) : "Output not available";
+		if (error && *error) lastError = error; else lastError.assign("Horizontal output failed to start or not available.");
+		blog(LOG_WARNING, "Horizontal stream output failed to start! %s", lastError.c_str());
+	}
 
-	const char *error = obs_output_get_last_error(streamOutput);
-	bool hasLastError = error && *error;
-	if (hasLastError)
-		lastError = error;
-	else
-		lastError = string();
+	// Vertical Stream Output
+	bool verticalAttempted = false;
+	bool verticalSuccessfullyStarted = false;
+	if (App()->IsDualOutputActive() && this->verticalStreamOutput && videoStreaming_v) {
+		verticalAttempted = true;
+		blog(LOG_INFO, "Attempting to start vertical stream (SimpleOutput)...");
 
-	const char *type = obs_output_get_id(streamOutput);
-	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type, hasLastError ? "  Last Error: " : "",
-	     hasLastError ? error : "");
+		// TODO: Apply vertical-specific delay, reconnect, and network settings if they are added to UI and config
+		// OBSDataAutoRelease settings_v = obs_data_create();
+		// obs_data_set_string(settings_v, "bind_ip", config_get_string(main->Config(), "Output", "BindIP_V_Stream"));
+		// ... etc. ...
+		// obs_output_update(this->verticalStreamOutput, settings_v);
+		// obs_output_set_delay(this->verticalStreamOutput, ...);
+		// obs_output_set_reconnect_settings(this->verticalStreamOutput, ...);
+		// For now, vertical stream uses default output settings or those applied during its creation in OBSApp::SetupOutputs
+
+		if (obs_output_start(this->verticalStreamOutput)) {
+			blog(LOG_INFO, "Vertical stream started successfully (SimpleOutput).");
+			verticalSuccessfullyStarted = true;
+		} else {
+			const char *error_v = obs_output_get_last_error(this->verticalStreamOutput);
+			blog(LOG_WARNING, "Vertical stream output failed to start! %s", error_v ? error_v : "Unknown error");
+			if (!horizontalStarted || (error_v && *error_v)) {
+				if(!lastError.empty() && lastError.back() != ' ') lastError += "; ";
+				lastError += "VerticalS: ";
+				lastError += (error_v && *error_v) ? error_v : "Unknown error";
+			}
+			verticalSuccessfullyStarted = false;
+		}
+	} else if (App()->IsDualOutputActive()) {
+		if (!this->verticalStreamOutput) blog(LOG_INFO, "Dual output active, but BasicOutputHandler::verticalStreamOutput is not set for SimpleOutput (cannot start vertical stream).");
+		if (!videoStreaming_v) blog(LOG_INFO, "Dual output active, but SimpleOutput::videoStreaming_v (encoder) is not set (cannot start vertical stream).");
+	}
+
+	// Determine overall success
+	if (horizontalStarted) return true; // If horizontal started, primary goal met.
+	if (App()->IsDualOutputActive() && verticalAttempted) return verticalSuccessfullyStarted; // If dual and vertical was tried, its success matters.
+	if (App()->IsDualOutputActive() && !verticalAttempted) return false; // Dual active, but vertical wasn't even attempted (config issue), and horizontal failed.
+
+	// If single output mode and horizontal failed.
+	const char *type = h_stream_output ? obs_output_get_id(h_stream_output) : "N/A";
+	blog(LOG_WARNING, "Stream output type '%s' (SimpleOutput) failed to start! Last Error: %s", type, lastError.c_str());
 	return false;
 }
 
-void SimpleOutput::UpdateRecording()
+// Replace existing SimpleOutput::StopStreaming
+void SimpleOutput::StopStreaming(bool force)
 {
-	const char *recFormat = config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
-	bool flv = strcmp(recFormat, "flv") == 0;
-	int tracks = config_get_int(main->Config(), "SimpleOutput", "RecTracks");
-	int idx = 0;
-	int idx2 = 0;
-	const char *quality = config_get_string(main->Config(), "SimpleOutput", "RecQuality");
-
-	if (replayBufferActive || recordingActive)
-		return;
-
-	if (usingRecordingPreset) {
-		if (!ffmpegOutput)
-			UpdateRecordingSettings();
-	} else if (!obs_output_active(streamOutput)) {
-		Update();
+	OBSOutputAutoRelease h_output = StreamingOutput(); // Horizontal output (could be multitrack)
+	if (h_output) {
+		blog(LOG_INFO, "Stopping horizontal stream (SimpleOutput)...");
+		if (force) obs_output_force_stop(h_output);
+		else obs_output_stop(h_output);
 	}
 
-	if (!Active())
-		SetupOutputs();
-
-	if (!ffmpegOutput) {
-		obs_output_set_video_encoder(fileOutput, videoRecording);
-		if (flv || strcmp(quality, "Stream") == 0) {
-			obs_output_set_audio_encoder(fileOutput, audioRecording, 0);
-		} else {
-			for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
-				if ((tracks & (1 << i)) != 0) {
-					obs_output_set_audio_encoder(fileOutput, audioTrack[i], idx++);
-				}
-			}
-		}
-	}
-	if (replayBuffer) {
-		obs_output_set_video_encoder(replayBuffer, videoRecording);
-		if (flv || strcmp(quality, "Stream") == 0) {
-			obs_output_set_audio_encoder(replayBuffer, audioRecording, 0);
-		} else {
-			for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
-				if ((tracks & (1 << i)) != 0) {
-					obs_output_set_audio_encoder(replayBuffer, audioTrack[i], idx2++);
-				}
-			}
-		}
+	if (this->verticalStreamOutput && obs_output_active(this->verticalStreamOutput)) {
+		blog(LOG_INFO, "Stopping vertical stream (SimpleOutput)...");
+		if (force) obs_output_force_stop(this->verticalStreamOutput);
+		else obs_output_stop(this->verticalStreamOutput);
 	}
 
-	recordingConfigured = true;
-}
-
-bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
-{
-	const char *path = config_get_string(main->Config(), "SimpleOutput", "FilePath");
-	const char *format = config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
-	const char *mux = config_get_string(main->Config(), "SimpleOutput", "MuxerCustom");
-	bool noSpace = config_get_bool(main->Config(), "SimpleOutput", "FileNameWithoutSpace");
-	const char *filenameFormat = config_get_string(main->Config(), "Output", "FilenameFormatting");
-	bool overwriteIfExists = config_get_bool(main->Config(), "Output", "OverwriteIfExists");
-	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput", "RecRBPrefix");
-	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput", "RecRBSuffix");
-	int rbTime = config_get_int(main->Config(), "SimpleOutput", "RecRBTime");
-	int rbSize = config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
-	int tracks = config_get_int(main->Config(), "SimpleOutput", "RecTracks");
-
-	bool is_fragmented = strncmp(format, "fragmented", 10) == 0;
-	bool is_lossless = videoQuality == "Lossless";
-
-	string f;
-
-	OBSDataAutoRelease settings = obs_data_create();
-	if (updateReplayBuffer) {
-		f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
-		string ext = GetFormatExt(format);
-		obs_data_set_string(settings, "directory", path);
-		obs_data_set_string(settings, "format", f.c_str());
-		obs_data_set_string(settings, "extension", ext.c_str());
-		obs_data_set_bool(settings, "allow_spaces", !noSpace);
-		obs_data_set_int(settings, "max_time_sec", rbTime);
-		obs_data_set_int(settings, "max_size_mb", usingRecordingPreset ? rbSize : 0);
-	} else {
-		f = GetFormatString(filenameFormat, nullptr, nullptr);
-		string strPath = GetRecordingFilename(path, ffmpegOutput ? "avi" : format, noSpace, overwriteIfExists,
-						      f.c_str(), ffmpegOutput);
-		obs_data_set_string(settings, ffmpegOutput ? "url" : "path", strPath.c_str());
-		if (ffmpegOutput)
-			obs_output_set_mixers(fileOutput, tracks);
-	}
-
-	// Use fragmented MOV/MP4 if user has not already specified custom movflags
-	if (is_fragmented && !is_lossless && (!mux || strstr(mux, "movflags") == NULL)) {
-		string mux_frag = "movflags=frag_keyframe+empty_moov+delay_moov";
-		if (mux) {
-			mux_frag += " ";
-			mux_frag += mux;
-		}
-		obs_data_set_string(settings, "muxer_settings", mux_frag.c_str());
-	} else {
-		if (is_fragmented && !is_lossless)
-			blog(LOG_WARNING, "User enabled fragmented recording, "
-					  "but custom muxer settings contained movflags.");
-		obs_data_set_string(settings, "muxer_settings", mux);
-	}
-
-	if (updateReplayBuffer)
-		obs_output_update(replayBuffer, settings);
-	else
-		obs_output_update(fileOutput, settings);
-
-	return true;
+	// multitrackVideoActive is reset by the stop signal handler for the multitrack output
 }
 
 bool SimpleOutput::StartRecording()
@@ -871,16 +897,6 @@ bool SimpleOutput::StartReplayBuffer()
 	return true;
 }
 
-void SimpleOutput::StopStreaming(bool force)
-{
-	auto output = StreamingOutput();
-	if (force && output)
-		obs_output_force_stop(output);
-	else if (multitrackVideo && multitrackVideoActive)
-		multitrackVideo->StopStreaming();
-	else
-		obs_output_stop(output);
-}
 
 void SimpleOutput::StopRecording(bool force)
 {
@@ -900,7 +916,9 @@ void SimpleOutput::StopReplayBuffer(bool force)
 
 bool SimpleOutput::StreamingActive() const
 {
-	return obs_output_active(StreamingOutput());
+	bool h_active = obs_output_active(StreamingOutput()); // Horizontal or multitrack
+	bool v_active = VerticalStreamingActive();
+	return h_active || v_active;
 }
 
 bool SimpleOutput::RecordingActive() const
@@ -911,4 +929,56 @@ bool SimpleOutput::RecordingActive() const
 bool SimpleOutput::ReplayBufferActive() const
 {
 	return obs_output_active(replayBuffer);
+}
+
+// Add these new functions or replace if stubs exist
+
+bool SimpleOutput::StartVerticalStreaming(obs_service_t *service)
+{
+	if (!App()->IsDualOutputActive() || !this->verticalStreamOutput || !videoStreaming_v) {
+		blog(LOG_WARNING, "Vertical stream cannot be started: Not in dual output mode or vertical output/encoder not configured (SimpleOutput).");
+		return false;
+	}
+
+	blog(LOG_INFO, "Attempting to start ONLY vertical stream (SimpleOutput)...");
+
+	// TODO: Apply vertical-specific service, delay, reconnect, and network settings
+	// This would mirror parts of StartStreaming but target verticalStreamOutput and vertical-specific configs
+	// For now, assumes verticalStreamOutput is pre-configured by OBSApp::SetupOutputs with its service
+	// and uses default/shared network settings.
+
+	// Example of setting service if it were managed here:
+	// if (service) { // A specific service for vertical stream
+	//     obs_output_set_service(this->verticalStreamOutput, service);
+	// } else {
+	//     blog(LOG_WARNING, "No service provided for StartVerticalStreaming.");
+	//     return false;
+	// }
+
+	if (obs_output_start(this->verticalStreamOutput)) {
+		blog(LOG_INFO, "Vertical stream started successfully via StartVerticalStreaming (SimpleOutput).");
+		return true;
+	} else {
+		const char *error_v = obs_output_get_last_error(this->verticalStreamOutput);
+		lastError = "VerticalS StartOnly: ";
+		lastError += (error_v && *error_v) ? error_v : "Unknown error";
+		blog(LOG_WARNING, "Vertical stream output (StartOnly) failed to start! %s", lastError.c_str());
+		return false;
+	}
+}
+
+void SimpleOutput::StopVerticalStreaming(bool force)
+{
+	if (this->verticalStreamOutput && obs_output_active(this->verticalStreamOutput)) {
+		blog(LOG_INFO, "Stopping ONLY vertical stream (SimpleOutput)...");
+		if (force) obs_output_force_stop(this->verticalStreamOutput);
+		else obs_output_stop(this->verticalStreamOutput);
+	} else {
+		blog(LOG_INFO, "StopVerticalStreaming called but vertical stream not active or not configured (SimpleOutput).");
+	}
+}
+
+bool SimpleOutput::VerticalStreamingActive() const
+{
+	return this->verticalStreamOutput && obs_output_active(this->verticalStreamOutput);
 }

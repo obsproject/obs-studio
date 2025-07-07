@@ -166,6 +166,61 @@ static void OBSDeactivateVirtualCam(void *data, calldata_t * /* params */)
 	output->DestroyVirtualCamView();
 }
 
+// --- Callbacks for Vertical Streaming ---
+void OBSStartVerticalStreaming(void *data, calldata_t *params)
+{
+	BasicOutputHandler *handler = static_cast<BasicOutputHandler *>(data);
+	handler->verticalStreamingActive = true;
+	// TODO: Add a global atomic for vertical streaming if needed elsewhere: os_atomic_set_bool(&vertical_streaming_active, true);
+	QMetaObject::invokeMethod(handler->main, "VerticalStreamingStart"); // Assumes a slot in OBSBasic
+	// Emit the specific signal from BasicOutputHandler
+	handler->startVerticalStreaming.Emit(params);
+}
+
+void OBSStopVerticalStreaming(void *data, calldata_t *params)
+{
+	BasicOutputHandler *handler = static_cast<BasicOutputHandler *>(data);
+	int code = (int)calldata_int(params, "code");
+	const char *last_error = calldata_string(params, "last_error");
+	QString arg_last_error = QString::fromUtf8(last_error);
+
+	handler->verticalStreamingActive = false;
+	handler->verticalDelayActive = false; // Reset delay state too
+	// TODO: os_atomic_set_bool(&vertical_streaming_active, false);
+	QMetaObject::invokeMethod(handler->main, "VerticalStreamingStop", Q_ARG(int, code), Q_ARG(QString, arg_last_error)); // Assumes a slot
+	handler->stopVerticalStreaming.Emit(params);
+}
+
+void OBSVerticalStreamDelayStarting(void *data, calldata_t *params)
+{
+	BasicOutputHandler *handler = static_cast<BasicOutputHandler *>(data);
+	obs_output_t *obj = (obs_output_t *)calldata_ptr(params, "output");
+	int sec = (int)obs_output_get_active_delay(obj);
+	if (sec == 0) return;
+
+	handler->verticalDelayActive = true;
+	// QMetaObject::invokeMethod(handler->main, "VerticalStreamDelayStarting", Q_ARG(int, sec)); // Assumes a slot
+	handler->verticalStreamDelayStarting.Emit(params);
+}
+
+void OBSVerticalStreamStopping(void *data, calldata_t *params)
+{
+	BasicOutputHandler *handler = static_cast<BasicOutputHandler *>(data);
+	obs_output_t *obj = (obs_output_t *)calldata_ptr(params, "output");
+	int sec = (int)obs_output_get_active_delay(obj);
+
+	// QMetaObject::invokeMethod(handler->main, sec == 0 ? "VerticalStreamStoppingEarly" : "VerticalStreamDelayStopping", Q_ARG(int, sec)); // Assumes slots
+	handler->verticalStreamStopping.Emit(params);
+}
+
+// TODO: Add OBSStartVerticalRecording, OBSStopVerticalRecording, etc. if implementing vertical recording
+
+static bool return_first_id(void *data, const char *id)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
+	output->DestroyVirtualCamView();
+}
+
 bool return_first_id(void *data, const char *id)
 {
 	const char **output = (const char **)data;

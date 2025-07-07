@@ -183,6 +183,21 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	recordStopping.Connect(obs_output_get_signal_handler(fileOutput), "stopping", OBSRecordStopping, this);
 	recordFileChanged.Connect(obs_output_get_signal_handler(fileOutput), "file_changed", OBSRecordFileChanged,
 				  this);
+
+	// Connect signals for Vertical Stream Output if it exists
+	if (this->verticalStreamOutput) { // verticalStreamOutput is from BasicOutputHandler
+		signal_handler_t *signal_v = obs_output_get_signal_handler(this->verticalStreamOutput);
+		// TODO: Create and connect to new global callbacks: OBSStartVerticalStreaming, OBSStopVerticalStreaming, etc.
+		// Example (placeholders, actual callbacks need to be defined and implemented):
+		startVerticalStreaming.Connect(signal_v, "start", OBSStartVerticalStreaming, this);
+		stopVerticalStreaming.Connect(signal_v, "stop", OBSStopVerticalStreaming, this);
+		verticalStreamDelayStarting.Connect(signal_v, "starting", OBSVerticalStreamDelayStarting, this);
+		verticalStreamStopping.Connect(signal_v, "stopping", OBSVerticalStreamStopping, this);
+		blog(LOG_INFO, "Connected signals for verticalStreamOutput in AdvancedOutput::SetupOutputs.");
+	} else if (App()->IsDualOutputActive()) {
+		blog(LOG_WARNING, "AdvancedOutput::SetupOutputs: Dual output active, but verticalStreamOutput is null. Cannot connect signals.");
+	}
+	// TODO: Add similar for verticalRecordingOutput if implemented
 }
 
 void AdvancedOutput::UpdateStreamSettings()
@@ -741,7 +756,79 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	const char *type = obs_output_get_id(streamOutput);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type, hasLastError ? "  Last Error: " : "",
 	     hasLastError ? error : "");
-	return false;
+	// Even if horizontal fails, try to start vertical if in dual mode
+	// The function will return true if at least one stream starts.
+	// Fall through if horizontal failed but dual output is active.
+	// horizontalStarted is false here.
+	}
+
+
+	// Vertical Stream Output
+	bool verticalAttempted = false;
+	bool verticalSuccessfullyStarted = false;
+	if (App()->IsDualOutputActive() && this->verticalStreamOutput) { // this->verticalStreamOutput is inherited
+		verticalAttempted = true;
+		blog(LOG_INFO, "Attempting to start vertical stream (AdvancedOutput)...");
+
+		// TODO: Apply vertical-specific settings (delay, reconnect, network) from AdvOut with _V_Stream suffixes
+		// OBSDataAutoRelease settings_v = obs_data_create();
+		// const char *bindIP_v = config_get_string(main->Config(), "Output", "BindIP_V_Stream"); // Example
+		// obs_data_set_string(settings_v, "bind_ip", bindIP_v);
+		// ... other settings ...
+		// obs_output_update(this->verticalStreamOutput, settings_v);
+		// bool v_useDelay = config_get_bool(main->Config(), "Output", "DelayEnable_V_Stream");
+		// ... set delay and reconnect for verticalStreamOutput ...
+
+		// Ensure encoders are set (this is primarily done in OBSApp::SetupOutputs when verticalStreamOutput is created)
+		// obs_output_set_video_encoder(this->verticalStreamOutput, App()->GetVerticalVideoEncoder()); // Conceptual
+		// obs_output_set_audio_encoder(this->verticalStreamOutput, App()->GetVerticalAudioEncoder(), 0); // Conceptual
+
+
+		if (obs_output_start(this->verticalStreamOutput)) {
+			blog(LOG_INFO, "Vertical stream started successfully (AdvancedOutput).");
+			verticalSuccessfullyStarted = true;
+		} else {
+			const char *error_v = obs_output_get_last_error(this->verticalStreamOutput);
+			blog(LOG_WARNING, "Vertical stream output (AdvancedOutput) failed to start! %s", error_v ? error_v : "Unknown error");
+			if (!horizontalStarted || (error_v && *error_v)) {
+				if(!lastError.empty() && lastError.back() != ' ') lastError += "; ";
+				lastError += "VerticalAdv: ";
+				lastError += (error_v && *error_v) ? error_v : "Unknown error";
+			}
+			verticalSuccessfullyStarted = false;
+		}
+	} else if (App()->IsDualOutputActive()) {
+		if (!this->verticalStreamOutput) blog(LOG_INFO, "Dual output active, but BasicOutputHandler::verticalStreamOutput is not set for AdvancedOutput (cannot start vertical stream).");
+		// No specific encoder member in AdvancedOutput for vertical, it's set on the output directly.
+	}
+
+	if (horizontalStarted) return true; // If horizontal started, primary goal met.
+	if (App()->IsDualOutputActive() && verticalAttempted) return verticalSuccessfullyStarted; // If dual and vertical was tried, its success matters.
+	if (App()->IsDualOutputActive() && !verticalAttempted && !horizontalStarted) return false; // Dual active, H failed, V not attempted -> total fail.
+
+	// If single output mode and horizontal failed (already returned false if horizontalStarted was false and not dual active).
+	return false; // Should be covered by initial horizontal failure if not dual active
+}
+
+
+void AdvancedOutput::StopStreaming(bool force)
+{
+	auto h_output = StreamingOutput(); // Horizontal output (could be multitrack)
+	if (h_output) {
+		blog(LOG_INFO, "Stopping horizontal stream (AdvancedOutput)...");
+		if (force) obs_output_force_stop(h_output);
+		else obs_output_stop(h_output);
+	}
+
+	if (multitrackVideo && multitrackVideoActive && !force) {
+		// multitrackVideo->StopStreaming(); // Handled by StreamingOutput() stop
+	}
+
+	if (this->verticalStreamOutput && obs_output_active(this->verticalStreamOutput)) {
+		blog(LOG_INFO, "Stopping vertical stream (AdvancedOutput)...");
+		if (force) obs_output_force_stop(this->verticalStreamOutput);
+		else obs_output_stop(this->verticalStreamOutput);
+	}
 }
 
 bool AdvancedOutput::StartRecording()
@@ -914,8 +1001,98 @@ void AdvancedOutput::StopReplayBuffer(bool force)
 
 bool AdvancedOutput::StreamingActive() const
 {
-	return obs_output_active(StreamingOutput());
+	bool h_active = obs_output_active(StreamingOutput()); // Horizontal or multitrack
+	bool v_active = VerticalStreamingActive(); // Uses the new virtual method
+	return h_active || v_active;
 }
+
+bool AdvancedOutput::StartVerticalStreaming(obs_service_t *service)
+{
+	if (!App()->IsDualOutputActive() || !this->verticalStreamOutput) {
+		blog(LOG_WARNING, "Vertical stream cannot be started: Not in dual output mode or vertical output not configured (AdvancedOutput).");
+		return false;
+	}
+
+	// Ensure outputs are set up if not already active (e.g. if only starting vertical)
+	if (!Active()) {
+		Update(); // This calls SetupOutputs which connects signals etc.
+		SetupOutputs(); // Explicitly call to ensure encoders are set on outputs
+	}
+
+	blog(LOG_INFO, "Attempting to start ONLY vertical stream (AdvancedOutput)...");
+
+	// TODO: Apply vertical-specific service, delay, reconnect, and network settings
+	// This would mirror parts of StartStreaming but target verticalStreamOutput and vertical-specific configs
+	// from "AdvOut" section with "_V_Stream" suffixes.
+	// Example:
+	// OBSDataAutoRelease settings_v = obs_data_create();
+	// const char *bindIP_v = config_get_string(main->Config(), "AdvOut", "BindIP_V_Stream");
+	// obs_data_set_string(settings_v, "bind_ip", bindIP_v);
+	// ... load other relevant network/delay settings for vertical stream ...
+	// obs_output_update(this->verticalStreamOutput, settings_v);
+	//
+	// bool v_useDelay = config_get_bool(main->Config(), "AdvOut", "DelayEnable_V_Stream");
+	// int v_delaySec = config_get_int(main->Config(), "AdvOut", "DelaySec_V_Stream");
+	// bool v_preserveDelay = config_get_bool(main->Config(), "AdvOut", "DelayPreserve_V_Stream");
+	// obs_output_set_delay(this->verticalStreamOutput, v_useDelay ? v_delaySec : 0, v_preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
+	//
+	// bool v_reconnect = config_get_bool(main->Config(), "AdvOut", "Reconnect_V_Stream");
+	// int v_retryDelay = config_get_int(main->Config(), "AdvOut", "RetryDelay_V_Stream");
+	// int v_maxRetries = config_get_int(main->Config(), "AdvOut", "MaxRetries_V_Stream");
+	// obs_output_set_reconnect_settings(this->verticalStreamOutput, v_reconnect ? v_maxRetries : 0, v_retryDelay);
+
+	// The service for verticalStreamOutput should have been set in OBSApp::SetupOutputs.
+	// If a different service object is passed here, it could be set:
+	if (service && obs_output_get_service(this->verticalStreamOutput) != service) {
+	    obs_output_set_service(this->verticalStreamOutput, service);
+	} else if (!obs_output_get_service(this->verticalStreamOutput)) {
+		// This case implies that OBSApp::SetupOutputs didn't assign a service,
+		// which it should have if verticalStreamOutput was properly created.
+		// This might happen if OBSApp::SetupOutputs only creates the output object
+		// but expects the service to be set here.
+		blog(LOG_WARNING, "StartVerticalStreaming: No service explicitly passed and verticalStreamOutput has no service. Attempting to use main service or fail.");
+		obs_service_t* main_service = main->GetService(); // Fallback to main service? Or require specific service?
+		if(main_service) obs_output_set_service(this->verticalStreamOutput, main_service);
+		else {
+			lastError = "VerticalAdv: Service not configured for vertical stream.";
+			blog(LOG_ERROR, "%s", lastError.c_str());
+			return false;
+		}
+	}
+
+
+	if (obs_output_start(this->verticalStreamOutput)) {
+		blog(LOG_INFO, "Vertical stream started successfully via StartVerticalStreaming (AdvancedOutput).");
+		this->verticalStreamingActive = true; // Update internal flag
+		return true;
+	} else {
+		const char *error_v = obs_output_get_last_error(this->verticalStreamOutput);
+		lastError = "VerticalAdv StartOnly: ";
+		lastError += (error_v && *error_v) ? error_v : "Unknown error";
+		blog(LOG_WARNING, "Vertical stream output (StartOnly) failed to start! %s", lastError.c_str());
+		this->verticalStreamingActive = false;
+		return false;
+	}
+}
+
+void AdvancedOutput::StopVerticalStreaming(bool force)
+{
+	if (this->verticalStreamOutput && obs_output_active(this->verticalStreamOutput)) {
+		blog(LOG_INFO, "Stopping ONLY vertical stream (AdvancedOutput)...");
+		if (force) obs_output_force_stop(this->verticalStreamOutput);
+		else obs_output_stop(this->verticalStreamOutput);
+	} else {
+		blog(LOG_INFO, "StopVerticalStreaming called but vertical stream not active or not configured (AdvancedOutput).");
+	}
+	// The actual verticalStreamingActive = false will be set by the OBSStopVerticalStreaming callback
+}
+
+bool AdvancedOutput::VerticalStreamingActive() const
+{
+	// Check both our flag and the output's state, as the flag is set by callbacks.
+	return this->verticalStreamingActive && this->verticalStreamOutput && obs_output_active(this->verticalStreamOutput);
+}
+
 
 bool AdvancedOutput::RecordingActive() const
 {
