@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Check Release Tag ☑️
         id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           : Check Release Tag ☑️
           if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
