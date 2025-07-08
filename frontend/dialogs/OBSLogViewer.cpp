@@ -29,6 +29,8 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLog
 	}
 
 	InitLog();
+
+	connect(App(), &OBSApp::logLineAdded, this, &OBSLogViewer::AddLine);
 }
 
 OBSLogViewer::~OBSLogViewer()
@@ -40,8 +42,6 @@ void OBSLogViewer::on_showStartup_clicked(bool checked)
 {
 	config_set_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup", checked);
 }
-
-extern QPointer<OBSLogViewer> obsLogViewer;
 
 void OBSLogViewer::InitLog()
 {
@@ -74,8 +74,6 @@ void OBSLogViewer::InitLog()
 	}
 	QScrollBar *scroll = ui->textArea->verticalScrollBar();
 	scroll->setValue(scroll->maximum());
-
-	obsLogViewer = this;
 }
 
 void OBSLogViewer::AddLine(int type, const QString &str)
