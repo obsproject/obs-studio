@@ -981,11 +981,12 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 
 	vodTrackContainer = new QWidget(this);
 	QHBoxLayout *vodTrackLayout = new QHBoxLayout();
-	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
-		vodTrack[i] = new QRadioButton(QString::number(i + 1));
-		vodTrackLayout->addWidget(vodTrack[i]);
-
-		HookWidget(vodTrack[i].data(), &QRadioButton::clicked, &OBSBasicSettings::OutputsChanged);
+	vodTracks.reserve(MAX_AUDIO_MIXES);
+	for (size_t i = 0; i < vodTracks.capacity(); i++) {
+		auto vodRadio = new QRadioButton(QString::number(i + 1));
+		vodTrackLayout->addWidget(vodRadio);
+		vodTracks.emplace_back(vodRadio);
+		HookWidget(vodRadio, &QRadioButton::clicked, &OBSBasicSettings::OutputsChanged);
 	}
 
 	HookWidget(vodTrackCheckbox.data(), &QCheckBox::clicked, &OBSBasicSettings::OutputsChanged);
@@ -1004,8 +1005,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	connect(vodTrackCheckbox, &QCheckBox::clicked, vodTrackContainer, &QWidget::setEnabled);
 
 	int trackIndex = config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
-	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
-		vodTrack[i]->setChecked((i + 1) == trackIndex);
+	for (size_t i = 0; i < vodTracks.size(); i++) {
+		vodTracks[i]->setChecked(((int)i + 1) == trackIndex);
 	}
 }
 
