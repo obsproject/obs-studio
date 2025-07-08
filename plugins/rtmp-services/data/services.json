@@ -3537,6 +3537,33 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
+        },
+        {
+            "name": "Spoon",
+            "servers": [
+                {
+                    "name": "Korea (RTMPS)",
+                    "url": "rtmps://kr-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Korea (RTMP)",
+                    "url": "rtmp://kr-rtmp.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMPS)",
+                    "url": "rtmps://jp-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMP)",
+                    "url": "rtmp://jp-rtmp.spooncast.net/live"
+                }
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "max audio bitrate": 96
+            }
         }
     ]
 }
