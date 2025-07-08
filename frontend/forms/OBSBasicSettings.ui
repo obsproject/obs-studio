@@ -2495,6 +2495,156 @@
                          <number>0</number>
                         </property>
                         <item>
+                         <widget class="QGroupBox" name="advOutServiceContainer_v_stream">
+                          <property name="title">
+                           <string>Basic.Settings.Stream</string>
+                          </property>
+                          <layout class="QFormLayout" name="advOutServiceLayout_v_stream">
+                           <property name="fieldGrowthPolicy">
+                            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                           </property>
+                           <property name="labelAlignment">
+                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                           </property>
+                           <item row="0" column="0">
+                            <widget class="QLabel" name="advServiceLabel_v_stream">
+                             <property name="minimumSize">
+                              <size>
+                               <width>170</width>
+                               <height>0</height>
+                              </size>
+                             </property>
+                             <property name="text">
+                              <string>Basic.Settings.Stream.Service</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advService_v_stream</cstring>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="0" column="1">
+                            <widget class="QComboBox" name="advService_v_stream"/>
+                           </item>
+                           <item row="1" column="1">
+                            <layout class="QHBoxLayout" name="advAccountButtonsLayout_v_stream">
+                             <item>
+                              <widget class="QPushButton" name="advConnectAccount_v_stream">
+                               <property name="text">
+                                <string>Basic.Settings.Stream.ConnectAccount</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QPushButton" name="advDisconnectAccount_v_stream">
+                               <property name="text">
+                                <string>Basic.Settings.Stream.DisconnectAccount</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <spacer name="advAccountButtonsSpacer_v_stream">
+                               <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                               </property>
+                               <property name="sizeHint" stdset="0">
+                                <size>
+                                 <width>40</width>
+                                 <height>20</height>
+                                </size>
+                               </property>
+                              </spacer>
+                             </item>
+                            </layout>
+                           </item>
+                           <item row="2" column="0">
+                            <widget class="QLabel" name="advServerLabel_v_stream">
+                             <property name="text">
+                              <string>Basic.Settings.Stream.Server</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advServer_v_stream</cstring>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="2" column="1">
+                            <widget class="QComboBox" name="advServer_v_stream">
+                             <property name="editable">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="3" column="0">
+                            <widget class="QLabel" name="advKeyLabel_v_stream">
+                             <property name="text">
+                              <string>Basic.Settings.Stream.StreamKey</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advKey_v_stream</cstring>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="3" column="1">
+                            <widget class="QLineEdit" name="advKey_v_stream">
+                             <property name="echoMode">
+                              <enum>QLineEdit::Password</enum>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="4" column="1">
+                            <widget class="QCheckBox" name="advAuthUseStreamKey_v_stream">
+                             <property name="text">
+                              <string>Basic.Settings.Stream.UseAuthentication</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="5" column="0">
+                            <widget class="QLabel" name="advAuthUsernameLabel_v_stream">
+                             <property name="text">
+                              <string>Username</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advAuthUsername_v_stream</cstring>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="5" column="1">
+                            <widget class="QLineEdit" name="advAuthUsername_v_stream"/>
+                           </item>
+                           <item row="6" column="0">
+                            <widget class="QLabel" name="advAuthPasswordLabel_v_stream">
+                             <property name="text">
+                              <string>Password</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advAuthPassword_v_stream</cstring>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="6" column="1">
+                            <widget class="QLineEdit" name="advAuthPassword_v_stream">
+                             <property name="echoMode">
+                              <enum>QLineEdit::Password</enum>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="7" column="1">
+                            <widget class="QCheckBox" name="advShowAllServices_v_stream">
+                             <property name="text">
+                              <string>Basic.Settings.Stream.ShowAll</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="8" column="1">
+                            <widget class="QCheckBox" name="advIgnoreRec_v_stream">
+                             <property name="text">
+                              <string>Basic.Settings.Stream.IgnoreRecommended</string>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </widget>
+                        </item>
+                        <item>
                          <widget class="QGroupBox" name="advOutTopContainer_v">
                           <property name="title">
                            <string>Basic.Settings.Output.Adv.Streaming.Settings</string>

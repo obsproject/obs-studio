@@ -1216,7 +1216,9 @@ void OBSBasic::OBSInit()
 			//    } else {
 			//        obs_display_set_source(window->GetDisplay(), nullptr);
 			//    }
-				blog(LOG_INFO, "Dual Output Active: Vertical display created. TODO: Set obs_source for vertical display.");
+				// blog(LOG_INFO, "Dual Output Active: Vertical display created. TODO: Set obs_source for vertical display.");
+				obs_display_set_source(window->GetDisplay(), App()->GetCurrentVerticalScene());
+				blog(LOG_INFO, "Dual Output Active: Vertical display created and source set.");
 			} else {
 			   obs_display_set_source(window->GetDisplay(), nullptr); // Clear source if not dual output
 			   window->setVisible(false); // Optionally hide it
@@ -2363,7 +2365,10 @@ void OBSBasic::HandleVerticalSceneChanged(obs_source_t *new_scene)
 		// If the vertical preview is active, update the scene list selection
 		SetCurrentScene(new_scene, true); // true to force
 	}
-	// Potentially update other UI elements specific to vertical output (e.g., a separate scene list or preview title)
+	// Update the vertical preview display source
+	if (ui->mainPreview_v && App()->IsDualOutputActive()) {
+		obs_display_set_source(ui->mainPreview_v->GetDisplay(), new_scene);
+	}
 }
 // Function to replace - STARTS
 void OBSBasic::SetCurrentScene(obs_source_t *scene, bool force)

@@ -74,7 +74,10 @@ private:
 	int verticalStreamRetries_ = 0;
 	uint64_t verticalStreamLastBytesSent_ = 0;
 	uint64_t verticalStreamLastBytesSentTime_ = 0;
-	int verticalStreamSecondsCounter_ = 0; // For periodic bandwidth update
+	int verticalStreamSecondsCounter_ = 0;
+	float verticalStreamLastCongestion_ = 0.0f;
+	std::vector<float> verticalStreamCongestionArray_;
+	bool vertical_stream_first_congestion_update_ = false;
 	// Add pixmaps for vertical stream status if different icons are desired
 
 	obs_output_t *GetOutput(); // This likely refers to the main (horizontal) stream output
@@ -104,6 +107,10 @@ private slots:
 	void UpdateStatusBar();
 	void UpdateCurrentFPS();
 	void UpdateIcons();
+
+private slots: // New private slots for vertical reconnect logic
+	void VerticalReconnect(int seconds);
+	void VerticalReconnectSuccess();
 
 public:
 	OBSBasicStatusBar(QWidget *parent);

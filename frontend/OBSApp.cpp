@@ -925,7 +925,8 @@ void OBSApp::SetupOutputs()
 					if (preset && *preset) obs_data_set_string(h_encoder_settings, "preset", preset);
 					const char* tune = config_get_string(profile_config, "Output", "Tune");
 					if (tune && *tune && strcmp(tune, Str("None")) != 0) obs_data_set_string(h_encoder_settings, "tune", tune);
-					// Custom settings are usually encoder-specific and might not fit generic obs_data_set_string easily
+					const char* custom_settings = config_get_string(profile_config, "Output", "StreamCustom");
+					if (custom_settings && *custom_settings) obs_data_set_string(h_encoder_settings, "custom", custom_settings); // Encoder might look for "custom" or parse it
 				}
 			} else { // Advanced mode
 				h_encoder_id = config_get_string(profile_config, "AdvOut", "Encoder");
@@ -985,11 +986,35 @@ void OBSApp::SetupOutputs()
 			}
 		}
 
+		// Apply audio settings to v_service_settings before creating the service
+		if (simple_mode) {
+			obs_data_set_int(v_service_settings, "abitrate", config_get_int(profile_config, "Output", "ABitrate_V_Stream"));
+			// obs_data_set_string(v_service_settings, "audio_encoder_id", "ffmpeg_aac"); // Example, if needed by service
+		} else { // Advanced Mode
+			const char* audio_encoder_id_v = config_get_string(profile_config, "AdvOut", "AEncoder_V_Stream");
+			if (audio_encoder_id_v && *audio_encoder_id_v) {
+				obs_data_set_string(v_service_settings, "audio_encoder_id", audio_encoder_id_v);
+			}
+
+			int audio_track_v = config_get_int(profile_config, "AdvOut", "TrackIndex_V_Stream"); // 1-6
+			if (audio_track_v >= 1 && audio_track_v <= 6) {
+				char key[32];
+				snprintf(key, sizeof(key), "AudioBitrateTrack%d", audio_track_v);
+				long long track_bitrate = config_get_int(profile_config, "AdvOut", key);
+				obs_data_set_int(v_service_settings, "abitrate", track_bitrate);
+				// The service itself would need to be aware of which track to encode if not just taking the main mix from obs_get_audio().
+				// This might involve a service-specific property like "audio_track_index".
+				// For now, we assume TrackIndex_V_Stream primarily informs bitrate selection from global track settings.
+			}
+		}
+
+
 		if (v_service_type && *v_service_type) {
 			vertical_stream_service = obs_service_create(v_service_type, "vertical_stream_service_internal", v_service_settings, nullptr);
 
 			if (vertical_stream_service) {
 				// obs_service_apply_settings(vertical_stream_service, v_service_settings); // Applied at creation
+				// Audio encoder settings are now part of v_service_settings or handled by service defaults.
 
 				const char *v_encoder_id = nullptr;
 				OBSDataAutoRelease v_encoder_settings = obs_data_create();
@@ -1003,7 +1028,8 @@ void OBSApp::SetupOutputs()
 						if (preset_v && *preset_v) obs_data_set_string(v_encoder_settings, "preset", preset_v);
 						const char* tune_v = config_get_string(profile_config, "Output", "Tune_V_Stream");
 						if (tune_v && *tune_v && strcmp(tune_v, Str("None")) != 0) obs_data_set_string(v_encoder_settings, "tune", tune_v);
-						// Custom settings for vertical simple
+						const char* custom_settings_v = config_get_string(profile_config, "Output", "StreamCustom_V_Stream");
+						if (custom_settings_v && *custom_settings_v) obs_data_set_string(v_encoder_settings, "custom", custom_settings_v);
 					}
 				} else { // Advanced mode for vertical stream
 					v_encoder_id = config_get_string(profile_config, "AdvOut", "Encoder_V_Stream");
