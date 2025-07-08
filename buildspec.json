@@ -32,16 +32,16 @@
             "hashes": {
                 "macos-x86_64": "94ff9dffd60a83a3cd30851eb5b55c1c8d00e7626bd2b8b22d332fc013643105",
                 "macos-arm64": "7c6c1c3706e08f470fb09c57bcfa49e760ba4a00dc59467e8c2c0d83bc99f0d5",
-                "ubuntu-x86_64": "cb7225c7a937ac4cdc9c41700061f45cccc640d696902357782e57f8250bf43a",
-                "ubuntu-aarch64": "e82388ef61776a88701b37d96e44f65dcc91f4d4f205f4f17cdc0d50f4e6a7a7",
+                "ubuntu-x86_64": "df38ef6d8078895953d224a58dd811b83110b4f8644c5cd2b6246d04b0023ee6",
+                "ubuntu-aarch64": "b1ebcedbe63657c7f38a4d547398a4759544f75d955777eea386052abc9c9228",
                 "windows-x64": "922efbda1f2f8be9e5b2754d878a14d90afc81f04e94fc9101a7513e2b5cecc1",
                 "windows-arm64": "df9df4bd85826b4c071c6db404fd59cf93efd9c58ec3ab64e204466ae19bb02a"
             },
             "revision": {
                 "macos-x86_64": 4,
                 "macos-arm64": 4,
-                "ubuntu-x86_64": 3,
-                "ubuntu-aarch64": 4,
+                "ubuntu-x86_64": 5,
+                "ubuntu-aarch64": 5,
                 "windows-x64": 2
             }
         }
