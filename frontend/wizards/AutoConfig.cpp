@@ -176,6 +176,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 		streamPage->ui->key->setText(key.c_str());
 
 	TestHardwareEncoding();
+	TestSoftwareEncoding();
 
 	int bitrate = config_get_int(main->Config(), "SimpleOutput", "VBitrate");
 	bool multitrackVideoEnabled = config_has_user_value(main->Config(), "Stream1", "EnableMultitrackVideo")
@@ -208,6 +209,16 @@ AutoConfig::~AutoConfig()
 	OBSBasic *main = OBSBasic::Get();
 	main->EnableOutputs(true);
 	EnableThreadedMessageBoxes(false);
+}
+
+void AutoConfig::TestSoftwareEncoding()
+{
+	size_t idx = 0;
+	const char *id;
+	while (obs_enum_encoder_types(idx++, &id)) {
+		if (strcmp(id, "obs_x264") == 0)
+			x264Available = true;
+	}
 }
 
 void AutoConfig::TestHardwareEncoding()
@@ -285,8 +296,10 @@ inline const char *AutoConfig::GetEncoderId(Encoder enc)
 		return SIMPLE_ENCODER_AMD;
 	case Encoder::Apple:
 		return SIMPLE_ENCODER_APPLE_H264;
-	default:
+	case Encoder::x264:
 		return SIMPLE_ENCODER_X264;
+	default:
+		return SIMPLE_ENCODER_OPENH264;
 	}
 };
 
