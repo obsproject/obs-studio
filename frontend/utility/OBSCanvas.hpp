@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -41,7 +42,7 @@ public:
 	operator obs_canvas_t *() const { return canvas; }
 
 	[[nodiscard]] std::optional<OBSDataAutoRelease> Save() const;
-	static std::optional<Canvas> Load(obs_data_t *data);
+	static std::unique_ptr<Canvas> Load(obs_data_t *data);
 	static std::vector<Canvas> LoadCanvases(obs_data_array_t *canvases);
 	static OBSDataArrayAutoRelease SaveCanvases(const std::vector<Canvas> &canvases);
 
