@@ -37,21 +37,14 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	statusWidget->ui->kbps->hide();
 
 	// Initialize Vertical Stream UI elements (assuming they exist in StatusBarWidget.ui)
-	// TODO: Add QLabel ui_vStreamTime, ui_vKbps, ui_vDroppedFrames, ui_vStatusIcon, ui_vStreamIcon to StatusBarWidget.ui
-	if (statusWidget->ui->vStreamTime) { // Check if UI element exists
-		statusWidget->ui->vStreamTime->setText(QString("00:00:00"));
-		statusWidget->ui->vStreamTime->setDisabled(true);
-	}
-	if (statusWidget->ui->vStreamIcon) { // Check if UI element exists
-		// statusWidget->ui->vStreamIcon->setPixmap(streamingInactivePixmap); // Assuming same icon for inactive
-	}
-	if (statusWidget->ui->vStatusIcon) { // Check if UI element exists
-		// statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap);
-	}
-	if (statusWidget->ui->vKbps) statusWidget->ui->vKbps->hide();
-	if (statusWidget->ui->vDroppedFrames) statusWidget->ui->vDroppedFrames->hide();
-	// TODO: Add a vertical delay frame if needed: statusWidget->ui->vDelayFrame->hide();
-
+	// Initialize Vertical Stream UI elements
+	statusWidget->ui->vStreamTime->setText(QString("V: 00:00:00"));
+	statusWidget->ui->vStreamTime->setDisabled(true);
+	statusWidget->ui->vStreamIcon->setPixmap(streamingInactivePixmap);
+	statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap);
+	statusWidget->ui->vKbps->hide();
+	statusWidget->ui->vDroppedFrames->hide();
+	statusWidget->ui->verticalStreamFrame->hide(); // Hide the whole frame initially
 
 	addPermanentWidget(statusWidget, 1);
 	setMinimumHeight(statusWidget->height());
@@ -119,13 +112,13 @@ void OBSBasicStatusBar::Activate()
 
 	// Vertical Stream UI activation
 	if (verticalStreamOutput_) { // Check if vertical stream output is configured
-		// TODO (UI): Update vertical stream icon to active, enable time label, show kbps/dropped frames
-		// if (statusWidget->ui->vStreamIcon) statusWidget->ui->vStreamIcon->setPixmap(streamingActivePixmap);
-		// if (statusWidget->ui->vStreamTime) statusWidget->ui->vStreamTime->setDisabled(false);
-		// if (statusWidget->ui->vKbps) statusWidget->ui->vKbps->show();
-		// if (statusWidget->ui->vDroppedFrames) statusWidget->ui->vDroppedFrames->show();
-		// if (statusWidget->ui->vStatusIcon) statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap); // Initial status
-		blog(LOG_INFO, "TODO: Activate vertical stream UI elements in status bar.");
+		statusWidget->ui->verticalStreamFrame->show();
+		statusWidget->ui->vStreamIcon->setPixmap(streamingActivePixmap);
+		statusWidget->ui->vStreamTime->setDisabled(false);
+		statusWidget->ui->vKbps->show();
+		statusWidget->ui->vDroppedFrames->show();
+		statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap); // Initial status
+		vertical_stream_first_congestion_update_ = true;
 	}
 }
 
@@ -156,8 +149,13 @@ void OBSBasicStatusBar::Deactivate()
 		totalRecordSeconds = 0;
 	}
 
-	if (main->outputHandler && !main->outputHandler->Active()) {
-		delete refreshTimer;
+	bool anyOutputActive = (streamOutput != nullptr) || (recordOutput != nullptr) || (verticalStreamOutput_ != nullptr);
+
+	if (main->outputHandler && !main->outputHandler->Active() && !anyOutputActive) { // Check if any output is active
+		if (refreshTimer) { // Check if timer exists before deleting
+			delete refreshTimer;
+			refreshTimer = nullptr; // Nullify after delete
+		}
 
 		statusWidget->ui->delayInfo->setText("");
 		statusWidget->ui->droppedFrames->setText(QTStr("DroppedFrames").arg("0", "0.0"));
@@ -174,18 +172,19 @@ void OBSBasicStatusBar::Deactivate()
 	}
 
 	// Vertical Stream UI deactivation
-	if (!verticalStreamOutput_ && statusWidget->ui->vStreamTime) { // Check if UI element exists
-		// TODO (UI): Update vertical stream UI to inactive state
-		// statusWidget->ui->vStreamTime->setText(QString("00:00:00"));
-		// statusWidget->ui->vStreamTime->setDisabled(true);
-		// if (statusWidget->ui->vStreamIcon) statusWidget->ui->vStreamIcon->setPixmap(streamingInactivePixmap);
-		// if (statusWidget->ui->vStatusIcon) statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap);
-		// if (statusWidget->ui->vDelayInfo) statusWidget->ui->vDelayInfo->hide();
-		// if (statusWidget->ui->vKbps) statusWidget->ui->vKbps->hide();
-		// if (statusWidget->ui->vDroppedFrames) statusWidget->ui->vDroppedFrames->hide();
-		// verticalStreamTotalSeconds_ = 0; // Reset time
-		// verticalStreamDisconnected_ = false;
-		blog(LOG_INFO, "TODO: Deactivate vertical stream UI elements in status bar.");
+	if (!verticalStreamOutput_) {
+		statusWidget->ui->vStreamTime->setText(QString("V: 00:00:00"));
+		statusWidget->ui->vStreamTime->setDisabled(true);
+		statusWidget->ui->vStreamIcon->setPixmap(streamingInactivePixmap);
+		statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap);
+		// if (statusWidget->ui->vDelayInfo) statusWidget->ui->vDelayInfo->hide(); // No vDelayInfo yet
+		statusWidget->ui->vKbps->hide();
+		statusWidget->ui->vDroppedFrames->hide();
+		statusWidget->ui->verticalStreamFrame->hide();
+		verticalStreamTotalSeconds_ = 0;
+		verticalStreamCongestionArray_.clear();
+		verticalStreamDisconnected_ = false;
+		vertical_stream_first_congestion_update_ = false;
 	}
 }
 
@@ -503,11 +502,10 @@ void OBSBasicStatusBar::UpdateStatusBar()
 
 	UpdateDroppedFrames(); // For horizontal stream
 
-	if (verticalStreamingActive_) {
+	if (verticalStreamingActive_ && verticalStreamOutput_) {
 		UpdateVerticalStreamTime();
-		// TODO: Call UpdateVerticalBandwidth() and UpdateVerticalDroppedFrames() if implemented
-		// These would be new functions similar to UpdateBandwidth and UpdateDroppedFrames,
-		// but using stats from verticalStreamOutput_.
+		UpdateVerticalBandwidth();
+		UpdateVerticalDroppedFrames();
 	}
 
 	int skipped = video_output_get_skipped_frames(obs_get_video());
@@ -667,15 +665,17 @@ void OBSBasicStatusBar::VerticalStreamStarted(obs_output_t *output)
 	verticalStreamRetries_ = 0;
 	verticalStreamLastBytesSent_ = 0;
 	verticalStreamLastBytesSentTime_ = os_gettime_ns();
-	verticalStreamSecondsCounter_ = 0; // For periodic bandwidth/dropped frames update
+	verticalStreamSecondsCounter_ = 0;
+	verticalStreamCongestionArray_.clear();
+	vertical_stream_first_congestion_update_ = true;
 
-	// TODO (UI): Update UI elements for vertical stream (e.g., icon, status text)
-	// Example:
-	// if (statusWidget->ui->vStreamIcon) statusWidget->ui->vStreamIcon->setPixmap(streamingActivePixmap); // Assuming same icon
-	// if (statusWidget->ui->vStreamTime) statusWidget->ui->vStreamTime->setDisabled(false);
-	// if (statusWidget->ui->vStatusIcon) statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap); // Initial status for congestion
-	// if (statusWidget->ui->vKbps) statusWidget->ui->vKbps->show();
-	// if (statusWidget->ui->vDroppedFrames) statusWidget->ui->vDroppedFrames->show();
+
+	statusWidget->ui->verticalStreamFrame->show();
+	statusWidget->ui->vStreamIcon->setPixmap(streamingActivePixmap);
+	statusWidget->ui->vStreamTime->setDisabled(false);
+	statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap);
+	statusWidget->ui->vKbps->show();
+	statusWidget->ui->vDroppedFrames->show();
 
 
 	// Use the main refresh timer (refreshTimer) if it's not already active,
@@ -696,9 +696,10 @@ void OBSBasicStatusBar::VerticalStreamStarted(obs_output_t *output)
 	}
 	*/
 
-	// TODO: Connect reconnect signals for verticalStreamOutput_ if applicable and if distinct from main stream output's signals
-	// verticalStreamSigs.emplace_back(obs_output_get_signal_handler(output), "reconnect", OBSOutputVerticalReconnectCallback, this);
-	// verticalStreamSigs.emplace_back(obs_output_get_signal_handler(output), "reconnect_success", OBSOutputVerticalReconnectSuccessCallback, this);
+	if (output) { // Ensure output is valid before getting signal handler
+		verticalStreamSigs.emplace_back(obs_output_get_signal_handler(output), "reconnect", OBSOutputVerticalReconnect, this);
+		verticalStreamSigs.emplace_back(obs_output_get_signal_handler(output), "reconnect_success", OBSOutputVerticalReconnectSuccess, this);
+	}
 
 	blog(LOG_INFO, "Vertical streaming started (status bar handling).");
 }
@@ -721,24 +722,28 @@ void OBSBasicStatusBar::VerticalStreamStopped(int code, QString last_error)
 	// }
 	// if (statusWidget->ui->vStreamIcon) statusWidget->ui->vStreamIcon->setPixmap(streamingInactivePixmap);
 	// if (statusWidget->ui->vStatusIcon) statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap);
-	// if (statusWidget->ui->vDelayInfo) statusWidget->ui->vDelayInfo->hide();
-	// if (statusWidget->ui->vKbps) statusWidget->ui->vKbps->hide();
-	// if (statusWidget->ui->vDroppedFrames) statusWidget->ui->vDroppedFrames->hide();
+	statusWidget->ui->vStreamTime->setText(QString("V: 00:00:00"));
+	statusWidget->ui->vStreamTime->setDisabled(true);
+	statusWidget->ui->vStreamIcon->setPixmap(streamingInactivePixmap);
+	statusWidget->ui->vStatusIcon->setPixmap(inactivePixmap);
+	// if (statusWidget->ui->vDelayInfo) statusWidget->ui->vDelayInfo->hide(); // No vDelayInfo yet
+	statusWidget->ui->vKbps->hide();
+	statusWidget->ui->vDroppedFrames->hide();
+	statusWidget->ui->verticalStreamFrame->hide();
 
 	Deactivate(); // Call Deactivate to check if the main refreshTimer can be stopped
 
 	blog(LOG_INFO, "Vertical streaming stopped (status bar handling). Code: %d, Error: %s", code, last_error.toUtf8().constData());
 	if (code != 0 && !last_error.isEmpty()) {
 		// TODO (UI): Consider a different message or way to show vertical stream specific errors if general showMessage is too intrusive.
-		showMessage(QTStr("Output.StreamStoppedPrematurely.Vertical").arg(code).arg(last_error), 5000);
+		// For now, using general showMessage. A dedicated label for vertical stream errors might be better.
+		showMessage(QTStr("Output.StreamStoppedPrematurely.Vertical", "Vertical Stream Stopped Prematurely: Code %1, Error: %2").arg(code).arg(last_error), 5000);
 	}
 }
 
 void OBSBasicStatusBar::UpdateVerticalStreamTime()
 {
 	if (!verticalStreamingActive_) {
-		// Ensure timer is stopped if not active
-		// if (verticalStreamTimer && verticalStreamTimer->isActive()) verticalStreamTimer->stop();
 		return;
 	}
 
@@ -749,52 +754,199 @@ void OBSBasicStatusBar::UpdateVerticalStreamTime()
 	int minutes = totalMinutes % 60;
 	int hours = totalMinutes / 60;
 
-	// TODO (UI): Update vertical stream time UI element (e.g., statusWidget->ui->vStreamTime)
-	// Example:
-	if (statusWidget->ui->vStreamTime) { // Check if UI element exists
-		QString text = QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
-		statusWidget->ui->vStreamTime->setText(text);
-		if (!statusWidget->ui->vStreamTime->isEnabled()) statusWidget->ui->vStreamTime->setDisabled(false);
+	QString text = QString::asprintf("V: %02d:%02d:%02d", hours, minutes, seconds);
+	statusWidget->ui->vStreamTime->setText(text);
+	if (!statusWidget->ui->vStreamTime->isEnabled()) statusWidget->ui->vStreamTime->setDisabled(false);
+
+	if (verticalStreamReconnectTimeout_ > 0) {
+		QString msg = QTStr("Basic.StatusBar.Reconnecting.Vertical", "Vertical Reconnecting: attempt %1 in %2 sec")
+				      .arg(QString::number(verticalStreamRetries_), QString::number(verticalStreamReconnectTimeout_));
+		// TODO: Show this message appropriately, perhaps in a dedicated vertical status message area or log
+		// For now, we can use the main message bar, or just log it.
+		// showMessage(msg); // This would overwrite main message
+		statusWidget->ui->vStatusIcon->setPixmap(disconnectedPixmap); // Use main disconnected Pixmap
+		verticalStreamCongestionArray_.clear();
+		verticalStreamReconnectTimeout_--;
+		verticalStreamDisconnected_ = true;
+
+
+	} else if (verticalStreamRetries_ > 0 && !verticalStreamDisconnected_) { // Only show attempting if not already in hard disconnected state
+		QString msg = QTStr("Basic.StatusBar.AttemptingReconnect.Vertical", "Vertical Stream: Attempting reconnect %1...")
+                                .arg(QString::number(verticalStreamRetries_));
+		// showMessage(msg);
 	}
 
-	// TODO: Handle reconnect timeout display for vertical stream if applicable
-	// if (verticalStreamReconnectTimeout_ > 0) { ... }
 
-	// TODO: Update vertical delay message if applicable
-	// if (verticalStreamDelaySecStopping_ > 0 || verticalStreamDelaySecStarting_ > 0) { UpdateVerticalDelayMsg_V(); } // Needs new helper
+	// TODO: Handle vertical delay display if/when implemented
+	// if (verticalStreamDelaySecStopping_ > 0 || verticalStreamDelaySecStarting_ > 0) { UpdateVerticalDelayMsg_V(); }
 }
+
+void OBSBasicStatusBar::UpdateVerticalBandwidth() {
+	if (!verticalStreamOutput_ || !verticalStreamingActive_) return;
+
+	if (++verticalStreamSecondsCounter_ < bitrateUpdateSeconds) return; // Use same bitrateUpdateSeconds
+
+	OBSOutput output = OBSGetStrongRef(verticalStreamOutput_);
+	if (!output) return;
+
+	uint64_t bytesSent = obs_output_get_total_bytes(output);
+	uint64_t bytesSentTime = os_gettime_ns();
+
+	if (bytesSent < verticalStreamLastBytesSent_) bytesSent = 0; // Reset if byte counter wrapped or output restarted
+	if (bytesSent == 0 && verticalStreamLastBytesSent_ != 0) verticalStreamLastBytesSent_ = 0; // If output reset, ensure we don't use old value
+
+	uint64_t bitsBetween = (bytesSent - verticalStreamLastBytesSent_) * 8;
+	double timePassed = double(bytesSentTime - verticalStreamLastBytesSentTime_) / 1000000000.0;
+	double kbitsPerSec = (timePassed > EPSILON) ? (double(bitsBetween) / timePassed / 1000.0) : 0.0;
+
+	QString text = QString("V: %1 kbps").arg(QString::number(kbitsPerSec, 'f', 0));
+	statusWidget->ui->vKbps->setText(text);
+	// statusWidget->ui->vKbps->setMinimumWidth(statusWidget->ui->vKbps->width()); // Optional: adjust width
+
+	if (!statusWidget->ui->vKbps->isVisible()) statusWidget->ui->vKbps->show();
+
+	verticalStreamLastBytesSent_ = bytesSent;
+	verticalStreamLastBytesSentTime_ = bytesSentTime;
+	verticalStreamSecondsCounter_ = 0;
+}
+
+void OBSBasicStatusBar::UpdateVerticalDroppedFrames() {
+    if (!verticalStreamOutput_ || !verticalStreamingActive_) return;
+
+    OBSOutput output = OBSGetStrongRef(verticalStreamOutput_);
+    if (!output) return;
+
+    int totalDropped = obs_output_get_frames_dropped(output);
+    int totalFrames = obs_output_get_total_frames(output);
+    double percent = (totalFrames > 0) ? ((double)totalDropped / (double)totalFrames * 100.0) : 0.0;
+
+    QString text = QTStr("DroppedFrames.Vertical", "V Dropped: %1 (%2%)")
+                           .arg(QString::number(totalDropped))
+                           .arg(QString::number(percent, 'f', 1));
+    statusWidget->ui->vDroppedFrames->setText(text);
+
+    if (!statusWidget->ui->vDroppedFrames->isVisible()) statusWidget->ui->vDroppedFrames->show();
+
+    float congestion = obs_output_get_congestion(output);
+    float avgCongestion = (congestion + verticalStreamLastCongestion_) * 0.5f;
+    if (avgCongestion < congestion) avgCongestion = congestion; // Prioritize current higher congestion
+    if (avgCongestion > 1.0f) avgCongestion = 1.0f;
+    verticalStreamLastCongestion_ = congestion;
+
+    if (verticalStreamDisconnected_) return;
+
+    bool update = vertical_stream_first_congestion_update_;
+    float congestionOverTime = avgCongestion;
+
+    if (verticalStreamCongestionArray_.size() >= congestionUpdateSeconds) {
+        congestionOverTime = std::accumulate(verticalStreamCongestionArray_.begin(), verticalStreamCongestionArray_.end(), 0.0f) /
+                             (float)verticalStreamCongestionArray_.size();
+        verticalStreamCongestionArray_.clear();
+        update = true;
+    } else {
+        verticalStreamCongestionArray_.emplace_back(avgCongestion);
+    }
+
+    if (update) {
+        if (congestionOverTime <= excellentThreshold + EPSILON)
+            statusWidget->ui->vStatusIcon->setPixmap(excellentPixmap);
+        else if (congestionOverTime <= goodThreshold)
+            statusWidget->ui->vStatusIcon->setPixmap(goodPixmap);
+        else if (congestionOverTime <= mediocreThreshold)
+            statusWidget->ui->vStatusIcon->setPixmap(mediocrePixmap);
+        else
+            statusWidget->ui->vStatusIcon->setPixmap(badPixmap);
+        vertical_stream_first_congestion_update_ = false;
+    }
+}
+
 
 void OBSBasicStatusBar::VerticalStreamDelayStarting(int seconds)
 {
-	// This assumes BasicOutputHandler's verticalDelayActive_ is set by its own callback.
-	// This slot is for UI updates.
-	// TODO (UI): Implement vertical stream delay UI update
-	// Example:
-	// if (statusWidget->ui->vDelayInfo) { // Assuming a vDelayInfo QLabel
-	// 	QString msg = QTStr("Basic.StatusBar.DelayStartingIn").arg(QString::number(seconds));
+	// TODO: Implement UI for vertical stream delay if a separate delay indicator is added.
+	// For now, just log.
+	blog(LOG_INFO, "Vertical stream delay UI update: Starting in %d seconds.", seconds);
+	// Example if vDelayInfo existed:
+	// if (statusWidget->ui->vDelayInfo) {
+	// 	QString msg = QTStr("Basic.StatusBar.DelayStartingIn.Vertical", "V Delay Starting: %1s").arg(QString::number(seconds));
 	//	statusWidget->ui->vDelayInfo->setText(msg);
 	//	statusWidget->ui->vDelayInfo->show();
 	// }
-	blog(LOG_INFO, "Vertical stream delay UI update: Starting in %d seconds.", seconds);
-	// For now, just log. UI part depends on vDelayInfo QLabel.
-	// This also needs member like verticalStreamDelaySecStarting_ if we want to show countdown here.
+	// verticalStreamDelaySecStarting_ = seconds; // Need member if counting down here
 }
 
 void OBSBasicStatusBar::VerticalStreamStopping()
 {
-	// This slot is for UI updates when stopping with delay.
-	// TODO (UI): Implement vertical stream delay stopping UI update
-	// Example:
-	// if (statusWidget->ui->vDelayInfo && verticalStreamDelaySecStopping_ > 0) { // Assuming a member for stopping delay seconds
-	// 	QString msg = QTStr("Basic.StatusBar.DelayStoppingIn").arg(QString::number(verticalStreamDelaySecStopping_));
+	// TODO: Implement UI for vertical stream stopping delay.
+	blog(LOG_INFO, "Vertical stream stopping UI update (with delay).");
+	// Example if vDelayInfo and verticalStreamDelaySecStopping_ existed:
+	// if (statusWidget->ui->vDelayInfo && verticalStreamDelaySecStopping_ > 0) {
+	// 	QString msg = QTStr("Basic.StatusBar.DelayStoppingIn.Vertical", "V Delay Stopping: %1s").arg(QString::number(verticalStreamDelaySecStopping_));
 	//	statusWidget->ui->vDelayInfo->setText(msg);
 	//	statusWidget->ui->vDelayInfo->show();
 	// } else if (statusWidget->ui->vDelayInfo) {
 	//    statusWidget->ui->vDelayInfo->hide();
 	// }
-	blog(LOG_INFO, "Vertical stream stopping UI update.");
-	// For now, just log. UI part depends on vDelayInfo QLabel and related state.
 }
 
-// TODO: Add OBSOutputVerticalReconnect and OBSOutputVerticalReconnectSuccess static callbacks if needed
-// and connect them in VerticalStreamStarted.
+// Callbacks for vertical stream reconnect
+void OBSBasicStatusBar::OBSOutputVerticalReconnect(void *data, calldata_t *params)
+{
+	OBSBasicStatusBar *statusBar = static_cast<OBSBasicStatusBar *>(data);
+	int seconds = (int)calldata_int(params, "timeout_sec");
+	QMetaObject::invokeMethod(statusBar, "VerticalReconnect", Qt::QueuedConnection, Q_ARG(int, seconds));
+}
+
+void OBSBasicStatusBar::OBSOutputVerticalReconnectSuccess(void *data, calldata_t *)
+{
+	OBSBasicStatusBar *statusBar = static_cast<OBSBasicStatusBar *>(data);
+	QMetaObject::invokeMethod(statusBar, "VerticalReconnectSuccess", Qt::QueuedConnection);
+}
+
+void OBSBasicStatusBar::VerticalReconnect(int seconds)
+{
+	OBSBasic *main = qobject_cast<OBSBasic *>(parent());
+	if (!main) return;
+
+	if (!verticalStreamRetries_) {
+		// main->SysTrayNotify(QTStr("Basic.SystemTray.Message.Reconnecting.Vertical", "Vertical Stream: Reconnecting..."), QSystemTrayIcon::Warning);
+	}
+
+	verticalStreamReconnectTimeout_ = seconds;
+	verticalStreamDisconnected_ = true; // Mark as disconnected during reconnect attempt
+
+	if (verticalStreamOutput_) {
+		OBSOutput output = OBSGetStrongRef(verticalStreamOutput_);
+		if (output) {
+			// verticalStreamDelaySecTotal_ = obs_output_get_active_delay(output); // If vertical delay is implemented
+			// UpdateVerticalDelayMsg_V();
+		}
+		verticalStreamRetries_++;
+	}
+}
+
+void OBSBasicStatusBar::VerticalReconnectSuccess()
+{
+	OBSBasic *main = qobject_cast<OBSBasic *>(parent());
+	if (!main) return;
+
+	// QString msg = QTStr("Basic.StatusBar.ReconnectSuccessful.Vertical", "Vertical Stream: Reconnect successful!");
+	// showMessage(msg, 4000); // This would overwrite main message
+	// main->SysTrayNotify(msg, QSystemTrayIcon::Information);
+
+	verticalStreamRetries_ = 0;
+	verticalStreamReconnectTimeout_ = 0;
+	verticalStreamDisconnected_ = false; // Mark as connected
+	// verticalStreamDelaySecTotal_ = 0;
+	// UpdateVerticalDelayMsg_V();
+
+	if (verticalStreamOutput_) {
+		OBSOutput output = OBSGetStrongRef(verticalStreamOutput_);
+		if (output) {
+			// verticalStreamDelaySecTotal_ = obs_output_get_active_delay(output);
+			// UpdateVerticalDelayMsg_V();
+		}
+		vertical_stream_first_congestion_update_ = true; // Force congestion update
+		UpdateVerticalDroppedFrames(); // Update status immediately
+	}
+}
