@@ -324,6 +324,9 @@ public:
 
 	inline bool Closing() { return closing; }
 
+	// TODO: Determine best place in header files for this
+	static void AddNewModules(void *param, obs_module_t *module);
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
@@ -755,6 +758,9 @@ public:
 
 private slots:
 	void ResizeOutputSizeOfSource();
+
+private slots:
+	void on_actionOpenPluginManager_triggered();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Preview
