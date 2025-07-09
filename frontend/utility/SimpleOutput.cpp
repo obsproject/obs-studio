@@ -808,6 +808,12 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 		verticalAttempted = true;
 		blog(LOG_INFO, "Attempting to start vertical stream (SimpleOutput)...");
 
+		// Ensure the video encoder configured by SimpleOutput::Update() is set on the output
+		obs_output_set_video_encoder(this->verticalStreamOutput, videoStreaming_v);
+		// Audio encoder for vertical stream is handled by the service using settings from OBSApp::SetupOutputs,
+		// or directly on the output if it's a muxing type not using a separate service audio encoder.
+		// SimpleOutput doesn't manage a separate audio encoder instance for vertical to set here.
+
 		// TODO: Apply vertical-specific delay, reconnect, and network settings if they are added to UI and config
 		// OBSDataAutoRelease settings_v = obs_data_create();
 		// obs_data_set_string(settings_v, "bind_ip", config_get_string(main->Config(), "Output", "BindIP_V_Stream"));
@@ -838,7 +844,8 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	// Determine overall success
 	if (horizontalStarted) return true; // If horizontal started, primary goal met.
 	if (App()->IsDualOutputActive() && verticalAttempted) return verticalSuccessfullyStarted; // If dual and vertical was tried, its success matters.
-	if (App()->IsDualOutputActive() && !verticalAttempted) return false; // Dual active, but vertical wasn't even attempted (config issue), and horizontal failed.
+	if (App()->IsDualOutputActive() && !verticalAttempted && !horizontalStarted) return false; // Dual active, H failed, V not attempted -> total fail.
+
 
 	// If single output mode and horizontal failed.
 	const char *type = h_stream_output ? obs_output_get_id(h_stream_output) : "N/A";

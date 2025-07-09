@@ -971,10 +971,18 @@ void OBSApp::SetupOutputs()
 		OBSDataAutoRelease v_service_settings = obs_data_create();
 
 		if (simple_mode) {
-			v_service_type = config_get_string(profile_config, "Output", "Service_V_Stream"); // This key needs to be saved by Simple Output settings
-			obs_data_set_string(v_service_settings, "server", config_get_string(profile_config, "Output", "Server_V_Stream"));
-			obs_data_set_string(v_service_settings, "key", config_get_string(profile_config, "Output", "Key_V_Stream"));
-			// Note: Simple mode UI for vertical stream doesn't have separate auth. Assumes key-based or no auth.
+			// Simple mode for vertical stream uses the main service settings (like horizontal simple stream)
+			// Service type is taken from horizontal stream's service
+			v_service_type = h_service_type_from_stream_page; // From horizontal setup
+			// Copy server/key/auth from main "Stream" page config
+			obs_data_set_string(v_service_settings, "server", config_get_string(profile_config, "Stream", "Server"));
+			obs_data_set_string(v_service_settings, "key", config_get_string(profile_config, "Stream", "Key"));
+			if (config_get_bool(profile_config, "Stream", "UseAuth")) {
+				obs_data_set_bool(v_service_settings, "use_auth", true);
+				obs_data_set_string(v_service_settings, "username", config_get_string(profile_config, "Stream", "Username"));
+				obs_data_set_string(v_service_settings, "password", config_get_string(profile_config, "Stream", "Password"));
+			}
+			// Vertical simple stream specific audio bitrate is set below
 		} else { // Advanced mode for vertical stream
 			v_service_type = config_get_string(profile_config, "AdvOut", "VStream_ServiceType");
 			obs_data_set_string(v_service_settings, "server", config_get_string(profile_config, "AdvOut", "VStream_Server"));
@@ -986,11 +994,12 @@ void OBSApp::SetupOutputs()
 			}
 		}
 
-		// Apply audio settings to v_service_settings before creating the service
+		// Apply audio settings to v_service_settings. This is done for both simple and advanced mode here.
 		if (simple_mode) {
 			obs_data_set_int(v_service_settings, "abitrate", config_get_int(profile_config, "Output", "ABitrate_V_Stream"));
-			// obs_data_set_string(v_service_settings, "audio_encoder_id", "ffmpeg_aac"); // Example, if needed by service
-		} else { // Advanced Mode
+			// Potentially set a default audio_encoder_id if services commonly require it and it's not otherwise set for simple
+			// Example: obs_data_set_string(v_service_settings, "audio_encoder_id", "aac");
+		} else { // Advanced Mode for audio part of service settings
 			const char* audio_encoder_id_v = config_get_string(profile_config, "AdvOut", "AEncoder_V_Stream");
 			if (audio_encoder_id_v && *audio_encoder_id_v) {
 				obs_data_set_string(v_service_settings, "audio_encoder_id", audio_encoder_id_v);
@@ -998,18 +1007,16 @@ void OBSApp::SetupOutputs()
 
 			int audio_track_v = config_get_int(profile_config, "AdvOut", "TrackIndex_V_Stream"); // 1-6
 			if (audio_track_v >= 1 && audio_track_v <= 6) {
-				char key[32];
-				snprintf(key, sizeof(key), "AudioBitrateTrack%d", audio_track_v);
-				long long track_bitrate = config_get_int(profile_config, "AdvOut", key);
+				char key_track_bitrate[32]; // Changed variable name to avoid conflict
+				snprintf(key_track_bitrate, sizeof(key_track_bitrate), "AudioBitrateTrack%d", audio_track_v);
+				long long track_bitrate = config_get_int(profile_config, "AdvOut", key_track_bitrate);
 				obs_data_set_int(v_service_settings, "abitrate", track_bitrate);
-				// The service itself would need to be aware of which track to encode if not just taking the main mix from obs_get_audio().
-				// This might involve a service-specific property like "audio_track_index".
-				// For now, we assume TrackIndex_V_Stream primarily informs bitrate selection from global track settings.
 			}
 		}
 
 
 		if (v_service_type && *v_service_type) {
+			blog(LOG_INFO, "Vertical Service Type: %s, Server: %s", v_service_type, obs_data_get_string(v_service_settings, "server"));
 			vertical_stream_service = obs_service_create(v_service_type, "vertical_stream_service_internal", v_service_settings, nullptr);
 
 			if (vertical_stream_service) {
