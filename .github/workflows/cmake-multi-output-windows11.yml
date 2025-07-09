@@ -1,0 +1,92 @@
+name: CMake Build for Windows 11 (x64)
+
+on:
+  workflow_dispatch: # Allows manual triggering
+    inputs:
+      build_config:
+        description: 'Build configuration (e.g., Release, RelWithDebInfo, Debug)'
+        required: true
+        default: 'Release'
+      architecture:
+        description: 'Target architecture'
+        required: true
+        default: 'x64'
+        type: choice
+        options:
+          - x64
+          - arm64
+      package_output:
+        description: 'Create installer package (true/false)'
+        required: true
+        default: 'true'
+        type: boolean
+
+  push:
+    branches: [ "master" ] # Or your main development branch
+  pull_request:
+    branches: [ "master" ] # Or your main development branch
+
+jobs:
+  build_windows:
+    name: Build for Windows 11 (${{ inputs.architecture || github.event.inputs.architecture || 'x64' }})
+    runs-on: windows-latest # This generally uses Windows Server 2022, which is compatible for Win11 builds
+    defaults:
+      run:
+        shell: pwsh # Aligning with OBS project's preference for Windows jobs
+
+    steps:
+    - name: Checkout Repository 🛎️
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive # Important for OBS Studio
+        fetch-depth: 0 # Necessary for some versioning/packaging steps
+
+    # The 'check-event' job in build-project.yaml determines config, package, codesign flags.
+    # For a dispatchable workflow focused on Windows 11, we'll use inputs or sensible defaults.
+    # Secrets would still be needed for full functionality of custom actions if they do signing.
+
+    - name: Build OBS Studio 🧱
+      uses: ./.github/actions/build-obs
+      env: # These are typically provided by secrets in the OBS project
+        TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
+        TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+        RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+        RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+        YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+        YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+        YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+        YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+        GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
+      with:
+        target: ${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}
+        config: ${{ inputs.build_config || github.event.inputs.build_config || 'Release' }}
+        # codesign related inputs would go here if signing is desired for these builds
+        # For example:
+        # codesign: ${{ (inputs.build_config || github.event.inputs.build_config || 'Release') == 'Release' && secrets.WINDOWS_CODESIGN_PFX_CERT_BASE64 != '' }}
+        # signcert_base64: ${{ secrets.WINDOWS_CODESIGN_PFX_CERT_BASE64 }}
+        # signcert_pass: ${{ secrets.WINDOWS_CODESIGN_PFX_PASS }}
+
+    - name: Package OBS Studio 📀
+      if: ${{ (inputs.package_output || github.event.inputs.package_output || 'true') == 'true' }}
+      uses: ./.github/actions/package-obs
+      with:
+        target: ${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}
+        config: ${{ inputs.build_config || github.event.inputs.build_config || 'Release' }}
+        package: true # We always want to package if this step runs
+        # codesign and notarization inputs would also go here if applicable
+
+    - name: Upload Artifacts 📡
+      uses: actions/upload-artifact@v4
+      with:
+        name: obs-studio-windows-${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}-${{ github.sha }}
+        # The path depends on where package-obs places the output.
+        # From build-project.yaml, it seems to be:
+        # ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.zip
+        # ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.exe (for installer)
+        # We need to confirm the exact output path structure of package-obs or make it configurable.
+        # For now, let's assume a common pattern.
+        path: |
+          ${{ github.workspace }}/build_${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}/obs-studio-*-windows-${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}.zip
+          ${{ github.workspace }}/build_${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}/obs-studio-*-windows-${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}.exe
+          ${{ github.workspace }}/build_${{ inputs.architecture || github.event.inputs.architecture || 'x64' }}/PDBs_x64.zip
+        if-no-files-found: warn # Don't fail the workflow if an optional file isn't there
