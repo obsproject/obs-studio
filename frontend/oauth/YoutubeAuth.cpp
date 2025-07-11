@@ -141,7 +141,9 @@ void YoutubeAuth::LoadUI()
 	}
 #endif
 
-	main->NewYouTubeAppDock();
+	if (!main->GetYouTubeAppDock()) {
+		main->NewYouTubeAppDock();
+	}
 
 	if (!firstLoad) {
 		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState");
