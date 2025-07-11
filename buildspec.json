@@ -1,28 +1,28 @@
 {
     "dependencies": {
         "prebuilt": {
-            "version": "2025-05-23",
+            "version": "2025-07-11",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "7b1448581b92c6f8d4e2f9b1b10eb318ebfc4df7255638e05bacb49b620e190d",
-                "windows-x64": "88dc7bab50542b4b58194cdd5d7e6f4b73cde7c0d1ee7a040a6d9c9df05187b1",
-                "windows-x86": "f6d01c7c31f14cb245803963a2f9af42b01b63f9baadf6259e56843d94eae8c4",
-                "windows-arm64": "43520957736d332b0a545c320db7087762e394ef78243d72769fb59794e00913"
+                "macos-universal": "495687e63383d1a287684b6e2e9bfe246bb8f156fe265926afb1a325af1edd2a",
+                "windows-x64": "c8c642c1070dc31ce9a0f1e4cef5bb992f4bff4882255788b5da12129e85caa7",
+                "windows-x86": "85e3503d254abbdd1155b058cb7df14da33b862d5a3c058c728456f71a69841b",
+                "windows-arm64": "f581cc61e8f734a8b12d485fc8662a408ca59d222814e4b37bce115bd442fb04"
             }
         },
         "qt6": {
-            "version": "2025-05-23",
+            "version": "2025-07-11",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "d4945fe719d31d353dc76298f58823d7891126e33af5029f763427ea9f80bfaa",
-                "windows-x64": "bd80383dc799c0bba2f7fae793613b3fbd2cc3a3712b3d3b63b490721d187d9e",
-                "windows-arm64": "35a06786c460031571134f0e2ba288a9dce4ddf044686f6af48fae52728d1796"
+                "macos-universal": "d3f5f04b6ea486e032530bdf0187cbda9a54e0a49621a4c8ba984c5023998867",
+                "windows-x64": "0e76bf0555dd5382838850b748d3dcfab44a1e1058441309ab54e1a65b156d0a",
+                "windows-arm64": "7aab240504931f32ea8e8d208a912a0d6ddbd78c16858f2e559c7c9b29ab9326"
             },
             "debugSymbols": {
-                "windows-x64": "9c9a15c5dbe59eb6a1c31c06b7208f3c4403671fbdfaef341cac3beb7af24ea1",
-                "windows-arm64": "a6229cc9e5e08a22921b1fa8fb10fc6e36e88f692fa2e6921c1b61b7a3161c81"
+                "windows-x64": "11b7be92cf66a273299b8f3515c07a5cfb61614b59a4e67f7fc5ecba5e2bdf21",
+                "windows-arm64": "884ae08291b5c87d83a7b0004ea8db356530c1f4ff9bdc814b5d599a8d28a152"
             }
         },
         "cef": {
