@@ -16,8 +16,8 @@
         {
             "type": "git",
             "url": "https://github.com/Haivision/srt.git",
-            "tag": "v1.5.4",
-            "commit": "a8c6b65520f814c5bd8f801be48c33ceece7c4a6"
+            "tag": "v1.5.3",
+            "commit": "09f35c0f1743e23f514cb41444504a7faeacf89e"
         }
     ]
 }
