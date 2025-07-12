@@ -1414,6 +1414,7 @@ private:
 	void SetPreviewProgramMode(bool enabled);
 	void ResizeProgram(uint32_t cx, uint32_t cy);
 	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
+	void resizeProgramWidget();
 
 	void UpdatePreviewProgramIndicators();
 

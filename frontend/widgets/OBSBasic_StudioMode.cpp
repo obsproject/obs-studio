@@ -220,6 +220,10 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		programLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 		programLabel->setProperty("class", "label-preview-title");
 
+		QFrame *programSpacer = new QFrame();
+		programSpacer->setObjectName("programSpacer");
+		programSpacer->setContentsMargins(0, 0, 0, 0);
+
 		programWidget = new QWidget();
 		programLayout = new QVBoxLayout();
 
@@ -228,6 +232,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		programLayout->addWidget(programLabel);
 		programLayout->addWidget(program);
+		programLayout->addWidget(programSpacer);
 
 		programWidget->setLayout(programLayout);
 
@@ -282,6 +287,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 	ResetUI();
 	UpdateTitleBar();
+	resizeProgramWidget();
 }
 
 void OBSBasic::RenderProgram(void *data, uint32_t, uint32_t)
@@ -313,6 +319,30 @@ void OBSBasic::RenderProgram(void *data, uint32_t, uint32_t)
 	gs_viewport_pop();
 
 	GS_DEBUG_MARKER_END();
+}
+
+void OBSBasic::resizeProgramWidget()
+{
+	if (!programWidget) {
+		return;
+	}
+
+	if (!IsPreviewProgramMode()) {
+		programWidget->setMinimumWidth(0);
+		programWidget->setMaximumWidth(QWIDGETSIZE_MAX);
+		return;
+	}
+
+	if (abs(programWidget->width() - ui->preview->width()) >= 2) {
+		/* Changing the size of the program widget causes the preview to resize which triggers this method again.
+		 * Setting the maximum width to the average of the two causes the uneven space to get distributed evenly.
+		 */
+		programWidget->setMaximumWidth(round((programWidget->width() + ui->preview->width()) / 2));
+	}
+
+	if (ui->previewXContainer->isVisible()) {
+		programWidget->setMinimumWidth(ui->previewXContainer->minimumSizeHint().width());
+	}
 }
 
 void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)
