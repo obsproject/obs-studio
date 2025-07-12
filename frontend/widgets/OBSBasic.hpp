@@ -24,6 +24,7 @@
 #include <oauth/Auth.hpp>
 #include <utility/BasicOutputHandler.hpp>
 #include <utility/OBSCanvas.hpp>
+#include <utility/PreviewProgramSizeObserver.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
 #include <utility/undo_stack.hpp>
@@ -1430,6 +1431,7 @@ private:
 	int programX = 0, programY = 0;
 	int programCX = 0, programCY = 0;
 	float programScale = 0.0f;
+	QPointer<PreviewProgramSizeObserver> sizeObserver;
 
 	void CreateProgramDisplay();
 	void CreateProgramOptions();
