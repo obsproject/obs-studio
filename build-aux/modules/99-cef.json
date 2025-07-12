@@ -17,8 +17,8 @@
     "sources": [
         {
             "type": "archive",
-            "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_6533_linux_x86_64_v3.tar.xz",
-            "sha256": "cb7225c7a937ac4cdc9c41700061f45cccc640d696902357782e57f8250bf43a"
+            "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_6533_linux_x86_64_v5.tar.xz",
+            "sha256": "df38ef6d8078895953d224a58dd811b83110b4f8644c5cd2b6246d04b0023ee6"
         }
     ]
 }
