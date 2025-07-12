@@ -249,8 +249,10 @@ static void preload_frame(void *opaque, struct obs_source_frame *f)
 	if (s->close_when_inactive)
 		return;
 
-	if (s->is_clear_on_media_end || s->is_looping)
+	if (s->is_clear_on_media_end || s->is_looping) {
+		obs_source_output_video(s->source, NULL);
 		obs_source_preload_video(s->source, f);
+	}
 
 	if (!s->is_local_file && os_atomic_set_bool(&s->reconnecting, false))
 		FF_BLOG(LOG_INFO, "Reconnected.");
@@ -326,8 +328,10 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 	media_playback_play(s->media, s->is_looping, s->reconnecting);
 	if (s->is_local_file && media_playback_has_video(s->media) && (s->is_clear_on_media_end || s->is_looping))
 		obs_source_show_preloaded_video(s->source);
-	else
+	else {
 		obs_source_output_video(s->source, NULL);
+		media_playback_seek(s->media, 0);
+	}
 	set_media_state(s, OBS_MEDIA_STATE_PLAYING);
 	obs_source_media_started(s->source);
 }
@@ -655,8 +659,10 @@ static void ffmpeg_source_activate(void *data)
 {
 	struct ffmpeg_source *s = data;
 
-	if (s->restart_on_activate)
+	if (s->restart_on_activate) {
+		obs_source_output_video(s->source, NULL);
 		obs_source_media_restart(s->source);
+	}
 }
 
 static void ffmpeg_source_deactivate(void *data)
@@ -667,8 +673,7 @@ static void ffmpeg_source_deactivate(void *data)
 		if (s->media) {
 			media_playback_stop(s->media);
 
-			if (s->is_clear_on_media_end)
-				obs_source_output_video(s->source, NULL);
+			obs_source_output_video(s->source, NULL);
 		}
 	}
 }
