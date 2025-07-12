@@ -1630,6 +1630,14 @@ void OBSBasicPreview::leaveEvent(QEvent *)
 		hoveredPreviewItems.clear();
 }
 
+void OBSBasicPreview::resizeEvent(QResizeEvent *event)
+{
+	OBSBasic *main = OBSBasic::Get();
+	main->resizeProgramWidget();
+
+	OBSQTDisplay::resizeEvent(event);
+}
+
 static void DrawLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale)
 {
 	float cx;
