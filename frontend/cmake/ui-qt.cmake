@@ -2,6 +2,9 @@ find_package(Qt6 REQUIRED Widgets Network Svg Xml)
 
 if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
   find_package(Qt6 REQUIRED Gui DBus)
+  if (Qt6Gui_VERSION VERSION_GREATER_EQUAL "6.10.0")
+    find_package(Qt6GuiPrivate REQUIRED)
+  endif()
 endif()
 
 if(NOT TARGET OBS::qt-wrappers)
