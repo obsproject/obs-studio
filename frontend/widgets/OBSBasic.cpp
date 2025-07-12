@@ -28,6 +28,7 @@
 #include <docks/YouTubeAppDock.hpp>
 #endif
 #include <dialogs/NameDialog.hpp>
+#include <dialogs/NotificationDialog.hpp>
 #include <dialogs/OBSAbout.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
 #include <dialogs/OBSBasicFilters.hpp>
@@ -41,6 +42,7 @@
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
+#include <widgets/Notification.hpp>
 #include <widgets/OBSProjector.hpp>
 
 #include <OBSStudioAPI.hpp>
@@ -331,6 +333,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		UpdateContextBarVisibility();
 		UpdatePreviewControls();
 		dpi = devicePixelRatioF();
+
+		emit resized(width(), height());
 	};
 	dpi = devicePixelRatioF();
 
@@ -945,6 +949,8 @@ void OBSBasic::OBSInit()
 	InitHotkeys();
 	ui->preview->Init();
 
+	initNotifications();
+
 	/* hack to prevent elgato from loading its own QtNetwork that it tries
 	 * to ship with */
 #if defined(_WIN32) && !defined(_DEBUG)
@@ -1328,6 +1334,8 @@ OBSBasic::~OBSBasic()
 	if (patronJsonThread && patronJsonThread->isRunning())
 		patronJsonThread->wait();
 
+	saveNotifications();
+
 	delete screenshotData;
 	delete previewProjector;
 	delete studioProgramProjector;
@@ -1369,6 +1377,7 @@ OBSBasic::~OBSBasic()
 	delete advAudioWindow;
 	delete about;
 	delete remux;
+	delete notificationDialog;
 
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(), OBSBasic::RenderMain, this);
 

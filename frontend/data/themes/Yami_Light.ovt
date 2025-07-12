@@ -129,6 +129,14 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/close.svg);
 }
 
+.icon-bell-active {
+    qproperty-icon: url(theme:Light/bell-active.svg);
+}
+
+.icon-bell-inactive {
+    qproperty-icon: url(theme:Light/bell-inactive.svg);
+}
+
 QToolBarExtension {
     qproperty-icon: url(theme:Light/dots-vert.svg);
 }
