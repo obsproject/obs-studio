@@ -201,7 +201,9 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "YouTube - HLS",
@@ -209,7 +211,10 @@
             "more_info_link": "https://developers.google.com/youtube/v3/live/guides/ingestion-protocol-comparison",
             "stream_key_link": "https://www.youtube.com/live_dashboard",
             "protocol": "HLS",
-            "supported video codecs": ["h264", "hevc"],
+            "supported video codecs": [
+                "h264",
+                "hevc"
+            ],
             "servers": [
                 {
                     "name": "Primary YouTube ingest server",
@@ -236,7 +241,11 @@
                 "YouTube - RTMP",
                 "YouTube - RTMPS (Beta)"
             ],
-            "supported video codecs": ["h264", "hevc", "av1"],
+            "supported video codecs": [
+                "h264",
+                "hevc",
+                "av1"
+            ],
             "servers": [
                 {
                     "name": "Primary YouTube ingest server",
@@ -294,7 +303,9 @@
                 "bframes": 2,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Lovecast",
@@ -309,10 +320,15 @@
                 "profile": "main",
                 "max video bitrate": 8000,
                 "max audio bitrate": 192,
-                "supported resolutions": ["1920x1080", "1280x720"],
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
                 "max fps": 30
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Luzento.com - RTMP",
@@ -334,7 +350,9 @@
                 "bframes": 2,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Web.TV",
@@ -350,7 +368,9 @@
                 "max video bitrate": 3500,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "GoodGame.ru",
@@ -360,7 +380,9 @@
                     "url": "rtmp://msk.goodgame.ru:1940/live"
                 }
             ],
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Vaughn Live / iNSTAGIB",
@@ -419,7 +441,9 @@
                 "max video bitrate": 15000,
                 "max audio bitrate": 320
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Breakers.TV",
@@ -478,7 +502,9 @@
                 "max video bitrate": 15000,
                 "max audio bitrate": 320
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Facebook Live",
@@ -545,11 +571,16 @@
                 "max video bitrate": 9000,
                 "max audio bitrate": 128
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Restream.io",
-            "alt_names": ["Restream.io - RTMP", "Restream.io - FTL"],
+            "alt_names": [
+                "Restream.io - RTMP",
+                "Restream.io - FTL"
+            ],
             "common": true,
             "stream_key_link": "https://restream.io/settings/streaming-setup?from=OBS",
             "servers": [
@@ -641,7 +672,9 @@
             "recommended": {
                 "keyint": 2
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Castr.io",
@@ -790,7 +823,9 @@
             "recommended": {
                 "keyint": 2
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Boomstream",
@@ -800,7 +835,9 @@
                     "url": "rtmp://live.boomstream.com/live"
                 }
             ],
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Meridix Live Sports Platform",
@@ -813,11 +850,16 @@
             "recommended": {
                 "max video bitrate": 3500
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "AfreecaTV",
-            "alt_names": ["아프리카TV", "Afreeca.TV"],
+            "alt_names": [
+                "아프리카TV",
+                "Afreeca.TV"
+            ],
             "servers": [
                 {
                     "name": "Asia : Korea",
@@ -850,7 +892,9 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "CAM4",
@@ -866,7 +910,9 @@
                 "max video bitrate": 3000,
                 "max audio bitrate": 128
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "ePlay",
@@ -882,7 +928,9 @@
                 "max video bitrate": 7500,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Picarto",
@@ -917,7 +965,9 @@
                 "profile": "main",
                 "max video bitrate": 3500
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Livestream",
@@ -927,7 +977,9 @@
                     "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
                 }
             ],
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Uscreen",
@@ -942,7 +994,9 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Stripchat",
@@ -960,7 +1014,9 @@
                 "max audio bitrate": 128,
                 "x264opts": "tune=zerolatency"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "CamSoda",
@@ -998,7 +1054,9 @@
                 "max audio bitrate": 160,
                 "x264opts": "tune=zerolatency"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Chaturbate",
@@ -1125,7 +1183,9 @@
                 ],
                 "max fps": 60
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "WpStream",
@@ -1161,13 +1221,17 @@
                 "keyint": 2,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Twitter",
             "common": true,
             "stream_key_link": "https://studio.twitter.com/producer/sources",
-            "alt_names": ["Twitter / Periscope"],
+            "alt_names": [
+                "Twitter / Periscope"
+            ],
             "servers": [
                 {
                     "name": "US West: California",
@@ -1224,11 +1288,15 @@
                 "max audio bitrate": 128,
                 "max fps": 60
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Switchboard Live",
-            "alt_names": ["Switchboard Live (Joicaster)"],
+            "alt_names": [
+                "Switchboard Live (Joicaster)"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1239,7 +1307,9 @@
                 "keyint": 2,
                 "profile": "high"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Eventials",
@@ -1255,7 +1325,9 @@
                 "max video bitrate": 900,
                 "max audio bitrate": 96
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "EventLive.pro",
@@ -1269,10 +1341,15 @@
                 "keyint": 2,
                 "max video bitrate": 3000,
                 "max audio bitrate": 192,
-                "supported resolutions": ["1920x1080", "1280x720"],
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
                 "max fps": 30
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Lahzenegar - StreamG | لحظه‌نگار - استریمجی",
@@ -1292,7 +1369,9 @@
                 "max video bitrate": 4000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "MyLive",
@@ -1308,11 +1387,15 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Trovo",
-            "alt_names": ["Madcat"],
+            "alt_names": [
+                "Madcat"
+            ],
             "stream_key_link": "https://studio.trovo.live/mychannel/stream",
             "servers": [
                 {
@@ -1326,7 +1409,9 @@
                 "max audio bitrate": 160,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Mixcloud",
@@ -1340,15 +1425,23 @@
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 320,
-                "supported resolutions": ["1280x720", "852x480", "480x360"],
+                "supported resolutions": [
+                    "1280x720",
+                    "852x480",
+                    "480x360"
+                ],
                 "max fps": 30,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "SermonAudio Cloud",
-            "alt_names": ["SermonAudio.com"],
+            "alt_names": [
+                "SermonAudio.com"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -1359,7 +1452,9 @@
                 "max video bitrate": 2000,
                 "max audio bitrate": 128
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Vimeo",
@@ -1369,7 +1464,9 @@
                     "url": "rtmp://rtmp.cloud.vimeo.com/live"
                 }
             ],
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Aparat",
@@ -1385,7 +1482,9 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "KakaoTV",
@@ -1399,7 +1498,9 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Piczel.tv",
@@ -1415,7 +1516,9 @@
                 "max audio bitrate": 256,
                 "x264opts": "tune=zerolatency"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "STAGE TEN",
@@ -1431,7 +1534,9 @@
                 "max video bitrate": 4000,
                 "max audio bitrate": 128
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "DLive",
@@ -1446,7 +1551,9 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Lightcast.com",
@@ -1470,7 +1577,9 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Bongacams",
@@ -1499,7 +1608,9 @@
                 "bframes": 0,
                 "x264opts": "tune=zerolatency"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "OnlyFans.com",
@@ -1518,7 +1629,9 @@
                 "bframes": 0,
                 "x264opts": "tune=zerolatency"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Steam",
@@ -1535,7 +1648,9 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 128
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Konduit.live",
@@ -1549,7 +1664,9 @@
                 "keyint": 2,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "LOCO",
@@ -1562,7 +1679,9 @@
             "recommended": {
                 "keyint": 2
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "niconico (ニコニコ生放送)",
@@ -1584,7 +1703,9 @@
                 "max video bitrate": 5808,
                 "x264opts": "tune=zerolatency"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Nimo TV",
@@ -1603,7 +1724,9 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "XLoveCam.com",
@@ -1644,7 +1767,9 @@
             "recommended": {
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "AngelThump",
@@ -1688,7 +1813,9 @@
                 "max video bitrate": 3500,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "api.video",
@@ -1703,7 +1830,9 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "SHOWROOM",
@@ -1721,7 +1850,9 @@
                 "max audio bitrate": 160,
                 "x264opts": "tune=zerolatency"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Mux",
@@ -1740,7 +1871,9 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Viloud",
@@ -1755,7 +1888,9 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "MyFreeCams",
@@ -1801,7 +1936,9 @@
                 "max audio bitrate": 192,
                 "x264opts": "tune=zerolatency scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "PolyStreamer.com",
@@ -1842,7 +1979,9 @@
             "recommended": {
                 "keyint": 2
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "OPENREC.tv - Premium member (プレミアム会員)",
@@ -1858,7 +1997,9 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "nanoStream Cloud / bintu",
@@ -1930,7 +2071,9 @@
                 "max audio bitrate": 192,
                 "x264opts": "tune=zerolatency b-pyramid=0 scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Dacast",
@@ -1947,13 +2090,17 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 128
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Bilibili Live - RTMP | 哔哩哔哩直播 - RTMP",
             "more_info_link": "https://link.bilibili.com/p/help/index?id=4#/tools-tutorial",
             "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
-            "alt_names": ["Bilibili Live"],
+            "alt_names": [
+                "Bilibili Live"
+            ],
             "servers": [
                 {
                     "name": "Global - Primary | 全球 - 主要",
@@ -1972,7 +2119,10 @@
                     "url": "rtmp://txy.live-push.bilivideo.com/live-bvc/"
                 }
             ],
-            "supported video codecs": ["h264", "hevc"]
+            "supported video codecs": [
+                "h264",
+                "hevc"
+            ]
         },
         {
             "name": "Volume.com",
@@ -1996,7 +2146,9 @@
                 "max video bitrate": 20000,
                 "max fps": 60
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "BoxCast",
@@ -2007,7 +2159,9 @@
                     "url": "rtmp://rtmp.boxcast.com/live"
                 }
             ],
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Disciple Media",
@@ -2017,7 +2171,9 @@
                     "url": "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ],
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Jio Games",
@@ -2036,7 +2192,9 @@
                 "max video bitrate": 32000,
                 "max audio bitrate": 256
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Kuaishou Live",
@@ -2051,11 +2209,15 @@
                     "url": "rtmp://tx.push.yximgs.com/live/"
                 }
             ],
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Playeur",
-            "alt_names": ["Utreon"],
+            "alt_names": [
+                "Utreon"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2067,7 +2229,9 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "PhoneLiveStreaming",
@@ -2083,7 +2247,9 @@
                 "max video bitrate": 128,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Sympla",
@@ -2098,7 +2264,9 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Livepush",
@@ -2165,7 +2333,9 @@
                 "keyint": 2,
                 "max video bitrate": 16000
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Vindral",
@@ -2184,7 +2354,9 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Whowatch (ふわっち)",
@@ -2201,7 +2373,9 @@
                 "max video bitrate": 1800,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "IRLToolkit",
@@ -2254,7 +2428,9 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 256
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Bitmovin",
@@ -2269,7 +2445,9 @@
             "recommended": {
                 "keyint": 2
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Live Streamer Cafe",
@@ -2285,7 +2463,9 @@
                 "keyint": 2,
                 "max video bitrate": 6000
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Enchant.events",
@@ -2302,7 +2482,9 @@
                 "max video bitrate": 9000,
                 "max audio bitrate": 192
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Joystick.TV",
@@ -2327,7 +2509,9 @@
                 "bframes": 0,
                 "x264opts": "tune=zerolatency scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Livepeer Studio",
@@ -2354,7 +2538,9 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 512
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "MasterStream.iR | مستراستریم | ری استریم و استریم همزمان",
@@ -2380,7 +2566,9 @@
                 }
             ],
             "protocol": "RTMP",
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "recommended": {
                 "keyint": 2,
                 "supported resolutions": [
@@ -2415,7 +2603,9 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "Vault - by CommanderRoot",
@@ -2433,8 +2623,12 @@
                 }
             ],
             "protocol": "RTMP",
-            "supported video codecs": ["h264"],
-            "supported audio codecs": ["aac"],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 7800,
@@ -2452,7 +2646,9 @@
                     "url": "rtmp://global-rtmp.lip2.navercorp.com:8080/relay"
                 }
             ],
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "recommended": {
                 "keyint": 1,
                 "bframes": 0,
@@ -2460,7 +2656,9 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192,
                 "x264opts": "tune=zerolatency scenecut=0",
-                "supported resolutions": ["1920x1080"]
+                "supported resolutions": [
+                    "1920x1080"
+                ]
             }
         },
         {
@@ -2479,7 +2677,9 @@
                 }
             ],
             "protocol": "RTMP",
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "recommended": {
                 "keyint": 2
             }
@@ -2494,7 +2694,9 @@
                     "url": "rtmp://live-us-atl-stream.shareplay.tv"
                 }
             ],
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 12000,
@@ -2512,8 +2714,12 @@
                 }
             ],
             "protocol": "RTMP",
-            "supported video codecs": ["h264"],
-            "supported audio codecs": ["aac"],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "recommended": {
                 "keyint": 1,
                 "profile": "main",
@@ -2574,7 +2780,9 @@
         },
         {
             "name": "Amazon IVS",
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "servers": [
                 {
                     "name": "Asia: China, Hong Kong (6) (RTMPS)",
@@ -3281,7 +3489,11 @@
                     "url": "rtmp://rtmp-syd-1.millicast.com:1935/v2/pub"
                 }
             ],
-            "supported video codecs": ["h264", "hevc", "av1"],
+            "supported video codecs": [
+                "h264",
+                "hevc",
+                "av1"
+            ],
             "recommended": {
                 "keyint": 1,
                 "bframes": 0
@@ -3298,10 +3510,16 @@
                 }
             ],
             "recommended": {
-                "supported resolutions": ["1920x1080", "1280x720", "640x360"],
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "640x360"
+                ],
                 "max fps": 60
             },
-            "supported video codecs": ["h264"]
+            "supported video codecs": [
+                "h264"
+            ]
         },
         {
             "name": "VRCDN - Live",
@@ -3312,7 +3530,9 @@
                     "url": "rtmp://ingest.vrcdn.live/live"
                 }
             ],
-            "supported video codecs": ["h264"],
+            "supported video codecs": [
+                "h264"
+            ],
             "recommended": {
                 "keyint": 1,
                 "max video bitrate": 6000
