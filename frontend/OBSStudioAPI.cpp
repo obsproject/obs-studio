@@ -608,7 +608,7 @@ void OBSStudioAPI::obs_frontend_take_source_screenshot(obs_source_t *source)
 
 obs_output_t *OBSStudioAPI::obs_frontend_get_virtualcam_output()
 {
-	OBSOutput output = main->outputHandler->virtualCam.Get();
+	OBSOutput output = main->outputHandler->virtualCam->GetOutput();
 	return obs_output_get_ref(output);
 }
 
@@ -624,7 +624,7 @@ void OBSStudioAPI::obs_frontend_stop_virtualcam()
 
 bool OBSStudioAPI::obs_frontend_virtualcam_active()
 {
-	return os_atomic_load_bool(&virtualcam_active);
+	return main->outputHandler->VirtualCamActive();
 }
 
 void OBSStudioAPI::obs_frontend_reset_video()
