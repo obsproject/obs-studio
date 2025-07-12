@@ -22,6 +22,12 @@ jobs:
       flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
       updateChannel: ${{ steps.check.outputs.updateChannel }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
+
       - name: Check Release Tag ☑️
         id: check
         env:
