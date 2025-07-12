@@ -120,10 +120,11 @@ void OBSBasic::ResetUI()
 {
 	bool studioPortraitLayout = config_get_bool(App()->GetUserConfig(), "BasicWindow", "StudioPortraitLayout");
 
-	if (studioPortraitLayout)
+	if (studioPortraitLayout) {
 		ui->previewLayout->setDirection(QBoxLayout::BottomToTop);
-	else
+	} else {
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+	}
 
 	UpdatePreviewProgramIndicators();
 }

@@ -37,6 +37,8 @@ target_sources(
     utility/OBSThemeVariable.hpp
     utility/OBSTranslator.cpp
     utility/OBSTranslator.hpp
+    utility/PreviewProgramSizeObserver.cpp
+    utility/PreviewProgramSizeObserver.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
     utility/RemoteTextThread.cpp
