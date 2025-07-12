@@ -179,15 +179,17 @@ void OBSBasic::TogglePreviewProgramMode()
 
 void OBSBasic::SetPreviewProgramMode(bool enabled)
 {
-	if (IsPreviewProgramMode() == enabled)
+	if (IsPreviewProgramMode() == enabled) {
 		return;
+	}
 
 	os_atomic_set_bool(&previewProgramMode, enabled);
 	emit PreviewProgramModeChanged(enabled);
 
 	if (IsPreviewProgramMode()) {
-		if (!previewEnabled)
+		if (!previewEnabled) {
 			EnablePreviewDisplay(true);
+		}
 
 		CreateProgramDisplay();
 		CreateProgramOptions();
@@ -217,12 +219,11 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		RefreshQuickTransitions();
 
 		programLabel = new QLabel(QTStr("StudioMode.ProgramSceneLabel"), this);
-		programLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+		programLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 		programLabel->setProperty("class", "label-preview-title");
 
 		programWidget = new QWidget();
 		programLayout = new QVBoxLayout();
-
 		programLayout->setContentsMargins(0, 0, 0, 0);
 		programLayout->setSpacing(0);
 
@@ -235,6 +236,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->addWidget(programWidget);
 		ui->previewLayout->setAlignment(programOptions, Qt::AlignCenter);
 
+		sizeObserver = new PreviewProgramSizeObserver(ui->preview, program, this);
+
 		OnEvent(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
 
 		blog(LOG_INFO, "Switched to Preview/Program mode");
@@ -242,16 +245,18 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			       "-------------------");
 	} else {
 		OBSSource actualProgramScene = OBSGetStrongRef(programScene);
-		if (!actualProgramScene)
+		if (!actualProgramScene) {
 			actualProgramScene = GetCurrentSceneSource();
-		else
+		} else {
 			SetCurrentScene(actualProgramScene, true);
+		}
 		TransitionToScene(actualProgramScene, true);
 
 		delete programOptions;
 		delete program;
 		delete programLabel;
 		delete programWidget;
+		sizeObserver->deleteLater();
 
 		if (lastScene) {
 			OBSSource actualLastScene = OBSGetStrongRef(lastScene);
@@ -264,11 +269,13 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		swapScene = nullptr;
 		prevFTBSource = nullptr;
 
-		for (QuickTransition &qt : quickTransitions)
+		for (QuickTransition &qt : quickTransitions) {
 			qt.button = nullptr;
+		}
 
-		if (!previewEnabled)
+		if (!previewEnabled) {
 			EnablePreviewDisplay(false);
+		}
 
 		ui->transitions->setEnabled(true);
 		tBarActive = false;
