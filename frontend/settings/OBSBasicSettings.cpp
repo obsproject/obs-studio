@@ -135,7 +135,7 @@ static inline bool SetInvalidValue(QComboBox *combo, const char *name, const cha
 {
 	combo->insertItem(0, name, data);
 
-	QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(combo->model());
+	QStandardItemModel *model = qobject_cast<QStandardItemModel *>(combo->model());
 	if (!model)
 		return false;
 
@@ -1206,7 +1206,7 @@ void OBSBasicSettings::LoadBranchesList()
 
 		// Disable item if branch is disabled
 		if (!branch.is_enabled) {
-			QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(ui->updateChannelBox->model());
+			QStandardItemModel *model = qobject_cast<QStandardItemModel *>(ui->updateChannelBox->model());
 			QStandardItem *item = model->item(ui->updateChannelBox->count() - 1);
 			item->setFlags(Qt::NoItemFlags);
 		}
@@ -4487,7 +4487,7 @@ static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format, co
 			is_compatible = FFCodecAndFormatCompatible(codec, ext.c_str());
 		}
 
-		QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItemModel *model = qobject_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
 		if (is_compatible) {
@@ -4545,7 +4545,7 @@ static void ResetInvalidSelection(QComboBox *cbox)
 	if (idx < 0)
 		return;
 
-	QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+	QStandardItemModel *model = qobject_cast<QStandardItemModel *>(cbox->model());
 	QStandardItem *item = model->item(idx);
 
 	if (item->isEnabled())
@@ -5098,7 +5098,7 @@ static void DisableIncompatibleSimpleCodecs(QComboBox *cbox, const QString &form
 			codec = obs_get_encoder_codec(encoder_id);
 		}
 
-		QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItemModel *model = qobject_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
 		if (ContainerSupportsCodec(format.toStdString(), codec.toStdString())) {
@@ -5128,7 +5128,7 @@ static void DisableIncompatibleSimpleContainer(QComboBox *cbox, const QString &c
 		QString format = cbox->itemData(idx).toString();
 		string formatStr = format.toStdString();
 
-		QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItemModel *model = qobject_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
 		if (ContainerSupportsCodec(formatStr, vCodec) && ContainerSupportsCodec(formatStr, aCodec)) {

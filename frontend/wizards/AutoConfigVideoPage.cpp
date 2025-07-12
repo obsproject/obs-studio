@@ -15,7 +15,7 @@
 #define FPS_PREFER_HIGH_FPS RES_TEXT("FPS.PreferHighFPS")
 #define FPS_PREFER_HIGH_RES RES_TEXT("FPS.PreferHighRes")
 
-#define wiz reinterpret_cast<AutoConfig *>(wizard())
+#define wiz qobject_cast<AutoConfig *>(wizard())
 
 AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent) : QWizardPage(parent), ui(new Ui_AutoConfigVideoPage)
 {
