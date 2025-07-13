@@ -86,7 +86,8 @@ function(set_target_properties_obs target)
       endif()
 
       get_property(obs_executables GLOBAL PROPERTY _OBS_EXECUTABLES)
-      add_dependencies(${target} ${obs_executables})
+      get_property(obs_modules GLOBAL PROPERTY OBS_MODULES_ENABLED)
+      add_dependencies(${target} ${obs_executables} ${obs_modules})
       foreach(executable IN LISTS obs_executables)
         set_target_xcode_properties(${executable} PROPERTIES INSTALL_PATH
                                     "$(LOCAL_APPS_DIR)/$<TARGET_BUNDLE_DIR_NAME:${target}>/Contents/MacOS"
