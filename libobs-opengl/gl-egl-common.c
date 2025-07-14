@@ -17,8 +17,11 @@
 
 #include "gl-egl-common.h"
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <xf86drm.h>
 
 #include <glad/glad_egl.h>
 
@@ -26,9 +29,6 @@
 
 #include <linux/types.h>
 #include <asm/ioctl.h>
-#include <xf86drm.h>
-#include <unistd.h>
-#include <fcntl.h>
 typedef unsigned int drm_handle_t;
 
 #else
