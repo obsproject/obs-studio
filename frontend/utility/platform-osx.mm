@@ -25,7 +25,14 @@
 #import <AppKit/AppKit.h>
 #import <dlfcn.h>
 
+#import <Cocoa/Cocoa.h>
+
 using namespace std;
+
+bool isAppHidden()
+{
+    return [NSApp isHidden];
+}
 
 bool isInBundle()
 {
@@ -328,6 +335,7 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 
 @interface OBSApplication : NSApplication <CrAppProtocol>
 @property (nonatomic, getter=isHandlingSendEvent) BOOL handlingSendEvent;
+@property (nonatomic) BOOL shouldFocusOnLaunch;
 @end
 
 @implementation OBSApplication
@@ -337,6 +345,15 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
     _handlingSendEvent = YES;
     [super sendEvent:event];
     _handlingSendEvent = NO;
+}
+
+- (void)finishLaunching
+{
+    [super finishLaunching];
+
+    if (!self.shouldFocusOnLaunch) {
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    }
 }
 
 @end
@@ -358,4 +375,10 @@ void InstallNSApplicationSubclass()
 bool HighContrastEnabled()
 {
     return [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldIncreaseContrast];
+}
+
+void SetOBSApplicationFlags(bool shouldFocusOnLaunch)
+{
+    OBSApplication *app = [OBSApplication sharedApplication];
+    app.shouldFocusOnLaunch = shouldFocusOnLaunch;
 }
