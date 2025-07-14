@@ -2037,8 +2037,8 @@ static obs_properties_t *av_capture_properties(void *data)
         obs_properties_add_list(props, "device", TEXT_DEVICE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
     obs_property_list_add_string(dev_list, "", "");
 
-    NSMutableArray *device_types = [NSMutableArray
-        arrayWithObjects:AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternalUnknown, nil];
+    NSMutableArray *device_types =
+        [NSMutableArray arrayWithObjects:AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal, nil];
     if (__builtin_available(macOS 13.0, *)) {
         [device_types addObject:AVCaptureDeviceTypeDeskViewCamera];
     }

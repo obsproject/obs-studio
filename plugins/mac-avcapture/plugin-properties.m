@@ -233,11 +233,10 @@ bool properties_update_device(OBSAVCapture *capture __unused, obs_property_t *pr
     NSArray *deviceTypes;
     if (@available(macOS 13, *)) {
         deviceTypes = @[
-            AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternalUnknown,
-            AVCaptureDeviceTypeDeskViewCamera
+            AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal, AVCaptureDeviceTypeDeskViewCamera
         ];
     } else {
-        deviceTypes = @[AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternalUnknown];
+        deviceTypes = @[AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal];
     }
 
     AVCaptureDeviceDiscoverySession *videoDiscoverySession =
