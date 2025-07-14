@@ -34,6 +34,9 @@ target_link_libraries(
     "$<LINK_LIBRARY:WEAK_FRAMEWORK,ScreenCaptureKit.framework>"
 )
 
+set_property(SOURCE mac-window-capture.m PROPERTY COMPILE_FLAGS "-Wno-error=deprecated-declarations")
+set_property(SOURCE mac-display-capture.m PROPERTY COMPILE_FLAGS "-Wno-error=deprecated-declarations")
+
 set_target_properties_obs(
   mac-capture
   PROPERTIES FOLDER plugins
