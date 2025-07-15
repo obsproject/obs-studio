@@ -36,7 +36,10 @@ void OBSBasic::on_actionShow_Recordings_triggered()
 				       : config_get_string(activeConfiguration, "AdvOut", "RecFilePath");
 	const char *path = strcmp(mode, "Advanced") ? config_get_string(activeConfiguration, "SimpleOutput", "FilePath")
 						    : adv_path;
-	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	bool success = QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+	if (!success) {
+		OutputPathInvalidMessage();
+	}
 }
 
 #define RECORDING_START "==== Recording Start ==============================================="
@@ -113,7 +116,7 @@ void OBSBasic::StartRecording()
 	if (disableOutputsRef)
 		return;
 
-	if (!OutputPathValid()) {
+	if (!OutputPathValid() && !promptCreateOutputPath()) {
 		OutputPathInvalidMessage();
 		return;
 	}

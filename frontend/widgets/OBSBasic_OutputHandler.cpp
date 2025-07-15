@@ -114,7 +114,7 @@ void OBSBasic::OutputPathInvalidMessage()
 {
 	blog(LOG_ERROR, "Recording stopped because of bad output path");
 
-	OBSMessageBox::critical(this, QTStr("Output.BadPath.Title"), QTStr("Output.BadPath.Text"));
+	OBSMessageBox::critical(this, QTStr("Output.Error.Title"), QTStr("Output.PathError.Text"));
 }
 
 bool OBSBasic::IsFFmpegOutputToURL() const
@@ -139,4 +139,28 @@ bool OBSBasic::OutputPathValid()
 
 	const char *path = GetCurrentOutputPath();
 	return path && *path && QDir(path).exists();
+}
+
+bool OBSBasic::promptCreateOutputPath()
+{
+	const char *path = GetCurrentOutputPath();
+
+	if (!path || !*path) {
+		return false;
+	}
+
+	auto result = OBSMessageBox::question(this, QTStr("Output.BadPath.Title"),
+					      QTStr("Output.BadPath.Text").arg(path),
+					      QMessageBox::Yes | QMessageBox::No);
+
+	if (result == QMessageBox::No) {
+		return false;
+	}
+
+	auto makeDirectory = os_mkdir(path);
+	if (makeDirectory == MKDIR_ERROR) {
+		OBSMessageBox::critical(this, QTStr("Error"), QTStr("Failed to create directory '%1'").arg(path));
+	}
+
+	return makeDirectory != MKDIR_ERROR;
 }

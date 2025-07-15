@@ -2615,6 +2615,9 @@
                            <property name="enabled">
                             <bool>true</bool>
                            </property>
+                           <property name="readOnly">
+                            <bool>true</bool>
+                           </property>
                           </widget>
                          </item>
                          <item>
@@ -3621,6 +3624,9 @@
                                      <horstretch>0</horstretch>
                                      <verstretch>0</verstretch>
                                     </sizepolicy>
+                                   </property>
+                                   <property name="readOnly">
+                                    <bool>true</bool>
                                    </property>
                                   </widget>
                                  </item>

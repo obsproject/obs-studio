@@ -76,7 +76,7 @@ void OBSBasic::StartReplayBuffer()
 	if (!UIValidation::NoSourcesConfirmation(this))
 		return;
 
-	if (!OutputPathValid()) {
+	if (!OutputPathValid() && !promptCreateOutputPath()) {
 		OutputPathInvalidMessage();
 		return;
 	}
