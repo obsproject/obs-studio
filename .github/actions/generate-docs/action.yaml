@@ -59,7 +59,7 @@ runs:
         echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
     - name: Install Sphinx 📜
-      uses: totaldebug/sphinx-publish-action@cdbb304b4b8aa1fd36015e3c459c1f122804bd6b
+      uses: totaldebug/sphinx-publish-action@a44364271972de3b13c5b63801c2596dfde82413
       with:
         sphinx_src: ${{ inputs.sourceDirectory }}/docs/sphinx
         build_only: true
