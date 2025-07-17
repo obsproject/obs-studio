@@ -46,6 +46,7 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	ui->setupUi(this);
 
 	ui->progressBar->setVisible(false);
+	ui->progressLabel->setVisible(false);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 	ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)->setEnabled(false);
 
@@ -59,6 +60,7 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	ui->progressBar->setMinimum(0);
 	ui->progressBar->setMaximum(1000);
 	ui->progressBar->setValue(0);
+	ui->progressLabel->setText("0%");
 
 	ui->tableView->setModel(queueModel);
 	ui->tableView->setItemDelegateForColumn(RemuxEntryColumn::InputPath,
@@ -222,6 +224,7 @@ void OBSRemux::beginRemux()
 	queueModel->beginProcessing();
 
 	ui->progressBar->setVisible(true);
+	ui->progressLabel->setVisible(true);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("Remux.Stop"));
 	setAcceptDrops(false);
 
@@ -232,6 +235,7 @@ void OBSRemux::AutoRemux(QString inFile, QString outFile)
 {
 	if (inFile != "" && outFile != "" && autoRemux) {
 		ui->progressBar->setVisible(true);
+		ui->progressLabel->setVisible(true);
 		emit remux(inFile, outFile);
 		autoRemuxFile = outFile;
 	}
@@ -255,6 +259,7 @@ void OBSRemux::remuxNextEntry()
 		}
 
 		ui->progressBar->setVisible(autoRemux);
+		ui->progressLabel->setVisible(autoRemux);
 		ui->buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("Remux.Remux"));
 		ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)->setEnabled(true);
 		ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(queueModel->canClearFinished());
@@ -281,6 +286,7 @@ void OBSRemux::reject()
 void OBSRemux::updateProgress(float percent)
 {
 	ui->progressBar->setValue(percent * 10);
+	ui->progressLabel->setText(QString::number(static_cast<int>(percent)) + "%");
 }
 
 void OBSRemux::remuxFinished(bool success)
