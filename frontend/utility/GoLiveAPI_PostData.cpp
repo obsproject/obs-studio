@@ -73,13 +73,11 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 
 	if (maximum_aggregate_bitrate.has_value())
 		preferences.maximum_aggregate_bitrate = maximum_aggregate_bitrate.value();
-	if (maximum_video_tracks.has_value())
-		preferences.maximum_video_tracks = maximum_video_tracks.value();
 
-	/* Always cap to maximum number of output encoders. */
-	if (!preferences.maximum_video_tracks.has_value() ||
-	    preferences.maximum_video_tracks.value() > MAX_OUTPUT_VIDEO_ENCODERS) {
-		preferences.maximum_video_tracks = MAX_OUTPUT_VIDEO_ENCODERS;
+	if (maximum_video_tracks.has_value()) {
+		/* Cap to maximum supported number of output encoders. */
+		preferences.maximum_video_tracks =
+			std::min(maximum_video_tracks.value(), static_cast<uint32_t>(MAX_OUTPUT_VIDEO_ENCODERS));
 	}
 
 	return post_data;
