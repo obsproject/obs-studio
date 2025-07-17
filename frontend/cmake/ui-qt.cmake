@@ -47,6 +47,7 @@ target_sources(
     forms/OBSLogReply.ui
     forms/OBSMissingFiles.ui
     forms/OBSRemux.ui
+    forms/PluginManagerWindow.ui
     forms/source-toolbar/browser-source-toolbar.ui
     forms/source-toolbar/color-source-toolbar.ui
     forms/source-toolbar/device-select-toolbar.ui
