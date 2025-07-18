@@ -74,14 +74,11 @@ void OBSStudioAPI::obs_frontend_set_current_scene(obs_source_t *scene)
 
 void OBSStudioAPI::obs_frontend_get_transitions(struct obs_frontend_source_list *sources)
 {
-	for (int i = 0; i < main->ui->transitions->count(); i++) {
-		OBSSource tr = main->ui->transitions->itemData(i).value<OBSSource>();
+	for (const auto &[uuid, transition] : main->transitions) {
+		obs_source_t *source = transition;
 
-		if (!tr)
-			continue;
-
-		if (obs_source_get_ref(tr) != nullptr)
-			da_push_back(sources->sources, &tr);
+		if (obs_source_get_ref(source) != nullptr)
+			da_push_back(sources->sources, &source);
 	}
 }
 
@@ -98,12 +95,12 @@ void OBSStudioAPI::obs_frontend_set_current_transition(obs_source_t *transition)
 
 int OBSStudioAPI::obs_frontend_get_transition_duration()
 {
-	return main->ui->transitionDuration->value();
+	return main->GetTransitionDuration();
 }
 
 void OBSStudioAPI::obs_frontend_set_transition_duration(int duration)
 {
-	QMetaObject::invokeMethod(main->ui->transitionDuration, "setValue", Q_ARG(int, duration));
+	QMetaObject::invokeMethod(main, "SetTransitionDuration", Q_ARG(int, duration));
 }
 
 void OBSStudioAPI::obs_frontend_release_tbar()
