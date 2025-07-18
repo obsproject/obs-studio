@@ -20,8 +20,10 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git
     message(FATAL_ERROR "Could not fetch OBS version tag from git.\n" ${_git_describe_err})
   endif()
 
-  if(_obs_version_result EQUAL 0)
+  if(_obs_version_result EQUAL 0 AND _obs_version MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
     string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1;\\2;\\3" _obs_version_canonical ${_obs_version})
+  else()
+    set(_obs_version_canonical "0;0;1")
   endif()
 elseif(DEFINED OBS_VERSION_OVERRIDE)
   if(OBS_VERSION_OVERRIDE MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
