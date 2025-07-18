@@ -452,6 +452,12 @@ EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);
 EXPORT bool obs_get_audio_info2(struct obs_audio_info2 *oai2);
 
 /**
+ * When monitoring and an Audio Output Capture source use the same device, this enables the deduplication
+ * logic and passes the source pointer to core audio.
+ */
+EXPORT void obs_set_prevent_monitoring_duplication(bool enable, obs_source_t *source);
+
+/**
  * Opens a plugin module directly from a specific path.
  *
  * If the module already exists then the function will return successful, and
@@ -1186,6 +1192,9 @@ EXPORT void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers);
 
 /** Gets audio mixer flags */
 EXPORT uint32_t obs_source_get_audio_mixers(const obs_source_t *source);
+
+/** Sets monitoring capture audio flag */
+EXPORT void obs_source_set_monitoring_capture_flag(bool flag, obs_source_t *source);
 
 /**
  * Increments the 'showing' reference counter to indicate that the source is

@@ -465,6 +465,47 @@ static inline void execute_audio_tasks(void)
 	}
 }
 
+/* In case monitoring and an AOC (Audio Output Capture) source have the same device, one silences all the monitored
+ * sources unless the AOC is muted.
+ */
+static inline bool should_silence_source(obs_source_t *source, struct obs_core_audio *audio)
+{
+	bool prevent_dup = os_atomic_load_bool(&audio->prevent_monitoring_duplication);
+	if (!prevent_dup)
+		return false;
+	if (!audio->monitoring_device_src)
+		return false;
+
+	/* The syncing between the mute state of the AOC source set in UI and libobs is a bit tricky. There is an
+	 intrinsic positive delay of the AOC source w/ respect to monitored sources due to the audio OS processing
+	 (wasapi or pulse audio). Unfortunately the delay is machine dependent and we can only mitigate its effects.
+	 During tests, src->user_muted worked better than src->muted, maybe because it is set earlier than the muted
+	 flag which allows to keep a better sync ? W/ src->muted, unmuting the AOC led to a systematic level increase
+	 during one tick on my dev machine for a sine tone (about +3 dBFS). In general we don't expect much difference
+	 though between user_muted and muted.*/
+	bool bypass_mon = !audio->monitoring_device_src->user_muted;
+
+	if (bypass_mon) {
+		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT) {
+			return true;
+			//blog(LOG_DEBUG, "Skipping monitored source %s to avoid duplication",
+			//     obs_source_get_name(source));
+		}
+	}
+	return false;
+}
+
+static inline void clear_audio_output_buf(obs_source_t *source)
+{
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+		for (size_t ch = 0; ch < MAX_AUDIO_CHANNELS; ch++) {
+			float *buf = source->audio_output_buf[mix][ch];
+			if (buf)
+				memset(buf, 0, AUDIO_OUTPUT_FRAMES * sizeof(float));
+		}
+	}
+}
+
 bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts, uint32_t mixers,
 		    struct audio_output_data *mixes)
 {
@@ -534,6 +575,8 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 	for (size_t i = 0; i < audio->render_order.num; i++) {
 		obs_source_t *source = audio->render_order.array[i];
 		obs_source_audio_render(source, mixers, channels, sample_rate, audio_size);
+		if (should_silence_source(source, audio))
+			clear_audio_output_buf(source);
 
 		/* if a source has gone backward in time and we can no
 		 * longer buffer, drop some or all of its audio */
