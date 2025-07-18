@@ -99,3 +99,16 @@ QStringList OpenFiles(QWidget *parent, QString title, QString path, QString exte
 void TruncateLabel(QLabel *label, QString newText, int length = MAX_LABEL_LENGTH);
 
 void RefreshToolBarStyling(QToolBar *toolBar);
+
+class ResizeSignaler : public QObject {
+	Q_OBJECT
+
+public:
+	inline ResizeSignaler(QObject *parent) : QObject(parent) {}
+
+signals:
+	void resized();
+
+protected:
+	bool eventFilter(QObject *object, QEvent *event) override;
+};

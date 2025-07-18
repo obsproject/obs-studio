@@ -26,6 +26,7 @@
 #include <utility/OBSCanvas.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
+#include <utility/ThumbnailManager.hpp>
 #include <utility/undo_stack.hpp>
 
 #include <obs-frontend-internal.hpp>
@@ -36,6 +37,9 @@
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/util.hpp>
+
+#include <QAccessible>
+#include <components/AccessibleAlignmentSelector.hpp>
 
 #include <QSystemTrayIcon>
 
@@ -49,6 +53,7 @@ class OBSBasicAdvAudio;
 class OBSBasicFilters;
 class OBSBasicInteraction;
 class OBSBasicProperties;
+class OBSBasicSourceSelect;
 class OBSBasicTransform;
 class OBSLogViewer;
 class OBSMissingFiles;
@@ -299,6 +304,8 @@ private:
 	// TODO: Remove, orphaned instance method
 	void LoadProject();
 
+	ThumbnailManager *thumbnailManager = nullptr;
+
 public slots:
 	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
@@ -326,6 +333,8 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	inline bool Closing() { return closing; }
+
+	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
@@ -444,6 +453,7 @@ public:
 	void RemoveDockWidget(const QString &name);
 	bool IsDockObjectNameUsed(const QString &name);
 	void AddCustomDockWidget(QDockWidget *dock);
+	void setDockCornersVertical(bool vertical);
 
 private slots:
 	void on_resetDocks_triggered(bool force = false);
@@ -464,6 +474,9 @@ private:
 	void dragLeaveEvent(QDragLeaveEvent *event) override;
 	void dragMoveEvent(QDragMoveEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
+
+signals:
+	void sourceUuidDropped(QString uuid);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Hotkeys
@@ -560,6 +573,7 @@ private:
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
 	QPointer<OBSAbout> about;
+	QPointer<OBSBasicSourceSelect> addWindow;
 	QPointer<OBSLogViewer> logView;
 	QPointer<QWidget> stats;
 	QPointer<QWidget> remux;
@@ -797,7 +811,7 @@ private:
 	QColor cropColor;
 	QColor hoverColor;
 
-	bool drawSpacingHelpers = true;
+	bool previewSpacingHelpersEnabled = true;
 
 	float dpi = 1.0;
 
@@ -851,6 +865,7 @@ private slots:
 	void TogglePreview();
 
 public:
+	void addSnapGuide(float x1, float y1, float x2, float y2);
 	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
 	{
 		x = previewX;
@@ -1166,11 +1181,8 @@ private:
 	static void SourceAudioDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 
-	void AddSource(const char *id);
-	QMenu *CreateAddSourcePopupMenu();
-	void AddSourcePopupMenu(const QPoint &pos);
-
 private slots:
+	void AddSourceDialog();
 	void RenameSources(OBSSource source, QString newName, QString prevName);
 
 	void ActivateAudioSource(OBSSource source);

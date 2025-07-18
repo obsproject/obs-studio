@@ -189,8 +189,10 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 
 	window->ui->preview->DrawSceneEditing();
 
-	if (window->drawSpacingHelpers)
-		window->ui->preview->DrawSpacingHelpers();
+	if (window->previewSpacingHelpersEnabled)
+		window->ui->preview->drawSpacingHelpers();
+
+	window->ui->preview->drawSnapGuides();
 
 	/* --------------------------------------- */
 
@@ -268,6 +270,11 @@ void OBSBasic::TogglePreview()
 {
 	previewEnabled = !previewEnabled;
 	EnablePreviewDisplay(previewEnabled);
+}
+
+void OBSBasic::addSnapGuide(float x1, float y1, float x2, float y2)
+{
+	ui->preview->addSnapGuide(x1, y1, x2, y2);
 }
 
 void OBSBasic::EnablePreview()
@@ -617,7 +624,7 @@ QColor OBSBasic::GetHoverColor() const
 
 void OBSBasic::UpdatePreviewSpacingHelpers()
 {
-	drawSpacingHelpers = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SpacingHelpersEnabled");
+	previewSpacingHelpersEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SpacingHelpersEnabled");
 }
 
 float OBSBasic::GetDevicePixelRatio()

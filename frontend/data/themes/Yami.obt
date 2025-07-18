@@ -335,6 +335,12 @@
     margin: var(--spacing_base) 0;
 }
 
+.subtitle {
+    font-size: var(--font_small);
+    font-weight: bold;
+    color: var(--text_muted);
+}
+
 .button-primary {
     background-color: var(--primary_dark);
     border-color: var(--primary);
@@ -780,6 +786,20 @@ OBSDock QToolBar QToolButton:disabled {
     background: var(--grey7);
 }
 
+/* Reset styling for the preview dock */
+#previewDock > QWidget {
+    background: var(--bg_base);
+    border-radius: var(--border_radius);
+    border: none;
+    border: 1px solid var(--border_color);
+}
+
+#previewFrame {
+    background: var(--grey7);
+    margin-top: var(--spacing_large);
+    border: 1px solid var(--grey7);
+}
+
 #transitionsFrame {
     padding: var(--padding_container);
 }
@@ -977,6 +997,9 @@ OBSDock QScrollBar:vertical {
     background-color: var(--bg_base);
     margin-top: 4px;
     border-radius: var(--border_radius);
+    margin-bottom: var(--spacing_base);
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
 }
 
 #contextContainer QPushButton {
@@ -2157,34 +2180,70 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     background: var(--bg_base);
 }
 
-#previewScalePercent,
+#previewXContainer {
+    border-top: 1px solid var(--grey6);
+    max-height: var(--input_height_half);
+    padding: 0;
+    color: var(--text_muted);
+}
+
+#previewZoomOutButton,
+#previewZoomInButton,
 #previewScalingMode {
     background: transparent;
     color: var(--text_muted);
     font-size: var(--font_xsmall);
-    height: 14px;
-    max-height: 14px;
+    height: var(--input_height_half);
+    max-height: var(--input_height_half);
     padding: 0px;
     margin: 0;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 0;
 }
 
-#previewXContainer {
-    border: 1px solid var(--grey6);
+#previewScalingMode,
+#previewScalePercent {
+    color: var(--text_muted);
+    font-size: var(--font_xsmall);
 }
 
-#previewScalePercent {
-    padding: 0px var(--input_text_padding);
-    min-width: var(--preview_scale_width);
+#previewZoomOutButton,
+#previewZoomInButton {
+    padding: 0px var(--padding_large);
 }
 
 #previewScalingMode {
     padding: 0px var(--input_text_padding);
-    border: 1px solid var(--grey6);
+    border-left-color: var(--grey6);
+    border-right-color: var(--grey6);
 }
 
-#previewScalingMode:hover,
+#previewScalingMode QAbstractItemView {
+    padding: 0;
+}
+
+#previewScalingMode QAbstractItemView::item {
+    height: var(--input_height_half);
+    padding: var(--padding_base) var(--padding_large);
+    border-radius: var(--border_radius_small);
+}
+
+#previewZoomOutButton:hover,
+#previewZoomInButton:hover,
+#previewScalingMode:hover {
+    background-color: var(--grey6);
+    border-color: transparent;
+    color: var(--white3);
+}
+
+#previewZoomOutButton:pressed,
+#previewZoomInButton:pressed,
+#previewScalingMode:pressed {
+    background-color: var(--button_down);
+}
+
+#previewZoomOutButton:focus,
+#previewZoomInButton:focus,
 #previewScalingMode:focus {
     border-color: var(--input_border_hover);
 }
@@ -2194,20 +2253,19 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     border-color: var(--input_border_focus);
 }
 
-#previewXScrollBar,
-#previewYScrollBar {
+#previewScalePercent {
+    padding: 0px var(--input_text_padding);
+    min-width: var(--preview_scale_width);
+}
+
+#previewContainer QScrollBar {
     background: transparent;
-    border: 1px solid var(--grey6);
+    border: none;
     border-radius: 0;
+    margin: 0;
 }
 
-#previewXScrollBar {
-    border-left: none;
-    height: 16px;
-}
-
-#previewXScrollBar::handle,
-#previewYScrollBar::handle {
+#previewContainer QScrollBar::handle {
     margin: 3px;
 }
 
@@ -2240,6 +2298,34 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 #previewZoomInButton:focus,
 #previewZoomOutButton:focus {
     border: 1px solid var(--input_border_hover);
+}
+
+/* Add Source Dialog */
+SourceSelectButton {
+    text-align: center;
+    padding: var(--padding_base) var(--padding_base);
+    margin: var(--spacing_base);
+}
+
+SourceSelectButton QLabel {
+    padding: var(--padding_large) 0;
+    text-align: center;
+}
+
+SourceSelectButton #thumbnail {
+    background: var(--grey6);
+    border: 1px solid var(--grey4);
+    padding: 0;
+    margin-top: var(--spacing_base);
+}
+
+SourceSelectButton QPushButton {
+    background: var(--grey5);
+}
+
+SourceSelectButton QPushButton:checked:focus,
+SourceSelectButton QPushButton:focus {
+    border-color: var(--white3);
 }
 
 /* Idian Widgets */
@@ -2512,4 +2598,132 @@ idian--RowFrame.hover .row-buddy {
 
 idian--RowFrame.hover idian--ExpandButton::indicator {
     border-color: var(--grey1);
+}
+
+#previewContainer #previewXScrollBar {
+    height: 16px;
+}
+
+#previewContainer #previewYScrollBar {
+    width: 16px;
+    border-left: 1px solid var(--grey6);
+}
+
+/* Add Source Dialog */
+
+#sourceTypeList {
+    outline: none;
+    padding: var(--padding_base) var(--padding_large);
+}
+
+#sourceTypeList::item {
+    padding: var(--padding_large) var(--padding_large);
+    border: 1px solid transparent;
+    margin-bottom: var(--spacing_base);
+}
+
+#sourceTypeList::item:hover {
+    background: var(--grey4);
+    border: 1px solid var(--grey3);
+}
+
+#sourceTypeList::item:selected {
+    background: var(--primary_dark);
+    border: 1px solid var(--primary);
+}
+
+#sourceTypeList::item:selected:hover {
+    background: var(--primary);
+    border: 1px solid var(--primary_light);
+}
+
+#sourceTypeList::item:focus {
+    border: 1px solid var(--white3);
+}
+
+SourceSelectButton {
+    text-align: center;
+    padding: var(--padding_base) var(--padding_base);
+    margin: var(--spacing_base);
+}
+
+SourceSelectButton QLabel {
+    padding: var(--padding_large) 0;
+    text-align: center;
+}
+
+SourceSelectButton #thumbnail {
+    background: var(--grey6);
+    border: 1px solid var(--grey4);
+    min-width: 160px;
+    min-height: 90px;
+    padding: 0;
+    margin-top: var(--spacing_base);
+}
+
+SourceSelectButton QPushButton {
+    background: var(--grey5);
+    outline: none;
+}
+
+SourceSelectButton QPushButton:pressed,
+SourceSelectButton QPushButton:checked {
+    
+}
+
+#createNewSource {
+    margin-left: var(--spacing_large);
+    background-color: var(--primary_dark);
+    border-color: var(--primary);
+    outline: none;
+}
+
+#createNewSource:hover,
+#createNewSource:focus {
+    background-color: var(--primary);
+    border-color: var(--white3);
+}
+
+#createNewSource:hover {
+    border-color: var(--primary_light);
+}
+
+AlignmentSelector {
+    border: 1px solid var(--input_border);
+    margin: 0px;
+    border-radius: 2px;
+}
+
+AlignmentSelector:focus,
+AlignmentSelector:hover {
+    border: 1px solid var(--white3);
+}
+
+AlignmentSelector:checked:hover {
+    border: 1px solid var(--primary_lighter);
+}
+
+AlignmentSelector::indicator {
+    margin: 0px;
+    background: transparent;    
+}
+
+AlignmentSelector::indicator:checked {
+    background: var(--primary);
+}
+
+AlignmentSelector::indicator:checked:focus {
+    background: var(--primary_light);
+}
+
+AlignmentSelector:disabled {
+    border: 1px solid var(--grey3);
+}
+
+AlignmentSelector::indicator:disabled {
+    background: var(--grey5);
+}
+
+AlignmentSelector::indicator:checked:disabled {
+    background: var(--grey3);
 }

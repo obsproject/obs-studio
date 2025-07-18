@@ -1,5 +1,6 @@
 /******************************************************************************
     Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
+    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,10 +31,26 @@ class ScreenshotObj : public QObject {
 public:
 	ScreenshotObj(obs_source_t *source);
 	~ScreenshotObj() override;
-	void Screenshot();
-	void Download();
-	void Copy();
-	void MuxAndFinish();
+
+	enum class Stage { Render, Download, Output, Finished };
+
+	void processStage();
+	void renderScreenshot();
+	void downloadData();
+	void copyData();
+	void saveToFile();
+	void muxFile();
+	void onFinished();
+
+	Stage stage() { return stage_; }
+	void setStage(Stage stage) { stage_ = stage; }
+
+	void setSize(QSize size);
+	void setSize(int width, int height);
+	void setSaveToFile(bool save);
+
+private:
+	Stage stage_ = Stage::Render;
 
 	gs_texrender_t *texrender = nullptr;
 	gs_stagesurf_t *stagesurf = nullptr;
@@ -41,12 +58,19 @@ public:
 	std::string path;
 	QImage image;
 	std::vector<uint8_t> half_bytes;
-	uint32_t cx;
-	uint32_t cy;
+	QSize customSize;
+	uint32_t sourceWidth = 0;
+	uint32_t sourceHeight = 0;
+	uint32_t outputWidth = 0;
+	uint32_t outputHeight = 0;
+
 	std::thread th;
+	std::shared_ptr<QImage> imagePtr;
+	bool outputToFile = true;
 
-	int stage = 0;
+signals:
+	void imageReady(QImage image);
 
-public slots:
-	void Save();
+private slots:
+	void handleSave();
 };
