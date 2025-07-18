@@ -84,6 +84,18 @@
     qproperty-icon: url(:res/images/revert.svg);
 }
 
+.icon-info {
+    qproperty-icon: url(:res/images/info.svg);
+}
+
+.icon-bell-active {
+    qproperty-icon: url(:res/images/bell-active.svg);
+}
+
+.icon-bell-inactive {
+    qproperty-icon: url(:res/images/bell-inactive.svg);
+}
+
 .indicator-mute {
     outline: none;
 }
