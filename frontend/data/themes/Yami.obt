@@ -2513,3 +2513,43 @@ idian--RowFrame.hover .row-buddy {
 idian--RowFrame.hover idian--ExpandButton::indicator {
     border-color: var(--grey1);
 }
+
+AlignmentSelector {
+    border: 1px solid var(--input_border);
+    margin: 0px;
+    border-radius: 2px;
+}
+
+AlignmentSelector:focus,
+AlignmentSelector:hover {
+    border: 1px solid var(--white3);
+}
+
+AlignmentSelector:checked:hover {
+    border: 1px solid var(--primary_lighter);
+}
+
+AlignmentSelector::indicator {
+    margin: 0px;
+    background: transparent;    
+}
+
+AlignmentSelector::indicator:checked {
+    background: var(--primary);
+}
+
+AlignmentSelector::indicator:checked:focus {
+    background: var(--primary_light);
+}
+
+AlignmentSelector:disabled {
+    border: 1px solid var(--grey3);
+}
+
+AlignmentSelector::indicator:disabled {
+    background: var(--grey5);
+}
+
+AlignmentSelector::indicator:checked:disabled {
+    background: var(--grey3);
+}
