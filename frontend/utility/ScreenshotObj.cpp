@@ -49,15 +49,8 @@ ScreenshotObj::~ScreenshotObj()
 	if (th.joinable()) {
 		th.join();
 
-		if (cx && cy) {
-			OBSBasic *main = OBSBasic::Get();
-			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
-
-			main->lastScreenshot = path;
-
-			main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
-		}
+		if (cx && cy)
+			emit screenshotTaken(QT_UTF8(path.c_str()));
 	}
 }
 
