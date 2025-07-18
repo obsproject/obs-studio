@@ -21,6 +21,7 @@
 #include "OBSMainWindow.hpp"
 
 #include <OBSApp.hpp>
+#include <components/AccessibleAlignmentSelector.hpp>
 #include <oauth/Auth.hpp>
 #include <utility/BasicOutputHandler.hpp>
 #include <utility/OBSCanvas.hpp>
@@ -38,6 +39,7 @@
 #include <util/threading.h>
 #include <util/util.hpp>
 
+#include <QAccessible>
 #include <QSystemTrayIcon>
 
 #include <deque>
