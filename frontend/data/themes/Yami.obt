@@ -335,6 +335,12 @@
     margin: var(--spacing_base) 0;
 }
 
+.subtitle {
+    font-size: var(--font_small);
+    font-weight: bold;
+    color: var(--text_muted);
+}
+
 .button-primary {
     background-color: var(--primary_dark);
     border-color: var(--primary);
