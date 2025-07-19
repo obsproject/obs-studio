@@ -246,6 +246,8 @@ static int libsrt_listen(int eid, SRTSOCKET fd, const struct sockaddr *addr, soc
 	char streamid[513];
 	int streamid_len = sizeof(streamid);
 
+	blog(LOG_INFO, "[obs-ffmpeg mpegts muxer / libsrt]: listening for a connection...");
+
 	if (srt_setsockopt(fd, SOL_SOCKET, SRTO_REUSEADDR, &reuse, sizeof(reuse))) {
 		blog(LOG_WARNING, "[obs-ffmpeg mpegts muxer / libsrt]: setsockopt(SRTO_REUSEADDR) failed");
 	}

@@ -353,6 +353,7 @@ fail:
 			librist_close(uc);
 		else
 			libsrt_close(uc);
+
 		av_freep(&uc->priv_data);
 	}
 
