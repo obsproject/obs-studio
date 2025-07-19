@@ -341,8 +341,11 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 
 	if (err < 0)
 		goto fail;
+	else
+		stream->has_connected = true;
 	return 0;
 fail:
+	stream->has_connected = false;
 	if (uc)
 		av_freep(&uc->priv_data);
 	av_freep(&uc);
@@ -551,7 +554,8 @@ void ffmpeg_mpegts_data_free(struct ffmpeg_output *stream, struct ffmpeg_data *d
 
 	if (data->output) {
 		if (data->config.is_rist || data->config.is_srt) {
-			close_mpegts_url(stream, data->config.is_rist);
+			if (stream->has_connected)
+				close_mpegts_url(stream, data->config.is_rist);
 		} else {
 			avio_close(data->output->pb);
 		}
