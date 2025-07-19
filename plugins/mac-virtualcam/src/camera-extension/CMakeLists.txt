@@ -22,11 +22,10 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 13.0)
 add_executable(mac-camera-extension)
 add_executable(OBS:mac-camera-extension ALIAS mac-camera-extension)
 
-set(_placeholder_location "${CMAKE_CURRENT_SOURCE_DIR}/../common/data/placeholder.png")
 target_sources(
   mac-camera-extension
   PRIVATE
-    "${_placeholder_location}"
+    data/placeholder.png
     main.swift
     OBSCameraDeviceSource.swift
     OBSCameraProviderSource.swift
@@ -34,8 +33,8 @@ target_sources(
     OBSCameraStreamSource.swift
 )
 
-set_property(SOURCE "${_placeholder_location}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
-source_group("Resources" FILES "${_placeholder_location}")
+set_property(SOURCE data/placeholder.png PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
+source_group("Resources" FILES data/placeholder.png)
 
 set_target_properties_obs(
   mac-camera-extension
