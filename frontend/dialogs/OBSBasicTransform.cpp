@@ -4,6 +4,7 @@
 
 #include "moc_OBSBasicTransform.cpp"
 
+namespace {
 static bool find_sel(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
 	OBSSceneItem &dst = *static_cast<OBSSceneItem *>(param);
@@ -28,8 +29,28 @@ static OBSSceneItem FindASelectedItem(obs_scene_t *scene)
 	obs_scene_enum_items(scene, find_sel, &item);
 	return item;
 }
+static vec2 getAlignmentConversion(uint32_t alignment)
+{
+	vec2 ratio = {0.5f, 0.5f};
+	if (alignment & OBS_ALIGN_RIGHT) {
+		ratio.x = 1.0f;
+	}
+	if (alignment & OBS_ALIGN_LEFT) {
+		ratio.x = 0.0f;
+	}
+	if (alignment & OBS_ALIGN_BOTTOM) {
+		ratio.y = 1.0f;
+	}
+	if (alignment & OBS_ALIGN_TOP) {
+		ratio.y = 0.0f;
+	}
+
+	return ratio;
+}
+} // namespace
 
 #define COMBO_CHANGED &QComboBox::currentIndexChanged
+#define ALIGN_CHANGED &AlignmentSelector::currentIndexChanged
 #define ISCROLL_CHANGED &QSpinBox::valueChanged
 #define DSCROLL_CHANGED &QDoubleSpinBox::valueChanged
 
@@ -42,14 +63,40 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 
 	ui->setupUi(this);
 
+	positionAlignment = new AlignmentSelector(this);
+	positionAlignment->setAccessibleName(QTStr("Basic.TransformWindow.Alignment"));
+	ui->verticalLayout_4->addWidget(positionAlignment);
+	positionAlignment->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+	boundsAlignment = new AlignmentSelector(this);
+	boundsAlignment->setAccessibleName(QTStr("Basic.TransformWindow.BoundsAlignment"));
+	boundsAlignment->setEnabled(false);
+	ui->verticalLayout_5->addWidget(boundsAlignment);
+	boundsAlignment->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+	/* Avoid needing to include colons in strings themselves by adding them here */
+	ui->positionXLabel->setText(ui->positionXLabel->text() + ":");
+	ui->positionYLabel->setText(ui->positionYLabel->text() + ":");
+	ui->sizeWidthLabel->setText(ui->sizeWidthLabel->text() + ":");
+	ui->sizeHeightLabel->setText(ui->sizeHeightLabel->text() + ":");
+	ui->boundsWidthLabel->setText(ui->boundsWidthLabel->text() + ":");
+	ui->boundsHeightLabel->setText(ui->boundsHeightLabel->text() + ":");
+	ui->cropLeftLabel->setText(ui->cropLeftLabel->text() + ":");
+	ui->cropTopLabel->setText(ui->cropTopLabel->text() + ":");
+	ui->cropRightLabel->setText(ui->cropRightLabel->text() + ":");
+	ui->cropBottomLabel->setText(ui->cropBottomLabel->text() + ":");
+
+	setTabOrder(ui->rotation, positionAlignment);
+	setTabOrder(ui->cropToBounds, boundsAlignment);
+
 	HookWidget(ui->positionX, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
 	HookWidget(ui->positionY, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
 	HookWidget(ui->rotation, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
 	HookWidget(ui->sizeX, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
 	HookWidget(ui->sizeY, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->align, COMBO_CHANGED, &OBSBasicTransform::OnControlChanged);
+	HookWidget(positionAlignment.get(), ALIGN_CHANGED, &OBSBasicTransform::OnAlignChanged);
 	HookWidget(ui->boundsType, COMBO_CHANGED, &OBSBasicTransform::OnBoundsType);
-	HookWidget(ui->boundsAlign, COMBO_CHANGED, &OBSBasicTransform::OnControlChanged);
+	HookWidget(boundsAlignment.get(), ALIGN_CHANGED, &OBSBasicTransform::OnControlChanged);
 	HookWidget(ui->boundsWidth, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
 	HookWidget(ui->boundsHeight, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
 	HookWidget(ui->cropLeft, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
@@ -79,6 +126,10 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	undo_data = std::string(obs_data_get_json(wrapper));
 
 	channelChangedSignal.Connect(obs_get_signal_handler(), "channel_change", OBSChannelChanged, this);
+
+	adjustSize();
+	setMinimumSize(size());
+	setMaximumSize(size());
 }
 
 OBSBasicTransform::~OBSBasicTransform()
@@ -123,6 +174,8 @@ void OBSBasicTransform::SetItem(OBSSceneItem newItem)
 void OBSBasicTransform::SetEnabled(bool enable)
 {
 	ui->container->setEnabled(enable);
+	ui->container2->setEnabled(enable);
+	ui->container3->setEnabled(enable);
 	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
 }
 
@@ -201,20 +254,20 @@ void OBSBasicTransform::OBSSceneItemLocked(void *param, calldata_t *data)
 	QMetaObject::invokeMethod(window, "SetEnabled", Q_ARG(bool, !locked));
 }
 
-static const uint32_t listToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,
-				       OBS_ALIGN_TOP,
-				       OBS_ALIGN_TOP | OBS_ALIGN_RIGHT,
-				       OBS_ALIGN_LEFT,
-				       OBS_ALIGN_CENTER,
-				       OBS_ALIGN_RIGHT,
-				       OBS_ALIGN_BOTTOM | OBS_ALIGN_LEFT,
-				       OBS_ALIGN_BOTTOM,
-				       OBS_ALIGN_BOTTOM | OBS_ALIGN_RIGHT};
+static const uint32_t indexToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,
+					OBS_ALIGN_TOP,
+					OBS_ALIGN_TOP | OBS_ALIGN_RIGHT,
+					OBS_ALIGN_LEFT,
+					OBS_ALIGN_CENTER,
+					OBS_ALIGN_RIGHT,
+					OBS_ALIGN_BOTTOM | OBS_ALIGN_LEFT,
+					OBS_ALIGN_BOTTOM,
+					OBS_ALIGN_BOTTOM | OBS_ALIGN_RIGHT};
 
-static int AlignToList(uint32_t align)
+static int alignToIndex(uint32_t align)
 {
 	int index = 0;
-	for (uint32_t curAlign : listToAlign) {
+	for (uint32_t curAlign : indexToAlign) {
 		if (curAlign == align)
 			return index;
 
@@ -240,8 +293,8 @@ void OBSBasicTransform::RefreshControls()
 	float width = float(source_cx);
 	float height = float(source_cy);
 
-	int alignIndex = AlignToList(osi.alignment);
-	int boundsAlignIndex = AlignToList(osi.bounds_alignment);
+	int alignIndex = alignToIndex(osi.alignment);
+	int boundsAlignIndex = alignToIndex(osi.bounds_alignment);
 
 	ignoreItemChange = true;
 	ui->positionX->setValue(osi.pos.x);
@@ -249,14 +302,14 @@ void OBSBasicTransform::RefreshControls()
 	ui->rotation->setValue(osi.rot);
 	ui->sizeX->setValue(osi.scale.x * width);
 	ui->sizeY->setValue(osi.scale.y * height);
-	ui->align->setCurrentIndex(alignIndex);
+	positionAlignment->setCurrentIndex(alignIndex);
 
 	bool valid_size = source_cx != 0 && source_cy != 0;
 	ui->sizeX->setEnabled(valid_size);
 	ui->sizeY->setEnabled(valid_size);
 
 	ui->boundsType->setCurrentIndex(int(osi.bounds_type));
-	ui->boundsAlign->setCurrentIndex(boundsAlignIndex);
+	boundsAlignment->setCurrentIndex(boundsAlignIndex);
 	ui->boundsWidth->setValue(osi.bounds.x);
 	ui->boundsHeight->setValue(osi.bounds.y);
 	ui->cropToBounds->setChecked(osi.crop_to_bounds);
@@ -271,6 +324,51 @@ void OBSBasicTransform::RefreshControls()
 	setWindowTitle(QTStr("Basic.TransformWindow.Title").arg(name.c_str()));
 }
 
+void OBSBasicTransform::OnAlignChanged(int index)
+{
+	uint32_t alignment = indexToAlign[index];
+
+	vec2 flipRatio = getAlignmentConversion(alignment);
+
+	obs_transform_info osi;
+	obs_sceneitem_crop crop;
+	obs_sceneitem_get_info2(item, &osi);
+	obs_sceneitem_get_crop(item, &crop);
+
+	obs_source_t *source = obs_sceneitem_get_source(item);
+	uint32_t sourceWidth = obs_source_get_width(source);
+	uint32_t sourceHeight = obs_source_get_height(source);
+
+	uint32_t widthForFlip = sourceWidth - crop.left - crop.right;
+	uint32_t heightForFlip = sourceHeight - crop.top - crop.bottom;
+
+	if (osi.bounds_type != OBS_BOUNDS_NONE) {
+		widthForFlip = osi.bounds.x;
+		heightForFlip = osi.bounds.y;
+	}
+
+	vec2 currentRatio = getAlignmentConversion(osi.alignment);
+
+	float shiftX = (currentRatio.x - flipRatio.x) * widthForFlip * osi.scale.x;
+	float shiftY = (currentRatio.y - flipRatio.y) * heightForFlip * osi.scale.y;
+
+	bool previousIgnoreState = ignoreItemChange;
+
+	ignoreItemChange = true;
+	ui->positionX->setValue(osi.pos.x - shiftX);
+	ui->positionY->setValue(osi.pos.y - shiftY);
+	ignoreItemChange = previousIgnoreState;
+
+	OnControlChanged();
+}
+
+void OBSBasicTransform::OnBoundsAlignChanged(int index)
+{
+	uint32_t alignment = indexToAlign[index];
+
+	OnControlChanged();
+}
+
 void OBSBasicTransform::OnBoundsType(int index)
 {
 	if (index == -1)
@@ -279,10 +377,13 @@ void OBSBasicTransform::OnBoundsType(int index)
 	obs_bounds_type type = (obs_bounds_type)index;
 	bool enable = (type != OBS_BOUNDS_NONE);
 
-	ui->boundsAlign->setEnabled(enable);
+	boundsAlignment->setEnabled(enable && type != OBS_BOUNDS_STRETCH);
 	ui->boundsWidth->setEnabled(enable);
 	ui->boundsHeight->setEnabled(enable);
-	ui->cropToBounds->setEnabled(enable);
+
+	bool isCoverBounds = type == OBS_BOUNDS_SCALE_OUTER || type == OBS_BOUNDS_SCALE_TO_WIDTH ||
+			     type == OBS_BOUNDS_SCALE_TO_HEIGHT;
+	ui->cropToBounds->setEnabled(isCoverBounds);
 
 	if (!ignoreItemChange) {
 		obs_bounds_type lastType = obs_sceneitem_get_bounds_type(item);
@@ -291,8 +392,50 @@ void OBSBasicTransform::OnBoundsType(int index)
 			int width = (int)obs_source_get_width(source);
 			int height = (int)obs_source_get_height(source);
 
-			ui->boundsWidth->setValue(width);
-			ui->boundsHeight->setValue(height);
+			vec2 scale;
+			obs_sceneitem_get_scale(item, &scale);
+
+			obs_sceneitem_crop crop;
+			obs_sceneitem_get_crop(item, &crop);
+
+			ui->sizeX->setValue(width);
+			ui->sizeY->setValue(height);
+
+			ui->boundsWidth->setValue((width - crop.left - crop.right) * scale.x);
+			ui->boundsHeight->setValue((height - crop.top - crop.bottom) * scale.y);
+		} else if (type == OBS_BOUNDS_NONE) {
+			OBSSource source = obs_sceneitem_get_source(item);
+			int width = (int)obs_source_get_width(source);
+			int height = (int)obs_source_get_height(source);
+
+			matrix4 draw;
+			obs_sceneitem_get_draw_transform(item, &draw);
+
+			ui->sizeX->setValue(width * draw.x.x);
+			ui->sizeY->setValue(height * draw.y.y);
+
+			/* Position Adjustment */
+			obs_transform_info osi;
+			obs_sceneitem_get_info2(item, &osi);
+
+			/* We use the draw transform values here which is always a top left coordinate origin */
+			vec2 currentRatio = getAlignmentConversion(OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
+			vec2 flipRatio = getAlignmentConversion(osi.alignment);
+
+			float drawX = draw.t.x;
+			float drawY = draw.t.y;
+
+			obs_sceneitem_crop crop;
+			obs_sceneitem_get_crop(item, &crop);
+
+			uint32_t widthForFlip = width - crop.left - crop.right;
+			uint32_t heightForFlip = height - crop.top - crop.bottom;
+
+			float shiftX = (currentRatio.x - flipRatio.x) * (widthForFlip * draw.x.x);
+			float shiftY = (currentRatio.y - flipRatio.y) * (heightForFlip * draw.y.y);
+
+			ui->positionX->setValue(osi.pos.x - (osi.pos.x - drawX) - shiftX);
+			ui->positionY->setValue(osi.pos.y - (osi.pos.y - drawY) - shiftY);
 		}
 	}
 
@@ -322,10 +465,10 @@ void OBSBasicTransform::OnControlChanged()
 	oti.pos.x = float(ui->positionX->value());
 	oti.pos.y = float(ui->positionY->value());
 	oti.rot = float(ui->rotation->value());
-	oti.alignment = listToAlign[ui->align->currentIndex()];
+	oti.alignment = indexToAlign[positionAlignment->currentIndex()];
 
 	oti.bounds_type = (obs_bounds_type)ui->boundsType->currentIndex();
-	oti.bounds_alignment = listToAlign[ui->boundsAlign->currentIndex()];
+	oti.bounds_alignment = indexToAlign[boundsAlignment->currentIndex()];
 	oti.bounds.x = float(ui->boundsWidth->value());
 	oti.bounds.y = float(ui->boundsHeight->value());
 	oti.crop_to_bounds = ui->cropToBounds->isChecked();
