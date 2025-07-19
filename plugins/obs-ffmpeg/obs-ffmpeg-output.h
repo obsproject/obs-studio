@@ -120,6 +120,7 @@ struct ffmpeg_output {
 	pthread_t start_stop_thread;
 	pthread_mutex_t start_stop_mutex;
 	volatile bool start_stop_thread_active;
+	bool has_connected;
 #endif
 };
 
