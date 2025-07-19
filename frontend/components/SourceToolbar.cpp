@@ -7,7 +7,7 @@
 SourceToolbar::SourceToolbar(QWidget *parent, OBSSource source)
 	: QWidget(parent),
 	  weakSource(OBSGetWeakRef(source)),
-	  props(obs_source_properties(source), obs_properties_destroy)
+	  props(obs_source_properties(source))
 {
 }
 
