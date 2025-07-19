@@ -77,24 +77,24 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	setTabOrder(ui->rotation, positionAlignment);
 	setTabOrder(ui->boundsType, boundsAlignment);
 
-	HookWidget(ui->positionX, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->positionY, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->rotation, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->sizeX, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->sizeY, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(positionAlignment.get(), ALIGN_CHANGED, &OBSBasicTransform::OnAlignChanged);
-	HookWidget(ui->boundsType, COMBO_CHANGED, &OBSBasicTransform::OnBoundsType);
-	HookWidget(boundsAlignment.get(), ALIGN_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->boundsWidth, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->boundsHeight, DSCROLL_CHANGED, &OBSBasicTransform::OnControlChanged);
-	HookWidget(ui->cropLeft, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
-	HookWidget(ui->cropRight, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
-	HookWidget(ui->cropTop, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
-	HookWidget(ui->cropBottom, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
+	hookWidget(ui->positionX, DSCROLL_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(ui->positionY, DSCROLL_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(ui->rotation, DSCROLL_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(ui->sizeX, DSCROLL_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(ui->sizeY, DSCROLL_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(positionAlignment.get(), ALIGN_CHANGED, &OBSBasicTransform::onAlignChanged);
+	hookWidget(ui->boundsType, COMBO_CHANGED, &OBSBasicTransform::onBoundsType);
+	hookWidget(boundsAlignment.get(), ALIGN_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(ui->boundsWidth, DSCROLL_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(ui->boundsHeight, DSCROLL_CHANGED, &OBSBasicTransform::onControlChanged);
+	hookWidget(ui->cropLeft, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
+	hookWidget(ui->cropRight, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
+	hookWidget(ui->cropTop, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
+	hookWidget(ui->cropBottom, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-	HookWidget(ui->cropToBounds, &QCheckBox::checkStateChanged, &OBSBasicTransform::OnControlChanged);
+	hookWidget(ui->cropToBounds, &QCheckBox::checkStateChanged, &OBSBasicTransform::onControlChanged);
 #else
-	HookWidget(ui->cropToBounds, &QCheckBox::stateChanged, &OBSBasicTransform::OnControlChanged);
+	hookWidget(ui->cropToBounds, &QCheckBox::stateChanged, &OBSBasicTransform::onControlChanged);
 #endif
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
@@ -104,8 +104,8 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	installEventFilter(CreateShortcutFilter());
 
 	OBSScene scene = obs_sceneitem_get_scene(item);
-	SetScene(scene);
-	SetItem(item);
+	setScene(scene);
+	setItem(item);
 
 	std::string name = obs_source_get_name(obs_sceneitem_get_source(item));
 	setWindowTitle(QTStr("Basic.TransformWindow.Title").arg(name.c_str()));
@@ -136,7 +136,7 @@ OBSBasicTransform::~OBSBasicTransform()
 			undo_redo, undo_redo, undo_data, redo_data);
 }
 
-void OBSBasicTransform::SetScene(OBSScene scene)
+void OBSBasicTransform::setScene(OBSScene scene)
 {
 	sigs.clear();
 
@@ -152,12 +152,12 @@ void OBSBasicTransform::SetScene(OBSScene scene)
 	}
 }
 
-void OBSBasicTransform::SetItem(OBSSceneItem newItem)
+void OBSBasicTransform::setItem(OBSSceneItem newItem)
 {
-	QMetaObject::invokeMethod(this, "SetItemQt", Q_ARG(OBSSceneItem, OBSSceneItem(newItem)));
+	QMetaObject::invokeMethod(this, "setItemQt", Q_ARG(OBSSceneItem, OBSSceneItem(newItem)));
 }
 
-void OBSBasicTransform::SetEnabled(bool enable)
+void OBSBasicTransform::setEnabled(bool enable)
 {
 	ui->container->setEnabled(enable);
 	ui->container2->setEnabled(enable);
@@ -165,14 +165,14 @@ void OBSBasicTransform::SetEnabled(bool enable)
 	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
 }
 
-void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
+void OBSBasicTransform::setItemQt(OBSSceneItem newItem)
 {
 	item = newItem;
 	if (item)
-		RefreshControls();
+		refreshControls();
 
 	bool enable = !!item && !obs_sceneitem_locked(item);
-	SetEnabled(enable);
+	setEnabled(enable);
 }
 
 void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)
@@ -181,7 +181,7 @@ void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item == window->item && !window->ignoreTransformSignal)
-		QMetaObject::invokeMethod(window, "RefreshControls");
+		QMetaObject::invokeMethod(window, "refreshControls");
 }
 
 void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
@@ -191,7 +191,7 @@ void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
 	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item == window->item)
-		window->SetItem(FindASelectedItem(scene));
+		window->setItem(FindASelectedItem(scene));
 }
 
 void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t *data)
@@ -200,7 +200,7 @@ void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t *data)
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item != window->item)
-		window->SetItem(item);
+		window->setItem(item);
 }
 
 void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
@@ -211,7 +211,7 @@ void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 
 	if (item == window->item) {
 		window->setWindowTitle(QTStr("Basic.TransformWindow.NoSelectedSource"));
-		window->SetItem(FindASelectedItem(scene));
+		window->setItem(FindASelectedItem(scene));
 	}
 }
 
@@ -220,7 +220,7 @@ void OBSBasicTransform::OBSSceneItemLocked(void *param, calldata_t *data)
 	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	bool locked = calldata_bool(data, "locked");
 
-	QMetaObject::invokeMethod(window, "SetEnabled", Q_ARG(bool, !locked));
+	QMetaObject::invokeMethod(window, "setEnabled", Q_ARG(bool, !locked));
 }
 
 static const uint32_t indexToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,
@@ -246,7 +246,7 @@ static int alignToIndex(uint32_t align)
 	return 0;
 }
 
-void OBSBasicTransform::RefreshControls()
+void OBSBasicTransform::refreshControls()
 {
 	if (!item)
 		return;
@@ -293,7 +293,7 @@ void OBSBasicTransform::RefreshControls()
 	setWindowTitle(QTStr("Basic.TransformWindow.Title").arg(name.c_str()));
 }
 
-void OBSBasicTransform::OnAlignChanged(int index)
+void OBSBasicTransform::onAlignChanged(int index)
 {
 	uint32_t alignment = indexToAlign[index];
 
@@ -328,17 +328,10 @@ void OBSBasicTransform::OnAlignChanged(int index)
 	ui->positionY->setValue(osi.pos.y - shiftY);
 	ignoreItemChange = previousIgnoreState;
 
-	OnControlChanged();
+	onControlChanged();
 }
 
-void OBSBasicTransform::OnBoundsAlignChanged(int index)
-{
-	uint32_t alignment = indexToAlign[index];
-
-	OnControlChanged();
-}
-
-void OBSBasicTransform::OnBoundsType(int index)
+void OBSBasicTransform::onBoundsType(int index)
 {
 	if (index == -1)
 		return;
@@ -383,7 +376,6 @@ void OBSBasicTransform::OnBoundsType(int index)
 			ui->sizeX->setValue(width * draw.x.x);
 			ui->sizeY->setValue(height * draw.y.y);
 
-			/* Position Adjustment */
 			obs_transform_info osi;
 			obs_sceneitem_get_info2(item, &osi);
 
@@ -408,10 +400,10 @@ void OBSBasicTransform::OnBoundsType(int index)
 		}
 	}
 
-	OnControlChanged();
+	onControlChanged();
 }
 
-void OBSBasicTransform::OnControlChanged()
+void OBSBasicTransform::onControlChanged()
 {
 	if (ignoreItemChange)
 		return;
@@ -447,7 +439,7 @@ void OBSBasicTransform::OnControlChanged()
 	ignoreTransformSignal = false;
 }
 
-void OBSBasicTransform::OnCropChanged()
+void OBSBasicTransform::onCropChanged()
 {
 	if (ignoreItemChange)
 		return;
@@ -463,11 +455,11 @@ void OBSBasicTransform::OnCropChanged()
 	ignoreTransformSignal = false;
 }
 
-void OBSBasicTransform::OnSceneChanged(QListWidgetItem *current, QListWidgetItem *)
+void OBSBasicTransform::onSceneChanged(QListWidgetItem *current, QListWidgetItem *)
 {
 	if (!current)
 		return;
 
 	OBSScene scene = GetOBSRef<OBSScene>(current);
-	this->SetScene(scene);
+	this->setScene(scene);
 }
