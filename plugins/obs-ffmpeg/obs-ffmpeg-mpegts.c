@@ -292,14 +292,21 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 		err = OBS_OUTPUT_ERROR;
 		goto fail;
 	}
+
 	uc->url = (char *)url;
 	uc->max_packet_size = is_rist ? RIST_MAX_PAYLOAD_SIZE : SRT_LIVE_DEFAULT_PAYLOAD_SIZE;
+
+	if (stream->ff_data.config.srt_pkt_size)
+		uc->max_packet_size = stream->ff_data.config.srt_pkt_size;
+
 	uc->priv_data = is_rist ? av_mallocz(sizeof(RISTContext)) : av_mallocz(sizeof(SRTContext));
+
 	if (!uc->priv_data) {
 		ffmpeg_mpegts_log_error(LOG_ERROR, &stream->ff_data, "Couldn't allocate memory");
 		err = OBS_OUTPUT_ERROR;
 		goto fail;
 	}
+
 	/* For SRT, pass streamid & passphrase; for RIST, pass passphrase, username
 	 * & password.
 	 */
@@ -380,9 +387,14 @@ static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream, bool
 
 	buffer_size = UDP_DEFAULT_PAYLOAD_SIZE;
 
+	if (h->max_packet_size)
+		buffer_size = h->max_packet_size;
+
 	buffer = av_malloc(buffer_size);
+
 	if (!buffer)
 		return AVERROR(ENOMEM);
+
 	/* allocate custom avio_context */
 	if (is_rist)
 		s = avio_alloc_context(buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL, (write_packet_cb)librist_write,
@@ -390,8 +402,10 @@ static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream, bool
 	else
 		s = avio_alloc_context(buffer, buffer_size, AVIO_FLAG_WRITE, h, NULL, (write_packet_cb)libsrt_write,
 				       NULL);
+
 	if (!s)
 		goto fail;
+
 	s->max_packet_size = h->max_packet_size;
 	s->opaque = h;
 	stream->s = s;
@@ -843,6 +857,16 @@ static bool fetch_service_info(struct ffmpeg_output *stream, struct ffmpeg_cfg *
 	config->format_mime_type = "video/M2PT";
 	config->is_rist = is_rist(config->url);
 	config->is_srt = is_srt(config->url);
+	config->srt_pkt_size = 0; /* use default, which is usually 1316 for mpegts */
+
+	/* parse pkt_size option */
+	const char *p;
+	char buf[1024];
+	p = strchr(config->url, '?');
+	if (av_find_info_tag(buf, sizeof(buf), "payload_size", p) ||
+	    av_find_info_tag(buf, sizeof(buf), "pkt_size", p)) {
+		config->srt_pkt_size = strtol(buf, NULL, 10);
+	}
 	return true;
 }
 
