@@ -341,11 +341,21 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 
 	if (err < 0)
 		goto fail;
+	else
+		stream->has_connected = true;
 
 	return 0;
 fail:
-	if (uc)
+	stream->has_connected = false;
+
+	if (uc) {
+		if (is_rist)
+			librist_close(uc);
+		else
+			libsrt_close(uc);
 		av_freep(&uc->priv_data);
+	}
+
 	av_freep(&uc);
 #if HAVE_WINSOCK2_H
 	WSACleanup();
