@@ -45,6 +45,7 @@ struct ffmpeg_cfg {
 	const char *encrypt_passphrase;
 	bool is_srt;
 	bool is_rist;
+	int srt_pkt_size;
 };
 
 struct ffmpeg_audio_info {
