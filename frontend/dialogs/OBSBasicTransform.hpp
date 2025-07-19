@@ -3,8 +3,10 @@
 #include "ui_OBSBasicTransform.h"
 
 #include <obs.hpp>
+#include <components/AlignmentSelector.hpp>
 
 #include <QDialog>
+#include <QPointer>
 
 class OBSBasic;
 class QListWidgetItem;
@@ -14,6 +16,9 @@ class OBSBasicTransform : public QDialog {
 
 private:
 	std::unique_ptr<Ui::OBSBasicTransform> ui;
+
+	QPointer<AlignmentSelector> positionAlignment;
+	QPointer<AlignmentSelector> boundsAlignment;
 
 	OBSBasic *main;
 	OBSSceneItem item;
@@ -43,6 +48,8 @@ private:
 private slots:
 	void RefreshControls();
 	void SetItemQt(OBSSceneItem newItem);
+	void OnAlignChanged(int index);
+	void OnBoundsAlignChanged(int index);
 	void OnBoundsType(int index);
 	void OnControlChanged();
 	void OnCropChanged();
