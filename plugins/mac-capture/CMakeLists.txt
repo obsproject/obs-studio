@@ -8,7 +8,7 @@ target_sources(
   PRIVATE
     audio-device-enum.c
     audio-device-enum.h
-    mac-audio.c
+    mac-audio.m
     mac-display-capture.m
     mac-sck-audio-capture.m
     mac-sck-common.h
@@ -31,6 +31,7 @@ target_link_libraries(
     "$<LINK_LIBRARY:FRAMEWORK,CoreMedia.framework>"
     "$<LINK_LIBRARY:FRAMEWORK,CoreVideo.framework>"
     "$<LINK_LIBRARY:FRAMEWORK,IOSurface.framework>"
+    "$<LINK_LIBRARY:FRAMEWORK,AVFoundation.framework>"
     "$<LINK_LIBRARY:WEAK_FRAMEWORK,ScreenCaptureKit.framework>"
 )
 
