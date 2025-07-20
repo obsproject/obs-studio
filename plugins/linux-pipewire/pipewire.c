@@ -26,6 +26,7 @@
 
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
+#include <glib/gstdio.h>
 
 #include <fcntl.h>
 #include <glad/glad.h>
@@ -765,14 +766,18 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		}
 
 #if PW_CHECK_VERSION(1, 2, 0)
+		g_clear_fd(&obs_pw_stream->sync.acquire_syncobj_fd, NULL);
+		g_clear_fd(&obs_pw_stream->sync.release_syncobj_fd, NULL);
+
 		if (synctimeline && (buffer->n_datas == (planes + 2))) {
 			assert(buffer->datas[planes].type == SPA_DATA_SyncObj);
 			assert(buffer->datas[planes + 1].type == SPA_DATA_SyncObj);
 
-			obs_pw_stream->sync.acquire_syncobj_fd = buffer->datas[planes].fd;
+			obs_pw_stream->sync.acquire_syncobj_fd = fcntl(buffer->datas[planes].fd, F_DUPFD_CLOEXEC, 5);
 			obs_pw_stream->sync.acquire_point = synctimeline->acquire_point;
 
-			obs_pw_stream->sync.release_syncobj_fd = buffer->datas[planes + 1].fd;
+			obs_pw_stream->sync.release_syncobj_fd =
+				fcntl(buffer->datas[planes + 1].fd, F_DUPFD_CLOEXEC, 5);
 			obs_pw_stream->sync.release_point = synctimeline->release_point;
 
 			obs_pw_stream->sync.set = true;
@@ -1179,6 +1184,8 @@ obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_sourc
 	obs_pw_stream->cursor.visible = connect_info->screencast.cursor_visible;
 	obs_pw_stream->framerate.set = connect_info->video.framerate != NULL;
 	obs_pw_stream->resolution.set = connect_info->video.resolution != NULL;
+	obs_pw_stream->sync.acquire_syncobj_fd = -1;
+	obs_pw_stream->sync.release_syncobj_fd = -1;
 
 	if (obs_pw_stream->framerate.set)
 		obs_pw_stream->framerate.fraction = *connect_info->video.framerate;
@@ -1408,6 +1415,9 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 		pw_stream_disconnect(obs_pw_stream->stream);
 	g_clear_pointer(&obs_pw_stream->stream, pw_stream_destroy);
 	pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
+
+	g_clear_fd(&obs_pw_stream->sync.acquire_syncobj_fd, NULL);
+	g_clear_fd(&obs_pw_stream->sync.release_syncobj_fd, NULL);
 
 	clear_format_info(obs_pw_stream);
 	bfree(obs_pw_stream);
