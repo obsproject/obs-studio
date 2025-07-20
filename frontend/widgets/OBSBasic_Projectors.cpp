@@ -105,7 +105,7 @@ QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 	for (int i = 0; i < screens.size(); i++) {
 		QScreen *screen = screens[i];
 		QRect screenGeometry = screen->geometry();
-		qreal ratio = screen->devicePixelRatio();
+		qreal screenPixelRatio = screen->devicePixelRatio();
 		QString name = "";
 #if defined(__APPLE__) || defined(_WIN32)
 		name = screen->name();
@@ -120,9 +120,12 @@ QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 		if (name.length() == 0) {
 			name = QString("%1 %2").arg(QTStr("Display")).arg(QString::number(i + 1));
 		}
+
+		int screenPixelWidth = std::round((screenGeometry.width() * screenPixelRatio) * 0.5f) * 2;
+		int screenPixelHeight = std::round((screenGeometry.height() * screenPixelRatio) * 0.5f) * 2;
+
 		QString str = QString("%1: %2x%3 @ %4,%5")
-				      .arg(name, QString::number(screenGeometry.width() * ratio),
-					   QString::number(screenGeometry.height() * ratio),
+				      .arg(name, QString::number(screenPixelWidth), QString::number(screenPixelHeight),
 					   QString::number(screenGeometry.x()), QString::number(screenGeometry.y()));
 		projectorsFormatted.push_back(str);
 	}
