@@ -5810,7 +5810,7 @@
                   </widget>
                   <widget class="QWidget" name="page_fpsInteger_v">
                    <layout class="QHBoxLayout" name="horizontalLayout_fpsInteger_v">
- имущество="левое поле"><число>0</число></имущество><имущество="верхнее поле"><число>0</число></имущество><имущество="правое поле"><число>0</число></имущество><имущество="нижнее поле"><число>0</число></имущество>
+                    <property name="leftMargin"><number>0</number></property><property name="topMargin"><number>0</number></property><property name="rightMargin"><number>0</number></property><property name="bottomMargin"><number>0</number></property>
                     <item alignment="Qt::AlignTop"><widget class="QSpinBox" name="fpsInteger_v"><property name="minimum"><number>1</number></property><property name="maximum"><number>120</number></property></widget></item>
                    </layout>
                   </widget>
