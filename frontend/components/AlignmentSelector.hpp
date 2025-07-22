@@ -24,6 +24,9 @@
 class AlignmentSelector : public QWidget {
 	Q_OBJECT
 
+	friend class AccessibleAlignmentSelector;
+	friend class AccessibleAlignmentCell;
+
 public:
 	explicit AlignmentSelector(QWidget *parent = nullptr);
 
@@ -40,6 +43,8 @@ signals:
 	void currentIndexChanged(int value);
 
 protected:
+	QRect cellRect(int index) const;
+
 	void paintEvent(QPaintEvent *event) override;
 	void leaveEvent(QEvent *event) override;
 	void mouseMoveEvent(QMouseEvent *event) override;
@@ -58,7 +63,7 @@ private:
 	QRect gridRect() const;
 
 	void moveFocusedCell(int moveX, int moveY);
+	void setFocusedCell(int cell);
 	void selectCell(int cell);
-	QRect cellRect(int index) const;
 	Qt::Alignment cellAlignment(int index) const;
 };
