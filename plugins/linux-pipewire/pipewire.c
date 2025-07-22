@@ -144,6 +144,7 @@ struct _obs_pipewire_stream {
 		int release_syncobj_fd;
 		uint64_t acquire_point;
 		uint64_t release_point;
+		bool release_point_will_signal;
 		bool set;
 	} sync;
 };
@@ -766,6 +767,14 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		}
 
 #if PW_CHECK_VERSION(1, 2, 0)
+		if (obs_pw_stream->sync.release_syncobj_fd != -1) {
+			if (!obs_pw_stream->sync.release_point_will_signal) {
+				gs_sync_signal_syncobj_timeline_point(obs_pw_stream->sync.release_syncobj_fd,
+								      obs_pw_stream->sync.release_point);
+				obs_pw_stream->sync.release_point_will_signal = true;
+			}
+		}
+
 		g_clear_fd(&obs_pw_stream->sync.acquire_syncobj_fd, NULL);
 		g_clear_fd(&obs_pw_stream->sync.release_syncobj_fd, NULL);
 
@@ -779,6 +788,7 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 			obs_pw_stream->sync.release_syncobj_fd =
 				fcntl(buffer->datas[planes + 1].fd, F_DUPFD_CLOEXEC, 5);
 			obs_pw_stream->sync.release_point = synctimeline->release_point;
+			obs_pw_stream->sync.release_point_will_signal = false;
 
 			obs_pw_stream->sync.set = true;
 		} else {
@@ -1384,6 +1394,7 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 		gs_sync_export_syncobj_timeline_point(release_sync, obs_pw_stream->sync.release_syncobj_fd,
 						      obs_pw_stream->sync.release_point);
 		gs_sync_destroy(release_sync);
+		obs_pw_stream->sync.release_point_will_signal = true;
 	}
 }
 
