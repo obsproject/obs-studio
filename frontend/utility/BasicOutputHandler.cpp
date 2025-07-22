@@ -228,12 +228,11 @@ BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 		deactivateVirtualCam.Connect(signal, "deactivate", OBSDeactivateVirtualCam, this);
 	}
 
-	auto multitrack_enabled = config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo");
-	if (!config_has_user_value(main->Config(), "Stream1", "EnableMultitrackVideo")) {
-		auto service = main_->GetService();
-		OBSDataAutoRelease settings = obs_service_get_settings(service);
-		multitrack_enabled = obs_data_has_user_value(settings, "multitrack_video_configuration_url");
-	}
+	auto service = main_->GetService();
+	OBSDataAutoRelease settings = obs_service_get_settings(service);
+	auto multitrack_enabled = config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo") &&
+				  obs_data_has_user_value(settings, "multitrack_video_configuration_url");
+
 	if (multitrack_enabled)
 		multitrackVideo = make_unique<MultitrackVideoOutput>();
 }
