@@ -79,6 +79,17 @@ extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
+namespace {
+QAccessibleInterface *alignmentSelectorFactory(const QString &classname, QObject *object)
+{
+	if (classname == QLatin1String("AlignmentSelector")) {
+		if (auto *w = qobject_cast<AlignmentSelector *>(object))
+			return new AccessibleAlignmentSelector(w);
+	}
+	return nullptr;
+}
+}
+
 QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *obj, QEvent *event) {
@@ -932,6 +943,8 @@ static void move_basic_to_scene_collections(void)
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
+
+	QAccessible::installFactory(alignmentSelectorFactory);
 
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
