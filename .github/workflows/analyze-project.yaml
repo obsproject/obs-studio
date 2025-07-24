@@ -124,7 +124,7 @@ jobs:
 
           pushd ${analytics_root}
 
-          npx @microsoft/sarif-multitool merge *.sarif
+          npx @microsoft/sarif-multitool merge --merge-runs *.sarif
 
           popd
 
