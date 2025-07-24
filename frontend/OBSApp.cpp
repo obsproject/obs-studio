@@ -1374,11 +1374,9 @@ string GetFormatString(const char *format, const char *prefix, const char *suffi
 string GetFormatExt(const char *container)
 {
 	string ext = container;
-	if (ext == "fragmented_mp4")
+	if (ext == "fragmented_mp4" || ext == "hybrid_mp4")
 		ext = "mp4";
-	if (ext == "hybrid_mp4")
-		ext = "mp4";
-	else if (ext == "fragmented_mov")
+	else if (ext == "fragmented_mov" || ext == "hybrid_mov")
 		ext = "mov";
 	else if (ext == "hls")
 		ext = "m3u8";
