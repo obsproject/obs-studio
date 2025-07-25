@@ -47,6 +47,11 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	connect(messageTimer, &QTimer::timeout, this, &OBSBasicStatusBar::clearMessage);
 
 	clearMessage();
+
+	OBSBasic *main = qobject_cast<OBSBasic *>(parent);
+	connect(main, &OBSBasic::notificationsUpdated, statusWidget->ui->bell, &NotificationBell::setCount);
+
+	connect(statusWidget->ui->bell, &NotificationBell::clicked, this, [this]() { emit notificationBellClicked(); });
 }
 
 void OBSBasicStatusBar::Activate()
