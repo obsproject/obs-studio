@@ -1314,7 +1314,13 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	bool rotated;
 	int flip = 0;
 
+	enum gs_color_space color_space = gs_get_color_space();
 	gs_eparam_t *image;
+
+	const char *tech_name = "Draw";
+	gs_technique_t *tech;
+
+	const bool previous = gs_framebuffer_srgb_enabled();
 
 	if (!obs_pw_stream->texture)
 		return;
@@ -1327,19 +1333,18 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	}
 
 	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-	gs_technique_t *tech = gs_effect_get_technique(effect, "DrawSrgbDecompress");
+
+	if (color_space != GS_CS_SRGB)
+		tech_name = "DrawSrgbDecompress";
+
+	tech = gs_effect_get_technique(effect, tech_name);
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
 
-	const bool linear_srgb = gs_get_linear_srgb();
-	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_srgb);
+	gs_enable_framebuffer_srgb(false);
 
 	image = gs_effect_get_param_by_name(effect, "image");
-	if (linear_srgb)
-		gs_effect_set_texture_srgb(image, obs_pw_stream->texture);
-	else
-		gs_effect_set_texture(image, obs_pw_stream->texture);
+	gs_effect_set_texture(image, obs_pw_stream->texture);
 
 	rotated = push_rotation(obs_pw_stream);
 
@@ -1373,10 +1378,7 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 		gs_matrix_push();
 		gs_matrix_translate3f(cursor_x, cursor_y, 0.0f);
 
-		if (linear_srgb)
-			gs_effect_set_texture_srgb(image, obs_pw_stream->cursor.texture);
-		else
-			gs_effect_set_texture(image, obs_pw_stream->cursor.texture);
+		gs_effect_set_texture(image, obs_pw_stream->cursor.texture);
 		gs_draw_sprite(obs_pw_stream->texture, 0, obs_pw_stream->cursor.width, obs_pw_stream->cursor.height);
 
 		gs_matrix_pop();
