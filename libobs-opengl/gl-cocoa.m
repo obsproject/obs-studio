@@ -32,6 +32,15 @@ struct gl_platform {
     NSOpenGLContext *context;
 };
 
+typedef struct {
+    gs_swapchain_t *swapchain;
+    NSOpenGLContext *platformContext;
+    NSOpenGLContext *swapchainContext;
+    GLuint frameBufferObjectId;
+    enum gs_color_format textureFormat;
+    NSSize textureSize;
+} OBSFrameBufferUpdateData;
+
 static NSOpenGLContext *gl_context_create(NSOpenGLContext *share)
 {
     NSOpenGLPixelFormatAttribute attributes[] = {NSOpenGLPFADoubleBuffer, NSOpenGLPFAOpenGLProfile,
@@ -189,40 +198,112 @@ void gl_windowinfo_destroy(struct gl_windowinfo *wi)
 
     wi->view = nil;
     bfree(wi);
+void updateSwapchainFramebuffer(gs_device_t *device, OBSFrameBufferUpdateData updateData)
+{
+    if (!(device && updateData.swapchain)) {
+        return;
+    }
+
+    NSOpenGLContext *platformContext = updateData.platformContext;
+    NSOpenGLContext *swapContext = updateData.swapchainContext;
+
+    CGLContextObj platformContextObj = platformContext.CGLContextObj;
+    CGLLockContext(platformContextObj);
+
+    CGLContextObj swapContextObj = swapContext.CGLContextObj;
+    CGLLockContext(swapContextObj);
+
+    [swapContext makeCurrentContext];
+    [swapContext update];
+
+    gs_texture_t *framebufferTexture = device_texture_create(device, updateData.textureSize.width,
+                                                             updateData.textureSize.height, updateData.textureFormat, 1,
+                                                             NULL, GS_RENDER_TARGET);
+
+    if (!framebufferTexture) {
+        blog(LOG_ERROR, "gl_update (deferred): Unable to generate backing texture for frame buffer.");
+
+        goto updateSwapchainCleanup;
+    }
+
+    BOOL hasBoundFramebuffer = gl_bind_framebuffer(GL_FRAMEBUFFER, updateData.frameBufferObjectId);
+
+    if (!hasBoundFramebuffer) {
+        goto updateSwapchainCleanup;
+    }
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebufferTexture->texture, 0);
+    BOOL hasBoundFramebufferTexture = gl_success("glFrameBufferTexture2D");
+
+    if (!hasBoundFramebufferTexture) {
+        GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+        if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
+            switch (framebufferStatus) {
+                case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                    blog(LOG_ERROR, "gl_update (deferred): Framebuffer object attachment is not complete.");
+                    goto updateSwapchainCleanup;
+                case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                    blog(LOG_ERROR, "gl_update (deferred): Framebuffer object attachment is missing.");
+                    goto updateSwapchainCleanup;
+                default:
+                    blog(LOG_ERROR, "gl_update (deferred): Framebuffer object is incomplete.");
+                    goto updateSwapchainCleanup;
+            }
+        }
+
+        goto updateSwapchainCleanup;
+    }
+
+    gl_bind_framebuffer(GL_FRAMEBUFFER, 0);
+
+    glFlush();
+
+    gs_swapchain_t *currentSwapchain = updateData.swapchain;
+
+    if (currentSwapchain && currentSwapchain->wi && currentSwapchain->wi->texture) {
+        gs_texture_t *priorFramebufferTexture = currentSwapchain->wi->texture;
+        currentSwapchain->wi->texture = framebufferTexture;
+        gs_texture_destroy(priorFramebufferTexture);
+    }
+
+updateSwapchainCleanup:
+    [NSOpenGLContext clearCurrentContext];
+
+    CGLUnlockContext(swapContextObj);
+    CGLUnlockContext(platformContextObj);
 }
 
 void gl_update(gs_device_t *device)
 {
-    gs_swapchain_t *swap = device->cur_swap;
-    NSOpenGLContext *parent = device->plat->context;
-    NSOpenGLContext *context = swap->wi->context;
-    dispatch_async(dispatch_get_main_queue(), ^() {
-        if (!swap || !swap->wi) {
-            return;
-        }
+    if (!(device && device->cur_swap)) {
+        return;
+    }
 
-        CGLContextObj parent_obj = [parent CGLContextObj];
-        CGLLockContext(parent_obj);
+    gs_swapchain_t *currentSwapchain = device->cur_swap;
 
-        CGLContextObj context_obj = [context CGLContextObj];
-        CGLLockContext(context_obj);
+    NSOpenGLContext *platformContext = device->plat->context;
+    NSOpenGLContext *swapContext = currentSwapchain->wi->context;
 
-        [context makeCurrentContext];
-        [context update];
-        struct gs_init_data *info = &swap->info;
-        gs_texture_t *previous = swap->wi->texture;
-        swap->wi->texture = device_texture_create(device, info->cx, info->cy, info->format, 1, NULL, GS_RENDER_TARGET);
-        gl_bind_framebuffer(GL_FRAMEBUFFER, swap->wi->fbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, swap->wi->texture->texture, 0);
-        gl_success("glFrameBufferTexture2D");
-        gs_texture_destroy(previous);
-        glFlush();
-        [NSOpenGLContext clearCurrentContext];
+    OBSFrameBufferUpdateData updateData = {.swapchain = currentSwapchain,
+                                           .platformContext = platformContext,
+                                           .swapchainContext = swapContext,
+                                           .frameBufferObjectId = currentSwapchain->wi->fbo,
+                                           .textureFormat = currentSwapchain->info.format,
+                                           .textureSize =
+                                               NSMakeSize(currentSwapchain->info.cx, currentSwapchain->info.cy)};
 
-        CGLUnlockContext(context_obj);
+    if (platformContext && swapContext) {
+        [platformContext retain];
+        [swapContext retain];
 
-        CGLUnlockContext(parent_obj);
-    });
+        dispatch_async(dispatch_get_main_queue(), ^() {
+            updateSwapchainFramebuffer(device, updateData);
+
+            [swapContext release];
+            [platformContext release];
+        });
+    }
 }
 
 void gl_clear_context(gs_device_t *device)
