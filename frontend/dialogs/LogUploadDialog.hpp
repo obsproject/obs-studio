@@ -17,20 +17,36 @@
 
 #pragma once
 
-#include "ui_OBSLogReply.h"
+#include "ui_LogUploadDialog.h"
 
 #include <QDialog>
 
-class OBSLogReply : public QDialog {
+#include <filesystem>
+
+class QTimer;
+
+namespace OBS {
+
+enum class LogFileType;
+
+class LogUploadDialog : public QDialog {
 	Q_OBJECT
 
 private:
-	std::unique_ptr<Ui::OBSLogReply> ui;
+	std::unique_ptr<Ui::LogUploadDialog> ui;
+	std::unique_ptr<QTimer> uploadStatusTimer_;
+
+	LogFileType uploadType_;
 
 public:
-	OBSLogReply(QWidget *parent, const QString &url, const bool crash);
+	LogUploadDialog(QWidget *parent, LogFileType uploadType);
 
 private slots:
-	void on_copyURL_clicked();
-	void on_analyzeURL_clicked();
+	void startLogUpload();
+	void handleUploadSuccess(LogFileType uploadType, const QString &fileURL);
+	void handleUploadFailure(LogFileType uploadType, const QString &errorMessage);
+
+	void copyToClipBoard() const;
+	void openAnalyzeURL() const;
 };
+} // namespace OBS

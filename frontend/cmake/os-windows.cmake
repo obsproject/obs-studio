@@ -24,6 +24,7 @@ target_sources(
     obs.rc
     utility/AutoUpdateThread.cpp
     utility/AutoUpdateThread.hpp
+    utility/CrashHandler_Windows.cpp
     utility/crypto-helpers-mbedtls.cpp
     utility/crypto-helpers.hpp
     utility/models/branches.hpp
