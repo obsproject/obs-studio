@@ -1420,6 +1420,14 @@ void obs_shutdown(void)
 		bfree(obs->safe_modules.array[i]);
 	da_free(obs->safe_modules);
 
+	for (size_t i = 0; i < obs->disabled_modules.num; i++)
+		bfree(obs->disabled_modules.array[i]);
+	da_free(obs->disabled_modules);
+
+	for (size_t i = 0; i < obs->core_modules.num; i++)
+		bfree(obs->core_modules.array[i]);
+	da_free(obs->core_modules);
+
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
 
