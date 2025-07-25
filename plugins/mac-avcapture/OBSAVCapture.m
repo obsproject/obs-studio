@@ -774,14 +774,12 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
             effectsCount++;
         }
     }
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 150000
     if (@available(macOS 15.0, *)) {
         if (device.backgroundReplacementActive) {
             effectWarning = @"Warning.Effect.BackgroundReplacement";
             effectsCount++;
         }
     }
-#endif
     if (effectsCount > 1) {
         effectWarning = @"Warning.Effect.Multiple";
     }
