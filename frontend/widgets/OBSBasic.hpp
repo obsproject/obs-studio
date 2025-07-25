@@ -1391,10 +1391,12 @@ signals:
 private:
 	QPointer<QMenu> studioProgramProjector;
 	QPointer<QWidget> programWidget;
-	QPointer<QVBoxLayout> programLayout;
+	QPointer<QGridLayout> programLayout;
 	QPointer<QLabel> programLabel;
 	QPointer<QWidget> programOptions;
 	QPointer<OBSQTDisplay> program;
+	QPointer<QFrame> programHorizontalSpacer;
+	QPointer<QFrame> programVerticalSpacer;
 	OBSWeakSource lastProgramScene;
 
 	bool editPropertiesMode = false;
@@ -1414,6 +1416,7 @@ private:
 	void SetPreviewProgramMode(bool enabled);
 	void ResizeProgram(uint32_t cx, uint32_t cy);
 	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
+	void resizeProgramWidget();
 
 	void UpdatePreviewProgramIndicators();
 
