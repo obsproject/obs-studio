@@ -405,6 +405,9 @@ struct obs_core_audio {
 
 	pthread_mutex_t task_mutex;
 	struct deque tasks;
+
+	volatile bool prevent_monitoring_duplication;
+	struct obs_source *monitoring_device_src;
 };
 
 /* user sources, output channels, and displays */
@@ -938,6 +941,10 @@ struct obs_source {
 
 	/* canvas this source belongs to (only used for scenes) */
 	obs_weak_canvas_t *canvas;
+
+	/* audio deduplication */
+	/* captures_mon_device: tracks whether the desktop audio and monitoring device are the same */
+	bool captures_mon_device;
 };
 
 extern struct obs_source_info *get_source_info(const char *id);

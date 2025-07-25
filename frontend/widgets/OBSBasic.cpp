@@ -906,6 +906,38 @@ static inline void LogEncoders()
 	list_encoders(OBS_ENCODER_AUDIO);
 }
 
+int OBSBasic::MonDeviceUsedAsAudioCaptureDevice()
+{
+	QString monDevId = config_get_string(Config(), "Audio", "MonitoringDeviceId");
+	if (monDevId.isEmpty())
+		return -1;
+
+	for (int i = 0; i < (int)AudioCaptureList.size(); ++i) {
+		OBSAudioCaptureInfo &info = AudioCaptureList[i];
+		obs_source_set_monitoring_capture_flag(false, info.source);
+		if (info.device_id == monDevId) {
+			obs_source_set_monitoring_capture_flag(true, info.source);
+			return i;
+		}
+	}
+	return -1;
+}
+
+void OBSBasic::PreventMonitoringDuplication()
+{
+	int index = MonDeviceUsedAsAudioCaptureDevice();
+	if (index >= 0) {
+		obs_source_t *src = AudioCaptureList[index].source;
+		obs_set_prevent_monitoring_duplication(true, src);
+		const char *device_name = obs_source_get_name(src);
+		blog(LOG_INFO,
+		     "Audio monitoring & Audio Output Capture source('%s') share same device:\n\t audio deduplication triggered.",
+		     device_name);
+	} else {
+		obs_set_prevent_monitoring_duplication(false, NULL);
+	}
+}
+
 void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");

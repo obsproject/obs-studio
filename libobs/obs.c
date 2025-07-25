@@ -1672,6 +1672,16 @@ bool obs_get_audio_info2(struct obs_audio_info2 *oai2)
 	}
 }
 
+void obs_set_prevent_monitoring_duplication(bool enable, obs_source_t *source)
+{
+	struct obs_core_audio *audio = &obs->audio;
+
+	if (audio) {
+		os_atomic_set_bool(&audio->prevent_monitoring_duplication, enable);
+		audio->monitoring_device_src = source;
+	}
+}
+
 bool obs_enum_source_types(size_t idx, const char **id)
 {
 	if (idx >= obs->source_types.num)

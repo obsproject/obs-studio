@@ -892,6 +892,9 @@ void OBSBasic::Save(SceneCollection &collection)
 						       transitions, scene, curProgramScene, savedProjectorList,
 						       savedCanvases);
 
+	SceneUpdateAudioCaptureList();
+	PreventMonitoringDuplication();
+
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
 	obs_data_set_int(saveData, "scaling_level", ui->preview->GetScalingLevel());
@@ -1131,6 +1134,8 @@ void OBSBasic::Load(SceneCollection &collection)
 	}
 
 	LoadData(data, collection);
+	SceneUpdateAudioCaptureList();
+	PreventMonitoringDuplication();
 }
 
 static inline void AddMissingFiles(void *data, obs_source_t *source)
@@ -1140,6 +1145,57 @@ static inline void AddMissingFiles(void *data, obs_source_t *source)
 
 	obs_missing_files_append(f, sf);
 	obs_missing_files_destroy(sf);
+}
+
+void OBSBasic::UpdateAudioCaptureList(obs_source_t *src)
+{
+	if (!src)
+		return;
+
+	obs_data_t *settings = obs_source_get_settings(src);
+	if (!settings)
+		return;
+
+	QString dev_id;
+	const char *dev_cstr = obs_data_get_string(settings, "device_id");
+	if (dev_cstr)
+		dev_id = QString::fromUtf8(dev_cstr);
+
+	obs_data_release(settings);
+
+	AudioCaptureList.push_back(OBSAudioCaptureInfo{dev_id, src});
+}
+
+static bool AddAOCToCaptureList_Callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
+{
+	OBSBasic *self = static_cast<OBSBasic *>(param);
+	obs_source_t *src = obs_sceneitem_get_source(item);
+	const char *src_id = obs_source_get_id(src);
+	if (!src_id)
+		return false;
+
+	bool isAOC = ((strcmp(src_id, "wasapi_output_capture") == 0 || strcmp(src_id, "pulse_output_capture") == 0));
+
+	if (isAOC)
+		self->UpdateAudioCaptureList(src);
+
+	return true;
+}
+
+void OBSBasic::SceneUpdateAudioCaptureList()
+{
+	AudioCaptureList.clear();
+	obs_source_t *desktop1 = obs_get_output_source(1);
+	obs_source_t *desktop2 = obs_get_output_source(2);
+	UpdateAudioCaptureList(desktop1);
+	obs_source_release(desktop1);
+	UpdateAudioCaptureList(desktop2);
+	obs_source_release(desktop2);
+
+	OBSScene scene = GetCurrentScene();
+	if (scene) {
+		obs_scene_enum_items(scene, AddAOCToCaptureList_Callback, this);
+	}
 }
 
 void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
