@@ -101,6 +101,8 @@ void InstallNSApplicationSubclass();
 void InstallNSThreadLocks();
 void disableColorSpaceConversion(QWidget *window);
 void SetMacOSDarkMode(bool dark);
+void SetOBSApplicationFlags(bool shouldFocusOnLaunch);
+bool isAppHidden();
 
 MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type, bool prompt_for_permission);
 #define CheckPermission(x) CheckPermissionWithPrompt(x, false)
