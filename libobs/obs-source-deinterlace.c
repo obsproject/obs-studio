@@ -22,7 +22,7 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 	struct obs_source_frame *next_frame = source->async_frames.array[0];
 	struct obs_source_frame *prev_frame = NULL;
 	struct obs_source_frame *frame = NULL;
-	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
+	uint64_t sys_offset = sys_time - source->last_ready_sys_ts; // source->last_sys_timestamp;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 	size_t idx = 1;
@@ -194,6 +194,7 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s, uint64_t sys_
 			if (offset_diff > half_interval)
 				s->deinterlace_offset = offset;
 		}
+		s->last_ready_sys_ts = sys_time;
 	}
 }
 
