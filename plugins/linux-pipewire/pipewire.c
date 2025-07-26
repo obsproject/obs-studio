@@ -1327,6 +1327,7 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	/* Use opaque effect on formats without alpha that are put in a format with alpha */
 	switch (obs_pw_stream->format.info.raw.format) {
 	case SPA_VIDEO_FORMAT_RGBx:
+	case SPA_VIDEO_FORMAT_xBGR_210LE:
 		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 		opaque = true;
 		break;
