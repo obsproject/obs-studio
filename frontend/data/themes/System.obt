@@ -379,3 +379,14 @@ QCalendarWidget #qt_calendar_nextmonth {
 StatusBarWidget > QFrame {
     padding: 0px 12px 8px;
 }
+
+/* Primary Control Button Checked Coloring */
+#streamButton:!hover:!pressed.state-active,
+#recordButton:!hover:!pressed.state-active,
+#pauseRecordButton:!hover:!pressed.state-active,
+#replayBufferButton:!hover:!pressed.state-active,
+#virtualCamButton:!hover:!pressed.state-active,
+#modeSwitch:!hover:!pressed.state-active,
+#broadcastButton:!hover:!pressed.state-active {
+    background: rgb(140, 181, 255);
+}
