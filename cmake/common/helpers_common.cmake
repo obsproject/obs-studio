@@ -477,7 +477,10 @@ function(add_obs_plugin target)
           set(found_architecture TRUE)
         endif()
       elseif(OS_MACOS)
-        if("${architecture}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+        if(
+          "${architecture}" IN_LIST CMAKE_OSX_ARCHITECTURES
+          OR "${architecture}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}"
+        )
           set(found_architecture TRUE)
         endif()
       elseif("${architecture}" STREQUAL CMAKE_SYSTEM_PROCESSOR)
