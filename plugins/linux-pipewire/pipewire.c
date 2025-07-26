@@ -806,11 +806,10 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
 
 		use_modifiers = obs_pw_stream->format.info.raw.modifier != DRM_FORMAT_MOD_INVALID;
-		obs_pw_stream->texture = gs_texture_create_from_dmabuf(obs_pw_stream->format.info.raw.size.width,
-								       obs_pw_stream->format.info.raw.size.height,
-								       obs_pw_video_format.drm_format, GS_BGRX, planes,
-								       fds, strides, offsets,
-								       use_modifiers ? modifiers : NULL);
+		obs_pw_stream->texture = gs_texture_create_from_dmabuf(
+			obs_pw_stream->format.info.raw.size.width, obs_pw_stream->format.info.raw.size.height,
+			obs_pw_video_format.drm_format, obs_pw_video_format.gs_format, planes, fds, strides, offsets,
+			use_modifiers ? modifiers : NULL);
 
 		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(obs_pw_stream, obs_pw_stream->format.info.raw.format,
