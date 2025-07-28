@@ -38,7 +38,7 @@
 
     --separator_hover: var(--black1);
 
-    --scrollbar_handle: var(--grey7);
+    --scrollbar_handle: var(--grey3);
     --scrollbar_hover: var(--grey6);
     --scrollbar_down: var(--grey8);
     --scrollbar_border: var(--grey7);
