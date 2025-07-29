@@ -4,16 +4,24 @@
 #include <AMF/components/VideoEncoderHEVC.h>
 #include <AMF/components/VideoEncoderAV1.h>
 
+#if defined(_WIN32)
 #include <util/windows/ComPtr.hpp>
-
 #include <dxgi.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#else
+#include <dlfcn.h>
+#endif
 
 #include <vector>
 #include <string>
 #include <map>
+#include <chrono>
+#include <future>
+#include <cstring>
 
+using namespace std;
+using namespace std::chrono_literals;
 using namespace amf;
 
 #ifdef _MSC_VER
@@ -40,6 +48,7 @@ static bool has_encoder(AMFContextPtr &amf_context, const wchar_t *encoder_name)
 	return res == AMF_OK;
 }
 
+#if defined(_WIN32)
 static inline uint32_t get_adapter_idx(uint32_t adapter_idx, LUID luid)
 {
 	for (size_t i = 0; i < luid_order.size(); i++) {
@@ -50,7 +59,6 @@ static inline uint32_t get_adapter_idx(uint32_t adapter_idx, LUID luid)
 
 	return adapter_idx;
 }
-
 static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 {
 	AMF_RESULT res;
@@ -94,77 +102,106 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 
 	return true;
 }
-
-DWORD WINAPI TimeoutThread(LPVOID param)
+#else
+static bool get_adapter_caps(uint32_t adapter_idx)
 {
-	HANDLE hMainThread = (HANDLE)param;
-
-	DWORD ret = WaitForSingleObject(hMainThread, 2500);
-	if (ret == WAIT_TIMEOUT)
-		TerminateProcess(GetCurrentProcess(), STATUS_TIMEOUT);
-
-	CloseHandle(hMainThread);
-
-	return 0;
-}
-
-int main(int argc, char *argv[])
-try {
-	ComPtr<IDXGIFactory> factory;
 	AMF_RESULT res;
-	HRESULT hr;
+	AMFContextPtr amf_context;
 
-	HANDLE hMainThread;
-	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &hMainThread, 0, FALSE,
-			DUPLICATE_SAME_ACCESS);
-	DWORD threadId;
-	HANDLE hThread;
-	hThread = CreateThread(NULL, 0, TimeoutThread, hMainThread, 0, &threadId);
-	CloseHandle(hThread);
+	if (adapter_idx > 0)
+		return false;
 
-	/* --------------------------------------------------------- */
-	/* try initializing amf, I guess                             */
-
-	HMODULE amf_module = LoadLibraryW(AMF_DLL_NAME);
-	if (!amf_module)
-		throw "Failed to load AMF lib";
-
-	auto init = (AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
-	if (!init)
-		throw "Failed to get init func";
-
-	res = init(AMF_FULL_VERSION, &amf_factory);
+	res = amf_factory->CreateContext(&amf_context);
 	if (res != AMF_OK)
-		throw "AMFInit failed";
+		return true;
 
+	res = AMFContext2Ptr(amf_context)->InitVulkan(nullptr);
+	if (res != AMF_OK)
+		return true;
+	uint32_t luid_idx = 0;
+	adapter_caps &caps = adapter_info[luid_idx];
+
+	caps.supports_avc = has_encoder(amf_context, AMFVideoEncoderVCE_AVC);
+	caps.supports_hevc = has_encoder(amf_context, AMFVideoEncoder_HEVC);
+	caps.supports_av1 = has_encoder(amf_context, AMFVideoEncoder_AV1);
+
+	return true;
+}
+#endif
+
+int check_thread()
+{
+	try {
+		amf_handle amf_module;
+		AMF_RESULT res;
+
+#if defined(_WIN32)
+		ComPtr<IDXGIFactory> factory;
+		HRESULT hr;
+		/* --------------------------------------------------------- */
+		/* try initializing amf, I guess                             */
+
+		amf_module = LoadLibraryW(AMF_DLL_NAME);
+		if (!amf_module)
+			throw "Failed to load AMF lib";
+		auto init = (AMFInit_Fn)GetProcAddress((HMODULE)amf_module, AMF_INIT_FUNCTION_NAME);
+#else
+		amf_module = dlopen(AMF_DLL_NAMEA, RTLD_NOW | RTLD_GLOBAL);
+		if (!amf_module)
+			throw "Failed to load AMF lib";
+		auto init = (AMFInit_Fn)dlsym(amf_module, AMF_INIT_FUNCTION_NAME);
+#endif
+		if (!init)
+			throw "Failed to get init func";
+
+		res = init(AMF_FULL_VERSION, &amf_factory);
+		if (res != AMF_OK)
+			throw "AMFInit failed";
+
+#if defined(_WIN32)
+		/* --------------------------------------------------------- */
+		/* obtain adapter compatibility information                  */
+
+		hr = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void **)&factory);
+		if (FAILED(hr))
+			throw "CreateDXGIFactory1 failed";
+
+		uint32_t idx = 0;
+		while (get_adapter_caps(factory, idx++))
+			;
+#else
+		uint32_t idx = 0;
+		while (get_adapter_caps(idx++))
+			;
+
+#endif
+
+		for (auto &[idx, caps] : adapter_info) {
+			printf("[%u]\n", idx);
+			printf("is_amd=%s\n", caps.is_amd ? "true" : "false");
+			printf("supports_avc=%s\n", caps.supports_avc ? "true" : "false");
+			printf("supports_hevc=%s\n", caps.supports_hevc ? "true" : "false");
+			printf("supports_av1=%s\n", caps.supports_av1 ? "true" : "false");
+		}
+
+		return 0;
+	} catch (const char *text) {
+		printf("[error]\nstring=%s\n", text);
+		return 0;
+	}
+}
+int main(int argc, char **argv)
+{
 	/* --------------------------------------------------------- */
 	/* parse expected LUID order                                 */
-
 	for (int i = 1; i < argc; i++) {
 		luid_order.push_back(strtoull(argv[i], NULL, 16));
 	}
 
-	/* --------------------------------------------------------- */
-	/* obtain adapter compatibility information                  */
+	future<int> f = async(launch::async, check_thread);
+	future_status status = f.wait_for(2.5s);
 
-	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void **)&factory);
-	if (FAILED(hr))
-		throw "CreateDXGIFactory1 failed";
-
-	uint32_t idx = 0;
-	while (get_adapter_caps(factory, idx++))
-		;
-
-	for (auto &[idx, caps] : adapter_info) {
-		printf("[%u]\n", idx);
-		printf("is_amd=%s\n", caps.is_amd ? "true" : "false");
-		printf("supports_avc=%s\n", caps.supports_avc ? "true" : "false");
-		printf("supports_hevc=%s\n", caps.supports_hevc ? "true" : "false");
-		printf("supports_av1=%s\n", caps.supports_av1 ? "true" : "false");
-	}
-
-	return 0;
-} catch (const char *text) {
-	printf("[error]\nstring=%s\n", text);
-	return 0;
+	if (status == future_status::timeout)
+		exit(1);
+	return f.get();
 }
