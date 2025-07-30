@@ -20,24 +20,11 @@
 
 using namespace amf;
 
-#define AMFOBS_RETURN_IF_FALSE(exp, ret, format, ...) \
-    { \
-        bool exp_res = (exp); \
-        if(!exp_res) \
-        { \
-            error(format,  ##__VA_ARGS__); \
-            return ret; \
-        } \
-    }
-
 #define AMFOBS_RETURN_IF_EGL_FAILED(_ret, format, ...) \
-    AMFOBS_RETURN_IF_FALSE((eglGetError() == EGL_SUCCESS), _ret, format, ##__VA_ARGS__)
-
-#define AMFOBS_RETURN_IF_FAILED(_ret, format, ...) \
-    AMFOBS_RETURN_IF_FALSE((_ret == AMF_OK), _ret, format, ##__VA_ARGS__)
+	AMFOBS_RETURN_IF_FALSE((eglGetError() == EGL_SUCCESS), _ret, format, ##__VA_ARGS__)
 
 #define GET_DLL_ENTRYPOINT(h, w) w = reinterpret_cast<PFN_##w>(dlsym(h, #w)); if(w==nullptr) \
-    { error("Failed to aquire entrypoint %s", #w); return AMF_FAIL; };
+	{ error("Failed to aquire entrypoint %s", #w); return AMF_FAIL; };
 
 class amf_vulkan_impl : public amf_gpu, public amf::AMFSurfaceObserver {
 public:
@@ -93,7 +80,6 @@ private:
 			if (egl_img != 0)
 				eglDestroyImage(eglGetCurrentDisplay(), egl_img);
 		}
-
 		AMF_RESULT import_to_amf(GLuint tex, AMF_SURFACE_FORMAT format, int width, int height,
 					 AMFSurface **out);
 
@@ -158,13 +144,12 @@ AMF_RESULT amf_vulkan_impl::init_opengl()
 	for (unsigned int index = 0; index < (sizeof(NAMES) / sizeof(NAMES[0])); index++) {
 		opengl_so = dlopen(NAMES[index], RTLD_NOW | RTLD_GLOBAL);
 
-		if (opengl_so != NULL) {
+		if (opengl_so != NULL)
 			glGetProcAddressPtr =
 				(PFNGLXGETPROCADDRESSPROC_PRIVATE)dlsym(opengl_so, "glXGetProcAddressARB");
-		}
-		if (glGetProcAddressPtr != nullptr) {
+
+		if (glGetProcAddressPtr != nullptr)
 			break;
-		}
 	}
 	AMFOBS_RETURN_IF_FALSE(glGetProcAddressPtr != nullptr, AMF_NOT_SUPPORTED,
 			       "gl doesn't support glXGetProcAddressARB");
@@ -257,9 +242,9 @@ AMF_RESULT amf_vulkan_impl::create_surface_from_handle(int fd, AMF_SURFACE_FORMA
 	imageCreateInfo.mipLevels = 1;
 	imageCreateInfo.arrayLayers = 1;
 
-	//    uint32_t computeQueueIndex =  amf_compute->GetNativeCommandQueue();
-	//    imageCreateInfo.pQueueFamilyIndices = &computeQueueIndex;
-	//    imageCreateInfo.queueFamilyIndexCount = 1;
+	//	uint32_t computeQueueIndex =  amf_compute->GetNativeCommandQueue();
+	//	imageCreateInfo.pQueueFamilyIndices = &computeQueueIndex;
+	//	imageCreateInfo.queueFamilyIndexCount = 1;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; //VK_SHARING_MODE_CONCURRENT
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -277,9 +262,9 @@ AMF_RESULT amf_vulkan_impl::create_surface_from_handle(int fd, AMF_SURFACE_FORMA
 	vkExternalMemoryImageCreateInfo.handleTypes =
 		VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT; //VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-	//    VkImageDrmFormatModifierListCreateInfoEXT drmCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT};
-	//    drmCreateInfo.drmFormatModifierCount = 1;
-	//    drmCreateInfo.pDrmFormatModifiers = &drmMode;
+	//	VkImageDrmFormatModifierListCreateInfoEXT drmCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT};
+	//	drmCreateInfo.drmFormatModifierCount = 1;
+	//	drmCreateInfo.pDrmFormatModifiers = &drmMode;
 
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL; // VK_IMAGE_TILING_LINEAR
 	// create creation chain
@@ -311,9 +296,8 @@ AMF_RESULT amf_vulkan_impl::create_surface_from_handle(int fd, AMF_SURFACE_FORMA
 			if ((memoryRequirements.memoryTypeBits & (1 << nMemoryType)) != 0) {
 				memoryTypeIndex = nMemoryType;
 				if (!needLocalMemory || (memoryProps.memoryTypes[nMemoryType].propertyFlags &
-							 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+							 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
 					break;
-				}
 			}
 		}
 	}
@@ -396,15 +380,14 @@ void AMF_STD_CALL amf_vulkan_impl::OnSurfaceDataRelease(AMFSurface *pSurface)
 
 			AMFVulkanSurface *surfaceVK = (AMFVulkanSurface *)surface_data.get();
 
-			if (surfaceVK->hImage != VK_NULL_HANDLE) {
+			if (surfaceVK->hImage != VK_NULL_HANDLE)
 				vkDestroyImage(vulkan_dev->hDevice, surfaceVK->hImage, nullptr);
-			}
-			if (surfaceVK->hMemory != VK_NULL_HANDLE) {
+
+			if (surfaceVK->hMemory != VK_NULL_HANDLE)
 				vkFreeMemory(vulkan_dev->hDevice, surfaceVK->hMemory, nullptr);
-			}
-			if (surfaceVK->Sync.hSemaphore != VK_NULL_HANDLE) {
+
+			if (surfaceVK->Sync.hSemaphore != VK_NULL_HANDLE)
 				vkDestroySemaphore(vulkan_dev->hDevice, surfaceVK->Sync.hSemaphore, nullptr);
-			}
 		}
 	}
 }
@@ -478,13 +461,16 @@ AMF_RESULT amf_vulkan_impl::egl_image::import_to_amf(GLuint tex, AMF_SURFACE_FOR
 	egl_img = eglCreateImage(eglGetCurrentDisplay(), eglGetCurrentContext(), EGL_GL_TEXTURE_2D,
 				 (EGLClientBuffer)(uint64_t)tex, nullptr);
 	AMFOBS_RETURN_IF_EGL_FAILED(AMF_FAIL, "copy_obs_to_amf:egl_image: eglCreateImage() failed %d)", eglGetError());
+
 	EGLint stride = 0;
 	EGLint offset = 0;
 	amf_host->eglExportDMABUFImageMESA(eglGetCurrentDisplay(), egl_img, &fd, &stride, &offset);
 	AMFOBS_RETURN_IF_EGL_FAILED(AMF_FAIL, "copy_obs_to_amf:egl_image:eglExportDMABUFImageMESA() failed %d)",
 				    eglGetError());
+
 	AMF_RESULT res = amf_host->create_surface_from_handle(fd, format, AMF_PLANE_Y, width, height, out);
 	AMFOBS_RETURN_IF_FAILED(res, "copy_obs_to_amf:egl_image: create_surface_from_handle() failed");
+
 	fd = 0; //ownership of FD transferred to Vulkan
 	return AMF_OK;
 }
