@@ -75,7 +75,7 @@ target_link_libraries(
 
 if(OS_WINDOWS)
   if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
-    target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp)
+    target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_windows.cpp)
     target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF)
   endif()
 
@@ -89,9 +89,6 @@ if(OS_LINUX)
     obs-ffmpeg
     PRIVATE
       AMF::AMF
-      #    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libdrm::Libdrm>
-      #    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:XCB::XCB>
-      #    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::XCB>
       $<$<AND:$<PLATFORM_ID:Linux>,$<BOOL:${ENABLE_WAYLAND}>>:OpenGL::EGL>
       $<$<AND:$<PLATFORM_ID:Linux>,$<BOOL:${ENABLE_WAYLAND}>>:Wayland::Egl>
   )
