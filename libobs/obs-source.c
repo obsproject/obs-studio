@@ -3991,6 +3991,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 	struct obs_source_frame *frame = source->async_frames.array[0];
 	uint64_t frame_ts;
 	uint64_t frame_offset;
+	bool using_direct_ts;
 
 	if (source->async_unbuffered) {
 		while (source->async_frames.num > 1) {
@@ -4005,6 +4006,8 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 
 	frame_ts = frame->timestamp;
 	frame_offset = uint64_diff(source->last_frame_ts, frame_ts);
+	/* detect 'directly' set timestamp if within tolerance of video time */
+	using_direct_ts = uint64_diff(sys_time, frame_ts) < MAX_TS_VAR;
 
 #if DEBUG_ASYNC_FRAMES
 	blog(LOG_DEBUG,
@@ -4014,7 +4017,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 #endif
 
 	/* head of queue has timing jump => reset */
-	if (frame_ts < source->last_frame_ts || frame_out_of_bounds(source, frame_ts)) {
+	if (frame_ts < source->last_frame_ts || (!using_direct_ts && frame_out_of_bounds(source, frame_ts))) {
 		blog(LOG_DEBUG, "Timestamp for source '%s' jumped by '%" PRIu64 "'", source->context.name,
 		     uint64_diff(source->last_frame_ts, frame_ts));
 		set_ready_frame_timing(source, frame_ts, sys_time);
@@ -4027,14 +4030,22 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 		struct obs_source_frame *peek_frame = source->async_frames.array[1];
 		uint64_t peek_frame_ts = peek_frame->timestamp;
 		uint64_t peek_frame_offset = uint64_diff(source->last_frame_ts, peek_frame_ts);
+		bool peek_using_direct_ts = uint64_diff(sys_time, peek_frame_ts) < MAX_TS_VAR;
 
-		if (peek_frame_ts < source->last_frame_ts || frame_out_of_bounds(source, peek_frame_ts))
+		if (peek_frame_ts < source->last_frame_ts || peek_using_direct_ts != using_direct_ts ||
+		    (!using_direct_ts && frame_out_of_bounds(source, peek_frame_ts)))
 			/* timing jump => return head of queue as closest */
 			break;
 
-		/* compare timestamp change since last frame */
-		if (peek_frame_offset > sys_time - source->last_ready_sys_ts - TS_JITTER_TOLERANCE)
-			break;
+		if (using_direct_ts) {
+			/* compare timestamps directly */
+			if (peek_frame->timestamp > sys_time - TS_JITTER_TOLERANCE)
+				break;
+		} else {
+			/* compare timestamp change since last frame */
+			if (peek_frame_offset > sys_time - source->last_ready_sys_ts - TS_JITTER_TOLERANCE)
+				break;
+		}
 
 		/* discard head of queue and update timing as though head was readied exactly on-time */
 		da_erase(source->async_frames, 0);
@@ -4046,9 +4057,16 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 		frame = peek_frame;
 	}
 
-	if (frame_offset <= sys_time - source->last_ready_sys_ts) {
-		set_ready_frame_timing(source, frame_ts, source->last_ready_sys_ts + frame_offset);
-		return true;
+	if (using_direct_ts) {
+		if (frame_ts <= sys_time) {
+			set_ready_frame_timing(source, frame_ts, sys_time);
+			return true;
+		}
+	} else {
+		if (frame_offset <= sys_time - source->last_ready_sys_ts) {
+			set_ready_frame_timing(source, frame_ts, source->last_ready_sys_ts + frame_offset);
+			return true;
+		}
 	}
 
 	return false;
@@ -4061,8 +4079,12 @@ static inline struct obs_source_frame *get_closest_frame(obs_source_t *source, u
 
 	if (!source->last_ready_sys_ts) {
 		struct obs_source_frame *frame = source->async_frames.array[0];
-		/* first frame(s): discard all but most-recently queued */
+		/* first frame(s): discard all but most-recently queued up until
+		 * a 'directly' set timestamp is detected */
 		while (source->async_frames.num > 1) {
+			if (uint64_diff(sys_time, frame->timestamp) < MAX_TS_VAR)
+				break;
+
 			da_erase(source->async_frames, 0);
 			remove_async_frame(source, frame);
 
