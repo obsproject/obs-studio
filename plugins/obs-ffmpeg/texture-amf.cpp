@@ -158,77 +158,116 @@ enum class amf_codec_type {
 
 struct amf_base {
 	obs_encoder_t *encoder;
-	const char *encoder_str;
-	amf_codec_type codec;
-	bool fallback;
+	const char *encoder_str = "";
+	amf_codec_type codec = amf_codec_type::AVC;
+	bool fallback = false;
 
-	AMFContextPtr amf_context;
+	// share amf_context between encoders
+	static std::mutex amf_encoder_mutex;
+	static AMFContextPtr amf_context;
+	static amf_int64 amf_encoder_count;
+	static std::unique_ptr<amf_gpu> amf_gpu_obj;
+
 	AMFComponentPtr amf_encoder;
 	AMFBufferPtr packet_data;
-	AMFRate amf_frame_rate;
+	AMFRate amf_frame_rate{30, 1};
 	AMFBufferPtr header;
 	AMFSurfacePtr roi_map;
 
 	std::deque<AMFDataPtr> queued_packets;
 
-	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM amf_color_profile;
-	AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM amf_characteristic;
-	AMF_COLOR_PRIMARIES_ENUM amf_primaries;
-	AMF_SURFACE_FORMAT amf_format;
+	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM amf_color_profile = AMF_VIDEO_CONVERTER_COLOR_PROFILE_UNKNOWN;
+	AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM amf_characteristic = AMF_COLOR_TRANSFER_CHARACTERISTIC_UNDEFINED;
+	AMF_COLOR_PRIMARIES_ENUM amf_primaries = AMF_COLOR_PRIMARIES_UNDEFINED;
+	AMF_SURFACE_FORMAT amf_format = AMF_SURFACE_UNKNOWN;
 
 	amf_int64 max_throughput = 0;
 	amf_int64 requested_throughput = 0;
 	amf_int64 throughput = 0;
 	int64_t dts_offset = 0;
-	uint32_t cx;
-	uint32_t cy;
+	uint32_t cx = 1;
+	uint32_t cy = 1;
 	uint32_t linesize = 0;
 	uint32_t roi_increment = 0;
-	int fps_num;
-	int fps_den;
-	bool full_range;
+	int fps_num = 30;
+	int fps_den = 1;
+	bool full_range = false;
 	bool bframes_supported = false;
 	bool first_update = true;
 	bool roi_supported = false;
 
-	std::unique_ptr<amf_gpu> amf_gpu_obj;
+	amf_base(bool fallback) : fallback(fallback) {}
+	virtual ~amf_base();
+	virtual void init();
+};
 
-	inline amf_base(bool fallback) : fallback(fallback) {}
-	virtual ~amf_base()
-	{
-		// clean in this order
-		packet_data = nullptr;
-		header = nullptr;
-		roi_map = nullptr;
+std::mutex amf_base::amf_encoder_mutex;
+AMFContextPtr amf_base::amf_context;
+amf_int64 amf_base::amf_encoder_count = 0;
+std::unique_ptr<amf_gpu> amf_base::amf_gpu_obj;
+
+void amf_base::init()
+{
+	std::scoped_lock lock(amf_encoder_mutex);
+	if (amf_encoder_count == 0) {
+		AMFContextPtr context;
+		AMF_RESULT res = amf_factory->CreateContext(&context);
+		if (res != AMF_OK)
+			throw amf_error("CreateContext failed", res);
+
+		// do it only once
+		if (fallback) {
+#if defined(_WIN32)
+			AMF_RESULT res = context->InitDX11(nullptr, AMF_DX11_1);
+#else
+			AMF_RESULT res = AMFContext2Ptr(context)->InitVulkan(nullptr);
+#endif
+			if (res != AMF_OK)
+				throw amf_error("InitDX11 failed", res);
+		} else {
+			amf_gpu_obj = std::unique_ptr<amf_gpu>(amf_gpu::create());
+			if (amf_gpu_obj == nullptr)
+				throw amf_error("amf_gpu::create failed", AMF_FAIL);
+
+			obs_video_info ovi;
+			obs_get_video_info(&ovi);
+
+			AMF_RESULT res = amf_gpu_obj->init(context, ovi.adapter);
+
+			if (res != AMF_OK) {
+				amf_gpu_obj = nullptr;
+				throw amf_error("amf_gpu::init failed", res);
+			}
+		}
+		// all good - store
+		amf_context = context;
+	}
+	amf_encoder_count++;
+}
+amf_base::~amf_base()
+{
+	// clean in this order
+	queued_packets.clear();
+	packet_data = nullptr;
+	header = nullptr;
+	roi_map = nullptr;
+	if (amf_encoder != nullptr) {
+		amf_encoder->Terminate();
 		amf_encoder = nullptr;
+	}
+	std::scoped_lock lock(amf_encoder_mutex);
+	amf_encoder_count--;
+	if (amf_encoder_count == 0) {
 		amf_context = nullptr;
 		amf_gpu_obj = nullptr;
 	}
-	virtual void init() = 0;
-};
+}
 
 using buf_t = std::vector<uint8_t>;
 
 struct amf_texencode : amf_base {
 	inline amf_texencode() : amf_base(false) {}
 	~amf_texencode() {}
-
-	void init() override
-	{
-		//TODO ensure the same device on linux
-
-		amf_gpu_obj = std::unique_ptr<amf_gpu>(amf_gpu::create());
-		if (amf_gpu_obj == nullptr)
-			throw amf_error("amf_gpu::create failed", AMF_FAIL);
-
-		obs_video_info ovi;
-		obs_get_video_info(&ovi);
-
-		AMF_RESULT res = amf_gpu_obj->init(amf_context, ovi.adapter);
-
-		if (res != AMF_OK)
-			throw amf_error("amf_gpu::init failed", res);
-	}
 };
 
 struct amf_fallback : amf_base, public AMFSurfaceObserver {
@@ -253,17 +292,6 @@ struct amf_fallback : amf_base, public AMFSurfaceObserver {
 			available_buffers.push_back(std::move(it->second));
 			active_buffers.erase(it);
 		}
-	}
-
-	void init() override
-	{
-#if defined(_WIN32)
-		AMF_RESULT res = amf_context->InitDX11(nullptr, AMF_DX11_1);
-#else
-		AMF_RESULT res = AMFContext2Ptr(amf_context)->InitVulkan(nullptr);
-#endif
-		if (res != AMF_OK)
-			throw amf_error("InitDX11 failed", res);
 	}
 };
 
@@ -423,7 +451,7 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data, encoder_p
 	enc->packet_data = AMFBufferPtr(data);
 	data->GetProperty(L"PTS", &packet->pts);
 
-	const wchar_t *get_output_type;
+	const wchar_t *get_output_type = nullptr;
 	switch (enc->codec) {
 	case amf_codec_type::AVC:
 		get_output_type = AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE;
@@ -920,10 +948,6 @@ try {
 	/* ------------------------------------ */
 	/* create encoder			*/
 
-	res = amf_factory->CreateContext(&enc->amf_context);
-	if (res != AMF_OK)
-		throw amf_error("CreateContext failed", res);
-
 	enc->init();
 
 	const wchar_t *codec = nullptr;
@@ -1409,7 +1433,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	 * determined by amf_set_codec_level(). Query the final AVC level then lookup the matching string. Warn if not
 	 * found, because ffmpeg_opts is free-form and may have set something bogus.
 	 */
-	amf_int64 final_level;
+	amf_int64 final_level = 0;
 	get_avc_property(enc, PROFILE_LEVEL, &final_level);
 	const char *level_str = nullptr;
 	if (!amf_get_level_str(enc, final_level, &level_str)) {
@@ -1754,7 +1778,7 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	 * determined by amf_set_codec_level(). Query the final HEVC level then lookup the matching string. Warn if not
 	 * found, because ffmpeg_opts is free-form and may have set something bogus.
 	 */
-	amf_int64 final_level;
+	amf_int64 final_level = 0;
 	get_hevc_property(enc, PROFILE_LEVEL, &final_level);
 	char const *level_str = nullptr;
 	if (!amf_get_level_str(enc, final_level, &level_str)) {
@@ -1832,7 +1856,8 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	set_hevc_property(enc, COLOR_BIT_DEPTH, is10bit ? AMF_COLOR_BIT_DEPTH_10 : AMF_COLOR_BIT_DEPTH_8);
 	set_hevc_property(enc, PROFILE,
 			  is10bit ? AMF_VIDEO_ENCODER_HEVC_PROFILE_MAIN_10 : AMF_VIDEO_ENCODER_HEVC_PROFILE_MAIN);
-	set_hevc_property(enc, LOWLATENCY_MODE, false);
+	//	set_hevc_property(enc, LOWLATENCY_MODE, false);
+	set_hevc_property(enc, LOWLATENCY_MODE, true);
 	set_hevc_property(enc, OUTPUT_COLOR_PROFILE, enc->amf_color_profile);
 	set_hevc_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_hevc_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
@@ -2177,7 +2202,7 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	 * determined by amf_set_codec_level(). Query the final AV1 level then lookup the matching string. Warn if not
 	 * found, because ffmpeg_opts is free-form and may have set something bogus.
 	 */
-	amf_int64 final_level;
+	amf_int64 final_level = 0;
 	get_av1_property(enc, LEVEL, &final_level);
 	char const *level_str = nullptr;
 	if (!amf_get_level_str(enc, final_level, &level_str)) {
@@ -2543,6 +2568,9 @@ try {
 #ifndef DEBUG_AMF_STUFF
 	amf_trace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
 	amf_trace->EnableWriter(AMF_TRACE_WRITER_CONSOLE, false);
+#else
+	amf_trace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
+	amf_trace->SetWriterLevel(AMF_TRACE_WRITER_DEBUG_OUTPUT, AMF_TRACE_INFO);
 #endif
 
 	/* ----------------------------------- */
