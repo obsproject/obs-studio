@@ -1342,7 +1342,7 @@ static void async_tick(obs_source_t *source)
 		source->cur_async_frame = get_closest_frame(source, sys_time);
 	}
 
-	source->last_sys_timestamp = sys_time;
+	set_ready_frame_timing(source, source->last_frame_ts, sys_time);
 
 	if (deinterlacing_enabled(source))
 		filter_frame(source, &source->prev_async_frame);
@@ -3511,6 +3511,7 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source, co
 	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
 		free_async_cache(source);
 		source->last_frame_ts = 0;
+		source->last_frame_sys_ts = 0;
 		pthread_mutex_unlock(&source->async_mutex);
 		return NULL;
 	}
@@ -3569,6 +3570,7 @@ static void obs_source_output_video_internal(obs_source_t *source, const struct 
 		pthread_mutex_lock(&source->async_mutex);
 		source->async_active = false;
 		source->last_frame_ts = 0;
+		source->last_frame_sys_ts = 0;
 		free_async_cache(source);
 		pthread_mutex_unlock(&source->async_mutex);
 		return;
@@ -3714,7 +3716,7 @@ static void obs_source_preload_video_internal(obs_source_t *source, const struct
 
 	copy_frame_data(source->async_preload_frame, frame);
 
-	source->last_frame_ts = frame->timestamp;
+	set_ready_frame_timing(source, frame->timestamp, obs->video.video_time);
 }
 
 void obs_source_preload_video(obs_source_t *source, const struct obs_source_frame *frame)
@@ -3810,7 +3812,7 @@ static void obs_source_set_video_frame_internal(obs_source_t *source, const stru
 	set_async_texture_size(source, source->async_preload_frame);
 	update_async_textures(source, source->async_preload_frame, source->async_textures, source->async_texrender);
 
-	source->last_frame_ts = frame->timestamp;
+	set_ready_frame_timing(source, frame->timestamp, obs->video.video_time);
 
 	obs_leave_graphics();
 }
@@ -4084,11 +4086,19 @@ void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)
 
 /* #define DEBUG_ASYNC_FRAMES 1 */
 
+void set_ready_frame_timing(obs_source_t *source, uint64_t frame_ts, uint64_t sys_time)
+{
+	/* the timestamp provided by the source for the 'readied' frame */
+	source->last_frame_ts = frame_ts;
+	/* the corresponding system (video) timestamp given the source timestamp */
+	source->last_frame_sys_ts = sys_time;
+}
+
 static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 {
 	struct obs_source_frame *next_frame = source->async_frames.array[0];
 	struct obs_source_frame *frame = NULL;
-	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
+	uint64_t sys_offset = sys_time - source->last_frame_sys_ts;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 
@@ -4099,7 +4109,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 			next_frame = source->async_frames.array[0];
 		}
 
-		source->last_frame_ts = next_frame->timestamp;
+		set_ready_frame_timing(source, next_frame->timestamp, sys_time);
 		return true;
 	}
 
@@ -4117,11 +4127,11 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 #if DEBUG_ASYNC_FRAMES
 		blog(LOG_DEBUG, "timing jump");
 #endif
-		source->last_frame_ts = next_frame->timestamp;
+		set_ready_frame_timing(source, next_frame->timestamp, source->last_frame_sys_ts);
 		return true;
 	} else {
 		frame_offset = frame_time - source->last_frame_ts;
-		source->last_frame_ts += sys_offset;
+		set_ready_frame_timing(source, source->last_frame_ts + sys_offset, source->last_frame_sys_ts);
 	}
 
 	while (source->last_frame_ts > next_frame->timestamp) {
@@ -4157,7 +4167,7 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 #if DEBUG_ASYNC_FRAMES
 			blog(LOG_DEBUG, "timing jump");
 #endif
-			source->last_frame_ts = next_frame->timestamp - frame_offset;
+			set_ready_frame_timing(source, next_frame->timestamp - frame_offset, source->last_frame_sys_ts);
 		}
 
 		frame_time = next_frame->timestamp;
@@ -4182,7 +4192,7 @@ static inline struct obs_source_frame *get_closest_frame(obs_source_t *source, u
 		da_erase(source->async_frames, 0);
 
 		if (!source->last_frame_ts)
-			source->last_frame_ts = frame->timestamp;
+			set_ready_frame_timing(source, frame->timestamp, source->last_frame_sys_ts);
 
 		return frame;
 	}
