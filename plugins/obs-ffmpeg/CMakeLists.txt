@@ -85,13 +85,7 @@ endif()
 
 if(OS_LINUX)
   target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_linux.cpp)
-  target_link_libraries(
-    obs-ffmpeg
-    PRIVATE
-      AMF::AMF
-      $<$<AND:$<PLATFORM_ID:Linux>,$<BOOL:${ENABLE_WAYLAND}>>:OpenGL::EGL>
-      $<$<AND:$<PLATFORM_ID:Linux>,$<BOOL:${ENABLE_WAYLAND}>>:Wayland::Egl>
-  )
+  target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF OpenGL::EGL OpenGL::GL)
 endif()
 
 set_target_properties_obs(obs-ffmpeg PROPERTIES FOLDER plugins/obs-ffmpeg PREFIX "")

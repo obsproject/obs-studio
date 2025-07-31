@@ -22,6 +22,9 @@
 #include <util/windows/device-enum.h>
 #else
 #include <dlfcn.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
 #endif
 
 #define AMFOBS_ENCODER enc->encoder_str
@@ -32,6 +35,13 @@
 #include <util/util.hpp>
 #include <util/pipe.h>
 #include <util/dstr.h>
+
+class obs_graphics // self destructuctor
+{
+public:
+	obs_graphics() { obs_enter_graphics(); }
+	~obs_graphics() { obs_leave_graphics(); }
+};
 
 //#define DEBUG_AMF_STUFF
 
@@ -201,20 +211,15 @@ using buf_t = std::vector<uint8_t>;
 
 struct amf_texencode : amf_base {
 	inline amf_texencode() : amf_base(false) {}
-	~amf_texencode()
-	{
-		if (amf_gpu_obj != nullptr)
-			amf_gpu_obj->terminate();
-	}
+	~amf_texencode() {}
 
 	void init() override
 	{
 		//TODO ensure the same device on linux
-		amf_gpu *gpu_obj = nullptr;
-		amf_gpu::create(&gpu_obj);
-		amf_gpu_obj = std::unique_ptr<amf_gpu>(gpu_obj);
+
+		amf_gpu_obj = std::unique_ptr<amf_gpu>(amf_gpu::create());
 		if (amf_gpu_obj == nullptr)
-			throw amf_error("amf_vulkan::create failed", AMF_FAIL);
+			throw amf_error("amf_gpu::create failed", AMF_FAIL);
 
 		obs_video_info ovi;
 		obs_get_video_info(&ovi);
@@ -222,7 +227,7 @@ struct amf_texencode : amf_base {
 		AMF_RESULT res = amf_gpu_obj->init(amf_context, ovi.adapter);
 
 		if (res != AMF_OK)
-			throw amf_error("amf_vulkan::init failed", res);
+			throw amf_error("amf_gpu::init failed", res);
 	}
 };
 
@@ -960,11 +965,18 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, amf_codec_ty
 	bool avc = amf_codec_type::AVC == codec;
 	bool hevc = amf_codec_type::HEVC == codec;
 	bool av1 = amf_codec_type::AV1 == codec;
+#if defined(_WIN32)
+	bool support10Bit = true;
+#else
+	bool support10Bit = amf_version >= AMF_MAKE_FULL_VERSION(1, 5, 0, 0);
+#endif
 
 	if (obs_encoder_scaling_enabled(encoder) && !obs_encoder_gpu_scaling_enabled(encoder))
 		throw "Encoder scaling is active";
 
 	if (hevc || av1) {
+		if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010) && !support10Bit)
+			throw "older AMF; P010 textures not supported";
 		if (!obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
 		    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010))
 			throw "NV12/P010 textures aren't active";
@@ -2374,44 +2386,23 @@ static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
 
 #if !defined(_WIN32)
 typedef bool (*device_luid_cb)(void *param, uint32_t idx, uint64_t luid);
+
 void ogl_enum_graphics_device_luids(device_luid_cb device_luid, void *param)
 {
-	(void)device_luid;
-	(void)param;
-	// GL_NUM_DEVICE_UUIDS_EXT return 0 devices
-	/*
 	obs_graphics gr;
 	//GL_NUM_DEVICE_UUIDS_EXT
 	//GL_DEVICE_UUID_EXT
-	static const char *NAMES[] = {"libGL.so.1", "libGL.so"};
-
-	typedef void* (APIENTRYP PFNGLXGETPROCADDRESSPROC_PRIVATE)(const char*);
-	PFNGLXGETPROCADDRESSPROC_PRIVATE glGetProcAddressPtr = nullptr;
-
-	amf_handle opengl_so = 0;
-	for(unsigned int  index = 0; index < (sizeof(NAMES) / sizeof(NAMES[0])); index++) 
-	{
-		opengl_so = dlopen(NAMES[index], RTLD_NOW | RTLD_GLOBAL);
-
-		if(opengl_so != NULL)
-			glGetProcAddressPtr = (PFNGLXGETPROCADDRESSPROC_PRIVATE)dlsym(opengl_so, "glXGetProcAddressARB");
-		
-		if(glGetProcAddressPtr != nullptr)
-		{
-			break;
-		}
-	}
-	//AMFOBS_RETURN_IF_FALSE(glGetProcAddressPtr != nullptr, AMF_NOT_SUPPORTED,"gl doesn't support glXGetProcAddressARB");
-
-	PFNGLGETUNSIGNEDBYTEI_VEXTPROC glGetUnsignedBytei_vEXT = (PFNGLGETUNSIGNEDBYTEI_VEXTPROC)glGetProcAddressPtr("glGetUnsignedBytei_vEXT");
 	GLint numDevices = 0;
 	glGetIntegerv(GL_NUM_DEVICE_UUIDS_EXT, &numDevices);
-	int err= glGetError();
+	int err = glGetError();
 	(void)err;
 
-	for (GLint i = 0; i < numDevices; ++i)
-	{
-		GLubyte glDeviceUUID[GL_UUID_SIZE_EXT] = {};  // 16 bytes identifier. This example only supports one device but check up to 8 device in a machine.
+	// GL_NUM_DEVICE_UUIDS_EXT return 0 devices but driver returns LUID for current device
+	if (numDevices == 0)
+		numDevices = 1;
+
+	for (GLint i = 0; i < numDevices; ++i) {
+		GLubyte glDeviceUUID[GL_UUID_SIZE_EXT] = {};
 
 		glGetUnsignedBytei_vEXT(GL_DEVICE_UUID_EXT, i, glDeviceUUID);
 
@@ -2419,8 +2410,6 @@ void ogl_enum_graphics_device_luids(device_luid_cb device_luid, void *param)
 		if (!device_luid(param, i, luid64))
 			break;
 	}
-	dlclose(opengl_so);
-*/
 }
 #endif
 
