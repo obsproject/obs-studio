@@ -39,15 +39,18 @@
 #include <vector>
 
 #if defined(__FreeBSD__) || defined(__DragonFly__)
-#include <fcntl.h>
-#include <libprocstat.h>
-#include <pthread_np.h>
-#endif
-#if defined(__FreeBSD__) || defined(__DragonFly__)
 #include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/queue.h>
 #endif
 #ifdef __linux__
 #include <sys/socket.h>
+#endif
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+#include <fcntl.h>
+#include <libprocstat.h>
+#include <pthread_np.h>
 #endif
 #if defined(__FreeBSD__) || defined(__DragonFly__)
 #include <sys/sysctl.h>
