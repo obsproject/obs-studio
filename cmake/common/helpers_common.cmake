@@ -304,12 +304,17 @@ function(target_export target)
   install(
     TARGETS ${target}
     EXPORT ${target}Targets
-    RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Development ${exclude_variant}
-    LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development ${exclude_variant}
-    ARCHIVE DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development ${exclude_variant}
-    FRAMEWORK DESTINATION Frameworks COMPONENT Development ${exclude_variant}
+    RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Development
+    ${exclude_variant}
+    LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development
+    ${exclude_variant}
+    ARCHIVE DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development
+    ${exclude_variant}
+    FRAMEWORK DESTINATION Frameworks COMPONENT Development
+    ${exclude_variant}
     INCLUDES DESTINATION "${include_destination}"
-    PUBLIC_HEADER DESTINATION "${include_destination}" COMPONENT Development ${exclude_variant}
+    PUBLIC_HEADER DESTINATION "${include_destination}" COMPONENT Development
+    ${exclude_variant}
   )
 
   get_target_property(obs_public_headers ${target} OBS_PUBLIC_HEADERS)
