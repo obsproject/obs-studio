@@ -19,6 +19,8 @@
 
 #include <obs.hpp>
 
+#include <OBSApp.hpp>
+
 #include <QLineEdit>
 
 class OBSBasicSettings;
@@ -45,6 +47,7 @@ public:
 	{
 		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
+		setStyle(App()->GetInvisibleCursorStyle());
 		InitSignalHandler();
 		ResetKey();
 	}
@@ -52,6 +55,7 @@ public:
 	{
 		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
+		setStyle(App()->GetInvisibleCursorStyle());
 		InitSignalHandler();
 		ResetKey();
 	}
