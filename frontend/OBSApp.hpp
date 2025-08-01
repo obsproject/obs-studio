@@ -94,6 +94,7 @@ private:
 	OBSTheme *currentTheme = nullptr;
 	QHash<QString, OBSTheme> themes;
 	QPointer<QFileSystemWatcher> themeWatcher;
+	std::unique_ptr<QStyle> invisibleCursorStyle;
 
 	void FindThemes();
 
@@ -137,6 +138,7 @@ public:
 	OBSTheme *GetTheme(const QString &name);
 	bool SetTheme(const QString &name);
 	bool IsThemeDark() const { return currentTheme ? currentTheme->isDark : false; }
+	QStyle *GetInvisibleCursorStyle();
 
 	void SetBranchData(const std::string &data);
 	std::vector<UpdateBranch> GetBranches();
