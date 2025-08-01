@@ -21,6 +21,7 @@
 #include <dialogs/LogUploadDialog.hpp>
 #include <utility/CrashHandler.hpp>
 #include <utility/OBSEventFilter.hpp>
+#include <utility/OBSProxyStyle.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <utility/models/branches.hpp>
 #endif
@@ -1342,6 +1343,14 @@ bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 	}
 
 	return text_lookup_getstr(App()->GetTextLookup(), lookupVal, out);
+}
+
+QStyle *OBSApp::GetInvisibleCursorStyle()
+{
+	if (!invisibleCursorStyle) {
+		invisibleCursorStyle = std::make_unique<OBSInvisibleCursorProxyStyle>();
+	}
+	return invisibleCursorStyle.get();
 }
 
 // Global handler to receive all QEvent::Show events so we can apply
