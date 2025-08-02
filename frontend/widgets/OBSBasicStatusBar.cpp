@@ -223,10 +223,8 @@ void OBSBasicStatusBar::UpdateCurrentFPS()
 	float targetFPS = (float)ovi.fps_num / (float)ovi.fps_den;
 
 	QLocale locale;
-	QString text = QTStr("Basic.StatusBar.FPS").arg(
-		locale.toString(obs_get_active_fps(), 'f', 2),
-		locale.toString(targetFPS, 'f', 2)
-	);
+	QString text = QTStr("Basic.StatusBar.FPS")
+			       .arg(locale.toString(obs_get_active_fps(), 'f', 2), locale.toString(targetFPS, 'f', 2));
 
 	statusWidget->ui->fpsCurrent->setText(text);
 	statusWidget->ui->fpsCurrent->setMinimumWidth(statusWidget->ui->fpsCurrent->width());
