@@ -1050,7 +1050,7 @@ bool OBSApp::OBSInit()
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	if (QApplication::platformName() == "xcb") {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+#if !defined(ENABLE_WAYLAND) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		auto native = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
 
 		obs_set_nix_platform_display(native->display());
