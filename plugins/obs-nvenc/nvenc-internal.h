@@ -86,6 +86,7 @@ struct nvenc_data {
 	DARRAY(uint8_t) packet_data;
 	int64_t packet_pts;
 	bool packet_keyframe;
+	int packet_priority;
 
 #ifdef _WIN32
 	DARRAY(struct nv_texture) textures;
