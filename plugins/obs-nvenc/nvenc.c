@@ -1,5 +1,6 @@
 #include "nvenc-internal.h"
 
+#include <obs-nal.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 
@@ -1055,6 +1056,26 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 		enc->packet_pts = (int64_t)lock.outputTimeStamp;
 		enc->packet_keyframe = lock.pictureType == NV_ENC_PIC_TYPE_IDR;
 
+		switch (lock.pictureType) {
+		case NV_ENC_PIC_TYPE_I:
+		case NV_ENC_PIC_TYPE_BI:
+		case NV_ENC_PIC_TYPE_IDR:
+#ifdef NVENC_12_2_OR_LATER
+		case NV_ENC_PIC_TYPE_SWITCH:
+#endif
+			enc->packet_priority = OBS_NAL_PRIORITY_HIGHEST;
+			break;
+		case NV_ENC_PIC_TYPE_P:
+			enc->packet_priority = OBS_NAL_PRIORITY_HIGH;
+			break;
+		case NV_ENC_PIC_TYPE_B:
+		case NV_ENC_PIC_TYPE_NONREF_P:
+			enc->packet_priority = OBS_NAL_PRIORITY_DISPOSABLE;
+			break;
+		default:
+			enc->packet_priority = OBS_NAL_PRIORITY_DISPOSABLE;
+		}
+
 		if (NV_FAILED(nv.nvEncUnlockBitstream(s, bs->ptr))) {
 			return false;
 		}
@@ -1246,6 +1267,7 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 		packet->pts = enc->packet_pts;
 		packet->dts = dts;
 		packet->keyframe = enc->packet_keyframe;
+		packet->priority = enc->packet_priority;
 	} else {
 		*received_packet = false;
 	}
