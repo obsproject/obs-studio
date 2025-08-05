@@ -38,6 +38,7 @@
 #include <settings/OBSBasicSettings.hpp>
 #include <utility/QuickTransition.hpp>
 #include <utility/SceneRenameDelegate.hpp>
+#include <utility/ThumbnailManager.hpp>
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
@@ -507,6 +508,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
 	UpdatePreviewOverflowSettings();
+
+	thumbnailManager = new ThumbnailManager();
 }
 
 static const double scaled_vals[] = {1.0, 1.25, (1.0 / 0.75), 1.5, (1.0 / 0.6), 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 0.0};
@@ -1346,6 +1349,7 @@ OBSBasic::~OBSBasic()
 	delete trayMenu;
 	delete programOptions;
 	delete program;
+	delete thumbnailManager;
 
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the
