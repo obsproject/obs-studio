@@ -12,6 +12,8 @@ target_sources(
   PRIVATE
     widgets/ColorSelect.cpp
     widgets/ColorSelect.hpp
+    widgets/Notification.cpp
+    widgets/Notification.hpp
     widgets/OBSBasic.cpp
     widgets/OBSBasic.hpp
     widgets/OBSBasic_Browser.cpp
@@ -23,6 +25,7 @@ target_sources(
     widgets/OBSBasic_Hotkeys.cpp
     widgets/OBSBasic_Icons.cpp
     widgets/OBSBasic_MainControls.cpp
+    widgets/OBSBasic_Notifications.cpp
     widgets/OBSBasic_OutputHandler.cpp
     widgets/OBSBasic_Preview.cpp
     widgets/OBSBasic_Profiles.cpp

@@ -74,6 +74,9 @@
     <file>images/network-bad.svg</file>
     <file>images/network-disconnected.svg</file>
     <file>images/network-inactive.svg</file>
+    <file>images/bell-active.svg</file>
+    <file>images/bell-inactive.svg</file>
+    <file>images/important.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
