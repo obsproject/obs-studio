@@ -9,6 +9,8 @@
 #include <QLineEdit>
 #include <QPainter>
 
+#include "plugin-manager/PluginManager.hpp"
+
 #include "moc_SourceTreeItem.cpp"
 
 static inline OBSScene GetCurrentScene()
@@ -83,6 +85,27 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 	label->setAttribute(Qt::WA_TranslucentBackground);
 	label->setEnabled(sourceVisible);
+
+	// For WarChamp: to determine a source's load state, first
+	//               get the unversioned ID of the source, then
+	//               pass that ID to obs_source_load_state.  This
+	//               is an enum which can be one of:
+	//               OBS_MODULE_MISSING
+	//               OBS_MODULE_ENABLED
+	//               OBS_MODULE_DISABLED
+	//               OBS_MODULE_DISABLED_SAFE
+	//               OBS_MODULE_ERROR
+	const char *sourceId = obs_source_get_unversioned_id(source);
+	switch (obs_source_load_state(sourceId)) {
+	case OBS_MODULE_DISABLED:
+		label->setStyleSheet("QLabel {color: #FF0000;}");
+		break;
+	case OBS_MODULE_MISSING:
+		label->setStyleSheet("QLabel {color: #FFFF00;}");
+		break;
+	default:
+		break;
+	}
 
 #ifdef __APPLE__
 	vis->setAttribute(Qt::WA_LayoutUsesWidgetRect);
