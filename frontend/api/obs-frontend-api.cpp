@@ -613,3 +613,22 @@ bool obs_frontend_remove_canvas(obs_canvas_t *canvas)
 {
 	return !!callbacks_valid() ? c->obs_frontend_remove_canvas(canvas) : false;
 }
+
+void obs_frontend_copy_sceneitem(obs_sceneitem_t *item)
+{
+	if (callbacks_valid())
+		return c->obs_frontend_copy_sceneitem(item);
+}
+
+bool obs_frontend_can_paste_sceneitem(bool duplicate)
+{
+	if (!callbacks_valid())
+		return false;
+	return c->obs_frontend_can_paste_sceneitem(duplicate);
+}
+
+void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
+{
+	if (callbacks_valid())
+		return c->obs_frontend_paste_sceneitem(scene, duplicate);
+}

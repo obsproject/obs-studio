@@ -230,6 +230,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	bool obs_frontend_remove_canvas(obs_canvas_t *canvas) override;
 
+	void obs_frontend_copy_sceneitem(obs_sceneitem_t *item) override;
+
+	bool obs_frontend_can_paste_sceneitem(bool duplicate) override;
+
+	void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate) override;
+
 	void on_load(obs_data_t *settings) override;
 
 	void on_preload(obs_data_t *settings) override;
