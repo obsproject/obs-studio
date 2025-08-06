@@ -75,6 +75,7 @@ sudo apt-get install -y --no-install-recommends \
   libgl1-mesa-dev \
   libjansson-dev \
   uthash-dev \
+  libsimde-dev \
   libluajit-5.1-dev python3-dev \
   libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev \
   libxcb-composite0-dev libxinerama-dev libxcb1-dev libx11-xcb-dev libxcb-xfixes0-dev \

@@ -1,6 +1,0 @@
-This is a slightly modified version of the simde directory in
-https://github.com/simd-everywhere/simde/commit/c3d7abfaba6729a8b11d09a314b34a4db628911d
-
-Modifications:
-1. Unused files have removed.
-2. The code was reformatted using the "formatcode.sh" script in the root of this repository.

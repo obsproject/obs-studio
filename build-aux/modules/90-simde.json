@@ -1,0 +1,16 @@
+{
+    "name": "simde",
+    "buildsystem": "meson",
+    "builddir": true,
+    "config-opts": [
+        "-Dtests=false"
+    ],
+    "sources": [
+        {
+            "type": "git",
+            "url": "https://github.com/simd-everywhere/simde.git",
+            "tag": "v0.8.2",
+            "commit": "71fd833d9666141edcd1d3c109a80e228303d8d7"
+        }
+    ]
+}

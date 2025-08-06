@@ -25,8 +25,17 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+
+#if defined(_MSC_VER) && defined(__cplusplus)
+#include <cmath>
+#endif
+
+#if defined(__APPLE__)
+#include <simd/base.h>
+#endif
+
 #define SIMDE_ENABLE_NATIVE_ALIASES
 PRAGMA_WARN_PUSH
-#include "simde/x86/sse2.h"
+#include <simde/x86/sse2.h>
 PRAGMA_WARN_POP
 #endif

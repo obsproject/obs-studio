@@ -404,6 +404,15 @@ function(target_export target)
     COMPONENT Development
     ${exclude_variant}
   )
+
+  if(target STREQUAL libobs)
+    install(
+      FILES "${CMAKE_SOURCE_DIR}/cmake/finders/FindSIMDe.cmake"
+      DESTINATION "${package_destination}/finders"
+      COMPONENT Development
+      ${exclude_variant}
+    )
+  endif()
 endfunction()
 
 # check_uuid: Helper function to check for valid UUID
