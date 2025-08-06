@@ -1048,6 +1048,7 @@ bool OBSApp::OBSInit()
 
 	qRegisterMetaType<VoidFunc>("VoidFunc");
 
+#if !defined(ENABLE_WAYLAND)
 #if !defined(_WIN32) && !defined(__APPLE__)
 	if (QApplication::platformName() == "xcb") {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
@@ -1060,6 +1061,7 @@ bool OBSApp::OBSInit()
 
 		blog(LOG_INFO, "Using EGL/X11");
 	}
+#endif
 
 #ifdef ENABLE_WAYLAND
 	if (QApplication::platformName().contains("wayland")) {
