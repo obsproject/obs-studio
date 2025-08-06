@@ -24,6 +24,8 @@
 #include <util/bmem.h>
 #include <util/platform.h>
 
+#include <glib.h>
+
 #include <QDBusConnection>
 #include <QDBusReply>
 
@@ -220,7 +222,8 @@ bool GetDataFilePath(const char *data, string &output)
 
 string GetDefaultVideoSavePath()
 {
-	return string(getenv("HOME"));
+	const char *dir = g_get_user_special_dir(G_USER_DIRECTORY_VIDEOS);
+	return string(dir ? dir : getenv("HOME"));
 }
 
 vector<string> GetPreferredLocales()
