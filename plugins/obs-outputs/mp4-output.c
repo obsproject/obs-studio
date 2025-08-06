@@ -21,6 +21,7 @@
 
 #include <obs-module.h>
 #include <util/platform.h>
+#include <util/deque.h>
 #include <util/dstr.h>
 #include <util/threading.h>
 #include <util/buffered-file-serializer.h>
@@ -34,7 +35,7 @@
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 
 struct chapter {
-	int64_t dts_usec;
+	uint64_t ts;
 	char *name;
 };
 
@@ -59,8 +60,8 @@ struct mp4_output {
 	struct mp4_mux *muxer;
 	int flags;
 
-	int64_t last_dts_usec;
-	DARRAY(struct chapter) chapters;
+	size_t chapter_ctr;
+	struct deque chapters;
 
 	/* File splitting stuff */
 	bool split_file_enabled;
@@ -139,17 +140,63 @@ static const char *mp4_output_name(void *unused)
 	return obs_module_text("MP4Output");
 }
 
+static void mp4_clear_chapters(struct mp4_output *out)
+{
+	while (out->chapters.size) {
+		struct chapter *chap = deque_data(&out->chapters, 0);
+		bfree(chap->name);
+		deque_pop_front(&out->chapters, NULL, sizeof(struct chapter));
+	}
+	out->chapter_ctr = 0;
+}
+
 static void mp4_output_destroy(void *data)
 {
 	struct mp4_output *out = data;
 
-	for (size_t i = 0; i < out->chapters.num; i++)
-		bfree(out->chapters.array[i].name);
-	da_free(out->chapters);
-
 	pthread_mutex_destroy(&out->mutex);
+	mp4_clear_chapters(out);
+	deque_free(&out->chapters);
 	dstr_free(&out->path);
 	bfree(out);
+}
+
+void mp4_pkt_callback(obs_output_t *output, struct encoder_packet *pkt, struct encoder_packet_time *pkt_time,
+		      void *param)
+{
+	UNUSED_PARAMETER(output);
+	struct mp4_output *out = param;
+
+	/* Only the primary video track is used as the reference for the chapter track. */
+	if (!pkt_time || !pkt || pkt->type != OBS_ENCODER_VIDEO || pkt->track_idx != 0)
+		return;
+
+	pthread_mutex_lock(&out->mutex);
+	struct chapter *chap = NULL;
+	/* Write all queued chapters with a timestamp <= the current frame's composition time. */
+	while (out->chapters.size) {
+		chap = deque_data(&out->chapters, 0);
+		if (chap->ts > pkt_time->cts)
+			break;
+
+		/* Video frames can be out of order (b-frames), so instead of using the video packet's dts_usec we need to calculate
+		 * the chapter DTS from the frame's PTS (for chapters DTS == PTS). */
+		int64_t chap_dts_usec = pkt->pts * 1000000 / pkt->timebase_den;
+		int64_t chap_dts_msec = chap_dts_usec / 1000;
+		int64_t chap_dts_sec = chap_dts_msec / 1000;
+
+		int milliseconds = (int)(chap_dts_msec % 1000);
+		int seconds = (int)chap_dts_sec % 60;
+		int minutes = ((int)chap_dts_sec / 60) % 60;
+		int hours = (int)chap_dts_sec / 3600;
+		info("Adding chapter \"%s\" at %02d:%02d:%02d.%03d", chap->name, hours, minutes, seconds, milliseconds);
+
+		mp4_mux_add_chapter(out->muxer, chap_dts_usec, chap->name);
+		/* Free name and remove chapter from queue. */
+		bfree(chap->name);
+		deque_pop_front(&out->chapters, NULL, sizeof(struct chapter));
+	}
+	pthread_mutex_unlock(&out->mutex);
 }
 
 static void mp4_add_chapter_proc(void *data, calldata_t *cd)
@@ -161,21 +208,17 @@ static void mp4_add_chapter_proc(void *data, calldata_t *cd)
 
 	if (name.len == 0) {
 		/* Generate name if none provided. */
-		dstr_catf(&name, "%s %zu", obs_module_text("MP4Output.UnnamedChapter"), out->chapters.num + 1);
+		dstr_catf(&name, "%s %zu", obs_module_text("MP4Output.UnnamedChapter"), out->chapter_ctr + 1);
 	}
 
-	int64_t totalRecordSeconds = out->last_dts_usec / 1000 / 1000;
-	int seconds = (int)totalRecordSeconds % 60;
-	int totalMinutes = (int)totalRecordSeconds / 60;
-	int minutes = totalMinutes % 60;
-	int hours = totalMinutes / 60;
-
-	info("Adding chapter \"%s\" at %02d:%02d:%02d", name.array, hours, minutes, seconds);
-
 	pthread_mutex_lock(&out->mutex);
-	struct chapter *chap = da_push_back_new(out->chapters);
-	chap->dts_usec = out->last_dts_usec;
-	chap->name = name.array;
+	/* Enqueue chapter marker to be inserted once a packet containing the video frame with the corresponding timestamp is
+	 * being processed. */
+	struct chapter chap = {0};
+	chap.ts = obs_get_video_frame_time();
+	chap.name = name.array;
+	deque_push_back(&out->chapters, &chap, sizeof(struct chapter));
+	out->chapter_ctr++;
 	pthread_mutex_unlock(&out->mutex);
 }
 
@@ -286,6 +329,9 @@ static bool mp4_output_start(void *data)
 		return false;
 	}
 
+	/* Add packet callback for accurate chapter markers. */
+	obs_output_add_packet_callback(out->output, mp4_pkt_callback, (void *)out);
+
 	/* Initialise muxer and start capture */
 	out->muxer = mp4_mux_create(out->output, &out->serializer, out->flags);
 	os_atomic_set_bool(&out->active, true);
@@ -381,11 +427,6 @@ static bool change_file(struct mp4_output *out, struct encoder_packet *pkt)
 	uint64_t start_time = os_gettime_ns();
 
 	/* finalise file */
-	for (size_t i = 0; i < out->chapters.num; i++) {
-		struct chapter *chap = &out->chapters.array[i];
-		mp4_mux_add_chapter(out->muxer, chap->dts_usec, chap->name);
-	}
-
 	mp4_mux_finalise(out->muxer);
 
 	info("Waiting for file writer to finish...");
@@ -393,11 +434,7 @@ static bool change_file(struct mp4_output *out, struct encoder_packet *pkt)
 	/* flush/close file and destroy old muxer */
 	buffered_file_serializer_free(&out->serializer);
 	mp4_mux_destroy(out->muxer);
-
-	for (size_t i = 0; i < out->chapters.num; i++)
-		bfree(out->chapters.array[i].name);
-
-	da_clear(out->chapters);
+	mp4_clear_chapters(out);
 
 	info("MP4 file split complete. Finalization took %" PRIu64 " ms.", (os_gettime_ns() - start_time) / 1000000);
 
@@ -441,13 +478,9 @@ static void mp4_mux_destroy_task(void *ptr)
 static void mp4_output_actual_stop(struct mp4_output *out, int code)
 {
 	os_atomic_set_bool(&out->active, false);
+	obs_output_remove_packet_callback(out->output, mp4_pkt_callback, NULL);
 
 	uint64_t start_time = os_gettime_ns();
-
-	for (size_t i = 0; i < out->chapters.num; i++) {
-		struct chapter *chap = &out->chapters.array[i];
-		mp4_mux_add_chapter(out->muxer, chap->dts_usec, chap->name);
-	}
 
 	mp4_mux_finalise(out->muxer);
 
@@ -465,10 +498,7 @@ static void mp4_output_actual_stop(struct mp4_output *out, int code)
 	out->muxer = NULL;
 
 	/* Clear chapter data */
-	for (size_t i = 0; i < out->chapters.num; i++)
-		bfree(out->chapters.array[i].name);
-
-	da_clear(out->chapters);
+	mp4_clear_chapters(out);
 
 	info("MP4 file output complete. Finalization took %" PRIu64 " ms.", (os_gettime_ns() - start_time) / 1000000);
 }
@@ -563,10 +593,6 @@ static void mp4_output_packet(void *data, struct encoder_packet *packet)
 
 	if (out->split_file_enabled)
 		ts_offset_update(out, packet);
-
-	/* Update PTS for chapter markers */
-	if (packet->type == OBS_ENCODER_VIDEO && packet->track_idx == 0)
-		out->last_dts_usec = packet->dts_usec - out->start_time;
 
 	submit_packet(out, packet);
 
