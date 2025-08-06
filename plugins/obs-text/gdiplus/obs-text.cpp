@@ -226,6 +226,7 @@ struct TextSource {
 
 	wstring text;
 	wstring face;
+	wstring style;
 	int face_size = 0;
 	uint32_t color = 0xFFFFFF;
 	uint32_t color2 = 0xFFFFFF;
@@ -727,6 +728,7 @@ inline void TextSource::Update(obs_data_t *s)
 	bool new_antialiasing = obs_data_get_bool(s, S_ANTIALIASING);
 
 	const char *font_face = obs_data_get_string(font_obj, "face");
+	const char *font_style = obs_data_get_string(font_obj, "style");
 	int font_size = (int)obs_data_get_int(font_obj, "size");
 	int64_t font_flags = obs_data_get_int(font_obj, "flags");
 	bool new_bold = (font_flags & OBS_FONT_BOLD) != 0;
@@ -740,9 +742,10 @@ inline void TextSource::Update(obs_data_t *s)
 	/* ----------------------------- */
 
 	wstring new_face = to_wide(font_face);
+	wstring new_style = to_wide(font_style);
 
-	if (new_face != face || face_size != font_size || new_bold != bold || new_italic != italic ||
-	    new_underline != underline || new_strikeout != strikeout) {
+	if (new_face != face || new_style != style || face_size != font_size || new_bold != bold ||
+	    new_italic != italic || new_underline != underline || new_strikeout != strikeout) {
 
 		face = new_face;
 		face_size = font_size;
