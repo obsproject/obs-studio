@@ -194,11 +194,21 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
     }
     os_sem_post(sc->shareable_content_available);
 
+    struct obs_video_info video_info;
+    bool hasVideoInfo = obs_get_video_info(&video_info);
+
     CGColorRef background = CGColorGetConstantColor(kCGColorClear);
     [sc->stream_properties setQueueDepth:8];
     [sc->stream_properties setShowsCursor:!sc->hide_cursor];
     [sc->stream_properties setColorSpaceName:kCGColorSpaceDisplayP3];
     [sc->stream_properties setBackgroundColor:background];
+    if (hasVideoInfo) {
+        CMTime frameTimeInterval = CMTimeMake((int64_t) video_info.fps_den, video_info.fps_num);
+        CMTime minimumUpdateTime = CMTimeMultiplyByFloat64(frameTimeInterval, 0.9);
+        [sc->stream_properties setMinimumFrameInterval:minimumUpdateTime];
+    } else {
+        blog(LOG_WARNING, "Unable to retrieve OBS output FPS when initializing macOS Screen Capture");
+    }
     FourCharCode l10r_type = 0;
     l10r_type = ('l' << 24) | ('1' << 16) | ('0' << 8) | 'r';
     [sc->stream_properties setPixelFormat:l10r_type];
