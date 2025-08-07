@@ -97,7 +97,6 @@ struct nvvfx_data {
 	/* blur specific */
 	enum nvvfx_fx_id filter_id;
 	NvVFX_Handle handle_blur;
-	CUstream stream_blur;        // cuda stream
 	float strength;              // from 0 to 1, default = 0.5
 	NvCVImage *blur_BGR_dst_img; // dst img of blur FX (BGR, chunky, u8)
 	NvCVImage *RGBA_dst_img;     // tmp img used to transfer to texture
@@ -196,8 +195,6 @@ static void nvvfx_filter_actual_destroy(void *data)
 	}
 	if (filter->stream)
 		NvVFX_CudaStreamDestroy(filter->stream);
-	if (filter->stream_blur)
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
 
 	if (filter->effect) {
 		obs_enter_graphics();
@@ -249,11 +246,21 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 		log_nverror_destroy(filter, vfxErr);
 	/* debug */
 #ifdef _DEBUG
-	const char *info;
-	vfxErr = NvVFX_GetString(filter->handle_blur, NVVFX_INFO, &info);
-	blog(LOG_DEBUG, "blur fx settings /n/%s", info);
+	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
+		const char *info2;
+		vfxErr = NvVFX_GetString(filter->handle, NVVFX_INFO, &info2);
+		blog(LOG_DEBUG, "aigs fx settings :%s", info2);
+	}
+	if (id == S_FX_BLUR || id == S_FX_BG_BLUR) {
+		const char *info;
+		vfxErr = NvVFX_GetString(filter->handle_blur, NVVFX_INFO, &info);
+		blog(LOG_DEBUG, "blur fx settings :%s", info);
+	}
 #endif
 	/* 2. Set models path & initialize CudaStream */
+	vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
+	if (NVCV_SUCCESS != vfxErr)
+		log_nverror_destroy(filter, vfxErr);
 	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
 		char buffer[MAX_PATH];
 		char modelDir[MAX_PATH];
@@ -261,18 +268,13 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 		size_t max_len = sizeof(buffer) / sizeof(char);
 		snprintf(modelDir, max_len, "%s\\models", buffer);
 		vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY, modelDir);
-		vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
-		if (NVCV_SUCCESS != vfxErr)
-			log_nverror_destroy(filter, vfxErr);
 		vfxErr = NvVFX_SetCudaStream(filter->handle, NVVFX_CUDA_STREAM, filter->stream);
 		if (NVCV_SUCCESS != vfxErr)
 			log_nverror_destroy(filter, vfxErr);
 	}
+
 	if (id == S_FX_BLUR || id == S_FX_BG_BLUR) {
-		vfxErr = NvVFX_CudaStreamCreate(&filter->stream_blur);
-		if (NVCV_SUCCESS != vfxErr)
-			log_nverror_destroy(filter, vfxErr);
-		vfxErr = NvVFX_SetCudaStream(filter->handle_blur, NVVFX_CUDA_STREAM, filter->stream_blur);
+		vfxErr = NvVFX_SetCudaStream(filter->handle_blur, NVVFX_CUDA_STREAM, filter->stream);
 		if (NVCV_SUCCESS != vfxErr)
 			log_nverror_destroy(filter, vfxErr);
 	}
@@ -400,9 +402,7 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 	if (filter->stream) {
 		NvVFX_CudaStreamDestroy(filter->stream);
 	}
-	if (filter->stream_blur) {
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
-	}
+
 	// [B] recreate
 	/* 1. Create FX */
 	/* 2. Set models path & initialize CudaStream */
@@ -622,20 +622,9 @@ fail:
 static bool process_texture(struct nvvfx_data *filter)
 {
 	enum nvvfx_fx_id id = filter->filter_id;
-	CUstream process_stream;
+	CUstream process_stream = filter->stream;
 
 	/* 1. Map src img holding texture. */
-	switch (id) {
-	case S_FX_AIGS:
-	case S_FX_BG_BLUR:
-		process_stream = filter->stream;
-		break;
-	case S_FX_BLUR:
-		process_stream = filter->stream_blur;
-		break;
-	default:
-		process_stream = NULL;
-	}
 	NvCV_Status vfxErr = NvCVImage_MapResource(filter->src_img, process_stream);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -679,21 +668,21 @@ static bool process_texture(struct nvvfx_data *filter)
 				nvvfx_filter_reset(filter, NULL);
 		}
 		/* 4b. Transfer blur result to an intermediate dst [RGBA, chunky, u8] */
-		vfxErr = NvCVImage_Transfer(filter->blur_BGR_dst_img, filter->RGBA_dst_img, 1.0f, filter->stream_blur,
+		vfxErr = NvCVImage_Transfer(filter->blur_BGR_dst_img, filter->RGBA_dst_img, 1.0f, filter->stream,
 					    filter->stage);
 		if (vfxErr != NVCV_SUCCESS) {
 			error("Error transferring blurred to intermediate img [RGBA, chunky, u8], error %i, ", vfxErr);
 			goto fail;
 		}
 		/* 5. Map blur dst texture before transfer from dst img provided by FX */
-		vfxErr = NvCVImage_MapResource(filter->blur_dst_img, filter->stream_blur);
+		vfxErr = NvCVImage_MapResource(filter->blur_dst_img, filter->stream);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error mapping resource for dst texture; error %i: %s", vfxErr, errString);
 			goto fail;
 		}
 
-		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream_blur,
+		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream,
 					    filter->stage);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -701,7 +690,7 @@ static bool process_texture(struct nvvfx_data *filter)
 			goto fail;
 		}
 
-		vfxErr = NvCVImage_UnmapResource(filter->blur_dst_img, filter->stream_blur);
+		vfxErr = NvCVImage_UnmapResource(filter->blur_dst_img, filter->stream);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error unmapping resource for dst texture; error %i: %s", vfxErr, errString);
