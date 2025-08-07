@@ -132,6 +132,7 @@ static void nvidia_audio_destroy(void *data)
 
 	if (ng->nvidia_sdk_dir_found)
 		pthread_mutex_lock(&ng->nvafx_mutex);
+
 	NvAFX_UninitializeLogger();
 	for (size_t i = 0; i < ng->channels; i++) {
 		if (ng->handle[0]) {
@@ -280,7 +281,7 @@ bool load_nvidia_afx(void)
 	bool new_sdk = nvafx_new_sdk;
 	LOAD_SYM(NvAFX_UninitializeLogger);
 	if (!nvafx_new_sdk || !new_sdk) {
-		blog(LOG_INFO, "[NVIDIA AUDIO FX]: sdk loaded but old redistributable detected; please upgrade.");
+		blog(LOG_INFO, "[NVIDIA AUDIO FX]: SDK loaded but old redistributable detected. Please upgrade.");
 		nvafx_new_sdk = false;
 	}
 #undef LOAD_SYM

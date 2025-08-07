@@ -261,6 +261,7 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 	vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
 	if (NVCV_SUCCESS != vfxErr)
 		log_nverror_destroy(filter, vfxErr);
+
 	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
 		char buffer[MAX_PATH];
 		char modelDir[MAX_PATH];
@@ -541,6 +542,7 @@ static bool init_blur_images(struct nvvfx_data *filter)
 		NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, filter->A_dst_img);
 	else
 		NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, NULL);
+
 	NvVFX_SetImage(filter->handle_blur, NVVFX_OUTPUT_IMAGE, filter->blur_BGR_dst_img);
 
 	if (NvVFX_Load(filter->handle_blur) != NVCV_SUCCESS) {
@@ -1198,7 +1200,7 @@ bool load_nvidia_vfx(void)
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
 	LOAD_SYM(NvVFX_ConfigureLogger);
 	if (!nvvfx_new_sdk) {
-		blog(LOG_INFO, "[NVIDIA VIDEO FX]: sdk loaded but old redistributable detected; please upgrade.");
+		blog(LOG_INFO, "[NVIDIA VIDEO FX]: SDK loaded but old redistributable detected. Please upgrade.");
 	}
 #undef LOAD_SYM
 
