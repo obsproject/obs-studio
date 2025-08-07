@@ -30,6 +30,14 @@ void OBSBasic::Screenshot(OBSSource source)
 	}
 
 	screenshotData = new ScreenshotObj(source);
+
+	auto onScreenshot = [this](const QString &path) {
+		ShowStatusBarMessage(QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(path));
+		lastScreenshot = QT_TO_UTF8(path);
+		OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
+	};
+
+	connect(screenshotData, &ScreenshotObj::screenshotTaken, this, onScreenshot);
 }
 
 void OBSBasic::ScreenshotSelectedSource()
