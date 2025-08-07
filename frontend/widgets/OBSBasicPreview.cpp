@@ -118,23 +118,38 @@ static bool FindItemAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item, void
 	matrix4 invTransform;
 	vec3 transformedPos;
 	vec3 pos3;
-	vec3 pos3_;
 
 	if (!SceneItemHasVideo(item))
 		return true;
 	if (obs_sceneitem_locked(item))
 		return true;
 
+	if (obs_sceneitem_is_group(item)) {
+		obs_sceneitem_t *old_group = data->group;
+		data->group = item;
+		bool continue_enum =
+			obs_sceneitem_group_enum_items(item, FindItemAtPos, param);
+		data->group = old_group;
+
+		if (!continue_enum)
+			return false;
+	}
+
 	vec3_set(&pos3, data->pos.x, data->pos.y, 0.0f);
 
 	obs_sceneitem_get_box_transform(item, &transform);
 
+	if (data->group) {
+		matrix4 parent_transform;
+		obs_sceneitem_get_draw_transform(data->group, &parent_transform);
+		matrix4_mul(&transform, &transform, &parent_transform);
+	}
+
 	matrix4_inv(&invTransform, &transform);
 	vec3_transform(&transformedPos, &pos3, &invTransform);
-	vec3_transform(&pos3_, &transformedPos, &transform);
 
-	if (CloseFloat(pos3.x, pos3_.x) && CloseFloat(pos3.y, pos3_.y) && transformedPos.x >= 0.0f &&
-	    transformedPos.x <= 1.0f && transformedPos.y >= 0.0f && transformedPos.y <= 1.0f) {
+	if (transformedPos.x >= 0.0f && transformedPos.x <= 1.0f &&
+	    transformedPos.y >= 0.0f && transformedPos.y <= 1.0f) {
 		if (data->selectBelow && obs_sceneitem_selected(item)) {
 			if (data->item)
 				return false;
@@ -143,6 +158,7 @@ static bool FindItemAtPos(obs_scene_t * /* scene */, obs_sceneitem_t *item, void
 		}
 
 		data->item = item;
+		return false;
 	}
 
 	return true;
