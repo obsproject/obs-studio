@@ -226,27 +226,6 @@ typedef enum NvCVImage_ComponentType {
 #define NVCV_CPU_PINNED 2 //!< The buffer is stored in pinned CPU memory.
 #define NVCV_CUDA_ARRAY 3 //!< A CUDA array is used for storage.
 
-/** Parameter selectors */
-#define NVVFX_INPUT_IMAGE_0 "SrcImage0"
-#define NVVFX_INPUT_IMAGE NVVFX_INPUT_IMAGE_0
-#define NVVFX_INPUT_IMAGE_1 "SrcImage1"
-#define NVVFX_OUTPUT_IMAGE_0 "DstImage0"
-#define NVVFX_OUTPUT_IMAGE NVVFX_OUTPUT_IMAGE_0
-#define NVVFX_MODEL_DIRECTORY "ModelDir"
-#define NVVFX_CUDA_STREAM "CudaStream"         //!< The CUDA stream to use
-#define NVVFX_CUDA_GRAPH "CudaGraph"           //!< Enable CUDA graph to use
-#define NVVFX_INFO "Info"                      //!< Get info about the effects
-#define NVVFX_SCALE "Scale"                    //!< Scale factor
-#define NVVFX_STRENGTH "Strength"              //!< Strength for different filters
-#define NVVFX_STRENGTH_LEVELS "StrengthLevels" //!< Number of strength levels
-#define NVVFX_MODE "Mode"                      //!< Mode for different filters
-#define NVVFX_TEMPORAL "Temporal"              //!< Temporal mode: 0=image, 1=video
-#define NVVFX_GPU "GPU"                        //!< Preferred GPU (optional)
-#define NVVFX_BATCH_SIZE "BatchSize"           //!< Batch Size (default 1)
-#define NVVFX_MODEL_BATCH "ModelBatch"
-#define NVVFX_STATE "State"          //!< State variable
-#define NVVFX_STATE_SIZE "StateSize" //!< Number of bytes needed to store state
-
 /** Logging support **/
 enum {
 	NVCV_LOG_FATAL,   //!< Message to be printed right before aborting due to an unrecoverable error.
