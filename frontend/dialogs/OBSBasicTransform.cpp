@@ -55,12 +55,17 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	HookWidget(ui->cropLeft, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
 	HookWidget(ui->cropRight, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
 	HookWidget(ui->cropTop, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
-	HookWidget(ui->cropBottom, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
+	   HookWidget(ui->cropBottom, ISCROLL_CHANGED, &OBSBasicTransform::OnCropChanged);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	HookWidget(ui->cropToBounds, &QCheckBox::checkStateChanged, &OBSBasicTransform::OnControlChanged);
 #else
 	HookWidget(ui->cropToBounds, &QCheckBox::stateChanged, &OBSBasicTransform::OnControlChanged);
 #endif
+
+	connect(ui->opacitySlider, &QSlider::valueChanged, ui->opacitySpinBox, &QSpinBox::setValue);
+	connect(ui->opacitySpinBox, &QSpinBox::valueChanged, ui->opacitySlider, &QSlider::setValue);
+	connect(ui->opacitySlider, &QSlider::valueChanged, this, &OBSBasicTransform::OnOpacityChanged);
+
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
 	connect(ui->buttonBox->button(QDialogButtonBox::Reset), &QPushButton::clicked, main,
