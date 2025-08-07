@@ -163,33 +163,18 @@ int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY, uint8_t *p
 		       uint32_t strideUV, mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	mfxStatus sts = MFX_ERR_NONE;
 
 	if (pDataY != NULL && pDataUV != NULL)
-		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pBS);
-
-	if (sts == MFX_ERR_NONE)
-		return 0;
-	else if (sts == MFX_ERR_MORE_DATA)
-		return 1;
+		return pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pBS);
 	else
-		return -1;
+		return 0;
 }
 
 int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key,
 			   mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	mfxStatus sts = MFX_ERR_NONE;
-
-	sts = pEncoder->Encode_tex(ts, tex, lock_key, next_key, pBS);
-
-	if (sts == MFX_ERR_NONE)
-		return 0;
-	else if (sts == MFX_ERR_MORE_DATA)
-		return 1;
-	else
-		return -1;
+	return pEncoder->Encode_tex(ts, tex, lock_key, next_key, pBS);
 }
 
 int qsv_encoder_close(qsv_t *pContext)
@@ -224,9 +209,9 @@ int qsv_param_apply_profile(qsv_param_t *, const char *profile)
 int qsv_encoder_reconfig(qsv_t *pContext, qsv_param_t *pParams)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	pEncoder->UpdateParams(pParams);
-	mfxStatus sts = pEncoder->ReconfigureEncoder();
 
+	pEncoder->Flush();
+	mfxStatus sts = pEncoder->ReconfigureEncoder(pParams);
 	if (sts != MFX_ERR_NONE)
 		return false;
 	return true;
