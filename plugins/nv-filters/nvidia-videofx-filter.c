@@ -414,12 +414,12 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 		vfxErr = NvVFX_SetU32(filter->handle, NVVFX_MODE, filter->mode);
 		if (NVCV_SUCCESS != vfxErr)
 			error("Error loading NVIDIA Video FX %i", vfxErr);
-		vfxErr = NvVFX_Load(filter->handle);
-		if (NVCV_SUCCESS != vfxErr)
-			error("Error loading NVIDIA Video FX %i", vfxErr);
 		// reallocate state object
 		vfxErr = NvVFX_AllocateState(filter->handle, &filter->stateObjectHandle);
 		vfxErr = NvVFX_SetStateObjectHandleArray(filter->handle, NVVFX_STATE, &filter->stateObjectHandle);
+		vfxErr = NvVFX_Load(filter->handle);
+		if (NVCV_SUCCESS != vfxErr)
+			error("Error loading NVIDIA Video FX %i", vfxErr);
 	}
 	if (filter->filter_id != S_FX_AIGS) {
 		vfxErr = NvVFX_SetF32(filter->handle_blur, NVVFX_STRENGTH, filter->strength);
