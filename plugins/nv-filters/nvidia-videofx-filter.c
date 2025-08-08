@@ -618,7 +618,7 @@ fail:
 
 //---------------------------------------------------------------------------//
 // video processing functions //
-
+enum nvvfx_run_mode { SYNC, ASYNC };
 static bool process_texture(struct nvvfx_data *filter)
 {
 	enum nvvfx_fx_id id = filter->filter_id;
@@ -648,7 +648,7 @@ static bool process_texture(struct nvvfx_data *filter)
 
 	/* 3. Run AIGS (AI Greenscreen) fx */
 	if (id != S_FX_BLUR) {
-		vfxErr = NvVFX_Run(filter->handle, 1);
+		vfxErr = NvVFX_Run(filter->handle, SYNC);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error running the AIGS FX; error %i: %s", vfxErr, errString);
@@ -660,7 +660,7 @@ static bool process_texture(struct nvvfx_data *filter)
 	if (id != S_FX_AIGS) {
 		/* 4. BLUR FX */
 		/* 4a. Run BLUR FX except for AIGS */
-		vfxErr = NvVFX_Run(filter->handle_blur, 1);
+		vfxErr = NvVFX_Run(filter->handle_blur, SYNC);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error running the BLUR FX; error %i: %s", vfxErr, errString);
