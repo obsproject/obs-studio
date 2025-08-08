@@ -521,6 +521,7 @@ static bool init_blur_images(struct nvvfx_data *filter)
 {
 	uint32_t width = filter->width;
 	uint32_t height = filter->height;
+	enum nvvfx_fx_id id = filter->filter_id;
 
 	/* 1. Create and allocate Blur BGR NvCVimage (blur FX dst) */
 	NvCVImage_Create(width, height, NVCV_BGR, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1, &filter->blur_BGR_dst_img);
@@ -536,7 +537,10 @@ static bool init_blur_images(struct nvvfx_data *filter)
 
 	/* 3. Set input & output images for nv blur FX */
 	NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE, filter->BGR_src_img);
-	NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, filter->A_dst_img);
+	if (id != S_FX_BLUR)
+		NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, filter->A_dst_img);
+	else
+		NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, NULL);
 	NvVFX_SetImage(filter->handle_blur, NVVFX_OUTPUT_IMAGE, filter->blur_BGR_dst_img);
 
 	if (NvVFX_Load(filter->handle_blur) != NVCV_SUCCESS) {
