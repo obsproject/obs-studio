@@ -54,7 +54,7 @@ invoke_formatter() {
         exit 2
       fi
 
-      if (( ! #source_files )) source_files=((libobs|libobs-*|frontend|plugins|deps|shared)/**/*.(c|cpp|h|hpp|m|mm)(.N))
+      if (( ! #source_files )) source_files=((libobs|libobs-*|frontend|plugins|deps|shared|test)/**/*.(c|cpp|h|hpp|m|mm)(.N))
 
       source_files=(${source_files:#*/(obs-websocket/deps|decklink/*/decklink-sdk|mac-syphon/syphon-framework|libdshowcapture)/*})
 
