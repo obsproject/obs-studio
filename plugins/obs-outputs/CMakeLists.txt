@@ -4,6 +4,7 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 find_package(MbedTLS REQUIRED)
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 find_package(ZLIB REQUIRED)
+find_package(jansson REQUIRED)
 
 if(NOT TARGET happy-eyeballs)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/happy-eyeballs" "${CMAKE_BINARY_DIR}/shared/happy-eyeballs")
@@ -75,6 +76,7 @@ target_link_libraries(
     OBS::opts-parser
     MbedTLS::mbedtls
     ZLIB::ZLIB
+    jansson::jansson
     $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
     $<$<PLATFORM_ID:Windows>:crypt32>
     $<$<PLATFORM_ID:Windows>:iphlpapi>

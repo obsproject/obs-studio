@@ -686,12 +686,6 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 #endif
 	bool enableDynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
-	if (multitrackVideo && multitrackVideoActive &&
-	    !multitrackVideo->HandleIncompatibleSettings(main, main->Config(), service, enableDynBitrate)) {
-		multitrackVideoActive = false;
-		return false;
-	}
-
 	bool is_rtmp = false;
 	obs_service_t *service_obj = main->GetService();
 	const char *protocol = obs_service_get_protocol(service_obj);

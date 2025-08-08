@@ -308,6 +308,26 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 }
 
+static uint32_t gcd(uint32_t a, uint32_t b)
+{
+	if (a < b) {
+		uint32_t temp = a;
+		a = b;
+		b = temp;
+	}
+
+	uint32_t remainder = a % b;
+	if (!remainder)
+		return b;
+
+	return gcd(b, remainder);
+}
+
+static uint32_t lcm(uint32_t a, uint32_t b)
+{
+	return (a / gcd(a, b)) * b;
+}
+
 static void add_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
@@ -328,6 +348,12 @@ static void add_connection(struct obs_encoder *encoder)
 
 	if (encoder->encoder_group) {
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
+		if (encoder->encoder_group->frame_rate_divisors_lcm == 0)
+			encoder->encoder_group->frame_rate_divisors_lcm = 1;
+
+		encoder->encoder_group->frame_rate_divisors_lcm =
+			lcm(encoder->encoder_group->frame_rate_divisors_lcm, encoder->frame_rate_divisor);
+
 		encoder->encoder_group->num_encoders_started += 1;
 		bool ready = encoder->encoder_group->num_encoders_started >= encoder->encoder_group->encoders.num;
 		pthread_mutex_unlock(&encoder->encoder_group->mutex);
@@ -352,10 +378,19 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 	}
 
 	if (encoder->encoder_group) {
-		pthread_mutex_lock(&encoder->encoder_group->mutex);
-		if (--encoder->encoder_group->num_encoders_started == 0)
-			encoder->encoder_group->start_timestamp = 0;
-		pthread_mutex_unlock(&encoder->encoder_group->mutex);
+		struct obs_encoder_group *group = encoder->encoder_group;
+		pthread_mutex_lock(&group->mutex);
+		if (--group->num_encoders_started == 0) {
+			group->start_timestamp = 0;
+			group->frame_rate_divisors_lcm = 1;
+
+			group->reconfigure_request = 0;
+			group->next_pts = 0;
+			group->encoders_reconfigured = 0;
+			group->encoders_updated_next_pts = 0;
+			group->reconfigure_again = false;
+		}
+		pthread_mutex_unlock(&group->mutex);
 	}
 
 	/* obs_encoder_shutdown locks init_mutex, so don't call it on encode
@@ -500,6 +535,8 @@ obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 	return NULL;
 }
 
+static void encoder_group_new_reconfigure_request(struct obs_encoder_group *group);
+
 void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_update"))
@@ -515,15 +552,33 @@ void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 	if (!encoder->info.update)
 		return;
 
-	// If the encoder is active we defer the update as it may not be
-	// reentrant. Setting reconfigure_requested to true makes the changes
-	// apply at the next possible moment in the encoder / GPU encoder
-	// thread.
-	if (encoder_active(encoder)) {
-		encoder->reconfigure_requested = true;
-	} else {
+	if (!encoder_active(encoder)) {
 		encoder->info.update(encoder->context.data, encoder->context.settings);
+		return;
 	}
+
+	/* If the encoder is active we defer the update as it may not be reentrant. Setting reconfigure_requested to
+	 * true makes the changes apply at the next possible moment in the encoder / GPU encoder thread.
+	 */
+	if (!encoder->encoder_group) {
+		encoder->reconfigure_requested = true;
+		return;
+	}
+
+	/* Encoder groups need slightly more special handling since encoders generally start new GOPs/insert IDR frames
+	 * when reconfigured, so we need to reconfigure them all on the same frame.
+	 */
+	struct obs_encoder_group *group = encoder->encoder_group;
+	pthread_mutex_lock(&group->mutex);
+	bool first_reconfigure_request = group->reconfigure_request == 0;
+	bool all_encoders_reconfigured = group->encoders_reconfigured == group->encoders.num;
+	bool current_encoder_reconfigured = encoder->last_handled_reconfigure_request == group->reconfigure_request;
+	if (first_reconfigure_request || all_encoders_reconfigured) {
+		encoder_group_new_reconfigure_request(group);
+	} else if (current_encoder_reconfigured) {
+		group->reconfigure_again = true;
+	}
+	pthread_mutex_unlock(&group->mutex);
 }
 
 bool obs_encoder_get_extra_data(const obs_encoder_t *encoder, uint8_t **extra_data, size_t *size)
@@ -1436,6 +1491,52 @@ bool video_pause_check(struct pause_data *pause, uint64_t timestamp)
 	return ignore_frame;
 }
 
+static void encoder_group_new_reconfigure_request(struct obs_encoder_group *group)
+{
+	group->reconfigure_request += 1;
+	group->encoders_updated_next_pts = 0;
+	group->encoders_reconfigured = 0;
+	group->reconfigure_again = false;
+}
+
+void handle_encoder_group_reconfigure_request(obs_encoder_t *encoder)
+{
+	if (!encoder->encoder_group)
+		return;
+
+	struct obs_encoder_group *group = encoder->encoder_group;
+	pthread_mutex_lock(&group->mutex);
+	bool new_reconfigure_request = encoder->last_reconfigure_request != group->reconfigure_request;
+	if (!new_reconfigure_request && group->encoders_updated_next_pts == group->num_encoders_started &&
+	    encoder->cur_pts == group->next_pts &&
+	    encoder->last_handled_reconfigure_request != encoder->last_reconfigure_request) {
+		group->encoders_reconfigured += 1;
+
+		encoder->last_handled_reconfigure_request = encoder->last_reconfigure_request;
+		encoder->reconfigure_requested = true;
+
+		if (group->encoders_reconfigured == group->encoders.num && group->reconfigure_again)
+			encoder_group_new_reconfigure_request(group);
+
+	} else if (new_reconfigure_request || encoder->cur_pts == group->next_pts) {
+		encoder->last_reconfigure_request = group->reconfigure_request;
+
+		int64_t overall_timestep = encoder->timebase_num * group->frame_rate_divisors_lcm;
+
+		int64_t next_pts = encoder->cur_pts + encoder->timebase_num * encoder->frame_rate_divisor;
+
+		if (next_pts % overall_timestep != 0)
+			next_pts = (next_pts / overall_timestep + 1) * overall_timestep;
+
+		if (next_pts > group->next_pts)
+			group->next_pts = next_pts;
+
+		if (new_reconfigure_request)
+			group->encoders_updated_next_pts += 1;
+	}
+	pthread_mutex_unlock(&group->mutex);
+}
+
 static const char *receive_video_name = "receive_video";
 static void receive_video(void *param, struct video_data *frame)
 {
@@ -1471,6 +1572,8 @@ static void receive_video(void *param, struct video_data *frame)
 
 	if (video_pause_check(&encoder->pause, frame->timestamp))
 		goto wait_for_audio;
+
+	handle_encoder_group_reconfigure_request(encoder);
 
 	memset(&enc_frame, 0, sizeof(struct encoder_frame));
 

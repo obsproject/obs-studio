@@ -29,6 +29,8 @@ static const char *av1_main = "Main";
 // Maximum reconnect attempts with an invalid key error before giving up (roughly 30 seconds with default start value)
 static constexpr uint8_t MAX_RECONNECT_ATTEMPTS = 5;
 
+using json = nlohmann::json;
+
 Qt::ConnectionType BlockingConnectionTypeFor(QObject *object)
 {
 	return object->thread() == QThread::currentThread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection;
@@ -575,85 +577,10 @@ void MultitrackVideoOutput::StopStreaming()
 		obs_output_stop(dump_output);
 }
 
-bool MultitrackVideoOutput::HandleIncompatibleSettings(QWidget *parent, config_t *config, obs_service_t *service,
-						       bool &enableDynBitrate)
-{
-	QString incompatible_settings;
-	QString where_to_disable;
-	QString incompatible_settings_list;
-
-	size_t num = 1;
-
-	auto check_setting = [&](bool setting, const char *name, const char *section) {
-		if (!setting)
-			return;
-
-		incompatible_settings += QString(" %1. %2\n").arg(num).arg(QTStr(name));
-
-		where_to_disable += QString(" %1. [%2 → %3 → %4]\n")
-					    .arg(num)
-					    .arg(QTStr("Settings"))
-					    .arg(QTStr("Basic.Settings.Advanced"))
-					    .arg(QTStr(section));
-
-		incompatible_settings_list += QString("%1, ").arg(name);
-
-		num += 1;
-	};
-
-	check_setting(enableDynBitrate, "Basic.Settings.Output.DynamicBitrate.Beta", "Basic.Settings.Advanced.Network");
-
-	if (incompatible_settings.isEmpty())
-		return true;
-
-	OBSDataAutoRelease service_settings = obs_service_get_settings(service);
-
-	QMessageBox mb(parent);
-	mb.setIcon(QMessageBox::Critical);
-	mb.setWindowTitle(QTStr("MultitrackVideo.IncompatibleSettings.Title"));
-	mb.setText(QString(QTStr("MultitrackVideo.IncompatibleSettings.Text"))
-			   .arg(obs_data_get_string(service_settings, "multitrack_video_name"))
-			   .arg(incompatible_settings)
-			   .arg(where_to_disable));
-	auto this_stream = mb.addButton(QTStr("MultitrackVideo.IncompatibleSettings.DisableAndStartStreaming"),
-					QMessageBox::AcceptRole);
-	auto all_streams = mb.addButton(QString(QTStr("MultitrackVideo.IncompatibleSettings.UpdateAndStartStreaming")),
-					QMessageBox::AcceptRole);
-	mb.setStandardButtons(QMessageBox::StandardButton::Cancel);
-
-	mb.exec();
-
-	const char *action = "cancel";
-	if (mb.clickedButton() == this_stream) {
-		action = "DisableAndStartStreaming";
-	} else if (mb.clickedButton() == all_streams) {
-		action = "UpdateAndStartStreaming";
-	}
-
-	blog(LOG_INFO,
-	     "MultitrackVideoOutput: attempted to start stream with incompatible"
-	     "settings (%s); action taken: %s",
-	     incompatible_settings_list.toUtf8().constData(), action);
-
-	if (mb.clickedButton() == this_stream || mb.clickedButton() == all_streams) {
-		enableDynBitrate = false;
-
-		if (mb.clickedButton() == all_streams) {
-			config_set_bool(config, "Output", "DynamicBitrate", false);
-		}
-
-		return true;
-	}
-
-	MultitrackVideoOutput::ReleaseOnMainThread(take_current());
-	MultitrackVideoOutput::ReleaseOnMainThread(take_current_stream_dump());
-
-	return false;
-}
-
 static bool create_video_encoders(const GoLiveApi::Config &go_live_config,
 				  std::shared_ptr<obs_encoder_group_t> &video_encoder_group, obs_output_t *output,
-				  obs_output_t *recording_output, const std::vector<OBSCanvasAutoRelease> &canvases)
+				  obs_output_t *recording_output, json &bitrate_interpolation_array,
+				  const std::vector<OBSCanvasAutoRelease> &canvases)
 {
 	DStr video_encoder_name_buffer;
 	if (go_live_config.encoder_configurations.empty()) {
@@ -685,6 +612,12 @@ static bool create_video_encoders(const GoLiveApi::Config &go_live_config,
 		obs_output_set_video_encoder2(output, encoder, i);
 		if (recording_output)
 			obs_output_set_video_encoder2(recording_output, encoder, i);
+
+		auto &data = go_live_config.encoder_configurations[i].bitrate_interpolation_points;
+		if (data.has_value())
+			bitrate_interpolation_array.push_back(*data);
+		else
+			bitrate_interpolation_array.push_back(json::array());
 	}
 
 	video_encoder_group = encoder_group;
@@ -844,8 +777,14 @@ static OBSOutputs SetupOBSOutput(QWidget *parent, const QString &multitrack_vide
 	if (dump_stream_to_file_config)
 		recording_output = create_recording_output(dump_stream_to_file_config);
 
-	if (!create_video_encoders(go_live_config, video_encoder_group, output, recording_output, canvases))
+	json bitrate_interpolation_array = json::array();
+	if (!create_video_encoders(go_live_config, video_encoder_group, output, recording_output,
+				   bitrate_interpolation_array, canvases))
 		return {nullptr, nullptr};
+
+	OBSDataAutoRelease settings = obs_output_get_settings(output);
+	obs_data_set_string(settings, "interpolation_table_data", bitrate_interpolation_array.dump().c_str());
+	obs_output_update(output, settings);
 
 	std::vector<speaker_layout> requested_speaker_layouts;
 	speaker_layout current_layout = SPEAKERS_UNKNOWN;
