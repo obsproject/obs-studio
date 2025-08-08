@@ -227,6 +227,7 @@ struct TextSource {
 	wstring text;
 	wstring face;
 	wstring style;
+	int weight = 0;
 	int face_size = 0;
 	uint32_t color = 0xFFFFFF;
 	uint32_t color2 = 0xFFFFFF;
@@ -313,7 +314,7 @@ void TextSource::UpdateFont()
 
 	LOGFONT lf = {};
 	lf.lfHeight = face_size;
-	lf.lfWeight = bold ? FW_BOLD : FW_DONTCARE;
+	lf.lfWeight = weight;
 	lf.lfItalic = italic;
 	lf.lfUnderline = underline;
 	lf.lfStrikeOut = strikeout;
@@ -729,6 +730,7 @@ inline void TextSource::Update(obs_data_t *s)
 
 	const char *font_face = obs_data_get_string(font_obj, "face");
 	const char *font_style = obs_data_get_string(font_obj, "style");
+	int font_weight = (int)obs_data_get_int(font_obj, "weight");
 	int font_size = (int)obs_data_get_int(font_obj, "size");
 	int64_t font_flags = obs_data_get_int(font_obj, "flags");
 	bool new_bold = (font_flags & OBS_FONT_BOLD) != 0;
@@ -744,11 +746,13 @@ inline void TextSource::Update(obs_data_t *s)
 	wstring new_face = to_wide(font_face);
 	wstring new_style = to_wide(font_style);
 
-	if (new_face != face || new_style != style || face_size != font_size || new_bold != bold ||
-	    new_italic != italic || new_underline != underline || new_strikeout != strikeout) {
+	if (new_face != face || new_style != style || font_weight != weight || font_size != face_size ||
+	    new_bold != bold || new_italic != italic || new_underline != underline || new_strikeout != strikeout) {
 
 		face = new_face;
+		style = new_style;
 		face_size = font_size;
+		weight = font_weight;
 		bold = new_bold;
 		italic = new_italic;
 		underline = new_underline;
