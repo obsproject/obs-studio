@@ -1361,12 +1361,21 @@ static bool init_connect(struct rtmp_stream *stream)
 		const char *codec = obs_encoder_get_codec(enc);
 		stream->video_codec[i] = to_video_type(codec);
 
-		if ((obs_encoder_get_caps(enc) & OBS_ENCODER_CAP_DYN_BITRATE) == 0) {
+		const char *encoder_id = obs_encoder_get_id(enc);
+		bool is_qsv = strncmp(encoder_id, "obs_qsv11", 9) == 0;
+		bool has_dbr_cap = (obs_encoder_get_caps(enc) & OBS_ENCODER_CAP_DYN_BITRATE) != 0;
+
+		if (!has_dbr_cap || is_qsv) {
 			dbr_capable = false;
-			info("Dynamic bitrate disabled. "
-			     "The encoder '%s' does not support on-the-fly "
-			     "bitrate reconfiguration.",
-			     obs_encoder_get_name(enc));
+			if (!has_dbr_cap) {
+				info("Dynamic bitrate disabled. "
+				     "The encoder '%s' does not support on-the-fly bitrate reconfiguration.",
+				     obs_encoder_get_name(enc));
+			} else {
+				info("Dynamic bitrate disabled. "
+				     "The encoder '%s' feature is currently disabled pending a fix for Intel QSV DBR support.",
+				     obs_encoder_get_name(enc));
+			}
 			continue;
 		}
 
