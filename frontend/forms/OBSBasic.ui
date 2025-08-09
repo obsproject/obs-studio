@@ -937,6 +937,7 @@
      <string>Basic.MainMenu.Tools</string>
     </property>
     <addaction name="autoConfigure"/>
+    <addaction name="idianPlayground"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
@@ -2163,6 +2164,11 @@
   <action name="actionPasteDup">
    <property name="text">
     <string>PasteDuplicate</string>
+   </property>
+  </action>
+  <action name="idianPlayground">
+   <property name="text">
+    <string>Idian Playground</string>
    </property>
   </action>
   <action name="autoConfigure2">
