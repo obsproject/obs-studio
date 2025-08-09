@@ -54,8 +54,9 @@ FragPos VSConvertUnorm(uint id : VERTEXID)
 float4 Mask(FragData f_in)
 {
 	float4 rgba = image.Sample(texSampler, f_in.uv);
-	rgba.rgb = max(float3(0.0, 0.0, 0.0), blurred.Sample(texSampler, f_in.uv).rgb / rgba.a);
-	return rgba;
+	float3 blur = blurred.SampleLevel(texSampler, f_in.uv, 0).rgb;
+	float A = rgba.a;
+	return float4(blur * A, A);
 }
 
 float4 PSMask(FragData f_in) : TARGET
