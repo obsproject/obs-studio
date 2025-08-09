@@ -550,7 +550,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
-	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->dynBitrate,           CHECK_CHANGED,  ADV_CHANGED);
 	/* clang-format on */
 
@@ -2522,7 +2521,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool replayBuf = config_get_bool(main->Config(), "AdvOut", "RecRB");
 	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
-	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(App()->GetUserConfig(), "General", "HotkeyFocusType");
 	bool dynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
 	const char *ipFamily = config_get_string(main->Config(), "Output", "IPFamily");
@@ -2553,7 +2551,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->streamDelaySec->setValue(delaySec);
 	ui->streamDelayPreserve->setChecked(preserveDelay);
 	ui->streamDelayEnable->setChecked(enableDelay);
-	ui->autoRemux->setChecked(autoRemux);
 	ui->dynBitrate->setChecked(dynBitrate);
 
 	SetComboByValue(ui->colorFormat, videoColorFormat);
@@ -3193,7 +3190,6 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
 	SaveComboData(ui->ipFamily, "Output", "IPFamily");
-	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
 	SaveCheckBox(ui->dynBitrate, "Output", "DynamicBitrate");
 
 	if (obs_audio_monitoring_available()) {
@@ -4592,10 +4588,6 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 			warningMsg += "\n\n";
 
 		warningMsg += QTStr("OutputWarnings.MP4Recording");
-		ui->autoRemux->setText(QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4") + " " +
-				       QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
-	} else {
-		ui->autoRemux->setText(QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
 
 #if defined(__APPLE__) && QT_VERSION < QT_VERSION_CHECK(6, 5, 1)
@@ -5240,10 +5232,6 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		if (!warning.isEmpty())
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");
-		ui->autoRemux->setText(QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4") + " " +
-				       QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
-	} else {
-		ui->autoRemux->setText(QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
 
 	if (qual == "Stream") {

@@ -59,8 +59,6 @@ public:
 	void clearFinished();
 	void clearAll();
 
-	bool autoRemux = false;
-
 private:
 	struct RemuxQueueEntry {
 		RemuxEntryState state;

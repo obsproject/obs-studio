@@ -96,9 +96,8 @@ struct BasicOutputHandler {
 	}
 
 protected:
-	void SetupAutoRemux(const char *&container);
 	std::string GetRecordingFilename(const char *path, const char *container, bool noSpace, bool overwrite,
-					 const char *format, bool ffmpeg);
+					 const char *format);
 
 	std::shared_future<void> SetupMultitrackVideo(obs_service_t *service, std::string audio_encoder_id,
 						      size_t main_audio_mixer, std::optional<size_t> vod_track_mixer,

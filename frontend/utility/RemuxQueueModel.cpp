@@ -330,10 +330,8 @@ void RemuxQueueModel::endProcessing()
 
 	// Signal that the insertion point exists again.
 	isProcessing = false;
-	if (!autoRemux) {
-		beginInsertRows(QModelIndex(), queue.length(), queue.length());
-		endInsertRows();
-	}
+	beginInsertRows(QModelIndex(), queue.length(), queue.length());
+	endInsertRows();
 
 	emit dataChanged(index(0, RemuxEntryColumn::State), index(queue.length(), RemuxEntryColumn::State));
 }

@@ -810,7 +810,7 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	} else {
 		f = GetFormatString(filenameFormat, nullptr, nullptr);
 		string strPath = GetRecordingFilename(path, ffmpegOutput ? "avi" : format, noSpace, overwriteIfExists,
-						      f.c_str(), ffmpegOutput);
+						      f.c_str());
 		obs_data_set_string(settings, ffmpegOutput ? "url" : "path", strPath.c_str());
 		if (ffmpegOutput)
 			obs_output_set_mixers(fileOutput, tracks);

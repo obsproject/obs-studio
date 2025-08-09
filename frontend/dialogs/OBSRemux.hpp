@@ -39,16 +39,11 @@ class OBSRemux : public QDialog {
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void reject() override;
 
-	bool autoRemux;
-	QString autoRemuxFile;
-
 public:
-	explicit OBSRemux(const char *recPath, QWidget *parent = nullptr, bool autoRemux = false);
+	explicit OBSRemux(const char *recPath, QWidget *parent = nullptr);
 	virtual ~OBSRemux() override;
 
 	using job_t = std::shared_ptr<struct media_remux_job>;
-
-	void AutoRemux(QString inFile, QString outFile);
 
 protected:
 	virtual void dropEvent(QDropEvent *ev) override;

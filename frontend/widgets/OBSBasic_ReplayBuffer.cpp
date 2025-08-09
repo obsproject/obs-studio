@@ -170,8 +170,6 @@ void OBSBasic::ReplayBufferSaved()
 	calldata_free(&cd);
 
 	OnEvent(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED);
-
-	AutoRemux(QT_UTF8(path.c_str()));
 }
 
 void OBSBasic::ReplayBufferStop(int code)

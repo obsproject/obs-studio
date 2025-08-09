@@ -31,13 +31,12 @@
 
 #include "moc_OBSRemux.cpp"
 
-OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
+OBSRemux::OBSRemux(const char *path, QWidget *parent)
 	: QDialog(parent),
 	  queueModel(new RemuxQueueModel),
 	  worker(new RemuxWorker()),
 	  ui(new Ui::OBSRemux),
-	  recPath(path),
-	  autoRemux(autoRemux_)
+	  recPath(path)
 {
 	setAcceptDrops(true);
 
@@ -48,13 +47,6 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	ui->progressBar->setVisible(false);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 	ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)->setEnabled(false);
-
-	if (autoRemux) {
-		resize(280, 40);
-		ui->tableView->hide();
-		ui->buttonBox->hide();
-		ui->label->hide();
-	}
 
 	ui->progressBar->setMinimum(0);
 	ui->progressBar->setMaximum(1000);
@@ -182,7 +174,7 @@ void OBSRemux::dropEvent(QDropEvent *ev)
 	if (urlList.empty()) {
 		QMessageBox::information(nullptr, QTStr("Remux.NoFilesAddedTitle"), QTStr("Remux.NoFilesAdded"),
 					 QMessageBox::Ok);
-	} else if (!autoRemux) {
+	} else {
 		QModelIndex insertIndex = queueModel->index(queueModel->rowCount() - 1, RemuxEntryColumn::InputPath);
 		queueModel->setData(insertIndex, urlList, RemuxEntryRole::NewPathsToProcessRole);
 	}
@@ -228,15 +220,6 @@ void OBSRemux::beginRemux()
 	remuxNextEntry();
 }
 
-void OBSRemux::AutoRemux(QString inFile, QString outFile)
-{
-	if (inFile != "" && outFile != "" && autoRemux) {
-		ui->progressBar->setVisible(true);
-		emit remux(inFile, outFile);
-		autoRemuxFile = outFile;
-	}
-}
-
 void OBSRemux::remuxNextEntry()
 {
 	worker->lastProgress = 0.f;
@@ -245,16 +228,12 @@ void OBSRemux::remuxNextEntry()
 	if (queueModel->beginNextEntry(inputPath, outputPath)) {
 		emit remux(inputPath, outputPath);
 	} else {
-		queueModel->autoRemux = autoRemux;
 		queueModel->endProcessing();
 
-		if (!autoRemux) {
-			OBSMessageBox::information(this, QTStr("Remux.FinishedTitle"),
-						   queueModel->checkForErrors() ? QTStr("Remux.FinishedError")
-										: QTStr("Remux.Finished"));
-		}
+		OBSMessageBox::information(this, QTStr("Remux.FinishedTitle"),
+					   queueModel->checkForErrors() ? QTStr("Remux.FinishedError")
+									: QTStr("Remux.Finished"));
 
-		ui->progressBar->setVisible(autoRemux);
 		ui->buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("Remux.Remux"));
 		ui->buttonBox->button(QDialogButtonBox::RestoreDefaults)->setEnabled(true);
 		ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(queueModel->canClearFinished());
@@ -286,16 +265,7 @@ void OBSRemux::updateProgress(float percent)
 void OBSRemux::remuxFinished(bool success)
 {
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
-
 	queueModel->finishEntry(success);
-
-	if (autoRemux && autoRemuxFile != "") {
-		QTimer::singleShot(3000, this, &OBSRemux::close);
-
-		OBSBasic *main = OBSBasic::Get();
-		main->ShowStatusBarMessage(QTStr("Basic.StatusBar.AutoRemuxedTo").arg(autoRemuxFile));
-	}
-
 	remuxNextEntry();
 }
 

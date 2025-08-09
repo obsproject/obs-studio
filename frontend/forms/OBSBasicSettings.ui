@@ -8203,26 +8203,6 @@
                      </property>
                     </spacer>
                    </item>
-                   <item row="2" column="1">
-                    <widget class="QCheckBox" name="autoRemux">
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.AutoRemux</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
-                    <spacer name="horizontalSpacer_16">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>40</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -8885,7 +8865,6 @@
   <tabstop>resetOSXVSync</tabstop>
   <tabstop>filenameFormatting</tabstop>
   <tabstop>overwriteIfExists</tabstop>
-  <tabstop>autoRemux</tabstop>
   <tabstop>simpleRBPrefix</tabstop>
   <tabstop>simpleRBSuffix</tabstop>
   <tabstop>streamDelayEnable</tabstop>

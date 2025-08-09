@@ -964,7 +964,6 @@ private:
 	bool isRecordingPausable = false;
 	bool recordingPaused = false;
 
-	void AutoRemux(QString input, bool no_show = false);
 	void UpdateIsRecordingPausable();
 
 	bool LowDiskSpace();

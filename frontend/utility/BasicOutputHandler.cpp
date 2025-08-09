@@ -412,19 +412,9 @@ void clear_archive_encoder(obs_output_t *output, const char *expected_name)
 		obs_output_set_audio_encoder(output, nullptr, 1);
 }
 
-void BasicOutputHandler::SetupAutoRemux(const char *&container)
-{
-	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
-	if (autoRemux && strcmp(container, "mp4") == 0)
-		container = "mkv";
-}
-
 std::string BasicOutputHandler::GetRecordingFilename(const char *path, const char *container, bool noSpace,
-						     bool overwrite, const char *format, bool ffmpeg)
+						     bool overwrite, const char *format)
 {
-	if (!ffmpeg)
-		SetupAutoRemux(container);
-
 	string dst = GetOutputFilename(path, container, noSpace, overwrite, format);
 	lastRecordingPath = dst;
 	return dst;
@@ -567,9 +557,7 @@ OBSDataAutoRelease BasicOutputHandler::GenerateMultitrackVideoStreamDumpConfig()
 
 	OBSDataAutoRelease settings = obs_data_create();
 	f = GetFormatString(filenameFormat, nullptr, nullptr);
-	string strPath = GetRecordingFilename(path, useMP4 ? "mp4" : "flv", noSpace, overwriteIfExists, f.c_str(),
-					      // never remux stream dump
-					      false);
+	string strPath = GetRecordingFilename(path, useMP4 ? "mp4" : "flv", noSpace, overwriteIfExists, f.c_str());
 	obs_data_set_string(settings, "path", strPath.c_str());
 
 	if (useMP4) {

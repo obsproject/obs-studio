@@ -44,68 +44,6 @@ void OBSBasic::on_actionShow_Recordings_triggered()
 
 extern volatile bool replaybuf_active;
 
-void OBSBasic::AutoRemux(QString input, bool no_show)
-{
-	auto config = Config();
-
-	bool autoRemux = config_get_bool(config, "Video", "AutoRemux");
-
-	if (!autoRemux)
-		return;
-
-	bool isSimpleMode = false;
-
-	const char *mode = config_get_string(config, "Output", "Mode");
-	if (!mode) {
-		isSimpleMode = true;
-	} else {
-		isSimpleMode = strcmp(mode, "Simple") == 0;
-	}
-
-	if (!isSimpleMode) {
-		const char *recType = config_get_string(config, "AdvOut", "RecType");
-
-		bool ffmpegOutput = astrcmpi(recType, "FFmpeg") == 0;
-
-		if (ffmpegOutput)
-			return;
-	}
-
-	if (input.isEmpty())
-		return;
-
-	QFileInfo fi(input);
-	QString suffix = fi.suffix();
-
-	/* do not remux if lossless */
-	if (suffix.compare("avi", Qt::CaseInsensitive) == 0) {
-		return;
-	}
-
-	QString path = fi.path();
-
-	QString output = input;
-	output.resize(output.size() - suffix.size());
-
-	const obs_encoder_t *videoEncoder = obs_output_get_video_encoder(outputHandler->fileOutput);
-	const char *vCodecName = obs_encoder_get_codec(videoEncoder);
-	const char *format = config_get_string(config, isSimpleMode ? "SimpleOutput" : "AdvOut", "RecFormat2");
-
-	/* Retain original container for fMP4/fMOV */
-	if (strncmp(format, "fragmented", 10) == 0) {
-		output += "remuxed." + suffix;
-	} else if (strcmp(vCodecName, "prores") == 0) {
-		output += "mov";
-	} else {
-		output += "mp4";
-	}
-
-	OBSRemux *remux = new OBSRemux(QT_TO_UTF8(path), this, true);
-	if (!no_show)
-		remux->show();
-	remux->AutoRemux(input, output);
-}
-
 void OBSBasic::StartRecording()
 {
 	if (outputHandler->RecordingActive())
@@ -228,8 +166,6 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	if (diskFullTimer->isActive())
 		diskFullTimer->stop();
 
-	AutoRemux(outputHandler->lastRecordingPath.c_str());
-
 	OnDeactivate();
 }
 
@@ -237,8 +173,6 @@ void OBSBasic::RecordingFileChanged(QString lastRecordingPath)
 {
 	QString str = QTStr("Basic.StatusBar.RecordingSavedTo");
 	ShowStatusBarMessage(str.arg(lastRecordingPath));
-
-	AutoRemux(lastRecordingPath, true);
 }
 
 void OBSBasic::RecordActionTriggered()

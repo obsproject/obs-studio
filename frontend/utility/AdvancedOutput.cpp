@@ -778,8 +778,7 @@ bool AdvancedOutput::StartRecording()
 					  ffmpegRecording ? "FFFileNameWithoutSpace" : "RecFileNameWithoutSpace");
 		splitFile = config_get_bool(main->Config(), "AdvOut", "RecSplitFile");
 
-		string strPath = GetRecordingFilename(path, recFormat, noSpace, overwriteIfExists, filenameFormat,
-						      ffmpegRecording);
+		string strPath = GetRecordingFilename(path, recFormat, noSpace, overwriteIfExists, filenameFormat);
 
 		OBSDataAutoRelease settings = obs_data_create();
 		obs_data_set_string(settings, ffmpegRecording ? "url" : "path", strPath.c_str());
