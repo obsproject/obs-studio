@@ -757,7 +757,7 @@ static void nvvfx_filter_tick(void *data, float t)
 	const uint32_t cy = obs_source_get_base_height(target);
 
 	// initially the sizes are 0
-	if (!cx && !cy) {
+	if (!cx || !cy) {
 		filter->target_valid = false;
 		return;
 	}
@@ -771,7 +771,7 @@ static void nvvfx_filter_tick(void *data, float t)
 		}
 	}
 
-	if (cx != filter->width && cy != filter->height) {
+	if (cx != filter->width || cy != filter->height) {
 		filter->images_allocated = false;
 		filter->width = cx;
 		filter->height = cy;
