@@ -426,8 +426,6 @@ public slots:
 	 * -------------------------------------
 	 */
 private:
-	QList<QPointer<QDockWidget>> oldExtraDocks;
-	QStringList oldExtraDockNames;
 	QPointer<QDockWidget> statsDock;
 	QByteArray startingDockLayout;
 	QStringList extraDockNames;
@@ -439,7 +437,6 @@ private:
 	QPointer<OBSDock> controlsDock;
 
 public:
-	QAction *AddDockWidget(QDockWidget *dock);
 	void AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool extraBrowser = false);
 	void RemoveDockWidget(const QString &name);
 	bool IsDockObjectNameUsed(const QString &name);
@@ -450,7 +447,6 @@ private slots:
 	void on_lockDocks_toggled(bool lock);
 	void on_sideDocks_toggled(bool side);
 
-	void RepairOldExtraDockName();
 	void RepairCustomExtraDockName();
 
 	/* -------------------------------------

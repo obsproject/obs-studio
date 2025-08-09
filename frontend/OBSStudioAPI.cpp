@@ -332,26 +332,6 @@ void OBSStudioAPI::obs_frontend_add_tools_menu_item(const char *name, obs_fronte
 	QObject::connect(action, &QAction::triggered, func);
 }
 
-void *OBSStudioAPI::obs_frontend_add_dock(void *dock)
-{
-	QDockWidget *d = static_cast<QDockWidget *>(dock);
-
-	QString name = d->objectName();
-	if (name.isEmpty() || main->IsDockObjectNameUsed(name)) {
-		blog(LOG_WARNING, "The object name of the added dock is empty or already used,"
-				  " a temporary one will be set to avoid conflicts");
-
-		char *uuid = os_generate_uuid();
-		name = QT_UTF8(uuid);
-		bfree(uuid);
-		name.append("_oldExtraDock");
-
-		d->setObjectName(name);
-	}
-
-	return (void *)main->AddDockWidget(d);
-}
-
 bool OBSStudioAPI::obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
 {
 	if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
