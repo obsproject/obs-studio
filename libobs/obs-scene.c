@@ -2185,13 +2185,6 @@ bool check_sceneitem_exists(obs_scene_t *scene, obs_sceneitem_t *item, void *vp_
 	return true;
 }
 
-obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene, obs_source_t *source)
-{
-	struct sceneitem_check check = {source, NULL};
-	obs_scene_enum_items(scene, check_sceneitem_exists, (void *)&check);
-	return check.item_out;
-}
-
 obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene, int64_t id)
 {
 	struct obs_scene_item *item;
