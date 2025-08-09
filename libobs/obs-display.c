@@ -27,9 +27,6 @@ bool obs_display_init(struct obs_display *display, const struct gs_init_data *gr
 #if defined(_WIN32)
 	/* Conservative test for NVIDIA flickering in multi-GPU setups */
 	display->use_clear_workaround = gs_get_adapter_count() > 1 && !gs_can_adapter_fast_clear();
-#elif defined(__APPLE__)
-	/* Apple Silicon GL driver doesn't seem to track SRGB clears correctly */
-	display->use_clear_workaround = true;
 #else
 	display->use_clear_workaround = false;
 #endif
@@ -188,10 +185,23 @@ static inline bool render_display_begin(struct obs_display *display, uint32_t cx
 	if (success) {
 		gs_begin_scene();
 
+		/*
+		 * In contrast to OpenGL or Direct3D 11, Metal and Direct3D 12 require the clear color to use linear gamma
+		 * as either the load command to clear the render target (Metal) or the explicit clear command seem to operate
+		 * on the render target in linear space.
+		 *
+		 * As OpenGL is implemented via Metal on Apple Silicon Macs and "glClear" has to be emulated via an explicit
+		 * render pass that returns the clear color for every fragment, the color becomes subject to automatic sRGB
+		 * gamma encoding if the render target uses an sRGB color format.
+		 */
+#if defined(__APPLE__) && defined(__aarch64__)
+		vec4_from_rgba_srgb(&clear_color, display->background_color);
+#else
 		if (gs_get_color_space() == GS_CS_SRGB)
 			vec4_from_rgba(&clear_color, display->background_color);
 		else
 			vec4_from_rgba_srgb(&clear_color, display->background_color);
+#endif
 		clear_color.w = 1.0f;
 
 		const bool use_clear_workaround = display->use_clear_workaround;

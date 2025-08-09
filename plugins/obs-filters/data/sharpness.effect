@@ -61,7 +61,7 @@ float4 PSDrawBare(VertOut vert_in) : TARGET
 	color -= H;
 	color -= image.Sample(def_sampler, vert_in.t3.zw);
 
-	color = ((E!=F && E!=D) || (E!=B && E!=H)) ? saturate(E + color*sharpness) : E;
+	color = ( (distance(E,F) != 0.0 && distance(E,D) != 0.0) || (distance(E,B) != 0.0 && distance(E,H) != 0.0) ) ? saturate(E + color * sharpness) : E;
 
 	return color;
 }
