@@ -189,8 +189,8 @@ use a bounding box, you call the
 :c:func:`obs_sceneitem_set_bounds()`, and
 :c:func:`obs_sceneitem_set_bounds_alignment()`.  Though the easiest way
 to handle everything related to transforms is to use the
-:c:func:`obs_sceneitem_set_info()` and
-:c:func:`obs_sceneitem_get_info()` functions.  See
+:c:func:`obs_sceneitem_set_info2()` and
+:c:func:`obs_sceneitem_get_info2()` functions.  See
 :ref:`scene_item_reference` for all the functions related to scene
 items.
 
