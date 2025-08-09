@@ -444,13 +444,6 @@ Scene Item Functions
 
 ---------------------
 
-.. function:: void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info)
-              void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info)
-
-   Sets/gets the transform information of the scene item.
-
----------------------
-
 .. function:: void obs_sceneitem_set_info2(obs_sceneitem_t *item, const struct obs_transform_info *info)
               void obs_sceneitem_get_info2(const obs_sceneitem_t *item, struct obs_transform_info *info)
 

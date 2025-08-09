@@ -3040,13 +3040,6 @@ static inline void scene_item_get_info_internal(const obs_sceneitem_t *item, str
 	info->bounds_alignment = item->bounds_align;
 }
 
-void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info)
-{
-	if (item && info) {
-		scene_item_get_info_internal(item, info);
-	}
-}
-
 void obs_sceneitem_get_info2(const obs_sceneitem_t *item, struct obs_transform_info *info)
 {
 	if (item && info) {
@@ -3075,14 +3068,6 @@ static inline void scene_item_set_info_internal(obs_sceneitem_t *item, const str
 	item->align = info->alignment;
 	item->bounds_type = info->bounds_type;
 	item->bounds_align = info->bounds_alignment;
-}
-
-void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info)
-{
-	if (item && info) {
-		scene_item_set_info_internal(item, info);
-		do_update_transform(item);
-	}
 }
 
 void obs_sceneitem_set_info2(obs_sceneitem_t *item, const struct obs_transform_info *info)
