@@ -2185,13 +2185,6 @@ bool check_sceneitem_exists(obs_scene_t *scene, obs_sceneitem_t *item, void *vp_
 	return true;
 }
 
-obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene, obs_source_t *source)
-{
-	struct sceneitem_check check = {source, NULL};
-	obs_scene_enum_items(scene, check_sceneitem_exists, (void *)&check);
-	return check.item_out;
-}
-
 obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene, int64_t id)
 {
 	struct obs_scene_item *item;
@@ -3047,13 +3040,6 @@ static inline void scene_item_get_info_internal(const obs_sceneitem_t *item, str
 	info->bounds_alignment = item->bounds_align;
 }
 
-void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info)
-{
-	if (item && info) {
-		scene_item_get_info_internal(item, info);
-	}
-}
-
 void obs_sceneitem_get_info2(const obs_sceneitem_t *item, struct obs_transform_info *info)
 {
 	if (item && info) {
@@ -3082,14 +3068,6 @@ static inline void scene_item_set_info_internal(obs_sceneitem_t *item, const str
 	item->align = info->alignment;
 	item->bounds_type = info->bounds_type;
 	item->bounds_align = info->bounds_alignment;
-}
-
-void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info)
-{
-	if (item && info) {
-		scene_item_set_info_internal(item, info);
-		do_update_transform(item);
-	}
 }
 
 void obs_sceneitem_set_info2(obs_sceneitem_t *item, const struct obs_transform_info *info)
