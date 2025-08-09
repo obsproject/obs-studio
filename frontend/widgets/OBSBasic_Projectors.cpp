@@ -121,7 +121,7 @@ QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 			name = QString("%1 %2").arg(QTStr("Display")).arg(QString::number(i + 1));
 		}
 
-		int screenPixelWidth = 2 * qRound((screenGeometry.width() * screenPixelRatio) / 2);
+		int screenPixelWidth = std::round((screenGeometry.width() * screenPixelRatio) * 0.5f) * 2
 		int screenPixelHeight = 2 * qRound((screenGeometry.height() * screenPixelRatio) / 2);
 
 		QString str = QString("%1: %2x%3 @ %4,%5")
