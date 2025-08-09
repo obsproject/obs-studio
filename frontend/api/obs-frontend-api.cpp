@@ -311,11 +311,6 @@ void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback
 		c->obs_frontend_add_tools_menu_item(name, callback, private_data);
 }
 
-void *obs_frontend_add_dock(void *dock)
-{
-	return !!callbacks_valid() ? c->obs_frontend_add_dock(dock) : nullptr;
-}
-
 bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
 {
 	return !!callbacks_valid() ? c->obs_frontend_add_dock_by_id(id, title, widget) : false;
