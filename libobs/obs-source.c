@@ -4094,24 +4094,27 @@ void set_ready_frame_timing(obs_source_t *source, uint64_t frame_ts, uint64_t sy
 	source->last_frame_sys_ts = sys_time;
 }
 
-static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
+struct obs_source_frame *ready_async_frame_unbuffered(obs_source_t *source, uint64_t sys_time)
+{
+	struct obs_source_frame *frame = source->async_frames.array[0];
+
+	while (source->async_frames.num > 1) {
+		da_erase(source->async_frames, 0);
+		remove_async_frame(source, frame);
+		frame = source->async_frames.array[0];
+	}
+
+	set_ready_frame_timing(source, frame->timestamp, sys_time);
+	return frame;
+}
+
+static bool ready_async_frame_buffered(obs_source_t *source, uint64_t sys_time)
 {
 	struct obs_source_frame *next_frame = source->async_frames.array[0];
 	struct obs_source_frame *frame = NULL;
 	uint64_t sys_offset = sys_time - source->last_frame_sys_ts;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
-
-	if (source->async_unbuffered) {
-		while (source->async_frames.num > 1) {
-			da_erase(source->async_frames, 0);
-			remove_async_frame(source, next_frame);
-			next_frame = source->async_frames.array[0];
-		}
-
-		set_ready_frame_timing(source, next_frame->timestamp, sys_time);
-		return true;
-	}
 
 #if DEBUG_ASYNC_FRAMES
 	blog(LOG_DEBUG,
@@ -4187,7 +4190,18 @@ static inline struct obs_source_frame *get_closest_frame(obs_source_t *source, u
 	if (!source->async_frames.num)
 		return NULL;
 
-	if (!source->last_frame_ts || ready_async_frame(source, sys_time)) {
+	if (source->async_unbuffered) {
+		struct obs_source_frame *frame = ready_async_frame_unbuffered(source, sys_time);
+#if DEBUG_ASYNC_FRAMES
+		blog(LOG_DEBUG, "source '%s' unbuffered-ready: queued=%lu, sys_ts=%lu, frame_ts=%lu",
+		     source->context.name, source->async_frames.num, sys_time, frame->timestamp);
+#endif
+		da_erase(source->async_frames, 0);
+
+		return frame;
+	}
+
+	if (!source->last_frame_ts || ready_async_frame_buffered(source, sys_time)) {
 		struct obs_source_frame *frame = source->async_frames.array[0];
 		da_erase(source->async_frames, 0);
 
