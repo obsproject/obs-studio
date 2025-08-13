@@ -11,6 +11,11 @@
 
 #include "plugin-manager/PluginManager.hpp"
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include "moc_SourceTreeItem.cpp"
 
 static inline OBSScene GetCurrentScene()
@@ -280,7 +285,22 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 		OBSBasic *main = OBSBasic::Get();
 		if (obs_source_configurable(source)) {
+#if defined(_WIN32)
+			/* This timer works around a bug introduced around Qt 6.8.3 that causes
+			 * the application to hang when double clicking the sources list and the
+			 * Windows setting 'Snap mouse to default button in dialog boxes' is enabled.
+			 */
+			bool snapEnabled;
+			SystemParametersInfo(SPI_GETSNAPTODEFBUTTON, 0, &snapEnabled, 0);
+
+			if (snapEnabled) {
+				QTimer::singleShot(200, this, [=]() { main->CreatePropertiesWindow(source); });
+			} else {
+				main->CreatePropertiesWindow(source);
+			}
+#else
 			main->CreatePropertiesWindow(source);
+#endif
 		}
 	}
 }
