@@ -850,6 +850,7 @@ struct obs_source {
 	uint64_t resample_offset;
 	uint64_t next_audio_ts_min;
 	uint64_t next_audio_sys_ts_min;
+	uint64_t discard_sys_ts;
 	uint64_t last_frame_ts;
 	uint64_t last_frame_sys_ts;
 	bool async_rendered;
