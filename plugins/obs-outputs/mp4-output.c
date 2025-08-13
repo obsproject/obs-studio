@@ -79,11 +79,6 @@ struct mp4_output {
 	int64_t start_time;
 	int64_t max_time;
 
-	bool found_video[MAX_OUTPUT_VIDEO_ENCODERS];
-	bool found_audio[MAX_OUTPUT_AUDIO_ENCODERS];
-	int64_t video_pts_offsets[MAX_OUTPUT_VIDEO_ENCODERS];
-	int64_t audio_dts_offsets[MAX_OUTPUT_AUDIO_ENCODERS];
-
 	/* Buffer for packets while we reinitialise the muxer after splitting */
 	DARRAY(struct encoder_packet) split_buffer;
 };
@@ -101,42 +96,6 @@ static inline bool active(struct mp4_output *out)
 static inline int64_t packet_pts_usec(struct encoder_packet *packet)
 {
 	return packet->pts * 1000000 / packet->timebase_den;
-}
-
-static inline void ts_offset_clear(struct mp4_output *out)
-{
-	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
-		out->found_video[i] = false;
-		out->video_pts_offsets[i] = 0;
-	}
-
-	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
-		out->found_audio[i] = false;
-		out->audio_dts_offsets[i] = 0;
-	}
-}
-
-static inline void ts_offset_update(struct mp4_output *out, struct encoder_packet *packet)
-{
-	int64_t *offset;
-	int64_t ts;
-	bool *found;
-
-	if (packet->type == OBS_ENCODER_VIDEO) {
-		offset = &out->video_pts_offsets[packet->track_idx];
-		found = &out->found_video[packet->track_idx];
-		ts = packet->pts;
-	} else {
-		offset = &out->audio_dts_offsets[packet->track_idx];
-		found = &out->found_audio[packet->track_idx];
-		ts = packet->dts;
-	}
-
-	if (*found)
-		return;
-
-	*offset = ts;
-	*found = true;
 }
 
 static const char *mp4_output_name(void *unused)
@@ -332,6 +291,7 @@ static bool mp4_output_start(void *data)
 	out->split_file_enabled = obs_data_get_bool(settings, "split_file");
 	out->allow_overwrite = obs_data_get_bool(settings, "allow_overwrite");
 	out->cur_size = 0;
+	out->start_time = 0;
 
 	/* Get path */
 	const char *path = obs_data_get_string(settings, "path");
@@ -486,7 +446,6 @@ static bool change_file(struct mp4_output *out, struct encoder_packet *pkt)
 
 	out->cur_size = 0;
 	out->start_time = pkt->dts_usec;
-	ts_offset_clear(out);
 
 	return true;
 }
@@ -547,24 +506,9 @@ static void push_back_packet(struct mp4_output *out, struct encoder_packet *pack
 static inline bool submit_packet(struct mp4_output *out, struct encoder_packet *pkt)
 {
 	out->total_bytes += pkt->size;
-
-	if (!out->split_file_enabled)
-		return mp4_mux_submit_packet(out->muxer, pkt);
-
 	out->cur_size += pkt->size;
 
-	/* Apply DTS/PTS offset local packet copy */
-	struct encoder_packet modified = *pkt;
-
-	if (modified.type == OBS_ENCODER_VIDEO) {
-		modified.dts -= out->video_pts_offsets[modified.track_idx];
-		modified.pts -= out->video_pts_offsets[modified.track_idx];
-	} else {
-		modified.dts -= out->audio_dts_offsets[modified.track_idx];
-		modified.pts -= out->audio_dts_offsets[modified.track_idx];
-	}
-
-	return mp4_mux_submit_packet(out->muxer, &modified);
+	return mp4_mux_submit_packet(out->muxer, pkt);
 }
 
 static void mp4_output_packet(void *data, struct encoder_packet *packet)
@@ -615,7 +559,6 @@ static void mp4_output_packet(void *data, struct encoder_packet *packet)
 	if (out->split_file_ready) {
 		for (size_t i = 0; i < out->split_buffer.num; i++) {
 			struct encoder_packet *pkt = &out->split_buffer.array[i];
-			ts_offset_update(out, pkt);
 			submit_packet(out, pkt);
 			obs_encoder_packet_release(pkt);
 		}
@@ -624,9 +567,6 @@ static void mp4_output_packet(void *data, struct encoder_packet *packet)
 		out->split_file_ready = false;
 		os_atomic_set_bool(&out->manual_split, false);
 	}
-
-	if (out->split_file_enabled)
-		ts_offset_update(out, packet);
 
 	submit_packet(out, packet);
 
