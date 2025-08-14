@@ -3751,7 +3751,7 @@ void OBSBasicSettings::SaveHotkeySettings()
 	}
 
 	const char *id = obs_obj_get_id(main->outputHandler->replayBuffer);
-	if (strcmp(id, "replay_buffer") == 0) {
+	if (strstr(id, "replay_buffer") != nullptr) {
 		OBSDataAutoRelease hotkeys = obs_hotkeys_save_output(main->outputHandler->replayBuffer);
 		config_set_string(config, "Hotkeys", "ReplayBuffer", obs_data_get_json(hotkeys));
 	}
