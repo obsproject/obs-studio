@@ -499,7 +499,28 @@ static bool device_selected(void *data, obs_properties_t *props, obs_property_t 
 	return true;
 }
 
-static int sort_resolutions(gconstpointer a, gconstpointer b)
+static void remove_duplicates_from_sorted(GArray *array, GCompareFunc cmp)
+{
+	if (array->len < 2)
+		return;
+
+	guint element_size = g_array_get_element_size(array);
+	const gchar *const end = array->data + element_size * array->len;
+	gchar *last = array->data;
+	size_t new_size = 1;
+
+	for (gchar *i = array->data + element_size; i < end; i += element_size) {
+		if (cmp(last, i) != 0) {
+			last += element_size;
+			memmove(last, i, element_size);
+			new_size += 1;
+		}
+	}
+
+	g_array_set_size(array, new_size);
+}
+
+static int compare_resolutions(gconstpointer a, gconstpointer b)
 {
 	const struct spa_rectangle *resolution_a = a;
 	const struct spa_rectangle *resolution_b = b;
@@ -516,7 +537,6 @@ static int sort_resolutions(gconstpointer a, gconstpointer b)
 
 static void resolution_list(struct camera_device *dev, uint32_t pixelformat, obs_property_t *prop)
 {
-	struct spa_rectangle last_resolution = SPA_RECTANGLE(0, 0);
 	g_autoptr(GArray) resolutions = NULL;
 	struct param *p;
 	obs_data_t *data;
@@ -554,14 +574,11 @@ static void resolution_list(struct camera_device *dev, uint32_t pixelformat, obs
 					 SPA_POD_OPT_Rectangle(&resolution)) < 0)
 			continue;
 
-		if (resolution.width == last_resolution.width && resolution.height == last_resolution.height)
-			continue;
-
-		last_resolution = resolution;
 		g_array_append_val(resolutions, resolution);
 	}
 
-	g_array_sort(resolutions, sort_resolutions);
+	g_array_sort(resolutions, compare_resolutions);
+	remove_duplicates_from_sorted(resolutions, compare_resolutions);
 
 	obs_property_list_clear(prop);
 
@@ -699,6 +716,7 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 	}
 
 	g_array_sort(framerates, compare_framerates);
+	remove_duplicates_from_sorted(framerates, compare_framerates);
 
 	obs_property_list_clear(prop);
 
