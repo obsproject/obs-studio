@@ -503,10 +503,15 @@ static int sort_resolutions(gconstpointer a, gconstpointer b)
 {
 	const struct spa_rectangle *resolution_a = a;
 	const struct spa_rectangle *resolution_b = b;
-	int64_t area_a = resolution_a->width * resolution_a->height;
-	int64_t area_b = resolution_b->width * resolution_b->height;
 
-	return area_a - area_b;
+	uint64_t area_a = (uint64_t)resolution_a->width * resolution_a->height;
+	uint64_t area_b = (uint64_t)resolution_b->width * resolution_b->height;
+
+	if (area_a < area_b)
+		return -1;
+	if (area_a > area_b)
+		return +1;
+	return 0;
 }
 
 static void resolution_list(struct camera_device *dev, uint32_t pixelformat, obs_property_t *prop)
