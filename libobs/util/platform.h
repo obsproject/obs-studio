@@ -174,6 +174,7 @@ EXPORT bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active);
 EXPORT void os_inhibit_sleep_destroy(os_inhibit_t *info);
 
 EXPORT void os_breakpoint(void);
+EXPORT void os_oom(void);
 
 EXPORT int os_get_physical_cores(void);
 EXPORT int os_get_logical_cores(void);

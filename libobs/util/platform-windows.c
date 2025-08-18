@@ -1257,6 +1257,11 @@ void os_breakpoint(void)
 	__debugbreak();
 }
 
+void os_oom(void)
+{
+	__debugbreak();
+}
+
 DWORD num_logical_cores(ULONG_PTR mask)
 {
 	DWORD left_shift = sizeof(ULONG_PTR) * 8 - 1;
