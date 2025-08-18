@@ -138,14 +138,14 @@ int32 HostProcessData::createBuffers (IComponent& component, AudioBusBuffers*& b
 						if (symbolicSampleSize == kSample64)
 						{
 							if (bufferSamples > 0)
-								buffers[i].channelBuffers64[j] = new Sample64[bufferSamples];
+								buffers[i].channelBuffers64[j] = new Sample64[bufferSamples]();
 							else
 								buffers[i].channelBuffers64[j] = nullptr;
 						}
 						else
 						{
 							if (bufferSamples > 0)
-								buffers[i].channelBuffers32[j] = new Sample32[bufferSamples];
+								buffers[i].channelBuffers32[j] = new Sample32[bufferSamples]();
 							else
 								buffers[i].channelBuffers32[j] = nullptr;
 						}
