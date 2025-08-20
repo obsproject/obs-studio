@@ -75,12 +75,25 @@ target_link_libraries(
 
 if(OS_WINDOWS)
   if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
-    target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp)
+    target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_windows.cpp)
     target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF)
   endif()
 
   configure_file(cmake/windows/obs-module.rc.in obs-ffmpeg.rc)
   target_sources(obs-ffmpeg PRIVATE obs-ffmpeg.rc)
 endif()
+
+
+if(OS_LINUX)
+  target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_linux.cpp)
+  target_link_libraries(
+    obs-ffmpeg
+    PRIVATE
+    AMF::AMF
+    OpenGL::EGL
+    OpenGL::GL
+  )
+endif()
+
 
 set_target_properties_obs(obs-ffmpeg PROPERTIES FOLDER plugins/obs-ffmpeg PREFIX "")
