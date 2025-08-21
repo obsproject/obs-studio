@@ -27,6 +27,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <typeinfo>
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
@@ -99,3 +100,35 @@ QStringList OpenFiles(QWidget *parent, QString title, QString path, QString exte
 void TruncateLabel(QLabel *label, QString newText, int length = MAX_LABEL_LENGTH);
 
 void RefreshToolBarStyling(QToolBar *toolBar);
+
+// Template for Qt invokeMethod for OBS signals
+template<typename> struct memberTraits;
+
+template<typename Return, typename Object, typename... Args> struct memberTraits<Return (Object::*)(Args...)> {
+	using objectType = Object;
+};
+
+template<auto Slot, auto... Args> static inline void qtMethod(void *data, calldata_t *)
+{
+	using Receiver = typename memberTraits<decltype(Slot)>::objectType;
+	Receiver *object = static_cast<Receiver *>(data);
+	QMetaObject::invokeMethod(object, std::bind(Slot, object, Args...));
+}
+
+template<auto Slot, auto... Args> static inline void qtMethodSource(void *data, calldata_t *params)
+{
+	OBSSource source = static_cast<obs_source_t *>(calldata_ptr(params, "source"));
+
+	using Receiver = typename memberTraits<decltype(Slot)>::objectType;
+	Receiver *object = static_cast<Receiver *>(data);
+	QMetaObject::invokeMethod(object, std::bind(Slot, object, source, Args...));
+}
+
+template<auto Slot, auto... Args> static inline void qtMethodItem(void *data, calldata_t *params)
+{
+	OBSSceneItem item = static_cast<obs_sceneitem_t *>(calldata_ptr(params, "item"));
+
+	using Receiver = typename memberTraits<decltype(Slot)>::objectType;
+	Receiver *object = static_cast<Receiver *>(data);
+	QMetaObject::invokeMethod(object, std::bind(Slot, object, item, Args...));
+}
