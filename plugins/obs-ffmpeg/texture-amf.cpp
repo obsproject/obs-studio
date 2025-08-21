@@ -2395,6 +2395,7 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	set_av1_property(enc, OUTPUT_COLOR_PROFILE, enc->amf_color_profile);
 	set_av1_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_av1_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
+	set_av1_property(enc, NOMINAL_RANGE, enc->full_range);
 	set_av1_property(enc, FRAMERATE, enc->amf_frame_rate);
 	set_av1_property(enc, SCREEN_CONTENT_TOOLS, true);
 	set_av1_property(enc, PALETTE_MODE, true);
