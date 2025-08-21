@@ -73,7 +73,7 @@ tresult PLUGIN_API ConnectionProxy::notify (IMessage* message)
 	if (dstConnection)
 	{
 		// We discard the message if we are not in the UI main thread
-		if (threadChecker && threadChecker->test ())
+		//if (threadChecker && threadChecker->test ())
 			return dstConnection->notify (message);
 	}
 	return kResultFalse;
