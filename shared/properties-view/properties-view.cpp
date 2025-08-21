@@ -583,6 +583,8 @@ template<long long get_int(obs_data_t *, const char *), double get_double(obs_da
 	 const char *get_string(obs_data_t *, const char *), bool get_bool(obs_data_t *, const char *)>
 static QVariant from_obs_data(obs_data_t *data, const char *name, obs_combo_format format)
 {
+	PRAGMA_WARN_PUSH
+	PRAGMA_DISABLE_DEPRECATION
 	switch (format) {
 	case OBS_COMBO_FORMAT_INT:
 		return QVariant::fromValue(get_int(data, name));
@@ -595,6 +597,7 @@ static QVariant from_obs_data(obs_data_t *data, const char *name, obs_combo_form
 	default:
 		return QVariant();
 	}
+	PRAGMA_WARN_POP
 }
 
 static QVariant from_obs_data(obs_data_t *data, const char *name, obs_combo_format format)
@@ -605,8 +608,11 @@ static QVariant from_obs_data(obs_data_t *data, const char *name, obs_combo_form
 
 static QVariant from_obs_data_autoselect(obs_data_t *data, const char *name, obs_combo_format format)
 {
+	PRAGMA_WARN_PUSH
+	PRAGMA_DISABLE_DEPRECATION
 	return from_obs_data<obs_data_get_autoselect_int, obs_data_get_autoselect_double,
 			     obs_data_get_autoselect_string, obs_data_get_autoselect_bool>(data, name, format);
+	PRAGMA_WARN_POP
 }
 
 QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
@@ -662,8 +668,11 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
 
+	PRAGMA_WARN_PUSH
+	PRAGMA_DISABLE_DEPRECATION
 	if (obs_data_has_autoselect_value(settings, name)) {
 		QVariant autoselect = from_obs_data_autoselect(settings, name, format);
+		PRAGMA_WARN_POP
 		int id = combo->findData(autoselect);
 
 		if (id != -1 && id != idx) {
@@ -1302,9 +1311,12 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 
 	media_frames_per_second fps{};
 	media_frames_per_second *valid_fps = nullptr;
+	PRAGMA_WARN_PUSH
+	PRAGMA_DISABLE_DEPRECATION
 	if (obs_data_item_get_autoselect_frames_per_second(obj.get(), &fps, nullptr) ||
 	    obs_data_item_get_frames_per_second(obj.get(), &fps, nullptr))
 		valid_fps = &fps;
+	PRAGMA_WARN_POP
 
 	const char *option = nullptr;
 	obs_data_item_get_frames_per_second(obj.get(), nullptr, &option);
