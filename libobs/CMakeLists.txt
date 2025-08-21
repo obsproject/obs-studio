@@ -219,6 +219,17 @@ target_sources(
     graphics/vec4.h
 )
 
+# Temporarily disables deprecation warnings while obs_data_autoselect_* is deprecated.
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+  set_source_files_properties(obs-data.c PROPERTIES COMPILE_OPTIONS "/wd4996")
+elseif(
+  CMAKE_C_COMPILER_ID STREQUAL "GNU"
+  OR CMAKE_C_COMPILER_ID STREQUAL "Clang"
+  OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang"
+)
+  set_source_files_properties(obs-data.c PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-declarations")
+endif()
+
 target_compile_features(libobs PUBLIC cxx_std_17)
 
 target_compile_definitions(
