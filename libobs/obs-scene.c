@@ -2082,24 +2082,6 @@ obs_sceneitem_t *obs_scene_find_source_recursive(obs_scene_t *scene, const char 
 	return item;
 }
 
-struct sceneitem_check {
-	obs_source_t *source_in;
-	obs_sceneitem_t *item_out;
-};
-
-bool check_sceneitem_exists(obs_scene_t *scene, obs_sceneitem_t *item, void *vp_check)
-{
-	UNUSED_PARAMETER(scene);
-	struct sceneitem_check *check = (struct sceneitem_check *)vp_check;
-	if (obs_sceneitem_get_source(item) == check->source_in) {
-		check->item_out = item;
-		obs_sceneitem_addref(item);
-		return false;
-	}
-
-	return true;
-}
-
 obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene, int64_t id)
 {
 	struct obs_scene_item *item;

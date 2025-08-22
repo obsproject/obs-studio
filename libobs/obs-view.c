@@ -140,16 +140,6 @@ void obs_view_render(obs_view_t *view)
 	pthread_mutex_unlock(&view->channels_mutex);
 }
 
-static inline size_t find_mix_for_view(obs_view_t *view)
-{
-	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
-		if (obs->video.mixes.array[i]->view == view)
-			return i;
-	}
-
-	return DARRAY_INVALID;
-}
-
 video_t *obs_view_add(obs_view_t *view)
 {
 	if (!obs->data.main_canvas->mix)
