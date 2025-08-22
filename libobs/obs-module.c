@@ -100,7 +100,7 @@ int obs_module_load_metadata(struct obs_module *mod)
 {
 	struct obs_module_metadata *md = NULL;
 
-	// Check if the metadata file exists
+	/* Check if the metadata file exists */
 	struct dstr path = {0};
 
 	dstr_copy(&path, mod->data_path);
@@ -109,8 +109,7 @@ int obs_module_load_metadata(struct obs_module *mod)
 	dstr_cat(&path, "manifest.json");
 
 	if (os_file_exists(path.array)) {
-		//obs_data_t* metadata = obs_data_create_from_json_file();
-		// If we find a metadata file, allocate a new metadata;
+		/* If we find a metadata file, allocate a new metadata; */
 		md = bmalloc(sizeof(obs_module_metadata_t));
 		obs_data_t *metadata = obs_data_create_from_json_file(path.array);
 
@@ -131,7 +130,6 @@ int obs_module_load_metadata(struct obs_module *mod)
 		md->has_banner = obs_data_get_bool(metadata, "has_banner");
 		md->has_icon = obs_data_get_bool(metadata, "has_icon");
 		obs_data_release(metadata);
-		//md->display_name = "Test";
 	}
 	dstr_free(&path);
 	mod->metadata = md;
@@ -276,7 +274,6 @@ const char *obs_get_module_name(obs_module_t *module)
 
 const char *obs_get_module_author(obs_module_t *module)
 {
-	// TODO: Handle multiple authors in metadata.
 	return (module && module->author) ? module->author() : NULL;
 }
 
@@ -826,7 +823,6 @@ void free_module(struct obs_module *mod)
 	bfree(mod->bin_path);
 	bfree(mod->data_path);
 
-	// iterate over mod->sources, free strings, then free mod->sources
 	for (size_t i = 0; i < mod->sources.num; i++) {
 		bfree(mod->sources.array[i]);
 	}
@@ -1099,19 +1095,6 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 		}
 	}
 #undef CHECK_REQUIRED_VAL_
-
-	// TODO: Figure this out for outputs, encoders, and services.
-	/* Is the following code (commented out) OK? */
-	/* If so, this should be done for encoders and services as well. */
-	//struct obs_output_info data = { 0 };
-	//memcpy(&data, info, size);
-	//const char* modName = loadingModule != NULL ? loadingModule->file : "";
-	//if (loadingModule) {
-	//	data.module = loadingModule;
-	//	char* output_id = bstrdup(info->id);
-	//	da_push_back(loadingModule->outputs, &output_id);
-	//}
-	//REGISTER_OBS_DEF(size, obs_output_info, obs->output_types, &data);
 
 	REGISTER_OBS_DEF(size, obs_output_info, obs->output_types, info);
 

@@ -6,6 +6,8 @@
 #include <QScrollArea>
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QString>
+#include <OBSApp.hpp>
 
 #include "moc_PluginManagerWindow.cpp"
 
@@ -31,15 +33,15 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 		// Check if the module is missing:
 		bool missing = !obs_get_module(id.c_str()) && !obs_get_disabled_module(id.c_str());
 
-		std::string name = !metadata.display_name.empty() ? metadata.display_name : metadata.module_name;
+		QString name = !metadata.display_name.empty() ? metadata.display_name.c_str()
+							      : metadata.module_name.c_str();
 		if (missing) {
-			name += " [PLUGIN NOT FOUND]";
+			name += " " + QTStr("PluginManager.MissingPlugin");
 		}
-		auto item = new QListWidgetItem(name.c_str());
+		auto item = new QListWidgetItem(name);
 		item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
 		item->setCheckState(metadata.enabled ? Qt::Checked : Qt::Unchecked);
-		// Warchamp- if the module is missing, I'm simply disabling
-		//           the item.  We may want to handle this differently.
+
 		if (missing) {
 			item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
 		}
