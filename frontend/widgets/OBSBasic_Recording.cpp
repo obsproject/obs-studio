@@ -217,9 +217,9 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 		SysTrayNotify(QTStr("Output.RecordError.Msg"), QSystemTrayIcon::Warning);
 	} else if (code == OBS_OUTPUT_SUCCESS) {
 		if (outputHandler) {
-			std::string path = outputHandler->lastRecordingPath;
-			QString str = QTStr("Basic.StatusBar.RecordingSavedTo");
-			ShowStatusBarMessage(str.arg(QT_UTF8(path.c_str())));
+			showSaveNotification(":/res/images/recording-active", QTStr("Notification.RecordingSaved"),
+					     QTStr("Basic.StatusBar.RecordingSavedTo"),
+					     QT_UTF8(outputHandler->lastRecordingPath.c_str()));
 		}
 	}
 
@@ -235,8 +235,8 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 
 void OBSBasic::RecordingFileChanged(QString lastRecordingPath)
 {
-	QString str = QTStr("Basic.StatusBar.RecordingSavedTo");
-	ShowStatusBarMessage(str.arg(lastRecordingPath));
+	showSaveNotification(":/res/images/recording-active", QTStr("Notification.RecordingSaved"),
+			     QTStr("Basic.StatusBar.RecordingSavedTo"), lastRecordingPath);
 
 	AutoRemux(lastRecordingPath, true);
 }

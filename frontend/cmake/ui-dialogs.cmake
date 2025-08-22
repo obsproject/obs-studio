@@ -9,6 +9,8 @@ target_sources(
   PRIVATE
     dialogs/NameDialog.cpp
     dialogs/NameDialog.hpp
+    dialogs/NotificationDialog.cpp
+    dialogs/NotificationDialog.hpp
     dialogs/OAuthLogin.cpp
     dialogs/OAuthLogin.hpp
     dialogs/OBSAbout.cpp

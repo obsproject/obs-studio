@@ -44,6 +44,8 @@
 extern volatile bool recording_paused;
 
 class ColorSelect;
+class NotificationDialog;
+class Notification;
 class OBSAbout;
 class OBSBasicAdvAudio;
 class OBSBasicFilters;
@@ -328,6 +330,9 @@ protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void changeEvent(QEvent *event) override;
+
+signals:
+	void resized(uint32_t width, uint32_t height);
 
 	/* -------------------------------------
 	 * MARK: - OAuth
@@ -1679,4 +1684,38 @@ signals:
 	void BroadcastStreamReady(bool ready);
 	void BroadcastStreamActive();
 	void BroadcastStreamStarted(bool autoStop);
+
+	/* -------------------------------------
+	 * MARK: - OBSBasic_Notifications
+	 * -------------------------------------
+	 */
+
+private:
+	QPointer<NotificationDialog> notificationDialog;
+	Notification *getCurrentNotification();
+
+	QPoint getNotificationPosition(QWidget *widget);
+
+	void initNotifications();
+	void saveNotifications();
+
+	int unreadNotificationCount = 0;
+	int unreadImportantNotificationCount = 0;
+
+private slots:
+	void resetNotificationCount();
+
+public:
+	Notification *addNotification(const QString &iconName, const QString &title, const QString &text,
+				      bool important = false);
+	void showNotification(Notification *notification);
+
+	void showSaveNotification(const QString &icon, const QString &title, const QString &text, const QString &path);
+
+public slots:
+	void showNotificationDialog();
+	void closeNotification(Notification *notification);
+
+signals:
+	void notificationsUpdated(int unreadCount, int unreadImportantCount);
 };

@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>714</width>
-    <height>34</height>
+    <width>613</width>
+    <height>40</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>34</height>
+    <height>40</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -47,12 +47,15 @@
       <string notr="true">border: none;</string>
      </property>
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_9">
+      <property name="spacing">
+       <number>0</number>
+      </property>
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -65,6 +68,28 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
+      <item alignment="Qt::AlignmentFlag::AlignVCenter">
+       <widget class="NotificationBell" name="bell">
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>28</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>40</width>
+          <height>28</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Shape::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Raised</enum>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QLabel" name="message">
         <property name="sizePolicy">
@@ -84,10 +109,10 @@
    <item>
     <widget class="QFrame" name="delayFrame">
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -124,10 +149,10 @@
    <item>
     <widget class="QFrame" name="issuesFrame">
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -164,10 +189,10 @@
    <item>
     <widget class="QFrame" name="networkFrame">
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -219,7 +244,7 @@
          <string>0 kbps</string>
         </property>
         <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -229,10 +254,10 @@
    <item>
     <widget class="QFrame" name="streamFrame">
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -297,10 +322,10 @@
       </sizepolicy>
      </property>
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -359,10 +384,10 @@
    <item>
     <widget class="QFrame" name="cpuFrame">
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -392,7 +417,7 @@
          <string>CPU: 0.0%</string>
         </property>
         <property name="alignment">
-         <set>Qt::AlignCenter</set>
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
        </widget>
       </item>
@@ -402,10 +427,10 @@
    <item>
     <widget class="QFrame" name="fpsFrame">
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -435,7 +460,7 @@
          <string>0.00 / 0.00 FPS</string>
         </property>
         <property name="alignment">
-         <set>Qt::AlignCenter</set>
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
        </widget>
       </item>
@@ -444,6 +469,14 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>NotificationBell</class>
+   <extends>QFrame</extends>
+   <header>components/NotificationBell.hpp</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="obs.qrc"/>
  </resources>

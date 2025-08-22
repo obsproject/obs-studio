@@ -30,6 +30,8 @@ target_sources(
     forms/AutoConfigTestPage.ui
     forms/AutoConfigVideoPage.ui
     forms/ColorSelect.ui
+    forms/NotificationDialog.ui
+    forms/Notification.ui
     forms/obs.qrc
     forms/OBSAbout.ui
     forms/OBSAdvAudio.ui

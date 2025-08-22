@@ -293,7 +293,8 @@ void OBSRemux::remuxFinished(bool success)
 		QTimer::singleShot(3000, this, &OBSRemux::close);
 
 		OBSBasic *main = OBSBasic::Get();
-		main->ShowStatusBarMessage(QTStr("Basic.StatusBar.AutoRemuxedTo").arg(autoRemuxFile));
+		main->showSaveNotification("icon-auto-remux", QTStr("Notification.AutoRemuxed"),
+					   QTStr("Basic.StatusBar.AutoRemuxedTo"), autoRemuxFile);
 	}
 
 	remuxNextEntry();

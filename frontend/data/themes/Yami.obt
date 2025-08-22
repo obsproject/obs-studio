@@ -361,6 +361,14 @@
     qproperty-icon: url(theme:Dark/close.svg);
 }
 
+.icon-bell-active {
+    qproperty-icon: url(theme:Dark/bell-active.svg);
+}
+
+.icon-bell-inactive {
+    qproperty-icon: url(theme:Dark/bell-inactive.svg);
+}
+
 /* Media icons */
 
 .icon-media-play {
@@ -2152,4 +2160,42 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 #previewZoomInButton:focus,
 #previewZoomOutButton:focus {
     border: 1px solid var(--input_border_hover);
+}
+
+Notification {
+    background-color: var(--bg_preview);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--border_color);
+}
+
+Notification IconLabel {
+    qproperty-iconSize: 32;
+}
+
+Notification #closeButton {
+    height: 16px;
+    width: 16px;
+    padding: 0;
+    margin: 0;
+}
+
+Notification #title {
+    font-weight: bold;
+    font-size: 12pt;
+}
+
+Notification QPushButton {
+    font-weight: bold;
+}
+
+NotificationBell {
+    qproperty-countColor: var(--primary);
+}
+
+NotificationDialog #notificationLabel {
+    font-size: var(--font_xlarge);
+}
+
+NotificationDialog #moreLabel {
+    padding-top: var(--padding_xlarge);
 }

@@ -51,8 +51,8 @@ ScreenshotObj::~ScreenshotObj()
 
 		if (cx && cy) {
 			OBSBasic *main = OBSBasic::Get();
-			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
+			main->showSaveNotification("icon-screenshot", QTStr("Notification.ScreenshotSaved"),
+						   QTStr("Basic.StatusBar.ScreenshotSavedTo"), QT_UTF8(path.c_str()));
 
 			main->lastScreenshot = path;
 
