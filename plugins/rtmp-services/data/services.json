@@ -3552,7 +3552,6 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "x264opts": "tune=zerolatency",
                 "profile": "high",
                 "max video bitrate": 7000
             }
