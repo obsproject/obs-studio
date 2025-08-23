@@ -35,6 +35,40 @@ const char *obs_service_get_display_name(const char *id)
 	return (info != NULL) ? info->get_name(info->type_data) : NULL;
 }
 
+obs_module_t *obs_service_get_module(const char *id)
+{
+	obs_module_t *module = obs->first_module;
+	while (module) {
+		for (size_t i = 0; i < module->services.num; i++) {
+			if (strcmp(module->services.array[i], id) == 0) {
+				return module;
+			}
+		}
+		module = module->next;
+	}
+
+	module = obs->first_disabled_module;
+	while (module) {
+		for (size_t i = 0; i < module->services.num; i++) {
+			if (strcmp(module->services.array[i], id) == 0) {
+				return module;
+			}
+		}
+		module = module->next;
+	}
+
+	return NULL;
+}
+
+enum obs_module_load_state obs_service_load_state(const char *id)
+{
+	obs_module_t *module = obs_service_get_module(id);
+	if (!module) {
+		return OBS_MODULE_MISSING;
+	}
+	return module->load_state;
+}
+
 static obs_service_t *obs_service_create_internal(const char *id, const char *name, obs_data_t *settings,
 						  obs_data_t *hotkey_data, bool private)
 {

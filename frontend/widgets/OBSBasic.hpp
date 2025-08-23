@@ -762,6 +762,9 @@ public:
 private slots:
 	void ResizeOutputSizeOfSource();
 
+private slots:
+	void on_actionOpenPluginManager_triggered();
+
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Preview
 	 * -------------------------------------

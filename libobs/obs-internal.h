@@ -113,6 +113,8 @@ struct obs_module {
 	void *module;
 	bool loaded;
 
+	enum obs_module_load_state load_state;
+
 	bool (*load)(void);
 	void (*unload)(void);
 	void (*post_load)(void);
@@ -125,7 +127,28 @@ struct obs_module {
 	const char *(*description)(void);
 	const char *(*author)(void);
 
+	struct obs_module_metadata *metadata;
+
 	struct obs_module *next;
+
+	DARRAY(char *) sources;
+	DARRAY(char *) outputs;
+	DARRAY(char *) encoders;
+	DARRAY(char *) services;
+};
+
+struct obs_disabled_module {
+	char *mod_name;
+
+	enum obs_module_load_state load_state;
+
+	struct obs_module_metadata *metadata;
+	struct obs_disabled_module *next;
+
+	DARRAY(char *) sources;
+	DARRAY(char *) outputs;
+	DARRAY(char *) encoders;
+	DARRAY(char *) services;
 };
 
 extern void free_module(struct obs_module *mod);
@@ -140,6 +163,37 @@ static inline void free_module_path(struct obs_module_path *omp)
 	if (omp) {
 		bfree(omp->bin);
 		bfree(omp->data);
+	}
+}
+
+struct obs_module_metadata {
+	char *display_name;
+	char *version;
+	char *id;
+	char *os_arch;
+	char *description;
+	char *long_description;
+	bool has_icon;
+	bool has_banner;
+	char *repository_url;
+	char *support_url;
+	char *website_url;
+	char *name;
+};
+
+static inline void free_module_metadata(struct obs_module_metadata *omi)
+{
+	if (omi) {
+		bfree(omi->display_name);
+		bfree(omi->version);
+		bfree(omi->id);
+		bfree(omi->os_arch);
+		bfree(omi->description);
+		bfree(omi->long_description);
+		bfree(omi->repository_url);
+		bfree(omi->support_url);
+		bfree(omi->website_url);
+		bfree(omi->name);
 	}
 }
 
@@ -490,8 +544,12 @@ typedef DARRAY(struct obs_source_info) obs_source_info_array_t;
 
 struct obs_core {
 	struct obs_module *first_module;
+	struct obs_module *first_disabled_module;
+
 	DARRAY(struct obs_module_path) module_paths;
 	DARRAY(char *) safe_modules;
+	DARRAY(char *) disabled_modules;
+	DARRAY(char *) core_modules;
 
 	obs_source_info_array_t source_types;
 	obs_source_info_array_t input_types;
