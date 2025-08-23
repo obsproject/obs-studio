@@ -39,21 +39,20 @@ extern int GetConfigPath(char *path, size_t size, const char *name);
 
 static inline bool check_path(const char *data, const char *path, string &output)
 {
-	ostringstream str;
-	str << path << data;
-	output = str.str();
+	if (!output.empty()) {
+		output.clear();
+	}
+
+	output.append(path).append(data);
 
 	blog(LOG_DEBUG, "Attempted path: %s", output.c_str());
-
 	return os_file_exists(output.c_str());
 }
 
 bool GetDataFilePath(const char *data, string &output)
 {
-	if (check_path(data, "data/obs-studio/", output))
-		return true;
-
-	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
+	return check_path(data, "data/obs-studio/", output) ||
+		check_path(data, OBS_DATA_PATH "/obs-studio/", output);
 }
 
 string GetDefaultVideoSavePath()
@@ -100,17 +99,17 @@ static vector<string> GetUserPreferredLocales()
 
 vector<string> GetPreferredLocales()
 {
-	vector<string> windows_locales = GetUserPreferredLocales();
-	auto obs_locales = GetLocaleNames();
-	auto windows_to_obs = [&obs_locales](string windows) {
+	vector<string> windows_locales(GetUserPreferredLocales());
+	const auto obs_locales(GetLocaleNames());
+	auto windows_to_obs = [&obs_locales](const string& windows) {
 		string lang_match;
 
 		for (auto &locale_pair : obs_locales) {
-			auto &locale = locale_pair.first;
+			const auto &locale = locale_pair.first;
 			if (locale == windows.substr(0, locale.size()))
 				return locale;
 
-			if (lang_match.size())
+			if (!lang_match.empty())
 				continue;
 
 			if (locale.substr(0, 2) == windows.substr(0, 2))
@@ -124,8 +123,8 @@ vector<string> GetPreferredLocales()
 	result.reserve(obs_locales.size());
 
 	for (const string &locale : windows_locales) {
-		string match = windows_to_obs(locale);
-		if (!match.size())
+		const string match(windows_to_obs(locale));
+		if (match.empty())
 			continue;
 
 		if (find(begin(result), end(result), match) != end(result))
@@ -167,7 +166,7 @@ uint32_t GetWindowsBuild()
 
 bool IsAlwaysOnTop(QWidget *window)
 {
-	DWORD exStyle = GetWindowLong((HWND)window->winId(), GWL_EXSTYLE);
+	DWORD exStyle = GetWindowLongW((HWND)window->winId(), GWL_EXSTYLE);
 	return (exStyle & WS_EX_TOPMOST) != 0;
 }
 
@@ -198,9 +197,9 @@ void SetProcessPriority(const char *priority)
 void SetWin32DropStyle(QWidget *window)
 {
 	HWND hwnd = (HWND)window->winId();
-	LONG_PTR ex_style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+	LONG_PTR ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
 	ex_style |= WS_EX_ACCEPTFILES;
-	SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex_style);
+	SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style);
 }
 
 bool SetDisplayAffinitySupported(void)
@@ -346,14 +345,11 @@ static BOOL CALLBACK GetMonitorCallback(HMONITOR monitor, HDC, LPRECT, LPARAM pa
 typedef const char *(CDECL *WINEGETVERSION)(void);
 bool IsRunningOnWine()
 {
-	WINEGETVERSION func;
-	HMODULE nt;
-
-	nt = GetModuleHandleW(L"ntdll");
+	HMODULE nt = GetModuleHandleW(L"ntdll");
 	if (!nt)
 		return false;
 
-	func = (WINEGETVERSION)GetProcAddress(nt, "wine_get_version");
+	WINEGETVERSION func = (WINEGETVERSION)GetProcAddress(nt, "wine_get_version");
 	if (func) {
 		blog(LOG_WARNING, "Running on Wine version \"%s\"", func());
 		return true;

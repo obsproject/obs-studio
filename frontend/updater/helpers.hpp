@@ -36,3 +36,5 @@ public:
 void FreeProvider(HCRYPTPROV prov);
 
 using CryptProvider = CustomHandle<HCRYPTPROV, FreeProvider>;
+
+bool file_exists(const wchar_t *path);
