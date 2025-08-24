@@ -1841,7 +1841,7 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	vec2_set(&s, boxTransform.x.x / 96, boxTransform.y.y / 96);
 
 	gs_effect_set_vec2(scale, &s);
-	gs_effect_set_texture(image, prev->overflow);
+	gs_effect_set_texture_srgb(image, prev->overflow);
 
 	gs_matrix_push();
 	gs_matrix_mul(&boxTransform);
@@ -1849,10 +1849,14 @@ bool OBSBasicPreview::DrawSelectedOverflow(obs_scene_t *, obs_sceneitem_t *item,
 	obs_sceneitem_crop crop;
 	obs_sceneitem_get_crop(item, &crop);
 
+	const bool currentFramebufferSrgbState = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	while (gs_effect_loop(solid, "Draw")) {
 		gs_draw_sprite(prev->overflow, 0, 1, 1);
 	}
 
+	gs_enable_framebuffer_srgb(currentFramebufferSrgbState);
 	gs_matrix_pop();
 
 	GS_DEBUG_MARKER_END();
