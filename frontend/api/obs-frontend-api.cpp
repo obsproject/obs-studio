@@ -371,8 +371,8 @@ config_t *obs_frontend_get_user_config(void)
 
 config_t *obs_frontend_get_global_config(void)
 {
-	blog(LOG_WARNING,
-	     "DEPRECATION: obs_frontend_get_global_config is deprecated. Read from global or user configuration explicitly instead.");
+	blog(LOG_WARNING, "DEPRECATION: obs_frontend_get_global_config is deprecated. "
+			  "Use obs_frontend_get_app_config or obs_frontend_get_user_config explicitly instead.");
 	return !!callbacks_valid() ? c->obs_frontend_get_app_config() : nullptr;
 }
 
