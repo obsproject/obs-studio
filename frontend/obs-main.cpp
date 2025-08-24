@@ -1034,7 +1034,7 @@ int main(int argc, char *argv[])
 			steam = true;
 
 		} else if (arg_is(argv[i], "--help", "-h")) {
-			std::string help =
+			const char *help =
 				"--help, -h: Get list of available commands.\n\n"
 				"--startstreaming: Automatically start streaming.\n"
 				"--startrecording: Automatically start recording.\n"
@@ -1060,7 +1060,7 @@ int main(int argc, char *argv[])
 				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n";
 
 #ifdef _WIN32
-			MessageBoxA(NULL, help.c_str(), "Help", MB_OK | MB_ICONASTERISK);
+			MessageBoxA(NULL, help, "Help", MB_OK | MB_ICONASTERISK);
 #else
 			std::cout << help << "--version, -V: Get current version.\n";
 #endif

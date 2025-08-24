@@ -73,6 +73,8 @@ add_compile_options(
   "$<$<COMPILE_LANG_AND_ID:C,Clang>:${_obs_clang_c_options}>"
   "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:${_obs_clang_cxx_options}>"
   $<$<NOT:$<CONFIG:Debug>>:/Gy>
+  $<$<NOT:$<CONFIG:Debug>>:/Zi>
+  $<$<NOT:$<CONFIG:Debug>>:/Gw>
   $<$<NOT:$<CONFIG:Debug>>:/GL>
   $<$<NOT:$<CONFIG:Debug>>:/Oi>
 )

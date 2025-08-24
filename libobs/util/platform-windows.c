@@ -401,14 +401,14 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 bool os_sleepto_ns(uint64_t time_target)
 {
 	const uint64_t freq = get_clockfreq();
-	const LONGLONG count_target = util_mul_div64(time_target, freq, 1000000000);
+	const LONGLONG count_target = util_mul_div64(time_target, freq, 1000000000ULL);
 
 	LARGE_INTEGER count;
 	QueryPerformanceCounter(&count);
 
 	const bool stall = count.QuadPart < count_target;
 	if (stall) {
-		const DWORD milliseconds = (DWORD)(((count_target - count.QuadPart) * 1000.0) / freq);
+		const DWORD milliseconds = (DWORD)(((count_target - count.QuadPart) * 1000LL) / freq);
 		if (milliseconds > 1)
 			Sleep(milliseconds - 1);
 
@@ -431,7 +431,7 @@ bool os_sleepto_ns_fast(uint64_t time_target)
 		return false;
 
 	do {
-		uint64_t remain_ms = (time_target - current) / 1000000;
+		uint64_t remain_ms = (time_target - current) / 1000000ULL;
 		if (!remain_ms)
 			remain_ms = 1;
 		Sleep((DWORD)remain_ms);
@@ -455,7 +455,7 @@ uint64_t os_gettime_ns(void)
 {
 	LARGE_INTEGER current_time;
 	QueryPerformanceCounter(&current_time);
-	return util_mul_div64(current_time.QuadPart, 1000000000, get_clockfreq());
+	return util_mul_div64(current_time.QuadPart, 1000000000ULL, get_clockfreq());
 }
 
 /* returns [folder]\[name] on windows */
@@ -550,11 +550,12 @@ bool os_file_exists(const char *path)
 		return false;
 
 	hFind = FindFirstFileW(path_utf16, &wfd);
-	if (hFind != INVALID_HANDLE_VALUE)
+	bool exists = hFind != INVALID_HANDLE_VALUE;
+	if (exists)
 		FindClose(hFind);
 
 	bfree(path_utf16);
-	return hFind != INVALID_HANDLE_VALUE;
+	return exists;
 }
 
 size_t os_get_abs_path(const char *path, char *abspath, size_t size)
@@ -713,7 +714,7 @@ int os_glob(const char *pattern, int flags, os_glob_t **pglob)
 				make_globent(&ent, &wfd, pattern);
 				if (ent.path)
 					da_push_back(files, &ent);
-			} while (FindNextFile(handle, &wfd));
+			} while (FindNextFileW(handle, &wfd));
 			FindClose(handle);
 
 			*pglob = bmalloc(sizeof(**pglob));
@@ -781,7 +782,7 @@ int os_mkdir(const char *path)
 	if (!os_utf8_to_wcs_ptr(path, 0, &path_utf16))
 		return MKDIR_ERROR;
 
-	success = CreateDirectory(path_utf16, NULL);
+	success = CreateDirectoryW(path_utf16, NULL);
 	bfree(path_utf16);
 
 	if (!success)
@@ -1062,7 +1063,7 @@ void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, struct reg_dw
 	HKEY key;
 	LSTATUS status;
 
-	status = RegOpenKeyEx(hkey, sub_key, 0, KEY_READ, &key);
+	status = RegOpenKeyExW(hkey, sub_key, 0, KEY_READ, &key);
 
 	if (status != ERROR_SUCCESS) {
 		info->status = status;
@@ -1259,13 +1260,16 @@ void os_breakpoint(void)
 
 DWORD num_logical_cores(ULONG_PTR mask)
 {
+	// Counts the number of set bits.
+	// We could use the dedicated popcnt instruction on supported processors rather than doing it manually.
+	// return (DWORD)__popcnt64((DWORD64)mask);
 	DWORD left_shift = sizeof(ULONG_PTR) * 8 - 1;
 	DWORD bit_set_count = 0;
 	ULONG_PTR bit_test = (ULONG_PTR)1 << left_shift;
 
 	for (DWORD i = 0; i <= left_shift; ++i) {
 		bit_set_count += ((mask & bit_test) ? 1 : 0);
-		bit_test /= 2;
+		bit_test >>= 1;
 	}
 
 	return bit_set_count;
@@ -1277,34 +1281,26 @@ static bool core_count_initialized = false;
 
 static void os_get_cores_internal(void)
 {
-	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION info = NULL, temp = NULL;
-	DWORD len = 0;
-
 	if (core_count_initialized)
 		return;
 
 	core_count_initialized = true;
 
-	GetLogicalProcessorInformation(info, &len);
+	DWORD len = 0;
+	GetLogicalProcessorInformation(NULL, &len);
 	if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
 		return;
 
-	info = malloc(len);
-
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION info = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(len);
 	if (info) {
 		if (GetLogicalProcessorInformation(info, &len)) {
 			DWORD num = len / sizeof(*info);
-			temp = info;
-
 			for (DWORD i = 0; i < num; i++) {
-				if (temp->Relationship == RelationProcessorCore) {
-					ULONG_PTR mask = temp->ProcessorMask;
-
+				if (info[i].Relationship == RelationProcessorCore) {
+					ULONG_PTR mask = info->ProcessorMask;
 					physical_cores++;
 					logical_cores += num_logical_cores(mask);
 				}
-
-				temp++;
 			}
 		}
 
@@ -1328,9 +1324,7 @@ int os_get_logical_cores(void)
 
 static inline bool os_get_sys_memory_usage_internal(MEMORYSTATUSEX *msex)
 {
-	if (!GlobalMemoryStatusEx(msex))
-		return false;
-	return true;
+	return GlobalMemoryStatusEx(msex);
 }
 
 uint64_t os_get_sys_free_size(void)
@@ -1365,9 +1359,7 @@ uint64_t os_get_sys_total_size(void)
 
 static inline bool os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
 {
-	if (!GetProcessMemoryInfo(GetCurrentProcess(), pmc, sizeof(*pmc)))
-		return false;
-	return true;
+	return GetProcessMemoryInfo(GetCurrentProcess(), pmc, sizeof(*pmc));
 }
 
 bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage)
@@ -1404,11 +1396,11 @@ uint64_t os_get_free_disk_space(const char *dir)
 	if (!wdir)
 		return 0;
 
-	ULARGE_INTEGER free;
-	bool success = !!GetDiskFreeSpaceExW(wdir, &free, NULL, NULL);
+	ULARGE_INTEGER free = {0};
+	GetDiskFreeSpaceExW(wdir, &free, NULL, NULL);
 	bfree(wdir);
 
-	return success ? free.QuadPart : 0;
+	return free.QuadPart;
 }
 
 char *os_generate_uuid(void)

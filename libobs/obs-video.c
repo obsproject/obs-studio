@@ -807,19 +807,14 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time, u
 	struct obs_vframe_info vframe_info;
 	uint64_t cur_time = *p_time;
 	uint64_t t = cur_time + interval_ns;
-	int count;
+	int count = 1;
 
-	if (os_sleepto_ns(t)) {
-		*p_time = t;
-		count = 1;
-	} else {
+	if (!os_sleepto_ns(t)) {
 		const uint64_t udiff = os_gettime_ns() - cur_time;
-		int64_t diff;
-		memcpy(&diff, &udiff, sizeof(diff));
-		const uint64_t clamped_diff = (diff > (int64_t)interval_ns) ? (uint64_t)diff : interval_ns;
-		count = (int)(clamped_diff / interval_ns);
-		*p_time = cur_time + interval_ns * count;
+		count += (int)(udiff / interval_ns);
 	}
+
+	*p_time += (interval_ns * count);
 
 	video->total_frames += count;
 	video->lagged_frames += count - 1;
