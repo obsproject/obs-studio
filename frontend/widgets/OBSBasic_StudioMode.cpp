@@ -217,17 +217,30 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		RefreshQuickTransitions();
 
 		programLabel = new QLabel(QTStr("StudioMode.ProgramSceneLabel"), this);
-		programLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+		programLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 		programLabel->setProperty("class", "label-preview-title");
 
+		programHorizontalSpacer = new QFrame();
+		programHorizontalSpacer->setObjectName("programSpacer");
+		programHorizontalSpacer->setContentsMargins(0, 0, 0, 0);
+		programHorizontalSpacer->setMaximumHeight(ui->previewXContainer->height());
+
+		programVerticalSpacer = new QFrame();
+		programVerticalSpacer->setObjectName("programSpacer");
+		programVerticalSpacer->setContentsMargins(0, 0, 0, 0);
+		programVerticalSpacer->setMaximumWidth(ui->previewYScrollBar->width());
+
 		programWidget = new QWidget();
-		programLayout = new QVBoxLayout();
+		programLayout = new QGridLayout();
 
 		programLayout->setContentsMargins(0, 0, 0, 0);
 		programLayout->setSpacing(0);
 
-		programLayout->addWidget(programLabel);
-		programLayout->addWidget(program);
+		programLayout->addWidget(programLabel, 0, 0, 1, 2);
+		programLayout->addWidget(program, 1, 0, 1, 1);
+		programLayout->addWidget(programHorizontalSpacer, 2, 0, 1, 2);
+		programLayout->addWidget(programVerticalSpacer, 1, 1, 1, 2);
+		programVerticalSpacer->hide();
 
 		programWidget->setLayout(programLayout);
 
@@ -313,6 +326,69 @@ void OBSBasic::RenderProgram(void *data, uint32_t, uint32_t)
 	gs_viewport_pop();
 
 	GS_DEBUG_MARKER_END();
+}
+
+void OBSBasic::resizeProgramWidget()
+{
+	if (!programWidget || !program) {
+		return;
+	}
+
+	if (!IsPreviewProgramMode()) {
+		programWidget->setMinimumWidth(0);
+		programWidget->setMinimumHeight(0);
+		programWidget->setMaximumWidth(QWIDGETSIZE_MAX);
+
+		program->setMinimumHeight(0);
+		program->setMaximumHeight(QWIDGETSIZE_MAX);
+		return;
+	}
+
+	bool isPortraitLayout = config_get_bool(App()->GetUserConfig(), "BasicWindow", "StudioPortraitLayout");
+	if (isPortraitLayout) {
+		programHorizontalSpacer->hide();
+		programVerticalSpacer->show();
+
+		/* Average out the difference in the containers minus the size of the preview controls.
+		 * Since resizing the preview triggers this method again, multiple iterations distribute
+		 * the available space slightly unevenly so that the preview and program displays end up
+		 * the same size.
+		 */
+		programWidget->setMaximumWidth(QWIDGETSIZE_MAX);
+		if (abs(program->height() - ui->preview->height()) >= 2) {
+			int previewWidgets = ui->previewContainer->height() - ui->preview->height();
+			int programWidgets = programWidget->height() - program->height();
+			int controlsSize = abs(previewWidgets - programWidgets);
+
+			int limit =
+				round((programWidget->height() + ui->previewContainer->height() - controlsSize) / 2);
+			programWidget->setMaximumHeight(limit);
+		}
+	} else {
+		programHorizontalSpacer->show();
+		programVerticalSpacer->hide();
+
+		programWidget->setMaximumHeight(QWIDGETSIZE_MAX);
+		if (abs(program->width() - ui->preview->width()) >= 2) {
+			int previewWidgets = ui->previewContainer->width() - ui->preview->width();
+			int programWidgets = programWidget->width() - program->width();
+			int controlsSize = abs(previewWidgets - programWidgets);
+
+			int limit = round((programWidget->width() + ui->previewContainer->width() - controlsSize) / 2);
+			programWidget->setMaximumWidth(limit);
+		}
+	}
+
+	programWidget->setMinimumWidth(ui->previewContainer->minimumSizeHint().width());
+	programWidget->setMinimumHeight(ui->previewContainer->minimumSizeHint().height());
+
+	if (ui->previewXContainer->isVisible()) {
+		programHorizontalSpacer->setMinimumHeight(ui->previewXContainer->height());
+	}
+
+	if (ui->previewYScrollBar->isVisible()) {
+		programVerticalSpacer->setMinimumWidth(ui->previewYScrollBar->width());
+	}
 }
 
 void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)
