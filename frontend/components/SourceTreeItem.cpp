@@ -268,7 +268,13 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 		OBSBasic *main = OBSBasic::Get();
 		if (obs_source_configurable(source)) {
-			main->CreatePropertiesWindow(source);
+			/* This timer works around a bug introduced around Qt 6.8.3 that causes
+			 * the application to hang when double clicking the sources list with the
+			 * Windows setting 'Snap mouse to default button in dialog boxes' is enabled
+			 */
+			QTimer::singleShot(200, this, [=]() {
+				main->CreatePropertiesWindow(source);
+			});
 		}
 	}
 }
