@@ -297,8 +297,8 @@ struct obs_core_video_mix {
 	struct deque vframe_info_buffer_gpu;
 	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
 	int cur_texture;
-	volatile long raw_active;
-	volatile long gpu_encoder_active;
+	volatile bool raw_active;
+	volatile bool gpu_encoder_active;
 	bool gpu_was_active;
 	bool raw_was_active;
 	bool was_active;

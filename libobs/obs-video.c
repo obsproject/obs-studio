@@ -1052,8 +1052,8 @@ static inline void update_active_state(struct obs_core_video_mix *video)
 	const bool gpu_was_active = video->gpu_was_active;
 	const bool was_active = video->was_active;
 
-	bool raw_active = os_atomic_load_long(&video->raw_active) > 0;
-	const bool gpu_active = os_atomic_load_long(&video->gpu_encoder_active) > 0;
+	const bool raw_active = os_atomic_load_bool(&video->raw_active);
+	const bool gpu_active = os_atomic_load_bool(&video->gpu_encoder_active);
 	const bool active = raw_active || gpu_active;
 
 	if (!was_active && active)
