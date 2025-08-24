@@ -807,10 +807,13 @@ static bool ResolutionAvailable(const VideoDevice &dev, int cx, int cy)
 
 static bool DetermineResolution(int &cx, int &cy, obs_data_t *settings, VideoDevice &dev)
 {
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	const char *res = obs_data_get_autoselect_string(settings, RESOLUTION);
 	if (obs_data_has_autoselect_value(settings, RESOLUTION) && ConvertRes(cx, cy, res) &&
 	    ResolutionAvailable(dev, cx, cy))
 		return true;
+	PRAGMA_WARN_POP
 
 	res = obs_data_get_string(settings, RESOLUTION);
 	if (ConvertRes(cx, cy, res) && ResolutionAvailable(dev, cx, cy))
@@ -890,9 +893,12 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 			return false;
 		}
 
+		PRAGMA_WARN_PUSH
+		PRAGMA_WARN_DEPRECATION
 		has_autosel_val = obs_data_has_autoselect_value(settings, FRAME_INTERVAL);
 		interval = has_autosel_val ? obs_data_get_autoselect_int(settings, FRAME_INTERVAL)
 					   : obs_data_get_int(settings, FRAME_INTERVAL);
+		PRAGMA_WARN_POP
 
 		if (interval == FPS_MATCHING)
 			interval = GetOBSFPS();
@@ -1297,10 +1303,13 @@ static bool TryResolution(const VideoDevice &dev, const string &res)
 
 static bool SetResolution(obs_properties_t *props, obs_data_t *settings, const string &res, bool autoselect = false)
 {
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	if (autoselect)
 		obs_data_set_autoselect_string(settings, RESOLUTION, res.c_str());
 	else
 		obs_data_unset_autoselect_value(settings, RESOLUTION);
+	PRAGMA_WARN_POP
 
 	DeviceIntervalChanged(props, obs_properties_get(props, FRAME_INTERVAL), settings);
 
@@ -1557,7 +1566,10 @@ static bool ResTypeChanged(obs_properties_t *props, obs_property_t *p, obs_data_
 		p = obs_properties_get(props, RESOLUTION);
 		DeviceResolutionChanged(props, p, settings);
 	} else {
+		PRAGMA_WARN_PUSH
+		PRAGMA_WARN_DEPRECATION
 		obs_data_unset_autoselect_value(settings, FRAME_INTERVAL);
+		PRAGMA_WARN_POP
 	}
 
 	return true;
@@ -1747,12 +1759,18 @@ static bool DeviceIntervalChanged(obs_properties_t *props, obs_property_t *p, ob
 		}
 
 		if (listed_val != val) {
+			PRAGMA_WARN_PUSH
+			PRAGMA_WARN_DEPRECATION
 			obs_data_set_autoselect_int(settings, FRAME_INTERVAL, listed_val);
+			PRAGMA_WARN_POP
 			val = listed_val;
 		}
 
 	} else {
+		PRAGMA_WARN_PUSH
+		PRAGMA_WARN_DEPRECATION
 		obs_data_unset_autoselect_value(settings, FRAME_INTERVAL);
+		PRAGMA_WARN_POP
 	}
 
 	UpdateVideoFormats(device, format, cx, cy, val, props);
