@@ -824,6 +824,7 @@ void MakeQFont(obs_data_t *font_obj, QFont &font, bool limit = false)
 {
 	const char *face = obs_data_get_string(font_obj, "face");
 	const char *style = obs_data_get_string(font_obj, "style");
+	int weight = (int)obs_data_get_int(font_obj, "weight");
 	int size = (int)obs_data_get_int(font_obj, "size");
 	uint32_t flags = (uint32_t)obs_data_get_int(font_obj, "flags");
 
@@ -1869,6 +1870,7 @@ bool WidgetInfo::FontChanged(const char *setting)
 
 	obs_data_set_string(font_obj, "face", QT_TO_UTF8(font.family()));
 	obs_data_set_string(font_obj, "style", QT_TO_UTF8(font.styleName()));
+	obs_data_set_int(font_obj, "weight", font.weight());
 	obs_data_set_int(font_obj, "size", font.pointSize());
 	flags = font.bold() ? OBS_FONT_BOLD : 0;
 	flags |= font.italic() ? OBS_FONT_ITALIC : 0;
