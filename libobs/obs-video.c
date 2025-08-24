@@ -807,19 +807,14 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time, u
 	struct obs_vframe_info vframe_info;
 	uint64_t cur_time = *p_time;
 	uint64_t t = cur_time + interval_ns;
-	int count;
+	int count = 1;
 
-	if (os_sleepto_ns(t)) {
-		*p_time = t;
-		count = 1;
-	} else {
+	if (!os_sleepto_ns(t)) {
 		const uint64_t udiff = os_gettime_ns() - cur_time;
-		int64_t diff;
-		memcpy(&diff, &udiff, sizeof(diff));
-		const uint64_t clamped_diff = (diff > (int64_t)interval_ns) ? (uint64_t)diff : interval_ns;
-		count = (int)(clamped_diff / interval_ns);
-		*p_time = cur_time + interval_ns * count;
+		count += (int)(udiff / interval_ns);
 	}
+
+	*p_time += (interval_ns * count);
 
 	video->total_frames += count;
 	video->lagged_frames += count - 1;
@@ -1057,8 +1052,8 @@ static inline void update_active_state(struct obs_core_video_mix *video)
 	const bool gpu_was_active = video->gpu_was_active;
 	const bool was_active = video->was_active;
 
-	bool raw_active = os_atomic_load_long(&video->raw_active) > 0;
-	const bool gpu_active = os_atomic_load_long(&video->gpu_encoder_active) > 0;
+	const bool raw_active = os_atomic_load_bool(&video->raw_active);
+	const bool gpu_active = os_atomic_load_bool(&video->gpu_encoder_active);
 	const bool active = raw_active || gpu_active;
 
 	if (!was_active && active)

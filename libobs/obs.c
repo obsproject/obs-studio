@@ -3052,7 +3052,7 @@ void start_raw_video(video_t *v, const struct video_scale_info *conversion, uint
 	// https://github.com/obsproject/obs-studio/pull/12379
 	// https://github.com/obsproject/obs-studio/issues/12366
 	if (video_output_connect2(v, conversion, frame_rate_divisor, callback, param) && video)
-		os_atomic_inc_long(&video->raw_active);
+		os_atomic_set_bool(&video->raw_active, true);
 }
 
 void stop_raw_video(video_t *v, void (*callback)(void *param, struct video_data *frame), void *param)
@@ -3063,7 +3063,7 @@ void stop_raw_video(video_t *v, void (*callback)(void *param, struct video_data 
 	// https://github.com/obsproject/obs-studio/pull/12379
 	// https://github.com/obsproject/obs-studio/issues/12366
 	if (video_output_disconnect2(v, callback, param) && video)
-		os_atomic_dec_long(&video->raw_active);
+		os_atomic_set_bool(&video->raw_active, false);
 }
 
 void obs_add_raw_video_callback(const struct video_scale_info *conversion,
@@ -3143,7 +3143,7 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 	obs_leave_graphics();
 
 	if (success) {
-		os_atomic_inc_long(&video->gpu_encoder_active);
+		os_atomic_set_bool(&video->gpu_encoder_active, true);
 		video_output_inc_texture_encoders(video->video);
 	}
 
@@ -3155,7 +3155,7 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
 	bool call_free = false;
 
-	os_atomic_dec_long(&video->gpu_encoder_active);
+	os_atomic_set_bool(&video->gpu_encoder_active, false);
 	video_output_dec_texture_encoders(video->video);
 
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
@@ -3185,8 +3185,8 @@ bool obs_video_active(void)
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
 		struct obs_core_video_mix *video = obs->video.mixes.array[i];
 
-		if (os_atomic_load_long(&video->raw_active) > 0 ||
-		    os_atomic_load_long(&video->gpu_encoder_active) > 0) {
+		if (os_atomic_load_bool(&video->raw_active) ||
+		    os_atomic_load_bool(&video->gpu_encoder_active)) {
 			result = true;
 			break;
 		}

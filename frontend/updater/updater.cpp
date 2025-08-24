@@ -638,22 +638,10 @@ try {
 
 /* ----------------------------------------------------------------------- */
 
-static inline bool FileExists(const wchar_t *path)
-{
-	WIN32_FIND_DATAW wfd;
-	HANDLE hFind;
-
-	hFind = FindFirstFileW(path, &wfd);
-	if (hFind != INVALID_HANDLE_VALUE)
-		FindClose(hFind);
-
-	return hFind != INVALID_HANDLE_VALUE;
-}
-
 static bool NonCorePackageInstalled(const char *name)
 {
 	if (strcmp(name, "obs-browser") == 0)
-		return FileExists(L"obs-plugins\\64bit\\obs-browser.dll");
+		return file_exists(L"obs-plugins\\64bit\\obs-browser.dll");
 
 	return false;
 }
@@ -1694,7 +1682,7 @@ static void LaunchOBS(LPWSTR lpCmdLine)
 
 	StringCbCat(obsPath, sizeof(obsPath), L"\\obs64.exe");
 
-	if (!FileExists(obsPath)) {
+	if (!file_exists(obsPath)) {
 		/* TODO: give user a message maybe? */
 		return;
 	}

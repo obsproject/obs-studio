@@ -65,16 +65,6 @@ fail:
 	return success;
 }
 
-static inline bool file_exists(const wchar_t *path)
-{
-	WIN32_FIND_DATAW wfd;
-	HANDLE h = FindFirstFileW(path, &wfd);
-	if (h == INVALID_HANDLE_VALUE)
-		return false;
-	FindClose(h);
-	return true;
-}
-
 static LSTATUS get_reg(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, bool b64)
 {
 	HKEY key;
