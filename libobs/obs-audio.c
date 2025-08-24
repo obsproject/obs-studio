@@ -639,6 +639,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 	/* render audio data */
 	for (size_t i = 0; i < audio->render_order.num; i++) {
 		obs_source_t *source = audio->render_order.array[i];
+		const uint64_t start = source_profiler_source_audio_render_start();
 		obs_source_audio_render(source, mixers, channels, sample_rate, audio_size);
 		if (should_silence_monitored_source(source, audio))
 			clear_audio_output_buf(source);
@@ -668,6 +669,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 					obs_source_audio_render(source, mixers, channels, sample_rate, audio_size);
 			}
 		}
+		source_profiler_source_audio_render_end(source, start, AUDIO_OUTPUT_FRAMES);
 	}
 
 	/* ------------------------------------------------ */
