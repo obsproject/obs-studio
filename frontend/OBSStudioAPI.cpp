@@ -74,14 +74,11 @@ void OBSStudioAPI::obs_frontend_set_current_scene(obs_source_t *scene)
 
 void OBSStudioAPI::obs_frontend_get_transitions(struct obs_frontend_source_list *sources)
 {
-	for (int i = 0; i < main->ui->transitions->count(); i++) {
-		OBSSource tr = main->ui->transitions->itemData(i).value<OBSSource>();
+	for (const auto &[uuid, transition] : main->transitions) {
+		obs_source_t *source = transition;
 
-		if (!tr)
-			continue;
-
-		if (obs_source_get_ref(tr) != nullptr)
-			da_push_back(sources->sources, &tr);
+		if (obs_source_get_ref(source) != nullptr)
+			da_push_back(sources->sources, &source);
 	}
 }
 
@@ -98,12 +95,12 @@ void OBSStudioAPI::obs_frontend_set_current_transition(obs_source_t *transition)
 
 int OBSStudioAPI::obs_frontend_get_transition_duration()
 {
-	return main->ui->transitionDuration->value();
+	return main->GetTransitionDuration();
 }
 
 void OBSStudioAPI::obs_frontend_set_transition_duration(int duration)
 {
-	QMetaObject::invokeMethod(main->ui->transitionDuration, "setValue", Q_ARG(int, duration));
+	QMetaObject::invokeMethod(main, "SetTransitionDuration", Q_ARG(int, duration));
 }
 
 void OBSStudioAPI::obs_frontend_release_tbar()
@@ -330,26 +327,6 @@ void OBSStudioAPI::obs_frontend_add_tools_menu_item(const char *name, obs_fronte
 	QAction *action = main->ui->menuTools->addAction(QT_UTF8(name));
 	action->setMenuRole(QAction::NoRole);
 	QObject::connect(action, &QAction::triggered, func);
-}
-
-void *OBSStudioAPI::obs_frontend_add_dock(void *dock)
-{
-	QDockWidget *d = static_cast<QDockWidget *>(dock);
-
-	QString name = d->objectName();
-	if (name.isEmpty() || main->IsDockObjectNameUsed(name)) {
-		blog(LOG_WARNING, "The object name of the added dock is empty or already used,"
-				  " a temporary one will be set to avoid conflicts");
-
-		char *uuid = os_generate_uuid();
-		name = QT_UTF8(uuid);
-		bfree(uuid);
-		name.append("_oldExtraDock");
-
-		d->setObjectName(name);
-	}
-
-	return (void *)main->AddDockWidget(d);
 }
 
 bool OBSStudioAPI::obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)

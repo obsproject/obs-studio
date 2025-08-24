@@ -843,6 +843,11 @@ void os_breakpoint()
 	raise(SIGTRAP);
 }
 
+void os_oom()
+{
+	raise(SIGTRAP);
+}
+
 #ifndef __APPLE__
 static int physical_cores = 0;
 static int logical_cores = 0;

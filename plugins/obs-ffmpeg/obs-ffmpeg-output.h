@@ -45,6 +45,7 @@ struct ffmpeg_cfg {
 	const char *encrypt_passphrase;
 	bool is_srt;
 	bool is_rist;
+	int srt_pkt_size;
 };
 
 struct ffmpeg_audio_info {
@@ -114,7 +115,25 @@ struct ffmpeg_output {
 	URLContext *h;
 	AVIOContext *s;
 	bool got_headers;
+
+	volatile bool running;
+
+	pthread_t start_stop_thread;
+	pthread_mutex_t start_stop_mutex;
+	volatile bool start_stop_thread_active;
+	bool has_connected;
 #endif
 };
+
+#ifdef NEW_MPEGTS_OUTPUT
+enum mpegts_cmd_type { MPEGTS_CMD_START, MPEGTS_CMD_STOP };
+
+struct mpegts_cmd {
+	enum mpegts_cmd_type type;
+	bool signal_stop;
+	struct ffmpeg_output *stream;
+	uint64_t ts;
+};
+#endif
 bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config);
 void ffmpeg_data_free(struct ffmpeg_data *data);

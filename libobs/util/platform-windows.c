@@ -1258,6 +1258,11 @@ void os_breakpoint(void)
 	__debugbreak();
 }
 
+void os_oom(void)
+{
+	__debugbreak();
+}
+
 DWORD num_logical_cores(ULONG_PTR mask)
 {
 	// Counts the number of set bits.

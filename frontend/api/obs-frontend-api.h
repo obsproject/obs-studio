@@ -149,10 +149,6 @@ typedef void (*obs_frontend_cb)(void *private_data);
 EXPORT void *obs_frontend_add_tools_menu_qaction(const char *name);
 EXPORT void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback, void *private_data);
 
-/* takes QDockWidget and returns QAction */
-OBS_DEPRECATED
-EXPORT void *obs_frontend_add_dock(void *dock);
-
 /* takes QWidget for widget */
 EXPORT bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget);
 

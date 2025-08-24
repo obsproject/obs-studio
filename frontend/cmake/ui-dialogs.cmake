@@ -1,3 +1,9 @@
+if(NOT TARGET OBS::idian)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/idian" "${CMAKE_BINARY_DIR}/shared/qt/idian")
+endif()
+
+target_link_libraries(obs-studio PRIVATE OBS::idian)
+
 if(NOT TARGET OBS::properties-view)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/properties-view" "${CMAKE_BINARY_DIR}/shared/properties-view")
 endif()
@@ -7,6 +13,8 @@ target_link_libraries(obs-studio PRIVATE OBS::properties-view)
 target_sources(
   obs-studio
   PRIVATE
+    dialogs/LogUploadDialog.cpp
+    dialogs/LogUploadDialog.hpp
     dialogs/NameDialog.cpp
     dialogs/NameDialog.hpp
     dialogs/OAuthLogin.cpp
@@ -27,8 +35,6 @@ target_sources(
     dialogs/OBSBasicTransform.hpp
     dialogs/OBSBasicVCamConfig.cpp
     dialogs/OBSBasicVCamConfig.hpp
-    dialogs/OBSLogReply.cpp
-    dialogs/OBSLogReply.hpp
     dialogs/OBSLogViewer.cpp
     dialogs/OBSLogViewer.hpp
     dialogs/OBSMissingFiles.cpp

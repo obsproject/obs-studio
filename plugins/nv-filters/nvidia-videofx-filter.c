@@ -23,6 +23,8 @@
 #define S_MODE "mode"
 #define S_MODE_QUALITY 0
 #define S_MODE_PERF 1
+#define S_MODE_QUALITY_CHAIR 2
+#define S_MODE_PERF_CHAIR 3
 #define S_THRESHOLDFX "threshold"
 #define S_THRESHOLDFX_DEFAULT 1.0
 #define S_PROCESSING "processing_interval"
@@ -31,6 +33,8 @@
 #define TEXT_MODE MT_("Nvvfx.Method.Greenscreen.Mode")
 #define TEXT_MODE_QUALITY MT_("Nvvfx.Method.Greenscreen.Quality")
 #define TEXT_MODE_PERF MT_("Nvvfx.Method.Greenscreen.Performance")
+#define TEXT_MODE_QUALITY_CHAIR MT_("Nvvfx.Method.Greenscreen.Quality.Chair")
+#define TEXT_MODE_PERF_CHAIR MT_("Nvvfx.Method.Greenscreen.Performance.Chair")
 #define TEXT_MODE_THRESHOLD MT_("Nvvfx.Method.Greenscreen.Threshold")
 #define TEXT_DEPRECATION MT_("Nvvfx.OutdatedSDK")
 #define TEXT_PROCESSING MT_("Nvvfx.Method.Greenscreen.Processing")
@@ -93,7 +97,6 @@ struct nvvfx_data {
 	/* blur specific */
 	enum nvvfx_fx_id filter_id;
 	NvVFX_Handle handle_blur;
-	CUstream stream_blur;        // cuda stream
 	float strength;              // from 0 to 1, default = 0.5
 	NvCVImage *blur_BGR_dst_img; // dst img of blur FX (BGR, chunky, u8)
 	NvCVImage *RGBA_dst_img;     // tmp img used to transfer to texture
@@ -131,7 +134,7 @@ static void nvvfx_filter_update(void *data, obs_data_t *settings)
 	filter->processing_interval = (int)obs_data_get_int(settings, S_PROCESSING);
 	float strength = (float)obs_data_get_double(settings, S_STRENGTH);
 	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
-		int mode = id == S_FX_BG_BLUR ? (int)S_MODE_QUALITY : (int)obs_data_get_int(settings, S_MODE);
+		int mode = id == S_FX_BG_BLUR ? (int)S_MODE_PERF : (int)obs_data_get_int(settings, S_MODE);
 		if (filter->mode != mode) {
 			filter->mode = mode;
 			vfxErr = NvVFX_SetU32(filter->handle, NVVFX_MODE, mode);
@@ -192,8 +195,6 @@ static void nvvfx_filter_actual_destroy(void *data)
 	}
 	if (filter->stream)
 		NvVFX_CudaStreamDestroy(filter->stream);
-	if (filter->stream_blur)
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
 
 	if (filter->effect) {
 		obs_enter_graphics();
@@ -245,11 +246,22 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 		log_nverror_destroy(filter, vfxErr);
 	/* debug */
 #ifdef _DEBUG
-	const char *info;
-	vfxErr = NvVFX_GetString(filter->handle_blur, NVVFX_INFO, &info);
-	blog(LOG_DEBUG, "blur fx settings /n/%s", info);
+	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
+		const char *info2;
+		vfxErr = NvVFX_GetString(filter->handle, NVVFX_INFO, &info2);
+		blog(LOG_DEBUG, "aigs fx settings :%s", info2);
+	}
+	if (id == S_FX_BLUR || id == S_FX_BG_BLUR) {
+		const char *info;
+		vfxErr = NvVFX_GetString(filter->handle_blur, NVVFX_INFO, &info);
+		blog(LOG_DEBUG, "blur fx settings :%s", info);
+	}
 #endif
 	/* 2. Set models path & initialize CudaStream */
+	vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
+	if (NVCV_SUCCESS != vfxErr)
+		log_nverror_destroy(filter, vfxErr);
+
 	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
 		char buffer[MAX_PATH];
 		char modelDir[MAX_PATH];
@@ -257,22 +269,23 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 		size_t max_len = sizeof(buffer) / sizeof(char);
 		snprintf(modelDir, max_len, "%s\\models", buffer);
 		vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY, modelDir);
-		vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
-		if (NVCV_SUCCESS != vfxErr)
-			log_nverror_destroy(filter, vfxErr);
 		vfxErr = NvVFX_SetCudaStream(filter->handle, NVVFX_CUDA_STREAM, filter->stream);
 		if (NVCV_SUCCESS != vfxErr)
 			log_nverror_destroy(filter, vfxErr);
 	}
+
 	if (id == S_FX_BLUR || id == S_FX_BG_BLUR) {
-		vfxErr = NvVFX_CudaStreamCreate(&filter->stream_blur);
-		if (NVCV_SUCCESS != vfxErr)
-			log_nverror_destroy(filter, vfxErr);
-		vfxErr = NvVFX_SetCudaStream(filter->handle_blur, NVVFX_CUDA_STREAM, filter->stream_blur);
+		vfxErr = NvVFX_SetCudaStream(filter->handle_blur, NVVFX_CUDA_STREAM, filter->stream);
 		if (NVCV_SUCCESS != vfxErr)
 			log_nverror_destroy(filter, vfxErr);
 	}
 	return true;
+}
+
+static void nvvfx_logger_callback(void *data, const char *msg)
+{
+	UNUSED_PARAMETER(data);
+	blog(LOG_ERROR, "[NVIDIA Video Effect: '%s']", msg);
 }
 
 static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, enum nvvfx_fx_id id)
@@ -349,6 +362,10 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 
 	nvvfx_filter_update(filter, settings);
 
+	/* Setup NVIDIA logger */
+	if (nvvfx_new_sdk)
+		vfxErr = NvVFX_ConfigureLogger(NVCV_LOG_ERROR, NULL, &nvvfx_logger_callback, filter);
+
 	return filter;
 }
 
@@ -386,9 +403,7 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 	if (filter->stream) {
 		NvVFX_CudaStreamDestroy(filter->stream);
 	}
-	if (filter->stream_blur) {
-		NvVFX_CudaStreamDestroy(filter->stream_blur);
-	}
+
 	// [B] recreate
 	/* 1. Create FX */
 	/* 2. Set models path & initialize CudaStream */
@@ -400,12 +415,12 @@ static void nvvfx_filter_reset(void *data, calldata_t *calldata)
 		vfxErr = NvVFX_SetU32(filter->handle, NVVFX_MODE, filter->mode);
 		if (NVCV_SUCCESS != vfxErr)
 			error("Error loading NVIDIA Video FX %i", vfxErr);
-		vfxErr = NvVFX_Load(filter->handle);
-		if (NVCV_SUCCESS != vfxErr)
-			error("Error loading NVIDIA Video FX %i", vfxErr);
 		// reallocate state object
 		vfxErr = NvVFX_AllocateState(filter->handle, &filter->stateObjectHandle);
 		vfxErr = NvVFX_SetStateObjectHandleArray(filter->handle, NVVFX_STATE, &filter->stateObjectHandle);
+		vfxErr = NvVFX_Load(filter->handle);
+		if (NVCV_SUCCESS != vfxErr)
+			error("Error loading NVIDIA Video FX %i", vfxErr);
 	}
 	if (filter->filter_id != S_FX_AIGS) {
 		vfxErr = NvVFX_SetF32(filter->handle_blur, NVVFX_STRENGTH, filter->strength);
@@ -507,6 +522,7 @@ static bool init_blur_images(struct nvvfx_data *filter)
 {
 	uint32_t width = filter->width;
 	uint32_t height = filter->height;
+	enum nvvfx_fx_id id = filter->filter_id;
 
 	/* 1. Create and allocate Blur BGR NvCVimage (blur FX dst) */
 	NvCVImage_Create(width, height, NVCV_BGR, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1, &filter->blur_BGR_dst_img);
@@ -522,7 +538,11 @@ static bool init_blur_images(struct nvvfx_data *filter)
 
 	/* 3. Set input & output images for nv blur FX */
 	NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE, filter->BGR_src_img);
-	NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, filter->A_dst_img);
+	if (id != S_FX_BLUR)
+		NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, filter->A_dst_img);
+	else
+		NvVFX_SetImage(filter->handle_blur, NVVFX_INPUT_IMAGE_1, NULL);
+
 	NvVFX_SetImage(filter->handle_blur, NVVFX_OUTPUT_IMAGE, filter->blur_BGR_dst_img);
 
 	if (NvVFX_Load(filter->handle_blur) != NVCV_SUCCESS) {
@@ -604,24 +624,13 @@ fail:
 
 //---------------------------------------------------------------------------//
 // video processing functions //
-
+enum nvvfx_run_mode { SYNC, ASYNC };
 static bool process_texture(struct nvvfx_data *filter)
 {
 	enum nvvfx_fx_id id = filter->filter_id;
-	CUstream process_stream;
+	CUstream process_stream = filter->stream;
 
 	/* 1. Map src img holding texture. */
-	switch (id) {
-	case S_FX_AIGS:
-	case S_FX_BG_BLUR:
-		process_stream = filter->stream;
-		break;
-	case S_FX_BLUR:
-		process_stream = filter->stream_blur;
-		break;
-	default:
-		process_stream = NULL;
-	}
 	NvCV_Status vfxErr = NvCVImage_MapResource(filter->src_img, process_stream);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -645,7 +654,7 @@ static bool process_texture(struct nvvfx_data *filter)
 
 	/* 3. Run AIGS (AI Greenscreen) fx */
 	if (id != S_FX_BLUR) {
-		vfxErr = NvVFX_Run(filter->handle, 1);
+		vfxErr = NvVFX_Run(filter->handle, SYNC);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error running the AIGS FX; error %i: %s", vfxErr, errString);
@@ -657,7 +666,7 @@ static bool process_texture(struct nvvfx_data *filter)
 	if (id != S_FX_AIGS) {
 		/* 4. BLUR FX */
 		/* 4a. Run BLUR FX except for AIGS */
-		vfxErr = NvVFX_Run(filter->handle_blur, 1);
+		vfxErr = NvVFX_Run(filter->handle_blur, SYNC);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error running the BLUR FX; error %i: %s", vfxErr, errString);
@@ -665,21 +674,21 @@ static bool process_texture(struct nvvfx_data *filter)
 				nvvfx_filter_reset(filter, NULL);
 		}
 		/* 4b. Transfer blur result to an intermediate dst [RGBA, chunky, u8] */
-		vfxErr = NvCVImage_Transfer(filter->blur_BGR_dst_img, filter->RGBA_dst_img, 1.0f, filter->stream_blur,
+		vfxErr = NvCVImage_Transfer(filter->blur_BGR_dst_img, filter->RGBA_dst_img, 1.0f, filter->stream,
 					    filter->stage);
 		if (vfxErr != NVCV_SUCCESS) {
 			error("Error transferring blurred to intermediate img [RGBA, chunky, u8], error %i, ", vfxErr);
 			goto fail;
 		}
 		/* 5. Map blur dst texture before transfer from dst img provided by FX */
-		vfxErr = NvCVImage_MapResource(filter->blur_dst_img, filter->stream_blur);
+		vfxErr = NvCVImage_MapResource(filter->blur_dst_img, filter->stream);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error mapping resource for dst texture; error %i: %s", vfxErr, errString);
 			goto fail;
 		}
 
-		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream_blur,
+		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream,
 					    filter->stage);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -687,7 +696,7 @@ static bool process_texture(struct nvvfx_data *filter)
 			goto fail;
 		}
 
-		vfxErr = NvCVImage_UnmapResource(filter->blur_dst_img, filter->stream_blur);
+		vfxErr = NvCVImage_UnmapResource(filter->blur_dst_img, filter->stream);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error unmapping resource for dst texture; error %i: %s", vfxErr, errString);
@@ -750,7 +759,7 @@ static void nvvfx_filter_tick(void *data, float t)
 	const uint32_t cy = obs_source_get_base_height(target);
 
 	// initially the sizes are 0
-	if (!cx && !cy) {
+	if (!cx || !cy) {
 		filter->target_valid = false;
 		return;
 	}
@@ -764,7 +773,7 @@ static void nvvfx_filter_tick(void *data, float t)
 		}
 	}
 
-	if (cx != filter->width && cy != filter->height) {
+	if (cx != filter->width || cy != filter->height) {
 		filter->images_allocated = false;
 		filter->width = cx;
 		filter->height = cy;
@@ -1064,6 +1073,8 @@ static obs_properties_t *nvvfx_filter_properties(void *data)
 			obs_properties_add_list(props, S_MODE, TEXT_MODE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 		obs_property_list_add_int(mode, TEXT_MODE_QUALITY, S_MODE_QUALITY);
 		obs_property_list_add_int(mode, TEXT_MODE_PERF, S_MODE_PERF);
+		obs_property_list_add_int(mode, TEXT_MODE_QUALITY_CHAIR, S_MODE_QUALITY_CHAIR);
+		obs_property_list_add_int(mode, TEXT_MODE_PERF_CHAIR, S_MODE_PERF_CHAIR);
 		obs_property_t *threshold =
 			obs_properties_add_float_slider(props, S_THRESHOLDFX, TEXT_MODE_THRESHOLD, 0, 1, 0.05);
 		obs_property_t *partial = obs_properties_add_int_slider(props, S_PROCESSING, TEXT_PROCESSING, 1, 4, 1);
@@ -1151,6 +1162,10 @@ bool load_nvidia_vfx(void)
 	LOAD_SYM(NvVFX_Load);
 	LOAD_SYM(NvVFX_CudaStreamCreate);
 	LOAD_SYM(NvVFX_CudaStreamDestroy);
+	LOAD_SYM(NvVFX_SetStateObjectHandleArray);
+	LOAD_SYM(NvVFX_AllocateState);
+	LOAD_SYM(NvVFX_DeallocateState);
+	LOAD_SYM(NvVFX_ResetState);
 	old_sdk_loaded = true;
 #undef LOAD_SYM
 
@@ -1183,12 +1198,9 @@ bool load_nvidia_vfx(void)
 #undef LOAD_SYM
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
-	LOAD_SYM(NvVFX_SetStateObjectHandleArray);
-	LOAD_SYM(NvVFX_AllocateState);
-	LOAD_SYM(NvVFX_DeallocateState);
-	LOAD_SYM(NvVFX_ResetState);
+	LOAD_SYM(NvVFX_ConfigureLogger);
 	if (!nvvfx_new_sdk) {
-		blog(LOG_INFO, "[NVIDIA VIDEO FX]: sdk loaded but old redistributable detected; please upgrade.");
+		blog(LOG_INFO, "[NVIDIA VIDEO FX]: SDK loaded but old redistributable detected. Please upgrade.");
 	}
 #undef LOAD_SYM
 

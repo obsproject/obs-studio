@@ -1,5 +1,6 @@
 #include "nvenc-internal.h"
 
+#include <obs-nal.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 
@@ -211,6 +212,11 @@ static bool is_10_bit(const struct nvenc_data *enc)
 {
 	return enc->non_texture ? enc->in_format == VIDEO_FORMAT_P010
 				: obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
+}
+
+static bool is_hdr(const enum video_colorspace space)
+{
+	return space == VIDEO_CS_2100_HLG || space == VIDEO_CS_2100_PQ;
 }
 
 static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
@@ -480,6 +486,13 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	if (enc->in_format == VIDEO_FORMAT_I444) {
 		config->profileGUID = NV_ENC_H264_PROFILE_HIGH_444_GUID;
 		h264_config->chromaFormatIDC = 3;
+#ifdef NVENC_13_0_OR_LATER
+	} else if (astrcmpi(enc->props.profile, "high10") == 0) {
+		config->profileGUID = NV_ENC_H264_PROFILE_HIGH_10_GUID;
+	} else if (is_10_bit(enc)) {
+		warn("Forcing high10 for P010");
+		config->profileGUID = NV_ENC_H264_PROFILE_HIGH_10_GUID;
+#endif
 	} else if (astrcmpi(enc->props.profile, "main") == 0) {
 		config->profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
 	} else if (astrcmpi(enc->props.profile, "baseline") == 0) {
@@ -487,6 +500,14 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	} else if (!lossless) {
 		config->profileGUID = NV_ENC_H264_PROFILE_HIGH_GUID;
 	}
+
+#ifdef NVENC_13_0_OR_LATER
+	/* Note: Only supported on Blackwell! */
+	h264_config->inputBitDepth = is_10_bit(enc) ? NV_ENC_BIT_DEPTH_10 : NV_ENC_BIT_DEPTH_8;
+	h264_config->outputBitDepth = memcmp(&config->profileGUID, &NV_ENC_H264_PROFILE_HIGH_10_GUID, sizeof(GUID)) == 0
+					      ? NV_ENC_BIT_DEPTH_10
+					      : NV_ENC_BIT_DEPTH_8;
+#endif
 
 	if (!apply_user_args(enc)) {
 		obs_encoder_set_last_error(enc->encoder, obs_module_text("Opts.Invalid"));
@@ -586,7 +607,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 		config->profileGUID = NV_ENC_HEVC_PROFILE_MAIN10_GUID;
 		profile_is_10bpc = true;
 	} else if (is_10_bit(enc)) {
-		blog(LOG_WARNING, "[obs-nvenc] Forcing main10 for P010");
+		warn("Forcing main10 for P010");
 		config->profileGUID = NV_ENC_HEVC_PROFILE_MAIN10_GUID;
 		profile_is_10bpc = true;
 	} else {
@@ -598,6 +619,13 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 #else
 	hevc_config->inputBitDepth = is_10_bit(enc) ? NV_ENC_BIT_DEPTH_10 : NV_ENC_BIT_DEPTH_8;
 	hevc_config->outputBitDepth = profile_is_10bpc ? NV_ENC_BIT_DEPTH_10 : NV_ENC_BIT_DEPTH_8;
+#endif
+
+#ifdef NVENC_13_0_OR_LATER
+	if (is_10_bit(enc) && is_hdr(voi->colorspace)) {
+		hevc_config->outputMasteringDisplay = 1;
+		hevc_config->outputMaxCll = 1;
+	}
 #endif
 
 	if (!apply_user_args(enc)) {
@@ -687,6 +715,13 @@ static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings)
 	av1_config->numBwdRefs = 1;
 	av1_config->repeatSeqHdr = 1;
 
+#ifdef NVENC_13_0_OR_LATER
+	if (is_10_bit(enc) && is_hdr(voi->colorspace)) {
+		av1_config->outputMasteringDisplay = 1;
+		av1_config->outputMaxCll = 1;
+	}
+#endif
+
 	if (!apply_user_args(enc)) {
 		obs_encoder_set_last_error(enc->encoder, obs_module_text("Opts.Invalid"));
 		return false;
@@ -772,6 +807,31 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 			break;
 		}
 	}
+
+#ifdef NVENC_13_0_OR_LATER
+	const bool pq = voi->colorspace == VIDEO_CS_2100_PQ;
+	const bool hlg = voi->colorspace == VIDEO_CS_2100_HLG;
+	if (pq || hlg) {
+		enc->cll = bzalloc(sizeof(CONTENT_LIGHT_LEVEL));
+		enc->mdi = bzalloc(sizeof(MASTERING_DISPLAY_INFO));
+		const uint16_t hdr_nominal_peak_level = pq ? (uint16_t)obs_get_video_hdr_nominal_peak_level()
+							   : (hlg ? 1000 : 0);
+		/* Currently these are hardcoded across all encoders. */
+		enc->mdi->r.x = 13250;
+		enc->mdi->r.y = 34500;
+		enc->mdi->g.x = 7500;
+		enc->mdi->g.y = 3000;
+		enc->mdi->b.x = 34000;
+		enc->mdi->b.y = 16000;
+		enc->mdi->whitePoint.x = 15635;
+		enc->mdi->whitePoint.y = 16450;
+		enc->mdi->maxLuma = hdr_nominal_peak_level * 10000;
+		enc->mdi->minLuma = 0;
+
+		enc->cll->maxContentLightLevel = hdr_nominal_peak_level;
+		enc->cll->maxPicAverageLightLevel = hdr_nominal_peak_level;
+	}
+#endif
 
 	switch (enc->codec) {
 	case CODEC_HEVC:
@@ -985,6 +1045,13 @@ static void nvenc_destroy(void *data)
 	bfree(enc->sei);
 	bfree(enc->roi_map);
 
+#ifdef NVENC_13_0_OR_LATER
+	if (enc->mdi)
+		bfree(enc->mdi);
+	if (enc->cll)
+		bfree(enc->cll);
+#endif
+
 	deque_free(&enc->dts_list);
 
 	da_free(enc->surfaces);
@@ -1054,6 +1121,26 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 
 		enc->packet_pts = (int64_t)lock.outputTimeStamp;
 		enc->packet_keyframe = lock.pictureType == NV_ENC_PIC_TYPE_IDR;
+
+		switch (lock.pictureType) {
+		case NV_ENC_PIC_TYPE_I:
+		case NV_ENC_PIC_TYPE_BI:
+		case NV_ENC_PIC_TYPE_IDR:
+#ifdef NVENC_12_2_OR_LATER
+		case NV_ENC_PIC_TYPE_SWITCH:
+#endif
+			enc->packet_priority = OBS_NAL_PRIORITY_HIGHEST;
+			break;
+		case NV_ENC_PIC_TYPE_P:
+			enc->packet_priority = OBS_NAL_PRIORITY_HIGH;
+			break;
+		case NV_ENC_PIC_TYPE_B:
+		case NV_ENC_PIC_TYPE_NONREF_P:
+			enc->packet_priority = OBS_NAL_PRIORITY_DISPOSABLE;
+			break;
+		default:
+			enc->packet_priority = OBS_NAL_PRIORITY_DISPOSABLE;
+		}
 
 		if (NV_FAILED(nv.nvEncUnlockBitstream(s, bs->ptr))) {
 			return false;
@@ -1204,6 +1291,21 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 					   : NV_ENC_BUFFER_FORMAT_NV12;
 	}
 
+#ifdef NVENC_13_0_OR_LATER
+	if (enc->cll) {
+		if (enc->codec == CODEC_AV1)
+			params.codecPicParams.av1PicParams.pMaxCll = enc->cll;
+		else if (enc->codec == CODEC_HEVC)
+			params.codecPicParams.hevcPicParams.pMaxCll = enc->cll;
+	}
+	if (enc->mdi) {
+		if (enc->codec == CODEC_AV1)
+			params.codecPicParams.av1PicParams.pMasteringDisplay = enc->mdi;
+		else if (enc->codec == CODEC_HEVC)
+			params.codecPicParams.hevcPicParams.pMasteringDisplay = enc->mdi;
+	}
+#endif
+
 	/* Add ROI map if enabled */
 	if (obs_encoder_has_roi(enc->encoder))
 		add_roi(enc, &params);
@@ -1246,6 +1348,7 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 		packet->pts = enc->packet_pts;
 		packet->dts = dts;
 		packet->keyframe = enc->packet_keyframe;
+		packet->priority = enc->packet_priority;
 	} else {
 		*received_packet = false;
 	}

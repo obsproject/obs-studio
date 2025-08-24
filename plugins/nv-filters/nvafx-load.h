@@ -49,6 +49,7 @@ static HMODULE nv_cuda = NULL;
 #define NVAFX_PARAM_NUM_INPUT_CHANNELS "num_input_channels"
 #define NVAFX_PARAM_NUM_OUTPUT_CHANNELS "num_output_channels"
 #define NVAFX_PARAM_INTENSITY_RATIO "intensity_ratio"
+#define NVAFX_PARAM_ENABLE_VAD "enable_vad"
 
 #pragma deprecated(NVAFX_PARAM_DENOISER_MODEL_PATH)
 #define NVAFX_PARAM_DENOISER_MODEL_PATH NVAFX_PARAM_MODEL_PATH
@@ -102,6 +103,31 @@ typedef enum {
 #define NVAFX_FALSE 0
 typedef char NvAFX_Bool;
 
+/** Logging level to enable, each level is inclusive of the level preceding it */
+typedef enum LoggingSeverity_t {
+	NVAFX_LOG_LEVEL_NONE = -1,
+	NVAFX_LOG_LEVEL_FATAL = 0,
+	NVAFX_LOG_LEVEL_ERROR = 1,
+	NVAFX_LOG_LEVEL_WARNING = 2,
+	NVAFX_LOG_LEVEL_INFO = 3,
+} LoggingSeverity;
+
+typedef enum LoggingTarget_t {
+	// No logging.
+	LOG_TARGET_NONE = -1,
+	// Log to stderr.
+	LOG_TARGET_STDERR = 0,
+	// Log to specified file.
+	LOG_TARGET_FILE = 1,
+	// Log through invocation of a user-specified callback.
+	LOG_TARGET_CALLBACK = 2,
+} LoggingTarget;
+
+/** Function used for logging callback */
+/// @param[in,out]  user_data   a pointer to data needed by the specific logger.
+/// @param[in]      msg         a C-string to add to the log.
+typedef void (*logging_cb_t)(void *user_data, const char *msg);
+
 typedef const char *NvAFX_EffectSelector;
 typedef const char *NvAFX_ParameterSelector;
 typedef void *NvAFX_Handle;
@@ -136,6 +162,10 @@ typedef NvAFX_Status NVAFX_API (*NvAFX_Run_t)(NvAFX_Handle effect, const float *
 					      unsigned num_samples, unsigned num_channels);
 typedef NvAFX_Status NVAFX_API (*NvAFX_Reset_t)(NvAFX_Handle effect);
 
+/* SDK >= 1.6.0 */
+typedef NvAFX_Status NVAFX_API (*NvAFX_InitializeLogger_t)(LoggingSeverity level, LoggingTarget target,
+							   const char *filename, logging_cb_t cb, void *userdata);
+typedef NvAFX_Status NVAFX_API (*NvAFX_UninitializeLogger_t)();
 /* cuda */
 typedef enum cudaError_enum {
 	CUDA_SUCCESS = 0,
@@ -209,7 +239,10 @@ static NvAFX_GetFloatList_t NvAFX_GetFloatList = NULL;
 static NvAFX_Load_t NvAFX_Load = NULL;
 static NvAFX_GetSupportedDevices_t NvAFX_GetSupportedDevices = NULL;
 static NvAFX_Run_t NvAFX_Run = NULL;
-static NvAFX_Reset_t NvAFX_Reset;
+static NvAFX_Reset_t NvAFX_Reset = NULL;
+/* SDK >= 1.6.0 */
+static NvAFX_InitializeLogger_t NvAFX_InitializeLogger = NULL;
+static NvAFX_UninitializeLogger_t NvAFX_UninitializeLogger = NULL;
 /* cuda */
 static cuCtxGetCurrent_t cuCtxGetCurrent = NULL;
 static cuCtxPopCurrent_t cuCtxPopCurrent = NULL;
@@ -236,6 +269,9 @@ void release_lib(void)
 	NvAFX_GetSupportedDevices = NULL;
 	NvAFX_Run = NULL;
 	NvAFX_Reset = NULL;
+	/* SDK >= 1.6.0 */
+	NvAFX_InitializeLogger = NULL;
+	NvAFX_UninitializeLogger = NULL;
 	if (nv_audiofx) {
 		FreeLibrary(nv_audiofx);
 		nv_audiofx = NULL;

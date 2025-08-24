@@ -58,8 +58,6 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback,
 						      void *private_data) = 0;
 
-	virtual void *obs_frontend_add_dock(void *dock) = 0;
-
 	virtual bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget) = 0;
 	virtual void obs_frontend_remove_dock(const char *id) = 0;
 	virtual bool obs_frontend_add_custom_qdock(const char *id, void *dock) = 0;

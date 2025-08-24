@@ -13,7 +13,6 @@
     <file>images/plus.svg</file>
     <file>images/down.svg</file>
     <file>images/up.svg</file>
-    <file>images/obs_256x256.png</file>
     <file>images/obs.png</file>
     <file>images/obs_macos.svg</file>
     <file>images/obs_paused.png</file>
@@ -31,6 +30,7 @@
     <file>images/visible.svg</file>
     <file>images/help.svg</file>
     <file>images/help_light.svg</file>
+    <file>images/hide.svg</file>
     <file>images/revert.svg</file>
     <file>images/alert.svg</file>
     <file>images/warning.svg</file>

@@ -17,7 +17,6 @@ private:
 
 	OBSBasic *main;
 	OBSSceneItem item;
-	OBSSignal channelChangedSignal;
 	std::vector<OBSSignal> sigs;
 
 	std::string undo_data;
@@ -34,8 +33,6 @@ private:
 
 	void SetScene(OBSScene scene);
 	void SetItem(OBSSceneItem newItem);
-
-	static void OBSChannelChanged(void *param, calldata_t *data);
 
 	static void OBSSceneItemTransform(void *param, calldata_t *data);
 	static void OBSSceneItemRemoved(void *param, calldata_t *data);

@@ -923,9 +923,6 @@ EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
 
-/** Gets the video settings currently in use for this view context, returns false if no video */
-OBS_DEPRECATED EXPORT bool obs_view_get_video_info(obs_view_t *view, struct obs_video_info *ovi);
-
 /** Enumerate the video info of all mixes using the specified view context */
 EXPORT void obs_view_enum_video_info(obs_view_t *view, bool (*enum_proc)(void *, struct obs_video_info *), void *param);
 
@@ -1674,9 +1671,6 @@ EXPORT void obs_sceneitem_save(obs_sceneitem_t *item, obs_data_array_t *arr);
 /** Set the ID of a sceneitem */
 EXPORT void obs_sceneitem_set_id(obs_sceneitem_t *sceneitem, int64_t id);
 
-/** Tries to find the sceneitem of the source in a given scene. Returns NULL if not found */
-OBS_DEPRECATED EXPORT obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene, obs_source_t *source);
-
 /** Save all the transform states for a current scene's sceneitems */
 EXPORT obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items);
 
@@ -1723,8 +1717,6 @@ EXPORT uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_get_bounds_crop(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_bounds(const obs_sceneitem_t *item, struct vec2 *bounds);
 
-OBS_DEPRECATED EXPORT void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info);
-OBS_DEPRECATED EXPORT void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info);
 EXPORT void obs_sceneitem_get_info2(const obs_sceneitem_t *item, struct obs_transform_info *info);
 EXPORT void obs_sceneitem_set_info2(obs_sceneitem_t *item, const struct obs_transform_info *info);
 

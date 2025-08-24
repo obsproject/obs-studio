@@ -287,6 +287,40 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	connect(controls, &OBSBasicControls::SettingsButtonClicked, this, &OBSBasic::on_action_Settings_triggered);
 
+	/* Set up transitions combobox connections */
+	connect(this, &OBSBasic::TransitionAdded, this, [this](const QString &name, const QString &uuid) {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->addItem(name, uuid);
+	});
+	connect(this, &OBSBasic::TransitionRenamed, this, [this](const QString &uuid, const QString &newName) {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->setItemText(ui->transitions->findData(uuid), newName);
+	});
+	connect(this, &OBSBasic::TransitionRemoved, this, [this](const QString &uuid) {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->removeItem(ui->transitions->findData(uuid));
+	});
+	connect(this, &OBSBasic::TransitionsCleared, this, [this]() {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->clear();
+	});
+
+	connect(this, &OBSBasic::CurrentTransitionChanged, this, [this](const QString &uuid) {
+		QSignalBlocker sb(ui->transitions);
+		ui->transitions->setCurrentIndex(ui->transitions->findData(uuid));
+	});
+
+	connect(ui->transitions, &QComboBox::currentIndexChanged, this,
+		[this]() { SetCurrentTransition(ui->transitions->currentData().toString()); });
+
+	connect(this, &OBSBasic::TransitionDurationChanged, this, [this](int duration) {
+		QSignalBlocker sb(ui->transitionDuration);
+		ui->transitionDuration->setValue(duration);
+	});
+
+	connect(ui->transitionDuration, &QSpinBox::valueChanged, this,
+		[this](int value) { SetTransitionDuration(value); });
+
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();
@@ -422,6 +456,10 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->actionE_xit->setShortcut(Qt::CTRL | Qt::Key_Q);
 #endif
 
+#ifndef ENABLE_IDIAN_PLAYGROUND
+	ui->idianPlayground->setVisible(false);
+#endif
+
 	auto addNudge = [this](const QKeySequence &seq, MoveDir direction, int distance) {
 		QAction *nudge = new QAction(ui->preview);
 		nudge->setShortcut(seq);
@@ -511,12 +549,18 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 static const double scaled_vals[] = {1.0, 1.25, (1.0 / 0.75), 1.5, (1.0 / 0.6), 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 0.0};
 
-#ifdef __APPLE__
+#ifdef __APPLE__ // macOS
+#if OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
 #define DEFAULT_CONTAINER "fragmented_mov"
-#elif OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
+#else
+#define DEFAULT_CONTAINER "hybrid_mov"
+#endif
+#else // Windows/Linux
+#if OBS_RELEASE_CANDIDATE == 0 && OBS_BETA == 0
 #define DEFAULT_CONTAINER "mkv"
 #else
 #define DEFAULT_CONTAINER "hybrid_mp4"
+#endif
 #endif
 
 bool OBSBasic::InitBasicConfigDefaults()
@@ -961,7 +1005,7 @@ void OBSBasic::OBSInit()
 	}
 
 	/* Modules can access frontend information (i.e. profile and scene collection data) during their initialization, and some modules (e.g. obs-websockets) are known to use the filesystem location of the current profile in their own code.
-     
+
      Thus the profile and scene collection discovery needs to happen before any access to that information (but after intializing global settings) to ensure legacy code gets valid path information.
      */
 	RefreshSceneCollections(true);
@@ -1227,16 +1271,16 @@ void OBSBasic::OBSInit()
 	ui->sources->UpdateIcons();
 
 #if !defined(_WIN32)
+	delete ui->actionRepair;
+	ui->actionRepair = nullptr;
+#if !defined(__APPLE__)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
 	delete ui->menuCrashLogs;
-	delete ui->actionRepair;
+	delete ui->actionCheckForUpdates;
 	ui->actionShowCrashLogs = nullptr;
 	ui->actionUploadLastCrashLog = nullptr;
 	ui->menuCrashLogs = nullptr;
-	ui->actionRepair = nullptr;
-#if !defined(__APPLE__)
-	delete ui->actionCheckForUpdates;
 	ui->actionCheckForUpdates = nullptr;
 #endif
 #endif
@@ -1317,6 +1361,13 @@ void OBSBasic::OnFirstLoad()
 }
 
 OBSBasic::~OBSBasic()
+{
+	if (!handledShutdown) {
+		applicationShutdown();
+	}
+}
+
+void OBSBasic::applicationShutdown() noexcept
 {
 	/* clear out UI event queue */
 	QApplication::sendPostedEvents(nullptr);
@@ -1414,6 +1465,8 @@ OBSBasic::~OBSBasic()
 	delete cef;
 	cef = nullptr;
 #endif
+
+	handledShutdown = true;
 }
 
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)

@@ -30,7 +30,7 @@ target_sources(
     forms/AutoConfigTestPage.ui
     forms/AutoConfigVideoPage.ui
     forms/ColorSelect.ui
-    forms/obs.qrc
+    forms/LogUploadDialog.ui
     forms/OBSAbout.ui
     forms/OBSAdvAudio.ui
     forms/OBSBasic.ui
@@ -43,10 +43,10 @@ target_sources(
     forms/OBSBasicVCamConfig.ui
     forms/OBSExtraBrowsers.ui
     forms/OBSImporter.ui
-    forms/OBSLogReply.ui
-    forms/OBSLogReply.ui
     forms/OBSMissingFiles.ui
     forms/OBSRemux.ui
+    forms/StatusBarWidget.ui
+    forms/obs.qrc
     forms/source-toolbar/browser-source-toolbar.ui
     forms/source-toolbar/color-source-toolbar.ui
     forms/source-toolbar/device-select-toolbar.ui
@@ -54,5 +54,4 @@ target_sources(
     forms/source-toolbar/image-source-toolbar.ui
     forms/source-toolbar/media-controls.ui
     forms/source-toolbar/text-source-toolbar.ui
-    forms/StatusBarWidget.ui
 )

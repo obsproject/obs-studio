@@ -462,19 +462,6 @@ Functions
 
 ---------------------------------------
 
-.. function:: void* obs_frontend_add_dock(void *dock)
-
-   Adds a QDockWidget to the UI's Docks menu.
-
-   :param dock: QDockWidget to add/create
-   :return: A pointer to the added QAction
-
-.. deprecated:: 30.0
-   Prefer :c:func:`obs_frontend_add_dock_by_id()` or
-   :c:func:`obs_frontend_add_custom_qdock()` instead.
-
----------------------------------------
-
 .. function:: bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
 
    Adds a dock with the widget to the UI with a toggle in the Docks

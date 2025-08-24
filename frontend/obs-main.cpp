@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include <OBSApp.hpp>
-#include <dialogs/OBSLogViewer.hpp>
 #ifdef __APPLE__
 #include <dialogs/OBSPermissions.hpp>
 #endif
@@ -33,7 +32,9 @@
 #include <util/windows/win-version.h>
 #endif
 
+#include <QFontDatabase>
 #include <QProcess>
+#include <QPushButton>
 #include <curl/curl.h>
 
 #include <fstream>
@@ -53,15 +54,13 @@ static log_handler_t def_log_handler;
 
 extern string currentLogFile;
 extern string lastLogFile;
-extern string lastCrashLogFile;
 
 bool portable_mode = false;
 bool steam = false;
 bool safe_mode = false;
 bool disable_3p_plugins = false;
 static bool unclean_shutdown = false;
-static bool disable_shutdown_check = false;
-static bool multi = false;
+bool multi = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
@@ -81,8 +80,6 @@ string opt_starting_scene;
 bool restart = false;
 bool restart_safe = false;
 static QStringList arguments;
-
-QPointer<OBSLogViewer> obsLogViewer;
 
 string CurrentTimeString()
 {
@@ -117,9 +114,8 @@ static void LogString(fstream &logFile, const char *timeString, char *str, int l
 	logFile << msg << endl;
 	logfile_mutex.unlock();
 
-	if (!!obsLogViewer)
-		QMetaObject::invokeMethod(obsLogViewer.data(), "AddLine", Qt::QueuedConnection, Q_ARG(int, log_level),
-					  Q_ARG(QString, QString(msg.c_str())));
+	QMetaObject::invokeMethod(App(), "addLogLine", Qt::QueuedConnection, Q_ARG(int, log_level),
+				  Q_ARG(QString, QString(msg.c_str())));
 }
 
 static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
@@ -405,9 +401,6 @@ static void create_log_file(fstream &logFile)
 	stringstream dst;
 
 	get_last_log(false, "obs-studio/logs", lastLogFile);
-#ifdef _WIN32
-	get_last_log(true, "obs-studio/crashes", lastCrashLogFile);
-#endif
 
 	currentLogFile = GenerateTimeDateFilename("txt");
 	dst << "obs-studio/logs/" << currentLogFile.c_str();
@@ -625,26 +618,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		if (!created_log)
 			create_log_file(logFile);
 
-		if (unclean_shutdown) {
-			blog(LOG_WARNING, "[Safe Mode] Unclean shutdown detected!");
-		}
-
-		if (unclean_shutdown && !safe_mode) {
-			QMessageBox mb(QMessageBox::Warning, QTStr("AutoSafeMode.Title"), QTStr("AutoSafeMode.Text"));
-			QPushButton *launchSafeButton =
-				mb.addButton(QTStr("AutoSafeMode.LaunchSafe"), QMessageBox::AcceptRole);
-			QPushButton *launchNormalButton =
-				mb.addButton(QTStr("AutoSafeMode.LaunchNormal"), QMessageBox::RejectRole);
-			mb.setDefaultButton(launchNormalButton);
-			mb.exec();
-
-			safe_mode = mb.clickedButton() == launchSafeButton;
-			if (safe_mode) {
-				blog(LOG_INFO, "[Safe Mode] User has launched in Safe Mode.");
-			} else {
-				blog(LOG_WARNING, "[Safe Mode] User elected to launch normally.");
-			}
-		}
+		program.checkForUncleanShutdown();
 
 		qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &, const QString &message) {
 			switch (type) {
@@ -842,36 +816,6 @@ static inline bool arg_is(const char *arg, const char *long_form, const char *sh
 	return (long_form && strcmp(arg, long_form) == 0) || (short_form && strcmp(arg, short_form) == 0);
 }
 
-static void check_safe_mode_sentinel(void)
-{
-#ifndef NDEBUG
-	/* Safe Mode detection is disabled in Debug builds to keep developers
-	 * somewhat sane. */
-	return;
-#else
-	if (disable_shutdown_check)
-		return;
-
-	BPtr sentinelPath = GetAppConfigPathPtr("obs-studio/safe_mode");
-	if (os_file_exists(sentinelPath)) {
-		unclean_shutdown = true;
-		return;
-	}
-
-	os_quick_write_utf8_file(sentinelPath, nullptr, 0, false);
-#endif
-}
-
-static void delete_safe_mode_sentinel(void)
-{
-#ifndef NDEBUG
-	return;
-#else
-	BPtr sentinelPath = GetAppConfigPathPtr("obs-studio/safe_mode");
-	os_unlink(sentinelPath);
-#endif
-}
-
 #ifdef _WIN32
 static constexpr char vcRunErrorTitle[] = "Outdated Visual C++ Runtime";
 static constexpr char vcRunErrorMsg[] = "OBS Studio requires a newer version of the Microsoft Visual C++ "
@@ -965,7 +909,6 @@ int main(int argc, char *argv[])
 	for (int i = 1; i < argc; i++) {
 		if (arg_is(argv[i], "--multi", "-m")) {
 			multi = true;
-			disable_shutdown_check = true;
 
 #if ALLOW_PORTABLE_MODE
 		} else if (arg_is(argv[i], "--portable", "-p")) {
@@ -980,10 +923,6 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--only-bundled-plugins", nullptr)) {
 			disable_3p_plugins = true;
-
-		} else if (arg_is(argv[i], "--disable-shutdown-check", nullptr)) {
-			/* This exists mostly to bypass the dialog during development. */
-			disable_shutdown_check = true;
 
 		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
 			opt_always_on_top = true;
@@ -1091,8 +1030,6 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	check_safe_mode_sentinel();
-
 	fstream logFile;
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -1109,7 +1046,6 @@ int main(int argc, char *argv[])
 	log_blocked_dlls();
 #endif
 
-	delete_safe_mode_sentinel();
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	base_set_log_handler(nullptr, nullptr);
 

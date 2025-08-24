@@ -120,8 +120,6 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback, void *private_data) override;
 
-	void *obs_frontend_add_dock(void *dock) override;
-
 	bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget) override;
 
 	void obs_frontend_remove_dock(const char *id) override;

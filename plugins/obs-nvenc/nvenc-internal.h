@@ -86,6 +86,7 @@ struct nvenc_data {
 	DARRAY(uint8_t) packet_data;
 	int64_t packet_pts;
 	bool packet_keyframe;
+	int packet_priority;
 
 #ifdef _WIN32
 	DARRAY(struct nv_texture) textures;
@@ -106,6 +107,11 @@ struct nvenc_data {
 	int8_t *roi_map;
 	size_t roi_map_size;
 	uint32_t roi_increment;
+
+#ifdef NVENC_13_0_OR_LATER
+	CONTENT_LIGHT_LEVEL *cll;
+	MASTERING_DISPLAY_INFO *mdi;
+#endif
 
 	struct nvenc_properties props;
 

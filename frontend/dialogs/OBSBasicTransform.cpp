@@ -77,8 +77,6 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 
 	OBSDataAutoRelease wrapper = obs_scene_save_transform_states(main->GetCurrentScene(), false);
 	undo_data = std::string(obs_data_get_json(wrapper));
-
-	channelChangedSignal.Connect(obs_get_signal_handler(), "channel_change", OBSChannelChanged, this);
 }
 
 OBSBasicTransform::~OBSBasicTransform()
@@ -134,23 +132,6 @@ void OBSBasicTransform::SetItemQt(OBSSceneItem newItem)
 
 	bool enable = !!item && !obs_sceneitem_locked(item);
 	SetEnabled(enable);
-}
-
-void OBSBasicTransform::OBSChannelChanged(void *param, calldata_t *data)
-{
-	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
-	uint32_t channel = (uint32_t)calldata_int(data, "channel");
-	OBSSource source = (obs_source_t *)calldata_ptr(data, "source");
-
-	if (channel == 0) {
-		OBSScene scene = obs_scene_from_source(source);
-		window->SetScene(scene);
-
-		if (!scene)
-			window->SetItem(nullptr);
-		else
-			window->SetItem(FindASelectedItem(scene));
-	}
 }
 
 void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)

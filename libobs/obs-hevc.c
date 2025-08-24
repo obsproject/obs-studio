@@ -48,22 +48,45 @@ bool obs_hevc_keyframe(const uint8_t *data, size_t size)
 
 static int compute_hevc_keyframe_priority(const uint8_t *nal_start, bool *is_keyframe, int priority)
 {
+	int new_priority;
 	// HEVC contains NAL unit specifier at [6..1] bits of
 	// the byte next to the startcode 0x000001
 	const int type = (nal_start[0] & 0x7F) >> 1;
 
-	// Mark IDR slices as key-frames and set them to highest
-	// priority if needed. Assume other slices are non-key
-	// frames and set their priority as high
-	if (type >= OBS_HEVC_NAL_BLA_W_LP && type <= OBS_HEVC_NAL_RSV_IRAP_VCL23) {
-		*is_keyframe = 1;
-		priority = OBS_NAL_PRIORITY_HIGHEST;
-	} else if (type >= OBS_HEVC_NAL_TRAIL_N && type <= OBS_HEVC_NAL_RASL_R) {
-		if (priority < OBS_NAL_PRIORITY_HIGH)
-			priority = OBS_NAL_PRIORITY_HIGH;
+	switch (type) {
+	case OBS_HEVC_NAL_BLA_W_LP:
+	case OBS_HEVC_NAL_BLA_W_RADL:
+	case OBS_HEVC_NAL_BLA_N_LP:
+	case OBS_HEVC_NAL_IDR_W_RADL:
+	case OBS_HEVC_NAL_IDR_N_LP:
+	case OBS_HEVC_NAL_CRA_NUT:
+	case OBS_HEVC_NAL_RSV_IRAP_VCL22:
+	case OBS_HEVC_NAL_RSV_IRAP_VCL23:
+		/* intra random access point (IRAP) picture, keyframe and highest priority */
+		*is_keyframe = true;
+		new_priority = OBS_NAL_PRIORITY_HIGHEST;
+		break;
+	case OBS_HEVC_NAL_TRAIL_R:
+	case OBS_HEVC_NAL_TSA_R:
+	case OBS_HEVC_NAL_STSA_R:
+	case OBS_HEVC_NAL_RADL_R:
+	case OBS_HEVC_NAL_RASL_R:
+		/* sub-layer reference picture (mainly P-frames), high priority */
+		new_priority = OBS_NAL_PRIORITY_HIGH;
+		break;
+	case OBS_HEVC_NAL_TRAIL_N:
+	case OBS_HEVC_NAL_TSA_N:
+	case OBS_HEVC_NAL_STSA_N:
+	case OBS_HEVC_NAL_RADL_N:
+	case OBS_HEVC_NAL_RASL_N:
+		/* sub-layer non-reference (SLNR) picture (mainly B-frames), disposable */
+		new_priority = OBS_NAL_PRIORITY_DISPOSABLE;
+		break;
+	default:
+		new_priority = OBS_NAL_PRIORITY_DISPOSABLE;
 	}
 
-	return priority;
+	return priority > new_priority ? priority : new_priority;
 }
 
 static void serialize_hevc_data(struct serializer *s, const uint8_t *data, size_t size, bool *is_keyframe,

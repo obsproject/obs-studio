@@ -44,6 +44,11 @@ struct camera_portal_source {
 	obs_pipewire_stream *obs_pw_stream;
 	char *device_id;
 
+	bool restart_stream;
+
+	enum spa_media_subtype subtype;
+	struct obs_pw_video_format format;
+
 	struct {
 		struct spa_rectangle rect;
 		bool set;
@@ -242,7 +247,7 @@ static bool update_device_id(struct camera_portal_source *camera_source, const c
 
 static void stream_camera(struct camera_portal_source *camera_source)
 {
-	struct obs_pipwire_connect_stream_info connect_info;
+	struct obs_pipewire_connect_stream_info connect_info;
 	const struct spa_rectangle *resolution = NULL;
 	const struct spa_fraction *framerate = NULL;
 	struct camera_device *device;
@@ -261,11 +266,13 @@ static void stream_camera(struct camera_portal_source *camera_source)
 	if (camera_source->framerate.set)
 		framerate = &camera_source->framerate.fraction;
 
-	connect_info = (struct obs_pipwire_connect_stream_info){
+	connect_info = (struct obs_pipewire_connect_stream_info){
 		.stream_name = "OBS PipeWire Camera",
 		.stream_properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY, "Capture",
 						       PW_KEY_MEDIA_ROLE, "Camera", NULL),
 		.video = {
+			.subtype = &camera_source->subtype,
+			.format = &camera_source->format,
 			.resolution = resolution,
 			.framerate = framerate,
 		}};
@@ -274,17 +281,64 @@ static void stream_camera(struct camera_portal_source *camera_source)
 		obs_pipewire_connect_stream(connection->obs_pw, camera_source->source, device->id, &connect_info);
 }
 
+static double gcd(uint32_t m, uint32_t n)
+{
+	if (n == 0)
+		return m;
+
+	return gcd(n, m % n);
+}
+
+static struct dstr aspect_ratio_from_spa_rectangle(struct spa_rectangle rect)
+{
+	struct dstr str = {};
+	double divisor = gcd(rect.width, rect.height);
+
+	if (divisor <= 50) {
+		if (rect.width > rect.height) {
+			double x = (double)rect.width / (double)rect.height;
+			dstr_printf(&str, "%.2f:1", x);
+		} else {
+			double y = (double)rect.height / (double)rect.width;
+			dstr_printf(&str, "1:%.2f", y);
+		}
+	} else {
+		uint32_t x = rect.width / (uint32_t)divisor;
+		uint32_t y = rect.height / (uint32_t)divisor;
+
+		if (x == 8 && y == 5) {
+			x = 16;
+			y = 10;
+		}
+
+		dstr_printf(&str, "%u:%u", x, y);
+	}
+
+	return str;
+}
+
 static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 {
 	struct param *p;
-	enum video_format last_format = VIDEO_FORMAT_NONE;
+	obs_data_t *data = NULL;
 
 	obs_property_list_clear(prop);
 
 	spa_list_for_each(p, &dev->param_list, link)
 	{
-		struct obs_pw_video_format obs_pw_video_format;
-		uint32_t media_type, media_subtype, format;
+		struct dstr str = {};
+		struct dstr aspect_ratio;
+		uint32_t media_type, media_subtype;
+		uint32_t format = 0;
+		const char *format_name;
+		struct spa_rectangle resolution;
+
+		const struct spa_pod_prop *framerate_prop = NULL;
+		struct spa_pod *framerate_pod;
+		uint32_t n_framerates;
+		enum spa_choice_type framerate_choice;
+		const struct spa_fraction *framerate_values;
+		g_autoptr(GArray) framerates = NULL;
 
 		if (p->id != SPA_PARAM_EnumFormat || p->param == NULL)
 			continue;
@@ -293,24 +347,97 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			continue;
 		if (media_type != SPA_MEDIA_TYPE_video)
 			continue;
+
+		g_clear_pointer(&data, obs_data_release);
+
+		data = obs_data_create();
+
 		if (media_subtype == SPA_MEDIA_SUBTYPE_raw) {
+			struct obs_pw_video_format obs_pw_video_format;
+
 			if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_format,
 						 SPA_POD_Id(&format)) < 0)
 				continue;
+
+			if (!obs_pw_video_format_from_spa_format(format, &obs_pw_video_format))
+				continue;
+
+			obs_data_set_bool(data, "encoded", false);
+			obs_data_set_int(data, "video_format", format);
+
+			format_name = obs_pw_video_format.pretty_name;
 		} else {
-			format = SPA_VIDEO_FORMAT_ENCODED;
+			continue;
 		}
 
-		if (!obs_pw_video_format_from_spa_format(format, &obs_pw_video_format))
+		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, format ? &format : NULL,
+					 SPA_FORMAT_VIDEO_size, SPA_POD_OPT_Rectangle(&resolution)) < 0)
 			continue;
 
-		if (obs_pw_video_format.video_format == last_format)
+		obs_data_set_int(data, "width", resolution.width);
+		obs_data_set_int(data, "height", resolution.height);
+
+		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
+		if (!framerate_prop)
 			continue;
 
-		last_format = obs_pw_video_format.video_format;
+		framerate_pod = spa_pod_get_values(&framerate_prop->value, &n_framerates, &framerate_choice);
+		if (framerate_pod->type != SPA_TYPE_Fraction) {
+			blog(LOG_WARNING, "Framerate is not a fraction");
+			continue;
+		}
 
-		obs_property_list_add_int(prop, obs_pw_video_format.pretty_name, format);
+		framerate_values = SPA_POD_BODY(framerate_pod);
+		framerates = g_array_new(FALSE, FALSE, sizeof(struct spa_fraction));
+
+		switch (framerate_choice) {
+		case SPA_CHOICE_None:
+			g_array_append_val(framerates, framerate_values[0]);
+			break;
+		case SPA_CHOICE_Range:
+			blog(LOG_WARNING, "Ranged framerates not supported");
+			continue;
+		case SPA_CHOICE_Step:
+			blog(LOG_WARNING, "Stepped framerates not supported");
+			continue;
+		case SPA_CHOICE_Enum:
+			/* i=0 is the default framerate, skip it */
+			for (uint32_t i = 1; i < n_framerates; i++)
+				g_array_append_val(framerates, framerate_values[i]);
+			break;
+		default:
+			continue;
+		}
+
+		dstr_printf(&str, "%ux%u", resolution.width, resolution.height);
+
+		aspect_ratio = aspect_ratio_from_spa_rectangle(resolution);
+		if (aspect_ratio.len != 0) {
+			dstr_catf(&str, " (%s)", aspect_ratio.array);
+			dstr_free(&aspect_ratio);
+		}
+
+		dstr_cat(&str, " - ");
+
+		for (int i = framerates->len - 1; i >= 0; i--) {
+			const struct spa_fraction *framerate = &g_array_index(framerates, struct spa_fraction, i);
+
+			if (i != (int)framerates->len - 1)
+				dstr_cat(&str, ", ");
+
+			if (framerate->denom == 1)
+				dstr_catf(&str, "%u", framerate->num);
+			else
+				dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
+		}
+
+		dstr_catf(&str, " FPS - %s", format_name);
+
+		obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
+		dstr_free(&str);
 	}
+
+	g_clear_pointer(&data, obs_data_release);
 }
 
 static bool control_changed(void *data, obs_properties_t *props, obs_property_t *prop, obs_data_t *settings)
@@ -479,12 +606,11 @@ static bool device_selected(void *data, obs_properties_t *props, obs_property_t 
 	if (device == NULL)
 		return false;
 
-	if (update_device_id(camera_source, device_id))
-		stream_camera(camera_source);
+	camera_source->restart_stream = update_device_id(camera_source, device_id);
 
 	blog(LOG_INFO, "[camera-portal] Updating pixel formats");
 
-	property = obs_properties_get(props, "pixelformat");
+	property = obs_properties_get(props, "format");
 	new_control_properties = obs_properties_create();
 	obs_properties_remove_by_name(props, "controls");
 
@@ -495,108 +621,6 @@ static bool device_selected(void *data, obs_properties_t *props, obs_property_t 
 				 new_control_properties);
 
 	obs_property_modified(property, settings);
-
-	return true;
-}
-
-static int sort_resolutions(gconstpointer a, gconstpointer b)
-{
-	const struct spa_rectangle *resolution_a = a;
-	const struct spa_rectangle *resolution_b = b;
-	int64_t area_a = resolution_a->width * resolution_a->height;
-	int64_t area_b = resolution_b->width * resolution_b->height;
-
-	return area_a - area_b;
-}
-
-static void resolution_list(struct camera_device *dev, uint32_t pixelformat, obs_property_t *prop)
-{
-	struct spa_rectangle last_resolution = SPA_RECTANGLE(0, 0);
-	g_autoptr(GArray) resolutions = NULL;
-	struct param *p;
-	obs_data_t *data;
-
-	resolutions = g_array_new(FALSE, FALSE, sizeof(struct spa_rectangle));
-
-	spa_list_for_each(p, &dev->param_list, link)
-	{
-		struct obs_pw_video_format obs_pw_video_format;
-		struct spa_rectangle resolution;
-		uint32_t media_type, media_subtype, format;
-
-		if (p->id != SPA_PARAM_EnumFormat || p->param == NULL)
-			continue;
-
-		if (spa_format_parse(p->param, &media_type, &media_subtype) < 0)
-			continue;
-		if (media_type != SPA_MEDIA_TYPE_video)
-			continue;
-		if (media_subtype == SPA_MEDIA_SUBTYPE_raw) {
-			if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_format,
-						 SPA_POD_Id(&format)) < 0)
-				continue;
-		} else {
-			format = SPA_VIDEO_FORMAT_ENCODED;
-		}
-
-		if (!obs_pw_video_format_from_spa_format(format, &obs_pw_video_format))
-			continue;
-
-		if (obs_pw_video_format.video_format != pixelformat)
-			continue;
-
-		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_size,
-					 SPA_POD_OPT_Rectangle(&resolution)) < 0)
-			continue;
-
-		if (resolution.width == last_resolution.width && resolution.height == last_resolution.height)
-			continue;
-
-		last_resolution = resolution;
-		g_array_append_val(resolutions, resolution);
-	}
-
-	g_array_sort(resolutions, sort_resolutions);
-
-	obs_property_list_clear(prop);
-
-	data = obs_data_create();
-	for (size_t i = 0; i < resolutions->len; i++) {
-		const struct spa_rectangle *resolution = &g_array_index(resolutions, struct spa_rectangle, i);
-		struct dstr str = {};
-
-		dstr_printf(&str, "%ux%u", resolution->width, resolution->height);
-
-		obs_data_set_int(data, "width", resolution->width);
-		obs_data_set_int(data, "height", resolution->height);
-
-		obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
-
-		dstr_free(&str);
-	}
-	obs_data_release(data);
-}
-
-/*
- * Format selected callback
- */
-static bool format_selected(void *data, obs_properties_t *properties, obs_property_t *property, obs_data_t *settings)
-{
-	UNUSED_PARAMETER(property);
-	UNUSED_PARAMETER(settings);
-
-	struct camera_portal_source *camera_source = data;
-	struct camera_device *device;
-	obs_property_t *resolution;
-
-	blog(LOG_INFO, "[camera-portal] Selected format for '%s'", camera_source->device_id);
-
-	device = g_hash_table_lookup(connection->devices, camera_source->device_id);
-	if (device == NULL)
-		return false;
-
-	resolution = obs_properties_get(properties, "resolution");
-	resolution_list(device, obs_data_get_int(settings, "pixelformat"), resolution);
 
 	return true;
 }
@@ -760,47 +784,68 @@ static bool framerate_selected(void *data, obs_properties_t *properties, obs_pro
 }
 
 /*
- * Resolution selected callback
+ * Format selected callback
  */
-
-static bool parse_resolution(struct spa_rectangle *dest, const char *json)
+static bool parse_format(struct camera_portal_source *dest, const char *json)
 {
 	obs_data_t *data = obs_data_create_from_json(json);
+	bool ret = false;
 
 	if (!data)
 		return false;
 
-	dest->width = obs_data_get_int(data, "width");
-	dest->height = obs_data_get_int(data, "height");
+	if (obs_data_has_user_value(data, "video_format") && obs_data_has_user_value(data, "encoded")) {
+		struct obs_pw_video_format format;
+
+		if (obs_data_get_bool(data, "encoded")) {
+			dest->subtype = obs_data_get_int(data, "video_format");
+			ret = true;
+		} else if (obs_pw_video_format_from_spa_format(obs_data_get_int(data, "video_format"), &format)) {
+			dest->subtype = SPA_MEDIA_SUBTYPE_raw;
+			dest->format = format;
+			ret = true;
+		}
+
+		if (obs_data_has_user_value(data, "width") && obs_data_has_user_value(data, "height")) {
+			dest->resolution.rect.width = obs_data_get_int(data, "width");
+			dest->resolution.rect.height = obs_data_get_int(data, "height");
+			dest->resolution.set = true;
+		}
+	}
+
 	obs_data_release(data);
-	return true;
+	return ret;
 }
 
-static bool resolution_selected(void *data, obs_properties_t *properties, obs_property_t *property,
-				obs_data_t *settings)
+static bool format_selected(void *data, obs_properties_t *properties, obs_property_t *property, obs_data_t *settings)
 {
-	UNUSED_PARAMETER(properties);
 	UNUSED_PARAMETER(property);
 	UNUSED_PARAMETER(settings);
 
 	struct camera_portal_source *camera_source = data;
-	struct spa_rectangle resolution;
 	struct camera_device *device;
+	enum spa_media_subtype last_subtype = camera_source->subtype;
+	enum spa_video_format last_format = camera_source->format.spa_format;
 
-	blog(LOG_INFO, "[camera-portal] Selected resolution for '%s'", camera_source->device_id);
+	blog(LOG_INFO, "[camera-portal] Selected format for '%s'", camera_source->device_id);
 
 	device = g_hash_table_lookup(connection->devices, camera_source->device_id);
 	if (device == NULL)
 		return false;
 
-	if (!parse_resolution(&resolution, obs_data_get_string(settings, "resolution")))
+	if (!parse_format(camera_source, obs_data_get_string(settings, "format")))
 		return false;
 
-	if (camera_source->obs_pw_stream)
-		obs_pipewire_stream_set_resolution(camera_source->obs_pw_stream, &resolution);
+	if (!camera_source->obs_pw_stream || camera_source->restart_stream || last_subtype != camera_source->subtype ||
+	    last_format != camera_source->format.spa_format) {
+		camera_source->restart_stream = false;
+		stream_camera(camera_source);
+	} else if (camera_source->obs_pw_stream) {
+		obs_pipewire_stream_set_resolution(camera_source->obs_pw_stream, &camera_source->resolution.rect);
+	}
 
 	property = obs_properties_get(properties, "framerate");
-	framerate_list(device, obs_data_get_int(settings, "pixelformat"), &resolution, property);
+	framerate_list(device, camera_source->format.spa_format, &camera_source->resolution.rect, property);
 
 	return true;
 }
@@ -1116,6 +1161,19 @@ static const char *pipewire_camera_get_name(void *data)
 	return obs_module_text("PipeWireCamera");
 }
 
+static bool parse_resolution(struct spa_rectangle *dest, const char *json)
+{
+	obs_data_t *data = obs_data_create_from_json(json);
+
+	if (!data)
+		return false;
+
+	dest->width = obs_data_get_int(data, "width");
+	dest->height = obs_data_get_int(data, "height");
+	obs_data_release(data);
+	return true;
+}
+
 static void *pipewire_camera_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct camera_portal_source *camera_source;
@@ -1125,8 +1183,30 @@ static void *pipewire_camera_create(obs_data_t *settings, obs_source_t *source)
 	camera_source->device_id = bstrdup(obs_data_get_string(settings, "device_id"));
 	camera_source->framerate.set =
 		parse_framerate(&camera_source->framerate.fraction, obs_data_get_string(settings, "framerate"));
-	camera_source->resolution.set =
-		parse_resolution(&camera_source->resolution.rect, obs_data_get_string(settings, "resolution"));
+
+	if (obs_data_has_user_value(settings, "format")) {
+		parse_format(camera_source, obs_data_get_string(settings, "format"));
+	} else if (obs_pw_video_format_from_spa_format(obs_data_get_int(settings, "pixelformat"),
+						       &camera_source->format)) {
+		camera_source->subtype = SPA_MEDIA_SUBTYPE_raw;
+
+		camera_source->resolution.set =
+			parse_resolution(&camera_source->resolution.rect, obs_data_get_string(settings, "resolution"));
+
+		/* NOTE: We can convert to the new format only if resolution is available */
+		if (camera_source->resolution.set) {
+			obs_data_t *format = obs_data_create();
+
+			obs_data_set_bool(format, "encoded", false);
+			obs_data_set_int(format, "video_format", camera_source->format.spa_format);
+			obs_data_set_int(format, "width", camera_source->resolution.rect.width);
+			obs_data_set_int(format, "height", camera_source->resolution.rect.height);
+
+			obs_data_set_string(settings, "format", obs_data_get_json(format));
+
+			obs_data_release(format);
+		}
+	}
 
 	access_camera(camera_source);
 
@@ -1156,7 +1236,6 @@ static obs_properties_t *pipewire_camera_get_properties(void *data)
 	struct camera_portal_source *camera_source = data;
 	obs_properties_t *controls_props;
 	obs_properties_t *props;
-	obs_property_t *resolution_list;
 	obs_property_t *framerate_list;
 	obs_property_t *device_list;
 	obs_property_t *format_list;
@@ -1166,11 +1245,8 @@ static obs_properties_t *pipewire_camera_get_properties(void *data)
 	device_list = obs_properties_add_list(props, "device_id", obs_module_text("PipeWireCameraDevice"),
 					      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
-	format_list = obs_properties_add_list(props, "pixelformat", obs_module_text("VideoFormat"), OBS_COMBO_TYPE_LIST,
-					      OBS_COMBO_FORMAT_INT);
-
-	resolution_list = obs_properties_add_list(props, "resolution", obs_module_text("Resolution"),
-						  OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	format_list = obs_properties_add_list(props, "format", obs_module_text("VideoFormat"), OBS_COMBO_TYPE_LIST,
+					      OBS_COMBO_FORMAT_STRING);
 
 	framerate_list = obs_properties_add_list(props, "framerate", obs_module_text("FrameRate"), OBS_COMBO_TYPE_LIST,
 						 OBS_COMBO_FORMAT_STRING);
@@ -1184,7 +1260,6 @@ static obs_properties_t *pipewire_camera_get_properties(void *data)
 
 	obs_property_set_modified_callback2(device_list, device_selected, camera_source);
 	obs_property_set_modified_callback2(format_list, format_selected, camera_source);
-	obs_property_set_modified_callback2(resolution_list, resolution_selected, camera_source);
 	obs_property_set_modified_callback2(framerate_list, framerate_selected, camera_source);
 
 	return props;

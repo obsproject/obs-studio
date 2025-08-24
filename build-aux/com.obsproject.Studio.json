@@ -17,7 +17,6 @@
         "--talk-name=org.freedesktop.Flatpak",
         "--talk-name=org.freedesktop.Notifications",
         "--talk-name=org.a11y.Bus",
-        "--system-talk-name=org.freedesktop.Avahi",
         "--env=VST_PATH=/app/extensions/Plugins/vst"
     ],
     "add-extensions": {
@@ -65,6 +64,7 @@
         "modules/50-vpl-gpu-rt.json",
         "modules/90-asio.json",
         "modules/90-nlohmann-json.json",
+        "modules/90-simde.json",
         "modules/90-uthash.json",
         "modules/90-websocketpp.json",
         "modules/99-cef.json",

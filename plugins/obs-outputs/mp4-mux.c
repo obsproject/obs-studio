@@ -37,8 +37,9 @@
  * Standard identifier is included if not referring to ISO/IEC 14496-12.
  */
 
-#define do_log(level, format, ...) \
-	blog(level, "[mp4 muxer: '%s'] " format, obs_output_get_name(mux->output), ##__VA_ARGS__)
+#define do_log(level, format, ...)                                                          \
+	blog(level, "[%s muxer: '%s'] " format, mux->flavor == FLAVOR_MOV ? "mov" : "mp4", \
+	     obs_output_get_name(mux->output), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -86,44 +87,49 @@ static size_t mp4_write_ftyp(struct mp4_mux *mux, bool fragmented)
 
 	write_box(s, 0, "ftyp");
 
-	const char *major_brand = "isom";
-	/* Following FFmpeg's example, when using negative CTS the major brand
-	 * needs to be either iso4 or iso6 depending on whether the file is
-	 * currently fragmented. */
-	if (mux->flags & MP4_USE_NEGATIVE_CTS)
-		major_brand = fragmented ? "iso6" : "iso4";
+	if (mux->flavor == FLAVOR_MOV) {
+		/* For MOV, the brand is just "qt" followed by two spaces. */
+		s_write(s, "qt  ", 4); // major brand
+		s_wb32(s, 0x20140200); // minor version (BCD YYYYMM00 per QTFF spec)
+		s_write(s, "qt  ", 4); // minor brand
+	} else {
+		const char *major_brand = "isom";
+		/* Following FFmpeg's example, when using negative CTS the major brand
+		 * needs to be either iso4 or iso6 depending on whether the file is
+		 * currently fragmented. */
+		if (mux->flags & MP4_USE_NEGATIVE_CTS)
+			major_brand = fragmented ? "iso6" : "iso4";
 
-	s_write(s, major_brand, 4); // major brand
-	s_wb32(s, 512);             // minor version
+		s_write(s, major_brand, 4); // major brand
+		s_wb32(s, 0);               // minor version
+		s_write(s, major_brand, 4); // minor brands (first one matches major brand)
 
-	// minor brands (first one matches major brand)
-	s_write(s, major_brand, 4);
+		/* Write isom base brand if it's not the major brand */
+		if (strcmp(major_brand, "isom") != 0)
+			s_write(s, "isom", 4);
 
-	/* Write isom base brand if it's not the major brand */
-	if (strcmp(major_brand, "isom") != 0)
-		s_write(s, "isom", 4);
+		/* Avoid adding newer brand (iso6) unless necessary, use "obs1" brand
+		 * as a placeholder to maintain ftyp box size. */
+		if (fragmented && strcmp(major_brand, "iso6") != 0)
+			s_write(s, "iso6", 4);
+		else
+			s_write(s, "obs1", 4);
 
-	/* Avoid adding newer brand (iso6) unless necessary, use "obs1" brand
-	 * as a placeholder to maintain ftyp box size. */
-	if (fragmented && strcmp(major_brand, "iso6") != 0)
-		s_write(s, "iso6", 4);
-	else
-		s_write(s, "obs1", 4);
+		s_write(s, "iso2", 4);
 
-	s_write(s, "iso2", 4);
-
-	/* Include H.264 brand if used */
-	for (size_t i = 0; i < mux->tracks.num; i++) {
-		struct mp4_track *track = &mux->tracks.array[i];
-		if (track->type == TRACK_VIDEO) {
-			if (track->codec == CODEC_H264)
-				s_write(s, "avc1", 4);
-			break;
+		/* Include H.264 brand if used */
+		for (size_t i = 0; i < mux->tracks.num; i++) {
+			struct mp4_track *track = &mux->tracks.array[i];
+			if (track->type == TRACK_VIDEO) {
+				if (track->codec == CODEC_H264)
+					s_write(s, "avc1", 4);
+				break;
+			}
 		}
-	}
 
-	/* General MP4 brannd */
-	s_write(s, "mp41", 4);
+		/* General MP4 brannd */
+		s_write(s, "mp41", 4);
+	}
 
 	return write_box_size(s, start);
 }
@@ -136,7 +142,7 @@ static size_t mp4_write_free(struct mp4_mux *mux)
 	/* Write a 16-byte free box, so it can be replaced with a 64-bit size
 	 * box header (u32 + char[4] + u64) */
 	s_wb32(s, 16);
-	s_write(s, "free", 4);
+	s_write(s, mux->flavor == FLAVOR_MOV ? "wide" : "free", 4);
 	s_wb64(s, 0);
 
 	return 16;
@@ -157,10 +163,12 @@ static size_t mp4_write_mvhd(struct mp4_mux *mux)
 			break;
 		}
 	}
+	bool extended_ts = duration > UINT32_MAX || mux->creation_time > UINT32_MAX;
+	uint8_t version = extended_ts ? 1 : 0;
 
-	write_fullbox(s, 0, "mvhd", 0, 0);
+	write_fullbox(s, 0, "mvhd", version, 0);
 
-	if (duration > UINT32_MAX || mux->creation_time > UINT32_MAX) {
+	if (extended_ts) {
 		s_wb64(s, mux->creation_time); // creation time
 		s_wb64(s, mux->creation_time); // modification time
 		s_wb32(s, 1000);               // timescale
@@ -203,12 +211,14 @@ static size_t mp4_write_tkhd(struct mp4_mux *mux, struct mp4_track *track)
 	size_t start = serializer_get_pos(s);
 
 	uint64_t duration = util_mul_div64(track->duration, 1000, track->timebase_den);
+	bool extended_ts = duration > UINT32_MAX || mux->creation_time > UINT32_MAX;
+	uint8_t version = extended_ts ? 1 : 0;
 
 	/* Flags are 0x1 (enabled) | 0x2 (in movie) */
 	static const uint32_t flags = 0x1 | 0x2;
-	write_fullbox(s, 0, "tkhd", 0, flags);
+	write_fullbox(s, 0, "tkhd", version, flags);
 
-	if (duration > UINT32_MAX || mux->creation_time > UINT32_MAX) {
+	if (extended_ts) {
 		s_wb64(s, mux->creation_time); // creation time
 		s_wb64(s, mux->creation_time); // modification time
 		s_wb32(s, track->track_id);    // track_id
@@ -265,6 +275,11 @@ static size_t mp4_write_mdhd(struct mp4_mux *mux, struct mp4_track *track)
 
 	/* use 64-bit duration if necessary */
 	if (duration > UINT32_MAX || mux->creation_time > UINT32_MAX) {
+		if (mux->flavor == FLAVOR_MOV) {
+			/* QTFF does not specify how to handle 32-bit overflow for duration/timestamps. */
+			warn("Duration too large for MOV, this file may be unplayable in QuickTime!");
+		}
+
 		size = 44;
 		version = 1;
 	}
@@ -283,8 +298,8 @@ static size_t mp4_write_mdhd(struct mp4_mux *mux, struct mp4_track *track)
 		s_wb32(s, (uint32_t)duration);           // duration
 	}
 
-	s_wb16(s, 21956); // language (undefined)
-	s_wb16(s, 0);     // pre_defined
+	s_wb16(s, mux->flavor == FLAVOR_MOV ? 32767 : 21956); // language (undefined)
+	s_wb16(s, 0);                                         // pre_defined
 
 	return size;
 }
@@ -297,10 +312,15 @@ static size_t mp4_write_hdlr(struct mp4_mux *mux, struct mp4_track *track)
 
 	write_fullbox(s, 0, "hdlr", 0, 0);
 
-	s_wb32(s, 0); // pre_defined
+	if (mux->flavor == FLAVOR_MOV)
+		s_write(s, track ? "mhlr" : "dhlr", 4);
+	else
+		s_wb32(s, 0); // pre_defined
 
 	// handler_type
-	if (track->type == TRACK_VIDEO)
+	if (!track)
+		s_write(s, "url ", 4);
+	else if (track->type == TRACK_VIDEO)
 		s_write(s, "vide", 4);
 	else if (track->type == TRACK_CHAPTERS)
 		s_write(s, "text", 4);
@@ -311,13 +331,25 @@ static size_t mp4_write_hdlr(struct mp4_mux *mux, struct mp4_track *track)
 	s_wb32(s, 0); // reserved
 	s_wb32(s, 0); // reserved
 
-	// name (utf-8 string, null terminated)
-	if (track->type == TRACK_VIDEO)
-		s_write(s, "OBS Video Handler", 18);
+	const char *handler_name;
+	if (!track)
+		handler_name = "OBS Data Handler";
+	else if (track->type == TRACK_VIDEO)
+		handler_name = "OBS Video Handler";
 	else if (track->type == TRACK_CHAPTERS)
-		s_write(s, "OBS Chapter Handler", 20);
+		handler_name = "OBS Chapter Handler";
 	else
-		s_write(s, "OBS Audio Handler", 18);
+		handler_name = "OBS Audio Handler";
+
+	// name (null-terminated for MP4, pascal string for MOV)
+	size_t handler_len = strlen(handler_name);
+	if (mux->flavor == FLAVOR_MOV) {
+		s_w8(s, (uint8_t)handler_len);
+		s_write(s, handler_name, handler_len);
+	} else {
+		s_write(s, handler_name, handler_len);
+		s_w8(s, 0); // NULL terminator
+	}
 
 	return write_box_size(s, start);
 }
@@ -534,9 +566,16 @@ static inline void mp4_write_visual_sample_entry(struct mp4_mux *mux, obs_encode
 	// VisualSampleEntry Box
 	s_wb16(s, 0); // pre_defined
 	s_wb16(s, 0); // reserved
-	s_wb32(s, 0); // pre_defined
-	s_wb32(s, 0); // pre_defined
-	s_wb32(s, 0); // pre_defined
+
+	if (mux->flavor == FLAVOR_MOV) {
+		s_write(s, "OBSS", 4); // vendor
+		s_wb32(s, 0x200);      // temporal quality (codecNormalQuality = 512)
+		s_wb32(s, 0x200);      // spatial quality (codecNormalQuality)
+	} else {
+		s_wb32(s, 0); // pre_defined
+		s_wb32(s, 0); // pre_defined
+		s_wb32(s, 0); // pre_defined
+	}
 
 	s_wb16(s, (uint16_t)obs_encoder_get_width(enc));  // width
 	s_wb16(s, (uint16_t)obs_encoder_get_height(enc)); // height
@@ -701,6 +740,47 @@ static size_t mp4_write_av01(struct mp4_mux *mux, obs_encoder_t *enc)
 	return write_box_size(s, start);
 }
 
+/// (QTFF/Apple) Video Sample Description
+static size_t mp4_write_prores(struct mp4_mux *mux, obs_encoder_t *enc)
+{
+	struct serializer *s = mux->serializer;
+	int64_t start = serializer_get_pos(s);
+
+	/* We get the tag as an int, but need it as a char[4] */
+	union tag {
+		char c[4];
+		uint32_t i;
+	} codec_tag;
+
+	/* Codec tag varies for ProRes depending on configuration, so we need to get it from the encoder. */
+	obs_data_t *settings = obs_encoder_get_settings(enc);
+	codec_tag.i = (uint32_t)obs_data_get_int(settings, "codec_type");
+	obs_data_release(settings);
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	codec_tag.i = ((codec_tag.i >> 24) & 0x000000FF) | ((codec_tag.i << 8) & 0x00FF0000) |
+		      ((codec_tag.i >> 8) & 0x0000FF00) | ((codec_tag.i << 24) & 0xFF000000);
+#endif
+
+	write_box(s, 0, codec_tag.c);
+
+	mp4_write_visual_sample_entry(mux, enc);
+
+	// colr
+	mp4_write_colr(mux, enc);
+
+	// clli
+	mp4_write_clli(mux, enc);
+
+	// mdcv
+	mp4_write_mdcv(mux, enc);
+
+	// pasp
+	mp4_write_pasp(mux);
+
+	return write_box_size(s, start);
+}
+
 static inline void put_descr(struct serializer *s, uint8_t tag, size_t size)
 {
 	int i = 3;
@@ -772,6 +852,8 @@ static size_t mp4_write_esds(struct mp4_mux *mux, struct mp4_track *track)
 static inline void mp4_write_audio_sample_entry(struct mp4_mux *mux, struct mp4_track *track, uint8_t version)
 {
 	struct serializer *s = mux->serializer;
+	bool is_mov = mux->flavor == FLAVOR_MOV;
+	bool is_pcm = track->codec == CODEC_PCM_I16 || track->codec == CODEC_PCM_I24 || track->codec == CODEC_PCM_F32;
 
 	// SampleEntry Box
 	s_w8(s, 0); // reserved
@@ -784,33 +866,69 @@ static inline void mp4_write_audio_sample_entry(struct mp4_mux *mux, struct mp4_
 	s_wb16(s, 1); // data_reference_index
 
 	// AudioSampleEntry Box
-	if (version == 1) {
-		s_wb16(s, 1); // entry_version
-		s_wb16(s, 0); // reserved
-		s_wb16(s, 0); // reserved
-		s_wb16(s, 0); // reserved
-	} else {
-		s_wb32(s, 0); // reserved
-		s_wb32(s, 0); // reserved
-	}
+	s_wb16(s, version); // entry_version
+	s_wb16(s, 0);       // reserved
+	s_wb16(s, 0);       // reserved
+	s_wb16(s, 0);       // reserved
 
 	audio_t *audio = obs_encoder_audio(track->encoder);
-	size_t channels = audio_output_get_channels(audio);
+	uint32_t channels = (uint32_t)audio_output_get_channels(audio);
 	uint32_t sample_rate = track->timescale;
 	bool alac = track->codec == CODEC_ALAC;
 
-	s_wb16(s, (uint32_t)channels); // channelcount
+	/* MOV specific version: https://developer.apple.com/documentation/quicktime-file-format/sound_sample_description_version_2 */
+	if (version == 2) {
+		// We need to get the raw float bytes, union seems to be the easiest way to do that.
+		union rate {
+			uint64_t u;
+			double f;
+		} rate;
+		rate.f = (double)sample_rate;
 
-	/* OBS FLAC is currently always 16 bit, ALAC always 24, this may change
-	 * in the futrure and should be handled differently then.
-	 * That being said thoes codecs are self-describing so in most cases it
-	 * shouldn't matter either way. */
-	s_wb16(s, alac ? 24 : 16); // samplesize
+		s_wb16(s, 3);          // always3
+		s_wb16(s, 16);         // always16
+		s_wb16(s, 0xfffe);     // alwaysMinus2
+		s_wb16(s, 0);          // always0
+		s_wb32(s, 0x00010000); // always65536
+		s_wb32(s, 72);         // sizeOfStructOnly (start of containing box to constLPCMFramesPerAudioPacket)
+		s_wb64(s, rate.u);     // audioSampleRate
+		s_wb32(s, channels);   // numAudioChannels
+		s_wb32(s, 0x7F000000); // always7F000000
+		s_wb32(s, is_pcm ? track->sample_size / channels * 8 : 0); // constBitsPerChannel
+		s_wb32(s, get_lpcm_flags(track->codec));                   // formatSpecificFlags
+		s_wb32(s, is_pcm ? track->sample_size : 0);                // constBytesPerAudioPacket
+		s_wb32(s, is_pcm ? 1 : 0);                                 // constLPCMFramesPerAudioPacket
+	} else {
+		s_wb16(s, channels); // channelcount
 
-	s_wb16(s, 0); // pre_defined
-	s_wb16(s, 0); // reserved
+		/* OBS FLAC is currently always 16-bit, ALAC always 24, this may change in the future and should be
+		 * handled differently then.
+		 * That being said those codecs are self-describing, so in most cases it shouldn't actually matter. */
+		s_wb16(s, !is_mov && alac ? 24 : 16); // samplesize
 
-	s_wb32(s, sample_rate << 16); // samplerate
+		s_wb16(s, is_mov && !is_pcm ? -2 : 0); // pre_defined (compression ID in MOV)
+		s_wb16(s, 0);                          // reserved
+
+		/* The sample rate field is limited to 16-bits. Technically version 1 supports a "srat" box which
+		 * provides 32-bits, but this is not supported by most software (including FFmpeg and Chromium).
+		 * For encoded codecs (AAC etc.), the sample rate can be read from the encoded data itself.
+		 * For PCM FFmpeg will try to use the timescale as sample rate. */
+		if (sample_rate > UINT16_MAX) {
+			warn("Sample rate too high for MP4, file may not play back correctly.");
+			sample_rate = 0;
+		}
+
+		s_wb32(s, sample_rate << 16); // samplerate
+
+		/* MOV-only data: https://developer.apple.com/documentation/quicktime-file-format/sound_sample_description_version_1 */
+		if (is_mov && version == 1) {
+			size_t frame_size = obs_encoder_get_frame_size(track->encoder);
+			s_wb32(s, is_pcm ? 1 : (uint32_t)frame_size);          // frame size
+			s_wb32(s, is_pcm ? track->sample_size / channels : 0); // bytes per packet
+			s_wb32(s, is_pcm ? track->sample_size : 0);            // bytes per frame
+			s_wb32(s, 2); // bytes per sample, 2 for anything but 8-bit
+		}
+	}
 }
 
 /// 12.2.4 Channel layout
@@ -1055,6 +1173,103 @@ static size_t mp4_write_Opus(struct mp4_mux *mux, struct mp4_track *track, uint8
 	return write_box_size(s, start);
 }
 
+/// (QTFF/Apple) siDecompressionParam Atom ('wave')
+static size_t mp4_write_wave(struct mp4_mux *mux, struct mp4_track *track, const char tag[4])
+{
+	struct serializer *s = mux->serializer;
+	int64_t start = serializer_get_pos(s);
+
+	write_box(s, 0, "wave");
+
+	/* frma atom containing codec tag (again) */
+	s_wb32(s, 12);
+	s_write(s, "frma", 4);
+	s_write(s, tag, 4);
+
+	if (track->codec == CODEC_AAC) {
+		mp4_write_esds(mux, track);
+	} else if (track->codec == CODEC_ALAC) {
+		uint8_t *extradata;
+		size_t extradata_size;
+
+		if (obs_encoder_get_extra_data(track->encoder, &extradata, &extradata_size)) {
+			/* Apple Lossless Magic Cookie */
+			s_write(s, extradata, extradata_size);
+		}
+	}
+
+	/* Terminator atom */
+	s_wb32(s, 8); // size
+	s_wb32(s, 0); // NULL name
+
+	return write_box_size(s, start);
+}
+
+/// (QTFF/Apple) Audio Channel Layout Atom (‘chan’)
+static size_t mp4_write_chan(struct mp4_mux *mux, struct mp4_track *track)
+{
+	struct serializer *s = mux->serializer;
+	int64_t start = serializer_get_pos(s);
+
+	audio_t *audio = obs_encoder_audio(track->encoder);
+	const struct audio_output_info *info = audio_output_get_info(audio);
+	uint32_t layout = get_mov_channel_layout(track->codec, info->speakers);
+	uint32_t bitmap = layout == kAudioChannelLayoutTag_UseChannelBitmap ? get_mov_channel_bitmap(info->speakers)
+									    : 0;
+	if (layout == kAudioChannelLayoutTag_UseChannelBitmap && !bitmap) {
+		warn("No valid speaker layout found, not writing chan box. File may not play back correctly!");
+		return 0;
+	}
+
+	write_fullbox(s, 0, "chan", 0, 0);
+	/* AudioChannelLayout from CoreAudioTypes.h */
+	s_wb32(s, layout); // mChannelLayoutTag
+	s_wb32(s, bitmap); // mChannelBitmap
+	s_wb32(s, 0);      // mNumberChannelDescriptions
+
+	return write_box_size(s, start);
+}
+
+/// (QTFF/Apple) Sound Sample Description (v1 and v2)
+static size_t mp4_write_mov_audio_tag(struct mp4_mux *mux, struct mp4_track *track)
+{
+	struct serializer *s = mux->serializer;
+	int64_t start = serializer_get_pos(s);
+
+	const char *tag = NULL;
+	audio_t *audio = obs_encoder_audio(track->encoder);
+	uint32_t sample_rate = audio_output_get_sample_rate(audio);
+	size_t channels = audio_output_get_channels(audio);
+	/* More than 2 channels or samples rates above 65535 Hz requires v2 */
+	uint8_t version = (channels > 2 || sample_rate > UINT16_MAX) ? 2 : 1;
+
+	if (track->codec == CODEC_PCM_F32 || track->codec == CODEC_PCM_I16 || track->codec == CODEC_PCM_I24) {
+		tag = "lpcm";
+		version = 2; /* lpcm also requires v2 */
+	} else if (track->codec == CODEC_AAC) {
+		tag = "mp4a";
+	} else if (track->codec == CODEC_ALAC) {
+		tag = "alac";
+	}
+
+	/* Unsupported/Unknown codec */
+	if (!tag)
+		return 0;
+
+	write_box(s, 0, tag);
+
+	mp4_write_audio_sample_entry(mux, track, version);
+
+	// wave
+	if (version == 1)
+		mp4_write_wave(mux, track, tag);
+
+	// chan
+	mp4_write_chan(mux, track);
+
+	return write_box_size(s, start);
+}
+
 /// 8.5.2 Sample Description Box
 static size_t mp4_write_stsd(struct mp4_mux *mux, struct mp4_track *track)
 {
@@ -1065,7 +1280,7 @@ static size_t mp4_write_stsd(struct mp4_mux *mux, struct mp4_track *track)
 	 * but in practice that doesn't appear to matter. */
 	uint8_t version = 0;
 
-	if (track->type == TRACK_AUDIO) {
+	if (track->type == TRACK_AUDIO && mux->flavor != FLAVOR_MOV) {
 		audio_t *audio = obs_encoder_audio(track->encoder);
 		version = audio_output_get_channels(audio) > 2 ? 1 : 0;
 	}
@@ -1082,18 +1297,24 @@ static size_t mp4_write_stsd(struct mp4_mux *mux, struct mp4_track *track)
 			mp4_write_hvc1(mux, track->encoder);
 		else if (track->codec == CODEC_AV1)
 			mp4_write_av01(mux, track->encoder);
+		else if (track->codec == CODEC_PRORES)
+			mp4_write_prores(mux, track->encoder);
 	} else if (track->type == TRACK_AUDIO) {
-		if (track->codec == CODEC_AAC)
-			mp4_write_mp4a(mux, track, version);
-		else if (track->codec == CODEC_OPUS)
-			mp4_write_Opus(mux, track, version);
-		else if (track->codec == CODEC_FLAC)
-			mp4_write_fLaC(mux, track, version);
-		else if (track->codec == CODEC_ALAC)
-			mp4_write_alac(mux, track, version);
-		else if (track->codec == CODEC_PCM_I16 || track->codec == CODEC_PCM_I24 ||
-			 track->codec == CODEC_PCM_F32)
-			mp4_write_xpcm(mux, track, version);
+		if (mux->flavor == FLAVOR_MOV) {
+			mp4_write_mov_audio_tag(mux, track);
+		} else {
+			if (track->codec == CODEC_AAC)
+				mp4_write_mp4a(mux, track, version);
+			else if (track->codec == CODEC_OPUS)
+				mp4_write_Opus(mux, track, version);
+			else if (track->codec == CODEC_FLAC)
+				mp4_write_fLaC(mux, track, version);
+			else if (track->codec == CODEC_ALAC)
+				mp4_write_alac(mux, track, version);
+			else if (track->codec == CODEC_PCM_I16 || track->codec == CODEC_PCM_I24 ||
+				 track->codec == CODEC_PCM_F32)
+				mp4_write_xpcm(mux, track, version);
+		}
 	} else if (track->type == TRACK_CHAPTERS) {
 		mp4_write_text(mux);
 	}
@@ -1415,8 +1636,8 @@ static size_t mp4_write_stbl(struct mp4_mux *mux, struct mp4_track *track, bool 
 	// stts
 	mp4_write_stts(mux, track, fragmented);
 
-	// stss (non-fragmented only)
-	if (track->type == TRACK_VIDEO && !fragmented)
+	// stss (non-fragmented/non-prores only)
+	if (track->type == TRACK_VIDEO && !fragmented && track->codec != CODEC_PRORES)
 		mp4_write_stss(mux, track);
 
 	// ctts (non-fragmented only)
@@ -1505,6 +1726,10 @@ static size_t mp4_write_minf(struct mp4_mux *mux, struct mp4_track *track, bool 
 		mp4_write_gmhd(mux);
 	else
 		mp4_write_smhd(mux);
+
+	// hdlr for dinf, required in MOV only
+	if (mux->flavor == FLAVOR_MOV)
+		mp4_write_hdlr(mux, NULL);
 
 	// dinf, unnecessary but mandatory
 	mp4_write_dinf(mux);
@@ -1760,6 +1985,22 @@ static size_t mp4_write_data_atom(struct mp4_mux *mux, const char *data)
 	return size;
 }
 
+/// (QTFF/Apple) String atom
+static size_t mp4_write_string_data_atom(struct mp4_mux *mux, const char name[4], const char *data)
+{
+	struct serializer *s = mux->serializer;
+	int64_t start = serializer_get_pos(s);
+
+	uint16_t len = (uint16_t)strlen(data);
+
+	write_box(s, 0, name);
+	s_wb16(s, len);            // String length
+	s_write(s, "\x55\xC4", 2); // language code, just using undefined
+	s_write(s, data, len);     // Note: No NULL terminator
+
+	return write_box_size(s, start);
+}
+
 /// (QTFF/Apple) Metadata item atom
 static size_t mp4_write_ilst_item_atom(struct mp4_mux *mux, const char name[4], const char *value)
 {
@@ -1935,8 +2176,21 @@ static size_t mp4_write_udta(struct mp4_mux *mux)
 	/* Normally metadata would be directly in the moov, but since this is
 	 * Apple/QTFF format metadata it is inside udta. */
 
-	// meta
-	mp4_write_meta(mux);
+	if (mux->flavor == FLAVOR_MOV && !(mux->flags & MP4_USE_MDTA_KEY_VALUE)) {
+		// keys directly in udta atom
+		struct dstr value = {0};
+
+		/* Encoder name */
+		dstr_cat(&value, "OBS Studio (");
+		dstr_cat(&value, obs_get_version_string());
+		dstr_cat(&value, ")");
+		mp4_write_string_data_atom(mux, "\251swr", value.array);
+
+		dstr_free(&value);
+	} else {
+		// meta
+		mp4_write_meta(mux);
+	}
 
 	return write_box_size(s, start);
 }
@@ -2485,6 +2739,8 @@ static inline enum mp4_codec get_codec(obs_encoder_t *enc)
 		return CODEC_HEVC;
 	if (strcmp(codec, "av1") == 0)
 		return CODEC_AV1;
+	if (strcmp(codec, "prores") == 0)
+		return CODEC_PRORES;
 	if (strcmp(codec, "aac") == 0)
 		return CODEC_AAC;
 	if (strcmp(codec, "opus") == 0)
@@ -2520,11 +2776,6 @@ static inline void add_track(struct mp4_mux *mux, obs_encoder_t *enc)
 		track->timebase_den = info->fps_num;
 
 		track->timescale = track->timebase_den;
-		/* FFmpeg does this to compensate for non-monotonic timestamps,
-		 * we probably don't need it, but let's stick to what they do
-		 * for maximum compatibility. */
-		while (track->timescale < 10000)
-			track->timescale *= 2;
 	} else {
 		uint32_t sample_rate = obs_encoder_get_sample_rate(enc);
 		/* Opus is always 48 kHz */
@@ -2583,15 +2834,23 @@ static inline void free_track(struct mp4_track *track)
 /* ===========================================================================*/
 /* API */
 
-struct mp4_mux *mp4_mux_create(obs_output_t *output, struct serializer *serializer, enum mp4_mux_flags flags)
+struct mp4_mux *mp4_mux_create(obs_output_t *output, struct serializer *serializer, enum mp4_mux_flags flags,
+			       enum mp4_flavor flavor)
 {
 	struct mp4_mux *mux = bzalloc(sizeof(struct mp4_mux));
 
 	mux->output = output;
 	mux->serializer = serializer;
 	mux->flags = flags;
+	mux->flavor = flavor;
 	/* Timestamp is based on 1904 rather than 1970. */
 	mux->creation_time = time(NULL) + 0x7C25B080;
+
+	if (flavor == FLAVOR_MOV && mux->creation_time > UINT32_MAX) {
+		/* This will only happen in 2040 but better safe than sorry! */
+		warn("Creation time too large for MOV, setting to 0 (unset).");
+		mux->creation_time = 0;
+	}
 
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		obs_encoder_t *enc = obs_output_get_video_encoder2(output, i);
@@ -2658,6 +2917,8 @@ bool mp4_mux_submit_packet(struct mp4_mux *mux, struct encoder_packet *pkt)
 			obs_parse_hevc_packet(&parsed_packet, pkt);
 		else if (track->codec == CODEC_AV1)
 			obs_parse_av1_packet(&parsed_packet, pkt);
+		else if (track->codec == CODEC_PRORES)
+			obs_encoder_packet_ref(&parsed_packet, pkt);
 
 		/* Set fragmentation PTS if packet is keyframe and PTS > 0 */
 		if (parsed_packet.keyframe && parsed_packet.pts > 0) {
@@ -2706,7 +2967,7 @@ bool mp4_mux_finalise(struct mp4_mux *mux)
 	info("Number of fragments: %u", mux->fragments_written);
 
 	if (mux->flags & MP4_SKIP_FINALISATION) {
-		warn("Skipping MP4 finalization!");
+		warn("Skipping finalization!");
 		return true;
 	}
 

@@ -8,6 +8,8 @@ target_sources(
     utility/BaseLexer.hpp
     utility/BasicOutputHandler.cpp
     utility/BasicOutputHandler.hpp
+    utility/CrashHandler.cpp
+    utility/CrashHandler.hpp
     utility/display-helpers.hpp
     utility/FFmpegCodec.cpp
     utility/FFmpegCodec.hpp

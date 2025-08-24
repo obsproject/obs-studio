@@ -1,4 +1,7 @@
-target_sources(obs-studio PRIVATE utility/platform-x11.cpp utility/system-info-posix.cpp)
+target_sources(
+  obs-studio
+  PRIVATE utility/platform-x11.cpp utility/system-info-posix.cpp utility/CrashHandler_FreeBSD.cpp
+)
 target_compile_definitions(obs-studio PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}")
 target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate Qt::DBus procstat)
 

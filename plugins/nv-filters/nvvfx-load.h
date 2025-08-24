@@ -226,26 +226,13 @@ typedef enum NvCVImage_ComponentType {
 #define NVCV_CPU_PINNED 2 //!< The buffer is stored in pinned CPU memory.
 #define NVCV_CUDA_ARRAY 3 //!< A CUDA array is used for storage.
 
-/** Parameter selectors */
-#define NVVFX_INPUT_IMAGE_0 "SrcImage0"
-#define NVVFX_INPUT_IMAGE NVVFX_INPUT_IMAGE_0
-#define NVVFX_INPUT_IMAGE_1 "SrcImage1"
-#define NVVFX_OUTPUT_IMAGE_0 "DstImage0"
-#define NVVFX_OUTPUT_IMAGE NVVFX_OUTPUT_IMAGE_0
-#define NVVFX_MODEL_DIRECTORY "ModelDir"
-#define NVVFX_CUDA_STREAM "CudaStream"         //!< The CUDA stream to use
-#define NVVFX_CUDA_GRAPH "CudaGraph"           //!< Enable CUDA graph to use
-#define NVVFX_INFO "Info"                      //!< Get info about the effects
-#define NVVFX_SCALE "Scale"                    //!< Scale factor
-#define NVVFX_STRENGTH "Strength"              //!< Strength for different filters
-#define NVVFX_STRENGTH_LEVELS "StrengthLevels" //!< Number of strength levels
-#define NVVFX_MODE "Mode"                      //!< Mode for different filters
-#define NVVFX_TEMPORAL "Temporal"              //!< Temporal mode: 0=image, 1=video
-#define NVVFX_GPU "GPU"                        //!< Preferred GPU (optional)
-#define NVVFX_BATCH_SIZE "BatchSize"           //!< Batch Size (default 1)
-#define NVVFX_MODEL_BATCH "ModelBatch"
-#define NVVFX_STATE "State"          //!< State variable
-#define NVVFX_STATE_SIZE "StateSize" //!< Number of bytes needed to store state
+/** Logging support **/
+enum {
+	NVCV_LOG_FATAL,   //!< Message to be printed right before aborting due to an unrecoverable error.
+	NVCV_LOG_ERROR,   //!< An operation has failed, but it is not fatal.
+	NVCV_LOG_WARNING, //!< Something was not quite right, but we fixed it up, perhaps at a loss in performance.
+	NVCV_LOG_INFO     //!< Nothing is wrong, but this information might be of interest.
+};
 
 //! Image descriptor.
 typedef struct
@@ -334,11 +321,14 @@ typedef NvCV_Status NvVFX_API (*NvVFX_Load_t)(NvVFX_Handle effect);
 typedef NvCV_Status NvVFX_API (*NvVFX_CudaStreamCreate_t)(CUstream *stream);
 typedef NvCV_Status NvVFX_API (*NvVFX_CudaStreamDestroy_t)(CUstream stream);
 
-/* requires sdk version >= 0.7.0 */
+/* requires SDK version >= 0.7.0 */
 typedef NvCV_Status NvVFX_API (*NvVFX_AllocateState_t)(NvVFX_Handle effect, NvVFX_StateObjectHandle *handle);
 typedef NvCV_Status NvVFX_API (*NvVFX_DeallocateState_t)(NvVFX_Handle effect, NvVFX_StateObjectHandle handle);
 typedef NvCV_Status NvVFX_API (*NvVFX_ResetState_t)(NvVFX_Handle effect, NvVFX_StateObjectHandle handle);
 
+/* requires SDK version >= 0.7.5 */
+typedef NvCV_Status NvVFX_API (*NvVFX_ConfigureLogger_t)(int verbosity, const char *file,
+							 void (*cb)(void *, const char *), void *cb_data);
 /* NvCVImage functions */
 typedef NvCV_Status NvCV_API (*NvCVImage_Init_t)(NvCVImage *im, unsigned width, unsigned height, int pitch,
 						 void *pixels, NvCVImage_PixelFormat format,
@@ -401,6 +391,7 @@ typedef NvCV_Status NvCV_API (*NvCVImage_FromD3DColorSpace_t)(DXGI_COLOR_SPACE_T
 							      unsigned char *pNvcvColorSpace);
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3D11Texture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3DTexture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
+
 /* cuda runtime */
 typedef enum cudaError {
 	cudaSuccess = 0,
@@ -537,7 +528,7 @@ typedef cudaError_t CUDARTAPI (*cudaFree_t)(void *devPtr);
 typedef cudaError_t CUDARTAPI (*cudaMemsetAsync_t)(void *devPtr, int value, size_t count, CUstream stream);
 typedef cudaError_t CUDARTAPI (*cudaMemcpy_t)(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind);
 
-/* nvvfx */
+/* NVVFX */
 static NvVFX_GetVersion_t NvVFX_GetVersion = NULL;
 static NvVFX_CreateEffect_t NvVFX_CreateEffect = NULL;
 static NvVFX_DestroyEffect_t NvVFX_DestroyEffect = NULL;
@@ -564,11 +555,14 @@ static NvVFX_Load_t NvVFX_Load = NULL;
 static NvVFX_CudaStreamCreate_t NvVFX_CudaStreamCreate = NULL;
 static NvVFX_CudaStreamDestroy_t NvVFX_CudaStreamDestroy = NULL;
 
-/* nvvfx sdk >= 0.7.0 */
+/* NVVFX SDK >= 0.7.0 */
 static NvVFX_SetStateObjectHandleArray_t NvVFX_SetStateObjectHandleArray = NULL;
 static NvVFX_AllocateState_t NvVFX_AllocateState = NULL;
 static NvVFX_DeallocateState_t NvVFX_DeallocateState = NULL;
 static NvVFX_ResetState_t NvVFX_ResetState = NULL;
+
+/* NVVFX SDK >= 0.7.5 */
+static NvVFX_ConfigureLogger_t NvVFX_ConfigureLogger = NULL;
 
 /*nvcvimage */
 static NvCVImage_Init_t NvCVImage_Init = NULL;
@@ -638,6 +632,7 @@ static inline void release_nv_vfx()
 	NvVFX_AllocateState = NULL;
 	NvVFX_DeallocateState = NULL;
 	NvVFX_ResetState = NULL;
+	NvVFX_ConfigureLogger = NULL;
 	if (nv_videofx) {
 		FreeLibrary(nv_videofx);
 		nv_videofx = NULL;

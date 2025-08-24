@@ -21,14 +21,6 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 	client.name = "obs-studio";
 	client.version = obs_get_version_string();
 
-	auto add_codec = [&](const char *codec) {
-		auto it = std::find(std::begin(client.supported_codecs), std::end(client.supported_codecs), codec);
-		if (it != std::end(client.supported_codecs))
-			return;
-
-		client.supported_codecs.push_back(codec);
-	};
-
 	const char *encoder_id = nullptr;
 	for (size_t i = 0; obs_enum_encoder_types(i, &encoder_id); i++) {
 		auto codec = obs_get_encoder_codec(encoder_id);
@@ -36,13 +28,13 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 			continue;
 
 		if (qstricmp(codec, "h264") == 0) {
-			add_codec("h264");
+			client.supported_codecs.emplace("h264");
 #ifdef ENABLE_HEVC
-		} else if (qstricmp(codec, "hevc")) {
-			add_codec("h265");
+		} else if (qstricmp(codec, "hevc") == 0) {
+			client.supported_codecs.emplace("h265");
 #endif
-		} else if (qstricmp(codec, "av1")) {
-			add_codec("av1");
+		} else if (qstricmp(codec, "av1") == 0) {
+			client.supported_codecs.emplace("av1");
 		}
 	}
 
