@@ -48,6 +48,7 @@ target_compile_definitions(
     $<$<BOOL:${ENABLE_FFMPEG_LOGGING}>:ENABLE_FFMPEG_LOGGING>
     $<$<BOOL:${ENABLE_FFMPEG_NVENC}>:ENABLE_FFMPEG_NVENC>
     $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:NEW_MPEGTS_OUTPUT>
+    $<$<BOOL:${ENABLE_AMF}>:ENABLE_AMF>
 )
 
 target_link_libraries(
@@ -73,19 +74,21 @@ target_link_libraries(
     $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:Libsrt::Libsrt>
 )
 
-if(OS_WINDOWS)
-  if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
-    target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_windows.cpp)
-    target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF)
+if(ENABLE_AMF)
+  if(OS_WINDOWS)
+    if(CMAKE_VS_PLATFORM_NAME STREQUAL x64)
+      target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_windows.cpp)
+      target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF)
+    endif()
+
+    configure_file(cmake/windows/obs-module.rc.in obs-ffmpeg.rc)
+    target_sources(obs-ffmpeg PRIVATE obs-ffmpeg.rc)
   endif()
 
-  configure_file(cmake/windows/obs-module.rc.in obs-ffmpeg.rc)
-  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg.rc)
-endif()
-
-if(OS_LINUX)
-  target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_linux.cpp)
-  target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF OpenGL::EGL OpenGL::GL)
+  if(OS_LINUX)
+    target_sources(obs-ffmpeg PRIVATE texture-amf-opts.hpp texture-amf.cpp amf_gpu.hpp amf_linux.cpp)
+    target_link_libraries(obs-ffmpeg PRIVATE AMF::AMF OpenGL::EGL OpenGL::GL)
+  endif()
 endif()
 
 set_target_properties_obs(obs-ffmpeg PROPERTIES FOLDER plugins/obs-ffmpeg PREFIX "")
