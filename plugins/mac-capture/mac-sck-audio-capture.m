@@ -48,7 +48,7 @@ API_AVAILABLE(macos(13.0)) static void sck_audio_capture_destroy(void *data)
     if (sc->capture_delegate) {
         [sc->capture_delegate release];
     }
-    [sc->application_id release];
+    [sc->application_ids release];
 
     pthread_mutex_destroy(&sc->mutex);
     bfree(sc);
@@ -84,14 +84,13 @@ API_AVAILABLE(macos(13.0)) static bool init_audio_screen_stream(struct screen_ca
         } break;
         case ScreenCaptureAudioApplicationStream: {
             SCDisplay *target_display = get_target_display();
-            SCRunningApplication *target_application = nil;
+            NSMutableArray *target_applications = [[NSMutableArray alloc] init];
             for (SCRunningApplication *application in sc->shareable_content.applications) {
-                if ([application.bundleIdentifier isEqualToString:sc->application_id]) {
-                    target_application = application;
-                    break;
+                if ([sc->application_ids containsObject:application.bundleIdentifier]) {
+                    [target_applications addObject:application];
                 }
             }
-            NSArray *target_application_array = [[NSArray alloc] initWithObjects:target_application, nil];
+            NSArray *target_application_array = [[NSArray alloc] initWithArray:target_applications];
 
             NSArray *empty = [[NSArray alloc] init];
             content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
@@ -190,7 +189,7 @@ API_AVAILABLE(macos(13.0)) static void *sck_audio_capture_create(obs_data_t *set
 
     sc->display = CGMainDisplayID();
 
-    sc->application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
+    sc->application_ids = strings_from_array(obs_data_get_array(settings, "application"));
     pthread_mutex_init(&sc->mutex, NULL);
 
     if (!init_audio_screen_stream(sc))
@@ -260,8 +259,8 @@ API_AVAILABLE(macos(13.0)) static obs_properties_t *sck_audio_capture_properties
 
     obs_property_set_modified_callback2(capture_type, audio_capture_method_changed, data);
 
-    obs_property_t *app_list = obs_properties_add_list(props, "application", obs_module_text("Application"),
-                                                       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+    obs_property_t *app_list = obs_properties_add_editable_list(props, "application", obs_module_text("Application"),
+                                                                OBS_EDITABLE_LIST_TYPE_COMBO, NULL, NULL);
     obs_property_t *reactivate =
         obs_properties_add_button2(props, "reactivate_capture", obs_module_text("SCK.Restart"), reactivate_capture, sc);
     obs_property_set_enabled(reactivate, sc->capture_failed);
@@ -287,12 +286,12 @@ API_AVAILABLE(macos(13.0)) static void sck_audio_capture_update(void *data, obs_
     struct screen_capture *sc = data;
 
     ScreenCaptureAudioStreamType capture_type = (ScreenCaptureAudioStreamType) obs_data_get_int(settings, "type");
-    NSString *application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
+    NSArray<NSString *> *application_ids = strings_from_array(obs_data_get_array(settings, "application"));
 
     destroy_audio_screen_stream(sc);
     sc->audio_capture_type = capture_type;
-    [sc->application_id release];
-    sc->application_id = application_id;
+    [sc->application_ids release];
+    sc->application_ids = application_ids;
     init_audio_screen_stream(sc);
 }
 
