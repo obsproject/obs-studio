@@ -23,9 +23,18 @@
 #include <QDir>
 #include <QGroupBox>
 #include <QObject>
-#include <QDesktopServices>
 #include <QUuid>
+#include <QDesktopServices>
+#include "QtCore/qstring.h"
+#include "QtGui/qaction.h"
+#include "QtWidgets/qcombobox.h"
+#include "QtWidgets/qdialog.h"
+#include "QtWidgets/qdialogbuttonbox.h"
+#include "QtWidgets/qlistwidget.h"
+#include "QtWidgets/qwidget.h"
 #include "double-slider.hpp"
+#include "slider-ignorewheel.hpp"
+#include "obs-properties.h"
 #include "spinbox-ignorewheel.hpp"
 #include "moc_properties-view.cpp"
 #include "properties-view.moc.hpp"
@@ -2104,12 +2113,53 @@ public:
 	inline QString GetText() const { return edit->text(); }
 };
 
+class DropdownDialog : public QDialog {
+	QComboBox *dropdown;
+
+public:
+	DropdownDialog(QWidget *parent) : QDialog(parent)
+	{
+		QHBoxLayout *topLayout = new QHBoxLayout();
+		QVBoxLayout *mainLayout = new QVBoxLayout();
+
+		dropdown = new QComboBox();
+		topLayout->addWidget(dropdown);
+		topLayout->setAlignment(dropdown, Qt::AlignVCenter);
+
+		QDialogButtonBox::StandardButtons buttons = QDialogButtonBox::Ok | QDialogButtonBox::Cancel;
+
+		QDialogButtonBox *buttonBox = new QDialogButtonBox(buttons);
+		buttonBox->setCenterButtons(true);
+
+		mainLayout->addLayout(topLayout);
+		mainLayout->addWidget(buttonBox);
+
+		setLayout(mainLayout);
+		resize(400, 80);
+
+		connect(buttonBox, &QDialogButtonBox::accepted, this, &DropdownDialog::accept);
+		connect(buttonBox, &QDialogButtonBox::rejected, this, &DropdownDialog::reject);
+	}
+
+	int GetSelectedIndex() const { return dropdown->currentIndex(); }
+
+	QString GetSelectedString() { return dropdown->currentText(); }
+
+	void AddField(const char *name) { dropdown->addItem(name); }
+	void AddField(const QString &icon, const char *name) { dropdown->addItem(icon, name); }
+};
+
 void WidgetInfo::EditListAdd()
 {
 	enum obs_editable_list_type type = obs_property_editable_list_type(property);
 
 	if (type == OBS_EDITABLE_LIST_TYPE_STRINGS) {
 		EditListAddText();
+		return;
+	}
+
+	if (type == OBS_EDITABLE_LIST_TYPE_SOURCES) {
+		EditListAddSource();
 		return;
 	}
 
@@ -2133,6 +2183,39 @@ void WidgetInfo::EditListAdd()
 	}
 
 	popup.exec(QCursor::pos());
+}
+
+void WidgetInfo::EditListAddSource()
+{
+	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	const char *desc = obs_property_description(property);
+
+	DropdownDialog dialog(widget->window());
+	/* ListEntry reused because its syntactically correct here. */
+	auto title = tr("Basic.PropertiesWindow.AddEditableListEntry").arg(QT_UTF8(desc));
+
+	dialog.setWindowTitle(title);
+
+	dialog.AddField(tr("None"), "none");
+
+	obs_enum_sources(
+		[](void *info, obs_source_t *source) {
+			auto dialog = reinterpret_cast<DropdownDialog *>(info);
+			const char *name = obs_source_get_name(source);
+
+			dialog->AddField(name);
+			return true;
+		},
+		&dialog);
+
+	if (dialog.exec() == QDialog::Rejected) {
+		return;
+	}
+
+	QString qstr = dialog.GetSelectedString();
+
+	list->addItem(qstr);
+	EditableListChanged();
 }
 
 void WidgetInfo::EditListAddText()
