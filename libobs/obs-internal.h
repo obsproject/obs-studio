@@ -124,6 +124,8 @@ struct obs_module {
 	const char *(*name)(void);
 	const char *(*description)(void);
 	const char *(*author)(void);
+	uint32_t (*version)(void);
+	const char *(*version_string)(void);
 
 	struct obs_module *next;
 };

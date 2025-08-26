@@ -56,6 +56,17 @@ static int load_module_exports(struct obs_module *mod, const char *path)
 	mod->description = os_dlsym(mod->module, "obs_module_description");
 	mod->author = os_dlsym(mod->module, "obs_module_author");
 	mod->get_string = os_dlsym(mod->module, "obs_module_get_string");
+	mod->version = os_dlsym(mod->module, "obs_module_version");
+	mod->version_string = os_dlsym(mod->module, "obs_module_version_string");
+	if (mod->version_string) {
+		uint32_t major, minor, patch;
+		if (sscanf(mod->version_string(), "%u.%u.%u", &major, &minor, &patch) != 3) {
+			return MODULE_VERSION_STRING_NOT_SEMANTIC;
+		}
+		if (mod->version && mod->version() != MAKE_SEMANTIC_VERSION(major, minor, patch)) {
+			return MODULE_VERSION_MISMATCH;
+		}
+	}
 	return MODULE_SUCCESS;
 }
 
@@ -210,6 +221,21 @@ const char *obs_get_module_data_path(obs_module_t *module)
 	return module ? module->data_path : NULL;
 }
 
+uint32_t obs_get_module_api_version(obs_module_t *module)
+{
+	return (module && module->ver) ? module->ver() : 0;
+}
+
+uint32_t obs_get_module_version(obs_module_t *module)
+{
+	return (module && module->version) ? module->version() : 0;
+}
+
+const char *obs_get_module_version_string(obs_module_t *module)
+{
+	return (module && module->version_string) ? module->version_string() : NULL;
+}
+
 obs_module_t *obs_get_module(const char *name)
 {
 	obs_module_t *module = obs->first_module;
@@ -345,6 +371,12 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 		goto load_failure;
 	case MODULE_INCOMPATIBLE_VER:
 		blog(LOG_DEBUG, "Failed to load module file '%s', incompatible version", info->bin_path);
+		goto load_failure;
+	case MODULE_VERSION_MISMATCH:
+		blog(LOG_DEBUG, "Failed to load module file '%s', version mismatch", info->bin_path);
+		goto load_failure;
+	case MODULE_VERSION_STRING_NOT_SEMANTIC:
+		blog(LOG_DEBUG, "Failed to load module file '%s', version string not semantic", info->bin_path);
 		goto load_failure;
 	case MODULE_HARDCODED_SKIP:
 		return;
