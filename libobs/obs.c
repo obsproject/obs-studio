@@ -1401,6 +1401,14 @@ void obs_shutdown(void)
 	}
 	obs->first_module = NULL;
 
+	module = obs->first_disabled_module;
+	while (module) {
+		struct obs_module *next = module->next;
+		free_module(module);
+		module = next;
+	}
+	obs->first_disabled_module = NULL;
+
 	obs_free_data();
 	obs_free_audio();
 	obs_free_video();
@@ -1412,13 +1420,25 @@ void obs_shutdown(void)
 	obs->procs = NULL;
 	obs->signals = NULL;
 
-	for (size_t i = 0; i < obs->module_paths.num; i++)
+	for (size_t i = 0; i < obs->module_paths.num; i++) {
 		free_module_path(obs->module_paths.array + i);
+	}
 	da_free(obs->module_paths);
 
-	for (size_t i = 0; i < obs->safe_modules.num; i++)
+	for (size_t i = 0; i < obs->safe_modules.num; i++) {
 		bfree(obs->safe_modules.array[i]);
+	}
 	da_free(obs->safe_modules);
+
+	for (size_t i = 0; i < obs->disabled_modules.num; i++) {
+		bfree(obs->disabled_modules.array[i]);
+	}
+	da_free(obs->disabled_modules);
+
+	for (size_t i = 0; i < obs->core_modules.num; i++) {
+		bfree(obs->core_modules.array[i]);
+	}
+	da_free(obs->core_modules);
 
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
