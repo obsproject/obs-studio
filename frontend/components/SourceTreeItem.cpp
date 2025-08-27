@@ -9,6 +9,8 @@
 #include <QLineEdit>
 #include <QPainter>
 
+#include "plugin-manager/PluginManager.hpp"
+
 #include "moc_SourceTreeItem.cpp"
 
 static inline OBSScene GetCurrentScene()
@@ -83,6 +85,16 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 	label->setAttribute(Qt::WA_TranslucentBackground);
 	label->setEnabled(sourceVisible);
+
+	const char *sourceId = obs_source_get_unversioned_id(source);
+	switch (obs_source_load_state(sourceId)) {
+	case OBS_MODULE_DISABLED:
+	case OBS_MODULE_MISSING:
+		label->setStyleSheet("QLabel {color: #CC0000;}");
+		break;
+	default:
+		break;
+	}
 
 #ifdef __APPLE__
 	vis->setAttribute(Qt::WA_LayoutUsesWidgetRect);
