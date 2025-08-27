@@ -47,6 +47,7 @@ class CrashHandler;
 
 enum class LogFileType { NoType, CurrentAppLog, LastAppLog, CrashLog };
 enum class LogFileState { NoState, New, Uploaded };
+class PluginManager;
 } // namespace OBS
 
 struct UpdateBranch {
@@ -83,6 +84,8 @@ private:
 	bool enableHotkeysOutOfFocus = true;
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
+
+	std::unique_ptr<OBS::PluginManager> pluginManager_;
 
 	bool UpdatePre22MultiviewLayout(const char *layout);
 
@@ -144,6 +147,7 @@ public:
 	std::filesystem::path userConfigLocation;
 	std::filesystem::path userScenesLocation;
 	std::filesystem::path userProfilesLocation;
+	std::filesystem::path userPluginManagerSettingsLocation;
 
 	inline const char *GetLocale() const { return locale.c_str(); }
 
@@ -209,6 +213,11 @@ public:
 #ifndef _WIN32
 	static void SigIntSignalHandler(int);
 #endif
+
+	void loadAppModules(struct obs_module_failure_info &mfi);
+
+	// Plugin Manager Accessors
+	void pluginManagerOpenDialog();
 
 public slots:
 	void Exec(VoidFunc func);
