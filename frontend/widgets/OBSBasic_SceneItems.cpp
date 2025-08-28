@@ -38,7 +38,7 @@ using namespace std;
 static inline bool HasAudioDevices(const char *source_id)
 {
 	const char *output_id = source_id;
-	obs_properties_t *props = obs_get_source_properties(output_id);
+	OBSProperties props = obs_get_source_properties(output_id);
 	size_t count = 0;
 
 	if (!props)
@@ -47,8 +47,6 @@ static inline bool HasAudioDevices(const char *source_id)
 	obs_property_t *devices = obs_properties_get(props, "device_id");
 	if (devices)
 		count = obs_property_list_item_count(devices);
-
-	obs_properties_destroy(props);
 
 	return count != 0;
 }
