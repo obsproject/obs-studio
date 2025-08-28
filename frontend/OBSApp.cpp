@@ -292,7 +292,12 @@ bool OBSApp::InitGlobalConfigDefaults()
 #if _WIN32
 	config_set_default_string(appConfig, "Video", "Renderer", "Direct3D 11");
 #else
+#if defined(__APPLE__) && defined(__aarch64__)
+	// TODO: Change this value to "Metal" once the renderer has reached production quality
 	config_set_default_string(appConfig, "Video", "Renderer", "OpenGL");
+#else
+	config_set_default_string(appConfig, "Video", "Renderer", "OpenGL");
+#endif
 #endif
 
 #ifdef _WIN32
@@ -1077,9 +1082,17 @@ void OBSApp::checkForUncleanShutdown()
 
 const char *OBSApp::GetRenderModule() const
 {
+#if defined(_WIN32)
 	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
 
 	return (astrcmpi(renderer, "Direct3D 11") == 0) ? DL_D3D11 : DL_OPENGL;
+#elif defined(__APPLE__) && defined(__aarch64__)
+	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
+
+	return (astrcmpi(renderer, "Metal (Experimental)") == 0) ? DL_METAL : DL_OPENGL;
+#else
+	return DL_OPENGL;
+#endif
 }
 
 static bool StartupOBS(const char *locale, profiler_name_store_t *store)

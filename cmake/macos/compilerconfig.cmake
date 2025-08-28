@@ -88,7 +88,7 @@ string(APPEND CMAKE_OBJCXX_FLAGS_RELEASE " -g")
 # * -Wno-non-virtual-dtor
 
 add_compile_definitions(
-  $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:DEBUG>>
+  $<$<CONFIG:DEBUG>:DEBUG>
   $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:$<$<CONFIG:DEBUG>:_DEBUG>>
   $<$<NOT:$<COMPILE_LANGUAGE:Swift>>:SIMDE_ENABLE_OPENMP>
 )
