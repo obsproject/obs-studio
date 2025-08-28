@@ -317,6 +317,28 @@ static struct dstr aspect_ratio_from_spa_rectangle(struct spa_rectangle rect)
 	return str;
 }
 
+static const void *get_values_from_pod(const struct spa_pod *p, uint32_t type, uint32_t size, uint32_t *cnt)
+{
+	uint32_t choice;
+	const struct spa_pod *vals = spa_pod_get_values(p, cnt, &choice);
+	if (!vals || vals->type != type || vals->size != size || *cnt <= 0)
+		return NULL;
+
+	const void *body = SPA_POD_BODY_CONST(vals);
+
+	switch (choice) {
+	case SPA_CHOICE_Enum:
+		/* skip the first one, the default value */
+		*cnt -= 1;
+		body = SPA_PTROFF(body, size, const void);
+		SPA_FALLTHROUGH;
+	case SPA_CHOICE_None:
+		return body;
+	default:
+		return NULL;
+	}
+}
+
 static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 {
 	struct param *p;
@@ -380,49 +402,21 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			dstr_free(&aspect_ratio);
 		}
 
+		const struct spa_fraction *framerate_values = NULL;
+		uint32_t n_framerates;
+
 		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
-		if (framerate_prop) {
-			struct spa_pod *framerate_pod;
-			uint32_t n_framerates;
-			enum spa_choice_type framerate_choice;
-			const struct spa_fraction *framerate_values;
-			g_autoptr(GArray) framerates = NULL;
+		if (framerate_prop)
+			framerate_values = get_values_from_pod(&framerate_prop->value, SPA_TYPE_Fraction,
+							       sizeof(*framerate_values), &n_framerates);
 
-			framerate_pod = spa_pod_get_values(&framerate_prop->value, &n_framerates, &framerate_choice);
-			if (framerate_pod->type != SPA_TYPE_Fraction) {
-				blog(LOG_WARNING, "Framerate is not a fraction");
-				continue;
-			}
-
-			framerate_values = SPA_POD_BODY(framerate_pod);
-			framerates = g_array_new(FALSE, FALSE, sizeof(struct spa_fraction));
-
-			switch (framerate_choice) {
-			case SPA_CHOICE_None:
-				g_array_append_val(framerates, framerate_values[0]);
-				break;
-			case SPA_CHOICE_Range:
-				blog(LOG_WARNING, "Ranged framerates not supported");
-				continue;
-			case SPA_CHOICE_Step:
-				blog(LOG_WARNING, "Stepped framerates not supported");
-				continue;
-			case SPA_CHOICE_Enum:
-				/* i=0 is the default framerate, skip it */
-				for (uint32_t i = 1; i < n_framerates; i++)
-					g_array_append_val(framerates, framerate_values[i]);
-				break;
-			default:
-				continue;
-			}
-
+		if (framerate_values) {
 			dstr_cat(&str, " - ");
 
-			for (int i = framerates->len - 1; i >= 0; i--) {
-				const struct spa_fraction *framerate =
-					&g_array_index(framerates, struct spa_fraction, i);
+			for (uint32_t i = n_framerates; i > 0; i--) {
+				const struct spa_fraction *framerate = &framerate_values[i - 1];
 
-				if (i != (int)framerates->len - 1)
+				if (i != n_framerates)
 					dstr_cat(&str, ", ");
 
 				if (framerate->denom == 1)
@@ -649,10 +643,8 @@ static bool framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 	spa_list_for_each(p, &dev->param_list, link)
 	{
 		const struct spa_fraction *framerate_values;
-		enum spa_choice_type choice;
 		const struct spa_pod_prop *prop;
 		struct spa_rectangle this_resolution;
-		struct spa_pod *framerate_pod;
 		uint32_t media_subtype;
 		uint32_t media_type;
 		uint32_t n_framerates;
@@ -687,32 +679,13 @@ static bool framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 		if (!prop)
 			continue;
 
-		framerate_pod = spa_pod_get_values(&prop->value, &n_framerates, &choice);
-		if (framerate_pod->type != SPA_TYPE_Fraction) {
-			blog(LOG_WARNING, "Framerate is not a fraction - something is wrong");
+		framerate_values =
+			get_values_from_pod(&prop->value, SPA_TYPE_Fraction, sizeof(*framerate_values), &n_framerates);
+		if (!framerate_values)
 			continue;
-		}
 
-		framerate_values = SPA_POD_BODY(framerate_pod);
-
-		switch (choice) {
-		case SPA_CHOICE_None:
-			g_array_append_val(framerates, framerate_values[0]);
-			break;
-		case SPA_CHOICE_Range:
-			blog(LOG_WARNING, "Ranged framerates not supported");
-			break;
-		case SPA_CHOICE_Step:
-			blog(LOG_WARNING, "Stepped framerates not supported");
-			break;
-		case SPA_CHOICE_Enum:
-			/* i=0 is the default framerate, skip it */
-			for (uint32_t i = 1; i < n_framerates; i++)
-				g_array_append_val(framerates, framerate_values[i]);
-			break;
-		default:
-			break;
-		}
+		for (uint32_t i = 0; i < n_framerates; i++)
+			g_array_append_val(framerates, framerate_values[i]);
 	}
 
 	g_array_sort(framerates, compare_framerates);
