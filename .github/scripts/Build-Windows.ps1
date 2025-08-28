@@ -54,14 +54,6 @@ function Build {
 
     $CmakeArgs = @('--preset', "windows-ci-${Target}")
 
-    # Required at the very least until OBS Studio updates to Qt 6.8+, pending review of Qt's build options for
-    # Windows ARM64.
-    if ( $Target -eq 'arm64' ) {
-        $QtDependencyVersion = $BuildSpec.dependencies.qt6.version
-
-        $CmakeArgs += @("-DQT_HOST_PATH=${ProjectRoot}\.deps\obs-deps-qt6-${QtDependencyVersion}-x64")
-    }
-
     $CmakeBuildArgs = @('--build')
     $CmakeInstallArgs = @()
 
