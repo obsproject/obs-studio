@@ -125,7 +125,15 @@ static void AddExtraModulePaths()
 		string data_path_with_module_suffix;
 		data_path_with_module_suffix += plugins_data_path;
 		data_path_with_module_suffix += "/%module%";
-		obs_add_module_path(plugins_path.c_str(), data_path_with_module_suffix.c_str());
+
+		string plugins_path_with_module_suffix;
+		plugins_path_with_module_suffix += plugins_path;
+#if ARCH_BITS == 64
+		plugins_path_with_module_suffix += "/%module%/bin/64bit";
+#else
+		plugins_path_with_module_suffix += "/%module%/bin/32bit";
+#endif
+		obs_add_module_path(plugins_path_with_module_suffix.c_str(), data_path_with_module_suffix.c_str());
 #endif
 	}
 
