@@ -343,17 +343,14 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 {
 	struct param *p;
 	obs_data_t *data = NULL;
-	struct dstr str = {};
 
 	obs_property_list_clear(prop);
 
 	spa_list_for_each(p, &dev->param_list, link)
 	{
-		struct dstr aspect_ratio;
 		uint32_t media_type, media_subtype;
 		uint32_t format = 0;
 		const char *format_name;
-		struct spa_rectangle resolution;
 
 		const struct spa_pod_prop *framerate_prop = NULL;
 
@@ -387,53 +384,70 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			continue;
 		}
 
-		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, format ? &format : NULL,
-					 SPA_FORMAT_VIDEO_size, SPA_POD_OPT_Rectangle(&resolution)) < 0)
+		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, format ? &format : NULL) < 0)
 			continue;
 
-		obs_data_set_int(data, "width", resolution.width);
-		obs_data_set_int(data, "height", resolution.height);
+		const struct spa_pod_prop *resolution_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_size);
+		if (!resolution_prop)
+			continue;
 
-		dstr_printf(&str, "%ux%u", resolution.width, resolution.height);
+		const struct spa_rectangle *resolution_values;
+		uint32_t n_resolutions;
 
-		aspect_ratio = aspect_ratio_from_spa_rectangle(resolution);
-		if (aspect_ratio.len != 0) {
-			dstr_catf(&str, " (%s)", aspect_ratio.array);
-			dstr_free(&aspect_ratio);
-		}
+		resolution_values = get_values_from_pod(&resolution_prop->value, SPA_TYPE_Rectangle,
+							sizeof(*resolution_values), &n_resolutions);
+		if (!resolution_values)
+			continue;
 
-		const struct spa_fraction *framerate_values = NULL;
-		uint32_t n_framerates;
+		for (uint32_t i = 0; i < n_resolutions; i++) {
+			const struct spa_rectangle *resolution = &resolution_values[i];
+			struct dstr aspect_ratio;
+			struct dstr str = {};
 
-		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
-		if (framerate_prop)
-			framerate_values = get_values_from_pod(&framerate_prop->value, SPA_TYPE_Fraction,
-							       sizeof(*framerate_values), &n_framerates);
+			obs_data_set_int(data, "width", resolution->width);
+			obs_data_set_int(data, "height", resolution->height);
 
-		if (framerate_values) {
-			dstr_cat(&str, " - ");
+			dstr_printf(&str, "%ux%u", resolution->width, resolution->height);
 
-			for (uint32_t i = n_framerates; i > 0; i--) {
-				const struct spa_fraction *framerate = &framerate_values[i - 1];
-
-				if (i != n_framerates)
-					dstr_cat(&str, ", ");
-
-				if (framerate->denom == 1)
-					dstr_catf(&str, "%u", framerate->num);
-				else
-					dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
+			aspect_ratio = aspect_ratio_from_spa_rectangle(*resolution);
+			if (aspect_ratio.len != 0) {
+				dstr_catf(&str, " (%s)", aspect_ratio.array);
+				dstr_free(&aspect_ratio);
 			}
 
-			dstr_cat(&str, " FPS");
-		}
+			const struct spa_fraction *framerate_values = NULL;
+			uint32_t n_framerates;
 
-		dstr_catf(&str, " - %s", format_name);
-		obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
+			framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
+			if (framerate_prop)
+				framerate_values = get_values_from_pod(&framerate_prop->value, SPA_TYPE_Fraction,
+								       sizeof(*framerate_values), &n_framerates);
+
+			if (framerate_values) {
+				dstr_cat(&str, " - ");
+
+				for (uint32_t i = n_framerates; i > 0; i--) {
+					const struct spa_fraction *framerate = &framerate_values[i - 1];
+
+					if (i != n_framerates)
+						dstr_cat(&str, ", ");
+
+					if (framerate->denom == 1)
+						dstr_catf(&str, "%u", framerate->num);
+					else
+						dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
+				}
+
+				dstr_cat(&str, " FPS");
+			}
+
+			dstr_catf(&str, " - %s", format_name);
+			obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
+			dstr_free(&str);
+		}
 	}
 
 	g_clear_pointer(&data, obs_data_release);
-	dstr_free(&str);
 }
 
 static bool control_changed(void *data, obs_properties_t *props, obs_property_t *prop, obs_data_t *settings)
