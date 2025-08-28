@@ -397,13 +397,9 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 		obs_data_set_int(data, "height", resolution.height);
 
 		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
-		if (!framerate_prop)
-			continue;
-
-		framerates = get_values_from_pod(&framerate_prop->value, SPA_TYPE_Fraction, sizeof(*framerates),
-						 &n_framerates);
-		if (!framerates)
-			continue;
+		if (framerate_prop)
+			framerates = get_values_from_pod(&framerate_prop->value, SPA_TYPE_Fraction, sizeof(*framerates),
+							 &n_framerates);
 
 		dstr_printf(&str, "%ux%u", resolution.width, resolution.height);
 
@@ -413,21 +409,25 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			dstr_free(&aspect_ratio);
 		}
 
-		dstr_cat(&str, " - ");
+		if (n_framerates > 0) {
+			dstr_cat(&str, " - ");
 
-		for (size_t i = n_framerates; i > 0; i--) {
-			const struct spa_fraction *framerate = &framerates[i - 1];
+			for (size_t i = n_framerates; i > 0; i--) {
+				const struct spa_fraction *framerate = &framerates[i - 1];
 
-			if (i != n_framerates)
-				dstr_cat(&str, ", ");
+				if (i != n_framerates)
+					dstr_cat(&str, ", ");
 
-			if (framerate->denom == 1)
-				dstr_catf(&str, "%u", framerate->num);
-			else
-				dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
+				if (framerate->denom == 1)
+					dstr_catf(&str, "%u", framerate->num);
+				else
+					dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
+			}
+
+			dstr_catf(&str, " FPS");
 		}
 
-		dstr_catf(&str, " FPS - %s", format_name);
+		dstr_catf(&str, " - %s", format_name);
 
 		obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
 		dstr_free(&str);
