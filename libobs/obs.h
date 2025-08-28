@@ -1710,6 +1710,7 @@ EXPORT bool obs_scene_reorder_items2(obs_scene_t *scene, struct obs_sceneitem_or
 				     size_t item_order_size);
 
 EXPORT bool obs_source_is_scene(const obs_source_t *source);
+EXPORT bool obs_source_type_is_scene(const char *id);
 
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source);
@@ -1839,6 +1840,7 @@ EXPORT void obs_sceneitem_group_remove_item(obs_sceneitem_t *group, obs_sceneite
 EXPORT obs_sceneitem_t *obs_sceneitem_get_group(obs_scene_t *scene, obs_sceneitem_t *item);
 
 EXPORT bool obs_source_is_group(const obs_source_t *source);
+EXPORT bool obs_source_type_is_group(const char *id);
 EXPORT bool obs_scene_is_group(const obs_scene_t *scene);
 
 EXPORT void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,

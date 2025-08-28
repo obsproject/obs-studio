@@ -2258,7 +2258,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data, bool is_priva
 	if (!*v_id)
 		v_id = id;
 
-	if (strcmp(id, scene_info.id) == 0 || strcmp(id, group_info.id) == 0) {
+	if (obs_source_type_is_scene(id) || obs_source_type_is_group(id)) {
 		const char *canvas_uuid = obs_data_get_string(source_data, "canvas_uuid");
 		canvas = obs_get_canvas_by_uuid(canvas_uuid);
 		/* Fall back to main canvas if canvas cannot be found. */
