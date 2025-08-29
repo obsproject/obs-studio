@@ -990,7 +990,6 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 
 	/* NOTE: The assignment of data.module must occur before memcpy! */
 	if (loadingModule) {
-		data.module = loadingModule;
 		char *source_id = bstrdup(info->id);
 		da_push_back(loadingModule->sources, &source_id);
 	}
@@ -1115,6 +1114,11 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 			da_push_back(obs->data.protocols, &new_prtcl);
 		}
 		strlist_free(protocols);
+	}
+
+	if (loadingModule) {
+		char *output_id = bstrdup(info->id);
+		da_push_back(loadingModule->outputs, &output_id);
 	}
 
 	return;
