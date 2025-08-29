@@ -55,6 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #define ONEVPL_EXPERIMENTAL
+#define WAIT_500_MILLISECONDS 500
 #include <vpl/mfxstructures.h>
 #include <vpl/mfxvideo++.h>
 #include "QSV_Encoder.h"
@@ -71,13 +72,13 @@ public:
 	void GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf);
 	void GetVpsSpsPps(mfxU8 **pVPSBuf, mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnVPSBuf, mfxU16 *pnSPSBuf,
 			  mfxU16 *pnPPSBuf);
-	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
-			 mfxBitstream **pBS);
-	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key, mfxBitstream **pBS);
+	int Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
+		   mfxBitstream **pBS);
+	int Encode_tex(uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key, mfxBitstream **pBS);
 	mfxStatus ClearData();
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
-	mfxStatus ReconfigureEncoder();
-	bool UpdateParams(qsv_param_t *pParams);
+	bool Flush();
+	mfxStatus ReconfigureEncoder(qsv_param_t *pParams);
 	void AddROI(mfxU32 left, mfxU32 top, mfxU32 right, mfxU32 bottom, mfxI16 delta);
 	void ClearROI();
 
@@ -123,6 +124,7 @@ private:
 	mfxExtChromaLocInfo m_ExtChromaLocInfo{};
 	mfxExtMasteringDisplayColourVolume m_ExtMasteringDisplayColourVolume{};
 	mfxExtContentLightLevelInfo m_ExtContentLightLevelInfo{};
+	mfxExtEncoderResetOption m_ExtEncodeResetOption{};
 	mfxU16 m_nTaskPool;
 	Task *m_pTaskPool;
 	int m_nTaskIdx;
