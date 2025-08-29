@@ -1116,6 +1116,11 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 		strlist_free(protocols);
 	}
 
+	if (loadingModule) {
+		char *output_id = bstrdup(info->id);
+		da_push_back(loadingModule->outputs, &output_id);
+	}
+
 	return;
 
 error:
