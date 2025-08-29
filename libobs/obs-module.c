@@ -990,7 +990,6 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 
 	/* NOTE: The assignment of data.module must occur before memcpy! */
 	if (loadingModule) {
-		data.module = loadingModule;
 		char *source_id = bstrdup(info->id);
 		da_push_back(loadingModule->sources, &source_id);
 	}
