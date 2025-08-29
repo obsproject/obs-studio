@@ -198,6 +198,7 @@ bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 			 {"enableAutoStart", broadcast.auto_start},
 			 {"enableAutoStop", broadcast.auto_stop},
 			 {"enableDvr", broadcast.dvr},
+			 {"closedCaptionsType", "closedCaptionsEmbedded"},
 			 {"projection", QT_TO_UTF8(broadcast.projection)},
 			 {
 				 "monitorStream",
