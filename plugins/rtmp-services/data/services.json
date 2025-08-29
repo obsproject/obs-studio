@@ -2409,24 +2409,6 @@
             ]
         },
         {
-            "name": "Live Streamer Cafe",
-            "more_info_link": "https://livestreamercafe.com/help.php",
-            "stream_key_link": "https://livestreamercafe.com/profile.php",
-            "servers": [
-                {
-                    "name": "Live Streamer Cafe Server",
-                    "url": "rtmp://tophicles.com/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Enchant.events",
             "more_info_link": "https://docs.enchant.events/knowledge-base-y4pOb",
             "servers": [
