@@ -191,7 +191,7 @@ void PluginManager::addModuleTypes_()
 	i = 0;
 	while (obs_enum_output_types(i, &output_id)) {
 		i += 1;
-		obs_module_t *obsModule = obs_source_get_module(output_id);
+		obs_module_t *obsModule = obs_output_get_module(output_id);
 		if (!obsModule) {
 			continue;
 		}
@@ -208,7 +208,7 @@ void PluginManager::addModuleTypes_()
 	i = 0;
 	while (obs_enum_encoder_types(i, &encoder_id)) {
 		i += 1;
-		obs_module_t *obsModule = obs_source_get_module(encoder_id);
+		obs_module_t *obsModule = obs_encoder_get_module(encoder_id);
 		if (!obsModule) {
 			continue;
 		}
@@ -225,7 +225,7 @@ void PluginManager::addModuleTypes_()
 	i = 0;
 	while (obs_enum_service_types(i, &service_id)) {
 		i += 1;
-		obs_module_t *obsModule = obs_source_get_module(service_id);
+		obs_module_t *obsModule = obs_service_get_module(service_id);
 		if (!obsModule) {
 			continue;
 		}
