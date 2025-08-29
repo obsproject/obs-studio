@@ -3496,6 +3496,24 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
+        },
+        {
+            "name": "Odysee",
+            "more_info_link": "https://odysee.com",
+            "servers": [
+                {
+                    "name": "Primary RTMP",
+                    "url": "rtmp://stream.odysee.com/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max video bitrate": 7000
+            }
         }
     ]
 }
