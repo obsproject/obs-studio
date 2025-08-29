@@ -94,7 +94,15 @@ void PluginManager::loadModules_()
 	auto modulesFile = getConfigFilePath_();
 	if (std::filesystem::exists(modulesFile)) {
 		std::ifstream jsonFile(modulesFile);
-		nlohmann::json data = nlohmann::json::parse(jsonFile);
+		nlohmann::json data;
+		try {
+			data = nlohmann::json::parse(jsonFile);
+		} catch (const nlohmann::json::parse_error &error) {
+			modules_.clear();
+			blog(LOG_ERROR, "Error loading modules config file: %s", error.what());
+			blog(LOG_ERROR, "Generating new config file.");
+			return;
+		}
 		modules_.clear();
 		for (auto it : data) {
 			ModuleInfo obsModule;
