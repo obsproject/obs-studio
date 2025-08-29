@@ -88,7 +88,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QDoubleSpinBox" name="positionX">
+          <widget class="ClampedDoubleSpinBox" name="positionX">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -119,7 +119,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="positionY">
+          <widget class="ClampedDoubleSpinBox" name="positionY">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -163,7 +163,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="rotation">
+       <widget class="ClampedDoubleSpinBox" name="rotation">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -231,7 +231,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QDoubleSpinBox" name="sizeX">
+          <widget class="ClampedDoubleSpinBox" name="sizeX">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -265,7 +265,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="sizeY">
+          <widget class="ClampedDoubleSpinBox" name="sizeY">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -531,7 +531,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QDoubleSpinBox" name="boundsWidth">
+          <widget class="ClampedDoubleSpinBox" name="boundsWidth">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -565,7 +565,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="boundsHeight">
+          <widget class="ClampedDoubleSpinBox" name="boundsHeight">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -852,6 +852,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ClampedDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>ClampedDoubleSpinBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
