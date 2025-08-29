@@ -1852,7 +1852,7 @@ void obs_canvas_enum_scenes(obs_canvas_t *canvas, bool (*enum_proc)(void *, obs_
 	while (source) {
 		obs_source_t *s = obs_source_get_ref(source);
 		if (s) {
-			if (obs_source_is_scene(source) && !enum_proc(param, s)) {
+			if (source->info.type == OBS_SOURCE_TYPE_SCENE && !enum_proc(param, s)) {
 				obs_source_release(s);
 				break;
 			}
