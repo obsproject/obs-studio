@@ -23,6 +23,7 @@
 #include <utility/FFmpegShared.hpp>
 
 #include <QPointer>
+#include <QRadioButton>
 
 #define VOLUME_METER_DECAY_FAST 23.53
 #define VOLUME_METER_DECAY_MEDIUM 11.76
@@ -107,6 +108,15 @@ private:
 					 QPointer<QSpinBox>>;
 	std::vector<AudioSource_t> audioSources;
 	std::vector<OBSSignal> audioSourceSignals;
+	std::vector<QPointer<QCheckBox>> simpleOutRecTracks;
+	std::vector<QPointer<QRadioButton>> advOutStreamSingleTracks;
+	std::vector<QPointer<QCheckBox>> advOutStreamMultiTracks;
+	std::vector<QPointer<QCheckBox>> advOutRecTracks;
+	std::vector<QPointer<QRadioButton>> advOutFlvTracks;
+	std::vector<QPointer<QCheckBox>> advOutFFTracks;
+	std::vector<QPointer<QComboBox>> advOutputTracksBitrates;
+	std::vector<QPointer<QLabel>> advOutputTracksBitrateLabels;
+	std::vector<QPointer<QLineEdit>> advOutputTracksNames;
 	OBSSignal sourceCreated;
 	OBSSignal channelChanged;
 
@@ -121,7 +131,7 @@ private:
 
 	QPointer<QCheckBox> vodTrackCheckbox;
 	QPointer<QWidget> vodTrackContainer;
-	QPointer<QRadioButton> vodTrack[MAX_AUDIO_MIXES];
+	std::vector<QPointer<QRadioButton>> vodTracks;
 
 	QIcon hotkeyConflictIcon;
 
