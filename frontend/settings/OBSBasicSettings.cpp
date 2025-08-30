@@ -113,16 +113,16 @@ static inline bool WidgetChanged(QWidget *widget)
 	return widget->property("changed").toBool();
 }
 
-static inline void SetComboByName(QComboBox *combo, const char *name)
+static inline void SetComboByName(QComboBox *combo, const QString &name)
 {
-	int idx = combo->findText(QT_UTF8(name));
+	int idx = combo->findText(name);
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
 }
 
-static inline bool SetComboByValue(QComboBox *combo, const char *name)
+static inline bool SetComboByValue(QComboBox *combo, const QString &name)
 {
-	int idx = combo->findData(QT_UTF8(name));
+	int idx = combo->findData(name);
 	if (idx != -1) {
 		combo->setCurrentIndex(idx);
 		return true;
@@ -131,7 +131,7 @@ static inline bool SetComboByValue(QComboBox *combo, const char *name)
 	return false;
 }
 
-static inline bool SetInvalidValue(QComboBox *combo, const char *name, const char *data = nullptr)
+static inline bool SetInvalidValue(QComboBox *combo, const QString &name, const QVariant &data)
 {
 	combo->insertItem(0, name, data);
 
@@ -1748,7 +1748,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	if (!IsSurround(speakers))
 		RestrictResetBitrates({ui->simpleOutputABitrate}, 320);
 
-	SetComboByName(ui->simpleOutputABitrate, std::to_string(audioBitrate).c_str());
+	SetComboByName(ui->simpleOutputABitrate, QString::number(audioBitrate));
 
 	ui->simpleOutAdvanced->setChecked(advanced);
 	ui->simpleOutCustom->setText(custom);
@@ -2143,12 +2143,12 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 				      320);
 	}
 
-	SetComboByName(ui->advOutTrack1Bitrate, std::to_string(track1Bitrate).c_str());
-	SetComboByName(ui->advOutTrack2Bitrate, std::to_string(track2Bitrate).c_str());
-	SetComboByName(ui->advOutTrack3Bitrate, std::to_string(track3Bitrate).c_str());
-	SetComboByName(ui->advOutTrack4Bitrate, std::to_string(track4Bitrate).c_str());
-	SetComboByName(ui->advOutTrack5Bitrate, std::to_string(track5Bitrate).c_str());
-	SetComboByName(ui->advOutTrack6Bitrate, std::to_string(track6Bitrate).c_str());
+	SetComboByName(ui->advOutTrack1Bitrate, QString::number(track1Bitrate));
+	SetComboByName(ui->advOutTrack2Bitrate, QString::number(track2Bitrate));
+	SetComboByName(ui->advOutTrack3Bitrate, QString::number(track3Bitrate));
+	SetComboByName(ui->advOutTrack4Bitrate, QString::number(track4Bitrate));
+	SetComboByName(ui->advOutTrack5Bitrate, QString::number(track5Bitrate));
+	SetComboByName(ui->advOutTrack6Bitrate, QString::number(track6Bitrate));
 
 	ui->advOutTrack1Name->setText(name1);
 	ui->advOutTrack2Name->setText(name2);
@@ -2548,8 +2548,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	LoadRendererList();
 
-	if (obs_audio_monitoring_available() && !SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
-		SetInvalidValue(ui->monitoringDevice, monDevName.toUtf8(), monDevId.toUtf8());
+	if (obs_audio_monitoring_available() && !SetComboByValue(ui->monitoringDevice, monDevId))
+		SetInvalidValue(ui->monitoringDevice, monDevName, monDevId);
 
 	ui->confirmOnExit->setChecked(confirmOnExit);
 
