@@ -45,8 +45,7 @@ LogUploadDialog::LogUploadDialog(QWidget *parent, LogFileType uploadType)
 
 	ui->stackedWidget->setCurrentIndex(DialogPage::Start);
 
-	ui->privacyNotice->setText(
-		QTStr("LogUploadDialog.Labels.PrivacyNotice").arg(QTStr("LogUploadDialog.Buttons.ConfirmUpload")));
+	ui->privacyNotice->setText(QTStr("LogUploadDialog.Labels.PrivacyNotice"));
 
 	if (uploadType_ == LogFileType::CrashLog) {
 		ui->analyzeURL->hide();
