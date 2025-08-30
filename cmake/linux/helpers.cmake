@@ -59,8 +59,8 @@ function(set_target_properties_obs target)
     set_target_properties(
       ${target}
       PROPERTIES
-        VERSION 30
-        SOVERSION 30
+        VERSION ${OBS_VERSION_CANONICAL}
+        SOVERSION ${OBS_VERSION_MAJOR}
         BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
         INSTALL_RPATH "${OBS_LIBRARY_RPATH}"
     )
@@ -107,13 +107,13 @@ function(set_target_properties_obs target)
     endif()
   elseif(target_type STREQUAL MODULE_LIBRARY)
     if(target STREQUAL obs-browser)
-      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION 30)
+      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_VERSION_MAJOR})
     else()
       set_target_properties(
         ${target}
         PROPERTIES
           VERSION 0
-          SOVERSION 30
+          SOVERSION ${OBS_VERSION_MAJOR}
           BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
           INSTALL_RPATH "${OBS_MODULE_RPATH}"
       )
