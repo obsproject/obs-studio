@@ -139,6 +139,15 @@ bool CrashHandler::hasUncleanShutdown()
 
 bool CrashHandler::hasNewCrashLog()
 {
+	switch (getPlatformType()) {
+	case PlatformType::InvalidPlatform:
+	case PlatformType::Linux:
+	case PlatformType::FreeBSD:
+		return false;
+	default:
+		break;
+	}
+
 	CrashLogUpdateResult result = updateLocalCrashLogState();
 
 	bool hasNewCrashLog = (result == CrashLogUpdateResult::Updated);
