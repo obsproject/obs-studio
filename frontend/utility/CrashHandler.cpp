@@ -141,6 +141,10 @@ bool CrashHandler::hasNewCrashLog()
 {
 	CrashLogUpdateResult result = updateLocalCrashLogState();
 
+	if (result == CrashLogUpdateResult::NotAvailable) {
+		return false;
+	}
+
 	bool hasNewCrashLog = (result == CrashLogUpdateResult::Updated);
 	bool hasNoLogUrl = lastCrashLogURL_.empty();
 
@@ -152,6 +156,10 @@ CrashLogUpdateResult CrashHandler::updateLocalCrashLogState()
 	updateCrashLogFromConfig();
 
 	std::filesystem::path lastLocalCrashLogFile = findLastCrashLog();
+
+	if (lastLocalCrashLogFile.empty() && lastCrashLogFile_.empty()) {
+		return CrashLogUpdateResult::NotAvailable;
+	}
 
 	if (lastLocalCrashLogFile != lastCrashLogFile_) {
 		lastCrashLogFile_ = std::move(lastLocalCrashLogFile);
