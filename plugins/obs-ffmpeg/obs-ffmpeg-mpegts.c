@@ -863,8 +863,8 @@ static bool fetch_service_info(struct ffmpeg_output *stream, struct ffmpeg_cfg *
 	const char *p;
 	char buf[1024];
 	p = strchr(config->url, '?');
-	if (av_find_info_tag(buf, sizeof(buf), "payload_size", p) ||
-	    av_find_info_tag(buf, sizeof(buf), "pkt_size", p)) {
+	if (p && (av_find_info_tag(buf, sizeof(buf), "payload_size", p) ||
+		  av_find_info_tag(buf, sizeof(buf), "pkt_size", p))) {
 		config->srt_pkt_size = strtol(buf, NULL, 10);
 	}
 	return true;
