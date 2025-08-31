@@ -209,7 +209,11 @@ enum {
 	kAppleLosslessFormatFlag_32BitSourceData = 4,
 };
 
-enum { kAudioFormatFlagsNativeEndian = 0 };
+enum {
+	kAudioFormatFlagsNativeEndian = 0,
+	kAudioFormatFlagsNativeFloatPacked = kAudioFormatFlagIsFloat | kAudioFormatFlagsNativeEndian |
+					     kAudioFormatFlagIsPacked
+};
 
 enum {
 	// AudioStreamBasicDescription structure properties
