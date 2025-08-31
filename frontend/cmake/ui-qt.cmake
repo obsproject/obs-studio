@@ -18,6 +18,9 @@ set_target_properties(
   PROPERTIES AUTOMOC TRUE AUTOUIC TRUE AUTORCC TRUE AUTOGEN_PARALLEL AUTO
 )
 
+# https://doc.qt.io/qt-6/qtglobal.html#QT_ENABLE_STRICT_MODE_UP_TO
+target_compile_definitions(obs-studio PRIVATE QT_ENABLE_STRICT_MODE_UP_TO=0xFF0000)
+
 set_property(TARGET obs-studio APPEND PROPERTY AUTOUIC_SEARCH_PATHS forms forms/source-toolbar)
 
 target_sources(
