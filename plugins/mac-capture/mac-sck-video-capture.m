@@ -291,11 +291,13 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;
 
+    obs_enter_graphics();
     if (gs_get_device_type() == GS_DEVICE_OPENGL) {
         sc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
     } else {
         sc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
     }
+    obs_leave_graphics();
 
     if (!sc->effect)
         goto fail;
@@ -311,7 +313,6 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     return sc;
 
 fail:
-    obs_leave_graphics();
     sck_video_capture_destroy(sc);
     return NULL;
 }
