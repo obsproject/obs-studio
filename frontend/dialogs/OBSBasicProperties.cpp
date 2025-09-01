@@ -128,7 +128,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		obs_source_inc_active(sourceClone);
 		obs_transition_set(sourceClone, sourceA);
 
-		auto updateCallback = [=]() {
+		auto updateCallback = [this]() {
 			OBSDataAutoRelease settings = obs_source_get_settings(source);
 			obs_source_update(sourceClone, settings);
 
@@ -167,7 +167,7 @@ void OBSBasicProperties::AddPreviewButton()
 
 	playButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-	auto play = [=]() {
+	auto play = [this]() {
 		OBSSource start;
 		OBSSource end;
 

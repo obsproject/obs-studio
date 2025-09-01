@@ -150,7 +150,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 
 	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged, this, [&](obs_key_combination) { emit KeyChanged(); });
 	QObject::connect(edit, &OBSHotkeyEdit::SearchKey, this,
-			 [=](obs_key_combination combo) { emit SearchKey(combo); });
+			 [this](obs_key_combination combo) { emit SearchKey(combo); });
 }
 
 void OBSHotkeyWidget::RemoveEdit(size_t idx, bool signal)
