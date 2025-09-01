@@ -130,10 +130,15 @@ static void nvidia_audio_destroy(void *data)
 {
 	struct nvidia_audio_data *ng = data;
 
+	if (!ng)
+		return;
+
 	if (ng->nvidia_sdk_dir_found)
 		pthread_mutex_lock(&ng->nvafx_mutex);
 
-	NvAFX_UninitializeLogger();
+	if (nvafx_new_sdk)
+		NvAFX_UninitializeLogger();
+
 	for (size_t i = 0; i < ng->channels; i++) {
 		if (ng->handle[0]) {
 			if (NvAFX_DestroyEffect) {
