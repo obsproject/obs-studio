@@ -8,6 +8,7 @@ class OBSSourceLabel;
 class VolumeMeter;
 class VolumeSlider;
 class MuteCheckBox;
+class QCheckBox;
 class QLabel;
 class QPushButton;
 
@@ -22,6 +23,7 @@ private:
 	VolumeMeter *volMeter;
 	VolumeSlider *slider;
 	MuteCheckBox *mute;
+	QCheckBox *monitor;
 	QPushButton *config = nullptr;
 	float levelTotal;
 	float levelCount;
@@ -35,15 +37,18 @@ private:
 				   const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS]);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
 	static void OBSMixersOrMonitoringChanged(void *data, calldata_t *);
+	static void OBSMonitorEnabled(void *data, calldata_t *calldata);
 
 	void EmitConfigClicked();
 
 private slots:
 	void VolumeChanged();
 	void VolumeMuted(bool muted);
+	void MonitorEnabled(bool enabled);
 	void MixersOrMonitoringChanged();
 
 	void SetMuted(bool checked);
+	void SetMonitorEnabled(bool checked);
 	void SliderChanged(int vol);
 	void updateText();
 

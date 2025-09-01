@@ -100,6 +100,18 @@
     image: url(:/settings/images/settings/audio.svg);
 }
 
+.indicator-headphones {
+    outline: none;
+}
+
+.indicator-headphones::indicator:checked {
+    image: url(:/res/images/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:unchecked {
+    image: url(:/res/images/headphones-off.svg);
+}
+
 .indicator-expand {
     background: transparent;
     outline: none;
