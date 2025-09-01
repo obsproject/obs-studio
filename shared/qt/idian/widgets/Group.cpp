@@ -116,7 +116,7 @@ void Group::setCheckable(bool check)
 		toggleSwitch = new ToggleSwitch(true);
 		controlLayout->addWidget(toggleSwitch);
 		connect(toggleSwitch, &ToggleSwitch::toggled, this,
-			[=](bool checked) { propertyList->setEnabled(checked); });
+			[this](bool checked) { propertyList->setEnabled(checked); });
 	}
 
 	if (!checkable && toggleSwitch) {
