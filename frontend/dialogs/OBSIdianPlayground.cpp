@@ -21,6 +21,8 @@
 
 #include <QTimer>
 
+#include "moc_OBSIdianPlayground.cpp"
+
 using namespace idian;
 
 OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(new Ui_OBSIdianPlayground)
