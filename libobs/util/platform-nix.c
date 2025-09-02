@@ -82,7 +82,7 @@ void *os_dlopen(const char *path)
 		dstr_cat(&dylib_name, ".so");
 
 #ifdef __APPLE__
-	int dlopen_flags = RTLD_LAZY | RTLD_FIRST;
+	int dlopen_flags = RTLD_NOW | RTLD_FIRST;
 	if (dstr_find(&dylib_name, "Python")) {
 		dlopen_flags = dlopen_flags | RTLD_GLOBAL;
 	} else {
@@ -90,7 +90,7 @@ void *os_dlopen(const char *path)
 	}
 	void *res = dlopen(dylib_name.array, dlopen_flags);
 #else
-	void *res = dlopen(dylib_name.array, RTLD_LAZY);
+	void *res = dlopen(dylib_name.array, RTLD_NOW);
 #endif
 	if (!res)
 		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n", path, dylib_name.array, dlerror());
@@ -113,7 +113,7 @@ void os_dlclose(void *module)
 #if !defined(__APPLE__)
 int module_has_qt5_check(const char *path)
 {
-	void *mod = os_dlopen(path);
+	void *mod = dlopen(path, RTLD_LAZY);
 	if (mod == NULL) {
 		return 1;
 	}
