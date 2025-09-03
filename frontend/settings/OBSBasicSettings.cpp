@@ -2835,7 +2835,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		}
 
 		hotkeys.emplace_back(registerer_type == OBS_HOTKEY_REGISTERER_FRONTEND, hw);
-		connect(hw, &OBSHotkeyWidget::KeyChanged, this, [=]() {
+		connect(hw, &OBSHotkeyWidget::KeyChanged, this, [this, hotkeysLayout]() {
 			HotkeysChanged();
 			ScanDuplicateHotkeys(hotkeysLayout);
 		});
