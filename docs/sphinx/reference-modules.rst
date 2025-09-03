@@ -245,6 +245,9 @@ plugin modules.
 .. function:: void obs_load_all_modules(void)
 
    Automatically loads all modules from module paths (convenience function).
+   
+   .. deprecated:: 32.1
+   Use :c:func:`obs_load_all_modules2` instead.
 
 ---------------------
 
@@ -311,6 +314,9 @@ plugin modules.
 
    typedef void (*obs_find_module_callback_t)(void *param,
                    const struct obs_module_info *info);
+
+   .. deprecated: 32.1
+   Use :c:func:`obs_find_modules2` instead.
 
 ---------------------
 

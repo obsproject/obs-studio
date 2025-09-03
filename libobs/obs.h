@@ -574,7 +574,7 @@ EXPORT void obs_add_safe_module(const char *name);
 EXPORT void obs_add_core_module(const char *name);
 
 /** Automatically loads all modules from module paths (convenience function) */
-EXPORT void obs_load_all_modules(void);
+OBS_DEPRECATED EXPORT void obs_load_all_modules(void);
 
 struct obs_module_failure_info {
 	char **failed_modules;
@@ -596,7 +596,7 @@ struct obs_module_info {
 typedef void (*obs_find_module_callback_t)(void *param, const struct obs_module_info *info);
 
 /** Finds all modules within the search paths added by obs_add_module_path. */
-EXPORT void obs_find_modules(obs_find_module_callback_t callback, void *param);
+OBS_DEPRECATED EXPORT void obs_find_modules(obs_find_module_callback_t callback, void *param);
 
 struct obs_module_info2 {
 	const char *bin_path;
