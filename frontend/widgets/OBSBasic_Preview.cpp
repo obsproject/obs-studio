@@ -493,7 +493,7 @@ void OBSBasic::ColorChange()
 				}
 			};
 
-			auto changedColor = [=](const QColor &color) {
+			auto changedColor = [this, selectedItems](const QColor &color) {
 				if (color.isValid()) {
 					ConfirmColor(ui->sources, color, selectedItems);
 				}
