@@ -487,8 +487,9 @@ public:
 			});
 		}
 	}
-	
-	template<typename T> static void naturalSort(QList<T> &list, bool reverse = false) {
+
+	template<typename T> static void naturalSort(QList<T> &list, bool reverse = false)
+	{
 		naturalSort(list, [](const T &item) { return item; }, reverse);
 	}
 

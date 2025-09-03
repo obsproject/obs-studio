@@ -51,20 +51,14 @@ static const char *mediaExtensions[] = {
 	"nuv", "ogg",  "ogm", "ogv",  "ogx",   "ps",    "rec",   "rm",   "rmvb", "rpl",  "thp",  "tod",  "ts",  "tts",
 	"txd", "vob",  "vro", "webm", "wm",    "wmv",   "wtv",   nullptr};
 
-
 const std::map<OBSBasic::DropType, const char *> OBSBasic::DropTypes = {
 #ifdef _WIN32
-	{DropType_RawText, "text_gdiplus"},
-	{DropType_Text, "text_gdiplus"},
+	{DropType_RawText, "text_gdiplus"}, {DropType_Text, "text_gdiplus"},
 #else
-	{DropType_RawText, "text_ft2_source"},
-	{DropType_Text, "text_ft2_source"},
+	{DropType_RawText, "text_ft2_source"}, {DropType_Text, "text_ft2_source"},
 #endif
-	{DropType_Image, "image_source"},
-	{DropType_Media, "ffmpeg_source"},
-	{DropType_Html, "browser_source"},
-	{DropType_Url, "browser_source"}
-};
+	{DropType_Image, "image_source"},   {DropType_Media, "ffmpeg_source"},
+	{DropType_Html, "browser_source"},  {DropType_Url, "browser_source"}};
 
 struct OBSBasic::DropItem {
 	QString url;
@@ -296,7 +290,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 				QFileInfo fileInfo(file);
 
 				if (!fileInfo.exists()) {
-					
+
 					if (ConfirmDropUrl(url.url())) {
 						addList << DropItem{url.url(), GetUrlDisplayName(url.url()),
 								    DropType_Url};
@@ -362,7 +356,6 @@ void OBSBasic::dropEvent(QDropEvent *event)
 	naturalSort(addList, [](const DropItem &item) { return item.displayName; }, true);
 
 	for (const auto &item : addList) {
-		QString displayName = item.displayName;
 		AddDropSource(item);
 	}
 }

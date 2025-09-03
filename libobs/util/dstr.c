@@ -194,7 +194,7 @@ int astrnatcmpi(const char *str1, const char *str2)
 		/*
 		* Scan forward until next number comparison can be made or end of string is reached.
 		* _strnicoll considers locale, so a longer string could be before or after a shorter string.
-		*/ 
+		*/
 		while (read < min_len - i && !(isdigit(str1[i + read]) && isdigit(str2[i + read]))) {
 			read++;
 		}
@@ -273,7 +273,7 @@ static inline int a_compare_number(const char *a, const char *b, int *skip)
 		if (!isdigit(b[ai]))
 			return 1;
 		if (r != 0) {
-			if (a[ai] < b[bi]) 
+			if (a[ai] < b[bi])
 				r = -1;
 			else if (a[ai] > b[bi])
 				r = 1;

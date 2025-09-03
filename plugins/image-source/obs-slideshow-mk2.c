@@ -531,7 +531,8 @@ static void ss_update(void *data, obs_data_t *settings)
 			os_closedir(dir);
 
 			if (sortable_files.num > 0) {
-				qsort(sortable_files.array, sortable_files.num, sizeof(sortable_files.array[0]), compare_files);
+				qsort(sortable_files.array, sortable_files.num, sizeof(sortable_files.array[0]),
+				      compare_files);
 
 				for (int i = 0; i < sortable_files.num; i++) {
 					add_file(&new_data.files, sortable_files.array[i].path);
