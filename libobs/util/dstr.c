@@ -163,6 +163,158 @@ int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n)
 	return 0;
 }
 
+int astrnatcmpi(const char *str1, const char *str2)
+{
+	if (!str1)
+		str1 = astrblank;
+	if (!str2)
+		str2 = astrblank;
+
+	size_t len1 = strlen(str1);
+	size_t len2 = strlen(str2);
+	size_t min_len = (len1 < len2) ? len1 : len2;
+
+	int result = 0;
+	if (len1 < len2)
+		result = -1;
+	else if (len1 > len2)
+		result = 1;
+
+	int i = 0;
+	int read, r;
+
+	while (i < min_len) {
+
+		read = 1;
+		if (isdigit(str1[i]) && isdigit(str2[i])) {
+			if ((r = a_compare_number(str1 + i, str2 + i, &read)) != 0)
+				return r;
+		}
+
+		/*
+		* Scan forward until next number comparison can be made or end of string is reached.
+		* _strnicoll considers locale, so a longer string could be before or after a shorter string.
+		*/ 
+		while (read < min_len - i && !(isdigit(str1[i + read]) && isdigit(str2[i + read]))) {
+			read++;
+		}
+
+		if ((r = _strnicoll(str1 + i, str2 + i, read)) != 0)
+			return r;
+
+		i += read;
+	}
+	return result;
+}
+
+int wstrnatcmpi(const wchar_t *str1, const wchar_t *str2)
+{
+	if (!str1)
+		str1 = wstrblank;
+	if (!str2)
+		str2 = wstrblank;
+
+	size_t len1 = wcslen(str1);
+	size_t len2 = wcslen(str2);
+	size_t min_len = (len1 < len2) ? len1 : len2;
+
+	int result = 0;
+	if (len1 < len2)
+		result = -1;
+	else if (len1 > len2)
+		result = 1;
+
+	int i = 0;
+	int read, r;
+
+	while (i < min_len) {
+
+		read = 1;
+		if (iswdigit(str1[i]) && iswdigit(str2[i])) {
+			if ((r = w_compare_number(str1 + i, str2 + i, &read)) != 0)
+				return r;
+		}
+
+		/*
+		* Scan forward until next number comparison can be made or end of string is reached.
+		* _wcsnicoll considers locale, so a longer string could be before or after a shorter string.
+		*/
+		while (read < min_len - i && !(iswdigit(str1[i + read]) && iswdigit(str2[i + read]))) {
+			read++;
+		}
+
+		if ((r = _wcsnicoll(str1 + i, str2 + i, read)) != 0)
+			return r;
+
+		i += read;
+	}
+	return result;
+}
+
+static inline int a_compare_number(const char *a, const char *b, int *skip)
+{
+	int r = 0;
+	int ai = 0;
+	int bi = 0;
+
+	while (a[ai] == '0')
+		ai++;
+
+	while (b[bi] == '0')
+		bi++;
+
+	for (;; ai++, bi++) {
+		if (!isdigit(a[ai]) && !isdigit(b[bi])) {
+			*skip = (ai > bi) ? bi : ai;
+			return r;
+		}
+		if (!isdigit(a[ai]))
+			return -1;
+		if (!isdigit(b[ai]))
+			return 1;
+		if (r != 0) {
+			if (a[ai] < b[bi]) 
+				r = -1;
+			else if (a[ai] > b[bi])
+				r = 1;
+		}
+	};
+
+	return r;
+}
+
+static inline int w_compare_number(const wchar_t *a, const wchar_t *b, int *skip)
+{
+	int r = 0;
+	int ai = 0;
+	int bi = 0;
+
+	while (a[ai] == '0')
+		ai++;
+
+	while (b[bi] == '0')
+		bi++;
+
+	for (;; ai++, bi++) {
+		if (!iswdigit(a[ai]) && !iswdigit(b[bi])) {
+			*skip = (ai > bi) ? bi : ai;
+			return r;
+		}
+		if (!iswdigit(a[ai]))
+			return -1;
+		if (!iswdigit(b[ai]))
+			return 1;
+		if (r != 0) {
+			if (a[ai] < b[bi])
+				r = -1;
+			else if (a[ai] > b[bi])
+				r = 1;
+		}
+	};
+
+	return r;
+}
+
 char *astrstri(const char *str, const char *find)
 {
 	size_t len;
