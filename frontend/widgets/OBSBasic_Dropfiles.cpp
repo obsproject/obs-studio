@@ -362,7 +362,6 @@ void OBSBasic::dropEvent(QDropEvent *event)
 	naturalSort(addList, [](const DropItem &item) { return item.displayName; }, true);
 
 	for (const auto &item : addList) {
-		QString displayName = item.displayName;
 		AddDropSource(item);
 	}
 }
