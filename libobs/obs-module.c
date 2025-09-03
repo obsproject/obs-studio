@@ -442,7 +442,7 @@ void obs_add_disabled_module(const char *name)
 	da_push_back(obs->disabled_modules, &item);
 }
 
-extern void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load);
+extern void get_plugin_info(const char *path, bool *is_obs_plugin);
 
 struct fail_info {
 	struct dstr fail_modules;
@@ -497,9 +497,8 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 	obs_module_t *disabled_module;
 
 	bool is_obs_plugin;
-	bool can_load_obs_plugin;
 
-	get_plugin_info(info->bin_path, &is_obs_plugin, &can_load_obs_plugin);
+	get_plugin_info(info->bin_path, &is_obs_plugin);
 
 	if (!is_obs_plugin) {
 		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin", info->bin_path);
@@ -516,14 +515,6 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path, OBS_MODULE_DISABLED);
 		blog(LOG_WARNING, "Skipping module '%s', is disabled", info->name);
 		return;
-	}
-
-	if (!can_load_obs_plugin) {
-		blog(LOG_WARNING,
-		     "Skipping module '%s' due to possible "
-		     "import conflicts",
-		     info->bin_path);
-		goto load_failure;
 	}
 
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
