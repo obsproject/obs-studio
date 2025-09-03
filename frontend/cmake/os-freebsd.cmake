@@ -6,7 +6,8 @@ target_compile_definitions(obs-studio PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_
 target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate Qt::DBus procstat)
 
 find_package(Libpci REQUIRED)
-target_link_libraries(obs-studio PRIVATE Libpci::pci)
+find_package(GLIB2 REQUIRED)
+target_link_libraries(obs-studio PRIVATE Libpci::pci GLIB2::GLIB2)
 
 if(TARGET OBS::python)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
