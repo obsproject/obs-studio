@@ -271,6 +271,30 @@
             }
         },
         {
+            "name": "Rumble Studio",
+            "common": true,
+            "stream_key_link": "https://rumble.com/account/static-stream-key",
+            "servers": [
+                {
+                    "name": "Autodetect",
+                    "url": "rtmp://rtmp.rumble.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 8000,
+                "max audio bitrate": 128,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max fps": 60
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
             "name": "Loola.tv",
             "common": false,
             "servers": [
