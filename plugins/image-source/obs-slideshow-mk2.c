@@ -405,6 +405,11 @@ static void restart_slides(struct slideshow *ss)
 	ssd->slides = new_slides;
 }
 
+static int compare_files(const struct image_file_data *a, const struct image_file_data *b)
+{
+	return astrnatcmpi(a->path, b->path);
+}
+
 static void ss_update(void *data, obs_data_t *settings)
 {
 	struct slideshow *ss = data;
@@ -501,6 +506,8 @@ static void ss_update(void *data, obs_data_t *settings)
 			struct dstr dir_path = {0};
 			struct os_dirent *ent;
 
+			image_file_array_t sortable_files = {0};
+
 			for (;;) {
 				const char *ext;
 
@@ -517,11 +524,19 @@ static void ss_update(void *data, obs_data_t *settings)
 				dstr_copy(&dir_path, path);
 				dstr_cat_ch(&dir_path, '/');
 				dstr_cat(&dir_path, ent->d_name);
-				add_file(&new_data.files, dir_path.array);
+				add_file(&sortable_files, dir_path.array);
 			}
 
 			dstr_free(&dir_path);
 			os_closedir(dir);
+
+			if (sortable_files.num > 0) {
+				qsort(sortable_files.array, sortable_files.num, sizeof(sortable_files.array[0]), compare_files);
+
+				for (int i = 0; i < sortable_files.num; i++) {
+					add_file(&new_data.files, sortable_files.array[i].path);
+				}
+			}
 		} else {
 			add_file(&new_data.files, path);
 		}
