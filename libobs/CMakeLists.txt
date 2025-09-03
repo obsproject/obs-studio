@@ -15,10 +15,6 @@ find_package(FFmpeg 6.1 REQUIRED avformat avutil swscale swresample OPTIONAL_COM
 find_package(ZLIB REQUIRED)
 find_package(Uthash REQUIRED)
 
-if(ENABLE_UI)
-  find_package(Qt6 REQUIRED Core)
-endif()
-
 find_package(jansson REQUIRED)
 if(NOT TARGET OBS::caption)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/libcaption" "${CMAKE_BINARY_DIR}/deps/libcaption")
