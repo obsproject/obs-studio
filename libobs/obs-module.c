@@ -160,7 +160,7 @@ int obs_open_module(obs_module_t **module, const char *path, const char *data_pa
 	mod.module = os_dlopen(path);
 	if (!mod.module) {
 		blog(LOG_WARNING, "Module '%s' not loaded", path);
-		return MODULE_FILE_NOT_FOUND;
+		return MODULE_FAILED_TO_OPEN;
 	}
 
 	errorcode = load_module_exports(&mod, path);
@@ -522,14 +522,18 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 	case MODULE_MISSING_EXPORTS:
 		blog(LOG_DEBUG, "Failed to load module file '%s', not an OBS plugin", info->bin_path);
 		return;
-	case MODULE_FILE_NOT_FOUND:
-		blog(LOG_DEBUG, "Failed to load module file '%s', file not found", info->bin_path);
-		return;
+	case MODULE_FAILED_TO_OPEN:
+		blog(LOG_DEBUG, "Failed to load module file '%s', module failed to open", info->bin_path);
+		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
+					   OBS_MODULE_FAILED_TO_OPEN);
+		goto load_failure;
 	case MODULE_ERROR:
-		blog(LOG_DEBUG, "Failed to load module file '%s'", info->bin_path);
+		blog(LOG_DEBUG, "Failed to load module file '%s' (unknown error)", info->bin_path);
 		goto load_failure;
 	case MODULE_INCOMPATIBLE_VER:
 		blog(LOG_DEBUG, "Failed to load module file '%s', incompatible version", info->bin_path);
+		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
+					   OBS_MODULE_FAILED_TO_OPEN);
 		goto load_failure;
 	case MODULE_HARDCODED_SKIP:
 		return;
@@ -537,7 +541,8 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 
 	if (!obs_init_module(module)) {
 		free_module(module);
-		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path, OBS_MODULE_ERROR);
+		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
+					   OBS_MODULE_FAILED_TO_INITIALIZE);
 	}
 
 	UNUSED_PARAMETER(param);

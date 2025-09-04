@@ -165,11 +165,12 @@ enum obs_bounds_type {
  */
 enum obs_module_load_state {
 	OBS_MODULE_INVALID,
-	OBS_MODULE_MISSING,
 	OBS_MODULE_ENABLED,
+	OBS_MODULE_MISSING,
 	OBS_MODULE_DISABLED,
 	OBS_MODULE_DISABLED_SAFE,
-	OBS_MODULE_ERROR
+	OBS_MODULE_FAILED_TO_OPEN,
+	OBS_MODULE_FAILED_TO_INITIALIZE,
 };
 
 struct obs_transform_info {
@@ -482,7 +483,7 @@ EXPORT bool obs_get_audio_info2(struct obs_audio_info2 *oai2);
  *                    data files are stored.
  * @returns           MODULE_SUCCESS if successful
  *                    MODULE_ERROR if a generic error occurred
- *                    MODULE_FILE_NOT_FOUND if the module was not found
+ *                    MODULE_FAILED_TO_OPEN if the module failed to open, e.g. because it was not found or had missing symbols
  *                    MODULE_MISSING_EXPORTS if required exports are missing
  *                    MODULE_INCOMPATIBLE_VER if incompatible version
  */
