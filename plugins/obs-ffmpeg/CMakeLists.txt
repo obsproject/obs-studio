@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
 option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
+option(ENABLE_AMF "Enable AMF encoder" ON)
 
 if(OS_LINUX OR OS_WINDOWS)
   option(ENABLE_FFMPEG_NVENC "Enable legacy FFmpeg NVENC encoder" OFF)

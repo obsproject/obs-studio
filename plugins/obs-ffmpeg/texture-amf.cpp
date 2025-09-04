@@ -24,6 +24,7 @@
 #include <dlfcn.h>
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
+#include <EGL/egl.h>
 #include <GL/glext.h>
 #endif
 
@@ -2426,14 +2427,22 @@ void ogl_enum_graphics_device_luids(device_luid_cb device_luid, void *param)
 	if (numDevices == 0)
 		numDevices = 1;
 
-	for (GLint i = 0; i < numDevices; ++i) {
-		GLubyte glDeviceUUID[GL_UUID_SIZE_EXT] = {};
+	typedef void *(APIENTRYP PFNGLXGETPROCADDRESSPROC_PRIVATE)(const char *);
 
-		glGetUnsignedBytei_vEXT(GL_DEVICE_UUID_EXT, i, glDeviceUUID);
+	PFNGLGETUNSIGNEDBYTEI_VEXTPROC fun =
+		(PFNGLGETUNSIGNEDBYTEI_VEXTPROC)eglGetProcAddress("glGetUnsignedBytei_vEXT");
 
-		uint64_t luid64 = *(uint64_t *)glDeviceUUID;
-		if (!device_luid(param, i, luid64))
-			break;
+	if (fun != nullptr) {
+		for (GLint i = 0; i < numDevices; ++i) {
+			GLubyte glDeviceUUID[GL_UUID_SIZE_EXT] = {};
+
+			//glGetUnsignedBytei_vEXT(GL_DEVICE_UUID_EXT, i, glDeviceUUID);
+			fun(GL_DEVICE_UUID_EXT, i, glDeviceUUID);
+
+			uint64_t luid64 = *(uint64_t *)glDeviceUUID;
+			if (!device_luid(param, i, luid64))
+				break;
+		}
 	}
 }
 #endif
