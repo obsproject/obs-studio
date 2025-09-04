@@ -482,7 +482,7 @@ EXPORT bool obs_get_audio_info2(struct obs_audio_info2 *oai2);
  *                    data files are stored.
  * @returns           MODULE_SUCCESS if successful
  *                    MODULE_ERROR if a generic error occurred
- *                    MODULE_FILE_NOT_FOUND if the module was not found
+ *                    MODULE_FAILED_TO_OPEN if the module failed to open, e.g. because it was not found or had missing symbols
  *                    MODULE_MISSING_EXPORTS if required exports are missing
  *                    MODULE_INCOMPATIBLE_VER if incompatible version
  */
