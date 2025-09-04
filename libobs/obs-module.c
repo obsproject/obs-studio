@@ -533,12 +533,16 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 		return;
 	case MODULE_FAILED_TO_OPEN:
 		blog(LOG_DEBUG, "Failed to load module file '%s', module failed to open", info->bin_path);
+		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
+					   OBS_MODULE_FAILED_TO_OPEN);
 		return;
 	case MODULE_ERROR:
-		blog(LOG_DEBUG, "Failed to load module file '%s'", info->bin_path);
+		blog(LOG_DEBUG, "Failed to load module file '%s' (unknown error)", info->bin_path);
 		goto load_failure;
 	case MODULE_INCOMPATIBLE_VER:
 		blog(LOG_DEBUG, "Failed to load module file '%s', incompatible version", info->bin_path);
+		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
+					   OBS_MODULE_FAILED_TO_OPEN);
 		goto load_failure;
 	case MODULE_HARDCODED_SKIP:
 		return;
@@ -546,7 +550,8 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 
 	if (!obs_init_module(module)) {
 		free_module(module);
-		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path, OBS_MODULE_ERROR);
+		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
+					   OBS_MODULE_FAILED_TO_INITIALIZE);
 	}
 
 	UNUSED_PARAMETER(param);
