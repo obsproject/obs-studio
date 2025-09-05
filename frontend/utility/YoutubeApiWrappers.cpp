@@ -51,7 +51,8 @@ bool IsUserSignedIntoYT()
 
 bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
 {
-	QString translated = QTStr("YouTube.Errors." + lastErrorReason.toUtf8());
+	const QString errorKey = "YouTube.Errors." + lastErrorReason.toUtf8();
+	const QString translated = QTStr(QT_TO_UTF8(errorKey));
 	// No translation found
 	if (translated.startsWith("YouTube.Errors."))
 		return false;
@@ -158,8 +159,8 @@ bool YoutubeApiWrappers::GetChannelDescription(ChannelDescription &channel_descr
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_CHANNEL_URL "?part=snippet,contentDetails,statistics"
-							"&mine=true";
+	const char *url = YOUTUBE_LIVE_CHANNEL_URL "?part=snippet,contentDetails,statistics"
+						   "&mine=true";
 	Json json_out;
 	if (!InsertCommand(url, "application/json", "", nullptr, json_out)) {
 		return false;
@@ -179,7 +180,7 @@ bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_BROADCAST_URL "?part=snippet,status,contentDetails";
+	const char *url = YOUTUBE_LIVE_BROADCAST_URL "?part=snippet,status,contentDetails";
 	const Json data = Json::object{
 		{"snippet",
 		 Json::object{
@@ -219,7 +220,7 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_STREAM_URL "?part=snippet,cdn,status,contentDetails";
+	const char *url = YOUTUBE_LIVE_STREAM_URL "?part=snippet,cdn,status,contentDetails";
 	const Json data = Json::object{
 		{"snippet",
 		 Json::object{
@@ -260,17 +261,17 @@ bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, const QString &page, 
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	QByteArray url = YOUTUBE_LIVE_BROADCAST_URL "?part=snippet,contentDetails,status"
-						    "&broadcastType=all&maxResults=" DEFAULT_BROADCASTS_PER_QUERY;
+	QString url = YOUTUBE_LIVE_BROADCAST_URL "?part=snippet,contentDetails,status"
+						 "&broadcastType=all&maxResults=" DEFAULT_BROADCASTS_PER_QUERY;
 
 	if (status.isEmpty())
 		url += "&mine=true";
 	else
-		url += "&broadcastStatus=" + status.toUtf8();
+		url += "&broadcastStatus=" + status;
 
 	if (!page.isEmpty())
-		url += "&pageToken=" + page.toUtf8();
-	return InsertCommand(url, "application/json", "", nullptr, json_out);
+		url += "&pageToken=" + page;
+	return InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out);
 }
 
 bool YoutubeApiWrappers::GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out)
@@ -316,7 +317,7 @@ bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id, const QString
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_VIDEOS_URL "?part=snippet";
+	const char *url = YOUTUBE_LIVE_VIDEOS_URL "?part=snippet";
 	const Json data = Json::object{
 		{"id", QT_TO_UTF8(video_id)},
 		{"snippet",
@@ -480,11 +481,11 @@ bool YoutubeApiWrappers::FindBroadcast(const QString &id, json11::Json &json_out
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	QByteArray url = YOUTUBE_LIVE_BROADCAST_URL "?part=id,snippet,contentDetails,status"
-						    "&broadcastType=all&maxResults=1";
-	url += "&id=" + id.toUtf8();
+	QString url = YOUTUBE_LIVE_BROADCAST_URL "?part=id,snippet,contentDetails,status"
+						 "&broadcastType=all&maxResults=1";
+	url += "&id=" + id;
 
-	if (!InsertCommand(url, "application/json", "", nullptr, json_out))
+	if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out))
 		return false;
 
 	auto items = json_out["items"].array_items();
@@ -500,11 +501,11 @@ bool YoutubeApiWrappers::FindStream(const QString &id, json11::Json &json_out)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	QByteArray url = YOUTUBE_LIVE_STREAM_URL "?part=id,snippet,cdn,status"
-						 "&maxResults=1";
-	url += "&id=" + id.toUtf8();
+	QString url = YOUTUBE_LIVE_STREAM_URL "?part=id,snippet,cdn,status"
+					      "&maxResults=1";
+	url += "&id=" + id;
 
-	if (!InsertCommand(url, "application/json", "", nullptr, json_out))
+	if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out))
 		return false;
 
 	auto items = json_out["items"].array_items();

@@ -81,7 +81,7 @@ GoLiveApi::Config DownloadGoLiveConfig(QWidget *parent, QString url, const GoLiv
 
 	std::vector<std::string> headers;
 	headers.push_back("Content-Type: application/json");
-	bool encodeConfigDownloadedOk = GetRemoteFile(url.toLocal8Bit(), encodeConfigText,
+	bool encodeConfigDownloadedOk = GetRemoteFile(url.toUtf8().constData(), encodeConfigText,
 						      libraryError, // out params
 						      nullptr,
 						      nullptr, // out params (response code and content type)
