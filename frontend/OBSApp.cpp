@@ -59,6 +59,12 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef __APPLE__
+#include <objc/objc-runtime.h>
+#include <QTimer>
+#include <utility/platform.hpp>
+#endif
+
 #include "moc_OBSApp.cpp"
 
 using namespace std;
@@ -73,6 +79,8 @@ extern bool multi;
 extern bool disable_3p_plugins;
 extern bool opt_disable_updater;
 extern bool opt_disable_missing_files_check;
+extern bool opt_background_launch;
+extern bool opt_minimize_tray;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
 
@@ -1227,6 +1235,16 @@ bool OBSApp::OBSInit()
 	setQuitOnLastWindowClosed(false);
 
 	mainWindow = new OBSBasic();
+
+#ifdef __APPLE__
+	QTimer::singleShot(0, this, [this]() {
+		if (isAppHidden()) {
+			opt_minimize_tray = true;
+		}
+	});
+
+	SetOBSApplicationFlags(!opt_background_launch);
+#endif
 
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 	connect(mainWindow, &OBSBasic::destroyed, this, &OBSApp::quit);
