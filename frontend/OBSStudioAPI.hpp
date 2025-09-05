@@ -138,8 +138,6 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	config_t *obs_frontend_get_profile_config(void) override;
 
-	config_t *obs_frontend_get_global_config(void) override;
-
 	config_t *obs_frontend_get_app_config(void) override;
 
 	config_t *obs_frontend_get_user_config(void) override;
