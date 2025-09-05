@@ -265,8 +265,8 @@ would be used:
    uniform texture2d image;
 
    struct VertInOut {
-           float4 my_position : POSITION;
-           float2 my_texcoord : TEXCOORD0;
+           float4 pos : POSITION;
+           float2 uv : TEXCOORD0;
    };
 
    VertInOut MyVertexShaderFunc(VertInOut vert_in)
