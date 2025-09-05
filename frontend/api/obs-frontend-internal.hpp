@@ -70,7 +70,6 @@ struct obs_frontend_callbacks {
 	virtual obs_output_t *obs_frontend_get_replay_buffer_output(void) = 0;
 
 	virtual config_t *obs_frontend_get_profile_config(void) = 0;
-	OBS_DEPRECATED virtual config_t *obs_frontend_get_global_config(void) = 0;
 
 	virtual config_t *obs_frontend_get_app_config(void) = 0;
 	virtual config_t *obs_frontend_get_user_config(void) = 0;
