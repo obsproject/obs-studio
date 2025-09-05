@@ -245,6 +245,38 @@ QTableView::indicator:unchecked:disabled {
     image: url(theme:Light/settings/audio.svg);
 }
 
+.indicator-headphones::indicator:checked {
+    image: url(theme:Light/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:unchecked {
+    image: url(:/res/images/headphones-off.svg);
+}
+
+.indicator-headphones::indicator:unchecked:hover {
+    image: url(:/res/images/headphones-off.svg);
+}
+
+.indicator-headphones::indicator:unchecked:focus {
+    image: url(:/res/images/headphones-off.svg);
+}
+
+.indicator-headphones::indicator:checked:hover {
+    image: url(theme:Light/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:checked:focus {
+    image: url(theme:Light/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:checked:disabled {
+    image: url(theme:Light/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:unchecked:disabled {
+    image: url(:/res/images/headphones-off.svg);
+}
+
 .indicator-expand::indicator:checked,
 .indicator-expand::indicator:checked:hover {
     image: url(theme:Light/expand.svg);
