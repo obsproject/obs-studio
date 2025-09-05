@@ -1396,15 +1396,15 @@ void OBSBasicSettings::LoadRendererList()
 #if defined(_WIN32) || (defined(__APPLE__) && defined(__aarch64__))
 	const char *renderer = config_get_string(App()->GetAppConfig(), "Video", "Renderer");
 #ifdef _WIN32
-	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
+	ui->renderer->addItem(QString("Direct3D 11"), QString("Direct3D 11"));
 	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0) {
-		ui->renderer->addItem(QT_UTF8("OpenGL"));
+		ui->renderer->addItem(QString("OpenGL"), QString("OpenGL"));
 	}
 #else
-	ui->renderer->addItem(QT_UTF8("OpenGL"));
-	ui->renderer->addItem(QT_UTF8("Metal (Experimental)"));
+	ui->renderer->addItem(QString("OpenGL"), QString("OpenGL"));
+	ui->renderer->addItem(QTStr("Basic.Settings.Video.Renderer.Experimental").arg("Metal"), QString("Metal"));
 #endif
-	int index = ui->renderer->findText(QT_UTF8(renderer));
+	int index = ui->renderer->findData(QString(renderer));
 	if (index == -1) {
 		index = 0;
 	}
@@ -3146,7 +3146,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 
 #if defined(_WIN32) || (defined(__APPLE__) && defined(__aarch64__))
 	if (WidgetChanged(ui->renderer)) {
-		config_set_string(App()->GetAppConfig(), "Video", "Renderer", QT_TO_UTF8(ui->renderer->currentText()));
+		config_set_string(App()->GetAppConfig(), "Video", "Renderer",
+				  QT_TO_UTF8(ui->renderer->currentData().toString()));
 	}
 #endif
 
