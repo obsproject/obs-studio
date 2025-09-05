@@ -163,6 +163,210 @@ int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n)
 	return 0;
 }
 
+int astrnatcmp(const char *str1, const char *str2)
+{
+	if (!str1)
+		str1 = astrblank;
+	if (!str2)
+		str2 = astrblank;
+
+	size_t len1 = strlen(str1);
+	size_t len2 = strlen(str2);
+	size_t min_len = (len1 < len2) ? len1 : len2;
+
+	if (min_len == 0)
+		return strcoll(str1, str2);
+
+	size_t i = 0;
+	size_t read;
+	int r;
+
+	for (;;) {
+
+		read = 1;
+		if (isdigit(str1[i]) && isdigit(str2[i])) {
+			if ((r = a_compare_number(str1 + i, str2 + i, &read)) != 0)
+				return r;
+		}
+
+		/*
+		* Scan forward until next number comparison can be made or end of string is reached.
+		* astrncoll considers locale, so a longer string could be before or after a shorter string.
+		*/
+		while (read + i < min_len && !(isdigit(str1[i + read]) && isdigit(str2[i + read]))) {
+			read++;
+		}
+
+		if (read + i >= min_len)
+			break;
+
+		if ((r = astrncoll(str1 + i, str2 + i, read)) != 0)
+			return r;
+
+		i += read;
+	}
+	return strcoll(str1 + i, str2 + i);
+}
+
+int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
+{
+	if (!str1)
+		str1 = wstrblank;
+	if (!str2)
+		str2 = wstrblank;
+
+	size_t len1 = wcslen(str1);
+	size_t len2 = wcslen(str2);
+	size_t min_len = (len1 < len2) ? len1 : len2;
+
+	if (min_len == 0)
+		return wcscoll(str1, str2);
+
+	size_t i = 0;
+	size_t read;
+	int r;
+
+	for (;;) {
+
+		read = 1;
+		if (iswdigit(str1[i]) && iswdigit(str2[i])) {
+			if ((r = w_compare_number(str1 + i, str2 + i, &read)) != 0)
+				return r;
+		}
+
+		/*
+		* Scan forward until next number comparison can be made or end of string is reached.
+		* wstrncoll considers locale, so a longer string could be before or after a shorter string.
+		*/
+		while (read + i < min_len && !(iswdigit(str1[i + read]) && iswdigit(str2[i + read]))) {
+			read++;
+		}
+
+		if (read + i >= min_len)
+			break;
+
+		if ((r = wstrncoll(str1 + i, str2 + i, read)) != 0)
+			return r;
+
+		i += read;
+	}
+	return wcscoll(str1 + i, str2 + i);
+}
+
+static int astrncoll(const char *str1, const char *str2, const size_t read)
+{
+	if (read == 0)
+		return 0;
+
+	char *buf1 = (char *)malloc(sizeof(char) * (read + 1));
+	char *buf2 = (char *)malloc(sizeof(char) * (read + 1));
+
+	if (!buf1 || !buf2) {
+		free(buf1);
+		free(buf2);
+		return 0;
+	}
+
+	memcpy(buf1, str1, sizeof(char) * read);
+	memcpy(buf2, str2, sizeof(char) * read);
+
+	buf1[read] = 0;
+	buf2[read] = 0;
+
+	int r = strcoll(buf1, buf2);
+
+	free(buf1);
+	free(buf2);
+
+	return r;
+}
+
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read)
+{
+	if (read == 0)
+		return 0;
+
+	wchar_t *buf1 = (wchar_t *)malloc(sizeof(wchar_t) * (read + 1));
+	wchar_t *buf2 = (wchar_t *)malloc(sizeof(wchar_t) * (read + 1));
+
+	if (!buf1 || !buf2) {
+		free(buf1);
+		free(buf2);
+		return 0;
+	}
+
+	memcpy(buf1, str1, sizeof(wchar_t) * read);
+	memcpy(buf2, str2, sizeof(wchar_t) * read);
+
+	buf1[read] = 0;
+	buf2[read] = 0;
+
+	int r = wcscoll(buf1, buf2);
+
+	free(buf1);
+	free(buf2);
+
+	return r;
+}
+
+static inline int a_compare_number(const char *a, const char *b, size_t *skip)
+{
+	int r = 0;
+	size_t ai = 0;
+	size_t bi = 0;
+
+	while (a[ai] == '0')
+		ai++;
+
+	while (b[bi] == '0')
+		bi++;
+
+	for (; isdigit(a[ai]) || isdigit(b[bi]); ai++, bi++) {
+
+		if (!isdigit(a[ai]))
+			return -1;
+		if (!isdigit(b[bi]))
+			return 1;
+		if (r == 0) {
+			if (a[ai] < b[bi])
+				r = -1;
+			else if (a[ai] > b[bi])
+				r = 1;
+		}
+	};
+	*skip = (ai > bi) ? bi : ai;
+	return r;
+}
+
+static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *skip)
+{
+	int r = 0;
+	size_t ai = 0;
+	size_t bi = 0;
+
+	while (a[ai] == '0')
+		ai++;
+
+	while (b[bi] == '0')
+		bi++;
+
+	for (; iswdigit(a[ai]) || iswdigit(b[bi]); ai++, bi++) {
+
+		if (!iswdigit(a[ai]))
+			return -1;
+		if (!iswdigit(b[bi]))
+			return 1;
+		if (r == 0) {
+			if (a[ai] < b[bi])
+				r = -1;
+			else if (a[ai] > b[bi])
+				r = 1;
+		}
+	};
+	*skip = (ai > bi) ? bi : ai;
+	return r;
+}
+
 char *astrstri(const char *str, const char *find)
 {
 	size_t len;
