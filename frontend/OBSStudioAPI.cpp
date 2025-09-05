@@ -419,13 +419,6 @@ config_t *OBSStudioAPI::obs_frontend_get_profile_config()
 	return main->activeConfiguration;
 }
 
-config_t *OBSStudioAPI::obs_frontend_get_global_config()
-{
-	blog(LOG_WARNING,
-	     "DEPRECATION: obs_frontend_get_global_config is deprecated. Read from global or user configuration explicitly instead.");
-	return App()->GetAppConfig();
-}
-
 config_t *OBSStudioAPI::obs_frontend_get_app_config()
 {
 	return App()->GetAppConfig();
