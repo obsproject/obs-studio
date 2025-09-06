@@ -334,7 +334,7 @@ static inline int a_compare_number(const char *a, const char *b, size_t *skip)
 				r = 1;
 		}
 	};
-	*skip = (ai > bi) ? bi : ai;
+	*skip = (ai > bi) ? ai : bi;
 	return r;
 }
 
@@ -363,7 +363,7 @@ static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *s
 				r = 1;
 		}
 	};
-	*skip = (ai > bi) ? bi : ai;
+	*skip = (ai > bi) ? ai : bi;
 	return r;
 }
 
