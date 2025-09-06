@@ -565,7 +565,7 @@ static inline obs_properties_t *syphon_properties_internal(syphon_t s)
     LOAD_CROP(size.height);
 #undef LOAD_CROP
 
-    obs_properties_add_button(props, "syphon license", obs_module_text("SyphonLicense"), show_syphon_license);
+    obs_properties_add_button2(props, "syphon license", obs_module_text("SyphonLicense"), show_syphon_license, NULL);
 
     return props;
 }

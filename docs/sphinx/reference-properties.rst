@@ -259,7 +259,14 @@ Property Object Functions
 ---------------------
 
 .. function:: obs_property_t *obs_properties_add_button(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback)
-              obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback, void *priv)
+
+   Like :c:func:`obs_properties_add_button2`, except the value of the ``data`` argument in the callback is
+   determined by the caller of :c:func:`obs_property_button_clicked`, and as such unspecified by libobs.
+
+   .. deprecated:: 32.1
+   Use :c:func:`obs_properties_add_button2` instead.
+
+.. function:: obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback, void *priv)
 
    Adds a button property.  This property does not actually store any
    settings; it's used to implement a button in user interface if the
@@ -642,6 +649,16 @@ Property Modification Functions
 
 .. function:: bool obs_property_button_clicked(obs_property_t *p, void *obj)
 
+   Calls the ``callback`` of the button.
+
+   :param p: The property
+   :param obj: Must be a pointer to an object of type ``obs_canvas_t``, ``obs_source_t``,
+               ``obs_output_t``, ``obs_encoder_t``, or ``obs_service_t``.
+               If the property was created with :c:func:`obs_properties_add_button`, that
+               object's context will be passed as the ``obj`` parameter.
+               If the property was created with :c:func:`obs_properties_add_button2`, it
+               will be ignored.
+
 ---------------------
 
 .. function:: void obs_property_set_visible(obs_property_t *p, bool visible)
@@ -813,6 +830,8 @@ Property Modification Functions
 
 .. function:: void obs_property_button_set_type(obs_property_t *p, enum obs_button_type type)
 
+   Sets the type of the button. The button's ``callback`` will be called regardless of type.
+
    :param   type: Can be one of the following values:
 
                   - **OBS_BUTTON_DEFAULT** - Standard button
@@ -822,3 +841,6 @@ Property Modification Functions
 ---------------------
 
 .. function:: void obs_property_button_set_url(obs_property_t *p, char *url)
+
+   :param p:   The property
+   :param url: The URL to be opened if the button is of type ``OBS_BUTTON_URL``
