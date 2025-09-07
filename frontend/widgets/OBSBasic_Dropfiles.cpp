@@ -353,7 +353,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 		return;
 
 	// Reverse sort order, since AddDropSource() sends signals that are processed in reverse order
-	naturalSort(addList, [](const DropItem &item) { return item.displayName; }, true);
+	NaturalSort(addList, [](const DropItem &item) { return item.displayName; }, true);
 
 	for (const auto &item : addList) {
 		AddDropSource(item);

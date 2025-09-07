@@ -38,7 +38,6 @@
 #include <util/util.hpp>
 
 #include <QSystemTrayIcon>
-#include <QCollator>
 
 #include <deque>
 
@@ -468,30 +467,6 @@ private:
 	void dragLeaveEvent(QDragLeaveEvent *event) override;
 	void dragMoveEvent(QDragMoveEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
-
-public:
-	template<typename T, typename Callback>
-	static void naturalSort(QList<T> &list, Callback extractor, bool reverse = false)
-	{
-		QCollator collator(QLocale::system());
-		collator.setNumericMode(true);
-		collator.setCaseSensitivity(Qt::CaseInsensitive);
-
-		if (reverse) {
-			std::sort(list.begin(), list.end(), [&collator, &extractor](const T &a, const T &b) {
-				return collator.compare(extractor(a), extractor(b)) > 0;
-			});
-		} else {
-			std::sort(list.begin(), list.end(), [&collator, &extractor](const T &a, const T &b) {
-				return collator.compare(extractor(a), extractor(b)) < 0;
-			});
-		}
-	}
-
-	template<typename T> static void naturalSort(QList<T> &list, bool reverse = false)
-	{
-		naturalSort(list, [](const T &item) { return item; }, reverse);
-	}
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Hotkeys

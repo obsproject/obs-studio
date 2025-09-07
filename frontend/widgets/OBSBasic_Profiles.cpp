@@ -54,7 +54,7 @@ void updateSortedProfiles(const OBSProfileCache &profiles)
 		newList.append(entry);
 	}
 
-	OBSBasic::naturalSort(newList);
+	NaturalSort(newList);
 
 	sortedProfiles.swap(newList);
 }

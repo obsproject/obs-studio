@@ -67,7 +67,7 @@ void updateSortedSceneCollections(const OBSSceneCollectionCache &collections)
 		newList.append(entry);
 	}
 
-	OBSBasic::naturalSort(newList);
+	NaturalSort(newList);
 
 	sortedSceneCollections.swap(newList);
 }
