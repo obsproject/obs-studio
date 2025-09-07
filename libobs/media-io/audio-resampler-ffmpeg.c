@@ -216,3 +216,23 @@ bool audio_resampler_resample(audio_resampler_t *rs, uint8_t *output[], uint32_t
 	*out_frames = (uint32_t)ret;
 	return true;
 }
+
+// Allows passing of a matrix for channel re-ordering and custom weights.
+bool audio_resampler_set_matrix(audio_resampler_t *rs, double *matrix, int stride)
+{
+	if (!rs)
+		return false;
+
+	swr_close(rs->context);
+
+	if (swr_set_matrix(rs->context, matrix, stride) < 0)
+		blog(LOG_DEBUG, "swr_set_matrix failed\n");
+
+	int errcode = swr_init(rs->context);
+	if (errcode != 0) {
+		blog(LOG_ERROR, "swr_init failed: error code %d", errcode);
+		audio_resampler_destroy(rs);
+		return false;
+	}
+	return true;
+}

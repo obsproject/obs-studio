@@ -39,6 +39,8 @@ EXPORT void audio_resampler_destroy(audio_resampler_t *resampler);
 EXPORT bool audio_resampler_resample(audio_resampler_t *resampler, uint8_t *output[], uint32_t *out_frames,
 				     uint64_t *ts_offset, const uint8_t *const input[], uint32_t in_frames);
 
+EXPORT bool audio_resampler_set_matrix(audio_resampler_t *rs, double *matrix, int stride);
+
 #ifdef __cplusplus
 }
 #endif
