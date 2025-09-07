@@ -53,10 +53,6 @@ EXPORT int astrcmpi_n(const char *str1, const char *str2, size_t n);
 EXPORT int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n);
 EXPORT int astrnatcmp(const char *str1, const char *str2);
 EXPORT int wstrnatcmp(const wchar_t *str1, const wchar_t *str2);
-static inline int astrncoll(const char *str1, const char *str2, size_t read);
-static inline int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read);
-static inline int a_compare_number(const char *a, const char *b, size_t *j);
-static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *j);
 
 EXPORT char *astrstri(const char *str, const char *find);
 EXPORT wchar_t *wstrstri(const wchar_t *str, const wchar_t *find);

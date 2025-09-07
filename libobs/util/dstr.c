@@ -35,6 +35,11 @@
 static const char *astrblank = "";
 static const wchar_t *wstrblank = L"";
 
+static int astrncoll(const char *str1, const char *str2, size_t read);
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read);
+static inline int a_compare_number(const char *a, const char *b, size_t *read);
+static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *read);
+
 int astrcmpi(const char *str1, const char *str2)
 {
 	if (!str1)
