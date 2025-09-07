@@ -258,25 +258,13 @@ static int astrncoll(const char *str1, const char *str2, const size_t read)
 	if (read == 0)
 		return 0;
 
-	char *buf1 = (char *)malloc(sizeof(char) * (read + 1));
-	char *buf2 = (char *)malloc(sizeof(char) * (read + 1));
-
-	if (!buf1 || !buf2) {
-		free(buf1);
-		free(buf2);
-		return 0;
-	}
-
-	memcpy(buf1, str1, sizeof(char) * read);
-	memcpy(buf2, str2, sizeof(char) * read);
-
-	buf1[read] = 0;
-	buf2[read] = 0;
+	char *buf1 = bstrdup_n(str1, read);
+	char *buf2 = bstrdup_n(str2, read);
 
 	int r = strcoll(buf1, buf2);
 
-	free(buf1);
-	free(buf2);
+	bfree(buf1);
+	bfree(buf2);
 
 	return r;
 }
@@ -286,25 +274,13 @@ static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read)
 	if (read == 0)
 		return 0;
 
-	wchar_t *buf1 = (wchar_t *)malloc(sizeof(wchar_t) * (read + 1));
-	wchar_t *buf2 = (wchar_t *)malloc(sizeof(wchar_t) * (read + 1));
-
-	if (!buf1 || !buf2) {
-		free(buf1);
-		free(buf2);
-		return 0;
-	}
-
-	memcpy(buf1, str1, sizeof(wchar_t) * read);
-	memcpy(buf2, str2, sizeof(wchar_t) * read);
-
-	buf1[read] = 0;
-	buf2[read] = 0;
+	wchar_t *buf1 = bwstrdup_n(str1, read);
+	wchar_t *buf2 = bwstrdup_n(str2, read);
 
 	int r = wcscoll(buf1, buf2);
 
-	free(buf1);
-	free(buf2);
+	bfree(buf1);
+	bfree(buf2);
 
 	return r;
 }
