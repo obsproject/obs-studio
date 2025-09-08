@@ -84,6 +84,27 @@ function(set_target_properties_obs target)
       COMMENT "Copy ${target} to library directory (${OBS_LIBRARY_DESTINATION})"
       VERBATIM
     )
+
+    if(target STREQUAL libobs OR target STREQUAL obs-frontend-api)
+      install(
+        FILES "$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.0"
+        DESTINATION "${OBS_LIBRARY_DESTINATION}"
+      )
+
+      add_custom_command(
+        TARGET ${target}
+        POST_BUILD
+        COMMAND
+          "${CMAKE_COMMAND}" -E create_symlink
+          "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.${OBS_VERSION_MAJOR}"
+          "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.0"
+        COMMAND
+          "${CMAKE_COMMAND}" -E copy_if_different
+          "$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.0"
+          "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
+        COMMENT "Create symlink for legacy ${target}"
+      )
+    endif()
   elseif(target_type STREQUAL MODULE_LIBRARY)
     if(target STREQUAL obs-browser)
       set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_VERSION_MAJOR})
