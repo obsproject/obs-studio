@@ -19,6 +19,7 @@ function(set_target_properties_obs target)
   endwhile()
 
   get_target_property(target_type ${target} TYPE)
+  set(OBS_SOVERSION 30)
 
   if(target_type STREQUAL EXECUTABLE)
     install(TARGETS ${target} RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Runtime)
@@ -59,8 +60,8 @@ function(set_target_properties_obs target)
     set_target_properties(
       ${target}
       PROPERTIES
-        VERSION 30
-        SOVERSION 30
+        VERSION ${OBS_SOVERSION}
+        SOVERSION ${OBS_SOVERSION}
         BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
         INSTALL_RPATH "${OBS_LIBRARY_RPATH}"
     )
@@ -96,7 +97,7 @@ function(set_target_properties_obs target)
         POST_BUILD
         COMMAND
           "${CMAKE_COMMAND}" -E create_symlink
-          "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.${OBS_VERSION_MAJOR}"
+          "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.${OBS_SOVERSION}"
           "$<TARGET_FILE_PREFIX:${target}>$<TARGET_FILE_BASE_NAME:${target}>.so.0"
         COMMAND
           "${CMAKE_COMMAND}" -E copy_if_different
@@ -107,13 +108,13 @@ function(set_target_properties_obs target)
     endif()
   elseif(target_type STREQUAL MODULE_LIBRARY)
     if(target STREQUAL obs-browser)
-      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION 30)
+      set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_SOVERSION})
     else()
       set_target_properties(
         ${target}
         PROPERTIES
           VERSION 0
-          SOVERSION 30
+          SOVERSION ${OBS_SOVERSION}
           BUILD_RPATH "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_LIBRARY_DESTINATION}"
           INSTALL_RPATH "${OBS_MODULE_RPATH}"
       )
