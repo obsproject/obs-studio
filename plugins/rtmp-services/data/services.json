@@ -2487,23 +2487,43 @@
             "name": "MasterStream.iR | مستراستریم | ری استریم و استریم همزمان",
             "common": false,
             "more_info_link": "https://masterstream.ir/webpage/page/docs",
-            "stream_key_link": "https://masterstream.ir/managestreams.php",
+            "stream_key_link": "https://masterstream.ir/control-panel/streaming",
             "servers": [
                 {
                     "name": "Iran Server 1 - Bandwidth Required",
-                    "url": "rtmp://live-vip1.masterstream.ir/live"
+                    "url": "rtmp://live1.masterstream.ir/live"
                 },
                 {
                     "name": "Iran Server 2 - Bandwidth Required",
-                    "url": "rtmp://live-vip2.masterstream.ir/live"
+                    "url": "rtmp://live2.masterstream.ir/live"
                 },
                 {
-                    "name": "Turkey Server 1",
-                    "url": "rtmp://tr-live1.masterstream.ir/live"
+                    "name": "Iran Server 3 - Bandwidth Required",
+                    "url": "rtmp://live3.masterstream.ir/live"
                 },
                 {
-                    "name": "Russia Server 1",
-                    "url": "rtmp://ru-live1.masterstream.ir/live"
+                    "name": "Iran Server 4 - Bandwidth Required",
+                    "url": "rtmp://live4.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 5 - Bandwidth Required",
+                    "url": "rtmp://live5.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 1",
+                    "url": "rtmp://ilive1.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 2",
+                    "url": "rtmp://ilive2.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 3",
+                    "url": "rtmp://ilive3.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 4",
+                    "url": "rtmp://ilive4.masterstream.ir/live"
                 }
             ],
             "protocol": "RTMP",
