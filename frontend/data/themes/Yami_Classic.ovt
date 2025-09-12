@@ -110,11 +110,6 @@ QDockWidget > QWidget {
     padding: var(--padding_xlarge);
 }
 
-SceneTree::item,
-SourceTreeItem {
-    border-width: 0px;
-}
-
 QMenu::item {
     padding: var(--padding_menu_y) var(--padding_menu);
 }

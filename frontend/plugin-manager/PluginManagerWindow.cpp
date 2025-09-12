@@ -40,12 +40,40 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 
 	ui->setupUi(this);
 
+	ui->modulesListContainer->viewport()->setAutoFillBackground(false);
+	ui->modulesListContents->setAutoFillBackground(false);
+
+	// Set up sidebar entries
+	ui->sectionList->clear();
+	ui->sectionList->setSelectionMode(QAbstractItemView::SingleSelection);
+
+	connect(ui->sectionList, &QListWidget::itemSelectionChanged, this,
+		&PluginManagerWindow::sectionSelectionChanged);
+
+	QListWidgetItem *browse = new QListWidgetItem(QTStr("PluginManager.Section.Discover"));
+	browse->setFlags(browse->flags() & ~Qt::ItemIsEnabled);
+	browse->setFlags(browse->flags() & ~Qt::ItemIsSelectable);
+	browse->setToolTip(QTStr("ComingSoon"));
+	ui->sectionList->addItem(browse);
+
+	QListWidgetItem *installed = new QListWidgetItem(QTStr("PluginManager.Section.Manage"));
+	ui->sectionList->addItem(installed);
+
+	QListWidgetItem *updates = new QListWidgetItem(QTStr("PluginManager.Section.Updates"));
+	updates->setFlags(updates->flags() & ~Qt::ItemIsEnabled);
+	updates->setFlags(updates->flags() & ~Qt::ItemIsSelectable);
+	updates->setToolTip(QTStr("ComingSoon"));
+	ui->sectionList->addItem(updates);
+
+	setSection(ui->sectionList->indexFromItem(installed));
+
 	std::sort(modules_.begin(), modules_.end(), [](const ModuleInfo &a, const ModuleInfo &b) {
 		std::string aName = !a.display_name.empty() ? a.display_name : a.module_name;
 		std::string bName = !b.display_name.empty() ? b.display_name : b.module_name;
 		return aName < bName;
 	});
 
+	int row = 0;
 	for (auto &metadata : modules_) {
 		std::string id = metadata.module_name;
 		// Check if the module is missing:
@@ -56,24 +84,67 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 		if (missing) {
 			name += " " + QTStr("PluginManager.MissingPlugin");
 		}
-		auto item = new QListWidgetItem(name);
-		item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-		item->setCheckState(metadata.enabled ? Qt::Checked : Qt::Unchecked);
+
+		auto item = new QCheckBox(name);
+		item->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+		item->setChecked(metadata.enabled);
+
+		if (!metadata.enabledAtLaunch) {
+			item->setProperty("class", "text-muted");
+		}
 
 		if (missing) {
-			item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
+			item->setEnabled(false);
 		}
-		ui->modulesList->addItem(item);
+		ui->modulesList->layout()->addWidget(item);
+
+		connect(item, &QCheckBox::toggled, this, [this, row](bool checked) {
+			modules_[row].enabled = checked;
+			ui->manageRestartLabel->setVisible(isEnabledPluginsChanged());
+		});
+
+		row++;
 	}
 
-	connect(ui->modulesList, &QListWidget::itemChanged, this, [this](QListWidgetItem *item) {
-		auto row = ui->modulesList->row(item);
-		bool checked = item->checkState() == Qt::Checked;
-		modules_[row].enabled = checked;
-	});
+	ui->modulesList->adjustSize();
+	ui->modulesListContents->adjustSize();
+
+	ui->manageRestartLabel->setVisible(isEnabledPluginsChanged());
 
 	connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+void PluginManagerWindow::sectionSelectionChanged()
+{
+	auto selected = ui->sectionList->selectedItems();
+	if (selected.count() != 1) {
+		setSection(activeSectionIndex);
+	} else {
+		auto selectionIndex = ui->sectionList->indexFromItem(selected.first());
+		setSection(selectionIndex);
+	}
+}
+
+void PluginManagerWindow::setSection(QPersistentModelIndex index)
+{
+	if (ui->sectionList->itemFromIndex(index)) {
+		activeSectionIndex = index;
+		ui->sectionList->setCurrentIndex(index);
+	}
+}
+
+bool PluginManagerWindow::isEnabledPluginsChanged()
+{
+	bool result = false;
+	for (auto &metadata : modules_) {
+		if (metadata.enabledAtLaunch != metadata.enabled) {
+			result = true;
+			break;
+		}
+	}
+
+	return result;
 }
 
 }; // namespace OBS

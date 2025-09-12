@@ -297,8 +297,8 @@ void PluginManager::open()
 		}
 
 		if (changed) {
-			QMessageBox::StandardButton button = OBSMessageBox::question(
-				main, QTStr("PluginManager.Restart"), QTStr("PluginManager.NeedsRestart"));
+			QMessageBox::StandardButton button =
+				OBSMessageBox::question(main, QTStr("Restart"), QTStr("NeedsRestart"));
 
 			if (button == QMessageBox::Yes) {
 				restart = true;
