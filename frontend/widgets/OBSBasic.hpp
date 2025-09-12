@@ -112,6 +112,14 @@ struct SourceCopyInfo {
 	obs_transform_info transform;
 	obs_blending_method blend_method;
 	obs_blending_type blend_mode;
+	obs_scale_type scale_type;
+	const char *show_transition_id;
+	const char *hide_transition_id;
+	OBSData show_transition_settings;
+	OBSData hide_transition_settings;
+	uint32_t show_transition_duration;
+	uint32_t hide_transition_duration;
+	OBSData private_settings;
 };
 
 struct OBSProfile {
