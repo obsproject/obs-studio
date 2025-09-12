@@ -74,10 +74,6 @@ extern void image_source_preload_image(void *data);
 struct image_file_data {
 	char *path;
 };
-struct image_file_sort_data {
-	char *path;
-	wchar_t *wpath;
-};
 
 struct source_data {
 	size_t slide_idx;
@@ -86,7 +82,6 @@ struct source_data {
 };
 
 typedef DARRAY(struct image_file_data) image_file_array_t;
-typedef DARRAY(struct image_file_sort_data) image_file_sort_array_t;
 
 enum behavior {
 	BEHAVIOR_STOP_RESTART,
@@ -412,10 +407,10 @@ static void restart_slides(struct slideshow *ss)
 
 static int compare_files(const void *a, const void *b)
 {
-	const struct image_file_sort_data *aa = a;
-	const struct image_file_sort_data *bb = b;
+	const struct image_file_data *aa = a;
+	const struct image_file_data *bb = b;
 
-	return wstrnatcmp(aa->wpath, bb->wpath);
+	return astrnatcmp(aa->path, bb->path);
 }
 
 static void ss_update(void *data, obs_data_t *settings)
@@ -511,10 +506,9 @@ static void ss_update(void *data, obs_data_t *settings)
 		}
 
 		if (dir) {
-			struct dstr dir_path = {0};
 			struct os_dirent *ent;
 
-			image_file_sort_array_t sortable_files = {0};
+			image_file_array_t sortable_files = {0};
 			da_init(sortable_files);
 
 			for (;;) {
@@ -530,28 +524,27 @@ static void ss_update(void *data, obs_data_t *settings)
 				if (!valid_extension(ext))
 					continue;
 
-				dstr_copy(&dir_path, path);
-				dstr_cat_ch(&dir_path, '/');
-				dstr_cat(&dir_path, ent->d_name);
-
-				struct image_file_sort_data data;
-				data.path = bstrdup(dir_path.array);
-				os_utf8_to_wcs_ptr(ent->d_name, strlen(ent->d_name), &data.wpath);
-				da_push_back(sortable_files, &data);
+				add_file(&sortable_files, ent->d_name);
 			}
-
-			dstr_free(&dir_path);
 			os_closedir(dir);
 
 			if (sortable_files.num > 0) {
-				qsort(sortable_files.array, sortable_files.num, sizeof(struct image_file_sort_data),
+				qsort(sortable_files.array, sortable_files.num, sizeof(struct image_file_data),
 				      compare_files);
 
+				struct dstr dir_path = {0};
+
 				for (size_t i = 0; i < sortable_files.num; i++) {
-					add_file(&new_data.files, sortable_files.array[i].path);
+
+					dstr_copy(&dir_path, path);
+					dstr_cat_ch(&dir_path, '/');
+					dstr_cat(&dir_path, sortable_files.array[i].path);
+
+					add_file(&new_data.files, dir_path.array);
+
 					bfree(sortable_files.array[i].path);
-					bfree(sortable_files.array[i].wpath);
 				}
+				dstr_free(&dir_path);
 			}
 			da_free(sortable_files);
 
