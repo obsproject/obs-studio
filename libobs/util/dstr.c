@@ -398,6 +398,7 @@ static inline size_t w_mblen(const wchar_t *str)
 
 	return 2;
 #else
+	UNUSED_PARAMETER(str);
 	return 1;
 #endif
 }
