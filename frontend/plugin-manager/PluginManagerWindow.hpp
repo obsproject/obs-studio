@@ -35,6 +35,12 @@ public:
 
 private:
 	std::vector<ModuleInfo> modules_;
+
+	void sectionSelectionChanged();
+	QPersistentModelIndex activeSectionIndex;
+	void setSection(QPersistentModelIndex index);
+
+	bool isEnabledPluginsChanged();
 };
 
 }; // namespace OBS

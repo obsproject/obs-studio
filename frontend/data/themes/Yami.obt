@@ -98,8 +98,8 @@
     --spacing_base_value: calc(2 + calc(var(--obsPadding) / 2));
 
     --highlight_width: 1px;
-    --highlight_color: var(--primary_lighter); 
-    
+    --highlight_color: var(--primary_lighter);
+
     /* TODO: Better Accessibility focus state */
     /* TODO: Move Accessibilty Colors to Theme config system */
     --border_highlight: "transparent";
@@ -144,7 +144,7 @@
     --scrollbar_size: 12px;
     --settings_scrollbar_size: calc(var(--scrollbar_size) + 9px);
     --scrollbar_handle: var(--grey4);
-    
+
     --scrollbar_bg: var(--grey6);
     --scrollbar_hover: var(--grey3);
     --scrollbar_down: var(--grey2);
@@ -275,6 +275,11 @@
     background-color: var(--bg_base);
 }
 
+.text-title {
+    font-size: var(--font_large);
+    font-weight: bold;
+}
+
 .text-heading {
     font-size: var(--font_heading);
     font-weight: bold;
@@ -305,13 +310,75 @@
 }
 
 .frame-notice {
-    background: var(--bg_preview);
+    background: var(--grey8);
+    border: 1px solid var(--grey6);
     border-radius: var(--border_radius);
     padding: var(--padding_xlarge) var(--padding_large);
 }
 
 .frame-notice QLabel {
     padding: var(--padding_large) 0px;
+}
+
+.dialog-container {
+    padding: var(--padding_large) var(--padding_xlarge);
+}
+
+.dialog-frame {
+    background-color: var(--grey6);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--border_color);
+    margin: var(--spacing_base);
+}
+
+.dialog-frame > QWidget {
+    margin: var(--spacing_base) 0;
+}
+
+.button-primary {
+    background-color: var(--primary_dark);
+    border-color: var(--primary);
+    outline: none;
+}
+
+.button-primary:hover,
+.button-primary:focus {
+    background-color: var(--primary);
+    border-color: var(--white3);
+}
+
+.button-primary:hover {
+    border-color: var(--primary_light);
+}
+
+.margin {
+    margin: var(--spacing_base);
+}
+
+.margin-x {
+    margin-left: var(--spacing_base);
+    margin-right: var(--spacing_base);
+}
+
+.margin-left {
+    margin-left: var(--spacing_base);
+}
+
+.margin-right {
+    margin-right: var(--spacing_base);
+}
+
+.margin-y {
+    margin-top: var(--spacing_base);
+    margin-bottom: var(--spacing_base);
+}
+
+.margin-top {
+    margin-top: var(--spacing_base);
+}
+
+.margin-bottom {
+    margin-bottom: var(--spacing_base);
 }
 
 /* Icon Overrides */
@@ -608,17 +675,14 @@ QMenu::item:selected,
 QListView::item:selected,
 QListWidget::item:selected {
     background-color: var(--primary);
-    border-color: var(--primary);
+    border-color: var(--primary_light);
 }
 
 QMenu::item:hover,
 QListView::item:hover,
-QListWidget::item:hover,
-QMenu::item:selected:hover,
-QListView::item:selected:hover,
-QListWidget::item:selected:hover {
-    background-color: var(--primary_light);
-    border-color: var(--highlight_color);
+QListWidget::item:hover {
+    background: var(--grey4);
+    border: 1px solid var(--grey3);
 }
 
 QMenu::item:focus,
@@ -627,7 +691,15 @@ QListWidget::item:focus,
 QMenu::item:selected:focus,
 QListView::item:selected:focus,
 QListWidget::item:selected:focus {
-    border: 1px solid var(--border_highlight);
+    border: 1px solid var(--white3);
+}
+
+QMenu::item:selected:hover,
+QListView::item:selected:hover,
+QListWidget::item:selected:hover {
+    background: var(--primary_light);
+    border: 1px solid var(--primary_lighter);
+    color: var(--text);
 }
 
 QListView::item:disabled,
@@ -655,7 +727,6 @@ QListWidget QLineEdit:focus {
 /* Settings QList */
 
 OBSBasicSettings QScrollBar:vertical {
-    width: var(--scrollbar_size);
     width: var(--settings_scrollbar_size);
     margin-left: 9px;
 }
@@ -880,14 +951,6 @@ QScrollBar::handle:horizontal {
 QScrollBar::handle:disabled {
     background: transparent;
     border-color: transparent;
-}
-
-OBSDock QListWidget {
-    padding: 0;
-}
-
-OBSDock QListWidget::item {
-    margin: 0 var(--spacing_base);
 }
 
 OBSDock QScrollBar {
