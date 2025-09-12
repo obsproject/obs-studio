@@ -188,17 +188,19 @@ int astrnatcmp(const char *str1, const char *str2)
 
 	for (;;) {
 
-		read = 1;
-		if (isdigit(str1[i]) && isdigit(str2[i])) {
+		if (isdigit((unsigned char)str1[i]) && isdigit((unsigned char)str2[i])) {
 			if ((r = a_compare_number(str1 + i, str2 + i, &read)) != 0)
 				return r;
+		} else {
+			read = 1;
 		}
 
 		/*
 		* Scan forward until next number comparison can be made or end of string is reached.
 		* astrncoll considers locale, so a longer string could be before or after a shorter string.
 		*/
-		while (read + i < min_len && !(isdigit(str1[i + read]) && isdigit(str2[i + read]))) {
+		while (read + i < min_len &&
+		       !(isdigit((unsigned char)str1[i + read]) && isdigit((unsigned char)str2[i + read]))) {
 			read++;
 		}
 
@@ -233,10 +235,11 @@ int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
 
 	for (;;) {
 
-		read = 1;
 		if (iswdigit(str1[i]) && iswdigit(str2[i])) {
 			if ((r = w_compare_number(str1 + i, str2 + i, &read)) != 0)
 				return r;
+		} else {
+			read = 1;
 		}
 
 		/*
@@ -302,11 +305,11 @@ static inline int a_compare_number(const char *a, const char *b, size_t *skip)
 	while (b[bi] == '0')
 		bi++;
 
-	for (; isdigit(a[ai]) || isdigit(b[bi]); ai++, bi++) {
+	for (; isdigit((unsigned char)a[ai]) || isdigit((unsigned char)b[bi]); ai++, bi++) {
 
-		if (!isdigit(a[ai]))
+		if (!isdigit((unsigned char)a[ai]))
 			return -1;
-		if (!isdigit(b[bi]))
+		if (!isdigit((unsigned char)b[bi]))
 			return 1;
 		if (r == 0) {
 			if (a[ai] < b[bi])
