@@ -29,6 +29,11 @@ struct AddSourceData {
 	obs_sceneitem_crop *crop = nullptr;
 	obs_blending_method *blend_method = nullptr;
 	obs_blending_type *blend_mode = nullptr;
+	obs_scale_type *scale_type = nullptr;
+	const char *show_transition_uuid = nullptr;
+	const char *hide_transition_uuid = nullptr;
+	uint32_t show_transition_duration = 300;
+	uint32_t hide_transition_duration = 300;
 
 	/* Return data */
 	obs_sceneitem_t *scene_item = nullptr;
@@ -125,6 +130,31 @@ static void AddSource(void *_data, obs_scene_t *scene)
 		obs_sceneitem_set_blending_method(sceneitem, *data->blend_method);
 	if (data->blend_mode != nullptr)
 		obs_sceneitem_set_blending_mode(sceneitem, *data->blend_mode);
+	if (data->scale_type != nullptr)
+		obs_sceneitem_set_scale_filter(sceneitem, *data->scale_type);
+
+	if (data->show_transition_uuid && *data->show_transition_uuid) {
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(data->show_transition_uuid);
+
+		if (source) {
+			OBSSourceAutoRelease transition =
+				obs_source_duplicate(source, obs_source_get_name(source), true);
+			obs_sceneitem_set_transition(sceneitem, true, transition);
+		}
+	}
+
+	if (data->hide_transition_uuid && *data->hide_transition_uuid) {
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(data->hide_transition_uuid);
+
+		if (source) {
+			OBSSourceAutoRelease transition =
+				obs_source_duplicate(source, obs_source_get_name(source), true);
+			obs_sceneitem_set_transition(sceneitem, false, transition);
+		}
+	}
+
+	obs_sceneitem_set_transition_duration(sceneitem, true, data->show_transition_duration);
+	obs_sceneitem_set_transition_duration(sceneitem, false, data->hide_transition_duration);
 
 	obs_sceneitem_set_visible(sceneitem, data->visible);
 
@@ -149,8 +179,7 @@ char *get_new_source_name(const char *name, const char *format)
 	return new_name.array;
 }
 
-static void AddExisting(OBSSource source, bool visible, bool duplicate, obs_transform_info *transform,
-			obs_sceneitem_crop *crop, obs_blending_method *blend_method, obs_blending_type *blend_mode)
+static void AddExisting(OBSSource source, bool visible, bool duplicate, SourceCopyInfo *info = nullptr)
 {
 	OBSBasic *main = OBSBasic::Get();
 	OBSScene scene = main->GetCurrentScene();
@@ -171,22 +200,29 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate, obs_tran
 	AddSourceData data;
 	data.source = source;
 	data.visible = visible;
-	data.transform = transform;
-	data.crop = crop;
-	data.blend_method = blend_method;
-	data.blend_mode = blend_mode;
+
+	if (info) {
+		data.transform = &info->transform;
+		data.crop = &info->crop;
+		data.blend_method = &info->blend_method;
+		data.blend_mode = &info->blend_mode;
+		data.scale_type = &info->scale_type;
+		data.show_transition_uuid = info->show_transition_uuid;
+		data.hide_transition_uuid = info->hide_transition_uuid;
+		data.show_transition_duration = info->show_transition_duration;
+		data.hide_transition_duration = info->hide_transition_duration;
+	}
 
 	obs_enter_graphics();
 	obs_scene_atomic_update(scene, AddSource, &data);
 	obs_leave_graphics();
 }
 
-static void AddExisting(const char *name, bool visible, bool duplicate, obs_transform_info *transform,
-			obs_sceneitem_crop *crop, obs_blending_method *blend_method, obs_blending_type *blend_mode)
+static void AddExisting(const char *name, bool visible, bool duplicate)
 {
 	OBSSourceAutoRelease source = obs_get_source_by_name(name);
 	if (source) {
-		AddExisting(source.Get(), visible, duplicate, transform, crop, blend_method, blend_mode);
+		AddExisting(source.Get(), visible, duplicate);
 	}
 }
 
@@ -243,7 +279,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			return;
 
 		QString source_name = item->text();
-		AddExisting(QT_TO_UTF8(source_name), visible, false, nullptr, nullptr, nullptr, nullptr);
+		AddExisting(QT_TO_UTF8(source_name), visible, false);
 
 		OBSBasic *main = OBSBasic::Get();
 		const char *scene_name = obs_source_get_name(main->GetCurrentSceneSource());
@@ -270,7 +306,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			obs_source_t *scene_source = obs_get_source_by_name(scene_name);
 			main->SetCurrentScene(scene_source, true);
 			obs_source_release(scene_source);
-			AddExisting(QT_TO_UTF8(source_name), visible, false, nullptr, nullptr, nullptr, nullptr);
+			AddExisting(QT_TO_UTF8(source_name), visible, false);
 		};
 
 		undo_s.add_action(QTStr("Undo.Add").arg(source_name), undo, redo, "", "");
@@ -411,5 +447,5 @@ void OBSBasicSourceSelect::SourcePaste(SourceCopyInfo &info, bool dup)
 	if (!source)
 		return;
 
-	AddExisting(source, info.visible, dup, &info.transform, &info.crop, &info.blend_method, &info.blend_mode);
+	AddExisting(source, info.visible, dup, &info);
 }
