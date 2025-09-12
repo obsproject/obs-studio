@@ -35,10 +35,12 @@
 static const char *astrblank = "";
 static const wchar_t *wstrblank = L"";
 
-static int astrncoll(const char *str1, const char *str2, size_t read);
-static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read);
+static int astrncoll(const char *str1, const char *str2, size_t read1, size_t read2);
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2);
 static inline int a_compare_number(const char *a, const char *b, size_t *read);
 static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *read);
+static inline size_t a_mblen(const char *str);
+static inline size_t w_mblen(const wchar_t *str);
 
 int astrcmpi(const char *str1, const char *str2)
 {
@@ -177,42 +179,48 @@ int astrnatcmp(const char *str1, const char *str2)
 
 	size_t len1 = strlen(str1);
 	size_t len2 = strlen(str2);
-	size_t min_len = (len1 < len2) ? len1 : len2;
 
-	if (min_len == 0)
+	if (len1 == 0 || len2 == 0)
 		return strcoll(str1, str2);
 
-	size_t i = 0;
-	size_t read;
+	// Track indexes separately, because we may have multibyte characters.
+	size_t i1 = 0;
+	size_t i2 = 0;
+	size_t read1;
+	size_t read2;
 	int r;
 
 	for (;;) {
 
-		if (isdigit((unsigned char)str1[i]) && isdigit((unsigned char)str2[i])) {
-			if ((r = a_compare_number(str1 + i, str2 + i, &read)) != 0)
+		if (isdigit((unsigned char)str1[i1]) && isdigit((unsigned char)str2[i2])) {
+			if ((r = a_compare_number(str1 + i1, str2 + i2, &read1)) != 0)
 				return r;
+			read2 = read1;
 		} else {
-			read = 1;
+			read1 = a_mblen(str1 + i1);
+			read2 = a_mblen(str2 + i2);
 		}
 
 		/*
 		* Scan forward until next number comparison can be made or end of string is reached.
 		* astrncoll considers locale, so a longer string could be before or after a shorter string.
 		*/
-		while (read + i < min_len &&
-		       !(isdigit((unsigned char)str1[i + read]) && isdigit((unsigned char)str2[i + read]))) {
-			read++;
+		while (read1 + i1 < len1 && read2 + i2 < len2 &&
+		       !(isdigit((unsigned char)str1[i1 + read1]) && isdigit((unsigned char)str2[i2 + read2]))) {
+			read1 += a_mblen(str1 + i1 + read1);
+			read2 += a_mblen(str2 + i2 + read2);
 		}
 
-		if (read + i >= min_len)
+		if (read1 + i1 >= len1 || read2 + i2 >= len2)
 			break;
 
-		if ((r = astrncoll(str1 + i, str2 + i, read)) != 0)
+		if ((r = astrncoll(str1 + i1, str2 + i2, read1, read2)) != 0)
 			return r;
 
-		i += read;
+		i1 += read1;
+		i2 += read2;
 	}
-	return strcoll(str1 + i, str2 + i);
+	return strcoll(str1 + i1, str2 + i2);
 }
 
 int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
@@ -224,50 +232,57 @@ int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
 
 	size_t len1 = wcslen(str1);
 	size_t len2 = wcslen(str2);
-	size_t min_len = (len1 < len2) ? len1 : len2;
 
-	if (min_len == 0)
+	if (len1 == 0 || len2 == 0)
 		return wcscoll(str1, str2);
 
-	size_t i = 0;
-	size_t read;
+	// Track indexes separately, because we may have surrogate pairs.
+	size_t i1 = 0;
+	size_t i2 = 0;
+	size_t read1;
+	size_t read2;
 	int r;
 
 	for (;;) {
 
-		if (iswdigit(str1[i]) && iswdigit(str2[i])) {
-			if ((r = w_compare_number(str1 + i, str2 + i, &read)) != 0)
+		if (iswdigit(str1[i1]) && iswdigit(str2[i2])) {
+			if ((r = w_compare_number(str1 + i1, str2 + i2, &read1)) != 0)
 				return r;
+			read2 = read1;
 		} else {
-			read = 1;
+			read1 = w_mblen(str1 + i1);
+			read2 = w_mblen(str2 + i2);
 		}
 
 		/*
 		* Scan forward until next number comparison can be made or end of string is reached.
 		* wstrncoll considers locale, so a longer string could be before or after a shorter string.
 		*/
-		while (read + i < min_len && !(iswdigit(str1[i + read]) && iswdigit(str2[i + read]))) {
-			read++;
+		while (read1 + i1 < len1 && read2 + i2 < len2 &&
+		       !(iswdigit(str1[i1 + read1]) && iswdigit(str2[i2 + read2]))) {
+			read1 += w_mblen(str1 + i1 + read1);
+			read2 += w_mblen(str2 + i2 + read2);
 		}
 
-		if (read + i >= min_len)
+		if (read1 + i1 >= len1 || read2 + i2 >= len2)
 			break;
 
-		if ((r = wstrncoll(str1 + i, str2 + i, read)) != 0)
+		if ((r = wstrncoll(str1 + i1, str2 + i2, read1, read2)) != 0)
 			return r;
 
-		i += read;
+		i1 += read1;
+		i2 += read2;
 	}
-	return wcscoll(str1 + i, str2 + i);
+	return wcscoll(str1 + i1, str2 + i2);
 }
 
-static int astrncoll(const char *str1, const char *str2, const size_t read)
+static int astrncoll(const char *str1, const char *str2, const size_t read1, size_t read2)
 {
-	if (read == 0)
+	if (read1 == 0 || read2 == 0)
 		return 0;
 
-	char *buf1 = bstrdup_n(str1, read);
-	char *buf2 = bstrdup_n(str2, read);
+	char *buf1 = bstrdup_n(str1, read1);
+	char *buf2 = bstrdup_n(str2, read2);
 
 	int r = strcoll(buf1, buf2);
 
@@ -277,13 +292,13 @@ static int astrncoll(const char *str1, const char *str2, const size_t read)
 	return r;
 }
 
-static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read)
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2)
 {
-	if (read == 0)
+	if (read1 == 0 || read2 == 0)
 		return 0;
 
-	wchar_t *buf1 = bwstrdup_n(str1, read);
-	wchar_t *buf2 = bwstrdup_n(str2, read);
+	wchar_t *buf1 = bwstrdup_n(str1, read1);
+	wchar_t *buf2 = bwstrdup_n(str2, read2);
 
 	int r = wcscoll(buf1, buf2);
 
@@ -318,7 +333,8 @@ static inline int a_compare_number(const char *a, const char *b, size_t *skip)
 				r = 1;
 		}
 	};
-	*skip = (ai > bi) ? ai : bi;
+	// We can skip only shorter numbers length, since we may have multibyte characters
+	*skip = (ai > bi) ? bi : ai;
 	return r;
 }
 
@@ -347,8 +363,43 @@ static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *s
 				r = 1;
 		}
 	};
-	*skip = (ai > bi) ? ai : bi;
+	// We can skip only shorter numbers length, since we may have multibyte characters
+	*skip = (ai > bi) ? bi : ai;
 	return r;
+}
+
+// Returns length of multibyte character or 1 for malformations and single byte characters
+// str must be null terminated
+static inline size_t a_mblen(const char *str)
+{
+	if ((unsigned char)str[0] >> 7 == 0b0) // (Not) Multibyte start bit
+		return 1;
+
+	if ((unsigned char)str[1] >> 6 != 0b10) // (Not) Multibyte continuation bit
+		return 1;
+	if ((unsigned char)str[2] >> 6 != 0b10)
+		return 2;
+	if ((unsigned char)str[3] >> 6 != 0b10)
+		return 3;
+
+	return 4;
+}
+
+// Windwos wchar_t is 16bit while unix is 32bit, thus Windows needs to check for surrogates
+// str must be null terminated
+static inline size_t w_mblen(const wchar_t *str)
+{
+#ifdef WIN32
+	if (str[0] < 0xD800) // (Not) high-surrogate
+		return 1;
+
+	if (str[1] < 0xDBFF) // (Not) low-surrogate
+		return 1;
+
+	return 2;
+#else
+	return 1;
+#endif
 }
 
 char *astrstri(const char *str, const char *find)
