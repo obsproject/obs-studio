@@ -390,10 +390,10 @@ static inline size_t a_mblen(const char *str)
 static inline size_t w_mblen(const wchar_t *str)
 {
 #ifdef WIN32
-	if (str[0] < 0xD800) // (Not) high-surrogate
+	if (str[0] < 0xD800 || str[0] > 0xDBFF) // (Not) high-surrogate
 		return 1;
 
-	if (str[1] < 0xDBFF) // (Not) low-surrogate
+	if (str[1] < 0xDC00 || str[1] > 0xDFFF) // (Not) low-surrogate
 		return 1;
 
 	return 2;
