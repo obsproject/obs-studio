@@ -693,10 +693,6 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
-	// set basic default application locale
-	if (!locale.empty())
-		QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
-
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
 		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
@@ -731,10 +727,6 @@ bool OBSApp::InitLocale()
 
 			blog(LOG_INFO, "Using preferred locale '%s'", locale_.c_str());
 			locale = locale_;
-
-			// set application default locale to the new choosen one
-			if (!locale.empty())
-				QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
 
 			return true;
 		}
@@ -868,11 +860,49 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	  profilerNameStore(store),
 	  appLaunchUUID_(QUuid::createUuid())
 {
+
+	bool usingUTF8 = true;
+#ifdef _WIN32
+	/*
+	 Appropriate setlocale() calls are already performed for unix platforms in QCoreApplicationPrivate::initLocale()
+	 We are just following suit for win32
+	*/
+
+	// Use system locale with UTF-8 codepage (available from Windows 10 version 1803)
+	// Qt calls setlocale(LC_ALL, "") for unix system defaults, but it is likely unix defaults to UTF-8 ccodepage
+	if (!setlocale(LC_ALL, ".UTF-8")) {
+
+		// Fallback to minimal C locale
+		// Could use "" for system defaults, but the Windows default ANSI codepages (.125x or .9xx)
+		// mismatch with UTF-8 that is assumed by many parts of the codebase
+		setlocale(LC_ALL, "C");
+		usingUTF8 = false;
+	}
+#else
+	// Extend Qt default locale calls for unix by enforcing UTF-8 LC_COLLATE (string comparisons, sorting, regex)
+	{
+		QByteArray collationLocale = setlocale(LC_COLLATE, nullptr);
+		if (qsizetype dot = collationLocale.indexOf('.'); dot != -1)
+			collationLocale.truncate(dot); // remove encoding, if any
+
+		if (qsizetype at = collationLocale.indexOf('@'); at != -1)
+			collationLocale.truncate(at); // remove variant, as the old de_DE@euro
+
+		collationLocale += ".UTF-8";
+		if (!setlocale(LC_COLLATE, collationLocale))
+			usingUTF8 = false;
+	}
+#endif
+
 	/* fix float handling */
-#if defined(Q_OS_UNIX)
 	if (!setlocale(LC_NUMERIC, "C"))
 		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
-#endif
+
+	if (!usingUTF8)
+		blog(LOG_WARNING, "Failed to set UTF-8 codepage for locales");
+
+	const char *localeStr = setlocale(LC_ALL, nullptr);
+	blog(LOG_INFO, "Set locale to: %s", localeStr);
 
 #ifndef _WIN32
 	/* Handle SIGINT properly */
