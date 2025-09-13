@@ -51,6 +51,7 @@
 
 #ifdef _WIN32
 #include <sstream>
+#include <mbctype.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -708,10 +709,6 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
-	// set basic default application locale
-	if (!locale.empty())
-		QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
-
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
 		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
@@ -746,10 +743,6 @@ bool OBSApp::InitLocale()
 
 			blog(LOG_INFO, "Using preferred locale '%s'", locale_.c_str());
 			locale = locale_;
-
-			// set application default locale to the new chosen one
-			if (!locale.empty())
-				QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
 
 			return true;
 		}
@@ -878,6 +871,43 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 	return out;
 }
 
+static bool set_utf8_locale(void)
+{
+	// Use system locale with UTF-8 codepage (available from Windows 10 version 1803)
+	bool usingUTF8 = !!setlocale(LC_ALL, ".UTF-8");
+
+#ifdef _WIN32
+	usingUTF8 = usingUTF8 && (_setmbcp(CP_UTF8) == 0);
+#endif
+
+	/*
+	Fallback to minimal C locale
+	Could use "" for system defaults, but the Windows default ANSI codepages (.125x or .9xx)
+	mismatch with UTF-8 that is assumed by many parts of the codebase. "C" only covers ASCII, so no mismatches.
+	*/
+	usingUTF8 = usingUTF8 || !!setlocale(LC_ALL, "C.UTF-8");
+	if (!usingUTF8)
+			setlocale(LC_ALL, "C");
+
+	// fix float handling
+	setlocale(LC_NUMERIC, "C");
+
+	// Copy C runtime locale for C++
+	std::locale defaultLocale(setlocale(LC_ALL, nullptr));
+	std::locale::global(defaultLocale);
+
+	/*
+	system() is already the QLocale default, but just to be explicit about the intention.
+	Unlike CRT and C++ locales above, QLocale doesn't support customization of locale categories and codepages.
+	Ie. We can't enforce decimal point to be a dot and at the same time use user's preferred locale.
+	*/
+	QLocale::setDefault(QLocale::system());
+
+	blog(LOG_INFO, "Set locale to: %s", defaultLocale.name().c_str());
+
+	return usingUTF8;
+	}
+
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv),
 	  profilerNameStore(store),
@@ -885,11 +915,8 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 {
 	installNativeEventFilter(new OBS::NativeEventFilter);
 
-	/* fix float handling */
-#if defined(Q_OS_UNIX)
-	if (!setlocale(LC_NUMERIC, "C"))
-		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
-#endif
+	if (!set_utf8_locale())
+		blog(LOG_WARNING, "Failed to set UTF-8 codepage for locales");
 
 #ifndef _WIN32
 	/* Handle SIGINT properly */
