@@ -2173,26 +2173,6 @@
             ]
         },
         {
-            "name": "Playeur",
-            "alt_names": [
-                "Utreon"
-            ],
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live.playeur.com:5222/app"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 5000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "PhoneLiveStreaming",
             "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
             "servers": [
