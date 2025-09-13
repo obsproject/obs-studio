@@ -235,6 +235,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->addWidget(programWidget);
 		ui->previewLayout->setAlignment(programOptions, Qt::AlignCenter);
 
+		ui->transitions->setEnabled(true);
+
 		OnEvent(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
 
 		blog(LOG_INFO, "Switched to Preview/Program mode");
