@@ -238,6 +238,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		sizeObserver = new PreviewProgramSizeObserver(ui->preview, program, this);
 
+		ui->transitions->setEnabled(true);
+
 		OnEvent(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
 
 		blog(LOG_INFO, "Switched to Preview/Program mode");
