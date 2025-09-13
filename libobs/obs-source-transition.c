@@ -319,6 +319,11 @@ static inline bool transition_active(obs_source_t *transition)
 	return transition->transitioning_audio || transition->transitioning_video;
 }
 
+bool obs_transition_is_active(obs_source_t *transition)
+{
+	return transition_active(transition);
+}
+
 bool obs_transition_start(obs_source_t *transition, enum obs_transition_mode mode, uint32_t duration_ms,
 			  obs_source_t *dest)
 {
