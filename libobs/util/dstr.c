@@ -385,7 +385,7 @@ static inline size_t a_mblen(const char *str)
 	return 4;
 }
 
-// Windwos wchar_t is 16bit while unix is 32bit, thus Windows needs to check for surrogates
+// Windows wchar_t is 16bit while unix is 32bit, thus Windows needs to check for surrogates
 // str must be null terminated
 static inline size_t w_mblen(const wchar_t *str)
 {
