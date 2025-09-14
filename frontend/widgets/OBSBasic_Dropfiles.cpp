@@ -161,7 +161,8 @@ void OBSBasic::AddDropSource(const DropItem &dropItem)
 {
 	OBSBasic *main = OBSBasic::Get();
 	OBSDataAutoRelease settings = obs_data_create();
-	const char *data = QT_TO_UTF8(dropItem.url);
+	QByteArray dataArr = dropItem.url.toUtf8();
+	const char *data = dataArr.constData();
 	const char *type = dropItem.typeId;
 
 	obs_video_info ovi;
@@ -313,7 +314,9 @@ void OBSBasic::dropEvent(QDropEvent *event)
 					}
 				}
 #endif
-				const char *suffix = QT_TO_UTF8(fileInfo.suffix());
+				QString suffixQStr = fileInfo.suffix();
+				QByteArray suffixArray = suffixQStr.toUtf8();
+				const char *suffix = suffixArray.constData();
 				bool found = false;
 
 				const char **cmp;
