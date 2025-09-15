@@ -112,14 +112,14 @@ void Row::setSuffixEnabled(bool enabled)
 	suffix_->setVisible(enabled);
 }
 
-void Row::setTitle(QString name)
+void Row::setTitle(const QString &name)
 {
 	nameLabel->setText(name);
 	setAccessibleName(name);
 	showTitle(true);
 }
 
-void Row::setDescription(QString description)
+void Row::setDescription(const QString &description)
 {
 	descriptionLabel->setText(description);
 	setAccessibleDescription(description);
@@ -260,7 +260,7 @@ void ExpandButton::paintEvent(QPaintEvent *)
 }
 
 // Row variant that can be expanded to show another properties list
-CollapsibleRow::CollapsibleRow(const QString &name, QWidget *parent) : GenericRow(parent)
+CollapsibleRow::CollapsibleRow(QWidget *parent) : GenericRow(parent)
 {
 	layout = new QVBoxLayout;
 	layout->setContentsMargins(0, 0, 0, 0);
@@ -274,7 +274,6 @@ CollapsibleRow::CollapsibleRow(const QString &name, QWidget *parent) : GenericRo
 	rowWidget->setLayout(rowLayout);
 
 	actionRow = new Row();
-	actionRow->setTitle(name);
 	actionRow->setChangeCursor(false);
 
 	rowLayout->addWidget(actionRow);
@@ -301,13 +300,7 @@ CollapsibleRow::CollapsibleRow(const QString &name, QWidget *parent) : GenericRo
 	actionRow->setFocusProxy(expandButton);
 
 	connect(expandButton, &QAbstractButton::clicked, this, &CollapsibleRow::toggleVisibility);
-
 	connect(actionRow, &Row::clicked, expandButton, &QAbstractButton::click);
-}
-
-CollapsibleRow::CollapsibleRow(const QString &name, const QString &desc, QWidget *parent) : CollapsibleRow(name, parent)
-{
-	actionRow->setDescription(desc);
 }
 
 void CollapsibleRow::setCheckable(bool check)
@@ -322,6 +315,7 @@ void CollapsibleRow::setCheckable(bool check)
 
 		actionRow->setSuffix(toggleSwitch, false);
 		connect(toggleSwitch, &ToggleSwitch::toggled, propertyList, &PropertiesList::setEnabled);
+		connect(toggleSwitch, &ToggleSwitch::toggled, this, &CollapsibleRow::toggled);
 	}
 
 	if (!checkable && toggleSwitch) {
@@ -330,6 +324,25 @@ void CollapsibleRow::setCheckable(bool check)
 
 		actionRow->suffix()->deleteLater();
 	}
+}
+
+void CollapsibleRow::setChecked(bool checked)
+{
+	if (!isCheckable()) {
+		throw std::logic_error("Called setChecked on a non-checkable row.");
+	}
+
+	toggleSwitch->setChecked(checked);
+}
+
+void CollapsibleRow::setTitle(const QString &name)
+{
+	actionRow->setTitle(name);
+}
+
+void CollapsibleRow::setDescription(const QString &description)
+{
+	actionRow->setDescription(description);
 }
 
 void CollapsibleRow::toggleVisibility()

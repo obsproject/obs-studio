@@ -21,6 +21,8 @@
 
 #include <QTimer>
 
+#include "moc_OBSIdianPlayground.cpp"
+
 using namespace idian;
 
 OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(new Ui_OBSIdianPlayground)
@@ -101,7 +103,8 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	tmp->setSuffix(new ToggleSwitch);
 	test->properties()->addRow(tmp);
 
-	CollapsibleRow *tmp2 = new CollapsibleRow("A Collapsible row!", this);
+	CollapsibleRow *tmp2 = new CollapsibleRow(this);
+	tmp2->setTitle("A Collapsible row!");
 	tmp2->setCheckable(true);
 	test->addRow(tmp2);
 

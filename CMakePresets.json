@@ -98,7 +98,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "architecture": "x64,version=10.0.22621",
+      "architecture": "x64,version=10.0.22621.0",
       "binaryDir": "${sourceDir}/build_x64",
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {
@@ -127,7 +127,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "architecture": "ARM64,version=10.0.22621",
+      "architecture": "ARM64,version=10.0.22621.0",
       "binaryDir": "${sourceDir}/build_arm64",
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {

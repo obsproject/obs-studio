@@ -27,7 +27,6 @@
 #include "platform.h"
 #include "darray.h"
 #include "dstr.h"
-#include "obsconfig.h"
 #include "util_uint64.h"
 #include "windows/win-registry.h"
 #include "windows/win-version.h"
@@ -134,63 +133,6 @@ void os_dlclose(void *module)
 	FreeLibrary(module);
 }
 
-static bool has_qt5_import(VOID *base, PIMAGE_NT_HEADERS nt_headers)
-{
-	__try {
-		PIMAGE_DATA_DIRECTORY data_dir;
-		data_dir = &nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-
-		if (data_dir->Size == 0)
-			return false;
-
-		PIMAGE_SECTION_HEADER section, last_section;
-		section = IMAGE_FIRST_SECTION(nt_headers);
-		last_section = section;
-
-		/* find the section that contains the export directory */
-		int i;
-		for (i = 0; i < nt_headers->FileHeader.NumberOfSections; i++) {
-			if (section->VirtualAddress <= data_dir->VirtualAddress) {
-				last_section = section;
-				section++;
-				continue;
-			} else {
-				break;
-			}
-		}
-
-		/* double check in case we exited early */
-		if (last_section->VirtualAddress > data_dir->VirtualAddress ||
-		    section->VirtualAddress <= data_dir->VirtualAddress)
-			return false;
-
-		section = last_section;
-
-		/* get a pointer to the import directory */
-		PIMAGE_IMPORT_DESCRIPTOR import;
-		import = (PIMAGE_IMPORT_DESCRIPTOR)((byte *)base + data_dir->VirtualAddress - section->VirtualAddress +
-						    section->PointerToRawData);
-
-		while (import->Name != 0) {
-			char *name = (char *)((byte *)base + import->Name - section->VirtualAddress +
-					      section->PointerToRawData);
-
-			/* qt5? bingo, reject this library */
-			if (astrcmpi_n(name, "qt5", 3) == 0) {
-				return true;
-			}
-
-			import++;
-		}
-
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		/* we failed somehow, for compatibility assume no qt5 import */
-		return false;
-	}
-
-	return false;
-}
-
 static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 {
 	__try {
@@ -256,7 +198,7 @@ static bool has_obs_export(VOID *base, PIMAGE_NT_HEADERS nt_headers)
 	return false;
 }
 
-void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
+void get_plugin_info(const char *path, bool *is_obs_plugin)
 {
 	struct dstr dll_name;
 	wchar_t *wpath;
@@ -269,7 +211,6 @@ void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
 	PIMAGE_NT_HEADERS nt_headers;
 
 	*is_obs_plugin = false;
-	*can_load = false;
 
 	if (!path)
 		return;
@@ -312,15 +253,10 @@ void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
 
 		*is_obs_plugin = has_obs_export(base, nt_headers);
 
-		if (*is_obs_plugin) {
-			*can_load = !has_qt5_import(base, nt_headers);
-		}
-
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 		/* we failed somehow, for compatibility let's assume it
 		 * was a valid plugin and let the loader deal with it */
 		*is_obs_plugin = true;
-		*can_load = true;
 		goto cleanup;
 	}
 
@@ -338,11 +274,10 @@ cleanup:
 bool os_is_obs_plugin(const char *path)
 {
 	bool is_obs_plugin;
-	bool can_load;
 
-	get_plugin_info(path, &is_obs_plugin, &can_load);
+	get_plugin_info(path, &is_obs_plugin);
 
-	return is_obs_plugin && can_load;
+	return is_obs_plugin;
 }
 
 union time_data {

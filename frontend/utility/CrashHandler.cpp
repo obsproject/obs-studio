@@ -33,8 +33,8 @@ using CrashLogUpdateResult = OBS::CrashHandler::CrashLogUpdateResult;
 
 namespace {
 
-constexpr std::string_view crashSentinelPath = "obs-studio";
-constexpr std::string_view crashSentinelPrefix = "crash_sentinel_";
+constexpr std::string_view crashSentinelPath = "obs-studio/.sentinel";
+constexpr std::string_view crashSentinelPrefix = "run_";
 constexpr std::string_view crashUploadURL = "https://obsproject.com/logs/upload";
 
 #ifndef NDEBUG
@@ -141,6 +141,10 @@ bool CrashHandler::hasNewCrashLog()
 {
 	CrashLogUpdateResult result = updateLocalCrashLogState();
 
+	if (result == CrashLogUpdateResult::NotAvailable) {
+		return false;
+	}
+
 	bool hasNewCrashLog = (result == CrashLogUpdateResult::Updated);
 	bool hasNoLogUrl = lastCrashLogURL_.empty();
 
@@ -152,6 +156,10 @@ CrashLogUpdateResult CrashHandler::updateLocalCrashLogState()
 	updateCrashLogFromConfig();
 
 	std::filesystem::path lastLocalCrashLogFile = findLastCrashLog();
+
+	if (lastLocalCrashLogFile.empty() && lastCrashLogFile_.empty()) {
+		return CrashLogUpdateResult::NotAvailable;
+	}
 
 	if (lastLocalCrashLogFile != lastCrashLogFile_) {
 		lastCrashLogFile_ = std::move(lastLocalCrashLogFile);
@@ -182,8 +190,14 @@ void CrashHandler::checkCrashState()
 	std::filesystem::path crashSentinelPath = crashSentinelFile_.parent_path();
 
 	if (!std::filesystem::exists(crashSentinelPath)) {
-		blog(LOG_ERROR, "Crash sentinel location '%s' does not exist", crashSentinelPath.u8string().c_str());
-		return;
+		try {
+			std::filesystem::create_directory(crashSentinelPath);
+		} catch (const std::filesystem::filesystem_error &error) {
+			blog(LOG_ERROR,
+			     "Crash sentinel location '%s' does not exist and unable to create directory:\n%s.",
+			     crashSentinelPath.u8string().c_str(), error.what());
+			return;
+		}
 	}
 
 	for (const auto &entry : std::filesystem::directory_iterator(crashSentinelPath)) {

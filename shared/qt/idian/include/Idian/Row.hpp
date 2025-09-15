@@ -40,6 +40,9 @@ class GenericRow : public QFrame, public Utils {
 
 public:
 	GenericRow(QWidget *parent = nullptr) : QFrame(parent), Utils(this) { setAccessibleName(""); };
+
+	virtual void setTitle(const QString &title) = 0;
+	virtual void setDescription(const QString &description) = 0;
 };
 
 // Row widget containing one or more controls
@@ -61,8 +64,8 @@ public:
 	void setPrefixEnabled(bool enabled);
 	void setSuffixEnabled(bool enabled);
 
-	void setTitle(QString name);
-	void setDescription(QString description);
+	virtual void setTitle(const QString &title) override;
+	virtual void setDescription(const QString &description) override;
 
 	void showTitle(bool visible);
 	void showDescription(bool visible);
@@ -171,13 +174,21 @@ class CollapsibleRow : public GenericRow {
 	Q_OBJECT
 
 public:
-	CollapsibleRow(const QString &name, QWidget *parent = nullptr);
-	CollapsibleRow(const QString &name, const QString &desc = nullptr, QWidget *parent = nullptr);
+	CollapsibleRow(QWidget *parent = nullptr);
 
 	void setCheckable(bool check);
 	bool isCheckable() { return checkable; }
 
+	void setChecked(bool checked);
+	bool isChecked() { return toggleSwitch->isChecked(); };
+
+	virtual void setTitle(const QString &title) override;
+	virtual void setDescription(const QString &description) override;
+
 	void addRow(GenericRow *actionRow);
+
+signals:
+	void toggled(bool checked);
 
 private:
 	void toggleVisibility();

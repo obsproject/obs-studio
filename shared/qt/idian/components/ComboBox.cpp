@@ -46,7 +46,7 @@ void ComboBox::hidePopup()
 	//
 	// All my efforts have failed so we get this instead.
 	allowOpeningPopup = false;
-	QTimer::singleShot(120, this, [=]() { allowOpeningPopup = true; });
+	QTimer::singleShot(120, this, [this]() { allowOpeningPopup = true; });
 
 	QComboBox::hidePopup();
 }

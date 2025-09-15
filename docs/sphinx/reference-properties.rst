@@ -270,7 +270,11 @@ Property Object Functions
 
    :param    name:        Setting identifier string
    :param    text:        Localized name shown to user
-   :param    callback:    Callback to be executed when the button is pressed
+   :param    callback:    Callback to be executed when the button is pressed. Note that if the property
+                          is created with :c:func:`obs_properties_add_button` instead of
+                          :c:func:`obs_properties_add_button2`, the value of ``data`` is determined by
+                          the caller of :c:func:`obs_property_button_clicked`, and as such unspecified
+                          by libobs.
    :param    priv:        Pointer passed back as the `data` argument of the callback
    :return:               The property
 
@@ -642,6 +646,16 @@ Property Modification Functions
 
 .. function:: bool obs_property_button_clicked(obs_property_t *p, void *obj)
 
+   Calls the ``callback`` of the button.
+
+   :param p:   The property
+   :param obj: Must be a pointer to an object of type ``obs_canvas_t``, ``obs_source_t``,
+               ``obs_output_t``, ``obs_encoder_t``, or ``obs_service_t``.
+               If the property was created with :c:func:`obs_properties_add_button`, that
+               object's context will be passed as the ``obj`` parameter.
+               If the property was created with :c:func:`obs_properties_add_button2`, it
+               will be ignored.
+
 ---------------------
 
 .. function:: void obs_property_set_visible(obs_property_t *p, bool visible)
@@ -813,6 +827,8 @@ Property Modification Functions
 
 .. function:: void obs_property_button_set_type(obs_property_t *p, enum obs_button_type type)
 
+   Sets the type of the button. The button's ``callback`` will be called regardless of type.
+
    :param   type: Can be one of the following values:
 
                   - **OBS_BUTTON_DEFAULT** - Standard button
@@ -822,3 +838,6 @@ Property Modification Functions
 ---------------------
 
 .. function:: void obs_property_button_set_url(obs_property_t *p, char *url)
+
+   :param p:   The property
+   :param url: The URL to be opened if the button is of type ``OBS_BUTTON_URL``

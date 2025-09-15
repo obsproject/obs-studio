@@ -67,7 +67,7 @@ public:
 	std::filesystem::path getCrashLogDirectory() const;
 	void uploadLastCrashLog();
 
-	enum class CrashLogUpdateResult { InvalidResult, NotUpdated, Updated };
+	enum class CrashLogUpdateResult { InvalidResult, NotAvailable, NotUpdated, Updated };
 
 private:
 	void checkCrashState();
