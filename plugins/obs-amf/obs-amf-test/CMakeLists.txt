@@ -11,4 +11,4 @@ target_link_libraries(
   PRIVATE OBS::COMutils AMF::AMF d3d11 dxgi dxguid
 )
 
-set_target_properties_obs(obs-amf-test PROPERTIES FOLDER plugins/obs-ffmpeg)
+set_target_properties_obs(obs-amf-test PROPERTIES FOLDER plugins/obs-amf)
