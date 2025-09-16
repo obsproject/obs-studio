@@ -1521,6 +1521,8 @@ static inline enum video_format GetVideoFormatFromName(const char *name)
 		return VIDEO_FORMAT_YUY2;
 	else if (astrcmpi(name, "UYVY") == 0)
 		return VIDEO_FORMAT_UYVY;
+	else if (astrcmpi(name, "UYVA") == 0)
+		return VIDEO_FORMAT_UYVA;
 #endif
 	else
 		return VIDEO_FORMAT_BGRA;

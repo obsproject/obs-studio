@@ -1604,6 +1604,7 @@ enum convert_type {
 	CONVERT_422P10LE,
 	CONVERT_422_A,
 	CONVERT_422_PACK,
+	CONVERT_422_PACK_A,
 	CONVERT_444,
 	CONVERT_444P12LE,
 	CONVERT_444_A,
@@ -1638,6 +1639,9 @@ static inline enum convert_type get_convert_type(enum video_format format, bool 
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
 		return CONVERT_422_PACK;
+
+	case VIDEO_FORMAT_UYVA:
+		return CONVERT_422_PACK_A;
 
 	case VIDEO_FORMAT_Y800:
 		return CONVERT_800;
@@ -1696,6 +1700,21 @@ static inline bool set_packed422_sizes(struct obs_source *source, const struct o
 	source->async_convert_height[0] = height;
 	source->async_texture_formats[0] = GS_BGRA;
 	source->async_channel_count = 1;
+	return true;
+}
+
+static inline bool set_packed422_sep_alpha_sizes(struct obs_source *source, const struct obs_source_frame *frame)
+{
+	const uint32_t width = frame->width;
+	const uint32_t height = frame->height;
+	const uint32_t half_width = (width + 1) / 2;
+	source->async_convert_width[0] = half_width;
+	source->async_convert_height[0] = height;
+	source->async_texture_formats[0] = GS_BGRA;
+	source->async_convert_width[1] = width;
+	source->async_convert_height[1] = height;
+	source->async_texture_formats[1] = GS_R8;
+	source->async_channel_count = 2;
 	return true;
 }
 
@@ -1976,6 +1995,9 @@ static inline bool init_gpu_conversion(struct obs_source *source, const struct o
 	case CONVERT_422_PACK:
 		return set_packed422_sizes(source, frame);
 
+	case CONVERT_422_PACK_A:
+		return set_packed422_sep_alpha_sizes(source, frame);
+
 	case CONVERT_420:
 	case CONVERT_420_PQ:
 		return set_planar420_sizes(source, frame);
@@ -2093,6 +2115,7 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES], const struct obs_
 {
 	switch (get_convert_type(frame->format, frame->full_range, frame->trc)) {
 	case CONVERT_422_PACK:
+	case CONVERT_422_PACK_A:
 	case CONVERT_800:
 	case CONVERT_RGB_LIMITED:
 	case CONVERT_BGR3:
@@ -2129,6 +2152,9 @@ static const char *select_conversion_technique(enum video_format format, bool fu
 	switch (format) {
 	case VIDEO_FORMAT_UYVY:
 		return "UYVY_Reverse";
+
+	case VIDEO_FORMAT_UYVA:
+		return "UYVA_Reverse";
 
 	case VIDEO_FORMAT_YUY2:
 		switch (trc) {
@@ -3365,6 +3391,11 @@ static void copy_frame_data(struct obs_source_frame *dst, const struct obs_sourc
 	case VIDEO_FORMAT_V210:
 	case VIDEO_FORMAT_R10L:
 		copy_frame_data_plane(dst, src, 0, dst->height);
+		break;
+
+	case VIDEO_FORMAT_UYVA:
+		copy_frame_data_plane(dst, src, 0, dst->height);
+		copy_frame_data_plane(dst, src, 1, dst->height);
 		break;
 
 	case VIDEO_FORMAT_I40A: {
