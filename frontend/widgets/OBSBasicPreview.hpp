@@ -137,6 +137,7 @@ public:
 	virtual void mouseReleaseEvent(QMouseEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
 	virtual void leaveEvent(QEvent *event) override;
+	virtual void resizeEvent(QResizeEvent *event) override;
 
 	void DrawOverflow();
 	void DrawSceneEditing();
