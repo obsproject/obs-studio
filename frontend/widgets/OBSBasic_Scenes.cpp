@@ -899,7 +899,7 @@ void OBSBasic::SceneNameEdited(QWidget *editor)
 {
 	OBSScene scene = GetCurrentScene();
 	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
-	string text = QT_TO_UTF8(edit->text().trimmed());
+	string text = edit->text().trimmed().toStdString();
 
 	if (!scene)
 		return;

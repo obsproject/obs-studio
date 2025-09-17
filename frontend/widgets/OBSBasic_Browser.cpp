@@ -132,7 +132,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url, con
 			std::string script;
 			script = "Object.defineProperty(document, 'referrer', { get: () => '";
 			script += "https://twitch.tv/";
-			script += QT_TO_UTF8(username);
+			script += username.toStdString();
 			script += "/dashboard/live";
 			script += "'});";
 			browser->setStartupScript(script);
