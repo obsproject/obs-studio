@@ -32,21 +32,15 @@ using namespace std;
 extern bool cef_js_avail;
 
 #ifdef YOUTUBE_ENABLED
-void OBSBasic::YouTubeActionDialogOk(const QString &broadcast_id, const QString &stream_id, const QString &key,
-				     bool autostart, bool autostop, bool start_now)
+void OBSBasic::YouTubeActionDialogOk(const std::string &broadcastId, const std::string &streamId,
+				     const std::string &key, bool autostart, bool autostop, bool startNow)
 {
-	//blog(LOG_DEBUG, "Stream key: %s", QT_TO_UTF8(key));
 	obs_service_t *service_obj = GetService();
 	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 
-	const std::string a_key = QT_TO_UTF8(key);
-	obs_data_set_string(settings, "key", a_key.c_str());
-
-	const std::string b_id = QT_TO_UTF8(broadcast_id);
-	obs_data_set_string(settings, "broadcast_id", b_id.c_str());
-
-	const std::string s_id = QT_TO_UTF8(stream_id);
-	obs_data_set_string(settings, "stream_id", s_id.c_str());
+	obs_data_set_string(settings, "key", key.c_str());
+	obs_data_set_string(settings, "broadcast_id", broadcastId.c_str());
+	obs_data_set_string(settings, "stream_id", streamId.c_str());
 
 	obs_service_update(service_obj, settings);
 	autoStartBroadcast = autostart;
@@ -55,7 +49,7 @@ void OBSBasic::YouTubeActionDialogOk(const QString &broadcast_id, const QString 
 
 	emit BroadcastStreamReady(broadcastReady);
 
-	if (start_now)
+	if (startNow)
 		QMetaObject::invokeMethod(this, "StartStreaming");
 }
 

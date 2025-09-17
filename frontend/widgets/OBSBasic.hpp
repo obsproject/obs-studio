@@ -1705,8 +1705,8 @@ private:
 
 	void YoutubeStreamCheck(const std::string &key);
 	void ShowYouTubeAutoStartWarning();
-	void YouTubeActionDialogOk(const QString &broadcast_id, const QString &stream_id, const QString &key,
-				   bool autostart, bool autostop, bool start_now);
+	void YouTubeActionDialogOk(const std::string &broadcastId, const std::string &streamId, const std::string &key,
+				   bool autostart, bool autostop, bool startNow);
 #endif
 
 	void BroadcastButtonClicked();

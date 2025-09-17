@@ -527,14 +527,14 @@ void OBSYoutubeActions::InitBroadcast()
 			} else {
 				// Stream now usecase.
 				blog(LOG_DEBUG, "New valid stream: %s", QT_TO_UTF8(stream.name));
-				emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name), true,
-					true, true);
+				emit ok(broadcast.id.toStdString(), stream.id.toStdString(), stream.name.toStdString(),
+					true, true, true);
 				Accept();
 			}
 		} else {
 			// Stream to precreated broadcast usecase.
-			emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name), autostart,
-				autostop, true);
+			emit ok(broadcast.id.toStdString(), stream.id.toStdString(), stream.name.toStdString(),
+				autostart, autostop, true);
 			Accept();
 		}
 	} else {
@@ -577,8 +577,8 @@ void OBSYoutubeActions::ReadyBroadcast()
 	thread->wait();
 
 	if (success) {
-		emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name), autostart, autostop,
-			false);
+		emit ok(broadcast.id.toStdString(), stream.id.toStdString(), stream.name.toStdString(), autostart,
+			autostop, false);
 		Accept();
 	} else {
 		// Fail.
