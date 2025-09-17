@@ -1194,7 +1194,11 @@ void os_breakpoint(void)
 
 void os_oom(void)
 {
+#ifdef DEBUG
 	__debugbreak();
+#else
+	RaiseException(ERROR_OUTOFMEMORY, EXCEPTION_NONCONTINUABLE, 0, NULL);
+#endif
 }
 
 DWORD num_logical_cores(ULONG_PTR mask)
