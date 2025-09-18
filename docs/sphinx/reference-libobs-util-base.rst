@@ -55,6 +55,7 @@ Logging Functions
 .. function:: void base_set_crash_handler(void (*handler)(const char *, va_list, void *), void *param)
 
    Sets the current crash handler.
+   This may only be set once.
 
 ---------------------
 
