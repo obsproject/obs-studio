@@ -1897,6 +1897,71 @@ QTableView::indicator:unchecked:disabled {
     image: url(theme:Dark/settings/audio.svg);
 }
 
+/* Headphone CheckBox */
+
+.indicator-headphones {
+    outline: none;
+}
+
+.indicator-headphones::indicator,
+.indicator-headphones::indicator:unchecked {
+    width: var(--icon_base);
+    height: var(--icon_base);
+    background-color: var(--button_bg);
+    padding: var(--padding_base_border) var(--padding_base_border);
+    margin: 0px;
+    border: var(--highlight_width) solid var(--button_border);
+    border-radius: var(--border_radius);
+    icon-size: var(--icon_base);
+}
+
+.indicator-headphones::indicator:hover,
+.indicator-headphones::indicator:unchecked:hover {
+    background-color: var(--button_bg_hover);
+    padding: var(--padding_base_border) var(--padding_base_border);
+    margin: 0px;
+    border: var(--highlight_width) solid var(--button_border_hover);
+    icon-size: var(--icon_base);
+}
+
+.indicator-headphones::indicator:pressed,
+.indicator-headphones::indicator:pressed:hover {
+    background-color: var(--button_bg_down);
+    border-color: var(--button_border);
+}
+
+.indicator-headphones::indicator:checked {
+    image: url(theme:Dark/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:unchecked {
+    image: url(:/res/images/headphones-off.svg);
+}
+
+.indicator-headphones::indicator:unchecked:hover {
+    image: url(:/res/images/headphones-off.svg);
+}
+
+.indicator-headphones::indicator:unchecked:focus {
+    image: url(:/res/images/headphones-off.svg);
+}
+
+.indicator-headphones::indicator:checked:hover {
+    image: url(theme:Dark/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:checked:focus {
+    image: url(theme:Dark/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:checked:disabled {
+    image: url(theme:Dark/headphones-on.svg);
+}
+
+.indicator-headphones::indicator:unchecked:disabled {
+    image: url(:/res/images/headphones-off.svg);
+}
+
 #hotkeyFilterReset {
     margin-top: 0px;
 }

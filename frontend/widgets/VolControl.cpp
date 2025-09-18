@@ -75,6 +75,14 @@ void VolControl::OBSVolumeMuted(void *data, calldata_t *calldata)
 	QMetaObject::invokeMethod(volControl, "VolumeMuted", Q_ARG(bool, muted));
 }
 
+void VolControl::OBSMonitorEnabled(void *data, calldata_t *calldata)
+{
+	VolControl *volControl = static_cast<VolControl *>(data);
+	bool enabled = calldata_bool(calldata, "enabled");
+
+	QMetaObject::invokeMethod(volControl, "MonitorEnabled", Q_ARG(bool, enabled));
+}
+
 void VolControl::VolumeChanged()
 {
 	slider->blockSignals(true);
@@ -93,6 +101,12 @@ void VolControl::VolumeMuted(bool muted)
 		mute->setCheckState(newState);
 
 	volMeter->muted = muted || unassigned;
+}
+
+void VolControl::MonitorEnabled(bool enabled)
+{
+	if (monitor && (monitor->isChecked() != enabled))
+		monitor->setChecked(enabled);
 }
 
 void VolControl::OBSMixersOrMonitoringChanged(void *data, calldata_t *)
@@ -136,6 +150,24 @@ void VolControl::SetMuted(bool)
 	};
 
 	QString text = QTStr(checked ? "Undo.Volume.Mute" : "Undo.Volume.Unmute");
+
+	const char *name = obs_source_get_name(source);
+	const char *uuid = obs_source_get_uuid(source);
+	OBSBasic::Get()->undo_s.add_action(text.arg(name), std::bind(undo_redo, std::placeholders::_1, prev),
+					   std::bind(undo_redo, std::placeholders::_1, checked), uuid, uuid);
+}
+
+void VolControl::SetMonitorEnabled(bool checked)
+{
+	bool prev = obs_source_monitor_enabled(source);
+	obs_source_set_monitor_enabled(source, checked);
+
+	auto undo_redo = [](const std::string &uuid, bool val) {
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
+		obs_source_set_monitor_enabled(source, val);
+	};
+
+	QString text = QTStr(checked ? "Undo.Monitor.Enable" : "Undo.Monitor.Disable");
 
 	const char *name = obs_source_get_name(source);
 	const char *uuid = obs_source_get_uuid(source);
@@ -211,6 +243,10 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	nameLabel = new OBSSourceLabel(source);
 	volLabel = new QLabel();
 	mute = new MuteCheckBox();
+	if (obs_audio_monitoring_available()) {
+		monitor = new QCheckBox();
+		setClasses(monitor, "indicator-headphones");
+	}
 
 	volLabel->setObjectName("volLabel");
 	volLabel->setAlignment(Qt::AlignCenter);
@@ -264,8 +300,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		controlLayout->setContentsMargins(0, 0, 0, 0);
 		controlLayout->setSpacing(0);
 
-		// Add Headphone (audio monitoring) widget here
 		controlLayout->addWidget(mute);
+		controlLayout->addWidget(monitor);
 
 		if (showConfig) {
 			controlLayout->addWidget(config);
@@ -333,6 +369,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		}
 		buttonLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
 		buttonLayout->addWidget(mute);
+		buttonLayout->addWidget(monitor);
 
 		controlLayout->addItem(buttonLayout);
 		controlLayout->addWidget(meterFrame);
@@ -358,13 +395,22 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	obs_fader_add_callback(obs_fader, OBSVolumeChanged, this);
 	obs_volmeter_add_callback(obs_volmeter, OBSVolumeLevel, this);
 
+	if (obs_audio_monitoring_available()) {
+		monitor->setAccessibleName(QTStr("VolControl.Monitor").arg(sourceName));
+		monitor->setChecked(obs_source_monitor_enabled(source));
+	}
+
 	sigs.emplace_back(obs_source_get_signal_handler(source), "mute", OBSVolumeMuted, this);
 	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_mixers", OBSMixersOrMonitoringChanged, this);
 	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_monitoring", OBSMixersOrMonitoringChanged,
 			  this);
+	if (obs_audio_monitoring_available())
+		sigs.emplace_back(obs_source_get_signal_handler(source), "monitor_enable", OBSMonitorEnabled, this);
 
 	QWidget::connect(slider, &VolumeSlider::valueChanged, this, &VolControl::SliderChanged);
 	QWidget::connect(mute, &MuteCheckBox::clicked, this, &VolControl::SetMuted);
+	if (obs_audio_monitoring_available())
+		QWidget::connect(monitor, &QCheckBox::clicked, this, &VolControl::SetMonitorEnabled);
 
 	obs_fader_attach_source(obs_fader, source);
 	obs_volmeter_attach_source(obs_volmeter, source);

@@ -599,6 +599,10 @@ The following signals are defined for every source type:
 
    Called when the source is muted/unmuted.
 
+**monitor_enable** (ptr source, bool enabled)
+
+   Called when the source audio monitor is enabled/disabled.
+
 **push_to_mute_changed** (ptr source, bool enabled)
 
    Called when push-to-mute has been enabled/disabled.
@@ -1163,6 +1167,13 @@ General Source Functions
               void obs_source_set_muted(obs_source_t *source, bool muted)
 
    Sets/gets whether the source's audio is muted.
+
+---------------------
+
+.. function:: bool obs_source_monitor_enabled(const obs_source_t *source)
+              void obs_source_set_monitor_enabled(obs_source_t *source, bool muted)
+
+   Sets/gets whether the source's audio monitor is enabled.
 
 ---------------------
 
