@@ -53,10 +53,10 @@ int strref_cmpi(const struct strref *str1, const char *str2)
 		str2 = astrblank;
 
 	do {
-		char ch1, ch2;
+		unsigned char ch1, ch2;
 
-		ch1 = (i < str1->len) ? (char)toupper(str1->array[i]) : 0;
-		ch2 = (char)toupper(*str2);
+		ch1 = (i < str1->len) ? (unsigned char)toupper((unsigned char)str1->array[i]) : 0;
+		ch2 = (unsigned char)toupper((unsigned char)*str2);
 
 		if (ch1 < ch2)
 			return -1;
@@ -77,7 +77,7 @@ int strref_cmp_strref(const struct strref *str1, const struct strref *str2)
 		return -1;
 
 	do {
-		char ch1, ch2;
+		unsigned char ch1, ch2;
 
 		ch1 = (i < str1->len) ? str1->array[i] : 0;
 		ch2 = (i < str2->len) ? str2->array[i] : 0;
@@ -103,10 +103,10 @@ int strref_cmpi_strref(const struct strref *str1, const struct strref *str2)
 		return -1;
 
 	do {
-		char ch1, ch2;
+		unsigned char ch1, ch2;
 
-		ch1 = (i < str1->len) ? (char)toupper(str1->array[i]) : 0;
-		ch2 = (i < str2->len) ? (char)toupper(str2->array[i]) : 0;
+		ch1 = (i < str1->len) ? (unsigned char)toupper((unsigned char)str1->array[i]) : 0;
+		ch2 = (i < str2->len) ? (unsigned char)toupper((unsigned char)str2->array[i]) : 0;
 
 		if (ch1 < ch2)
 			return -1;
