@@ -4,7 +4,6 @@ if [[ "$1" == "${CMAKE_CXX_COMPILER}" ]] ; then
     shift
 fi
 
-export CCACHE_CPP2=true
 export CCACHE_DEPEND=true
 export CCACHE_DIRECT=true
 export CCACHE_FILECLONE=true
