@@ -484,8 +484,7 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 			  .bytes_per_packet((UInt32)(1 * bytes_per_frame))
 			  .bits_per_channel((UInt32)bits_per_channel)
 			  .format_id(kAudioFormatLinearPCM)
-			  .format_flags(kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked |
-					kAudioFormatFlagIsFloat | 0)
+			  .format_flags(kAudioFormatFlagsNativeFloatPacked)
 			  .asbd;
 
 	AudioStreamBasicDescription out;
@@ -858,7 +857,7 @@ static AudioStreamBasicDescription get_default_in_asbd()
 	return fill_common_asbd_fields(asbd_builder(), true)
 		.sample_rate(44100)
 		.format_id(kAudioFormatLinearPCM)
-		.format_flags(kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked | kAudioFormatFlagIsFloat | 0)
+		.format_flags(kAudioFormatFlagsNativeFloatPacked)
 		.asbd;
 }
 

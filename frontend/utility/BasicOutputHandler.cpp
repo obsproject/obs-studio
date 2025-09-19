@@ -528,7 +528,7 @@ std::shared_future<void> BasicOutputHandler::SetupMultitrackVideo(obs_service_t 
 		return continuation(true);
 	};
 
-	QThreadPool::globalInstance()->start([=, multitrackVideo = multitrackVideo.get(),
+	QThreadPool::globalInstance()->start([=, main = main, multitrackVideo = multitrackVideo.get(),
 					      service_name = std::string{service_name}, service = OBSService{service},
 					      stream_dump_config = OBSData{stream_dump_config},
 					      start_streaming_guard = start_streaming_guard]() mutable {

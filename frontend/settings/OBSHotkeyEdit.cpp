@@ -207,7 +207,7 @@ void OBSHotkeyEdit::CreateDupeIcon()
 {
 	dupeIcon = addAction(settings->GetHotkeyConflictIcon(), ActionPosition::TrailingPosition);
 	dupeIcon->setToolTip(QTStr("Basic.Settings.Hotkeys.DuplicateWarning"));
-	QObject::connect(dupeIcon, &QAction::triggered, [=] { emit SearchKey(key); });
+	QObject::connect(dupeIcon, &QAction::triggered, [this] { emit SearchKey(key); });
 	dupeIcon->setVisible(false);
 }
 
