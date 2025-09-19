@@ -401,6 +401,10 @@ public:
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
 
+	void copySceneItem(OBSSceneItem item);
+	bool canPasteSceneItem(bool duplicate);
+	void pasteSceneItem(OBSScene scene, bool duplicate);
+
 	/* -------------------------------------
 	 * MARK: - OBSBasic_ContextToolbar
 	 * -------------------------------------

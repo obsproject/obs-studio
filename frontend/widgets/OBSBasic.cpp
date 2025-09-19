@@ -1911,19 +1911,6 @@ void OBSBasic::UpdateEditMenu()
 		filter_count = obs_source_filter_count(source);
 	}
 
-	bool allowPastingDuplicate = !!clipboard.size();
-	for (size_t i = clipboard.size(); i > 0; i--) {
-		const size_t idx = i - 1;
-		OBSWeakSource &weak = clipboard[idx].weak_source;
-		if (obs_weak_source_expired(weak)) {
-			clipboard.erase(clipboard.begin() + idx);
-			continue;
-		}
-		OBSSourceAutoRelease strong = obs_weak_source_get_source(weak.Get());
-		if (allowPastingDuplicate && obs_source_get_output_flags(strong) & OBS_SOURCE_DO_NOT_DUPLICATE)
-			allowPastingDuplicate = false;
-	}
-
 	int videoCount = 0;
 	bool canTransformMultiple = false;
 	for (int i = 0; i < totalCount; i++) {
@@ -1948,8 +1935,8 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionPasteTransform->setEnabled(canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource) && totalCount > 0);
-	ui->actionPasteRef->setEnabled(!!clipboard.size());
-	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
+	ui->actionPasteRef->setEnabled(canPasteSceneItem(false));
+	ui->actionPasteDup->setEnabled(canPasteSceneItem(true));
 
 	ui->actionMoveUp->setEnabled(totalCount > 0);
 	ui->actionMoveDown->setEnabled(totalCount > 0);

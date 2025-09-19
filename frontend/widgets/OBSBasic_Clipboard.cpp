@@ -70,31 +70,40 @@ void OBSBasic::on_actionCopySource_triggered()
 	clipboard.clear();
 
 	for (auto &selectedSource : GetAllSelectedSourceItems()) {
-		OBSSceneItem item = ui->sources->Get(selectedSource.row());
-		if (!item)
-			continue;
-
-		OBSSource source = obs_sceneitem_get_source(item);
-
-		SourceCopyInfo copyInfo;
-		copyInfo.weak_source = OBSGetWeakRef(source);
-		obs_sceneitem_get_info2(item, &copyInfo.transform);
-		obs_sceneitem_get_crop(item, &copyInfo.crop);
-		copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
-		copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);
-		copyInfo.visible = obs_sceneitem_visible(item);
-
-		clipboard.push_back(copyInfo);
+		copySceneItem(ui->sources->Get(selectedSource.row()));
 	}
-
 	UpdateEditMenu();
+}
+
+void OBSBasic::copySceneItem(OBSSceneItem item)
+{
+	if (!item)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(item);
+
+	SourceCopyInfo copyInfo;
+	copyInfo.weak_source = OBSGetWeakRef(source);
+	obs_sceneitem_get_info2(item, &copyInfo.transform);
+	obs_sceneitem_get_crop(item, &copyInfo.crop);
+	copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
+	copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);
+	copyInfo.visible = obs_sceneitem_visible(item);
+
+	clipboard.push_back(copyInfo);
 }
 
 void OBSBasic::on_actionPasteRef_triggered()
 {
-	OBSSource scene_source = GetCurrentSceneSource();
+	pasteSceneItem(GetCurrentScene(), false);
+}
+
+void OBSBasic::pasteSceneItem(OBSScene scene, bool duplicate)
+{
+	if (!scene || !clipboard.size())
+		return;
+	OBSSource scene_source = obs_scene_get_source(scene);
 	OBSData undo_data = BackupScene(scene_source);
-	OBSScene scene = GetCurrentScene();
 
 	undo_s.push_disabled();
 
@@ -109,16 +118,16 @@ void OBSBasic::on_actionPasteRef_triggered()
 
 		/* do not allow duplicate refs of the same group in the same
 		 * scene */
-		if (!!obs_scene_get_group(scene, name)) {
+		if (!duplicate && !!obs_scene_get_group(scene, name)) {
 			continue;
 		}
 
-		OBSBasicSourceSelect::SourcePaste(copyInfo, false);
+		OBSBasicSourceSelect::SourcePaste(copyInfo, duplicate);
 	}
 
 	undo_s.pop_disabled();
 
-	QString action_name = QTStr("Undo.PasteSourceRef");
+	QString action_name = QTStr(duplicate ? "Undo.PasteSource" : "Undo.PasteSourceRef");
 	const char *scene_name = obs_source_get_name(scene_source);
 
 	OBSData redo_data = BackupScene(scene_source);
@@ -127,23 +136,7 @@ void OBSBasic::on_actionPasteRef_triggered()
 
 void OBSBasic::on_actionPasteDup_triggered()
 {
-	OBSSource scene_source = GetCurrentSceneSource();
-	OBSData undo_data = BackupScene(scene_source);
-
-	undo_s.push_disabled();
-
-	for (size_t i = clipboard.size(); i > 0; i--) {
-		SourceCopyInfo &copyInfo = clipboard[i - 1];
-		OBSBasicSourceSelect::SourcePaste(copyInfo, true);
-	}
-
-	undo_s.pop_disabled();
-
-	QString action_name = QTStr("Undo.PasteSource");
-	const char *scene_name = obs_source_get_name(scene_source);
-
-	OBSData redo_data = BackupScene(scene_source);
-	CreateSceneUndoRedoAction(action_name.arg(scene_name), undo_data, redo_data);
+	pasteSceneItem(GetCurrentScene(), true);
 }
 
 void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
@@ -246,4 +239,24 @@ void OBSBasic::on_actionPasteFilters_triggered()
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
 
 	SourcePasteFilters(source.Get(), dstSource);
+}
+
+bool OBSBasic::canPasteSceneItem(bool duplicate)
+{
+	if (!duplicate)
+		return !!clipboard.size();
+
+	bool allowPastingDuplicate = !!clipboard.size();
+	for (size_t i = clipboard.size(); i > 0; i--) {
+		const size_t idx = i - 1;
+		OBSWeakSource &weak = clipboard[idx].weak_source;
+		if (obs_weak_source_expired(weak)) {
+			clipboard.erase(clipboard.begin() + idx);
+			continue;
+		}
+		OBSSourceAutoRelease strong = obs_weak_source_get_source(weak.Get());
+		if (allowPastingDuplicate && obs_source_get_output_flags(strong) & OBS_SOURCE_DO_NOT_DUPLICATE)
+			allowPastingDuplicate = false;
+	}
+	return allowPastingDuplicate;
 }
