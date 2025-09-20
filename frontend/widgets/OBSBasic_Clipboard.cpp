@@ -83,6 +83,11 @@ void OBSBasic::on_actionCopySource_triggered()
 		copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
 		copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);
 		copyInfo.visible = obs_sceneitem_visible(item);
+		copyInfo.scale_type = obs_sceneitem_get_scale_filter(item);
+		copyInfo.show_transition_uuid = obs_source_get_uuid(obs_sceneitem_get_transition(item, true));
+		copyInfo.hide_transition_uuid = obs_source_get_uuid(obs_sceneitem_get_transition(item, false));
+		copyInfo.show_transition_duration = obs_sceneitem_get_transition_duration(item, true);
+		copyInfo.hide_transition_duration = obs_sceneitem_get_transition_duration(item, false);
 
 		clipboard.push_back(copyInfo);
 	}
