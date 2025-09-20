@@ -51,6 +51,38 @@ static const char *mediaExtensions[] = {
 	"nuv", "ogg",  "ogm", "ogv",  "ogx",   "ps",    "rec",   "rm",   "rmvb", "rpl",  "thp",  "tod",  "ts",  "tts",
 	"txd", "vob",  "vro", "webm", "wm",    "wmv",   "wtv",   nullptr};
 
+const std::map<OBSBasic::DropType, const char *> OBSBasic::DropTypes = {
+#ifdef _WIN32
+	{DropType_RawText, "text_gdiplus"}, {DropType_Text, "text_gdiplus"},
+#else
+	{DropType_RawText, "text_ft2_source"}, {DropType_Text, "text_ft2_source"},
+#endif
+	{DropType_Image, "image_source"},   {DropType_Media, "ffmpeg_source"},
+	{DropType_Html, "browser_source"},  {DropType_Url, "browser_source"}};
+
+struct OBSBasic::DropItem {
+	QString url;
+	QString displayName;
+	DropType dropType;
+	const char *typeId;
+
+	DropItem(const QString &url, DropType dropType) : DropItem(url, QString(), dropType) {}
+	DropItem(const QString &url, const QString &displayName, DropType dropType)
+	{
+		this->url = url;
+		this->dropType = dropType;
+		this->typeId = obs_get_latest_input_type_id(unversionedType());
+
+		if (this->typeId == nullptr)
+			throw invalid_argument("Unsupported drop type: " + std::string(unversionedType()));
+
+		this->displayName = displayName.isEmpty() ? QString::fromUtf8(defaultName()) : displayName;
+	};
+
+	const char *unversionedType() const { return DropTypes.at(dropType); }
+	const char *defaultName() const { return obs_source_get_display_name(typeId); }
+};
+
 static string GenerateSourceName(const char *base)
 {
 	string name;
@@ -81,9 +113,16 @@ static QString ReadWindowsURLFile(const QString &file)
 }
 #endif
 
-void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings, const obs_video_info &ovi)
+QString OBSBasic::GetUrlDisplayName(const QString &url)
 {
-	QUrl path = QString::fromUtf8(url);
+	QUrl qurl(url);
+	QUrlQuery query = QUrlQuery(qurl.query(QUrl::FullyEncoded));
+	return query.hasQueryItem("layer-name") ? query.queryItemValue("layer-name", QUrl::FullyDecoded) : qurl.host();
+}
+
+void OBSBasic::AddDropURL(const QString &url, obs_data_t *settings, const obs_video_info &ovi)
+{
+	QUrl path(url);
 	QUrlQuery query = QUrlQuery(path.query(QUrl::FullyEncoded));
 
 	int cx = (int)ovi.base_width;
@@ -109,8 +148,6 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings, 
 	obs_data_set_int(settings, "width", cx);
 	obs_data_set_int(settings, "height", cy);
 
-	name = query.hasQueryItem("layer-name") ? query.queryItemValue("layer-name", QUrl::FullyDecoded) : path.host();
-
 	query.removeQueryItem("layer-width");
 	query.removeQueryItem("layer-height");
 	query.removeQueryItem("layer-name");
@@ -120,70 +157,48 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings, 
 	obs_data_set_string(settings, "url", QT_TO_UTF8(path.url()));
 }
 
-void OBSBasic::AddDropSource(const char *data, DropType image)
+void OBSBasic::AddDropSource(const DropItem &dropItem)
 {
 	OBSBasic *main = OBSBasic::Get();
 	OBSDataAutoRelease settings = obs_data_create();
-	const char *type = nullptr;
-	QString name;
+	QByteArray dataArr = dropItem.url.toUtf8();
+	const char *data = dataArr.constData();
+	const char *type = dropItem.typeId;
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
-	switch (image) {
+	switch (dropItem.dropType) {
 	case DropType_RawText:
 		obs_data_set_string(settings, "text", data);
-#ifdef _WIN32
-		type = "text_gdiplus";
-#else
-		type = "text_ft2_source";
-#endif
 		break;
 	case DropType_Text:
 #ifdef _WIN32
 		obs_data_set_bool(settings, "read_from_file", true);
 		obs_data_set_string(settings, "file", data);
-		name = QUrl::fromLocalFile(QString(data)).fileName();
-		type = "text_gdiplus";
 #else
 		obs_data_set_bool(settings, "from_file", true);
 		obs_data_set_string(settings, "text_file", data);
-		type = "text_ft2_source";
 #endif
 		break;
 	case DropType_Image:
 		obs_data_set_string(settings, "file", data);
-		name = QUrl::fromLocalFile(QString(data)).fileName();
-		type = "image_source";
 		break;
 	case DropType_Media:
 		obs_data_set_string(settings, "local_file", data);
-		name = QUrl::fromLocalFile(QString(data)).fileName();
-		type = "ffmpeg_source";
 		break;
 	case DropType_Html:
 		obs_data_set_bool(settings, "is_local_file", true);
 		obs_data_set_string(settings, "local_file", data);
 		obs_data_set_int(settings, "width", ovi.base_width);
 		obs_data_set_int(settings, "height", ovi.base_height);
-		name = QUrl::fromLocalFile(QString(data)).fileName();
-		type = "browser_source";
 		break;
 	case DropType_Url:
-		AddDropURL(data, name, settings, ovi);
-		type = "browser_source";
+		AddDropURL(dropItem.url, settings, ovi);
 		break;
 	}
 
-	type = obs_get_latest_input_type_id(type);
-
-	if (type == nullptr || !obs_source_get_display_name(type)) {
-		return;
-	}
-
-	if (name.isEmpty())
-		name = obs_source_get_display_name(type);
-	std::string sourceName = GenerateSourceName(QT_TO_UTF8(name));
+	std::string sourceName = GenerateSourceName(QT_TO_UTF8(dropItem.displayName));
 	OBSSourceAutoRelease source = obs_source_create(type, sourceName.c_str(), settings, nullptr);
 	if (source) {
 		OBSDataAutoRelease wrapper = obs_save_source(source);
@@ -234,7 +249,7 @@ void OBSBasic::dragMoveEvent(QDragMoveEvent *event)
 	event->acceptProposedAction();
 }
 
-void OBSBasic::ConfirmDropUrl(const QString &url)
+bool OBSBasic::ConfirmDropUrl(const QString &url)
 {
 	if (url.left(7).compare("http://", Qt::CaseInsensitive) == 0 ||
 	    url.left(8).compare("https://", Qt::CaseInsensitive) == 0) {
@@ -256,74 +271,94 @@ void OBSBasic::ConfirmDropUrl(const QString &url)
 		messageBox.setIcon(QMessageBox::Question);
 		messageBox.exec();
 
-		if (messageBox.clickedButton() == yesButton)
-			AddDropSource(QT_TO_UTF8(url), DropType_Url);
+		return messageBox.clickedButton() == yesButton;
 	}
+	return false;
 }
 
 void OBSBasic::dropEvent(QDropEvent *event)
 {
 	const QMimeData *mimeData = event->mimeData();
+	QList<DropItem> addList{};
 
-	if (mimeData->hasUrls()) {
-		QList<QUrl> urls = mimeData->urls();
+	try {
+		if (mimeData->hasUrls()) {
+			QList<QUrl> urls = mimeData->urls();
 
-		for (int i = 0; i < urls.size(); i++) {
-			QUrl url = urls[i];
-			QString file = url.toLocalFile();
-			QFileInfo fileInfo(file);
+			for (int i = 0; i < urls.size(); i++) {
+				QUrl url = urls[i];
+				QString file = url.toLocalFile();
+				QFileInfo fileInfo(file);
 
-			if (!fileInfo.exists()) {
-				ConfirmDropUrl(url.url());
-				continue;
-			}
-
-#ifdef _WIN32
-			if (fileInfo.suffix().compare("url", Qt::CaseInsensitive) == 0) {
-				QString urlTarget = ReadWindowsURLFile(file);
-				if (!urlTarget.isEmpty()) {
-					ConfirmDropUrl(urlTarget);
-				}
-				continue;
-			} else if (fileInfo.isShortcut()) {
-				file = fileInfo.symLinkTarget();
-				fileInfo = QFileInfo(file);
 				if (!fileInfo.exists()) {
+
+					if (ConfirmDropUrl(url.url())) {
+						addList << DropItem{url.url(), GetUrlDisplayName(url.url()),
+								    DropType_Url};
+					}
 					continue;
 				}
-			}
+
+#ifdef _WIN32
+				if (fileInfo.suffix().compare("url", Qt::CaseInsensitive) == 0) {
+					QString urlTarget = ReadWindowsURLFile(file);
+					if (ConfirmDropUrl(urlTarget))
+						addList << DropItem{urlTarget, GetUrlDisplayName(urlTarget),
+								    DropType_Url};
+					continue;
+				} else if (fileInfo.isShortcut()) {
+					file = fileInfo.symLinkTarget();
+					fileInfo = QFileInfo(file);
+					if (!fileInfo.exists()) {
+						continue;
+					}
+				}
 #endif
+				QString suffixQStr = fileInfo.suffix();
+				QByteArray suffixArray = suffixQStr.toUtf8();
+				const char *suffix = suffixArray.constData();
+				bool found = false;
 
-			QString suffixQStr = fileInfo.suffix();
-			QByteArray suffixArray = suffixQStr.toUtf8();
-			const char *suffix = suffixArray.constData();
-			bool found = false;
+				const char **cmp;
 
-			const char **cmp;
-
-#define CHECK_SUFFIX(extensions, type)                         \
-	cmp = extensions;                                      \
-	while (*cmp) {                                         \
-		if (astrcmpi(*cmp, suffix) == 0) {             \
-			AddDropSource(QT_TO_UTF8(file), type); \
-			found = true;                          \
-			break;                                 \
-		}                                              \
-                                                               \
-		cmp++;                                         \
-	}                                                      \
-                                                               \
-	if (found)                                             \
+#define CHECK_SUFFIX(extensions, type)				             \
+	cmp = extensions;                                                    \
+	while (*cmp) {                                                       \
+		if (astrcmpi(*cmp, suffix) == 0) {                           \
+			addList << DropItem{file, fileInfo.fileName(), type};\
+			found = true;                                        \
+			break;                                               \
+		}                                                            \
+                                                                             \
+		cmp++;                                                       \
+	}                                                                    \
+                                                                             \
+	if (found)                                                           \
 		continue;
 
-			CHECK_SUFFIX(textExtensions, DropType_Text);
-			CHECK_SUFFIX(htmlExtensions, DropType_Html);
-			CHECK_SUFFIX(imageExtensions, DropType_Image);
-			CHECK_SUFFIX(mediaExtensions, DropType_Media);
+				CHECK_SUFFIX(textExtensions, DropType_Text);
+				CHECK_SUFFIX(htmlExtensions, DropType_Html);
+				CHECK_SUFFIX(imageExtensions, DropType_Image);
+				CHECK_SUFFIX(mediaExtensions, DropType_Media);
 
 #undef CHECK_SUFFIX
+			}
+		} else if (mimeData->hasText()) {
+			AddDropSource(DropItem{mimeData->text(), DropType_RawText});
 		}
-	} else if (mimeData->hasText()) {
-		AddDropSource(QT_TO_UTF8(mimeData->text()), DropType_RawText);
+	}
+
+	catch (const invalid_argument &error) {
+		blog(LOG_ERROR, "%s", error.what());
+	}
+
+	if (addList.isEmpty())
+		return;
+
+	// Reverse sort order, since AddDropSource() sends signals that are processed in reverse order
+	NaturalSort(addList, [](const DropItem &item) { return item.displayName; }, true);
+
+	for (const auto &item : addList) {
+		AddDropSource(item);
 	}
 }
