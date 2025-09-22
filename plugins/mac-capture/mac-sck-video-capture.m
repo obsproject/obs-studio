@@ -65,7 +65,7 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_destroy(void *data)
     if (sc->capture_delegate) {
         [sc->capture_delegate release];
     }
-    [sc->application_id release];
+    [sc->application_ids release];
 
     pthread_mutex_destroy(&sc->mutex);
     bfree(sc);
@@ -170,14 +170,13 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
                 os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
                 return true;
             }
-            SCRunningApplication *target_application = nil;
+            NSMutableArray *target_applications = [[NSMutableArray alloc] init];
             for (SCRunningApplication *application in sc->shareable_content.applications) {
-                if ([application.bundleIdentifier isEqualToString:sc->application_id]) {
-                    target_application = application;
-                    break;
+                if ([sc->application_ids containsObject:[application bundleIdentifier]]) {
+                    [target_applications addObject:application];
                 }
             }
-            NSArray *target_application_array = [[NSArray alloc] initWithObjects:target_application, nil];
+            NSArray *target_application_array = [[NSArray alloc] initWithArray:target_applications];
             NSArray *empty_array = [[NSArray alloc] init];
             content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
                                                 includingApplications:target_application_array
@@ -304,7 +303,7 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
 
     sc->display = get_display_migrate_settings(settings);
 
-    sc->application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
+    sc->application_ids = strings_from_array(obs_data_get_array(settings, "application"));
     pthread_mutex_init(&sc->mutex, NULL);
 
     if (!init_screen_stream(sc))
@@ -409,7 +408,7 @@ static void sck_video_capture_defaults(obs_data_t *settings)
     CFRelease(uuid_string);
     CFRelease(display_uuid);
 
-    obs_data_set_default_string(settings, "application", NULL);
+    obs_data_set_default_array(settings, "application", NULL);
     obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
     obs_data_set_default_int(settings, "window", kCGNullWindowID);
     obs_data_set_default_bool(settings, "show_cursor", true);
@@ -432,7 +431,7 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
 
     CGDirectDisplayID display = get_display_migrate_settings(settings);
 
-    NSString *application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
+    NSArray<NSString *> *application_ids = strings_from_array(obs_data_get_array(settings, "application"));
     bool show_cursor = obs_data_get_bool(settings, "show_cursor");
     bool hide_obs = obs_data_get_bool(settings, "hide_obs");
     bool show_empty_names = obs_data_get_bool(settings, "show_empty_names");
@@ -442,20 +441,20 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
         switch (sc->capture_type) {
             case ScreenCaptureDisplayStream: {
                 if (sc->display == display && sc->hide_cursor != show_cursor && sc->hide_obs == hide_obs) {
-                    [application_id release];
+                    [application_ids release];
                     return;
                 }
             } break;
             case ScreenCaptureWindowStream: {
                 if (old_window_id == sc->window && sc->hide_cursor != show_cursor) {
-                    [application_id release];
+                    [application_ids release];
                     return;
                 }
             } break;
             case ScreenCaptureApplicationStream: {
-                if (sc->display == display && [application_id isEqualToString:sc->application_id] &&
+                if (sc->display == display && [application_ids isEqualToArray:sc->application_ids] &&
                     sc->hide_cursor != show_cursor) {
-                    [application_id release];
+                    [application_ids release];
                     return;
                 }
             } break;
@@ -467,8 +466,8 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
     destroy_screen_stream(sc);
     sc->capture_type = capture_type;
     sc->display = display;
-    [sc->application_id release];
-    sc->application_id = application_id;
+    [sc->application_ids release];
+    sc->application_ids = application_ids;
     sc->hide_cursor = !show_cursor;
     sc->hide_obs = hide_obs;
     sc->show_empty_names = show_empty_names;
@@ -586,8 +585,8 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
     obs_property_t *display_list = obs_properties_add_list(
         props, "display_uuid", obs_module_text("DisplayCapture.Display"), OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
-    obs_property_t *app_list = obs_properties_add_list(props, "application", obs_module_text("Application"),
-                                                       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+    obs_property_t *app_list = obs_properties_add_editable_list(props, "application", obs_module_text("Application"),
+                                                                OBS_EDITABLE_LIST_TYPE_COMBO, NULL, NULL);
 
     obs_property_t *window_list = obs_properties_add_list(props, "window", obs_module_text("WindowUtils.Window"),
                                                           OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

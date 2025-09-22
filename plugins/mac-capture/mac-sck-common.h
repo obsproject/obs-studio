@@ -63,7 +63,7 @@ struct API_AVAILABLE(macos(12.5)) screen_capture {
     ScreenCaptureAudioStreamType audio_capture_type;
     CGDirectDisplayID display;
     CGWindowID window;
-    NSString *application_id;
+    NSArray<NSString *> *application_ids;
 };
 
 bool is_screen_capture_available(void);
@@ -81,3 +81,5 @@ static const char *screen_capture_getname(void *unused __unused);
 API_AVAILABLE(macos(12.5)) void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer);
 
 API_AVAILABLE(macos(12.5)) void screen_stream_audio_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer);
+
+NSArray<NSString *> *strings_from_array(obs_data_array_t *array);
