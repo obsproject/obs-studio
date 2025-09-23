@@ -43,6 +43,7 @@
 
 #include <QCompleter>
 #include <QStandardItemModel>
+#include <QLocale>
 
 #include <sstream>
 
@@ -563,10 +564,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #undef ADD_HOTKEY_FOCUS_TYPE
 
 	ui->simpleOutputVBitrate->setSingleStep(50);
-	ui->simpleOutputVBitrate->setSuffix(" Kbps");
+	ui->simpleOutputVBitrate->setSuffix(QTStr("Basic.Settings.Output.BitrateUnit"));
 	ui->advOutFFVBitrate->setSingleStep(50);
-	ui->advOutFFVBitrate->setSuffix(" Kbps");
-	ui->advOutFFABitrate->setSuffix(" Kbps");
+	ui->advOutFFVBitrate->setSuffix(QTStr("Basic.Settings.Output.BitrateUnit"));
+	ui->advOutFFABitrate->setSuffix(QTStr("Basic.Settings.Output.BitrateUnit"));
 
 #if !defined(_WIN32) && !defined(ENABLE_SPARKLE_UPDATER)
 	delete ui->updateSettingsGroupBox;
@@ -2438,11 +2439,12 @@ void OBSBasicSettings::LoadAudioSettings()
 
 	loading = true;
 
-	const char *str;
+	QLocale locale;
+	QString str;
 	if (sampleRate == 48000)
-		str = "48 kHz";
+		str = QTStr("Basic.Settings.Audio.SampleRateValue").arg(locale.toString(48.0, 'f', 0));
 	else
-		str = "44.1 kHz";
+		str = QTStr("Basic.Settings.Audio.SampleRateValue").arg(locale.toString(44.1, 'f', 1));
 
 	int sampleRateIdx = ui->sampleRate->findText(str);
 	if (sampleRateIdx != -1)
@@ -3504,7 +3506,9 @@ void OBSBasicSettings::SaveAudioSettings()
 	}
 
 	int sampleRate = 44100;
-	if (sampleRateStr == "48 kHz")
+	QLocale locale;
+	QString expectedStr48 = QTStr("Basic.Settings.Audio.SampleRateValue").arg(locale.toString(48.0, 'f', 0));
+	if (sampleRateStr == expectedStr48)
 		sampleRate = 48000;
 
 	if (WidgetChanged(ui->sampleRate))
