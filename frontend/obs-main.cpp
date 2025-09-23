@@ -71,6 +71,7 @@ bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
+bool opt_background_launch = false;
 bool opt_disable_updater = false;
 bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
@@ -927,6 +928,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
 			opt_always_on_top = true;
 
+		} else if (arg_is(argv[i], "--no-focus", nullptr)) {
+			opt_background_launch = true;
+
 		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
 			unfiltered_log = true;
 
@@ -993,6 +997,9 @@ int main(int argc, char *argv[])
 				"--only-bundled-plugins: Only load included (first-party) plugins\n"
 				"--verbose: Make log more verbose.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"
+#ifdef __APPLE__
+				"--no-focus: Launch without stealing focus (macOS).\n"
+#endif
 				"--unfiltered_log: Make log unfiltered.\n\n"
 				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
 				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n";
