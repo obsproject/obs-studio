@@ -10,8 +10,6 @@ find_package(LibAJANTV2 REQUIRED)
 find_package(Qt6 REQUIRED Widgets)
 
 if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
-  find_package(Qt6 REQUIRED Gui)
-
   find_package(X11 REQUIRED)
 endif()
 
@@ -47,7 +45,6 @@ target_link_libraries(
     Qt::Widgets
     AJA::LibAJANTV2
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
-    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>
 )
 
 target_link_options(aja-output-ui PRIVATE $<$<PLATFORM_ID:Windows>:/IGNORE:4099>)
