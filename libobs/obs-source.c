@@ -1268,6 +1268,7 @@ static void async_tick(obs_source_t *source)
 
 	if (deinterlacing_enabled(source)) {
 		deinterlace_process_last_frame(source, sys_time);
+		set_ready_frame_timing(source, source->last_frame_ts, sys_time);
 	} else {
 		if (source->cur_async_frame) {
 			remove_async_frame(source, source->cur_async_frame);
@@ -1276,8 +1277,6 @@ static void async_tick(obs_source_t *source)
 
 		source->cur_async_frame = get_closest_frame(source, sys_time);
 	}
-
-	source->last_sys_timestamp = sys_time;
 
 	if (deinterlacing_enabled(source))
 		filter_frame(source, &source->prev_async_frame);
@@ -3446,6 +3445,8 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source, co
 	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
 		free_async_cache(source);
 		source->last_frame_ts = 0;
+		source->last_frame_sys_ts = 0;
+		source->discard_sys_ts = 0;
 		pthread_mutex_unlock(&source->async_mutex);
 		return NULL;
 	}
@@ -3504,6 +3505,8 @@ static void obs_source_output_video_internal(obs_source_t *source, const struct 
 		pthread_mutex_lock(&source->async_mutex);
 		source->async_active = false;
 		source->last_frame_ts = 0;
+		source->last_frame_sys_ts = 0;
+		source->discard_sys_ts = 0;
 		free_async_cache(source);
 		pthread_mutex_unlock(&source->async_mutex);
 		return;
@@ -3649,7 +3652,7 @@ static void obs_source_preload_video_internal(obs_source_t *source, const struct
 
 	copy_frame_data(source->async_preload_frame, frame);
 
-	source->last_frame_ts = frame->timestamp;
+	set_ready_frame_timing(source, frame->timestamp, obs->video.video_time);
 }
 
 void obs_source_preload_video(obs_source_t *source, const struct obs_source_frame *frame)
@@ -3745,7 +3748,7 @@ static void obs_source_set_video_frame_internal(obs_source_t *source, const stru
 	set_async_texture_size(source, source->async_preload_frame);
 	update_async_textures(source, source->async_preload_frame, source->async_textures, source->async_texrender);
 
-	source->last_frame_ts = frame->timestamp;
+	set_ready_frame_timing(source, frame->timestamp, obs->video.video_time);
 
 	obs_leave_graphics();
 }
@@ -4019,92 +4022,133 @@ void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)
 
 /* #define DEBUG_ASYNC_FRAMES 1 */
 
-static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
+/* This tolerance is used to display the head of the queue even if a little
+ * early, and to keep the head of the queue if the following frame is too close
+ * to the video clock. */
+#define TS_JITTER_TOLERANCE 2000000ULL
+
+void set_ready_frame_timing(obs_source_t *source, uint64_t frame_ts, uint64_t sys_time)
 {
-	struct obs_source_frame *next_frame = source->async_frames.array[0];
-	struct obs_source_frame *frame = NULL;
-	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
-	uint64_t frame_time = next_frame->timestamp;
-	uint64_t frame_offset = 0;
+	/* the timestamp provided by the source for the 'readied' frame */
+	source->last_frame_ts = frame_ts;
+	/* the corresponding system (video) timestamp given the source timestamp */
+	source->last_frame_sys_ts = sys_time;
+}
 
-	if (source->async_unbuffered) {
-		while (source->async_frames.num > 1) {
-			da_erase(source->async_frames, 0);
-			remove_async_frame(source, next_frame);
-			next_frame = source->async_frames.array[0];
-		}
+struct obs_source_frame *ready_async_frame_unbuffered(obs_source_t *source, uint64_t sys_time)
+{
+	struct obs_source_frame *frame = source->async_frames.array[0];
 
-		source->last_frame_ts = next_frame->timestamp;
-		return true;
-	}
-
-#if DEBUG_ASYNC_FRAMES
-	blog(LOG_DEBUG,
-	     "source->last_frame_ts: %llu, frame_time: %llu, "
-	     "sys_offset: %llu, frame_offset: %llu, "
-	     "number of frames: %lu",
-	     source->last_frame_ts, frame_time, sys_offset, frame_time - source->last_frame_ts,
-	     (unsigned long)source->async_frames.num);
-#endif
-
-	/* account for timestamp invalidation */
-	if (frame_out_of_bounds(source, frame_time)) {
-#if DEBUG_ASYNC_FRAMES
-		blog(LOG_DEBUG, "timing jump");
-#endif
-		source->last_frame_ts = next_frame->timestamp;
-		return true;
-	} else {
-		frame_offset = frame_time - source->last_frame_ts;
-		source->last_frame_ts += sys_offset;
-	}
-
-	while (source->last_frame_ts > next_frame->timestamp) {
-
-		/* this tries to reduce the needless frame duplication, also
-		 * helps smooth out async rendering to frame boundaries.  In
-		 * other words, tries to keep the framerate as smooth as
-		 * possible */
-		if (frame && (source->last_frame_ts - next_frame->timestamp) < 2000000)
-			break;
-
-		if (frame)
-			da_erase(source->async_frames, 0);
-
-#if DEBUG_ASYNC_FRAMES
-		blog(LOG_DEBUG,
-		     "new frame, "
-		     "source->last_frame_ts: %llu, "
-		     "next_frame->timestamp: %llu",
-		     source->last_frame_ts, next_frame->timestamp);
-#endif
-
+	while (source->async_frames.num > 1) {
+		da_erase(source->async_frames, 0);
 		remove_async_frame(source, frame);
+		frame = source->async_frames.array[0];
+	}
 
+	set_ready_frame_timing(source, frame->timestamp, sys_time);
+	return frame;
+}
+
+static bool ready_async_frame_buffered(obs_source_t *source, uint64_t sys_time);
+
+static bool restart_sequence_buffered(obs_source_t *source, uint64_t sys_time)
+{
+	struct obs_source_frame *frame = source->async_frames.array[0];
+
+	/* first timestamp is an untrustworthy anchor (e.g. some webcams via
+	* V4L2); discard timestamp and start sequence on next frame */
+	if (!source->discard_sys_ts) {
+		source->discard_sys_ts = sys_time;
 		if (source->async_frames.num == 1)
 			return true;
+	}
 
-		frame = next_frame;
-		next_frame = source->async_frames.array[1];
+	/* start sequence with assumption that the source and clock time-stamps
+	 * are (most) in-sync at the most recent frame */
+	while (source->async_frames.num > 1) {
+		da_erase(source->async_frames, 0);
+		remove_async_frame(source, frame);
+		frame = source->async_frames.array[0];
+	}
 
-		/* more timestamp checking and compensating */
-		if ((next_frame->timestamp - frame_time) > MAX_TS_VAR) {
-#if DEBUG_ASYNC_FRAMES
-			blog(LOG_DEBUG, "timing jump");
-#endif
-			source->last_frame_ts = next_frame->timestamp - frame_offset;
+	/* assume frame ready a half-jitter ago (sys_time >  half-jit) */
+	set_ready_frame_timing(source, frame->timestamp, sys_time - TS_JITTER_TOLERANCE / 2);
+	return true;
+}
+
+static bool ready_async_frame_buffered(obs_source_t *source, uint64_t sys_time)
+{
+	struct obs_source_frame *frame = source->async_frames.array[0];
+	uint64_t frame_ts = frame->timestamp;
+	uint64_t frame_sys_ts = source->last_frame_sys_ts + uint64_diff(source->last_frame_ts, frame_ts);
+
+	if (frame_out_of_bounds(source, frame_ts)) {
+		blog(LOG_DEBUG, "source '%s': timestamp sequence interrupted, restart from %" PRIu64 ")",
+		     source->context.name, frame_ts);
+		set_ready_frame_timing(source, 0, 0);
+		source->discard_sys_ts = 0;
+		return restart_sequence_buffered(source, sys_time);
+	}
+
+	if (frame_ts < source->last_frame_ts) {
+		blog(LOG_DEBUG, "source '%s': out-of-sequence frame dropped (timestamp %" PRIu64 ")",
+		     source->context.name, frame_ts);
+		da_erase(source->async_frames, 0);
+		remove_async_frame(source, frame);
+
+		if (source->async_frames.num > 0)
+			return ready_async_frame_buffered(source, sys_time);
+		return false;
+	}
+
+	while (source->async_frames.num > 1) {
+		struct obs_source_frame *peek_frame = source->async_frames.array[1];
+		uint64_t peek_frame_ts = peek_frame->timestamp;
+		uint64_t peek_frame_sys_ts =
+			source->last_frame_sys_ts + uint64_diff(source->last_frame_ts, peek_frame_ts);
+
+		if (frame_out_of_bounds(source, peek_frame_ts)) {
+			blog(LOG_DEBUG, "source '%s': timestamp sequence interrupted, restart from %" PRIu64,
+			     source->context.name, peek_frame_ts);
+			da_erase(source->async_frames, 0);
+			remove_async_frame(source, frame);
+
+			set_ready_frame_timing(source, 0, 0);
+			source->discard_sys_ts = 0;
+			return restart_sequence_buffered(source, sys_time);
 		}
 
-		frame_time = next_frame->timestamp;
-		frame_offset = frame_time - source->last_frame_ts;
+		if (peek_frame_ts < source->last_frame_ts) {
+			blog(LOG_DEBUG, "source '%s': out-of-sequence frame dropped (timestamp %" PRIu64 ")",
+			     source->context.name, peek_frame_ts);
+			da_erase(source->async_frames, 1);
+			remove_async_frame(source, peek_frame);
+			continue;
+		}
+
+		/* conservatively hold back frames if not half-jitter old */
+		if (peek_frame_sys_ts > sys_time - TS_JITTER_TOLERANCE / 2)
+			break;
+
+		/* discard head of queue and update timing as though head was readied exactly on-time */
+		da_erase(source->async_frames, 0);
+		remove_async_frame(source, frame);
+		set_ready_frame_timing(source, frame_ts, frame_sys_ts);
+
+		frame_sys_ts = peek_frame_sys_ts;
+		frame_ts = peek_frame_ts;
+		frame = peek_frame;
+	}
+
+	if (frame_sys_ts <= sys_time + TS_JITTER_TOLERANCE) {
+		set_ready_frame_timing(source, frame_ts, frame_sys_ts);
+		return true;
 	}
 
 #if DEBUG_ASYNC_FRAMES
-	if (!frame)
-		blog(LOG_DEBUG, "no frame!");
+	blog(LOG_DEBUG, "source '%s': no frame", source->context.name);
 #endif
-
-	return frame != NULL;
+	return false;
 }
 
 static inline struct obs_source_frame *get_closest_frame(obs_source_t *source, uint64_t sys_time)
@@ -4112,12 +4156,35 @@ static inline struct obs_source_frame *get_closest_frame(obs_source_t *source, u
 	if (!source->async_frames.num)
 		return NULL;
 
-	if (!source->last_frame_ts || ready_async_frame(source, sys_time)) {
-		struct obs_source_frame *frame = source->async_frames.array[0];
+	if (source->async_unbuffered) {
+		struct obs_source_frame *frame = ready_async_frame_unbuffered(source, sys_time);
+#if DEBUG_ASYNC_FRAMES
+		blog(LOG_DEBUG, "source '%s' unbuffered-ready: queued=%lu, sys_ts=%lu, frame_ts=%lu",
+		     source->context.name, source->async_frames.num, sys_time, frame->timestamp);
+#endif
 		da_erase(source->async_frames, 0);
 
-		if (!source->last_frame_ts)
-			source->last_frame_ts = frame->timestamp;
+		return frame;
+	}
+
+	if (!source->last_frame_sys_ts && restart_sequence_buffered(source, sys_time)) {
+		struct obs_source_frame *frame = source->async_frames.array[0];
+#if DEBUG_ASYNC_FRAMES
+		blog(LOG_DEBUG, "source '%s' buffered sequence started: queued=%lu, sys_ts=%lu, frame_ts=%lu",
+		     source->context.name, source->async_frames.num, sys_time, frame->timestamp);
+#endif
+		da_erase(source->async_frames, 0);
+
+		return frame;
+	}
+
+	if (source->last_frame_sys_ts && ready_async_frame_buffered(source, sys_time)) {
+		struct obs_source_frame *frame = source->async_frames.array[0];
+#if DEBUG_ASYNC_FRAMES
+		blog(LOG_DEBUG, "source '%s' buffered-ready: queued=%lu, sys_ts=%lu, frame_ts=%lu",
+		     source->context.name, source->async_frames.num, sys_time, frame->timestamp);
+#endif
+		da_erase(source->async_frames, 0);
 
 		return frame;
 	}
@@ -5532,6 +5599,10 @@ void obs_source_set_async_unbuffered(obs_source_t *source, bool unbuffered)
 	if (!obs_source_valid(source, "obs_source_set_async_unbuffered"))
 		return;
 
+	if (source->async_unbuffered != unbuffered) {
+		set_ready_frame_timing(source, 0, 0);
+		source->discard_sys_ts = 0;
+	}
 	source->async_unbuffered = unbuffered;
 }
 
