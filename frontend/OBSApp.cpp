@@ -898,11 +898,21 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	if (!setlocale(LC_NUMERIC, "C"))
 		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
 
+	/* Copy C runtime locale for C++ */
+	std::locale defaultLocale(setlocale(LC_ALL, nullptr));
+	std::locale::global(defaultLocale);
+
+	/*
+	   system() is already the QLocale default, but just to be explicit about the intention.
+	   Unlike CRT and C++ locales above, QLocale doesn't support customization of locale categories and codepages.
+	   Ie. We can't enforce decimal point to be a dot and at the same time use user's preferred locale.
+	*/
+	QLocale::setDefault(QLocale::system());
+
 	if (!usingUTF8)
 		blog(LOG_WARNING, "Failed to set UTF-8 codepage for locales");
 
-	const char *localeStr = setlocale(LC_ALL, nullptr);
-	blog(LOG_INFO, "Set locale to: %s", localeStr);
+	blog(LOG_INFO, "Set locale to: %s", defaultLocale.name().c_str());
 
 #ifndef _WIN32
 	/* Handle SIGINT properly */
