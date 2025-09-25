@@ -290,7 +290,7 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 			 * the application to hang when double clicking the sources list and the
 			 * Windows setting 'Snap mouse to default button in dialog boxes' is enabled.
 			 */
-			bool snapEnabled;
+			BOOL snapEnabled = FALSE;
 			SystemParametersInfo(SPI_GETSNAPTODEFBUTTON, 0, &snapEnabled, 0);
 
 			if (snapEnabled) {
