@@ -544,7 +544,8 @@ static inline bool should_silence_monitored_source(obs_source_t *source, struct 
 	bool output_capture_unmuted = !audio->monitoring_duplicating_source->user_muted;
 
 	if (audio->prevent_monitoring_duplication && output_capture_unmuted) {
-		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT) {
+		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT &&
+		    source != audio->monitoring_duplicating_source) {
 			return true;
 		}
 	}
