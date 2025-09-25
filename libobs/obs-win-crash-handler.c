@@ -245,7 +245,7 @@ static inline void write_header(struct exception_handler_data *data)
 	time_t now = time(0);
 	struct tm ts;
 	ts = *localtime(&now);
-	strftime(date_time, sizeof(date_time), "%Y-%m-%d, %X", &ts);
+	strftime(date_time, sizeof(date_time), "%Y-%m-%d, %T", &ts);
 
 	const char *obs_bitness;
 	if (sizeof(void *) == 8)
