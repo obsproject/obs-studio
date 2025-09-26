@@ -280,6 +280,54 @@ string CurrentDateTimeString()
 	return buf;
 }
 
+bool OBSNativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result)
+{
+	if (eventType == "windows_generic_MSG") {
+#ifdef _WIN32
+		MSG *msg = static_cast<MSG *>(message);
+
+		OBSBasic *main = OBSBasic::Get();
+		if (!main) {
+			return false;
+		}
+
+		switch (msg->message) {
+		case WM_QUERYENDSESSION:
+			main->saveAll();
+			if (msg->lParam == ENDSESSION_CRITICAL) {
+				break;
+			}
+
+			if (main->shouldPromptForClose()) {
+				*result = FALSE;
+				return true;
+			}
+
+			return false;
+		case WM_ENDSESSION:
+			if (msg->wParam == TRUE) {
+				/* Session is ending, start closing the main window now with no checks or prompts. */
+				main->closeWindow();
+			} else {
+				/* Session is no longer ending. If OBS is still open, odds are it is what held
+				 * up the session end due to it's higher than default priority. We call the
+				 * close method to trigger the confirmation window flow. We do this after the fact
+				 * to avoid blocking the main window event loop prior to this message.
+				 * Otherwise OBS is already gone and invoking this does nothing */
+				main->close();
+			}
+
+			return true;
+		}
+#else
+		UNUSED_PARAMETER(message);
+		UNUSED_PARAMETER(result);
+#endif
+	}
+
+	return false;
+}
+
 #define DEFAULT_LANG "en-US"
 
 bool OBSApp::InitGlobalConfigDefaults()
@@ -868,6 +916,8 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	  profilerNameStore(store),
 	  appLaunchUUID_(QUuid::createUuid())
 {
+	installNativeEventFilter(new OBSNativeEventFilter);
+
 	/* fix float handling */
 #if defined(Q_OS_UNIX)
 	if (!setlocale(LC_NUMERIC, "C"))
@@ -880,7 +930,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
 	connect(snInt, &QSocketNotifier::activated, this, &OBSApp::ProcessSigInt);
 #else
-	connect(qApp, &QGuiApplication::commitDataRequest, this, &OBSApp::commitData);
+	connect(qApp, &QGuiApplication::commitDataRequest, this, &OBSApp::commitData, Qt::DirectConnection);
 #endif
 	if (multi) {
 		crashHandler_ = std::make_unique<OBS::CrashHandler>();
@@ -1229,7 +1279,20 @@ bool OBSApp::OBSInit()
 	mainWindow = new OBSBasic();
 
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-	connect(mainWindow, &OBSBasic::destroyed, this, &OBSApp::quit);
+
+	connect(QApplication::instance(), &QApplication::aboutToQuit, this, [this]() {
+		crashHandler_.get()->applicationShutdownHandler();
+
+		/* Ensure OBSMainWindow gets closed */
+		if (mainWindow) {
+			mainWindow->close();
+			delete mainWindow;
+		}
+
+		if (libobs_initialized) {
+			applicationShutdown();
+		}
+	});
 
 	mainWindow->OBSInit();
 
@@ -1759,17 +1822,19 @@ void OBSApp::ProcessSigInt(void)
 	recv(sigintFd[1], &tmp, sizeof(tmp), 0);
 
 	OBSBasic *main = OBSBasic::Get();
-	if (main)
+	if (main) {
+		main->saveAll();
 		main->close();
+	}
 #endif
 }
 
 #ifdef _WIN32
 void OBSApp::commitData(QSessionManager &manager)
 {
-	if (auto main = App()->GetMainWindow()) {
-		QMetaObject::invokeMethod(main, "close", Qt::QueuedConnection);
-		manager.cancel();
+	OBSBasic *main = static_cast<OBSBasic *>(GetMainWindow());
+	if (main) {
+		main->saveAll();
 	}
 }
 #endif
