@@ -63,8 +63,9 @@ template<typename OBSRef> struct SignalContainer {
 void OBSBasic::ReceivedIntroJson(const QString &text)
 {
 #ifdef WHATSNEW_ENABLED
-	if (closing)
+	if (isClosing()) {
 		return;
+	}
 
 	WhatsNewList items;
 	try {
@@ -153,8 +154,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 void OBSBasic::ShowWhatsNew(const QString &url)
 {
 #ifdef BROWSER_AVAILABLE
-	if (closing)
+	if (isClosing()) {
 		return;
+	}
 
 	if (obsWhatsNew) {
 		obsWhatsNew->close();

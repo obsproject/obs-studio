@@ -29,6 +29,7 @@ target_sources(
     utility/crypto-helpers.hpp
     utility/models/branches.hpp
     utility/models/whatsnew.hpp
+    utility/NativeEventFilter_Windows.cpp
     utility/platform-windows.cpp
     utility/system-info-windows.cpp
     utility/update-helpers.cpp
