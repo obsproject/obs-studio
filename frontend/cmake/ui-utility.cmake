@@ -33,6 +33,8 @@ target_sources(
     utility/MultitrackVideoError.hpp
     utility/MultitrackVideoOutput.cpp
     utility/MultitrackVideoOutput.hpp
+    utility/NativeEventFilter.cpp
+    utility/NativeEventFilter.hpp
     utility/obf.c
     utility/obf.h
     utility/OBSCanvas.cpp
