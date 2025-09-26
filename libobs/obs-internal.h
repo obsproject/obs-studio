@@ -462,6 +462,7 @@ struct obs_core_audio {
 
 	volatile bool prevent_monitoring_duplication;
 	struct obs_source *monitoring_duplicating_source;
+	bool monitoring_duplication_prevented_on_prev_tick;
 };
 
 /* user sources, output channels, and displays */
