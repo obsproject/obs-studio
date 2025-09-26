@@ -858,13 +858,22 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);
 
-	struct sigaction sig_handler;
+	struct sigaction sigint_handler;
 
-	sig_handler.sa_handler = OBSApp::SigIntSignalHandler;
-	sigemptyset(&sig_handler.sa_mask);
-	sig_handler.sa_flags = 0;
+	sigint_handler.sa_handler = OBSApp::SigIntSignalHandler;
+	sigemptyset(&sigint_handler.sa_mask);
+	sigint_handler.sa_flags = 0;
 
-	sigaction(SIGINT, &sig_handler, NULL);
+	sigaction(SIGINT, &sigint_handler, NULL);
+
+	struct sigaction sigterm_handler;
+
+	sigterm_handler.sa_handler = OBSApp::SigTermSignalHandler;
+	sigemptyset(&sigterm_handler.sa_mask);
+	sigterm_handler.sa_flags = 0;
+
+	sigaction(SIGTERM, &sigterm_handler, NULL);
+	sigaction(SIGHUP, &sigterm_handler, NULL);
 
 	/* Block SIGPIPE in all threads, this can happen if a thread calls write on
 	a closed pipe. */
@@ -889,6 +898,14 @@ int main(int argc, char *argv[])
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
+
+	/* Shutdown priority value is a range from 0 - 4FF with higher values getting first priority.
+	 * 000 - 0FF and 400 - 4FF are reserved system ranges.
+	 * Processes start at shutdown level 0x280 by default.
+	 * We set the main OBS application to a higher priority to ensure it tries to close before
+	 * any subprocesses such as CEF.
+	 */
+	SetProcessShutdownParameters(0x300, SHUTDOWN_NORETRY);
 
 	const HMODULE hRtwq = LoadLibrary(L"RTWorkQ.dll");
 	if (hRtwq) {

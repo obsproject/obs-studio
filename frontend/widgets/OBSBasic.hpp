@@ -259,7 +259,8 @@ private:
 	std::vector<OBSSignal> signalHandlers;
 
 	bool loaded = false;
-	bool closing = false;
+	bool isClosing_ = false;
+	bool isClosePromptOpen_ = false;
 	bool handledShutdown = false;
 
 	// TODO: Remove, orphaned variable
@@ -300,6 +301,7 @@ private:
 	void LoadProject();
 
 public slots:
+	void close();
 	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
 	void applicationShutdown() noexcept;
@@ -325,9 +327,16 @@ public:
 
 	void SetDisplayAffinity(QWindow *window);
 
-	inline bool Closing() { return closing; }
+	void saveAll();
+	bool shouldPromptForClose();
+	inline bool isClosing() { return isClosing_; }
+	inline bool isClosePromptOpen() { return isClosePromptOpen_; }
+	void closeWindow();
 
 protected:
+	bool isReadyToClose();
+	bool promptToClose();
+
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void changeEvent(QEvent *event) override;
