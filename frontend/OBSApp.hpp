@@ -25,6 +25,7 @@
 #include <util/profiler.hpp>
 #include <util/util.hpp>
 
+#include <QAbstractNativeEventFilter>
 #include <QApplication>
 #include <QPalette>
 #include <QPointer>
@@ -58,8 +59,15 @@ struct UpdateBranch {
 	bool is_visible;
 };
 
+class OBSNativeEventFilter : public QAbstractNativeEventFilter {
+public:
+	bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result);
+};
+
 class OBSApp : public QApplication {
 	Q_OBJECT
+
+	friend class OBSNativeEventFilter;
 
 private:
 	QUuid appLaunchUUID_;
