@@ -58,9 +58,16 @@ static inline void check_audio_output_source_is_monitoring_device(obs_source_t *
 	    strcmp(s->info.id, "coreaudio_output_capture") == 0) {
 		const char *dev_id = NULL;
 		obs_data_t *settings = obs_source_get_settings(s);
+		bool is_pulse = strcmp(s->info.id, "pulse_output_capture") == 0;
 		if (settings) {
 			dev_id = obs_data_get_string(settings, "device_id");
-			if (strcmp(dev_id, audio->monitoring_device_id) == 0) {
+			bool id_match = strcmp(dev_id, audio->monitoring_device_id) == 0;
+			if (is_pulse) {
+				// pulse may append '.monitor'
+				size_t count = strlen(audio->monitoring_device_id) - 9;
+				id_match = id_match || strncmp(dev_id, audio->monitoring_device_id, count) == 0;
+			}
+			if (id_match) {
 				audio->prevent_monitoring_duplication = true;
 				audio->monitoring_duplicating_source = s;
 				if (!audio->monitoring_duplication_prevented_on_prev_tick)
