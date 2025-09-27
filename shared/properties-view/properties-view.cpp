@@ -333,7 +333,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout, Q
 
 		WidgetInfo *info = new WidgetInfo(this, prop, edit);
 		connect(show, &QAbstractButton::toggled, info, &WidgetInfo::TogglePasswordText);
-		connect(show, &QAbstractButton::toggled,
+		connect(show, &QAbstractButton::toggled, show,
 			[=](bool hide) { show->setText(hide ? tr("Hide") : tr("Show")); });
 		children.emplace_back(info);
 
@@ -733,7 +733,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop, QFormLayout *layou
 		/* for backwards compatibility */
 		if (uuid.isEmpty()) {
 			uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
-			obs_data_set_string(item, "uuid", uuid.toUtf8());
+			obs_data_set_string(item, "uuid", QT_TO_UTF8(uuid));
 		}
 		list_item->setData(Qt::UserRole, uuid);
 	}
@@ -741,7 +741,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop, QFormLayout *layou
 	WidgetInfo *info = new WidgetInfo(this, prop, list);
 
 	list->setDragDropMode(QAbstractItemView::InternalMove);
-	connect(list->model(), &QAbstractItemModel::rowsMoved, [info]() { info->EditableListChanged(); });
+	connect(list->model(), &QAbstractItemModel::rowsMoved, info, [info]() { info->EditableListChanged(); });
 
 	QVBoxLayout *sideLayout = new QVBoxLayout();
 	NewButton(sideLayout, info, "icon-plus", &WidgetInfo::EditListAdd);
@@ -1408,14 +1408,14 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		emit info->ControlChanged();
 	});
 
-	connect(widget->simpleFPS, comboIndexChanged, [=](int) {
+	connect(widget->simpleFPS, comboIndexChanged, info, [=](int) {
 		if (widget->updating)
 			return;
 
 		emit info->ControlChanged();
 	});
 
-	connect(widget->fpsRange, comboIndexChanged, [=](int) {
+	connect(widget->fpsRange, comboIndexChanged, info, [=](int) {
 		if (widget->updating)
 			return;
 
@@ -1423,14 +1423,14 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 	});
 
 	auto sbValueChanged = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
-	connect(widget->numEdit, sbValueChanged, [=](int) {
+	connect(widget->numEdit, sbValueChanged, info, [=](int) {
 		if (widget->updating)
 			return;
 
 		emit info->ControlChanged();
 	});
 
-	connect(widget->denEdit, sbValueChanged, [=](int) {
+	connect(widget->denEdit, sbValueChanged, info, [=](int) {
 		if (widget->updating)
 			return;
 
@@ -2021,7 +2021,7 @@ void WidgetInfo::ControlChanged()
 	if (!recently_updated) {
 		recently_updated = true;
 		update_timer = new QTimer;
-		connect(update_timer, &QTimer::timeout, [this, &ru = recently_updated]() {
+		connect(update_timer, &QTimer::timeout, this, [this, &ru = recently_updated]() {
 			OBSObject strongObj = view->GetObject();
 			void *obj = strongObj ? strongObj.Get() : view->rawObj;
 			if (obj && view->callback && !view->deferUpdate) {
@@ -2030,7 +2030,7 @@ void WidgetInfo::ControlChanged()
 
 			ru = false;
 		});
-		connect(update_timer, &QTimer::timeout, &QTimer::deleteLater);
+		connect(update_timer, &QTimer::timeout, update_timer, &QTimer::deleteLater);
 		update_timer->setSingleShot(true);
 	}
 

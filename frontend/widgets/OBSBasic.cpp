@@ -389,8 +389,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	};
 	dpi = devicePixelRatioF();
 
-	connect(windowHandle(), &QWindow::screenChanged, displayResize);
-	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
+	connect(windowHandle(), &QWindow::screenChanged, this, displayResize);
+	connect(ui->preview, &OBSQTDisplay::DisplayResized, this, displayResize);
 
 	/* TODO: Move these into window-basic-preview */
 	/* Preview Scaling label */
@@ -486,7 +486,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		nudge->setShortcut(seq);
 		nudge->setShortcutContext(Qt::WidgetShortcut);
 		ui->preview->addAction(nudge);
-		connect(nudge, &QAction::triggered, [this, distance, direction]() { Nudge(distance, direction); });
+		connect(nudge, &QAction::triggered, this,
+			[this, distance, direction]() { Nudge(distance, direction); });
 	};
 
 	addNudge(Qt::Key_Up, MoveDir::Up, 1);
@@ -555,7 +556,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->enablePreviewButton, &QPushButton::clicked, this, &OBSBasic::TogglePreview);
 
-	connect(ui->scenes, &SceneTree::scenesReordered, []() { OBSProjector::UpdateMultiviewProjectors(); });
+	connect(ui->scenes, &SceneTree::scenesReordered, ui->scenes,
+		[]() { OBSProjector::UpdateMultiviewProjectors(); });
 
 	connect(App(), &OBSApp::StyleChanged, this, [this]() { OnEvent(OBS_FRONTEND_EVENT_THEME_CHANGED); });
 
@@ -1134,7 +1136,7 @@ void OBSBasic::OBSInit()
 			ResizePreview(ovi.base_width, ovi.base_height);
 	};
 
-	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDisplay);
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
