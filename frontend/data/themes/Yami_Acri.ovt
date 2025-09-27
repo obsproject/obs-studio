@@ -234,3 +234,14 @@ idian--ToggleSwitch {
     qproperty-background_checked: var(--button_bg);
     qproperty-background_checked_hover: var(--primary_light);
 }
+
+/* Add Source Dialog */
+SourceSelectButton QPushButton,
+SourceSelectButton #thumbnail {
+    border-color: var(--grey3);
+}
+
+SourceSelectButton QPushButton:checked {
+    background: var(--button_bg_red);
+    border-color: var(--button_bg_red_hover);
+}
