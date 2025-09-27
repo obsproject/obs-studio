@@ -435,6 +435,7 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 
 	/* audio deduplication initialization */
 	source->audio_is_duplicated = false;
+	source->fader_muted = false;
 
 	obs_source_init_finalize(source, canvas);
 	if (!private) {
