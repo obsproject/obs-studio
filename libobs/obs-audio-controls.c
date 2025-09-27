@@ -600,8 +600,10 @@ bool obs_fader_set_db(obs_fader_t *fader, const float db)
 
 	pthread_mutex_unlock(&fader->mutex);
 
-	if (src)
+	if (src) {
 		obs_source_set_volume(src, mul);
+		src->fader_muted = (fader->cur_db <= fader->min_db) ? true : false;
+	}
 
 	return !clamped;
 }
@@ -677,6 +679,7 @@ bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 
 	fader->source = source;
 	fader->cur_db = mul_to_db(vol);
+	source->fader_muted = (fader->cur_db <= fader->min_db) ? true : false;
 
 	pthread_mutex_unlock(&fader->mutex);
 
