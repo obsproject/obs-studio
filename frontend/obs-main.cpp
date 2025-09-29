@@ -407,7 +407,7 @@ static void create_log_file(fstream &logFile)
 
 	BPtr<char> path(GetAppConfigPathPtr(dst.str().c_str()));
 
-	logFile.imbue(std::locale(setlocale(LC_ALL, nullptr)));
+	logFile.imbue(std::locale());
 
 #ifdef _WIN32
 	BPtr<wchar_t> wpath;
