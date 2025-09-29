@@ -793,44 +793,50 @@ void OBSBasic::ActivateSceneCollection(SceneCollection &collection)
 
 using namespace std;
 
-static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent, vector<OBSSource> &audioSources)
+namespace {
+constexpr std::string_view DESKTOP_AUDIO_1{"DesktopAudioDevice1"};
+constexpr std::string_view DESKTOP_AUDIO_2{"DesktopAudioDevice2"};
+constexpr std::string_view AUX_AUDIO_1{"AuxAudioDevice1"};
+constexpr std::string_view AUX_AUDIO_2{"AuxAudioDevice2"};
+constexpr std::string_view AUX_AUDIO_3{"AuxAudioDevice3"};
+constexpr std::string_view AUX_AUDIO_4{"AuxAudioDevice4"};
+} // namespace
+
+void OBSBasic::Save(SceneCollection &collection)
 {
-	OBSSourceAutoRelease source = obs_get_output_source(channel);
-	if (!source)
-		return;
+	OBSDataAutoRelease saveData = obs_data_create();
 
-	audioSources.push_back(source.Get());
+	// Scene collection name
+	const char *sceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
+	obs_data_set_string(saveData, "name", sceneCollection);
 
-	OBSDataAutoRelease data = obs_save_source(source);
-
-	obs_data_set_obj(parent, name, data);
-}
-
-static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array_t *quickTransitionData,
-				    int transitionDuration, obs_data_array_t *transitions, OBSScene &scene,
-				    OBSSource &curProgramScene, obs_data_array_t *savedProjectorList,
-				    obs_data_array_t *savedCanvases)
-{
-	obs_data_t *saveData = obs_data_create();
-
+	// Global audio sources
 	vector<OBSSource> audioSources;
 	audioSources.reserve(6);
 
-	SaveAudioDevice(DESKTOP_AUDIO_1, 1, saveData, audioSources);
-	SaveAudioDevice(DESKTOP_AUDIO_2, 2, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_1, 3, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_2, 4, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_3, 5, saveData, audioSources);
-	SaveAudioDevice(AUX_AUDIO_4, 6, saveData, audioSources);
+	auto SaveAudioDevice = [&](const std::string_view &key, int channel) {
+		if (OBSSourceAutoRelease source = obs_get_output_source(channel)) {
+			audioSources.emplace_back(source.Get());
+			OBSDataAutoRelease data = obs_save_source(source);
+			obs_data_set_obj(saveData, key.data(), data);
+		}
+	};
 
-	/* -------------------------------- */
-	/* save non-group sources           */
+	SaveAudioDevice(DESKTOP_AUDIO_1, 1);
+	SaveAudioDevice(DESKTOP_AUDIO_2, 2);
+	SaveAudioDevice(AUX_AUDIO_1, 3);
+	SaveAudioDevice(AUX_AUDIO_2, 4);
+	SaveAudioDevice(AUX_AUDIO_3, 5);
+	SaveAudioDevice(AUX_AUDIO_4, 6);
 
+	// Non-global sources
+
+	// Save all non-scene sources first
 	auto FilterAudioSources = [&](obs_source_t *source) {
-		if (obs_source_is_group(source))
+		if (obs_source_is_group(source) || obs_source_is_scene(source))
 			return false;
 
-		return find(begin(audioSources), end(audioSources), source) == end(audioSources);
+		return std::find(begin(audioSources), end(audioSources), source) == end(audioSources);
 	};
 	using FilterAudioSources_t = decltype(FilterAudioSources);
 
@@ -841,60 +847,78 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder, obs_data_array
 		},
 		static_cast<void *>(&FilterAudioSources));
 
-	/* -------------------------------- */
-	/* save group sources separately    */
+	// Saving groups separately ensures they won't be loaded in older versions.
+	// TODO: Get rid of this at some point. Groups were introduced in 22.0
+	OBSDataArrayAutoRelease groupsArray;
 
-	/* saving separately ensures they won't be loaded in older versions */
-	OBSDataArrayAutoRelease groupsArray = obs_save_sources_filtered(
-		[](void *, obs_source_t *source) { return obs_source_is_group(source); }, nullptr);
+	auto sourcesAndGroups = std::make_pair(sourcesArray.Get(), groupsArray.Get());
+	using sourcesAndGroups_t = decltype(sourcesAndGroups);
 
-	/* -------------------------------- */
+	auto exportSceneItemsCallback = [](void *param, obs_source_t *source) -> bool {
+		auto sourcesArrays = static_cast<sourcesAndGroups_t *>(param);
+		OBSDataAutoRelease source_data = obs_save_source(source);
 
-	OBSSourceAutoRelease transition = obs_get_output_source(0);
-	obs_source_t *currentScene = obs_scene_get_source(scene);
-	const char *sceneName = obs_source_get_name(currentScene);
-	const char *programName = obs_source_get_name(curProgramScene);
+		if (obs_source_is_scene(source)) {
+			obs_data_array_push_back(sourcesArrays->first, source_data);
+		} else {
+			obs_data_array_push_back(sourcesArrays->second, source_data);
+		}
+		return true;
+	};
 
-	const char *sceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
+	obs_enum_scenes(exportSceneItemsCallback, &sourcesAndGroups);
 
-	obs_data_set_string(saveData, "current_scene", sceneName);
-	obs_data_set_string(saveData, "current_program_scene", programName);
+	// Iterate over our additional canvases (if any), save their scenes and groups.
+	for (const auto &canvas : canvases) {
+		// Do not store sources from ephemeral canvases.
+		if (obs_canvas_get_flags(canvas) & EPHEMERAL)
+			continue;
+
+		obs_canvas_enum_scenes(canvas, exportSceneItemsCallback, &sourcesAndGroups);
+	}
+
+	obs_data_set_array(saveData, "sources", sourcesArray);
+	obs_data_set_array(saveData, "groups", groupsArray);
+
+	// UI scene order
+	OBSDataArrayAutoRelease sceneOrder = SaveSceneListOrder();
 	obs_data_set_array(saveData, "scene_order", sceneOrder);
-	obs_data_set_string(saveData, "name", sceneCollection);
-	obs_data_set_array(saveData, "sources", sourcesArray.Get());
-	obs_data_set_array(saveData, "groups", groupsArray.Get());
-	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
-	obs_data_set_array(saveData, "transitions", transitions);
-	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
-	obs_data_set_array(saveData, "canvases", savedCanvases);
 
-	obs_data_set_string(saveData, "current_transition", obs_source_get_name(transition));
-	obs_data_set_int(saveData, "transition_duration", transitionDuration);
-
-	return saveData;
-}
-
-void OBSBasic::Save(SceneCollection &collection)
-{
+	// Current preview/program scenes
 	OBSScene scene = GetCurrentScene();
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
 	if (!curProgramScene)
 		curProgramScene = obs_scene_get_source(scene);
 
-	OBSDataArrayAutoRelease sceneOrder = SaveSceneListOrder();
-	OBSDataArrayAutoRelease transitionsData = SaveTransitions();
-	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
-	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
-	OBSDataArrayAutoRelease savedCanvases = OBS::Canvas::SaveCanvases(canvases);
-	OBSDataAutoRelease saveData = GenerateSaveData(sceneOrder, quickTrData, transitionDuration, transitionsData,
-						       scene, curProgramScene, savedProjectorList, savedCanvases);
+	obs_data_set_string(saveData, "current_scene", obs_source_get_name(obs_scene_get_source(scene)));
+	obs_data_set_string(saveData, "current_program_scene", obs_source_get_name(curProgramScene));
 
+	// Canvases
+	OBSDataArrayAutoRelease savedCanvases = OBS::Canvas::SaveCanvases(canvases);
+	obs_data_set_array(saveData, "canvases", savedCanvases);
+
+	// Transitions
+	OBSSourceAutoRelease transition = obs_get_output_source(0);
+	OBSDataArrayAutoRelease transitionsData = SaveTransitions();
+	OBSDataArrayAutoRelease quickTransitionData = SaveQuickTransitions();
+
+	obs_data_set_string(saveData, "current_transition", obs_source_get_name(transition));
+	obs_data_set_int(saveData, "transition_duration", transitionDuration);
+	obs_data_set_array(saveData, "transitions", transitionsData);
+	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
+
+	// Projectors
+	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
+	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
+
+	// UI state
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled", ui->preview->IsFixedScaling());
 	obs_data_set_int(saveData, "scaling_level", ui->preview->GetScalingLevel());
 	obs_data_set_double(saveData, "scaling_off_x", ui->preview->GetScrollX());
 	obs_data_set_double(saveData, "scaling_off_y", ui->preview->GetScrollY());
 
+	// Virtual Cam
 	if (vcamEnabled) {
 		OBSDataAutoRelease obj = obs_data_create();
 
@@ -915,6 +939,7 @@ void OBSBasic::Save(SceneCollection &collection)
 		obs_data_set_obj(saveData, "virtual-camera", obj);
 	}
 
+	// Module-specific data
 	if (api) {
 		if (!collectionModuleData)
 			collectionModuleData = obs_data_create();
@@ -923,15 +948,13 @@ void OBSBasic::Save(SceneCollection &collection)
 		obs_data_set_obj(saveData, "modules", collectionModuleData);
 	}
 
+	// Relative coordinates metadata
 	if (lastOutputResolution) {
 		OBSDataAutoRelease res = obs_data_create();
 		obs_data_set_int(res, "x", lastOutputResolution->first);
 		obs_data_set_int(res, "y", lastOutputResolution->second);
 		obs_data_set_obj(saveData, "resolution", res);
 	}
-
-	int sceneCollectionVersion = collection.getVersion();
-	obs_data_set_int(saveData, "version", sceneCollectionVersion);
 
 	OBS::Rect migrationResolution = collection.getMigrationResolution();
 	SceneCoordinateMode coordinateMode = collection.getCoordinateMode();
@@ -948,6 +971,10 @@ void OBSBasic::Save(SceneCollection &collection)
 
 		obs_data_set_obj(saveData, DataKeys::MigrationResolution.data(), resolutionData);
 	}
+
+	// Version
+	int sceneCollectionVersion = collection.getVersion();
+	obs_data_set_int(saveData, "version", sceneCollectionVersion);
 
 	const std::string collectionFileName = collection.getFilePathString();
 	bool success = obs_data_save_json_pretty_safe(saveData, collectionFileName.c_str(), "tmp", "bak");
@@ -1202,12 +1229,12 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	if (!name || !*name)
 		name = curSceneCollection;
 
-	LoadAudioDevice(DESKTOP_AUDIO_1, 1, data);
-	LoadAudioDevice(DESKTOP_AUDIO_2, 2, data);
-	LoadAudioDevice(AUX_AUDIO_1, 3, data);
-	LoadAudioDevice(AUX_AUDIO_2, 4, data);
-	LoadAudioDevice(AUX_AUDIO_3, 5, data);
-	LoadAudioDevice(AUX_AUDIO_4, 6, data);
+	LoadAudioDevice(DESKTOP_AUDIO_1.data(), 1, data);
+	LoadAudioDevice(DESKTOP_AUDIO_2.data(), 2, data);
+	LoadAudioDevice(AUX_AUDIO_1.data(), 3, data);
+	LoadAudioDevice(AUX_AUDIO_2.data(), 4, data);
+	LoadAudioDevice(AUX_AUDIO_3.data(), 5, data);
+	LoadAudioDevice(AUX_AUDIO_4.data(), 6, data);
 
 	if (collection_canvases)
 		canvases = OBS::Canvas::LoadCanvases(collection_canvases);
