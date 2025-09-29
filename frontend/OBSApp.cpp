@@ -278,7 +278,7 @@ string CurrentDateTimeString()
 	struct tm tstruct;
 	char buf[80];
 	tstruct = *localtime(&now);
-	strftime(buf, sizeof(buf), "%Y-%m-%d, %X", &tstruct);
+	strftime(buf, sizeof(buf), "%Y-%m-%d, %T", &tstruct);
 	return buf;
 }
 
@@ -873,7 +873,7 @@ static bool set_utf8_locale(void)
 	*/
 	usingUTF8 = usingUTF8 || !!setlocale(LC_ALL, "C.UTF-8");
 	if (!usingUTF8)
-			setlocale(LC_ALL, "C");
+		setlocale(LC_ALL, "C");
 
 	// fix float handling
 	setlocale(LC_NUMERIC, "C");
@@ -892,7 +892,7 @@ static bool set_utf8_locale(void)
 	blog(LOG_INFO, "Set locale to: %s", defaultLocale.name().c_str());
 
 	return usingUTF8;
-	}
+}
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv),
