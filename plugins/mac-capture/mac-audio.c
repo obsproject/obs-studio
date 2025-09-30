@@ -1015,6 +1015,7 @@ static obs_properties_t *coreaudio_properties(bool input, void *data)
 	obs_property_set_modified_callback2(property, coreaudio_device_changed, ca);
 
 	property = obs_properties_add_bool(props, "enable_downmix", obs_module_text("CoreAudio.Downmix"));
+	obs_property_set_long_description(property, obs_module_text("CoreAudio.Downmix.Hint"));
 	obs_property_set_modified_callback2(property, coreaudio_downmix_changed, ca);
 
 	if (ca != NULL && ca->au_initialized) {
