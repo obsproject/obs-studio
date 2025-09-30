@@ -13,7 +13,7 @@ extern volatile bool replaybuf_active;
 extern volatile bool virtualcam_active;
 
 template<typename T>
-inline size_t GetCallbackIdx(vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
+inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
 {
 	for (size_t i = 0; i < callbacks.size(); i++) {
 		OBSStudioCallback<T> curCB = callbacks[i];
