@@ -482,15 +482,19 @@ gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device, void *io
 
             break;
         }
+            /* Versions of Syphon before 2dc6d31 provide IOSurfaces with pixel format 0.
+             * A pixel format of 0 means they are invalid, but in practice the IOSurfaces provided by Syphon are always
+             * 32BGRA. Historically, OBS had a bug that accidentally treated any invalid surface as 32BGRA, so those
+             * invalid surfaces were never noticed. To keep Syphon working, we need to keep this (wrong) behavior.
+             * This is suboptimal as IOSurfaces that are actually invalid (possibly coming from somewhere else) also
+             * get treated as valid 32BGRA, but it is how it is. */
+        case 0:
         case kCVPixelFormatType_32BGRA: {
             color_format = convert_gs_format(GS_BGRA);
             internal_format = convert_gs_internal_format(GS_BGRA);
             texture_type = GL_UNSIGNED_INT_8_8_8_8_REV;
             break;
         }
-        case 0:
-            blog(LOG_ERROR, "Invalid IOSurface Buffer");
-            goto fail;
         default:
             blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pixelFormat, pixelFormat >> 24, pixelFormat >> 16,
                  pixelFormat >> 8, pixelFormat);
