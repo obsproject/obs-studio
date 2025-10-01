@@ -15,7 +15,8 @@ struct syphon {
     IOSurfaceRef ref;
 
     gs_samplerstate_t *sampler;
-    gs_effect_t *effect;
+    gs_effect_t *effect_default;
+    gs_effect_t *effect_opaque;
     gs_vertbuffer_t *vertbuffer;
     gs_texture_t *tex;
     uint32_t width, height;
@@ -314,13 +315,15 @@ static inline bool init_obs_graphics_objects(syphon_t s)
     s->vertbuffer = create_vertbuffer();
 
     if (gs_get_device_type() == GS_DEVICE_OPENGL) {
-        s->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+        s->effect_default = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+        s->effect_opaque = NULL;
     } else {
-        s->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+        s->effect_default = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+        s->effect_opaque = obs_get_base_effect(OBS_EFFECT_OPAQUE);
     }
     obs_leave_graphics();
 
-    return s->sampler != NULL && s->vertbuffer != NULL && s->effect != NULL;
+    return s->sampler != NULL && s->vertbuffer != NULL && s->effect_default != NULL;
 }
 
 static inline bool create_syphon_listeners(syphon_t s)
@@ -647,9 +650,16 @@ static void syphon_video_render(void *data, gs_effect_t *effect)
     gs_load_vertexbuffer(s->vertbuffer);
     gs_load_indexbuffer(NULL);
     gs_load_samplerstate(s->sampler, 0);
-    const char *tech_name = s->allow_transparency ? "Draw" : "DrawOpaque";
-    gs_technique_t *tech = gs_effect_get_technique(s->effect, tech_name);
-    gs_effect_set_texture(gs_effect_get_param_by_name(s->effect, "image"), s->tex);
+    gs_technique_t *tech;
+    if (gs_get_device_type() == GS_DEVICE_OPENGL) {
+        const char *tech_name = s->allow_transparency ? "Draw" : "DrawOpaque";
+        tech = gs_effect_get_technique(s->effect_default, tech_name);
+        gs_effect_set_texture(gs_effect_get_param_by_name(s->effect_default, "image"), s->tex);
+    } else {
+        gs_effect_t *draw_effect = s->allow_transparency ? s->effect_default : s->effect_opaque;
+        tech = gs_effect_get_technique(draw_effect, "Draw");
+        gs_effect_set_texture(gs_effect_get_param_by_name(draw_effect, "image"), s->tex);
+    }
     gs_technique_begin(tech);
     gs_technique_begin_pass(tech, 0);
 
