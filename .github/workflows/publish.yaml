@@ -87,7 +87,7 @@ jobs:
       YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
       YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
       options: --privileged
     strategy:
       matrix:
@@ -109,7 +109,7 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
+          cache_key='flatpak-builder-${{ hashFiles('build-aux/com.obsproject.Studio.json') }}'
           cache_ref='master'
           read -r id key size unit created accessed <<< \
             "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
