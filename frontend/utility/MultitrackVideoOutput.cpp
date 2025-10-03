@@ -410,8 +410,7 @@ void MultitrackVideoOutput::PrepareStreaming(
 	     rtmp_url.has_value() ? rtmp_url->c_str() : "",
 	     vod_track_info_storage->array ? vod_track_info_storage->array : "No", canvasNames.c_str());
 
-	const bool custom_config_only = auto_config_url.isEmpty() && MultitrackVideoDeveloperModeEnabled() &&
-					custom_config.has_value() &&
+	const bool custom_config_only = auto_config_url.isEmpty() && custom_config.has_value() &&
 					strcmp(obs_service_get_id(service), "rtmp_custom") == 0;
 
 	if (!custom_config_only) {

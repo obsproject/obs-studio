@@ -63,6 +63,11 @@ static inline void check_audio_output_source_is_monitoring_device(obs_source_t *
 			if (strcmp(dev_id, audio->monitoring_device_id) == 0) {
 				audio->prevent_monitoring_duplication = true;
 				audio->monitoring_duplicating_source = s;
+				if (!audio->monitoring_duplication_prevented_on_prev_tick)
+					blog(LOG_INFO,
+					     "Device for 'Audio Output Capture' source is also used for audio"
+					     " monitoring:\nDeduplication logic is being applied to all monitored"
+					     " sources.\n");
 			}
 			obs_data_release(settings);
 		}
@@ -544,7 +549,8 @@ static inline bool should_silence_monitored_source(obs_source_t *source, struct 
 	bool output_capture_unmuted = !audio->monitoring_duplicating_source->user_muted;
 
 	if (audio->prevent_monitoring_duplication && output_capture_unmuted) {
-		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT) {
+		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT &&
+		    source != audio->monitoring_duplicating_source) {
 			return true;
 		}
 	}
@@ -576,6 +582,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 
 	da_resize(audio->render_order, 0);
 	da_resize(audio->root_nodes, 0);
+	audio->monitoring_duplication_prevented_on_prev_tick = audio->prevent_monitoring_duplication;
 	audio->prevent_monitoring_duplication = false;
 	audio->monitoring_duplicating_source = NULL;
 
