@@ -31,7 +31,7 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token) : QD
 
 	OBSBasic::InitBrowserPanelSafeBlock();
 
-	cefWidget = cef->create_widget(nullptr, url, panel_cookies);
+	cefWidget = cef->create_widget(this, url, panel_cookies);
 	if (!cefWidget) {
 		fail = true;
 		return;
@@ -71,7 +71,9 @@ int OAuthLogin::exec()
 void OAuthLogin::reject()
 {
 #ifdef BROWSER_AVAILABLE
-	delete cefWidget;
+	if (cefWidget) {
+		cefWidget->closeBrowser();
+	}
 #endif
 	QDialog::reject();
 }
@@ -79,7 +81,9 @@ void OAuthLogin::reject()
 void OAuthLogin::accept()
 {
 #ifdef BROWSER_AVAILABLE
-	delete cefWidget;
+	if (cefWidget) {
+		cefWidget->closeBrowser();
+	}
 #endif
 	QDialog::accept();
 }
