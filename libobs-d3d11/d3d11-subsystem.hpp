@@ -17,23 +17,10 @@
 
 #pragma once
 
-#include <util/windows/win-version.h>
+#include "d3dx-common.hpp"
 
-#include <vector>
-#include <string>
-#include <memory>
-
-#include <windows.h>
-#include <dxgi1_6.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
-
-#include <util/base.h>
-#include <graphics/matrix4.h>
-#include <graphics/graphics.h>
-#include <graphics/device-exports.h>
-#include <util/windows/ComPtr.hpp>
-#include <util/windows/HRError.hpp>
 
 // #define DISASSEMBLE_SHADERS
 
@@ -43,174 +30,11 @@ struct shader_var;
 struct shader_sampler;
 struct gs_vertex_shader;
 
-using namespace std;
-
 /*
  * Just to clarify, all structs, and all public.  These are exporting only
  * via encapsulated C bindings, not C++ bindings, so the whole concept of
  * "public" and "private" does not matter at all for this subproject.
  */
-
-static inline uint32_t GetWinVer()
-{
-	struct win_version_info ver;
-	get_win_ver(&ver);
-
-	return (ver.major << 8) | ver.minor;
-}
-
-static inline DXGI_FORMAT ConvertGSTextureFormatResource(gs_color_format format)
-{
-	switch (format) {
-	case GS_UNKNOWN:
-		return DXGI_FORMAT_UNKNOWN;
-	case GS_A8:
-		return DXGI_FORMAT_A8_UNORM;
-	case GS_R8:
-		return DXGI_FORMAT_R8_UNORM;
-	case GS_RGBA:
-		return DXGI_FORMAT_R8G8B8A8_TYPELESS;
-	case GS_BGRX:
-		return DXGI_FORMAT_B8G8R8X8_TYPELESS;
-	case GS_BGRA:
-		return DXGI_FORMAT_B8G8R8A8_TYPELESS;
-	case GS_R10G10B10A2:
-		return DXGI_FORMAT_R10G10B10A2_UNORM;
-	case GS_RGBA16:
-		return DXGI_FORMAT_R16G16B16A16_UNORM;
-	case GS_R16:
-		return DXGI_FORMAT_R16_UNORM;
-	case GS_RGBA16F:
-		return DXGI_FORMAT_R16G16B16A16_FLOAT;
-	case GS_RGBA32F:
-		return DXGI_FORMAT_R32G32B32A32_FLOAT;
-	case GS_RG16F:
-		return DXGI_FORMAT_R16G16_FLOAT;
-	case GS_RG32F:
-		return DXGI_FORMAT_R32G32_FLOAT;
-	case GS_R16F:
-		return DXGI_FORMAT_R16_FLOAT;
-	case GS_R32F:
-		return DXGI_FORMAT_R32_FLOAT;
-	case GS_DXT1:
-		return DXGI_FORMAT_BC1_UNORM;
-	case GS_DXT3:
-		return DXGI_FORMAT_BC2_UNORM;
-	case GS_DXT5:
-		return DXGI_FORMAT_BC3_UNORM;
-	case GS_R8G8:
-		return DXGI_FORMAT_R8G8_UNORM;
-	case GS_RGBA_UNORM:
-		return DXGI_FORMAT_R8G8B8A8_UNORM;
-	case GS_BGRX_UNORM:
-		return DXGI_FORMAT_B8G8R8X8_UNORM;
-	case GS_BGRA_UNORM:
-		return DXGI_FORMAT_B8G8R8A8_UNORM;
-	case GS_RG16:
-		return DXGI_FORMAT_R16G16_UNORM;
-	}
-
-	return DXGI_FORMAT_UNKNOWN;
-}
-
-static inline DXGI_FORMAT ConvertGSTextureFormatView(gs_color_format format)
-{
-	switch (format) {
-	case GS_RGBA:
-		return DXGI_FORMAT_R8G8B8A8_UNORM;
-	case GS_BGRX:
-		return DXGI_FORMAT_B8G8R8X8_UNORM;
-	case GS_BGRA:
-		return DXGI_FORMAT_B8G8R8A8_UNORM;
-	default:
-		return ConvertGSTextureFormatResource(format);
-	}
-}
-
-static inline DXGI_FORMAT ConvertGSTextureFormatViewLinear(gs_color_format format)
-{
-	switch (format) {
-	case GS_RGBA:
-		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	case GS_BGRX:
-		return DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
-	case GS_BGRA:
-		return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-	default:
-		return ConvertGSTextureFormatResource(format);
-	}
-}
-
-static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
-{
-	switch (format) {
-	case DXGI_FORMAT_A8_UNORM:
-		return GS_A8;
-	case DXGI_FORMAT_R8_UNORM:
-		return GS_R8;
-	case DXGI_FORMAT_R8G8_UNORM:
-		return GS_R8G8;
-	case DXGI_FORMAT_R8G8B8A8_TYPELESS:
-		return GS_RGBA;
-	case DXGI_FORMAT_B8G8R8X8_TYPELESS:
-		return GS_BGRX;
-	case DXGI_FORMAT_B8G8R8A8_TYPELESS:
-		return GS_BGRA;
-	case DXGI_FORMAT_R10G10B10A2_UNORM:
-		return GS_R10G10B10A2;
-	case DXGI_FORMAT_R16G16B16A16_UNORM:
-		return GS_RGBA16;
-	case DXGI_FORMAT_R16_UNORM:
-		return GS_R16;
-	case DXGI_FORMAT_R16G16B16A16_FLOAT:
-		return GS_RGBA16F;
-	case DXGI_FORMAT_R32G32B32A32_FLOAT:
-		return GS_RGBA32F;
-	case DXGI_FORMAT_R16G16_FLOAT:
-		return GS_RG16F;
-	case DXGI_FORMAT_R32G32_FLOAT:
-		return GS_RG32F;
-	case DXGI_FORMAT_R16_FLOAT:
-		return GS_R16F;
-	case DXGI_FORMAT_R32_FLOAT:
-		return GS_R32F;
-	case DXGI_FORMAT_BC1_UNORM:
-		return GS_DXT1;
-	case DXGI_FORMAT_BC2_UNORM:
-		return GS_DXT3;
-	case DXGI_FORMAT_BC3_UNORM:
-		return GS_DXT5;
-	case DXGI_FORMAT_R8G8B8A8_UNORM:
-		return GS_RGBA_UNORM;
-	case DXGI_FORMAT_B8G8R8X8_UNORM:
-		return GS_BGRX_UNORM;
-	case DXGI_FORMAT_B8G8R8A8_UNORM:
-		return GS_BGRA_UNORM;
-	case DXGI_FORMAT_R16G16_UNORM:
-		return GS_RG16;
-	}
-
-	return GS_UNKNOWN;
-}
-
-static inline DXGI_FORMAT ConvertGSZStencilFormat(gs_zstencil_format format)
-{
-	switch (format) {
-	case GS_ZS_NONE:
-		return DXGI_FORMAT_UNKNOWN;
-	case GS_Z16:
-		return DXGI_FORMAT_D16_UNORM;
-	case GS_Z24_S8:
-		return DXGI_FORMAT_D24_UNORM_S8_UINT;
-	case GS_Z32F:
-		return DXGI_FORMAT_D32_FLOAT;
-	case GS_Z32F_S8X24:
-		return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-	}
-
-	return DXGI_FORMAT_UNKNOWN;
-}
-
 static inline D3D11_COMPARISON_FUNC ConvertGSDepthTest(gs_depth_test test)
 {
 	switch (test) {
@@ -335,53 +159,17 @@ static inline D3D11_PRIMITIVE_TOPOLOGY ConvertGSTopology(gs_draw_mode mode)
 	return D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 }
 
-/* exception-safe RAII wrapper for vertex buffer data (NOTE: not copy-safe) */
-struct VBDataPtr {
-	gs_vb_data *data;
-
-	inline VBDataPtr(gs_vb_data *data) : data(data) {}
-	inline ~VBDataPtr() { gs_vbdata_destroy(data); }
-};
-
-enum class gs_type {
-	gs_vertex_buffer,
-	gs_index_buffer,
-	gs_texture_2d,
-	gs_zstencil_buffer,
-	gs_stage_surface,
-	gs_sampler_state,
-	gs_vertex_shader,
-	gs_pixel_shader,
-	gs_duplicator,
-	gs_swap_chain,
-	gs_timer,
-	gs_timer_range,
-	gs_texture_3d,
-};
-
-struct gs_obj {
-	gs_device_t *device;
-	gs_type obj_type;
-	gs_obj *next;
-	gs_obj **prev_next;
-
-	inline gs_obj() : device(nullptr), next(nullptr), prev_next(nullptr) {}
-
-	gs_obj(gs_device_t *device, gs_type type);
-	virtual ~gs_obj();
-};
-
 struct gs_vertex_buffer : gs_obj {
 	ComPtr<ID3D11Buffer> vertexBuffer;
 	ComPtr<ID3D11Buffer> normalBuffer;
 	ComPtr<ID3D11Buffer> colorBuffer;
 	ComPtr<ID3D11Buffer> tangentBuffer;
-	vector<ComPtr<ID3D11Buffer>> uvBuffers;
+	std::vector<ComPtr<ID3D11Buffer>> uvBuffers;
 
 	bool dynamic;
 	VBDataPtr vbd;
 	size_t numVerts;
-	vector<size_t> uvSizes;
+	std::vector<size_t> uvSizes;
 
 	void FlushBuffer(ID3D11Buffer *buffer, void *array, size_t elementSize);
 
@@ -403,14 +191,6 @@ struct gs_vertex_buffer : gs_obj {
 	void Rebuild();
 
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data, uint32_t flags);
-};
-
-/* exception-safe RAII wrapper for index buffer data (NOTE: not copy-safe) */
-struct DataPtr {
-	void *data;
-
-	inline DataPtr(void *data) : data(data) {}
-	inline ~DataPtr() { bfree(data); }
 };
 
 struct gs_index_buffer : gs_obj {
@@ -516,11 +296,11 @@ struct gs_texture_2d : gs_texture {
 	bool chroma = false;
 	bool acquired = false;
 
-	vector<vector<uint8_t>> data;
-	vector<D3D11_SUBRESOURCE_DATA> srd;
+	std::vector<std::vector<uint8_t>> data;
+	std::vector<D3D11_SUBRESOURCE_DATA> srd;
 	D3D11_TEXTURE2D_DESC td = {};
 
-	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd);
+	void InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd);
 	void InitTexture(const uint8_t *const *data);
 	void InitResourceView();
 	void InitRenderTargets();
@@ -571,11 +351,11 @@ struct gs_texture_3d : gs_texture {
 	bool chroma = false;
 	bool acquired = false;
 
-	vector<vector<uint8_t>> data;
-	vector<D3D11_SUBRESOURCE_DATA> srd;
+	std::vector<std::vector<uint8_t>> data;
+	std::vector<D3D11_SUBRESOURCE_DATA> srd;
 	D3D11_TEXTURE3D_DESC td = {};
 
-	void InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd);
+	void InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd);
 	void InitTexture(const uint8_t *const *data);
 	void InitResourceView();
 	void BackupTexture(const uint8_t *const *data);
@@ -655,7 +435,7 @@ struct gs_sampler_state : gs_obj {
 };
 
 struct gs_shader_param {
-	string name;
+	std::string name;
 	gs_shader_param_type type;
 
 	uint32_t textureID;
@@ -665,8 +445,8 @@ struct gs_shader_param {
 
 	size_t pos;
 
-	vector<uint8_t> curValue;
-	vector<uint8_t> defaultValue;
+	std::vector<uint8_t> curValue;
+	std::vector<uint8_t> defaultValue;
 	bool changed;
 
 	gs_shader_param(shader_var &var, uint32_t &texCounter);
@@ -681,14 +461,14 @@ struct ShaderError {
 
 struct gs_shader : gs_obj {
 	gs_shader_type type;
-	vector<gs_shader_param> params;
+	std::vector<gs_shader_param> params;
 	ComPtr<ID3D11Buffer> constants;
 	size_t constantSize;
 
 	D3D11_BUFFER_DESC bd = {};
-	vector<uint8_t> data;
+	std::vector<uint8_t> data;
 
-	inline void UpdateParam(vector<uint8_t> &constData, gs_shader_param &param, bool &upload);
+	inline void UpdateParam(std::vector<uint8_t> &constData, gs_shader_param &param, bool &upload);
 	void UploadParams();
 
 	void BuildConstantBuffer();
@@ -705,7 +485,7 @@ struct gs_shader : gs_obj {
 };
 
 struct ShaderSampler {
-	string name;
+	std::string name;
 	gs_sampler_state sampler;
 
 	inline ShaderSampler(const char *name, gs_device_t *device, gs_sampler_info *info)
@@ -721,7 +501,7 @@ struct gs_vertex_shader : gs_shader {
 
 	gs_shader_param *world, *viewProj;
 
-	vector<D3D11_INPUT_ELEMENT_DESC> layoutData;
+	std::vector<D3D11_INPUT_ELEMENT_DESC> layoutData;
 
 	bool hasNormals;
 	bool hasColors;
@@ -750,7 +530,7 @@ struct gs_vertex_shader : gs_shader {
 		return count;
 	}
 
-	void GetBuffersExpected(const vector<D3D11_INPUT_ELEMENT_DESC> &inputs);
+	void GetBuffersExpected(const std::vector<D3D11_INPUT_ELEMENT_DESC> &inputs);
 
 	gs_vertex_shader(gs_device_t *device, const char *file, const char *shaderString);
 };
@@ -775,7 +555,7 @@ struct gs_duplicator : gs_obj {
 
 struct gs_pixel_shader : gs_shader {
 	ComPtr<ID3D11PixelShader> shader;
-	vector<unique_ptr<ShaderSampler>> samplers;
+	std::vector<std::unique_ptr<ShaderSampler>> samplers;
 
 	void Rebuild(ID3D11Device *dev);
 
@@ -937,10 +717,6 @@ struct SavedRasterState : RasterState {
 	inline SavedRasterState(const RasterState &val, D3D11_RASTERIZER_DESC &desc) : RasterState(val), rd(desc) {}
 };
 
-struct mat4float {
-	float mat[16];
-};
-
 struct gs_monitor_color_info {
 	bool hdr;
 	UINT bits_per_color;
@@ -987,9 +763,9 @@ struct gs_device {
 	ZStencilState zstencilState;
 	RasterState rasterState;
 	BlendState blendState;
-	vector<SavedZStencilState> zstencilStates;
-	vector<SavedRasterState> rasterStates;
-	vector<SavedBlendState> blendStates;
+	std::vector<SavedZStencilState> zstencilStates;
+	std::vector<SavedRasterState> rasterStates;
+	std::vector<SavedBlendState> blendStates;
 	ID3D11DepthStencilState *curDepthStencilState = nullptr;
 	ID3D11RasterizerState *curRasterState = nullptr;
 	ID3D11BlendState *curBlendState = nullptr;
@@ -997,16 +773,16 @@ struct gs_device {
 
 	gs_rect viewport;
 
-	vector<mat4float> projStack;
+	std::vector<mat4float> projStack;
 
 	matrix4 curProjMatrix;
 	matrix4 curViewMatrix;
 	matrix4 curViewProjMatrix;
 
-	vector<gs_device_loss> loss_callbacks;
+	std::vector<gs_device_loss> loss_callbacks;
 	gs_obj *first_obj = nullptr;
 
-	vector<std::pair<HMONITOR, gs_monitor_color_info>> monitor_to_hdr;
+	std::vector<std::pair<HMONITOR, gs_monitor_color_info>> monitor_to_hdr;
 
 	void InitFactory();
 	void InitAdapter(uint32_t adapterIdx);

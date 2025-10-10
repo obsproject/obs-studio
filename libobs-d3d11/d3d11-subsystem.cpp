@@ -15,24 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <algorithm>
-#include <cassert>
-#include <cinttypes>
-#include <optional>
-#include <util/base.h>
-#include <util/platform.h>
-#include <util/dstr.h>
-#include <util/util.hpp>
-#include <graphics/matrix3.h>
-#include <winternl.h>
-#include <d3d9.h>
 #include "d3d11-subsystem.hpp"
-#include <shellscalingapi.h>
-#include <d3dkmthk.h>
-
-struct UnsupportedHWError : HRError {
-	inline UnsupportedHWError(const char *str, HRESULT hr) : HRError(str, hr) {}
-};
+#include <d3d9.h>
 
 #ifdef _MSC_VER
 /* alignment warning - despite the fact that alignment is already fixed */
@@ -79,18 +63,6 @@ static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd, DXGI_S
 	}
 
 	return next_space;
-}
-
-static enum gs_color_format get_swap_format_from_space(gs_color_space space, gs_color_format sdr_format)
-{
-	gs_color_format format = sdr_format;
-	switch (space) {
-	case GS_CS_SRGB_16F:
-	case GS_CS_709_SCRGB:
-		format = GS_RGBA16F;
-	}
-
-	return format;
 }
 
 static inline enum gs_color_space make_swap_desc(gs_device *device, DXGI_SWAP_CHAIN_DESC &desc,
@@ -281,42 +253,6 @@ const static D3D_FEATURE_LEVEL featureLevels[] = {
 	D3D_FEATURE_LEVEL_10_0,
 };
 
-/* ------------------------------------------------------------------------- */
-
-#define VERT_IN_OUT \
-	"\
-struct VertInOut { \
-	float4 pos : POSITION; \
-}; "
-
-#define NV12_Y_PS \
-	VERT_IN_OUT "\
-float main(VertInOut vert_in) : TARGET \
-{ \
-	return 1.0; \
-}"
-
-#define NV12_UV_PS \
-	VERT_IN_OUT "\
-float2 main(VertInOut vert_in) : TARGET \
-{ \
-	return float2(1.0, 1.0); \
-}"
-
-#define NV12_VS \
-	VERT_IN_OUT "\
-VertInOut main(VertInOut vert_in) \
-{ \
-	VertInOut vert_out; \
-	vert_out.pos = float4(vert_in.pos.xyz, 1.0); \
-	return vert_out; \
-} "
-
-/* ------------------------------------------------------------------------- */
-
-#define NV12_CX 128
-#define NV12_CY 128
-
 bool gs_device::HasBadNV12Output()
 try {
 	vec3 points[4];
@@ -445,122 +381,6 @@ static bool set_priority(ID3D11Device *device, bool hags_enabled)
 }
 #endif
 
-struct HagsStatus {
-	enum DriverSupport { ALWAYS_OFF, ALWAYS_ON, EXPERIMENTAL, STABLE, UNKNOWN };
-
-	bool enabled;
-	bool enabled_by_default;
-	DriverSupport support;
-
-	explicit HagsStatus(const D3DKMT_WDDM_2_7_CAPS *caps)
-	{
-		enabled = caps->HwSchEnabled;
-		enabled_by_default = caps->HwSchEnabledByDefault;
-		support = caps->HwSchSupported ? DriverSupport::STABLE : DriverSupport::ALWAYS_OFF;
-	}
-
-	void SetDriverSupport(const UINT DXGKVal)
-	{
-		switch (DXGKVal) {
-		case DXGK_FEATURE_SUPPORT_ALWAYS_OFF:
-			support = ALWAYS_OFF;
-			break;
-		case DXGK_FEATURE_SUPPORT_ALWAYS_ON:
-			support = ALWAYS_ON;
-			break;
-		case DXGK_FEATURE_SUPPORT_EXPERIMENTAL:
-			support = EXPERIMENTAL;
-			break;
-		case DXGK_FEATURE_SUPPORT_STABLE:
-			support = STABLE;
-			break;
-		default:
-			support = UNKNOWN;
-		}
-	}
-
-	string ToString() const
-	{
-		string status = enabled ? "Enabled" : "Disabled";
-		status += " (Default: ";
-		status += enabled_by_default ? "Yes" : "No";
-		status += ", Driver status: ";
-		status += DriverSupportToString();
-		status += ")";
-
-		return status;
-	}
-
-private:
-	const char *DriverSupportToString() const
-	{
-		switch (support) {
-		case ALWAYS_OFF:
-			return "Unsupported";
-		case ALWAYS_ON:
-			return "Always On";
-		case EXPERIMENTAL:
-			return "Experimental";
-		case STABLE:
-			return "Supported";
-		default:
-			return "Unknown";
-		}
-	}
-};
-
-static optional<HagsStatus> GetAdapterHagsStatus(const DXGI_ADAPTER_DESC *desc)
-{
-	optional<HagsStatus> ret;
-	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
-	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
-
-	NTSTATUS res = D3DKMTOpenAdapterFromLuid(&d3dkmt_openluid);
-	if (FAILED(res)) {
-		blog(LOG_DEBUG, "Failed opening D3DKMT adapter: %x", res);
-		return ret;
-	}
-
-	D3DKMT_WDDM_2_7_CAPS caps = {};
-	D3DKMT_QUERYADAPTERINFO args = {};
-	args.hAdapter = d3dkmt_openluid.hAdapter;
-	args.Type = KMTQAITYPE_WDDM_2_7_CAPS;
-	args.pPrivateDriverData = &caps;
-	args.PrivateDriverDataSize = sizeof(caps);
-	res = D3DKMTQueryAdapterInfo(&args);
-
-	/* If this still fails we're likely on Windows 10 pre-2004
-	 * where HAGS is not supported anyway. */
-	if (SUCCEEDED(res)) {
-		HagsStatus status(&caps);
-
-		/* Starting with Windows 10 21H2 we can query more detailed
-		 * support information (e.g. experimental status).
-		 * This Is optional and failure doesn't matter. */
-		D3DKMT_WDDM_2_9_CAPS ext_caps = {};
-		args.hAdapter = d3dkmt_openluid.hAdapter;
-		args.Type = KMTQAITYPE_WDDM_2_9_CAPS;
-		args.pPrivateDriverData = &ext_caps;
-		args.PrivateDriverDataSize = sizeof(ext_caps);
-		res = D3DKMTQueryAdapterInfo(&args);
-
-		if (SUCCEEDED(res))
-			status.SetDriverSupport(ext_caps.HwSchSupportState);
-
-		ret = status;
-	} else {
-		blog(LOG_WARNING, "Failed querying WDDM 2.7 caps: %x", res);
-	}
-
-	D3DKMT_CLOSEADAPTER d3dkmt_close = {d3dkmt_openluid.hAdapter};
-	res = D3DKMTCloseAdapter(&d3dkmt_close);
-	if (FAILED(res)) {
-		blog(LOG_DEBUG, "Failed closing D3DKMT adapter %x: %x", d3dkmt_openluid.hAdapter, res);
-	}
-
-	return ret;
-}
-
 static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
 {
 	constexpr UINT required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
@@ -569,24 +389,9 @@ static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
 	return SUCCEEDED(device->CheckFormatSupport(format, &support)) && ((support & required) == required);
 }
 
-static bool FastClearSupported(UINT vendorId, uint64_t version)
-{
-	/* Always true for non-NVIDIA GPUs */
-	if (vendorId != 0x10de)
-		return true;
-
-	const uint16_t aa = (version >> 48) & 0xffff;
-	const uint16_t bb = (version >> 32) & 0xffff;
-	const uint16_t ccccc = (version >> 16) & 0xffff;
-	const uint16_t ddddd = version & 0xffff;
-
-	/* Check for NVIDIA driver version >= 31.0.15.2737 */
-	return aa >= 31 && bb >= 0 && ccccc >= 15 && ddddd >= 2737;
-}
-
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
-	wstring adapterName;
+	std::wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_10_0;
 	LARGE_INTEGER umd;
@@ -917,239 +722,6 @@ const char *device_preprocessor_name(void)
 	return "_D3D11";
 }
 
-static inline void EnumD3DAdapters(bool (*callback)(void *, const char *, uint32_t), void *param)
-{
-	ComPtr<IDXGIFactory1> factory;
-	ComPtr<IDXGIAdapter1> adapter;
-	HRESULT hr;
-	UINT i;
-
-	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
-		throw HRError("Failed to create DXGIFactory", hr);
-
-	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
-		DXGI_ADAPTER_DESC desc;
-		char name[512] = "";
-
-		hr = adapter->GetDesc(&desc);
-		if (FAILED(hr))
-			continue;
-
-		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
-			continue;
-
-		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
-
-		if (!callback(param, name, i))
-			break;
-	}
-}
-
-bool device_enum_adapters(gs_device_t *device, bool (*callback)(void *param, const char *name, uint32_t id),
-			  void *param)
-{
-	UNUSED_PARAMETER(device);
-
-	try {
-		EnumD3DAdapters(callback, param);
-		return true;
-
-	} catch (const HRError &error) {
-		blog(LOG_WARNING, "Failed enumerating devices: %s (%08lX)", error.str, error.hr);
-		return false;
-	}
-}
-
-static bool GetMonitorTarget(const MONITORINFOEX &info, DISPLAYCONFIG_TARGET_DEVICE_NAME &target)
-{
-	bool found = false;
-
-	UINT32 numPath, numMode;
-	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath, &numMode) == ERROR_SUCCESS) {
-		std::vector<DISPLAYCONFIG_PATH_INFO> paths(numPath);
-		std::vector<DISPLAYCONFIG_MODE_INFO> modes(numMode);
-		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths.data(), &numMode, modes.data(),
-				       nullptr) == ERROR_SUCCESS) {
-			paths.resize(numPath);
-			for (size_t i = 0; i < numPath; ++i) {
-				const DISPLAYCONFIG_PATH_INFO &path = paths[i];
-
-				DISPLAYCONFIG_SOURCE_DEVICE_NAME
-				source;
-				source.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-				source.header.size = sizeof(source);
-				source.header.adapterId = path.sourceInfo.adapterId;
-				source.header.id = path.sourceInfo.id;
-				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS &&
-				    wcscmp(info.szDevice, source.viewGdiDeviceName) == 0) {
-					target.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
-					target.header.size = sizeof(target);
-					target.header.adapterId = path.sourceInfo.adapterId;
-					target.header.id = path.targetInfo.id;
-					found = DisplayConfigGetDeviceInfo(&target.header) == ERROR_SUCCESS;
-					break;
-				}
-			}
-		}
-	}
-
-	return found;
-}
-
-static bool GetOutputDesc1(IDXGIOutput *const output, DXGI_OUTPUT_DESC1 *desc1)
-{
-	ComPtr<IDXGIOutput6> output6;
-	HRESULT hr = output->QueryInterface(IID_PPV_ARGS(output6.Assign()));
-	bool success = SUCCEEDED(hr);
-	if (success) {
-		hr = output6->GetDesc1(desc1);
-		success = SUCCEEDED(hr);
-		if (!success) {
-			blog(LOG_WARNING, "IDXGIOutput6::GetDesc1 failed: 0x%08lX", hr);
-		}
-	}
-
-	return success;
-}
-
-// Returns true if this is an integrated display panel e.g. the screen attached to tablets or laptops.
-static bool IsInternalVideoOutput(const DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY VideoOutputTechnologyType)
-{
-	switch (VideoOutputTechnologyType) {
-	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL:
-	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
-	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_UDI_EMBEDDED:
-		return TRUE;
-
-	default:
-		return FALSE;
-	}
-}
-
-// Note: Since an hmon can represent multiple monitors while in clone, this function as written will return
-//  the value for the internal monitor if one exists, and otherwise the highest clone-path priority.
-static HRESULT GetPathInfo(_In_ PCWSTR pszDeviceName, _Out_ DISPLAYCONFIG_PATH_INFO *pPathInfo)
-{
-	HRESULT hr = S_OK;
-	UINT32 NumPathArrayElements = 0;
-	UINT32 NumModeInfoArrayElements = 0;
-	DISPLAYCONFIG_PATH_INFO *PathInfoArray = nullptr;
-	DISPLAYCONFIG_MODE_INFO *ModeInfoArray = nullptr;
-
-	do {
-		// In case this isn't the first time through the loop, delete the buffers allocated
-		delete[] PathInfoArray;
-		PathInfoArray = nullptr;
-
-		delete[] ModeInfoArray;
-		ModeInfoArray = nullptr;
-
-		hr = HRESULT_FROM_WIN32(GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &NumPathArrayElements,
-								    &NumModeInfoArrayElements));
-		if (FAILED(hr)) {
-			break;
-		}
-
-		PathInfoArray = new (std::nothrow) DISPLAYCONFIG_PATH_INFO[NumPathArrayElements];
-		if (PathInfoArray == nullptr) {
-			hr = E_OUTOFMEMORY;
-			break;
-		}
-
-		ModeInfoArray = new (std::nothrow) DISPLAYCONFIG_MODE_INFO[NumModeInfoArrayElements];
-		if (ModeInfoArray == nullptr) {
-			hr = E_OUTOFMEMORY;
-			break;
-		}
-
-		hr = HRESULT_FROM_WIN32(QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &NumPathArrayElements, PathInfoArray,
-							   &NumModeInfoArrayElements, ModeInfoArray, nullptr));
-	} while (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
-
-	INT DesiredPathIdx = -1;
-
-	if (SUCCEEDED(hr)) {
-		// Loop through all sources until the one which matches the 'monitor' is found.
-		for (UINT PathIdx = 0; PathIdx < NumPathArrayElements; ++PathIdx) {
-			DISPLAYCONFIG_SOURCE_DEVICE_NAME SourceName = {};
-			SourceName.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-			SourceName.header.size = sizeof(SourceName);
-			SourceName.header.adapterId = PathInfoArray[PathIdx].sourceInfo.adapterId;
-			SourceName.header.id = PathInfoArray[PathIdx].sourceInfo.id;
-
-			hr = HRESULT_FROM_WIN32(DisplayConfigGetDeviceInfo(&SourceName.header));
-			if (SUCCEEDED(hr)) {
-				if (wcscmp(pszDeviceName, SourceName.viewGdiDeviceName) == 0) {
-					// Found the source which matches this hmonitor. The paths are given in path-priority order
-					// so the first found is the most desired, unless we later find an internal.
-					if (DesiredPathIdx == -1 ||
-					    IsInternalVideoOutput(PathInfoArray[PathIdx].targetInfo.outputTechnology)) {
-						DesiredPathIdx = PathIdx;
-					}
-				}
-			}
-		}
-	}
-
-	if (DesiredPathIdx != -1) {
-		*pPathInfo = PathInfoArray[DesiredPathIdx];
-	} else {
-		hr = E_INVALIDARG;
-	}
-
-	delete[] PathInfoArray;
-	PathInfoArray = nullptr;
-
-	delete[] ModeInfoArray;
-	ModeInfoArray = nullptr;
-
-	return hr;
-}
-
-// Overloaded function accepts an HMONITOR and converts to DeviceName
-static HRESULT GetPathInfo(HMONITOR hMonitor, _Out_ DISPLAYCONFIG_PATH_INFO *pPathInfo)
-{
-	HRESULT hr = S_OK;
-
-	// Get the name of the 'monitor' being requested
-	MONITORINFOEXW ViewInfo;
-	RtlZeroMemory(&ViewInfo, sizeof(ViewInfo));
-	ViewInfo.cbSize = sizeof(ViewInfo);
-	if (!GetMonitorInfoW(hMonitor, &ViewInfo)) {
-		// Error condition, likely invalid monitor handle, could log error
-		hr = HRESULT_FROM_WIN32(GetLastError());
-	}
-
-	if (SUCCEEDED(hr)) {
-		hr = GetPathInfo(ViewInfo.szDevice, pPathInfo);
-	}
-
-	return hr;
-}
-
-static ULONG GetSdrMaxNits(HMONITOR monitor)
-{
-	ULONG nits = 80;
-
-	DISPLAYCONFIG_PATH_INFO info;
-	if (SUCCEEDED(GetPathInfo(monitor, &info))) {
-		const DISPLAYCONFIG_PATH_TARGET_INFO &targetInfo = info.targetInfo;
-
-		DISPLAYCONFIG_SDR_WHITE_LEVEL level;
-		DISPLAYCONFIG_DEVICE_INFO_HEADER &header = level.header;
-		header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
-		header.size = sizeof(level);
-		header.adapterId = targetInfo.adapterId;
-		header.id = targetInfo.id;
-		if (DisplayConfigGetDeviceInfo(&header) == ERROR_SUCCESS)
-			nits = (level.SDRWhiteLevel * 80) / 1000;
-	}
-
-	return nits;
-}
-
 gs_monitor_color_info gs_device::GetMonitorColorInfo(HMONITOR hMonitor)
 {
 	IDXGIFactory1 *factory1 = factory;
@@ -1184,216 +756,6 @@ gs_monitor_color_info gs_device::GetMonitorColorInfo(HMONITOR hMonitor)
 	return gs_monitor_color_info(false, 8, 80);
 }
 
-static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id, size_t capacity)
-{
-	MONITORINFOEXA mi;
-	mi.cbSize = sizeof(mi);
-	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
-		strcpy_s(alt_id, capacity, mi.szDevice);
-		DISPLAY_DEVICEA device;
-		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			strcpy_s(id, capacity, device.DeviceID);
-		}
-	}
-}
-
-static constexpr double DoubleTriangleArea(double ax, double ay, double bx, double by, double cx, double cy)
-{
-	return ax * (by - cy) + bx * (cy - ay) + cx * (ay - by);
-}
-
-static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
-{
-	UINT i;
-	ComPtr<IDXGIOutput> output;
-
-	for (i = 0; adapter->EnumOutputs(i, &output) == S_OK; ++i) {
-		DXGI_OUTPUT_DESC desc;
-		if (FAILED(output->GetDesc(&desc)))
-			continue;
-
-		unsigned refresh = 0;
-
-		bool target_found = false;
-		DISPLAYCONFIG_TARGET_DEVICE_NAME target;
-
-		constexpr size_t id_capacity = 128;
-		char id[id_capacity]{};
-		char alt_id[id_capacity]{};
-		PopulateMonitorIds(desc.Monitor, id, alt_id, id_capacity);
-
-		MONITORINFOEX info;
-		info.cbSize = sizeof(info);
-		if (GetMonitorInfo(desc.Monitor, &info)) {
-			target_found = GetMonitorTarget(info, target);
-
-			DEVMODE mode;
-			mode.dmSize = sizeof(mode);
-			mode.dmDriverExtra = 0;
-			if (EnumDisplaySettings(info.szDevice, ENUM_CURRENT_SETTINGS, &mode)) {
-				refresh = mode.dmDisplayFrequency;
-			}
-		}
-
-		if (!target_found) {
-			target.monitorFriendlyDeviceName[0] = 0;
-		}
-
-		UINT bits_per_color = 8;
-		DXGI_COLOR_SPACE_TYPE type = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-		FLOAT primaries[4][2]{};
-		double gamut_size = 0.;
-		FLOAT min_luminance = 0.f;
-		FLOAT max_luminance = 0.f;
-		FLOAT max_full_frame_luminance = 0.f;
-		DXGI_OUTPUT_DESC1 desc1;
-		if (GetOutputDesc1(output, &desc1)) {
-			bits_per_color = desc1.BitsPerColor;
-			type = desc1.ColorSpace;
-			primaries[0][0] = desc1.RedPrimary[0];
-			primaries[0][1] = desc1.RedPrimary[1];
-			primaries[1][0] = desc1.GreenPrimary[0];
-			primaries[1][1] = desc1.GreenPrimary[1];
-			primaries[2][0] = desc1.BluePrimary[0];
-			primaries[2][1] = desc1.BluePrimary[1];
-			primaries[3][0] = desc1.WhitePoint[0];
-			primaries[3][1] = desc1.WhitePoint[1];
-			gamut_size = DoubleTriangleArea(desc1.RedPrimary[0], desc1.RedPrimary[1], desc1.GreenPrimary[0],
-							desc1.GreenPrimary[1], desc1.BluePrimary[0],
-							desc1.BluePrimary[1]);
-			min_luminance = desc1.MinLuminance;
-			max_luminance = desc1.MaxLuminance;
-			max_full_frame_luminance = desc1.MaxFullFrameLuminance;
-		}
-
-		const char *space = "Unknown";
-		switch (type) {
-		case DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709:
-			space = "RGB_FULL_G22_NONE_P709";
-			break;
-		case DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020:
-			space = "RGB_FULL_G2084_NONE_P2020";
-			break;
-		default:
-			blog(LOG_WARNING, "Unexpected DXGI_COLOR_SPACE_TYPE: %u", (unsigned)type);
-		}
-
-		// These are always identical, but you still have to supply both, thanks Microsoft!
-		UINT dpiX, dpiY;
-		unsigned scaling = 100;
-		if (GetDpiForMonitor(desc.Monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY) == S_OK) {
-			scaling = (unsigned)(dpiX * 100.0f / 96.0f);
-		} else {
-			dpiX = 0;
-		}
-
-		const RECT &rect = desc.DesktopCoordinates;
-		const ULONG sdr_white_nits = GetSdrMaxNits(desc.Monitor);
-
-		char *friendly_name;
-		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0, &friendly_name);
-
-		blog(LOG_INFO,
-		     "\t  output %u:\n"
-		     "\t    name=%s\n"
-		     "\t    pos={%d, %d}\n"
-		     "\t    size={%d, %d}\n"
-		     "\t    attached=%s\n"
-		     "\t    refresh=%u\n"
-		     "\t    bits_per_color=%u\n"
-		     "\t    space=%s\n"
-		     "\t    primaries=[r=(%f, %f), g=(%f, %f), b=(%f, %f), wp=(%f, %f)]\n"
-		     "\t    relative_gamut_area=[709=%f, P3=%f, 2020=%f]\n"
-		     "\t    sdr_white_nits=%lu\n"
-		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]\n"
-		     "\t    dpi=%u (%u%%)\n"
-		     "\t    id=%s\n"
-		     "\t    alt_id=%s",
-		     i, friendly_name, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false", refresh, bits_per_color, space, primaries[0][0],
-		     primaries[0][1], primaries[1][0], primaries[1][1], primaries[2][0], primaries[2][1],
-		     primaries[3][0], primaries[3][1], gamut_size / DoubleTriangleArea(.64, .33, .3, .6, .15, .06),
-		     gamut_size / DoubleTriangleArea(.68, .32, .265, .69, .15, .060),
-		     gamut_size / DoubleTriangleArea(.708, .292, .17, .797, .131, .046), sdr_white_nits, min_luminance,
-		     max_luminance, max_full_frame_luminance, dpiX, scaling, id, alt_id);
-		bfree(friendly_name);
-	}
-}
-
-static inline double to_GiB(size_t bytes)
-{
-	return static_cast<double>(bytes) / (1 << 30);
-}
-
-static inline void LogD3DAdapters()
-{
-	ComPtr<IDXGIFactory1> factory;
-	ComPtr<IDXGIAdapter1> adapter;
-	HRESULT hr;
-	UINT i;
-
-	blog(LOG_INFO, "Available Video Adapters: ");
-
-	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
-		throw HRError("Failed to create DXGIFactory", hr);
-
-	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
-		DXGI_ADAPTER_DESC desc;
-		char name[512] = "";
-
-		hr = adapter->GetDesc(&desc);
-		if (FAILED(hr))
-			continue;
-
-		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
-			continue;
-
-		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
-		blog(LOG_INFO, "\tAdapter %u: %s", i, name);
-		blog(LOG_INFO, "\t  Dedicated VRAM: %" PRIu64 " (%.01f GiB)", desc.DedicatedVideoMemory,
-		     to_GiB(desc.DedicatedVideoMemory));
-		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64 " (%.01f GiB)", desc.SharedSystemMemory,
-		     to_GiB(desc.SharedSystemMemory));
-		blog(LOG_INFO, "\t  PCI ID:         %x:%.4x", desc.VendorId, desc.DeviceId);
-
-		if (auto hags_support = GetAdapterHagsStatus(&desc)) {
-			blog(LOG_INFO, "\t  HAGS Status:    %s", hags_support->ToString().c_str());
-		} else {
-			blog(LOG_WARNING, "\t  HAGS Status:    Unknown");
-		}
-
-		/* driver version */
-		LARGE_INTEGER umd;
-		hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umd);
-		if (SUCCEEDED(hr)) {
-			const uint64_t version = umd.QuadPart;
-			const uint16_t aa = (version >> 48) & 0xffff;
-			const uint16_t bb = (version >> 32) & 0xffff;
-			const uint16_t ccccc = (version >> 16) & 0xffff;
-			const uint16_t ddddd = version & 0xffff;
-			blog(LOG_INFO, "\t  Driver Version: %" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16, aa, bb,
-			     ccccc, ddddd);
-		} else {
-			blog(LOG_INFO, "\t  Driver Version: Unknown (0x%X)", (unsigned)hr);
-		}
-
-		LogAdapterMonitors(adapter);
-	}
-}
-
-static void CreateShaderCacheDirectory()
-{
-	BPtr cachePath = os_get_program_data_path_ptr("obs-studio/shader-cache");
-
-	if (os_mkdirs(cachePath) == MKDIR_ERROR) {
-		blog(LOG_WARNING, "Failed to create shader cache directory, "
-				  "cache may not be available.");
-	}
-}
-
 int device_create(gs_device_t **p_device, uint32_t adapter)
 {
 	gs_device *device = NULL;
@@ -1423,18 +785,6 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 void device_destroy(gs_device_t *device)
 {
 	delete device;
-}
-
-void device_enter_context(gs_device_t *device)
-{
-	/* does nothing */
-	UNUSED_PARAMETER(device);
-}
-
-void device_leave_context(gs_device_t *device)
-{
-	/* does nothing */
-	UNUSED_PARAMETER(device);
 }
 
 void *device_get_device_obj(gs_device_t *device)
@@ -1943,14 +1293,6 @@ void device_load_pixelshader(gs_device_t *device, gs_shader_t *pixelshader)
 			device->curSamplers[i] = nullptr;
 }
 
-void device_load_default_samplerstate(gs_device_t *device, bool b_3d, int unit)
-{
-	/* TODO */
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(b_3d);
-	UNUSED_PARAMETER(unit);
-}
-
 gs_shader_t *device_get_vertex_shader(const gs_device_t *device)
 {
 	return device->curVertexShader;
@@ -2094,20 +1436,6 @@ void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y, gs
 	}
 }
 
-static DXGI_FORMAT get_copy_compare_format(gs_color_format format)
-{
-	switch (format) {
-	case GS_RGBA_UNORM:
-		return DXGI_FORMAT_R8G8B8A8_TYPELESS;
-	case GS_BGRX_UNORM:
-		return DXGI_FORMAT_B8G8R8X8_TYPELESS;
-	case GS_BGRA_UNORM:
-		return DXGI_FORMAT_B8G8R8A8_TYPELESS;
-	default:
-		return ConvertGSTextureFormatResource(format);
-	}
-}
-
 void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst, uint32_t dst_x, uint32_t dst_y,
 				gs_texture_t *src, uint32_t src_x, uint32_t src_y, uint32_t src_w, uint32_t src_h)
 {
@@ -2248,12 +1576,6 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t star
 			num_verts = (uint32_t)device->curVertexBuffer->numVerts;
 		device->context->Draw(num_verts, start_vert);
 	}
-}
-
-void device_end_scene(gs_device_t *device)
-{
-	/* does nothing in D3D11 */
-	UNUSED_PARAMETER(device);
 }
 
 void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swapchain)
@@ -2698,34 +2020,6 @@ void gs_voltexture_destroy(gs_texture_t *voltex)
 	delete voltex;
 }
 
-uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)
-{
-	/* TODO */
-	UNUSED_PARAMETER(voltex);
-	return 0;
-}
-
-uint32_t gs_voltexture_get_height(const gs_texture_t *voltex)
-{
-	/* TODO */
-	UNUSED_PARAMETER(voltex);
-	return 0;
-}
-
-uint32_t gs_voltexture_get_depth(const gs_texture_t *voltex)
-{
-	/* TODO */
-	UNUSED_PARAMETER(voltex);
-	return 0;
-}
-
-enum gs_color_format gs_voltexture_get_color_format(const gs_texture_t *voltex)
-{
-	/* TODO */
-	UNUSED_PARAMETER(voltex);
-	return GS_UNKNOWN;
-}
-
 void gs_stagesurface_destroy(gs_stagesurf_t *stagesurf)
 {
 	delete stagesurf;
@@ -2951,16 +2245,6 @@ gs_timer::gs_timer(gs_device_t *device) : gs_obj(device, gs_type::gs_timer)
 gs_timer_range::gs_timer_range(gs_device_t *device) : gs_obj(device, gs_type::gs_timer_range)
 {
 	Rebuild(device->device);
-}
-
-extern "C" EXPORT bool device_gdi_texture_available(void)
-{
-	return true;
-}
-
-extern "C" EXPORT bool device_shared_texture_available(void)
-{
-	return true;
 }
 
 extern "C" EXPORT bool device_nv12_available(gs_device_t *device)
@@ -3264,28 +2548,6 @@ extern "C" EXPORT void device_unregister_loss_callbacks(gs_device_t *device, voi
 			break;
 		}
 	}
-}
-
-uint32_t gs_get_adapter_count(void)
-{
-	uint32_t count = 0;
-
-	ComPtr<IDXGIFactory1> factory;
-	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (SUCCEEDED(hr)) {
-		ComPtr<IDXGIAdapter1> adapter;
-		for (UINT i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
-			DXGI_ADAPTER_DESC desc;
-			if (SUCCEEDED(adapter->GetDesc(&desc))) {
-				/* ignore Microsoft's 'basic' renderer' */
-				if (desc.VendorId != 0x1414 && desc.DeviceId != 0x8c) {
-					++count;
-				}
-			}
-		}
-	}
-
-	return count;
 }
 
 extern "C" EXPORT bool device_can_adapter_fast_clear(gs_device_t *device)
