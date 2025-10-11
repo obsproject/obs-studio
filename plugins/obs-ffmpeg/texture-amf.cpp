@@ -957,6 +957,7 @@ static void h264_video_info_fallback(void *, struct video_scale_info *info)
 {
 	switch (info->format) {
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		info->format = VIDEO_FORMAT_RGBA;
@@ -971,6 +972,7 @@ static void h265_video_info_fallback(void *, struct video_scale_info *info)
 {
 	switch (info->format) {
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		info->format = VIDEO_FORMAT_RGBA;
@@ -988,6 +990,7 @@ static void av1_video_info_fallback(void *, struct video_scale_info *info)
 {
 	switch (info->format) {
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 		info->format = VIDEO_FORMAT_RGBA;

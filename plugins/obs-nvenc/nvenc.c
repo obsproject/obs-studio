@@ -756,6 +756,7 @@ static enum video_format get_preferred_format(enum video_format format)
 	case VIDEO_FORMAT_P010:
 		return VIDEO_FORMAT_P010;
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_I444:

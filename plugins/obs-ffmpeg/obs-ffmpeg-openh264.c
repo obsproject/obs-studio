@@ -127,6 +127,7 @@ static void *h264_create_internal(obs_data_t *settings, obs_encoder_t *encoder, 
 	case VIDEO_FORMAT_UYVY:
 	// packed uncompressed formats
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_BGR3:

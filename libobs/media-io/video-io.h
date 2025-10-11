@@ -94,6 +94,9 @@ enum video_format {
 
 	/* packed uncompressed 10-bit format */
 	VIDEO_FORMAT_R10L,
+
+	/* packed uncompressed formats */
+	VIDEO_FORMAT_RGBX,
 };
 
 enum video_trc {
@@ -163,6 +166,7 @@ static inline bool format_is_yuv(enum video_format format)
 		return true;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_Y800:
@@ -193,6 +197,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "UYVY";
 	case VIDEO_FORMAT_RGBA:
 		return "RGBA";
+	case VIDEO_FORMAT_RGBX:
+		return "RGBX";
 	case VIDEO_FORMAT_BGRA:
 		return "BGRA";
 	case VIDEO_FORMAT_BGRX:

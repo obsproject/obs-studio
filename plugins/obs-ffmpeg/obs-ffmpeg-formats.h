@@ -26,9 +26,9 @@ static inline enum AVPixelFormat obs_to_ffmpeg_video_format(enum video_format fo
 	case VIDEO_FORMAT_YVYU:
 		return AV_PIX_FMT_YVYU422;
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_RGBX:
 		return AV_PIX_FMT_RGBA;
 	case VIDEO_FORMAT_BGRA:
-		return AV_PIX_FMT_BGRA;
 	case VIDEO_FORMAT_BGRX:
 		return AV_PIX_FMT_BGRA;
 	case VIDEO_FORMAT_Y800:

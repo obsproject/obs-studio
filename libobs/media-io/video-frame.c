@@ -41,6 +41,7 @@ void video_frame_get_linesizes(uint32_t linesize[MAX_AV_PLANES], enum video_form
 		linesize[0] = width * 3;
 		break;
 	case VIDEO_FORMAT_RGBA: /* one plane: quadruple width */
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_AYUV:
@@ -144,6 +145,7 @@ void video_frame_get_plane_heights(uint32_t heights[MAX_AV_PLANES], enum video_f
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
+	case VIDEO_FORMAT_RGBX:
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
