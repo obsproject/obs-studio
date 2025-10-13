@@ -241,13 +241,10 @@ void obs_captions::start()
 			return;
 		}
 
-		size_t len = (size_t)wcslen(wname);
-
-		string lang_name;
-		lang_name.resize(len);
-
-		for (size_t i = 0; i < len; i++)
-			lang_name[i] = (char)wname[i];
+		char *aname;
+		os_wcs_to_utf8_ptr(wname, 0, &aname);
+		string lang_name(aname);
+		bfree(aname);
 
 		OBSSource s = OBSGetStrongRef(source);
 		if (!s) {

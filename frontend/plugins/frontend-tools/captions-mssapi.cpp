@@ -9,13 +9,11 @@ mssapi_captions::mssapi_captions(captions_cb callback, const std::string &lang)
 try : captions_handler(callback, AUDIO_FORMAT_16BIT, 16000) {
 	HRESULT hr;
 
-	std::wstring wlang;
-	wlang.resize(lang.size());
+	wchar_t *wlang;
+	os_utf8_to_wcs_ptr(lang.c_str(), lang.length(), &wlang);
 
-	for (size_t i = 0; i < lang.size(); i++)
-		wlang[i] = (wchar_t)lang[i];
-
-	LCID lang_id = LocaleNameToLCID(wlang.c_str(), 0);
+	LCID lang_id = LocaleNameToLCID(wlang, 0);
+	bfree(wlang);
 
 	wchar_t lang_str[32];
 	_snwprintf(lang_str, 31, L"language=%x", (int)lang_id);
