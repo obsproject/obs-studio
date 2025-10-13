@@ -263,28 +263,6 @@ public func device_get_color_space(device: UnsafeRawPointer) -> gs_color_space {
     return device.renderState.gsColorSpace
 }
 
-/// Signals the beginning of a new render loop iteration by `libobs` renderer.
-/// - Parameter device: Opaque pointer to ``MetalDevice`` instance shared with `libobs`
-///
-/// This function is the first graphics API-specific function called by `libobs` render loop and can be used as a
-/// signal to reset any lingering state of the prior loop iteration.
-///
-/// For the Metal renderer this ensures that the current render target, current swap chain, as well as the list of
-/// active swap chains is reset. As the Metal renderer also needs to keep track of whether `libobs` is rendering any
-/// "displays", the associated state variable is also reset here.
-@_cdecl("device_begin_frame")
-public func device_begin_frame(device: UnsafeRawPointer) {
-    let device: MetalDevice = unretained(device)
-
-    device.renderState.useSRGBGamma = false
-    device.renderState.renderTarget = nil
-
-    device.renderState.swapChain = nil
-    device.renderState.isInDisplaysRenderStage = false
-
-    return
-}
-
 /// Gets a pointer to the current render target
 /// - Parameter device: Opaque pointer to ``MetalDevice`` instance shared with `libobs`
 /// - Returns: Opaque pointer to ``MetalTexture`` object representing the render target

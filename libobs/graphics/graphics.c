@@ -1909,16 +1909,6 @@ void gs_stage_texture(gs_stagesurf_t *dst, gs_texture_t *src)
 	graphics->exports.device_stage_texture(graphics->device, dst, src);
 }
 
-void gs_begin_frame(void)
-{
-	graphics_t *graphics = thread_graphics;
-
-	if (!gs_valid("gs_begin_frame"))
-		return;
-
-	graphics->exports.device_begin_frame(graphics->device);
-}
-
 void gs_begin_scene(void)
 {
 	graphics_t *graphics = thread_graphics;
@@ -3041,6 +3031,16 @@ gs_texture_t *gs_texture_open_shared(uint32_t handle)
 }
 
 #elif _WIN32
+
+void gs_reset_duplicators(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_begin_frame"))
+		return;
+
+	graphics->exports.device_reset_duplicators(graphics->device);
+}
 
 bool gs_gdi_texture_available(void)
 {

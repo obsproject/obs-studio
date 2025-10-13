@@ -93,7 +93,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module, const char 
 	GRAPHICS_IMPORT(device_copy_texture_region);
 	GRAPHICS_IMPORT(device_copy_texture);
 	GRAPHICS_IMPORT(device_stage_texture);
-	GRAPHICS_IMPORT(device_begin_frame);
 	GRAPHICS_IMPORT(device_begin_scene);
 	GRAPHICS_IMPORT(device_draw);
 	GRAPHICS_IMPORT(device_load_swapchain);
@@ -217,6 +216,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module, const char 
 
 	/* win32 specific functions */
 #elif _WIN32
+	GRAPHICS_IMPORT(device_reset_duplicators);
 	GRAPHICS_IMPORT(device_gdi_texture_available);
 	GRAPHICS_IMPORT(device_shared_texture_available);
 	GRAPHICS_IMPORT_OPTIONAL(device_get_duplicator_monitor_info);

@@ -679,7 +679,6 @@ EXPORT void gs_copy_texture_region(gs_texture_t *dst, uint32_t dst_x, uint32_t d
 				   uint32_t src_y, uint32_t src_w, uint32_t src_h);
 EXPORT void gs_stage_texture(gs_stagesurf_t *dst, gs_texture_t *src);
 
-EXPORT void gs_begin_frame(void);
 EXPORT void gs_begin_scene(void);
 EXPORT void gs_draw(enum gs_draw_mode draw_mode, uint32_t start_vert, uint32_t num_verts);
 EXPORT void gs_end_scene(void);
@@ -826,7 +825,7 @@ EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
 EXPORT bool gs_shared_texture_available(void);
 
 #elif _WIN32
-
+EXPORT void gs_reset_duplicators(void);
 EXPORT bool gs_gdi_texture_available(void);
 EXPORT bool gs_shared_texture_available(void);
 

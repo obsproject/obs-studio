@@ -1105,7 +1105,9 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	source_profiler_frame_begin();
 
 	gs_enter_context(obs->video.graphics);
-	gs_begin_frame();
+#ifdef _WIN32
+	gs_reset_duplicators();
+#endif
 	gs_leave_context();
 
 	profile_start(tick_sources_name);

@@ -2181,7 +2181,7 @@ void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst, gs_texture_t
 
 extern "C" void reset_duplicators(void);
 
-void device_begin_frame(gs_device_t *device)
+void device_reset_duplicators(gs_device_t *device)
 {
 	/* does nothing in D3D11 */
 	UNUSED_PARAMETER(device);
