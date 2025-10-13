@@ -33,25 +33,20 @@ CaptionStream::CaptionStream(DWORD samplerate_, mssapi_captions *handler_)
 
 void CaptionStream::Stop()
 {
-	{
-		lock_guard<mutex> lock(m);
-		deque_free(buf);
-	}
+	lock_guard<mutex> lock(m);
+	stop = true;
+	deque_free(buf);
 
 	cv.notify_one();
 }
 
 void CaptionStream::PushAudio(const void *data, size_t frames)
 {
-	bool ready = false;
-
 	lock_guard<mutex> lock(m);
 	deque_push_back(buf, data, frames * sizeof(int16_t));
 	write_pos += frames * sizeof(int16_t);
 
 	if (wait_size && buf->size >= wait_size)
-		ready = true;
-	if (ready)
 		cv.notify_one();
 }
 
@@ -102,22 +97,18 @@ STDMETHODIMP_(ULONG) CaptionStream::Release()
 STDMETHODIMP CaptionStream::Read(void *data, ULONG bytes, ULONG *read_bytes)
 {
 	HRESULT hr = S_OK;
-	size_t cur_size;
 
 	debugfunc("data, %lu, read_bytes", bytes);
 	if (!data)
 		return STG_E_INVALIDPOINTER;
 
-	{
-		lock_guard<mutex> lock1(m);
-		wait_size = bytes;
-		cur_size = buf->size;
-	}
-
 	unique_lock<mutex> lock(m);
 
-	if (bytes > cur_size)
+	if (!stop && bytes > buf->size) {
+		wait_size = bytes;
 		cv.wait(lock);
+		wait_size = 0;
+	}
 
 	if (bytes > (ULONG)buf->size) {
 		bytes = (ULONG)buf->size;
@@ -128,7 +119,6 @@ STDMETHODIMP CaptionStream::Read(void *data, ULONG bytes, ULONG *read_bytes)
 	if (read_bytes)
 		*read_bytes = bytes;
 
-	wait_size = 0;
 	pos.QuadPart += bytes;
 	return hr;
 }
@@ -173,10 +163,11 @@ STDMETHODIMP CaptionStream::CopyTo(IStream *stream, ULARGE_INTEGER bytes, ULARGE
 		return STG_E_INVALIDPOINTER;
 
 	ULONG written = 0;
+
+	lock_guard<mutex> lock(m);
 	if (bytes.QuadPart > (ULONGLONG)buf->size)
 		bytes.QuadPart = (ULONGLONG)buf->size;
 
-	lock_guard<mutex> lock(m);
 	temp_buf.resize((size_t)bytes.QuadPart);
 	deque_peek_front(buf, &temp_buf[0], (size_t)bytes.QuadPart);
 
