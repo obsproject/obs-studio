@@ -103,6 +103,7 @@ CaptionsDialog::CaptionsDialog(QWidget *parent) : QDialog(parent), ui(new Ui_Cap
 	obs_enum_sources([](void *data, obs_source_t *source) { return (*static_cast<cb_t *>(data))(source); }, &cb);
 	ui->source->blockSignals(false);
 
+	ui->provider->blockSignals(true);
 	for (auto &ht : captions->handler_types) {
 		QString name = ht.second.name().c_str();
 		QString id = ht.first.c_str();
@@ -113,6 +114,7 @@ CaptionsDialog::CaptionsDialog(QWidget *parent) : QDialog(parent), ui(new Ui_Cap
 	int idx = ui->provider->findData(qhandler_id);
 	if (idx != -1)
 		ui->provider->setCurrentIndex(idx);
+	ui->provider->blockSignals(false);
 
 	ui->enable->blockSignals(true);
 	ui->enable->setChecked(!!captions->handler);
