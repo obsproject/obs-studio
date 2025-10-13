@@ -664,8 +664,8 @@ void OBSStudioAPI::obs_frontend_add_undo_redo_action(const char *name, const und
 
 void OBSStudioAPI::obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_list)
 {
-	for (const auto &canvas : main->canvases) {
-		obs_canvas_t *ref = obs_canvas_get_ref(canvas);
+	for (const auto &kv : main->canvases) {
+		obs_canvas_t *ref = obs_canvas_get_ref(kv.first);
 		if (ref)
 			da_push_back(canvas_list->canvases, &ref);
 	}
@@ -674,7 +674,7 @@ void OBSStudioAPI::obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_li
 obs_canvas_t *OBSStudioAPI::obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags)
 {
 	auto &canvas = main->AddCanvas(std::string(name), ovi, flags);
-	return obs_canvas_get_ref(canvas);
+	return obs_canvas_get_ref(canvas->canvas);
 }
 
 bool OBSStudioAPI::obs_frontend_remove_canvas(obs_canvas_t *canvas)

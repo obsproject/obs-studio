@@ -23,11 +23,6 @@ namespace OBS {
 
 Canvas::Canvas(obs_canvas_t *canvas) : canvas(canvas) {}
 
-Canvas::Canvas(Canvas &&other) noexcept
-{
-	canvas = std::exchange(other.canvas, nullptr);
-}
-
 Canvas::~Canvas() noexcept
 {
 	if (!canvas)
@@ -36,13 +31,6 @@ Canvas::~Canvas() noexcept
 	obs_canvas_remove(canvas);
 	obs_canvas_release(canvas);
 	canvas = nullptr;
-}
-
-Canvas &Canvas::operator=(Canvas &&other) noexcept
-{
-	canvas = std::exchange(other.canvas, canvas);
-
-	return *this;
 }
 
 std::optional<OBSDataAutoRelease> Canvas::Save() const
@@ -55,37 +43,37 @@ std::optional<OBSDataAutoRelease> Canvas::Save() const
 	return std::nullopt;
 }
 
-std::unique_ptr<Canvas> Canvas::Load(obs_data_t *data)
+std::shared_ptr<Canvas> Canvas::Load(obs_data_t *data)
 {
 	if (OBSDataAutoRelease canvas_data = obs_data_get_obj(data, "info")) {
 		if (obs_canvas_t *canvas = obs_load_canvas(canvas_data)) {
-			return std::make_unique<Canvas>(canvas);
+			return std::make_shared<Canvas>(canvas);
 		}
 	}
 
 	return nullptr;
 }
 
-std::vector<Canvas> Canvas::LoadCanvases(obs_data_array_t *canvases)
+std::map<obs_canvas_t *, std::shared_ptr<Canvas>> Canvas::LoadCanvases(obs_data_array_t *canvases)
 {
 	auto cb = [](obs_data_t *data, void *param) -> void {
-		auto vec = static_cast<std::vector<Canvas> *>(param);
+		auto vec = static_cast<std::map<obs_canvas_t *, std::shared_ptr<Canvas>> *>(param);
 		if (auto canvas = Canvas::Load(data))
-			vec->emplace_back(std::move(*canvas));
+			(*vec)[canvas->canvas] = canvas;
 	};
 
-	std::vector<Canvas> ret;
+	std::map<obs_canvas_t *, std::shared_ptr<Canvas>> ret;
 	obs_data_array_enum(canvases, cb, &ret);
 
 	return ret;
 }
 
-OBSDataArrayAutoRelease Canvas::SaveCanvases(const std::vector<Canvas> &canvases)
+OBSDataArrayAutoRelease Canvas::SaveCanvases(const std::map<obs_canvas_t *, std::shared_ptr<Canvas>> &canvases)
 {
 	OBSDataArrayAutoRelease savedCanvases = obs_data_array_create();
 
-	for (auto &canvas : canvases) {
-		auto canvas_data = canvas.Save();
+	for (auto kv : canvases) {
+		auto canvas_data = kv.second->Save();
 		if (!canvas_data)
 			continue;
 
