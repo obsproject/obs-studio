@@ -57,7 +57,8 @@ void OBSBasic::copyActionsDynamicProperties()
 			temp->setProperty(y, x->property(y));
 		}
 	}
-
+	// TODO: FIXME
+	/*
 	for (QAction *x : ui->mixerToolbar->actions()) {
 		QWidget *temp = ui->mixerToolbar->widgetForAction(x);
 
@@ -68,6 +69,7 @@ void OBSBasic::copyActionsDynamicProperties()
 			temp->setProperty(y, x->property(y));
 		}
 	}
+	*/
 }
 
 void OBSBasic::ClearContextBar()

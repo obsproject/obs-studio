@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include <obs.hpp>
 
@@ -66,9 +67,12 @@ class VolumeMeter : public QWidget {
 	friend class VolControl;
 
 private:
-	obs_volmeter_t *obs_volmeter;
+	OBSVolMeter obs_volmeter;
 	static std::weak_ptr<VolumeMeterTimer> updateTimer;
 	std::shared_ptr<VolumeMeterTimer> updateTimerRef;
+
+	static void obsVolumeLevel(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
+				   const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS]);
 
 	inline void resetLevels();
 	inline void doLayout();
@@ -144,17 +148,22 @@ private:
 	uint64_t lastRedrawTime = 0;
 	int channels = 0;
 	bool clipping = false;
-	bool vertical;
+	bool vertical = false;
+	bool hidden = false;
 	bool muted = false;
+	bool useDisabledColors = false;
 
 public:
-	explicit VolumeMeter(QWidget *parent = nullptr, obs_volmeter_t *obs_volmeter = nullptr, bool vertical = false);
+	explicit VolumeMeter(QWidget *parent = nullptr, OBSSource source = nullptr);
 	~VolumeMeter();
 
 	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
 		       const float inputPeak[MAX_AUDIO_CHANNELS]);
 	QRect getBarRect() const;
 	bool needLayoutChange();
+
+	void setVertical(bool vertical = true);
+	void setUseDisabledColors(bool enable);
 
 	QColor getBackgroundNominalColor() const;
 	void setBackgroundNominalColor(QColor c);
