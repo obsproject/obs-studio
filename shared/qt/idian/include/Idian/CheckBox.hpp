@@ -28,19 +28,6 @@ class CheckBox : public QCheckBox, public Utils {
 
 public:
 	CheckBox(QWidget *parent = nullptr);
-
-protected:
-	void focusInEvent(QFocusEvent *e) override
-	{
-		Utils::showKeyFocused(e);
-		QAbstractButton::focusInEvent(e);
-	}
-
-	void focusOutEvent(QFocusEvent *e) override
-	{
-		Utils::hideKeyFocused(e);
-		QAbstractButton::focusOutEvent(e);
-	}
 };
 
 } // namespace idian
