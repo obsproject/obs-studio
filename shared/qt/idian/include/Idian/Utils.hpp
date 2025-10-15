@@ -17,13 +17,8 @@
 
 #pragma once
 
-#include <QAbstractButton>
-#include <QFocusEvent>
-#include <QPainter>
 #include <QRegularExpression>
 #include <QStyle>
-#include <QStyleOptionButton>
-#include <QTimer>
 #include <QWidget>
 
 namespace idian {
@@ -45,7 +40,6 @@ public:
 
 	// Force all children widgets to repaint
 	void polishChildren() { polishChildren(parent); }
-
 	static void polishChildren(QWidget *widget)
 	{
 		for (QWidget *child : widget->findChildren<QWidget *>()) {
@@ -54,7 +48,6 @@ public:
 	}
 
 	void repolish() { repolish(parent); }
-
 	static void repolish(QWidget *widget)
 	{
 		widget->style()->unpolish(widget);
@@ -63,7 +56,6 @@ public:
 
 	// Adds a style class to the widget
 	void addClass(const QString &classname) { addClass(parent, classname); }
-
 	static void addClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
@@ -89,7 +81,6 @@ public:
 
 	// Removes a style class from a widget
 	void removeClass(const QString &classname) { removeClass(parent, classname); }
-
 	static void removeClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
@@ -118,7 +109,6 @@ public:
 
 	// Forces the addition or removal of a style class from a widget
 	void toggleClass(const QString &classname, bool toggle) { toggleClass(parent, classname, toggle); }
-
 	static void toggleClass(QWidget *widget, const QString &classname, bool toggle)
 	{
 		if (toggle) {
@@ -128,33 +118,9 @@ public:
 		}
 	}
 
-	static void applyColorToIcon(QWidget *widget)
-	{
-		QAbstractButton *button = qobject_cast<QAbstractButton *>(widget);
-		if (button && !button->icon().isNull()) {
-			// Filter is on a widget with an icon set, update it's colors
-			QStyleOptionButton opt;
-			opt.initFrom(button);
+	static void applyColorToIcon(QWidget *widget);
 
-			QColor color = opt.palette.color(QPalette::ButtonText);
-			QPixmap tinted = recolorPixmap(button->icon().pixmap(button->iconSize(), QIcon::Normal), color);
-			QIcon tintedIcon;
-			tintedIcon.addPixmap(tinted, QIcon::Normal);
-			tintedIcon.addPixmap(tinted, QIcon::Disabled);
-
-			button->setIcon(tintedIcon);
-		}
-	}
-
-	static QPixmap recolorPixmap(const QPixmap &src, const QColor &color)
-	{
-		QImage img = src.toImage();
-		QPainter p(&img);
-		p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-		p.fillRect(img.rect(), color);
-		p.end();
-		return QPixmap::fromImage(img);
-	}
+	static QPixmap recolorPixmap(const QPixmap &src, const QColor &color);
 
 	void applyStateStylingEventFilter(QWidget *widget);
 };

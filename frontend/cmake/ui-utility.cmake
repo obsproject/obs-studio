@@ -70,6 +70,16 @@ target_sources(
     utility/undo_stack.cpp
     utility/undo_stack.hpp
     utility/VCamConfig.hpp
-    utility/VolumeMeterTimer.cpp
-    utility/VolumeMeterTimer.hpp
+    utility/audio-encoders.cpp
+    utility/audio-encoders.hpp
+    utility/display-helpers.hpp
+    utility/item-widget-helpers.cpp
+    utility/item-widget-helpers.hpp
+    utility/models/multitrack-video.hpp
+    utility/obf.c
+    utility/obf.h
+    utility/platform.hpp
+    utility/system-info.hpp
+    utility/undo_stack.cpp
+    utility/undo_stack.hpp
 )

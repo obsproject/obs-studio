@@ -58,7 +58,7 @@ class OBSBasicTransform;
 class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
-class VolControl;
+class VolumeControl;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
 #endif
@@ -155,28 +155,6 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 {
 	item->setData(static_cast<int>(QtDataRole::OBSRef), QVariant::fromValue(val));
-}
-
-static inline bool SourceMixerHidden(obs_source_t *source)
-{
-	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
-	bool hidden = obs_data_get_bool(priv_settings, "mixer_hidden");
-
-	return hidden;
-}
-
-static inline void SetSourceMixerHidden(obs_source_t *source, bool hidden)
-{
-	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
-	obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
-}
-
-static inline bool SourceVolumeLocked(obs_source_t *source)
-{
-	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
-	bool lock = obs_data_get_bool(priv_settings, "volume_locked");
-
-	return lock;
 }
 
 #ifdef _WIN32
@@ -310,6 +288,7 @@ public slots:
 	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
 	void applicationShutdown() noexcept;
+	void toggleMixerLayout();
 
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
@@ -340,6 +319,15 @@ protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void changeEvent(QEvent *event) override;
+
+signals:
+	void mainWindowClosed();
+
+	void appSettingChanged(const std::string &category, const std::string &name);
+	void userSettingChanged(const std::string &category, const std::string &name);
+	void profileSettingChanged(const std::string &category, const std::string &name);
+
+	void mixerStatusChanged(QString sourceUuid);
 
 	/* -------------------------------------
 	 * MARK: - OAuth
@@ -381,7 +369,7 @@ public:
 	 */
 private:
 	std::deque<SourceCopyInfo> clipboard;
-	OBSWeakSourceAutoRelease copyFiltersSource;
+	OBSWeakSourceAutoRelease copyFiltersSource_;
 	obs_transform_info copiedTransformInfo;
 	obs_sceneitem_crop copiedCropInfo;
 	bool hasCopiedTransform = false;
@@ -395,8 +383,6 @@ private slots:
 
 	void on_actionCopyFilters_triggered();
 	void on_actionPasteFilters_triggered();
-	void AudioMixerCopyFilters();
-	void AudioMixerPasteFilters();
 	void SourcePasteFilters(OBSSource source, OBSSource dstSource);
 
 	void SceneCopyFilters();
@@ -405,7 +391,12 @@ private slots:
 	void on_actionCopyTransform_triggered();
 	void on_actionPasteTransform_triggered();
 
+public slots:
+	void actionCopyFilters();
+	void actionPasteFilters();
+
 public:
+	obs_weak_source_t *copyFiltersSource() { return copyFiltersSource_; }
 	OBSWeakSource copyFilter;
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
@@ -447,6 +438,7 @@ private:
 	QList<QPointer<QDockWidget>> extraCustomDocks;
 
 	QPointer<OBSDock> controlsDock;
+	QPointer<OBSDock> mixerDock;
 
 public:
 	void AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool extraBrowser = false);
@@ -614,7 +606,6 @@ private slots:
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
 	void on_actionShowMacPermissions_triggered();
-	void on_actionAdvAudioProperties_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
@@ -651,6 +642,9 @@ private slots:
 	void logUploadFinished(const QString &text, const QString &error, OBS::LogFileType uploadType);
 
 	void updateCheckFinished();
+
+public slots:
+	void on_actionAdvAudioProperties_triggered();
 
 public:
 	void ResetUI();
@@ -1163,9 +1157,6 @@ private:
 	bool QueryRemoveSource(obs_source_t *source);
 	int GetTopSelectedSourceItem();
 
-	void GetAudioSourceFilters();
-	void GetAudioSourceProperties();
-
 	QModelIndexList GetAllSelectedSourceItems();
 
 	// TODO: Move back to transitions
@@ -1175,18 +1166,11 @@ private:
 	/* OBS Callbacks */
 	static void SourceCreated(void *data, calldata_t *params);
 	static void SourceRemoved(void *data, calldata_t *params);
-	static void SourceActivated(void *data, calldata_t *params);
-	static void SourceDeactivated(void *data, calldata_t *params);
-	static void SourceAudioActivated(void *data, calldata_t *params);
-	static void SourceAudioDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 
 private slots:
 	void AddSourceDialog();
 	void RenameSources(OBSSource source, QString newName, QString prevName);
-
-	void ActivateAudioSource(OBSSource source);
-	void DeactivateAudioSource(OBSSource source);
 
 	void ReorderSources(OBSScene scene);
 	void RefreshSources(OBSScene scene);
@@ -1198,8 +1182,6 @@ private slots:
 
 	void SetBlendingMethod();
 	void SetBlendingMode();
-
-	void MixerRenameSource();
 
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
@@ -1250,6 +1232,9 @@ public:
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction, ColorSelect *select,
 				      obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(int idx, bool preview);
+
+	void actionOpenSourceFilters();
+	void actionOpenSourceProperties();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Scenes
@@ -1652,38 +1637,6 @@ signals:
 	void VirtualCamEnabled();
 	void VirtualCamStarted();
 	void VirtualCamStopped();
-
-	/* -------------------------------------
-	 * MARK: - OBSBasic_VolControl
-	 * -------------------------------------
-	 */
-private:
-	std::vector<VolControl *> volumes;
-
-	void UpdateVolumeControlsDecayRate();
-	void UpdateVolumeControlsPeakMeterType();
-	void ClearVolumeControls();
-	void VolControlContextMenu();
-	void ToggleVolControlLayout();
-	void ToggleMixerLayout(bool vertical);
-
-private slots:
-	void HideAudioControl();
-	void UnhideAllAudioControls();
-	void ToggleHideMixer();
-
-	void on_vMixerScrollArea_customContextMenuRequested();
-	void on_hMixerScrollArea_customContextMenuRequested();
-
-	void LockVolumeControl(bool lock);
-
-	void on_actionMixerToolbarAdvAudio_triggered();
-	void on_actionMixerToolbarMenu_triggered();
-
-	void StackedMixerAreaContextMenuRequested();
-
-public:
-	void RefreshVolumeColors();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_YouTube

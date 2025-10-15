@@ -2403,9 +2403,9 @@ void OBSBasicSettings::LoadAudioSources()
 		TruncateLabel(label, label->text());
 		label->setMinimumSize(QSize(170, 0));
 		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-		connect(label, &OBSSourceLabel::Removed,
+		connect(label, &OBSSourceLabel::removed,
 			[=]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
-		connect(label, &OBSSourceLabel::Destroyed,
+		connect(label, &OBSSourceLabel::destroyed,
 			[=]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
 
 		layout->addRow(label, form);
@@ -3531,14 +3531,14 @@ void OBSBasicSettings::SaveAudioSettings()
 		}
 		config_set_double(main->Config(), "Audio", "MeterDecayRate", meterDecayRate);
 
-		main->UpdateVolumeControlsDecayRate();
+		emit main->profileSettingChanged("Audio", "MeterDecayRate");
 	}
 
 	if (WidgetChanged(ui->peakMeterType)) {
 		uint32_t peakMeterTypeIdx = ui->peakMeterType->currentIndex();
 		config_set_uint(main->Config(), "Audio", "PeakMeterType", peakMeterTypeIdx);
 
-		main->UpdateVolumeControlsPeakMeterType();
+		emit main->profileSettingChanged("Audio", "PeakMeterType");
 	}
 
 	if (WidgetChanged(ui->lowLatencyBuffering)) {

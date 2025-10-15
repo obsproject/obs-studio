@@ -602,11 +602,8 @@
    </widget>
   </widget>
   <widget class="OBSDock" name="mixerDock">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
+   <property name="contextMenuPolicy">
+    <enum>Qt::CustomContextMenu</enum>
    </property>
    <property name="features">
     <set>QDockWidget::DockWidgetFeature::DockWidgetClosable|QDockWidget::DockWidgetFeature::DockWidgetFloatable|QDockWidget::DockWidgetFeature::DockWidgetMovable</set>
@@ -657,6 +654,12 @@
         </property>
         <item>
          <widget class="QStackedWidget" name="stackedMixerArea">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <widget class="VScrollArea" name="hMixerScrollArea">
            <property name="contextMenuPolicy">
             <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
@@ -691,7 +694,7 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <layout class="QVBoxLayout" name="hVolControlLayout">
+            <layout class="QVBoxLayout" name="hVolumeControlLayout">
              <property name="spacing">
               <number>0</number>
              </property>
@@ -744,7 +747,7 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <layout class="QHBoxLayout" name="vVolControlLayout">
+            <layout class="QHBoxLayout" name="vVolumeControlLayout">
              <property name="spacing">
               <number>0</number>
              </property>
@@ -2459,12 +2462,6 @@
    <header>widgets/OBSBasicStatusBar.hpp</header>
   </customwidget>
   <customwidget>
-   <class>HScrollArea</class>
-   <extends>QScrollArea</extends>
-   <header>components/HScrollArea.hpp</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>VScrollArea</class>
    <extends>QScrollArea</extends>
    <header>vertical-scroll-area.hpp</header>
@@ -2495,6 +2492,12 @@
    <class>OBSPreviewScalingComboBox</class>
    <extends>QComboBox</extends>
    <header>components/OBSPreviewScalingComboBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>HScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>components/HScrollArea.hpp</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
