@@ -3531,14 +3531,14 @@ void OBSBasicSettings::SaveAudioSettings()
 		}
 		config_set_double(main->Config(), "Audio", "MeterDecayRate", meterDecayRate);
 
-		main->UpdateVolumeControlsDecayRate();
+		emit main->profileSettingChanged("Audio", "MeterDecayRate");
 	}
 
 	if (WidgetChanged(ui->peakMeterType)) {
 		uint32_t peakMeterTypeIdx = ui->peakMeterType->currentIndex();
 		config_set_uint(main->Config(), "Audio", "PeakMeterType", peakMeterTypeIdx);
 
-		main->UpdateVolumeControlsPeakMeterType();
+		emit main->profileSettingChanged("Audio", "PeakMeterType");
 	}
 
 	if (WidgetChanged(ui->lowLatencyBuffering)) {

@@ -45,6 +45,7 @@
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
 #include <widgets/OBSProjector.hpp>
+#include <widgets/AudioMixer.hpp>
 
 #include <OBSStudioAPI.hpp>
 #ifdef BROWSER_AVAILABLE
@@ -899,15 +900,9 @@ void OBSBasic::InitOBSCallbacks()
 {
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
-	signalHandlers.reserve(signalHandlers.size() + 10);
+	signalHandlers.reserve(signalHandlers.size() + 6);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create", OBSBasic::SourceCreated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove", OBSBasic::SourceRemoved, this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_activate", OBSBasic::SourceActivated, this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_deactivate", OBSBasic::SourceDeactivated, this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_audio_activate", OBSBasic::SourceAudioActivated,
-				    this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_audio_deactivate",
-				    OBSBasic::SourceAudioDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename", OBSBasic::SourceRenamed, this);
 	signalHandlers.emplace_back(
 		obs_get_signal_handler(), "source_filter_add",
@@ -1173,6 +1168,13 @@ void OBSBasic::OBSInit()
 		show();
 #endif
 
+	/* Setup Audio Mixer dock*/
+	AudioMixer *audioMixer = new AudioMixer(this);
+	ui->mixerDock->setWidget(audioMixer);
+	ui->mixerDock->setContextMenuPolicy(Qt::CustomContextMenu);
+
+	connect(ui->mixerDock, &QDockWidget::customContextMenuRequested, audioMixer, &AudioMixer::showMixerContextMenu);
+
 	/* setup stats dock */
 	OBSBasicStats *statsDlg = new OBSBasicStats(statsDock, false);
 	statsDock->setWidget(statsDlg);
@@ -1263,7 +1265,7 @@ void OBSBasic::OBSInit()
 #endif
 	TimedCheckForUpdates();
 
-	ToggleMixerLayout(config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
+	emit userSettingChanged("BasicWindow", "VerticalVolControl");
 
 	if (config_get_bool(activeConfiguration, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
@@ -1477,6 +1479,14 @@ void OBSBasic::applicationShutdown() noexcept
 #endif
 
 	handledShutdown = true;
+}
+
+void OBSBasic::toggleMixerLayout()
+{
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl", !vertical);
+
+	emit userSettingChanged("BasicWindow", "VerticalVolControl");
 }
 
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)
