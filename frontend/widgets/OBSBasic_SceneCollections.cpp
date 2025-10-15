@@ -1494,7 +1494,6 @@ void OBSBasic::ClearSceneData()
 
 	CloseDialogs();
 
-	ClearVolumeControls();
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
@@ -1524,7 +1523,7 @@ void OBSBasic::ClearSceneData()
 	prevFTBSource = nullptr;
 
 	clipboard.clear();
-	copyFiltersSource = nullptr;
+	copyFiltersSource_ = nullptr;
 	copyFilter = nullptr;
 
 	auto cb = [](void *, obs_source_t *source) {

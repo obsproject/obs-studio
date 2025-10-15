@@ -18,9 +18,10 @@
 #pragma once
 
 #include <QCheckBox>
-#include <QStyleOptionButton>
-#include <QStylePainter>
-#include <QMouseEvent>
+
+class QStyleOptionButton;
+class QStylePainter;
+class QMouseEvent;
 
 class MenuCheckBox : public QCheckBox {
 	Q_OBJECT

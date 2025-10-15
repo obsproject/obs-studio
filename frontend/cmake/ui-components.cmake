@@ -79,6 +79,14 @@ target_sources(
     components/VisibilityItemDelegate.hpp
     components/VisibilityItemWidget.cpp
     components/VisibilityItemWidget.hpp
+    components/VolumeAccessibleInterface.cpp
+    components/VolumeAccessibleInterface.hpp
+    components/VolumeControl.cpp
+    components/VolumeControl.hpp
+    components/VolumeMeter.cpp
+    components/VolumeMeter.hpp
+    components/VolumeName.cpp
+    components/VolumeName.hpp
     components/VolumeSlider.cpp
     components/VolumeSlider.hpp
     components/WindowCaptureToolbar.cpp
