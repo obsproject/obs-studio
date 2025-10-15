@@ -111,7 +111,7 @@ void OBSBasicSettings::SaveA11ySettings()
 	config_set_int(config, "Accessibility", "MixerYellowActive", mixerYellowActive);
 	config_set_int(config, "Accessibility", "MixerRedActive", mixerRedActive);
 
-	main->RefreshVolumeColors();
+	emit main->userSettingChanged("Accessibility", "SettingsChanged");
 }
 
 static void SetStyle(QLabel *label, uint32_t colorVal)
