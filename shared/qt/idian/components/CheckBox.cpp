@@ -21,4 +21,7 @@
 
 using idian::CheckBox;
 
-CheckBox::CheckBox(QWidget *parent) : QCheckBox(parent), Utils(this) {}
+CheckBox::CheckBox(QWidget *parent) : QCheckBox(parent), Utils(this)
+{
+	Utils::applyStateStylingEventFilter(this);
+}

@@ -38,6 +38,8 @@ ToggleSwitch::ToggleSwitch(QWidget *parent)
 	  animBgColor(new QPropertyAnimation(this, "blend", this)),
 	  Utils(this)
 {
+	Utils::applyStateStylingEventFilter(this);
+
 	offPos = rect().width() / 2 - 18;
 	onPos = rect().width() / 2 + 18;
 	xPos = offPos;
