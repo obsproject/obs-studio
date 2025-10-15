@@ -17,10 +17,13 @@
 
 #pragma once
 
+#include <QAbstractButton>
 #include <QFocusEvent>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QStyle>
+#include <QStyleOptionButton>
+#include <QTimer>
 #include <QWidget>
 
 namespace idian {
@@ -123,6 +126,34 @@ public:
 		} else {
 			removeClass(widget, classname);
 		}
+	}
+
+	static void applyColorToIcon(QWidget *widget)
+	{
+		QAbstractButton *button = qobject_cast<QAbstractButton *>(widget);
+		if (button && !button->icon().isNull()) {
+			// Filter is on a widget with an icon set, update it's colors
+			QStyleOptionButton opt;
+			opt.initFrom(button);
+
+			QColor color = opt.palette.color(QPalette::ButtonText);
+			QPixmap tinted = recolorPixmap(button->icon().pixmap(button->iconSize(), QIcon::Normal), color);
+			QIcon tintedIcon;
+			tintedIcon.addPixmap(tinted, QIcon::Normal);
+			tintedIcon.addPixmap(tinted, QIcon::Disabled);
+
+			button->setIcon(tintedIcon);
+		}
+	}
+
+	static QPixmap recolorPixmap(const QPixmap &src, const QColor &color)
+	{
+		QImage img = src.toImage();
+		QPainter p(&img);
+		p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+		p.fillRect(img.rect(), color);
+		p.end();
+		return QPixmap::fromImage(img);
 	}
 
 	void applyStateStylingEventFilter(QWidget *widget);
