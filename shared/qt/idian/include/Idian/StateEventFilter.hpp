@@ -3,8 +3,6 @@
 #include <Idian/Utils.hpp>
 
 #include <QWidget>
-#include <QAbstractbutton>
-#include <QStyleOptionButton>
 
 namespace idian {
 class StateEventFilter : public QObject {
@@ -21,5 +19,7 @@ public slots:
 private:
 	Utils *utils;
 	QWidget *target;
+
+	void applyColorToIcon();
 };
 } // namespace idian
