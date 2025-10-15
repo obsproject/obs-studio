@@ -109,13 +109,13 @@ try {
 	if (FAILED(hr))
 		throw HRError("SetRecoState(SPRST_ACTIVE) failed", hr);
 
-	HANDLE events[] = {notify, stop};
+	HANDLE events[] = {stop, notify};
 
 	started = true;
 
 	for (;;) {
 		DWORD ret = WaitForMultipleObjects(2, events, false, INFINITE);
-		if (ret != WAIT_OBJECT_0)
+		if (ret != WAIT_OBJECT_0 + 1)
 			break;
 
 		CSpEvent event;
