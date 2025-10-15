@@ -383,12 +383,13 @@ void VolumeMeter::wheelEvent(QWheelEvent *event)
 	QApplication::sendEvent(focusProxy(), event);
 }
 
-VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter, bool vertical)
+VolumeMeter::VolumeMeter(QWidget *parent, OBSSource source)
 	: QWidget(parent),
-	  obs_volmeter(obs_volmeter),
-	  vertical(vertical)
+	  obs_volmeter(obs_volmeter_create(OBS_FADER_LOG))
 {
 	setAttribute(Qt::WA_OpaquePaintEvent, true);
+	setAttribute(Qt::WA_TransparentForMouseEvents);
+	setFocusPolicy(Qt::NoFocus);
 
 	// Default meter settings, they only show if
 	// there is no stylesheet, do not remove.
@@ -420,8 +421,11 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter, bool ver
 	peakHoldDuration = 20.0;                 //  20 seconds
 	inputPeakHoldDuration = 1.0;             //  1 second
 	meterThickness = 3;                      // Bar thickness in pixels
-	meterFontScaling = 0.7;                  // Font size for numbers is 70% of Widget's font size
+	meterFontScaling = 0.8;                  // Font size for numbers is 70% of Widget's font size
 	channels = (int)audio_output_get_channels(obs_get_audio());
+
+	obs_volmeter_add_callback(obs_volmeter, obsVolumeLevel, this);
+	obs_volmeter_attach_source(obs_volmeter, source);
 
 	doLayout();
 	updateTimerRef = updateTimer.lock();
@@ -437,6 +441,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter, bool ver
 
 VolumeMeter::~VolumeMeter()
 {
+	obs_volmeter_remove_callback(obs_volmeter, obsVolumeLevel, this);
+	obs_volmeter_detach_source(obs_volmeter);
 	updateTimerRef->RemoveVolControl(this);
 }
 
@@ -457,6 +463,14 @@ void VolumeMeter::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const flo
 	// that the ballistics of peak and hold are recalculated.
 	locker.unlock();
 	calculateBallistics(ts);
+}
+
+void VolumeMeter::obsVolumeLevel(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
+				 const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS])
+{
+	VolumeMeter *meter = static_cast<VolumeMeter *>(data);
+
+	meter->setLevels(magnitude, peak, inputPeak);
 }
 
 inline void VolumeMeter::resetLevels()
@@ -494,6 +508,21 @@ bool VolumeMeter::needLayoutChange()
 	return recalculateLayout;
 }
 
+void VolumeMeter::setVertical(bool vertical_)
+{
+	if (vertical == vertical_) {
+		return;
+	}
+
+	vertical = vertical_;
+	doLayout();
+}
+
+void VolumeMeter::setUseDisabledColors(bool enable)
+{
+	useDisabledColors = enable;
+}
+
 // When this is called from the constructor, obs_volmeter_get_nr_channels has not
 // yet been called and Q_PROPERTY settings have not yet been read from the
 // stylesheet.
@@ -503,7 +532,7 @@ inline void VolumeMeter::doLayout()
 
 	if (displayNrAudioChannels) {
 		int meterSize = std::floor(22 / displayNrAudioChannels);
-		setMeterThickness(std::clamp(meterSize, 3, 7));
+		setMeterThickness(std::clamp(meterSize, 3, 6));
 	}
 	recalculateLayout = false;
 
@@ -603,8 +632,9 @@ inline void VolumeMeter::calculateBallistics(uint64_t ts, qreal timeSinceLastRed
 {
 	QMutexLocker locker(&dataMutex);
 
-	for (int channelNr = 0; channelNr < MAX_AUDIO_CHANNELS; channelNr++)
+	for (int channelNr = 0; channelNr < MAX_AUDIO_CHANNELS; channelNr++) {
 		calculateBallisticsForChannel(channelNr, ts, timeSinceLastRedraw);
+	}
 }
 
 void VolumeMeter::paintInputMeter(QPainter &painter, int x, int y, int width, int height, float peakHold)
@@ -612,16 +642,17 @@ void VolumeMeter::paintInputMeter(QPainter &painter, int x, int y, int width, in
 	QMutexLocker locker(&dataMutex);
 	QColor color;
 
-	if (peakHold < minimumInputLevel)
+	if (peakHold < minimumInputLevel) {
 		color = backgroundNominalColor;
-	else if (peakHold < warningLevel)
+	} else if (peakHold < warningLevel) {
 		color = foregroundNominalColor;
-	else if (peakHold < errorLevel)
+	} else if (peakHold < errorLevel) {
 		color = foregroundWarningColor;
-	else if (peakHold <= clipLevel)
+	} else if (peakHold <= clipLevel) {
 		color = foregroundErrorColor;
-	else
+	} else {
 		color = clipColor;
+	}
 
 	painter.fillRect(x, y, width, height, color);
 }
@@ -635,7 +666,7 @@ void VolumeMeter::paintHTicks(QPainter &painter, int x, int y, int width)
 	painter.setPen(majorTickColor);
 
 	// Draw major tick lines and numeric indicators.
-	for (int i = 0; i >= minimumLevel; i -= 5) {
+	for (int i = 0; i >= minimumLevel; i -= 6) {
 		int position = int(x + width - (i * scale) - 1);
 		QString str = QString::number(i);
 
@@ -646,8 +677,9 @@ void VolumeMeter::paintHTicks(QPainter &painter, int x, int y, int width)
 			pos = position - textBounds.width();
 		} else {
 			pos = position - (textBounds.width() / 2);
-			if (pos < 0)
+			if (pos < 0) {
 				pos = 0;
+			}
 		}
 		painter.drawText(pos, y + 4 + metrics.capHeight(), str);
 
@@ -664,7 +696,7 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 	painter.setPen(majorTickColor);
 
 	// Draw major tick lines and numeric indicators.
-	for (int i = 0; i >= minimumLevel; i -= 5) {
+	for (int i = 0; i >= minimumLevel; i -= 6) {
 		int position = y + int(i * scale) + METER_PADDING;
 		QString str = QString::number(i);
 
@@ -687,12 +719,13 @@ inline int VolumeMeter::convertToInt(float number)
 	constexpr int max = std::numeric_limits<int>::max();
 
 	// NOTE: Conversion from 'const int' to 'float' changes max value from 2147483647 to 2147483648
-	if (number >= (float)max)
+	if (number >= (float)max) {
 		return max;
-	else if (number < min)
+	} else if (number < min) {
 		return min;
-	else
+	} else {
 		return int(number);
+	}
 }
 
 void VolumeMeter::paintHMeter(QPainter &painter, int x, int y, int width, int height, float magnitude, float peak,
@@ -718,40 +751,42 @@ void VolumeMeter::paintHMeter(QPainter &painter, int x, int y, int width, int he
 		peakPosition = maximumPosition;
 	}
 
+	bool disabledColors = muted || useDisabledColors;
+
 	if (peakPosition < minimumPosition) {
 		painter.fillRect(minimumPosition, y, nominalLength, height,
-				 muted ? backgroundNominalColorDisabled : backgroundNominalColor);
+				 disabledColors ? backgroundNominalColorDisabled : backgroundNominalColor);
 		painter.fillRect(warningPosition, y, warningLength, height,
-				 muted ? backgroundWarningColorDisabled : backgroundWarningColor);
+				 disabledColors ? backgroundWarningColorDisabled : backgroundWarningColor);
 		painter.fillRect(errorPosition, y, errorLength, height,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else if (peakPosition < warningPosition) {
 		painter.fillRect(minimumPosition, y, peakPosition - minimumPosition, height,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
 		painter.fillRect(peakPosition, y, warningPosition - peakPosition, height,
-				 muted ? backgroundNominalColorDisabled : backgroundNominalColor);
+				 disabledColors ? backgroundNominalColorDisabled : backgroundNominalColor);
 		painter.fillRect(warningPosition, y, warningLength, height,
-				 muted ? backgroundWarningColorDisabled : backgroundWarningColor);
+				 disabledColors ? backgroundWarningColorDisabled : backgroundWarningColor);
 		painter.fillRect(errorPosition, y, errorLength, height,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else if (peakPosition < errorPosition) {
 		painter.fillRect(minimumPosition, y, nominalLength, height,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
 		painter.fillRect(warningPosition, y, peakPosition - warningPosition, height,
-				 muted ? foregroundWarningColorDisabled : foregroundWarningColor);
+				 disabledColors ? foregroundWarningColorDisabled : foregroundWarningColor);
 		painter.fillRect(peakPosition, y, errorPosition - peakPosition, height,
-				 muted ? backgroundWarningColorDisabled : backgroundWarningColor);
+				 disabledColors ? backgroundWarningColorDisabled : backgroundWarningColor);
 		painter.fillRect(errorPosition, y, errorLength, height,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else if (peakPosition < maximumPosition) {
 		painter.fillRect(minimumPosition, y, nominalLength, height,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
 		painter.fillRect(warningPosition, y, warningLength, height,
-				 muted ? foregroundWarningColorDisabled : foregroundWarningColor);
+				 disabledColors ? foregroundWarningColorDisabled : foregroundWarningColor);
 		painter.fillRect(errorPosition, y, peakPosition - errorPosition, height,
-				 muted ? foregroundErrorColorDisabled : foregroundErrorColor);
+				 disabledColors ? foregroundErrorColorDisabled : foregroundErrorColor);
 		painter.fillRect(peakPosition, y, maximumPosition - peakPosition, height,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else {
 		if (!clipping) {
 			QTimer::singleShot(CLIP_FLASH_DURATION_MS, this, [&]() { clipping = false; });
@@ -760,20 +795,21 @@ void VolumeMeter::paintHMeter(QPainter &painter, int x, int y, int width, int he
 
 		int end = errorLength + warningLength + nominalLength;
 		painter.fillRect(minimumPosition, y, end, height,
-				 QBrush(muted ? foregroundErrorColorDisabled : foregroundErrorColor));
+				 QBrush(disabledColors ? foregroundErrorColorDisabled : foregroundErrorColor));
 	}
 
-	if (peakHoldPosition - 3 < minimumPosition)
-		; // Peak-hold below minimum, no drawing.
-	else if (peakHoldPosition < warningPosition)
+	if (peakHoldPosition - 3 < minimumPosition) {
+		// Peak-hold below minimum, no drawing.
+	} else if (peakHoldPosition < warningPosition) {
 		painter.fillRect(peakHoldPosition - 3, y, 3, height,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
-	else if (peakHoldPosition < errorPosition)
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
+	} else if (peakHoldPosition < errorPosition) {
 		painter.fillRect(peakHoldPosition - 3, y, 3, height,
-				 muted ? foregroundWarningColorDisabled : foregroundWarningColor);
-	else
+				 disabledColors ? foregroundWarningColorDisabled : foregroundWarningColor);
+	} else {
 		painter.fillRect(peakHoldPosition - 3, y, 3, height,
-				 muted ? foregroundErrorColorDisabled : foregroundErrorColor);
+				 disabledColors ? foregroundErrorColorDisabled : foregroundErrorColor);
+	}
 
 	if (magnitudePosition - 3 >= minimumPosition)
 		painter.fillRect(magnitudePosition - 3, y, 3, height, magnitudeColor);
@@ -802,40 +838,42 @@ void VolumeMeter::paintVMeter(QPainter &painter, int x, int y, int width, int he
 		peakPosition = maximumPosition;
 	}
 
+	bool disabledColors = muted || useDisabledColors;
+
 	if (peakPosition < minimumPosition) {
 		painter.fillRect(x, minimumPosition, width, nominalLength,
-				 muted ? backgroundNominalColorDisabled : backgroundNominalColor);
+				 disabledColors ? backgroundNominalColorDisabled : backgroundNominalColor);
 		painter.fillRect(x, warningPosition, width, warningLength,
-				 muted ? backgroundWarningColorDisabled : backgroundWarningColor);
+				 disabledColors ? backgroundWarningColorDisabled : backgroundWarningColor);
 		painter.fillRect(x, errorPosition, width, errorLength,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else if (peakPosition < warningPosition) {
 		painter.fillRect(x, minimumPosition, width, peakPosition - minimumPosition,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
 		painter.fillRect(x, peakPosition, width, warningPosition - peakPosition,
-				 muted ? backgroundNominalColorDisabled : backgroundNominalColor);
+				 disabledColors ? backgroundNominalColorDisabled : backgroundNominalColor);
 		painter.fillRect(x, warningPosition, width, warningLength,
-				 muted ? backgroundWarningColorDisabled : backgroundWarningColor);
+				 disabledColors ? backgroundWarningColorDisabled : backgroundWarningColor);
 		painter.fillRect(x, errorPosition, width, errorLength,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else if (peakPosition < errorPosition) {
 		painter.fillRect(x, minimumPosition, width, nominalLength,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
 		painter.fillRect(x, warningPosition, width, peakPosition - warningPosition,
-				 muted ? foregroundWarningColorDisabled : foregroundWarningColor);
+				 disabledColors ? foregroundWarningColorDisabled : foregroundWarningColor);
 		painter.fillRect(x, peakPosition, width, errorPosition - peakPosition,
-				 muted ? backgroundWarningColorDisabled : backgroundWarningColor);
+				 disabledColors ? backgroundWarningColorDisabled : backgroundWarningColor);
 		painter.fillRect(x, errorPosition, width, errorLength,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else if (peakPosition < maximumPosition) {
 		painter.fillRect(x, minimumPosition, width, nominalLength,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
 		painter.fillRect(x, warningPosition, width, warningLength,
-				 muted ? foregroundWarningColorDisabled : foregroundWarningColor);
+				 disabledColors ? foregroundWarningColorDisabled : foregroundWarningColor);
 		painter.fillRect(x, errorPosition, width, peakPosition - errorPosition,
-				 muted ? foregroundErrorColorDisabled : foregroundErrorColor);
+				 disabledColors ? foregroundErrorColorDisabled : foregroundErrorColor);
 		painter.fillRect(x, peakPosition, width, maximumPosition - peakPosition,
-				 muted ? backgroundErrorColorDisabled : backgroundErrorColor);
+				 disabledColors ? backgroundErrorColorDisabled : backgroundErrorColor);
 	} else {
 		if (!clipping) {
 			QTimer::singleShot(CLIP_FLASH_DURATION_MS, this, [&]() { clipping = false; });
@@ -844,20 +882,21 @@ void VolumeMeter::paintVMeter(QPainter &painter, int x, int y, int width, int he
 
 		int end = errorLength + warningLength + nominalLength;
 		painter.fillRect(x, minimumPosition, width, end,
-				 QBrush(muted ? foregroundErrorColorDisabled : foregroundErrorColor));
+				 QBrush(disabledColors ? foregroundErrorColorDisabled : foregroundErrorColor));
 	}
 
-	if (peakHoldPosition - 3 < minimumPosition)
-		; // Peak-hold below minimum, no drawing.
-	else if (peakHoldPosition < warningPosition)
+	if (peakHoldPosition - 3 < minimumPosition) {
+		// Peak-hold below minimum, no drawing.
+	} else if (peakHoldPosition < warningPosition) {
 		painter.fillRect(x, peakHoldPosition - 3, width, 3,
-				 muted ? foregroundNominalColorDisabled : foregroundNominalColor);
-	else if (peakHoldPosition < errorPosition)
+				 disabledColors ? foregroundNominalColorDisabled : foregroundNominalColor);
+	} else if (peakHoldPosition < errorPosition) {
 		painter.fillRect(x, peakHoldPosition - 3, width, 3,
-				 muted ? foregroundWarningColorDisabled : foregroundWarningColor);
-	else
+				 disabledColors ? foregroundWarningColorDisabled : foregroundWarningColor);
+	} else {
 		painter.fillRect(x, peakHoldPosition - 3, width, 3,
-				 muted ? foregroundErrorColorDisabled : foregroundErrorColor);
+				 disabledColors ? foregroundErrorColorDisabled : foregroundErrorColor);
+	}
 
 	if (magnitudePosition - 3 >= minimumPosition)
 		painter.fillRect(x, magnitudePosition - 3, width, 3, magnitudeColor);
@@ -880,14 +919,16 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	QColor background = palette().color(QPalette::ColorRole::Window);
 	painter.fillRect(event->region().boundingRect(), background);
 
-	if (vertical)
+	if (vertical) {
 		height -= METER_PADDING * 2;
+	}
 
 	// timerEvent requests update of the bar(s) only, so we can avoid the
 	// overhead of repainting the scale and labels.
 	if (event->region().boundingRect() != getBarRect()) {
-		if (needLayoutChange())
+		if (needLayoutChange()) {
 			doLayout();
+		}
 
 		if (vertical) {
 			paintVTicks(painter, displayNrAudioChannels * (meterThickness + 1) - 1, 0,
@@ -908,14 +949,15 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 		int channelNrFixed = (displayNrAudioChannels == 1 && channels > 2) ? 2 : channelNr;
 
-		if (vertical)
+		if (vertical) {
 			paintVMeter(painter, channelNr * (meterThickness + 1), INDICATOR_THICKNESS + 2, meterThickness,
 				    height - (INDICATOR_THICKNESS + 2), displayMagnitude[channelNrFixed],
 				    displayPeak[channelNrFixed], displayPeakHold[channelNrFixed]);
-		else
+		} else {
 			paintHMeter(painter, INDICATOR_THICKNESS + 2, channelNr * (meterThickness + 1),
 				    width - (INDICATOR_THICKNESS + 2), meterThickness, displayMagnitude[channelNrFixed],
 				    displayPeak[channelNrFixed], displayPeakHold[channelNrFixed]);
+		}
 
 		if (idle)
 			continue;
@@ -923,12 +965,13 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		// By not drawing the input meter boxes the user can
 		// see that the audio stream has been stopped, without
 		// having too much visual impact.
-		if (vertical)
+		if (vertical) {
 			paintInputMeter(painter, channelNr * (meterThickness + 1), 0, meterThickness,
 					INDICATOR_THICKNESS, displayInputPeakHold[channelNrFixed]);
-		else
+		} else {
 			paintInputMeter(painter, 0, channelNr * (meterThickness + 1), INDICATOR_THICKNESS,
 					meterThickness, displayInputPeakHold[channelNrFixed]);
+		}
 	}
 
 	lastRedrawTime = ts;
@@ -937,18 +980,20 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 QRect VolumeMeter::getBarRect() const
 {
 	QRect rec = rect();
-	if (vertical)
+	if (vertical) {
 		rec.setWidth(displayNrAudioChannels * (meterThickness + 1) - 1);
-	else
+	} else {
 		rec.setHeight(displayNrAudioChannels * (meterThickness + 1) - 1);
+	}
 
 	return rec;
 }
 
 void VolumeMeter::changeEvent(QEvent *e)
 {
-	if (e->type() == QEvent::StyleChange)
+	if (e->type() == QEvent::StyleChange) {
 		recalculateLayout = true;
+	}
 
 	QWidget::changeEvent(e);
 }
