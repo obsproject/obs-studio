@@ -2,7 +2,7 @@
 #include <Idian/Utils.hpp>
 
 #include <QAbstractButton>
-#include <QLabel>
+#include <QStyleOptionButton>
 
 namespace idian {
 StateEventFilter::StateEventFilter(idian::Utils *utils, QWidget *target) : QObject(target), target(target), utils(utils)
@@ -22,7 +22,16 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 	QWidget *widget = qobject_cast<QWidget *>(obj);
 	QFocusEvent *focusEvent = nullptr;
 
+	bool updateIconColors = true;
+
 	switch (event->type()) {
+	case QEvent::StyleChange:
+	case QEvent::ThemeChange:
+		utils->repolish(widget);
+
+		utils->polishChildren(widget);
+
+		break;
 	case QEvent::FocusIn:
 		utils->toggleClass(widget, "focus", true);
 
@@ -34,6 +43,7 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 		}
 
 		utils->polishChildren(widget);
+
 		break;
 	case QEvent::FocusOut:
 		utils->toggleClass(widget, "focus", false);
@@ -44,8 +54,8 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 			utils->polishChildren(widget);
 		}
 
-		break;
-	case QEvent::MouseButtonPress:
+		utils->polishChildren(widget);
+
 		break;
 	case QEvent::HoverEnter:
 		if (widget->isEnabled()) {
@@ -53,18 +63,28 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 		}
 
 		utils->polishChildren(widget);
+
 		break;
 	case QEvent::HoverLeave:
 		utils->toggleClass(widget, "hover", false);
 
 		utils->polishChildren(widget);
+
 		break;
 	case QEvent::EnabledChange:
-		bool widgetEnabled = widget->isEnabled();
-		utils->toggleClass(widget, "disabled", !widgetEnabled);
+		utils->toggleClass(widget, "disabled", !widget->isEnabled());
 
 		utils->polishChildren(widget);
+
 		break;
+	default:
+		updateIconColors = false;
+		break;
+	}
+
+	if (updateIconColors) {
+		// Delay icon update
+		QTimer::singleShot(0, this, [this, widget]() { utils->applyColorToIcon(widget); });
 	}
 
 	return QObject::eventFilter(obj, event);
