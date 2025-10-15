@@ -18,6 +18,7 @@
 #pragma once
 
 #include <QFocusEvent>
+#include <QPainter>
 #include <QRegularExpression>
 #include <QStyle>
 #include <QWidget>
@@ -38,23 +39,6 @@ public:
 	QWidget *parent = nullptr;
 
 	Utils(QWidget *w) { parent = w; }
-
-	// Set a custom property whenever the widget has keyboard focus specifically
-	void showKeyFocused(QFocusEvent *e)
-	{
-		if (e->reason() != Qt::MouseFocusReason && e->reason() != Qt::PopupFocusReason) {
-			addClass("keyFocus");
-		} else {
-			removeClass("keyFocus");
-		}
-	}
-
-	void hideKeyFocused(QFocusEvent *e)
-	{
-		if (e->reason() != Qt::PopupFocusReason) {
-			removeClass("keyFocus");
-		}
-	}
 
 	// Force all children widgets to repaint
 	void polishChildren() { polishChildren(parent); }
@@ -91,9 +75,11 @@ public:
 		}
 
 		classList.removeDuplicates();
+		classList.removeAll("");
 		classList.append(classname);
 
-		widget->setProperty("class", classList.join(" "));
+		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+		widget->setProperty("class", newClasses);
 
 		repolish(widget);
 	}
@@ -118,9 +104,11 @@ public:
 		}
 
 		classList.removeDuplicates();
+		classList.removeAll("");
 		classList.removeAll(classname);
 
-		widget->setProperty("class", classList.join(" "));
+		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+		widget->setProperty("class", newClasses);
 
 		repolish(widget);
 	}
@@ -136,6 +124,8 @@ public:
 			removeClass(widget, classname);
 		}
 	}
+
+	void applyStateStylingEventFilter(QWidget *widget);
 };
 
 } // namespace idian
