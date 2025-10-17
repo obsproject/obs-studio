@@ -157,8 +157,6 @@ void Row::enterEvent(QEnterEvent *event)
 		setCursor(Qt::PointingHandCursor);
 	}
 
-	Utils::addClass("hover");
-
 	if (buddyWidget)
 		Utils::repolish(buddyWidget);
 
@@ -171,8 +169,6 @@ void Row::enterEvent(QEnterEvent *event)
 
 void Row::leaveEvent(QEvent *event)
 {
-	Utils::removeClass("hover");
-
 	if (buddyWidget)
 		Utils::repolish(buddyWidget);
 
@@ -236,6 +232,7 @@ void Row::connectBuddyWidget(QWidget *widget)
 // Button for expanding a collapsible ActionRow
 ExpandButton::ExpandButton(QWidget *parent) : QAbstractButton(parent), Utils(this)
 {
+	Utils::applyStateStylingEventFilter(this);
 	setCheckable(true);
 }
 
@@ -358,13 +355,17 @@ void CollapsibleRow::addRow(GenericRow *actionRow)
 	propertyList->addRow(actionRow);
 }
 
-RowFrame::RowFrame(QWidget *parent) : QFrame(parent), Utils(this) {}
+RowFrame::RowFrame(QWidget *parent) : QFrame(parent), Utils(this)
+{
+	setAttribute(Qt::WA_Hover, true);
+
+	Utils::applyStateStylingEventFilter(this);
+}
 
 void RowFrame::enterEvent(QEnterEvent *event)
 {
 	setCursor(Qt::PointingHandCursor);
 
-	Utils::addClass("hover");
 	Utils::polishChildren();
 
 	QWidget::enterEvent(event);
@@ -372,7 +373,6 @@ void RowFrame::enterEvent(QEnterEvent *event)
 
 void RowFrame::leaveEvent(QEvent *event)
 {
-	Utils::removeClass("hover");
 	Utils::polishChildren();
 
 	QWidget::leaveEvent(event);
