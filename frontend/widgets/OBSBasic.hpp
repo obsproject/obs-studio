@@ -1120,14 +1120,15 @@ public:
 	 * -------------------------------------
 	 */
 private:
-	std::vector<OBS::Canvas> canvases;
+	std::map<obs_canvas_t *, std::shared_ptr<OBS::Canvas>> canvases;
 
 	static void CanvasRemoved(void *data, calldata_t *params);
 
 public:
-	const std::vector<OBS::Canvas> &GetCanvases() const noexcept { return canvases; }
+	const std::map<obs_canvas_t *, std::shared_ptr<OBS::Canvas>> &GetCanvases() const noexcept { return canvases; }
 
-	const OBS::Canvas &AddCanvas(const std::string &name, obs_video_info *ovi = nullptr, int flags = 0);
+	const std::shared_ptr<OBS::Canvas> AddCanvas(const std::string &name, obs_video_info *ovi = nullptr,
+						     int flags = 0);
 
 public slots:
 	bool RemoveCanvas(OBSCanvas canvas);

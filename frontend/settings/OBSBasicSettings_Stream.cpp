@@ -173,10 +173,11 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->multitrackVideoAdditionalCanvas->clear();
 	ui->multitrackVideoAdditionalCanvas->addItem(QTStr("None"));
 	for (const auto &canvas : main->GetCanvases()) {
-		if (obs_canvas_get_flags(canvas) & EPHEMERAL)
+		if (obs_canvas_get_flags(canvas.first) & EPHEMERAL)
 			continue;
 
-		ui->multitrackVideoAdditionalCanvas->addItem(obs_canvas_get_name(canvas), obs_canvas_get_uuid(canvas));
+		ui->multitrackVideoAdditionalCanvas->addItem(obs_canvas_get_name(canvas.first),
+							     obs_canvas_get_uuid(canvas.first));
 	}
 
 	if (config_has_user_value(main->Config(), "Stream1", "MultitrackExtraCanvas")) {
