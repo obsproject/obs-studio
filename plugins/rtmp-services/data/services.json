@@ -3478,6 +3478,27 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
+        },
+        {
+            "name": "Streamplace",
+            "more_info_link": "https://stream.place/about",
+            "stream_key_link": "https://stream.place/live",
+            "common": false,
+            "servers": [
+                {
+                    "name": "Global",
+                    "url": "rtmps://rtmp.stream.place:1935/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "bframes": 0,
+                "max video bitrate": 20000
+            }
         }
     ]
 }
