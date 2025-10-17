@@ -10,6 +10,10 @@ target_link_libraries(obs-studio PRIVATE OBS::qt-slider-ignorewheel)
 target_sources(
   obs-studio
   PRIVATE
+    components/AccessibleAlignmentSelector.cpp
+    components/AccessibleAlignmentSelector.hpp
+    components/AlignmentSelector.cpp
+    components/AlignmentSelector.hpp
     components/AbsoluteSlider.cpp
     components/AbsoluteSlider.hpp
     components/ApplicationAudioCaptureToolbar.cpp

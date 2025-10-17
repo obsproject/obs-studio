@@ -37,6 +37,9 @@
 #include <util/threading.h>
 #include <util/util.hpp>
 
+#include <QAccessible>
+#include <components/AccessibleAlignmentSelector.hpp>
+
 #include <QSystemTrayIcon>
 
 #include <deque>
