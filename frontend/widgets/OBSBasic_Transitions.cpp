@@ -421,7 +421,7 @@ OBSSource OBSBasic::GetCurrentTransition()
 
 void OBSBasic::AddTransition(const char *id)
 {
-	string name;
+	std::string name;
 	QString placeHolderText = QT_UTF8(obs_source_get_display_name(id));
 	QString format = placeHolderText + " (%1)";
 	obs_source_t *source = nullptr;
