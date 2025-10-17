@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Ruwen Hahn <palana@stunned.de>
+    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,34 +19,36 @@
 
 #include <obs.hpp>
 
-#include <QLabel>
+#include <QAbstractButton>
 
-class OBSSourceLabel : public QLabel {
+class VolumeName : public QAbstractButton {
 	Q_OBJECT;
+	Q_PROPERTY(Qt::Alignment textAlignment READ alignment WRITE setAlignment)
 
 public:
 	OBSSignal renamedSignal;
 	OBSSignal removedSignal;
 	OBSSignal destroyedSignal;
 
-	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags())
-		: QLabel(obs_source_get_name(source), parent, f),
-		  renamedSignal(obs_source_get_signal_handler(source), "rename", &OBSSourceLabel::SourceRenamed, this),
-		  removedSignal(obs_source_get_signal_handler(source), "remove", &OBSSourceLabel::SourceRemoved, this),
-		  destroyedSignal(obs_source_get_signal_handler(source), "destroy", &OBSSourceLabel::SourceDestroyed,
-				  this)
-	{
-	}
+	VolumeName(const OBSSource source, QWidget *parent = nullptr);
+	~VolumeName();
+
+	void setAlignment(Qt::Alignment alignment);
+	Qt::Alignment alignment() const { return textAlignment; }
+
+	QSize sizeHint() const override;
 
 protected:
-	static void SourceRenamed(void *data, calldata_t *params);
-	static void SourceRemoved(void *data, calldata_t *params);
-	static void SourceDestroyed(void *data, calldata_t *params);
-	void mousePressEvent(QMouseEvent *event);
+	Qt::Alignment textAlignment = Qt::AlignLeft;
+
+	static void obsSourceRenamed(void *data, calldata_t *params);
+	static void obsSourceRemoved(void *data, calldata_t *params);
+	static void obsSourceDestroyed(void *data, calldata_t *params);
+
+	void paintEvent(QPaintEvent *event) override;
 
 signals:
-	void Renamed(const char *name);
-	void Removed();
-	void Destroyed();
-	void clicked();
+	void renamed(const char *name);
+	void removed();
+	void destroyed();
 };

@@ -162,21 +162,27 @@ void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array, redo_array);
 }
 
-void OBSBasic::AudioMixerCopyFilters()
+void OBSBasic::actionCopyFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
+	obs_source_t *source = action->property("source").value<OBSSource>();
+
+	if (!source) {
+		return;
+	}
 
 	copyFiltersSource = obs_source_get_weak_source(source);
 	ui->actionPasteFilters->setEnabled(true);
 }
 
-void OBSBasic::AudioMixerPasteFilters()
+void OBSBasic::actionPasteFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *dstSource = vol->GetSource();
+	obs_source_t *dstSource = action->property("source").value<OBSSource>();
+
+	if (!dstSource) {
+		return;
+	}
 
 	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource);
 

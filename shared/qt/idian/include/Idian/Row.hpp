@@ -39,7 +39,13 @@ class GenericRow : public QFrame, public Utils {
 	Q_OBJECT
 
 public:
-	GenericRow(QWidget *parent = nullptr) : QFrame(parent), Utils(this) { setAccessibleName(""); };
+	GenericRow(QWidget *parent = nullptr) : QFrame(parent), Utils(this)
+	{
+		setAttribute(Qt::WA_Hover, true);
+
+		applyStateStylingEventFilter(this);
+		setAccessibleName("");
+	};
 
 	virtual void setTitle(const QString &title) = 0;
 	virtual void setDescription(const QString &description) = 0;
@@ -84,18 +90,6 @@ protected:
 	void keyReleaseEvent(QKeyEvent *) override;
 	bool hasDescription() const { return descriptionLabel != nullptr; }
 
-	void focusInEvent(QFocusEvent *event) override
-	{
-		Utils::showKeyFocused(event);
-		QFrame::focusInEvent(event);
-	}
-
-	void focusOutEvent(QFocusEvent *event) override
-	{
-		Utils::hideKeyFocused(event);
-		QFrame::focusOutEvent(event);
-	}
-
 private:
 	QGridLayout *layout;
 
@@ -127,18 +121,6 @@ protected:
 	explicit ExpandButton(QWidget *parent = nullptr);
 
 	void paintEvent(QPaintEvent *) override;
-
-	void focusInEvent(QFocusEvent *event) override
-	{
-		Utils::showKeyFocused(event);
-		QAbstractButton::focusInEvent(event);
-	}
-
-	void focusOutEvent(QFocusEvent *event) override
-	{
-		Utils::hideKeyFocused(event);
-		QAbstractButton::focusOutEvent(event);
-	}
 };
 
 class RowFrame : protected QFrame, protected Utils {
@@ -152,18 +134,6 @@ protected:
 
 	void enterEvent(QEnterEvent *) override;
 	void leaveEvent(QEvent *) override;
-
-	void focusInEvent(QFocusEvent *event) override
-	{
-		Utils::showKeyFocused(event);
-		QWidget::focusInEvent(event);
-	}
-
-	void focusOutEvent(QFocusEvent *event) override
-	{
-		Utils::hideKeyFocused(event);
-		QWidget::focusOutEvent(event);
-	}
 
 private:
 	friend class CollapsibleRow;
