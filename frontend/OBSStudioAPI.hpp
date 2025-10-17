@@ -38,6 +38,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	inline OBSStudioAPI(OBSBasic *main_) : main(main_) {}
 
+	void obs_frontend_close_main_window(void) override;
+
 	void *obs_frontend_get_main_window(void) override;
 
 	void *obs_frontend_get_main_window_handle(void) override;
