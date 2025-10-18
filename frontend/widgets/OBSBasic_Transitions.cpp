@@ -83,7 +83,7 @@ void OBSBasic::InitDefaultTransitions()
 		emit TransitionAdded(QT_UTF8(obs_source_get_name(tr)), QString::fromStdString(uuid));
 	}
 
-	UpdateCurrentTransition(transitionUuids.back(), true);
+	setCurrentTransition(transitionUuids.back());
 }
 
 void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
@@ -410,33 +410,30 @@ static inline void SetComboTransition(QComboBox *combo, obs_source_t *tr)
 	}
 }
 
-void OBSBasic::SetTransition(OBSSource transition)
+void OBSBasic::studioAPISetTransition(OBSSource transition)
 {
-	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
-
-	if (oldTransition && obs_transition_is_active(oldTransition)) {
-		return;
-	}
-
-	if (oldTransition && transition) {
+	if (transition) {
 		std::string uuid = obs_source_get_uuid(transition);
-		obs_transition_swap_begin(transition, oldTransition);
-		if (currentTransitionUuid != uuid) {
-			UpdateCurrentTransition(uuid, false);
+
+		if (transition && transitions.find(uuid) != transitions.end()) {
+			setCurrentTransition(uuid);
+			return;
 		}
-		obs_set_output_source(0, transition);
-		obs_transition_swap_end(transition, oldTransition);
+
+		if (OBSSourceAutoRelease oldTransition = obs_get_output_source(0)) {
+			std::string uuid = obs_source_get_uuid(transition);
+			obs_transition_swap_begin(transition, oldTransition);
+			obs_set_output_source(0, transition);
+			obs_transition_swap_end(transition, oldTransition);
+
+			emit currentTransitionChanged(QString::fromStdString(uuid), obs_transition_fixed(transition),
+						      obs_source_configurable(transition));
+		}
 	} else {
 		obs_set_output_source(0, transition);
+
+		emit currentTransitionChanged({}, false, false);
 	}
-
-	bool fixed = transition ? obs_transition_fixed(transition) : false;
-	ui->transitionDurationLabel->setVisible(!fixed);
-	ui->transitionDuration->setVisible(!fixed);
-
-	bool configurable = transition ? obs_source_configurable(transition) : false;
-	ui->transitionRemove->setEnabled(configurable);
-	ui->transitionProps->setEnabled(configurable);
 
 	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
@@ -494,7 +491,7 @@ void OBSBasic::AddTransition(const char *id)
 
 		emit TransitionAdded(QString::fromStdString(name), QString::fromStdString(uuid));
 
-		UpdateCurrentTransition(uuid, true);
+		setCurrentTransition(uuid);
 
 		CreatePropertiesWindow(source);
 		obs_source_release(source);
@@ -566,7 +563,7 @@ void OBSBasic::on_transitionRemove_clicked()
 	transitions.erase(currentTransitionUuid);
 	emit TransitionRemoved(QString::fromStdString(currentTransitionUuid));
 
-	UpdateCurrentTransition(transitionUuids.back(), true);
+	setCurrentTransition(transitionUuids.back());
 
 	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 
@@ -1475,7 +1472,7 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitionsData, obs_load_sourc
 		}
 	}
 
-	UpdateCurrentTransition(transitionUuids.back(), true);
+	setCurrentTransition(transitionUuids.back());
 }
 
 OBSSource OBSBasic::GetOverrideTransition(OBSSource source)
@@ -1514,7 +1511,23 @@ int OBSBasic::GetTransitionDuration()
 	return transitionDuration;
 }
 
-void OBSBasic::UpdateCurrentTransition(const std::string &uuid, bool setTransition)
+void OBSBasic::setTransitionInternal(OBSSource transition)
+{
+	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
+
+	if (oldTransition) {
+		std::string uuid = obs_source_get_uuid(transition);
+		obs_transition_swap_begin(transition, oldTransition);
+		obs_set_output_source(0, transition);
+		obs_transition_swap_end(transition, oldTransition);
+	} else {
+		obs_set_output_source(0, transition);
+	}
+
+	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
+}
+
+void OBSBasic::setCurrentTransition(const std::string &uuid)
 {
 	auto transitionIter = transitions.find(uuid);
 
@@ -1523,15 +1536,13 @@ void OBSBasic::UpdateCurrentTransition(const std::string &uuid, bool setTransiti
 	}
 
 	currentTransitionUuid = uuid;
+	setTransitionInternal(transitionIter->second);
 
-	if (setTransition) {
-		SetTransition(transitionIter->second);
-	}
-
-	emit CurrentTransitionChanged(QString::fromStdString(uuid));
+	emit currentTransitionChanged(QString::fromStdString(uuid), obs_transition_fixed(transitionIter->second),
+				      obs_source_configurable(transitionIter->second));
 }
 
-void OBSBasic::SetCurrentTransition(const QString &uuid)
+void OBSBasic::setCurrentTransition(const QString &uuid)
 {
 	auto transitionIter = transitions.find(uuid.toStdString());
 
@@ -1540,9 +1551,10 @@ void OBSBasic::SetCurrentTransition(const QString &uuid)
 	}
 
 	currentTransitionUuid = uuid.toStdString();
-	SetTransition(transitionIter->second);
+	setTransitionInternal(transitionIter->second);
 
-	emit CurrentTransitionChanged(uuid);
+	emit currentTransitionChanged(uuid, obs_transition_fixed(transitionIter->second),
+				      obs_source_configurable(transitionIter->second));
 }
 
 void OBSBasic::SetTransitionDuration(int duration)
