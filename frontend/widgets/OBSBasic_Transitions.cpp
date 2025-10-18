@@ -66,16 +66,16 @@ void OBSBasic::InitDefaultTransitions()
 			defaultTransitions.emplace_back(tr);
 
 			if (strcmp(id, "fade_transition") == 0) {
-				fadeTransition = tr;
+				fadeTransitionUuid = obs_source_get_uuid(tr);
 			} else if (strcmp(id, "cut_transition") == 0) {
-				cutTransition = tr;
+				cutTransitionUuid = obs_source_get_uuid(tr);
 			}
 		}
 	}
 
 	// We require transitions in order to function, so exit with an error if
 	// obs-transitions failed to load for whatever reason.
-	if (!fadeTransition || !cutTransition) {
+	if (fadeTransitionUuid.empty() || cutTransitionUuid.empty()) {
 		// FIXME: https://github.com/obsproject/obs-studio/issues/13394
 		throw "InitDefaultTransitions: Could not load default transitions. Try re-installing OBS Studio from "
 		      "<a href=\"https://obsproject.com/\">obsproject.com</a>.";
@@ -169,9 +169,9 @@ void OBSBasic::CreateDefaultQuickTransitions()
 {
 	/* non-configurable transitions are always available, so add them
 	 * to the "default quick transitions" list */
-	quickTransitions.emplace_back(cutTransition, 300, quickTransitionIdCounter++);
-	quickTransitions.emplace_back(fadeTransition, 300, quickTransitionIdCounter++);
-	quickTransitions.emplace_back(fadeTransition, 300, quickTransitionIdCounter++, true);
+	quickTransitions.emplace_back(transitions.at(cutTransitionUuid), 300, quickTransitionIdCounter++);
+	quickTransitions.emplace_back(transitions.at(fadeTransitionUuid), 300, quickTransitionIdCounter++);
+	quickTransitions.emplace_back(transitions.at(fadeTransitionUuid), 300, quickTransitionIdCounter++, true);
 }
 
 void OBSBasic::LoadQuickTransitions(obs_data_array_t *array)
@@ -1245,7 +1245,7 @@ void OBSBasic::AddQuickTransition()
 		return;
 	}
 
-	transition = fadeToBlack ? OBSSource(fadeTransition) : transitionIter->second;
+	transition = fadeToBlack ? transitions.at(fadeTransitionUuid) : transitionIter->second;
 
 	if (!transition) {
 		return;
@@ -1313,7 +1313,7 @@ void OBSBasic::QuickTransitionChange()
 			return;
 		}
 
-		tr = fadeToBlack ? OBSSource(fadeTransition) : transitionIter->second;
+		tr = fadeToBlack ? transitions.at(fadeTransitionUuid) : transitionIter->second;
 
 		if (tr) {
 			qt->source = tr;
