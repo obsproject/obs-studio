@@ -1038,7 +1038,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
 	SetTransitionDuration(300);
-	UpdateCurrentTransition(fadeTransitionUuid, true);
+	setCurrentTransition(fadeTransitionUuid);
 
 	updateRemigrationMenuItem(SceneCoordinateMode::Relative, ui->actionRemigrateSceneCollection);
 
@@ -1362,12 +1362,9 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	}
 
 	curTransition = FindTransition(transitionName);
-	if (!curTransition) {
-		curTransition = transitions.at(fadeTransitionUuid);
-	}
 
 	SetTransitionDuration(newDuration);
-	SetTransition(curTransition);
+	setCurrentTransition(curTransition ? obs_source_get_uuid(curTransition) : fadeTransitionUuid);
 
 retryScene:
 	curScene = obs_get_source_by_name(sceneName);
