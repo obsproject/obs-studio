@@ -482,15 +482,13 @@ gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device, void *io
 
             break;
         }
+        case 0: /* case 0 is workaround for Syphon always providing invalid IOSurfaces */
         case kCVPixelFormatType_32BGRA: {
             color_format = convert_gs_format(GS_BGRA);
             internal_format = convert_gs_internal_format(GS_BGRA);
             texture_type = GL_UNSIGNED_INT_8_8_8_8_REV;
             break;
         }
-        case 0:
-            blog(LOG_ERROR, "Invalid IOSurface Buffer");
-            goto fail;
         default:
             blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pixelFormat, pixelFormat >> 24, pixelFormat >> 16,
                  pixelFormat >> 8, pixelFormat);
