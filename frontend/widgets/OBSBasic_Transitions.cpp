@@ -27,6 +27,7 @@
 #include <qt-wrappers.hpp>
 #include <slider-ignorewheel.hpp>
 
+#include <QSpinBox>
 #include <QToolTip>
 #include <QWidgetAction>
 
