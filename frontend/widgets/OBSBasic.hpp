@@ -851,6 +851,7 @@ private slots:
 	void TogglePreview();
 
 public:
+	void addSnapGuide(float x1, float y1, float x2, float y2);
 	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
 	{
 		x = previewX;
