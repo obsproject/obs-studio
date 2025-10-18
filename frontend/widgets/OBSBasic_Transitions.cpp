@@ -442,8 +442,6 @@ void OBSBasic::studioAPISetTransition(OBSSource transition)
 
 		emit currentTransitionChanged({}, false, false);
 	}
-
-	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
 
 OBSSource OBSBasic::GetCurrentTransition()
@@ -1530,8 +1528,6 @@ void OBSBasic::setTransitionInternal(OBSSource transition)
 	} else {
 		obs_set_output_source(0, transition);
 	}
-
-	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
 
 void OBSBasic::setCurrentTransition(const std::string &uuid)
@@ -1576,6 +1572,4 @@ void OBSBasic::SetTransitionDuration(int duration)
 	transitionDuration = duration;
 
 	emit TransitionDurationChanged(transitionDuration);
-
-	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
 }
