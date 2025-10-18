@@ -278,6 +278,15 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		},
 		Qt::DirectConnection);
 
+	/* Set up transition connections */
+	connect(
+		this, &OBSBasic::CurrentTransitionChanged, this,
+		[this]() { OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED); }, Qt::DirectConnection);
+
+	connect(
+		this, &OBSBasic::TransitionDurationChanged, this,
+		[this]() { OnEvent(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED); }, Qt::DirectConnection);
+
 	/* Add controls dock */
 	OBSBasicControls *controls = new OBSBasicControls(this);
 	controlsDock = new OBSDock(this);
