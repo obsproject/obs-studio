@@ -92,7 +92,7 @@ obs_source_t *OBSStudioAPI::obs_frontend_get_current_transition()
 
 void OBSStudioAPI::obs_frontend_set_current_transition(obs_source_t *transition)
 {
-	QMetaObject::invokeMethod(main, &OBSBasic::SetTransition, OBSSource(transition));
+	QMetaObject::invokeMethod(main, &OBSBasic::studioAPISetTransition, OBSSource(transition));
 }
 
 int OBSStudioAPI::obs_frontend_get_transition_duration()
