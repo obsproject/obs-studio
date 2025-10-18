@@ -27,6 +27,18 @@ try {
 	return false;
 }
 
+static inline winrt::Windows::Foundation::TimeSpan calculate_min_interval()
+{
+    obs_video_info ovi{};
+    if (!obs_get_video_info(&ovi) || !ovi.fps_num)
+        return winrt::Windows::Foundation::TimeSpan{0};
+
+    const uint64_t frame_interval_hns =
+        util_mul_div64(ovi.fps_den, 10000000ULL, ovi.fps_num);
+    return winrt::Windows::Foundation::TimeSpan{
+        static_cast<int64_t>(frame_interval_hns / 2)};
+}
+
 template<typename T>
 static winrt::com_ptr<T> GetDXGIInterfaceFromObject(winrt::Windows::Foundation::IInspectable const &object)
 {
@@ -306,6 +318,16 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 			capture->last_size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session = frame_pool.CreateCaptureSession(item);
 
+	if (winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(
+		    L"Windows.Graphics.Capture.GraphicsCaptureSession", L"MinUpdateInterval")) {
+		try {
+			session.MinUpdateInterval(calculate_min_interval());
+		} catch (const winrt::hresult_error &err) {
+			blog(LOG_WARNING, "GraphicsCaptureSession::MinUpdateInterval (0x%08X): %s", err.code().value,
+			     winrt::to_string(err.message()).c_str());
+		}
+	}
+
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::RequestAccessAsync(
 			winrt::Windows::Graphics::Capture::GraphicsCaptureAccessKind::Borderless)
@@ -369,6 +391,16 @@ try {
 		winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::Create(
 			device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(format), 2, size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session = frame_pool.CreateCaptureSession(item);
+
+	if (winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(
+		    L"Windows.Graphics.Capture.GraphicsCaptureSession", L"MinUpdateInterval")) {
+		try {
+			session.MinUpdateInterval(calculate_min_interval());
+		} catch (const winrt::hresult_error &err) {
+			blog(LOG_WARNING, "GraphicsCaptureSession::MinUpdateInterval (0x%08X): %s", err.code().value,
+			     winrt::to_string(err.message()).c_str());
+		}
+	}
 
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::RequestAccessAsync(
