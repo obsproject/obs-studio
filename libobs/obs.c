@@ -3174,22 +3174,17 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
 	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
-	bool call_free = false;
 
-	os_atomic_dec_long(&video->gpu_encoder_active);
 	video_output_dec_texture_encoders(video->video);
 
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
 	da_erase_item(video->gpu_encoders, &encoder);
-	if (!video->gpu_encoders.num)
-		call_free = true;
 	pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
 	os_event_wait(video->gpu_encode_inactive);
 
-	if (call_free) {
+	if (os_atomic_dec_long(&video->gpu_encoder_active) == 0) {
 		stop_gpu_encoding_thread(video);
-
 		obs_enter_graphics();
 		pthread_mutex_lock(&video->gpu_encoder_mutex);
 		free_gpu_encoding(video);
