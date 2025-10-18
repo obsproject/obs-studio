@@ -64,9 +64,9 @@ void OBSBasic::InitDefaultTransitions()
 			defaultTransitions.emplace_back(tr);
 
 			if (strcmp(id, "fade_transition") == 0)
-				fadeTransition = tr;
+				fadeTransitionUuid = obs_source_get_uuid(tr);
 			else if (strcmp(id, "cut_transition") == 0)
-				cutTransition = tr;
+				cutTransitionUuid = obs_source_get_uuid(tr);
 		}
 	}
 
@@ -151,9 +151,9 @@ void OBSBasic::CreateDefaultQuickTransitions()
 {
 	/* non-configurable transitions are always available, so add them
 	 * to the "default quick transitions" list */
-	quickTransitions.emplace_back(cutTransition, 300, quickTransitionIdCounter++);
-	quickTransitions.emplace_back(fadeTransition, 300, quickTransitionIdCounter++);
-	quickTransitions.emplace_back(fadeTransition, 300, quickTransitionIdCounter++, true);
+	quickTransitions.emplace_back(transitions.at(cutTransitionUuid), 300, quickTransitionIdCounter++);
+	quickTransitions.emplace_back(transitions.at(fadeTransitionUuid), 300, quickTransitionIdCounter++);
+	quickTransitions.emplace_back(transitions.at(fadeTransitionUuid), 300, quickTransitionIdCounter++, true);
 }
 
 void OBSBasic::LoadQuickTransitions(obs_data_array_t *array)
@@ -1164,7 +1164,7 @@ void OBSBasic::AddQuickTransition()
 	if (!fadeToBlack && (transitionIter == transitions.end()))
 		return;
 
-	transition = fadeToBlack ? OBSSource(fadeTransition) : transitionIter->second;
+	transition = fadeToBlack ? transitions.at(fadeTransitionUuid) : transitionIter->second;
 
 	if (!transition)
 		return;
@@ -1226,7 +1226,7 @@ void OBSBasic::QuickTransitionChange()
 		if (!fadeToBlack && (transitionIter == transitions.end()))
 			return;
 
-		tr = fadeToBlack ? OBSSource(fadeTransition) : transitionIter->second;
+		tr = fadeToBlack ? transitions.at(fadeTransitionUuid) : transitionIter->second;
 
 		if (tr) {
 			qt->source = tr;

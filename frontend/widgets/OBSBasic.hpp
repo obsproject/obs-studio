@@ -1500,8 +1500,8 @@ private:
 	std::unordered_map<std::string, std::string> transitionNameToUuids;
 	int transitionDuration;
 	std::string currentTransitionUuid;
-	obs_source_t *fadeTransition;
-	obs_source_t *cutTransition;
+	std::string fadeTransitionUuid;
+	std::string cutTransitionUuid;
 	std::vector<QuickTransition> quickTransitions;
 	bool swapScenesMode = true;
 
