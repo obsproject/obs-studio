@@ -970,18 +970,6 @@
             ]
         },
         {
-            "name": "Livestream",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Uscreen",
             "servers": [
                 {
