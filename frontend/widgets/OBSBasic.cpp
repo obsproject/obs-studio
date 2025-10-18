@@ -326,13 +326,20 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		ui->transitions->clear();
 	});
 
-	connect(this, &OBSBasic::CurrentTransitionChanged, this, [this](const QString &uuid) {
-		QSignalBlocker sb(ui->transitions);
-		ui->transitions->setCurrentIndex(ui->transitions->findData(uuid));
-	});
+	connect(this, &OBSBasic::CurrentTransitionChanged, this,
+		[this](const QString &uuid, bool fixed, bool configurable) {
+			QSignalBlocker sb(ui->transitions);
+			ui->transitions->setCurrentIndex(ui->transitions->findData(uuid));
+
+			ui->transitionDurationLabel->setVisible(!fixed);
+			ui->transitionDuration->setVisible(!fixed);
+
+			ui->transitionRemove->setEnabled(configurable);
+			ui->transitionProps->setEnabled(configurable);
+		});
 
 	connect(ui->transitions, &QComboBox::currentIndexChanged, this,
-		[this]() { SetCurrentTransition(ui->transitions->currentData().toString()); });
+		[this]() { setCurrentTransition(ui->transitions->currentData().toString()); });
 
 	connect(this, &OBSBasic::TransitionDurationChanged, this, [this](int duration) {
 		QSignalBlocker sb(ui->transitionDuration);
