@@ -449,6 +449,7 @@ private:
 	QStringList extraCustomDockNames;
 	QList<QPointer<QDockWidget>> extraCustomDocks;
 
+	QPointer<OBSDock> transitionsDock;
 	QPointer<OBSDock> controlsDock;
 
 public:
@@ -1515,6 +1516,8 @@ private:
 
 	OBSSource prevFTBSource = nullptr;
 
+	bool transitionsControlLocked = false;
+
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
 	obs_source_t *FindTransition(const char *name);
@@ -1565,13 +1568,13 @@ public slots:
 	void TransitionToScene(OBSSource scene, bool force = false, bool quickTransition = false, int quickDuration = 0,
 			       bool black = false, bool manual = false);
 
-	void setCurrentTransition(const QString &uuid);
-
 	void SetTransitionDuration(int duration);
 
 private slots:
 	void AddTransition(const char *id);
 	void RenameTransition(OBSSource transition);
+
+	void setCurrentTransitionQString(const QString &uuid);
 
 	void TransitionClicked();
 	void TransitionStopped();
@@ -1581,14 +1584,16 @@ private slots:
 	void TBarChanged(int value);
 	void TBarReleased();
 
-	void on_transitionAdd_clicked();
-	void on_transitionRemove_clicked();
-	void on_transitionProps_clicked();
+	void createAddTransitionMenu();
+	void removeCurrentTransition();
+	void createCurrentTransitionPropertiesMenu();
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
 
 signals:
+	void transitionsControlChanged(bool locked);
+
 	void TransitionAdded(const QString &name, const QString &uuid);
 	void TransitionRenamed(const QString &uuid, const QString &newName);
 	void TransitionRemoved(const QString &uuid);

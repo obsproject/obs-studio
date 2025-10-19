@@ -22,6 +22,7 @@
 #include "ColorSelect.hpp"
 #include "OBSBasicControls.hpp"
 #include "OBSBasicStats.hpp"
+#include "OBSBasicTransitions.hpp"
 #include "plugin-manager/PluginManager.hpp"
 #include "VolControl.hpp"
 
@@ -287,6 +288,28 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		this, &OBSBasic::TransitionDurationChanged, this,
 		[this]() { OnEvent(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED); }, Qt::DirectConnection);
 
+	/* Add transitions dock */
+	OBSBasicTransitions *transitionsWidget = new OBSBasicTransitions(this);
+	transitionsDock = new OBSDock(this);
+	transitionsDock->setObjectName(QString::fromUtf8("transitionsDock"));
+	transitionsDock->setWindowTitle(QTStr("Basic.SceneTransitions"));
+	/* Parenting is done there so transitions will be deleted alongside transitionsDock */
+	transitionsDock->setWidget(transitionsWidget);
+	addDockWidget(Qt::BottomDockWidgetArea, transitionsDock);
+
+	connect(transitionsWidget, &OBSBasicTransitions::transitionChanged, this,
+		&OBSBasic::setCurrentTransitionQString);
+
+	connect(transitionsWidget, &OBSBasicTransitions::transitionDurationChanged, this,
+		&OBSBasic::SetTransitionDuration);
+
+	connect(transitionsWidget, &OBSBasicTransitions::addTransitionClicked, this,
+		&OBSBasic::createAddTransitionMenu);
+	connect(transitionsWidget, &OBSBasicTransitions::removeCurrentTransitionClicked, this,
+		&OBSBasic::removeCurrentTransition);
+	connect(transitionsWidget, &OBSBasicTransitions::currentTransitionPropertiesMenuClicked, this,
+		&OBSBasic::createCurrentTransitionPropertiesMenu);
+
 	/* Add controls dock */
 	OBSBasicControls *controls = new OBSBasicControls(this);
 	controlsDock = new OBSDock(this);
@@ -316,47 +339,6 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	connect(controls, &OBSBasicControls::StudioModeButtonClicked, this, &OBSBasic::TogglePreviewProgramMode);
 
 	connect(controls, &OBSBasicControls::SettingsButtonClicked, this, &OBSBasic::on_action_Settings_triggered);
-
-	/* Set up transitions combobox connections */
-	connect(this, &OBSBasic::TransitionAdded, this, [this](const QString &name, const QString &uuid) {
-		QSignalBlocker sb(ui->transitions);
-		ui->transitions->addItem(name, uuid);
-	});
-	connect(this, &OBSBasic::TransitionRenamed, this, [this](const QString &uuid, const QString &newName) {
-		QSignalBlocker sb(ui->transitions);
-		ui->transitions->setItemText(ui->transitions->findData(uuid), newName);
-	});
-	connect(this, &OBSBasic::TransitionRemoved, this, [this](const QString &uuid) {
-		QSignalBlocker sb(ui->transitions);
-		ui->transitions->removeItem(ui->transitions->findData(uuid));
-	});
-	connect(this, &OBSBasic::TransitionsCleared, this, [this]() {
-		QSignalBlocker sb(ui->transitions);
-		ui->transitions->clear();
-	});
-
-	connect(this, &OBSBasic::CurrentTransitionChanged, this,
-		[this](const QString &uuid, bool fixed, bool configurable) {
-			QSignalBlocker sb(ui->transitions);
-			ui->transitions->setCurrentIndex(ui->transitions->findData(uuid));
-
-			ui->transitionDurationLabel->setVisible(!fixed);
-			ui->transitionDuration->setVisible(!fixed);
-
-			ui->transitionRemove->setEnabled(configurable);
-			ui->transitionProps->setEnabled(configurable);
-		});
-
-	connect(ui->transitions, &QComboBox::currentIndexChanged, this,
-		[this]() { setCurrentTransition(ui->transitions->currentData().toString()); });
-
-	connect(this, &OBSBasic::TransitionDurationChanged, this, [this](int duration) {
-		QSignalBlocker sb(ui->transitionDuration);
-		ui->transitionDuration->setValue(duration);
-	});
-
-	connect(ui->transitionDuration, &QSpinBox::valueChanged, this,
-		[this](int value) { SetTransitionDuration(value); });
 
 	startingDockLayout = saveState();
 
@@ -524,7 +506,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	SETUP_DOCK(ui->scenesDock);
 	SETUP_DOCK(ui->sourcesDock);
 	SETUP_DOCK(ui->mixerDock);
-	SETUP_DOCK(ui->transitionsDock);
+	SETUP_DOCK(transitionsDock);
 	SETUP_DOCK(controlsDock);
 	SETUP_DOCK(statsDock);
 #undef SETUP_DOCK

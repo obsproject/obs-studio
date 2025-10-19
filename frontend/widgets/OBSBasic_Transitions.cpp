@@ -474,12 +474,15 @@ void OBSBasic::AddTransition(const char *id)
 	}
 }
 
-void OBSBasic::on_transitionAdd_clicked()
+void OBSBasic::createAddTransitionMenu()
 {
 	bool foundConfigurableTransitions = false;
 	QMenu menu(this);
 	size_t idx = 0;
 	const char *id;
+
+	if (transitionsControlLocked)
+		return;
 
 	while (obs_enum_transition_types(idx++, &id)) {
 		if (obs_is_source_configurable(id)) {
@@ -497,11 +500,14 @@ void OBSBasic::on_transitionAdd_clicked()
 		menu.exec(QCursor::pos());
 }
 
-void OBSBasic::on_transitionRemove_clicked()
+void OBSBasic::removeCurrentTransition()
 {
 	auto transitionIterator = transitions.find(currentTransitionUuid);
 	OBSSource tr;
 	const char *name;
+
+	if (transitionsControlLocked)
+		return;
 
 	if (transitionIterator == transitions.end())
 		return;
@@ -580,9 +586,12 @@ void OBSBasic::RenameTransition(OBSSource transition)
 	RefreshQuickTransitions();
 }
 
-void OBSBasic::on_transitionProps_clicked()
+void OBSBasic::createCurrentTransitionPropertiesMenu()
 {
 	OBSSource source = GetCurrentTransition();
+
+	if (transitionsControlLocked)
+		return;
 
 	if (!obs_source_configurable(source))
 		return;
@@ -1299,34 +1308,28 @@ void OBSBasic::RefreshQuickTransitions()
 
 void OBSBasic::EnableTransitionWidgets(bool enable)
 {
-	ui->transitions->setEnabled(enable);
+	if (IsPreviewProgramMode()) {
 
-	if (!enable) {
-		ui->transitionProps->setEnabled(false);
-	} else {
-		bool configurable = obs_source_configurable(GetCurrentTransition());
-		ui->transitionProps->setEnabled(configurable);
+		QVBoxLayout *programLayout = reinterpret_cast<QVBoxLayout *>(programOptions->layout());
+
+		for (int idx = 0;; idx++) {
+			QLayoutItem *item = programLayout->itemAt(idx);
+			if (!item)
+				break;
+
+			QPushButton *button = qobject_cast<QPushButton *>(item->widget());
+			if (!button)
+				continue;
+
+			button->setEnabled(enable);
+		}
+
+		if (transitionButton)
+			transitionButton->setEnabled(enable);
 	}
 
-	if (!IsPreviewProgramMode())
-		return;
-
-	QVBoxLayout *programLayout = reinterpret_cast<QVBoxLayout *>(programOptions->layout());
-
-	for (int idx = 0;; idx++) {
-		QLayoutItem *item = programLayout->itemAt(idx);
-		if (!item)
-			break;
-
-		QPushButton *button = qobject_cast<QPushButton *>(item->widget());
-		if (!button)
-			continue;
-
-		button->setEnabled(enable);
-	}
-
-	if (transitionButton)
-		transitionButton->setEnabled(enable);
+	transitionsControlLocked = !enable;
+	emit transitionsControlChanged(!enable);
 }
 
 obs_data_array_t *OBSBasic::SaveTransitions()
@@ -1447,7 +1450,7 @@ void OBSBasic::setCurrentTransition(const std::string &uuid)
 				      obs_source_configurable(transitionIter->second));
 }
 
-void OBSBasic::setCurrentTransition(const QString &uuid)
+void OBSBasic::setCurrentTransitionQString(const QString &uuid)
 {
 	auto transitionIter = transitions.find(uuid.toStdString());
 

@@ -270,8 +270,9 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		if (!previewEnabled)
 			EnablePreviewDisplay(false);
 
-		ui->transitions->setEnabled(true);
 		tBarActive = false;
+
+		emit transitionsControlChanged(transitionsControlLocked);
 
 		OnEvent(OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED);
 
