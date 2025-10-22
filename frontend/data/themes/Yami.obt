@@ -1435,6 +1435,19 @@ QToolButton:focus,
     background-color: var(--button_bg_hover);
 }
 
+QToolButton:checked,
+.btn-tool:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+QToolButton:checked:hover,
+QToolButton:checked:focus,
+.btn-tool:checked:hover,
+.btn-tool:checked:focus {
+    border-color: var(--primary_lighter);
+}
+
 QToolButton:pressed,
 QToolButton:pressed:hover,
 .btn-tool:pressed,
