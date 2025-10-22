@@ -1,12 +1,16 @@
 #pragma once
+#pragma once
 
 #include <Idian/Utils.hpp>
 
 #include <obs.hpp>
+#include <widgets/VolumeName.hpp>
+#include <components/VolumeSlider.hpp>
 
 #include <QFrame>
+#include <QPushButton>
+#include <QPushButton>
 
-class VolumeName;
 class VolumeMeter;
 class VolumeSlider;
 class MuteCheckBox;
@@ -22,6 +26,7 @@ enum class MixerStatus : uint32_t {
 	Pinned = 1 << 3,
 	Hidden = 1 << 4,
 	Unassigned = 1 << 5,
+	Preview = 1 << 6,
 };
 
 inline MixerStatus operator|(MixerStatus a, MixerStatus b)
@@ -46,11 +51,13 @@ class VolControl : public QFrame {
 private:
 	idian::Utils *utils;
 
-	OBSSource source;
-	QString uuid;
+	OBSWeakSource weakSource_;
+	const char *uuid;
 	std::vector<OBSSignal> sigs;
+
+	QBoxLayout *mainLayout;
 	QLabel *categoryLabel;
-	VolumeName *nameLabel;
+	VolumeName *nameButton;
 	QLabel *volLabel;
 	VolumeMeter *volMeter;
 	VolumeSlider *slider;
@@ -73,9 +80,13 @@ private:
 	static void obsMixersOrMonitoringChanged(void *data, calldata_t *);
 	static void obsSourceActivated(void *data, calldata_t *params);
 	static void obsSourceDeactivated(void *data, calldata_t *params);
+	static void obsSourceDestroy(void *data, calldata_t *params);
 
-	void showVolumeControlMenu();
+	void setLayoutVertical(bool vertical);
+	void showVolumeControlMenu(QPoint pos = QPoint(0, 0));
 	void updateCategoryLabel();
+	void updateDecayRate();
+	void updatePeakMeterType();
 
 	void setMuted(bool mute);
 	void setMonitoring(obs_monitoring_type type);
@@ -96,14 +107,16 @@ private slots:
 	void updateText();
 	void setName(QString name);
 
+	void handleSourceDestroyed() { deleteLater(); }
+
 signals:
 	void unhideAll();
 
 public:
-	explicit VolControl(OBSSource source, bool showConfig = false, bool vertical = false);
+	explicit VolControl(obs_source_t *source, bool vertical = false, QWidget *parent = nullptr);
 	~VolControl();
 
-	inline obs_source_t *getSource() const { return source; }
+	inline OBSWeakSource weakSource() const { return weakSource_; }
 	QString const &getCachedName() const { return sourceName; }
 
 	void setMeterDecayRate(qreal q);
@@ -116,6 +129,16 @@ public:
 	void setPinnedInMixer(bool pinned);
 	void setHideInMixer(bool hidden);
 	void setContextMenu(QMenu *cm) { contextMenu = cm; }
+
+	bool isVertical() const { return vertical; }
+	void setVertical(bool vertical);
+
+	void updateTabOrder();
+	QWidget *firstWidget() const { return static_cast<QWidget *>(nameButton); }
+	QWidget *lastWidget() const
+	{
+		return vertical ? static_cast<QWidget *>(monitorButton) : static_cast<QWidget *>(slider);
+	}
 
 	void updateName();
 	void refreshColors();
