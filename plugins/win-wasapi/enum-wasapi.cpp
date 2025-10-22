@@ -1,6 +1,7 @@
 #include "enum-wasapi.hpp"
 
 #include <util/base.h>
+#include <util/dstr.h>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
@@ -89,4 +90,36 @@ void GetWASAPIAudioDevices(vector<AudioDeviceInfo> &devices, bool input)
 	} catch (HRError &error) {
 		blog(LOG_WARNING, "[GetWASAPIAudioDevices] %s: %lX", error.str, error.hr);
 	}
+}
+
+IMMDevice *GetMMDeviceById(bool isDefaultDevice, const std::string &device_id, bool input)
+{
+	ComPtr<IMMDeviceEnumerator> enumerator;
+	ComPtr<IMMDevice> device;
+
+	HRESULT res = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
+				       (void **)enumerator.Assign());
+	if (FAILED(res))
+		return nullptr;
+
+	if (isDefaultDevice) {
+		HRESULT res = enumerator->GetDefaultAudioEndpoint(input ? eCapture : eRender,
+								  input ? eCommunications : eConsole, device.Assign());
+		if (FAILED(res))
+			return nullptr;
+	} else {
+		wchar_t *w_id;
+		os_utf8_to_wcs_ptr(device_id.c_str(), device_id.size(), &w_id);
+		if (!w_id)
+			throw "Failed to widen device id string";
+
+		const HRESULT res = enumerator->GetDevice(w_id, device.Assign());
+
+		bfree(w_id);
+
+		if (FAILED(res))
+			return nullptr;
+	}
+
+	return device.Detach();
 }
