@@ -3809,7 +3809,10 @@ static inline struct obs_audio_data *filter_async_audio(obs_source_t *source, st
 			continue;
 
 		if (filter->context.data && filter->info.filter_audio) {
+			const uint64_t start = source_profiler_source_audio_async_render_start();
+			const uint32_t frames = in->frames;
 			in = filter->info.filter_audio(filter->context.data, in);
+			source_profiler_source_audio_async_render_end(filter, start, frames);
 			if (!in)
 				return NULL;
 		}
@@ -3972,6 +3975,8 @@ void obs_source_output_audio(obs_source_t *source, const struct obs_source_audio
 	if (!obs_ptr_valid(audio_in, "obs_source_output_audio"))
 		return;
 
+	const uint64_t start = source_profiler_source_audio_async_render_start();
+
 	/* sets unused data pointers to NULL automatically because apparently
 	 * some filter plugins aren't checking the actual channel count, and
 	 * instead are checking to see whether the pointer is non-zero. */
@@ -4000,6 +4005,7 @@ void obs_source_output_audio(obs_source_t *source, const struct obs_source_audio
 	}
 
 	pthread_mutex_unlock(&source->filter_mutex);
+	source_profiler_source_audio_async_render_end(source, start, source->audio_data.frames);
 }
 
 void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)
