@@ -23,12 +23,13 @@
 
 #include "moc_VolumeName.cpp"
 
-VolumeName::VolumeName(const OBSSource source, QWidget *parent)
-	: QAbstractButton(parent),
-	  renamedSignal(obs_source_get_signal_handler(source), "rename", &VolumeName::obsSourceRenamed, this),
-	  removedSignal(obs_source_get_signal_handler(source), "remove", &VolumeName::obsSourceRemoved, this),
-	  destroyedSignal(obs_source_get_signal_handler(source), "destroy", &VolumeName::obsSourceDestroyed, this)
+VolumeName::VolumeName(obs_source_t *source, QWidget *parent) : QAbstractButton(parent)
 {
+	renamedSignal = OBSSignal(obs_source_get_signal_handler(source), "rename", &VolumeName::obsSourceRenamed, this);
+	removedSignal = OBSSignal(obs_source_get_signal_handler(source), "remove", &VolumeName::obsSourceRemoved, this);
+	destroyedSignal =
+		OBSSignal(obs_source_get_signal_handler(source), "destroy", &VolumeName::obsSourceDestroyed, this);
+
 	setText(obs_source_get_name(source));
 }
 
@@ -63,7 +64,7 @@ QSize VolumeName::sizeHint() const
 	const int spacing = style()->pixelMetric(QStyle::PM_ButtonMargin, &opt, this) / 2;
 	width += iconWidth + spacing;
 
-	QSize contents(width, height);
+	QSize contents(width - 4, height);
 	return style()->sizeFromContents(QStyle::CT_PushButton, &opt, contents, this);
 }
 

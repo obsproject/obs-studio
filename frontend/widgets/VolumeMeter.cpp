@@ -383,8 +383,9 @@ void VolumeMeter::wheelEvent(QWheelEvent *event)
 	QApplication::sendEvent(focusProxy(), event);
 }
 
-VolumeMeter::VolumeMeter(QWidget *parent, OBSSource source)
+VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 	: QWidget(parent),
+	  weakSource(OBSGetWeakRef(source)),
 	  obs_volmeter(obs_volmeter_create(OBS_FADER_LOG))
 {
 	setAttribute(Qt::WA_OpaquePaintEvent, true);
@@ -427,6 +428,9 @@ VolumeMeter::VolumeMeter(QWidget *parent, OBSSource source)
 	obs_volmeter_add_callback(obs_volmeter, obsVolumeLevel, this);
 	obs_volmeter_attach_source(obs_volmeter, source);
 
+	destroyedSignal =
+		OBSSignal(obs_source_get_signal_handler(source), "destroy", &VolumeMeter::obsSourceDestroyed, this);
+
 	doLayout();
 	updateTimerRef = updateTimer.lock();
 	if (!updateTimerRef) {
@@ -444,6 +448,12 @@ VolumeMeter::~VolumeMeter()
 	obs_volmeter_remove_callback(obs_volmeter, obsVolumeLevel, this);
 	obs_volmeter_detach_source(obs_volmeter);
 	updateTimerRef->RemoveVolControl(this);
+}
+
+void VolumeMeter::obsSourceDestroyed(void *data, calldata_t *)
+{
+	VolumeMeter *self = static_cast<VolumeMeter *>(data);
+	QMetaObject::invokeMethod(self, "handleSourceDestroyed", Qt::QueuedConnection);
 }
 
 void VolumeMeter::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],

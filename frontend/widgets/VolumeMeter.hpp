@@ -67,12 +67,16 @@ class VolumeMeter : public QWidget {
 	friend class VolControl;
 
 private:
+	OBSWeakSource weakSource;
 	OBSVolMeter obs_volmeter;
 	static std::weak_ptr<VolumeMeterTimer> updateTimer;
 	std::shared_ptr<VolumeMeterTimer> updateTimerRef;
 
 	static void obsVolumeLevel(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
 				   const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS]);
+
+	OBSSignal destroyedSignal;
+	static void obsSourceDestroyed(void *data, calldata_t *);
 
 	inline void resetLevels();
 	inline void doLayout();
@@ -154,7 +158,7 @@ private:
 	bool useDisabledColors = false;
 
 public:
-	explicit VolumeMeter(QWidget *parent = nullptr, OBSSource source = nullptr);
+	explicit VolumeMeter(QWidget *parent = nullptr, obs_source_t *source = nullptr);
 	~VolumeMeter();
 
 	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
@@ -228,4 +232,7 @@ public:
 protected:
 	void paintEvent(QPaintEvent *event) override;
 	void changeEvent(QEvent *e) override;
+
+private slots:
+	void handleSourceDestroyed() { deleteLater(); }
 };
