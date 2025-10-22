@@ -26,7 +26,7 @@ class VolumeName : public QAbstractButton {
 	Q_PROPERTY(Qt::Alignment textAlignment READ alignment WRITE setAlignment)
 
 public:
-	VolumeName(const obs_source_t *source, QWidget *parent = nullptr);
+	VolumeName(obs_source_t *source, QWidget *parent = nullptr);
 	~VolumeName();
 
 	void setAlignment(Qt::Alignment alignment);

@@ -28,6 +28,8 @@
 #include <QStackedWidget>
 #include <QScrollArea>
 
+#include <unordered_set>
+
 class AudioMixer : public QFrame {
 	Q_OBJECT
 
@@ -41,7 +43,6 @@ public:
 	~AudioMixer();
 
 	void refreshVolumeColors();
-	void reloadVolumeControls();
 
 	void setMixerLayoutVertical(bool vertical);
 	void showMixerContextMenu();
@@ -50,7 +51,15 @@ private:
 	idian::Utils *utils;
 
 	std::vector<OBSSignal> signalHandlers;
-	std::vector<OBSSource> globalSources;
+	static void onFrontendEvent(enum obs_frontend_event event, void *data);
+	void handleFrontendEvent(enum obs_frontend_event event);
+
+	std::unordered_map<QString, QPointer<VolControl>> volumeList;
+	void addControlForUuid(QString uuid);
+	void removeControlForUuid(QString uuid);
+
+	std::unordered_set<QString> globalSources;
+	std::unordered_set<QString> previewSources;
 	bool mixerVertical = false;
 
 	int hiddenCount = 0;
@@ -83,12 +92,15 @@ private:
 	QWidget *vVolumeWidgets = nullptr;
 	QHBoxLayout *vVolControlLayout = nullptr;
 
-	std::vector<VolControl *> volumes;
+	QBoxLayout *activeLayout() const;
 
-	void updateGlobalSources();
-	bool isSourceGlobal(OBSSource source);
-	void updateDecayRate();
-	void updatePeakMeterType();
+	void reloadVolumeControls();
+	bool getMixerVisibilityForControl(VolControl *widget);
+
+	void addPreviewSource(const char *uuid);
+	void clearPreviewSources();
+	bool isSourcePreviewed(obs_source_t *source);
+	bool isSourceGlobal(obs_source_t *source);
 	void clearVolumeControls();
 	void updateShowInactive();
 	void updateKeepInactiveRight();
@@ -108,13 +120,15 @@ private:
 	static void obsSourceRename(void *data, calldata_t *params);
 
 private slots:
+	void sourceCreated(QString uuid);
+	void sourceRemoved(QString uuid);
+	void updatePreviewSources();
+	void updateGlobalSources();
 	void unhideAllAudioControls();
 	void queueLayoutUpdate();
 
-	void createVolumeControl(OBSSource source);
-	void deleteVolumeControl(OBSSource source);
-	void showVolumeControl(OBSSource source);
-	void hideVolumeControl(OBSSource source);
+	VolControl *createVolumeControl(obs_source_t *source);
+	void updateControlVisibility(std::string uuid);
 
 	void toggleLayout();
 	void toggleShowInactive(bool checked);

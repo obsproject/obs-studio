@@ -10,6 +10,7 @@
 #include <QMessageBox>
 
 #include "moc_VolControl.cpp"
+#include <QObjectCleanupHandler>
 
 namespace {
 bool isSourceUnassigned(obs_source_t *source)
@@ -44,70 +45,134 @@ void showUnassignedWarning(const char *name)
 }
 } // namespace
 
+VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
+	: weakSource_(OBSGetWeakRef(source)),
+	  levelTotal(0.0f),
+	  levelCount(0.0f),
+	  obs_fader(obs_fader_create(OBS_FADER_LOG)),
+	  vertical(vertical),
+	  contextMenu(nullptr),
+	  QFrame(parent)
+{
+	utils = new idian::Utils(this);
+
+	uuid = obs_source_get_uuid(source);
+
+	mainLayout = new QBoxLayout(QBoxLayout::LeftToRight, this);
+	mainLayout->setContentsMargins(0, 0, 0, 0);
+	mainLayout->setSpacing(0);
+	setLayout(mainLayout);
+
+	categoryLabel = new QLabel("Active");
+	categoryLabel->setAlignment(Qt::AlignCenter);
+	utils->addClass(categoryLabel, "mixer-category");
+	utils->addClass(categoryLabel, "text-tiny");
+
+	nameButton = new VolumeName(source, this);
+	utils->addClass(nameButton, "text-small");
+	utils->addClass(nameButton, "mixer-name");
+
+	muteButton = new QPushButton(this);
+	muteButton->setCheckable(true);
+	utils->addClass(muteButton, "btn-mute");
+
+	monitorButton = new QPushButton(this);
+	monitorButton->setCheckable(true);
+	utils->addClass(monitorButton, "btn-monitor");
+
+	volLabel = new QLabel(this);
+	volLabel->setObjectName("volLabel");
+
+	slider = new VolumeSlider(obs_fader, Qt::Horizontal, this);
+	slider->setMinimum(0);
+	slider->setMaximum(int(FADER_PRECISION));
+
+	sourceName = obs_source_get_name(source);
+	setObjectName(sourceName);
+
+	utils->applyStateStylingEventFilter(muteButton);
+	utils->applyStateStylingEventFilter(monitorButton);
+
+	volMeter = new VolumeMeter(this, source);
+
+	bool muted = obs_source_muted(source);
+	bool unassigned = isSourceUnassigned(source);
+
+	volMeter->muted = muted || unassigned;
+
+	setLayoutVertical(vertical);
+	setName(sourceName);
+
+	obs_fader_add_callback(obs_fader, obsVolumeChanged, this);
+
+	sigs.emplace_back(obs_source_get_signal_handler(source), "mute", obsVolumeMuted, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_mixers", obsMixersOrMonitoringChanged, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_monitoring", obsMixersOrMonitoringChanged,
+			  this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "activate", VolControl::obsSourceActivated, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "deactivate", VolControl::obsSourceDeactivated, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_activate", VolControl::obsSourceActivated,
+			  this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_deactivate", VolControl::obsSourceDeactivated,
+			  this);
+
+	sigs.emplace_back(obs_source_get_signal_handler(source), "remove", VolControl::obsSourceDestroy, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "destroy", VolControl::obsSourceDestroy, this);
+
+	setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this, &QWidget::customContextMenuRequested, this, &VolControl::showVolumeControlMenu);
+
+	connect(nameButton, &VolumeName::renamed, this, &VolControl::setName);
+	connect(nameButton, &VolumeName::clicked, this, [&]() { showVolumeControlMenu(); });
+
+	connect(slider, &VolumeSlider::valueChanged, this, &VolControl::sliderChanged);
+	connect(muteButton, &QPushButton::clicked, this, &VolControl::handleMuteButton);
+	connect(monitorButton, &QPushButton::clicked, this, &VolControl::handleMonitorButton);
+
+	OBSBasic *main = OBSBasic::Get();
+	if (main) {
+		connect(main, &OBSBasic::profileSettingChanged, this,
+			[this](const std::string &category, const std::string &name) {
+				if (category == "Audio" && name == "MeterDecayRate") {
+					updateDecayRate();
+				} else if (category == "Audio" && name == "PeakMeterType") {
+					updatePeakMeterType();
+				}
+			});
+	}
+
+	obs_fader_attach_source(obs_fader, source);
+
+	/* Call volume changed once to init the slider position and label */
+	changeVolume();
+
+	updateMixerState();
+	updateCategoryLabel();
+}
+
+VolControl::~VolControl()
+{
+	obs_fader_remove_callback(obs_fader, obsVolumeChanged, this);
+
+	sigs.clear();
+
+	if (contextMenu) {
+		contextMenu->close();
+	}
+}
+
 void VolControl::obsVolumeChanged(void *data, float)
 {
 	VolControl *volControl = static_cast<VolControl *>(data);
 
-	QMetaObject::invokeMethod(volControl, "changeVolume");
+	QMetaObject::invokeMethod(volControl, "changeVolume", Qt::QueuedConnection);
 }
 
 void VolControl::obsVolumeMuted(void *data, calldata_t *)
 {
 	VolControl *volControl = static_cast<VolControl *>(data);
 
-	QMetaObject::invokeMethod(volControl, "updateMixerState");
-}
-
-void VolControl::renameSource()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
-	const char *prevName = obs_source_get_name(source);
-
-	for (;;) {
-		std::string name;
-		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.MixerRename.Title"),
-						       QTStr("Basic.Main.MixerRename.Text"), name, QT_UTF8(prevName));
-		if (!accepted) {
-			return;
-		}
-
-		if (name.empty()) {
-			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
-			continue;
-		}
-
-		OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
-
-		if (sourceTest) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
-			continue;
-		}
-
-		obs_source_set_name(source, name.c_str());
-		break;
-	}
-}
-
-void VolControl::changeVolume()
-{
-	QSignalBlocker blocker(slider);
-	slider->setValue((int)(obs_fader_get_deflection(obs_fader) * FADER_PRECISION));
-
-	updateText();
-}
-
-void VolControl::setLocked(bool locked)
-{
-	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
-	obs_data_set_bool(priv_settings, "volume_locked", locked);
-
-	enableSlider(!locked);
-	setMixerFlag(OBS::MixerStatus::Locked, locked);
-
-	OBSBasic *main = OBSBasic::Get();
-	emit main->mixerStatusChanged(uuid);
+	QMetaObject::invokeMethod(volControl, "updateMixerState", Qt::QueuedConnection);
 }
 
 void VolControl::obsMixersOrMonitoringChanged(void *data, calldata_t *)
@@ -118,19 +183,168 @@ void VolControl::obsMixersOrMonitoringChanged(void *data, calldata_t *)
 
 void VolControl::obsSourceActivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "sourceActiveChanged", Q_ARG(bool, true));
+	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
+				  Q_ARG(bool, true));
 }
 
 void VolControl::obsSourceDeactivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "sourceActiveChanged", Q_ARG(bool, false));
+	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
+				  Q_ARG(bool, false));
 }
 
-void VolControl::showVolumeControlMenu()
+void VolControl::obsSourceDestroy(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "handleSourceDestroyed", Qt::QueuedConnection);
+}
+
+void VolControl::setLayoutVertical(bool vertical)
+{
+	QBoxLayout *newLayout = new QBoxLayout(vertical ? QBoxLayout::TopToBottom : QBoxLayout::LeftToRight);
+	newLayout->setContentsMargins(0, 0, 0, 0);
+	newLayout->setSpacing(0);
+
+	if (vertical) {
+		setMaximumWidth(120);
+		setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+		QHBoxLayout *categoryLayout = new QHBoxLayout;
+		QHBoxLayout *nameLayout = new QHBoxLayout;
+		QHBoxLayout *controlLayout = new QHBoxLayout;
+		QHBoxLayout *volLayout = new QHBoxLayout;
+		QFrame *meterFrame = new QFrame;
+		QHBoxLayout *meterLayout = new QHBoxLayout;
+
+		volMeter->setVertical(true);
+		volMeter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+
+		slider->setOrientation(Qt::Vertical);
+		slider->setLayoutDirection(Qt::LeftToRight);
+		slider->setDisplayTicks(true);
+
+		nameButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+		categoryLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+		volLabel->setAlignment(Qt::AlignLeft);
+
+		categoryLayout->setAlignment(Qt::AlignCenter);
+		nameLayout->setAlignment(Qt::AlignCenter);
+		meterLayout->setAlignment(Qt::AlignCenter);
+		controlLayout->setAlignment(Qt::AlignCenter);
+		volLayout->setAlignment(Qt::AlignCenter);
+
+		meterFrame->setObjectName("volMeterFrame");
+
+		categoryLayout->setContentsMargins(0, 0, 0, 0);
+		categoryLayout->setSpacing(0);
+		categoryLayout->addWidget(categoryLabel);
+
+		nameLayout->setContentsMargins(0, 0, 0, 0);
+		nameLayout->setSpacing(0);
+		nameLayout->addWidget(nameButton);
+
+		controlLayout->setContentsMargins(0, 0, 0, 0);
+		controlLayout->setSpacing(0);
+
+		// Add Headphone (audio monitoring) widget here
+		controlLayout->addWidget(muteButton);
+		controlLayout->addWidget(monitorButton);
+
+		meterLayout->setContentsMargins(0, 0, 0, 0);
+		meterLayout->setSpacing(0);
+		meterLayout->addWidget(slider);
+		meterLayout->addWidget(volMeter);
+
+		meterFrame->setLayout(meterLayout);
+
+		volLayout->setContentsMargins(0, 0, 0, 0);
+		volLayout->setSpacing(0);
+		volLayout->addWidget(volLabel);
+		volLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Maximum));
+
+		newLayout->addItem(categoryLayout);
+		newLayout->addItem(nameLayout);
+		newLayout->addItem(volLayout);
+		newLayout->addWidget(meterFrame);
+		newLayout->addItem(controlLayout);
+
+		newLayout->setStretch(0, 0);
+		newLayout->setStretch(1, 0);
+		newLayout->setStretch(2, 0);
+		newLayout->setStretch(3, 1);
+		newLayout->setStretch(4, 0);
+
+		volMeter->setFocusProxy(slider);
+	} else {
+		setMaximumWidth(QWIDGETSIZE_MAX);
+		setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+
+		QVBoxLayout *textLayout = new QVBoxLayout;
+		QHBoxLayout *controlLayout = new QHBoxLayout;
+		QFrame *meterFrame = new QFrame;
+		QVBoxLayout *meterLayout = new QVBoxLayout;
+		QVBoxLayout *buttonLayout = new QVBoxLayout;
+
+		volMeter->setVertical(false);
+		volMeter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+
+		slider->setOrientation(Qt::Horizontal);
+		slider->setLayoutDirection(Qt::LeftToRight);
+		slider->setDisplayTicks(true);
+
+		nameButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+		categoryLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+		volLabel->setAlignment(Qt::AlignRight);
+
+		QHBoxLayout *textTopLayout = new QHBoxLayout;
+		textTopLayout->setContentsMargins(0, 0, 0, 0);
+		textTopLayout->addWidget(categoryLabel);
+		textTopLayout->addWidget(volLabel);
+
+		textLayout->setContentsMargins(0, 0, 0, 0);
+		textLayout->addItem(textTopLayout);
+		textLayout->addWidget(nameButton);
+
+		meterFrame->setObjectName("volMeterFrame");
+		meterFrame->setLayout(meterLayout);
+
+		meterLayout->setContentsMargins(0, 0, 0, 0);
+		meterLayout->setSpacing(0);
+
+		meterLayout->addWidget(slider);
+		meterLayout->addWidget(volMeter);
+		meterLayout->setStretch(0, 2);
+		meterLayout->setStretch(1, 2);
+
+		buttonLayout->setContentsMargins(0, 0, 0, 0);
+		buttonLayout->setSpacing(0);
+
+		//buttonLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
+		buttonLayout->addWidget(muteButton);
+		buttonLayout->addWidget(monitorButton);
+
+		controlLayout->addItem(buttonLayout);
+		controlLayout->addWidget(meterFrame);
+
+		newLayout->addItem(textLayout);
+		newLayout->addItem(controlLayout);
+		newLayout->setStretch(0, 3);
+		newLayout->setStretch(1, 6);
+
+		volMeter->setFocusProxy(slider);
+	}
+
+	QWidget().setLayout(mainLayout);
+
+	setLayout(newLayout);
+	mainLayout = newLayout;
+	updateTabOrder();
+
+	adjustSize();
+}
+
+void VolControl::showVolumeControlMenu(QPoint pos)
 {
 	QMenu popup;
-
-	OBSSource source = getSource();
 
 	/* ------------------- */
 
@@ -167,6 +381,11 @@ void VolControl::showVolumeControlMenu()
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
 
 	/* ------------------- */
+
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
 
 	hideAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
 	pinAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
@@ -233,36 +452,120 @@ void VolControl::showVolumeControlMenu()
 	popup.addAction(&filtersAction);
 	popup.addAction(&propertiesAction);
 
+	QPoint popupPos = mapToGlobal(pos);
+
+	if (pos.isNull()) {
+		QPoint menuPos = nameButton->mapToGlobal(nameButton->rect().bottomLeft());
+		QSize menuSize = popup.sizeHint();
+
+		QRect available = QGuiApplication::screenAt(menuPos)->availableGeometry();
+		int spaceBelow = available.bottom() - menuPos.y();
+		int spaceAbove = menuPos.y() - available.top();
+
+		if (menuSize.height() > spaceBelow && spaceAbove > spaceBelow) {
+			menuPos = nameButton->mapToGlobal(nameButton->rect().topLeft());
+			menuPos.ry() -= menuSize.height();
+		}
+
+		if (menuPos.x() + menuSize.width() > available.right()) {
+			menuPos.rx() = available.right() - menuSize.width();
+		}
+
+		popupPos = menuPos;
+	}
+
 	// toggleControlLayoutAction deletes and re-creates the volume controls
 	// meaning that "vol" would be pointing to freed memory.
-	if (popup.exec(QCursor::pos()) != &toggleControlLayoutAction) {
+	if (popup.exec(popupPos) != &toggleControlLayoutAction) {
 		//vol->SetContextMenu(nullptr);
 	}
 }
 
+void VolControl::renameSource()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	obs_source_t *source = action->property("source").value<OBSSource>();
+
+	const char *prevName = obs_source_get_name(source);
+
+	for (;;) {
+		std::string name;
+		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.MixerRename.Title"),
+						       QTStr("Basic.Main.MixerRename.Text"), name, QT_UTF8(prevName));
+		if (!accepted) {
+			return;
+		}
+
+		if (name.empty()) {
+			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
+			continue;
+		}
+
+		OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
+
+		if (sourceTest) {
+			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
+			continue;
+		}
+
+		obs_source_set_name(source, name.c_str());
+		break;
+	}
+}
+
+void VolControl::changeVolume()
+{
+	QSignalBlocker blocker(slider);
+	slider->setValue((int)(obs_fader_get_deflection(obs_fader) * FADER_PRECISION));
+
+	updateText();
+}
+
+void VolControl::setLocked(bool locked)
+{
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
+	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
+	obs_data_set_bool(priv_settings, "volume_locked", locked);
+
+	enableSlider(!locked);
+	setMixerFlag(OBS::MixerStatus::Locked, locked);
+
+	OBSBasic *main = OBSBasic::Get();
+	emit main->mixerStatusChanged(uuid);
+}
+
 void VolControl::updateCategoryLabel()
 {
-	QString labelText = "Active";
+	QString labelText = QTStr("Basic.AudioMixer.Category.Active");
 
 	if (hasMixerFlag(OBS::MixerStatus::Unassigned)) {
-		labelText = "Unassigned";
+		labelText = QTStr("Basic.AudioMixer.Category.Unassigned");
 	} else if (hasMixerFlag(OBS::MixerStatus::Global)) {
-		labelText = "Global";
+		labelText = QTStr("Basic.AudioMixer.Category.Global");
 	} else if (hasMixerFlag(OBS::MixerStatus::Pinned)) {
-		labelText = "Pinned";
+		labelText = QTStr("Basic.AudioMixer.Category.Pinned");
 	} else if (hasMixerFlag(OBS::MixerStatus::Hidden)) {
-		labelText = "Hidden";
+		labelText = QTStr("Basic.AudioMixer.Category.Hidden");
 	} else if (!hasMixerFlag(OBS::MixerStatus::Active)) {
-		labelText = "Inactive";
+		labelText = QTStr("Basic.AudioMixer.Category.Inactive");
+
+		if (hasMixerFlag(OBS::MixerStatus::Preview)) {
+			labelText = QTStr("Basic.AudioMixer.Category.Preview");
+		}
 	}
 
 	bool stylePinned = hasMixerFlag(OBS::MixerStatus::Global) || hasMixerFlag(OBS::MixerStatus::Pinned);
-	bool styleInactive = !hasMixerFlag(OBS::MixerStatus::Active);
+	bool styleInactive = hasMixerFlag(OBS::MixerStatus::Active) != true;
 	bool styleHidden = hasMixerFlag(OBS::MixerStatus::Hidden);
 	bool styleUnassigned = hasMixerFlag(OBS::MixerStatus::Unassigned);
+	bool stylePreviewed = hasMixerFlag(OBS::MixerStatus::Preview);
 
 	utils->toggleClass(this, "volume-pinned", stylePinned);
 	utils->toggleClass(this, "volume-inactive", styleInactive);
+	utils->toggleClass(this, "volume-preview", styleInactive && stylePreviewed);
 	utils->toggleClass(this, "volume-hidden", styleHidden && !stylePinned);
 	utils->toggleClass(this, "volume-unassigned", styleUnassigned);
 
@@ -271,8 +574,42 @@ void VolControl::updateCategoryLabel()
 	utils->polishChildren(this);
 }
 
+void VolControl::updateDecayRate()
+{
+	OBSBasic *main = OBSBasic::Get();
+	double meterDecayRate = config_get_double(main->Config(), "Audio", "MeterDecayRate");
+
+	setMeterDecayRate(meterDecayRate);
+}
+
+void VolControl::updatePeakMeterType()
+{
+	OBSBasic *main = OBSBasic::Get();
+	uint32_t peakMeterTypeIdx = config_get_uint(main->Config(), "Audio", "PeakMeterType");
+
+	enum obs_peak_meter_type peakMeterType;
+	switch (peakMeterTypeIdx) {
+	case 0:
+		peakMeterType = SAMPLE_PEAK_METER;
+		break;
+	case 1:
+		peakMeterType = TRUE_PEAK_METER;
+		break;
+	default:
+		peakMeterType = SAMPLE_PEAK_METER;
+		break;
+	}
+
+	setPeakMeterType(peakMeterType);
+}
+
 void VolControl::setMuted(bool mute)
 {
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
+
 	bool prev = obs_source_muted(source);
 	bool unassigned = isSourceUnassigned(source);
 
@@ -296,13 +633,17 @@ void VolControl::setMuted(bool mute)
 	QString text = QTStr(mute ? "Undo.Volume.Mute" : "Undo.Volume.Unmute");
 
 	const char *name = obs_source_get_name(source);
-	const char *uuid = obs_source_get_uuid(source);
 	OBSBasic::Get()->undo_s.add_action(text.arg(name), std::bind(undo_redo, std::placeholders::_1, prev),
 					   std::bind(undo_redo, std::placeholders::_1, mute), uuid, uuid);
 }
 
 void VolControl::setMonitoring(obs_monitoring_type type)
 {
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
+
 	obs_monitoring_type prevMonitoringType = obs_source_get_monitoring_type(source);
 	obs_source_set_monitoring_type(source, type);
 
@@ -314,7 +655,6 @@ void VolControl::setMonitoring(obs_monitoring_type type)
 	QString text = QTStr("Undo.MonitoringType.Change");
 
 	const char *name = obs_source_get_name(source);
-	const char *uuid = obs_source_get_uuid(source);
 	OBSBasic::Get()->undo_s.add_action(text.arg(name),
 					   std::bind(undo_redo, std::placeholders::_1, prevMonitoringType),
 					   std::bind(undo_redo, std::placeholders::_1, type), uuid, uuid);
@@ -331,6 +671,12 @@ void VolControl::sourceActiveChanged(bool active)
 
 void VolControl::updateMixerState()
 {
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		deleteLater();
+		return;
+	}
+
 	bool muted = obs_source_muted(source);
 	bool unassigned = isSourceUnassigned(source);
 	obs_monitoring_type monitoringType = obs_source_get_monitoring_type(source);
@@ -397,6 +743,11 @@ void VolControl::updateMixerState()
 
 void VolControl::handleMuteButton(bool mute)
 {
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
+
 	// The Mute and Monitor buttons in the volume mixer work as a pseudo quad-state toggle.
 	// Both buttons must be in their "off" state in order to actually process it as a mute.
 	// Otherwise, clicking "Mute" with monitoring enabled will toggle the monitoring type.
@@ -413,6 +764,11 @@ void VolControl::handleMuteButton(bool mute)
 
 void VolControl::handleMonitorButton(bool enableMonitoring)
 {
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
+
 	// The Mute and Monitor buttons in the volume mixer work as a pseudo quad-state toggle.
 	// The source is only ever actually "Muted" if Monitoring is set to None.
 	obs_monitoring_type monitoringType = obs_source_get_monitoring_type(source);
@@ -434,6 +790,11 @@ void VolControl::handleMonitorButton(bool enableMonitoring)
 
 void VolControl::sliderChanged(int vol)
 {
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
+
 	float prev = obs_source_get_volume(source);
 
 	obs_fader_set_deflection(obs_fader, float(vol) / FADER_PRECISION);
@@ -446,7 +807,6 @@ void VolControl::sliderChanged(int vol)
 
 	float val = obs_source_get_volume(source);
 	const char *name = obs_source_get_name(source);
-	const char *uuid = obs_source_get_uuid(source);
 	OBSBasic::Get()->undo_s.add_action(QTStr("Undo.Volume.Change").arg(name),
 					   std::bind(undo_redo, std::placeholders::_1, prev),
 					   std::bind(undo_redo, std::placeholders::_1, val), uuid, uuid, true);
@@ -457,12 +817,18 @@ void VolControl::updateText()
 	QString text;
 	float db = obs_fader_get_db(obs_fader);
 
-	if (db < -96.0f)
+	if (db < -96.0f) {
 		text = "-inf dB";
-	else
+	} else {
 		text = QString::number(db, 'f', 1).append(" dB");
+	}
 
 	volLabel->setText(text);
+
+	OBSSource source = OBSGetStrongRef(weakSource());
+	if (!source) {
+		return;
+	}
 
 	bool muted = obs_source_muted(source);
 	const char *accTextLookup = muted ? "VolControl.SliderMuted" : "VolControl.SliderUnmuted";
@@ -471,6 +837,37 @@ void VolControl::updateText()
 	QString accText = QTStr(accTextLookup).arg(sourceName);
 
 	slider->setAccessibleName(accText);
+}
+
+void VolControl::setVertical(bool vertical_)
+{
+	if (vertical == vertical_) {
+		return;
+	}
+
+	vertical = vertical_;
+
+	setLayoutVertical(vertical);
+}
+
+void VolControl::updateTabOrder()
+{
+	QWidget *prevFocus = firstWidget()->previousInFocusChain();
+	QWidget *lastFocus = lastWidget()->nextInFocusChain();
+
+	if (vertical) {
+		setTabOrder(prevFocus, nameButton);
+		setTabOrder(nameButton, slider);
+		setTabOrder(slider, muteButton);
+		setTabOrder(muteButton, monitorButton);
+		setTabOrder(monitorButton, lastFocus);
+	} else {
+		setTabOrder(prevFocus, nameButton);
+		setTabOrder(nameButton, muteButton);
+		setTabOrder(muteButton, monitorButton);
+		setTabOrder(monitorButton, slider);
+		setTabOrder(slider, lastFocus);
+	}
 }
 
 void VolControl::updateName()
@@ -493,209 +890,6 @@ void VolControl::setMeterDecayRate(qreal q)
 void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 {
 	volMeter->setPeakMeterType(peakMeterType);
-}
-
-VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
-	: source(std::move(source_)),
-	  levelTotal(0.0f),
-	  levelCount(0.0f),
-	  obs_fader(obs_fader_create(OBS_FADER_LOG)),
-	  vertical(vertical),
-	  contextMenu(nullptr)
-{
-	utils = new idian::Utils(this);
-
-	uuid = obs_source_get_uuid(source);
-
-	categoryLabel = new QLabel("Active");
-	utils->addClass(categoryLabel, "mixer-category");
-	utils->addClass(categoryLabel, "text-tiny");
-	categoryLabel->setAlignment(Qt::AlignCenter);
-	categoryLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-	nameLabel = new VolumeName(source, this);
-	nameLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-	utils->addClass(nameLabel, "text-small");
-	utils->addClass(nameLabel, "mixer-name");
-	volLabel = new QLabel(this);
-	muteButton = new QPushButton(this);
-	muteButton->setCheckable(true);
-	utils->addClass(muteButton, "btn-mute");
-	monitorButton = new QPushButton(this);
-	monitorButton->setCheckable(true);
-	utils->addClass(monitorButton, "btn-monitor");
-
-	volLabel->setObjectName("volLabel");
-	volLabel->setAlignment(Qt::AlignCenter);
-
-	sourceName = obs_source_get_name(source);
-	setObjectName(sourceName);
-
-	utils->applyStateStylingEventFilter(muteButton);
-	utils->applyStateStylingEventFilter(monitorButton);
-
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->setContentsMargins(0, 0, 0, 0);
-	mainLayout->setSpacing(0);
-
-	if (vertical) {
-		setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-		QHBoxLayout *categoryLayout = new QHBoxLayout;
-		QHBoxLayout *nameLayout = new QHBoxLayout;
-		QHBoxLayout *controlLayout = new QHBoxLayout;
-		QHBoxLayout *volLayout = new QHBoxLayout;
-		QFrame *meterFrame = new QFrame;
-		QHBoxLayout *meterLayout = new QHBoxLayout;
-
-		volMeter = new VolumeMeter(this, source);
-		volMeter->setVertical();
-		slider = new VolumeSlider(obs_fader, Qt::Vertical);
-		slider->setLayoutDirection(Qt::LeftToRight);
-		slider->setDisplayTicks(true);
-
-		nameLabel->setAlignment(Qt::AlignCenter);
-
-		categoryLayout->setAlignment(Qt::AlignCenter);
-		nameLayout->setAlignment(Qt::AlignCenter);
-		meterLayout->setAlignment(Qt::AlignCenter);
-		controlLayout->setAlignment(Qt::AlignCenter);
-		volLayout->setAlignment(Qt::AlignCenter);
-
-		meterFrame->setObjectName("volMeterFrame");
-
-		categoryLayout->setContentsMargins(0, 0, 0, 0);
-		categoryLayout->setSpacing(0);
-		categoryLayout->addWidget(categoryLabel);
-
-		nameLayout->setContentsMargins(0, 0, 0, 0);
-		nameLayout->setSpacing(0);
-		nameLayout->addWidget(nameLabel);
-
-		controlLayout->setContentsMargins(0, 0, 0, 0);
-		controlLayout->setSpacing(0);
-
-		// Add Headphone (audio monitoring) widget here
-		controlLayout->addWidget(muteButton);
-		controlLayout->addWidget(monitorButton);
-
-		if (showConfig) {
-			// controlLayout->addWidget(config);
-		}
-
-		meterLayout->setContentsMargins(0, 0, 0, 0);
-		meterLayout->setSpacing(0);
-		meterLayout->addWidget(slider);
-		meterLayout->addWidget(volMeter);
-
-		meterFrame->setLayout(meterLayout);
-
-		volLayout->setContentsMargins(0, 0, 0, 0);
-		volLayout->setSpacing(0);
-		volLayout->addWidget(volLabel);
-		volLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Maximum));
-
-		mainLayout->addItem(categoryLayout);
-		mainLayout->addItem(nameLayout);
-		mainLayout->addItem(volLayout);
-		mainLayout->addWidget(meterFrame);
-		mainLayout->addItem(controlLayout);
-
-		volMeter->setFocusProxy(slider);
-
-		setMaximumWidth(120);
-	} else {
-		QHBoxLayout *textLayout = new QHBoxLayout;
-		QHBoxLayout *controlLayout = new QHBoxLayout;
-		QFrame *meterFrame = new QFrame;
-		QVBoxLayout *meterLayout = new QVBoxLayout;
-		QVBoxLayout *buttonLayout = new QVBoxLayout;
-
-		volMeter = new VolumeMeter(this, source);
-		volMeter->setVertical(false);
-		volMeter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-
-		slider = new VolumeSlider(obs_fader, Qt::Horizontal);
-		slider->setLayoutDirection(Qt::LeftToRight);
-		slider->setDisplayTicks(true);
-
-		nameLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-		categoryLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-		textLayout->setContentsMargins(0, 0, 0, 0);
-		textLayout->addWidget(categoryLabel);
-		textLayout->addWidget(nameLabel);
-		textLayout->addWidget(volLabel);
-
-		meterFrame->setObjectName("volMeterFrame");
-		meterFrame->setLayout(meterLayout);
-
-		meterLayout->setContentsMargins(0, 0, 0, 0);
-		meterLayout->setSpacing(0);
-
-		meterLayout->addWidget(volMeter);
-		meterLayout->addWidget(slider);
-
-		buttonLayout->setContentsMargins(0, 0, 0, 0);
-		buttonLayout->setSpacing(0);
-
-		if (showConfig) {
-			// buttonLayout->addWidget(config);
-		}
-		buttonLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
-		buttonLayout->addWidget(monitorButton);
-		buttonLayout->addWidget(muteButton);
-
-		controlLayout->addItem(buttonLayout);
-		controlLayout->addWidget(meterFrame);
-
-		mainLayout->addItem(textLayout);
-		mainLayout->addItem(controlLayout);
-
-		volMeter->setFocusProxy(slider);
-	}
-
-	setLayout(mainLayout);
-
-	slider->setMinimum(0);
-	slider->setMaximum(int(FADER_PRECISION));
-
-	bool muted = obs_source_muted(source);
-	bool unassigned = isSourceUnassigned(source);
-
-	volMeter->muted = muted || unassigned;
-
-	obs_fader_add_callback(obs_fader, obsVolumeChanged, this);
-
-	sigs.emplace_back(obs_source_get_signal_handler(source), "mute", obsVolumeMuted, this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_mixers", obsMixersOrMonitoringChanged, this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_monitoring", obsMixersOrMonitoringChanged,
-			  this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "activate", VolControl::obsSourceActivated, this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "deactivate", VolControl::obsSourceDeactivated, this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_activate", VolControl::obsSourceActivated,
-			  this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_deactivate", VolControl::obsSourceDeactivated,
-			  this);
-
-	setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QWidget::customContextMenuRequested, this, &VolControl::showVolumeControlMenu);
-
-	connect(nameLabel, &VolumeName::renamed, this, &VolControl::setName);
-	connect(nameLabel, &VolumeName::clicked, this, &VolControl::showVolumeControlMenu);
-
-	connect(slider, &VolumeSlider::valueChanged, this, &VolControl::sliderChanged);
-	connect(muteButton, &QPushButton::clicked, this, &VolControl::handleMuteButton);
-	connect(monitorButton, &QPushButton::clicked, this, &VolControl::handleMonitorButton);
-
-	obs_fader_attach_source(obs_fader, source);
-
-	setName(sourceName);
-
-	/* Call volume changed once to init the slider position and label */
-	changeVolume();
-
-	updateMixerState();
-	updateCategoryLabel();
 }
 
 void VolControl::enableSlider(bool enable)
@@ -738,6 +932,10 @@ void VolControl::setGlobalInMixer(bool global)
 void VolControl::setPinnedInMixer(bool pinned)
 {
 	if (hasMixerFlag(OBS::MixerStatus::Pinned) != pinned) {
+		OBSSource source = OBSGetStrongRef(weakSource());
+		if (!source) {
+			return;
+		}
 		OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 		obs_data_set_bool(priv_settings, "mixer_pinned", pinned);
 
@@ -756,6 +954,10 @@ void VolControl::setPinnedInMixer(bool pinned)
 void VolControl::setHideInMixer(bool hidden)
 {
 	if (hasMixerFlag(OBS::MixerStatus::Hidden) != hidden) {
+		OBSSource source = OBSGetStrongRef(weakSource());
+		if (!source) {
+			return;
+		}
 		OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 		obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
 
@@ -763,17 +965,6 @@ void VolControl::setHideInMixer(bool hidden)
 
 		OBSBasic *main = OBSBasic::Get();
 		emit main->mixerStatusChanged(uuid);
-	}
-}
-
-VolControl::~VolControl()
-{
-	obs_fader_remove_callback(obs_fader, obsVolumeChanged, this);
-
-	sigs.clear();
-
-	if (contextMenu) {
-		contextMenu->close();
 	}
 }
 
