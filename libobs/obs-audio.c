@@ -58,9 +58,16 @@ static inline void check_audio_output_source_is_monitoring_device(obs_source_t *
 	    strcmp(s->info.id, "coreaudio_output_capture") == 0) {
 		const char *dev_id = NULL;
 		obs_data_t *settings = obs_source_get_settings(s);
+		bool is_pulse = strcmp(s->info.id, "pulse_output_capture") == 0;
 		if (settings) {
 			dev_id = obs_data_get_string(settings, "device_id");
-			if (strcmp(dev_id, audio->monitoring_device_id) == 0) {
+			bool id_match = strcmp(dev_id, audio->monitoring_device_id) == 0;
+			if (is_pulse) {
+				// pulse may append '.monitor'
+				size_t count = strlen(audio->monitoring_device_id) - 9;
+				id_match = id_match || strncmp(dev_id, audio->monitoring_device_id, count) == 0;
+			}
+			if (id_match) {
 				audio->prevent_monitoring_duplication = true;
 				audio->monitoring_duplicating_source = s;
 				if (!audio->monitoring_duplication_prevented_on_prev_tick)
@@ -546,7 +553,8 @@ static inline bool should_silence_monitored_source(obs_source_t *source, struct 
 	if (!audio->monitoring_duplicating_source)
 		return false;
 
-	bool output_capture_unmuted = !audio->monitoring_duplicating_source->user_muted;
+	bool fader_muted = close_float(audio->monitoring_duplicating_source->volume, 0.0f, 0.0001f);
+	bool output_capture_unmuted = !audio->monitoring_duplicating_source->user_muted && !fader_muted;
 
 	if (audio->prevent_monitoring_duplication && output_capture_unmuted) {
 		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT &&
@@ -557,13 +565,22 @@ static inline bool should_silence_monitored_source(obs_source_t *source, struct 
 	return false;
 }
 
-static inline void clear_audio_output_buf(obs_source_t *source)
+static inline void clear_audio_output_buf(obs_source_t *source, struct obs_core_audio *audio)
 {
+	if (!audio->monitoring_duplicating_source)
+		return;
+
+	uint32_t aoc_mixers = audio->monitoring_duplicating_source->audio_mixers;
+	uint32_t source_mixers = source->audio_mixers;
+
 	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
-		for (size_t ch = 0; ch < MAX_AUDIO_CHANNELS; ch++) {
-			float *buf = source->audio_output_buf[mix][ch];
-			if (buf)
-				memset(buf, 0, AUDIO_OUTPUT_FRAMES * sizeof(float));
+		uint32_t mix_and_val = (1 << mix);
+		if ((aoc_mixers & mix_and_val) && (source_mixers & mix_and_val)) {
+			for (size_t ch = 0; ch < MAX_AUDIO_CHANNELS; ch++) {
+				float *buf = source->audio_output_buf[mix][ch];
+				if (buf)
+					memset(buf, 0, AUDIO_OUTPUT_FRAMES * sizeof(float));
+			}
 		}
 	}
 }
@@ -648,7 +665,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 		obs_source_t *source = audio->render_order.array[i];
 		obs_source_audio_render(source, mixers, channels, sample_rate, audio_size);
 		if (should_silence_monitored_source(source, audio))
-			clear_audio_output_buf(source);
+			clear_audio_output_buf(source, audio);
 
 		/* if a source has gone backward in time and we can no
 		 * longer buffer, drop some or all of its audio */
