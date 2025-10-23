@@ -20,6 +20,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include <map>
 
 #include "obs.h"
 #include "obs.hpp"
@@ -37,16 +38,16 @@ public:
 	Canvas() = delete;
 	Canvas(Canvas &other) = delete;
 
-	Canvas &operator=(Canvas &&other) noexcept;
+	Canvas &operator=(Canvas &&other) = delete;
 
 	operator obs_canvas_t *() const { return canvas; }
 
 	[[nodiscard]] std::optional<OBSDataAutoRelease> Save() const;
-	static std::unique_ptr<Canvas> Load(obs_data_t *data);
-	static std::vector<Canvas> LoadCanvases(obs_data_array_t *canvases);
-	static OBSDataArrayAutoRelease SaveCanvases(const std::vector<Canvas> &canvases);
+	static std::shared_ptr<Canvas> Load(obs_data_t *data);
+	static std::map<obs_canvas_t *, std::shared_ptr<Canvas>> LoadCanvases(obs_data_array_t *canvases);
+	static OBSDataArrayAutoRelease SaveCanvases(const std::map<obs_canvas_t *, std::shared_ptr<Canvas>> &canvases);
 
-private:
+public:
 	obs_canvas_t *canvas = nullptr;
 };
 } // namespace OBS
