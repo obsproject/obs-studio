@@ -2215,6 +2215,10 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     width: 16px;
 }
 
+#programSpacer {
+    background: var(--bg_preview);
+}
+
 #previewZoomInButton {
     border: none;
     border-radius: 0px;
