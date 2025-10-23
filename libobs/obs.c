@@ -1357,6 +1357,7 @@ struct obs_cmdline_args obs_get_cmdline_args(void)
 
 void obs_shutdown(void)
 {
+	blog(LOG_INFO, "[libobs] Beginning obs_shutdown");
 	struct obs_module *module;
 
 	obs_wait_for_destroy_queue();
@@ -1390,9 +1391,13 @@ void obs_shutdown(void)
 	da_free(obs->filter_types);
 	da_free(obs->transition_types);
 
+	blog(LOG_INFO, "[libobs] Freed all types");
+
 	stop_video();
 	stop_audio();
 	stop_hotkeys();
+
+	blog(LOG_INFO, "[libobs] Stopped audio/video");
 
 	module = obs->first_module;
 	while (module) {
@@ -1410,16 +1415,21 @@ void obs_shutdown(void)
 	}
 	obs->first_disabled_module = NULL;
 
+	blog(LOG_INFO, "[libobs] Freed modules");
+
 	obs_free_data();
 	obs_free_audio();
 	obs_free_video();
 	os_task_queue_destroy(obs->destruction_task_thread);
 	obs_free_hotkeys();
 	obs_free_graphics();
+	blog(LOG_INFO, "[libobs] Freed data");
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);
 	obs->procs = NULL;
 	obs->signals = NULL;
+
+	blog(LOG_INFO, "[libobs] Freed signals");
 
 	for (size_t i = 0; i < obs->module_paths.num; i++) {
 		free_module_path(obs->module_paths.array + i);
@@ -1441,6 +1451,8 @@ void obs_shutdown(void)
 	}
 	da_free(obs->core_modules);
 
+	blog(LOG_INFO, "[libobs] Freed module paths");
+
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
 
@@ -1449,6 +1461,8 @@ void obs_shutdown(void)
 	bfree(obs);
 	obs = NULL;
 	bfree(cmdline_args.argv);
+
+	blog(LOG_INFO, "[libobs] Completed obs_shutdown");
 
 #ifdef _WIN32
 	if (com_initialized)

@@ -25,6 +25,7 @@
 #include <util/profiler.hpp>
 #include <util/util.hpp>
 
+#include <QAbstractNativeEventFilter>
 #include <QApplication>
 #include <QPalette>
 #include <QPointer>
@@ -58,8 +59,15 @@ struct UpdateBranch {
 	bool is_visible;
 };
 
+class OBSNativeEventFilter : public QAbstractNativeEventFilter {
+public:
+	bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result);
+};
+
 class OBSApp : public QApplication {
 	Q_OBJECT
+
+	friend class OBSNativeEventFilter;
 
 private:
 	QUuid appLaunchUUID_;
@@ -117,12 +125,13 @@ private:
 #ifndef _WIN32
 	static int sigintFd[2];
 	QSocketNotifier *snInt = nullptr;
-#else
-private slots:
-	void commitData(QSessionManager &manager);
+
+	static int sigtermFd[2];
+	QSocketNotifier *snTerm = nullptr;
 #endif
 
 private slots:
+	void commitData(QSessionManager &manager);
 	void addLogLine(int logLevel, const QString &message);
 	void themeFileChanged(const QString &);
 	void applicationShutdown() noexcept;
@@ -212,6 +221,7 @@ public:
 	inline void PopUITranslation() { translatorHooks.pop_front(); }
 #ifndef _WIN32
 	static void SigIntSignalHandler(int);
+	static void SigTermSignalHandler(int);
 #endif
 
 	void loadAppModules(struct obs_module_failure_info &mfi);
@@ -222,6 +232,7 @@ public:
 public slots:
 	void Exec(VoidFunc func);
 	void ProcessSigInt();
+	void ProcessSigTerm();
 
 signals:
 	void logLineAdded(int logLevel, const QString &message);
