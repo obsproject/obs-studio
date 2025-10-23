@@ -1217,6 +1217,15 @@ void obs_hotkey_enable_callback_rerouting(bool enable)
 	unlock();
 }
 
+void obs_hotkey_enable_strict_modifiers(bool enable)
+{
+	if (!lock())
+		return;
+
+	obs->hotkeys.strict_modifiers = enable;
+	unlock();
+}
+
 static void obs_set_key_translation(obs_key_t key, const char *translation)
 {
 	bfree(obs->hotkeys.translations[key]);

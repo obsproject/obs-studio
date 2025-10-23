@@ -246,6 +246,9 @@ EXPORT void obs_hotkey_trigger_routed_callback(obs_hotkey_id id, bool pressed);
  * router func is set */
 EXPORT void obs_hotkey_enable_callback_rerouting(bool enable);
 
+/* Allow hotkeys to match even with extra modifiers pressed (e.g., 'k' matches 'Shift+k') */
+EXPORT void obs_hotkey_enable_strict_modifiers(bool enable);
+
 /* misc */
 
 typedef void (*obs_hotkey_atomic_update_func)(void *);

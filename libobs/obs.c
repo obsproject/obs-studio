@@ -1140,7 +1140,7 @@ static inline bool obs_init_hotkeys(void)
 	if (pthread_create(&hotkeys->hotkey_thread, NULL, obs_hotkey_thread, NULL))
 		goto fail;
 
-	hotkeys->strict_modifiers = true;
+	hotkeys->strict_modifiers = false;
 	hotkeys->hotkey_thread_initialized = true;
 
 	success = true;

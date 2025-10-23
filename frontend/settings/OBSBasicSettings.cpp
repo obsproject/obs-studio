@@ -550,6 +550,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->hotkeyIgnoreModifiers, CHECK_CHANGED, ADV_CHANGED);
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->dynBitrate,           CHECK_CHANGED,  ADV_CHANGED);
 	/* clang-format on */
@@ -2540,6 +2541,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(App()->GetUserConfig(), "General", "HotkeyFocusType");
+	bool hotkeyIgnoreModifiers = config_get_bool(App()->GetUserConfig(), "General", "HotkeyIgnoreModifiers");
 	bool dynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
 	const char *ipFamily = config_get_string(main->Config(), "Output", "IPFamily");
 	bool confirmOnExit = config_get_bool(App()->GetUserConfig(), "General", "ConfirmOnExit");
@@ -2616,6 +2618,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 #endif
 
 	SetComboByValue(ui->hotkeyFocusType, hotkeyFocusType);
+	ui->hotkeyIgnoreModifiers->setChecked(hotkeyIgnoreModifiers);
 
 	loading = false;
 }
@@ -3168,6 +3171,11 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	if (WidgetChanged(ui->hotkeyFocusType)) {
 		QString str = GetComboData(ui->hotkeyFocusType);
 		config_set_string(App()->GetUserConfig(), "General", "HotkeyFocusType", QT_TO_UTF8(str));
+	}
+
+	if (WidgetChanged(ui->hotkeyIgnoreModifiers)) {
+		bool ignoreModifiers = ui->hotkeyIgnoreModifiers->isChecked();
+		config_set_bool(App()->GetUserConfig(), "General", "HotkeyIgnoreModifiers", ignoreModifiers);
 	}
 
 #ifdef __APPLE__

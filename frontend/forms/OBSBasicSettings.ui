@@ -8603,7 +8603,17 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="hotkeyFocusType"/>
                    </item>
-                   <item row="1" column="0">
+                   <item row="1" column="0" colspan="2">
+                    <widget class="QCheckBox" name="hotkeyIgnoreModifiers">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Hotkeys.IgnoreModifiers</string>
+                     </property>
+                     <property name="toolTip">
+                      <string>Basic.Settings.Advanced.Hotkeys.IgnoreModifiers.Tooltip</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
                     <spacer name="horizontalSpacer_14">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>

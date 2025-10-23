@@ -339,6 +339,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "General", "ConfirmOnExit", true);
 
 	config_set_default_string(userConfig, "General", "HotkeyFocusType", "NeverDisableHotkeys");
+	config_set_default_bool(userConfig, "General", "HotkeyIgnoreModifiers", false);
 
 	config_set_default_bool(userConfig, "BasicWindow", "PreviewEnabled", true);
 	config_set_default_bool(userConfig, "BasicWindow", "PreviewProgramMode", false);
@@ -1122,6 +1123,9 @@ void OBSApp::UpdateHotkeyFocusSetting(bool resetState)
 	} else if (astrcmpi(hotkeyFocusType, "DisableHotkeysOutOfFocus") == 0) {
 		enableHotkeysOutOfFocus = false;
 	}
+
+	bool ignoreModifiers = config_get_bool(userConfig, "General", "HotkeyIgnoreModifiers");
+	obs_hotkey_enable_strict_modifiers(!ignoreModifiers);
 
 	if (resetState)
 		ResetHotkeyState(applicationState() == Qt::ApplicationActive);
