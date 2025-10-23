@@ -3363,6 +3363,11 @@ void OBSBasicSettings::SaveOutputSettings()
          do. This only exists to make sure that the x264 preset doesn't
          get overwritten with empty data. */
 		presetType = "ApplePreset";
+	else if (encoder == SIMPLE_ENCODER_OPENH264)
+		/* The OpenH264 encoder does not have presets like the other encoders
+         do. This only exists to make sure that the x264 preset doesn't
+         get overwritten with empty data. */
+		presetType = "OpenH264Preset";
 	else
 		presetType = "Preset";
 
@@ -4734,8 +4739,11 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 	ADD_QUALITY("HQ");
 	ADD_QUALITY("Lossless");
 
-	ui->simpleOutRecEncoder->addItem(ENCODER_STR("Software"), QString(SIMPLE_ENCODER_X264));
-	ui->simpleOutRecEncoder->addItem(ENCODER_STR("SoftwareLowCPU"), QString(SIMPLE_ENCODER_X264_LOWCPU));
+	ui->simpleOutRecEncoder->addItem(ENCODER_STR("Software.OpenH264"), QString(SIMPLE_ENCODER_OPENH264));
+	if (EncoderAvailable("obs_x264")) {
+		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Software"), QString(SIMPLE_ENCODER_X264));
+		ui->simpleOutRecEncoder->addItem(ENCODER_STR("SoftwareLowCPU"), QString(SIMPLE_ENCODER_X264_LOWCPU));
+	}
 	if (EncoderAvailable("obs_qsv11"))
 		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Hardware.QSV.H264"), QString(SIMPLE_ENCODER_QSV));
 	if (EncoderAvailable("obs_qsv11_av1"))
@@ -4884,6 +4892,9 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		defaultPreset = "balanced";
 		preset = curAMDAV1Preset;
+	} else if (encoder == SIMPLE_ENCODER_OPENH264) {
+		ui->simpleOutPreset->setVisible(false);
+		ui->simpleOutPresetLabel->setVisible(false);
 	} else {
 
 #define PRESET_STR(val) QString(Str("Basic.Settings.Output.EncoderPreset." val)).arg(val)

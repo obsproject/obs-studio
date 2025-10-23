@@ -76,6 +76,7 @@ enum class LogFileType;
 
 #define SIMPLE_ENCODER_X264 "x264"
 #define SIMPLE_ENCODER_X264_LOWCPU "x264_lowcpu"
+#define SIMPLE_ENCODER_OPENH264 "ffmpeg_openh264"
 #define SIMPLE_ENCODER_QSV "qsv"
 #define SIMPLE_ENCODER_QSV_AV1 "qsv_av1"
 #define SIMPLE_ENCODER_NVENC "nvenc"
@@ -894,7 +895,7 @@ private:
 	void UpdateProfileEncoders();
 	std::vector<std::string> GetRestartRequirements(const ConfigFile &config) const;
 	void ResetProfileData();
-	void CheckForSimpleModeX264Fallback();
+	void CheckForSimpleModeH264Fallback();
 
 public:
 	inline const OBSProfileCache &GetProfileCache() const noexcept { return profiles; };
