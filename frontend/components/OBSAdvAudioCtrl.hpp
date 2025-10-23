@@ -41,12 +41,7 @@ private:
 	QPointer<QLabel> labelR;
 	QPointer<QSpinBox> syncOffset;
 	QPointer<QComboBox> monitoringType;
-	QPointer<QCheckBox> mixer1;
-	QPointer<QCheckBox> mixer2;
-	QPointer<QCheckBox> mixer3;
-	QPointer<QCheckBox> mixer4;
-	QPointer<QCheckBox> mixer5;
-	QPointer<QCheckBox> mixer6;
+	std::vector<QPointer<QCheckBox>> mixersAssignments;
 
 	std::vector<OBSSignal> sigs;
 
