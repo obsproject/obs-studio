@@ -1539,7 +1539,7 @@ void OBSBasic::ClearSceneData()
 		obs_canvas_enum_scenes(canvas, cb, nullptr);
 	}
 
-	canvases.clear();
+	ClearCanvases();
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP);
 

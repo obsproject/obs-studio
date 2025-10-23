@@ -1123,6 +1123,7 @@ private:
 	std::vector<OBS::Canvas> canvases;
 
 	static void CanvasRemoved(void *data, calldata_t *params);
+	void ClearCanvases();
 
 public:
 	const std::vector<OBS::Canvas> &GetCanvases() const noexcept { return canvases; }
