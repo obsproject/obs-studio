@@ -84,6 +84,9 @@ static inline void check_audio_output_source_is_monitoring_device(obs_source_t *
  */
 static void push_audio_tree2(obs_source_t *parent, obs_source_t *source, void *p)
 {
+	if (obs_source_removed(source))
+		return;
+
 	struct obs_core_audio *audio = p;
 	size_t idx = da_find(audio->render_order, &source, 0);
 
@@ -614,6 +617,8 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 				continue;
 			if (!obs_source_active(source))
 				continue;
+			if (obs_source_removed(source))
+				continue;
 
 			/* first, add top - level sources as root_nodes */
 			if (obs->video.mixes.array[j]->mix_audio)
@@ -636,7 +641,9 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 
 	source = data->first_audio_source;
 	while (source) {
-		push_audio_tree(NULL, source, audio);
+		if (!obs_source_removed(source)) {
+			push_audio_tree(NULL, source, audio);
+		}
 		source = (struct obs_source *)source->next_audio_source;
 	}
 
