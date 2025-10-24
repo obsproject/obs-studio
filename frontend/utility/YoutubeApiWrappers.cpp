@@ -14,22 +14,24 @@
 
 using namespace json11;
 
-/* ------------------------------------------------------------------------- */
-#define YOUTUBE_LIVE_API_URL "https://www.googleapis.com/youtube/v3"
+namespace {
+using std::string_view_literals::operator""sv;
 
-#define YOUTUBE_LIVE_STREAM_URL YOUTUBE_LIVE_API_URL "/liveStreams"
-#define YOUTUBE_LIVE_BROADCAST_URL YOUTUBE_LIVE_API_URL "/liveBroadcasts"
-#define YOUTUBE_LIVE_BROADCAST_TRANSITION_URL YOUTUBE_LIVE_BROADCAST_URL "/transition"
-#define YOUTUBE_LIVE_BROADCAST_BIND_URL YOUTUBE_LIVE_BROADCAST_URL "/bind"
+constexpr auto youtubeLiveApiUrl = "https://www.googleapis.com/youtube/v3"sv;
 
-#define YOUTUBE_LIVE_CHANNEL_URL YOUTUBE_LIVE_API_URL "/channels"
-#define YOUTUBE_LIVE_TOKEN_URL "https://oauth2.googleapis.com/token"
-#define YOUTUBE_LIVE_VIDEOCATEGORIES_URL YOUTUBE_LIVE_API_URL "/videoCategories"
-#define YOUTUBE_LIVE_VIDEOS_URL YOUTUBE_LIVE_API_URL "/videos"
-#define YOUTUBE_LIVE_THUMBNAIL_URL "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
+constexpr auto youtubeLiveStreamUrl = "https://www.googleapis.com/youtube/v3/liveStreams"sv;
+constexpr auto youtubeLiveBroadcastUrl = "https://www.googleapis.com/youtube/v3/liveBroadcasts"sv;
+constexpr auto youtubeLiveBroadcastTransitionUrl = "https://www.googleapis.com/youtube/v3/liveBroadcasts/transition"sv;
+constexpr auto youtubeLiveBroadcastBindUrl = "https://www.googleapis.com/youtube/v3/liveBroadcasts/bind"sv;
 
-#define DEFAULT_BROADCASTS_PER_QUERY "50" // acceptable values are 0 to 50, inclusive
-/* ------------------------------------------------------------------------- */
+constexpr auto youtubeLiveChannelUrl = "https://www.googleapis.com/youtube/v3/channels"sv;
+constexpr auto youtubeLiveTokenUrl = "https://oauth2.googleapis.com/token"sv;
+constexpr auto youtubeLiveVideoCategoriesUrl = "https://www.googleapis.com/youtube/v3/videoCategories"sv;
+constexpr auto youtubeLiveVideosUrl = "https://www.googleapis.com/youtube/v3/videos"sv;
+constexpr auto youtubeLiveThumbnailUrl = "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"sv;
+
+constexpr auto defaultBroadcastsPerQuery = 50; // acceptable values are 0 to 50, inclusive
+} // namespace
 
 bool IsYouTubeService(const std::string &service)
 {
@@ -51,7 +53,8 @@ bool IsUserSignedIntoYT()
 
 bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
 {
-	QString translated = QTStr("YouTube.Errors." + lastErrorReason.toUtf8());
+	const QString errorKey = "YouTube.Errors." + lastErrorReason.toUtf8();
+	const QString translated = QTStr(QT_TO_UTF8(errorKey));
 	// No translation found
 	if (translated.startsWith("YouTube.Errors."))
 		return false;
@@ -110,7 +113,6 @@ bool YoutubeApiWrappers::UpdateAccessToken()
 	deobfuscate_str(&secret[0], YOUTUBE_SECRET_HASH);
 
 	std::string r_token = QUrl::toPercentEncoding(refresh_token.c_str()).toStdString();
-	const QString url = YOUTUBE_LIVE_TOKEN_URL;
 	const QString data_template = "client_id=%1"
 				      "&client_secret=%2"
 				      "&refresh_token=%3"
@@ -118,8 +120,8 @@ bool YoutubeApiWrappers::UpdateAccessToken()
 	const QString data =
 		data_template.arg(QString(clientid.c_str()), QString(secret.c_str()), QString(r_token.c_str()));
 	Json json_out;
-	bool success =
-		TryInsertCommand(QT_TO_UTF8(url), "application/x-www-form-urlencoded", "", QT_TO_UTF8(data), json_out);
+	bool success = TryInsertCommand(youtubeLiveTokenUrl.data(), "application/x-www-form-urlencoded", "",
+					QT_TO_UTF8(data), json_out);
 
 	if (!success || json_out.object_items().find("error") != json_out.object_items().end())
 		return false;
@@ -158,10 +160,11 @@ bool YoutubeApiWrappers::GetChannelDescription(ChannelDescription &channel_descr
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_CHANNEL_URL "?part=snippet,contentDetails,statistics"
-							"&mine=true";
+
+	const std::string url =
+		std::string(youtubeLiveChannelUrl) + "?part=snippet,contentDetails,statistics&mine=true";
 	Json json_out;
-	if (!InsertCommand(url, "application/json", "", nullptr, json_out)) {
+	if (!InsertCommand(url.c_str(), "application/json", "", nullptr, json_out)) {
 		return false;
 	}
 
@@ -179,7 +182,7 @@ bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_BROADCAST_URL "?part=snippet,status,contentDetails";
+	const std::string url = std::string(youtubeLiveBroadcastUrl) + "?part=snippet,status,contentDetails";
 	const Json data = Json::object{
 		{"snippet",
 		 Json::object{
@@ -208,7 +211,7 @@ bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 		 }},
 	};
 	Json json_out;
-	if (!InsertCommand(url, "application/json", "", data.dump().c_str(), json_out)) {
+	if (!InsertCommand(url.c_str(), "application/json", "", data.dump().c_str(), json_out)) {
 		return false;
 	}
 	broadcast.id = QString(json_out["id"].string_value().c_str());
@@ -219,7 +222,7 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_STREAM_URL "?part=snippet,cdn,status,contentDetails";
+	const std::string url = std::string(youtubeLiveStreamUrl) + "?part=snippet,cdn,status,contentDetails";
 	const Json data = Json::object{
 		{"snippet",
 		 Json::object{
@@ -234,7 +237,7 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 		{"contentDetails", Json::object{{"isReusable", false}}},
 	};
 	Json json_out;
-	if (!InsertCommand(url, "application/json", "", data.dump().c_str(), json_out)) {
+	if (!InsertCommand(url.c_str(), "application/json", "", data.dump().c_str(), json_out)) {
 		return false;
 	}
 	stream.id = QString(json_out["id"].string_value().c_str());
@@ -246,9 +249,9 @@ bool YoutubeApiWrappers::BindStream(const QString broadcast_id, const QString st
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QString url_template = YOUTUBE_LIVE_BROADCAST_BIND_URL "?id=%1"
-								     "&streamId=%2"
-								     "&part=id,snippet,contentDetails,status";
+	// TODO: Use std::format with std::string instead of QString::arg with C++20
+	const QString url_template = QString(youtubeLiveBroadcastBindUrl.data()) +
+				     "?id=%1&streamId=%2&part=id,snippet,contentDetails,status";
 	const QString url = url_template.arg(broadcast_id, stream_id);
 	const Json data = Json::object{};
 	this->broadcast_id = broadcast_id;
@@ -260,26 +263,28 @@ bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, const QString &page, 
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	QByteArray url = YOUTUBE_LIVE_BROADCAST_URL "?part=snippet,contentDetails,status"
-						    "&broadcastType=all&maxResults=" DEFAULT_BROADCASTS_PER_QUERY;
+	std::string url = std::string(youtubeLiveBroadcastUrl) +
+			  "?part=snippet,contentDetails,status&broadcastType=all&maxResults=" +
+			  std::to_string(defaultBroadcastsPerQuery);
 
 	if (status.isEmpty())
 		url += "&mine=true";
 	else
-		url += "&broadcastStatus=" + status.toUtf8();
+		url += "&broadcastStatus=" + status.toStdString();
 
 	if (!page.isEmpty())
-		url += "&pageToken=" + page.toUtf8();
-	return InsertCommand(url, "application/json", "", nullptr, json_out);
+		url += "&pageToken=" + page.toStdString();
+	return InsertCommand(url.c_str(), "application/json", "", nullptr, json_out);
 }
 
 bool YoutubeApiWrappers::GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QString url_template = YOUTUBE_LIVE_VIDEOCATEGORIES_URL "?part=snippet"
-								      "&regionCode=%1"
-								      "&hl=%2";
+	// TODO: Use std::format with C++20
+	const QString url_template =
+		QString(youtubeLiveVideoCategoriesUrl.data()) + "?part=snippet&regionCode=%1&hl=%2";
+
 	/*
 	 * All OBS locale regions aside from "US" are missing category id 29
 	 * ("Nonprofits & Activism"), but it is still available to channels
@@ -316,7 +321,7 @@ bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id, const QString
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QByteArray url = YOUTUBE_LIVE_VIDEOS_URL "?part=snippet";
+	const std::string url = std::string(youtubeLiveVideosUrl) + "?part=snippet";
 	const Json data = Json::object{
 		{"id", QT_TO_UTF8(video_id)},
 		{"snippet",
@@ -327,7 +332,7 @@ bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id, const QString
 		 }},
 	};
 	Json json_out;
-	return InsertCommand(url, "application/json", "PUT", data.dump().c_str(), json_out);
+	return InsertCommand(url.c_str(), "application/json", "PUT", data.dump().c_str(), json_out);
 }
 
 bool YoutubeApiWrappers::SetVideoThumbnail(const QString &video_id, const QString &thumbnail_file)
@@ -350,9 +355,9 @@ bool YoutubeApiWrappers::SetVideoThumbnail(const QString &video_id, const QStrin
 	const QByteArray fileContents = thumbFile.readAll();
 	const QString mime = QMimeDatabase().mimeTypeForData(fileContents).name();
 
-	const QString url = YOUTUBE_LIVE_THUMBNAIL_URL "?videoId=" + video_id;
+	const std::string url = std::string(youtubeLiveThumbnailUrl) + "?videoId=" + video_id.toStdString();
 	Json json_out;
-	return InsertCommand(QT_TO_UTF8(url), QT_TO_UTF8(mime), "POST", fileContents.constData(), json_out,
+	return InsertCommand(url.c_str(), QT_TO_UTF8(mime), "POST", fileContents.constData(), json_out,
 			     fileContents.size());
 }
 
@@ -383,9 +388,9 @@ bool YoutubeApiWrappers::StartBroadcast(const QString &broadcast_id)
 	if (lifeCycleStatus != "testing" && monitorStreamEnabled && !ResetBroadcast(broadcast_id, json_out))
 		return false;
 
-	const QString url_template = YOUTUBE_LIVE_BROADCAST_TRANSITION_URL "?id=%1"
-									   "&broadcastStatus=%2"
-									   "&part=status";
+	// TODO: Use std::format with C++20
+	const QString url_template =
+		QString(youtubeLiveBroadcastTransitionUrl.data()) + "?id=%1&broadcastStatus=%2&part=status";
 	const QString live = url_template.arg(broadcast_id, "live");
 	bool success = InsertCommand(QT_TO_UTF8(live), "application/json", "POST", "{}", json_out);
 	// Return a success if the command failed, but was redundant (broadcast already live)
@@ -402,9 +407,8 @@ bool YoutubeApiWrappers::StopBroadcast(const QString &broadcast_id)
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
 
-	const QString url_template = YOUTUBE_LIVE_BROADCAST_TRANSITION_URL "?id=%1"
-									   "&broadcastStatus=complete"
-									   "&part=status";
+	const QString url_template =
+		QString(youtubeLiveBroadcastTransitionUrl.data()) + "?id=%1&broadcastStatus=complete&part=status";
 	const QString url = url_template.arg(broadcast_id);
 	Json json_out;
 	bool success = InsertCommand(QT_TO_UTF8(url), "application/json", "POST", "{}", json_out);
@@ -472,19 +476,19 @@ bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id, json11::Jso
 		 }},
 	};
 
-	const QString put = YOUTUBE_LIVE_BROADCAST_URL "?part=id,snippet,contentDetails,status";
-	return InsertCommand(QT_TO_UTF8(put), "application/json", "PUT", data.dump().c_str(), json_out);
+	const std::string put = std::string(youtubeLiveBroadcastUrl) + "?part=id,snippet,contentDetails,status";
+	return InsertCommand(put.c_str(), "application/json", "PUT", data.dump().c_str(), json_out);
 }
 
 bool YoutubeApiWrappers::FindBroadcast(const QString &id, json11::Json &json_out)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	QByteArray url = YOUTUBE_LIVE_BROADCAST_URL "?part=id,snippet,contentDetails,status"
-						    "&broadcastType=all&maxResults=1";
-	url += "&id=" + id.toUtf8();
+	std::string url = std::string(youtubeLiveBroadcastUrl) +
+			  "?part=id,snippet,contentDetails,status&broadcastType=all&maxResults=1";
+	url += "&id=" + id.toStdString();
 
-	if (!InsertCommand(url, "application/json", "", nullptr, json_out))
+	if (!InsertCommand(url.c_str(), "application/json", "", nullptr, json_out))
 		return false;
 
 	auto items = json_out["items"].array_items();
@@ -500,11 +504,10 @@ bool YoutubeApiWrappers::FindStream(const QString &id, json11::Json &json_out)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	QByteArray url = YOUTUBE_LIVE_STREAM_URL "?part=id,snippet,cdn,status"
-						 "&maxResults=1";
-	url += "&id=" + id.toUtf8();
+	std::string url = std::string(youtubeLiveStreamUrl) + "?part=id,snippet,cdn,status&maxResults=1";
+	url += "&id=" + id.toStdString();
 
-	if (!InsertCommand(url, "application/json", "", nullptr, json_out))
+	if (!InsertCommand(url.c_str(), "application/json", "", nullptr, json_out))
 		return false;
 
 	auto items = json_out["items"].array_items();

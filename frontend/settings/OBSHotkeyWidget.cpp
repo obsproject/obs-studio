@@ -98,7 +98,7 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	clear->setToolTip(QTStr("Clear"));
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
-	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged, [=](obs_key_combination_t new_combo) {
+	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged, this, [=](obs_key_combination_t new_combo) {
 		clear->setEnabled(!obs_key_combination_is_empty(new_combo));
 		revert->setEnabled(edit->original != new_combo);
 	});
@@ -117,10 +117,10 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 		return std::distance(begin(removeButtons), res);
 	};
 
-	QObject::connect(add, &QPushButton::clicked,
+	QObject::connect(add, &QPushButton::clicked, this,
 			 [&, CurrentIndex] { AddEdit({0, OBS_KEY_NONE}, CurrentIndex() + 1); });
 
-	QObject::connect(remove, &QPushButton::clicked, [&, CurrentIndex] { RemoveEdit(CurrentIndex()); });
+	QObject::connect(remove, &QPushButton::clicked, this, [&, CurrentIndex] { RemoveEdit(CurrentIndex()); });
 
 	QHBoxLayout *subLayout = new QHBoxLayout;
 	subLayout->setContentsMargins(0, 2, 0, 2);
@@ -148,8 +148,9 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	QObject::connect(revert, &QPushButton::clicked, edit, &OBSHotkeyEdit::ResetKey);
 	QObject::connect(clear, &QPushButton::clicked, edit, &OBSHotkeyEdit::ClearKey);
 
-	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged, [&](obs_key_combination) { emit KeyChanged(); });
-	QObject::connect(edit, &OBSHotkeyEdit::SearchKey, [=](obs_key_combination combo) { emit SearchKey(combo); });
+	QObject::connect(edit, &OBSHotkeyEdit::KeyChanged, this, [&](obs_key_combination) { emit KeyChanged(); });
+	QObject::connect(edit, &OBSHotkeyEdit::SearchKey, this,
+			 [=](obs_key_combination combo) { emit SearchKey(combo); });
 }
 
 void OBSHotkeyWidget::RemoveEdit(size_t idx, bool signal)

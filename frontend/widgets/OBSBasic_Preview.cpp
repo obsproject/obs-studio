@@ -350,7 +350,7 @@ void OBSBasic::Nudge(int dist, MoveDir dir)
 		std::string undo_data(obs_data_get_json(wrapper));
 
 		nudge_timer = new QTimer;
-		QObject::connect(nudge_timer, &QTimer::timeout, [this, &recent_nudge = recent_nudge, undo_data]() {
+		QObject::connect(nudge_timer, &QTimer::timeout, this, [this, &recent_nudge = recent_nudge, undo_data]() {
 			OBSDataAutoRelease rwrapper = obs_scene_save_transform_states(GetCurrentScene(), true);
 			std::string redo_data(obs_data_get_json(rwrapper));
 
@@ -527,9 +527,9 @@ void OBSBasic::ColorChange()
 			QColorDialog *colorDialog = new QColorDialog(this);
 			colorDialog->setOptions(options);
 			colorDialog->setCurrentColor(QColor(customColor));
-			connect(colorDialog, &QColorDialog::currentColorChanged, liveChangeColor);
-			connect(colorDialog, &QColorDialog::colorSelected, changedColor);
-			connect(colorDialog, &QColorDialog::rejected, rejected);
+			connect(colorDialog, &QColorDialog::currentColorChanged, this, liveChangeColor);
+			connect(colorDialog, &QColorDialog::colorSelected, this, changedColor);
+			connect(colorDialog, &QColorDialog::rejected, this, rejected);
 			colorDialog->open();
 		} else {
 			for (int x = 0; x < selectedItems.count(); x++) {

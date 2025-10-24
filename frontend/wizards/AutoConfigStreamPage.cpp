@@ -67,7 +67,7 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent) : QWizardPage(parent
 	connect(ui->service, &QComboBox::currentIndexChanged, this, &AutoConfigStreamPage::UpdateKeyLink);
 	connect(ui->service, &QComboBox::currentIndexChanged, this, &AutoConfigStreamPage::UpdateMoreInfoLink);
 
-	connect(ui->useStreamKeyAdv, &QPushButton::clicked, [&]() {
+	connect(ui->useStreamKeyAdv, &QPushButton::clicked, this, [&]() {
 		ui->streamKeyWidget->setVisible(true);
 		ui->streamKeyLabel->setVisible(true);
 		ui->useStreamKeyAdv->setVisible(false);

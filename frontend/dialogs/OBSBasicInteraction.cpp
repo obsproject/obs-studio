@@ -69,7 +69,7 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 		obs_display_add_draw_callback(ui->preview->GetDisplay(), OBSBasicInteraction::DrawPreview, this);
 	};
 
-	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
 }
 
 OBSBasicInteraction::~OBSBasicInteraction()
