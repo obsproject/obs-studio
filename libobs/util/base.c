@@ -19,6 +19,7 @@
 
 #include "c99defs.h"
 #include "base.h"
+#include "threading.h"
 
 static int crashing = 0;
 static void *log_param = NULL;
@@ -81,10 +82,22 @@ void base_set_log_handler(log_handler_t handler, void *param)
 	log_handler = handler;
 }
 
+static pthread_mutex_t set_crash_handler_mutex = PTHREAD_MUTEX_INITIALIZER;
 void base_set_crash_handler(void (*handler)(const char *, va_list, void *), void *param)
 {
+	pthread_mutex_lock(&set_crash_handler_mutex);
+	static bool non_default_handler_set = false;
+
+	if (non_default_handler_set) {
+		blog(LOG_ERROR, "Tried to set a crash handler when one already exists. "
+				"This is unsupported.");
+		return;
+	}
+
+	non_default_handler_set = true;
 	crash_param = param;
 	crash_handler = handler;
+	pthread_mutex_unlock(&set_crash_handler_mutex);
 }
 
 OBS_NORETURN void bcrash(const char *format, ...)
