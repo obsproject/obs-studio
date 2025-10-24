@@ -1,0 +1,65 @@
+name: Check commit message
+description: Check git commit messages complying CONTRIBUTING.rst
+inputs:
+  failCondition:
+    description: Controls whether failed checks also fail the workflow run.
+    required: false
+    default: never
+  unknownModuleLevel:
+    description: Controls whether failed checks at unknown module name. Set "error" to fail.
+    required: false
+    default: warning
+  workingDirectory:
+    description: Working directory for checks.
+    required: false
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System 🏃‍♂️
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        : Check Runner Operating System 🏃‍♂️
+        echo "::notice::services-validation action requires a macOS-based or Linux-based runner."
+        exit 2
+
+    - name: Run log message checker 🕵️
+      shell: bash
+      working-directory: ${{ inputs.workingDirectory }}
+      run: |
+        : Run log message checker 🕵️
+        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
+
+        echo ::group::Configure criteria
+        SUBJECT_RE='^\([A-Za-z0-9/., -]\+: [A-Z].\+[^. ]\|Revert .\+\|Merge pull request .\+\)$'
+        BODY_IGNORE_LINE_RE='\(^Co-Authored-By:\|\<https\?://\)'
+        BODY_EXCEED_LIMIT_RE='.\{73\}'
+
+        COMMIT_RANGE='HEAD^1..HEAD^2'
+
+        exit_code=0
+        export LC_ALL=C LC_CTYPE=C LANG=C
+        t=$(mktemp)
+        echo ::endgroup::
+
+        echo ::group::Validate subject
+        if git log --format='%s' "${COMMIT_RANGE}" | grep -v "${SUBJECT_RE}" >$t ; then
+          exit_code=1
+          echo 'Error: invalid subject:'
+          cat $t
+          echo
+        fi
+        echo ::endgroup::
+
+        echo ::group::Validate body
+        if git log --format='%B' "${COMMIT_RANGE}" | grep -v "${BODY_IGNORE_LINE_RE}" | \
+            grep "${BODY_EXCEED_LIMIT_RE}" >$t; then
+          exit_code=1
+          echo 'Error: too long line:'
+          cat $t
+          echo
+        fi
+        echo ::endgroup::
+
+        exit "$exit_code"
