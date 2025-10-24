@@ -229,3 +229,8 @@ QCalendarWidget QToolButton:pressed {
 QCalendarWidget QSpinBox {
     background-color: var(--primary_dark);
 }
+
+idian--ToggleSwitch {
+    qproperty-background_checked: var(--button_bg);
+    qproperty-background_checked_hover: var(--primary_light);
+}

@@ -706,7 +706,7 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 	RefreshProfiles();
 
 	UpdateTitleBar();
-	UpdateVolumeControlsDecayRate();
+	// TODO: FIXME updateDecayRate();
 
 	Auth::Load();
 #ifdef YOUTUBE_ENABLED

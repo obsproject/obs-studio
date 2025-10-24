@@ -10,6 +10,8 @@ target_link_libraries(obs-studio PRIVATE OBS::qt-vertical-scroll-area)
 target_sources(
   obs-studio
   PRIVATE
+    widgets/AudioMixer.cpp
+    widgets/AudioMixer.hpp
     widgets/ColorSelect.cpp
     widgets/ColorSelect.hpp
     widgets/OBSBasic.cpp
@@ -41,7 +43,6 @@ target_sources(
     widgets/OBSBasic_Transitions.cpp
     widgets/OBSBasic_Updater.cpp
     widgets/OBSBasic_VirtualCam.cpp
-    widgets/OBSBasic_VolControl.cpp
     widgets/OBSBasic_YouTube.cpp
     widgets/OBSBasicControls.cpp
     widgets/OBSBasicControls.hpp
@@ -64,4 +65,6 @@ target_sources(
     widgets/VolumeAccessibleInterface.hpp
     widgets/VolumeMeter.cpp
     widgets/VolumeMeter.hpp
+    widgets/VolumeName.cpp
+    widgets/VolumeName.hpp
 )
