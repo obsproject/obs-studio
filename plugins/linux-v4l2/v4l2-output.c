@@ -138,48 +138,6 @@ static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
 	return vcam;
 }
 
-bool try_reset_output_caps(const char *device)
-{
-	struct v4l2_capability capability;
-	struct v4l2_format format;
-	int fd;
-
-	blog(LOG_INFO, "Attempting to reset output capability of '%s'", device);
-
-	fd = open(device, O_RDWR);
-	if (fd < 0)
-		return false;
-
-	format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-	if (ioctl(fd, VIDIOC_G_FMT, &format) < 0)
-		goto fail_close_reset_caps_fd;
-
-	if (ioctl(fd, VIDIOC_S_FMT, &format) < 0)
-		goto fail_close_reset_caps_fd;
-
-	if (ioctl(fd, VIDIOC_STREAMON, &format.type) < 0)
-		goto fail_close_reset_caps_fd;
-
-	if (ioctl(fd, VIDIOC_STREAMOFF, &format.type) < 0)
-		goto fail_close_reset_caps_fd;
-
-	close(fd);
-
-	fd = open(device, O_RDWR);
-	if (fd < 0)
-		return false;
-
-	if (ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0)
-		goto fail_close_reset_caps_fd;
-
-	close(fd);
-	return (capability.device_caps & V4L2_CAP_VIDEO_OUTPUT) != 0;
-
-fail_close_reset_caps_fd:
-	close(fd);
-	return false;
-}
-
 static bool try_connect(void *data, const char *device)
 {
 	static bool use_caps_workaround = false;
@@ -201,13 +159,8 @@ static bool try_connect(void *data, const char *device)
 	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) < 0)
 		goto fail_close_device;
 
-	if (!use_caps_workaround && !(capability.device_caps & V4L2_CAP_VIDEO_OUTPUT)) {
-		if (!try_reset_output_caps(device))
-			goto fail_close_device;
-
-		use_caps_workaround = true;
-	}
-	vcam->use_caps_workaround = use_caps_workaround;
+	if (!(capability.device_caps & V4L2_CAP_VIDEO_OUTPUT))
+		goto fail_close_device;
 
 	format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
@@ -234,6 +187,12 @@ static bool try_connect(void *data, const char *device)
 
 	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) < 0)
 		goto fail_close_device;
+
+	if (!use_caps_workaround && ioctl(vcam->device, VIDIOC_STREAMON, &format.type) == 0) {
+		/* STREAMON should error on all devices except v4l2loopback 0.12.x-0.13.x */
+		use_caps_workaround = true;
+	}
+	vcam->use_caps_workaround = use_caps_workaround;
 
 	struct video_scale_info vsi = {0};
 	vsi.format = VIDEO_FORMAT_YUY2;
@@ -326,7 +285,7 @@ static void virtualcam_stop(void *data, uint64_t ts)
 
 	uint32_t buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-	if (vcam->use_caps_workaround && ioctl(vcam->device, VIDIOC_STREAMOFF, buf_type) < 0) {
+	if (vcam->use_caps_workaround && ioctl(vcam->device, VIDIOC_STREAMOFF, &buf_type) < 0) {
 		blog(LOG_WARNING, "Failed to stop streaming on video device %d (%s)", vcam->device, strerror(errno));
 	}
 
