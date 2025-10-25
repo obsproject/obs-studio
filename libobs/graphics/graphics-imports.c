@@ -55,6 +55,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module, const char 
 	GRAPHICS_IMPORT(device_leave_context);
 	GRAPHICS_IMPORT(device_get_device_obj);
 	GRAPHICS_IMPORT(device_swapchain_create);
+	GRAPHICS_IMPORT(device_swapchain_destroy);
 	GRAPHICS_IMPORT(device_resize);
 	GRAPHICS_IMPORT(device_get_color_space);
 	GRAPHICS_IMPORT(device_update_color_space);
@@ -122,8 +123,6 @@ bool load_graphics_imports(struct gs_exports *exports, void *module, const char 
 	GRAPHICS_IMPORT(device_frustum);
 	GRAPHICS_IMPORT(device_projection_push);
 	GRAPHICS_IMPORT(device_projection_pop);
-
-	GRAPHICS_IMPORT(gs_swapchain_destroy);
 
 	GRAPHICS_IMPORT(gs_texture_destroy);
 	GRAPHICS_IMPORT(gs_texture_get_width);
