@@ -54,6 +54,8 @@ VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
 	  contextMenu(nullptr),
 	  QFrame(parent)
 {
+	setAttribute(Qt::WA_OpaquePaintEvent, true);
+
 	utils = new idian::Utils(this);
 
 	uuid = obs_source_get_uuid(source);
@@ -98,7 +100,7 @@ VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
 	bool muted = obs_source_muted(source);
 	bool unassigned = isSourceUnassigned(source);
 
-	volMeter->muted = muted || unassigned;
+	volMeter->setMuted(muted || unassigned);
 
 	setLayoutVertical(vertical);
 	setName(sourceName);
@@ -572,6 +574,7 @@ void VolControl::updateCategoryLabel()
 	categoryLabel->setText(labelText);
 
 	utils->polishChildren(this);
+	volMeter->updateBackgroundCache();
 }
 
 void VolControl::updateDecayRate()
@@ -694,7 +697,7 @@ void VolControl::updateMixerState()
 	bool showAsMonitored = monitoringType != OBS_MONITORING_TYPE_NONE;
 	bool showAsUnassigned = !muted && unassigned;
 
-	volMeter->muted = (showAsMuted || showAsUnassigned) && !showAsMonitored;
+	volMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
 
 	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
 	// in QSS so we set a checked class selector on the button to be used instead.
