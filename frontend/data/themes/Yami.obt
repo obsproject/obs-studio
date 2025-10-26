@@ -1692,7 +1692,8 @@ QSlider::handle:disabled {
     border-color: transparent;
 }
 
-VolControl {
+VolControl,
+VolumeMeter {
     background: var(--bg_base);
 }
 
@@ -1800,7 +1801,6 @@ VolControl #volLabel {
 }
 
 VolumeMeter {
-    background: transparent;
     color: var(--grey3);
     font-size: 7.5pt;
     font-weight: bold;
@@ -1818,6 +1818,8 @@ VolumeMeter {
 
 /* Hidden Volume Controls */
 VolControl.volume-hidden,
+VolControl.volume-hidden VolumeMeter,
+VolControl.volume-inactive VolumeMeter,
 VolControl.volume-inactive {
     background: var(--grey7);
 }
