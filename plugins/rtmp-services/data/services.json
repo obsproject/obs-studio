@@ -3478,6 +3478,27 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
+        },
+        {
+            "name": "Streamrun",
+            "common": false,
+            "more_info_link": "https://streamrun.com",
+            "stream_key_link": "https://streamrun.com/apps",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://ingest.streamrun.io"
+                }
+            ],
+            "supported video codecs": [
+                "h264",
+                "hevc",
+                "av1"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 20000
+            }
         }
     ]
 }
