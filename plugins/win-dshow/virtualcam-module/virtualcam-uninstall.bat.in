@@ -22,6 +22,11 @@ goto checkAdmin
 	) else (
 		regsvr32.exe /u /s obs-virtualcam-module64.dll
 	)
+	if exist "%~dp0\data\obs-plugins\win-dshow\obs-virtualcam-module-arm64.dll" (
+        "%SystemRoot%\System32\regsvr32.exe" /u /s "%~dp0\data\obs-plugins\win-dshow\obs-virtualcam-module-arm64.dll"
+    ) else (
+        "%SystemRoot%\System32\regsvr32.exe" /u /s obs-virtualcam-module-arm64.dll
+    )
 
 :endSuccess
 	echo Virtual Cam uninstalled!
