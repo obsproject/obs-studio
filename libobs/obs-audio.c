@@ -48,37 +48,52 @@ static inline bool is_individual_audio_source(obs_source_t *source)
 	       !(source->info.output_flags & OBS_SOURCE_COMPOSITE);
 }
 
+extern bool devices_match(const char *id1, const char *id2);
+
 static inline void check_audio_output_source_is_monitoring_device(obs_source_t *s, void *p)
 {
 	struct obs_core_audio *audio = p;
 	if (!audio->monitoring_device_name)
 		return;
 
-	if (strcmp(s->info.id, "wasapi_output_capture") == 0 || strcmp(s->info.id, "pulse_output_capture") == 0 ||
-	    strcmp(s->info.id, "coreaudio_output_capture") == 0) {
-		const char *dev_id = NULL;
-		obs_data_t *settings = obs_source_get_settings(s);
-		bool is_pulse = strcmp(s->info.id, "pulse_output_capture") == 0;
-		if (settings) {
-			dev_id = obs_data_get_string(settings, "device_id");
-			bool id_match = strcmp(dev_id, audio->monitoring_device_id) == 0;
-			if (is_pulse) {
-				// pulse may append '.monitor'
-				size_t count = strlen(audio->monitoring_device_id) - 9;
-				id_match = id_match || strncmp(dev_id, audio->monitoring_device_id, count) == 0;
-			}
-			if (id_match) {
-				audio->prevent_monitoring_duplication = true;
-				audio->monitoring_duplicating_source = s;
-				if (!audio->monitoring_duplication_prevented_on_prev_tick)
-					blog(LOG_INFO,
-					     "Device for 'Audio Output Capture' source is also used for audio"
-					     " monitoring:\nDeduplication logic is being applied to all monitored"
-					     " sources.\n");
-			}
-			obs_data_release(settings);
-		}
+	const char *id = s->info.id;
+	if (strcmp(id, "wasapi_output_capture") != 0 && strcmp(id, "pulse_output_capture") != 0 &&
+	    strcmp(id, "coreaudio_output_capture") != 0)
+		return;
+
+	obs_data_t *settings = obs_source_get_settings(s);
+	if (!settings)
+		return;
+
+	const char *device_id = obs_data_get_string(settings, "device_id");
+	const char *mon_id = audio->monitoring_device_id;
+	bool id_match = false;
+
+#ifdef __APPLE__
+	extern void get_desktop_default_id(char **p_id);
+	if (device_id && strcmp(device_id, "default") == 0) {
+		char *def_id = NULL;
+		get_desktop_default_id(&def_id);
+		id_match = devices_match(def_id, mon_id);
+		if (def_id)
+			bfree(def_id);
+	} else {
+		id_match = devices_match(device_id, mon_id);
 	}
+#else
+	id_match = devices_match(device_id, mon_id);
+#endif
+
+	if (id_match) {
+		audio->prevent_monitoring_duplication = true;
+		audio->monitoring_duplicating_source = s;
+		if (!audio->monitoring_duplication_prevented_on_prev_tick)
+			blog(LOG_INFO, "Device for 'Audio Output Capture' source is also used for audio"
+				       " monitoring:\nDeduplication logic is being applied to all monitored"
+				       " sources.\n");
+	}
+
+	obs_data_release(settings);
 }
 
 /*
