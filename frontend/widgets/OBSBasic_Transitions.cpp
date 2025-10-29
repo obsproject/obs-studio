@@ -274,8 +274,8 @@ void OBSBasic::SetSwapScenesMode(bool enabled)
 		swapScenesMode = enabled;
 
 		blog(LOG_INFO, "SwapScenesMode set to: %s", enabled ? "true" : "false");
-/*
-		emit SwapScenesModeChanged(enabled);*/
+
+		emit SwapScenesModeChanged(enabled);
 
 		OnEvent(OBS_FRONTEND_EVENT_SWAP_SCENES_MODE_CHANGED);
 	});

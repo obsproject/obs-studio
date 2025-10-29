@@ -570,7 +570,7 @@ bool OBSStudioAPI::obs_frontend_get_swap_scenes_mode(void)
     OBSBasic *main = OBSBasic::Get();
     if (!main)
         return false;
-    return main->GetSwapScenesMode(); // implement GetSwapScenesMode() in OBSBasic
+    return main->GetSwapScenesMode();
 }
 
 void OBSStudioAPI::obs_frontend_set_swap_scenes_mode(bool enabled)
