@@ -841,7 +841,7 @@ Functions
    Get the current value of "Swap preview/program scenes after transitioning"
    option in studio mode.
 
-   :return: *true* if the preview display is enabled, *false* otherwise
+   :return: *true* if mode is enabled, *false* otherwise
 
 ---------------------------------------
 
