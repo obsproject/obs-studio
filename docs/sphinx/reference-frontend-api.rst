@@ -167,6 +167,11 @@ Structures/Enumerations
      Triggered when the current preview scene has changed in studio
      mode.
 
+   - **OBS_FRONTEND_EVENT_SWAP_SCENES_MODE_CHANGED**
+
+     Triggered when the "Swap preview/program scenes after transitioning"
+     option in studio mode is toggled
+
    - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP**
 
      Triggered when a scene collection has been completely unloaded, and
@@ -817,6 +822,26 @@ Functions
 .. function:: bool obs_frontend_preview_enabled(void)
 
    :return: *true* if the preview display is enabled, *false* otherwise
+
+---------------------------------------
+
+.. function:: obs_frontend_set_swap_scenes_mode(bool enable)
+
+   Toggles the "Swap preview/program scenes after transitioning"
+   behavior while in studio mode. Useful for instances where
+   both behaviors may be desirable depending on circumstance.
+   Does nothing when not using studio mode.
+
+   :param enable: *true* to enable this mode, *false* to disable it
+
+---------------------------------------
+
+.. function:: obs_frontend_get_swap_scenes_mode(void)
+
+   Get the current value of "Swap preview/program scenes after transitioning"
+   option in studio mode.
+
+   :return: *true* if mode is enabled, *false* otherwise
 
 ---------------------------------------
 
