@@ -167,11 +167,6 @@ Structures/Enumerations
      Triggered when the current preview scene has changed in studio
      mode.
 
-   - **OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED**
-
-     Triggered when the current preview scene has changed in studio
-     mode.
-
    - **OBS_FRONTEND_EVENT_SWAP_SCENES_MODE_CHANGED**
 
      Triggered when the "Swap preview/program scenes after transitioning"
