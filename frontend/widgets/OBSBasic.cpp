@@ -1971,7 +1971,7 @@ void OBSBasic::closeWindow()
 	applicationShutdown();
 	deleteLater();
 
-	App()->quit();
+	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
 }
 
 void OBSBasic::UpdateEditMenu()
