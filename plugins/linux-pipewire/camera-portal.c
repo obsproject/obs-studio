@@ -675,7 +675,7 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 		if (!obs_pw_video_format_from_spa_format(format, &obs_pw_video_format))
 			continue;
 
-		if (obs_pw_video_format.video_format != pixelformat)
+		if (obs_pw_video_format.spa_format != pixelformat)
 			continue;
 
 		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_size,

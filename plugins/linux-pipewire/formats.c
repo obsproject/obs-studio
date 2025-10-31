@@ -55,9 +55,9 @@ static const struct obs_pw_video_format supported_formats[] = {
 	{
 		SPA_VIDEO_FORMAT_RGBx,
 		DRM_FORMAT_XBGR8888,
-		GS_BGRX,
-		VIDEO_FORMAT_NONE,
-		true,
+		GS_RGBA,
+		VIDEO_FORMAT_RGBA,
+		false,
 		4,
 		"XBGR8888",
 	},
