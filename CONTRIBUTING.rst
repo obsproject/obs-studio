@@ -46,6 +46,13 @@ Coding Guidelines
   information, please read here:
   https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst
 
+  - Exception: Always use braces for all control statements even for a single
+    statement.  For example::
+
+      if (!success) {
+              return;
+      }
+
 - Avoid trailing spaces.  To view trailing spaces before making a
   commit, use "git diff" on your changes.  If colors are enabled for
   git in the command prompt, it will show you any whitespace issues
