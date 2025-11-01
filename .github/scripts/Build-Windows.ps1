@@ -36,20 +36,23 @@ function Build {
 
     $ScriptHome = $PSScriptRoot
     $ProjectRoot = Resolve-Path -Path "$PSScriptRoot/../.."
-
+    $BuildSpecFile = "${ProjectRoot}/CMakePresets.json"
     $UtilityFunctions = Get-ChildItem -Path $PSScriptRoot/utils.pwsh/*.ps1 -Recurse
 
     foreach($Utility in $UtilityFunctions) {
         Write-Debug "Loading $($Utility.FullName)"
         . $Utility.FullName
     }
-
+    $BuildSpec = Get-Content -Path ${BuildSpecFile} -Raw | ConvertFrom-Json
     Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
 
     Push-Location -Stack BuildTemp
     Ensure-Location $ProjectRoot
 
     $CmakeArgs = @('--preset', "windows-ci-${Target}")
+
+    $DepsVersion = $BuildSpec.configurePresets.vendor.'obsproject.com/obs-studio'.dependencies.prebuilt.version
+    $CmakeArgs += @("-DVST3SDK_PATH=${ProjectRoot}\.deps\obs-deps-${DepsVersion}-${Target}\include\vst3sdk")
 
     $CmakeBuildArgs = @('--build')
     $CmakeInstallArgs = @()
