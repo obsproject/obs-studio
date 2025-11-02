@@ -66,7 +66,6 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_CANVAS_ADDED,
 	OBS_FRONTEND_EVENT_CANVAS_REMOVED,
 	OBS_FRONTEND_EVENT_SWAP_SCENES_MODE_CHANGED,
-
 };
 
 /* ------------------------------------------------------------------------- */
