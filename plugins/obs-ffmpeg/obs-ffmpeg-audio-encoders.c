@@ -128,10 +128,10 @@ static bool initialize_codec(struct enc_encoder *enc)
 	ret = avcodec_open2(enc->context, enc->codec, NULL);
 	if (ret < 0) {
 		struct dstr error_message = {0};
-		dstr_printf(&error_message, "Failed to open AAC codec: %s", av_err2str(ret));
+		dstr_printf(&error_message, "Failed to open %s codec: %s", enc->type, av_err2str(ret));
 		obs_encoder_set_last_error(enc->encoder, error_message.array);
 		dstr_free(&error_message);
-		warn("Failed to open AAC codec: %s", av_err2str(ret));
+		warn("Failed to open %s codec: %s", enc->type, av_err2str(ret));
 		return false;
 	}
 	enc->aframe->format = enc->context->sample_fmt;
