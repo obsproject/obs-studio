@@ -422,6 +422,18 @@ static obs_properties_t *enc_properties(void *unused)
 	return props;
 }
 
+static obs_properties_t *opus_properties(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+
+	obs_properties_t *props = obs_properties_create();
+	/* FFmpeg libopus encoder maximum bitrate is 256 kbps per channel.
+	 * For typical stereo/mono usage, 256 kbps provides excellent quality
+	 * (Opus is highly efficient - typical WebRTC usage is 30-90 kbps). */
+	obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"), 64, 256, 32);
+	return props;
+}
+
 static bool enc_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
 	struct enc_encoder *enc = data;
@@ -481,7 +493,7 @@ struct obs_encoder_info opus_encoder_info = {
 	.encode = enc_encode,
 	.get_frame_size = enc_frame_size,
 	.get_defaults = enc_defaults,
-	.get_properties = enc_properties,
+	.get_properties = opus_properties,
 	.get_extra_data = enc_extra_data,
 	.get_audio_info = enc_audio_info,
 };
