@@ -49,7 +49,7 @@ invoke_formatter() {
         exit 2
       fi
 
-      if ! is-at-least ${formatter_version[-1]} 19.1.1; then
+      if ! is-at-least ${formatter_version[-1]} 19.1.8; then
         log_error "clang-format is more recent than version 19.1.1 (found ${formatter_version[-1]})."
         exit 2
       fi

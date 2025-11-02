@@ -226,7 +226,6 @@ EXPORT void obs_frontend_set_current_preview_scene(obs_source_t *scene);
 EXPORT bool obs_frontend_get_swap_scenes_mode(void);
 EXPORT void obs_frontend_set_swap_scenes_mode(bool enabled);
 
-
 EXPORT void obs_frontend_take_screenshot(void);
 EXPORT void obs_frontend_take_source_screenshot(obs_source_t *source);
 
