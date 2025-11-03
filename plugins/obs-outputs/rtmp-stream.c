@@ -1353,6 +1353,16 @@ static bool init_connect(struct rtmp_stream *stream)
 	da_reserve(stream->dbr_interpolation_table, 2);
 	da_push_back_new(stream->dbr_interpolation_table);
 	struct dbr_interpolation_point *dbr_point = da_push_back_new(stream->dbr_interpolation_table);
+
+	// Determine if the stream is multitrack by checking for any encoder beyond index 0
+	bool is_multitrack = false;
+	for (size_t j = 1; j < MAX_OUTPUT_VIDEO_ENCODERS; j++) {
+		if (obs_output_get_video_encoder2(stream->output, j) != NULL) {
+			is_multitrack = true;
+			break;
+		}
+	}
+
 	for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
 		obs_encoder_t *enc = obs_output_get_video_encoder2(stream->output, i);
 		if (!enc)
@@ -1361,22 +1371,25 @@ static bool init_connect(struct rtmp_stream *stream)
 		const char *codec = obs_encoder_get_codec(enc);
 		stream->video_codec[i] = to_video_type(codec);
 
-		const char *encoder_id = obs_encoder_get_id(enc);
-		bool is_qsv = strncmp(encoder_id, "obs_qsv11", 9) == 0;
-		bool has_dbr_cap = (obs_encoder_get_caps(enc) & OBS_ENCODER_CAP_DYN_BITRATE) != 0;
+		uint32_t caps = obs_encoder_get_caps(enc);
+		bool has_dbr_cap = (caps & OBS_ENCODER_CAP_DYN_BITRATE) != 0;
+		bool has_multitrack_dbr_cap = (caps & OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE) != 0;
 
-		if (!has_dbr_cap || is_qsv) {
+		// For multitrack, all encoders must support multitrack DBR. For single track, encoder must support
+		// standard DBR.
+		bool dbr_supported = is_multitrack ? has_multitrack_dbr_cap : has_dbr_cap;
+
+		if (!dbr_supported) {
 			dbr_capable = false;
 			if (!has_dbr_cap) {
 				info("Dynamic bitrate disabled. "
 				     "The encoder '%s' does not support on-the-fly bitrate reconfiguration.",
 				     obs_encoder_get_name(enc));
-			} else {
+			} else if (is_multitrack && !has_multitrack_dbr_cap) {
 				info("Dynamic bitrate disabled. "
-				     "The encoder '%s' feature is currently disabled pending a fix for Intel QSV DBR support.",
+				     "The encoder '%s' does not support on-the-fly multitrack bitrate reconfiguration.",
 				     obs_encoder_get_name(enc));
 			}
-			continue;
 		}
 
 		obs_data_t *settings = obs_encoder_get_settings(enc);
