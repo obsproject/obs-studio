@@ -123,9 +123,30 @@ struct winrt_capture {
 		active = FALSE;
 	}
 
+	bool is_device_lost()
+	{
+		if (context) {
+			ComPtr<ID3D11Device> pDevice;
+			context->GetDevice(pDevice.Assign());
+
+			if (pDevice) {
+				auto hr = pDevice->GetDeviceRemovedReason();
+				if (hr == DXGI_ERROR_DEVICE_RESET || hr == DXGI_ERROR_DEVICE_REMOVED) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	void on_frame_arrived(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const &sender,
 			      winrt::Windows::Foundation::IInspectable const &)
 	{
+		if (is_device_lost()) {
+			/* {frame_pool.Recreate} will crash if device has been lost or reset */
+			return;
+		}
+
 		const winrt::Windows::Graphics::Capture::Direct3D11CaptureFrame frame = sender.TryGetNextFrame();
 		const winrt::Windows::Graphics::SizeInt32 frame_content_size = frame.ContentSize();
 
