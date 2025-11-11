@@ -1648,7 +1648,7 @@ bool OBSBasic::ResetAudio()
 
 void OBSBasic::close()
 {
-	if (isClosePromptOpen || isClosing()) {
+	if (isClosePromptOpen() || isClosing()) {
 		return;
 	}
 
@@ -1657,7 +1657,7 @@ void OBSBasic::close()
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
-	if (isClosePromptOpen || isClosing()) {
+	if (isClosePromptOpen() || isClosing()) {
 		return;
 	}
 
@@ -1684,7 +1684,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		event->ignore();
 		restart = false;
 
-		if (!isClosePromptOpen) {
+		if (!isClosePromptOpen()) {
 			bool shouldClose = promptToClose();
 
 			if (shouldClose) {
@@ -1890,18 +1890,18 @@ bool OBSBasic::shouldPromptForClose()
 
 bool OBSBasic::promptToClose()
 {
-	isClosePromptOpen = true;
+	isClosePromptOpen_ = true;
 
 	SetShowing(true);
 	QMessageBox::StandardButton button =
 		OBSMessageBox::question(this, QTStr("ConfirmExit.Title"), QTStr("ConfirmExit.Text"));
 
 	if (button == QMessageBox::No) {
-		isClosePromptOpen = false;
+		isClosePromptOpen_ = false;
 		return false;
 	}
 
-	isClosePromptOpen = false;
+	isClosePromptOpen_ = false;
 	return true;
 }
 

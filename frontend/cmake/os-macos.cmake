@@ -7,6 +7,7 @@ target_sources(
     dialogs/OBSPermissions.hpp
     forms/OBSPermissions.ui
     utility/CrashHandler_MacOS.mm
+    utility/NativeEventFilter.cpp
     utility/platform-osx.mm
     utility/system-info-macos.mm
 )

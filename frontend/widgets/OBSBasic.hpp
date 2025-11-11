@@ -217,7 +217,6 @@ class OBSBasic : public OBSMainWindow {
 	Q_PROPERTY(QIcon audioProcessOutputIcon READ GetAudioProcessOutputIcon WRITE SetAudioProcessOutputIcon
 			   DESIGNABLE true)
 
-	friend class OBS::NativeEventFilter;
 	friend class OBSAbout;
 	friend class OBSBasicPreview;
 	friend class OBSBasicStatusBar;
@@ -261,7 +260,7 @@ private:
 
 	bool loaded = false;
 	bool isClosing_ = false;
-	bool isClosePromptOpen = false;
+	bool isClosePromptOpen_ = false;
 	bool handledShutdown = false;
 
 	// TODO: Remove, orphaned variable
@@ -331,11 +330,12 @@ public:
 	void saveAll();
 	bool shouldPromptForClose();
 	inline bool isClosing() { return isClosing_; }
+	inline bool isClosePromptOpen() { return isClosePromptOpen_; }
+	void closeWindow();
 
 protected:
 	bool isReadyToClose();
 	bool promptToClose();
-	void closeWindow();
 
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;

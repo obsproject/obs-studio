@@ -18,8 +18,8 @@
 #pragma once
 
 #include <utility/OBSTheme.hpp>
-#include <widgets/OBSMainWindow.hpp>
 #include <utility/NativeEventFilter.hpp>
+#include <widgets/OBSMainWindow.hpp>
 
 #include <obs-frontend-api.h>
 #include <util/platform.h>
