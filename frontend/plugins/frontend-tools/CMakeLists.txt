@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.28...3.30)
 find_package(Qt6 REQUIRED Widgets)
 
 if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
-  find_package(Qt6 REQUIRED Gui)
+  find_package(Qt6 REQUIRED GuiPrivate)
   find_package(X11 REQUIRED)
 endif()
 
