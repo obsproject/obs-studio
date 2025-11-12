@@ -520,9 +520,9 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 {
 	ui->sourcesToolbar->setVisible(visible);
 	ui->scenesToolbar->setVisible(visible);
-	// TODO: FIXME ui->mixerToolbar->setVisible(visible);
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowListboxToolbars", visible);
+	emit userSettingChanged("BasicWindow", "ShowListboxToolbars");
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)
