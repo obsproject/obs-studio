@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 find_package(Qt6 REQUIRED Widgets)
 
 if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
-  find_package(Qt6 REQUIRED Gui)
   find_package(X11 REQUIRED)
 endif()
 
@@ -65,7 +64,6 @@ target_link_libraries(
     Qt::Widgets
     "$<$<PLATFORM_ID:Darwin>:$<LINK_LIBRARY:FRAMEWORK,Cocoa>>"
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:X11::X11>
-    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Qt::GuiPrivate>
 )
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/shared/obs-scripting" "${CMAKE_BINARY_DIR}/shared/obs-scripting")
