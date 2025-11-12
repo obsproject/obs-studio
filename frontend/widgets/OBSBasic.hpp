@@ -67,12 +67,12 @@ struct Rect;
 enum class LogFileType;
 } // namespace OBS
 
-#define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
-#define DESKTOP_AUDIO_2 Str("DesktopAudioDevice2")
-#define AUX_AUDIO_1 Str("AuxAudioDevice1")
-#define AUX_AUDIO_2 Str("AuxAudioDevice2")
-#define AUX_AUDIO_3 Str("AuxAudioDevice3")
-#define AUX_AUDIO_4 Str("AuxAudioDevice4")
+#define DESKTOP_AUDIO_1 "DesktopAudioDevice1"
+#define DESKTOP_AUDIO_2 "DesktopAudioDevice2"
+#define AUX_AUDIO_1 "AuxAudioDevice1"
+#define AUX_AUDIO_2 "AuxAudioDevice2"
+#define AUX_AUDIO_3 "AuxAudioDevice3"
+#define AUX_AUDIO_4 "AuxAudioDevice4"
 
 #define SIMPLE_ENCODER_X264 "x264"
 #define SIMPLE_ENCODER_X264_LOWCPU "x264_lowcpu"
