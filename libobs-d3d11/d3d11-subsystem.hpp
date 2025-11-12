@@ -69,6 +69,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormatResource(gs_color_format format)
 	case GS_R8:
 		return DXGI_FORMAT_R8_UNORM;
 	case GS_RGBA:
+	case GS_RGBX: // There is no RGBX format in Windows D3D, so RGBA is used here instead.
 		return DXGI_FORMAT_R8G8B8A8_TYPELESS;
 	case GS_BGRX:
 		return DXGI_FORMAT_B8G8R8X8_TYPELESS;
@@ -117,6 +118,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormatView(gs_color_format format)
 {
 	switch (format) {
 	case GS_RGBA:
+	case GS_RGBX:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case GS_BGRX:
 		return DXGI_FORMAT_B8G8R8X8_UNORM;
@@ -131,6 +133,7 @@ static inline DXGI_FORMAT ConvertGSTextureFormatViewLinear(gs_color_format forma
 {
 	switch (format) {
 	case GS_RGBA:
+	case GS_RGBX:
 		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	case GS_BGRX:
 		return DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;

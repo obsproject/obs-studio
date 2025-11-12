@@ -553,6 +553,8 @@ static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 	switch (format) {
 	case AV_PIX_FMT_RGBA:
 		return GS_RGBA;
+	case AV_PIX_FMT_RGB0:
+		return GS_RGBX;
 	case AV_PIX_FMT_BGRA:
 		return GS_BGRA;
 	case AV_PIX_FMT_BGR0:

@@ -39,10 +39,10 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_RED;
 	case GS_R8:
 		return GL_RED;
+	case GS_RGBX:
 	case GS_RGBA:
 		return GL_RGBA;
 	case GS_BGRX:
-		return GL_BGRA;
 	case GS_BGRA:
 		return GL_BGRA;
 	case GS_R10G10B10A2:
@@ -93,11 +93,11 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_R8; /* NOTE: use GL_TEXTURE_SWIZZLE_x */
 	case GS_R8:
 		return GL_R8;
-	case GS_RGBA:
-		return GL_SRGB8_ALPHA8;
+	case GS_RGBX:
 	case GS_BGRX:
 		return GL_SRGB8;
 	case GS_BGRA:
+	case GS_RGBA:
 		return GL_SRGB8_ALPHA8;
 	case GS_R10G10B10A2:
 		return GL_RGB10_A2;
@@ -144,13 +144,10 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 {
 	switch (format) {
 	case GS_A8:
-		return GL_UNSIGNED_BYTE;
 	case GS_R8:
-		return GL_UNSIGNED_BYTE;
+	case GS_RGBX:
 	case GS_RGBA:
-		return GL_UNSIGNED_BYTE;
 	case GS_BGRX:
-		return GL_UNSIGNED_BYTE;
 	case GS_BGRA:
 		return GL_UNSIGNED_BYTE;
 	case GS_R10G10B10A2:

@@ -52,6 +52,8 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_RGBA:
 		return VIDEO_FORMAT_RGBA;
+	case AV_PIX_FMT_RGB0:
+		return VIDEO_FORMAT_RGBX;
 	case AV_PIX_FMT_BGRA:
 		return VIDEO_FORMAT_BGRA;
 	case AV_PIX_FMT_YUVA420P:
