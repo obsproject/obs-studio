@@ -69,6 +69,8 @@ private:
 	bool keepInactiveRight = false;
 	bool keepHiddenRight = false;
 
+	bool showToolbar = true;
+
 	QFrame *mixerFrame = nullptr;
 	QVBoxLayout *mainLayout = nullptr;
 	QVBoxLayout *mixerLayout = nullptr;
@@ -106,6 +108,7 @@ private:
 	void updateKeepInactiveRight();
 	void updateShowHidden();
 	void updateKeepHiddenRight();
+	void updateShowToolbar();
 
 	QTimer updateTimer;
 	void updateVolumeLayouts();

@@ -147,6 +147,8 @@ public:
 	void setUseDisabledColors(bool enable);
 	void setMuted(bool mute);
 
+	void refreshColors();
+
 	QColor getBackgroundNominalColor() const;
 	void setBackgroundNominalColor(QColor c);
 	QColor getBackgroundWarningColor() const;

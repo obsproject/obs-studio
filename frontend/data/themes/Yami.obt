@@ -1697,8 +1697,23 @@ VolumeMeter {
     background: var(--bg_base);
 }
 
+VolumeMeter {
+    color: var(--grey3);
+    font-size: 7.5pt;
+    font-weight: bold;
+    
+    qproperty-backgroundNominalColor: var(--green5);
+    qproperty-backgroundWarningColor: var(--yellow5);
+    qproperty-backgroundErrorColor: var(--red5);
+    qproperty-foregroundNominalColor: var(--green2);
+    qproperty-foregroundWarningColor: var(--yellow2);
+    qproperty-foregroundErrorColor: var(--red2);
+    qproperty-magnitudeColor: rgb(0, 0, 0);
+    qproperty-majorTickColor: var(--white5);
+    qproperty-minorTickColor: var(--grey1);
+}
+
 VolumeName {
-    background: transparent;
     font-size: var(--font_small);
     padding: 1px var(--padding_base);
     border: 1px solid transparent;
@@ -1714,7 +1729,6 @@ VolumeName:hover {
 }
 
 VolControl #volLabel {
-    background: transparent;
     padding: var(--padding_base) 0px var(--padding_base);
     text-align: center;
     font-size: var(--font_base);
@@ -1800,22 +1814,6 @@ VolControl #volLabel {
     padding: 0px var(--padding_large);
 }
 
-VolumeMeter {
-    color: var(--grey3);
-    font-size: 7.5pt;
-    font-weight: bold;
-    
-    qproperty-backgroundNominalColor: var(--green5);
-    qproperty-backgroundWarningColor: var(--yellow5);
-    qproperty-backgroundErrorColor: var(--red5);
-    qproperty-foregroundNominalColor: var(--green2);
-    qproperty-foregroundWarningColor: var(--yellow2);
-    qproperty-foregroundErrorColor: var(--red2);
-    qproperty-magnitudeColor: rgb(0, 0, 0);
-    qproperty-majorTickColor: var(--white5);
-    qproperty-minorTickColor: var(--grey1);
-}
-
 /* Hidden Volume Controls */
 VolControl.volume-hidden,
 VolControl.volume-hidden VolumeMeter,
@@ -1873,7 +1871,6 @@ VolControl.volume-hidden VolumeMeter {
     qproperty-foregroundWarningColor: var(--yellow4);
     qproperty-foregroundErrorColor: var(--red4);
 }
-
 
 /* Status Bar */
 

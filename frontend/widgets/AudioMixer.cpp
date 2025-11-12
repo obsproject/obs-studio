@@ -250,6 +250,10 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 					updateShowHidden();
 				} else if (category == "BasicWindow" && name == "MixerKeepHiddenRight") {
 					updateKeepHiddenRight();
+				} else if (category == "BasicWindow" && name == "ShowListboxToolbars") {
+					updateShowToolbar();
+				} else if (category == "Accessibility" && name == "SettingsChanged") {
+					refreshVolumeColors();
 				}
 			});
 
@@ -261,6 +265,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 		connect(layoutButton, &QAction::triggered, main, &OBSBasic::toggleMixerLayout);
 	}
 
+	updateShowToolbar();
 	updatePreviewSources();
 	updateGlobalSources();
 
@@ -920,6 +925,19 @@ void AudioMixer::updateKeepHiddenRight()
 	keepHiddenRight = settingKeepHiddenRight;
 
 	queueLayoutUpdate();
+}
+
+void AudioMixer::updateShowToolbar()
+{
+	bool settingShowToolbar = config_get_bool(App()->GetUserConfig(), "BasicWindow", "ShowListboxToolbars");
+
+	if (showToolbar == settingShowToolbar) {
+		return;
+	}
+
+	showToolbar = settingShowToolbar;
+
+	showToolbar ? mixerToolbar->show() : mixerToolbar->hide();
 }
 
 void AudioMixer::obsSourceActivated(void *data, calldata_t *params)

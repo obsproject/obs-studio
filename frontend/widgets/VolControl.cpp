@@ -973,12 +973,7 @@ void VolControl::setHideInMixer(bool hidden)
 
 void VolControl::refreshColors()
 {
-	volMeter->setBackgroundNominalColor(volMeter->getBackgroundNominalColor());
-	volMeter->setBackgroundWarningColor(volMeter->getBackgroundWarningColor());
-	volMeter->setBackgroundErrorColor(volMeter->getBackgroundErrorColor());
-	volMeter->setForegroundNominalColor(volMeter->getForegroundNominalColor());
-	volMeter->setForegroundWarningColor(volMeter->getForegroundWarningColor());
-	volMeter->setForegroundErrorColor(volMeter->getForegroundErrorColor());
+	volMeter->refreshColors();
 }
 
 void VolControl::debugHideControls()

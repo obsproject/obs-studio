@@ -456,6 +456,18 @@ void VolumeMeter::setMuted(bool mute)
 	muted = mute;
 }
 
+void VolumeMeter::refreshColors()
+{
+	setBackgroundNominalColor(getBackgroundNominalColor());
+	setBackgroundWarningColor(getBackgroundWarningColor());
+	setBackgroundErrorColor(getBackgroundErrorColor());
+	setForegroundNominalColor(getForegroundNominalColor());
+	setForegroundWarningColor(getForegroundWarningColor());
+	setForegroundErrorColor(getForegroundErrorColor());
+
+	updateBackgroundCache();
+}
+
 // When this is called from the constructor, obs_volmeter_get_nr_channels has not
 // yet been called and Q_PROPERTY settings have not yet been read from the
 // stylesheet.
