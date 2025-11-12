@@ -33,15 +33,30 @@ const OBS::Canvas &OBSBasic::AddCanvas(const std::string &name, obs_video_info *
 
 bool OBSBasic::RemoveCanvas(OBSCanvas canvas)
 {
+	bool removed = false;
 	if (!canvas)
-		return false;
+		return removed;
 
 	auto canvas_it = std::find(std::begin(canvases), std::end(canvases), canvas);
 	if (canvas_it != std::end(canvases)) {
+		// Move canvas to a temporary object to delay removal of the canvas and calls to its signal handlers
+		// until after erase() completes. This is to avoid issues with recursion coming from the
+		// CanvasRemoved() signal handler.
+		OBS::Canvas tmp = std::move(*canvas_it);
 		canvases.erase(canvas_it);
-		OnEvent(OBS_FRONTEND_EVENT_CANVAS_REMOVED);
-		return true;
+		removed = true;
 	}
 
-	return false;
+	if (removed)
+		OnEvent(OBS_FRONTEND_EVENT_CANVAS_REMOVED);
+
+	return removed;
+}
+
+void OBSBasic::ClearCanvases()
+{
+	// Delete canvases one-by-one to ensure OBS_FRONTEND_EVENT_CANVAS_REMOVED is sent for each
+	while (!canvases.empty()) {
+		RemoveCanvas(OBSCanvas(canvases.back()));
+	}
 }
