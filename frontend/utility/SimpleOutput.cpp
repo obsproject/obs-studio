@@ -596,7 +596,8 @@ std::shared_future<void> SimpleOutput::SetupStreaming(obs_service_t *service, Se
 	auto audio_bitrate = GetAudioBitrate();
 	auto vod_track_mixer = IsVodTrackEnabled(service) ? std::optional{1} : std::nullopt;
 
-	auto handle_multitrack_video_result = [=](std::optional<bool> multitrackVideoResult) {
+	auto handle_multitrack_video_result = [this, type = std::string{type},
+					       service](std::optional<bool> multitrackVideoResult) {
 		if (multitrackVideoResult.has_value())
 			return multitrackVideoResult.value();
 
@@ -607,12 +608,9 @@ std::shared_future<void> SimpleOutput::SetupStreaming(obs_service_t *service, Se
 			startStreaming.Disconnect();
 			stopStreaming.Disconnect();
 
-			streamOutput = obs_output_create(type, "simple_stream", nullptr, nullptr);
+			streamOutput = obs_output_create(type.c_str(), "simple_stream", nullptr, nullptr);
 			if (!streamOutput) {
-				blog(LOG_WARNING,
-				     "Creation of stream output type '%s' "
-				     "failed!",
-				     type);
+				blog(LOG_WARNING, "Creation of stream output type '%s' failed!", type.c_str());
 				return false;
 			}
 

@@ -615,7 +615,8 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 	const char *audio_encoder_id = config_get_string(main->Config(), "AdvOut", "AudioEncoder");
 	int streamTrackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
 
-	auto handle_multitrack_video_result = [=](std::optional<bool> multitrackVideoResult) {
+	auto handle_multitrack_video_result = [this, type = std::string{type}, is_multitrack_output,
+					       multiTrackAudioMixes](std::optional<bool> multitrackVideoResult) {
 		if (multitrackVideoResult.has_value())
 			return multitrackVideoResult.value();
 
@@ -626,12 +627,9 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 			startStreaming.Disconnect();
 			stopStreaming.Disconnect();
 
-			streamOutput = obs_output_create(type, "adv_stream", nullptr, nullptr);
+			streamOutput = obs_output_create(type.c_str(), "adv_stream", nullptr, nullptr);
 			if (!streamOutput) {
-				blog(LOG_WARNING,
-				     "Creation of stream output type '%s' "
-				     "failed!",
-				     type);
+				blog(LOG_WARNING, "Creation of stream output type '%s' failed!", type.c_str());
 				return false;
 			}
 
