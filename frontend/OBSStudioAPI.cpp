@@ -682,6 +682,23 @@ bool OBSStudioAPI::obs_frontend_remove_canvas(obs_canvas_t *canvas)
 	return main->RemoveCanvas(canvas);
 }
 
+void OBSStudioAPI::obs_frontend_copy_sceneitem(obs_sceneitem_t *item)
+{
+	main->clipboard.clear();
+	main->copySceneItem(item);
+	main->UpdateEditMenu();
+}
+
+bool OBSStudioAPI::obs_frontend_can_paste_sceneitem(bool duplicate)
+{
+	return main->canPasteSceneItem(duplicate);
+}
+
+void OBSStudioAPI::obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
+{
+	main->pasteSceneItem(scene, duplicate);
+}
+
 void OBSStudioAPI::on_load(obs_data_t *settings)
 {
 	for (size_t i = saveCallbacks.size(); i > 0; i--) {
