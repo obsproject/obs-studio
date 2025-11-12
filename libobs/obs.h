@@ -1604,6 +1604,8 @@ EXPORT uint32_t obs_transition_get_alignment(const obs_source_t *transition);
 EXPORT void obs_transition_set_size(obs_source_t *transition, uint32_t cx, uint32_t cy);
 EXPORT void obs_transition_get_size(const obs_source_t *transition, uint32_t *cx, uint32_t *cy);
 
+EXPORT bool obs_transition_is_active(obs_source_t *transition);
+
 /* function used by transitions */
 
 /**
