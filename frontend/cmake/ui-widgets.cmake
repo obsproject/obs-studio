@@ -14,6 +14,7 @@ target_sources(
     widgets/ColorSelect.hpp
     widgets/OBSBasic.cpp
     widgets/OBSBasic.hpp
+    widgets/OBSBasic_Broadcast.cpp
     widgets/OBSBasic_Browser.cpp
     widgets/OBSBasic_Canvases.cpp
     widgets/OBSBasic_Clipboard.cpp
@@ -29,6 +30,7 @@ target_sources(
     widgets/OBSBasic_Projectors.cpp
     widgets/OBSBasic_Recording.cpp
     widgets/OBSBasic_ReplayBuffer.cpp
+    widgets/OBSBasic_Restream.cpp
     widgets/OBSBasic_SceneCollections.cpp
     widgets/OBSBasic_SceneItems.cpp
     widgets/OBSBasic_Scenes.cpp
