@@ -263,6 +263,22 @@ void OBSBasic::TransitionFullyStopped()
 		overridingTransition = false;
 	}
 }
+void OBSBasic::SetSwapScenesMode(bool enabled)
+
+{
+	QMetaObject::invokeMethod(this, [this, enabled]() {
+		if (swapScenesMode == enabled)
+			return;
+
+		swapScenesMode = enabled;
+
+		blog(LOG_INFO, "SwapScenesMode set to: %s", enabled ? "enabled" : "disabled");
+
+		emit SwapScenesModeChanged(enabled);
+
+		OnEvent(OBS_FRONTEND_EVENT_SWAP_SCENES_MODE_CHANGED);
+	});
+}
 
 void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransition, int quickDuration, bool black,
 				 bool manual)
