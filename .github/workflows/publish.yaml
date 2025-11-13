@@ -89,10 +89,54 @@ jobs:
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
       options: --privileged
+      volumes:
+        - /usr/local/lib/android:/to_clean/android
+        - /opt/hostedtoolcache/CodeQL:/to_clean/codeql
+        - /usr/local/.ghcup:/to_clean/ghcup
+        - /opt/hostedtoolcache/Python:/to_clean/python
+        - /usr/share/swift:/to_clean/swift
+        - /usr/share/dotnet:/to_clean/dotnet
     strategy:
       matrix:
         branch: ${{ fromJSON(needs.check-tag.outputs.flatpakMatrix) }}
     steps:
+      - name: Prepare build space
+        shell: bash
+        run: |
+          : Prepare build space
+
+          echo ::group::Available storage
+          df -h
+          echo ::endgroup::
+
+          echo ::group::Remove Android stuff
+          rm -rf /to_clean/android/*
+          echo ::endgroup::
+
+          echo ::group::Remove CodeQL stuff
+          rm -rf /to_clean/codeql/*
+          echo ::endgroup::
+
+          echo ::group::Remove GHCup stuff
+          rm -rf /to_clean/ghcup/*
+          echo ::endgroup::
+
+          echo ::group::Remove Python stuff
+          rm -rf /to_clean/python/*
+          echo ::endgroup::
+
+          echo ::group::Remove Swift stuff
+          rm -rf /to_clean/swift/*
+          echo ::endgroup::
+
+          echo ::group::Remove .NET stuff
+          rm -rf /to_clean/dotnet/*
+          echo ::endgroup::
+
+          echo ::group::Available storage
+          df -h
+          echo ::endgroup::
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
