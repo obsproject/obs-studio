@@ -3,8 +3,10 @@
 #include "ui_OBSBasicTransform.h"
 
 #include <obs.hpp>
+#include <components/AlignmentSelector.hpp>
 
 #include <QDialog>
+#include <QPointer>
 
 class OBSBasic;
 class QListWidgetItem;
@@ -14,6 +16,9 @@ class OBSBasicTransform : public QDialog {
 
 private:
 	std::unique_ptr<Ui::OBSBasicTransform> ui;
+
+	QPointer<AlignmentSelector> positionAlignment;
+	QPointer<AlignmentSelector> boundsAlignment;
 
 	OBSBasic *main;
 	OBSSceneItem item;
@@ -25,14 +30,14 @@ private:
 	bool ignoreItemChange = false;
 
 	template<typename Widget, typename WidgetParent, typename... SignalArgs, typename... SlotArgs>
-	void HookWidget(Widget *widget, void (WidgetParent::*signal)(SignalArgs...),
+	void hookWidget(Widget *widget, void (WidgetParent::*signal)(SignalArgs...),
 			void (OBSBasicTransform::*slot)(SlotArgs...))
 	{
 		QObject::connect(widget, signal, this, slot);
 	}
 
-	void SetScene(OBSScene scene);
-	void SetItem(OBSSceneItem newItem);
+	void setScene(OBSScene scene);
+	void setItem(OBSSceneItem newItem);
 
 	static void OBSSceneItemTransform(void *param, calldata_t *data);
 	static void OBSSceneItemRemoved(void *param, calldata_t *data);
@@ -41,17 +46,18 @@ private:
 	static void OBSSceneItemLocked(void *param, calldata_t *data);
 
 private slots:
-	void RefreshControls();
-	void SetItemQt(OBSSceneItem newItem);
-	void OnBoundsType(int index);
-	void OnControlChanged();
-	void OnCropChanged();
-	void SetEnabled(bool enable);
+	void refreshControls();
+	void setItemQt(OBSSceneItem newItem);
+	void onAlignChanged(int index);
+	void onBoundsType(int index);
+	void onControlChanged();
+	void onCropChanged();
+	void setEnabled(bool enable);
 
 public:
 	OBSBasicTransform(OBSSceneItem item, OBSBasic *parent);
 	~OBSBasicTransform();
 
 public slots:
-	void OnSceneChanged(QListWidgetItem *current, QListWidgetItem *prev);
+	void onSceneChanged(QListWidgetItem *current, QListWidgetItem *prev);
 };

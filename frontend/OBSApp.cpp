@@ -144,6 +144,15 @@ UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 
 	return launchAction;
 }
+
+QAccessibleInterface *alignmentSelectorFactory(const QString &classname, QObject *object)
+{
+	if (classname == QLatin1String("AlignmentSelector")) {
+		if (auto *w = qobject_cast<AlignmentSelector *>(object))
+			return new AccessibleAlignmentSelector(w);
+	}
+	return nullptr;
+}
 } // namespace
 
 QObject *CreateShortcutFilter()
@@ -1014,6 +1023,8 @@ static void move_basic_to_scene_collections(void)
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
+
+	QAccessible::installFactory(alignmentSelectorFactory);
 
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
