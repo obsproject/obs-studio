@@ -17,9 +17,13 @@
 
 #pragma once
 
+#include <QAbstractButton>
 #include <QFocusEvent>
+#include <QPainter>
 #include <QRegularExpression>
 #include <QStyle>
+#include <QStyleOptionButton>
+#include <QTimer>
 #include <QWidget>
 
 namespace idian {
@@ -38,23 +42,6 @@ public:
 	QWidget *parent = nullptr;
 
 	Utils(QWidget *w) { parent = w; }
-
-	// Set a custom property whenever the widget has keyboard focus specifically
-	void showKeyFocused(QFocusEvent *e)
-	{
-		if (e->reason() != Qt::MouseFocusReason && e->reason() != Qt::PopupFocusReason) {
-			addClass("keyFocus");
-		} else {
-			removeClass("keyFocus");
-		}
-	}
-
-	void hideKeyFocused(QFocusEvent *e)
-	{
-		if (e->reason() != Qt::PopupFocusReason) {
-			removeClass("keyFocus");
-		}
-	}
 
 	// Force all children widgets to repaint
 	void polishChildren() { polishChildren(parent); }
@@ -91,9 +78,11 @@ public:
 		}
 
 		classList.removeDuplicates();
+		classList.removeAll("");
 		classList.append(classname);
 
-		widget->setProperty("class", classList.join(" "));
+		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+		widget->setProperty("class", newClasses);
 
 		repolish(widget);
 	}
@@ -118,9 +107,11 @@ public:
 		}
 
 		classList.removeDuplicates();
+		classList.removeAll("");
 		classList.removeAll(classname);
 
-		widget->setProperty("class", classList.join(" "));
+		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+		widget->setProperty("class", newClasses);
 
 		repolish(widget);
 	}
@@ -136,6 +127,36 @@ public:
 			removeClass(widget, classname);
 		}
 	}
+
+	static void applyColorToIcon(QWidget *widget)
+	{
+		QAbstractButton *button = qobject_cast<QAbstractButton *>(widget);
+		if (button && !button->icon().isNull()) {
+			// Filter is on a widget with an icon set, update it's colors
+			QStyleOptionButton opt;
+			opt.initFrom(button);
+
+			QColor color = opt.palette.color(QPalette::ButtonText);
+			QPixmap tinted = recolorPixmap(button->icon().pixmap(button->iconSize(), QIcon::Normal), color);
+			QIcon tintedIcon;
+			tintedIcon.addPixmap(tinted, QIcon::Normal);
+			tintedIcon.addPixmap(tinted, QIcon::Disabled);
+
+			button->setIcon(tintedIcon);
+		}
+	}
+
+	static QPixmap recolorPixmap(const QPixmap &src, const QColor &color)
+	{
+		QImage img = src.toImage();
+		QPainter p(&img);
+		p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+		p.fillRect(img.rect(), color);
+		p.end();
+		return QPixmap::fromImage(img);
+	}
+
+	void applyStateStylingEventFilter(QWidget *widget);
 };
 
 } // namespace idian
