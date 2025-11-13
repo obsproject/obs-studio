@@ -6,6 +6,9 @@ add_library(OBS::libobs-d3d11 ALIAS libobs-d3d11)
 target_sources(
   libobs-d3d11
   PRIVATE
+    d3dx-common.hpp
+    d3dx-common.cpp
+    d3d11-unimplemented.cpp
     d3d11-duplicator.cpp
     d3d11-indexbuffer.cpp
     d3d11-rebuild.cpp
