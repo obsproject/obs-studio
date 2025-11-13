@@ -51,6 +51,8 @@ target_sources(
     widgets/OBSBasicStats.hpp
     widgets/OBSBasicStatusBar.cpp
     widgets/OBSBasicStatusBar.hpp
+    widgets/OBSBasicTransitions.cpp
+    widgets/OBSBasicTransitions.hpp
     widgets/OBSMainWindow.hpp
     widgets/OBSProjector.cpp
     widgets/OBSProjector.hpp
