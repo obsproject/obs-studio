@@ -758,12 +758,10 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(activeConfiguration, "AdvOut", "FFABitrate", 160);
 	config_set_default_uint(activeConfiguration, "AdvOut", "FFAudioMixes", 1);
 
-	config_set_default_uint(activeConfiguration, "AdvOut", "Track1Bitrate", 160);
-	config_set_default_uint(activeConfiguration, "AdvOut", "Track2Bitrate", 160);
-	config_set_default_uint(activeConfiguration, "AdvOut", "Track3Bitrate", 160);
-	config_set_default_uint(activeConfiguration, "AdvOut", "Track4Bitrate", 160);
-	config_set_default_uint(activeConfiguration, "AdvOut", "Track5Bitrate", 160);
-	config_set_default_uint(activeConfiguration, "AdvOut", "Track6Bitrate", 160);
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		std::string trackBitrateConfigKey = "Track" + std::to_string(i + 1) + "Bitrate";
+		config_set_default_uint(activeConfiguration, "AdvOut", trackBitrateConfigKey.c_str(), 160);
+	}
 
 	config_set_default_uint(activeConfiguration, "AdvOut", "RecSplitFileTime", 15);
 	config_set_default_uint(activeConfiguration, "AdvOut", "RecSplitFileSize", 2048);
