@@ -326,6 +326,15 @@ modules/namespaces).
    :param name:     Name of the parameter.
    :return:         A borrowed reference to an obs_source_t object.
 
+.. py:function:: calldata_scene(calldata, name)
+
+   Casts a pointer parameter of a calldata_t object to an obs_scene_t
+   object.
+
+   :param calldata: A calldata_t object.
+   :param name:     Name of the parameter.
+   :return:         A borrowed reference to an obs_scene_t object.
+
 .. py:function:: calldata_sceneitem(calldata, name)
 
    Casts a pointer parameter of a calldata_t object to an
@@ -334,3 +343,21 @@ modules/namespaces).
    :param calldata: A calldata_t object.
    :param name:     Name of the parameter.
    :return:         A borrowed reference to an obs_sceneitem_t object.
+
+.. py:function:: calldata_output(calldata, name)
+
+   Casts a pointer parameter of a calldata_t object to an obs_output_t
+   object.
+
+   :param calldata: A calldata_t object.
+   :param name:     Name of the parameter.
+   :return:         A borrowed reference to an obs_output_t object.
+
+.. py:function:: calldata_canvas(calldata, name)
+
+   Casts a pointer parameter of a calldata_t object to an obs_canvas_t
+   object.
+
+   :param calldata: A calldata_t object.
+   :param name:     Name of the parameter.
+   :return:         A borrowed reference to an obs_canvas_t object.
