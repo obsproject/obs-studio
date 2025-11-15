@@ -11,3 +11,4 @@ Core API Object Reference
    Services (obs_service_t) <reference-services>
    Data Settings (obs_data_t) <reference-settings>
    Properties (obs_properties_t) <reference-properties>
+   Canvases (obs_canvas_t) <reference-canvases>
