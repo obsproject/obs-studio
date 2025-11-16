@@ -241,6 +241,8 @@ class OBSBasic : public OBSMainWindow {
 		DropType_Html,
 		DropType_Url,
 	};
+	static const std::map<DropType, const char *> DropTypes;
+	struct DropItem;
 
 	enum ContextBarSize { ContextBarSize_Minimized, ContextBarSize_Reduced, ContextBarSize_Normal };
 
@@ -457,9 +459,10 @@ private slots:
 	 * -------------------------------------
 	 */
 private:
-	void AddDropSource(const char *file, DropType image);
-	void AddDropURL(const char *url, QString &name, obs_data_t *settings, const obs_video_info &ovi);
-	void ConfirmDropUrl(const QString &url);
+	QString GetUrlDisplayName(const QString &url);
+	void AddDropSource(const DropItem &dropItem);
+	void AddDropURL(const QString &url, obs_data_t *settings, const obs_video_info &ovi);
+	bool ConfirmDropUrl(const QString &url);
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void dragLeaveEvent(QDragLeaveEvent *event) override;
 	void dragMoveEvent(QDragMoveEvent *event) override;
