@@ -2581,6 +2581,10 @@ EXPORT void obs_source_frame_copy(struct obs_source_frame *dst, const struct obs
 /* Get source icon type */
 EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
 
+/* Get dark and light versions of custom icons */
+EXPORT const char *obs_source_get_dark_icon(const char *id);
+EXPORT const char *obs_source_get_light_icon(const char *id);
+
 /* ------------------------------------------------------------------------- */
 /* Canvases */
 
