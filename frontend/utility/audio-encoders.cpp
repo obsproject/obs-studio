@@ -1,5 +1,6 @@
 #include "audio-encoders.hpp"
 
+#include <obs.hpp>
 #include <OBSApp.hpp>
 #include <widgets/OBSMainWindow.hpp>
 
@@ -80,11 +81,7 @@ static void HandleSampleRate(obs_property_t *prop, const char *id)
 
 static void HandleEncoderProperties(const char *id, std::vector<int> &bitrates)
 {
-	auto DestroyProperties = [](obs_properties_t *props) {
-		obs_properties_destroy(props);
-	};
-	std::unique_ptr<obs_properties_t, decltype(DestroyProperties)> props{obs_get_encoder_properties(id),
-									     DestroyProperties};
+	OBSProperties props = obs_get_encoder_properties(id);
 
 	if (!props) {
 		blog(LOG_ERROR,
@@ -94,11 +91,11 @@ static void HandleEncoderProperties(const char *id, std::vector<int> &bitrates)
 		return;
 	}
 
-	obs_property_t *samplerate = obs_properties_get(props.get(), "samplerate");
+	obs_property_t *samplerate = obs_properties_get(props, "samplerate");
 	if (samplerate)
 		HandleSampleRate(samplerate, id);
 
-	obs_property_t *bitrate = obs_properties_get(props.get(), "bitrate");
+	obs_property_t *bitrate = obs_properties_get(props, "bitrate");
 
 	obs_property_type type = obs_property_get_type(bitrate);
 	switch (type) {
