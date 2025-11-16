@@ -1326,6 +1326,18 @@ gs_swapchain_t *gs_swapchain_create(const struct gs_init_data *data)
 	return graphics->exports.device_swapchain_create(graphics->device, &new_data);
 }
 
+void gs_swapchain_destroy(gs_swapchain_t *swapchain)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_swapchain_destroy"))
+		return;
+	if (!swapchain)
+		return;
+
+	graphics->exports.device_swapchain_destroy(swapchain);
+}
+
 void gs_resize(uint32_t x, uint32_t y)
 {
 	graphics_t *graphics = thread_graphics;
@@ -2209,18 +2221,6 @@ void gs_projection_pop(void)
 		return;
 
 	graphics->exports.device_projection_pop(graphics->device);
-}
-
-void gs_swapchain_destroy(gs_swapchain_t *swapchain)
-{
-	graphics_t *graphics = thread_graphics;
-
-	if (!gs_valid("gs_swapchain_destroy"))
-		return;
-	if (!swapchain)
-		return;
-
-	graphics->exports.gs_swapchain_destroy(swapchain);
 }
 
 void gs_shader_destroy(gs_shader_t *shader)
