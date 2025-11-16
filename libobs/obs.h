@@ -2641,6 +2641,7 @@ EXPORT void obs_weak_canvas_release(obs_weak_canvas_t *weak);
 EXPORT obs_weak_canvas_t *obs_canvas_get_weak_canvas(obs_canvas_t *canvas);
 /** Get strong reference from weak reference */
 EXPORT obs_canvas_t *obs_weak_canvas_get_canvas(obs_weak_canvas_t *weak);
+EXPORT bool obs_weak_canvas_references_canvas(obs_weak_canvas_t *weak, obs_canvas_t *canvas);
 
 /** Returns the signal handler for a canvas */
 EXPORT signal_handler_t *obs_canvas_get_signal_handler(obs_canvas_t *canvas);
