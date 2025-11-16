@@ -891,6 +891,46 @@ fail:
 	return ret;
 }
 
+static int calldata_scene(lua_State *script)
+{
+	calldata_t *cd;
+	const char *str;
+	int ret = 0;
+
+	if (!ls_get_libobs_obj(calldata_t, 1, &cd))
+		goto fail;
+	str = lua_tostring(script, 2);
+	if (!str)
+		goto fail;
+
+	obs_scene_t *scene = calldata_ptr(cd, str);
+	if (ls_push_libobs_obj(obs_scene_t, scene, false))
+		++ret;
+
+fail:
+	return ret;
+}
+
+static int calldata_hotkey(lua_State *script)
+{
+	calldata_t *cd;
+	const char *str;
+	int ret = 0;
+
+	if (!ls_get_libobs_obj(calldata_t, 1, &cd))
+		goto fail;
+	str = lua_tostring(script, 2);
+	if (!str)
+		goto fail;
+
+	obs_hotkey_t *hotkey = calldata_ptr(cd, str);
+	if (ls_push_libobs_obj(obs_hotkey_t, hotkey, false))
+		++ret;
+
+fail:
+	return ret;
+}
+
 /* -------------------------------------------- */
 
 static int source_list_release(lua_State *script)
