@@ -1555,15 +1555,9 @@ string GetFormatExt(const char *container)
 
 string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite, const char *format)
 {
-	OBSBasic *main = OBSBasic::Get();
-
 	os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
 
 	if (!dir) {
-		if (main->isVisible())
-			OBSMessageBox::warning(main, QTStr("Output.BadPath.Title"), QTStr("Output.BadPath.Text"));
-		else
-			main->SysTrayNotify(QTStr("Output.BadPath.Text"), QSystemTrayIcon::Warning);
 		return "";
 	}
 
