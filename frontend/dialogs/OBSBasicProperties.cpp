@@ -76,7 +76,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->propertiesLayout->addWidget(view);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		connect(view, &OBSPropertiesView::PropertiesRefreshed, this, &OBSBasicProperties::AddPreviewButton);
+		addTransitionPreviewButton();
 	}
 
 	view->show();
@@ -159,11 +159,12 @@ OBSBasicProperties::~OBSBasicProperties()
 	main->UpdateContextBarDeferred(true);
 }
 
-void OBSBasicProperties::AddPreviewButton()
+void OBSBasicProperties::addTransitionPreviewButton()
 {
 	QPushButton *playButton = new QPushButton(QTStr("PreviewTransition"), this);
-	VScrollArea *area = view;
-	area->widget()->layout()->addWidget(playButton);
+
+	QBoxLayout *buttonBoxLayout = dynamic_cast<QBoxLayout *>(ui->buttonBox->layout());
+	buttonBoxLayout->insertWidget(2, playButton);
 
 	playButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
