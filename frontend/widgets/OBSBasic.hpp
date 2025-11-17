@@ -26,6 +26,7 @@
 #include <utility/OBSCanvas.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
+#include <utility/ThumbnailManager.hpp>
 #include <utility/undo_stack.hpp>
 
 #include <obs-frontend-internal.hpp>
@@ -49,6 +50,7 @@ class OBSBasicAdvAudio;
 class OBSBasicFilters;
 class OBSBasicInteraction;
 class OBSBasicProperties;
+class OBSBasicSourceSelect;
 class OBSBasicTransform;
 class OBSLogViewer;
 class OBSMissingFiles;
@@ -299,6 +301,8 @@ private:
 	// TODO: Remove, orphaned instance method
 	void LoadProject();
 
+	ThumbnailManager *thumbnailManager = nullptr;
+
 public slots:
 	void UpdatePatronJson(const QString &text, const QString &error);
 	void UpdateEditMenu();
@@ -326,6 +330,8 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	inline bool Closing() { return closing; }
+
+	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
@@ -465,6 +471,9 @@ private:
 	void dragMoveEvent(QDragMoveEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
 
+signals:
+	void sourceUuidDropped(QString uuid);
+
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Hotkeys
 	 * -------------------------------------
@@ -560,6 +569,7 @@ private:
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
 	QPointer<OBSAbout> about;
+	QPointer<OBSBasicSourceSelect> addWindow;
 	QPointer<OBSLogViewer> logView;
 	QPointer<QWidget> stats;
 	QPointer<QWidget> remux;
@@ -1166,11 +1176,8 @@ private:
 	static void SourceAudioDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 
-	void AddSource(const char *id);
-	QMenu *CreateAddSourcePopupMenu();
-	void AddSourcePopupMenu(const QPoint &pos);
-
 private slots:
+	void AddSourceDialog();
 	void RenameSources(OBSSource source, QString newName, QString prevName);
 
 	void ActivateAudioSource(OBSSource source);

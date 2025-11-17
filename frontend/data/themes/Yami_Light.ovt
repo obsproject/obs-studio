@@ -10,7 +10,7 @@
     --grey1: rgb(140,140,140);
     --grey2: rgb(254,254,254);
     --grey3: rgb(254,254,254);
-    --grey4: rgb(243,243,243);
+    --grey4: rgb(245,245,245);
     --grey5: rgb(236,236,236);
     --grey6: rgb(229,229,229);
     --grey7: rgb(211,211,211);
@@ -18,13 +18,13 @@
 
     --primary: rgb(140,181,255);
     --primary_light: rgb(178,207,255);
-    --primary_dark: rgb(22,31,65);
+    --primary_dark: rgb(122, 164, 243);
 
     --bg_window: var(--grey7);
     --bg_base: var(--grey6);
     --bg_preview: var(--grey8);
 
-    --text: var(--black1);
+    --text: #030303
     --text_light: var(--black3);
     --text_muted: var(--black4);
 
@@ -34,7 +34,10 @@
     --input_bg_hover: var(--grey3);
     --input_bg_focus: var(--grey3);
 
+    --input_border_hover: var(--black5);
+
     --button_bg_disabled: var(--grey7);
+    --button_border_hover: var(--black5);
 
     --separator_hover: var(--black1);
 
@@ -42,6 +45,13 @@
     --scrollbar_hover: var(--grey6);
     --scrollbar_down: var(--grey8);
     --scrollbar_border: var(--grey7);
+}
+
+/* --------------------- */
+/* General Styling Hints */
+
+.button-primary:hover {
+    border-color: var(--button_border_hover);
 }
 
 VolumeMeter {
@@ -323,4 +333,20 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     qproperty-icon: url(theme:Light/right.svg);
+}
+
+/* Add Source Dialog */
+SourceSelectButton QPushButton,
+SourceSelectButton #thumbnail {
+    border-color: var(--grey3);
+}
+
+SourceSelectButton QPushButton:checked {
+    background: var(--primary);
+    border-color: var(--primary_light);
+}
+
+SourceSelectButton QPushButton:checked:focus,
+SourceSelectButton QPushButton:focus {
+    border-color: var(--black3);
 }
