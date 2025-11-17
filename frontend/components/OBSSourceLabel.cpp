@@ -43,3 +43,10 @@ void OBSSourceLabel::SourceDestroyed(void *data, calldata_t *)
 	label.removedSignal.Disconnect();
 	label.renamedSignal.Disconnect();
 }
+
+void OBSSourceLabel::mousePressEvent(QMouseEvent *event)
+{
+	emit clicked();
+
+	QLabel::mousePressEvent(event);
+}

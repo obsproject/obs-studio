@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2024 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,30 +17,32 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
+#include <QCheckBox>
+#include <QStyleOptionButton>
+#include <QStylePainter>
+#include <QMouseEvent>
 
-#include <QComboBox>
-#include <QAbstractItemView>
-
-namespace idian {
-
-class ComboBox : public QComboBox, public Utils {
+class MenuCheckBox : public QCheckBox {
 	Q_OBJECT
 
 public:
-	ComboBox(QWidget *parent = nullptr);
+	explicit MenuCheckBox(const QString &text, QWidget *parent = nullptr);
 
-public Q_SLOTS:
-	void togglePopup();
-
-private:
-	bool allowOpeningPopup = true;
+	void setAction(QAction *action);
 
 protected:
-	void showPopup() override;
-	void hidePopup() override;
-
+	void focusInEvent(QFocusEvent *event) override;
 	void mousePressEvent(QMouseEvent *event) override;
-};
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void mouseReleaseEvent(QMouseEvent *event) override;
+	void enterEvent(QEnterEvent *event) override;
+	void leaveEvent(QEvent *event) override;
+	void paintEvent(QPaintEvent *event) override;
 
-} // namespace idian
+private:
+	QAction *menuAction = nullptr;
+	bool mousePressInside = false;
+
+	bool isHovered = false;
+	void setHovered(bool hovered);
+};

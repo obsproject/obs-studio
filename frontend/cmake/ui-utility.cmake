@@ -68,6 +68,4 @@ target_sources(
     utility/undo_stack.cpp
     utility/undo_stack.hpp
     utility/VCamConfig.hpp
-    utility/VolumeMeterTimer.cpp
-    utility/VolumeMeterTimer.hpp
 )

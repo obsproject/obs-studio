@@ -35,6 +35,22 @@
 
 using namespace std;
 
+namespace {
+bool isHideInMixer(obs_source_t *source)
+{
+	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
+	bool hidden = obs_data_get_bool(priv_settings, "mixer_hidden");
+
+	return hidden;
+}
+
+void setHideInMixer(obs_source_t *source, bool hidden)
+{
+	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
+	obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
+}
+} // namespace
+
 static inline bool HasAudioDevices(const char *source_id)
 {
 	const char *output_id = source_id;
@@ -109,114 +125,20 @@ void OBSBasic::RenameSources(OBSSource source, QString newName, QString prevName
 	UpdatePreviewProgramIndicators();
 }
 
-void OBSBasic::GetAudioSourceFilters()
+void OBSBasic::actionOpenSourceFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
+	obs_source_t *source = action->property("source").value<OBSSource>();
 
 	CreateFiltersWindow(source);
 }
 
-void OBSBasic::GetAudioSourceProperties()
+void OBSBasic::actionOpenSourceProperties()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
+	obs_source_t *source = action->property("source").value<OBSSource>();
 
 	CreatePropertiesWindow(source);
-}
-
-void OBSBasic::MixerRenameSource()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	OBSSource source = vol->GetSource();
-
-	const char *prevName = obs_source_get_name(source);
-
-	for (;;) {
-		string name;
-		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.MixerRename.Title"),
-						       QTStr("Basic.Main.MixerRename.Text"), name, QT_UTF8(prevName));
-		if (!accepted)
-			return;
-
-		if (name.empty()) {
-			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
-			continue;
-		}
-
-		OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
-
-		if (sourceTest) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
-			continue;
-		}
-
-		obs_source_set_name(source, name.c_str());
-		break;
-	}
-}
-
-void OBSBasic::ActivateAudioSource(OBSSource source)
-{
-	if (SourceMixerHidden(source))
-		return;
-	if (!obs_source_active(source))
-		return;
-	if (!obs_source_audio_active(source))
-		return;
-
-	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
-	VolControl *vol = new VolControl(source, true, vertical);
-
-	vol->EnableSlider(!SourceVolumeLocked(source));
-
-	double meterDecayRate = config_get_double(activeConfiguration, "Audio", "MeterDecayRate");
-	vol->SetMeterDecayRate(meterDecayRate);
-
-	uint32_t peakMeterTypeIdx = config_get_uint(activeConfiguration, "Audio", "PeakMeterType");
-
-	enum obs_peak_meter_type peakMeterType;
-	switch (peakMeterTypeIdx) {
-	case 0:
-		peakMeterType = SAMPLE_PEAK_METER;
-		break;
-	case 1:
-		peakMeterType = TRUE_PEAK_METER;
-		break;
-	default:
-		peakMeterType = SAMPLE_PEAK_METER;
-		break;
-	}
-
-	vol->setPeakMeterType(peakMeterType);
-
-	vol->setContextMenuPolicy(Qt::CustomContextMenu);
-
-	connect(vol, &QWidget::customContextMenuRequested, this, &OBSBasic::VolControlContextMenu);
-	connect(vol, &VolControl::ConfigClicked, this, &OBSBasic::VolControlContextMenu);
-
-	InsertQObjectByName(volumes, vol);
-
-	for (auto volume : volumes) {
-		if (vertical)
-			ui->vVolControlLayout->addWidget(volume);
-		else
-			ui->hVolControlLayout->addWidget(volume);
-	}
-}
-
-void OBSBasic::DeactivateAudioSource(OBSSource source)
-{
-	for (size_t i = 0; i < volumes.size(); i++) {
-		if (volumes[i]->GetSource() == source) {
-			delete volumes[i];
-			volumes.erase(volumes.begin() + i);
-			break;
-		}
-	}
 }
 
 bool OBSBasic::QueryRemoveSource(obs_source_t *source)
@@ -280,42 +202,6 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 	if (obs_scene_from_source(source) != NULL)
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RemoveScene",
 					  Q_ARG(OBSSource, OBSSource(source)));
-}
-
-void OBSBasic::SourceActivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-	uint32_t flags = obs_source_get_output_flags(source);
-
-	if (flags & OBS_SOURCE_AUDIO)
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ActivateAudioSource",
-					  Q_ARG(OBSSource, OBSSource(source)));
-}
-
-void OBSBasic::SourceDeactivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-	uint32_t flags = obs_source_get_output_flags(source);
-
-	if (flags & OBS_SOURCE_AUDIO)
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "DeactivateAudioSource",
-					  Q_ARG(OBSSource, OBSSource(source)));
-}
-
-void OBSBasic::SourceAudioActivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-
-	if (obs_source_active(source))
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ActivateAudioSource",
-					  Q_ARG(OBSSource, OBSSource(source)));
-}
-
-void OBSBasic::SourceAudioDeactivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "DeactivateAudioSource",
-				  Q_ARG(OBSSource, OBSSource(source)));
 }
 
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)
@@ -654,10 +540,17 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addMenu(AddBackgroundColorMenu(colorMenu, colorWidgetAction, colorSelect, sceneItem));
 
 			if (hasAudio) {
+				bool isHidden = isHideInMixer(source);
+
 				QAction *actionHideMixer =
-					popup.addAction(QTStr("HideMixer"), this, &OBSBasic::ToggleHideMixer);
+					popup.addAction(QTStr("HideMixer"), this, [source, isHidden]() {
+						setHideInMixer(source, !isHidden);
+
+						OBSBasic *main = OBSBasic::Get();
+						emit main->mixerStatusChanged(obs_source_get_uuid(source));
+					});
 				actionHideMixer->setCheckable(true);
-				actionHideMixer->setChecked(SourceMixerHidden(source));
+				actionHideMixer->setChecked(isHidden);
 			}
 			popup.addSeparator();
 		}
