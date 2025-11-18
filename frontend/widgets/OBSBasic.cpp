@@ -1144,7 +1144,7 @@ void OBSBasic::OBSInit()
 				 (opt_minimize_tray || sysTrayWhenStarted);
 
 #ifdef _WIN32
-	SetWin32DropStyle(this);
+	setAcceptDrops(true);
 
 	if (!hideWindowOnStart)
 		show();
