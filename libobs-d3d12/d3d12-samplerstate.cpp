@@ -69,12 +69,8 @@ gs_sampler_state::gs_sampler_state(gs_device_t *device, const gs_sampler_info *i
 	  info(*info)
 {
 	HRESULT hr;
-
-	samplerDescriptor = (gs_staging_descriptor *)bmalloc(sizeof(samplerDescriptor));
-	device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, samplerDescriptor);
-
+	auto samplerCpuDescriptorHandle = device->samplerHeapDescriptor->Allocate();
 	vec4 v4;
-	D3D12_SAMPLER_DESC sd;
 
 	memset(&sd, 0, sizeof(sd));
 	sd.AddressU = ConvertGSAddressMode(info->address_u);
@@ -88,5 +84,5 @@ gs_sampler_state::gs_sampler_state(gs_device_t *device, const gs_sampler_info *i
 	vec4_from_rgba(&v4, info->border_color);
 	memcpy(sd.BorderColor, v4.ptr, sizeof(v4));
 
-	device->device->CreateSampler(&sd, samplerDescriptor->cpuHandle);
+	device->device->CreateSampler(&sd, samplerCpuDescriptorHandle);
 }

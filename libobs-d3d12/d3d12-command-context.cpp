@@ -19,17 +19,62 @@
 
 #include "d3d12-subsystem.hpp"
 
-gs_command_queue::gs_command_queue(ID3D12Device *device_, D3D12_COMMAND_LIST_TYPE type_) : device(device_), type(type_)
+
+gs_command_allocator::gs_command_allocator(gs_device_t *device_, D3D12_COMMAND_LIST_TYPE type_)
+	: device(device_),
+	  commandListType(type_)
+{
+}
+
+gs_command_allocator::~gs_command_allocator() {
+	Release();
+}
+
+void gs_command_allocator::Release()
+{
+	allocators.clear();
+}
+
+D3D12CommandAllocatorPtr gs_command_allocator::RequestAllocator(uint64_t completedFenceValue) {
+	D3D12CommandAllocatorPtr allocator = nullptr;
+
+	if (!readyAllocators.empty()) {
+		auto &allocatorInfo = readyAllocators.front();
+
+		if (allocatorInfo.fenceValue <= completedFenceValue) {
+			allocator = allocatorInfo.allocator;
+			allocator->Reset();
+			readyAllocators.pop();
+		}
+	}
+
+	if (allocator == nullptr) {
+		device->device->CreateCommandAllocator(commandListType, IID_PPV_ARGS(&allocator));
+		wchar_t allocatorName[32];
+		swprintf(allocatorName, 32, L"CommandAllocator %zu", allocators.size());
+		allocator->SetName(allocatorName);
+		allocators.push_back(allocator);
+	}
+
+	return allocator;
+}
+
+void gs_command_allocator::DiscardAllocator(uint64_t fenceValue, D3D12CommandAllocatorPtr allocator) {
+	readyAllocators.push(D3D12CommandAllocatorInfo(fenceValue, allocator));
+}
+
+gs_command_queue::gs_command_queue(gs_device_t *device_, D3D12_COMMAND_LIST_TYPE type_) : device(device_), commandListType(type_),
+	  commandAllocators(std::make_unique<gs_command_allocator>(device, commandListType))
 {
 
 	D3D12_COMMAND_QUEUE_DESC QueueDesc = {};
-	QueueDesc.Type = type;
+	QueueDesc.Type = commandListType;
 	QueueDesc.NodeMask = 0;
-	HRESULT hr = device->CreateCommandQueue(&QueueDesc, IID_PPV_ARGS(&commandQueue));
+	HRESULT hr = device->device->CreateCommandQueue(&QueueDesc, IID_PPV_ARGS(&commandQueue));
 	if (FAILED(hr))
 		throw HRError("create command queue failed", hr);
 
-	hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+	hr = device->device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 	if (FAILED(hr))
 		throw HRError("create fence failed", hr);
 
@@ -52,6 +97,17 @@ bool gs_command_queue::IsFenceComplete(uint64_t fenceValue)
 						   : fence->GetCompletedValue());
 
 	return fenceValue <= lastCompletedFenceValue;
+}
+
+void gs_command_queue::StallForFence(uint64_t fenceValue)
+{
+	//CommandQueue &Producer = Graphics::g_CommandManager.GetQueue((D3D12_COMMAND_LIST_TYPE)(FenceValue >> 56));
+	//m_CommandQueue->Wait(Producer.m_pFence, FenceValue);
+}
+
+void gs_command_queue::StallForProducer(gs_command_queue *producer)
+{
+	commandQueue->Wait(producer->fence, producer->nextFenceValue - 1);
 }
 
 void gs_command_queue::WaitForFence(uint64_t fenceValue)
@@ -80,34 +136,16 @@ uint64_t gs_command_queue::ExecuteCommandList(ID3D12GraphicsCommandList *list)
 	return nextFenceValue++;
 }
 
-ID3D12CommandAllocator *gs_command_queue::RequestAllocator()
+D3D12CommandAllocatorPtr gs_command_queue::RequestAllocator()
 {
 	uint64_t completedFence = fence->GetCompletedValue();
-	ID3D12CommandAllocator *pAllocator = nullptr;
 
-	if (!readyAllocators.empty()) {
-		std::pair<uint64_t, ID3D12CommandAllocator *> &allocatorPair = readyAllocators.front();
-
-		if (allocatorPair.first <= completedFence) {
-			pAllocator = allocatorPair.second;
-			HRESULT hr = pAllocator->Reset();
-			if (FAILED(hr))
-				throw HRError("allocator reset failed", hr);
-			readyAllocators.pop();
-		}
-	}
-
-	if (pAllocator == nullptr) {
-		HRESULT hr = device->CreateCommandAllocator(type, IID_PPV_ARGS(&pAllocator));
-		allocatorPool.push_back(pAllocator);
-	}
-
-	return pAllocator;
+	return commandAllocators->RequestAllocator(completedFence);
 }
 
-void gs_command_queue::DiscardAllocator(uint64_t fenceValueForReset, ID3D12CommandAllocator *allocator)
+void gs_command_queue::DiscardAllocator(uint64_t fenceValueForReset, D3D12CommandAllocatorPtr allocator)
 {
-	readyAllocators.push(std::make_pair(fenceValueForReset, allocator));
+	commandAllocators->DiscardAllocator(fenceValueForReset, allocator);
 }
 
 gs_command_context::gs_command_context(gs_device *device_) : device(device_)

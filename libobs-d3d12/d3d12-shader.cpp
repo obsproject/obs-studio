@@ -244,7 +244,6 @@ inline void gs_shader::UpdateParam(std::vector<uint8_t> &constData, gs_shader_pa
 		struct gs_shader_texture shader_tex;
 		memcpy(&shader_tex, param.curValue.data(), sizeof(shader_tex));
 		if (param.nextSampler) {
-			gs_staging_descriptor *state = param.nextSampler->samplerDescriptor;
 			device->curSamplers[param.textureID] = param.nextSampler;
 			param.nextSampler = nullptr;
 		}

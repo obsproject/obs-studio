@@ -157,8 +157,6 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 		requiredSize = (requiredSize + (D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1)) &
 			       ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
-
-		upload_buffer = new gs_buffer(device, requiredSize, gs_type::gs_upload_buffer, 0);
 	}
 
 	if (data) {
@@ -169,7 +167,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 void gs_texture_2d::UpdateSubresources()
 {
-	if (!needUpdate)
+	/* if (!needUpdate)
 		return;
 
 	std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> placedTextureDesc;
@@ -257,6 +255,7 @@ void gs_texture_2d::UpdateSubresources()
 	device->currentCommandContext->TransitionResource(texture, resourceState,
 							  D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	resourceState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	*/
 }
 
 void gs_texture_2d::InitResourceView()
@@ -274,8 +273,8 @@ void gs_texture_2d::InitResourceView()
 		resourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		resourceViewDesc.Texture2D.MipLevels = genMipmaps || !levels ? -1 : levels;
 	}
-	device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &textureDescriptor);
-	device->device->CreateShaderResourceView(texture, &resourceViewDesc, textureDescriptor.cpuHandle);
+	textureCpuDescriptorHandle = device->cbvSrvUavHeapDescriptor->Allocate();
+	device->device->CreateShaderResourceView(texture, &resourceViewDesc, textureCpuDescriptorHandle);
 }
 
 void gs_texture_2d::InitRenderTargets()
@@ -293,17 +292,17 @@ void gs_texture_2d::InitRenderTargets()
 		renderTargetViewDesc.Texture2D.MipSlice = 0;
 		renderTargetViewDesc.Format = dxgiFormatView;
 		renderTargetViewDesc.Texture2D.PlaneSlice = 0;
-		device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, &renderTargetDescriptor[0]);
+
+		renderTargetCpuDescriptorHandle[0] = device->rtvHeapDescriptor->Allocate();
 		device->device->CreateRenderTargetView(texture, &renderTargetViewDesc,
-						       renderTargetDescriptor[0].cpuHandle);
+						       renderTargetCpuDescriptorHandle[0]);
 		if (dxgiFormatView == dxgiFormatViewLinear) {
-			renderTargetLinearDescriptor[0] = renderTargetDescriptor[0];
+			renderTargetCpuLinearDescriptorHandle[0] = renderTargetCpuDescriptorHandle[0];
 		} else {
 			renderTargetViewDesc.Format = dxgiFormatViewLinear;
-			device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-							&renderTargetLinearDescriptor[0]);
+			renderTargetCpuLinearDescriptorHandle[0] = device->rtvHeapDescriptor->Allocate();
 			device->device->CreateRenderTargetView(texture, &renderTargetViewDesc,
-							       renderTargetLinearDescriptor[0].cpuHandle);
+							       renderTargetCpuLinearDescriptorHandle[0]);
 		}
 		return;
 	}
@@ -312,24 +311,24 @@ void gs_texture_2d::InitRenderTargets()
 	for (int32_t layerIndex = 0; layerIndex < layerCount; ++layerIndex) {
 		for (int32_t levelIndex = 0; levelIndex < levels; ++levelIndex) {
 			int32_t currentIndex = levelIndex + (layerIndex * levels);
-			device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-							&renderTargetDescriptor[currentIndex]);
+			renderTargetCpuDescriptorHandle[currentIndex] = device->rtvHeapDescriptor->Allocate();
 			renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 			renderTargetViewDesc.Texture2DArray.FirstArraySlice = layerIndex;
 			renderTargetViewDesc.Texture2DArray.MipSlice = levelIndex;
 			renderTargetViewDesc.Texture2DArray.ArraySize = 1;
 			renderTargetViewDesc.Texture2DArray.PlaneSlice = 0;
 			device->device->CreateRenderTargetView(texture, &renderTargetViewDesc,
-							       renderTargetDescriptor[currentIndex].cpuHandle);
+							       renderTargetCpuDescriptorHandle[currentIndex]);
 			if (dxgiFormatView == dxgiFormatViewLinear) {
-				renderTargetLinearDescriptor[currentIndex] = renderTargetDescriptor[currentIndex];
+				renderTargetCpuLinearDescriptorHandle[currentIndex] =
+					renderTargetCpuDescriptorHandle[currentIndex];
 			} else {
 				renderTargetViewDesc.Format = dxgiFormatViewLinear;
-				device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-								&renderTargetLinearDescriptor[currentIndex]);
+				renderTargetCpuLinearDescriptorHandle[currentIndex] =
+					device->rtvHeapDescriptor->Allocate();
 				device->device->CreateRenderTargetView(
 					texture, &renderTargetViewDesc,
-					renderTargetLinearDescriptor[currentIndex].cpuHandle);
+					renderTargetCpuLinearDescriptorHandle[currentIndex]);
 			}
 		}
 	}
@@ -442,7 +441,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
 
 bool gs_texture_2d::Map(int32_t subresourceIndex, D3D12_MEMCPY_DEST *map)
 {
-	auto desc = texture->GetDesc();
+	/** auto desc = texture->GetDesc();
 	uint8_t *pData = nullptr;
 	std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> placedTextureDesc;
 	std::vector<uint32_t> numRows;
@@ -459,12 +458,10 @@ bool gs_texture_2d::Map(int32_t subresourceIndex, D3D12_MEMCPY_DEST *map)
 	map->pData = pData + placedTextureDesc[subresourceIndex].Offset;
 	map->RowPitch = placedTextureDesc[subresourceIndex].Footprint.RowPitch;
 	map->SlicePitch = placedTextureDesc[subresourceIndex].Footprint.RowPitch * numRows[subresourceIndex];
-
-	return true;
+	*/
+	return false;
 }
 
 void gs_texture_2d::Unmap(int32_t subresourceIndex)
 {
-	upload_buffer->resource->Unmap(subresourceIndex, nullptr);
-	needUpdate = true;
 }

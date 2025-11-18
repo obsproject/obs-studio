@@ -17,115 +17,161 @@
 
 #include "d3d12-subsystem.hpp"
 
-#define MAX_ROOT_SIGNATURE_PARAMETERS 64
-#define VIEW_GPU_DESCRIPTOR_COUNT 65536
-
-gs_graphics_rootsignature::gs_graphics_rootsignature(ID3D12Device *device, gs_vertex_shader *vertexShader,
-						     gs_pixel_shader *pixelShader)
+gs_root_signature::gs_root_signature(gs_device_t *device_, UINT numRootParams_,
+				     UINT numStaticSamplers)
+	: device(device_),
+	  numParameters(numRootParams_),
+	  numInitializedStaticSamplers(0),
+	  descriptorTableBitMap(0),
+	  samplerTableBitMap(0)
 {
-	D3D12_ROOT_PARAMETER rootParameters[MAX_ROOT_SIGNATURE_PARAMETERS];
-	D3D12_DESCRIPTOR_RANGE descriptorRanges[MAX_ROOT_SIGNATURE_PARAMETERS];
-	int32_t parameterCount = 0;
-	int32_t rangeCount = 0;
-	D3D12_DESCRIPTOR_RANGE descriptorRange;
-	D3D12_ROOT_PARAMETER rootParameter;
-	HRESULT hr = S_FALSE;
+	paramArray.resize(numRootParams_);
+	samplerArray.resize(numStaticSamplers);
+	memset(descriptorTableSize, 0, sizeof(descriptorTableSize));
+}
 
-	memset(&rootParameters, 0, sizeof(rootParameters));
-	memset(&descriptorRanges, 0, sizeof(descriptorRanges));
-	memset(&descriptorRange, 0, sizeof(descriptorRange));
-	memset(&rootParameter, 0, sizeof(rootParameter));
+void gs_root_signature::InitStaticSampler(UINT registerIndex, const D3D12_SAMPLER_DESC &nonStaticSamplerDesc,
+		       D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL)
+{
+	D3D12_STATIC_SAMPLER_DESC &staticSamplerDesc = samplerArray[numInitializedStaticSamplers++];
 
+	staticSamplerDesc.Filter = nonStaticSamplerDesc.Filter;
+	staticSamplerDesc.AddressU = nonStaticSamplerDesc.AddressU;
+	staticSamplerDesc.AddressV = nonStaticSamplerDesc.AddressV;
+	staticSamplerDesc.AddressW = nonStaticSamplerDesc.AddressW;
+	staticSamplerDesc.MipLODBias = nonStaticSamplerDesc.MipLODBias;
+	staticSamplerDesc.MaxAnisotropy = nonStaticSamplerDesc.MaxAnisotropy;
+	staticSamplerDesc.ComparisonFunc = nonStaticSamplerDesc.ComparisonFunc;
+	staticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+	staticSamplerDesc.MinLOD = nonStaticSamplerDesc.MinLOD;
+	staticSamplerDesc.MaxLOD = nonStaticSamplerDesc.MaxLOD;
+	staticSamplerDesc.ShaderRegister = registerIndex;
+	staticSamplerDesc.RegisterSpace = 0;
+	staticSamplerDesc.ShaderVisibility = Visibility;
+
+	if (staticSamplerDesc.AddressU == D3D12_TEXTURE_ADDRESS_MODE_BORDER ||
+	    staticSamplerDesc.AddressV == D3D12_TEXTURE_ADDRESS_MODE_BORDER ||
+	    staticSamplerDesc.AddressW == D3D12_TEXTURE_ADDRESS_MODE_BORDER) {
+
+		// Transparent Black
+		// nonStaticSamplerDesc.BorderColor[0] = 0.0f;
+		// nonStaticSamplerDesc.BorderColor[1] = 0.0f;
+		// nonStaticSamplerDesc.BorderColor[2] = 0.0f;
+		// nonStaticSamplerDesc.BorderColor[3] = 0.0f;
+
+				// Opaque Black
+		// nonStaticSamplerDesc.BorderColor[0] = 0.0f;
+		// nonStaticSamplerDesc.BorderColor[1] = 0.0f;
+		// nonStaticSamplerDesc.BorderColor[2] = 0.0f;
+		// nonStaticSamplerDesc.BorderColor[3] = 1.0f;
+		
+				// Opaque White
+		// nonStaticSamplerDesc.BorderColor[0] = 1.0f;
+		// nonStaticSamplerDesc.BorderColor[1] = 1.0f;
+		// nonStaticSamplerDesc.BorderColor[2] = 1.0f;
+		// nonStaticSamplerDesc.BorderColor[3] = 1.0f;
+
+		if (nonStaticSamplerDesc.BorderColor[3] == 1.0f) {
+			if (nonStaticSamplerDesc.BorderColor[0] == 1.0f)
+				staticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+			else
+				staticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+		} else {
+			staticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		}
+	}
+}
+
+void gs_root_signature::Reset(UINT numRootParams_, UINT numStaticSamplers_ = 1) {
+
+	paramArray.resize(numRootParams_);
+	samplerArray.resize(numStaticSamplers_);
+	memset(descriptorTableSize, 0, sizeof(descriptorTableSize));
+	numParameters = numRootParams_;
+	numSamplers = numStaticSamplers_;
+	numInitializedStaticSamplers = 0;
+}
+
+void gs_root_signature::InitParamWith(gs_vertex_shader *vertexShader, gs_pixel_shader *pixelShader) {
 	if (vertexShader->uniform32BitBufferCount > 0) {
-		rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-		rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-		rootParameter.Constants.Num32BitValues = vertexShader->uniform32BitBufferCount;
-		rootParameter.Constants.ShaderRegister = 0;
-		rootParameter.Constants.RegisterSpace = 0;
-		rootParameters[parameterCount] = rootParameter;
-		vertexUniform32BitBufferRootIndex = parameterCount;
-		parameterCount += 1;
+		numParameters += 1;
 	}
 
 	if (pixelShader->samplerCount > 0) {
-		// Fragment Samplers
-		descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-		descriptorRange.NumDescriptors = pixelShader->samplerCount;
-		descriptorRange.BaseShaderRegister = 0;
-		descriptorRange.RegisterSpace = 0;
-		descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		descriptorRanges[rangeCount] = descriptorRange;
-
-		rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		rootParameter.DescriptorTable.NumDescriptorRanges = 1;
-		rootParameter.DescriptorTable.pDescriptorRanges = &descriptorRanges[rangeCount];
-		rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-		rootParameters[parameterCount] = rootParameter;
-		pixelSamplerRootIndex = parameterCount;
-		rangeCount += 1;
-		parameterCount += 1;
+		numSamplers += 1;
 	}
 
 	if (pixelShader->textureCount > 0) {
-		// Fragment Storage Textures
-		descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		descriptorRange.NumDescriptors = pixelShader->textureCount;
-		descriptorRange.BaseShaderRegister = 0;
-		descriptorRange.RegisterSpace = 0;
-		descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-		descriptorRanges[rangeCount] = descriptorRange;
-
-		rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		rootParameter.DescriptorTable.NumDescriptorRanges = 1;
-		rootParameter.DescriptorTable.pDescriptorRanges = &descriptorRanges[rangeCount];
-		rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-		rootParameters[parameterCount] = rootParameter;
-		pixelTextureRootIndex = parameterCount;
-		rangeCount += 1;
-		parameterCount += 1;
+		numParameters += 1;
 	}
 
 	if (pixelShader->uniform32BitBufferCount > 0) {
-		rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-		rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-		rootParameter.Constants.Num32BitValues = pixelShader->uniform32BitBufferCount;
-		rootParameter.Constants.ShaderRegister = 0;
-		rootParameter.Constants.RegisterSpace = 0;
-		rootParameters[parameterCount] = rootParameter;
-		pixelUniform32BitBufferRootIndex = parameterCount;
-		parameterCount += 1;
+		numParameters += 1;
 	}
 
-	if (parameterCount > MAX_ROOT_SIGNATURE_PARAMETERS)
-		throw HRError("Failed to create rootSignature, parameterCount is too long", hr);
+	Reset(numParameters, numSamplers);
+	if (vertexShader->uniform32BitBufferCount > 0) {
+		RootParameter(0).InitAsConstants(0, 1, D3D12_SHADER_VISIBILITY_VERTEX);
+	}
 
-	if (rangeCount > MAX_ROOT_SIGNATURE_PARAMETERS)
-		throw HRError("Failed to create rootSignature, rangeCount is too long", hr);
-
-	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.NumParameters = parameterCount;
-	rootSignatureDesc.pParameters = rootParameters;
-	rootSignatureDesc.NumStaticSamplers = 0;
-	rootSignatureDesc.pStaticSamplers = NULL;
-	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-	ID3DBlob *serializedRootSignature;
-	ID3DBlob *errorBlob;
-	hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &serializedRootSignature,
-					 &errorBlob);
-
-	if (FAILED(hr)) {
-		std::string throwStr = "Failed SerializeRootSignature errStr:";
-		if (errorBlob) {
-			std::string errStr((const char *)errorBlob->GetBufferPointer(), errorBlob->GetBufferSize());
-			throwStr += errStr;
+	if (pixelShader->samplerCount > 0) {
+		for (int32_t i = 0; i < pixelShader->samplerCount; ++i) {
+			InitStaticSampler(i, pixelShader->samplers[i]->GetDesc());
 		}
-		throw HRError(throwStr.c_str(), hr);
 	}
 
-	hr = device->CreateRootSignature(0, serializedRootSignature->GetBufferPointer(),
-					 serializedRootSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+	if (pixelShader->textureCount > 0) {
+		RootParameter(1).InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, pixelShader->textureCount);
+	}
 
-	if (FAILED(hr))
-		throw HRError("Failed to create rootSignature", hr);
+	if (pixelShader->uniform32BitBufferCount > 0) {
+		RootParameter(2).InitAsConstants(1, 1, D3D12_SHADER_VISIBILITY_PIXEL);
+	}
 }
+
+void gs_root_signature::Build(const std::wstring &name, D3D12_ROOT_SIGNATURE_FLAGS flags)
+{
+
+	D3D12_ROOT_SIGNATURE_DESC RootDesc;
+	RootDesc.NumParameters = numParameters;
+	RootDesc.pParameters = (const D3D12_ROOT_PARAMETER *)paramArray.data();
+	RootDesc.NumStaticSamplers = numSamplers;
+	RootDesc.pStaticSamplers = (const D3D12_STATIC_SAMPLER_DESC *)samplerArray.data();
+	RootDesc.Flags = flags;
+
+	descriptorTableBitMap = 0;
+	samplerTableBitMap = 0;
+
+	for (UINT param = 0; param < numParameters; ++param) {
+		const D3D12_ROOT_PARAMETER &rootParam = RootDesc.pParameters[param];
+		descriptorTableSize[param] = 0;
+
+		if (rootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE) {
+			if (rootParam.DescriptorTable.pDescriptorRanges->RangeType ==
+			    D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER)
+				samplerTableBitMap |= (1 << param);
+			else
+				descriptorTableBitMap |= (1 << param);
+
+			for (UINT tableRange = 0; tableRange < rootParam.DescriptorTable.NumDescriptorRanges;
+			     ++tableRange)
+				descriptorTableSize[param] +=
+					rootParam.DescriptorTable.pDescriptorRanges[tableRange].NumDescriptors;
+		}
+	}
+
+
+	ComPtr<ID3DBlob> pOutBlob, pErrorBlob;
+
+	D3D12SerializeRootSignature(&RootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &pOutBlob, &pErrorBlob);
+	device->device->CreateRootSignature(
+			1, pOutBlob->GetBufferPointer(), pOutBlob->GetBufferSize(), IID_PPV_ARGS(&signature));
+
+	signature->SetName(name.c_str());
+}
+
+gs_root_signature::~gs_root_signature() {
+	Release();
+}
+
+void gs_root_signature::Release() {}

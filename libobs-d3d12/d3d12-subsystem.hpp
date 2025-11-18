@@ -45,6 +45,7 @@ struct gs_staging_descriptor;
 struct gs_graphics_rootsignature;
 
 #define MAX_UNIFORM_BUFFERS_PER_STAGE 16
+#define NUM_DESCRIPTORS_PER_HEAP 256
 
 #define GS_GPU_BUFFERUSAGE_VERTEX (1u << 0)                /**< Buffer is a vertex buffer. */
 #define GS_GPU_BUFFERUSAGE_INDEX (1u << 1)                 /**< Buffer is an index buffer. */
@@ -394,68 +395,25 @@ struct gs_obj {
 	virtual ~gs_obj();
 };
 
-struct gs_staging_descriptor_heap {
-	ID3D12DescriptorHeap *handle = nullptr;
-	D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHeapCPUStart = {0};
-	size_t descriptorSize = 0;
-};
+struct gs_descriptor_allocator {
+	gs_device_t *device;
 
-struct gs_staging_descriptor {
-	gs_staging_descriptor_pool *pool = NULL;
-	gs_staging_descriptor_heap *heap = NULL;
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = {0};
-	int32_t cpuHandleIndex = 0;
-};
+	D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeadType;
+	ComPtr<ID3D12DescriptorHeap> currentHeap;
+	D3D12_CPU_DESCRIPTOR_HANDLE currentHandle;
+	uint32_t descriptorSize = 0;
+	uint32_t remainingFreeHandles = 0;
+	std::vector<ComPtr<ID3D12DescriptorHeap>> descriptorHeapPool;
 
-struct gs_staging_descriptor_pool {
-	int32_t heapCount = 0;
-	gs_staging_descriptor_heap **heaps = NULL;
-	size_t descriptorCapacity = 0;
-	size_t freeDescriptorCount = 0;
-	gs_staging_descriptor *freeDescriptors = NULL;
-};
+       	gs_descriptor_allocator(gs_device_t *device, D3D12_DESCRIPTOR_HEAP_TYPE type);
+	~gs_descriptor_allocator();
 
-gs_staging_descriptor_pool *gs_staging_descriptor_pool_create(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type);
-void gs_expand_staging_descriptor_pool(ID3D12Device *device, gs_staging_descriptor_pool *pool);
-void gs_staging_descriptor_pool_destroy(gs_staging_descriptor_pool *pool);
+	D3D12_CPU_DESCRIPTOR_HANDLE Allocate(uint32_t count = 1);
 
-void gs_staging_descriptor_release(gs_staging_descriptor *cpuDescriptor);
+	ComPtr<ID3D12DescriptorHeap> RequestNewHeap(D3D12_DESCRIPTOR_HEAP_TYPE type);
 
-struct gs_gpu_descriptor_heap {
-	ID3D12DescriptorHeap *handle = NULL;
-	D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	D3D12_GPU_DESCRIPTOR_HANDLE descriptorHeapGPUStart = {0};
-	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHeapCPUStart = {0};
-	size_t maxDescriptors = 0;
-	size_t descriptorSize = 0;
-	int32_t currentDescriptorIndex = 0;
-};
 
-gs_gpu_descriptor_heap *gs_gpu_descriptor_heap_create(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type,
-						      size_t descriptorCount);
-void gs_gpu_descriptor_heap_destroy(gs_gpu_descriptor_heap *heap);
-void gs_gpu_descriptor_heap_reset(gs_gpu_descriptor_heap *heap);
-
-struct gs_buffer : gs_obj {
-	ComPtr<ID3D12Resource> resource;
-	gs_staging_descriptor uavDescriptor;
-	gs_staging_descriptor srvDescriptor;
-	gs_staging_descriptor cbvDescriptor;
-	D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress;
-
-	bool transitioned = false;
-	uint32_t usageFlags = 0;
-
-	int32_t size = 0;
-	gs_buffer(gs_device *device, int32_t size, gs_type type, uint32_t flags);
-	inline ~gs_buffer() {}
-
-	void UploadToBuffer(gs_buffer *source, uint32_t source_offset, gs_buffer *dest, uint32_t dest_offset);
-	void UploadToBuffer(uint8_t *data, size_t size, gs_buffer *dest, uint32_t dest_offset);
-
-	void CpoyBufferToBuffer(gs_buffer *source, uint32_t source_offset, gs_buffer *dest, uint32_t dest_offset);
-	void DownloadFromBuffer(gs_buffer *source, uint32_t source_offset, gs_buffer *dest, uint32_t dest_offset);
+	void Release(void);
 };
 
 struct gs_texture : gs_obj {
@@ -465,7 +423,6 @@ struct gs_texture : gs_obj {
 	int32_t sampleCount = 1;
 	gs_color_format format = GS_BGRA;
 
-	bool needUpdate = false;
 	inline gs_texture(gs_texture_type type, uint32_t levels, gs_color_format format)
 		: type(type),
 		  levels(levels),
@@ -490,14 +447,12 @@ struct gs_texture : gs_obj {
 };
 
 struct gs_texture_2d : gs_texture {
-	gs_buffer *upload_buffer = nullptr;
-
-	gs_staging_descriptor textureDescriptor;
+	D3D12_CPU_DESCRIPTOR_HANDLE textureCpuDescriptorHandle;
 	ComPtr<ID3D12Resource> texture;
 	D3D12_RESOURCE_STATES resourceState = (D3D12_RESOURCE_STATES)0;
 
-	gs_staging_descriptor renderTargetDescriptor[6] = {0};
-	gs_staging_descriptor renderTargetLinearDescriptor[6] = {0};
+	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetCpuDescriptorHandle[6] = {0};
+	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetCpuLinearDescriptorHandle[6] = {0};
 
 	uint32_t width = 0, height = 0;
 	uint32_t flags = 0;
@@ -527,34 +482,17 @@ struct gs_texture_2d : gs_texture {
 	void GetSharedHandle(IDXGIResource *dxgi_res);
 	void UpdateSubresources();
 
-	/*void UploadToTexture(gs_buffer *source, uint32_t source_offset, uint32_t source_pixels_per_row,
-			     uint32_t souce_rows_per_layer, gs_texture_2d *dest, GPUTextureRegion textureRegion);*/
 	bool Map(int32_t subresourceIndex, D3D12_MEMCPY_DEST *map);
 	void Unmap(int32_t subresourceIndex);
 
 	inline void Release()
 	{
-		if (textureDescriptor.cpuHandle.ptr != 0)
-			gs_staging_descriptor_release(&textureDescriptor);
+		textureCpuDescriptorHandle = { };
 
-		for (int32_t i = 0; i < 6; ++i) {
-			if (renderTargetDescriptor[i].cpuHandle.ptr != 0)
-				gs_staging_descriptor_release(renderTargetDescriptor + i);
-			if (renderTargetLinearDescriptor[i].cpuHandle.ptr != 0)
-				gs_staging_descriptor_release(renderTargetLinearDescriptor + i);
-
-			memset(&renderTargetDescriptor[i], 0, sizeof(renderTargetDescriptor));
-			memset(&renderTargetLinearDescriptor[i], 0, sizeof(renderTargetLinearDescriptor));
-		}
-
-		memset(&textureDescriptor, 0, sizeof(textureDescriptor));
+		memset(renderTargetCpuDescriptorHandle, 0, sizeof(renderTargetCpuDescriptorHandle));
+		memset(renderTargetCpuLinearDescriptorHandle, 0, sizeof(renderTargetCpuLinearDescriptorHandle));
 
 		texture.Release();
-
-		if (upload_buffer) {
-			delete upload_buffer;
-			upload_buffer = nullptr;
-		}
 	}
 
 	inline gs_texture_2d() : gs_texture(GS_TEXTURE_2D, 0, GS_UNKNOWN) {}
@@ -606,7 +544,7 @@ struct gs_texture_3d : gs_texture {
 
 struct gs_zstencil_buffer : gs_obj {
 	ComPtr<ID3D12Resource> texture;
-	gs_staging_descriptor textureDescriptor;
+	D3D12_CPU_DESCRIPTOR_HANDLE zsCpuDescriptorHandle;
 
 	uint32_t width, height;
 	gs_zstencil_format format;
@@ -616,19 +554,13 @@ struct gs_zstencil_buffer : gs_obj {
 
 	void inline Clear()
 	{
-		if (textureDescriptor.cpuHandle.ptr != 0)
-			gs_staging_descriptor_release(&textureDescriptor);
-
-		memset(&textureDescriptor, 0, sizeof(textureDescriptor));
+		memset(&zsCpuDescriptorHandle, 0, sizeof(zsCpuDescriptorHandle));
 		texture.Release();
 	}
 
 	inline void Release()
 	{
-		if (textureDescriptor.cpuHandle.ptr != 0)
-			gs_staging_descriptor_release(&textureDescriptor);
-
-		memset(&textureDescriptor, 0, sizeof(textureDescriptor));
+		memset(&zsCpuDescriptorHandle, 0, sizeof(zsCpuDescriptorHandle));
 		texture.Release();
 	}
 
@@ -652,16 +584,7 @@ struct gs_stage_surface : gs_obj {
 
 struct gs_sampler_state : gs_obj {
 	gs_sampler_info info;
-	gs_staging_descriptor *samplerDescriptor;
-
-	inline void Release()
-	{
-		if (samplerDescriptor)
-			bfree(samplerDescriptor);
-
-		samplerDescriptor = NULL;
-	}
-
+	D3D12_SAMPLER_DESC sd;
 	gs_sampler_state(gs_device_t *device, const gs_sampler_info *info);
 };
 
@@ -721,6 +644,10 @@ struct gs_shader : gs_obj {
 struct ShaderSampler {
 	std::string name;
 	gs_sampler_state sampler;
+
+	const D3D12_SAMPLER_DESC &GetDesc() {
+		return sampler.sd;
+	}
 
 	inline ShaderSampler(const char *name, gs_device_t *device, gs_sampler_info *info)
 		: name(name),
@@ -834,36 +761,205 @@ struct gs_swap_chain : gs_obj {
 	virtual ~gs_swap_chain();
 };
 
-struct gs_graphics_rootsignature {
-	ComPtr<ID3D12RootSignature> rootSignature;
+struct gs_root_parameter {
+	D3D12_ROOT_PARAMETER rootParam;
 
-	int32_t vertexUniform32BitBufferRootIndex = -1;
+	 gs_root_parameter() { rootParam.ParameterType = (D3D12_ROOT_PARAMETER_TYPE)0xFFFFFFFF; }
 
-	int32_t pixelSamplerRootIndex = -1;
-	int32_t pixelTextureRootIndex = -1;
-	int32_t pixelUniform32BitBufferRootIndex = -1;
+	~gs_root_parameter() { Release(); }
 
-	inline bool operator==(const gs_graphics_rootsignature &other) const
+	void Release()
 	{
-		return vertexUniform32BitBufferRootIndex == other.vertexUniform32BitBufferRootIndex &&
-		       pixelSamplerRootIndex == other.pixelSamplerRootIndex &&
-		       pixelTextureRootIndex == other.pixelTextureRootIndex &&
-		       pixelUniform32BitBufferRootIndex == other.pixelUniform32BitBufferRootIndex;
+		if (rootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+			delete[] rootParam.DescriptorTable.pDescriptorRanges;
+
+		rootParam.ParameterType = (D3D12_ROOT_PARAMETER_TYPE)0xFFFFFFFF;
 	}
 
-	inline bool operator!=(const gs_graphics_rootsignature &other) const { return !(*this == other); }
-
-	inline ~gs_graphics_rootsignature()
+	void InitAsConstants(UINT Register, UINT NumDwords,
+			     D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL, UINT Space = 0)
 	{
-		rootSignature.Clear();
-		vertexUniform32BitBufferRootIndex = -1;
-		pixelSamplerRootIndex = -1;
-		pixelTextureRootIndex = -1;
-		pixelUniform32BitBufferRootIndex = -1;
+		rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+		rootParam.ShaderVisibility = Visibility;
+		rootParam.Constants.Num32BitValues = NumDwords;
+		rootParam.Constants.ShaderRegister = Register;
+		rootParam.Constants.RegisterSpace = Space;
 	}
-	inline gs_graphics_rootsignature() {}
-	gs_graphics_rootsignature(ID3D12Device *device, gs_vertex_shader *vertexShader, gs_pixel_shader *pixelShader);
+
+	void InitAsConstantBuffer(UINT Register, D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL,
+				  UINT Space = 0)
+	{
+		rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParam.ShaderVisibility = Visibility;
+		rootParam.Descriptor.ShaderRegister = Register;
+		rootParam.Descriptor.RegisterSpace = Space;
+	}
+
+	void InitAsBufferSRV(UINT Register, D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL,
+			     UINT Space = 0)
+	{
+		rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+		rootParam.ShaderVisibility = Visibility;
+		rootParam.Descriptor.ShaderRegister = Register;
+		rootParam.Descriptor.RegisterSpace = Space;
+	}
+
+	void InitAsBufferUAV(UINT Register, D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL,
+			     UINT Space = 0)
+	{
+		rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+		rootParam.ShaderVisibility = Visibility;
+		rootParam.Descriptor.ShaderRegister = Register;
+		rootParam.Descriptor.RegisterSpace = Space;
+	}
+
+	void InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE Type, UINT Register, UINT Count,
+				   D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL, UINT Space = 0)
+	{
+		InitAsDescriptorTable(1, Visibility);
+		SetTableRange(0, Type, Register, Count, Space);
+	}
+
+	void InitAsDescriptorTable(UINT RangeCount, D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL)
+	{
+		rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParam.ShaderVisibility = Visibility;
+		rootParam.DescriptorTable.NumDescriptorRanges = RangeCount;
+		rootParam.DescriptorTable.pDescriptorRanges = new D3D12_DESCRIPTOR_RANGE[RangeCount];
+	}
+
+	void SetTableRange(UINT RangeIndex, D3D12_DESCRIPTOR_RANGE_TYPE Type, UINT Register, UINT Count, UINT Space = 0)
+	{
+		D3D12_DESCRIPTOR_RANGE *range = const_cast<D3D12_DESCRIPTOR_RANGE *>(rootParam.DescriptorTable.pDescriptorRanges + RangeIndex);
+		range->RangeType = Type;
+		range->NumDescriptors = Count;
+		range->BaseShaderRegister = Register;
+		range->RegisterSpace = Space;
+		range->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	}
+
+	const D3D12_ROOT_PARAMETER &operator()(void) const { return rootParam; }
 };
+
+
+struct gs_root_signature {
+	gs_device_t *device;
+
+	UINT numParameters = 0;
+	UINT numSamplers = 0;
+	UINT numInitializedStaticSamplers = 0;
+	uint32_t descriptorTableBitMap = 0;        // One bit is set for root parameters that are non-sampler descriptor tables
+	uint32_t samplerTableBitMap = 0;           // One bit is set for root parameters that are sampler descriptor tables
+	uint32_t descriptorTableSize[16] = { 0 };  // Non-sampler descriptor tables need to know their descriptor count
+	std::vector<gs_root_parameter> paramArray;
+	std::vector<D3D12_STATIC_SAMPLER_DESC> samplerArray;
+	ComPtr<ID3D12RootSignature> signature;
+
+	gs_root_signature(gs_device_t *device, UINT numRootParams, UINT numStaticSamplers);
+	void InitStaticSampler(UINT registerIndex, const D3D12_SAMPLER_DESC &nonStaticSamplerDesc,
+			       D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL);
+	void InitParamWith(gs_vertex_shader *vertexShader, gs_pixel_shader *pixelShader);
+	void Reset(UINT numRootParams, UINT numStaticSamplers = 1);
+	gs_root_parameter &RootParameter(size_t entryIndex)
+	{
+		return paramArray[entryIndex];
+	}
+	void Build(const std::wstring &name, D3D12_ROOT_SIGNATURE_FLAGS flags);
+	~gs_root_signature();
+	void Release();
+};
+
+
+struct gs_pipeline_state_obj {
+
+	const wchar_t *m_Name;
+
+	std::shared_ptr<gs_root_signature> rootSignature;
+
+	ComPtr<ID3D12PipelineState> pso;
+	gs_pipeline_state_obj(const wchar_t *Name) : m_Name(Name), rootSignature(nullptr), pso(nullptr) {}
+	void SetRootSignature(const RootSignature &BindMappings) { m_RootSignature = &BindMappings; }
+
+	std::shared_ptr<gs_root_signature> GetRootSignature(void) const
+	{ return rootSignature;
+	}
+
+	ComPtr<ID3D12PipelineState> GetPipelineStateObject(void) const { return pso; }
+};
+
+class gs_graphics_pso :  gs_pipeline_state_obj {
+	friend class CommandContext;
+
+public:
+	// Start with empty state
+	GraphicsPSO(const wchar_t *Name = L"Unnamed Graphics PSO");
+
+	void SetBlendState(const D3D12_BLEND_DESC &BlendDesc);
+	void SetRasterizerState(const D3D12_RASTERIZER_DESC &RasterizerDesc);
+	void SetDepthStencilState(const D3D12_DEPTH_STENCIL_DESC &DepthStencilDesc);
+	void SetSampleMask(UINT SampleMask);
+	void SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE TopologyType);
+	void SetDepthTargetFormat(DXGI_FORMAT DSVFormat, UINT MsaaCount = 1, UINT MsaaQuality = 0);
+	void SetRenderTargetFormat(DXGI_FORMAT RTVFormat, DXGI_FORMAT DSVFormat, UINT MsaaCount = 1,
+				   UINT MsaaQuality = 0);
+	void SetRenderTargetFormats(UINT NumRTVs, const DXGI_FORMAT *RTVFormats, DXGI_FORMAT DSVFormat,
+				    UINT MsaaCount = 1, UINT MsaaQuality = 0);
+	void SetInputLayout(UINT NumElements, const D3D12_INPUT_ELEMENT_DESC *pInputElementDescs);
+	void SetPrimitiveRestart(D3D12_INDEX_BUFFER_STRIP_CUT_VALUE IBProps);
+
+	// These const_casts shouldn't be necessary, but we need to fix the API to accept "const void* pShaderBytecode"
+	void SetVertexShader(const void *Binary, size_t Size)
+	{
+		m_PSODesc.VS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
+	}
+	void SetPixelShader(const void *Binary, size_t Size)
+	{
+		m_PSODesc.PS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
+	}
+	void SetGeometryShader(const void *Binary, size_t Size)
+	{
+		m_PSODesc.GS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
+	}
+	void SetHullShader(const void *Binary, size_t Size)
+	{
+		m_PSODesc.HS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
+	}
+	void SetDomainShader(const void *Binary, size_t Size)
+	{
+		m_PSODesc.DS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
+	}
+
+	void SetVertexShader(const D3D12_SHADER_BYTECODE &Binary) { m_PSODesc.VS = Binary; }
+	void SetPixelShader(const D3D12_SHADER_BYTECODE &Binary) { m_PSODesc.PS = Binary; }
+	void SetGeometryShader(const D3D12_SHADER_BYTECODE &Binary) { m_PSODesc.GS = Binary; }
+	void SetHullShader(const D3D12_SHADER_BYTECODE &Binary) { m_PSODesc.HS = Binary; }
+	void SetDomainShader(const D3D12_SHADER_BYTECODE &Binary) { m_PSODesc.DS = Binary; }
+
+	// Perform validation and compute a hash value for fast state block comparisons
+	void Finalize();
+
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc;
+	std::shared_ptr<const D3D12_INPUT_ELEMENT_DESC> m_InputLayouts;
+};
+
+struct gs_compute_pso : gs_pipeline_state_obj {
+	friend class CommandContext;
+
+	ComputePSO(const wchar_t *Name = L"Unnamed Compute PSO");
+
+	void SetComputeShader(const void *Binary, size_t Size)
+	{
+		m_PSODesc.CS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
+	}
+	void SetComputeShader(const D3D12_SHADER_BYTECODE &Binary) { m_PSODesc.CS = Binary; }
+
+	void Finalize();
+
+private:
+	D3D12_COMPUTE_PIPELINE_STATE_DESC m_PSODesc;
+};
+
 
 struct gs_vertex_buffer : gs_obj {
 	ComPtr<ID3D12Resource> vertexBuffer;
@@ -1054,7 +1150,7 @@ struct gs_graphics_pipeline {
 	DXGI_FORMAT zsformat = DXGI_FORMAT_UNKNOWN;
 	DXGI_FORMAT rtvformat = DXGI_FORMAT_UNKNOWN;
 
-	gs_graphics_rootsignature curRootSignature;
+	gs_root_signature *curRootSignature;
 
 	inline bool operator==(const gs_graphics_pipeline &other) const
 	{
@@ -1092,41 +1188,65 @@ struct gs_graphics_pipeline {
 	}
 };
 
+using D3D12CommandAllocatorPtr = ComPtr<ID3D12CommandAllocator>;
+struct D3D12CommandAllocatorInfo {
+	D3D12CommandAllocatorInfo(uint64_t value, D3D12CommandAllocatorPtr ptr) : fenceValue(value), allocator(ptr) {}
+	uint64_t fenceValue;
+	D3D12CommandAllocatorPtr allocator;
+};
+
+struct gs_command_allocator {
+	
+	D3D12_COMMAND_LIST_TYPE commandListType;
+
+	gs_device_t *device;
+	std::vector<D3D12CommandAllocatorPtr> allocators;
+	std::queue<D3D12CommandAllocatorInfo> readyAllocators;
+
+	gs_command_allocator(gs_device_t *device, D3D12_COMMAND_LIST_TYPE type);
+	~gs_command_allocator();
+
+	void Release();
+
+	D3D12CommandAllocatorPtr RequestAllocator(uint64_t completedFenceValue);
+	void DiscardAllocator(uint64_t fenceValue, D3D12CommandAllocatorPtr allocator);
+};
+
 struct gs_command_queue {
-	ID3D12Device *device = nullptr;
-	ID3D12CommandQueue *commandQueue = nullptr;
-	D3D12_COMMAND_LIST_TYPE type;
-	ID3D12Fence *fence = nullptr;
+	gs_device_t *device = nullptr;
+	D3D12_COMMAND_LIST_TYPE commandListType;
+	std::unique_ptr<gs_command_allocator> commandAllocators;
+
+	ComPtr<ID3D12CommandQueue> commandQueue = nullptr;
+	ComPtr<ID3D12Fence> fence = nullptr;
 	uint64_t nextFenceValue = 0;
 	uint64_t lastCompletedFenceValue = 0;
 	HANDLE fenceEventHandle = 0;
 
-	std::vector<ID3D12CommandAllocator *> allocatorPool;
-	std::queue<std::pair<uint64_t, ID3D12CommandAllocator *>> readyAllocators;
-
-	gs_command_queue(ID3D12Device *device, D3D12_COMMAND_LIST_TYPE type);
-
+	gs_command_queue(gs_device_t *device, D3D12_COMMAND_LIST_TYPE type);
 	inline ~gs_command_queue() { Release(); }
 
-private:
-	friend struct gs_command_context;
 	uint64_t IncrementFence(void);
 	bool IsFenceComplete(uint64_t fenceValue);
+	void StallForFence(uint64_t fenceValue);
+	void StallForProducer(gs_command_queue *producer);
 	void WaitForFence(uint64_t fenceValue);
 	void WaitForIdle(void);
 
+	ComPtr<ID3D12CommandQueue> GetCommandQueue() { return commandQueue; }
+
+	uint64_t GetNextFenceValue() { return nextFenceValue; }
+
 	uint64_t ExecuteCommandList(ID3D12GraphicsCommandList *list);
-	ID3D12CommandAllocator *RequestAllocator(void);
-	void DiscardAllocator(uint64_t FenceValueForReset, ID3D12CommandAllocator *Allocator);
-	inline void Release() {}
+	D3D12CommandAllocatorPtr RequestAllocator(void);
+	void DiscardAllocator(uint64_t fenceValueForReset, D3D12CommandAllocatorPtr);
+	inline void Release();
 };
 
 struct gs_command_context {
 	gs_device *device = nullptr;
 	ID3D12GraphicsCommandList *commandList = nullptr;
 	ID3D12CommandAllocator *currentAllocator = nullptr;
-
-	gs_gpu_descriptor_heap *gpu_descriptor_heap[2] = {nullptr};
 
 	D3D12_RESOURCE_BARRIER resourceBarrierBuffer[32] = {};
 	UINT numBarriersToFlush = 0;
@@ -1170,13 +1290,22 @@ struct gs_device {
 	RasterState curRasterState;
 	BlendState curBlendState;
 
-	gs_staging_descriptor_pool *stagingDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+	// D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, D3D12_DESCRIPTOR_HEAP_TYPE_DSV
+	gs_descriptor_allocator *cbvSrvUavHeapDescriptor;
+	gs_descriptor_allocator *samplerHeapDescriptor;
+	gs_descriptor_allocator *rtvHeapDescriptor;
+	gs_descriptor_allocator *dsvHeapDescriptor;
+
+	// D3D12_COMMAND_LIST_TYPE_COMPUTE D3D12_COMMAND_LIST_TYPE_COPY D3D12_COMMAND_LIST_TYPE_DIRECT
+	gs_command_queue *computeQueue;
+	gs_command_queue *copyQueue;
+	gs_command_queue *graphicsQueue;
+
 
 	D3D12_PRIMITIVE_TOPOLOGY curToplogy;
 	gs_graphics_pipeline curPipeline;
 
 	std::vector<gs_graphics_pipeline> graphicsPipelines;
-	gs_command_queue *commandQueue;
 	gs_command_context *currentCommandContext;
 
 	gs_rect viewport;
@@ -1195,7 +1324,6 @@ struct gs_device {
 	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 
-	void AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE heapType, gs_staging_descriptor *cpuDescripotr);
 	void WriteGPUDescriptor(gs_gpu_descriptor_heap *gpuHeap, D3D12_CPU_DESCRIPTOR_HANDLE *cpuHandle, int32_t count,
 				D3D12_GPU_DESCRIPTOR_HANDLE *gpuBaseDescriptor);
 

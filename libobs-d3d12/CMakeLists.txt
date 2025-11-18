@@ -14,12 +14,11 @@ target_sources(libobs-d3d12 PRIVATE
     d3d12-stagesurf.cpp
     d3d12-subsystem.cpp
     d3d12-subsystem.hpp
-    d3d12-buffer.cpp
     d3d12-texture2d.cpp
     d3d12-texture3d.cpp
     d3d12-vertexbuffer.cpp
     d3d12-zstencilbuffer.cpp
-    d3d12-descriptor-heap.cpp
+    d3d12-descriptor-allocator.cpp
     d3d12-command-context.cpp
     d3d12-graphics-rootsignature.cpp)
 

@@ -126,17 +126,16 @@ void gs_swap_chain::InitTarget(uint32_t cx, uint32_t cy)
 		rtv.Format = target[i].dxgiFormatView;
 		rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtv.Texture2D.MipSlice = 0;
-		device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, &target[i].renderTargetDescriptor[0]);
+		target[i].renderTargetCpuDescriptorHandle[0] = device->rtvHeapDescriptor->Allocate();
 		device->device->CreateRenderTargetView(target[i].texture, &rtv,
-						       target[i].renderTargetDescriptor[0].cpuHandle);
+						       target[i].renderTargetCpuDescriptorHandle[0]);
 		if (target[i].dxgiFormatView == target[i].dxgiFormatViewLinear) {
-			target[i].renderTargetLinearDescriptor[0] = target[i].renderTargetDescriptor[0];
+			target[i].renderTargetCpuLinearDescriptorHandle[0] =
+				target[i].renderTargetCpuDescriptorHandle[0];
 		} else {
 			rtv.Format = target[i].dxgiFormatViewLinear;
-			device->AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-							&target[i].renderTargetLinearDescriptor[0]);
-			device->device->CreateRenderTargetView(target[i].texture, &rtv,
-							       target[i].renderTargetLinearDescriptor[0].cpuHandle);
+			target[i].renderTargetCpuLinearDescriptorHandle[0] = device->rtvHeapDescriptor->Allocate();
+			device->device->CreateRenderTargetView(target[i].texture, &rtv, target[i].renderTargetCpuLinearDescriptorHandle[0]);
 		}
 	}
 }
@@ -438,31 +437,14 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	commandQueue = new gs_command_queue(device, D3D12_COMMAND_LIST_TYPE_DIRECT);
 
-	stagingDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] =
-		gs_staging_descriptor_pool_create(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	stagingDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER] =
-		gs_staging_descriptor_pool_create(device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-	stagingDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_RTV] =
-		gs_staging_descriptor_pool_create(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	stagingDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_DSV] =
-		gs_staging_descriptor_pool_create(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	cbvSrvUavHeapDescriptor = new gs_descriptor_allocator(this, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	samplerHeapDescriptor = new gs_descriptor_allocator(this, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	rtvHeapDescriptor = new gs_descriptor_allocator(this, D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	dsvHeapDescriptor = new gs_descriptor_allocator(this, D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
 	fastClearSupported = FastClearSupported(desc.VendorId, driverVersion);
 
 	blog(LOG_INFO, "D3D12 loaded successfully, feature level used: %x", (unsigned int)levelUsed);
-}
-
-void gs_device::AssignStagingDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE heapType, gs_staging_descriptor *cpuDescripotr)
-{
-	gs_staging_descriptor *descriptor;
-	gs_staging_descriptor_pool *pool = stagingDescriptorPools[heapType];
-
-	if (pool->freeDescriptorCount == 0)
-		gs_expand_staging_descriptor_pool(device, pool);
-
-	descriptor = &pool->freeDescriptors[pool->freeDescriptorCount - 1];
-	memcpy(cpuDescripotr, descriptor, sizeof(gs_staging_descriptor));
-	pool->freeDescriptorCount -= 1;
 }
 
 void gs_device::WriteGPUDescriptor(gs_gpu_descriptor_heap *gpuHeap, D3D12_CPU_DESCRIPTOR_HANDLE *cpuHandle,
@@ -628,10 +610,10 @@ void gs_device::LoadVertexBufferData()
 
 void gs_device::LoadSamplerDescriptors()
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandles[GS_MAX_TEXTURES] = {0};
+	/* D3D12_CPU_DESCRIPTOR_HANDLE cpuHandles[GS_MAX_TEXTURES] = {0};
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuBaseDescriptor = {0};
 	for (size_t i = 0; i < curPixelShader->samplerCount; ++i) {
-		cpuHandles[i] = curSamplers[i]->samplerDescriptor->cpuHandle;
+		cpuHandles[i] = curSamplers[i]->samplerCpuDescriptorHandle;
 	}
 
 	WriteGPUDescriptor(currentCommandContext->gpu_descriptor_heap[1], cpuHandles, curPixelShader->samplerCount,
@@ -640,7 +622,7 @@ void gs_device::LoadSamplerDescriptors()
 	if (curPixelShader->samplerCount > 0) {
 		currentCommandContext->CommandList()->SetGraphicsRootDescriptorTable(
 			curPipeline.curRootSignature.pixelSamplerRootIndex, gpuBaseDescriptor);
-	}
+	}*/
 }
 
 void gs_device::LoadTextureDescriptors()
@@ -648,7 +630,7 @@ void gs_device::LoadTextureDescriptors()
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandles[GS_MAX_TEXTURES];
 	for (size_t i = 0; i < curPixelShader->textureCount; ++i) {
 		gs_texture_2d *curTexture = dynamic_cast<gs_texture_2d *>(curTextures[i]);
-		cpuHandles[i] = curTexture->textureDescriptor.cpuHandle;
+		cpuHandles[i] = curTexture->textureCpuDescriptorHandle;
 		curTexture->UpdateSubresources();
 	}
 
@@ -705,8 +687,9 @@ void gs_device::FlushOutputViews()
 		D3D12_CPU_DESCRIPTOR_HANDLE *rtv = nullptr;
 		if (curRenderTarget) {
 			const int i = curRenderSide;
-			rtv = curFramebufferSrgb ? &curRenderTarget->renderTargetLinearDescriptor[i].cpuHandle
-						 : &curRenderTarget->renderTargetDescriptor[i].cpuHandle;
+			rtv = curFramebufferSrgb
+				      ? &curRenderTarget->renderTargetCpuLinearDescriptorHandle[curRenderSide]
+				      : &curRenderTarget->renderTargetCpuDescriptorHandle[curRenderSide];
 			if (!rtv->ptr) {
 				blog(LOG_ERROR, "device_draw (D3D11): texture is not a render target");
 				return;
@@ -714,7 +697,7 @@ void gs_device::FlushOutputViews()
 		}
 		D3D12_CPU_DESCRIPTOR_HANDLE *dsv = nullptr;
 		if (curZStencilBuffer)
-			dsv = &curZStencilBuffer->textureDescriptor.cpuHandle;
+			dsv = &curZStencilBuffer->zsCpuDescriptorHandle;
 		if (dsv && dsv->ptr)
 			currentCommandContext->CommandList()->OMSetRenderTargets(1, rtv, false, dsv);
 		else
@@ -2058,8 +2041,8 @@ void device_clear(gs_device_t *device, uint32_t clear_flags, const struct vec4 *
 		if (tex) {
 			const int side = device->curRenderSide;
 			D3D12_CPU_DESCRIPTOR_HANDLE rtv = device->curFramebufferSrgb
-								  ? tex->renderTargetLinearDescriptor[side].cpuHandle
-								  : tex->renderTargetDescriptor[side].cpuHandle;
+								  ? tex->renderTargetCpuLinearDescriptorHandle[side]
+								  : tex->renderTargetCpuDescriptorHandle[side];
 			device->currentCommandContext->CommandList()->ClearRenderTargetView(rtv, color->ptr, 0,
 											    nullptr);
 		}
@@ -2072,9 +2055,9 @@ void device_clear(gs_device_t *device, uint32_t clear_flags, const struct vec4 *
 		if ((clear_flags & GS_CLEAR_STENCIL) != 0)
 			flags |= D3D12_CLEAR_FLAG_STENCIL;
 
-		if (flags && device->curZStencilBuffer->textureDescriptor.cpuHandle.ptr)
+		if (flags && device->curZStencilBuffer->zsCpuDescriptorHandle.ptr != 0)
 			device->currentCommandContext->CommandList()->ClearDepthStencilView(
-				device->curZStencilBuffer->textureDescriptor.cpuHandle, flags, depth, stencil, 0,
+				device->curZStencilBuffer->zsCpuDescriptorHandle, flags, depth, stencil, 0,
 				nullptr);
 	}
 }
@@ -2423,7 +2406,7 @@ bool gs_texture_map(gs_texture_t *tex, uint8_t **ptr, uint32_t *linesize)
 	bool ret = tex2d->Map(0, &map);
 	*ptr = (uint8_t *)map.pData;
 	*linesize = map.RowPitch;
-	return true;
+	return false;
 }
 
 void gs_texture_unmap(gs_texture_t *tex)
