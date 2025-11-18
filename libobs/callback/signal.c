@@ -346,7 +346,13 @@ void signal_handler_signal(signal_handler_t *handler, const char *signal, callda
 	pthread_mutex_unlock(&handler->global_callbacks_mutex);
 
 	if (remove_refs) {
-		os_atomic_set_long(&handler->refs, os_atomic_load_long(&handler->refs) - remove_refs);
+		long refs = os_atomic_load_long(&handler->refs);
+		while (!os_atomic_compare_exchange_long(&handler->refs, &refs, refs - remove_refs))
+			;
+
+		if (refs == remove_refs) {
+			signal_handler_actually_destroy(handler);
+		}
 	}
 }
 
