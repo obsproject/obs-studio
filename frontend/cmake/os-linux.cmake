@@ -1,10 +1,10 @@
 target_sources(
   obs-studio
   PRIVATE
+    utility/CrashHandler_Linux.cpp
     utility/NativeEventFilter.cpp
     utility/platform-x11.cpp
     utility/system-info-posix.cpp
-    utility/CrashHandler_Linux.cpp
 )
 target_compile_definitions(
   obs-studio
