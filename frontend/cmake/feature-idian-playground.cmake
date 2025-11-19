@@ -3,7 +3,7 @@ option(ENABLE_IDIAN_PLAYGROUND "Enable building custom idian widget demo window"
 if(ENABLE_IDIAN_PLAYGROUND)
   target_sources(
     obs-studio
-    PRIVATE forms/OBSIdianPlayground.ui dialogs/OBSIdianPlayground.hpp dialogs/OBSIdianPlayground.cpp
+    PRIVATE dialogs/OBSIdianPlayground.hpp dialogs/OBSIdianPlayground.cpp forms/OBSIdianPlayground.ui
   )
   target_enable_feature(obs-studio "Idian Playground" ENABLE_IDIAN_PLAYGROUND)
 else()
