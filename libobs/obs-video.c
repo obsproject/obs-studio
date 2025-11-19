@@ -78,9 +78,21 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	for (size_t i = 0; i < data->sources_to_tick.num; i++) {
 		obs_source_t *s = data->sources_to_tick.array[i];
 		if (!obs_source_removed(s)) {
-			const uint64_t start = source_profiler_source_tick_start();
-			obs_source_video_tick(s, seconds);
-			source_profiler_source_tick_end(s, start);
+			// Optimization: skip tick for sources that are not active and not showing
+			// This reduces CPU load when sources are not in use
+			bool is_active = os_atomic_load_long(&s->activate_refs) > 0;
+			bool is_showing = os_atomic_load_long(&s->show_refs) > 0;
+			
+			// Always tick transitions and sources with async output (needed for buffering)
+			bool needs_tick = (s->info.type == OBS_SOURCE_TYPE_TRANSITION) ||
+					  ((s->info.output_flags & OBS_SOURCE_ASYNC) != 0) ||
+					  is_active || is_showing;
+			
+			if (needs_tick) {
+				const uint64_t start = source_profiler_source_tick_start();
+				obs_source_video_tick(s, seconds);
+				source_profiler_source_tick_end(s, start);
+			}
 		}
 		obs_source_release(s);
 	}
@@ -94,8 +106,24 @@ extern void render_display(struct obs_display *display);
 static inline void render_displays(void)
 {
 	struct obs_display *display;
+	bool has_enabled_displays = false;
 
 	if (!obs->data.valid)
+		return;
+
+	// Optimization: check for active displays before entering graphics context
+	pthread_mutex_lock(&obs->data.displays_mutex);
+	display = obs->data.first_display;
+	while (display) {
+		if (display->enabled) {
+			has_enabled_displays = true;
+			break;
+		}
+		display = display->next;
+	}
+	pthread_mutex_unlock(&obs->data.displays_mutex);
+
+	if (!has_enabled_displays)
 		return;
 
 	gs_enter_context(obs->video.graphics);
@@ -536,6 +564,47 @@ end:
 	profile_end(output_gpu_encoders_name);
 }
 
+static inline bool has_active_displays_needing_main_texture(void)
+{
+	bool has_active = false;
+
+	// Check rendered_callbacks first - they require main texture to be rendered
+	// (they use obs_get_main_texture() which checks texture_rendered)
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+	if (obs->data.rendered_callbacks.num > 0) {
+		has_active = true;
+	}
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
+
+	if (has_active)
+		return true;
+
+	// Check active displays with draw_callbacks that use main texture
+	// (preview uses obs_render_main_texture_src_color_only() which requires texture_rendered)
+	pthread_mutex_lock(&obs->data.displays_mutex);
+	struct obs_display *display = obs->data.first_display;
+	while (display) {
+		if (display->enabled) {
+			pthread_mutex_lock(&display->draw_callbacks_mutex);
+			if (display->draw_callbacks.num > 0) {
+				has_active = true;
+				pthread_mutex_unlock(&display->draw_callbacks_mutex);
+				break;
+			}
+			pthread_mutex_unlock(&display->draw_callbacks_mutex);
+		}
+		display = display->next;
+	}
+	pthread_mutex_unlock(&obs->data.displays_mutex);
+
+	// Note: draw_callbacks at obs->data level are called during render_main_texture
+	// and may not require main texture to be rendered beforehand.
+	// They are called before obs_view_render(), so they don't need texture_rendered.
+	// Only rendered_callbacks and display draw_callbacks (preview) require it.
+
+	return has_active;
+}
+
 static inline void render_video(struct obs_core_video_mix *video, bool raw_active, const bool gpu_active,
 				int cur_texture)
 {
@@ -544,7 +613,18 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 	gs_enable_depth_test(false);
 	gs_set_cull_mode(GS_NEITHER);
 
-	render_main_texture(video);
+	// Optimization: skip main texture rendering if no active outputs
+	// and no active displays that use it
+	bool needs_main_texture = raw_active || gpu_active;
+	if (!needs_main_texture) {
+		needs_main_texture = has_active_displays_needing_main_texture();
+	}
+
+	if (needs_main_texture) {
+		render_main_texture(video);
+	} else {
+		video->texture_rendered = false;
+	}
 
 	if (raw_active || gpu_active) {
 		gs_texture_t *const *convert_textures = video->convert_textures;

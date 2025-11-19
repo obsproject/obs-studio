@@ -1264,27 +1264,50 @@ static void async_tick(obs_source_t *source)
 {
 	uint64_t sys_time = obs->video.video_time;
 
+	// Optimization: check if source is active before processing
+	// Buffer still needs to be maintained, but texture update is not required
+	bool is_active = os_atomic_load_long(&source->activate_refs) > 0;
+	bool is_showing = os_atomic_load_long(&source->show_refs) > 0;
+	bool needs_processing = is_active || is_showing;
+
 	pthread_mutex_lock(&source->async_mutex);
 
-	if (deinterlacing_enabled(source)) {
-		deinterlace_process_last_frame(source, sys_time);
-	} else {
-		if (source->cur_async_frame) {
-			remove_async_frame(source, source->cur_async_frame);
-			source->cur_async_frame = NULL;
-		}
-
-		source->cur_async_frame = get_closest_frame(source, sys_time);
-	}
-
+	// Always update timestamp for synchronization
 	source->last_sys_timestamp = sys_time;
 
-	if (deinterlacing_enabled(source))
-		filter_frame(source, &source->prev_async_frame);
-	filter_frame(source, &source->cur_async_frame);
+	if (needs_processing) {
+		// Full processing only for active sources
+		if (deinterlacing_enabled(source)) {
+			deinterlace_process_last_frame(source, sys_time);
+		} else {
+			if (source->cur_async_frame) {
+				remove_async_frame(source, source->cur_async_frame);
+				source->cur_async_frame = NULL;
+			}
 
-	if (source->cur_async_frame)
-		source->async_update_texture = set_async_texture_size(source, source->cur_async_frame);
+			source->cur_async_frame = get_closest_frame(source, sys_time);
+		}
+
+		if (deinterlacing_enabled(source))
+			filter_frame(source, &source->prev_async_frame);
+		filter_frame(source, &source->cur_async_frame);
+
+		if (source->cur_async_frame)
+			source->async_update_texture = set_async_texture_size(source, source->cur_async_frame);
+	} else {
+		// For inactive sources only clear old frames from buffer
+		// to prevent overflow, but don't update texture
+		// MAX_ASYNC_FRAMES = 30 (defined later in code)
+		const size_t max_async_frames = 30;
+		if (source->async_frames.num > max_async_frames / 2) {
+			// Clear half of buffer, leaving room for new frames
+			while (source->async_frames.num > max_async_frames / 2) {
+				struct obs_source_frame *old_frame = source->async_frames.array[0];
+				da_erase(source->async_frames, 0);
+				remove_async_frame(source, old_frame);
+			}
+		}
+	}
 
 	pthread_mutex_unlock(&source->async_mutex);
 }
