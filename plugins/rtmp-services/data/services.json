@@ -3593,6 +3593,28 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "HomeGround TV",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://ticker.homegroundapp.com:8100/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 2500,
+                "max audio bitrate": 192,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max fps": 30
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
