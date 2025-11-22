@@ -54,6 +54,9 @@ function Build {
 
     $CmakeArgs = @('--preset', "windows-ci-${Target}")
 
+    $DepsVersion = $BuildSpec.dependencies.prebuilt.version
+    $CmakeArgs += @("-DVST3SDK_PATH=${ProjectRoot}\.deps\obs-deps-${DepsVersion}-${Target}\include\vst3sdk")
+
     $CmakeBuildArgs = @('--build')
     $CmakeInstallArgs = @()
 
