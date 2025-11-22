@@ -552,7 +552,7 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 			colorButton->setStyleSheet("border: 2px solid black");
 
 		colorButton->setProperty("bgColor", i);
-		select->connect(colorButton, &QPushButton::released, this, &OBSBasic::ColorChange);
+		connect(colorButton, &QPushButton::released, this, &OBSBasic::ColorChange);
 	}
 
 	menu->addAction(widgetAction);
@@ -803,7 +803,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	auto addSource = [this, getActionAfter](QMenu *popup, const char *type, const char *name) {
 		QString qname = QT_UTF8(name);
 		QAction *popupItem = new QAction(qname, this);
-		connect(popupItem, &QAction::triggered, [this, type]() { AddSource(type); });
+		connect(popupItem, &QAction::triggered, this, [this, type]() { AddSource(type); });
 
 		QIcon icon;
 
@@ -839,7 +839,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	popup->addSeparator();
 	QAction *addGroup = new QAction(QTStr("Group"), this);
 	addGroup->setIcon(GetGroupIcon());
-	connect(addGroup, &QAction::triggered, [this]() { AddSource("group"); });
+	connect(addGroup, &QAction::triggered, this, [this]() { AddSource("group"); });
 	popup->addAction(addGroup);
 
 	if (!foundDeprecated) {

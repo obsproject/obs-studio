@@ -37,10 +37,10 @@ void setupDockAction(QDockWidget *dock)
 
 	// Replace the slot connected by default
 	QObject::disconnect(action, &QAction::triggered, nullptr, 0);
-	dock->connect(action, &QAction::triggered, newToggleView);
+	QObject::connect(action, &QAction::triggered, dock, newToggleView);
 
 	// Make the action unable to be disabled
-	action->connect(action, &QAction::enabledChanged, neverDisable);
+	QObject::connect(action, &QAction::enabledChanged, action, neverDisable);
 }
 
 void OBSBasic::on_resetDocks_triggered(bool force)
