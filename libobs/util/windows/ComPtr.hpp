@@ -149,6 +149,16 @@ public:
 	inline bool operator!=(T *p) const { return ptr != p; }
 
 	inline bool operator!() const { return !ptr; }
+
+	inline T **GetAddressOf() { return &ptr; }
+	inline void Attach(T *other) throw()
+	{
+		if (ptr != nullptr) {
+			ptr->Release();
+		}
+
+		ptr = other;
+	}
 };
 
 #ifdef _WIN32

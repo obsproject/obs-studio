@@ -18,9 +18,8 @@ target_sources(libobs-d3d12 PRIVATE
     d3d12-texture3d.cpp
     d3d12-vertexbuffer.cpp
     d3d12-zstencilbuffer.cpp
-    d3d12-descriptor-allocator.cpp
-    d3d12-command-context.cpp
-    d3d12-graphics-rootsignature.cpp)
+    d3d12-command-context.hpp
+    d3d12-command-context.cpp)
 
 configure_file(cmake/windows/obs-module.rc.in libobs-d3d12.rc)
 target_sources(libobs-d3d12 PRIVATE libobs-d3d12.rc)
