@@ -975,7 +975,7 @@ public:
 		auto projectors = GetProjectorMenuMonitorsFormatted();
 		for (int i = 0; i < projectors.size(); i++) {
 			QString str = projectors[i];
-			QAction *action = parent->addAction(str, target, slot);
+			QAction *action = parent->addAction(EscapeMenuItem(str), target, slot);
 			action->setProperty("monitor", i);
 		}
 	}
