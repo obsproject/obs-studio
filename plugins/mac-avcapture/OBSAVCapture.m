@@ -1129,21 +1129,14 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
         return;
     }
 
-    if (![[device uniqueID] isEqualTo:self.deviceUUID]) {
-        obs_source_update_properties(self.captureInfo->source);
-        return;
-    }
-
-    if (self.deviceInput.device) {
-        [self AVCaptureLog:LOG_INFO withFormat:@"Received connect event with active device '%@' (UUID %@)",
-                                               self.deviceInput.device.localizedName, self.deviceInput.device.uniqueID];
-
-        obs_source_update_properties(self.captureInfo->source);
-        return;
-    }
+    obs_source_update_properties(self.captureInfo->source);
 
     [self AVCaptureLog:LOG_INFO
             withFormat:@"Received connect event for device '%@' (UUID %@)", device.localizedName, device.uniqueID];
+
+    if (![[device uniqueID] isEqualTo:self.deviceUUID]) {
+        return;
+    }
 
     NSError *error;
     NSString *presetName = [OBSAVCapture stringFromSettings:self.captureInfo->settings withSetting:@"preset"];
