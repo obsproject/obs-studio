@@ -1083,6 +1083,7 @@ static inline enum gs_color_format convert_video_format(enum video_format format
 		case VIDEO_FORMAT_I42A:
 		case VIDEO_FORMAT_YUVA:
 		case VIDEO_FORMAT_AYUV:
+		case VIDEO_FORMAT_UYVA:
 			return GS_BGRA;
 		case VIDEO_FORMAT_I010:
 		case VIDEO_FORMAT_P010:
