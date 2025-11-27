@@ -318,7 +318,7 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 	minimumLevel = -60.0;                    // -60 dB
 	warningLevel = -20.0;                    // -20 dB
 	errorLevel = -9.0;                       //  -9 dB
-	clipLevel = -0.5;                        //  -0.5 dB
+	clipLevel = 0.0;                         //  0 dB
 	minimumInputLevel = -50.0;               // -50 dB
 	peakDecayRate = 11.76;                   //  20 dB / 1.7 sec
 	magnitudeIntegrationTime = 0.3;          //  99% in 300 ms
@@ -593,7 +593,7 @@ QColor VolumeMeter::getPeakColor(float peakHold)
 		color = foregroundNominalColor;
 	} else if (peakHold < errorLevel) {
 		color = foregroundWarningColor;
-	} else if (peakHold <= clipLevel) {
+	} else if (peakHold < clipLevel) {
 		color = foregroundErrorColor;
 	} else {
 		color = clipColor;
@@ -754,6 +754,7 @@ void VolumeMeter::paintEvent(QPaintEvent *)
 	// Draw dynamic audio meter bars
 	int warningPosition = meterLength - convertToInt(warningLevel * scale);
 	int errorPosition = meterLength - convertToInt(errorLevel * scale);
+	int clipPosition = meterLength - convertToInt(clipLevel * scale);
 
 	int nominalLength = warningPosition;
 	int warningLength = nominalLength + (errorPosition - warningPosition);
@@ -786,7 +787,7 @@ void VolumeMeter::paintEvent(QPaintEvent *)
 		int channelOffset = channelNr * (meterThickness + 1);
 
 		// Draw audio meter peak bars
-		if (peakPosition >= meterLength) {
+		if (peakPosition >= clipPosition) {
 			if (!clipping) {
 				QTimer::singleShot(CLIP_FLASH_DURATION_MS, this, [&]() { clipping = false; });
 				clipping = true;
