@@ -55,6 +55,7 @@ target_sources(
     utility/RemuxQueueModel.hpp
     utility/RemuxWorker.cpp
     utility/RemuxWorker.hpp
+    utility/ResizeSignaler.hpp
     utility/SceneRenameDelegate.cpp
     utility/SceneRenameDelegate.hpp
     utility/ScreenshotObj.cpp
@@ -65,6 +66,8 @@ target_sources(
     utility/StartMultiTrackVideoStreamingGuard.hpp
     utility/SurfaceEventFilter.hpp
     utility/system-info.hpp
+    utility/ThumbnailManager.cpp
+    utility/ThumbnailManager.hpp
     utility/undo_stack.cpp
     utility/undo_stack.hpp
     utility/VCamConfig.hpp

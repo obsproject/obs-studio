@@ -22,6 +22,7 @@
 
     --primary: rgb(25,52,76);
     --primary_light: rgb(33,71,109);
+    --primary_dark: rgb(19, 40, 58);
 
     /* Layout */
     --padding_large: min(max(0px, calc(1px * var(--padding_base_value))), 5px);
@@ -81,6 +82,13 @@
     --dock_title_padding: calc(2px + var(--padding_base));
     --icon_base_mixer: calc(2px + var(--icon_base));
     --padding_menu_y: calc(3px + calc(1 * var(--padding_base_value)));
+}
+
+/* --------------------- */
+/* General Styling Hints */
+
+.dialog-frame {
+    background: var(--bg_window);
 }
 
 QStatusBar {
@@ -302,4 +310,9 @@ VolumeMeter {
 
 OBSBasicStats {
     background: var(--bg_window);
+}
+
+/* Add Source Dialog */
+SourceSelectButton QPushButton {
+    background-color: var(--grey7);
 }
