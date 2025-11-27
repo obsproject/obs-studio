@@ -71,7 +71,7 @@ void OBSBasic::RefreshVolumeColors()
 
 void OBSBasic::HideAudioControl()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
@@ -121,7 +121,7 @@ void OBSBasic::ToggleHideMixer()
 
 void OBSBasic::LockVolumeControl(bool lock)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
@@ -133,7 +133,7 @@ void OBSBasic::LockVolumeControl(bool lock)
 
 void OBSBasic::VolControlContextMenu()
 {
-	VolControl *vol = reinterpret_cast<VolControl *>(sender());
+	VolControl *vol = qobject_cast<VolControl *>(sender());
 
 	/* ------------------- */
 

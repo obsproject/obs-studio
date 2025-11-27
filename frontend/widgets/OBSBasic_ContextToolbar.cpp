@@ -156,10 +156,10 @@ void OBSBasic::UpdateContextBar(bool force)
 		bool updateNeeded = true;
 		QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
 		if (la) {
-			if (SourceToolbar *toolbar = dynamic_cast<SourceToolbar *>(la->widget())) {
+			if (SourceToolbar *toolbar = qobject_cast<SourceToolbar *>(la->widget())) {
 				if (toolbar->GetSource() == source)
 					updateNeeded = false;
-			} else if (MediaControls *toolbar = dynamic_cast<MediaControls *>(la->widget())) {
+			} else if (MediaControls *toolbar = qobject_cast<MediaControls *>(la->widget())) {
 				if (toolbar->GetSource() == source)
 					updateNeeded = false;
 			}

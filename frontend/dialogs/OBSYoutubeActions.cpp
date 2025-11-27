@@ -20,7 +20,7 @@ const QString IndexOfGamingCategory = "20";
 OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcastReady)
 	: QDialog(parent),
 	  ui(new Ui::OBSYoutubeActions),
-	  apiYouTube(dynamic_cast<YoutubeApiWrappers *>(auth)),
+	  apiYouTube(qobject_cast<YoutubeApiWrappers *>(auth)),
 	  workerThread(new WorkerThread(apiYouTube)),
 	  broadcastReady(broadcastReady)
 {
