@@ -35,6 +35,13 @@
 static const char *astrblank = "";
 static const wchar_t *wstrblank = L"";
 
+static int astrncoll(const char *str1, const char *str2, size_t read1, size_t read2);
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2);
+static inline int a_compare_number(const char *a, const char *b, size_t *read);
+static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *read);
+static inline size_t a_mblen(const char *str);
+static inline size_t w_mblen(const wchar_t *str);
+
 int astrcmpi(const char *str1, const char *str2)
 {
 	if (!str1)
@@ -161,6 +168,239 @@ int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n)
 	} while (*str1++ && *str2++ && --n);
 
 	return 0;
+}
+
+int astrnatcmp(const char *str1, const char *str2)
+{
+	if (!str1)
+		str1 = astrblank;
+	if (!str2)
+		str2 = astrblank;
+
+	size_t len1 = strlen(str1);
+	size_t len2 = strlen(str2);
+
+	if (len1 == 0 || len2 == 0)
+		return strcoll(str1, str2);
+
+	// Track indexes separately, because we may have multibyte characters.
+	size_t i1 = 0;
+	size_t i2 = 0;
+	size_t read1;
+	size_t read2;
+	int r;
+
+	for (;;) {
+
+		if (isdigit((unsigned char)str1[i1]) && isdigit((unsigned char)str2[i2])) {
+			if ((r = a_compare_number(str1 + i1, str2 + i2, &read1)) != 0)
+				return r;
+			read2 = read1;
+		} else {
+			read1 = a_mblen(str1 + i1);
+			read2 = a_mblen(str2 + i2);
+		}
+
+		/*
+		* Scan forward until next number comparison can be made or end of string is reached.
+		* astrncoll considers locale, so a longer string could be before or after a shorter string.
+		*/
+		while (read1 + i1 < len1 && read2 + i2 < len2 &&
+		       !(isdigit((unsigned char)str1[i1 + read1]) && isdigit((unsigned char)str2[i2 + read2]))) {
+			read1 += a_mblen(str1 + i1 + read1);
+			read2 += a_mblen(str2 + i2 + read2);
+		}
+
+		if (read1 + i1 >= len1 || read2 + i2 >= len2)
+			break;
+
+		if ((r = astrncoll(str1 + i1, str2 + i2, read1, read2)) != 0)
+			return r;
+
+		i1 += read1;
+		i2 += read2;
+	}
+	return strcoll(str1 + i1, str2 + i2);
+}
+
+int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
+{
+	if (!str1)
+		str1 = wstrblank;
+	if (!str2)
+		str2 = wstrblank;
+
+	size_t len1 = wcslen(str1);
+	size_t len2 = wcslen(str2);
+
+	if (len1 == 0 || len2 == 0)
+		return wcscoll(str1, str2);
+
+	// Track indexes separately, because we may have surrogate pairs.
+	size_t i1 = 0;
+	size_t i2 = 0;
+	size_t read1;
+	size_t read2;
+	int r;
+
+	for (;;) {
+
+		if (iswdigit(str1[i1]) && iswdigit(str2[i2])) {
+			if ((r = w_compare_number(str1 + i1, str2 + i2, &read1)) != 0)
+				return r;
+			read2 = read1;
+		} else {
+			read1 = w_mblen(str1 + i1);
+			read2 = w_mblen(str2 + i2);
+		}
+
+		/*
+		* Scan forward until next number comparison can be made or end of string is reached.
+		* wstrncoll considers locale, so a longer string could be before or after a shorter string.
+		*/
+		while (read1 + i1 < len1 && read2 + i2 < len2 &&
+		       !(iswdigit(str1[i1 + read1]) && iswdigit(str2[i2 + read2]))) {
+			read1 += w_mblen(str1 + i1 + read1);
+			read2 += w_mblen(str2 + i2 + read2);
+		}
+
+		if (read1 + i1 >= len1 || read2 + i2 >= len2)
+			break;
+
+		if ((r = wstrncoll(str1 + i1, str2 + i2, read1, read2)) != 0)
+			return r;
+
+		i1 += read1;
+		i2 += read2;
+	}
+	return wcscoll(str1 + i1, str2 + i2);
+}
+
+static int astrncoll(const char *str1, const char *str2, const size_t read1, size_t read2)
+{
+	if (read1 == 0 || read2 == 0)
+		return 0;
+
+	char *buf1 = bstrdup_n(str1, read1);
+	char *buf2 = bstrdup_n(str2, read2);
+
+	int r = strcoll(buf1, buf2);
+
+	bfree(buf1);
+	bfree(buf2);
+
+	return r;
+}
+
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2)
+{
+	if (read1 == 0 || read2 == 0)
+		return 0;
+
+	wchar_t *buf1 = bwstrdup_n(str1, read1);
+	wchar_t *buf2 = bwstrdup_n(str2, read2);
+
+	int r = wcscoll(buf1, buf2);
+
+	bfree(buf1);
+	bfree(buf2);
+
+	return r;
+}
+
+static inline int a_compare_number(const char *a, const char *b, size_t *skip)
+{
+	int r = 0;
+	size_t ai = 0;
+	size_t bi = 0;
+
+	while (a[ai] == '0')
+		ai++;
+
+	while (b[bi] == '0')
+		bi++;
+
+	for (; isdigit((unsigned char)a[ai]) || isdigit((unsigned char)b[bi]); ai++, bi++) {
+
+		if (!isdigit((unsigned char)a[ai]))
+			return -1;
+		if (!isdigit((unsigned char)b[bi]))
+			return 1;
+		if (r == 0) {
+			if (a[ai] < b[bi])
+				r = -1;
+			else if (a[ai] > b[bi])
+				r = 1;
+		}
+	};
+	// We can skip only shorter numbers length, since we may have multibyte characters
+	*skip = (ai > bi) ? bi : ai;
+	return r;
+}
+
+static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *skip)
+{
+	int r = 0;
+	size_t ai = 0;
+	size_t bi = 0;
+
+	while (a[ai] == '0')
+		ai++;
+
+	while (b[bi] == '0')
+		bi++;
+
+	for (; iswdigit(a[ai]) || iswdigit(b[bi]); ai++, bi++) {
+
+		if (!iswdigit(a[ai]))
+			return -1;
+		if (!iswdigit(b[bi]))
+			return 1;
+		if (r == 0) {
+			if (a[ai] < b[bi])
+				r = -1;
+			else if (a[ai] > b[bi])
+				r = 1;
+		}
+	};
+	// We can skip only shorter numbers length, since we may have multibyte characters
+	*skip = (ai > bi) ? bi : ai;
+	return r;
+}
+
+// Returns length of multibyte character or 1 for malformations and single byte characters
+// str must be null terminated
+static inline size_t a_mblen(const char *str)
+{
+	if ((unsigned char)str[0] >> 7 == 0b0) // (Not) Multibyte start bit
+		return 1;
+
+	if ((unsigned char)str[1] >> 6 != 0b10) // (Not) Multibyte continuation bit
+		return 1;
+	if ((unsigned char)str[2] >> 6 != 0b10)
+		return 2;
+	if ((unsigned char)str[3] >> 6 != 0b10)
+		return 3;
+
+	return 4;
+}
+
+// Windows wchar_t is 16bit while unix is 32bit, thus Windows needs to check for surrogates
+// str must be null terminated
+static inline size_t w_mblen(const wchar_t *str)
+{
+#ifdef WIN32
+	if (str[0] < 0xD800 || str[0] > 0xDBFF) // (Not) high-surrogate
+		return 1;
+
+	if (str[1] < 0xDC00 || str[1] > 0xDFFF) // (Not) low-surrogate
+		return 1;
+
+	return 2;
+#else
+	UNUSED_PARAMETER(str);
+	return 1;
+#endif
 }
 
 char *astrstri(const char *str, const char *find)
