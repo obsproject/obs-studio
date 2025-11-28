@@ -379,7 +379,7 @@ void OBSBasicTransform::onBoundsType(int index)
 			obs_transform_info osi;
 			obs_sceneitem_get_info2(item, &osi);
 
-			/* We use the draw transform values here which is always a top left coordinate origin */
+			// We use the draw transform values here which is always a top left coordinate origin.
 			vec2 currentRatio = getAlignmentConversion(OBS_ALIGN_TOP | OBS_ALIGN_LEFT);
 			vec2 flipRatio = getAlignmentConversion(osi.alignment);
 

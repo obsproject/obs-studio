@@ -20,20 +20,20 @@
 #include <components/AlignmentSelector.hpp>
 
 #include <QAccessible>
-#include <QAccessibleWidget>
 #include <QAccessibleInterface>
+#include <QAccessibleWidget>
 
 class AccessibleAlignmentCell;
 
 class AccessibleAlignmentSelector : public QAccessibleWidget {
 
 	mutable QHash<int, QAccessible::Id> cellInterfaces{};
+	static constexpr int cellCount = 9;
 
 public:
 	explicit AccessibleAlignmentSelector(AlignmentSelector *widget);
 	~AccessibleAlignmentSelector();
 
-	QObject *object() const override { return widget; }
 	QRect rect() const override;
 	QAccessible::Role role() const override;
 	QAccessible::State state() const override;
@@ -45,8 +45,6 @@ public:
 	QAccessibleInterface *focusChild() const override;
 
 	QVariant value() const;
-
-	AlignmentSelector *widget;
 };
 
 class AccessibleAlignmentCell : public QAccessibleInterface {

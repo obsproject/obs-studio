@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include <QWidget>
-#include <QKeyEvent>
 #include <QFocusEvent>
+#include <QKeyEvent>
+#include <QWidget>
 
 class AlignmentSelector : public QWidget {
 	Q_OBJECT

@@ -16,10 +16,11 @@
 ******************************************************************************/
 
 #include "AccessibleAlignmentSelector.hpp"
+
 #include <OBSApp.hpp>
 
 namespace {
-static const char *indexToString[] = {
+static const char *cellIndexToString[] = {
 	"Basic.TransformWindow.Alignment.TopLeft",    "Basic.TransformWindow.Alignment.TopCenter",
 	"Basic.TransformWindow.Alignment.TopRight",   "Basic.TransformWindow.Alignment.CenterLeft",
 	"Basic.TransformWindow.Alignment.Center",     "Basic.TransformWindow.Alignment.CenterRight",
@@ -27,12 +28,11 @@ static const char *indexToString[] = {
 	"Basic.TransformWindow.Alignment.BottomRight"};
 }
 
-AccessibleAlignmentSelector::AccessibleAlignmentSelector(AlignmentSelector *widget)
-	: QAccessibleWidget(widget, QAccessible::Grouping),
-	  widget(widget)
+AccessibleAlignmentSelector::AccessibleAlignmentSelector(AlignmentSelector *widget_)
+	: QAccessibleWidget(widget_, QAccessible::Grouping)
 {
-	for (int i = 0; i < 9; ++i) {
-		AccessibleAlignmentCell *cell = new AccessibleAlignmentCell(this, widget, i);
+	for (int i = 0; i < cellCount; ++i) {
+		AccessibleAlignmentCell *cell = new AccessibleAlignmentCell(this, widget_, i);
 		QAccessible::registerAccessibleInterface(cell);
 		cellInterfaces.insert(i, QAccessible::uniqueId(cell));
 	}
@@ -47,7 +47,7 @@ AccessibleAlignmentSelector::~AccessibleAlignmentSelector()
 
 int AccessibleAlignmentSelector::childCount() const
 {
-	return 9;
+	return cellCount;
 }
 
 QAccessibleInterface *AccessibleAlignmentSelector::child(int index) const
@@ -71,7 +71,7 @@ int AccessibleAlignmentSelector::indexOfChild(const QAccessibleInterface *child)
 
 bool AccessibleAlignmentSelector::isValid() const
 {
-	return widget != nullptr;
+	return widget() != nullptr;
 }
 
 QAccessibleInterface *AccessibleAlignmentSelector::focusChild() const
@@ -86,13 +86,13 @@ QAccessibleInterface *AccessibleAlignmentSelector::focusChild() const
 
 QRect AccessibleAlignmentSelector::rect() const
 {
-	return widget->rect();
+	return widget()->rect();
 }
 
 QString AccessibleAlignmentSelector::text(QAccessible::Text textType) const
 {
 	if (textType == QAccessible::Name) {
-		QString str = widget->accessibleName();
+		QString str = widget()->accessibleName();
 		if (str.isEmpty()) {
 			str = QTStr("Accessible.Widget.Name.AlignmentSelector");
 		}
@@ -116,8 +116,8 @@ QAccessible::State AccessibleAlignmentSelector::state() const
 	QAccessible::State state;
 
 	state.focusable = true;
-	state.focused = widget->hasFocus();
-	state.disabled = !widget->isEnabled();
+	state.focused = widget()->hasFocus();
+	state.disabled = !widget()->isEnabled();
 	state.readOnly = false;
 
 	return state;
@@ -127,7 +127,7 @@ QVariant AccessibleAlignmentSelector::value() const
 {
 	for (int i = 0; i < childCount(); ++i) {
 		if (child(i)->state().checked) {
-			return QTStr(indexToString[i]);
+			return QTStr(cellIndexToString[i]);
 		}
 	}
 
@@ -135,7 +135,8 @@ QVariant AccessibleAlignmentSelector::value() const
 }
 
 // --- AccessibleAlignmentCell ---
-AccessibleAlignmentCell::AccessibleAlignmentCell(QAccessibleInterface *parent, AlignmentSelector *widget, int index)
+AccessibleAlignmentCell::AccessibleAlignmentCell(QAccessibleInterface *parent, AlignmentSelector *widget,
+						 int index)
 	: parent_(parent),
 	  widget(widget),
 	  index_(index)
@@ -150,7 +151,7 @@ QRect AccessibleAlignmentCell::rect() const
 QString AccessibleAlignmentCell::text(QAccessible::Text text) const
 {
 	if (text == QAccessible::Name || text == QAccessible::Value) {
-		return QTStr(indexToString[index_]);
+		return QTStr(cellIndexToString[index_]);
 	}
 	return QString();
 }

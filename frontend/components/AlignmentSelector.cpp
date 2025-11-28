@@ -15,16 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "AccessibleAlignmentSelector.hpp"
 #include "AlignmentSelector.hpp"
 
-#include <QPainter>
-#include <QMouseEvent>
-#include <QStyleOptionButton>
+#include <util/base.h>
 
 #include <QAccessible>
-#include "AccessibleAlignmentSelector.hpp"
-
-#include <util/base.h>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QStyleOptionButton>
 
 AlignmentSelector::AlignmentSelector(QWidget *parent) : QWidget(parent)
 {
@@ -133,7 +132,8 @@ QRect AlignmentSelector::cellRect(int index) const
 
 Qt::Alignment AlignmentSelector::cellAlignment(int index) const
 {
-	Qt::Alignment hAlign, vAlign;
+	Qt::Alignment hAlign;
+	Qt::Alignment vAlign;
 
 	switch (index % 3) {
 	case 0:
@@ -210,7 +210,9 @@ void AlignmentSelector::mousePressEvent(QMouseEvent *event)
 
 void AlignmentSelector::keyPressEvent(QKeyEvent *event)
 {
-	int moveX = 0, moveY = 0;
+	int moveX = 0;
+	int moveY = 0;
+
 	switch (event->key()) {
 	case Qt::Key_Left:
 		moveX = -1;
