@@ -176,3 +176,51 @@ bool devices_match(const char *id1, const char *id2)
 
 	return match;
 }
+
+static inline bool device_is_input(const char *device)
+{
+	return astrstri(device, "soundflower") == NULL && astrstri(device, "wavtap") == NULL &&
+	       astrstri(device, "soundsiphon") == NULL && astrstri(device, "ishowu") == NULL &&
+	       astrstri(device, "blackhole") == NULL && astrstri(device, "loopback") == NULL &&
+	       astrstri(device, "groundcontrol") == NULL && astrstri(device, "vbcable") == NULL;
+}
+
+static bool find_loopback_cb(void *param, const char *name, const char *id)
+{
+	UNUSED_PARAMETER(name);
+	char **p_id = param;
+
+	if (!device_is_input(id)) {
+		*p_id = bstrdup(id);
+		return false;
+	}
+	return true;
+}
+
+void get_desktop_default_id(char **p_id)
+{
+	if (*p_id)
+		return;
+
+	AudioObjectPropertyAddress addr = {kAudioHardwarePropertyDefaultSystemOutputDevice,
+					   kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
+
+	AudioDeviceID id = 0;
+	UInt32 size = sizeof(id);
+	OSStatus stat = AudioObjectGetPropertyData(kAudioObjectSystemObject, &addr, 0, NULL, &size, &id);
+
+	if (success(stat, "AudioObjectGetPropertyData")) {
+		/* Try system default output first */
+		obs_enum_audio_monitoring_device(alloc_default_id, p_id, id, false);
+
+		/* If not a loopback, try to find a virtual (non-input) device instead */
+		if (*p_id && device_is_input(*p_id)) {
+			bfree(*p_id);
+			*p_id = NULL;
+			enum_audio_devices(find_loopback_cb, p_id, false);
+		}
+	}
+
+	if (!*p_id)
+		*p_id = bzalloc(1);
+}

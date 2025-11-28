@@ -855,35 +855,36 @@
             ]
         },
         {
-            "name": "AfreecaTV",
+            "name": "SOOP Korea",
             "alt_names": [
+                "AfreecaTV",
                 "아프리카TV",
                 "Afreeca.TV"
             ],
             "servers": [
                 {
                     "name": "Asia : Korea",
-                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app"
+                    "url": "rtmp://stream.sooplive.co.kr/app/"
                 },
                 {
                     "name": "North America : US East",
-                    "url": "rtmp://rtmp-esu.afreecatv.com/app"
+                    "url": "rtmp://rtmp-esu.sooplive.co.kr/app/"
                 },
                 {
                     "name": "North America : US West",
-                    "url": "rtmp://rtmp-wsu.afreecatv.com/app"
+                    "url": "rtmp://rtmp-wsu.sooplive.co.kr/app/"
                 },
                 {
                     "name": "South America : Brazil",
-                    "url": "rtmp://rtmp-brz.afreecatv.com/app"
+                    "url": "rtmp://rtmp-brz.sooplive.co.kr/app/"
                 },
                 {
                     "name": "Europe : UK",
-                    "url": "rtmp://rtmp-uk.afreecatv.com/app"
+                    "url": "rtmp://rtmp-uk.sooplive.co.kr/app/"
                 },
                 {
                     "name": "Asia : Singapore",
-                    "url": "rtmp://rtmp-sgp.afreecatv.com/app"
+                    "url": "rtmp://rtmp-sgp.sooplive.co.kr/app/"
                 }
             ],
             "recommended": {
@@ -2619,8 +2620,56 @@
             "stream_key_link": "https://playstudio.shareplay.tv/stream/settings",
             "servers": [
                 {
+                    "name": "Default (Auto Detect)",
+                    "url": "rtmp://stream.shareplay.tv"
+                },
+                {
                     "name": "Atlanta, Georgia, USA",
                     "url": "rtmp://live-us-atl-stream.shareplay.tv"
+                },
+                {
+                    "name": "Chicago, Illinois, USA",
+                    "url": "rtmp://live-us-ord-stream.shareplay.tv"
+                },
+                {
+                    "name": "Dallas, Texas, USA",
+                    "url": "rtmp://live-us-dfw-stream.shareplay.tv"
+                },
+                {
+                    "name": "Los Angeles, California, USA",
+                    "url": "rtmp://live-us-lax-stream.shareplay.tv"
+                },
+                {
+                    "name": "Miami, Florida, USA",
+                    "url": "rtmp://live-us-mia-stream.shareplay.tv"
+                },
+                {
+                    "name": "Seattle, Washington, USA",
+                    "url": "rtmp://live-us-sea-stream.shareplay.tv"
+                },
+                {
+                    "name": "Washington D.C., USA",
+                    "url": "rtmp://live-us-iad-stream.shareplay.tv"
+                },
+                {
+                    "name": "Toronto, Canada",
+                    "url": "rtmp://live-ca-yyz-stream.shareplay.tv"
+                },
+                {
+                    "name": "Paris, France",
+                    "url": "rtmp://live-fr-par-stream.shareplay.tv"
+                },
+                {
+                    "name": "London, UK",
+                    "url": "rtmp://live-uk-lhr-stream.shareplay.tv"
+                },
+                {
+                    "name": "Milan, Italy",
+                    "url": "rtmp://live-it-mil-stream.shareplay.tv"
+                },
+                {
+                    "name": "Sydney, Australia",
+                    "url": "rtmp://live-au-syd-stream.shareplay.tv"
                 }
             ],
             "supported video codecs": [
@@ -3337,13 +3386,16 @@
             }
         },
         {
-            "name": "Dolby Millicast",
+            "name": "Dolby OptiView Real-time",
+            "alt_names": [
+                "Dolby Millicast"
+            ],
             "common": false,
-            "more_info_link": "https://docs.optiview.dolby.com/millicast/using-obs/",
+            "more_info_link": "https://optiview.dolby.com/docs/millicast/using-obs/",
             "stream_key_link": "https://streaming.dolby.io",
             "multitrack_video_configuration_url": "https://director.millicast.com/api/multitrackvideo/configuration",
             "multitrack_video_name": "Enhanced Broadcasting",
-            "multitrack_video_learn_more_link": "https://docs.optiview.dolby.com/millicast/obs-enhanced-broadcasting-multitrack-video/",
+            "multitrack_video_learn_more_link": "https://optiview.dolby.com/docs/millicast/obs-enhanced-broadcasting-multitrack-video/",
             "servers": [
                 {
                     "name": "Global (RTMPS)",
