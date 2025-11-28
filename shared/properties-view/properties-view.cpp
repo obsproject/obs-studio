@@ -1171,7 +1171,7 @@ static QWidget *CreateRationalFPS(OBSFrameRatePropertyWidget *fpsProps, bool &se
 }
 
 static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop, bool &warning, const char *option,
-							 media_frames_per_second *current_fps,
+							 int fps_selector_mode, media_frames_per_second *current_fps,
 							 frame_rate_ranges_t &fps_ranges)
 {
 	auto widget = new OBSFrameRatePropertyWidget{};
@@ -1201,7 +1201,6 @@ static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop, b
 			continue;
 
 		option_found = true;
-		combo->setCurrentIndex(combo->count() - 1);
 	}
 
 	hlayout->addWidget(combo, 0, Qt::AlignTop);
@@ -1217,22 +1216,24 @@ static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop, b
 			return;
 
 		match_found = true;
-
-		stack->setCurrentIndex(stack->count() - 1);
-		combo->setCurrentIndex(stack->count() - 1);
 	};
 
 	AddWidget(CreateSimpleFPSValues);
 	AddWidget(CreateRationalFPS);
 	stack->addWidget(new QWidget{});
 
-	if (option_found)
+	// When possible, use the previously selected FPS selector mode (typically simple or rational). If a consumer has
+	// created extra selection modes and our stored value is out of bounds, fall back to the trailing values for the mode
+	// selector and the the corresponding FPS selector.
+	if (fps_selector_mode < combo->count() && fps_selector_mode < stack->count()) {
+		combo->setCurrentIndex(fps_selector_mode);
+		stack->setCurrentIndex(fps_selector_mode);
+	} else {
+		combo->setCurrentIndex(combo->count() - 1);
 		stack->setCurrentIndex(stack->count() - 1);
-	else if (!match_found) {
-		int idx = current_fps ? 1 : 0; // Rational for "unsupported"
-					       // Simple as default
-		stack->setCurrentIndex(idx);
-		combo->setCurrentIndex(idx);
+	}
+
+	if (!match_found) {
 		warning = true;
 	}
 
@@ -1367,7 +1368,9 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		fps_ranges.emplace_back(obs_property_frame_rate_fps_range_min(prop, i),
 					obs_property_frame_rate_fps_range_max(prop, i));
 
-	auto widget = CreateFrameRateWidget(prop, warning, option, valid_fps, fps_ranges);
+	int selector_mode = obs_data_get_int(settings, "fps_selector_mode");
+
+	auto widget = CreateFrameRateWidget(prop, warning, option, selector_mode, valid_fps, fps_ranges);
 	auto info = new WidgetInfo(this, prop, widget);
 
 	widget->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -1643,6 +1646,8 @@ static bool FrameRateChanged(QWidget *widget, const char *name, OBSData &setting
 	};
 	unique_ptr<void, decltype(StopUpdating)> signalGuard(static_cast<void *>(w), StopUpdating);
 	w->updating = true;
+
+	obs_data_set_int(w->settings, "fps_selector_mode", w->modeSelect->currentIndex());
 
 	if (!obs_data_has_user_value(settings, name))
 		obs_data_set_obj(settings, name, nullptr);
