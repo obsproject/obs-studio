@@ -65,4 +65,12 @@
   <custom>
     <value key="flathub::manifest">https://github.com/obsproject/obs-studio/blob/@GIT_HASH@/build-aux/</value>
   </custom>
+  <keywords>
+    <keyword>live streaming software</keyword>
+    <keyword>video recording software</keyword>
+    <keyword>screen recording tool</keyword>
+    <keyword>free live streamer</keyword>
+    <keyword>youtube streamer</keyword>
+    <keyword>twitch streamer</keyword>
+  </keywords>
 </component>
