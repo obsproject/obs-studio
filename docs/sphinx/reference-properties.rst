@@ -320,10 +320,20 @@ Property Object Functions
                              editable list of files.
                            - **OBS_EDITABLE_LIST_TYPE_FILES_AND_URLS** -
                              An editable list of files and URLs.
+                           - **OBS_EDITABLE_LIST_TYPE_COMBO** - An
+                             editable list of strings which are
+                             selected from a combo box.
 
    :param    filter:       File filter to use if a file list
    :param    default_path: Default path if a file list
    :return:                The property
+
+   Important Related Functions:
+
+   - :c:func:`obs_property_editable_list_add_item`
+   - :c:func:`obs_property_editable_list_insert_item`
+   - :c:func:`obs_property_editable_list_item_remove`
+   - :c:func:`obs_property_editable_list_clear`
 
 ---------------------
 
@@ -565,6 +575,18 @@ Property Enumeration Functions
 
 ---------------------
 
+.. function:: size_t obs_property_editable_list_item_count(obs_property_t *p)
+
+---------------------
+
+.. function:: const char *obs_property_editable_list_item_name(obs_property_t *p, size_t idx)
+
+---------------------
+
+.. function:: const char *obs_property_editable_list_item_value(obs_property_t *p, size_t idx)
+
+---------------------
+
 .. function:: size_t      obs_property_frame_rate_options_count(obs_property_t *p)
 
 ---------------------
@@ -794,6 +816,34 @@ Property Modification Functions
 ---------------------
 
 .. function:: void obs_property_list_item_remove(obs_property_t *p, size_t idx)
+
+---------------------
+
+.. function:: void obs_property_editable_list_clear(obs_property_t *p)
+
+---------------------
+
+.. function:: void obs_property_editable_list_item_remove(obs_property_t *p, size_t idx)
+
+---------------------
+
+.. function:: size_t obs_property_editable_list_add_item(obs_property_t *p, const char *name, const char *val)
+
+   Adds a string to the items when the type is ``OBS_EDITABLE_LIST_TYPE_COMBO``.
+
+   :param    name: Localized name shown to user
+   :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_array_item`
+   :returns: The index of the list item.
+
+---------------------
+
+.. function:: void obs_property_editable_list_insert_item(obs_property_t *p, size_t idx, const char *name, const char *val)
+
+   Inserts a string in to the items when the type is ``OBS_EDITABLE_LIST_TYPE_COMBO``.
+
+   :param    idx:  The index of the list item
+   :param    name: Localized name shown to user
+   :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_array_item`
 
 ---------------------
 
