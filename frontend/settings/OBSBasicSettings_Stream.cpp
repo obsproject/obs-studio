@@ -112,6 +112,8 @@ void OBSBasicSettings::LoadStream1Settings()
 	bool use_custom_server = obs_data_get_bool(settings, "using_custom_server");
 	protocol = QT_UTF8(obs_service_get_protocol(service_obj));
 	const char *bearer_token = obs_data_get_string(settings, "bearer_token");
+	const char *stun_server = obs_data_get_string(settings, "stun_server");
+	const bool wait_gathered_candidates = obs_data_get_bool(settings, "wait_gathered_candidates");
 
 	if (is_rtmp_custom || is_whip)
 		ui->customServer->setText(server);
@@ -209,10 +211,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	if (use_custom_server)
 		ui->serviceCustomServer->setText(server);
 
-	if (is_whip)
+	if (is_whip) {
 		ui->key->setText(bearer_token);
-	else
+		ui->stunServer->setText(stun_server);
+		ui->waitGatheredCandidates->setChecked(wait_gathered_candidates);
+	} else {
 		ui->key->setText(key);
+	}
 
 	ServiceChanged(true);
 
@@ -306,6 +311,8 @@ void OBSBasicSettings::SaveStream1Settings()
 	if (whip) {
 		obs_data_set_string(settings, "service", "WHIP");
 		obs_data_set_string(settings, "bearer_token", QT_TO_UTF8(ui->key->text()));
+		obs_data_set_string(settings, "stun_server", QT_TO_UTF8(ui->stunServer->text()));
+		obs_data_set_bool(settings, "wait_gathered_candidates", ui->waitGatheredCandidates->isChecked());
 	} else {
 		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 	}
@@ -414,6 +421,10 @@ void OBSBasicSettings::UpdateKeyLink()
 	} else if (IsWHIP()) {
 		ui->streamKeyLabel->setText(QTStr("Basic.AutoConfig.StreamPage.BearerToken"));
 		ui->streamKeyLabel->setToolTip("");
+		ui->stunServerLabel->setText(QTStr("Basic.Settings.Stream.Custom.StunServer"));
+		ui->stunServerLabel->setToolTip("");
+		ui->waitGatheredCandidates->setText(QTStr("Basic.Settings.Stream.Custom.WaitGatheredCandidates"));
+		ui->waitGatheredCandidates->setToolTip("");
 	} else if (!IsCustomService()) {
 		ui->streamKeyLabel->setText(QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
 		ui->streamKeyLabel->setToolTip("");
@@ -769,10 +780,13 @@ OBSService OBSBasicSettings::SpawnTempService()
 		obs_data_set_string(settings, "server", QT_TO_UTF8(ui->customServer->text().trimmed()));
 	}
 
-	if (whip)
+	if (whip) {
 		obs_data_set_string(settings, "bearer_token", QT_TO_UTF8(ui->key->text()));
-	else
+		obs_data_set_string(settings, "stun_server", QT_TO_UTF8(ui->stunServer->text()));
+		obs_data_set_bool(settings, "wait_gathered_candidates", ui->waitGatheredCandidates->isChecked());
+	} else {
 		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
+	}
 
 	OBSServiceAutoRelease newService = obs_service_create(service_id, "temp_service", settings, nullptr);
 	return newService.Get();
@@ -930,9 +944,14 @@ bool OBSBasicSettings::IsCustomServer()
 void OBSBasicSettings::on_server_currentIndexChanged(int /*index*/)
 {
 	auto server_is_custom = IsCustomServer();
+	auto server_is_whip = IsWHIP();
 
 	ui->serviceCustomServerLabel->setVisible(server_is_custom);
 	ui->serviceCustomServer->setVisible(server_is_custom);
+
+	ui->stunServer->setVisible(server_is_whip);
+	ui->stunServerLabel->setVisible(server_is_whip);
+	ui->waitGatheredCandidates->setVisible(server_is_whip);
 }
 
 void OBSBasicSettings::UpdateVodTrackSetting()
