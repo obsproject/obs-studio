@@ -76,6 +76,7 @@ bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+string opt_config_dir;
 
 bool restart = false;
 bool restart_safe = false;
@@ -972,6 +973,10 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--steam", nullptr)) {
 			steam = true;
 
+		} else if (arg_is(argv[i], "--config-dir", nullptr)) {
+			if (++i < argc)
+				opt_config_dir = argv[i];
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::string help =
 				"--help, -h: Get list of available commands.\n\n"
@@ -983,6 +988,7 @@ int main(int argc, char *argv[])
 				"\n"
 				"--profile <string>: Use specific profile.\n"
 				"--scene <string>: Start with specific scene.\n\n"
+				"--config-dir <string>: Configuration directory.\n"
 				"--studio-mode: Enable studio mode.\n"
 				"--minimize-to-tray: Minimize to system tray.\n"
 #if ALLOW_PORTABLE_MODE
