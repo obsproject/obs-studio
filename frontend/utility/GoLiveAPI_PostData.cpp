@@ -36,6 +36,7 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 		} else if (qstricmp(codec, "av1") == 0) {
 			client.supported_codecs.emplace("av1");
 		}
+		client.supported_encoders.emplace(encoder_id);
 	}
 
 	auto &preferences = post_data.preferences;
