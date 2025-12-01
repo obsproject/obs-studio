@@ -3593,6 +3593,42 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "zap.stream",
+            "more_info_link": "https://zap.stream",
+            "stream_key_link": "https://zap.stream/dashboard",
+            "multitrack_video_configuration_url": "https://api.zap.stream/api/v1/multi-track-config",
+            "multitrack_video_name": "Optimized Broadcasting",
+            "servers": [
+                {
+                    "name": "Ireland",
+                    "url": "rtmp://in.zap.stream/Good"
+                },
+                {
+                    "name": "UK",
+                    "url": "rtmp://in.uk.zap.stream/Good"
+                },
+                {
+                    "name": "Canada",
+                    "url": "rtmp://in.ca.zap.stream/Good"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 12000,
+                "max audio bitrate": 320,
+                "max fps": 60
+            },
+            "supported video codecs": [
+                "h264",
+                "hevc",
+                "av1"
+            ],
+            "supported audio codecs": [
+                "aac",
+                "opus"
+            ]
         }
     ]
 }
