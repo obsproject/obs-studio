@@ -1238,8 +1238,6 @@ bool OBSApp::OBSInit()
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 
 	connect(QApplication::instance(), &QApplication::aboutToQuit, this, [this]() {
-		crashHandler_->applicationShutdownHandler();
-
 		/* Ensure OBSMainWindow gets closed */
 		if (mainWindow) {
 			mainWindow->close();
@@ -1252,6 +1250,9 @@ bool OBSApp::OBSInit()
 	});
 
 	mainWindow->OBSInit();
+
+	connect(OBSBasic::Get(), &OBSBasic::mainWindowClosed, crashHandler_.get(),
+		&OBS::CrashHandler::applicationShutdownHandler);
 
 	connect(this, &QGuiApplication::applicationStateChanged,
 		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });

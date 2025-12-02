@@ -341,6 +341,9 @@ protected:
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void changeEvent(QEvent *event) override;
 
+signals:
+	void mainWindowClosed();
+
 	/* -------------------------------------
 	 * MARK: - OAuth
 	 * -------------------------------------
