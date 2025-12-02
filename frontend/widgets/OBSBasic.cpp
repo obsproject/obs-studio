@@ -1894,9 +1894,10 @@ bool OBSBasic::promptToClose()
 
 	SetShowing(true);
 	QMessageBox::StandardButton button =
-		OBSMessageBox::question(this, QTStr("ConfirmExit.Title"), QTStr("ConfirmExit.Text"));
+		OBSMessageBox::question(this, QTStr("ConfirmExit.Title"), QTStr("ConfirmExit.Text"),
+					QMessageBox::StandardButtons(QMessageBox::Ok | QMessageBox::Cancel));
 
-	if (button == QMessageBox::No) {
+	if (button == QMessageBox::Cancel) {
 		isClosePromptOpen_ = false;
 		return false;
 	}
@@ -1970,6 +1971,8 @@ void OBSBasic::closeWindow()
 
 	applicationShutdown();
 	deleteLater();
+
+	emit mainWindowClosed();
 
 	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
 }

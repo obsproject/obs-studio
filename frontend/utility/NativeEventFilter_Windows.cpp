@@ -43,7 +43,10 @@ bool NativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *mes
 			}
 
 			if (main->shouldPromptForClose()) {
-				*result = FALSE;
+				if (result) {
+					*result = FALSE;
+				}
+				QTimer::singleShot(1, main, &OBSBasic::close);
 				return true;
 			}
 
@@ -52,13 +55,6 @@ bool NativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *mes
 			if (msg->wParam == TRUE) {
 				// Session is ending, start closing the main window now with no checks or prompts.
 				main->closeWindow();
-			} else {
-				/* Session is no longer ending. If OBS is still open, odds are it is what held
-				 * up the session end due to its higher than default priority. We call the
-				 * close method to trigger the confirmation window flow. We do this after the fact
-				 * to avoid blocking the main window event loop prior to this message.
-				 * Otherwise, OBS is already gone and invoking this does nothing. */
-				main->close();
 			}
 
 			return true;
