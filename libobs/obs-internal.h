@@ -1078,6 +1078,8 @@ static inline enum gs_color_format convert_video_format(enum video_format format
 		switch (format) {
 		case VIDEO_FORMAT_RGBA:
 			return GS_RGBA;
+		case VIDEO_FORMAT_RGBX:
+			return GS_RGBX;
 		case VIDEO_FORMAT_BGRA:
 		case VIDEO_FORMAT_I40A:
 		case VIDEO_FORMAT_I42A:
