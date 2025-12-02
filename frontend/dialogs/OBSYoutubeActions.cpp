@@ -48,9 +48,9 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 	connect(ui->helpAutoStartStop, &QLabel::linkActivated, this,
 		[](const QString &) { QToolTip::showText(QCursor::pos(), QTStr("YouTube.Actions.AutoStartStop.TT")); });
 	connect(ui->help360Video, &QLabel::linkActivated, this,
-		[](const QString &link) { QDesktopServices::openUrl(link); });
+		[](const QString &link) { QDesktopServices::openUrl(QUrl(link)); });
 	connect(ui->helpMadeForKids, &QLabel::linkActivated, this,
-		[](const QString &link) { QDesktopServices::openUrl(link); });
+		[](const QString &link) { QDesktopServices::openUrl(QUrl(link)); });
 
 	ui->scheduledTime->setVisible(false);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
@@ -712,7 +712,7 @@ void OBSYoutubeActions::OpenYouTubeDashboard()
 	QString uri =
 		QString("https://studio.youtube.com/channel/%1/videos/live?filter=[]&sort={\"columnType\"%3A\"date\"%2C\"sortOrder\"%3A\"DESCENDING\"}")
 			.arg(channel.id);
-	QDesktopServices::openUrl(uri);
+	QDesktopServices::openUrl(QUrl(uri));
 }
 
 void OBSYoutubeActions::Cancel()

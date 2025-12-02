@@ -42,7 +42,7 @@ void OBSBasic::CreateProgramDisplay()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	};
 
-	connect(program.data(), &OBSQTDisplay::DisplayResized, displayResize);
+	connect(program.data(), &OBSQTDisplay::DisplayResized, this, displayResize);
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
 		obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderProgram, this);
@@ -52,7 +52,7 @@ void OBSBasic::CreateProgramDisplay()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	};
 
-	connect(program.data(), &OBSQTDisplay::DisplayCreated, addDisplay);
+	connect(program.data(), &OBSQTDisplay::DisplayCreated, this, addDisplay);
 
 	program->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
@@ -146,30 +146,30 @@ void OBSBasic::CreateProgramOptions()
 		action->setToolTip(QTStr("QuickTransitions.DuplicateSceneTT"));
 		action->setCheckable(true);
 		action->setChecked(sceneDuplicationMode);
-		connect(action, &QAction::triggered, toggleSceneDuplication);
-		connect(action, &QAction::hovered, showToolTip);
+		connect(action, &QAction::triggered, this, toggleSceneDuplication);
+		connect(action, &QAction::hovered, action, showToolTip);
 
 		action = menu.addAction(QTStr("QuickTransitions.EditProperties"));
 		action->setToolTip(QTStr("QuickTransitions.EditPropertiesTT"));
 		action->setCheckable(true);
 		action->setChecked(editPropertiesMode);
 		action->setEnabled(sceneDuplicationMode);
-		connect(action, &QAction::triggered, toggleEditProperties);
-		connect(action, &QAction::hovered, showToolTip);
+		connect(action, &QAction::triggered, this, toggleEditProperties);
+		connect(action, &QAction::hovered, action, showToolTip);
 
 		action = menu.addAction(QTStr("QuickTransitions.SwapScenes"));
 		action->setToolTip(QTStr("QuickTransitions.SwapScenesTT"));
 		action->setCheckable(true);
 		action->setChecked(swapScenesMode);
-		connect(action, &QAction::triggered, toggleSwapScenesMode);
-		connect(action, &QAction::hovered, showToolTip);
+		connect(action, &QAction::triggered, this, toggleSwapScenesMode);
+		connect(action, &QAction::hovered, action, showToolTip);
 
 		menu.exec(QCursor::pos());
 	};
 
 	connect(transitionButton.data(), &QAbstractButton::clicked, this, &OBSBasic::TransitionClicked);
-	connect(addQuickTransition, &QAbstractButton::clicked, onAdd);
-	connect(configTransitions, &QAbstractButton::clicked, onConfig);
+	connect(addQuickTransition, &QAbstractButton::clicked, this, onAdd);
+	connect(configTransitions, &QAbstractButton::clicked, this, onConfig);
 }
 
 void OBSBasic::TogglePreviewProgramMode()

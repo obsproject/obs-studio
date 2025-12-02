@@ -802,7 +802,7 @@ bool LoadBranchesFile(vector<UpdateBranch> &out)
 		goto fail;
 	}
 
-	branchesText = branchesFile.readAll();
+	branchesText = branchesFile.readAll().toStdString();
 	if (branchesText.empty()) {
 		error = "File empty.";
 		goto fail;
@@ -1253,7 +1253,7 @@ bool OBSApp::OBSInit()
 
 	mainWindow->OBSInit();
 
-	connect(this, &QGuiApplication::applicationStateChanged,
+	connect(this, &QGuiApplication::applicationStateChanged, this,
 		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
 
