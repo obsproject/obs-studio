@@ -140,6 +140,13 @@ General Canvas Functions
 
 ---------------------
 
+.. function:: signal_handler_t *obs_canvas_get_signal_handler(obs_canvas_t *canvas)
+
+   :return: The canvas's signal handler. Should not be manually freed,
+            as its lifecycle is managed by libobs.
+
+---------------------
+
 Saving/Loading Functions
 ------------------------
 
@@ -290,3 +297,13 @@ Canvas Video Functions
    Render the canvas's view. Must be called on the graphics thread.
 
 ---------------------
+
+.. function:: void obs_render_canvas_texture(obs_canvas_t *canvas)
+
+   Renders the last canvas output texture.
+
+---------------------
+
+.. function:: void obs_render_canvas_texture_src_color_only(obs_canvas_t *canvas)
+
+   Renders the last canvas output texture ignoring background color.
