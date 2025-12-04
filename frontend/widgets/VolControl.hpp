@@ -49,7 +49,7 @@ class VolControl : public QFrame {
 	Q_OBJECT
 
 private:
-	idian::Utils *utils;
+	std::unique_ptr<idian::Utils> utils;
 
 	OBSWeakSource weakSource_;
 	const char *uuid;
@@ -134,10 +134,10 @@ public:
 	void setVertical(bool vertical);
 
 	void updateTabOrder();
-	QWidget *firstWidget() const { return static_cast<QWidget *>(nameButton); }
+	QWidget *firstWidget() const { return qobject_cast<QWidget *>(nameButton); }
 	QWidget *lastWidget() const
 	{
-		return vertical ? static_cast<QWidget *>(monitorButton) : static_cast<QWidget *>(slider);
+		return vertical ? qobject_cast<QWidget *>(monitorButton) : qobject_cast<QWidget *>(slider);
 	}
 
 	void updateName();

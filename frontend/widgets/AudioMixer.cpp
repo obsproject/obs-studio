@@ -175,8 +175,8 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 
 	QPushButton *optionsButton = new QPushButton(mixerToolbar);
 	optionsButton->setText(QTStr("Basic.AudioMixer.Options"));
-	utils->addClass(optionsButton, "toolbar-button");
-	utils->addClass(optionsButton, "text-bold");
+	idian::Utils::addClass(optionsButton, "toolbar-button");
+	idian::Utils::addClass(optionsButton, "text-bold");
 	optionsButton->setMenu(&mixerMenu);
 
 	toggleHiddenButton = new QPushButton(mixerToolbar);
@@ -188,8 +188,8 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	hiddenIcon.addFile(QString::fromUtf8(":/res/images/hidden.svg"), QSize(16, 16), QIcon::Mode::Normal,
 			   QIcon::State::Off);
 	toggleHiddenButton->setIcon(hiddenIcon);
-	utils->addClass(toggleHiddenButton, "toolbar-button");
-	utils->addClass(toggleHiddenButton, "toggle-hidden");
+	idian::Utils::addClass(toggleHiddenButton, "toolbar-button");
+	idian::Utils::addClass(toggleHiddenButton, "toggle-hidden");
 
 	mixerToolbar->addWidget(toggleHiddenButton);
 
@@ -206,7 +206,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	// Setting this property on the QAction itself does not seem to work despite
 	// the UI files doing exactly that, so we set it on the action widget directly
 	QWidget *advAudioWidget = mixerToolbar->widgetForAction(advAudio);
-	utils->addClass(advAudioWidget, "icon-cogs");
+	idian::Utils::addClass(advAudioWidget, "icon-cogs");
 
 	// Connect to OBS signals
 	signalHandlers.reserve(signalHandlers.size() + 8);
@@ -727,10 +727,10 @@ void AudioMixer::updateVolumeLayouts()
 	toggleHiddenButton->setText(QTStr("%1 hidden").arg(hiddenCount));
 	if (hiddenCount == 0) {
 		toggleHiddenButton->setDisabled(true);
-		utils->toggleClass(toggleHiddenButton, "text-muted", true);
+		idian::Utils::toggleClass(toggleHiddenButton, "text-muted", true);
 	} else {
 		toggleHiddenButton->setDisabled(false);
-		utils->toggleClass(toggleHiddenButton, "text-muted", false);
+		idian::Utils::toggleClass(toggleHiddenButton, "text-muted", false);
 	}
 
 	setUpdatesEnabled(true);
@@ -765,8 +765,8 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 
 	QWidget *buttonWidget = mixerToolbar->widgetForAction(layoutButton);
 	if (buttonWidget) {
-		utils->toggleClass(buttonWidget, "icon-layout-vertical", vertical);
-		utils->toggleClass(buttonWidget, "icon-layout-horizontal", !vertical);
+		idian::Utils::toggleClass(buttonWidget, "icon-layout-vertical", vertical);
+		idian::Utils::toggleClass(buttonWidget, "icon-layout-horizontal", !vertical);
 	}
 }
 

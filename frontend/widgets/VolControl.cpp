@@ -56,7 +56,7 @@ VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
 {
 	setAttribute(Qt::WA_OpaquePaintEvent, true);
 
-	utils = new idian::Utils(this);
+	utils = std::make_unique<idian::Utils>(this);
 
 	uuid = obs_source_get_uuid(source);
 
@@ -71,6 +71,7 @@ VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
 	utils->addClass(categoryLabel, "text-tiny");
 
 	nameButton = new VolumeName(source, this);
+	nameButton->setMaximumWidth(140);
 	utils->addClass(nameButton, "text-small");
 	utils->addClass(nameButton, "mixer-name");
 
@@ -565,15 +566,15 @@ void VolControl::updateCategoryLabel()
 	bool styleUnassigned = hasMixerFlag(OBS::MixerStatus::Unassigned);
 	bool stylePreviewed = hasMixerFlag(OBS::MixerStatus::Preview);
 
-	utils->toggleClass(this, "volume-pinned", stylePinned);
-	utils->toggleClass(this, "volume-inactive", styleInactive);
-	utils->toggleClass(this, "volume-preview", styleInactive && stylePreviewed);
-	utils->toggleClass(this, "volume-hidden", styleHidden && !stylePinned);
-	utils->toggleClass(this, "volume-unassigned", styleUnassigned);
+	utils->toggleClass("volume-pinned", stylePinned);
+	utils->toggleClass("volume-inactive", styleInactive);
+	utils->toggleClass("volume-preview", styleInactive && stylePreviewed);
+	utils->toggleClass("volume-hidden", styleHidden && !stylePinned);
+	utils->toggleClass("volume-unassigned", styleUnassigned);
 
 	categoryLabel->setText(labelText);
 
-	utils->polishChildren(this);
+	utils->polishChildren();
 	volMeter->updateBackgroundCache();
 }
 

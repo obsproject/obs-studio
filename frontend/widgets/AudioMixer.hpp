@@ -48,8 +48,6 @@ public:
 	void showMixerContextMenu();
 
 private:
-	idian::Utils *utils;
-
 	std::vector<OBSSignal> signalHandlers;
 	static void onFrontendEvent(enum obs_frontend_event event, void *data);
 	void handleFrontendEvent(enum obs_frontend_event event);
