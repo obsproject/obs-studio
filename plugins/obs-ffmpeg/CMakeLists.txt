@@ -30,10 +30,10 @@ target_sources(
     obs-ffmpeg-av1.c
     obs-ffmpeg-compat.h
     obs-ffmpeg-formats.h
-    obs-ffmpeg-openh264.c
     obs-ffmpeg-hls-mux.c
     obs-ffmpeg-mux.c
     obs-ffmpeg-mux.h
+    obs-ffmpeg-openh264.c
     obs-ffmpeg-output.c
     obs-ffmpeg-output.h
     obs-ffmpeg-source.c

@@ -8,14 +8,14 @@ add_library(OBS::glad ALIAS obsglad)
 target_sources(
   obsglad
   PRIVATE
-    src/glad.c
     $<$<PLATFORM_ID:Windows>:src/glad_wgl.c>
-    $<$<TARGET_EXISTS:OpenGL::EGL>:src/glad_egl.c>
     $<$<TARGET_EXISTS:OpenGL::EGL>:include/EGL/eglplatform.h>
+    $<$<TARGET_EXISTS:OpenGL::EGL>:src/glad_egl.c>
+    src/glad.c
   PUBLIC
-    include/glad/glad.h
     "$<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_SOURCE_DIR}/include/glad/glad_wgl.h>"
     "$<$<TARGET_EXISTS:OpenGL::EGL>:${CMAKE_CURRENT_SOURCE_DIR}/include/glad/glad_egl.h>"
+    include/glad/glad.h
 )
 
 target_compile_options(obsglad PRIVATE $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-strict-prototypes>)

@@ -14,6 +14,14 @@ target_sources(
     widgets/ColorSelect.hpp
     widgets/OBSBasic.cpp
     widgets/OBSBasic.hpp
+    widgets/OBSBasicControls.cpp
+    widgets/OBSBasicControls.hpp
+    widgets/OBSBasicPreview.cpp
+    widgets/OBSBasicPreview.hpp
+    widgets/OBSBasicStats.cpp
+    widgets/OBSBasicStats.hpp
+    widgets/OBSBasicStatusBar.cpp
+    widgets/OBSBasicStatusBar.hpp
     widgets/OBSBasic_Browser.cpp
     widgets/OBSBasic_Canvases.cpp
     widgets/OBSBasic_Clipboard.cpp
@@ -43,14 +51,6 @@ target_sources(
     widgets/OBSBasic_VirtualCam.cpp
     widgets/OBSBasic_VolControl.cpp
     widgets/OBSBasic_YouTube.cpp
-    widgets/OBSBasicControls.cpp
-    widgets/OBSBasicControls.hpp
-    widgets/OBSBasicPreview.cpp
-    widgets/OBSBasicPreview.hpp
-    widgets/OBSBasicStats.cpp
-    widgets/OBSBasicStats.hpp
-    widgets/OBSBasicStatusBar.cpp
-    widgets/OBSBasicStatusBar.hpp
     widgets/OBSMainWindow.hpp
     widgets/OBSProjector.cpp
     widgets/OBSProjector.hpp

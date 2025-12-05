@@ -7,8 +7,8 @@ target_sources(
   ipc-util
   INTERFACE
     "$<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_SOURCE_DIR}/ipc-util/pipe-windows.c>"
-    ipc-util/pipe.h
     "$<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_SOURCE_DIR}/ipc-util/pipe-windows.h>"
+    ipc-util/pipe.h
 )
 
 target_include_directories(ipc-util INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")

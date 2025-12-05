@@ -51,9 +51,9 @@ target_sources(
     util/threading-windows.c
     util/threading-windows.h
     util/windows/CoTaskMemPtr.hpp
+    util/windows/HRError.hpp
     util/windows/device-enum.c
     util/windows/device-enum.h
-    util/windows/HRError.hpp
     util/windows/win-registry.h
     util/windows/win-version.h
     util/windows/window-helpers.c

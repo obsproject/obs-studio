@@ -42,6 +42,14 @@ target_sources(
     $<$<PLATFORM_ID:Darwin>:mac/platform.cpp>
     $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:linux/platform.cpp>
     $<$<PLATFORM_ID:Windows>:win/platform.cpp>
+    DecklinkBase.cpp
+    DecklinkBase.h
+    DecklinkInput.cpp
+    DecklinkInput.hpp
+    DecklinkOutput.cpp
+    DecklinkOutput.hpp
+    OBSVideoFrame.cpp
+    OBSVideoFrame.h
     audio-repack.c
     audio-repack.h
     audio-repack.hpp
@@ -58,14 +66,6 @@ target_sources(
     decklink-devices.hpp
     decklink-output.cpp
     decklink-source.cpp
-    DecklinkBase.cpp
-    DecklinkBase.h
-    DecklinkInput.cpp
-    DecklinkInput.hpp
-    DecklinkOutput.cpp
-    DecklinkOutput.hpp
-    OBSVideoFrame.cpp
-    OBSVideoFrame.h
     platform.hpp
     plugin-main.cpp
     util.cpp
