@@ -9,7 +9,7 @@ Canvas API Reference (obs_canvas_t)
    The Canvas API should be considered **unstable** and may be changed without warning. This documentation serves to aid
    in their iterative development within OBS Studio.
 
-   **If you are developing a plugin that utilizes canvases proceed with great caution.**
+   **If you are developing a plugin that utilizes canvases, proceed with great caution.**
 
 Canvases are reference-counted objects that contain scenes and define how those are rendered.
 They provide a video object which can be used with encoders or raw outputs.
