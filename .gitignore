@@ -40,8 +40,9 @@
 !/docs/sphinx/_build/.gitignore
 !/docs/sphinx/Makefile
 
-# Exclude modified Flatpak files
+# Exclude modified Flatpak and gersemi files
 build-aux/flatpak-github-action-modified-*
+build-aux/__pycache__
 
 # Exclude macOS legacy resource forks
 .DS_Store
