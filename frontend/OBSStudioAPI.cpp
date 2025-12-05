@@ -544,8 +544,11 @@ bool OBSStudioAPI::obs_frontend_preview_enabled()
 
 void OBSStudioAPI::obs_frontend_set_preview_enabled(bool enable)
 {
-	if (main->previewEnabled != enable)
-		main->EnablePreviewDisplay(enable);
+	if (enable) {
+		main->EnablePreview();
+	} else {
+		main->DisablePreview();
+	}
 }
 
 obs_source_t *OBSStudioAPI::obs_frontend_get_current_preview_scene()
