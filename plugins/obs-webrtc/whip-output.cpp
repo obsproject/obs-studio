@@ -30,6 +30,8 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	: output(output),
 	  endpoint_url(),
 	  bearer_token(),
+	  stun_server(),
+	  wait_gathered_candidates(),
 	  resource_url(),
 	  running(false),
 	  start_stop_mutex(),
@@ -38,6 +40,10 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  peer_connection(nullptr),
 	  audio_track(nullptr),
 	  video_track(nullptr),
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
+	  gathering_done_promise(),
+	  gathering_done_future(),
+#endif
 	  total_bytes_sent(0),
 	  connect_time_ms(0),
 	  start_time_ns(0),
@@ -209,6 +215,7 @@ bool WHIPOutput::Init()
 	}
 
 	bearer_token = obs_service_get_connect_info(service, OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN);
+	stun_server = obs_service_get_connect_info(service, OBS_SERVICE_CONNECT_INFO_STUN_SERVER);
 
 	return true;
 }
@@ -224,9 +231,33 @@ bool WHIPOutput::Setup()
 
 #if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
 	cfg.disableAutoGathering = true;
+	if (stun_server.length() > 0) {
+		do_log(LOG_INFO, "Using STUN Server to negotiate: %s", stun_server.data());
+		cfg.iceServers.emplace_back(rtc::IceServer(stun_server));
+	}
 #endif
 
 	peer_connection = std::make_shared<rtc::PeerConnection>(cfg);
+
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
+	gathering_done_promise = std::promise<void>();
+	gathering_done_future = gathering_done_promise.get_future();
+
+	peer_connection->onGatheringStateChange([this](rtc::PeerConnection::GatheringState state) {
+		switch (state) {
+		case rtc::PeerConnection::GatheringState::New:
+			do_log(LOG_INFO, "Gathering state is now: New");
+			break;
+		case rtc::PeerConnection::GatheringState::InProgress:
+			do_log(LOG_INFO, "Gathering state is now: InProgress");
+			break;
+		case rtc::PeerConnection::GatheringState::Complete:
+			do_log(LOG_INFO, "Gathering state is now: Complet");
+			gathering_done_promise.set_value();
+			break;
+		}
+	});
+#endif
 
 	peer_connection->onStateChange([this](rtc::PeerConnection::State state) {
 		switch (state) {
@@ -346,6 +377,14 @@ bool WHIPOutput::Connect()
 
 	std::string read_buffer;
 	std::vector<std::string> http_headers;
+
+	// wait for gathering to finish
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
+	if (wait_gathered_candidates) {
+		peer_connection->gatherLocalCandidates();
+		gathering_done_future.get();
+	}
+#endif
 
 	auto offer_sdp = std::string(peer_connection->localDescription().value());
 

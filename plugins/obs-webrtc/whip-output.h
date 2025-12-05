@@ -44,6 +44,8 @@ private:
 
 	std::string endpoint_url;
 	std::string bearer_token;
+	std::string stun_server;
+	bool wait_gathered_candidates;
 	std::string resource_url;
 
 	std::atomic<bool> running;
@@ -57,6 +59,10 @@ private:
 	std::shared_ptr<rtc::Track> video_track;
 	std::shared_ptr<rtc::RtcpSrReporter> audio_sr_reporter;
 	std::shared_ptr<rtc::RtcpSrReporter> video_sr_reporter;
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
+	std::promise<void> gathering_done_promise;
+	std::future<void> gathering_done_future;
+#endif
 
 	std::atomic<size_t> total_bytes_sent;
 	std::atomic<int> connect_time_ms;
