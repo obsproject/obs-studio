@@ -387,6 +387,10 @@ void OBSBasic::SetTransition(OBSSource transition)
 {
 	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
 
+	if (oldTransition && obs_transition_is_active(oldTransition)) {
+		return;
+	}
+
 	if (oldTransition && transition) {
 		std::string uuid = obs_source_get_uuid(transition);
 		obs_transition_swap_begin(transition, oldTransition);
