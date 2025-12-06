@@ -565,6 +565,21 @@ void OBSStudioAPI::obs_frontend_set_current_preview_scene(obs_source_t *scene)
 					  Q_ARG(bool, false));
 	}
 }
+bool OBSStudioAPI::obs_frontend_get_swap_scenes_mode(void)
+{
+	OBSBasic *main = OBSBasic::Get();
+	if (!main)
+		return false;
+	return main->GetSwapScenesMode();
+}
+
+void OBSStudioAPI::obs_frontend_set_swap_scenes_mode(bool enabled)
+{
+	OBSBasic *main = OBSBasic::Get();
+	if (!main)
+		return;
+	main->SetSwapScenesMode(enabled);
+}
 
 void OBSStudioAPI::obs_frontend_take_screenshot()
 {
