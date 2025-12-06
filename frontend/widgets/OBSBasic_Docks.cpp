@@ -234,7 +234,7 @@ void OBSBasic::AddCustomDockWidget(QDockWidget *dock)
 
 void OBSBasic::RepairCustomExtraDockName()
 {
-	QDockWidget *dock = reinterpret_cast<QDockWidget *>(sender());
+	QDockWidget *dock = qobject_cast<QDockWidget *>(sender());
 	int idx = extraCustomDocks.indexOf(dock);
 	QSignalBlocker block(dock);
 

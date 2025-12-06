@@ -337,7 +337,7 @@ void OBSBasic::DeleteSceneCollection(const QString &name)
 
 void OBSBasic::ChangeSceneCollection()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 
 	if (!action) {
 		return;

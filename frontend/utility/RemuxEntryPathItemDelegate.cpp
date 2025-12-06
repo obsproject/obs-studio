@@ -205,7 +205,7 @@ void RemuxEntryPathItemDelegate::handleClear(QWidget *container)
 
 void RemuxEntryPathItemDelegate::updateText()
 {
-	QLineEdit *lineEdit = dynamic_cast<QLineEdit *>(sender());
+	QLineEdit *lineEdit = qobject_cast<QLineEdit *>(sender());
 	QWidget *editor = lineEdit->parentWidget();
 	emit commitData(editor);
 }

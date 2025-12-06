@@ -780,7 +780,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 
 void OBSBasicSettings::OnOAuthStreamKeyConnected()
 {
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	OAuthStreamKey *a = qobject_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
 		bool validKey = !a->key().empty();
