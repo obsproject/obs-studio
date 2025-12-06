@@ -928,6 +928,12 @@ bool obs_transition_audio_render(obs_source_t *transition, uint64_t *ts_out, str
 	sources[0] = transition->transition_sources[0];
 	sources[1] = transition->transition_sources[1];
 
+	if (sources[0] && obs_source_removed(sources[0]))
+		sources[0] = NULL;
+
+	if (sources[1] && obs_source_removed(sources[1]))
+		sources[1] = NULL;
+
 	min_ts = calc_min_ts(sources);
 
 	if (min_ts) {
