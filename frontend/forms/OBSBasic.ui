@@ -1306,7 +1306,7 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <layout class="QVBoxLayout" name="hVolControlLayout">
+            <layout class="QVBoxLayout" name="hVolumeControlLayout">
              <property name="spacing">
               <number>0</number>
              </property>
@@ -1359,7 +1359,7 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <layout class="QHBoxLayout" name="vVolControlLayout">
+            <layout class="QHBoxLayout" name="vVolumeControlLayout">
              <property name="spacing">
               <number>0</number>
              </property>

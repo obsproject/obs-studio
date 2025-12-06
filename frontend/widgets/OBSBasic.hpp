@@ -53,7 +53,7 @@ class OBSBasicTransform;
 class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
-class VolControl;
+class VolumeControl;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
 #endif
@@ -208,8 +208,6 @@ class OBSBasic : public OBSMainWindow {
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 	friend class ScreenshotObj;
-	friend class AudioMixer;
-	friend class VolControl;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -324,7 +322,7 @@ protected:
 
 signals:
 	void mainWindowClosed();
-	
+
 	void appSettingChanged(const std::string &category, const std::string &name);
 	void userSettingChanged(const std::string &category, const std::string &name);
 	void profileSettingChanged(const std::string &category, const std::string &name);
@@ -371,7 +369,7 @@ public:
 	 */
 private:
 	std::deque<SourceCopyInfo> clipboard;
-	OBSWeakSourceAutoRelease copyFiltersSource;
+	OBSWeakSourceAutoRelease copyFiltersSource_;
 	obs_transform_info copiedTransformInfo;
 	obs_sceneitem_crop copiedCropInfo;
 	bool hasCopiedTransform = false;
@@ -385,8 +383,6 @@ private slots:
 
 	void on_actionCopyFilters_triggered();
 	void on_actionPasteFilters_triggered();
-	void actionCopyFilters();
-	void actionPasteFilters();
 	void SourcePasteFilters(OBSSource source, OBSSource dstSource);
 
 	void SceneCopyFilters();
@@ -395,7 +391,12 @@ private slots:
 	void on_actionCopyTransform_triggered();
 	void on_actionPasteTransform_triggered();
 
+public slots:
+	void actionCopyFilters();
+	void actionPasteFilters();
+
 public:
+	obs_weak_source_t *copyFiltersSource() { return copyFiltersSource_; }
 	OBSWeakSource copyFilter;
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
@@ -600,7 +601,6 @@ private slots:
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
 	void on_actionShowMacPermissions_triggered();
-	void on_actionAdvAudioProperties_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
@@ -637,6 +637,9 @@ private slots:
 	void logUploadFinished(const QString &text, const QString &error, OBS::LogFileType uploadType);
 
 	void updateCheckFinished();
+
+public slots:
+	void on_actionAdvAudioProperties_triggered();
 
 public:
 	void ResetUI();
@@ -1149,9 +1152,6 @@ private:
 	bool QueryRemoveSource(obs_source_t *source);
 	int GetTopSelectedSourceItem();
 
-	void actionOpenSourceFilters();
-	void actionOpenSourceProperties();
-
 	QModelIndexList GetAllSelectedSourceItems();
 
 	// TODO: Move back to transitions
@@ -1230,6 +1230,9 @@ public:
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction, ColorSelect *select,
 				      obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(int idx, bool preview);
+
+	void actionOpenSourceFilters();
+	void actionOpenSourceProperties();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Scenes

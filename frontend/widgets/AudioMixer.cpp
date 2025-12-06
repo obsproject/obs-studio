@@ -15,21 +15,33 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <widgets/AudioMixer.hpp>
-#include <components/MenuCheckBox.hpp>
+#include "AudioMixer.hpp"
 
+#include <components/MenuCheckBox.hpp>
+#include <dialogs/NameDialog.hpp>
+#include <widgets/OBSBasic.hpp>
+#include <utility/item-widget-helpers.hpp>
+
+#include <Idian/Utils.hpp>
 #include <QAction>
 #include <QCheckBox>
+#include <QHBoxLayout>
+#include <QMenu>
+#include <QPointer>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QStackedWidget>
+#include <QTimer>
+#include <QToolBar>
 #include <QWidgetAction>
-
-#include <widgets/OBSBasic.hpp>
-#include <dialogs/NameDialog.hpp>
-#include <utility/item-widget-helpers.hpp>
+#include <QVBoxLayout>
 
 #include "moc_AudioMixer.cpp"
 
+static constexpr int GLOBAL_SOURCE_TOTAL = 6;
+
 namespace {
-bool isHideInMixer(obs_source_t *source)
+bool isHiddenInMixer(obs_source_t *source)
 {
 	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 	bool hidden = obs_data_get_bool(priv_settings, "mixer_hidden");
@@ -65,9 +77,9 @@ bool isVolumeLocked(obs_source_t *source)
 AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 {
 	showInactive = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerShowInactive");
-	keepInactiveRight = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveRight");
+	keepInactiveLast = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveLast");
 	showHidden = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerShowHidden");
-	keepHiddenRight = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepHiddenRight");
+	keepHiddenLast = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepHiddenLast");
 
 	mainLayout = new QVBoxLayout(this);
 	mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -100,10 +112,10 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	hVolumeWidgets->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 	hVolumeWidgets->setObjectName("hVolumeWidgets");
 
-	hVolControlLayout = new QVBoxLayout();
-	hVolumeWidgets->setLayout(hVolControlLayout);
-	hVolControlLayout->setContentsMargins(0, 0, 0, 0);
-	hVolControlLayout->setSpacing(0);
+	hVolumeControlLayout = new QVBoxLayout();
+	hVolumeWidgets->setLayout(hVolumeControlLayout);
+	hVolumeControlLayout->setContentsMargins(0, 0, 0, 0);
+	hVolumeControlLayout->setSpacing(0);
 
 	hMixerScrollArea->setWidget(hVolumeWidgets);
 
@@ -130,11 +142,11 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 
 	vVolumeWidgets->setObjectName("vVolumeWidgets");
 
-	vVolControlLayout = new QHBoxLayout();
-	vVolumeWidgets->setLayout(vVolControlLayout);
-	vVolControlLayout->setContentsMargins(0, 0, 0, 0);
-	vVolControlLayout->setSpacing(0);
-	vVolControlLayout->setAlignment(Qt::AlignLeft);
+	vVolumeControlLayout = new QHBoxLayout();
+	vVolumeWidgets->setLayout(vVolumeControlLayout);
+	vVolumeControlLayout->setContentsMargins(0, 0, 0, 0);
+	vVolumeControlLayout->setSpacing(0);
+	vVolumeControlLayout->setAlignment(Qt::AlignLeft);
 
 	vMixerScrollArea->setWidget(vVolumeWidgets);
 
@@ -165,7 +177,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	layoutButton->setText("");
 	layoutButton->setToolTip("");
 	QIcon layoutIcon;
-	layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-horizontal.svg"), QSize(16, 16), QIcon::Mode::Normal,
+	layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-vertical.svg"), QSize(16, 16), QIcon::Mode::Normal,
 			   QIcon::State::Off);
 	layoutButton->setIcon(layoutIcon);
 	layoutButton->setObjectName("actionMixerToolbarToggleLayout");
@@ -173,11 +185,13 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	QWidget *spacer = new QWidget(mixerToolbar);
 	spacer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
-	QPushButton *optionsButton = new QPushButton(mixerToolbar);
+	optionsButton = new QPushButton(mixerToolbar);
 	optionsButton->setText(QTStr("Basic.AudioMixer.Options"));
 	idian::Utils::addClass(optionsButton, "toolbar-button");
 	idian::Utils::addClass(optionsButton, "text-bold");
-	optionsButton->setMenu(&mixerMenu);
+
+	createMixerContextMenu();
+	optionsButton->setMenu(mixerMenu);
 
 	toggleHiddenButton = new QPushButton(mixerToolbar);
 	toggleHiddenButton->setCheckable(true);
@@ -240,16 +254,16 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	if (main) {
 		connect(main, &OBSBasic::userSettingChanged, this,
 			[this](const std::string &category, const std::string &name) {
-				if (category == "BasicWindow" && name == "VerticalVolControl") {
+				if (category == "BasicWindow" && name == "VerticalVolumeControl") {
 					toggleLayout();
 				} else if (category == "BasicWindow" && name == "MixerShowInactive") {
 					updateShowInactive();
-				} else if (category == "BasicWindow" && name == "MixerKeepInactiveRight") {
-					updateKeepInactiveRight();
+				} else if (category == "BasicWindow" && name == "MixerKeepInactiveLast") {
+					updateKeepInactiveLast();
 				} else if (category == "BasicWindow" && name == "MixerShowHidden") {
 					updateShowHidden();
-				} else if (category == "BasicWindow" && name == "MixerKeepHiddenRight") {
-					updateKeepHiddenRight();
+				} else if (category == "BasicWindow" && name == "MixerKeepHiddenLast") {
+					updateKeepHiddenLast();
 				} else if (category == "BasicWindow" && name == "ShowListboxToolbars") {
 					updateShowToolbar();
 				} else if (category == "Accessibility" && name == "SettingsChanged") {
@@ -286,7 +300,7 @@ AudioMixer::~AudioMixer()
 
 void AudioMixer::toggleLayout()
 {
-	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 	setMixerLayoutVertical(vertical);
 
 	queueLayoutUpdate();
@@ -301,12 +315,12 @@ void AudioMixer::toggleShowInactive(bool checked)
 	}
 }
 
-void AudioMixer::toggleKeepInactiveRight(bool checked)
+void AudioMixer::toggleKeepInactiveLast(bool checked)
 {
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveRight", checked);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveLast", checked);
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
-		emit main->userSettingChanged("BasicWindow", "MixerKeepInactiveRight");
+		emit main->userSettingChanged("BasicWindow", "MixerKeepInactiveLast");
 	}
 }
 
@@ -319,30 +333,30 @@ void AudioMixer::toggleShowHidden(bool checked)
 	}
 }
 
-void AudioMixer::toggleKeepHiddenRight(bool checked)
+void AudioMixer::toggleKeepHiddenLast(bool checked)
 {
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepHiddenRight", checked);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepHiddenLast", checked);
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
-		emit main->userSettingChanged("BasicWindow", "MixerKeepHiddenRight");
+		emit main->userSettingChanged("BasicWindow", "MixerKeepHiddenLast");
 	}
 }
 
-VolControl *AudioMixer::createVolumeControl(obs_source_t *source)
+VolumeControl *AudioMixer::createVolumeControl(obs_source_t *source)
 {
-	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
-	VolControl *vol = new VolControl(source, vertical, this);
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
+	VolumeControl *control = new VolumeControl(source, this, vertical);
 
-	vol->setGlobalInMixer(isSourceGlobal(source));
-	vol->setHideInMixer(isHideInMixer(source));
-	vol->setPinnedInMixer(isPinnedInMixer(source));
+	control->setGlobalInMixer(isSourceGlobal(source));
+	control->setHiddenInMixer(isHiddenInMixer(source));
+	control->setPinnedInMixer(isPinnedInMixer(source));
 
-	vol->enableSlider(!isVolumeLocked(source));
+	control->enableSlider(!isVolumeLocked(source));
 
 	OBSBasic *main = OBSBasic::Get();
 
 	double meterDecayRate = config_get_double(main->Config(), "Audio", "MeterDecayRate");
-	vol->setMeterDecayRate(meterDecayRate);
+	control->setMeterDecayRate(meterDecayRate);
 
 	uint32_t peakMeterTypeIdx = config_get_uint(main->Config(), "Audio", "PeakMeterType");
 
@@ -359,21 +373,21 @@ VolControl *AudioMixer::createVolumeControl(obs_source_t *source)
 		break;
 	}
 
-	vol->setPeakMeterType(peakMeterType);
+	control->setPeakMeterType(peakMeterType);
 
-	connect(vol, &VolControl::unhideAll, this, &AudioMixer::unhideAllAudioControls);
+	connect(control, &VolumeControl::unhideAll, this, &AudioMixer::unhideAllAudioControls);
 
-	return vol;
+	return control;
 }
 
-void AudioMixer::updateControlVisibility(std::string uuid)
+void AudioMixer::updateControlVisibility(QString uuid)
 {
-	auto item = volumeList.find(uuid.c_str());
+	auto item = volumeList.find(uuid);
 	if (item == volumeList.end()) {
 		return;
 	}
 
-	VolControl *control = item->second;
+	VolumeControl *control = item->second;
 	bool show = getMixerVisibilityForControl(control);
 
 	if (show) {
@@ -429,9 +443,9 @@ void AudioMixer::updatePreviewSources()
 				return true;
 			}
 
-			const char *uuid = obs_source_get_uuid(source);
-			if (uuid && *uuid) {
-				previewSources.insert(QString::fromUtf8(uuid));
+			auto uuidPointer = obs_source_get_uuid(source);
+			if (uuidPointer && *uuidPointer) {
+				previewSources.insert(QString::fromUtf8(uuidPointer));
 			}
 
 			return true;
@@ -452,11 +466,13 @@ void AudioMixer::updateGlobalSources()
 {
 	globalSources.clear();
 
-	for (int i = 1; i <= 6; i++) {
+	for (int i = 1; i <= GLOBAL_SOURCE_TOTAL; i++) {
 		OBSSourceAutoRelease source = obs_get_output_source(i);
 		if (source) {
-			std::string uuid = obs_source_get_uuid(source);
-			globalSources.insert(QString::fromStdString(uuid));
+			auto uuidPointer = obs_source_get_uuid(source);
+			if (uuidPointer && *uuidPointer) {
+				globalSources.insert(QString::fromUtf8(uuidPointer));
+			}
 		}
 	}
 
@@ -465,10 +481,10 @@ void AudioMixer::updateGlobalSources()
 
 QBoxLayout *AudioMixer::activeLayout() const
 {
-	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 
-	QBoxLayout *layout = vertical ? static_cast<QBoxLayout *>(vVolControlLayout)
-				      : static_cast<QBoxLayout *>(hVolControlLayout);
+	QBoxLayout *layout = vertical ? static_cast<QBoxLayout *>(vVolumeControlLayout)
+				      : static_cast<QBoxLayout *>(hVolumeControlLayout);
 
 	return layout;
 }
@@ -478,40 +494,37 @@ void AudioMixer::reloadVolumeControls()
 	setUpdatesEnabled(false);
 	clearVolumeControls();
 
-	auto ReloadAudioMixer = [this](obs_source_t *source) /* -- */
-	{
+	auto createMixerControls = [](void *param, obs_source_t *source) -> bool {
+		AudioMixer *mixer = static_cast<AudioMixer *>(param);
+
 		uint32_t flags = obs_source_get_output_flags(source);
 
 		if ((flags & OBS_SOURCE_AUDIO) == 0) {
 			return true;
 		}
 
-		std::string uuid = obs_source_get_uuid(source);
+		auto uuidPointer = obs_source_get_uuid(source);
+		if (!uuidPointer || !*uuidPointer) {
+			return true;
+		}
 
-		addControlForUuid(QString::fromStdString(uuid));
+		mixer->addControlForUuid(QString::fromUtf8(uuidPointer));
 		return true;
 	};
 
-	using ReloadAudioMixer_t = decltype(ReloadAudioMixer);
-
-	auto PreEnum = [](void *data, obs_source_t *source) -> bool /* -- */
-	{
-		return (*static_cast<ReloadAudioMixer_t *>(data))(source);
-	};
-
-	obs_enum_sources(PreEnum, &ReloadAudioMixer);
+	obs_enum_sources(createMixerControls, this);
 
 	queueLayoutUpdate();
 	setUpdatesEnabled(true);
 }
 
-bool AudioMixer::getMixerVisibilityForControl(VolControl *control)
+bool AudioMixer::getMixerVisibilityForControl(VolumeControl *control)
 {
 	OBSSource source = OBSGetStrongRef(control->weakSource());
 
 	bool isPinned = isPinnedInMixer(source);
 	bool isPreviewed = isSourcePreviewed(source);
-	bool isHidden = isHideInMixer(source);
+	bool isHidden = isHiddenInMixer(source);
 	bool isAudioActive = isSourceAudioActive(source);
 
 	if (isPinned) {
@@ -548,12 +561,12 @@ bool AudioMixer::isSourcePreviewed(obs_source_t *source)
 		return false;
 	}
 
-	const char *uuid = obs_source_get_uuid(source);
-	if (!uuid) {
+	auto uuidPointer = obs_source_get_uuid(source);
+	if (!uuidPointer || !*uuidPointer) {
 		return false;
 	}
 
-	if (previewSources.find(uuid) != previewSources.end()) {
+	if (previewSources.find(QString::fromUtf8(uuidPointer)) != previewSources.end()) {
 		return true;
 	}
 
@@ -566,12 +579,12 @@ bool AudioMixer::isSourceGlobal(obs_source_t *source)
 		return false;
 	}
 
-	const char *uuid = obs_source_get_uuid(source);
-	if (!uuid) {
+	auto uuidPointer = obs_source_get_uuid(source);
+	if (!uuidPointer || !*uuidPointer) {
 		return false;
 	}
 
-	if (globalSources.find(uuid) != globalSources.end()) {
+	if (globalSources.find(QString::fromUtf8(uuidPointer)) != globalSources.end()) {
 		return true;
 	}
 
@@ -598,7 +611,7 @@ void AudioMixer::refreshVolumeColors()
 void AudioMixer::unhideAllAudioControls()
 {
 	for (const auto &[uuid, control] : volumeList) {
-		control->setHideInMixer(false);
+		control->setHiddenInMixer(false);
 	}
 
 	queueLayoutUpdate();
@@ -616,41 +629,40 @@ void AudioMixer::updateVolumeLayouts()
 	setUpdatesEnabled(false);
 
 	hiddenCount = 0;
-	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 
-	std::vector<RankedVol> rankedVolumes;
+	std::vector<RankedVolume> rankedVolumes;
 	rankedVolumes.reserve(volumeList.size());
 	for (const auto &entry : volumeList) {
-		VolControl *control = entry.second;
+		VolumeControl *control = entry.second;
 		if (control) {
 			rankedVolumes.push_back({control, 0});
 		}
 	}
 
-	std::sort(rankedVolumes.begin(), rankedVolumes.end(), [](const RankedVol &a, const RankedVol &b) {
-		const QString &nameA = a.vol->getCachedName();
-		const QString &nameB = b.vol->getCachedName();
+	std::sort(rankedVolumes.begin(), rankedVolumes.end(), [](const RankedVolume &a, const RankedVolume &b) {
+		const QString &nameA = a.control->getCachedName();
+		const QString &nameB = b.control->getCachedName();
 
 		return nameA < nameB;
 	});
 
-	for (RankedVol &entry : rankedVolumes) {
-		VolControl *volControl = entry.vol;
+	for (RankedVolume &entry : rankedVolumes) {
+		VolumeControl *volControl = entry.control;
 
-		int sortWeight = 0;
+		int sortingWeight = 0;
 
 		OBSSource source = OBSGetStrongRef(volControl->weakSource());
 		if (!source) {
-			std::string cachedName = volControl->getCachedName().toStdString();
-			const char *name = cachedName.c_str();
-			blog(LOG_INFO, "Tried to sort VolControl for '%s' but source is null", name);
+			const char *cachedName = volControl->getCachedName().toUtf8().constData();
+			blog(LOG_INFO, "Tried to sort VolumeControl for '%s' but source is null", cachedName);
 			continue;
 		}
 
 		bool isPreviewed = isSourcePreviewed(source);
 		bool isGlobal = isSourceGlobal(source);
 		bool isPinned = isPinnedInMixer(source);
-		bool isHidden = isHideInMixer(source);
+		bool isHidden = isHiddenInMixer(source);
 		bool isAudioActive = isSourceAudioActive(source);
 		bool isLocked = isVolumeLocked(source);
 
@@ -666,40 +678,40 @@ void AudioMixer::updateVolumeLayouts()
 		}
 
 		if (!isGlobal) {
-			sortWeight += 20;
+			sortingWeight += 20;
 		}
 
 		if (!isPinned) {
-			sortWeight += 20;
+			sortingWeight += 20;
 		}
 
-		if (isHidden && keepHiddenRight) {
-			sortWeight += 20;
+		if (isHidden && keepHiddenLast) {
+			sortingWeight += 20;
 
 			if (isPreviewed) {
-				sortWeight -= 10;
+				sortingWeight -= 10;
 			}
 		}
 
-		if (!isAudioActive && keepInactiveRight) {
-			sortWeight += 50;
+		if (!isAudioActive && keepInactiveLast) {
+			sortingWeight += 50;
 
 			if (isPreviewed) {
-				sortWeight -= 10;
+				sortingWeight -= 10;
 			}
 		}
 
-		entry.sortWeight = sortWeight;
+		entry.sortingWeight = sortingWeight;
 	}
 
 	std::sort(rankedVolumes.begin(), rankedVolumes.end(),
-		  [](const RankedVol &a, const RankedVol &b) { return a.sortWeight < b.sortWeight; });
+		  [](const RankedVolume &a, const RankedVolume &b) { return a.sortingWeight < b.sortingWeight; });
 
-	VolControl *prevControl = nullptr;
+	VolumeControl *prevControl = nullptr;
 	for (const auto &entry : rankedVolumes) {
 		QBoxLayout *layout = activeLayout();
 
-		VolControl *volControl = entry.vol;
+		VolumeControl *volControl = entry.control;
 
 		layout->addWidget(volControl);
 		volControl->setVertical(vertical);
@@ -750,7 +762,7 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 		stackedMixerArea->setCurrentIndex(1);
 
 		QIcon layoutIcon;
-		layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-vertical.svg"), QSize(16, 16),
+		layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-horizontal.svg"), QSize(16, 16),
 				   QIcon::Mode::Normal, QIcon::State::Off);
 		layoutButton->setIcon(layoutIcon);
 	} else {
@@ -758,79 +770,89 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 		stackedMixerArea->setCurrentIndex(0);
 
 		QIcon layoutIcon;
-		layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-horizontal.svg"), QSize(16, 16),
+		layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-vertical.svg"), QSize(16, 16),
 				   QIcon::Mode::Normal, QIcon::State::Off);
 		layoutButton->setIcon(layoutIcon);
 	}
 
 	QWidget *buttonWidget = mixerToolbar->widgetForAction(layoutButton);
 	if (buttonWidget) {
-		idian::Utils::toggleClass(buttonWidget, "icon-layout-vertical", vertical);
-		idian::Utils::toggleClass(buttonWidget, "icon-layout-horizontal", !vertical);
+		idian::Utils::toggleClass(buttonWidget, "icon-layout-horizontal", vertical);
+		idian::Utils::toggleClass(buttonWidget, "icon-layout-vertical", !vertical);
 	}
+}
+
+void AudioMixer::createMixerContextMenu()
+{
+	if (mixerMenu) {
+		mixerMenu->deleteLater();
+	}
+
+	mixerMenu = new QMenu(this);
+
+	// Create menu actions
+	QAction *unhideAllAction = new QAction(QTStr("UnhideAll"), mixerMenu);
+
+	QWidgetAction *showHiddenAction = new QWidgetAction(mixerMenu);
+	MenuCheckBox *showHiddenCheckBox = new MenuCheckBox(QTStr("Basic.AudioMixer.ShowHidden"), mixerMenu);
+	showHiddenCheckBox->setAction(showHiddenAction);
+	showHiddenCheckBox->setChecked(showHidden);
+	showHiddenAction->setDefaultWidget(showHiddenCheckBox);
+
+	QWidgetAction *showInactiveAction = new QWidgetAction(mixerMenu);
+	MenuCheckBox *showInactiveCheckBox = new MenuCheckBox(QTStr("Basic.AudioMixer.ShowInactive"), mixerMenu);
+	showInactiveCheckBox->setAction(showInactiveAction);
+	showInactiveCheckBox->setChecked(showInactive);
+	showInactiveAction->setDefaultWidget(showInactiveCheckBox);
+
+	QWidgetAction *hiddenLastAction = new QWidgetAction(mixerMenu);
+	const char *hiddenShifted = mixerVertical ? "Basic.AudioMixer.KeepHiddenRight"
+						  : "Basic.AudioMixer.KeepHiddenBottom";
+	MenuCheckBox *hiddenLastCheckBox = new MenuCheckBox(QTStr(hiddenShifted), mixerMenu);
+	hiddenLastCheckBox->setAction(hiddenLastAction);
+	hiddenLastCheckBox->setChecked(keepHiddenLast);
+	hiddenLastAction->setDefaultWidget(hiddenLastCheckBox);
+
+	QWidgetAction *inactiveLastAction = new QWidgetAction(mixerMenu);
+	const char *inactiveShifted = mixerVertical ? "Basic.AudioMixer.KeepInactiveRight"
+						    : "Basic.AudioMixer.KeepInactiveBottom";
+	MenuCheckBox *inactiveLastCheckBox = new MenuCheckBox(QTStr(inactiveShifted), mixerMenu);
+	inactiveLastCheckBox->setAction(inactiveLastAction);
+	inactiveLastCheckBox->setChecked(keepInactiveLast);
+	inactiveLastAction->setDefaultWidget(inactiveLastCheckBox);
+
+	// Connect menu actions
+	connect(unhideAllAction, &QAction::triggered, this, &AudioMixer::unhideAllAudioControls, Qt::DirectConnection);
+
+	connect(showHiddenCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleShowHidden, Qt::DirectConnection);
+	connect(hiddenLastCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleKeepHiddenLast, Qt::DirectConnection);
+
+	connect(showInactiveCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleShowInactive, Qt::DirectConnection);
+	connect(inactiveLastCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleKeepInactiveLast,
+		Qt::DirectConnection);
+
+	// Build menu and show
+	mixerMenu->addAction(unhideAllAction);
+	mixerMenu->addSeparator();
+	mixerMenu->addAction(showHiddenAction);
+	mixerMenu->addAction(showInactiveAction);
+	mixerMenu->addAction(hiddenLastAction);
+	mixerMenu->addAction(inactiveLastAction);
+
+	optionsButton->setMenu(mixerMenu);
 }
 
 void AudioMixer::showMixerContextMenu()
 {
-	QAction unhideAllAction(QTStr("UnhideAll"), &mixerMenu);
-
-	QWidgetAction showHiddenAction(&mixerMenu);
-	MenuCheckBox showHiddenCheckBox(QTStr("Basic.AudioMixer.ShowHidden"), &mixerMenu);
-	showHiddenCheckBox.setAction(&showHiddenAction);
-	showHiddenCheckBox.setChecked(showHidden);
-	showHiddenAction.setDefaultWidget(&showHiddenCheckBox);
-
-	QWidgetAction showInactiveAction(&mixerMenu);
-	MenuCheckBox showInactiveCheckBox(QTStr("Basic.AudioMixer.ShowInactive"), &mixerMenu);
-	showInactiveCheckBox.setAction(&showInactiveAction);
-	showInactiveCheckBox.setChecked(showInactive);
-	showInactiveAction.setDefaultWidget(&showInactiveCheckBox);
-
-	QWidgetAction hiddenOnRightAction(&mixerMenu);
-	const char *hiddenShifted = mixerVertical ? "Basic.AudioMixer.KeepHiddenRight"
-						  : "Basic.AudioMixer.KeepHiddenBottom";
-	MenuCheckBox hiddenOnRightCheckBox(QTStr(hiddenShifted), &mixerMenu);
-	hiddenOnRightCheckBox.setAction(&hiddenOnRightAction);
-	hiddenOnRightCheckBox.setChecked(keepHiddenRight);
-	hiddenOnRightAction.setDefaultWidget(&hiddenOnRightCheckBox);
-
-	QWidgetAction inactiveOnRightAction(&mixerMenu);
-	const char *inactiveShifted = mixerVertical ? "Basic.AudioMixer.KeepInactiveRight"
-						    : "Basic.AudioMixer.KeepInactiveBottom";
-	MenuCheckBox inactiveOnRightCheckBox(QTStr(inactiveShifted), &mixerMenu);
-	inactiveOnRightCheckBox.setAction(&inactiveOnRightAction);
-	inactiveOnRightCheckBox.setChecked(keepInactiveRight);
-	inactiveOnRightAction.setDefaultWidget(&inactiveOnRightCheckBox);
-
-	/* ------------------- */
-
-	connect(&unhideAllAction, &QAction::triggered, this, &AudioMixer::unhideAllAudioControls, Qt::DirectConnection);
-
-	connect(&showHiddenCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleShowHidden, Qt::DirectConnection);
-	connect(&hiddenOnRightCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleKeepHiddenRight,
-		Qt::DirectConnection);
-
-	connect(&showInactiveCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleShowInactive,
-		Qt::DirectConnection);
-	connect(&inactiveOnRightCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleKeepInactiveRight,
-		Qt::DirectConnection);
-
-	/* ------------------- */
-
-	mixerMenu.addAction(&unhideAllAction);
-	mixerMenu.addSeparator();
-	mixerMenu.addAction(&showHiddenAction);
-	mixerMenu.addAction(&showInactiveAction);
-	mixerMenu.addAction(&hiddenOnRightAction);
-	mixerMenu.addAction(&inactiveOnRightAction);
-	mixerMenu.exec(QCursor::pos());
+	createMixerContextMenu();
+	mixerMenu->popup(QCursor::pos());
 }
 
 void AudioMixer::addControlForUuid(QString uuid)
 {
-	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toStdString().c_str());
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
 
-	QPointer<VolControl> newControl = createVolumeControl(source);
+	QPointer<VolumeControl> newControl = createVolumeControl(source);
 	activeLayout()->addWidget(newControl);
 
 	volumeList.insert({uuid, newControl});
@@ -841,7 +863,7 @@ void AudioMixer::removeControlForUuid(QString uuid)
 {
 	auto item = volumeList.find(uuid);
 	if (item != volumeList.end()) {
-		VolControl *widget = item->second;
+		VolumeControl *widget = item->second;
 		if (widget) {
 			activeLayout()->removeWidget(widget);
 			widget->deleteLater();
@@ -887,15 +909,14 @@ void AudioMixer::updateShowInactive()
 	queueLayoutUpdate();
 }
 
-void AudioMixer::updateKeepInactiveRight()
+void AudioMixer::updateKeepInactiveLast()
 {
-	bool settingKeepInactiveRight =
-		config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveRight");
-	if (keepInactiveRight == settingKeepInactiveRight) {
+	bool settingKeepInactiveLast = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveLast");
+	if (keepInactiveLast == settingKeepInactiveLast) {
 		return;
 	}
 
-	keepInactiveRight = settingKeepInactiveRight;
+	keepInactiveLast = settingKeepInactiveLast;
 
 	queueLayoutUpdate();
 }
@@ -915,14 +936,14 @@ void AudioMixer::updateShowHidden()
 	queueLayoutUpdate();
 }
 
-void AudioMixer::updateKeepHiddenRight()
+void AudioMixer::updateKeepHiddenLast()
 {
-	bool settingKeepHiddenRight = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepHiddenRight");
-	if (keepHiddenRight == settingKeepHiddenRight) {
+	bool settingKeepHiddenLast = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepHiddenLast");
+	if (keepHiddenLast == settingKeepHiddenLast) {
 		return;
 	}
 
-	keepHiddenRight = settingKeepHiddenRight;
+	keepHiddenLast = settingKeepHiddenLast;
 
 	queueLayoutUpdate();
 }
@@ -946,9 +967,9 @@ void AudioMixer::obsSourceActivated(void *data, calldata_t *params)
 	uint32_t flags = obs_source_get_output_flags(source);
 
 	if (flags & OBS_SOURCE_AUDIO) {
-		std::string uuid = obs_source_get_uuid(source);
+		auto uuidPointer = obs_source_get_uuid(source);
 		QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "updateControlVisibility",
-					  Qt::QueuedConnection, Q_ARG(std::string, uuid));
+					  Qt::QueuedConnection, Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 	}
 }
 
@@ -958,9 +979,9 @@ void AudioMixer::obsSourceDeactivated(void *data, calldata_t *params)
 	uint32_t flags = obs_source_get_output_flags(source);
 
 	if (flags & OBS_SOURCE_AUDIO) {
-		std::string uuid = obs_source_get_uuid(source);
+		auto uuidPointer = obs_source_get_uuid(source);
 		QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "updateControlVisibility",
-					  Qt::QueuedConnection, Q_ARG(std::string, uuid));
+					  Qt::QueuedConnection, Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 	}
 }
 
@@ -969,9 +990,9 @@ void AudioMixer::obsSourceAudioActivated(void *data, calldata_t *params)
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
 
 	if (obs_source_active(source)) {
-		std::string uuid = obs_source_get_uuid(source);
+		auto uuidPointer = obs_source_get_uuid(source);
 		QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "updateControlVisibility",
-					  Qt::QueuedConnection, Q_ARG(std::string, uuid));
+					  Qt::QueuedConnection, Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 	}
 }
 
@@ -979,9 +1000,9 @@ void AudioMixer::obsSourceAudioDeactivated(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
 
-	std::string uuid = obs_source_get_uuid(source);
+	auto uuidPointer = obs_source_get_uuid(source);
 	QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "updateControlVisibility", Qt::QueuedConnection,
-				  Q_ARG(std::string, uuid));
+				  Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 }
 
 void AudioMixer::obsSourceCreate(void *data, calldata_t *params)
@@ -990,9 +1011,9 @@ void AudioMixer::obsSourceCreate(void *data, calldata_t *params)
 	uint32_t flags = obs_source_get_output_flags(source);
 
 	if (flags & OBS_SOURCE_AUDIO) {
-		std::string uuid = obs_source_get_uuid(source);
+		auto uuidPointer = obs_source_get_uuid(source);
 		QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "sourceCreated", Qt::QueuedConnection,
-					  Q_ARG(QString, QString::fromStdString(uuid)));
+					  Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 	}
 }
 
@@ -1002,9 +1023,9 @@ void AudioMixer::obsSourceRemove(void *data, calldata_t *params)
 	uint32_t flags = obs_source_get_output_flags(source);
 
 	if (flags & OBS_SOURCE_AUDIO) {
-		std::string uuid = obs_source_get_uuid(source);
+		auto uuidPointer = obs_source_get_uuid(source);
 		QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "sourceRemoved", Qt::QueuedConnection,
-					  Q_ARG(QString, QString::fromStdString(uuid)));
+					  Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 	}
 }
 
@@ -1020,16 +1041,16 @@ void AudioMixer::on_actionMixerToolbarMenu_triggered()
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
 	connect(&unhideAllAction, &QAction::triggered, this, &AudioMixer::unhideAllAudioControls, Qt::DirectConnection);
 
-	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
-	toggleControlLayoutAction.setCheckable(true);
-	toggleControlLayoutAction.setChecked(
-		config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
-	connect(&toggleControlLayoutAction, &QAction::changed, main, &OBSBasic::toggleMixerLayout,
-		Qt::DirectConnection);
+	QAction *toggleControlLayoutAction = new QAction(QTStr("VerticalLayout"), this);
+	toggleControlLayoutAction->setCheckable(true);
+	toggleControlLayoutAction->setChecked(
+		config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl"));
+	connect(toggleControlLayoutAction, &QAction::changed, main, &OBSBasic::toggleMixerLayout, Qt::DirectConnection);
 
-	QMenu popup;
-	popup.addAction(&unhideAllAction);
-	popup.addSeparator();
-	popup.addAction(&toggleControlLayoutAction);
-	popup.exec(QCursor::pos());
+	QMenu *popup = new QMenu(this);
+	popup->addAction(&unhideAllAction);
+	popup->addSeparator();
+	popup->addAction(toggleControlLayoutAction);
+
+	popup->popup(QCursor::pos());
 }

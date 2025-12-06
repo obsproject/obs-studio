@@ -20,7 +20,7 @@
 #include "OBSBasic.hpp"
 #include "ColorSelect.hpp"
 #include "OBSProjector.hpp"
-#include "VolControl.hpp"
+#include "VolumeControl.hpp"
 
 #include <dialogs/NameDialog.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
@@ -36,7 +36,7 @@
 using namespace std;
 
 namespace {
-bool isHideInMixer(obs_source_t *source)
+bool isHiddenInMixer(obs_source_t *source)
 {
 	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 	bool hidden = obs_data_get_bool(priv_settings, "mixer_hidden");
@@ -44,7 +44,7 @@ bool isHideInMixer(obs_source_t *source)
 	return hidden;
 }
 
-void setHideInMixer(obs_source_t *source, bool hidden)
+void setHiddenInMixer(obs_source_t *source, bool hidden)
 {
 	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 	obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
@@ -123,22 +123,6 @@ void OBSBasic::RenameSources(OBSSource source, QString newName, QString prevName
 
 	UpdateContextBar();
 	UpdatePreviewProgramIndicators();
-}
-
-void OBSBasic::actionOpenSourceFilters()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
-	CreateFiltersWindow(source);
-}
-
-void OBSBasic::actionOpenSourceProperties()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
-	CreatePropertiesWindow(source);
 }
 
 bool OBSBasic::QueryRemoveSource(obs_source_t *source)
@@ -540,11 +524,11 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addMenu(AddBackgroundColorMenu(colorMenu, colorWidgetAction, colorSelect, sceneItem));
 
 			if (hasAudio) {
-				bool isHidden = isHideInMixer(source);
+				bool isHidden = isHiddenInMixer(source);
 
 				QAction *actionHideMixer =
 					popup.addAction(QTStr("HideMixer"), this, [source, isHidden]() {
-						setHideInMixer(source, !isHidden);
+						setHiddenInMixer(source, !isHidden);
 
 						OBSBasic *main = OBSBasic::Get();
 						emit main->mixerStatusChanged(obs_source_get_uuid(source));
@@ -634,6 +618,30 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	}
 
 	popup.exec(QCursor::pos());
+}
+
+void OBSBasic::actionOpenSourceFilters()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	if (!action->property("source").isValid()) {
+		return;
+	}
+
+	obs_source_t *source = action->property("source").value<OBSSource>();
+
+	CreateFiltersWindow(source);
+}
+
+void OBSBasic::actionOpenSourceProperties()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	if (!action->property("source").isValid()) {
+		return;
+	}
+
+	obs_source_t *source = action->property("source").value<OBSSource>();
+
+	CreatePropertiesWindow(source);
 }
 
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)

@@ -1,16 +1,17 @@
+#include "VolumeControl.hpp"
+
 #include "OBSBasic.hpp"
 
 #include <components/MuteCheckBox.hpp>
 #include <components/VolumeSlider.hpp>
 #include <dialogs/NameDialog.hpp>
-#include <widgets/VolControl.hpp>
 #include <widgets/VolumeMeter.hpp>
 #include <widgets/VolumeName.hpp>
 
 #include <QMessageBox>
-
-#include "moc_VolControl.cpp"
 #include <QObjectCleanupHandler>
+
+#include "moc_VolumeControl.cpp"
 
 namespace {
 bool isSourceUnassigned(obs_source_t *source)
@@ -45,7 +46,7 @@ void showUnassignedWarning(const char *name)
 }
 } // namespace
 
-VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
+VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertical)
 	: weakSource_(OBSGetWeakRef(source)),
 	  levelTotal(0.0f),
 	  levelCount(0.0f),
@@ -112,25 +113,26 @@ VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
 	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_mixers", obsMixersOrMonitoringChanged, this);
 	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_monitoring", obsMixersOrMonitoringChanged,
 			  this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "activate", VolControl::obsSourceActivated, this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "deactivate", VolControl::obsSourceDeactivated, this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_activate", VolControl::obsSourceActivated,
+	sigs.emplace_back(obs_source_get_signal_handler(source), "activate", VolumeControl::obsSourceActivated, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "deactivate", VolumeControl::obsSourceDeactivated,
 			  this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_deactivate", VolControl::obsSourceDeactivated,
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_activate", VolumeControl::obsSourceActivated,
 			  this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "audio_deactivate",
+			  VolumeControl::obsSourceDeactivated, this);
 
-	sigs.emplace_back(obs_source_get_signal_handler(source), "remove", VolControl::obsSourceDestroy, this);
-	sigs.emplace_back(obs_source_get_signal_handler(source), "destroy", VolControl::obsSourceDestroy, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "remove", VolumeControl::obsSourceDestroy, this);
+	sigs.emplace_back(obs_source_get_signal_handler(source), "destroy", VolumeControl::obsSourceDestroy, this);
 
 	setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QWidget::customContextMenuRequested, this, &VolControl::showVolumeControlMenu);
+	connect(this, &QWidget::customContextMenuRequested, this, &VolumeControl::showVolumeControlMenu);
 
-	connect(nameButton, &VolumeName::renamed, this, &VolControl::setName);
+	connect(nameButton, &VolumeName::renamed, this, &VolumeControl::setName);
 	connect(nameButton, &VolumeName::clicked, this, [&]() { showVolumeControlMenu(); });
 
-	connect(slider, &VolumeSlider::valueChanged, this, &VolControl::sliderChanged);
-	connect(muteButton, &QPushButton::clicked, this, &VolControl::handleMuteButton);
-	connect(monitorButton, &QPushButton::clicked, this, &VolControl::handleMonitorButton);
+	connect(slider, &VolumeSlider::valueChanged, this, &VolumeControl::sliderChanged);
+	connect(muteButton, &QPushButton::clicked, this, &VolumeControl::handleMuteButton);
+	connect(monitorButton, &QPushButton::clicked, this, &VolumeControl::handleMonitorButton);
 
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
@@ -153,7 +155,7 @@ VolControl::VolControl(obs_source_t *source, bool vertical, QWidget *parent)
 	updateCategoryLabel();
 }
 
-VolControl::~VolControl()
+VolumeControl::~VolumeControl()
 {
 	obs_fader_remove_callback(obs_fader, obsVolumeChanged, this);
 
@@ -164,51 +166,51 @@ VolControl::~VolControl()
 	}
 }
 
-void VolControl::obsVolumeChanged(void *data, float)
+void VolumeControl::obsVolumeChanged(void *data, float)
 {
-	VolControl *volControl = static_cast<VolControl *>(data);
+	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 
 	QMetaObject::invokeMethod(volControl, "changeVolume", Qt::QueuedConnection);
 }
 
-void VolControl::obsVolumeMuted(void *data, calldata_t *)
+void VolumeControl::obsVolumeMuted(void *data, calldata_t *)
 {
-	VolControl *volControl = static_cast<VolControl *>(data);
+	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 
 	QMetaObject::invokeMethod(volControl, "updateMixerState", Qt::QueuedConnection);
 }
 
-void VolControl::obsMixersOrMonitoringChanged(void *data, calldata_t *)
+void VolumeControl::obsMixersOrMonitoringChanged(void *data, calldata_t *)
 {
-	VolControl *volControl = static_cast<VolControl *>(data);
+	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 	QMetaObject::invokeMethod(volControl, "updateMixerState", Qt::QueuedConnection);
 }
 
-void VolControl::obsSourceActivated(void *data, calldata_t *)
+void VolumeControl::obsSourceActivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
 				  Q_ARG(bool, true));
 }
 
-void VolControl::obsSourceDeactivated(void *data, calldata_t *)
+void VolumeControl::obsSourceDeactivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
 				  Q_ARG(bool, false));
 }
 
-void VolControl::obsSourceDestroy(void *data, calldata_t *)
+void VolumeControl::obsSourceDestroy(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolControl *>(data), "handleSourceDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "handleSourceDestroyed", Qt::QueuedConnection);
 }
 
-void VolControl::setLayoutVertical(bool vertical)
+void VolumeControl::setLayoutVertical(bool vertical)
 {
 	QBoxLayout *newLayout = new QBoxLayout(vertical ? QBoxLayout::TopToBottom : QBoxLayout::LeftToRight);
 	newLayout->setContentsMargins(0, 0, 0, 0);
 	newLayout->setSpacing(0);
 
 	if (vertical) {
-		setMaximumWidth(120);
+		setMaximumWidth(110);
 		setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
 		QHBoxLayout *categoryLayout = new QHBoxLayout;
@@ -345,121 +347,109 @@ void VolControl::setLayoutVertical(bool vertical)
 	adjustSize();
 }
 
-void VolControl::showVolumeControlMenu(QPoint pos)
+void VolumeControl::showVolumeControlMenu(QPoint pos)
 {
-	QMenu popup;
-
-	/* ------------------- */
-
-	QAction lockAction(QTStr("LockVolume"), &popup);
-	lockAction.setCheckable(true);
-	lockAction.setChecked(hasMixerFlag(OBS::MixerStatus::Locked));
-
-	bool isGlobal = hasMixerFlag(OBS::MixerStatus::Global);
-
-	QAction pinAction(QTStr("Basic.AudioMixer.Pin"), &popup);
-	bool isPinned = hasMixerFlag(OBS::MixerStatus::Pinned);
-	if (isPinned) {
-		pinAction.setText(QTStr("Basic.AudioMixer.Unpin"));
-	}
-
-	QAction hideAction(QTStr("Basic.AudioMixer.Hide"), &popup);
-	bool isHidden = hasMixerFlag(OBS::MixerStatus::Hidden);
-	if (isHidden && !isGlobal) {
-		hideAction.setText(QTStr("Basic.AudioMixer.Unhide"));
-	}
-
-	QAction unhideAllAction(QTStr("UnhideAll"), &popup);
-	QAction mixerRenameAction(QTStr("Rename"), &popup);
-
-	QAction copyFiltersAction(QTStr("Copy.Filters"), &popup);
-	QAction pasteFiltersAction(QTStr("Paste.Filters"), &popup);
-
-	QAction filtersAction(QTStr("Filters"), &popup);
-	QAction propertiesAction(QTStr("Properties"), &popup);
-
-	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), &popup);
-	toggleControlLayoutAction.setCheckable(true);
-	toggleControlLayoutAction.setChecked(
-		config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
-
-	/* ------------------- */
-
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
 		return;
 	}
 
-	hideAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
-	pinAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
+	QMenu *popup = new QMenu(this);
 
-	mixerRenameAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
+	// Create menu QActions
+	QAction *lockAction = new QAction(QTStr("LockVolume"), popup);
+	lockAction->setCheckable(true);
+	lockAction->setChecked(hasMixerFlag(OBS::MixerStatus::Locked));
 
-	copyFiltersAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
-	pasteFiltersAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
+	bool isGlobal = hasMixerFlag(OBS::MixerStatus::Global);
 
-	filtersAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
-	propertiesAction.setProperty("source", QVariant::fromValue<OBSSource>(source));
+	QAction *pinAction = new QAction(QTStr("Basic.AudioMixer.Pin"), popup);
+	bool isPinned = hasMixerFlag(OBS::MixerStatus::Pinned);
+	if (isPinned) {
+		pinAction->setText(QTStr("Basic.AudioMixer.Unpin"));
+	}
 
-	/* ------------------- */
+	QAction *hideAction = new QAction(QTStr("Basic.AudioMixer.Hide"), popup);
+	bool isHidden = hasMixerFlag(OBS::MixerStatus::Hidden);
+	if (isHidden && !isGlobal) {
+		hideAction->setText(QTStr("Basic.AudioMixer.Unhide"));
+	}
 
+	QAction *unhideAllAction = new QAction(QTStr("UnhideAll"), popup);
+	QAction *mixerRenameAction = new QAction(QTStr("Rename"), popup);
+
+	QAction *copyFiltersAction = new QAction(QTStr("Copy.Filters"), popup);
+	QAction *pasteFiltersAction = new QAction(QTStr("Paste.Filters"), popup);
+
+	QAction *filtersAction = new QAction(QTStr("Filters"), popup);
+	QAction *propertiesAction = new QAction(QTStr("Properties"), popup);
+
+	// Set properties on actions that require source reference
+	hideAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
+	pinAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
+
+	mixerRenameAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
+
+	copyFiltersAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
+	pasteFiltersAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
+
+	filtersAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
+	propertiesAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
+
+	// Connect actions to signals
 	OBSBasic *main = OBSBasic::Get();
 
-	connect(&unhideAllAction, &QAction::triggered, this, [this]() { emit unhideAll(); });
+	connect(unhideAllAction, &QAction::triggered, this, [this]() { emit unhideAll(); });
 
-	connect(&hideAction, &QAction::triggered, this, [this, isHidden]() { setHideInMixer(!isHidden); });
+	connect(hideAction, &QAction::triggered, this, [this, isHidden]() { setHiddenInMixer(!isHidden); });
 	connect(
-		&pinAction, &QAction::triggered, this, [this, isPinned]() { setPinnedInMixer(!isPinned); },
+		pinAction, &QAction::triggered, this, [this, isPinned]() { setPinnedInMixer(!isPinned); },
 		Qt::DirectConnection);
-	connect(&lockAction, &QAction::toggled, this, &VolControl::setLocked);
+	connect(lockAction, &QAction::toggled, this, &VolumeControl::setLocked);
 
-	connect(&copyFiltersAction, &QAction::triggered, main, &OBSBasic::actionCopyFilters);
-	connect(&pasteFiltersAction, &QAction::triggered, main, &OBSBasic::actionPasteFilters);
+	connect(copyFiltersAction, &QAction::triggered, main, &OBSBasic::actionCopyFilters);
+	connect(pasteFiltersAction, &QAction::triggered, main, &OBSBasic::actionPasteFilters);
 
-	connect(&mixerRenameAction, &QAction::triggered, this, &VolControl::renameSource);
+	connect(mixerRenameAction, &QAction::triggered, this, &VolumeControl::renameSource);
 
-	connect(&filtersAction, &QAction::triggered, main, &OBSBasic::actionOpenSourceFilters);
-	connect(&propertiesAction, &QAction::triggered, main, &OBSBasic::actionOpenSourceProperties);
+	connect(filtersAction, &QAction::triggered, main, &OBSBasic::actionOpenSourceFilters);
+	connect(propertiesAction, &QAction::triggered, main, &OBSBasic::actionOpenSourceProperties);
 
-	/* ------------------- */
-
-	connect(&toggleControlLayoutAction, &QAction::changed, main, &OBSBasic::toggleMixerLayout,
-		Qt::DirectConnection);
-
-	/* ------------------- */
-
-	copyFiltersAction.setEnabled(obs_source_filter_count(source) > 0);
-	pasteFiltersAction.setEnabled(!obs_weak_source_expired(main->copyFiltersSource));
+	// Enable/disable actions
+	copyFiltersAction->setEnabled(obs_source_filter_count(source) > 0);
+	pasteFiltersAction->setEnabled(!obs_weak_source_expired(main->copyFiltersSource()));
 
 	if (isGlobal) {
-		pinAction.setDisabled(true);
-		hideAction.setDisabled(true);
+		pinAction->setDisabled(true);
+		hideAction->setDisabled(true);
 	}
 
 	if (isPinned) {
-		hideAction.setDisabled(true);
+		hideAction->setDisabled(true);
 	}
 
-	popup.addAction(&unhideAllAction);
-	popup.addSeparator();
-	popup.addAction(&pinAction);
-	popup.addAction(&hideAction);
-	popup.addAction(&lockAction);
+	// Build menu
+	popup->addAction(unhideAllAction);
+	popup->addSeparator();
+	popup->addAction(pinAction);
+	popup->addAction(hideAction);
+	popup->addAction(lockAction);
 
-	popup.addSeparator();
-	popup.addAction(&copyFiltersAction);
-	popup.addAction(&pasteFiltersAction);
-	popup.addSeparator();
-	popup.addAction(&mixerRenameAction);
-	popup.addSeparator();
-	popup.addAction(&filtersAction);
-	popup.addAction(&propertiesAction);
+	popup->addSeparator();
+	popup->addAction(copyFiltersAction);
+	popup->addAction(pasteFiltersAction);
+	popup->addSeparator();
+	popup->addAction(mixerRenameAction);
+	popup->addSeparator();
+	popup->addAction(filtersAction);
+	popup->addAction(propertiesAction);
 
+	// Calculate menu position
 	QPoint popupPos = mapToGlobal(pos);
 
 	if (pos.isNull()) {
 		QPoint menuPos = nameButton->mapToGlobal(nameButton->rect().bottomLeft());
-		QSize menuSize = popup.sizeHint();
+		QSize menuSize = popup->sizeHint();
 
 		QRect available = QGuiApplication::screenAt(menuPos)->availableGeometry();
 		int spaceBelow = available.bottom() - menuPos.y();
@@ -477,14 +467,12 @@ void VolControl::showVolumeControlMenu(QPoint pos)
 		popupPos = menuPos;
 	}
 
-	// toggleControlLayoutAction deletes and re-creates the volume controls
-	// meaning that "vol" would be pointing to freed memory.
-	if (popup.exec(popupPos) != &toggleControlLayoutAction) {
-		//vol->SetContextMenu(nullptr);
-	}
+	popup->popup(popupPos);
+
+	connect(popup, &QMenu::aboutToHide, popup, &QMenu::deleteLater);
 }
 
-void VolControl::renameSource()
+void VolumeControl::renameSource()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
 	obs_source_t *source = action->property("source").value<OBSSource>();
@@ -516,7 +504,7 @@ void VolControl::renameSource()
 	}
 }
 
-void VolControl::changeVolume()
+void VolumeControl::changeVolume()
 {
 	QSignalBlocker blocker(slider);
 	slider->setValue((int)(obs_fader_get_deflection(obs_fader) * FADER_PRECISION));
@@ -524,7 +512,7 @@ void VolControl::changeVolume()
 	updateText();
 }
 
-void VolControl::setLocked(bool locked)
+void VolumeControl::setLocked(bool locked)
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -540,7 +528,7 @@ void VolControl::setLocked(bool locked)
 	emit main->mixerStatusChanged(uuid);
 }
 
-void VolControl::updateCategoryLabel()
+void VolumeControl::updateCategoryLabel()
 {
 	QString labelText = QTStr("Basic.AudioMixer.Category.Active");
 
@@ -578,7 +566,7 @@ void VolControl::updateCategoryLabel()
 	volMeter->updateBackgroundCache();
 }
 
-void VolControl::updateDecayRate()
+void VolumeControl::updateDecayRate()
 {
 	OBSBasic *main = OBSBasic::Get();
 	double meterDecayRate = config_get_double(main->Config(), "Audio", "MeterDecayRate");
@@ -586,7 +574,7 @@ void VolControl::updateDecayRate()
 	setMeterDecayRate(meterDecayRate);
 }
 
-void VolControl::updatePeakMeterType()
+void VolumeControl::updatePeakMeterType()
 {
 	OBSBasic *main = OBSBasic::Get();
 	uint32_t peakMeterTypeIdx = config_get_uint(main->Config(), "Audio", "PeakMeterType");
@@ -607,7 +595,7 @@ void VolControl::updatePeakMeterType()
 	setPeakMeterType(peakMeterType);
 }
 
-void VolControl::setMuted(bool mute)
+void VolumeControl::setMuted(bool mute)
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -641,7 +629,7 @@ void VolControl::setMuted(bool mute)
 					   std::bind(undo_redo, std::placeholders::_1, mute), uuid, uuid);
 }
 
-void VolControl::setMonitoring(obs_monitoring_type type)
+void VolumeControl::setMonitoring(obs_monitoring_type type)
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -664,7 +652,7 @@ void VolControl::setMonitoring(obs_monitoring_type type)
 					   std::bind(undo_redo, std::placeholders::_1, type), uuid, uuid);
 }
 
-void VolControl::sourceActiveChanged(bool active)
+void VolumeControl::sourceActiveChanged(bool active)
 {
 	setUseDisabledColors(!active);
 	setMixerFlag(OBS::MixerStatus::Active, active);
@@ -673,7 +661,7 @@ void VolControl::sourceActiveChanged(bool active)
 	emit main->mixerStatusChanged(uuid);
 }
 
-void VolControl::updateMixerState()
+void VolumeControl::updateMixerState()
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -745,7 +733,7 @@ void VolControl::updateMixerState()
 	updateCategoryLabel();
 }
 
-void VolControl::handleMuteButton(bool mute)
+void VolumeControl::handleMuteButton(bool mute)
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -766,7 +754,7 @@ void VolControl::handleMuteButton(bool mute)
 	}
 }
 
-void VolControl::handleMonitorButton(bool enableMonitoring)
+void VolumeControl::handleMonitorButton(bool enableMonitoring)
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -792,7 +780,7 @@ void VolControl::handleMonitorButton(bool enableMonitoring)
 	}
 }
 
-void VolControl::sliderChanged(int vol)
+void VolumeControl::sliderChanged(int vol)
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -816,7 +804,7 @@ void VolControl::sliderChanged(int vol)
 					   std::bind(undo_redo, std::placeholders::_1, val), uuid, uuid, true);
 }
 
-void VolControl::updateText()
+void VolumeControl::updateText()
 {
 	QString text;
 	float db = obs_fader_get_db(obs_fader);
@@ -843,7 +831,7 @@ void VolControl::updateText()
 	slider->setAccessibleName(accText);
 }
 
-void VolControl::setVertical(bool vertical_)
+void VolumeControl::setVertical(bool vertical_)
 {
 	if (vertical == vertical_) {
 		return;
@@ -854,7 +842,7 @@ void VolControl::setVertical(bool vertical_)
 	setLayoutVertical(vertical);
 }
 
-void VolControl::updateTabOrder()
+void VolumeControl::updateTabOrder()
 {
 	QWidget *prevFocus = firstWidget()->previousInFocusChain();
 	QWidget *lastFocus = lastWidget()->nextInFocusChain();
@@ -874,34 +862,34 @@ void VolControl::updateTabOrder()
 	}
 }
 
-void VolControl::updateName()
+void VolumeControl::updateName()
 {
 	setName(sourceName);
 }
 
-void VolControl::setName(QString name)
+void VolumeControl::setName(QString name)
 {
 	sourceName = name;
 
 	muteButton->setAccessibleName(QTStr("VolControl.Mute").arg(name));
 }
 
-void VolControl::setMeterDecayRate(qreal q)
+void VolumeControl::setMeterDecayRate(qreal q)
 {
 	volMeter->setPeakDecayRate(q);
 }
 
-void VolControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
+void VolumeControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 {
 	volMeter->setPeakMeterType(peakMeterType);
 }
 
-void VolControl::enableSlider(bool enable)
+void VolumeControl::enableSlider(bool enable)
 {
 	slider->setEnabled(enable);
 }
 
-void VolControl::setMixerFlag(OBS::MixerStatus category, bool enable)
+void VolumeControl::setMixerFlag(OBS::MixerStatus category, bool enable)
 {
 	using T = std::underlying_type_t<OBS::MixerStatus>;
 	T value = static_cast<T>(statusCategory);
@@ -912,18 +900,18 @@ void VolControl::setMixerFlag(OBS::MixerStatus category, bool enable)
 	statusCategory = static_cast<OBS::MixerStatus>(value);
 }
 
-bool VolControl::hasMixerFlag(OBS::MixerStatus category)
+bool VolumeControl::hasMixerFlag(OBS::MixerStatus category)
 {
 	using T = std::underlying_type_t<OBS::MixerStatus>;
 	return (static_cast<T>(statusCategory) & static_cast<T>(category)) != 0;
 }
 
-void VolControl::setUseDisabledColors(bool greyscale)
+void VolumeControl::setUseDisabledColors(bool greyscale)
 {
 	volMeter->setUseDisabledColors(greyscale);
 }
 
-void VolControl::setGlobalInMixer(bool global)
+void VolumeControl::setGlobalInMixer(bool global)
 {
 	if (hasMixerFlag(OBS::MixerStatus::Global) != global) {
 		setMixerFlag(OBS::MixerStatus::Global, global);
@@ -933,7 +921,7 @@ void VolControl::setGlobalInMixer(bool global)
 	}
 }
 
-void VolControl::setPinnedInMixer(bool pinned)
+void VolumeControl::setPinnedInMixer(bool pinned)
 {
 	if (hasMixerFlag(OBS::MixerStatus::Pinned) != pinned) {
 		OBSSource source = OBSGetStrongRef(weakSource());
@@ -947,7 +935,7 @@ void VolControl::setPinnedInMixer(bool pinned)
 
 		if (pinned) {
 			// Unset hidden state when pinning controls
-			setHideInMixer(false);
+			setHiddenInMixer(false);
 		}
 
 		OBSBasic *main = OBSBasic::Get();
@@ -955,7 +943,7 @@ void VolControl::setPinnedInMixer(bool pinned)
 	}
 }
 
-void VolControl::setHideInMixer(bool hidden)
+void VolumeControl::setHiddenInMixer(bool hidden)
 {
 	if (hasMixerFlag(OBS::MixerStatus::Hidden) != hidden) {
 		OBSSource source = OBSGetStrongRef(weakSource());
@@ -972,20 +960,20 @@ void VolControl::setHideInMixer(bool hidden)
 	}
 }
 
-void VolControl::refreshColors()
+void VolumeControl::refreshColors()
 {
 	volMeter->refreshColors();
 }
 
-void VolControl::debugHideControls()
+void VolumeControl::debugHideControls()
 {
 	slider->hide();
 	volLabel->hide();
 	muteButton->hide();
 }
 
-void VolControl::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
-			   const float inputPeak[MAX_AUDIO_CHANNELS])
+void VolumeControl::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
+			      const float inputPeak[MAX_AUDIO_CHANNELS])
 {
 	if (volMeter) {
 		volMeter->setLevels(magnitude, peak, inputPeak);

@@ -1,21 +1,19 @@
 #pragma once
-#pragma once
-
-#include <Idian/Utils.hpp>
 
 #include <obs.hpp>
-#include <widgets/VolumeName.hpp>
-#include <components/VolumeSlider.hpp>
 
+#include <components/VolumeSlider.hpp>
+#include <widgets/VolumeName.hpp>
+
+#include <Idian/Utils.hpp>
 #include <QFrame>
 #include <QPushButton>
-#include <QPushButton>
+#include <QWidget>
 
-class VolumeMeter;
-class VolumeSlider;
 class MuteCheckBox;
+class QBoxLayout;
 class QLabel;
-class QPushButton;
+class VolumeMeter;
 
 namespace OBS {
 enum class MixerStatus : uint32_t {
@@ -45,7 +43,7 @@ inline MixerStatus operator~(MixerStatus a)
 }
 } // namespace OBS
 
-class VolControl : public QFrame {
+class VolumeControl : public QFrame {
 	Q_OBJECT
 
 private:
@@ -113,8 +111,9 @@ signals:
 	void unhideAll();
 
 public:
-	explicit VolControl(obs_source_t *source, bool vertical = false, QWidget *parent = nullptr);
-	~VolControl();
+	explicit VolumeControl(obs_source_t *source, QWidget *parent, bool vertical);
+	explicit VolumeControl(obs_source_t *source, QWidget *parent) : VolumeControl(source, parent, false) {}
+	~VolumeControl();
 
 	inline OBSWeakSource weakSource() const { return weakSource_; }
 	QString const &getCachedName() const { return sourceName; }
@@ -127,7 +126,7 @@ public:
 	bool hasMixerFlag(OBS::MixerStatus category);
 	void setGlobalInMixer(bool global);
 	void setPinnedInMixer(bool pinned);
-	void setHideInMixer(bool hidden);
+	void setHiddenInMixer(bool hidden);
 	void setContextMenu(QMenu *cm) { contextMenu = cm; }
 
 	bool isVertical() const { return vertical; }

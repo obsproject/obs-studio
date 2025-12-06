@@ -19,11 +19,12 @@
 
 #include "OBSBasic.hpp"
 #include "ui-config.h"
+
 #include "ColorSelect.hpp"
 #include "OBSBasicControls.hpp"
 #include "OBSBasicStats.hpp"
+#include "VolumeControl.hpp"
 #include "plugin-manager/PluginManager.hpp"
-#include "VolControl.hpp"
 
 #include <obs-module.h>
 
@@ -44,8 +45,8 @@
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
-#include <widgets/OBSProjector.hpp>
 #include <widgets/AudioMixer.hpp>
+#include <widgets/OBSProjector.hpp>
 
 #include <OBSStudioAPI.hpp>
 #ifdef BROWSER_AVAILABLE
@@ -1169,7 +1170,7 @@ void OBSBasic::OBSInit()
 		show();
 #endif
 
-	/* Setup Audio Mixer dock*/
+	// Setup Audio Mixer dock
 	AudioMixer *audioMixer = new AudioMixer(this);
 	ui->mixerDock->setWidget(audioMixer);
 	ui->mixerDock->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -1266,7 +1267,7 @@ void OBSBasic::OBSInit()
 #endif
 	TimedCheckForUpdates();
 
-	emit userSettingChanged("BasicWindow", "VerticalVolControl");
+	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
 
 	if (config_get_bool(activeConfiguration, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
@@ -1471,10 +1472,10 @@ void OBSBasic::applicationShutdown() noexcept
 
 void OBSBasic::toggleMixerLayout()
 {
-	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl", !vertical);
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl", !vertical);
 
-	emit userSettingChanged("BasicWindow", "VerticalVolControl");
+	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
 }
 
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)
@@ -2035,7 +2036,7 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionCopyTransform->setEnabled(canTransformSingle);
 	ui->actionPasteTransform->setEnabled(canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
-	ui->actionPasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource) && totalCount > 0);
+	ui->actionPasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource()) && totalCount > 0);
 	ui->actionPasteRef->setEnabled(!!clipboard.size());
 	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
 

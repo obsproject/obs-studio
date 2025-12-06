@@ -17,25 +17,29 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
-
 #include "OBSBasic.hpp"
-#include "VolControl.hpp"
+#include "VolumeControl.hpp"
 
-#include <QWidget>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QStackedWidget>
-#include <QScrollArea>
+#include <QObject>
+#include <QPointer>
+#include <QTimer>
 
 #include <unordered_set>
+
+class QHBoxLayout;
+class QMenu;
+class QStackedWidget;
+class QScrollArea;
+class QPushButton;
+class QToolBar;
+class QVBoxLayout;
 
 class AudioMixer : public QFrame {
 	Q_OBJECT
 
-	struct RankedVol {
-		VolControl *vol;
-		int sortWeight;
+	struct RankedVolume {
+		VolumeControl *control;
+		int sortingWeight;
 	};
 
 public:
@@ -45,6 +49,7 @@ public:
 	void refreshVolumeColors();
 
 	void setMixerLayoutVertical(bool vertical);
+	void createMixerContextMenu();
 	void showMixerContextMenu();
 
 private:
@@ -52,50 +57,52 @@ private:
 	static void onFrontendEvent(enum obs_frontend_event event, void *data);
 	void handleFrontendEvent(enum obs_frontend_event event);
 
-	std::unordered_map<QString, QPointer<VolControl>> volumeList;
+	std::unordered_map<QString, QPointer<VolumeControl>> volumeList;
 	void addControlForUuid(QString uuid);
 	void removeControlForUuid(QString uuid);
 
 	std::unordered_set<QString> globalSources;
 	std::unordered_set<QString> previewSources;
-	bool mixerVertical = false;
+	bool mixerVertical{false};
 
-	int hiddenCount = 0;
-	bool showHidden = false;
-	bool showInactive = false;
+	int hiddenCount{0};
+	bool showHidden{false};
+	bool showInactive{false};
 
-	bool keepInactiveRight = false;
-	bool keepHiddenRight = false;
+	bool keepInactiveLast{false};
+	bool keepHiddenLast{false};
 
-	bool showToolbar = true;
+	bool showToolbar{true};
 
-	QFrame *mixerFrame = nullptr;
-	QVBoxLayout *mainLayout = nullptr;
-	QVBoxLayout *mixerLayout = nullptr;
+	QFrame *mixerFrame{nullptr};
+	QVBoxLayout *mainLayout{nullptr};
+	QVBoxLayout *mixerLayout{nullptr};
 
-	QStackedWidget *stackedMixerArea = nullptr;
-	QToolBar *mixerToolbar = nullptr;
-	QAction *layoutButton = nullptr;
-	QAction *advAudio = nullptr;
-	QPushButton *toggleHiddenButton = nullptr;
-	QMenu mixerMenu;
+	QStackedWidget *stackedMixerArea{nullptr};
+	QToolBar *mixerToolbar{nullptr};
+	QAction *layoutButton{nullptr};
+	QAction *advAudio{nullptr};
+	QPushButton *optionsButton{nullptr};
+	QPushButton *toggleHiddenButton{nullptr};
 
-	QVBoxLayout *hMainLayout = nullptr;
-	QWidget *hMixerContainer = nullptr;
-	QScrollArea *hMixerScrollArea = nullptr;
-	QWidget *hVolumeWidgets = nullptr;
-	QVBoxLayout *hVolControlLayout = nullptr;
+	QPointer<QMenu> mixerMenu;
 
-	QHBoxLayout *vMainLayout = nullptr;
-	QWidget *vMixerContainer = nullptr;
-	QScrollArea *vMixerScrollArea = nullptr;
-	QWidget *vVolumeWidgets = nullptr;
-	QHBoxLayout *vVolControlLayout = nullptr;
+	QVBoxLayout *hMainLayout{nullptr};
+	QWidget *hMixerContainer{nullptr};
+	QScrollArea *hMixerScrollArea{nullptr};
+	QWidget *hVolumeWidgets{nullptr};
+	QVBoxLayout *hVolumeControlLayout{nullptr};
+
+	QHBoxLayout *vMainLayout{nullptr};
+	QWidget *vMixerContainer{nullptr};
+	QScrollArea *vMixerScrollArea{nullptr};
+	QWidget *vVolumeWidgets{nullptr};
+	QHBoxLayout *vVolumeControlLayout{nullptr};
 
 	QBoxLayout *activeLayout() const;
 
 	void reloadVolumeControls();
-	bool getMixerVisibilityForControl(VolControl *widget);
+	bool getMixerVisibilityForControl(VolumeControl *widget);
 
 	void addPreviewSource(const char *uuid);
 	void clearPreviewSources();
@@ -103,15 +110,15 @@ private:
 	bool isSourceGlobal(obs_source_t *source);
 	void clearVolumeControls();
 	void updateShowInactive();
-	void updateKeepInactiveRight();
+	void updateKeepInactiveLast();
 	void updateShowHidden();
-	void updateKeepHiddenRight();
+	void updateKeepHiddenLast();
 	void updateShowToolbar();
 
 	QTimer updateTimer;
 	void updateVolumeLayouts();
 
-	/* OBS Callbacks */
+	// OBS Callbacks
 	static void obsSourceActivated(void *data, calldata_t *params);
 	static void obsSourceDeactivated(void *data, calldata_t *params);
 	static void obsSourceAudioActivated(void *data, calldata_t *params);
@@ -128,14 +135,14 @@ private slots:
 	void unhideAllAudioControls();
 	void queueLayoutUpdate();
 
-	VolControl *createVolumeControl(obs_source_t *source);
-	void updateControlVisibility(std::string uuid);
+	VolumeControl *createVolumeControl(obs_source_t *source);
+	void updateControlVisibility(QString uuid);
 
 	void toggleLayout();
 	void toggleShowInactive(bool checked);
-	void toggleKeepInactiveRight(bool checked);
+	void toggleKeepInactiveLast(bool checked);
 	void toggleShowHidden(bool checked);
-	void toggleKeepHiddenRight(bool checked);
+	void toggleKeepHiddenLast(bool checked);
 
 	void on_actionMixerToolbarMenu_triggered();
 

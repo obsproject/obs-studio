@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include <obs.hpp>
 
@@ -11,6 +10,7 @@
 
 class VolumeMeter : public QWidget {
 	Q_OBJECT
+
 	Q_PROPERTY(QColor backgroundNominalColor READ getBackgroundNominalColor WRITE setBackgroundNominalColor
 			   DESIGNABLE true)
 	Q_PROPERTY(QColor backgroundWarningColor READ getBackgroundWarningColor WRITE setBackgroundWarningColor
@@ -41,16 +41,16 @@ class VolumeMeter : public QWidget {
 	Q_PROPERTY(QColor majorTickColor READ getMajorTickColor WRITE setMajorTickColor DESIGNABLE true)
 	Q_PROPERTY(QColor minorTickColor READ getMinorTickColor WRITE setMinorTickColor DESIGNABLE true)
 
-	friend class VolControl;
+	friend class VolumeControl;
 
 private:
 	OBSWeakSource weakSource;
-	OBSVolMeter obs_volmeter;
+	OBSVolMeter obsVolMeter;
 
 	QSharedPointer<QTimer> updateTimer;
 
-	static void obsVolumeLevel(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
-				   const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS]);
+	static void obsVolMeterChanged(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
+				       const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS]);
 
 	OBSSignal destroyedSignal;
 	static void obsSourceDestroyed(void *data, calldata_t *);
@@ -69,13 +69,13 @@ private:
 
 	QMutex dataMutex;
 
-	bool recalculateLayout = true;
-	uint64_t currentLastUpdateTime = 0;
+	bool recalculateLayout{true};
+	uint64_t currentLastUpdateTime{0};
 	float currentMagnitude[MAX_AUDIO_CHANNELS];
 	float currentPeak[MAX_AUDIO_CHANNELS];
 	float currentInputPeak[MAX_AUDIO_CHANNELS];
 
-	int displayNrAudioChannels = 0;
+	int displayNrAudioChannels{0};
 	float displayMagnitude[MAX_AUDIO_CHANNELS];
 	float displayPeak[MAX_AUDIO_CHANNELS];
 	float displayPeakHold[MAX_AUDIO_CHANNELS];
@@ -126,13 +126,13 @@ private:
 	QColor p_foregroundWarningColor;
 	QColor p_foregroundErrorColor;
 
-	uint64_t lastRedrawTime = 0;
-	int channels = 0;
-	bool clipping = false;
-	bool vertical = false;
-	bool hidden = false;
-	bool muted = false;
-	bool useDisabledColors = false;
+	uint64_t lastRedrawTime{0};
+	int channels{0};
+	bool clipping{false};
+	bool vertical{false};
+	bool hidden{false};
+	bool muted{false};
+	bool useDisabledColors{false};
 
 public:
 	explicit VolumeMeter(QWidget *parent = nullptr, obs_source_t *source = nullptr);

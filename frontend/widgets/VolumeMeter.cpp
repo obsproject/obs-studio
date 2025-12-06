@@ -242,7 +242,7 @@ void VolumeMeter::setPeakDecayRate(qreal decayRate)
 
 void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 {
-	obs_volmeter_set_peak_meter_type(obs_volmeter, peakMeterType);
+	obs_volmeter_set_peak_meter_type(obsVolMeter, peakMeterType);
 	switch (peakMeterType) {
 	case TRUE_PEAK_METER:
 		// For true-peak meters EBU has defined the Permitted Maximum,
@@ -289,7 +289,7 @@ void VolumeMeter::wheelEvent(QWheelEvent *event)
 VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 	: QWidget(parent),
 	  weakSource(OBSGetWeakRef(source)),
-	  obs_volmeter(obs_volmeter_create(OBS_FADER_LOG))
+	  obsVolMeter(obs_volmeter_create(OBS_FADER_LOG))
 {
 	setAttribute(Qt::WA_OpaquePaintEvent, true);
 	setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -328,8 +328,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 	meterFontScaling = 0.8;                  // Font size for numbers is 70% of Widget's font size
 	channels = (int)audio_output_get_channels(obs_get_audio());
 
-	obs_volmeter_add_callback(obs_volmeter, obsVolumeLevel, this);
-	obs_volmeter_attach_source(obs_volmeter, source);
+	obs_volmeter_add_callback(obsVolMeter, obsVolMeterChanged, this);
+	obs_volmeter_attach_source(obsVolMeter, source);
 
 	destroyedSignal =
 		OBSSignal(obs_source_get_signal_handler(source), "destroy", &VolumeMeter::obsSourceDestroyed, this);
@@ -356,8 +356,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 
 VolumeMeter::~VolumeMeter()
 {
-	obs_volmeter_remove_callback(obs_volmeter, obsVolumeLevel, this);
-	obs_volmeter_detach_source(obs_volmeter);
+	obs_volmeter_remove_callback(obsVolMeter, obsVolMeterChanged, this);
+	obs_volmeter_detach_source(obsVolMeter);
 }
 
 void VolumeMeter::obsSourceDestroyed(void *data, calldata_t *)
@@ -385,8 +385,8 @@ void VolumeMeter::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const flo
 	calculateBallistics(ts);
 }
 
-void VolumeMeter::obsVolumeLevel(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
-				 const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS])
+void VolumeMeter::obsVolMeterChanged(void *data, const float magnitude[MAX_AUDIO_CHANNELS],
+				     const float peak[MAX_AUDIO_CHANNELS], const float inputPeak[MAX_AUDIO_CHANNELS])
 {
 	VolumeMeter *meter = static_cast<VolumeMeter *>(data);
 
@@ -412,7 +412,7 @@ inline void VolumeMeter::resetLevels()
 
 bool VolumeMeter::needLayoutChange()
 {
-	int currentNrAudioChannels = obs_volmeter_get_nr_channels(obs_volmeter);
+	int currentNrAudioChannels = obs_volmeter_get_nr_channels(obsVolMeter);
 
 	if (!currentNrAudioChannels) {
 		struct obs_audio_info oai;
@@ -506,8 +506,8 @@ inline void VolumeMeter::doLayout()
 
 inline bool VolumeMeter::detectIdle(uint64_t ts)
 {
-	double timeSinceLastUpdate = (ts - currentLastUpdateTime) * 0.000000001;
-	if (timeSinceLastUpdate > 0.5) {
+	double secondsSinceLastUpdate = (ts - currentLastUpdateTime) * 0.000000001;
+	if (secondsSinceLastUpdate > 0.5) {
 		resetLevels();
 		return true;
 	} else {
@@ -659,11 +659,12 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 void VolumeMeter::updateBackgroundCache()
 {
 	QColor backgroundColor = palette().color(QPalette::Window);
+
 	backgroundCache = QPixmap(size() * devicePixelRatioF());
 	backgroundCache.setDevicePixelRatio(devicePixelRatioF());
 	backgroundCache.fill(backgroundColor);
 
-	QPainter bg(&backgroundCache);
+	QPainter bg{&backgroundCache};
 	QRect widgetRect = rect();
 
 	// Draw ticks

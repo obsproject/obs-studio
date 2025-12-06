@@ -1692,7 +1692,7 @@ QSlider::handle:disabled {
     border-color: transparent;
 }
 
-VolControl,
+VolumeControl,
 VolumeMeter {
     background: var(--bg_base);
 }
@@ -1728,7 +1728,7 @@ VolumeName:hover {
     border: 1px solid var(--button_border_hover);
 }
 
-VolControl #volLabel {
+VolumeControl #volLabel {
     padding: var(--padding_base) 0px var(--padding_base);
     text-align: center;
     font-size: var(--font_base);
@@ -1736,7 +1736,7 @@ VolControl #volLabel {
 }
 
 /* Horizontal Mixer */
-#hVolumeWidgets VolControl {
+#hVolumeWidgets VolumeControl {
     padding: 0px 0px;
     border-bottom: 1px solid var(--border_color);
     margin-bottom: 0px;
@@ -1762,25 +1762,25 @@ VolControl #volLabel {
     margin-bottom: var(--padding_xlarge);
 }
 
-#hVolumeWidgets VolControl QSlider {
+#hVolumeWidgets VolumeControl QSlider {
     margin: var(--padding_large) 0px var(--padding_xlarge);
 }
 
-#hVolumeWidgets VolControl QSlider::groove:horizontal {
+#hVolumeWidgets VolumeControl QSlider::groove:horizontal {
     background: var(--bg_window);
     height: var(--volume_slider);
 }
 
-#hVolumeWidgets VolControl QPushButton {
+#hVolumeWidgets VolumeControl QPushButton {
     margin-left: var(--padding_xlarge);
 }
 
-#hVolumeWidgets VolControl #volMeterFrame {
+#hVolumeWidgets VolumeControl #volMeterFrame {
     padding: 0 var(--padding_xlarge);
 }
 
 /* Vertical Mixer */
-#vVolumeWidgets VolControl {
+#vVolumeWidgets VolumeControl {
     padding: 0px 0px var(--padding_container);
     border-right: 1px solid var(--border_color);
 }
@@ -1789,81 +1789,81 @@ VolControl #volLabel {
     border-bottom: 1px solid var(--border_color);
 }
 
-#vMixerScrollArea VolControl QSlider {
+#vMixerScrollArea VolumeControl QSlider {
     width: var(--volume_slider_box);
     margin: 0px var(--padding_xlarge);
 }
 
-#vVolumeWidgets VolControl #volLabel {
+#vVolumeWidgets VolumeControl #volLabel {
     padding: var(--padding_base) 0px var(--padding_base);
     min-width: var(--volume_slider_label);
     margin-left: var(--padding_xlarge);
     text-align: center;
 }
 
-#vVolumeWidgets VolControl QSlider::groove:vertical {
+#vVolumeWidgets VolumeControl QSlider::groove:vertical {
     background: var(--bg_window);
     width: var(--volume_slider);
 }
 
-#vVolumeWidgets VolControl #volMeterFrame {
+#vVolumeWidgets VolumeControl #volMeterFrame {
     padding: var(--padding_large) var(--padding_xlarge) var(--padding_large) 0px;
 }
 
-#vVolumeWidgets VolControl QLabel {
+#vVolumeWidgets VolumeControl QLabel {
     padding: 0px var(--padding_large);
 }
 
 /* Hidden Volume Controls */
-VolControl.volume-hidden,
-VolControl.volume-hidden VolumeMeter,
-VolControl.volume-inactive VolumeMeter,
-VolControl.volume-inactive {
+VolumeControl.volume-hidden,
+VolumeControl.volume-hidden VolumeMeter,
+VolumeControl.volume-inactive VolumeMeter,
+VolumeControl.volume-inactive {
     background: var(--grey7);
 }
 
-VolControl.volume-hidden .mixer-name,
-VolControl.volume-inactive .mixer-name {
+VolumeControl.volume-hidden .mixer-name,
+VolumeControl.volume-inactive .mixer-name {
     color: var(--text_muted);
 }
 
-VolControl .mixer-category {
+VolumeControl .mixer-category {
     font-weight: bold;
     background: var(--blue6);
     color: var(--blue1);
 }
 
-VolControl.volume-pinned .mixer-category {
+VolumeControl.volume-pinned .mixer-category {
     background: var(--blue5);
     color: var(--text);
 }
 
-VolControl.volume-hidden .mixer-category {
+VolumeControl.volume-hidden .mixer-category {
     background: var(--purple6);
     color: var(--purple1);
 }
 
-VolControl.volume-unassigned .mixer-category {
+VolumeControl.volume-unassigned .mixer-category {
     background: var(--yellow6);
     color: var(--yellow1);
 }
 
-VolControl.volume-inactive .mixer-category {
+VolumeControl.volume-inactive .mixer-category {
     background: var(--grey8);
     color: var(--text_muted);
 }
 
-VolControl.volume-preview .mixer-category {
+VolumeControl.volume-preview .mixer-category {
     background: var(--green6);
     color: var(--green1);
 }
 
-#stackedMixerArea VolControl.volume-hidden QSlider::groove,
-#stackedMixerArea VolControl.volume-inactive QSlider::groove {
+#stackedMixerArea VolumeControl.volume-hidden QSlider::groove,
+#stackedMixerArea VolumeControl.volume-inactive QSlider::groove {
     background: var(--grey8);
 }
 
-VolControl.volume-hidden VolumeMeter {
+VolumeControl.volume-hidden VolumeMeter {
     qproperty-backgroundNominalColor: var(--grey5);
     qproperty-backgroundWarningColor: var(--grey3);
     qproperty-backgroundErrorColor: var(--grey5);
