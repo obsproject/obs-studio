@@ -1800,6 +1800,8 @@ struct obs_sceneitem_crop {
 EXPORT void obs_sceneitem_set_crop(obs_sceneitem_t *item, const struct obs_sceneitem_crop *crop);
 EXPORT void obs_sceneitem_get_crop(const obs_sceneitem_t *item, struct obs_sceneitem_crop *crop);
 
+EXPORT void obs_sceneitem_get_bounds_crop_sizes(const obs_sceneitem_t *item, struct obs_sceneitem_crop *crop);
+
 EXPORT void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item, enum obs_scale_type filter);
 EXPORT enum obs_scale_type obs_sceneitem_get_scale_filter(obs_sceneitem_t *item);
 
