@@ -1044,13 +1044,30 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 
 	blog(LOG_INFO, "%s- source: '%s' (%s)", indent.c_str(), name, id);
 
-	obs_monitoring_type monitoring_type = obs_source_get_monitoring_type(source);
+	if (obs_source_get_output_flags(source) & OBS_SOURCE_AUDIO) {
+		const uint32_t all_mixers = (1 << MAX_AUDIO_MIXES) - 1;
+		uint32_t mixers = obs_source_get_audio_mixers(source);
+		if (mixers == 0) {
+			blog(LOG_INFO, "    %s- audio tracks: none", indent.c_str());
+		} else if ((mixers & all_mixers) != all_mixers) {
+			std::string tracks;
+			for (uint32_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+				if (mixers & (1 << i)) {
+					tracks += " ";
+					tracks += std::to_string(i + 1);
+				}
+			}
+			blog(LOG_INFO, "    %s- audio tracks:%s", indent.c_str(), tracks.c_str());
+		}
 
-	if (monitoring_type != OBS_MONITORING_TYPE_NONE) {
-		const char *type = (monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY) ? "monitor only"
-											 : "monitor and output";
+		obs_monitoring_type monitoring_type = obs_source_get_monitoring_type(source);
 
-		blog(LOG_INFO, "    %s- monitoring: %s", indent.c_str(), type);
+		if (monitoring_type != OBS_MONITORING_TYPE_NONE) {
+			const char *type = (monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY) ? "monitor only"
+												 : "monitor and output";
+
+			blog(LOG_INFO, "    %s- monitoring: %s", indent.c_str(), type);
+		}
 	}
 	int child_indent = 1 + indent_count;
 	obs_source_enum_filters(source, LogFilter, (void *)(intptr_t)child_indent);
