@@ -1680,6 +1680,14 @@ QSlider::handle:disabled {
     border-color: var(--green1);
 }
 
+.volume-inactive .btn-monitor.checked {
+    background: var(--grey7);
+}
+
+.volume-inactive .btn-monitor.checked:hover {
+    background-color: var(--button_bg_hover);
+}
+
 /* Toggle hidden button */
 
 .toggle-hidden:checked {
