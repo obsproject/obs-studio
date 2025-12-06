@@ -801,7 +801,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	};
 
 	auto addSource = [this, getActionAfter](QMenu *popup, const char *type, const char *name) {
-		QString qname = QT_UTF8(name);
+		QString qname = EscapeMenuItem(QT_UTF8(name));
 		QAction *popupItem = new QAction(qname, this);
 		connect(popupItem, &QAction::triggered, [this, type]() { AddSource(type); });
 
