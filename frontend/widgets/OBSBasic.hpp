@@ -746,6 +746,7 @@ private:
 
 	bool IsFFmpegOutputToURL() const;
 	bool OutputPathValid();
+	bool promptCreateOutputPath();
 	void OutputPathInvalidMessage();
 
 	// TODO: Unimplemented, remove.
