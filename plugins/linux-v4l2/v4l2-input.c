@@ -259,15 +259,18 @@ static void *v4l2_thread(void *vptr)
 		start = (uint8_t *)data->buffers.info[buf.index].start;
 
 		if (data->pixfmt == V4L2_PIX_FMT_MJPEG || data->pixfmt == V4L2_PIX_FMT_H264) {
-			if (v4l2_decode_frame(&out, start, buf.bytesused, &data->decoder) < 0) {
+			r = v4l2_decode_frame(&out, start, buf.bytesused, &data->decoder);
+			if (r < 0) {
 				blog(LOG_ERROR, "failed to unpack jpeg or h264");
 				break;
 			}
 		} else {
+			r = 1;
 			for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
 				out.data[i] = start + plane_offsets[i];
 		}
-		obs_source_output_video(data->source, &out);
+		if (r > 0)
+			obs_source_output_video(data->source, &out);
 
 	continue_queue_buffer:
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
