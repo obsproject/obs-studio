@@ -1,0 +1,19 @@
+{
+    "name": "amf",
+    "no-autogen": true,
+    "buildsystem": "simple",
+    "build-commands": [
+	"mkdir /app/include/AMF",
+	"cp -R ./AMF/ /app/include"
+    ],
+    "cleanup": [
+        "*"
+    ],
+    "sources": [
+        {
+            "type": "archive",
+            "url": "https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v1.4.36/AMF-headers-v1.4.36.tar.gz",
+	    "sha256": "ec07ee21b820a73f5bae224e92fd3c492f52732d4885f0637f48189afdd87564"
+        }
+    ]
+}
