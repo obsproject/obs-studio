@@ -5420,6 +5420,9 @@ bool obs_source_audio_pending(const obs_source_t *source)
 	if (!obs_source_valid(source, "obs_source_audio_pending"))
 		return true;
 
+	if (obs_source_removed(source))
+		return true;
+
 	return (is_composite_source(source) || is_audio_source(source)) ? source->audio_pending : true;
 }
 
