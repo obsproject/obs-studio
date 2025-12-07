@@ -3852,6 +3852,10 @@ static inline void reset_resampler(obs_source_t *source, const struct obs_source
 
 static void copy_audio_data(obs_source_t *source, const uint8_t *const data[], uint32_t frames, uint64_t ts)
 {
+	/* During shutdown, this may be nullptr */
+	if (!obs->audio.audio) {
+		return;
+	}
 	size_t planes = audio_output_get_planes(obs->audio.audio);
 	size_t blocksize = audio_output_get_block_size(obs->audio.audio);
 	size_t size = (size_t)frames * blocksize;
