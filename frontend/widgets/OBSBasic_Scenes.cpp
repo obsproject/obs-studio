@@ -492,16 +492,21 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current, QListWidge
 {
 	OBSSource source;
 
+	bool forceSceneChange = false;
+
 	if (current) {
 		OBSScene scene = GetOBSRef<OBSScene>(current);
 		source = obs_scene_get_source(scene);
+
+		bool oldSceneIsRemoved = obs_source_removed(obs_scene_get_source(currentScene));
+		forceSceneChange = oldSceneIsRemoved;
 
 		currentScene = scene;
 	} else {
 		currentScene = NULL;
 	}
 
-	SetCurrentScene(source);
+	SetCurrentScene(source, forceSceneChange);
 
 	if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
 		outputHandler->UpdateVirtualCamOutputSource();
