@@ -106,8 +106,8 @@ static bool alloc_default_id(void *data, const char *name, const char *id)
 
 static void get_default_id(char **p_id)
 {
-	AudioObjectPropertyAddress addr = {kAudioHardwarePropertyDefaultSystemOutputDevice,
-					   kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
+	AudioObjectPropertyAddress addr = {kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyScopeGlobal,
+					   kAudioObjectPropertyElementMain};
 
 	if (*p_id)
 		return;
