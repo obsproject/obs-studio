@@ -48,54 +48,6 @@ static inline bool is_individual_audio_source(obs_source_t *source)
 	       !(source->info.output_flags & OBS_SOURCE_COMPOSITE);
 }
 
-extern bool devices_match(const char *id1, const char *id2);
-
-static inline void check_audio_output_source_is_monitoring_device(obs_source_t *s, void *p)
-{
-	struct obs_core_audio *audio = p;
-	if (!audio->monitoring_device_name)
-		return;
-
-	const char *id = s->info.id;
-	if (strcmp(id, "wasapi_output_capture") != 0 && strcmp(id, "pulse_output_capture") != 0 &&
-	    strcmp(id, "coreaudio_output_capture") != 0)
-		return;
-
-	obs_data_t *settings = obs_source_get_settings(s);
-	if (!settings)
-		return;
-
-	const char *device_id = obs_data_get_string(settings, "device_id");
-	const char *mon_id = audio->monitoring_device_id;
-	bool id_match = false;
-
-#ifdef __APPLE__
-	extern void get_desktop_default_id(char **p_id);
-	if (device_id && strcmp(device_id, "default") == 0) {
-		char *def_id = NULL;
-		get_desktop_default_id(&def_id);
-		id_match = devices_match(def_id, mon_id);
-		if (def_id)
-			bfree(def_id);
-	} else {
-		id_match = devices_match(device_id, mon_id);
-	}
-#else
-	id_match = devices_match(device_id, mon_id);
-#endif
-
-	if (id_match) {
-		audio->prevent_monitoring_duplication = true;
-		audio->monitoring_duplicating_source = s;
-		if (!audio->monitoring_duplication_prevented_on_prev_tick)
-			blog(LOG_INFO, "Device for 'Audio Output Capture' source is also used for audio"
-				       " monitoring:\nDeduplication logic is being applied to all monitored"
-				       " sources.\n");
-	}
-
-	obs_data_release(settings);
-}
-
 /*
  * This version of push_audio_tree checks whether any source is an Audio Output Capture source ('Desktop Audio',
  * 'wasapi_output_capture' on Windows, 'pulse_output_capture' on Linux, 'coreaudio_output_capture' on macOS), & if the
@@ -118,7 +70,6 @@ static void push_audio_tree2(obs_source_t *parent, obs_source_t *source, void *p
 		if (s) {
 			da_push_back(audio->render_order, &s);
 			s->audio_is_duplicated = false;
-			check_audio_output_source_is_monitoring_device(s, audio);
 		}
 	} else {
 		/* Source already present in tree → mark as duplicated if applicable */
@@ -558,23 +509,18 @@ static inline void execute_audio_tasks(void)
 
 /* In case monitoring and an 'Audio Output Capture' source have the same device, one silences all the monitored
  * sources unless the 'Audio Output Capture' is muted.
- * The syncing between the mute state of the 'Audio Output Capture' source set in UI and libobs is a bit tricky. There 
- * is an intrinsic positive delay of the 'Audio Output Capture' source with respect to monitored sources due to the 
- * audio OS processing (wasapi, pulseaudio or coreaudio). Unfortunately, the delay is machine dependent and we can only 
- * mitigate its effects. During tests, src->user_muted worked better than src->muted, maybe because it is set earlier 
- * than the muted flag which allows to keep a better sync. With src->muted, unmuting the 'Audio Output Capture' led to
- * a systematic level increase during one tick during testing for a sine tone (about +3 dBFS). In general we
- * don't expect much difference though between user_muted and muted.
  */
 static inline bool should_silence_monitored_source(obs_source_t *source, struct obs_core_audio *audio)
 {
-	if (!audio->monitoring_duplicating_source)
+	obs_source_t *dup_src = audio->monitoring_duplicating_source;
+
+	if (!dup_src || !obs_source_active(dup_src))
 		return false;
 
 	bool fader_muted = close_float(audio->monitoring_duplicating_source->volume, 0.0f, 0.0001f);
-	bool output_capture_unmuted = !audio->monitoring_duplicating_source->user_muted && !fader_muted;
+	bool output_capture_unmuted = !audio->monitoring_duplicating_source->muted && !fader_muted;
 
-	if (audio->prevent_monitoring_duplication && output_capture_unmuted) {
+	if (output_capture_unmuted) {
 		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT &&
 		    source != audio->monitoring_duplicating_source) {
 			return true;
@@ -617,9 +563,6 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 
 	da_resize(audio->render_order, 0);
 	da_resize(audio->root_nodes, 0);
-	audio->monitoring_duplication_prevented_on_prev_tick = audio->prevent_monitoring_duplication;
-	audio->prevent_monitoring_duplication = false;
-	audio->monitoring_duplicating_source = NULL;
 
 	deque_push_back(&audio->buffered_timestamps, &ts, sizeof(ts));
 	deque_peek_front(&audio->buffered_timestamps, &ts, sizeof(ts));
@@ -656,14 +599,11 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 			if (obs->video.mixes.array[j]->mix_audio)
 				da_push_back(audio->root_nodes, &source);
 
-			/* Build audio tree, track Audio Output Capture sources and tag duplicate individual sources */
+			/* Build audio tree, tag duplicate individual sources */
 			obs_source_enum_active_tree(source, push_audio_tree2, audio);
 
 			/* add top - level sources to audio tree */
 			push_audio_tree(NULL, source, audio);
-
-			/* Check whether the source is an 'Audio Output Capture' and coincides with monitoring device */
-			check_audio_output_source_is_monitoring_device(source, audio);
 		}
 		pthread_mutex_unlock(&view->channels_mutex);
 	}
