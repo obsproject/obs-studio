@@ -1323,6 +1323,13 @@ EXPORT void obs_source_add_audio_capture_callback(obs_source_t *source, obs_sour
 EXPORT void obs_source_remove_audio_capture_callback(obs_source_t *source, obs_source_audio_capture_t callback,
 						     void *param);
 
+/**
+ * For an Audio Output Capture source (like 'wasapi_output_capture') used for 'Desktop Audio', this checks whether the
+ * device is also used for monitoring. A signal to obs core struct is then emitted to trigger deduplication  logic at
+ * the end of an audio tick.
+ */
+EXPORT void obs_source_audio_output_capture_device_changed(obs_source_t *source, const char *device_id);
+
 typedef void (*obs_source_caption_t)(void *param, obs_source_t *source, const struct obs_source_cea_708 *captions);
 
 EXPORT void obs_source_add_caption_callback(obs_source_t *source, obs_source_caption_t callback, void *param);

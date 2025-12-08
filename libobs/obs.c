@@ -880,6 +880,22 @@ static void obs_free_graphics(void)
 	}
 }
 
+void set_monitoring_duplication_source(void *param)
+{
+	obs_source_t *src = param;
+	struct obs_core_audio *audio = &obs->audio;
+
+	audio->monitoring_duplicating_source = src;
+}
+
+static void apply_monitoring_deduplication(void *ignored, calldata_t *cd)
+{
+	UNUSED_PARAMETER(ignored);
+	obs_source_t *src = calldata_ptr(cd, "source");
+
+	obs_queue_task(OBS_TASK_AUDIO, set_monitoring_duplication_source, src, false);
+}
+
 static void set_audio_thread(void *unused);
 
 static bool obs_init_audio(struct audio_output_info *ai)
@@ -899,7 +915,10 @@ static bool obs_init_audio(struct audio_output_info *ai)
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
-	audio->monitoring_duplication_prevented_on_prev_tick = false;
+	audio->monitoring_duplicating_source = NULL;
+
+	signal_handler_add(obs->signals, "void deduplication_changed(ptr source)");
+	signal_handler_connect(obs->signals, "deduplication_changed", apply_monitoring_deduplication, NULL);
 
 	errorcode = audio_output_open(&audio->audio, ai);
 	if (errorcode == AUDIO_OUTPUT_SUCCESS)
@@ -2947,6 +2966,18 @@ void obs_reset_audio_monitoring(void)
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 }
 
+static bool check_all_aoc_sources(void *param, obs_source_t *src)
+{
+	UNUSED_PARAMETER(param);
+	if (src->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
+		obs_data_t *settings = obs_source_get_settings(src);
+		const char *device_id = obs_data_get_string(settings, "device_id");
+		obs_source_audio_output_capture_device_changed(src, device_id);
+		obs_data_release(settings);
+	}
+	return true;
+}
+
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
 	if (!name || !id || !*name || !*id)
@@ -2967,10 +2998,13 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 
 	obs->audio.monitoring_device_name = bstrdup(name);
 	obs->audio.monitoring_device_id = bstrdup(id);
+	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
 	obs_reset_audio_monitoring();
 
-	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+	/* Check all Audio Output Capture sources for monitoring duplication. */
+	obs_enum_sources(check_all_aoc_sources, NULL);
+
 	return true;
 }
 
