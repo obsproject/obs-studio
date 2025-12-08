@@ -509,6 +509,11 @@ static void pulse_destroy(void *vptr)
 
 	if (data->stream)
 		pulse_stop_recording(data);
+
+	/* If the device is also used for monitoring, a cleanup is needed. */
+	if (!data->input)
+		obs_source_audio_output_capture_device_changed(data->source, NULL);
+
 	pulse_unref();
 
 	if (data->device)
@@ -523,12 +528,15 @@ static void pulse_update(void *vptr, obs_data_t *settings)
 {
 	PULSE_DATA(vptr);
 	bool restart = false;
-	const char *new_device;
-
-	new_device = obs_data_get_string(settings, "device_id");
+	const char *new_device = obs_data_get_string(settings, "device_id");
 	if (!data->device || strcmp(data->device, new_device) != 0) {
+		/* Signal to deduplication logic in case the device is also used for monitoring. */
+		if (!data->input)
+			obs_source_audio_output_capture_device_changed(data->source, new_device);
+
 		if (data->device)
 			bfree(data->device);
+
 		data->device = bstrdup(new_device);
 		data->is_default = strcmp("default", data->device) == 0;
 		restart = true;
