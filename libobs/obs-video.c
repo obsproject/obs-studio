@@ -64,7 +64,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	source = data->sources;
 	while (source) {
-		obs_source_t *s = obs_source_get_ref(source);
+		obs_source_t *s = obs_source_removed(source) ? NULL : obs_source_get_ref(source);
 		if (s)
 			da_push_back(data->sources_to_tick, &s);
 		source = (struct obs_source *)source->context.hh_uuid.next;
@@ -77,9 +77,11 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	for (size_t i = 0; i < data->sources_to_tick.num; i++) {
 		obs_source_t *s = data->sources_to_tick.array[i];
-		const uint64_t start = source_profiler_source_tick_start();
-		obs_source_video_tick(s, seconds);
-		source_profiler_source_tick_end(s, start);
+		if (!obs_source_removed(s)) {
+			const uint64_t start = source_profiler_source_tick_start();
+			obs_source_video_tick(s, seconds);
+			source_profiler_source_tick_end(s, start);
+		}
 		obs_source_release(s);
 	}
 

@@ -72,7 +72,7 @@
     --tab_border_focus: var(--grey1);
     --tab_border_selected: var(--primary);
 
-    --scrollbar: var(--grey4);
+    --scrollbar_handle: var(--grey4);
     --scrollbar_hover: var(--grey3);
     --scrollbar_down: var(--grey8);
     --scrollbar_border: var(--grey2);

@@ -3,14 +3,11 @@ target_sources(
   PRIVATE
     utility/AdvancedOutput.cpp
     utility/AdvancedOutput.hpp
-    utility/audio-encoders.cpp
-    utility/audio-encoders.hpp
     utility/BaseLexer.hpp
     utility/BasicOutputHandler.cpp
     utility/BasicOutputHandler.hpp
     utility/CrashHandler.cpp
     utility/CrashHandler.hpp
-    utility/display-helpers.hpp
     utility/FFmpegCodec.cpp
     utility/FFmpegCodec.hpp
     utility/FFmpegFormat.cpp
@@ -22,19 +19,15 @@ target_sources(
     utility/GoLiveAPI_Network.hpp
     utility/GoLiveAPI_PostData.cpp
     utility/GoLiveAPI_PostData.hpp
-    utility/item-widget-helpers.cpp
-    utility/item-widget-helpers.hpp
     utility/MissingFilesModel.cpp
     utility/MissingFilesModel.hpp
     utility/MissingFilesPathItemDelegate.cpp
     utility/MissingFilesPathItemDelegate.hpp
-    utility/models/multitrack-video.hpp
     utility/MultitrackVideoError.cpp
     utility/MultitrackVideoError.hpp
     utility/MultitrackVideoOutput.cpp
     utility/MultitrackVideoOutput.hpp
-    utility/obf.c
-    utility/obf.h
+    utility/NativeEventFilter.hpp
     utility/OBSCanvas.cpp
     utility/OBSCanvas.hpp
     utility/OBSEventFilter.hpp
@@ -44,7 +37,6 @@ target_sources(
     utility/OBSThemeVariable.hpp
     utility/OBSTranslator.cpp
     utility/OBSTranslator.hpp
-    utility/platform.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
     utility/RemoteTextThread.cpp
@@ -64,10 +56,19 @@ target_sources(
     utility/SimpleOutput.hpp
     utility/StartMultiTrackVideoStreamingGuard.hpp
     utility/SurfaceEventFilter.hpp
-    utility/system-info.hpp
-    utility/undo_stack.cpp
-    utility/undo_stack.hpp
     utility/VCamConfig.hpp
     utility/VolumeMeterTimer.cpp
     utility/VolumeMeterTimer.hpp
+    utility/audio-encoders.cpp
+    utility/audio-encoders.hpp
+    utility/display-helpers.hpp
+    utility/item-widget-helpers.cpp
+    utility/item-widget-helpers.hpp
+    utility/models/multitrack-video.hpp
+    utility/obf.c
+    utility/obf.h
+    utility/platform.hpp
+    utility/system-info.hpp
+    utility/undo_stack.cpp
+    utility/undo_stack.hpp
 )

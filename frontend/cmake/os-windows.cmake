@@ -25,6 +25,11 @@ target_sources(
     utility/AutoUpdateThread.cpp
     utility/AutoUpdateThread.hpp
     utility/CrashHandler_Windows.cpp
+    utility/NativeEventFilter_Windows.cpp
+    utility/WhatsNewBrowserInitThread.cpp
+    utility/WhatsNewBrowserInitThread.hpp
+    utility/WhatsNewInfoThread.cpp
+    utility/WhatsNewInfoThread.hpp
     utility/crypto-helpers-mbedtls.cpp
     utility/crypto-helpers.hpp
     utility/models/branches.hpp
@@ -33,10 +38,6 @@ target_sources(
     utility/system-info-windows.cpp
     utility/update-helpers.cpp
     utility/update-helpers.hpp
-    utility/WhatsNewBrowserInitThread.cpp
-    utility/WhatsNewBrowserInitThread.hpp
-    utility/WhatsNewInfoThread.cpp
-    utility/WhatsNewInfoThread.hpp
     utility/win-dll-blocklist.c
 )
 
