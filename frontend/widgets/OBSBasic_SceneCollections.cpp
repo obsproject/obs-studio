@@ -1003,7 +1003,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ClearSceneData();
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
-	transitionDuration = 300;
+	SetTransitionDuration(300);
 	SetTransition(fadeTransition);
 
 	updateRemigrationMenuItem(SceneCoordinateMode::Relative, ui->actionRemigrateSceneCollection);
@@ -1303,7 +1303,7 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	if (!curTransition)
 		curTransition = fadeTransition;
 
-	transitionDuration = newDuration;
+	SetTransitionDuration(newDuration);
 	SetTransition(curTransition);
 
 retryScene:
