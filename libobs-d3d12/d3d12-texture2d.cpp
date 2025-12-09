@@ -122,7 +122,9 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	m_UsageState = D3D12_RESOURCE_STATE_COPY_DEST;
 	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	if (type == GS_TEXTURE_CUBE) {
+	if (isShared) {
+		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
+		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
 	}
 
 	if (isRenderTarget || isGDICompatible) {
@@ -181,8 +183,11 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 
 	if (isShared) {
-		device->d3d12Instance->GetDevice()->CreateSharedHandle(m_pResource.Get(), nullptr, GENERIC_ALL, nullptr,
+		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(m_pResource.Get(), nullptr, GENERIC_ALL, nullptr,
 								       (HANDLE *)(uintptr_t)&sharedHandle);
+		if (FAILED(hr)) {
+			throw HRError("Create Shared Handle Failed", hr);
+		}
 	}
 }
 

@@ -2066,7 +2066,8 @@ extern "C" EXPORT bool device_p010_available(gs_device_t *device)
 
 extern "C" EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
-	return false;
+	const HMONITOR hMonitor = static_cast<HMONITOR>(monitor);
+	return device->GetMonitorColorInfo(hMonitor).hdr;
 }
 
 extern "C" EXPORT void device_debug_marker_begin(gs_device_t *, const char *markername, const float color[4]) {}
@@ -2165,7 +2166,7 @@ extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
 	if (tex->type != GS_TEXTURE_2D)
 		return GS_INVALID_HANDLE;
 
-	return GS_INVALID_HANDLE;
+	return tex2d->isShared ? tex2d->sharedHandle : GS_INVALID_HANDLE;
 }
 
 extern "C" EXPORT gs_texture_t *device_texture_wrap_obj(gs_device_t *device, void *obj)
@@ -2188,23 +2189,8 @@ int device_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
 	if (tex->type != GS_TEXTURE_2D)
 		return -1;
-
-	if (tex2d->acquired)
-		return 0;
-
 	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->GetResource());
-	if (!keyedMutex)
-		return -1;
-
-	HRESULT hr = keyedMutex->AcquireSync(key, ms);
-	if (hr == S_OK) {
-		tex2d->acquired = true;
-		return 0;
-	} else if (hr == WAIT_TIMEOUT) {
-		return ETIMEDOUT;
-	}
-
-	return -1;
+	return 0;
 }
 
 extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex, uint64_t key)
@@ -2213,20 +2199,8 @@ extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex, uint64_t ke
 	if (tex->type != GS_TEXTURE_2D)
 		return -1;
 
-	if (!tex2d->acquired)
-		return 0;
-
 	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->GetResource());
-	if (!keyedMutex)
-		return -1;
-
-	HRESULT hr = keyedMutex->ReleaseSync(key);
-	if (hr == S_OK) {
-		tex2d->acquired = false;
-		return 0;
-	}
-
-	return -1;
+	return 0;
 }
 
 extern "C" EXPORT bool device_texture_create_nv12(gs_device_t *device, gs_texture_t **p_tex_y, gs_texture_t **p_tex_uv,

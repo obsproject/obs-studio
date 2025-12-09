@@ -27,8 +27,6 @@
 #include <dxgi1_6.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
-#include <d3d12.h>
-#include <d3d11on12.h>
 
 #include <util/base.h>
 #include <graphics/matrix4.h>
@@ -960,10 +958,7 @@ struct gs_device {
 	ComPtr<IDXGIFactory1> factory;
 	ComPtr<IDXGIAdapter1> adapter;
 	ComPtr<ID3D11Device> device;
-	ComPtr<ID3D12Device> d3d12device;
 	ComPtr<ID3D11DeviceContext> context;
-	ComPtr<ID3D12CommandQueue> commandQueue;
-
 	uint32_t adpIdx = 0;
 	bool nv12Supported = false;
 	bool p010Supported = false;
