@@ -19,9 +19,9 @@
 
 #include "OBSBasic.hpp"
 
+#include <components/VolumeControl.hpp>
 #include <dialogs/OBSBasicFilters.hpp>
 #include <dialogs/OBSBasicSourceSelect.hpp>
-#include <widgets/VolumeControl.hpp>
 
 extern void undo_redo(const std::string &data);
 

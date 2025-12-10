@@ -59,12 +59,4 @@ target_sources(
     widgets/OBSQTDisplay.hpp
     widgets/StatusBarWidget.cpp
     widgets/StatusBarWidget.hpp
-    widgets/VolumeAccessibleInterface.cpp
-    widgets/VolumeAccessibleInterface.hpp
-    widgets/VolumeControl.cpp
-    widgets/VolumeControl.hpp
-    widgets/VolumeMeter.cpp
-    widgets/VolumeMeter.hpp
-    widgets/VolumeName.cpp
-    widgets/VolumeName.hpp
 )

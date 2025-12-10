@@ -20,8 +20,8 @@
 #include "OBSBasic.hpp"
 #include "ColorSelect.hpp"
 #include "OBSProjector.hpp"
-#include "VolumeControl.hpp"
 
+#include <components/VolumeControl.hpp>
 #include <dialogs/NameDialog.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
 #include <dialogs/OBSBasicSourceSelect.hpp>

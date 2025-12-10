@@ -76,6 +76,7 @@ bool isVolumeLocked(obs_source_t *source)
 
 AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 {
+	mixerVertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 	showInactive = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerShowInactive");
 	keepInactiveLast = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveLast");
 	showHidden = config_get_bool(App()->GetUserConfig(), "BasicWindow", "MixerShowHidden");
@@ -95,7 +96,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	hMixerContainer = new QWidget(this);
 	hMixerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-	hMainLayout = new QVBoxLayout();
+	hMainLayout = new QVBoxLayout(hMixerContainer);
 	hMainLayout->setContentsMargins(0, 0, 0, 0);
 	hMainLayout->setSpacing(0);
 	hMixerContainer->setLayout(hMainLayout);
@@ -112,7 +113,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	hVolumeWidgets->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 	hVolumeWidgets->setObjectName("hVolumeWidgets");
 
-	hVolumeControlLayout = new QVBoxLayout();
+	hVolumeControlLayout = new QVBoxLayout(hVolumeWidgets);
 	hVolumeWidgets->setLayout(hVolumeControlLayout);
 	hVolumeControlLayout->setContentsMargins(0, 0, 0, 0);
 	hVolumeControlLayout->setSpacing(0);
@@ -125,7 +126,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	vMixerContainer = new QWidget(this);
 	vMixerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-	vMainLayout = new QHBoxLayout();
+	vMainLayout = new QHBoxLayout(vMixerContainer);
 	vMainLayout->setContentsMargins(0, 0, 0, 0);
 	vMainLayout->setSpacing(0);
 	vMixerContainer->setLayout(vMainLayout);
@@ -142,7 +143,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 
 	vVolumeWidgets->setObjectName("vVolumeWidgets");
 
-	vVolumeControlLayout = new QHBoxLayout();
+	vVolumeControlLayout = new QHBoxLayout(vVolumeWidgets);
 	vVolumeWidgets->setLayout(vVolumeControlLayout);
 	vVolumeControlLayout->setContentsMargins(0, 0, 0, 0);
 	vVolumeControlLayout->setSpacing(0);
@@ -255,7 +256,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 		connect(main, &OBSBasic::userSettingChanged, this,
 			[this](const std::string &category, const std::string &name) {
 				if (category == "BasicWindow" && name == "VerticalVolumeControl") {
-					toggleLayout();
+					updateLayout();
 				} else if (category == "BasicWindow" && name == "MixerShowInactive") {
 					updateShowInactive();
 				} else if (category == "BasicWindow" && name == "MixerKeepInactiveLast") {
@@ -298,12 +299,13 @@ AudioMixer::~AudioMixer()
 	obs_frontend_remove_event_callback(AudioMixer::onFrontendEvent, this);
 }
 
-void AudioMixer::toggleLayout()
+void AudioMixer::updateLayout()
 {
 	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 	setMixerLayoutVertical(vertical);
 
-	queueLayoutUpdate();
+	// queueLayoutUpdate();
+	updateVolumeLayouts();
 }
 
 void AudioMixer::toggleShowInactive(bool checked)
@@ -358,9 +360,9 @@ VolumeControl *AudioMixer::createVolumeControl(obs_source_t *source)
 	double meterDecayRate = config_get_double(main->Config(), "Audio", "MeterDecayRate");
 	control->setMeterDecayRate(meterDecayRate);
 
-	uint32_t peakMeterTypeIdx = config_get_uint(main->Config(), "Audio", "PeakMeterType");
+	uint64_t peakMeterTypeIdx = config_get_uint(main->Config(), "Audio", "PeakMeterType");
 
-	enum obs_peak_meter_type peakMeterType;
+	obs_peak_meter_type peakMeterType;
 	switch (peakMeterTypeIdx) {
 	case 0:
 		peakMeterType = SAMPLE_PEAK_METER;
@@ -491,7 +493,6 @@ QBoxLayout *AudioMixer::activeLayout() const
 
 void AudioMixer::reloadVolumeControls()
 {
-	setUpdatesEnabled(false);
 	clearVolumeControls();
 
 	auto createMixerControls = [](void *param, obs_source_t *source) -> bool {
@@ -515,17 +516,14 @@ void AudioMixer::reloadVolumeControls()
 	obs_enum_sources(createMixerControls, this);
 
 	queueLayoutUpdate();
-	setUpdatesEnabled(true);
 }
 
 bool AudioMixer::getMixerVisibilityForControl(VolumeControl *control)
 {
-	OBSSource source = OBSGetStrongRef(control->weakSource());
-
-	bool isPinned = isPinnedInMixer(source);
-	bool isPreviewed = isSourcePreviewed(source);
-	bool isHidden = isHiddenInMixer(source);
-	bool isAudioActive = isSourceAudioActive(source);
+	bool isPinned = control->mixerStatus().has(OBS::MixerStatus::Pinned);
+	bool isPreviewed = control->mixerStatus().has(OBS::MixerStatus::Preview);
+	bool isHidden = control->mixerStatus().has(OBS::MixerStatus::Hidden);
+	bool isAudioActive = control->mixerStatus().has(OBS::MixerStatus::Active);
 
 	if (isPinned) {
 		return true;
@@ -626,8 +624,6 @@ void AudioMixer::queueLayoutUpdate()
 
 void AudioMixer::updateVolumeLayouts()
 {
-	setUpdatesEnabled(false);
-
 	hiddenCount = 0;
 	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 
@@ -636,7 +632,60 @@ void AudioMixer::updateVolumeLayouts()
 	for (const auto &entry : volumeList) {
 		VolumeControl *control = entry.second;
 		if (control) {
-			rankedVolumes.push_back({control, 0});
+			int sortingWeight = 0;
+
+			OBSSource source = OBSGetStrongRef(control->weakSource());
+			if (!source) {
+				const char *cachedName = control->getCachedName().toUtf8().constData();
+				blog(LOG_INFO, "Tried to sort VolumeControl for '%s' but source is null", cachedName);
+				continue;
+			}
+
+			bool isPreviewed = isSourcePreviewed(source);
+			bool isGlobal = isSourceGlobal(source);
+			bool isPinned = isPinnedInMixer(source);
+			bool isHidden = isHiddenInMixer(source);
+			bool isAudioActive = isSourceAudioActive(source);
+			bool isLocked = isVolumeLocked(source);
+
+			control->mixerStatus().set(OBS::MixerStatus::Preview, isPreviewed);
+			control->mixerStatus().set(OBS::MixerStatus::Global, isGlobal);
+			control->mixerStatus().set(OBS::MixerStatus::Pinned, isPinned);
+			control->mixerStatus().set(OBS::MixerStatus::Hidden, isHidden);
+			control->mixerStatus().set(OBS::MixerStatus::Active, isAudioActive);
+			control->mixerStatus().set(OBS::MixerStatus::Locked, isLocked);
+
+			if (isHidden) {
+				hiddenCount += 1;
+			}
+
+			if (!isGlobal) {
+				sortingWeight += 20;
+			}
+
+			if (!isPinned) {
+				sortingWeight += 20;
+			}
+
+			if (isHidden && keepHiddenLast) {
+				sortingWeight += 20;
+
+				if (isPreviewed) {
+					sortingWeight -= 10;
+				}
+			}
+
+			if (!isAudioActive && keepInactiveLast) {
+				sortingWeight += 50;
+
+				if (isPreviewed) {
+					sortingWeight -= 10;
+				}
+			}
+
+			sortingWeight;
+
+			rankedVolumes.push_back({control, sortingWeight});
 		}
 	}
 
@@ -644,76 +693,28 @@ void AudioMixer::updateVolumeLayouts()
 		const QString &nameA = a.control->getCachedName();
 		const QString &nameB = b.control->getCachedName();
 
-		return nameA < nameB;
+		if (a.sortingWeight == b.sortingWeight) {
+			return nameA.toLower() < nameB.toLower();
+		}
+
+		return a.sortingWeight < b.sortingWeight;
 	});
 
-	for (RankedVolume &entry : rankedVolumes) {
+	VolumeControl *prevControl = nullptr;
+	int index = 0;
+	QBoxLayout *layout = activeLayout();
+
+	vMixerScrollArea->setWidgetResizable(false);
+	hMixerScrollArea->setWidgetResizable(false);
+
+	for (const auto &entry : rankedVolumes) {
+
 		VolumeControl *volControl = entry.control;
-
-		int sortingWeight = 0;
-
-		OBSSource source = OBSGetStrongRef(volControl->weakSource());
-		if (!source) {
-			const char *cachedName = volControl->getCachedName().toUtf8().constData();
-			blog(LOG_INFO, "Tried to sort VolumeControl for '%s' but source is null", cachedName);
+		if (!volControl) {
 			continue;
 		}
 
-		bool isPreviewed = isSourcePreviewed(source);
-		bool isGlobal = isSourceGlobal(source);
-		bool isPinned = isPinnedInMixer(source);
-		bool isHidden = isHiddenInMixer(source);
-		bool isAudioActive = isSourceAudioActive(source);
-		bool isLocked = isVolumeLocked(source);
-
-		volControl->setMixerFlag(OBS::MixerStatus::Preview, isPreviewed);
-		volControl->setMixerFlag(OBS::MixerStatus::Global, isGlobal);
-		volControl->setMixerFlag(OBS::MixerStatus::Pinned, isPinned);
-		volControl->setMixerFlag(OBS::MixerStatus::Hidden, isHidden);
-		volControl->setMixerFlag(OBS::MixerStatus::Active, isAudioActive);
-		volControl->setMixerFlag(OBS::MixerStatus::Locked, isLocked);
-
-		if (isHidden) {
-			hiddenCount += 1;
-		}
-
-		if (!isGlobal) {
-			sortingWeight += 20;
-		}
-
-		if (!isPinned) {
-			sortingWeight += 20;
-		}
-
-		if (isHidden && keepHiddenLast) {
-			sortingWeight += 20;
-
-			if (isPreviewed) {
-				sortingWeight -= 10;
-			}
-		}
-
-		if (!isAudioActive && keepInactiveLast) {
-			sortingWeight += 50;
-
-			if (isPreviewed) {
-				sortingWeight -= 10;
-			}
-		}
-
-		entry.sortingWeight = sortingWeight;
-	}
-
-	std::sort(rankedVolumes.begin(), rankedVolumes.end(),
-		  [](const RankedVolume &a, const RankedVolume &b) { return a.sortingWeight < b.sortingWeight; });
-
-	VolumeControl *prevControl = nullptr;
-	for (const auto &entry : rankedVolumes) {
-		QBoxLayout *layout = activeLayout();
-
-		VolumeControl *volControl = entry.control;
-
-		layout->addWidget(volControl);
+		layout->insertWidget(index, volControl);
 		volControl->setVertical(vertical);
 		volControl->updateName();
 		volControl->updateMixerState();
@@ -734,6 +735,8 @@ void AudioMixer::updateVolumeLayouts()
 		volControl->updateTabOrder();
 
 		prevControl = volControl;
+
+		++index;
 	}
 
 	toggleHiddenButton->setText(QTStr("%1 hidden").arg(hiddenCount));
@@ -745,7 +748,8 @@ void AudioMixer::updateVolumeLayouts()
 		idian::Utils::toggleClass(toggleHiddenButton, "text-muted", false);
 	}
 
-	setUpdatesEnabled(true);
+	vMixerScrollArea->setWidgetResizable(true);
+	hMixerScrollArea->setWidgetResizable(true);
 }
 
 void AudioMixer::mixerContextMenuRequested()
@@ -853,7 +857,7 @@ void AudioMixer::addControlForUuid(QString uuid)
 	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
 
 	QPointer<VolumeControl> newControl = createVolumeControl(source);
-	activeLayout()->addWidget(newControl);
+	// activeLayout()->addWidget(newControl);
 
 	volumeList.insert({uuid, newControl});
 	queueLayoutUpdate();

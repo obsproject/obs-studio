@@ -3,7 +3,7 @@
 #include <obs.hpp>
 
 #include <components/VolumeSlider.hpp>
-#include <widgets/VolumeName.hpp>
+#include <components/VolumeName.hpp>
 
 #include <Idian/Utils.hpp>
 #include <QFrame>
@@ -16,31 +16,53 @@ class QLabel;
 class VolumeMeter;
 
 namespace OBS {
-enum class MixerStatus : uint32_t {
-	None = 0,
-	Active = 1 << 0,
-	Locked = 1 << 1,
-	Global = 1 << 2,
-	Pinned = 1 << 3,
-	Hidden = 1 << 4,
-	Unassigned = 1 << 5,
-	Preview = 1 << 6,
+
+struct MixerStatus {
+	enum Value : uint32_t {
+		None = 0,
+		Active = 1 << 0,
+		Locked = 1 << 1,
+		Global = 1 << 2,
+		Pinned = 1 << 3,
+		Hidden = 1 << 4,
+		Unassigned = 1 << 5,
+		Preview = 1 << 6,
+	};
+
+	MixerStatus() = default;
+	MixerStatus(Value v) : bits(v) {}
+
+	bool has(Value v) const { return (bits & v) != 0; }
+	void set(Value v, bool enable)
+	{
+		if (enable) {
+			bits |= v;
+		} else {
+			bits &= ~v;
+		}
+	}
+
+	MixerStatus operator|(Value v) const { return MixerStatus(bits | v); }
+	MixerStatus &operator|=(Value v)
+	{
+		bits |= v;
+		return *this;
+	}
+
+	MixerStatus operator&(Value v) const { return MixerStatus(bits & v); }
+	MixerStatus &operator&=(Value v)
+	{
+		bits &= v;
+		return *this;
+	}
+
+	MixerStatus operator~() const { return MixerStatus(~bits); }
+
+private:
+	uint32_t bits = None;
+	explicit MixerStatus(uint32_t v) : bits(v) {}
 };
 
-inline MixerStatus operator|(MixerStatus a, MixerStatus b)
-{
-	return static_cast<MixerStatus>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-}
-
-inline MixerStatus operator&(MixerStatus a, MixerStatus b)
-{
-	return static_cast<MixerStatus>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-}
-
-inline MixerStatus operator~(MixerStatus a)
-{
-	return static_cast<MixerStatus>(~static_cast<uint32_t>(a));
-}
 } // namespace OBS
 
 class VolumeControl : public QFrame {
@@ -51,7 +73,7 @@ private:
 
 	OBSWeakSource weakSource_;
 	const char *uuid;
-	std::vector<OBSSignal> sigs;
+	std::vector<OBSSignal> obsSignals;
 
 	QBoxLayout *mainLayout;
 	QLabel *categoryLabel;
@@ -69,7 +91,7 @@ private:
 	QString sourceName;
 	bool vertical;
 
-	OBS::MixerStatus statusCategory;
+	OBS::MixerStatus mixerStatus_;
 
 	QMenu *contextMenu;
 
@@ -122,8 +144,7 @@ public:
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
 	void enableSlider(bool enable);
-	void setMixerFlag(OBS::MixerStatus category, bool enable);
-	bool hasMixerFlag(OBS::MixerStatus category);
+	OBS::MixerStatus &mixerStatus() { return mixerStatus_; }
 	void setGlobalInMixer(bool global);
 	void setPinnedInMixer(bool pinned);
 	void setHiddenInMixer(bool hidden);

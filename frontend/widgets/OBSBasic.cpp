@@ -23,7 +23,6 @@
 #include "ColorSelect.hpp"
 #include "OBSBasicControls.hpp"
 #include "OBSBasicStats.hpp"
-#include "VolumeControl.hpp"
 #include "plugin-manager/PluginManager.hpp"
 
 #include <obs-module.h>

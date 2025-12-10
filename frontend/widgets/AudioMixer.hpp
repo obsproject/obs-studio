@@ -18,7 +18,8 @@
 #pragma once
 
 #include "OBSBasic.hpp"
-#include "VolumeControl.hpp"
+
+#include <components/VolumeControl.hpp>
 
 #include <QObject>
 #include <QPointer>
@@ -138,7 +139,7 @@ private slots:
 	VolumeControl *createVolumeControl(obs_source_t *source);
 	void updateControlVisibility(QString uuid);
 
-	void toggleLayout();
+	void updateLayout();
 	void toggleShowInactive(bool checked);
 	void toggleKeepInactiveLast(bool checked);
 	void toggleShowHidden(bool checked);
