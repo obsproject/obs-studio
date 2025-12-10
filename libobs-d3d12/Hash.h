@@ -18,11 +18,11 @@
 // and AMD Bulldozer (Oct. 2011) processors.  I could put a runtime
 // check for this, but I'm just going to assume people playing with
 // DirectX 12 on Windows 10 have fairly recent machines.
-#ifdef _M_X64
-#define ENABLE_SSE_CRC32 1
-#else
+//#ifdef _M_X64
+//#define ENABLE_SSE_CRC32 1
+//#else
 #define ENABLE_SSE_CRC32 0
-#endif
+//#endif
 
 #if ENABLE_SSE_CRC32
 #pragma intrinsic(_mm_crc32_u32)
