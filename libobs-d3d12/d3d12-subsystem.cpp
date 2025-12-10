@@ -116,7 +116,7 @@ static inline enum gs_color_space make_swap_desc(gs_device *device, DXGI_SWAP_CH
 
 void gs_swap_chain::Release()
 {
-	device->d3d12Instance->GetCommandManager().IdleGPU();
+	device->context->Flush(true);
 }
 
 void gs_swap_chain::Resize(uint32_t cx, uint32_t cy, gs_color_format format)
@@ -615,7 +615,6 @@ static void device_resize_internal(gs_device_t *device, uint32_t cx, uint32_t cy
 		device->context->SetNullRenderTarget();
 		device->curSwapChain->Resize(cx, cy, format);
 		device->curRenderTarget = &device->curSwapChain->target[device->curSwapChain->currentBackBufferIndex];
-		// device->context->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		device->curSwapChain->space = space;
 		device->curFramebufferInvalidate = true;
 	} catch (const HRError &error) {
