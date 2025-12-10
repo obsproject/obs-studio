@@ -278,9 +278,6 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	nv12Supported = d3d12Instance->IsNV12TextureSupported();
 	p010Supported = d3d12Instance->IsP010TextureSupported();
 
-	if (context == nullptr) {
-		context = d3d12Instance->GetNewGraphicsContext();
-	}
 	blog(LOG_INFO, "D3D12 loaded successfully");
 }
 
@@ -1240,12 +1237,15 @@ extern "C" void reset_duplicators(void);
 void device_begin_frame(gs_device_t *device)
 {
 	reset_duplicators();
+	if (!device->context) {
+		device->context = device->d3d12Instance->GetNewGraphicsContext();
+	}
 }
 
 void device_end_frame(gs_device_t *device)
 {
-	//device->context->Finish(true);
-	//device->context = device->d3d12Instance->GetNewGraphicsContext();
+	device->context->Finish();
+	device->context = device->d3d12Instance->GetNewGraphicsContext();
 }
 
 void device_begin_scene(gs_device_t *device)
@@ -1419,8 +1419,7 @@ void device_present(gs_device_t *device)
 	if (curSwapChain) {
 		device->curFramebufferInvalidate = true;
 		device->context->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_PRESENT);
-
-		device->context->Finish(true);
+		device->context->Finish();
 		device->context = device->d3d12Instance->GetNewGraphicsContext();
 		const HRESULT hr = curSwapChain->swap->Present(0, 0);
 		if (FAILED(hr)) {

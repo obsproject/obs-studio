@@ -39,6 +39,7 @@ static const uint32_t kNumDescriptorsPerHeap = 1024;
 static const uint32_t kMaxNumDescriptors = 256;
 static const uint32_t kMaxNumDescriptorTables = 16;
 static const uint32_t sm_NumDescriptorsPerHeap = 256;
+static const uint32_t kMaxDescriptorsPerCopy = 16;
 
 typedef uint32_t GraphHandle;
 

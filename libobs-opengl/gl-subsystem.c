@@ -1015,7 +1015,11 @@ void device_begin_frame(gs_device_t *device)
 	UNUSED_PARAMETER(device);
 }
 
-void device_end_frame(gs_device_t *device) {}
+void device_end_frame(gs_device_t *device)
+{
+	/* does nothing */
+	UNUSED_PARAMETER(device);
+}
 
 void device_begin_scene(gs_device_t *device)
 {

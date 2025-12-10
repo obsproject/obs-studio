@@ -37,7 +37,8 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t
 	  format(GS_UNKNOWN),
 	  dxgiFormat(p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12)
 {
-	Create(L"surface", (UINT)GetTotalBytes() / D3D12Graphics::BytesPerPixel(p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12),
+	Create(L"surface",
+	       (UINT)GetTotalBytes() / D3D12Graphics::BytesPerPixel(p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12),
 	       D3D12Graphics::BytesPerPixel(dxgiFormat));
 }
 

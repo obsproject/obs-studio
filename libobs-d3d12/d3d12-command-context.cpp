@@ -347,7 +347,6 @@ void DescriptorHandleCache::CopyAndBindStaleTables(
 
 	m_StaleRootParamsBitMap = 0;
 
-	static const uint32_t kMaxDescriptorsPerCopy = 16;
 	UINT NumDestDescriptorRanges = 0;
 	D3D12_CPU_DESCRIPTOR_HANDLE pDestDescriptorRangeStarts[kMaxDescriptorsPerCopy];
 	UINT pDestDescriptorRangeSizes[kMaxDescriptorsPerCopy];
@@ -1926,18 +1925,22 @@ void GraphicsPSO::SetVertexShader(const void *Binary, size_t Size)
 {
 	m_PSODesc.VS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
 }
+
 void GraphicsPSO::SetPixelShader(const void *Binary, size_t Size)
 {
 	m_PSODesc.PS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
 }
+
 void GraphicsPSO::SetGeometryShader(const void *Binary, size_t Size)
 {
 	m_PSODesc.GS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
 }
+
 void GraphicsPSO::SetHullShader(const void *Binary, size_t Size)
 {
 	m_PSODesc.HS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
 }
+
 void GraphicsPSO::SetDomainShader(const void *Binary, size_t Size)
 {
 	m_PSODesc.DS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
@@ -1947,18 +1950,22 @@ void GraphicsPSO::SetVertexShader(const D3D12_SHADER_BYTECODE &Binary)
 {
 	m_PSODesc.VS = Binary;
 }
+
 void GraphicsPSO::SetPixelShader(const D3D12_SHADER_BYTECODE &Binary)
 {
 	m_PSODesc.PS = Binary;
 }
+
 void GraphicsPSO::SetGeometryShader(const D3D12_SHADER_BYTECODE &Binary)
 {
 	m_PSODesc.GS = Binary;
 }
+
 void GraphicsPSO::SetHullShader(const D3D12_SHADER_BYTECODE &Binary)
 {
 	m_PSODesc.HS = Binary;
 }
+
 void GraphicsPSO::SetDomainShader(const D3D12_SHADER_BYTECODE &Binary)
 {
 	m_PSODesc.DS = Binary;

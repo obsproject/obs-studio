@@ -183,8 +183,8 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 
 	if (isShared) {
-		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(m_pResource.Get(), nullptr, GENERIC_ALL, nullptr,
-								       (HANDLE *)(uintptr_t)&sharedHandle);
+		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(
+			m_pResource.Get(), nullptr, GENERIC_ALL, nullptr, (HANDLE *)(uintptr_t)&sharedHandle);
 		if (FAILED(hr)) {
 			throw HRError("Create Shared Handle Failed", hr);
 		}
