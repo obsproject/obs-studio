@@ -1404,7 +1404,6 @@ bool device_is_present_ready(gs_device_t *device)
 	gs_swap_chain *const curSwapChain = device->curSwapChain;
 	bool ready = curSwapChain != nullptr;
 	if (ready) {
-		device->d3d12Instance->GetCommandManager().IdleGPU();
 		device->context->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	} else {
 		blog(LOG_WARNING, "device_is_present_ready (D3D12): No active swap");
@@ -1419,7 +1418,7 @@ void device_present(gs_device_t *device)
 	if (curSwapChain) {
 		device->curFramebufferInvalidate = true;
 		device->context->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_PRESENT);
-		device->context->Finish();
+		device->context->Finish(true);
 		device->context = device->d3d12Instance->GetNewGraphicsContext();
 		const HRESULT hr = curSwapChain->swap->Present(0, 0);
 		if (FAILED(hr)) {
@@ -1751,16 +1750,6 @@ void gs_texture_unmap(gs_texture_t *tex)
 	upload->Unmap();
 	texture->device->context->UpdateTexture(*texture, *upload);
 	texture->device->context->TransitionResource(*texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-	// auto &InitContext = *texture->device->d3d12Instance->GetNewGraphicsContext();
-
-	// InitContext.UpdateTexture(*texture, *upload);
-	// InitContext.TransitionResource(*texture, D3D12_RESOURCE_STATE_GENERIC_READ);
-
-	// Execute the command list and wait for it to finish so we can release the upload buffer
-	// InitContext.Finish(true);
-
-	// texture->device->context->TransitionResource(*texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void *gs_texture_get_obj(gs_texture_t *tex)

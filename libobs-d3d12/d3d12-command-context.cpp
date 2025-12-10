@@ -2254,8 +2254,8 @@ uint64_t CommandQueue::ExecuteCommandList(ID3D12CommandList *List)
 {
 	HRESULT hr = ((ID3D12GraphicsCommandList *)List)->Close();
 	if (FAILED(hr)) {
-		hr = m_DeviceInstance->GetDevice()->GetDeviceRemovedReason();
-		throw HRError("CommandQueue: Failed to close command list before execution.", hr);
+		auto removeReason = m_DeviceInstance->GetDevice()->GetDeviceRemovedReason();
+		throw HRError("CommandQueue: Failed to close command list before execution.", removeReason);
 	}
 
 	// Kickoff the command list
@@ -2560,7 +2560,6 @@ void CommandContext::CopyTextureRegion(GpuResource &Dest, UINT x, UINT y, UINT z
 void CommandContext::UpdateTexture(GpuResource &Dest, UploadBuffer &buffer)
 {
 	TransitionResource(Dest, D3D12_RESOURCE_STATE_COPY_DEST);
-	TransitionResource(buffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	FlushResourceBarriers();
 
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedTextureDesc;
@@ -2835,7 +2834,7 @@ void GraphicsContext::ClearUAV(GpuBuffer &Target)
 void GraphicsContext::ClearColor(D3D12_CPU_DESCRIPTOR_HANDLE RenderTargetView, const FLOAT ColorRGBA[4], UINT NumRects,
 				 const D3D12_RECT *pRects)
 {
-	// FlushResourceBarriers();
+	FlushResourceBarriers();
 	m_CommandList->ClearRenderTargetView(RenderTargetView, ColorRGBA, (pRects == nullptr) ? 0 : 1, pRects);
 }
 
