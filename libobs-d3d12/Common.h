@@ -14,7 +14,7 @@
 #pragma once
 
 #include <DirectXMath.h>
-#include <intrin.h>
+#include <util/sse-intrin.h>
 
 #define INLINE __forceinline
 
