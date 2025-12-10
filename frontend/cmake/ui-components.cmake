@@ -12,6 +12,10 @@ target_sources(
   PRIVATE
     components/AbsoluteSlider.cpp
     components/AbsoluteSlider.hpp
+    components/AccessibleAlignmentSelector.cpp
+    components/AccessibleAlignmentSelector.hpp
+    components/AlignmentSelector.cpp
+    components/AlignmentSelector.hpp
     components/ApplicationAudioCaptureToolbar.cpp
     components/ApplicationAudioCaptureToolbar.hpp
     components/AudioCaptureToolbar.cpp
