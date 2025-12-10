@@ -13,6 +13,7 @@ target_compile_definitions(
 target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate Qt::DBus)
 
 find_package(Libpci REQUIRED)
+find_package(Qt6GuiPrivate REQUIRED)
 target_link_libraries(obs-studio PRIVATE Libpci::pci)
 
 if(TARGET OBS::python)
