@@ -21,6 +21,7 @@
 #include <avrt.h>
 #include <RTWorkQ.h>
 #include <wrl/implements.h>
+#include <devicetopology.h>
 
 using namespace std;
 
@@ -289,6 +290,11 @@ public:
 		obs_weak_source_release(reroute_target);
 		reroute_target = obs_source_get_weak_source(target);
 	}
+
+	template<typename F, typename... Fs> static void DeviceTopologyTraversal(IMMDevice *device, F &&f, Fs &&...fs);
+	template<typename F, typename... Fs>
+	static void DeviceTopologyTraversal(IConnector *connect, F &&f, Fs &&...fs);
+	template<typename F, typename... Fs> static void DeviceTopologyTraversal(IPart *part, F &&f, Fs &&...fs);
 };
 
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_, SourceType type)
@@ -541,11 +547,76 @@ void WASAPISource::Update(obs_data_t *settings)
 					(title != params.title) || (executable != params.executable))
 				     : (device_id.compare(params.device_id) != 0);
 
+	std::string deviceId = params.device_id;
+	bool isDefault = params.isDefaultDevice;
 	UpdateSettings(std::move(params));
 	LogSettings();
 
 	if (restart)
 		SetEvent(restartSignal);
+
+	IMMDevice *device = GetMMDeviceById(isDefault, deviceId, sourceType == SourceType::Input);
+	WASAPISource::DeviceTopologyTraversal(device, [settings](IPart *part) {
+		GUID SubType = {};
+		part->GetSubType(&SubType);
+		LPWSTR name = nullptr;
+		part->GetName(&name);
+		if (SubType == KSNODETYPE_VOLUME) {
+			IAudioVolumeLevel *audioVolumeLevel = nullptr;
+			part->Activate(CLSCTX_ALL, __uuidof(IAudioVolumeLevel), (void **)&audioVolumeLevel);
+			if (audioVolumeLevel) {
+				float pfMinLevelDB = 0.0f;
+				float pfMaxLevelDB = 0.0f;
+				float pfStepping = 0.0f;
+				HRESULT hr =
+					audioVolumeLevel->GetLevelRange(0, &pfMinLevelDB, &pfMaxLevelDB, &pfStepping);
+				if (SUCCEEDED(hr)) {
+					size_t len = wcslen(name);
+					size_t size = os_wcs_to_utf8(name, len, nullptr, 0) + 1;
+					std::string utf8_name;
+					utf8_name.resize(size);
+					os_wcs_to_utf8(name, len, &utf8_name[0], size);
+					float pfLevelDB = (float)obs_data_get_double(settings, utf8_name.c_str());
+					audioVolumeLevel->SetLevel(0, pfLevelDB, nullptr);
+				}
+				audioVolumeLevel->Release();
+			}
+		} else if (SubType == KSNODETYPE_MUTE) {
+			IAudioMute *audioMute = nullptr;
+			part->Activate(CLSCTX_ALL, __uuidof(IAudioMute), (void **)&audioMute);
+			if (audioMute != nullptr) {
+				size_t len = wcslen(name);
+				size_t size = os_wcs_to_utf8(name, len, nullptr, 0) + 1;
+				std::string utf8_name;
+				utf8_name.resize(size);
+				os_wcs_to_utf8(name, len, &utf8_name[0], size);
+				bool mute = obs_data_get_bool(settings, utf8_name.c_str());
+				audioMute->SetMute(mute, nullptr);
+				audioMute->Release();
+			}
+		} else if (SubType == KSNODETYPE_AGC) {
+			IAudioAutoGainControl *audioAutoGainControl = nullptr;
+			part->Activate(CLSCTX_ALL, __uuidof(IAudioAutoGainControl), (void **)&audioAutoGainControl);
+
+			if (audioAutoGainControl != nullptr) {
+				size_t len = wcslen(name);
+				size_t size = os_wcs_to_utf8(name, len, nullptr, 0) + 1;
+				std::string utf8_name;
+				utf8_name.resize(size);
+				os_wcs_to_utf8(name, len, &utf8_name[0], size);
+				bool enable = obs_data_get_bool(settings, utf8_name.c_str());
+				audioAutoGainControl->SetEnabled(enable, nullptr);
+				audioAutoGainControl->Release();
+			}
+		}
+
+		if (!name) {
+			CoTaskMemFree(name);
+		}
+	});
+	if (device) {
+		device->Release();
+	}
 }
 
 void WASAPISource::OnWindowChanged(obs_data_t *settings)
@@ -630,6 +701,108 @@ static DWORD GetSpeakerChannelMask(speaker_layout layout)
 	return (DWORD)layout;
 }
 
+template<typename F, typename... Fs> void WASAPISource::DeviceTopologyTraversal(IPart *part, F &&f, Fs &&...fs)
+{
+	if (part == nullptr) {
+		return;
+	}
+	IPartsList *partList = nullptr;
+	part->EnumPartsOutgoing(&partList);
+	if (partList == nullptr) {
+		return;
+	}
+	IPart *pPartNext = NULL;
+	partList->GetPart(0, &pPartNext);
+	if (pPartNext == nullptr) {
+		partList->Release();
+		return;
+	}
+	PartType partType;
+	HRESULT hr = pPartNext->GetPartType(&partType);
+	if (FAILED(hr)) {
+		partList->Release();
+		pPartNext->Release();
+		return;
+	}
+
+	if (partType == PartType::Subunit) {
+		std::bind(std::forward<F>(f), pPartNext, std::forward<Fs>(fs)...)();
+		DeviceTopologyTraversal(pPartNext, f, fs...);
+		pPartNext->Release();
+	}
+
+	if (partType == PartType::Connector) {
+		IConnector *connect = nullptr;
+		hr = pPartNext->QueryInterface(__uuidof(IConnector), (void **)&connect);
+		DeviceTopologyTraversal(connect, f, fs...);
+	}
+}
+
+template<typename F, typename... Fs> void WASAPISource::DeviceTopologyTraversal(IConnector *connect, F &&f, Fs &&...fs)
+{
+	if (connect == nullptr) {
+		return;
+	}
+
+	BOOL IsConnected = FALSE;
+	HRESULT hr = connect->IsConnected(&IsConnected);
+	if (FAILED(hr)) {
+		return;
+	}
+
+	if (IsConnected == FALSE) {
+		ConnectorType connType;
+		hr = connect->GetType(&connType);
+
+		if (FAILED(hr)) {
+			return;
+		}
+		if (connType == Software_IO) {
+			return;
+		}
+	}
+
+	IConnector *connectedTo = nullptr;
+	hr = connect->GetConnectedTo(&connectedTo);
+	if (FAILED(hr) || connectedTo == nullptr) {
+		return;
+	}
+
+	IPart *Part = nullptr;
+
+	connectedTo->QueryInterface(__uuidof(IPart), (void **)&Part);
+	DeviceTopologyTraversal(Part, f, fs...);
+	if (Part != nullptr) {
+		Part->Release();
+	}
+
+	connectedTo->Release();
+}
+
+template<typename F, typename... Fs> void WASAPISource::DeviceTopologyTraversal(IMMDevice *device, F &&f, Fs &&...fs)
+{
+	if (device == nullptr) {
+		return;
+	}
+	IDeviceTopology *pDeviceTopology = nullptr;
+	HRESULT hr = device->Activate(__uuidof(IDeviceTopology), CLSCTX_ALL, nullptr, (void **)&pDeviceTopology);
+	if (FAILED(hr))
+		return;
+	UINT nConnectorCount = 0;
+	hr = pDeviceTopology->GetConnectorCount(&nConnectorCount);
+	if (FAILED(hr))
+		return;
+	for (UINT i = 0; i < nConnectorCount; i++) {
+		IConnector *pConnector = nullptr;
+		pDeviceTopology->GetConnector(i, &pConnector);
+		DeviceTopologyTraversal(pConnector, f, fs...);
+		if (pConnector) {
+			pConnector->Release();
+		}
+	}
+	pDeviceTopology->Release();
+}
+
 ComPtr<IAudioClient> WASAPISource::InitClient(IMMDevice *device, SourceType type, DWORD process_id,
 					      PFN_ActivateAudioInterfaceAsync activate_audio_interface_async,
 					      speaker_layout &speakers, audio_format &format, uint32_t &samples_per_sec)
@@ -707,6 +880,7 @@ ComPtr<IAudioClient> WASAPISource::InitClient(IMMDevice *device, SourceType type
 	DWORD flags = AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
 	if (type != SourceType::Input)
 		flags |= AUDCLNT_STREAMFLAGS_LOOPBACK;
+
 	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, BUFFER_TIME_100NS, 0, pFormat, nullptr);
 	if (FAILED(res))
 		throw HRError("Failed to initialize audio client", res);
@@ -1454,8 +1628,100 @@ static bool UpdateWASAPIMethod(obs_properties_t *props, obs_property_t *, obs_da
 	return true;
 }
 
-static obs_properties_t *GetWASAPIPropertiesInput(void *)
+static bool DeviceSelectionChanged(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
+	string id = obs_data_get_string(settings, OPT_DEVICE_ID);
+	obs_property_t *property = obs_properties_first(props);
+
+	while (property) {
+		std::string name = obs_property_name(property);
+		obs_property_next(&property);
+		if (name != OPT_DEVICE_ID && name != OPT_USE_DEVICE_TIMING) {
+			obs_properties_remove_by_name(props, name.c_str());
+		}
+	}
+	IMMDevice *device = GetMMDeviceById(id == "default" ? true : false, id, true);
+	WASAPISource::DeviceTopologyTraversal(device, [props, settings](IPart *part) {
+		GUID SubType = {};
+		part->GetSubType(&SubType);
+		LPWSTR name = nullptr;
+		part->GetName(&name);
+		if (SubType == KSNODETYPE_VOLUME) {
+			IAudioVolumeLevel *audioVolumeLevel = nullptr;
+			part->Activate(CLSCTX_ALL, __uuidof(IAudioVolumeLevel), (void **)&audioVolumeLevel);
+			if (audioVolumeLevel) {
+				float pfMinLevelDB = 0.0f;
+				float pfMaxLevelDB = 0.0f;
+				float pfStepping = 0.0f;
+				HRESULT hr =
+					audioVolumeLevel->GetLevelRange(0, &pfMinLevelDB, &pfMaxLevelDB, &pfStepping);
+				if (SUCCEEDED(hr)) {
+					size_t len = wcslen(name);
+					size_t size = os_wcs_to_utf8(name, len, nullptr, 0) + 1;
+					std::string utf8_name;
+					utf8_name.resize(size);
+					os_wcs_to_utf8(name, len, &utf8_name[0], size);
+					float pfLevelDB = 0.0f;
+					audioVolumeLevel->GetLevel(0, &pfLevelDB);
+					obs_property_t *p = obs_properties_add_float_slider(props, utf8_name.c_str(),
+											    utf8_name.c_str(),
+											    pfMinLevelDB, pfMaxLevelDB,
+											    pfStepping);
+					obs_data_set_double(settings, utf8_name.c_str(), pfLevelDB);
+				}
+				audioVolumeLevel->Release();
+			}
+		} else if (SubType == KSNODETYPE_MUTE) {
+			IAudioMute *audioMute = nullptr;
+			part->Activate(CLSCTX_ALL, __uuidof(IAudioMute), (void **)&audioMute);
+			if (audioMute != nullptr) {
+				size_t len = wcslen(name);
+				size_t size = os_wcs_to_utf8(name, len, nullptr, 0) + 1;
+				std::string utf8_name;
+				utf8_name.resize(size);
+				os_wcs_to_utf8(name, len, &utf8_name[0], size);
+
+				obs_property_t *p =
+					obs_properties_add_bool(props, utf8_name.c_str(), utf8_name.c_str());
+				BOOL isMute = FALSE;
+				audioMute->GetMute(&isMute);
+				obs_data_set_bool(settings, utf8_name.c_str(), !!isMute);
+
+				audioMute->Release();
+			}
+		} else if (SubType == KSNODETYPE_AGC) {
+			IAudioAutoGainControl *audioAutoGainControl = nullptr;
+			part->Activate(CLSCTX_ALL, __uuidof(IAudioAutoGainControl), (void **)&audioAutoGainControl);
+
+			if (audioAutoGainControl != nullptr) {
+				size_t len = wcslen(name);
+				size_t size = os_wcs_to_utf8(name, len, nullptr, 0) + 1;
+				std::string utf8_name;
+				utf8_name.resize(size);
+				os_wcs_to_utf8(name, len, &utf8_name[0], size);
+
+				obs_property_t *p =
+					obs_properties_add_bool(props, utf8_name.c_str(), utf8_name.c_str());
+				BOOL isEnabled = FALSE;
+				audioAutoGainControl->GetEnabled(&isEnabled);
+				obs_data_set_bool(settings, utf8_name.c_str(), !!isEnabled);
+				audioAutoGainControl->Release();
+			}
+		}
+
+		if (!name) {
+			CoTaskMemFree(name);
+		}
+	});
+	if (device) {
+		device->Release();
+	}
+	return true;
+}
+
+static obs_properties_t *GetWASAPIPropertiesInput(void *data)
+{
+	WASAPISource *source = (WASAPISource *)data;
 	obs_properties_t *props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
 
@@ -1473,7 +1739,7 @@ static obs_properties_t *GetWASAPIPropertiesInput(void *)
 	}
 
 	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING, obs_module_text("UseDeviceTiming"));
-
+	obs_property_set_modified_callback(device_prop, DeviceSelectionChanged);
 	return props;
 }
 
