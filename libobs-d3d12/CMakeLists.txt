@@ -6,6 +6,7 @@ add_library(OBS::libobs-d3d12 ALIAS libobs-d3d12)
 target_sources(
   libobs-d3d12
   PRIVATE
+    # cmake-format: unsort
     d3d12-command-context.cpp
     d3d12-command-context.hpp
     d3d12-duplicator.cpp
@@ -23,19 +24,25 @@ target_sources(
     d3d12-zstencilbuffer.cpp
 )
 
+# cmake-format: off
 configure_file(cmake/windows/obs-module.rc.in libobs-d3d12.rc)
 target_sources(libobs-d3d12 PRIVATE libobs-d3d12.rc)
+# cmake-format: on
 
+# cmake-format: off
 target_compile_definitions(
   libobs-d3d12
   PRIVATE
     $<$<BOOL:${GPU_PRIORITY_VAL}>:USE_GPU_PRIORITY>
     "$<IF:$<BOOL:${GPU_PRIORITY_VAL}>,GPU_PRIORITY_VAL=${GPU_PRIORITY_VAL},GPU_PRIORITY_VAL=0>"
 )
+# cmake-format: on
 
+# cmake-format: off
 target_link_libraries(
   libobs-d3d12 PRIVATE OBS::libobs d3d11 d3d12 dxguid d3dcompiler dxgi shcore
 )
+# cmake-format: on
 
 target_enable_feature(libobs "Direct3D 12 renderer")
 
