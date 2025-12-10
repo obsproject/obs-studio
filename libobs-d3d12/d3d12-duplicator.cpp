@@ -289,9 +289,8 @@ static void CreateSharedTexture(gs_duplicator_t *d, D3D11_TEXTURE2D_DESC &desc, 
 
 		hr = d->texShared->QueryInterface(__uuidof(IDXGIKeyedMutex), (void **)&d->km);
 		if (FAILED(hr)) {
-			throw HRError("Failed to query "
-				      "IDXGIKeyedMutex",
-				      hr);
+			__debugbreak();
+			blog(LOG_ERROR, "device_present (D3D12): IDXGISwapChain::Present failed %08lX", hr);
 		}
 	}
 }

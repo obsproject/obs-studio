@@ -19,7 +19,6 @@
 #include <util/windows/HRError.hpp>
 
 #include <d3d11.h>
-#include <d3dx12.h>
 #include <dxgi1_6.h>
 #include <dxgidebug.h>
 #include <d3d11on12.h>
@@ -230,6 +229,128 @@ static size_t BitsPerPixel(_In_ DXGI_FORMAT fmt)
 static UINT BytesPerPixel(DXGI_FORMAT Format)
 {
 	return (UINT)BitsPerPixel(Format) / 8;
+};
+
+inline UINT64 GetRequiredIntermediateSize(_In_ ID3D12Resource *pDestinationResource,
+					  _In_range_(0, D3D12_REQ_SUBRESOURCES) UINT FirstSubresource,
+					  _In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource)
+						  UINT NumSubresources) noexcept
+{
+	auto Desc = pDestinationResource->GetDesc();
+	UINT64 RequiredSize = 0;
+
+	ID3D12Device *pDevice = nullptr;
+	pDestinationResource->GetDevice(IID_ID3D12Device, reinterpret_cast<void **>(&pDevice));
+	pDevice->GetCopyableFootprints(&Desc, FirstSubresource, NumSubresources, 0, nullptr, nullptr, nullptr,
+				       &RequiredSize);
+	pDevice->Release();
+
+	return RequiredSize;
+}
+
+struct CD3DX12_RANGE : public D3D12_RANGE {
+	CD3DX12_RANGE() = default;
+	explicit CD3DX12_RANGE(const D3D12_RANGE &o) noexcept : D3D12_RANGE(o) {}
+	CD3DX12_RANGE(SIZE_T begin, SIZE_T end) noexcept
+	{
+		Begin = begin;
+		End = end;
+	}
+};
+
+struct CD3DX12_HEAP_PROPERTIES : public D3D12_HEAP_PROPERTIES {
+	CD3DX12_HEAP_PROPERTIES() = default;
+	explicit CD3DX12_HEAP_PROPERTIES(const D3D12_HEAP_PROPERTIES &o) noexcept : D3D12_HEAP_PROPERTIES(o) {}
+	CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY cpuPageProperty, D3D12_MEMORY_POOL memoryPoolPreference,
+				UINT creationNodeMask = 1, UINT nodeMask = 1) noexcept
+	{
+		Type = D3D12_HEAP_TYPE_CUSTOM;
+		CPUPageProperty = cpuPageProperty;
+		MemoryPoolPreference = memoryPoolPreference;
+		CreationNodeMask = creationNodeMask;
+		VisibleNodeMask = nodeMask;
+	}
+	explicit CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE type, UINT creationNodeMask = 1, UINT nodeMask = 1) noexcept
+	{
+		Type = type;
+		CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		CreationNodeMask = creationNodeMask;
+		VisibleNodeMask = nodeMask;
+	}
+	bool IsCPUAccessible() const noexcept
+	{
+		return Type == D3D12_HEAP_TYPE_UPLOAD || Type == D3D12_HEAP_TYPE_READBACK ||
+		       (Type == D3D12_HEAP_TYPE_CUSTOM && (CPUPageProperty == D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE ||
+							   CPUPageProperty == D3D12_CPU_PAGE_PROPERTY_WRITE_BACK));
+	}
+};
+
+inline bool operator==(const D3D12_HEAP_PROPERTIES &l, const D3D12_HEAP_PROPERTIES &r) noexcept
+{
+	return l.Type == r.Type && l.CPUPageProperty == r.CPUPageProperty &&
+	       l.MemoryPoolPreference == r.MemoryPoolPreference && l.CreationNodeMask == r.CreationNodeMask &&
+	       l.VisibleNodeMask == r.VisibleNodeMask;
+}
+
+inline bool operator!=(const D3D12_HEAP_PROPERTIES &l, const D3D12_HEAP_PROPERTIES &r) noexcept
+{
+	return !(l == r);
+}
+
+struct CD3DX12_SHADER_BYTECODE : public D3D12_SHADER_BYTECODE {
+	CD3DX12_SHADER_BYTECODE() = default;
+	explicit CD3DX12_SHADER_BYTECODE(const D3D12_SHADER_BYTECODE &o) noexcept : D3D12_SHADER_BYTECODE(o) {}
+	CD3DX12_SHADER_BYTECODE(_In_ ID3DBlob *pShaderBlob) noexcept
+	{
+		pShaderBytecode = pShaderBlob->GetBufferPointer();
+		BytecodeLength = pShaderBlob->GetBufferSize();
+	}
+	CD3DX12_SHADER_BYTECODE(const void *_pShaderBytecode, SIZE_T bytecodeLength) noexcept
+	{
+		pShaderBytecode = _pShaderBytecode;
+		BytecodeLength = bytecodeLength;
+	}
+};
+
+struct CD3DX12_TEXTURE_COPY_LOCATION : public D3D12_TEXTURE_COPY_LOCATION {
+	CD3DX12_TEXTURE_COPY_LOCATION() = default;
+	explicit CD3DX12_TEXTURE_COPY_LOCATION(const D3D12_TEXTURE_COPY_LOCATION &o) noexcept
+		: D3D12_TEXTURE_COPY_LOCATION(o)
+	{
+	}
+	CD3DX12_TEXTURE_COPY_LOCATION(_In_ ID3D12Resource *pRes) noexcept
+	{
+		pResource = pRes;
+		Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		PlacedFootprint = {};
+	}
+	CD3DX12_TEXTURE_COPY_LOCATION(_In_ ID3D12Resource *pRes,
+				      D3D12_PLACED_SUBRESOURCE_FOOTPRINT const &Footprint) noexcept
+	{
+		pResource = pRes;
+		Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		PlacedFootprint = Footprint;
+	}
+	CD3DX12_TEXTURE_COPY_LOCATION(_In_ ID3D12Resource *pRes, UINT Sub) noexcept
+	{
+		pResource = pRes;
+		Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		PlacedFootprint = {};
+		SubresourceIndex = Sub;
+	}
+};
+
+struct CD3DX12_RECT : public D3D12_RECT {
+	CD3DX12_RECT() = default;
+	explicit CD3DX12_RECT(const D3D12_RECT &o) noexcept : D3D12_RECT(o) {}
+	explicit CD3DX12_RECT(LONG Left, LONG Top, LONG Right, LONG Bottom) noexcept
+	{
+		left = Left;
+		top = Top;
+		right = Right;
+		bottom = Bottom;
+	}
 };
 
 class RootParameter {

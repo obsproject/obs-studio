@@ -171,7 +171,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	if (isDynamic) {
 		uploadBuffer = std::make_unique<D3D12Graphics::UploadBuffer>(device->d3d12Instance);
 		uploadBuffer->Create(L"Texture2D Upload Buffer",
-				     GetRequiredIntermediateSize(GetResource(), 0, data ? (UINT)srd.size() : 1));
+				     D3D12Graphics::GetRequiredIntermediateSize(GetResource(), 0, data ? (UINT)srd.size() : 1));
 	}
 
 	if (isGDICompatible) {

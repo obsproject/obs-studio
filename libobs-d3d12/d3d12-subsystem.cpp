@@ -1425,7 +1425,7 @@ void device_present(gs_device_t *device)
 		if (FAILED(hr)) {
 			auto removeReason = device->d3d12Instance->GetDevice()->GetDeviceRemovedReason();
 			__debugbreak();
-			throw HRError("device_present (D3D12): IDXGISwapChain::Present failed", hr);
+			blog(LOG_ERROR, "device_present (D3D12): IDXGISwapChain::Present failed %08lX", removeReason);
 		}
 
 		curSwapChain->currentBackBufferIndex = curSwapChain->swap->GetCurrentBackBufferIndex();
