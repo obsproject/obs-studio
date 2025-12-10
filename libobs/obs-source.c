@@ -5260,8 +5260,13 @@ static void apply_audio_volume(obs_source_t *source, uint32_t mixers, size_t cha
 
 	if (vol == 0.0f || mixers == 0) {
 		memset(source->audio_output_buf[0][0], 0,
-		       AUDIO_OUTPUT_FRAMES * sizeof(float) * MAX_AUDIO_CHANNELS *
-			       (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES));
+		       AUDIO_OUTPUT_FRAMES * sizeof(float) * MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES);
+		/* We don't silence the extra monitoring mixes so that they can be heard at all times. */
+		for (size_t mix = MAX_AUDIO_MIXES; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
+			uint32_t mix_and_val = (1 << mix);
+			if ((source->audio_mixers & mix_and_val) != 0 && (mixers & mix_and_val) != 0)
+				multiply_output_audio(source, mix, channels, source->volume);
+		}
 		return;
 	}
 
