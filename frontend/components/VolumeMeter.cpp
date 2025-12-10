@@ -501,7 +501,6 @@ inline void VolumeMeter::doLayout()
 	}
 
 	resetLevels();
-	updateBackgroundCache();
 }
 
 inline bool VolumeMeter::detectIdle(uint64_t ts)

@@ -601,6 +601,8 @@ void AudioMixer::queueLayoutUpdate()
 
 void AudioMixer::updateVolumeLayouts()
 {
+	setUpdatesEnabled(false);
+
 	hiddenCount = 0;
 	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 
@@ -725,6 +727,8 @@ void AudioMixer::updateVolumeLayouts()
 
 	vMixerScrollArea->setWidgetResizable(true);
 	hMixerScrollArea->setWidgetResizable(true);
+
+	setUpdatesEnabled(true);
 }
 
 void AudioMixer::mixerContextMenuRequested()

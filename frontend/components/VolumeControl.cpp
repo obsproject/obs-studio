@@ -83,8 +83,8 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	monitorButton->setCheckable(true);
 	utils->addClass(monitorButton, "btn-monitor");
 
-	volLabel = new QLabel(this);
-	volLabel->setObjectName("volLabel");
+	volumeLabel = new QLabel(this);
+	volumeLabel->setObjectName("volLabel");
 
 	slider = new VolumeSlider(obs_fader, Qt::Horizontal, this);
 	slider->setMinimum(0);
@@ -96,12 +96,12 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	utils->applyStateStylingEventFilter(muteButton);
 	utils->applyStateStylingEventFilter(monitorButton);
 
-	volMeter = new VolumeMeter(this, source);
+	volumeMeter = new VolumeMeter(this, source);
 
 	bool muted = obs_source_muted(source);
 	bool unassigned = isSourceUnassigned(source);
 
-	volMeter->setMuted(muted || unassigned);
+	volumeMeter->setMuted(muted || unassigned);
 
 	setLayoutVertical(vertical);
 	setName(sourceName);
@@ -155,7 +155,6 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	changeVolume();
 
 	updateMixerState();
-	updateCategoryLabel();
 }
 
 VolumeControl::~VolumeControl()
@@ -223,8 +222,8 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		QFrame *meterFrame = new QFrame;
 		QHBoxLayout *meterLayout = new QHBoxLayout;
 
-		volMeter->setVertical(true);
-		volMeter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+		volumeMeter->setVertical(true);
+		volumeMeter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
 
 		slider->setOrientation(Qt::Vertical);
 		slider->setLayoutDirection(Qt::LeftToRight);
@@ -232,7 +231,7 @@ void VolumeControl::setLayoutVertical(bool vertical)
 
 		nameButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 		categoryLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-		volLabel->setAlignment(Qt::AlignLeft);
+		volumeLabel->setAlignment(Qt::AlignLeft);
 
 		categoryLayout->setAlignment(Qt::AlignCenter);
 		nameLayout->setAlignment(Qt::AlignCenter);
@@ -260,13 +259,13 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		meterLayout->setContentsMargins(0, 0, 0, 0);
 		meterLayout->setSpacing(0);
 		meterLayout->addWidget(slider);
-		meterLayout->addWidget(volMeter);
+		meterLayout->addWidget(volumeMeter);
 
 		meterFrame->setLayout(meterLayout);
 
 		volLayout->setContentsMargins(0, 0, 0, 0);
 		volLayout->setSpacing(0);
-		volLayout->addWidget(volLabel);
+		volLayout->addWidget(volumeLabel);
 		volLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Maximum));
 
 		newLayout->addItem(categoryLayout);
@@ -281,7 +280,7 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		newLayout->setStretch(3, 1);
 		newLayout->setStretch(4, 0);
 
-		volMeter->setFocusProxy(slider);
+		volumeMeter->setFocusProxy(slider);
 	} else {
 		setMaximumWidth(QWIDGETSIZE_MAX);
 		setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
@@ -292,8 +291,8 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		QVBoxLayout *meterLayout = new QVBoxLayout;
 		QVBoxLayout *buttonLayout = new QVBoxLayout;
 
-		volMeter->setVertical(false);
-		volMeter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+		volumeMeter->setVertical(false);
+		volumeMeter->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
 		slider->setOrientation(Qt::Horizontal);
 		slider->setLayoutDirection(Qt::LeftToRight);
@@ -301,12 +300,12 @@ void VolumeControl::setLayoutVertical(bool vertical)
 
 		nameButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 		categoryLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-		volLabel->setAlignment(Qt::AlignRight);
+		volumeLabel->setAlignment(Qt::AlignRight);
 
 		QHBoxLayout *textTopLayout = new QHBoxLayout;
 		textTopLayout->setContentsMargins(0, 0, 0, 0);
 		textTopLayout->addWidget(categoryLabel);
-		textTopLayout->addWidget(volLabel);
+		textTopLayout->addWidget(volumeLabel);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->addItem(textTopLayout);
@@ -319,7 +318,7 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		meterLayout->setSpacing(0);
 
 		meterLayout->addWidget(slider);
-		meterLayout->addWidget(volMeter);
+		meterLayout->addWidget(volumeMeter);
 		meterLayout->setStretch(0, 2);
 		meterLayout->setStretch(1, 2);
 
@@ -338,7 +337,7 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		newLayout->setStretch(0, 3);
 		newLayout->setStretch(1, 6);
 
-		volMeter->setFocusProxy(slider);
+		volumeMeter->setFocusProxy(slider);
 	}
 
 	QWidget().setLayout(mainLayout);
@@ -582,7 +581,7 @@ void VolumeControl::updateCategoryLabel()
 	categoryLabel->setText(labelText);
 
 	utils->polishChildren();
-	volMeter->updateBackgroundCache();
+	volumeMeter->updateBackgroundCache();
 }
 
 void VolumeControl::updateDecayRate()
@@ -705,7 +704,7 @@ void VolumeControl::updateMixerState()
 	bool showAsMonitored = monitoringType != OBS_MONITORING_TYPE_NONE;
 	bool showAsUnassigned = !muted && unassigned;
 
-	volMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
+	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
 
 	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
 	// in QSS so we set a checked class selector on the button to be used instead.
@@ -834,7 +833,7 @@ void VolumeControl::updateText()
 		text = QString::number(db, 'f', 1).append(" dB");
 	}
 
-	volLabel->setText(text);
+	volumeLabel->setText(text);
 
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
@@ -895,12 +894,12 @@ void VolumeControl::setName(QString name)
 
 void VolumeControl::setMeterDecayRate(qreal q)
 {
-	volMeter->setPeakDecayRate(q);
+	volumeMeter->setPeakDecayRate(q);
 }
 
 void VolumeControl::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 {
-	volMeter->setPeakMeterType(peakMeterType);
+	volumeMeter->setPeakMeterType(peakMeterType);
 }
 
 void VolumeControl::enableSlider(bool enable)
@@ -910,7 +909,7 @@ void VolumeControl::enableSlider(bool enable)
 
 void VolumeControl::setUseDisabledColors(bool greyscale)
 {
-	volMeter->setUseDisabledColors(greyscale);
+	volumeMeter->setUseDisabledColors(greyscale);
 }
 
 void VolumeControl::setGlobalInMixer(bool global)
@@ -964,20 +963,20 @@ void VolumeControl::setHiddenInMixer(bool hidden)
 
 void VolumeControl::refreshColors()
 {
-	volMeter->refreshColors();
+	volumeMeter->refreshColors();
 }
 
 void VolumeControl::debugHideControls()
 {
 	slider->hide();
-	volLabel->hide();
+	volumeLabel->hide();
 	muteButton->hide();
 }
 
 void VolumeControl::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
 			      const float inputPeak[MAX_AUDIO_CHANNELS])
 {
-	if (volMeter) {
-		volMeter->setLevels(magnitude, peak, inputPeak);
+	if (volumeMeter) {
+		volumeMeter->setLevels(magnitude, peak, inputPeak);
 	}
 }

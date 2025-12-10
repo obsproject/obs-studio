@@ -78,8 +78,8 @@ private:
 	QBoxLayout *mainLayout;
 	QLabel *categoryLabel;
 	VolumeName *nameButton;
-	QLabel *volLabel;
-	VolumeMeter *volMeter;
+	QLabel *volumeLabel;
+	VolumeMeter *volumeMeter;
 	VolumeSlider *slider;
 	QPushButton *muteButton;
 	QPushButton *monitorButton;
