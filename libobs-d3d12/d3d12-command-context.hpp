@@ -14,6 +14,7 @@
 #include <map>
 #include <optional>
 
+#include <util/platform.h>
 #include <windows.h>
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/HRError.hpp>
