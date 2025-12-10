@@ -5323,8 +5323,13 @@ static void apply_audio_volume(obs_source_t *source, uint32_t mixers, size_t cha
 
 	if (vol == 0.0f || mixers == 0 || source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY) {
 		memset(source->audio_output_buf[0][0], 0,
-		       AUDIO_OUTPUT_FRAMES * sizeof(float) * MAX_AUDIO_CHANNELS *
-			       (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES));
+		       AUDIO_OUTPUT_FRAMES * sizeof(float) * MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES);
+		/* We don't silence the extra monitoring mixes so that they can be heard at all times. */
+		for (size_t mix = MAX_AUDIO_MIXES; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
+			uint32_t mix_and_val = (1 << mix);
+			if ((source->audio_mixers & mix_and_val) != 0 && (mixers & mix_and_val) != 0)
+				multiply_output_audio(source, mix, channels, source->volume);
+		}
 		return;
 	}
 
@@ -5364,7 +5369,8 @@ static void custom_audio_render(obs_source_t *source, uint32_t mixers, size_t ch
 		if ((mixers & mix_bit) == 0)
 			continue;
 
-		if ((source->audio_mixers & mix_bit) == 0) {
+		if ((source->audio_mixers & mix_bit) == 0 ||
+		    (mix < MAX_AUDIO_MIXES && source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)) {
 			memset(source->audio_output_buf[mix][0], 0, sizeof(float) * AUDIO_OUTPUT_FRAMES * channels);
 		}
 	}
@@ -5431,7 +5437,8 @@ static inline void process_audio_source_tick(obs_source_t *source, uint32_t mixe
 			mix_and_val = 1;
 		}
 
-		if ((source->audio_mixers & mix_and_val) == 0 || (mixers & mix_and_val) == 0) {
+		if ((source->audio_mixers & mix_and_val) == 0 || (mixers & mix_and_val) == 0 ||
+		    (mix < MAX_AUDIO_MIXES && source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)) {
 			memset(source->audio_output_buf[mix][0], 0, size * channels);
 			continue;
 		}
@@ -5445,7 +5452,8 @@ static inline void process_audio_source_tick(obs_source_t *source, uint32_t mixe
 		return;
 	}
 
-	if ((source->audio_mixers & 1) == 0 || (mixers & 1) == 0)
+	if ((source->audio_mixers & 1) == 0 || (mixers & 1) == 0 ||
+	    source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)
 		memset(source->audio_output_buf[0][0], 0, size * channels);
 
 	apply_audio_volume(source, mixers, channels, sample_rate);
