@@ -88,14 +88,10 @@ private:
 
 	QPointer<QMenu> mixerMenu;
 
-	QVBoxLayout *hMainLayout{nullptr};
-	QWidget *hMixerContainer{nullptr};
 	QScrollArea *hMixerScrollArea{nullptr};
 	QWidget *hVolumeWidgets{nullptr};
 	QVBoxLayout *hVolumeControlLayout{nullptr};
 
-	QHBoxLayout *vMainLayout{nullptr};
-	QWidget *vMixerContainer{nullptr};
 	QScrollArea *vMixerScrollArea{nullptr};
 	QWidget *vVolumeWidgets{nullptr};
 	QHBoxLayout *vVolumeControlLayout{nullptr};

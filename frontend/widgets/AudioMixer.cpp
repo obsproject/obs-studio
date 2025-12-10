@@ -93,14 +93,6 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	stackedMixerArea->setObjectName("stackedMixerArea");
 
 	// Horizontal Widgets
-	hMixerContainer = new QWidget(this);
-	hMixerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-	hMainLayout = new QVBoxLayout(hMixerContainer);
-	hMainLayout->setContentsMargins(0, 0, 0, 0);
-	hMainLayout->setSpacing(0);
-	hMixerContainer->setLayout(hMainLayout);
-
 	hMixerScrollArea = new QScrollArea(this);
 	hMixerScrollArea->setObjectName("hMixerScrollArea");
 	hMixerScrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -120,17 +112,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 
 	hMixerScrollArea->setWidget(hVolumeWidgets);
 
-	hMainLayout->addWidget(hMixerScrollArea);
-
 	// Vertical Widgets
-	vMixerContainer = new QWidget(this);
-	vMixerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-	vMainLayout = new QHBoxLayout(vMixerContainer);
-	vMainLayout->setContentsMargins(0, 0, 0, 0);
-	vMainLayout->setSpacing(0);
-	vMixerContainer->setLayout(vMainLayout);
-
 	vMixerScrollArea = new QScrollArea(this);
 	vMixerScrollArea->setObjectName("vMixerScrollArea");
 	vMixerScrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -151,12 +133,8 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 
 	vMixerScrollArea->setWidget(vVolumeWidgets);
 
-	vMainLayout->addWidget(vMixerScrollArea);
-
-	stackedMixerArea->addWidget(hMixerContainer);
-	stackedMixerArea->addWidget(vMixerContainer);
-
-	//stackedMixerArea->setCurrentWidget(vMixerContainer);
+	stackedMixerArea->addWidget(hMixerScrollArea);
+	stackedMixerArea->addWidget(vMixerScrollArea);
 
 	mixerToolbar = new QToolBar(this);
 	mixerToolbar->setIconSize(QSize(16, 16));
@@ -304,7 +282,6 @@ void AudioMixer::updateLayout()
 	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
 	setMixerLayoutVertical(vertical);
 
-	// queueLayoutUpdate();
 	updateVolumeLayouts();
 }
 
@@ -683,8 +660,6 @@ void AudioMixer::updateVolumeLayouts()
 				}
 			}
 
-			sortingWeight;
-
 			rankedVolumes.push_back({control, sortingWeight});
 		}
 	}
@@ -857,7 +832,6 @@ void AudioMixer::addControlForUuid(QString uuid)
 	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
 
 	QPointer<VolumeControl> newControl = createVolumeControl(source);
-	// activeLayout()->addWidget(newControl);
 
 	volumeList.insert({uuid, newControl});
 	queueLayoutUpdate();
