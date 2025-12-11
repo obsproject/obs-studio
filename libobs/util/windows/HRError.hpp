@@ -22,14 +22,14 @@ struct HRError {
 
 	inline HRError(const char *str, HRESULT hr) : str(str), hr(hr)
 	{
-#if 0
+
 		__debugbreak();
-#endif
+
 	}
 	inline HRError(const char *str) : str(str)
 	{
-#if 0
+
 		__debugbreak();
-#endif
+
 	}
 };

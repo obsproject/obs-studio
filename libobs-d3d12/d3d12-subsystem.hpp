@@ -1,20 +1,3 @@
-/******************************************************************************
-    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-******************************************************************************/
-
 #pragma once
 
 #include <util/windows/win-version.h>
@@ -437,9 +420,15 @@ struct gs_texture_2d : gs_texture {
 	D3D12_RESOURCE_DESC texDesc = {};
 	std::unique_ptr<D3D12Graphics::UploadBuffer> uploadBuffer;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetRTV[6] = {D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN};
-	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetLinearRTV[6] = {D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN};
-	D3D12_CPU_DESCRIPTOR_HANDLE UAV[12];
+	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetRTV[6] = {
+		D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN, D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN,
+		D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN, D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN,
+		D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN, D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN};
+
+	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetLinearRTV[6] = {
+		D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN, D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN,
+		D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN, D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN,
+		D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN, D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN};
 
 	ComPtr<IDXGISurface1> gdiSurface;
 
@@ -493,6 +482,8 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d(gs_device_t *device, ID3D12Resource *nv12, uint32_t flags);
 	gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle = false);
 	gs_texture_2d(gs_device_t *device, ID3D12Resource *obj);
+	virtual ~gs_texture_2d();
+	virtual void Destroy() override;
 };
 
 struct gs_texture_3d : gs_texture {
@@ -563,7 +554,6 @@ struct gs_stage_surface : gs_obj, public D3D12Graphics::ReadbackBuffer {
 struct gs_sampler_state : gs_obj {
 	gs_sampler_info info;
 	D3D12Graphics::SamplerDesc sampleDesc;
-	D3D12_CPU_DESCRIPTOR_HANDLE sampler;
 	gs_sampler_state(gs_device_t *device, const gs_sampler_info *info);
 };
 

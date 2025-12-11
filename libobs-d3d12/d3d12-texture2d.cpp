@@ -1,20 +1,3 @@
-/******************************************************************************
-    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-******************************************************************************/
-
 #include <util/base.h>
 #include "d3d12-subsystem.hpp"
 
@@ -133,14 +116,6 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 				D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
 
-	if (isGDICompatible) {
-	}
-
-	if ((flags & GS_SHARED_KM_TEX) != 0) {
-
-	} else if ((flags & GS_SHARED_TEX) != 0) {
-	}
-
 	if (data) {
 		BackupTexture(data);
 		InitSRD(srd);
@@ -175,14 +150,6 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 										data ? (UINT)srd.size() : 1));
 	}
 
-	if (isGDICompatible) {
-	}
-
-	if ((flags & GS_SHARED_KM_TEX) != 0) {
-
-	} else if ((flags & GS_SHARED_TEX) != 0) {
-	}
-
 	if (isShared) {
 		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(
 			m_pResource.Get(), nullptr, GENERIC_ALL, nullptr, (HANDLE *)(uintptr_t)&sharedHandle);
@@ -215,16 +182,12 @@ void gs_texture_2d::InitResourceView(int32_t PlaneSliceCount)
 	device->d3d12Instance->GetDevice()->CreateShaderResourceView(Resource, &SRVDesc, shaderSRV);
 
 	SRVDesc.Format = dxgiFormatViewLinear;
-	if (dxgiFormatView == dxgiFormatViewLinear) {
-		shaderLinearSRV = shaderSRV;
-	} else {
-		if (shaderLinearSRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
-			shaderLinearSRV =
-				device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		}
 
-		device->d3d12Instance->GetDevice()->CreateShaderResourceView(Resource, &SRVDesc, shaderLinearSRV);
+	if (shaderLinearSRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		shaderLinearSRV = device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
+
+	device->d3d12Instance->GetDevice()->CreateShaderResourceView(Resource, &SRVDesc, shaderLinearSRV);
 }
 
 void gs_texture_2d::InitRenderTargets(int32_t PlaneSliceCount)
@@ -239,16 +202,10 @@ void gs_texture_2d::InitRenderTargets(int32_t PlaneSliceCount)
 		renderTargetRTV[0] = device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		device->d3d12Instance->GetDevice()->CreateRenderTargetView(GetResource(), &RTVDesc, renderTargetRTV[0]);
 
-		if (dxgiFormatView == dxgiFormatViewLinear) {
-			renderTargetLinearRTV[0] = renderTargetRTV[0];
-		} else {
-			RTVDesc.Format = dxgiFormatViewLinear;
-			renderTargetLinearRTV[0] =
-				device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-			device->d3d12Instance->GetDevice()->CreateRenderTargetView(GetResource(), &RTVDesc,
-										   renderTargetLinearRTV[0]);
-		}
-
+		RTVDesc.Format = dxgiFormatViewLinear;
+		renderTargetLinearRTV[0] = device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		device->d3d12Instance->GetDevice()->CreateRenderTargetView(GetResource(), &RTVDesc,
+									   renderTargetLinearRTV[0]);
 	} else {
 		RTVDesc.Format = dxgiFormatView;
 		RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
@@ -260,15 +217,12 @@ void gs_texture_2d::InitRenderTargets(int32_t PlaneSliceCount)
 			renderTargetRTV[0] = device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 			device->d3d12Instance->GetDevice()->CreateRenderTargetView(GetResource(), &RTVDesc,
 										   renderTargetRTV[0]);
-			if (dxgiFormatView == dxgiFormatViewLinear) {
-				renderTargetLinearRTV[i] = renderTargetRTV[i];
-			} else {
-				RTVDesc.Format = dxgiFormatViewLinear;
-				renderTargetLinearRTV[i] =
-					device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-				device->d3d12Instance->GetDevice()->CreateRenderTargetView(GetResource(), &RTVDesc,
-											   renderTargetLinearRTV[i]);
-			}
+
+			RTVDesc.Format = dxgiFormatViewLinear;
+			renderTargetLinearRTV[i] =
+				device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			device->d3d12Instance->GetDevice()->CreateRenderTargetView(GetResource(), &RTVDesc,
+										   renderTargetLinearRTV[i]);
 		}
 	}
 }
@@ -425,4 +379,26 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
 	this->dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 
 	InitResourceView();
+}
+
+gs_texture_2d::~gs_texture_2d()
+{
+	Destroy();
+}
+
+void gs_texture_2d::Destroy()
+{
+	if (shaderSRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		shaderSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (shaderLinearSRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		shaderLinearSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	for (size_t i = 0; i < 6; ++i) {
+		renderTargetRTV[i].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+		renderTargetLinearRTV[i].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+	GpuResource::Destroy();
 }

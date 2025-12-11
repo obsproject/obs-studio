@@ -1,20 +1,3 @@
-/******************************************************************************
-    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-******************************************************************************/
-
 #include <cassert>
 #include <cinttypes>
 #include <optional>
@@ -611,7 +594,7 @@ static void device_resize_internal(gs_device_t *device, uint32_t cx, uint32_t cy
 {
 	try {
 		const gs_color_format format = get_swap_format_from_space(space, device->curSwapChain->initData.format);
-		device->context->Flush(true);
+		device->context->Finish(true);
 		device->context->SetNullRenderTarget();
 		device->curSwapChain->Resize(cx, cy, format);
 		device->curRenderTarget = &device->curSwapChain->target[device->curSwapChain->currentBackBufferIndex];
@@ -970,7 +953,7 @@ void device_load_samplerstate(gs_device_t *device, gs_samplerstate_t *samplersta
 		return;
 
 	if (samplerstate) {
-		handle = &samplerstate->sampler;
+		handle = &samplerstate->sampleDesc.Sampler;
 	}
 
 	device->curSamplers[unit] = samplerstate;
@@ -1243,7 +1226,7 @@ void device_begin_frame(gs_device_t *device)
 
 void device_end_frame(gs_device_t *device)
 {
-	device->context->Finish();
+	device->context->Finish(true);
 	device->context = device->d3d12Instance->GetNewGraphicsContext();
 }
 
@@ -1298,12 +1281,13 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t star
 		for (int32_t i = 0; i < GS_MAX_TEXTURES; ++i) {
 			if (states[i] != nullptr) {
 				device->context->SetDynamicSampler(device->curPixelShader->samplerRootParameterIndex, i,
-								   states[i]->sampler);
+								   states[i]->sampleDesc.Sampler);
 			}
 		}
 
 		for (int32_t i = 0; i < GS_MAX_TEXTURES; ++i) {
-			if (device->curSamplers[i] && device->curSamplers[i]->sampler.ptr != states[i]->sampler.ptr) {
+			if (device->curSamplers[i] &&
+			    device->curSamplers[i]->sampleDesc.Sampler.ptr != states[i]->sampleDesc.Sampler.ptr) {
 				device->curSamplers[i] = nullptr;
 			}
 		}

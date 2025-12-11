@@ -591,6 +591,8 @@ class DescriptorAllocator {
 public:
 	DescriptorAllocator(D3D12DeviceInstance *DeviceInstance, D3D12_DESCRIPTOR_HEAP_TYPE Type);
 	D3D12_CPU_DESCRIPTOR_HANDLE Allocate(uint32_t Count);
+	void DiscardAll();
+	size_t RemainingFreeCount();
 
 protected:
 	D3D12DeviceInstance *m_DeviceInstance = nullptr;
@@ -810,6 +812,8 @@ public:
 	GpuBuffer(D3D12DeviceInstance *DeviceInstance);
 	virtual ~GpuBuffer();
 
+	virtual void Destroy() override;
+
 	// Create a buffer.  If initial data is provided, it will be copied into the buffer using the default command context.
 	void Create(const std::wstring &name, uint32_t NumElements, uint32_t ElementSize,
 		    const void *initialData = nullptr);
@@ -944,6 +948,7 @@ struct Color {
 class DepthBuffer : public PixelBuffer {
 public:
 	DepthBuffer(D3D12DeviceInstance *DeviceInstance, float ClearDepth = 0.0f, uint8_t ClearStencil = 0);
+	virtual ~DepthBuffer();
 	// Create a depth buffer.  If an address is supplied, memory will not be allocated.
 	// The vmem address allows you to alias buffers (which can be especially useful for
 	// reusing ESRAM across a frame.)
@@ -952,6 +957,7 @@ public:
 
 	void Create(const std::wstring &Name, uint32_t Width, uint32_t Height, uint32_t NumSamples, DXGI_FORMAT Format,
 		    D3D12_GPU_VIRTUAL_ADDRESS VidMemPtr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN);
+	virtual void Destroy() override;
 
 	// Get pre-created CPU-visible descriptor handles
 	const D3D12_CPU_DESCRIPTOR_HANDLE &GetDSV() const;
@@ -1332,6 +1338,10 @@ public:
 	D3D12_COMMAND_LIST_TYPE m_Type;
 };
 
+class GraphicsCopyContext {
+
+};
+
 class GraphicsContext : public CommandContext {
 public:
 	void ClearUAV(GpuBuffer &Target);
@@ -1410,8 +1420,6 @@ public:
 
 class ComputeContext : public CommandContext {
 public:
-	static ComputeContext &Begin(const std::wstring &ID = L"", bool Async = false);
-
 	void ClearUAV(GpuBuffer &Target);
 
 	void SetRootSignature(const RootSignature &RootSig);
@@ -1538,13 +1546,15 @@ private:
 class SamplerDesc : public D3D12_SAMPLER_DESC {
 public:
 	SamplerDesc(D3D12DeviceInstance *DeviceInstance);
+	~SamplerDesc();
 	void SetTextureAddressMode(D3D12_TEXTURE_ADDRESS_MODE AddressMode);
 	void SetBorderColor(Color Border);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE CreateDescriptor(void);
+	void CreateDescriptor(void);
 	void CreateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE Handle);
 
 	D3D12DeviceInstance *m_DeviceInstance = nullptr;
+	D3D12_CPU_DESCRIPTOR_HANDLE Sampler;
 };
 
 struct MonitorColorInfo {
@@ -1589,7 +1599,6 @@ public:
 	CommandSignature &GetDispatchIndirectCommandSignature();
 	CommandSignature &GetDrawIndirectCommandSignature();
 	DescriptorAllocator *GetDescriptorAllocator();
-	std::map<size_t, D3D12_CPU_DESCRIPTOR_HANDLE> &GetSamplerCache();
 
 	DescriptorAllocator m_DescriptorAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {
 		{this, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV},
@@ -1597,6 +1606,8 @@ public:
 		{this, D3D12_DESCRIPTOR_HEAP_TYPE_RTV},
 		{this, D3D12_DESCRIPTOR_HEAP_TYPE_DSV}};
 	D3D12_CPU_DESCRIPTOR_HANDLE AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count = 1);
+	void DiscardDescriptorAll(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count = 1);
+
 	ID3D12DescriptorHeap *RequestCommonHeap(D3D12_DESCRIPTOR_HEAP_TYPE Type);
 
 	ID3D12DescriptorHeap *RequestDynamicDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE HeapType);
@@ -1667,8 +1678,6 @@ private:
 
 	std::map<size_t, ComPtr<ID3D12PipelineState>> m_GraphicsPSOHashMap;
 	std::map<size_t, ComPtr<ID3D12PipelineState>> m_ComputePSOHashMap;
-
-	std::map<size_t, D3D12_CPU_DESCRIPTOR_HANDLE> m_SamplerCache;
 
 	bool m_TypedUAVLoadSupport_R11G11B10_FLOAT = false;
 	bool m_TypedUAVLoadSupport_R16G16B16A16_FLOAT = false;
