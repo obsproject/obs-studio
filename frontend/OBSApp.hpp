@@ -21,6 +21,7 @@
 #include <utility/OBSTheme.hpp>
 #include <utility/ThumbnailManager.hpp>
 #include <widgets/OBSMainWindow.hpp>
+#include <Idian/Tooltip.hpp>
 
 #include <obs-frontend-api.h>
 #include <util/platform.h>
