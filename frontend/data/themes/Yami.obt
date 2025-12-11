@@ -1754,7 +1754,6 @@ QTableView::indicator:unchecked {
 QCheckBox::indicator:unchecked:hover,
 QGroupBox::indicator:unchecked:hover,
 QTableView::indicator:unchecked:hover {
-    border: none;
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
 
@@ -2315,11 +2314,11 @@ idian--ToggleSwitch {
     border: var(--highlight_width) solid transparent;
 }
 
-idian--ToggleSwitch:hover {
+idian--ToggleSwitch.hover {
     border-color: var(--grey4);
 }
 
-idian--ToggleSwitch:checked:hover {
+idian--ToggleSwitch.checked.hover {
     border-color: var(--white1);
 }
 
@@ -2327,13 +2326,13 @@ idian--ToggleSwitch.keyFocus {
     border-color: var(--highlight_color);
 }
 
-idian--Row idian--ToggleSwitch:hover,
+idian--Row idian--ToggleSwitch.hover,
 idian--Row.hover > idian--ToggleSwitch.row-buddy {
     border-color: var(--grey1);
 }
 
-idian--Row idian--ToggleSwitch:checked:hover,
-idian--Row.hover idian--ToggleSwitch.row-buddy:checked {
+idian--Row idian--ToggleSwitch.hover.checked,
+idian--Row.hover > idian--ToggleSwitch.checked.row-buddy {
     border-color: var(--white1);
 }
 
@@ -2352,7 +2351,7 @@ idian--Row QComboBox:focus {
     border-color: transparent;
 }
 
-idian--Row QComboBox:hover {
+idian--Row QComboBox.hover {
     border-color: var(--grey1);
 }
 
@@ -2377,7 +2376,7 @@ idian--Row QComboBox QAbstractItemView::item {
     padding: var(--padding_base) var(--padding_large);
 }
 
-idian--Row QComboBox QAbstractItemView::item:hover,
+idian--Row QComboBox QAbstractItemView.hover::item,
 idian--Row QComboBox QAbstractItemView::item:selected {
     background-color: var(--list_item_bg_selected);
     padding: var(--padding_base) var(--padding_large);
@@ -2400,32 +2399,30 @@ idian--Row idian--CheckBox {
     outline: none;
 }
 
-idian--Row idian--CheckBox::indicator,
-idian--Row idian--CheckBox::indicator:unchecked:hover {
+idian--CheckBox::indicator {
     border: var(--highlight_width) solid transparent;
     border-radius: var(--border_radius);
 }
 
-idian--Row.hover > idian--CheckBox.row-buddy::indicator,
-idian--Row > idian--CheckBox::indicator:unchecked:hover,
-idian--Row > idian--CheckBox::indicator:hover {
-    border-color: var(--grey1);
-}
-
-idian--Row.hover > idian--CheckBox.row-buddy::indicator:unchecked,
-idian--CheckBox.keyFocus::indicator:unchecked {
+idian--CheckBox.keyFocus::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy::indicator {
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
 
-idian--Row idian--CheckBox.keyFocus::indicator,
-idian--Row.hover > idian--CheckBox::indicator {
+idian--CheckBox.keyFocus.checked::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy.checked::indicator {
     image: url(theme:Yami/checkbox_checked_focus.svg);
 }
 
-idian--Row idian--CheckBox.keyFocus::indicator,
-idian--Row idian--CheckBox.keyFocus::indicator:unchecked,
-idian--Row idian--CheckBox.keyFocus::indicator:hover,
-idian--Row idian--CheckBox.keyFocus::indicator:unchecked:hover {
+idian--CheckBox.hover::indicator,
+idian--CheckBox.checked.hover::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy::indicator
+idian--Row.hover > idian--CheckBox.row-buddy.checked::indicator {
+    border-color: var(--grey1);
+}
+
+idian--CheckBox.keyFocus::indicator,
+idian--CheckBox.keyFocus.checked::indicator {
     border-color: var(--highlight_color);
 }
 
@@ -2497,16 +2494,15 @@ idian--RowFrame.hover .btn-frame {
     background: var(--grey4);
 }
 
-idian--RowFrame.hover idian--Row,
-idian--RowFrame.hover idian--Row.hover {
+idian--RowFrame.hover idian--Row {
     background: var(--grey4);
-    border: 2px solid var(--grey1);
+    border: var(--highlight_width) solid var(--grey1);
     border-right: none;
 }
 
 idian--RowFrame.hover .row-buddy {
     background: var(--grey4);
-    border: 2px solid var(--grey1);
+    border: var(--highlight_width) solid var(--grey1);
     border-left: none;
 }
 
