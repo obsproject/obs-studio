@@ -1,20 +1,3 @@
-/******************************************************************************
-    Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-******************************************************************************/
-
 #include "d3d12-command-context.hpp"
 
 #include <util/base.h>
@@ -264,10 +247,28 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::Allocate(uint32_t Count)
 			m_DescriptorSize = m_DeviceInstance->GetDevice()->GetDescriptorHandleIncrementSize(m_Type);
 	}
 
+	if (m_RemainingFreeHandles <= 0) {
+		throw HRError("DescriptorAllocator: No remaining free handles");
+	}
+
 	D3D12_CPU_DESCRIPTOR_HANDLE ret = m_CurrentHandle;
 	m_CurrentHandle.ptr += Count * m_DescriptorSize;
 	m_RemainingFreeHandles -= Count;
 	return ret;
+}
+
+size_t DescriptorAllocator::RemainingFreeCount() {
+	return m_RemainingFreeHandles;
+}
+
+void DescriptorAllocator::DiscardAll()
+{
+	if (m_CurrentHeap == nullptr) {
+		return;
+	}
+
+	m_CurrentHandle = m_CurrentHeap->GetCPUDescriptorHandleForHeapStart();
+	m_RemainingFreeHandles = sm_NumDescriptorsPerHeap;
 }
 
 DescriptorHandle::DescriptorHandle()
@@ -741,6 +742,19 @@ GpuBuffer::GpuBuffer(D3D12DeviceInstance *DeviceInstance)
 GpuBuffer::~GpuBuffer()
 {
 	Destroy();
+}
+
+void GpuBuffer::Destroy()
+{
+	if (m_UAV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_UAV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (m_SRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_SRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	GpuResource::Destroy();
 }
 
 void GpuBuffer::Create(const std::wstring &name, uint32_t NumElements, uint32_t ElementSize, const void *initialData)
@@ -1544,6 +1558,11 @@ DepthBuffer::DepthBuffer(D3D12DeviceInstance *DeviceInstance, float ClearDepth, 
 	m_hStencilSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 }
 
+DepthBuffer::~DepthBuffer()
+{
+	Destroy();
+}
+
 void DepthBuffer::Create(const std::wstring &Name, uint32_t Width, uint32_t Height, DXGI_FORMAT Format,
 			 D3D12_GPU_VIRTUAL_ADDRESS VidMemPtr)
 {
@@ -1561,6 +1580,35 @@ void DepthBuffer::Create(const std::wstring &Name, uint32_t Width, uint32_t Heig
 	ClearValue.Format = Format;
 	CreateTextureResource(m_DeviceInstance->GetDevice(), Name, ResourceDesc, ClearValue, VidMemPtr);
 	CreateDerivedViews(m_DeviceInstance->GetDevice());
+}
+
+void DepthBuffer::Destroy()
+{
+	if (m_hDSV[0].ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_hDSV[0].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (m_hDSV[1].ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_hDSV[1].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (m_hDSV[2].ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_hDSV[2].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (m_hDSV[3].ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_hDSV[3].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (m_hDepthSRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_hDepthSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (m_hStencilSRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		m_hStencilSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	GpuResource::Destroy();
 }
 
 const D3D12_CPU_DESCRIPTOR_HANDLE &DepthBuffer::GetDSV() const
@@ -3625,6 +3673,7 @@ void EngineProfiling::DisplayFrameRate()
 
 SamplerDesc::SamplerDesc(D3D12DeviceInstance *DeviceInstance) : m_DeviceInstance(DeviceInstance)
 {
+	Sampler.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 	Filter = D3D12_FILTER_ANISOTROPIC;
 	AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -3638,6 +3687,13 @@ SamplerDesc::SamplerDesc(D3D12DeviceInstance *DeviceInstance) : m_DeviceInstance
 	BorderColor[3] = 1.0f;
 	MinLOD = 0.0f;
 	MaxLOD = D3D12_FLOAT32_MAX;
+}
+
+SamplerDesc::~SamplerDesc()
+{
+	if (Sampler.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		Sampler.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
 }
 
 void SamplerDesc::SetTextureAddressMode(D3D12_TEXTURE_ADDRESS_MODE AddressMode)
@@ -3655,17 +3711,10 @@ void SamplerDesc::SetBorderColor(Color Border)
 	BorderColor[3] = Border.w;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE SamplerDesc::CreateDescriptor(void)
+void SamplerDesc::CreateDescriptor(void)
 {
-	size_t hashValue = Utility::HashState(this);
-	auto iter = m_DeviceInstance->GetSamplerCache().find(hashValue);
-	if (iter != m_DeviceInstance->GetSamplerCache().end()) {
-		return iter->second;
-	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE Handle = m_DeviceInstance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-	m_DeviceInstance->GetDevice()->CreateSampler(this, Handle);
-	return Handle;
+	Sampler = m_DeviceInstance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	m_DeviceInstance->GetDevice()->CreateSampler(this, Sampler);
 }
 
 void SamplerDesc::CreateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE Handle)
@@ -3862,11 +3911,6 @@ DescriptorAllocator *D3D12DeviceInstance::GetDescriptorAllocator()
 	return m_DescriptorAllocator;
 }
 
-std::map<size_t, D3D12_CPU_DESCRIPTOR_HANDLE> &D3D12DeviceInstance::GetSamplerCache()
-{
-	return m_SamplerCache;
-}
-
 ID3D12DescriptorHeap *D3D12DeviceInstance::RequestCommonHeap(D3D12_DESCRIPTOR_HEAP_TYPE Type)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC Desc;
@@ -3928,6 +3972,11 @@ void D3D12DeviceInstance::DiscardDynamicDescriptorHeaps(D3D12_DESCRIPTOR_HEAP_TY
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12DeviceInstance::AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count)
 {
 	return m_DescriptorAllocator[Type].Allocate(Count);
+}
+
+void D3D12DeviceInstance::DiscardDescriptorAll(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count)
+{
+	m_DescriptorAllocator[Type].DiscardAll();
 }
 
 GraphicsContext *D3D12DeviceInstance::GetNewGraphicsContext(const std::wstring &ID)
