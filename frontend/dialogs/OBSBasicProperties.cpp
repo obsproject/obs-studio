@@ -17,6 +17,8 @@
 
 #include "OBSBasicProperties.hpp"
 
+#include <components/MediaControls.hpp>
+#include <Idian/Utils.hpp>
 #include <utility/display-helpers.hpp>
 #include <widgets/OBSBasic.hpp>
 
@@ -39,6 +41,19 @@ using namespace std;
 
 static void CreateTransitionScene(OBSSource scene, const char *text, uint32_t color);
 
+namespace {
+bool is_network_media_source(obs_source_t *source, const char *id)
+{
+	if (strcmp(id, "ffmpeg_source") != 0)
+		return false;
+
+	OBSDataAutoRelease s = obs_source_get_settings(source);
+	bool is_local_file = obs_data_get_bool(s, "is_local_file");
+
+	return !is_local_file;
+}
+} // namespace
+
 OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
 	  ui(new Ui::OBSBasicProperties),
@@ -53,11 +68,17 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	int cy = (int)config_get_int(App()->GetAppConfig(), "PropertiesWindow", "cy");
 
 	enum obs_source_type type = obs_source_get_type(source);
+	uint32_t caps = obs_source_get_output_flags(source);
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
+	idian::Utils utils(this);
+
 	ui->setupUi(this);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
+
+	ui->controlsFrame->hide();
+	utils.addClass(ui->controlsFrame, "dialog-frame");
 
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
@@ -76,7 +97,16 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->propertiesLayout->addWidget(view);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		connect(view, &OBSPropertiesView::PropertiesRefreshed, this, &OBSBasicProperties::AddPreviewButton);
+		addTransitionPreviewButton();
+	}
+
+	if ((caps & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0) {
+		MediaControls *mediaControls = new MediaControls(this);
+		mediaControls->SetSource(source);
+
+		ui->controlsFrame->layout()->addWidget(mediaControls);
+
+		connect(view, &OBSPropertiesView::PropertiesRefreshed, this, &OBSBasicProperties::refreshControls);
 	}
 
 	view->show();
@@ -97,7 +127,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		obs_display_add_draw_callback(ui->preview->GetDisplay(), OBSBasicProperties::DrawTransitionPreview,
 					      this);
 	};
-	uint32_t caps = obs_source_get_output_flags(source);
+
 	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT || type == OBS_SOURCE_TYPE_SCENE;
 	bool drawable_preview = (caps & OBS_SOURCE_VIDEO) != 0;
 
@@ -159,11 +189,12 @@ OBSBasicProperties::~OBSBasicProperties()
 	main->UpdateContextBarDeferred(true);
 }
 
-void OBSBasicProperties::AddPreviewButton()
+void OBSBasicProperties::addTransitionPreviewButton()
 {
 	QPushButton *playButton = new QPushButton(QTStr("PreviewTransition"), this);
-	VScrollArea *area = view;
-	area->widget()->layout()->addWidget(playButton);
+
+	ui->controlsFrame->layout()->addWidget(playButton);
+	ui->controlsFrame->show();
 
 	playButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -404,6 +435,21 @@ void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx, uint32_t
 
 	gs_projection_pop();
 	gs_viewport_pop();
+}
+
+void OBSBasicProperties::refreshControls()
+{
+	uint32_t caps = obs_source_get_output_flags(source);
+
+	if ((caps & OBS_SOURCE_CONTROLLABLE_MEDIA) != 0) {
+		const char *id = obs_source_get_unversioned_id(source);
+
+		if (!is_network_media_source(source, id)) {
+			ui->controlsFrame->show();
+		} else {
+			ui->controlsFrame->hide();
+		}
+	}
 }
 
 void OBSBasicProperties::Cleanup()

@@ -449,6 +449,10 @@
 
 /* Media icons */
 
+MediaControls QPushButton {
+    min-height: var(--input_height);
+}
+
 .icon-media-play {
     qproperty-icon: url(theme:Dark/media/media_play.svg);
 }

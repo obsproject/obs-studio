@@ -39,7 +39,6 @@ private:
 	OBSSignal updatePropertiesSignal;
 	OBSData oldSettings;
 	OBSPropertiesView *view;
-	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
 
 	OBSSourceAutoRelease sourceA;
@@ -52,14 +51,16 @@ private:
 	static void UpdateProperties(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 	static void DrawTransitionPreview(void *data, uint32_t cx, uint32_t cy);
+
+	void refreshControls();
 	void UpdateCallback(void *obj, obs_data_t *settings);
 	bool ConfirmQuit();
 	int CheckSettings();
 	void Cleanup();
+	void addTransitionPreviewButton();
 
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
-	void AddPreviewButton();
 
 public:
 	OBSBasicProperties(QWidget *parent, OBSSource source_);
