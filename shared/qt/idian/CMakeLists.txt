@@ -8,20 +8,29 @@ add_library(OBS::idian ALIAS idian)
 target_sources(
   idian
   PRIVATE
+    components/AbstractPopup.cpp
     components/CheckBox.cpp
     components/ComboBox.cpp
     components/DoubleSpinBox.cpp
+    components/GuidePopup.cpp
+    components/InfoPopup.cpp
     components/SpinBox.cpp
     components/ToggleSwitch.cpp
+    components/Tooltip.cpp
+    include/Idian/AbstractPopup.hpp
     include/Idian/CheckBox.hpp
     include/Idian/ComboBox.hpp
     include/Idian/DoubleSpinBox.hpp
     include/Idian/Group.hpp
+    include/Idian/GuidePopup.hpp
     include/Idian/Idian.hpp
+    include/Idian/InfoPopup.hpp
+    include/Idian/PopupContents.hpp
     include/Idian/PropertiesList.hpp
     include/Idian/Row.hpp
     include/Idian/SpinBox.hpp
     include/Idian/ToggleSwitch.hpp
+    include/Idian/Tooltip.hpp
     include/Idian/Utils.hpp
     widgets/Group.cpp
     widgets/PropertiesList.cpp
