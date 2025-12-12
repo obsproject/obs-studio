@@ -221,12 +221,12 @@ bool gs_swap_chain::CheckHDRSupport()
 		return true;
 	}
 
-	/* UINT colorSpaceSupport = 0;
+	UINT colorSpaceSupport = 0;
 	swap->CheckColorSpaceSupport(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020, &colorSpaceSupport);
 
 	if (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) {
 		return true;
-	}*/
+	}
 
 	return false;
 }

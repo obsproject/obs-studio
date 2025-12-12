@@ -39,6 +39,7 @@ void gs_index_buffer::Release()
 	}
 }
 
-gs_index_buffer::~gs_index_buffer() {
+gs_index_buffer::~gs_index_buffer()
+{
 	Release();
 }

@@ -88,8 +88,9 @@ void gs_vertex_buffer::BuildBuffers()
 	}
 }
 
-gs_vertex_buffer::~gs_vertex_buffer() {
-		Release();
+gs_vertex_buffer::~gs_vertex_buffer()
+{
+	Release();
 }
 
 void gs_vertex_buffer::Release()

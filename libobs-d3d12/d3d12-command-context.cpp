@@ -245,6 +245,15 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::Allocate(uint32_t Count)
 
 		if (m_DescriptorSize == 0)
 			m_DescriptorSize = m_DeviceInstance->GetDevice()->GetDescriptorHandleIncrementSize(m_Type);
+
+		for (int32_t i = 0; i < kMaxNumDescriptors; ++i) {
+			m_DescriptorPoolNodes[i].index = i;
+			if (i != kMaxNumDescriptors - 1) {
+				m_DescriptorPoolNodes[i].next = &m_DescriptorPoolNodes[i + 1];
+			}
+		}
+
+		m_DescriptorPoolHead = &m_DescriptorPoolNodes[0];
 	}
 
 	if (m_RemainingFreeHandles <= 0) {
@@ -257,18 +266,21 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::Allocate(uint32_t Count)
 	return ret;
 }
 
-size_t DescriptorAllocator::RemainingFreeCount() {
-	return m_RemainingFreeHandles;
+UINT64 DescriptorAllocator::GetAvailableIndex()
+{
+	if (m_DescriptorPoolHead) {
+		SIZE_T index = m_DescriptorPoolHead->index;
+		m_DescriptorPoolHead = (DescriptorHandleNode *)(m_DescriptorPoolHead->next);
+		return index;
+	} else {
+		return D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
 }
 
-void DescriptorAllocator::DiscardAll()
+void DescriptorAllocator::FreeIndex(UINT64 index)
 {
-	if (m_CurrentHeap == nullptr) {
-		return;
-	}
-
-	m_CurrentHandle = m_CurrentHeap->GetCPUDescriptorHandleForHeapStart();
-	m_RemainingFreeHandles = kMaxNumDescriptors;
+	m_DescriptorPoolNodes[index].next = m_DescriptorPoolHead;
+	m_DescriptorPoolHead = &m_DescriptorPoolNodes[index];
 }
 
 DescriptorHandle::DescriptorHandle()
@@ -1005,95 +1017,6 @@ void ByteAddressBuffer::CreateDerivedViews(void)
 	UAVDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 	UAVDesc.Buffer.NumElements = (UINT)m_BufferSize / 4;
 	UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
-
-	if (m_UAV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
-		m_UAV = m_DeviceInstance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_DeviceInstance->GetDevice()->CreateUnorderedAccessView(m_pResource.Get(), nullptr, &UAVDesc, m_UAV);
-}
-
-StructuredBuffer::StructuredBuffer(D3D12DeviceInstance *DeviceInstance)
-	: GpuBuffer(DeviceInstance),
-	  m_CounterBuffer(std::make_unique<ByteAddressBuffer>(DeviceInstance))
-{
-}
-
-void StructuredBuffer::Destroy(void)
-{
-	m_CounterBuffer->Destroy();
-	GpuBuffer::Destroy();
-}
-
-void StructuredBuffer::CreateDerivedViews(void)
-{
-	D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
-	SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	SRVDesc.Buffer.NumElements = m_ElementCount;
-	SRVDesc.Buffer.StructureByteStride = m_ElementSize;
-	SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-	if (m_SRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
-		m_SRV = m_DeviceInstance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_DeviceInstance->GetDevice()->CreateShaderResourceView(m_pResource.Get(), &SRVDesc, m_SRV);
-
-	D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
-	UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
-	UAVDesc.Buffer.CounterOffsetInBytes = 0;
-	UAVDesc.Buffer.NumElements = m_ElementCount;
-	UAVDesc.Buffer.StructureByteStride = m_ElementSize;
-	UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-
-	m_CounterBuffer->Create(L"StructuredBuffer::Counter", 1, 4);
-
-	if (m_UAV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
-		m_UAV = m_DeviceInstance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_DeviceInstance->GetDevice()->CreateUnorderedAccessView(m_pResource.Get(), m_CounterBuffer->GetResource(),
-								 &UAVDesc, m_UAV);
-}
-
-ByteAddressBuffer &StructuredBuffer::GetCounterBuffer(void)
-{
-	return *m_CounterBuffer;
-}
-
-const D3D12_CPU_DESCRIPTOR_HANDLE &StructuredBuffer::GetCounterSRV(CommandContext &Context)
-{
-	Context.TransitionResource(*m_CounterBuffer, D3D12_RESOURCE_STATE_GENERIC_READ);
-	return m_CounterBuffer->GetSRV();
-}
-
-const D3D12_CPU_DESCRIPTOR_HANDLE &StructuredBuffer::GetCounterUAV(CommandContext &Context)
-{
-	Context.TransitionResource(*m_CounterBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	return m_CounterBuffer->GetUAV();
-}
-
-TypedBuffer::TypedBuffer(D3D12DeviceInstance *DeviceInstance, DXGI_FORMAT Format)
-	: GpuBuffer(DeviceInstance),
-	  m_DataFormat(Format)
-{
-}
-
-void TypedBuffer::CreateDerivedViews(void)
-{
-	D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	SRVDesc.Format = m_DataFormat;
-	SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	SRVDesc.Buffer.NumElements = m_ElementCount;
-	SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-	if (m_SRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
-		m_SRV = m_DeviceInstance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	m_DeviceInstance->GetDevice()->CreateShaderResourceView(m_pResource.Get(), &SRVDesc, m_SRV);
-
-	D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
-	UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	UAVDesc.Format = m_DataFormat;
-	UAVDesc.Buffer.NumElements = m_ElementCount;
-	UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 
 	if (m_UAV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
 		m_UAV = m_DeviceInstance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -2513,9 +2436,6 @@ uint64_t CommandContext::Finish(bool WaitForCompletion)
 {
 	FlushResourceBarriers();
 
-	if (m_ID.length() > 0)
-		EngineProfiling::GetInstace()->EndBlock(this);
-
 	if (m_CurrentAllocator == nullptr) {
 		throw HRError("Trying to finish a command list with no allocator set.");
 	}
@@ -2579,14 +2499,6 @@ void CommandContext::CopySubresource(GpuResource &Dest, UINT DestSubIndex, GpuRe
 	m_CommandList->CopyTextureRegion(&DestLocation, 0, 0, 0, &SrcLocation, nullptr);
 }
 
-void CommandContext::CopyCounter(GpuResource &Dest, size_t DestOffset, StructuredBuffer &Src)
-{
-	TransitionResource(Dest, D3D12_RESOURCE_STATE_COPY_DEST);
-	TransitionResource(Src.GetCounterBuffer(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-	FlushResourceBarriers();
-	m_CommandList->CopyBufferRegion(Dest.GetResource(), DestOffset, Src.GetCounterBuffer().GetResource(), 0, 4);
-}
-
 void CommandContext::CopyTextureRegion(GpuResource &Dest, UINT x, UINT y, UINT z, GpuResource &Source, RECT &Rect)
 {
 	TransitionResource(Dest, D3D12_RESOURCE_STATE_COPY_DEST);
@@ -2635,12 +2547,6 @@ void CommandContext::UpdateTexture(GpuResource &Dest, UploadBuffer &buffer)
 	m_CommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, NULL);
 }
 
-void CommandContext::ResetCounter(StructuredBuffer &Buf, uint32_t Value)
-{
-	FillBuffer(Buf.GetCounterBuffer(), 0, Value, sizeof(uint32_t));
-	TransitionResource(Buf.GetCounterBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-}
-
 uint32_t CommandContext::ReadbackTexture(ReadbackBuffer &DstBuffer, GpuResource &SrcBuffer)
 {
 	uint64_t CopySize = 0;
@@ -2679,14 +2585,6 @@ void CommandContext::WriteBuffer(GpuResource &Dest, size_t DestOffset, const voi
 	}
 	DynAlloc TempSpace = m_CpuLinearAllocator->Allocate(NumBytes, 512);
 	SIMDMemCopy(TempSpace.DataPtr, BufferData, Math::DivideByMultiple(NumBytes, 16));
-	CopyBufferRegion(Dest, DestOffset, TempSpace.Buffer, TempSpace.Offset, NumBytes);
-}
-
-void CommandContext::FillBuffer(GpuResource &Dest, size_t DestOffset, DWParam Value, size_t NumBytes)
-{
-	DynAlloc TempSpace = m_CpuLinearAllocator->Allocate(NumBytes, 512);
-	__m128 VectorValue = _mm_set1_ps(Value.Float);
-	SIMDMemFill(TempSpace.DataPtr, VectorValue, Math::DivideByMultiple(NumBytes, 16));
 	CopyBufferRegion(Dest, DestOffset, TempSpace.Buffer, TempSpace.Offset, NumBytes);
 }
 
@@ -3042,35 +2940,9 @@ void GraphicsContext::SetConstantArray(UINT RootIndex, UINT NumConstants, const 
 	m_CommandList->SetGraphicsRoot32BitConstants(RootIndex, NumConstants, pConstants, 0);
 }
 
-void GraphicsContext::SetConstant(UINT RootIndex, UINT Offset, DWParam Val)
+void GraphicsContext::SetConstant(UINT RootIndex, UINT Offset, UINT Val)
 {
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, Val.Uint, Offset);
-}
-
-void GraphicsContext::SetConstants(UINT RootIndex, DWParam X)
-{
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, X.Uint, 0);
-}
-
-void GraphicsContext::SetConstants(UINT RootIndex, DWParam X, DWParam Y)
-{
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, X.Uint, 0);
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, Y.Uint, 1);
-}
-
-void GraphicsContext::SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z)
-{
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, X.Uint, 0);
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, Y.Uint, 1);
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, Z.Uint, 2);
-}
-
-void GraphicsContext::SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W)
-{
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, X.Uint, 0);
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, Y.Uint, 1);
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, Z.Uint, 2);
-	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, W.Uint, 3);
+	m_CommandList->SetGraphicsRoot32BitConstant(RootIndex, Val, Offset);
 }
 
 void GraphicsContext::SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV)
@@ -3273,35 +3145,9 @@ void ComputeContext::SetConstantArray(UINT RootIndex, UINT NumConstants, const v
 	m_CommandList->SetComputeRoot32BitConstants(RootIndex, NumConstants, pConstants, 0);
 }
 
-void ComputeContext::SetConstant(UINT RootIndex, UINT Offset, DWParam Val)
+void ComputeContext::SetConstant(UINT RootIndex, UINT Offset, UINT Val)
 {
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, Val.Uint, Offset);
-}
-
-void ComputeContext::SetConstants(UINT RootIndex, DWParam X)
-{
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, X.Uint, 0);
-}
-
-void ComputeContext::SetConstants(UINT RootIndex, DWParam X, DWParam Y)
-{
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, X.Uint, 0);
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, Y.Uint, 1);
-}
-
-void ComputeContext::SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z)
-{
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, X.Uint, 0);
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, Y.Uint, 1);
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, Z.Uint, 2);
-}
-
-void ComputeContext::SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W)
-{
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, X.Uint, 0);
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, Y.Uint, 1);
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, Z.Uint, 2);
-	m_CommandList->SetComputeRoot32BitConstant(RootIndex, W.Uint, 3);
+	m_CommandList->SetComputeRoot32BitConstant(RootIndex, Val, Offset);
 }
 
 void ComputeContext::SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV)
@@ -3316,8 +3162,8 @@ void ComputeContext::SetDynamicConstantBufferView(UINT RootIndex, size_t BufferS
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	//SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
-	memcpy(cb.DataPtr, BufferData, BufferSize);
+	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
+	//memcpy(cb.DataPtr, BufferData, BufferSize);
 	m_CommandList->SetComputeRootConstantBufferView(RootIndex, cb.GpuAddress);
 }
 
@@ -3422,253 +3268,6 @@ void ComputeContext::ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &Ar
 				       ArgumentStartOffset,
 				       CommandCounterBuffer == nullptr ? nullptr : CommandCounterBuffer->GetResource(),
 				       CounterOffset);
-}
-
-void GpuTimeManager::Initialize(D3D12DeviceInstance *DeviceInstance, uint32_t MaxNumTimers)
-{
-	m_DeviceInstance = DeviceInstance;
-	uint64_t GpuFrequency;
-	m_DeviceInstance->GetCommandManager().GetCommandQueue()->GetTimestampFrequency(&GpuFrequency);
-	m_GpuTickDelta = 1.0 / static_cast<double>(GpuFrequency);
-
-	D3D12_HEAP_PROPERTIES HeapProps;
-	HeapProps.Type = D3D12_HEAP_TYPE_READBACK;
-	HeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	HeapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	HeapProps.CreationNodeMask = 1;
-	HeapProps.VisibleNodeMask = 1;
-
-	D3D12_RESOURCE_DESC BufferDesc;
-	BufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	BufferDesc.Alignment = 0;
-	BufferDesc.Width = sizeof(uint64_t) * MaxNumTimers * 2;
-	BufferDesc.Height = 1;
-	BufferDesc.DepthOrArraySize = 1;
-	BufferDesc.MipLevels = 1;
-	BufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-	BufferDesc.SampleDesc.Count = 1;
-	BufferDesc.SampleDesc.Quality = 0;
-	BufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	BufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-	HRESULT hr = m_DeviceInstance->GetDevice()->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE,
-									    &BufferDesc, D3D12_RESOURCE_STATE_COPY_DEST,
-									    nullptr, IID_PPV_ARGS(&m_ReadBackBuffer));
-	if (FAILED(hr)) {
-		throw HRError("Failed to create GPU time stamp readback buffer", hr);
-	}
-
-	m_ReadBackBuffer->SetName(L"GpuTimeStamp Buffer");
-
-	D3D12_QUERY_HEAP_DESC QueryHeapDesc;
-	QueryHeapDesc.Count = MaxNumTimers * 2;
-	QueryHeapDesc.NodeMask = 1;
-	QueryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
-	hr = m_DeviceInstance->GetDevice()->CreateQueryHeap(&QueryHeapDesc, IID_PPV_ARGS(&m_QueryHeap));
-	if (FAILED(hr)) {
-		throw HRError("Failed to create GPU time stamp query heap", hr);
-	}
-
-	m_QueryHeap->SetName(L"GpuTimeStamp QueryHeap");
-
-	m_MaxNumTimers = (uint32_t)MaxNumTimers;
-}
-
-void GpuTimeManager::Shutdown()
-{
-	if (m_ReadBackBuffer != nullptr)
-		m_ReadBackBuffer->Release();
-
-	if (m_QueryHeap != nullptr)
-		m_QueryHeap->Release();
-}
-
-uint32_t GpuTimeManager::NewTimer(void)
-{
-	return m_NumTimers++;
-}
-
-void GpuTimeManager::StartTimer(CommandContext &Context, uint32_t TimerIdx)
-{
-	Context.InsertTimeStamp(m_QueryHeap, TimerIdx * 2);
-}
-
-void GpuTimeManager::StopTimer(CommandContext &Context, uint32_t TimerIdx)
-{
-	Context.InsertTimeStamp(m_QueryHeap, TimerIdx * 2 + 1);
-}
-
-void GpuTimeManager::BeginReadBack(void)
-{
-	m_DeviceInstance->GetCommandManager().WaitForFence(m_Fence);
-
-	D3D12_RANGE Range;
-	Range.Begin = 0;
-	Range.End = (m_NumTimers * 2) * sizeof(uint64_t);
-	HRESULT hr = m_ReadBackBuffer->Map(0, &Range, reinterpret_cast<void **>(&m_TimeStampBuffer));
-	if (FAILED(hr)) {
-		throw HRError("Failed to map GPU time stamp readback buffer", hr);
-	}
-
-	m_ValidTimeStart = m_TimeStampBuffer[0];
-	m_ValidTimeEnd = m_TimeStampBuffer[1];
-
-	// On the first frame, with random values in the timestamp query heap, we can avoid a misstart.
-	if (m_ValidTimeEnd < m_ValidTimeStart) {
-		m_ValidTimeStart = 0ull;
-		m_ValidTimeEnd = 0ull;
-	}
-}
-void GpuTimeManager::EndReadBack(void)
-{
-	// Unmap with an empty range to indicate nothing was written by the CPU
-	D3D12_RANGE EmptyRange = {};
-	m_ReadBackBuffer->Unmap(0, &EmptyRange);
-	m_TimeStampBuffer = nullptr;
-
-	CommandContext &Context = *m_DeviceInstance->GetNewGraphicsContext();
-	Context.InsertTimeStamp(m_QueryHeap, 1);
-	Context.ResolveTimeStamps(m_ReadBackBuffer, m_QueryHeap, m_NumTimers * 2);
-	Context.InsertTimeStamp(m_QueryHeap, 0);
-	m_Fence = Context.Finish();
-}
-
-float GpuTimeManager::GetTime(uint32_t TimerIdx)
-{
-	if (m_TimeStampBuffer == nullptr) {
-		throw HRError("Time stamp readback buffer is not mapped");
-	}
-	if (TimerIdx >= m_NumTimers) {
-		throw HRError("Invalid GPU timer index");
-	}
-	uint64_t TimeStamp1 = m_TimeStampBuffer[TimerIdx * 2];
-	uint64_t TimeStamp2 = m_TimeStampBuffer[TimerIdx * 2 + 1];
-
-	if (TimeStamp1 < m_ValidTimeStart || TimeStamp2 > m_ValidTimeEnd || TimeStamp2 <= TimeStamp1)
-		return 0.0f;
-
-	return static_cast<float>(m_GpuTickDelta * (TimeStamp2 - TimeStamp1));
-}
-
-GpuTimer::GpuTimer(D3D12DeviceInstance *DeviceInstance) : m_DeviceInstance(DeviceInstance)
-{
-	m_TimerIndex = m_DeviceInstance->GetGPUTimeManager().NewTimer();
-}
-
-void GpuTimer::Start(CommandContext &Context)
-{
-	m_DeviceInstance->GetGPUTimeManager().StartTimer(Context, m_TimerIndex);
-}
-
-void GpuTimer::Stop(CommandContext &Context)
-{
-	m_DeviceInstance->GetGPUTimeManager().StopTimer(Context, m_TimerIndex);
-}
-
-float GpuTimer::GetTime(void)
-{
-	return m_DeviceInstance->GetGPUTimeManager().GetTime(m_TimerIndex);
-}
-
-uint32_t GpuTimer::GetTimerIndex(void)
-{
-	return m_TimerIndex;
-}
-
-SystemTime *SystemTime::GetInstance()
-{
-	SystemTime *instance = new SystemTime();
-	return instance;
-}
-
-SystemTime::SystemTime()
-{
-	LARGE_INTEGER frequency;
-	if (TRUE != QueryPerformanceFrequency(&frequency)) {
-		throw HRError("Unable to query performance counter frequency");
-	}
-	m_CpuTickDelta = 1.0 / static_cast<double>(frequency.QuadPart);
-}
-
-int64_t SystemTime::GetCurrentTick(void)
-{
-	LARGE_INTEGER currentTick;
-	if (TRUE != QueryPerformanceCounter(&currentTick)) {
-		throw HRError("Unable to query performance counter value");
-	}
-
-	return static_cast<int64_t>(currentTick.QuadPart);
-}
-
-void SystemTime::BusyLoopSleep(float SleepTime)
-{
-	int64_t finalTick = (int64_t)((double)SleepTime / m_CpuTickDelta) + GetCurrentTick();
-	while (GetCurrentTick() < finalTick)
-		;
-}
-
-double SystemTime::TicksToSeconds(int64_t TickCount)
-{
-	return TickCount * m_CpuTickDelta;
-}
-
-double SystemTime::TicksToMillisecs(int64_t TickCount)
-{
-	return TickCount * m_CpuTickDelta * 1000.0;
-}
-
-double SystemTime::TimeBetweenTicks(int64_t tick1, int64_t tick2)
-{
-	return TicksToSeconds(tick2 - tick1);
-}
-
-CpuTimer::CpuTimer()
-{
-	m_StartTick = 0ll;
-	m_ElapsedTicks = 0ll;
-}
-
-void CpuTimer::Start()
-{
-	if (m_StartTick == 0ll)
-		m_StartTick = SystemTime::GetInstance()->GetCurrentTick();
-}
-void CpuTimer::Stop()
-{
-	if (m_StartTick != 0ll) {
-		m_ElapsedTicks += SystemTime::GetInstance()->GetCurrentTick() - m_StartTick;
-		m_StartTick = 0ll;
-	}
-}
-
-void CpuTimer::Reset()
-{
-	m_ElapsedTicks = 0ll;
-	m_StartTick = 0ll;
-}
-
-double CpuTimer::GetTime() const
-{
-	return SystemTime::GetInstance()->TicksToSeconds(m_ElapsedTicks);
-}
-
-EngineProfiling *EngineProfiling::GetInstace()
-{
-	static EngineProfiling *instance = new EngineProfiling();
-	return instance;
-}
-
-void EngineProfiling::Update() {}
-
-void EngineProfiling::BeginBlock(const std::wstring &name, CommandContext *Context) {}
-
-void EngineProfiling::EndBlock(CommandContext *Context) {}
-
-void EngineProfiling::DisplayFrameRate()
-{
-	/*float cpuTime = NestedTimingTree::GetTotalCpuTime();
-	float gpuTime = NestedTimingTree::GetTotalGpuTime();
-	float frameRate = 1.0f / NestedTimingTree::GetFrameDelta();*/
 }
 
 SamplerDesc::SamplerDesc(D3D12DeviceInstance *DeviceInstance) : m_DeviceInstance(DeviceInstance)
@@ -3843,10 +3442,8 @@ void D3D12DeviceInstance::Initialize(int32_t adaptorIndex)
 
 	m_CommandManager = std::make_unique<CommandListManager>();
 	m_ContextManager = std::make_unique<ContextManager>(this);
-	m_GPUTimeManager = std::make_unique<GpuTimeManager>();
 
 	m_CommandManager->Create(this);
-	m_GPUTimeManager->Initialize(this, 4096);
 }
 
 void D3D12DeviceInstance::Uninitialize() {}
@@ -3974,17 +3571,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3D12DeviceInstance::AllocateDescriptor(D3D12_DESCRI
 	return m_DescriptorAllocator[Type].Allocate(Count);
 }
 
-void D3D12DeviceInstance::DiscardDescriptorAll(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count)
-{
-	m_DescriptorAllocator[Type].DiscardAll();
-}
-
 GraphicsContext *D3D12DeviceInstance::GetNewGraphicsContext(const std::wstring &ID)
 {
 	CommandContext *NewContext = m_ContextManager->AllocateContext(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	NewContext->SetID(ID);
-	if (ID.length() > 0)
-		EngineProfiling::GetInstace()->BeginBlock(ID, NewContext);
 	return (GraphicsContext *)NewContext;
 }
 
@@ -3993,8 +3583,6 @@ ComputeContext *D3D12DeviceInstance::GetNewComputeContext(const std::wstring &ID
 	CommandContext *NewContext = m_ContextManager->AllocateContext(Async ? D3D12_COMMAND_LIST_TYPE_COMPUTE
 									     : D3D12_COMMAND_LIST_TYPE_DIRECT);
 	NewContext->SetID(ID);
-	if (ID.length() > 0)
-		EngineProfiling::GetInstace()->BeginBlock(ID, NewContext);
 	return (ComputeContext *)NewContext;
 }
 
@@ -4193,11 +3781,6 @@ void D3D12DeviceInstance::InitializeTextureArraySlice(GpuResource &Dest, UINT Sl
 
 	Context.TransitionResource(Dest, D3D12_RESOURCE_STATE_GENERIC_READ);
 	Context.Finish(true);
-}
-
-GpuTimeManager &D3D12DeviceInstance::GetGPUTimeManager()
-{
-	return *m_GPUTimeManager;
 }
 
 bool D3D12DeviceInstance::IsNV12TextureSupported() const
