@@ -445,6 +445,14 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector4d.h \
  /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.h \
  /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/nodes/CameraNode.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonobject.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonvalue.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcborvalue.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatetime.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcalendar.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcborcommon.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/quuid.h \
  /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/nodes/VideoNode.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QFormLayout \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qformlayout.h \

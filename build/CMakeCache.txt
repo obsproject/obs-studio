@@ -726,6 +726,24 @@ QT_ADDITIONAL_HOST_PACKAGES_PREFIX_PATH:STRING=
 //Additional directories where find(Qt6 ...) components are searched
 QT_ADDITIONAL_PACKAGES_PREFIX_PATH:STRING=
 
+//The directory containing a CMake configuration file for Qt63DCore.
+Qt63DCore_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore
+
+//The directory containing a CMake configuration file for Qt63DExtras.
+Qt63DExtras_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras
+
+//The directory containing a CMake configuration file for Qt63DInput.
+Qt63DInput_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput
+
+//The directory containing a CMake configuration file for Qt63DLogic.
+Qt63DLogic_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic
+
+//The directory containing a CMake configuration file for Qt63DRender.
+Qt63DRender_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender
+
+//The directory containing a CMake configuration file for Qt6Concurrent.
+Qt6Concurrent_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent
+
 //The directory containing a CMake configuration file for Qt6CoreTools.
 Qt6CoreTools_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools
 
@@ -743,6 +761,9 @@ Qt6GuiTools_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools
 
 //The directory containing a CMake configuration file for Qt6Gui.
 Qt6Gui_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Gui
+
+//The directory containing a CMake configuration file for Qt6Multimedia.
+Qt6Multimedia_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia
 
 //The directory containing a CMake configuration file for Qt6Network.
 Qt6Network_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Network
@@ -765,8 +786,32 @@ Qt6QmlTools_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6QmlTools
 //The directory containing a CMake configuration file for Qt6Qml.
 Qt6Qml_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Qml
 
+//The directory containing a CMake configuration file for Qt6Quick3DRuntimeRender.
+Qt6Quick3DRuntimeRender_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender
+
+//The directory containing a CMake configuration file for Qt6Quick3DTools.
+Qt6Quick3DTools_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools
+
+//The directory containing a CMake configuration file for Qt6Quick3DUtils.
+Qt6Quick3DUtils_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils
+
+//The directory containing a CMake configuration file for Qt6Quick3D.
+Qt6Quick3D_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D
+
+//The directory containing a CMake configuration file for Qt6QuickControls2.
+Qt6QuickControls2_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2
+
+//The directory containing a CMake configuration file for Qt6QuickTemplates2.
+Qt6QuickTemplates2_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2
+
 //The directory containing a CMake configuration file for Qt6Quick.
 Qt6Quick_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick
+
+//The directory containing a CMake configuration file for Qt6ShaderToolsTools.
+Qt6ShaderToolsTools_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools
+
+//The directory containing a CMake configuration file for Qt6ShaderTools.
+Qt6ShaderTools_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools
 
 //The directory containing a CMake configuration file for Qt6WidgetsTools.
 Qt6WidgetsTools_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools
@@ -1786,6 +1831,8 @@ QT_FEATURE_alloca:INTERNAL=ON
 QT_FEATURE_alloca_h:INTERNAL=ON
 //Qt feature: alloca_malloc_h (from target Qt6::Core)
 QT_FEATURE_alloca_malloc_h:INTERNAL=OFF
+//Qt feature: alsa (from target Qt6::Multimedia)
+QT_FEATURE_alsa:INTERNAL=OFF
 //Qt feature: android_style_assets (from target Qt6::Core)
 QT_FEATURE_android_style_assets:INTERNAL=OFF
 //Qt feature: animation (from target Qt6::Core)
@@ -1796,6 +1843,8 @@ QT_FEATURE_appstore_compliant:INTERNAL=OFF
 QT_FEATURE_arm_crc32:INTERNAL=OFF
 //Qt feature: arm_crypto (from target Qt6::Core)
 QT_FEATURE_arm_crypto:INTERNAL=OFF
+//Qt feature: avfoundation (from target Qt6::Multimedia)
+QT_FEATURE_avfoundation:INTERNAL=OFF
 //Qt feature: avx (from target Qt6::Core)
 QT_FEATURE_avx:INTERNAL=ON
 //Qt feature: avx2 (from target Qt6::Core)
@@ -1864,6 +1913,8 @@ QT_FEATURE_concatenatetablesproxymodel:INTERNAL=ON
 QT_FEATURE_concurrent:INTERNAL=ON
 //Qt feature: contextmenu (from target Qt6::Widgets)
 QT_FEATURE_contextmenu:INTERNAL=ON
+//Qt feature: coreaudio (from target Qt6::Multimedia)
+QT_FEATURE_coreaudio:INTERNAL=OFF
 //Qt feature: cpp_winrt (from target Qt6::Core)
 QT_FEATURE_cpp_winrt:INTERNAL=OFF
 //Qt feature: cross_compile (from target Qt6::Core)
@@ -1984,8 +2035,12 @@ QT_FEATURE_etw:INTERNAL=OFF
 QT_FEATURE_evdev:INTERNAL=ON
 //Qt feature: eventfd (from target Qt6::Core)
 QT_FEATURE_eventfd:INTERNAL=ON
+//Qt feature: evr (from target Qt6::Multimedia)
+QT_FEATURE_evr:INTERNAL=OFF
 //Qt feature: f16c (from target Qt6::Core)
 QT_FEATURE_f16c:INTERNAL=ON
+//Qt feature: ffmpeg (from target Qt6::Multimedia)
+QT_FEATURE_ffmpeg:INTERNAL=ON
 //Qt feature: filedialog (from target Qt6::Widgets)
 QT_FEATURE_filedialog:INTERNAL=ON
 //Qt feature: filesystemiterator (from target Qt6::Core)
@@ -2036,6 +2091,8 @@ QT_FEATURE_gif:INTERNAL=ON
 QT_FEATURE_glib:INTERNAL=ON
 //Qt feature: glibc (from target Qt6::Core)
 QT_FEATURE_glibc:INTERNAL=ON
+//Qt feature: gpu_vivante (from target Qt6::Multimedia)
+QT_FEATURE_gpu_vivante:INTERNAL=OFF
 //Qt feature: graphicseffect (from target Qt6::Widgets)
 QT_FEATURE_graphicseffect:INTERNAL=ON
 //Qt feature: graphicsview (from target Qt6::Widgets)
@@ -2044,6 +2101,16 @@ QT_FEATURE_graphicsview:INTERNAL=ON
 QT_FEATURE_groupbox:INTERNAL=ON
 //Qt feature: gssapi (from target Qt6::Network)
 QT_FEATURE_gssapi:INTERNAL=ON
+//Qt feature: gstreamer (from target Qt6::Multimedia)
+QT_FEATURE_gstreamer:INTERNAL=ON
+//Qt feature: gstreamer_1_0 (from target Qt6::Multimedia)
+QT_FEATURE_gstreamer_1_0:INTERNAL=ON
+//Qt feature: gstreamer_app (from target Qt6::Multimedia)
+QT_FEATURE_gstreamer_app:INTERNAL=ON
+//Qt feature: gstreamer_gl (from target Qt6::Multimedia)
+QT_FEATURE_gstreamer_gl:INTERNAL=ON
+//Qt feature: gstreamer_photography (from target Qt6::Multimedia)
+QT_FEATURE_gstreamer_photography:INTERNAL=OFF
 //Qt feature: gtk3 (from target Qt6::Widgets)
 QT_FEATURE_gtk3:INTERNAL=ON
 //Qt feature: gui (from target Qt6::Core)
@@ -2136,8 +2203,12 @@ QT_FEATURE_libudev:INTERNAL=ON
 QT_FEATURE_lineedit:INTERNAL=ON
 //Qt feature: linkat (from target Qt6::Core)
 QT_FEATURE_linkat:INTERNAL=ON
+//Qt feature: linux_dmabuf (from target Qt6::Multimedia)
+QT_FEATURE_linux_dmabuf:INTERNAL=ON
 //Qt feature: linux_netlink (from target Qt6::Network)
 QT_FEATURE_linux_netlink:INTERNAL=ON
+//Qt feature: linux_v4l (from target Qt6::Multimedia)
+QT_FEATURE_linux_v4l:INTERNAL=ON
 //Qt feature: linuxfb (from target Qt6::Gui)
 QT_FEATURE_linuxfb:INTERNAL=ON
 //Qt feature: listview (from target Qt6::Widgets)
@@ -2166,6 +2237,8 @@ QT_FEATURE_mimetype_database:INTERNAL=OFF
 QT_FEATURE_mips_dsp:INTERNAL=OFF
 //Qt feature: mips_dspr2 (from target Qt6::Core)
 QT_FEATURE_mips_dspr2:INTERNAL=OFF
+//Qt feature: mmrenderer (from target Qt6::Multimedia)
+QT_FEATURE_mmrenderer:INTERNAL=OFF
 //Qt feature: movie (from target Qt6::Gui)
 QT_FEATURE_movie:INTERNAL=ON
 //Qt feature: mtdev (from target Qt6::Gui)
@@ -2200,6 +2273,8 @@ QT_FEATURE_opengles3:INTERNAL=OFF
 QT_FEATURE_opengles31:INTERNAL=OFF
 //Qt feature: opengles32 (from target Qt6::Gui)
 QT_FEATURE_opengles32:INTERNAL=OFF
+//Qt feature: opensles (from target Qt6::Multimedia)
+QT_FEATURE_opensles:INTERNAL=OFF
 //Qt feature: openssl (from target Qt6::Network)
 QT_FEATURE_openssl:INTERNAL=ON
 //Qt feature: openssl_linked (from target Qt6::Network)
@@ -2250,6 +2325,8 @@ QT_FEATURE_proxymodel:INTERNAL=ON
 QT_FEATURE_publicsuffix_qt:INTERNAL=ON
 //Qt feature: publicsuffix_system (from target Qt6::Network)
 QT_FEATURE_publicsuffix_system:INTERNAL=ON
+//Qt feature: pulseaudio (from target Qt6::Multimedia)
+QT_FEATURE_pulseaudio:INTERNAL=ON
 //Qt feature: pushbutton (from target Qt6::Widgets)
 QT_FEATURE_pushbutton:INTERNAL=ON
 //Qt feature: qml_animation (from target Qt6::Qml)
@@ -2290,6 +2367,30 @@ QT_FEATURE_qml_xmllistmodel:INTERNAL=ON
 QT_FEATURE_qqnx_imf:INTERNAL=OFF
 //Qt feature: qqnx_pps (from target Qt6::Core)
 QT_FEATURE_qqnx_pps:INTERNAL=OFF
+//Qt feature: qt3d_animation (from target Qt6::3DCore)
+QT_FEATURE_qt3d_animation:INTERNAL=ON
+//Qt feature: qt3d_assimp (from target Qt6::3DCore)
+QT_FEATURE_qt3d_assimp:INTERNAL=ON
+//Qt feature: qt3d_extras (from target Qt6::3DCore)
+QT_FEATURE_qt3d_extras:INTERNAL=ON
+//Qt feature: qt3d_input (from target Qt6::3DCore)
+QT_FEATURE_qt3d_input:INTERNAL=ON
+//Qt feature: qt3d_logic (from target Qt6::3DCore)
+QT_FEATURE_qt3d_logic:INTERNAL=ON
+//Qt feature: qt3d_opengl_renderer (from target Qt6::3DRender)
+QT_FEATURE_qt3d_opengl_renderer:INTERNAL=ON
+//Qt feature: qt3d_render (from target Qt6::3DCore)
+QT_FEATURE_qt3d_render:INTERNAL=ON
+//Qt feature: qt3d_rhi_renderer (from target Qt6::3DRender)
+QT_FEATURE_qt3d_rhi_renderer:INTERNAL=ON
+//Qt feature: qt3d_simd_avx2 (from target Qt6::3DCore)
+QT_FEATURE_qt3d_simd_avx2:INTERNAL=OFF
+//Qt feature: qt3d_simd_sse2 (from target Qt6::3DCore)
+QT_FEATURE_qt3d_simd_sse2:INTERNAL=ON
+//Qt feature: qt3d_system_assimp (from target Qt6::3DCore)
+QT_FEATURE_qt3d_system_assimp:INTERNAL=ON
+//Qt feature: qt3d_vulkan (from target Qt6::3DRender)
+QT_FEATURE_qt3d_vulkan:INTERNAL=ON
 //Qt feature: quick_animatedimage (from target Qt6::Quick)
 QT_FEATURE_quick_animatedimage:INTERNAL=ON
 //Qt feature: quick_canvas (from target Qt6::Quick)
@@ -2326,6 +2427,28 @@ QT_FEATURE_quick_tableview:INTERNAL=ON
 QT_FEATURE_quick_treeview:INTERNAL=ON
 //Qt feature: quick_viewtransitions (from target Qt6::Quick)
 QT_FEATURE_quick_viewtransitions:INTERNAL=ON
+//Qt feature: quickcontrols2_basic (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_basic:INTERNAL=ON
+//Qt feature: quickcontrols2_fusion (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_fusion:INTERNAL=ON
+//Qt feature: quickcontrols2_imagine (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_imagine:INTERNAL=ON
+//Qt feature: quickcontrols2_ios (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_ios:INTERNAL=ON
+//Qt feature: quickcontrols2_macos (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_macos:INTERNAL=ON
+//Qt feature: quickcontrols2_material (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_material:INTERNAL=ON
+//Qt feature: quickcontrols2_universal (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_universal:INTERNAL=ON
+//Qt feature: quickcontrols2_windows (from target Qt6::QuickControls2)
+QT_FEATURE_quickcontrols2_windows:INTERNAL=ON
+//Qt feature: quicktemplates2_calendar (from target Qt6::QuickTemplates2)
+QT_FEATURE_quicktemplates2_calendar:INTERNAL=ON
+//Qt feature: quicktemplates2_hover (from target Qt6::QuickTemplates2)
+QT_FEATURE_quicktemplates2_hover:INTERNAL=ON
+//Qt feature: quicktemplates2_multitouch (from target Qt6::QuickTemplates2)
+QT_FEATURE_quicktemplates2_multitouch:INTERNAL=ON
 //Qt feature: radiobutton (from target Qt6::Widgets)
 QT_FEATURE_radiobutton:INTERNAL=ON
 //Qt feature: raster_64bit (from target Qt6::Gui)
@@ -2394,6 +2517,10 @@ QT_FEATURE_slog2:INTERNAL=OFF
 QT_FEATURE_socks5:INTERNAL=ON
 //Qt feature: sortfilterproxymodel (from target Qt6::Core)
 QT_FEATURE_sortfilterproxymodel:INTERNAL=ON
+//Qt feature: spatialaudio (from target Qt6::Multimedia)
+QT_FEATURE_spatialaudio:INTERNAL=ON
+//Qt feature: spatialaudio_quick3d (from target Qt6::Multimedia)
+QT_FEATURE_spatialaudio_quick3d:INTERNAL=ON
 //Qt feature: spinbox (from target Qt6::Widgets)
 QT_FEATURE_spinbox:INTERNAL=ON
 //Qt feature: splashscreen (from target Qt6::Widgets)
@@ -2552,10 +2679,14 @@ QT_FEATURE_use_gold_linker:INTERNAL=OFF
 QT_FEATURE_use_lld_linker:INTERNAL=OFF
 //Qt feature: use_mold_linker (from target Qt6::Core)
 QT_FEATURE_use_mold_linker:INTERNAL=OFF
+//Qt feature: vaapi (from target Qt6::Multimedia)
+QT_FEATURE_vaapi:INTERNAL=ON
 //Qt feature: vaes (from target Qt6::Core)
 QT_FEATURE_vaes:INTERNAL=ON
 //Qt feature: validator (from target Qt6::Gui)
 QT_FEATURE_validator:INTERNAL=ON
+//Qt feature: videotoolbox (from target Qt6::Multimedia)
+QT_FEATURE_videotoolbox:INTERNAL=OFF
 //Qt feature: vkgen (from target Qt6::Gui)
 QT_FEATURE_vkgen:INTERNAL=ON
 //Qt feature: vkkhrdisplay (from target Qt6::Gui)
@@ -2566,6 +2697,8 @@ QT_FEATURE_vnc:INTERNAL=ON
 QT_FEATURE_vsp2:INTERNAL=OFF
 //Qt feature: vulkan (from target Qt6::Gui)
 QT_FEATURE_vulkan:INTERNAL=ON
+//Qt feature: wasm (from target Qt6::Multimedia)
+QT_FEATURE_wasm:INTERNAL=OFF
 //Qt feature: whatsthis (from target Qt6::Gui)
 QT_FEATURE_whatsthis:INTERNAL=ON
 //Qt feature: wheelevent (from target Qt6::Gui)
@@ -2576,6 +2709,10 @@ QT_FEATURE_widgets:INTERNAL=ON
 QT_FEATURE_widgettextcontrol:INTERNAL=ON
 //Qt feature: wizard (from target Qt6::Widgets)
 QT_FEATURE_wizard:INTERNAL=ON
+//Qt feature: wmf (from target Qt6::Multimedia)
+QT_FEATURE_wmf:INTERNAL=OFF
+//Qt feature: wmsdk (from target Qt6::Multimedia)
+QT_FEATURE_wmsdk:INTERNAL=OFF
 //Qt feature: xcb (from target Qt6::Gui)
 QT_FEATURE_xcb:INTERNAL=ON
 //Qt feature: xcb_egl_plugin (from target Qt6::Gui)

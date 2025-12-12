@@ -66,11 +66,15 @@ include frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/co
 # Include the progress variables for this target.
 include frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/progress.make
 
-frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/qt6/libexec/moc
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/qt6/libexec/uic
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/qt6/libexec/moc
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt63DCore.so.6.4.2
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: frontend/shared/libvr_frontend_shared.a
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt63DRender.so.6.4.2
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt63DExtras.so.6.4.2
 
 vr_blueprint_autogen_timestamp_deps: frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps
 vr_blueprint_autogen_timestamp_deps: frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build.make

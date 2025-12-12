@@ -415,6 +415,7 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compila
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qnativeinterface.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QMouseEvent \
  /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/EWIEGA46WW/../../../../../frontend/blueprint/NodeRegistry.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
@@ -478,4 +479,46 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compila
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGroupBox \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgroupbox.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextcursor.h \
- /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextformat.h
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qtextformat.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/UUSGRH3SQA/moc_SpatialPreviewWidget.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/UUSGRH3SQA/../../../../../frontend/widgets/SpatialPreviewWidget.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/Qt3DWindow \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qt3dwindow.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qt3dextras_global.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qt3dcore_global.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qt3dcore-config.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qrenderapi.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qt3drender_global.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QWindow \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qwindow.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QEvent \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcoreevent.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QMargins \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qmargins.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qsurface.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qsurfaceformat.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/QEntity \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qentity.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qnode.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qnodeid.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QDebug \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qdebug.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QHashFunctions \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qhashfunctions.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QMetaType \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qmetatype.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DRender/QCamera \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qcamera.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qentity.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qtransform.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qcomponent.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qmatrix4x4.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qquaternion.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qcameralens.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QMatrix4x4 \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qmatrix4x4.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QQuaternion \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QVector3D \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/QOrbitCameraController \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qorbitcameracontroller.h \
+ /usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qabstractcameracontroller.h

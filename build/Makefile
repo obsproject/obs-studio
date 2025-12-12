@@ -903,6 +903,32 @@ obs-vr/fast:
 .PHONY : obs-vr/fast
 
 #=============================================================================
+# Target rules for targets named obs-vr_autogen_timestamp_deps
+
+# Build rule for target.
+obs-vr_autogen_timestamp_deps: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr_autogen_timestamp_deps
+.PHONY : obs-vr_autogen_timestamp_deps
+
+# fast build rule for target.
+obs-vr_autogen_timestamp_deps/fast:
+	$(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/build.make obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/build
+.PHONY : obs-vr_autogen_timestamp_deps/fast
+
+#=============================================================================
+# Target rules for targets named obs-vr_autogen
+
+# Build rule for target.
+obs-vr_autogen: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr_autogen
+.PHONY : obs-vr_autogen
+
+# fast build rule for target.
+obs-vr_autogen/fast:
+	$(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr_autogen.dir/build.make obs-vr/CMakeFiles/obs-vr_autogen.dir/build
+.PHONY : obs-vr_autogen/fast
+
+#=============================================================================
 # Target rules for targets named vr_frontend_shared
 
 # Build rule for target.
@@ -942,43 +968,43 @@ vr_frontend_shared_autogen/fast:
 .PHONY : vr_frontend_shared_autogen/fast
 
 #=============================================================================
-# Target rules for targets named vr_blueprint
+# Target rules for targets named vr_blueprint_qml
 
 # Build rule for target.
-vr_blueprint: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vr_blueprint
-.PHONY : vr_blueprint
+vr_blueprint_qml: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vr_blueprint_qml
+.PHONY : vr_blueprint_qml
 
 # fast build rule for target.
-vr_blueprint/fast:
-	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/build
-.PHONY : vr_blueprint/fast
+vr_blueprint_qml/fast:
+	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build
+.PHONY : vr_blueprint_qml/fast
 
 #=============================================================================
-# Target rules for targets named vr_blueprint_autogen_timestamp_deps
+# Target rules for targets named vr_blueprint_qml_autogen_timestamp_deps
 
 # Build rule for target.
-vr_blueprint_autogen_timestamp_deps: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vr_blueprint_autogen_timestamp_deps
-.PHONY : vr_blueprint_autogen_timestamp_deps
+vr_blueprint_qml_autogen_timestamp_deps: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vr_blueprint_qml_autogen_timestamp_deps
+.PHONY : vr_blueprint_qml_autogen_timestamp_deps
 
 # fast build rule for target.
-vr_blueprint_autogen_timestamp_deps/fast:
-	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build
-.PHONY : vr_blueprint_autogen_timestamp_deps/fast
+vr_blueprint_qml_autogen_timestamp_deps/fast:
+	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/build
+.PHONY : vr_blueprint_qml_autogen_timestamp_deps/fast
 
 #=============================================================================
-# Target rules for targets named vr_blueprint_autogen
+# Target rules for targets named vr_blueprint_qml_autogen
 
 # Build rule for target.
-vr_blueprint_autogen: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vr_blueprint_autogen
-.PHONY : vr_blueprint_autogen
+vr_blueprint_qml_autogen: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vr_blueprint_qml_autogen
+.PHONY : vr_blueprint_qml_autogen
 
 # fast build rule for target.
-vr_blueprint_autogen/fast:
-	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/build
-.PHONY : vr_blueprint_autogen/fast
+vr_blueprint_qml_autogen/fast:
+	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/build
+.PHONY : vr_blueprint_qml_autogen/fast
 
 #=============================================================================
 # Target rules for targets named vr_active
@@ -1061,11 +1087,13 @@ help:
 	@echo "... NightlyUpdate"
 	@echo "... generate_openxr_header"
 	@echo "... libopenxr_loader.so.1.0"
+	@echo "... obs-vr_autogen"
+	@echo "... obs-vr_autogen_timestamp_deps"
 	@echo "... uninstall"
 	@echo "... vr_active_autogen"
 	@echo "... vr_active_autogen_timestamp_deps"
-	@echo "... vr_blueprint_autogen"
-	@echo "... vr_blueprint_autogen_timestamp_deps"
+	@echo "... vr_blueprint_qml_autogen"
+	@echo "... vr_blueprint_qml_autogen_timestamp_deps"
 	@echo "... vr_frontend_shared_autogen"
 	@echo "... vr_frontend_shared_autogen_timestamp_deps"
 	@echo "... xr_common_generated_files"
@@ -1095,7 +1123,7 @@ help:
 	@echo "... test_sr"
 	@echo "... test_srt"
 	@echo "... vr_active"
-	@echo "... vr_blueprint"
+	@echo "... vr_blueprint_qml"
 	@echo "... vr_frontend_shared"
 .PHONY : help
 

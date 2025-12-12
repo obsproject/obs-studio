@@ -413,4 +413,7 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qurl.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/quuid.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonArray \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonarray.h
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonarray.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsDropShadowEffect \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicseffect.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QLinearGradient

@@ -1,0 +1,340 @@
+{
+	"BUILD_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_qml_autogen",
+	"CMAKE_BINARY_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint",
+	"CMAKE_EXECUTABLE" : "/usr/bin/cmake",
+	"CMAKE_LIST_FILES" : 
+	[
+		"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/CMakeLists.txt",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigExtras.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Targets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6VersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeature.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeatureCommon.cmake",
+		"/usr/share/cmake-3.28/Modules/CheckCXXCompilerFlag.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicAppleHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFinalizerHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicPluginHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTargetHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicWalkLibsHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFindPackageHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicDependencyHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTestHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicToolHelpers.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeHelpers.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Dependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2ConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2ConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Config.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Dependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2ConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2ConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Config.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Dependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Targets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Targets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2AdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2VersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Targets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Targets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2AdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2VersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsMacros.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DMacros.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaVersionlessTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaPlugins.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginConfig.cmake",
+		"/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginAdditionalTargetInfo.cmake"
+	],
+	"CMAKE_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio",
+	"DEP_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_qml_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "vr_blueprint_qml_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionModel.h",
+			"MU",
+			"EWIEGA46WW/moc_ConnectionModel.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.h",
+			"MU",
+			"EWIEGA46WW/moc_NodeItem.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeModel.h",
+			"MU",
+			"EWIEGA46WW/moc_NodeModel.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.h",
+			"MU",
+			"EWIEGA46WW/moc_PortItem.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/nodes/AudioInputNode.h",
+			"MU",
+			"HGMM2TZZ6Q/moc_AudioInputNode.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/nodes/VideoInputNode.h",
+			"MU",
+			"HGMM2TZZ6Q/moc_VideoInputNode.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/viewmodels/MixerViewModel.h",
+			"MU",
+			"RVZ4ISEY7V/moc_MixerViewModel.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/viewmodels/PropertiesViewModel.h",
+			"MU",
+			"RVZ4ISEY7V/moc_PropertiesViewModel.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/viewmodels/SettingsViewModel.h",
+			"MU",
+			"RVZ4ISEY7V/moc_SettingsViewModel.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_qml_autogen/include",
+	"MOC_COMPILATION_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_qml_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"QT_CONCURRENT_LIB",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_MULTIMEDIA_LIB",
+		"QT_NETWORK_LIB",
+		"QT_NO_DEBUG",
+		"QT_OPENGL_LIB",
+		"QT_QMLINTEGRATION_LIB",
+		"QT_QMLMODELS_LIB",
+		"QT_QML_LIB",
+		"QT_QUICK3DRUNTIMERENDER_LIB",
+		"QT_QUICK3DUTILS_LIB",
+		"QT_QUICK3D_LIB",
+		"QT_QUICKCONTROLS2_LIB",
+		"QT_QUICK_LIB",
+		"QT_SHADERTOOLS_LIB",
+		"QT_WIDGETS_LIB"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol",
+		"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared",
+		"/home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol",
+		"/usr/include/x86_64-linux-gnu/qt6/QtCore",
+		"/usr/include/x86_64-linux-gnu/qt6",
+		"/usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++",
+		"/usr/include/x86_64-linux-gnu/qt6/QtGui",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQuick",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQml",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQmlIntegration",
+		"/usr/include/x86_64-linux-gnu/qt6/QtNetwork",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQmlModels",
+		"/usr/include/x86_64-linux-gnu/qt6/QtOpenGL",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQuickControls2",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQuick3D",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQuick3DRuntimeRender",
+		"/usr/include/x86_64-linux-gnu/qt6/QtQuick3DUtils",
+		"/usr/include/x86_64-linux-gnu/qt6/QtShaderTools",
+		"/usr/include/x86_64-linux-gnu/qt6/QtConcurrent",
+		"/usr/include/x86_64-linux-gnu/qt6/QtMultimedia",
+		"/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
+		"/usr/include",
+		"/usr/include/c++/13",
+		"/usr/include/x86_64-linux-gnu/c++/13",
+		"/usr/include/c++/13/backward",
+		"/usr/lib/gcc/x86_64-linux-gnu/13/include",
+		"/usr/local/include",
+		"/usr/include/x86_64-linux-gnu"
+	],
+	"MOC_MACRO_NAMES" : 
+	[
+		"Q_OBJECT",
+		"Q_GADGET",
+		"Q_GADGET_EXPORT",
+		"Q_NAMESPACE",
+		"Q_NAMESPACE_EXPORT"
+	],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/usr/bin/c++",
+		"-std=gnu++20",
+		"-dM",
+		"-E",
+		"-c",
+		"/usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_qml_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 6,
+	"PARSE_CACHE_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/usr/lib/qt6/libexec/moc",
+	"QT_UIC_EXECUTABLE" : "/usr/lib/qt6/libexec/uic",
+	"QT_VERSION_MAJOR" : 6,
+	"QT_VERSION_MINOR" : 4,
+	"SETTINGS_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionModel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeModel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/nodes/AudioInputNode.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/nodes/VideoInputNode.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/qml_main.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/viewmodels/MixerViewModel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/viewmodels/PropertiesViewModel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/viewmodels/SettingsViewModel.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"VERBOSITY" : 0
+}

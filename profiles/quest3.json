@@ -1,0 +1,18 @@
+{
+    "name": "Meta Quest 3",
+    "id": "quest3",
+    "eyeWidth": 1920,
+    "eyeHeight": 1920,
+    "fovHorizontal": 110.0,
+    "fovVertical": 96.0,
+    "ipd": 63.0,
+    "codec": "h265",
+    "bitrate": 100000,
+    "framerate": 90,
+    "stereoFormat": "side_by_side",
+    "embedDepthMap": true,
+    "embedSpatialAudio": true,
+    "spatialFormat": "equirectangular",
+    "srtPort": 9001,
+    "enabled": true
+}

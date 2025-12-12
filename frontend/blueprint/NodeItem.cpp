@@ -4,6 +4,9 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+#include <QGraphicsDropShadowEffect>
+#include <QLinearGradient>
+
 NodeItem::NodeItem(const QString &title, QGraphicsItem *parent)
 	: QGraphicsObject(parent),
 	  m_id(QUuid::createUuid()),
@@ -13,9 +16,17 @@ NodeItem::NodeItem(const QString &title, QGraphicsItem *parent)
 	setFlag(ItemIsSelectable);
 	setFlag(ItemSendsGeometryChanges); // Important for connections later
 
-	m_headerColor = QColor(60, 60, 60);
-	m_bodyColor = QColor(40, 40, 40);
-	m_borderColor = QColor(20, 20, 20);
+	// Premium Colors
+	m_headerColor = QColor(60, 60, 60);        // Gradient base
+	m_bodyColor = QColor(30, 30, 35, 220);     // Dark semi-transparent
+	m_borderColor = QColor(255, 255, 255, 30); // Subtle highlight
+
+	// Shadow Effect
+	auto shadow = new QGraphicsDropShadowEffect();
+	shadow->setBlurRadius(20);
+	shadow->setOffset(0, 4);
+	shadow->setColor(QColor(0, 0, 0, 100));
+	setGraphicsEffect(shadow);
 }
 
 QRectF NodeItem::boundingRect() const
@@ -28,30 +39,42 @@ void NodeItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, 
 	Q_UNUSED(option);
 	Q_UNUSED(widget);
 
-	// Body
+	painter->setRenderHint(QPainter::Antialiasing);
+
+	// Body Background
 	painter->setBrush(m_bodyColor);
-	painter->setPen(QPen(m_borderColor, 2));
-	painter->drawRoundedRect(0, 0, m_width, m_height, 5, 5);
-
-	// Header
-	QRectF headerRect(0, 0, m_width, 25);
-	painter->setBrush(m_headerColor);
 	painter->setPen(Qt::NoPen);
-	painter->drawRoundedRect(headerRect, 5, 5);
-	// Fix bottom corners of header to be square so they merge with body, or just draw over
-	// Simpler: Just draw header content.
+	painter->drawRoundedRect(0, 0, m_width, m_height, 8, 8); // Softer corners
 
-	// Selection Highlight
+	// Header Gradient
+	QRectF headerRect(0, 0, m_width, 30);
+	QLinearGradient gradient(headerRect.topLeft(), headerRect.bottomLeft());
+	gradient.setColorAt(0, QColor(60, 60, 65));
+	gradient.setColorAt(1, QColor(40, 40, 45));
+
+	painter->setBrush(gradient);
+	// Clip header to top rounded corners
+	QPainterPath path;
+	path.addRoundedRect(0, 0, m_width, m_height, 8, 8);
+	painter->setClipPath(path);
+	painter->drawRect(headerRect); // Draw strict rect over clipped area
+	painter->setClipping(false);
+
+	// Border (Overlay)
 	if (isSelected()) {
-		painter->setPen(QPen(QColor(255, 165, 0), 2));
-		painter->setBrush(Qt::NoBrush);
-		painter->drawRoundedRect(0, 0, m_width, m_height, 5, 5);
+		painter->setPen(QPen(QColor(0, 120, 215), 2));
+	} else {
+		painter->setPen(QPen(m_borderColor, 1));
 	}
+	painter->setBrush(Qt::NoBrush);
+	painter->drawRoundedRect(0, 0, m_width, m_height, 8, 8);
 
 	// Title
-	painter->setPen(Qt::white);
-	painter->setFont(QFont("Arial", 10, QFont::Bold));
-	painter->drawText(headerRect, Qt::AlignCenter, m_title);
+	painter->setPen(QColor(240, 240, 240));
+	painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
+	QRectF textRect = headerRect;
+	textRect.setLeft(10); // Check padding
+	painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, m_title);
 }
 
 void NodeItem::mousePressEvent(QGraphicsSceneMouseEvent *event)

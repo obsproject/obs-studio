@@ -16,6 +16,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/vr_blueprint.dir/PortItem.cpp.o.d"
   "CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o"
   "CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o.d"
+  "CMakeFiles/vr_blueprint.dir/__/widgets/SpatialPreviewWidget.cpp.o"
+  "CMakeFiles/vr_blueprint.dir/__/widgets/SpatialPreviewWidget.cpp.o.d"
   "CMakeFiles/vr_blueprint.dir/main.cpp.o"
   "CMakeFiles/vr_blueprint.dir/main.cpp.o.d"
   "CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o"

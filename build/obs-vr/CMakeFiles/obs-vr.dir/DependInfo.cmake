@@ -8,7 +8,11 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerEngine.cpp" "obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o" "gcc" "obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o.d"
+  "/home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerRouter.cpp" "obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o" "gcc" "obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o.d"
+  "/home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/VirtualCamManager.cpp" "obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o" "gcc" "obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o.d"
   "/home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/main.cpp" "obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o" "gcc" "obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o.d"
+  "/home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/obs-vr_autogen/mocs_compilation.cpp" "obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o" "gcc" "obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

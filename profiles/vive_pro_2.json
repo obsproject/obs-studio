@@ -1,0 +1,18 @@
+{
+    "name": "HTC Vive Pro 2",
+    "id": "vive_pro_2",
+    "eyeWidth": 2448,
+    "eyeHeight": 2448,
+    "fovHorizontal": 120.0,
+    "fovVertical": 120.0,
+    "ipd": 63.0,
+    "codec": "av1",
+    "bitrate": 200000,
+    "framerate": 90,
+    "stereoFormat": "side_by_side",
+    "embedDepthMap": true,
+    "embedSpatialAudio": true,
+    "spatialFormat": "equirectangular",
+    "srtPort": 9003,
+    "enabled": false
+}

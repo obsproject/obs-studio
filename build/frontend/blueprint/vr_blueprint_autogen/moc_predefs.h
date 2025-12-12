@@ -43,6 +43,7 @@
 #define __cpp_variable_templates 201304L
 #define __FLT32X_MAX_EXP__ 1024
 #define __GCC_HAVE_SYNC_COMPARE_AND_SWAP_1 1
+#define QT_OPENGL_LIB 1
 #define __FLT32_HAS_DENORM__ 1
 #define __UINT_FAST8_MAX__ 0xff
 #define __cpp_rvalue_reference 200610L
@@ -128,6 +129,7 @@
 #define __FLT64_MIN_EXP__ (-1021)
 #define __cpp_using_enum 201907L
 #define __FLT64X_MIN_10_EXP__ (-4931)
+#define QT_3DRENDER_LIB 1
 #define __LDBL_HAS_QUIET_NAN__ 1
 #define __cpp_return_type_deduction 201304L
 #define __FLT16_MIN_EXP__ (-13)
@@ -226,6 +228,7 @@
 #define __FLT_MANT_DIG__ 24
 #define __LDBL_DECIMAL_DIG__ 21
 #define __VERSION__ "13.3.0"
+#define QT_3DCORE_LIB 1
 #define __UINT64_C(c) c ## UL
 #define __cpp_unicode_characters 201411L
 #define _STDC_PREDEF_H 1
@@ -251,6 +254,7 @@
 #define __DEC128_MAX__ 9.999999999999999999999999999999999E6144DL
 #define __cpp_constinit 201907L
 #define __INT_FAST32_TYPE__ long int
+#define QT_CONCURRENT_LIB 1
 #define __UINT_LEAST16_TYPE__ short unsigned int
 #define __DEC128_MAX_EXP__ 6145
 #define unix 1
@@ -279,6 +283,7 @@
 #define __USER_LABEL_PREFIX__ 
 #define __STDC_IEC_60559_BFP__ 201404L
 #define __SIZEOF_PTRDIFF_T__ 8
+#define QT_3DINPUT_LIB 1
 #define __FLT64X_HAS_INFINITY__ 1
 #define __SIZEOF_LONG__ 8
 #define __LDBL_DIG__ 18
@@ -289,6 +294,7 @@
 #define __DEC32_SUBNORMAL_MIN__ 0.000001E-95DF
 #define __INT_FAST16_MAX__ 0x7fffffffffffffffL
 #define __GCC_CONSTRUCTIVE_SIZE 64
+#define QT_3DLOGIC_LIB 1
 #define __FLT64_DIG__ 15
 #define __UINT_FAST32_MAX__ 0xffffffffffffffffUL
 #define __UINT_LEAST64_TYPE__ long unsigned int
@@ -417,6 +423,7 @@
 #define __FXSR__ 1
 #define __FLT32X_MAX__ 1.79769313486231570814527423731704357e+308F32x
 #define __DBL_NORM_MAX__ double(1.79769313486231570814527423731704357e+308L)
+#define QT_3DEXTRAS_LIB 1
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
 #define __GCC_DESTRUCTIVE_SIZE 64
 #define __INTMAX_WIDTH__ 64

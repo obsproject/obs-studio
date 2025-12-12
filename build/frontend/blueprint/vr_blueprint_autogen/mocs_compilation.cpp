@@ -2,3 +2,4 @@
 #include "EWIEGA46WW/moc_NodeGraph.cpp"
 #include "EWIEGA46WW/moc_NodeItem.cpp"
 #include "EWIEGA46WW/moc_PropertiesPanel.cpp"
+#include "UUSGRH3SQA/moc_SpatialPreviewWidget.cpp"

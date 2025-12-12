@@ -15,6 +15,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.cpp" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o" "gcc" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o.d"
   "/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.cpp" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o" "gcc" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o.d"
   "/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.cpp" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o" "gcc" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o.d"
+  "/home/subtomic/Documents/GitHub/Neural-Studio/frontend/widgets/SpatialPreviewWidget.cpp" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/__/widgets/SpatialPreviewWidget.cpp.o" "gcc" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/__/widgets/SpatialPreviewWidget.cpp.o.d"
   "/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o" "gcc" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o.d"
   "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o" "gcc" "frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o.d"
   )

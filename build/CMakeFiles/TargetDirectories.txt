@@ -109,6 +109,8 @@
 /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/CMakeFiles/install.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/CMakeFiles/install/local.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/CMakeFiles/install/strip.dir
+/home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir
+/home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/CMakeFiles/obs-vr_autogen.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/CMakeFiles/edit_cache.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/CMakeFiles/rebuild_cache.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/CMakeFiles/list_install_components.dir
@@ -124,15 +126,15 @@
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/CMakeFiles/install/strip.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir
-/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint.dir
+/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/edit_cache.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/rebuild_cache.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/list_install_components.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/install.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/install/local.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/install/strip.dir
-/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir
-/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir
+/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir
+/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/vr_active.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/edit_cache.dir
 /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/rebuild_cache.dir

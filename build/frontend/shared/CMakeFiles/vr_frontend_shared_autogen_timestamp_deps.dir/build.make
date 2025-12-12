@@ -66,12 +66,12 @@ include frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir
 # Include the progress variables for this target.
 include frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/progress.make
 
+frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/qt6/libexec/uic
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/qt6/libexec/moc
-frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/qt6/libexec/uic
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
-frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
+frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
 
 vr_frontend_shared_autogen_timestamp_deps: frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps
 vr_frontend_shared_autogen_timestamp_deps: frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build.make

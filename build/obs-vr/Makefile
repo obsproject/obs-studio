@@ -175,6 +175,106 @@ obs-vr/fast:
 	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/build
 .PHONY : obs-vr/fast
 
+# Convenience name for target.
+obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/rule:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/rule
+.PHONY : obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/rule
+
+# Convenience name for target.
+obs-vr_autogen_timestamp_deps: obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/rule
+.PHONY : obs-vr_autogen_timestamp_deps
+
+# fast build rule for target.
+obs-vr_autogen_timestamp_deps/fast:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/build.make obs-vr/CMakeFiles/obs-vr_autogen_timestamp_deps.dir/build
+.PHONY : obs-vr_autogen_timestamp_deps/fast
+
+# Convenience name for target.
+obs-vr/CMakeFiles/obs-vr_autogen.dir/rule:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/CMakeFiles/obs-vr_autogen.dir/rule
+.PHONY : obs-vr/CMakeFiles/obs-vr_autogen.dir/rule
+
+# Convenience name for target.
+obs-vr_autogen: obs-vr/CMakeFiles/obs-vr_autogen.dir/rule
+.PHONY : obs-vr_autogen
+
+# fast build rule for target.
+obs-vr_autogen/fast:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr_autogen.dir/build.make obs-vr/CMakeFiles/obs-vr_autogen.dir/build
+.PHONY : obs-vr_autogen/fast
+
+MixerEngine.o: MixerEngine.cpp.o
+.PHONY : MixerEngine.o
+
+# target to build an object file
+MixerEngine.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o
+.PHONY : MixerEngine.cpp.o
+
+MixerEngine.i: MixerEngine.cpp.i
+.PHONY : MixerEngine.i
+
+# target to preprocess a source file
+MixerEngine.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.i
+.PHONY : MixerEngine.cpp.i
+
+MixerEngine.s: MixerEngine.cpp.s
+.PHONY : MixerEngine.s
+
+# target to generate assembly for a file
+MixerEngine.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.s
+.PHONY : MixerEngine.cpp.s
+
+MixerRouter.o: MixerRouter.cpp.o
+.PHONY : MixerRouter.o
+
+# target to build an object file
+MixerRouter.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o
+.PHONY : MixerRouter.cpp.o
+
+MixerRouter.i: MixerRouter.cpp.i
+.PHONY : MixerRouter.i
+
+# target to preprocess a source file
+MixerRouter.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.i
+.PHONY : MixerRouter.cpp.i
+
+MixerRouter.s: MixerRouter.cpp.s
+.PHONY : MixerRouter.s
+
+# target to generate assembly for a file
+MixerRouter.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.s
+.PHONY : MixerRouter.cpp.s
+
+VirtualCamManager.o: VirtualCamManager.cpp.o
+.PHONY : VirtualCamManager.o
+
+# target to build an object file
+VirtualCamManager.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o
+.PHONY : VirtualCamManager.cpp.o
+
+VirtualCamManager.i: VirtualCamManager.cpp.i
+.PHONY : VirtualCamManager.i
+
+# target to preprocess a source file
+VirtualCamManager.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.i
+.PHONY : VirtualCamManager.cpp.i
+
+VirtualCamManager.s: VirtualCamManager.cpp.s
+.PHONY : VirtualCamManager.s
+
+# target to generate assembly for a file
+VirtualCamManager.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.s
+.PHONY : VirtualCamManager.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -199,6 +299,30 @@ main.cpp.s:
 	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+obs-vr_autogen/mocs_compilation.o: obs-vr_autogen/mocs_compilation.cpp.o
+.PHONY : obs-vr_autogen/mocs_compilation.o
+
+# target to build an object file
+obs-vr_autogen/mocs_compilation.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o
+.PHONY : obs-vr_autogen/mocs_compilation.cpp.o
+
+obs-vr_autogen/mocs_compilation.i: obs-vr_autogen/mocs_compilation.cpp.i
+.PHONY : obs-vr_autogen/mocs_compilation.i
+
+# target to preprocess a source file
+obs-vr_autogen/mocs_compilation.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.i
+.PHONY : obs-vr_autogen/mocs_compilation.cpp.i
+
+obs-vr_autogen/mocs_compilation.s: obs-vr_autogen/mocs_compilation.cpp.s
+.PHONY : obs-vr_autogen/mocs_compilation.s
+
+# target to generate assembly for a file
+obs-vr_autogen/mocs_compilation.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.s
+.PHONY : obs-vr_autogen/mocs_compilation.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -211,10 +335,24 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
+	@echo "... obs-vr_autogen"
+	@echo "... obs-vr_autogen_timestamp_deps"
 	@echo "... obs-vr"
+	@echo "... MixerEngine.o"
+	@echo "... MixerEngine.i"
+	@echo "... MixerEngine.s"
+	@echo "... MixerRouter.o"
+	@echo "... MixerRouter.i"
+	@echo "... MixerRouter.s"
+	@echo "... VirtualCamManager.o"
+	@echo "... VirtualCamManager.i"
+	@echo "... VirtualCamManager.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... obs-vr_autogen/mocs_compilation.o"
+	@echo "... obs-vr_autogen/mocs_compilation.i"
+	@echo "... obs-vr_autogen/mocs_compilation.s"
 .PHONY : help
 
 

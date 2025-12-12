@@ -69,10 +69,24 @@ include obs-vr/CMakeFiles/obs-vr.dir/progress.make
 # Include the compile flags for this target's objects.
 include obs-vr/CMakeFiles/obs-vr.dir/flags.make
 
+obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/flags.make
+obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o: obs-vr/obs-vr_autogen/mocs_compilation.cpp
+obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o -MF CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/obs-vr_autogen/mocs_compilation.cpp
+
+obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.i"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/obs-vr_autogen/mocs_compilation.cpp > CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.i
+
+obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.s"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr/obs-vr_autogen/mocs_compilation.cpp -o CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.s
+
 obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/flags.make
 obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/main.cpp
 obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o"
 	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o -MF CMakeFiles/obs-vr.dir/main.cpp.o.d -o CMakeFiles/obs-vr.dir/main.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/main.cpp
 
 obs-vr/CMakeFiles/obs-vr.dir/main.cpp.i: cmake_force
@@ -83,21 +97,75 @@ obs-vr/CMakeFiles/obs-vr.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/obs-vr.dir/main.cpp.s"
 	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/main.cpp -o CMakeFiles/obs-vr.dir/main.cpp.s
 
+obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/flags.make
+obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/VirtualCamManager.cpp
+obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o -MF CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o.d -o CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/VirtualCamManager.cpp
+
+obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.i"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/VirtualCamManager.cpp > CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.i
+
+obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.s"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/VirtualCamManager.cpp -o CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.s
+
+obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/flags.make
+obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerRouter.cpp
+obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o -MF CMakeFiles/obs-vr.dir/MixerRouter.cpp.o.d -o CMakeFiles/obs-vr.dir/MixerRouter.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerRouter.cpp
+
+obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/obs-vr.dir/MixerRouter.cpp.i"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerRouter.cpp > CMakeFiles/obs-vr.dir/MixerRouter.cpp.i
+
+obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/obs-vr.dir/MixerRouter.cpp.s"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerRouter.cpp -o CMakeFiles/obs-vr.dir/MixerRouter.cpp.s
+
+obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/flags.make
+obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerEngine.cpp
+obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o: obs-vr/CMakeFiles/obs-vr.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o -MF CMakeFiles/obs-vr.dir/MixerEngine.cpp.o.d -o CMakeFiles/obs-vr.dir/MixerEngine.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerEngine.cpp
+
+obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/obs-vr.dir/MixerEngine.cpp.i"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerEngine.cpp > CMakeFiles/obs-vr.dir/MixerEngine.cpp.i
+
+obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/obs-vr.dir/MixerEngine.cpp.s"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/MixerEngine.cpp -o CMakeFiles/obs-vr.dir/MixerEngine.cpp.s
+
 # Object files for target obs-vr
 obs__vr_OBJECTS = \
-"CMakeFiles/obs-vr.dir/main.cpp.o"
+"CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o" \
+"CMakeFiles/obs-vr.dir/main.cpp.o" \
+"CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o" \
+"CMakeFiles/obs-vr.dir/MixerRouter.cpp.o" \
+"CMakeFiles/obs-vr.dir/MixerEngine.cpp.o"
 
 # External object files for target obs-vr
 obs__vr_EXTERNAL_OBJECTS =
 
+obs-vr/obs-vr: obs-vr/CMakeFiles/obs-vr.dir/obs-vr_autogen/mocs_compilation.cpp.o
 obs-vr/obs-vr: obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o
+obs-vr/obs-vr: obs-vr/CMakeFiles/obs-vr.dir/VirtualCamManager.cpp.o
+obs-vr/obs-vr: obs-vr/CMakeFiles/obs-vr.dir/MixerRouter.cpp.o
+obs-vr/obs-vr: obs-vr/CMakeFiles/obs-vr.dir/MixerEngine.cpp.o
 obs-vr/obs-vr: obs-vr/CMakeFiles/obs-vr.dir/build.make
 obs-vr/obs-vr: libvr/liblibvr.a
+obs-vr/obs-vr: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
 obs-vr/obs-vr: /usr/lib/x86_64-linux-gnu/libvulkan.so
 obs-vr/obs-vr: _deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32
 obs-vr/obs-vr: /usr/lib/x86_64-linux-gnu/libcuda.so
+obs-vr/obs-vr: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
+obs-vr/obs-vr: /usr/lib/x86_64-linux-gnu/libGLX.so
+obs-vr/obs-vr: /usr/lib/x86_64-linux-gnu/libOpenGL.so
 obs-vr/obs-vr: obs-vr/CMakeFiles/obs-vr.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable obs-vr"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable obs-vr"
 	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/obs-vr.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

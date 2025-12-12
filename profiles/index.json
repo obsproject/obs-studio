@@ -1,0 +1,18 @@
+{
+    "name": "Valve Index",
+    "id": "index",
+    "eyeWidth": 1440,
+    "eyeHeight": 1600,
+    "fovHorizontal": 130.0,
+    "fovVertical": 105.0,
+    "ipd": 63.0,
+    "codec": "h265",
+    "bitrate": 150000,
+    "framerate": 120,
+    "stereoFormat": "side_by_side",
+    "embedDepthMap": true,
+    "embedSpatialAudio": true,
+    "spatialFormat": "equirectangular",
+    "srtPort": 9002,
+    "enabled": false
+}

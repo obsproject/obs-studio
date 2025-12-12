@@ -162,125 +162,77 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/rule:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint.dir/rule
-.PHONY : frontend/blueprint/CMakeFiles/vr_blueprint.dir/rule
+frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/rule:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/rule
+.PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/rule
 
 # Convenience name for target.
-vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/rule
-.PHONY : vr_blueprint
+vr_blueprint_qml: frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/rule
+.PHONY : vr_blueprint_qml
 
 # fast build rule for target.
-vr_blueprint/fast:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/build
-.PHONY : vr_blueprint/fast
+vr_blueprint_qml/fast:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build
+.PHONY : vr_blueprint_qml/fast
 
 # Convenience name for target.
-frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/rule:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/rule
-.PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/rule
+frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/rule:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/rule
+.PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/rule
 
 # Convenience name for target.
-vr_blueprint_autogen_timestamp_deps: frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/rule
-.PHONY : vr_blueprint_autogen_timestamp_deps
+vr_blueprint_qml_autogen_timestamp_deps: frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/rule
+.PHONY : vr_blueprint_qml_autogen_timestamp_deps
 
 # fast build rule for target.
-vr_blueprint_autogen_timestamp_deps/fast:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build
-.PHONY : vr_blueprint_autogen_timestamp_deps/fast
+vr_blueprint_qml_autogen_timestamp_deps/fast:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen_timestamp_deps.dir/build
+.PHONY : vr_blueprint_qml_autogen_timestamp_deps/fast
 
 # Convenience name for target.
-frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/rule:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/rule
-.PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/rule
+frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/rule:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/rule
+.PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/rule
 
 # Convenience name for target.
-vr_blueprint_autogen: frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/rule
-.PHONY : vr_blueprint_autogen
+vr_blueprint_qml_autogen: frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/rule
+.PHONY : vr_blueprint_qml_autogen
 
 # fast build rule for target.
-vr_blueprint_autogen/fast:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/build
-.PHONY : vr_blueprint_autogen/fast
+vr_blueprint_qml_autogen/fast:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml_autogen.dir/build
+.PHONY : vr_blueprint_qml_autogen/fast
 
-ConnectionItem.o: ConnectionItem.cpp.o
-.PHONY : ConnectionItem.o
-
-# target to build an object file
-ConnectionItem.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o
-.PHONY : ConnectionItem.cpp.o
-
-ConnectionItem.i: ConnectionItem.cpp.i
-.PHONY : ConnectionItem.i
-
-# target to preprocess a source file
-ConnectionItem.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.i
-.PHONY : ConnectionItem.cpp.i
-
-ConnectionItem.s: ConnectionItem.cpp.s
-.PHONY : ConnectionItem.s
-
-# target to generate assembly for a file
-ConnectionItem.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.s
-.PHONY : ConnectionItem.cpp.s
-
-GraphSerializer.o: GraphSerializer.cpp.o
-.PHONY : GraphSerializer.o
+ConnectionModel.o: ConnectionModel.cpp.o
+.PHONY : ConnectionModel.o
 
 # target to build an object file
-GraphSerializer.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o
-.PHONY : GraphSerializer.cpp.o
+ConnectionModel.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/ConnectionModel.cpp.o
+.PHONY : ConnectionModel.cpp.o
 
-GraphSerializer.i: GraphSerializer.cpp.i
-.PHONY : GraphSerializer.i
-
-# target to preprocess a source file
-GraphSerializer.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.i
-.PHONY : GraphSerializer.cpp.i
-
-GraphSerializer.s: GraphSerializer.cpp.s
-.PHONY : GraphSerializer.s
-
-# target to generate assembly for a file
-GraphSerializer.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.s
-.PHONY : GraphSerializer.cpp.s
-
-NodeGraph.o: NodeGraph.cpp.o
-.PHONY : NodeGraph.o
-
-# target to build an object file
-NodeGraph.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o
-.PHONY : NodeGraph.cpp.o
-
-NodeGraph.i: NodeGraph.cpp.i
-.PHONY : NodeGraph.i
+ConnectionModel.i: ConnectionModel.cpp.i
+.PHONY : ConnectionModel.i
 
 # target to preprocess a source file
-NodeGraph.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.i
-.PHONY : NodeGraph.cpp.i
+ConnectionModel.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/ConnectionModel.cpp.i
+.PHONY : ConnectionModel.cpp.i
 
-NodeGraph.s: NodeGraph.cpp.s
-.PHONY : NodeGraph.s
+ConnectionModel.s: ConnectionModel.cpp.s
+.PHONY : ConnectionModel.s
 
 # target to generate assembly for a file
-NodeGraph.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.s
-.PHONY : NodeGraph.cpp.s
+ConnectionModel.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/ConnectionModel.cpp.s
+.PHONY : ConnectionModel.cpp.s
 
 NodeItem.o: NodeItem.cpp.o
 .PHONY : NodeItem.o
 
 # target to build an object file
 NodeItem.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/NodeItem.cpp.o
 .PHONY : NodeItem.cpp.o
 
 NodeItem.i: NodeItem.cpp.i
@@ -288,7 +240,7 @@ NodeItem.i: NodeItem.cpp.i
 
 # target to preprocess a source file
 NodeItem.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/NodeItem.cpp.i
 .PHONY : NodeItem.cpp.i
 
 NodeItem.s: NodeItem.cpp.s
@@ -296,39 +248,39 @@ NodeItem.s: NodeItem.cpp.s
 
 # target to generate assembly for a file
 NodeItem.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/NodeItem.cpp.s
 .PHONY : NodeItem.cpp.s
 
-NodeRegistry.o: NodeRegistry.cpp.o
-.PHONY : NodeRegistry.o
+NodeModel.o: NodeModel.cpp.o
+.PHONY : NodeModel.o
 
 # target to build an object file
-NodeRegistry.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o
-.PHONY : NodeRegistry.cpp.o
+NodeModel.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/NodeModel.cpp.o
+.PHONY : NodeModel.cpp.o
 
-NodeRegistry.i: NodeRegistry.cpp.i
-.PHONY : NodeRegistry.i
+NodeModel.i: NodeModel.cpp.i
+.PHONY : NodeModel.i
 
 # target to preprocess a source file
-NodeRegistry.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.i
-.PHONY : NodeRegistry.cpp.i
+NodeModel.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/NodeModel.cpp.i
+.PHONY : NodeModel.cpp.i
 
-NodeRegistry.s: NodeRegistry.cpp.s
-.PHONY : NodeRegistry.s
+NodeModel.s: NodeModel.cpp.s
+.PHONY : NodeModel.s
 
 # target to generate assembly for a file
-NodeRegistry.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.s
-.PHONY : NodeRegistry.cpp.s
+NodeModel.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/NodeModel.cpp.s
+.PHONY : NodeModel.cpp.s
 
 PortItem.o: PortItem.cpp.o
 .PHONY : PortItem.o
 
 # target to build an object file
 PortItem.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/PortItem.cpp.o
 .PHONY : PortItem.cpp.o
 
 PortItem.i: PortItem.cpp.i
@@ -336,7 +288,7 @@ PortItem.i: PortItem.cpp.i
 
 # target to preprocess a source file
 PortItem.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/PortItem.cpp.i
 .PHONY : PortItem.cpp.i
 
 PortItem.s: PortItem.cpp.s
@@ -344,80 +296,176 @@ PortItem.s: PortItem.cpp.s
 
 # target to generate assembly for a file
 PortItem.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/PortItem.cpp.s
 .PHONY : PortItem.cpp.s
 
-PropertiesPanel.o: PropertiesPanel.cpp.o
-.PHONY : PropertiesPanel.o
+nodes/AudioInputNode.o: nodes/AudioInputNode.cpp.o
+.PHONY : nodes/AudioInputNode.o
 
 # target to build an object file
-PropertiesPanel.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o
-.PHONY : PropertiesPanel.cpp.o
+nodes/AudioInputNode.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/nodes/AudioInputNode.cpp.o
+.PHONY : nodes/AudioInputNode.cpp.o
 
-PropertiesPanel.i: PropertiesPanel.cpp.i
-.PHONY : PropertiesPanel.i
+nodes/AudioInputNode.i: nodes/AudioInputNode.cpp.i
+.PHONY : nodes/AudioInputNode.i
 
 # target to preprocess a source file
-PropertiesPanel.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.i
-.PHONY : PropertiesPanel.cpp.i
+nodes/AudioInputNode.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/nodes/AudioInputNode.cpp.i
+.PHONY : nodes/AudioInputNode.cpp.i
 
-PropertiesPanel.s: PropertiesPanel.cpp.s
-.PHONY : PropertiesPanel.s
+nodes/AudioInputNode.s: nodes/AudioInputNode.cpp.s
+.PHONY : nodes/AudioInputNode.s
 
 # target to generate assembly for a file
-PropertiesPanel.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.s
-.PHONY : PropertiesPanel.cpp.s
+nodes/AudioInputNode.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/nodes/AudioInputNode.cpp.s
+.PHONY : nodes/AudioInputNode.cpp.s
 
-main.o: main.cpp.o
-.PHONY : main.o
+nodes/VideoInputNode.o: nodes/VideoInputNode.cpp.o
+.PHONY : nodes/VideoInputNode.o
 
 # target to build an object file
-main.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o
-.PHONY : main.cpp.o
+nodes/VideoInputNode.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/nodes/VideoInputNode.cpp.o
+.PHONY : nodes/VideoInputNode.cpp.o
 
-main.i: main.cpp.i
-.PHONY : main.i
+nodes/VideoInputNode.i: nodes/VideoInputNode.cpp.i
+.PHONY : nodes/VideoInputNode.i
 
 # target to preprocess a source file
-main.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.i
-.PHONY : main.cpp.i
+nodes/VideoInputNode.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/nodes/VideoInputNode.cpp.i
+.PHONY : nodes/VideoInputNode.cpp.i
 
-main.s: main.cpp.s
-.PHONY : main.s
+nodes/VideoInputNode.s: nodes/VideoInputNode.cpp.s
+.PHONY : nodes/VideoInputNode.s
 
 # target to generate assembly for a file
-main.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.s
-.PHONY : main.cpp.s
+nodes/VideoInputNode.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/nodes/VideoInputNode.cpp.s
+.PHONY : nodes/VideoInputNode.cpp.s
 
-vr_blueprint_autogen/mocs_compilation.o: vr_blueprint_autogen/mocs_compilation.cpp.o
-.PHONY : vr_blueprint_autogen/mocs_compilation.o
+qml_main.o: qml_main.cpp.o
+.PHONY : qml_main.o
 
 # target to build an object file
-vr_blueprint_autogen/mocs_compilation.cpp.o:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o
-.PHONY : vr_blueprint_autogen/mocs_compilation.cpp.o
+qml_main.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/qml_main.cpp.o
+.PHONY : qml_main.cpp.o
 
-vr_blueprint_autogen/mocs_compilation.i: vr_blueprint_autogen/mocs_compilation.cpp.i
-.PHONY : vr_blueprint_autogen/mocs_compilation.i
+qml_main.i: qml_main.cpp.i
+.PHONY : qml_main.i
 
 # target to preprocess a source file
-vr_blueprint_autogen/mocs_compilation.cpp.i:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.i
-.PHONY : vr_blueprint_autogen/mocs_compilation.cpp.i
+qml_main.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/qml_main.cpp.i
+.PHONY : qml_main.cpp.i
 
-vr_blueprint_autogen/mocs_compilation.s: vr_blueprint_autogen/mocs_compilation.cpp.s
-.PHONY : vr_blueprint_autogen/mocs_compilation.s
+qml_main.s: qml_main.cpp.s
+.PHONY : qml_main.s
 
 # target to generate assembly for a file
-vr_blueprint_autogen/mocs_compilation.cpp.s:
-	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.s
-.PHONY : vr_blueprint_autogen/mocs_compilation.cpp.s
+qml_main.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/qml_main.cpp.s
+.PHONY : qml_main.cpp.s
+
+viewmodels/MixerViewModel.o: viewmodels/MixerViewModel.cpp.o
+.PHONY : viewmodels/MixerViewModel.o
+
+# target to build an object file
+viewmodels/MixerViewModel.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/MixerViewModel.cpp.o
+.PHONY : viewmodels/MixerViewModel.cpp.o
+
+viewmodels/MixerViewModel.i: viewmodels/MixerViewModel.cpp.i
+.PHONY : viewmodels/MixerViewModel.i
+
+# target to preprocess a source file
+viewmodels/MixerViewModel.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/MixerViewModel.cpp.i
+.PHONY : viewmodels/MixerViewModel.cpp.i
+
+viewmodels/MixerViewModel.s: viewmodels/MixerViewModel.cpp.s
+.PHONY : viewmodels/MixerViewModel.s
+
+# target to generate assembly for a file
+viewmodels/MixerViewModel.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/MixerViewModel.cpp.s
+.PHONY : viewmodels/MixerViewModel.cpp.s
+
+viewmodels/PropertiesViewModel.o: viewmodels/PropertiesViewModel.cpp.o
+.PHONY : viewmodels/PropertiesViewModel.o
+
+# target to build an object file
+viewmodels/PropertiesViewModel.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/PropertiesViewModel.cpp.o
+.PHONY : viewmodels/PropertiesViewModel.cpp.o
+
+viewmodels/PropertiesViewModel.i: viewmodels/PropertiesViewModel.cpp.i
+.PHONY : viewmodels/PropertiesViewModel.i
+
+# target to preprocess a source file
+viewmodels/PropertiesViewModel.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/PropertiesViewModel.cpp.i
+.PHONY : viewmodels/PropertiesViewModel.cpp.i
+
+viewmodels/PropertiesViewModel.s: viewmodels/PropertiesViewModel.cpp.s
+.PHONY : viewmodels/PropertiesViewModel.s
+
+# target to generate assembly for a file
+viewmodels/PropertiesViewModel.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/PropertiesViewModel.cpp.s
+.PHONY : viewmodels/PropertiesViewModel.cpp.s
+
+viewmodels/SettingsViewModel.o: viewmodels/SettingsViewModel.cpp.o
+.PHONY : viewmodels/SettingsViewModel.o
+
+# target to build an object file
+viewmodels/SettingsViewModel.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/SettingsViewModel.cpp.o
+.PHONY : viewmodels/SettingsViewModel.cpp.o
+
+viewmodels/SettingsViewModel.i: viewmodels/SettingsViewModel.cpp.i
+.PHONY : viewmodels/SettingsViewModel.i
+
+# target to preprocess a source file
+viewmodels/SettingsViewModel.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/SettingsViewModel.cpp.i
+.PHONY : viewmodels/SettingsViewModel.cpp.i
+
+viewmodels/SettingsViewModel.s: viewmodels/SettingsViewModel.cpp.s
+.PHONY : viewmodels/SettingsViewModel.s
+
+# target to generate assembly for a file
+viewmodels/SettingsViewModel.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/viewmodels/SettingsViewModel.cpp.s
+.PHONY : viewmodels/SettingsViewModel.cpp.s
+
+vr_blueprint_qml_autogen/mocs_compilation.o: vr_blueprint_qml_autogen/mocs_compilation.cpp.o
+.PHONY : vr_blueprint_qml_autogen/mocs_compilation.o
+
+# target to build an object file
+vr_blueprint_qml_autogen/mocs_compilation.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/vr_blueprint_qml_autogen/mocs_compilation.cpp.o
+.PHONY : vr_blueprint_qml_autogen/mocs_compilation.cpp.o
+
+vr_blueprint_qml_autogen/mocs_compilation.i: vr_blueprint_qml_autogen/mocs_compilation.cpp.i
+.PHONY : vr_blueprint_qml_autogen/mocs_compilation.i
+
+# target to preprocess a source file
+vr_blueprint_qml_autogen/mocs_compilation.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/vr_blueprint_qml_autogen/mocs_compilation.cpp.i
+.PHONY : vr_blueprint_qml_autogen/mocs_compilation.cpp.i
+
+vr_blueprint_qml_autogen/mocs_compilation.s: vr_blueprint_qml_autogen/mocs_compilation.cpp.s
+.PHONY : vr_blueprint_qml_autogen/mocs_compilation.s
+
+# target to generate assembly for a file
+vr_blueprint_qml_autogen/mocs_compilation.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_qml.dir/vr_blueprint_qml_autogen/mocs_compilation.cpp.s
+.PHONY : vr_blueprint_qml_autogen/mocs_compilation.cpp.s
 
 # Help Target
 help:
@@ -431,36 +479,42 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
-	@echo "... vr_blueprint_autogen"
-	@echo "... vr_blueprint_autogen_timestamp_deps"
-	@echo "... vr_blueprint"
-	@echo "... ConnectionItem.o"
-	@echo "... ConnectionItem.i"
-	@echo "... ConnectionItem.s"
-	@echo "... GraphSerializer.o"
-	@echo "... GraphSerializer.i"
-	@echo "... GraphSerializer.s"
-	@echo "... NodeGraph.o"
-	@echo "... NodeGraph.i"
-	@echo "... NodeGraph.s"
+	@echo "... vr_blueprint_qml_autogen"
+	@echo "... vr_blueprint_qml_autogen_timestamp_deps"
+	@echo "... vr_blueprint_qml"
+	@echo "... ConnectionModel.o"
+	@echo "... ConnectionModel.i"
+	@echo "... ConnectionModel.s"
 	@echo "... NodeItem.o"
 	@echo "... NodeItem.i"
 	@echo "... NodeItem.s"
-	@echo "... NodeRegistry.o"
-	@echo "... NodeRegistry.i"
-	@echo "... NodeRegistry.s"
+	@echo "... NodeModel.o"
+	@echo "... NodeModel.i"
+	@echo "... NodeModel.s"
 	@echo "... PortItem.o"
 	@echo "... PortItem.i"
 	@echo "... PortItem.s"
-	@echo "... PropertiesPanel.o"
-	@echo "... PropertiesPanel.i"
-	@echo "... PropertiesPanel.s"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
-	@echo "... vr_blueprint_autogen/mocs_compilation.o"
-	@echo "... vr_blueprint_autogen/mocs_compilation.i"
-	@echo "... vr_blueprint_autogen/mocs_compilation.s"
+	@echo "... nodes/AudioInputNode.o"
+	@echo "... nodes/AudioInputNode.i"
+	@echo "... nodes/AudioInputNode.s"
+	@echo "... nodes/VideoInputNode.o"
+	@echo "... nodes/VideoInputNode.i"
+	@echo "... nodes/VideoInputNode.s"
+	@echo "... qml_main.o"
+	@echo "... qml_main.i"
+	@echo "... qml_main.s"
+	@echo "... viewmodels/MixerViewModel.o"
+	@echo "... viewmodels/MixerViewModel.i"
+	@echo "... viewmodels/MixerViewModel.s"
+	@echo "... viewmodels/PropertiesViewModel.o"
+	@echo "... viewmodels/PropertiesViewModel.i"
+	@echo "... viewmodels/PropertiesViewModel.s"
+	@echo "... viewmodels/SettingsViewModel.o"
+	@echo "... viewmodels/SettingsViewModel.i"
+	@echo "... viewmodels/SettingsViewModel.s"
+	@echo "... vr_blueprint_qml_autogen/mocs_compilation.o"
+	@echo "... vr_blueprint_qml_autogen/mocs_compilation.i"
+	@echo "... vr_blueprint_qml_autogen/mocs_compilation.s"
 .PHONY : help
 
 

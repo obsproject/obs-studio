@@ -16,6 +16,8 @@ vr_blueprint_autogen/timestamp: \
 	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.cpp \
 	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.h \
 	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/widgets/SpatialPreviewWidget.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/widgets/SpatialPreviewWidget.h \
 	/home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol/VRProtocol.h \
 	/usr/include/alloca.h \
 	/usr/include/asm-generic/bitsperlong.h \
@@ -319,7 +321,31 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
 	/usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
 	/usr/include/x86_64-linux-gnu/gnu/stubs.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/QEntity \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qcomponent.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qentity.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qnode.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qnodeid.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qt3dcore-config.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qt3dcore_global.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DCore/qtransform.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/QOrbitCameraController \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/Qt3DWindow \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qabstractcameracontroller.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qorbitcameracontroller.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qt3dextras_global.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DExtras/qt3dwindow.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DRender/QCamera \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qcamera.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qcameralens.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qrenderapi.h \
+	/usr/include/x86_64-linux-gnu/qt6/Qt3DRender/qt3drender_global.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QDebug \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QEvent \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QHashFunctions \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QMargins \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QMetaType \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QSize \
@@ -423,12 +449,15 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qversiontagging.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QBrush \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QFont \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QMatrix4x4 \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QMouseEvent \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QPainter \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QPen \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QQuaternion \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QVector3D \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QWheelEvent \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QWindow \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qaction.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qbitmap.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qbrush.h \
@@ -447,6 +476,7 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qinputdevice.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qinputmethod.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qkeysequence.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qmatrix4x4.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpaintdevice.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpainter.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpainterpath.h \
@@ -462,6 +492,8 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qrgb.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qrgba64.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qscreen.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qsurface.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qsurfaceformat.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtextdocument.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtextoption.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtgui-config.h \
@@ -473,6 +505,7 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvector3d.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvector4d.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvectornd.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qwindow.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qwindowdefs.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QApplication \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QComboBox \
@@ -531,4 +564,158 @@ vr_blueprint_autogen/timestamp: \
 	/usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
 	/usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
 	/usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigExtras.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Dependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Targets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6VersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeature.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeatureCommon.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicAppleHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicDependencyHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFinalizerHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFindPackageHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicPluginHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTargetHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTestHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicToolHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicWalkLibsHelpers.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DCore/Qt63DCoreVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DExtras/Qt63DExtrasVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DInput/Qt63DInputVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DLogic/Qt63DLogicVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderPlugins.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt63DRenderVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt6RhiRendererPluginAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt6RhiRendererPluginConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt6RhiRendererPluginTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt63DRender/Qt6RhiRendererPluginTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Concurrent/Qt6ConcurrentVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaPlugins.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DMacros.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3D/Qt6Quick3DVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DRuntimeRender/Qt6Quick3DRuntimeRenderVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DTools/Qt6Quick3DToolsVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Quick3DUtils/Qt6Quick3DUtilsVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2AdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Config.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2ConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2ConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Dependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Targets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2Targets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickControls2/Qt6QuickControls2VersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2AdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Config.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2ConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2ConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Dependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Targets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2Targets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6QuickTemplates2/Qt6QuickTemplates2VersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderTools/Qt6ShaderToolsVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsMacros.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6ShaderToolsTools/Qt6ShaderToolsToolsVersionlessTargets.cmake \
+	/usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake \
+	/usr/share/cmake-3.28/Modules/CheckCXXCompilerFlag.cmake \
 	/usr/bin/cmake

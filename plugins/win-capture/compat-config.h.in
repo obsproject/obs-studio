@@ -1,4 +1,0 @@
-#pragma once
-
-#define COMPAT_URL "@COMPAT_URL@"
-#cmakedefine ENABLE_COMPAT_UPDATES
