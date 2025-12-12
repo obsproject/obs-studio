@@ -852,8 +852,9 @@ struct obs_source {
 	uint64_t resample_offset;
 	uint64_t next_audio_ts_min;
 	uint64_t next_audio_sys_ts_min;
+	uint64_t discard_sys_ts;
 	uint64_t last_frame_ts;
-	uint64_t last_sys_timestamp;
+	uint64_t last_frame_sys_ts;
 	bool async_rendered;
 
 	/* audio */
@@ -1137,6 +1138,7 @@ extern bool update_async_textures(struct obs_source *source, const struct obs_so
 				  gs_texture_t *tex[MAX_AV_PLANES], gs_texrender_t *texrender);
 extern bool set_async_texture_size(struct obs_source *source, const struct obs_source_frame *frame);
 extern void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame);
+extern void set_ready_frame_timing(obs_source_t *source, uint64_t frame_ts, uint64_t sys_time);
 
 extern void set_deinterlace_texture_size(obs_source_t *source);
 extern void deinterlace_process_last_frame(obs_source_t *source, uint64_t sys_time);
