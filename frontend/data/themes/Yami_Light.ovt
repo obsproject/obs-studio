@@ -45,15 +45,15 @@
 }
 
 VolumeMeter {
-    qproperty-backgroundNominalColor: rgb(66,112,24);
-    qproperty-backgroundWarningColor: rgb(112,91,28);
-    qproperty-backgroundErrorColor: rgb(112,39,53);
-    qproperty-foregroundNominalColor: rgb(115,189,49);
-    qproperty-foregroundWarningColor: rgb(189,144,9);
-    qproperty-foregroundErrorColor: rgb(189,47,73);
+    qproperty-backgroundNominalColor: var(--green4);
+    qproperty-backgroundWarningColor: var(--yellow4);
+    qproperty-backgroundErrorColor: var(--red4);
+    qproperty-foregroundNominalColor: var(--green1);
+    qproperty-foregroundWarningColor: var(--yellow1);
+    qproperty-foregroundErrorColor: var(--red1);
     qproperty-magnitudeColor: rgb(0,0,0);
-    qproperty-majorTickColor: palette(text);
-    qproperty-minorTickColor: palette(light);
+    qproperty-majorTickColor: var(--black1);
+    qproperty-minorTickColor: var(--black5);
 }
 
 QMenu::right-arrow {
