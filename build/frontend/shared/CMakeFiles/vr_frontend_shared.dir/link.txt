@@ -1,0 +1,2 @@
+/usr/bin/ar qc libvr_frontend_shared.a CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o
+/usr/bin/ranlib libvr_frontend_shared.a

@@ -1,0 +1,15 @@
+# Copyright (c) 2017-2023, The Khronos Group Inc.
+#
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+prefix=/usr/local
+exec_prefix=/usr/local
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: obs-vr
+Description: OpenXR Loader
+Version: 1.0
+Libs: -L${libdir} -lopenxr_loader 
+Cflags: -I${includedir}
+

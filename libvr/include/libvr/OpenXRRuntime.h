@@ -36,6 +36,13 @@ public:
     // The callback is invoked when it's time to process a frame (between wait and begin)
     void RunLoop(std::function<void()> frame_callback);
 
+    // Swapchain Access
+    // Acquires the next image index for the given view and returns the VkImage handle
+    // In real OpenXR, we must Acquire then Wait.
+    void* GetResolvedSwapchainImage(uint32_t viewIndex, uint32_t& outImageIndex);
+    // Release image (called after encoding/blitting)
+    void ReleaseSwapchainImage(uint32_t viewIndex);
+
     // Accessors
     XrInstance GetInstance() const { return instance; }
     XrSession GetSession() const { return session; }
@@ -62,6 +69,15 @@ private:
     bool initialized = false;
     bool sessionRunning = false;
     XrSessionState sessionState = XR_SESSION_STATE_UNKNOWN;
+
+    struct Swapchain {
+        XrSwapchain handle;
+        int32_t width;
+        int32_t height;
+        std::vector<XrSwapchainImageVulkanKHR> images;
+    };
+    std::vector<Swapchain> swapchains;
+
 };
 
 } // namespace libvr

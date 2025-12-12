@@ -18,4 +18,10 @@
 
 #include <pthread.h>
 
-/* TODO */
+struct ipc_pipe_server {
+    int dummy;
+};
+
+struct ipc_pipe_client {
+    int dummy;
+};

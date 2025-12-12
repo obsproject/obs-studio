@@ -26,6 +26,8 @@ typedef struct ISuperResolutionAdapter {
     void* user_data;
 } ISuperResolutionAdapter;
 
+ISuperResolutionAdapter* CreateSRAdapter();
+
 #ifdef __cplusplus
 }
 #endif

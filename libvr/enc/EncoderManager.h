@@ -20,6 +20,9 @@ public:
     
     void DestroyEncoder(IEncoderAdapter* encoder);
 
+    // List of active encoders
+    const std::vector<IEncoderAdapter*>& GetEncoders() const { return active_encoders; }
+
 private:
     std::vector<IEncoderAdapter*> active_encoders;
 };

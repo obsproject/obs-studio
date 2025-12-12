@@ -10,3 +10,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Modules
 add_subdirectory(libvr)
 add_subdirectory(obs-vr)
+if(NOT DISABLE_UI)
+    add_subdirectory(frontend)
+endif()

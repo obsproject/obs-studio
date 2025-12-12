@@ -29,6 +29,7 @@ typedef struct GPUFrameView {
     uint64_t timestamp;    // Nanoseconds
     ColorInfo color;
     void* user_data;       // Backing object (context)
+    int fd;                // Opaque FD for interop (Linux) or Handle (Win32)
 } GPUFrameView;
 
 #ifdef __cplusplus

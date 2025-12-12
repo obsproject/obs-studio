@@ -1,0 +1,10 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/subtomic/Documents/GitHub/VRobs-studio/build_vr/CMakeFiles/_CMakeLTOTest-CXX/src/main.cpp
+

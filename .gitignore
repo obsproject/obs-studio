@@ -1,5 +1,4 @@
 # Exclude everything
-/*
 
 # Except for default project files
 !/.github
@@ -35,6 +34,7 @@
 !COPYING
 !INSTALL
 !README.rst
+!DEVELOPMENTPLAN.md
 
 # Exclude lock files
 *.lock.json

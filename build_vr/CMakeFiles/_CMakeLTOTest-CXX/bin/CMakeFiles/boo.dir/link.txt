@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -flto=auto -fno-fat-lto-objects CMakeFiles/boo.dir/main.cpp.o -o boo  libfoo.a 

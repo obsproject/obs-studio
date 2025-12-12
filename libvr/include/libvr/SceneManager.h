@@ -4,45 +4,92 @@
 #include <string>
 #include <array>
 #include <mutex>
-#include <cstdint> // For uint32_t
+#include <cstdint>  // For uint32_t
 
 namespace libvr {
 
-struct Transform {
-    float position[3];
-    float rotation[4]; // Quaternion
-    float scale[3];
-};
+    struct Transform {
+        float position[3];
+        float rotation[4];  // Quaternion
+        float scale[3];
+    };
 
-struct Mesh {
-    uint32_t id;
-    // Simplified for skeleton: assume static buffers are managed elsewhere by ID
-    // In real engine: std::vector<Vertex> vertices;
-    std::string name;
-};
+    struct Vertex {
+        float position[3];
+        float normal[3];
+        float uv[2];
+    };
 
-struct SceneNode {
-    uint32_t id;
-    Transform transform;
-    uint32_t mesh_id; // 0 = no mesh
-    std::vector<uint32_t> children;
-};
+    struct Mesh {
+        uint32_t id;
+        std::string name;
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+    };
 
-class SceneManager {
-public:
-    SceneManager();
-    ~SceneManager();
+    struct Material {
+        uint32_t id;
+        float base_color[4];  // RGBA
+        uint32_t texture_id;
+        float roughness;
+        float metallic;
+    };
 
-    uint32_t AddNode(const Transform& transform);
-    uint32_t AddMeshNode(const Transform& transform, uint32_t mesh_id); // New
-    void RemoveNode(uint32_t id);
-    void SetTransform(uint32_t id, const Transform& transform);
-    const std::vector<SceneNode>& GetNodes() const;
+    struct Light {
+        uint32_t id;
+        float position[3];  // or direction for directional light
+        float color[3];     // RGB
+        float intensity;
+        int type;  // 0 = Point, 1 = Directional
+    };
 
-private:
-    std::vector<SceneNode> nodes;
-    int next_id = 1;
-    mutable std::mutex nodes_mutex;
-};
+    struct SceneNode {
+        uint32_t id;
+        Transform transform;
+        uint32_t mesh_id;
+        uint32_t material_id;  // New: Material reference
+        uint32_t texture_id;   // Legacy/Override
+        std::vector<uint32_t> children;
+    };
 
-} // namespace libvr
+    class SceneManager
+    {
+          public:
+        SceneManager();
+        ~SceneManager();
+
+        // Node Management
+        uint32_t AddNode(const Transform &transform);
+        uint32_t AddMeshNode(const Transform &transform, uint32_t mesh_id);
+        uint32_t AddVideoNode(const Transform &transform, uint32_t mesh_id, uint32_t texture_id);
+        void RemoveNode(uint32_t id);
+        void SetTransform(uint32_t id, const Transform &transform);
+        const std::vector<SceneNode> &GetNodes() const;
+
+        // Resource Management
+        uint32_t AddMesh(const Mesh &mesh);
+        const Mesh *GetMesh(uint32_t id) const;
+
+        uint32_t AddMaterial(const Material &material);
+        const Material *GetMaterial(uint32_t id) const;
+
+        uint32_t AddLight(const Light &light);
+        const std::vector<Light> &GetLights() const;
+
+          private:
+        std::vector<SceneNode> nodes;
+        int next_id = 1;
+        mutable std::mutex nodes_mutex;
+
+        // Resources
+        std::vector<Mesh> meshes;
+        int next_mesh_id = 1;
+
+        std::vector<Material> materials;
+        int next_material_id = 1;
+
+        std::vector<Light> lights;
+        int next_light_id = 1;
+    };
+
+}  // namespace libvr

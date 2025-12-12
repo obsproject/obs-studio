@@ -14,4 +14,44 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* TODO */
+#include "pipe.h"
+
+bool ipc_pipe_server_start(ipc_pipe_server_t *pipe, const char *name, ipc_pipe_read_t read_callback, void *param)
+{
+	(void)pipe;
+	(void)name;
+	(void)read_callback;
+	(void)param;
+	return false;
+}
+
+void ipc_pipe_server_free(ipc_pipe_server_t *pipe)
+{
+	(void)pipe;
+}
+
+bool ipc_pipe_client_open(ipc_pipe_client_t *pipe, const char *name)
+{
+	(void)pipe;
+	(void)name;
+	return false;
+}
+
+void ipc_pipe_client_free(ipc_pipe_client_t *pipe)
+{
+	(void)pipe;
+}
+
+bool ipc_pipe_client_write(ipc_pipe_client_t *pipe, const void *data, size_t size)
+{
+	(void)pipe;
+	(void)data;
+	(void)size;
+	return false;
+}
+
+bool ipc_pipe_client_valid(ipc_pipe_client_t *pipe)
+{
+	(void)pipe;
+	return false;
+}

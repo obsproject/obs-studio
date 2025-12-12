@@ -1,0 +1,153 @@
+{
+	"BUILD_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen",
+	"CMAKE_BINARY_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint",
+	"CMAKE_EXECUTABLE" : "/usr/bin/cmake",
+	"CMAKE_LIST_FILES" : 
+	[
+		"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/CMakeLists.txt"
+	],
+	"CMAKE_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio",
+	"DEP_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "vr_blueprint_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.h",
+			"MU",
+			"EWIEGA46WW/moc_ConnectionItem.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.h",
+			"MU",
+			"EWIEGA46WW/moc_GraphSerializer.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.h",
+			"MU",
+			"EWIEGA46WW/moc_NodeGraph.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.h",
+			"MU",
+			"EWIEGA46WW/moc_NodeItem.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.h",
+			"MU",
+			"EWIEGA46WW/moc_NodeRegistry.cpp",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.h",
+			"MU",
+			"EWIEGA46WW/moc_PortItem.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/include",
+	"MOC_COMPILATION_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : [ "QT_CORE_LIB", "QT_GUI_LIB", "QT_NO_DEBUG", "QT_WIDGETS_LIB" ],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/home/subtomic/Documents/GitHub/VRobs-studio/shared/vr-protocol",
+		"/usr/include/x86_64-linux-gnu/qt6/QtCore",
+		"/usr/include/x86_64-linux-gnu/qt6",
+		"/usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++",
+		"/usr/include/x86_64-linux-gnu/qt6/QtGui",
+		"/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
+		"/usr/include",
+		"/usr/include/c++/13",
+		"/usr/include/x86_64-linux-gnu/c++/13",
+		"/usr/include/c++/13/backward",
+		"/usr/lib/gcc/x86_64-linux-gnu/13/include",
+		"/usr/local/include",
+		"/usr/include/x86_64-linux-gnu"
+	],
+	"MOC_MACRO_NAMES" : 
+	[
+		"Q_OBJECT",
+		"Q_GADGET",
+		"Q_GADGET_EXPORT",
+		"Q_NAMESPACE",
+		"Q_NAMESPACE_EXPORT"
+	],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/usr/bin/c++",
+		"-std=gnu++20",
+		"-dM",
+		"-E",
+		"-c",
+		"/usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 6,
+	"PARSE_CACHE_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/usr/lib/qt6/libexec/moc",
+	"QT_UIC_EXECUTABLE" : "/usr/lib/qt6/libexec/uic",
+	"QT_VERSION_MAJOR" : 6,
+	"QT_VERSION_MINOR" : 4,
+	"SETTINGS_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/main.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"VERBOSITY" : 0
+}

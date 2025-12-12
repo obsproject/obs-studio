@@ -51,8 +51,10 @@ bool MLRuntime::Initialize() {
          return false;
     }
     
-    // Suggest CUDA execution provider if available?
-    // impl->orth->SessionOptionsAppendExecutionProvider_CUDA(impl->session_options, 0);
+    // Enable CUDA Provider if available
+    OrtCUDAProviderOptions cuda_options;
+    memset(&cuda_options, 0, sizeof(cuda_options));
+    impl->orth->SessionOptionsAppendExecutionProvider_CUDA(impl->session_options, &cuda_options);
 
     return true;
 #else

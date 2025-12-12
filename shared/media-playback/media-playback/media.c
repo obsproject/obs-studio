@@ -22,7 +22,7 @@
 #include "media.h"
 #include "closest-format.h"
 
-#include <libavdevice/avdevice.h>
+// #include <libavdevice/avdevice.h>
 #include <libavutil/imgutils.h>
 
 static int64_t base_sys_ts = 0;
@@ -896,7 +896,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 
 	static bool initialized = false;
 	if (!initialized) {
-		avdevice_register_all();
+		// avdevice_register_all();
 		avformat_network_init();
 		initialized = true;
 	}

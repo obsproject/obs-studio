@@ -39,6 +39,10 @@ public:
     // End the frame and present/export.
     // Returns the view of the rendered frame (e.g., for encoding).
     virtual GPUFrameView GetOutputFrame() = 0;
+
+    // Zero-Copy / Swapchain Utility
+    // Copies the internal Main Render Target to the destination image (e.g. OpenXR swapchain)
+    virtual void BlitToExternal(void* dstHandle, uint32_t w, uint32_t h) = 0;
 };
 
 // Factory

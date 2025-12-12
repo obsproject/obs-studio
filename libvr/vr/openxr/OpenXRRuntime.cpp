@@ -197,8 +197,86 @@ bool OpenXRRuntime::CreateVulkanSession(VkInstance vkInstance, VkPhysicalDevice 
 }
 
 bool OpenXRRuntime::CreateSwapchains(int width, int height) {
-    // Scaffold impl
+    if (!session) return false;
+    
+    // 1. Get View Configuration Views (Optional, but good verification)
+    uint32_t viewCount = 0;
+    xrEnumerateViewConfigurationViews(instance, systemId, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &viewCount, nullptr);
+    std::vector<XrViewConfigurationView> configViews(viewCount, {XR_TYPE_VIEW_CONFIGURATION_VIEW});
+    xrEnumerateViewConfigurationViews(instance, systemId, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, viewCount, &viewCount, configViews.data());
+    
+    // For this MVP, we create a swapchain for each view (stereo = 2)
+    // using the user-provided resolution (server architecture) or the view recommended res.
+    // For Cloud VR, we stick to the provided width/height (Encoder target).
+    
+    for (uint32_t i = 0; i < viewCount; i++) {
+        XrSwapchainCreateInfo swapchainInfo = {XR_TYPE_SWAPCHAIN_CREATE_INFO};
+        swapchainInfo.createFlags = 0;
+        swapchainInfo.usageFlags = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT | XR_SWAPCHAIN_USAGE_SAMPLED_BIT;
+        swapchainInfo.format = VK_FORMAT_R8G8B8A8_UNORM; // Should query supported formats, but this is standard
+        swapchainInfo.sampleCount = 1; // No MSAA for now
+        swapchainInfo.width = width;
+        swapchainInfo.height = height;
+        swapchainInfo.faceCount = 1;
+        swapchainInfo.arraySize = 1;
+        swapchainInfo.mipCount = 1;
+        
+        XrSwapchain swapchainHandle;
+        if (XR_FAILED(xrCreateSwapchain(session, &swapchainInfo, &swapchainHandle))) {
+            std::cerr << "[OpenXR] Failed to create swapchain for view " << i << std::endl;
+            return false;
+        }
+        
+        // Enumerate Images
+        uint32_t imageCount = 0;
+        xrEnumerateSwapchainImages(swapchainHandle, 0, &imageCount, nullptr);
+        std::vector<XrSwapchainImageVulkanKHR> swapchainImages(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR});
+        if (XR_FAILED(xrEnumerateSwapchainImages(swapchainHandle, imageCount, &imageCount, (XrSwapchainImageBaseHeader*)swapchainImages.data()))) {
+             std::cerr << "[OpenXR] Failed to enumerate swapchain images." << std::endl;
+             return false;
+        }
+        
+        Swapchain sc;
+        sc.handle = swapchainHandle;
+        sc.width = width;
+        sc.height = height;
+        sc.images = swapchainImages;
+        
+        swapchains.push_back(sc);
+        std::cout << "[OpenXR] Created Swapchain " << i << " (" << width << "x" << height << ") with " << imageCount << " images." << std::endl;
+    }
+    
     return true;
+}
+
+void* OpenXRRuntime::GetResolvedSwapchainImage(uint32_t viewIndex, uint32_t& outImageIndex) {
+    if (viewIndex >= swapchains.size()) return nullptr;
+    auto& sc = swapchains[viewIndex];
+    
+    XrSwapchainImageAcquireInfo acquireInfo = {XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+    if (XR_FAILED(xrAcquireSwapchainImage(sc.handle, &acquireInfo, &outImageIndex))) {
+        std::cerr << "[OpenXR] Failed to acquire image for view " << viewIndex << std::endl;
+        return nullptr;
+    }
+    
+    XrSwapchainImageWaitInfo waitInfo = {XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
+    waitInfo.timeout = XR_INFINITE_DURATION;
+    if (XR_FAILED(xrWaitSwapchainImage(sc.handle, &waitInfo))) {
+        std::cerr << "[OpenXR] Failed to wait for image for view " << viewIndex << std::endl;
+        return nullptr;
+    }
+    
+    if (outImageIndex < sc.images.size()) {
+        return (void*)sc.images[outImageIndex].image;
+    }
+    return nullptr;
+}
+
+void OpenXRRuntime::ReleaseSwapchainImage(uint32_t viewIndex) {
+    if (viewIndex >= swapchains.size()) return;
+    auto& sc = swapchains[viewIndex];
+    XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
+    xrReleaseSwapchainImage(sc.handle, &releaseInfo);
 }
 
 void OpenXRRuntime::RunLoop(std::function<void()> frame_callback) {

@@ -1,0 +1,3 @@
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate.dir
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/edit_cache.dir
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/rebuild_cache.dir

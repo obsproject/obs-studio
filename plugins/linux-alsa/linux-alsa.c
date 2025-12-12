@@ -25,7 +25,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 extern struct obs_source_info alsa_input_capture;
 
-bool obs_module_load(void)
+bool linux_alsa_module_load(void)
 {
 	obs_register_source(&alsa_input_capture);
 	return true;

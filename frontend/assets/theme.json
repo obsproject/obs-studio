@@ -1,0 +1,19 @@
+{
+    "colors": {
+        "primary": "#007ACC",
+        "accent": "#FFD700",
+        "bg_dark": "#1E1E1E",
+        "bg_light": "#2D2D30",
+        "text": "#FFFFFF",
+        "border": "#3E3E42"
+    },
+    "fonts": {
+        "base_size": 10,
+        "header_size": 12,
+        "family": "Segoe UI"
+    },
+    "sizes": {
+        "border_radius": 4,
+        "padding": 5
+    }
+}

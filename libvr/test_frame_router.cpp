@@ -1,4 +1,4 @@
-#include "pipeline/FrameRouter.h"
+#include "libvr/pipeline/FrameRouter.h"
 #include <iostream>
 #include <vector>
 
@@ -16,6 +16,12 @@ public:
         view.timestamp = 123456789;
         return view;
     }
+
+    void* GetInstance() const override { return nullptr; }
+    void* GetPhysicalDevice() const override { return nullptr; }
+    void* GetDevice() const override { return nullptr; }
+    uint32_t GetGraphicsQueueFamily() const override { return 0; }
+    void BlitToExternal(void* dstHandle, uint32_t w, uint32_t h) override {}
 };
 
 // Mock Encoder

@@ -1,0 +1,14 @@
+# Target labels
+ openxr-sdk-populate
+# Source files and their labels
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate-complete.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-build.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-configure.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-download.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-install.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-mkdir.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-patch.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-test.rule
+/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update.rule
