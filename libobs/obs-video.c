@@ -1127,6 +1127,10 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	output_frames();
 	profile_end(output_frame_name);
 
+	gs_enter_context(obs->video.graphics);
+	gs_end_frame();
+	gs_leave_context();
+
 	profile_start(render_displays_name);
 	render_displays();
 	profile_end(render_displays_name);

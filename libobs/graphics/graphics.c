@@ -1919,6 +1919,16 @@ void gs_begin_frame(void)
 	graphics->exports.device_begin_frame(graphics->device);
 }
 
+void gs_end_frame(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_begin_frame"))
+		return;
+
+	graphics->exports.device_end_frame(graphics->device);
+}
+
 void gs_begin_scene(void)
 {
 	graphics_t *graphics = thread_graphics;
