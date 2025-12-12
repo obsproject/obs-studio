@@ -9,6 +9,8 @@ extern "C" {
 typedef struct SRConfig {
     float sharpness;
     int quality_level;
+    const char* model_path; // New field
+    float scale_factor;     // New field
 } SRConfig;
 
 struct ISuperResolutionAdapter;

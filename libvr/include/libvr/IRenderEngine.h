@@ -11,6 +11,8 @@ struct RenderConfig {
     bool enable_validation_layers;
 };
 
+class SceneManager; // Forward declaration
+
 class IRenderEngine {
 public:
     virtual ~IRenderEngine() = default;
@@ -23,7 +25,7 @@ public:
 
     // Submit a list of draw commands or scene graph update (simplified for now).
     // In a real engine, this would take a command list or scene description.
-    virtual void DrawScene() = 0;
+    virtual void DrawScene(const SceneManager* scene) = 0;
 
     // End the frame and present/export.
     // Returns the view of the rendered frame (e.g., for encoding).

@@ -20,9 +20,28 @@ inline void FillGPUFrameView(GPUFrameView& view, VkImage image, uint32_t width, 
     view.color.masters_max_luma = 0.0f;
     
     // TODO: Map VkFormat to more detailed color info
+    view.color.masters_max_luma = 0.0f;
+    
+    // TODO: Map VkFormat to more detailed color info
     if (format == VK_FORMAT_A2B10G10R10_UNORM_PACK32 || format == VK_FORMAT_R16G16B16A16_SFLOAT) {
         view.color.is_hdr = true; // Primitive heuristic
     }
 }
+
+// Interop Info
+struct VulkanImageHandle {
+    VkImage image;
+    VkDeviceMemory memory;
+    VkDeviceSize size;
+    VkFormat format;
+    uint32_t width;
+    uint32_t height;
+    int fd; // Opaque FD on Linux
+};
+
+// Export prototype
+bool LoadInteropFunctions(VkDevice device);
+bool ExportImageFd(VkDevice device, VkDeviceMemory memory, int* out_fd);
+uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 } // namespace libvr

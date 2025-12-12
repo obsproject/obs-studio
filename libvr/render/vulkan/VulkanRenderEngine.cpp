@@ -1,8 +1,9 @@
 #include "libvr/IRenderEngine.h"
+#include "libvr/SceneManager.h"
 #include <iostream>
 #include <vector>
 #include <stdexcept>
-#include <vulkan/vulkan.h>
+#include "gpu/vulkan_utils.h"
 
 namespace libvr {
 
@@ -105,6 +106,17 @@ public:
         deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
         deviceCreateInfo.queueCreateInfoCount = 1;
         // Enable features if needed...
+        
+        std::vector<const char*> deviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME, // Usually needed for presentation
+            VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME
+        };
+
+        deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
+        deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
         VK_CHECK(vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device));
         vkGetDeviceQueue(device, graphicsFamily, 0, &graphicsQueue);
@@ -133,14 +145,111 @@ public:
         return true;
     }
 
-    void DrawScene() override {
-        // Real implementation: Record command buffer
+
+    
+    void DrawScene(const SceneManager* scene) override {
+         if (!scene) return;
+         
+         const auto& nodes = scene->GetNodes();
+         std::cout << "[Vulkan] Drawing Scene with " << nodes.size() << " nodes..." << std::endl;
+         
+         // Mock command recording
+         for (const auto& node : nodes) {
+             if (node.mesh_id != 0) {
+                 std::cout << "  - Recording Draw for Node " << node.id << " (Mesh " << node.mesh_id << ")" << std::endl;
+                 // vkCmdBindPipeline...
+                 // vkCmdBindVertexBuffers...
+                 // vkCmdDraw...
+             }
+         }
     }
 
     GPUFrameView GetOutputFrame() override {
+        // Lazy allocation of the output frame for testing Interop
+        if (outputImage == VK_NULL_HANDLE) {
+            VkExternalMemoryImageCreateInfo extImageInfo = {};
+            extImageInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+            extImageInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+            VkImageCreateInfo imageInfo = {};
+            imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            imageInfo.pNext = &extImageInfo;
+            imageInfo.imageType = VK_IMAGE_TYPE_2D;
+            imageInfo.extent.width = 1920; // Default test res
+            imageInfo.extent.height = 1080;
+            imageInfo.extent.depth = 1;
+            imageInfo.mipLevels = 1;
+            imageInfo.arrayLayers = 1;
+            imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+            imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+            imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+
+            if (vkCreateImage(device, &imageInfo, nullptr, &outputImage) != VK_SUCCESS) {
+                std::cerr << "[Vulkan] Failed to create output image" << std::endl;
+                return {};
+            }
+
+            VkMemoryRequirements memRequirements;
+            vkGetImageMemoryRequirements(device, outputImage, &memRequirements);
+
+            VkExportMemoryAllocateInfo exportAllocInfo = {};
+            exportAllocInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+            exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+            VkMemoryAllocateInfo allocInfo = {};
+            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.pNext = &exportAllocInfo;
+            allocInfo.allocationSize = memRequirements.size;
+            allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            if (vkAllocateMemory(device, &allocInfo, nullptr, &outputMemory) != VK_SUCCESS) {
+                std::cerr << "[Vulkan] Failed to allocate output image memory" << std::endl;
+                return {};
+            }
+
+            vkBindImageMemory(device, outputImage, outputMemory, 0);
+            
+            // Export the FD
+            if (!ExportImageFd(device, outputMemory, &outputFd)) {
+                 std::cerr << "[Vulkan] Failed to export FD" << std::endl;
+            } else {
+                 std::cout << "[Vulkan] Exported Image FD: " << outputFd << std::endl;
+            }
+        }
+
         GPUFrameView view = {};
-        // Placeholder handles for now, but backed by real device structure member
-        // In next step, we will implement actual VkImage allocation
+        // Populate view with our specific handle struct
+        // We need to manage the lifecycle of this struct. 
+        // For this phase, we use a static or member struct, or strict C-ABI handling
+        // But GPUFrameView.handle is void*. 
+        // We will pass the VulkanImageHandle pointer.
+        
+        static VulkanImageHandle vkhz; // Simple static for single-instance test
+        vkhz.image = outputImage;
+        vkhz.memory = outputMemory;
+        vkhz.fd = outputFd; // The consumer must NOT close this if we want to reuse it, OR we dupe it.
+        // Opaque FD ownership rules: usually transferring ownership closes it on sender side?
+        // Wait, transferring FD usually means 'sendmsg' over socket, or just dup.
+        // If we pass `int` in process, it's just an index.
+        // Import consumes it? "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT... importing it transfers ownership of the file descriptor to the Vulkan implementation."
+        // So correct flow: We keeping owning it. Consumer uses dup() if they import it into another API that consumes it?
+        // Or we export a fresh FD every time? "Multiple file descriptors may be exported from the same memory object".
+        // Let's re-export to be safe for now, OR rely on dup.
+        // Actually, let's keep it simple: We hold the FD. If the consumer imports it to CUDA, CUDA likely takes ownership or needs a dup.
+        // NOTE: Standard POSIX: `dup(fd)`
+        
+        vkhz.width = 1920;
+        vkhz.height = 1080;
+        vkhz.format = VK_FORMAT_R8G8B8A8_UNORM;
+        
+        view.handle = &vkhz; 
+        view.width = 1920;
+        view.height = 1080;
+        view.color.space = Colorspace_Rec709;
+        
         return view;
     }
 
@@ -151,7 +260,10 @@ private:
     VkDevice device = VK_NULL_HANDLE;
     VkQueue graphicsQueue = VK_NULL_HANDLE;
     
-    // Future: VmaAllocator allocator;
+    // Test Output Frame State
+    VkImage outputImage = VK_NULL_HANDLE;
+    VkDeviceMemory outputMemory = VK_NULL_HANDLE;
+    int outputFd = -1;
 };
 
 // Factory function for testing/creation

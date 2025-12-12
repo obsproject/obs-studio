@@ -29,7 +29,8 @@ void FrameRouter::RunFrame() {
     // Future: sceneManager->Update(deltaTime);
 
     // 3. Render
-    renderer->DrawScene();
+    // Pass nullptr for now as FrameRouter doesn't own SceneManager yet or needs refactor
+    renderer->DrawScene(nullptr);
 
     // 4. Get Output
     GPUFrameView frame = renderer->GetOutputFrame();
@@ -46,7 +47,6 @@ void FrameRouter::RunFrame() {
     }
     
     // 6. End Frame (Implied in IRenderEngine specific flow, or added explicit EndFrame if needed)
-    // For now we assume GetOutputFrame triggers presentation/readiness or is synchronized.
 }
 
 } // namespace libvr

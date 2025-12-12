@@ -4,20 +4,28 @@
 #include <string>
 #include <array>
 #include <mutex>
+#include <cstdint> // For uint32_t
 
 namespace libvr {
 
 struct Transform {
-    std::array<float, 3> position = {0.0f, 0.0f, 0.0f};
-    std::array<float, 3> rotation = {0.0f, 0.0f, 0.0f}; // Euler angles
-    std::array<float, 3> scale = {1.0f, 1.0f, 1.0f};
+    float position[3];
+    float rotation[4]; // Quaternion
+    float scale[3];
+};
+
+struct Mesh {
+    uint32_t id;
+    // Simplified for skeleton: assume static buffers are managed elsewhere by ID
+    // In real engine: std::vector<Vertex> vertices;
+    std::string name;
 };
 
 struct SceneNode {
-    int id;
-    std::string name;
+    uint32_t id;
     Transform transform;
-    // Type info, mesh data, etc. would go here
+    uint32_t mesh_id; // 0 = no mesh
+    std::vector<uint32_t> children;
 };
 
 class SceneManager {
@@ -25,9 +33,10 @@ public:
     SceneManager();
     ~SceneManager();
 
-    int AddNode(const std::string& name);
-    void RemoveNode(int id);
-    void SetTransform(int id, const Transform& transform);
+    uint32_t AddNode(const Transform& transform);
+    uint32_t AddMeshNode(const Transform& transform, uint32_t mesh_id); // New
+    void RemoveNode(uint32_t id);
+    void SetTransform(uint32_t id, const Transform& transform);
     const std::vector<SceneNode>& GetNodes() const;
 
 private:
