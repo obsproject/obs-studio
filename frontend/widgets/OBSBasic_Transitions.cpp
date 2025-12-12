@@ -483,7 +483,7 @@ void OBSBasic::on_transitionAdd_clicked()
 	while (obs_enum_transition_types(idx++, &id)) {
 		if (obs_is_source_configurable(id)) {
 			const char *name = obs_source_get_display_name(id);
-			QAction *action = new QAction(name, this);
+			QAction *action = new QAction(EscapeMenuItem(QT_UTF8(name)), this);
 
 			connect(action, &QAction::triggered, [this, id]() { AddTransition(id); });
 
@@ -840,7 +840,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 		if (!name || !*name)
 			name = Str("None");
 
-		action = menu->addAction(QT_UTF8(name));
+		action = menu->addAction(EscapeMenuItem(QT_UTF8(name)));
 		action->setProperty("transition_uuid", QString::fromStdString(uuid));
 		action->setCheckable(true);
 		action->setChecked(match);
@@ -999,7 +999,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	while (obs_enum_transition_types(idx++, &id)) {
 		const char *name = obs_source_get_display_name(id);
 		const bool match = id && curId && strcmp(id, curId) == 0;
-		action = menu->addAction(QT_UTF8(name));
+		action = menu->addAction(EscapeMenuItem(QT_UTF8(name)));
 		action->setProperty("transition_id", QT_UTF8(id));
 		action->setCheckable(true);
 		action->setChecked(match);
