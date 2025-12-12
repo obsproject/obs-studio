@@ -37,6 +37,41 @@ endif()
 # OpenXR-SDK provides targets like 'openxr_loader'
 # It typically exports 'openxr_loader' target.
 
+<<<<<<< Updated upstream
+=======
+# Fetch nlohmann_json for flexible ML config
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
+# Fetch Wasmtime C API
+set(WASMTIME_VERSION "v25.0.0")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(WASMTIME_ASSET "wasmtime-${WASMTIME_VERSION}-x86_64-linux-c-api")
+    set(WASMTIME_HASH "SHA256=d34509756184511200171d9b35bc2c3098553641b5206260a9244ee3431682c0") # Valid for v25.0.0 x86_64
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(WASMTIME_ASSET "wasmtime-${WASMTIME_VERSION}-x86_64-windows-c-api")
+    # Add hash if known, or skip
+endif()
+
+FetchContent_Declare(
+    wasmtime
+    URL "https://github.com/bytecodealliance/wasmtime/releases/download/${WASMTIME_VERSION}/${WASMTIME_ASSET}.tar.xz"
+)
+FetchContent_MakeAvailable(wasmtime)
+
+# Create an imported target for Wasmtime if it doesn't declare one automatically (it usually doesn't for raw tarballs)
+if(NOT TARGET wasmtime)
+    add_library(wasmtime STATIC IMPORTED)
+    set_target_properties(wasmtime PROPERTIES
+        IMPORTED_LOCATION "${wasmtime_SOURCE_DIR}/lib/libwasmtime.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${wasmtime_SOURCE_DIR}/include"
+    )
+    # Wasmtime on Linux needs dl, m, pthread
+    if(UNIX)
+        set_property(TARGET wasmtime APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
+    endif()
+endif()
+>>>>>>> Stashed changes
 
 add_library(libvr STATIC
     core/vr_core.c

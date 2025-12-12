@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=/usr/bin/cmake;-P;/home/subtomic/Documents/GitHub/VRobs-studio/build_qt_check/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/download-json-populate.cmake;COMMAND;/usr/bin/cmake;-P;/home/subtomic/Documents/GitHub/VRobs-studio/build_qt_check/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/verify-json-populate.cmake;COMMAND;/usr/bin/cmake;-P;/home/subtomic/Documents/GitHub/VRobs-studio/build_qt_check/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/extract-json-populate.cmake
+source_dir=/home/subtomic/Documents/GitHub/VRobs-studio/build_qt_check/_deps/json-src
+work_dir=/home/subtomic/Documents/GitHub/VRobs-studio/build_qt_check/_deps
+url(s)=https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+hash=
+no_extract=
+
