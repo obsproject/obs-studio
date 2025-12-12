@@ -12,6 +12,10 @@
 !/plugins
 !/shared
 !/test
+!/libvr
+!/libvr/*
+!/obs-vr
+!/obs-vr/*
 !.cirrus.xml
 !.clang-format
 !.editorconfig

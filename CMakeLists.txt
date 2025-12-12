@@ -34,4 +34,8 @@ add_subdirectory(test/test-input)
 
 add_subdirectory(frontend)
 
+# VR Fork Extensions
+add_subdirectory(libvr)
+add_subdirectory(obs-vr)
+
 message_configuration()
