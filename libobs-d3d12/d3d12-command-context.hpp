@@ -32,13 +32,8 @@
 
 #define DEFAULT_ALIGN 256
 
-static const uint32_t kHistorySize = 64;
-static const uint32_t kExtendedHistorySize = 256;
-static const uint32_t kNumDescriptorsPerHeap = 1024;
 static const uint32_t kMaxNumDescriptors = 256;
 static const uint32_t kMaxNumDescriptorTables = 16;
-static const uint32_t sm_NumDescriptorsPerHeap = 256;
-static const uint32_t kMaxDescriptorsPerCopy = 16;
 
 typedef uint32_t GraphHandle;
 
@@ -1262,7 +1257,6 @@ public:
 	~CommandContext(void);
 
 	void Reset(void);
-
 	// Flush existing commands to the GPU but keep the context alive
 	uint64_t Flush(bool WaitForCompletion = false);
 
