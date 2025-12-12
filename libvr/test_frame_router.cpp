@@ -8,7 +8,7 @@ public:
     bool Initialize(const libvr::RenderConfig& config) override { return true; }
     void Shutdown() override {}
     bool BeginFrame() override { return true; }
-    void DrawScene() override {}
+    void DrawScene(const libvr::SceneManager* scene) override {}
     GPUFrameView GetOutputFrame() override {
         GPUFrameView view = {};
         view.width = 100;
@@ -50,7 +50,7 @@ int main() {
     router.AddEncoder(&encoder);
 
     std::cout << "[TestFrameRouter] Running frame tick..." << std::endl;
-    router.RunFrame();
+    router.ProcessFrame();
 
     return 0;
 }

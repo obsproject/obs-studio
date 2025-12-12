@@ -1,41 +1,12 @@
-cmake_minimum_required(VERSION 3.28...3.30)
+cmake_minimum_required(VERSION 3.28)
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
+project(obs-vr VERSION 0.1.0 LANGUAGES C CXX)
 
-project(obs-studio VERSION ${OBS_VERSION_CANONICAL})
+# Standard Settings
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/windows/architecture.cmake")
-  if(NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
-    return()
-  endif()
-endif()
-
-include(compilerconfig)
-include(defaults)
-include(helpers)
-
-option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
-option(ENABLE_SCRIPTING "Enable scripting support" ON)
-option(ENABLE_HEVC "Enable HEVC encoders" ON)
-
-add_subdirectory(libobs)
-if(OS_WINDOWS)
-  add_subdirectory(libobs-d3d11)
-  add_subdirectory(libobs-winrt)
-endif()
-add_subdirectory(libobs-opengl)
-if(OS_MACOS)
-  add_subdirectory(libobs-metal)
-endif()
-add_subdirectory(plugins)
-
-add_subdirectory(test/test-input)
-
-add_subdirectory(frontend)
-
-# VR Fork Extensions
+# Modules
 add_subdirectory(libvr)
 add_subdirectory(obs-vr)
-
-message_configuration()

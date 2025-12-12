@@ -1,4 +1,4 @@
-#include "FrameRouter.h"
+#include "libvr/pipeline/FrameRouter.h"
 #include <iostream>
 #include <algorithm>
 
@@ -16,7 +16,7 @@ void FrameRouter::RemoveEncoder(IEncoderAdapter* encoder) {
     encoders.erase(std::remove(encoders.begin(), encoders.end(), encoder), encoders.end());
 }
 
-void FrameRouter::RunFrame() {
+void FrameRouter::ProcessFrame() {
     if (!renderer) return;
 
     // 1. Begin Frame

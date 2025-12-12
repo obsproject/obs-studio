@@ -42,11 +42,18 @@ public:
             layers.push_back("VK_LAYER_KHRONOS_validation");
         }
 
+        std::vector<const char*> instanceExtensions;
+        for (const auto& ext : config.required_extensions) {
+            instanceExtensions.push_back(ext.c_str());
+        }
+
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
         createInfo.enabledLayerCount = (uint32_t)layers.size();
         createInfo.ppEnabledLayerNames = layers.data();
+        createInfo.enabledExtensionCount = (uint32_t)instanceExtensions.size();
+        createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
         VK_CHECK(vkCreateInstance(&createInfo, nullptr, &instance));
         std::cout << "[Vulkan] Instance created." << std::endl;
@@ -85,6 +92,7 @@ public:
         for (int i = 0; i < queueFamilies.size(); i++) {
             if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 graphicsFamily = i;
+                graphicsQueueFamily = i;
                 break;
             }
         }
@@ -138,6 +146,13 @@ public:
         initialized = false;
         std::cout << "[Vulkan] Shutdown complete." << std::endl;
     }
+
+    // Accessors
+    void* GetInstance() const override { return instance; }
+    void* GetPhysicalDevice() const override { return physicalDevice; }
+    void* GetDevice() const override { return device; }
+    uint32_t GetGraphicsQueueFamily() const override { return graphicsQueueFamily; }
+
 
     bool BeginFrame() override {
         if (!initialized) return false;
@@ -259,6 +274,7 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
     VkQueue graphicsQueue = VK_NULL_HANDLE;
+    uint32_t graphicsQueueFamily = 0;
     
     // Test Output Frame State
     VkImage outputImage = VK_NULL_HANDLE;
@@ -267,8 +283,8 @@ private:
 };
 
 // Factory function for testing/creation
-IRenderEngine* CreateVulkanRenderEngine() {
-    return new VulkanRenderEngine();
+std::unique_ptr<IRenderEngine> CreateVulkanRenderEngine() {
+    return std::make_unique<VulkanRenderEngine>();
 }
 
 } // namespace libvr

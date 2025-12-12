@@ -15,8 +15,8 @@ public:
     void AddEncoder(IEncoderAdapter* encoder);
     void RemoveEncoder(IEncoderAdapter* encoder);
 
-    // Main loop tick
-    void RunFrame();
+    // Process a single frame
+    void ProcessFrame();
 
 private:
     IRenderEngine* renderer;

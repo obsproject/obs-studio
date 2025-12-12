@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include <vector>
+#include <memory>
 
 namespace libvr {
 
@@ -9,6 +10,7 @@ struct RenderConfig {
     uint32_t width;
     uint32_t height;
     bool enable_validation_layers;
+    std::vector<std::string> required_extensions;
 };
 
 class SceneManager; // Forward declaration
@@ -19,6 +21,13 @@ public:
 
     virtual bool Initialize(const RenderConfig& config) = 0;
     virtual void Shutdown() = 0;
+    
+    // Accessors for OpenXR Binding
+    virtual void* GetInstance() const = 0; // Returns VkInstance
+    virtual void* GetPhysicalDevice() const = 0; // Returns VkPhysicalDevice
+    virtual void* GetDevice() const = 0; // Returns VkDevice
+    virtual uint32_t GetGraphicsQueueFamily() const = 0;
+
 
     // Begin a new frame. Returns false if frame cannot be started.
     virtual bool BeginFrame() = 0;
@@ -31,5 +40,8 @@ public:
     // Returns the view of the rendered frame (e.g., for encoding).
     virtual GPUFrameView GetOutputFrame() = 0;
 };
+
+// Factory
+std::unique_ptr<IRenderEngine> CreateVulkanRenderEngine();
 
 } // namespace libvr
