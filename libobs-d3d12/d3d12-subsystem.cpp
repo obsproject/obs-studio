@@ -1226,7 +1226,7 @@ void device_begin_frame(gs_device_t *device)
 
 void device_end_frame(gs_device_t *device)
 {
-	device->context->Finish(true);
+	device->context->Finish();
 	device->context = device->d3d12Instance->GetNewGraphicsContext();
 }
 
@@ -1401,7 +1401,7 @@ void device_present(gs_device_t *device)
 	if (curSwapChain) {
 		device->curFramebufferInvalidate = true;
 		device->context->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_PRESENT);
-		device->context->Finish(true);
+		device->context->Finish();
 		device->context = device->d3d12Instance->GetNewGraphicsContext();
 		const HRESULT hr = curSwapChain->swap->Present(0, 0);
 		if (FAILED(hr)) {
@@ -1733,7 +1733,7 @@ void gs_texture_unmap(gs_texture_t *tex)
 	upload->Unmap();
 	texture->device->context->UpdateTexture(*texture, *upload);
 	texture->device->context->TransitionResource(*texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	texture->device->context->Flush(true);
+	texture->device->context->Flush();
 }
 
 void *gs_texture_get_obj(gs_texture_t *tex)

@@ -241,7 +241,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::Allocate(uint32_t Count)
 	if (m_CurrentHeap == nullptr || m_RemainingFreeHandles < Count) {
 		m_CurrentHeap = m_DeviceInstance->RequestCommonHeap(m_Type);
 		m_CurrentHandle = m_CurrentHeap->GetCPUDescriptorHandleForHeapStart();
-		m_RemainingFreeHandles = sm_NumDescriptorsPerHeap;
+		m_RemainingFreeHandles = kMaxNumDescriptors;
 
 		if (m_DescriptorSize == 0)
 			m_DescriptorSize = m_DeviceInstance->GetDevice()->GetDescriptorHandleIncrementSize(m_Type);
@@ -268,7 +268,7 @@ void DescriptorAllocator::DiscardAll()
 	}
 
 	m_CurrentHandle = m_CurrentHeap->GetCPUDescriptorHandleForHeapStart();
-	m_RemainingFreeHandles = sm_NumDescriptorsPerHeap;
+	m_RemainingFreeHandles = kMaxNumDescriptors;
 }
 
 DescriptorHandle::DescriptorHandle()
@@ -350,12 +350,12 @@ void DescriptorHandleCache::CopyAndBindStaleTables(
 	m_StaleRootParamsBitMap = 0;
 
 	UINT NumDestDescriptorRanges = 0;
-	D3D12_CPU_DESCRIPTOR_HANDLE pDestDescriptorRangeStarts[kMaxDescriptorsPerCopy];
-	UINT pDestDescriptorRangeSizes[kMaxDescriptorsPerCopy];
+	D3D12_CPU_DESCRIPTOR_HANDLE pDestDescriptorRangeStarts[kMaxNumDescriptorTables];
+	UINT pDestDescriptorRangeSizes[kMaxNumDescriptorTables];
 
 	UINT NumSrcDescriptorRanges = 0;
-	D3D12_CPU_DESCRIPTOR_HANDLE pSrcDescriptorRangeStarts[kMaxDescriptorsPerCopy];
-	UINT pSrcDescriptorRangeSizes[kMaxDescriptorsPerCopy];
+	D3D12_CPU_DESCRIPTOR_HANDLE pSrcDescriptorRangeStarts[kMaxNumDescriptorTables];
+	UINT pSrcDescriptorRangeSizes[kMaxNumDescriptorTables];
 
 	for (uint32_t i = 0; i < StaleParamCount; ++i) {
 		RootIndex = RootIndices[i];
@@ -380,7 +380,7 @@ void DescriptorHandleCache::CopyAndBindStaleTables(
 			SetHandles >>= DescriptorCount;
 
 			// If we run out of temp room, copy what we've got so far
-			if (NumSrcDescriptorRanges + DescriptorCount > kMaxDescriptorsPerCopy) {
+			if (NumSrcDescriptorRanges + DescriptorCount > kMaxNumDescriptorTables) {
 				m_DeviceInstance->GetDevice()->CopyDescriptors(
 					NumDestDescriptorRanges, pDestDescriptorRangeStarts, pDestDescriptorRangeSizes,
 					NumSrcDescriptorRanges, pSrcDescriptorRangeStarts, pSrcDescriptorRangeSizes,
@@ -560,7 +560,7 @@ void DynamicDescriptorHeap::CommitComputeRootDescriptorTables(ID3D12GraphicsComm
 
 bool DynamicDescriptorHeap::HasSpace(uint32_t Count)
 {
-	return (m_CurrentHeapPtr != nullptr && m_CurrentOffset + Count <= kNumDescriptorsPerHeap);
+	return (m_CurrentHeapPtr != nullptr && m_CurrentOffset + Count <= kMaxNumDescriptors);
 }
 
 void DynamicDescriptorHeap::RetireCurrentHeap(void)
@@ -3915,7 +3915,7 @@ ID3D12DescriptorHeap *D3D12DeviceInstance::RequestCommonHeap(D3D12_DESCRIPTOR_HE
 {
 	D3D12_DESCRIPTOR_HEAP_DESC Desc;
 	Desc.Type = Type;
-	Desc.NumDescriptors = sm_NumDescriptorsPerHeap;
+	Desc.NumDescriptors = kMaxNumDescriptors;
 	Desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	Desc.NodeMask = 1;
 
@@ -3946,7 +3946,7 @@ ID3D12DescriptorHeap *D3D12DeviceInstance::RequestDynamicDescriptorHeap(D3D12_DE
 	} else {
 		D3D12_DESCRIPTOR_HEAP_DESC HeapDesc = {};
 		HeapDesc.Type = HeapType;
-		HeapDesc.NumDescriptors = kNumDescriptorsPerHeap;
+		HeapDesc.NumDescriptors = kMaxNumDescriptors;
 		HeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		HeapDesc.NodeMask = 1;
 		ComPtr<ID3D12DescriptorHeap> HeapPtr;
