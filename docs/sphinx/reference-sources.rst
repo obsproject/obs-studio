@@ -1852,6 +1852,12 @@ Transitions
 
 ---------------------
 
+.. function:: void obs_transition_is_active(obs_source_t *transition)
+
+   :return: *true* if the transition is currently transitioning, *false* otherwise.
+
+---------------------
+
 .. function:: void obs_transition_set_size(obs_source_t *transition, uint32_t cx, uint32_t cy)
               void obs_transition_get_size(const obs_source_t *transition, uint32_t *cx, uint32_t *cy)
 
