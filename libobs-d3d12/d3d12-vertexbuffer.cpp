@@ -88,6 +88,39 @@ void gs_vertex_buffer::BuildBuffers()
 	}
 }
 
+gs_vertex_buffer::~gs_vertex_buffer() {
+		Release();
+}
+
+void gs_vertex_buffer::Release()
+{
+	device->d3d12Instance->GetCommandManager().IdleGPU();
+	if (vertexBuffer) {
+		delete vertexBuffer;
+		vertexBuffer = nullptr;
+	}
+	if (normalBuffer) {
+		delete normalBuffer;
+		normalBuffer = nullptr;
+	}
+	if (colorBuffer) {
+		delete colorBuffer;
+		colorBuffer = nullptr;
+	}
+	if (tangentBuffer) {
+		delete tangentBuffer;
+		tangentBuffer = nullptr;
+	}
+
+	for (auto buf : uvBuffers) {
+		if (buf) {
+			delete buf;
+		}
+	}
+
+	uvBuffers.clear();
+}
+
 gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data, uint32_t flags)
 	: gs_obj(device, gs_type::gs_vertex_buffer),
 	  dynamic((flags & GS_DYNAMIC) != 0),

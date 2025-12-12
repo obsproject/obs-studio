@@ -29,3 +29,16 @@ gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type, v
 
 	InitBuffer();
 }
+
+void gs_index_buffer::Release()
+{
+	device->d3d12Instance->GetCommandManager().IdleGPU();
+	if (indexBuffer) {
+		delete indexBuffer;
+		indexBuffer = nullptr;
+	}
+}
+
+gs_index_buffer::~gs_index_buffer() {
+	Release();
+}

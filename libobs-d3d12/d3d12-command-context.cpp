@@ -3800,7 +3800,7 @@ const char *HagsStatus::DriverSupportToString() const
 
 D3D12DeviceInstance::D3D12DeviceInstance() {}
 
-#define DEBUG_D3D12 1
+#define DEBUG_D3D12 0
 
 void D3D12DeviceInstance::Initialize(int32_t adaptorIndex)
 {

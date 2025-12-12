@@ -471,7 +471,7 @@ struct gs_texture_2d : gs_texture {
 	void RebuildPaired_Y(ID3D12Device *dev);
 	void RebuildPaired_UV(ID3D12Device *dev);
 
-	inline void Release() { uploadBuffer.reset(); }
+	inline void Release() {  }
 
 	inline gs_texture_2d() : gs_texture(GS_TEXTURE_2D, 0, GS_UNKNOWN) {}
 
@@ -743,35 +743,10 @@ struct gs_vertex_buffer : gs_obj {
 
 	void BuildBuffers();
 
-	inline void Release()
-	{
-		if (vertexBuffer) {
-			delete vertexBuffer;
-			vertexBuffer = nullptr;
-		}
-		if (normalBuffer) {
-			delete normalBuffer;
-			normalBuffer = nullptr;
-		}
-		if (colorBuffer) {
-			delete colorBuffer;
-			colorBuffer = nullptr;
-		}
-		if (tangentBuffer) {
-			delete tangentBuffer;
-			tangentBuffer = nullptr;
-		}
-
-		for (auto buf : uvBuffers) {
-			if (buf) {
-				delete buf;
-			}
-		}
-
-		uvBuffers.clear();
-	}
+	inline void Release();
 
 	void Rebuild();
+	~gs_vertex_buffer();
 
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data, uint32_t flags);
 };
@@ -799,15 +774,10 @@ struct gs_index_buffer : gs_obj {
 
 	void Rebuild(ID3D11Device *dev);
 
-	inline void Release()
-	{
-		if (indexBuffer) {
-			delete indexBuffer;
-			indexBuffer = nullptr;
-		}
-	}
+	void Release();
 
 	gs_index_buffer(gs_device_t *device, enum gs_index_type type, void *indices, size_t num, uint32_t flags);
+	~gs_index_buffer();
 };
 
 struct BlendState {
