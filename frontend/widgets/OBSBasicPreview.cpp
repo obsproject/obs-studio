@@ -2308,6 +2308,8 @@ bool OBSBasicPreview::DrawSelectionBox(float x1, float y1, float x2, float y2, g
 
 bool OBSBasicPreview::drawCropping(obs_sceneitem_t *item, void *param)
 {
+	return true;
+
 	OBSBasicPreview *prev = static_cast<OBSBasicPreview *>(param);
 
 	gs_matrix_push();
@@ -2742,6 +2744,8 @@ static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end, vec3 &v
 
 void OBSBasicPreview::drawCroppingOverlay()
 {
+	return;
+
 	OBSBasic *main = OBSBasic::Get();
 
 	vec4 overlay;
