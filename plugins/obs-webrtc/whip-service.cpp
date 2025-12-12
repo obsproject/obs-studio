@@ -3,7 +3,11 @@
 const char *audio_codecs[] = {"opus", nullptr};
 const char *video_codecs[] = {"h264", "hevc", "av1", nullptr};
 
-WHIPService::WHIPService(obs_data_t *settings, obs_service_t *) : server(), bearer_token()
+WHIPService::WHIPService(obs_data_t *settings, obs_service_t *)
+	: server(),
+	  bearer_token(),
+	  stun_server(),
+	  wait_gathered_candidates()
 {
 	Update(settings);
 }
@@ -12,6 +16,8 @@ void WHIPService::Update(obs_data_t *settings)
 {
 	server = obs_data_get_string(settings, "server");
 	bearer_token = obs_data_get_string(settings, "bearer_token");
+	stun_server = obs_data_get_string(settings, "stun_server");
+	wait_gathered_candidates = obs_data_get_bool(settings, "wait_gathered_candidates");
 }
 
 obs_properties_t *WHIPService::Properties()
@@ -20,6 +26,8 @@ obs_properties_t *WHIPService::Properties()
 
 	obs_properties_add_text(ppts, "server", "URL", OBS_TEXT_DEFAULT);
 	obs_properties_add_text(ppts, "bearer_token", obs_module_text("Service.BearerToken"), OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "stun_server", obs_module_text("Service.STUNServer"), OBS_TEXT_DEFAULT);
+	obs_properties_add_bool(ppts, "wait_gathered_candidates", obs_module_text("Service.WaitGatheredCandidates"));
 
 	return ppts;
 }
@@ -40,6 +48,8 @@ const char *WHIPService::GetConnectInfo(enum obs_service_connect_info type)
 		return server.c_str();
 	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN:
 		return bearer_token.c_str();
+	case OBS_SERVICE_CONNECT_INFO_STUN_SERVER:
+		return stun_server.c_str();
 	default:
 		return nullptr;
 	}

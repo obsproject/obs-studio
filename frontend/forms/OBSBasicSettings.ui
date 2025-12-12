@@ -58,7 +58,7 @@
         <number>1</number>
        </property>
        <property name="currentRow">
-        <number>0</number>
+        <number>-1</number>
        </property>
        <item>
         <property name="text">
@@ -146,7 +146,7 @@
      <item>
       <widget class="QStackedWidget" name="settingsPages">
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="generalPage">
         <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -181,8 +181,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>755</width>
-              <height>1260</height>
+              <width>670</width>
+              <height>1499</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -944,8 +944,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>772</width>
-              <height>680</height>
+              <width>1332</width>
+              <height>224</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_1337">
@@ -1375,7 +1375,7 @@
          <item>
           <widget class="QStackedWidget" name="streamStackWidget">
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="loginPage">
             <layout class="QVBoxLayout" name="verticalLayout_31">
@@ -1518,9 +1518,9 @@
              <property name="geometry">
               <rect>
                <x>0</x>
-               <y>0</y>
-               <width>987</width>
-               <height>791</height>
+               <y>-372</y>
+               <width>1241</width>
+               <height>1004</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="streamkeyPageLayout">
@@ -1631,7 +1631,7 @@
                  <item row="1" column="1">
                   <widget class="QLineEdit" name="serviceCustomServer"/>
                  </item>
-                 <item row="2" column="0">
+                 <item row="3" column="0">
                   <widget class="QLabel" name="streamKeyLabel">
                    <property name="text">
                     <string>Basic.AutoConfig.StreamPage.StreamKey</string>
@@ -1644,7 +1644,7 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="2" column="1">
+                 <item row="3" column="1">
                   <widget class="QFrame" name="streamKeyWidget">
                    <layout class="QHBoxLayout" name="horizontalLayout_11">
                     <property name="leftMargin">
@@ -1695,14 +1695,14 @@
                    </layout>
                   </widget>
                  </item>
-                 <item row="3" column="0">
+                 <item row="5" column="0">
                   <widget class="QLabel" name="connectedAccountLabel">
                    <property name="text">
                     <string>Basic.AutoConfig.StreamPage.ConnectedAccount</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="3" column="1">
+                 <item row="5" column="1">
                   <layout class="QHBoxLayout" name="horizontalLayout_15">
                    <item>
                     <widget class="QPushButton" name="connectAccount2">
@@ -1746,7 +1746,7 @@
                    </item>
                   </layout>
                  </item>
-                 <item row="4" column="0">
+                 <item row="6" column="0">
                   <spacer name="horizontalSpacer_18">
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
@@ -1759,7 +1759,7 @@
                    </property>
                   </spacer>
                  </item>
-                 <item row="5" column="1">
+                 <item row="7" column="1">
                   <layout class="QHBoxLayout" name="horizontalLayout_28">
                    <item>
                     <widget class="QPushButton" name="useStreamKeyAdv">
@@ -1783,14 +1783,14 @@
                    </item>
                   </layout>
                  </item>
-                 <item row="6" column="1">
+                 <item row="8" column="1">
                   <widget class="QCheckBox" name="useAuth">
                    <property name="text">
                     <string>Basic.Settings.Stream.Custom.UseAuthentication</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="7" column="0">
+                 <item row="9" column="0">
                   <widget class="QLabel" name="authUsernameLabel">
                    <property name="text">
                     <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1800,10 +1800,10 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="7" column="1">
+                 <item row="9" column="1">
                   <widget class="QLineEdit" name="authUsername"/>
                  </item>
-                 <item row="8" column="0">
+                 <item row="10" column="0">
                   <widget class="QLabel" name="authPwLabel">
                    <property name="text">
                     <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1813,7 +1813,7 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="8" column="1">
+                 <item row="10" column="1">
                   <widget class="QFrame" name="authPwWidget">
                    <layout class="QHBoxLayout" name="horizontalLayout_25">
                     <property name="leftMargin">
@@ -2016,6 +2016,13 @@
                      </item>
                     </layout>
                    </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="multitrackVideoAdditionalCanvasLabel">
+                     <property name="text">
+                      <string>Basic.Settings.Stream.MultitrackVideoExtraCanvas</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="3" column="1">
                     <widget class="QComboBox" name="multitrackVideoAdditionalCanvas">
                      <property name="placeholderText">
@@ -2070,13 +2077,6 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="0">
-                    <widget class="QLabel" name="multitrackVideoAdditionalCanvasLabel">
-                     <property name="text">
-                      <string>Basic.Settings.Stream.MultitrackVideoExtraCanvas</string>
-                     </property>
-                    </widget>
-                   </item>
                   </layout>
                  </item>
                 </layout>
@@ -2106,7 +2106,7 @@
                  <property name="bottomMargin">
                   <number>9</number>
                  </property>
-                 <item row="0" column="0">
+                 <item row="1" column="0">
                   <widget class="QLabel" name="twitchAddonLabel">
                    <property name="text">
                     <string>Basic.Settings.Stream.TTVAddon</string>
@@ -2116,10 +2116,10 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="0" column="1">
+                 <item row="1" column="1">
                   <widget class="QComboBox" name="twitchAddonDropdown"/>
                  </item>
-                 <item row="1" column="0">
+                 <item row="3" column="0">
                   <spacer name="horizontalSpacer_18_1">
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
@@ -2132,21 +2132,34 @@
                    </property>
                   </spacer>
                  </item>
-                 <item row="1" column="1">
+                 <item row="3" column="1">
                   <widget class="QCheckBox" name="bandwidthTestEnable">
                    <property name="text">
                     <string>Basic.Settings.Stream.BandwidthTestMode</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="2" column="1">
+                 <item row="4" column="1">
                   <widget class="QCheckBox" name="ignoreRecommended">
                    <property name="text">
                     <string>Basic.Settings.Stream.IgnoreRecommended</string>
                    </property>
+                   <property name="checked">
+                    <bool>false</bool>
+                   </property>
                   </widget>
                  </item>
-                 <item row="3" column="1">
+                 <item row="5" column="1">
+                  <widget class="QCheckBox" name="waitGatheredCandidates">
+                   <property name="text">
+                    <string>Basic.Settings.Stream.Custom.WaitGatheredCandidates</string>
+                   </property>
+                   <property name="checked">
+                    <bool>false</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="6" column="1">
                   <widget class="QLabel" name="enforceSettingsLabel">
                    <property name="text">
                     <string notr="true"/>
@@ -2156,6 +2169,16 @@
                    </property>
                    <property name="openExternalLinks">
                     <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="8" column="1">
+                  <widget class="QLineEdit" name="stunServer"/>
+                 </item>
+                 <item row="8" column="0">
+                  <widget class="QLabel" name="stunServerLabel">
+                   <property name="text">
+                    <string>Basic.Settings.Stream.Custom.StunServer</string>
                    </property>
                   </widget>
                  </item>
@@ -2346,8 +2369,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>755</width>
-                     <height>609</height>
+                     <width>645</width>
+                     <height>707</height>
                     </rect>
                    </property>
                    <property name="sizePolicy">
@@ -3131,8 +3154,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>424</width>
-                         <height>175</height>
+                         <width>513</width>
+                         <height>211</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_14">
@@ -3537,8 +3560,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>509</width>
-                             <height>371</height>
+                             <width>648</width>
+                             <height>435</height>
                             </rect>
                            </property>
                            <property name="sizePolicy">
@@ -4178,8 +4201,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>625</width>
-                             <height>489</height>
+                             <width>791</width>
+                             <height>563</height>
                             </rect>
                            </property>
                            <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -4728,8 +4751,8 @@
                            <rect>
                             <x>0</x>
                             <y>0</y>
-                            <width>258</width>
-                            <height>510</height>
+                            <width>295</width>
+                            <height>612</height>
                            </rect>
                           </property>
                           <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -5810,8 +5833,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>772</width>
-              <height>636</height>
+              <width>742</width>
+              <height>609</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -6789,8 +6812,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>770</width>
-              <height>642</height>
+              <width>230</width>
+              <height>18</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_33">
@@ -6882,8 +6905,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>772</width>
-              <height>680</height>
+              <width>886</width>
+              <height>378</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_42">
@@ -7791,8 +7814,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>755</width>
-              <height>952</height>
+              <width>890</width>
+              <height>1125</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -8934,8 +8957,8 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>310</x>
-     <y>29</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
      <x>241</x>
@@ -8954,8 +8977,8 @@
      <y>16</y>
     </hint>
     <hint type="destinationlabel">
-     <x>401</x>
-     <y>64</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -8966,12 +8989,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -8982,12 +9005,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -8998,12 +9021,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>579</y>
+     <x>944</x>
+     <y>886</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>602</y>
+     <x>944</x>
+     <y>916</y>
     </hint>
    </hints>
   </connection>
@@ -9014,12 +9037,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>579</y>
+     <x>944</x>
+     <y>886</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>625</y>
+     <x>944</x>
+     <y>946</y>
     </hint>
    </hints>
   </connection>
@@ -9046,12 +9069,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>944</x>
+     <y>537</y>
     </hint>
     <hint type="destinationlabel">
-     <x>347</x>
-     <y>366</y>
+     <x>455</x>
+     <y>570</y>
     </hint>
    </hints>
   </connection>
@@ -9062,12 +9085,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>944</x>
+     <y>537</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>366</y>
+     <x>944</x>
+     <y>570</y>
     </hint>
    </hints>
   </connection>
@@ -9078,12 +9101,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>944</x>
+     <y>537</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>389</y>
+     <x>944</x>
+     <y>600</y>
     </hint>
    </hints>
   </connection>
@@ -9094,12 +9117,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>944</x>
+     <y>537</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>412</y>
+     <x>944</x>
+     <y>630</y>
     </hint>
    </hints>
   </connection>
@@ -9110,12 +9133,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>944</x>
+     <y>537</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>435</y>
+     <x>944</x>
+     <y>660</y>
     </hint>
    </hints>
   </connection>
@@ -9126,12 +9149,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>222</y>
+     <x>944</x>
+     <y>379</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>245</y>
+     <x>944</x>
+     <y>409</y>
     </hint>
    </hints>
   </connection>
@@ -9142,12 +9165,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>268</y>
+     <x>944</x>
+     <y>439</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>291</y>
+     <x>944</x>
+     <y>469</y>
     </hint>
    </hints>
   </connection>
@@ -9222,12 +9245,12 @@
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>484</x>
-     <y>142</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>454</x>
-     <y>87</y>
+     <x>289</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
@@ -9238,12 +9261,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>327</x>
-     <y>355</y>
+     <x>289</x>
+     <y>59</y>
     </hint>
     <hint type="destinationlabel">
-     <x>701</x>
-     <y>355</y>
+     <x>289</x>
+     <y>59</y>
     </hint>
    </hints>
   </connection>
@@ -9254,12 +9277,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>663</x>
-     <y>106</y>
+     <x>289</x>
+     <y>48</y>
     </hint>
     <hint type="destinationlabel">
-     <x>560</x>
-     <y>391</y>
+     <x>289</x>
+     <y>33</y>
     </hint>
    </hints>
   </connection>
@@ -9270,12 +9293,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>334</x>
-     <y>377</y>
+     <x>289</x>
+     <y>59</y>
     </hint>
     <hint type="destinationlabel">
-     <x>685</x>
-     <y>377</y>
+     <x>275</x>
+     <y>55</y>
     </hint>
    </hints>
   </connection>
@@ -9286,12 +9309,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>685</x>
-     <y>163</y>
+     <x>289</x>
+     <y>59</y>
     </hint>
     <hint type="destinationlabel">
-     <x>685</x>
-     <y>191</y>
+     <x>289</x>
+     <y>59</y>
     </hint>
    </hints>
   </connection>
