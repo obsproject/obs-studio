@@ -245,6 +245,15 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::Allocate(uint32_t Count)
 
 		if (m_DescriptorSize == 0)
 			m_DescriptorSize = m_DeviceInstance->GetDevice()->GetDescriptorHandleIncrementSize(m_Type);
+
+		for (int32_t i = 0; i < kMaxNumDescriptors; ++i) {
+			m_DescriptorPoolNodes[i].index = i;
+			if (i != kMaxNumDescriptors - 1) {
+				m_DescriptorPoolNodes[i].next = &m_DescriptorPoolNodes[i + 1];
+			}
+		}
+
+		m_DescriptorPoolHead = &m_DescriptorPoolNodes[0];
 	}
 
 	if (m_RemainingFreeHandles <= 0) {
@@ -257,18 +266,21 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::Allocate(uint32_t Count)
 	return ret;
 }
 
-size_t DescriptorAllocator::RemainingFreeCount() {
-	return m_RemainingFreeHandles;
+int32_t DescriptorAllocator::GetAvailableIndex()
+{
+	if (m_DescriptorPoolHead) {
+		SIZE_T index = m_DescriptorPoolHead->index;
+		m_DescriptorPoolHead = (DescriptorHandleNode *)(m_DescriptorPoolHead->next);
+		return index;
+	} else {
+		return D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
 }
 
-void DescriptorAllocator::DiscardAll()
+void DescriptorAllocator::FreeIndex(int32_t index)
 {
-	if (m_CurrentHeap == nullptr) {
-		return;
-	}
-
-	m_CurrentHandle = m_CurrentHeap->GetCPUDescriptorHandleForHeapStart();
-	m_RemainingFreeHandles = kMaxNumDescriptors;
+	m_DescriptorPoolNodes[index].next = m_DescriptorPoolHead;
+	m_DescriptorPoolHead = &m_DescriptorPoolNodes[index];
 }
 
 DescriptorHandle::DescriptorHandle()
@@ -3972,11 +3984,6 @@ void D3D12DeviceInstance::DiscardDynamicDescriptorHeaps(D3D12_DESCRIPTOR_HEAP_TY
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12DeviceInstance::AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count)
 {
 	return m_DescriptorAllocator[Type].Allocate(Count);
-}
-
-void D3D12DeviceInstance::DiscardDescriptorAll(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count)
-{
-	m_DescriptorAllocator[Type].DiscardAll();
 }
 
 GraphicsContext *D3D12DeviceInstance::GetNewGraphicsContext(const std::wstring &ID)

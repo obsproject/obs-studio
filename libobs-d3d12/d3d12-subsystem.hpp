@@ -471,7 +471,7 @@ struct gs_texture_2d : gs_texture {
 	void RebuildPaired_Y(ID3D12Device *dev);
 	void RebuildPaired_UV(ID3D12Device *dev);
 
-	inline void Release() {  }
+	inline void Release() {}
 
 	inline gs_texture_2d() : gs_texture(GS_TEXTURE_2D, 0, GS_UNKNOWN) {}
 

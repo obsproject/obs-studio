@@ -582,12 +582,20 @@ protected:
 	ComPtr<ID3D12CommandSignature> m_Signature;
 };
 
+typedef struct DescriptorHandleNode {
+	int32_t index = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	void *next = (void *)D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+} DescriptorHandleNode;
+
+typedef struct D3D12_CPU_DESCRIPTOR_HANDLE_NODE {
+	int32_t index;
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = {D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN};
+} D3D12_CPU_DESCRIPTOR_HANDLE_NODE;
+
 class DescriptorAllocator {
 public:
 	DescriptorAllocator(D3D12DeviceInstance *DeviceInstance, D3D12_DESCRIPTOR_HEAP_TYPE Type);
 	D3D12_CPU_DESCRIPTOR_HANDLE Allocate(uint32_t Count);
-	void DiscardAll();
-	size_t RemainingFreeCount();
 
 protected:
 	D3D12DeviceInstance *m_DeviceInstance = nullptr;
@@ -596,6 +604,12 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_CurrentHandle;
 	uint32_t m_DescriptorSize = 0;
 	uint32_t m_RemainingFreeHandles;
+
+	// TODO
+	int32_t GetAvailableIndex();
+	void FreeIndex(int32_t index);
+	DescriptorHandleNode *m_DescriptorPoolHead;
+	DescriptorHandleNode m_DescriptorPoolNodes[kMaxNumDescriptors];
 };
 
 class DescriptorHandle {
@@ -1332,9 +1346,7 @@ public:
 	D3D12_COMMAND_LIST_TYPE m_Type;
 };
 
-class GraphicsCopyContext {
-
-};
+class GraphicsCopyContext {};
 
 class GraphicsContext : public CommandContext {
 public:
@@ -1600,7 +1612,6 @@ public:
 		{this, D3D12_DESCRIPTOR_HEAP_TYPE_RTV},
 		{this, D3D12_DESCRIPTOR_HEAP_TYPE_DSV}};
 	D3D12_CPU_DESCRIPTOR_HANDLE AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count = 1);
-	void DiscardDescriptorAll(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count = 1);
 
 	ID3D12DescriptorHeap *RequestCommonHeap(D3D12_DESCRIPTOR_HEAP_TYPE Type);
 
