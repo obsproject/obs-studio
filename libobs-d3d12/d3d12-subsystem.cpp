@@ -99,7 +99,7 @@ static inline enum gs_color_space make_swap_desc(gs_device *device, DXGI_SWAP_CH
 
 void gs_swap_chain::Release()
 {
-	device->context->Flush(true);
+	device->d3d12Instance->GetCommandManager().IdleGPU();
 }
 
 void gs_swap_chain::Resize(uint32_t cx, uint32_t cy, gs_color_format format)
@@ -594,7 +594,7 @@ static void device_resize_internal(gs_device_t *device, uint32_t cx, uint32_t cy
 {
 	try {
 		const gs_color_format format = get_swap_format_from_space(space, device->curSwapChain->initData.format);
-		device->context->Finish(true);
+		device->context->Flush(true);
 		device->context->SetNullRenderTarget();
 		device->curSwapChain->Resize(cx, cy, format);
 		device->curRenderTarget = &device->curSwapChain->target[device->curSwapChain->currentBackBufferIndex];
@@ -1733,6 +1733,7 @@ void gs_texture_unmap(gs_texture_t *tex)
 	upload->Unmap();
 	texture->device->context->UpdateTexture(*texture, *upload);
 	texture->device->context->TransitionResource(*texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	texture->device->context->Flush(true);
 }
 
 void *gs_texture_get_obj(gs_texture_t *tex)

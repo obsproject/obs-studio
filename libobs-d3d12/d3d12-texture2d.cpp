@@ -388,6 +388,11 @@ gs_texture_2d::~gs_texture_2d()
 
 void gs_texture_2d::Destroy()
 {
+	if (device) {
+		device->d3d12Instance->GetCommandManager().IdleGPU();
+	}
+
+	uploadBuffer.reset();
 	if (shaderSRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
 		shaderSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 	}
