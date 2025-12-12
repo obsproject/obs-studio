@@ -289,6 +289,14 @@
     font-size: var(--font_large);
 }
 
+.text-bold {
+    font-weight: bold;
+}
+
+.text-italic {
+    font-style: italic;
+}
+
 .text-bright {
     color: var(--primary_light);
 }
