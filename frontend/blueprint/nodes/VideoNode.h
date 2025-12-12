@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../NodeItem.h"
+#include <QJsonObject>
 
 class VideoNode : public NodeItem
 {
@@ -20,7 +21,13 @@ class VideoNode : public NodeItem
 
     void setStereoMode(StereoMode mode)
     {
+        if (m_stereoMode == mode)
+            return;
         m_stereoMode = mode;
+
+        QJsonObject data;
+        data["stereoMode"] = (int) m_stereoMode;
+        emit nodeUpdated(id().toString(), data);
     }
     StereoMode stereoMode() const
     {

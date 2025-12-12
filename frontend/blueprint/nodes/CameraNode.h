@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../NodeItem.h"
+#include <QJsonObject>
 
 class CameraNode : public NodeItem
 {
@@ -17,8 +18,6 @@ class CameraNode : public NodeItem
         VR180_Fisheye,
         VR360_Equirectangular,
     };
-
-#include <QJsonObject>
 
     CameraNode(const QString &title = "Camera") : NodeItem(title)
     {

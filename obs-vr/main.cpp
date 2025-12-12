@@ -83,8 +83,13 @@ int main(int argc, char **argv)
 	}
 	router.SetSuperRes(srAdapter);
 
+#include <unordered_map>
+
+	// ...
 	// 5.5 IPC Server (Backend UI Support)
 	libvr::IPCServer ipcServer;
+	std::unordered_map<std::string, uint32_t> uuidMap;
+
 	// Simple command handler
 	ipcServer.SetCommandCallback([&](const std::string &msg) -> std::string {
 		std::cout << "[obs-vr] IPC Command Received: " << msg << std::endl;
@@ -100,6 +105,11 @@ int main(int argc, char **argv)
 					libvr::Transform t = {{x, y, 0.0f}, {0, 0, 0, 1}, {1, 1, 1}};
 					uint32_t id = sceneManager.AddNode(t);
 
+					if (j.contains("id")) {
+						std::string uuid = j["id"];
+						uuidMap[uuid] = id;
+					}
+
 					libvr::SemanticData sData;
 					if (j.contains("label"))
 						sData.label = j["label"];
@@ -109,6 +119,77 @@ int main(int argc, char **argv)
 						  << std::endl;
 					return "{\"status\": \"ok\", \"id\": " + std::to_string(id) + "}";
 				}
+
+				if (cmd == "updateNode") {
+					if (j.contains("id")) {
+						std::string uuid = j["id"];
+						if (uuidMap.find(uuid) != uuidMap.end()) {
+							uint32_t nodeId = uuidMap[uuid];
+							if (j.contains("updates")) {
+								auto updates = j["updates"];
+
+								// Get current state (Naive linear search for now)
+								const auto &nodes = sceneManager.GetNodes();
+								libvr::Transform currentT;
+								libvr::SemanticData currentS;
+								bool found = false;
+								for (const auto &n : nodes) {
+									if (n.id == nodeId) {
+										currentT = n.transform;
+										currentS = n.semantics;
+										found = true;
+										break;
+									}
+								}
+
+								if (found) {
+									bool tChanged = false;
+									if (updates.contains("position")) {
+										auto p = updates["position"];
+										currentT.position[0] = p[0];
+										currentT.position[1] = p[1];
+										currentT.position[2] = p[2];
+										tChanged = true;
+									}
+									if (updates.contains("scale")) {
+										auto s = updates["scale"];
+										currentT.scale[0] = s[0];
+										currentT.scale[1] = s[1];
+										currentT.scale[2] = s[2];
+										tChanged = true;
+									}
+									if (updates.contains("rotation")) {
+										auto r = updates["rotation"];
+										currentT.rotation[0] = r[0];
+										currentT.rotation[1] = r[1];
+										currentT.rotation[2] = r[2];
+										currentT.rotation[3] = r[3];
+										tChanged = true;
+									}
+									if (tChanged)
+										sceneManager.SetTransform(nodeId,
+													  currentT);
+
+									bool sChanged = false;
+									if (updates.contains("stereoMode")) {
+										currentS.stereoMode =
+											(libvr::StereoMode)
+												updates["stereoMode"]
+													.get<int>();
+										sChanged = true;
+									}
+									/* Handle LensType if we add it to SemanticData later */
+
+									if (sChanged)
+										sceneManager.SetSemantics(nodeId,
+													  currentS);
+								}
+							}
+						}
+					}
+					return "{\"status\": \"ok\"}";
+				}
+
 				if (cmd == "getScenes") {
 					return "{\"scenes\": [\"Scene 1\", \"Scene 2\"], \"current\": \"Scene 1\"}";
 				}
