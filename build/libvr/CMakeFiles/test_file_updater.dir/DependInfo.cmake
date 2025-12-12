@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_file_updater.cpp" "libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.o" "gcc" "libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.o.d"
+  "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_file_updater.cpp" "libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.o" "gcc" "libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

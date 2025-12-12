@@ -1,7 +1,7 @@
 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_value.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/src/lib_json/json_value.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/src/lib_json/json_value.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/assertions.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/assertions.h \
  /usr/include/c++/13/cstdlib \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -41,17 +41,13 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsonc
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
  /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h \
  /usr/include/c++/13/bits/std_abs.h /usr/include/c++/13/sstream \
  /usr/include/c++/13/bits/requires_hosted.h /usr/include/c++/13/istream \
  /usr/include/c++/13/ios /usr/include/c++/13/iosfwd \
@@ -65,8 +61,6 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsonc
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
  /usr/include/c++/13/exception /usr/include/c++/13/bits/exception.h \
  /usr/include/c++/13/bits/exception_ptr.h \
  /usr/include/c++/13/bits/exception_defines.h \
@@ -134,11 +128,9 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsonc
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/c++/13/cerrno \
- /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
- /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
+ /usr/include/c++/13/cerrno /usr/include/errno.h \
+ /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
+ /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/13/bits/charconv.h \
@@ -162,7 +154,7 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsonc
  /usr/include/c++/13/bits/ostream.tcc \
  /usr/include/c++/13/bits/istream.tcc \
  /usr/include/c++/13/bits/sstream.tcc \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/config.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/config.h \
  /usr/include/c++/13/cstdint \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
@@ -182,13 +174,11 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsonc
  /usr/include/c++/13/backward/auto_ptr.h \
  /usr/include/c++/13/pstl/glue_memory_defs.h \
  /usr/include/c++/13/pstl/execution_defs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/allocator.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/allocator.h \
  /usr/include/c++/13/cstring /usr/include/string.h /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/version.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/value.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/forwards.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/version.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/value.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/forwards.h \
  /usr/include/c++/13/array /usr/include/c++/13/compare \
  /usr/include/c++/13/map /usr/include/c++/13/bits/stl_tree.h \
  /usr/include/c++/13/bits/node_handle.h \
@@ -198,8 +188,8 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsonc
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
  /usr/include/c++/13/bits/vector.tcc \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/writer.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/value.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/writer.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/include/json/value.h \
  /usr/include/c++/13/algorithm /usr/include/c++/13/bits/stl_algo.h \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
@@ -230,4 +220,4 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsonc
  /usr/include/c++/13/tr1/poly_laguerre.tcc \
  /usr/include/c++/13/tr1/riemann_zeta.tcc /usr/include/c++/13/iostream \
  /usr/include/c++/13/utility /usr/include/c++/13/bits/stl_relops.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/src/lib_json/json_valueiterator.inl
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/external/jsoncpp/src/lib_json/json_valueiterator.inl

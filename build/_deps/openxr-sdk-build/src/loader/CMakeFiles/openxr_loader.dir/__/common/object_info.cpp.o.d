@@ -1,10 +1,10 @@
 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_info.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/object_info.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/object_info.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/object_info.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/hex_and_handles.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/object_info.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/hex_and_handles.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
@@ -41,8 +41,6 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
  /usr/include/c++/13/type_traits /usr/include/c++/13/bits/allocator.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++allocator.h \
  /usr/include/c++/13/bits/new_allocator.h /usr/include/c++/13/new \
@@ -100,28 +98,22 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
  /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h \
  /usr/include/c++/13/bits/std_abs.h /usr/include/c++/13/cstdio \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/c++/13/cerrno \
- /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
- /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
+ /usr/include/c++/13/cerrno /usr/include/errno.h \
+ /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
+ /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/13/bits/charconv.h \
@@ -173,7 +165,7 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
  /usr/include/c++/13/bits/vector.tcc \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/extra_algorithms.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/extra_algorithms.h \
  /usr/include/c++/13/algorithm /usr/include/c++/13/bits/stl_algo.h \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
@@ -198,6 +190,4 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_
  /usr/include/c++/13/bits/ostream.tcc \
  /usr/include/c++/13/bits/istream.tcc \
  /usr/include/c++/13/bits/sstream.tcc /usr/include/memory.h \
- /usr/include/string.h /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h
+ /usr/include/string.h /usr/include/strings.h

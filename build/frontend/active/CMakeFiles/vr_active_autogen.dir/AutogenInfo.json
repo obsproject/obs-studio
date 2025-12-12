@@ -1,77 +1,84 @@
 {
-	"BUILD_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen",
-	"CMAKE_BINARY_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build",
-	"CMAKE_CURRENT_BINARY_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active",
-	"CMAKE_CURRENT_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active",
+	"BUILD_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen",
+	"CMAKE_BINARY_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active",
 	"CMAKE_EXECUTABLE" : "/usr/bin/cmake",
 	"CMAKE_LIST_FILES" : 
 	[
-		"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/CMakeLists.txt"
+		"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/CMakeLists.txt"
 	],
-	"CMAKE_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio",
-	"DEP_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/deps",
+	"CMAKE_SOURCE_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio",
+	"DEP_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/deps",
 	"DEP_FILE_RULE_NAME" : "vr_active_autogen/timestamp",
 	"HEADERS" : 
 	[
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/AudioMixer.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/AudioMixer.h",
 			"MU",
 			"EWIEGA46WW/moc_AudioMixer.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/CamModule.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/CamModule.h",
 			"MU",
 			"EWIEGA46WW/moc_CamModule.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ExtraModules.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ExtraModules.h",
 			"MU",
 			"EWIEGA46WW/moc_ExtraModules.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorGrid.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorGrid.h",
 			"MU",
 			"EWIEGA46WW/moc_MonitorGrid.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorWidget.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorWidget.h",
 			"MU",
 			"EWIEGA46WW/moc_MonitorWidget.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MoreModules.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MoreModules.h",
 			"MU",
 			"EWIEGA46WW/moc_MoreModules.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/SceneButtons.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/SceneButtons.h",
 			"MU",
 			"EWIEGA46WW/moc_SceneButtons.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ThreeDModule.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ThreeDModule.h",
 			"MU",
 			"EWIEGA46WW/moc_ThreeDModule.cpp",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/VideoModule.h",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/VideoModule.h",
 			"MU",
 			"EWIEGA46WW/moc_VideoModule.cpp",
 			null
 		]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
-	"INCLUDE_DIR" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/include",
-	"MOC_COMPILATION_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp",
-	"MOC_DEFINITIONS" : [ "QT_CORE_LIB", "QT_GUI_LIB", "QT_NO_DEBUG", "QT_WIDGETS_LIB" ],
+	"INCLUDE_DIR" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/include",
+	"MOC_COMPILATION_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_NETWORK_LIB",
+		"QT_NO_DEBUG",
+		"QT_WIDGETS_LIB"
+	],
 	"MOC_DEPEND_FILTERS" : 
 	[
 		[
@@ -81,13 +88,15 @@
 	],
 	"MOC_INCLUDES" : 
 	[
-		"/home/subtomic/Documents/GitHub/VRobs-studio/shared/vr-protocol",
-		"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared",
+		"/home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol",
+		"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared",
+		"/home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol",
 		"/usr/include/x86_64-linux-gnu/qt6/QtCore",
 		"/usr/include/x86_64-linux-gnu/qt6",
 		"/usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++",
 		"/usr/include/x86_64-linux-gnu/qt6/QtGui",
 		"/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
+		"/usr/include/x86_64-linux-gnu/qt6/QtNetwork",
 		"/usr/include",
 		"/usr/include/c++/13",
 		"/usr/include/x86_64-linux-gnu/c++/13",
@@ -115,66 +124,66 @@
 		"-c",
 		"/usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp"
 	],
-	"MOC_PREDEFS_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/moc_predefs.h",
+	"MOC_PREDEFS_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/moc_predefs.h",
 	"MOC_RELAXED_MODE" : false,
 	"MOC_SKIP" : [],
 	"MULTI_CONFIG" : false,
 	"PARALLEL" : 6,
-	"PARSE_CACHE_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/ParseCache.txt",
+	"PARSE_CACHE_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/ParseCache.txt",
 	"QT_MOC_EXECUTABLE" : "/usr/lib/qt6/libexec/moc",
 	"QT_UIC_EXECUTABLE" : "/usr/lib/qt6/libexec/uic",
 	"QT_VERSION_MAJOR" : 6,
 	"QT_VERSION_MINOR" : 4,
-	"SETTINGS_FILE" : "/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/AutogenUsed.txt",
+	"SETTINGS_FILE" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/AudioMixer.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/AudioMixer.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/CamModule.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/CamModule.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ExtraModules.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ExtraModules.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorGrid.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorGrid.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorWidget.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorWidget.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MoreModules.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MoreModules.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/SceneButtons.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/SceneButtons.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ThreeDModule.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ThreeDModule.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/VideoModule.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/VideoModule.cpp",
 			"MU",
 			null
 		],
 		[
-			"/home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/main.cpp",
+			"/home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/main.cpp",
 			"MU",
 			null
 		]

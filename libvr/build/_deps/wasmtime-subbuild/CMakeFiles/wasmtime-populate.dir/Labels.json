@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/CMakeFiles/wasmtime-populate"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/CMakeFiles/wasmtime-populate.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/CMakeFiles/wasmtime-populate-complete.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-build.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-configure.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-download.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-install.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-patch.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-test.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/build/_deps/wasmtime-subbuild/wasmtime-populate-prefix/src/wasmtime-populate-stamp/wasmtime-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"wasmtime-populate"
+		],
+		"name" : "wasmtime-populate"
+	}
+}

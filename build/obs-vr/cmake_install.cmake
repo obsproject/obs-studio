@@ -1,4 +1,4 @@
-# Install script for directory: /home/subtomic/Documents/GitHub/VRobs-studio/obs-vr
+# Install script for directory: /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

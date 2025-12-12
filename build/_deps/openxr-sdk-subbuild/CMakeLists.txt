@@ -28,8 +28,8 @@ set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
 include(ExternalProject)
 ExternalProject_Add(openxr-sdk-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/KhronosGroup/OpenXR-SDK.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "release-1.0.32"
-                    SOURCE_DIR          "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src"
-                    BINARY_DIR          "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build"
+                    SOURCE_DIR          "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src"
+                    BINARY_DIR          "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

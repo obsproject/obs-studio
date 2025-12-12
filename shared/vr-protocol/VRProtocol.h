@@ -22,6 +22,9 @@ namespace VRProtocol {
     constexpr const char *CMD_GET_SCENES = "getScenes";
     constexpr const char *CMD_SET_SCENE = "setScene";
     constexpr const char *CMD_GET_NODES = "getNodes";
+    constexpr const char *CMD_CREATE_NODE = "createNode";
+    constexpr const char *CMD_UPDATE_NODE = "updateNode";
+    constexpr const char *CMD_DELETE_NODE = "deleteNode";
 
     // Limits
     constexpr uint32_t MAX_PAYLOAD_SIZE = 10 * 1024 * 1024;  // 10MB

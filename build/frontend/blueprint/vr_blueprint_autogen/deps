@@ -1,22 +1,29 @@
 vr_blueprint_autogen/timestamp: \
-	/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/moc_predefs.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/CMakeLists.txt \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/main.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/moc_predefs.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/CMakeLists.txt \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol/VRProtocol.h \
 	/usr/include/alloca.h \
+	/usr/include/asm-generic/bitsperlong.h \
 	/usr/include/asm-generic/errno-base.h \
 	/usr/include/asm-generic/errno.h \
+	/usr/include/asm-generic/posix_types.h \
+	/usr/include/asm-generic/socket.h \
+	/usr/include/asm-generic/sockios.h \
 	/usr/include/assert.h \
 	/usr/include/c++/13/algorithm \
 	/usr/include/c++/13/array \
@@ -53,6 +60,7 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/c++/13/bits/hash_bytes.h \
 	/usr/include/c++/13/bits/invoke.h \
 	/usr/include/c++/13/bits/ios_base.h \
+	/usr/include/c++/13/bits/istream.tcc \
 	/usr/include/c++/13/bits/iterator_concepts.h \
 	/usr/include/c++/13/bits/list.tcc \
 	/usr/include/c++/13/bits/locale_classes.h \
@@ -150,6 +158,8 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/c++/13/initializer_list \
 	/usr/include/c++/13/ios \
 	/usr/include/c++/13/iosfwd \
+	/usr/include/c++/13/iostream \
+	/usr/include/c++/13/istream \
 	/usr/include/c++/13/iterator \
 	/usr/include/c++/13/limits \
 	/usr/include/c++/13/list \
@@ -195,6 +205,8 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/limits.h \
 	/usr/include/linux/errno.h \
 	/usr/include/linux/limits.h \
+	/usr/include/linux/posix_types.h \
+	/usr/include/linux/stddef.h \
 	/usr/include/locale.h \
 	/usr/include/pthread.h \
 	/usr/include/sched.h \
@@ -209,7 +221,12 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/unistd.h \
 	/usr/include/wchar.h \
 	/usr/include/wctype.h \
+	/usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
 	/usr/include/x86_64-linux-gnu/asm/errno.h \
+	/usr/include/x86_64-linux-gnu/asm/posix_types.h \
+	/usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+	/usr/include/x86_64-linux-gnu/asm/socket.h \
+	/usr/include/x86_64-linux-gnu/asm/sockios.h \
 	/usr/include/x86_64-linux-gnu/asm/unistd.h \
 	/usr/include/x86_64-linux-gnu/asm/unistd_64.h \
 	/usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
@@ -237,6 +254,9 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/bits/sched.h \
 	/usr/include/x86_64-linux-gnu/bits/select.h \
 	/usr/include/x86_64-linux-gnu/bits/setjmp.h \
+	/usr/include/x86_64-linux-gnu/bits/sockaddr.h \
+	/usr/include/x86_64-linux-gnu/bits/socket.h \
+	/usr/include/x86_64-linux-gnu/bits/socket_type.h \
 	/usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
 	/usr/include/x86_64-linux-gnu/bits/stdint-least.h \
 	/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
@@ -267,7 +287,9 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
 	/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
 	/usr/include/x86_64-linux-gnu/bits/types/struct___jmp_buf_tag.h \
+	/usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h \
 	/usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h \
+	/usr/include/x86_64-linux-gnu/bits/types/struct_osockaddr.h \
 	/usr/include/x86_64-linux-gnu/bits/types/struct_sched_param.h \
 	/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
 	/usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
@@ -302,6 +324,9 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QSize \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QSizeF \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QUuid \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qabstractitemmodel.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qalgorithms.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qanystringview.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydata.h \
@@ -324,9 +349,12 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qcontainerinfo.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qcontainertools_impl.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qcontiguouscache.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qcoreapplication.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qcoreapplication_platform.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qcoreevent.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qdatastream.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qdebug.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qeventloop.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qflags.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qforeach.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qgenericatomic.h \
@@ -340,6 +368,7 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qiterator.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qline.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qlocale.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qlogging.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qmap.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qmargins.h \
@@ -359,6 +388,7 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qprocessordetection.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qrect.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qrefcount.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qregularexpression.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qscopedpointer.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qscopeguard.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qset.h \
@@ -387,10 +417,17 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qtypeinfo.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qurl.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qutf8stringview.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/quuid.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qvariant.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qvarlengtharray.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qversiontagging.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QBrush \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QFont \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QPainter \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QPen \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QQuaternion \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/QVector3D \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QWheelEvent \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qaction.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qbitmap.h \
@@ -402,46 +439,95 @@ vr_blueprint_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qfont.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qfontinfo.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qfontmetrics.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qgenericmatrix.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qguiapplication.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qguiapplication_platform.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qicon.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qimage.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qinputdevice.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qinputmethod.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qkeysequence.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpaintdevice.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpainter.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpainterpath.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpalette.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpen.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpicture.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpixelformat.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpixmap.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpointingdevice.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qpolygon.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qquaternion.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qregion.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qrgb.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qrgba64.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qscreen.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtextdocument.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtextoption.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtgui-config.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtguiexports.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtguiglobal.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvalidator.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvector2d.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvector3d.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvector4d.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvectornd.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qwindowdefs.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QApplication \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QComboBox \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDockWidget \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDoubleSpinBox \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsItem \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsObject \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsScene \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsSceneMouseEvent \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsView \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGroupBox \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLabel \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QStatusBar \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QWidget \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractitemdelegate.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractscrollarea.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractslider.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractspinbox.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qapplication.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qcombobox.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdockwidget.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qframe.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsitem.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsscene.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicssceneevent.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsview.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgroupbox.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlabel.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayout.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayoutitem.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qrubberband.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qscrollarea.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsizepolicy.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qslider.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qspinbox.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstatusbar.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstyle.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstyleoption.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabbar.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgets-config.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsexports.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qwidget.h \
 	/usr/include/x86_64-linux-gnu/sys/cdefs.h \
 	/usr/include/x86_64-linux-gnu/sys/select.h \
+	/usr/include/x86_64-linux-gnu/sys/socket.h \
 	/usr/include/x86_64-linux-gnu/sys/syscall.h \
 	/usr/include/x86_64-linux-gnu/sys/types.h \
+	/usr/include/x86_64-linux-gnu/sys/un.h \
 	/usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
 	/usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
 	/usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \

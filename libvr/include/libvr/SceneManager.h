@@ -43,13 +43,58 @@ namespace libvr {
         int type;  // 0 = Point, 1 = Directional
     };
 
+    enum class StereoMode {
+        MONO,
+        STEREO_SBS,  // Side-by-Side
+        STEREO_TB,   // Top-Bottom
+        LEFT_EYE,    // Only visible to left eye
+        RIGHT_EYE    // Only visible to right eye
+    };
+
+    struct AABB {
+        float min[3];
+        float max[3];
+    };
+
+    struct SemanticData {
+        // Identity
+        std::string label;              // e.g., "Office Desk"
+        std::string category;           // e.g., "Furniture"
+        std::vector<std::string> tags;  // e.g., ["flat", "wooden"]
+
+        // Spatial Properties
+        AABB boundingBox;
+
+        // VR/Stereo Properties
+        StereoMode stereoMode = StereoMode::MONO;
+        float ipdOffset = 0.0f;
+    };
+
     struct SceneNode {
         uint32_t id;
         Transform transform;
         uint32_t mesh_id;
-        uint32_t material_id;  // New: Material reference
-        uint32_t texture_id;   // Legacy/Override
+        uint32_t material_id;
+        uint32_t texture_id;  // Legacy/Override
         std::vector<uint32_t> children;
+
+        // Semantic Layer
+        SemanticData semantics;
+    };
+
+    enum class RelationType {
+        SUPPORTED_BY,
+        NEAR,
+        FACING,
+        INSIDE,
+        PART_OF
+    };
+
+    struct SemanticEdge {
+        uint32_t sourceNodeId;
+        uint32_t targetNodeId;
+        RelationType type;
+        float weight;
     };
 
     class SceneManager
@@ -64,6 +109,7 @@ namespace libvr {
         uint32_t AddVideoNode(const Transform &transform, uint32_t mesh_id, uint32_t texture_id);
         void RemoveNode(uint32_t id);
         void SetTransform(uint32_t id, const Transform &transform);
+        void SetSemantics(uint32_t id, const SemanticData &data);
         const std::vector<SceneNode> &GetNodes() const;
 
         // Resource Management
@@ -76,10 +122,17 @@ namespace libvr {
         uint32_t AddLight(const Light &light);
         const std::vector<Light> &GetLights() const;
 
+        // Semantic Graph API
+        void AddRelation(uint32_t sourceId, uint32_t targetId, RelationType type, float weight = 1.0f);
+        const std::vector<SemanticEdge> &GetRelations() const;
+
           private:
         std::vector<SceneNode> nodes;
         int next_id = 1;
         mutable std::mutex nodes_mutex;
+
+        // Semantic Graph
+        std::vector<SemanticEdge> edges;
 
         // Resources
         std::vector<Mesh> meshes;

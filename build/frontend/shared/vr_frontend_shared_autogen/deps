@@ -1,15 +1,17 @@
 vr_frontend_shared_autogen/timestamp: \
-	/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/moc_predefs.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/CMakeLists.txt \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRCommon.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRFilePicker.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRFilePicker.h \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRSlider.cpp \
-	/home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRSlider.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/moc_predefs.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/CMakeLists.txt \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRClient.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRClient.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRCommon.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRFilePicker.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRFilePicker.h \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRSlider.cpp \
+	/home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRSlider.h \
 	/usr/include/alloca.h \
 	/usr/include/asm-generic/errno-base.h \
 	/usr/include/asm-generic/errno.h \
@@ -316,6 +318,7 @@ vr_frontend_shared_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QFile \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonDocument \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qalgorithms.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qanystringview.h \
@@ -445,6 +448,12 @@ vr_frontend_shared_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtguiglobal.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qwindowdefs.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/QLocalSocket \
+	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qabstractsocket.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qlocalsocket.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetwork-config.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkexports.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkglobal.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QHBoxLayout \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLineEdit \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \

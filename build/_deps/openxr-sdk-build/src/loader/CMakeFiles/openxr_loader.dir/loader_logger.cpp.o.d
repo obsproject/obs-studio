@@ -1,7 +1,7 @@
 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/loader/loader_logger.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/loader/loader_logger.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/loader/loader_logger.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/loader/loader_logger.hpp \
  /usr/include/c++/13/memory /usr/include/c++/13/bits/memoryfwd.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -71,8 +71,6 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
  /usr/include/c++/13/bits/shared_ptr_base.h /usr/include/c++/13/typeinfo \
  /usr/include/c++/13/bits/allocated_ptr.h \
  /usr/include/c++/13/bits/refwrap.h \
@@ -149,20 +147,13 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp
  /usr/include/x86_64-linux-gnu/sys/select.h \
  /usr/include/x86_64-linux-gnu/bits/select.h \
  /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h \
+ /usr/include/alloca.h /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/c++/13/bits/std_abs.h /usr/include/c++/13/cstdio \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h \
  /usr/include/c++/13/bits/charconv.h \
  /usr/include/c++/13/bits/basic_string.tcc \
  /usr/include/c++/13/bits/memory_resource.h /usr/include/c++/13/cstddef \
@@ -182,19 +173,19 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp
  /usr/include/c++/13/bits/stl_multiset.h /usr/include/c++/13/map \
  /usr/include/c++/13/bits/stl_map.h \
  /usr/include/c++/13/bits/stl_multimap.h /usr/include/c++/13/shared_mutex \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/hex_and_handles.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/object_info.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/extra_algorithms.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/hex_and_handles.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/object_info.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/extra_algorithms.h \
  /usr/include/c++/13/algorithm /usr/include/c++/13/bits/stl_algo.h \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
  /usr/include/c++/13/bits/uniform_int_dist.h \
  /usr/include/c++/13/pstl/glue_algorithm_defs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/loader/loader_logger_recorders.hpp \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/platform_utils.hpp \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/xr_dependencies.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/loader/loader_logger_recorders.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/platform_utils.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/xr_dependencies.h \
  /usr/include/X11/Xlib.h /usr/include/X11/X.h \
  /usr/include/X11/Xfuncproto.h /usr/include/X11/Xosdefs.h \
  /usr/include/X11/Xutil.h /usr/include/X11/keysym.h \
@@ -213,14 +204,12 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp
  /usr/include/vk_video/vulkan_video_codec_h264std_decode.h \
  /usr/include/vk_video/vulkan_video_codec_h265std_decode.h \
  /usr/include/c++/13/stdlib.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/../common_config.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/../common_config.h \
  /usr/include/unistd.h /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
  /usr/include/x86_64-linux-gnu/bits/confname.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
- /usr/include/x86_64-linux-gnu/bits/unistd.h \
- /usr/include/x86_64-linux-gnu/bits/unistd-decl.h \
  /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
  /usr/include/linux/close_range.h /usr/include/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/fcntl.h \
@@ -228,9 +217,8 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp
  /usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h \
  /usr/include/linux/falloc.h /usr/include/x86_64-linux-gnu/bits/stat.h \
  /usr/include/x86_64-linux-gnu/bits/struct_stat.h \
- /usr/include/x86_64-linux-gnu/bits/fcntl2.h /usr/include/c++/13/iostream \
- /usr/include/c++/13/ostream /usr/include/c++/13/ios \
- /usr/include/c++/13/bits/ios_base.h \
+ /usr/include/c++/13/iostream /usr/include/c++/13/ostream \
+ /usr/include/c++/13/ios /usr/include/c++/13/bits/ios_base.h \
  /usr/include/c++/13/bits/locale_classes.h \
  /usr/include/c++/13/bits/locale_classes.tcc \
  /usr/include/c++/13/system_error /usr/include/c++/13/stdexcept \

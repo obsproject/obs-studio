@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Include any dependencies generated for this target.
 include frontend/blueprint/CMakeFiles/vr_blueprint.dir/depend.make
@@ -72,114 +72,128 @@ include frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o: frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o -MF CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o -MF CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp > CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp > CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp -o CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/mocs_compilation.cpp -o CMakeFiles/vr_blueprint.dir/vr_blueprint_autogen/mocs_compilation.cpp.s
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/main.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o -MF CMakeFiles/vr_blueprint.dir/main.cpp.o.d -o CMakeFiles/vr_blueprint.dir/main.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o -MF CMakeFiles/vr_blueprint.dir/main.cpp.o.d -o CMakeFiles/vr_blueprint.dir/main.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/main.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/main.cpp > CMakeFiles/vr_blueprint.dir/main.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp > CMakeFiles/vr_blueprint.dir/main.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/main.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/main.cpp -o CMakeFiles/vr_blueprint.dir/main.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp -o CMakeFiles/vr_blueprint.dir/main.cpp.s
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o -MF CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o.d -o CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o -MF CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o.d -o CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.cpp > CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.cpp > CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.cpp -o CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.cpp -o CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.s
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o -MF CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o.d -o CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o -MF CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o.d -o CMakeFiles/vr_blueprint.dir/NodeItem.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/NodeItem.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.cpp > CMakeFiles/vr_blueprint.dir/NodeItem.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.cpp > CMakeFiles/vr_blueprint.dir/NodeItem.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeItem.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/NodeItem.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.cpp -o CMakeFiles/vr_blueprint.dir/NodeItem.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.cpp -o CMakeFiles/vr_blueprint.dir/NodeItem.cpp.s
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o -MF CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o.d -o CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o -MF CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o.d -o CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.cpp > CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.cpp > CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.cpp -o CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.cpp -o CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.s
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o -MF CMakeFiles/vr_blueprint.dir/PortItem.cpp.o.d -o CMakeFiles/vr_blueprint.dir/PortItem.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o -MF CMakeFiles/vr_blueprint.dir/PortItem.cpp.o.d -o CMakeFiles/vr_blueprint.dir/PortItem.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/PortItem.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.cpp > CMakeFiles/vr_blueprint.dir/PortItem.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.cpp > CMakeFiles/vr_blueprint.dir/PortItem.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/PortItem.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.cpp -o CMakeFiles/vr_blueprint.dir/PortItem.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.cpp -o CMakeFiles/vr_blueprint.dir/PortItem.cpp.s
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o -MF CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o.d -o CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o -MF CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o.d -o CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.cpp > CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.cpp > CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.cpp -o CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.cpp -o CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.s
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
-frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.cpp
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o -MF CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o.d -o CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o -MF CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o.d -o CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.cpp
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.cpp > CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.cpp > CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.i
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.cpp -o CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.cpp -o CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.s
+
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/flags.make
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.cpp
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o: frontend/blueprint/CMakeFiles/vr_blueprint.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o -MF CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o.d -o CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.cpp
+
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.i"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.cpp > CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.i
+
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.s"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.cpp -o CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.s
 
 # Object files for target vr_blueprint
 vr_blueprint_OBJECTS = \
@@ -190,7 +204,8 @@ vr_blueprint_OBJECTS = \
 "CMakeFiles/vr_blueprint.dir/NodeRegistry.cpp.o" \
 "CMakeFiles/vr_blueprint.dir/PortItem.cpp.o" \
 "CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o" \
-"CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o"
+"CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o" \
+"CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o"
 
 # External object files for target vr_blueprint
 vr_blueprint_EXTERNAL_OBJECTS =
@@ -203,25 +218,28 @@ frontend/blueprint/vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/
 frontend/blueprint/vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/PortItem.cpp.o
 frontend/blueprint/vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o
 frontend/blueprint/vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o
+frontend/blueprint/vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/PropertiesPanel.cpp.o
 frontend/blueprint/vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make
+frontend/blueprint/vr_blueprint: frontend/shared/libvr_frontend_shared.a
 frontend/blueprint/vr_blueprint: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
 frontend/blueprint/vr_blueprint: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
-frontend/blueprint/vr_blueprint: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 frontend/blueprint/vr_blueprint: /usr/lib/x86_64-linux-gnu/libGLX.so
 frontend/blueprint/vr_blueprint: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+frontend/blueprint/vr_blueprint: /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
+frontend/blueprint/vr_blueprint: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 frontend/blueprint/vr_blueprint: frontend/blueprint/CMakeFiles/vr_blueprint.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX executable vr_blueprint"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vr_blueprint.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable vr_blueprint"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vr_blueprint.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/build: frontend/blueprint/vr_blueprint
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint.dir/build
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && $(CMAKE_COMMAND) -P CMakeFiles/vr_blueprint.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && $(CMAKE_COMMAND) -P CMakeFiles/vr_blueprint.dir/cmake_clean.cmake
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint.dir/clean
 
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/CMakeFiles/vr_blueprint.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint.dir/depend
 

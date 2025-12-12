@@ -4,6 +4,8 @@
 #include <libvr/pipeline/FrameRouter.h>
 #include <libvr/IStitcher.h>
 #include <libvr/ISuperResolutionAdapter.h>
+#include <libvr/SceneManager.h>
+#include <nlohmann/json.hpp>
 #include <libvr/ipc/IPCServer.h>
 #include <memory>
 
@@ -64,6 +66,9 @@ int main(int argc, char **argv)
 	// 5. Initialize Router & Pipeline Components
 	libvr::FrameRouter router(renderer.get());
 
+	// Scene Manager
+	libvr::SceneManager sceneManager;
+
 	// Create Stitcher
 	auto stitcher = libvr::CreateStitcher();
 	if (stitcher && stitcher->vtbl->Initialize) {
@@ -83,12 +88,35 @@ int main(int argc, char **argv)
 	// Simple command handler
 	ipcServer.SetCommandCallback([&](const std::string &msg) -> std::string {
 		std::cout << "[obs-vr] IPC Command Received: " << msg << std::endl;
-		// Basic parser
-		if (msg.find("getScenes") != std::string::npos) {
-			return "{\"scenes\": [\"Scene 1\", "
-			       "\"Scene 2\"], \"current\": \"Scene 1\"}";
+		try {
+			auto j = nlohmann::json::parse(msg);
+			if (j.contains("command")) {
+				std::string cmd = j["command"];
+
+				if (cmd == "createNode") {
+					float x = j.value("x", 0.0f);
+					float y = j.value("y", 0.0f);
+
+					libvr::Transform t = {{x, y, 0.0f}, {0, 0, 0, 1}, {1, 1, 1}};
+					uint32_t id = sceneManager.AddNode(t);
+
+					libvr::SemanticData sData;
+					if (j.contains("label"))
+						sData.label = j["label"];
+					sceneManager.SetSemantics(id, sData);
+
+					std::cout << "Created Node ID: " << id << " Label: " << sData.label
+						  << std::endl;
+					return "{\"status\": \"ok\", \"id\": " + std::to_string(id) + "}";
+				}
+				if (cmd == "getScenes") {
+					return "{\"scenes\": [\"Scene 1\", \"Scene 2\"], \"current\": \"Scene 1\"}";
+				}
+			}
+		} catch (...) {
+			return "{\"status\": \"error\", \"message\": \"Invalid JSON\"}";
 		}
-		return "{\"status\": \"ok\", \"echo\": \"" + msg + "\"}";
+		return "{\"status\": \"ok\", \"echo\": \"accepted\"}";
 	});
 
 	if (!ipcServer.Start("/tmp/vrobs.sock")) {

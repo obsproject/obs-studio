@@ -1,8 +1,8 @@
 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/loader/loader_init_data.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/loader/loader_init_data.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/loader/loader_init_data.hpp \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/common/xr_dependencies.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/loader/loader_init_data.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/common/xr_dependencies.h \
  /usr/include/X11/Xlib.h /usr/include/x86_64-linux-gnu/sys/types.h \
  /usr/include/features.h /usr/include/features-time64.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -30,8 +30,6 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -59,6 +57,6 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.
  /usr/include/vk_video/vulkan_video_codec_h265std.h \
  /usr/include/vk_video/vulkan_video_codec_h264std_decode.h \
  /usr/include/vk_video/vulkan_video_codec_h265std_decode.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h

@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Include any dependencies generated for this target.
 include frontend/shared/CMakeFiles/vr_frontend_shared.dir/depend.make
@@ -72,72 +72,86 @@ include frontend/shared/CMakeFiles/vr_frontend_shared.dir/flags.make
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/flags.make
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o: frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp > CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp > CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.i
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp -o CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp -o CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.s
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/flags.make
-frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.cpp
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.cpp
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.cpp
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.cpp > CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.cpp > CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.i
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.cpp -o CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.cpp -o CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.s
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/flags.make
-frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRSlider.cpp
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRSlider.cpp
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRSlider.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRSlider.cpp
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRSlider.cpp > CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRSlider.cpp > CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.i
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRSlider.cpp -o CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRSlider.cpp -o CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.s
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/flags.make
-frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRFilePicker.cpp
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRFilePicker.cpp
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRFilePicker.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRFilePicker.cpp
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRFilePicker.cpp > CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRFilePicker.cpp > CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.i
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRFilePicker.cpp -o CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRFilePicker.cpp -o CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.s
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/flags.make
-frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.cpp
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.cpp
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.cpp
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.cpp > CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.cpp > CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.i
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.cpp -o CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.cpp -o CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.s
+
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/flags.make
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRClient.cpp
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o: frontend/shared/CMakeFiles/vr_frontend_shared.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o -MF CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o.d -o CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRClient.cpp
+
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.i"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRClient.cpp > CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.i
+
+frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.s"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRClient.cpp -o CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.s
 
 # Object files for target vr_frontend_shared
 vr_frontend_shared_OBJECTS = \
@@ -145,7 +159,8 @@ vr_frontend_shared_OBJECTS = \
 "CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o" \
 "CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o" \
 "CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o" \
-"CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o"
+"CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o" \
+"CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o"
 
 # External object files for target vr_frontend_shared
 vr_frontend_shared_EXTERNAL_OBJECTS =
@@ -155,21 +170,22 @@ frontend/shared/libvr_frontend_shared.a: frontend/shared/CMakeFiles/vr_frontend_
 frontend/shared/libvr_frontend_shared.a: frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o
 frontend/shared/libvr_frontend_shared.a: frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o
 frontend/shared/libvr_frontend_shared.a: frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o
+frontend/shared/libvr_frontend_shared.a: frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o
 frontend/shared/libvr_frontend_shared.a: frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make
 frontend/shared/libvr_frontend_shared.a: frontend/shared/CMakeFiles/vr_frontend_shared.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX static library libvr_frontend_shared.a"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && $(CMAKE_COMMAND) -P CMakeFiles/vr_frontend_shared.dir/cmake_clean_target.cmake
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vr_frontend_shared.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX static library libvr_frontend_shared.a"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && $(CMAKE_COMMAND) -P CMakeFiles/vr_frontend_shared.dir/cmake_clean_target.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vr_frontend_shared.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/build: frontend/shared/libvr_frontend_shared.a
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared.dir/build
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && $(CMAKE_COMMAND) -P CMakeFiles/vr_frontend_shared.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && $(CMAKE_COMMAND) -P CMakeFiles/vr_frontend_shared.dir/cmake_clean.cmake
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared.dir/clean
 
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/CMakeFiles/vr_frontend_shared.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/CMakeFiles/vr_frontend_shared.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared.dir/depend
 

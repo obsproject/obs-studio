@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Utility rule file for vr_frontend_shared_autogen.
 
@@ -71,9 +71,9 @@ frontend/shared/CMakeFiles/vr_frontend_shared_autogen: frontend/shared/vr_fronte
 frontend/shared/vr_frontend_shared_autogen/timestamp: /usr/lib/qt6/libexec/moc
 frontend/shared/vr_frontend_shared_autogen/timestamp: /usr/lib/qt6/libexec/uic
 frontend/shared/vr_frontend_shared_autogen/timestamp: frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target vr_frontend_shared"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/cmake -E cmake_autogen /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/AutogenInfo.json ""
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/timestamp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target vr_frontend_shared"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/cmake -E cmake_autogen /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/AutogenInfo.json ""
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/timestamp
 
 vr_frontend_shared_autogen: frontend/shared/CMakeFiles/vr_frontend_shared_autogen
 vr_frontend_shared_autogen: frontend/shared/vr_frontend_shared_autogen/timestamp
@@ -85,10 +85,10 @@ frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build: vr_frontend_sha
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build
 
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared && $(CMAKE_COMMAND) -P CMakeFiles/vr_frontend_shared_autogen.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared && $(CMAKE_COMMAND) -P CMakeFiles/vr_frontend_shared_autogen.dir/cmake_clean.cmake
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/clean
 
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/depend
 

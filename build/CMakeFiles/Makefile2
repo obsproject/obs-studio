@@ -54,10 +54,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -79,6 +79,21 @@ clean: libvr/clean
 clean: obs-vr/clean
 clean: frontend/clean
 .PHONY : clean
+
+#=============================================================================
+# Directory level rules for directory _deps/json-build
+
+# Recursive "all" directory target.
+_deps/json-build/all:
+.PHONY : _deps/json-build/all
+
+# Recursive "preinstall" directory target.
+_deps/json-build/preinstall:
+.PHONY : _deps/json-build/preinstall
+
+# Recursive "clean" directory target.
+_deps/json-build/clean:
+.PHONY : _deps/json-build/clean
 
 #=============================================================================
 # Directory level rules for directory _deps/openxr-sdk-build
@@ -273,6 +288,8 @@ libvr/all: libvr/CMakeFiles/test_frame_router.dir/all
 libvr/all: libvr/CMakeFiles/test_encode.dir/all
 libvr/all: libvr/CMakeFiles/test_srt.dir/all
 libvr/all: libvr/CMakeFiles/test_ml_init.dir/all
+libvr/all: libvr/CMakeFiles/test_sr.dir/all
+libvr/all: libvr/CMakeFiles/test_semantic_scene.dir/all
 libvr/all: libvr/CMakeFiles/test_scene_draw.dir/all
 libvr/all: libvr/CMakeFiles/test_interop.dir/all
 libvr/all: libvr/CMakeFiles/test_openxr_init.dir/all
@@ -287,10 +304,11 @@ libvr/all: libvr/CMakeFiles/test_remaining_shared.dir/all
 libvr/all: libvr/CMakeFiles/test_3d_scene.dir/all
 libvr/all: libvr/CMakeFiles/test_plugin_image.dir/all
 libvr/all: libvr/CMakeFiles/test_plugin_alsa.dir/all
+libvr/all: _deps/json-build/all
 .PHONY : libvr/all
 
 # Recursive "preinstall" directory target.
-libvr/preinstall:
+libvr/preinstall: _deps/json-build/preinstall
 .PHONY : libvr/preinstall
 
 # Recursive "clean" directory target.
@@ -300,6 +318,8 @@ libvr/clean: libvr/CMakeFiles/test_frame_router.dir/clean
 libvr/clean: libvr/CMakeFiles/test_encode.dir/clean
 libvr/clean: libvr/CMakeFiles/test_srt.dir/clean
 libvr/clean: libvr/CMakeFiles/test_ml_init.dir/clean
+libvr/clean: libvr/CMakeFiles/test_sr.dir/clean
+libvr/clean: libvr/CMakeFiles/test_semantic_scene.dir/clean
 libvr/clean: libvr/CMakeFiles/test_scene_draw.dir/clean
 libvr/clean: libvr/CMakeFiles/test_interop.dir/clean
 libvr/clean: libvr/CMakeFiles/test_openxr_init.dir/clean
@@ -315,6 +335,7 @@ libvr/clean: libvr/CMakeFiles/test_3d_scene.dir/clean
 libvr/clean: libvr/CMakeFiles/test_plugin_image.dir/clean
 libvr/clean: libvr/CMakeFiles/test_plugin_alsa.dir/clean
 libvr/clean: _deps/openxr-sdk-build/clean
+libvr/clean: _deps/json-build/clean
 .PHONY : libvr/clean
 
 #=============================================================================
@@ -340,14 +361,14 @@ libvr/CMakeFiles/libvr.dir/all: _deps/openxr-sdk-build/include/openxr/CMakeFiles
 libvr/CMakeFiles/libvr.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39 "Built target libvr"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38 "Built target libvr"
 .PHONY : libvr/CMakeFiles/libvr.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/libvr.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 51
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 49
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/libvr.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/libvr.dir/rule
 
 # Convenience name for target.
@@ -368,14 +389,14 @@ libvr/CMakeFiles/test_render_init.dir/all: _deps/openxr-sdk-build/include/openxr
 libvr/CMakeFiles/test_render_init.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=74,75 "Built target test_render_init"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=71,72 "Built target test_render_init"
 .PHONY : libvr/CMakeFiles/test_render_init.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_render_init.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_render_init.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_render_init.dir/rule
 
 # Convenience name for target.
@@ -396,14 +417,14 @@ libvr/CMakeFiles/test_frame_router.dir/all: _deps/openxr-sdk-build/include/openx
 libvr/CMakeFiles/test_frame_router.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=59 "Built target test_frame_router"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=57 "Built target test_frame_router"
 .PHONY : libvr/CMakeFiles/test_frame_router.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_frame_router.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_frame_router.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_frame_router.dir/rule
 
 # Convenience name for target.
@@ -424,14 +445,14 @@ libvr/CMakeFiles/test_encode.dir/all: _deps/openxr-sdk-build/include/openxr/CMak
 libvr/CMakeFiles/test_encode.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=56 "Built target test_encode"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=54 "Built target test_encode"
 .PHONY : libvr/CMakeFiles/test_encode.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_encode.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_encode.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_encode.dir/rule
 
 # Convenience name for target.
@@ -452,14 +473,14 @@ libvr/CMakeFiles/test_srt.dir/all: _deps/openxr-sdk-build/include/openxr/CMakeFi
 libvr/CMakeFiles/test_srt.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=78,79 "Built target test_srt"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=78 "Built target test_srt"
 .PHONY : libvr/CMakeFiles/test_srt.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_srt.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_srt.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_srt.dir/rule
 
 # Convenience name for target.
@@ -480,14 +501,14 @@ libvr/CMakeFiles/test_ml_init.dir/all: _deps/openxr-sdk-build/include/openxr/CMa
 libvr/CMakeFiles/test_ml_init.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=67,68 "Built target test_ml_init"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=65 "Built target test_ml_init"
 .PHONY : libvr/CMakeFiles/test_ml_init.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_ml_init.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_ml_init.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_ml_init.dir/rule
 
 # Convenience name for target.
@@ -500,6 +521,62 @@ libvr/CMakeFiles/test_ml_init.dir/clean:
 .PHONY : libvr/CMakeFiles/test_ml_init.dir/clean
 
 #=============================================================================
+# Target rules for target libvr/CMakeFiles/test_sr.dir
+
+# All Build rule for target.
+libvr/CMakeFiles/test_sr.dir/all: libvr/CMakeFiles/libvr.dir/all
+libvr/CMakeFiles/test_sr.dir/all: _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/all
+libvr/CMakeFiles/test_sr.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/depend
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=77 "Built target test_sr"
+.PHONY : libvr/CMakeFiles/test_sr.dir/all
+
+# Build rule for subdir invocation for target.
+libvr/CMakeFiles/test_sr.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_sr.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
+.PHONY : libvr/CMakeFiles/test_sr.dir/rule
+
+# Convenience name for target.
+test_sr: libvr/CMakeFiles/test_sr.dir/rule
+.PHONY : test_sr
+
+# clean rule for target.
+libvr/CMakeFiles/test_sr.dir/clean:
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/clean
+.PHONY : libvr/CMakeFiles/test_sr.dir/clean
+
+#=============================================================================
+# Target rules for target libvr/CMakeFiles/test_semantic_scene.dir
+
+# All Build rule for target.
+libvr/CMakeFiles/test_semantic_scene.dir/all: libvr/CMakeFiles/libvr.dir/all
+libvr/CMakeFiles/test_semantic_scene.dir/all: _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/all
+libvr/CMakeFiles/test_semantic_scene.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/depend
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=75,76 "Built target test_semantic_scene"
+.PHONY : libvr/CMakeFiles/test_semantic_scene.dir/all
+
+# Build rule for subdir invocation for target.
+libvr/CMakeFiles/test_semantic_scene.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 51
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_semantic_scene.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
+.PHONY : libvr/CMakeFiles/test_semantic_scene.dir/rule
+
+# Convenience name for target.
+test_semantic_scene: libvr/CMakeFiles/test_semantic_scene.dir/rule
+.PHONY : test_semantic_scene
+
+# clean rule for target.
+libvr/CMakeFiles/test_semantic_scene.dir/clean:
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/clean
+.PHONY : libvr/CMakeFiles/test_semantic_scene.dir/clean
+
+#=============================================================================
 # Target rules for target libvr/CMakeFiles/test_scene_draw.dir
 
 # All Build rule for target.
@@ -508,14 +585,14 @@ libvr/CMakeFiles/test_scene_draw.dir/all: _deps/openxr-sdk-build/include/openxr/
 libvr/CMakeFiles/test_scene_draw.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=76 "Built target test_scene_draw"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=73 "Built target test_scene_draw"
 .PHONY : libvr/CMakeFiles/test_scene_draw.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_scene_draw.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_scene_draw.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_scene_draw.dir/rule
 
 # Convenience name for target.
@@ -536,14 +613,14 @@ libvr/CMakeFiles/test_interop.dir/all: _deps/openxr-sdk-build/include/openxr/CMa
 libvr/CMakeFiles/test_interop.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=62 "Built target test_interop"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=59,60 "Built target test_interop"
 .PHONY : libvr/CMakeFiles/test_interop.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_interop.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_interop.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_interop.dir/rule
 
 # Convenience name for target.
@@ -564,14 +641,14 @@ libvr/CMakeFiles/test_openxr_init.dir/all: _deps/openxr-sdk-build/include/openxr
 libvr/CMakeFiles/test_openxr_init.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=69 "Built target test_openxr_init"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=66 "Built target test_openxr_init"
 .PHONY : libvr/CMakeFiles/test_openxr_init.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_openxr_init.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_openxr_init.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_openxr_init.dir/rule
 
 # Convenience name for target.
@@ -592,14 +669,14 @@ libvr/CMakeFiles/test_media_source.dir/all: _deps/openxr-sdk-build/include/openx
 libvr/CMakeFiles/test_media_source.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=66 "Built target test_media_source"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=63,64 "Built target test_media_source"
 .PHONY : libvr/CMakeFiles/test_media_source.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_media_source.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_media_source.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_media_source.dir/rule
 
 # Convenience name for target.
@@ -620,14 +697,14 @@ libvr/CMakeFiles/test_bpm.dir/all: _deps/openxr-sdk-build/include/openxr/CMakeFi
 libvr/CMakeFiles/test_bpm.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=55 "Built target test_bpm"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=53 "Built target test_bpm"
 .PHONY : libvr/CMakeFiles/test_bpm.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_bpm.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_bpm.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_bpm.dir/rule
 
 # Convenience name for target.
@@ -648,14 +725,14 @@ libvr/CMakeFiles/test_file_updater.dir/all: _deps/openxr-sdk-build/include/openx
 libvr/CMakeFiles/test_file_updater.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=57,58 "Built target test_file_updater"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=55,56 "Built target test_file_updater"
 .PHONY : libvr/CMakeFiles/test_file_updater.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_file_updater.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_file_updater.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_file_updater.dir/rule
 
 # Convenience name for target.
@@ -676,14 +753,14 @@ libvr/CMakeFiles/test_happy_eyeballs.dir/all: _deps/openxr-sdk-build/include/ope
 libvr/CMakeFiles/test_happy_eyeballs.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=60,61 "Built target test_happy_eyeballs"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=58 "Built target test_happy_eyeballs"
 .PHONY : libvr/CMakeFiles/test_happy_eyeballs.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_happy_eyeballs.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_happy_eyeballs.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_happy_eyeballs.dir/rule
 
 # Convenience name for target.
@@ -704,14 +781,14 @@ libvr/CMakeFiles/test_ipc_util.dir/all: _deps/openxr-sdk-build/include/openxr/CM
 libvr/CMakeFiles/test_ipc_util.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=63 "Built target test_ipc_util"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=61 "Built target test_ipc_util"
 .PHONY : libvr/CMakeFiles/test_ipc_util.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_ipc_util.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_ipc_util.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_ipc_util.dir/rule
 
 # Convenience name for target.
@@ -732,14 +809,14 @@ libvr/CMakeFiles/test_media_playback.dir/all: _deps/openxr-sdk-build/include/ope
 libvr/CMakeFiles/test_media_playback.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=64,65 "Built target test_media_playback"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=62 "Built target test_media_playback"
 .PHONY : libvr/CMakeFiles/test_media_playback.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_media_playback.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_media_playback.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_media_playback.dir/rule
 
 # Convenience name for target.
@@ -760,14 +837,14 @@ libvr/CMakeFiles/test_scripting.dir/all: _deps/openxr-sdk-build/include/openxr/C
 libvr/CMakeFiles/test_scripting.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=77 "Built target test_scripting"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=74 "Built target test_scripting"
 .PHONY : libvr/CMakeFiles/test_scripting.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_scripting.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_scripting.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_scripting.dir/rule
 
 # Convenience name for target.
@@ -788,14 +865,14 @@ libvr/CMakeFiles/test_remaining_shared.dir/all: _deps/openxr-sdk-build/include/o
 libvr/CMakeFiles/test_remaining_shared.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=73 "Built target test_remaining_shared"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=70 "Built target test_remaining_shared"
 .PHONY : libvr/CMakeFiles/test_remaining_shared.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_remaining_shared.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_remaining_shared.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_remaining_shared.dir/rule
 
 # Convenience name for target.
@@ -816,14 +893,14 @@ libvr/CMakeFiles/test_3d_scene.dir/all: _deps/openxr-sdk-build/include/openxr/CM
 libvr/CMakeFiles/test_3d_scene.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=53,54 "Built target test_3d_scene"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=51,52 "Built target test_3d_scene"
 .PHONY : libvr/CMakeFiles/test_3d_scene.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_3d_scene.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_3d_scene.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_3d_scene.dir/rule
 
 # Convenience name for target.
@@ -844,14 +921,14 @@ libvr/CMakeFiles/test_plugin_image.dir/all: _deps/openxr-sdk-build/include/openx
 libvr/CMakeFiles/test_plugin_image.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=71,72 "Built target test_plugin_image"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=69 "Built target test_plugin_image"
 .PHONY : libvr/CMakeFiles/test_plugin_image.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_plugin_image.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 53
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_plugin_image.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_plugin_image.dir/rule
 
 # Convenience name for target.
@@ -872,14 +949,14 @@ libvr/CMakeFiles/test_plugin_alsa.dir/all: _deps/openxr-sdk-build/include/openxr
 libvr/CMakeFiles/test_plugin_alsa.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/depend
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=70 "Built target test_plugin_alsa"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=67,68 "Built target test_plugin_alsa"
 .PHONY : libvr/CMakeFiles/test_plugin_alsa.dir/all
 
 # Build rule for subdir invocation for target.
 libvr/CMakeFiles/test_plugin_alsa.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 51
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_plugin_alsa.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : libvr/CMakeFiles/test_plugin_alsa.dir/rule
 
 # Convenience name for target.
@@ -898,14 +975,14 @@ libvr/CMakeFiles/test_plugin_alsa.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/build.make _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/build.make _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target Experimental"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target Experimental"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/rule
 
 # Convenience name for target.
@@ -924,14 +1001,14 @@ _deps/openxr-sdk-build/CMakeFiles/Experimental.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/build.make _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/build.make _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target Nightly"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target Nightly"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/rule
 
 # Convenience name for target.
@@ -950,14 +1027,14 @@ _deps/openxr-sdk-build/CMakeFiles/Nightly.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/build.make _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/build.make _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target Continuous"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target Continuous"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/rule
 
 # Convenience name for target.
@@ -976,14 +1053,14 @@ _deps/openxr-sdk-build/CMakeFiles/Continuous.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyMemoryCheck"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyMemoryCheck"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/rule
 
 # Convenience name for target.
@@ -1002,14 +1079,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyMemoryCheck.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyStart"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyStart"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/rule
 
 # Convenience name for target.
@@ -1028,14 +1105,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyStart.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyUpdate"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyUpdate"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/rule
 
 # Convenience name for target.
@@ -1054,14 +1131,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyUpdate.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyConfigure"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyConfigure"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/rule
 
 # Convenience name for target.
@@ -1080,14 +1157,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyBuild"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyBuild"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/rule
 
 # Convenience name for target.
@@ -1106,14 +1183,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyBuild.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyTest"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/rule
 
 # Convenience name for target.
@@ -1132,14 +1209,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyTest.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyCoverage"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyCoverage"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/rule
 
 # Convenience name for target.
@@ -1158,14 +1235,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyCoverage.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlyMemCheck"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlyMemCheck"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/rule
 
 # Convenience name for target.
@@ -1184,14 +1261,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyMemCheck.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/build.make _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target NightlySubmit"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target NightlySubmit"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/rule
 
 # Convenience name for target.
@@ -1210,14 +1287,14 @@ _deps/openxr-sdk-build/CMakeFiles/NightlySubmit.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalStart"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalStart"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/rule
 
 # Convenience name for target.
@@ -1236,14 +1313,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalUpdate"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalUpdate"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/rule
 
 # Convenience name for target.
@@ -1262,14 +1339,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalUpdate.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalConfigure"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalConfigure"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/rule
 
 # Convenience name for target.
@@ -1288,14 +1365,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalConfigure.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalBuild"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalBuild"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/rule
 
 # Convenience name for target.
@@ -1314,14 +1391,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalBuild.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalTest"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/rule
 
 # Convenience name for target.
@@ -1340,14 +1417,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalTest.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalCoverage"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalCoverage"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/rule
 
 # Convenience name for target.
@@ -1366,14 +1443,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalCoverage.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalMemCheck"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalMemCheck"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/rule
 
 # Convenience name for target.
@@ -1392,14 +1469,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalMemCheck.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ExperimentalSubmit"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ExperimentalSubmit"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/rule
 
 # Convenience name for target.
@@ -1418,14 +1495,14 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalSubmit.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousStart"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousStart"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/rule
 
 # Convenience name for target.
@@ -1444,14 +1521,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousStart.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousUpdate"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousUpdate"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/rule
 
 # Convenience name for target.
@@ -1470,14 +1547,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousUpdate.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousConfigure"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousConfigure"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/rule
 
 # Convenience name for target.
@@ -1496,14 +1573,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousConfigure.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousBuild"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousBuild"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/rule
 
 # Convenience name for target.
@@ -1522,14 +1599,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousBuild.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousTest"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousTest"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/rule
 
 # Convenience name for target.
@@ -1548,14 +1625,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousTest.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousCoverage"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousCoverage"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/rule
 
 # Convenience name for target.
@@ -1574,14 +1651,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousCoverage.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousMemCheck"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousMemCheck"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/rule
 
 # Convenience name for target.
@@ -1600,14 +1677,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousMemCheck.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/build.make _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target ContinuousSubmit"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target ContinuousSubmit"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/rule
 
 # Convenience name for target.
@@ -1626,14 +1703,14 @@ _deps/openxr-sdk-build/CMakeFiles/ContinuousSubmit.dir/clean:
 _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/build.make _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/build.make _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target uninstall"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target uninstall"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/rule
 
 # Convenience name for target.
@@ -1652,14 +1729,14 @@ _deps/openxr-sdk-build/CMakeFiles/uninstall.dir/clean:
 _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/build.make _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/build.make _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target generate_openxr_header"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target generate_openxr_header"
 .PHONY : _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/rule
 
 # Convenience name for target.
@@ -1678,14 +1755,14 @@ _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/clea
 _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target xr_common_generated_files"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target xr_common_generated_files"
 .PHONY : _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/rule
 
 # Convenience name for target.
@@ -1704,14 +1781,14 @@ _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/clean:
 _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target xr_global_generated_files"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target xr_global_generated_files"
 .PHONY : _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/rule
 
 # Convenience name for target.
@@ -1731,14 +1808,14 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all: _deps/openxr
 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all: _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/all
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=41,42,43,44,45,46,47,48,49,50,51,52 "Built target openxr_loader"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=40,41,42,43,44,45,46,47,48,49,50 "Built target openxr_loader"
 .PHONY : _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 12
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 11
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/rule
 
 # Convenience name for target.
@@ -1757,14 +1834,14 @@ _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/clean:
 _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/all:
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/depend
 	$(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target libopenxr_loader.so.1.0"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target libopenxr_loader.so.1.0"
 .PHONY : _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/all
 
 # Build rule for subdir invocation for target.
 _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/rule
 
 # Convenience name for target.
@@ -1785,14 +1862,14 @@ obs-vr/CMakeFiles/obs-vr.dir/all: _deps/openxr-sdk-build/include/openxr/CMakeFil
 obs-vr/CMakeFiles/obs-vr.dir/all: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/all
 	$(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/depend
 	$(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=40 "Built target obs-vr"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=39 "Built target obs-vr"
 .PHONY : obs-vr/CMakeFiles/obs-vr.dir/all
 
 # Build rule for subdir invocation for target.
 obs-vr/CMakeFiles/obs-vr.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 52
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 50
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/CMakeFiles/obs-vr.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : obs-vr/CMakeFiles/obs-vr.dir/rule
 
 # Convenience name for target.
@@ -1812,14 +1889,14 @@ frontend/shared/CMakeFiles/vr_frontend_shared.dir/all: frontend/shared/CMakeFile
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/all: frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=96,97,98,99 "Built target vr_frontend_shared"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=95,96,97,98,99 "Built target vr_frontend_shared"
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 5
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared.dir/rule
 
 # Convenience name for target.
@@ -1838,14 +1915,14 @@ frontend/shared/CMakeFiles/vr_frontend_shared.dir/clean:
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/all:
 	$(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target vr_frontend_shared_autogen_timestamp_deps"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target vr_frontend_shared_autogen_timestamp_deps"
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/rule
 
 # Convenience name for target.
@@ -1864,14 +1941,14 @@ frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/clean:
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/all: frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=100 "Built target vr_frontend_shared_autogen"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=100 "Built target vr_frontend_shared_autogen"
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 1
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 1
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/rule
 
 # Convenience name for target.
@@ -1887,18 +1964,19 @@ frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/clean:
 # Target rules for target frontend/blueprint/CMakeFiles/vr_blueprint.dir
 
 # All Build rule for target.
+frontend/blueprint/CMakeFiles/vr_blueprint.dir/all: frontend/shared/CMakeFiles/vr_frontend_shared.dir/all
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/all: frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/all
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/all: frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=89,90,91,92,93,94 "Built target vr_blueprint"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=88,89,90,91,92,93,94 "Built target vr_blueprint"
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 13
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint.dir/rule
 
 # Convenience name for target.
@@ -1914,17 +1992,17 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/clean:
 # Target rules for target frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir
 
 # All Build rule for target.
-frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/all:
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/all: frontend/shared/CMakeFiles/vr_frontend_shared.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target vr_blueprint_autogen_timestamp_deps"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target vr_blueprint_autogen_timestamp_deps"
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/rule
 
 # Convenience name for target.
@@ -1943,14 +2021,14 @@ frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/clean:
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/all: frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/build.make frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=95 "Built target vr_blueprint_autogen"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target vr_blueprint_autogen"
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 1
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen.dir/rule
 
 # Convenience name for target.
@@ -1971,14 +2049,14 @@ frontend/active/CMakeFiles/vr_active.dir/all: frontend/active/CMakeFiles/vr_acti
 frontend/active/CMakeFiles/vr_active.dir/all: frontend/active/CMakeFiles/vr_active_autogen.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=80,81,82,83,84,85,86,87 "Built target vr_active"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=79,80,81,82,83,84,85,86 "Built target vr_active"
 .PHONY : frontend/active/CMakeFiles/vr_active.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/active/CMakeFiles/vr_active.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 15
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/active/CMakeFiles/vr_active.dir/rule
 
 # Convenience name for target.
@@ -1997,14 +2075,14 @@ frontend/active/CMakeFiles/vr_active.dir/clean:
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/all: frontend/shared/CMakeFiles/vr_frontend_shared.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build.make frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build.make frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num= "Built target vr_active_autogen_timestamp_deps"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num= "Built target vr_active_autogen_timestamp_deps"
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 5
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/rule
 
 # Convenience name for target.
@@ -2023,14 +2101,14 @@ frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/clean:
 frontend/active/CMakeFiles/vr_active_autogen.dir/all: frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/all
 	$(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen.dir/build.make frontend/active/CMakeFiles/vr_active_autogen.dir/depend
 	$(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen.dir/build.make frontend/active/CMakeFiles/vr_active_autogen.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=88 "Built target vr_active_autogen"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=87 "Built target vr_active_autogen"
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen.dir/all
 
 # Build rule for subdir invocation for target.
 frontend/active/CMakeFiles/vr_active_autogen.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 6
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 7
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active_autogen.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen.dir/rule
 
 # Convenience name for target.

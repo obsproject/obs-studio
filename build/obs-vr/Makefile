@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,14 +132,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles /home/subtomic/Documents/GitHub/VRobs-studio/build/obs-vr//CMakeFiles/progress.marks
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles /home/subtomic/Documents/GitHub/Neural-Studio/build/obs-vr//CMakeFiles/progress.marks
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/clean
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,22 +148,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 obs-vr/CMakeFiles/obs-vr.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/CMakeFiles/obs-vr.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 obs-vr/CMakeFiles/obs-vr.dir/rule
 .PHONY : obs-vr/CMakeFiles/obs-vr.dir/rule
 
 # Convenience name for target.
@@ -172,7 +172,7 @@ obs-vr: obs-vr/CMakeFiles/obs-vr.dir/rule
 
 # fast build rule for target.
 obs-vr/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/build
 .PHONY : obs-vr/fast
 
 main.o: main.cpp.o
@@ -180,7 +180,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -188,7 +188,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/main.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -196,7 +196,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/main.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f obs-vr/CMakeFiles/obs-vr.dir/build.make obs-vr/CMakeFiles/obs-vr.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 # Help Target
@@ -226,6 +226,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

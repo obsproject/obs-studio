@@ -1,9 +1,11 @@
 #include "NodeItem.h"
 #include <QPainter>
 #include <QGraphicsSceneMouseEvent>
+#include <QJsonObject>
+#include <QJsonArray>
 
 NodeItem::NodeItem(const QString &title, QGraphicsItem *parent)
-	: QGraphicsItem(parent),
+	: QGraphicsObject(parent),
 	  m_id(QUuid::createUuid()),
 	  m_title(title)
 {
@@ -61,11 +63,28 @@ void NodeItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 QVariant NodeItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
 	if (change == ItemPositionHasChanged) {
-		// In future: Notify connected links to update
-		// for (auto port : m_inputs) ...
-		// for (auto port : m_outputs) ...
+		// Sync 2D position to 3D Spatial Position (assuming Z=0 for now)
+		m_spatialPosition.setX(pos().x());
+		m_spatialPosition.setY(pos().y());
+		emitSpatialUpdate();
 	}
 	return QGraphicsItem::itemChange(change, value);
+}
+
+void NodeItem::emitSpatialUpdate()
+{
+	QJsonObject spatialData;
+	QJsonArray posArray = {m_spatialPosition.x(), m_spatialPosition.y(), m_spatialPosition.z()};
+	QJsonArray rotArray = {m_spatialRotation.scalar(), m_spatialRotation.x(), m_spatialRotation.y(),
+			       m_spatialRotation.z()};
+	QJsonArray scaleArray = {m_spatialScale.x(), m_spatialScale.y(), m_spatialScale.z()};
+
+	spatialData["position"] = posArray;
+	spatialData["rotation"] = rotArray;
+	spatialData["scale"] = scaleArray;
+
+	// Emit generic update
+	emit nodeUpdated(m_id.toString(), spatialData);
 }
 
 void NodeItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
@@ -77,4 +96,47 @@ void NodeItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
 	update();
 	QGraphicsItem::mouseReleaseEvent(event);
+}
+
+void NodeItem::addInputPort(const QString &name, PortDataType type)
+{
+	PortItem *port = new PortItem(this, PortType::Input, name, type);
+	m_inputs.push_back(port);
+	calculateLayout();
+}
+
+void NodeItem::addOutputPort(const QString &name, PortDataType type)
+{
+	PortItem *port = new PortItem(this, PortType::Output, name, type);
+	m_outputs.push_back(port);
+	calculateLayout();
+}
+
+void NodeItem::calculateLayout()
+{
+	// Simple vertical layout
+	const int headerHeight = 30;
+	const int portStep = 25;
+
+	int currentY = headerHeight + 10;
+
+	for (auto port : m_inputs) {
+		port->setPos(0, currentY); // Left edge
+		currentY += portStep;
+	}
+
+	// Reset for outputs, but maybe align right
+	currentY = headerHeight + 10;
+	for (auto port : m_outputs) {
+		port->setPos(m_width, currentY); // Right edge
+		currentY += portStep;
+	}
+
+	// Resize node if needed
+	int maxPorts = std::max(m_inputs.size(), m_outputs.size());
+	int neededHeight = headerHeight + 10 + (maxPorts * portStep) + 10;
+	if (neededHeight > m_height) {
+		m_height = neededHeight;
+		update();
+	}
 }

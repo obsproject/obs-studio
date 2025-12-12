@@ -1,0 +1,4 @@
+Name: ${PROJECT_NAME}
+Description: JSON for Modern C++
+Version: ${PROJECT_VERSION}
+Cflags: -I${CMAKE_INSTALL_FULL_INCLUDEDIR}

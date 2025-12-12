@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/test_scene_draw.dir/test_scene_draw.cpp.o -o test_scene_draw  -Wl,-rpath,/home/subtomic/Documents/GitHub/VRobs-studio/build_libvr/_deps/openxr-sdk-build/src/loader liblibvr.a /usr/lib/x86_64-linux-gnu/libvulkan.so -lavcodec -lavutil _deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32 

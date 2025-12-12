@@ -1,5 +1,5 @@
 libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c \
  /usr/include/stdc-predef.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -13,9 +13,7 @@ libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
  /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/obs-tiny-nv12-scale/tiny-nv12-scale.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/obs-tiny-nv12-scale/tiny-nv12-scale.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/types.h \
  /usr/include/x86_64-linux-gnu/bits/typesizes.h \

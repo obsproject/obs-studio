@@ -1,7 +1,7 @@
 libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_from_utf8.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/deps/libcaption/src/eia608_from_utf8.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/deps/libcaption/src/eia608_from_utf8.c \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/deps/libcaption/caption/utf8.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../deps/libcaption/caption/utf8.h \
  /usr/include/inttypes.h /usr/include/features.h \
  /usr/include/features-time64.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \

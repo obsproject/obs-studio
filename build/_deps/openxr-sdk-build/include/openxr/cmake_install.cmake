@@ -1,4 +1,4 @@
-# Install script for directory: /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr
+# Install script for directory: /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,12 +44,12 @@ endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Headers" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/openxr" TYPE FILE FILES
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h"
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h"
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform.h"
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_reflection.h"
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_reflection_structs.h"
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_reflection_parent_structs.h"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform.h"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_reflection.h"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_reflection_structs.h"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_reflection_parent_structs.h"
     )
 endif()
 

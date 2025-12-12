@@ -1,7 +1,7 @@
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/GraphSerializer.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/GraphSerializer.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qobjectdefs.h \
@@ -364,7 +364,7 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonarray.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonDocument \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsondocument.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsView \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsview.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
@@ -432,7 +432,8 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qnativeinterface.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsItem \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsitem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpainterpath.h \
@@ -444,12 +445,20 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/GraphSerializer.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qfont.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QUuid \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/quuid.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsObject \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QPainter \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpainter.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsSceneMouseEvent \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicssceneevent.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QVector3D \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvectornd.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QQuaternion \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qquaternion.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qgenericmatrix.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector3d.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector4d.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsPathItem \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QFile \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qfile.h \

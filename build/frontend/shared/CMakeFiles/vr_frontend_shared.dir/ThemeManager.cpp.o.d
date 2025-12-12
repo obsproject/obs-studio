@@ -1,7 +1,7 @@
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qchar.h \

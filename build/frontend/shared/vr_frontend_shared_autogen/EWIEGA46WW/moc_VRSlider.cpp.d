@@ -1,7 +1,7 @@
-/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRSlider.cpp: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRSlider.h \
-  /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/moc_predefs.h \
-  /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.h \
-  /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRCommon.h \
+/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRSlider.cpp: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRSlider.h \
+  /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/moc_predefs.h \
+  /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.h \
+  /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRCommon.h \
   /usr/include/alloca.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/asm-generic/errno.h \

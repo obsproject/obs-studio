@@ -1,6 +1,8 @@
 #include "NodeGraph.h"
 #include "NodeItem.h"
 #include "NodeRegistry.h"
+#include "VRClient.h"
+#include "VRProtocol.h"
 #include <QScrollBar>
 #include <QMenu>
 #include <QGraphicsSceneContextMenuEvent>
@@ -8,6 +10,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QContextMenuEvent>
 #include <cmath>
+#include <QJsonObject>
 
 NodeGraph::NodeGraph(QWidget *parent) : QGraphicsView(parent)
 {
@@ -27,11 +30,32 @@ NodeGraph::NodeGraph(QWidget *parent) : QGraphicsView(parent)
 	setBackgroundBrush(QBrush(QColor(30, 30, 30), Qt::CrossPattern));
 }
 
-void NodeGraph::addNode(const QString &title, int x, int y)
+void NodeGraph::addNode(const NodeDefinition &def, int x, int y)
 {
-	NodeItem *node = new NodeItem(title);
+	NodeItem *node = nullptr;
+	if (def.createFunc) {
+		node = def.createFunc();
+	} else {
+		node = new NodeItem(def.name);
+	}
+
 	node->setPos(x, y);
 	m_scene->addItem(node);
+
+	// Backend Wiring
+	QJsonObject args;
+	args["title"] = def.name;
+	args["id"] = node->id().toString(); // Use the actual UUID
+	args["x"] = x;
+	args["y"] = y;
+	args["label"] = def.name;
+	args["category"] = NodeRegistry::instance().categoryName(def.category);
+
+	VRClient::instance().sendCommand(QString::fromUtf8(VRProtocol::CMD_CREATE_NODE), args);
+
+	// Wiring Updates
+	connect(node, &NodeItem::nodeUpdated,
+		[](const QString &uuid, const QJsonObject &data) { VRClient::instance().updateNode(uuid, data); });
 }
 
 void NodeGraph::wheelEvent(QWheelEvent *event)
@@ -75,7 +99,7 @@ void NodeGraph::contextMenuEvent(QContextMenuEvent *event)
 			catMenu->addAction(nodeDef.name, [this, nodeDef, event]() {
 				QPoint pos = event->pos(); // View pos
 				QPointF scenePos = mapToScene(pos);
-				this->addNode(nodeDef.name, scenePos.x(), scenePos.y());
+				this->addNode(nodeDef, scenePos.x(), scenePos.y());
 			});
 		}
 	}

@@ -1,7 +1,7 @@
 libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/happy-eyeballs/happy-eyeballs.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/happy-eyeballs/happy-eyeballs.c \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/happy-eyeballs/happy-eyeballs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/happy-eyeballs/happy-eyeballs.h \
  /usr/include/x86_64-linux-gnu/sys/socket.h /usr/include/features.h \
  /usr/include/features-time64.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -32,8 +32,6 @@ libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -53,56 +51,44 @@ libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.o: \
  /usr/include/x86_64-linux-gnu/asm/sockios.h \
  /usr/include/asm-generic/sockios.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_osockaddr.h \
- /usr/include/x86_64-linux-gnu/bits/socket2.h /usr/include/unistd.h \
- /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
+ /usr/include/unistd.h /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
  /usr/include/x86_64-linux-gnu/bits/environments.h \
  /usr/include/x86_64-linux-gnu/bits/confname.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
- /usr/include/x86_64-linux-gnu/bits/unistd.h \
- /usr/include/x86_64-linux-gnu/bits/unistd-decl.h \
  /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/darray.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/c99defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/darray.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/c99defs.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /usr/include/stdlib.h /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /usr/include/strings.h /usr/include/stdlib.h \
+ /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
  /usr/include/x86_64-linux-gnu/bits/floatn.h \
  /usr/include/x86_64-linux-gnu/bits/floatn-common.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h /usr/include/assert.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/bmem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/base.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/assert.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/bmem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/base.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h /usr/include/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/dstr.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/platform.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/dstr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/platform.h \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/threading.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/threading.h \
  /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
  /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
@@ -117,7 +103,7 @@ libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/struct___jmp_buf_tag.h \
  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h \
  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/threading-posix.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/threading-posix.h \
  /usr/include/netdb.h /usr/include/netinet/in.h \
  /usr/include/x86_64-linux-gnu/bits/in.h /usr/include/rpc/netdb.h \
  /usr/include/x86_64-linux-gnu/bits/netdb.h

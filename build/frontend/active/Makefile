@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,14 +132,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active//CMakeFiles/progress.marks
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active//CMakeFiles/progress.marks
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/clean
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,22 +148,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 frontend/active/CMakeFiles/vr_active.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active.dir/rule
 .PHONY : frontend/active/CMakeFiles/vr_active.dir/rule
 
 # Convenience name for target.
@@ -172,12 +172,12 @@ vr_active: frontend/active/CMakeFiles/vr_active.dir/rule
 
 # fast build rule for target.
 vr_active/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/build
 .PHONY : vr_active/fast
 
 # Convenience name for target.
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/rule
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/rule
 
 # Convenience name for target.
@@ -186,12 +186,12 @@ vr_active_autogen_timestamp_deps: frontend/active/CMakeFiles/vr_active_autogen_t
 
 # fast build rule for target.
 vr_active_autogen_timestamp_deps/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build.make frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build.make frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build
 .PHONY : vr_active_autogen_timestamp_deps/fast
 
 # Convenience name for target.
 frontend/active/CMakeFiles/vr_active_autogen.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active_autogen.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/active/CMakeFiles/vr_active_autogen.dir/rule
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen.dir/rule
 
 # Convenience name for target.
@@ -200,7 +200,7 @@ vr_active_autogen: frontend/active/CMakeFiles/vr_active_autogen.dir/rule
 
 # fast build rule for target.
 vr_active_autogen/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen.dir/build.make frontend/active/CMakeFiles/vr_active_autogen.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active_autogen.dir/build.make frontend/active/CMakeFiles/vr_active_autogen.dir/build
 .PHONY : vr_active_autogen/fast
 
 AudioMixer.o: AudioMixer.cpp.o
@@ -208,7 +208,7 @@ AudioMixer.o: AudioMixer.cpp.o
 
 # target to build an object file
 AudioMixer.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o
 .PHONY : AudioMixer.cpp.o
 
 AudioMixer.i: AudioMixer.cpp.i
@@ -216,7 +216,7 @@ AudioMixer.i: AudioMixer.cpp.i
 
 # target to preprocess a source file
 AudioMixer.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.i
 .PHONY : AudioMixer.cpp.i
 
 AudioMixer.s: AudioMixer.cpp.s
@@ -224,7 +224,7 @@ AudioMixer.s: AudioMixer.cpp.s
 
 # target to generate assembly for a file
 AudioMixer.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.s
 .PHONY : AudioMixer.cpp.s
 
 CamModule.o: CamModule.cpp.o
@@ -232,7 +232,7 @@ CamModule.o: CamModule.cpp.o
 
 # target to build an object file
 CamModule.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o
 .PHONY : CamModule.cpp.o
 
 CamModule.i: CamModule.cpp.i
@@ -240,7 +240,7 @@ CamModule.i: CamModule.cpp.i
 
 # target to preprocess a source file
 CamModule.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.i
 .PHONY : CamModule.cpp.i
 
 CamModule.s: CamModule.cpp.s
@@ -248,7 +248,7 @@ CamModule.s: CamModule.cpp.s
 
 # target to generate assembly for a file
 CamModule.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.s
 .PHONY : CamModule.cpp.s
 
 ExtraModules.o: ExtraModules.cpp.o
@@ -256,7 +256,7 @@ ExtraModules.o: ExtraModules.cpp.o
 
 # target to build an object file
 ExtraModules.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o
 .PHONY : ExtraModules.cpp.o
 
 ExtraModules.i: ExtraModules.cpp.i
@@ -264,7 +264,7 @@ ExtraModules.i: ExtraModules.cpp.i
 
 # target to preprocess a source file
 ExtraModules.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.i
 .PHONY : ExtraModules.cpp.i
 
 ExtraModules.s: ExtraModules.cpp.s
@@ -272,7 +272,7 @@ ExtraModules.s: ExtraModules.cpp.s
 
 # target to generate assembly for a file
 ExtraModules.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.s
 .PHONY : ExtraModules.cpp.s
 
 MonitorGrid.o: MonitorGrid.cpp.o
@@ -280,7 +280,7 @@ MonitorGrid.o: MonitorGrid.cpp.o
 
 # target to build an object file
 MonitorGrid.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o
 .PHONY : MonitorGrid.cpp.o
 
 MonitorGrid.i: MonitorGrid.cpp.i
@@ -288,7 +288,7 @@ MonitorGrid.i: MonitorGrid.cpp.i
 
 # target to preprocess a source file
 MonitorGrid.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.i
 .PHONY : MonitorGrid.cpp.i
 
 MonitorGrid.s: MonitorGrid.cpp.s
@@ -296,7 +296,7 @@ MonitorGrid.s: MonitorGrid.cpp.s
 
 # target to generate assembly for a file
 MonitorGrid.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.s
 .PHONY : MonitorGrid.cpp.s
 
 MonitorWidget.o: MonitorWidget.cpp.o
@@ -304,7 +304,7 @@ MonitorWidget.o: MonitorWidget.cpp.o
 
 # target to build an object file
 MonitorWidget.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o
 .PHONY : MonitorWidget.cpp.o
 
 MonitorWidget.i: MonitorWidget.cpp.i
@@ -312,7 +312,7 @@ MonitorWidget.i: MonitorWidget.cpp.i
 
 # target to preprocess a source file
 MonitorWidget.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.i
 .PHONY : MonitorWidget.cpp.i
 
 MonitorWidget.s: MonitorWidget.cpp.s
@@ -320,7 +320,7 @@ MonitorWidget.s: MonitorWidget.cpp.s
 
 # target to generate assembly for a file
 MonitorWidget.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.s
 .PHONY : MonitorWidget.cpp.s
 
 MoreModules.o: MoreModules.cpp.o
@@ -328,7 +328,7 @@ MoreModules.o: MoreModules.cpp.o
 
 # target to build an object file
 MoreModules.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o
 .PHONY : MoreModules.cpp.o
 
 MoreModules.i: MoreModules.cpp.i
@@ -336,7 +336,7 @@ MoreModules.i: MoreModules.cpp.i
 
 # target to preprocess a source file
 MoreModules.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.i
 .PHONY : MoreModules.cpp.i
 
 MoreModules.s: MoreModules.cpp.s
@@ -344,7 +344,7 @@ MoreModules.s: MoreModules.cpp.s
 
 # target to generate assembly for a file
 MoreModules.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.s
 .PHONY : MoreModules.cpp.s
 
 SceneButtons.o: SceneButtons.cpp.o
@@ -352,7 +352,7 @@ SceneButtons.o: SceneButtons.cpp.o
 
 # target to build an object file
 SceneButtons.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o
 .PHONY : SceneButtons.cpp.o
 
 SceneButtons.i: SceneButtons.cpp.i
@@ -360,7 +360,7 @@ SceneButtons.i: SceneButtons.cpp.i
 
 # target to preprocess a source file
 SceneButtons.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.i
 .PHONY : SceneButtons.cpp.i
 
 SceneButtons.s: SceneButtons.cpp.s
@@ -368,7 +368,7 @@ SceneButtons.s: SceneButtons.cpp.s
 
 # target to generate assembly for a file
 SceneButtons.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.s
 .PHONY : SceneButtons.cpp.s
 
 ThreeDModule.o: ThreeDModule.cpp.o
@@ -376,7 +376,7 @@ ThreeDModule.o: ThreeDModule.cpp.o
 
 # target to build an object file
 ThreeDModule.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o
 .PHONY : ThreeDModule.cpp.o
 
 ThreeDModule.i: ThreeDModule.cpp.i
@@ -384,7 +384,7 @@ ThreeDModule.i: ThreeDModule.cpp.i
 
 # target to preprocess a source file
 ThreeDModule.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.i
 .PHONY : ThreeDModule.cpp.i
 
 ThreeDModule.s: ThreeDModule.cpp.s
@@ -392,7 +392,7 @@ ThreeDModule.s: ThreeDModule.cpp.s
 
 # target to generate assembly for a file
 ThreeDModule.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.s
 .PHONY : ThreeDModule.cpp.s
 
 VideoModule.o: VideoModule.cpp.o
@@ -400,7 +400,7 @@ VideoModule.o: VideoModule.cpp.o
 
 # target to build an object file
 VideoModule.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o
 .PHONY : VideoModule.cpp.o
 
 VideoModule.i: VideoModule.cpp.i
@@ -408,7 +408,7 @@ VideoModule.i: VideoModule.cpp.i
 
 # target to preprocess a source file
 VideoModule.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.i
 .PHONY : VideoModule.cpp.i
 
 VideoModule.s: VideoModule.cpp.s
@@ -416,7 +416,7 @@ VideoModule.s: VideoModule.cpp.s
 
 # target to generate assembly for a file
 VideoModule.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.s
 .PHONY : VideoModule.cpp.s
 
 main.o: main.cpp.o
@@ -424,7 +424,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/main.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -432,7 +432,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/main.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -440,7 +440,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/main.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 vr_active_autogen/mocs_compilation.o: vr_active_autogen/mocs_compilation.cpp.o
@@ -448,7 +448,7 @@ vr_active_autogen/mocs_compilation.o: vr_active_autogen/mocs_compilation.cpp.o
 
 # target to build an object file
 vr_active_autogen/mocs_compilation.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o
 .PHONY : vr_active_autogen/mocs_compilation.cpp.o
 
 vr_active_autogen/mocs_compilation.i: vr_active_autogen/mocs_compilation.cpp.i
@@ -456,7 +456,7 @@ vr_active_autogen/mocs_compilation.i: vr_active_autogen/mocs_compilation.cpp.i
 
 # target to preprocess a source file
 vr_active_autogen/mocs_compilation.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.i
 .PHONY : vr_active_autogen/mocs_compilation.cpp.i
 
 vr_active_autogen/mocs_compilation.s: vr_active_autogen/mocs_compilation.cpp.s
@@ -464,7 +464,7 @@ vr_active_autogen/mocs_compilation.s: vr_active_autogen/mocs_compilation.cpp.s
 
 # target to generate assembly for a file
 vr_active_autogen/mocs_compilation.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/active/CMakeFiles/vr_active.dir/build.make frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.s
 .PHONY : vr_active_autogen/mocs_compilation.cpp.s
 
 # Help Target
@@ -526,6 +526,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

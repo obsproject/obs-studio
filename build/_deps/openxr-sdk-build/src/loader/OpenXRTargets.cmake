@@ -54,7 +54,7 @@ unset(_cmake_expected_targets)
 add_library(OpenXR::openxr_loader SHARED IMPORTED)
 
 set_target_properties(OpenXR::openxr_loader PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include;/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/include"
+  INTERFACE_INCLUDE_DIRECTORIES "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include;/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/include"
   INTERFACE_LINK_LIBRARIES "Threads::Threads;OpenXR::headers"
 )
 
@@ -62,13 +62,13 @@ set_target_properties(OpenXR::openxr_loader PROPERTIES
 add_library(OpenXR::headers INTERFACE IMPORTED)
 
 set_target_properties(OpenXR::headers PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include"
+  INTERFACE_INCLUDE_DIRECTORIES "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include"
 )
 
 # Import target "OpenXR::openxr_loader" for configuration ""
 set_property(TARGET OpenXR::openxr_loader APPEND PROPERTY IMPORTED_CONFIGURATIONS NOCONFIG)
 set_target_properties(OpenXR::openxr_loader PROPERTIES
-  IMPORTED_LOCATION_NOCONFIG "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32"
+  IMPORTED_LOCATION_NOCONFIG "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32"
   IMPORTED_SONAME_NOCONFIG "libopenxr_loader.so.1"
   )
 

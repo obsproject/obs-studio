@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,14 +132,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src//CMakeFiles/progress.marks
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src//CMakeFiles/progress.marks
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/clean
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,22 +148,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/rule
 .PHONY : _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/rule
 
 # Convenience name for target.
@@ -172,12 +172,12 @@ xr_common_generated_files: _deps/openxr-sdk-build/src/CMakeFiles/xr_common_gener
 
 # fast build rule for target.
 xr_common_generated_files/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_common_generated_files.dir/build
 .PHONY : xr_common_generated_files/fast
 
 # Convenience name for target.
 _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/rule
 .PHONY : _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/rule
 
 # Convenience name for target.
@@ -186,7 +186,7 @@ xr_global_generated_files: _deps/openxr-sdk-build/src/CMakeFiles/xr_global_gener
 
 # fast build rule for target.
 xr_global_generated_files/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/build.make _deps/openxr-sdk-build/src/CMakeFiles/xr_global_generated_files.dir/build
 .PHONY : xr_global_generated_files/fast
 
 # Help Target
@@ -214,6 +214,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

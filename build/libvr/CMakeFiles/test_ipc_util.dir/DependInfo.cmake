@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_ipc_util.cpp" "libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o" "gcc" "libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o.d"
+  "/home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_ipc_util.cpp" "libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o" "gcc" "libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

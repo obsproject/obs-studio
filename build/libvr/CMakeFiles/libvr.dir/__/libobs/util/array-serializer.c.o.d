@@ -1,8 +1,8 @@
 libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/array-serializer.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libobs/util/array-serializer.c \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/darray.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/c99defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libobs/util/darray.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libobs/util/c99defs.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
@@ -36,8 +36,6 @@ libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -46,25 +44,19 @@ libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.o: \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /usr/include/stdlib.h /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /usr/include/strings.h /usr/include/stdlib.h \
+ /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
  /usr/include/x86_64-linux-gnu/bits/floatn.h \
  /usr/include/x86_64-linux-gnu/bits/floatn-common.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h /usr/include/assert.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/bmem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/base.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/assert.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libobs/util/bmem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libobs/util/base.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h /usr/include/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/array-serializer.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/serializer.h
+ /home/subtomic/Documents/GitHub/Neural-Studio/libobs/util/array-serializer.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libobs/util/serializer.h

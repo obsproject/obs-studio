@@ -1,8 +1,8 @@
 libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/obs-scripting/obs-scripting-logging.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/obs-scripting/obs-scripting-logging.c \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/obs-scripting/obs-scripting-internal.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/dstr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/obs-scripting/obs-scripting-internal.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/dstr.h \
  /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -15,11 +15,8 @@ libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.o: \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/c99defs.h \
+ /usr/include/strings.h /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/c99defs.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/types.h \
  /usr/include/x86_64-linux-gnu/bits/typesizes.h \
@@ -44,16 +41,14 @@ libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
  /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/bmem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/base.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/bmem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/base.h \
  /usr/include/wchar.h /usr/include/x86_64-linux-gnu/bits/floatn.h \
  /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
  /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
@@ -61,19 +56,14 @@ libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/callback/calldata.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/obs-scripting/obs-scripting.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-data.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/media-io/frame-rate.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-properties.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/platform.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/callback/calldata.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/obs-scripting/obs-scripting.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-data.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/media-io/frame-rate.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-properties.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/platform.h \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
- /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h
+ /usr/include/x86_64-linux-gnu/bits/stdio_lim.h

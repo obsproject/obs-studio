@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild
 
 # Utility rule file for openxr-sdk-populate.
 
@@ -77,60 +77,60 @@ CMakeFiles/openxr-sdk-populate-complete: openxr-sdk-populate-prefix/src/openxr-s
 CMakeFiles/openxr-sdk-populate-complete: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-build
 CMakeFiles/openxr-sdk-populate-complete: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-install
 CMakeFiles/openxr-sdk-populate-complete: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-test
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Completed 'openxr-sdk-populate'"
-	/usr/bin/cmake -E make_directory /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles
-	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate-complete
-	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-done
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Completed 'openxr-sdk-populate'"
+	/usr/bin/cmake -E make_directory /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles
+	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate-complete
+	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-done
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update:
 .PHONY : openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-build: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-configure
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "No build step for 'openxr-sdk-populate'"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "No build step for 'openxr-sdk-populate'"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-build
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-configure: openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-cfgcmd.txt
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-configure: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-patch
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "No configure step for 'openxr-sdk-populate'"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-configure
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "No configure step for 'openxr-sdk-populate'"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-configure
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-download: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-gitinfo.txt
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-download: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-mkdir
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Performing download step (git clone) for 'openxr-sdk-populate'"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps && /usr/bin/cmake -P /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-gitclone.cmake
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-download
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Performing download step (git clone) for 'openxr-sdk-populate'"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps && /usr/bin/cmake -P /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-gitclone.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-download
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-install: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "No install step for 'openxr-sdk-populate'"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-install
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "No install step for 'openxr-sdk-populate'"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-install
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-mkdir:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Creating directories for 'openxr-sdk-populate'"
-	/usr/bin/cmake -Dcfgdir= -P /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-mkdirs.cmake
-	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-mkdir
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Creating directories for 'openxr-sdk-populate'"
+	/usr/bin/cmake -Dcfgdir= -P /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-mkdirs.cmake
+	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-mkdir
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-patch: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-patch-info.txt
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-patch: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "No patch step for 'openxr-sdk-populate'"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "No patch step for 'openxr-sdk-populate'"
 	/usr/bin/cmake -E echo_append
-	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-patch
+	/usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-patch
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update:
 .PHONY : openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-test: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-install
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "No test step for 'openxr-sdk-populate'"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-test
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "No test step for 'openxr-sdk-populate'"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E echo_append
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-test
 
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update: openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-gitupdate.cmake
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update-info.txt
 openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-update: openxr-sdk-populate-prefix/src/openxr-sdk-populate-stamp/openxr-sdk-populate-download
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Performing update step for 'openxr-sdk-populate'"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src && /usr/bin/cmake -Dcan_fetch=YES -P /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-gitupdate.cmake
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Performing update step for 'openxr-sdk-populate'"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src && /usr/bin/cmake -Dcan_fetch=YES -P /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/openxr-sdk-populate-prefix/tmp/openxr-sdk-populate-gitupdate.cmake
 
 openxr-sdk-populate: CMakeFiles/openxr-sdk-populate
 openxr-sdk-populate: CMakeFiles/openxr-sdk-populate-complete
@@ -154,6 +154,6 @@ CMakeFiles/openxr-sdk-populate.dir/clean:
 .PHONY : CMakeFiles/openxr-sdk-populate.dir/clean
 
 CMakeFiles/openxr-sdk-populate.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-subbuild/CMakeFiles/openxr-sdk-populate.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : CMakeFiles/openxr-sdk-populate.dir/depend
 

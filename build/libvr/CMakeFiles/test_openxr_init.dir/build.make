@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Include any dependencies generated for this target.
 include libvr/CMakeFiles/test_openxr_init.dir/depend.make
@@ -70,18 +70,18 @@ include libvr/CMakeFiles/test_openxr_init.dir/progress.make
 include libvr/CMakeFiles/test_openxr_init.dir/flags.make
 
 libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o: libvr/CMakeFiles/test_openxr_init.dir/flags.make
-libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_openxr_init.cpp
+libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_openxr_init.cpp
 libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o: libvr/CMakeFiles/test_openxr_init.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o -MF CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o.d -o CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_openxr_init.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o -MF CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o.d -o CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_openxr_init.cpp
 
 libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_openxr_init.cpp > CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_openxr_init.cpp > CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.i
 
 libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_openxr_init.cpp -o CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_openxr_init.cpp -o CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.s
 
 # Object files for target test_openxr_init
 test_openxr_init_OBJECTS = \
@@ -95,19 +95,20 @@ libvr/test_openxr_init: libvr/CMakeFiles/test_openxr_init.dir/build.make
 libvr/test_openxr_init: libvr/liblibvr.a
 libvr/test_openxr_init: _deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32
 libvr/test_openxr_init: /usr/lib/x86_64-linux-gnu/libvulkan.so
+libvr/test_openxr_init: /usr/lib/x86_64-linux-gnu/libcuda.so
 libvr/test_openxr_init: libvr/CMakeFiles/test_openxr_init.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable test_openxr_init"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_openxr_init.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable test_openxr_init"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_openxr_init.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 libvr/CMakeFiles/test_openxr_init.dir/build: libvr/test_openxr_init
 .PHONY : libvr/CMakeFiles/test_openxr_init.dir/build
 
 libvr/CMakeFiles/test_openxr_init.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && $(CMAKE_COMMAND) -P CMakeFiles/test_openxr_init.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && $(CMAKE_COMMAND) -P CMakeFiles/test_openxr_init.dir/cmake_clean.cmake
 .PHONY : libvr/CMakeFiles/test_openxr_init.dir/clean
 
 libvr/CMakeFiles/test_openxr_init.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/libvr /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr/CMakeFiles/test_openxr_init.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/libvr /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr/CMakeFiles/test_openxr_init.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : libvr/CMakeFiles/test_openxr_init.dir/depend
 

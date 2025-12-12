@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Include any dependencies generated for this target.
 include frontend/active/CMakeFiles/vr_active.dir/depend.make
@@ -72,156 +72,156 @@ include frontend/active/CMakeFiles/vr_active.dir/flags.make
 frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
 frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o: frontend/active/vr_active_autogen/mocs_compilation.cpp
 frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o -MF CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o -MF CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o.d -o CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp > CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp > CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp -o CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/mocs_compilation.cpp -o CMakeFiles/vr_active.dir/vr_active_autogen/mocs_compilation.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/main.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/main.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/main.cpp
+frontend/active/CMakeFiles/vr_active.dir/main.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/main.cpp
 frontend/active/CMakeFiles/vr_active.dir/main.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/main.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/main.cpp.o -MF CMakeFiles/vr_active.dir/main.cpp.o.d -o CMakeFiles/vr_active.dir/main.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/main.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/main.cpp.o -MF CMakeFiles/vr_active.dir/main.cpp.o.d -o CMakeFiles/vr_active.dir/main.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/main.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/main.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/main.cpp > CMakeFiles/vr_active.dir/main.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/main.cpp > CMakeFiles/vr_active.dir/main.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/main.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/main.cpp -o CMakeFiles/vr_active.dir/main.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/main.cpp -o CMakeFiles/vr_active.dir/main.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorWidget.cpp
+frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorWidget.cpp
 frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o -MF CMakeFiles/vr_active.dir/MonitorWidget.cpp.o.d -o CMakeFiles/vr_active.dir/MonitorWidget.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorWidget.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.o -MF CMakeFiles/vr_active.dir/MonitorWidget.cpp.o.d -o CMakeFiles/vr_active.dir/MonitorWidget.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorWidget.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/MonitorWidget.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorWidget.cpp > CMakeFiles/vr_active.dir/MonitorWidget.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorWidget.cpp > CMakeFiles/vr_active.dir/MonitorWidget.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/MonitorWidget.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/MonitorWidget.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorWidget.cpp -o CMakeFiles/vr_active.dir/MonitorWidget.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorWidget.cpp -o CMakeFiles/vr_active.dir/MonitorWidget.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorGrid.cpp
+frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorGrid.cpp
 frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o -MF CMakeFiles/vr_active.dir/MonitorGrid.cpp.o.d -o CMakeFiles/vr_active.dir/MonitorGrid.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorGrid.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.o -MF CMakeFiles/vr_active.dir/MonitorGrid.cpp.o.d -o CMakeFiles/vr_active.dir/MonitorGrid.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorGrid.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/MonitorGrid.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorGrid.cpp > CMakeFiles/vr_active.dir/MonitorGrid.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorGrid.cpp > CMakeFiles/vr_active.dir/MonitorGrid.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/MonitorGrid.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/MonitorGrid.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MonitorGrid.cpp -o CMakeFiles/vr_active.dir/MonitorGrid.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MonitorGrid.cpp -o CMakeFiles/vr_active.dir/MonitorGrid.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/AudioMixer.cpp
+frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/AudioMixer.cpp
 frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o -MF CMakeFiles/vr_active.dir/AudioMixer.cpp.o.d -o CMakeFiles/vr_active.dir/AudioMixer.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/AudioMixer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.o -MF CMakeFiles/vr_active.dir/AudioMixer.cpp.o.d -o CMakeFiles/vr_active.dir/AudioMixer.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/AudioMixer.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/AudioMixer.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/AudioMixer.cpp > CMakeFiles/vr_active.dir/AudioMixer.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/AudioMixer.cpp > CMakeFiles/vr_active.dir/AudioMixer.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/AudioMixer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/AudioMixer.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/AudioMixer.cpp -o CMakeFiles/vr_active.dir/AudioMixer.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/AudioMixer.cpp -o CMakeFiles/vr_active.dir/AudioMixer.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/SceneButtons.cpp
+frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/SceneButtons.cpp
 frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o -MF CMakeFiles/vr_active.dir/SceneButtons.cpp.o.d -o CMakeFiles/vr_active.dir/SceneButtons.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/SceneButtons.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.o -MF CMakeFiles/vr_active.dir/SceneButtons.cpp.o.d -o CMakeFiles/vr_active.dir/SceneButtons.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/SceneButtons.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/SceneButtons.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/SceneButtons.cpp > CMakeFiles/vr_active.dir/SceneButtons.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/SceneButtons.cpp > CMakeFiles/vr_active.dir/SceneButtons.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/SceneButtons.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/SceneButtons.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/SceneButtons.cpp -o CMakeFiles/vr_active.dir/SceneButtons.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/SceneButtons.cpp -o CMakeFiles/vr_active.dir/SceneButtons.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/VideoModule.cpp
+frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/VideoModule.cpp
 frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o -MF CMakeFiles/vr_active.dir/VideoModule.cpp.o.d -o CMakeFiles/vr_active.dir/VideoModule.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/VideoModule.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.o -MF CMakeFiles/vr_active.dir/VideoModule.cpp.o.d -o CMakeFiles/vr_active.dir/VideoModule.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/VideoModule.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/VideoModule.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/VideoModule.cpp > CMakeFiles/vr_active.dir/VideoModule.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/VideoModule.cpp > CMakeFiles/vr_active.dir/VideoModule.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/VideoModule.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/VideoModule.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/VideoModule.cpp -o CMakeFiles/vr_active.dir/VideoModule.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/VideoModule.cpp -o CMakeFiles/vr_active.dir/VideoModule.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/CamModule.cpp
+frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/CamModule.cpp
 frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o -MF CMakeFiles/vr_active.dir/CamModule.cpp.o.d -o CMakeFiles/vr_active.dir/CamModule.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/CamModule.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.o -MF CMakeFiles/vr_active.dir/CamModule.cpp.o.d -o CMakeFiles/vr_active.dir/CamModule.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/CamModule.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/CamModule.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/CamModule.cpp > CMakeFiles/vr_active.dir/CamModule.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/CamModule.cpp > CMakeFiles/vr_active.dir/CamModule.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/CamModule.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/CamModule.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/CamModule.cpp -o CMakeFiles/vr_active.dir/CamModule.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/CamModule.cpp -o CMakeFiles/vr_active.dir/CamModule.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ThreeDModule.cpp
+frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ThreeDModule.cpp
 frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o -MF CMakeFiles/vr_active.dir/ThreeDModule.cpp.o.d -o CMakeFiles/vr_active.dir/ThreeDModule.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ThreeDModule.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.o -MF CMakeFiles/vr_active.dir/ThreeDModule.cpp.o.d -o CMakeFiles/vr_active.dir/ThreeDModule.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ThreeDModule.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/ThreeDModule.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ThreeDModule.cpp > CMakeFiles/vr_active.dir/ThreeDModule.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ThreeDModule.cpp > CMakeFiles/vr_active.dir/ThreeDModule.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/ThreeDModule.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/ThreeDModule.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ThreeDModule.cpp -o CMakeFiles/vr_active.dir/ThreeDModule.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ThreeDModule.cpp -o CMakeFiles/vr_active.dir/ThreeDModule.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ExtraModules.cpp
+frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ExtraModules.cpp
 frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o -MF CMakeFiles/vr_active.dir/ExtraModules.cpp.o.d -o CMakeFiles/vr_active.dir/ExtraModules.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ExtraModules.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.o -MF CMakeFiles/vr_active.dir/ExtraModules.cpp.o.d -o CMakeFiles/vr_active.dir/ExtraModules.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ExtraModules.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/ExtraModules.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ExtraModules.cpp > CMakeFiles/vr_active.dir/ExtraModules.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ExtraModules.cpp > CMakeFiles/vr_active.dir/ExtraModules.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/ExtraModules.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/ExtraModules.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/ExtraModules.cpp -o CMakeFiles/vr_active.dir/ExtraModules.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/ExtraModules.cpp -o CMakeFiles/vr_active.dir/ExtraModules.cpp.s
 
 frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o: frontend/active/CMakeFiles/vr_active.dir/flags.make
-frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MoreModules.cpp
+frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MoreModules.cpp
 frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o: frontend/active/CMakeFiles/vr_active.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o -MF CMakeFiles/vr_active.dir/MoreModules.cpp.o.d -o CMakeFiles/vr_active.dir/MoreModules.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MoreModules.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.o -MF CMakeFiles/vr_active.dir/MoreModules.cpp.o.d -o CMakeFiles/vr_active.dir/MoreModules.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MoreModules.cpp
 
 frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vr_active.dir/MoreModules.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MoreModules.cpp > CMakeFiles/vr_active.dir/MoreModules.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MoreModules.cpp > CMakeFiles/vr_active.dir/MoreModules.cpp.i
 
 frontend/active/CMakeFiles/vr_active.dir/MoreModules.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vr_active.dir/MoreModules.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active/MoreModules.cpp -o CMakeFiles/vr_active.dir/MoreModules.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active/MoreModules.cpp -o CMakeFiles/vr_active.dir/MoreModules.cpp.s
 
 # Object files for target vr_active
 vr_active_OBJECTS = \
@@ -255,22 +255,23 @@ frontend/active/vr_active: frontend/active/CMakeFiles/vr_active.dir/build.make
 frontend/active/vr_active: frontend/shared/libvr_frontend_shared.a
 frontend/active/vr_active: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
 frontend/active/vr_active: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
-frontend/active/vr_active: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 frontend/active/vr_active: /usr/lib/x86_64-linux-gnu/libGLX.so
 frontend/active/vr_active: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+frontend/active/vr_active: /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
+frontend/active/vr_active: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 frontend/active/vr_active: frontend/active/CMakeFiles/vr_active.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable vr_active"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vr_active.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable vr_active"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vr_active.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 frontend/active/CMakeFiles/vr_active.dir/build: frontend/active/vr_active
 .PHONY : frontend/active/CMakeFiles/vr_active.dir/build
 
 frontend/active/CMakeFiles/vr_active.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && $(CMAKE_COMMAND) -P CMakeFiles/vr_active.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && $(CMAKE_COMMAND) -P CMakeFiles/vr_active.dir/cmake_clean.cmake
 .PHONY : frontend/active/CMakeFiles/vr_active.dir/clean
 
 frontend/active/CMakeFiles/vr_active.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/CMakeFiles/vr_active.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/vr_active.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : frontend/active/CMakeFiles/vr_active.dir/depend
 

@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Utility rule file for vr_active_autogen_timestamp_deps.
 
@@ -66,11 +66,11 @@ include frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/compiler
 # Include the progress variables for this target.
 include frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/progress.make
 
-frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/qt6/libexec/moc
-frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
-frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
+frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/qt6/libexec/moc
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/qt6/libexec/uic
+frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
+frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps: frontend/shared/libvr_frontend_shared.a
 
 vr_active_autogen_timestamp_deps: frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps
@@ -82,10 +82,10 @@ frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build: vr_active
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/build
 
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && $(CMAKE_COMMAND) -P CMakeFiles/vr_active_autogen_timestamp_deps.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && $(CMAKE_COMMAND) -P CMakeFiles/vr_active_autogen_timestamp_deps.dir/cmake_clean.cmake
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/clean
 
 frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen_timestamp_deps.dir/depend
 

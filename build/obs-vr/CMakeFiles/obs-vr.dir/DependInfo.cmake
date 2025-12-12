@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/subtomic/Documents/GitHub/VRobs-studio/obs-vr/main.cpp" "obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o" "gcc" "obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o.d"
+  "/home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/main.cpp" "obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o" "gcc" "obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

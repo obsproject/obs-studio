@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Utility rule file for NightlyConfigure.
 
@@ -67,7 +67,7 @@ include _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/compiler_depend.m
 include _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/progress.make
 
 _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/ctest -D NightlyConfigure
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/ctest -D NightlyConfigure
 
 NightlyConfigure: _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure
 NightlyConfigure: _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/build.make
@@ -78,10 +78,10 @@ _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/build: NightlyConfigure
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/build
 
 _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && $(CMAKE_COMMAND) -P CMakeFiles/NightlyConfigure.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && $(CMAKE_COMMAND) -P CMakeFiles/NightlyConfigure.dir/cmake_clean.cmake
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/clean
 
 _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/NightlyConfigure.dir/depend
 

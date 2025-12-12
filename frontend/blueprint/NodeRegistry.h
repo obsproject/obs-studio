@@ -14,23 +14,19 @@ enum class NodeCategory {
     Effects,
     Filters,
     Audio,
-    ThreeD,
     ML,
     AI,
     IncomingStreams,
-    // Gaps
-    Photo,
-    Script,
-    Transitions,
-    Effects,
-    Filters,
     Broadcasting
 };
+
+class NodeItem;
 
 struct NodeDefinition {
     QString name;
     NodeCategory category;
     QString description;
+    std::function<NodeItem *()> createFunc;
 };
 
 class NodeRegistry
@@ -41,6 +37,7 @@ class NodeRegistry
     void registerNode(const NodeDefinition &def);
     std::vector<NodeDefinition> getNodesByCategory(NodeCategory cat) const;
     std::vector<NodeDefinition> getAllNodes() const;
+    const NodeDefinition *getNodeByName(const QString &name) const;
 
     QString categoryName(NodeCategory cat) const;
 

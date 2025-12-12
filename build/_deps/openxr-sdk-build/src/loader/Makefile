@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,14 +132,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader//CMakeFiles/progress.marks
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader//CMakeFiles/progress.marks
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/clean
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,22 +148,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/rule
 .PHONY : _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/rule
 
 # Convenience name for target.
@@ -172,12 +172,12 @@ openxr_loader: _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/ru
 
 # fast build rule for target.
 openxr_loader/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build
 .PHONY : openxr_loader/fast
 
 # Convenience name for target.
 _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/rule
 .PHONY : _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/rule
 
 # Convenience name for target.
@@ -186,7 +186,7 @@ libopenxr_loader.so.1.0: _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_
 
 # fast build rule for target.
 libopenxr_loader.so.1.0/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/libopenxr_loader.so.1.0.dir/build
 .PHONY : libopenxr_loader.so.1.0/fast
 
 __/common/filesystem_utils.o: __/common/filesystem_utils.cpp.o
@@ -194,7 +194,7 @@ __/common/filesystem_utils.o: __/common/filesystem_utils.cpp.o
 
 # target to build an object file
 __/common/filesystem_utils.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/filesystem_utils.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/filesystem_utils.cpp.o
 .PHONY : __/common/filesystem_utils.cpp.o
 
 __/common/filesystem_utils.i: __/common/filesystem_utils.cpp.i
@@ -202,7 +202,7 @@ __/common/filesystem_utils.i: __/common/filesystem_utils.cpp.i
 
 # target to preprocess a source file
 __/common/filesystem_utils.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/filesystem_utils.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/filesystem_utils.cpp.i
 .PHONY : __/common/filesystem_utils.cpp.i
 
 __/common/filesystem_utils.s: __/common/filesystem_utils.cpp.s
@@ -210,7 +210,7 @@ __/common/filesystem_utils.s: __/common/filesystem_utils.cpp.s
 
 # target to generate assembly for a file
 __/common/filesystem_utils.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/filesystem_utils.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/filesystem_utils.cpp.s
 .PHONY : __/common/filesystem_utils.cpp.s
 
 __/common/object_info.o: __/common/object_info.cpp.o
@@ -218,7 +218,7 @@ __/common/object_info.o: __/common/object_info.cpp.o
 
 # target to build an object file
 __/common/object_info.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_info.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_info.cpp.o
 .PHONY : __/common/object_info.cpp.o
 
 __/common/object_info.i: __/common/object_info.cpp.i
@@ -226,7 +226,7 @@ __/common/object_info.i: __/common/object_info.cpp.i
 
 # target to preprocess a source file
 __/common/object_info.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_info.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_info.cpp.i
 .PHONY : __/common/object_info.cpp.i
 
 __/common/object_info.s: __/common/object_info.cpp.s
@@ -234,7 +234,7 @@ __/common/object_info.s: __/common/object_info.cpp.s
 
 # target to generate assembly for a file
 __/common/object_info.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_info.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/common/object_info.cpp.s
 .PHONY : __/common/object_info.cpp.s
 
 __/external/jsoncpp/src/lib_json/json_reader.o: __/external/jsoncpp/src/lib_json/json_reader.cpp.o
@@ -242,7 +242,7 @@ __/external/jsoncpp/src/lib_json/json_reader.o: __/external/jsoncpp/src/lib_json
 
 # target to build an object file
 __/external/jsoncpp/src/lib_json/json_reader.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_reader.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_reader.cpp.o
 .PHONY : __/external/jsoncpp/src/lib_json/json_reader.cpp.o
 
 __/external/jsoncpp/src/lib_json/json_reader.i: __/external/jsoncpp/src/lib_json/json_reader.cpp.i
@@ -250,7 +250,7 @@ __/external/jsoncpp/src/lib_json/json_reader.i: __/external/jsoncpp/src/lib_json
 
 # target to preprocess a source file
 __/external/jsoncpp/src/lib_json/json_reader.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_reader.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_reader.cpp.i
 .PHONY : __/external/jsoncpp/src/lib_json/json_reader.cpp.i
 
 __/external/jsoncpp/src/lib_json/json_reader.s: __/external/jsoncpp/src/lib_json/json_reader.cpp.s
@@ -258,7 +258,7 @@ __/external/jsoncpp/src/lib_json/json_reader.s: __/external/jsoncpp/src/lib_json
 
 # target to generate assembly for a file
 __/external/jsoncpp/src/lib_json/json_reader.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_reader.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_reader.cpp.s
 .PHONY : __/external/jsoncpp/src/lib_json/json_reader.cpp.s
 
 __/external/jsoncpp/src/lib_json/json_value.o: __/external/jsoncpp/src/lib_json/json_value.cpp.o
@@ -266,7 +266,7 @@ __/external/jsoncpp/src/lib_json/json_value.o: __/external/jsoncpp/src/lib_json/
 
 # target to build an object file
 __/external/jsoncpp/src/lib_json/json_value.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_value.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_value.cpp.o
 .PHONY : __/external/jsoncpp/src/lib_json/json_value.cpp.o
 
 __/external/jsoncpp/src/lib_json/json_value.i: __/external/jsoncpp/src/lib_json/json_value.cpp.i
@@ -274,7 +274,7 @@ __/external/jsoncpp/src/lib_json/json_value.i: __/external/jsoncpp/src/lib_json/
 
 # target to preprocess a source file
 __/external/jsoncpp/src/lib_json/json_value.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_value.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_value.cpp.i
 .PHONY : __/external/jsoncpp/src/lib_json/json_value.cpp.i
 
 __/external/jsoncpp/src/lib_json/json_value.s: __/external/jsoncpp/src/lib_json/json_value.cpp.s
@@ -282,7 +282,7 @@ __/external/jsoncpp/src/lib_json/json_value.s: __/external/jsoncpp/src/lib_json/
 
 # target to generate assembly for a file
 __/external/jsoncpp/src/lib_json/json_value.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_value.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_value.cpp.s
 .PHONY : __/external/jsoncpp/src/lib_json/json_value.cpp.s
 
 __/external/jsoncpp/src/lib_json/json_writer.o: __/external/jsoncpp/src/lib_json/json_writer.cpp.o
@@ -290,7 +290,7 @@ __/external/jsoncpp/src/lib_json/json_writer.o: __/external/jsoncpp/src/lib_json
 
 # target to build an object file
 __/external/jsoncpp/src/lib_json/json_writer.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_writer.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_writer.cpp.o
 .PHONY : __/external/jsoncpp/src/lib_json/json_writer.cpp.o
 
 __/external/jsoncpp/src/lib_json/json_writer.i: __/external/jsoncpp/src/lib_json/json_writer.cpp.i
@@ -298,7 +298,7 @@ __/external/jsoncpp/src/lib_json/json_writer.i: __/external/jsoncpp/src/lib_json
 
 # target to preprocess a source file
 __/external/jsoncpp/src/lib_json/json_writer.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_writer.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_writer.cpp.i
 .PHONY : __/external/jsoncpp/src/lib_json/json_writer.cpp.i
 
 __/external/jsoncpp/src/lib_json/json_writer.s: __/external/jsoncpp/src/lib_json/json_writer.cpp.s
@@ -306,7 +306,7 @@ __/external/jsoncpp/src/lib_json/json_writer.s: __/external/jsoncpp/src/lib_json
 
 # target to generate assembly for a file
 __/external/jsoncpp/src/lib_json/json_writer.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_writer.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/external/jsoncpp/src/lib_json/json_writer.cpp.s
 .PHONY : __/external/jsoncpp/src/lib_json/json_writer.cpp.s
 
 __/xr_generated_dispatch_table_core.o: __/xr_generated_dispatch_table_core.c.o
@@ -314,7 +314,7 @@ __/xr_generated_dispatch_table_core.o: __/xr_generated_dispatch_table_core.c.o
 
 # target to build an object file
 __/xr_generated_dispatch_table_core.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/xr_generated_dispatch_table_core.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/xr_generated_dispatch_table_core.c.o
 .PHONY : __/xr_generated_dispatch_table_core.c.o
 
 __/xr_generated_dispatch_table_core.i: __/xr_generated_dispatch_table_core.c.i
@@ -322,7 +322,7 @@ __/xr_generated_dispatch_table_core.i: __/xr_generated_dispatch_table_core.c.i
 
 # target to preprocess a source file
 __/xr_generated_dispatch_table_core.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/xr_generated_dispatch_table_core.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/xr_generated_dispatch_table_core.c.i
 .PHONY : __/xr_generated_dispatch_table_core.c.i
 
 __/xr_generated_dispatch_table_core.s: __/xr_generated_dispatch_table_core.c.s
@@ -330,7 +330,7 @@ __/xr_generated_dispatch_table_core.s: __/xr_generated_dispatch_table_core.c.s
 
 # target to generate assembly for a file
 __/xr_generated_dispatch_table_core.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/xr_generated_dispatch_table_core.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/__/xr_generated_dispatch_table_core.c.s
 .PHONY : __/xr_generated_dispatch_table_core.c.s
 
 android_utilities.o: android_utilities.cpp.o
@@ -338,7 +338,7 @@ android_utilities.o: android_utilities.cpp.o
 
 # target to build an object file
 android_utilities.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/android_utilities.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/android_utilities.cpp.o
 .PHONY : android_utilities.cpp.o
 
 android_utilities.i: android_utilities.cpp.i
@@ -346,7 +346,7 @@ android_utilities.i: android_utilities.cpp.i
 
 # target to preprocess a source file
 android_utilities.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/android_utilities.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/android_utilities.cpp.i
 .PHONY : android_utilities.cpp.i
 
 android_utilities.s: android_utilities.cpp.s
@@ -354,7 +354,7 @@ android_utilities.s: android_utilities.cpp.s
 
 # target to generate assembly for a file
 android_utilities.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/android_utilities.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/android_utilities.cpp.s
 .PHONY : android_utilities.cpp.s
 
 api_layer_interface.o: api_layer_interface.cpp.o
@@ -362,7 +362,7 @@ api_layer_interface.o: api_layer_interface.cpp.o
 
 # target to build an object file
 api_layer_interface.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/api_layer_interface.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/api_layer_interface.cpp.o
 .PHONY : api_layer_interface.cpp.o
 
 api_layer_interface.i: api_layer_interface.cpp.i
@@ -370,7 +370,7 @@ api_layer_interface.i: api_layer_interface.cpp.i
 
 # target to preprocess a source file
 api_layer_interface.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/api_layer_interface.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/api_layer_interface.cpp.i
 .PHONY : api_layer_interface.cpp.i
 
 api_layer_interface.s: api_layer_interface.cpp.s
@@ -378,7 +378,7 @@ api_layer_interface.s: api_layer_interface.cpp.s
 
 # target to generate assembly for a file
 api_layer_interface.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/api_layer_interface.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/api_layer_interface.cpp.s
 .PHONY : api_layer_interface.cpp.s
 
 loader_core.o: loader_core.cpp.o
@@ -386,7 +386,7 @@ loader_core.o: loader_core.cpp.o
 
 # target to build an object file
 loader_core.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_core.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_core.cpp.o
 .PHONY : loader_core.cpp.o
 
 loader_core.i: loader_core.cpp.i
@@ -394,7 +394,7 @@ loader_core.i: loader_core.cpp.i
 
 # target to preprocess a source file
 loader_core.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_core.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_core.cpp.i
 .PHONY : loader_core.cpp.i
 
 loader_core.s: loader_core.cpp.s
@@ -402,7 +402,7 @@ loader_core.s: loader_core.cpp.s
 
 # target to generate assembly for a file
 loader_core.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_core.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_core.cpp.s
 .PHONY : loader_core.cpp.s
 
 loader_init_data.o: loader_init_data.cpp.o
@@ -410,7 +410,7 @@ loader_init_data.o: loader_init_data.cpp.o
 
 # target to build an object file
 loader_init_data.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.cpp.o
 .PHONY : loader_init_data.cpp.o
 
 loader_init_data.i: loader_init_data.cpp.i
@@ -418,7 +418,7 @@ loader_init_data.i: loader_init_data.cpp.i
 
 # target to preprocess a source file
 loader_init_data.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.cpp.i
 .PHONY : loader_init_data.cpp.i
 
 loader_init_data.s: loader_init_data.cpp.s
@@ -426,7 +426,7 @@ loader_init_data.s: loader_init_data.cpp.s
 
 # target to generate assembly for a file
 loader_init_data.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_init_data.cpp.s
 .PHONY : loader_init_data.cpp.s
 
 loader_instance.o: loader_instance.cpp.o
@@ -434,7 +434,7 @@ loader_instance.o: loader_instance.cpp.o
 
 # target to build an object file
 loader_instance.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_instance.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_instance.cpp.o
 .PHONY : loader_instance.cpp.o
 
 loader_instance.i: loader_instance.cpp.i
@@ -442,7 +442,7 @@ loader_instance.i: loader_instance.cpp.i
 
 # target to preprocess a source file
 loader_instance.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_instance.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_instance.cpp.i
 .PHONY : loader_instance.cpp.i
 
 loader_instance.s: loader_instance.cpp.s
@@ -450,7 +450,7 @@ loader_instance.s: loader_instance.cpp.s
 
 # target to generate assembly for a file
 loader_instance.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_instance.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_instance.cpp.s
 .PHONY : loader_instance.cpp.s
 
 loader_logger.o: loader_logger.cpp.o
@@ -458,7 +458,7 @@ loader_logger.o: loader_logger.cpp.o
 
 # target to build an object file
 loader_logger.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp.o
 .PHONY : loader_logger.cpp.o
 
 loader_logger.i: loader_logger.cpp.i
@@ -466,7 +466,7 @@ loader_logger.i: loader_logger.cpp.i
 
 # target to preprocess a source file
 loader_logger.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp.i
 .PHONY : loader_logger.cpp.i
 
 loader_logger.s: loader_logger.cpp.s
@@ -474,7 +474,7 @@ loader_logger.s: loader_logger.cpp.s
 
 # target to generate assembly for a file
 loader_logger.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger.cpp.s
 .PHONY : loader_logger.cpp.s
 
 loader_logger_recorders.o: loader_logger_recorders.cpp.o
@@ -482,7 +482,7 @@ loader_logger_recorders.o: loader_logger_recorders.cpp.o
 
 # target to build an object file
 loader_logger_recorders.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger_recorders.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger_recorders.cpp.o
 .PHONY : loader_logger_recorders.cpp.o
 
 loader_logger_recorders.i: loader_logger_recorders.cpp.i
@@ -490,7 +490,7 @@ loader_logger_recorders.i: loader_logger_recorders.cpp.i
 
 # target to preprocess a source file
 loader_logger_recorders.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger_recorders.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger_recorders.cpp.i
 .PHONY : loader_logger_recorders.cpp.i
 
 loader_logger_recorders.s: loader_logger_recorders.cpp.s
@@ -498,7 +498,7 @@ loader_logger_recorders.s: loader_logger_recorders.cpp.s
 
 # target to generate assembly for a file
 loader_logger_recorders.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger_recorders.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/loader_logger_recorders.cpp.s
 .PHONY : loader_logger_recorders.cpp.s
 
 manifest_file.o: manifest_file.cpp.o
@@ -506,7 +506,7 @@ manifest_file.o: manifest_file.cpp.o
 
 # target to build an object file
 manifest_file.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/manifest_file.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/manifest_file.cpp.o
 .PHONY : manifest_file.cpp.o
 
 manifest_file.i: manifest_file.cpp.i
@@ -514,7 +514,7 @@ manifest_file.i: manifest_file.cpp.i
 
 # target to preprocess a source file
 manifest_file.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/manifest_file.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/manifest_file.cpp.i
 .PHONY : manifest_file.cpp.i
 
 manifest_file.s: manifest_file.cpp.s
@@ -522,7 +522,7 @@ manifest_file.s: manifest_file.cpp.s
 
 # target to generate assembly for a file
 manifest_file.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/manifest_file.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/manifest_file.cpp.s
 .PHONY : manifest_file.cpp.s
 
 runtime_interface.o: runtime_interface.cpp.o
@@ -530,7 +530,7 @@ runtime_interface.o: runtime_interface.cpp.o
 
 # target to build an object file
 runtime_interface.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/runtime_interface.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/runtime_interface.cpp.o
 .PHONY : runtime_interface.cpp.o
 
 runtime_interface.i: runtime_interface.cpp.i
@@ -538,7 +538,7 @@ runtime_interface.i: runtime_interface.cpp.i
 
 # target to preprocess a source file
 runtime_interface.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/runtime_interface.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/runtime_interface.cpp.i
 .PHONY : runtime_interface.cpp.i
 
 runtime_interface.s: runtime_interface.cpp.s
@@ -546,7 +546,7 @@ runtime_interface.s: runtime_interface.cpp.s
 
 # target to generate assembly for a file
 runtime_interface.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/runtime_interface.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/runtime_interface.cpp.s
 .PHONY : runtime_interface.cpp.s
 
 xr_generated_loader.o: xr_generated_loader.cpp.o
@@ -554,7 +554,7 @@ xr_generated_loader.o: xr_generated_loader.cpp.o
 
 # target to build an object file
 xr_generated_loader.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/xr_generated_loader.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/xr_generated_loader.cpp.o
 .PHONY : xr_generated_loader.cpp.o
 
 xr_generated_loader.i: xr_generated_loader.cpp.i
@@ -562,7 +562,7 @@ xr_generated_loader.i: xr_generated_loader.cpp.i
 
 # target to preprocess a source file
 xr_generated_loader.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/xr_generated_loader.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/xr_generated_loader.cpp.i
 .PHONY : xr_generated_loader.cpp.i
 
 xr_generated_loader.s: xr_generated_loader.cpp.s
@@ -570,7 +570,7 @@ xr_generated_loader.s: xr_generated_loader.cpp.s
 
 # target to generate assembly for a file
 xr_generated_loader.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/xr_generated_loader.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/build.make _deps/openxr-sdk-build/src/loader/CMakeFiles/openxr_loader.dir/xr_generated_loader.cpp.s
 .PHONY : xr_generated_loader.cpp.s
 
 # Help Target
@@ -646,6 +646,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Utility rule file for vr_blueprint_autogen_timestamp_deps.
 
@@ -67,10 +67,10 @@ include frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/co
 include frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/progress.make
 
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/qt6/libexec/moc
-frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
-frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2
-frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/qt6/libexec/uic
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2
+frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps: frontend/shared/libvr_frontend_shared.a
 
 vr_blueprint_autogen_timestamp_deps: frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps
 vr_blueprint_autogen_timestamp_deps: frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build.make
@@ -81,10 +81,10 @@ frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build: vr_
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/build
 
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint && $(CMAKE_COMMAND) -P CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint && $(CMAKE_COMMAND) -P CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/cmake_clean.cmake
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/clean
 
 frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : frontend/blueprint/CMakeFiles/vr_blueprint_autogen_timestamp_deps.dir/depend
 

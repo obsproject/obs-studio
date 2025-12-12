@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Include any dependencies generated for this target.
 include libvr/CMakeFiles/test_ipc_util.dir/depend.make
@@ -70,18 +70,18 @@ include libvr/CMakeFiles/test_ipc_util.dir/progress.make
 include libvr/CMakeFiles/test_ipc_util.dir/flags.make
 
 libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o: libvr/CMakeFiles/test_ipc_util.dir/flags.make
-libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o: /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_ipc_util.cpp
+libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o: /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_ipc_util.cpp
 libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o: libvr/CMakeFiles/test_ipc_util.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o -MF CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o.d -o CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o -c /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_ipc_util.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o -MF CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o.d -o CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o -c /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_ipc_util.cpp
 
 libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.i"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_ipc_util.cpp > CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_ipc_util.cpp > CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.i
 
 libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.s"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/VRobs-studio/libvr/test_ipc_util.cpp -o CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/subtomic/Documents/GitHub/Neural-Studio/libvr/test_ipc_util.cpp -o CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.s
 
 # Object files for target test_ipc_util
 test_ipc_util_OBJECTS = \
@@ -95,19 +95,20 @@ libvr/test_ipc_util: libvr/CMakeFiles/test_ipc_util.dir/build.make
 libvr/test_ipc_util: libvr/liblibvr.a
 libvr/test_ipc_util: /usr/lib/x86_64-linux-gnu/libvulkan.so
 libvr/test_ipc_util: _deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32
+libvr/test_ipc_util: /usr/lib/x86_64-linux-gnu/libcuda.so
 libvr/test_ipc_util: libvr/CMakeFiles/test_ipc_util.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable test_ipc_util"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_ipc_util.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable test_ipc_util"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_ipc_util.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 libvr/CMakeFiles/test_ipc_util.dir/build: libvr/test_ipc_util
 .PHONY : libvr/CMakeFiles/test_ipc_util.dir/build
 
 libvr/CMakeFiles/test_ipc_util.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr && $(CMAKE_COMMAND) -P CMakeFiles/test_ipc_util.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr && $(CMAKE_COMMAND) -P CMakeFiles/test_ipc_util.dir/cmake_clean.cmake
 .PHONY : libvr/CMakeFiles/test_ipc_util.dir/clean
 
 libvr/CMakeFiles/test_ipc_util.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/libvr /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr/CMakeFiles/test_ipc_util.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/libvr /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr/CMakeFiles/test_ipc_util.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : libvr/CMakeFiles/test_ipc_util.dir/depend
 

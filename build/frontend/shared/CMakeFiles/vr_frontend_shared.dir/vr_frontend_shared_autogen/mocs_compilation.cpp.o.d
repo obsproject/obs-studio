@@ -1,7 +1,7 @@
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/mocs_compilation.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRButton.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRButton.cpp \
  /usr/include/c++/13/memory /usr/include/c++/13/bits/memoryfwd.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -196,7 +196,7 @@ frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/moc
  /usr/include/c++/13/bits/ranges_algobase.h \
  /usr/include/c++/13/pstl/glue_memory_defs.h \
  /usr/include/c++/13/pstl/execution_defs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRButton.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRButton.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
@@ -383,12 +383,12 @@ frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/moc
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsizepolicy.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qcursor.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qbitmap.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRCommon.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRCommon.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QColor \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qcolor.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/ThemeManager.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/ThemeManager.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QFont \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qfont.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
@@ -411,8 +411,18 @@ frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/moc
  /usr/include/c++/13/bits/fs_dir.h /usr/include/c++/13/bits/fs_ops.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonDocument \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsondocument.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRFilePicker.cpp \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRFilePicker.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRClient.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRClient.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QLocalSocket \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qlocalsocket.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkglobal.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetwork-config.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkexports.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qabstractsocket.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRFilePicker.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRFilePicker.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QWidget \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qwidget.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLineEdit \
@@ -429,8 +439,8 @@ frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/moc
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayoutitem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRSlider.cpp \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRSlider.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRSlider.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/../../../../../frontend/shared/VRSlider.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QSlider \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qslider.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractslider.h

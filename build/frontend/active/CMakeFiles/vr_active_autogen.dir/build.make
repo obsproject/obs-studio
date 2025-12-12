@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Utility rule file for vr_active_autogen.
 
@@ -71,9 +71,9 @@ frontend/active/CMakeFiles/vr_active_autogen: frontend/active/vr_active_autogen/
 frontend/active/vr_active_autogen/timestamp: /usr/lib/qt6/libexec/moc
 frontend/active/vr_active_autogen/timestamp: /usr/lib/qt6/libexec/uic
 frontend/active/vr_active_autogen/timestamp: frontend/active/CMakeFiles/vr_active_autogen.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target vr_active"
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/cmake -E cmake_autogen /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/AutogenInfo.json ""
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/vr_active_autogen/timestamp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target vr_active"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/cmake -E cmake_autogen /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/AutogenInfo.json ""
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && /usr/bin/cmake -E touch /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/vr_active_autogen/timestamp
 
 vr_active_autogen: frontend/active/CMakeFiles/vr_active_autogen
 vr_active_autogen: frontend/active/vr_active_autogen/timestamp
@@ -85,10 +85,10 @@ frontend/active/CMakeFiles/vr_active_autogen.dir/build: vr_active_autogen
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen.dir/build
 
 frontend/active/CMakeFiles/vr_active_autogen.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active && $(CMAKE_COMMAND) -P CMakeFiles/vr_active_autogen.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active && $(CMAKE_COMMAND) -P CMakeFiles/vr_active_autogen.dir/cmake_clean.cmake
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen.dir/clean
 
 frontend/active/CMakeFiles/vr_active_autogen.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/frontend/active /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/frontend/active /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/CMakeFiles/vr_active_autogen.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : frontend/active/CMakeFiles/vr_active_autogen.dir/depend
 

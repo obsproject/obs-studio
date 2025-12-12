@@ -1,4 +1,8 @@
 #include "NodeRegistry.h"
+#include "NodeItem.h"
+#include "nodes/CameraNode.h"
+#include "nodes/VideoNode.h"
+#include "nodes/EffectNode.h"
 
 NodeRegistry &NodeRegistry::instance()
 {
@@ -8,38 +12,53 @@ NodeRegistry &NodeRegistry::instance()
 
 NodeRegistry::NodeRegistry()
 {
+	// Helper to reduce verbosity
+	auto reg = [this](const QString &name, NodeCategory cat, const QString &desc,
+			  std::function<NodeItem *()> func = nullptr) {
+		if (!func)
+			func = [name]() {
+				return new NodeItem(name);
+			};
+		registerNode({name, cat, desc, func});
+	};
+
 	// Register Default Nodes based on User's List
-	registerNode({"PTZ Camera", NodeCategory::Cameras, "Camera with Pan/Tilt/Zoom"});
-	registerNode({"Webcam", NodeCategory::Cameras, "Standard V4L2 Device"});
+	reg("PTZ Camera", NodeCategory::Cameras, "Camera with Pan/Tilt/Zoom",
+	    []() { return new CameraNode("PTZ Camera"); });
+	reg("Webcam", NodeCategory::Cameras, "Standard V4L2 Device", []() { return new CameraNode("Webcam"); });
 
-	registerNode({"Media File", NodeCategory::Video, "Video File Source"});
-	registerNode({"Playlist", NodeCategory::Video, "Sequential Video Playback"});
+	reg("Media File", NodeCategory::Video, "Video File Source", []() { return new VideoNode("Media File"); });
+	reg("Playlist", NodeCategory::Video, "Sequential Video Playback", []() { return new VideoNode("Playlist"); });
 
-	registerNode({"Image Slide", NodeCategory::Photo, "Single Image or Slideshow"});
+	reg("Image Slide", NodeCategory::Photo, "Single Image or Slideshow");
 
-	registerNode({"Audio Input", NodeCategory::Audio, "Mic or Aux Input"});
-	registerNode({"VST Plugin", NodeCategory::Audio, "Audio Effect Plugin"});
+	reg("Audio Input", NodeCategory::Audio, "Mic or Aux Input");
+	reg("VST Plugin", NodeCategory::Audio, "Audio Effect Plugin");
 
-	registerNode({"Lua Script", NodeCategory::Script, "Custom Logic Script"});
+	reg("Lua Script", NodeCategory::Script, "Custom Logic Script");
 
-	registerNode({"3D Mesh", NodeCategory::ThreeD, "OBJ/GLTF Model"});
-	registerNode({"Animation", NodeCategory::ThreeD, "3D Animation Controller"});
+	reg("3D Mesh", NodeCategory::ThreeD, "OBJ/GLTF Model");
+	reg("Animation", NodeCategory::ThreeD, "3D Animation Controller");
 
-	registerNode({"Stinger", NodeCategory::Transitions, "Video Transition"});
-	registerNode({"Crossfade", NodeCategory::Transitions, "Standard Mix"});
+	reg("Stinger", NodeCategory::Transitions, "Video Transition", []() { return new EffectNode("Stinger"); });
+	reg("Crossfade", NodeCategory::Transitions, "Standard Mix", []() { return new EffectNode("Crossfade"); });
 
-	registerNode({"Color Correction", NodeCategory::Effects, "LUTs and Adjustments"});
-	registerNode({"Chroma Key", NodeCategory::Filters, "Green Screen Removal"});
+	reg("Color Correction", NodeCategory::Effects, "LUTs and Adjustments",
+	    []() { return new EffectNode("Color Correction"); });
+	reg("Chroma Key", NodeCategory::Filters, "Green Screen Removal", []() { return new EffectNode("Chroma Key"); });
 
-	registerNode({"SuperRes", NodeCategory::ML, "AI Upscaling"});
-	registerNode({"Face Track", NodeCategory::ML, "Face Detection Coordinates"});
+	reg("SuperRes", NodeCategory::ML, "AI Upscaling", []() { return new EffectNode("SuperRes"); });
+	reg("Face Track", NodeCategory::ML, "Face Detection Coordinates",
+	    []() { return new EffectNode("Face Track"); });
 
-	registerNode({"Stable Diffusion", NodeCategory::AI, "Generative Image Stream"});
+	reg("Stable Diffusion", NodeCategory::AI, "Generative Image Stream",
+	    []() { return new CameraNode("Stable Diffusion"); }); // Generates video
 
-	registerNode({"RTMP Stream", NodeCategory::Broadcasting, "Streaming Output"});
-	registerNode({"Virtual Cam", NodeCategory::Broadcasting, "Loopback Output"});
+	reg("RTMP Stream", NodeCategory::Broadcasting, "Streaming Output");
+	reg("Virtual Cam", NodeCategory::Broadcasting, "Loopback Output");
 
-	registerNode({"SRT Input", NodeCategory::IncomingStreams, "Low Latency Stream In"});
+	reg("SRT Input", NodeCategory::IncomingStreams, "Low Latency Stream In",
+	    []() { return new VideoNode("SRT Input"); });
 }
 
 void NodeRegistry::registerNode(const NodeDefinition &def)
@@ -63,35 +82,44 @@ std::vector<NodeDefinition> NodeRegistry::getAllNodes() const
 	return m_definitions;
 }
 
+const NodeDefinition *NodeRegistry::getNodeByName(const QString &name) const
+{
+	for (const auto &def : m_definitions) {
+		if (def.name == name)
+			return &def;
+	}
+	return nullptr;
+}
+
 QString NodeRegistry::categoryName(NodeCategory cat) const
 {
 	switch (cat) {
 	case NodeCategory::Cameras:
-		return "Cameras + Automation";
+		return "Manager Cameras";
 	case NodeCategory::Video:
-		return "Video";
+		return "Manager Video";
 	case NodeCategory::Photo:
-		return "Photo";
+		return "Manager Photo";
 	case NodeCategory::Audio:
-		return "Audio";
+		return "Manager Audio";
 	case NodeCategory::Script:
-		return "Script";
+		return "Manager Script";
 	case NodeCategory::ThreeD:
-		return "3D Assets";
+		return "Manager 3D Assets";
 	case NodeCategory::Transitions:
-		return "Transitions";
+		return "Manager Transitions";
 	case NodeCategory::Effects:
-		return "Effects";
+		return "Manager Effects";
 	case NodeCategory::Filters:
-		return "Filters";
+		return "Manager Filters";
 	case NodeCategory::ML:
-		return "ML";
+		return "Manager ML";
 	case NodeCategory::AI:
-		return "AI";
+		return "Manager AI";
 	case NodeCategory::Broadcasting:
-		return "Broadcasting";
+		return "Manager Broadcasting";
 	case NodeCategory::IncomingStreams:
-		return "Incoming Streams";
+		return "Manager Incoming Streams";
 	default:
 		return "Unknown";
 	}

@@ -1,8 +1,8 @@
 libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/input/MediaSource.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/input/MediaSource.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/MediaSource.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/frame.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/MediaSource.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/frame.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -40,8 +40,6 @@ libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
  /usr/include/c++/13/type_traits /usr/include/c++/13/compare \
  /usr/include/c++/13/concepts /usr/include/c++/13/bits/stl_construct.h \
  /usr/include/c++/13/new /usr/include/c++/13/bits/exception.h \
@@ -104,28 +102,22 @@ libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
  /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h \
  /usr/include/c++/13/bits/std_abs.h /usr/include/c++/13/cstdio \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/c++/13/cerrno \
- /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
- /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
+ /usr/include/c++/13/cerrno /usr/include/errno.h \
+ /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
+ /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/13/bits/charconv.h \
@@ -196,8 +188,6 @@ libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/confname.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
- /usr/include/x86_64-linux-gnu/bits/unistd.h \
- /usr/include/x86_64-linux-gnu/bits/unistd-decl.h \
  /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
  /usr/include/linux/close_range.h /usr/include/syscall.h \
  /usr/include/x86_64-linux-gnu/sys/syscall.h \
@@ -215,20 +205,18 @@ libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
  /usr/include/c++/13/bits/vector.tcc /usr/include/c++/13/iostream \
  /usr/include/c++/13/istream /usr/include/c++/13/bits/istream.tcc \
  /usr/include/c++/13/cstring /usr/include/string.h /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/media-playback/media-playback/media-playback.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/c99defs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/bmem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/base.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/profiler.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/darray.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../shared/media-playback/media-playback/media-playback.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/c99defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/bmem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/base.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/profiler.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/darray.h \
  /usr/include/c++/13/stdlib.h /usr/include/assert.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/text-lookup.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/graphics.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/input.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/vec2.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/text-lookup.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/graphics.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/input.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/vec2.h \
  /usr/include/c++/13/math.h /usr/include/c++/13/cmath /usr/include/math.h \
  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
@@ -252,11 +240,11 @@ libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
  /usr/include/c++/13/tr1/poly_hermite.tcc \
  /usr/include/c++/13/tr1/poly_laguerre.tcc \
  /usr/include/c++/13/tr1/riemann_zeta.tcc \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/vec3.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/math-defs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/vec4.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/srgb.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/graphics/../util/sse-intrin.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/vec3.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/math-defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/vec4.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/srgb.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/graphics/../util/sse-intrin.h \
  /usr/include/simde/x86/sse2.h /usr/include/simde/x86/sse.h \
  /usr/include/simde/x86/mmx.h /usr/include/simde/simde-common.h \
  /usr/include/simde/hedley.h /usr/include/simde/simde-detect-clang.h \
@@ -271,31 +259,31 @@ libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
  /usr/include/fenv.h /usr/include/x86_64-linux-gnu/bits/fenv.h \
  /usr/include/c++/13/cfenv /usr/include/simde/check.h \
  /usr/include/simde/debug-trap.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/media-io/audio-io.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/media-io/media-io-defs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/media-io/../util/util_uint64.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/media-io/video-io.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/callback/signal.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/callback/calldata.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/callback/proc.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-config.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/config/obsconfig.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-defs.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-data.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/media-io/frame-rate.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-properties.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-interaction.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-missing-files.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-source.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-encoder.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-output.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-service.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-audio-controls.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-hotkey.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-hotkeys.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/media-playback/media-playback/media.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/media-playback/media-playback/decode.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/deque.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/media-io/audio-io.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/media-io/media-io-defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/media-io/../util/util_uint64.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/media-io/video-io.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/callback/signal.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/callback/calldata.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/callback/proc.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-config.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/config/obsconfig.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-data.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/media-io/frame-rate.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-properties.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-interaction.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-missing-files.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-source.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-encoder.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-output.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-service.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-audio-controls.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-hotkey.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-hotkeys.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../shared/media-playback/media-playback/media.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../shared/media-playback/media-playback/decode.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/deque.h \
  /usr/include/x86_64-linux-gnu/libavformat/avformat.h \
  /usr/include/x86_64-linux-gnu/libavcodec/codec_par.h \
  /usr/include/x86_64-linux-gnu/libavutil/avutil.h \
@@ -346,8 +334,8 @@ libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o: \
  /usr/include/x86_64-linux-gnu/libavcodec/version.h \
  /usr/include/x86_64-linux-gnu/libavcodec/codec_desc.h \
  /usr/include/x86_64-linux-gnu/libavcodec/codec_par.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/threading.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/threading-posix.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/threading.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/threading-posix.h \
  /usr/include/x86_64-linux-gnu/libswscale/swscale.h \
  /usr/include/x86_64-linux-gnu/libswscale/version_major.h \
  /usr/include/x86_64-linux-gnu/libswscale/version.h

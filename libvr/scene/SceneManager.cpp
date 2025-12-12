@@ -49,6 +49,17 @@ void SceneManager::SetTransform(uint32_t id, const Transform &transform)
 	}
 }
 
+void SceneManager::SetSemantics(uint32_t id, const SemanticData &data)
+{
+	std::lock_guard<std::mutex> lock(nodes_mutex);
+	for (auto &node : nodes) {
+		if (node.id == id) {
+			node.semantics = data;
+			break;
+		}
+	}
+}
+
 const std::vector<SceneNode> &SceneManager::GetNodes() const
 {
 	return nodes;
@@ -107,6 +118,18 @@ uint32_t SceneManager::AddLight(const Light &light)
 const std::vector<Light> &SceneManager::GetLights() const
 {
 	return lights;
+}
+
+void SceneManager::AddRelation(uint32_t sourceId, uint32_t targetId, RelationType type, float weight)
+{
+	std::lock_guard<std::mutex> lock(nodes_mutex);
+	SemanticEdge edge{sourceId, targetId, type, weight};
+	edges.push_back(edge);
+}
+
+const std::vector<SemanticEdge> &SceneManager::GetRelations() const
+{
+	return edges;
 }
 
 } // namespace libvr

@@ -4,8 +4,8 @@
 
 
 # Configuration directories and files
-SourceDirectory: /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src
-BuildDirectory: /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build
+SourceDirectory: /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src
+BuildDirectory: /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build
 
 # Where to place the cost data store
 CostDataFile: 
@@ -27,7 +27,7 @@ SubmitInactivityTimeout:
 NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
-ConfigureCommand: "/usr/bin/cmake" "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src"
+ConfigureCommand: "/usr/bin/cmake" "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src"
 MakeCommand: /usr/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
 DefaultCTestConfigurationType: Release
 

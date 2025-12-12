@@ -1,4 +1,4 @@
-# Install script for directory: /home/subtomic/Documents/GitHub/VRobs-studio/frontend
+# Install script for directory: /home/subtomic/Documents/GitHub/Neural-Studio/frontend
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,16 +44,16 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/cmake_install.cmake")
+  include("/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/cmake_install.cmake")
+  include("/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/active/cmake_install.cmake")
+  include("/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/active/cmake_install.cmake")
 endif()
 

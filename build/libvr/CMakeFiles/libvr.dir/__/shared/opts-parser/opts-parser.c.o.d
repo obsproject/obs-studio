@@ -1,5 +1,5 @@
 libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/opts-parser/opts-parser.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/opts-parser/opts-parser.c \
  /usr/include/stdc-predef.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h /usr/include/stdlib.h \
@@ -34,36 +34,28 @@ libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
  /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h /usr/include/string.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
  /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/bmem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/c99defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/bmem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/c99defs.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/base.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/base.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h /usr/include/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/dstr.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/opts-parser/opts-parser.h
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/dstr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/opts-parser/opts-parser.h

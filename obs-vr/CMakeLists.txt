@@ -6,6 +6,7 @@ add_executable(obs-vr
 
 target_link_libraries(obs-vr PRIVATE
     libvr
+    nlohmann_json::nlohmann_json
 )
 
 set_target_properties(obs-vr PROPERTIES

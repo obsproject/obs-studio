@@ -1,5 +1,6 @@
 #include "GraphSerializer.h"
 #include "NodeGraph.h"
+#include "NodeRegistry.h"
 #include "NodeItem.h"
 #include "ConnectionItem.h"
 #include "PortItem.h"
@@ -71,8 +72,17 @@ bool GraphSerializer::load(NodeGraph *graph, const QString &path)
 		QString title = nodeObj["title"].toString();
 		double x = nodeObj["x"].toDouble();
 		double y = nodeObj["y"].toDouble();
-		graph->addNode(title, x, y);
-		// Note: ID restoration isn't handled in addNode yet, would need setID method
+
+		// Lookup definition by title/name
+		const NodeDefinition *def = NodeRegistry::instance().getNodeByName(title);
+		if (def) {
+			graph->addNode(*def, x, y);
+			// TODO: Restore ID
+		} else {
+			// Fallback for unknown nodes?
+			// For now, create a dummy compatible definition or skip
+			qWarning() << "Unknown node type:" << title;
+		}
 	}
 
 	return true;

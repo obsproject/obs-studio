@@ -1,5 +1,5 @@
 obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/obs-vr/main.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/obs-vr/main.cpp \
  /usr/include/stdc-predef.h /usr/include/c++/13/iostream \
  /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
@@ -30,8 +30,6 @@ obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
  /usr/include/c++/13/exception /usr/include/c++/13/bits/exception.h \
  /usr/include/c++/13/bits/exception_ptr.h \
  /usr/include/c++/13/bits/exception_defines.h \
@@ -124,22 +122,16 @@ obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/sys/select.h \
  /usr/include/x86_64-linux-gnu/bits/select.h \
  /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h \
+ /usr/include/alloca.h /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/c++/13/bits/std_abs.h /usr/include/c++/13/cstdio \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/c++/13/cerrno \
- /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
- /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
+ /usr/include/c++/13/cerrno /usr/include/errno.h \
+ /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
+ /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/13/bits/charconv.h \
@@ -163,7 +155,7 @@ obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: \
  /usr/include/c++/13/bits/basic_ios.tcc \
  /usr/include/c++/13/bits/ostream.tcc /usr/include/c++/13/istream \
  /usr/include/c++/13/bits/istream.tcc \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/OpenXRRuntime.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/OpenXRRuntime.h \
  /usr/include/vulkan/vulkan.h /usr/include/vulkan/vk_platform.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
@@ -178,10 +170,10 @@ obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: \
  /usr/include/vk_video/vulkan_video_codec_h265std.h \
  /usr/include/vk_video/vulkan_video_codec_h264std_decode.h \
  /usr/include/vk_video/vulkan_video_codec_h265std_decode.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform_defines.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr_platform.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr/openxr.h \
  /usr/include/c++/13/vector /usr/include/c++/13/bits/stl_uninitialized.h \
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
@@ -212,8 +204,6 @@ obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/confname.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
- /usr/include/x86_64-linux-gnu/bits/unistd.h \
- /usr/include/x86_64-linux-gnu/bits/unistd-decl.h \
  /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
  /usr/include/linux/close_range.h /usr/include/syscall.h \
  /usr/include/x86_64-linux-gnu/sys/syscall.h \
@@ -238,20 +228,125 @@ obs-vr/CMakeFiles/obs-vr.dir/main.cpp.o: \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
  /usr/include/c++/13/bits/uniform_int_dist.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/IRenderEngine.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/frame.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/IRenderEngine.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/frame.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/pipeline/FrameRouter.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/IEncoderAdapter.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/IStitcher.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/ISuperResolutionAdapter.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/include/libvr/ipc/IPCServer.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/pipeline/FrameRouter.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/IEncoderAdapter.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/IStitcher.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/ISuperResolutionAdapter.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/SceneManager.h \
+ /usr/include/c++/13/mutex /usr/include/c++/13/bits/chrono.h \
+ /usr/include/c++/13/ratio /usr/include/c++/13/limits \
+ /usr/include/c++/13/ctime /usr/include/c++/13/bits/parse_numbers.h \
+ /usr/include/c++/13/bits/unique_lock.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/json.hpp \
+ /usr/include/c++/13/algorithm /usr/include/c++/13/bits/ranges_algo.h \
+ /usr/include/c++/13/pstl/glue_algorithm_defs.h \
+ /usr/include/c++/13/iterator /usr/include/c++/13/bits/stream_iterator.h \
+ /usr/include/c++/13/utility /usr/include/c++/13/bits/stl_relops.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/adl_serializer.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/abi_macros.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/conversions/from_json.hpp \
+ /usr/include/c++/13/forward_list /usr/include/c++/13/bits/forward_list.h \
+ /usr/include/c++/13/bits/forward_list.tcc /usr/include/c++/13/map \
+ /usr/include/c++/13/bits/stl_tree.h /usr/include/c++/13/bits/stl_map.h \
+ /usr/include/c++/13/bits/stl_multimap.h /usr/include/c++/13/valarray \
+ /usr/include/c++/13/cmath /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
+ /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
+ /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
+ /usr/include/x86_64-linux-gnu/bits/fp-fast.h \
+ /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h \
+ /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
+ /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h \
+ /usr/include/x86_64-linux-gnu/bits/iscanonical.h \
+ /usr/include/c++/13/bits/specfun.h /usr/include/c++/13/tr1/gamma.tcc \
+ /usr/include/c++/13/tr1/special_function_util.h \
+ /usr/include/c++/13/tr1/bessel_function.tcc \
+ /usr/include/c++/13/tr1/beta_function.tcc \
+ /usr/include/c++/13/tr1/ell_integral.tcc \
+ /usr/include/c++/13/tr1/exp_integral.tcc \
+ /usr/include/c++/13/tr1/hypergeometric.tcc \
+ /usr/include/c++/13/tr1/legendre_function.tcc \
+ /usr/include/c++/13/tr1/modified_bessel_func.tcc \
+ /usr/include/c++/13/tr1/poly_hermite.tcc \
+ /usr/include/c++/13/tr1/poly_laguerre.tcc \
+ /usr/include/c++/13/tr1/riemann_zeta.tcc \
+ /usr/include/c++/13/bits/valarray_array.h \
+ /usr/include/c++/13/bits/valarray_array.tcc \
+ /usr/include/c++/13/bits/valarray_before.h \
+ /usr/include/c++/13/bits/slice_array.h \
+ /usr/include/c++/13/bits/valarray_after.h \
+ /usr/include/c++/13/bits/gslice.h \
+ /usr/include/c++/13/bits/gslice_array.h \
+ /usr/include/c++/13/bits/mask_array.h \
+ /usr/include/c++/13/bits/indirect_array.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/exceptions.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/value_t.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/macro_scope.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/detected.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/void_t.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/thirdparty/hedley/hedley.hpp \
+ /usr/include/c++/13/version /usr/include/c++/13/cassert \
+ /usr/include/assert.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/string_escape.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/input/position_t.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/cpp_future.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/type_traits.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/iterators/iterator_traits.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/call_std/begin.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/call_std/end.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/json_fwd.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/string_concat.hpp \
+ /usr/include/c++/13/cstring /usr/include/string.h /usr/include/strings.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/identity_tag.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/std_fs.hpp \
+ /usr/include/c++/13/filesystem /usr/include/c++/13/bits/fs_fwd.h \
+ /usr/include/c++/13/bits/fs_path.h /usr/include/c++/13/locale \
+ /usr/include/c++/13/bits/locale_facets_nonio.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/time_members.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/messages_members.h \
+ /usr/include/libintl.h /usr/include/c++/13/bits/codecvt.h \
+ /usr/include/c++/13/bits/locale_facets_nonio.tcc \
+ /usr/include/c++/13/bits/locale_conv.h /usr/include/c++/13/iomanip \
+ /usr/include/c++/13/bits/quoted_string.h /usr/include/c++/13/sstream \
+ /usr/include/c++/13/bits/sstream.tcc /usr/include/c++/13/codecvt \
+ /usr/include/c++/13/bits/fs_dir.h /usr/include/c++/13/bits/fs_ops.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/conversions/to_json.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/iterators/iteration_proxy.hpp \
+ /usr/include/c++/13/ranges /usr/include/c++/13/optional \
+ /usr/include/c++/13/span \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/byte_container_with_subtype.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/hash.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/input/binary_reader.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/input/input_adapters.hpp \
+ /usr/include/c++/13/numeric /usr/include/c++/13/bits/stl_numeric.h \
+ /usr/include/c++/13/pstl/glue_numeric_defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/input/json_sax.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/input/lexer.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/meta/is_sax.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/input/parser.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/iterators/internal_iterator.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/iterators/primitive_iterator.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/iterators/iter_impl.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/iterators/json_reverse_iterator.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/json_custom_base_class.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/json_pointer.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/json_ref.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/output/binary_writer.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/output/output_adapters.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/output/serializer.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/conversions/to_chars.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/ordered_map.hpp \
+ /usr/include/c++/13/any \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/detail/macro_unscope.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-src/include/nlohmann/thirdparty/hedley/hedley_undef.hpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/include/libvr/ipc/IPCServer.h \
  /usr/include/c++/13/thread /usr/include/c++/13/stop_token \
  /usr/include/c++/13/atomic /usr/include/c++/13/bits/std_thread.h \
  /usr/include/c++/13/semaphore /usr/include/c++/13/bits/semaphore_base.h \
- /usr/include/c++/13/bits/chrono.h /usr/include/c++/13/ratio \
- /usr/include/c++/13/limits /usr/include/c++/13/ctime \
- /usr/include/c++/13/bits/parse_numbers.h \
  /usr/include/c++/13/bits/atomic_timed_wait.h \
  /usr/include/c++/13/bits/this_thread_sleep.h \
  /usr/include/x86_64-linux-gnu/sys/time.h /usr/include/semaphore.h \

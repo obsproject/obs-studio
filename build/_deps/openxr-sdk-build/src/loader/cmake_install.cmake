@@ -1,4 +1,4 @@
-# Install script for directory: /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/src/loader
+# Install script for directory: /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/src/loader
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -43,7 +43,7 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/openxr.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/openxr.pc")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Loader" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -59,8 +59,8 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Loader" OR NOT CMAKE_INSTALL_COMPONENT)
     endif()
   endforeach()
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32"
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1.0.32"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so.1"
     )
   foreach(file
       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libopenxr_loader.so.1.0.32"
@@ -76,14 +76,14 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Loader" OR NOT CMAKE_INSTALL_COMPONENT)
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Loader" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE SHARED_LIBRARY FILES "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/libopenxr_loader.so")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "CMakeConfigs" OR NOT CMAKE_INSTALL_COMPONENT)
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr/OpenXRTargets.cmake")
     file(DIFFERENT _cmake_export_file_changed FILES
          "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr/OpenXRTargets.cmake"
-         "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/CMakeFiles/Export/30f7f7b4fca785de0f5072a0d39157da/OpenXRTargets.cmake")
+         "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/CMakeFiles/Export/30f7f7b4fca785de0f5072a0d39157da/OpenXRTargets.cmake")
     if(_cmake_export_file_changed)
       file(GLOB _cmake_old_config_files "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr/OpenXRTargets-*.cmake")
       if(_cmake_old_config_files)
@@ -96,16 +96,16 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "CMakeConfigs" OR NOT CMAKE_INSTALL_COMPONEN
     endif()
     unset(_cmake_export_file_changed)
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr" TYPE FILE FILES "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/CMakeFiles/Export/30f7f7b4fca785de0f5072a0d39157da/OpenXRTargets.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr" TYPE FILE FILES "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/CMakeFiles/Export/30f7f7b4fca785de0f5072a0d39157da/OpenXRTargets.cmake")
   if(CMAKE_INSTALL_CONFIG_NAME MATCHES "^()$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr" TYPE FILE FILES "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/CMakeFiles/Export/30f7f7b4fca785de0f5072a0d39157da/OpenXRTargets-noconfig.cmake")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr" TYPE FILE FILES "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/CMakeFiles/Export/30f7f7b4fca785de0f5072a0d39157da/OpenXRTargets-noconfig.cmake")
   endif()
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "CMakeConfigs" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/openxr" TYPE FILE FILES
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/OpenXRConfig.cmake"
-    "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/loader/OpenXRConfigVersion.cmake"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/OpenXRConfig.cmake"
+    "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/loader/OpenXRConfigVersion.cmake"
     )
 endif()
 

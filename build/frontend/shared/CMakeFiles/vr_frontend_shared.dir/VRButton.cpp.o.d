@@ -1,7 +1,7 @@
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRButton.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRButton.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qpushbutton.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
@@ -382,12 +382,12 @@ frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsizepolicy.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qcursor.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qbitmap.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRCommon.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRCommon.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QColor \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qcolor.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/ThemeManager.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/ThemeManager.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QFont \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qfont.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \

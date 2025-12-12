@@ -1,5 +1,5 @@
-/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRFilePicker.cpp: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/shared/VRFilePicker.h \
-  /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared/vr_frontend_shared_autogen/moc_predefs.h \
+/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/EWIEGA46WW/moc_VRFilePicker.cpp: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRFilePicker.h \
+  /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared/vr_frontend_shared_autogen/moc_predefs.h \
   /usr/include/alloca.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/asm-generic/errno.h \

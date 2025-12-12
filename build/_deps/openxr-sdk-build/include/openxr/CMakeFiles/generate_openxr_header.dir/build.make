@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Utility rule file for generate_openxr_header.
 
@@ -74,10 +74,10 @@ _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/buil
 .PHONY : _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/build
 
 _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/include/openxr && $(CMAKE_COMMAND) -P CMakeFiles/generate_openxr_header.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/include/openxr && $(CMAKE_COMMAND) -P CMakeFiles/generate_openxr_header.dir/cmake_clean.cmake
 .PHONY : _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/clean
 
 _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include/openxr /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/include/openxr /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include/openxr /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/include/openxr /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : _deps/openxr-sdk-build/include/openxr/CMakeFiles/generate_openxr_header.dir/depend
 

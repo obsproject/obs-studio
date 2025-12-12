@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 # Utility rule file for ExperimentalStart.
 
@@ -67,7 +67,7 @@ include _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/compiler_depend.
 include _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/progress.make
 
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && /usr/bin/ctest -D ExperimentalStart
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && /usr/bin/ctest -D ExperimentalStart
 
 ExperimentalStart: _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart
 ExperimentalStart: _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/build.make
@@ -78,10 +78,10 @@ _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/build: ExperimentalStart
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/build
 
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build && $(CMAKE_COMMAND) -P CMakeFiles/ExperimentalStart.dir/cmake_clean.cmake
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build && $(CMAKE_COMMAND) -P CMakeFiles/ExperimentalStart.dir/cmake_clean.cmake
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/clean
 
 _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/VRobs-studio /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src /home/subtomic/Documents/GitHub/VRobs-studio/build /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/subtomic/Documents/GitHub/Neural-Studio /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src /home/subtomic/Documents/GitHub/Neural-Studio/build /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : _deps/openxr-sdk-build/CMakeFiles/ExperimentalStart.dir/depend
 

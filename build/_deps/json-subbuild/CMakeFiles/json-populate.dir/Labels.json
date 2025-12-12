@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/CMakeFiles/json-populate"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/CMakeFiles/json-populate.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/CMakeFiles/json-populate-complete.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-build.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-configure.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-download.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-install.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-patch.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-test.rule"
+		},
+		{
+			"file" : "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"json-populate"
+		],
+		"name" : "json-populate"
+	}
+}

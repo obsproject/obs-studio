@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,14 +132,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/shared//CMakeFiles/progress.marks
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/shared//CMakeFiles/progress.marks
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/clean
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,22 +148,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 frontend/shared/CMakeFiles/vr_frontend_shared.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared.dir/rule
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared.dir/rule
 
 # Convenience name for target.
@@ -172,12 +172,12 @@ vr_frontend_shared: frontend/shared/CMakeFiles/vr_frontend_shared.dir/rule
 
 # fast build rule for target.
 vr_frontend_shared/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/build
 .PHONY : vr_frontend_shared/fast
 
 # Convenience name for target.
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/rule
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/rule
 
 # Convenience name for target.
@@ -186,12 +186,12 @@ vr_frontend_shared_autogen_timestamp_deps: frontend/shared/CMakeFiles/vr_fronten
 
 # fast build rule for target.
 vr_frontend_shared_autogen_timestamp_deps/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen_timestamp_deps.dir/build
 .PHONY : vr_frontend_shared_autogen_timestamp_deps/fast
 
 # Convenience name for target.
 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/rule
 .PHONY : frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/rule
 
 # Convenience name for target.
@@ -200,7 +200,7 @@ vr_frontend_shared_autogen: frontend/shared/CMakeFiles/vr_frontend_shared_autoge
 
 # fast build rule for target.
 vr_frontend_shared_autogen/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared_autogen.dir/build
 .PHONY : vr_frontend_shared_autogen/fast
 
 ThemeManager.o: ThemeManager.cpp.o
@@ -208,7 +208,7 @@ ThemeManager.o: ThemeManager.cpp.o
 
 # target to build an object file
 ThemeManager.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.o
 .PHONY : ThemeManager.cpp.o
 
 ThemeManager.i: ThemeManager.cpp.i
@@ -216,7 +216,7 @@ ThemeManager.i: ThemeManager.cpp.i
 
 # target to preprocess a source file
 ThemeManager.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.i
 .PHONY : ThemeManager.cpp.i
 
 ThemeManager.s: ThemeManager.cpp.s
@@ -224,7 +224,7 @@ ThemeManager.s: ThemeManager.cpp.s
 
 # target to generate assembly for a file
 ThemeManager.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/ThemeManager.cpp.s
 .PHONY : ThemeManager.cpp.s
 
 VRButton.o: VRButton.cpp.o
@@ -232,7 +232,7 @@ VRButton.o: VRButton.cpp.o
 
 # target to build an object file
 VRButton.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.o
 .PHONY : VRButton.cpp.o
 
 VRButton.i: VRButton.cpp.i
@@ -240,7 +240,7 @@ VRButton.i: VRButton.cpp.i
 
 # target to preprocess a source file
 VRButton.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.i
 .PHONY : VRButton.cpp.i
 
 VRButton.s: VRButton.cpp.s
@@ -248,15 +248,39 @@ VRButton.s: VRButton.cpp.s
 
 # target to generate assembly for a file
 VRButton.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRButton.cpp.s
 .PHONY : VRButton.cpp.s
+
+VRClient.o: VRClient.cpp.o
+.PHONY : VRClient.o
+
+# target to build an object file
+VRClient.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.o
+.PHONY : VRClient.cpp.o
+
+VRClient.i: VRClient.cpp.i
+.PHONY : VRClient.i
+
+# target to preprocess a source file
+VRClient.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.i
+.PHONY : VRClient.cpp.i
+
+VRClient.s: VRClient.cpp.s
+.PHONY : VRClient.s
+
+# target to generate assembly for a file
+VRClient.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRClient.cpp.s
+.PHONY : VRClient.cpp.s
 
 VRFilePicker.o: VRFilePicker.cpp.o
 .PHONY : VRFilePicker.o
 
 # target to build an object file
 VRFilePicker.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.o
 .PHONY : VRFilePicker.cpp.o
 
 VRFilePicker.i: VRFilePicker.cpp.i
@@ -264,7 +288,7 @@ VRFilePicker.i: VRFilePicker.cpp.i
 
 # target to preprocess a source file
 VRFilePicker.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.i
 .PHONY : VRFilePicker.cpp.i
 
 VRFilePicker.s: VRFilePicker.cpp.s
@@ -272,7 +296,7 @@ VRFilePicker.s: VRFilePicker.cpp.s
 
 # target to generate assembly for a file
 VRFilePicker.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRFilePicker.cpp.s
 .PHONY : VRFilePicker.cpp.s
 
 VRSlider.o: VRSlider.cpp.o
@@ -280,7 +304,7 @@ VRSlider.o: VRSlider.cpp.o
 
 # target to build an object file
 VRSlider.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.o
 .PHONY : VRSlider.cpp.o
 
 VRSlider.i: VRSlider.cpp.i
@@ -288,7 +312,7 @@ VRSlider.i: VRSlider.cpp.i
 
 # target to preprocess a source file
 VRSlider.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.i
 .PHONY : VRSlider.cpp.i
 
 VRSlider.s: VRSlider.cpp.s
@@ -296,7 +320,7 @@ VRSlider.s: VRSlider.cpp.s
 
 # target to generate assembly for a file
 VRSlider.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/VRSlider.cpp.s
 .PHONY : VRSlider.cpp.s
 
 vr_frontend_shared_autogen/mocs_compilation.o: vr_frontend_shared_autogen/mocs_compilation.cpp.o
@@ -304,7 +328,7 @@ vr_frontend_shared_autogen/mocs_compilation.o: vr_frontend_shared_autogen/mocs_c
 
 # target to build an object file
 vr_frontend_shared_autogen/mocs_compilation.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.o
 .PHONY : vr_frontend_shared_autogen/mocs_compilation.cpp.o
 
 vr_frontend_shared_autogen/mocs_compilation.i: vr_frontend_shared_autogen/mocs_compilation.cpp.i
@@ -312,7 +336,7 @@ vr_frontend_shared_autogen/mocs_compilation.i: vr_frontend_shared_autogen/mocs_c
 
 # target to preprocess a source file
 vr_frontend_shared_autogen/mocs_compilation.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.i
 .PHONY : vr_frontend_shared_autogen/mocs_compilation.cpp.i
 
 vr_frontend_shared_autogen/mocs_compilation.s: vr_frontend_shared_autogen/mocs_compilation.cpp.s
@@ -320,7 +344,7 @@ vr_frontend_shared_autogen/mocs_compilation.s: vr_frontend_shared_autogen/mocs_c
 
 # target to generate assembly for a file
 vr_frontend_shared_autogen/mocs_compilation.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f frontend/shared/CMakeFiles/vr_frontend_shared.dir/build.make frontend/shared/CMakeFiles/vr_frontend_shared.dir/vr_frontend_shared_autogen/mocs_compilation.cpp.s
 .PHONY : vr_frontend_shared_autogen/mocs_compilation.cpp.s
 
 # Help Target
@@ -344,6 +368,9 @@ help:
 	@echo "... VRButton.o"
 	@echo "... VRButton.i"
 	@echo "... VRButton.s"
+	@echo "... VRClient.o"
+	@echo "... VRClient.i"
+	@echo "... VRClient.s"
 	@echo "... VRFilePicker.o"
 	@echo "... VRFilePicker.i"
 	@echo "... VRFilePicker.s"
@@ -364,6 +391,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

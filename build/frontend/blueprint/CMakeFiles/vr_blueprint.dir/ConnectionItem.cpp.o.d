@@ -1,7 +1,7 @@
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/ConnectionItem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/ConnectionItem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsPathItem \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsitem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
@@ -370,7 +370,7 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/ConnectionItem.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qrgba64.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qimage.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpixelformat.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsItem \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QBrush \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qbrush.h \

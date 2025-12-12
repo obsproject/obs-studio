@@ -1,7 +1,7 @@
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.cpp \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsView \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsview.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
@@ -414,7 +414,10 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qnativeinterface.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeItem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsItem \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsitem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpainterpath.h \
@@ -424,16 +427,40 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/NodeGraph.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpen.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QFont \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qfont.h \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QUuid \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/quuid.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsObject \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QPainter \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpainter.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsSceneMouseEvent \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicssceneevent.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/PortItem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeRegistry.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QVector3D \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvectornd.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QQuaternion \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qquaternion.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qgenericmatrix.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector3d.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector4d.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/shared/VRClient.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonobject.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonvalue.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcborvalue.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatetime.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcalendar.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qlocale.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcborcommon.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qregularexpression.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/quuid.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QLocalSocket \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qlocalsocket.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkglobal.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetwork-config.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkexports.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qabstractsocket.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol/VRProtocol.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QScrollBar \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qscrollbar.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractslider.h \

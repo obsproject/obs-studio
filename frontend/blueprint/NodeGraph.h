@@ -3,13 +3,14 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QWheelEvent>
+#include "NodeRegistry.h"
 
 class NodeGraph : public QGraphicsView
 {
     Q_OBJECT
       public:
     explicit NodeGraph(QWidget *parent = nullptr);
-    void addNode(const QString &title, int x, int y);
+    void addNode(const NodeDefinition &def, int x, int y);
     QGraphicsScene *scene() const
     {
         return m_scene;

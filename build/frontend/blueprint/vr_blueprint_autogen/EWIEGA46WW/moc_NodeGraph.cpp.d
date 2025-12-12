@@ -1,5 +1,6 @@
-/home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/EWIEGA46WW/moc_NodeGraph.cpp: /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.h \
-  /home/subtomic/Documents/GitHub/VRobs-studio/build/frontend/blueprint/vr_blueprint_autogen/moc_predefs.h \
+/home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/EWIEGA46WW/moc_NodeGraph.cpp: /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.h \
+  /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/moc_predefs.h \
+  /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.h \
   /usr/include/alloca.h \
   /usr/include/asm-generic/errno-base.h \
   /usr/include/asm-generic/errno.h \
@@ -288,6 +289,7 @@
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSize \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSizeF \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qalgorithms.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qanystringview.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydata.h \

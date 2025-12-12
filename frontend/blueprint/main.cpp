@@ -11,17 +11,44 @@
 #include <unistd.h>
 
 #include "NodeGraph.h"
+#include "NodeRegistry.h"
+#include "NodeItem.h"
+
+#include "PropertiesPanel.h"
+#include <QDockWidget>
 
 class BlueprintWindow : public QMainWindow {
+	Q_OBJECT // Needs Q_OBJECT for slots if used, but lambda is fine
 public:
 	BlueprintWindow()
 	{
 		setWindowTitle("VR Blueprint Editor");
-		resize(1024, 768);
+		resize(1280, 800);
 
 		// Main Graph View
 		nodeGraph = new NodeGraph(this);
 		setCentralWidget(nodeGraph);
+
+		// Properties Panel Dock
+		QDockWidget *dock = new QDockWidget("Spatial Properties", this);
+		dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+		propertiesPanel = new PropertiesPanel(dock);
+		dock->setWidget(propertiesPanel);
+		addDockWidget(Qt::RightDockWidgetArea, dock);
+
+		// Connect Selection
+		connect(nodeGraph->scene(), &QGraphicsScene::selectionChanged, this, [this]() {
+			if (!nodeGraph || !nodeGraph->scene())
+				return;
+			QList<QGraphicsItem *> selected = nodeGraph->scene()->selectedItems();
+			if (selected.isEmpty()) {
+				propertiesPanel->setNode(nullptr);
+			} else {
+				// Assuming single selection logic for properties
+				NodeItem *node = dynamic_cast<NodeItem *>(selected.first());
+				propertiesPanel->setNode(node);
+			}
+		});
 
 		statusLabel = new QLabel("Disconnected", this);
 		statusBar()->addWidget(statusLabel);
@@ -46,9 +73,17 @@ public:
 			// On connect, request scenes (Mock send for now)
 			// In a real Qt app, we'd use QSocketNotifier to read asynchronously.
 			// For this skeleton, we'll just mock adding some nodes to show it works.
-			nodeGraph->addNode("Camera Source", 0, 0);
-			nodeGraph->addNode("Filter: Color", 300, 50);
-			nodeGraph->addNode("Output: Stream", 600, 0);
+			const auto *camDef = NodeRegistry::instance().getNodeByName("PTZ Camera");
+			if (camDef)
+				nodeGraph->addNode(*camDef, 0, 0);
+
+			const auto *filterDef = NodeRegistry::instance().getNodeByName("Color Correction");
+			if (filterDef)
+				nodeGraph->addNode(*filterDef, 300, 50);
+
+			const auto *outDef = NodeRegistry::instance().getNodeByName("RTMP Stream");
+			if (outDef)
+				nodeGraph->addNode(*outDef, 600, 0);
 
 			// Close socket for now as we aren't maintaining persistent connection logic in this single-threaded stub
 			::close(sock);
@@ -60,7 +95,9 @@ public:
 private:
 	QLabel *statusLabel;
 	NodeGraph *nodeGraph;
+	PropertiesPanel *propertiesPanel;
 };
+#include "main.moc"
 
 int main(int argc, char *argv[])
 {

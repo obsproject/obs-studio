@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
 project(libvr)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Define the library
 find_package(Vulkan REQUIRED)
@@ -10,6 +11,8 @@ pkg_check_modules(SRT srt)
 if(SRT_FOUND)
     add_definitions(-DHAS_SRT)
 endif()
+
+find_package(CUDAToolkit REQUIRED)
 
 include(FetchContent)
 
@@ -37,8 +40,6 @@ endif()
 # OpenXR-SDK provides targets like 'openxr_loader'
 # It typically exports 'openxr_loader' target.
 
-<<<<<<< Updated upstream
-=======
 # Fetch nlohmann_json for flexible ML config
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
@@ -71,7 +72,6 @@ if(NOT TARGET wasmtime)
         set_property(TARGET wasmtime APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
     endif()
 endif()
->>>>>>> Stashed changes
 
 add_library(libvr STATIC
     core/vr_core.c
@@ -163,18 +163,17 @@ target_include_directories(libvr PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/external/cef_minimal
     
     # OBS Core Includes
-    ${CMAKE_SOURCE_DIR}/libobs
-    ${CMAKE_SOURCE_DIR}/shared/media-playback/media-playback
-    ${CMAKE_SOURCE_DIR}/shared/bpm
-    ${CMAKE_SOURCE_DIR}/deps/libcaption
-    ${CMAKE_SOURCE_DIR}/deps/libcaption/caption
-    ${CMAKE_SOURCE_DIR}/shared/file-updater/file-updater
-    ${CMAKE_SOURCE_DIR}/shared/happy-eyeballs
-    ${CMAKE_SOURCE_DIR}/shared/ipc-util/ipc-util
-    ${CMAKE_SOURCE_DIR}/shared/media-playback/media-playback
-    ${CMAKE_SOURCE_DIR}/shared/obs-scripting
-    ${CMAKE_SOURCE_DIR}/shared/opts-parser
-    ${CMAKE_SOURCE_DIR}/shared/obs-tiny-nv12-scale
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libobs
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/media-playback/media-playback
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/bpm
+    ${CMAKE_CURRENT_SOURCE_DIR}/../deps/libcaption
+    ${CMAKE_CURRENT_SOURCE_DIR}/../deps/libcaption/caption
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/file-updater/file-updater
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/happy-eyeballs
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/ipc-util/ipc-util
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/obs-scripting
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/opts-parser
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/obs-tiny-nv12-scale
     ${CMAKE_CURRENT_SOURCE_DIR}/shim
 )
 target_include_directories(libvr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -182,6 +181,7 @@ target_include_directories(libvr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(libvr PUBLIC
     Vulkan::Vulkan
     OpenXR::openxr_loader
+    CUDA::cuda_driver
     ${FFMPEG_LIBRARIES}
 )
 
@@ -224,6 +224,16 @@ add_executable(test_ml_init test_ml_init.cpp)
 target_link_libraries(test_ml_init PRIVATE libvr)
 target_include_directories(test_ml_init PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Test SR (Super Res)
+add_executable(test_sr test_sr.cpp)
+target_link_libraries(test_sr PRIVATE libvr)
+target_include_directories(test_ml_init PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Test Semantic Scene
+add_executable(test_semantic_scene test_semantic_scene.cpp)
+target_link_libraries(test_semantic_scene PRIVATE libvr)
+target_include_directories(test_semantic_scene PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Scene Test
 add_executable(test_scene_draw test_scene_draw.cpp)
 target_link_libraries(test_scene_draw PRIVATE libvr)
@@ -244,8 +254,8 @@ endif()
 
 if(ALSA_FOUND)
     target_sources(libvr PRIVATE
-        "${CMAKE_SOURCE_DIR}/plugins/linux-alsa/linux-alsa.c"
-        "${CMAKE_SOURCE_DIR}/plugins/linux-alsa/alsa-input.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/linux-alsa/linux-alsa.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/linux-alsa/alsa-input.c"
     )
     if (USE_ALSA_MOCK)
         target_sources(libvr PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/shim/alsa-mock.c")

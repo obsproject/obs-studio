@@ -1,5 +1,5 @@
 frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/main.cpp \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/main.cpp \
  /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QStatusBar \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstatusbar.h \
@@ -407,7 +407,7 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlayoutitem.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qboxlayout.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgridlayout.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/vr-protocol/VRProtocol.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/vr-protocol/VRProtocol.h \
  /usr/include/c++/13/iostream /usr/include/x86_64-linux-gnu/sys/socket.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h \
  /usr/include/x86_64-linux-gnu/bits/socket.h \
@@ -425,7 +425,7 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: \
  /usr/include/asm-generic/sockios.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_osockaddr.h \
  /usr/include/x86_64-linux-gnu/sys/un.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/frontend/blueprint/NodeGraph.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeGraph.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsView \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsview.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qpainter.h \
@@ -455,4 +455,55 @@ frontend/blueprint/CMakeFiles/vr_blueprint.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qsize.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSizeF \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
- /usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeRegistry.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/NodeItem.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsItem \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicsitem.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qpainterpath.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QBrush \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qbrush.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QPen \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qpen.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QFont \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qfont.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QUuid \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/quuid.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsObject \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QPainter \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qpainter.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsSceneMouseEvent \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgraphicssceneevent.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QVector3D \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvectornd.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QQuaternion \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qquaternion.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qgenericmatrix.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector3d.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvector4d.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PortItem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/frontend/blueprint/PropertiesPanel.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QWidget \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qwidget.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDoubleSpinBox \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qspinbox.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractspinbox.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qvalidator.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qregularexpression.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QComboBox \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qcombobox.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractitemdelegate.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstyleoption.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qslider.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractslider.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstyle.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabbar.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qrubberband.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qabstractitemmodel.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGroupBox \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qgroupbox.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDockWidget \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdockwidget.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/build/frontend/blueprint/vr_blueprint_autogen/include/main.moc

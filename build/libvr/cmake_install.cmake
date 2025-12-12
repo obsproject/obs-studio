@@ -1,4 +1,4 @@
-# Install script for directory: /home/subtomic/Documents/GitHub/VRobs-studio/libvr
+# Install script for directory: /home/subtomic/Documents/GitHub/Neural-Studio/libvr
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,10 @@ endif()
 # Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
   set(CMAKE_OBJDUMP "/usr/bin/objdump")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/json-build/cmake_install.cmake")
 endif()
 

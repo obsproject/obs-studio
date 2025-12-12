@@ -1,10 +1,10 @@
 libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/file-updater/file-updater/file-updater.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/file-updater/file-updater/file-updater.c \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/curl/curl-helper.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libvr/shim/curl/curl.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/threading.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/c99defs.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/curl/curl-helper.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/shim/curl/curl.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/threading.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/c99defs.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
@@ -38,8 +38,6 @@ libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.o:
  /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \
- /usr/include/x86_64-linux-gnu/bits/select2.h \
- /usr/include/x86_64-linux-gnu/bits/select-decl.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
  /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h \
  /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
@@ -62,8 +60,8 @@ libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.o:
  /usr/include/x86_64-linux-gnu/bits/types/struct___jmp_buf_tag.h \
  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h \
  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/threading-posix.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/platform.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/threading-posix.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/platform.h \
  /usr/include/stdio.h /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
@@ -74,26 +72,17 @@ libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.o:
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/floatn.h \
- /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/wchar.h \
+ /usr/include/x86_64-linux-gnu/bits/floatn-common.h /usr/include/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h \
- /usr/include/x86_64-linux-gnu/bits/wchar2.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/darray.h \
- /usr/include/string.h /usr/include/strings.h \
- /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
- /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
- /usr/include/stdlib.h /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/darray.h \
+ /usr/include/string.h /usr/include/strings.h /usr/include/stdlib.h \
+ /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h /usr/include/assert.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/bmem.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/base.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/util/dstr.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/obs-data.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/libobs/media-io/frame-rate.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/file-updater/file-updater/file-updater.h
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/assert.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/bmem.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/base.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/util/dstr.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/obs-data.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/libvr/../libobs/media-io/frame-rate.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/file-updater/file-updater/file-updater.h

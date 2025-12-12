@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,9 +132,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles /home/subtomic/Documents/GitHub/VRobs-studio/build//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles /home/subtomic/Documents/GitHub/Neural-Studio/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -238,6 +238,32 @@ test_ml_init: cmake_check_build_system
 test_ml_init/fast:
 	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/build
 .PHONY : test_ml_init/fast
+
+#=============================================================================
+# Target rules for targets named test_sr
+
+# Build rule for target.
+test_sr: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_sr
+.PHONY : test_sr
+
+# fast build rule for target.
+test_sr/fast:
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/build
+.PHONY : test_sr/fast
+
+#=============================================================================
+# Target rules for targets named test_semantic_scene
+
+# Build rule for target.
+test_semantic_scene: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_semantic_scene
+.PHONY : test_semantic_scene
+
+# fast build rule for target.
+test_semantic_scene/fast:
+	$(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/build
+.PHONY : test_semantic_scene/fast
 
 #=============================================================================
 # Target rules for targets named test_scene_draw
@@ -1065,6 +1091,8 @@ help:
 	@echo "... test_render_init"
 	@echo "... test_scene_draw"
 	@echo "... test_scripting"
+	@echo "... test_semantic_scene"
+	@echo "... test_sr"
 	@echo "... test_srt"
 	@echo "... vr_active"
 	@echo "... vr_blueprint"

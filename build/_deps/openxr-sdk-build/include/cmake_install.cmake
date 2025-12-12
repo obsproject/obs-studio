@@ -1,4 +1,4 @@
-# Install script for directory: /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/include
+# Install script for directory: /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/include
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,6 +44,6 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/include/openxr/cmake_install.cmake")
+  include("/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/include/openxr/cmake_install.cmake")
 endif()
 

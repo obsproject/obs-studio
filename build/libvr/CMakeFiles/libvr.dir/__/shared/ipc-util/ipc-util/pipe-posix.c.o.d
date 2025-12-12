@@ -1,7 +1,7 @@
 libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.o: \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/ipc-util/ipc-util/pipe-posix.c \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/ipc-util/ipc-util/pipe-posix.c \
  /usr/include/stdc-predef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/ipc-util/ipc-util/pipe.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/ipc-util/ipc-util/pipe.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
@@ -20,7 +20,7 @@ libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.o: \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
- /home/subtomic/Documents/GitHub/VRobs-studio/shared/ipc-util/ipc-util/pipe-posix.h \
+ /home/subtomic/Documents/GitHub/Neural-Studio/shared/ipc-util/ipc-util/pipe-posix.h \
  /usr/include/pthread.h /usr/include/sched.h \
  /usr/include/x86_64-linux-gnu/bits/types/time_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h \

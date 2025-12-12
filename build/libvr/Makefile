@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/VRobs-studio
+CMAKE_SOURCE_DIR = /home/subtomic/Documents/GitHub/Neural-Studio
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/VRobs-studio/build
+CMAKE_BINARY_DIR = /home/subtomic/Documents/GitHub/Neural-Studio/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,14 +132,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles /home/subtomic/Documents/GitHub/VRobs-studio/build/libvr//CMakeFiles/progress.marks
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/VRobs-studio/build/CMakeFiles 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles /home/subtomic/Documents/GitHub/Neural-Studio/build/libvr//CMakeFiles/progress.marks
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/subtomic/Documents/GitHub/Neural-Studio/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/clean
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,22 +148,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/preinstall
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 libvr/CMakeFiles/libvr.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/libvr.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/libvr.dir/rule
 .PHONY : libvr/CMakeFiles/libvr.dir/rule
 
 # Convenience name for target.
@@ -172,12 +172,12 @@ libvr: libvr/CMakeFiles/libvr.dir/rule
 
 # fast build rule for target.
 libvr/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/build
 .PHONY : libvr/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_render_init.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_render_init.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_render_init.dir/rule
 .PHONY : libvr/CMakeFiles/test_render_init.dir/rule
 
 # Convenience name for target.
@@ -186,12 +186,12 @@ test_render_init: libvr/CMakeFiles/test_render_init.dir/rule
 
 # fast build rule for target.
 test_render_init/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/build
 .PHONY : test_render_init/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_frame_router.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_frame_router.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_frame_router.dir/rule
 .PHONY : libvr/CMakeFiles/test_frame_router.dir/rule
 
 # Convenience name for target.
@@ -200,12 +200,12 @@ test_frame_router: libvr/CMakeFiles/test_frame_router.dir/rule
 
 # fast build rule for target.
 test_frame_router/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/build
 .PHONY : test_frame_router/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_encode.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_encode.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_encode.dir/rule
 .PHONY : libvr/CMakeFiles/test_encode.dir/rule
 
 # Convenience name for target.
@@ -214,12 +214,12 @@ test_encode: libvr/CMakeFiles/test_encode.dir/rule
 
 # fast build rule for target.
 test_encode/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/build
 .PHONY : test_encode/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_srt.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_srt.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_srt.dir/rule
 .PHONY : libvr/CMakeFiles/test_srt.dir/rule
 
 # Convenience name for target.
@@ -228,12 +228,12 @@ test_srt: libvr/CMakeFiles/test_srt.dir/rule
 
 # fast build rule for target.
 test_srt/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/build
 .PHONY : test_srt/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_ml_init.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_ml_init.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_ml_init.dir/rule
 .PHONY : libvr/CMakeFiles/test_ml_init.dir/rule
 
 # Convenience name for target.
@@ -242,12 +242,40 @@ test_ml_init: libvr/CMakeFiles/test_ml_init.dir/rule
 
 # fast build rule for target.
 test_ml_init/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/build
 .PHONY : test_ml_init/fast
 
 # Convenience name for target.
+libvr/CMakeFiles/test_sr.dir/rule:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_sr.dir/rule
+.PHONY : libvr/CMakeFiles/test_sr.dir/rule
+
+# Convenience name for target.
+test_sr: libvr/CMakeFiles/test_sr.dir/rule
+.PHONY : test_sr
+
+# fast build rule for target.
+test_sr/fast:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/build
+.PHONY : test_sr/fast
+
+# Convenience name for target.
+libvr/CMakeFiles/test_semantic_scene.dir/rule:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_semantic_scene.dir/rule
+.PHONY : libvr/CMakeFiles/test_semantic_scene.dir/rule
+
+# Convenience name for target.
+test_semantic_scene: libvr/CMakeFiles/test_semantic_scene.dir/rule
+.PHONY : test_semantic_scene
+
+# fast build rule for target.
+test_semantic_scene/fast:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/build
+.PHONY : test_semantic_scene/fast
+
+# Convenience name for target.
 libvr/CMakeFiles/test_scene_draw.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_scene_draw.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_scene_draw.dir/rule
 .PHONY : libvr/CMakeFiles/test_scene_draw.dir/rule
 
 # Convenience name for target.
@@ -256,12 +284,12 @@ test_scene_draw: libvr/CMakeFiles/test_scene_draw.dir/rule
 
 # fast build rule for target.
 test_scene_draw/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/build
 .PHONY : test_scene_draw/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_interop.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_interop.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_interop.dir/rule
 .PHONY : libvr/CMakeFiles/test_interop.dir/rule
 
 # Convenience name for target.
@@ -270,12 +298,12 @@ test_interop: libvr/CMakeFiles/test_interop.dir/rule
 
 # fast build rule for target.
 test_interop/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/build
 .PHONY : test_interop/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_openxr_init.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_openxr_init.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_openxr_init.dir/rule
 .PHONY : libvr/CMakeFiles/test_openxr_init.dir/rule
 
 # Convenience name for target.
@@ -284,12 +312,12 @@ test_openxr_init: libvr/CMakeFiles/test_openxr_init.dir/rule
 
 # fast build rule for target.
 test_openxr_init/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/build
 .PHONY : test_openxr_init/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_media_source.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_media_source.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_media_source.dir/rule
 .PHONY : libvr/CMakeFiles/test_media_source.dir/rule
 
 # Convenience name for target.
@@ -298,12 +326,12 @@ test_media_source: libvr/CMakeFiles/test_media_source.dir/rule
 
 # fast build rule for target.
 test_media_source/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/build
 .PHONY : test_media_source/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_bpm.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_bpm.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_bpm.dir/rule
 .PHONY : libvr/CMakeFiles/test_bpm.dir/rule
 
 # Convenience name for target.
@@ -312,12 +340,12 @@ test_bpm: libvr/CMakeFiles/test_bpm.dir/rule
 
 # fast build rule for target.
 test_bpm/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/build
 .PHONY : test_bpm/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_file_updater.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_file_updater.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_file_updater.dir/rule
 .PHONY : libvr/CMakeFiles/test_file_updater.dir/rule
 
 # Convenience name for target.
@@ -326,12 +354,12 @@ test_file_updater: libvr/CMakeFiles/test_file_updater.dir/rule
 
 # fast build rule for target.
 test_file_updater/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/build
 .PHONY : test_file_updater/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_happy_eyeballs.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_happy_eyeballs.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_happy_eyeballs.dir/rule
 .PHONY : libvr/CMakeFiles/test_happy_eyeballs.dir/rule
 
 # Convenience name for target.
@@ -340,12 +368,12 @@ test_happy_eyeballs: libvr/CMakeFiles/test_happy_eyeballs.dir/rule
 
 # fast build rule for target.
 test_happy_eyeballs/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/build
 .PHONY : test_happy_eyeballs/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_ipc_util.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_ipc_util.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_ipc_util.dir/rule
 .PHONY : libvr/CMakeFiles/test_ipc_util.dir/rule
 
 # Convenience name for target.
@@ -354,12 +382,12 @@ test_ipc_util: libvr/CMakeFiles/test_ipc_util.dir/rule
 
 # fast build rule for target.
 test_ipc_util/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/build
 .PHONY : test_ipc_util/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_media_playback.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_media_playback.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_media_playback.dir/rule
 .PHONY : libvr/CMakeFiles/test_media_playback.dir/rule
 
 # Convenience name for target.
@@ -368,12 +396,12 @@ test_media_playback: libvr/CMakeFiles/test_media_playback.dir/rule
 
 # fast build rule for target.
 test_media_playback/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/build
 .PHONY : test_media_playback/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_scripting.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_scripting.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_scripting.dir/rule
 .PHONY : libvr/CMakeFiles/test_scripting.dir/rule
 
 # Convenience name for target.
@@ -382,12 +410,12 @@ test_scripting: libvr/CMakeFiles/test_scripting.dir/rule
 
 # fast build rule for target.
 test_scripting/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/build
 .PHONY : test_scripting/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_remaining_shared.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_remaining_shared.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_remaining_shared.dir/rule
 .PHONY : libvr/CMakeFiles/test_remaining_shared.dir/rule
 
 # Convenience name for target.
@@ -396,12 +424,12 @@ test_remaining_shared: libvr/CMakeFiles/test_remaining_shared.dir/rule
 
 # fast build rule for target.
 test_remaining_shared/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/build
 .PHONY : test_remaining_shared/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_3d_scene.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_3d_scene.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_3d_scene.dir/rule
 .PHONY : libvr/CMakeFiles/test_3d_scene.dir/rule
 
 # Convenience name for target.
@@ -410,12 +438,12 @@ test_3d_scene: libvr/CMakeFiles/test_3d_scene.dir/rule
 
 # fast build rule for target.
 test_3d_scene/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/build
 .PHONY : test_3d_scene/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_plugin_image.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_plugin_image.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_plugin_image.dir/rule
 .PHONY : libvr/CMakeFiles/test_plugin_image.dir/rule
 
 # Convenience name for target.
@@ -424,12 +452,12 @@ test_plugin_image: libvr/CMakeFiles/test_plugin_image.dir/rule
 
 # fast build rule for target.
 test_plugin_image/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/build
 .PHONY : test_plugin_image/fast
 
 # Convenience name for target.
 libvr/CMakeFiles/test_plugin_alsa.dir/rule:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_plugin_alsa.dir/rule
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 libvr/CMakeFiles/test_plugin_alsa.dir/rule
 .PHONY : libvr/CMakeFiles/test_plugin_alsa.dir/rule
 
 # Convenience name for target.
@@ -438,7 +466,7 @@ test_plugin_alsa: libvr/CMakeFiles/test_plugin_alsa.dir/rule
 
 # fast build rule for target.
 test_plugin_alsa/fast:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/build
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/build
 .PHONY : test_plugin_alsa/fast
 
 __/deps/libcaption/src/caption.o: __/deps/libcaption/src/caption.c.o
@@ -446,7 +474,7 @@ __/deps/libcaption/src/caption.o: __/deps/libcaption/src/caption.c.o
 
 # target to build an object file
 __/deps/libcaption/src/caption.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/caption.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/caption.c.o
 .PHONY : __/deps/libcaption/src/caption.c.o
 
 __/deps/libcaption/src/caption.i: __/deps/libcaption/src/caption.c.i
@@ -454,7 +482,7 @@ __/deps/libcaption/src/caption.i: __/deps/libcaption/src/caption.c.i
 
 # target to preprocess a source file
 __/deps/libcaption/src/caption.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/caption.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/caption.c.i
 .PHONY : __/deps/libcaption/src/caption.c.i
 
 __/deps/libcaption/src/caption.s: __/deps/libcaption/src/caption.c.s
@@ -462,7 +490,7 @@ __/deps/libcaption/src/caption.s: __/deps/libcaption/src/caption.c.s
 
 # target to generate assembly for a file
 __/deps/libcaption/src/caption.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/caption.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/caption.c.s
 .PHONY : __/deps/libcaption/src/caption.c.s
 
 __/deps/libcaption/src/cea708.o: __/deps/libcaption/src/cea708.c.o
@@ -470,7 +498,7 @@ __/deps/libcaption/src/cea708.o: __/deps/libcaption/src/cea708.c.o
 
 # target to build an object file
 __/deps/libcaption/src/cea708.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/cea708.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/cea708.c.o
 .PHONY : __/deps/libcaption/src/cea708.c.o
 
 __/deps/libcaption/src/cea708.i: __/deps/libcaption/src/cea708.c.i
@@ -478,7 +506,7 @@ __/deps/libcaption/src/cea708.i: __/deps/libcaption/src/cea708.c.i
 
 # target to preprocess a source file
 __/deps/libcaption/src/cea708.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/cea708.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/cea708.c.i
 .PHONY : __/deps/libcaption/src/cea708.c.i
 
 __/deps/libcaption/src/cea708.s: __/deps/libcaption/src/cea708.c.s
@@ -486,7 +514,7 @@ __/deps/libcaption/src/cea708.s: __/deps/libcaption/src/cea708.c.s
 
 # target to generate assembly for a file
 __/deps/libcaption/src/cea708.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/cea708.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/cea708.c.s
 .PHONY : __/deps/libcaption/src/cea708.c.s
 
 __/deps/libcaption/src/eia608.o: __/deps/libcaption/src/eia608.c.o
@@ -494,7 +522,7 @@ __/deps/libcaption/src/eia608.o: __/deps/libcaption/src/eia608.c.o
 
 # target to build an object file
 __/deps/libcaption/src/eia608.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608.c.o
 .PHONY : __/deps/libcaption/src/eia608.c.o
 
 __/deps/libcaption/src/eia608.i: __/deps/libcaption/src/eia608.c.i
@@ -502,7 +530,7 @@ __/deps/libcaption/src/eia608.i: __/deps/libcaption/src/eia608.c.i
 
 # target to preprocess a source file
 __/deps/libcaption/src/eia608.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608.c.i
 .PHONY : __/deps/libcaption/src/eia608.c.i
 
 __/deps/libcaption/src/eia608.s: __/deps/libcaption/src/eia608.c.s
@@ -510,7 +538,7 @@ __/deps/libcaption/src/eia608.s: __/deps/libcaption/src/eia608.c.s
 
 # target to generate assembly for a file
 __/deps/libcaption/src/eia608.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608.c.s
 .PHONY : __/deps/libcaption/src/eia608.c.s
 
 __/deps/libcaption/src/eia608_charmap.o: __/deps/libcaption/src/eia608_charmap.c.o
@@ -518,7 +546,7 @@ __/deps/libcaption/src/eia608_charmap.o: __/deps/libcaption/src/eia608_charmap.c
 
 # target to build an object file
 __/deps/libcaption/src/eia608_charmap.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_charmap.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_charmap.c.o
 .PHONY : __/deps/libcaption/src/eia608_charmap.c.o
 
 __/deps/libcaption/src/eia608_charmap.i: __/deps/libcaption/src/eia608_charmap.c.i
@@ -526,7 +554,7 @@ __/deps/libcaption/src/eia608_charmap.i: __/deps/libcaption/src/eia608_charmap.c
 
 # target to preprocess a source file
 __/deps/libcaption/src/eia608_charmap.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_charmap.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_charmap.c.i
 .PHONY : __/deps/libcaption/src/eia608_charmap.c.i
 
 __/deps/libcaption/src/eia608_charmap.s: __/deps/libcaption/src/eia608_charmap.c.s
@@ -534,7 +562,7 @@ __/deps/libcaption/src/eia608_charmap.s: __/deps/libcaption/src/eia608_charmap.c
 
 # target to generate assembly for a file
 __/deps/libcaption/src/eia608_charmap.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_charmap.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_charmap.c.s
 .PHONY : __/deps/libcaption/src/eia608_charmap.c.s
 
 __/deps/libcaption/src/eia608_from_utf8.o: __/deps/libcaption/src/eia608_from_utf8.c.o
@@ -542,7 +570,7 @@ __/deps/libcaption/src/eia608_from_utf8.o: __/deps/libcaption/src/eia608_from_ut
 
 # target to build an object file
 __/deps/libcaption/src/eia608_from_utf8.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_from_utf8.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_from_utf8.c.o
 .PHONY : __/deps/libcaption/src/eia608_from_utf8.c.o
 
 __/deps/libcaption/src/eia608_from_utf8.i: __/deps/libcaption/src/eia608_from_utf8.c.i
@@ -550,7 +578,7 @@ __/deps/libcaption/src/eia608_from_utf8.i: __/deps/libcaption/src/eia608_from_ut
 
 # target to preprocess a source file
 __/deps/libcaption/src/eia608_from_utf8.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_from_utf8.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_from_utf8.c.i
 .PHONY : __/deps/libcaption/src/eia608_from_utf8.c.i
 
 __/deps/libcaption/src/eia608_from_utf8.s: __/deps/libcaption/src/eia608_from_utf8.c.s
@@ -558,7 +586,7 @@ __/deps/libcaption/src/eia608_from_utf8.s: __/deps/libcaption/src/eia608_from_ut
 
 # target to generate assembly for a file
 __/deps/libcaption/src/eia608_from_utf8.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_from_utf8.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/eia608_from_utf8.c.s
 .PHONY : __/deps/libcaption/src/eia608_from_utf8.c.s
 
 __/deps/libcaption/src/mpeg.o: __/deps/libcaption/src/mpeg.c.o
@@ -566,7 +594,7 @@ __/deps/libcaption/src/mpeg.o: __/deps/libcaption/src/mpeg.c.o
 
 # target to build an object file
 __/deps/libcaption/src/mpeg.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/mpeg.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/mpeg.c.o
 .PHONY : __/deps/libcaption/src/mpeg.c.o
 
 __/deps/libcaption/src/mpeg.i: __/deps/libcaption/src/mpeg.c.i
@@ -574,7 +602,7 @@ __/deps/libcaption/src/mpeg.i: __/deps/libcaption/src/mpeg.c.i
 
 # target to preprocess a source file
 __/deps/libcaption/src/mpeg.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/mpeg.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/mpeg.c.i
 .PHONY : __/deps/libcaption/src/mpeg.c.i
 
 __/deps/libcaption/src/mpeg.s: __/deps/libcaption/src/mpeg.c.s
@@ -582,7 +610,7 @@ __/deps/libcaption/src/mpeg.s: __/deps/libcaption/src/mpeg.c.s
 
 # target to generate assembly for a file
 __/deps/libcaption/src/mpeg.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/mpeg.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/mpeg.c.s
 .PHONY : __/deps/libcaption/src/mpeg.c.s
 
 __/deps/libcaption/src/utf8.o: __/deps/libcaption/src/utf8.c.o
@@ -590,7 +618,7 @@ __/deps/libcaption/src/utf8.o: __/deps/libcaption/src/utf8.c.o
 
 # target to build an object file
 __/deps/libcaption/src/utf8.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/utf8.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/utf8.c.o
 .PHONY : __/deps/libcaption/src/utf8.c.o
 
 __/deps/libcaption/src/utf8.i: __/deps/libcaption/src/utf8.c.i
@@ -598,7 +626,7 @@ __/deps/libcaption/src/utf8.i: __/deps/libcaption/src/utf8.c.i
 
 # target to preprocess a source file
 __/deps/libcaption/src/utf8.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/utf8.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/utf8.c.i
 .PHONY : __/deps/libcaption/src/utf8.c.i
 
 __/deps/libcaption/src/utf8.s: __/deps/libcaption/src/utf8.c.s
@@ -606,7 +634,7 @@ __/deps/libcaption/src/utf8.s: __/deps/libcaption/src/utf8.c.s
 
 # target to generate assembly for a file
 __/deps/libcaption/src/utf8.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/utf8.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/utf8.c.s
 .PHONY : __/deps/libcaption/src/utf8.c.s
 
 __/deps/libcaption/src/xds.o: __/deps/libcaption/src/xds.c.o
@@ -614,7 +642,7 @@ __/deps/libcaption/src/xds.o: __/deps/libcaption/src/xds.c.o
 
 # target to build an object file
 __/deps/libcaption/src/xds.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/xds.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/xds.c.o
 .PHONY : __/deps/libcaption/src/xds.c.o
 
 __/deps/libcaption/src/xds.i: __/deps/libcaption/src/xds.c.i
@@ -622,7 +650,7 @@ __/deps/libcaption/src/xds.i: __/deps/libcaption/src/xds.c.i
 
 # target to preprocess a source file
 __/deps/libcaption/src/xds.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/xds.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/xds.c.i
 .PHONY : __/deps/libcaption/src/xds.c.i
 
 __/deps/libcaption/src/xds.s: __/deps/libcaption/src/xds.c.s
@@ -630,7 +658,7 @@ __/deps/libcaption/src/xds.s: __/deps/libcaption/src/xds.c.s
 
 # target to generate assembly for a file
 __/deps/libcaption/src/xds.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/xds.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/deps/libcaption/src/xds.c.s
 .PHONY : __/deps/libcaption/src/xds.c.s
 
 __/libobs/obs-av1.o: __/libobs/obs-av1.c.o
@@ -638,7 +666,7 @@ __/libobs/obs-av1.o: __/libobs/obs-av1.c.o
 
 # target to build an object file
 __/libobs/obs-av1.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/obs-av1.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/obs-av1.c.o
 .PHONY : __/libobs/obs-av1.c.o
 
 __/libobs/obs-av1.i: __/libobs/obs-av1.c.i
@@ -646,7 +674,7 @@ __/libobs/obs-av1.i: __/libobs/obs-av1.c.i
 
 # target to preprocess a source file
 __/libobs/obs-av1.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/obs-av1.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/obs-av1.c.i
 .PHONY : __/libobs/obs-av1.c.i
 
 __/libobs/obs-av1.s: __/libobs/obs-av1.c.s
@@ -654,7 +682,7 @@ __/libobs/obs-av1.s: __/libobs/obs-av1.c.s
 
 # target to generate assembly for a file
 __/libobs/obs-av1.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/obs-av1.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/obs-av1.c.s
 .PHONY : __/libobs/obs-av1.c.s
 
 __/libobs/util/array-serializer.o: __/libobs/util/array-serializer.c.o
@@ -662,7 +690,7 @@ __/libobs/util/array-serializer.o: __/libobs/util/array-serializer.c.o
 
 # target to build an object file
 __/libobs/util/array-serializer.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.o
 .PHONY : __/libobs/util/array-serializer.c.o
 
 __/libobs/util/array-serializer.i: __/libobs/util/array-serializer.c.i
@@ -670,7 +698,7 @@ __/libobs/util/array-serializer.i: __/libobs/util/array-serializer.c.i
 
 # target to preprocess a source file
 __/libobs/util/array-serializer.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.i
 .PHONY : __/libobs/util/array-serializer.c.i
 
 __/libobs/util/array-serializer.s: __/libobs/util/array-serializer.c.s
@@ -678,7 +706,7 @@ __/libobs/util/array-serializer.s: __/libobs/util/array-serializer.c.s
 
 # target to generate assembly for a file
 __/libobs/util/array-serializer.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/array-serializer.c.s
 .PHONY : __/libobs/util/array-serializer.c.s
 
 __/libobs/util/dstr.o: __/libobs/util/dstr.c.o
@@ -686,7 +714,7 @@ __/libobs/util/dstr.o: __/libobs/util/dstr.c.o
 
 # target to build an object file
 __/libobs/util/dstr.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/dstr.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/dstr.c.o
 .PHONY : __/libobs/util/dstr.c.o
 
 __/libobs/util/dstr.i: __/libobs/util/dstr.c.i
@@ -694,7 +722,7 @@ __/libobs/util/dstr.i: __/libobs/util/dstr.c.i
 
 # target to preprocess a source file
 __/libobs/util/dstr.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/dstr.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/dstr.c.i
 .PHONY : __/libobs/util/dstr.c.i
 
 __/libobs/util/dstr.s: __/libobs/util/dstr.c.s
@@ -702,7 +730,7 @@ __/libobs/util/dstr.s: __/libobs/util/dstr.c.s
 
 # target to generate assembly for a file
 __/libobs/util/dstr.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/dstr.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/libobs/util/dstr.c.s
 .PHONY : __/libobs/util/dstr.c.s
 
 __/plugins/image-source/color-source.o: __/plugins/image-source/color-source.c.o
@@ -710,7 +738,7 @@ __/plugins/image-source/color-source.o: __/plugins/image-source/color-source.c.o
 
 # target to build an object file
 __/plugins/image-source/color-source.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/color-source.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/color-source.c.o
 .PHONY : __/plugins/image-source/color-source.c.o
 
 __/plugins/image-source/color-source.i: __/plugins/image-source/color-source.c.i
@@ -718,7 +746,7 @@ __/plugins/image-source/color-source.i: __/plugins/image-source/color-source.c.i
 
 # target to preprocess a source file
 __/plugins/image-source/color-source.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/color-source.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/color-source.c.i
 .PHONY : __/plugins/image-source/color-source.c.i
 
 __/plugins/image-source/color-source.s: __/plugins/image-source/color-source.c.s
@@ -726,7 +754,7 @@ __/plugins/image-source/color-source.s: __/plugins/image-source/color-source.c.s
 
 # target to generate assembly for a file
 __/plugins/image-source/color-source.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/color-source.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/color-source.c.s
 .PHONY : __/plugins/image-source/color-source.c.s
 
 __/plugins/image-source/image-source.o: __/plugins/image-source/image-source.c.o
@@ -734,7 +762,7 @@ __/plugins/image-source/image-source.o: __/plugins/image-source/image-source.c.o
 
 # target to build an object file
 __/plugins/image-source/image-source.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/image-source.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/image-source.c.o
 .PHONY : __/plugins/image-source/image-source.c.o
 
 __/plugins/image-source/image-source.i: __/plugins/image-source/image-source.c.i
@@ -742,7 +770,7 @@ __/plugins/image-source/image-source.i: __/plugins/image-source/image-source.c.i
 
 # target to preprocess a source file
 __/plugins/image-source/image-source.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/image-source.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/image-source.c.i
 .PHONY : __/plugins/image-source/image-source.c.i
 
 __/plugins/image-source/image-source.s: __/plugins/image-source/image-source.c.s
@@ -750,7 +778,7 @@ __/plugins/image-source/image-source.s: __/plugins/image-source/image-source.c.s
 
 # target to generate assembly for a file
 __/plugins/image-source/image-source.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/image-source.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/image-source/image-source.c.s
 .PHONY : __/plugins/image-source/image-source.c.s
 
 __/plugins/linux-alsa/alsa-input.o: __/plugins/linux-alsa/alsa-input.c.o
@@ -758,7 +786,7 @@ __/plugins/linux-alsa/alsa-input.o: __/plugins/linux-alsa/alsa-input.c.o
 
 # target to build an object file
 __/plugins/linux-alsa/alsa-input.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/alsa-input.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/alsa-input.c.o
 .PHONY : __/plugins/linux-alsa/alsa-input.c.o
 
 __/plugins/linux-alsa/alsa-input.i: __/plugins/linux-alsa/alsa-input.c.i
@@ -766,7 +794,7 @@ __/plugins/linux-alsa/alsa-input.i: __/plugins/linux-alsa/alsa-input.c.i
 
 # target to preprocess a source file
 __/plugins/linux-alsa/alsa-input.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/alsa-input.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/alsa-input.c.i
 .PHONY : __/plugins/linux-alsa/alsa-input.c.i
 
 __/plugins/linux-alsa/alsa-input.s: __/plugins/linux-alsa/alsa-input.c.s
@@ -774,7 +802,7 @@ __/plugins/linux-alsa/alsa-input.s: __/plugins/linux-alsa/alsa-input.c.s
 
 # target to generate assembly for a file
 __/plugins/linux-alsa/alsa-input.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/alsa-input.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/alsa-input.c.s
 .PHONY : __/plugins/linux-alsa/alsa-input.c.s
 
 __/plugins/linux-alsa/linux-alsa.o: __/plugins/linux-alsa/linux-alsa.c.o
@@ -782,7 +810,7 @@ __/plugins/linux-alsa/linux-alsa.o: __/plugins/linux-alsa/linux-alsa.c.o
 
 # target to build an object file
 __/plugins/linux-alsa/linux-alsa.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/linux-alsa.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/linux-alsa.c.o
 .PHONY : __/plugins/linux-alsa/linux-alsa.c.o
 
 __/plugins/linux-alsa/linux-alsa.i: __/plugins/linux-alsa/linux-alsa.c.i
@@ -790,7 +818,7 @@ __/plugins/linux-alsa/linux-alsa.i: __/plugins/linux-alsa/linux-alsa.c.i
 
 # target to preprocess a source file
 __/plugins/linux-alsa/linux-alsa.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/linux-alsa.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/linux-alsa.c.i
 .PHONY : __/plugins/linux-alsa/linux-alsa.c.i
 
 __/plugins/linux-alsa/linux-alsa.s: __/plugins/linux-alsa/linux-alsa.c.s
@@ -798,7 +826,7 @@ __/plugins/linux-alsa/linux-alsa.s: __/plugins/linux-alsa/linux-alsa.c.s
 
 # target to generate assembly for a file
 __/plugins/linux-alsa/linux-alsa.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/linux-alsa.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/plugins/linux-alsa/linux-alsa.c.s
 .PHONY : __/plugins/linux-alsa/linux-alsa.c.s
 
 __/shared/bpm/bpm.o: __/shared/bpm/bpm.c.o
@@ -806,7 +834,7 @@ __/shared/bpm/bpm.o: __/shared/bpm/bpm.c.o
 
 # target to build an object file
 __/shared/bpm/bpm.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/bpm/bpm.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/bpm/bpm.c.o
 .PHONY : __/shared/bpm/bpm.c.o
 
 __/shared/bpm/bpm.i: __/shared/bpm/bpm.c.i
@@ -814,7 +842,7 @@ __/shared/bpm/bpm.i: __/shared/bpm/bpm.c.i
 
 # target to preprocess a source file
 __/shared/bpm/bpm.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/bpm/bpm.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/bpm/bpm.c.i
 .PHONY : __/shared/bpm/bpm.c.i
 
 __/shared/bpm/bpm.s: __/shared/bpm/bpm.c.s
@@ -822,7 +850,7 @@ __/shared/bpm/bpm.s: __/shared/bpm/bpm.c.s
 
 # target to generate assembly for a file
 __/shared/bpm/bpm.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/bpm/bpm.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/bpm/bpm.c.s
 .PHONY : __/shared/bpm/bpm.c.s
 
 __/shared/file-updater/file-updater/file-updater.o: __/shared/file-updater/file-updater/file-updater.c.o
@@ -830,7 +858,7 @@ __/shared/file-updater/file-updater/file-updater.o: __/shared/file-updater/file-
 
 # target to build an object file
 __/shared/file-updater/file-updater/file-updater.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.o
 .PHONY : __/shared/file-updater/file-updater/file-updater.c.o
 
 __/shared/file-updater/file-updater/file-updater.i: __/shared/file-updater/file-updater/file-updater.c.i
@@ -838,7 +866,7 @@ __/shared/file-updater/file-updater/file-updater.i: __/shared/file-updater/file-
 
 # target to preprocess a source file
 __/shared/file-updater/file-updater/file-updater.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.i
 .PHONY : __/shared/file-updater/file-updater/file-updater.c.i
 
 __/shared/file-updater/file-updater/file-updater.s: __/shared/file-updater/file-updater/file-updater.c.s
@@ -846,7 +874,7 @@ __/shared/file-updater/file-updater/file-updater.s: __/shared/file-updater/file-
 
 # target to generate assembly for a file
 __/shared/file-updater/file-updater/file-updater.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/file-updater/file-updater/file-updater.c.s
 .PHONY : __/shared/file-updater/file-updater/file-updater.c.s
 
 __/shared/happy-eyeballs/happy-eyeballs.o: __/shared/happy-eyeballs/happy-eyeballs.c.o
@@ -854,7 +882,7 @@ __/shared/happy-eyeballs/happy-eyeballs.o: __/shared/happy-eyeballs/happy-eyebal
 
 # target to build an object file
 __/shared/happy-eyeballs/happy-eyeballs.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.o
 .PHONY : __/shared/happy-eyeballs/happy-eyeballs.c.o
 
 __/shared/happy-eyeballs/happy-eyeballs.i: __/shared/happy-eyeballs/happy-eyeballs.c.i
@@ -862,7 +890,7 @@ __/shared/happy-eyeballs/happy-eyeballs.i: __/shared/happy-eyeballs/happy-eyebal
 
 # target to preprocess a source file
 __/shared/happy-eyeballs/happy-eyeballs.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.i
 .PHONY : __/shared/happy-eyeballs/happy-eyeballs.c.i
 
 __/shared/happy-eyeballs/happy-eyeballs.s: __/shared/happy-eyeballs/happy-eyeballs.c.s
@@ -870,7 +898,7 @@ __/shared/happy-eyeballs/happy-eyeballs.s: __/shared/happy-eyeballs/happy-eyebal
 
 # target to generate assembly for a file
 __/shared/happy-eyeballs/happy-eyeballs.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/happy-eyeballs/happy-eyeballs.c.s
 .PHONY : __/shared/happy-eyeballs/happy-eyeballs.c.s
 
 __/shared/ipc-util/ipc-util/pipe-posix.o: __/shared/ipc-util/ipc-util/pipe-posix.c.o
@@ -878,7 +906,7 @@ __/shared/ipc-util/ipc-util/pipe-posix.o: __/shared/ipc-util/ipc-util/pipe-posix
 
 # target to build an object file
 __/shared/ipc-util/ipc-util/pipe-posix.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.o
 .PHONY : __/shared/ipc-util/ipc-util/pipe-posix.c.o
 
 __/shared/ipc-util/ipc-util/pipe-posix.i: __/shared/ipc-util/ipc-util/pipe-posix.c.i
@@ -886,7 +914,7 @@ __/shared/ipc-util/ipc-util/pipe-posix.i: __/shared/ipc-util/ipc-util/pipe-posix
 
 # target to preprocess a source file
 __/shared/ipc-util/ipc-util/pipe-posix.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.i
 .PHONY : __/shared/ipc-util/ipc-util/pipe-posix.c.i
 
 __/shared/ipc-util/ipc-util/pipe-posix.s: __/shared/ipc-util/ipc-util/pipe-posix.c.s
@@ -894,7 +922,7 @@ __/shared/ipc-util/ipc-util/pipe-posix.s: __/shared/ipc-util/ipc-util/pipe-posix
 
 # target to generate assembly for a file
 __/shared/ipc-util/ipc-util/pipe-posix.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/ipc-util/ipc-util/pipe-posix.c.s
 .PHONY : __/shared/ipc-util/ipc-util/pipe-posix.c.s
 
 __/shared/media-playback/media-playback/cache.o: __/shared/media-playback/media-playback/cache.c.o
@@ -902,7 +930,7 @@ __/shared/media-playback/media-playback/cache.o: __/shared/media-playback/media-
 
 # target to build an object file
 __/shared/media-playback/media-playback/cache.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/cache.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/cache.c.o
 .PHONY : __/shared/media-playback/media-playback/cache.c.o
 
 __/shared/media-playback/media-playback/cache.i: __/shared/media-playback/media-playback/cache.c.i
@@ -910,7 +938,7 @@ __/shared/media-playback/media-playback/cache.i: __/shared/media-playback/media-
 
 # target to preprocess a source file
 __/shared/media-playback/media-playback/cache.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/cache.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/cache.c.i
 .PHONY : __/shared/media-playback/media-playback/cache.c.i
 
 __/shared/media-playback/media-playback/cache.s: __/shared/media-playback/media-playback/cache.c.s
@@ -918,7 +946,7 @@ __/shared/media-playback/media-playback/cache.s: __/shared/media-playback/media-
 
 # target to generate assembly for a file
 __/shared/media-playback/media-playback/cache.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/cache.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/cache.c.s
 .PHONY : __/shared/media-playback/media-playback/cache.c.s
 
 __/shared/media-playback/media-playback/decode.o: __/shared/media-playback/media-playback/decode.c.o
@@ -926,7 +954,7 @@ __/shared/media-playback/media-playback/decode.o: __/shared/media-playback/media
 
 # target to build an object file
 __/shared/media-playback/media-playback/decode.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/decode.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/decode.c.o
 .PHONY : __/shared/media-playback/media-playback/decode.c.o
 
 __/shared/media-playback/media-playback/decode.i: __/shared/media-playback/media-playback/decode.c.i
@@ -934,7 +962,7 @@ __/shared/media-playback/media-playback/decode.i: __/shared/media-playback/media
 
 # target to preprocess a source file
 __/shared/media-playback/media-playback/decode.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/decode.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/decode.c.i
 .PHONY : __/shared/media-playback/media-playback/decode.c.i
 
 __/shared/media-playback/media-playback/decode.s: __/shared/media-playback/media-playback/decode.c.s
@@ -942,7 +970,7 @@ __/shared/media-playback/media-playback/decode.s: __/shared/media-playback/media
 
 # target to generate assembly for a file
 __/shared/media-playback/media-playback/decode.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/decode.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/decode.c.s
 .PHONY : __/shared/media-playback/media-playback/decode.c.s
 
 __/shared/media-playback/media-playback/media-playback.o: __/shared/media-playback/media-playback/media-playback.c.o
@@ -950,7 +978,7 @@ __/shared/media-playback/media-playback/media-playback.o: __/shared/media-playba
 
 # target to build an object file
 __/shared/media-playback/media-playback/media-playback.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media-playback.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media-playback.c.o
 .PHONY : __/shared/media-playback/media-playback/media-playback.c.o
 
 __/shared/media-playback/media-playback/media-playback.i: __/shared/media-playback/media-playback/media-playback.c.i
@@ -958,7 +986,7 @@ __/shared/media-playback/media-playback/media-playback.i: __/shared/media-playba
 
 # target to preprocess a source file
 __/shared/media-playback/media-playback/media-playback.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media-playback.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media-playback.c.i
 .PHONY : __/shared/media-playback/media-playback/media-playback.c.i
 
 __/shared/media-playback/media-playback/media-playback.s: __/shared/media-playback/media-playback/media-playback.c.s
@@ -966,7 +994,7 @@ __/shared/media-playback/media-playback/media-playback.s: __/shared/media-playba
 
 # target to generate assembly for a file
 __/shared/media-playback/media-playback/media-playback.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media-playback.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media-playback.c.s
 .PHONY : __/shared/media-playback/media-playback/media-playback.c.s
 
 __/shared/media-playback/media-playback/media.o: __/shared/media-playback/media-playback/media.c.o
@@ -974,7 +1002,7 @@ __/shared/media-playback/media-playback/media.o: __/shared/media-playback/media-
 
 # target to build an object file
 __/shared/media-playback/media-playback/media.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media.c.o
 .PHONY : __/shared/media-playback/media-playback/media.c.o
 
 __/shared/media-playback/media-playback/media.i: __/shared/media-playback/media-playback/media.c.i
@@ -982,7 +1010,7 @@ __/shared/media-playback/media-playback/media.i: __/shared/media-playback/media-
 
 # target to preprocess a source file
 __/shared/media-playback/media-playback/media.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media.c.i
 .PHONY : __/shared/media-playback/media-playback/media.c.i
 
 __/shared/media-playback/media-playback/media.s: __/shared/media-playback/media-playback/media.c.s
@@ -990,7 +1018,7 @@ __/shared/media-playback/media-playback/media.s: __/shared/media-playback/media-
 
 # target to generate assembly for a file
 __/shared/media-playback/media-playback/media.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/media-playback/media-playback/media.c.s
 .PHONY : __/shared/media-playback/media-playback/media.c.s
 
 __/shared/obs-scripting/obs-scripting-logging.o: __/shared/obs-scripting/obs-scripting-logging.c.o
@@ -998,7 +1026,7 @@ __/shared/obs-scripting/obs-scripting-logging.o: __/shared/obs-scripting/obs-scr
 
 # target to build an object file
 __/shared/obs-scripting/obs-scripting-logging.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.o
 .PHONY : __/shared/obs-scripting/obs-scripting-logging.c.o
 
 __/shared/obs-scripting/obs-scripting-logging.i: __/shared/obs-scripting/obs-scripting-logging.c.i
@@ -1006,7 +1034,7 @@ __/shared/obs-scripting/obs-scripting-logging.i: __/shared/obs-scripting/obs-scr
 
 # target to preprocess a source file
 __/shared/obs-scripting/obs-scripting-logging.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.i
 .PHONY : __/shared/obs-scripting/obs-scripting-logging.c.i
 
 __/shared/obs-scripting/obs-scripting-logging.s: __/shared/obs-scripting/obs-scripting-logging.c.s
@@ -1014,7 +1042,7 @@ __/shared/obs-scripting/obs-scripting-logging.s: __/shared/obs-scripting/obs-scr
 
 # target to generate assembly for a file
 __/shared/obs-scripting/obs-scripting-logging.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting-logging.c.s
 .PHONY : __/shared/obs-scripting/obs-scripting-logging.c.s
 
 __/shared/obs-scripting/obs-scripting.o: __/shared/obs-scripting/obs-scripting.c.o
@@ -1022,7 +1050,7 @@ __/shared/obs-scripting/obs-scripting.o: __/shared/obs-scripting/obs-scripting.c
 
 # target to build an object file
 __/shared/obs-scripting/obs-scripting.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting.c.o
 .PHONY : __/shared/obs-scripting/obs-scripting.c.o
 
 __/shared/obs-scripting/obs-scripting.i: __/shared/obs-scripting/obs-scripting.c.i
@@ -1030,7 +1058,7 @@ __/shared/obs-scripting/obs-scripting.i: __/shared/obs-scripting/obs-scripting.c
 
 # target to preprocess a source file
 __/shared/obs-scripting/obs-scripting.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting.c.i
 .PHONY : __/shared/obs-scripting/obs-scripting.c.i
 
 __/shared/obs-scripting/obs-scripting.s: __/shared/obs-scripting/obs-scripting.c.s
@@ -1038,7 +1066,7 @@ __/shared/obs-scripting/obs-scripting.s: __/shared/obs-scripting/obs-scripting.c
 
 # target to generate assembly for a file
 __/shared/obs-scripting/obs-scripting.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-scripting/obs-scripting.c.s
 .PHONY : __/shared/obs-scripting/obs-scripting.c.s
 
 __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.o: __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.o
@@ -1046,7 +1074,7 @@ __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.o: __/shared/obs-tiny-nv12-scale/t
 
 # target to build an object file
 __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.o
 .PHONY : __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.o
 
 __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.i: __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.i
@@ -1054,7 +1082,7 @@ __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.i: __/shared/obs-tiny-nv12-scale/t
 
 # target to preprocess a source file
 __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.i
 .PHONY : __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.i
 
 __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.s: __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.s
@@ -1062,7 +1090,7 @@ __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.s: __/shared/obs-tiny-nv12-scale/t
 
 # target to generate assembly for a file
 __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.s
 .PHONY : __/shared/obs-tiny-nv12-scale/tiny-nv12-scale.c.s
 
 __/shared/opts-parser/opts-parser.o: __/shared/opts-parser/opts-parser.c.o
@@ -1070,7 +1098,7 @@ __/shared/opts-parser/opts-parser.o: __/shared/opts-parser/opts-parser.c.o
 
 # target to build an object file
 __/shared/opts-parser/opts-parser.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.o
 .PHONY : __/shared/opts-parser/opts-parser.c.o
 
 __/shared/opts-parser/opts-parser.i: __/shared/opts-parser/opts-parser.c.i
@@ -1078,7 +1106,7 @@ __/shared/opts-parser/opts-parser.i: __/shared/opts-parser/opts-parser.c.i
 
 # target to preprocess a source file
 __/shared/opts-parser/opts-parser.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.i
 .PHONY : __/shared/opts-parser/opts-parser.c.i
 
 __/shared/opts-parser/opts-parser.s: __/shared/opts-parser/opts-parser.c.s
@@ -1086,7 +1114,7 @@ __/shared/opts-parser/opts-parser.s: __/shared/opts-parser/opts-parser.c.s
 
 # target to generate assembly for a file
 __/shared/opts-parser/opts-parser.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/__/shared/opts-parser/opts-parser.c.s
 .PHONY : __/shared/opts-parser/opts-parser.c.s
 
 audio/AudioManager.o: audio/AudioManager.cpp.o
@@ -1094,7 +1122,7 @@ audio/AudioManager.o: audio/AudioManager.cpp.o
 
 # target to build an object file
 audio/AudioManager.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/audio/AudioManager.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/audio/AudioManager.cpp.o
 .PHONY : audio/AudioManager.cpp.o
 
 audio/AudioManager.i: audio/AudioManager.cpp.i
@@ -1102,7 +1130,7 @@ audio/AudioManager.i: audio/AudioManager.cpp.i
 
 # target to preprocess a source file
 audio/AudioManager.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/audio/AudioManager.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/audio/AudioManager.cpp.i
 .PHONY : audio/AudioManager.cpp.i
 
 audio/AudioManager.s: audio/AudioManager.cpp.s
@@ -1110,7 +1138,7 @@ audio/AudioManager.s: audio/AudioManager.cpp.s
 
 # target to generate assembly for a file
 audio/AudioManager.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/audio/AudioManager.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/audio/AudioManager.cpp.s
 .PHONY : audio/AudioManager.cpp.s
 
 core/GraphicsCompat.o: core/GraphicsCompat.cpp.o
@@ -1118,7 +1146,7 @@ core/GraphicsCompat.o: core/GraphicsCompat.cpp.o
 
 # target to build an object file
 core/GraphicsCompat.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/GraphicsCompat.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/GraphicsCompat.cpp.o
 .PHONY : core/GraphicsCompat.cpp.o
 
 core/GraphicsCompat.i: core/GraphicsCompat.cpp.i
@@ -1126,7 +1154,7 @@ core/GraphicsCompat.i: core/GraphicsCompat.cpp.i
 
 # target to preprocess a source file
 core/GraphicsCompat.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/GraphicsCompat.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/GraphicsCompat.cpp.i
 .PHONY : core/GraphicsCompat.cpp.i
 
 core/GraphicsCompat.s: core/GraphicsCompat.cpp.s
@@ -1134,7 +1162,7 @@ core/GraphicsCompat.s: core/GraphicsCompat.cpp.s
 
 # target to generate assembly for a file
 core/GraphicsCompat.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/GraphicsCompat.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/GraphicsCompat.cpp.s
 .PHONY : core/GraphicsCompat.cpp.s
 
 core/ObsCompat.o: core/ObsCompat.cpp.o
@@ -1142,7 +1170,7 @@ core/ObsCompat.o: core/ObsCompat.cpp.o
 
 # target to build an object file
 core/ObsCompat.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/ObsCompat.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/ObsCompat.cpp.o
 .PHONY : core/ObsCompat.cpp.o
 
 core/ObsCompat.i: core/ObsCompat.cpp.i
@@ -1150,7 +1178,7 @@ core/ObsCompat.i: core/ObsCompat.cpp.i
 
 # target to preprocess a source file
 core/ObsCompat.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/ObsCompat.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/ObsCompat.cpp.i
 .PHONY : core/ObsCompat.cpp.i
 
 core/ObsCompat.s: core/ObsCompat.cpp.s
@@ -1158,7 +1186,7 @@ core/ObsCompat.s: core/ObsCompat.cpp.s
 
 # target to generate assembly for a file
 core/ObsCompat.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/ObsCompat.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/ObsCompat.cpp.s
 .PHONY : core/ObsCompat.cpp.s
 
 core/vr_core.o: core/vr_core.c.o
@@ -1166,7 +1194,7 @@ core/vr_core.o: core/vr_core.c.o
 
 # target to build an object file
 core/vr_core.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/vr_core.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/vr_core.c.o
 .PHONY : core/vr_core.c.o
 
 core/vr_core.i: core/vr_core.c.i
@@ -1174,7 +1202,7 @@ core/vr_core.i: core/vr_core.c.i
 
 # target to preprocess a source file
 core/vr_core.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/vr_core.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/vr_core.c.i
 .PHONY : core/vr_core.c.i
 
 core/vr_core.s: core/vr_core.c.s
@@ -1182,7 +1210,7 @@ core/vr_core.s: core/vr_core.c.s
 
 # target to generate assembly for a file
 core/vr_core.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/vr_core.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/core/vr_core.c.s
 .PHONY : core/vr_core.c.s
 
 enc/EncoderManager.o: enc/EncoderManager.cpp.o
@@ -1190,7 +1218,7 @@ enc/EncoderManager.o: enc/EncoderManager.cpp.o
 
 # target to build an object file
 enc/EncoderManager.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/EncoderManager.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/EncoderManager.cpp.o
 .PHONY : enc/EncoderManager.cpp.o
 
 enc/EncoderManager.i: enc/EncoderManager.cpp.i
@@ -1198,7 +1226,7 @@ enc/EncoderManager.i: enc/EncoderManager.cpp.i
 
 # target to preprocess a source file
 enc/EncoderManager.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/EncoderManager.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/EncoderManager.cpp.i
 .PHONY : enc/EncoderManager.cpp.i
 
 enc/EncoderManager.s: enc/EncoderManager.cpp.s
@@ -1206,7 +1234,7 @@ enc/EncoderManager.s: enc/EncoderManager.cpp.s
 
 # target to generate assembly for a file
 enc/EncoderManager.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/EncoderManager.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/EncoderManager.cpp.s
 .PHONY : enc/EncoderManager.cpp.s
 
 enc/ffmpeg/FFmpegEncoderAdapter.o: enc/ffmpeg/FFmpegEncoderAdapter.cpp.o
@@ -1214,7 +1242,7 @@ enc/ffmpeg/FFmpegEncoderAdapter.o: enc/ffmpeg/FFmpegEncoderAdapter.cpp.o
 
 # target to build an object file
 enc/ffmpeg/FFmpegEncoderAdapter.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/ffmpeg/FFmpegEncoderAdapter.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/ffmpeg/FFmpegEncoderAdapter.cpp.o
 .PHONY : enc/ffmpeg/FFmpegEncoderAdapter.cpp.o
 
 enc/ffmpeg/FFmpegEncoderAdapter.i: enc/ffmpeg/FFmpegEncoderAdapter.cpp.i
@@ -1222,7 +1250,7 @@ enc/ffmpeg/FFmpegEncoderAdapter.i: enc/ffmpeg/FFmpegEncoderAdapter.cpp.i
 
 # target to preprocess a source file
 enc/ffmpeg/FFmpegEncoderAdapter.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/ffmpeg/FFmpegEncoderAdapter.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/ffmpeg/FFmpegEncoderAdapter.cpp.i
 .PHONY : enc/ffmpeg/FFmpegEncoderAdapter.cpp.i
 
 enc/ffmpeg/FFmpegEncoderAdapter.s: enc/ffmpeg/FFmpegEncoderAdapter.cpp.s
@@ -1230,7 +1258,7 @@ enc/ffmpeg/FFmpegEncoderAdapter.s: enc/ffmpeg/FFmpegEncoderAdapter.cpp.s
 
 # target to generate assembly for a file
 enc/ffmpeg/FFmpegEncoderAdapter.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/ffmpeg/FFmpegEncoderAdapter.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/enc/ffmpeg/FFmpegEncoderAdapter.cpp.s
 .PHONY : enc/ffmpeg/FFmpegEncoderAdapter.cpp.s
 
 external/nvidia/NVVideoEffectsProxy.o: external/nvidia/NVVideoEffectsProxy.cpp.o
@@ -1238,7 +1266,7 @@ external/nvidia/NVVideoEffectsProxy.o: external/nvidia/NVVideoEffectsProxy.cpp.o
 
 # target to build an object file
 external/nvidia/NVVideoEffectsProxy.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/nvidia/NVVideoEffectsProxy.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/nvidia/NVVideoEffectsProxy.cpp.o
 .PHONY : external/nvidia/NVVideoEffectsProxy.cpp.o
 
 external/nvidia/NVVideoEffectsProxy.i: external/nvidia/NVVideoEffectsProxy.cpp.i
@@ -1246,7 +1274,7 @@ external/nvidia/NVVideoEffectsProxy.i: external/nvidia/NVVideoEffectsProxy.cpp.i
 
 # target to preprocess a source file
 external/nvidia/NVVideoEffectsProxy.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/nvidia/NVVideoEffectsProxy.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/nvidia/NVVideoEffectsProxy.cpp.i
 .PHONY : external/nvidia/NVVideoEffectsProxy.cpp.i
 
 external/nvidia/NVVideoEffectsProxy.s: external/nvidia/NVVideoEffectsProxy.cpp.s
@@ -1254,7 +1282,7 @@ external/nvidia/NVVideoEffectsProxy.s: external/nvidia/NVVideoEffectsProxy.cpp.s
 
 # target to generate assembly for a file
 external/nvidia/NVVideoEffectsProxy.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/nvidia/NVVideoEffectsProxy.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/nvidia/NVVideoEffectsProxy.cpp.s
 .PHONY : external/nvidia/NVVideoEffectsProxy.cpp.s
 
 external/pipewire/PipeWireProxy.o: external/pipewire/PipeWireProxy.cpp.o
@@ -1262,7 +1290,7 @@ external/pipewire/PipeWireProxy.o: external/pipewire/PipeWireProxy.cpp.o
 
 # target to build an object file
 external/pipewire/PipeWireProxy.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/pipewire/PipeWireProxy.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/pipewire/PipeWireProxy.cpp.o
 .PHONY : external/pipewire/PipeWireProxy.cpp.o
 
 external/pipewire/PipeWireProxy.i: external/pipewire/PipeWireProxy.cpp.i
@@ -1270,7 +1298,7 @@ external/pipewire/PipeWireProxy.i: external/pipewire/PipeWireProxy.cpp.i
 
 # target to preprocess a source file
 external/pipewire/PipeWireProxy.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/pipewire/PipeWireProxy.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/pipewire/PipeWireProxy.cpp.i
 .PHONY : external/pipewire/PipeWireProxy.cpp.i
 
 external/pipewire/PipeWireProxy.s: external/pipewire/PipeWireProxy.cpp.s
@@ -1278,7 +1306,7 @@ external/pipewire/PipeWireProxy.s: external/pipewire/PipeWireProxy.cpp.s
 
 # target to generate assembly for a file
 external/pipewire/PipeWireProxy.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/pipewire/PipeWireProxy.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/external/pipewire/PipeWireProxy.cpp.s
 .PHONY : external/pipewire/PipeWireProxy.cpp.s
 
 gpu/cuda_utils.o: gpu/cuda_utils.cpp.o
@@ -1286,7 +1314,7 @@ gpu/cuda_utils.o: gpu/cuda_utils.cpp.o
 
 # target to build an object file
 gpu/cuda_utils.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/cuda_utils.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/cuda_utils.cpp.o
 .PHONY : gpu/cuda_utils.cpp.o
 
 gpu/cuda_utils.i: gpu/cuda_utils.cpp.i
@@ -1294,7 +1322,7 @@ gpu/cuda_utils.i: gpu/cuda_utils.cpp.i
 
 # target to preprocess a source file
 gpu/cuda_utils.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/cuda_utils.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/cuda_utils.cpp.i
 .PHONY : gpu/cuda_utils.cpp.i
 
 gpu/cuda_utils.s: gpu/cuda_utils.cpp.s
@@ -1302,7 +1330,7 @@ gpu/cuda_utils.s: gpu/cuda_utils.cpp.s
 
 # target to generate assembly for a file
 gpu/cuda_utils.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/cuda_utils.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/cuda_utils.cpp.s
 .PHONY : gpu/cuda_utils.cpp.s
 
 gpu/vulkan_utils.o: gpu/vulkan_utils.cpp.o
@@ -1310,7 +1338,7 @@ gpu/vulkan_utils.o: gpu/vulkan_utils.cpp.o
 
 # target to build an object file
 gpu/vulkan_utils.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/vulkan_utils.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/vulkan_utils.cpp.o
 .PHONY : gpu/vulkan_utils.cpp.o
 
 gpu/vulkan_utils.i: gpu/vulkan_utils.cpp.i
@@ -1318,7 +1346,7 @@ gpu/vulkan_utils.i: gpu/vulkan_utils.cpp.i
 
 # target to preprocess a source file
 gpu/vulkan_utils.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/vulkan_utils.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/vulkan_utils.cpp.i
 .PHONY : gpu/vulkan_utils.cpp.i
 
 gpu/vulkan_utils.s: gpu/vulkan_utils.cpp.s
@@ -1326,7 +1354,7 @@ gpu/vulkan_utils.s: gpu/vulkan_utils.cpp.s
 
 # target to generate assembly for a file
 gpu/vulkan_utils.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/vulkan_utils.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/gpu/vulkan_utils.cpp.s
 .PHONY : gpu/vulkan_utils.cpp.s
 
 input/BrowserSource.o: input/BrowserSource.cpp.o
@@ -1334,7 +1362,7 @@ input/BrowserSource.o: input/BrowserSource.cpp.o
 
 # target to build an object file
 input/BrowserSource.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/BrowserSource.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/BrowserSource.cpp.o
 .PHONY : input/BrowserSource.cpp.o
 
 input/BrowserSource.i: input/BrowserSource.cpp.i
@@ -1342,7 +1370,7 @@ input/BrowserSource.i: input/BrowserSource.cpp.i
 
 # target to preprocess a source file
 input/BrowserSource.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/BrowserSource.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/BrowserSource.cpp.i
 .PHONY : input/BrowserSource.cpp.i
 
 input/BrowserSource.s: input/BrowserSource.cpp.s
@@ -1350,7 +1378,7 @@ input/BrowserSource.s: input/BrowserSource.cpp.s
 
 # target to generate assembly for a file
 input/BrowserSource.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/BrowserSource.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/BrowserSource.cpp.s
 .PHONY : input/BrowserSource.cpp.s
 
 input/CEFBrowserSource.o: input/CEFBrowserSource.cpp.o
@@ -1358,7 +1386,7 @@ input/CEFBrowserSource.o: input/CEFBrowserSource.cpp.o
 
 # target to build an object file
 input/CEFBrowserSource.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/CEFBrowserSource.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/CEFBrowserSource.cpp.o
 .PHONY : input/CEFBrowserSource.cpp.o
 
 input/CEFBrowserSource.i: input/CEFBrowserSource.cpp.i
@@ -1366,7 +1394,7 @@ input/CEFBrowserSource.i: input/CEFBrowserSource.cpp.i
 
 # target to preprocess a source file
 input/CEFBrowserSource.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/CEFBrowserSource.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/CEFBrowserSource.cpp.i
 .PHONY : input/CEFBrowserSource.cpp.i
 
 input/CEFBrowserSource.s: input/CEFBrowserSource.cpp.s
@@ -1374,7 +1402,7 @@ input/CEFBrowserSource.s: input/CEFBrowserSource.cpp.s
 
 # target to generate assembly for a file
 input/CEFBrowserSource.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/CEFBrowserSource.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/CEFBrowserSource.cpp.s
 .PHONY : input/CEFBrowserSource.cpp.s
 
 input/MediaSource.o: input/MediaSource.cpp.o
@@ -1382,7 +1410,7 @@ input/MediaSource.o: input/MediaSource.cpp.o
 
 # target to build an object file
 input/MediaSource.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.o
 .PHONY : input/MediaSource.cpp.o
 
 input/MediaSource.i: input/MediaSource.cpp.i
@@ -1390,7 +1418,7 @@ input/MediaSource.i: input/MediaSource.cpp.i
 
 # target to preprocess a source file
 input/MediaSource.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.i
 .PHONY : input/MediaSource.cpp.i
 
 input/MediaSource.s: input/MediaSource.cpp.s
@@ -1398,7 +1426,7 @@ input/MediaSource.s: input/MediaSource.cpp.s
 
 # target to generate assembly for a file
 input/MediaSource.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/MediaSource.cpp.s
 .PHONY : input/MediaSource.cpp.s
 
 input/PipeWireSource.o: input/PipeWireSource.cpp.o
@@ -1406,7 +1434,7 @@ input/PipeWireSource.o: input/PipeWireSource.cpp.o
 
 # target to build an object file
 input/PipeWireSource.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/PipeWireSource.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/PipeWireSource.cpp.o
 .PHONY : input/PipeWireSource.cpp.o
 
 input/PipeWireSource.i: input/PipeWireSource.cpp.i
@@ -1414,7 +1442,7 @@ input/PipeWireSource.i: input/PipeWireSource.cpp.i
 
 # target to preprocess a source file
 input/PipeWireSource.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/PipeWireSource.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/PipeWireSource.cpp.i
 .PHONY : input/PipeWireSource.cpp.i
 
 input/PipeWireSource.s: input/PipeWireSource.cpp.s
@@ -1422,7 +1450,7 @@ input/PipeWireSource.s: input/PipeWireSource.cpp.s
 
 # target to generate assembly for a file
 input/PipeWireSource.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/PipeWireSource.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/PipeWireSource.cpp.s
 .PHONY : input/PipeWireSource.cpp.s
 
 input/V4L2Source.o: input/V4L2Source.cpp.o
@@ -1430,7 +1458,7 @@ input/V4L2Source.o: input/V4L2Source.cpp.o
 
 # target to build an object file
 input/V4L2Source.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/V4L2Source.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/V4L2Source.cpp.o
 .PHONY : input/V4L2Source.cpp.o
 
 input/V4L2Source.i: input/V4L2Source.cpp.i
@@ -1438,7 +1466,7 @@ input/V4L2Source.i: input/V4L2Source.cpp.i
 
 # target to preprocess a source file
 input/V4L2Source.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/V4L2Source.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/V4L2Source.cpp.i
 .PHONY : input/V4L2Source.cpp.i
 
 input/V4L2Source.s: input/V4L2Source.cpp.s
@@ -1446,7 +1474,7 @@ input/V4L2Source.s: input/V4L2Source.cpp.s
 
 # target to generate assembly for a file
 input/V4L2Source.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/V4L2Source.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/input/V4L2Source.cpp.s
 .PHONY : input/V4L2Source.cpp.s
 
 ipc/IPCServer.o: ipc/IPCServer.cpp.o
@@ -1454,7 +1482,7 @@ ipc/IPCServer.o: ipc/IPCServer.cpp.o
 
 # target to build an object file
 ipc/IPCServer.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ipc/IPCServer.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ipc/IPCServer.cpp.o
 .PHONY : ipc/IPCServer.cpp.o
 
 ipc/IPCServer.i: ipc/IPCServer.cpp.i
@@ -1462,7 +1490,7 @@ ipc/IPCServer.i: ipc/IPCServer.cpp.i
 
 # target to preprocess a source file
 ipc/IPCServer.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ipc/IPCServer.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ipc/IPCServer.cpp.i
 .PHONY : ipc/IPCServer.cpp.i
 
 ipc/IPCServer.s: ipc/IPCServer.cpp.s
@@ -1470,7 +1498,7 @@ ipc/IPCServer.s: ipc/IPCServer.cpp.s
 
 # target to generate assembly for a file
 ipc/IPCServer.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ipc/IPCServer.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ipc/IPCServer.cpp.s
 .PHONY : ipc/IPCServer.cpp.s
 
 ml/MLRuntime.o: ml/MLRuntime.cpp.o
@@ -1478,7 +1506,7 @@ ml/MLRuntime.o: ml/MLRuntime.cpp.o
 
 # target to build an object file
 ml/MLRuntime.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/MLRuntime.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/MLRuntime.cpp.o
 .PHONY : ml/MLRuntime.cpp.o
 
 ml/MLRuntime.i: ml/MLRuntime.cpp.i
@@ -1486,7 +1514,7 @@ ml/MLRuntime.i: ml/MLRuntime.cpp.i
 
 # target to preprocess a source file
 ml/MLRuntime.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/MLRuntime.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/MLRuntime.cpp.i
 .PHONY : ml/MLRuntime.cpp.i
 
 ml/MLRuntime.s: ml/MLRuntime.cpp.s
@@ -1494,7 +1522,7 @@ ml/MLRuntime.s: ml/MLRuntime.cpp.s
 
 # target to generate assembly for a file
 ml/MLRuntime.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/MLRuntime.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/MLRuntime.cpp.s
 .PHONY : ml/MLRuntime.cpp.s
 
 ml/SuperResolutionAdapter.o: ml/SuperResolutionAdapter.cpp.o
@@ -1502,7 +1530,7 @@ ml/SuperResolutionAdapter.o: ml/SuperResolutionAdapter.cpp.o
 
 # target to build an object file
 ml/SuperResolutionAdapter.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/SuperResolutionAdapter.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/SuperResolutionAdapter.cpp.o
 .PHONY : ml/SuperResolutionAdapter.cpp.o
 
 ml/SuperResolutionAdapter.i: ml/SuperResolutionAdapter.cpp.i
@@ -1510,7 +1538,7 @@ ml/SuperResolutionAdapter.i: ml/SuperResolutionAdapter.cpp.i
 
 # target to preprocess a source file
 ml/SuperResolutionAdapter.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/SuperResolutionAdapter.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/SuperResolutionAdapter.cpp.i
 .PHONY : ml/SuperResolutionAdapter.cpp.i
 
 ml/SuperResolutionAdapter.s: ml/SuperResolutionAdapter.cpp.s
@@ -1518,7 +1546,7 @@ ml/SuperResolutionAdapter.s: ml/SuperResolutionAdapter.cpp.s
 
 # target to generate assembly for a file
 ml/SuperResolutionAdapter.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/SuperResolutionAdapter.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/ml/SuperResolutionAdapter.cpp.s
 .PHONY : ml/SuperResolutionAdapter.cpp.s
 
 output/VirtualCamOutput.o: output/VirtualCamOutput.cpp.o
@@ -1526,7 +1554,7 @@ output/VirtualCamOutput.o: output/VirtualCamOutput.cpp.o
 
 # target to build an object file
 output/VirtualCamOutput.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/output/VirtualCamOutput.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/output/VirtualCamOutput.cpp.o
 .PHONY : output/VirtualCamOutput.cpp.o
 
 output/VirtualCamOutput.i: output/VirtualCamOutput.cpp.i
@@ -1534,7 +1562,7 @@ output/VirtualCamOutput.i: output/VirtualCamOutput.cpp.i
 
 # target to preprocess a source file
 output/VirtualCamOutput.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/output/VirtualCamOutput.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/output/VirtualCamOutput.cpp.i
 .PHONY : output/VirtualCamOutput.cpp.i
 
 output/VirtualCamOutput.s: output/VirtualCamOutput.cpp.s
@@ -1542,7 +1570,7 @@ output/VirtualCamOutput.s: output/VirtualCamOutput.cpp.s
 
 # target to generate assembly for a file
 output/VirtualCamOutput.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/output/VirtualCamOutput.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/output/VirtualCamOutput.cpp.s
 .PHONY : output/VirtualCamOutput.cpp.s
 
 pipeline/FrameRouter.o: pipeline/FrameRouter.cpp.o
@@ -1550,7 +1578,7 @@ pipeline/FrameRouter.o: pipeline/FrameRouter.cpp.o
 
 # target to build an object file
 pipeline/FrameRouter.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/pipeline/FrameRouter.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/pipeline/FrameRouter.cpp.o
 .PHONY : pipeline/FrameRouter.cpp.o
 
 pipeline/FrameRouter.i: pipeline/FrameRouter.cpp.i
@@ -1558,7 +1586,7 @@ pipeline/FrameRouter.i: pipeline/FrameRouter.cpp.i
 
 # target to preprocess a source file
 pipeline/FrameRouter.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/pipeline/FrameRouter.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/pipeline/FrameRouter.cpp.i
 .PHONY : pipeline/FrameRouter.cpp.i
 
 pipeline/FrameRouter.s: pipeline/FrameRouter.cpp.s
@@ -1566,7 +1594,7 @@ pipeline/FrameRouter.s: pipeline/FrameRouter.cpp.s
 
 # target to generate assembly for a file
 pipeline/FrameRouter.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/pipeline/FrameRouter.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/pipeline/FrameRouter.cpp.s
 .PHONY : pipeline/FrameRouter.cpp.s
 
 render/vulkan/VulkanRenderEngine.o: render/vulkan/VulkanRenderEngine.cpp.o
@@ -1574,7 +1602,7 @@ render/vulkan/VulkanRenderEngine.o: render/vulkan/VulkanRenderEngine.cpp.o
 
 # target to build an object file
 render/vulkan/VulkanRenderEngine.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/render/vulkan/VulkanRenderEngine.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/render/vulkan/VulkanRenderEngine.cpp.o
 .PHONY : render/vulkan/VulkanRenderEngine.cpp.o
 
 render/vulkan/VulkanRenderEngine.i: render/vulkan/VulkanRenderEngine.cpp.i
@@ -1582,7 +1610,7 @@ render/vulkan/VulkanRenderEngine.i: render/vulkan/VulkanRenderEngine.cpp.i
 
 # target to preprocess a source file
 render/vulkan/VulkanRenderEngine.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/render/vulkan/VulkanRenderEngine.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/render/vulkan/VulkanRenderEngine.cpp.i
 .PHONY : render/vulkan/VulkanRenderEngine.cpp.i
 
 render/vulkan/VulkanRenderEngine.s: render/vulkan/VulkanRenderEngine.cpp.s
@@ -1590,7 +1618,7 @@ render/vulkan/VulkanRenderEngine.s: render/vulkan/VulkanRenderEngine.cpp.s
 
 # target to generate assembly for a file
 render/vulkan/VulkanRenderEngine.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/render/vulkan/VulkanRenderEngine.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/render/vulkan/VulkanRenderEngine.cpp.s
 .PHONY : render/vulkan/VulkanRenderEngine.cpp.s
 
 scene/OBJLoader.o: scene/OBJLoader.cpp.o
@@ -1598,7 +1626,7 @@ scene/OBJLoader.o: scene/OBJLoader.cpp.o
 
 # target to build an object file
 scene/OBJLoader.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/OBJLoader.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/OBJLoader.cpp.o
 .PHONY : scene/OBJLoader.cpp.o
 
 scene/OBJLoader.i: scene/OBJLoader.cpp.i
@@ -1606,7 +1634,7 @@ scene/OBJLoader.i: scene/OBJLoader.cpp.i
 
 # target to preprocess a source file
 scene/OBJLoader.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/OBJLoader.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/OBJLoader.cpp.i
 .PHONY : scene/OBJLoader.cpp.i
 
 scene/OBJLoader.s: scene/OBJLoader.cpp.s
@@ -1614,7 +1642,7 @@ scene/OBJLoader.s: scene/OBJLoader.cpp.s
 
 # target to generate assembly for a file
 scene/OBJLoader.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/OBJLoader.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/OBJLoader.cpp.s
 .PHONY : scene/OBJLoader.cpp.s
 
 scene/SceneManager.o: scene/SceneManager.cpp.o
@@ -1622,7 +1650,7 @@ scene/SceneManager.o: scene/SceneManager.cpp.o
 
 # target to build an object file
 scene/SceneManager.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/SceneManager.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/SceneManager.cpp.o
 .PHONY : scene/SceneManager.cpp.o
 
 scene/SceneManager.i: scene/SceneManager.cpp.i
@@ -1630,7 +1658,7 @@ scene/SceneManager.i: scene/SceneManager.cpp.i
 
 # target to preprocess a source file
 scene/SceneManager.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/SceneManager.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/SceneManager.cpp.i
 .PHONY : scene/SceneManager.cpp.i
 
 scene/SceneManager.s: scene/SceneManager.cpp.s
@@ -1638,7 +1666,7 @@ scene/SceneManager.s: scene/SceneManager.cpp.s
 
 # target to generate assembly for a file
 scene/SceneManager.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/SceneManager.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/scene/SceneManager.cpp.s
 .PHONY : scene/SceneManager.cpp.s
 
 shim/alsa-mock.o: shim/alsa-mock.c.o
@@ -1646,7 +1674,7 @@ shim/alsa-mock.o: shim/alsa-mock.c.o
 
 # target to build an object file
 shim/alsa-mock.c.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/shim/alsa-mock.c.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/shim/alsa-mock.c.o
 .PHONY : shim/alsa-mock.c.o
 
 shim/alsa-mock.i: shim/alsa-mock.c.i
@@ -1654,7 +1682,7 @@ shim/alsa-mock.i: shim/alsa-mock.c.i
 
 # target to preprocess a source file
 shim/alsa-mock.c.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/shim/alsa-mock.c.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/shim/alsa-mock.c.i
 .PHONY : shim/alsa-mock.c.i
 
 shim/alsa-mock.s: shim/alsa-mock.c.s
@@ -1662,7 +1690,7 @@ shim/alsa-mock.s: shim/alsa-mock.c.s
 
 # target to generate assembly for a file
 shim/alsa-mock.c.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/shim/alsa-mock.c.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/shim/alsa-mock.c.s
 .PHONY : shim/alsa-mock.c.s
 
 stitch/Stitcher.o: stitch/Stitcher.cpp.o
@@ -1670,7 +1698,7 @@ stitch/Stitcher.o: stitch/Stitcher.cpp.o
 
 # target to build an object file
 stitch/Stitcher.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/stitch/Stitcher.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/stitch/Stitcher.cpp.o
 .PHONY : stitch/Stitcher.cpp.o
 
 stitch/Stitcher.i: stitch/Stitcher.cpp.i
@@ -1678,7 +1706,7 @@ stitch/Stitcher.i: stitch/Stitcher.cpp.i
 
 # target to preprocess a source file
 stitch/Stitcher.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/stitch/Stitcher.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/stitch/Stitcher.cpp.i
 .PHONY : stitch/Stitcher.cpp.i
 
 stitch/Stitcher.s: stitch/Stitcher.cpp.s
@@ -1686,7 +1714,7 @@ stitch/Stitcher.s: stitch/Stitcher.cpp.s
 
 # target to generate assembly for a file
 stitch/Stitcher.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/stitch/Stitcher.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/stitch/Stitcher.cpp.s
 .PHONY : stitch/Stitcher.cpp.s
 
 test_3d_scene.o: test_3d_scene.cpp.o
@@ -1694,7 +1722,7 @@ test_3d_scene.o: test_3d_scene.cpp.o
 
 # target to build an object file
 test_3d_scene.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/test_3d_scene.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/test_3d_scene.cpp.o
 .PHONY : test_3d_scene.cpp.o
 
 test_3d_scene.i: test_3d_scene.cpp.i
@@ -1702,7 +1730,7 @@ test_3d_scene.i: test_3d_scene.cpp.i
 
 # target to preprocess a source file
 test_3d_scene.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/test_3d_scene.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/test_3d_scene.cpp.i
 .PHONY : test_3d_scene.cpp.i
 
 test_3d_scene.s: test_3d_scene.cpp.s
@@ -1710,7 +1738,7 @@ test_3d_scene.s: test_3d_scene.cpp.s
 
 # target to generate assembly for a file
 test_3d_scene.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/test_3d_scene.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_3d_scene.dir/build.make libvr/CMakeFiles/test_3d_scene.dir/test_3d_scene.cpp.s
 .PHONY : test_3d_scene.cpp.s
 
 test_bpm.o: test_bpm.cpp.o
@@ -1718,7 +1746,7 @@ test_bpm.o: test_bpm.cpp.o
 
 # target to build an object file
 test_bpm.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/test_bpm.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/test_bpm.cpp.o
 .PHONY : test_bpm.cpp.o
 
 test_bpm.i: test_bpm.cpp.i
@@ -1726,7 +1754,7 @@ test_bpm.i: test_bpm.cpp.i
 
 # target to preprocess a source file
 test_bpm.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/test_bpm.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/test_bpm.cpp.i
 .PHONY : test_bpm.cpp.i
 
 test_bpm.s: test_bpm.cpp.s
@@ -1734,7 +1762,7 @@ test_bpm.s: test_bpm.cpp.s
 
 # target to generate assembly for a file
 test_bpm.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/test_bpm.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_bpm.dir/build.make libvr/CMakeFiles/test_bpm.dir/test_bpm.cpp.s
 .PHONY : test_bpm.cpp.s
 
 test_encode.o: test_encode.cpp.o
@@ -1742,7 +1770,7 @@ test_encode.o: test_encode.cpp.o
 
 # target to build an object file
 test_encode.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/test_encode.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/test_encode.cpp.o
 .PHONY : test_encode.cpp.o
 
 test_encode.i: test_encode.cpp.i
@@ -1750,7 +1778,7 @@ test_encode.i: test_encode.cpp.i
 
 # target to preprocess a source file
 test_encode.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/test_encode.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/test_encode.cpp.i
 .PHONY : test_encode.cpp.i
 
 test_encode.s: test_encode.cpp.s
@@ -1758,7 +1786,7 @@ test_encode.s: test_encode.cpp.s
 
 # target to generate assembly for a file
 test_encode.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/test_encode.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_encode.dir/build.make libvr/CMakeFiles/test_encode.dir/test_encode.cpp.s
 .PHONY : test_encode.cpp.s
 
 test_file_updater.o: test_file_updater.cpp.o
@@ -1766,7 +1794,7 @@ test_file_updater.o: test_file_updater.cpp.o
 
 # target to build an object file
 test_file_updater.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.o
 .PHONY : test_file_updater.cpp.o
 
 test_file_updater.i: test_file_updater.cpp.i
@@ -1774,7 +1802,7 @@ test_file_updater.i: test_file_updater.cpp.i
 
 # target to preprocess a source file
 test_file_updater.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.i
 .PHONY : test_file_updater.cpp.i
 
 test_file_updater.s: test_file_updater.cpp.s
@@ -1782,7 +1810,7 @@ test_file_updater.s: test_file_updater.cpp.s
 
 # target to generate assembly for a file
 test_file_updater.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_file_updater.dir/build.make libvr/CMakeFiles/test_file_updater.dir/test_file_updater.cpp.s
 .PHONY : test_file_updater.cpp.s
 
 test_frame_router.o: test_frame_router.cpp.o
@@ -1790,7 +1818,7 @@ test_frame_router.o: test_frame_router.cpp.o
 
 # target to build an object file
 test_frame_router.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/test_frame_router.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/test_frame_router.cpp.o
 .PHONY : test_frame_router.cpp.o
 
 test_frame_router.i: test_frame_router.cpp.i
@@ -1798,7 +1826,7 @@ test_frame_router.i: test_frame_router.cpp.i
 
 # target to preprocess a source file
 test_frame_router.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/test_frame_router.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/test_frame_router.cpp.i
 .PHONY : test_frame_router.cpp.i
 
 test_frame_router.s: test_frame_router.cpp.s
@@ -1806,7 +1834,7 @@ test_frame_router.s: test_frame_router.cpp.s
 
 # target to generate assembly for a file
 test_frame_router.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/test_frame_router.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_frame_router.dir/build.make libvr/CMakeFiles/test_frame_router.dir/test_frame_router.cpp.s
 .PHONY : test_frame_router.cpp.s
 
 test_happy_eyeballs.o: test_happy_eyeballs.cpp.o
@@ -1814,7 +1842,7 @@ test_happy_eyeballs.o: test_happy_eyeballs.cpp.o
 
 # target to build an object file
 test_happy_eyeballs.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/test_happy_eyeballs.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/test_happy_eyeballs.cpp.o
 .PHONY : test_happy_eyeballs.cpp.o
 
 test_happy_eyeballs.i: test_happy_eyeballs.cpp.i
@@ -1822,7 +1850,7 @@ test_happy_eyeballs.i: test_happy_eyeballs.cpp.i
 
 # target to preprocess a source file
 test_happy_eyeballs.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/test_happy_eyeballs.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/test_happy_eyeballs.cpp.i
 .PHONY : test_happy_eyeballs.cpp.i
 
 test_happy_eyeballs.s: test_happy_eyeballs.cpp.s
@@ -1830,7 +1858,7 @@ test_happy_eyeballs.s: test_happy_eyeballs.cpp.s
 
 # target to generate assembly for a file
 test_happy_eyeballs.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/test_happy_eyeballs.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_happy_eyeballs.dir/build.make libvr/CMakeFiles/test_happy_eyeballs.dir/test_happy_eyeballs.cpp.s
 .PHONY : test_happy_eyeballs.cpp.s
 
 test_interop.o: test_interop.cpp.o
@@ -1838,7 +1866,7 @@ test_interop.o: test_interop.cpp.o
 
 # target to build an object file
 test_interop.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/test_interop.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/test_interop.cpp.o
 .PHONY : test_interop.cpp.o
 
 test_interop.i: test_interop.cpp.i
@@ -1846,7 +1874,7 @@ test_interop.i: test_interop.cpp.i
 
 # target to preprocess a source file
 test_interop.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/test_interop.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/test_interop.cpp.i
 .PHONY : test_interop.cpp.i
 
 test_interop.s: test_interop.cpp.s
@@ -1854,7 +1882,7 @@ test_interop.s: test_interop.cpp.s
 
 # target to generate assembly for a file
 test_interop.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/test_interop.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_interop.dir/build.make libvr/CMakeFiles/test_interop.dir/test_interop.cpp.s
 .PHONY : test_interop.cpp.s
 
 test_ipc_util.o: test_ipc_util.cpp.o
@@ -1862,7 +1890,7 @@ test_ipc_util.o: test_ipc_util.cpp.o
 
 # target to build an object file
 test_ipc_util.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.o
 .PHONY : test_ipc_util.cpp.o
 
 test_ipc_util.i: test_ipc_util.cpp.i
@@ -1870,7 +1898,7 @@ test_ipc_util.i: test_ipc_util.cpp.i
 
 # target to preprocess a source file
 test_ipc_util.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.i
 .PHONY : test_ipc_util.cpp.i
 
 test_ipc_util.s: test_ipc_util.cpp.s
@@ -1878,7 +1906,7 @@ test_ipc_util.s: test_ipc_util.cpp.s
 
 # target to generate assembly for a file
 test_ipc_util.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ipc_util.dir/build.make libvr/CMakeFiles/test_ipc_util.dir/test_ipc_util.cpp.s
 .PHONY : test_ipc_util.cpp.s
 
 test_media_playback.o: test_media_playback.cpp.o
@@ -1886,7 +1914,7 @@ test_media_playback.o: test_media_playback.cpp.o
 
 # target to build an object file
 test_media_playback.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/test_media_playback.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/test_media_playback.cpp.o
 .PHONY : test_media_playback.cpp.o
 
 test_media_playback.i: test_media_playback.cpp.i
@@ -1894,7 +1922,7 @@ test_media_playback.i: test_media_playback.cpp.i
 
 # target to preprocess a source file
 test_media_playback.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/test_media_playback.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/test_media_playback.cpp.i
 .PHONY : test_media_playback.cpp.i
 
 test_media_playback.s: test_media_playback.cpp.s
@@ -1902,7 +1930,7 @@ test_media_playback.s: test_media_playback.cpp.s
 
 # target to generate assembly for a file
 test_media_playback.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/test_media_playback.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_playback.dir/build.make libvr/CMakeFiles/test_media_playback.dir/test_media_playback.cpp.s
 .PHONY : test_media_playback.cpp.s
 
 test_media_source.o: test_media_source.cpp.o
@@ -1910,7 +1938,7 @@ test_media_source.o: test_media_source.cpp.o
 
 # target to build an object file
 test_media_source.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/test_media_source.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/test_media_source.cpp.o
 .PHONY : test_media_source.cpp.o
 
 test_media_source.i: test_media_source.cpp.i
@@ -1918,7 +1946,7 @@ test_media_source.i: test_media_source.cpp.i
 
 # target to preprocess a source file
 test_media_source.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/test_media_source.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/test_media_source.cpp.i
 .PHONY : test_media_source.cpp.i
 
 test_media_source.s: test_media_source.cpp.s
@@ -1926,7 +1954,7 @@ test_media_source.s: test_media_source.cpp.s
 
 # target to generate assembly for a file
 test_media_source.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/test_media_source.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_media_source.dir/build.make libvr/CMakeFiles/test_media_source.dir/test_media_source.cpp.s
 .PHONY : test_media_source.cpp.s
 
 test_ml_init.o: test_ml_init.cpp.o
@@ -1934,7 +1962,7 @@ test_ml_init.o: test_ml_init.cpp.o
 
 # target to build an object file
 test_ml_init.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/test_ml_init.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/test_ml_init.cpp.o
 .PHONY : test_ml_init.cpp.o
 
 test_ml_init.i: test_ml_init.cpp.i
@@ -1942,7 +1970,7 @@ test_ml_init.i: test_ml_init.cpp.i
 
 # target to preprocess a source file
 test_ml_init.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/test_ml_init.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/test_ml_init.cpp.i
 .PHONY : test_ml_init.cpp.i
 
 test_ml_init.s: test_ml_init.cpp.s
@@ -1950,7 +1978,7 @@ test_ml_init.s: test_ml_init.cpp.s
 
 # target to generate assembly for a file
 test_ml_init.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/test_ml_init.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_ml_init.dir/build.make libvr/CMakeFiles/test_ml_init.dir/test_ml_init.cpp.s
 .PHONY : test_ml_init.cpp.s
 
 test_openxr_init.o: test_openxr_init.cpp.o
@@ -1958,7 +1986,7 @@ test_openxr_init.o: test_openxr_init.cpp.o
 
 # target to build an object file
 test_openxr_init.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.o
 .PHONY : test_openxr_init.cpp.o
 
 test_openxr_init.i: test_openxr_init.cpp.i
@@ -1966,7 +1994,7 @@ test_openxr_init.i: test_openxr_init.cpp.i
 
 # target to preprocess a source file
 test_openxr_init.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.i
 .PHONY : test_openxr_init.cpp.i
 
 test_openxr_init.s: test_openxr_init.cpp.s
@@ -1974,7 +2002,7 @@ test_openxr_init.s: test_openxr_init.cpp.s
 
 # target to generate assembly for a file
 test_openxr_init.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_openxr_init.dir/build.make libvr/CMakeFiles/test_openxr_init.dir/test_openxr_init.cpp.s
 .PHONY : test_openxr_init.cpp.s
 
 test_plugin_alsa.o: test_plugin_alsa.cpp.o
@@ -1982,7 +2010,7 @@ test_plugin_alsa.o: test_plugin_alsa.cpp.o
 
 # target to build an object file
 test_plugin_alsa.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/test_plugin_alsa.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/test_plugin_alsa.cpp.o
 .PHONY : test_plugin_alsa.cpp.o
 
 test_plugin_alsa.i: test_plugin_alsa.cpp.i
@@ -1990,7 +2018,7 @@ test_plugin_alsa.i: test_plugin_alsa.cpp.i
 
 # target to preprocess a source file
 test_plugin_alsa.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/test_plugin_alsa.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/test_plugin_alsa.cpp.i
 .PHONY : test_plugin_alsa.cpp.i
 
 test_plugin_alsa.s: test_plugin_alsa.cpp.s
@@ -1998,7 +2026,7 @@ test_plugin_alsa.s: test_plugin_alsa.cpp.s
 
 # target to generate assembly for a file
 test_plugin_alsa.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/test_plugin_alsa.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_alsa.dir/build.make libvr/CMakeFiles/test_plugin_alsa.dir/test_plugin_alsa.cpp.s
 .PHONY : test_plugin_alsa.cpp.s
 
 test_plugin_image.o: test_plugin_image.cpp.o
@@ -2006,7 +2034,7 @@ test_plugin_image.o: test_plugin_image.cpp.o
 
 # target to build an object file
 test_plugin_image.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/test_plugin_image.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/test_plugin_image.cpp.o
 .PHONY : test_plugin_image.cpp.o
 
 test_plugin_image.i: test_plugin_image.cpp.i
@@ -2014,7 +2042,7 @@ test_plugin_image.i: test_plugin_image.cpp.i
 
 # target to preprocess a source file
 test_plugin_image.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/test_plugin_image.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/test_plugin_image.cpp.i
 .PHONY : test_plugin_image.cpp.i
 
 test_plugin_image.s: test_plugin_image.cpp.s
@@ -2022,7 +2050,7 @@ test_plugin_image.s: test_plugin_image.cpp.s
 
 # target to generate assembly for a file
 test_plugin_image.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/test_plugin_image.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_plugin_image.dir/build.make libvr/CMakeFiles/test_plugin_image.dir/test_plugin_image.cpp.s
 .PHONY : test_plugin_image.cpp.s
 
 test_remaining_shared.o: test_remaining_shared.cpp.o
@@ -2030,7 +2058,7 @@ test_remaining_shared.o: test_remaining_shared.cpp.o
 
 # target to build an object file
 test_remaining_shared.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/test_remaining_shared.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/test_remaining_shared.cpp.o
 .PHONY : test_remaining_shared.cpp.o
 
 test_remaining_shared.i: test_remaining_shared.cpp.i
@@ -2038,7 +2066,7 @@ test_remaining_shared.i: test_remaining_shared.cpp.i
 
 # target to preprocess a source file
 test_remaining_shared.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/test_remaining_shared.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/test_remaining_shared.cpp.i
 .PHONY : test_remaining_shared.cpp.i
 
 test_remaining_shared.s: test_remaining_shared.cpp.s
@@ -2046,7 +2074,7 @@ test_remaining_shared.s: test_remaining_shared.cpp.s
 
 # target to generate assembly for a file
 test_remaining_shared.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/test_remaining_shared.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_remaining_shared.dir/build.make libvr/CMakeFiles/test_remaining_shared.dir/test_remaining_shared.cpp.s
 .PHONY : test_remaining_shared.cpp.s
 
 test_render_init.o: test_render_init.cpp.o
@@ -2054,7 +2082,7 @@ test_render_init.o: test_render_init.cpp.o
 
 # target to build an object file
 test_render_init.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/test_render_init.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/test_render_init.cpp.o
 .PHONY : test_render_init.cpp.o
 
 test_render_init.i: test_render_init.cpp.i
@@ -2062,7 +2090,7 @@ test_render_init.i: test_render_init.cpp.i
 
 # target to preprocess a source file
 test_render_init.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/test_render_init.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/test_render_init.cpp.i
 .PHONY : test_render_init.cpp.i
 
 test_render_init.s: test_render_init.cpp.s
@@ -2070,7 +2098,7 @@ test_render_init.s: test_render_init.cpp.s
 
 # target to generate assembly for a file
 test_render_init.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/test_render_init.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_render_init.dir/build.make libvr/CMakeFiles/test_render_init.dir/test_render_init.cpp.s
 .PHONY : test_render_init.cpp.s
 
 test_scene_draw.o: test_scene_draw.cpp.o
@@ -2078,7 +2106,7 @@ test_scene_draw.o: test_scene_draw.cpp.o
 
 # target to build an object file
 test_scene_draw.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/test_scene_draw.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/test_scene_draw.cpp.o
 .PHONY : test_scene_draw.cpp.o
 
 test_scene_draw.i: test_scene_draw.cpp.i
@@ -2086,7 +2114,7 @@ test_scene_draw.i: test_scene_draw.cpp.i
 
 # target to preprocess a source file
 test_scene_draw.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/test_scene_draw.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/test_scene_draw.cpp.i
 .PHONY : test_scene_draw.cpp.i
 
 test_scene_draw.s: test_scene_draw.cpp.s
@@ -2094,7 +2122,7 @@ test_scene_draw.s: test_scene_draw.cpp.s
 
 # target to generate assembly for a file
 test_scene_draw.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/test_scene_draw.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scene_draw.dir/build.make libvr/CMakeFiles/test_scene_draw.dir/test_scene_draw.cpp.s
 .PHONY : test_scene_draw.cpp.s
 
 test_scripting.o: test_scripting.cpp.o
@@ -2102,7 +2130,7 @@ test_scripting.o: test_scripting.cpp.o
 
 # target to build an object file
 test_scripting.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/test_scripting.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/test_scripting.cpp.o
 .PHONY : test_scripting.cpp.o
 
 test_scripting.i: test_scripting.cpp.i
@@ -2110,7 +2138,7 @@ test_scripting.i: test_scripting.cpp.i
 
 # target to preprocess a source file
 test_scripting.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/test_scripting.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/test_scripting.cpp.i
 .PHONY : test_scripting.cpp.i
 
 test_scripting.s: test_scripting.cpp.s
@@ -2118,15 +2146,63 @@ test_scripting.s: test_scripting.cpp.s
 
 # target to generate assembly for a file
 test_scripting.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/test_scripting.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_scripting.dir/build.make libvr/CMakeFiles/test_scripting.dir/test_scripting.cpp.s
 .PHONY : test_scripting.cpp.s
+
+test_semantic_scene.o: test_semantic_scene.cpp.o
+.PHONY : test_semantic_scene.o
+
+# target to build an object file
+test_semantic_scene.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/test_semantic_scene.cpp.o
+.PHONY : test_semantic_scene.cpp.o
+
+test_semantic_scene.i: test_semantic_scene.cpp.i
+.PHONY : test_semantic_scene.i
+
+# target to preprocess a source file
+test_semantic_scene.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/test_semantic_scene.cpp.i
+.PHONY : test_semantic_scene.cpp.i
+
+test_semantic_scene.s: test_semantic_scene.cpp.s
+.PHONY : test_semantic_scene.s
+
+# target to generate assembly for a file
+test_semantic_scene.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_semantic_scene.dir/build.make libvr/CMakeFiles/test_semantic_scene.dir/test_semantic_scene.cpp.s
+.PHONY : test_semantic_scene.cpp.s
+
+test_sr.o: test_sr.cpp.o
+.PHONY : test_sr.o
+
+# target to build an object file
+test_sr.cpp.o:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/test_sr.cpp.o
+.PHONY : test_sr.cpp.o
+
+test_sr.i: test_sr.cpp.i
+.PHONY : test_sr.i
+
+# target to preprocess a source file
+test_sr.cpp.i:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/test_sr.cpp.i
+.PHONY : test_sr.cpp.i
+
+test_sr.s: test_sr.cpp.s
+.PHONY : test_sr.s
+
+# target to generate assembly for a file
+test_sr.cpp.s:
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_sr.dir/build.make libvr/CMakeFiles/test_sr.dir/test_sr.cpp.s
+.PHONY : test_sr.cpp.s
 
 test_srt.o: test_srt.cpp.o
 .PHONY : test_srt.o
 
 # target to build an object file
 test_srt.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/test_srt.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/test_srt.cpp.o
 .PHONY : test_srt.cpp.o
 
 test_srt.i: test_srt.cpp.i
@@ -2134,7 +2210,7 @@ test_srt.i: test_srt.cpp.i
 
 # target to preprocess a source file
 test_srt.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/test_srt.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/test_srt.cpp.i
 .PHONY : test_srt.cpp.i
 
 test_srt.s: test_srt.cpp.s
@@ -2142,7 +2218,7 @@ test_srt.s: test_srt.cpp.s
 
 # target to generate assembly for a file
 test_srt.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/test_srt.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/test_srt.dir/build.make libvr/CMakeFiles/test_srt.dir/test_srt.cpp.s
 .PHONY : test_srt.cpp.s
 
 transport/RTMPAdapter.o: transport/RTMPAdapter.cpp.o
@@ -2150,7 +2226,7 @@ transport/RTMPAdapter.o: transport/RTMPAdapter.cpp.o
 
 # target to build an object file
 transport/RTMPAdapter.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/RTMPAdapter.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/RTMPAdapter.cpp.o
 .PHONY : transport/RTMPAdapter.cpp.o
 
 transport/RTMPAdapter.i: transport/RTMPAdapter.cpp.i
@@ -2158,7 +2234,7 @@ transport/RTMPAdapter.i: transport/RTMPAdapter.cpp.i
 
 # target to preprocess a source file
 transport/RTMPAdapter.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/RTMPAdapter.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/RTMPAdapter.cpp.i
 .PHONY : transport/RTMPAdapter.cpp.i
 
 transport/RTMPAdapter.s: transport/RTMPAdapter.cpp.s
@@ -2166,7 +2242,7 @@ transport/RTMPAdapter.s: transport/RTMPAdapter.cpp.s
 
 # target to generate assembly for a file
 transport/RTMPAdapter.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/RTMPAdapter.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/RTMPAdapter.cpp.s
 .PHONY : transport/RTMPAdapter.cpp.s
 
 transport/SRTAdapter.o: transport/SRTAdapter.cpp.o
@@ -2174,7 +2250,7 @@ transport/SRTAdapter.o: transport/SRTAdapter.cpp.o
 
 # target to build an object file
 transport/SRTAdapter.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/SRTAdapter.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/SRTAdapter.cpp.o
 .PHONY : transport/SRTAdapter.cpp.o
 
 transport/SRTAdapter.i: transport/SRTAdapter.cpp.i
@@ -2182,7 +2258,7 @@ transport/SRTAdapter.i: transport/SRTAdapter.cpp.i
 
 # target to preprocess a source file
 transport/SRTAdapter.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/SRTAdapter.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/SRTAdapter.cpp.i
 .PHONY : transport/SRTAdapter.cpp.i
 
 transport/SRTAdapter.s: transport/SRTAdapter.cpp.s
@@ -2190,7 +2266,7 @@ transport/SRTAdapter.s: transport/SRTAdapter.cpp.s
 
 # target to generate assembly for a file
 transport/SRTAdapter.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/SRTAdapter.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/SRTAdapter.cpp.s
 .PHONY : transport/SRTAdapter.cpp.s
 
 transport/WebTransportAdapter.o: transport/WebTransportAdapter.cpp.o
@@ -2198,7 +2274,7 @@ transport/WebTransportAdapter.o: transport/WebTransportAdapter.cpp.o
 
 # target to build an object file
 transport/WebTransportAdapter.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/WebTransportAdapter.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/WebTransportAdapter.cpp.o
 .PHONY : transport/WebTransportAdapter.cpp.o
 
 transport/WebTransportAdapter.i: transport/WebTransportAdapter.cpp.i
@@ -2206,7 +2282,7 @@ transport/WebTransportAdapter.i: transport/WebTransportAdapter.cpp.i
 
 # target to preprocess a source file
 transport/WebTransportAdapter.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/WebTransportAdapter.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/WebTransportAdapter.cpp.i
 .PHONY : transport/WebTransportAdapter.cpp.i
 
 transport/WebTransportAdapter.s: transport/WebTransportAdapter.cpp.s
@@ -2214,7 +2290,7 @@ transport/WebTransportAdapter.s: transport/WebTransportAdapter.cpp.s
 
 # target to generate assembly for a file
 transport/WebTransportAdapter.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/WebTransportAdapter.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/transport/WebTransportAdapter.cpp.s
 .PHONY : transport/WebTransportAdapter.cpp.s
 
 vr/openxr/OpenXRRuntime.o: vr/openxr/OpenXRRuntime.cpp.o
@@ -2222,7 +2298,7 @@ vr/openxr/OpenXRRuntime.o: vr/openxr/OpenXRRuntime.cpp.o
 
 # target to build an object file
 vr/openxr/OpenXRRuntime.cpp.o:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/vr/openxr/OpenXRRuntime.cpp.o
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/vr/openxr/OpenXRRuntime.cpp.o
 .PHONY : vr/openxr/OpenXRRuntime.cpp.o
 
 vr/openxr/OpenXRRuntime.i: vr/openxr/OpenXRRuntime.cpp.i
@@ -2230,7 +2306,7 @@ vr/openxr/OpenXRRuntime.i: vr/openxr/OpenXRRuntime.cpp.i
 
 # target to preprocess a source file
 vr/openxr/OpenXRRuntime.cpp.i:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/vr/openxr/OpenXRRuntime.cpp.i
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/vr/openxr/OpenXRRuntime.cpp.i
 .PHONY : vr/openxr/OpenXRRuntime.cpp.i
 
 vr/openxr/OpenXRRuntime.s: vr/openxr/OpenXRRuntime.cpp.s
@@ -2238,7 +2314,7 @@ vr/openxr/OpenXRRuntime.s: vr/openxr/OpenXRRuntime.cpp.s
 
 # target to generate assembly for a file
 vr/openxr/OpenXRRuntime.cpp.s:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/vr/openxr/OpenXRRuntime.cpp.s
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(MAKE) $(MAKESILENT) -f libvr/CMakeFiles/libvr.dir/build.make libvr/CMakeFiles/libvr.dir/vr/openxr/OpenXRRuntime.cpp.s
 .PHONY : vr/openxr/OpenXRRuntime.cpp.s
 
 # Help Target
@@ -2272,6 +2348,8 @@ help:
 	@echo "... test_render_init"
 	@echo "... test_scene_draw"
 	@echo "... test_scripting"
+	@echo "... test_semantic_scene"
+	@echo "... test_sr"
 	@echo "... test_srt"
 	@echo "... __/deps/libcaption/src/caption.o"
 	@echo "... __/deps/libcaption/src/caption.i"
@@ -2483,6 +2561,12 @@ help:
 	@echo "... test_scripting.o"
 	@echo "... test_scripting.i"
 	@echo "... test_scripting.s"
+	@echo "... test_semantic_scene.o"
+	@echo "... test_semantic_scene.i"
+	@echo "... test_semantic_scene.s"
+	@echo "... test_sr.o"
+	@echo "... test_sr.i"
+	@echo "... test_sr.s"
 	@echo "... test_srt.o"
 	@echo "... test_srt.i"
 	@echo "... test_srt.s"
@@ -2509,6 +2593,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/subtomic/Documents/GitHub/VRobs-studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/subtomic/Documents/GitHub/Neural-Studio/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

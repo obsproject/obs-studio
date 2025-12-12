@@ -1,4 +1,4 @@
-# Install script for directory: /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src
+# Install script for directory: /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,15 +44,15 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/include/cmake_install.cmake")
+  include("/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/include/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/src/cmake_install.cmake")
+  include("/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/src/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "License" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/doc/openxr" TYPE FILE FILES "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-src/LICENSE")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/doc/openxr" TYPE FILE FILES "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-src/LICENSE")
 endif()
 

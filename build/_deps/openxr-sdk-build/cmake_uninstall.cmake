@@ -34,11 +34,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if(NOT EXISTS "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/install_manifest.txt")
-  message(FATAL_ERROR "Cannot find install manifest: /home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/install_manifest.txt")
-endif(NOT EXISTS "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/install_manifest.txt")
+if(NOT EXISTS "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/install_manifest.txt")
+  message(FATAL_ERROR "Cannot find install manifest: /home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/install_manifest.txt")
+endif(NOT EXISTS "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/install_manifest.txt")
 
-file(READ "/home/subtomic/Documents/GitHub/VRobs-studio/build/_deps/openxr-sdk-build/install_manifest.txt" files)
+file(READ "/home/subtomic/Documents/GitHub/Neural-Studio/build/_deps/openxr-sdk-build/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 foreach(file ${files})
   message(STATUS "Uninstalling $ENV{DESTDIR}${file}")
