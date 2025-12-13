@@ -1446,7 +1446,7 @@ void obs_module_post_load(void)
 		.get_defaults2 = vt_defaults,
 		.get_extra_data = vt_extra_data,
 		.free_type_data = vt_free_type_data,
-		.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+		.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE,
 	};
 
 	da_init(vt_prores_hardware_encoder_list);
