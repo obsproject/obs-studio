@@ -5,6 +5,8 @@
 struct WHIPService {
 	std::string server;
 	std::string bearer_token;
+	std::string stun_server;
+	bool wait_gathered_candidates;
 
 	WHIPService(obs_data_t *settings, obs_service_t *service);
 
