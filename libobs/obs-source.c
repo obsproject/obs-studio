@@ -257,7 +257,7 @@ static bool obs_source_init(struct obs_source *source)
 	obs_context_init_control(&source->context, source, (obs_destroy_cb)obs_source_destroy);
 
 	source->deinterlace_top_first = true;
-	source->audio_mixers = 0xFF;
+	source->audio_mixers = (1 << MAX_AUDIO_MIXES) - 1;
 
 	source->private_settings = obs_data_create();
 	return true;
