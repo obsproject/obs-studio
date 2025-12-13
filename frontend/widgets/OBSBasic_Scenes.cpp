@@ -541,7 +541,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		copyFilters->setEnabled(false);
 		connect(copyFilters, &QAction::triggered, this, &OBSBasic::SceneCopyFilters);
 		QAction *pasteFilters = new QAction(QTStr("Paste.Filters"), this);
-		pasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource));
+		pasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource()));
 		connect(pasteFilters, &QAction::triggered, this, &OBSBasic::ScenePasteFilters);
 
 		popup.addSeparator();
