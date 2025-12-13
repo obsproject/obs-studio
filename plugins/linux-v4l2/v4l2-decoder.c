@@ -43,6 +43,8 @@ int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt)
 	if (!decoder->context) {
 		return -1;
 	}
+	decoder->context->thread_count = 0;
+	decoder->context->thread_type = FF_THREAD_FRAME;
 
 	decoder->packet = av_packet_alloc();
 	if (!decoder->packet) {
@@ -128,5 +130,5 @@ int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data, size_t length
 		break;
 	}
 
-	return 0;
+	return 1;
 }
