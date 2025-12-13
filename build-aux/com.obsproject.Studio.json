@@ -62,6 +62,7 @@
         "modules/50-swig.json",
         "modules/50-v4l-utils.json",
         "modules/50-vpl-gpu-rt.json",
+        "modules/90-amf.json",
         "modules/90-asio.json",
         "modules/90-nlohmann-json.json",
         "modules/90-simde.json",

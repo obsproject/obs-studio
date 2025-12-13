@@ -316,7 +316,7 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 			val = atoi(opt->value);
 		}
 
-		os_utf8_to_wcs(opt->name, 0, wname, _countof(wname));
+		os_utf8_to_wcs(opt->name, 0, wname, amf_countof(wname));
 		if (is_bool) {
 			bool bool_val = (bool)val;
 			set_amf_property(enc, wname, bool_val);
