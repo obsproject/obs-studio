@@ -1,0 +1,31 @@
+{
+  "format": {
+    "line_width": 120,
+    "tab_size": 2,
+    "enable_sort": true,
+    "autosort": true
+  },
+  "additional_commands": {
+    "set_target_properties_obs": {
+      "pargs": 1,
+      "flags": [],
+      "kwargs": {
+        "PROPERTIES": {
+          "kwargs": {
+            "PREFIX": 1,
+            "OUTPUT_NAME": 1,
+            "FOLDER": 1,
+            "VERSION": 1,
+            "SOVERSION": 1,
+            "AUTOMOC": 1,
+            "AUTOUIC": 1,
+            "AUTORCC": 1,
+            "AUTOUIC_SEARCH_PATHS": 1,
+            "BUILD_RPATH": 1,
+            "INSTALL_RPATH": 1
+          }
+        }
+      }
+    }
+  }
+}

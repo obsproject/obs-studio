@@ -1,0 +1,45 @@
+{
+  "dependencies": {
+    "obs-studio": {
+      "version": "30.2.3",
+      "baseUrl": "https://github.com/obsproject/obs-studio/archive/refs/tags",
+      "label": "OBS sources",
+      "hashes": {
+          "windows-x64": "a75de0a777013ae5edca526e21b584176bf21606d4d5db23ba4b5a87cfde12e3"
+      }
+    },
+    "prebuilt": {
+      "version": "2024-09-12",
+      "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+      "label": "Pre-Built obs-deps",
+      "hashes": {
+          "windows-x64": "d4a4f194591766891ad3c0b267deec3c4b85239c8fe557273559927456aeedbb"
+      }
+    },
+    "qt6": {
+      "version": "2024-09-12",
+      "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+      "label": "Pre-Built Qt6",
+      "hashes": {
+          "windows-x64": "4d15ce13dbb0a8a2cabcce5ae0da5e80ee589b482a61b2025378465c1da32c4f"
+      },
+      "debugSymbols": {
+          "windows-x64": "dad2351a5c9cd438168e1ed8fb453a2534532252edb555f1001a5e8eb3f1bbd4"
+      }
+    }
+},
+"platformConfig": {
+  "macos": {
+      "bundleId": "com.bemjo.obs-rtx-superresolution"
+  }
+},
+  "name": "rtx-superresolution",
+  "displayName": "OBS RTX SuperResolution",
+  "version": "1.3.0",
+  "author": "Ben Jolley",
+  "website": "https://github.com/Bemjo/OBS_RTX_SuperResolution",
+  "email": "",
+  "uuids": {
+      "windowsApp": "00000000-0000-0000-0000-000000000000"
+  }
+}
