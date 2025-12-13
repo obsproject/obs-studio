@@ -60,6 +60,17 @@ core/
 │   ├── audio/               # Audio engine
 │   ├── video/               # Video engine
 │   ├── rendering/           # Rendering systems
+│   │   ├── VulkanRenderer.cpp/h          # Qt RHI (Vulkan/OpenGL/Metal abstraction)
+│   │   ├── StereoRenderer.cpp/h          # SBS/dual-stream input, IPD offsetting, 3D overlay composition
+│   │   ├── FramebufferManager.cpp/h      # Triple buffering, per-profile FBOs (Quest 3/Index/Vive Pro 2)
+│   │   ├── STMapLoader.cpp/h             # TIFF/PNG UV remap texture loader for lens calibration
+│   │   ├── PreviewRenderer.cpp/h         # Smart preview (2D for desktop, VR for HMD), SBS extraction
+│   │   └── shaders/
+│   │       ├── stitch.comp               # STMap fisheye→equirectangular stitching (Vulkan GLSL)
+│   │       ├── stereo.vert/.frag         # Stereo compositing (video + 3D overlays)
+│   │       ├── preview_sbs.frag          # Preview with SBS left-eye extraction (resolution-agnostic)
+│   │       ├── compile_shaders.sh        # GLSL→SPIR-V compilation script
+│   │       └── compiled/                 # .spv bytecode output
 │   ├── compositor/          # 3D-first layer mixer/compositor (supports 2D)
 │   ├── scene-graph/         # Semantic scene graph
 │   └── ipc/                 # Inter-process communication
@@ -295,3 +306,15 @@ Legacy Windows dependencies (w32-pthreads, libdshowcapture) → Mark for removal
 Localization files → ui/shared_ui/locale/
 Cryptographic keys → core/keys/
 All utilities → core/utilities/ (don't over-organize)
+
+---
+
+## Phase 2 Module Descriptions
+
+### core/src/rendering/ - VR Stereo Rendering Engine
+Hardware-accelerated VR180/360 rendering using Qt RHI (Rendering Hardware Interface). Abstracts Vulkan, OpenGL, and Metal backends for cross-platform compatibility. Processes **4K SBS (side-by-side) input video** containing 2x 2K stereo frames. Pipeline: split SBS → STMap fisheye stitching per eye → dual-pass 3D overlay rendering (L/R with IPD offset) → composite 3D over video → **per-headset profile outputs** (Quest 3, Index, Vive Pro 2). HDR support (Rec.2020 PQ/HLG) for high-quality VR streaming.
+
+**Key Components**: VulkanRenderer (RHI init, swap chain), StereoRenderer (SBS split, dual-pass 3D, IPD offset), FramebufferManager (per-profile FBOs), STMapLoader (TIFF UV remap), RTXUpscaler (NVIDIA AI 4K→8K), HDRProcessor (tone mapping).
+
+**Input**: Single 4K SBS video feed (2x 2K L/R frames side-by-side) OR dual separate camera streams (AV2 multi-stream ready)  
+**Output**: Multiple per-headset profile streams with 3D objects composited over stitched video

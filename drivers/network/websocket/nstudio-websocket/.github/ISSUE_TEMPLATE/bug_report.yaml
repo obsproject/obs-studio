@@ -1,0 +1,127 @@
+name: Bug Report
+description: Report a bug or crash
+title: "Bug: "
+labels: ["Issue: Bug - Unconfirmed"]
+body:
+- type: markdown
+  id: md_welcome
+  attributes:
+    value: This form is for reporting bugs for obs-websocket!
+- type: dropdown
+  id: os_info
+  attributes:
+    label: Operating System Info
+    description: What Operating System are you running?
+    options:
+    - Windows 11
+    - Windows 10
+    - Windows 8.1
+    - macOS 12.0
+    - macOS 11.6
+    - macOS 11.5
+    - macOS 11.4
+    - macOS 11.3
+    - macOS 11.2
+    - macOS 11.1
+    - macOS 11.0
+    - macOS 10.15
+    - macOS 10.14
+    - macOS 10.13
+    - Ubuntu 22.04 LTS
+    - Ubuntu 20.10
+    - Ubuntu 20.04 LTS
+    - Other
+  validations:
+    required: true
+- type: input
+  id: os_info_other
+  attributes:
+    label: Other OS
+    description: "If \"Other\" was selected above, what OS are you using?"
+    placeholder: "e.g., Arch Linux, FreeBSD"
+  validations:
+    required: false
+- type: dropdown
+  id: obs_version
+  attributes:
+    label: OBS Studio Version
+    description: What version of OBS Studio are you using?
+    options:
+    - 29.0.x
+    - 28.1.x
+    - 28.0.x
+    - 27.2.4
+    - Git
+    - Other
+  validations:
+    required: true
+- type: input
+  id: obs_version_other
+  attributes:
+    label: OBS Studio Version (Other)
+    description: "If \"Other\" was selected above, what version of OBS Studio are you using?"
+  validations:
+    required: false
+- type: dropdown
+  id: obs_websocket_version
+  attributes:
+    label: obs-websocket Version
+    description: What version of obs-websocket are you using?
+    options:
+    - 5.1.0
+    - 5.0.1
+    - 5.0.0
+    - Git
+  validations:
+    required: true
+- type: input
+  id: obs_log_url
+  attributes:
+    label: OBS Studio Log URL
+    description: Please provide the obsproject.com URL (from Help menu > Log Files > Upload Current/Last Log File) to the OBS log file where this issue occurred.
+  validations:
+    required: true
+- type: input
+  id: obs_crash_log_url
+  attributes:
+    label: OBS Studio Crash Log URL
+    description: If this is a crash report, please provide the obsproject.com URL to the OBS crash log file where this issue occurred.
+  validations:
+    required: false
+- type: textarea
+  id: expected_behavior
+  attributes:
+    label: Expected Behavior
+    description: "What did you expect to happen?"
+  validations:
+    required: true
+- type: textarea
+  id: current_behavior
+  attributes:
+    label: Current Behavior
+    description: "What actually happened?"
+  validations:
+    required: true
+- type: textarea
+  id: steps_to_reproduce
+  attributes:
+    label: Steps to Reproduce
+    description: "How do you trigger this bug? Please walk us through it step by step."
+    placeholder: |
+      1.
+      2.
+      3.
+      ...
+    value: |
+      1.
+      2.
+      3.
+      ...
+  validations:
+    required: true
+- type: textarea
+  id: additional_notes
+  attributes:
+    label: Anything else we should know?
+  validations:
+    required: false

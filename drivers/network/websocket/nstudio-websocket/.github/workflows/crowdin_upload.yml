@@ -1,0 +1,22 @@
+name: Upload Language Files 🌐
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "**/en-US.ini"
+jobs:
+  upload-language-files:
+    name: Upload Language Files 🌐
+    if: github.repository_owner == 'obsproject'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+      - name: Upload US English Language Files 🇺🇸
+        uses: obsproject/obs-crowdin-sync/upload@30b5446e3b5eb19595aa68a81ddf896a857302cf
+        env:
+          CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          SUBMODULE_NAME: obs-websocket

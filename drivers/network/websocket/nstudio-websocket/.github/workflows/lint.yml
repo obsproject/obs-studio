@@ -1,0 +1,24 @@
+name: Code Quality
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  markdown:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '[skip ci]') != true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Generate docs
+        run: cd docs && ./build_docs.sh
+      - name: Run markdownlint-cli
+        uses: nosborn/github-action-markdown-cli@v3.0.1
+        with:
+          files: .

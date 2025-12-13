@@ -1,0 +1,4 @@
+{
+    "srcGlob": "./../../src/**/*.@(cpp|h)",
+    "outDirectory": "./../work"
+}

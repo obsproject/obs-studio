@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Help/Support
+    url: https://discord.gg/UjfPmYdRPZ
+    about: Development-related help for obs-websocket

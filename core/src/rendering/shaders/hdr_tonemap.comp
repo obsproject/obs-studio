@@ -1,0 +1,176 @@
+#version 450
+
+// HDR Tone Mapping Compute Shader
+// Handles color space conversion (Rec.709 ↔ Rec.2020) and tone mapping
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+// Input/output textures
+layout(binding = 0) uniform sampler2D inputImage;
+layout(binding = 1, rgba16f) uniform writeonly image2D outputImage;
+
+// Configuration constants
+layout(push_constant) uniform PushConstants {
+    int inputColorSpace;   // 0 = Rec.709, 1 = Rec.2020
+    int outputColorSpace;  // 0 = Rec.709, 1 = Rec.2020
+    int inputEOTF;         // 0 = Linear, 1 = sRGB, 2 = PQ, 3 = HLG
+    int outputEOTF;        // 0 = Linear, 1 = sRGB, 2 = PQ, 3 = HLG
+    int toneMapMode;       // 0 = None, 1 = ACES, 2 = Reinhard, 3 = Hable
+    float exposure;        // Exposure multiplier
+    float maxLuminance;    // Max nits for PQ (100-10000)
+    float _pad;
+} params;
+
+// Color space conversion matrices
+const mat3 REC709_TO_REC2020 = mat3(
+    0.627404, 0.329283, 0.043313,
+    0.069097, 0.919541, 0.011362,
+    0.016391, 0.088013, 0.895595
+);
+
+const mat3 REC2020_TO_REC709 = mat3(
+    1.660496, -0.587656, -0.072840,
+    -0.124547,  1.132895, -0.008348,
+    -0.018154, -0.100597,  1.118751
+);
+
+// EOTF: PQ (Perceptual Quantizer) - ST.2084
+vec3 applyPQ(vec3 rgb) {
+    const float m1 = 0.1593017578125;
+    const float m2 = 78.84375;
+    const float c1 = 0.8359375;
+    const float c2 = 18.8515625;
+    const float c3 = 18.6875;
+    
+    vec3 Lp = pow(rgb, vec3(m1));
+    return pow((c1 + c2 * Lp) / (1.0 + c3 * Lp), vec3(m2));
+}
+
+vec3 removePQ(vec3 rgb) {
+    const float m1 = 0.1593017578125;
+    const float m2 = 78.84375;
+    const float c1 = 0.8359375;
+    const float c2 = 18.8515625;
+    const float c3 = 18.6875;
+    
+    vec3 Ep = pow(rgb, vec3(1.0 / m2));
+    return pow(max(Ep - c1, 0.0) / (c2 - c3 * Ep), vec3(1.0 / m1));
+}
+
+// EOTF: HLG (Hybrid Log-Gamma) - ARIB STD-B67
+vec3 applyHLG(vec3 rgb) {
+    const float a = 0.17883277;
+    const float b = 0.28466892;
+    const float c = 0.55991073;
+    
+    vec3 result;
+    for (int i = 0; i < 3; i++) {
+        float E = rgb[i];
+        if (E <= 0.5) {
+            result[i] = E * E / 3.0;
+        } else {
+            result[i] = (exp((E - c) / a) + b) / 12.0;
+        }
+    }
+    return result;
+}
+
+vec3 removeHLG(vec3 rgb) {
+    const float a = 0.17883277;
+    const float b = 0.28466892;
+    const float c = 0.55991073;
+    
+    vec3 result;
+    for (int i = 0; i < 3; i++) {
+        float E = rgb[i] * 12.0;
+        if (E <= 1.0) {
+            result[i] = sqrt(3.0 * E);
+        } else {
+            result[i] = a * log(E - b) + c;
+        }
+    }
+    return result;
+}
+
+// Tone Mapping: ACES Filmic
+vec3 acesFilmic(vec3 x) {
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+// Tone Mapping: Reinhard
+vec3 reinhard(vec3 color) {
+    return color / (1.0 + color);
+}
+
+// Tone Mapping: Hable (Uncharted 2)
+vec3 hable(vec3 x) {
+    float A = 0.15;
+    float B = 0.50;
+    float C = 0.10;
+    float D = 0.20;
+    float E = 0.02;
+    float F = 0.30;
+    return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
+}
+
+void main() {
+    ivec2 outCoord = ivec2(gl_GlobalInvocationID.xy);
+    vec2 outSize = vec2(imageSize(outputImage));
+    
+    if (outCoord.x >= outSize.x || outCoord.y >= outSize.y) {
+        return;
+    }
+    
+    // Sample input
+    vec2 uv = (vec2(outCoord) + 0.5) / outSize;
+    vec4 color = texture(inputImage, uv);
+    
+    // Remove input EOTF (convert to linear)
+    if (params.inputEOTF == 2) {
+        color.rgb = removePQ(color.rgb);
+    } else if (params.inputEOTF == 3) {
+        color.rgb = removeHLG(color.rgb);
+    } else if (params.inputEOTF == 1) {
+        color.rgb = pow(color.rgb, vec3(2.2)); // sRGB gamma
+    }
+    
+    // Apply exposure
+    color.rgb *= params.exposure;
+    
+    // Color space conversion
+    if (params.inputColorSpace != params.outputColorSpace) {
+        if (params.inputColorSpace == 0 && params.outputColorSpace == 1) {
+            // Rec.709 → Rec.2020
+            color.rgb = REC709_TO_REC2020 * color.rgb;
+        } else if (params.inputColorSpace == 1 && params.outputColorSpace == 0) {
+            // Rec.2020 → Rec.709
+            color.rgb = REC2020_TO_REC709 * color.rgb;
+        }
+    }
+    
+    // Tone mapping
+    if (params.toneMapMode == 1) {
+        color.rgb = acesFilmic(color.rgb);
+    } else if (params.toneMapMode == 2) {
+        color.rgb = reinhard(color.rgb);
+    } else if (params.toneMapMode == 3) {
+        color.rgb = hable(color.rgb) / hable(vec3(params.maxLuminance / 10000.0));
+    }
+    
+    // Apply output EOTF
+    if (params.outputEOTF == 2) {
+        color.rgb = applyPQ(color.rgb);
+    } else if (params.outputEOTF == 3) {
+        color.rgb = applyHLG(color.rgb);
+    } else if (params.outputEOTF == 1) {
+        color.rgb = pow(color.rgb, vec3(1.0 / 2.2)); // sRGB gamma
+    }
+    
+    // Write output
+    imageStore(outputImage, outCoord, color);
+}

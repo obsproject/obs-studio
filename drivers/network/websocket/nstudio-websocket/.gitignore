@@ -1,0 +1,12 @@
+*~
+.DS_Store
+.idea
+.vscode
+/build/
+/build32/
+/build64/
+/release/
+/package/
+/installer/Output/
+/docs/node_modules/
+/cmake-build-debug/

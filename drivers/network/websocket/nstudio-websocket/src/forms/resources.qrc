@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="toolTip">
+    <file>images/help_light.svg</file>
+    <file>images/help.svg</file>
+  </qresource>
+</RCC>

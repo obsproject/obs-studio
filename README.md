@@ -63,6 +63,7 @@ Neural Studio supports:
 ## 🧩 **Dual Interface System**
 
 Neural Studio offers two synchronized views:
+So when you load an source in the Managers it will automatically create the node for it in the Blueprint Frame.. and if you change something in the Blueprint Frame it will change in the ActiveFrame. Similar to unreal engines blueprint you build your pipelines all the way from source to output dock or hardware. and it get merged in the SceneGraph.
 
 ### **1. ActiveFrame (Classic Action View)**
 
@@ -81,6 +82,7 @@ A clean operator dashboard optimized for live streaming.
 * Control Buttons (Start Stream, Record, Studio Mode, etc.)
 * Macro/Automation Hotkeys
 * Multiview display
+* Source/Scene/Assets Managers
 
 ### **2. BlueprintFrame (Node-Based Creation View)**
 
@@ -121,6 +123,7 @@ Handles:
 * VR head cameras
 * Depth cameras
 * Virtual cameras inside the 3D SceneGraph
+* Standard Cameras
 
 ### **Source & Preview 3D Module**
 Real-time preview of 3D models, scenes, animations, skeletal rigs, particles.
@@ -137,7 +140,7 @@ Waveforms, spectrograms, spatial audio previews.
 ### **Source & Preview Script Module**
 Script triggers, automation states, event listeners.
 
-### **SceneGraph / VirtualCam / LayerMixer**
+### **SceneGraph / VirtualCam / LayerMixer** (3D Compositor)
 Real-time compositor with:
 * World layers
 * Depth-based compositing

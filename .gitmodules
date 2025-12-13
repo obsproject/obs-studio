@@ -1,9 +1,1 @@
-[submodule "plugins/win-dshow/libdshowcapture"]
-	path = deps/libdshowcapture/src
-	url = https://github.com/obsproject/libdshowcapture.git
-[submodule "plugins/obs-browser"]
-	path = plugins/obs-browser
-	url = https://github.com/obsproject/obs-browser.git
-[submodule "plugins/obs-websocket"]
-	path = plugins/obs-websocket
-	url = https://github.com/obsproject/obs-websocket.git
+

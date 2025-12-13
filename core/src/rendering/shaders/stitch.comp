@@ -1,0 +1,58 @@
+#version 450
+
+// STMap Stitching Compute Shader
+// Converts fisheye camera input to equirectangular VR180/360
+// Uses TIFF UV remap textures (STMaps) for lens distortion correction
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+// Input textures
+layout(binding = 0) uniform sampler2D inputImage;      // Fisheye camera input
+layout(binding = 1) uniform sampler2D remapTexture;    // STMap TIFF (UV coordinates)
+
+// Output texture
+layout(binding = 2, rgba8) uniform writeonly image2D outputImage;
+
+// Push constants for parameters
+layout(push_constant) uniform PushConstants {
+    uint outputWidth;
+    uint outputHeight;
+    float uvScale;        // Scale factor for UV coordinates (default 1.0)
+    float borderColor;    // Border color for out-of-bounds (0.0 = black)
+} params;
+
+void main() {
+    // Get output pixel coordinates
+    ivec2 outCoord = ivec2(gl_GlobalInvocationID.xy);
+    
+    // Bounds check
+    if (outCoord.x >= params.outputWidth || outCoord.y >= params.outputHeight) {
+        return;
+    }
+    
+    // Normalized output coordinates [0, 1]
+    vec2 outUV = vec2(outCoord) / vec2(params.outputWidth, params.outputHeight);
+    
+    // Sample STMap to get remapped UV coordinates
+    // R channel = U coordinate, G channel = V coordinate
+    vec4 remapValue = texture(remapTexture, outUV);
+    float uvX = remapValue.r * params.uvScale;
+    float uvY = 1.0 - (remapValue.g * params.uvScale);  // Flip Y for TIFF convention
+    
+    vec2 remappedUV = vec2(uvX, uvY);
+    
+    // Check if remapped coordinates are in valid range
+    if (remappedUV.x < 0.0 || remappedUV.x > 1.0 || 
+        remappedUV.y < 0.0 || remappedUV.y > 1.0) {
+        // Out of bounds - use border color
+        vec4 borderColorVec = vec4(params.borderColor);
+        imageStore(outputImage, outCoord, borderColorVec);
+        return;
+    }
+    
+    // Sample input image at remapped coordinates
+    vec4 outputColor = texture(inputImage, remappedUV);
+    
+    // Write to output image
+    imageStore(outputImage, outCoord, outputColor);
+}

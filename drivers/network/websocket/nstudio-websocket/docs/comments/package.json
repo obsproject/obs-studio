@@ -1,0 +1,15 @@
+{
+  "name": "obs-websocket-comments",
+  "version": "1.2.0",
+  "description": "",
+  "main": "comments.js",
+  "scripts": {
+    "comments": "node ./comments.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "glob": "^7.1.2",
+    "parse-comments": "^0.4.3"
+  }
+}

@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Modules
-add_subdirectory(libvr)
-add_subdirectory(obs-vr)
+# Modules
+add_subdirectory(core)
 if(NOT DISABLE_UI)
-    add_subdirectory(frontend)
+    add_subdirectory(ui)
 endif()
