@@ -195,14 +195,6 @@ void SetProcessPriority(const char *priority)
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 }
 
-void SetWin32DropStyle(QWidget *window)
-{
-	HWND hwnd = (HWND)window->winId();
-	LONG_PTR ex_style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-	ex_style |= WS_EX_ACCEPTFILES;
-	SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex_style);
-}
-
 bool SetDisplayAffinitySupported(void)
 {
 	static bool checked = false;
