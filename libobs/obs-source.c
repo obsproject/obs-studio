@@ -1662,6 +1662,8 @@ static void source_output_audio_data(obs_source_t *source, const struct audio_da
 enum convert_type {
 	CONVERT_NONE,
 	CONVERT_NV12,
+	CONVERT_NV16,
+	CONVERT_NV24,
 	CONVERT_420,
 	CONVERT_420_PQ,
 	CONVERT_420_A,
@@ -1690,6 +1692,10 @@ static inline enum convert_type get_convert_type(enum video_format format, bool 
 		return (trc == VIDEO_TRC_PQ) ? CONVERT_420_PQ : CONVERT_420;
 	case VIDEO_FORMAT_NV12:
 		return CONVERT_NV12;
+	case VIDEO_FORMAT_NV16:
+		return CONVERT_NV16;
+	case VIDEO_FORMAT_NV24:
+		return CONVERT_NV24;
 	case VIDEO_FORMAT_I444:
 		return CONVERT_444;
 	case VIDEO_FORMAT_I412:
@@ -1952,6 +1958,35 @@ static inline bool set_nv12_sizes(struct obs_source *source, const struct obs_so
 	return true;
 }
 
+static inline bool set_nv16_sizes(struct obs_source *source, const struct obs_source_frame *frame)
+{
+	const uint32_t width = frame->width;
+	const uint32_t height = frame->height;
+	const uint32_t half_width = (width + 1) / 2;
+	source->async_convert_width[0] = width;
+	source->async_convert_width[1] = half_width;
+	source->async_convert_height[0] = height;
+	source->async_convert_height[1] = height;
+	source->async_texture_formats[0] = GS_R8;
+	source->async_texture_formats[1] = GS_R8G8;
+	source->async_channel_count = 2;
+	return true;
+}
+
+static inline bool set_nv24_sizes(struct obs_source *source, const struct obs_source_frame *frame)
+{
+	const uint32_t width = frame->width;
+	const uint32_t height = frame->height;
+	source->async_convert_width[0] = width;
+	source->async_convert_width[1] = width;
+	source->async_convert_height[0] = height;
+	source->async_convert_height[1] = height;
+	source->async_texture_formats[0] = GS_R8;
+	source->async_texture_formats[1] = GS_R8G8;
+	source->async_channel_count = 2;
+	return true;
+}
+
 static inline bool set_y800_sizes(struct obs_source *source, const struct obs_source_frame *frame)
 {
 	source->async_convert_width[0] = frame->width;
@@ -2053,6 +2088,12 @@ static inline bool init_gpu_conversion(struct obs_source *source, const struct o
 
 	case CONVERT_NV12:
 		return set_nv12_sizes(source, frame);
+
+	case CONVERT_NV16:
+		return set_nv16_sizes(source, frame);
+
+	case CONVERT_NV24:
+		return set_nv24_sizes(source, frame);
 
 	case CONVERT_444:
 		return set_planar444_sizes(source, frame);
@@ -2166,6 +2207,8 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES], const struct obs_
 	case CONVERT_422:
 	case CONVERT_422P10LE:
 	case CONVERT_NV12:
+	case CONVERT_NV16:
+	case CONVERT_NV24:
 	case CONVERT_444:
 	case CONVERT_444P12LE:
 	case CONVERT_420_A:
@@ -2226,6 +2269,26 @@ static const char *select_conversion_technique(enum video_format format, bool fu
 			return "NV12_HLG_Reverse";
 		default:
 			return "NV12_Reverse";
+		}
+
+	case VIDEO_FORMAT_NV16:
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "NV16_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "NV16_HLG_Reverse";
+		default:
+			return "NV16_Reverse";
+		}
+
+	case VIDEO_FORMAT_NV24:
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "NV24_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "NV24_HLG_Reverse";
+		default:
+			return "NV24_Reverse";
 		}
 
 	case VIDEO_FORMAT_I444:
@@ -3405,6 +3468,14 @@ static void copy_frame_data(struct obs_source_frame *dst, const struct obs_sourc
 		const uint32_t half_height = (height + 1) / 2;
 		copy_frame_data_plane(dst, src, 0, height);
 		copy_frame_data_plane(dst, src, 1, half_height);
+		break;
+	}
+
+	case VIDEO_FORMAT_NV16:
+	case VIDEO_FORMAT_NV24: {
+		const uint32_t height = dst->height;
+		copy_frame_data_plane(dst, src, 0, height);
+		copy_frame_data_plane(dst, src, 1, height);
 		break;
 	}
 

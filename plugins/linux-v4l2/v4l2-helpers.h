@@ -68,6 +68,10 @@ static inline enum video_format v4l2_to_obs_video_format(uint_fast32_t format)
 		return VIDEO_FORMAT_UYVY;
 	case V4L2_PIX_FMT_NV12:
 		return VIDEO_FORMAT_NV12;
+	case V4L2_PIX_FMT_NV16:
+		return VIDEO_FORMAT_NV16;
+	case V4L2_PIX_FMT_NV24:
+		return VIDEO_FORMAT_NV24;
 	case V4L2_PIX_FMT_YUV420:
 		return VIDEO_FORMAT_I420;
 	case V4L2_PIX_FMT_YVU420:
