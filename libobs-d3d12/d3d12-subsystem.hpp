@@ -443,7 +443,7 @@ struct gs_texture_2d : gs_texture {
 	bool isDynamic = false;
 	bool isShared = false;
 	bool genMipmaps = false;
-	uint32_t sharedHandle = GS_INVALID_HANDLE;
+	HANDLE sharedHandle = NULL;
 
 	gs_texture_2d *pairedTexture = nullptr;
 	bool twoPlane = false;

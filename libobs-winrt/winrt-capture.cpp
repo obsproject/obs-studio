@@ -182,7 +182,7 @@ struct winrt_capture {
 			}
 		}
 		uint64_t shared_handle = reinterpret_cast<uint64_t>(texSharedHandle);
-		return gs_texture_open_shared((uint32_t)shared_handle);
+		return gs_texture_open_nt_shared((uint32_t)shared_handle);
 	}
 
 	void on_frame_arrived(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const &sender,
@@ -250,7 +250,6 @@ struct winrt_capture {
 						/* if they gave an SRV, we could avoid this copy */
 						context->CopyResource(dst, frame_surface.get());
 					}
-					context->Flush();
 					km->ReleaseSync(0);
 				}
 
