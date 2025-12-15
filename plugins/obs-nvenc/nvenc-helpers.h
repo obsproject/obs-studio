@@ -84,6 +84,10 @@ bool has_broken_split_encoding(void);
 void register_encoders(void);
 void register_compat_encoders(void);
 
+#ifdef _WIN32
+void register_encoders_d3d12(void);
+#endif
+
 #define nv_fail(encoder, format, ...) nv_fail2(encoder, enc->session, format, ##__VA_ARGS__)
 
 #define nv_failed(encoder, err, func, call) nv_failed2(encoder, enc->session, err, func, call)
