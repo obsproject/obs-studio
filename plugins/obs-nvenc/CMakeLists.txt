@@ -30,7 +30,7 @@ target_sources(
   PRIVATE
     $<$<PLATFORM_ID:Linux>:nvenc-opengl.c>
     $<$<PLATFORM_ID:Windows>:nvenc-d3d11.c>
-    # $<$<PLATFORM_ID:Windows>:nvenc-d3d12.c>
+    $<$<PLATFORM_ID:Windows>:nvenc-d3d12.c>
     cuda-helpers.c
     cuda-helpers.h
     nvenc-compat.c
