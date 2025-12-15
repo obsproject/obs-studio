@@ -26,7 +26,7 @@ struct HRError {
 		__debugbreak();
 #endif
 	}
-	inline HRError(const char *str) : str(str)
+	inline HRError(const char *str) : str(str), hr(-1)
 	{
 
 #if 0

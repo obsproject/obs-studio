@@ -73,7 +73,7 @@ void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
 		     "get shared handle: %08lX",
 		     hr);
 	} else {
-		sharedHandle = (uint32_t)(uintptr_t)handle;
+		sharedHandle = handle;
 	}
 }
 
@@ -93,7 +93,6 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -107,25 +106,18 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 	if (isShared) {
 		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
-		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
 	}
 
-	if (isRenderTarget || isGDICompatible) {
+	if (isRenderTarget) {
 		m_UsageState = D3D12_RESOURCE_STATE_COMMON;
-		texDesc.Flags = D3D12_RESOURCE_FLAG_NONE | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS |
-				D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
 
 	if (data) {
 		BackupTexture(data);
 		InitSRD(srd);
 	}
-
-	D3D12_CLEAR_VALUE ClearValue = {};
-	ClearValue.Format = dxgiFormatView;
-	ClearValue.Color[1] = 0;
-	ClearValue.Color[2] = 0;
-	ClearValue.Color[3] = 0;
 
 	if (texDesc.Format == DXGI_FORMAT_NV12 || texDesc.Format == DXGI_FORMAT_P010) {
 		texDesc.Width = (texDesc.Width + 1) & ~1;
@@ -136,13 +128,14 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 		&HeapProps, isShared ? D3D12_HEAP_FLAG_SHARED : D3D12_HEAP_FLAG_NONE, &texDesc, m_UsageState, nullptr,
 		IID_PPV_ARGS(&m_pResource));
 	if (FAILED(hr)) {
-		hr = device->d3d12Instance->GetDevice()->GetDeviceRemovedReason();
-		throw HRError("Failed to create 2D texture resource", hr);
+		auto removeReason = device->d3d12Instance->GetDevice()->GetDeviceRemovedReason();
+		throw HRError("Failed to create 2D texture resource", removeReason);
 	}
 
 	if (data) {
 		device->d3d12Instance->InitializeTexture(*this, (UINT)srd.size(), srd.data());
 	}
+
 	if (isDynamic) {
 		uploadBuffer = std::make_unique<D3D12Graphics::UploadBuffer>(device->d3d12Instance);
 		uploadBuffer->Create(L"Texture2D Upload Buffer",
@@ -151,11 +144,13 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 
 	if (isShared) {
-		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(
-			m_pResource.Get(), nullptr, GENERIC_ALL, nullptr, (HANDLE *)(uintptr_t)&sharedHandle);
+		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(m_pResource.Get(), nullptr, GENERIC_ALL,
+									    nullptr, &sharedHandle);
 		if (FAILED(hr)) {
 			throw HRError("Create Shared Handle Failed", hr);
 		}
+
+		acquired = true;
 	}
 }
 
@@ -282,7 +277,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t heigh
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
-	  sharedHandle(GS_INVALID_HANDLE),
+	  sharedHandle(NULL),
 	  twoPlane(twoPlane_)
 {
 	InitTexture(data);
@@ -331,7 +326,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *nv12tex, uint3
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle)
 	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
 	  isShared(true),
-	  sharedHandle(handle)
+	  sharedHandle((HANDLE)handle)
 {
 	(void)ntHandle;
 
@@ -356,6 +351,10 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle
 	this->dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 
 	InitResourceView();
+	if (isRenderTarget) {
+		InitRenderTargets(1);
+		InitUAV();
+	}
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
@@ -379,6 +378,10 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
 	this->dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 
 	InitResourceView();
+	if (isRenderTarget) {
+		InitRenderTargets(1);
+		InitUAV();
+	}
 }
 
 gs_texture_2d::~gs_texture_2d()
