@@ -19,8 +19,10 @@
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
 	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
-
-	if (NV_FAILED(nv.nvEncCreateBitstreamBuffer(enc->session, &buf))) {
+	NVENCSTATUS status = nv.nvEncCreateBitstreamBuffer(enc->session, &buf);
+	if (NV_FAILED(status)) {
+		const char *err = nv.nvEncGetLastErrorString(enc->session);
+		blog(LOG_WARNING, "nvenc init encoder failed %s ", err);
 		return false;
 	}
 
@@ -44,6 +46,12 @@ static const char *h264_nvenc_get_name(void *type_data)
 	return "NVIDIA NVENC H.264";
 }
 
+static const char *h264_nvenc_get_name_d3d12(void *type_data)
+{
+	UNUSED_PARAMETER(type_data);
+	return "NVIDIA NVENC H.264 D3D12";
+}
+
 static const char *h264_nvenc_soft_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
@@ -57,6 +65,12 @@ static const char *hevc_nvenc_get_name(void *type_data)
 	return "NVIDIA NVENC HEVC";
 }
 
+static const char *hevc_nvenc_get_name_d3d12(void *type_data)
+{
+	UNUSED_PARAMETER(type_data);
+	return "NVIDIA NVENC HEVC D3D12";
+}
+
 static const char *hevc_nvenc_soft_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
@@ -68,6 +82,11 @@ static const char *av1_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
 	return "NVIDIA NVENC AV1";
+}
+
+static const char *av1_nvenc_get_name_d3d12(void *type_data) {
+	UNUSED_PARAMETER(type_data);
+	return "NVIDIA NVENC AV1 D3D12";
 }
 
 static const char *av1_nvenc_soft_get_name(void *type_data)
@@ -126,7 +145,12 @@ static bool init_session(struct nvenc_data *enc)
 		params.device = enc->cu_ctx;
 		params.deviceType = NV_ENC_DEVICE_TYPE_CUDA;
 	} else {
-		params.device = enc->device;
+		if (enc->is_use_d3d12) {
+			params.device = enc->device12;
+		} else {
+			params.device = enc->device11;
+		}
+
 		params.deviceType = NV_ENC_DEVICE_TYPE_DIRECTX;
 	}
 #else
@@ -158,6 +182,7 @@ static void initialize_params(struct nvenc_data *enc, const GUID *nv_preset, NV_
 	params->enablePTD = 1;
 	params->encodeConfig = &enc->config;
 	params->tuningInfo = nv_tuning;
+	params->bufferFormat = 
 #ifdef NVENC_12_1_OR_LATER
 	params->splitEncodeMode = (NV_ENC_SPLIT_ENCODE_MODE)enc->props.split_encode;
 #endif
@@ -513,8 +538,11 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 		obs_encoder_set_last_error(enc->encoder, obs_module_text("Opts.Invalid"));
 		return false;
 	}
-
-	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
+	enc->params.bufferFormat = is_10_bit(enc) ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
+	NVENCSTATUS status = nv.nvEncInitializeEncoder(enc->session, &enc->params);
+	if (NV_FAILED(status)) {
+		const char* err = nv.nvEncGetLastErrorString(enc->session);
+		blog(LOG_WARNING, "nvenc init encoder failed %s ", err);
 		return false;
 	}
 
@@ -632,8 +660,11 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 		obs_encoder_set_last_error(enc->encoder, obs_module_text("Opts.Invalid"));
 		return false;
 	}
-
-	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
+	enc->params.bufferFormat = is_10_bit(enc) ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
+	NVENCSTATUS status = nv.nvEncInitializeEncoder(enc->session, &enc->params);
+	if (NV_FAILED(status)) {
+		const char *err = nv.nvEncGetLastErrorString(enc->session);
+		blog(LOG_WARNING, "nvenc init encoder failed %s ", err);
 		return false;
 	}
 
@@ -845,9 +876,10 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 	return false;
 }
 
-static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture)
+static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture, bool is_d3d12)
 {
 	struct nvenc_data *enc = bzalloc(sizeof(*enc));
+	enc->is_use_d3d12 = is_d3d12;
 	enc->encoder = encoder;
 	enc->codec = codec;
 	enc->first_packet = true;
@@ -873,8 +905,18 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, 
 		goto fail;
 
 #ifdef _WIN32
-	if (texture ? !d3d11_init(enc, settings) : !init_cuda(encoder))
-		goto fail;
+	if (texture) {
+		if (is_d3d12) {
+			if (!d3d12_init(enc, settings))
+				goto fail;
+		} else {
+			if (!d3d11_init(enc, settings))
+				goto fail;
+		}
+	} else {
+		if (!init_cuda(encoder))
+			goto fail;
+	}
 #else
 	if (!init_cuda(encoder))
 		goto fail;
@@ -892,13 +934,26 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, 
 	if (!init_encoder(enc, codec, settings, encoder)) {
 		goto fail;
 	}
-	if (!init_bitstreams(enc)) {
-		goto fail;
+
+	if (!enc->is_use_d3d12) {
+		if (!init_bitstreams(enc)) {
+			goto fail;
+		}
 	}
 
 #ifdef _WIN32
-	if (texture ? !d3d11_init_textures(enc) : !cuda_init_surfaces(enc))
-		goto fail;
+	if (texture) {
+		if (is_d3d12) {
+			if (!d3d12_init_textures(enc))
+				goto fail;
+		} else {
+			if (!d3d11_init_textures(enc))
+				goto fail;
+		}
+	} else {
+		if (!cuda_init_surfaces(enc))
+			goto fail;
+	}
 #else
 	if (!cuda_init_surfaces(enc))
 		goto fail;
@@ -913,7 +968,7 @@ fail:
 	return NULL;
 }
 
-static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture)
+static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture, bool is_d3d12)
 {
 	/* This encoder requires shared textures, this cannot be used on a
 	 * gpu other than the one OBS is currently running on.
@@ -955,7 +1010,7 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 		goto reroute;
 	}
 
-	struct nvenc_data *enc = nvenc_create_internal(codec, settings, encoder, texture);
+	struct nvenc_data *enc = nvenc_create_internal(codec, settings, encoder, texture, is_d3d12);
 
 	if (enc) {
 		return enc;
@@ -967,50 +1022,65 @@ reroute:
 		return NULL;
 	}
 
-	switch (codec) {
+	/* switch (codec) {
 	case CODEC_H264:
 		return obs_encoder_create_rerouted(encoder, "obs_nvenc_h264_soft");
 	case CODEC_HEVC:
 		return obs_encoder_create_rerouted(encoder, "obs_nvenc_hevc_soft");
 	case CODEC_AV1:
 		return obs_encoder_create_rerouted(encoder, "obs_nvenc_av1_soft");
-	}
+	}*/
 
 	return NULL;
 }
 
 static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return nvenc_create_base(CODEC_H264, settings, encoder, true);
+	return nvenc_create_base(CODEC_H264, settings, encoder, true, false);
+}
+
+static void *h264_nvenc_create_d3d12(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return nvenc_create_base(CODEC_H264, settings, encoder, true, true);
 }
 
 #ifdef ENABLE_HEVC
 static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return nvenc_create_base(CODEC_HEVC, settings, encoder, true);
+	return nvenc_create_base(CODEC_HEVC, settings, encoder, true, false);
+}
+
+static void *hevc_nvenc_create_d3d12(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return nvenc_create_base(CODEC_HEVC, settings, encoder, true, true);
 }
 #endif
 
 static void *av1_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return nvenc_create_base(CODEC_AV1, settings, encoder, true);
+	return nvenc_create_base(CODEC_AV1, settings, encoder, true, false);
+}
+
+static void *av1_nvenc_create_d3d12(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return nvenc_create_base(CODEC_AV1, settings, encoder, true, true);
 }
 
 static void *h264_nvenc_soft_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return nvenc_create_base(CODEC_H264, settings, encoder, false);
+	return nvenc_create_base(CODEC_H264, settings, encoder, false, false);
 }
 
 #ifdef ENABLE_HEVC
 static void *hevc_nvenc_soft_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return nvenc_create_base(CODEC_HEVC, settings, encoder, false);
+	return nvenc_create_base(CODEC_HEVC, settings, encoder, false, false);
 }
 #endif
 
 static void *av1_nvenc_soft_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return nvenc_create_base(CODEC_AV1, settings, encoder, false);
+	return nvenc_create_base(CODEC_AV1, settings, encoder, false, false);
 }
 
 static bool get_encoded_packet(struct nvenc_data *enc, bool finalize);
@@ -1408,6 +1478,26 @@ struct obs_encoder_info h264_nvenc_info = {
 	.get_sei_data = nvenc_sei_data,
 };
 
+struct obs_encoder_info h264_nvenc_info_d3d12 = {
+	.id = "obs_nvenc_h264_tex_d3d12",
+	.codec = "h264",
+	.type = OBS_ENCODER_VIDEO,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI,
+	.get_name = h264_nvenc_get_name_d3d12,
+	.create = h264_nvenc_create_d3d12,
+	.destroy = nvenc_destroy,
+	.update = nvenc_update,
+#ifdef _WIN32
+	.encode_texture2 = d3d12_encode,
+#else
+	.encode_texture2 = cuda_opengl_encode,
+#endif
+	.get_defaults = h264_nvenc_defaults,
+	.get_properties = h264_nvenc_properties,
+	.get_extra_data = nvenc_extra_data,
+	.get_sei_data = nvenc_sei_data,
+};
+
 #ifdef ENABLE_HEVC
 struct obs_encoder_info hevc_nvenc_info = {
 	.id = "obs_nvenc_hevc_tex",
@@ -1420,6 +1510,26 @@ struct obs_encoder_info hevc_nvenc_info = {
 	.update = nvenc_update,
 #ifdef _WIN32
 	.encode_texture2 = d3d11_encode,
+#else
+	.encode_texture2 = cuda_opengl_encode,
+#endif
+	.get_defaults = hevc_nvenc_defaults,
+	.get_properties = hevc_nvenc_properties,
+	.get_extra_data = nvenc_extra_data,
+	.get_sei_data = nvenc_sei_data,
+};
+
+struct obs_encoder_info hevc_nvenc_info_d3d12 = {
+	.id = "obs_nvenc_hevc_tex_d3d12",
+	.codec = "hevc",
+	.type = OBS_ENCODER_VIDEO,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI,
+	.get_name = hevc_nvenc_get_name_d3d12,
+	.create = hevc_nvenc_create_d3d12,
+	.destroy = nvenc_destroy,
+	.update = nvenc_update,
+#ifdef _WIN32
+	.encode_texture2 = d3d12_encode,
 #else
 	.encode_texture2 = cuda_opengl_encode,
 #endif
@@ -1441,6 +1551,25 @@ struct obs_encoder_info av1_nvenc_info = {
 	.update = nvenc_update,
 #ifdef _WIN32
 	.encode_texture2 = d3d11_encode,
+#else
+	.encode_texture2 = cuda_opengl_encode,
+#endif
+	.get_defaults = av1_nvenc_defaults,
+	.get_properties = av1_nvenc_properties,
+	.get_extra_data = nvenc_extra_data,
+};
+
+struct obs_encoder_info av1_nvenc_info_d3d12 = {
+	.id = "obs_nvenc_av1_tex_d3d12",
+	.codec = "av1",
+	.type = OBS_ENCODER_VIDEO,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI,
+	.get_name = av1_nvenc_get_name_d3d12,
+	.create = av1_nvenc_create_d3d12,
+	.destroy = nvenc_destroy,
+	.update = nvenc_update,
+#ifdef _WIN32
+	.encode_texture2 = d3d12_encode,
 #else
 	.encode_texture2 = cuda_opengl_encode,
 #endif
@@ -1504,13 +1633,16 @@ struct obs_encoder_info av1_nvenc_soft_info = {
 void register_encoders(void)
 {
 	obs_register_encoder(&h264_nvenc_info);
+	obs_register_encoder(&h264_nvenc_info_d3d12);
 	obs_register_encoder(&h264_nvenc_soft_info);
 #ifdef ENABLE_HEVC
 	obs_register_encoder(&hevc_nvenc_info);
+	obs_register_encoder(&hevc_nvenc_info_d3d12);
 	obs_register_encoder(&hevc_nvenc_soft_info);
 #endif
 	if (is_codec_supported(CODEC_AV1)) {
 		obs_register_encoder(&av1_nvenc_info);
+		obs_register_encoder(&av1_nvenc_info_d3d12);
 		obs_register_encoder(&av1_nvenc_soft_info);
 	}
 }

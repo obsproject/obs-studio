@@ -90,9 +90,13 @@ struct nvenc_data {
 	int packet_priority;
 
 #ifdef _WIN32
+	bool is_use_d3d12;
 	DARRAY(struct nv_texture) textures;
-	ID3D11Device *device;
+	ID3D11Device *device11;
 	ID3D11DeviceContext *context;
+
+	ID3D12Device *device12;
+	ID3D12CommandQueue *commandQueue;
 #endif
 
 	uint32_t cx;
@@ -152,9 +156,14 @@ struct nv_cuda_surface {
 #ifdef _WIN32
 /* DX11 textures */
 struct nv_texture {
+	// D3D11
 	void *res;
 	ID3D11Texture2D *tex;
 	void *mapped_res;
+	// D3D12
+	void *res12;
+	ID3D12Resource *tex12;
+	void *mapped_res12;
 };
 #endif
 
@@ -178,11 +187,14 @@ void d3d11_free_textures(struct nvenc_data *enc);
 bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 		  struct encoder_packet *packet, bool *received_packet);
 
-bool d3d12_init();
-void d3d12_free();
+bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings);
+void d3d12_free(struct nvenc_data *enc);
 
-bool d3d12_init_textures();
-bool d3d12_encode();
+bool d3d12_init_textures(struct nvenc_data *enc);
+void d3d12_free_textures(struct nvenc_data *enc);
+
+bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
+		  struct encoder_packet *packet, bool *received_packet);
 
 #endif
 
