@@ -58,10 +58,7 @@ class GpuResource;
 class CommandContext;
 class GraphicsContext;
 class ComputeContext;
-class GpuTimeManager;
 class Texture;
-class SystemTime;
-class CpuTimer;
 class D3D12DeviceInstance;
 class HagsStatus;
 
@@ -583,12 +580,12 @@ protected:
 };
 
 typedef struct DescriptorHandleNode {
-	int32_t index = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	UINT64 index = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 	void *next = (void *)D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 } DescriptorHandleNode;
 
 typedef struct D3D12_CPU_DESCRIPTOR_HANDLE_NODE {
-	int32_t index;
+	UINT64 index;
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = {D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN};
 } D3D12_CPU_DESCRIPTOR_HANDLE_NODE;
 
@@ -606,8 +603,8 @@ protected:
 	uint32_t m_RemainingFreeHandles;
 
 	// TODO
-	int32_t GetAvailableIndex();
-	void FreeIndex(int32_t index);
+	UINT64 GetAvailableIndex();
+	void FreeIndex(UINT64 index);
 	DescriptorHandleNode *m_DescriptorPoolHead;
 	DescriptorHandleNode m_DescriptorPoolNodes[kMaxNumDescriptors];
 };
@@ -870,31 +867,6 @@ public:
 	virtual void CreateDerivedViews(void) override;
 };
 
-class StructuredBuffer : public GpuBuffer {
-public:
-	StructuredBuffer(D3D12DeviceInstance *DeviceInstance);
-	virtual void Destroy(void) override;
-
-	virtual void CreateDerivedViews(void) override;
-
-	ByteAddressBuffer &GetCounterBuffer(void);
-
-	const D3D12_CPU_DESCRIPTOR_HANDLE &GetCounterSRV(CommandContext &Context);
-	const D3D12_CPU_DESCRIPTOR_HANDLE &GetCounterUAV(CommandContext &Context);
-
-private:
-	std::unique_ptr<ByteAddressBuffer> m_CounterBuffer;
-};
-
-class TypedBuffer : public GpuBuffer {
-public:
-	TypedBuffer(D3D12DeviceInstance *DeviceInstance, DXGI_FORMAT Format);
-	virtual void CreateDerivedViews(void) override;
-
-protected:
-	DXGI_FORMAT m_DataFormat;
-};
-
 class ReadbackBuffer : public GpuBuffer {
 public:
 	ReadbackBuffer(D3D12DeviceInstance *DeviceInstance);
@@ -1076,22 +1048,6 @@ private:
 	LinearAllocationPage *m_CurPage;
 	std::vector<LinearAllocationPage *> m_RetiredPages;
 	std::vector<LinearAllocationPage *> m_LargePageList;
-};
-
-struct DWParam {
-	DWParam(FLOAT f) : Float(f) {}
-	DWParam(UINT u) : Uint(u) {}
-	DWParam(INT i) : Int(i) {}
-
-	void operator=(FLOAT f) { Float = f; }
-	void operator=(UINT u) { Uint = u; }
-	void operator=(INT i) { Int = i; }
-
-	union {
-		FLOAT Float;
-		UINT Uint;
-		INT Int;
-	};
 };
 
 class PSO {
@@ -1286,10 +1242,8 @@ public:
 	void CopyBufferRegion(GpuResource &Dest, size_t DestOffset, GpuResource &Src, size_t SrcOffset,
 			      size_t NumBytes);
 	void CopySubresource(GpuResource &Dest, UINT DestSubIndex, GpuResource &Src, UINT SrcSubIndex);
-	void CopyCounter(GpuResource &Dest, size_t DestOffset, StructuredBuffer &Src);
 	void CopyTextureRegion(GpuResource &Dest, UINT x, UINT y, UINT z, GpuResource &Source, RECT &rect);
 	void UpdateTexture(GpuResource &Dest, UploadBuffer &buffer);
-	void ResetCounter(StructuredBuffer &Buf, uint32_t Value = 0);
 
 	// Creates a readback buffer of sufficient size, copies the texture into it,
 	// and returns row pitch in bytes.
@@ -1298,7 +1252,6 @@ public:
 	DynAlloc ReserveUploadMemory(size_t SizeInBytes);
 
 	void WriteBuffer(GpuResource &Dest, size_t DestOffset, const void *Data, size_t NumBytes);
-	void FillBuffer(GpuResource &Dest, size_t DestOffset, DWParam Value, size_t NumBytes);
 
 	void TransitionResource(GpuResource &Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate = false);
 	void BeginResourceTransition(GpuResource &Resource, D3D12_RESOURCE_STATES NewState,
@@ -1388,11 +1341,7 @@ public:
 	void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY Topology);
 
 	void SetConstantArray(UINT RootIndex, UINT NumConstants, const void *pConstants);
-	void SetConstant(UINT RootIndex, UINT Offset, DWParam Val);
-	void SetConstants(UINT RootIndex, DWParam X);
-	void SetConstants(UINT RootIndex, DWParam X, DWParam Y);
-	void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z);
-	void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W);
+	void SetConstant(UINT RootIndex, UINT Offset, UINT Val);
 	void SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV);
 	void SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void *BufferData);
 	void SetBufferSRV(UINT RootIndex, const GpuBuffer &SRV, UINT64 Offset = 0);
@@ -1431,11 +1380,7 @@ public:
 	void SetRootSignature(const RootSignature &RootSig);
 
 	void SetConstantArray(UINT RootIndex, UINT NumConstants, const void *pConstants);
-	void SetConstant(UINT RootIndex, UINT Offset, DWParam Val);
-	void SetConstants(UINT RootIndex, DWParam X);
-	void SetConstants(UINT RootIndex, DWParam X, DWParam Y);
-	void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z);
-	void SetConstants(UINT RootIndex, DWParam X, DWParam Y, DWParam Z, DWParam W);
+	void SetConstant(UINT RootIndex, UINT Offset, UINT Val);
 	void SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS CBV);
 	void SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void *BufferData);
 	void SetDynamicSRV(UINT RootIndex, size_t BufferSize, const void *BufferData);
@@ -1458,95 +1403,6 @@ public:
 	void ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &ArgumentBuffer, uint64_t ArgumentStartOffset = 0,
 			     uint32_t MaxCommands = 1, GpuBuffer *CommandCounterBuffer = nullptr,
 			     uint64_t CounterOffset = 0);
-};
-
-class GpuTimeManager {
-public:
-	void Initialize(D3D12DeviceInstance *DeviceInstance, uint32_t MaxNumTimers = 4096);
-	void Shutdown();
-
-	// Reserve a unique timer index
-	uint32_t NewTimer(void);
-
-	// Write start and stop time stamps on the GPU timeline
-	void StartTimer(CommandContext &Context, uint32_t TimerIdx);
-	void StopTimer(CommandContext &Context, uint32_t TimerIdx);
-
-	// Bookend all calls to GetTime() with Begin/End which correspond to Map/Unmap.  This
-	// needs to happen either at the very start or very end of a frame.
-	void BeginReadBack(void);
-	void EndReadBack(void);
-
-	// Returns the time in milliseconds between start and stop queries
-	float GetTime(uint32_t TimerIdx);
-
-protected:
-	D3D12DeviceInstance *m_DeviceInstance = nullptr;
-	ID3D12QueryHeap *m_QueryHeap = nullptr;
-	ID3D12Resource *m_ReadBackBuffer = nullptr;
-	uint64_t *m_TimeStampBuffer = nullptr;
-	uint64_t m_Fence = 0;
-	uint32_t m_MaxNumTimers = 0;
-	uint32_t m_NumTimers = 1;
-	uint64_t m_ValidTimeStart = 0;
-	uint64_t m_ValidTimeEnd = 0;
-	double m_GpuTickDelta = 0.0;
-};
-
-class GpuTimer {
-public:
-	GpuTimer(D3D12DeviceInstance *DeviceInstance);
-
-	void Start(CommandContext &Context);
-	void Stop(CommandContext &Context);
-
-	float GetTime(void);
-	uint32_t GetTimerIndex(void);
-
-private:
-	D3D12DeviceInstance *m_DeviceInstance = nullptr;
-	uint32_t m_TimerIndex;
-};
-
-class SystemTime {
-public:
-	static SystemTime *GetInstance();
-	SystemTime();
-	int64_t GetCurrentTick(void);
-	void BusyLoopSleep(float SleepTime);
-	double TicksToSeconds(int64_t TickCount);
-	double TicksToMillisecs(int64_t TickCount);
-	double TimeBetweenTicks(int64_t tick1, int64_t tick2);
-
-private:
-	double m_CpuTickDelta = 0.0;
-};
-
-class CpuTimer {
-public:
-	CpuTimer();
-	void Start();
-	void Stop();
-	void Reset();
-	double GetTime() const;
-
-private:
-	int64_t m_StartTick;
-	int64_t m_ElapsedTicks;
-};
-
-class EngineProfiling {
-public:
-	static EngineProfiling *GetInstace();
-	void Update();
-
-	void BeginBlock(const std::wstring &name, CommandContext *Context = nullptr);
-	void EndBlock(CommandContext *Context = nullptr);
-
-	void DisplayFrameRate();
-
-private:
-	bool Paused = false;
 };
 
 class SamplerDesc : public D3D12_SAMPLER_DESC {
@@ -1627,7 +1483,6 @@ public:
 	void InitializeBuffer(GpuBuffer &Dest, const UploadBuffer &Src, size_t SrcOffset, size_t NumBytes = -1,
 			      size_t DestOffset = 0);
 	void InitializeTextureArraySlice(GpuResource &Dest, UINT SliceIndex, GpuResource &Src);
-	GpuTimeManager &GetGPUTimeManager();
 	bool IsNV12TextureSupported() const;
 	bool IsP010TextureSupported() const;
 	bool FastClearSupported() const;
@@ -1671,7 +1526,6 @@ private:
 
 	std::unique_ptr<CommandListManager> m_CommandManager;
 	std::unique_ptr<ContextManager> m_ContextManager;
-	std::unique_ptr<GpuTimeManager> m_GPUTimeManager;
 
 	std::map<size_t, ComPtr<ID3D12RootSignature>> m_RootSignatureHashMap;
 
