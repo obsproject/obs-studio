@@ -81,6 +81,9 @@ gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
 gs_duplicator::~gs_duplicator()
 {
 	delete texture;
+	if (texSharedHandle != NULL) {
+		texSharedHandle = NULL;
+	}
 }
 
 extern "C" {
@@ -297,17 +300,11 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 		}
 
 		if (d->texSharedHandle) {
-			CloseHandle(d->texSharedHandle);
 			d->texSharedHandle = 0;
 		}
 
 		CreateSharedTexture(d, desc, general_format);
-		ComPtr<ID3D12Resource> d3d12res;
-		HRESULT hr = d->device->d3d12Instance->GetDevice()->OpenSharedHandle(
-			d->texSharedHandle, __uuidof(ID3D12Resource), (void **)d3d12res.Assign());
-		if (SUCCEEDED(hr)) {
-			d->texture = gs_texture_wrap_obj(d3d12res.Get());
-		}
+		d->texture = gs_texture_open_nt_shared((uint32_t)(uintptr_t)(d->texSharedHandle));
 
 		d->color_space =
 			d->hdr ? GS_CS_709_SCRGB
@@ -317,7 +314,6 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 	if (d->texShared) {
 		d->km->AcquireSync(0, INFINITE);
 		d->context11->CopyResource(d->texShared, tex);
-		d->context11->Flush();
 		d->km->ReleaseSync(0);
 	}
 }
