@@ -280,6 +280,10 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 	if (obs_scene_from_source(source) != NULL)
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RemoveScene",
 					  Q_ARG(OBSSource, OBSSource(source)));
+
+	if (obs_source_get_output_flags(source) & OBS_SOURCE_AUDIO)
+		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "DeactivateAudioSource",
+					  Q_ARG(OBSSource, OBSSource(source)));
 }
 
 void OBSBasic::SourceActivated(void *data, calldata_t *params)
