@@ -97,6 +97,7 @@ struct nvenc_data {
 
 	ID3D12Device *device12;
 	ID3D12CommandQueue *commandQueue;
+	ID3D12Fence *fence;
 #endif
 
 	uint32_t cx;
@@ -156,12 +157,11 @@ struct nv_cuda_surface {
 #ifdef _WIN32
 /* DX11 textures */
 struct nv_texture {
-	// D3D11
 	void *res;
+	// D3D11
 	ID3D11Texture2D *tex;
 	void *mapped_res;
 	// D3D12
-	void *res12;
 	ID3D12Resource *tex12;
 	void *mapped_res12;
 };

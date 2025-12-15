@@ -31,6 +31,7 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	IDXGIFactory1 *factory;
 	IDXGIAdapter *adapter;
 	ID3D12Device *device;
+	ID3D12Fence *fence;
 	HRESULT hr;
 
 	if (!dxgi || !d3d12) {
@@ -41,7 +42,7 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	create_device = (PFN_D3D12_CREATE_DEVICE)GetProcAddress(d3d12, "D3D12CreateDevice");
 
 	if (!create_dxgi || !create_device) {
-		error("Failed to load D3D11/DXGI procedures");
+		error("Failed to load D3D12/DXGI procedures");
 		return false;
 	}
 
@@ -61,11 +62,18 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	hr = create_device((IUnknown*)adapter, D3D_FEATURE_LEVEL_12_0, &IID_ID3D12Device, (void**)&device);
 	adapter->lpVtbl->Release(adapter);
 	if (FAILED(hr)) {
-		error_hr("D3D11CreateDevice failed");
+		error_hr("D3D12CreateDevice failed");
+		return false;
+	}
+
+	hr = device->lpVtbl->CreateFence(device, 0, D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void**)(&fence));
+	if (FAILED(hr)) {
+		error_hr("D3D12 CreateFence failed");
 		return false;
 	}
 
 	enc->device12 = device;
+	enc->fence = fence;
 	return true;
 }
 
@@ -122,17 +130,23 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.width = enc->cx;
 	res.height = enc->cy;
 	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
-	res.pInputFencePoint;
-	res.pInputFencePoint;
 
+	NV_ENC_FENCE_POINT_D3D12 d3d12_enc_fence = {NV_ENC_FENCE_POINT_D3D12_VER};
+	d3d12_enc_fence.bSignal = 0;
+	d3d12_enc_fence.pFence = enc->fence;
+	d3d12_enc_fence.bWait = 0;
+	d3d12_enc_fence.signalValue = 0;
+	d3d12_enc_fence.waitValue = 0;
+
+	res.pInputFencePoint = &d3d12_enc_fence;
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
 		return false;
 	}
 
-	/*nvtex->res = res.registeredResource;
-	nvtex->tex = tex;
-	nvtex->mapped_res = NULL;*/
+	nvtex->res = res.registeredResource;
+	nvtex->tex12 = tex;
+	nvtex->mapped_res = NULL;
 	return true;
 }
 
