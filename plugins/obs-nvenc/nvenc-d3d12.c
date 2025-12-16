@@ -96,6 +96,7 @@ void d3d12_free(struct nvenc_data *enc)
 
 static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 {
+	ID3D12Device *const device = enc->device12;
 	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
 
 	D3D12_RESOURCE_DESC desc = {0};
@@ -107,7 +108,6 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	desc.SampleDesc.Count = 1;
 	desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	ID3D12Device *const device = enc->device12;
 
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -130,6 +130,7 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.width = enc->cx;
 	res.height = enc->cy;
 	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
+	res.bufferUsage = NV_ENC_INPUT_IMAGE;
 
 	NV_ENC_FENCE_POINT_D3D12 d3d12_enc_fence = {NV_ENC_FENCE_POINT_D3D12_VER};
 	d3d12_enc_fence.bSignal = 0;
@@ -145,8 +146,9 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	}
 
 	nvtex->res = res.registeredResource;
-	nvtex->tex12 = tex;
+	nvtex->tex = tex;
 	nvtex->mapped_res = NULL;
+	nvtex->fence_point = d3d12_enc_fence;
 	return true;
 }
 
@@ -174,7 +176,8 @@ static void d3d12_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 			nv.nvEncUnmapInputResource(enc->session, nvtex->mapped_res);
 		}
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
-		nvtex->tex->lpVtbl->Release(nvtex->tex);
+		ID3D12Resource *tex12 = (ID3D12Resource *)(nvtex->tex);
+		tex12->lpVtbl->Release(tex12);
 	}
 }
 
@@ -185,15 +188,88 @@ void d3d12_free_textures(struct nvenc_data *enc)
 	}
 }
 
+bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs) {
+	ID3D12Device *const device = enc->device12;
+	D3D12_HEAP_PROPERTIES HeapProps;
+	HeapProps.Type = D3D12_HEAP_TYPE_READBACK;
+	HeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	HeapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	HeapProps.CreationNodeMask = 1;
+	HeapProps.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC ResourceDesc;
+	memset(&ResourceDesc, 0, sizeof(D3D12_RESOURCE_DESC));
+	ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	ResourceDesc.Width = 2 * enc->cx * enc->cy;
+	ResourceDesc.Height = 1;
+	ResourceDesc.DepthOrArraySize = 1;
+	ResourceDesc.MipLevels = 1;
+	ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	ResourceDesc.SampleDesc.Count = 1;
+	ResourceDesc.SampleDesc.Quality = 0;
+	ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	ResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	ID3D12Resource *tex = NULL;
+	HRESULT hr = device->lpVtbl->CreateCommittedResource(device, & HeapProps, D3D12_HEAP_FLAG_NONE,
+									    &ResourceDesc,
+									    D3D12_RESOURCE_STATE_COPY_DEST, NULL, &IID_ID3D12Resource,
+							     (void **)(&tex));
+	if (FAILED(hr)) {
+		auto remoteReason = device->lpVtbl->GetDeviceRemovedReason(device);
+		error_hr("Failed to create texture");
+		return false;
+	}
+
+	NV_ENC_REGISTER_RESOURCE res = {NV_ENC_REGISTER_RESOURCE_VER};
+	res.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_DIRECTX;
+	res.resourceToRegister = tex;
+	res.width = enc->cx;
+	res.height = enc->cy;
+	res.bufferFormat = NV_ENC_BUFFER_FORMAT_U8;
+	res.bufferUsage = NV_ENC_OUTPUT_BITSTREAM;
+
+	NV_ENC_FENCE_POINT_D3D12 d3d12_enc_fence = {NV_ENC_FENCE_POINT_D3D12_VER};
+	d3d12_enc_fence.bSignal = 0;
+	d3d12_enc_fence.pFence = enc->fence;
+	d3d12_enc_fence.bWait = 0;
+	d3d12_enc_fence.signalValue = 0;
+	d3d12_enc_fence.waitValue = 0;
+
+	res.pInputFencePoint = &d3d12_enc_fence;
+	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
+		tex->lpVtbl->Release(tex);
+		return false;
+	}
+
+	bs->fence_point = d3d12_enc_fence;
+	bs->ptr = res.registeredResource;
+	bs->tex = tex;
+	bs->mapped_res = NULL;
+	return true;
+}
+
+void d3d12_free_readback(struct nvenc_data *enc, struct nv_bitstream *bs)
+{
+	if (bs->ptr) {
+		if (bs->mapped_res) {
+			nv.nvEncUnmapInputResource(enc->session, bs->mapped_res);
+		}
+		nv.nvEncUnregisterResource(enc->session, bs->ptr);
+		ID3D12Resource *tex12 = (ID3D12Resource *)(bs->tex);
+		tex12->lpVtbl->Release(tex12);
+	}
+}
+
 /* ------------------------------------------------------------------------- */
 /* Actual encoding stuff                                                     */
 
-static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc, uint32_t handle, IDXGIKeyedMutex **km_out)
+static ID3D12Resource *get_tex_from_handle(struct nvenc_data *enc, uint32_t handle, IDXGIKeyedMutex **km_out)
 {
 	ID3D12Device *device = enc->device12;
-	// IDXGIKeyedMutex *km;
-	// ID3D11Texture2D *input_tex;
-	// HRESULT hr;
+	IDXGIKeyedMutex *km;
+	ID3D12Resource *input_tex;
+	HRESULT hr;
 
 	for (size_t i = 0; i < enc->input_textures.num; i++) {
 		struct handle_tex *ht = &enc->input_textures.array[i];
@@ -203,9 +279,7 @@ static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc, uint32_t han
 		}
 	}
 
-	return NULL;
-	/* hr =
-		device->lpVtbl->OpenSharedResource(device, (HANDLE)(uintptr_t)handle, &IID_ID3D11Texture2D, &input_tex);
+	hr = device->lpVtbl->OpenSharedHandle(device, (HANDLE)(uintptr_t)handle, &IID_ID3D12Resource, &input_tex);
 	if (FAILED(hr)) {
 		error_hr("OpenSharedResource failed");
 		return NULL;
@@ -215,25 +289,22 @@ static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc, uint32_t han
 	if (FAILED(hr)) {
 		error_hr("QueryInterface(IDXGIKeyedMutex) failed");
 		input_tex->lpVtbl->Release(input_tex);
-		return NULL;
+		km = NULL;
 	}
-
-	input_tex->lpVtbl->SetEvictionPriority(input_tex, DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
 	*km_out = km;
 
 	struct handle_tex new_ht = {handle, input_tex, km};
 	da_push_back(enc->input_textures, &new_ht);
-	return input_tex;*/
+	return input_tex;
 }
 
 bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 		  struct encoder_packet *packet, bool *received_packet)
 {
 	struct nvenc_data *enc = data;
-	ID3D11DeviceContext *context = enc->context;
-	ID3D11Texture2D *input_tex;
-	ID3D11Texture2D *output_tex;
+	ID3D12Resource *input_tex;
+	ID3D12Resource *output_tex;
 	IDXGIKeyedMutex *km;
 	struct nv_texture *nvtex;
 	struct nv_bitstream *bs;
@@ -258,15 +329,6 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 	deque_push_back(&enc->dts_list, &pts, sizeof(pts));
 
 	/* ------------------------------------ */
-	/* copy to output tex                   */
-
-	km->lpVtbl->AcquireSync(km, lock_key, INFINITE);
-
-	context->lpVtbl->CopyResource(context, (ID3D11Resource *)output_tex, (ID3D11Resource *)input_tex);
-
-	km->lpVtbl->ReleaseSync(km, *next_key);
-
-	/* ------------------------------------ */
 	/* map output tex so nvenc can use it   */
 
 	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
@@ -279,6 +341,8 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 
 	/* ------------------------------------ */
 	/* do actual encode call                */
-
-	return nvenc_encode_base(enc, bs, nvtex->mapped_res, pts, packet, received_packet);
+	NV_ENC_INPUT_RESOURCE_D3D12 inputRes = {NV_ENC_INPUT_RESOURCE_D3D12_VER};
+	inputRes.inputFencePoint = nvtex->fence_point;
+	inputRes.pInputBuffer = nvtex->mapped_res;
+	return nvenc_encode_base_d3d12(enc, bs, &inputRes, pts, packet, received_packet);
 }

@@ -250,7 +250,6 @@ struct winrt_capture {
 						/* if they gave an SRV, we could avoid this copy */
 						context->CopyResource(dst, frame_surface.get());
 					}
-					context->Flush();
 					km->ReleaseSync(0);
 				}
 

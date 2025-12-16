@@ -1065,8 +1065,8 @@ void ReadbackBuffer::Create(const std::wstring &name, uint32_t NumElements, uint
 									    D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
 									    IID_PPV_ARGS(&m_pResource));
 	if (FAILED(hr)) {
-		hr = m_DeviceInstance->GetDevice()->GetDeviceRemovedReason();
-		throw HRError("ReadbackBuffer: CreateCommittedResource failed", hr);
+		auto remoteReason = m_DeviceInstance->GetDevice()->GetDeviceRemovedReason();
+		throw HRError("ReadbackBuffer: CreateCommittedResource failed", remoteReason);
 	}
 
 	m_GpuVirtualAddress = m_pResource->GetGPUVirtualAddress();

@@ -18,11 +18,12 @@
 
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
+	if (enc->is_use_d3d12) {
+		return d3d12_init_readback(enc, bs);
+	}
+
 	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
-	NVENCSTATUS status = nv.nvEncCreateBitstreamBuffer(enc->session, &buf);
-	if (NV_FAILED(status)) {
-		const char *err = nv.nvEncGetLastErrorString(enc->session);
-		blog(LOG_WARNING, "nvenc init encoder failed %s ", err);
+	if (NV_FAILED(nv.nvEncCreateBitstreamBuffer(enc->session, &buf))) {
 		return false;
 	}
 
@@ -32,8 +33,12 @@ static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 
 static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
-	if (bs->ptr) {
-		nv.nvEncDestroyBitstreamBuffer(enc->session, bs->ptr);
+	if (enc->is_use_d3d12) {
+		d3d12_free_readback(enc, bs);
+	} else {
+		if (bs->ptr) {
+			nv.nvEncDestroyBitstreamBuffer(enc->session, bs->ptr);
+		}
 	}
 }
 
@@ -931,14 +936,13 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, 
 	if (!init_session(enc)) {
 		goto fail;
 	}
+
 	if (!init_encoder(enc, codec, settings, encoder)) {
 		goto fail;
 	}
 
-	if (!enc->is_use_d3d12) {
-		if (!init_bitstreams(enc)) {
+	if (!init_bitstreams(enc)) {
 			goto fail;
-		}
 	}
 
 #ifdef _WIN32
@@ -958,7 +962,6 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, 
 	if (!cuda_init_surfaces(enc))
 		goto fail;
 #endif
-
 	enc->codec = codec;
 
 	return enc;
@@ -1351,6 +1354,105 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 	params.inputHeight = enc->cy;
 	params.inputPitch = enc->cx;
 	params.outputBitstream = bs->ptr;
+	params.frameIdx = (uint32_t)pts;
+
+	if (enc->non_texture) {
+		params.bufferFmt = enc->surface_format;
+	} else {
+		params.bufferFmt = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010)
+					   ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
+					   : NV_ENC_BUFFER_FORMAT_NV12;
+	}
+
+#ifdef NVENC_13_0_OR_LATER
+	if (enc->cll) {
+		if (enc->codec == CODEC_AV1)
+			params.codecPicParams.av1PicParams.pMaxCll = enc->cll;
+		else if (enc->codec == CODEC_HEVC)
+			params.codecPicParams.hevcPicParams.pMaxCll = enc->cll;
+	}
+	if (enc->mdi) {
+		if (enc->codec == CODEC_AV1)
+			params.codecPicParams.av1PicParams.pMasteringDisplay = enc->mdi;
+		else if (enc->codec == CODEC_HEVC)
+			params.codecPicParams.hevcPicParams.pMasteringDisplay = enc->mdi;
+	}
+#endif
+
+	/* Add ROI map if enabled */
+	if (obs_encoder_has_roi(enc->encoder))
+		add_roi(enc, &params);
+
+	NVENCSTATUS err = nv.nvEncEncodePicture(enc->session, &params);
+	if (err != NV_ENC_SUCCESS && err != NV_ENC_ERR_NEED_MORE_INPUT) {
+		nv_failed(enc->encoder, err, __FUNCTION__, "nvEncEncodePicture");
+		return false;
+	}
+
+	enc->encode_started = true;
+	enc->buffers_queued++;
+
+	if (++enc->next_bitstream == enc->buf_count) {
+		enc->next_bitstream = 0;
+	}
+
+	/* ------------------------------------ */
+	/* check for encoded packet and parse   */
+
+	if (!get_encoded_packet(enc, false)) {
+		return false;
+	}
+
+	/* ------------------------------------ */
+	/* output encoded packet                */
+
+	if (enc->packet_data.num) {
+		int64_t dts;
+		deque_pop_front(&enc->dts_list, &dts, sizeof(dts));
+
+		/* subtract bframe delay from dts for H.264/HEVC */
+		if (enc->codec != CODEC_AV1)
+			dts -= enc->props.bf * packet->timebase_num;
+
+		*received_packet = true;
+		packet->data = enc->packet_data.array;
+		packet->size = enc->packet_data.num;
+		packet->type = OBS_ENCODER_VIDEO;
+		packet->pts = enc->packet_pts;
+		packet->dts = dts;
+		packet->keyframe = enc->packet_keyframe;
+		packet->priority = enc->packet_priority;
+	} else {
+		*received_packet = false;
+	}
+
+	return true;
+}
+
+bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *bs, NV_ENC_INPUT_RESOURCE_D3D12 *pic,
+			     int64_t pts, struct encoder_packet *packet, bool *received_packet) {
+
+	NV_ENC_PIC_PARAMS params = {0};
+	params.version = NV_ENC_PIC_PARAMS_VER;
+	params.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
+	params.inputBuffer = pic;
+	params.inputTimeStamp = (uint64_t)pts;
+	params.inputWidth = enc->cx;
+	params.inputHeight = enc->cy;
+	params.inputPitch = enc->cx;
+
+	NV_ENC_OUTPUT_RESOURCE_D3D12 res = {NV_ENC_INPUT_RESOURCE_D3D12_VER};
+	res.outputFencePoint = bs->fence_point;
+
+	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+	map.registeredResource = bs->ptr;
+	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map))) {
+		return false;
+	}
+
+	res.pOutputBuffer = map.mappedResource;
+
+	params.outputBitstream = &res;
 	params.frameIdx = (uint32_t)pts;
 
 	if (enc->non_texture) {

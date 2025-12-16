@@ -317,7 +317,6 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 	if (d->texShared) {
 		d->km->AcquireSync(0, INFINITE);
 		d->context11->CopyResource(d->texShared, tex);
-		d->context11->Flush();
 		d->km->ReleaseSync(0);
 	}
 }

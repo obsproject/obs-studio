@@ -156,7 +156,8 @@ static void d3d11_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 			nv.nvEncUnmapInputResource(enc->session, nvtex->mapped_res);
 		}
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
-		nvtex->tex->lpVtbl->Release(nvtex->tex);
+		ID3D11Texture2D *tex11 = (ID3D11Texture2D *)(nvtex->tex);
+		tex11->lpVtbl->Release(tex11);
 	}
 }
 
