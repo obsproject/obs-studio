@@ -32,6 +32,11 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	IDXGIAdapter *adapter;
 	ID3D12Device *device;
 	ID3D12Fence *fence;
+	ID3D12CommandQueue *command_queue;
+	ID3D12GraphicsCommandList *command_list;
+	ID3D12CommandAllocator *allocator;
+	HANDLE fence_event_handle;
+
 	HRESULT hr;
 
 	if (!dxgi || !d3d12) {
@@ -72,18 +77,49 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
+	D3D12_COMMAND_QUEUE_DESC QueueDesc;
+	memset(&QueueDesc, 0, sizeof(D3D12_COMMAND_QUEUE_DESC));
+	QueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
+	QueueDesc.NodeMask = 1;
+	hr = device->lpVtbl->CreateCommandQueue(device, &QueueDesc, &IID_ID3D12CommandQueue,
+						(void **)(&command_queue));
+	if (FAILED(hr)) {
+		error_hr("D3D12 CreateCommandQueue failed");
+		return false;
+	}
+
+	hr = device->lpVtbl->CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_COPY, &IID_ID3D12CommandAllocator,
+						    (void **)(&allocator));
+	if (FAILED(hr)) {
+		error_hr("D3D12 CreateCommandAllocator failed");
+		return false;
+	}
+
+	hr = device->lpVtbl->CreateCommandList(device, 1, D3D12_COMMAND_LIST_TYPE_COPY, allocator, NULL,
+					       &IID_ID3D12GraphicsCommandList, (void **)(&command_list));
+	if (FAILED(hr)) {
+		error_hr("D3D12 CreateCommandList failed");
+		return false;
+	}
+
+	fence_event_handle = CreateEvent(NULL, false, false, NULL);
+
 	enc->device12 = device;
 	enc->fence = fence;
+	enc->command_queue = command_queue;
+	enc->fence_event_handle = fence_event_handle;
+	enc->allocator = allocator;
+	enc->command_list = command_list;
+	enc->next_fence_value = 0;
+	enc->last_completed_fence_value = 0;
 	return true;
 }
 
 void d3d12_free(struct nvenc_data *enc)
 {
 	for (size_t i = 0; i < enc->input_textures.num; i++) {
-		ID3D11Texture2D *tex = enc->input_textures.array[i].tex;
-		IDXGIKeyedMutex *km = enc->input_textures.array[i].km;
+		ID3D12Resource *tex = enc->input_textures.array[i].tex;
 		tex->lpVtbl->Release(tex);
-		km->lpVtbl->Release(km);
 	}
 
 	if (enc->device12) {
@@ -133,22 +169,33 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.bufferUsage = NV_ENC_INPUT_IMAGE;
 
 	NV_ENC_FENCE_POINT_D3D12 d3d12_enc_fence = {NV_ENC_FENCE_POINT_D3D12_VER};
-	d3d12_enc_fence.bSignal = 0;
-	d3d12_enc_fence.pFence = enc->fence;
-	d3d12_enc_fence.bWait = 0;
-	d3d12_enc_fence.signalValue = 0;
-	d3d12_enc_fence.waitValue = 0;
 
-	res.pInputFencePoint = &d3d12_enc_fence;
+	res.pInputFencePoint = NULL;
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
 		return false;
 	}
+	/*
+	NV_ENC_REGISTER_RESOURCE registerInputResource = { NV_ENC_REGISTER_RESOURCE_VER };
+	registerInputResource.bufferFormat = bufferFormat;
+	registerInputResource.bufferUsage = NV_ENC_INPUT_IMAGE;
+	registerInputResource.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_DIRECTX;
+	registerInputResource.resourceToRegister = inputTexture->getResource();
+	registerInputResource.subResourceIndex = 0;
+	registerInputResource.width = Graphics::getWidth();
+	registerInputResource.height = Graphics::getHeight();
+	registerInputResource.pitch = 0;
+	registerInputResource.pInputFencePoint = nullptr;
+
+	NVENCCALL(nvencAPI.nvEncRegisterResource(encoder, &registerInputResource));
+
+	NV_ENC_MAP_INPUT_RESOURCE mapInputResource = { NV_ENC_MAP_INPUT_RESOURCE_VER };
+	mapInputResource.registeredResource = registerInputResource.registeredResource;
+	*/
 
 	nvtex->res = res.registeredResource;
 	nvtex->tex = tex;
 	nvtex->mapped_res = NULL;
-	nvtex->fence_point = d3d12_enc_fence;
 	return true;
 }
 
@@ -231,18 +278,36 @@ bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs) {
 
 	NV_ENC_FENCE_POINT_D3D12 d3d12_enc_fence = {NV_ENC_FENCE_POINT_D3D12_VER};
 	d3d12_enc_fence.bSignal = 0;
-	d3d12_enc_fence.pFence = enc->fence;
+	d3d12_enc_fence.pFence = NULL;
 	d3d12_enc_fence.bWait = 0;
 	d3d12_enc_fence.signalValue = 0;
 	d3d12_enc_fence.waitValue = 0;
 
-	res.pInputFencePoint = &d3d12_enc_fence;
+	res.pInputFencePoint = NULL;
+	// &d3d12_enc_fence;
+	/*
+	NV_ENC_REGISTER_RESOURCE registerOutputResource = { NV_ENC_REGISTER_RESOURCE_VER };
+	registerOutputResource.bufferFormat = NV_ENC_BUFFER_FORMAT_U8;
+	registerOutputResource.bufferUsage = NV_ENC_OUTPUT_BITSTREAM;
+	registerOutputResource.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_DIRECTX;
+	registerOutputResource.resourceToRegister = readbackHeap->getResource();
+	registerOutputResource.subResourceIndex = 0;
+	registerOutputResource.width = 2 * 4 * Graphics::getWidth() * Graphics::getHeight();
+	registerOutputResource.height = 1;
+	registerOutputResource.pitch = 0;
+	registerOutputResource.pInputFencePoint = nullptr;
+
+	NVENCCALL(nvencAPI.nvEncRegisterResource(encoder, &registerOutputResource));
+	NV_ENC_MAP_INPUT_RESOURCE mapOutputResource = { NV_ENC_MAP_INPUT_RESOURCE_VER };
+	mapOutputResource.registeredResource = registerOutputResource.registeredResource;
+
+	NVENCCALL(nvencAPI.nvEncMapInputResource(encoder, &mapOutputResource));
+	*/
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
 		return false;
 	}
 
-	bs->fence_point = d3d12_enc_fence;
 	bs->ptr = res.registeredResource;
 	bs->tex = tex;
 	bs->mapped_res = NULL;
@@ -293,7 +358,6 @@ static ID3D12Resource *get_tex_from_handle(struct nvenc_data *enc, uint32_t hand
 	}
 
 	*km_out = km;
-
 	struct handle_tex new_ht = {handle, input_tex, km};
 	da_push_back(enc->input_textures, &new_ht);
 	return input_tex;
@@ -308,6 +372,10 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 	IDXGIKeyedMutex *km;
 	struct nv_texture *nvtex;
 	struct nv_bitstream *bs;
+
+	ID3D12GraphicsCommandList *command_list = enc->command_list;
+	ID3D12CommandQueue *command_queue = enc->command_queue;
+	ID3D12Fence *fence = enc->fence;
 
 	if (texture->handle == GS_INVALID_HANDLE) {
 		error("Encode failed: bad texture handle");
@@ -328,21 +396,82 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 
 	deque_push_back(&enc->dts_list, &pts, sizeof(pts));
 
+	
 	/* ------------------------------------ */
-	/* map output tex so nvenc can use it   */
+	/* copy to output tex                   */
 
-	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
-	map.registeredResource = nvtex->res;
-	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map))) {
+	// km->lpVtbl->AcquireSync(km, lock_key, INFINITE);
+
+	command_list->lpVtbl->CopyResource(command_list, output_tex, input_tex);
+	HRESULT hr = command_list->lpVtbl->Close(command_list);
+	if (FAILED(hr)) {
+		error_hr("CommandList(Close) failed");
 		return false;
 	}
 
-	nvtex->mapped_res = map.mappedResource;
+	command_queue->lpVtbl->ExecuteCommandLists(command_queue, 1, (ID3D12CommandList**) &command_list);
+	hr = command_queue->lpVtbl->Signal(command_queue, enc->fence, ++enc->next_fence_value);
+	if (FAILED(hr)) {
+		error_hr("CommandQeue(Signal) failed");
+		return false;
+	}
+
+	hr = fence->lpVtbl->SetEventOnCompletion(fence, enc->next_fence_value, enc->fence_event_handle);
+	if (FAILED(hr)) {
+		error_hr("Fence(SetEventOnCompletion) failed");
+		return false;
+	}
+
+	WaitForSingleObject(enc->fence_event_handle, INFINITE);
+	enc->last_completed_fence_value = enc->next_fence_value;
+
+	hr = command_list->lpVtbl->Reset(command_list, enc->allocator, NULL);
+	if (FAILED(hr)) {
+		error_hr("CommandList(Reset) failed");
+		return false;
+	}
+
+
+	// km->lpVtbl->ReleaseSync(km, *next_key);
+
+	/* ------------------------------------ */
+	/* map output tex so nvenc can use it   */
+
+	NV_ENC_MAP_INPUT_RESOURCE mapIn = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+	mapIn.registeredResource = nvtex->res;
+	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &mapIn))) {
+		return false;
+	}
+
+	nvtex->mapped_res = mapIn.mappedResource;
 
 	/* ------------------------------------ */
 	/* do actual encode call                */
-	NV_ENC_INPUT_RESOURCE_D3D12 inputRes = {NV_ENC_INPUT_RESOURCE_D3D12_VER};
-	inputRes.inputFencePoint = nvtex->fence_point;
-	inputRes.pInputBuffer = nvtex->mapped_res;
-	return nvenc_encode_base_d3d12(enc, bs, &inputRes, pts, packet, received_packet);
+	nvtex->input_resource.version = NV_ENC_INPUT_RESOURCE_D3D12_VER;
+	nvtex->input_resource.pInputBuffer = nvtex->mapped_res;
+
+	/*
+	NV_ENC_INPUT_RESOURCE_D3D12 inputResource = { NV_ENC_INPUT_RESOURCE_D3D12_VER };
+	inputResource.pInputBuffer = mapInputResource.mappedResource;
+	inputResource.inputFencePoint = NV_ENC_FENCE_POINT_D3D12{ NV_ENC_FENCE_POINT_D3D12_VER };
+
+	NV_ENC_OUTPUT_RESOURCE_D3D12 outputResource = { NV_ENC_INPUT_RESOURCE_D3D12_VER };
+	outputResource.pOutputBuffer = mapOutputResource.mappedResource;
+	outputResource.outputFencePoint = NV_ENC_FENCE_POINT_D3D12{ NV_ENC_FENCE_POINT_D3D12_VER };
+	outputResource.outputFencePoint.pFence = outputFence.Get();
+	outputResource.outputFencePoint.signalValue = ++outputFenceValue;
+	outputResource.outputFencePoint.bSignal = true;
+	*/
+
+	NV_ENC_MAP_INPUT_RESOURCE mapOut = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+	mapOut.registeredResource = bs->ptr;
+	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &mapOut))) {
+		return false;
+	}
+
+	bs->mapped_res = mapOut.mappedResource;
+	bs->output_resource.version = NV_ENC_OUTPUT_RESOURCE_D3D12_VER;
+	bs->output_resource.pOutputBuffer = bs->mapped_res;
+
+	return nvenc_encode_base_d3d12(enc, bs, nvtex, pts, packet, received_packet);
 }

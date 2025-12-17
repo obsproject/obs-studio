@@ -1087,6 +1087,7 @@ static void *av1_nvenc_soft_create(obs_data_t *settings, obs_encoder_t *encoder)
 }
 
 static bool get_encoded_packet(struct nvenc_data *enc, bool finalize);
+static bool get_encoded_packet_d3d12(struct nvenc_data *enc, bool finalize);
 
 static void nvenc_destroy(void *data)
 {
@@ -1096,7 +1097,11 @@ static void nvenc_destroy(void *data)
 		NV_ENC_PIC_PARAMS params = {NV_ENC_PIC_PARAMS_VER};
 		params.encodePicFlags = NV_ENC_PIC_FLAG_EOS;
 		nv.nvEncEncodePicture(enc->session, &params);
-		get_encoded_packet(enc, true);
+		if (enc->is_use_d3d12) {
+			get_encoded_packet_d3d12(enc, true);
+		} else {
+			get_encoded_packet(enc, true);
+		}
 	}
 
 	for (size_t i = 0; i < enc->bitstreams.num; i++) {
@@ -1106,8 +1111,13 @@ static void nvenc_destroy(void *data)
 		nv.nvEncDestroyEncoder(enc->session);
 
 #ifdef _WIN32
-	d3d11_free_textures(enc);
-	d3d11_free(enc);
+	if (enc->is_use_d3d12) {
+		d3d12_free_textures(enc);
+		d3d12_free(enc);
+	} else {
+		d3d11_free_textures(enc);
+		d3d11_free(enc);
+	}
 #else
 	cuda_opengl_free(enc);
 #endif
@@ -1228,6 +1238,128 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 				return false;
 			}
 			nvtex->mapped_res = NULL;
+		}
+#endif
+		/* ---------------- */
+
+		if (surf && surf->mapped_res) {
+			NVENCSTATUS err;
+			err = nv.nvEncUnmapInputResource(s, surf->mapped_res);
+			if (nv_failed(enc->encoder, err, __FUNCTION__, "unmap")) {
+				return false;
+			}
+			surf->mapped_res = NULL;
+		}
+
+		/* ---------------- */
+
+		if (++enc->cur_bitstream == enc->buf_count)
+			enc->cur_bitstream = 0;
+
+		enc->buffers_queued--;
+	}
+
+	return true;
+}
+
+static bool get_encoded_packet_d3d12(struct nvenc_data *enc, bool finalize) {
+	void *s = enc->session;
+
+	da_resize(enc->packet_data, 0);
+
+	if (!enc->buffers_queued)
+		return true;
+	if (!finalize && enc->buffers_queued < enc->output_delay)
+		return true;
+
+	size_t count = finalize ? enc->buffers_queued : 1;
+
+	for (size_t i = 0; i < count; i++) {
+		size_t cur_bs_idx = enc->cur_bitstream;
+		struct nv_bitstream *bs = &enc->bitstreams.array[cur_bs_idx];
+#ifdef _WIN32
+		struct nv_texture *nvtex = enc->non_texture ? NULL : &enc->textures.array[cur_bs_idx];
+		struct nv_cuda_surface *surf = enc->non_texture ? &enc->surfaces.array[cur_bs_idx] : NULL;
+#else
+		struct nv_cuda_surface *surf = &enc->surfaces.array[cur_bs_idx];
+#endif
+
+		/* ---------------- */
+
+		NV_ENC_LOCK_BITSTREAM lock = {NV_ENC_LOCK_BITSTREAM_VER};
+		lock.outputBitstream = &bs->output_resource;
+		lock.doNotWait = false;
+
+		NVENCSTATUS status = nv.nvEncLockBitstream(s, &lock);
+		if (NV_FAILED(status)) {
+			const char *err = nv.nvEncGetLastErrorString(enc->session);
+			blog(LOG_WARNING, "nvenc init encoder failed %s ", err);
+			return false;
+		}
+
+		if (enc->first_packet) {
+			NV_ENC_SEQUENCE_PARAM_PAYLOAD payload = {0};
+			uint8_t buf[256];
+			uint32_t size = 0;
+
+			payload.version = NV_ENC_SEQUENCE_PARAM_PAYLOAD_VER;
+			payload.spsppsBuffer = buf;
+			payload.inBufferSize = sizeof(buf);
+			payload.outSPSPPSPayloadSize = &size;
+
+			nv.nvEncGetSequenceParams(s, &payload);
+			enc->header = bmemdup(buf, size);
+			enc->header_size = size;
+			enc->first_packet = false;
+		}
+
+		da_copy_array(enc->packet_data, lock.bitstreamBufferPtr, lock.bitstreamSizeInBytes);
+
+		enc->packet_pts = (int64_t)lock.outputTimeStamp;
+		enc->packet_keyframe = lock.pictureType == NV_ENC_PIC_TYPE_IDR;
+
+		switch (lock.pictureType) {
+		case NV_ENC_PIC_TYPE_I:
+		case NV_ENC_PIC_TYPE_BI:
+		case NV_ENC_PIC_TYPE_IDR:
+#ifdef NVENC_12_2_OR_LATER
+		case NV_ENC_PIC_TYPE_SWITCH:
+#endif
+			enc->packet_priority = OBS_NAL_PRIORITY_HIGHEST;
+			break;
+		case NV_ENC_PIC_TYPE_P:
+			enc->packet_priority = OBS_NAL_PRIORITY_HIGH;
+			break;
+		case NV_ENC_PIC_TYPE_B:
+		case NV_ENC_PIC_TYPE_NONREF_P:
+			enc->packet_priority = OBS_NAL_PRIORITY_DISPOSABLE;
+			break;
+		default:
+			enc->packet_priority = OBS_NAL_PRIORITY_DISPOSABLE;
+		}
+
+		if (NV_FAILED(nv.nvEncUnlockBitstream(s, lock.outputBitstream))) {
+			return false;
+		}
+
+		/* ---------------- */
+#ifdef _WIN32
+		if (nvtex && nvtex->mapped_res) {
+			NVENCSTATUS err;
+			err = nv.nvEncUnmapInputResource(s, nvtex->mapped_res);
+			if (nv_failed(enc->encoder, err, __FUNCTION__, "unmap")) {
+				return false;
+			}
+			nvtex->mapped_res = NULL;
+		}
+
+		if (bs && bs->mapped_res) {
+			NVENCSTATUS err;
+			err = nv.nvEncUnmapInputResource(s, bs->mapped_res);
+			if (nv_failed(enc->encoder, err, __FUNCTION__, "unmap")) {
+				return false;
+			}
+			bs->mapped_res = NULL;
 		}
 #endif
 		/* ---------------- */
@@ -1429,31 +1561,20 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 	return true;
 }
 
-bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *bs, NV_ENC_INPUT_RESOURCE_D3D12 *pic,
-			     int64_t pts, struct encoder_packet *packet, bool *received_packet) {
-
+bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *out, struct nv_texture *pic,
+			     int64_t pts, struct encoder_packet *packet, bool *received_packet)
+{
 	NV_ENC_PIC_PARAMS params = {0};
 	params.version = NV_ENC_PIC_PARAMS_VER;
 	params.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
-	params.inputBuffer = pic;
+	params.inputBuffer = &pic->input_resource;
 	params.inputTimeStamp = (uint64_t)pts;
 	params.inputWidth = enc->cx;
 	params.inputHeight = enc->cy;
 	params.inputPitch = enc->cx;
-
-	NV_ENC_OUTPUT_RESOURCE_D3D12 res = {NV_ENC_INPUT_RESOURCE_D3D12_VER};
-	res.outputFencePoint = bs->fence_point;
-
-	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
-	map.registeredResource = bs->ptr;
-	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map))) {
-		return false;
-	}
-
-	res.pOutputBuffer = map.mappedResource;
-
-	params.outputBitstream = &res;
+	params.outputBitstream = &out->output_resource;
 	params.frameIdx = (uint32_t)pts;
+	params.completionEvent = NULL;
 
 	if (enc->non_texture) {
 		params.bufferFmt = enc->surface_format;
@@ -1498,7 +1619,7 @@ bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *bs, NV
 	/* ------------------------------------ */
 	/* check for encoded packet and parse   */
 
-	if (!get_encoded_packet(enc, false)) {
+	if (!get_encoded_packet_d3d12(enc, false)) {
 		return false;
 	}
 

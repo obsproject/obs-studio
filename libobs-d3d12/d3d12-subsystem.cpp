@@ -2138,7 +2138,7 @@ extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
 	if (tex->type != GS_TEXTURE_2D)
 		return GS_INVALID_HANDLE;
 
-	return tex2d->isShared ? tex2d->sharedHandle : GS_INVALID_HANDLE;
+	return tex2d->isShared ? (uint32_t)tex2d->sharedHandle : GS_INVALID_HANDLE;
 }
 
 extern "C" EXPORT gs_texture_t *device_texture_wrap_obj(gs_device_t *device, void *obj)
@@ -2161,7 +2161,12 @@ int device_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
 	if (tex->type != GS_TEXTURE_2D)
 		return -1;
-	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->GetResource());
+
+	if (tex2d->acquired) {
+		return 0;
+	}
+
+	tex2d->acquired = true;
 	return 0;
 }
 
@@ -2171,7 +2176,10 @@ extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex, uint64_t ke
 	if (tex->type != GS_TEXTURE_2D)
 		return -1;
 
-	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->GetResource());
+	if (!tex2d->acquired)
+		return 0;
+
+	tex2d->acquired = false;
 	return 0;
 }
 

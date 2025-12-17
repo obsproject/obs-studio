@@ -73,7 +73,7 @@ void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
 		     "get shared handle: %08lX",
 		     hr);
 	} else {
-		sharedHandle = (uint32_t)(uintptr_t)handle;
+		sharedHandle = handle;
 	}
 }
 
@@ -152,10 +152,12 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 	if (isShared) {
 		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(
-			m_pResource.Get(), nullptr, GENERIC_ALL, nullptr, (HANDLE *)(uintptr_t)&sharedHandle);
+			m_pResource.Get(), nullptr, GENERIC_ALL, nullptr, &sharedHandle);
 		if (FAILED(hr)) {
 			throw HRError("Create Shared Handle Failed", hr);
 		}
+
+		acquired = true;
 	}
 }
 
@@ -282,7 +284,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t heigh
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
-	  sharedHandle(GS_INVALID_HANDLE),
+	  sharedHandle(NULL),
 	  twoPlane(twoPlane_)
 {
 	InitTexture(data);
@@ -331,7 +333,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *nv12tex, uint3
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle)
 	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
 	  isShared(true),
-	  sharedHandle(handle)
+	  sharedHandle((HANDLE)handle)
 {
 	(void)ntHandle;
 
