@@ -51,6 +51,7 @@ build() {
     macos-x86_64
     macos-arm64
     ubuntu-x86_64
+    ubuntu-aarch64
   )
 
   local config='RelWithDebInfo'
