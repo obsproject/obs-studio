@@ -18,7 +18,7 @@
 #include <util/base.h>
 #include "d3d11-subsystem.hpp"
 
-void gs_texture_3d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
+void gs_texture_3d::InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd)
 {
 	uint32_t rowSizeBits = width * gs_get_format_bpp(format);
 	uint32_t sliceSizeBytes = height * rowSizeBits / 8;
@@ -58,7 +58,7 @@ void gs_texture_3d::BackupTexture(const uint8_t *const *data)
 		const uint32_t texSize = bbp * w * h * d / 8;
 		this->data[i].resize(texSize);
 
-		vector<uint8_t> &subData = this->data[i];
+		std::vector<uint8_t> &subData = this->data[i];
 		memcpy(&subData[0], data[i], texSize);
 
 		if (w > 1)
