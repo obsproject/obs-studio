@@ -43,37 +43,43 @@ struct AddSourceData {
 };
 
 namespace {
-const char *getSourceDisplayName(QString type)
+QString getSourceDisplayName(QString type)
 {
-	std::string typeId = type.toStdString();
-	const char *unversionedId = typeId.c_str();
-
-	if (strcmp(unversionedId, "scene") == 0) {
-		return Str("Basic.Scene");
+	if (type == "scene") {
+		return QTStr("Basic.Scene");
 	}
-	const char *id = obs_get_latest_input_type_id(unversionedId);
-	return obs_source_get_display_name(id);
+
+	const char *inputChar = obs_get_latest_input_type_id(type.toUtf8().constData());
+	const char *displayChar = obs_source_get_display_name(inputChar);
+	std::string displayId = (displayChar) ? displayChar : "";
+
+	if (!displayId.empty()) {
+		return QString::fromStdString(displayId);
+	} else {
+		return QString();
+	}
 }
-} // namespace
 
-char *getNewSourceName(const char *name, const char *format)
+std::string getNewSourceName(std::string_view name)
 {
-	struct dstr new_name = {0};
-	int inc = 0;
+	std::string newName(name);
 
-	dstr_copy(&new_name, name);
+	int suffix = 1;
 
 	for (;;) {
-		OBSSourceAutoRelease existing_source = obs_get_source_by_name(new_name.array);
+		OBSSourceAutoRelease existing_source = obs_get_source_by_name(newName.c_str());
 		if (!existing_source) {
 			break;
 		}
 
-		dstr_printf(&new_name, format, name, ++inc + 1);
+		newName = name;
+		newName += " ";
+		newName += std::to_string(suffix);
 	}
 
-	return new_name.array;
+	return newName;
 }
+} // namespace
 
 static void AddSource(void *_data, obs_scene_t *scene)
 {
@@ -111,10 +117,9 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate, obs_tran
 
 	if (duplicate) {
 		OBSSource from = source;
-		char *new_name = getNewSourceName(obs_source_get_name(source), "%s %d");
-		source = obs_source_duplicate(from, new_name, false);
+		std::string new_name = getNewSourceName(obs_source_get_name(source));
+		source = obs_source_duplicate(from, new_name.c_str(), false);
 		obs_source_release(source);
-		bfree(new_name);
 
 		if (!source) {
 			return;
@@ -217,6 +222,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 		&OBSBasicSourceSelect::checkSourceVisibility);
 
 	ui->createNewFrame->setVisible(false);
+	ui->deprecatedCreateLabel->setVisible(false);
+	ui->deprecatedCreateLabel->setProperty("class", "text-muted");
 
 	getSourceTypes();
 	getSources();
@@ -251,8 +258,8 @@ void OBSBasicSourceSelect::checkSourceVisibility()
 
 	// Allow some room for previous/next rows to make scrolling a bit more seamless
 	QRect scrollAreaRect(QPoint(0, 0), ui->existingScrollArea->size());
-	scrollAreaRect.setTop(scrollAreaRect.top() - Thumbnail::cy);
-	scrollAreaRect.setBottom(scrollAreaRect.bottom() + Thumbnail::cy);
+	scrollAreaRect.setTop(scrollAreaRect.top() - Thumbnail::size.width());
+	scrollAreaRect.setBottom(scrollAreaRect.bottom() + Thumbnail::size.height());
 
 	for (QAbstractButton *button : buttons) {
 		SourceSelectButton *sourceButton = qobject_cast<SourceSelectButton *>(button->parent());
@@ -313,6 +320,10 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 	for (obs_source_t *source : *sourcesList) {
 		if (limit > 0 && count >= limit) {
 			break;
+		}
+
+		if (!source || obs_source_removed(source)) {
+			continue;
 		}
 
 		const char *id = obs_source_get_unversioned_id(source);
@@ -406,18 +417,22 @@ void OBSBasicSourceSelect::getSourceTypes()
 			continue;
 		}
 
-		QListWidgetItem *newItem = new QListWidgetItem();
+		QListWidgetItem *newItem = new QListWidgetItem(ui->sourceTypeList);
 		newItem->setData(Qt::DisplayRole, name);
 		newItem->setData(UNVERSIONED_ID_ROLE, unversioned_type);
 
-		QIcon icon;
-		icon = main->GetSourceIcon(type);
-		newItem->setIcon(icon);
+		if ((caps & OBS_SOURCE_DEPRECATED) != 0) {
+			newItem->setData(DEPRECATED_ROLE, true);
+		} else {
+			newItem->setData(DEPRECATED_ROLE, false);
 
-		ui->sourceTypeList->addItem(newItem);
+			QIcon icon;
+			icon = main->GetSourceIcon(type);
+			newItem->setIcon(icon);
+		}
 	}
 
-	QListWidgetItem *newItem = new QListWidgetItem();
+	QListWidgetItem *newItem = new QListWidgetItem(ui->sourceTypeList);
 	newItem->setData(Qt::DisplayRole, Str("Basic.Scene"));
 	newItem->setData(UNVERSIONED_ID_ROLE, "scene");
 
@@ -425,9 +440,26 @@ void OBSBasicSourceSelect::getSourceTypes()
 	icon = main->GetSceneIcon();
 	newItem->setIcon(icon);
 
-	ui->sourceTypeList->addItem(newItem);
-
 	ui->sourceTypeList->sortItems();
+
+	// Shift Deprecated sources to the bottom
+	QList<QListWidgetItem *> deprecatedItems;
+	for (int i = 0; i < ui->sourceTypeList->count(); i++) {
+		QListWidgetItem *item = ui->sourceTypeList->item(i);
+		if (!item) {
+			break;
+		}
+
+		bool isDeprecated = item->data(DEPRECATED_ROLE).toBool();
+		if (isDeprecated) {
+			ui->sourceTypeList->takeItem(i);
+			deprecatedItems.append(item);
+		}
+	}
+
+	for (auto &item : deprecatedItems) {
+		ui->sourceTypeList->addItem(item);
+	}
 
 	QListWidgetItem *allSources = new QListWidgetItem();
 	allSources->setData(Qt::DisplayRole, Str("Basic.SourceSelect.Recent"));
@@ -454,9 +486,10 @@ void OBSBasicSourceSelect::setSelectedSourceType(QListWidgetItem *item)
 		delete child;
 	}
 
-	QVariant data = item->data(UNVERSIONED_ID_ROLE);
+	QVariant unversionedIdData = item->data(UNVERSIONED_ID_ROLE);
+	QVariant deprecatedData = item->data(DEPRECATED_ROLE);
 
-	if (data.isNull()) {
+	if (unversionedIdData.isNull()) {
 		setSelectedSource(nullptr);
 		sourceTypeId.clear();
 		ui->createNewFrame->setVisible(false);
@@ -464,16 +497,22 @@ void OBSBasicSourceSelect::setSelectedSourceType(QListWidgetItem *item)
 		return;
 	}
 
-	QString type = data.toString();
+	QString type = unversionedIdData.toString();
 	if (type.compare(sourceTypeId) == 0) {
 		return;
 	}
 
 	ui->createNewFrame->setVisible(true);
 
+	bool isDeprecatedType = deprecatedData.toBool();
+	ui->newSourceName->setVisible(!isDeprecatedType);
+	ui->createNewSource->setVisible(!isDeprecatedType);
+
+	ui->deprecatedCreateLabel->setVisible(isDeprecatedType);
+
 	sourceTypeId = type;
 
-	QString placeHolderText{QT_UTF8(getSourceDisplayName(sourceTypeId))};
+	QString placeHolderText{getSourceDisplayName(sourceTypeId)};
 
 	QString text{placeHolderText};
 	int i = 2;

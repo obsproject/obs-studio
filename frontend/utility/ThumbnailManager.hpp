@@ -67,8 +67,7 @@ public:
 
 	inline QPixmap getPixmap() const { return item->pixmap; }
 
-	static constexpr int cx = 320;
-	static constexpr int cy = 180;
+	static constexpr QSize size = {320, 180};
 
 signals:
 	void updateThumbnail(QPixmap pixmap);

@@ -129,7 +129,7 @@ bool ThumbnailManager::updatePixmap(std::shared_ptr<ThumbnailItem> &sharedPointe
 
 		auto obj = new ScreenshotObj(source);
 		obj->setSaveToFile(false);
-		obj->setSize(Thumbnail::cx, Thumbnail::cy);
+		obj->setSize(Thumbnail::size);
 
 		connect(obj, &ScreenshotObj::imageReady, item, &ThumbnailItem::imageUpdated);
 	}
@@ -225,7 +225,7 @@ void ThumbnailManager::preloadThumbnail(OBSSource source, QObject *object, std::
 
 		auto obj = new ScreenshotObj(source);
 		obj->setSaveToFile(false);
-		obj->setSize(Thumbnail::cx, Thumbnail::cy);
+		obj->setSize(Thumbnail::size);
 
 		QPointer<QObject> safeObject = qobject_cast<QObject *>(object);
 		connect(obj, &ScreenshotObj::imageReady, this, [=](QImage image) {

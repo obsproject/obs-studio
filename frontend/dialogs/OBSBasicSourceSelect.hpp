@@ -30,6 +30,7 @@
 #include <QDialog>
 
 constexpr int UNVERSIONED_ID_ROLE = Qt::UserRole + 1;
+constexpr int DEPRECATED_ROLE = Qt::UserRole + 2;
 
 class OBSBasicSourceSelect : public QDialog {
 	Q_OBJECT

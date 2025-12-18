@@ -35,6 +35,29 @@
 
 using namespace std;
 
+namespace {
+std::string getNewSourceName(std::string_view name)
+{
+	std::string newName(name);
+
+	int suffix = 1;
+
+	for (;;) {
+		OBSSourceAutoRelease existing_source = obs_get_source_by_name(newName.c_str());
+		if (!existing_source) {
+			break;
+		}
+
+		newName = name;
+		newName += " (";
+		newName += std::to_string(suffix);
+		newName += ")";
+	}
+
+	return newName;
+}
+} // namespace
+
 static inline bool HasAudioDevices(const char *source_id)
 {
 	const char *output_id = source_id;
@@ -330,8 +353,6 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
 }
 
-extern char *getNewSourceName(const char *name, const char *format);
-
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, const char *deviceDesc, int channel)
 {
 	bool disable = deviceId && strcmp(deviceId, "disabled") == 0;
@@ -352,11 +373,11 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 		}
 
 	} else if (!disable) {
-		BPtr<char> name = getNewSourceName(deviceDesc, "%s (%d)");
+		std::string name = getNewSourceName(deviceDesc);
 
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(sourceId, name, settings, nullptr);
+		source = obs_source_create(sourceId, name.c_str(), settings, nullptr);
 
 		obs_set_output_source(channel, source);
 	}

@@ -493,6 +493,22 @@
                 </widget>
                </item>
                <item>
+                <widget class="QLabel" name="deprecatedCreateLabel">
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Plain</enum>
+                 </property>
+                 <property name="lineWidth">
+                  <number>0</number>
+                 </property>
+                 <property name="text">
+                  <string>Basic.SourceSelect.Deprecated.Create</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QFrame" name="frame">
                  <property name="frameShape">
                   <enum>QFrame::NoFrame</enum>
