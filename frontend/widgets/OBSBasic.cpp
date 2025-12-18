@@ -1976,6 +1976,13 @@ void OBSBasic::closeWindow()
 
 #ifdef BROWSER_AVAILABLE
 	ClearExtraBrowserDocks();
+
+#ifdef YOUTUBE_ENABLED
+	if (youtubeAppDock) {
+		RemoveDockWidget(youtubeAppDock->objectName());
+		youtubeAppDock = nullptr;
+	}
+#endif
 #endif
 
 	OnEvent(OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN);
