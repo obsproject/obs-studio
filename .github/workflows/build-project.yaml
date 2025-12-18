@@ -118,6 +118,18 @@ jobs:
           notarizationUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
           notarizationPassword: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
 
+      - name: Rename Virtual Camera 🎥
+        run: |
+          LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/camera-extension/OBSCameraProviderSource.swift
+          LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/dal-plugin/OBSDALDevice.mm
+          LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/dal-plugin/OBSDALStream.mm
+          LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/dal-plugin/OBSDALPlugIn.mm
+            
+      - name: Verify Virtual Camera rename 🔍
+        run: |
+          grep -R "Live Stream Camera" plugins/mac-virtualcam
+          ! grep -R "OBS Virtual Camera" plugins/mac-virtualcam
+
       - name: Build OBS Studio 🧱
         uses: ./.github/actions/build-obs
         env:
