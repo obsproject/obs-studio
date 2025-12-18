@@ -269,6 +269,60 @@ static inline void write_header(struct exception_handler_data *data)
 		  data->cpu_info.array);
 }
 
+static inline void write_context(struct exception_handler_data *data)
+{
+	if (!data || !data->exception || !data->exception->ContextRecord)
+		return;
+
+	// x64: see https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-context
+	// x86: see https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-context-r2
+	// arm64:see https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-arm64_nt_context
+	// arm32:see https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-context-r1
+#ifdef _M_X64
+	CONTEXT context_record = *data->exception->ContextRecord;
+	dstr_catf(&data->str, "Data Seg Registers:");
+	dstr_catf(&data->str, "\r\nCS=%016I64X, DS=%016I64X, ES%=016I64X, FS=%016I64X, SS=%016I64X, EF=%016I64X\r\n",
+		  context_record.SegCs, context_record.SegDs, context_record.SegEs, context_record.SegFs,
+		  context_record.SegGs, context_record.SegSs);
+	dstr_catf(&data->str, "\r\nInteger Registers:");
+	dstr_catf(
+		&data->str,
+		"\r\nRax=%016I64X, Rcx=%016I64X, Rdx=%016I64X, Rbx=%016I64X, Rsp=%016I64X, Rbp=%016I64X, Rsi=%016I64X, Rdi=%016I64X\r\n"
+		"R8=%016I64X, R9=%016I64X, R10=%016I64X, R11=%016I64X, R12=%016I64X, R13=%016I64X, R14=%016I64X, R15=%016I64X\r\n",
+		context_record.Rax, context_record.Rcx, context_record.Rdx, context_record.Rbx, context_record.Rsp,
+		context_record.Rbp, context_record.Rsi, context_record.Rdi, context_record.R8, context_record.R9,
+		context_record.R10, context_record.R11, context_record.R12, context_record.R13, context_record.R14,
+		context_record.R15);
+	dstr_catf(&data->str, "\r\nProgram Counter Register:\r\nRip=%016I64X\r\n", context_record.Rip);
+	dstr_catf(&data->str, "\r\nXmm Registers:");
+	for (int i = 0; i < 16; ++i) {
+		float *xmm = (float *)(&context_record.Xmm0 + i);
+		dstr_catf(&data->str, "\r\nxmm%d:%.4f,%.4f,%.4f,%.4f", i, xmm[0], xmm[1], xmm[2], xmm[3]);
+	}
+	dstr_catf(&data->str, "\r\n");
+#elif _M_IX86
+	// not implement
+#elif _M_ARM64
+	ARM64_NT_CONTEXT context_record = *data->exception->ContextRecord;
+	dstr_catf(&data->str, "Program State Registers:");
+	dstr_catf(&data->str, "\r\nCpsr=%016I64X\r\n", context_record.Cpsr);
+	dstr_catf(&data->str, "\r\nSP Register:\r\nSp=%016I64X\r\n", context_record.Sp);
+	dstr_catf(&data->str, "\r\nInteger Registers:");
+	for (int i = 0; i < 8; ++i) {
+		dstr_catf(&data->str, "\r\nX%d=%016I64X, X%d=%016I64X, X%d=%016I64X, X%d=%016I64X", i,
+			  context_record.X[i * 4], context_record.X[i * 4 + 1], context_record.X[i * 4 + 2],
+			  context_record.X[i * 4 + 3]);
+	}
+	dstr_catf(&data->str, "\r\nProgram Counter Register:\r\nPc=%016I64X\r\n", context_record.Pc);
+	dstr_catf(&data->str, "\r\nNEON Registers:");
+	for (int i = 0; i < 32; ++i) {
+		float *neon = (float *)(&context_record.V[i]);
+		dstr_catf(&data->str, "\r\nARM64_NT_NEON128-%d:%.4f,%.4f,%.4f,%.4f", i, neon[0], neon[1], neon[2],
+			  neon[3]);
+	}
+#endif
+}
+
 struct module_info {
 	DWORD64 addr;
 	char name_utf8[MAX_PATH];
@@ -496,6 +550,7 @@ static inline void handle_exception(struct exception_handler_data *data, PEXCEPT
 	init_module_info(data);
 
 	write_header(data);
+	write_context(data);
 	write_thread_traces(data);
 	write_module_list(data);
 }
