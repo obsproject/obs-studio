@@ -317,6 +317,28 @@ static struct dstr aspect_ratio_from_spa_rectangle(struct spa_rectangle rect)
 	return str;
 }
 
+static const void *get_values_from_pod(const struct spa_pod *p, uint32_t type, uint32_t size, uint32_t *cnt)
+{
+	uint32_t choice;
+	const struct spa_pod *vals = spa_pod_get_values(p, cnt, &choice);
+	if (!vals || vals->type != type || vals->size != size || *cnt <= 0)
+		return NULL;
+
+	const void *body = SPA_POD_BODY_CONST(vals);
+
+	switch (choice) {
+	case SPA_CHOICE_Enum:
+		/* skip the first one, the default value */
+		*cnt -= 1;
+		body = SPA_PTROFF(body, size, const void);
+		SPA_FALLTHROUGH;
+	case SPA_CHOICE_None:
+		return body;
+	default:
+		return NULL;
+	}
+}
+
 static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 {
 	struct param *p;
@@ -331,14 +353,10 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 		uint32_t media_type, media_subtype;
 		uint32_t format = 0;
 		const char *format_name;
-		struct spa_rectangle resolution;
 
 		const struct spa_pod_prop *framerate_prop = NULL;
-		struct spa_pod *framerate_pod;
-		uint32_t n_framerates;
-		enum spa_choice_type framerate_choice;
-		const struct spa_fraction *framerate_values;
-		g_autoptr(GArray) framerates = NULL;
+		uint32_t n_framerates = 0;
+		const struct spa_fraction *framerates = NULL;
 
 		if (p->id != SPA_PARAM_EnumFormat || p->param == NULL)
 			continue;
@@ -370,71 +388,58 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			continue;
 		}
 
-		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, format ? &format : NULL,
-					 SPA_FORMAT_VIDEO_size, SPA_POD_OPT_Rectangle(&resolution)) < 0)
+		const struct spa_pod_prop *size_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_size);
+		if (!size_prop)
 			continue;
 
-		obs_data_set_int(data, "width", resolution.width);
-		obs_data_set_int(data, "height", resolution.height);
+		uint32_t n_resolutions;
+		const struct spa_rectangle *resolutions = get_values_from_pod(&size_prop->value, SPA_TYPE_Rectangle,
+									      sizeof(*resolutions), &n_resolutions);
+		if (!resolutions)
+			continue;
 
 		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
-		if (!framerate_prop)
-			continue;
+		if (framerate_prop)
+			framerates = get_values_from_pod(&framerate_prop->value, SPA_TYPE_Fraction, sizeof(*framerates),
+							 &n_framerates);
 
-		framerate_pod = spa_pod_get_values(&framerate_prop->value, &n_framerates, &framerate_choice);
-		if (framerate_pod->type != SPA_TYPE_Fraction) {
-			blog(LOG_WARNING, "Framerate is not a fraction");
-			continue;
+		for (size_t i = 0; i < n_resolutions; i++) {
+			const struct spa_rectangle *resolution = &resolutions[i];
+
+			obs_data_set_int(data, "width", resolution->width);
+			obs_data_set_int(data, "height", resolution->height);
+
+			dstr_printf(&str, "%ux%u", resolution->width, resolution->height);
+
+			aspect_ratio = aspect_ratio_from_spa_rectangle(*resolution);
+			if (aspect_ratio.len != 0) {
+				dstr_catf(&str, " (%s)", aspect_ratio.array);
+				dstr_free(&aspect_ratio);
+			}
+
+			if (n_framerates > 0) {
+				dstr_cat(&str, " - ");
+
+				for (size_t i = n_framerates; i > 0; i--) {
+					const struct spa_fraction *framerate = &framerates[i - 1];
+
+					if (i != n_framerates)
+						dstr_cat(&str, ", ");
+
+					if (framerate->denom == 1)
+						dstr_catf(&str, "%u", framerate->num);
+					else
+						dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
+				}
+
+				dstr_catf(&str, " FPS");
+			}
+
+			dstr_catf(&str, " - %s", format_name);
+
+			obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
+			dstr_free(&str);
 		}
-
-		framerate_values = SPA_POD_BODY(framerate_pod);
-		framerates = g_array_new(FALSE, FALSE, sizeof(struct spa_fraction));
-
-		switch (framerate_choice) {
-		case SPA_CHOICE_None:
-			g_array_append_val(framerates, framerate_values[0]);
-			break;
-		case SPA_CHOICE_Range:
-			blog(LOG_WARNING, "Ranged framerates not supported");
-			continue;
-		case SPA_CHOICE_Step:
-			blog(LOG_WARNING, "Stepped framerates not supported");
-			continue;
-		case SPA_CHOICE_Enum:
-			/* i=0 is the default framerate, skip it */
-			for (uint32_t i = 1; i < n_framerates; i++)
-				g_array_append_val(framerates, framerate_values[i]);
-			break;
-		default:
-			continue;
-		}
-
-		dstr_printf(&str, "%ux%u", resolution.width, resolution.height);
-
-		aspect_ratio = aspect_ratio_from_spa_rectangle(resolution);
-		if (aspect_ratio.len != 0) {
-			dstr_catf(&str, " (%s)", aspect_ratio.array);
-			dstr_free(&aspect_ratio);
-		}
-
-		dstr_cat(&str, " - ");
-
-		for (int i = framerates->len - 1; i >= 0; i--) {
-			const struct spa_fraction *framerate = &g_array_index(framerates, struct spa_fraction, i);
-
-			if (i != (int)framerates->len - 1)
-				dstr_cat(&str, ", ");
-
-			if (framerate->denom == 1)
-				dstr_catf(&str, "%u", framerate->num);
-			else
-				dstr_catf(&str, "%.2f", framerate->num / (double)framerate->denom);
-		}
-
-		dstr_catf(&str, " FPS - %s", format_name);
-
-		obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
-		dstr_free(&str);
 	}
 
 	g_clear_pointer(&data, obs_data_release);
@@ -635,8 +640,8 @@ static int compare_framerates(gconstpointer a, gconstpointer b)
 	return da - db;
 }
 
-static void framerate_list(struct camera_device *dev, uint32_t pixelformat, const struct spa_rectangle *resolution,
-			   obs_property_t *prop)
+static size_t framerate_list(struct camera_device *dev, uint32_t pixelformat, const struct spa_rectangle *resolution,
+			     obs_property_t *prop)
 {
 	g_autoptr(GArray) framerates = NULL;
 	struct param *p;
@@ -648,10 +653,7 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 	{
 		const struct spa_fraction *framerate_values;
 		struct obs_pw_video_format obs_pw_video_format;
-		enum spa_choice_type choice;
-		const struct spa_pod_prop *prop;
-		struct spa_rectangle this_resolution;
-		struct spa_pod *framerate_pod;
+		const struct spa_pod_prop *framerate_prop;
 		uint32_t media_subtype;
 		uint32_t media_type;
 		uint32_t n_framerates;
@@ -678,43 +680,39 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 		if (obs_pw_video_format.video_format != pixelformat)
 			continue;
 
-		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_size,
-					 SPA_POD_OPT_Rectangle(&this_resolution)) < 0)
+		const struct spa_pod_prop *size_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_size);
+		if (!size_prop)
 			continue;
 
-		if (this_resolution.width != resolution->width || this_resolution.height != resolution->height)
+		uint32_t n_resolutions;
+		const struct spa_rectangle *resolutions = get_values_from_pod(&size_prop->value, SPA_TYPE_Rectangle,
+									      sizeof(*resolutions), &n_resolutions);
+		if (!resolutions)
 			continue;
 
-		prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
-		if (!prop)
-			continue;
+		bool resolution_found = false;
 
-		framerate_pod = spa_pod_get_values(&prop->value, &n_framerates, &choice);
-		if (framerate_pod->type != SPA_TYPE_Fraction) {
-			blog(LOG_WARNING, "Framerate is not a fraction - something is wrong");
-			continue;
+		for (size_t i = 0; i < n_resolutions; i++) {
+			resolution_found = resolutions[i].width == resolution->width &&
+					   resolutions[i].height == resolution->height;
+			if (resolution_found)
+				break;
 		}
 
-		framerate_values = SPA_POD_BODY(framerate_pod);
+		if (!resolution_found)
+			continue;
 
-		switch (choice) {
-		case SPA_CHOICE_None:
-			g_array_append_val(framerates, framerate_values[0]);
-			break;
-		case SPA_CHOICE_Range:
-			blog(LOG_WARNING, "Ranged framerates not supported");
-			break;
-		case SPA_CHOICE_Step:
-			blog(LOG_WARNING, "Stepped framerates not supported");
-			break;
-		case SPA_CHOICE_Enum:
-			/* i=0 is the default framerate, skip it */
-			for (uint32_t i = 1; i < n_framerates; i++)
-				g_array_append_val(framerates, framerate_values[i]);
-			break;
-		default:
-			break;
-		}
+		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
+		if (!framerate_prop)
+			continue;
+
+		framerate_values = get_values_from_pod(&framerate_prop->value, SPA_TYPE_Fraction,
+						       sizeof(*framerate_values), &n_framerates);
+		if (!framerate_values)
+			continue;
+
+		for (size_t i = 0; i < n_framerates; i++)
+			g_array_append_val(framerates, framerate_values[i]);
 	}
 
 	g_array_sort(framerates, compare_framerates);
@@ -739,6 +737,8 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 		dstr_free(&str);
 	}
 	obs_data_release(data);
+
+	return framerates->len;
 }
 
 static bool parse_framerate(struct spa_fraction *dest, const char *json)
@@ -845,7 +845,14 @@ static bool format_selected(void *data, obs_properties_t *properties, obs_proper
 	}
 
 	property = obs_properties_get(properties, "framerate");
-	framerate_list(device, camera_source->format.spa_format, &camera_source->resolution.rect, property);
+
+	bool has_framerates =
+		framerate_list(device, camera_source->format.spa_format, &camera_source->resolution.rect, property);
+
+	obs_property_set_visible(property, has_framerates);
+
+	if (!has_framerates)
+		obs_pipewire_stream_set_framerate(camera_source->obs_pw_stream, NULL);
 
 	return true;
 }
