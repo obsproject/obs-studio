@@ -124,6 +124,7 @@ jobs:
           LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/dal-plugin/OBSDALDevice.mm
           LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/dal-plugin/OBSDALStream.mm
           LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/dal-plugin/OBSDALPlugIn.mm
+          LC_ALL=C sed -i '' 's/OBS Virtual Camera/Live Stream Camera/g' plugins/mac-virtualcam/src/camera-extension/CMakeLists.txt
             
       - name: Verify Virtual Camera rename 🔍
         run: |
