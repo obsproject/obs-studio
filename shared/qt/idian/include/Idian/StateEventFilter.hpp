@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Ruwen Hahn <palana@stunned.de>
+    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,29 +17,25 @@
 
 #pragma once
 
-#include <obs.hpp>
+#include <Idian/Utils.hpp>
+#include <QObject>
 
-#include <QLabel>
+class QWidget;
 
-class OBSSourceLabel : public QLabel {
-	Q_OBJECT;
+namespace idian {
+class StateEventFilter : public QObject {
+	Q_OBJECT
 
 public:
-	OBSSignal renamedSignal;
-	OBSSignal removedSignal;
-	OBSSignal destroyedSignal;
+	explicit StateEventFilter(idian::Utils *utils, QWidget *parent);
 
-	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	bool eventFilter(QObject *obj, QEvent *event);
 
-protected:
-	static void obsSourceRenamed(void *data, calldata_t *params);
-	static void obsSourceRemoved(void *data, calldata_t *params);
-	static void obsSourceDestroyed(void *data, calldata_t *params);
-	void mousePressEvent(QMouseEvent *event);
+public slots:
+	void updateCheckedState(bool checked);
 
-signals:
-	void renamed(const char *name);
-	void removed();
-	void destroyed();
-	void clicked();
+private:
+	Utils *utils;
+	QWidget *target;
 };
+} // namespace idian
