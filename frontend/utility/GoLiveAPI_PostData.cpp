@@ -36,6 +36,9 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 		} else if (qstricmp(codec, "av1") == 0) {
 			client.supported_codecs.emplace("av1");
 		}
+		auto encoder_caps = obs_get_encoder_caps(encoder_id);
+		if ((encoder_caps & OBS_ENCODER_CAP_DEPRECATED) == 0)
+			client.supported_encoders.emplace(encoder_id);
 	}
 
 	auto &preferences = post_data.preferences;
