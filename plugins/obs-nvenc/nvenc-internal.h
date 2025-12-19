@@ -9,9 +9,11 @@
 #ifdef _WIN32
 #define INITGUID
 #include <dxgi.h>
+#include <dxgi1_6.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
 #include <d3d12.h>
+#include <dxgidebug.h>
 #else
 #include <glad/glad.h>
 #endif
@@ -170,7 +172,7 @@ struct nv_texture {
 	void *res;  // register Resource
 	// D3D11
 	void *tex;  // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
-	void *mapped_res;  //
+	void *mapped_res;
 	// D3D12
 	NV_ENC_INPUT_RESOURCE_D3D12 input_resource;
 };

@@ -93,7 +93,6 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -107,13 +106,13 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 	if (isShared) {
 		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
-		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
+		// texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
 	}
 
 	if (isRenderTarget || isGDICompatible) {
 		m_UsageState = D3D12_RESOURCE_STATE_COMMON;
-		texDesc.Flags = D3D12_RESOURCE_FLAG_NONE | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS |
-				D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
 
 	if (data) {
@@ -133,11 +132,15 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 
 	HRESULT hr = device->d3d12Instance->GetDevice()->CreateCommittedResource(
-		&HeapProps, isShared ? D3D12_HEAP_FLAG_SHARED : D3D12_HEAP_FLAG_NONE, &texDesc, m_UsageState, nullptr,
+		&HeapProps,
+		isShared ? D3D12_HEAP_FLAG_SHARED
+			 : D3D12_HEAP_FLAG_NONE,
+		&texDesc,
+		m_UsageState, nullptr,
 		IID_PPV_ARGS(&m_pResource));
 	if (FAILED(hr)) {
-		hr = device->d3d12Instance->GetDevice()->GetDeviceRemovedReason();
-		throw HRError("Failed to create 2D texture resource", hr);
+		auto removeReason = device->d3d12Instance->GetDevice()->GetDeviceRemovedReason();
+		throw HRError("Failed to create 2D texture resource", removeReason);
 	}
 
 	if (data) {
@@ -358,6 +361,10 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle
 	this->dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 
 	InitResourceView();
+	if (isRenderTarget) {
+		InitRenderTargets(1);
+		InitUAV();
+	}
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
@@ -381,6 +388,10 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
 	this->dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 
 	InitResourceView();
+	if (isRenderTarget) {
+		InitRenderTargets(1);
+		InitUAV();
+	}
 }
 
 gs_texture_2d::~gs_texture_2d()
