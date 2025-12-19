@@ -759,6 +759,28 @@ static inline struct cf_def *cf_preprocess_get_def(struct cf_preprocessor *pp, c
 	return pp->defines.array + idx;
 }
 
+bool cf_preprocess_get_def_value(struct cf_preprocessor *pp, const struct strref *def_name, int *value)
+{
+	struct cf_def *def = cf_preprocess_get_def(pp, def_name);
+	if (def == NULL || def->macro)
+		return false;
+
+	for (size_t i = 0; i < def->tokens.num; i++) {
+		if (def->tokens.array[i].type == CFTOKEN_SPACETAB)
+			continue;
+		if (def->tokens.array[i].type == CFTOKEN_NUM &&
+		    sscanf(def->tokens.array[i].str.array, "%i", value) == 1)
+			return true;
+
+		if (def->tokens.array[i].type == CFTOKEN_NAME &&
+		    cf_preprocess_get_def_value(pp, &def->tokens.array[i].str, value))
+			return true;
+
+		return false;
+	}
+	return false;
+}
+
 static char space_filler[2] = " ";
 
 static inline void append_space(struct cf_preprocessor *pp, cf_token_array_t *tokens, const struct cf_token *base)
@@ -887,6 +909,86 @@ static inline bool cf_preprocess_subblock(struct cf_preprocessor *pp, bool ignor
 	return !eof;
 }
 
+static void cf_preprocess_if(struct cf_preprocessor *pp, struct cf_token **p_cur_token)
+{
+	struct cf_token *cur_token = *p_cur_token;
+
+	int value_a = 0;
+	int value_b = 0;
+
+	next_token(&cur_token, true);
+	if ((cur_token->type != CFTOKEN_NAME || !cf_preprocess_get_def_value(pp, &cur_token->str, &value_a)) &&
+	    (cur_token->type != CFTOKEN_NUM || sscanf(cur_token->str.array, "%i", &value_a) != 1)) {
+		cf_adderror_expecting(pp, cur_token, "identifier or number");
+		go_to_newline(&cur_token);
+		goto exit;
+	}
+	next_token(&cur_token, true);
+	bool is_true = false;
+	if (cur_token->type == CFTOKEN_NEWLINE) {
+		is_true = value_a;
+	} else {
+		if (cur_token->type != CFTOKEN_OTHER) {
+			cf_adderror_expecting(pp, cur_token, "comparator");
+			go_to_newline(&cur_token);
+			goto exit;
+		}
+		struct strref comparator = cur_token->str;
+		cur_token++;
+		while (cur_token->type == CFTOKEN_OTHER) {
+			comparator.len += cur_token->str.len;
+			cur_token++;
+		}
+		cur_token--;
+		next_token(&cur_token, true);
+		if ((cur_token->type != CFTOKEN_NAME || !cf_preprocess_get_def_value(pp, &cur_token->str, &value_b)) &&
+		    (cur_token->type != CFTOKEN_NUM || sscanf(cur_token->str.array, "%i", &value_b) != 1)) {
+			cf_adderror_expecting(pp, cur_token, "identifier or number");
+			go_to_newline(&cur_token);
+			goto exit;
+		}
+
+		if (strref_cmp(&comparator, "==") == 0) {
+			is_true = value_a == value_b;
+		} else if (strref_cmp(&comparator, ">=") == 0) {
+			is_true = value_a >= value_b;
+		} else if (strref_cmp(&comparator, "<=") == 0) {
+			is_true = value_a <= value_b;
+		} else if (strref_cmp(&comparator, "!=") == 0) {
+			is_true = value_a != value_b;
+		} else if (strref_cmp(&comparator, "<") == 0) {
+			is_true = value_a < value_b;
+		} else if (strref_cmp(&comparator, ">") == 0) {
+			is_true = value_a > value_b;
+		} else {
+			cf_adderror_expecting(pp, cur_token, "comparator");
+			go_to_newline(&cur_token);
+			goto exit;
+		}
+	}
+
+	if (!cf_preprocess_subblock(pp, !is_true, &cur_token))
+		goto exit;
+
+	if (strref_cmp(&cur_token->str, "else") == 0) {
+		if (!cf_preprocess_subblock(pp, is_true, &cur_token))
+			goto exit;
+	} else if (strref_cmp(&cur_token->str, "elif") == 0) {
+		if (is_true) {
+			if (!cf_preprocess_subblock(pp, is_true, &cur_token))
+				goto exit;
+		} else {
+			cf_preprocess_if(pp, &cur_token);
+			goto exit;
+		}
+	}
+
+	cur_token++;
+
+exit:
+	*p_cur_token = cur_token;
+}
+
 static void cf_preprocess_ifdef(struct cf_preprocessor *pp, bool ifnot, struct cf_token **p_cur_token)
 {
 	struct cf_token *cur_token = *p_cur_token;
@@ -909,7 +1011,16 @@ static void cf_preprocess_ifdef(struct cf_preprocessor *pp, bool ifnot, struct c
 	if (strref_cmp(&cur_token->str, "else") == 0) {
 		if (!cf_preprocess_subblock(pp, is_true, &cur_token))
 			goto exit;
-		/*} else if (strref_cmp(&cur_token->str, "elif") == 0) {*/
+
+	} else if (strref_cmp(&cur_token->str, "elif") == 0) {
+		if (is_true) {
+			if (!cf_preprocess_subblock(pp, is_true, &cur_token))
+				goto exit;
+
+		} else {
+			cf_preprocess_if(pp, &cur_token);
+			goto exit;
+		}
 	}
 
 	cur_token++;
@@ -937,10 +1048,10 @@ static bool cf_preprocessor(struct cf_preprocessor *pp, bool if_block, struct cf
 	} else if (strref_cmp(&cur_token->str, "ifndef") == 0) {
 		cf_preprocess_ifdef(pp, true, p_cur_token);
 
-		/*} else if (strref_cmp(&cur_token->str, "if") == 0) {
-		TODO;*/
-	} else if (strref_cmp(&cur_token->str, "else") == 0 ||
-		   /*strref_cmp(&cur_token->str, "elif") == 0 ||*/
+	} else if (strref_cmp(&cur_token->str, "if") == 0) {
+		cf_preprocess_if(pp, p_cur_token);
+
+	} else if (strref_cmp(&cur_token->str, "else") == 0 || strref_cmp(&cur_token->str, "elif") == 0 ||
 		   strref_cmp(&cur_token->str, "endif") == 0) {
 		if (!if_block) {
 			struct dstr name;
