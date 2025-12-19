@@ -86,14 +86,14 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	int mixerSize = cx - (cx22_5 * 2 + cx5 + cx21);
 
-	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock, ui->mixerDock, ui->transitionsDock, controlsDock};
+	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock, ui->mixerDock, transitionsDock, controlsDock};
 
 	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx21};
 
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
 	ui->mixerDock->setVisible(true);
-	ui->transitionsDock->setVisible(true);
+	transitionsDock->setVisible(true);
 	controlsDock->setVisible(true);
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
@@ -117,7 +117,7 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 	ui->scenesDock->setFeatures(mainFeatures);
 	ui->sourcesDock->setFeatures(mainFeatures);
 	ui->mixerDock->setFeatures(mainFeatures);
-	ui->transitionsDock->setFeatures(mainFeatures);
+	transitionsDock->setFeatures(mainFeatures);
 	controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
 

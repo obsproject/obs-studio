@@ -6,6 +6,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QCheckBox>
+#include <QSpinBox>
 
 #include "moc_OBSAdvAudioCtrl.cpp"
 

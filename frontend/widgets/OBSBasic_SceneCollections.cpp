@@ -1004,7 +1004,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
 	SetTransitionDuration(300);
-	SetTransition(fadeTransition);
+	setCurrentTransition(fadeTransitionUuid);
 
 	updateRemigrationMenuItem(SceneCoordinateMode::Relative, ui->actionRemigrateSceneCollection);
 
@@ -1188,7 +1188,7 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 		newDuration = 300;
 
 	if (!transitionName)
-		transitionName = obs_source_get_name(fadeTransition);
+		transitionName = obs_source_get_name(transitions.at(fadeTransitionUuid));
 
 	const char *curSceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
 
@@ -1300,11 +1300,9 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 		LoadSceneListOrder(sceneOrder);
 
 	curTransition = FindTransition(transitionName);
-	if (!curTransition)
-		curTransition = fadeTransition;
 
 	SetTransitionDuration(newDuration);
-	SetTransition(curTransition);
+	setCurrentTransition(curTransition ? obs_source_get_uuid(curTransition) : fadeTransitionUuid);
 
 retryScene:
 	curScene = obs_get_source_by_name(sceneName);
