@@ -22,8 +22,10 @@ local deps_baseurl
 local deps_label
 local deps_hash
 
+local cef_target="${target//arm64/aarch64}"
+
 IFS=';' read -r deps_version deps_baseurl deps_label deps_hash deps_revision <<< \
-  "$(jq -r --arg target "${target}" \
+  "$(jq -r --arg target "${cef_target}" \
     '.dependencies["cef"] | {version, baseUrl, "label", "hash": .hashes[$target], "revision": .revision[$target]} | join(";")' \
     ${buildspec_file})"
 
@@ -34,14 +36,14 @@ if (( ! deps_version )) {
 log_group 'Setting up pre-built Chromium Embedded Framework...'
 
 pushd ${project_root}/.deps
-local _filename="cef_binary_${deps_version}_${target//ubuntu-/linux_}${deps_revision:+"_v${deps_revision}"}.tar.xz"
+local _filename="cef_binary_${deps_version}_${cef_target//ubuntu-/linux_}${deps_revision:+"_v${deps_revision}"}.tar.xz"
 local _url=${deps_baseurl}/${_filename}
-local _target="cef_binary_${deps_version}_${target//ubuntu-/linux_}"
+local _target="cef_binary_${deps_version}_${cef_target//ubuntu-/linux_}"
 typeset -g CEF_VERSION=${deps_version}
 
 log_debug "Running curl ${curl_opts} ${_url}"
 curl ${curl_opts} ${_url} && \
-  log_status "Downloaded ${deps_label} for ${target}."
+  log_status "Downloaded ${deps_label} for ${cef_target}."
 
 read -r artifact_checksum _ <<< "$(sha256sum ${_filename})"
 if [[ ${deps_hash} != ${artifact_checksum} ]] {
@@ -57,6 +59,11 @@ XZ_OPT=-T0 tar --strip-components 1 -xJf ../${_filename} && log_status "${deps_l
 popd
 
 log_group 'Installing obs-studio build dependencies from apt...'
+
+local -a libvpl=()
+if [[ "${target}" == "ubuntu-x86_64" ]] {
+  libvpl=(libvpl-dev libvpl2)
+}
 
 sudo apt-get install -y --no-install-recommends \
   build-essential libglib2.0-dev \
@@ -87,4 +94,4 @@ sudo apt-get install -y --no-install-recommends \
   nlohmann-json3-dev libwebsocketpp-dev libasio-dev libqrcodegencpp-dev \
   libffmpeg-nvenc-dev librist-dev libsrt-openssl-dev \
   qt6-base-dev libqt6svg6-dev qt6-base-private-dev \
-  libvpl-dev libvpl2
+  ${libvpl}

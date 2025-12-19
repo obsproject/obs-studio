@@ -265,6 +265,8 @@ jobs:
           macos_intel_dsym_artifact_name="obs-studio-macos-x86_64-${commit_hash}-dSYMs"
           ubuntu_2404_x86_64_artifact_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}"
           ubuntu_2404_x86_64_debug_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}-dbgsym"
+          ubuntu_2404_arm64_artifact_name="obs-studio-ubuntu-24.04-arm64-${commit_hash}"
+          ubuntu_2404_arm64_debug_name="obs-studio-ubuntu-24.04-arm64-${commit_hash}-dbgsym"
           ubuntu_2404_sources_name="obs-studio-ubuntu-24.04-sources-${commit_hash}"
           windows_x64_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
           windows_x64_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
@@ -285,6 +287,10 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64.deb
           mv -v "${ubuntu_2404_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64-dbsym.ddeb
+          mv -v "${ubuntu_2404_arm64_artifact_name}/"obs-studio-*-arm64-ubuntu-gnu.deb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-arm64.deb
+          mv -v "${ubuntu_2404_arm64_debug_name}/"obs-studio-*-arm64-ubuntu-gnu-dbgsym.ddeb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-arm64-dbsym.ddeb
           mv -v "${ubuntu_2404_sources_name}/"obs-studio-*-sources.tar.gz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
           mv -v "${windows_x64_artifact_name}/"OBS-Studio-*.zip \

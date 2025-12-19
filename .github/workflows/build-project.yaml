@@ -173,7 +173,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-24.04]
-    runs-on: ${{ matrix.os }}
+        target: [x86_64, arm64]
+        include:
+          - target: x86_64
+            runs_on: ubuntu-24.04
+          - target: arm64
+            runs_on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runs_on }}
     needs: check-event
     defaults:
       run:
@@ -188,9 +194,9 @@ jobs:
         id: ccache-cache
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          key: ${{ runner.os }}-${{ matrix.os }}-ccache-${{ matrix.target }}-${{ needs.check-event.outputs.config }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-
+            ${{ runner.os }}-${{ matrix.os }}-ccache-${{ matrix.target }}-
 
       - name: Build OBS Studio 🧱
         uses: ./.github/actions/build-obs
@@ -204,17 +210,18 @@ jobs:
           YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
         with:
-          target: x86_64
+          target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
         with:
-          target: x86_64
+          target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
 
       - name: Upload Source Tarball 🗜️
+        if: matrix.target == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: obs-studio-${{ matrix.os }}-sources-${{ needs.check-event.outputs.commitHash }}
@@ -223,21 +230,21 @@ jobs:
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@v4
         with:
-          name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu.*
+          name: obs-studio-${{ matrix.os }}-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}
+          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-${{ matrix.target }}-ubuntu-gnu.*
 
       - name: Upload Debug Symbol Artifacts 🪲
         uses: actions/upload-artifact@v4
         if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
-          name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}-dbgsym
-          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb
+          name: obs-studio-${{ matrix.os }}-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}-dbgsym
+          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-${{ matrix.target }}-ubuntu-gnu-dbgsym.ddeb
 
       - uses: actions/cache/save@v4
         if: github.event_name != 'pull_request' && steps.ccache-cache.outputs.cache-hit != 'true'
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
+          key: ${{ runner.os }}-${{ matrix.os }}-ccache-${{ matrix.target }}-${{ needs.check-event.outputs.config }}
 
   flatpak-build:
     name: Flatpak 📦
