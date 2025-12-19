@@ -524,6 +524,7 @@ static bool stinger_audio_render(void *data, uint64_t *ts_out, struct obs_source
 static void stinger_transition_start(void *data)
 {
 	struct stinger_info *s = data;
+	enum obs_media_state state;
 
 	if (s->media_source) {
 		calldata_t cd = {0};
@@ -531,7 +532,10 @@ static void stinger_transition_start(void *data)
 		proc_handler_t *ph = obs_source_get_proc_handler(s->media_source);
 		proc_handler_t *matte_ph = s->matte_source ? obs_source_get_proc_handler(s->matte_source) : NULL;
 
-		if (s->transitioning) {
+		proc_handler_call(ph, "get_state", &cd);
+		state = (uint64_t)calldata_int(&cd, "state");
+
+		if (s->transitioning || state == OBS_MEDIA_STATE_PLAYING) {
 			proc_handler_call(ph, "restart", &cd);
 			if (matte_ph) {
 				proc_handler_call(matte_ph, "restart", &cd);
