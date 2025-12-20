@@ -3,7 +3,7 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float multiplier;
-
+uniform texture2d mask;
 uniform texture2d blurred;
 
 sampler_state texSampler {
@@ -54,15 +54,11 @@ FragPos VSConvertUnorm(uint id : VERTEXID)
 float4 Mask(FragData f_in)
 {
 	float4 rgba = image.Sample(texSampler, f_in.uv);
-	float3 blur = blurred.SampleLevel(texSampler, f_in.uv, 0).rgb;
-	float A = rgba.a;
-	return float4(blur * A, A);
-}
-
-float4 PSMask(FragData f_in) : TARGET
-{
-	float4 rgba = Mask(f_in);
-	return rgba;
+	float3 blur = srgb_nonlinear_to_linear(blurred.Sample(texSampler, f_in.uv).rgb);
+	// Between blurred and unblurred area we interpolate to have a smooth transition.
+	float m = smoothstep(0.85, 0.95, mask.Sample(texSampler, f_in.uv).a);
+	float3 out_lin = lerp(blur, rgba.rgb, m);
+	return float4(out_lin, rgba.a);
 }
 
 float4 PSMaskMultiply(FragData f_in) : TARGET
@@ -91,16 +87,42 @@ float4 PSMaskMultiplyTonemap(FragData f_in) : TARGET
 	return rgba;
 }
 
+float4 PSMask(FragData f_in) : TARGET
+{
+	return Mask(f_in);
+}
+
 float4 PSDefault(FragPos f_in) : TARGET
 {
 	float4 rgba = image.Load(int3(f_in.pos.xy, 0));
 	return rgba;
 }
 
-float4 PSConvertMultiply(FragPos f_in) : TARGET
+float4 PSConvertUnorm(FragPos f_in) : TARGET
+{
+	float4 rgba = image.Load(int3(f_in.pos.xy, 0));
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	return rgba;
+}
+
+float4 PSConvertUnormTonemap(FragPos f_in) : TARGET
+{
+	float4 rgba = image.Load(int3(f_in.pos.xy, 0));
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	return rgba;
+}
+
+float4 PSConvertUnormMultiplyTonemap(FragPos f_in) : TARGET
 {
 	float4 rgba = image.Load(int3(f_in.pos.xy, 0));
 	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
 	return rgba;
 }
 
@@ -145,15 +167,24 @@ technique ConvertUnorm
 	pass
 	{
 		vertex_shader = VSConvertUnorm(id);
-		pixel_shader  = PSDefault(f_in);
+		pixel_shader  = PSConvertUnorm(f_in);
 	}
 }
 
-technique ConvertUnormMultiply
+technique ConvertUnormTonemap
 {
 	pass
 	{
 		vertex_shader = VSConvertUnorm(id);
-		pixel_shader  = PSConvertMultiply(f_in);
+		pixel_shader  = PSConvertUnormTonemap(f_in);
+	}
+}
+
+technique ConvertUnormMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSConvertUnorm(id);
+		pixel_shader  = PSConvertUnormMultiplyTonemap(f_in);
 	}
 }
