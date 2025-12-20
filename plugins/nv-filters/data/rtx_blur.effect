@@ -53,10 +53,10 @@ FragPos VSConvertUnorm(uint id : VERTEXID)
 
 float4 Mask(FragData f_in)
 {
-	float4 rgba = image.Sample(texSampler, f_in.uv);
-	float3 blur = blurred.SampleLevel(texSampler, f_in.uv, 0).rgb;
-	float A = rgba.a;
-	return float4(blur * A, A);
+	float4 src_lin = image.Sample(texSampler, f_in.uv);
+	float4 blur_srgb = blurred.Sample(texSampler, f_in.uv);
+	float3 blur_lin = srgb_nonlinear_to_linear(blur_srgb.rgb);
+	return float4(blur_lin, src_lin.a);
 }
 
 float4 PSMask(FragData f_in) : TARGET
@@ -104,6 +104,14 @@ float4 PSConvertMultiply(FragPos f_in) : TARGET
 	return rgba;
 }
 
+float4 PSConvertUnorm(FragPos f_in) : TARGET
+{
+	float4 rgba = image.Load(int3(f_in.pos.xy, 0));
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	return rgba;
+}
+
+
 technique Draw
 {
 	pass
@@ -145,7 +153,7 @@ technique ConvertUnorm
 	pass
 	{
 		vertex_shader = VSConvertUnorm(id);
-		pixel_shader  = PSDefault(f_in);
+		pixel_shader  = PSConvertUnorm(f_in);
 	}
 }
 
