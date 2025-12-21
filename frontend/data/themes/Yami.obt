@@ -135,6 +135,7 @@
 
     --padding_base_border: calc(var(--padding_base) + 1px);
 
+    --spinbox_min_width: calc(var(--input_height) * 2.5);
     --spinbox_button_height: calc(var(--input_height_half) - 1px);
 
     --volume_slider: calc(calc(4px + var(--font_base_value)) / 4);
@@ -1215,8 +1216,11 @@ QDoubleSpinBox {
     border: var(--input_border_width) solid var(--input_bg);
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
+    padding-right: var(--padding_base);
+
     height: var(--input_height);
     max-height: var(--input_height);
+    min-width: var(--spinbox_min_width);
 }
 
 QSpinBox:hover,
