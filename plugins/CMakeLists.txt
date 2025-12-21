@@ -54,6 +54,7 @@ add_obs_plugin(mac-capture PLATFORMS MACOS)
 add_obs_plugin(mac-syphon PLATFORMS MACOS)
 add_obs_plugin(mac-videotoolbox PLATFORMS MACOS)
 add_obs_plugin(mac-virtualcam PLATFORMS MACOS)
+add_obs_plugin(mediafoundation PLATFORMS WINDOWS)
 add_obs_plugin(nv-filters PLATFORMS WINDOWS)
 
 check_obs_browser()
