@@ -268,7 +268,7 @@ try {
 	std::string text;
 
 	if (FetchAndVerifyFile("whatsnew", "obs-studio/updates/whatsnew.json", WHATSNEW_URL, &text)) {
-		emit Result(QString::fromStdString(text));
+		emit Result(text);
 	}
 } catch (std::string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());

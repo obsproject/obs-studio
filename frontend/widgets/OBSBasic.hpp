@@ -302,7 +302,7 @@ private:
 
 public slots:
 	void close();
-	void UpdatePatronJson(const QString &text, const QString &error);
+	void UpdatePatronJson(const std::string &text, const std::string &error);
 	void UpdateEditMenu();
 	void applicationShutdown() noexcept;
 
@@ -647,7 +647,7 @@ private slots:
 
 	void on_resetUI_triggered();
 
-	void logUploadFinished(const QString &text, const QString &error, OBS::LogFileType uploadType);
+	void logUploadFinished(const std::string &text, const std::string &error, OBS::LogFileType uploadType);
 
 	void updateCheckFinished();
 
@@ -1615,7 +1615,7 @@ private:
 	void CheckForUpdates(bool manualUpdate);
 
 	void MacBranchesFetched(const QString &branch, bool manualUpdate);
-	void ReceivedIntroJson(const QString &text);
+	void ReceivedIntroJson(const std::string &text);
 	void ShowWhatsNew(const QString &url);
 
 	/* -------------------------------------
@@ -1705,8 +1705,8 @@ private:
 
 	void YoutubeStreamCheck(const std::string &key);
 	void ShowYouTubeAutoStartWarning();
-	void YouTubeActionDialogOk(const QString &broadcast_id, const QString &stream_id, const QString &key,
-				   bool autostart, bool autostop, bool start_now);
+	void YouTubeActionDialogOk(const std::string &broadcastId, const std::string &streamId, const std::string &key,
+				   bool autostart, bool autostop, bool startNow);
 #endif
 
 	void BroadcastButtonClicked();
