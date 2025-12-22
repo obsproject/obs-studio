@@ -18,6 +18,6 @@ void BrowserToolbar::on_refresh_clicked()
 		return;
 	}
 
-	obs_property_t *p = obs_properties_get(props.get(), "refreshnocache");
+	obs_property_t *p = obs_properties_get(props, "refreshnocache");
 	obs_property_button_clicked(p, source.Get());
 }
