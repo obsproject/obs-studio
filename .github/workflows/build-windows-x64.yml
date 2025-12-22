@@ -1,0 +1,43 @@
+name: Build Windows x64
+
+on:
+  push:
+    branches:
+      - ui-update-salad
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Warchamp7/obs-studio
+          ref: ui-update-salad
+          submodules: 'recursive'
+          fetch-depth: 0
+
+      - name: Add portable mode flag
+        shell: pwsh
+        run: |
+          New-Item -Path "portable_mode.txt" -ItemType File
+          Add-Content -Path "CMakeLists.txt" -Value "`ninstall(FILES portable_mode.txt DESTINATION .)`n"
+
+      - name: Build OBS Studio
+        uses: ./.github/actions/build-obs
+        with:
+          target: x64
+          config: RelWithDebInfo
+
+      - name: Package OBS Studio
+        uses: ./.github/actions/package-obs
+        with:
+          target: x64
+          config: RelWithDebInfo
+          package: false
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-studio-windows-x64-portable
+          path: build_x64/obs-studio-*-windows-x64.zip
