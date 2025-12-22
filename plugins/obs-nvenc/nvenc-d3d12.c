@@ -237,9 +237,6 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.height = enc->cy;
 	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
 	res.bufferUsage = NV_ENC_INPUT_IMAGE;
-
-	NV_ENC_FENCE_POINT_D3D12 d3d12_enc_fence = {NV_ENC_FENCE_POINT_D3D12_VER};
-
 	res.pInputFencePoint = NULL;
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
@@ -254,7 +251,6 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 
 bool d3d12_init_textures(struct nvenc_data *enc)
 {
-	//blog(LOG_DEBUG, "buf count: %d", enc->buf_count);
 	da_reserve(enc->textures, enc->buf_count);
 	for (uint32_t i = 0; i < enc->buf_count; i++) {
 		struct nv_texture texture;
@@ -328,14 +324,6 @@ bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs) {
 	res.height = enc->cy;
 	res.bufferFormat = NV_ENC_BUFFER_FORMAT_U8;
 	res.bufferUsage = NV_ENC_OUTPUT_BITSTREAM;
-
-	NV_ENC_FENCE_POINT_D3D12 d3d12_enc_fence = {NV_ENC_FENCE_POINT_D3D12_VER};
-	d3d12_enc_fence.bSignal = 0;
-	d3d12_enc_fence.pFence = NULL;
-	d3d12_enc_fence.bWait = 0;
-	d3d12_enc_fence.signalValue = 0;
-	d3d12_enc_fence.waitValue = 0;
-
 	res.pInputFencePoint = NULL;
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
@@ -383,8 +371,6 @@ static ID3D12Resource *get_tex_from_handle(struct nvenc_data *enc, uint32_t hand
 		return NULL;
 	}
 
-	D3D12_RESOURCE_DESC desc;
-	input_tex->lpVtbl->GetDesc(input_tex, &desc);
 	*km_out = NULL;
 	struct handle_tex new_ht = {handle, input_tex, NULL};
 	da_push_back(enc->input_textures, &new_ht);

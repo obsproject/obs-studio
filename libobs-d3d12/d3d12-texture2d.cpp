@@ -106,10 +106,9 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 	if (isShared) {
 		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
-		// texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
 	}
 
-	if (isRenderTarget || isGDICompatible) {
+	if (isRenderTarget) {
 		m_UsageState = D3D12_RESOURCE_STATE_COMMON;
 		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		texDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -119,12 +118,6 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 		BackupTexture(data);
 		InitSRD(srd);
 	}
-
-	D3D12_CLEAR_VALUE ClearValue = {};
-	ClearValue.Format = dxgiFormatView;
-	ClearValue.Color[1] = 0;
-	ClearValue.Color[2] = 0;
-	ClearValue.Color[3] = 0;
 
 	if (texDesc.Format == DXGI_FORMAT_NV12 || texDesc.Format == DXGI_FORMAT_P010) {
 		texDesc.Width = (texDesc.Width + 1) & ~1;
@@ -146,6 +139,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	if (data) {
 		device->d3d12Instance->InitializeTexture(*this, (UINT)srd.size(), srd.data());
 	}
+
 	if (isDynamic) {
 		uploadBuffer = std::make_unique<D3D12Graphics::UploadBuffer>(device->d3d12Instance);
 		uploadBuffer->Create(L"Texture2D Upload Buffer",
