@@ -5,6 +5,10 @@ target_sources(
   libdshowcapture
   INTERFACE
     libdshowcapture/dshowcapture.hpp
+    libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
+    libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
+    libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
+    libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp
     libdshowcapture/source/capture-filter.cpp
     libdshowcapture/source/capture-filter.hpp
     libdshowcapture/source/device-vendor.cpp
@@ -31,10 +35,6 @@ target_sources(
     libdshowcapture/source/log.hpp
     libdshowcapture/source/output-filter.cpp
     libdshowcapture/source/output-filter.hpp
-    libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
-    libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
-    libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
-    libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp
 )
 
 target_include_directories(

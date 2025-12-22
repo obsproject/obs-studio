@@ -22,12 +22,12 @@ target_sources(
     $<$<PLATFORM_ID:Windows>:win/EditorWidget-win.cpp>
     $<$<PLATFORM_ID:Windows>:win/VSTPlugin-win.cpp>
     EditorWidget.cpp
+    VSTPlugin.cpp
     headers/EditorWidget.h
-    headers/vst-plugin-callbacks.hpp
     headers/VSTPlugin.h
+    headers/vst-plugin-callbacks.hpp
     obs-vst.cpp
     vst_header/aeffectx.h
-    VSTPlugin.cpp
 )
 
 target_include_directories(obs-vst PRIVATE vst_header)

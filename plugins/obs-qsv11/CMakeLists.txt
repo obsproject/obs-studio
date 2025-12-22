@@ -23,14 +23,14 @@ target_sources(
     $<$<PLATFORM_ID:Windows>:common_directx11.cpp>
     $<$<PLATFORM_ID:Windows>:common_directx11.h>
     $<$<PLATFORM_ID:Windows>:common_utils_windows.cpp>
-    common_utils.cpp
-    common_utils.h
-    obs-qsv11-plugin-main.c
-    obs-qsv11.c
     QSV_Encoder.cpp
     QSV_Encoder.h
     QSV_Encoder_Internal.cpp
     QSV_Encoder_Internal.h
+    common_utils.cpp
+    common_utils.h
+    obs-qsv11-plugin-main.c
+    obs-qsv11.c
 )
 
 target_compile_options(

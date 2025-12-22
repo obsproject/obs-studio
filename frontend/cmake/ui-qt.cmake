@@ -28,7 +28,6 @@ target_sources(
   PRIVATE
     forms/AutoConfigFinishPage.ui
     forms/AutoConfigStartPage.ui
-    forms/AutoConfigStartPage.ui
     forms/AutoConfigStreamPage.ui
     forms/AutoConfigTestPage.ui
     forms/AutoConfigVideoPage.ui
@@ -48,8 +47,8 @@ target_sources(
     forms/OBSImporter.ui
     forms/OBSMissingFiles.ui
     forms/OBSRemux.ui
-    forms/StatusBarWidget.ui
     forms/PluginManagerWindow.ui
+    forms/StatusBarWidget.ui
     forms/obs.qrc
     forms/source-toolbar/browser-source-toolbar.ui
     forms/source-toolbar/color-source-toolbar.ui

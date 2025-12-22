@@ -111,7 +111,7 @@ invoke_formatter() {
         local -i num_failures=0
         local -a source_files=($@)
         local file
-        local -a command=(${formatter} -c --no-cache ${source_files})
+        local -a command=(${formatter} -c --no-cache ${source_files} --extensions ./build-aux/gersemi-sort.py)
 
         if (( ${#source_files} )) {
           while read -r line; do
@@ -136,7 +136,7 @@ invoke_formatter() {
         local -a source_files=($@)
 
         if (( ${#source_files} )) {
-          "${formatter}" -i ${source_files}
+          "${formatter}" -i ${source_files} --extensions ./build-aux/gersemi-sort.py
         }
       }
       ;;

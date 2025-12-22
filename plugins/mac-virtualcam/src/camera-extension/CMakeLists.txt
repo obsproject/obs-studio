@@ -27,11 +27,11 @@ target_sources(
   mac-camera-extension
   PRIVATE
     "${_placeholder_location}"
-    main.swift
     OBSCameraDeviceSource.swift
     OBSCameraProviderSource.swift
     OBSCameraStreamSink.swift
     OBSCameraStreamSource.swift
+    main.swift
 )
 
 set_property(SOURCE "${_placeholder_location}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources")
