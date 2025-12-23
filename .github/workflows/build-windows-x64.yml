@@ -3,8 +3,8 @@ name: Build Windows x64
 on:
   push:
     branches:
-      - ui-update-salad
-  workflow_dispatch:
+      - ui-redesign  # Cambiado para que coincida con tu rama actual
+  workflow_dispatch: # Esto permite el botón manual
 
 jobs:
   build-windows:
@@ -21,6 +21,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -Path "portable_mode.txt" -ItemType File
+          # Ajuste para asegurar que el flag de modo portable se incluya
           Add-Content -Path "CMakeLists.txt" -Value "`ninstall(FILES portable_mode.txt DESTINATION .)`n"
 
       - name: Build OBS Studio
@@ -40,4 +41,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: obs-studio-windows-x64-portable
-          path: build_x64/obs-studio-*-windows-x64.zip
+          path: |
+            build_x64/rundir/RelWithDebInfo
+            portable_mode.txt
