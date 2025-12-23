@@ -126,7 +126,7 @@ void OBSBasic::CreateProgramOptions()
 		};
 
 		auto toggleSwapScenesMode = [this]() {
-			swapScenesMode = !swapScenesMode;
+			SetSwapScenesMode(!swapScenesMode);
 		};
 
 		auto toggleSceneDuplication = [this]() {
