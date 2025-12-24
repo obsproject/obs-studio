@@ -438,23 +438,26 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
     bool show_empty_names = obs_data_get_bool(settings, "show_empty_names");
     bool show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
 
-    if (capture_type == sc->capture_type) {
+    /// Early return for cases where the changed setting does not require reinitializing the stream. Currently, this
+    /// only includes `show_hidden_windows` and `show_empty_names`. We check if one of these two settings were changed
+    /// by checking if other settings values were not changed, because content lists are built with the new settings
+    /// values already set on the `sc` capture object prior to this function being called.
+    if (capture_type == sc->capture_type && sc->hide_cursor != show_cursor && hide_obs == sc->hide_obs) {
         switch (sc->capture_type) {
             case ScreenCaptureDisplayStream: {
-                if (sc->display == display && sc->hide_cursor != show_cursor && sc->hide_obs == hide_obs) {
+                if (sc->display == display) {
                     [application_id release];
                     return;
                 }
             } break;
             case ScreenCaptureWindowStream: {
-                if (old_window_id == sc->window && sc->hide_cursor != show_cursor) {
+                if (old_window_id == sc->window) {
                     [application_id release];
                     return;
                 }
             } break;
             case ScreenCaptureApplicationStream: {
-                if (sc->display == display && [application_id isEqualToString:sc->application_id] &&
-                    sc->hide_cursor != show_cursor) {
+                if (sc->display == display && [application_id isEqualToString:sc->application_id]) {
                     [application_id release];
                     return;
                 }
@@ -542,7 +545,6 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
 
     sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
     sc->show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
-    sc->hide_obs = obs_data_get_bool(settings, "hide_obs");
 
     screen_capture_build_content_list(sc, capture_type_id == ScreenCaptureDisplayStream);
     build_display_list(sc, props);
