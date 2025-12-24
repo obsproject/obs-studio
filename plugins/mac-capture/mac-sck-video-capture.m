@@ -209,9 +209,12 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
     } else {
         blog(LOG_WARNING, "Unable to retrieve OBS output FPS when initializing macOS Screen Capture");
     }
-    FourCharCode l10r_type = 0;
-    l10r_type = ('l' << 24) | ('1' << 16) | ('0' << 8) | 'r';
-    [sc->stream_properties setPixelFormat:l10r_type];
+
+    if (sc->high_resolution_transparency) {
+        [sc->stream_properties setPixelFormat:kCVPixelFormatType_32BGRA];
+    } else {
+        [sc->stream_properties setPixelFormat:kCVPixelFormatType_ARGB2101010LEPacked];
+    }
 
     if (@available(macOS 13.0, *)) {
         [sc->stream_properties setCapturesAudio:YES];
@@ -284,6 +287,7 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     sc->window = (CGWindowID) obs_data_get_int(settings, "window");
     sc->capture_type = (unsigned int) obs_data_get_int(settings, "type");
     sc->audio_only = false;
+    sc->high_resolution_transparency = obs_data_get_bool(settings, "transparency");
 
     os_sem_init(&sc->shareable_content_available, 1);
     screen_capture_build_content_list(sc, sc->capture_type == ScreenCaptureDisplayStream);
@@ -413,6 +417,7 @@ static void sck_video_capture_defaults(obs_data_t *settings)
     obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
     obs_data_set_default_int(settings, "window", kCGNullWindowID);
     obs_data_set_default_bool(settings, "show_cursor", true);
+    obs_data_set_default_bool(settings, "transparency", false);
     obs_data_set_default_bool(settings, "hide_obs", false);
     obs_data_set_default_bool(settings, "show_empty_names", false);
     obs_data_set_default_bool(settings, "show_hidden_windows", false);
@@ -437,12 +442,14 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
     bool hide_obs = obs_data_get_bool(settings, "hide_obs");
     bool show_empty_names = obs_data_get_bool(settings, "show_empty_names");
     bool show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
+    bool high_resolution_transparency = obs_data_get_bool(settings, "transparency");
 
     /// Early return for cases where the changed setting does not require reinitializing the stream. Currently, this
     /// only includes `show_hidden_windows` and `show_empty_names`. We check if one of these two settings were changed
     /// by checking if other settings values were not changed, because content lists are built with the new settings
     /// values already set on the `sc` capture object prior to this function being called.
-    if (capture_type == sc->capture_type && sc->hide_cursor != show_cursor && hide_obs == sc->hide_obs) {
+    if (capture_type == sc->capture_type && high_resolution_transparency == sc->high_resolution_transparency &&
+        sc->hide_cursor != show_cursor && hide_obs == sc->hide_obs) {
         switch (sc->capture_type) {
             case ScreenCaptureDisplayStream: {
                 if (sc->display == display) {
@@ -476,6 +483,7 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
     sc->hide_obs = hide_obs;
     sc->show_empty_names = show_empty_names;
     sc->show_hidden_windows = show_hidden_windows;
+    sc->high_resolution_transparency = high_resolution_transparency;
     init_screen_stream(sc);
 
     obs_leave_graphics();
@@ -596,6 +604,8 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
 
     obs_property_t *empty =
         obs_properties_add_bool(props, "show_empty_names", obs_module_text("WindowUtils.ShowEmptyNames"));
+
+    obs_properties_add_bool(props, "transparency", obs_module_text("SCK.Transparency"));
 
     obs_property_t *hidden =
         obs_properties_add_bool(props, "show_hidden_windows", obs_module_text("WindowUtils.ShowHidden"));

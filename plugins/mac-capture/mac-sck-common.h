@@ -46,6 +46,7 @@ struct API_AVAILABLE(macos(12.5)) screen_capture {
     bool show_hidden_windows;
     bool show_empty_names;
     bool audio_only;
+    bool high_resolution_transparency;
 
     SCStream *disp;
     SCStreamConfiguration *stream_properties;
