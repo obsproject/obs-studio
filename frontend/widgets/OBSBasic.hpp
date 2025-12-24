@@ -1466,7 +1466,7 @@ signals:
 	 * -------------------------------------
 	 */
 private:
-	QScopedPointer<QSystemTrayIcon> trayIcon;
+	QPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
 	QPointer<QAction> sysTrayRecord;
 	QPointer<QAction> sysTrayReplayBuffer;
