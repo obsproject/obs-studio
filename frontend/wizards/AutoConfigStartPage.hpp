@@ -1,5 +1,7 @@
 #pragma once
 
+#include <wizards/AutoConfig.hpp>
+
 #include <QWizardPage>
 
 class Ui_AutoConfigStartPage;
@@ -10,6 +12,9 @@ class AutoConfigStartPage : public QWizardPage {
 	friend class AutoConfig;
 
 	std::unique_ptr<Ui_AutoConfigStartPage> ui;
+
+protected:
+	AutoConfig *autoConfig() const { return qobject_cast<AutoConfig *>(wizard()); }
 
 public:
 	AutoConfigStartPage(QWidget *parent = nullptr);

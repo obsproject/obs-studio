@@ -1,5 +1,7 @@
 #pragma once
 
+#include <wizards/AutoConfig.hpp>
+
 #include <QWizardPage>
 
 class Auth;
@@ -23,6 +25,9 @@ class AutoConfigStreamPage : public QWizardPage {
 
 	void LoadServices(bool showAll);
 	inline bool IsCustomService() const;
+
+protected:
+	AutoConfig *autoConfig() const { return qobject_cast<AutoConfig *>(wizard()); }
 
 public:
 	AutoConfigStreamPage(QWidget *parent = nullptr);
