@@ -77,7 +77,7 @@ bool YoutubeAuth::RetryLogin()
 void YoutubeAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "DockState", main->saveState().toBase64().constData());
+	config_set_string(main->Config(), service(), "DockState2", main->saveState().toBase64().constData());
 
 	const char *section_name = section.c_str();
 	config_set_string(main->Config(), section_name, "RefreshToken", refresh_token.c_str());
@@ -131,7 +131,7 @@ void YoutubeAuth::LoadUI()
 	browser = cef->create_widget(chat, YOUTUBE_CHAT_PLACEHOLDER_URL, panel_cookies);
 
 	chat->SetWidget(browser);
-	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
+	main->createDockWidget(Qt::RightDockWidgetArea, chat);
 
 	chat->setFloating(true);
 	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
@@ -146,7 +146,7 @@ void YoutubeAuth::LoadUI()
 	}
 
 	if (!firstLoad) {
-		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState");
+		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState2");
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
 		main->restoreState(dockState);
 	}

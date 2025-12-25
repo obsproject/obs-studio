@@ -344,7 +344,7 @@ bool OBSStudioAPI::obs_frontend_add_dock_by_id(const char *id, const char *title
 	dock->setWindowTitle(QT_UTF8(title));
 	dock->setObjectName(QT_UTF8(id));
 
-	main->AddDockWidget(dock, Qt::RightDockWidgetArea);
+	main->createDockWidget(Qt::BottomDockWidgetArea, dock);
 
 	dock->setVisible(false);
 	dock->setFloating(true);
