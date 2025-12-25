@@ -3593,6 +3593,18 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "StreamVi",
+            "common": false,
+            "more_info_link": "https://streamvi.io/ru/docs/info",
+            "stream_key_link": "https://streamvi.io/cabinet/my/settings/stream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://ingest.live-default.streamvi.ru/live"
+                }
+            ]
         }
     ]
 }
