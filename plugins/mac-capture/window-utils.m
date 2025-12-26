@@ -267,7 +267,7 @@ CGDirectDisplayID get_display_migrate_settings(obs_data_t *settings)
     }
 
     const char *display_uuid = obs_data_get_string(settings, "display_uuid");
-    if (display_uuid) {
+    if (display_uuid && *display_uuid) {
         CFStringRef uuid_string = CFStringCreateWithCString(kCFAllocatorDefault, display_uuid, kCFStringEncodingUTF8);
         CFUUIDRef uuid_ref = CFUUIDCreateFromString(kCFAllocatorDefault, uuid_string);
         CGDirectDisplayID display = CGDisplayGetDisplayIDFromUUID(uuid_ref);
