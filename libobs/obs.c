@@ -676,7 +676,8 @@ static bool restore_canvases(void)
 		if (canvas->flags & MAIN)
 			continue;
 
-		if (!obs_canvas_reset_video_internal(canvas, NULL)) {
+		struct obs_video_info ovi;
+		if (obs_canvas_get_video_info(canvas, &ovi) && !obs_canvas_reset_video_internal(canvas, NULL)) {
 			blog(LOG_ERROR, "Failed restoring video mix for canvas '%s'", canvas->context.name);
 			success = false;
 		}
