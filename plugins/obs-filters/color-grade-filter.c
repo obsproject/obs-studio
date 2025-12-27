@@ -465,6 +465,34 @@ static enum gs_color_space color_grade_filter_get_color_space(void *data, size_t
 	return source_space;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct lut_filter_data *filter = src;
+
+	obs_source_t *source = filter->context;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, SETTING_IMAGE_PATH, new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
+static obs_missing_files_t *color_grade_filter_missing_files(void *data)
+{
+	struct lut_filter_data *filter = data;
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	if (filter->file && strcmp(filter->file, "") != 0 && !os_file_exists(filter->file)) {
+		obs_missing_file_t *file = obs_missing_file_create(filter->file, missing_file_callback,
+								   OBS_MISSING_FILE_SOURCE, filter->context, NULL);
+
+		obs_missing_files_add_file(files, file);
+	}
+
+	return files;
+}
+
 struct obs_source_info color_grade_filter = {
 	.id = "clut_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
@@ -477,4 +505,5 @@ struct obs_source_info color_grade_filter = {
 	.get_properties = color_grade_filter_properties,
 	.video_render = color_grade_filter_render,
 	.video_get_color_space = color_grade_filter_get_color_space,
+	.missing_files = color_grade_filter_missing_files,
 };
