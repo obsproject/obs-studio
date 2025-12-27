@@ -721,6 +721,12 @@ static size_t aac_frame_size(void *data)
 	return ca->out_frames_per_packet;
 }
 
+static uint32_t aac_priming_samples(void *data)
+{
+	ca_encoder *ca = static_cast<ca_encoder *>(data);
+	return ca->priming_samples;
+}
+
 /* The following code was extracted from encca_aac.c in HandBrake's libhb */
 #define MP4ESDescrTag 0x03
 #define MP4DecConfigDescrTag 0x04
@@ -1275,6 +1281,7 @@ bool obs_module_load(void)
 	aac_info.get_extra_data = aac_extra_data;
 	aac_info.get_defaults = aac_defaults;
 	aac_info.get_properties = aac_properties;
+	aac_info.get_priming_samples = aac_priming_samples;
 
 	obs_register_encoder(&aac_info);
 	return true;
