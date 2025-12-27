@@ -105,6 +105,7 @@ struct audio_params {
 	int abitrate;
 	int sample_rate;
 	int frame_size;
+	int initial_padding;
 	int channels;
 };
 
@@ -287,6 +288,8 @@ static bool get_audio_params(struct audio_params *audio, int *argc, char ***argv
 	if (!get_opt_int(argc, argv, &audio->sample_rate, "audio sample rate"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->frame_size, "audio frame size"))
+		return false;
+	if (!get_opt_int(argc, argv, &audio->initial_padding, "audio padding"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->channels, "audio channels"))
 		return false;
@@ -553,6 +556,9 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+	// Set initial padding so that priming samples are skipped
+	context->initial_padding = ffm->audio[idx].initial_padding;
 
 	avcodec_parameters_from_context(stream->codecpar, context);
 
