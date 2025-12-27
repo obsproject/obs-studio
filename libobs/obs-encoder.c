@@ -2161,3 +2161,12 @@ bool obs_encoder_video_tex_active(const obs_encoder_t *encoder, enum video_forma
 
 	return false;
 }
+
+uint32_t obs_encoder_get_skip_samples(const obs_encoder_t *encoder)
+{
+	if (encoder->info.get_skip_samples) {
+		return encoder->info.get_skip_samples(encoder->context.data);
+	}
+
+	return 0;
+}
