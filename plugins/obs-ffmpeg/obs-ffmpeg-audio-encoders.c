@@ -456,6 +456,12 @@ static size_t enc_frame_size(void *data)
 	return enc->frame_size;
 }
 
+static uint32_t enc_initial_padding(void *data)
+{
+	struct enc_encoder *enc = data;
+	return enc->context->initial_padding;
+}
+
 struct obs_encoder_info aac_encoder_info = {
 	.id = "ffmpeg_aac",
 	.type = OBS_ENCODER_AUDIO,
@@ -469,6 +475,7 @@ struct obs_encoder_info aac_encoder_info = {
 	.get_properties = enc_properties,
 	.get_extra_data = enc_extra_data,
 	.get_audio_info = enc_audio_info,
+	.get_priming_samples = enc_initial_padding,
 };
 
 struct obs_encoder_info opus_encoder_info = {
@@ -484,6 +491,7 @@ struct obs_encoder_info opus_encoder_info = {
 	.get_properties = enc_properties,
 	.get_extra_data = enc_extra_data,
 	.get_audio_info = enc_audio_info,
+	.get_priming_samples = enc_initial_padding,
 };
 
 struct obs_encoder_info pcm_encoder_info = {
