@@ -89,7 +89,8 @@ static const char *av1_nvenc_get_name(void *type_data)
 	return "NVIDIA NVENC AV1";
 }
 
-static const char *av1_nvenc_get_name_d3d12(void *type_data) {
+static const char *av1_nvenc_get_name_d3d12(void *type_data)
+{
 	UNUSED_PARAMETER(type_data);
 	return "NVIDIA NVENC AV1 D3D12";
 }
@@ -187,9 +188,9 @@ static void initialize_params(struct nvenc_data *enc, const GUID *nv_preset, NV_
 	params->enablePTD = 1;
 	params->encodeConfig = &enc->config;
 	params->tuningInfo = nv_tuning;
-	params->bufferFormat = 
+	params->bufferFormat =
 #ifdef NVENC_12_1_OR_LATER
-	params->splitEncodeMode = (NV_ENC_SPLIT_ENCODE_MODE)enc->props.split_encode;
+		params->splitEncodeMode = (NV_ENC_SPLIT_ENCODE_MODE)enc->props.split_encode;
 #endif
 }
 
@@ -546,7 +547,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	enc->params.bufferFormat = is_10_bit(enc) ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
 	NVENCSTATUS status = nv.nvEncInitializeEncoder(enc->session, &enc->params);
 	if (NV_FAILED(status)) {
-		const char* err = nv.nvEncGetLastErrorString(enc->session);
+		const char *err = nv.nvEncGetLastErrorString(enc->session);
 		blog(LOG_WARNING, "nvenc init encoder failed %s ", err);
 		return false;
 	}
@@ -881,7 +882,8 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 	return false;
 }
 
-static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture, bool is_d3d12)
+static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture,
+				   bool is_d3d12)
 {
 	struct nvenc_data *enc = bzalloc(sizeof(*enc));
 	enc->is_use_d3d12 = is_d3d12;
@@ -942,7 +944,7 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, 
 	}
 
 	if (!init_bitstreams(enc)) {
-			goto fail;
+		goto fail;
 	}
 
 #ifdef _WIN32
@@ -971,7 +973,8 @@ fail:
 	return NULL;
 }
 
-static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture, bool is_d3d12)
+static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_encoder_t *encoder, bool texture,
+			       bool is_d3d12)
 {
 	/* This encoder requires shared textures, this cannot be used on a
 	 * gpu other than the one OBS is currently running on.
@@ -1262,7 +1265,8 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 	return true;
 }
 
-static bool get_encoded_packet_d3d12(struct nvenc_data *enc, bool finalize) {
+static bool get_encoded_packet_d3d12(struct nvenc_data *enc, bool finalize)
+{
 	void *s = enc->session;
 
 	da_resize(enc->packet_data, 0);
@@ -1561,8 +1565,8 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 	return true;
 }
 
-bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *out, struct nv_texture *pic,
-			     int64_t pts, struct encoder_packet *packet, bool *received_packet)
+bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *out, struct nv_texture *pic, int64_t pts,
+			     struct encoder_packet *packet, bool *received_packet)
 {
 	NV_ENC_PIC_PARAMS params = {0};
 	params.version = NV_ENC_PIC_PARAMS_VER;

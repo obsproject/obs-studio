@@ -125,11 +125,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 
 	HRESULT hr = device->d3d12Instance->GetDevice()->CreateCommittedResource(
-		&HeapProps,
-		isShared ? D3D12_HEAP_FLAG_SHARED
-			 : D3D12_HEAP_FLAG_NONE,
-		&texDesc,
-		m_UsageState, nullptr,
+		&HeapProps, isShared ? D3D12_HEAP_FLAG_SHARED : D3D12_HEAP_FLAG_NONE, &texDesc, m_UsageState, nullptr,
 		IID_PPV_ARGS(&m_pResource));
 	if (FAILED(hr)) {
 		auto removeReason = device->d3d12Instance->GetDevice()->GetDeviceRemovedReason();
@@ -148,8 +144,8 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 
 	if (isShared) {
-		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(
-			m_pResource.Get(), nullptr, GENERIC_ALL, nullptr, &sharedHandle);
+		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(m_pResource.Get(), nullptr, GENERIC_ALL,
+									    nullptr, &sharedHandle);
 		if (FAILED(hr)) {
 			throw HRError("Create Shared Handle Failed", hr);
 		}

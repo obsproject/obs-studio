@@ -100,14 +100,14 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	}
 
 	hr = factory->lpVtbl->EnumAdapterByGpuPreference(factory, 0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-						  &IID_IDXGIAdapter1, &adapter1);
+							 &IID_IDXGIAdapter1, &adapter1);
 	factory->lpVtbl->Release(factory);
 	if (FAILED(hr)) {
 		error_hr("EnumAdapters failed");
 		return false;
 	}
 
-	hr = create_device((IUnknown*)adapter1, D3D_FEATURE_LEVEL_12_0, &IID_ID3D12Device, (void**)&device);
+	hr = create_device((IUnknown *)adapter1, D3D_FEATURE_LEVEL_12_0, &IID_ID3D12Device, (void **)&device);
 	adapter1->lpVtbl->Release(adapter1);
 	if (FAILED(hr)) {
 		error_hr("D3D12CreateDevice failed");
@@ -139,7 +139,7 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 		}
 	}
 #endif
-	hr = device->lpVtbl->CreateFence(device, 0, D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void**)(&fence));
+	hr = device->lpVtbl->CreateFence(device, 0, D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void **)(&fence));
 	if (FAILED(hr)) {
 		error_hr("D3D12 CreateFence failed");
 		return false;
@@ -149,8 +149,7 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	memset(&QueueDesc, 0, sizeof(D3D12_COMMAND_QUEUE_DESC));
 	QueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
 	QueueDesc.NodeMask = 1;
-	hr = device->lpVtbl->CreateCommandQueue(device, &QueueDesc, &IID_ID3D12CommandQueue,
-						(void **)(&command_queue));
+	hr = device->lpVtbl->CreateCommandQueue(device, &QueueDesc, &IID_ID3D12CommandQueue, (void **)(&command_queue));
 	if (FAILED(hr)) {
 		error_hr("D3D12 CreateCommandQueue failed");
 		return false;
@@ -284,7 +283,8 @@ void d3d12_free_textures(struct nvenc_data *enc)
 	}
 }
 
-bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs) {
+bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs)
+{
 	ID3D12Device *const device = enc->device12;
 	D3D12_HEAP_PROPERTIES HeapProps;
 	HeapProps.Type = D3D12_HEAP_TYPE_READBACK;
@@ -307,9 +307,8 @@ bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs) {
 	ResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	ID3D12Resource *tex = NULL;
-	HRESULT hr = device->lpVtbl->CreateCommittedResource(device, & HeapProps, D3D12_HEAP_FLAG_NONE,
-									    &ResourceDesc,
-									    D3D12_RESOURCE_STATE_COPY_DEST, NULL, &IID_ID3D12Resource,
+	HRESULT hr = device->lpVtbl->CreateCommittedResource(device, &HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc,
+							     D3D12_RESOURCE_STATE_COPY_DEST, NULL, &IID_ID3D12Resource,
 							     (void **)(&tex));
 	if (FAILED(hr)) {
 		auto remoteReason = device->lpVtbl->GetDeviceRemovedReason(device);
@@ -410,7 +409,6 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 
 	deque_push_back(&enc->dts_list, &pts, sizeof(pts));
 
-	
 	/* ------------------------------------ */
 	/* copy to output tex                   */
 
@@ -423,7 +421,7 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 		return false;
 	}
 
-	command_queue->lpVtbl->ExecuteCommandLists(command_queue, 1, (ID3D12CommandList**) &command_list);
+	command_queue->lpVtbl->ExecuteCommandLists(command_queue, 1, (ID3D12CommandList **)&command_list);
 	hr = command_queue->lpVtbl->Signal(command_queue, enc->fence, ++enc->next_fence_value);
 	if (FAILED(hr)) {
 		error_hr("CommandQeue(Signal) failed");
@@ -444,7 +442,6 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 		error_hr("CommandList(Reset) failed");
 		return false;
 	}
-
 
 	// km->lpVtbl->ReleaseSync(km, *next_key);
 

@@ -138,8 +138,8 @@ struct nvenc_data {
 struct handle_tex {
 #ifdef _WIN32
 	uint32_t handle;
-	void *tex;  // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
-	IDXGIKeyedMutex *km;  // only for D3D11
+	void *tex;           // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
+	IDXGIKeyedMutex *km; // only for D3D11
 #else
 	GLuint tex_id;
 	/* CUDA mappings */
@@ -151,7 +151,7 @@ struct handle_tex {
 /* Bitstream buffer */
 struct nv_bitstream {
 	// D3D11 and D3D12
-	void *ptr;     // register resource
+	void *ptr; // register resource
 	// D3D12
 	ID3D12Resource *tex;
 	void *mapped_res;
@@ -169,9 +169,9 @@ struct nv_cuda_surface {
 #ifdef _WIN32
 /* DX11 textures */
 struct nv_texture {
-	void *res;  // register Resource
+	void *res; // register Resource
 	// D3D11
-	void *tex;  // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
+	void *tex; // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
 	void *mapped_res;
 	// D3D12
 	NV_ENC_INPUT_RESOURCE_D3D12 input_resource;
@@ -183,8 +183,8 @@ struct nv_texture {
 
 bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pic, int64_t pts,
 		       struct encoder_packet *packet, bool *received_packet);
-bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *out, struct nv_texture *pic,
-			     int64_t pts, struct encoder_packet *packet, bool *received_packet);
+bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *out, struct nv_texture *pic, int64_t pts,
+			     struct encoder_packet *packet, bool *received_packet);
 
 /* ------------------------------------------------------------------------- */
 /* Backend-specific functions                                                */
