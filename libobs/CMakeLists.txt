@@ -26,6 +26,10 @@ endif()
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
 
+# Link extracted modules (format helpers) into libobs so legacy calls resolve
+# during the incremental extraction process.
+target_link_libraries(libobs PRIVATE mod_sources_format)
+
 target_sources(
   libobs
   PRIVATE

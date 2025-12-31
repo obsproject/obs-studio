@@ -1644,17 +1644,7 @@ static inline enum convert_type get_convert_type(enum video_format format, bool 
 	return CONVERT_NONE;
 }
 
-static inline bool set_packed422_sizes(struct obs_source *source, const struct obs_source_frame *frame)
-{
-	const uint32_t width = frame->width;
-	const uint32_t height = frame->height;
-	const uint32_t half_width = (width + 1) / 2;
-	source->async_convert_width[0] = half_width;
-	source->async_convert_height[0] = height;
-	source->async_texture_formats[0] = GS_BGRA;
-	source->async_channel_count = 1;
-	return true;
-}
+extern bool set_packed422_sizes(struct obs_source *source, const struct obs_source_frame *frame);
 
 static inline bool set_packed444_alpha_sizes(struct obs_source *source, const struct obs_source_frame *frame)
 {
@@ -1731,24 +1721,7 @@ static inline bool set_planar444_16_alpha_sizes(struct obs_source *source, const
 	return true;
 }
 
-static inline bool set_planar420_sizes(struct obs_source *source, const struct obs_source_frame *frame)
-{
-	const uint32_t width = frame->width;
-	const uint32_t height = frame->height;
-	const uint32_t half_width = (width + 1) / 2;
-	const uint32_t half_height = (height + 1) / 2;
-	source->async_convert_width[0] = width;
-	source->async_convert_width[1] = half_width;
-	source->async_convert_width[2] = half_width;
-	source->async_convert_height[0] = height;
-	source->async_convert_height[1] = half_height;
-	source->async_convert_height[2] = half_height;
-	source->async_texture_formats[0] = GS_R8;
-	source->async_texture_formats[1] = GS_R8;
-	source->async_texture_formats[2] = GS_R8;
-	source->async_channel_count = 3;
-	return true;
-}
+extern bool set_planar420_sizes(struct obs_source *source, const struct obs_source_frame *frame);
 
 static inline bool set_planar420_alpha_sizes(struct obs_source *source, const struct obs_source_frame *frame)
 {
@@ -1772,23 +1745,7 @@ static inline bool set_planar420_alpha_sizes(struct obs_source *source, const st
 	return true;
 }
 
-static inline bool set_planar422_sizes(struct obs_source *source, const struct obs_source_frame *frame)
-{
-	const uint32_t width = frame->width;
-	const uint32_t height = frame->height;
-	const uint32_t half_width = (width + 1) / 2;
-	source->async_convert_width[0] = width;
-	source->async_convert_width[1] = half_width;
-	source->async_convert_width[2] = half_width;
-	source->async_convert_height[0] = height;
-	source->async_convert_height[1] = height;
-	source->async_convert_height[2] = height;
-	source->async_texture_formats[0] = GS_R8;
-	source->async_texture_formats[1] = GS_R8;
-	source->async_texture_formats[2] = GS_R8;
-	source->async_channel_count = 3;
-	return true;
-}
+extern bool set_planar422_sizes(struct obs_source *source, const struct obs_source_frame *frame);
 static inline bool set_planar422_16_sizes(struct obs_source *source, const struct obs_source_frame *frame)
 {
 	const uint32_t width = frame->width;
@@ -1828,21 +1785,7 @@ static inline bool set_planar422_alpha_sizes(struct obs_source *source, const st
 	return true;
 }
 
-static inline bool set_nv12_sizes(struct obs_source *source, const struct obs_source_frame *frame)
-{
-	const uint32_t width = frame->width;
-	const uint32_t height = frame->height;
-	const uint32_t half_width = (width + 1) / 2;
-	const uint32_t half_height = (height + 1) / 2;
-	source->async_convert_width[0] = width;
-	source->async_convert_width[1] = half_width;
-	source->async_convert_height[0] = height;
-	source->async_convert_height[1] = half_height;
-	source->async_texture_formats[0] = GS_R8;
-	source->async_texture_formats[1] = GS_R8G8;
-	source->async_channel_count = 2;
-	return true;
-}
+extern bool set_nv12_sizes(struct obs_source *source, const struct obs_source_frame *frame);
 
 static inline bool set_y800_sizes(struct obs_source *source, const struct obs_source_frame *frame)
 {
@@ -1853,14 +1796,7 @@ static inline bool set_y800_sizes(struct obs_source *source, const struct obs_so
 	return true;
 }
 
-static inline bool set_rgb_limited_sizes(struct obs_source *source, const struct obs_source_frame *frame)
-{
-	source->async_convert_width[0] = frame->width;
-	source->async_convert_height[0] = frame->height;
-	source->async_texture_formats[0] = convert_video_format(frame->format, frame->trc);
-	source->async_channel_count = 1;
-	return true;
-}
+extern bool set_rgb_limited_sizes(struct obs_source *source, const struct obs_source_frame *frame);
 
 static inline bool set_bgr3_sizes(struct obs_source *source, const struct obs_source_frame *frame)
 {
