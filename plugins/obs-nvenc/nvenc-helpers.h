@@ -77,7 +77,6 @@ bool is_codec_supported(enum codec_type codec);
 bool has_broken_split_encoding(void);
 
 void register_encoders(void);
-void register_compat_encoders(void);
 
 #define nv_fail(encoder, format, ...) nv_fail2(encoder, enc->session, format, ##__VA_ARGS__)
 
