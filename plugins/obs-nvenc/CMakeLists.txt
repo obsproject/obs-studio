@@ -32,7 +32,6 @@ target_sources(
     $<$<PLATFORM_ID:Windows>:nvenc-d3d11.c>
     cuda-helpers.c
     cuda-helpers.h
-    nvenc-compat.c
     nvenc-cuda.c
     nvenc-helpers.c
     nvenc-helpers.h

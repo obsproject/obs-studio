@@ -73,14 +73,9 @@ private:
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 
-	bool UpdatePre22MultiviewLayout(const char *layout);
-
 	bool InitGlobalConfig();
 	bool InitGlobalConfigDefaults();
 	bool InitGlobalLocationDefaults();
-
-	bool MigrateGlobalSettings();
-	void MigrateLegacySettings(uint32_t lastVersion);
 
 	bool InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion);
 	void InitUserConfigDefaults();

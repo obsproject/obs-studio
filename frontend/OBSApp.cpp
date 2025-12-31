@@ -387,38 +387,6 @@ static bool MakeUserProfileDirs()
 	return true;
 }
 
-bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
-{
-	if (!layout)
-		return false;
-
-	if (astrcmpi(layout, "horizontaltop") == 0) {
-		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
-			       static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_8_SCENES));
-		return true;
-	}
-
-	if (astrcmpi(layout, "horizontalbottom") == 0) {
-		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
-			       static_cast<int>(MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES));
-		return true;
-	}
-
-	if (astrcmpi(layout, "verticalleft") == 0) {
-		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
-			       static_cast<int>(MultiviewLayout::VERTICAL_LEFT_8_SCENES));
-		return true;
-	}
-
-	if (astrcmpi(layout, "verticalright") == 0) {
-		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
-			       static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
-		return true;
-	}
-
-	return false;
-}
-
 bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
@@ -435,17 +403,6 @@ bool OBSApp::InitGlobalConfig()
 	}
 
 	uint32_t lastVersion = config_get_int(appConfig, "General", "LastVersion");
-
-	if (lastVersion && lastVersion < MAKE_SEMANTIC_VERSION(31, 0, 0)) {
-		bool migratedUserSettings = config_get_bool(appConfig, "General", "Pre31Migrated");
-
-		if (!migratedUserSettings) {
-			bool migrated = MigrateGlobalSettings();
-
-			config_set_bool(appConfig, "General", "Pre31Migrated", migrated);
-			config_save_safe(appConfig, "tmp", nullptr);
-		}
-	}
 
 	InitGlobalConfigDefaults();
 	InitGlobalLocationDefaults();
@@ -496,94 +453,7 @@ bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t 
 		return false;
 	}
 
-	MigrateLegacySettings(lastVersion);
 	InitUserConfigDefaults();
-
-	return true;
-}
-
-void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
-{
-	bool hasChanges = false;
-
-	const uint32_t v19 = MAKE_SEMANTIC_VERSION(19, 0, 0);
-	const uint32_t v21 = MAKE_SEMANTIC_VERSION(21, 0, 0);
-	const uint32_t v23 = MAKE_SEMANTIC_VERSION(23, 0, 0);
-	const uint32_t v24 = MAKE_SEMANTIC_VERSION(24, 0, 0);
-	const uint32_t v24_1 = MAKE_SEMANTIC_VERSION(24, 1, 0);
-
-	const map<uint32_t, string> defaultsMap{
-		{{v19, "Pre19Defaults"}, {v21, "Pre21Defaults"}, {v23, "Pre23Defaults"}, {v24_1, "Pre24.1Defaults"}}};
-
-	for (auto &[version, configKey] : defaultsMap) {
-		if (!config_has_user_value(userConfig, "General", configKey.c_str())) {
-			bool useOldDefaults = lastVersion && lastVersion < version;
-			config_set_bool(userConfig, "General", configKey.c_str(), useOldDefaults);
-
-			hasChanges = true;
-		}
-	}
-
-	if (config_has_user_value(userConfig, "BasicWindow", "MultiviewLayout")) {
-		const char *layout = config_get_string(userConfig, "BasicWindow", "MultiviewLayout");
-
-		bool layoutUpdated = UpdatePre22MultiviewLayout(layout);
-
-		hasChanges = hasChanges | layoutUpdated;
-	}
-
-	if (lastVersion && lastVersion < v24) {
-		bool disableHotkeysInFocus = config_get_bool(userConfig, "General", "DisableHotkeysInFocus");
-
-		if (disableHotkeysInFocus) {
-			config_set_string(userConfig, "General", "HotkeyFocusType", "DisableHotkeysInFocus");
-		}
-
-		hasChanges = true;
-	}
-
-	if (hasChanges) {
-		userConfig.SaveSafe("tmp");
-	}
-}
-
-static constexpr string_view OBSGlobalIniPath = "/obs-studio/global.ini";
-static constexpr string_view OBSUserIniPath = "/obs-studio/user.ini";
-
-bool OBSApp::MigrateGlobalSettings()
-{
-	char path[512];
-
-	int len = GetAppConfigPath(path, sizeof(path), nullptr);
-	if (len <= 0) {
-		OBSErrorBox(nullptr, "Unable to get global configuration path.");
-		return false;
-	}
-
-	std::string legacyConfigFileString;
-	legacyConfigFileString.reserve(strlen(path) + OBSGlobalIniPath.size());
-	legacyConfigFileString.append(path).append(OBSGlobalIniPath);
-
-	const std::filesystem::path legacyGlobalConfigFile = std::filesystem::u8path(legacyConfigFileString);
-
-	std::string configFileString;
-	configFileString.reserve(strlen(path) + OBSUserIniPath.size());
-	configFileString.append(path).append(OBSUserIniPath);
-
-	const std::filesystem::path userConfigFile = std::filesystem::u8path(configFileString);
-
-	if (std::filesystem::exists(userConfigFile)) {
-		OBSErrorBox(nullptr,
-			    "Unable to migrate global configuration - user configuration file already exists.");
-		return false;
-	}
-
-	try {
-		std::filesystem::copy(legacyGlobalConfigFile, userConfigFile);
-	} catch (const std::filesystem::filesystem_error &) {
-		OBSErrorBox(nullptr, "Unable to migrate global configuration - copy failed.");
-		return false;
-	}
 
 	return true;
 }
