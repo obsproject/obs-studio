@@ -36,6 +36,8 @@
 #include <QFile>
 #endif
 
+#include <QQmlApplicationEngine>
+
 #ifdef _WIN32
 #include <QSessionManager>
 #else
@@ -444,6 +446,7 @@ bool OBSApp::InitGlobalConfig()
 
 bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion)
 {
+	UNUSED_PARAMETER(lastVersion);
 	const std::string userConfigFile = userConfigLocation.u8string() + "/obs-studio/user.ini";
 
 	int errorCode = userConfig.Open(userConfigFile.c_str(), CONFIG_OPEN_ALWAYS);
@@ -990,12 +993,39 @@ bool OBSApp::OBSInit()
 
 	setQuitOnLastWindowClosed(false);
 
-	mainWindow = new OBSBasic();
+	extern bool opt_modern_ui;
 
-	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-	connect(mainWindow, &OBSBasic::destroyed, this, &OBSApp::quit);
+	if (opt_modern_ui) {
+		QQmlApplicationEngine *engine = new QQmlApplicationEngine(this);
+		connect(engine, &QQmlApplicationEngine::objectCreated, this,
+			[this](QObject *obj, const QUrl &objUrl) {
+				if (!obj && objUrl == QUrl(QStringLiteral("qrc:/qml/ModernWindow.qml")))
+					QCoreApplication::exit(-1);
+				else if (obj && obj->isWindowType()) {
+					QWindow *window = qobject_cast<QWindow *>(obj);
+					if (window) {
+						connect(window, &QWindow::visibleChanged, this,
+							[this, window](bool visible) {
+								if (!visible)
+									quit();
+							});
+					}
+				}
+			},
+			Qt::QueuedConnection);
 
-	mainWindow->OBSInit();
+		engine->load(QUrl(QStringLiteral("qrc:/qml/ModernWindow.qml")));
+		if (engine->rootObjects().isEmpty())
+			return false;
+
+	} else {
+		mainWindow = new OBSBasic();
+
+		mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+		connect(mainWindow, &OBSBasic::destroyed, this, &OBSApp::quit);
+
+		mainWindow->OBSInit();
+	}
 
 	connect(this, &QGuiApplication::applicationStateChanged,
 		[this](Qt::ApplicationState state) { ResetHotkeyState(state == Qt::ApplicationActive); });

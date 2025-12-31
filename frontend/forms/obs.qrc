@@ -91,4 +91,7 @@
     <file>fonts/OpenSans-Bold.ttf</file>
     <file>fonts/OpenSans-Italic.ttf</file>
   </qresource>
+  <qresource prefix="/qml">
+    <file alias="ModernWindow.qml">../qml/ModernWindow.qml</file>
+  </qresource>
 </RCC>

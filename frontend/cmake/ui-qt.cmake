@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED Widgets Network Svg Xml)
+find_package(Qt6 REQUIRED Widgets Network Svg Xml Quick Qml QuickControls2)
 
 if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
   find_package(Qt6 REQUIRED Gui DBus)
@@ -10,7 +10,7 @@ endif()
 
 target_link_libraries(
   obs-studio
-  PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network OBS::qt-wrappers
+  PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network Qt::Quick Qt::Qml Qt::QuickControls2 OBS::qt-wrappers
 )
 
 set_target_properties(

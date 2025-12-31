@@ -80,6 +80,7 @@ string opt_starting_scene;
 
 bool restart = false;
 bool restart_safe = false;
+bool opt_modern_ui = false;
 static QStringList arguments;
 
 QPointer<OBSLogViewer> obsLogViewer;
@@ -987,6 +988,9 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--always-on-top", nullptr)) {
 			opt_always_on_top = true;
+
+		} else if (arg_is(argv[i], "--modern-ui", nullptr)) {
+			opt_modern_ui = true;
 
 		} else if (arg_is(argv[i], "--unfiltered_log", nullptr)) {
 			unfiltered_log = true;
