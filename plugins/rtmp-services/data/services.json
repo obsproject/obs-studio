@@ -3593,6 +3593,77 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Nenufar.live - Multi-Streaming",
+            "more_info_link": "https://nenufar.live/docs",
+            "stream_key_link": "https://app.nenufar.live/destinations",
+            "servers": [
+                {
+                    "name": "Ingest 1",
+                    "url": "rtmp://ingest1.nenufar.live/multistream/"
+                }
+            ],
+            "supported video codecs": [
+                "h264",
+                "hevc"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "bframes": 0,
+                "max fps": 60,
+                "max video bitrate": 7000,
+                "max audio bitrate": 320,
+                "supported resolutions": [
+                    "3840x2160",
+                    "2560x1440",
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 5000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 7000
+                    },
+                    {
+                        "res": "2560x1440",
+                        "fps": 30,
+                        "max bitrate": 9000
+                    },
+                    {
+                        "res": "2560x1440",
+                        "fps": 60,
+                        "max bitrate": 12000
+                    },
+                    {
+                        "res": "3840x2160",
+                        "fps": 30,
+                        "max bitrate": 15000
+                    },
+                    {
+                        "res": "3840x2160",
+                        "fps": 60,
+                        "max bitrate": 20000
+                    }
+                ]
+            }
         }
     ]
 }
