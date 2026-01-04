@@ -919,6 +919,7 @@ struct obs_source {
 	uint32_t async_convert_width[MAX_AV_PLANES];
 	uint32_t async_convert_height[MAX_AV_PLANES];
 	uint64_t async_last_rendered_ts;
+	uint32_t async_not_close_needed_count;
 	uint32_t async_out_of_sequence_count;
 
 	pthread_mutex_t caption_cb_mutex;

@@ -3814,7 +3814,7 @@ static void obs_source_set_video_frame_internal(obs_source_t *source, const stru
 	update_async_textures(source, source->async_preload_frame, source->async_textures, source->async_texrender);
 
 	set_ready_frame_timing(source, frame->timestamp, obs->video.video_time);
-	source->async_out_of_sequence_count = 0;
+	source->async_not_close_needed_count = source->async_out_of_sequence_count = 0;
 
 	obs_leave_graphics();
 }
@@ -4088,9 +4088,12 @@ void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame)
 
 /* #define DEBUG_ASYNC_FRAMES 1 */
 
-/* Tolerance that allows a frame to be displayed as long as it is not too close
- * to the video clock. */
+/* Tolerance used to control frames that are too close to the video clock */
 #define TS_JITTER_TOLERANCE 2000000ULL
+/* If we encounter a frame that is within 0.5 TOLERANCE, then we hold back
+ * any frame < 2x TOLERANCE from video clock, until enough frames with at least
+ * 2x TOLERANCE are delivered. */
+#define ASYNC_NOT_CLOSE_SEQUENCE_SIZE 4
 /* limit the number of discard consecutive out-of-sequence frames; after which
  * the (timestamp) sequence is restarted */
 #define ASYNC_OUT_OF_SEQUENCE_LIMIT 4
@@ -4148,7 +4151,7 @@ static bool restart_interrupted_sequence_buffered(obs_source_t *source, uint64_t
 	     frame_ts);
 	set_ready_frame_timing(source, 0, 0);
 	source->discard_sys_ts = 0;
-	source->async_out_of_sequence_count = 0;
+	source->async_not_close_needed_count = source->async_out_of_sequence_count = 0;
 	return restart_sequence_buffered(source, sys_time);
 }
 
@@ -4163,6 +4166,8 @@ static bool ready_async_frame_buffered(obs_source_t *source, uint64_t sys_time)
 		const uint64_t peek_frame_ts = peek_frame->timestamp;
 		const uint64_t peek_frame_sys_ts =
 			source->last_frame_sys_ts + uint64_diff(source->last_frame_ts, peek_frame_ts);
+		const uint64_t peek_frame_diff_ns =
+			uint64_diff(sys_time + (uint64_t)(TS_JITTER_TOLERANCE / 2), peek_frame_sys_ts);
 
 		if (frame_out_of_bounds(source, peek_frame_ts)) {
 			if (frame) {
@@ -4192,11 +4197,19 @@ static bool ready_async_frame_buffered(obs_source_t *source, uint64_t sys_time)
 
 		/* attempt to smooth out frame delivery by holding back frames
 		 * with timestamp too close to video clock */
-		if (frame && (source->last_frame_ts - peek_frame_ts) < TS_JITTER_TOLERANCE)
-			break;
+		if (peek_frame_diff_ns < TS_JITTER_TOLERANCE * 2) {
+			if (peek_frame_diff_ns < TS_JITTER_TOLERANCE / 2)
+				source->async_not_close_needed_count = ASYNC_NOT_CLOSE_SEQUENCE_SIZE;
+
+			if (source->async_not_close_needed_count)
+				break;
+		}
 
 		if (peek_frame_sys_ts > sys_time + (TS_JITTER_TOLERANCE / 2))
 			break;
+
+		if (source->async_not_close_needed_count)
+			--source->async_not_close_needed_count;
 
 		if (frame) {
 			da_erase(source->async_frames, 0);
@@ -5674,7 +5687,7 @@ void obs_source_set_async_unbuffered(obs_source_t *source, bool unbuffered)
 	if (source->async_unbuffered != unbuffered) {
 		set_ready_frame_timing(source, 0, 0);
 		source->discard_sys_ts = 0;
-		source->async_out_of_sequence_count = 0;
+		source->async_not_close_needed_count = source->async_out_of_sequence_count = 0;
 	}
 	source->async_unbuffered = unbuffered;
 }
