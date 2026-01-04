@@ -669,7 +669,7 @@ bool SimpleOutput::IsVodTrackEnabled(obs_service_t *service)
 	if (strcmp(id, "rtmp_custom") == 0)
 		return enableForCustomServer ? enable : false;
 	else
-		return advanced && enable && ServiceSupportsVodTrack(name);
+		return advanced && enable && ServiceSupportsVodTrack(name, settings);
 }
 
 void SimpleOutput::SetupVodTrack(obs_service_t *service)

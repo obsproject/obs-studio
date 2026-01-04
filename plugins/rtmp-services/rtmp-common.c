@@ -602,6 +602,11 @@ static void copy_info_to_settings(json_t *service, obs_data_t *settings)
 	dstr_free(&str);
 
 	update_protocol(service, settings);
+
+	json_t *vod_track_val = json_object_get(service, "supports_vod_track");
+	if (vod_track_val && json_is_boolean(vod_track_val)) {
+		obs_data_set_bool(settings, "supports_vod_track", json_is_true(vod_track_val));
+	}
 }
 
 static inline json_t *find_service(json_t *root, const char *name, const char **p_new_name)
