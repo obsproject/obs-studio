@@ -17,6 +17,7 @@
 
 #include "OBSBasicProperties.hpp"
 
+#include <utility/AppTooltip.hpp>
 #include <utility/display-helpers.hpp>
 #include <widgets/OBSBasic.hpp>
 
@@ -78,6 +79,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
 		connect(view, &OBSPropertiesView::PropertiesRefreshed, this, &OBSBasicProperties::AddPreviewButton);
 	}
+	connect(view, &OBSPropertiesView::PropertiesRefreshed, this, [this]() { AppTooltip::useAppTooltip(view); });
 
 	view->show();
 	installEventFilter(CreateShortcutFilter());

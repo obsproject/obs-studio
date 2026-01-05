@@ -250,6 +250,11 @@ void OBSBasic::UpdateContextBar(bool force)
 
 		const char *name = obs_source_get_name(source);
 		ui->contextSourceLabel->setText(name);
+		if (ui->contextSourceLabel->sizeHint().width() > ui->contextSourceLabel->width()) {
+			ui->contextSourceLabel->setToolTip(name);
+		} else {
+			ui->contextSourceLabel->setToolTip("");
+		}
 
 		ui->sourceFiltersButton->setEnabled(true);
 		ui->sourcePropertiesButton->setEnabled(obs_source_configurable(source));
@@ -258,6 +263,7 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->contextSourceIcon->hide();
 		ui->contextSourceIconSpacer->show();
 		ui->contextSourceLabel->setText(QTStr("ContextBar.NoSelectedSource"));
+		ui->contextSourceLabel->setToolTip("");
 
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
