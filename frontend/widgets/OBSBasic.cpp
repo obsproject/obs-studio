@@ -39,6 +39,7 @@
 #include <dialogs/OBSBasicTransform.hpp>
 #include <models/SceneCollection.hpp>
 #include <settings/OBSBasicSettings.hpp>
+#include <utility/AppTooltip.hpp>
 #include <utility/QuickTransition.hpp>
 #include <utility/SceneRenameDelegate.hpp>
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
@@ -47,6 +48,8 @@
 #include <widgets/AudioMixer.hpp>
 #include <widgets/OBSProjector.hpp>
 
+#include <Idian/GuidePopup.hpp>
+#include <Idian/InfoPopup.hpp>
 #include <OBSStudioAPI.hpp>
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
@@ -578,6 +581,9 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	QActionGroup *actionGroup = new QActionGroup(this);
 	actionGroup->addAction(ui->actionSceneListMode);
 	actionGroup->addAction(ui->actionSceneGridMode);
+
+	AppTooltip::useAppTooltip(this);
+	AppTooltip::useAppTooltip(ui->contextSourceLabel);
 
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
