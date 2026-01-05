@@ -255,13 +255,10 @@ void OBSPropertiesView::resizeEvent(QResizeEvent *event)
 template<typename Sender, typename SenderParent, typename... Args>
 QWidget *OBSPropertiesView::NewWidget(obs_property_t *prop, Sender *widget, void (SenderParent::*signal)(Args...))
 {
-	const char *long_desc = obs_property_long_description(prop);
-
 	WidgetInfo *info = new WidgetInfo(this, prop, widget);
 	QObject::connect(widget, signal, info, &WidgetInfo::ControlChanged);
 	children.emplace_back(info);
 
-	widget->setToolTip(QT_UTF8(long_desc));
 	return widget;
 }
 
@@ -397,7 +394,6 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout, Q
 	QLineEdit *edit = new QLineEdit();
 
 	edit->setText(QT_UTF8(val));
-	edit->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	return NewWidget(prop, edit, &QLineEdit::textEdited);
 }
@@ -1616,7 +1612,6 @@ void OBSPropertiesView::AddProperty(obs_property_t *property, QFormLayout *layou
 		QString file = !obs_frontend_is_theme_dark() ? ":/res/images/help.svg" : ":/res/images/help_light.svg";
 
 		QWidget *newWidget = new QWidget();
-		newWidget->setToolTip(obs_property_long_description(property));
 
 		QHBoxLayout *boxLayout = new QHBoxLayout(newWidget);
 		boxLayout->setContentsMargins(0, 0, 0, 0);

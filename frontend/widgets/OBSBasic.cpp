@@ -39,6 +39,7 @@
 #include <dialogs/OBSBasicTransform.hpp>
 #include <models/SceneCollection.hpp>
 #include <settings/OBSBasicSettings.hpp>
+#include <utility/AppTooltip.hpp>
 #include <utility/QuickTransition.hpp>
 #include <utility/SceneRenameDelegate.hpp>
 #include <utility/ScreenshotObj.hpp>
@@ -475,6 +476,9 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	QActionGroup *actionGroup = new QActionGroup(this);
 	actionGroup->addAction(ui->actionSceneListMode);
 	actionGroup->addAction(ui->actionSceneGridMode);
+
+	AppTooltip::applyAppTooltipToChildren(this);
+	AppTooltip::applyAppTooltip(ui->contextSourceLabel);
 
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
