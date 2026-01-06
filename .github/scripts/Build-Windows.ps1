@@ -36,7 +36,6 @@ function Build {
 
     $ScriptHome = $PSScriptRoot
     $ProjectRoot = Resolve-Path -Path "$PSScriptRoot/../.."
-    $BuildSpecFile = "${ProjectRoot}/buildspec.json"
 
     $UtilityFunctions = Get-ChildItem -Path $PSScriptRoot/utils.pwsh/*.ps1 -Recurse
 
@@ -44,8 +43,6 @@ function Build {
         Write-Debug "Loading $($Utility.FullName)"
         . $Utility.FullName
     }
-
-    $BuildSpec = Get-Content -Path ${BuildSpecFile} -Raw | ConvertFrom-Json
 
     Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
 
