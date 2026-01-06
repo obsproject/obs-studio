@@ -16,9 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "OBSApp.hpp"
 #include "OBSBasicSourceSelect.hpp"
 
+#include <OBSApp.hpp>
 #include <utility/ResizeSignaler.hpp>
 #include <utility/ThumbnailManager.hpp>
 
@@ -62,8 +62,7 @@ QString getSourceDisplayName(QString type)
 
 std::string getNewSourceName(std::string_view name)
 {
-	std::string newName(name);
-
+	std::string newName{name};
 	int suffix = 1;
 
 	for (;;) {
@@ -72,9 +71,9 @@ std::string getNewSourceName(std::string_view name)
 			break;
 		}
 
-		newName = name;
-		newName += " ";
-		newName += std::to_string(suffix);
+		char nextName[256];
+		std::snprintf(nextName, sizeof(nextName), "%s %d", name.data(), ++suffix);
+		newName = nextName;
 	}
 
 	return newName;

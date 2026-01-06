@@ -38,8 +38,7 @@ using namespace std;
 namespace {
 std::string getNewSourceName(std::string_view name)
 {
-	std::string newName(name);
-
+	std::string newName{name};
 	int suffix = 1;
 
 	for (;;) {
@@ -48,10 +47,9 @@ std::string getNewSourceName(std::string_view name)
 			break;
 		}
 
-		newName = name;
-		newName += " (";
-		newName += std::to_string(suffix);
-		newName += ")";
+		char nextName[256];
+		std::snprintf(nextName, sizeof(nextName), "%s (%d)", name.data(), ++suffix);
+		newName = nextName;
 	}
 
 	return newName;
