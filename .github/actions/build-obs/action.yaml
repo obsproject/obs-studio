@@ -59,9 +59,7 @@ runs:
       run: |
         : Install Dependencies 🛍️
         echo ::group::Install Dependencies
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-        brew install --quiet zsh
+        sudo apt-get install -y --no-install-recommends zsh
         echo ::endgroup::
 
     - name: Run Ubuntu Build

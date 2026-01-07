@@ -57,6 +57,7 @@ build() {
     macos-x86_64
     macos-arm64
     ubuntu-x86_64
+    ubuntu-arm64
   )
 
   local config='RelWithDebInfo'
@@ -208,10 +209,11 @@ build() {
       ;;
     ubuntu-*)
       local cmake_bin='/usr/bin/cmake'
+      local cef_target="${target//arm64/aarch64}"
       cmake_args+=(
         --preset ubuntu-ci
         -DENABLE_BROWSER:BOOL=ON
-        -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//ubuntu-/linux_}"
+        -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${cef_target//ubuntu-/linux_}"
       )
 
       cmake_build_args+=(build_${target%%-*} --config ${config} --parallel)
