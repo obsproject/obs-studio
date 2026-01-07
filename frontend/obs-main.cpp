@@ -519,12 +519,15 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
-	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
-	 * looks ugly instead of crashing. */
-	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");
-	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0)
-		unsetenv("QT_QPA_PLATFORMTHEME");
+	/* NOTE: This will prevent users and Qt itself to pick a platform theme that might enforce some undesired
+	 * choice on the behavior of Qt.
+	 * "xdgdesktopportal" is also the default when Qt is built without GTK 3 support.*/
+	qputenv("QT_QPA_PLATFORMTHEME", "xdgdesktopportal");
+
+	/* NOTE: "bradient" is the default decoration provided by Qt.
+	 * But since Qt 6.8, GNOME-like decoration were added to allow Qt apps to "fit" on GNOME.
+	 * The same look on all DE is preferred */
+	qputenv("QT_WAYLAND_DECORATION", "bradient");
 #endif
 
 	/* NOTE: This disables an optimisation in Qt that attempts to determine if
