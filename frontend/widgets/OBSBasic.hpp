@@ -65,6 +65,7 @@ namespace OBS {
 class SceneCollection;
 struct Rect;
 enum class LogFileType;
+enum class ItemPasteType { Invalid, Reference, Duplicate, Both };
 } // namespace OBS
 
 #define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
@@ -412,6 +413,10 @@ public:
 	OBSWeakSource copyFilter;
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
+
+	void copySceneItem(OBSSceneItem item);
+	OBS::ItemPasteType getItemPasteType();
+	void pasteSceneItem(OBSScene scene, bool duplicate);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_ContextToolbar
