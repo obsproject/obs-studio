@@ -9,6 +9,19 @@
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
 #define HELPER_ROT_BREAKPOINT 45.0f
 
+namespace {
+bool checkEdgeSnap(float moveAxis, float checkAxis, float clampDistance, float &offset)
+{
+	double dist = fabsf(checkAxis - moveAxis);
+	if (dist < clampDistance && fabsf(offset) < EPSILON && (fabsf(offset) > dist || offset < EPSILON)) {
+		offset = checkAxis - moveAxis;
+		return true;
+	}
+
+	return false;
+}
+} // namespace
+
 /* TODO: make C++ math classes and clean up code here later */
 
 OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags) : OBSQTDisplay(parent, flags)
@@ -170,17 +183,6 @@ static inline vec2 GetOBSScreenSize()
 	}
 
 	return size;
-}
-
-static bool checkEdgeSnap(float moveAxis, float checkAxis, float clapDistance, float &offset)
-{
-	double dist = fabsf(checkAxis - moveAxis);
-	if (dist < clapDistance && fabsf(offset) < EPSILON && (fabsf(offset) > dist || offset < EPSILON)) {
-		offset = checkAxis - moveAxis;
-		return true;
-	}
-
-	return false;
 }
 
 void OBSBasicPreview::addSnapGuide(float x1, float y1, float x2, float y2)
@@ -943,58 +945,57 @@ static bool GetSourceSnapOffset(obs_scene_t * /* scene */, obs_sceneitem_t *item
 		}
 	}
 
-	// Checked item positions
-	const float itemLeft = tl.x;
-	const float itemTop = tl.y;
-	const float itemRight = br.x;
-	const float itemBottom = br.y;
+	const auto screen = GetOBSScreenSize();
 
-	const float itemCenterX = itemRight - (itemRight - itemLeft) / 2.0f;
-	const float itemCenterY = itemBottom - (itemBottom - itemTop) / 2.0f;
+	QRectF moveRect{data->left(), data->top(), data->right() - data->left(), data->bottom() - data->top()};
+	QRectF itemRect{tl.x, tl.y, br.x - tl.x, br.y - tl.y};
 
-	// Snap edges to item edges
-	if (checkEdgeSnap(data->left(), itemLeft, data->clampDist, data->offset.x) ||
-	    checkEdgeSnap(data->right(), itemLeft, data->clampDist, data->offset.x)) {
-		main->addSnapGuide(itemLeft, 0, itemLeft, GetOBSScreenSize().y);
+	const QPointF centerDelta{moveRect.center().x() - itemRect.center().x(),
+				  moveRect.center().y() - itemRect.center().y()};
+
+	QPoint itemEdge{};
+	QPoint movingEdge{};
+
+	itemEdge.rx() = centerDelta.x() < 0 ? itemRect.left() : itemRect.right();
+	movingEdge.rx() = centerDelta.x() < 0 ? moveRect.left() : moveRect.right();
+
+	itemEdge.ry() = centerDelta.y() < 0 ? itemRect.top() : itemRect.bottom();
+	movingEdge.ry() = centerDelta.y() < 0 ? moveRect.top() : moveRect.bottom();
+
+	// Horizontal snapping
+	// Check if the delta between centers is larger than the sum of half widths minus the clamp distance.
+	// Subtracting the clamp distance allows snapping from the "inner" edges when overlapping.
+	if (std::fabs(centerDelta.x()) > (moveRect.width() + itemRect.width() - (data->clampDist * 2)) / 2) {
+		// Moving item is not overlapping
+		movingEdge.rx() = centerDelta.x() < 0 ? moveRect.right() : moveRect.left();
+	} else if (moveRect.width() > itemRect.width()) {
+		// Moving item is overlapping but larger, invert checked edges
+		itemEdge.rx() = centerDelta.x() > 0 ? itemRect.left() : itemRect.right();
+		movingEdge.rx() = centerDelta.x() > 0 ? moveRect.left() : moveRect.right();
 	}
 
-	if (checkEdgeSnap(data->top(), itemTop, data->clampDist, data->offset.y) ||
-	    checkEdgeSnap(data->bottom(), itemTop, data->clampDist, data->offset.y)) {
-		main->addSnapGuide(0, itemTop, GetOBSScreenSize().x, itemTop);
+	// Vertical snapping
+	// Check if the delta between centers is larger than the sum of half widths minus the clamp distance.
+	// Subtracting the clamp distance allows snapping from the "inner" edges when overlapping.
+	if (std::fabs(centerDelta.y()) > (moveRect.height() + itemRect.height() - (data->clampDist * 2)) / 2) {
+		// Moving item is not overlapping
+		movingEdge.ry() = centerDelta.y() < 0 ? moveRect.bottom() : moveRect.top();
+	} else if (moveRect.height() > itemRect.height()) {
+		// Moving item is overlapping but larger, invert checked edges
+		itemEdge.ry() = centerDelta.y() > 0 ? itemRect.top() : itemRect.bottom();
+		movingEdge.ry() = centerDelta.y() > 0 ? moveRect.top() : moveRect.bottom();
 	}
 
-	if (checkEdgeSnap(data->left(), itemRight, data->clampDist, data->offset.x) ||
-	    checkEdgeSnap(data->right(), itemRight, data->clampDist, data->offset.x)) {
-		main->addSnapGuide(itemRight, 0, itemRight, GetOBSScreenSize().y);
+	if (checkEdgeSnap(movingEdge.x(), itemEdge.x(), data->clampDist, data->offset.x)) {
+		main->addSnapGuide(itemEdge.x(), 0.0f, itemEdge.x(), screen.y);
+	} else if (checkEdgeSnap(moveRect.center().x(), itemRect.center().x(), data->clampDist, data->offset.x)) {
+		main->addSnapGuide(itemRect.center().x(), 0.0f, itemRect.center().x(), screen.y);
 	}
 
-	if (checkEdgeSnap(data->top(), itemBottom, data->clampDist, data->offset.y) ||
-	    checkEdgeSnap(data->bottom(), itemBottom, data->clampDist, data->offset.y)) {
-		main->addSnapGuide(0, itemBottom, GetOBSScreenSize().x, itemBottom);
-	}
-
-	// Snap center to item edges
-	if (checkEdgeSnap(data->center().x, itemLeft, data->clampDist, data->offset.x)) {
-		main->addSnapGuide(itemLeft, 0, itemLeft, GetOBSScreenSize().y);
-	}
-	if (checkEdgeSnap(data->center().x, itemRight, data->clampDist, data->offset.x)) {
-		main->addSnapGuide(itemRight, 0, itemRight, GetOBSScreenSize().y);
-	}
-
-	if (checkEdgeSnap(data->center().y, itemTop, data->clampDist, data->offset.y)) {
-		main->addSnapGuide(0, itemTop, GetOBSScreenSize().x, itemTop);
-	}
-	if (checkEdgeSnap(data->center().y, itemBottom, data->clampDist, data->offset.y)) {
-		main->addSnapGuide(0, itemBottom, GetOBSScreenSize().x, itemBottom);
-	}
-
-	// Snap center to item center
-	if (checkEdgeSnap(data->center().x, itemCenterX, data->clampDist, data->offset.x)) {
-		main->addSnapGuide(itemCenterX, 0, itemCenterX, GetOBSScreenSize().y);
-	}
-
-	if (checkEdgeSnap(data->center().y, itemCenterY, data->clampDist, data->offset.y)) {
-		main->addSnapGuide(0, itemCenterY, GetOBSScreenSize().x, itemCenterY);
+	if (checkEdgeSnap(movingEdge.y(), itemEdge.y(), data->clampDist, data->offset.y)) {
+		main->addSnapGuide(0.0f, itemEdge.y(), screen.x, itemEdge.y());
+	} else if (checkEdgeSnap(moveRect.center().y(), itemRect.center().y(), data->clampDist, data->offset.y)) {
+		main->addSnapGuide(0.0f, itemRect.center().y(), screen.x, itemRect.center().y());
 	}
 
 	return true;
