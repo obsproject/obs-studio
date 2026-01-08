@@ -28,6 +28,7 @@
 #include <docks/YouTubeAppDock.hpp>
 #endif
 #include <utility/audio-encoders.hpp>
+#include <utility/AppTooltip.hpp>
 #include <utility/BaseLexer.hpp>
 #include <utility/FFmpegCodec.hpp>
 #include <utility/FFmpegFormat.hpp>
@@ -911,6 +912,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->audioMsg->setVisible(false);
 	ui->advancedMsg->setVisible(false);
 	ui->advancedMsg2->setVisible(false);
+
+	AppTooltip::useAppTooltip(this);
 }
 
 OBSBasicSettings::~OBSBasicSettings()

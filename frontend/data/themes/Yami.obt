@@ -165,7 +165,7 @@
     --input_padding: calc(2px + var(--padding_base));
     --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2px));
-    --input_height_half: calc(var(--input_height_base) / 2);
+    --input_height_half: calc(var(--input_height_base) / 2px);
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey7);
@@ -2512,4 +2512,82 @@ idian--RowFrame.hover .row-buddy {
 
 idian--RowFrame.hover idian--ExpandButton::indicator {
     border-color: var(--grey1);
+}
+
+/* Popup widgets */
+idian--PopupContents {
+    background: var(--grey8);
+    padding: 1px;
+    border-radius: var(--border_radius);
+}
+
+idian--Tooltip idian--PopupContents {
+    padding: var(--padding_large) var(--padding_xlarge);
+}
+
+idian--Tooltip QLabel {
+    font-size: var(--font_small);
+    font-weight: bold;
+}
+
+idian--AbstractPopup .popup-header {
+    background: rgba(0, 0, 0, 0.4);
+    border-top-left-radius: var(--border_radius);
+    border-top-right-radius: var(--border_radius);
+}
+
+idian--AbstractPopup .popup-header QLabel {
+    padding: 1px var(--padding_base);
+    font-weight: bold;
+}
+
+idian--AbstractPopup .popup-text {
+    background: rgba(0, 0, 0, 0.8);
+    padding: var(--padding_xlarge);
+    min-width: 300px;
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+idian--AbstractPopup .tooltip-close {
+    background: transparent;
+    border: none;
+    padding: var(--padding_large);
+    max-width: var(--input_height_half);
+    max-height: var(--input_height_half);
+    icon-size: 8px;
+    margin-right: var(--spacing_base);
+}
+
+idian--AbstractPopup .tooltip-close:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+idian--InfoPopup idian--PopupContents {
+    background: var(--teal2);
+    padding: 1px;
+    border-radius: var(--border_radius);
+}
+
+idian--GuidePopup idian--PopupContents {
+    background: var(--blue3);
+    padding: 1px;
+    border-radius: var(--border_radius);
+}
+
+idian--GuidePopup .popup-text {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+idian--GuidePopup .popup-footer {
+    background: rgba(0, 0, 0, 0.6);
+    padding: var(--padding_base) var(--padding_xlarge);
+    min-width: 300px;
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+idian--GuidePopup .popup-footer QPushButton {
+    padding: var(--padding_small) var(--padding_xlarge);
 }
