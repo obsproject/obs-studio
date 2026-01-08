@@ -305,51 +305,52 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 	sourceButtons = new QButtonGroup(this);
 	sourceButtons->setExclusive(false);
 
-	auto sourcesList = &sources;
-
-	std::vector<obs_source_t *> reversedSources;
-	bool isReverseListOrder = sourceTypeId.isNull();
-	if (isReverseListOrder) {
-		reversedSources = {sources.rbegin(), sources.rend()};
-		sourcesList = &reversedSources;
-	}
-
-	QWidget *prevTabWidget = ui->sourceTypeList;
-	int count = 0;
-	for (obs_source_t *source : *sourcesList) {
-		if (limit > 0 && count >= limit) {
-			break;
-		}
-
+	std::vector<obs_source_t *> matchingSources{};
+	std::copy_if(sources.begin(), sources.end(), std::back_inserter(matchingSources), [this](obs_source_t *source) {
 		if (!source || obs_source_removed(source)) {
-			continue;
+			return false;
 		}
 
 		const char *id = obs_source_get_unversioned_id(source);
 		QString stringId = QString(id);
 
 		if (stringId.compare("group") == 0) {
-			continue;
+			return false;
 		}
 
 		if (sourceTypeId.compare(stringId) == 0 || sourceTypeId.isNull()) {
-			SourceSelectButton *newButton = new SourceSelectButton(source, ui->existingListFrame);
-			std::string name = obs_source_get_name(source);
-
-			existingFlowLayout->addWidget(newButton);
-			sourceButtons->addButton(newButton->getButton());
-
-			if (!prevTabWidget) {
-				setTabOrder(ui->existingListFrame, newButton->getButton());
-			} else {
-				setTabOrder(prevTabWidget, newButton->getButton());
-			}
-
-			prevTabWidget = newButton->getButton();
-
-			count++;
+			return true;
 		}
+
+		return false;
+	});
+
+	QWidget *prevTabWidget = ui->sourceTypeList;
+
+	auto createSourceButton = [this, &prevTabWidget](obs_source_t *source) {
+		SourceSelectButton *newButton = new SourceSelectButton(source, ui->existingListFrame);
+		std::string name = obs_source_get_name(source);
+
+		existingFlowLayout->addWidget(newButton);
+		sourceButtons->addButton(newButton->getButton());
+
+		if (!prevTabWidget) {
+			setTabOrder(ui->existingListFrame, newButton->getButton());
+		} else {
+			setTabOrder(prevTabWidget, newButton->getButton());
+		}
+
+		prevTabWidget = newButton->getButton();
+	};
+
+	bool isReverseListOrder = sourceTypeId.isNull();
+	size_t iterationLimit = limit > 0 ? limit : matchingSources.size();
+	if (isReverseListOrder) {
+		std::for_each(matchingSources.rbegin(), matchingSources.rbegin() + iterationLimit, createSourceButton);
+	} else {
+		std::for_each(matchingSources.begin(), matchingSources.begin() + iterationLimit, createSourceButton);
 	}
+
 	setTabOrder(prevTabWidget, ui->addExistingContainer);
 
 	connect(sourceButtons, &QButtonGroup::buttonToggled, this, &OBSBasicSourceSelect::sourceButtonToggled);
