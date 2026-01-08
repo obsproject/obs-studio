@@ -229,3 +229,14 @@ QCalendarWidget QToolButton:pressed {
 QCalendarWidget QSpinBox {
     background-color: var(--primary_dark);
 }
+
+/* Add Source Dialog */
+SourceSelectButton QPushButton,
+SourceSelectButton #thumbnail {
+    border-color: var(--grey3);
+}
+
+SourceSelectButton QPushButton:checked {
+    background: var(--button_bg_red);
+    border-color: var(--button_bg_red_hover);
+}
