@@ -26,6 +26,10 @@ if(NOT TARGET OBS::bpm)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/bpm" bpm)
 endif()
 
+if(NOT TARGET OBS::qt-clamped-doublespinbox)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/clamped-doublespinbox" clamped-doublespinbox)
+endif()
+
 add_executable(obs-studio)
 add_executable(OBS::studio ALIAS obs-studio)
 
@@ -40,6 +44,7 @@ target_link_libraries(
     OBS::frontend-api
     OBS::json11
     OBS::bpm
+    OBS::qt-clamped-doublespinbox
 )
 
 include(cmake/ui-components.cmake)

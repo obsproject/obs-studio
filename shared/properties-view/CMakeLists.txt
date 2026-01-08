@@ -28,6 +28,13 @@ if(NOT TARGET OBS::qt-icon-label)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/icon-label" "${CMAKE_BINARY_DIR}/shared/qt/icon-label")
 endif()
 
+if(NOT TARGET OBS::qt-clamped-doublespinbox)
+  add_subdirectory(
+    "${CMAKE_SOURCE_DIR}/shared/qt/clamped-doublespinbox"
+    "${CMAKE_BINARY_DIR}/shared/qt/clamped-doublespinbox"
+  )
+endif()
+
 add_library(properties-view INTERFACE)
 add_library(OBS::properties-view ALIAS properties-view)
 
@@ -51,6 +58,7 @@ target_link_libraries(
     OBS::libobs
     OBS::qt-wrappers
     OBS::qt-plain-text-edit
+    OBS::qt-clamped-doublespinbox
     OBS::qt-vertical-scroll-area
     OBS::qt-slider-ignorewheel
     OBS::qt-icon-label

@@ -1,6 +1,7 @@
 #include "OBSBasicTransform.hpp"
 
 #include <widgets/OBSBasic.hpp>
+#include "ClampedDoubleSpinBox.hpp"
 
 #include "moc_OBSBasicTransform.cpp"
 
