@@ -26,6 +26,12 @@ using namespace std;
 
 #define OPT_DEVICE_ID "device_id"
 #define OPT_USE_DEVICE_TIMING "use_device_timing"
+
+#define OPT_STREAM_ORIGIN "stream_origin"
+#define OPT_STREAM_CATEGORY "stream_category"
+
+#define OPT_HARDWARE_OFFLOADED "hardware_offloaded"
+
 #define OPT_WINDOW "window"
 #define OPT_PRIORITY "priority"
 
@@ -162,6 +168,9 @@ class WASAPISource {
 	string window_class;
 	string title;
 	string executable;
+	string streamCategory;
+	bool isOriginStream;
+	bool isHardwareOffStream;
 	HWND hwnd = NULL;
 	DWORD process_id = 0;
 	const SourceType sourceType;
@@ -241,6 +250,8 @@ class WASAPISource {
 	static ComPtr<IMMDevice> InitDevice(IMMDeviceEnumerator *enumerator, bool isDefaultDevice, SourceType type,
 					    const string device_id);
 	static ComPtr<IAudioClient> InitClient(IMMDevice *device, SourceType type, DWORD process_id,
+					       const string &streamCategory, bool isOriginStream,
+					       bool isHardwareOffStream,
 					       PFN_ActivateAudioInterfaceAsync activate_audio_interface_async,
 					       speaker_layout &speakers, audio_format &format, uint32_t &sampleRate);
 	static void InitFormat(const WAVEFORMATEX *wfex, enum speaker_layout &speakers, enum audio_format &format,
@@ -259,6 +270,10 @@ class WASAPISource {
 		string window_class;
 		string title;
 		string executable;
+
+		string streamCategory;
+		bool isOriginStream;
+		bool isHardwareOffStream;
 	};
 
 	UpdateParams BuildUpdateParams(obs_data_t *settings);
@@ -499,6 +514,10 @@ WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
 			params.executable = executable;
 			bfree(executable);
 		}
+	} else if (sourceType == SourceType::Input) {
+		params.streamCategory = obs_data_get_string(settings, OPT_STREAM_CATEGORY);
+		params.isOriginStream = obs_data_get_bool(settings, OPT_STREAM_ORIGIN);
+		params.isHardwareOffStream = obs_data_get_bool(settings, OPT_HARDWARE_OFFLOADED);
 	}
 
 	return params;
@@ -517,6 +536,9 @@ void WASAPISource::UpdateSettings(UpdateParams &&params)
 	window_class = std::move(params.window_class);
 	title = std::move(params.title);
 	executable = std::move(params.executable);
+	streamCategory = std::move(params.streamCategory);
+	isOriginStream = params.isOriginStream;
+	isHardwareOffStream = params.isHardwareOffStream;
 }
 
 void WASAPISource::LogSettings()
@@ -543,11 +565,16 @@ void WASAPISource::Update(obs_data_t *settings)
 {
 	UpdateParams params = BuildUpdateParams(settings);
 
-	const bool restart = (sourceType == SourceType::ProcessOutput)
-				     ? ((priority != params.priority) || (window_class != params.window_class) ||
-					(title != params.title) || (executable != params.executable))
-				     : (device_id.compare(params.device_id) != 0);
-
+	bool restart = false;
+	if (sourceType == SourceType::ProcessOutput) {
+		restart = ((priority != params.priority) || (window_class != params.window_class) ||
+			   (title != params.title) || (executable != params.executable));
+	} else if (sourceType == SourceType::DeviceOutput) {
+		restart = (device_id.compare(params.device_id) != 0);
+	} else if (sourceType == SourceType::Input) {
+		restart = (device_id.compare(params.device_id) != 0) || isOriginStream != params.isOriginStream ||
+			  streamCategory != params.streamCategory || isHardwareOffStream != params.isHardwareOffStream;
+	}
 	UpdateSettings(std::move(params));
 	LogSettings();
 
@@ -637,7 +664,33 @@ static DWORD GetSpeakerChannelMask(speaker_layout layout)
 	return (DWORD)layout;
 }
 
+static inline AUDIO_STREAM_CATEGORY GetAudioStreamCategory(const string &category)
+{
+	if (category == "Communications")
+		return AudioCategory_Communications;
+	else if (category == "Alerts")
+		return AudioCategory_Alerts;
+	else if (category == "SoundEffects")
+		return AudioCategory_SoundEffects;
+	else if (category == "GameEffects")
+		return AudioCategory_GameEffects;
+	else if (category == "GameMedia")
+		return AudioCategory_GameMedia;
+	else if (category == "GameChat")
+		return AudioCategory_GameChat;
+	else if (category == "Speech")
+		return AudioCategory_Speech;
+	else if (category == "Movie")
+		return AudioCategory_Movie;
+	else if (category == "Media")
+		return AudioCategory_Media;
+	else
+		return AudioCategory_Other;
+}
+
 ComPtr<IAudioClient> WASAPISource::InitClient(IMMDevice *device, SourceType type, DWORD process_id,
+					      const string &streamCategory, bool isOriginStream,
+					      bool isHardwareOffStream,
 					      PFN_ActivateAudioInterfaceAsync activate_audio_interface_async,
 					      speaker_layout &speakers, audio_format &format, uint32_t &samples_per_sec)
 {
@@ -714,10 +767,52 @@ ComPtr<IAudioClient> WASAPISource::InitClient(IMMDevice *device, SourceType type
 	DWORD flags = AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
 	if (type != SourceType::Input)
 		flags |= AUDCLNT_STREAMFLAGS_LOOPBACK;
+
+	if (type == SourceType::Input && streamCategory != "default") {
+		ComPtr<IAudioClient2> audioClient2 = nullptr;
+		client->QueryInterface(__uuidof(IAudioClient2), (void **)(&audioClient2));
+		if (audioClient2) {
+			AudioClientProperties properties = {};
+			properties.cbSize = sizeof(AudioClientProperties);
+			BOOL isSupportOffloadStream = FALSE;
+			properties.Options = isOriginStream ? AUDCLNT_STREAMOPTIONS_RAW : AUDCLNT_STREAMOPTIONS_NONE;
+			audioClient2->IsOffloadCapable(properties.eCategory, &isSupportOffloadStream);
+			flags |= AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM;
+			properties.eCategory = GetAudioStreamCategory(streamCategory);
+
+			if (isSupportOffloadStream) {
+				properties.bIsOffload = isHardwareOffStream ? TRUE : FALSE;
+			}
+			audioClient2->SetClientProperties(&properties);
+		}
+	}
+
 	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, BUFFER_TIME_100NS, 0, pFormat, nullptr);
 	if (FAILED(res))
 		throw HRError("Failed to initialize audio client", res);
 
+	if (type == SourceType::Input) {
+		ComPtr<IAudioEffectsManager> audioEffectsManager;
+		HRESULT hr = client->GetService(IID_PPV_ARGS(audioEffectsManager.Assign()));
+		if (audioEffectsManager) {
+			CoTaskMemPtr<AUDIO_EFFECT> audioEffects = nullptr;
+			UINT32 numEffects = 0;
+			audioEffectsManager->GetAudioEffects(&audioEffects, &numEffects);
+
+			for (UINT32 i = 0; i < numEffects; ++i) {
+				if (audioEffects[i].id == AUDIO_EFFECT_TYPE_DEEP_NOISE_SUPPRESSION) {
+					blog(LOG_INFO, "DEEP_NOISE_SUPPRESSION STATE:%d, Can Set:%d",
+					     audioEffects[i].state, audioEffects[i].canSetState);
+				} else if (audioEffects[i].id == AUDIO_EFFECT_TYPE_AUTOMATIC_GAIN_CONTROL) {
+					blog(LOG_INFO, "AUTOMATIC_GAIN_CONTROL STATE:%d, Can Set:%d",
+					     audioEffects[i].state, audioEffects[i].canSetState);
+				} else if (audioEffects[i].id == AUDIO_EFFECT_TYPE_ACOUSTIC_ECHO_CANCELLATION) {
+					blog(LOG_INFO, "ACOUSTIC_ECHO_CANCELLATION STATE:%d, Can Set:%d",
+					     audioEffects[i].state, audioEffects[i].canSetState);
+				}
+			}
+		}
+	}
 	return client;
 }
 
@@ -841,8 +936,9 @@ void WASAPISource::Initialize()
 
 	ResetEvent(receiveSignal);
 
-	ComPtr<IAudioClient> temp_client = InitClient(device, sourceType, process_id, activate_audio_interface_async,
-						      speakers, format, sampleRate);
+	ComPtr<IAudioClient> temp_client = InitClient(device, sourceType, process_id, streamCategory, isOriginStream,
+						      isHardwareOffStream, activate_audio_interface_async, speakers,
+						      format, sampleRate);
 	if (sourceType == SourceType::DeviceOutput)
 		ClearBuffer(device);
 	ComPtr<IAudioCaptureClient> temp_capture = InitCapture(temp_client, receiveSignal);
@@ -1331,6 +1427,9 @@ static void GetWASAPIDefaultsInput(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
 	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, false);
+	obs_data_set_default_bool(settings, OPT_STREAM_ORIGIN, false);
+	obs_data_set_default_string(settings, OPT_STREAM_CATEGORY, "default");
+	obs_data_set_default_bool(settings, OPT_HARDWARE_OFFLOADED, false);
 }
 
 static void GetWASAPIDefaultsDeviceOutput(obs_data_t *settings)
@@ -1461,6 +1560,24 @@ static bool UpdateWASAPIMethod(obs_properties_t *props, obs_property_t *, obs_da
 	return true;
 }
 
+static bool StreamCategoryChanged(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
+{
+	std::string category = obs_data_get_string(settings, OPT_STREAM_CATEGORY);
+
+	obs_property_t *streamOrigin = obs_properties_get(props, OPT_STREAM_ORIGIN);
+	obs_property_t *streamHardwareOffload = obs_properties_get(props, OPT_HARDWARE_OFFLOADED);
+
+	if (category != "default") {
+		obs_property_set_enabled(streamOrigin, true);
+		obs_property_set_enabled(streamHardwareOffload, true);
+	} else {
+		obs_property_set_enabled(streamOrigin, false);
+		obs_property_set_enabled(streamHardwareOffload, false);
+	}
+
+	return true;
+}
+
 static obs_properties_t *GetWASAPIPropertiesInput(void *)
 {
 	obs_properties_t *props = obs_properties_create();
@@ -1481,6 +1598,23 @@ static obs_properties_t *GetWASAPIPropertiesInput(void *)
 
 	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING, obs_module_text("UseDeviceTiming"));
 
+	obs_property_t *stream_category = obs_properties_add_list(props, OPT_STREAM_CATEGORY,
+								  obs_module_text("StreamCategory"),
+								  OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_set_modified_callback(stream_category, StreamCategoryChanged);
+
+	obs_property_list_add_string(stream_category, obs_module_text("Default"), "default");
+	obs_property_list_add_string(stream_category, obs_module_text("Communications"), "Communications");
+	obs_property_list_add_string(stream_category, obs_module_text("Speech"), "Speech");
+	obs_property_list_add_string(stream_category, obs_module_text("VoiceTyping"), "VoiceTyping");
+	obs_property_list_add_string(stream_category, obs_module_text("GameChat"), "GameChat");
+
+	obs_property_t *streamOrigin =
+		obs_properties_add_bool(props, OPT_STREAM_ORIGIN, obs_module_text("StreamOrigin"));
+	obs_property_set_enabled(streamOrigin, false);
+	obs_property_t *streamHardwareOffload =
+		obs_properties_add_bool(props, OPT_HARDWARE_OFFLOADED, obs_module_text("HardwareOffloaded"));
+	obs_property_set_enabled(streamHardwareOffload, false);
 	return props;
 }
 
