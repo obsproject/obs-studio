@@ -2317,18 +2317,6 @@
     <string>icon-cogs</string>
    </property>
   </action>
-  <action name="actionMixerToolbarMenu">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/dots-vert.svg</normaloff>:/res/images/dots-vert.svg</iconset>
-   </property>
-   <property name="text">
-    <string>MixerToolbarMenu</string>
-   </property>
-   <property name="class" stdset="0">
-    <string>icon-dots-vert</string>
-   </property>
-  </action>
   <action name="actionSceneFilters">
    <property name="icon">
     <iconset resource="obs.qrc">

@@ -15,58 +15,55 @@ class QBoxLayout;
 class QLabel;
 class VolumeMeter;
 
-namespace OBS {
-
-struct MixerStatus {
-	enum Value : uint32_t {
-		None = 0,
-		Active = 1 << 0,
-		Locked = 1 << 1,
-		Global = 1 << 2,
-		Pinned = 1 << 3,
-		Hidden = 1 << 4,
-		Unassigned = 1 << 5,
-		Preview = 1 << 6,
-	};
-
-	MixerStatus() = default;
-	MixerStatus(Value v) : bits(v) {}
-
-	bool has(Value v) const { return (bits & v) != 0; }
-	void set(Value v, bool enable)
-	{
-		if (enable) {
-			bits |= v;
-		} else {
-			bits &= ~v;
-		}
-	}
-
-	MixerStatus operator|(Value v) const { return MixerStatus(bits | v); }
-	MixerStatus &operator|=(Value v)
-	{
-		bits |= v;
-		return *this;
-	}
-
-	MixerStatus operator&(Value v) const { return MixerStatus(bits & v); }
-	MixerStatus &operator&=(Value v)
-	{
-		bits &= v;
-		return *this;
-	}
-
-	MixerStatus operator~() const { return MixerStatus(~bits); }
-
-private:
-	uint32_t bits = None;
-	explicit MixerStatus(uint32_t v) : bits(v) {}
-};
-
-} // namespace OBS
-
 class VolumeControl : public QFrame {
 	Q_OBJECT
+
+public:
+	struct MixerStatus {
+		enum Value : uint32_t {
+			None = 0,
+			Active = 1 << 0,
+			Locked = 1 << 1,
+			Global = 1 << 2,
+			Pinned = 1 << 3,
+			Hidden = 1 << 4,
+			Unassigned = 1 << 5,
+			Preview = 1 << 6,
+		};
+
+		MixerStatus() = default;
+		MixerStatus(Value v) : bits(v) {}
+
+		bool has(Value v) const { return (bits & v) != 0; }
+		void set(Value v, bool enable)
+		{
+			if (enable) {
+				bits |= v;
+			} else {
+				bits &= ~v;
+			}
+		}
+
+		MixerStatus operator|(Value v) const { return MixerStatus(bits | v); }
+		MixerStatus &operator|=(Value v)
+		{
+			bits |= v;
+			return *this;
+		}
+
+		MixerStatus operator&(Value v) const { return MixerStatus(bits & v); }
+		MixerStatus &operator&=(Value v)
+		{
+			bits &= v;
+			return *this;
+		}
+
+		MixerStatus operator~() const { return MixerStatus(~bits); }
+
+	private:
+		uint32_t bits = None;
+		explicit MixerStatus(uint32_t v) : bits(v) {}
+	};
 
 private:
 	std::unique_ptr<idian::Utils> utils;
@@ -84,14 +81,12 @@ private:
 	QPushButton *muteButton;
 	QPushButton *monitorButton;
 
-	float levelTotal;
-	float levelCount;
 	OBSFader obs_fader;
 
 	QString sourceName;
 	bool vertical;
 
-	OBS::MixerStatus mixerStatus_;
+	MixerStatus mixerStatus_;
 
 	QMenu *contextMenu;
 
@@ -144,7 +139,7 @@ public:
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
 	void enableSlider(bool enable);
-	OBS::MixerStatus &mixerStatus() { return mixerStatus_; }
+	MixerStatus &mixerStatus() { return mixerStatus_; }
 	void setGlobalInMixer(bool global);
 	void setPinnedInMixer(bool pinned);
 	void setHiddenInMixer(bool hidden);
@@ -162,7 +157,6 @@ public:
 
 	void updateName();
 	void refreshColors();
-	void debugHideControls();
 	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
 		       const float inputPeak[MAX_AUDIO_CHANNELS]);
 };

@@ -19,6 +19,7 @@
 
 #include "OBSBasic.hpp"
 
+#include <components/MenuCheckBox.hpp>
 #include <components/VolumeControl.hpp>
 
 #include <QObject>
@@ -87,6 +88,8 @@ private:
 	QPushButton *toggleHiddenButton{nullptr};
 
 	QPointer<QMenu> mixerMenu;
+	QPointer<MenuCheckBox> showHiddenCheckBox;
+	QPointer<QWidgetAction> showHiddenAction;
 
 	QScrollArea *hMixerScrollArea{nullptr};
 	QWidget *hVolumeWidgets{nullptr};
@@ -101,7 +104,6 @@ private:
 	void reloadVolumeControls();
 	bool getMixerVisibilityForControl(VolumeControl *widget);
 
-	void addPreviewSource(const char *uuid);
 	void clearPreviewSources();
 	bool isSourcePreviewed(obs_source_t *source);
 	bool isSourceGlobal(obs_source_t *source);
@@ -140,8 +142,6 @@ private slots:
 	void toggleKeepInactiveLast(bool checked);
 	void toggleShowHidden(bool checked);
 	void toggleKeepHiddenLast(bool checked);
-
-	void on_actionMixerToolbarMenu_triggered();
 
 	void mixerContextMenuRequested();
 

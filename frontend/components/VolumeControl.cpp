@@ -47,8 +47,6 @@ void showUnassignedWarning(const char *name)
 
 VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertical)
 	: weakSource_(OBSGetWeakRef(source)),
-	  levelTotal(0.0f),
-	  levelCount(0.0f),
 	  obs_fader(obs_fader_create(OBS_FADER_LOG)),
 	  vertical(vertical),
 	  contextMenu(nullptr),
@@ -151,7 +149,7 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 
 	obs_fader_attach_source(obs_fader, source);
 
-	/* Call volume changed once to init the slider position and label */
+	// Call volume changed once to init the slider position and label
 	changeVolume();
 
 	updateMixerState();
@@ -325,7 +323,6 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		buttonLayout->setContentsMargins(0, 0, 0, 0);
 		buttonLayout->setSpacing(0);
 
-		//buttonLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
 		buttonLayout->addWidget(muteButton);
 		buttonLayout->addWidget(monitorButton);
 
@@ -361,18 +358,18 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 	// Create menu QActions
 	QAction *lockAction = new QAction(QTStr("LockVolume"), popup);
 	lockAction->setCheckable(true);
-	lockAction->setChecked(mixerStatus().has(OBS::MixerStatus::Locked));
+	lockAction->setChecked(mixerStatus().has(VolumeControl::MixerStatus::Locked));
 
-	bool isGlobal = mixerStatus().has(OBS::MixerStatus::Global);
+	bool isGlobal = mixerStatus().has(VolumeControl::MixerStatus::Global);
 
 	QAction *pinAction = new QAction(QTStr("Basic.AudioMixer.Pin"), popup);
-	bool isPinned = mixerStatus().has(OBS::MixerStatus::Pinned);
+	bool isPinned = mixerStatus().has(VolumeControl::MixerStatus::Pinned);
 	if (isPinned) {
 		pinAction->setText(QTStr("Basic.AudioMixer.Unpin"));
 	}
 
 	QAction *hideAction = new QAction(QTStr("Basic.AudioMixer.Hide"), popup);
-	bool isHidden = mixerStatus().has(OBS::MixerStatus::Hidden);
+	bool isHidden = mixerStatus().has(VolumeControl::MixerStatus::Hidden);
 	if (isHidden && !isGlobal) {
 		hideAction->setText(QTStr("Basic.AudioMixer.Unhide"));
 	}
@@ -540,7 +537,7 @@ void VolumeControl::setLocked(bool locked)
 	obs_data_set_bool(priv_settings, "volume_locked", locked);
 
 	enableSlider(!locked);
-	mixerStatus().set(OBS::MixerStatus::Locked, locked);
+	mixerStatus().set(VolumeControl::MixerStatus::Locked, locked);
 
 	OBSBasic *main = OBSBasic::Get();
 	emit main->mixerStatusChanged(uuid);
@@ -550,27 +547,28 @@ void VolumeControl::updateCategoryLabel()
 {
 	QString labelText = QTStr("Basic.AudioMixer.Category.Active");
 
-	if (mixerStatus().has(OBS::MixerStatus::Unassigned)) {
+	if (mixerStatus().has(VolumeControl::MixerStatus::Unassigned)) {
 		labelText = QTStr("Basic.AudioMixer.Category.Unassigned");
-	} else if (mixerStatus().has(OBS::MixerStatus::Global)) {
+	} else if (mixerStatus().has(VolumeControl::MixerStatus::Global)) {
 		labelText = QTStr("Basic.AudioMixer.Category.Global");
-	} else if (mixerStatus().has(OBS::MixerStatus::Pinned)) {
+	} else if (mixerStatus().has(VolumeControl::MixerStatus::Pinned)) {
 		labelText = QTStr("Basic.AudioMixer.Category.Pinned");
-	} else if (mixerStatus().has(OBS::MixerStatus::Hidden)) {
+	} else if (mixerStatus().has(VolumeControl::MixerStatus::Hidden)) {
 		labelText = QTStr("Basic.AudioMixer.Category.Hidden");
-	} else if (!mixerStatus().has(OBS::MixerStatus::Active)) {
+	} else if (!mixerStatus().has(VolumeControl::MixerStatus::Active)) {
 		labelText = QTStr("Basic.AudioMixer.Category.Inactive");
 
-		if (mixerStatus().has(OBS::MixerStatus::Preview)) {
+		if (mixerStatus().has(VolumeControl::MixerStatus::Preview)) {
 			labelText = QTStr("Basic.AudioMixer.Category.Preview");
 		}
 	}
 
-	bool stylePinned = mixerStatus().has(OBS::MixerStatus::Global) || mixerStatus().has(OBS::MixerStatus::Pinned);
-	bool styleInactive = mixerStatus().has(OBS::MixerStatus::Active) != true;
-	bool styleHidden = mixerStatus().has(OBS::MixerStatus::Hidden);
-	bool styleUnassigned = mixerStatus().has(OBS::MixerStatus::Unassigned);
-	bool stylePreviewed = mixerStatus().has(OBS::MixerStatus::Preview);
+	bool stylePinned = mixerStatus().has(VolumeControl::MixerStatus::Global) ||
+			   mixerStatus().has(VolumeControl::MixerStatus::Pinned);
+	bool styleInactive = mixerStatus().has(VolumeControl::MixerStatus::Active) != true;
+	bool styleHidden = mixerStatus().has(VolumeControl::MixerStatus::Hidden);
+	bool styleUnassigned = mixerStatus().has(VolumeControl::MixerStatus::Unassigned);
+	bool stylePreviewed = mixerStatus().has(VolumeControl::MixerStatus::Preview);
 
 	utils->toggleClass("volume-pinned", stylePinned);
 	utils->toggleClass("volume-inactive", styleInactive);
@@ -626,8 +624,7 @@ void VolumeControl::setMuted(bool mute)
 	obs_source_set_muted(source, mute);
 
 	if (!mute && unassigned) {
-		// muteButton->setChecked(true);
-		/* Show notice about the source no being assigned to any tracks */
+		// Show notice about the source no being assigned to any tracks
 		bool has_shown_warning =
 			config_get_bool(App()->GetUserConfig(), "General", "WarnedAboutUnassignedSources");
 		if (!has_shown_warning) {
@@ -673,7 +670,7 @@ void VolumeControl::setMonitoring(obs_monitoring_type type)
 void VolumeControl::sourceActiveChanged(bool active)
 {
 	setUseDisabledColors(!active);
-	mixerStatus().set(OBS::MixerStatus::Active, active);
+	mixerStatus().set(VolumeControl::MixerStatus::Active, active);
 
 	OBSBasic *main = OBSBasic::Get();
 	emit main->mixerStatusChanged(uuid);
@@ -693,9 +690,9 @@ void VolumeControl::updateMixerState()
 
 	bool isActive = obs_source_active(source) && obs_source_audio_active(source);
 
-	mixerStatus().set(OBS::MixerStatus::Active, isActive);
+	mixerStatus().set(VolumeControl::MixerStatus::Active, isActive);
 	setUseDisabledColors(!isActive);
-	mixerStatus().set(OBS::MixerStatus::Unassigned, unassigned);
+	mixerStatus().set(VolumeControl::MixerStatus::Unassigned, unassigned);
 
 	QSignalBlocker blockMute(muteButton);
 	QSignalBlocker blockMonitor(monitorButton);
@@ -914,8 +911,8 @@ void VolumeControl::setUseDisabledColors(bool greyscale)
 
 void VolumeControl::setGlobalInMixer(bool global)
 {
-	if (mixerStatus().has(OBS::MixerStatus::Global) != global) {
-		mixerStatus().set(OBS::MixerStatus::Global, global);
+	if (mixerStatus().has(VolumeControl::MixerStatus::Global) != global) {
+		mixerStatus().set(VolumeControl::MixerStatus::Global, global);
 
 		OBSBasic *main = OBSBasic::Get();
 		emit main->mixerStatusChanged(uuid);
@@ -924,7 +921,7 @@ void VolumeControl::setGlobalInMixer(bool global)
 
 void VolumeControl::setPinnedInMixer(bool pinned)
 {
-	if (mixerStatus().has(OBS::MixerStatus::Pinned) != pinned) {
+	if (mixerStatus().has(VolumeControl::MixerStatus::Pinned) != pinned) {
 		OBSSource source = OBSGetStrongRef(weakSource());
 		if (!source) {
 			return;
@@ -932,7 +929,7 @@ void VolumeControl::setPinnedInMixer(bool pinned)
 		OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 		obs_data_set_bool(priv_settings, "mixer_pinned", pinned);
 
-		mixerStatus().set(OBS::MixerStatus::Pinned, pinned);
+		mixerStatus().set(VolumeControl::MixerStatus::Pinned, pinned);
 
 		if (pinned) {
 			// Unset hidden state when pinning controls
@@ -946,7 +943,7 @@ void VolumeControl::setPinnedInMixer(bool pinned)
 
 void VolumeControl::setHiddenInMixer(bool hidden)
 {
-	if (mixerStatus().has(OBS::MixerStatus::Hidden) != hidden) {
+	if (mixerStatus().has(VolumeControl::MixerStatus::Hidden) != hidden) {
 		OBSSource source = OBSGetStrongRef(weakSource());
 		if (!source) {
 			return;
@@ -954,7 +951,7 @@ void VolumeControl::setHiddenInMixer(bool hidden)
 		OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 		obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
 
-		mixerStatus().set(OBS::MixerStatus::Hidden, hidden);
+		mixerStatus().set(VolumeControl::MixerStatus::Hidden, hidden);
 
 		OBSBasic *main = OBSBasic::Get();
 		emit main->mixerStatusChanged(uuid);
@@ -964,13 +961,6 @@ void VolumeControl::setHiddenInMixer(bool hidden)
 void VolumeControl::refreshColors()
 {
 	volumeMeter->refreshColors();
-}
-
-void VolumeControl::debugHideControls()
-{
-	slider->hide();
-	volumeLabel->hide();
-	muteButton->hide();
 }
 
 void VolumeControl::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
