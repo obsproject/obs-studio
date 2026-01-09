@@ -324,3 +324,33 @@ QCalendarWidget #qt_calendar_prevmonth {
 QCalendarWidget #qt_calendar_nextmonth {
     qproperty-icon: url(theme:Light/right.svg);
 }
+
+/* Idian Widgets */
+idian--ToggleSwitch {
+    qproperty-background: var(--grey8);
+    qproperty-background_hover: var(--grey7);
+    qproperty-background_checked: var(--primary);
+    qproperty-background_checked_hover: var(--primary_light);
+}
+
+idian--Row QComboBox::down-arrow {
+    image: url(theme:Light/collapse.svg);
+}
+
+idian--CheckBox.keyFocus::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy::indicator {
+    image: url(theme:Light/checkbox_unchecked_focus.svg);
+}
+
+idian--CheckBox.keyFocus.checked::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy.checked::indicator {
+    image: url(theme:Light/checkbox_checked_focus.svg);
+}
+
+idian--ExpandButton::indicator {
+    image: url(theme:Light/down.svg);
+}
+
+idian--ExpandButton::indicator:checked {
+    image: url(theme:Light/up.svg);
+}

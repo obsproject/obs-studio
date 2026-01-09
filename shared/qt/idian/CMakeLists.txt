@@ -22,7 +22,10 @@ target_sources(
     include/Idian/Row.hpp
     include/Idian/SpinBox.hpp
     include/Idian/ToggleSwitch.hpp
+    include/Idian/Utils.cpp
     include/Idian/Utils.hpp
+    include/Idian/StateEventFilter.cpp
+    include/Idian/StateEventFilter.hpp
     widgets/Group.cpp
     widgets/PropertiesList.cpp
     widgets/Row.cpp
