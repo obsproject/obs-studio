@@ -1754,19 +1754,30 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleOutAdvanced->setChecked(advanced);
 	ui->simpleOutCustom->setText(custom);
 
+	bool outputSettingReset = false;
+
 	idx = ui->simpleOutRecQuality->findData(QString(recQual));
-	if (idx == -1)
+	if (idx == -1) {
+		ui->simpleOutRecQuality->setProperty("changed", QVariant(true));
 		idx = 0;
+		outputSettingReset = true;
+	}
 	ui->simpleOutRecQuality->setCurrentIndex(idx);
 
 	idx = ui->simpleOutStrEncoder->findData(QString(streamEnc));
-	if (idx == -1)
+	if (idx == -1) {
+		ui->simpleOutStrEncoder->setProperty("changed", QVariant(true));
 		idx = 0;
+		outputSettingReset = true;
+	}
 	ui->simpleOutStrEncoder->setCurrentIndex(idx);
 
 	idx = ui->simpleOutStrAEncoder->findData(QString(streamAudioEnc));
-	if (idx == -1)
+	if (idx == -1) {
+		ui->simpleOutStrAEncoder->setProperty("changed", QVariant(true));
 		idx = 0;
+		outputSettingReset = true;
+	}
 	ui->simpleOutStrAEncoder->setCurrentIndex(idx);
 
 	idx = ui->simpleOutRecEncoder->findData(QString(recEnc));
@@ -1782,6 +1793,10 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleRBMegsMax->setValue(rbSize);
 
 	SimpleStreamingEncoderChanged();
+	if (outputSettingReset) {
+		outputsChanged = true;
+		EnableApplyButton(true);
+	}
 }
 
 static inline QString makeFormatToolTip()
@@ -1922,6 +1937,10 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 
 			ui->advOutEncoder->insertItem(0, encName, QT_UTF8(type));
 			SetComboByValue(ui->advOutEncoder, type);
+		} else {
+			ui->advOutEncoder->setProperty("changed", QVariant(true));
+			outputsChanged = true;
+			EnableApplyButton(true);
 		}
 	}
 
@@ -2028,6 +2047,9 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 			SetComboByValue(ui->advOutRecEncoder, type);
 		} else {
 			ui->advOutRecEncoder->setCurrentIndex(-1);
+			ui->advOutRecEncoder->setProperty("changed", QVariant(true));
+			outputsChanged = true;
+			EnableApplyButton(true);
 		}
 	}
 }
@@ -3718,8 +3740,7 @@ bool OBSBasicSettings::QueryAllowedToClose()
 	bool invalidFormat = false;
 	bool invalidTracks = false;
 	if (simple) {
-		if (ui->simpleOutRecEncoder->currentIndex() == -1 || ui->simpleOutStrEncoder->currentIndex() == -1 ||
-		    ui->simpleOutRecAEncoder->currentIndex() == -1 || ui->simpleOutStrAEncoder->currentIndex() == -1)
+		if (ui->simpleOutStrEncoder->currentIndex() == -1 || ui->simpleOutStrAEncoder->currentIndex() == -1)
 			invalidEncoder = true;
 
 		if (ui->simpleOutRecFormat->currentIndex() == -1)
@@ -3729,6 +3750,10 @@ bool OBSBasicSettings::QueryAllowedToClose()
 		QString format = ui->simpleOutRecFormat->currentData().toString();
 		if (SimpleOutGetSelectedAudioTracks() == 0 && qual != "Stream" && format != "flv")
 			invalidTracks = true;
+
+		if (qual != "Stream" &&
+		    (ui->simpleOutRecEncoder->currentIndex() == -1 || ui->simpleOutRecAEncoder->currentIndex() == -1))
+			invalidEncoder = true;
 	} else {
 		if (ui->advOutRecEncoder->currentIndex() == -1 || ui->advOutEncoder->currentIndex() == -1 ||
 		    ui->advOutRecAEncoder->currentIndex() == -1 || ui->advOutAEncoder->currentIndex() == -1)
