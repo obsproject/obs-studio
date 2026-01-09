@@ -344,7 +344,7 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 	};
 
 	bool isReverseListOrder = sourceTypeId.isNull();
-	size_t iterationLimit = limit > 0 ? limit : matchingSources.size();
+	size_t iterationLimit = limit > 0 && limit <= matchingSources.size() ? limit : matchingSources.size();
 	if (isReverseListOrder) {
 		std::for_each(matchingSources.rbegin(), matchingSources.rbegin() + iterationLimit, createSourceButton);
 	} else {

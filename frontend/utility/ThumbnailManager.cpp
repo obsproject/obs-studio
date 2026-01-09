@@ -195,19 +195,23 @@ void ThumbnailManager::updateTick()
 
 std::optional<QPixmap> ThumbnailManager::getCachedThumbnail(OBSSource source)
 {
+	if (!source) {
+		return std::nullopt;
+	}
+
 	std::string uuid = obs_source_get_uuid(source);
 	auto it = cachedThumbnails.find(uuid);
 	if (it != cachedThumbnails.end()) {
 		auto &cachedItem = it->second;
 		if (cachedItem.pixmap.has_value()) {
 			return cachedItem.pixmap;
-		} else {
-			auto activeItem = cachedItem.weakActiveItem.lock();
-			return activeItem ? std::make_optional(activeItem->pixmap) : std::nullopt;
 		}
-	} else {
-		return std::nullopt;
+
+		auto activeItem = cachedItem.weakActiveItem.lock();
+		return activeItem ? std::make_optional(activeItem->pixmap) : std::nullopt;
 	}
+
+	return std::nullopt;
 }
 
 void ThumbnailManager::preloadThumbnail(OBSSource source, QObject *object, std::function<void(QPixmap)> callback)
