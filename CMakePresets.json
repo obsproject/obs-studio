@@ -115,8 +115,7 @@
       "inherits": ["macos"],
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-        "ENABLE_CCACHE": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
     },
     {
