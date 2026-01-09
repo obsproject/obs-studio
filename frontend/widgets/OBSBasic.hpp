@@ -21,9 +21,11 @@
 #include "OBSMainWindow.hpp"
 
 #include <OBSApp.hpp>
+#include <components/AccessibleAlignmentSelector.hpp>
 #include <oauth/Auth.hpp>
 #include <utility/BasicOutputHandler.hpp>
 #include <utility/OBSCanvas.hpp>
+#include <utility/PreviewProgramSizeObserver.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
 #include <utility/undo_stack.hpp>
@@ -37,6 +39,7 @@
 #include <util/threading.h>
 #include <util/util.hpp>
 
+#include <QAccessible>
 #include <QSystemTrayIcon>
 
 #include <deque>
@@ -66,13 +69,6 @@ class SceneCollection;
 struct Rect;
 enum class LogFileType;
 } // namespace OBS
-
-#define DESKTOP_AUDIO_1 Str("DesktopAudioDevice1")
-#define DESKTOP_AUDIO_2 Str("DesktopAudioDevice2")
-#define AUX_AUDIO_1 Str("AuxAudioDevice1")
-#define AUX_AUDIO_2 Str("AuxAudioDevice2")
-#define AUX_AUDIO_3 Str("AuxAudioDevice3")
-#define AUX_AUDIO_4 Str("AuxAudioDevice4")
 
 #define SIMPLE_ENCODER_X264 "x264"
 #define SIMPLE_ENCODER_X264_LOWCPU "x264_lowcpu"
@@ -112,6 +108,14 @@ struct SourceCopyInfo {
 	obs_transform_info transform;
 	obs_blending_method blend_method;
 	obs_blending_type blend_mode;
+	obs_scale_type scale_type;
+	const char *show_transition_id;
+	const char *hide_transition_id;
+	OBSData show_transition_settings;
+	OBSData hide_transition_settings;
+	uint32_t show_transition_duration;
+	uint32_t hide_transition_duration;
+	OBSData private_settings;
 };
 
 struct OBSProfile {
@@ -1431,6 +1435,7 @@ private:
 	int programX = 0, programY = 0;
 	int programCX = 0, programCY = 0;
 	float programScale = 0.0f;
+	QPointer<PreviewProgramSizeObserver> sizeObserver;
 
 	void CreateProgramDisplay();
 	void CreateProgramOptions();

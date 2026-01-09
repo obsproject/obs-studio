@@ -120,10 +120,11 @@ void OBSBasic::ResetUI()
 {
 	bool studioPortraitLayout = config_get_bool(App()->GetUserConfig(), "BasicWindow", "StudioPortraitLayout");
 
-	if (studioPortraitLayout)
+	if (studioPortraitLayout) {
 		ui->previewLayout->setDirection(QBoxLayout::BottomToTop);
-	else
+	} else {
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+	}
 
 	UpdatePreviewProgramIndicators();
 }
@@ -488,7 +489,7 @@ void OBSBasic::CreateEditTransformWindow(obs_sceneitem_t *item)
 	if (transformWindow)
 		transformWindow->close();
 	transformWindow = new OBSBasicTransform(item, this);
-	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::OnSceneChanged);
+	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::onSceneChanged);
 	transformWindow->show();
 	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }

@@ -2013,10 +2013,6 @@
                     "url": "rtmp://bintu-stream-ass.nanocosmos.de/live"
                 },
                 {
-                    "name": "bintu-stream Australia (AU)",
-                    "url": "rtmp://bintu-stream-au.nanocosmos.de/live"
-                },
-                {
                     "name": "bintu-vtrans Europe (EU)",
                     "url": "rtmp://bintu-vtrans-eu.nanocosmos.de/live"
                 },

@@ -369,7 +369,25 @@ void OBSBasic::SetDeinterlacingMode()
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
+	obs_deinterlace_mode oldMode = obs_source_get_deinterlace_mode(source);
 	obs_source_set_deinterlace_mode(source, mode);
+
+	auto undo_redo = [](const std::string &uuid, obs_deinterlace_mode val) {
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
+		if (source)
+			obs_source_set_deinterlace_mode(source, val);
+	};
+
+	const char *uuid = obs_source_get_uuid(source);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.DeinterlacingMode").arg(obs_source_get_name(source));
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, oldMode);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, mode);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 void OBSBasic::SetDeinterlacingOrder()
@@ -379,7 +397,25 @@ void OBSBasic::SetDeinterlacingOrder()
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
+	obs_deinterlace_field_order oldOrder = obs_source_get_deinterlace_field_order(source);
 	obs_source_set_deinterlace_field_order(source, order);
+
+	auto undo_redo = [](const std::string &uuid, obs_deinterlace_field_order val) {
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
+		if (source)
+			obs_source_set_deinterlace_field_order(source, val);
+	};
+
+	const char *uuid = obs_source_get_uuid(source);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.DeinterlacingOrder").arg(obs_source_get_name(source));
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, oldOrder);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, order);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
@@ -426,7 +462,31 @@ void OBSBasic::SetScaleFilter()
 	obs_scale_type mode = (obs_scale_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
+	obs_scale_type oldMode = obs_sceneitem_get_scale_filter(sceneItem);
 	obs_sceneitem_set_scale_filter(sceneItem, mode);
+
+	auto undo_redo = [](const std::string &uuid, int64_t id, obs_scale_type val) {
+		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
+		obs_scene_t *sc = obs_group_or_scene_from_source(s);
+		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
+		if (si)
+			obs_sceneitem_set_scale_filter(si, val);
+	};
+
+	OBSSource source = obs_sceneitem_get_source(sceneItem);
+	OBSSource sceneSource = obs_scene_get_source(obs_sceneitem_get_scene(sceneItem));
+	int64_t id = obs_sceneitem_get_id(sceneItem);
+	const char *name = obs_source_get_name(sceneSource);
+	const char *uuid = obs_source_get_uuid(sceneSource);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.ScaleFiltering").arg(obs_source_get_name(source), name);
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMode);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, mode);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
@@ -457,7 +517,31 @@ void OBSBasic::SetBlendingMethod()
 	obs_blending_method method = (obs_blending_method)action->property("method").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
+	obs_blending_method oldMethod = obs_sceneitem_get_blending_method(sceneItem);
 	obs_sceneitem_set_blending_method(sceneItem, method);
+
+	auto undo_redo = [](const std::string &uuid, int64_t id, obs_blending_method val) {
+		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
+		obs_scene_t *sc = obs_group_or_scene_from_source(s);
+		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
+		if (si)
+			obs_sceneitem_set_blending_method(si, val);
+	};
+
+	OBSSource source = obs_sceneitem_get_source(sceneItem);
+	OBSSource sceneSource = obs_scene_get_source(obs_sceneitem_get_scene(sceneItem));
+	int64_t id = obs_sceneitem_get_id(sceneItem);
+	const char *name = obs_source_get_name(sceneSource);
+	const char *uuid = obs_source_get_uuid(sceneSource);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.BlendingMethod").arg(obs_source_get_name(source), name);
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMethod);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, method);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
@@ -484,7 +568,31 @@ void OBSBasic::SetBlendingMode()
 	obs_blending_type mode = (obs_blending_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
+	obs_blending_type oldMode = obs_sceneitem_get_blending_mode(sceneItem);
 	obs_sceneitem_set_blending_mode(sceneItem, mode);
+
+	auto undo_redo = [](const std::string &uuid, int64_t id, obs_blending_type val) {
+		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
+		obs_scene_t *sc = obs_group_or_scene_from_source(s);
+		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
+		if (si)
+			obs_sceneitem_set_blending_mode(si, val);
+	};
+
+	OBSSource source = obs_sceneitem_get_source(sceneItem);
+	OBSSource sceneSource = obs_scene_get_source(obs_sceneitem_get_scene(sceneItem));
+	int64_t id = obs_sceneitem_get_id(sceneItem);
+	const char *name = obs_source_get_name(sceneSource);
+	const char *uuid = obs_source_get_uuid(sceneSource);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.BlendingMode").arg(obs_source_get_name(source), name);
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMode);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, mode);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item)
