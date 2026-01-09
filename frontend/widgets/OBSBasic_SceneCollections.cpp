@@ -1157,6 +1157,15 @@ void OBSBasic::Load(SceneCollection &collection)
 	LoadData(data, collection);
 }
 
+static inline void AddMissingFilterFiles(obs_source_t *, obs_source_t *filter, void *data)
+{
+	obs_missing_files_t *f = (obs_missing_files_t *)data;
+	obs_missing_files_t *sf = obs_source_get_missing_files(filter);
+
+	obs_missing_files_append(f, sf);
+	obs_missing_files_destroy(sf);
+}
+
 static inline void AddMissingFiles(void *data, obs_source_t *source)
 {
 	obs_missing_files_t *f = (obs_missing_files_t *)data;
@@ -1164,6 +1173,8 @@ static inline void AddMissingFiles(void *data, obs_source_t *source)
 
 	obs_missing_files_append(f, sf);
 	obs_missing_files_destroy(sf);
+
+	obs_source_enum_filters(source, AddMissingFilterFiles, data);
 }
 
 void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
