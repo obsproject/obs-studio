@@ -249,7 +249,7 @@ jobs:
     env:
       FLATPAK_BUILD_SHARE_PATH: flatpak_app/files/share
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
       options: --privileged
       volumes:
         - /usr/local/lib/android:/to_clean/android
