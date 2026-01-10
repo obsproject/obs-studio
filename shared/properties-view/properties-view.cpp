@@ -2116,12 +2116,43 @@ public:
 	inline QString GetText() const { return edit->text(); }
 };
 
+class ComboItemDialog : public QDialog {
+	QComboBox *combo;
+
+public:
+	ComboItemDialog(QWidget *parent, const QMap<QString, QString> &options) : QDialog(parent)
+	{
+		QVBoxLayout *mainLayout = new QVBoxLayout();
+
+		combo = new QComboBox();
+		for (auto [name, value] : options.asKeyValueRange()) {
+			combo->addItem(name, value);
+		}
+		mainLayout->addWidget(combo);
+
+		QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+		mainLayout->addWidget(buttonBox);
+		setLayout(mainLayout);
+		resize(QSize(400, 80));
+
+		connect(buttonBox, &QDialogButtonBox::accepted, this, &ComboItemDialog::accept);
+		connect(buttonBox, &QDialogButtonBox::rejected, this, &ComboItemDialog::reject);
+	}
+
+	inline QString GetText() const { return combo->currentData().toString(); }
+};
+
 void WidgetInfo::EditListAdd()
 {
 	enum obs_editable_list_type type = obs_property_editable_list_type(property);
 
 	if (type == OBS_EDITABLE_LIST_TYPE_STRINGS) {
 		EditListAddText();
+		return;
+	}
+
+	if (type == OBS_EDITABLE_LIST_TYPE_COMBO) {
+		EditListAddCombo();
 		return;
 	}
 
@@ -2214,6 +2245,36 @@ void WidgetInfo::EditListAddDir()
 		return;
 
 	QListWidgetItem *item = new QListWidgetItem(dir);
+	item->setData(Qt::UserRole, QUuid::createUuid().toString(QUuid::WithoutBraces));
+	list->addItem(item);
+
+	EditableListChanged();
+}
+
+void WidgetInfo::EditListAddCombo()
+{
+	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	const char *desc = obs_property_description(property);
+
+	QMap<QString, QString> options;
+	size_t count = obs_property_editable_list_item_count(property);
+	for (size_t i = 0; i < count; i++) {
+		const char *name = obs_property_editable_list_item_name(property, i);
+		const char *value = obs_property_editable_list_item_value(property, i);
+		options.insert(QT_UTF8(name), QT_UTF8(value));
+	}
+
+	ComboItemDialog dialog(widget->window(), options);
+	auto title = tr("Basic.PropertiesWindow.AddEditableListEntry").arg(QT_UTF8(desc));
+	dialog.setWindowTitle(title);
+	if (dialog.exec() == QDialog::Rejected)
+		return;
+
+	QString text = dialog.GetText();
+	if (text.isEmpty())
+		return;
+
+	QListWidgetItem *item = new QListWidgetItem(text);
 	item->setData(Qt::UserRole, QUuid::createUuid().toString(QUuid::WithoutBraces));
 	list->addItem(item);
 

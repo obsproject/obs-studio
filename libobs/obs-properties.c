@@ -71,6 +71,7 @@ struct editable_list_data {
 	enum obs_editable_list_type type;
 	char *filter;
 	char *default_path;
+	DARRAY(struct list_item) items;
 };
 
 struct button_data {
@@ -1268,6 +1269,71 @@ const char *obs_property_editable_list_default_path(obs_property_t *p)
 {
 	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
 	return data ? data->default_path : NULL;
+}
+
+void obs_property_editable_list_clear(obs_property_t *p)
+{
+	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
+	if (data) {
+		for (size_t i = 0; i < data->items.num; i++) {
+			struct list_item *item = data->items.array + i;
+			bfree(item->name);
+			bfree(item->str);
+		}
+		da_free(data->items);
+	}
+}
+
+void obs_property_editable_list_item_remove(obs_property_t *p, size_t idx)
+{
+	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
+	if (data && idx < data->items.num) {
+		struct list_item *item = data->items.array + idx;
+		bfree(item->name);
+		bfree(item->str);
+		da_erase(data->items, idx);
+	}
+}
+
+size_t obs_property_editable_list_add_item(obs_property_t *p, const char *name, const char *val)
+{
+	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
+	if (data && data->type == OBS_EDITABLE_LIST_TYPE_COMBO) {
+		struct list_item item = {NULL};
+		item.name = bstrdup(name);
+		item.str = bstrdup(val);
+		return da_push_back(data->items, &item);
+	}
+	return 0;
+}
+
+void obs_property_editable_list_insert_item(obs_property_t *p, size_t idx, const char *name, const char *val)
+{
+	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
+	if (data && data->type == OBS_EDITABLE_LIST_TYPE_COMBO) {
+		struct list_item item = {NULL};
+		item.name = bstrdup(name);
+		item.str = bstrdup(val);
+		da_insert(data->items, idx, &item);
+	}
+}
+
+size_t obs_property_editable_list_item_count(obs_property_t *p)
+{
+	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
+	return data ? data->items.num : 0;
+}
+
+const char *obs_property_editable_list_item_name(obs_property_t *p, size_t idx)
+{
+	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
+	return (data && idx < data->items.num) ? data->items.array[idx].name : NULL;
+}
+
+const char *obs_property_editable_list_item_value(obs_property_t *p, size_t idx)
+{
+	struct editable_list_data *data = get_type_data(p, OBS_PROPERTY_EDITABLE_LIST);
+	return (data && idx < data->items.num) ? data->items.array[idx].str : NULL;
 }
 
 /* ------------------------------------------------------------------------- */
