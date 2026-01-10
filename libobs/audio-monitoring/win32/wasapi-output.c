@@ -49,8 +49,8 @@ struct audio_monitor {
 
 /* #define DEBUG_AUDIO */
 
-static bool process_audio_delay(struct audio_monitor *monitor, float **data, uint32_t *frames, uint64_t ts,
-				uint32_t pad)
+static bool process_audio_sync_delay(struct audio_monitor *monitor, float **data, uint32_t *frames, uint64_t ts,
+				     uint32_t pad)
 {
 	obs_source_t *s = monitor->source;
 	uint64_t last_frame_ts = s->last_frame_ts;
@@ -116,6 +116,66 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data, uin
 			     "diff: %lld, delay buffer size: %lu, "
 			     "v: %llu: a: %llu",
 			     diff, (int)monitor->delay_buffer.size, last_frame_ts, front_ts);
+#endif
+			continue;
+		}
+
+		*data = monitor->buf.array;
+		return true;
+	}
+
+	return false;
+}
+
+static bool process_audio_only_delay(struct audio_monitor *monitor, float **data, uint32_t *frames, uint64_t ts,
+				     uint32_t pad)
+{
+	uint64_t cur_time = os_gettime_ns();
+	uint64_t front_ts;
+	uint64_t cur_ts;
+	int64_t diff;
+	uint32_t blocksize = monitor->channels * sizeof(float);
+
+	if (cur_time - monitor->last_recv_time > 1000000000)
+		deque_free(&monitor->delay_buffer);
+	monitor->last_recv_time = cur_time;
+
+	ts += monitor->source->sync_offset;
+
+	deque_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
+	deque_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
+	deque_push_back(&monitor->delay_buffer, *data, *frames * blocksize);
+
+	while (monitor->delay_buffer.size != 0) {
+		size_t size;
+		deque_peek_front(&monitor->delay_buffer, &cur_ts, sizeof(ts));
+		front_ts = cur_ts - util_mul_div64(pad, 1000000000ULL, monitor->sample_rate);
+
+		diff = (int64_t)front_ts - (int64_t)cur_time;
+		if (diff > 75000000) {
+#ifdef DEBUG_AUDIO
+			blog(LOG_INFO,
+			     "audio ahead of realtime, waiting, "
+			     "diff: %lld, delay buffer size: %lu, "
+			     "cur_time: %llu, front_ts: %llu",
+			     diff, (unsigned long)monitor->delay_buffer.size, cur_time, front_ts);
+#endif
+			return false;
+		}
+		deque_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
+		deque_pop_front(&monitor->delay_buffer, frames, sizeof(*frames));
+
+		size = *frames * blocksize;
+		da_resize(monitor->buf, size);
+		deque_pop_front(&monitor->delay_buffer, monitor->buf.array, size);
+
+		if (diff < -75000000 && monitor->delay_buffer.size > 0) {
+#ifdef DEBUG_AUDIO
+			blog(LOG_INFO,
+			     "audio behind realtime, dropping, "
+			     "diff: %lld, delay buffer size: %lu, "
+			     "cur_time: %llu, front_ts: %llu",
+			     diff, (unsigned long)monitor->delay_buffer.size, cur_time, front_ts);
 #endif
 			continue;
 		}
@@ -310,11 +370,14 @@ static void on_audio_playback(void *param, obs_source_t *source, const struct au
 	}
 
 	bool decouple_audio = source->async_unbuffered && source->async_decoupled;
+	uint64_t ts = audio_data->timestamp - ts_offset;
 
 	if (monitor->source_has_video && !decouple_audio) {
-		uint64_t ts = audio_data->timestamp - ts_offset;
-
-		if (!process_audio_delay(monitor, (float **)(&resample_data[0]), &resample_frames, ts, pad)) {
+		if (!process_audio_sync_delay(monitor, (float **)(&resample_data[0]), &resample_frames, ts, pad)) {
+			goto unlock;
+		}
+	} else {
+		if (!process_audio_only_delay(monitor, (float **)(&resample_data[0]), &resample_frames, ts, pad)) {
 			goto unlock;
 		}
 	}
