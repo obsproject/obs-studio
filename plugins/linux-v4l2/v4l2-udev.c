@@ -63,7 +63,7 @@ static enum udev_action udev_action_to_enum(const char *action)
 /**
  * Call all registered callbacks with the event
  *
- * @param dev udev device that had an event occuring
+ * @param dev udev device that had an event occurring
  */
 static inline void udev_signal_event(struct udev_device *dev)
 {
