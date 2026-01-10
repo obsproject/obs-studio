@@ -110,27 +110,31 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
                 os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
                 return true;
             }
+
+            NSMutableArray *app_exclusions = [[NSMutableArray alloc] init];
+            NSMutableArray *window_exclusions = [[NSMutableArray alloc] init];
             if (sc->hide_obs) {
-                SCRunningApplication *obsApp = nil;
                 NSString *mainBundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
                 for (SCRunningApplication *app in sc->shareable_content.applications) {
                     if ([app.bundleIdentifier isEqualToString:mainBundleIdentifier]) {
-                        obsApp = app;
+                        [app_exclusions addObject:app];
                         break;
                     }
                 }
-                NSArray *exclusions = [[NSArray alloc] initWithObjects:obsApp, nil];
-                NSArray *empty = [[NSArray alloc] init];
-                content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
-                                                    excludingApplications:exclusions
-                                                         exceptingWindows:empty];
-                [empty release];
-                [exclusions release];
-            } else {
-                NSArray *empty = [[NSArray alloc] init];
-                content_filter = [[SCContentFilter alloc] initWithDisplay:target_display excludingWindows:empty];
-                [empty release];
             }
+            if (sc->hide_privacy_indicators) {
+                for (SCWindow *window in sc->shareable_content.windows) {
+                    if ([window.title isEqualToString:@"StatusIndicator"]) {
+                        [window_exclusions addObject:window];
+                        break;
+                    }
+                }
+            }
+            content_filter = [[SCContentFilter alloc] initWithDisplay:target_display
+                                                excludingApplications:app_exclusions
+                                                     exceptingWindows:window_exclusions];
+            [app_exclusions release];
+            [window_exclusions release];
 
             set_display_mode(sc, target_display);
         } break;
@@ -279,6 +283,7 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     sc->source = source;
     sc->hide_cursor = !obs_data_get_bool(settings, "show_cursor");
     sc->hide_obs = obs_data_get_bool(settings, "hide_obs");
+    sc->hide_privacy_indicators = obs_data_get_bool(settings, "hide_privacy_indicators");
     sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
     sc->show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
     sc->window = (CGWindowID) obs_data_get_int(settings, "window");
@@ -414,6 +419,7 @@ static void sck_video_capture_defaults(obs_data_t *settings)
     obs_data_set_default_int(settings, "window", kCGNullWindowID);
     obs_data_set_default_bool(settings, "show_cursor", true);
     obs_data_set_default_bool(settings, "hide_obs", false);
+    obs_data_set_default_bool(settings, "hide_privacy_indicators", false);
     obs_data_set_default_bool(settings, "show_empty_names", false);
     obs_data_set_default_bool(settings, "show_hidden_windows", false);
 }
@@ -435,13 +441,15 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
     NSString *application_id = [[NSString alloc] initWithUTF8String:obs_data_get_string(settings, "application")];
     bool show_cursor = obs_data_get_bool(settings, "show_cursor");
     bool hide_obs = obs_data_get_bool(settings, "hide_obs");
+    bool hide_privacy_indicators = obs_data_get_bool(settings, "hide_privacy_indicators");
     bool show_empty_names = obs_data_get_bool(settings, "show_empty_names");
     bool show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
 
     if (capture_type == sc->capture_type) {
         switch (sc->capture_type) {
             case ScreenCaptureDisplayStream: {
-                if (sc->display == display && sc->hide_cursor != show_cursor && sc->hide_obs == hide_obs) {
+                if (sc->display == display && sc->hide_cursor != show_cursor && sc->hide_obs == hide_obs &&
+                    sc->hide_privacy_indicators == hide_privacy_indicators) {
                     [application_id release];
                     return;
                 }
@@ -471,6 +479,7 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_update(void *data, obs_
     sc->application_id = application_id;
     sc->hide_cursor = !show_cursor;
     sc->hide_obs = hide_obs;
+    sc->hide_privacy_indicators = hide_privacy_indicators;
     sc->show_empty_names = show_empty_names;
     sc->show_hidden_windows = show_hidden_windows;
     init_screen_stream(sc);
@@ -493,6 +502,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
     obs_property_t *empty = obs_properties_get(props, "show_empty_names");
     obs_property_t *hidden = obs_properties_get(props, "show_hidden_windows");
     obs_property_t *hide_obs = obs_properties_get(props, "hide_obs");
+    obs_property_t *hide_privacy_indicators = obs_properties_get(props, "hide_privacy_indicators");
 
     obs_property_t *capture_type_error = obs_properties_get(props, "capture_type_info");
 
@@ -505,6 +515,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
                 obs_property_set_visible(empty, false);
                 obs_property_set_visible(hidden, false);
                 obs_property_set_visible(hide_obs, true);
+                obs_property_set_visible(hide_privacy_indicators, true);
 
                 if (capture_type_error) {
                     obs_property_set_visible(capture_type_error, true);
@@ -518,6 +529,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
                 obs_property_set_visible(empty, true);
                 obs_property_set_visible(hidden, true);
                 obs_property_set_visible(hide_obs, false);
+                obs_property_set_visible(hide_privacy_indicators, false);
 
                 if (capture_type_error) {
                     obs_property_set_visible(capture_type_error, false);
@@ -531,6 +543,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
                 obs_property_set_visible(empty, false);
                 obs_property_set_visible(hidden, true);
                 obs_property_set_visible(hide_obs, false);
+                obs_property_set_visible(hide_privacy_indicators, false);
 
                 if (capture_type_error) {
                     obs_property_set_visible(capture_type_error, true);
@@ -543,6 +556,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props, obs_pr
     sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
     sc->show_hidden_windows = obs_data_get_bool(settings, "show_hidden_windows");
     sc->hide_obs = obs_data_get_bool(settings, "hide_obs");
+    sc->hide_privacy_indicators = obs_data_get_bool(settings, "hide_privacy_indicators");
 
     screen_capture_build_content_list(sc, capture_type_id == ScreenCaptureDisplayStream);
     build_display_list(sc, props);
@@ -601,6 +615,8 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
     obs_properties_add_bool(props, "show_cursor", obs_module_text("DisplayCapture.ShowCursor"));
 
     obs_property_t *hide_obs = obs_properties_add_bool(props, "hide_obs", obs_module_text("DisplayCapture.HideOBS"));
+    obs_property_t *hide_privacy_indicators = obs_properties_add_bool(
+        props, "hide_privacy_indicators", obs_module_text("DisplayCapture.HidePrivacyIndicators"));
     obs_property_t *reactivate =
         obs_properties_add_button2(props, "reactivate_capture", obs_module_text("SCK.Restart"), reactivate_capture, sc);
     obs_property_set_enabled(reactivate, sc->capture_failed);
@@ -618,6 +634,7 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
                 obs_property_set_visible(empty, false);
                 obs_property_set_visible(hidden, false);
                 obs_property_set_visible(hide_obs, true);
+                obs_property_set_visible(hide_privacy_indicators, true);
                 break;
             }
             case 1: {
@@ -627,6 +644,7 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
                 obs_property_set_visible(empty, true);
                 obs_property_set_visible(hidden, true);
                 obs_property_set_visible(hide_obs, false);
+                obs_property_set_visible(hide_privacy_indicators, false);
                 break;
             }
             case 2: {
@@ -636,6 +654,7 @@ API_AVAILABLE(macos(12.5)) static obs_properties_t *sck_video_capture_properties
                 obs_property_set_visible(empty, false);
                 obs_property_set_visible(hidden, true);
                 obs_property_set_visible(hide_obs, false);
+                obs_property_set_visible(hide_privacy_indicators, false);
                 break;
             }
         }
