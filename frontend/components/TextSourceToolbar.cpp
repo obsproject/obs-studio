@@ -137,7 +137,7 @@ void TextSourceToolbar::on_text_textChanged()
 	if (!source) {
 		return;
 	}
-	std::string newText = QT_TO_UTF8(ui->text->text());
+	std::string newText = ui->text->text().toStdString();
 	OBSDataAutoRelease settings = obs_source_get_settings(source);
 	if (newText == obs_data_get_string(settings, "text")) {
 		return;
