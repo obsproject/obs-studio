@@ -68,7 +68,6 @@ struct nvvfx_data {
 	NvCVImage *BGR_src_img;     // src img in BGR on GPU
 	NvCVImage *A_dst_img;       // mask img on GPU
 	NvCVImage *dst_img;         // Greenscreen: alpha mask texture; blur: texture initialized from d3d11 (RGBA, chunky, u8)
-	NvCVImage *stage;           // used for transfer to texture
 	unsigned int version;
 	NvVFX_StateObjectHandle stateObjectHandle;
 
@@ -176,7 +175,6 @@ static void nvvfx_filter_actual_destroy(void *data)
 		NvCVImage_Destroy(filter->BGR_src_img);
 		NvCVImage_Destroy(filter->A_dst_img);
 		NvCVImage_Destroy(filter->dst_img);
-		NvCVImage_Destroy(filter->stage);
 		if (filter->filter_id != S_FX_AIGS) {
 			NvCVImage_Destroy(filter->blur_BGR_dst_img);
 			NvCVImage_Destroy(filter->RGBA_dst_img);
@@ -588,14 +586,7 @@ static void init_images(struct nvvfx_data *filter)
 		NvCVImage_Alloc(filter->A_dst_img, width, height, NVCV_A, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1);
 	}
 
-	/* 6. Create stage NvCVImage which will be used as buffer for transfer */
-	vfxErr = NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1, &filter->stage);
-	vfxErr = NvCVImage_Alloc(filter->stage, width, height, NVCV_RGBA, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1);
-	if (vfxErr != NVCV_SUCCESS) {
-		goto fail;
-	}
-
-	/* 7. Init blur images */
+	/* 6. Init blur images */
 	if (filter->filter_id == S_FX_BLUR || filter->filter_id == S_FX_BG_BLUR) {
 		if (!init_blur_images(filter))
 			goto fail;
@@ -638,7 +629,7 @@ static bool process_texture(struct nvvfx_data *filter)
 	}
 
 	/* 2. Convert to BGR. */
-	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, process_stream, filter->stage);
+	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, process_stream, NULL);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 		error("Error converting src to BGR img; error %i: %s", vfxErr, errString);
@@ -669,8 +660,7 @@ static bool process_texture(struct nvvfx_data *filter)
 			goto fail;
 		}
 
-		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream,
-					    filter->stage);
+		vfxErr = NvCVImage_Transfer(filter->A_dst_img, filter->dst_img, 1.0f, filter->stream, NULL);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error transferring mask to alpha texture; error %i: %s ", vfxErr, errString);
@@ -709,7 +699,7 @@ static bool process_texture(struct nvvfx_data *filter)
 			goto fail;
 		}
 
-		vfxErr = NvCVImage_Transfer(filter->A_dst_img, filter->dst_img, 1.0f, filter->stream, filter->stage);
+		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream, NULL);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error transferring mask to alpha texture; error %i: %s ", vfxErr, errString);
