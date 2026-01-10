@@ -979,7 +979,7 @@ static size_t mp4_write_mp4a(struct mp4_mux *mux, struct mp4_track *track, uint8
 	// esds
 	mp4_write_esds(mux, track);
 
-	/* Write channel layout for version 1 sample entires */
+	/* Write channel layout for version 1 sample entries */
 	if (version == 1)
 		mp4_write_chnl(mux, track);
 
@@ -2566,7 +2566,7 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track, uint64
 		if (pkt->keyframe)
 			da_push_back(track->sync_samples, &track->samples);
 
-		/* Only require ctts box if offet is non-zero */
+		/* Only require ctts box if offset is non-zero */
 		if (offset && !track->needs_ctts)
 			track->needs_ctts = true;
 
