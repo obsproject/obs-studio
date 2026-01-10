@@ -953,7 +953,8 @@ void OBSBasicSettings::on_server_currentIndexChanged(int /*index*/)
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
 	bool enableForCustomServer = config_get_bool(App()->GetUserConfig(), "General", "EnableCustomServerVodTrack");
-	bool enableVodTrack = ui->service->currentText() == "Twitch";
+	QString currentService = ui->service->currentText();
+	bool enableVodTrack = currentService == "Twitch" || currentService == "Nenufar.live - Multi-Streaming";
 	bool wasEnabled = !!vodTrackCheckbox;
 
 	if (enableForCustomServer && IsCustomService())

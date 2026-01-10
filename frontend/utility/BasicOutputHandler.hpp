@@ -136,7 +136,7 @@ const char *GetStreamOutputType(const obs_service_t *service);
 
 inline bool ServiceSupportsVodTrack(const char *service)
 {
-	static const char *vodTrackServices[] = {"Twitch"};
+	static const char *vodTrackServices[] = {"Twitch", "Nenufar.live - Multi-Streaming"};
 
 	for (const char *vodTrackService : vodTrackServices) {
 		if (astrcmpi(vodTrackService, service) == 0)
