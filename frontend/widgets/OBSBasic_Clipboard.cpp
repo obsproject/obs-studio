@@ -187,7 +187,7 @@ void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 
 void OBSBasic::AudioMixerCopyFilters()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
@@ -197,7 +197,7 @@ void OBSBasic::AudioMixerCopyFilters()
 
 void OBSBasic::AudioMixerPasteFilters()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = qobject_cast<QAction *>(sender());
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *dstSource = vol->GetSource();
 

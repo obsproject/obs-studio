@@ -23,8 +23,6 @@ enum class ListOpt : int {
 struct QCef;
 extern QCef *cef;
 
-#define wiz reinterpret_cast<AutoConfig *>(wizard())
-
 AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent) : QWizardPage(parent), ui(new Ui_AutoConfigStreamPage)
 {
 	ui->setupUi(this);
@@ -101,11 +99,11 @@ bool AutoConfigStreamPage::validatePage()
 {
 	OBSDataAutoRelease service_settings = obs_data_create();
 
-	wiz->customServer = IsCustomService();
+	autoConfig()->customServer = IsCustomService();
 
-	const char *serverType = wiz->customServer ? "rtmp_custom" : "rtmp_common";
+	const char *serverType = autoConfig()->customServer ? "rtmp_custom" : "rtmp_common";
 
-	if (!wiz->customServer) {
+	if (!autoConfig()->customServer) {
 		obs_data_set_string(service_settings, "service", QT_TO_UTF8(ui->service->currentText()));
 	}
 
@@ -114,17 +112,17 @@ bool AutoConfigStreamPage::validatePage()
 	int bitrate;
 	if (!ui->doBandwidthTest->isChecked()) {
 		bitrate = ui->bitrate->value();
-		wiz->idealBitrate = bitrate;
+		autoConfig()->idealBitrate = bitrate;
 	} else {
 		/* Default test target is 10 Mbps */
 		bitrate = 10000;
 #ifdef YOUTUBE_ENABLED
-		if (IsYouTubeService(wiz->serviceName)) {
+		if (IsYouTubeService(autoConfig()->serviceName)) {
 			/* Adjust upper bound to YouTube limits
 			 * for resolutions above 1080p */
-			if (wiz->baseResolutionCY > 1440)
+			if (autoConfig()->baseResolutionCY > 1440)
 				bitrate = 51000;
-			else if (wiz->baseResolutionCY > 1080)
+			else if (autoConfig()->baseResolutionCY > 1080)
 				bitrate = 18000;
 		}
 #endif
@@ -134,48 +132,48 @@ bool AutoConfigStreamPage::validatePage()
 	obs_data_set_int(settings, "bitrate", bitrate);
 	obs_service_apply_encoder_settings(service, settings, nullptr);
 
-	if (wiz->customServer) {
+	if (autoConfig()->customServer) {
 		QString server = ui->customServer->text().trimmed();
-		wiz->server = wiz->serverName = QT_TO_UTF8(server);
+		autoConfig()->server = autoConfig()->serverName = QT_TO_UTF8(server);
 	} else {
-		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
-		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
+		autoConfig()->serverName = QT_TO_UTF8(ui->server->currentText());
+		autoConfig()->server = QT_TO_UTF8(ui->server->currentData().toString());
 	}
 
-	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
-	wiz->startingBitrate = (int)obs_data_get_int(settings, "bitrate");
-	wiz->idealBitrate = wiz->startingBitrate;
-	wiz->regionUS = ui->regionUS->isChecked();
-	wiz->regionEU = ui->regionEU->isChecked();
-	wiz->regionAsia = ui->regionAsia->isChecked();
-	wiz->regionOther = ui->regionOther->isChecked();
-	wiz->serviceName = QT_TO_UTF8(ui->service->currentText());
+	autoConfig()->bandwidthTest = ui->doBandwidthTest->isChecked();
+	autoConfig()->startingBitrate = (int)obs_data_get_int(settings, "bitrate");
+	autoConfig()->idealBitrate = autoConfig()->startingBitrate;
+	autoConfig()->regionUS = ui->regionUS->isChecked();
+	autoConfig()->regionEU = ui->regionEU->isChecked();
+	autoConfig()->regionAsia = ui->regionAsia->isChecked();
+	autoConfig()->regionOther = ui->regionOther->isChecked();
+	autoConfig()->serviceName = QT_TO_UTF8(ui->service->currentText());
 	if (ui->preferHardware)
-		wiz->preferHardware = ui->preferHardware->isChecked();
-	wiz->key = QT_TO_UTF8(ui->key->text());
+		autoConfig()->preferHardware = ui->preferHardware->isChecked();
+	autoConfig()->key = QT_TO_UTF8(ui->key->text());
 
-	if (!wiz->customServer) {
-		if (wiz->serviceName == "Twitch")
-			wiz->service = AutoConfig::Service::Twitch;
+	if (!autoConfig()->customServer) {
+		if (autoConfig()->serviceName == "Twitch")
+			autoConfig()->service = AutoConfig::Service::Twitch;
 #ifdef YOUTUBE_ENABLED
-		else if (IsYouTubeService(wiz->serviceName))
-			wiz->service = AutoConfig::Service::YouTube;
+		else if (IsYouTubeService(autoConfig()->serviceName))
+			autoConfig()->service = AutoConfig::Service::YouTube;
 #endif
-		else if (wiz->serviceName == "Amazon IVS")
-			wiz->service = AutoConfig::Service::AmazonIVS;
+		else if (autoConfig()->serviceName == "Amazon IVS")
+			autoConfig()->service = AutoConfig::Service::AmazonIVS;
 		else
-			wiz->service = AutoConfig::Service::Other;
+			autoConfig()->service = AutoConfig::Service::Other;
 	} else {
-		wiz->service = AutoConfig::Service::Other;
+		autoConfig()->service = AutoConfig::Service::Other;
 	}
 
-	if (wiz->service == AutoConfig::Service::Twitch) {
-		wiz->testMultitrackVideo = ui->useMultitrackVideo->isChecked();
+	if (autoConfig()->service == AutoConfig::Service::Twitch) {
+		autoConfig()->testMultitrackVideo = ui->useMultitrackVideo->isChecked();
 
-		if (wiz->testMultitrackVideo) {
+		if (autoConfig()->testMultitrackVideo) {
 			std::vector<OBSCanvasAutoRelease> canvases;
 			canvases.emplace_back(obs_get_main_canvas());
-			auto postData = constructGoLivePost(QString::fromStdString(wiz->key), std::nullopt,
+			auto postData = constructGoLivePost(QString::fromStdString(autoConfig()->key), std::nullopt,
 							    std::nullopt, false, canvases);
 
 			OBSDataAutoRelease service_settings = obs_service_get_settings(service);
@@ -197,7 +195,7 @@ bool AutoConfigStreamPage::validatePage()
 					if (pos != address.npos)
 						address.erase(pos);
 
-					wiz->serviceConfigServers.push_back({address, address});
+					autoConfig()->serviceConfigServers.push_back({address, address});
 				}
 
 				int multitrackVideoBitrate = 0;
@@ -215,10 +213,10 @@ bool AutoConfigStreamPage::validatePage()
 				}
 
 				if (multitrackVideoBitrate > 0) {
-					wiz->startingBitrate = multitrackVideoBitrate;
-					wiz->idealBitrate = multitrackVideoBitrate;
-					wiz->multitrackVideo.targetBitrate = multitrackVideoBitrate;
-					wiz->multitrackVideo.testSuccessful = true;
+					autoConfig()->startingBitrate = multitrackVideoBitrate;
+					autoConfig()->idealBitrate = multitrackVideoBitrate;
+					autoConfig()->multitrackVideo.targetBitrate = multitrackVideoBitrate;
+					autoConfig()->multitrackVideo.testSuccessful = true;
 				}
 			} catch (const MultitrackVideoError & /*err*/) {
 				// FIXME: do something sensible
@@ -226,8 +224,9 @@ bool AutoConfigStreamPage::validatePage()
 		}
 	}
 
-	if (wiz->service != AutoConfig::Service::Twitch && wiz->service != AutoConfig::Service::YouTube &&
-	    wiz->service != AutoConfig::Service::AmazonIVS && wiz->bandwidthTest) {
+	if (autoConfig()->service != AutoConfig::Service::Twitch &&
+	    autoConfig()->service != AutoConfig::Service::YouTube &&
+	    autoConfig()->service != AutoConfig::Service::AmazonIVS && autoConfig()->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
 		button = OBSMessageBox::question(this, WARNING_TEXT("Title"), WARNING_TEXT("Text"));
@@ -253,7 +252,7 @@ void AutoConfigStreamPage::on_show_clicked()
 
 void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 {
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	OAuthStreamKey *a = qobject_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
 		bool validKey = !a->key().empty();
@@ -279,7 +278,7 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 
 			ui->connectedAccountText->setText(QTStr("Auth.LoadingChannel.Title"));
 
-			YoutubeApiWrappers *ytAuth = reinterpret_cast<YoutubeApiWrappers *>(a);
+			YoutubeApiWrappers *ytAuth = qobject_cast<YoutubeApiWrappers *>(a);
 			ChannelDescription cd;
 			if (ytAuth->GetChannelDescription(cd)) {
 				ui->connectedAccountText->setText(cd.title);
@@ -393,7 +392,7 @@ void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 {
 #ifdef YOUTUBE_ENABLED
 	// when account is already connected:
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	OAuthStreamKey *a = qobject_cast<OAuthStreamKey *>(auth.get());
 	if (a && service == a->service() && IsYouTubeService(a->service())) {
 		ui->connectedAccountLabel->setVisible(true);
 		ui->connectedAccountText->setVisible(true);
@@ -473,13 +472,14 @@ void AutoConfigStreamPage::ServiceChanged()
 	ui->useMultitrackVideo->setVisible(ertmp_multitrack_video_available);
 	ui->useMultitrackVideo->setText(
 		QTStr("Basic.AutoConfig.StreamPage.UseMultitrackVideo").arg(multitrack_video_name));
-	ui->multitrackVideoInfo->setEnabled(wiz->hardwareEncodingAvailable);
-	ui->useMultitrackVideo->setEnabled(wiz->hardwareEncodingAvailable);
+	ui->multitrackVideoInfo->setEnabled(autoConfig()->hardwareEncodingAvailable);
+	ui->useMultitrackVideo->setEnabled(autoConfig()->hardwareEncodingAvailable);
 
 	reset_service_ui_fields(service);
 
 	/* Test three closest servers if "Auto" is available for Twitch */
-	if ((service == "Twitch" && wiz->twitchAuto) || (service == "Amazon IVS" && wiz->amazonIVSAuto))
+	if ((service == "Twitch" && autoConfig()->twitchAuto) ||
+	    (service == "Amazon IVS" && autoConfig()->amazonIVSAuto))
 		regionBased = false;
 
 	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
@@ -502,7 +502,7 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->serverLabel->setHidden(testBandwidth);
 	}
 
-	wiz->testRegions = regionBased && testBandwidth;
+	autoConfig()->testRegions = regionBased && testBandwidth;
 
 	ui->bitrateLabel->setHidden(testBandwidth);
 	ui->bitrate->setHidden(testBandwidth);
@@ -691,7 +691,7 @@ void AutoConfigStreamPage::UpdateCompleted()
 		if (custom) {
 			ready = !ui->customServer->text().isEmpty();
 		} else {
-			ready = !wiz->testRegions || ui->regionUS->isChecked() || ui->regionEU->isChecked() ||
+			ready = !autoConfig()->testRegions || ui->regionUS->isChecked() || ui->regionEU->isChecked() ||
 				ui->regionAsia->isChecked() || ui->regionOther->isChecked();
 		}
 	}
