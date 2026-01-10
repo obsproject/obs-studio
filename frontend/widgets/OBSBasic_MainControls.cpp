@@ -521,9 +521,9 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 {
 	ui->sourcesToolbar->setVisible(visible);
 	ui->scenesToolbar->setVisible(visible);
-	ui->mixerToolbar->setVisible(visible);
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowListboxToolbars", visible);
+	emit userSettingChanged("BasicWindow", "ShowListboxToolbars");
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)
@@ -676,8 +676,6 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 			ui->scenes->customContextMenuRequested(globalPos);
 		} else if (objName.compare("sourcesDock") == 0) {
 			ui->sources->customContextMenuRequested(globalPos);
-		} else if (objName.compare("mixerDock") == 0) {
-			StackedMixerAreaContextMenuRequested();
 		}
 	} else if (!className) {
 		ui->menuDocks->exec(globalPos);

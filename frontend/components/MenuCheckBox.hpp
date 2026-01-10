@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Ruwen Hahn <palana@stunned.de>
+    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,29 +17,33 @@
 
 #pragma once
 
-#include <obs.hpp>
+#include <QCheckBox>
 
-#include <QLabel>
+class QStyleOptionButton;
+class QStylePainter;
+class QMouseEvent;
 
-class OBSSourceLabel : public QLabel {
-	Q_OBJECT;
+class MenuCheckBox : public QCheckBox {
+	Q_OBJECT
 
 public:
-	OBSSignal renamedSignal;
-	OBSSignal removedSignal;
-	OBSSignal destroyedSignal;
+	explicit MenuCheckBox(const QString &text, QWidget *parent = nullptr);
 
-	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	void setAction(QAction *action);
 
 protected:
-	static void obsSourceRenamed(void *data, calldata_t *params);
-	static void obsSourceRemoved(void *data, calldata_t *params);
-	static void obsSourceDestroyed(void *data, calldata_t *params);
-	void mousePressEvent(QMouseEvent *event);
+	void focusInEvent(QFocusEvent *event) override;
+	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void mouseReleaseEvent(QMouseEvent *event) override;
+	void enterEvent(QEnterEvent *event) override;
+	void leaveEvent(QEvent *event) override;
+	void paintEvent(QPaintEvent *event) override;
 
-signals:
-	void renamed(const char *name);
-	void removed();
-	void destroyed();
-	void clicked();
+private:
+	QAction *menuAction = nullptr;
+	bool mousePressInside = false;
+
+	bool isHovered = false;
+	void setHovered(bool hovered);
 };

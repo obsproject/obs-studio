@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2015 by Ruwen Hahn <palana@stunned.de>
+    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,27 +19,50 @@
 
 #include <obs.hpp>
 
+#include <QAbstractButton>
 #include <QLabel>
+#include <QPointer>
 
-class OBSSourceLabel : public QLabel {
+class VolumeName : public QAbstractButton {
 	Q_OBJECT;
+	Q_PROPERTY(Qt::Alignment textAlignment READ alignment WRITE setAlignment)
+
+	QPointer<QLabel> label{};
+	int indicatorWidth;
 
 public:
+	VolumeName(obs_source_t *source, QWidget *parent = nullptr);
+	~VolumeName();
+
+	void setAlignment(Qt::Alignment alignment);
+	Qt::Alignment alignment() const { return textAlignment; }
+
+	QSize sizeHint() const override;
+
+	void updateLabelText(const QString &name);
+	void setText(const QString &text);
+
+protected:
 	OBSSignal renamedSignal;
 	OBSSignal removedSignal;
 	OBSSignal destroyedSignal;
 
-	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	Qt::Alignment textAlignment = Qt::AlignLeft;
 
-protected:
 	static void obsSourceRenamed(void *data, calldata_t *params);
 	static void obsSourceRemoved(void *data, calldata_t *params);
 	static void obsSourceDestroyed(void *data, calldata_t *params);
-	void mousePressEvent(QMouseEvent *event);
+
+	void resizeEvent(QResizeEvent *event) override;
+	void paintEvent(QPaintEvent *event) override;
+
+private slots:
+	void onRenamed(QString name);
+	void onRemoved();
+	void onDestroyed();
 
 signals:
 	void renamed(const char *name);
 	void removed();
 	void destroyed();
-	void clicked();
 };

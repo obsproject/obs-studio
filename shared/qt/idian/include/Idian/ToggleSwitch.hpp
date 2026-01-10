@@ -82,18 +82,6 @@ protected:
 	void keyReleaseEvent(QKeyEvent *) override;
 	void mouseReleaseEvent(QMouseEvent *) override;
 
-	void focusInEvent(QFocusEvent *e) override
-	{
-		Utils::showKeyFocused(e);
-		QAbstractButton::focusInEvent(e);
-	}
-
-	void focusOutEvent(QFocusEvent *e) override
-	{
-		Utils::hideKeyFocused(e);
-		QAbstractButton::focusOutEvent(e);
-	}
-
 private slots:
 	void onClicked(bool checked);
 

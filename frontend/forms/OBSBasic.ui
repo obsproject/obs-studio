@@ -1044,7 +1044,6 @@
           <property name="defaultDropAction">
            <enum>Qt::TargetMoveAction</enum>
           </property>
-          <!-- Spacing must be 0 due to QTBUG-106395 -->
           <property name="spacing">
            <number>0</number>
           </property>
@@ -1173,7 +1172,6 @@
           <property name="selectionMode">
            <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
-          <!-- Spacing must be 0 due to QTBUG-106395 -->
           <property name="spacing">
            <number>0</number>
           </property>
@@ -1229,6 +1227,9 @@
    </widget>
   </widget>
   <widget class="OBSDock" name="mixerDock">
+   <property name="contextMenuPolicy">
+    <enum>Qt::CustomContextMenu</enum>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
@@ -1275,6 +1276,12 @@
         </property>
         <item>
          <widget class="QStackedWidget" name="stackedMixerArea">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <widget class="VScrollArea" name="hMixerScrollArea">
            <property name="contextMenuPolicy">
             <enum>Qt::CustomContextMenu</enum>
@@ -1309,7 +1316,7 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <layout class="QVBoxLayout" name="hVolControlLayout">
+            <layout class="QVBoxLayout" name="hVolumeControlLayout">
              <property name="spacing">
               <number>0</number>
              </property>
@@ -1362,7 +1369,7 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <layout class="QHBoxLayout" name="vVolControlLayout">
+            <layout class="QHBoxLayout" name="vVolumeControlLayout">
              <property name="spacing">
               <number>0</number>
              </property>
@@ -2320,18 +2327,6 @@
     <string>icon-cogs</string>
    </property>
   </action>
-  <action name="actionMixerToolbarMenu">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/dots-vert.svg</normaloff>:/res/images/dots-vert.svg</iconset>
-   </property>
-   <property name="text">
-    <string>MixerToolbarMenu</string>
-   </property>
-   <property name="class" stdset="0">
-    <string>icon-dots-vert</string>
-   </property>
-  </action>
   <action name="actionSceneFilters">
    <property name="icon">
     <iconset resource="obs.qrc">
@@ -2406,12 +2401,6 @@
    <header>widgets/OBSBasicStatusBar.hpp</header>
   </customwidget>
   <customwidget>
-   <class>HScrollArea</class>
-   <extends>QScrollArea</extends>
-   <header>components/HScrollArea.hpp</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>VScrollArea</class>
    <extends>QScrollArea</extends>
    <header>vertical-scroll-area.hpp</header>
@@ -2442,6 +2431,12 @@
    <class>OBSPreviewScalingComboBox</class>
    <extends>QComboBox</extends>
    <header>components/OBSPreviewScalingComboBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>HScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>components/HScrollArea.hpp</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

@@ -19,9 +19,9 @@
 
 #include "OBSBasic.hpp"
 
+#include <components/VolumeControl.hpp>
 #include <dialogs/OBSBasicFilters.hpp>
 #include <dialogs/OBSBasicSourceSelect.hpp>
-#include <widgets/VolControl.hpp>
 
 extern void undo_redo(const std::string &data);
 
@@ -185,36 +185,42 @@ void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array, redo_array);
 }
 
-void OBSBasic::AudioMixerCopyFilters()
+void OBSBasic::actionCopyFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
+	obs_source_t *source = action->property("source").value<OBSSource>();
 
-	copyFiltersSource = obs_source_get_weak_source(source);
+	if (!source) {
+		return;
+	}
+
+	copyFiltersSource_ = obs_source_get_weak_source(source);
 	ui->actionPasteFilters->setEnabled(true);
 }
 
-void OBSBasic::AudioMixerPasteFilters()
+void OBSBasic::actionPasteFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *dstSource = vol->GetSource();
+	obs_source_t *dstSource = action->property("source").value<OBSSource>();
 
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource);
+	if (!dstSource) {
+		return;
+	}
+
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
 
 	SourcePasteFilters(source.Get(), dstSource);
 }
 
 void OBSBasic::SceneCopyFilters()
 {
-	copyFiltersSource = obs_source_get_weak_source(GetCurrentSceneSource());
+	copyFiltersSource_ = obs_source_get_weak_source(GetCurrentSceneSource());
 	ui->actionPasteFilters->setEnabled(true);
 }
 
 void OBSBasic::ScenePasteFilters()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
 
 	OBSSource dstSource = GetCurrentSceneSource();
 
@@ -230,7 +236,7 @@ void OBSBasic::on_actionCopyFilters_triggered()
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	copyFiltersSource = obs_source_get_weak_source(source);
+	copyFiltersSource_ = obs_source_get_weak_source(source);
 
 	ui->actionPasteFilters->setEnabled(true);
 }
@@ -263,7 +269,7 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t
 
 void OBSBasic::on_actionPasteFilters_triggered()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
 
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);

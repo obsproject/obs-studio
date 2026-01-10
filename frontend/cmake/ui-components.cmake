@@ -48,6 +48,8 @@ target_sources(
     components/MediaControls.hpp
     components/MenuButton.cpp
     components/MenuButton.hpp
+    components/MenuCheckBox.cpp
+    components/MenuCheckBox.hpp
     components/Multiview.cpp
     components/Multiview.hpp
     components/MuteCheckBox.hpp
@@ -83,6 +85,14 @@ target_sources(
     components/VisibilityItemDelegate.hpp
     components/VisibilityItemWidget.cpp
     components/VisibilityItemWidget.hpp
+    components/VolumeAccessibleInterface.cpp
+    components/VolumeAccessibleInterface.hpp
+    components/VolumeControl.cpp
+    components/VolumeControl.hpp
+    components/VolumeMeter.cpp
+    components/VolumeMeter.hpp
+    components/VolumeName.cpp
+    components/VolumeName.hpp
     components/VolumeSlider.cpp
     components/VolumeSlider.hpp
     components/WindowCaptureToolbar.cpp
