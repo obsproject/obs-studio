@@ -134,8 +134,11 @@ inline bool can_use_output(const char *prot, const char *output, const char *pro
 
 const char *GetStreamOutputType(const obs_service_t *service);
 
-inline bool ServiceSupportsVodTrack(const char *service)
+inline bool ServiceSupportsVodTrack(const char *service, obs_data_t *settings)
 {
+	if (settings && obs_data_has_user_value(settings, "supports_vod_track"))
+		return obs_data_get_bool(settings, "supports_vod_track");
+
 	static const char *vodTrackServices[] = {"Twitch"};
 
 	for (const char *vodTrackService : vodTrackServices) {

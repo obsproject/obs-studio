@@ -953,11 +953,25 @@ void OBSBasicSettings::on_server_currentIndexChanged(int /*index*/)
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
 	bool enableForCustomServer = config_get_bool(App()->GetUserConfig(), "General", "EnableCustomServerVodTrack");
-	bool enableVodTrack = ui->service->currentText() == "Twitch";
+	bool enableVodTrack = false;
 	bool wasEnabled = !!vodTrackCheckbox;
 
-	if (enableForCustomServer && IsCustomService())
+	if (enableForCustomServer && IsCustomService()) {
 		enableVodTrack = true;
+	} else if (!IsCustomService()) {
+		QString serviceName = ui->service->currentText();
+		OBSDataAutoRelease settings = obs_data_create();
+		obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
+		OBSServiceAutoRelease temp_service =
+			obs_service_create_private("rtmp_common", "vod track query service", settings);
+		OBSDataAutoRelease serviceSettings = obs_service_get_settings(temp_service);
+
+		if (obs_data_has_user_value(serviceSettings, "supports_vod_track")) {
+			enableVodTrack = obs_data_get_bool(serviceSettings, "supports_vod_track");
+		} else {
+			enableVodTrack = (serviceName == "Twitch");
+		}
+	}
 
 	if (enableVodTrack == wasEnabled)
 		return;
