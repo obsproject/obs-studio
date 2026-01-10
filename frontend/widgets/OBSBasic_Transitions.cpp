@@ -127,6 +127,11 @@ void OBSBasic::RemoveQuickTransitionHotkey(QuickTransition *qt)
 
 void OBSBasic::InitTransition(obs_source_t *transition)
 {
+	auto onTransitionStart = [](void *data, calldata_t *) {
+		OBSBasic *window = (OBSBasic *)data;
+		QMetaObject::invokeMethod(window, "TransitionStarted", Qt::QueuedConnection);
+	};
+
 	auto onTransitionStop = [](void *data, calldata_t *) {
 		OBSBasic *window = (OBSBasic *)data;
 		QMetaObject::invokeMethod(window, "TransitionStopped", Qt::QueuedConnection);
@@ -138,6 +143,7 @@ void OBSBasic::InitTransition(obs_source_t *transition)
 	};
 
 	signal_handler_t *handler = obs_source_get_signal_handler(transition);
+	signal_handler_connect(handler, "transition_start", onTransitionStart, this);
 	signal_handler_connect(handler, "transition_video_stop", onTransitionStop, this);
 	signal_handler_connect(handler, "transition_stop", onTransitionFullStop, this);
 }
@@ -228,6 +234,11 @@ void OBSBasic::TransitionToScene(OBSScene scene, bool force)
 	TransitionToScene(source, force);
 }
 
+void OBSBasic::TransitionStarted()
+{
+	EnableTransitionWidgets(false);
+}
+
 void OBSBasic::TransitionStopped()
 {
 	if (swapScenesMode) {
@@ -258,6 +269,8 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 
 void OBSBasic::TransitionFullyStopped()
 {
+	EnableTransitionWidgets(true);
+
 	if (overridingTransition) {
 		OverrideTransition(GetCurrentTransition());
 		overridingTransition = false;
@@ -360,8 +373,6 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 
 		enum obs_transition_mode mode = manual ? OBS_TRANSITION_MODE_MANUAL : OBS_TRANSITION_MODE_AUTO;
 
-		EnableTransitionWidgets(false);
-
 		bool success = obs_transition_start(transition, mode, duration, source);
 
 		if (!success)
@@ -386,6 +397,10 @@ static inline void SetComboTransition(QComboBox *combo, obs_source_t *tr)
 void OBSBasic::SetTransition(OBSSource transition)
 {
 	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
+
+	if (oldTransition && obs_transition_is_active(oldTransition)) {
+		return;
+	}
 
 	if (oldTransition && transition) {
 		std::string uuid = obs_source_get_uuid(transition);
@@ -757,7 +772,8 @@ void OBSBasic::TBarChanged(int value)
 		tBarActive = true;
 	}
 
-	obs_transition_set_manual_time(transition, (float)value / T_BAR_PRECISION_F);
+	float clampedValue = std::clamp<float>((float)value / T_BAR_PRECISION_F, 0.01f, 0.99f);
+	obs_transition_set_manual_time(transition, clampedValue);
 
 	OnEvent(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
 }
