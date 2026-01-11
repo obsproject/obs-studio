@@ -123,10 +123,30 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
                 }
             }
             if (sc->hide_privacy_indicators) {
-                for (SCWindow *window in sc->shareable_content.windows) {
-                    if ([window.title isEqualToString:@"StatusIndicator"]) {
-                        [window_exclusions addObject:window];
-                        break;
+                // The privacy indicator is a window that can be filtered out of screen recordings.
+                // https://source.chromium.org/chromium/_/webrtc/src.git/+/a18fddcb53e64448afee62aaf84489c8bb89cb6a
+                NSString *kStatusIndicator = @"StatusIndicator";
+                NSString *kStatusIndicatorOwnerName = @"Window Server";
+
+                // Locate the window ID of the privacy indicator window
+                CGWindowID window_id = kCGNullWindowID;
+                NSArray *window_list =
+                    (NSArray *) CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+                for (NSDictionary *window_info in window_list) {
+                    if ([window_info[((NSString *) kCGWindowName)] isEqualToString:kStatusIndicator] &&
+                        [window_info[((NSString *) kCGWindowOwnerName)] isEqualToString:kStatusIndicatorOwnerName]) {
+                        window_id = ((NSNumber *) window_info[((NSString *) kCGWindowNumber)]).unsignedIntValue;
+                    }
+                }
+                [window_list release];
+
+                // Add the window to the exclusion list
+                if (window_id != kCGNullWindowID) {
+                    for (SCWindow *window in sc->shareable_content.windows) {
+                        if (window.windowID == window_id) {
+                            [window_exclusions addObject:window];
+                            break;
+                        }
                     }
                 }
             }
