@@ -125,7 +125,7 @@ jobs:
           : Set Up Redirects 🔄
           if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
 
-          echo "/previous/27.2 https://obsproject.com/docs/27.2 302" >> docs/_redirects
+          echo "/previous/27.2 https://docs.obsproject.com//27.2 302" >> docs/_redirects
           echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
 
       - name: Publish to Live Page
