@@ -33,7 +33,7 @@ Quick Links
 
 - Build Instructions: https://github.com/obsproject/obs-studio/wiki/Install-Instructions
 
-- Developer/API Documentation: https://obsproject.com/docs
+- Developer/API Documentation: https://docs.obsproject.com/
 
 - Donating/backing/sponsoring: https://obsproject.com/contribute
 
@@ -53,7 +53,7 @@ Contributing
   https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst
 
 - Developer/API documentation can be found here:
-  https://obsproject.com/docs
+  https://docs.obsproject.com/
 
 - If you wish to contribute translations, do not submit pull requests.
   Instead, please use Crowdin.  For more information read this page:

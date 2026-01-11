@@ -18,7 +18,7 @@ Quick Links for Contributing
   https://obsproject.com/forum/list/general-development.21/
 
 - Developer/API Documentation:
-  https://obsproject.com/docs
+  https://docs.obsproject.com/
 
 - To contribute language translations, do not make pull requests.
   Instead, use crowdin.  Read here for more information:
