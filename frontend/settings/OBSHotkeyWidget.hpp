@@ -87,7 +87,7 @@ private:
 	bool ignoreChangedBindings = false;
 	OBSBasicSettings *settings;
 
-	QVBoxLayout *layout() const { return dynamic_cast<QVBoxLayout *>(QWidget::layout()); }
+	QVBoxLayout *layout() const { return qobject_cast<QVBoxLayout *>(QWidget::layout()); }
 
 private slots:
 	void HandleChangedBindings(obs_hotkey_id id_);

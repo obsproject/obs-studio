@@ -1,5 +1,7 @@
 #pragma once
 
+#include <wizards/AutoConfig.hpp>
+
 #include <QPointer>
 #include <QWizardPage>
 
@@ -60,6 +62,9 @@ class AutoConfigTestPage : public QWizardPage {
 	};
 
 	void GetServers(std::vector<ServerInfo> &servers);
+
+protected:
+	AutoConfig *autoConfig() const { return qobject_cast<AutoConfig *>(wizard()); }
 
 public:
 	AutoConfigTestPage(QWidget *parent = nullptr);

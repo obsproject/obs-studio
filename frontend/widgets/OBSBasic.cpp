@@ -2083,7 +2083,7 @@ void OBSBasic::UpdateTitleBar()
 
 OBSBasic *OBSBasic::Get()
 {
-	return reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	return qobject_cast<OBSBasic *>(App()->GetMainWindow());
 }
 
 void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
