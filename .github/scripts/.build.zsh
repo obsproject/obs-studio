@@ -42,7 +42,7 @@ build() {
   local project_root=${SCRIPT_HOME:A:h:h}
 
   fpath=(${SCRIPT_HOME}/utils.zsh ${fpath})
-  autoload -Uz log_group log_error log_output check_${host_os} setup_ccache
+  autoload -Uz log_group log_error log_output check_${host_os}
 
   local -i debug=0
 
@@ -98,10 +98,11 @@ build() {
   set -- ${(@)args}
 
   check_${host_os}
-  setup_ccache
 
   if [[ ${host_os} == ubuntu ]] {
-    autoload -Uz setup_ubuntu && setup_ubuntu
+    autoload -Uz setup_ubuntu setup_ccache
+    setup_ccache
+    setup_ubuntu
   }
 
   local product_name='obs-studio'
@@ -116,7 +117,14 @@ build() {
 
   case ${target} {
     macos-*)
-      cmake_args+=(--preset 'macos-ci' -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-})
+      cmake_args+=(
+        --preset 'macos-ci'
+        -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-}
+      )
+
+      if (( debug )) {
+        cmake_args+=(CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_ENABLE_DIAGNOSTIC_REMARKS:STRING=YES)
+      }
 
       typeset -gx NSUnbufferedIO=YES
 
