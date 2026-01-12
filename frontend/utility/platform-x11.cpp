@@ -223,6 +223,15 @@ string GetDefaultVideoSavePath()
 	return string(getenv("HOME"));
 }
 
+string GetDefaultDocumentsPath()
+{
+    const char *home = getenv("HOME");
+    if (!home)
+        return "";
+    string documentsLocation = string(home) + "/Documents";
+    return documentsLocation;
+}
+
 vector<string> GetPreferredLocales()
 {
 	vector<string> matched;

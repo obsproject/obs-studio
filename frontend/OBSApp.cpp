@@ -59,6 +59,8 @@
 #endif
 
 #include "moc_OBSApp.cpp"
+#include <QMessageBox>
+#include <filesystem>
 
 using namespace std;
 
@@ -327,20 +329,24 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 bool OBSApp::InitGlobalLocationDefaults()
 {
-	char path[512];
+    char path[512];
 
-	int len = GetAppConfigPath(path, sizeof(path), nullptr);
-	if (len <= 0) {
-		OBSErrorBox(NULL, "Unable to get global configuration path.");
-		return false;
-	}
+    int len = GetAppConfigPath(path, sizeof(path), nullptr);
+    if (len <= 0) {
+        OBSErrorBox(NULL, "Unable to get global configuration path.");
+        return false;
+    }
 
-	config_set_default_string(appConfig, "Locations", "Configuration", path);
-	config_set_default_string(appConfig, "Locations", "SceneCollections", path);
-	config_set_default_string(appConfig, "Locations", "Profiles", path);
-	config_set_default_string(appConfig, "Locations", "PluginManagerSettings", path);
+    config_set_default_string(appConfig, "Locations", "Configuration", path);
+    config_set_default_string(appConfig, "Locations", "Profiles", path);
+    config_set_default_string(appConfig, "Locations", "PluginManagerSettings", path);
 
-	return true;
+    // Scene Collections stored in Documents folder
+    std::string docsPath = GetDefaultDocumentsPath();
+    std::string scenesPath = docsPath + "/OBS Scene Collections";
+    config_set_default_string(appConfig, "Locations", "SceneCollections", scenesPath.c_str());
+
+    return true;
 }
 
 void OBSApp::InitUserConfigDefaults()
@@ -514,6 +520,86 @@ bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
 	return false;
 }
 
+bool OBSApp::MigrateSceneCollections()
+{
+    std::filesystem::path oldLocation = 
+        std::filesystem::u8path(config_get_string(appConfig, "Locations", "Configuration")) / 
+        "obs-studio/basic/scenes";
+    
+    // Check if we've already prompted for migration
+    bool alreadyMigrated = config_get_bool(appConfig, "General", "SceneCollectionsMigrated");
+    if (alreadyMigrated) {
+        return true; // Already migrated, don't prompt again
+    }
+
+    // Check if old location exists and has files
+    if (!std::filesystem::exists(oldLocation) || 
+        std::filesystem::is_empty(oldLocation)) {
+        // Mark as migrated even if there's nothing to migrate
+        config_set_bool(appConfig, "General", "SceneCollectionsMigrated", true);
+        return true;
+    }
+
+    std::filesystem::path newLocation = userScenesLocation / "OBS Scene Collections";
+
+    // Create new location if it doesn't exist
+    if (!std::filesystem::exists(newLocation)) {
+        try {
+            std::filesystem::create_directories(newLocation);
+        } catch (const std::filesystem::filesystem_error &error) {
+            blog(LOG_ERROR, "Failed to create new scene collections directory: %s", error.what());
+            return false;
+        }
+    }
+
+    // Show migration dialog
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        nullptr,
+        "Migrate Scene Collections",
+        "OBS has found existing Scene Collections in the old location.\n\n"
+        "Would you like to move them to your Documents folder?\n\n"
+        "(Old files will be kept as backup)",
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes) {
+        // User declined migration, but mark that we've prompted
+        config_set_bool(appConfig, "General", "SceneCollectionsMigrated", true);
+        return true;
+    }
+
+    // Copy files from old to new location
+    try {
+        for (const auto &entry : std::filesystem::directory_iterator(oldLocation)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                const auto &filename = entry.path().filename();
+                std::filesystem::copy_file(
+                    entry.path(),
+                    newLocation / filename,
+                    std::filesystem::copy_options::overwrite_existing);
+                blog(LOG_INFO, "Migrated scene collection: %s", filename.c_str());
+            }
+        }
+    } catch (const std::filesystem::filesystem_error &error) {
+        blog(LOG_ERROR, "Failed to migrate scene collections: %s", error.what());
+        QMessageBox::warning(
+            nullptr,
+            "Migration Failed",
+            QString("Failed to migrate scene collections:\n\n%1").arg(error.what()));
+        return false;
+    }
+
+    QMessageBox::information(
+        nullptr,
+        "Migration Complete",
+        "Your Scene Collections have been successfully migrated to your Documents folder.\n\n"
+        "Original files remain in the old location as backup.");
+
+    // Mark migration as complete
+    config_set_bool(appConfig, "General", "SceneCollectionsMigrated", true);
+
+    return true;
+}
+
 bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
@@ -544,6 +630,7 @@ bool OBSApp::InitGlobalConfig()
 
 	InitGlobalConfigDefaults();
 	InitGlobalLocationDefaults();
+	MigrateSceneCollections();
 
 	std::filesystem::path defaultUserConfigLocation =
 		std::filesystem::u8path(config_get_default_string(appConfig, "Locations", "Configuration"));

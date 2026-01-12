@@ -15,21 +15,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <OBSApp.hpp>
+#include "OBSApp.hpp"
 #ifdef __APPLE__
-#include <dialogs/OBSPermissions.hpp>
+#include "dialogs/OBSPermissions.hpp"
 #endif
-#include <utility/BaseLexer.hpp>
-#include <utility/OBSTranslator.hpp>
-#include <utility/platform.hpp>
-#include <widgets/VolumeAccessibleInterface.hpp>
+#include "utility/BaseLexer.hpp"
+#include "utility/OBSTranslator.hpp"
+#include "utility/platform.hpp"
+#include "widgets/VolumeAccessibleInterface.hpp"
 
-#include <qt-wrappers.hpp>
-#include <util/platform.h>
-#include <util/profiler.h>
-#include <util/util.hpp>
+#include "qt-wrappers.hpp"
+#include "util/platform.h"
+#include "util/profiler.h"
+#include "util/util.hpp"
 #ifdef _WIN32
-#include <util/windows/win-version.h>
+#include "util/windows/win-version.h"
 #endif
 
 #include <QFontDatabase>

@@ -63,6 +63,18 @@ string GetDefaultVideoSavePath()
     return url.path.fileSystemRepresentation;
 }
 
+string GetDefaultDocumentsPath()
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSURL *url = [fm URLForDirectory:NSDocumentDirectory inDomain:NSUserDomainMask appropriateForURL:nil create:true
+                               error:nil];
+
+    if (!url)
+        return getenv("HOME");
+
+    return url.path.fileSystemRepresentation;
+}
+
 vector<string> GetPreferredLocales()
 {
     NSArray *preferred = [NSLocale preferredLanguages];
