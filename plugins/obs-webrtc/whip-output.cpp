@@ -279,6 +279,10 @@ bool WHIPOutput::Setup()
 	cfg.disableAutoGathering = true;
 #endif
 
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 23 || RTC_VERSION_MAJOR > 0
+	cfg.enableIceTcp = true;
+#endif
+
 	peer_connection = std::make_shared<rtc::PeerConnection>(cfg);
 
 	peer_connection->onStateChange([this](rtc::PeerConnection::State state) {
