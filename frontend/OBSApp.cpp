@@ -526,18 +526,21 @@ bool OBSApp::MigrateSceneCollections()
         std::filesystem::u8path(config_get_string(appConfig, "Locations", "Configuration")) / 
         "obs-studio/basic/scenes";
     
-    std::filesystem::path newLocation = userScenesLocation / "OBS Scene Collections";
+    // Check if we've already prompted for migration
+    bool alreadyMigrated = config_get_bool(appConfig, "General", "SceneCollectionsMigrated");
+    if (alreadyMigrated) {
+        return true; // Already migrated, don't prompt again
+    }
 
-    // Check if old location exists and has files, but new location is empty
+    // Check if old location exists and has files
     if (!std::filesystem::exists(oldLocation) || 
         std::filesystem::is_empty(oldLocation)) {
-        return true; // Nothing to migrate
+        // Mark as migrated even if there's nothing to migrate
+        config_set_bool(appConfig, "General", "SceneCollectionsMigrated", true);
+        return true;
     }
 
-    if (std::filesystem::exists(newLocation) && 
-        !std::filesystem::is_empty(newLocation)) {
-        return true; // Already migrated or has existing collections
-    }
+    std::filesystem::path newLocation = userScenesLocation / "OBS Scene Collections";
 
     // Create new location if it doesn't exist
     if (!std::filesystem::exists(newLocation)) {
@@ -559,7 +562,9 @@ bool OBSApp::MigrateSceneCollections()
         QMessageBox::Yes | QMessageBox::No);
 
     if (reply != QMessageBox::Yes) {
-        return true; // User declined migration
+        // User declined migration, but mark that we've prompted
+        config_set_bool(appConfig, "General", "SceneCollectionsMigrated", true);
+        return true;
     }
 
     // Copy files from old to new location
@@ -588,6 +593,9 @@ bool OBSApp::MigrateSceneCollections()
         "Migration Complete",
         "Your Scene Collections have been successfully migrated to your Documents folder.\n\n"
         "Original files remain in the old location as backup.");
+
+    // Mark migration as complete
+    config_set_bool(appConfig, "General", "SceneCollectionsMigrated", true);
 
     return true;
 }
