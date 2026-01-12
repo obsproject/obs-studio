@@ -28,6 +28,7 @@ class QWidget;
 bool GetDataFilePath(const char *data, std::string &path);
 
 std::string GetDefaultVideoSavePath();
+std::string GetDefaultDocumentsPath();
 
 std::vector<std::string> GetPreferredLocales();
 

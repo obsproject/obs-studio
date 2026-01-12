@@ -17,14 +17,14 @@
 
 #pragma once
 
-#include <utility/OBSTheme.hpp>
-#include <utility/NativeEventFilter.hpp>
-#include <widgets/OBSMainWindow.hpp>
+#include "utility/OBSTheme.hpp"
+#include "utility/NativeEventFilter.hpp"
+#include "widgets/OBSMainWindow.hpp"
 
-#include <obs-frontend-api.h>
-#include <util/platform.h>
-#include <util/profiler.hpp>
-#include <util/util.hpp>
+#include "obs-frontend-api.h"
+#include "util/platform.h"
+#include "util/profiler.hpp"
+#include "util/util.hpp"
 
 #include <QAbstractNativeEventFilter>
 #include <QApplication>
@@ -99,6 +99,7 @@ private:
 
 	bool MigrateGlobalSettings();
 	void MigrateLegacySettings(uint32_t lastVersion);
+	bool MigrateSceneCollections();
 
 	bool InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion);
 	void InitUserConfigDefaults();
