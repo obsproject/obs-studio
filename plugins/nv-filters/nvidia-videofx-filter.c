@@ -890,6 +890,12 @@ static void nvvfx_filter_render(void *data, gs_effect_t *effect, bool has_blur)
 	const enum gs_color_space source_space =
 		obs_source_get_color_space(target, OBS_COUNTOF(preferred_spaces), preferred_spaces);
 
+	enum nvvfx_fx_id id = filter->filter_id;
+	if (id == S_FX_BLUR && (source_space == GS_CS_709_EXTENDED || source_space == GS_CS_709_SCRGB)) {
+		obs_source_skip_video_filter(filter->context);
+		return;
+	}
+
 	if (filter->space != source_space) {
 		filter->space = source_space;
 		init_images(filter);
