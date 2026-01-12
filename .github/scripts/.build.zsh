@@ -43,7 +43,7 @@ build() {
   local buildspec_file=${project_root}/buildspec.json
 
   fpath=(${SCRIPT_HOME}/utils.zsh ${fpath})
-  autoload -Uz log_group log_error log_output check_${host_os} setup_ccache
+  autoload -Uz log_group log_error log_output check_${host_os}
 
   if [[ ! -r ${buildspec_file} ]] {
     log_error 'Missing buildspec.json in project checkout.'
@@ -104,10 +104,11 @@ build() {
   set -- ${(@)args}
 
   check_${host_os}
-  setup_ccache
 
   if [[ ${host_os} == ubuntu ]] {
-    autoload -Uz setup_ubuntu && setup_ubuntu
+    autoload -Uz setup_ubuntu setup_ccache
+    setup_ccache
+    setup_ubuntu
   }
 
   local product_name
@@ -123,7 +124,14 @@ build() {
 
   case ${target} {
     macos-*)
-      cmake_args+=(--preset 'macos-ci' -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-})
+      cmake_args+=(
+        --preset 'macos-ci'
+        -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-}
+      )
+
+      if (( debug )) {
+        cmake_args+=(CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_ENABLE_DIAGNOSTIC_REMARKS:STRING=YES)
+      }
 
       typeset -gx NSUnbufferedIO=YES
 

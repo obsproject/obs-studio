@@ -99,7 +99,7 @@ runs:
         .github/scripts/Build-Windows.ps1 @BuildArgs
 
     - name: Create Summary 📊
-      if: contains(fromJSON('["Linux", "macOS"]'), runner.os)
+      if: runner.os == 'Linux'
       shell: zsh --no-rcs --errexit --pipefail {0}
       run: |
         : Create Summary 📊
