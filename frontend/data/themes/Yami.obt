@@ -1728,9 +1728,12 @@ VolumeMeter {
 }
 
 VolumeName {
+    background: transparent;
+    padding: var(--padding_base);
+}
+
+VolumeName QLabel {
     font-size: var(--font_small);
-    padding: 1px var(--padding_base);
-    border: 1px solid transparent;
 }
 
 VolumeName:focus {
@@ -1762,8 +1765,7 @@ VolumeControl #volLabel {
     border-radius: var(--border_radius);
 }
 
-#hVolumeWidgets VolumeName {
-    padding: var(--padding_xlarge) var(--padding_xlarge);
+#hVolumeWidgets VolumeName QLabel {
     margin: 0px var(--spacing_base) var(--spacing_base);
 }
 

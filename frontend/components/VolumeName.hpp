@@ -20,10 +20,15 @@
 #include <obs.hpp>
 
 #include <QAbstractButton>
+#include <QLabel>
+#include <QPointer>
 
 class VolumeName : public QAbstractButton {
 	Q_OBJECT;
 	Q_PROPERTY(Qt::Alignment textAlignment READ alignment WRITE setAlignment)
+
+	QPointer<QLabel> label{};
+	int indicatorWidth;
 
 public:
 	VolumeName(obs_source_t *source, QWidget *parent = nullptr);
@@ -33,6 +38,9 @@ public:
 	Qt::Alignment alignment() const { return textAlignment; }
 
 	QSize sizeHint() const override;
+
+	void updateLabelText(const QString &name);
+	void setText(const QString &text);
 
 protected:
 	OBSSignal renamedSignal;
@@ -45,6 +53,7 @@ protected:
 	static void obsSourceRemoved(void *data, calldata_t *params);
 	static void obsSourceDestroyed(void *data, calldata_t *params);
 
+	void resizeEvent(QResizeEvent *event) override;
 	void paintEvent(QPaintEvent *event) override;
 
 private slots:
