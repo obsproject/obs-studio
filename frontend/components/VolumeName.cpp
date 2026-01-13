@@ -17,20 +17,34 @@
 
 #include "VolumeName.hpp"
 
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QResizeEvent>
 #include <QStyle>
 #include <QStyleOptionButton>
 #include <QStylePainter>
 
 #include "moc_VolumeName.cpp"
 
-VolumeName::VolumeName(obs_source_t *source, QWidget *parent) : QAbstractButton(parent)
+VolumeName::VolumeName(obs_source_t *source, QWidget *parent)
+	: QAbstractButton(parent),
+	  indicatorWidth(style()->pixelMetric(QStyle::PM_MenuButtonIndicator, nullptr, this))
 {
 	renamedSignal = OBSSignal(obs_source_get_signal_handler(source), "rename", &VolumeName::obsSourceRenamed, this);
 	removedSignal = OBSSignal(obs_source_get_signal_handler(source), "remove", &VolumeName::obsSourceRemoved, this);
 	destroyedSignal =
 		OBSSignal(obs_source_get_signal_handler(source), "destroy", &VolumeName::obsSourceDestroyed, this);
 
-	setText(obs_source_get_name(source));
+	QHBoxLayout *layout = new QHBoxLayout();
+	setLayout(layout);
+
+	label = new QLabel(this);
+	layout->addWidget(label);
+
+	layout->setContentsMargins(0, 0, indicatorWidth, 0);
+
+	QString name = obs_source_get_name(source);
+	setText(name);
 }
 
 VolumeName::~VolumeName() {}
@@ -54,15 +68,12 @@ QSize VolumeName::sizeHint() const
 	int width = textSize.width();
 	int height = textSize.height();
 
-	int iconWidth = style()->pixelMetric(QStyle::PM_MenuButtonIndicator, &opt, this);
-	int iconHeight = iconWidth;
-
 	if (!opt.icon.isNull()) {
-		height = std::max(height, iconHeight);
+		height = std::max(height, indicatorWidth);
 	}
 
 	const int spacing = style()->pixelMetric(QStyle::PM_ButtonMargin, &opt, this) / 2;
-	width += iconWidth + spacing;
+	width += indicatorWidth + spacing;
 
 	QSize contentsSize = style()->sizeFromContents(QStyle::CT_PushButton, &opt, QSize(width, height), this);
 	return contentsSize;
@@ -90,6 +101,12 @@ void VolumeName::obsSourceDestroyed(void *data, calldata_t *)
 	QMetaObject::invokeMethod(widget, "onDestroyed", Qt::QueuedConnection);
 }
 
+void VolumeName::resizeEvent(QResizeEvent *event)
+{
+	updateLabelText(text());
+	QAbstractButton::resizeEvent(event);
+}
+
 void VolumeName::paintEvent(QPaintEvent *)
 {
 	QStylePainter painter(this);
@@ -102,22 +119,6 @@ void VolumeName::paintEvent(QPaintEvent *)
 	int paddingRight = opt.rect.right() - contentRect.right();
 
 	int indicatorWidth = style()->pixelMetric(QStyle::PM_MenuButtonIndicator, &opt, this);
-	QRect textRect = contentRect.adjusted(0, 0, -indicatorWidth - paddingRight / 2, 0);
-
-	painter.setFont(font());
-	painter.setPen(opt.palette.color(QPalette::ButtonText));
-	Qt::Alignment align = (textAlignment & (Qt::AlignLeft | Qt::AlignRight | Qt::AlignHCenter)) ? textAlignment
-												    : Qt::AlignHCenter;
-	align |= Qt::AlignVCenter;
-
-	QFontMetrics metrics(font());
-	QString elidedText = metrics.elidedText(text(), Qt::ElideMiddle, textRect.width());
-	QRect metricsRect = metrics.boundingRect(text());
-
-	int textWidth = metricsRect.width();
-	int maxTextWidth = contentRect.width() - indicatorWidth - paddingRight / 2;
-
-	painter.drawText(textRect, align, textWidth > maxTextWidth ? elidedText : text());
 
 	QStyleOption arrowOpt = opt;
 	QRect arrowRect(opt.rect.right() - indicatorWidth - paddingRight / 2,
@@ -130,11 +131,35 @@ void VolumeName::paintEvent(QPaintEvent *)
 void VolumeName::onRenamed(QString name)
 {
 	setText(name);
-	updateGeometry();
 
 	std::string nameStr = name.toStdString();
-
 	emit renamed(nameStr.c_str());
+}
+
+void VolumeName::setText(const QString &text)
+{
+	QAbstractButton::setText(text);
+	updateLabelText(text);
+}
+
+void VolumeName::updateLabelText(const QString &name)
+{
+	QString plainText = name;
+	// Handle source names that use rich text.
+	if (name.contains("<") && name.contains(">")) {
+		QTextDocument doc;
+		doc.setHtml(name);
+
+		plainText = doc.toPlainText();
+	}
+
+	QFontMetrics metrics(label->font());
+	QString elidedText = metrics.elidedText(plainText, Qt::ElideMiddle, width() - indicatorWidth * 2);
+
+	bool useElidedText = metrics.boundingRect(plainText).width() > width() - indicatorWidth;
+
+	bool isRichText = name != plainText;
+	label->setText(useElidedText && !isRichText ? elidedText : name);
 }
 
 void VolumeName::onRemoved()
