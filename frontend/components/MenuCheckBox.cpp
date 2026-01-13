@@ -18,6 +18,9 @@
 #include "MenuCheckBox.hpp"
 
 #include <QMenu>
+#include <QMouseEvent>
+#include <QStyleOptionButton>
+#include <QStylePainter>
 
 MenuCheckBox::MenuCheckBox(const QString &text, QWidget *parent) : QCheckBox(text, parent)
 {

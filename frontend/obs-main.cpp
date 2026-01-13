@@ -16,13 +16,14 @@
 ******************************************************************************/
 
 #include <OBSApp.hpp>
+
+#include <components/VolumeAccessibleInterface.hpp>
 #ifdef __APPLE__
 #include <dialogs/OBSPermissions.hpp>
 #endif
 #include <utility/BaseLexer.hpp>
 #include <utility/OBSTranslator.hpp>
 #include <utility/platform.hpp>
-#include <widgets/VolumeAccessibleInterface.hpp>
 
 #include <qt-wrappers.hpp>
 #include <util/platform.h>
