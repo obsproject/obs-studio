@@ -175,9 +175,7 @@ class MetalDevice {
                 encoder.waitForFence(swapChain.fence)
                 encoder.copy(from: renderTarget.texture, to: drawable.texture)
 
-                commandBuffer.addScheduledHandler { _ in
-                    drawable.present()
-                }
+                commandBuffer.present(drawable)
             }
         }
 
