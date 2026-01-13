@@ -1643,10 +1643,17 @@ bool obs_scripting_load_python(const char *python_path)
 	wchar_t *argv[] = {L"", NULL};
 	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
 
-	PRAGMA_WARN_PUSH
-	PRAGMA_WARN_DEPRECATION
-	PySys_SetArgv(argc, argv);
-	PRAGMA_WARN_POP
+	//PySys_SetArgvEx(argc, argv, 0);
+	PyConfig config;
+	PyConfig_InitPythonConfig(&config);
+	config.parse_argv = 1;
+
+	PyStatus status = PyConfig_SetArgv(&config, argc, argv);
+	if (PyStatus_Exception(status)) {
+	}
+
+	Py_InitializeFromConfig(&config);
+	PyConfig_Clear(&config);
 
 #ifdef __APPLE__
 	PyRun_SimpleString("import sys");
