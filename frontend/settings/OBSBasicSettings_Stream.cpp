@@ -26,12 +26,6 @@ extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 extern bool cef_js_avail;
 
-enum class ListOpt : int {
-	ShowAll = 1,
-	Custom,
-	WHIP,
-};
-
 enum class Section : int {
 	Connect,
 	StreamKey,
@@ -40,42 +34,43 @@ enum class Section : int {
 bool OBSBasicSettings::IsCustomService() const
 {
 	QVariant data = ui->service->currentData();
-	if (data.canConvert<ServiceItemData>()) {
-		ServiceItemData serviceData = data.value<ServiceItemData>();
-		return serviceData.isCustom();
-	}
-	// Fallback for backward compatibility during migration
-	return data.toInt() == (int)ListOpt::Custom;
+	ServiceItemData serviceData = data.value<ServiceItemData>();
+	return serviceData.isCustom();
 }
 
-inline bool OBSBasicSettings::IsCustomServiceType() const
+bool OBSBasicSettings::IsCustomServiceType() const
 {
 	QVariant data = ui->service->currentData();
-	if (data.canConvert<ServiceItemData>()) {
-		ServiceItemData serviceData = data.value<ServiceItemData>();
-		return serviceData.isCustomServiceType();
-	}
-	// Fallback for backward compatibility during migration
-	return data.canConvert<QString>() && !data.toString().isEmpty();
+	ServiceItemData serviceData = data.value<ServiceItemData>();
+	return serviceData.isCustomServiceType();
 }
 
-inline QString OBSBasicSettings::GetCustomServiceTypeId() const
+QString OBSBasicSettings::GetCustomServiceTypeId() const
 {
 	QVariant data = ui->service->currentData();
-	if (data.canConvert<ServiceItemData>()) {
-		ServiceItemData serviceData = data.value<ServiceItemData>();
-		if (serviceData.isCustomServiceType())
-			return serviceData.serviceId;
-	}
-	// Fallback for backward compatibility during migration
-	if (data.canConvert<QString>())
-		return data.toString();
+	ServiceItemData serviceData = data.value<ServiceItemData>();
+	if (serviceData.isCustomServiceType())
+		return serviceData.serviceId;
 	return QString();
 }
 
 inline bool OBSBasicSettings::IsWHIP() const
 {
 	return GetCustomServiceTypeId() == "whip_custom";
+}
+
+int OBSBasicSettings::FindService(const std::function<bool(const ServiceItemData &)> &predicate)
+{
+	for (int i = 0; i < ui->service->count(); i++) {
+		QVariant data = ui->service->itemData(i);
+		if (data.canConvert<ServiceItemData>()) {
+			ServiceItemData serviceData = data.value<ServiceItemData>();
+			if (predicate(serviceData)) {
+				return i;
+			}
+		}
+	}
+	return -1;
 }
 
 void OBSBasicSettings::InitStreamPage()
@@ -148,18 +143,7 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->customServer->setText(server);
 
 	if (is_rtmp_custom) {
-		// Find the "Custom" option by looking for ServiceItemData with Type::Custom
-		int idx = -1;
-		for (int i = 0; i < ui->service->count(); i++) {
-			QVariant data = ui->service->itemData(i);
-			if (data.canConvert<ServiceItemData>()) {
-				ServiceItemData serviceData = data.value<ServiceItemData>();
-				if (serviceData.isCustom()) {
-					idx = i;
-					break;
-				}
-			}
-		}
+		auto idx = FindService([](const ServiceItemData &serviceData) { return serviceData.isCustom(); });
 		if (idx == -1)
 			idx = 0;
 		ui->service->setCurrentIndex(idx);
@@ -173,21 +157,11 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
 	} else if (is_rtmp_common) {
-		// For rtmp_common services, find by service ID in ServiceItemData
-		int idx = -1;
-		for (int i = 0; i < ui->service->count(); i++) {
-			QVariant data = ui->service->itemData(i);
-			if (data.canConvert<ServiceItemData>()) {
-				ServiceItemData serviceData = data.value<ServiceItemData>();
-				if (serviceData.isRtmpCommon() && serviceData.serviceId == service) {
-					idx = i;
-					break;
-				}
-			}
-		}
+		auto idx = FindService([&](const ServiceItemData &serviceData) {
+			return serviceData.isRtmpCommon() && serviceData.serviceId == service;
+		});
 
 		if (idx == -1) {
-			// Service not found, add it
 			if (service && *service) {
 				ServiceItemData newService(ServiceItemData::Type::RtmpCommon, service, service);
 				ui->service->insertItem(1, service, QVariant::fromValue(newService));
@@ -203,21 +177,11 @@ void OBSBasicSettings::LoadStream1Settings()
 		idx = config_get_int(main->Config(), "Twitch", "AddonChoice");
 		ui->twitchAddonDropdown->setCurrentIndex(idx);
 	} else {
-		// For custom service types (WHIP, MoQ, etc.), find by service type ID in ServiceItemData
-		int idx = -1;
-		for (int i = 0; i < ui->service->count(); i++) {
-			QVariant data = ui->service->itemData(i);
-			if (data.canConvert<ServiceItemData>()) {
-				ServiceItemData serviceData = data.value<ServiceItemData>();
-				if (serviceData.isCustomServiceType() && serviceData.serviceId == type) {
-					idx = i;
-					break;
-				}
-			}
-		}
+		auto idx = FindService([&](const ServiceItemData &serviceData) {
+			return serviceData.isCustomServiceType() && serviceData.serviceId == type;
+		});
 
 		if (idx == -1) {
-			// Service type not found in dropdown, try to add it
 			const char *display_name = obs_service_get_display_name(type);
 			if (!display_name)
 				display_name = type;
@@ -676,15 +640,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 {
 	// Check if "Show All" was selected
 	QVariant data = ui->service->currentData();
-	if (data.canConvert<ServiceItemData>()) {
-		ServiceItemData serviceData = data.value<ServiceItemData>();
-		if (serviceData.isShowAll()) {
-			LoadServices(true);
-			ui->service->showPopup();
-			return;
-		}
-	} else if (data.toInt() == (int)ListOpt::ShowAll) {
-		// Fallback for backward compatibility
+	ServiceItemData serviceData = data.value<ServiceItemData>();
+	if (serviceData.isShowAll()) {
 		LoadServices(true);
 		ui->service->showPopup();
 		return;
