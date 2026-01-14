@@ -321,12 +321,12 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 {
 	struct param *p;
 	obs_data_t *data = NULL;
+	struct dstr str = {};
 
 	obs_property_list_clear(prop);
 
 	spa_list_for_each(p, &dev->param_list, link)
 	{
-		struct dstr str = {};
 		struct dstr aspect_ratio;
 		uint32_t media_type, media_subtype;
 		uint32_t format = 0;
@@ -372,6 +372,14 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 		obs_data_set_int(data, "width", resolution.width);
 		obs_data_set_int(data, "height", resolution.height);
 
+		dstr_printf(&str, "%ux%u", resolution.width, resolution.height);
+
+		aspect_ratio = aspect_ratio_from_spa_rectangle(resolution);
+		if (aspect_ratio.len != 0) {
+			dstr_catf(&str, " (%s)", aspect_ratio.array);
+			dstr_free(&aspect_ratio);
+		}
+
 		framerate_prop = spa_pod_find_prop(p->param, NULL, SPA_FORMAT_VIDEO_framerate);
 		if (framerate_prop) {
 			struct spa_pod *framerate_pod;
@@ -408,14 +416,6 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 				continue;
 			}
 
-			dstr_printf(&str, "%ux%u", resolution.width, resolution.height);
-
-			aspect_ratio = aspect_ratio_from_spa_rectangle(resolution);
-			if (aspect_ratio.len != 0) {
-				dstr_catf(&str, " (%s)", aspect_ratio.array);
-				dstr_free(&aspect_ratio);
-			}
-
 			dstr_cat(&str, " - ");
 
 			for (int i = framerates->len - 1; i >= 0; i--) {
@@ -436,10 +436,10 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 
 		dstr_catf(&str, " - %s", format_name);
 		obs_property_list_add_string(prop, str.array, obs_data_get_json(data));
-		dstr_free(&str);
 	}
 
 	g_clear_pointer(&data, obs_data_release);
+	dstr_free(&str);
 }
 
 static bool control_changed(void *data, obs_properties_t *props, obs_property_t *prop, obs_data_t *settings)
