@@ -209,7 +209,7 @@ OBSBasicSettings QListWidget::item {
 }
 
 QPushButton:checked {
-  border-color: var(--primary);
+    border-color: var(--primary);
 }
 
 QToolButton,
@@ -220,22 +220,6 @@ QPushButton[toolButton="true"] {
 
 #stackedMixerArea QScrollArea {
   background: var(--bg_base);
-}
-
-#stackedMixerArea QPushButton {
-    min-width: var(--icon_base);
-    padding: var(--padding_large) var(--padding_large);
-    icon-size: var(--icon_base);
-}
-
-#stackedMixerArea QPushButton:!hover {
-    background-color: var(--bg_base);
-    border: none;
-}
-
-#stackedMixerArea QPushButton:hover {
-    background-color: var(--bg_base);
-    border: none;
 }
 
 #hMixerScrollArea VolControl {
@@ -286,13 +270,6 @@ QPushButton[toolButton="true"] {
 
 #contextContainer {
   background-color: var(--bg_window);
-}
-
-#stackedMixerArea QPushButton,
-#stackedMixerArea QPushButton:!hover {
-    width: var(--icon_base_mixer);
-    height: var(--icon_base_mixer);
-    padding: var(--spacing_base);
 }
 
 VolumeMeter {
