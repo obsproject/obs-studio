@@ -347,6 +347,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 		}
 		repaint();
 	});
+
+	connect(App(), &OBSApp::StyleChanged, this, &VolumeMeter::updateBackgroundCache);
 }
 
 VolumeMeter::~VolumeMeter()
