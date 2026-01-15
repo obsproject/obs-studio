@@ -292,9 +292,7 @@ static void pulse_source_info(pa_context *c, const pa_source_info *i, int eol, v
 	if (pulse_channels_to_obs_speakers(channels) == SPEAKERS_UNKNOWN) {
 		channels = 2;
 
-		blog(LOG_INFO,
-		     "%c channels not supported by OBS,"
-		     "using %c instead for recording",
+		blog(LOG_INFO, "%" PRIu8 " channels not supported by OBS, using %" PRIu8 " instead for recording",
 		     i->sample_spec.channels, channels);
 	}
 
