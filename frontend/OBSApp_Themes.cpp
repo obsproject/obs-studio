@@ -646,12 +646,6 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 		val = d1 < d2 ? d1 : d2;
 	}
 
-	// Round any values with a px suffix. Qt does this anyway for some properties,
-	// but then will flat out break with decimals for others.
-	if (val1.suffix == "px" || val2.suffix == "px") {
-		val = std::roundf(val);
-	}
-
 	bool isInteger = ceill(val) == val;
 	QString result = QString::number(val, 'f', isInteger ? 0 : -1);
 
@@ -710,6 +704,13 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars, const QS
 			replace = EvalMath(vars, var, var.type);
 		} else if (var.type == OBSThemeVariable::Size || var.type == OBSThemeVariable::Number) {
 			double val = value.toDouble();
+
+			// Round any values with a px suffix. Qt does this anyway for some properties,
+			// but then will flat out break with decimals for others.
+			if (var.suffix == "px") {
+				val = std::roundf(val);
+			}
+
 			bool isInteger = ceill(val) == val;
 			replace = QString::number(val, 'f', isInteger ? 0 : -1);
 
