@@ -646,6 +646,12 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 		val = d1 < d2 ? d1 : d2;
 	}
 
+	// Round any values with a px suffix. Qt does this anyway for some properties,
+	// but then will flat out break with decimals for others.
+	if (val1.suffix == "px" || val2.suffix == "px") {
+		val = std::roundf(val);
+	}
+
 	bool isInteger = ceill(val) == val;
 	QString result = QString::number(val, 'f', isInteger ? 0 : -1);
 
