@@ -145,8 +145,8 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	mainLayout->addWidget(mixerToolbar);
 
 	advAudio = new QAction(this);
-	advAudio->setText(QTStr("AdvAudioProps"));
-	advAudio->setToolTip(QTStr("AdvAudioProps"));
+	advAudio->setText(QTStr("Basic.AdvAudio"));
+	advAudio->setToolTip(QTStr("Basic.AdvAudio"));
 	QIcon advIcon;
 	advIcon.addFile(QString::fromUtf8(":/settings/images/settings/advanced.svg"), QSize(16, 16),
 			QIcon::Mode::Normal, QIcon::State::Off);
@@ -155,7 +155,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 
 	layoutButton = new QAction(this);
 	layoutButton->setText("");
-	layoutButton->setToolTip("");
+	layoutButton->setToolTip(QTStr("Basic.AudioMixer.Layout.Vertical"));
 	QIcon layoutIcon;
 	layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-vertical.svg"), QSize(16, 16), QIcon::Mode::Normal,
 			   QIcon::State::Off);
@@ -745,6 +745,7 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 		layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-horizontal.svg"), QSize(16, 16),
 				   QIcon::Mode::Normal, QIcon::State::Off);
 		layoutButton->setIcon(layoutIcon);
+		layoutButton->setToolTip(QTStr("Basic.AudioMixer.Layout.Horizontal"));
 	} else {
 		stackedMixerArea->setMinimumSize(220, 0);
 		stackedMixerArea->setCurrentIndex(0);
@@ -753,6 +754,7 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 		layoutIcon.addFile(QString::fromUtf8(":/res/images/layout-vertical.svg"), QSize(16, 16),
 				   QIcon::Mode::Normal, QIcon::State::Off);
 		layoutButton->setIcon(layoutIcon);
+		layoutButton->setToolTip(QTStr("Basic.AudioMixer.Layout.Vertical"));
 	}
 
 	QWidget *buttonWidget = mixerToolbar->widgetForAction(layoutButton);
