@@ -69,6 +69,7 @@ private:
 	bool outputToFile = true;
 
 signals:
+	void imageSaved(std::string path);
 	void imageReady(QImage image);
 
 private slots:

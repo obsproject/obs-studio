@@ -351,15 +351,11 @@ void ScreenshotObj::onFinished()
 	}
 
 	if (outputWidth && outputHeight) {
-		if (outputToFile) {
-			OBSBasic *main = OBSBasic::Get();
-			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
-			main->lastScreenshot = path;
-			main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
-		}
-
 		emit imageReady(image.copy());
+
+		if (outputToFile) {
+			emit imageSaved(path);
+		}
 	}
 
 	this->deleteLater();
