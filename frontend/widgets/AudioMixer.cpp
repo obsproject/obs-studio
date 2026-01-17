@@ -757,6 +757,10 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 		layoutButton->setToolTip(QTStr("Basic.AudioMixer.Layout.Vertical"));
 	}
 
+	// Qt caches the size of QWidgetActions so this is the simplest way to update the text
+	// of the checkboxes in the menu and make sure the menu size is recalculated.
+	createMixerContextMenu();
+
 	QWidget *buttonWidget = mixerToolbar->widgetForAction(layoutButton);
 	if (buttonWidget) {
 		idian::Utils::toggleClass(buttonWidget, "icon-layout-horizontal", vertical);
@@ -776,7 +780,7 @@ void AudioMixer::createMixerContextMenu()
 	QAction *unhideAllAction = new QAction(QTStr("UnhideAll"), mixerMenu);
 
 	showHiddenCheckBox = new MenuCheckBox(QTStr("Basic.AudioMixer.ShowHidden"), mixerMenu);
-	showHiddenAction = new QWidgetAction(mixerMenu);
+	QWidgetAction *showHiddenAction = new QWidgetAction(mixerMenu);
 	showHiddenCheckBox->setAction(showHiddenAction);
 	showHiddenCheckBox->setChecked(showHidden);
 	showHiddenAction->setDefaultWidget(showHiddenCheckBox);
@@ -788,17 +792,17 @@ void AudioMixer::createMixerContextMenu()
 	showInactiveAction->setDefaultWidget(showInactiveCheckBox);
 
 	QWidgetAction *hiddenLastAction = new QWidgetAction(mixerMenu);
-	const char *hiddenShifted = mixerVertical ? "Basic.AudioMixer.KeepHiddenRight"
-						  : "Basic.AudioMixer.KeepHiddenBottom";
-	MenuCheckBox *hiddenLastCheckBox = new MenuCheckBox(QTStr(hiddenShifted), mixerMenu);
+	const char *hiddenLastString = mixerVertical ? "Basic.AudioMixer.KeepHiddenRight"
+						     : "Basic.AudioMixer.KeepHiddenBottom";
+	MenuCheckBox *hiddenLastCheckBox = new MenuCheckBox(QTStr(hiddenLastString), mixerMenu);
 	hiddenLastCheckBox->setAction(hiddenLastAction);
 	hiddenLastCheckBox->setChecked(keepHiddenLast);
 	hiddenLastAction->setDefaultWidget(hiddenLastCheckBox);
 
 	QWidgetAction *inactiveLastAction = new QWidgetAction(mixerMenu);
-	const char *inactiveShifted = mixerVertical ? "Basic.AudioMixer.KeepInactiveRight"
-						    : "Basic.AudioMixer.KeepInactiveBottom";
-	MenuCheckBox *inactiveLastCheckBox = new MenuCheckBox(QTStr(inactiveShifted), mixerMenu);
+	const char *inactiveLastString = mixerVertical ? "Basic.AudioMixer.KeepInactiveRight"
+						       : "Basic.AudioMixer.KeepInactiveBottom";
+	MenuCheckBox *inactiveLastCheckBox = new MenuCheckBox(QTStr(inactiveLastString), mixerMenu);
 	inactiveLastCheckBox->setAction(inactiveLastAction);
 	inactiveLastCheckBox->setChecked(keepInactiveLast);
 	inactiveLastAction->setDefaultWidget(inactiveLastCheckBox);
