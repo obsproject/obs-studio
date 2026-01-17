@@ -713,7 +713,7 @@ void AudioMixer::updateVolumeLayouts()
 		++index;
 	}
 
-	toggleHiddenButton->setText(QTStr("%1 hidden").arg(hiddenCount));
+	toggleHiddenButton->setText(QTStr("Basic.AudioMixer.HiddenTotal").arg(hiddenCount));
 	if (hiddenCount == 0) {
 		toggleHiddenButton->setDisabled(true);
 		idian::Utils::toggleClass(toggleHiddenButton, "text-muted", true);
