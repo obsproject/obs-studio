@@ -89,7 +89,6 @@ private:
 
 	QPointer<QMenu> mixerMenu;
 	QPointer<MenuCheckBox> showHiddenCheckBox;
-	QPointer<QWidgetAction> showHiddenAction;
 
 	QScrollArea *hMixerScrollArea{nullptr};
 	QWidget *hVolumeWidgets{nullptr};
