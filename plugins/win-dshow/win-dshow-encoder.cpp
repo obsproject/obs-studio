@@ -303,7 +303,7 @@ static void GetDShowVideoInfo(void *data, struct video_scale_info *info)
 	}
 }
 
-static void GetDShowEncoderDefauts(obs_data_t *settings)
+static void GetDShowEncoderDefaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 1000);
 }
