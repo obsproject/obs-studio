@@ -439,7 +439,7 @@
                      </sizepolicy>
                     </property>
                     <property name="text">
-                     <string>Add Existing</string>
+                     <string>Basic.SourceSelect.ExistingButton</string>
                     </property>
                     <property name="class" stdset="0">
                      <string>button-primary</string>

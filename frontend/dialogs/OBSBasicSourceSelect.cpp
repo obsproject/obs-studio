@@ -281,9 +281,10 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 	connect(this, &OBSBasicSourceSelect::selectedItemsChanged, this, [=]() {
 		ui->addExistingButton->setEnabled(selectedItems.size() > 0);
 		if (selectedItems.size() > 0) {
-			ui->addExistingButton->setText(QTStr("Add %1 Existing").arg(selectedItems.size()));
+			ui->addExistingButton->setText(
+				QTStr("Basic.SourceSelect.ExistingButton.Multiple").arg(selectedItems.size()));
 		} else {
-			ui->addExistingButton->setText("Add Existing");
+			ui->addExistingButton->setText(QTStr("Basic.SourceSelect.ExistingButton"));
 		}
 	});
 
