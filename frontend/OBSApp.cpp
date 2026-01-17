@@ -370,6 +370,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "ShowSourceIcons", true);
 	config_set_default_bool(userConfig, "BasicWindow", "ShowContextToolbars", true);
 	config_set_default_bool(userConfig, "BasicWindow", "StudioModeLabels", true);
+	config_set_default_bool(userConfig, "BasicWindow", "SideDocks", true);
 
 	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolumeControl", true);
 
