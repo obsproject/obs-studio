@@ -792,6 +792,7 @@
      <addaction name="actionCenterToScreen"/>
      <addaction name="actionVerticalCenter"/>
      <addaction name="actionHorizontalCenter"/>
+     <addaction name="actionResizeSourceToBounds"/>
     </widget>
     <widget class="QMenu" name="orderMenu">
      <property name="title">
@@ -1803,6 +1804,14 @@
   <action name="actionFlipVertical">
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.FlipVertical</string>
+   </property>
+  </action>
+  <action name="actionResizeSourceToBounds">
+   <property name="text">
+    <string>Basic.MainMenu.Edit.Transform.ResizeToBounds</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
    </property>
   </action>
   <action name="actionMoveUp">

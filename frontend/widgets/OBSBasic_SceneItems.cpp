@@ -1358,6 +1358,30 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 		undo_redo, undo_redo, undo_data, redo_data);
 }
 
+void OBSBasic::on_actionResizeSourceToBounds_triggered()
+{
+	OBSSceneItem curItem = GetCurrentSceneItem();
+	if (obs_sceneitem_get_bounds_type(curItem) == OBS_BOUNDS_NONE)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(curItem);
+	if (!obs_source_resizeable(source))
+		return;
+
+	const uint32_t old_width = obs_source_get_width(source);
+	const uint32_t old_height = obs_source_get_height(source);
+
+	vec2 bounds;
+	obs_sceneitem_get_bounds(curItem, &bounds);
+	const uint32_t new_width = static_cast<uint32_t>(roundf(bounds.x));
+	const uint32_t new_height = static_cast<uint32_t>(roundf(bounds.y));
+
+	if (new_width == old_width && new_height == old_height)
+		return;
+
+	obs_source_resize(source, new_width, new_height);
+}
+
 void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 {
 	ui->sources->SetIconsVisible(visible);

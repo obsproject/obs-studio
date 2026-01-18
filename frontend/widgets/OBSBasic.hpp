@@ -1203,6 +1203,7 @@ private slots:
 	void on_actionCenterToScreen_triggered();
 	void on_actionVerticalCenter_triggered();
 	void on_actionHorizontalCenter_triggered();
+	void on_actionResizeSourceToBounds_triggered();
 
 	void on_actionEditTransform_triggered();
 
