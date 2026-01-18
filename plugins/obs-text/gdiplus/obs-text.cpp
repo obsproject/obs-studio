@@ -1082,7 +1082,8 @@ bool obs_module_load(void)
 	obs_source_info si = {};
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_CAP_OBSOLETE | OBS_SOURCE_SRGB;
+	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_CAP_OBSOLETE | OBS_SOURCE_SRGB |
+			  OBS_SOURCE_CAP_RESIZEABLE;
 	si.get_properties = get_properties;
 	si.icon_type = OBS_ICON_TYPE_TEXT;
 
@@ -1148,6 +1149,15 @@ bool obs_module_load(void)
 	si_v3.output_flags &= ~OBS_SOURCE_CAP_OBSOLETE;
 	si_v3.create = [](obs_data_t *settings, obs_source_t *source) {
 		return (void *)new TextSource(source, settings, false);
+	};
+
+	si_v3.resize = [](void *data, uint32_t width, uint32_t height) {
+		TextSource *s = reinterpret_cast<TextSource *>(data);
+		obs_data_t *settings = obs_source_get_settings(s->source);
+		obs_data_set_int(settings, S_EXTENTS_CX, width);
+		obs_data_set_int(settings, S_EXTENTS_CY, height);
+		obs_source_update(s->source, settings);
+		obs_data_release(settings);
 	};
 
 	obs_register_source(&si);
