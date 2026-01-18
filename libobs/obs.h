@@ -1128,6 +1128,9 @@ EXPORT enum gs_color_space obs_source_get_color_space(obs_source_t *source, size
 /** Hints whether or not the source will blend texels */
 EXPORT bool obs_source_get_texcoords_centered(obs_source_t *source);
 
+EXPORT bool obs_source_resizeable(const obs_source_t *source);
+EXPORT void obs_source_resize(const obs_source_t *source, uint32_t width, uint32_t height);
+
 /**
  * If the source is a filter, returns the parent source of the filter.  Only
  * guaranteed to be valid inside of the video_render, filter_audio,

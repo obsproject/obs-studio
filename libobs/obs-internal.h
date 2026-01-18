@@ -1141,9 +1141,6 @@ extern void deinterlace_process_last_frame(obs_source_t *source, uint64_t sys_ti
 extern void deinterlace_update_async_video(obs_source_t *source);
 extern void deinterlace_render(obs_source_t *s);
 
-extern bool obs_source_resizeable(const obs_source_t *source);
-extern void obs_source_resize(const obs_source_t *source, uint32_t width, uint32_t height);
-
 /* ------------------------------------------------------------------------- */
 /* outputs  */
 
