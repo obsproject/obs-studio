@@ -521,7 +521,6 @@ static void xshm_video_tick(void *vptr, float seconds)
 	}
 
 	if (geo_changed > 0) {
-		blog(LOG_INFO, "resolution changed, resizing capture");
 		obs_enter_graphics();
 		xshm_resize(data);
 		obs_leave_graphics();
