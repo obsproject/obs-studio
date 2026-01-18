@@ -698,7 +698,7 @@ void VolumeControl::updateMixerState()
 	QSignalBlocker blockMonitor(monitorButton);
 
 	bool showAsMuted = muted || monitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY;
-	bool showAsMonitored = monitoringType != OBS_MONITORING_TYPE_NONE;
+	bool showAsMonitored = !muted && monitoringType != OBS_MONITORING_TYPE_NONE;
 	bool showAsUnassigned = !muted && unassigned;
 
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
