@@ -3581,6 +3581,29 @@
                 "max video bitrate": 8000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Sportify",
+            "more_info_link": "https://www.homegroundapp.com",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.homegroundapp.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 3500,
+                "max audio bitrate": 192,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max fps": 30
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
