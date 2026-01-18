@@ -1405,6 +1405,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 	obs_bounds_type boundsType = obs_sceneitem_get_bounds_type(stretchItem);
 	uint32_t stretchFlags = (uint32_t)stretchHandle;
 	bool shiftDown = (modifiers & Qt::ShiftModifier);
+	bool ctrlDown = (modifiers & Qt::ControlModifier);
 	vec3 tl, br, pos3;
 
 	vec3_zero(&tl);
@@ -1423,7 +1424,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 	else if (stretchFlags & ITEM_BOTTOM)
 		br.y = pos3.y;
 
-	if (!(modifiers & Qt::ControlModifier))
+	if (!ctrlDown || (ctrlDown && shiftDown))
 		SnapStretchingToScreen(tl, br);
 
 	obs_source_t *source = obs_sceneitem_get_source(stretchItem);
@@ -1444,7 +1445,7 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 	vec2_set(&size, br.x - tl.x, br.y - tl.y);
 
 	if (boundsType != OBS_BOUNDS_NONE) {
-		if (shiftDown)
+		if (shiftDown && !ctrlDown)
 			ClampAspect(tl, br, size, baseSize);
 
 		if (tl.x > br.x)
@@ -1453,6 +1454,16 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 			std::swap(tl.y, br.y);
 
 		vec2_abs(&size, &size);
+
+		/* Update source size if primary */
+		if (obs_source_resizeable(source) && shiftDown && ctrlDown) {
+			const uint32_t new_width = (uint32_t)roundf(size.x);
+			const uint32_t new_height = (uint32_t)roundf(size.y);
+
+			if (source_cx != new_width || source_cy != new_height) {
+				obs_source_resize(source, new_width, new_height);
+			}
+		}
 
 		obs_sceneitem_set_bounds(stretchItem, &size);
 	} else {
