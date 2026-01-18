@@ -208,6 +208,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_REQUIRES_CANVAS (1 << 17)
 
+/**
+ * Source can be resized from scene item
+ */
+#define OBS_SOURCE_CAP_RESIZEABLE (1 << 18)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent, obs_source_t *child, void *param);
@@ -551,6 +556,8 @@ struct obs_source_info {
 	 * @param  source  Source that the filter is being added to
 	 */
 	void (*filter_add)(void *data, obs_source_t *source);
+
+	void (*resize)(void *data, uint32_t width, uint32_t height);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info, size_t size);

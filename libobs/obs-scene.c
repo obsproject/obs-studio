@@ -699,6 +699,20 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	calldata_set_ptr(&params, "item", item);
 	signal_parent(item->parent, "item_transform", &params);
 
+	/* Update source size if primary */
+	if (item->primary && obs_source_resizeable(item->source) && !update_tex) {
+		const uint32_t old_width = obs_source_get_width(item->source);
+		const uint32_t old_height = obs_source_get_height(item->source);
+		const uint32_t new_width = (uint32_t)roundf(scale.x);
+		const uint32_t new_height = (uint32_t)roundf(scale.y);
+
+		if (old_width != new_width || old_height != new_height) {
+			obs_source_resize(item->source, new_width, new_height);
+			update_item_transform(item, true);
+			return;
+		}
+	}
+
 	if (!update_tex)
 		return;
 
@@ -2303,6 +2317,9 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene, obs_source_t 
 	get_scene_dimensions(item, &item->scale_ref.x, &item->scale_ref.y);
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
+
+	/* TODO MAKE THIS NOT TRUE UNLESS IT'S THE ONLY ITEM */
+	item->primary = true;
 
 	/* Ensure initial position is still top-left corner in relative mode. */
 	if (!item->absolute_coordinates)

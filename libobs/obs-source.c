@@ -5985,3 +5985,16 @@ obs_canvas_t *obs_source_get_canvas(const obs_source_t *source)
 {
 	return obs_weak_canvas_get_canvas(source->canvas);
 }
+
+bool obs_source_resizeable(const obs_source_t *source)
+{
+	return source->info.output_flags & OBS_SOURCE_CAP_RESIZEABLE && !!source->info.resize;
+}
+
+void obs_source_resize(const obs_source_t *source, const uint32_t width, const uint32_t height)
+{
+	if (!obs_source_resizeable(source))
+		return;
+
+	source->info.resize(source->context.data, width, height);
+}

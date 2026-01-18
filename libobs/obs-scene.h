@@ -51,6 +51,9 @@ struct obs_scene_item {
 	gs_texrender_t *item_render;
 	struct obs_sceneitem_crop crop;
 
+	/* Primary scene item */
+	bool primary;
+
 	bool absolute_coordinates;
 	struct vec2 pos;
 	struct vec2 scale;
