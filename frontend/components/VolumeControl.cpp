@@ -480,21 +480,22 @@ void VolumeControl::renameSource()
 
 	for (;;) {
 		std::string name;
-		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.MixerRename.Title"),
+		bool accepted = NameDialog::AskForName(OBSBasic::Get(), QTStr("Basic.Main.MixerRename.Title"),
 						       QTStr("Basic.Main.MixerRename.Text"), name, QT_UTF8(prevName));
 		if (!accepted) {
 			return;
 		}
 
 		if (name.empty()) {
-			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
+			OBSMessageBox::warning(OBSBasic::Get(), QTStr("NoNameEntered.Title"),
+					       QTStr("NoNameEntered.Text"));
 			continue;
 		}
 
 		OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
 
 		if (sourceTest) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
+			OBSMessageBox::warning(OBSBasic::Get(), QTStr("NameExists.Title"), QTStr("NameExists.Text"));
 			continue;
 		}
 
