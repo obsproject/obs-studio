@@ -93,6 +93,10 @@ static void xshm_resize(struct xshm_data *data)
 	data->xshm = xshm_xcb_attach(data->xcb, data->adj_width, data->adj_height);
 	if (!data->xshm) {
 		blog(LOG_ERROR, "failed to attach shm after resize!");
+		if (data->texture) {
+			gs_texture_destroy(data->texture);
+			data->texture = NULL;
+		}
 		return;
 	}
 
