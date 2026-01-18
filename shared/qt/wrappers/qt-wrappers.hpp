@@ -100,4 +100,4 @@ void TruncateLabel(QLabel *label, QString newText, int length = MAX_LABEL_LENGTH
 
 void RefreshToolBarStyling(QToolBar *toolBar);
 
-QString EscapeMenuItem(QString name);
+QString EscapeMenuItem(const QString name);

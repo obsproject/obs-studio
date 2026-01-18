@@ -374,7 +374,7 @@ void RefreshToolBarStyling(QToolBar *toolBar)
 	}
 }
 
-QString EscapeMenuItem(QString name)
+QString EscapeMenuItem(const QString name)
 {
-	return name.replace("&", "&&");
+	return QString(name).replace("&", "&&");
 }
