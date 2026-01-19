@@ -380,12 +380,14 @@ void AudioMixer::updateControlVisibility(QString uuid)
 void AudioMixer::sourceCreated(QString uuid)
 {
 	addControlForUuid(uuid);
+	updatePreviewSources();
 	updateGlobalSources();
 }
 
 void AudioMixer::sourceRemoved(QString uuid)
 {
 	removeControlForUuid(uuid);
+	updatePreviewSources();
 	updateGlobalSources();
 }
 
@@ -871,6 +873,8 @@ void AudioMixer::handleFrontendEvent(obs_frontend_event event)
 {
 	switch (event) {
 	case OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
+	case OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED:
+	case OBS_FRONTEND_EVENT_STUDIO_MODE_DISABLED:
 		updatePreviewSources();
 		queueLayoutUpdate();
 		break;
