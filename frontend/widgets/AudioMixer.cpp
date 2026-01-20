@@ -110,6 +110,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	hVolumeWidgets->setLayout(hVolumeControlLayout);
 	hVolumeControlLayout->setContentsMargins(0, 0, 0, 0);
 	hVolumeControlLayout->setSpacing(0);
+	hVolumeControlLayout->setAlignment(Qt::AlignTop);
 
 	hMixerScrollArea->setWidget(hVolumeWidgets);
 
@@ -683,8 +684,8 @@ void AudioMixer::updateVolumeLayouts()
 	vMixerScrollArea->setWidgetResizable(false);
 	hMixerScrollArea->setWidgetResizable(false);
 
+	QSize minimumSize{};
 	for (const auto &entry : rankedVolumes) {
-
 		VolumeControl *volControl = entry.control;
 		if (!volControl) {
 			continue;
@@ -712,6 +713,10 @@ void AudioMixer::updateVolumeLayouts()
 
 		prevControl = volControl;
 
+		if (!minimumSize.isValid()) {
+			minimumSize = volControl->minimumSizeHint();
+		}
+
 		++index;
 	}
 
@@ -727,6 +732,9 @@ void AudioMixer::updateVolumeLayouts()
 	vMixerScrollArea->setWidgetResizable(true);
 	hMixerScrollArea->setWidgetResizable(true);
 
+	int scrollBarSize = QApplication::style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+	stackedMixerArea->setMinimumSize(minimumSize.width() + scrollBarSize, minimumSize.height() + scrollBarSize);
+
 	setUpdatesEnabled(true);
 }
 
@@ -740,7 +748,6 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 	mixerVertical = vertical;
 
 	if (vertical) {
-		stackedMixerArea->setMinimumSize(180, 220);
 		stackedMixerArea->setCurrentIndex(1);
 
 		QIcon layoutIcon;
@@ -749,7 +756,6 @@ void AudioMixer::setMixerLayoutVertical(bool vertical)
 		layoutButton->setIcon(layoutIcon);
 		layoutButton->setToolTip(QTStr("Basic.AudioMixer.Layout.Horizontal"));
 	} else {
-		stackedMixerArea->setMinimumSize(220, 0);
 		stackedMixerArea->setCurrentIndex(0);
 
 		QIcon layoutIcon;
