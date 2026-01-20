@@ -2636,10 +2636,6 @@
                     "url": "rtmp://live-us-lax-stream.shareplay.tv"
                 },
                 {
-                    "name": "Miami, Florida, USA",
-                    "url": "rtmp://live-us-mia-stream.shareplay.tv"
-                },
-                {
                     "name": "Seattle, Washington, USA",
                     "url": "rtmp://live-us-sea-stream.shareplay.tv"
                 },
@@ -2658,10 +2654,6 @@
                 {
                     "name": "London, UK",
                     "url": "rtmp://live-uk-lhr-stream.shareplay.tv"
-                },
-                {
-                    "name": "Milan, Italy",
-                    "url": "rtmp://live-it-mil-stream.shareplay.tv"
                 },
                 {
                     "name": "Sydney, Australia",
