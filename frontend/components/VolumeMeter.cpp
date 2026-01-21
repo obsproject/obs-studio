@@ -338,8 +338,10 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 	connect(updateTimer, &QTimer::timeout, this, [this]() {
 		if (needLayoutChange()) {
 			doLayout();
+			update();
+		} else {
+			update(getBarRect());
 		}
-		repaint();
 	});
 
 	connect(App(), &OBSApp::StyleChanged, this, &VolumeMeter::doLayout);
