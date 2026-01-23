@@ -33,10 +33,10 @@ class SourceSelectButton : public QFrame {
 	Q_OBJECT
 
 public:
-	SourceSelectButton(obs_source_t *source, QWidget *parent = nullptr);
+	SourceSelectButton(OBSWeakSource source, QWidget *parent = nullptr);
 	~SourceSelectButton();
 
-	QPointer<QPushButton> getButton();
+	QPushButton *button();
 	QString text();
 
 	void setRectVisible(bool visible);
@@ -53,8 +53,10 @@ private:
 	std::shared_ptr<Thumbnail> thumbnail;
 	QPointer<QLabel> image;
 
-	QPushButton *button = nullptr;
-	QVBoxLayout *layout = nullptr;
+	std::vector<OBSSignal> signalHandlers;
+	static void obsSourceRemoved(void *param, calldata_t *calldata);
+
+	QPointer<QPushButton> button_ = nullptr;
 	QLabel *label = nullptr;
 	bool preload = true;
 	bool rectVisible = false;
@@ -64,5 +66,9 @@ private:
 	QPoint dragStartPosition;
 
 private slots:
-	void thumbnailUpdated(QPixmap pixmap);
+	void updatePixmap(QPixmap pixmap);
+	void handleSourceRemoved();
+
+signals:
+	void sourceRemoved();
 };

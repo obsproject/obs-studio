@@ -16,9 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "OBSApp.hpp"
 #include "OBSBasicSourceSelect.hpp"
 
-#include <OBSApp.hpp>
 #include <utility/ResizeSignaler.hpp>
 #include <utility/ThumbnailManager.hpp>
 
@@ -51,6 +51,8 @@ struct AddSourceData {
 };
 
 namespace {
+constexpr int RECENT_LIST_LIMIT = 16;
+
 QString getSourceDisplayName(QString type)
 {
 	if (type == "scene") {
@@ -115,16 +117,18 @@ static void AddSource(void *_data, obs_scene_t *scene)
 		OBSSourceAutoRelease source = obs_source_create(data->show_transition_id, data->show_transition_id,
 								data->show_transition_settings, nullptr);
 
-		if (source)
+		if (source) {
 			obs_sceneitem_set_transition(sceneitem, true, source);
+		}
 	}
 
 	if (data->hide_transition_id && *data->hide_transition_id) {
 		OBSSourceAutoRelease source = obs_source_create(data->hide_transition_id, data->hide_transition_id,
 								data->hide_transition_settings, nullptr);
 
-		if (source)
+		if (source) {
 			obs_sceneitem_set_transition(sceneitem, false, source);
+		}
 	}
 
 	obs_sceneitem_set_transition_duration(sceneitem, true, data->show_transition_duration);
@@ -271,7 +275,13 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 	getSourceTypes();
 	getSources();
 
-	updateExistingSources(16);
+	updateExistingSources(RECENT_LIST_LIMIT);
+
+	signalHandlers.reserve(2);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create", &OBSBasicSourceSelect::obsSourceCreated,
+				    this);
+	signalHandlers.emplace_back(obs_get_signal_handler(), "source_destroy", &OBSBasicSourceSelect::obsSourceRemoved,
+				    this);
 
 	connect(ui->sourceTypeList, &QListWidget::itemDoubleClicked, this, &OBSBasicSourceSelect::createNewSource);
 	connect(ui->newSourceName, &QLineEdit::returnPressed, this, &OBSBasicSourceSelect::createNewSource);
@@ -294,6 +304,28 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 OBSBasicSourceSelect::~OBSBasicSourceSelect()
 {
 	App()->UpdateHotkeyFocusSetting();
+}
+
+void OBSBasicSourceSelect::obsSourceCreated(void *data, calldata_t *params)
+{
+	obs_source_t *source = static_cast<obs_source_t *>(calldata_ptr(params, "source"));
+	auto uuidPointer = obs_source_get_uuid(source);
+
+	if (uuidPointer) {
+		QMetaObject::invokeMethod(static_cast<OBSBasicSourceSelect *>(data), "handleSourceCreated",
+					  Qt::QueuedConnection, Q_ARG(QString, QString::fromUtf8(uuidPointer)));
+	}
+}
+
+void OBSBasicSourceSelect::obsSourceRemoved(void *data, calldata_t *params)
+{
+	obs_source_t *source = static_cast<obs_source_t *>(calldata_ptr(params, "source"));
+	auto uuidPointer = obs_source_get_uuid(source);
+
+	if (uuidPointer) {
+		QMetaObject::invokeMethod(static_cast<OBSBasicSourceSelect *>(data), "handleSourceRemoved",
+					  Qt::QueuedConnection, Q_ARG(QString, QString::fromUtf8(uuidPointer)));
+	}
 }
 
 void OBSBasicSourceSelect::checkSourceVisibility()
@@ -338,54 +370,105 @@ void OBSBasicSourceSelect::checkSourceVisibility()
 
 void OBSBasicSourceSelect::getSources()
 {
-	sources.clear();
+	weakSources.clear();
 
 	obs_enum_sources(enumSourcesCallback, this);
+
+	struct obs_frontend_source_list list = {};
+	obs_frontend_get_scenes(&list);
+
+	for (size_t i = 0; i < list.sources.num; i++) {
+		obs_source_t *source = list.sources.array[i];
+
+		weakSources.push_back(obs_source_get_weak_source(source));
+	}
+	obs_frontend_source_list_free(&list);
+
 	emit sourcesUpdated();
 }
 
 void OBSBasicSourceSelect::updateExistingSources(int limit)
 {
-	delete sourceButtons;
+	QLayout *layout = ui->existingListFrame->flowLayout();
+
+	// Clear existing buttons when switching types
+	QLayoutItem *child = nullptr;
+	while ((child = layout->takeAt(0)) != nullptr) {
+		if (child->widget()) {
+			child->widget()->deleteLater();
+		}
+		delete child;
+	}
+
+	if (sourceButtons) {
+		sourceButtons->deleteLater();
+	}
+
 	sourceButtons = new QButtonGroup(this);
 	sourceButtons->setExclusive(false);
 
-	std::vector<obs_source_t *> matchingSources{};
-	std::copy_if(sources.begin(), sources.end(), std::back_inserter(matchingSources), [this](obs_source_t *source) {
-		if (!source || obs_source_removed(source)) {
-			return false;
-		}
+	std::vector<obs_weak_source_t *> matchingSources{};
+	std::copy_if(weakSources.begin(), weakSources.end(), std::back_inserter(matchingSources),
+		     [this](obs_weak_source_t *weak) {
+			     obs_source_t *source = OBSGetStrongRef(weak);
 
-		const char *id = obs_source_get_unversioned_id(source);
-		QString stringId = QString(id);
+			     if (!source || obs_source_removed(source)) {
+				     return false;
+			     }
 
-		if (stringId.compare("group") == 0) {
-			return false;
-		}
+			     const char *id = obs_source_get_unversioned_id(source);
+			     QString stringId = QString(id);
 
-		if (sourceTypeId.compare(stringId) == 0 || sourceTypeId.isNull()) {
-			return true;
-		}
+			     if (stringId.compare("group") == 0) {
+				     return false;
+			     }
 
-		return false;
-	});
+			     if (sourceTypeId.isNull()) {
+				     // Skip listing scenes in recent sources list
+				     if (stringId.compare("scene") == 0) {
+					     return false;
+				     }
+
+				     return true;
+			     }
+
+			     if (sourceTypeId.compare(stringId) == 0) {
+				     return true;
+			     }
+
+			     return false;
+		     });
 
 	QWidget *prevTabWidget = ui->sourceTypeList;
 
-	auto createSourceButton = [this, &prevTabWidget](obs_source_t *source) {
-		SourceSelectButton *newButton = new SourceSelectButton(source, ui->existingListFrame);
+	auto createSourceButton = [this, &prevTabWidget](obs_weak_source_t *weak) {
+		OBSSource source{OBSGetStrongRef(weak)};
+
+		if (!source) {
+			return;
+		}
+
+		SourceSelectButton *newButton = new SourceSelectButton(weak, ui->existingListFrame);
 		std::string name = obs_source_get_name(source);
 
 		existingFlowLayout->addWidget(newButton);
-		sourceButtons->addButton(newButton->getButton());
+		sourceButtons->addButton(newButton->button());
 
 		if (!prevTabWidget) {
-			setTabOrder(ui->existingListFrame, newButton->getButton());
+			setTabOrder(ui->existingListFrame, newButton->button());
 		} else {
-			setTabOrder(prevTabWidget, newButton->getButton());
+			setTabOrder(prevTabWidget, newButton->button());
 		}
 
-		prevTabWidget = newButton->getButton();
+		connect(newButton, &SourceSelectButton::sourceRemoved, this, [this, newButton]() {
+			QSignalBlocker block(newButton);
+			newButton->button()->setChecked(false);
+			removeSelectedItem(newButton);
+
+			newButton->deleteLater();
+		});
+
+		prevTabWidget = newButton->button();
 	};
 
 	bool isReverseListOrder = sourceTypeId.isNull();
@@ -413,37 +496,9 @@ bool OBSBasicSourceSelect::enumSourcesCallback(void *data, obs_source_t *source)
 
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect *>(data);
 
-	window->sources.push_back(source);
+	window->weakSources.push_back(obs_source_get_weak_source(source));
 
 	return true;
-}
-
-bool OBSBasicSourceSelect::enumGroupsCallback(void *data, obs_source_t *source)
-{
-	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect *>(data);
-	const char *name = obs_source_get_name(source);
-	const char *id = obs_source_get_unversioned_id(source);
-
-	if (window->sourceTypeId.compare(QString(id)) == 0) {
-		OBSBasic *main = OBSBasic::Get();
-		OBSScene scene = main->GetCurrentScene();
-
-		obs_sceneitem_t *existing = obs_scene_get_group(scene, name);
-		if (!existing) {
-			QPushButton *button = new QPushButton(name);
-			connect(button, &QPushButton::clicked, window, &OBSBasicSourceSelect::addSelectedSources);
-		}
-	}
-
-	return true;
-}
-
-void OBSBasicSourceSelect::OBSSourceAdded(void *data, calldata_t *calldata)
-{
-	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect *>(data);
-	obs_source_t *source = (obs_source_t *)calldata_ptr(calldata, "source");
-
-	QMetaObject::invokeMethod(window, "SourceAdded", Q_ARG(OBSSource, source));
 }
 
 void OBSBasicSourceSelect::getSourceTypes()
@@ -499,6 +554,9 @@ void OBSBasicSourceSelect::getSourceTypes()
 		bool isDeprecated = item->data(DEPRECATED_ROLE).toBool();
 		if (isDeprecated) {
 			ui->sourceTypeList->takeItem(i);
+
+			QVariant unversionedIdData = item->data(UNVERSIONED_ID_ROLE);
+
 			deprecatedItems.append(item);
 		}
 	}
@@ -523,15 +581,6 @@ void OBSBasicSourceSelect::setSelectedSourceType(QListWidgetItem *item)
 	setSelectedSource(nullptr);
 	QLayout *layout = ui->existingListFrame->flowLayout();
 
-	// Clear existing buttons when switching types
-	QLayoutItem *child = nullptr;
-	while ((child = layout->takeAt(0)) != nullptr) {
-		if (child->widget()) {
-			child->widget()->deleteLater();
-		}
-		delete child;
-	}
-
 	QVariant unversionedIdData = item->data(UNVERSIONED_ID_ROLE);
 	QVariant deprecatedData = item->data(DEPRECATED_ROLE);
 
@@ -539,7 +588,7 @@ void OBSBasicSourceSelect::setSelectedSourceType(QListWidgetItem *item)
 		setSelectedSource(nullptr);
 		sourceTypeId.clear();
 		ui->createNewFrame->setVisible(false);
-		updateExistingSources(16);
+		updateExistingSources(RECENT_LIST_LIMIT);
 		return;
 	}
 
@@ -570,42 +619,7 @@ void OBSBasicSourceSelect::setSelectedSourceType(QListWidgetItem *item)
 	ui->newSourceName->setText(text);
 	ui->newSourceName->selectAll();
 
-	if (sourceTypeId.compare("scene") == 0) {
-		OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		OBSSource curSceneSource = main->GetCurrentSceneSource();
-
-		delete sourceButtons;
-		sourceButtons = new QButtonGroup(this);
-
-		int count = main->ui->scenes->count();
-		QWidget *prevTabItem = ui->sourceTypeList;
-		for (int i = 0; i < count; i++) {
-			QListWidgetItem *item = main->ui->scenes->item(i);
-			OBSScene scene = GetOBSRef<OBSScene>(item);
-			OBSSource sceneSource = obs_scene_get_source(scene);
-
-			if (curSceneSource == sceneSource) {
-				continue;
-			}
-
-			SourceSelectButton *newButton = new SourceSelectButton(sceneSource, ui->existingListFrame);
-			existingFlowLayout->addWidget(newButton);
-			sourceButtons->addButton(newButton->getButton());
-
-			setTabOrder(prevTabItem, newButton->getButton());
-			prevTabItem = newButton->getButton();
-		}
-		connect(sourceButtons, &QButtonGroup::buttonToggled, this, &OBSBasicSourceSelect::sourceButtonToggled);
-
-		QTimer::singleShot(100, this, [this] { checkSourceVisibility(); });
-
-		ui->createNewFrame->setVisible(false);
-
-	} else if (sourceTypeId.compare("group") == 0) {
-		obs_enum_sources(enumGroupsCallback, this);
-	} else {
-		updateExistingSources();
-	}
+	updateExistingSources();
 
 	if (layout->count() == 0) {
 		QLabel *noExisting = new QLabel();
@@ -613,14 +627,6 @@ void OBSBasicSourceSelect::setSelectedSourceType(QListWidgetItem *item)
 		noExisting->setProperty("class", "text-muted");
 		layout->addWidget(noExisting);
 	}
-}
-
-void OBSBasicSourceSelect::OBSSourceRemoved(void *data, calldata_t *calldata)
-{
-	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect *>(data);
-	obs_source_t *source = (obs_source_t *)calldata_ptr(calldata, "source");
-
-	QMetaObject::invokeMethod(window, "SourceRemoved", Q_ARG(OBSSource, source));
 }
 
 void OBSBasicSourceSelect::sourceButtonToggled(QAbstractButton *button, bool checked)
@@ -644,8 +650,6 @@ void OBSBasicSourceSelect::sourceButtonToggled(QAbstractButton *button, bool che
 		} else {
 			removeSelectedItem(buttonParent);
 		}
-
-		lastSelectedIndex = existingFlowLayout->indexOf(buttonParent);
 		return;
 	} else if (shiftDown) {
 		if (!ctrlDown) {
@@ -667,7 +671,7 @@ void OBSBasicSourceSelect::sourceButtonToggled(QAbstractButton *button, bool che
 
 			auto entry = dynamic_cast<SourceSelectButton *>(widget);
 			if (entry) {
-				entry->getButton()->setChecked(true);
+				entry->button()->setChecked(true);
 				addSelectedItem(entry);
 			}
 		}
@@ -709,6 +713,9 @@ void OBSBasicSourceSelect::addSelectedItem(SourceSelectButton *button)
 		return;
 	}
 
+	SourceSelectButton *buttonParent = dynamic_cast<SourceSelectButton *>(button->parentWidget());
+	lastSelectedIndex = existingFlowLayout->indexOf(buttonParent);
+
 	auto it = std::find(selectedItems.begin(), selectedItems.end(), button);
 	if (it == selectedItems.end()) {
 		selectedItems.push_back(button);
@@ -721,6 +728,9 @@ void OBSBasicSourceSelect::removeSelectedItem(SourceSelectButton *button)
 	if (button == nullptr) {
 		return;
 	}
+
+	SourceSelectButton *buttonParent = dynamic_cast<SourceSelectButton *>(button->parentWidget());
+	lastSelectedIndex = existingFlowLayout->indexOf(buttonParent);
 
 	auto it = std::find(selectedItems.begin(), selectedItems.end(), button);
 	if (it != selectedItems.end()) {
@@ -737,7 +747,10 @@ void OBSBasicSourceSelect::clearSelectedItems()
 
 	sourceButtons->blockSignals(true);
 	for (auto &item : selectedItems) {
-		item->getButton()->setChecked(false);
+		if (!item) {
+			continue;
+		}
+		item->button()->setChecked(false);
 	}
 	sourceButtons->blockSignals(false);
 	selectedItems.clear();
@@ -858,6 +871,38 @@ void OBSBasicSourceSelect::addSelectedSources()
 		addExistingSource(sourceName, visible);
 	}
 	close();
+}
+
+void OBSBasicSourceSelect::handleSourceCreated(QString uuid)
+{
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
+	if (!source) {
+		return;
+	}
+
+	OBSWeakSource weak = obs_source_get_weak_source(source);
+	weakSources.emplace_back(weak);
+
+	if (sourceTypeId.isNull()) {
+		updateExistingSources(RECENT_LIST_LIMIT);
+	} else {
+		updateExistingSources();
+	}
+}
+
+void OBSBasicSourceSelect::handleSourceRemoved(QString uuid)
+{
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
+	if (!source) {
+		return;
+	}
+
+	OBSWeakSource weak = obs_source_get_weak_source(source);
+
+	auto it = std::find(weakSources.begin(), weakSources.end(), weak);
+	if (it != weakSources.end()) {
+		weakSources.erase(it);
+	}
 }
 
 void OBSBasicSourceSelect::sourceTypeSelected(QListWidgetItem *current, QListWidgetItem *)

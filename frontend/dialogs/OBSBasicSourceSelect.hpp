@@ -42,8 +42,11 @@ private:
 
 	QPointer<QButtonGroup> sourceButtons;
 
-	std::vector<obs_source_t *> sources;
-	std::vector<obs_source_t *> groups;
+	std::vector<OBSSignal> signalHandlers;
+	static void obsSourceCreated(void *param, calldata_t *calldata);
+	static void obsSourceRemoved(void *param, calldata_t *calldata);
+
+	std::vector<obs_weak_source_t *> weakSources;
 
 	QPointer<FlowLayout> existingFlowLayout = nullptr;
 
@@ -51,16 +54,12 @@ private:
 	void updateExistingSources(int limit = 0);
 
 	static bool enumSourcesCallback(void *data, obs_source_t *source);
-	static bool enumGroupsCallback(void *data, obs_source_t *source);
-
-	static void OBSSourceRemoved(void *data, calldata_t *calldata);
-	static void OBSSourceAdded(void *data, calldata_t *calldata);
 
 	void getSourceTypes();
 	void setSelectedSourceType(QListWidgetItem *item);
 
 	int lastSelectedIndex = -1;
-	std::vector<SourceSelectButton *> selectedItems;
+	std::vector<QPointer<SourceSelectButton>> selectedItems;
 	void setSelectedSource(SourceSelectButton *button);
 	void addSelectedItem(SourceSelectButton *button);
 	void removeSelectedItem(SourceSelectButton *button);
@@ -78,6 +77,9 @@ signals:
 public slots:
 	void on_createNewSource_clicked(bool checked);
 	void addSelectedSources();
+
+	void handleSourceCreated(QString uuid);
+	void handleSourceRemoved(QString uuid);
 
 	void sourceTypeSelected(QListWidgetItem *current, QListWidgetItem *previous);
 
