@@ -1427,6 +1427,8 @@ struct obs_encoder {
 
 	/* stores the video/audio media output pointer.  video_t *or audio_t **/
 	void *media;
+	/* Stores the original video if GPU scaling is enabled and `media` can be overwritten. */
+	video_t *original_video;
 
 	pthread_mutex_t callbacks_mutex;
 	DARRAY(struct encoder_callback) callbacks;

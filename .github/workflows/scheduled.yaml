@@ -69,7 +69,7 @@ jobs:
             fi
           done <<< \
           "$(gh api repos/${GITHUB_REPOSITORY}/actions/caches \
-            --jq '.actions_caches.[] | select(.ref|test("refs/heads/master")) | select(.key|test(".*-ccache-*")) | {id, key} | join(";")')"
+            --jq '.actions_caches.[] | select(.ref|test("refs/heads/master")) | select(.key|test(".*-(ccache|xcode)-*")) | {id, key} | join(";")')"
           echo '::endgroup::'
 
 

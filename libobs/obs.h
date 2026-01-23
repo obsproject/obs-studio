@@ -1611,6 +1611,8 @@ EXPORT uint32_t obs_transition_get_alignment(const obs_source_t *transition);
 EXPORT void obs_transition_set_size(obs_source_t *transition, uint32_t cx, uint32_t cy);
 EXPORT void obs_transition_get_size(const obs_source_t *transition, uint32_t *cx, uint32_t *cy);
 
+EXPORT bool obs_transition_is_active(obs_source_t *transition);
+
 /* function used by transitions */
 
 /**
@@ -2348,6 +2350,9 @@ EXPORT size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder);
 
 /** For audio encoders, returns the mixer index */
 EXPORT size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder);
+
+/* For audio encoders, returns the number of samples to skip at the beginning of the stream */
+EXPORT uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder);
 
 /**
  * Sets the preferred video format for a video encoder.  If the encoder can use

@@ -18,7 +18,7 @@
 #include <util/base.h>
 #include "d3d11-subsystem.hpp"
 
-void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
+void gs_texture_2d::InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd)
 {
 	uint32_t rowSizeBytes = width * gs_get_format_bpp(format);
 	uint32_t texSizeBytes = height * rowSizeBytes / 8;
@@ -66,7 +66,7 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 
 			uint32_t texSize = bbp * w * h / 8;
 
-			vector<uint8_t> &subData = this->data[i];
+			std::vector<uint8_t> &subData = this->data[i];
 			subData.resize(texSize);
 			memcpy(&subData[0], data[i], texSize);
 

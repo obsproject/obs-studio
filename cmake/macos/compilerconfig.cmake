@@ -9,10 +9,13 @@ if(NOT XCODE)
   message(FATAL_ERROR "Building OBS Studio on macOS requires Xcode generator.")
 endif()
 
-include(ccache)
 include(compiler_common)
 
 add_compile_options("$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-fopenmp-simd>")
+
+if(CMAKE_CXX_STANDARD GREATER_EQUAL 20)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-char8_t>)
+endif()
 
 # Ensure recent enough Xcode and platform SDK
 function(check_sdk_requirements)

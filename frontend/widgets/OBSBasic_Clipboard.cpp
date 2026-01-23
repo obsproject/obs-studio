@@ -19,9 +19,9 @@
 
 #include "OBSBasic.hpp"
 
+#include <components/VolumeControl.hpp>
 #include <dialogs/OBSBasicFilters.hpp>
 #include <dialogs/OBSBasicSourceSelect.hpp>
-#include <widgets/VolControl.hpp>
 
 extern void undo_redo(const std::string &data);
 
@@ -83,6 +83,27 @@ void OBSBasic::on_actionCopySource_triggered()
 		copyInfo.blend_method = obs_sceneitem_get_blending_method(item);
 		copyInfo.blend_mode = obs_sceneitem_get_blending_mode(item);
 		copyInfo.visible = obs_sceneitem_visible(item);
+		copyInfo.scale_type = obs_sceneitem_get_scale_filter(item);
+		copyInfo.show_transition_id = obs_source_get_id(obs_sceneitem_get_transition(item, true));
+		copyInfo.hide_transition_id = obs_source_get_id(obs_sceneitem_get_transition(item, false));
+
+		OBSDataAutoRelease newShowData = obs_data_create();
+		OBSDataAutoRelease oldShowData = obs_source_get_settings(obs_sceneitem_get_transition(item, true));
+		obs_data_apply(newShowData, oldShowData);
+		copyInfo.show_transition_settings = newShowData.Get();
+
+		OBSDataAutoRelease newHideData = obs_data_create();
+		OBSDataAutoRelease oldHideData = obs_source_get_settings(obs_sceneitem_get_transition(item, false));
+		obs_data_apply(newHideData, oldHideData);
+		copyInfo.hide_transition_settings = newHideData.Get();
+
+		copyInfo.show_transition_duration = obs_sceneitem_get_transition_duration(item, true);
+		copyInfo.hide_transition_duration = obs_sceneitem_get_transition_duration(item, false);
+
+		OBSDataAutoRelease newPrivData = obs_data_create();
+		OBSDataAutoRelease oldPrivData = obs_sceneitem_get_private_settings(item);
+		obs_data_apply(newPrivData, oldPrivData);
+		copyInfo.private_settings = newPrivData.Get();
 
 		clipboard.push_back(copyInfo);
 	}
@@ -114,6 +135,7 @@ void OBSBasic::on_actionPasteRef_triggered()
 		}
 
 		OBSBasicSourceSelect::SourcePaste(copyInfo, false);
+		RefreshSources(scene);
 	}
 
 	undo_s.pop_disabled();
@@ -135,6 +157,7 @@ void OBSBasic::on_actionPasteDup_triggered()
 	for (size_t i = clipboard.size(); i > 0; i--) {
 		SourceCopyInfo &copyInfo = clipboard[i - 1];
 		OBSBasicSourceSelect::SourcePaste(copyInfo, true);
+		RefreshSources(GetCurrentScene());
 	}
 
 	undo_s.pop_disabled();
@@ -162,36 +185,42 @@ void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array, redo_array);
 }
 
-void OBSBasic::AudioMixerCopyFilters()
+void OBSBasic::actionCopyFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
+	obs_source_t *source = action->property("source").value<OBSSource>();
 
-	copyFiltersSource = obs_source_get_weak_source(source);
+	if (!source) {
+		return;
+	}
+
+	copyFiltersSource_ = obs_source_get_weak_source(source);
 	ui->actionPasteFilters->setEnabled(true);
 }
 
-void OBSBasic::AudioMixerPasteFilters()
+void OBSBasic::actionPasteFilters()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *dstSource = vol->GetSource();
+	obs_source_t *dstSource = action->property("source").value<OBSSource>();
 
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource);
+	if (!dstSource) {
+		return;
+	}
+
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
 
 	SourcePasteFilters(source.Get(), dstSource);
 }
 
 void OBSBasic::SceneCopyFilters()
 {
-	copyFiltersSource = obs_source_get_weak_source(GetCurrentSceneSource());
+	copyFiltersSource_ = obs_source_get_weak_source(GetCurrentSceneSource());
 	ui->actionPasteFilters->setEnabled(true);
 }
 
 void OBSBasic::ScenePasteFilters()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
 
 	OBSSource dstSource = GetCurrentSceneSource();
 
@@ -207,7 +236,7 @@ void OBSBasic::on_actionCopyFilters_triggered()
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	copyFiltersSource = obs_source_get_weak_source(source);
+	copyFiltersSource_ = obs_source_get_weak_source(source);
 
 	ui->actionPasteFilters->setEnabled(true);
 }
@@ -240,7 +269,7 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t
 
 void OBSBasic::on_actionPasteFilters_triggered()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource);
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
 
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);

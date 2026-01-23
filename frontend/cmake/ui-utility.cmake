@@ -37,6 +37,8 @@ target_sources(
     utility/OBSThemeVariable.hpp
     utility/OBSTranslator.cpp
     utility/OBSTranslator.hpp
+    utility/PreviewProgramSizeObserver.cpp
+    utility/PreviewProgramSizeObserver.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
     utility/RemoteTextThread.cpp
@@ -47,6 +49,7 @@ target_sources(
     utility/RemuxQueueModel.hpp
     utility/RemuxWorker.cpp
     utility/RemuxWorker.hpp
+    utility/ResizeSignaler.hpp
     utility/SceneRenameDelegate.cpp
     utility/SceneRenameDelegate.hpp
     utility/ScreenshotObj.cpp
@@ -56,9 +59,9 @@ target_sources(
     utility/SimpleOutput.hpp
     utility/StartMultiTrackVideoStreamingGuard.hpp
     utility/SurfaceEventFilter.hpp
+    utility/ThumbnailManager.cpp
+    utility/ThumbnailManager.hpp
     utility/VCamConfig.hpp
-    utility/VolumeMeterTimer.cpp
-    utility/VolumeMeterTimer.hpp
     utility/audio-encoders.cpp
     utility/audio-encoders.hpp
     utility/display-helpers.hpp

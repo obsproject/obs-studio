@@ -20,8 +20,8 @@
 #include "OBSBasic.hpp"
 #include "ColorSelect.hpp"
 #include "OBSProjector.hpp"
-#include "VolControl.hpp"
 
+#include <components/VolumeControl.hpp>
 #include <dialogs/NameDialog.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
 #include <dialogs/OBSBasicSourceSelect.hpp>
@@ -34,6 +34,41 @@
 #include <sstream>
 
 using namespace std;
+
+namespace {
+bool isHiddenInMixer(obs_source_t *source)
+{
+	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
+	bool hidden = obs_data_get_bool(priv_settings, "mixer_hidden");
+
+	return hidden;
+}
+
+void setHiddenInMixer(obs_source_t *source, bool hidden)
+{
+	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
+	obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
+}
+
+std::string getNewSourceName(std::string_view name)
+{
+	std::string newName{name};
+	int suffix = 1;
+
+	for (;;) {
+		OBSSourceAutoRelease existing_source = obs_get_source_by_name(newName.c_str());
+		if (!existing_source) {
+			break;
+		}
+
+		char nextName[256];
+		std::snprintf(nextName, sizeof(nextName), "%s (%d)", name.data(), ++suffix);
+		newName = nextName;
+	}
+
+	return newName;
+}
+} // namespace
 
 static inline bool HasAudioDevices(const char *source_id)
 {
@@ -109,116 +144,6 @@ void OBSBasic::RenameSources(OBSSource source, QString newName, QString prevName
 	UpdatePreviewProgramIndicators();
 }
 
-void OBSBasic::GetAudioSourceFilters()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
-
-	CreateFiltersWindow(source);
-}
-
-void OBSBasic::GetAudioSourceProperties()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	obs_source_t *source = vol->GetSource();
-
-	CreatePropertiesWindow(source);
-}
-
-void OBSBasic::MixerRenameSource()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolControl *vol = action->property("volControl").value<VolControl *>();
-	OBSSource source = vol->GetSource();
-
-	const char *prevName = obs_source_get_name(source);
-
-	for (;;) {
-		string name;
-		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.MixerRename.Title"),
-						       QTStr("Basic.Main.MixerRename.Text"), name, QT_UTF8(prevName));
-		if (!accepted)
-			return;
-
-		if (name.empty()) {
-			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
-			continue;
-		}
-
-		OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
-
-		if (sourceTest) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
-			continue;
-		}
-
-		obs_source_set_name(source, name.c_str());
-		break;
-	}
-}
-
-void OBSBasic::ActivateAudioSource(OBSSource source)
-{
-	if (SourceMixerHidden(source))
-		return;
-	if (!obs_source_active(source))
-		return;
-	if (!obs_source_audio_active(source))
-		return;
-
-	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl");
-	VolControl *vol = new VolControl(source, true, vertical);
-
-	vol->EnableSlider(!SourceVolumeLocked(source));
-
-	double meterDecayRate = config_get_double(activeConfiguration, "Audio", "MeterDecayRate");
-	vol->SetMeterDecayRate(meterDecayRate);
-
-	uint32_t peakMeterTypeIdx = config_get_uint(activeConfiguration, "Audio", "PeakMeterType");
-
-	enum obs_peak_meter_type peakMeterType;
-	switch (peakMeterTypeIdx) {
-	case 0:
-		peakMeterType = SAMPLE_PEAK_METER;
-		break;
-	case 1:
-		peakMeterType = TRUE_PEAK_METER;
-		break;
-	default:
-		peakMeterType = SAMPLE_PEAK_METER;
-		break;
-	}
-
-	vol->setPeakMeterType(peakMeterType);
-
-	vol->setContextMenuPolicy(Qt::CustomContextMenu);
-
-	connect(vol, &QWidget::customContextMenuRequested, this, &OBSBasic::VolControlContextMenu);
-	connect(vol, &VolControl::ConfigClicked, this, &OBSBasic::VolControlContextMenu);
-
-	InsertQObjectByName(volumes, vol);
-
-	for (auto volume : volumes) {
-		if (vertical)
-			ui->vVolControlLayout->addWidget(volume);
-		else
-			ui->hVolControlLayout->addWidget(volume);
-	}
-}
-
-void OBSBasic::DeactivateAudioSource(OBSSource source)
-{
-	for (size_t i = 0; i < volumes.size(); i++) {
-		if (volumes[i]->GetSource() == source) {
-			delete volumes[i];
-			volumes.erase(volumes.begin() + i);
-			break;
-		}
-	}
-}
-
 bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 {
 	if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE && !obs_source_is_group(source)) {
@@ -282,42 +207,6 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 					  Q_ARG(OBSSource, OBSSource(source)));
 }
 
-void OBSBasic::SourceActivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-	uint32_t flags = obs_source_get_output_flags(source);
-
-	if (flags & OBS_SOURCE_AUDIO)
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ActivateAudioSource",
-					  Q_ARG(OBSSource, OBSSource(source)));
-}
-
-void OBSBasic::SourceDeactivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-	uint32_t flags = obs_source_get_output_flags(source);
-
-	if (flags & OBS_SOURCE_AUDIO)
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "DeactivateAudioSource",
-					  Q_ARG(OBSSource, OBSSource(source)));
-}
-
-void OBSBasic::SourceAudioActivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-
-	if (obs_source_active(source))
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ActivateAudioSource",
-					  Q_ARG(OBSSource, OBSSource(source)));
-}
-
-void OBSBasic::SourceAudioDeactivated(void *data, calldata_t *params)
-{
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "DeactivateAudioSource",
-				  Q_ARG(OBSSource, OBSSource(source)));
-}
-
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
@@ -329,8 +218,6 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 
 	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
 }
-
-extern char *get_new_source_name(const char *name, const char *format);
 
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, const char *deviceDesc, int channel)
 {
@@ -352,11 +239,11 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 		}
 
 	} else if (!disable) {
-		BPtr<char> name = get_new_source_name(deviceDesc, "%s (%d)");
+		std::string name = getNewSourceName(deviceDesc);
 
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(sourceId, name, settings, nullptr);
+		source = obs_source_create(sourceId, name.c_str(), settings, nullptr);
 
 		obs_set_output_source(channel, source);
 	}
@@ -369,7 +256,25 @@ void OBSBasic::SetDeinterlacingMode()
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
+	obs_deinterlace_mode oldMode = obs_source_get_deinterlace_mode(source);
 	obs_source_set_deinterlace_mode(source, mode);
+
+	auto undo_redo = [](const std::string &uuid, obs_deinterlace_mode val) {
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
+		if (source)
+			obs_source_set_deinterlace_mode(source, val);
+	};
+
+	const char *uuid = obs_source_get_uuid(source);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.DeinterlacingMode").arg(obs_source_get_name(source));
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, oldMode);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, mode);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 void OBSBasic::SetDeinterlacingOrder()
@@ -379,7 +284,25 @@ void OBSBasic::SetDeinterlacingOrder()
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
+	obs_deinterlace_field_order oldOrder = obs_source_get_deinterlace_field_order(source);
 	obs_source_set_deinterlace_field_order(source, order);
+
+	auto undo_redo = [](const std::string &uuid, obs_deinterlace_field_order val) {
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
+		if (source)
+			obs_source_set_deinterlace_field_order(source, val);
+	};
+
+	const char *uuid = obs_source_get_uuid(source);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.DeinterlacingOrder").arg(obs_source_get_name(source));
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, oldOrder);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, order);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
@@ -426,7 +349,31 @@ void OBSBasic::SetScaleFilter()
 	obs_scale_type mode = (obs_scale_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
+	obs_scale_type oldMode = obs_sceneitem_get_scale_filter(sceneItem);
 	obs_sceneitem_set_scale_filter(sceneItem, mode);
+
+	auto undo_redo = [](const std::string &uuid, int64_t id, obs_scale_type val) {
+		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
+		obs_scene_t *sc = obs_group_or_scene_from_source(s);
+		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
+		if (si)
+			obs_sceneitem_set_scale_filter(si, val);
+	};
+
+	OBSSource source = obs_sceneitem_get_source(sceneItem);
+	OBSSource sceneSource = obs_scene_get_source(obs_sceneitem_get_scene(sceneItem));
+	int64_t id = obs_sceneitem_get_id(sceneItem);
+	const char *name = obs_source_get_name(sceneSource);
+	const char *uuid = obs_source_get_uuid(sceneSource);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.ScaleFiltering").arg(obs_source_get_name(source), name);
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMode);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, mode);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
@@ -457,7 +404,31 @@ void OBSBasic::SetBlendingMethod()
 	obs_blending_method method = (obs_blending_method)action->property("method").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
+	obs_blending_method oldMethod = obs_sceneitem_get_blending_method(sceneItem);
 	obs_sceneitem_set_blending_method(sceneItem, method);
+
+	auto undo_redo = [](const std::string &uuid, int64_t id, obs_blending_method val) {
+		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
+		obs_scene_t *sc = obs_group_or_scene_from_source(s);
+		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
+		if (si)
+			obs_sceneitem_set_blending_method(si, val);
+	};
+
+	OBSSource source = obs_sceneitem_get_source(sceneItem);
+	OBSSource sceneSource = obs_scene_get_source(obs_sceneitem_get_scene(sceneItem));
+	int64_t id = obs_sceneitem_get_id(sceneItem);
+	const char *name = obs_source_get_name(sceneSource);
+	const char *uuid = obs_source_get_uuid(sceneSource);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.BlendingMethod").arg(obs_source_get_name(source), name);
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMethod);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, method);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
@@ -484,7 +455,31 @@ void OBSBasic::SetBlendingMode()
 	obs_blending_type mode = (obs_blending_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
+	obs_blending_type oldMode = obs_sceneitem_get_blending_mode(sceneItem);
 	obs_sceneitem_set_blending_mode(sceneItem, mode);
+
+	auto undo_redo = [](const std::string &uuid, int64_t id, obs_blending_type val) {
+		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
+		obs_scene_t *sc = obs_group_or_scene_from_source(s);
+		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
+		if (si)
+			obs_sceneitem_set_blending_mode(si, val);
+	};
+
+	OBSSource source = obs_sceneitem_get_source(sceneItem);
+	OBSSource sceneSource = obs_scene_get_source(obs_sceneitem_get_scene(sceneItem));
+	int64_t id = obs_sceneitem_get_id(sceneItem);
+	const char *name = obs_source_get_name(sceneSource);
+	const char *uuid = obs_source_get_uuid(sceneSource);
+
+	if (uuid && *uuid) {
+		QString actionString = QTStr("Undo.BlendingMode").arg(obs_source_get_name(source), name);
+
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMode);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, mode);
+
+		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
+	}
 }
 
 QMenu *OBSBasic::AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item)
@@ -552,7 +547,7 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 			colorButton->setStyleSheet("border: 2px solid black");
 
 		colorButton->setProperty("bgColor", i);
-		select->connect(colorButton, &QPushButton::released, this, &OBSBasic::ColorChange);
+		connect(colorButton, &QPushButton::released, this, &OBSBasic::ColorChange);
 	}
 
 	menu->addAction(widgetAction);
@@ -592,10 +587,14 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	}
 
 	// Add new source
-	QPointer<QMenu> addSourceMenu = CreateAddSourcePopupMenu();
-	if (addSourceMenu) {
-		popup.addMenu(addSourceMenu);
-		popup.addSeparator();
+	QAction *addSource = popup.addAction(QTStr("AddSource"), this, SLOT(AddSourceDialog()));
+	popup.addAction(addSource);
+	popup.addSeparator();
+
+	if (!preview && !sourceSelected) {
+		QAction *addGroup = new QAction(QTStr("Basic.Main.NewGroup"), this);
+		connect(addGroup, &QAction::triggered, ui->sources, &SourceTree::AddGroup);
+		popup.addAction(addGroup);
 	}
 
 	// Preview menu entries
@@ -654,10 +653,17 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addMenu(AddBackgroundColorMenu(colorMenu, colorWidgetAction, colorSelect, sceneItem));
 
 			if (hasAudio) {
+				bool isHidden = isHiddenInMixer(source);
+
 				QAction *actionHideMixer =
-					popup.addAction(QTStr("HideMixer"), this, &OBSBasic::ToggleHideMixer);
+					popup.addAction(QTStr("HideMixer"), this, [source, isHidden]() {
+						setHiddenInMixer(source, !isHidden);
+
+						OBSBasic *main = OBSBasic::Get();
+						emit main->mixerStatusChanged(obs_source_get_uuid(source));
+					});
 				actionHideMixer->setCheckable(true);
-				actionHideMixer->setChecked(SourceMixerHidden(source));
+				actionHideMixer->setChecked(isHidden);
 			}
 			popup.addSeparator();
 		}
@@ -704,14 +710,12 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		// Source grouping
 		if (ui->sources->MultipleBaseSelected()) {
-			popup.addSeparator();
 			popup.addAction(QTStr("Basic.Main.GroupItems"), ui->sources, &SourceTree::GroupSelectedItems);
-
-		} else if (ui->sources->GroupsSelected()) {
 			popup.addSeparator();
+		} else if (ui->sources->GroupsSelected()) {
 			popup.addAction(QTStr("Basic.Main.Ungroup"), ui->sources, &SourceTree::UngroupSelectedGroups);
+			popup.addSeparator();
 		}
-		popup.addSeparator();
 
 		popup.addAction(ui->actionCopySource);
 		popup.addAction(ui->actionPasteRef);
@@ -743,6 +747,30 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	popup.exec(QCursor::pos());
 }
 
+void OBSBasic::actionOpenSourceFilters()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	if (!action->property("source").isValid()) {
+		return;
+	}
+
+	obs_source_t *source = action->property("source").value<OBSSource>();
+
+	CreateFiltersWindow(source);
+}
+
+void OBSBasic::actionOpenSourceProperties()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	if (!action->property("source").isValid()) {
+		return;
+	}
+
+	obs_source_t *source = action->property("source").value<OBSSource>();
+
+	CreatePropertiesWindow(source);
+}
+
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 {
 	if (ui->scenes->count()) {
@@ -767,115 +795,27 @@ static inline bool should_show_properties(obs_source_t *source, const char *id)
 	return true;
 }
 
-void OBSBasic::AddSource(const char *id)
+void OBSBasic::AddSourceDialog()
 {
-	if (id && *id) {
-		OBSBasicSourceSelect sourceSelect(this, id, undo_s);
-		sourceSelect.exec();
-		if (should_show_properties(sourceSelect.newSource, id)) {
-			CreatePropertiesWindow(sourceSelect.newSource);
-		}
-	}
-}
-
-QMenu *OBSBasic::CreateAddSourcePopupMenu()
-{
-	const char *unversioned_type;
-	const char *type;
-	bool foundValues = false;
-	bool foundDeprecated = false;
-	size_t idx = 0;
-
-	QMenu *popup = new QMenu(QTStr("AddSource"), this);
-	QMenu *deprecated = new QMenu(QTStr("Deprecated"), popup);
-
-	auto getActionAfter = [](QMenu *menu, const QString &name) {
-		QList<QAction *> actions = menu->actions();
-
-		for (QAction *menuAction : actions) {
-			if (menuAction->text().compare(name, Qt::CaseInsensitive) >= 0)
-				return menuAction;
-		}
-
-		return (QAction *)nullptr;
-	};
-
-	auto addSource = [this, getActionAfter](QMenu *popup, const char *type, const char *name) {
-		QString qname = QT_UTF8(name);
-		QAction *popupItem = new QAction(qname, this);
-		connect(popupItem, &QAction::triggered, [this, type]() { AddSource(type); });
-
-		QIcon icon;
-
-		if (strcmp(type, "scene") == 0)
-			icon = GetSceneIcon();
-		else
-			icon = GetSourceIcon(type);
-
-		popupItem->setIcon(icon);
-
-		QAction *after = getActionAfter(popup, qname);
-		popup->insertAction(after, popupItem);
-	};
-
-	while (obs_enum_input_types2(idx++, &type, &unversioned_type)) {
-		const char *name = obs_source_get_display_name(type);
-		uint32_t caps = obs_get_source_output_flags(type);
-
-		if ((caps & OBS_SOURCE_CAP_DISABLED) != 0)
-			continue;
-
-		if ((caps & OBS_SOURCE_DEPRECATED) == 0) {
-			addSource(popup, unversioned_type, name);
-		} else {
-			addSource(deprecated, unversioned_type, name);
-			foundDeprecated = true;
-		}
-		foundValues = true;
-	}
-
-	addSource(popup, "scene", Str("Basic.Scene"));
-
-	popup->addSeparator();
-	QAction *addGroup = new QAction(QTStr("Group"), this);
-	addGroup->setIcon(GetGroupIcon());
-	connect(addGroup, &QAction::triggered, [this]() { AddSource("group"); });
-	popup->addAction(addGroup);
-
-	if (!foundDeprecated) {
-		delete deprecated;
-		deprecated = nullptr;
-	}
-
-	if (!foundValues) {
-		delete popup;
-		popup = nullptr;
-
-	} else if (foundDeprecated) {
-		popup->addSeparator();
-		popup->addMenu(deprecated);
-	}
-
-	return popup;
-}
-
-void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
-{
-	if (!GetCurrentScene()) {
-		// Tell the user he needs a scene first (help beginners).
-		OBSMessageBox::information(this, QTStr("Basic.Main.AddSourceHelp.Title"),
-					   QTStr("Basic.Main.AddSourceHelp.Text"));
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
 		return;
 	}
 
-	QScopedPointer<QMenu> popup(CreateAddSourcePopupMenu());
-	if (popup)
-		popup->exec(pos);
+	if (addWindow) {
+		addWindow->close();
+	}
+
+	addWindow = new OBSBasicSourceSelect(this, undo_s);
+	addWindow->show();
+
+	addWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+	connect(this, &OBSBasic::sourceUuidDropped, addWindow, &OBSBasicSourceSelect::sourceDropped);
 }
 
 void OBSBasic::on_actionAddSource_triggered()
 {
-	AddSourcePopupMenu(QCursor::pos());
+	AddSourceDialog();
 }
 
 static bool remove_items(obs_scene_t *, obs_sceneitem_t *item, void *param)

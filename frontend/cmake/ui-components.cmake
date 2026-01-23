@@ -12,6 +12,12 @@ target_sources(
   PRIVATE
     components/AbsoluteSlider.cpp
     components/AbsoluteSlider.hpp
+    components/AccessibleAlignmentCell.cpp
+    components/AccessibleAlignmentCell.hpp
+    components/AccessibleAlignmentSelector.cpp
+    components/AccessibleAlignmentSelector.hpp
+    components/AlignmentSelector.cpp
+    components/AlignmentSelector.hpp
     components/ApplicationAudioCaptureToolbar.cpp
     components/ApplicationAudioCaptureToolbar.hpp
     components/AudioCaptureToolbar.cpp
@@ -30,18 +36,22 @@ target_sources(
     components/DisplayCaptureToolbar.cpp
     components/DisplayCaptureToolbar.hpp
     components/EditWidget.hpp
+    components/FlowFrame.cpp
+    components/FlowFrame.hpp
+    components/FlowLayout.cpp
+    components/FlowLayout.hpp
     components/FocusList.cpp
     components/FocusList.hpp
     components/GameCaptureToolbar.cpp
     components/GameCaptureToolbar.hpp
-    components/HScrollArea.cpp
-    components/HScrollArea.hpp
     components/ImageSourceToolbar.cpp
     components/ImageSourceToolbar.hpp
     components/MediaControls.cpp
     components/MediaControls.hpp
     components/MenuButton.cpp
     components/MenuButton.hpp
+    components/MenuCheckBox.cpp
+    components/MenuCheckBox.hpp
     components/Multiview.cpp
     components/Multiview.hpp
     components/MuteCheckBox.hpp
@@ -57,6 +67,8 @@ target_sources(
     components/SceneTree.hpp
     components/SilentUpdateCheckBox.hpp
     components/SilentUpdateSpinBox.hpp
+    components/SourceSelectButton.cpp
+    components/SourceSelectButton.hpp
     components/SourceToolbar.cpp
     components/SourceToolbar.hpp
     components/SourceTree.cpp
@@ -77,6 +89,14 @@ target_sources(
     components/VisibilityItemDelegate.hpp
     components/VisibilityItemWidget.cpp
     components/VisibilityItemWidget.hpp
+    components/VolumeAccessibleInterface.cpp
+    components/VolumeAccessibleInterface.hpp
+    components/VolumeControl.cpp
+    components/VolumeControl.hpp
+    components/VolumeMeter.cpp
+    components/VolumeMeter.hpp
+    components/VolumeName.cpp
+    components/VolumeName.hpp
     components/VolumeSlider.cpp
     components/VolumeSlider.hpp
     components/WindowCaptureToolbar.cpp

@@ -113,16 +113,16 @@ static inline bool WidgetChanged(QWidget *widget)
 	return widget->property("changed").toBool();
 }
 
-static inline void SetComboByName(QComboBox *combo, const char *name)
+static inline void SetComboByName(QComboBox *combo, const QString &name)
 {
-	int idx = combo->findText(QT_UTF8(name));
+	int idx = combo->findText(name);
 	if (idx != -1)
 		combo->setCurrentIndex(idx);
 }
 
-static inline bool SetComboByValue(QComboBox *combo, const char *name)
+static inline bool SetComboByValue(QComboBox *combo, const QString &name)
 {
-	int idx = combo->findData(QT_UTF8(name));
+	int idx = combo->findData(name);
 	if (idx != -1) {
 		combo->setCurrentIndex(idx);
 		return true;
@@ -131,7 +131,7 @@ static inline bool SetComboByValue(QComboBox *combo, const char *name)
 	return false;
 }
 
-static inline bool SetInvalidValue(QComboBox *combo, const char *name, const char *data = nullptr)
+static inline bool SetInvalidValue(QComboBox *combo, const QString &name, const QVariant &data)
 {
 	combo->insertItem(0, name, data);
 
@@ -385,6 +385,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->ignoreRecommended,    CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->whipSimulcastTotalLayers, SCROLL_CHANGED, STREAM1_CHANGED);
 	HookWidget(ui->enableMultitrackVideo,      CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoMaximumAggregateBitrateAuto, CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoMaximumAggregateBitrate,     SCROLL_CHANGED, STREAM1_CHANGED);
@@ -1177,8 +1178,8 @@ void OBSBasicSettings::LoadLanguageList()
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 void TranslateBranchInfo(const QString &name, QString &displayName, QString &description)
 {
-	QString translatedName = QTStr("Basic.Settings.General.ChannelName." + name.toUtf8());
-	QString translatedDesc = QTStr("Basic.Settings.General.ChannelDescription." + name.toUtf8());
+	QString translatedName = QTStr(QT_TO_UTF8(("Basic.Settings.General.ChannelName." + name)));
+	QString translatedDesc = QTStr(QT_TO_UTF8(("Basic.Settings.General.ChannelDescription." + name)));
 
 	if (!translatedName.startsWith("Basic.Settings."))
 		displayName = translatedName;
@@ -1748,7 +1749,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	if (!IsSurround(speakers))
 		RestrictResetBitrates({ui->simpleOutputABitrate}, 320);
 
-	SetComboByName(ui->simpleOutputABitrate, std::to_string(audioBitrate).c_str());
+	SetComboByName(ui->simpleOutputABitrate, QString::number(audioBitrate));
 
 	ui->simpleOutAdvanced->setChecked(advanced);
 	ui->simpleOutCustom->setText(custom);
@@ -2143,12 +2144,12 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 				      320);
 	}
 
-	SetComboByName(ui->advOutTrack1Bitrate, std::to_string(track1Bitrate).c_str());
-	SetComboByName(ui->advOutTrack2Bitrate, std::to_string(track2Bitrate).c_str());
-	SetComboByName(ui->advOutTrack3Bitrate, std::to_string(track3Bitrate).c_str());
-	SetComboByName(ui->advOutTrack4Bitrate, std::to_string(track4Bitrate).c_str());
-	SetComboByName(ui->advOutTrack5Bitrate, std::to_string(track5Bitrate).c_str());
-	SetComboByName(ui->advOutTrack6Bitrate, std::to_string(track6Bitrate).c_str());
+	SetComboByName(ui->advOutTrack1Bitrate, QString::number(track1Bitrate));
+	SetComboByName(ui->advOutTrack2Bitrate, QString::number(track2Bitrate));
+	SetComboByName(ui->advOutTrack3Bitrate, QString::number(track3Bitrate));
+	SetComboByName(ui->advOutTrack4Bitrate, QString::number(track4Bitrate));
+	SetComboByName(ui->advOutTrack5Bitrate, QString::number(track5Bitrate));
+	SetComboByName(ui->advOutTrack6Bitrate, QString::number(track6Bitrate));
 
 	ui->advOutTrack1Name->setText(name1);
 	ui->advOutTrack2Name->setText(name2);
@@ -2403,9 +2404,9 @@ void OBSBasicSettings::LoadAudioSources()
 		TruncateLabel(label, label->text());
 		label->setMinimumSize(QSize(170, 0));
 		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-		connect(label, &OBSSourceLabel::Removed,
+		connect(label, &OBSSourceLabel::removed, this,
 			[=]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
-		connect(label, &OBSSourceLabel::Destroyed,
+		connect(label, &OBSSourceLabel::destroyed, this,
 			[=]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
 
 		layout->addRow(label, form);
@@ -2548,8 +2549,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	LoadRendererList();
 
-	if (obs_audio_monitoring_available() && !SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
-		SetInvalidValue(ui->monitoringDevice, monDevName.toUtf8(), monDevId.toUtf8());
+	if (obs_audio_monitoring_available() && !SetComboByValue(ui->monitoringDevice, monDevId))
+		SetInvalidValue(ui->monitoringDevice, monDevName, monDevId);
 
 	ui->confirmOnExit->setChecked(confirmOnExit);
 
@@ -2834,11 +2835,11 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		}
 
 		hotkeys.emplace_back(registerer_type == OBS_HOTKEY_REGISTERER_FRONTEND, hw);
-		connect(hw, &OBSHotkeyWidget::KeyChanged, this, [=]() {
+		connect(hw, &OBSHotkeyWidget::KeyChanged, this, [this, hotkeysLayout]() {
 			HotkeysChanged();
 			ScanDuplicateHotkeys(hotkeysLayout);
 		});
-		connect(hw, &OBSHotkeyWidget::SearchKey, [=](obs_key_combination_t combo) {
+		connect(hw, &OBSHotkeyWidget::SearchKey, this, [this](obs_key_combination_t combo) {
 			ui->hotkeyFilterSearch->setText("");
 			ui->hotkeyFilterInput->HandleNewKey(combo);
 			ui->hotkeyFilterInput->KeyChanged(combo);
@@ -3531,14 +3532,14 @@ void OBSBasicSettings::SaveAudioSettings()
 		}
 		config_set_double(main->Config(), "Audio", "MeterDecayRate", meterDecayRate);
 
-		main->UpdateVolumeControlsDecayRate();
+		emit main->profileSettingChanged("Audio", "MeterDecayRate");
 	}
 
 	if (WidgetChanged(ui->peakMeterType)) {
 		uint32_t peakMeterTypeIdx = ui->peakMeterType->currentIndex();
 		config_set_uint(main->Config(), "Audio", "PeakMeterType", peakMeterTypeIdx);
 
-		main->UpdateVolumeControlsPeakMeterType();
+		emit main->profileSettingChanged("Audio", "PeakMeterType");
 	}
 
 	if (WidgetChanged(ui->lowLatencyBuffering)) {
@@ -4535,7 +4536,7 @@ void OBSBasicSettings::AdvOutRecCheckCodecs()
 	QString recFormatName = ui->advOutRecFormat->currentText();
 
 	/* Set tooltip if available */
-	QString tooltip = QTStr("Basic.Settings.Output.Format.TT." + recFormat.toUtf8());
+	QString tooltip = QTStr(QT_TO_UTF8(("Basic.Settings.Output.Format.TT." + recFormat)));
 
 	if (!tooltip.startsWith("Basic.Settings.Output"))
 		ui->advOutRecFormat->setToolTip(tooltip);
@@ -5198,7 +5199,7 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 
 	QString format = ui->simpleOutRecFormat->currentData().toString();
 	/* Set tooltip if available */
-	QString tooltip = QTStr("Basic.Settings.Output.Format.TT." + format.toUtf8());
+	QString tooltip = QTStr(QT_TO_UTF8(("Basic.Settings.Output.Format.TT." + format)));
 
 	if (!tooltip.startsWith("Basic.Settings.Output"))
 		ui->simpleOutRecFormat->setToolTip(tooltip);

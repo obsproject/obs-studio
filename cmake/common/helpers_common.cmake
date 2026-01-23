@@ -227,8 +227,7 @@ function(find_qt_plugins)
   endif()
 
   list(
-    APPEND
-    qt_plugins_Core
+    APPEND qt_plugins_Core
     platforms
     printsupport
     styles

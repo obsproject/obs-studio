@@ -4,7 +4,7 @@
 
 DoubleSlider::DoubleSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 {
-	connect(this, &DoubleSlider::valueChanged,
+	connect(this, &DoubleSlider::valueChanged, this,
 		[this](int val) { emit doubleValChanged((minVal / minStep + val) * minStep); });
 }
 

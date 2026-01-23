@@ -76,7 +76,11 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->propertiesLayout->addWidget(view);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		connect(view, &OBSPropertiesView::PropertiesRefreshed, this, &OBSBasicProperties::AddPreviewButton);
+		ui->transitionButton->setVisible(true);
+		connect(ui->transitionButton, &QPushButton::clicked, this,
+			&OBSBasicProperties::previewTransitionClicked);
+	} else {
+		ui->transitionButton->setVisible(false);
 	}
 
 	view->show();
@@ -103,7 +107,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	if (drawable_preview && drawable_type) {
 		ui->preview->show();
-		connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+		connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
 
 	} else if (type == OBS_SOURCE_TYPE_TRANSITION) {
 		sourceA = obs_source_create_private("scene", "sourceA", nullptr);
@@ -128,7 +132,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		obs_source_inc_active(sourceClone);
 		obs_transition_set(sourceClone, sourceA);
 
-		auto updateCallback = [=]() {
+		auto updateCallback = [this]() {
 			OBSDataAutoRelease settings = obs_source_get_settings(source);
 			obs_source_update(sourceClone, settings);
 
@@ -139,14 +143,16 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			direction = true;
 		};
 
-		connect(view, &OBSPropertiesView::Changed, updateCallback);
+		connect(view, &OBSPropertiesView::Changed, this, updateCallback);
 
 		ui->preview->show();
-		connect(ui->preview, &OBSQTDisplay::DisplayCreated, addTransitionDrawCallback);
+		connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addTransitionDrawCallback);
 
 	} else {
 		ui->preview->hide();
 	}
+
+	connect(ui->defaultsButton, &QPushButton::clicked, this, &OBSBasicProperties::restoreDefaultsClicked);
 }
 
 OBSBasicProperties::~OBSBasicProperties()
@@ -157,37 +163,6 @@ OBSBasicProperties::~OBSBasicProperties()
 	obs_source_dec_showing(source);
 	main->SaveProject();
 	main->UpdateContextBarDeferred(true);
-}
-
-void OBSBasicProperties::AddPreviewButton()
-{
-	QPushButton *playButton = new QPushButton(QTStr("PreviewTransition"), this);
-	VScrollArea *area = view;
-	area->widget()->layout()->addWidget(playButton);
-
-	playButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-	auto play = [=]() {
-		OBSSource start;
-		OBSSource end;
-
-		if (direction) {
-			start = sourceA;
-			end = sourceB;
-		} else {
-			start = sourceB;
-			end = sourceA;
-		}
-
-		obs_transition_set(sourceClone, start);
-		obs_transition_start(sourceClone, OBS_TRANSITION_MODE_AUTO, main->GetTransitionDuration(), end);
-		direction = !direction;
-
-		start = nullptr;
-		end = nullptr;
-	};
-
-	connect(playButton, &QPushButton::clicked, play);
 }
 
 static obs_source_t *CreateLabel(const char *name, size_t h)
@@ -251,6 +226,53 @@ static void CreateTransitionScene(OBSSource scene, const char *text, uint32_t co
 	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
 }
 
+static bool ConfirmReset(QWidget *parent)
+{
+	QMessageBox::StandardButton button;
+
+	button = OBSMessageBox::question(parent, QTStr("ConfirmReset.Title"), QTStr("ConfirmReset.Text"),
+					 QMessageBox::Yes | QMessageBox::No);
+
+	return button == QMessageBox::Yes;
+}
+
+void OBSBasicProperties::restoreDefaultsClicked()
+{
+	if (!ConfirmReset(this)) {
+		return;
+	}
+
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	obs_data_clear(settings);
+
+	if (!view->DeferUpdate()) {
+		obs_source_update(source, nullptr);
+	}
+
+	view->ReloadProperties();
+}
+
+void OBSBasicProperties::previewTransitionClicked()
+{
+	OBSSource start;
+	OBSSource end;
+
+	if (direction) {
+		start = sourceA;
+		end = sourceB;
+	} else {
+		start = sourceB;
+		end = sourceA;
+	}
+
+	obs_transition_set(sourceClone, start);
+	obs_transition_start(sourceClone, OBS_TRANSITION_MODE_AUTO, main->GetTransitionDuration(), end);
+	direction = !direction;
+
+	start = nullptr;
+	end = nullptr;
+}
+
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), "close");
@@ -267,16 +289,6 @@ void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
 void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
 {
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view, "ReloadProperties");
-}
-
-static bool ConfirmReset(QWidget *parent)
-{
-	QMessageBox::StandardButton button;
-
-	button = OBSMessageBox::question(parent, QTStr("ConfirmReset.Title"), QTStr("ConfirmReset.Text"),
-					 QMessageBox::Yes | QMessageBox::No);
-
-	return button == QMessageBox::Yes;
 }
 
 void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
@@ -329,18 +341,6 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			obs_source_update(source, oldSettings);
 
 		close();
-
-	} else if (val == QDialogButtonBox::ResetRole) {
-		if (!ConfirmReset(this))
-			return;
-
-		OBSDataAutoRelease settings = obs_source_get_settings(source);
-		obs_data_clear(settings);
-
-		if (!view->DeferUpdate())
-			obs_source_update(source, nullptr);
-
-		view->ReloadProperties();
 	}
 }
 

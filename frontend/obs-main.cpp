@@ -16,13 +16,14 @@
 ******************************************************************************/
 
 #include <OBSApp.hpp>
+
+#include <components/VolumeAccessibleInterface.hpp>
 #ifdef __APPLE__
 #include <dialogs/OBSPermissions.hpp>
 #endif
 #include <utility/BaseLexer.hpp>
 #include <utility/OBSTranslator.hpp>
 #include <utility/platform.hpp>
-#include <widgets/VolumeAccessibleInterface.hpp>
 
 #include <qt-wrappers.hpp>
 #include <util/platform.h>
@@ -519,7 +520,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
+	/* NOTE: Users blindly set this, but this theme is incompatible with Qt6 and
 	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
 	 * looks ugly instead of crashing. */
 	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");

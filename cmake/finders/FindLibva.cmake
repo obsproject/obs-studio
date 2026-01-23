@@ -79,8 +79,7 @@ if(PC_Libva_VERSION VERSION_GREATER 0)
   set(Libva_VERSION ${PC_Libva_VERSION})
 elseif(EXISTS "${Libva_INCLUDE_DIR}/va_version.h")
   file(
-    STRINGS
-    "${Libva_INCLUDE_DIR}/va_version.h"
+    STRINGS "${Libva_INCLUDE_DIR}/va_version.h"
     _VERSION_STRING
     REGEX "^.*(MAJOR|MINOR|MICRO)_VERSION[ \t]+[0-9]+[ \t]*$"
   )

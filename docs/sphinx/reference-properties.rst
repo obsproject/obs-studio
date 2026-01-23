@@ -157,7 +157,7 @@ Property Object Functions
                           - **OBS_TEXT_PASSWORD** - Single line of text (passworded)
                           - **OBS_TEXT_MULTILINE** - Multi-line text
                           - **OBS_TEXT_INFO** - Read-only informative text, behaves differently
-                            depending on wether description, string value and long description
+                            depending on whether description, string value and long description
                             are set
 
    :return:               The property

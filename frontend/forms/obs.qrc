@@ -1,8 +1,12 @@
 <RCC>
   <qresource prefix="/res">
+    <file>images/layout-horizontal.svg</file>
+    <file>images/layout-vertical.svg</file>
     <file>images/close.svg</file>
+    <file>images/headphones.svg</file>
     <file>images/save.svg</file>
     <file>images/media-pause.svg</file>
+    <file>images/headphones-off.svg</file>
     <file>images/trash.svg</file>
     <file>images/filter.svg</file>
     <file>images/mute.svg</file>
