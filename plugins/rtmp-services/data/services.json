@@ -1510,24 +1510,6 @@
             ]
         },
         {
-            "name": "STAGE TEN",
-            "servers": [
-                {
-                    "name": "STAGE TEN",
-                    "url": "rtmps://app-rtmp.stageten.tv:443/stageten"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "baseline",
-                "max video bitrate": 4000,
-                "max audio bitrate": 128
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "DLive",
             "servers": [
                 {
