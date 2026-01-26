@@ -83,7 +83,7 @@ private:
 	uint64_t displayInputPeakHoldLastUpdateTime[MAX_AUDIO_CHANNELS];
 
 	QPixmap backgroundCache;
-	void updateBackgroundCache();
+	void updateBackgroundCache(bool force = false);
 
 	QFont tickFont;
 	QRect tickTextTokenRect;

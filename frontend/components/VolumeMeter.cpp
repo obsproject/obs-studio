@@ -275,7 +275,8 @@ void VolumeMeter::setPeakMeterType(enum obs_peak_meter_type peakMeterType)
 		break;
 	}
 
-	updateBackgroundCache();
+	bool forceUpdate = true;
+	updateBackgroundCache(forceUpdate);
 }
 
 VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
@@ -337,8 +338,10 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_source_t *source)
 	connect(updateTimer, &QTimer::timeout, this, [this]() {
 		if (needLayoutChange()) {
 			doLayout();
+			update();
+		} else {
+			update(getBarRect());
 		}
-		repaint();
 	});
 
 	connect(App(), &OBSApp::StyleChanged, this, &VolumeMeter::doLayout);
@@ -455,7 +458,8 @@ void VolumeMeter::refreshColors()
 	setForegroundWarningColor(getForegroundWarningColor());
 	setForegroundErrorColor(getForegroundErrorColor());
 
-	updateBackgroundCache();
+	bool forceUpdate = true;
+	updateBackgroundCache(forceUpdate);
 }
 
 QRect VolumeMeter::getBarRect() const
@@ -648,17 +652,17 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 	}
 }
 
-void VolumeMeter::updateBackgroundCache()
+void VolumeMeter::updateBackgroundCache(bool force)
 {
-	if (!size().isValid()) {
+	if (!force && !size().isValid()) {
 		return;
 	}
 
-	if (backgroundCache.size() == size() && !backgroundCache.isNull()) {
+	if (!force && backgroundCache.size() == size() && !backgroundCache.isNull()) {
 		return;
 	}
 
-	if (displayNrAudioChannels <= 0) {
+	if (!force && displayNrAudioChannels <= 0) {
 		return;
 	}
 
