@@ -1,6 +1,5 @@
 /******************************************************************************
     Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +16,6 @@
 ******************************************************************************/
 
 #include "ScreenshotObj.hpp"
-#include "display-helpers.hpp"
 
 #include <widgets/OBSBasic.hpp>
 
@@ -32,23 +30,11 @@
 
 #include "moc_ScreenshotObj.cpp"
 
-namespace {
-void renderTick(void *param, float)
-{
-	auto *self = static_cast<ScreenshotObj *>(param);
-	if (self->stage() == ScreenshotObj::Stage::Finished) {
-		return;
-	}
-
-	obs_enter_graphics();
-	self->processStage();
-	obs_leave_graphics();
-}
-} // namespace
+static void ScreenshotTick(void *param, float);
 
 ScreenshotObj::ScreenshotObj(obs_source_t *source) : weakSource(OBSGetWeakRef(source))
 {
-	obs_add_tick_callback(renderTick, this);
+	obs_add_tick_callback(ScreenshotTick, this);
 }
 
 ScreenshotObj::~ScreenshotObj()
@@ -58,26 +44,40 @@ ScreenshotObj::~ScreenshotObj()
 	gs_texrender_destroy(texrender);
 	obs_leave_graphics();
 
-	obs_remove_tick_callback(renderTick, this);
+	obs_remove_tick_callback(ScreenshotTick, this);
+
+	if (th.joinable()) {
+		th.join();
+
+		if (cx && cy) {
+			OBSBasic *main = OBSBasic::Get();
+			main->ShowStatusBarMessage(
+				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
+
+			main->lastScreenshot = path;
+
+			main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
+		}
+	}
 }
 
-void ScreenshotObj::renderScreenshot()
+void ScreenshotObj::Screenshot()
 {
-	OBSSourceAutoRelease source = OBSGetStrongRef(weakSource);
+	OBSSource source = OBSGetStrongRef(weakSource);
 
 	if (source) {
-		sourceWidth = obs_source_get_width(source);
-		sourceHeight = obs_source_get_height(source);
+		cx = obs_source_get_width(source);
+		cy = obs_source_get_height(source);
 	} else {
 		obs_video_info ovi;
 		obs_get_video_info(&ovi);
-		sourceWidth = ovi.base_width;
-		sourceHeight = ovi.base_height;
+		cx = ovi.base_width;
+		cy = ovi.base_height;
 	}
 
-	if (!sourceWidth || !sourceHeight) {
-		blog(LOG_WARNING, "Cannot render source, invalid target size");
-		obs_remove_tick_callback(renderTick, this);
+	if (!cx || !cy) {
+		blog(LOG_WARNING, "Cannot screenshot, invalid target size");
+		obs_remove_tick_callback(ScreenshotTick, this);
 		deleteLater();
 		return;
 	}
@@ -94,34 +94,15 @@ void ScreenshotObj::renderScreenshot()
 #endif
 	const enum gs_color_format format = gs_get_format_from_space(space);
 
-	outputWidth = customSize.isValid() ? customSize.width() : sourceWidth;
-	outputHeight = customSize.isValid() ? customSize.height() : sourceHeight;
-
 	texrender = gs_texrender_create(format, GS_ZS_NONE);
-	stagesurf = gs_stagesurface_create(outputWidth, outputHeight, format);
+	stagesurf = gs_stagesurface_create(cx, cy, format);
 
-	if (gs_texrender_begin_with_color_space(texrender, outputWidth, outputHeight, space)) {
+	if (gs_texrender_begin_with_color_space(texrender, cx, cy, space)) {
 		vec4 zero;
 		vec4_zero(&zero);
 
-		int x;
-		int y;
-		int scaledWidth;
-		int scaledHeight;
-		float scale;
-
-		GetScaleAndCenterPos(sourceWidth, sourceHeight, outputWidth, outputHeight, x, y, scale);
-
-		scaledWidth = int(scale * float(sourceWidth));
-		scaledHeight = int(scale * float(sourceHeight));
-
 		gs_clear(GS_CLEAR_COLOR, &zero, 0.0f, 0);
-
-		gs_viewport_push();
-		gs_projection_push();
-
-		gs_ortho(0.0f, (float)sourceWidth, 0.0f, (float)sourceHeight, -100.0f, 100.0f);
-		gs_set_viewport(x, y, scaledWidth, scaledHeight);
+		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 
 		gs_blend_state_push();
 		gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
@@ -134,60 +115,35 @@ void ScreenshotObj::renderScreenshot()
 			obs_render_main_texture();
 		}
 
-		gs_projection_pop();
-		gs_viewport_pop();
-
 		gs_blend_state_pop();
 		gs_texrender_end(texrender);
 	}
 }
 
-void ScreenshotObj::processStage()
-{
-	switch (stage_) {
-	case Stage::Render:
-		renderScreenshot();
-		stage_ = Stage::Download;
-		break;
-	case Stage::Download:
-		downloadData();
-		stage_ = Stage::Output;
-		break;
-	case Stage::Output:
-		copyData();
-		QMetaObject::invokeMethod(this, &ScreenshotObj::handleSave, Qt::QueuedConnection);
-		obs_remove_tick_callback(renderTick, this);
-		stage_ = Stage::Finished;
-		break;
-	case Stage::Finished:
-		break;
-	}
-}
-
-void ScreenshotObj::downloadData()
+void ScreenshotObj::Download()
 {
 	gs_stage_texture(stagesurf, gs_texrender_get_texture(texrender));
 }
 
-void ScreenshotObj::copyData()
+void ScreenshotObj::Copy()
 {
 	uint8_t *videoData = nullptr;
 	uint32_t videoLinesize = 0;
 
 	if (gs_stagesurface_map(stagesurf, &videoData, &videoLinesize)) {
 		if (gs_stagesurface_get_color_format(stagesurf) == GS_RGBA16F) {
-			const uint32_t linesize = outputWidth * 8;
-			half_bytes.reserve(outputWidth * outputHeight * 8);
+			const uint32_t linesize = cx * 8;
+			half_bytes.reserve(cx * cy * 8);
 
-			for (uint32_t y = 0; y < outputHeight; y++) {
+			for (uint32_t y = 0; y < cy; y++) {
 				const uint8_t *const line = videoData + (y * videoLinesize);
 				half_bytes.insert(half_bytes.end(), line, line + linesize);
 			}
 		} else {
-			image = QImage(outputWidth, outputHeight, QImage::Format::Format_RGBX8888);
+			image = QImage(cx, cy, QImage::Format::Format_RGBX8888);
 
 			int linesize = image.bytesPerLine();
-			for (int y = 0; y < (int)outputHeight; y++)
+			for (int y = 0; y < (int)cy; y++)
 				memcpy(image.scanLine(y), videoData + (y * videoLinesize), linesize);
 		}
 
@@ -195,13 +151,8 @@ void ScreenshotObj::copyData()
 	}
 }
 
-void ScreenshotObj::saveToFile()
+void ScreenshotObj::Save()
 {
-	if (!outputToFile) {
-		QMetaObject::invokeMethod(this, &ScreenshotObj::onFinished, Qt::QueuedConnection);
-		return;
-	}
-
 	OBSBasic *main = OBSBasic::Get();
 	config_t *config = main->Config();
 
@@ -220,10 +171,7 @@ void ScreenshotObj::saveToFile()
 	path = GetOutputFilename(rec_path, ext, noSpace, overwriteIfExists,
 				 GetFormatString(filenameFormat, "Screenshot", nullptr).c_str());
 
-	th = std::thread([this] {
-		muxFile();
-		QMetaObject::invokeMethod(this, &ScreenshotObj::onFinished, Qt::QueuedConnection);
-	});
+	th = std::thread([this] { MuxAndFinish(); });
 }
 
 #ifdef _WIN32
@@ -237,44 +185,36 @@ static HRESULT SaveJxrImage(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t
 	value.vt = VT_BOOL;
 	value.bVal = TRUE;
 	HRESULT hr = options->Write(1, &bag, &value);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	hr = frameEncode->Initialize(options);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	hr = frameEncode->SetSize(cx, cy);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	hr = frameEncode->SetResolution(72, 72);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	WICPixelFormatGUID pixelFormat = GUID_WICPixelFormat64bppRGBAHalf;
 	hr = frameEncode->SetPixelFormat(&pixelFormat);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
-	if (memcmp(&pixelFormat, &GUID_WICPixelFormat64bppRGBAHalf, sizeof(WICPixelFormatGUID)) != 0) {
+	if (memcmp(&pixelFormat, &GUID_WICPixelFormat64bppRGBAHalf, sizeof(WICPixelFormatGUID)) != 0)
 		return E_FAIL;
-	}
 
 	hr = frameEncode->WritePixels(cy, cx * 8, cx * cy * 8, pixels);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	hr = frameEncode->Commit();
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	return S_OK;
 }
@@ -284,50 +224,43 @@ static HRESULT SaveJxr(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy)
 	Microsoft::WRL::ComPtr<IWICImagingFactory> factory;
 	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER,
 				      IID_PPV_ARGS(factory.GetAddressOf()));
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	Microsoft::WRL::ComPtr<IWICStream> stream;
 	hr = factory->CreateStream(stream.GetAddressOf());
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	hr = stream->InitializeFromFilename(path, GENERIC_WRITE);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	Microsoft::WRL::ComPtr<IWICBitmapEncoder> encoder = NULL;
 	hr = factory->CreateEncoder(GUID_ContainerFormatWmp, NULL, encoder.GetAddressOf());
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	hr = encoder->Initialize(stream.Get(), WICBitmapEncoderNoCache);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	Microsoft::WRL::ComPtr<IWICBitmapFrameEncode> frameEncode;
 	Microsoft::WRL::ComPtr<IPropertyBag2> options;
 	hr = encoder->CreateNewFrame(frameEncode.GetAddressOf(), options.GetAddressOf());
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	hr = SaveJxrImage(path, pixels, cx, cy, frameEncode.Get(), options.Get());
-	if (FAILED(hr)) {
+	if (FAILED(hr))
 		return hr;
-	}
 
 	encoder->Commit();
 	return S_OK;
 }
 #endif // #ifdef _WIN32
 
-void ScreenshotObj::muxFile()
+void ScreenshotObj::MuxAndFinish()
 {
 	if (half_bytes.empty()) {
 		image.save(QT_UTF8(path.c_str()));
@@ -337,50 +270,45 @@ void ScreenshotObj::muxFile()
 		wchar_t *path_w = nullptr;
 		os_utf8_to_wcs_ptr(path.c_str(), 0, &path_w);
 		if (path_w) {
-			SaveJxr(path_w, half_bytes.data(), outputWidth, outputHeight);
+			SaveJxr(path_w, half_bytes.data(), cx, cy);
 			bfree(path_w);
 		}
-#endif
-	}
-}
-
-void ScreenshotObj::onFinished()
-{
-	if (th.joinable()) {
-		th.join();
+#endif // #ifdef _WIN32
 	}
 
-	if (outputWidth && outputHeight) {
-		if (outputToFile) {
-			OBSBasic *main = OBSBasic::Get();
-			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
-			main->lastScreenshot = path;
-			main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
-		}
+	deleteLater();
+}
 
-		emit imageReady(image.copy());
+#define STAGE_SCREENSHOT 0
+#define STAGE_DOWNLOAD 1
+#define STAGE_COPY_AND_SAVE 2
+#define STAGE_FINISH 3
+
+static void ScreenshotTick(void *param, float)
+{
+	ScreenshotObj *data = static_cast<ScreenshotObj *>(param);
+
+	if (data->stage == STAGE_FINISH) {
+		return;
 	}
 
-	this->deleteLater();
-}
+	obs_enter_graphics();
 
-void ScreenshotObj::setSize(QSize size)
-{
-	customSize = size;
-}
+	switch (data->stage) {
+	case STAGE_SCREENSHOT:
+		data->Screenshot();
+		break;
+	case STAGE_DOWNLOAD:
+		data->Download();
+		break;
+	case STAGE_COPY_AND_SAVE:
+		data->Copy();
+		QMetaObject::invokeMethod(data, "Save");
+		obs_remove_tick_callback(ScreenshotTick, data);
+		break;
+	}
 
-void ScreenshotObj::setSize(int width, int height)
-{
-	setSize(QSize(width, height));
-}
+	obs_leave_graphics();
 
-void ScreenshotObj::setSaveToFile(bool save)
-{
-	outputToFile = save;
-}
-
-void ScreenshotObj::handleSave()
-{
-	saveToFile();
+	data->stage++;
 }
