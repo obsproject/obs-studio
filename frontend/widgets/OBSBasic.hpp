@@ -26,6 +26,7 @@
 #include <utility/BasicOutputHandler.hpp>
 #include <utility/OBSCanvas.hpp>
 #include <utility/PreviewProgramSizeObserver.hpp>
+#include <utility/ScreenshotObj.hpp>
 #include <utility/ThumbnailManager.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
@@ -213,7 +214,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSYoutubeActions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
-	friend class ScreenshotObj;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -1327,7 +1327,7 @@ public:
 	 * -------------------------------------
 	 */
 private:
-	QPointer<QObject> screenshotData;
+	QPointer<ScreenshotObj> screenshotData;
 	std::string lastScreenshot;
 
 private slots:
