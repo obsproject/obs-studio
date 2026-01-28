@@ -347,16 +347,24 @@ bool obs_transition_start(obs_source_t *transition, enum obs_transition_mode mod
 	if (active && mode == OBS_TRANSITION_MODE_MANUAL && same_mode && same_as_dest)
 		return true;
 
+	if (active && !same_as_dest) {
+
+		obs_transition_set(transition, transition->transition_sources[1]);
+
+		// Re-initialize after change
+		lock_transition(transition);
+		same_as_source = dest == transition->transition_sources[0];
+		same_as_dest = dest == transition->transition_sources[1];
+		same_mode = mode == transition->transition_mode;
+		active = transition_active(transition);
+		unlock_transition(transition);
+	}
+
 	lock_transition(transition);
 	transition->transition_mode = mode;
 	transition->transition_manual_val = 0.0f;
 	transition->transition_manual_target = 0.0f;
 	unlock_transition(transition);
-
-	if (active) {
-		obs_transition_set(transition, transition->transition_sources[1]);
-		active = false;
-	}
 
 	if (transition->info.transition_start)
 		transition->info.transition_start(transition->context.data);
