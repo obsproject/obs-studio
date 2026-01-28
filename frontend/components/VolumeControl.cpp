@@ -691,7 +691,6 @@ void VolumeControl::updateMixerState()
 	bool isActive = obs_source_active(source) && obs_source_audio_active(source);
 
 	mixerStatus().set(VolumeControl::MixerStatus::Active, isActive);
-	setUseDisabledColors(!isActive);
 	mixerStatus().set(VolumeControl::MixerStatus::Unassigned, unassigned);
 
 	QSignalBlocker blockMute(muteButton);
@@ -702,6 +701,7 @@ void VolumeControl::updateMixerState()
 	bool showAsUnassigned = !muted && unassigned;
 
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
+	setUseDisabledColors(showAsMuted);
 
 	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
 	// in QSS so we set a checked class selector on the button to be used instead.
