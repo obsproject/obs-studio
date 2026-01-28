@@ -491,6 +491,10 @@ void VolumeControl::renameSource()
 			continue;
 		}
 
+		if (name == prevName) {
+			return;
+		}
+
 		OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
 
 		if (sourceTest) {
