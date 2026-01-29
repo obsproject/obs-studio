@@ -83,6 +83,10 @@ struct rtmp_stream {
 	struct dstr bind_ip;
 	socklen_t addrlen_hint; /* hint IPv4 vs IPv6 */
 
+	/* reconnect feature */
+	volatile bool reconnect_requested;
+	struct dstr reconnect_path;
+
 	/* frame drop variables */
 	int64_t drop_threshold_usec;
 	int64_t pframe_drop_threshold_usec;
