@@ -12,6 +12,12 @@ target_sources(
   PRIVATE
     components/AbsoluteSlider.cpp
     components/AbsoluteSlider.hpp
+    components/AccessibleAlignmentCell.cpp
+    components/AccessibleAlignmentCell.hpp
+    components/AccessibleAlignmentSelector.cpp
+    components/AccessibleAlignmentSelector.hpp
+    components/AlignmentSelector.cpp
+    components/AlignmentSelector.hpp
     components/ApplicationAudioCaptureToolbar.cpp
     components/ApplicationAudioCaptureToolbar.hpp
     components/AudioCaptureToolbar.cpp
@@ -34,14 +40,14 @@ target_sources(
     components/FocusList.hpp
     components/GameCaptureToolbar.cpp
     components/GameCaptureToolbar.hpp
-    components/HScrollArea.cpp
-    components/HScrollArea.hpp
     components/ImageSourceToolbar.cpp
     components/ImageSourceToolbar.hpp
     components/MediaControls.cpp
     components/MediaControls.hpp
     components/MenuButton.cpp
     components/MenuButton.hpp
+    components/MenuCheckBox.cpp
+    components/MenuCheckBox.hpp
     components/Multiview.cpp
     components/Multiview.hpp
     components/MuteCheckBox.hpp
@@ -77,6 +83,14 @@ target_sources(
     components/VisibilityItemDelegate.hpp
     components/VisibilityItemWidget.cpp
     components/VisibilityItemWidget.hpp
+    components/VolumeAccessibleInterface.cpp
+    components/VolumeAccessibleInterface.hpp
+    components/VolumeControl.cpp
+    components/VolumeControl.hpp
+    components/VolumeMeter.cpp
+    components/VolumeMeter.hpp
+    components/VolumeName.cpp
+    components/VolumeName.hpp
     components/VolumeSlider.cpp
     components/VolumeSlider.hpp
     components/WindowCaptureToolbar.cpp

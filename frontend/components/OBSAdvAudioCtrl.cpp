@@ -6,6 +6,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QCheckBox>
+#include <QStackedWidget>
 
 #include "moc_OBSAdvAudioCtrl.cpp"
 

@@ -319,6 +319,11 @@ static inline bool transition_active(obs_source_t *transition)
 	return transition->transitioning_audio || transition->transitioning_video;
 }
 
+bool obs_transition_is_active(obs_source_t *transition)
+{
+	return transition_active(transition);
+}
+
 bool obs_transition_start(obs_source_t *transition, enum obs_transition_mode mode, uint32_t duration_ms,
 			  obs_source_t *dest)
 {
@@ -347,6 +352,11 @@ bool obs_transition_start(obs_source_t *transition, enum obs_transition_mode mod
 	transition->transition_manual_val = 0.0f;
 	transition->transition_manual_target = 0.0f;
 	unlock_transition(transition);
+
+	if (active) {
+		obs_transition_set(transition, transition->transition_sources[1]);
+		active = false;
+	}
 
 	if (transition->info.transition_start)
 		transition->info.transition_start(transition->context.data);
@@ -383,9 +393,16 @@ void obs_transition_set_manual_torque(obs_source_t *transition, float torque, fl
 
 void obs_transition_set_manual_time(obs_source_t *transition, float t)
 {
+	enum obs_transition_mode mode;
+
 	lock_transition(transition);
 	transition->transition_manual_target = t;
+	mode = transition->transition_mode;
 	unlock_transition(transition);
+
+	if (mode == OBS_TRANSITION_MODE_MANUAL && t == 0.0f) {
+		obs_transition_set(transition, transition->transition_sources[0]);
+	}
 }
 
 void obs_transition_set(obs_source_t *transition, obs_source_t *source)
@@ -397,6 +414,10 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 		return;
 
 	source = obs_source_get_ref(source);
+
+	if (transition_active(transition)) {
+		obs_source_dosignal(transition, "source_transition_stop", "transition_stop");
+	}
 
 	lock_transition(transition);
 	for (size_t i = 0; i < 2; i++) {

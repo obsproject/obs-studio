@@ -632,6 +632,7 @@ static int obs_lua_register_source(lua_State *script)
 		info.get_name = obs_lua_source_get_name;
 		info.get_defaults2 = obs_lua_source_get_defaults;
 		obs_register_source(&info);
+		obs_module_add_source(obs_current_module(), info.id);
 
 		pthread_mutex_lock(&lua_source_def_mutex);
 		v = info.type_data;

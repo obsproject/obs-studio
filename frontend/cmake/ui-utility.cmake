@@ -37,6 +37,8 @@ target_sources(
     utility/OBSThemeVariable.hpp
     utility/OBSTranslator.cpp
     utility/OBSTranslator.hpp
+    utility/PreviewProgramSizeObserver.cpp
+    utility/PreviewProgramSizeObserver.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
     utility/RemoteTextThread.cpp
@@ -57,8 +59,6 @@ target_sources(
     utility/StartMultiTrackVideoStreamingGuard.hpp
     utility/SurfaceEventFilter.hpp
     utility/VCamConfig.hpp
-    utility/VolumeMeterTimer.cpp
-    utility/VolumeMeterTimer.hpp
     utility/audio-encoders.cpp
     utility/audio-encoders.hpp
     utility/display-helpers.hpp

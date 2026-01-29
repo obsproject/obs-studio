@@ -630,6 +630,7 @@ extern "C" void InitScripts()
 {
 	scriptLogWindow = new ScriptLogWindow();
 
+	obs_scripting_set_module(obs_current_module());
 	obs_scripting_load();
 	obs_scripting_set_log_callback(script_log, nullptr);
 

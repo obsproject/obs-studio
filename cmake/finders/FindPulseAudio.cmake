@@ -63,8 +63,7 @@ if(PC_PulseAudio_VERSION VERSION_GREATER 0)
   set(PulseAudio_VERSION ${PC_PulseAudio_VERSION})
 elseif(EXISTS "${PulseAudio_INCLUDE_DIR}/version.h")
   file(
-    STRINGS
-    "${PulseAudio_INCLUDE_DIR}/version.h"
+    STRINGS "${PulseAudio_INCLUDE_DIR}/version.h"
     _VERSION_STRING
     REGEX "^.*pa_get_headers_version\\(\\)[\t ]+\\(\".*\"\\)[ \t]*$"
   )

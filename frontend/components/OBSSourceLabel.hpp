@@ -29,22 +29,17 @@ public:
 	OBSSignal removedSignal;
 	OBSSignal destroyedSignal;
 
-	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags())
-		: QLabel(obs_source_get_name(source), parent, f),
-		  renamedSignal(obs_source_get_signal_handler(source), "rename", &OBSSourceLabel::SourceRenamed, this),
-		  removedSignal(obs_source_get_signal_handler(source), "remove", &OBSSourceLabel::SourceRemoved, this),
-		  destroyedSignal(obs_source_get_signal_handler(source), "destroy", &OBSSourceLabel::SourceDestroyed,
-				  this)
-	{
-	}
+	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 protected:
-	static void SourceRenamed(void *data, calldata_t *params);
-	static void SourceRemoved(void *data, calldata_t *params);
-	static void SourceDestroyed(void *data, calldata_t *params);
+	static void obsSourceRenamed(void *data, calldata_t *params);
+	static void obsSourceRemoved(void *data, calldata_t *params);
+	static void obsSourceDestroyed(void *data, calldata_t *params);
+	void mousePressEvent(QMouseEvent *event);
 
 signals:
-	void Renamed(const char *name);
-	void Removed();
-	void Destroyed();
+	void renamed(const char *name);
+	void removed();
+	void destroyed();
+	void clicked();
 };

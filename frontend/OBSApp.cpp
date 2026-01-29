@@ -144,6 +144,15 @@ UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 
 	return launchAction;
 }
+
+QAccessibleInterface *alignmentSelectorFactory(const QString &classname, QObject *object)
+{
+	if (classname == QLatin1String("AlignmentSelector")) {
+		if (auto *w = qobject_cast<AlignmentSelector *>(object))
+			return new AccessibleAlignmentSelector(w);
+	}
+	return nullptr;
+}
 } // namespace
 
 QObject *CreateShortcutFilter()
@@ -361,8 +370,9 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "ShowSourceIcons", true);
 	config_set_default_bool(userConfig, "BasicWindow", "ShowContextToolbars", true);
 	config_set_default_bool(userConfig, "BasicWindow", "StudioModeLabels", true);
+	config_set_default_bool(userConfig, "BasicWindow", "SideDocks", true);
 
-	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolControl", true);
+	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolumeControl", true);
 
 	config_set_default_bool(userConfig, "BasicWindow", "MultiviewMouseSwitch", true);
 
@@ -371,6 +381,11 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "MultiviewDrawAreas", true);
 
 	config_set_default_bool(userConfig, "BasicWindow", "MediaControlsCountdownTimer", true);
+
+	config_set_default_bool(App()->GetUserConfig(), "BasicWindow", "MixerShowInactive", false);
+	config_set_default_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepInactiveLast", false);
+	config_set_default_bool(App()->GetUserConfig(), "BasicWindow", "MixerShowHidden", false);
+	config_set_default_bool(App()->GetUserConfig(), "BasicWindow", "MixerKeepHiddenLast", false);
 
 	config_set_default_int(userConfig, "Appearance", "FontScale", 10);
 	config_set_default_int(userConfig, "Appearance", "Density", 1);
@@ -732,7 +747,7 @@ bool OBSApp::InitLocale()
 			blog(LOG_INFO, "Using preferred locale '%s'", locale_.c_str());
 			locale = locale_;
 
-			// set application default locale to the new choosen one
+			// set application default locale to the new chosen one
 			if (!locale.empty())
 				QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
 
@@ -1021,6 +1036,8 @@ static void move_basic_to_scene_collections(void)
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
+
+	QAccessible::installFactory(alignmentSelectorFactory);
 
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
