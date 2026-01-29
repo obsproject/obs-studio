@@ -370,6 +370,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "ShowSourceIcons", true);
 	config_set_default_bool(userConfig, "BasicWindow", "ShowContextToolbars", true);
 	config_set_default_bool(userConfig, "BasicWindow", "StudioModeLabels", true);
+	config_set_default_bool(userConfig, "BasicWindow", "SideDocks", true);
 
 	config_set_default_bool(userConfig, "BasicWindow", "VerticalVolumeControl", true);
 
@@ -746,7 +747,7 @@ bool OBSApp::InitLocale()
 			blog(LOG_INFO, "Using preferred locale '%s'", locale_.c_str());
 			locale = locale_;
 
-			// set application default locale to the new choosen one
+			// set application default locale to the new chosen one
 			if (!locale.empty())
 				QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
 

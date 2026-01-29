@@ -392,24 +392,8 @@ API_AVAILABLE(macos(12.5)) static uint32_t sck_video_capture_getheight(void *dat
 
 static void sck_video_capture_defaults(obs_data_t *settings)
 {
-    CGDirectDisplayID initial_display = 0;
-    {
-        NSScreen *mainScreen = [NSScreen mainScreen];
-        if (mainScreen) {
-            NSNumber *screen_num = mainScreen.deviceDescription[@"NSScreenNumber"];
-            if (screen_num) {
-                initial_display = (CGDirectDisplayID) (uintptr_t) screen_num.pointerValue;
-            }
-        }
-    }
-
-    CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(initial_display);
-    CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
-    obs_data_set_default_string(settings, "display_uuid", CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
-    CFRelease(uuid_string);
-    CFRelease(display_uuid);
-
     obs_data_set_default_string(settings, "application", NULL);
+    obs_data_set_default_string(settings, "display_uuid", NULL);
     obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
     obs_data_set_default_int(settings, "window", kCGNullWindowID);
     obs_data_set_default_bool(settings, "show_cursor", true);

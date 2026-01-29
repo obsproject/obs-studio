@@ -108,7 +108,7 @@
     --highlight_color: var(--primary_lighter);
 
     /* TODO: Better Accessibility focus state */
-    /* TODO: Move Accessibilty Colors to Theme config system */
+    /* TODO: Move Accessibility Colors to Theme config system */
     --border_highlight: "transparent";
 
     /* OS Fixes */

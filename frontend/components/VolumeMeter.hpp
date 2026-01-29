@@ -69,7 +69,6 @@ private:
 
 	QMutex dataMutex;
 
-	bool recalculateLayout{true};
 	uint64_t currentLastUpdateTime{0};
 	float currentMagnitude[MAX_AUDIO_CHANNELS];
 	float currentPeak[MAX_AUDIO_CHANNELS];
@@ -84,9 +83,11 @@ private:
 	uint64_t displayInputPeakHoldLastUpdateTime[MAX_AUDIO_CHANNELS];
 
 	QPixmap backgroundCache;
-	void updateBackgroundCache();
+	void updateBackgroundCache(bool force = false);
 
 	QFont tickFont;
+	QRect tickTextTokenRect;
+
 	QColor backgroundNominalColor;
 	QColor backgroundWarningColor;
 	QColor backgroundErrorColor;
@@ -140,7 +141,6 @@ public:
 
 	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
 		       const float inputPeak[MAX_AUDIO_CHANNELS]);
-	QRect getBarRect() const;
 	bool needLayoutChange();
 
 	void setVertical(bool vertical = true);
@@ -148,6 +148,7 @@ public:
 	void setMuted(bool mute);
 
 	void refreshColors();
+	QRect getBarRect() const;
 
 	QColor getBackgroundNominalColor() const;
 	void setBackgroundNominalColor(QColor c);
@@ -190,12 +191,15 @@ public:
 	void setPeakDecayRate(qreal v);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
+	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void mousePressEvent(QMouseEvent *event) override;
 	virtual void wheelEvent(QWheelEvent *event) override;
 
+	QSize minimumSizeHint() const override;
+	QSize sizeHint() const override;
+
 protected:
 	void paintEvent(QPaintEvent *event) override;
-	void changeEvent(QEvent *e) override;
 
 private slots:
 	void handleSourceDestroyed() { deleteLater(); }

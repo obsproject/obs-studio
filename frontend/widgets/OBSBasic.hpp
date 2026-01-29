@@ -1561,6 +1561,7 @@ private slots:
 	void RenameTransition(OBSSource transition);
 
 	void TransitionClicked();
+	void TransitionStarted();
 	void TransitionStopped();
 	void TransitionFullyStopped();
 	void TriggerQuickTransition(int id);

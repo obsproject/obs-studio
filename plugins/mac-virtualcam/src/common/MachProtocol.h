@@ -8,7 +8,7 @@
 #define MACH_SERVICE_NAME "com.obsproject.obs-mac-virtualcam.server"
 
 typedef enum {
-	//! Initial connect message sent from the client to the server to initate a connection
+	//! Initial connect message sent from the client to the server to initiate a connection
 	MachMsgIdConnect = 1,
 	//! Message containing data for a frame
 	MachMsgIdFrame = 2,
