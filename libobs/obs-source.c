@@ -1648,12 +1648,10 @@ static void source_output_audio_data(obs_source_t *source, const struct audio_da
 		source->last_sync_offset = sync_offset;
 	}
 
-	if (source->monitoring_type != OBS_MONITORING_TYPE_MONITOR_ONLY) {
-		if (push_back && source->audio_ts)
-			source_output_audio_push_back(source, &in);
-		else
-			source_output_audio_place(source, &in);
-	}
+	if (push_back && source->audio_ts)
+		source_output_audio_push_back(source, &in);
+	else
+		source_output_audio_place(source, &in);
 
 	pthread_mutex_unlock(&source->audio_buf_mutex);
 
@@ -5323,7 +5321,7 @@ static void apply_audio_volume(obs_source_t *source, uint32_t mixers, size_t cha
 	if (vol == 1.0f)
 		return;
 
-	if (vol == 0.0f || mixers == 0) {
+	if (vol == 0.0f || mixers == 0 || source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY) {
 		memset(source->audio_output_buf[0][0], 0,
 		       AUDIO_OUTPUT_FRAMES * sizeof(float) * MAX_AUDIO_CHANNELS *
 			       (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES));
