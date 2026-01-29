@@ -36,10 +36,6 @@ target_sources(
     components/DisplayCaptureToolbar.cpp
     components/DisplayCaptureToolbar.hpp
     components/EditWidget.hpp
-    components/FlowFrame.cpp
-    components/FlowFrame.hpp
-    components/FlowLayout.cpp
-    components/FlowLayout.hpp
     components/FocusList.cpp
     components/FocusList.hpp
     components/GameCaptureToolbar.cpp
@@ -67,8 +63,6 @@ target_sources(
     components/SceneTree.hpp
     components/SilentUpdateCheckBox.hpp
     components/SilentUpdateSpinBox.hpp
-    components/SourceSelectButton.cpp
-    components/SourceSelectButton.hpp
     components/SourceToolbar.cpp
     components/SourceToolbar.hpp
     components/SourceTree.cpp

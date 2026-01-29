@@ -1,6 +1,5 @@
 /******************************************************************************
     Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,75 +17,38 @@
 
 #pragma once
 
-#include <OBSApp.hpp>
 #include "ui_OBSBasicSourceSelect.h"
 
-#include <components/FlowLayout.hpp>
-#include <components/SourceSelectButton.hpp>
 #include <utility/undo_stack.hpp>
 #include <widgets/OBSBasic.hpp>
 
-#include <QButtonGroup>
-#include <QDialog>
+#include <obs.hpp>
 
-constexpr int UNVERSIONED_ID_ROLE = Qt::UserRole + 1;
-constexpr int DEPRECATED_ROLE = Qt::UserRole + 2;
+#include <QDialog>
 
 class OBSBasicSourceSelect : public QDialog {
 	Q_OBJECT
 
 private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
-	QString sourceTypeId;
+	const char *id;
 	undo_stack &undo_s;
 
-	QPointer<QButtonGroup> sourceButtons;
-
-	std::vector<obs_source_t *> sources;
-	std::vector<obs_source_t *> groups;
-
-	QPointer<FlowLayout> existingFlowLayout = nullptr;
-
-	void getSources();
-	void updateExistingSources(int limit = 0);
-
-	static bool enumSourcesCallback(void *data, obs_source_t *source);
-	static bool enumGroupsCallback(void *data, obs_source_t *source);
+	static bool EnumSources(void *data, obs_source_t *source);
+	static bool EnumGroups(void *data, obs_source_t *source);
 
 	static void OBSSourceRemoved(void *data, calldata_t *calldata);
 	static void OBSSourceAdded(void *data, calldata_t *calldata);
 
-	void getSourceTypes();
-	void setSelectedSourceType(QListWidgetItem *item);
+private slots:
+	void on_buttonBox_accepted();
+	void on_buttonBox_rejected();
 
-	int lastSelectedIndex = -1;
-	std::vector<SourceSelectButton *> selectedItems;
-	void setSelectedSource(SourceSelectButton *button);
-	void addSelectedItem(SourceSelectButton *button);
-	void removeSelectedItem(SourceSelectButton *button);
-	void clearSelectedItems();
-
-	void createNewSource();
-	void addExistingSource(QString name, bool visible);
-
-	void checkSourceVisibility();
-
-signals:
-	void sourcesUpdated();
-	void selectedItemsChanged();
-
-public slots:
-	void on_createNewSource_clicked(bool checked);
-	void addSelectedSources();
-
-	void sourceTypeSelected(QListWidgetItem *current, QListWidgetItem *previous);
-
-	void sourceButtonToggled(QAbstractButton *button, bool checked);
-	void sourceDropped(QString uuid);
+	void SourceAdded(OBSSource source);
+	void SourceRemoved(OBSSource source);
 
 public:
-	OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s);
-	~OBSBasicSourceSelect();
+	OBSBasicSourceSelect(OBSBasic *parent, const char *id, undo_stack &undo_s);
 
 	OBSSource newSource;
 

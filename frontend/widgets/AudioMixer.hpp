@@ -56,8 +56,10 @@ public:
 
 private:
 	std::vector<OBSSignal> signalHandlers;
+	std::vector<OBSSignal> previewSignals;
 	static void onFrontendEvent(enum obs_frontend_event event, void *data);
 	void handleFrontendEvent(enum obs_frontend_event event);
+	void updatePreviewHandlers();
 
 	std::unordered_map<QString, QPointer<VolumeControl>> volumeList;
 	void addControlForUuid(QString uuid);
@@ -124,6 +126,7 @@ private:
 	static void obsSourceCreate(void *data, calldata_t *params);
 	static void obsSourceRemove(void *data, calldata_t *params);
 	static void obsSourceRename(void *data, calldata_t *params);
+	static void obsSceneItemVisibleChange(void *data, calldata_t *params);
 
 private slots:
 	void sourceCreated(QString uuid);

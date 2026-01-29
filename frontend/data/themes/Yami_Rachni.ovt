@@ -233,9 +233,3 @@ VolumeMeter {
     qproperty-majorTickColor: palette(window-text);
     qproperty-minorTickColor: palette(mid);
 }
-
-/* Add Source Dialog */
-SourceSelectButton QPushButton,
-SourceSelectButton #thumbnail {
-    border-color: var(--grey3);
-}

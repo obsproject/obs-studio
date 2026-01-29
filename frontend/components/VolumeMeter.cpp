@@ -438,6 +438,9 @@ void VolumeMeter::setUseDisabledColors(bool enable)
 	}
 
 	useDisabledColors = enable;
+
+	bool forceUpdate = true;
+	updateBackgroundCache(forceUpdate);
 }
 
 void VolumeMeter::setMuted(bool mute)
