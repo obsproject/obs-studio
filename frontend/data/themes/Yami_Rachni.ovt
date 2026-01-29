@@ -174,20 +174,6 @@ QToolButton:pressed:hover {
     border-color: var(--toolbutton_bg_down);
 }
 
-#stackedMixerArea QPushButton,
-#stackedMixerArea QPushButton:!hover {
-    background-color: var(--toolbutton_bg);
-    border-color: var(--toolbutton_bg);
-}
-
-#stackedMixerArea QPushButton:hover {
-    background-color: var(--toolbutton_bg_hover);
-}
-
-#stackedMixerArea QPushButton:pressed {
-    background-color: var(--toolbutton_bg_down);
-}
-
 QToolButton:disabled,
 QPushButton[toolButton="true"]:disabled {
     background-color: var(--toolbutton_bg_disabled);
