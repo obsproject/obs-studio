@@ -378,7 +378,7 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 	}
 
 	QString serviceName = ui->service->currentText();
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -394,7 +394,6 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link));
 		ui->moreInfoButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void OBSBasicSettings::UpdateKeyLink()
@@ -403,7 +402,7 @@ void OBSBasicSettings::UpdateKeyLink()
 	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -449,12 +448,11 @@ void OBSBasicSettings::UpdateKeyLink()
 		ui->getStreamKeyButton->setTargetUrl(QUrl(streamKeyLink));
 		ui->getStreamKeyButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)
 {
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 
 	OBSDataAutoRelease settings = obs_data_create();
 
@@ -497,8 +495,6 @@ void OBSBasicSettings::LoadServices(bool showAll)
 		if (idx != -1)
 			ui->service->setCurrentIndex(idx);
 	}
-
-	obs_properties_destroy(props);
 
 	ui->service->blockSignals(false);
 }
@@ -691,15 +687,13 @@ QString OBSBasicSettings::FindProtocol()
 			return QString("RIST");
 
 	} else {
-		obs_properties_t *props = obs_get_service_properties("rtmp_common");
+		OBSProperties props = obs_get_service_properties("rtmp_common");
 		obs_property_t *services = obs_properties_get(props, "service");
 
 		OBSDataAutoRelease settings = obs_data_create();
 
 		obs_data_set_string(settings, "service", QT_TO_UTF8(ui->service->currentText()));
 		obs_property_modified(services, settings);
-
-		obs_properties_destroy(props);
 
 		const char *protocol = obs_data_get_string(settings, "protocol");
 		if (protocol && *protocol)
@@ -715,7 +709,7 @@ void OBSBasicSettings::UpdateServerList()
 
 	lastService = serviceName;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -737,8 +731,6 @@ void OBSBasicSettings::UpdateServerList()
 	if (serviceName == "Twitch" || serviceName == "Amazon IVS") {
 		ui->server->addItem(QTStr("Basic.Settings.Stream.SpecifyCustomServer"), CustomServerUUID());
 	}
-
-	obs_properties_destroy(props);
 }
 
 void OBSBasicSettings::on_show_clicked()
