@@ -191,8 +191,6 @@ static bool try_connect(void *data, const char *device)
 	uint32_t width = obs_output_get_width(vcam->output);
 	uint32_t height = obs_output_get_height(vcam->output);
 
-	vcam->frame_size = width * height * 2;
-
 	vcam->device = open(device, O_RDWR);
 
 	if (vcam->device < 0)
@@ -210,14 +208,27 @@ static bool try_connect(void *data, const char *device)
 	vcam->use_caps_workaround = use_caps_workaround;
 
 	format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+	format.fmt.pix.width = width;
+	format.fmt.pix.height = height;
+	format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
 
-	if (ioctl(vcam->device, VIDIOC_G_FMT, &format) < 0)
+	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) < 0)
 		goto fail_close_device;
+
+	if (format.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV)
+		goto fail_close_device;
+
+	vcam->frame_size = format.fmt.pix.bytesperline * format.fmt.pix.height;
+
+	struct video_scale_info vsi = {0};
+	vsi.format = VIDEO_FORMAT_YUY2;
+	vsi.width = format.fmt.pix.width;
+	vsi.height = format.fmt.pix.height;
+	obs_output_set_video_conversion(vcam->output, &vsi);
 
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
-	memset(&parm, 0, sizeof(parm));
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
 	parm.parm.output.capability = V4L2_CAP_TIMEPERFRAME;
@@ -226,23 +237,6 @@ static bool try_connect(void *data, const char *device)
 
 	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) < 0)
 		goto fail_close_device;
-
-	format.fmt.pix.width = width;
-	format.fmt.pix.height = height;
-	format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-	format.fmt.pix.sizeimage = vcam->frame_size;
-
-	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) < 0)
-		goto fail_close_device;
-
-	struct video_scale_info vsi = {0};
-	vsi.format = VIDEO_FORMAT_YUY2;
-	vsi.width = width;
-	vsi.height = height;
-	obs_output_set_video_conversion(vcam->output, &vsi);
-
-	memset(&parm, 0, sizeof(parm));
-	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
 	if (vcam->use_caps_workaround && ioctl(vcam->device, VIDIOC_STREAMON, &format.type) < 0) {
 		blog(LOG_ERROR, "Failed to start streaming on '%s' (%s)", device, strerror(errno));
