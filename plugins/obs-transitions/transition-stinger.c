@@ -137,6 +137,12 @@ static void stinger_update(void *data, obs_data_t *settings)
 	}
 
 	s->monitoring_type = (int)obs_data_get_int(settings, "audio_monitoring");
+	// If the stinger is set to monitor only, don't send audio to output mixers
+	if (s->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)
+		obs_source_set_audio_mixers(s->media_source, 0);
+	else
+		obs_source_set_audio_mixers(s->media_source, 0xFF);
+
 	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
 
 	s->fade_style = (enum fade_style)obs_data_get_int(settings, "audio_fade_style");
