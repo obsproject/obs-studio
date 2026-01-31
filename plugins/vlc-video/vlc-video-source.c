@@ -589,6 +589,14 @@ static bool valid_extension(const char *ext)
 	return valid;
 }
 
+static int compare_files(const void *a, const void *b)
+{
+	const struct media_file_data *aa = a;
+	const struct media_file_data *bb = b;
+
+	return astrnatcmp(aa->path, bb->path);
+}
+
 static void vlcs_update(void *data, obs_data_t *settings)
 {
 	media_file_array_t new_files;
@@ -642,8 +650,10 @@ static void vlcs_update(void *data, obs_data_t *settings)
 		os_dir_t *dir = os_opendir(path);
 
 		if (dir) {
-			struct dstr dir_path = {0};
 			struct os_dirent *ent;
+
+			media_file_array_t sortable_files = {0};
+			da_init(sortable_files);
 
 			for (;;) {
 				const char *ext;
@@ -658,15 +668,35 @@ static void vlcs_update(void *data, obs_data_t *settings)
 				if (!valid_extension(ext))
 					continue;
 
-				dstr_copy(&dir_path, path);
-				dstr_cat_ch(&dir_path, '/');
-				dstr_cat(&dir_path, ent->d_name);
-				add_file(c, &new_files, dir_path.array, network_caching, track_index, subtitle_index,
-					 subtitle_enable);
+				struct media_file_data media_file;
+				media_file.path = bstrdup(ent->d_name);
+
+				da_push_back(sortable_files, &media_file);
 			}
 
-			dstr_free(&dir_path);
 			os_closedir(dir);
+
+			if (sortable_files.num > 0) {
+				qsort(sortable_files.array, sortable_files.num, sizeof(struct media_file_data),
+				      compare_files);
+
+				struct dstr dir_path = {0};
+
+				for (size_t i = 0; i < sortable_files.num; i++) {
+
+					dstr_copy(&dir_path, path);
+					dstr_cat_ch(&dir_path, '/');
+					dstr_cat(&dir_path, sortable_files.array[i].path);
+
+					add_file(c, &new_files, dir_path.array, network_caching, track_index,
+						 subtitle_index, subtitle_enable);
+
+					bfree(sortable_files.array[i].path);
+				}
+				dstr_free(&dir_path);
+			}
+			da_free(sortable_files);
+
 		} else {
 			add_file(c, &new_files, path, network_caching, track_index, subtitle_index, subtitle_enable);
 		}
