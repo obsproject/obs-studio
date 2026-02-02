@@ -81,7 +81,7 @@ typedef struct SRTContext {
 	char *localport;
 	int linger;
 	int tsbpd;
-#ifdef SRT_ENABLE_BONDING
+#if SRT_VERSION_VALUE >= 0x010500
 	int groupconnect;
 #endif
 	double time; // time in s in order to post logs at definite intervals
@@ -417,7 +417,7 @@ static int libsrt_set_options_pre(URLContext *h, SRTSOCKET fd)
 	     libsrt_setsockopt(h, fd, SRTO_MESSAGEAPI, "SRTO_MESSAGEAPI", &s->messageapi, sizeof(s->messageapi)) < 0) ||
 	    (s->payload_size >= 0 && libsrt_setsockopt(h, fd, SRTO_PAYLOADSIZE, "SRTO_PAYLOADSIZE", &s->payload_size,
 						       sizeof(s->payload_size)) < 0) ||
-#ifdef SRT_ENABLE_BONDING
+#if SRT_VERSION_VALUE >= 0x010500
 	    (s->groupconnect >= 0 && libsrt_setsockopt(h, fd, SRTO_GROUPCONNECT, "SRTO_GROUPCONNECT", &s->groupconnect,
 						       sizeof(s->groupconnect)) < 0) ||
 #endif
@@ -658,7 +658,7 @@ static void libsrt_set_defaults(SRTContext *s)
 	s->transtype = SRTT_LIVE;
 	s->linger = -1;
 	s->tsbpd = -1;
-#ifdef SRT_ENABLE_BONDING
+#if SRT_VERSION_VALUE >= 0x010500
 	s->groupconnect = -1;
 #endif
 }
@@ -814,7 +814,7 @@ static int libsrt_open(URLContext *h, const char *uri)
 		if (av_find_info_tag(buf, sizeof(buf), "localport", p)) {
 			s->localport = av_strndup(buf, strlen(buf));
 		}
-#ifdef SRT_ENABLE_BONDING
+#if SRT_VERSION_VALUE >= 0x010500
 		if (av_find_info_tag(buf, sizeof(buf), "groupconnect", p)) {
 			s->groupconnect = strtol(buf, NULL, 10);
 		}
