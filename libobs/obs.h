@@ -2461,6 +2461,15 @@ EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *messa
 EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
 
 /**
+ * Requests the encoder to produce a keyframe on the next frame.
+ * Used by outputs that receive keyframe requests from remote endpoints,
+ * such as WebRTC PLI (Picture Loss Indication) packets.
+ *
+ * @param encoder The encoder to request a keyframe from
+ */
+EXPORT void obs_encoder_request_keyframe(obs_encoder_t *encoder);
+
+/**
  * Creates an "encoder group", allowing synchronized startup of encoders within
  * the group. Encoder groups are single owner, and hold strong references to
  * encoders within the group. Calling destroy on an active group will not actually

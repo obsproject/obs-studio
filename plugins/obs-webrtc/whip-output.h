@@ -47,6 +47,7 @@ private:
 	void ParseLinkHeader(std::string linkHeader, std::vector<rtc::IceServer> &iceServers);
 	void Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
+	void OnRtcpMessage(rtc::message_variant message);
 
 	obs_output_t *output;
 

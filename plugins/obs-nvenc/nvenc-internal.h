@@ -76,6 +76,7 @@ struct nvenc_data {
 	bool first_packet;
 	bool can_change_bitrate;
 	bool non_texture;
+	volatile bool force_keyframe;
 
 	DARRAY(struct handle_tex) input_textures;
 	DARRAY(struct nv_bitstream) bitstreams;
@@ -162,6 +163,7 @@ struct nv_texture {
 
 bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pic, int64_t pts,
 		       struct encoder_packet *packet, bool *received_packet);
+void nvenc_request_keyframe(struct nvenc_data *enc);
 
 /* ------------------------------------------------------------------------- */
 /* Backend-specific functions                                                */

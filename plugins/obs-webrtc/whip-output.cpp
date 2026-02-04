@@ -240,6 +240,10 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id, std::string cn
 
 	video_track = peer_connection->addTrack(video_description);
 	video_track->setMediaHandler(packetizer);
+
+	video_track->onMessage([this](rtc::message_variant message) {
+		OnRtcpMessage(message);
+	});
 }
 
 /**
@@ -680,6 +684,28 @@ void WHIPOutput::StopThread(bool signal)
 	start_time_ns = 0;
 	last_audio_timestamp = 0;
 	videoLayerStates.clear();
+}
+
+void WHIPOutput::OnRtcpMessage(rtc::message_variant message)
+{
+	if (!std::holds_alternative<rtc::binary>(message))
+		return;
+
+	auto &data = std::get<rtc::binary>(message);
+	if (data.size() < 12)
+		return;
+
+	uint8_t pt = static_cast<uint8_t>(data[1]);
+	uint8_t fmt = static_cast<uint8_t>(data[0]) & 0x1f;
+
+	// Handle PLI (Picture Loss Indication) - RFC 4585
+	// pt=206 is RTCP Payload-Specific Feedback, fmt=1 is PLI
+	if (pt == 206 && fmt == 1) {
+		do_log(LOG_DEBUG, "PLI received, requesting keyframe");
+		obs_encoder_t *encoder = obs_output_get_video_encoder(output);
+		if (encoder)
+			obs_encoder_request_keyframe(encoder);
+	}
 }
 
 void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,

@@ -1980,6 +1980,13 @@ uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder)
 	return encoder ? encoder->pause.ts_offset : 0;
 }
 
+void obs_encoder_request_keyframe(obs_encoder_t *encoder)
+{
+	if (!encoder || !encoder->info.request_keyframe)
+		return;
+	encoder->info.request_keyframe(encoder->context.data);
+}
+
 bool obs_encoder_has_roi(const obs_encoder_t *encoder)
 {
 	return encoder->roi.num > 0;

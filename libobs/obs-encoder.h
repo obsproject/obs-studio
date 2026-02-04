@@ -347,6 +347,14 @@ struct obs_encoder_info {
 
 	/** Audio encoder only: Returns padding, in samples, that must be skipped at the start of the stream. */
 	uint32_t (*get_priming_samples)(void *data);
+
+	/**
+	 * Requests that the encoder produce a keyframe as soon as possible.
+	 * Used for WebRTC PLI (Picture Loss Indication) handling.
+	 *
+	 * @param  data  Data associated with this encoder context
+	 */
+	void (*request_keyframe)(void *data);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size);
