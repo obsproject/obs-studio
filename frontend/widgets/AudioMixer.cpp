@@ -179,10 +179,6 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	toggleHiddenButton->setChecked(showHidden);
 	toggleHiddenButton->setText(QTStr("Basic.AudioMixer.HiddenTotal").arg(0));
 	toggleHiddenButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-	QIcon hiddenIcon;
-	hiddenIcon.addFile(QString::fromUtf8(":/res/images/hidden.svg"), QSize(16, 16), QIcon::Mode::Normal,
-			   QIcon::State::Off);
-	toggleHiddenButton->setIcon(hiddenIcon);
 	idian::Utils::addClass(toggleHiddenButton, "toolbar-button");
 	idian::Utils::addClass(toggleHiddenButton, "toggle-hidden");
 
