@@ -29,22 +29,23 @@
 class QLabel;
 class Thumbnail;
 
-class SourceSelectButton : public QFrame {
+class SourceSelectButton : public QAbstractButton {
 	Q_OBJECT
 
 public:
-	SourceSelectButton(obs_source_t *source, QWidget *parent = nullptr);
+	SourceSelectButton(OBSWeakSource source, QWidget *parent = nullptr);
 	~SourceSelectButton();
 
-	QPointer<QPushButton> getButton();
-	QString text();
+	std::string uuid() const { return sourceUuid; };
 
 	void setRectVisible(bool visible);
 	void setPreload(bool preload);
 
 protected:
+	void paintEvent(QPaintEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
-	void moveEvent(QMoveEvent *event) override;
+	void enterEvent(QEnterEvent *event) override;
+	void leaveEvent(QEvent *event) override;
 	void mouseMoveEvent(QMouseEvent *event) override;
 	void buttonPressed();
 
@@ -52,9 +53,12 @@ private:
 	OBSWeakSource weakSource;
 	std::shared_ptr<Thumbnail> thumbnail;
 	QPointer<QLabel> image;
+	std::string sourceUuid;
 
-	QPushButton *button = nullptr;
-	QVBoxLayout *layout = nullptr;
+	std::vector<OBSSignal> signalHandlers;
+	static void obsSourceRemoved(void *param, calldata_t *calldata);
+	static void obsSourceRenamed(void *param, calldata_t *calldata);
+
 	QLabel *label = nullptr;
 	bool preload = true;
 	bool rectVisible = false;
@@ -65,4 +69,9 @@ private:
 
 private slots:
 	void thumbnailUpdated(QPixmap pixmap);
+	void handleSourceRemoved();
+	void handleSourceRenamed(QString name);
+
+signals:
+	void sourceRemoved();
 };
