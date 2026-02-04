@@ -75,11 +75,6 @@ extern bool opt_disable_missing_files_check;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
 
-#ifndef _WIN32
-int OBSApp::sigintFd[2];
-int OBSApp::sigtermFd[2];
-#endif
-
 // GPU hint exports for AMD/NVIDIA laptops
 #ifdef _MSC_VER
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
@@ -290,6 +285,13 @@ string CurrentDateTimeString()
 }
 
 #define DEFAULT_LANG "en-US"
+
+#ifndef _WIN32
+std::array<int, 2> OBSApp::sigIntFileDescriptor{0, 0};
+std::array<int, 2> OBSApp::sigTermFileDescriptor{0, 0};
+std::array<int, 2> OBSApp::sigAbrtFileDescriptor{0, 0};
+std::array<int, 2> OBSApp::sigQuitFileDescriptor{0, 0};
+#endif
 
 bool OBSApp::InitGlobalConfigDefaults()
 {
@@ -892,15 +894,25 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 #endif
 
 #ifndef _WIN32
-	/* Handle SIGINT properly */
-	socketpair(AF_UNIX, SOCK_STREAM, 0, sigintFd);
-	snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
-	connect(snInt, &QSocketNotifier::activated, this, &OBSApp::ProcessSigInt);
+	// Add POSIX signal handlers:
+	// * SIGINT
+	// * SIGTERM
+	// * SIGABRT
+	// * SIGQUIT
 
-	/* Handle SIGTERM */
-	socketpair(AF_UNIX, SOCK_STREAM, 0, sigtermFd);
-	snTerm = new QSocketNotifier(sigtermFd[1], QSocketNotifier::Read, this);
-	connect(snTerm, &QSocketNotifier::activated, this, &OBSApp::ProcessSigTerm);
+	using SignalCallback = decltype(&OBSApp::processSigInt);
+
+	auto connectSignal = [this](std::array<int, 2> &fileDescriptor, QPointer<QSocketNotifier> &notifier,
+				    SignalCallback callback) -> void {
+		socketpair(AF_UNIX, SOCK_STREAM, 0, fileDescriptor.data());
+		notifier = new QSocketNotifier(fileDescriptor[1], QSocketNotifier::Read, this);
+		connect(notifier, &QSocketNotifier::activated, this, callback);
+	};
+
+	connectSignal(sigIntFileDescriptor, sigIntNotifier, &OBSApp::processSigInt);
+	connectSignal(sigTermFileDescriptor, sigTermNotifier, &OBSApp::processSigTerm);
+	connectSignal(sigAbrtFileDescriptor, sigAbrtNotifier, &OBSApp::processSigAbrt);
+	connectSignal(sigQuitFileDescriptor, sigQuitNotifier, &OBSApp::processSigQuit);
 #endif
 	connect(qApp, &QGuiApplication::commitDataRequest, this, &OBSApp::commitData, Qt::DirectConnection);
 
@@ -1254,17 +1266,19 @@ bool OBSApp::OBSInit()
 
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 
+#ifndef __APPLE__
 	connect(QApplication::instance(), &QApplication::aboutToQuit, this, [this]() {
-		/* Ensure OBSMainWindow gets closed */
 		if (mainWindow) {
-			mainWindow->close();
-			delete mainWindow;
+			QPointer<OBSBasic> basicWindow = static_cast<OBSBasic *>(mainWindow.get());
+
+			basicWindow->closeWindow();
 		}
 
 		if (libobs_initialized) {
 			applicationShutdown();
 		}
 	});
+#endif
 
 	mainWindow->OBSInit();
 
@@ -1775,57 +1789,143 @@ bool WindowPositionValid(QRect rect)
 }
 
 #ifndef _WIN32
-void OBSApp::SigIntSignalHandler(int s)
+// Static signal handlers
+void OBSApp::sigIntSignalHandler(int)
 {
-	/* Handles SIGINT and writes to a socket. Qt will read
-	 * from the socket in the main thread event loop and trigger
-	 * a call to the ProcessSigInt slot, where we can safely run
-	 * shutdown code without signal safety issues. */
-	UNUSED_PARAMETER(s);
-
-	char a = 1;
-	send(sigintFd[0], &a, sizeof(a), 0);
+	char tmp = 1;
+	::send(sigIntFileDescriptor[0], &tmp, sizeof(tmp), 0);
 }
 
-void OBSApp::SigTermSignalHandler(int s)
+void OBSApp::sigTermSignalHandler(int)
 {
-	UNUSED_PARAMETER(s);
-
-	char a = 1;
-	send(sigtermFd[0], &a, sizeof(a), 0);
+	char tmp = 1;
+	::send(sigTermFileDescriptor[0], &tmp, sizeof(tmp), 0);
 }
-#endif
 
-void OBSApp::ProcessSigInt(void)
+void OBSApp::sigAbrtSignalHandler(int)
 {
-	/* This looks weird, but we can't ifdef a Qt slot function so
-	 * the SIGINT handler simply does nothing on Windows. */
-#ifndef _WIN32
+	char tmp = 1;
+	::send(sigAbrtFileDescriptor[0], &tmp, sizeof(tmp), 0);
+}
+
+void OBSApp::sigQuitSignalHandler(int)
+{
+	char tmp = 1;
+	::send(sigQuitFileDescriptor[0], &tmp, sizeof(tmp), 0);
+}
+
+// App instance signal processors
+void OBSApp::processSigInt()
+{
+	if (!sigIntNotifier->isEnabled()) {
+		return;
+	}
+
+	sigIntNotifier->setEnabled(false);
+
 	char tmp;
-	recv(sigintFd[1], &tmp, sizeof(tmp), 0);
+	::recv(sigIntFileDescriptor[1], &tmp, sizeof(tmp), 0);
 
+	sigIntNotifier->setEnabled(true);
+
+#ifndef __APPLE__
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
 		main->saveAll();
 		main->close();
 	}
+#else
+	quit();
 #endif
 }
 
-void OBSApp::ProcessSigTerm(void)
+void OBSApp::processSigTerm()
 {
-#ifndef _WIN32
-	char tmp;
-	recv(sigtermFd[1], &tmp, sizeof(tmp), 0);
+	if (!sigTermNotifier->isEnabled()) {
+		return;
+	}
 
+	sigTermNotifier->setEnabled(false);
+
+	char tmp;
+	::recv(sigTermFileDescriptor[1], &tmp, sizeof(tmp), 0);
+
+	sigTermNotifier->setEnabled(true);
+
+#ifndef __APPLE__
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
 		main->saveAll();
 	}
-
-	quit();
 #endif
+	quit();
 }
+
+void OBSApp::processSigAbrt()
+{
+	if (!sigAbrtNotifier->isEnabled()) {
+		return;
+	}
+
+	sigAbrtNotifier->setEnabled(false);
+
+	char tmp;
+	::recv(sigAbrtFileDescriptor[1], &tmp, sizeof(tmp), 0);
+
+	sigAbrtNotifier->setEnabled(true);
+
+#ifndef __APPLE__
+	OBSBasic *main = OBSBasic::Get();
+	if (main) {
+		main->saveAll();
+	}
+#endif
+	quit();
+}
+
+void OBSApp::processSigQuit()
+{
+	if (!sigQuitNotifier->isEnabled()) {
+		return;
+	}
+
+	sigQuitNotifier->setEnabled(false);
+
+	char tmp;
+	::recv(sigQuitFileDescriptor[1], &tmp, sizeof(tmp), 0);
+
+	sigQuitNotifier->setEnabled(true);
+
+#ifndef __APPLE__
+	OBSBasic *main = OBSBasic::Get();
+	if (main) {
+		main->saveAll();
+	}
+#endif
+	quit();
+}
+#else
+// App instance signal processor stub methods used on Windows for OBSApp API compliance
+void OBSApp::processSigInt()
+{
+	return;
+}
+
+void OBSApp::processSigTerm()
+{
+	return;
+}
+
+void OBSApp::processSigAbrt()
+{
+	return;
+}
+
+void OBSApp::processSigQuit()
+{
+	return;
+}
+#endif
 
 void OBSApp::commitData(QSessionManager &manager)
 {
@@ -1846,13 +1946,19 @@ void OBSApp::applicationShutdown() noexcept
 	if (disableAudioDucking)
 		DisableAudioDucking(false);
 #else
-	delete snInt;
-	close(sigintFd[0]);
-	close(sigintFd[1]);
+	auto disconnectSignal = [this](std::array<int, 2> &fileDescriptor,
+				       QPointer<QSocketNotifier> &notifier) -> void {
+		notifier->setEnabled(false);
 
-	delete snTerm;
-	close(sigtermFd[0]);
-	close(sigtermFd[1]);
+		std::array<int, 2> tempFileDescriptor = std::exchange(fileDescriptor, {0, 0});
+		::close(tempFileDescriptor[0]);
+		::close(tempFileDescriptor[1]);
+	};
+
+	disconnectSignal(sigIntFileDescriptor, sigIntNotifier);
+	disconnectSignal(sigTermFileDescriptor, sigTermNotifier);
+	disconnectSignal(sigAbrtFileDescriptor, sigAbrtNotifier);
+	disconnectSignal(sigQuitFileDescriptor, sigQuitNotifier);
 #endif
 
 #ifdef __APPLE__
