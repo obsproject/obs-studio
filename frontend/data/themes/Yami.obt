@@ -1879,15 +1879,6 @@ VolumeControl.volume-preview .mixer-category {
     background: var(--grey8);
 }
 
-VolumeControl.volume-hidden VolumeMeter {
-    qproperty-backgroundNominalColor: var(--grey5);
-    qproperty-backgroundWarningColor: var(--grey3);
-    qproperty-backgroundErrorColor: var(--grey5);
-    qproperty-foregroundNominalColor: var(--green4);
-    qproperty-foregroundWarningColor: var(--yellow4);
-    qproperty-foregroundErrorColor: var(--red4);
-}
-
 /* Status Bar */
 
 QStatusBar::item {

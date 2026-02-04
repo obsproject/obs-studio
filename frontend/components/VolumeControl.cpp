@@ -583,7 +583,9 @@ void VolumeControl::updateCategoryLabel()
 	categoryLabel->setText(labelText);
 
 	utils->polishChildren();
-	volumeMeter->updateBackgroundCache();
+
+	bool forceUpdate = true;
+	volumeMeter->updateBackgroundCache(forceUpdate);
 }
 
 void VolumeControl::updateDecayRate()
