@@ -32,44 +32,54 @@
 constexpr int UNVERSIONED_ID_ROLE = Qt::UserRole + 1;
 constexpr int DEPRECATED_ROLE = Qt::UserRole + 2;
 
+constexpr const char *RECENT_TYPE_ID = "_recent";
+constexpr int RECENT_LIST_LIMIT = 16;
+
 class OBSBasicSourceSelect : public QDialog {
 	Q_OBJECT
 
+public:
+	OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s);
+	~OBSBasicSourceSelect();
+
+	OBSSource newSource;
+
+	static void sourcePaste(SourceCopyInfo &info, bool duplicate);
+
 private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
-	QString sourceTypeId;
+	QString selectedTypeId{RECENT_TYPE_ID};
 	undo_stack &undo_s;
 
 	QPointer<QButtonGroup> sourceButtons;
 
-	std::vector<obs_source_t *> sources;
-	std::vector<obs_source_t *> groups;
+	std::vector<OBSSignal> signalHandlers;
+	static void obsSourceCreated(void *param, calldata_t *calldata);
+	static void obsSourceRemoved(void *param, calldata_t *calldata);
+
+	std::vector<obs_weak_source_t *> weakSources;
 
 	QPointer<FlowLayout> existingFlowLayout = nullptr;
 
-	void getSources();
+	void refreshSources();
 	void updateExistingSources(int limit = 0);
 
 	static bool enumSourcesCallback(void *data, obs_source_t *source);
-	static bool enumGroupsCallback(void *data, obs_source_t *source);
 
-	static void OBSSourceRemoved(void *data, calldata_t *calldata);
-	static void OBSSourceAdded(void *data, calldata_t *calldata);
-
-	void getSourceTypes();
-	void setSelectedSourceType(QListWidgetItem *item);
+	void rebuildSourceTypeList();
 
 	int lastSelectedIndex = -1;
-	std::vector<SourceSelectButton *> selectedItems;
-	void setSelectedSource(SourceSelectButton *button);
-	void addSelectedItem(SourceSelectButton *button);
-	void removeSelectedItem(SourceSelectButton *button);
+	std::vector<std::string> selectedItems;
+	void addSelectedItem(std::string uuid);
+	void removeSelectedItem(std::string uuid);
 	void clearSelectedItems();
 
-	void createNewSource();
-	void addExistingSource(QString name, bool visible);
+	SourceSelectButton *findButtonForUuid(std::string uuid);
 
-	void checkSourceVisibility();
+	void createNew();
+	void addExisting(std::string uuid, bool visible);
+
+	void updateButtonVisibility();
 
 signals:
 	void sourcesUpdated();
@@ -79,16 +89,11 @@ public slots:
 	void on_createNewSource_clicked(bool checked);
 	void addSelectedSources();
 
+	void handleSourceCreated();
+	void handleSourceRemoved(QString uuid);
+
 	void sourceTypeSelected(QListWidgetItem *current, QListWidgetItem *previous);
 
 	void sourceButtonToggled(QAbstractButton *button, bool checked);
 	void sourceDropped(QString uuid);
-
-public:
-	OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s);
-	~OBSBasicSourceSelect();
-
-	OBSSource newSource;
-
-	static void SourcePaste(SourceCopyInfo &info, bool duplicate);
 };

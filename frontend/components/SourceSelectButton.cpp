@@ -27,21 +27,29 @@
 #include <QPainter>
 #include <QStyleOptionButton>
 
-SourceSelectButton::SourceSelectButton(obs_source_t *source_, QWidget *parent) : QFrame(parent)
+SourceSelectButton::SourceSelectButton(OBSWeakSource weak, QWidget *parent) : QAbstractButton(parent), weakSource(weak)
 {
-	OBSSource source = source_;
-	weakSource = OBSGetWeakRef(source);
+	OBSSource source{OBSGetStrongRef(weak)};
+
+	if (!source || !weakSource) {
+		return;
+	}
+
 	const char *sourceName = obs_source_get_name(source);
+	const char *uuid = obs_source_get_uuid(source);
+
+	if (!sourceName || !uuid) {
+		return;
+	}
+
+	sourceUuid = uuid;
 
 	setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-	button = new QPushButton(this);
-	button->setCheckable(true);
-	button->setAttribute(Qt::WA_Moved);
-	button->setAccessibleName(sourceName);
-	button->show();
+	setCheckable(true);
+	setAccessibleName(sourceName);
 
-	layout = new QVBoxLayout();
+	QVBoxLayout *layout = new QVBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
 	layout->setSpacing(0);
 	setLayout(layout);
@@ -68,42 +76,81 @@ SourceSelectButton::SourceSelectButton(obs_source_t *source_, QWidget *parent) :
 	layout->addWidget(image);
 	layout->addWidget(label);
 
-	button->setFixedSize(width(), height());
-	button->move(0, 0);
-
 	setFocusPolicy(Qt::StrongFocus);
-	setFocusProxy(button);
 
-	connect(button, &QAbstractButton::pressed, this, &SourceSelectButton::buttonPressed);
+	signalHandlers.reserve(2);
+	signalHandlers.emplace_back(obs_source_get_signal_handler(source), "destroy",
+				    &SourceSelectButton::obsSourceRemoved, this);
+	signalHandlers.emplace_back(obs_source_get_signal_handler(source), "rename",
+				    &SourceSelectButton::obsSourceRenamed, this);
+
+	connect(this, &QAbstractButton::pressed, this, &SourceSelectButton::buttonPressed);
 }
 
 SourceSelectButton::~SourceSelectButton() {}
 
-QPointer<QPushButton> SourceSelectButton::getButton()
+void SourceSelectButton::paintEvent(QPaintEvent *)
 {
-	return button;
-}
+	QPainter painter{this};
 
-QString SourceSelectButton::text()
-{
-	return label->text();
+	QStyleOptionButton option;
+	option.initFrom(this);
+
+	if (isChecked()) {
+		option.state |= QStyle::State_On;
+	}
+	if (isDown()) {
+		option.state |= QStyle::State_Sunken;
+	}
+	if (hasFocus()) {
+		option.state |= QStyle::State_HasFocus;
+	}
+	if (underMouse()) {
+		option.state |= QStyle::State_MouseOver;
+	}
+
+	style()->drawControl(QStyle::CE_PushButton, &option, &painter, this);
 }
 
 void SourceSelectButton::resizeEvent(QResizeEvent *)
 {
-	button->setFixedSize(width(), height());
-	button->move(0, 0);
+	QStyleOptionButton option;
+	option.initFrom(this);
+
+	QRect contentRect = style()->subElementRect(QStyle::SE_PushButtonContents, &option, this);
+	if (!contentRect.isValid()) {
+		contentRect = rect();
+	}
+
+	int left = contentRect.left();
+	int top = contentRect.top();
+	int right = rect().width() - contentRect.right() - 1;
+	int bottom = rect().height() - contentRect.bottom() - 1;
+
+	left = std::max(0, left);
+	top = std::max(0, top);
+	right = std::max(0, right);
+	bottom = std::max(0, bottom);
+
+	if (auto layout = this->layout()) {
+		layout->setContentsMargins(left, top, right, bottom);
+	}
 }
 
-void SourceSelectButton::moveEvent(QMoveEvent *)
+void SourceSelectButton::enterEvent(QEnterEvent *)
 {
-	button->setFixedSize(width(), height());
-	button->move(0, 0);
+	update();
+	thumbnail->requestUpdate();
+}
+
+void SourceSelectButton::leaveEvent(QEvent *)
+{
+	update();
 }
 
 void SourceSelectButton::buttonPressed()
 {
-	dragStartPosition = QCursor::pos();
+	dragStartPosition = mapFromGlobal(QCursor::pos());
 }
 
 void SourceSelectButton::setDefaultThumbnail()
@@ -116,26 +163,51 @@ void SourceSelectButton::setDefaultThumbnail()
 	}
 }
 
+void SourceSelectButton::obsSourceRemoved(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<SourceSelectButton *>(data), &SourceSelectButton::handleSourceRemoved);
+}
+
+void SourceSelectButton::obsSourceRenamed(void *data, calldata_t *params)
+{
+	const char *newNamePtr = static_cast<const char *>(calldata_ptr(params, "new_name"));
+	std::string newName = newNamePtr;
+
+	QMetaObject::invokeMethod(static_cast<SourceSelectButton *>(data), "handleSourceRenamed", Qt::QueuedConnection,
+				  Q_ARG(QString, QString::fromStdString(newName)));
+}
+
+void SourceSelectButton::handleSourceRemoved()
+{
+	emit sourceRemoved();
+}
+
+void SourceSelectButton::handleSourceRenamed(QString name)
+{
+	label->setText(name);
+}
+
 void SourceSelectButton::mouseMoveEvent(QMouseEvent *event)
 {
 	if (!(event->buttons() & Qt::LeftButton)) {
 		return;
 	}
 
-	if ((event->pos() - dragStartPosition).manhattanLength() < QApplication::startDragDistance()) {
+	if ((event->pos() - dragStartPosition).manhattanLength() < QApplication::startDragDistance() * 3) {
 		return;
 	}
 
 	QMimeData *mimeData = new QMimeData;
-	OBSSource source = OBSGetStrongRef(weakSource);
-	if (source) {
-		std::string uuid = obs_source_get_uuid(source);
-		mimeData->setData("application/x-obs-source-uuid", uuid.c_str());
 
-		QDrag *drag = new QDrag(this);
-		drag->setMimeData(mimeData);
-		drag->setPixmap(this->grab());
-		drag->exec(Qt::CopyAction);
+	mimeData->setData("application/x-obs-source-uuid", sourceUuid.c_str());
+
+	QDrag *drag = new QDrag(this);
+	drag->setMimeData(mimeData);
+	drag->setPixmap(this->grab());
+	drag->exec(Qt::CopyAction);
+
+	if (isDown()) {
+		setDown(false);
 	}
 }
 
@@ -155,8 +227,8 @@ void SourceSelectButton::setRectVisible(bool visible)
 			if (hasVideo) {
 				thumbnail = OBSBasic::Get()->thumbnails()->getThumbnail(source);
 				connect(thumbnail.get(), &Thumbnail::updateThumbnail, this,
-					&SourceSelectButton::thumbnailUpdated);
-				thumbnailUpdated(thumbnail->getPixmap());
+					&SourceSelectButton::updatePixmap);
+				updatePixmap(thumbnail->getPixmap());
 			}
 		} else {
 			thumbnail.reset();
@@ -165,7 +237,7 @@ void SourceSelectButton::setRectVisible(bool visible)
 
 	if (preload && !rectVisible) {
 		OBSBasic::Get()->thumbnails()->preloadThumbnail(source, this,
-								[=](QPixmap pixmap) { thumbnailUpdated(pixmap); });
+								[=](QPixmap pixmap) { updatePixmap(pixmap); });
 	}
 	preload = false;
 }
