@@ -20,6 +20,10 @@
 
 #include <obs.hpp>
 
+#include <utility/ScreenshotObj.hpp>
+#include <utility/ThumbnailItem.hpp>
+
+#include <QElapsedTimer>
 #include <QObject>
 #include <QPixmap>
 #include <QPointer>
@@ -28,79 +32,82 @@
 #include <deque>
 #include <functional>
 
-class ThumbnailItem : public QObject {
-	Q_OBJECT
-
-	friend class ThumbnailManager;
-	friend class Thumbnail;
-
-	std::string uuid;
-	OBSWeakSource weakSource;
-	QPixmap pixmap;
-
-	void init(std::weak_ptr<ThumbnailItem> weakActiveItem);
-	void imageUpdated(QImage image);
-
-public:
-	ThumbnailItem(std::string uuid, OBSSource source);
-	~ThumbnailItem();
-
-	inline bool isNull() const { return !weakSource || obs_weak_source_expired(weakSource); }
-	inline const std::string &getUuid() const { return uuid; }
-
-signals:
-	void updateThumbnail(QPixmap pixmap);
-};
-
-class Thumbnail : public QObject {
-	Q_OBJECT
-
-	friend class ThumbnailManager;
-
-	std::shared_ptr<ThumbnailItem> item;
-
-private slots:
-	void thumbnailUpdated(QPixmap pixmap);
-
-public:
-	inline Thumbnail(std::shared_ptr<ThumbnailItem> item) : item(item) {}
-
-	inline QPixmap getPixmap() const { return item->pixmap; }
-
-	static constexpr QSize size = {320, 180};
-
-signals:
-	void updateThumbnail(QPixmap pixmap);
-};
+class ThumbnailView;
 
 class ThumbnailManager : public QObject {
 	Q_OBJECT
 
-	friend class ThumbnailItem;
+	std::vector<OBSSignal> signalHandlers;
+	static void obsSourceRemoved(void *param, calldata_t *calldata);
 
-	struct CachedItem {
-		std::optional<QPixmap> pixmap;
-		std::weak_ptr<ThumbnailItem> weakActiveItem;
+	struct ThumbnailCache {
+		size_t maxSize;
+
+		using CacheEntry = std::pair<std::string, QPixmap>;
+
+		std::list<CacheEntry> cacheList;
+		std::unordered_map<std::string, std::list<CacheEntry>::iterator> cacheMap;
+
+		ThumbnailCache(size_t maxSize) : maxSize(maxSize) {}
+
+		void put(const std::string &key, const QPixmap &value)
+		{
+			auto it = cacheMap.find(key);
+			if (it != cacheMap.end()) {
+				cacheList.erase(it->second);
+				cacheMap.erase(it);
+			}
+			cacheList.push_front(CacheEntry{key, value});
+			cacheMap[key] = cacheList.begin();
+			if (cacheMap.size() > maxSize) {
+				const CacheEntry &lastEntry = cacheList.back();
+				cacheMap.erase(lastEntry.first);
+				cacheList.pop_back();
+			}
+		}
+		std::optional<QPixmap> get(const std::string &key)
+		{
+			auto it = cacheMap.find(key);
+			if (it == cacheMap.end()) {
+				return std::nullopt;
+			}
+
+			std::list<CacheEntry>::iterator entry = it->second;
+			return entry->second;
+		}
 	};
 
-	std::deque<std::weak_ptr<ThumbnailItem>> newThumbnails;
-	std::deque<std::weak_ptr<ThumbnailItem>> thumbnails;
-	std::unordered_map<std::string, CachedItem> cachedThumbnails;
+	std::deque<std::string> priorityQueue;
+	std::deque<std::string> updateQueue;
+	std::unordered_map<std::string, QPointer<ThumbnailItem>> thumbnailList;
+	ThumbnailCache thumbnailCache{64};
+
 	QTimer updateTimer;
-
-	bool updatePixmap(std::shared_ptr<ThumbnailItem> &item);
-	void updateTick();
-
-	void updateIntervalChanged(size_t newCount);
+	QElapsedTimer elapsedTimer;
 
 public:
 	explicit ThumbnailManager(QObject *parent = nullptr);
 	~ThumbnailManager();
 
-	std::shared_ptr<Thumbnail> getThumbnail(OBSSource source);
-	std::optional<QPixmap> getCachedThumbnail(OBSSource source);
-	void preloadThumbnail(OBSSource source, QObject *object, std::function<void(QPixmap)> callback);
+	QPointer<ThumbnailView> createView(QWidget *parent, obs_source_t *source);
+	std::optional<QPixmap> getCachedPixmap(const std::string &uuid);
 
 private:
 	Q_DISABLE_COPY_MOVE(ThumbnailManager);
+
+	bool updateItem(ThumbnailItem *item);
+	void updateNextItem(size_t cycleDepth = 0);
+
+	void removeIdFromQueues(const std::string &uuid);
+	void updateTickInterval(int newInterval);
+
+	void createThumbnailItem(const std::string &uuid);
+	QPointer<ThumbnailItem> getThumbnailItem(const std::string &uuid);
+
+private slots:
+	void updateTick();
+	void addToPriorityQueue(const std::string &uuid, bool immediate = false);
+	void addItemToCache(std::string &uuid, QPixmap &pixmap);
+	void deleteItem(ThumbnailItem *item);
+	void deleteItemById(QString uuid);
 };
