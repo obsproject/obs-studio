@@ -46,6 +46,9 @@ public:
 
 	static void sourcePaste(SourceCopyInfo &info, bool duplicate);
 
+protected:
+	void showEvent(QShowEvent *event) override;
+
 private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
 	QString selectedTypeId{RECENT_TYPE_ID};

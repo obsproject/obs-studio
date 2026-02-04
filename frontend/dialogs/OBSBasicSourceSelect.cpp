@@ -16,11 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "OBSApp.hpp"
 #include "OBSBasicSourceSelect.hpp"
 
-#include <OBSApp.hpp>
 #include <utility/ResizeSignaler.hpp>
 #include <utility/ThumbnailManager.hpp>
+#include <utility/ThumbnailView.hpp>
 
 #include "qt-wrappers.hpp"
 
@@ -323,26 +324,16 @@ void OBSBasicSourceSelect::updateButtonVisibility()
 {
 	QList<QAbstractButton *> buttons = sourceButtons->buttons();
 
-	// Allow some room for previous/next rows to make scrolling a bit more seamless
-	QRect scrollAreaRect(QPoint(0, 0), ui->existingScrollArea->size());
-	scrollAreaRect.setTop(scrollAreaRect.top() - Thumbnail::size.width());
-	scrollAreaRect.setBottom(scrollAreaRect.bottom() + Thumbnail::size.height());
-
-	for (QAbstractButton *button : buttons) {
-		SourceSelectButton *sourceButton = qobject_cast<SourceSelectButton *>(button);
-		if (sourceButton) {
-			QRect buttonRect = button->rect();
-			buttonRect.moveTo(button->mapTo(ui->existingScrollArea, buttonRect.topLeft()));
-
-			if (scrollAreaRect.intersects(buttonRect)) {
-				sourceButton->setPreload(true);
-			} else {
-				sourceButton->setPreload(false);
-			}
-		}
+	if (buttons.size() <= 0) {
+		return;
 	}
 
-	scrollAreaRect = QRect(QPoint(0, 0), ui->existingScrollArea->size());
+	auto firstButton = buttons.first();
+
+	// Allow some room for previous/next rows to make scrolling a bit more seamless
+	QRect scrollAreaRect(QPoint(0, 0), ui->existingScrollArea->size());
+	scrollAreaRect.setTop(scrollAreaRect.top() - firstButton->rect().height());
+	scrollAreaRect.setBottom(scrollAreaRect.bottom() + firstButton->rect().height());
 
 	for (QAbstractButton *button : buttons) {
 		SourceSelectButton *sourceButton = qobject_cast<SourceSelectButton *>(button);
@@ -351,9 +342,9 @@ void OBSBasicSourceSelect::updateButtonVisibility()
 			buttonRect.moveTo(button->mapTo(ui->existingScrollArea, buttonRect.topLeft()));
 
 			if (scrollAreaRect.intersects(buttonRect)) {
-				sourceButton->setRectVisible(true);
+				sourceButton->setThumbnailEnabled(true);
 			} else {
-				sourceButton->setRectVisible(false);
+				sourceButton->setThumbnailEnabled(false);
 			}
 		}
 	}
@@ -477,7 +468,6 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 	connect(sourceButtons, &QButtonGroup::buttonToggled, this, &OBSBasicSourceSelect::sourceButtonToggled);
 
 	ui->existingListFrame->adjustSize();
-	QTimer::singleShot(10, this, [this] { updateButtonVisibility(); });
 }
 
 bool OBSBasicSourceSelect::enumSourcesCallback(void *data, obs_source_t *source)

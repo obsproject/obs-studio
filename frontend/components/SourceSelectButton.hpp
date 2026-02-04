@@ -28,6 +28,7 @@
 
 class QLabel;
 class Thumbnail;
+class ThumbnailView;
 
 class SourceSelectButton : public QAbstractButton {
 	Q_OBJECT
@@ -38,8 +39,8 @@ public:
 
 	std::string uuid() const { return sourceUuid; };
 
-	void setRectVisible(bool visible);
-	void setPreload(bool preload);
+	void setThumbnailEnabled(bool enabled);
+	void updateThumbnail();
 
 protected:
 	void paintEvent(QPaintEvent *event) override;
@@ -51,7 +52,7 @@ protected:
 
 private:
 	OBSWeakSource weakSource;
-	std::shared_ptr<Thumbnail> thumbnail;
+	QPointer<ThumbnailView> thumbnail;
 	QPointer<QLabel> image;
 	std::string sourceUuid;
 
@@ -60,15 +61,12 @@ private:
 	static void obsSourceRenamed(void *param, calldata_t *calldata);
 
 	QLabel *label = nullptr;
-	bool preload = true;
-	bool rectVisible = false;
-
-	void setDefaultThumbnail();
+	bool thumbnailEnabled = true;
 
 	QPoint dragStartPosition;
 
 private slots:
-	void thumbnailUpdated(QPixmap pixmap);
+	void updatePixmap(QPixmap pixmap);
 	void handleSourceRemoved();
 	void handleSourceRenamed(QString name);
 
