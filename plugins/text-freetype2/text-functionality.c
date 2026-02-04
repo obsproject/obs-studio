@@ -427,8 +427,7 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 		srcdata->text = NULL;
 	}
 	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text,
-		       (strlen(tmp_read) + 1));
+	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
 
 	remove_cr(srcdata->text);
 	bfree(tmp_read);
@@ -512,8 +511,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		srcdata->text = NULL;
 	}
 	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text,
-		       (strlen(tmp_read) + 1));
+	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
 
 	remove_cr(srcdata->text);
 	bfree(tmp_read);
