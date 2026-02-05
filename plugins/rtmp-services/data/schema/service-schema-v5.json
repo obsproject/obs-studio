@@ -218,6 +218,11 @@
                         "default": [
                             ""
                         ]
+                    },
+                    "supports_vod_track": {
+                        "type": "boolean",
+                        "description": "Whether or not the service supports a separate VOD audio track.",
+                        "default": false
                     }
                 },
                 "additionalProperties": false,
