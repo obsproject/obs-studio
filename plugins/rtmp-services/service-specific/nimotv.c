@@ -84,7 +84,7 @@ const char *nimotv_get_ingest(const char *key)
 	curl_free(encoded_key);
 
 	curl_easy_setopt(curl_handle, CURLOPT_URL, uri.array);
-	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, true);
+	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
 	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
 	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 3L);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, nimotv_write_cb);
