@@ -356,8 +356,7 @@ set(
 
 if(OS_WINDOWS)
   list(
-    APPEND
-    public_headers
+    APPEND public_headers
     util/threading-windows.h
     util/windows/ComPtr.hpp
     util/windows/CoTaskMemPtr.hpp

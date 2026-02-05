@@ -211,6 +211,7 @@ static void add_audio_encoder_params(os_process_args_t *args, obs_encoder_t *aen
 	os_process_args_add_argf(args, "%d", bitrate);
 	os_process_args_add_argf(args, "%d", (int)obs_encoder_get_sample_rate(aencoder));
 	os_process_args_add_argf(args, "%d", (int)obs_encoder_get_frame_size(aencoder));
+	os_process_args_add_argf(args, "%d", (int)obs_encoder_get_priming_samples(aencoder));
 	os_process_args_add_argf(args, "%d", (int)audio_output_get_channels(audio));
 }
 

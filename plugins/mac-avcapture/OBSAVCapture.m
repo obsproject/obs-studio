@@ -8,7 +8,7 @@
 #import "OBSAVCapture.h"
 #import "AVCaptureDeviceFormat+OBSListable.h"
 
-/// Tthe maximum number of frame rate ranges to show complete information for before providing a more generic description of the supported frame rates inside of a device format description.
+/// The maximum number of frame rate ranges to show complete information for before providing a more generic description of the supported frame rates inside of a device format description.
 static const UInt32 kMaxFrameRateRangesInDescription = 10;
 
 @implementation OBSAVCapture

@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <QFocusEvent>
 #include <QRegularExpression>
 #include <QStyle>
 #include <QWidget>
@@ -39,26 +38,8 @@ public:
 
 	Utils(QWidget *w) { parent = w; }
 
-	// Set a custom property whenever the widget has keyboard focus specifically
-	void showKeyFocused(QFocusEvent *e)
-	{
-		if (e->reason() != Qt::MouseFocusReason && e->reason() != Qt::PopupFocusReason) {
-			addClass("keyFocus");
-		} else {
-			removeClass("keyFocus");
-		}
-	}
-
-	void hideKeyFocused(QFocusEvent *e)
-	{
-		if (e->reason() != Qt::PopupFocusReason) {
-			removeClass("keyFocus");
-		}
-	}
-
 	// Force all children widgets to repaint
 	void polishChildren() { polishChildren(parent); }
-
 	static void polishChildren(QWidget *widget)
 	{
 		for (QWidget *child : widget->findChildren<QWidget *>()) {
@@ -67,7 +48,6 @@ public:
 	}
 
 	void repolish() { repolish(parent); }
-
 	static void repolish(QWidget *widget)
 	{
 		widget->style()->unpolish(widget);
@@ -76,7 +56,6 @@ public:
 
 	// Adds a style class to the widget
 	void addClass(const QString &classname) { addClass(parent, classname); }
-
 	static void addClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
@@ -91,16 +70,17 @@ public:
 		}
 
 		classList.removeDuplicates();
+		classList.removeAll("");
 		classList.append(classname);
 
-		widget->setProperty("class", classList.join(" "));
+		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+		widget->setProperty("class", newClasses);
 
 		repolish(widget);
 	}
 
 	// Removes a style class from a widget
 	void removeClass(const QString &classname) { removeClass(parent, classname); }
-
 	static void removeClass(QWidget *widget, const QString &classname)
 	{
 		if (!classNameIsValid(classname)) {
@@ -118,16 +98,17 @@ public:
 		}
 
 		classList.removeDuplicates();
+		classList.removeAll("");
 		classList.removeAll(classname);
 
-		widget->setProperty("class", classList.join(" "));
+		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+		widget->setProperty("class", newClasses);
 
 		repolish(widget);
 	}
 
 	// Forces the addition or removal of a style class from a widget
 	void toggleClass(const QString &classname, bool toggle) { toggleClass(parent, classname, toggle); }
-
 	static void toggleClass(QWidget *widget, const QString &classname, bool toggle)
 	{
 		if (toggle) {
@@ -136,6 +117,12 @@ public:
 			removeClass(widget, classname);
 		}
 	}
+
+	static void applyColorToIcon(QWidget *widget);
+
+	static QPixmap recolorPixmap(const QPixmap &src, const QColor &color);
+
+	void applyStateStylingEventFilter(QWidget *widget);
 };
 
 } // namespace idian

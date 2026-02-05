@@ -122,20 +122,6 @@ QToolButton:pressed:hover {
     border-color: var(--toolbutton_bg_down);
 }
 
-#stackedMixerArea QPushButton,
-#stackedMixerArea QPushButton:!hover {
-    background-color: var(--toolbutton_bg);
-    border-color: var(--toolbutton_bg);
-}
-
-#stackedMixerArea QPushButton:hover {
-    background-color: var(--toolbutton_bg_hover);
-}
-
-#stackedMixerArea QPushButton:pressed {
-    background-color: var(--toolbutton_bg_down);
-}
-
 QTabBar::tab {
     background-color: var(--grey5);
 }
@@ -228,4 +214,9 @@ QCalendarWidget QToolButton:pressed {
 
 QCalendarWidget QSpinBox {
     background-color: var(--primary_dark);
+}
+
+idian--ToggleSwitch {
+    qproperty-background_checked: var(--button_bg);
+    qproperty-background_checked_hover: var(--primary_light);
 }

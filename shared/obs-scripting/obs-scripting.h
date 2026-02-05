@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <util/c99defs.h>
 #include <obs-data.h>
+#include <obs.h>
 #include <obs-properties.h>
 
 #ifdef __cplusplus
@@ -31,6 +32,7 @@ typedef struct obs_script obs_script_t;
 
 enum obs_script_lang { OBS_SCRIPT_LANG_UNKNOWN, OBS_SCRIPT_LANG_LUA, OBS_SCRIPT_LANG_PYTHON };
 
+EXPORT void obs_scripting_set_module(obs_module_t *module);
 EXPORT bool obs_scripting_load(void);
 EXPORT void obs_scripting_unload(void);
 EXPORT const char **obs_scripting_supported_formats(void);

@@ -59,8 +59,6 @@ target_sources(
     utility/StartMultiTrackVideoStreamingGuard.hpp
     utility/SurfaceEventFilter.hpp
     utility/VCamConfig.hpp
-    utility/VolumeMeterTimer.cpp
-    utility/VolumeMeterTimer.hpp
     utility/audio-encoders.cpp
     utility/audio-encoders.hpp
     utility/display-helpers.hpp

@@ -57,17 +57,6 @@ void OBSBasic::copyActionsDynamicProperties()
 			temp->setProperty(y.constData(), x->property(y.constData()));
 		}
 	}
-
-	for (QAction *x : ui->mixerToolbar->actions()) {
-		QWidget *temp = ui->mixerToolbar->widgetForAction(x);
-
-		if (!temp)
-			continue;
-
-		for (QByteArray &y : x->dynamicPropertyNames()) {
-			temp->setProperty(y.constData(), x->property(y.constData()));
-		}
-	}
 }
 
 void OBSBasic::ClearContextBar()

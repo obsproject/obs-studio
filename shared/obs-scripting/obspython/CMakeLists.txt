@@ -31,8 +31,7 @@ swig_add_library(obspython LANGUAGE python TYPE MODULE SOURCES obspython.i)
 add_library(OBS::python ALIAS obspython)
 
 file(
-  GENERATE OUTPUT
-  $<$<PLATFORM_ID:Windows>:$<CONFIG>/>obspython.h
+  GENERATE OUTPUT $<$<PLATFORM_ID:Windows>:$<CONFIG>/>obspython.h
   CONTENT "#pragma once\n\n#define PYTHON_LIB \"$<TARGET_LINKER_FILE_NAME:Python::Python>\"\n"
 )
 

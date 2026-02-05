@@ -183,7 +183,7 @@ function(set_target_properties_obs target)
             COMMAND
               "${CMAKE_COMMAND}" -E copy_directory "${cef_root_location}/Resources/locales"
               "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/locales"
-            COMMENT "Add Chromium Embedded Framwork to library directory"
+            COMMENT "Add Chromium Embedded Framework to library directory"
           )
 
           install(
@@ -227,8 +227,7 @@ function(target_install_resources target)
     file(GLOB_RECURSE data_files "${CMAKE_CURRENT_SOURCE_DIR}/data/*")
     foreach(data_file IN LISTS data_files)
       cmake_path(
-        RELATIVE_PATH
-        data_file
+        RELATIVE_PATH data_file
         BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/"
         OUTPUT_VARIABLE relative_path
       )

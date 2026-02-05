@@ -849,7 +849,7 @@ void OBSBasic::Save(SceneCollection &collection)
 
 	// Saving groups separately ensures they won't be loaded in older versions.
 	// TODO: Get rid of this at some point. Groups were introduced in 22.0
-	OBSDataArrayAutoRelease groupsArray;
+	OBSDataArrayAutoRelease groupsArray = obs_data_array_create();
 
 	auto sourcesAndGroups = std::make_pair(sourcesArray.Get(), groupsArray.Get());
 	using sourcesAndGroups_t = decltype(sourcesAndGroups);
@@ -1521,7 +1521,6 @@ void OBSBasic::ClearSceneData()
 
 	CloseDialogs();
 
-	ClearVolumeControls();
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
@@ -1551,7 +1550,7 @@ void OBSBasic::ClearSceneData()
 	prevFTBSource = nullptr;
 
 	clipboard.clear();
-	copyFiltersSource = nullptr;
+	copyFiltersSource_ = nullptr;
 	copyFilter = nullptr;
 
 	auto cb = [](void *, obs_source_t *source) {
