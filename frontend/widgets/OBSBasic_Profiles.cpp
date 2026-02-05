@@ -47,7 +47,6 @@ QList<QString> sortedProfiles{};
 
 void updateSortedProfiles(const OBSProfileCache &profiles)
 {
-	const QLocale locale = QLocale::system();
 	QList<QString> newList{};
 
 	for (auto [profileName, _] : profiles) {
@@ -55,11 +54,7 @@ void updateSortedProfiles(const OBSProfileCache &profiles)
 		newList.append(entry);
 	}
 
-	std::sort(newList.begin(), newList.end(), [&locale](const QString &lhs, const QString &rhs) -> bool {
-		int result = QString::localeAwareCompare(locale.toLower(lhs), locale.toLower(rhs));
-
-		return (result < 0);
-	});
+	NaturalSort(newList);
 
 	sortedProfiles.swap(newList);
 }
