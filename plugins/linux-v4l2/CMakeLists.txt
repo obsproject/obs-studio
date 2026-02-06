@@ -27,7 +27,7 @@ add_library(OBS::v4l2 ALIAS linux-v4l2)
 
 target_sources(
   linux-v4l2
-  PRIVATE linux-v4l2.c v4l2-controls.c v4l2-decoder.c v4l2-helpers.c v4l2-input.c v4l2-output.c
+  PRIVATE linux-v4l2.c v4l2-controls.c v4l2-decoder.c v4l2-helpers.c v4l2-input.c v4l2-output.c v4l2-uvc-xu-controls.c
 )
 
 target_link_libraries(
