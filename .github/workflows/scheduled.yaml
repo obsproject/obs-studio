@@ -19,7 +19,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set Up Homebrew 🍺
@@ -111,7 +111,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
@@ -168,7 +168,7 @@ jobs:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check Nightly Runs ☑️
         id: checks
