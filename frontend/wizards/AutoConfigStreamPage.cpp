@@ -136,10 +136,12 @@ bool AutoConfigStreamPage::validatePage()
 
 	if (wiz->customServer) {
 		QString server = ui->customServer->text().trimmed();
-		wiz->server = wiz->serverName = QT_TO_UTF8(server);
+		const std::string name = server.toStdString();
+		wiz->server = name;
+		wiz->serverName = name;
 	} else {
-		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
-		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
+		wiz->serverName = ui->server->currentText().toStdString();
+		wiz->server = ui->server->currentData().toString().toStdString();
 	}
 
 	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
@@ -149,10 +151,10 @@ bool AutoConfigStreamPage::validatePage()
 	wiz->regionEU = ui->regionEU->isChecked();
 	wiz->regionAsia = ui->regionAsia->isChecked();
 	wiz->regionOther = ui->regionOther->isChecked();
-	wiz->serviceName = QT_TO_UTF8(ui->service->currentText());
+	wiz->serviceName = ui->service->currentText().toStdString();
 	if (ui->preferHardware)
 		wiz->preferHardware = ui->preferHardware->isChecked();
-	wiz->key = QT_TO_UTF8(ui->key->text());
+	wiz->key = ui->key->text().toStdString();
 
 	if (!wiz->customServer) {
 		if (wiz->serviceName == "Twitch")
@@ -302,7 +304,7 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 
 void AutoConfigStreamPage::OnAuthConnected()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	Auth::Type type = Auth::AuthType(service);
 
 	if (type == Auth::Type::OAuth_StreamKey || type == Auth::Type::OAuth_LinkedAccount) {
@@ -312,7 +314,7 @@ void AutoConfigStreamPage::OnAuthConnected()
 
 void AutoConfigStreamPage::on_connectAccount_clicked()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 	OAuth::DeleteCookies(service);
 
@@ -342,7 +344,7 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	main->auth.reset();
 	auth.reset();
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 #ifdef BROWSER_AVAILABLE
 	OAuth::DeleteCookies(service);
@@ -438,7 +440,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	if (showMore)
 		return;
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	bool regionBased = service == "Twitch";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustomService();
