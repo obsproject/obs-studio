@@ -141,7 +141,8 @@
                 "-DENABLE_AJA=ON",
                 "-DENABLE_LIBFDK=ON",
                 "-DENABLE_QSV11=ON",
-                "-DENABLE_DECKLINK=OFF"
+                "-DENABLE_DECKLINK=OFF",
+                "-DENABLE_VST3=OFF"
             ],
             "secret-opts": [
                 "-DRESTREAM_CLIENTID=$RESTREAM_CLIENTID",
