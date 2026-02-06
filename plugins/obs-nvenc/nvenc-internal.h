@@ -9,8 +9,11 @@
 #ifdef _WIN32
 #define INITGUID
 #include <dxgi.h>
+#include <dxgi1_6.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#include <d3d12.h>
+#include <dxgidebug.h>
 #else
 #include <glad/glad.h>
 #endif
@@ -89,9 +92,19 @@ struct nvenc_data {
 	int packet_priority;
 
 #ifdef _WIN32
+	bool is_use_d3d12;
 	DARRAY(struct nv_texture) textures;
-	ID3D11Device *device;
+	ID3D11Device *device11;
 	ID3D11DeviceContext *context;
+
+	ID3D12Device *device12;
+	ID3D12CommandQueue *command_queue;
+	ID3D12Fence *fence;
+	uint64_t next_fence_value;
+	uint64_t last_completed_fence_value;
+	HANDLE fence_event_handle;
+	ID3D12GraphicsCommandList *command_list;
+	ID3D12CommandAllocator *allocator;
 #endif
 
 	uint32_t cx;
@@ -125,8 +138,8 @@ struct nvenc_data {
 struct handle_tex {
 #ifdef _WIN32
 	uint32_t handle;
-	ID3D11Texture2D *tex;
-	IDXGIKeyedMutex *km;
+	void *tex;           // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
+	IDXGIKeyedMutex *km; // only for D3D11
 #else
 	GLuint tex_id;
 	/* CUDA mappings */
@@ -137,7 +150,12 @@ struct handle_tex {
 
 /* Bitstream buffer */
 struct nv_bitstream {
-	void *ptr;
+	// D3D11 and D3D12
+	void *ptr; // register resource
+	// D3D12
+	ID3D12Resource *tex;
+	void *mapped_res;
+	NV_ENC_OUTPUT_RESOURCE_D3D12 output_resource;
 };
 
 /** Mapped resources **/
@@ -151,9 +169,12 @@ struct nv_cuda_surface {
 #ifdef _WIN32
 /* DX11 textures */
 struct nv_texture {
-	void *res;
-	ID3D11Texture2D *tex;
+	void *res; // register Resource
+	// D3D11
+	void *tex; // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
 	void *mapped_res;
+	// D3D12
+	NV_ENC_INPUT_RESOURCE_D3D12 input_resource;
 };
 #endif
 
@@ -162,6 +183,8 @@ struct nv_texture {
 
 bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pic, int64_t pts,
 		       struct encoder_packet *packet, bool *received_packet);
+bool nvenc_encode_base_d3d12(struct nvenc_data *enc, struct nv_bitstream *out, struct nv_texture *pic, int64_t pts,
+			     struct encoder_packet *packet, bool *received_packet);
 
 /* ------------------------------------------------------------------------- */
 /* Backend-specific functions                                                */
@@ -176,6 +199,19 @@ void d3d11_free_textures(struct nvenc_data *enc);
 
 bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 		  struct encoder_packet *packet, bool *received_packet);
+
+bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings);
+void d3d12_free(struct nvenc_data *enc);
+
+bool d3d12_init_textures(struct nvenc_data *enc);
+void d3d12_free_textures(struct nvenc_data *enc);
+
+bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs);
+void d3d12_free_readback(struct nvenc_data *enc, struct nv_bitstream *bs);
+
+bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
+		  struct encoder_packet *packet, bool *received_packet);
+
 #endif
 
 /** CUDA **/
