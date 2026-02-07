@@ -82,6 +82,30 @@ static inline void xshm_resize_texture(struct xshm_data *data)
 }
 
 /**
+ * Recreate shared memory segment and texture after geometry change
+ *
+ * @note requires to be called within the obs graphics context
+ */
+static void xshm_resize(struct xshm_data *data)
+{
+	xshm_xcb_detach(data->xshm);
+
+	data->xshm = xshm_xcb_attach(data->xcb, data->adj_width, data->adj_height);
+	if (!data->xshm) {
+		blog(LOG_ERROR, "failed to attach shm after resize!");
+		if (data->texture) {
+			gs_texture_destroy(data->texture);
+			data->texture = NULL;
+		}
+		return;
+	}
+
+	xshm_resize_texture(data);
+
+	xcb_xcursor_offset(data->cursor, data->adj_x_org, data->adj_y_org);
+}
+
+/**
  * Check if the xserver supports all the extensions we need
  */
 static bool xshm_check_extensions(xcb_connection_t *xcb)
@@ -105,7 +129,7 @@ static bool xshm_check_extensions(xcb_connection_t *xcb)
 /**
  * Update the capture
  *
- * @return < 0 on error, 0 when size is unchanged, > 1 on size change
+ * @return < 0 on error, 0 when size is unchanged, > 0 on size change
  */
 static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 {
@@ -161,11 +185,11 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	if (data->cut_bot != 0)
 		data->adj_height = data->adj_height - data->cut_bot;
 
-	blog(LOG_INFO, "Geometry %" PRIdFAST32 "x%" PRIdFAST32 " @ %" PRIdFAST32 ",%" PRIdFAST32, data->width,
-	     data->height, data->x_org, data->y_org);
-
 	if (prev_width == data->adj_width && prev_height == data->adj_height)
 		return 0;
+
+	blog(LOG_INFO, "Geometry %" PRIdFAST32 "x%" PRIdFAST32 " @ %" PRIdFAST32 ",%" PRIdFAST32, data->width,
+	     data->height, data->x_org, data->y_org);
 
 	return 1;
 }
@@ -489,9 +513,24 @@ static void xshm_video_tick(void *vptr, float seconds)
 	UNUSED_PARAMETER(seconds);
 	XSHM_DATA(vptr);
 
-	if (!data->texture)
+	if (!data->xcb)
 		return;
 	if (!obs_source_showing(data->source))
+		return;
+
+	int_fast32_t geo_changed = xshm_update_geometry(data);
+	if (geo_changed < 0) {
+		blog(LOG_ERROR, "failed to update geometry in video tick!");
+		return;
+	}
+
+	if (geo_changed > 0) {
+		obs_enter_graphics();
+		xshm_resize(data);
+		obs_leave_graphics();
+	}
+
+	if (!data->texture || !data->xshm)
 		return;
 
 	xcb_shm_get_image_cookie_t img_c;
