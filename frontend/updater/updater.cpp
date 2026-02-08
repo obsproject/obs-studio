@@ -53,11 +53,12 @@ HCRYPTPROV hProvider = 0;
 static bool bExiting = false;
 static bool updateFailed = false;
 
-static bool downloadThreadFailure = false;
+static atomic<bool> downloadThreadFailure = false;
 
 size_t totalFileSize = 0;
-size_t completedFileSize = 0;
-static int completedUpdates = 0;
+atomic<size_t> completedFileSize = 0;
+atomic<int> lastPosition;
+static atomic<int> completedUpdates = 0;
 
 static wchar_t tempPath[MAX_PATH];
 static wchar_t obs_base_directory[MAX_PATH];
@@ -412,7 +413,7 @@ bool DownloadWorkerThread()
 				return false;
 			}
 
-			auto &buf = download_data[update.downloadHash];
+			auto &buf = download_data.at(update.downloadHash);
 			/* Reserve required memory */
 			buf.reserve(update.fileSize);
 
@@ -422,7 +423,7 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
-				return true;
+				return false;
 			}
 
 			if (responseCode != 200) {
@@ -430,7 +431,7 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
-				return true;
+				return false;
 			}
 
 			/* Validate hash of downloaded data. */
@@ -442,7 +443,7 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Integrity check "
 				       L"failed on %s",
 				       update.outputPath.c_str());
-				return true;
+				return false;
 			}
 
 			/* Decompress data in compressed buffer. */
@@ -453,7 +454,7 @@ bool DownloadWorkerThread()
 					Status(L"Update failed: Decompression "
 					       L"failed on %s (error code %d)",
 					       update.outputPath.c_str(), res);
-					return true;
+					return false;
 				}
 			}
 
@@ -1017,9 +1018,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 }
 
 queue<reference_wrapper<update_t>> updateQueue;
-static int lastPosition = 0;
-static int installed = 0;
-static bool updateThreadFailed = false;
+
+static atomic<int> installed = 0;
+static atomic<bool> updateThreadFailed = false;
 
 static bool UpdateWorker()
 {
@@ -1043,8 +1044,10 @@ static bool UpdateWorker()
 			return false;
 		} else {
 			int position = (int)(((float)++installed / (float)completedUpdates) * 100.0f);
-			if (position > lastPosition) {
-				lastPosition = position;
+			int oldPosition = lastPosition;
+
+			if (position > oldPosition &&
+			    lastPosition.compare_exchange_strong(oldPosition, position, memory_order_relaxed)) {
 				SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, position, 0);
 			}
 		}
@@ -1521,6 +1524,15 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Download Updates                      */
 
+	/* Pre-allocate download_data map so worker threads only
+	 * look up existing entries rather than inserting new ones,
+	 * avoiding concurrent map mutation from multiple threads. */
+	download_data.reserve(downloadHashes.size());
+	for (update_t &update : updates) {
+		if (update.state == STATE_PENDING_DOWNLOAD)
+			download_data.try_emplace(update.downloadHash);
+	}
+
 	Status(L"Downloading updates...");
 	if (!RunDownloadWorkers(4))
 		return false;
@@ -1534,6 +1546,7 @@ static bool Update(wchar_t *cmdLine)
 	 * Install updates                       */
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 0, 0);
+	lastPosition = 0;
 
 	Status(L"Installing updates...");
 	if (!RunUpdateWorkers(4))
