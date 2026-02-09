@@ -44,6 +44,26 @@
     --scrollbar_border: var(--grey7);
 }
 
+/* Mute Button */
+
+.btn-mute {
+    qproperty-icon: url(theme:Light/settings/audio.svg);
+}
+
+.btn-mute.checked {
+    qproperty-icon: url(theme:Light/mute.svg);
+}
+
+/* Monitor Button */
+
+.btn-monitor {
+    qproperty-icon: url(theme:Light/headphones-off.svg);
+}
+
+.btn-monitor.checked {
+    qproperty-icon: url(theme:Light/headphones.svg);
+}
+
 VolumeMeter {
     qproperty-backgroundNominalColor: var(--green4);
     qproperty-backgroundWarningColor: var(--yellow4);
@@ -127,6 +147,14 @@ QPushButton#sourceFiltersButton {
 
 .icon-close {
     qproperty-icon: url(theme:Light/close.svg);
+}
+
+.icon-layout-vertical {
+    qproperty-icon: url(theme:Light/layout-vertical.svg);
+}
+
+.icon-layout-horizontal {
+    qproperty-icon: url(theme:Light/layout-horizontal.svg);
 }
 
 QToolBarExtension {

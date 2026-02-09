@@ -857,33 +857,35 @@ static bool vc_runtime_outdated()
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
-	signal(SIGPIPE, SIG_IGN);
+	using SignalHandlerCallback = decltype(OBSApp::sigIntSignalHandler);
 
-	struct sigaction sigint_handler;
+	auto setupSignalHandler = [](SignalHandlerCallback &callback, int signal) {
+		struct sigaction signalHandler{};
+		signalHandler.sa_handler = callback;
+		sigemptyset(&signalHandler.sa_mask);
+		signalHandler.sa_flags = 0;
 
-	sigint_handler.sa_handler = OBSApp::SigIntSignalHandler;
-	sigemptyset(&sigint_handler.sa_mask);
-	sigint_handler.sa_flags = 0;
+		sigaction(signal, &signalHandler, nullptr);
+	};
 
-	sigaction(SIGINT, &sigint_handler, NULL);
+	setupSignalHandler(OBSApp::sigIntSignalHandler, SIGINT);
+	setupSignalHandler(OBSApp::sigTermSignalHandler, SIGTERM);
+	setupSignalHandler(OBSApp::sigTermSignalHandler, SIGHUP);
+	setupSignalHandler(OBSApp::sigAbrtSignalHandler, SIGABRT);
+	setupSignalHandler(OBSApp::sigQuitSignalHandler, SIGQUIT);
 
-	struct sigaction sigterm_handler;
+	// Block SIGPIPE in all threads, this can happen if a thread calls write on a closed pipe.
+	// Supposedly this can happen when OBS tries to write to a closed RTMP socket.
+	sigset_t sigpipeMask{};
+	sigemptyset(&sigpipeMask);
+	sigaddset(&sigpipeMask, SIGPIPE);
+	sigset_t savedMask{};
 
-	sigterm_handler.sa_handler = OBSApp::SigTermSignalHandler;
-	sigemptyset(&sigterm_handler.sa_mask);
-	sigterm_handler.sa_flags = 0;
+	// pthread_sigmask returns 0 on success
+	bool signalMaskChanged = pthread_sigmask(SIG_BLOCK, &sigpipeMask, &savedMask) == 0;
 
-	sigaction(SIGTERM, &sigterm_handler, NULL);
-	sigaction(SIGHUP, &sigterm_handler, NULL);
-
-	/* Block SIGPIPE in all threads, this can happen if a thread calls write on
-	a closed pipe. */
-	sigset_t sigpipe_mask;
-	sigemptyset(&sigpipe_mask);
-	sigaddset(&sigpipe_mask, SIGPIPE);
-	sigset_t saved_mask;
-	if (pthread_sigmask(SIG_BLOCK, &sigpipe_mask, &saved_mask) == -1) {
-		perror("pthread_sigmask");
+	if (!signalMaskChanged) {
+		perror("Unexpected failure to add 'SIG_BLOCK' to 'SIGPIPE' signal mask.");
 		exit(1);
 	}
 #endif
