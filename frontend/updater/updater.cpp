@@ -382,7 +382,7 @@ bool DownloadWorkerThread()
 	HttpHandle hConnect = WinHttpConnect(hSession, kCDNHostname, INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
 		downloadThreadFailure = true;
-		Status(L"Update failed: Couldn't connect to %S", kCDNHostname);
+		Status(L"Update failed: Couldn't connect to %s", kCDNHostname);
 		return false;
 	}
 
