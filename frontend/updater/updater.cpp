@@ -217,7 +217,7 @@ static string QuickReadFile(const wchar_t *path)
 
 static bool QuickWriteFile(const wchar_t *file, const void *data, size_t size)
 try {
-	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH, nullptr);
+	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
 
 	if (handle == INVALID_HANDLE_VALUE)
 		throw LastError();
