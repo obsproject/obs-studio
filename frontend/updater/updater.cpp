@@ -14,21 +14,22 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "updater.hpp"
 #include "manifest.hpp"
+#include "updater.hpp"
 
 #include <psapi.h>
-#include <WinTrust.h>
 #include <SoftPub.h>
+#include <WinTrust.h>
 
 #include <util/windows/CoTaskMemPtr.hpp>
 
+#include <exception>
 #include <future>
+#include <mutex>
+#include <queue>
 #include <string>
 #include <string_view>
-#include <mutex>
 #include <unordered_set>
-#include <queue>
 
 using namespace std;
 using namespace updater;
@@ -219,11 +220,11 @@ try {
 	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH, nullptr);
 
 	if (handle == INVALID_HANDLE_VALUE)
-		throw GetLastError();
+		throw LastError();
 
 	DWORD written;
 	if (!WriteFile(handle, data, (DWORD)size, &written, nullptr))
-		throw GetLastError();
+		throw LastError();
 
 	return true;
 
@@ -491,7 +492,11 @@ try {
 
 	return true;
 
+} catch (const exception &e) {
+	Status(L"Exception: %S", e.what());
+	return false;
 } catch (...) {
+	Status(L"Unknown exception occurred in RunDownloadWorkers");
 	return false;
 }
 
@@ -634,7 +639,11 @@ try {
 	for (auto &result : futures) {
 		result.wait();
 	}
+
+} catch (const exception &e) {
+	Status(L"Exception: %S", e.what());
 } catch (...) {
+	Status(L"Unknown exception occurred in RunHasherWorkers");
 }
 
 /* ----------------------------------------------------------------------- */
@@ -1075,7 +1084,11 @@ try {
 
 	return true;
 
+} catch (const exception &e) {
+	Status(L"Exception: %S", e.what());
+	return false;
 } catch (...) {
+	Status(L"Unknown exception occurred in RunUpdateWorkers");
 	return false;
 }
 
