@@ -57,6 +57,7 @@ CAPTION "OBS Studio Update"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     PUSHBUTTON      "Cancel",IDC_BUTTON,259,34,50,14
+    PUSHBUTTON      "Show Log",IDC_LOGBUTTON,7,34,50,14
     CONTROL         "",IDC_PROGRESS,"msctls_progress32",PBS_SMOOTH,7,17,302,14
     LTEXT           "Waiting for OBS to exit...",IDC_STATUS,7,7,302,8,SS_WORDELLIPSIS
 END
