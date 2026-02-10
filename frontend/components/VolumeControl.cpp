@@ -52,8 +52,6 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	  contextMenu(nullptr),
 	  QFrame(parent)
 {
-	setAttribute(Qt::WA_OpaquePaintEvent, true);
-
 	utils = std::make_unique<idian::Utils>(this);
 
 	uuid = obs_source_get_uuid(source);
