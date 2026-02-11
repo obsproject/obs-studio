@@ -13,6 +13,7 @@
 #include <util/platform.h>
 #include <winrt-capture.h>
 #endif
+#include <dwmapi.h>
 
 /* clang-format off */
 
@@ -26,6 +27,7 @@
 #define TEXT_MATCH_TITLE    obs_module_text("WindowCapture.Priority.Title")
 #define TEXT_MATCH_CLASS    obs_module_text("WindowCapture.Priority.Class")
 #define TEXT_MATCH_EXE      obs_module_text("WindowCapture.Priority.Exe")
+#define TEXT_NO_ROUNDED_CORNERS obs_module_text("WindowCapture.NoRoundedCorners")
 #define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
 #define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
 #define TEXT_CLIENT_AREA    obs_module_text("ClientArea")
@@ -108,6 +110,10 @@ struct window_capture {
 	PFN_SetThreadDpiAwarenessContext set_thread_dpi_awareness_context;
 	PFN_GetThreadDpiAwarenessContext get_thread_dpi_awareness_context;
 	PFN_GetWindowDpiAwarenessContext get_window_dpi_awareness_context;
+
+	bool no_rounded_corners;
+	bool wcp_dirty;
+	DWM_WINDOW_CORNER_PREFERENCE wcp_save;
 };
 
 static const char *wgc_partial_match_classes[] = {
@@ -224,6 +230,7 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->force_sdr = obs_data_get_bool(s, "force_sdr");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
+	wc->no_rounded_corners = obs_data_get_bool(s, "no_rounded_corners");
 
 	setup_audio_source(wc->source, &wc->audio_source, window, wc->capture_audio, wc->priority);
 
@@ -231,6 +238,37 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 }
 
 /* ------------------------------------------------------------------------- */
+
+extern bool wcp_supported;
+
+static bool get_wcp(HWND window, DWM_WINDOW_CORNER_PREFERENCE *wcp)
+{
+	return DwmGetWindowAttribute(window, DWMWA_WINDOW_CORNER_PREFERENCE, wcp, sizeof(*wcp)) == S_OK;
+}
+
+static bool set_wcp(HWND window, DWM_WINDOW_CORNER_PREFERENCE wcp)
+{
+	return DwmSetWindowAttribute(window, DWMWA_WINDOW_CORNER_PREFERENCE, &wcp, sizeof(wcp)) == S_OK;
+}
+
+static void wcp_noround(struct window_capture *wc)
+{
+	DWM_WINDOW_CORNER_PREFERENCE wcp;
+	if (get_wcp(wc->window, &wcp) && wcp != DWMWCP_DONOTROUND) {
+		wc->wcp_save = wcp;
+		wc->wcp_dirty = true;
+		set_wcp(wc->window, DWMWCP_DONOTROUND);
+	}
+}
+
+static void wcp_restore(struct window_capture *wc)
+{
+	if (wc->wcp_dirty) {
+		if (wc->window && IsWindow(wc->window))
+			set_wcp(wc->window, wc->wcp_save);
+		wc->wcp_dirty = false;
+	}
+}
 
 static void wc_get_hooked(void *data, calldata_t *cd)
 {
@@ -350,6 +388,8 @@ static void wc_actual_destroy(void *data)
 {
 	struct window_capture *wc = data;
 
+	wcp_restore(wc);
+
 	if (wc->capture_winrt) {
 		wc->exports.winrt_capture_free(wc->capture_winrt);
 	}
@@ -384,6 +424,8 @@ static void wc_destroy(void *data)
 
 static void force_reset(struct window_capture *wc)
 {
+	wcp_restore(wc);
+
 	wc->window = NULL;
 	wc->resize_timer = RESIZE_CHECK_TIME;
 	wc->check_window_timer = WC_CHECK_TIMER;
@@ -453,6 +495,9 @@ static void update_settings_visibility(obs_properties_t *props, struct window_ca
 
 	p = obs_properties_get(props, "client_area");
 	obs_property_set_visible(p, wgc_options);
+
+	p = obs_properties_get(props, "no_rounded_corners");
+	obs_property_set_visible(p, wcp_supported);
 
 	p = obs_properties_get(props, "force_sdr");
 	obs_property_set_visible(p, wgc_options);
@@ -559,6 +604,8 @@ static obs_properties_t *wc_properties(void *data)
 
 	obs_properties_add_bool(ppts, "client_area", TEXT_CLIENT_AREA);
 
+	obs_properties_add_bool(ppts, "no_rounded_corners", TEXT_NO_ROUNDED_CORNERS);
+
 	obs_properties_add_bool(ppts, "force_sdr", TEXT_FORCE_SDR);
 
 	return ppts;
@@ -574,6 +621,8 @@ static void wc_hide(void *data)
 	}
 
 	memset(&wc->last_rect, 0, sizeof(wc->last_rect));
+
+	wcp_restore(wc);
 
 	if (wc->hooked) {
 		wc->hooked = false;
@@ -596,6 +645,8 @@ static void wc_tick(void *data, float seconds)
 		return;
 
 	if (!wc->window || !IsWindow(wc->window)) {
+		wc->wcp_dirty = false;
+
 		if (wc->hooked) {
 			wc->hooked = false;
 
@@ -673,6 +724,11 @@ static void wc_tick(void *data, float seconds)
 
 		wc->cursor_check_time = 0.0f;
 	}
+
+	if (wc->no_rounded_corners && wcp_supported)
+		wcp_noround(wc);
+	else
+		wcp_restore(wc);
 
 	obs_enter_graphics();
 

@@ -100,6 +100,7 @@ void init_hook_files(void);
 
 bool graphics_uses_d3d11 = false;
 bool wgc_supported = false;
+bool wcp_supported = false;
 
 bool obs_module_load(void)
 {
@@ -112,6 +113,7 @@ bool obs_module_load(void)
 	snprintf(update_url, sizeof(update_url), "%s/v%d", COMPAT_URL, COMPAT_FORMAT_VERSION);
 
 	struct win_version_info win1903 = {.major = 10, .minor = 0, .build = 18362, .revis = 0};
+	struct win_version_info win11 = {.major = 10, .minor = 0, .build = 22000, .revis = 0};
 
 	local_dir = obs_module_file(NULL);
 	config_dir = obs_module_config_path(NULL);
@@ -136,6 +138,8 @@ bool obs_module_load(void)
 
 	if (graphics_uses_d3d11)
 		wgc_supported = win_version_compare(&ver, &win1903) >= 0;
+
+	wcp_supported = win_version_compare(&ver, &win11) >= 0;
 
 	if (win8_or_above && graphics_uses_d3d11)
 		obs_register_source(&duplicator_capture_info);

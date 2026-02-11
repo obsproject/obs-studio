@@ -71,6 +71,7 @@ target_link_libraries(
     OBS::w32-pthreads
     OBS::winrt-headers
     jansson::jansson
+    Dwmapi
 )
 
 # Remove once jansson has been fixed on obs-deps
