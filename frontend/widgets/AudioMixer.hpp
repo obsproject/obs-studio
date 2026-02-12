@@ -129,8 +129,8 @@ private:
 	static void obsSceneItemVisibleChange(void *data, calldata_t *params);
 
 private slots:
-	void sourceCreated(QString uuid);
-	void sourceRemoved(QString uuid);
+	void addSource(QString uuid);
+	void removeSource(QString uuid);
 	void updatePreviewSources();
 	void updateGlobalSources();
 	void unhideAllAudioControls();
