@@ -2688,6 +2688,8 @@ EXPORT video_t *obs_canvas_get_video(const obs_canvas_t *canvas);
 EXPORT bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info *ovi);
 /** Renders the sources of this canvas's view context */
 EXPORT void obs_canvas_render(obs_canvas_t *canvas);
+/** Returns true if video of the canvas is active, false otherwise */
+EXPORT bool obs_canvas_video_active(obs_canvas_t *canvas);
 
 #ifdef __cplusplus
 }
