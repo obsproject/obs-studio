@@ -466,7 +466,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		vui_params->colourPrimaries = 1;
 		vui_params->transferCharacteristics = 13;
-		vui_params->colourMatrix = 1;
+		vui_params->colourMatrix = 0;
 		break;
 	default:
 		break;
@@ -570,7 +570,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		vui_params->colourPrimaries = 1;
 		vui_params->transferCharacteristics = 13;
-		vui_params->colourMatrix = 1;
+		vui_params->colourMatrix = 0;
 		break;
 	case VIDEO_CS_2100_PQ:
 		vui_params->colourPrimaries = 9;
@@ -949,8 +949,9 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 	}
 
 	if (texture && !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
-	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010)) {
-		blog(LOG_INFO, "[obs-nvenc] nv12/p010 not active, falling back to "
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_BGRA)) {
+		blog(LOG_INFO, "[obs-nvenc] nv12/p010/ayuv not active, falling back to "
 			       "non-texture encoder");
 		goto reroute;
 	}

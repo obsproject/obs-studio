@@ -222,7 +222,7 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 	if (!video)
 		return false;
 	return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
-	       (video->using_p010_tex || video->using_nv12_tex);
+	       (video->using_p010_tex || video->using_nv12_tex || video->using_ayuv_tex);
 }
 
 /**
@@ -2158,6 +2158,8 @@ bool obs_encoder_video_tex_active(const obs_encoder_t *encoder, enum video_forma
 		return mix->using_nv12_tex;
 	if (format == VIDEO_FORMAT_P010)
 		return mix->using_p010_tex;
+	if (format == VIDEO_FORMAT_BGRA)
+		return mix->using_ayuv_tex;
 
 	return false;
 }

@@ -1120,6 +1120,21 @@ float4 PSR10L_HLG_2020_709_Limited_Reverse(FragPos frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
+float4 PSFake_AYUV(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	return float4(rgba.r, rgba.b, rgba.g, rgba.a);
+}
+
+technique Fake_AYUV
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSFake_AYUV(frag_in);
+	}
+}
+
 technique Planar_Y
 {
 	pass

@@ -77,6 +77,7 @@ enum gs_color_format {
 	GS_BGRX_UNORM,
 	GS_BGRA_UNORM,
 	GS_RG16,
+	GS_AYUV,
 };
 
 enum gs_color_space {

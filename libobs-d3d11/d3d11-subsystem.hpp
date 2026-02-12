@@ -108,6 +108,8 @@ static inline DXGI_FORMAT ConvertGSTextureFormatResource(gs_color_format format)
 		return DXGI_FORMAT_B8G8R8A8_UNORM;
 	case GS_RG16:
 		return DXGI_FORMAT_R16G16_UNORM;
+	case GS_AYUV:
+		return DXGI_FORMAT_AYUV;
 	}
 
 	return DXGI_FORMAT_UNKNOWN;
@@ -116,6 +118,8 @@ static inline DXGI_FORMAT ConvertGSTextureFormatResource(gs_color_format format)
 static inline DXGI_FORMAT ConvertGSTextureFormatView(gs_color_format format)
 {
 	switch (format) {
+	case GS_AYUV:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case GS_RGBA:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case GS_BGRX:
@@ -130,6 +134,8 @@ static inline DXGI_FORMAT ConvertGSTextureFormatView(gs_color_format format)
 static inline DXGI_FORMAT ConvertGSTextureFormatViewLinear(gs_color_format format)
 {
 	switch (format) {
+	case GS_AYUV:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case GS_RGBA:
 		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	case GS_BGRX:
