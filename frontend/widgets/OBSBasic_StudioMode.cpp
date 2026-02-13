@@ -97,7 +97,11 @@ void OBSBasic::CreateProgramOptions()
 
 	tBar->setProperty("class", "slider-tbar");
 
-	connect(tBar, &QSlider::valueChanged, this, &OBSBasic::TBarChanged);
+	auto onTBarValueChange = [this](int value) {
+		TBarChanged(value, tBar); // Pass the slider as the source of the change to prevent feedback loops.
+	};
+
+	connect(tBar, &QSlider::valueChanged, this, onTBarValueChange);
 	connect(tBar, &QSlider::sliderReleased, this, &OBSBasic::TBarReleased);
 
 	layout->addStretch(0);

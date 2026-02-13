@@ -753,7 +753,7 @@ static bool ValidTBarTransition(OBSSource transition)
 	return true;
 }
 
-void OBSBasic::TBarChanged(int value)
+void OBSBasic::TBarChanged(int value, QObject *sender)
 {
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
 
@@ -780,6 +780,10 @@ void OBSBasic::TBarChanged(int value)
 
 	float clampedValue = std::clamp<float>((float)value / T_BAR_PRECISION_F, 0.01f, 0.99f);
 	obs_transition_set_manual_time(transition, clampedValue);
+
+	if (sender != tBar) {
+		tBar->setValue(value);
+	}
 
 	OnEvent(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
 }
