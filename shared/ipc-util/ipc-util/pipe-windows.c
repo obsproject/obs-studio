@@ -20,8 +20,8 @@
 
 static inline bool ipc_pipe_internal_create_events(ipc_pipe_server_t *pipe)
 {
-	HANDLE ready_event = CreateEvent(NULL, false, false, NULL);
-	HANDLE stop_event = CreateEvent(NULL, false, false, NULL);
+	HANDLE ready_event = CreateEvent(NULL, true, false, NULL);
+	HANDLE stop_event = CreateEvent(NULL, true, false, NULL);
 	const bool success = ready_event && stop_event;
 	if (!success) {
 		if (ready_event) {
@@ -113,29 +113,46 @@ static DWORD CALLBACK ipc_pipe_internal_server_thread(LPVOID param)
 {
 	ipc_pipe_server_t *pipe = param;
 	uint8_t buf[IPC_PIPE_BUF_SIZE];
+	const HANDLE handles[] = {pipe->stop_event, pipe->ready_event};
+	bool loop = true;
+	DWORD bytes = 0;
+	DWORD wait;
+	bool success;
 
-	/* wait for connection */
-	DWORD wait = WaitForSingleObject(pipe->ready_event, INFINITE);
-	if (wait != WAIT_OBJECT_0) {
-		pipe->read_callback(pipe->param, NULL, 0);
-		return 0;
+	if (!pipe->connected) {
+
+		/* wait for connection */
+		wait = WaitForMultipleObjects(_countof(handles), handles, false, INFINITE);
+		if (wait != WAIT_OBJECT_0 + 1) {
+
+			// CancelIoEx might not make it for the next GetOverlappedResult call, so also set loop false
+			CancelIoEx(pipe->handle, &pipe->overlap);
+			loop = false;
+		}
+
+		success = GetOverlappedResult(pipe->handle, &pipe->overlap, &bytes, true);
+		if (!success) {
+			pipe->read_callback(pipe->param, NULL, 0);
+			return 0;
+		}
 	}
 
-	const HANDLE handles[] = {pipe->ready_event, pipe->stop_event};
-	for (;;) {
-		DWORD bytes = 0;
-		bool success;
+	while (loop) {
 
 		success = !!ReadFile(pipe->handle, buf, IPC_PIPE_BUF_SIZE, NULL, &pipe->overlap);
 		if (!success && !ipc_pipe_internal_io_pending()) {
 			break;
 		}
 
-		DWORD wait = WaitForMultipleObjects(_countof(handles), handles, FALSE, INFINITE);
-		if (wait != WAIT_OBJECT_0) {
-			break;
+		wait = WaitForMultipleObjects(_countof(handles), handles, FALSE, INFINITE);
+		if (wait != WAIT_OBJECT_0 + 1) {
+
+			// CancelIoEx might not make it for the next GetOverlappedResult call, so also set loop false
+			CancelIoEx(pipe->handle, &pipe->overlap);
+			loop = false;
 		}
 
+		// Wait for results here, because only then is buf free from race conditions
 		success = !!GetOverlappedResult(pipe->handle, &pipe->overlap, &bytes, true);
 		if (!success || !bytes) {
 			break;
@@ -161,11 +178,17 @@ static inline bool ipc_pipe_internal_start_server_thread(ipc_pipe_server_t *pipe
 
 static inline bool ipc_pipe_internal_wait_for_connection(ipc_pipe_server_t *pipe)
 {
-	bool success;
-
 	pipe->overlap.hEvent = pipe->ready_event;
-	success = !!ConnectNamedPipe(pipe->handle, &pipe->overlap);
-	return success || (!success && ipc_pipe_internal_io_pending());
+	pipe->connected = !!ConnectNamedPipe(pipe->handle, &pipe->overlap);
+	if (!pipe->connected) {
+		DWORD err = GetLastError();
+		if (err == ERROR_PIPE_CONNECTED)
+			pipe->connected = true;
+
+		else if (err == ERROR_IO_PENDING)
+			return true;
+	}
+	return pipe->connected;
 }
 
 static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe, const char *name)
@@ -219,7 +242,6 @@ void ipc_pipe_server_free(ipc_pipe_server_t *pipe)
 	if (pipe->stop_event) {
 		if (pipe->handle) {
 			if (pipe->thread) {
-				CancelIoEx(pipe->handle, &pipe->overlap);
 				SetEvent(pipe->stop_event);
 				WaitForSingleObject(pipe->thread, INFINITE);
 				CloseHandle(pipe->thread);
