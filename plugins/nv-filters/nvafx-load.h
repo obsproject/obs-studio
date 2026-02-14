@@ -285,26 +285,50 @@ void release_lib(void)
 	}
 }
 
-static bool nvafx_get_sdk_path(char *buffer, const size_t len)
+static inline bool nvafx_get_sdk_path(char *buffer, const size_t len)
 {
 	DWORD ret = GetEnvironmentVariableA("NVAFX_SDK_DIR", buffer, (DWORD)len);
 
-	if (!ret || ret >= len - 1)
+	if (!ret || ret >= len - 1) {
+		char path[MAX_PATH];
+		if (!GetEnvironmentVariableA("ProgramFiles", path, MAX_PATH)) {
+			buffer[0] = 0;
+			return false;
+		}
+
+		if (_snprintf_s(buffer, len, _TRUNCATE, "%s\\NVIDIA Corporation\\NVIDIA Audio Effects SDK", path) > 0) {
+			return true;
+		}
+
 		return false;
+	}
 
 	return true;
 }
 
-static bool load_lib(void)
+static inline bool load_lib()
 {
-	char path[MAX_PATH];
-	if (!nvafx_get_sdk_path(path, sizeof(path)))
-		return false;
+	char sdkPath[MAX_PATH];
+	char effectsPath[MAX_PATH];
+	char cudaPath[MAX_PATH];
 
-	SetDllDirectoryA(path);
-	nv_audiofx = LoadLibrary(L"NVAudioEffects.dll");
-	SetDllDirectoryA(NULL);
-	nv_cuda = LoadLibrary(L"nvcuda.dll");
+	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
+		return false;
+	}
+
+	if (_snprintf_s(effectsPath, _countof(effectsPath), _TRUNCATE, "%s\\NVAudioEffects.dll", sdkPath) == -1) {
+		return false;
+	}
+
+	if (_snprintf_s(cudaPath, _countof(cudaPath), _TRUNCATE, "%s\\nvcuda.dll", sdkPath) == -1) {
+		return false;
+	}
+
+	nv_audiofx =
+		LoadLibraryExA(effectsPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+
+	nv_cuda = LoadLibraryExA(cudaPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+
 	return !!nv_audiofx && !!nv_cuda;
 }
 
@@ -318,17 +342,21 @@ static unsigned int get_lib_version(void)
 
 	version_checked = true;
 
-	char path[MAX_PATH];
-	if (!nvafx_get_sdk_path(path, sizeof(path)))
-		return 0;
+	char sdkPath[MAX_PATH];
+	wchar_t dllPath[MAX_PATH];
 
-	SetDllDirectoryA(path);
+	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
+		return version;
+	}
+
+	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%S\\NVAudioEffects.dll", sdkPath) == -1) {
+		return version;
+	}
 
 	struct win_version_info nto_ver = {0};
-	if (get_dll_ver(L"NVAudioEffects.dll", &nto_ver))
+	if (get_dll_ver(dllPath, &nto_ver))
 		version = nto_ver.major << 24 | nto_ver.minor << 16 | nto_ver.build << 8 | nto_ver.revis << 0;
 
-	SetDllDirectoryA(NULL);
 	return version;
 }
 
