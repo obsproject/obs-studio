@@ -94,13 +94,14 @@ void d3d11_free(struct nvenc_data *enc)
 static bool d3d11_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 {
 	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
+	const bool fake_ayuv = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_BGRA);
 
 	D3D11_TEXTURE2D_DESC desc = {0};
 	desc.Width = enc->cx;
 	desc.Height = enc->cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12;
+	desc.Format = fake_ayuv ? DXGI_FORMAT_AYUV : (p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12); // FIXME: ugly
 	desc.SampleDesc.Count = 1;
 	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
@@ -119,7 +120,7 @@ static bool d3d11_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.resourceToRegister = tex;
 	res.width = enc->cx;
 	res.height = enc->cy;
-	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
+	res.bufferFormat = fake_ayuv ? NV_ENC_BUFFER_FORMAT_AYUV : (p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12); // FIXME: ugly
 
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);

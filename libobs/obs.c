@@ -68,6 +68,10 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 		video->conversion_techs[1] = "NV12_UV";
 		video->conversion_width_i = 1.f / (float)info->width;
 		break;
+	case VIDEO_FORMAT_BGRA:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "Fake_AYUV";
+		break;
 	case VIDEO_FORMAT_I444:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";
@@ -150,12 +154,14 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 
 	video->using_nv12_tex = info->format == VIDEO_FORMAT_NV12 ? gs_nv12_available() : false;
 	video->using_p010_tex = info->format == VIDEO_FORMAT_P010 ? gs_p010_available() : false;
+	video->using_ayuv_tex = info->format == VIDEO_FORMAT_BGRA ? true : false; // FIXME
 
 	if (!video->conversion_needed) {
 		blog(LOG_INFO, "GPU conversion not available for format: %u", (unsigned int)info->format);
 		video->gpu_conversion = false;
 		video->using_nv12_tex = false;
 		video->using_p010_tex = false;
+		video->using_ayuv_tex = false;
 		blog(LOG_INFO, "NV12 texture support not available");
 		return true;
 	}
@@ -169,6 +175,11 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 		blog(LOG_INFO, "P010 texture support enabled");
 	else
 		blog(LOG_INFO, "P010 texture support not available");
+
+	if (video->using_ayuv_tex)
+		blog(LOG_INFO, "AYUV texture support enabled");
+	else
+		blog(LOG_INFO, "AYUV texture support not available");
 
 	video->convert_textures[0] = NULL;
 	video->convert_textures[1] = NULL;
@@ -184,6 +195,10 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 	} else if (video->using_p010_tex) {
 		if (!gs_texture_create_p010(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
 					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
+			return false;
+		}
+	} else if (video->using_ayuv_tex) {
+		if (!(video->convert_textures_encode[0] = gs_texture_create(info->width, info->height, GS_AYUV, 1, NULL, GS_RENDER_TARGET | GS_SHARED_KM_TEX))) {
 			return false;
 		}
 	}
