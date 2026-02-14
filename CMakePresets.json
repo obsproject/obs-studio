@@ -27,14 +27,14 @@
         "obsproject.com/obs-studio": {
           "dependencies": {
               "prebuilt": {
-                  "version": "2025-08-23",
-                  "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+                  "version": "2025-12-16",
+                  "baseUrl": "https://github.com/pkviet/obs-deps/releases/download",
                   "label": "Pre-Built obs-deps",
                   "hashes": {
-                      "macos-universal": "9403bb43fb0a9bb215739a5659ca274fe884dbbbcd22bd9ca781c961fb041c42",
-                      "windows-x64": "8de229cff6f1981508c0eb646b35e644633a5855787b9f5d3b90ae2aeb87ffc1",
-                      "windows-x86": "fb3c68b75911f292b3206e346053638db1c73605957207445a0a92b33ab5e00a",
-                      "windows-arm64": "dd87ba00a6cbc153182fb62b3678a3b5021d1d11eb2730442060937a645eb97e"
+                      "macos-universal": "7c2470efffbaca7e19e99d2e4acea4c47395ceec74689d6a7dd6a555af201364",
+                      "windows-x64": "5b0df4f56a59a3ee0bfcc5ca466275b2b20a75d40de820bfba5d718970cc6b4c",
+                      "windows-x86": "6993d2feba9742fef760d4efd2879521900e5bcea1256f83e7be63458f7aa046",
+                      "windows-arm64": "82d08b42582f90ea8946119bfbf9066fc8d774a49da79c9d407795569d89d274"
                   }
               },
               "qt6": {
