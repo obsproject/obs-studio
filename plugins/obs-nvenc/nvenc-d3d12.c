@@ -33,8 +33,8 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	ID3D12Device *device;
 	ID3D12Fence *fence;
 	ID3D12CommandQueue *command_queue;
-	ID3D12GraphicsCommandList *command_list;
-	ID3D12CommandAllocator *allocator;
+	ID3D12GraphicsCommandList *command_list = NULL;
+	ID3D12CommandAllocator *allocator = NULL;
 	HANDLE event;
 
 	ID3D12Fence *input_fence;
@@ -170,29 +170,34 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
-	hr = device->lpVtbl->CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_COPY, &IID_ID3D12CommandAllocator,
-						    (void **)(&allocator));
-	if (FAILED(hr)) {
-		error_hr("D3D12 CreateCommandAllocator failed");
-		return false;
-	}
+	for (size_t i = 0; i < 64; ++i) {
+		hr = device->lpVtbl->CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_COPY,
+							    &IID_ID3D12CommandAllocator, (void **)(&allocator));
+		if (FAILED(hr)) {
+			error_hr("D3D12 CreateCommandAllocator failed");
+			return false;
+		}
+		if (i == 0) {
+			hr = device->lpVtbl->CreateCommandList(device, 1, D3D12_COMMAND_LIST_TYPE_COPY, allocator, NULL,
+							       &IID_ID3D12GraphicsCommandList,
+							       (void **)(&command_list));
+			if (FAILED(hr)) {
+				error_hr("D3D12 CreateCommandList failed");
+				return false;
+			}
 
-	hr = device->lpVtbl->CreateCommandList(device, 1, D3D12_COMMAND_LIST_TYPE_COPY, allocator, NULL,
-					       &IID_ID3D12GraphicsCommandList, (void **)(&command_list));
-	if (FAILED(hr)) {
-		error_hr("D3D12 CreateCommandList failed");
-		return false;
+			command_list->lpVtbl->Close(command_list);
+		}
+
+		enc->allocators[i] = allocator;
 	}
 
 	event = CreateEvent(NULL, false, false, NULL);
 
 	enc->device12 = device;
-	enc->fence = fence;
-	enc->fence_value = 0;
 
 	enc->command_queue = command_queue;
 	enc->event = event;
-	enc->allocator = allocator;
 	enc->command_list = command_list;
 
 	enc->input_fence = input_fence;
@@ -200,7 +205,6 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 
 	enc->output_fence = output_fence;
 	enc->output_fence_value = 0;
-
 	return true;
 }
 
@@ -315,7 +319,6 @@ static void d3d12_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
 		ID3D12Resource *tex12 = (ID3D12Resource *)(nvtex->tex);
 		tex12->lpVtbl->Release(tex12);
-		bfree(nvtex);
 	}
 }
 
@@ -453,7 +456,7 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 
 	ID3D12GraphicsCommandList *command_list = enc->command_list;
 	ID3D12CommandQueue *command_queue = enc->command_queue;
-	ID3D12Fence *fence = enc->fence;
+	ID3D12Fence *input_fence = enc->input_fence;
 
 	if (texture->handle == GS_INVALID_HANDLE) {
 		error("Encode failed: bad texture handle");
@@ -473,55 +476,42 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 	}
 
 	deque_push_back(&enc->dts_list, &pts, sizeof(pts));
+	ID3D12CommandAllocator *allocator = enc->allocators[enc->next_bitstream];
+	HRESULT hr = allocator->lpVtbl->Reset(allocator);
+	if (FAILED(hr)) {
+		error_hr("CommandAllocator(Reset) failed");
+		return false;
+	}
 
-	/* ------------------------------------ */
-	/* copy to output tex                   */
-
-	// km->lpVtbl->AcquireSync(km, lock_key, INFINITE);
+	hr = command_list->lpVtbl->Reset(command_list, allocator, NULL);
+	if (FAILED(hr)) {
+		error_hr("CommandList(Reset) failed");
+		return false;
+	}
 
 	command_list->lpVtbl->CopyResource(command_list, output_tex, input_tex);
-	HRESULT hr = command_list->lpVtbl->Close(command_list);
+
+	hr = command_list->lpVtbl->Close(command_list);
 	if (FAILED(hr)) {
 		error_hr("CommandList(Close) failed");
 		return false;
 	}
 
 	command_queue->lpVtbl->ExecuteCommandLists(command_queue, 1, (ID3D12CommandList **)&command_list);
-	hr = command_queue->lpVtbl->Signal(command_queue, enc->fence, ++enc->fence_value);
+	++enc->input_fence_value;
+	hr = command_queue->lpVtbl->Signal(command_queue, input_fence, enc->input_fence_value);
 	if (FAILED(hr)) {
 		error_hr("CommandQeue(Signal) failed");
 		return false;
 	}
-
-	hr = fence->lpVtbl->SetEventOnCompletion(fence, enc->fence_value, enc->event);
-	if (FAILED(hr)) {
-		error_hr("Fence(SetEventOnCompletion) failed");
-		return false;
-	}
-
-	WaitForSingleObject(enc->event, INFINITE);
-
-	hr = command_list->lpVtbl->Reset(command_list, enc->allocator, NULL);
-	if (FAILED(hr)) {
-		error_hr("CommandList(Reset) failed");
-		return false;
-	}
-
-	// km->lpVtbl->ReleaseSync(km, *next_key);
-
-	/* ------------------------------------ */
-	/* map output tex so nvenc can use it   */
 
 	NV_ENC_MAP_INPUT_RESOURCE mapIn = {NV_ENC_MAP_INPUT_RESOURCE_VER};
 	mapIn.registeredResource = nvtex->res;
 	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &mapIn))) {
 		return false;
 	}
-
 	nvtex->mapped_res = mapIn.mappedResource;
 
-	/* ------------------------------------ */
-	/* do actual encode call                */
 	NV_ENC_INPUT_RESOURCE_D3D12 *input_res = nvtex->input_res;
 	input_res->version = NV_ENC_INPUT_RESOURCE_D3D12_VER;
 	input_res->pInputBuffer = nvtex->mapped_res;

@@ -99,8 +99,6 @@ struct nvenc_data {
 
 	ID3D12Device *device12;
 	ID3D12CommandQueue *command_queue;
-	ID3D12Fence *fence;
-	uint64_t fence_value;
 	HANDLE event;
 
 	ID3D12Fence *input_fence;
@@ -110,7 +108,7 @@ struct nvenc_data {
 	uint64_t output_fence_value;
 
 	ID3D12GraphicsCommandList *command_list;
-	ID3D12CommandAllocator *allocator;
+	ID3D12CommandAllocator *allocators[64];
 #endif
 
 	uint32_t cx;

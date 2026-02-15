@@ -657,7 +657,12 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 		obs_encoder_set_last_error(enc->encoder, obs_module_text("Opts.Invalid"));
 		return false;
 	}
-
+#ifdef _WIN32
+	if (enc->is_use_d3d12) {
+		enc->params.bufferFormat = is_10_bit(enc) ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
+							  : NV_ENC_BUFFER_FORMAT_NV12;
+	}
+#endif
 	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
 		return false;
 	}
@@ -1363,13 +1368,8 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 	params.inputHeight = enc->cy;
 	params.inputPitch = enc->cx;
 #ifdef _WIN32
-	if (enc->is_use_d3d12) {
-		struct nv_output *output_res = (struct nv_output *)bs->ptr;
-		params.outputBitstream = output_res->output_res;
-		params.completionEvent = NULL;
-	} else {
-		params.outputBitstream = bs->ptr;
-	}
+	struct nv_output *output_res = (struct nv_output *)bs->ptr;
+	params.outputBitstream = enc->is_use_d3d12 ? output_res->output_res : bs->ptr;
 #else
 	params.outputBitstream = bs->ptr;
 #endif
