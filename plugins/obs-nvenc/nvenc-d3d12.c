@@ -177,19 +177,18 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 			error_hr("D3D12 CreateCommandAllocator failed");
 			return false;
 		}
-		if (i == 0) {
-			hr = device->lpVtbl->CreateCommandList(device, 1, D3D12_COMMAND_LIST_TYPE_COPY, allocator, NULL,
-							       &IID_ID3D12GraphicsCommandList,
-							       (void **)(&command_list));
-			if (FAILED(hr)) {
-				error_hr("D3D12 CreateCommandList failed");
-				return false;
-			}
+		enc->allocators[i] = allocator;
+	}
 
-			command_list->lpVtbl->Close(command_list);
+	if (enc->allocators[0] != NULL) {
+		hr = device->lpVtbl->CreateCommandList(device, 1, D3D12_COMMAND_LIST_TYPE_COPY, enc->allocators[0],
+						       NULL, &IID_ID3D12GraphicsCommandList, (void **)(&command_list));
+		if (FAILED(hr)) {
+			error_hr("D3D12 CreateCommandList failed");
+			return false;
 		}
 
-		enc->allocators[i] = allocator;
+		command_list->lpVtbl->Close(command_list);
 	}
 
 	event = CreateEvent(NULL, false, false, NULL);
@@ -213,6 +212,32 @@ void d3d12_free(struct nvenc_data *enc)
 	for (size_t i = 0; i < enc->input_textures.num; i++) {
 		ID3D12Resource *tex = enc->input_textures.array[i].tex;
 		tex->lpVtbl->Release(tex);
+	}
+
+	if (enc->command_queue) {
+		enc->command_queue->lpVtbl->Release(enc->command_queue);
+	}
+
+	if (enc->command_list) {
+		enc->command_list->lpVtbl->Release(enc->command_list);
+	}
+
+	if (enc->input_fence) {
+		enc->input_fence->lpVtbl->Release(enc->input_fence);
+	}
+
+	if (enc->output_fence) {
+		enc->output_fence->lpVtbl->Release(enc->output_fence);
+	}
+
+	if (enc->event) {
+		CloseHandle(enc->event);
+	}
+
+	for (size_t i = 0; i < _countof(enc->allocators); ++i) {
+		if (enc->allocators[i]) {
+			enc->allocators[i]->lpVtbl->Release(enc->allocators[i]);
+		}
 	}
 
 	if (enc->device12) {

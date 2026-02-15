@@ -142,8 +142,8 @@ struct nvenc_data {
 struct handle_tex {
 #ifdef _WIN32
 	uint32_t handle;
-	void *tex;           // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
-	IDXGIKeyedMutex *km; // only for D3D11
+	void *tex;
+	IDXGIKeyedMutex *km;
 #else
 	GLuint tex_id;
 	/* CUDA mappings */
@@ -154,10 +154,10 @@ struct handle_tex {
 
 #ifdef _WIN32
 struct nv_output {
-	void *res; // register Resource
-	void *tex; // ID3D12Resource
+	void *res;
+	void *tex;
 	void *mapped_res;
-	void *output_res; // NV_ENC_OUTPUT_RESOURCE_D3D12
+	void *output_res;
 };
 #endif
 
@@ -177,11 +177,10 @@ struct nv_cuda_surface {
 #ifdef _WIN32
 /* DX11 textures */
 struct nv_texture {
-	void *res; // register Resource
-	// D3D11
-	void *tex; // D3D11 is ID3D11Texture2D, D3D12 is ID3D12Resource
+	void *res;
+	void *tex;
 	void *mapped_res;
-	void *input_res; // NV_ENC_INPUT_RESOURCE_D3D12
+	void *input_res;
 };
 #endif
 
@@ -204,6 +203,7 @@ void d3d11_free_textures(struct nvenc_data *enc);
 
 bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 		  struct encoder_packet *packet, bool *received_packet);
+
 /** D3D12 **/
 bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings);
 void d3d12_free(struct nvenc_data *enc);
