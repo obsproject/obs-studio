@@ -44,9 +44,6 @@ struct AddSourceData {
 
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
 {
-	if (obs_source_is_hidden(source))
-		return true;
-
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect *>(data);
 	const char *name = obs_source_get_name(source);
 	const char *id = obs_source_get_unversioned_id(source);
