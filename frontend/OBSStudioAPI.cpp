@@ -115,7 +115,7 @@ void OBSStudioAPI::obs_frontend_set_tbar_position(int position)
 
 int OBSStudioAPI::obs_frontend_get_tbar_position()
 {
-	return main->tBar->value();
+	return main->GetTbarPosition();
 }
 
 void OBSStudioAPI::obs_frontend_get_scene_collections(std::vector<std::string> &strings)
