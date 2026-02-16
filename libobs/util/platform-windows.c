@@ -25,7 +25,6 @@
 
 #include "base.h"
 #include "platform.h"
-#include "darray.h"
 #include "dstr.h"
 #include "util_uint64.h"
 #include "windows/win-registry.h"
@@ -523,6 +522,47 @@ char *os_get_abs_path_ptr(const char *path)
 	return ptr;
 }
 
+int os_strcoll_l(const char *a, const char *b, os_locale_t locale)
+{
+	return _strcoll_l(a, b, locale);
+}
+int os_wcscoll_l(const wchar_t *a, const wchar_t *b, os_locale_t locale)
+{
+	return _wcscoll_l(a, b, locale);
+}
+
+os_locale_t os_get_locale(const char *locale)
+{
+	return _create_locale(LC_ALL, locale ? locale : ".UTF-8");
+}
+
+void os_free_locale(os_locale_t locale)
+{
+	_free_locale(locale);
+}
+
+struct _locale_aware_sort_context {
+	os_locale_aware_cmp cmp;
+	os_locale_t locale;
+};
+typedef struct _locale_aware_sort_context locale_aware_sort_ctx;
+
+int _locale_aware_comparison(locale_aware_sort_ctx *context, const void *a, const void *b)
+{
+	return context->cmp(a, b, context->locale);
+}
+
+void os_locale_aware_sort(void *base, size_t elements, size_t element_size, os_locale_aware_cmp cmp, os_locale_t locale)
+{
+	bool tmplocale = !locale;
+
+	locale_aware_sort_ctx context = {.cmp = cmp, .locale = tmplocale ? os_get_locale(NULL) : locale};
+	qsort_s(base, elements, element_size, _locale_aware_comparison, &context);
+
+	if (tmplocale)
+		os_free_locale(context.locale);
+}
+
 struct os_dir {
 	HANDLE handle;
 	WIN32_FIND_DATA wfd;
@@ -588,6 +628,47 @@ void os_closedir(os_dir_t *dir)
 		FindClose(dir->handle);
 		bfree(dir);
 	}
+}
+
+struct _sort_file_data {
+	struct os_dirent out;
+	wchar_t *wname;
+};
+typedef struct _sort_file_data sort_file_data_t;
+
+int natural_compare_files(const sort_file_data_t *a, const sort_file_data_t *b, os_locale_t locale)
+{
+	return wstrnatcmp(a->wname, b->wname, locale);
+}
+
+void os_sortdir_natural(os_dir_t *dir, struct darray *sorted, dir_filter_func filter_func)
+{
+	DARRAY(sort_file_data_t) files;
+	da_init(files);
+
+	while (os_readdir(dir)) {
+
+		if (!filter_func || filter_func(&dir->out)) {
+			sort_file_data_t sort_data = {.out = dir->out, .wname = bwstrdup(dir->wfd.cFileName)};
+			da_push_back(files, &sort_data);
+		}
+	}
+
+	if (files.num) {
+
+		os_locale_aware_sort(&files.array[0], files.num, sizeof(sort_file_data_t), natural_compare_files, NULL);
+
+		size_t item_size = sizeof(struct os_dirent);
+		darray_reserve(item_size, sorted, sorted->num + files.num);
+		//da_reserve(*sorted, sorted->num + files.num);
+
+		for (size_t i = 0; i < files.num; i++) {
+			darray_push_back(item_size, sorted, &files.array[i].out);
+			//da_push_back(*sorted, &files.array[i].out);
+			bfree(files.array[i].wname);
+		}
+	}
+	da_free(files);
 }
 
 int64_t os_get_free_space(const char *path)
