@@ -589,12 +589,13 @@ static bool valid_extension(const char *ext)
 	return valid;
 }
 
-static int compare_files(const void *a, const void *b)
+bool dir_file_filter(struct os_dirent *ent)
 {
-	const struct media_file_data *aa = a;
-	const struct media_file_data *bb = b;
+	if (ent->directory)
+		return false;
 
-	return astrnatcmp(aa->path, bb->path);
+	const char *ext = os_get_path_extension(ent->d_name);
+	return valid_extension(ext);
 }
 
 static void vlcs_update(void *data, obs_data_t *settings)
@@ -650,52 +651,23 @@ static void vlcs_update(void *data, obs_data_t *settings)
 		os_dir_t *dir = os_opendir(path);
 
 		if (dir) {
-			struct os_dirent *ent;
-
-			media_file_array_t sortable_files = {0};
-			da_init(sortable_files);
-
-			for (;;) {
-				const char *ext;
-
-				ent = os_readdir(dir);
-				if (!ent)
-					break;
-				if (ent->directory)
-					continue;
-
-				ext = os_get_path_extension(ent->d_name);
-				if (!valid_extension(ext))
-					continue;
-
-				struct media_file_data media_file;
-				media_file.path = bstrdup(ent->d_name);
-
-				da_push_back(sortable_files, &media_file);
-			}
-
+			DARRAY(struct os_dirent) files = {0};
+			da_init(files);
+			os_sortdir_natural(dir, &files.da, dir_file_filter);
 			os_closedir(dir);
 
-			if (sortable_files.num > 0) {
-				qsort(sortable_files.array, sortable_files.num, sizeof(struct media_file_data),
-				      compare_files);
+			struct dstr dir_path = {0};
+			for (size_t j = 0; j < files.num; j++) {
 
-				struct dstr dir_path = {0};
+				dstr_copy(&dir_path, path);
+				dstr_cat_ch(&dir_path, '/');
+				dstr_cat(&dir_path, files.array[j].d_name);
 
-				for (size_t i = 0; i < sortable_files.num; i++) {
-
-					dstr_copy(&dir_path, path);
-					dstr_cat_ch(&dir_path, '/');
-					dstr_cat(&dir_path, sortable_files.array[i].path);
-
-					add_file(c, &new_files, dir_path.array, network_caching, track_index,
-						 subtitle_index, subtitle_enable);
-
-					bfree(sortable_files.array[i].path);
-				}
-				dstr_free(&dir_path);
+				add_file(c, &new_files, dir_path.array, network_caching, track_index, subtitle_index,
+					 subtitle_enable);
 			}
-			da_free(sortable_files);
+			dstr_free(&dir_path);
+			da_free(files);
 
 		} else {
 			add_file(c, &new_files, path, network_caching, track_index, subtitle_index, subtitle_enable);

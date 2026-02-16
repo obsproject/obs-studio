@@ -30,13 +30,12 @@
 #include "bmem.h"
 #include "utf8.h"
 #include "lexer.h"
-#include "platform.h"
 
 static const char *astrblank = "";
 static const wchar_t *wstrblank = L"";
 
-static int astrncoll(const char *str1, const char *str2, size_t read1, size_t read2);
-static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2);
+static int astrncoll(const char *str1, const char *str2, size_t read1, size_t read2, os_locale_t locale);
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2, os_locale_t locale);
 static inline int a_compare_number(const char *a, const char *b, size_t *read);
 static inline int w_compare_number(const wchar_t *a, const wchar_t *b, size_t *read);
 static inline size_t a_mblen(const char *str);
@@ -170,7 +169,9 @@ int wstrcmpi_n(const wchar_t *str1, const wchar_t *str2, size_t n)
 	return 0;
 }
 
-int astrnatcmp(const char *str1, const char *str2)
+// Windows shouldn't do collation with strcoll() astrnatcmp() is based on, because it's limited to single bytes unlike unix
+// Instead use the wide variant wstrnatcmp() based on wcscoll()
+int astrnatcmp(const char *str1, const char *str2, os_locale_t locale)
 {
 	if (!str1)
 		str1 = astrblank;
@@ -181,7 +182,7 @@ int astrnatcmp(const char *str1, const char *str2)
 	size_t len2 = strlen(str2);
 
 	if (len1 == 0 || len2 == 0)
-		return strcoll(str1, str2);
+		return os_strcoll_l(str1, str2, locale);
 
 	// Track indexes separately, because we may have multibyte characters.
 	size_t i1 = 0;
@@ -214,16 +215,16 @@ int astrnatcmp(const char *str1, const char *str2)
 		if (read1 + i1 >= len1 || read2 + i2 >= len2)
 			break;
 
-		if ((r = astrncoll(str1 + i1, str2 + i2, read1, read2)) != 0)
+		if ((r = astrncoll(str1 + i1, str2 + i2, read1, read2, locale)) != 0)
 			return r;
 
 		i1 += read1;
 		i2 += read2;
 	}
-	return strcoll(str1 + i1, str2 + i2);
+	return os_strcoll_l(str1 + i1, str2 + i2, locale);
 }
 
-int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
+int wstrnatcmp(const wchar_t *str1, const wchar_t *str2, os_locale_t locale)
 {
 	if (!str1)
 		str1 = wstrblank;
@@ -234,7 +235,7 @@ int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
 	size_t len2 = wcslen(str2);
 
 	if (len1 == 0 || len2 == 0)
-		return wcscoll(str1, str2);
+		return os_wcscoll_l(str1, str2, locale);
 
 	// Track indexes separately, because we may have surrogate pairs.
 	size_t i1 = 0;
@@ -267,21 +268,21 @@ int wstrnatcmp(const wchar_t *str1, const wchar_t *str2)
 		if (read1 + i1 >= len1 || read2 + i2 >= len2)
 			break;
 
-		if ((r = wstrncoll(str1 + i1, str2 + i2, read1, read2)) != 0)
+		if ((r = wstrncoll(str1 + i1, str2 + i2, read1, read2, locale)) != 0)
 			return r;
 
 		i1 += read1;
 		i2 += read2;
 	}
-	return wcscoll(str1 + i1, str2 + i2);
+	return os_wcscoll_l(str1 + i1, str2 + i2, locale);
 }
 
-static int astrncoll(const char *str1, const char *str2, const size_t read1, size_t read2)
+static int astrncoll(const char *str1, const char *str2, const size_t read1, size_t read2, os_locale_t locale)
 {
 	char *buf1 = bstrdup_n(str1, read1);
 	char *buf2 = bstrdup_n(str2, read2);
 
-	int r = strcoll(buf1, buf2);
+	int r = os_strcoll_l(buf1, buf2, locale);
 
 	bfree(buf1);
 	bfree(buf2);
@@ -289,12 +290,12 @@ static int astrncoll(const char *str1, const char *str2, const size_t read1, siz
 	return r;
 }
 
-static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2)
+static int wstrncoll(const wchar_t *str1, const wchar_t *str2, size_t read1, size_t read2, os_locale_t locale)
 {
 	wchar_t *buf1 = bwstrdup_n(str1, read1);
 	wchar_t *buf2 = bwstrdup_n(str2, read2);
 
-	int r = wcscoll(buf1, buf2);
+	int r = os_wcscoll_l(buf1, buf2, locale);
 
 	bfree(buf1);
 	bfree(buf2);
