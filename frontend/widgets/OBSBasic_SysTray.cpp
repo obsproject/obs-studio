@@ -32,22 +32,20 @@ void OBSBasic::SystemTrayInit()
 	trayIcon = new QSystemTrayIcon(QIcon::fromTheme("obs-tray", trayIconFile), this);
 	trayIcon->setToolTip("OBS Studio");
 
-	showHide = new QAction(QTStr("Basic.SystemTray.Show"), trayIcon.data());
-	sysTrayStream =
-		new QAction(StreamingActive() ? QTStr("Basic.Main.StopStreaming") : QTStr("Basic.Main.StartStreaming"),
-			    trayIcon.data());
-	sysTrayRecord =
-		new QAction(RecordingActive() ? QTStr("Basic.Main.StopRecording") : QTStr("Basic.Main.StartRecording"),
-			    trayIcon.data());
+	trayMenu = new QMenu;
+
+	showHide = new QAction(QTStr("Basic.SystemTray.Show"), trayMenu);
+	sysTrayStream = new QAction(
+		StreamingActive() ? QTStr("Basic.Main.StopStreaming") : QTStr("Basic.Main.StartStreaming"), trayMenu);
+	sysTrayRecord = new QAction(
+		RecordingActive() ? QTStr("Basic.Main.StopRecording") : QTStr("Basic.Main.StartRecording"), trayMenu);
 	sysTrayReplayBuffer = new QAction(ReplayBufferActive() ? QTStr("Basic.Main.StopReplayBuffer")
 							       : QTStr("Basic.Main.StartReplayBuffer"),
-					  trayIcon.data());
+					  trayMenu);
 	sysTrayVirtualCam = new QAction(VirtualCamActive() ? QTStr("Basic.Main.StopVirtualCam")
 							   : QTStr("Basic.Main.StartVirtualCam"),
-					trayIcon.data());
-	exit = new QAction(QTStr("Exit"), trayIcon.data());
-
-	trayMenu = new QMenu;
+					trayMenu);
+	exit = new QAction(QTStr("Exit"), trayMenu);
 
 	previewProjector = new QMenu(QTStr("Projector.Open.Preview"));
 	studioProgramProjector = new QMenu(QTStr("Projector.Open.Program"));
