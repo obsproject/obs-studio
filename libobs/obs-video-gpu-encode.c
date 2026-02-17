@@ -183,10 +183,6 @@ static void *gpu_encode_thread(void *data)
 				ept->fer = fer_ts;
 			}
 
-			if (!success) {
-				os_event_signal(video->gpu_encode_inactive);
-			}
-
 			send_off_encoder_packet(encoder, success, received, &pkt);
 
 			lock_key = next_key;
