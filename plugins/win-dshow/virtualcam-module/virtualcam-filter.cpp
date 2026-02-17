@@ -61,7 +61,7 @@ VCamFilter::VCamFilter() : OutputFilter()
 		StringCbCat(res_file, sizeof(res_file), L"\\obs-virtualcam.txt");
 
 		HANDLE file = CreateFileW(res_file, GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-		if (file) {
+		if (file != INVALID_HANDLE_VALUE) {
 			char res[128];
 			DWORD len = 0;
 
