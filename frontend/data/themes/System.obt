@@ -84,6 +84,30 @@
     qproperty-icon: url(:res/images/revert.svg);
 }
 
+.icon-debug {
+    qproperty-icon: url(:res/images/debug.svg);
+}
+
+.icon-info {
+    qproperty-icon: url(:res/images/info.svg);
+}
+
+.icon-warning {
+    qproperty-icon: url(:res/images/warning2.svg);
+}
+
+.icon-error {
+    qproperty-icon: url(:res/images/error.svg);
+}
+
+.icon-case-sensitive {
+    qproperty-icon: url(:res/images/case-sensitive.svg);
+}
+
+.icon-regex {
+    qproperty-icon: url(:res/images/regex.svg);
+}
+
 .indicator-mute {
     outline: none;
 }

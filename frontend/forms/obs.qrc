@@ -36,6 +36,12 @@
     <file>images/help_light.svg</file>
     <file>images/hide.svg</file>
     <file>images/revert.svg</file>
+    <file>images/info.svg</file>
+    <file>images/error.svg</file>
+    <file>images/debug.svg</file>
+    <file>images/case-sensitive.svg</file>
+    <file>images/regex.svg</file>
+    <file>images/warning2.svg</file>
     <file>images/alert.svg</file>
     <file>images/warning.svg</file>
     <file>images/settings/general.svg</file>

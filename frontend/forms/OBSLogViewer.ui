@@ -18,17 +18,349 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="leftMargin">
-    <number>0</number>
+    <number>10</number>
    </property>
    <property name="topMargin">
-    <number>0</number>
+    <number>10</number>
    </property>
    <property name="rightMargin">
-    <number>0</number>
+    <number>10</number>
    </property>
    <property name="bottomMargin">
-    <number>4</number>
+    <number>10</number>
    </property>
+   <item>
+    <widget class="QWidget" name="searchWidget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="visible">
+      <bool>true</bool>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>4</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="searchBox">
+        <property name="clearButtonEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="placeholderText">
+         <string>LogViewer.Search</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="searchPrev">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.Search.PrevMatch</string>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-up</string>
+        </property>
+        <property name="styleSheet">
+         <string>background: transparent; border: none;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="searchNext">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.Search.NextMatch</string>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-down</string>
+        </property>
+        <property name="styleSheet">
+         <string>background: transparent; border: none;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="searchCount">
+        <property name="text">
+         <string>0/0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="separator1">
+        <property name="frameShape">
+         <enum>QFrame::VLine</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="styleSheet">
+         <string>color: #444; margin-left: 4px; margin-right: 4px;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="caseSensitive">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/case-sensitive.svg</normaloff>:/res/images/case-sensitive.svg</iconset>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.Search.CaseSensitive</string>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-case-sensitive</string>
+        </property>
+        <property name="styleSheet">
+         <string>QToolButton { background: transparent; border: 1px solid #333; border-radius: 4px; padding: 4px; } QToolButton:hover { border-color: #555; } QToolButton:checked { background: rgba(128, 128, 128, 60); border-color: #888; }</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="regexOption">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/regex.svg</normaloff>:/res/images/regex.svg</iconset>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.Search.EnableRegex</string>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-regex</string>
+        </property>
+        <property name="styleSheet">
+         <string>QToolButton { background: transparent; border: 1px solid #333; border-radius: 4px; padding: 4px; } QToolButton:hover { border-color: #555; } QToolButton:checked { background: rgba(128, 128, 128, 60); border-color: #888; }</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="separator2">
+        <property name="frameShape">
+         <enum>QFrame::VLine</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="styleSheet">
+         <string>color: #444; margin-left: 4px; margin-right: 4px;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="showInfo">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.ShowInfo</string>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/info.svg</normaloff>:/res/images/info.svg</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-info</string>
+        </property>
+        <property name="styleSheet">
+         <string>QToolButton { background: transparent; border: 1px solid #333; border-radius: 4px; padding: 4px; } QToolButton:hover { border-color: #555; } QToolButton:checked { background: rgba(0, 170, 255, 60); border-color: #00aaff; }</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">filterGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="showWarnings">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.ShowWarnings</string>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/warning.svg</normaloff>:/res/images/warning.svg</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-warning</string>
+        </property>
+        <property name="styleSheet">
+         <string>QToolButton { background: transparent; border: 1px solid #333; border-radius: 4px; padding: 4px; } QToolButton:hover { border-color: #555; } QToolButton:checked { background: rgba(255, 170, 0, 60); border-color: #ffaa00; }</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">filterGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="showErrors">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.ShowErrors</string>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/error.svg</normaloff>:/res/images/error.svg</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-error</string>
+        </property>
+        <property name="styleSheet">
+         <string>QToolButton { background: transparent; border: 1px solid #333; border-radius: 4px; padding: 4px; } QToolButton:hover { border-color: #555; } QToolButton:checked { background: rgba(255, 85, 85, 60); border-color: #ff5555; }</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">filterGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="showDebug">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="toolTip">
+         <string>LogViewer.ShowDebug</string>
+        </property>
+        <property name="icon">
+         <iconset resource="obs.qrc">
+          <normaloff>:/res/images/debug.svg</normaloff>:/res/images/debug.svg</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
+        <property name="class" stdset="0">
+         <string notr="true">icon-debug</string>
+        </property>
+        <property name="styleSheet">
+         <string>QToolButton { background: transparent; border: 1px solid #333; border-radius: 4px; padding: 4px; } QToolButton:hover { border-color: #555; } QToolButton:checked { background: rgba(160, 160, 160, 80); border-color: #bbb; }</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">filterGroup</string>
+        </attribute>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item>
     <widget class="OBSPlainTextEdit" name="textArea">
      <property name="readOnly">
@@ -39,13 +371,13 @@
    <item>
     <layout class="QHBoxLayout" name="buttonLayout">
      <property name="leftMargin">
-      <number>10</number>
+      <number>0</number>
      </property>
      <property name="topMargin">
       <number>0</number>
      </property>
      <property name="rightMargin">
-      <number>10</number>
+      <number>0</number>
      </property>
      <property name="bottomMargin">
       <number>0</number>
@@ -60,7 +392,7 @@
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -95,6 +427,13 @@
    </item>
   </layout>
  </widget>
+ <buttongroups>
+  <buttongroup name="filterGroup">
+   <property name="exclusive">
+    <bool>false</bool>
+   </property>
+  </buttongroup>
+ </buttongroups>
  <customwidgets>
   <customwidget>
    <class>OBSPlainTextEdit</class>
@@ -111,22 +450,6 @@
    <signal>clicked()</signal>
    <receiver>OBSLogViewer</receiver>
    <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>clearButton</sender>
-   <signal>clicked()</signal>
-   <receiver>textArea</receiver>
-   <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>20</x>
