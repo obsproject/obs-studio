@@ -18,8 +18,13 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLog
 	ui->setupUi(this);
 
 	bool showLogViewerOnStartup = config_get_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup");
+	bool alwaysOnTop = config_get_bool(App()->GetUserConfig(), "LogViewer", "OnTop");
 
 	ui->showStartup->setChecked(showLogViewerOnStartup);
+	ui->onTop->setChecked(alwaysOnTop);
+
+	if (alwaysOnTop)
+		setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
 	const char *geom = config_get_string(App()->GetUserConfig(), "LogViewer", "geometry");
 
@@ -41,6 +46,18 @@ OBSLogViewer::~OBSLogViewer()
 void OBSLogViewer::on_showStartup_clicked(bool checked)
 {
 	config_set_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup", checked);
+}
+
+void OBSLogViewer::on_onTop_clicked(bool checked)
+{
+	config_set_bool(App()->GetUserConfig(), "LogViewer", "OnTop", checked);
+
+	if (checked)
+		setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+	else
+		setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
+
+	show();
 }
 
 void OBSLogViewer::InitLog()
