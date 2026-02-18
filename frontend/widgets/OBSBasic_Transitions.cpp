@@ -789,6 +789,11 @@ int OBSBasic::GetTbarPosition()
 	return tBar->value();
 }
 
+void OBSBasic::SetTbarPosition(int position)
+{
+	tBar->setValue(position);
+}
+
 static inline void ResetQuickTransitionText(QuickTransition *qt)
 {
 	qt->button->setText(MakeQuickTransitionText(qt));
