@@ -893,8 +893,6 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, 
 	} else {
 		enc->is_use_d3d12 = false;
 	}
-#else
-	UNUSED_PARAMETER(is_d3d12);
 #endif
 	enc->encoder = encoder;
 	enc->codec = codec;
