@@ -73,7 +73,7 @@ void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
 		     "get shared handle: %08lX",
 		     hr);
 	} else {
-		sharedHandle = handle;
+		sharedHandle = (uint32_t)(uintptr_t)handle;
 	}
 }
 
@@ -145,7 +145,7 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 
 	if (isShared) {
 		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(m_pResource.Get(), nullptr, GENERIC_ALL,
-									    nullptr, &sharedHandle);
+									    nullptr, (HANDLE *)(&sharedHandle));
 		if (FAILED(hr)) {
 			throw HRError("Create Shared Handle Failed", hr);
 		}
@@ -222,8 +222,6 @@ void gs_texture_2d::InitRenderTargets(int32_t PlaneSliceCount)
 	}
 }
 
-void gs_texture_2d::InitUAV() {}
-
 UINT gs_texture_2d::GetLineSize()
 {
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedTextureDesc;
@@ -285,7 +283,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t heigh
 
 	if (isRenderTarget) {
 		InitRenderTargets();
-		InitUAV();
 	}
 }
 
@@ -319,14 +316,13 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *nv12tex, uint3
 	InitResourceView(1);
 	if (isRenderTarget) {
 		InitRenderTargets(1);
-		InitUAV();
 	}
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle)
 	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
 	  isShared(true),
-	  sharedHandle((HANDLE)handle)
+	  sharedHandle(handle)
 {
 	(void)ntHandle;
 
@@ -353,7 +349,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle
 	InitResourceView();
 	if (isRenderTarget) {
 		InitRenderTargets(1);
-		InitUAV();
 	}
 }
 
@@ -380,7 +375,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
 	InitResourceView();
 	if (isRenderTarget) {
 		InitRenderTargets(1);
-		InitUAV();
 	}
 }
 
