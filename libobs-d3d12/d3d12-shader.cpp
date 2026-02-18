@@ -44,7 +44,6 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file, const 
 	GetBuffersExpected(layoutData);
 	BuildConstantBuffer();
 
-	actuallyShaderString = outputString;
 	Compile(outputString.c_str(), file, "vs_4_0", shaderBlob.Assign());
 
 	data.resize(shaderBlob->GetBufferSize());
@@ -69,7 +68,6 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file, const ch
 	samplerCount = samplers.size();
 
 	BuildConstantBuffer();
-	actuallyShaderString = outputString;
 	Compile(outputString.c_str(), file, "ps_4_0", shaderBlob.Assign());
 
 	data.resize(shaderBlob->GetBufferSize());
@@ -236,8 +234,8 @@ inline void gs_shader::UpdateParam(std::vector<uint8_t> &constData, gs_shader_pa
 			device_load_texture(device, shader_tex.tex, param.textureID);
 
 		if (param.nextSampler) {
-			device->context->SetDynamicSampler(samplerRootParameterIndex, 0,
-							   param.nextSampler->sampleDesc.Sampler);
+			device->curContext->SetDynamicSampler(samplerRootParameterIndex, 0,
+							      param.nextSampler->sampleDesc.Sampler);
 			param.nextSampler = nullptr;
 		}
 	}
@@ -257,8 +255,8 @@ void gs_shader::UploadParams()
 		throw "Invalid constant data size given to shader";
 
 	if (upload && dynamicUniformConstantBufferRootParameterIndex != -1) {
-		device->context->SetDynamicConstantBufferView(dynamicUniformConstantBufferRootParameterIndex,
-							      constData.size(), constData.data());
+		device->curContext->SetDynamicConstantBufferView(dynamicUniformConstantBufferRootParameterIndex,
+								 constData.size(), constData.data());
 	}
 }
 
