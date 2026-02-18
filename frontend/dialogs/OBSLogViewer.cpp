@@ -8,7 +8,25 @@
 #include <QFile>
 #include <QScrollBar>
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 #include "moc_OBSLogViewer.cpp"
+
+/**
+ * Checks if the current platform supports the "stay on top" feature for windows.
+ *
+ * @return bool True if the current platform supports the "stay on top" feature, false otherwise.
+ */
+static bool has_stay_on_top_support()
+{
+#ifdef ENABLE_WAYLAND
+	return obs_get_nix_platform() != OBS_NIX_PLATFORM_WAYLAND;
+#else
+	return true;
+#endif
+}
 
 OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLogViewer)
 {
@@ -21,7 +39,13 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLog
 	bool alwaysOnTop = config_get_bool(App()->GetUserConfig(), "LogViewer", "OnTop");
 
 	ui->showStartup->setChecked(showLogViewerOnStartup);
-	ui->onTop->setChecked(alwaysOnTop);
+
+	if (has_stay_on_top_support()) {
+		ui->onTop->setChecked(alwaysOnTop);
+	} else {
+		ui->onTop->setEnabled(false);
+		ui->onTop->setVisible(false);
+	}
 
 	if (alwaysOnTop)
 		setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
