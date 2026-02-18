@@ -47,8 +47,6 @@ namespace D3D12Graphics {
 
 class RootParameter;
 class RootSignature;
-class IndirectParameter;
-class CommandSignature;
 class DescriptorAllocator;
 class DescriptorHandle;
 class DescriptorHandleCache;
@@ -58,7 +56,6 @@ class GpuResource;
 class CommandContext;
 class GraphicsContext;
 class ComputeContext;
-class Texture;
 class D3D12DeviceInstance;
 class HagsStatus;
 
@@ -73,6 +70,36 @@ enum {
 	kGpuAllocatorPageSize = 0x10000, // 64K
 	kCpuAllocatorPageSize = 0x200000 // 2MB
 };
+
+template<typename T> __forceinline T AlignUpWithMask(T value, size_t mask)
+{
+	return (T)(((size_t)value + mask) & ~mask);
+}
+
+template<typename T> __forceinline T AlignDownWithMask(T value, size_t mask)
+{
+	return (T)((size_t)value & ~mask);
+}
+
+template<typename T> __forceinline T AlignUp(T value, size_t alignment)
+{
+	return AlignUpWithMask(value, alignment - 1);
+}
+
+template<typename T> __forceinline T AlignDown(T value, size_t alignment)
+{
+	return AlignDownWithMask(value, alignment - 1);
+}
+
+template<typename T> __forceinline bool IsAligned(T value, size_t alignment)
+{
+	return 0 == ((size_t)value & (alignment - 1));
+}
+
+template<typename T> __forceinline T DivideByMultiple(T value, size_t alignment)
+{
+	return (T)((value + alignment - 1) / alignment);
+}
 
 static size_t BitsPerPixel(_In_ DXGI_FORMAT fmt)
 {
@@ -487,98 +514,6 @@ public:
 	ID3D12RootSignature *m_Signature;
 };
 
-class IndirectParameter {
-public:
-	IndirectParameter() { m_IndirectParam.Type = (D3D12_INDIRECT_ARGUMENT_TYPE)0xFFFFFFFF; }
-
-	void Draw(void) { m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW; }
-
-	void DrawIndexed(void) { m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED; }
-
-	void Dispatch(void) { m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH; }
-
-	void VertexBufferView(UINT Slot)
-	{
-		m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW;
-		m_IndirectParam.VertexBuffer.Slot = Slot;
-	}
-
-	void IndexBufferView(void) { m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW; }
-
-	void Constant(UINT RootParameterIndex, UINT DestOffsetIn32BitValues, UINT Num32BitValuesToSet)
-	{
-		m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT;
-		m_IndirectParam.Constant.RootParameterIndex = RootParameterIndex;
-		m_IndirectParam.Constant.DestOffsetIn32BitValues = DestOffsetIn32BitValues;
-		m_IndirectParam.Constant.Num32BitValuesToSet = Num32BitValuesToSet;
-	}
-
-	void ConstantBufferView(UINT RootParameterIndex)
-	{
-		m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW;
-		m_IndirectParam.ConstantBufferView.RootParameterIndex = RootParameterIndex;
-	}
-
-	void ShaderResourceView(UINT RootParameterIndex)
-	{
-		m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW;
-		m_IndirectParam.ShaderResourceView.RootParameterIndex = RootParameterIndex;
-	}
-
-	void UnorderedAccessView(UINT RootParameterIndex)
-	{
-		m_IndirectParam.Type = D3D12_INDIRECT_ARGUMENT_TYPE_UNORDERED_ACCESS_VIEW;
-		m_IndirectParam.UnorderedAccessView.RootParameterIndex = RootParameterIndex;
-	}
-
-	const D3D12_INDIRECT_ARGUMENT_DESC &GetDesc(void) const { return m_IndirectParam; }
-
-protected:
-	D3D12_INDIRECT_ARGUMENT_DESC m_IndirectParam;
-};
-
-class CommandSignature {
-public:
-	CommandSignature(D3D12DeviceInstance *DeviceInstance, UINT NumParams = 0)
-		: m_DeviceInstance(DeviceInstance),
-		  m_Finalized(FALSE),
-		  m_NumParameters(NumParams)
-	{
-		Reset(NumParams);
-	}
-
-	void Destroy(void)
-	{
-		m_Signature = nullptr;
-		m_ParamArray = nullptr;
-	}
-
-	void Reset(UINT NumParams)
-	{
-		if (NumParams > 0)
-			m_ParamArray.reset(new IndirectParameter[NumParams]);
-		else
-			m_ParamArray = nullptr;
-
-		m_NumParameters = NumParams;
-	}
-
-	IndirectParameter &operator[](size_t EntryIndex) { return m_ParamArray.get()[EntryIndex]; }
-
-	const IndirectParameter &operator[](size_t EntryIndex) const { return m_ParamArray.get()[EntryIndex]; }
-
-	ID3D12CommandSignature *GetSignature() const;
-
-	void Finalize(const RootSignature *RootSignature = nullptr);
-
-protected:
-	D3D12DeviceInstance *m_DeviceInstance = nullptr;
-	BOOL m_Finalized;
-	UINT m_NumParameters;
-	std::unique_ptr<IndirectParameter[]> m_ParamArray;
-	ComPtr<ID3D12CommandSignature> m_Signature;
-};
-
 typedef struct DescriptorHandleNode {
 	UINT64 index = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 	void *next = (void *)D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
@@ -605,7 +540,7 @@ protected:
 	// TODO
 	UINT64 GetAvailableIndex();
 	void FreeIndex(UINT64 index);
-	DescriptorHandleNode *m_DescriptorPoolHead;
+	DescriptorHandleNode *m_DescriptorPoolHead = nullptr;
 	DescriptorHandleNode m_DescriptorPoolNodes[kMaxNumDescriptors];
 };
 
@@ -1112,19 +1047,6 @@ private:
 	std::shared_ptr<const D3D12_INPUT_ELEMENT_DESC> m_InputLayouts;
 };
 
-class ComputePSO : public PSO {
-public:
-	ComputePSO(D3D12DeviceInstance *DeviceInstance, const wchar_t *Name = L"Unnamed Compute PSO");
-
-	void SetComputeShader(const void *Binary, size_t Size);
-	void SetComputeShader(const D3D12_SHADER_BYTECODE &Binary);
-
-	void Finalize();
-
-private:
-	D3D12_COMPUTE_PIPELINE_STATE_DESC m_PSODesc;
-};
-
 class CommandAllocatorPool {
 public:
 	CommandAllocatorPool(D3D12_COMMAND_LIST_TYPE Type);
@@ -1299,8 +1221,6 @@ public:
 	D3D12_COMMAND_LIST_TYPE m_Type;
 };
 
-class GraphicsCopyContext {};
-
 class GraphicsContext : public CommandContext {
 public:
 	void ClearUAV(GpuBuffer &Target);
@@ -1367,10 +1287,6 @@ public:
 			   UINT StartInstanceLocation = 0);
 	void DrawIndexedInstanced(UINT IndexCountPerInstance, UINT InstanceCount, UINT StartIndexLocation,
 				  INT BaseVertexLocation, UINT StartInstanceLocation);
-	void DrawIndirect(GpuBuffer &ArgumentBuffer, uint64_t ArgumentBufferOffset = 0);
-	void ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &ArgumentBuffer, uint64_t ArgumentStartOffset = 0,
-			     uint32_t MaxCommands = 1, GpuBuffer *CommandCounterBuffer = nullptr,
-			     uint64_t CounterOffset = 0);
 };
 
 class ComputeContext : public CommandContext {
@@ -1395,14 +1311,6 @@ public:
 	void SetDynamicSamplers(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
 
 	void Dispatch(size_t GroupCountX = 1, size_t GroupCountY = 1, size_t GroupCountZ = 1);
-	void Dispatch1D(size_t ThreadCountX, size_t GroupSizeX = 64);
-	void Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX = 8, size_t GroupSizeY = 8);
-	void Dispatch3D(size_t ThreadCountX, size_t ThreadCountY, size_t ThreadCountZ, size_t GroupSizeX,
-			size_t GroupSizeY, size_t GroupSizeZ);
-	void DispatchIndirect(GpuBuffer &ArgumentBuffer, uint64_t ArgumentBufferOffset = 0);
-	void ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &ArgumentBuffer, uint64_t ArgumentStartOffset = 0,
-			     uint32_t MaxCommands = 1, GpuBuffer *CommandCounterBuffer = nullptr,
-			     uint64_t CounterOffset = 0);
 };
 
 class SamplerDesc : public D3D12_SAMPLER_DESC {
@@ -1458,8 +1366,6 @@ public:
 	LinearAllocatorPageManager *GetPageManager(LinearAllocatorType AllocatorType);
 	std::map<size_t, ComPtr<ID3D12PipelineState>> &GetGraphicsPSOHashMap();
 	std::map<size_t, ComPtr<ID3D12PipelineState>> &GetComputePSOHashMap();
-	CommandSignature &GetDispatchIndirectCommandSignature();
-	CommandSignature &GetDrawIndirectCommandSignature();
 	DescriptorAllocator *GetDescriptorAllocator();
 
 	DescriptorAllocator m_DescriptorAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {
@@ -1515,9 +1421,6 @@ private:
 	bool IsDirectXRaytracingSupported(ID3D12Device *testDevice);
 
 private:
-	std::unique_ptr<CommandSignature> m_DispatchIndirectCommandSignature;
-	std::unique_ptr<CommandSignature> m_DrawIndirectCommandSignature;
-
 	std::vector<ComPtr<ID3D12DescriptorHeap>> m_DescriptorHeapPool;
 
 	ComPtr<ID3D12Device> m_Device = nullptr;
