@@ -1119,13 +1119,6 @@ void OBSApp::checkForUncleanShutdown()
 const char *OBSApp::GetRenderModule() const
 {
 #if defined(_WIN32)
-	// open PIX for windows support
-	/* if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0) {
-		HMODULE hModule = LoadLibraryW(L"C:\\Program Files\\Microsoft PIX\\2509.25\\WinPixGpuCapturer.dll");
-		if (hModule) {
-			blog(LOG_INFO, "Load Pixel");
-		}
-	}*/
 	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
 	if (astrcmpi(renderer, "Direct3D 12") == 0) {
 		return DL_D3D12;

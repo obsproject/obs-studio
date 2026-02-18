@@ -160,78 +160,13 @@ ID3D12RootSignature *RootSignature::GetSignature() const
 	return m_Signature;
 }
 
-ID3D12CommandSignature *CommandSignature::GetSignature() const
-{
-	return m_Signature.Get();
-}
-
-void CommandSignature::Finalize(const RootSignature *RootSignature)
-{
-	if (m_Finalized)
-		return;
-
-	UINT ByteStride = 0;
-	bool RequiresRootSignature = false;
-
-	for (UINT i = 0; i < m_NumParameters; ++i) {
-		switch (m_ParamArray[i].GetDesc().Type) {
-		case D3D12_INDIRECT_ARGUMENT_TYPE_DRAW:
-			ByteStride += sizeof(D3D12_DRAW_ARGUMENTS);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED:
-			ByteStride += sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH:
-			ByteStride += sizeof(D3D12_DISPATCH_ARGUMENTS);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT:
-			ByteStride += m_ParamArray[i].GetDesc().Constant.Num32BitValuesToSet * 4;
-			RequiresRootSignature = true;
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW:
-			ByteStride += sizeof(D3D12_VERTEX_BUFFER_VIEW);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW:
-			ByteStride += sizeof(D3D12_INDEX_BUFFER_VIEW);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW:
-		case D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW:
-		case D3D12_INDIRECT_ARGUMENT_TYPE_UNORDERED_ACCESS_VIEW:
-			ByteStride += 8;
-			RequiresRootSignature = true;
-			break;
-		}
-	}
-
-	D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc;
-	CommandSignatureDesc.ByteStride = ByteStride;
-	CommandSignatureDesc.NumArgumentDescs = m_NumParameters;
-	CommandSignatureDesc.pArgumentDescs = (const D3D12_INDIRECT_ARGUMENT_DESC *)m_ParamArray.get();
-	CommandSignatureDesc.NodeMask = 1;
-
-	ComPtr<ID3DBlob> pOutBlob, pErrorBlob;
-
-	ID3D12RootSignature *pRootSig = RootSignature ? RootSignature->GetSignature() : nullptr;
-	if (!RequiresRootSignature) {
-		pRootSig = nullptr;
-	}
-
-	HRESULT hr = m_DeviceInstance->GetDevice()->CreateCommandSignature(&CommandSignatureDesc, pRootSig,
-									   IID_PPV_ARGS(&m_Signature));
-	if (FAILED(hr)) {
-		throw HRError("CreateCommandSignature failed", hr);
-	}
-	m_Signature->SetName(L"CommandSignature");
-
-	m_Finalized = TRUE;
-}
-
 DescriptorAllocator::DescriptorAllocator(D3D12DeviceInstance *DeviceInstance, D3D12_DESCRIPTOR_HEAP_TYPE Type)
 	: m_DeviceInstance(DeviceInstance),
 	  m_Type(Type),
 	  m_CurrentHeap(nullptr),
 	  m_DescriptorSize(0),
-	  m_RemainingFreeHandles(0)
+	  m_RemainingFreeHandles(0),
+	  m_DescriptorPoolHead(nullptr)
 {
 	m_CurrentHandle.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 }
@@ -900,7 +835,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE GpuBuffer::CreateConstantBufferView(uint32_t Offset,
 		throw HRError("GpuBuffer: CreateConstantBufferView out of bounds");
 	}
 
-	Size = Math::AlignUp(Size, 16);
+	Size = AlignUp(Size, 16);
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
 	CBVDesc.BufferLocation = m_GpuVirtualAddress + (size_t)Offset;
@@ -1752,12 +1687,12 @@ DynAlloc LinearAllocator::Allocate(size_t SizeInBytes, size_t Alignment)
 	}
 
 	// Align the allocation
-	const size_t AlignedSize = Math::AlignUpWithMask(SizeInBytes, AlignmentMask);
+	const size_t AlignedSize = AlignUpWithMask(SizeInBytes, AlignmentMask);
 
 	if (AlignedSize > m_PageSize)
 		return AllocateLargePage(AlignedSize);
 
-	m_CurOffset = Math::AlignUp(m_CurOffset, Alignment);
+	m_CurOffset = AlignUp(m_CurOffset, Alignment);
 
 	if (m_CurOffset + AlignedSize > m_PageSize) {
 		if (m_CurPage == nullptr) {
@@ -1971,55 +1906,6 @@ void GraphicsPSO::Finalize()
 			throw HRError("GraphicsPSO: Failed to create graphics pipeline state object.");
 		}
 		m_DeviceInstance->GetGraphicsPSOHashMap()[HashCode].Set(m_PSO);
-		m_PSO->SetName(m_Name);
-	} else {
-		while (PSORef == nullptr)
-			std::this_thread::yield();
-		m_PSO = PSORef;
-	}
-}
-
-ComputePSO::ComputePSO(D3D12DeviceInstance *DeviceInstance, const wchar_t *Name) : PSO(DeviceInstance, Name)
-{
-	ZeroMemory(&m_PSODesc, sizeof(m_PSODesc));
-	m_PSODesc.NodeMask = 1;
-}
-
-void ComputePSO::SetComputeShader(const void *Binary, size_t Size)
-{
-	m_PSODesc.CS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
-}
-
-void ComputePSO::SetComputeShader(const D3D12_SHADER_BYTECODE &Binary)
-{
-	m_PSODesc.CS = Binary;
-}
-
-void ComputePSO::Finalize()
-{
-	m_PSODesc.pRootSignature = m_RootSignature->GetSignature();
-	size_t HashCode = Utility::HashState(&m_PSODesc);
-
-	ComPtr<ID3D12PipelineState> PSORef = nullptr;
-	bool firstCompile = false;
-	{
-		auto iter = m_DeviceInstance->GetComputePSOHashMap().find(HashCode);
-
-		// Reserve space so the next inquiry will find that someone got here first.
-		if (iter == m_DeviceInstance->GetComputePSOHashMap().end()) {
-			firstCompile = true;
-			PSORef = m_DeviceInstance->GetComputePSOHashMap()[HashCode];
-		} else
-			PSORef = iter->second;
-	}
-
-	if (firstCompile) {
-		HRESULT hr =
-			m_DeviceInstance->GetDevice()->CreateComputePipelineState(&m_PSODesc, IID_PPV_ARGS(&m_PSO));
-		if (FAILED(hr)) {
-			throw HRError("ComputePSO: Failed to create compute pipeline state object.");
-		}
-		m_DeviceInstance->GetComputePSOHashMap()[HashCode].Set(m_PSO);
 		m_PSO->SetName(m_Name);
 	} else {
 		while (PSORef == nullptr)
@@ -2580,11 +2466,11 @@ void CommandContext::WriteBuffer(GpuResource &Dest, size_t DestOffset, const voi
 		return;
 	}
 
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to WriteBuffer must be 16-byte aligned.");
 	}
 	DynAlloc TempSpace = m_CpuLinearAllocator->Allocate(NumBytes, 512);
-	SIMDMemCopy(TempSpace.DataPtr, BufferData, Math::DivideByMultiple(NumBytes, 16));
+	memcpy(TempSpace.DataPtr, BufferData, NumBytes);
 	CopyBufferRegion(Dest, DestOffset, TempSpace.Buffer, TempSpace.Offset, NumBytes);
 }
 
@@ -2952,13 +2838,12 @@ void GraphicsContext::SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRES
 
 void GraphicsContext::SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void *BufferData)
 {
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicConstantBufferView must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
-	// memcpy(cb.DataPtr, BufferData, BufferSize);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetGraphicsRootConstantBufferView(RootIndex, cb.GpuAddress);
 }
 
@@ -3025,13 +2910,13 @@ void GraphicsContext::SetVertexBuffers(UINT StartSlot, UINT Count, const D3D12_V
 
 void GraphicsContext::SetDynamicVB(UINT Slot, size_t NumVertices, size_t VertexStride, const void *VertexData)
 {
-	if (!Math::IsAligned(VertexData, 16)) {
+	if (!IsAligned(VertexData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicVB must be 16-byte aligned.");
 	}
-	size_t BufferSize = Math::AlignUp(NumVertices * VertexStride, 16);
+	size_t BufferSize = AlignUp(NumVertices * VertexStride, 16);
 	DynAlloc vb = m_CpuLinearAllocator->Allocate(BufferSize);
 
-	SIMDMemCopy(vb.DataPtr, VertexData, BufferSize >> 4);
+	memcpy(vb.DataPtr, VertexData, BufferSize);
 
 	D3D12_VERTEX_BUFFER_VIEW VBView;
 	VBView.BufferLocation = vb.GpuAddress;
@@ -3043,13 +2928,13 @@ void GraphicsContext::SetDynamicVB(UINT Slot, size_t NumVertices, size_t VertexS
 
 void GraphicsContext::SetDynamicIB(size_t IndexCount, const uint16_t *IndexData)
 {
-	if (!Math::IsAligned(IndexData, 16)) {
+	if (!IsAligned(IndexData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicIB must be 16-byte aligned.");
 	}
-	size_t BufferSize = Math::AlignUp(IndexCount * sizeof(uint16_t), 16);
+	size_t BufferSize = AlignUp(IndexCount * sizeof(uint16_t), 16);
 	DynAlloc ib = m_CpuLinearAllocator->Allocate(BufferSize);
 
-	SIMDMemCopy(ib.DataPtr, IndexData, BufferSize >> 4);
+	memcpy(ib.DataPtr, IndexData, BufferSize);
 
 	D3D12_INDEX_BUFFER_VIEW IBView;
 	IBView.BufferLocation = ib.GpuAddress;
@@ -3061,12 +2946,12 @@ void GraphicsContext::SetDynamicIB(size_t IndexCount, const uint16_t *IndexData)
 
 void GraphicsContext::SetDynamicSRV(UINT RootIndex, size_t BufferSize, const void *BufferData)
 {
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicSRV must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetGraphicsRootShaderResourceView(RootIndex, cb.GpuAddress);
 }
 
@@ -3097,24 +2982,6 @@ void GraphicsContext::DrawIndexedInstanced(UINT IndexCountPerInstance, UINT Inst
 	m_DynamicSamplerDescriptorHeap.CommitGraphicsRootDescriptorTables(m_CommandList);
 	m_CommandList->DrawIndexedInstanced(IndexCountPerInstance, InstanceCount, StartIndexLocation,
 					    BaseVertexLocation, StartInstanceLocation);
-}
-
-void GraphicsContext::DrawIndirect(GpuBuffer &ArgumentBuffer, uint64_t ArgumentBufferOffset)
-{
-	ExecuteIndirect(m_DeviceInstance->GetDrawIndirectCommandSignature(), ArgumentBuffer, ArgumentBufferOffset);
-}
-
-void GraphicsContext::ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &ArgumentBuffer,
-				      uint64_t ArgumentStartOffset, uint32_t MaxCommands,
-				      GpuBuffer *CommandCounterBuffer, uint64_t CounterOffset)
-{
-	FlushResourceBarriers();
-	m_DynamicViewDescriptorHeap.CommitGraphicsRootDescriptorTables(m_CommandList);
-	m_DynamicSamplerDescriptorHeap.CommitGraphicsRootDescriptorTables(m_CommandList);
-	m_CommandList->ExecuteIndirect(CommandSig.GetSignature(), MaxCommands, ArgumentBuffer.GetResource(),
-				       ArgumentStartOffset,
-				       CommandCounterBuffer == nullptr ? nullptr : CommandCounterBuffer->GetResource(),
-				       CounterOffset);
 }
 
 void ComputeContext::ClearUAV(GpuBuffer &Target)
@@ -3157,13 +3024,12 @@ void ComputeContext::SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS
 
 void ComputeContext::SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void *BufferData)
 {
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicConstantBufferView must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
-	//memcpy(cb.DataPtr, BufferData, BufferSize);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetComputeRootConstantBufferView(RootIndex, cb.GpuAddress);
 }
 
@@ -3172,12 +3038,12 @@ void ComputeContext::SetDynamicSRV(UINT RootIndex, size_t BufferSize, const void
 	if (BufferData == nullptr) {
 		return;
 	}
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicSRV must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetComputeRootShaderResourceView(RootIndex, cb.GpuAddress);
 }
 
@@ -3233,41 +3099,6 @@ void ComputeContext::Dispatch(size_t GroupCountX, size_t GroupCountY, size_t Gro
 	m_DynamicViewDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
 	m_DynamicSamplerDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
 	m_CommandList->Dispatch((UINT)GroupCountX, (UINT)GroupCountY, (UINT)GroupCountZ);
-}
-
-void ComputeContext::Dispatch1D(size_t ThreadCountX, size_t GroupSizeX)
-{
-	Dispatch(Math::DivideByMultiple(ThreadCountX, GroupSizeX), 1, 1);
-}
-
-void ComputeContext::Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX, size_t GroupSizeY)
-{
-	Dispatch(Math::DivideByMultiple(ThreadCountX, GroupSizeX), Math::DivideByMultiple(ThreadCountY, GroupSizeY), 1);
-}
-
-void ComputeContext::Dispatch3D(size_t ThreadCountX, size_t ThreadCountY, size_t ThreadCountZ, size_t GroupSizeX,
-				size_t GroupSizeY, size_t GroupSizeZ)
-{
-	Dispatch(Math::DivideByMultiple(ThreadCountX, GroupSizeX), Math::DivideByMultiple(ThreadCountY, GroupSizeY),
-		 Math::DivideByMultiple(ThreadCountZ, GroupSizeZ));
-}
-
-void ComputeContext::DispatchIndirect(GpuBuffer &ArgumentBuffer, uint64_t ArgumentBufferOffset)
-{
-	ExecuteIndirect(m_DeviceInstance->GetDispatchIndirectCommandSignature(), ArgumentBuffer, ArgumentBufferOffset);
-}
-
-void ComputeContext::ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &ArgumentBuffer,
-				     uint64_t ArgumentStartOffset, uint32_t MaxCommands,
-				     GpuBuffer *CommandCounterBuffer, uint64_t CounterOffset)
-{
-	FlushResourceBarriers();
-	m_DynamicViewDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
-	m_DynamicSamplerDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
-	m_CommandList->ExecuteIndirect(CommandSig.GetSignature(), MaxCommands, ArgumentBuffer.GetResource(),
-				       ArgumentStartOffset,
-				       CommandCounterBuffer == nullptr ? nullptr : CommandCounterBuffer->GetResource(),
-				       CounterOffset);
 }
 
 SamplerDesc::SamplerDesc(D3D12DeviceInstance *DeviceInstance) : m_DeviceInstance(DeviceInstance)
@@ -3437,9 +3268,6 @@ void D3D12DeviceInstance::Initialize(int32_t adaptorIndex)
 	m_PageManager[0] = std::make_unique<LinearAllocatorPageManager>(this, kGpuExclusive);
 	m_PageManager[1] = std::make_unique<LinearAllocatorPageManager>(this, kCpuWritable);
 
-	m_DispatchIndirectCommandSignature = std::make_unique<CommandSignature>(this, 1);
-	m_DrawIndirectCommandSignature = std::make_unique<CommandSignature>(this, 1);
-
 	m_CommandManager = std::make_unique<CommandListManager>();
 	m_ContextManager = std::make_unique<ContextManager>(this);
 
@@ -3491,16 +3319,6 @@ std::map<size_t, ComPtr<ID3D12PipelineState>> &D3D12DeviceInstance::GetGraphicsP
 std::map<size_t, ComPtr<ID3D12PipelineState>> &D3D12DeviceInstance::GetComputePSOHashMap()
 {
 	return m_ComputePSOHashMap;
-}
-
-CommandSignature &D3D12DeviceInstance::GetDispatchIndirectCommandSignature()
-{
-	return *m_DispatchIndirectCommandSignature;
-}
-
-CommandSignature &D3D12DeviceInstance::GetDrawIndirectCommandSignature()
-{
-	return *m_DrawIndirectCommandSignature;
 }
 
 DescriptorAllocator *D3D12DeviceInstance::GetDescriptorAllocator()
@@ -3721,7 +3539,7 @@ void D3D12DeviceInstance::InitializeBuffer(GpuBuffer &Dest, const void *BufferDa
 	CommandContext &InitContext = *GetNewGraphicsContext();
 
 	DynAlloc mem = InitContext.ReserveUploadMemory(NumBytes);
-	SIMDMemCopy(mem.DataPtr, BufferData, Math::DivideByMultiple(NumBytes, 16));
+	memcpy(mem.DataPtr, BufferData, NumBytes);
 
 	// copy data to the intermediate upload heap and then schedule a copy from the upload heap to the default texture
 	InitContext.TransitionResource(Dest, D3D12_RESOURCE_STATE_COPY_DEST, true);
