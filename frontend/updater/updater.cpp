@@ -1235,9 +1235,11 @@ static void UpdateRegistryVersion(const Manifest &manifest)
 static void ClearShaderCache()
 {
 	wchar_t shader_path[MAX_PATH];
-	SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, shader_path);
-	StringCbCatW(shader_path, sizeof(shader_path), L"\\obs-studio\\shader-cache");
-	filesystem::remove_all(shader_path);
+	if (SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, shader_path) == S_OK) {
+		if (SUCCEEDED(StringCbCatW(shader_path, sizeof(shader_path), L"\\obs-studio\\shader-cache"))) {
+			filesystem::remove_all(shader_path);
+		}
+	}
 }
 
 extern "C" void UpdateHookFiles(void);
