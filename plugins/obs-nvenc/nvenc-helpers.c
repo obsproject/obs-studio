@@ -379,9 +379,6 @@ void obs_nvenc_load(void)
 {
 	pthread_mutex_init(&init_mutex, NULL);
 	register_encoders();
-#ifdef _WIN32
-	register_encoders_d3d12();
-#endif
 	register_compat_encoders();
 }
 
