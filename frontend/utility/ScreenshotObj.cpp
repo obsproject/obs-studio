@@ -51,12 +51,16 @@ ScreenshotObj::~ScreenshotObj()
 
 		if (cx && cy) {
 			OBSBasic *main = OBSBasic::Get();
-			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
+			if (success) {
+				main->ShowStatusBarMessage(
+					QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
 
-			main->lastScreenshot = path;
+				main->lastScreenshot = path;
 
-			main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
+				main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
+			} else {
+				main->ShowStatusBarMessage(QTStr("Basic.StatusBar.ScreenshotError"));
+			}
 		}
 	}
 }
@@ -262,9 +266,15 @@ static HRESULT SaveJxr(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy)
 
 void ScreenshotObj::MuxAndFinish()
 {
-	if (half_bytes.empty()) {
-		image.save(QT_UTF8(path.c_str()));
-		blog(LOG_INFO, "Saved screenshot to '%s'", path.c_str());
+	success = false;
+
+	if (half_bytes.empty() && !path.empty()) {
+		success = image.save(QT_UTF8(path.c_str()));
+		if (success) {
+			blog(LOG_INFO, "Saved screenshot to '%s'", path.c_str());
+		} else {
+			blog(LOG_INFO, "Error while saving screenshot");
+		}
 	} else {
 #ifdef _WIN32
 		wchar_t *path_w = nullptr;
