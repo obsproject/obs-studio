@@ -469,8 +469,8 @@ void gs_device::FlushOutputViews()
 			dsv = &curZStencilBuffer->GetDSV();
 		}
 
-		context->TransitionResource(*rtv, D3D12_RESOURCE_STATE_RENDER_TARGET);
-		context->SetRenderTargets(1, &pRenderTargetDescriptors, false, dsv);
+		curContext->TransitionResource(*rtv, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		curContext->SetRenderTargets(1, &pRenderTargetDescriptors, false, dsv);
 
 		curFramebufferInvalidate = false;
 	}
@@ -594,8 +594,8 @@ static void device_resize_internal(gs_device_t *device, uint32_t cx, uint32_t cy
 {
 	try {
 		const gs_color_format format = get_swap_format_from_space(space, device->curSwapChain->initData.format);
-		device->context->Flush(true);
-		device->context->SetNullRenderTarget();
+		device->curContext->Flush(true);
+		device->curContext->SetNullRenderTarget();
 		device->curSwapChain->Resize(cx, cy, format);
 		device->curRenderTarget = &device->curSwapChain->target[device->curSwapChain->currentBackBufferIndex];
 		device->curSwapChain->space = space;
@@ -914,7 +914,7 @@ static void device_load_texture_internal(gs_device_t *device, gs_texture_t *tex,
 		return;
 
 	device->curTextures[unit] = tex;
-	device->context->SetDynamicDescriptor(device->curPixelShader->textureRootParameterIndex, unit, *handle);
+	device->curContext->SetDynamicDescriptor(device->curPixelShader->textureRootParameterIndex, unit, *handle);
 }
 
 void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
@@ -925,7 +925,7 @@ void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 	const D3D12_CPU_DESCRIPTOR_HANDLE *handle = nullptr;
 	if (tex) {
 		handle = &tex->shaderSRV;
-		device->context->TransitionResource(*tex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		device->curContext->TransitionResource(*tex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	} else {
 		handle = nullptr;
 	}
@@ -939,7 +939,7 @@ void device_load_texture_srgb(gs_device_t *device, gs_texture_t *tex, int unit)
 	const D3D12_CPU_DESCRIPTOR_HANDLE *handle = nullptr;
 	if (tex) {
 		handle = &tex->shaderLinearSRV;
-		device->context->TransitionResource(*tex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		device->curContext->TransitionResource(*tex, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	} else {
 		handle = nullptr;
 	}
@@ -957,7 +957,7 @@ void device_load_samplerstate(gs_device_t *device, gs_samplerstate_t *samplersta
 	}
 
 	device->curSamplers[unit] = samplerstate;
-	device->context->SetDynamicSampler(device->curPixelShader->samplerRootParameterIndex, unit, *handle);
+	device->curContext->SetDynamicSampler(device->curPixelShader->samplerRootParameterIndex, unit, *handle);
 }
 
 void device_load_vertexshader(gs_device_t *device, gs_shader_t *vertshader)
@@ -1165,7 +1165,7 @@ void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst, uint32_t
 		}
 
 		if (dst_x == 0 && dst_y == 0 && src_x == 0 && src_y == 0 && src_w == 0 && src_h == 0) {
-			device->context->CopyBuffer(*dst2d, *src2d);
+			device->curContext->CopyBuffer(*dst2d, *src2d);
 		}
 
 		RECT RectRegion;
@@ -1180,7 +1180,7 @@ void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst, uint32_t
 			RectRegion.bottom = src_y + src_h;
 		else
 			RectRegion.bottom = src2d->height - 1;
-		device->context->CopyTextureRegion(*dst, dst_x, dst_y, 0, *src, RectRegion);
+		device->curContext->CopyTextureRegion(*dst, dst_x, dst_y, 0, *src, RectRegion);
 
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_copy_texture (D3D12): %s", error);
@@ -1209,7 +1209,7 @@ void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst, gs_texture_t
 			throw "Source and destination must have the same "
 			      "dimensions";
 
-		device->context->ReadbackTexture(*dst, *src);
+		device->curContext->ReadbackTexture(*dst, *src);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_copy_texture (D3D12): %s", error);
 	}
@@ -1219,15 +1219,15 @@ extern "C" void reset_duplicators(void);
 void device_begin_frame(gs_device_t *device)
 {
 	reset_duplicators();
-	if (!device->context) {
-		device->context = device->d3d12Instance->GetNewGraphicsContext();
+	if (!device->curContext) {
+		device->curContext = device->d3d12Instance->GetNewGraphicsContext();
 	}
 }
 
 void device_end_frame(gs_device_t *device)
 {
-	device->context->Finish();
-	device->context = device->d3d12Instance->GetNewGraphicsContext();
+	device->curContext->Finish();
+	device->curContext = device->d3d12Instance->GetNewGraphicsContext();
 }
 
 void device_begin_scene(gs_device_t *device)
@@ -1261,8 +1261,8 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t star
 
 		device->LoadVertexBufferData();
 
-		device->context->SetVertexBuffers(0, (UINT)device->curVertexBufferViews.size(),
-						  device->curVertexBufferViews.data());
+		device->curContext->SetVertexBuffers(0, (UINT)device->curVertexBufferViews.size(),
+						     device->curVertexBufferViews.data());
 
 		std::unique_ptr<D3D12Graphics::RootSignature> rootSig =
 			std::make_unique<D3D12Graphics::RootSignature>(device->d3d12Instance);
@@ -1272,16 +1272,16 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t star
 			std::make_unique<D3D12Graphics::GraphicsPSO>(device->d3d12Instance);
 		device->LoadCurrentGraphicsPSO(pso, rootSig);
 
-		device->context->SetPipelineState(*(pso));
-		device->context->SetRootSignature(*(rootSig));
+		device->curContext->SetPipelineState(*(pso));
+		device->curContext->SetRootSignature(*(rootSig));
 
 		gs_samplerstate_t *states[GS_MAX_TEXTURES] = {0};
 		device->curPixelShader->GetSamplerStates(states);
 
 		for (int32_t i = 0; i < GS_MAX_TEXTURES; ++i) {
 			if (states[i] != nullptr) {
-				device->context->SetDynamicSampler(device->curPixelShader->samplerRootParameterIndex, i,
-								   states[i]->sampleDesc.Sampler);
+				device->curContext->SetDynamicSampler(device->curPixelShader->samplerRootParameterIndex,
+								      i, states[i]->sampleDesc.Sampler);
 			}
 		}
 
@@ -1297,11 +1297,11 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t star
 
 		D3D12Graphics::Color blendFactor = {1.0f, 1.0f, 1.0f, 1.0f};
 
-		device->context->SetBlendFactor(blendFactor);
+		device->curContext->SetBlendFactor(blendFactor);
 
-		device->context->SetStencilRef(0);
+		device->curContext->SetStencilRef(0);
 		D3D12_PRIMITIVE_TOPOLOGY newToplogy = ConvertGSTopology(draw_mode);
-		device->context->SetPrimitiveTopology(newToplogy);
+		device->curContext->SetPrimitiveTopology(newToplogy);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "device_draw (D3D12): %s", error);
 		return;
@@ -1315,11 +1315,11 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t star
 	if (device->curIndexBuffer) {
 		if (num_verts == 0)
 			num_verts = (uint32_t)device->curIndexBuffer->num;
-		device->context->DrawIndexedInstanced(num_verts, 1, start_vert, 0, 0);
+		device->curContext->DrawIndexedInstanced(num_verts, 1, start_vert, 0, 0);
 	} else {
 		if (num_verts == 0)
 			num_verts = (uint32_t)device->curVertexBuffer->numVerts;
-		device->context->DrawInstanced(num_verts, 1, start_vert, 0);
+		device->curContext->DrawInstanced(num_verts, 1, start_vert, 0);
 	}
 }
 
@@ -1356,13 +1356,13 @@ void device_clear(gs_device_t *device, uint32_t clear_flags, const struct vec4 *
 			const int side = device->curRenderSide;
 			D3D12_CPU_DESCRIPTOR_HANDLE rtv = device->curFramebufferSrgb ? tex->renderTargetLinearRTV[side]
 										     : tex->renderTargetRTV[side];
-			device->context->TransitionResource(*tex, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			device->curContext->TransitionResource(*tex, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			D3D12_RECT Rect;
 			Rect.left = 0;
 			Rect.top = 0;
 			Rect.right = tex->width;
 			Rect.bottom = tex->height;
-			device->context->ClearColor(rtv, color->ptr, 1, &Rect);
+			device->curContext->ClearColor(rtv, color->ptr, 1, &Rect);
 		}
 	}
 
@@ -1377,7 +1377,7 @@ void device_clear(gs_device_t *device, uint32_t clear_flags, const struct vec4 *
 		if ((clearDepth || clearStencil) && device->curZStencilBuffer) {
 			D3D12Graphics::DepthBuffer &depthBuffer =
 				(D3D12Graphics::DepthBuffer &)(*device->curZStencilBuffer);
-			device->context->ClearDepthAndStencil(depthBuffer);
+			device->curContext->ClearDepthAndStencil(depthBuffer);
 		}
 	}
 }
@@ -1387,7 +1387,7 @@ bool device_is_present_ready(gs_device_t *device)
 	gs_swap_chain *const curSwapChain = device->curSwapChain;
 	bool ready = curSwapChain != nullptr;
 	if (ready) {
-		device->context->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		device->curContext->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	} else {
 		blog(LOG_WARNING, "device_is_present_ready (D3D12): No active swap");
 	}
@@ -1400,9 +1400,9 @@ void device_present(gs_device_t *device)
 	gs_swap_chain *const curSwapChain = device->curSwapChain;
 	if (curSwapChain) {
 		device->curFramebufferInvalidate = true;
-		device->context->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_PRESENT);
-		device->context->Finish();
-		device->context = device->d3d12Instance->GetNewGraphicsContext();
+		device->curContext->TransitionResource(*device->curRenderTarget, D3D12_RESOURCE_STATE_PRESENT);
+		device->curContext->Finish();
+		device->curContext = device->d3d12Instance->GetNewGraphicsContext();
 		const HRESULT hr = curSwapChain->swap->Present(0, 0);
 		if (FAILED(hr)) {
 			auto removeReason = device->d3d12Instance->GetDevice()->GetDeviceRemovedReason();
@@ -1421,8 +1421,8 @@ void device_present(gs_device_t *device)
 
 void device_flush(gs_device_t *device)
 {
-	if (device->context) {
-		device->context->Flush();
+	if (device->curContext) {
+		device->curContext->Flush();
 	}
 }
 
@@ -1566,7 +1566,7 @@ void device_stencil_op(gs_device_t *device, enum gs_stencil_side side, enum gs_s
 
 void device_set_viewport(gs_device_t *device, int x, int y, int width, int height)
 {
-	device->context->SetViewportAndScissor(x, y, width, height);
+	device->curContext->SetViewportAndScissor(x, y, width, height);
 
 	device->viewport.x = x;
 	device->viewport.y = y;
@@ -1587,7 +1587,7 @@ void device_set_scissor_rect(gs_device_t *device, const struct gs_rect *rect)
 		d3drect.top = rect->y;
 		d3drect.right = rect->x + rect->cx;
 		d3drect.bottom = rect->y + rect->cy;
-		device->context->SetScissor(d3drect);
+		device->curContext->SetScissor(d3drect);
 	}
 }
 
@@ -1733,9 +1733,9 @@ void gs_texture_unmap(gs_texture_t *tex)
 
 	D3D12Graphics::UploadBuffer *upload = texture->uploadBuffer.get();
 	upload->Unmap();
-	texture->device->context->UpdateTexture(*texture, *upload);
-	texture->device->context->TransitionResource(*texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	texture->device->context->Flush();
+	texture->device->curContext->UpdateTexture(*texture, *upload);
+	texture->device->curContext->TransitionResource(*texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	texture->device->curContext->Flush();
 }
 
 void *gs_texture_get_obj(gs_texture_t *tex)
@@ -1911,8 +1911,8 @@ static inline void gs_indexbuffer_flush_internal(gs_indexbuffer_t *indexbuffer, 
 	if (!indexbuffer->dynamic)
 		return;
 
-	indexbuffer->device->context->WriteBuffer(*indexbuffer->indexBuffer, 0, data,
-						  indexbuffer->num * indexbuffer->indexSize);
+	indexbuffer->device->curContext->WriteBuffer(*indexbuffer->indexBuffer, 0, data,
+						     indexbuffer->num * indexbuffer->indexSize);
 }
 
 void gs_indexbuffer_flush(gs_indexbuffer_t *indexbuffer)

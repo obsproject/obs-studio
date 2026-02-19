@@ -17,7 +17,7 @@ static inline void PushBuffer(UINT *refNumBuffers, D3D12Graphics::GpuBuffer **bu
 
 void gs_vertex_buffer::FlushBuffer(D3D12Graphics::GpuBuffer *buffer, void *array, size_t elementSize)
 {
-	device->context->WriteBuffer(*buffer, 0, array, elementSize * vbd.data->num);
+	device->curContext->WriteBuffer(*buffer, 0, array, elementSize * vbd.data->num);
 }
 
 UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader, D3D12Graphics::GpuBuffer **buffers, uint32_t *strides)
