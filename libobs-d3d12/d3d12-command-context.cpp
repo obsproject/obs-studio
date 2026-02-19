@@ -160,72 +160,6 @@ ID3D12RootSignature *RootSignature::GetSignature() const
 	return m_Signature;
 }
 
-ID3D12CommandSignature *CommandSignature::GetSignature() const
-{
-	return m_Signature.Get();
-}
-
-void CommandSignature::Finalize(const RootSignature *RootSignature)
-{
-	if (m_Finalized)
-		return;
-
-	UINT ByteStride = 0;
-	bool RequiresRootSignature = false;
-
-	for (UINT i = 0; i < m_NumParameters; ++i) {
-		switch (m_ParamArray[i].GetDesc().Type) {
-		case D3D12_INDIRECT_ARGUMENT_TYPE_DRAW:
-			ByteStride += sizeof(D3D12_DRAW_ARGUMENTS);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED:
-			ByteStride += sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH:
-			ByteStride += sizeof(D3D12_DISPATCH_ARGUMENTS);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT:
-			ByteStride += m_ParamArray[i].GetDesc().Constant.Num32BitValuesToSet * 4;
-			RequiresRootSignature = true;
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW:
-			ByteStride += sizeof(D3D12_VERTEX_BUFFER_VIEW);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW:
-			ByteStride += sizeof(D3D12_INDEX_BUFFER_VIEW);
-			break;
-		case D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW:
-		case D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW:
-		case D3D12_INDIRECT_ARGUMENT_TYPE_UNORDERED_ACCESS_VIEW:
-			ByteStride += 8;
-			RequiresRootSignature = true;
-			break;
-		}
-	}
-
-	D3D12_COMMAND_SIGNATURE_DESC CommandSignatureDesc;
-	CommandSignatureDesc.ByteStride = ByteStride;
-	CommandSignatureDesc.NumArgumentDescs = m_NumParameters;
-	CommandSignatureDesc.pArgumentDescs = (const D3D12_INDIRECT_ARGUMENT_DESC *)m_ParamArray.get();
-	CommandSignatureDesc.NodeMask = 1;
-
-	ComPtr<ID3DBlob> pOutBlob, pErrorBlob;
-
-	ID3D12RootSignature *pRootSig = RootSignature ? RootSignature->GetSignature() : nullptr;
-	if (!RequiresRootSignature) {
-		pRootSig = nullptr;
-	}
-
-	HRESULT hr = m_DeviceInstance->GetDevice()->CreateCommandSignature(&CommandSignatureDesc, pRootSig,
-									   IID_PPV_ARGS(&m_Signature));
-	if (FAILED(hr)) {
-		throw HRError("CreateCommandSignature failed", hr);
-	}
-	m_Signature->SetName(L"CommandSignature");
-
-	m_Finalized = TRUE;
-}
-
 DescriptorAllocator::DescriptorAllocator(D3D12DeviceInstance *DeviceInstance, D3D12_DESCRIPTOR_HEAP_TYPE Type)
 	: m_DeviceInstance(DeviceInstance),
 	  m_Type(Type),
@@ -3099,24 +3033,6 @@ void GraphicsContext::DrawIndexedInstanced(UINT IndexCountPerInstance, UINT Inst
 					    BaseVertexLocation, StartInstanceLocation);
 }
 
-void GraphicsContext::DrawIndirect(GpuBuffer &ArgumentBuffer, uint64_t ArgumentBufferOffset)
-{
-	ExecuteIndirect(m_DeviceInstance->GetDrawIndirectCommandSignature(), ArgumentBuffer, ArgumentBufferOffset);
-}
-
-void GraphicsContext::ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &ArgumentBuffer,
-				      uint64_t ArgumentStartOffset, uint32_t MaxCommands,
-				      GpuBuffer *CommandCounterBuffer, uint64_t CounterOffset)
-{
-	FlushResourceBarriers();
-	m_DynamicViewDescriptorHeap.CommitGraphicsRootDescriptorTables(m_CommandList);
-	m_DynamicSamplerDescriptorHeap.CommitGraphicsRootDescriptorTables(m_CommandList);
-	m_CommandList->ExecuteIndirect(CommandSig.GetSignature(), MaxCommands, ArgumentBuffer.GetResource(),
-				       ArgumentStartOffset,
-				       CommandCounterBuffer == nullptr ? nullptr : CommandCounterBuffer->GetResource(),
-				       CounterOffset);
-}
-
 void ComputeContext::ClearUAV(GpuBuffer &Target)
 {
 	FlushResourceBarriers();
@@ -3250,24 +3166,6 @@ void ComputeContext::Dispatch3D(size_t ThreadCountX, size_t ThreadCountY, size_t
 {
 	Dispatch(Math::DivideByMultiple(ThreadCountX, GroupSizeX), Math::DivideByMultiple(ThreadCountY, GroupSizeY),
 		 Math::DivideByMultiple(ThreadCountZ, GroupSizeZ));
-}
-
-void ComputeContext::DispatchIndirect(GpuBuffer &ArgumentBuffer, uint64_t ArgumentBufferOffset)
-{
-	ExecuteIndirect(m_DeviceInstance->GetDispatchIndirectCommandSignature(), ArgumentBuffer, ArgumentBufferOffset);
-}
-
-void ComputeContext::ExecuteIndirect(CommandSignature &CommandSig, GpuBuffer &ArgumentBuffer,
-				     uint64_t ArgumentStartOffset, uint32_t MaxCommands,
-				     GpuBuffer *CommandCounterBuffer, uint64_t CounterOffset)
-{
-	FlushResourceBarriers();
-	m_DynamicViewDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
-	m_DynamicSamplerDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
-	m_CommandList->ExecuteIndirect(CommandSig.GetSignature(), MaxCommands, ArgumentBuffer.GetResource(),
-				       ArgumentStartOffset,
-				       CommandCounterBuffer == nullptr ? nullptr : CommandCounterBuffer->GetResource(),
-				       CounterOffset);
 }
 
 SamplerDesc::SamplerDesc(D3D12DeviceInstance *DeviceInstance) : m_DeviceInstance(DeviceInstance)
@@ -3437,9 +3335,6 @@ void D3D12DeviceInstance::Initialize(int32_t adaptorIndex)
 	m_PageManager[0] = std::make_unique<LinearAllocatorPageManager>(this, kGpuExclusive);
 	m_PageManager[1] = std::make_unique<LinearAllocatorPageManager>(this, kCpuWritable);
 
-	m_DispatchIndirectCommandSignature = std::make_unique<CommandSignature>(this, 1);
-	m_DrawIndirectCommandSignature = std::make_unique<CommandSignature>(this, 1);
-
 	m_CommandManager = std::make_unique<CommandListManager>();
 	m_ContextManager = std::make_unique<ContextManager>(this);
 
@@ -3491,16 +3386,6 @@ std::map<size_t, ComPtr<ID3D12PipelineState>> &D3D12DeviceInstance::GetGraphicsP
 std::map<size_t, ComPtr<ID3D12PipelineState>> &D3D12DeviceInstance::GetComputePSOHashMap()
 {
 	return m_ComputePSOHashMap;
-}
-
-CommandSignature &D3D12DeviceInstance::GetDispatchIndirectCommandSignature()
-{
-	return *m_DispatchIndirectCommandSignature;
-}
-
-CommandSignature &D3D12DeviceInstance::GetDrawIndirectCommandSignature()
-{
-	return *m_DrawIndirectCommandSignature;
 }
 
 DescriptorAllocator *D3D12DeviceInstance::GetDescriptorAllocator()
