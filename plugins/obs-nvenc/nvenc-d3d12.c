@@ -1,13 +1,6 @@
 #include "nvenc-internal.h"
 #include "nvenc-helpers.h"
 
-/*
- * NVENC implementation using Direct3D 11 context and textures
- */
-
-/* ------------------------------------------------------------------------- */
-/* D3D11 Context/Device management                                           */
-
 static HANDLE get_lib(struct nvenc_data *enc, const char *lib)
 {
 	HMODULE mod = GetModuleHandleA(lib);
@@ -245,9 +238,6 @@ void d3d12_free(struct nvenc_data *enc)
 	}
 }
 
-/* ------------------------------------------------------------------------- */
-/* D3D11 Surface management                                                  */
-
 static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 {
 	ID3D12Device *const device = enc->device12;
@@ -439,9 +429,6 @@ void d3d12_free_readback(struct nvenc_data *enc, struct nv_bitstream *bs)
 		bfree(output);
 	}
 }
-
-/* ------------------------------------------------------------------------- */
-/* Actual encoding stuff                                                     */
 
 static ID3D12Resource *get_tex_from_handle(struct nvenc_data *enc, uint32_t handle, IDXGIKeyedMutex **km_out)
 {
