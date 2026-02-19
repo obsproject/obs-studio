@@ -49,3 +49,14 @@ static inline void enc_str(char **enc, char *end, const char *str)
 	AVal s;
 	*enc = AMF_EncodeString(*enc, end, flv_str(&s, str));
 }
+
+static inline void enc_obj_start_val(char **enc, char *end, const char *name)
+{
+	AVal s;
+	*enc = AMF_EncodeNamedObjectStart(*enc, end, flv_str(&s, name));
+}
+
+static inline void enc_obj_end(char **enc, char *end)
+{
+	*enc = AMF_EncodeInt24(*enc, end, AMF_OBJECT_END);
+}
