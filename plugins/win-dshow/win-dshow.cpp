@@ -1167,7 +1167,7 @@ static const char *GetDShowInputName(void *)
 static void proc_activate(void *data, calldata_t *cd)
 {
 	bool activate = calldata_bool(cd, "active");
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = static_cast<DShowInput *>(data);
 	input->SetActive(activate);
 }
 
@@ -1188,12 +1188,12 @@ static void *CreateDShowInput(obs_data_t *settings, obs_source_t *source)
 
 static void DestroyDShowInput(void *data)
 {
-	delete reinterpret_cast<DShowInput *>(data);
+	delete static_cast<DShowInput *>(data);
 }
 
 static void UpdateDShowInput(void *data, obs_data_t *settings)
 {
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = static_cast<DShowInput *>(data);
 	if (input->active)
 		input->QueueActivate(settings);
 }
@@ -1465,7 +1465,7 @@ static bool DeviceSelectionChanged(obs_properties_t *props, obs_property_t *p, o
 
 static bool VideoConfigClicked(obs_properties_t *props, obs_property_t *p, void *data)
 {
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = static_cast<DShowInput *>(data);
 	input->QueueAction(Action::ConfigVideo);
 
 	UNUSED_PARAMETER(props);
@@ -1476,7 +1476,7 @@ static bool VideoConfigClicked(obs_properties_t *props, obs_property_t *p, void 
 /*static bool AudioConfigClicked(obs_properties_t *props, obs_property_t *p,
 		void *data)
 {
-	DShowInput *input = reinterpret_cast<DShowInput*>(data);
+	DShowInput *input = static_cast<DShowInput*>(data);
 	input->QueueAction(Action::ConfigAudio);
 
 	UNUSED_PARAMETER(props);
@@ -1486,7 +1486,7 @@ static bool VideoConfigClicked(obs_properties_t *props, obs_property_t *p, void 
 
 static bool CrossbarConfigClicked(obs_properties_t *props, obs_property_t *p, void *data)
 {
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = static_cast<DShowInput *>(data);
 	input->QueueAction(Action::ConfigCrossbar1);
 
 	UNUSED_PARAMETER(props);
@@ -1497,7 +1497,7 @@ static bool CrossbarConfigClicked(obs_properties_t *props, obs_property_t *p, vo
 /*static bool Crossbar2ConfigClicked(obs_properties_t *props, obs_property_t *p,
 		void *data)
 {
-	DShowInput *input = reinterpret_cast<DShowInput*>(data);
+	DShowInput *input = static_cast<DShowInput*>(data);
 	input->QueueAction(Action::ConfigCrossbar2);
 
 	UNUSED_PARAMETER(props);
@@ -1545,7 +1545,7 @@ static bool AddAudioDevice(obs_property_t *device_list, const AudioDevice &devic
 
 static void PropertiesDataDestroy(void *data)
 {
-	delete reinterpret_cast<PropertiesData *>(data);
+	delete static_cast<PropertiesData *>(data);
 }
 
 static bool ResTypeChanged(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
@@ -1841,7 +1841,7 @@ static bool CustomAudioClicked(obs_properties_t *props, obs_property_t *p, obs_d
 
 static bool ActivateClicked(obs_properties_t *, obs_property_t *p, void *data)
 {
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = static_cast<DShowInput *>(data);
 
 	if (input->active) {
 		input->SetActive(false);
@@ -1856,7 +1856,7 @@ static bool ActivateClicked(obs_properties_t *, obs_property_t *p, void *data)
 
 static obs_properties_t *GetDShowProperties(void *obj)
 {
-	DShowInput *input = reinterpret_cast<DShowInput *>(obj);
+	DShowInput *input = static_cast<DShowInput *>(obj);
 	obs_properties_t *ppts = obs_properties_create();
 	PropertiesData *data = new PropertiesData;
 
@@ -1989,7 +1989,7 @@ void DShowModuleLogCallback(LogType type, const wchar_t *msg, void *param)
 
 static void HideDShowInput(void *data)
 {
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = static_cast<DShowInput *>(data);
 
 	if (input->deactivateWhenNotShowing && input->active)
 		input->QueueAction(Action::Deactivate);
@@ -1997,7 +1997,7 @@ static void HideDShowInput(void *data)
 
 static void ShowDShowInput(void *data)
 {
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = static_cast<DShowInput *>(data);
 
 	if (input->deactivateWhenNotShowing && input->active)
 		input->QueueAction(Action::Activate);
