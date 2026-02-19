@@ -847,7 +847,6 @@ static void obs_free_video(void)
 
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
-	deque_free(&obs->video.tasks);
 }
 
 static void obs_free_graphics(void)
@@ -954,7 +953,6 @@ static void obs_free_audio(void)
 	da_free(audio->monitors);
 	bfree(audio->monitoring_device_name);
 	bfree(audio->monitoring_device_id);
-	deque_free(&audio->tasks);
 	pthread_mutex_destroy(&audio->task_mutex);
 	pthread_mutex_destroy(&audio->monitoring_mutex);
 
@@ -1432,6 +1430,10 @@ void obs_shutdown(void)
 	obs_free_data();
 	obs_free_audio();
 	obs_free_video();
+
+	deque_free(&obs->audio.tasks);
+	deque_free(&obs->video.tasks);
+
 	os_task_queue_destroy(obs->destruction_task_thread);
 	obs_free_hotkeys();
 	obs_free_graphics();
