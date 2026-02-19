@@ -72,7 +72,7 @@ add_obs_plugin(obs-text PLATFORMS WINDOWS)
 add_obs_plugin(obs-transitions)
 add_obs_plugin(
     obs-vst
-    PLATFORMS WINDOWS MACOS LINUX
+    PLATFORMS WINDOWS MACOS LINUX FREEBSD
     WITH_MESSAGE
 )
 add_obs_plugin(obs-webrtc)
