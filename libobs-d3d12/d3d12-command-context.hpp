@@ -71,6 +71,36 @@ enum {
 	kCpuAllocatorPageSize = 0x200000 // 2MB
 };
 
+template<typename T> __forceinline T AlignUpWithMask(T value, size_t mask)
+{
+	return (T)(((size_t)value + mask) & ~mask);
+}
+
+template<typename T> __forceinline T AlignDownWithMask(T value, size_t mask)
+{
+	return (T)((size_t)value & ~mask);
+}
+
+template<typename T> __forceinline T AlignUp(T value, size_t alignment)
+{
+	return AlignUpWithMask(value, alignment - 1);
+}
+
+template<typename T> __forceinline T AlignDown(T value, size_t alignment)
+{
+	return AlignDownWithMask(value, alignment - 1);
+}
+
+template<typename T> __forceinline bool IsAligned(T value, size_t alignment)
+{
+	return 0 == ((size_t)value & (alignment - 1));
+}
+
+template<typename T> __forceinline T DivideByMultiple(T value, size_t alignment)
+{
+	return (T)((value + alignment - 1) / alignment);
+}
+
 static size_t BitsPerPixel(_In_ DXGI_FORMAT fmt)
 {
 	switch (fmt) {
@@ -1296,10 +1326,6 @@ public:
 	void SetDynamicSamplers(UINT RootIndex, UINT Offset, UINT Count, const D3D12_CPU_DESCRIPTOR_HANDLE Handles[]);
 
 	void Dispatch(size_t GroupCountX = 1, size_t GroupCountY = 1, size_t GroupCountZ = 1);
-	void Dispatch1D(size_t ThreadCountX, size_t GroupSizeX = 64);
-	void Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX = 8, size_t GroupSizeY = 8);
-	void Dispatch3D(size_t ThreadCountX, size_t ThreadCountY, size_t ThreadCountZ, size_t GroupSizeX,
-			size_t GroupSizeY, size_t GroupSizeZ);
 };
 
 class SamplerDesc : public D3D12_SAMPLER_DESC {

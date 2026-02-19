@@ -834,7 +834,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE GpuBuffer::CreateConstantBufferView(uint32_t Offset,
 		throw HRError("GpuBuffer: CreateConstantBufferView out of bounds");
 	}
 
-	Size = Math::AlignUp(Size, 16);
+	Size = AlignUp(Size, 16);
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
 	CBVDesc.BufferLocation = m_GpuVirtualAddress + (size_t)Offset;
@@ -1686,12 +1686,12 @@ DynAlloc LinearAllocator::Allocate(size_t SizeInBytes, size_t Alignment)
 	}
 
 	// Align the allocation
-	const size_t AlignedSize = Math::AlignUpWithMask(SizeInBytes, AlignmentMask);
+	const size_t AlignedSize = AlignUpWithMask(SizeInBytes, AlignmentMask);
 
 	if (AlignedSize > m_PageSize)
 		return AllocateLargePage(AlignedSize);
 
-	m_CurOffset = Math::AlignUp(m_CurOffset, Alignment);
+	m_CurOffset = AlignUp(m_CurOffset, Alignment);
 
 	if (m_CurOffset + AlignedSize > m_PageSize) {
 		if (m_CurPage == nullptr) {
@@ -2514,11 +2514,11 @@ void CommandContext::WriteBuffer(GpuResource &Dest, size_t DestOffset, const voi
 		return;
 	}
 
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to WriteBuffer must be 16-byte aligned.");
 	}
 	DynAlloc TempSpace = m_CpuLinearAllocator->Allocate(NumBytes, 512);
-	SIMDMemCopy(TempSpace.DataPtr, BufferData, Math::DivideByMultiple(NumBytes, 16));
+	memcpy(TempSpace.DataPtr, BufferData, NumBytes);
 	CopyBufferRegion(Dest, DestOffset, TempSpace.Buffer, TempSpace.Offset, NumBytes);
 }
 
@@ -2886,13 +2886,12 @@ void GraphicsContext::SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRES
 
 void GraphicsContext::SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void *BufferData)
 {
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicConstantBufferView must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
-	// memcpy(cb.DataPtr, BufferData, BufferSize);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetGraphicsRootConstantBufferView(RootIndex, cb.GpuAddress);
 }
 
@@ -2959,13 +2958,13 @@ void GraphicsContext::SetVertexBuffers(UINT StartSlot, UINT Count, const D3D12_V
 
 void GraphicsContext::SetDynamicVB(UINT Slot, size_t NumVertices, size_t VertexStride, const void *VertexData)
 {
-	if (!Math::IsAligned(VertexData, 16)) {
+	if (!IsAligned(VertexData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicVB must be 16-byte aligned.");
 	}
-	size_t BufferSize = Math::AlignUp(NumVertices * VertexStride, 16);
+	size_t BufferSize = AlignUp(NumVertices * VertexStride, 16);
 	DynAlloc vb = m_CpuLinearAllocator->Allocate(BufferSize);
 
-	SIMDMemCopy(vb.DataPtr, VertexData, BufferSize >> 4);
+	memcpy(vb.DataPtr, VertexData, BufferSize);
 
 	D3D12_VERTEX_BUFFER_VIEW VBView;
 	VBView.BufferLocation = vb.GpuAddress;
@@ -2977,13 +2976,13 @@ void GraphicsContext::SetDynamicVB(UINT Slot, size_t NumVertices, size_t VertexS
 
 void GraphicsContext::SetDynamicIB(size_t IndexCount, const uint16_t *IndexData)
 {
-	if (!Math::IsAligned(IndexData, 16)) {
+	if (!IsAligned(IndexData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicIB must be 16-byte aligned.");
 	}
-	size_t BufferSize = Math::AlignUp(IndexCount * sizeof(uint16_t), 16);
+	size_t BufferSize = AlignUp(IndexCount * sizeof(uint16_t), 16);
 	DynAlloc ib = m_CpuLinearAllocator->Allocate(BufferSize);
 
-	SIMDMemCopy(ib.DataPtr, IndexData, BufferSize >> 4);
+	memcpy(ib.DataPtr, IndexData, BufferSize);
 
 	D3D12_INDEX_BUFFER_VIEW IBView;
 	IBView.BufferLocation = ib.GpuAddress;
@@ -2995,12 +2994,12 @@ void GraphicsContext::SetDynamicIB(size_t IndexCount, const uint16_t *IndexData)
 
 void GraphicsContext::SetDynamicSRV(UINT RootIndex, size_t BufferSize, const void *BufferData)
 {
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicSRV must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetGraphicsRootShaderResourceView(RootIndex, cb.GpuAddress);
 }
 
@@ -3073,13 +3072,12 @@ void ComputeContext::SetConstantBuffer(UINT RootIndex, D3D12_GPU_VIRTUAL_ADDRESS
 
 void ComputeContext::SetDynamicConstantBufferView(UINT RootIndex, size_t BufferSize, const void *BufferData)
 {
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicConstantBufferView must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
-	//memcpy(cb.DataPtr, BufferData, BufferSize);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetComputeRootConstantBufferView(RootIndex, cb.GpuAddress);
 }
 
@@ -3088,12 +3086,12 @@ void ComputeContext::SetDynamicSRV(UINT RootIndex, size_t BufferSize, const void
 	if (BufferData == nullptr) {
 		return;
 	}
-	if (!Math::IsAligned(BufferData, 16)) {
+	if (!IsAligned(BufferData, 16)) {
 		throw HRError("BufferData pointer passed to SetDynamicSRV must be 16-byte aligned.");
 	}
 
 	DynAlloc cb = m_CpuLinearAllocator->Allocate(BufferSize);
-	SIMDMemCopy(cb.DataPtr, BufferData, Math::AlignUp(BufferSize, 16) >> 4);
+	memcpy(cb.DataPtr, BufferData, AlignUp(BufferSize, 16));
 	m_CommandList->SetComputeRootShaderResourceView(RootIndex, cb.GpuAddress);
 }
 
@@ -3149,23 +3147,6 @@ void ComputeContext::Dispatch(size_t GroupCountX, size_t GroupCountY, size_t Gro
 	m_DynamicViewDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
 	m_DynamicSamplerDescriptorHeap.CommitComputeRootDescriptorTables(m_CommandList);
 	m_CommandList->Dispatch((UINT)GroupCountX, (UINT)GroupCountY, (UINT)GroupCountZ);
-}
-
-void ComputeContext::Dispatch1D(size_t ThreadCountX, size_t GroupSizeX)
-{
-	Dispatch(Math::DivideByMultiple(ThreadCountX, GroupSizeX), 1, 1);
-}
-
-void ComputeContext::Dispatch2D(size_t ThreadCountX, size_t ThreadCountY, size_t GroupSizeX, size_t GroupSizeY)
-{
-	Dispatch(Math::DivideByMultiple(ThreadCountX, GroupSizeX), Math::DivideByMultiple(ThreadCountY, GroupSizeY), 1);
-}
-
-void ComputeContext::Dispatch3D(size_t ThreadCountX, size_t ThreadCountY, size_t ThreadCountZ, size_t GroupSizeX,
-				size_t GroupSizeY, size_t GroupSizeZ)
-{
-	Dispatch(Math::DivideByMultiple(ThreadCountX, GroupSizeX), Math::DivideByMultiple(ThreadCountY, GroupSizeY),
-		 Math::DivideByMultiple(ThreadCountZ, GroupSizeZ));
 }
 
 SamplerDesc::SamplerDesc(D3D12DeviceInstance *DeviceInstance) : m_DeviceInstance(DeviceInstance)
@@ -3606,7 +3587,7 @@ void D3D12DeviceInstance::InitializeBuffer(GpuBuffer &Dest, const void *BufferDa
 	CommandContext &InitContext = *GetNewGraphicsContext();
 
 	DynAlloc mem = InitContext.ReserveUploadMemory(NumBytes);
-	SIMDMemCopy(mem.DataPtr, BufferData, Math::DivideByMultiple(NumBytes, 16));
+	memcpy(mem.DataPtr, BufferData, NumBytes);
 
 	// copy data to the intermediate upload heap and then schedule a copy from the upload heap to the default texture
 	InitContext.TransitionResource(Dest, D3D12_RESOURCE_STATE_COPY_DEST, true);
