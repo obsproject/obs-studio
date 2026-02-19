@@ -36,6 +36,8 @@
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 
+typedef DARRAY(struct encoder_packet) packet_array_t;
+
 struct chapter {
 	uint64_t ts;
 	char *name;
@@ -79,8 +81,21 @@ struct mp4_output {
 	int64_t start_time;
 	int64_t max_time;
 
+	/* Replay buffer specifics */
+	int64_t save_ts;
+	bool discard_buffer;
+
+	obs_hotkey_id hotkey;
+	obs_hotkey_id hotkey_dump;
+
+	volatile bool muxing;
+	pthread_t mux_thread;
+	bool mux_thread_joinable;
+
+	struct deque packets;
+
 	/* Buffer for packets while we reinitialise the muxer after splitting */
-	DARRAY(struct encoder_packet) split_buffer;
+	packet_array_t split_buffer;
 };
 
 static inline bool stopping(struct mp4_output *out)
@@ -622,4 +637,411 @@ struct obs_output_info mov_output_info = {
 	.encoded_packet = mp4_output_packet,
 	.get_properties = mp4_output_properties,
 	.get_total_bytes = mp4_output_total_bytes,
+};
+
+/* ------------------------------------------------------------------------ */
+/* Replay Buffer */
+/* ------------------------------------------------------------------------ */
+
+struct replay_thread_params {
+	volatile bool *muxing;
+	packet_array_t packets;
+	obs_output_t *output;
+	enum mp4_flavor flavor;
+	int muxer_flags;
+	struct dstr path;
+};
+
+static void free_thread_params(struct replay_thread_params *params)
+{
+	da_free(params->packets);
+	dstr_free(&params->path);
+	bfree(params);
+}
+
+static const char *mp4_replay_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("MP4Replay");
+}
+
+static const char *mov_replay_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("MOVReplay");
+}
+
+static void mp4_replay_save_hotkey_internal(void *data, bool discard)
+{
+	struct mp4_output *out = data;
+
+	if (os_atomic_load_bool(&out->active)) {
+		obs_encoder_t *vencoder = obs_output_get_video_encoder(out->output);
+		if (obs_encoder_paused(vencoder)) {
+			info("Could not save buffer because encoders paused");
+			return;
+		}
+
+		out->save_ts = os_gettime_ns() / 1000LL;
+		out->discard_buffer = discard;
+	}
+}
+
+static void mp4_replay_save_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	if (pressed) {
+		mp4_replay_save_hotkey_internal(data, false);
+	}
+}
+
+static void mp4_replay_save_discard_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
+	if (pressed) {
+		mp4_replay_save_hotkey_internal(data, true);
+	}
+}
+
+static void mp4_replay_save_proc(void *data, calldata_t *cd)
+{
+	mp4_replay_save_hotkey(data, 0, NULL, true);
+	UNUSED_PARAMETER(cd);
+}
+
+static void mp4_replay_save_discard_proc(void *data, calldata_t *cd)
+{
+	mp4_replay_save_discard_hotkey(data, 0, NULL, true);
+	UNUSED_PARAMETER(cd);
+}
+
+static void mp4_replay_last_file(void *data, calldata_t *cd)
+{
+	struct mp4_output *out = data;
+
+	if (!os_atomic_load_bool(&out->muxing))
+		calldata_set_string(cd, "path", out->path.array);
+}
+
+static void *mp4_replay_create_internal(obs_data_t *settings, obs_output_t *output, enum mp4_flavor flavor)
+{
+	struct mp4_output *out = bzalloc(sizeof(struct mp4_output));
+	out->output = output;
+	out->muxer_flavor = flavor;
+	pthread_mutex_init(&out->mutex, NULL);
+
+	out->hotkey = obs_hotkey_register_output(output, "MP4Replay.Save", obs_module_text("MP4Replay.Save"),
+						 mp4_replay_save_hotkey, out);
+	out->hotkey_dump = obs_hotkey_register_output(output, "MP4Replay.SaveDiscard",
+						      obs_module_text("MP4Replay.SaveDiscard"),
+						      mp4_replay_save_discard_hotkey, out);
+
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(ph, "void save()", mp4_replay_save_proc, out);
+	proc_handler_add(ph, "void save_discard()", mp4_replay_save_discard_proc, out);
+	proc_handler_add(ph, "void get_last_replay(out string path)", mp4_replay_last_file, out);
+
+	signal_handler_t *sh = obs_output_get_signal_handler(output);
+	signal_handler_add(sh, "void saved()");
+
+	UNUSED_PARAMETER(settings);
+	return out;
+}
+
+static void *mp4_replay_create(obs_data_t *settings, obs_output_t *output)
+{
+	return mp4_replay_create_internal(settings, output, FLAVOR_MP4);
+}
+
+static void *mov_replay_create(obs_data_t *settings, obs_output_t *output)
+{
+	return mp4_replay_create_internal(settings, output, FLAVOR_MOV);
+}
+
+static void mp4_replay_buffer_clear(struct mp4_output *out)
+{
+	while (out->packets.size > 0) {
+		struct encoder_packet pkt;
+		deque_pop_front(&out->packets, &pkt, sizeof(pkt));
+		obs_encoder_packet_release(&pkt);
+	}
+
+	deque_free(&out->packets);
+}
+
+static void mp4_replay_destroy(void *data)
+{
+	struct mp4_output *out = data;
+
+	if (out->hotkey)
+		obs_hotkey_unregister(out->hotkey);
+	if (out->hotkey_dump)
+		obs_hotkey_unregister(out->hotkey_dump);
+	if (out->mux_thread_joinable)
+		pthread_join(out->mux_thread, NULL);
+
+	mp4_replay_buffer_clear(out);
+	mp4_output_destroy(data);
+}
+
+static bool mp4_replay_start(void *data)
+{
+	struct mp4_output *out = data;
+
+	if (!obs_output_can_begin_data_capture(out->output, 0))
+		return false;
+	if (!obs_output_initialize_encoders(out->output, 0))
+		return false;
+
+	obs_data_t *s = obs_output_get_settings(out->output);
+	out->max_time = obs_data_get_int(s, "max_time_sec") * 1000000LL;
+	out->max_size = obs_data_get_int(s, "max_size_mb") * (1024 * 1024);
+	/* Parse custom options. */
+	const char *muxer_settings = obs_data_get_string(s, "muxer_settings");
+	parse_custom_options(out, muxer_settings);
+	obs_data_release(s);
+
+	os_atomic_set_bool(&out->active, true);
+	out->total_bytes = 0;
+	out->cur_size = 0;
+	out->start_time = 0;
+	out->save_ts = 0;
+
+	obs_output_begin_data_capture(out->output, 0);
+
+	return true;
+}
+
+static inline void purge_one(struct mp4_output *out)
+{
+	struct encoder_packet removed, first;
+
+	deque_pop_front(&out->packets, &removed, sizeof(struct encoder_packet));
+	out->cur_size -= (int64_t)removed.size;
+	obs_encoder_packet_release(&removed);
+
+	if (!out->packets.size) {
+		out->start_time = 0;
+		return;
+	}
+
+	/* Update start time to current front packet */
+	deque_peek_front(&out->packets, &first, sizeof(struct encoder_packet));
+	out->start_time = first.dts_usec;
+}
+
+static inline bool buffer_too_large(struct mp4_output *out, struct encoder_packet *packet)
+{
+	if (!out->packets.size)
+		return false;
+	if (out->max_size && (out->cur_size + packet->size) < out->max_size)
+		return false;
+	if (out->max_time && (packet->dts_usec - out->start_time) < out->max_time)
+		return false;
+
+	return true;
+}
+
+static void mp4_replay_buffer_purge(struct mp4_output *out, struct encoder_packet *packet)
+{
+	struct encoder_packet *front = deque_data(&out->packets, 0);
+
+	/* Keep dropping packets until the buffer is below the thresholds *and* the first packet is a video keyframe. */
+	while (front && (buffer_too_large(out, packet) || front->type != OBS_ENCODER_VIDEO || !front->keyframe)) {
+		purge_one(out);
+		front = deque_data(&out->packets, 0);
+	}
+}
+
+static void *mp4_replay_mux_thread(void *data)
+{
+	bool error = false;
+	struct replay_thread_params *params = data;
+	struct mp4_mux *muxer = NULL;
+	struct serializer serializer = {0};
+
+	if (!buffered_file_serializer_init(&serializer, params->path.array, 0, 0)) {
+		blog(LOG_ERROR, "[replay muxer thread] Cannot open file '%s'", params->path.array);
+		error = true;
+	}
+
+	if (!error) {
+		muxer = mp4_mux_create(params->output, &serializer, params->muxer_flags, params->flavor);
+
+		for (size_t idx = 0; idx < params->packets.num; idx++) {
+			struct encoder_packet *pkt = &params->packets.array[idx];
+			if (!error)
+				error = mp4_mux_submit_packet(muxer, pkt);
+			/* Even if there was an error we still need to release the packets. */
+			obs_encoder_packet_release(pkt);
+		}
+
+		if (!error)
+			error = mp4_mux_finalise(muxer);
+	}
+
+	os_atomic_set_bool(params->muxing, false);
+
+	if (!error) {
+		calldata_t cd = {0};
+		signal_handler_t *sh = obs_output_get_signal_handler(params->output);
+		signal_handler_signal(sh, "saved", &cd);
+	}
+
+	buffered_file_serializer_free(&serializer);
+	free_thread_params(params);
+
+	if (muxer)
+		obs_queue_task(OBS_TASK_DESTROY, mp4_mux_destroy_task, muxer, false);
+
+	return NULL;
+}
+
+static inline bool first_packet_is_less_than(struct deque *dq, int64_t dts_usec)
+{
+	if (!dq->size)
+		return false;
+
+	struct encoder_packet *pkt = deque_data(dq, 0);
+	return pkt->dts_usec < dts_usec;
+}
+
+static void mp4_replay_save(struct mp4_output *out)
+{
+	const size_t size = sizeof(struct encoder_packet);
+	size_t num_packets = out->packets.size / size;
+
+	struct replay_thread_params *tp = bzalloc(sizeof(struct replay_thread_params));
+	tp->muxing = &out->muxing;
+	tp->flavor = out->muxer_flavor;
+	tp->output = out->output;
+	tp->muxer_flags = out->flags;
+
+	/* Store all packets we want to mux */
+	int64_t last_idr_dts = 0;
+
+	for (size_t idx = 0; idx < num_packets; idx++) {
+		struct encoder_packet *pkt = deque_data(&out->packets, idx * size);
+		if (pkt->type == OBS_ENCODER_VIDEO && pkt->keyframe)
+			last_idr_dts = pkt->dts_usec;
+
+		struct encoder_packet *arr_pkt = da_push_back_new(tp->packets);
+		obs_encoder_packet_ref(arr_pkt, pkt);
+	}
+
+	/* If discard hotkey was used, discard all frames up to the last IDR. */
+	while (out->discard_buffer && first_packet_is_less_than(&out->packets, last_idr_dts)) {
+		purge_one(out);
+	}
+
+	generate_filename(out, &out->path, true);
+	dstr_copy_dstr(&tp->path, &out->path);
+
+	os_atomic_set_bool(&out->muxing, true);
+	out->mux_thread_joinable = pthread_create(&out->mux_thread, NULL, mp4_replay_mux_thread, tp) == 0;
+	if (!out->mux_thread_joinable) {
+		warn("Failed to create muxer thread");
+		os_atomic_set_bool(&out->muxing, false);
+	}
+}
+
+static void mp4_replay_deactivate(struct mp4_output *out, int code)
+{
+	if (code) {
+		obs_output_signal_stop(out->output, code);
+	} else if (stopping(out)) {
+		obs_output_end_data_capture(out->output);
+	}
+
+	os_atomic_set_bool(&out->active, false);
+	os_atomic_set_bool(&out->stopping, false);
+	mp4_replay_buffer_clear(out);
+}
+
+static void mp4_replay_packet(void *data, struct encoder_packet *packet)
+{
+	struct mp4_output *out = data;
+
+	struct encoder_packet pkt;
+
+	if (!active(out))
+		return;
+
+	/* encoder failure */
+	if (!packet) {
+		mp4_replay_deactivate(out, OBS_OUTPUT_ENCODE_ERROR);
+		return;
+	}
+
+	if (stopping(out)) {
+		if (packet->sys_dts_usec >= (int64_t)out->stop_ts) {
+			mp4_replay_deactivate(out, 0);
+			return;
+		}
+	}
+
+	obs_encoder_packet_ref(&pkt, packet);
+	mp4_replay_buffer_purge(out, packet);
+
+	if (!out->packets.size)
+		out->start_time = pkt.dts_usec;
+
+	out->cur_size += pkt.size;
+
+	deque_push_back(&out->packets, packet, sizeof(struct encoder_packet));
+
+	if (out->save_ts && packet->sys_dts_usec >= out->save_ts) {
+		if (os_atomic_load_bool(&out->muxing))
+			return;
+
+		if (out->mux_thread_joinable) {
+			pthread_join(out->mux_thread, NULL);
+			out->mux_thread_joinable = false;
+		}
+
+		out->save_ts = 0;
+		mp4_replay_save(out);
+	}
+}
+
+static void mp4_replay_defaults(obs_data_t *s)
+{
+	obs_data_set_default_int(s, "max_time_sec", 15);
+	obs_data_set_default_int(s, "max_size_mb", 500);
+	obs_data_set_default_string(s, "format", "%CCYY-%MM-%DD %hh-%mm-%ss");
+	obs_data_set_default_bool(s, "allow_spaces", true);
+}
+
+struct obs_output_info mp4_replay_info = {
+	.id = "mp4_replay_buffer",
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK_AV | OBS_OUTPUT_CAN_PAUSE,
+	.encoded_video_codecs = "h264;hevc;av1",
+	.encoded_audio_codecs = "aac;alac;flac;opus",
+	.get_name = mp4_replay_name,
+	.create = mp4_replay_create,
+	.destroy = mp4_replay_destroy,
+	.start = mp4_replay_start,
+	.stop = mp4_output_stop,
+	.encoded_packet = mp4_replay_packet,
+	.get_total_bytes = mp4_output_total_bytes,
+	.get_defaults = mp4_replay_defaults,
+};
+
+struct obs_output_info mov_replay_info = {
+	.id = "mov_replay_buffer",
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK_AV | OBS_OUTPUT_CAN_PAUSE,
+	.encoded_video_codecs = "h264;hevc;prores",
+	.encoded_audio_codecs = "aac;alac",
+	.get_name = mov_replay_name,
+	.create = mov_replay_create,
+	.destroy = mp4_replay_destroy,
+	.start = mp4_replay_start,
+	.stop = mp4_output_stop,
+	.encoded_packet = mp4_replay_packet,
+	.get_total_bytes = mp4_output_total_bytes,
+	.get_defaults = mp4_replay_defaults,
 };
