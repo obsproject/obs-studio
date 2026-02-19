@@ -139,6 +139,7 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	stackedMixerArea->addWidget(vMixerScrollArea);
 
 	mixerToolbar = new QToolBar(this);
+	mixerToolbar->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
 	mixerToolbar->setIconSize(QSize(16, 16));
 	mixerToolbar->setFloatable(false);
 
