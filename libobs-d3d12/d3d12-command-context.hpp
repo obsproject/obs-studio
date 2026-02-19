@@ -540,7 +540,7 @@ protected:
 	// TODO
 	UINT64 GetAvailableIndex();
 	void FreeIndex(UINT64 index);
-	DescriptorHandleNode *m_DescriptorPoolHead;
+	DescriptorHandleNode *m_DescriptorPoolHead = nullptr;
 	DescriptorHandleNode m_DescriptorPoolNodes[kMaxNumDescriptors];
 };
 

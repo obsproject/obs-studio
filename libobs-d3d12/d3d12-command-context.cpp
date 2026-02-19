@@ -165,7 +165,8 @@ DescriptorAllocator::DescriptorAllocator(D3D12DeviceInstance *DeviceInstance, D3
 	  m_Type(Type),
 	  m_CurrentHeap(nullptr),
 	  m_DescriptorSize(0),
-	  m_RemainingFreeHandles(0)
+	  m_RemainingFreeHandles(0),
+	  m_DescriptorPoolHead(nullptr)
 {
 	m_CurrentHandle.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
 }
