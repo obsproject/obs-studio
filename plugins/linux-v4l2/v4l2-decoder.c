@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <obs-module.h>
 #include <linux/videodev2.h>
-#include <libavutil/error.h>
 
 #include "v4l2-decoder.h"
 
@@ -43,6 +42,8 @@ int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt)
 	if (!decoder->context) {
 		return -1;
 	}
+	decoder->context->thread_count = 0;
+	decoder->context->thread_type = FF_THREAD_FRAME;
 
 	decoder->packet = av_packet_alloc();
 	if (!decoder->packet) {
@@ -95,12 +96,8 @@ int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data, size_t length
 		return -1;
 	}
 	r = avcodec_receive_frame(decoder->context, decoder->frame);
-	if (r == AVERROR(EAGAIN)) {
-		blog(LOG_DEBUG, "failed to receive frame in this state, try to send new frame to codec");
-		return 0;
-	} else if (r < 0) {
-		blog(LOG_ERROR, "failed to receive frame from codec");
-		return -1;
+	if (r < 0) {
+		return r;
 	}
 
 	for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i) {
