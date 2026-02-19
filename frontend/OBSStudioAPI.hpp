@@ -181,6 +181,10 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_set_current_preview_scene(obs_source_t *scene) override;
 
+	bool obs_frontend_get_swap_scenes_mode(void) override;
+
+	void obs_frontend_set_swap_scenes_mode(bool enabled) override;
+
 	void obs_frontend_take_screenshot(void) override;
 
 	void obs_frontend_take_source_screenshot(obs_source_t *source) override;
