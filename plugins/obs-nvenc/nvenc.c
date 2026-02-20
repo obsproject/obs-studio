@@ -219,6 +219,12 @@ static bool is_hdr(const enum video_colorspace space)
 	return space == VIDEO_CS_2100_HLG || space == VIDEO_CS_2100_PQ;
 }
 
+static bool is_444(const struct nvenc_data *enc)
+{
+	return enc->in_format == VIDEO_FORMAT_I444 || obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+	       obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_AYUV);
+}
+
 static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 {
 	UNUSED_PARAMETER(settings);
@@ -466,7 +472,9 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
 		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
-		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
+		vui_params->colourMatrix = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA)
+						   ? NV_ENC_VUI_MATRIX_COEFFS_RGB
+						   : NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	default:
 		break;
@@ -483,7 +491,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	/* -------------------------- */
 	/* profile                    */
 
-	if (enc->in_format == VIDEO_FORMAT_I444) {
+	if (is_444(enc)) {
 		config->profileGUID = NV_ENC_H264_PROFILE_HIGH_444_GUID;
 		h264_config->chromaFormatIDC = 3;
 #ifdef NVENC_13_0_OR_LATER
@@ -570,7 +578,9 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
 		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
-		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
+		vui_params->colourMatrix = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA)
+						   ? NV_ENC_VUI_MATRIX_COEFFS_RGB
+						   : NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_2100_PQ:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
@@ -600,7 +610,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 
 	bool profile_is_10bpc = false;
 
-	if (enc->in_format == VIDEO_FORMAT_I444) {
+	if (is_444(enc)) {
 		config->profileGUID = NV_ENC_HEVC_PROFILE_FREXT_GUID;
 		hevc_config->chromaFormatIDC = 3;
 	} else if (astrcmpi(enc->props.profile, "main10") == 0) {
@@ -783,7 +793,7 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 
 	enc->in_format = get_preferred_format(pref_format);
 
-	if (enc->in_format == VIDEO_FORMAT_I444 && !support_444) {
+	if (is_444(enc) && !support_444) {
 		NV_FAIL(obs_module_text("444Unsupported"));
 		return false;
 	}
@@ -933,8 +943,7 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 #endif
 
 	if (gpu_set && gpu != -1 && texture && !force_tex) {
-		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back "
-			       "to non-texture encoder");
+		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back to non-texture encoder");
 		goto reroute;
 	}
 
@@ -942,16 +951,16 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 		if (obs_encoder_gpu_scaling_enabled(encoder)) {
 			blog(LOG_INFO, "[obs-nvenc] GPU scaling enabled");
 		} else if (texture) {
-			blog(LOG_INFO, "[obs-nvenc] CPU scaling enabled, falling back to"
-				       " non-texture encoder");
+			blog(LOG_INFO, "[obs-nvenc] CPU scaling enabled, falling back to non-texture encoder");
 			goto reroute;
 		}
 	}
 
 	if (texture && !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
-	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010)) {
-		blog(LOG_INFO, "[obs-nvenc] nv12/p010 not active, falling back to "
-			       "non-texture encoder");
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV)) {
+		blog(LOG_INFO, "[obs-nvenc] Shared textures not active, falling back to non-texture encoder");
 		goto reroute;
 	}
 
@@ -1362,6 +1371,21 @@ static void nvenc_soft_video_info(void *data, struct video_scale_info *info)
 	info->format = enc->in_format;
 }
 
+static void nvenc_tex_video_info(void *data, struct video_scale_info *info)
+{
+	UNUSED_PARAMETER(data);
+	/* Override to GBRA for BGRA to enable RGB texture encoding without colour conversion. */
+	if (info->format == VIDEO_FORMAT_BGRA) {
+		info->format = VIDEO_FORMAT_GBRA;
+		info->range = VIDEO_RANGE_FULL;
+		info->colorspace = VIDEO_CS_SRGB;
+	} else if (info->format == VIDEO_FORMAT_I444) {
+		info->format = VIDEO_FORMAT_AYUV;
+	} else {
+		info->format = get_preferred_format(info->format);
+	}
+}
+
 static bool nvenc_extra_data(void *data, uint8_t **header, size_t *size)
 {
 	struct nvenc_data *enc = data;
@@ -1406,6 +1430,7 @@ struct obs_encoder_info h264_nvenc_info = {
 	.get_properties = h264_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
+	.get_video_info = nvenc_tex_video_info,
 };
 
 #ifdef ENABLE_HEVC
@@ -1427,6 +1452,7 @@ struct obs_encoder_info hevc_nvenc_info = {
 	.get_properties = hevc_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
+	.get_video_info = nvenc_tex_video_info,
 };
 #endif
 
@@ -1447,6 +1473,7 @@ struct obs_encoder_info av1_nvenc_info = {
 	.get_defaults = av1_nvenc_defaults,
 	.get_properties = av1_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
+	.get_video_info = nvenc_tex_video_info,
 };
 
 struct obs_encoder_info h264_nvenc_soft_info = {
