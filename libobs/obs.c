@@ -152,7 +152,7 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 	video->using_p010_tex = info->format == VIDEO_FORMAT_P010 ? gs_p010_available() : false;
 
 	if (!video->conversion_needed) {
-		blog(LOG_INFO, "GPU conversion not available for format: %u", (unsigned int)info->format);
+		blog(LOG_INFO, "GPU conversion not available for format: %s", get_video_format_name(info->format));
 		video->gpu_conversion = false;
 		video->using_nv12_tex = false;
 		video->using_p010_tex = false;
@@ -1520,6 +1520,26 @@ static inline bool size_valid(uint32_t width, uint32_t height)
 	return (width >= OBS_SIZE_MIN && height >= OBS_SIZE_MIN && width <= OBS_SIZE_MAX && height <= OBS_SIZE_MAX);
 }
 
+const char *get_scale_type_name(enum obs_scale_type type)
+{
+	switch (type) {
+	case OBS_SCALE_DISABLE:
+		return "Disabled";
+	case OBS_SCALE_POINT:
+		return "Point";
+	case OBS_SCALE_BICUBIC:
+		return "Bicubic";
+	case OBS_SCALE_BILINEAR:
+		return "Bilinear";
+	case OBS_SCALE_LANCZOS:
+		return "Lanczos";
+	case OBS_SCALE_AREA:
+		return "Area";
+	}
+
+	return "Unknown";
+}
+
 int obs_reset_video(struct obs_video_info *ovi)
 {
 	if (!obs)
@@ -1548,27 +1568,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 		}
 	}
 
-	const char *scale_type_name = "";
-	switch (ovi->scale_type) {
-	case OBS_SCALE_DISABLE:
-		scale_type_name = "Disabled";
-		break;
-	case OBS_SCALE_POINT:
-		scale_type_name = "Point";
-		break;
-	case OBS_SCALE_BICUBIC:
-		scale_type_name = "Bicubic";
-		break;
-	case OBS_SCALE_BILINEAR:
-		scale_type_name = "Bilinear";
-		break;
-	case OBS_SCALE_LANCZOS:
-		scale_type_name = "Lanczos";
-		break;
-	case OBS_SCALE_AREA:
-		scale_type_name = "Area";
-		break;
-	}
+	const char *scale_type_name = get_scale_type_name(ovi->scale_type);
 
 	bool yuv = format_is_yuv(ovi->output_format);
 	const char *yuv_format = get_video_colorspace_name(ovi->colorspace);
