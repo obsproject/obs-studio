@@ -367,6 +367,17 @@ static void remove_cr(wchar_t *source)
 	source[j] = '\0';
 }
 
+static void remove_utf8_nulls(char *str, size_t len)
+{
+	size_t j = 0;
+	for (size_t i = 0; i < len; i++) {
+		if (str[i] != '\0') {
+			str[j++] = str[i];
+		}
+	}
+	str[j] = '\0';
+}
+
 void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 {
 	FILE *tmp_file = NULL;
@@ -408,6 +419,8 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	tmp_read = bzalloc(filesize + 1);
 	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
 	fclose(tmp_file);
+
+	remove_utf8_nulls(tmp_read, filesize);
 
 	if (srcdata->text != NULL) {
 		bfree(srcdata->text);
@@ -490,6 +503,8 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	tmp_read = bzalloc((filesize - cur_pos) + 1);
 	bytes_read = fread(tmp_read, filesize - cur_pos, 1, tmp_file);
 	fclose(tmp_file);
+
+	remove_utf8_nulls(tmp_read, filesize - cur_pos);
 
 	if (srcdata->text != NULL) {
 		bfree(srcdata->text);
