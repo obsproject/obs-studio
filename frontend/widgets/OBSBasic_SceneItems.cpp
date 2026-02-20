@@ -183,9 +183,13 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
 
-	if (obs_scene_from_source(source) != NULL)
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RemoveScene",
-					  Q_ARG(OBSSource, OBSSource(source)));
+	if (obs_scene_from_source(source) != NULL) {
+		OBSCanvasAutoRelease canvas = obs_source_get_canvas(source);
+		if (canvas && obs_canvas_get_flags(canvas) & MAIN) {
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RemoveScene",
+						  Q_ARG(OBSSource, OBSSource(source)));
+		}
+	}
 }
 
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)
