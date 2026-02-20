@@ -97,7 +97,8 @@ static DXGI_FORMAT d3d11_format(const obs_encoder_t *encoder)
 		return DXGI_FORMAT_NV12;
 	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010))
 		return DXGI_FORMAT_P010;
-	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA))
+	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) ||
+	    obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV))
 		return DXGI_FORMAT_AYUV;
 
 	return DXGI_FORMAT_UNKNOWN;
@@ -109,7 +110,8 @@ static NV_ENC_BUFFER_FORMAT nvenc_format(const obs_encoder_t *encoder)
 		return NV_ENC_BUFFER_FORMAT_NV12;
 	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010))
 		return NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
-	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA))
+	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) ||
+	    obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV))
 		return NV_ENC_BUFFER_FORMAT_AYUV;
 
 	return NV_ENC_BUFFER_FORMAT_UNDEFINED;

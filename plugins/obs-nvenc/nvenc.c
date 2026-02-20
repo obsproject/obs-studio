@@ -221,7 +221,8 @@ static bool is_hdr(const enum video_colorspace space)
 
 static bool is_444(const struct nvenc_data *enc)
 {
-	return enc->in_format == VIDEO_FORMAT_I444 || obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA);
+	return enc->in_format == VIDEO_FORMAT_I444 || obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+	       obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_AYUV);
 }
 
 static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
@@ -942,8 +943,7 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 #endif
 
 	if (gpu_set && gpu != -1 && texture && !force_tex) {
-		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back "
-			       "to non-texture encoder");
+		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back to non-texture encoder");
 		goto reroute;
 	}
 
@@ -951,17 +951,16 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 		if (obs_encoder_gpu_scaling_enabled(encoder)) {
 			blog(LOG_INFO, "[obs-nvenc] GPU scaling enabled");
 		} else if (texture) {
-			blog(LOG_INFO, "[obs-nvenc] CPU scaling enabled, falling back to"
-				       " non-texture encoder");
+			blog(LOG_INFO, "[obs-nvenc] CPU scaling enabled, falling back to non-texture encoder");
 			goto reroute;
 		}
 	}
 
 	if (texture && !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
 	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010) &&
-	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA)) {
-		blog(LOG_INFO, "[obs-nvenc] nv12/p010/gbra not active, falling back to "
-			       "non-texture encoder");
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV)) {
+		blog(LOG_INFO, "[obs-nvenc] Shared textures not active, falling back to non-texture encoder");
 		goto reroute;
 	}
 
@@ -1380,6 +1379,8 @@ static void nvenc_tex_video_info(void *data, struct video_scale_info *info)
 		info->format = VIDEO_FORMAT_GBRA;
 		info->range = VIDEO_RANGE_FULL;
 		info->colorspace = VIDEO_CS_SRGB;
+	} else if (info->format == VIDEO_FORMAT_I444) {
+		info->format = VIDEO_FORMAT_AYUV;
 	} else {
 		info->format = get_preferred_format(info->format);
 	}

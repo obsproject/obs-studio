@@ -164,7 +164,8 @@ bool cuda_init_surfaces(struct nvenc_data *enc)
 	} else {
 		if (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010)) {
 			enc->surface_format = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
-		} else if (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA)) {
+		} else if (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+			   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_AYUV)) {
 			enc->surface_format = NV_ENC_BUFFER_FORMAT_AYUV;
 		} else {
 			enc->surface_format = NV_ENC_BUFFER_FORMAT_NV12;
