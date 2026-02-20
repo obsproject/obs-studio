@@ -811,6 +811,16 @@ float4 PSPlanar444A_12LE_Reverse(FragPos frag_in) : TARGET
 	return float4(rgb, alpha);
 }
 
+float4 PSAYUV(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	float3 rgb = rgba.rgb;
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	return float4(v, u, y, rgba.a);
+}
+
 float4 PSAYUV_Reverse(FragPos frag_in) : TARGET
 {
 	float4 yuva = image.Load(int3(frag_in.pos.xy, 0));
@@ -1118,6 +1128,12 @@ float4 PSR10L_HLG_2020_709_Limited_Reverse(FragPos frag_in) : TARGET
 	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
 	float3 rgb = rec2020_to_rec709(hdr2020);
 	return float4(rgb, 1.);
+}
+
+float4 PSGBRA(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	return float4(rgba.r, rgba.b, rgba.g, rgba.a);
 }
 
 technique Planar_Y
@@ -1606,6 +1622,15 @@ technique YA2L_Reverse
 	}
 }
 
+technique AYUV
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSAYUV(frag_in);
+	}
+}
+
 technique AYUV_Reverse
 {
 	pass
@@ -1819,5 +1844,14 @@ technique R10L_HLG_2020_709_Limited_Reverse
 	{
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSR10L_HLG_2020_709_Limited_Reverse(frag_in);
+	}
+}
+
+technique GBRA
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSGBRA(frag_in);
 	}
 }

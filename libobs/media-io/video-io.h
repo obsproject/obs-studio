@@ -94,6 +94,11 @@ enum video_format {
 
 	/* packed uncompressed 10-bit format */
 	VIDEO_FORMAT_R10L,
+
+	/* packed uncompressed 8-bit format. Same as BGRA but with blue and green channels swapped to allow for direct
+	 * encoding of RGB data in various codecs by using the identity matrix specified in ITU H.273 Section 8.3.
+	 * Needs to be passed into encoders as AYUV, with Y = G, U = B, V = R, and A = A. */
+	VIDEO_FORMAT_GBRA,
 };
 
 enum video_trc {
@@ -168,6 +173,7 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_BGR3:
 	case VIDEO_FORMAT_R10L:
+	case VIDEO_FORMAT_GBRA:
 		return false;
 	}
 
@@ -227,6 +233,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "v210";
 	case VIDEO_FORMAT_R10L:
 		return "R10l";
+	case VIDEO_FORMAT_GBRA:
+		return "GBRA";
 	case VIDEO_FORMAT_NONE:;
 	}
 
