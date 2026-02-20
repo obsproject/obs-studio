@@ -522,6 +522,9 @@ struct gs_texture_3d : gs_texture {
 		      uint32_t levels, const uint8_t *const *data, uint32_t flags);
 
 	gs_texture_3d(gs_device_t *device, uint32_t handle);
+
+	virtual ~gs_texture_3d();
+	virtual void Destroy() override;
 };
 
 struct gs_zstencil_buffer : gs_obj, public D3D12Graphics::DepthBuffer {
@@ -930,6 +933,7 @@ struct gs_device {
 	BlendState curBlendState;
 
 	gs_rect viewport;
+	gs_rect scissorRect;
 
 	std::vector<mat4float> projStack;
 
@@ -961,7 +965,7 @@ struct gs_device {
 
 	void RebuildDevice();
 
-	D3D12Graphics::GraphicsContext *context = nullptr;
+	D3D12Graphics::GraphicsContext *curContext = nullptr;
 
 	gs_monitor_color_info GetMonitorColorInfo(HMONITOR hMonitor);
 

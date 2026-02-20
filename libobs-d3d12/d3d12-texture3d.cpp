@@ -201,3 +201,25 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t handle)
 
 	InitResourceView();
 }
+
+gs_texture_3d::~gs_texture_3d()
+{
+	Destroy();
+}
+
+void gs_texture_3d::Destroy()
+{
+	if (device) {
+		device->d3d12Instance->GetCommandManager().IdleGPU();
+	}
+
+	if (shaderSRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		shaderSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	if (shaderLinearSRV.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
+		shaderLinearSRV.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+	}
+
+	GpuResource::Destroy();
+}

@@ -334,6 +334,7 @@ static void d3d12_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
 		ID3D12Resource *tex12 = (ID3D12Resource *)(nvtex->tex);
 		tex12->lpVtbl->Release(tex12);
+		bfree(nvtex->input_res);
 	}
 }
 
@@ -426,6 +427,7 @@ void d3d12_free_readback(struct nvenc_data *enc, struct nv_bitstream *bs)
 		nv.nvEncUnregisterResource(enc->session, output->res);
 		ID3D12Resource *tex12 = (ID3D12Resource *)(output->tex);
 		tex12->lpVtbl->Release(tex12);
+		bfree(output->output_res);
 		bfree(output);
 	}
 }
