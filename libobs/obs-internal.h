@@ -345,8 +345,7 @@ struct obs_core_video_mix {
 	bool texture_rendered;
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
-	bool using_nv12_tex;
-	bool using_p010_tex;
+	enum video_format encoder_texture_format;
 	struct deque vframe_info_buffer;
 	struct deque vframe_info_buffer_gpu;
 	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
