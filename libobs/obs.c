@@ -146,14 +146,18 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 	}
 }
 
-static bool video_format_texture_supported(enum video_format input)
+static bool video_format_texture_supported(const enum video_format input_format)
 {
-	if (input == VIDEO_FORMAT_NV12)
+	switch (input_format) {
+	case VIDEO_FORMAT_NV12:
 		return gs_nv12_available();
-	if (input == VIDEO_FORMAT_P010)
+	case VIDEO_FORMAT_P010:
 		return gs_p010_available();
-
-	return false;
+	case VIDEO_FORMAT_GBRA:
+		return gs_ayuv_available();
+	default:
+		return false;
+	}
 }
 
 static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
@@ -192,6 +196,12 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 	} else if (video->encoder_texture_format == VIDEO_FORMAT_P010) {
 		if (!gs_texture_create_p010(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
 					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
+			return false;
+		}
+	} else if (video->encoder_texture_format == VIDEO_FORMAT_GBRA) {
+		video->convert_textures_encode[0] = gs_texture_create(info->width, info->height, GS_AYUV, 1, NULL,
+								      GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		if (!video->convert_textures_encode[0]) {
 			return false;
 		}
 	}

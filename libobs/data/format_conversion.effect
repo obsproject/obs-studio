@@ -1120,6 +1120,12 @@ float4 PSR10L_HLG_2020_709_Limited_Reverse(FragPos frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
+float4 PSGBRA(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	return float4(rgba.r, rgba.b, rgba.g, rgba.a);
+}
+
 technique Planar_Y
 {
 	pass
@@ -1819,5 +1825,14 @@ technique R10L_HLG_2020_709_Limited_Reverse
 	{
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSR10L_HLG_2020_709_Limited_Reverse(frag_in);
+	}
+}
+
+technique GBRA
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSGBRA(frag_in);
 	}
 }
