@@ -134,7 +134,7 @@ void OBSBasic::on_actionPasteRef_triggered()
 			continue;
 		}
 
-		OBSBasicSourceSelect::SourcePaste(copyInfo, false);
+		OBSBasicSourceSelect::sourcePaste(copyInfo, false);
 		RefreshSources(scene);
 	}
 
@@ -156,7 +156,7 @@ void OBSBasic::on_actionPasteDup_triggered()
 
 	for (size_t i = clipboard.size(); i > 0; i--) {
 		SourceCopyInfo &copyInfo = clipboard[i - 1];
-		OBSBasicSourceSelect::SourcePaste(copyInfo, true);
+		OBSBasicSourceSelect::sourcePaste(copyInfo, true);
 		RefreshSources(GetCurrentScene());
 	}
 
