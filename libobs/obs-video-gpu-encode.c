@@ -241,6 +241,10 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 		} else if (info->format == VIDEO_FORMAT_NV12) {
 			gs_texture_create_nv12(&tex, &tex_uv, info->width, info->height,
 					       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		} else if (info->format == VIDEO_FORMAT_GBRA || info->format == VIDEO_FORMAT_AYUV) {
+			tex = gs_texture_create(info->width, info->height, GS_AYUV, 1, NULL,
+						GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+			tex_uv = NULL;
 		}
 		if (!tex) {
 			return false;
