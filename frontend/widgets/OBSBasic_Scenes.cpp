@@ -166,36 +166,55 @@ void OBSBasic::AddScene(OBSSource source)
 
 void OBSBasic::RemoveScene(OBSSource source)
 {
-	obs_scene_t *scene = obs_scene_from_source(source);
-
-	QListWidgetItem *sel = nullptr;
-	int count = ui->scenes->count();
-
-	for (int i = 0; i < count; i++) {
-		auto item = ui->scenes->item(i);
-		auto cur_scene = GetOBSRef<OBSScene>(item);
-		if (cur_scene != scene)
-			continue;
-
-		sel = item;
-		break;
+	OBSCanvasAutoRelease canvas = obs_source_get_canvas(source);
+	if (!canvas) {
+		//Source passed to function has no associated canvas.
+		return;
 	}
 
-	if (sel != nullptr) {
-		if (sel == ui->scenes->currentItem())
-			ui->sources->Clear();
-		delete sel;
+	uint32_t canvasFlags = obs_canvas_get_flags(canvas);
+
+	bool isMainCanvas = (canvasFlags & MAIN);
+	bool isEphemeralCanvas = (canvasFlags & EPHEMERAL);
+
+	int foundSceneRow = -1;
+
+	if (isMainCanvas) {
+		obs_scene_t *scene = obs_scene_from_source(source);
+
+		int numListItems = ui->scenes->count();
+
+		for (int i = 0; i < numListItems; ++i) {
+			QListWidgetItem *item = ui->scenes->item(i);
+			OBSScene cur_scene = GetOBSRef<OBSScene>(item);
+			if (cur_scene != scene)
+				continue;
+
+			foundSceneRow = i;
+			break;
+		}
+
+		if (foundSceneRow >= 0) {
+			if (foundSceneRow == ui->scenes->currentRow())
+				ui->sources->Clear();
+			QListWidgetItem *matchedItem = ui->scenes->takeItem(foundSceneRow);
+			delete matchedItem;
+		}
 	}
 
-	SaveProject();
+	if (!isEphemeralCanvas) {
+		SaveProject();
+	}
 
-	if (!disableSaving) {
+	if (isMainCanvas && !disableSaving) {
 		blog(LOG_INFO, "User Removed scene '%s'", obs_source_get_name(source));
 
 		OBSProjector::UpdateMultiviewProjectors();
 	}
 
-	OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
+	if (isMainCanvas && foundSceneRow >= 0) {
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
+	}
 }
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
