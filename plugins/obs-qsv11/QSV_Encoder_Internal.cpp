@@ -218,15 +218,18 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	m_mfxEncParams.mfx.CodecProfile = pParams->nCodecProfile;
 	m_mfxEncParams.mfx.FrameInfo.FrameRateExtN = pParams->nFpsNum;
 	m_mfxEncParams.mfx.FrameInfo.FrameRateExtD = pParams->nFpsDen;
+	m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 	if (pParams->video_fmt_10bit) {
 		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
 		m_mfxEncParams.mfx.FrameInfo.BitDepthChroma = 10;
 		m_mfxEncParams.mfx.FrameInfo.BitDepthLuma = 10;
 		m_mfxEncParams.mfx.FrameInfo.Shift = 1;
+	} else if (pParams->video_fmt_ayuv) {
+		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+		m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
 	} else {
 		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 	}
-	m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 	m_mfxEncParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 	m_mfxEncParams.mfx.FrameInfo.CropX = 0;
 	m_mfxEncParams.mfx.FrameInfo.CropY = 0;
@@ -320,17 +323,26 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 
 	extendedBuffers.push_back((mfxExtBuffer *)&m_co2);
 
-	if (HasOptimizedBRCSupport(platform, m_ver, pParams->nRateControl)) {
+	const bool optBrcSupport = HasOptimizedBRCSupport(platform, m_ver, pParams->nRateControl);
+	if (pParams->video_fmt_ayuv || optBrcSupport) {
 		memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
 		m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
 		m_co3.Header.BufferSz = sizeof(m_co3);
-		m_co3.WinBRCSize = pParams->nFpsNum / pParams->nFpsDen;
 
-		if (codec == QSV_CODEC_AVC || codec == QSV_CODEC_HEVC) {
-			m_co3.WinBRCMaxAvgKbps = mfxU16(1.3 * pParams->nTargetBitRate);
-		} else if (codec == QSV_CODEC_AV1) {
-			m_co3.WinBRCMaxAvgKbps = mfxU16(1.2 * pParams->nTargetBitRate);
+		if (optBrcSupport) {
+			m_co3.WinBRCSize = pParams->nFpsNum / pParams->nFpsDen;
+
+			if (codec == QSV_CODEC_AVC || codec == QSV_CODEC_HEVC) {
+				m_co3.WinBRCMaxAvgKbps = mfxU16(1.3 * pParams->nTargetBitRate);
+			} else if (codec == QSV_CODEC_AV1) {
+				m_co3.WinBRCMaxAvgKbps = mfxU16(1.2 * pParams->nTargetBitRate);
+			}
 		}
+
+		if (pParams->video_fmt_ayuv) {
+			m_co3.TargetChromaFormatPlus1 = MFX_CHROMAFORMAT_YUV444 + 1;
+		}
+
 		extendedBuffers.push_back((mfxExtBuffer *)&m_co3);
 	}
 
