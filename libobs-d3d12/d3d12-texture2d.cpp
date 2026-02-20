@@ -222,8 +222,6 @@ void gs_texture_2d::InitRenderTargets(int32_t PlaneSliceCount)
 	}
 }
 
-void gs_texture_2d::InitUAV() {}
-
 UINT gs_texture_2d::GetLineSize()
 {
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedTextureDesc;
@@ -285,7 +283,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t heigh
 
 	if (isRenderTarget) {
 		InitRenderTargets();
-		InitUAV();
 	}
 }
 
@@ -319,7 +316,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *nv12tex, uint3
 	InitResourceView(1);
 	if (isRenderTarget) {
 		InitRenderTargets(1);
-		InitUAV();
 	}
 }
 
@@ -353,7 +349,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle
 	InitResourceView();
 	if (isRenderTarget) {
 		InitRenderTargets(1);
-		InitUAV();
 	}
 }
 
@@ -380,7 +375,6 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D12Resource *obj)
 	InitResourceView();
 	if (isRenderTarget) {
 		InitRenderTargets(1);
-		InitUAV();
 	}
 }
 

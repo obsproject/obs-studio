@@ -456,7 +456,6 @@ struct gs_texture_2d : gs_texture {
 	void InitSRD(std::vector<D3D12_SUBRESOURCE_DATA> &srd);
 	void InitResourceView(int32_t PlaneSliceCount = 0);
 	void InitRenderTargets(int32_t PlaneSliceCount = 0);
-	void InitUAV();
 	UINT GetLineSize();
 	void CreateTargetFromSwapChain(gs_device_t *device, IDXGISwapChain *swap, int32_t bufferIndex,
 				       enum gs_color_format resFormat, const gs_init_data &initData);
@@ -487,6 +486,7 @@ struct gs_texture_2d : gs_texture {
 };
 
 struct gs_texture_3d : gs_texture {
+	D3D12_RESOURCE_DESC texDesc = {};
 	uint32_t width = 0, height = 0, depth = 0;
 	uint32_t flags = 0;
 	DXGI_FORMAT dxgiFormatResource = DXGI_FORMAT_UNKNOWN;
@@ -495,7 +495,7 @@ struct gs_texture_3d : gs_texture {
 	bool isDynamic = false;
 	bool isShared = false;
 	bool genMipmaps = false;
-	uint32_t sharedHandle = GS_INVALID_HANDLE;
+	HANDLE sharedHandle = NULL;
 
 	bool chroma = false;
 	bool acquired = false;
@@ -634,7 +634,7 @@ struct gs_vertex_shader : gs_shader {
 	bool hasTangents;
 	uint32_t nTexUnits;
 
-	void Rebuild(ID3D12Device *dev) {}
+	void Rebuild(ID3D12Device *dev);
 
 	inline void Release() {}
 
@@ -745,7 +745,7 @@ struct gs_vertex_buffer : gs_obj {
 
 	inline void Release();
 
-	void Rebuild();
+	void Rebuild(ID3D12Device *dev);
 	~gs_vertex_buffer();
 
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data, uint32_t flags);
@@ -772,7 +772,7 @@ struct gs_index_buffer : gs_obj {
 
 	void InitBuffer();
 
-	void Rebuild(ID3D11Device *dev);
+	void Rebuild(ID3D12Device *dev);
 
 	void Release();
 
