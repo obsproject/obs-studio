@@ -369,6 +369,10 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
 		const float multiplier = obs_get_video_sdr_white_level() / 10000.f;
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
+		if (!convert_textures[1] && !convert_textures[2]) {
+			gs_effect_set_vec4(color_vec1, &vec1);
+			gs_effect_set_vec4(color_vec2, &vec2);
+		}
 		gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
 		gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
 		render_convert_plane(effect, convert_textures[0], video->conversion_techs[0]);

@@ -141,6 +141,10 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "GBRA";
 		break;
+	case VIDEO_FORMAT_AYUV:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "AYUV";
+		break;
 	default:
 		break;
 	}
@@ -154,6 +158,7 @@ static bool video_format_texture_supported(const enum video_format input_format)
 	case VIDEO_FORMAT_P010:
 		return gs_p010_available();
 	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_AYUV:
 		return gs_ayuv_available();
 	default:
 		return false;
@@ -198,7 +203,8 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
 			return false;
 		}
-	} else if (video->encoder_texture_format == VIDEO_FORMAT_GBRA) {
+	} else if (video->encoder_texture_format == VIDEO_FORMAT_GBRA ||
+		   video->encoder_texture_format == VIDEO_FORMAT_AYUV) {
 		video->convert_textures_encode[0] = gs_texture_create(info->width, info->height, GS_AYUV, 1, NULL,
 								      GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 		if (!video->convert_textures_encode[0]) {

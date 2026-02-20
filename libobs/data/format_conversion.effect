@@ -811,6 +811,16 @@ float4 PSPlanar444A_12LE_Reverse(FragPos frag_in) : TARGET
 	return float4(rgb, alpha);
 }
 
+float4 PSAYUV(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	float3 rgb = rgba.rgb;
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	return float4(v, u, y, rgba.a);
+}
+
 float4 PSAYUV_Reverse(FragPos frag_in) : TARGET
 {
 	float4 yuva = image.Load(int3(frag_in.pos.xy, 0));
@@ -1609,6 +1619,15 @@ technique YA2L_Reverse
 	{
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSPlanar444A_12LE_Reverse(frag_in);
+	}
+}
+
+technique AYUV
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSAYUV(frag_in);
 	}
 }
 
