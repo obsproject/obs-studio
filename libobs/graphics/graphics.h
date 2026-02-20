@@ -77,6 +77,7 @@ enum gs_color_format {
 	GS_BGRX_UNORM,
 	GS_BGRA_UNORM,
 	GS_RG16,
+	GS_AYUV,
 };
 
 enum gs_color_space {
@@ -786,6 +787,7 @@ EXPORT bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint, uin
 
 EXPORT bool gs_nv12_available(void);
 EXPORT bool gs_p010_available(void);
+EXPORT bool gs_ayuv_available(void);
 EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv, uint32_t width, uint32_t height,
 				   uint32_t flags);
 EXPORT bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv, uint32_t width, uint32_t height,
@@ -947,6 +949,7 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_BGRX_UNORM:
 	case GS_BGRA_UNORM:
 	case GS_RG16:
+	case GS_AYUV:
 		return 32;
 	case GS_RGBA16:
 	case GS_RGBA16F:
