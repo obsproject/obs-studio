@@ -137,9 +137,23 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 			video->conversion_techs[1] = "P416_SRGB_UV";
 		}
 		break;
+	case VIDEO_FORMAT_GBRA:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "GBRA";
+		break;
 	default:
 		break;
 	}
+}
+
+static bool video_format_texture_supported(enum video_format input)
+{
+	if (input == VIDEO_FORMAT_NV12)
+		return gs_nv12_available();
+	if (input == VIDEO_FORMAT_P010)
+		return gs_p010_available();
+
+	return false;
 }
 
 static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
@@ -148,27 +162,21 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 
 	calc_gpu_conversion_sizes(video);
 
-	video->using_nv12_tex = info->format == VIDEO_FORMAT_NV12 ? gs_nv12_available() : false;
-	video->using_p010_tex = info->format == VIDEO_FORMAT_P010 ? gs_p010_available() : false;
+	if (video_format_texture_supported(info->format))
+		video->encoder_texture_format = info->format;
 
 	if (!video->conversion_needed) {
 		blog(LOG_INFO, "GPU conversion not available for format: %s", get_video_format_name(info->format));
 		video->gpu_conversion = false;
-		video->using_nv12_tex = false;
-		video->using_p010_tex = false;
-		blog(LOG_INFO, "NV12 texture support not available");
+		video->encoder_texture_format = VIDEO_FORMAT_NONE;
+		blog(LOG_INFO, "Encoder texture support not available");
 		return true;
 	}
 
-	if (video->using_nv12_tex)
-		blog(LOG_INFO, "NV12 texture support enabled");
+	if (video->encoder_texture_format != VIDEO_FORMAT_NONE)
+		blog(LOG_INFO, "%s texture support enabled", get_video_format_name(info->format));
 	else
-		blog(LOG_INFO, "NV12 texture support not available");
-
-	if (video->using_p010_tex)
-		blog(LOG_INFO, "P010 texture support enabled");
-	else
-		blog(LOG_INFO, "P010 texture support not available");
+		blog(LOG_INFO, "%s texture support not available", get_video_format_name(info->format));
 
 	video->convert_textures[0] = NULL;
 	video->convert_textures[1] = NULL;
@@ -176,12 +184,12 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 	video->convert_textures_encode[0] = NULL;
 	video->convert_textures_encode[1] = NULL;
 	video->convert_textures_encode[2] = NULL;
-	if (video->using_nv12_tex) {
+	if (video->encoder_texture_format == VIDEO_FORMAT_NV12) {
 		if (!gs_texture_create_nv12(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
 					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
 			return false;
 		}
-	} else if (video->using_p010_tex) {
+	} else if (video->encoder_texture_format == VIDEO_FORMAT_P010) {
 		if (!gs_texture_create_p010(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
 					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
 			return false;
@@ -372,13 +380,13 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
 #ifdef _WIN32
-		if (video->using_nv12_tex) {
+		if (video->encoder_texture_format == VIDEO_FORMAT_NV12) {
 			video->copy_surfaces_encode[i] = gs_stagesurface_create_nv12(info->width, info->height);
 			if (!video->copy_surfaces_encode[i]) {
 				success = false;
 				break;
 			}
-		} else if (video->using_p010_tex) {
+		} else if (video->encoder_texture_format == VIDEO_FORMAT_P010) {
 			video->copy_surfaces_encode[i] = gs_stagesurface_create_p010(info->width, info->height);
 			if (!video->copy_surfaces_encode[i]) {
 				success = false;
@@ -3254,13 +3262,13 @@ bool obs_video_active(void)
 bool obs_nv12_tex_active(void)
 {
 	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
-	return video->using_nv12_tex;
+	return video->encoder_texture_format == VIDEO_FORMAT_NV12;
 }
 
 bool obs_p010_tex_active(void)
 {
 	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
-	return video->using_p010_tex;
+	return video->encoder_texture_format == VIDEO_FORMAT_NV12;
 }
 
 /* ------------------------------------------------------------------------- */
