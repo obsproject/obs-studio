@@ -137,8 +137,31 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 			video->conversion_techs[1] = "P416_SRGB_UV";
 		}
 		break;
+	case VIDEO_FORMAT_GBRA:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "GBRA";
+		break;
+	case VIDEO_FORMAT_AYUV:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "AYUV";
+		break;
 	default:
 		break;
+	}
+}
+
+static bool video_format_texture_supported(const enum video_format input_format)
+{
+	switch (input_format) {
+	case VIDEO_FORMAT_NV12:
+		return gs_nv12_available();
+	case VIDEO_FORMAT_P010:
+		return gs_p010_available();
+	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_AYUV:
+		return gs_ayuv_available();
+	default:
+		return false;
 	}
 }
 
@@ -148,27 +171,21 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 
 	calc_gpu_conversion_sizes(video);
 
-	video->using_nv12_tex = info->format == VIDEO_FORMAT_NV12 ? gs_nv12_available() : false;
-	video->using_p010_tex = info->format == VIDEO_FORMAT_P010 ? gs_p010_available() : false;
+	if (video_format_texture_supported(info->format))
+		video->encoder_texture_format = info->format;
 
 	if (!video->conversion_needed) {
-		blog(LOG_INFO, "GPU conversion not available for format: %u", (unsigned int)info->format);
+		blog(LOG_INFO, "GPU conversion not available for format: %s", get_video_format_name(info->format));
 		video->gpu_conversion = false;
-		video->using_nv12_tex = false;
-		video->using_p010_tex = false;
+		video->encoder_texture_format = VIDEO_FORMAT_NONE;
 		blog(LOG_INFO, "NV12 texture support not available");
 		return true;
 	}
 
-	if (video->using_nv12_tex)
-		blog(LOG_INFO, "NV12 texture support enabled");
+	if (video->encoder_texture_format != VIDEO_FORMAT_NONE)
+		blog(LOG_INFO, "%s texture support enabled", get_video_format_name(info->format));
 	else
-		blog(LOG_INFO, "NV12 texture support not available");
-
-	if (video->using_p010_tex)
-		blog(LOG_INFO, "P010 texture support enabled");
-	else
-		blog(LOG_INFO, "P010 texture support not available");
+		blog(LOG_INFO, "%s texture support not available", get_video_format_name(info->format));
 
 	video->convert_textures[0] = NULL;
 	video->convert_textures[1] = NULL;
@@ -176,14 +193,21 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 	video->convert_textures_encode[0] = NULL;
 	video->convert_textures_encode[1] = NULL;
 	video->convert_textures_encode[2] = NULL;
-	if (video->using_nv12_tex) {
+	if (video->encoder_texture_format == VIDEO_FORMAT_NV12) {
 		if (!gs_texture_create_nv12(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
 					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
 			return false;
 		}
-	} else if (video->using_p010_tex) {
+	} else if (video->encoder_texture_format == VIDEO_FORMAT_P010) {
 		if (!gs_texture_create_p010(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
 					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
+			return false;
+		}
+	} else if (video->encoder_texture_format == VIDEO_FORMAT_GBRA ||
+		   video->encoder_texture_format == VIDEO_FORMAT_AYUV) {
+		video->convert_textures_encode[0] = gs_texture_create(info->width, info->height, GS_AYUV, 1, NULL,
+								      GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		if (!video->convert_textures_encode[0]) {
 			return false;
 		}
 	}
@@ -372,13 +396,13 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
 #ifdef _WIN32
-		if (video->using_nv12_tex) {
+		if (video->encoder_texture_format == VIDEO_FORMAT_NV12) {
 			video->copy_surfaces_encode[i] = gs_stagesurface_create_nv12(info->width, info->height);
 			if (!video->copy_surfaces_encode[i]) {
 				success = false;
 				break;
 			}
-		} else if (video->using_p010_tex) {
+		} else if (video->encoder_texture_format == VIDEO_FORMAT_P010) {
 			video->copy_surfaces_encode[i] = gs_stagesurface_create_p010(info->width, info->height);
 			if (!video->copy_surfaces_encode[i]) {
 				success = false;
@@ -1520,6 +1544,26 @@ static inline bool size_valid(uint32_t width, uint32_t height)
 	return (width >= OBS_SIZE_MIN && height >= OBS_SIZE_MIN && width <= OBS_SIZE_MAX && height <= OBS_SIZE_MAX);
 }
 
+const char *get_scale_type_name(enum obs_scale_type type)
+{
+	switch (type) {
+	case OBS_SCALE_DISABLE:
+		return "Disabled";
+	case OBS_SCALE_POINT:
+		return "Point";
+	case OBS_SCALE_BICUBIC:
+		return "Bicubic";
+	case OBS_SCALE_BILINEAR:
+		return "Bilinear";
+	case OBS_SCALE_LANCZOS:
+		return "Lanczos";
+	case OBS_SCALE_AREA:
+		return "Area";
+	}
+
+	return "Unknown";
+}
+
 int obs_reset_video(struct obs_video_info *ovi)
 {
 	if (!obs)
@@ -1548,27 +1592,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 		}
 	}
 
-	const char *scale_type_name = "";
-	switch (ovi->scale_type) {
-	case OBS_SCALE_DISABLE:
-		scale_type_name = "Disabled";
-		break;
-	case OBS_SCALE_POINT:
-		scale_type_name = "Point";
-		break;
-	case OBS_SCALE_BICUBIC:
-		scale_type_name = "Bicubic";
-		break;
-	case OBS_SCALE_BILINEAR:
-		scale_type_name = "Bilinear";
-		break;
-	case OBS_SCALE_LANCZOS:
-		scale_type_name = "Lanczos";
-		break;
-	case OBS_SCALE_AREA:
-		scale_type_name = "Area";
-		break;
-	}
+	const char *scale_type_name = get_scale_type_name(ovi->scale_type);
 
 	bool yuv = format_is_yuv(ovi->output_format);
 	const char *yuv_format = get_video_colorspace_name(ovi->colorspace);
@@ -3254,13 +3278,13 @@ bool obs_video_active(void)
 bool obs_nv12_tex_active(void)
 {
 	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
-	return video->using_nv12_tex;
+	return video->encoder_texture_format == VIDEO_FORMAT_NV12;
 }
 
 bool obs_p010_tex_active(void)
 {
 	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
-	return video->using_p010_tex;
+	return video->encoder_texture_format == VIDEO_FORMAT_NV12;
 }
 
 /* ------------------------------------------------------------------------- */

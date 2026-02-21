@@ -77,8 +77,9 @@ static inline enum AVPixelFormat get_ffmpeg_video_format(enum video_format forma
 		return AV_PIX_FMT_P216LE;
 	case VIDEO_FORMAT_P416:
 		return AV_PIX_FMT_P416LE;
-	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_AYUV:
+		return AV_PIX_FMT_VUYA;
+	case VIDEO_FORMAT_NONE:
 	default:
 		return AV_PIX_FMT_NONE;
 	}
