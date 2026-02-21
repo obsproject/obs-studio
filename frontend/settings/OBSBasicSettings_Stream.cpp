@@ -621,7 +621,7 @@ void OBSBasicSettings::on_customServer_textChanged(const QString &)
 
 void OBSBasicSettings::ServiceChanged(bool resetFields)
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	bool custom = IsCustomService();
 	bool whip = IsWHIP();
 
@@ -838,7 +838,7 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 
 void OBSBasicSettings::OnAuthConnected()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	Auth::Type type = Auth::AuthType(service);
 
 	if (type == Auth::Type::OAuth_StreamKey || type == Auth::Type::OAuth_LinkedAccount) {
@@ -853,7 +853,7 @@ void OBSBasicSettings::OnAuthConnected()
 
 void OBSBasicSettings::on_connectAccount_clicked()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 	OAuth::DeleteCookies(service);
 
@@ -890,7 +890,7 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	auth.reset();
 	main->SetBroadcastFlowEnabled(false);
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 #ifdef BROWSER_AVAILABLE
 	OAuth::DeleteCookies(service);
@@ -1154,7 +1154,7 @@ bool OBSBasicSettings::ResFPSValid(obs_service_resolution *res_list, size_t res_
 		if (fpsType != 0)
 			return false;
 
-		std::string fps_str = QT_TO_UTF8(ui->fpsCommon->currentText());
+		std::string fps_str = ui->fpsCommon->currentText().toStdString();
 		float fps;
 		sscanf(fps_str.c_str(), "%f", &fps);
 		if (fps > (float)max_fps)

@@ -370,7 +370,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	OBSBasic *main = OBSBasic::Get();
 	OBSScene scene = main->GetCurrentScene();
 
-	newName = QT_TO_UTF8(editor->text());
+	newName = editor->text().toStdString();
 
 	setFocusProxy(nullptr);
 	int index = boxLayout->indexOf(editor);

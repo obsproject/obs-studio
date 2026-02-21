@@ -2112,12 +2112,12 @@ OBSBasic *OBSBasic::Get()
 	return reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 }
 
-void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
+void OBSBasic::UpdatePatronJson(const std::string &text, const std::string &error)
 {
-	if (!error.isEmpty())
+	if (!error.empty())
 		return;
 
-	patronJson = QT_TO_UTF8(text);
+	patronJson = text;
 }
 
 void OBSBasic::SetDisplayAffinity(QWindow *window)
