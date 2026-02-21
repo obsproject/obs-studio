@@ -1421,8 +1421,6 @@ void OBSBasic::applicationShutdown() noexcept
 	delete deinterlaceMenu;
 	delete perSceneTransitionMenu;
 	delete shortcutFilter;
-	delete trayIcon;
-	delete trayMenu;
 	delete programOptions;
 	delete program;
 
