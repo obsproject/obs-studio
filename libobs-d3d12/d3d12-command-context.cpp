@@ -1914,55 +1914,6 @@ void GraphicsPSO::Finalize()
 	}
 }
 
-ComputePSO::ComputePSO(D3D12DeviceInstance *DeviceInstance, const wchar_t *Name) : PSO(DeviceInstance, Name)
-{
-	ZeroMemory(&m_PSODesc, sizeof(m_PSODesc));
-	m_PSODesc.NodeMask = 1;
-}
-
-void ComputePSO::SetComputeShader(const void *Binary, size_t Size)
-{
-	m_PSODesc.CS = CD3DX12_SHADER_BYTECODE(const_cast<void *>(Binary), Size);
-}
-
-void ComputePSO::SetComputeShader(const D3D12_SHADER_BYTECODE &Binary)
-{
-	m_PSODesc.CS = Binary;
-}
-
-void ComputePSO::Finalize()
-{
-	m_PSODesc.pRootSignature = m_RootSignature->GetSignature();
-	size_t HashCode = Utility::HashState(&m_PSODesc);
-
-	ComPtr<ID3D12PipelineState> PSORef = nullptr;
-	bool firstCompile = false;
-	{
-		auto iter = m_DeviceInstance->GetComputePSOHashMap().find(HashCode);
-
-		// Reserve space so the next inquiry will find that someone got here first.
-		if (iter == m_DeviceInstance->GetComputePSOHashMap().end()) {
-			firstCompile = true;
-			PSORef = m_DeviceInstance->GetComputePSOHashMap()[HashCode];
-		} else
-			PSORef = iter->second;
-	}
-
-	if (firstCompile) {
-		HRESULT hr =
-			m_DeviceInstance->GetDevice()->CreateComputePipelineState(&m_PSODesc, IID_PPV_ARGS(&m_PSO));
-		if (FAILED(hr)) {
-			throw HRError("ComputePSO: Failed to create compute pipeline state object.");
-		}
-		m_DeviceInstance->GetComputePSOHashMap()[HashCode].Set(m_PSO);
-		m_PSO->SetName(m_Name);
-	} else {
-		while (PSORef == nullptr)
-			std::this_thread::yield();
-		m_PSO = PSORef;
-	}
-}
-
 CommandAllocatorPool::CommandAllocatorPool(D3D12_COMMAND_LIST_TYPE Type)
 	: m_cCommandListType(Type),
 	  m_DeviceInstance(nullptr)

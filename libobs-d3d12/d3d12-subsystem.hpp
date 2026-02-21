@@ -443,7 +443,7 @@ struct gs_texture_2d : gs_texture {
 	bool isDynamic = false;
 	bool isShared = false;
 	bool genMipmaps = false;
-	HANDLE sharedHandle = NULL;
+	uint32_t sharedHandle = GS_INVALID_HANDLE;
 
 	gs_texture_2d *pairedTexture = nullptr;
 	bool twoPlane = false;
@@ -495,7 +495,7 @@ struct gs_texture_3d : gs_texture {
 	bool isDynamic = false;
 	bool isShared = false;
 	bool genMipmaps = false;
-	HANDLE sharedHandle = NULL;
+	uint32_t sharedHandle = GS_INVALID_HANDLE;
 
 	bool chroma = false;
 	bool acquired = false;
@@ -599,7 +599,6 @@ struct gs_shader : gs_obj {
 	int32_t dynamicUniformConstantBufferRootParameterIndex = -1;
 
 	std::vector<uint8_t> data;
-	std::string actuallyShaderString;
 
 	inline void UpdateParam(std::vector<uint8_t> &constData, gs_shader_param &param, bool &upload);
 	void UploadParams();

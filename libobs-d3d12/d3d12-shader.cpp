@@ -44,7 +44,6 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file, const 
 	GetBuffersExpected(layoutData);
 	BuildConstantBuffer();
 
-	actuallyShaderString = outputString;
 	Compile(outputString.c_str(), file, "vs_4_0", shaderBlob.Assign());
 
 	data.resize(shaderBlob->GetBufferSize());
@@ -69,7 +68,6 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file, const ch
 	samplerCount = samplers.size();
 
 	BuildConstantBuffer();
-	actuallyShaderString = outputString;
 	Compile(outputString.c_str(), file, "ps_4_0", shaderBlob.Assign());
 
 	data.resize(shaderBlob->GetBufferSize());

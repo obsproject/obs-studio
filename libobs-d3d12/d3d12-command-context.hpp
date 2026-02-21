@@ -1047,19 +1047,6 @@ private:
 	std::shared_ptr<const D3D12_INPUT_ELEMENT_DESC> m_InputLayouts;
 };
 
-class ComputePSO : public PSO {
-public:
-	ComputePSO(D3D12DeviceInstance *DeviceInstance, const wchar_t *Name = L"Unnamed Compute PSO");
-
-	void SetComputeShader(const void *Binary, size_t Size);
-	void SetComputeShader(const D3D12_SHADER_BYTECODE &Binary);
-
-	void Finalize();
-
-private:
-	D3D12_COMPUTE_PIPELINE_STATE_DESC m_PSODesc;
-};
-
 class CommandAllocatorPool {
 public:
 	CommandAllocatorPool(D3D12_COMMAND_LIST_TYPE Type);

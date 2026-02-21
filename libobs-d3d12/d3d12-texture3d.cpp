@@ -65,7 +65,7 @@ void gs_texture_3d::GetSharedHandle(IDXGIResource *dxgi_res)
 		     "get shared handle: %08lX",
 		     hr);
 	} else {
-		sharedHandle = handle;
+		sharedHandle = (uint32_t)(uintptr_t)handle;
 	}
 }
 
@@ -119,7 +119,7 @@ void gs_texture_3d::InitTexture(const uint8_t *const *data)
 
 	if (isShared) {
 		hr = device->d3d12Instance->GetDevice()->CreateSharedHandle(m_pResource.Get(), nullptr, GENERIC_ALL,
-									    nullptr, &sharedHandle);
+									    nullptr, (HANDLE *)(&sharedHandle));
 		if (FAILED(hr)) {
 			throw HRError("Create Shared Handle Failed", hr);
 		}
@@ -177,7 +177,7 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width, uint32_t heigh
 gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t handle)
 	: gs_texture(device, gs_type::gs_texture_3d, GS_TEXTURE_3D),
 	  isShared(true),
-	  sharedHandle((HANDLE)handle)
+	  sharedHandle(handle)
 {
 	HRESULT hr = device->d3d12Instance->GetDevice()->OpenSharedHandle((HANDLE)(uintptr_t)handle,
 									  IID_PPV_ARGS(&m_pResource));
