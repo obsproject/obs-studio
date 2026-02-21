@@ -517,6 +517,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.VideoFormat = 5;
 	obsqsv->params.VideoFullRange = voi->range == VIDEO_RANGE_FULL;
 
+	const bool is_gbr = obs_encoder_video_tex_active(obsqsv->encoder, VIDEO_FORMAT_GBRA);
+
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
 		obsqsv->params.ColourPrimaries = 6;
@@ -536,7 +538,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		obsqsv->params.ColourPrimaries = 1;
 		obsqsv->params.TransferCharacteristics = 13;
-		obsqsv->params.MatrixCoefficients = obsqsv->params.video_fmt_ayuv ? 0 : 1;
+		obsqsv->params.MatrixCoefficients = is_gbr ? 0 : 1;
 		obsqsv->params.ChromaSampleLocTypeTopField = 0;
 		obsqsv->params.ChromaSampleLocTypeBottomField = 0;
 		break;
@@ -777,6 +779,7 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings, obs_enco
 		return NULL;
 	}
 	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_AYUV:
 		if (codec != QSV_CODEC_HEVC || !useTexAlloc) {
 			const char *const text = obs_module_text("444Unsupported");
 			obs_encoder_set_last_error(encoder, text);
@@ -866,8 +869,10 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings, obs_
 
 	if (codec != QSV_CODEC_AVC)
 		gpu_texture_active = gpu_texture_active || obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010);
-	if (codec == QSV_CODEC_HEVC)
-		gpu_texture_active = gpu_texture_active || obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA);
+	if (codec == QSV_CODEC_HEVC) {
+		gpu_texture_active = gpu_texture_active || obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) ||
+				     obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV);
+	}
 
 	if (!gpu_texture_active) {
 		blog(LOG_INFO, ">>> gpu tex not active, fall back to old qsv encoder");
@@ -1000,6 +1005,9 @@ static void obs_qsv_video_info_hevc_tex(void *data, struct video_scale_info *inf
 		info->format = VIDEO_FORMAT_GBRA;
 		info->range = VIDEO_RANGE_FULL;
 		info->colorspace = VIDEO_CS_SRGB;
+		return;
+	} else if (info->format == VIDEO_FORMAT_I444) {
+		info->format = VIDEO_FORMAT_AYUV;
 		return;
 	}
 #endif
