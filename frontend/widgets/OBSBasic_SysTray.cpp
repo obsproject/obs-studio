@@ -32,7 +32,7 @@ void OBSBasic::SystemTrayInit()
 	trayIcon = new QSystemTrayIcon(QIcon::fromTheme("obs-tray", trayIconFile), this);
 	trayIcon->setToolTip("OBS Studio");
 
-	trayMenu = new QMenu;
+	trayMenu = new QMenu(this);
 
 	showHide = new QAction(QTStr("Basic.SystemTray.Show"), trayMenu);
 	sysTrayStream = new QAction(
