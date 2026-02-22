@@ -171,6 +171,20 @@
             "url": "https://obsproject.com/kb/minecraft-java-edition-troubleshooting"
         },
         {
+            "name": "WAKFU",
+            "translation_key": "Compatibility.Application.WAKFU",
+            "severity": 1,
+            "executable": "java.exe",
+            "window_class": "",
+            "window_title": "WAKFU",
+            "match_flags": 3,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "Capturing WAKFU with Game capture may lead to abnormal RAM usage. Prefer usage of Window Capture or Display Capture Instead.",
+            "url": "https://www.wakfu.com/en/mmorpg/news/announcements/1648798-ogrest-single-account-server-twitch-drops#1648798_nav_5"
+        },
+        {
             "name": "Call of Duty",
             "translation_key": "Compatibility.GameCapture.Admin",
             "severity": 1,
