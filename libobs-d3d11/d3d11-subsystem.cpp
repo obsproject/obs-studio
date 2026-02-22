@@ -276,6 +276,7 @@ void gs_device::InitAdapter(uint32_t adapterIdx)
 }
 
 const static D3D_FEATURE_LEVEL featureLevels[] = {
+	D3D_FEATURE_LEVEL_11_1,
 	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
 	D3D_FEATURE_LEVEL_10_0,
@@ -616,7 +617,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
-	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %x", (unsigned int)levelUsed);
+	// Feature level is encoded as BCD, so we can just shift it to get the decimal number.
+	const auto levelMajor = static_cast<int32_t>(levelUsed) >> 12;
+	const auto levelMinor = static_cast<int32_t>(levelUsed) >> 8 & 0xf;
+	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %d.%d", levelMajor, levelMinor);
 
 	/* prevent stalls sometimes seen in Present calls */
 	if (!increase_maximum_frame_latency(device)) {
