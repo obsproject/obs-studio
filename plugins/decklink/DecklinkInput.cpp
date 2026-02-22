@@ -17,7 +17,7 @@ DeckLinkInput::~DeckLinkInput(void)
 
 void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device, bool added)
 {
-	DeckLinkInput *decklink = reinterpret_cast<DeckLinkInput *>(param);
+	DeckLinkInput *decklink = static_cast<DeckLinkInput *>(param);
 	std::lock_guard<std::recursive_mutex> lock(decklink->deviceMutex);
 
 	obs_source_update_properties(decklink->source);

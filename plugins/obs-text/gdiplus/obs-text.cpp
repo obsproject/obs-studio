@@ -946,7 +946,7 @@ static bool extents_modified(obs_properties_t *props, obs_property_t *p, obs_dat
 
 static obs_properties_t *get_properties(void *data)
 {
-	TextSource *s = reinterpret_cast<TextSource *>(data);
+	TextSource *s = static_cast<TextSource *>(data);
 	string path;
 
 	obs_properties_t *props = obs_properties_create();
@@ -1066,7 +1066,7 @@ static void defaults(obs_data_t *settings, int ver)
 
 static void missing_file_callback(void *src, const char *new_path, void *data)
 {
-	TextSource *s = reinterpret_cast<TextSource *>(src);
+	TextSource *s = static_cast<TextSource *>(src);
 
 	obs_source_t *source = s->source;
 	obs_data_t *settings = obs_source_get_settings(source);
@@ -1093,28 +1093,28 @@ bool obs_module_load(void)
 		return (void *)new TextSource(source, settings, true);
 	};
 	si.destroy = [](void *data) {
-		delete reinterpret_cast<TextSource *>(data);
+		delete static_cast<TextSource *>(data);
 	};
 	si.get_width = [](void *data) {
-		return reinterpret_cast<TextSource *>(data)->cx;
+		return static_cast<TextSource *>(data)->cx;
 	};
 	si.get_height = [](void *data) {
-		return reinterpret_cast<TextSource *>(data)->cy;
+		return static_cast<TextSource *>(data)->cy;
 	};
 	si.get_defaults = [](obs_data_t *settings) {
 		defaults(settings, 1);
 	};
 	si.update = [](void *data, obs_data_t *settings) {
-		reinterpret_cast<TextSource *>(data)->Update(settings);
+		static_cast<TextSource *>(data)->Update(settings);
 	};
 	si.video_tick = [](void *data, float seconds) {
-		reinterpret_cast<TextSource *>(data)->Tick(seconds);
+		static_cast<TextSource *>(data)->Tick(seconds);
 	};
 	si.video_render = [](void *data, gs_effect_t *) {
-		reinterpret_cast<TextSource *>(data)->Render();
+		static_cast<TextSource *>(data)->Render();
 	};
 	si.missing_files = [](void *data) {
-		TextSource *s = reinterpret_cast<TextSource *>(data);
+		TextSource *s = static_cast<TextSource *>(data);
 		obs_missing_files_t *files = obs_missing_files_create();
 
 		obs_source_t *source = s->source;

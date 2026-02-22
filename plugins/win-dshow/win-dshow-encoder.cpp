@@ -138,7 +138,7 @@ inline bool DShowEncoder::Update(obs_data_t *settings)
 
 static bool UpdateDShowEncoder(void *data, obs_data_t *settings)
 {
-	DShowEncoder *encoder = reinterpret_cast<DShowEncoder *>(data);
+	DShowEncoder *encoder = static_cast<DShowEncoder *>(data);
 
 	if (!obs_encoder_active(encoder->context))
 		return encoder->Update(settings);
@@ -173,7 +173,7 @@ static void *CreateC353Encoder(obs_data_t *settings, obs_encoder_t *context)
 
 static void DestroyDShowEncoder(void *data)
 {
-	delete reinterpret_cast<DShowEncoder *>(data);
+	delete static_cast<DShowEncoder *>(data);
 }
 
 /* the first packet contains the SPS/PPS (header) NALs, so parse the first
@@ -260,12 +260,12 @@ inline bool DShowEncoder::Encode(struct encoder_frame *frame, struct encoder_pac
 
 static bool DShowEncode(void *data, struct encoder_frame *frame, struct encoder_packet *packet, bool *received_packet)
 {
-	return reinterpret_cast<DShowEncoder *>(data)->Encode(frame, packet, received_packet);
+	return static_cast<DShowEncoder *>(data)->Encode(frame, packet, received_packet);
 }
 
 static bool GetDShowExtraData(void *data, uint8_t **extra_data, size_t *size)
 {
-	DShowEncoder *encoder = reinterpret_cast<DShowEncoder *>(data);
+	DShowEncoder *encoder = static_cast<DShowEncoder *>(data);
 
 	*extra_data = encoder->header.array;
 	*size = encoder->header.num;
@@ -280,7 +280,7 @@ static inline bool ValidResolution(uint32_t width, uint32_t height)
 
 static void GetDShowVideoInfo(void *data, struct video_scale_info *info)
 {
-	DShowEncoder *encoder = reinterpret_cast<DShowEncoder *>(data);
+	DShowEncoder *encoder = static_cast<DShowEncoder *>(data);
 	encoder->format = VIDEO_FORMAT_I420;
 
 	if (info->format == VIDEO_FORMAT_I420 && ValidResolution(info->width, info->height))
