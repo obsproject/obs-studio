@@ -47,8 +47,8 @@ void OBSBasic::SystemTrayInit()
 					trayMenu);
 	exit = new QAction(QTStr("Exit"), trayMenu);
 
-	previewProjector = new QMenu(QTStr("Projector.Open.Preview"));
-	studioProgramProjector = new QMenu(QTStr("Projector.Open.Program"));
+	previewProjector = new QMenu(QTStr("Projector.Open.Preview"), trayMenu);
+	studioProgramProjector = new QMenu(QTStr("Projector.Open.Program"), trayMenu);
 	OBSBasic::updateSysTrayProjectorMenu();
 
 	trayMenu->addAction(showHide);

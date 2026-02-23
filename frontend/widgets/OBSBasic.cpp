@@ -1407,8 +1407,6 @@ void OBSBasic::applicationShutdown() noexcept
 		patronJsonThread->wait();
 
 	delete screenshotData;
-	delete previewProjector;
-	delete studioProgramProjector;
 	delete previewProjectorSource;
 	delete previewProjectorMain;
 	delete sourceProjector;
