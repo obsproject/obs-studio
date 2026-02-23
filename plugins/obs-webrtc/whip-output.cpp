@@ -35,6 +35,8 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
+	  resource_etag_mutex(),
+	  resource_etag(),
 	  ice_gathering_mutex(),
 	  ice_gathering_cv(),
 	  ice_gathering_complete(false),
@@ -325,11 +327,14 @@ bool WHIPOutput::FetchIceServersViaOptions(std::vector<rtc::IceServer> &iceServe
 		if (value.empty())
 			continue;
 
+		value = trim_string(value);
 		for (auto end = value.find(","); end != std::string::npos; end = value.find(",")) {
-			this->ParseLinkHeader(value.substr(0, end), iceServers);
-			value = value.substr(end + 1);
+			this->ParseLinkHeader(trim_string(value.substr(0, end)), iceServers);
+			value = trim_string(value.substr(end + 1));
 		}
-		this->ParseLinkHeader(value, iceServers);
+		if (!value.empty()) {
+			this->ParseLinkHeader(value, iceServers);
+		}
 	}
 
 	if (!iceServers.empty()) {
@@ -367,6 +372,10 @@ bool WHIPOutput::Setup()
 	post_response_gather_started = false;
 	ice_ufrag.clear();
 	ice_pwd.clear();
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		resource_etag.clear();
+	}
 	first_mid.clear();
 	{
 		std::lock_guard<std::mutex> lock(pending_candidates_mutex);
@@ -478,7 +487,8 @@ bool WHIPOutput::Setup()
 // https://www.ietf.org/archive/id/draft-ietf-wish-whip-13.html#section-4.4
 void WHIPOutput::ParseLinkHeader(std::string val, std::vector<rtc::IceServer> &iceServers)
 {
-	std::string url, username, password;
+	std::string url, username, password, rel;
+	const std::regex ice_url_scheme("^<(stun|stuns|turn|turns):", std::regex_constants::icase);
 
 	auto extractUrl = [](std::string input) -> std::string {
 		auto head = input.find("<") + 1;
@@ -506,9 +516,12 @@ void WHIPOutput::ParseLinkHeader(std::string val, std::vector<rtc::IceServer> &i
 		if (pos != std::string::npos) {
 			token = val.substr(0, pos);
 		}
+		token = trim_string(token);
 
-		if ((token.find("<stun:", 0) == 0) || (token.find("<turn:", 0) == 0)) {
+		if (std::regex_search(token, ice_url_scheme)) {
 			url = extractUrl(token);
+		} else if (token.find("rel=") != std::string::npos) {
+			rel = extractValue(token);
 		} else if (token.find("username=") != std::string::npos) {
 			username = extractValue(token);
 		} else if (token.find("credential=") != std::string::npos) {
@@ -519,6 +532,18 @@ void WHIPOutput::ParseLinkHeader(std::string val, std::vector<rtc::IceServer> &i
 			break;
 		}
 		val.erase(0, pos + 1);
+		val = trim_string(val);
+	}
+
+	if (!rel.empty()) {
+		const std::regex ice_server_rel("(^|\\s)ice-server(\\s|$)", std::regex_constants::icase);
+		if (!std::regex_search(rel, ice_server_rel)) {
+			return;
+		}
+	}
+
+	if (url.empty()) {
+		return;
 	}
 
 	try {
@@ -542,6 +567,7 @@ bool WHIPOutput::Connect()
 
 	std::string read_buffer;
 	std::vector<std::string> http_headers;
+	std::string response_etag;
 
 #if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
 	// Smart waiting: if we have ICE servers, wait for first candidate OR 150ms.
@@ -638,12 +664,16 @@ bool WHIPOutput::Connect()
 	std::string last_location_header;
 	size_t location_header_count = 0;
 	for (auto &http_header : http_headers) {
-		auto value = value_for_header("location", http_header);
-		if (value.empty())
-			continue;
+		auto location_value = value_for_header("location", http_header);
+		if (!location_value.empty()) {
+			location_header_count++;
+			last_location_header = location_value;
+		}
 
-		location_header_count++;
-		last_location_header = value;
+		auto etag_value = value_for_header("etag", http_header);
+		if (!etag_value.empty()) {
+			response_etag = etag_value;
+		}
 	}
 
 	if (location_header_count < static_cast<size_t>(redirect_count) + 1) {
@@ -661,12 +691,16 @@ bool WHIPOutput::Connect()
 		if (value.empty())
 			continue;
 
+		value = trim_string(value);
+
 		// Parse multiple links separated by ','
 		for (auto end = value.find(","); end != std::string::npos; end = value.find(",")) {
-			this->ParseLinkHeader(value.substr(0, end), iceServers);
-			value = value.substr(end + 1);
+			this->ParseLinkHeader(trim_string(value.substr(0, end)), iceServers);
+			value = trim_string(value.substr(end + 1));
 		}
-		this->ParseLinkHeader(value, iceServers);
+		if (!value.empty()) {
+			this->ParseLinkHeader(value, iceServers);
+		}
 	}
 
 	// If Location header doesn't start with `http` it is a relative URL.
@@ -699,6 +733,13 @@ bool WHIPOutput::Connect()
 	curl_free(url);
 	do_log(LOG_DEBUG, "WHIP Resource URL is: %s", resource_url.c_str());
 	curl_url_cleanup(url_builder);
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		resource_etag = response_etag;
+	}
+	if (response_etag.empty() && has_ice_servers) {
+		do_log(LOG_WARNING, "WHIP response did not include ETag; strict servers may reject trickle PATCH");
+	}
 
 	// Flush any candidates that arrived during the POST request (trickle ICE only)
 	// Set offer_sent inside the lock to prevent race with onLocalCandidate callback
@@ -831,7 +872,7 @@ void WHIPOutput::SendDelete()
 
 	long response_code;
 	curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
-	if (response_code != 200) {
+	if (response_code < 200 || response_code >= 300) {
 		do_log(LOG_WARNING, "DELETE request for resource URL failed. HTTP Code: %ld", response_code);
 		doCleanup();
 		return;
@@ -839,6 +880,10 @@ void WHIPOutput::SendDelete()
 
 	do_log(LOG_DEBUG, "Successfully performed DELETE request for resource URL");
 	resource_url.clear();
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		resource_etag.clear();
+	}
 	doCleanup();
 }
 
@@ -917,9 +962,20 @@ void WHIPOutput::SendTrickleIcePatch(const std::string &sdp_frag)
 		auto bearer_token_header = std::string("Authorization: Bearer ") + bearer_token;
 		headers = curl_slist_append(headers, bearer_token_header.c_str());
 	}
+
+	std::string etag;
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		etag = resource_etag;
+	}
+	if (!etag.empty()) {
+		auto if_match_header = std::string("If-Match: ") + etag;
+		headers = curl_slist_append(headers, if_match_header.c_str());
+	}
 	headers = curl_slist_append(headers, user_agent.c_str());
 
 	char error_buffer[CURL_ERROR_SIZE] = {};
+	std::vector<std::string> http_headers;
 
 	CURL *c = curl_easy_init();
 	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
@@ -929,6 +985,8 @@ void WHIPOutput::SendTrickleIcePatch(const std::string &sdp_frag)
 	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
 	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
+	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
 	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
 
 	CURLcode res = curl_easy_perform(c);
@@ -940,6 +998,14 @@ void WHIPOutput::SendTrickleIcePatch(const std::string &sdp_frag)
 		curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
 		if (response_code < 200 || response_code >= 300) {
 			do_log(LOG_WARNING, "Trickle ICE PATCH returned HTTP %ld", response_code);
+		} else {
+			for (auto &http_header : http_headers) {
+				auto value = value_for_header("etag", http_header);
+				if (!value.empty()) {
+					std::lock_guard<std::mutex> lock(resource_etag_mutex);
+					resource_etag = value;
+				}
+			}
 		}
 	}
 

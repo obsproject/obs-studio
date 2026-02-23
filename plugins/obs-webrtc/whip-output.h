@@ -61,6 +61,8 @@ private:
 	std::string endpoint_url;
 	std::string bearer_token;
 	std::string resource_url;
+	std::mutex resource_etag_mutex;
+	std::string resource_etag;
 
 	std::mutex ice_gathering_mutex;
 	std::condition_variable ice_gathering_cv;
