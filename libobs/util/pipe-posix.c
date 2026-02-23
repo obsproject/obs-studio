@@ -77,7 +77,6 @@ os_process_pipe_t *os_process_pipe_create_internal(const char *bin, char **argv,
 		posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
 		if (mainfds[1] != STDOUT_FILENO) {
 			posix_spawn_file_actions_adddup2(&file_actions, mainfds[1], STDOUT_FILENO);
-			posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
 		}
 	} else {
 		if (mainfds[0] != STDIN_FILENO) {
