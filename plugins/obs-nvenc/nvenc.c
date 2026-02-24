@@ -453,20 +453,20 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
-		vui_params->colourPrimaries = 6;
-		vui_params->transferCharacteristics = 6;
-		vui_params->colourMatrix = 6;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 1;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 13;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	default:
 		break;
@@ -557,33 +557,33 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
-		vui_params->colourPrimaries = 6;
-		vui_params->transferCharacteristics = 6;
-		vui_params->colourMatrix = 6;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 1;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 13;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_2100_PQ:
-		vui_params->colourPrimaries = 9;
-		vui_params->transferCharacteristics = 16;
-		vui_params->colourMatrix = 9;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE2084;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 		vui_params->chromaSampleLocationFlag = 1;
 		vui_params->chromaSampleLocationTop = 2;
 		vui_params->chromaSampleLocationBot = 2;
 		break;
 	case VIDEO_CS_2100_HLG:
-		vui_params->colourPrimaries = 9;
-		vui_params->transferCharacteristics = 18;
-		vui_params->colourMatrix = 9;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 		vui_params->chromaSampleLocationFlag = 1;
 		vui_params->chromaSampleLocationTop = 2;
 		vui_params->chromaSampleLocationBot = 2;
@@ -670,30 +670,30 @@ static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings)
 
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
-		av1_config->colorPrimaries = 6;
-		av1_config->transferCharacteristics = 6;
-		av1_config->matrixCoefficients = 6;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		av1_config->colorPrimaries = 1;
-		av1_config->transferCharacteristics = 1;
-		av1_config->matrixCoefficients = 1;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		av1_config->colorPrimaries = 1;
-		av1_config->transferCharacteristics = 13;
-		av1_config->matrixCoefficients = 1;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_2100_PQ:
-		av1_config->colorPrimaries = 9;
-		av1_config->transferCharacteristics = 16;
-		av1_config->matrixCoefficients = 9;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE2084;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 		break;
 	case VIDEO_CS_2100_HLG:
-		av1_config->colorPrimaries = 9;
-		av1_config->transferCharacteristics = 18;
-		av1_config->matrixCoefficients = 9;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 	}
 
 	/* -------------------------- */
