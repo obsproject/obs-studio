@@ -7,12 +7,14 @@
 #include <memory>
 #include <queue>
 
-#include <d3d12-command-context.hpp>
+#include <d3d12-deviceinstance.hpp>
 
 #include <util/base.h>
 #include <graphics/matrix4.h>
 #include <graphics/graphics.h>
 #include <graphics/device-exports.h>
+
+#include <d3d11.h>
 
 struct shader_var;
 struct shader_sampler;
