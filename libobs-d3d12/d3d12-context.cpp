@@ -333,7 +333,7 @@ void CommandContext::InsertAliasBarrier(GpuResource &Before, GpuResource &After,
 		FlushResourceBarriers();
 }
 
-inline void CommandContext::FlushResourceBarriers(void)
+void CommandContext::FlushResourceBarriers(void)
 {
 	if (m_NumBarriersToFlush > 0) {
 		m_CommandList->ResourceBarrier(m_NumBarriersToFlush, m_ResourceBarrierBuffer);
