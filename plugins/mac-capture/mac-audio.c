@@ -57,6 +57,8 @@ struct coreaudio_data {
 	unsigned long retry_time;
 
 	obs_source_t *source;
+	double factor;
+	mach_timebase_info_data_t info;
 };
 
 static bool get_default_output_device(struct coreaudio_data *ca)
@@ -438,14 +440,12 @@ static OSStatus input_callback(void *data, AudioUnitRenderActionFlags *action_fl
 									     : ca->buf_list->mNumberBuffers;
 	audio.format = ca->format;
 	audio.samples_per_sec = ca->sample_rate;
-	static double factor = 0.;
-	static mach_timebase_info_data_t info = {0, 0};
-	if (info.numer == 0 && info.denom == 0) {
-		mach_timebase_info(&info);
-		factor = ((double)info.numer) / info.denom;
+	if (ca->info.numer == 0 && ca->info.denom == 0) {
+		mach_timebase_info(&ca->info);
+		ca->factor = ((double)ca->info.numer) / ca->info.denom;
 	}
-	if (info.numer != info.denom)
-		audio.timestamp = (uint64_t)(factor * ts_data->mHostTime);
+	if (ca->info.numer != ca->info.denom)
+		audio.timestamp = (uint64_t)(ca->factor * ts_data->mHostTime);
 	else
 		audio.timestamp = ts_data->mHostTime;
 
@@ -863,6 +863,9 @@ static void *coreaudio_create(obs_data_t *settings, obs_source_t *source, bool i
 	ca->source = source;
 	ca->input = input;
 	ca->enable_downmix = obs_data_get_bool(settings, "enable_downmix");
+	ca->factor = 0;
+	ca->info.denom = 0;
+	ca->info.numer = 0;
 
 	if (!ca->enable_downmix) {
 		coreaudio_set_channels(ca, settings);
