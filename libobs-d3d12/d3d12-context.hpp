@@ -61,7 +61,7 @@ public:
 				     bool FlushImmediate = false);
 	void InsertUAVBarrier(GpuResource &Resource, bool FlushImmediate = false);
 	void InsertAliasBarrier(GpuResource &Before, GpuResource &After, bool FlushImmediate = false);
-	inline void FlushResourceBarriers(void);
+	void FlushResourceBarriers(void);
 
 	void InsertTimeStamp(ID3D12QueryHeap *pQueryHeap, uint32_t QueryIdx);
 	void ResolveTimeStamps(ID3D12Resource *pReadbackHeap, ID3D12QueryHeap *pQueryHeap, uint32_t NumQueries);
