@@ -417,6 +417,23 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
     OBSAVCaptureMediaFPS fps;
     if (!obs_data_get_frames_per_second(self.captureInfo->settings, "frame_rate", &fps, NULL)) {
         [self AVCaptureLog:LOG_DEBUG withFormat:@"No valid framerate found in settings"];
+
+        AVCaptureDeviceFormat *lastFormat = [self.deviceInput.device.formats lastObject];
+
+        fps = [OBSAVCapture fallbackFrameRateForFormat:lastFormat];
+
+        if (lastFormat.videoSupportedFrameRateRanges.count == 0) {
+            return NO;
+        }
+
+        obs_data_set_obj(self.captureInfo->settings, "frame_rate", NULL);
+
+        obs_data_item_t *frameRateSetting = obs_data_item_byname(self.captureInfo->settings, "frame_rate");
+
+        obs_data_item_set_frames_per_second(&frameRateSetting, fps, NULL);
+
+        obs_source_update(self.captureInfo->source, self.captureInfo->settings);
+
         return NO;
     }
 
