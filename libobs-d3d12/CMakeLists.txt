@@ -6,8 +6,26 @@ add_library(OBS::libobs-d3d12 ALIAS libobs-d3d12)
 target_sources(
   libobs-d3d12
   PRIVATE # cmake-format: unsort
-    d3d12-command-context.cpp
-    d3d12-command-context.hpp
+    d3d12-common.cpp
+    d3d12-common.hpp
+    d3d12-linearallocator.cpp
+    d3d12-linearallocator.hpp
+    d3d12-gpubuffer.cpp
+    d3d12-gpubuffer.hpp
+    d3d12-rootsignature.cpp
+    d3d12-rootsignature.hpp
+    d3d12-descriptorallocator.cpp
+    d3d12-descriptorallocator.hpp
+    d3d12-dynamic-descriptorheap.cpp
+    d3d12-dynamic-descriptorheap.hpp
+    d3d12-commandqueue.cpp
+    d3d12-commandqueue.hpp
+    d3d12-pipeline.cpp
+    d3d12-pipeline.hpp
+    d3d12-context.cpp
+    d3d12-context.hpp
+    d3d12-deviceinstance.cpp
+    d3d12-deviceinstance.hpp
     d3d12-duplicator.cpp
     d3d12-indexbuffer.cpp
     d3d12-samplerstate.cpp
