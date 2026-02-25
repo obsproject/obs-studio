@@ -26,8 +26,6 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 	ID3D12Device *device;
 	ID3D12Fence *fence;
 	ID3D12CommandQueue *command_queue;
-	ID3D12GraphicsCommandList *command_list = NULL;
-	ID3D12CommandAllocator *allocator = NULL;
 	HANDLE event;
 
 	ID3D12Fence *input_fence;
@@ -163,34 +161,12 @@ bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
-	for (size_t i = 0; i < 64; ++i) {
-		hr = device->lpVtbl->CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_COPY,
-							    &IID_ID3D12CommandAllocator, (void **)(&allocator));
-		if (FAILED(hr)) {
-			error_hr("D3D12 CreateCommandAllocator failed");
-			return false;
-		}
-		enc->allocators[i] = allocator;
-	}
-
-	if (enc->allocators[0] != NULL) {
-		hr = device->lpVtbl->CreateCommandList(device, 1, D3D12_COMMAND_LIST_TYPE_COPY, enc->allocators[0],
-						       NULL, &IID_ID3D12GraphicsCommandList, (void **)(&command_list));
-		if (FAILED(hr)) {
-			error_hr("D3D12 CreateCommandList failed");
-			return false;
-		}
-
-		command_list->lpVtbl->Close(command_list);
-	}
-
 	event = CreateEvent(NULL, false, false, NULL);
 
 	enc->device12 = device;
 
 	enc->command_queue = command_queue;
 	enc->event = event;
-	enc->command_list = command_list;
 
 	enc->input_fence = input_fence;
 	enc->input_fence_value = 0;
@@ -227,15 +203,45 @@ void d3d12_free(struct nvenc_data *enc)
 		CloseHandle(enc->event);
 	}
 
-	for (size_t i = 0; i < _countof(enc->allocators); ++i) {
-		if (enc->allocators[i]) {
-			enc->allocators[i]->lpVtbl->Release(enc->allocators[i]);
+	for (size_t i = 0; i < enc->allocators.num; ++i) {
+		if (enc->allocators.array[i]) {
+			ID3D12CommandAllocator *allocator = enc->allocators.array[i];
+			allocator->lpVtbl->Release(allocator);
 		}
 	}
 
 	if (enc->device12) {
 		enc->device12->lpVtbl->Release(enc->device12);
 	}
+}
+
+bool d3d12_init_allocators(struct nvenc_data *enc)
+{
+	ID3D12GraphicsCommandList *command_list = NULL;
+	ID3D12CommandAllocator *allocator = NULL;
+	ID3D12Device *device = enc->device12;
+
+	da_reserve(enc->allocators, enc->buf_count);
+	for (uint32_t i = 0; i < enc->buf_count; i++) {
+		HRESULT hr = device->lpVtbl->CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_COPY,
+								    &IID_ID3D12CommandAllocator, (void **)(&allocator));
+		if (FAILED(hr)) {
+			error_hr("D3D12 CreateCommandAllocator failed");
+			return false;
+		}
+		da_push_back(enc->allocators, &allocator);
+	}
+
+	HRESULT hr = device->lpVtbl->CreateCommandList(device, 1, D3D12_COMMAND_LIST_TYPE_COPY, allocator, NULL,
+						       &IID_ID3D12GraphicsCommandList, (void **)(&command_list));
+	if (FAILED(hr)) {
+		error_hr("D3D12 CreateCommandList failed");
+		return false;
+	}
+
+	command_list->lpVtbl->Close(command_list);
+	enc->command_list = command_list;
+	return true;
 }
 
 static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
@@ -306,7 +312,6 @@ static bool d3d12_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	nvtex->input_res = input_res;
 
 	cpu_wait_for_fence_point(enc, regRsrcInputFence.pFence, regRsrcInputFence.signalValue);
-
 	return true;
 }
 
@@ -490,7 +495,7 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 	}
 
 	deque_push_back(&enc->dts_list, &pts, sizeof(pts));
-	ID3D12CommandAllocator *allocator = enc->allocators[enc->next_bitstream];
+	ID3D12CommandAllocator *allocator = enc->allocators.array[enc->next_bitstream];
 	HRESULT hr = allocator->lpVtbl->Reset(allocator);
 	if (FAILED(hr)) {
 		error_hr("CommandAllocator(Reset) failed");
@@ -549,6 +554,5 @@ bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 	output_res->pOutputBuffer = output->mapped_res;
 	output_res->outputFencePoint.signalValue = enc->output_fence_value;
 	output_res->outputFencePoint.bSignal = true;
-
 	return nvenc_encode_base(enc, bs, nvtex->input_res, pts, packet, received_packet);
 }
