@@ -300,3 +300,9 @@ Canvas Video Functions
    Render the canvas's view. Must be called on the graphics thread.
 
 ---------------------
+
+.. function:: bool obs_canvas_video_active(obs_canvas_t *canvas)
+
+   Returns true if video of the canvas is active, false otherwise.
+
+---------------------
