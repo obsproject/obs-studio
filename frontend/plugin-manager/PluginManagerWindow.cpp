@@ -29,6 +29,8 @@
 
 #include "moc_PluginManagerWindow.cpp"
 
+extern bool safe_mode;
+
 namespace OBS {
 
 PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules, QWidget *parent)
@@ -73,7 +75,17 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 		return aName < bName;
 	});
 
+	std::sort(modules_.begin(), modules_.end(), [](const ModuleInfo &a, const ModuleInfo &b) {
+		bool missingA = !obs_get_module(a.module_name.c_str()) &&
+				!obs_get_disabled_module(a.module_name.c_str());
+		bool missingB = !obs_get_module(b.module_name.c_str()) &&
+				!obs_get_disabled_module(b.module_name.c_str());
+
+		return !missingA && missingB;
+	});
+
 	int row = 0;
+	int missingIndex = -1;
 	for (auto &metadata : modules_) {
 		std::string id = metadata.module_name;
 		// Check if the module is missing:
@@ -81,21 +93,19 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 
 		QString name = !metadata.display_name.empty() ? metadata.display_name.c_str()
 							      : metadata.module_name.c_str();
-		if (missing) {
-			name += " " + QTStr("PluginManager.MissingPlugin");
+
+		if (missing && missingIndex == -1) {
+			missingIndex = row;
 		}
 
 		auto item = new QCheckBox(name);
 		item->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 		item->setChecked(metadata.enabled);
 
-		if (!metadata.enabledAtLaunch) {
+		if (!metadata.enabledAtLaunch || missing) {
 			item->setProperty("class", "text-muted");
 		}
 
-		if (missing) {
-			item->setEnabled(false);
-		}
 		ui->modulesList->layout()->addWidget(item);
 
 		connect(item, &QCheckBox::toggled, this, [this, row](bool checked) {
@@ -104,6 +114,24 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 		});
 
 		row++;
+	}
+
+	QVBoxLayout *layout = qobject_cast<QVBoxLayout *>(ui->modulesList->layout());
+	if (safe_mode) {
+		QLabel *safeModeLabel = new QLabel(ui->modulesList);
+		safeModeLabel->setText(QTStr("PluginManager.SafeMode"));
+		safeModeLabel->setProperty("class", "text-muted text-italic");
+		safeModeLabel->setIndent(0);
+
+		layout->insertWidget(0, safeModeLabel);
+	} else if (missingIndex != -1) {
+		QLabel *missingLabel = new QLabel(ui->modulesList);
+		missingLabel->setText(QTStr("PluginManager.MissingPlugin"));
+		missingLabel->setProperty("class", "text-warning text-bold");
+		missingLabel->setIndent(0);
+
+		layout->insertWidget(missingIndex, new QLabel("", ui->modulesList));
+		layout->insertWidget(missingIndex + 1, missingLabel);
 	}
 
 	ui->modulesList->adjustSize();

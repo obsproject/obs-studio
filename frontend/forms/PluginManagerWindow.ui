@@ -179,6 +179,9 @@
               <property name="text">
                <string>PluginManager.Section.Manage.Title</string>
               </property>
+              <property name="indent">
+               <number>0</number>
+              </property>
               <property name="class" stdset="0">
                <string>text-title</string>
               </property>
