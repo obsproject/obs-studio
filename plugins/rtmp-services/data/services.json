@@ -271,6 +271,31 @@
             }
         },
         {
+            "name": "Frontro",
+            "common": true,
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.frontrow.cc/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264",
+                "hevc"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max fps": 30,
+                "max audio bitrate": 320,
+                "bitrate matrix": [
+                    {"res": "3840x2160", "fps": 30, "max bitrate": 20000},
+                    {"res": "1920x1080", "fps": 30, "max bitrate": 8000},
+                    {"res": "1280x720", "fps": 30, "max bitrate": 5000}
+                ]
+            }
+        },
+        {
             "name": "Loola.tv",
             "common": false,
             "servers": [
