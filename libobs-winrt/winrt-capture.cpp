@@ -89,6 +89,60 @@ static DXGI_FORMAT get_pixel_format(HWND window, HMONITOR monitor, BOOL force_sd
 	return (monitor && gs_is_monitor_hdr(monitor)) ? DXGI_FORMAT_R16G16B16A16_FLOAT : sdr_format;
 }
 
+static inline DXGI_FORMAT ConvertGSTextureFormatResource(gs_color_format format)
+{
+	switch (format) {
+	case GS_UNKNOWN:
+		return DXGI_FORMAT_UNKNOWN;
+	case GS_A8:
+		return DXGI_FORMAT_A8_UNORM;
+	case GS_R8:
+		return DXGI_FORMAT_R8_UNORM;
+	case GS_RGBA:
+		return DXGI_FORMAT_R8G8B8A8_TYPELESS;
+	case GS_BGRX:
+		return DXGI_FORMAT_B8G8R8X8_TYPELESS;
+	case GS_BGRA:
+		return DXGI_FORMAT_B8G8R8A8_TYPELESS;
+	case GS_R10G10B10A2:
+		return DXGI_FORMAT_R10G10B10A2_UNORM;
+	case GS_RGBA16:
+		return DXGI_FORMAT_R16G16B16A16_UNORM;
+	case GS_R16:
+		return DXGI_FORMAT_R16_UNORM;
+	case GS_RGBA16F:
+		return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case GS_RGBA32F:
+		return DXGI_FORMAT_R32G32B32A32_FLOAT;
+	case GS_RG16F:
+		return DXGI_FORMAT_R16G16_FLOAT;
+	case GS_RG32F:
+		return DXGI_FORMAT_R32G32_FLOAT;
+	case GS_R16F:
+		return DXGI_FORMAT_R16_FLOAT;
+	case GS_R32F:
+		return DXGI_FORMAT_R32_FLOAT;
+	case GS_DXT1:
+		return DXGI_FORMAT_BC1_UNORM;
+	case GS_DXT3:
+		return DXGI_FORMAT_BC2_UNORM;
+	case GS_DXT5:
+		return DXGI_FORMAT_BC3_UNORM;
+	case GS_R8G8:
+		return DXGI_FORMAT_R8G8_UNORM;
+	case GS_RGBA_UNORM:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case GS_BGRX_UNORM:
+		return DXGI_FORMAT_B8G8R8X8_UNORM;
+	case GS_BGRA_UNORM:
+		return DXGI_FORMAT_B8G8R8A8_UNORM;
+	case GS_RG16:
+		return DXGI_FORMAT_R16G16_UNORM;
+	}
+
+	return DXGI_FORMAT_UNKNOWN;
+}
+
 struct winrt_capture {
 	HWND window;
 	BOOL client_area;
@@ -226,6 +280,7 @@ struct winrt_capture {
 						texture = gs_texture_create(texture_width, texture_height, color_format,
 									    1, NULL, 0);
 					} else {
+						desc.Format = ConvertGSTextureFormatResource(color_format);
 						texture = CreateSharedTexture(desc);
 					}
 				}
