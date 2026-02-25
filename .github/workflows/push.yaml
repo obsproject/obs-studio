@@ -33,7 +33,7 @@ jobs:
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -57,7 +57,7 @@ jobs:
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -81,7 +81,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -115,7 +115,7 @@ jobs:
           : Get Commit Hash 🆔
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
           path: docs
@@ -149,7 +149,7 @@ jobs:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
@@ -172,7 +172,7 @@ jobs:
           print "channel=${channel}" >> $GITHUB_OUTPUT
 
       - name: Download Artifact 📥
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: obs-studio-macos-${{ matrix.target }}-${{ steps.setup.outputs.commitHash }}
 
@@ -189,7 +189,7 @@ jobs:
           customLink: 'https://obsproject.com/'
 
       - name: Upload Artifacts 📡
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: macos-sparkle-update-${{ matrix.target }}
           path: ${{ github.workspace }}/output
@@ -247,7 +247,7 @@ jobs:
           esac
 
       - name: Download Build Artifacts 📥
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         if: ${{ fromJSON(steps.check.outputs.validTag) }}
 
       - name: Rename Files 🏷️

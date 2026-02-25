@@ -27,7 +27,7 @@ jobs:
           Write-Output "Workflow SHA: ${sha}"
           "workflow_sha=${sha}" >> $env:GITHUB_OUTPUT
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           path: "repo"
           fetch-depth: 0
@@ -42,7 +42,7 @@ jobs:
           "commitHash=${shortHash}" >> $env:GITHUB_OUTPUT
 
       - name: Download Artifact 📥
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ steps.setup.outputs.commitHash }}
           path: ${{ github.workspace }}/build
@@ -62,21 +62,21 @@ jobs:
           subject-path: ${{ github.workspace }}/output/*-${{ matrix.architecture }}.zip
 
       - name: Upload Signed Build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-signed
           compression-level: 0
           path: ${{ github.workspace }}/output/*-${{ matrix.architecture }}.zip
 
       - name: Upload PDBs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-pdbs
           compression-level: 0
           path: ${{ github.workspace }}/output/*-pdbs.zip
 
       - name: Upload Installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: matrix.architecture == 'x64'
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-installer
