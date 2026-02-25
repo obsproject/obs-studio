@@ -133,6 +133,24 @@ static void AddExtraModulePaths()
 #endif
 	}
 
+#if defined(_WIN32)
+	/* Search the standard OBS Studio installation directory so that
+	   third-party plugins are available in development builds. */
+	{
+		char pf[512];
+		DWORD pf_len = GetEnvironmentVariableA("ProgramFiles", pf,
+						       sizeof(pf));
+		if (pf_len > 0 && pf_len < sizeof(pf)) {
+			string std_bin =
+				string(pf) + "/obs-studio/obs-plugins/64bit";
+			string std_data = string(pf) +
+					  "/obs-studio/data/obs-plugins/%module%";
+			obs_add_module_path(std_bin.c_str(),
+					    std_data.c_str());
+		}
+	}
+#endif
+
 	if (portable_mode)
 		return;
 
@@ -1407,6 +1425,8 @@ void OBSBasic::applicationShutdown() noexcept
 		patronJsonThread->wait();
 
 	delete screenshotData;
+	delete previewProjector;
+	delete studioProgramProjector;
 	delete previewProjectorSource;
 	delete previewProjectorMain;
 	delete sourceProjector;
@@ -1419,6 +1439,8 @@ void OBSBasic::applicationShutdown() noexcept
 	delete deinterlaceMenu;
 	delete perSceneTransitionMenu;
 	delete shortcutFilter;
+	delete trayIcon;
+	delete trayMenu;
 	delete programOptions;
 	delete program;
 

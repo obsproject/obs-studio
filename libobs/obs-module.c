@@ -517,6 +517,13 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 		return;
 	}
 
+	/* Skip modules already loaded from a higher-priority path. */
+	if (obs_get_module(info->name)) {
+		blog(LOG_DEBUG, "Skipping module '%s' (%s), already loaded",
+		     info->name, info->bin_path);
+		return;
+	}
+
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
 	switch (code) {
 	case MODULE_MISSING_EXPORTS:
