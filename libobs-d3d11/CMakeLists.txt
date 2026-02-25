@@ -6,6 +6,8 @@ add_library(OBS::libobs-d3d11 ALIAS libobs-d3d11)
 target_sources(
   libobs-d3d11
   PRIVATE
+    d3d11-colorspace.cpp
+    d3d11-colorspace.hlsl
     d3d11-duplicator.cpp
     d3d11-indexbuffer.cpp
     d3d11-rebuild.cpp
@@ -21,6 +23,9 @@ target_sources(
     d3d11-vertexbuffer.cpp
     d3d11-zstencilbuffer.cpp
 )
+
+# Mark the HLSL file so CMake doesn't try to compile it as C++
+set_source_files_properties(d3d11-colorspace.hlsl PROPERTIES HEADER_FILE_ONLY TRUE)
 
 configure_file(cmake/windows/obs-module.rc.in libobs-d3d11.rc)
 target_sources(libobs-d3d11 PRIVATE libobs-d3d11.rc)
