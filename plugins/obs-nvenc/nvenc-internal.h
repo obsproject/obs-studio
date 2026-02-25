@@ -108,7 +108,7 @@ struct nvenc_data {
 	uint64_t output_fence_value;
 
 	ID3D12GraphicsCommandList *command_list;
-	ID3D12CommandAllocator *allocators[64];
+	DARRAY(ID3D12CommandAllocator *) allocators;
 #endif
 
 	uint32_t cx;
@@ -207,6 +207,8 @@ bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 /** D3D12 **/
 bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings);
 void d3d12_free(struct nvenc_data *enc);
+
+bool d3d12_init_allocators(struct nvenc_data *enc);
 
 bool d3d12_init_textures(struct nvenc_data *enc);
 void d3d12_free_textures(struct nvenc_data *enc);
