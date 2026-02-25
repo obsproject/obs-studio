@@ -59,9 +59,9 @@ Contributing
   Instead, please use Crowdin.  For more information read this page:
   https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
 
-- Be sure to read and follow the Code of Conduct page located here 
-  before https://github.com/obsproject/obs-studio/blob/master/COC.rst
-  contributing to this project.
+- Contributors to OBS Studio and related repositories are expected to
+  follow our Code of Conduct, which can be read here:
+  https://github.com/obsproject/obs-studio/blob/master/COC.rst
 
 - Other ways to contribute are by helping people out with support on
   our forums or in our community chat.  Please limit support to topics
