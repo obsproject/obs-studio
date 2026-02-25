@@ -27,7 +27,14 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <avrt.h>      /* AvSetMmThreadCharacteristics / AvRevertMmThreadCharacteristics */
+#pragma comment(lib, "avrt.lib")
 #endif
+
+/* Forward declaration from obs-audio-optimized.c */
+extern void copy_video_plane_optimized(uint8_t *dst, const uint8_t *src,
+                                       uint32_t width, uint32_t height,
+                                       uint32_t dst_stride, uint32_t src_stride);
 
 static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
@@ -602,19 +609,20 @@ static inline bool download_frame(struct obs_core_video_mix *video, int prev_tex
 static const uint8_t *set_gpu_converted_plane(uint32_t width, uint32_t height, uint32_t linesize_input,
 					      uint32_t linesize_output, const uint8_t *in, uint8_t *out)
 {
-	if ((width == linesize_input) && (width == linesize_output)) {
-		size_t total = (size_t)width * (size_t)height;
-		memcpy(out, in, total);
-		in += total;
-	} else {
-		for (size_t y = 0; y < height; y++) {
-			memcpy(out, in, width);
-			out += linesize_output;
-			in += linesize_input;
-		}
-	}
+	/* Use SIMD-accelerated copy (SSE2/AVX + NT stores for large planes).
+	 * The optimized function mirrors the same contiguous/strided logic as
+	 * the original memcpy loops but processes 16–64 bytes per iteration.
+	 * We still need to return the updated 'in' pointer so callers that
+	 * chain planes (NV12/P010 interleaved-UV case) get the correct offset. */
+	copy_video_plane_optimized(out, in, width, height, linesize_output, linesize_input);
 
-	return in;
+	/* Advance 'in' by the number of bytes consumed:
+	 *  - contiguous layout: width * height bytes
+	 *  - strided layout:    linesize_input * height bytes */
+	if (width == linesize_input)
+		return in + (size_t)width * (size_t)height;
+	else
+		return in + (size_t)linesize_input * (size_t)height;
 }
 
 static void set_gpu_converted_data(struct video_frame *output, const struct video_data *input,
@@ -760,20 +768,11 @@ static void set_gpu_converted_data(struct video_frame *output, const struct vide
 static inline void copy_rgbx_frame(struct video_frame *output, const struct video_data *input,
 				   const struct video_output_info *info)
 {
-	uint8_t *in_ptr = input->data[0];
-	uint8_t *out_ptr = output->data[0];
-
-	/* if the line sizes match, do a single copy */
-	if (input->linesize[0] == output->linesize[0]) {
-		memcpy(out_ptr, in_ptr, (size_t)input->linesize[0] * (size_t)info->height);
-	} else {
-		const size_t copy_size = (size_t)info->width * 4;
-		for (size_t y = 0; y < info->height; y++) {
-			memcpy(out_ptr, in_ptr, copy_size);
-			in_ptr += input->linesize[0];
-			out_ptr += output->linesize[0];
-		}
-	}
+	/* Use SIMD-accelerated copy with NT stores for large frames and
+	 * prefetching for strided copies — same function used by
+	 * set_gpu_converted_plane(), width in bytes = width_px * 4. */
+	copy_video_plane_optimized(output->data[0], input->data[0], info->width * 4, info->height,
+				   output->linesize[0], input->linesize[0]);
 }
 
 static inline void output_video_data(struct obs_core_video_mix *video, struct video_data *input_frame, int count)
@@ -1165,6 +1164,14 @@ void *obs_graphics_thread(void *param)
 #ifdef _WIN32
 	struct winrt_state winrt;
 	init_winrt_state(&winrt);
+
+	/* Boost graphics thread priority for lower frame-time jitter.
+	 * Use MMCSS "Capture" task — this is the correct task for a
+	 * capture/compositing app and keeps OBS out of the "Games" CPU
+	 * pool used by the actual game being streamed.                 */
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+	DWORD _mmcss_task_idx = 0;
+	HANDLE _mmcss_hdl = AvSetMmThreadCharacteristics(L"Capture", &_mmcss_task_idx);
 #endif // #ifdef _WIN32
 
 	is_graphics_thread = true;
@@ -1197,6 +1204,8 @@ void *obs_graphics_thread(void *param)
 		;
 
 #ifdef _WIN32
+	if (_mmcss_hdl)
+		AvRevertMmThreadCharacteristics(_mmcss_hdl);
 	uninit_winrt_state(&winrt);
 #endif
 

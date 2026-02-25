@@ -19,6 +19,12 @@
 #include "obs-internal.h"
 #include "util/util_uint64.h"
 
+/* Forward declarations from obs-audio-optimized.c */
+extern void mix_audio_optimized(struct audio_output_data *mixes, size_t channels,
+                                float *(*audio_buffers)[MAX_AUDIO_CHANNELS],
+                                size_t start_point, size_t total_floats);
+extern void zero_audio_buffer_optimized(float *buffer, size_t count);
+
 struct ts_info {
 	uint64_t start;
 	uint64_t end;
@@ -104,19 +110,8 @@ static inline void mix_audio(struct audio_output_data *mixes, obs_source_t *sour
 		total_floats -= start_point;
 	}
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		for (size_t ch = 0; ch < channels; ch++) {
-			register float *mix = mixes[mix_idx].data[ch];
-			register float *aud = source->audio_output_buf[mix_idx][ch];
-			register float *end;
-
-			mix += start_point;
-			end = aud + total_floats;
-
-			while (aud < end)
-				*(mix++) += *(aud++);
-		}
-	}
+	/* Use SIMD-optimized mixing (SSE2/AVX2) instead of scalar loop */
+	mix_audio_optimized(mixes, channels, source->audio_output_buf, start_point, total_floats);
 }
 
 static bool ignore_audio(obs_source_t *source, size_t channels, size_t sample_rate, uint64_t start_ts)
@@ -543,10 +538,32 @@ static inline void clear_audio_output_buf(obs_source_t *source, struct obs_core_
 			for (size_t ch = 0; ch < MAX_AUDIO_CHANNELS; ch++) {
 				float *buf = source->audio_output_buf[mix][ch];
 				if (buf)
-					memset(buf, 0, AUDIO_OUTPUT_FRAMES * sizeof(float));
+					zero_audio_buffer_optimized(buf, AUDIO_OUTPUT_FRAMES);
 			}
 		}
 	}
+}
+
+/* ── Phase 6.4: parallel audio-render job ──────────────────────────────── */
+struct audio_render_job {
+	obs_source_t         *source;
+	uint32_t              mixers;
+	size_t                channels;
+	size_t                sample_rate;
+	size_t                audio_size;
+	struct obs_core_audio *audio;
+};
+
+/* Called from worker threads — only touches source-private buffers. */
+static void do_audio_render_job(void *param)
+{
+	struct audio_render_job *j = (struct audio_render_job *)param;
+	obs_source_audio_render(j->source, j->mixers, j->channels,
+				j->sample_rate, j->audio_size);
+	/* should_silence_monitored_source reads shared state read-only;
+	 * clear_audio_output_buf writes only to j->source's own buffers. */
+	if (should_silence_monitored_source(j->source, j->audio))
+		clear_audio_output_buf(j->source, j->audio);
 }
 
 bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts, uint32_t mixers,
@@ -622,16 +639,72 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 	pthread_mutex_unlock(&data->audio_sources_mutex);
 
 	/* ------------------------------------------------ */
-	/* render audio data */
-	for (size_t i = 0; i < audio->render_order.num; i++) {
+	/* render audio data (Phase 6.4: parallel simple-source render)    */
+	/*                                                                   */
+	/* Pass 1: simple sources (no audio_render callback) are dispatched */
+	/*         to the thread pool — they have no cross-source deps.     */
+	/* Pass 2: composite sources (scenes/transitions) are rendered      */
+	/*         serially in dependency order once Pass 1 drains.         */
+	/* Pass 3: backward-timestamp recovery runs serially for all.       */
+	size_t n_sources = audio->render_order.num;
+
+	/* Lazy-init the render pool on first call with 3+ sources.
+	 * audio_callback is always called from the single OBS audio thread,
+	 * so this check is inherently thread-safe.                          */
+	if (!audio->render_pool && n_sources >= 3) {
+		audio->render_pool = obs_audio_threadpool_create(0, 0);
+		if (audio->render_pool)
+			blog(LOG_INFO,
+			     "obs-audio-threaded: render pool started — "
+			     "%zu worker(s)",
+			     obs_audio_threadpool_num_threads(
+				     audio->render_pool));
+	}
+
+	bool use_parallel = (audio->render_pool != NULL && n_sources >= 3);
+	struct audio_render_job *jobs = NULL;
+	if (use_parallel)
+		jobs = bmalloc(n_sources * sizeof(struct audio_render_job));
+
+	/* ---- Pass 1: dispatch simple sources to thread pool ---- */
+	for (size_t i = 0; i < n_sources; i++) {
+		obs_source_t *src = audio->render_order.array[i];
+		if (!use_parallel || src->info.audio_render)
+			continue; /* composite — deferred to Pass 2 */
+		jobs[i].source      = src;
+		jobs[i].mixers      = mixers;
+		jobs[i].channels    = channels;
+		jobs[i].sample_rate = sample_rate;
+		jobs[i].audio_size  = audio_size;
+		jobs[i].audio       = audio;
+		obs_audio_threadpool_submit(audio->render_pool,
+					   do_audio_render_job, &jobs[i]);
+	}
+
+	/* Wait for all parallel simple-source renders to finish. */
+	if (use_parallel)
+		obs_audio_threadpool_wait(audio->render_pool);
+
+	/* ---- Pass 2: composite sources rendered serially in order ---- */
+	for (size_t i = 0; i < n_sources; i++) {
 		obs_source_t *source = audio->render_order.array[i];
-		obs_source_audio_render(source, mixers, channels, sample_rate, audio_size);
+		if (use_parallel && !source->info.audio_render)
+			continue; /* already done in Pass 1 */
+		obs_source_audio_render(source, mixers, channels, sample_rate,
+					audio_size);
 		if (should_silence_monitored_source(source, audio))
 			clear_audio_output_buf(source, audio);
+	}
 
+	bfree(jobs);
+
+	/* ---- Pass 3: backward-timestamp recovery (serial, all sources) ---- */
+	for (size_t i = 0; i < n_sources; i++) {
+		obs_source_t *source = audio->render_order.array[i];
 		/* if a source has gone backward in time and we can no
 		 * longer buffer, drop some or all of its audio */
-		if (audio_buffering_maxed(audio) && source->audio_ts != 0 && source->audio_ts < ts.start) {
+		if (audio_buffering_maxed(audio) && source->audio_ts != 0 &&
+		    source->audio_ts < ts.start) {
 			if (source->info.audio_render) {
 				blog(LOG_DEBUG,
 				     "render audio source %s timestamp has "
@@ -646,12 +719,16 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 #endif
 			} else {
 				pthread_mutex_lock(&source->audio_buf_mutex);
-				bool rerender = ignore_audio(source, channels, sample_rate, ts.start);
+				bool rerender = ignore_audio(
+					source, channels, sample_rate,
+					ts.start);
 				pthread_mutex_unlock(&source->audio_buf_mutex);
 
 				/* if we (potentially) recovered, re-render */
 				if (rerender)
-					obs_source_audio_render(source, mixers, channels, sample_rate, audio_size);
+					obs_source_audio_render(
+						source, mixers, channels,
+						sample_rate, audio_size);
 			}
 		}
 	}

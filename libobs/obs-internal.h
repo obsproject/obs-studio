@@ -38,6 +38,8 @@
 #include "media-io/audio-io.h"
 
 #include "obs.h"
+#include "obs-audio-pool.h"
+#include "obs-audio-threaded.h"
 
 #include <obsversion.h>
 #include <caption/caption.h>
@@ -461,6 +463,19 @@ struct obs_core_audio {
 	struct deque tasks;
 
 	struct obs_source *monitoring_duplicating_source;
+
+	/* Phase 2: pre-allocated, 64-byte-aligned audio buffer pools.
+	 * output_buf_pool: blocks of AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES floats.
+	 * mix_buf_pool:    blocks of AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS floats.              */
+	struct obs_audio_pool *output_buf_pool;
+	struct obs_audio_pool *mix_buf_pool;
+
+	/* Phase 6.4: thread pool for parallel per-source audio render.
+	 * Lazily created on first audio_callback; destroyed by
+	 * obs_audio_render_pool_shutdown() called from obs_shutdown().
+	 * NULL means parallel render is disabled (single-source scenes,
+	 * or systems with only one logical core).                        */
+	struct obs_audio_threadpool *render_pool;
 };
 
 /* user sources, output channels, and displays */

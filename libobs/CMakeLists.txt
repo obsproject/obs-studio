@@ -31,6 +31,11 @@ target_sources(
     obs-audio-controls.c
     obs-audio-controls.h
     obs-audio.c
+    obs-audio-optimized.c
+    obs-audio-pool.c
+    obs-audio-pool.h
+    obs-audio-threaded.c
+    obs-audio-threaded.h
     obs-av1.c
     obs-av1.h
     obs-avc.c
@@ -118,6 +123,7 @@ target_sources(
     util/serializer.h
     util/source-profiler.c
     util/source-profiler.h
+    util/spsc-queue.h
     util/sse-intrin.h
     util/task.c
     util/task.h
@@ -343,6 +349,7 @@ set(
   util/profiler.h
   util/profiler.hpp
   util/serializer.h
+  util/spsc-queue.h
   util/sse-intrin.h
   util/task.h
   util/text-lookup.h

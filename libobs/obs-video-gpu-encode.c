@@ -17,6 +17,13 @@
 
 #include "obs-internal.h"
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <avrt.h>
+#pragma comment(lib, "avrt.lib")
+#endif
+
 #define NBSP "\xC2\xA0"
 static const char *gpu_encode_frame_name = "gpu_encode_frame";
 static void *gpu_encode_thread(void *data)
@@ -29,6 +36,14 @@ static void *gpu_encode_thread(void *data)
 	da_init(encoders);
 
 	os_set_thread_name("obs gpu encode thread");
+
+#ifdef _WIN32
+	/* Boost GPU encode thread — latency matters for proper AV sync.
+	 * Use "Capture" MMCSS task (same as NVENC's own threads).     */
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+	DWORD _enc_mmcss_task = 0;
+	HANDLE _enc_mmcss_hdl = AvSetMmThreadCharacteristics(L"Capture", &_enc_mmcss_task);
+#endif
 	const char *gpu_encode_thread_name = profile_store_name(
 		obs_get_profiler_name_store(), "obs_gpu_encode_thread(%g" NBSP "ms)", interval / 1000000.);
 	profile_register_root(gpu_encode_thread_name, interval);
@@ -221,6 +236,10 @@ static void *gpu_encode_thread(void *data)
 	}
 
 	da_free(encoders);
+#ifdef _WIN32
+	if (_enc_mmcss_hdl)
+		AvRevertMmThreadCharacteristics(_enc_mmcss_hdl);
+#endif
 	return NULL;
 }
 

@@ -921,8 +921,19 @@ static bool obs_init_audio(struct audio_output_info *ai)
 	signal_handler_connect(obs->signals, "deduplication_changed", apply_monitoring_deduplication, NULL);
 
 	errorcode = audio_output_open(&audio->audio, ai);
-	if (errorcode == AUDIO_OUTPUT_SUCCESS)
+	if (errorcode == AUDIO_OUTPUT_SUCCESS) {
+		/* Phase 2: pre-allocate 64-byte-aligned audio buffer pools for
+		 * the per-source output and mix buffers.  32 slots pre-warmed;
+		 * the pool grows automatically if more sources are added. */
+		const size_t out_block =
+			sizeof(float) * AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES;
+		const size_t mix_block = sizeof(float) * AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS;
+		audio->output_buf_pool = obs_audio_pool_create(out_block, 32);
+		audio->mix_buf_pool    = obs_audio_pool_create(mix_block, 32);
+		if (!audio->output_buf_pool || !audio->mix_buf_pool)
+			blog(LOG_WARNING, "obs_init_audio: audio buffer pool creation failed");
 		return true;
+	}
 	else if (errorcode == AUDIO_OUTPUT_INVALIDPARAM)
 		blog(LOG_ERROR, "Invalid audio parameters specified");
 	else
@@ -957,6 +968,9 @@ static void obs_free_audio(void)
 	deque_free(&audio->tasks);
 	pthread_mutex_destroy(&audio->task_mutex);
 	pthread_mutex_destroy(&audio->monitoring_mutex);
+
+	obs_audio_pool_destroy(audio->output_buf_pool);
+	obs_audio_pool_destroy(audio->mix_buf_pool);
 
 	memset(audio, 0, sizeof(struct obs_core_audio));
 }
