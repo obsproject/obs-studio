@@ -955,6 +955,8 @@ static void *nvenc_create_internal(enum codec_type codec, obs_data_t *settings, 
 #ifdef _WIN32
 	if (texture) {
 		if (enc->is_use_d3d12) {
+			if (!d3d12_init_allocators(enc))
+				goto fail;
 			if (!d3d12_init_textures(enc))
 				goto fail;
 		} else {
@@ -1130,6 +1132,9 @@ static void nvenc_destroy(void *data)
 	da_free(enc->bitstreams);
 #ifdef _WIN32
 	da_free(enc->textures);
+	if (enc->is_use_d3d12) {
+		da_free(enc->allocators);
+	}
 #endif
 	da_free(enc->packet_data);
 
