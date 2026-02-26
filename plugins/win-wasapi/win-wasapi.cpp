@@ -791,28 +791,6 @@ ComPtr<IAudioClient> WASAPISource::InitClient(IMMDevice *device, SourceType type
 	if (FAILED(res))
 		throw HRError("Failed to initialize audio client", res);
 
-	if (type == SourceType::Input) {
-		ComPtr<IAudioEffectsManager> audioEffectsManager;
-		HRESULT hr = client->GetService(IID_PPV_ARGS(audioEffectsManager.Assign()));
-		if (audioEffectsManager) {
-			CoTaskMemPtr<AUDIO_EFFECT> audioEffects = nullptr;
-			UINT32 numEffects = 0;
-			audioEffectsManager->GetAudioEffects(&audioEffects, &numEffects);
-
-			for (UINT32 i = 0; i < numEffects; ++i) {
-				if (audioEffects[i].id == AUDIO_EFFECT_TYPE_DEEP_NOISE_SUPPRESSION) {
-					blog(LOG_INFO, "DEEP_NOISE_SUPPRESSION STATE:%d, Can Set:%d",
-					     audioEffects[i].state, audioEffects[i].canSetState);
-				} else if (audioEffects[i].id == AUDIO_EFFECT_TYPE_AUTOMATIC_GAIN_CONTROL) {
-					blog(LOG_INFO, "AUTOMATIC_GAIN_CONTROL STATE:%d, Can Set:%d",
-					     audioEffects[i].state, audioEffects[i].canSetState);
-				} else if (audioEffects[i].id == AUDIO_EFFECT_TYPE_ACOUSTIC_ECHO_CANCELLATION) {
-					blog(LOG_INFO, "ACOUSTIC_ECHO_CANCELLATION STATE:%d, Can Set:%d",
-					     audioEffects[i].state, audioEffects[i].canSetState);
-				}
-			}
-		}
-	}
 	return client;
 }
 
