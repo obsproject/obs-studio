@@ -219,6 +219,10 @@ void video_frame_init(struct video_frame *frame, enum video_format format, uint3
 		offsets[i] = size;
 	}
 
+	/* return early if size is zero */
+	if (!size)
+		return;
+
 	/* allocate memory */
 	frame->data[0] = bmalloc(size);
 	frame->linesize[0] = linesizes[0];
