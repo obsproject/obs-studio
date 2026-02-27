@@ -249,6 +249,10 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 			tex = gs_texture_create(info->width, info->height, GS_R10G10B10A2, 1, NULL,
 						GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 			tex_uv = NULL;
+		} else if (info->format == VIDEO_FORMAT_Y410 || info->format == VIDEO_FORMAT_GBR10) {
+			tex = gs_texture_create(info->width, info->height, GS_Y410, 1, NULL,
+						GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+			tex_uv = NULL;
 		}
 		if (!tex) {
 			return false;
