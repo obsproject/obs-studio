@@ -467,6 +467,7 @@ struct gs_texture_2d : gs_texture {
 	void BackupTexture(const uint8_t *const *data);
 	void GetSharedHandle(IDXGIResource *dxgi_res);
 
+	void RebuildResource(ID3D12Device *dev);
 	void RebuildSharedTextureFallback();
 	void Rebuild(ID3D12Device *dev);
 	void RebuildPaired_Y(ID3D12Device *dev);
@@ -530,6 +531,7 @@ struct gs_texture_3d : gs_texture {
 };
 
 struct gs_zstencil_buffer : gs_obj, public D3D12Graphics::DepthBuffer {
+	uint32_t width, height;
 	gs_zstencil_format format;
 
 	void inline Clear() { Destroy(); }
@@ -560,6 +562,8 @@ struct gs_sampler_state : gs_obj {
 	gs_sampler_info info;
 	D3D12Graphics::SamplerDesc sampleDesc;
 	gs_sampler_state(gs_device_t *device, const gs_sampler_info *info);
+	inline void Release() {}
+	void Rebuild(ID3D12Device *dev);
 };
 
 struct gs_shader_param {
@@ -722,6 +726,7 @@ struct gs_swap_chain : gs_obj {
 	void Resize(uint32_t cx, uint32_t cy, gs_color_format format);
 
 	void Release();
+	void Rebuild(ID3D12Device *dev);
 
 	gs_swap_chain(gs_device *device, const gs_init_data *data);
 	virtual ~gs_swap_chain();
@@ -749,7 +754,7 @@ struct gs_vertex_buffer : gs_obj {
 
 	inline void Release();
 
-	void Rebuild(ID3D12Device *dev);
+	void Rebuild();
 	~gs_vertex_buffer();
 
 	gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data, uint32_t flags);
