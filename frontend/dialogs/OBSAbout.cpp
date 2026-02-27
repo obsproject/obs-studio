@@ -1,13 +1,17 @@
 #include "OBSAbout.hpp"
-
-#include <widgets/OBSBasic.hpp>
+#include <OBSApp.hpp>
 #include <utility/RemoteTextThread.hpp>
+#include <utility/platform.hpp>
 
 #include <qt-wrappers.hpp>
 
 #include <json11.hpp>
 
 #include "moc_OBSAbout.cpp"
+
+namespace {
+QString patronJson;
+} // namespace
 
 using namespace json11;
 
@@ -62,30 +66,40 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 	connect(ui->authors, &ClickableLabel::clicked, this, &OBSAbout::ShowAuthors);
 	connect(ui->license, &ClickableLabel::clicked, this, &OBSAbout::ShowLicense);
 
-	QPointer<OBSAbout> about(this);
-
-	OBSBasic *main = OBSBasic::Get();
-	if (main->patronJson.empty() && !main->patronJsonThread) {
+	if (patronJson.isEmpty()) {
 		RemoteTextThread *thread =
 			new RemoteTextThread("https://obsproject.com/patreon/about-box.json", "application/json");
-		QObject::connect(thread, &RemoteTextThread::Result, main, &OBSBasic::UpdatePatronJson);
-		QObject::connect(thread, &RemoteTextThread::Result, this, &OBSAbout::ShowAbout);
-		main->patronJsonThread.reset(thread);
+		connect(thread, &RemoteTextThread::Result, this, &OBSAbout::updatePatronJson);
+		patronJsonThread.reset(thread);
 		thread->start();
 	} else {
 		ShowAbout();
 	}
 }
 
+OBSAbout::~OBSAbout()
+{
+	if (patronJsonThread && patronJsonThread->isRunning())
+		patronJsonThread->wait();
+}
+
+void OBSAbout::updatePatronJson(const QString &text, const QString &error)
+{
+	if (!error.isEmpty())
+		return;
+
+	patronJson = text;
+
+	ShowAbout();
+}
+
 void OBSAbout::ShowAbout()
 {
-	OBSBasic *main = OBSBasic::Get();
-
-	if (main->patronJson.empty())
+	if (patronJson.isEmpty())
 		return;
 
 	std::string error;
-	Json json = Json::parse(main->patronJson, error);
+	Json json = Json::parse(patronJson.toStdString(), error);
 	const Json::array &patrons = json.array_items();
 	QString text;
 
