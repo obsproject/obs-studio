@@ -400,6 +400,22 @@ try {
 	return false;
 }
 
+bool gs_device::Y410Supported()
+{
+	bool success = false;
+	try {
+		gs_texture_2d y410(this, NV12_CX, NV12_CY, GS_Y410, 1, nullptr, GS_RENDER_TARGET | GS_SHARED_KM_TEX,
+				   GS_TEXTURE_2D, false);
+		success = true;
+		blog(LOG_INFO, "Y410 textures supported!");
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "Y410 unsupported: %s (%08lX)", error.str, error.hr);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "Y410 unsupported: %s", error);
+	}
+	return success;
+}
+
 static bool increase_maximum_frame_latency(ID3D11Device *device)
 {
 	ComQIPtr<IDXGIDevice1> dxgiDevice(device);
@@ -670,6 +686,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	nv12Supported = CheckFormat(device, DXGI_FORMAT_NV12) && !HasBadNV12Output();
 	p010Supported = nv12Supported && CheckFormat(device, DXGI_FORMAT_P010);
 	ayuvSupported = CheckFormat(device, DXGI_FORMAT_AYUV);
+	// CheckFormatSupport fails when checking for Y410 with D3D11_FORMAT_SUPPORT_RENDER_TARGET, but as long as both
+	// D3D11_BIND_SHADER_RESOURCE and D3D11_BIND_RENDER_TARGET are set it does work.
+	// So check by actually creating a texture instead of relying on CHeckFormatSupport.
+	y410Supported = Y410Supported();
 
 	fastClearSupported = FastClearSupported(desc.VendorId, driverVersion);
 }
@@ -2981,6 +3001,11 @@ extern "C" EXPORT bool device_p010_available(gs_device_t *device)
 extern "C" EXPORT bool device_ayuv_available(gs_device_t *device)
 {
 	return device->ayuvSupported;
+}
+
+extern "C" EXPORT bool device_y410_available(gs_device_t *device)
+{
+	return device->y410Supported;
 }
 
 extern "C" EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
