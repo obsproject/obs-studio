@@ -98,14 +98,12 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 
 	obs_data_set_string(twitchSettings, "service", "Twitch");
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_properties_apply_settings(props, twitchSettings);
 
 	obs_property_t *p = obs_properties_get(props, "server");
 	const char *first = obs_property_list_item_string(p, 0);
 	twitchAuto = strcmp(first, "auto") == 0;
-
-	obs_properties_destroy(props);
 
 	/* ----------------------------------------- */
 	/* check to see if Amazon IVS "auto" entries are available */
@@ -120,8 +118,6 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	p = obs_properties_get(props, "server");
 	first = obs_property_list_item_string(p, 0);
 	amazonIVSAuto = strncmp(first, "auto", 4) == 0;
-
-	obs_properties_destroy(props);
 
 	/* ----------------------------------------- */
 	/* load service/servers                      */

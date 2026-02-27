@@ -94,13 +94,13 @@ void OBSPropertiesView::ReloadProperties()
 		OBSObject strongObj = GetObject();
 		void *obj = strongObj ? strongObj.Get() : rawObj;
 		if (obj)
-			properties.reset(reloadCallback(obj));
+			properties = reloadCallback(obj);
 	} else {
-		properties.reset(reloadCallback((void *)type.c_str()));
-		obs_properties_apply_settings(properties.get(), settings);
+		properties = reloadCallback((void *)type.c_str());
+		obs_properties_apply_settings(properties, settings);
 	}
 
-	uint32_t flags = obs_properties_get_flags(properties.get());
+	uint32_t flags = obs_properties_get_flags(properties);
 	deferUpdate = enableDefer && (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
 
 	RefreshProperties();
@@ -128,7 +128,7 @@ void OBSPropertiesView::RefreshProperties()
 
 	layout->setLabelAlignment(Qt::AlignRight);
 
-	obs_property_t *property = obs_properties_first(properties.get());
+	obs_property_t *property = obs_properties_first(properties);
 	bool hasNoProperties = !property;
 
 	while (property) {
@@ -195,7 +195,6 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj, Prope
 				     PropertiesUpdateCallback callback_, PropertiesVisualUpdateCb visUpdateCb_,
 				     int minSize_)
 	: VScrollArea(nullptr),
-	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
 	  weakObj(obs_object_get_weak_object(obj)),
 	  reloadCallback(reloadCallback),
@@ -211,7 +210,6 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesRel
 				     PropertiesUpdateCallback callback_, PropertiesVisualUpdateCb visUpdateCb_,
 				     int minSize_)
 	: VScrollArea(nullptr),
-	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
 	  rawObj(obj),
 	  reloadCallback(reloadCallback),
@@ -226,7 +224,6 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesRel
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, PropertiesReloadCallback reloadCallback_,
 				     int minSize_)
 	: VScrollArea(nullptr),
-	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
 	  type(type_),
 	  reloadCallback(reloadCallback_),

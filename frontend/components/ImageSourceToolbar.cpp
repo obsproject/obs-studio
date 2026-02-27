@@ -29,7 +29,7 @@ void ImageSourceToolbar::on_browse_clicked()
 		return;
 	}
 
-	obs_property_t *p = obs_properties_get(props.get(), "file");
+	obs_property_t *p = obs_properties_get(props, "file");
 	const char *desc = obs_property_description(p);
 	const char *filter = obs_property_path_filter(p);
 	const char *default_path = obs_property_path_default_path(p);

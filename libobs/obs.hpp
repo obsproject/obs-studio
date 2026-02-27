@@ -267,6 +267,7 @@ using OBSDisplay = OBSPtr<obs_display_t *, obs_display_destroy>;
 using OBSView = OBSPtr<obs_view_t *, obs_view_destroy>;
 using OBSFader = OBSPtr<obs_fader_t *, obs_fader_destroy>;
 using OBSVolMeter = OBSPtr<obs_volmeter_t *, obs_volmeter_destroy>;
+using OBSProperties = OBSPtr<obs_properties_t *, obs_properties_destroy>;
 
 /* signal handler connection */
 class OBSSignal {

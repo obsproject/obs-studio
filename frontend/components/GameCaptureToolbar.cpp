@@ -28,13 +28,13 @@ GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
 	std::string cur_window = obs_data_get_string(settings, "window");
 
 	ui->mode->blockSignals(true);
-	p = obs_properties_get(props.get(), "capture_mode");
+	p = obs_properties_get(props, "capture_mode");
 	cur_idx = FillPropertyCombo(ui->mode, p, cur_mode);
 	ui->mode->setCurrentIndex(cur_idx);
 	ui->mode->blockSignals(false);
 
 	ui->window->blockSignals(true);
-	p = obs_properties_get(props.get(), "window");
+	p = obs_properties_get(props, "window");
 	cur_idx = FillPropertyCombo(ui->window, p, cur_window);
 	ui->window->setCurrentIndex(cur_idx);
 	ui->window->blockSignals(false);
