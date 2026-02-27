@@ -1,47 +1,12 @@
 #include "MediaControls.hpp"
 #include "ui_media-controls.h"
+#include <qt-wrappers.hpp>
 
 #include <OBSApp.hpp>
 
 #include <QToolTip>
 
 #include "moc_MediaControls.cpp"
-
-void MediaControls::OBSMediaStopped(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetRestartState");
-}
-
-void MediaControls::OBSMediaPlay(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPlayingState");
-}
-
-void MediaControls::OBSMediaPause(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPausedState");
-}
-
-void MediaControls::OBSMediaStarted(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPlayingState");
-}
-
-void MediaControls::OBSMediaNext(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "UpdateSlideCounter");
-}
-
-void MediaControls::OBSMediaPrevious(void *data, calldata_t *)
-{
-	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "UpdateSlideCounter");
-}
 
 MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::MediaControls)
 {
@@ -195,6 +160,8 @@ void MediaControls::StopMediaTimer()
 
 void MediaControls::SetPlayingState()
 {
+	QT_REQUIRE_UI_THREAD();
+
 	ui->slider->setEnabled(true);
 	ui->playPauseButton->setProperty("class", "icon-media-pause");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
@@ -209,6 +176,8 @@ void MediaControls::SetPlayingState()
 
 void MediaControls::SetPausedState()
 {
+	QT_REQUIRE_UI_THREAD();
+
 	ui->playPauseButton->setProperty("class", "icon-media-play");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
@@ -219,6 +188,8 @@ void MediaControls::SetPausedState()
 
 void MediaControls::SetRestartState()
 {
+	QT_REQUIRE_UI_THREAD();
+
 	ui->playPauseButton->setProperty("class", "icon-media-restart");
 	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
 	ui->playPauseButton->style()->polish(ui->playPauseButton);
@@ -306,14 +277,14 @@ void MediaControls::SetSource(OBSSource source)
 	if (source) {
 		weakSource = OBSGetWeakRef(source);
 		signal_handler_t *sh = obs_source_get_signal_handler(source);
-		sigs.emplace_back(sh, "media_play", OBSMediaPlay, this);
-		sigs.emplace_back(sh, "media_pause", OBSMediaPause, this);
-		sigs.emplace_back(sh, "media_restart", OBSMediaPlay, this);
-		sigs.emplace_back(sh, "media_stopped", OBSMediaStopped, this);
-		sigs.emplace_back(sh, "media_started", OBSMediaStarted, this);
-		sigs.emplace_back(sh, "media_ended", OBSMediaStopped, this);
-		sigs.emplace_back(sh, "media_next", OBSMediaNext, this);
-		sigs.emplace_back(sh, "media_previous", OBSMediaPrevious, this);
+		sigs.emplace_back(sh, "media_play", qtInvoke<&MediaControls::SetPlayingState>, this);
+		sigs.emplace_back(sh, "media_pause", qtInvoke<&MediaControls::SetPausedState>, this);
+		sigs.emplace_back(sh, "media_restart", qtInvoke<&MediaControls::SetPlayingState>, this);
+		sigs.emplace_back(sh, "media_stopped", qtInvoke<&MediaControls::SetRestartState>, this);
+		sigs.emplace_back(sh, "media_started", qtInvoke<&MediaControls::SetPlayingState>, this);
+		sigs.emplace_back(sh, "media_ended", qtInvoke<&MediaControls::SetRestartState>, this);
+		sigs.emplace_back(sh, "media_next", qtInvoke<&MediaControls::UpdateSlideCounter>, this);
+		sigs.emplace_back(sh, "media_previous", qtInvoke<&MediaControls::UpdateSlideCounter>, this);
 	} else {
 		weakSource = nullptr;
 	}
@@ -480,6 +451,8 @@ void MediaControls::MoveSliderBackwards(int seconds)
 
 void MediaControls::UpdateSlideCounter()
 {
+	QT_REQUIRE_UI_THREAD();
+
 	if (!isSlideshow)
 		return;
 

@@ -49,12 +49,6 @@ private:
 	void UpdateSplitter(bool show_splitter_frame);
 	void UpdatePropertiesView(int row, bool async);
 
-	static void OBSSourceFilterAdded(void *param, calldata_t *data);
-	static void OBSSourceFilterRemoved(void *param, calldata_t *data);
-	static void OBSSourceReordered(void *param, calldata_t *data);
-	static void SourceRemoved(void *param, calldata_t *data);
-	static void SourceRenamed(void *param, calldata_t *data);
-	static void UpdateProperties(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 
 	QMenu *CreateAddFilterPopupMenu(bool async);
@@ -111,6 +105,8 @@ private slots:
 
 	void FiltersMoved(const QModelIndex &srcParent, int srcIdxStart, int srcIdxEnd, const QModelIndex &dstParent,
 			  int dstIdx);
+
+	void UpdateSourceName();
 
 public:
 	OBSBasicFilters(QWidget *parent, OBSSource source_);
