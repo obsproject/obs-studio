@@ -150,6 +150,10 @@ Structures/Enumerations
 
      Triggered when the replay buffer has fully stopped.
 
+   - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING**
+
+     Triggered when the replay buffer is saving.
+
    - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED**
 
      Triggered when the replay buffer has been saved.

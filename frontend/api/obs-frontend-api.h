@@ -65,6 +65,8 @@ enum obs_frontend_event {
 
 	OBS_FRONTEND_EVENT_CANVAS_ADDED,
 	OBS_FRONTEND_EVENT_CANVAS_REMOVED,
+
+	OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING,
 };
 
 /* ------------------------------------------------------------------------- */
