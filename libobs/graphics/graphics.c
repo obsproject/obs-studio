@@ -2875,6 +2875,17 @@ bool gs_ayuv_available(void)
 	return thread_graphics->exports.device_ayuv_available(thread_graphics->device);
 }
 
+bool gs_y410_available(void)
+{
+	if (!gs_valid("gs_y410_available"))
+		return false;
+
+	if (!thread_graphics->exports.device_y410_available)
+		return false;
+
+	return thread_graphics->exports.device_y410_available(thread_graphics->device);
+}
+
 bool gs_is_monitor_hdr(void *monitor)
 {
 	if (!gs_valid("gs_is_monitor_hdr"))
