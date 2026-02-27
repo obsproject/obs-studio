@@ -2493,6 +2493,8 @@
         {
             "name": "PandaTV | 팬더티비",
             "common": false,
+            "multitrack_video_name": "Enhanced Broadcasting",
+            "multitrack_video_configuration_url": "https://ingest.pandalive.co.kr/api/v3/GetClientConfiguration",
             "servers": [
                 {
                     "name": "Default",
