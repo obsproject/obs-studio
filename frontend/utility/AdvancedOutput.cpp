@@ -575,8 +575,8 @@ inline std::optional<size_t> AdvancedOutput::VodTrackMixerIdx(obs_service_t *ser
 		vodTrackEnabled = enableForCustomServer ? vodTrackEnabled : false;
 	} else {
 		OBSDataAutoRelease settings = obs_service_get_settings(service);
-		const char *service = obs_data_get_string(settings, "service");
-		if (!ServiceSupportsVodTrack(service))
+		const char *serviceName = obs_data_get_string(settings, "service");
+		if (!ServiceSupportsVodTrack(serviceName, settings))
 			vodTrackEnabled = false;
 	}
 
