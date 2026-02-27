@@ -1585,10 +1585,13 @@ signals:
 	void CurrentTransitionChanged(const QString &uuid);
 
 	void TransitionDurationChanged(const int &duration);
+	void SwapScenesModeChanged(bool enabled);
 
 public:
 	int GetTransitionDuration();
 	int GetTbarPosition();
+	bool GetSwapScenesMode() const { return swapScenesMode; }
+	void SetSwapScenesMode(bool enabled);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Updater

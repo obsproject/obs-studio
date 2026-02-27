@@ -504,6 +504,19 @@ void obs_frontend_take_source_screenshot(obs_source_t *source)
 		c->obs_frontend_take_source_screenshot(source);
 }
 
+bool obs_frontend_get_swap_scenes_mode(void)
+{
+	if (callbacks_valid())
+		return c->obs_frontend_get_swap_scenes_mode();
+	return false;
+}
+
+void obs_frontend_set_swap_scenes_mode(bool enabled)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_swap_scenes_mode(enabled);
+}
+
 obs_output_t *obs_frontend_get_virtualcam_output(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_virtualcam_output() : nullptr;
