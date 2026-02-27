@@ -1136,6 +1136,29 @@ float4 PSGBRA(FragPos frag_in) : TARGET
 	return float4(rgba.r, rgba.b, rgba.g, rgba.a);
 }
 
+float4 PSR10L_SRGB(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
+	rgb = srgb_linear_to_nonlinear(rgb);
+	return float4(rgb, 1.);
+}
+
+float4 PSR10L_PQ(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_st2084(rgb);
+	return float4(rgb, 1.);
+}
+
+float4 PSR10L_HLG(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_hlg(rgb, hdr_lw);
+	return float4(rgb, 1.);
+}
+
 technique Planar_Y
 {
 	pass
@@ -1853,5 +1876,32 @@ technique GBRA
 	{
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSGBRA(frag_in);
+	}
+}
+
+technique R10L_SRGB
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_SRGB(frag_in);
+	}
+}
+
+technique R10L_PQ
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_PQ(frag_in);
+	}
+}
+
+technique R10L_HLG
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSR10L_HLG(frag_in);
 	}
 }

@@ -145,6 +145,16 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "AYUV";
 		break;
+	case VIDEO_FORMAT_R10L:
+		video->conversion_needed = true;
+		if (info->colorspace == VIDEO_CS_2100_PQ) {
+			video->conversion_techs[0] = "R10L_PQ";
+		} else if (info->colorspace == VIDEO_CS_2100_HLG) {
+			video->conversion_techs[0] = "R10L_HLG";
+		} else {
+			video->conversion_techs[0] = "R10L_SRGB";
+		}
+		break;
 	default:
 		break;
 	}
@@ -160,6 +170,9 @@ static bool video_format_texture_supported(const enum video_format input_format)
 	case VIDEO_FORMAT_GBRA:
 	case VIDEO_FORMAT_AYUV:
 		return gs_ayuv_available();
+	case VIDEO_FORMAT_R10L:
+		/* GS_R10B10G10A2 should be always supported */
+		return true;
 	default:
 		return false;
 	}
@@ -207,6 +220,12 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 		   video->encoder_texture_format == VIDEO_FORMAT_AYUV) {
 		video->convert_textures_encode[0] = gs_texture_create(info->width, info->height, GS_AYUV, 1, NULL,
 								      GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		if (!video->convert_textures_encode[0]) {
+			return false;
+		}
+	} else if (video->encoder_texture_format == VIDEO_FORMAT_R10L) {
+		video->convert_textures_encode[0] = gs_texture_create(info->width, info->height, GS_R10G10B10A2, 1,
+								      NULL, GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 		if (!video->convert_textures_encode[0]) {
 			return false;
 		}
@@ -275,6 +294,12 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 		video->convert_textures[1] =
 			gs_texture_create(info->width, info->height, GS_RG16, 1, NULL, GS_RENDER_TARGET);
 		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
+	case VIDEO_FORMAT_R10L:
+		video->convert_textures[0] =
+			gs_texture_create(info->width, info->height, GS_R10G10B10A2, 1, NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0])
 			success = false;
 		break;
 	default:
@@ -366,6 +391,11 @@ static bool obs_init_gpu_copy_surfaces(struct obs_core_video_mix *video, size_t 
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
+	case VIDEO_FORMAT_R10L:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(info->width, info->height, GS_R10G10B10A2);
+		if (!video->copy_surfaces[i][0])
+			return false;
+		break;
 	default:
 		break;
 	}
@@ -388,6 +418,7 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 	case VIDEO_FORMAT_YA2L:
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
+	case VIDEO_FORMAT_R10L:
 		format = GS_RGBA16F;
 		break;
 	default:
@@ -437,6 +468,7 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 		case VIDEO_FORMAT_P010:
 		case VIDEO_FORMAT_P216:
 		case VIDEO_FORMAT_P416:
+		case VIDEO_FORMAT_R10L:
 			space = GS_CS_SRGB_16F;
 			break;
 		default:
