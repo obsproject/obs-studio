@@ -554,6 +554,12 @@ void OBSBasic::UpdateProjectorHideCursor()
 		projectors[i]->SetHideCursor();
 }
 
+void OBSBasic::UpdateProjectorHideFrame(bool hideFrame)
+{
+	for (size_t i = 0; i < projectors.size(); i++)
+		projectors[i]->SetHideFrame(hideFrame);
+}
+
 void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
 {
 	for (size_t i = 0; i < projectors.size(); i++)
