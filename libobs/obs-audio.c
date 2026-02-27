@@ -104,7 +104,7 @@ static inline void mix_audio(struct audio_output_data *mixes, obs_source_t *sour
 		total_floats -= start_point;
 	}
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+	for (size_t mix_idx = 0; mix_idx < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix_idx++) {
 		for (size_t ch = 0; ch < channels; ch++) {
 			register float *mix = mixes[mix_idx].data[ch];
 			register float *aud = source->audio_output_buf[mix_idx][ch];

@@ -76,7 +76,7 @@ struct audio_output {
 	audio_input_callback_t input_cb;
 	void *input_param;
 	pthread_mutex_t input_mutex;
-	struct audio_mix mixes[MAX_AUDIO_MIXES];
+	struct audio_mix mixes[MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES];
 };
 
 /* ------------------------------------------------------------------------- */
@@ -133,7 +133,7 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 {
 	size_t float_size = bytes / sizeof(float);
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+	for (size_t mix_idx = 0; mix_idx < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix_idx++) {
 		struct audio_mix *mix = &audio->mixes[mix_idx];
 
 		/* do not process mixing if a specific mix is inactive */
@@ -160,7 +160,7 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 static void input_and_output(struct audio_output *audio, uint64_t audio_time, uint64_t prev_time)
 {
 	size_t bytes = AUDIO_OUTPUT_FRAMES * audio->block_size;
-	struct audio_output_data data[MAX_AUDIO_MIXES];
+	struct audio_output_data data[MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES];
 	uint32_t active_mixes = 0;
 	uint64_t new_ts = 0;
 	bool success;
@@ -173,14 +173,14 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time, ui
 
 	/* get mixers */
 	pthread_mutex_lock(&audio->input_mutex);
-	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+	for (size_t i = 0; i < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); i++) {
 		if (audio->mixes[i].inputs.num)
 			active_mixes |= (1 << i);
 	}
 	pthread_mutex_unlock(&audio->input_mutex);
 
 	/* clear mix buffers */
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+	for (size_t mix_idx = 0; mix_idx < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix_idx++) {
 		struct audio_mix *mix = &audio->mixes[mix_idx];
 
 		memset(mix->buffer, 0, sizeof(mix->buffer));
@@ -198,7 +198,7 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time, ui
 	clamp_audio_output(audio, bytes);
 
 	/* output */
-	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
+	for (size_t i = 0; i < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); i++)
 		do_audio_output(audio, i, new_ts, AUDIO_OUTPUT_FRAMES);
 }
 
@@ -291,7 +291,7 @@ bool audio_output_connect(audio_t *audio, size_t mi, const struct audio_convert_
 {
 	bool success = false;
 
-	if (!audio || mi >= MAX_AUDIO_MIXES)
+	if (!audio || mi >= (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES))
 		return false;
 
 	pthread_mutex_lock(&audio->input_mutex);
@@ -330,7 +330,7 @@ bool audio_output_connect(audio_t *audio, size_t mi, const struct audio_convert_
 
 void audio_output_disconnect(audio_t *audio, size_t mix_idx, audio_output_callback_t callback, void *param)
 {
-	if (!audio || mix_idx >= MAX_AUDIO_MIXES)
+	if (!audio || mix_idx >= (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES))
 		return;
 
 	pthread_mutex_lock(&audio->input_mutex);
@@ -403,7 +403,7 @@ void audio_output_close(audio_t *audio)
 		pthread_mutex_destroy(&audio->input_mutex);
 	}
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+	for (size_t mix_idx = 0; mix_idx < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix_idx++) {
 		struct audio_mix *mix = &audio->mixes[mix_idx];
 
 		for (size_t i = 0; i < mix->inputs.num; i++)
@@ -424,7 +424,7 @@ bool audio_output_active(const audio_t *audio)
 	if (!audio)
 		return false;
 
-	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
+	for (size_t mix_idx = 0; mix_idx < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix_idx++) {
 		const struct audio_mix *mix = &audio->mixes[mix_idx];
 
 		if (mix->inputs.num != 0)

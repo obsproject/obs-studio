@@ -137,6 +137,12 @@ static void stinger_update(void *data, obs_data_t *settings)
 	}
 
 	s->monitoring_type = (int)obs_data_get_int(settings, "audio_monitoring");
+	// If the stinger is set to monitor only, don't send audio to output mixers
+	if (s->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)
+		obs_source_set_audio_mixers(s->media_source, 0);
+	else
+		obs_source_set_audio_mixers(s->media_source, 0xFF);
+
 	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
 
 	s->fade_style = (enum fade_style)obs_data_get_int(settings, "audio_fade_style");
@@ -504,7 +510,7 @@ static bool stinger_audio_render(void *data, uint64_t *ts_out, struct obs_source
 	struct obs_source_audio_mix child_audio;
 	obs_source_get_audio_mix(s->media_source, &child_audio);
 
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES; mix++) {
 		if ((mixers & (1 << mix)) == 0)
 			continue;
 

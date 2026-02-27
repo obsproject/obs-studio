@@ -719,6 +719,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	if (obs_audio_monitoring_available())
 		FillAudioMonitoringDevices();
 
+#ifdef _WIN32
+	connect(ui->asioMonitoring, &QPushButton::clicked, this, &OBSBasicSettings::AsioMonitoringShow);
+	ui->asioMonitoring->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+	ui->formLayout_56->setAlignment(ui->asioMonitoring, Qt::AlignLeft);
+#else
+	ui->asioMonitoring->hide();
+	ui->asioDeviceLabel->hide();
+#endif
 	connect(ui->channelSetup, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::SurroundWarning);
 	connect(ui->channelSetup, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::SpeakerLayoutChanged);
 	connect(ui->lowLatencyBuffering, &QCheckBox::clicked, this, &OBSBasicSettings::LowLatencyBufferingChanged);
@@ -5287,6 +5295,23 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	simpleOutRecWarning->setWordWrap(true);
 	ui->simpleOutInfoLayout->addWidget(simpleOutRecWarning);
 }
+
+#ifdef _WIN32
+void OBSBasicSettings::AsioMonitoringShow()
+{
+	QList<QAction *> actions = main->ui->menuTools->actions();
+	QAction *asioAction = nullptr;
+	for (QAction *action : actions) {
+		if (action->objectName() == "asioOutputSetupAction") {
+			asioAction = action;
+			break;
+		}
+	}
+	if (asioAction) {
+		asioAction->trigger();
+	}
+}
+#endif
 
 void OBSBasicSettings::SurroundWarning(int idx)
 {
