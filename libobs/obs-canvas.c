@@ -581,10 +581,31 @@ bool obs_canvas_removed(obs_canvas_t *canvas)
 
 bool obs_canvas_has_video(obs_canvas_t *canvas)
 {
-	return canvas->mix != NULL;
+	return obs_canvas_is_enabled(canvas);
 }
 
 void obs_canvas_render(obs_canvas_t *canvas)
 {
 	obs_view_render(&canvas->view);
+}
+
+void obs_canvas_disable(obs_canvas_t *canvas)
+{
+	if (!canvas->mix)
+		return;
+
+	obs_canvas_clear_mix(canvas);
+}
+
+bool obs_canvas_enable(obs_canvas_t *canvas)
+{
+	if (canvas->mix)
+		return true;
+
+	return obs_canvas_reset_video_internal(canvas, &canvas->ovi);
+}
+
+bool obs_canvas_is_enabled(const obs_canvas_t *canvas)
+{
+	return canvas->mix != NULL;
 }

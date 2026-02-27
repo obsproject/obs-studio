@@ -29,6 +29,18 @@
 #include <windows.h>
 #endif
 
+static void mark_as_ticked(obs_source_t *parent, obs_source_t *child, void *param)
+{
+	UNUSED_PARAMETER(param);
+	UNUSED_PARAMETER(parent);
+
+	child->ticked = child->enabled;
+
+	for (size_t i = 0; i < child->filters.num; i++) {
+		child->filters.array[i]->ticked = child->filters.array[i]->enabled;
+	}
+}
+
 static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 {
 	struct obs_core_data *data = &obs->data;
@@ -73,11 +85,40 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	pthread_mutex_unlock(&data->sources_mutex);
 
 	/* ------------------------------------- */
+
+	/* Mark all enabled private sources as ticked. */
+	for (size_t i = 0; i < data->sources_to_tick.num; i++) {
+		obs_source_t *s = data->sources_to_tick.array[i];
+		s->ticked = s->context.private && s->enabled;
+	}
+
+	/* Walk all mixes and their views' sources, mark all enabled sources as ticked. */
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+
+	for (size_t i = 0; i < obs->video.mixes.num; i++) {
+		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
+		if (!mix->view)
+			continue;
+
+		pthread_mutex_lock(&mix->view->channels_mutex);
+		for (size_t j = 0; j < MAX_CHANNELS; j++) {
+			obs_source_t *s = mix->view->channels[j];
+			if (s) {
+				s->ticked = s->enabled;
+				obs_source_enum_full_tree(s, mark_as_ticked, NULL);
+			}
+		}
+		pthread_mutex_unlock(&mix->view->channels_mutex);
+	}
+
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	/* ------------------------------------- */
 	/* call the tick function of each source */
 
 	for (size_t i = 0; i < data->sources_to_tick.num; i++) {
 		obs_source_t *s = data->sources_to_tick.array[i];
-		if (!obs_source_removed(s)) {
+		if (!obs_source_removed(s) && s->ticked) {
 			const uint64_t start = source_profiler_source_tick_start();
 			obs_source_video_tick(s, seconds);
 			source_profiler_source_tick_end(s, start);
