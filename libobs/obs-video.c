@@ -741,7 +741,8 @@ static void set_gpu_converted_data(struct video_frame *output, const struct vide
 
 		break;
 	}
-	case VIDEO_FORMAT_R10L: {
+	case VIDEO_FORMAT_R10L:
+	case VIDEO_FORMAT_Y410: {
 		set_gpu_converted_plane(info->width * 4, info->height, input->linesize[0], output->linesize[0],
 					input->data[0], output->data[0]);
 		break;
@@ -765,6 +766,7 @@ static void set_gpu_converted_data(struct video_frame *output, const struct vide
 	case VIDEO_FORMAT_AYUV:
 	case VIDEO_FORMAT_V210:
 	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_GBR10:
 		/* unimplemented */
 		;
 	}

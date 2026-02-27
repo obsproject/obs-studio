@@ -81,6 +81,8 @@ static inline enum AVPixelFormat get_ffmpeg_video_format(enum video_format forma
 		return AV_PIX_FMT_VUYA;
 	case VIDEO_FORMAT_R10L:
 		return AV_PIX_FMT_X2BGR10LE;
+	case VIDEO_FORMAT_Y410:
+		return AV_PIX_FMT_XV30LE;
 	case VIDEO_FORMAT_NONE:
 	default:
 		return AV_PIX_FMT_NONE;

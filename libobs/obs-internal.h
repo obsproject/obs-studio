@@ -1091,6 +1091,8 @@ static inline enum gs_color_format convert_video_format(enum video_format format
 		case VIDEO_FORMAT_P416:
 		case VIDEO_FORMAT_V210:
 		case VIDEO_FORMAT_R10L:
+		case VIDEO_FORMAT_Y410:
+		case VIDEO_FORMAT_GBR10:
 			return GS_RGBA16F;
 		default:
 			return GS_BGRX;
