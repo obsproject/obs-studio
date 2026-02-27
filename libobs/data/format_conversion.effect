@@ -1159,6 +1159,63 @@ float4 PSR10L_HLG(FragPos frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
+float4 PSY410_SRGB(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	float3 rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	return float4(u, y, v, 1.);
+}
+
+float4 PSY410_PQ(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	float3 rgb = rgba.rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_st2084(rgb);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	return float4(u, y, v, 1.);
+}
+
+float4 PSY410_HLG(FragPos frag_in) : TARGET
+{
+	float4 rgba = image.Load(int3(frag_in.pos.xy, 0));
+	float3 rgb = rgba.rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_hlg(rgb, hdr_lw);
+	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
+	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
+	return float4(u, y, v, 1.);
+}
+
+float4 PSGBR10_SRGB(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
+	rgb = srgb_linear_to_nonlinear(rgb);
+	return float4(rgb.b, rgb.g, rgb.r, 1.);
+}
+
+float4 PSGBR10_PQ(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_st2084(rgb);
+	return float4(rgb.b, rgb.g, rgb.r, 1.);
+}
+
+float4 PSGBR10_HLG(FragPos frag_in) : TARGET
+{
+	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb * sdr_white_nits_over_maximum;
+	rgb = rec709_to_rec2020(rgb);
+	rgb = linear_to_hlg(rgb, hdr_lw);
+	return float4(rgb.b, rgb.g, rgb.r, 1.);
+}
+
 technique Planar_Y
 {
 	pass
@@ -1903,5 +1960,59 @@ technique R10L_HLG
 	{
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSR10L_HLG(frag_in);
+	}
+}
+
+technique Y410_SRGB
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSY410_SRGB(frag_in);
+	}
+}
+
+technique Y410_PQ
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSY410_PQ(frag_in);
+	}
+}
+
+technique Y410_HLG
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSY410_HLG(frag_in);
+	}
+}
+
+technique GBR10_SRGB
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSGBR10_SRGB(frag_in);
+	}
+}
+
+technique GBR10_PQ
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSGBR10_PQ(frag_in);
+	}
+}
+
+technique GBR10_HLG
+{
+	pass
+	{
+		vertex_shader = VSPos(id);
+		pixel_shader  = PSGBR10_HLG(frag_in);
 	}
 }
