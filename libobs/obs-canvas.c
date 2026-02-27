@@ -245,6 +245,10 @@ obs_data_t *obs_save_canvas(obs_canvas_t *canvas)
 	obs_data_set_string(canvas_data, "uuid", canvas->context.uuid);
 	obs_data_set_bool(canvas_data, "private", canvas->context.private);
 	obs_data_set_int(canvas_data, "flags", canvas->flags);
+	obs_data_set_int(canvas_data, "base_width", canvas->ovi.base_width);
+	obs_data_set_int(canvas_data, "base_height", canvas->ovi.base_height);
+	obs_data_set_int(canvas_data, "output_width", canvas->ovi.output_width);
+	obs_data_set_int(canvas_data, "output_height", canvas->ovi.output_height);
 
 	return canvas_data;
 }
@@ -255,9 +259,15 @@ obs_canvas_t *obs_load_canvas(obs_data_t *data)
 	const char *uuid = obs_data_get_string(data, "uuid");
 	const bool private = obs_data_get_bool(data, "private");
 	uint32_t flags = (uint32_t)obs_data_get_int(data, "flags");
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	ovi.base_width = (uint32_t)obs_data_get_int(data, "base_width");
+	ovi.base_height = (uint32_t)obs_data_get_int(data, "base_height");
+	ovi.output_width = (uint32_t)obs_data_get_int(data, "output_width");
+	ovi.output_height = (uint32_t)obs_data_get_int(data, "output_height");
 
 	flags &= ~MAIN; /* Prevent user from creating a MAIN canvas. */
-	return obs_canvas_create_internal(name, uuid, NULL, flags, private);
+	return obs_canvas_create_internal(name, uuid, &ovi, flags, private);
 }
 
 /*** Internal API ***/
