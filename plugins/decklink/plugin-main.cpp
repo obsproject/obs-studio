@@ -20,7 +20,7 @@ bool log_sdk_version()
 	ComPtr<IDeckLinkAPIInformation> deckLinkAPIInformation;
 	HRESULT result;
 
-	deckLinkIterator = CreateDeckLinkIteratorInstance();
+	deckLinkIterator.Set(CreateDeckLinkIteratorInstance());
 	if (deckLinkIterator == NULL) {
 		blog(LOG_WARNING,
 		     "A DeckLink iterator could not be created.  The DeckLink drivers may not be installed");
