@@ -546,6 +546,15 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
+#ifdef _WIN32
+	if (enc->is_use_d3d12) {
+		enc->params.bufferFormat = is_10_bit(enc) ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
+							  : NV_ENC_BUFFER_FORMAT_NV12;
+		enc->params.maxEncodeHeight = enc->params.encodeHeight;
+		enc->params.maxEncodeWidth = enc->params.encodeWidth;
+	}
+#endif
+
 	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
 		return false;
 	}
