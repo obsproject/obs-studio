@@ -66,7 +66,7 @@ private:
 	bool mouseDown = false;
 	bool mouseMoved = false;
 	bool mouseOverItems = false;
-	bool cropping = false;
+	bool altPressed = false;
 	bool locked = false;
 	bool scrollMode = false;
 	bool fixedScaling = false;
@@ -79,6 +79,9 @@ private:
 	float groupRot = 0.0f;
 	bool updatingXScrollBar = false;
 	bool updatingYScrollBar = false;
+	bool showCroppingOverlay = false;
+	void setAltPressed(bool pressed);
+	bool isAltPressed() { return altPressed; }
 
 	std::vector<obs_sceneitem_t *> hoveredPreviewItems;
 	std::vector<obs_sceneitem_t *> selectedItems;
@@ -89,8 +92,9 @@ private:
 	static bool DrawSelectedOverflow(obs_scene_t *scene, obs_sceneitem_t *item, void *param);
 	static bool DrawSelectedItem(obs_scene_t *scene, obs_sceneitem_t *item, void *param);
 	static bool DrawSelectionBox(float x1, float y1, float x2, float y2, gs_vertbuffer_t *box);
+	static bool drawCropping(obs_sceneitem_t *item, void *param);
 
-	static OBSSceneItem GetItemAtPos(const vec2 &pos, bool selectBelow);
+	static OBSSceneItem GetItemAtPos(const vec2 &pos);
 	static bool SelectedAtPos(const vec2 &pos);
 
 	static void DoSelect(const vec2 &pos);
@@ -137,6 +141,7 @@ public:
 	virtual void mouseReleaseEvent(QMouseEvent *event) override;
 	virtual void mouseMoveEvent(QMouseEvent *event) override;
 	virtual void leaveEvent(QEvent *event) override;
+	virtual void focusOutEvent(QFocusEvent *event) override;
 
 	void DrawOverflow();
 	void DrawSceneEditing();
@@ -189,7 +194,8 @@ public:
 	OBSSourceAutoRelease spacerLabel[4];
 	int spacerPx[4] = {0};
 
-	void DrawSpacingHelpers();
+	void drawCroppingOverlay();
+	void drawSpacingHelpers();
 	void ClampScrollingOffsets();
 	void UpdateXScrollBar(float cx);
 	void UpdateYScrollBar(float cy);

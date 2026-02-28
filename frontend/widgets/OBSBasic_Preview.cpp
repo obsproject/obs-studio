@@ -189,9 +189,6 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 
 	window->ui->preview->DrawSceneEditing();
 
-	if (window->drawSpacingHelpers)
-		window->ui->preview->DrawSpacingHelpers();
-
 	/* --------------------------------------- */
 
 	gs_projection_pop();
@@ -617,7 +614,7 @@ QColor OBSBasic::GetHoverColor() const
 
 void OBSBasic::UpdatePreviewSpacingHelpers()
 {
-	drawSpacingHelpers = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SpacingHelpersEnabled");
+	previewSpacingHelpersEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SpacingHelpersEnabled");
 }
 
 float OBSBasic::GetDevicePixelRatio()
