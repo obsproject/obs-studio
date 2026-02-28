@@ -126,8 +126,9 @@ typedef struct {
 	mfxU32 MinDisplayMasteringLuminance;
 	mfxU16 MaxContentLightLevel;
 	mfxU16 MaxPicAverageLightLevel;
-	bool video_fmt_10bit;
+	bool video_fmt_p010;
 	bool video_fmt_ayuv;
+	bool video_fmt_y410;
 	bool bRepeatHeaders;
 } qsv_param_t;
 
