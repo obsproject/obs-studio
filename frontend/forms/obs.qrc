@@ -5,6 +5,7 @@
     <file>images/close.svg</file>
     <file>images/headphones.svg</file>
     <file>images/save.svg</file>
+    <file>images/edit.svg</file>
     <file>images/media-pause.svg</file>
     <file>images/headphones-off.svg</file>
     <file>images/trash.svg</file>
@@ -90,7 +91,7 @@
     <file>images/settings/accessibility.svg</file>
     <file>images/settings/appearance.svg</file>
   </qresource>
-  <qresource prefix="">
+  <qresource>
     <file>fonts/OpenSans-Regular.ttf</file>
     <file>fonts/OpenSans-Bold.ttf</file>
     <file>fonts/OpenSans-Italic.ttf</file>
