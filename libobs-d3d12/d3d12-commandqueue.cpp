@@ -43,7 +43,6 @@ ID3D12CommandAllocator *CommandAllocatorPool::RequestAllocator(uint64_t Complete
 		}
 	}
 
-	// If no allocator's were ready to be reused, create a new one
 	if (pAllocator == nullptr) {
 		HRESULT hr = m_DeviceInstance->GetDevice()->CreateCommandAllocator(m_cCommandListType,
 										   IID_PPV_ARGS(&pAllocator));
@@ -76,7 +75,8 @@ CommandQueue::CommandQueue(D3D12_COMMAND_LIST_TYPE Type)
 	  m_pFence(nullptr),
 	  m_NextFenceValue((uint64_t)Type << 56 | 1),
 	  m_LastCompletedFenceValue((uint64_t)Type << 56),
-	  m_AllocatorPool(std::make_unique<CommandAllocatorPool>(m_Type))
+	  m_AllocatorPool(std::make_unique<CommandAllocatorPool>(m_Type)),
+	  m_FenceEventHandle(nullptr)
 {
 }
 
@@ -144,9 +144,7 @@ uint64_t CommandQueue::IncrementFence(void)
 }
 
 bool CommandQueue::IsFenceComplete(uint64_t FenceValue)
-{ // Avoid querying the fence value by testing against the last one seen.
-	// The max() is to protect against an unlikely race condition that could cause the last
-	// completed fence value to regress.
+{
 	if (FenceValue > m_LastCompletedFenceValue)
 		m_LastCompletedFenceValue = std::max(m_LastCompletedFenceValue, m_pFence->GetCompletedValue());
 
@@ -204,13 +202,9 @@ uint64_t CommandQueue::ExecuteCommandList(ID3D12CommandList *List)
 		throw HRError("CommandQueue: Failed to close command list before execution.", removeReason);
 	}
 
-	// Kickoff the command list
 	m_CommandQueue->ExecuteCommandLists(1, &List);
-
-	// Signal the next fence value (with the GPU)
 	m_CommandQueue->Signal(m_pFence, m_NextFenceValue);
 
-	// And increment the fence value.
 	return m_NextFenceValue++;
 }
 

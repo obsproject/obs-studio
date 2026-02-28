@@ -255,7 +255,6 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	d3d12Instance = new D3D12Graphics::D3D12DeviceInstance();
 	d3d12Instance->Initialize(adapterIdx);
-	auto device11 = d3d12Instance->GetDevice();
 
 	fastClearSupported = d3d12Instance->FastClearSupported();
 	nv12Supported = d3d12Instance->IsNV12TextureSupported();

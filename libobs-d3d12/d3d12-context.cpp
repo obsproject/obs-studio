@@ -202,7 +202,9 @@ uint32_t CommandContext::ReadbackTexture(ReadbackBuffer &DstBuffer, GpuResource 
 	m_DeviceInstance->GetDevice()->GetCopyableFootprints(&resourceDesc, 0, 1, 0, &PlacedFootprint, nullptr, nullptr,
 							     &CopySize);
 
-	DstBuffer.Create(L"Readback", (uint32_t)CopySize, 1);
+	if (!DstBuffer.GetResource()) {
+		DstBuffer.Create(L"Readback", (uint32_t)CopySize, 1);
+	}
 
 	TransitionResource(SrcBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE, true);
 
