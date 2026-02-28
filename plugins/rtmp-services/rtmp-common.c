@@ -1137,8 +1137,14 @@ static const char *rtmp_common_get_connect_info(void *data, uint32_t type)
 
 		break;
 	}
-	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN:
-		return NULL;
+	case OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN: {
+		const char *protocol = rtmp_common_get_protocol(data);
+
+		if ((strcmp(protocol, "WHIP") == 0))
+			return rtmp_common_key(data);
+
+		break;
+	}
 	}
 
 	return NULL;

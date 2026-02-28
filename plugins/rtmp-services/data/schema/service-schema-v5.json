@@ -233,7 +233,7 @@
                     },
                     {
                         "$comment": "Require recommended output field if protocol field is not RTMP(S)",
-                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|WHIP)$" } } },
+                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST)$" } } },
                         "then": { "properties": { "recommended": { "required": ["output"] } } }
                     }
                 ]
