@@ -92,7 +92,13 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			else
 				hotkey = nullptr;
 
-			replayBuffer = obs_output_create("replay_buffer", Str("ReplayBuffer"), nullptr, hotkey);
+			const char *replay_mux = "replay_buffer";
+			if (strcmp(recFormat, "hybrid_mp4") == 0)
+				replay_mux = "mp4_replay_buffer";
+			else if (strcmp(recFormat, "hybrid_mov") == 0)
+				replay_mux = "mov_replay_buffer";
+
+			replayBuffer = obs_output_create(replay_mux, Str("ReplayBuffer"), nullptr, hotkey);
 
 			if (!replayBuffer)
 				throw "Failed to create replay buffer output "
