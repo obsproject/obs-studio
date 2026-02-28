@@ -2410,6 +2410,48 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     border: 1px solid var(--input_border_hover);
 }
 
+/* Add Source Dialog */
+SourceSelectButton {
+    background: var(--grey5);
+    padding: var(--padding_base) var(--padding_large);
+    margin: var(--spacing_base);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    outline: none;
+}
+
+SourceSelectButton QLabel {
+    padding: var(--padding_large) 0;
+    text-align: center;
+}
+
+SourceSelectButton #thumbnail {
+    background: var(--grey6);
+    border-radius: var(--border_radius);
+    padding: 0;
+    margin-top: var(--spacing_base);
+}
+
+SourceSelectButton:hover {
+    background-color: var(--button_bg_hover);
+}
+
+SourceSelectButton:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+SourceSelectButton:focus,
+SourceSelectButton:checked:focus {
+    border-color: var(--white3);
+}
+
+SourceSelectButton:pressed,
+SourceSelectButton:pressed:hover {
+    background-color: var(--button_bg_down);
+    border-color: var(--button_border);
+}
+
 /* Idian Widgets */
 idian--Group {
     border-radius: var(--border_radius);

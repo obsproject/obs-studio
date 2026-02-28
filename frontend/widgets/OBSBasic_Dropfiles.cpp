@@ -214,6 +214,10 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 
 void OBSBasic::dragEnterEvent(QDragEnterEvent *event)
 {
+	if (event->mimeData()->hasFormat("application/x-obs-source-uuid")) {
+		event->acceptProposedAction();
+	}
+
 	// refuse drops of our own widgets
 	if (event->source() != nullptr) {
 		event->setDropAction(Qt::IgnoreAction);
@@ -324,5 +328,10 @@ void OBSBasic::dropEvent(QDropEvent *event)
 		}
 	} else if (mimeData->hasText()) {
 		AddDropSource(QT_TO_UTF8(mimeData->text()), DropType_RawText);
+	} else if (event->mimeData()->hasFormat("application/x-obs-source-uuid")) {
+		QString uuid = QString::fromUtf8(event->mimeData()->data("application/x-obs-source-uuid"));
+
+		emit sourceUuidDropped(uuid);
+		event->acceptProposedAction();
 	}
 }

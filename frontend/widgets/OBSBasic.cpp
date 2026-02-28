@@ -243,6 +243,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	api = InitializeAPIInterface(this);
 
+	thumbnailManager = new ThumbnailManager(this);
+
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
 

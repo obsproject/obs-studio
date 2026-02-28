@@ -49,6 +49,25 @@ void setHiddenInMixer(obs_source_t *source, bool hidden)
 	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 	obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
 }
+
+std::string getNewSourceName(std::string_view name)
+{
+	std::string newName{name};
+	int suffix = 1;
+
+	for (;;) {
+		OBSSourceAutoRelease existing_source = obs_get_source_by_name(newName.c_str());
+		if (!existing_source) {
+			break;
+		}
+
+		char nextName[256];
+		std::snprintf(nextName, sizeof(nextName), "%s (%d)", name.data(), ++suffix);
+		newName = nextName;
+	}
+
+	return newName;
+}
 } // namespace
 
 static inline bool HasAudioDevices(const char *source_id)
@@ -200,8 +219,6 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
 }
 
-extern char *get_new_source_name(const char *name, const char *format);
-
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, const char *deviceDesc, int channel)
 {
 	bool disable = deviceId && strcmp(deviceId, "disabled") == 0;
@@ -222,11 +239,11 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 		}
 
 	} else if (!disable) {
-		BPtr<char> name = get_new_source_name(deviceDesc, "%s (%d)");
+		std::string name = getNewSourceName(deviceDesc);
 
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(sourceId, name, settings, nullptr);
+		source = obs_source_create(sourceId, name.c_str(), settings, nullptr);
 
 		obs_set_output_source(channel, source);
 	}
@@ -570,10 +587,14 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	}
 
 	// Add new source
-	QPointer<QMenu> addSourceMenu = CreateAddSourcePopupMenu();
-	if (addSourceMenu) {
-		popup.addMenu(addSourceMenu);
-		popup.addSeparator();
+	QAction *addSource = popup.addAction(QTStr("AddSource"), this, SLOT(AddSourceDialog()));
+	popup.addAction(addSource);
+	popup.addSeparator();
+
+	if (!preview && !sourceSelected) {
+		QAction *addGroup = new QAction(QTStr("Basic.Main.NewGroup"), this);
+		connect(addGroup, &QAction::triggered, ui->sources, &SourceTree::AddGroup);
+		popup.addAction(addGroup);
 	}
 
 	// Preview menu entries
@@ -689,14 +710,12 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		// Source grouping
 		if (ui->sources->MultipleBaseSelected()) {
-			popup.addSeparator();
 			popup.addAction(QTStr("Basic.Main.GroupItems"), ui->sources, &SourceTree::GroupSelectedItems);
-
-		} else if (ui->sources->GroupsSelected()) {
 			popup.addSeparator();
+		} else if (ui->sources->GroupsSelected()) {
 			popup.addAction(QTStr("Basic.Main.Ungroup"), ui->sources, &SourceTree::UngroupSelectedGroups);
+			popup.addSeparator();
 		}
-		popup.addSeparator();
 
 		popup.addAction(ui->actionCopySource);
 		popup.addAction(ui->actionPasteRef);
@@ -776,115 +795,27 @@ static inline bool should_show_properties(obs_source_t *source, const char *id)
 	return true;
 }
 
-void OBSBasic::AddSource(const char *id)
+void OBSBasic::AddSourceDialog()
 {
-	if (id && *id) {
-		OBSBasicSourceSelect sourceSelect(this, id, undo_s);
-		sourceSelect.exec();
-		if (should_show_properties(sourceSelect.newSource, id)) {
-			CreatePropertiesWindow(sourceSelect.newSource);
-		}
-	}
-}
-
-QMenu *OBSBasic::CreateAddSourcePopupMenu()
-{
-	const char *unversioned_type;
-	const char *type;
-	bool foundValues = false;
-	bool foundDeprecated = false;
-	size_t idx = 0;
-
-	QMenu *popup = new QMenu(QTStr("AddSource"), this);
-	QMenu *deprecated = new QMenu(QTStr("Deprecated"), popup);
-
-	auto getActionAfter = [](QMenu *menu, const QString &name) {
-		QList<QAction *> actions = menu->actions();
-
-		for (QAction *menuAction : actions) {
-			if (menuAction->text().compare(name, Qt::CaseInsensitive) >= 0)
-				return menuAction;
-		}
-
-		return (QAction *)nullptr;
-	};
-
-	auto addSource = [this, getActionAfter](QMenu *popup, const char *type, const char *name) {
-		QString qname = QT_UTF8(name);
-		QAction *popupItem = new QAction(qname, this);
-		connect(popupItem, &QAction::triggered, this, [this, type]() { AddSource(type); });
-
-		QIcon icon;
-
-		if (strcmp(type, "scene") == 0)
-			icon = GetSceneIcon();
-		else
-			icon = GetSourceIcon(type);
-
-		popupItem->setIcon(icon);
-
-		QAction *after = getActionAfter(popup, qname);
-		popup->insertAction(after, popupItem);
-	};
-
-	while (obs_enum_input_types2(idx++, &type, &unversioned_type)) {
-		const char *name = obs_source_get_display_name(type);
-		uint32_t caps = obs_get_source_output_flags(type);
-
-		if ((caps & OBS_SOURCE_CAP_DISABLED) != 0)
-			continue;
-
-		if ((caps & OBS_SOURCE_DEPRECATED) == 0) {
-			addSource(popup, unversioned_type, name);
-		} else {
-			addSource(deprecated, unversioned_type, name);
-			foundDeprecated = true;
-		}
-		foundValues = true;
-	}
-
-	addSource(popup, "scene", Str("Basic.Scene"));
-
-	popup->addSeparator();
-	QAction *addGroup = new QAction(QTStr("Group"), this);
-	addGroup->setIcon(GetGroupIcon());
-	connect(addGroup, &QAction::triggered, this, [this]() { AddSource("group"); });
-	popup->addAction(addGroup);
-
-	if (!foundDeprecated) {
-		delete deprecated;
-		deprecated = nullptr;
-	}
-
-	if (!foundValues) {
-		delete popup;
-		popup = nullptr;
-
-	} else if (foundDeprecated) {
-		popup->addSeparator();
-		popup->addMenu(deprecated);
-	}
-
-	return popup;
-}
-
-void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
-{
-	if (!GetCurrentScene()) {
-		// Tell the user he needs a scene first (help beginners).
-		OBSMessageBox::information(this, QTStr("Basic.Main.AddSourceHelp.Title"),
-					   QTStr("Basic.Main.AddSourceHelp.Text"));
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
 		return;
 	}
 
-	QScopedPointer<QMenu> popup(CreateAddSourcePopupMenu());
-	if (popup)
-		popup->exec(pos);
+	if (addWindow) {
+		addWindow->close();
+	}
+
+	addWindow = new OBSBasicSourceSelect(this, undo_s);
+	addWindow->show();
+
+	addWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+	connect(this, &OBSBasic::sourceUuidDropped, addWindow, &OBSBasicSourceSelect::sourceDropped);
 }
 
 void OBSBasic::on_actionAddSource_triggered()
 {
-	AddSourcePopupMenu(QCursor::pos());
+	AddSourceDialog();
 }
 
 static bool remove_items(obs_scene_t *, obs_sceneitem_t *item, void *param)
