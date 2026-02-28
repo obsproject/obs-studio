@@ -219,7 +219,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	m_mfxEncParams.mfx.FrameInfo.FrameRateExtN = pParams->nFpsNum;
 	m_mfxEncParams.mfx.FrameInfo.FrameRateExtD = pParams->nFpsDen;
 	m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-	if (pParams->video_fmt_10bit) {
+	if (pParams->video_fmt_10bit && !pParams->video_fmt_y410) {
 		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
 		m_mfxEncParams.mfx.FrameInfo.BitDepthChroma = 10;
 		m_mfxEncParams.mfx.FrameInfo.BitDepthLuma = 10;
@@ -227,6 +227,11 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	} else if (pParams->video_fmt_ayuv) {
 		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
 		m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+	} else if (pParams->video_fmt_y410) {
+		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+		m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+		m_mfxEncParams.mfx.FrameInfo.BitDepthChroma = 10;
+		m_mfxEncParams.mfx.FrameInfo.BitDepthLuma = 10;
 	} else {
 		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 	}
@@ -324,7 +329,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	extendedBuffers.push_back((mfxExtBuffer *)&m_co2);
 
 	const bool optBrcSupport = HasOptimizedBRCSupport(platform, m_ver, pParams->nRateControl);
-	if (pParams->video_fmt_ayuv || optBrcSupport) {
+	if (pParams->video_fmt_ayuv || pParams->video_fmt_y410 || optBrcSupport) {
 		memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
 		m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
 		m_co3.Header.BufferSz = sizeof(m_co3);
@@ -339,7 +344,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 			}
 		}
 
-		if (pParams->video_fmt_ayuv) {
+		if (pParams->video_fmt_ayuv || pParams->video_fmt_y410) {
 			m_co3.TargetChromaFormatPlus1 = MFX_CHROMAFORMAT_YUV444 + 1;
 		}
 
