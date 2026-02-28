@@ -211,7 +211,9 @@ static inline NV_ENC_MULTI_PASS get_nv_multipass(const char *multipass)
 static bool is_10_bit(const struct nvenc_data *enc)
 {
 	return enc->non_texture ? enc->in_format == VIDEO_FORMAT_P010
-				: obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
+				: (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_Y410) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10));
 }
 
 static bool is_hdr(const enum video_colorspace space)
@@ -221,8 +223,11 @@ static bool is_hdr(const enum video_colorspace space)
 
 static bool is_444(const struct nvenc_data *enc)
 {
-	return enc->in_format == VIDEO_FORMAT_I444 || obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
-	       obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_AYUV);
+	return enc->non_texture ? enc->in_format == VIDEO_FORMAT_I444
+				: (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_AYUV) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_Y410) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10));
 }
 
 static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
@@ -457,6 +462,9 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
 
+	const bool use_identity = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+				  obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10);
+
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
@@ -472,9 +480,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
 		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
-		vui_params->colourMatrix = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA)
-						   ? NV_ENC_VUI_MATRIX_COEFFS_RGB
-						   : NV_ENC_VUI_MATRIX_COEFFS_BT709;
+		vui_params->colourMatrix = use_identity ? NV_ENC_VUI_MATRIX_COEFFS_RGB : NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	default:
 		break;
@@ -563,6 +569,9 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
 
+	const bool use_identity = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+				  obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10);
+
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
@@ -578,9 +587,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
 		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
-		vui_params->colourMatrix = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA)
-						   ? NV_ENC_VUI_MATRIX_COEFFS_RGB
-						   : NV_ENC_VUI_MATRIX_COEFFS_BT709;
+		vui_params->colourMatrix = use_identity ? NV_ENC_VUI_MATRIX_COEFFS_RGB : NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_2100_PQ:
 		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
@@ -613,6 +620,8 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 	if (is_444(enc)) {
 		config->profileGUID = NV_ENC_HEVC_PROFILE_FREXT_GUID;
 		hevc_config->chromaFormatIDC = 3;
+		// FREXT can be 8-bit or 10-bit depending on input
+		profile_is_10bpc = is_10_bit(enc);
 	} else if (astrcmpi(enc->props.profile, "main10") == 0) {
 		config->profileGUID = NV_ENC_HEVC_PROFILE_MAIN10_GUID;
 		profile_is_10bpc = true;
@@ -806,6 +815,7 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 	switch (voi->format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_R10L:
 		break;
 	default:
 		switch (voi->colorspace) {
@@ -959,7 +969,9 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 	if (texture && !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
 	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010) &&
 	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) &&
-	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV)) {
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_Y410) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBR10)) {
 		blog(LOG_INFO, "[obs-nvenc] Shared textures not active, falling back to non-texture encoder");
 		goto reroute;
 	}
@@ -1381,6 +1393,14 @@ static void nvenc_tex_video_info(void *data, struct video_scale_info *info)
 		info->colorspace = VIDEO_CS_SRGB;
 	} else if (info->format == VIDEO_FORMAT_I444) {
 		info->format = VIDEO_FORMAT_AYUV;
+	} else if (info->format == VIDEO_FORMAT_Y410) {
+		info->format = VIDEO_FORMAT_Y410;
+	} else if (info->format == VIDEO_FORMAT_GBR10 || info->format == VIDEO_FORMAT_R10L) {
+		info->format = VIDEO_FORMAT_GBR10;
+		info->range = VIDEO_RANGE_FULL;
+		/* Use SRGB for SDR */
+		if (info->colorspace != VIDEO_CS_2100_PQ && info->colorspace != VIDEO_CS_2100_HLG)
+			info->colorspace = VIDEO_CS_SRGB;
 	} else {
 		info->format = get_preferred_format(info->format);
 	}
