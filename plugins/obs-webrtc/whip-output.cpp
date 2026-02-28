@@ -1,7 +1,10 @@
 #include "whip-output.h"
 #include "whip-utils.h"
 
+#include <regex>
 #include <obs.hpp>
+#include <rtc/candidate.hpp>
+#include <rtc/peerconnection.hpp>
 
 /*
  * Sets the maximum size for a video fragment. Effective range is
@@ -34,6 +37,9 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
+	  ice_ufrag(),
+	  ice_pwd(),
+	  trickled_candidates(),
 	  running(false),
 	  start_stop_mutex(),
 	  start_stop_thread(),
@@ -280,6 +286,7 @@ bool WHIPOutput::Setup()
 #endif
 
 	peer_connection = std::make_shared<rtc::PeerConnection>(cfg);
+	trickled_candidates = std::make_shared<std::vector<rtc::Candidate>>();
 
 	peer_connection->onStateChange([this](rtc::PeerConnection::State state) {
 		switch (state) {
@@ -308,6 +315,19 @@ bool WHIPOutput::Setup()
 		case rtc::PeerConnection::State::Closed:
 			do_log(LOG_INFO, "PeerConnection state is now: Closed");
 			break;
+		}
+	});
+
+	peer_connection->onLocalCandidate([this](rtc::Candidate candidate) {
+#ifdef DEBUG_SDP
+		do_log(LOG_DEBUG, "Trickled ICE Candidate:\n%s", candidate.candidate().c_str());
+#endif
+		trickled_candidates->push_back(candidate);
+	});
+
+	peer_connection->onGatheringStateChange([this](rtc::PeerConnection::GatheringState state) {
+		if (state == rtc::PeerConnection::GatheringState::Complete) {
+			SendTrickledCandidates();
 		}
 	});
 
@@ -405,6 +425,17 @@ bool WHIPOutput::Connect()
 #ifdef DEBUG_SDP
 	do_log(LOG_DEBUG, "Offer SDP:\n%s", offer_sdp.c_str());
 #endif
+
+	const std::regex re_ufrag{"a=ice-ufrag:(.*)"};
+	const std::regex re_pwd{"a=ice-pwd:(.*)"};
+	std::smatch ufrags;
+	std::smatch pwds;
+
+	std::regex_search(offer_sdp, ufrags, re_ufrag);
+	std::regex_search(offer_sdp, pwds, re_pwd);
+
+	ice_ufrag = ufrags[1];
+	ice_pwd = pwds[1];
 
 	// Add user-agent to our requests
 	headers = curl_slist_append(headers, user_agent.c_str());
@@ -716,6 +747,68 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, std::shared
 	} catch (const std::exception &e) {
 		do_log(LOG_ERROR, "error: %s ", e.what());
 	}
+}
+
+bool WHIPOutput::SendTrickledCandidates()
+{
+	std::string patch;
+	patch.append("a=ice-ufrag:" + ice_ufrag + "\r\n");
+	patch.append("a=ice-pwd:" + ice_pwd + "\r\n");
+	for (rtc::Candidate candidate : *trickled_candidates) {
+		patch.append("a=" + candidate.candidate() + "\r\n");
+	}
+	patch.append("a=end-of-candidates");
+
+	// TODO: send http patch
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Content-Type: application/trickle-ice-sdpfrag");
+	if (!bearer_token.empty()) {
+		auto bearer_token_header = std::string("Authorization: Bearer ") + bearer_token;
+		headers = curl_slist_append(headers, bearer_token_header.c_str());
+	}
+
+	std::vector<std::string> http_headers;
+
+	// Add user-agent to our requests
+	headers = curl_slist_append(headers, user_agent.c_str());
+
+	char error_buffer[CURL_ERROR_SIZE] = {};
+
+	CURL *c = curl_easy_init();
+	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
+	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(c, CURLOPT_URL, resource_url.c_str());
+	curl_easy_setopt(c, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, patch.c_str());
+	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
+	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer);
+
+	auto cleanup = [&]() {
+		curl_easy_cleanup(c);
+		curl_slist_free_all(headers);
+	};
+
+	CURLcode res = curl_easy_perform(c);
+	if (res != CURLE_OK) {
+		do_log(LOG_ERROR, "Connect failed: %s", error_buffer[0] ? error_buffer : curl_easy_strerror(res));
+		cleanup();
+		obs_output_signal_stop(output, OBS_OUTPUT_CONNECT_FAILED);
+		return false;
+	}
+
+	long response_code;
+	curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
+	if (response_code != 204) {
+		do_log(LOG_ERROR, "Connect failed: HTTP endpoint returned response code %ld", response_code);
+		cleanup();
+		obs_output_signal_stop(output, OBS_OUTPUT_INVALID_STREAM);
+		return false;
+	}
+
+	return true;
 }
 
 void register_whip_output()
