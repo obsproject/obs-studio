@@ -232,15 +232,27 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 
 	deque_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
 	for (size_t i = 0; i < NUM_ENCODE_TEXTURES; i++) {
-		gs_texture_t *tex;
-		gs_texture_t *tex_uv;
+		gs_texture_t *tex = NULL;
+		gs_texture_t *tex_uv = NULL;
 
 		if (info->format == VIDEO_FORMAT_P010) {
 			gs_texture_create_p010(&tex, &tex_uv, info->width, info->height,
 					       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
-		} else {
+		} else if (info->format == VIDEO_FORMAT_NV12) {
 			gs_texture_create_nv12(&tex, &tex_uv, info->width, info->height,
 					       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		} else if (info->format == VIDEO_FORMAT_GBRA || info->format == VIDEO_FORMAT_AYUV) {
+			tex = gs_texture_create(info->width, info->height, GS_AYUV, 1, NULL,
+						GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+			tex_uv = NULL;
+		} else if (info->format == VIDEO_FORMAT_R10L) {
+			tex = gs_texture_create(info->width, info->height, GS_R10G10B10A2, 1, NULL,
+						GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+			tex_uv = NULL;
+		} else if (info->format == VIDEO_FORMAT_Y410 || info->format == VIDEO_FORMAT_GBR10) {
+			tex = gs_texture_create(info->width, info->height, GS_Y410, 1, NULL,
+						GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+			tex_uv = NULL;
 		}
 		if (!tex) {
 			return false;

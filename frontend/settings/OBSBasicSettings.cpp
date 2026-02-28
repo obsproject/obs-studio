@@ -1014,8 +1014,10 @@ void OBSBasicSettings::LoadColorSpaces()
 #define CF_I444_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I444")
 #define CF_P010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P010")
 #define CF_I010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I010")
+#define CF_Y410_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.Y410")
 #define CF_P216_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P216")
 #define CF_P416_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P416")
+#define CF_R10l_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.R10l")
 #define CF_BGRA_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.BGRA")
 
 void OBSBasicSettings::LoadColorFormats()
@@ -1025,8 +1027,14 @@ void OBSBasicSettings::LoadColorFormats()
 	ui->colorFormat->addItem(CF_I444_STR, "I444");
 	ui->colorFormat->addItem(CF_P010_STR, "P010");
 	ui->colorFormat->addItem(CF_I010_STR, "I010");
+#ifdef _WIN32
+	ui->colorFormat->addItem(CF_Y410_STR, "Y410");
+#endif
 	ui->colorFormat->addItem(CF_P216_STR, "P216");
 	ui->colorFormat->addItem(CF_P416_STR, "P416");
+#ifdef _WIN32
+	ui->colorFormat->addItem(CF_R10l_STR, "R10l");
+#endif
 	ui->colorFormat->addItem(CF_BGRA_STR, "RGB"); // Avoid config break
 }
 
@@ -2486,7 +2494,7 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 	switch (ui->colorSpace->currentIndex()) {
 	case 3: /* Rec.2100 (PQ) */
 	case 4: /* Rec.2100 (HLG) */
-		if ((format == "P010") || (format == "P216") || (format == "P416")) {
+		if (format == "P010" || format == "Y410" || format == "P216" || format == "P416" || format == "R10l") {
 			ui->advancedMsg2->clear();
 			ui->advancedMsg2->setVisible(false);
 		} else if (format == "I010") {
@@ -2501,7 +2509,8 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 		if (format == "NV12") {
 			ui->advancedMsg2->clear();
 			ui->advancedMsg2->setVisible(false);
-		} else if ((format == "I010") || (format == "P010") || (format == "P216") || (format == "P416")) {
+		} else if (format == "I010" || format == "P010" || format == "Y410" || format == "P216" ||
+			   format == "P416" || format == "R10l") {
 			ui->advancedMsg2->setText(QTStr("Basic.Settings.Advanced.FormatWarningPreciseSdr"));
 			ui->advancedMsg2->setVisible(true);
 		} else {

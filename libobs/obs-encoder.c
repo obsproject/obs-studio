@@ -222,7 +222,7 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 	if (!video)
 		return false;
 	return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
-	       (video->using_p010_tex || video->using_nv12_tex);
+	       video->encoder_texture_format != VIDEO_FORMAT_NONE;
 }
 
 /**
@@ -234,9 +234,12 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 {
 	struct obs_core_video_mix *mix, *current_mix;
+	const bool is_tex_encoder = (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0;
 	bool create_mix = true;
+	bool conversion_requested = false;
 	struct obs_video_info ovi;
 	const struct video_output_info *info;
+	struct video_scale_info encoder_info;
 	uint32_t width;
 	uint32_t height;
 	enum video_format format;
@@ -245,18 +248,39 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 
 	if (!encoder->media)
 		return;
-	if (encoder->gpu_scale_type == OBS_SCALE_DISABLE)
-		return;
-	if (!encoder->scaled_height && !encoder->scaled_width && encoder->preferred_format == VIDEO_FORMAT_NONE &&
-	    encoder->preferred_space == VIDEO_CS_DEFAULT && encoder->preferred_range == VIDEO_RANGE_DEFAULT)
-		return;
 
 	info = video_output_get_info(encoder->media);
+
+	if (is_tex_encoder) {
+		format = encoder->preferred_format;
+		space = encoder->preferred_space;
+		range = encoder->preferred_range;
+
+		/* If a preferred format is not already set, allow the encoder to tell use which format it prefers to
+		 * determine  if we should opportunistically create a conversion mix even if scaling is disabled. */
+		get_video_info(encoder, &encoder_info);
+
+		if (format == VIDEO_FORMAT_NONE)
+			format = encoder_info.format;
+		if (space == VIDEO_CS_DEFAULT)
+			space = encoder_info.colorspace;
+		if (range == VIDEO_RANGE_DEFAULT)
+			range = encoder_info.range;
+
+		conversion_requested = format != info->format || space != info->colorspace || range != info->range;
+	} else {
+		format = info->format;
+		space = info->colorspace;
+		range = info->range;
+	}
+
+	if (encoder->gpu_scale_type == OBS_SCALE_DISABLE && !conversion_requested)
+		return;
+	if (!encoder->scaled_height && !encoder->scaled_width && !conversion_requested)
+		return;
+
 	width = encoder->scaled_width ? encoder->scaled_width : info->width;
 	height = encoder->scaled_height ? encoder->scaled_height : info->height;
-	format = encoder->preferred_format != VIDEO_FORMAT_NONE ? encoder->preferred_format : info->format;
-	space = encoder->preferred_space != VIDEO_CS_DEFAULT ? encoder->preferred_space : info->colorspace;
-	range = encoder->preferred_range != VIDEO_RANGE_DEFAULT ? encoder->preferred_range : info->range;
 
 	current_mix = get_mix_for_video(encoder->media);
 	if (!current_mix)
@@ -309,6 +333,14 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	if (!mix)
 		return;
 
+	/* Check that mix actually has the GPU texture format we want */
+	if (is_tex_encoder && mix->encoder_texture_format != format) {
+		blog(LOG_WARNING, "GPU scaling setup failed, texture format %s unavailable.",
+		     get_video_format_name(format));
+		obs_free_video_mix(mix);
+		return;
+	}
+
 	mix->encoder_only_mix = true;
 	mix->encoder_refs = 1;
 	mix->view = current_mix->view;
@@ -341,6 +373,17 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	} else {
 		da_push_back(obs->video.mixes, &mix);
 		obs_encoder_set_video(encoder, mix->video);
+
+		blog(LOG_INFO,
+		     "Created encoder-only mix for \"%s\"\n"
+		     "\tresolution: %dx%d\n"
+		     "\tscaling:    %s\n"
+		     "\tformat:     %s\n"
+		     "\tspace:      %s\n"
+		     "\trange:      %s\n",
+		     obs_encoder_get_name(encoder), width, height, get_scale_type_name(encoder->gpu_scale_type),
+		     get_video_format_name(format), get_video_colorspace_name(space),
+		     get_video_range_name(format, range));
 	}
 
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
@@ -623,7 +666,8 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 
 	obs_encoder_shutdown(encoder);
 
-	maybe_set_up_gpu_rescale(encoder);
+	if (encoder->orig_info.type == OBS_ENCODER_VIDEO)
+		maybe_set_up_gpu_rescale(encoder);
 
 	if (encoder->orig_info.create) {
 		can_reroute = true;
@@ -2157,13 +2201,7 @@ void obs_encoder_group_destroy(obs_encoder_group_t *group)
 bool obs_encoder_video_tex_active(const obs_encoder_t *encoder, enum video_format format)
 {
 	struct obs_core_video_mix *mix = get_mix_for_video(encoder->media);
-
-	if (format == VIDEO_FORMAT_NV12)
-		return mix->using_nv12_tex;
-	if (format == VIDEO_FORMAT_P010)
-		return mix->using_p010_tex;
-
-	return false;
+	return mix->encoder_texture_format == format;
 }
 
 uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder)
