@@ -1,6 +1,7 @@
 #include "MediaControls.hpp"
 #include "ui_media-controls.h"
 
+#include <Idian/Utils.hpp>
 #include <OBSApp.hpp>
 
 #include <QToolTip>
@@ -196,9 +197,12 @@ void MediaControls::StopMediaTimer()
 void MediaControls::SetPlayingState()
 {
 	ui->slider->setEnabled(true);
-	ui->playPauseButton->setProperty("class", "icon-media-pause");
-	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-	ui->playPauseButton->style()->polish(ui->playPauseButton);
+
+	idian::Utils::addClass(ui->playPauseButton, "icon-media-pause");
+	idian::Utils::removeClass(ui->playPauseButton, "icon-media-play");
+	idian::Utils::removeClass(ui->playPauseButton, "icon-media-restart");
+	idian::Utils::repolish(ui->playPauseButton);
+
 	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PauseMedia"));
 
 	prevPaused = false;
@@ -209,9 +213,11 @@ void MediaControls::SetPlayingState()
 
 void MediaControls::SetPausedState()
 {
-	ui->playPauseButton->setProperty("class", "icon-media-play");
-	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-	ui->playPauseButton->style()->polish(ui->playPauseButton);
+	idian::Utils::addClass(ui->playPauseButton, "icon-media-play");
+	idian::Utils::removeClass(ui->playPauseButton, "icon-media-pause");
+	idian::Utils::removeClass(ui->playPauseButton, "icon-media-restart");
+	idian::Utils::repolish(ui->playPauseButton);
+
 	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.PlayMedia"));
 
 	StopMediaTimer();
@@ -219,9 +225,11 @@ void MediaControls::SetPausedState()
 
 void MediaControls::SetRestartState()
 {
-	ui->playPauseButton->setProperty("class", "icon-media-restart");
-	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-	ui->playPauseButton->style()->polish(ui->playPauseButton);
+	idian::Utils::addClass(ui->playPauseButton, "icon-media-restart");
+	idian::Utils::removeClass(ui->playPauseButton, "icon-media-play");
+	idian::Utils::removeClass(ui->playPauseButton, "icon-media-pause");
+	idian::Utils::repolish(ui->playPauseButton);
+
 	ui->playPauseButton->setToolTip(QTStr("ContextBar.MediaControls.RestartMedia"));
 
 	ui->slider->setValue(0);

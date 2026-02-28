@@ -3,7 +3,7 @@
 #include <components/BalanceSlider.hpp>
 #include <widgets/OBSBasic.hpp>
 
-#include <qt-wrappers.hpp>
+#include <Idian/Utils.hpp>
 
 #include <QCheckBox>
 #include <QStackedWidget>
@@ -87,8 +87,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 
 	bool isActive = obs_source_active(source) && obs_source_audio_active(source);
 	active->setText(isActive ? QTStr("Basic.Stats.Status.Active") : QTStr("Basic.Stats.Status.Inactive"));
-	if (isActive)
-		setClasses(active, "text-danger");
+	idian::Utils::toggleClass(active, "text-danger", isActive);
 	active->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
 	volume->setMinimum(MIN_DB - 0.1);
@@ -326,11 +325,13 @@ void OBSAdvAudioCtrl::SourceActiveChanged(bool isActive)
 {
 	if (isActive && obs_source_audio_active(source)) {
 		active->setText(QTStr("Basic.Stats.Status.Active"));
-		setClasses(active, "text-danger");
+		idian::Utils::addClass(active, "text-danger");
 	} else {
 		active->setText(QTStr("Basic.Stats.Status.Inactive"));
-		setClasses(active, "");
+		idian::Utils::removeClass(active, "text-danger");
 	}
+
+	idian::Utils::repolish(active);
 }
 
 void OBSAdvAudioCtrl::SourceFlagsChanged(uint32_t flags)
