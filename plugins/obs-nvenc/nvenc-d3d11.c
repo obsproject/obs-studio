@@ -100,6 +100,9 @@ static DXGI_FORMAT d3d11_format(const obs_encoder_t *encoder)
 	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) ||
 	    obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV))
 		return DXGI_FORMAT_AYUV;
+	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_Y410) ||
+	    obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBR10))
+		return DXGI_FORMAT_Y410;
 
 	return DXGI_FORMAT_UNKNOWN;
 }
@@ -113,6 +116,9 @@ static NV_ENC_BUFFER_FORMAT nvenc_format(const obs_encoder_t *encoder)
 	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) ||
 	    obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV))
 		return NV_ENC_BUFFER_FORMAT_AYUV;
+	if (obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_Y410) ||
+	    obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBR10))
+		return NV_ENC_BUFFER_FORMAT_YUV444_10BIT;
 
 	return NV_ENC_BUFFER_FORMAT_UNDEFINED;
 }
@@ -127,6 +133,11 @@ static bool d3d11_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	desc.Format = d3d11_format(enc->encoder);
 	desc.SampleDesc.Count = 1;
 	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+	if (desc.Format == DXGI_FORMAT_Y410) {
+		/* DXGI_FORMAT_Y410 cannot be bound as a render target, but that does not seem to be required here. */
+		desc.BindFlags = 0;
+	}
 
 	ID3D11Device *const device = enc->device;
 	ID3D11Texture2D *tex;
