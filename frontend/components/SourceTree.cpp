@@ -415,6 +415,12 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 void SourceTree::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
+	// Avoids a crash during startup due to a circular call to OBSBasic which is still in its constructor.
+	// This is a symptom of the entire event hierarchy with the SourceTree being messy.
+	if (selected.size() == 0 && deselected.size() == 0) {
+		return;
+	}
+
 	{
 		QSignalBlocker sourcesSignalBlocker(this);
 		SourceTreeModel *stm = GetStm();
@@ -431,7 +437,11 @@ void SourceTree::selectionChanged(const QItemSelection &selected, const QItemSel
 			int idx = deselectedIdxs[i].row();
 			obs_sceneitem_select(stm->items[idx], false);
 		}
+
+		OBSBasic::Get()->UpdateContextBarDeferred();
+		OBSBasic::Get()->UpdateEditMenu();
 	}
+
 	QListView::selectionChanged(selected, deselected);
 }
 
