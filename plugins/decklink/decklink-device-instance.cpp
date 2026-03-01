@@ -543,7 +543,7 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	}
 
 	const HRESULT audioResult = output_->EnableAudioOutput(bmdAudioSampleRate48kHz, bmdAudioSampleType16bitInteger,
-							       2, bmdAudioOutputStreamTimestamped);
+							       2, bmdAudioOutputStreamContinuous);
 	if (audioResult != S_OK) {
 		LOG(LOG_ERROR, "Failed to enable audio output");
 		return false;
@@ -678,7 +678,7 @@ void DeckLinkDeviceInstance::ScheduleVideoFrame(IDeckLinkVideoFrame *frame)
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)
 {
 	uint32_t sampleFramesWritten;
-	output->WriteAudioSamplesSync(frames->data[0], frames->frames, &sampleFramesWritten);
+	output->ScheduleAudioSamples(frames->data[0], frames->frames, 0, 0, &sampleFramesWritten);
 }
 
 #define TIME_BASE 1000000000
