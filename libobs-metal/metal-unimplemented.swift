@@ -95,3 +95,8 @@ public func device_set_cube_render_target(
 ) {
     return
 }
+
+@_cdecl("device_end_frame")
+public func device_end_frame(device: UnsafeRawPointer) {
+    return
+}

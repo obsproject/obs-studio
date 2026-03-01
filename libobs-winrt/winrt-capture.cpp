@@ -89,6 +89,60 @@ static DXGI_FORMAT get_pixel_format(HWND window, HMONITOR monitor, BOOL force_sd
 	return (monitor && gs_is_monitor_hdr(monitor)) ? DXGI_FORMAT_R16G16B16A16_FLOAT : sdr_format;
 }
 
+static inline DXGI_FORMAT ConvertGSTextureFormatResource(gs_color_format format)
+{
+	switch (format) {
+	case GS_UNKNOWN:
+		return DXGI_FORMAT_UNKNOWN;
+	case GS_A8:
+		return DXGI_FORMAT_A8_UNORM;
+	case GS_R8:
+		return DXGI_FORMAT_R8_UNORM;
+	case GS_RGBA:
+		return DXGI_FORMAT_R8G8B8A8_TYPELESS;
+	case GS_BGRX:
+		return DXGI_FORMAT_B8G8R8X8_TYPELESS;
+	case GS_BGRA:
+		return DXGI_FORMAT_B8G8R8A8_TYPELESS;
+	case GS_R10G10B10A2:
+		return DXGI_FORMAT_R10G10B10A2_UNORM;
+	case GS_RGBA16:
+		return DXGI_FORMAT_R16G16B16A16_UNORM;
+	case GS_R16:
+		return DXGI_FORMAT_R16_UNORM;
+	case GS_RGBA16F:
+		return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case GS_RGBA32F:
+		return DXGI_FORMAT_R32G32B32A32_FLOAT;
+	case GS_RG16F:
+		return DXGI_FORMAT_R16G16_FLOAT;
+	case GS_RG32F:
+		return DXGI_FORMAT_R32G32_FLOAT;
+	case GS_R16F:
+		return DXGI_FORMAT_R16_FLOAT;
+	case GS_R32F:
+		return DXGI_FORMAT_R32_FLOAT;
+	case GS_DXT1:
+		return DXGI_FORMAT_BC1_UNORM;
+	case GS_DXT3:
+		return DXGI_FORMAT_BC2_UNORM;
+	case GS_DXT5:
+		return DXGI_FORMAT_BC3_UNORM;
+	case GS_R8G8:
+		return DXGI_FORMAT_R8G8_UNORM;
+	case GS_RGBA_UNORM:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case GS_BGRX_UNORM:
+		return DXGI_FORMAT_B8G8R8X8_UNORM;
+	case GS_BGRA_UNORM:
+		return DXGI_FORMAT_B8G8R8A8_UNORM;
+	case GS_RG16:
+		return DXGI_FORMAT_R16G16_UNORM;
+	}
+
+	return DXGI_FORMAT_UNKNOWN;
+}
+
 struct winrt_capture {
 	HWND window;
 	BOOL client_area;
@@ -98,6 +152,15 @@ struct winrt_capture {
 
 	bool capture_cursor;
 	BOOL cursor_visible;
+
+	// D3D12 WGC not support, use D3D11
+	int32_t deviceType = GS_DEVICE_DIRECT3D_11;
+	ComPtr<IDXGIFactory1> factory;
+	ComPtr<IDXGIAdapter1> adapter;
+	ComPtr<ID3D11Device> device11;
+	ComPtr<IDXGIKeyedMutex> km;
+	ComPtr<ID3D11Texture2D> texShared;
+	HANDLE texSharedHandle = NULL;
 
 	gs_texture_t *texture;
 	bool texture_written;
@@ -121,6 +184,59 @@ struct winrt_capture {
 		       winrt::Windows::Foundation::IInspectable const &)
 	{
 		active = FALSE;
+	}
+
+	// D3D11 and D3D12 shared resource
+	HANDLE GetSharedHandle(IDXGIResource *dxgi_res)
+	{
+		HANDLE handle;
+		HRESULT hr;
+
+		hr = dxgi_res->GetSharedHandle(&handle);
+		if (FAILED(hr)) {
+			blog(LOG_WARNING,
+			     "GetSharedHandle: Failed to "
+			     "get shared handle: %08lX",
+			     hr);
+			return nullptr;
+		} else {
+			return handle;
+		}
+	}
+
+	gs_texture_t *CreateSharedTexture(D3D11_TEXTURE2D_DESC &desc)
+	{
+		desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		HRESULT hr = device11->CreateTexture2D(&desc, NULL, texShared.Assign());
+
+		if (FAILED(hr)) {
+			blog(LOG_WARNING,
+			     "CreateSharedTexture: Failed to "
+			     "create shared texture: %08lX",
+			     hr);
+			return nullptr;
+		}
+		ComPtr<IDXGIResource> dxgi_res;
+
+		texShared->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
+
+		hr = texShared->QueryInterface(__uuidof(IDXGIResource), (void **)&dxgi_res);
+		if (FAILED(hr)) {
+			blog(LOG_WARNING,
+			     "InitTexture: Failed to query "
+			     "interface: %08lX",
+			     hr);
+		} else {
+			texSharedHandle = GetSharedHandle(dxgi_res);
+
+			hr = texShared->QueryInterface(__uuidof(IDXGIKeyedMutex), (void **)&km);
+			if (FAILED(hr)) {
+				return nullptr;
+			}
+		}
+		uint64_t shared_handle = reinterpret_cast<uint64_t>(texSharedHandle);
+		return gs_texture_open_nt_shared((uint32_t)shared_handle);
 	}
 
 	void on_frame_arrived(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const &sender,
@@ -159,17 +275,37 @@ struct winrt_capture {
 				if (!texture) {
 					const gs_color_format color_format =
 						desc.Format == DXGI_FORMAT_R16G16B16A16_FLOAT ? GS_RGBA16F : GS_BGRA;
-					texture = gs_texture_create(texture_width, texture_height, color_format, 1,
-								    NULL, 0);
+
+					if (deviceType == GS_DEVICE_DIRECT3D_11) {
+						texture = gs_texture_create(texture_width, texture_height, color_format,
+									    1, NULL, 0);
+					} else {
+						desc.Format = ConvertGSTextureFormatResource(color_format);
+						texture = CreateSharedTexture(desc);
+					}
 				}
 
-				if (client_area) {
-					context->CopySubresourceRegion((ID3D11Texture2D *)gs_texture_get_obj(texture),
-								       0, 0, 0, 0, frame_surface.get(), 0, &client_box);
+				ID3D11Texture2D *dst = deviceType == GS_DEVICE_DIRECT3D_11
+							       ? (ID3D11Texture2D *)gs_texture_get_obj(texture)
+							       : texShared.Get();
+				if (deviceType == GS_DEVICE_DIRECT3D_11) {
+					if (client_area) {
+						context->CopySubresourceRegion(dst, 0, 0, 0, 0, frame_surface.get(), 0,
+									       &client_box);
+					} else {
+						/* if they gave an SRV, we could avoid this copy */
+						context->CopyResource(dst, frame_surface.get());
+					}
 				} else {
-					/* if they gave an SRV, we could avoid this copy */
-					context->CopyResource((ID3D11Texture2D *)gs_texture_get_obj(texture),
-							      frame_surface.get());
+					km->AcquireSync(0, INFINITE);
+					if (client_area) {
+						context->CopySubresourceRegion(dst, 0, 0, 0, 0, frame_surface.get(), 0,
+									       &client_box);
+					} else {
+						/* if they gave an SRV, we could avoid this copy */
+						context->CopyResource(dst, frame_surface.get());
+					}
+					km->ReleaseSync(0);
 				}
 
 				texture_written = true;
@@ -281,6 +417,10 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
 
+	if (capture->deviceType == GS_DEVICE_DIRECT3D_12) {
+		return;
+	}
+
 	auto activation_factory =
 		winrt::get_activation_factory<winrt::Windows::Graphics::Capture::GraphicsCaptureItem>();
 	auto interop_factory = activation_factory.as<IGraphicsCaptureItemInterop>();
@@ -337,10 +477,36 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 static struct winrt_capture *winrt_capture_init_internal(BOOL cursor, HWND window, BOOL client_area, BOOL force_sdr,
 							 HMONITOR monitor)
 try {
-	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;
 
-	HRESULT hr = d3d_device->QueryInterface(&dxgi_device);
+	ComPtr<IDXGIFactory1> factory;
+	ComPtr<IDXGIAdapter1> adapter;
+	ComPtr<ID3D11Device> device11;
+	ComPtr<ID3D11DeviceContext> context11;
+
+	if (gs_get_device_type() == GS_DEVICE_DIRECT3D_11) {
+		device11 = (ID3D11Device *)gs_get_device_obj();
+	} else {
+		HRESULT hr;
+
+		hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
+		if (FAILED(hr)) {
+			return nullptr;
+		}
+
+		hr = factory->EnumAdapters1(0, &adapter);
+		if (FAILED(hr)) {
+			return nullptr;
+		}
+
+		hr = D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0, D3D11_SDK_VERSION,
+				       device11.Assign(), NULL, context11.Assign());
+		if (FAILED(hr)) {
+			return nullptr;
+		}
+	}
+
+	HRESULT hr = device11->QueryInterface(&dxgi_device);
 	if (FAILED(hr)) {
 		blog(LOG_ERROR, "Failed to get DXGI device");
 		return nullptr;
@@ -390,9 +556,15 @@ try {
 	capture->format = format;
 	capture->capture_cursor = cursor && cursor_toggle_supported;
 	capture->cursor_visible = cursor;
+
+	capture->deviceType = gs_get_device_type();
+	capture->factory = factory;
+	capture->adapter = adapter;
+	capture->device11 = device11;
+
 	capture->item = item;
 	capture->device = device;
-	d3d_device->GetImmediateContext(&capture->context);
+	device11->GetImmediateContext(&capture->context);
 	capture->frame_pool = frame_pool;
 	capture->session = session;
 	capture->last_size = size;

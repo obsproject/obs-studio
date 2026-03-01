@@ -20,5 +20,17 @@ struct HRError {
 	const char *str;
 	HRESULT hr;
 
-	inline HRError(const char *str, HRESULT hr) : str(str), hr(hr) {}
+	inline HRError(const char *str, HRESULT hr) : str(str), hr(hr)
+	{
+#if 0
+		__debugbreak();
+#endif
+	}
+	inline HRError(const char *str) : str(str), hr(-1)
+	{
+
+#if 0
+		__debugbreak();
+#endif
+	}
 };

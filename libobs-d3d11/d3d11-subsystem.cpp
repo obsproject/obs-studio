@@ -2189,6 +2189,8 @@ void device_begin_frame(gs_device_t *device)
 	reset_duplicators();
 }
 
+void device_end_frame(gs_device_t *device) {}
+
 void device_begin_scene(gs_device_t *device)
 {
 	clear_textures(device);

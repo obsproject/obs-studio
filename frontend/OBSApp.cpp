@@ -1120,11 +1120,15 @@ const char *OBSApp::GetRenderModule() const
 {
 #if defined(_WIN32)
 	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
-
-	return (astrcmpi(renderer, "Direct3D 11") == 0) ? DL_D3D11 : DL_OPENGL;
+	if (astrcmpi(renderer, "Direct3D 12") == 0) {
+		return DL_D3D12;
+	} else if (astrcmpi(renderer, "Direct3D 11") == 0) {
+		return DL_D3D11;
+	} else {
+		return DL_OPENGL;
+	}
 #elif defined(__APPLE__) && defined(__aarch64__)
 	const char *renderer = config_get_string(appConfig, "Video", "Renderer");
-
 	return (astrcmpi(renderer, "Metal") == 0) ? DL_METAL : DL_OPENGL;
 #else
 	return DL_OPENGL;
