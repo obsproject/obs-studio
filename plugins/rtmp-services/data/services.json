@@ -3594,7 +3594,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://ingest.velora.tv:1935/live"
+                    "url": "rtmp://publish.velora.tv/live"
                 }
             ],
             "protocol": "RTMP",
