@@ -3589,7 +3589,7 @@
         },
         {
             "name": "Velora",
-            "more_info_link": "https://developer.velora.tv/docs/guides/streaming-software",
+            "more_info_link": "https://velora.tv/docs/streaming-codec-guide",
             "stream_key_link": "https://velora.tv/settings/streaming",
             "servers": [
                 {
