@@ -94,6 +94,18 @@ void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
 	}
 }
 
+static HRESULT create_texture2d_seh_guarded(ID3D11Device *device, const D3D11_TEXTURE2D_DESC *desc,
+					    const D3D11_SUBRESOURCE_DATA *init_data, ID3D11Texture2D **texture)
+{
+	__try {
+		return device->CreateTexture2D(desc, init_data, texture);
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		blog(LOG_ERROR, "CreateTexture2D raised structured exception 0x%08lX (width=%u height=%u format=%u)",
+		     (unsigned long)GetExceptionCode(), desc->Width, desc->Height, (unsigned int)desc->Format);
+		return E_FAIL;
+	}
+}
+
 void gs_texture_2d::InitTexture(const uint8_t *const *data)
 {
 	HRESULT hr;
@@ -128,7 +140,8 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 		InitSRD(srd);
 	}
 
-	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL, texture.Assign());
+	hr = create_texture2d_seh_guarded(device->device, &td, data ? srd.data() : NULL, texture.Assign());
+
 	if (FAILED(hr))
 		throw HRError("Failed to create 2D texture", hr);
 
