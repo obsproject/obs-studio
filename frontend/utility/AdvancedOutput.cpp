@@ -354,8 +354,12 @@ inline void AdvancedOutput::SetupRecording()
 
 	if (useStreamEncoder) {
 		obs_output_set_video_encoder(fileOutput, videoStreaming);
-		if (replayBuffer)
-			obs_output_set_video_encoder(replayBuffer, videoStreaming);
+		if (replayBuffer) {
+			if (replayBufferVideoEncoder)
+				obs_output_set_video_encoder(replayBuffer, replayBufferVideoEncoder);
+			else
+				obs_output_set_video_encoder(replayBuffer, videoStreaming);
+		}
 	} else {
 		if (rescaleFilter != OBS_SCALE_DISABLE && rescaleRes && *rescaleRes) {
 			if (sscanf(rescaleRes, "%ux%u", &cx, &cy) != 2) {
@@ -367,8 +371,12 @@ inline void AdvancedOutput::SetupRecording()
 		obs_encoder_set_scaled_size(videoRecording, cx, cy);
 		obs_encoder_set_gpu_scale_type(videoRecording, (obs_scale_type)rescaleFilter);
 		obs_output_set_video_encoder(fileOutput, videoRecording);
-		if (replayBuffer)
-			obs_output_set_video_encoder(replayBuffer, videoRecording);
+		if (replayBuffer) {
+			if (replayBufferVideoEncoder)
+				obs_output_set_video_encoder(replayBuffer, replayBufferVideoEncoder);
+			else
+				obs_output_set_video_encoder(replayBuffer, videoRecording);
+		}
 	}
 
 	if (!flv) {
@@ -552,6 +560,9 @@ void AdvancedOutput::SetupOutputs()
 		SetupFFmpeg();
 	else
 		SetupRecording();
+
+	if (replayBufferVideoEncoder && replayBufferVideo)
+		obs_encoder_set_video(replayBufferVideoEncoder, replayBufferVideo);
 }
 
 int AdvancedOutput::GetAudioBitrate(size_t i, const char *id) const
@@ -836,6 +847,19 @@ bool AdvancedOutput::StartRecording()
 
 bool AdvancedOutput::StartReplayBuffer()
 {
+	if (main->rbConfig.type == RBOutputSceneView) {
+		SetupReplayBufferView(main->rbConfig.scene);
+		if (replayBufferVideo) {
+			OBSEncoder enc = useStreamEncoder ? videoStreaming : videoRecording;
+			replayBufferVideoEncoder = obs_video_encoder_create(obs_encoder_get_id(enc),
+									    "replay_buffer_video", nullptr, nullptr);
+
+			OBSDataAutoRelease settings = obs_encoder_get_settings(enc);
+			obs_encoder_update(replayBufferVideoEncoder, settings);
+			obs_encoder_set_video(replayBufferVideoEncoder, replayBufferVideo);
+		}
+	}
+
 	const char *path;
 	const char *recFormat;
 	const char *filenameFormat;

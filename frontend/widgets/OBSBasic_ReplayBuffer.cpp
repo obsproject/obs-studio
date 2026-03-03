@@ -20,6 +20,7 @@
 #include "OBSBasic.hpp"
 
 #include <components/UIValidation.hpp>
+#include <dialogs/OBSBasicRBConfig.hpp>
 
 #include <qt-wrappers.hpp>
 
@@ -179,6 +180,8 @@ void OBSBasic::ReplayBufferStop(int code)
 	if (!outputHandler || !outputHandler->replayBuffer)
 		return;
 
+	outputHandler->DestroyReplayBufferView();
+
 	emit ReplayBufStopped();
 
 	if (sysTrayReplayBuffer)
@@ -215,4 +218,23 @@ bool OBSBasic::ReplayBufferActive()
 	if (!outputHandler)
 		return false;
 	return outputHandler->ReplayBufferActive();
+}
+
+void OBSBasic::OpenReplayBufferConfig()
+{
+	OBSBasicRBConfig dialog(rbConfig, outputHandler->ReplayBufferActive(), this);
+
+	connect(&dialog, &OBSBasicRBConfig::Accepted, this, &OBSBasic::UpdateReplayBufferConfig);
+
+	dialog.exec();
+}
+
+void OBSBasic::UpdateReplayBufferConfig(const ReplayBufferConfig &config)
+{
+	rbConfig = config;
+
+	if (config.type == RBOutputSceneView)
+		blog(LOG_INFO, "Replay buffer output set to scene: %s", config.scene.c_str());
+	else
+		blog(LOG_INFO, "Replay buffer output set to program view");
 }

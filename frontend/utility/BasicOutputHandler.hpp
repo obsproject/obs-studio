@@ -43,6 +43,10 @@ struct BasicOutputHandler {
 	obs_scene_t *vCamSourceScene = nullptr;
 	obs_sceneitem_t *vCamSourceSceneItem = nullptr;
 
+	obs_view_t *replayBufferView = nullptr;
+	video_t *replayBufferVideo = nullptr;
+	OBSEncoder replayBufferVideoEncoder;
+
 	std::unique_ptr<WHIPSimulcastEncoders> whipSimulcastEncoders;
 
 	std::string outputType;
@@ -68,7 +72,7 @@ struct BasicOutputHandler {
 
 	BasicOutputHandler(OBSBasic *main_);
 
-	virtual ~BasicOutputHandler() {};
+	virtual ~BasicOutputHandler() { DestroyReplayBufferView(); }
 
 	virtual std::shared_future<void> SetupStreaming(obs_service_t *service,
 							SetupStreamingContinuation_t continuation) = 0;
@@ -91,6 +95,9 @@ struct BasicOutputHandler {
 	virtual void UpdateVirtualCamOutputSource();
 	virtual void DestroyVirtualCamView();
 	virtual void DestroyVirtualCameraScene();
+
+	void SetupReplayBufferView(const std::string &sceneName);
+	void DestroyReplayBufferView();
 
 	inline bool Active() const
 	{
