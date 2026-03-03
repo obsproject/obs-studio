@@ -97,6 +97,7 @@ struct BasicOutputHandler {
 	virtual void DestroyVirtualCameraScene();
 
 	void SetupReplayBufferView(const std::string &sceneName);
+	void SetupReplayBufferSceneOverride(OBSEncoder baseEncoder);
 	void DestroyReplayBufferView();
 
 	inline bool Active() const

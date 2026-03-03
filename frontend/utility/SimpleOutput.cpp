@@ -885,18 +885,7 @@ bool SimpleOutput::StartRecording()
 
 bool SimpleOutput::StartReplayBuffer()
 {
-	if (main->rbConfig.type == RBOutputSceneView) {
-		SetupReplayBufferView(main->rbConfig.scene);
-		if (replayBufferVideo) {
-			OBSEncoder enc = usingRecordingPreset ? videoRecording : videoStreaming;
-			replayBufferVideoEncoder = obs_video_encoder_create(obs_encoder_get_id(enc),
-									    "replay_buffer_video", nullptr, nullptr);
-
-			OBSDataAutoRelease settings = obs_encoder_get_settings(enc);
-			obs_encoder_update(replayBufferVideoEncoder, settings);
-			obs_encoder_set_video(replayBufferVideoEncoder, replayBufferVideo);
-		}
-	}
+	SetupReplayBufferSceneOverride(usingRecordingPreset ? videoRecording : videoStreaming);
 
 	UpdateRecording();
 	if (!ConfigureRecording(true))

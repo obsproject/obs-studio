@@ -400,6 +400,23 @@ void BasicOutputHandler::SetupReplayBufferView(const std::string &sceneName)
 	replayBufferVideo = obs_view_add(replayBufferView);
 }
 
+void BasicOutputHandler::SetupReplayBufferSceneOverride(OBSEncoder baseEncoder)
+{
+	if (main->rbConfig.type != RBOutputSceneView)
+		return;
+
+	SetupReplayBufferView(main->rbConfig.scene);
+	if (!replayBufferVideo)
+		return;
+
+	replayBufferVideoEncoder =
+		obs_video_encoder_create(obs_encoder_get_id(baseEncoder), "replay_buffer_video", nullptr, nullptr);
+
+	OBSDataAutoRelease settings = obs_encoder_get_settings(baseEncoder);
+	obs_encoder_update(replayBufferVideoEncoder, settings);
+	obs_encoder_set_video(replayBufferVideoEncoder, replayBufferVideo);
+}
+
 void BasicOutputHandler::DestroyReplayBufferView()
 {
 	replayBufferVideoEncoder = nullptr;
