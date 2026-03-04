@@ -214,25 +214,23 @@ QPushButton[toolButton="true"] {
   background: var(--bg_base);
 }
 
-#hMixerScrollArea VolControl {
-    padding: 0px var(--padding_container);
+#hVolumeWidgets VolumeControl {
     margin-bottom: 1px;
 }
 
-#hMixerScrollArea #volMeterFrame {
+#hVolumeWidgets VolumeControl #volMeterFrame {
     margin-top: var(--spacing_large);
 }
 
-#vMixerScrollArea VolControl {
-    padding: 0px var(--padding_xlarge) var(--spacing_large);
+#vVolumeWidgets VolumeControl {
     border-right: 1px solid var(--bg_window);
 }
 
-#vMixerScrollArea QLabel {
+#vVolumeWidgets VolumeControl QLabel {
     font-size: var(--font_small);
 }
 
-#vMixerScrollArea #volLabel {
+#vVolumeWidgets VolumeControl #volLabel {
     font-size: var(--font_base);
 }
 
