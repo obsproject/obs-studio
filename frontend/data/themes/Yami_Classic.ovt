@@ -236,30 +236,6 @@ QPushButton[toolButton="true"] {
     font-size: var(--font_base);
 }
 
-.indicator-mute::indicator,
-.indicator-mute::indicator:unchecked {
-    background-color: var(--bg_base);
-    border: none;
-    width: var(--icon_base_mixer);
-    height: var(--icon_base_mixer);
-    icon-size: var(--icon_base_mixer);
-}
-
-.indicator-mute::indicator:checked {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:checked:hover,
-.indicator-mute::indicator:unchecked:hover {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:hover,
-.indicator-mute::indicator:unchecked:hover {
-    icon-size: var(--icon_base_mixer);
-    border: none;
-}
-
 #contextContainer {
   background-color: var(--bg_window);
 }
@@ -274,7 +250,6 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0,0,0);
     qproperty-majorTickColor: var(--text);
     qproperty-minorTickColor: rgb(122,121,122); /* light */
-    qproperty-meterThickness: 3;
 }
 
 OBSBasicStats {
