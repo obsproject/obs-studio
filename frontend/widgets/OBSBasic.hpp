@@ -805,7 +805,7 @@ private:
 	QColor cropColor;
 	QColor hoverColor;
 
-	bool drawSpacingHelpers = true;
+	bool previewSpacingHelpersEnabled = true;
 
 	float dpi = 1.0;
 
