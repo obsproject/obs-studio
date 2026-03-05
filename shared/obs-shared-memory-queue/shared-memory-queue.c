@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <sddl.h>
 #include "shared-memory-queue.h"
 #include "tiny-nv12-scale.h"
 
@@ -82,7 +83,25 @@ video_queue_t *video_queue_create(uint32_t cx, uint32_t cy, uint64_t interval)
 		return NULL;
 	}
 
-	vq.handle = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size, VIDEO_NAME);
+	/* Build a security descriptor that grants read access to ALL_APP_PACKAGES
+	 * (S-1-15-2-1) so the DirectShow virtual camera filter can open the
+	 * mapping from inside an AppContainer (e.g. Microsoft Teams). The DACL
+	 * grants:
+	 *   GA (Generic All)  to CO (Creator Owner)
+	 *   GA                to SY (Local System)
+	 *   GRGX              to WD (Everyone / World)
+	 *   GRGX              to S-1-15-2-1 (ALL_APP_PACKAGES)
+	 */
+	PSECURITY_DESCRIPTOR psd = NULL;
+	SECURITY_ATTRIBUTES sa = {sizeof(sa), NULL, FALSE};
+	if (ConvertStringSecurityDescriptorToSecurityDescriptorW(
+		    L"D:(A;;GA;;;CO)(A;;GA;;;SY)(A;;GRGX;;;WD)(A;;GRGX;;;S-1-15-2-1)",
+		    SDDL_REVISION_1, &psd, NULL)) {
+		sa.lpSecurityDescriptor = psd;
+	}
+	vq.handle = CreateFileMappingW(INVALID_HANDLE_VALUE, &sa, PAGE_READWRITE, 0, size, VIDEO_NAME);
+	if (psd)
+		LocalFree(psd);
 	if (!vq.handle) {
 		return NULL;
 	}
