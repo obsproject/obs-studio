@@ -21,7 +21,7 @@
 void gs_texture_2d::InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd)
 {
 	uint32_t rowSizeBytes = width * gs_get_format_bpp(format);
-	uint32_t texSizeBytes = height * rowSizeBytes / 8;
+	uint32_t texSizeBytes = (uint32_t)((uint64_t)height * rowSizeBytes / 8);
 	size_t textures = type == GS_TEXTURE_2D ? 1 : 6;
 	uint32_t actual_levels = levels;
 	size_t curTex = 0;
@@ -64,7 +64,7 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 			if (!data[i])
 				break;
 
-			uint32_t texSize = bbp * w * h / 8;
+			uint32_t texSize = (uint32_t)((uint64_t)bbp * w * h / 8);
 
 			std::vector<uint8_t> &subData = this->data[i];
 			subData.resize(texSize);
