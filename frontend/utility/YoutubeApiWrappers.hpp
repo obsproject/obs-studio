@@ -22,6 +22,11 @@ struct CategoryDescription {
 	QString title;
 };
 
+struct I18nLanguageDescription {
+	QString id;
+	QString name;
+};
+
 struct BroadcastDescription {
 	QString id;
 	QString title;
@@ -36,6 +41,7 @@ struct BroadcastDescription {
 	bool schedul_for_later;
 	QString schedul_date_time;
 	QString projection;
+	QString language;
 };
 
 bool IsYouTubeService(const std::string &service);
@@ -59,8 +65,9 @@ public:
 	bool BindStream(const QString broadcast_id, const QString stream_id);
 	bool GetBroadcastsList(json11::Json &json_out, const QString &page, const QString &status);
 	bool GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out);
+	bool GetI18nLanguagesList(QVector<I18nLanguageDescription> &language_list_out);
 	bool SetVideoCategory(const QString &video_id, const QString &video_title, const QString &video_description,
-			      const QString &categorie_id);
+			      const QString &categorie_id, const QString &language = "");
 	bool SetVideoThumbnail(const QString &video_id, const QString &thumbnail_file);
 	bool StartBroadcast(const QString &broadcast_id);
 	bool StopBroadcast(const QString &broadcast_id);
