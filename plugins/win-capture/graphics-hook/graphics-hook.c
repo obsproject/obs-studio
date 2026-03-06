@@ -579,13 +579,13 @@ static DWORD CALLBACK copy_thread(LPVOID unused)
 	HANDLE events[2] = {NULL, NULL};
 	int shmem_id = 0;
 
-	if (!duplicate_handle(&events[0], thread_data.copy_event)) {
-		hlog_hr("copy_thread: Failed to duplicate copy event: %d", GetLastError());
+	if (!duplicate_handle(&events[0], thread_data.stop_event)) {
+		hlog_hr("copy_thread: Failed to duplicate stop event: %d", GetLastError());
 		return 0;
 	}
 
-	if (!duplicate_handle(&events[1], thread_data.stop_event)) {
-		hlog_hr("copy_thread: Failed to duplicate stop event: %d", GetLastError());
+	if (!duplicate_handle(&events[1], thread_data.copy_event)) {
+		hlog_hr("copy_thread: Failed to duplicate copy event: %d", GetLastError());
 		goto finish;
 	}
 
@@ -594,7 +594,7 @@ static DWORD CALLBACK copy_thread(LPVOID unused)
 		void *cur_data;
 
 		DWORD ret = WaitForMultipleObjects(2, events, false, INFINITE);
-		if (ret != WAIT_OBJECT_0) {
+		if (ret != WAIT_OBJECT_0 + 1) {
 			break;
 		}
 
