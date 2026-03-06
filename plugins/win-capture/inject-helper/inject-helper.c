@@ -97,6 +97,14 @@ int main(void)
 	int ret = INJECT_ERROR_INVALID_PARAMS;
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	SetDllDirectoryW(L"");
+
+	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {0};
+	policy.PreferSystem32Images = 1;
+	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
+
 	load_debug_privilege();
 
 	pCommandLineW = GetCommandLineW();
