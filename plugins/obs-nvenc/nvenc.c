@@ -211,12 +211,23 @@ static inline NV_ENC_MULTI_PASS get_nv_multipass(const char *multipass)
 static bool is_10_bit(const struct nvenc_data *enc)
 {
 	return enc->non_texture ? enc->in_format == VIDEO_FORMAT_P010
-				: obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
+				: (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_Y410) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10));
 }
 
 static bool is_hdr(const enum video_colorspace space)
 {
 	return space == VIDEO_CS_2100_HLG || space == VIDEO_CS_2100_PQ;
+}
+
+static bool is_444(const struct nvenc_data *enc)
+{
+	return enc->non_texture ? enc->in_format == VIDEO_FORMAT_I444
+				: (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_AYUV) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_Y410) ||
+				   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10));
 }
 
 static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
@@ -451,22 +462,25 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
 
+	const bool use_identity = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+				  obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10);
+
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
-		vui_params->colourPrimaries = 6;
-		vui_params->transferCharacteristics = 6;
-		vui_params->colourMatrix = 6;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 1;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 13;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
+		vui_params->colourMatrix = use_identity ? NV_ENC_VUI_MATRIX_COEFFS_RGB : NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	default:
 		break;
@@ -483,7 +497,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings)
 	/* -------------------------- */
 	/* profile                    */
 
-	if (enc->in_format == VIDEO_FORMAT_I444) {
+	if (is_444(enc)) {
 		config->profileGUID = NV_ENC_H264_PROFILE_HIGH_444_GUID;
 		h264_config->chromaFormatIDC = 3;
 #ifdef NVENC_13_0_OR_LATER
@@ -555,35 +569,38 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
 
+	const bool use_identity = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+				  obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBR10);
+
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
-		vui_params->colourPrimaries = 6;
-		vui_params->transferCharacteristics = 6;
-		vui_params->colourMatrix = 6;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 1;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		vui_params->colourPrimaries = 1;
-		vui_params->transferCharacteristics = 13;
-		vui_params->colourMatrix = 1;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
+		vui_params->colourMatrix = use_identity ? NV_ENC_VUI_MATRIX_COEFFS_RGB : NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_2100_PQ:
-		vui_params->colourPrimaries = 9;
-		vui_params->transferCharacteristics = 16;
-		vui_params->colourMatrix = 9;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE2084;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 		vui_params->chromaSampleLocationFlag = 1;
 		vui_params->chromaSampleLocationTop = 2;
 		vui_params->chromaSampleLocationBot = 2;
 		break;
 	case VIDEO_CS_2100_HLG:
-		vui_params->colourPrimaries = 9;
-		vui_params->transferCharacteristics = 18;
-		vui_params->colourMatrix = 9;
+		vui_params->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		vui_params->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
+		vui_params->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 		vui_params->chromaSampleLocationFlag = 1;
 		vui_params->chromaSampleLocationTop = 2;
 		vui_params->chromaSampleLocationBot = 2;
@@ -600,9 +617,11 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings)
 
 	bool profile_is_10bpc = false;
 
-	if (enc->in_format == VIDEO_FORMAT_I444) {
+	if (is_444(enc)) {
 		config->profileGUID = NV_ENC_HEVC_PROFILE_FREXT_GUID;
 		hevc_config->chromaFormatIDC = 3;
+		// FREXT can be 8-bit or 10-bit depending on input
+		profile_is_10bpc = is_10_bit(enc);
 	} else if (astrcmpi(enc->props.profile, "main10") == 0) {
 		config->profileGUID = NV_ENC_HEVC_PROFILE_MAIN10_GUID;
 		profile_is_10bpc = true;
@@ -670,30 +689,30 @@ static bool init_encoder_av1(struct nvenc_data *enc, obs_data_t *settings)
 
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
-		av1_config->colorPrimaries = 6;
-		av1_config->transferCharacteristics = 6;
-		av1_config->matrixCoefficients = 6;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_SMPTE170M;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		av1_config->colorPrimaries = 1;
-		av1_config->transferCharacteristics = 1;
-		av1_config->matrixCoefficients = 1;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		av1_config->colorPrimaries = 1;
-		av1_config->transferCharacteristics = 13;
-		av1_config->matrixCoefficients = 1;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SRGB;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 		break;
 	case VIDEO_CS_2100_PQ:
-		av1_config->colorPrimaries = 9;
-		av1_config->transferCharacteristics = 16;
-		av1_config->matrixCoefficients = 9;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_SMPTE2084;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 		break;
 	case VIDEO_CS_2100_HLG:
-		av1_config->colorPrimaries = 9;
-		av1_config->transferCharacteristics = 18;
-		av1_config->matrixCoefficients = 9;
+		av1_config->colorPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT2020;
+		av1_config->transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_ARIB_STD_B67;
+		av1_config->matrixCoefficients = NV_ENC_VUI_MATRIX_COEFFS_BT2020_NCL;
 	}
 
 	/* -------------------------- */
@@ -783,7 +802,7 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 
 	enc->in_format = get_preferred_format(pref_format);
 
-	if (enc->in_format == VIDEO_FORMAT_I444 && !support_444) {
+	if (is_444(enc) && !support_444) {
 		NV_FAIL(obs_module_text("444Unsupported"));
 		return false;
 	}
@@ -796,6 +815,7 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec, obs_data
 	switch (voi->format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_R10L:
 		break;
 	default:
 		switch (voi->colorspace) {
@@ -933,8 +953,7 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 #endif
 
 	if (gpu_set && gpu != -1 && texture && !force_tex) {
-		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back "
-			       "to non-texture encoder");
+		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back to non-texture encoder");
 		goto reroute;
 	}
 
@@ -942,16 +961,18 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 		if (obs_encoder_gpu_scaling_enabled(encoder)) {
 			blog(LOG_INFO, "[obs-nvenc] GPU scaling enabled");
 		} else if (texture) {
-			blog(LOG_INFO, "[obs-nvenc] CPU scaling enabled, falling back to"
-				       " non-texture encoder");
+			blog(LOG_INFO, "[obs-nvenc] CPU scaling enabled, falling back to non-texture encoder");
 			goto reroute;
 		}
 	}
 
 	if (texture && !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
-	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010)) {
-		blog(LOG_INFO, "[obs-nvenc] nv12/p010 not active, falling back to "
-			       "non-texture encoder");
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_Y410) &&
+	    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBR10)) {
+		blog(LOG_INFO, "[obs-nvenc] Shared textures not active, falling back to non-texture encoder");
 		goto reroute;
 	}
 
@@ -1362,6 +1383,29 @@ static void nvenc_soft_video_info(void *data, struct video_scale_info *info)
 	info->format = enc->in_format;
 }
 
+static void nvenc_tex_video_info(void *data, struct video_scale_info *info)
+{
+	UNUSED_PARAMETER(data);
+	/* Override to GBRA for BGRA to enable RGB texture encoding without colour conversion. */
+	if (info->format == VIDEO_FORMAT_BGRA) {
+		info->format = VIDEO_FORMAT_GBRA;
+		info->range = VIDEO_RANGE_FULL;
+		info->colorspace = VIDEO_CS_SRGB;
+	} else if (info->format == VIDEO_FORMAT_I444) {
+		info->format = VIDEO_FORMAT_AYUV;
+	} else if (info->format == VIDEO_FORMAT_Y410) {
+		info->format = VIDEO_FORMAT_Y410;
+	} else if (info->format == VIDEO_FORMAT_GBR10 || info->format == VIDEO_FORMAT_R10L) {
+		info->format = VIDEO_FORMAT_GBR10;
+		info->range = VIDEO_RANGE_FULL;
+		/* Use SRGB for SDR */
+		if (info->colorspace != VIDEO_CS_2100_PQ && info->colorspace != VIDEO_CS_2100_HLG)
+			info->colorspace = VIDEO_CS_SRGB;
+	} else {
+		info->format = get_preferred_format(info->format);
+	}
+}
+
 static bool nvenc_extra_data(void *data, uint8_t **header, size_t *size)
 {
 	struct nvenc_data *enc = data;
@@ -1406,6 +1450,7 @@ struct obs_encoder_info h264_nvenc_info = {
 	.get_properties = h264_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
+	.get_video_info = nvenc_tex_video_info,
 };
 
 #ifdef ENABLE_HEVC
@@ -1427,6 +1472,7 @@ struct obs_encoder_info hevc_nvenc_info = {
 	.get_properties = hevc_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
+	.get_video_info = nvenc_tex_video_info,
 };
 #endif
 
@@ -1447,6 +1493,7 @@ struct obs_encoder_info av1_nvenc_info = {
 	.get_defaults = av1_nvenc_defaults,
 	.get_properties = av1_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
+	.get_video_info = nvenc_tex_video_info,
 };
 
 struct obs_encoder_info h264_nvenc_soft_info = {
