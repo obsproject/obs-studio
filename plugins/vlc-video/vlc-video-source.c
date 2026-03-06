@@ -1,5 +1,6 @@
 #include "vlc-video-plugin.h"
 #include <media-io/video-frame.h>
+#include <media-io/audio-resampler.h>
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/dstr.h>
@@ -74,6 +75,8 @@ struct vlc_source {
 	obs_hotkey_id stop_hotkey;
 	obs_hotkey_id playlist_next_hotkey;
 	obs_hotkey_id playlist_prev_hotkey;
+
+	audio_resampler_t *resampler;
 };
 
 static libvlc_media_t *get_media(media_file_array_t *files, const char *path)
@@ -349,6 +352,10 @@ static void vlcs_destroy(void *data)
 
 	free_files(&c->files);
 	pthread_mutex_destroy(&c->mutex);
+
+	if (c->resampler)
+		audio_resampler_destroy(c->resampler);
+
 	bfree(c);
 }
 
@@ -471,10 +478,19 @@ static void vlcs_audio_play(void *data, const void *samples, unsigned count, int
 		c->audio_capacity = count;
 	}
 
-	memcpy((void *)c->audio.data[0], samples, size);
 	c->audio.timestamp = (uint64_t)pts * 1000ULL - time_start;
 	c->audio.frames = count;
-
+	// resample 5.1 vlc
+	if (c->resampler) {
+		uint8_t *output[MAX_AUDIO_CHANNELS];
+		uint32_t out_frames;
+		uint64_t ts_offset;
+		audio_resampler_resample(c->resampler, (uint8_t **)output, &out_frames, &ts_offset,
+					 (const uint8_t **)&samples, (uint32_t)count);
+		memcpy((void *)c->audio.data[0], output[0], size);
+	} else {
+		memcpy((void *)c->audio.data[0], samples, size);
+	}
 	obs_source_output_audio(c->source, &c->audio);
 }
 
@@ -489,6 +505,51 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate, unsigne
 	new_audio_format = convert_vlc_audio_format(format);
 	if (*channels > out_channels)
 		*channels = out_channels;
+
+	bool need_resampling = (*channels == 6 && out_channels == 6) || (*channels == 8 && out_channels == 8);
+
+	/* setup swresampler for 5.1 & 7.1 audio: 
+	 * vlc orders 5.1 as FL FR BL BR FC LFE ==> switches to FL FR FC LFE BL BR;
+	 * vlc orders 7.1 as FL FR SL SR BL BR FC LFE ==> switches to FL FR FC LFE BL BR SL SR */
+	if (need_resampling) {
+		struct resample_info src, dst;
+		src.samples_per_sec = *rate;
+		src.format = new_audio_format;
+		src.speakers = (enum speaker_layout) * channels;
+
+		dst.samples_per_sec = *rate;
+		dst.format = new_audio_format;
+		dst.speakers = (enum speaker_layout) * channels;
+
+		c->resampler = audio_resampler_create(&dst, &src);
+		/* clang-format off */
+		// Each line in the matrices corresponds to an outgoing channel (1st line is ch1, etc).
+		// The weight of incoming channels into an outgoing channel is in each row.
+		double matrix6[36] = {
+			1, 0, 0, 0, 0, 0,
+			0, 1, 0, 0, 0, 0,
+			0, 0, 0, 0, 1, 0,
+			0, 0, 0, 0, 0, 1,
+			0, 0, 1, 0, 0, 0,
+			0, 0, 0, 1, 0, 0
+		};
+		double matrix8[64] = {
+			1, 0, 0, 0, 0, 0, 0, 0,
+			0, 1, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 1, 0,
+			0, 0, 0, 0, 0, 0, 0, 1,
+			0, 0, 0, 0, 1, 0, 0, 0,
+			0, 0, 0, 0, 0, 1, 0, 0,
+			0, 0, 1, 0, 0, 0, 0, 0,
+			0, 0, 0, 1, 0, 0, 0, 0,
+		};
+		/* clang-format on */
+		bool is_5_1 = out_channels == 6;
+		if (c->resampler) {
+			if (!audio_resampler_set_matrix(c->resampler, is_5_1 ? matrix6 : matrix8, is_5_1 ? 6 : 8))
+				c->resampler = NULL;
+		}
+	}
 
 	/* don't free audio data if the data is the same format */
 	if (c->audio.format == new_audio_format && c->audio.samples_per_sec == *rate &&
@@ -930,6 +991,8 @@ static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 
 	c->playlist_prev_hotkey = obs_hotkey_register_source(
 		source, "VLCSource.PlaylistPrev", obs_module_text("PlaylistPrev"), vlcs_playlist_prev_hotkey, c);
+
+	c->resampler = NULL;
 
 	pthread_mutex_init_value(&c->mutex);
 	if (pthread_mutex_init(&c->mutex, NULL) != 0)
