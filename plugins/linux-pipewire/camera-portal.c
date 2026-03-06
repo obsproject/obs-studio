@@ -366,7 +366,7 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 		}
 
 		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, format ? &format : NULL,
-					 SPA_FORMAT_VIDEO_size, SPA_POD_OPT_Rectangle(&resolution)) < 0)
+					 SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&resolution)) < 0)
 			continue;
 
 		obs_data_set_int(data, "width", resolution.width);
@@ -677,7 +677,7 @@ static bool framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 			continue;
 
 		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_size,
-					 SPA_POD_OPT_Rectangle(&this_resolution)) < 0)
+					 SPA_POD_Rectangle(&this_resolution)) < 0)
 			continue;
 
 		if (this_resolution.width != resolution->width || this_resolution.height != resolution->height)
