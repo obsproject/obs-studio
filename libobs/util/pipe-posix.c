@@ -77,17 +77,21 @@ os_process_pipe_t *os_process_pipe_create_internal(const char *bin, char **argv,
 		posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
 		if (mainfds[1] != STDOUT_FILENO) {
 			posix_spawn_file_actions_adddup2(&file_actions, mainfds[1], STDOUT_FILENO);
-			posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
+			posix_spawn_file_actions_addclose(&file_actions, mainfds[1]);
 		}
 	} else {
+		posix_spawn_file_actions_addclose(&file_actions, mainfds[1]);
 		if (mainfds[0] != STDIN_FILENO) {
 			posix_spawn_file_actions_adddup2(&file_actions, mainfds[0], STDIN_FILENO);
-			posix_spawn_file_actions_addclose(&file_actions, mainfds[1]);
+			posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
 		}
 	}
 
 	posix_spawn_file_actions_addclose(&file_actions, errfds[0]);
-	posix_spawn_file_actions_adddup2(&file_actions, errfds[1], STDERR_FILENO);
+	if (errfds[1] != STDERR_FILENO) {
+		posix_spawn_file_actions_adddup2(&file_actions, errfds[1], STDERR_FILENO);
+		posix_spawn_file_actions_addclose(&file_actions, errfds[1]);
+	}
 
 	int pid;
 	int ret = posix_spawn(&pid, bin, &file_actions, NULL, (char *const *)argv, environ);
