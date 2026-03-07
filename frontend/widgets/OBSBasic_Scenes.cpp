@@ -168,6 +168,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
 
+	bool foundItem = false;
 	QListWidgetItem *sel = nullptr;
 	int count = ui->scenes->count();
 
@@ -177,6 +178,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 		if (cur_scene != scene)
 			continue;
 
+		foundItem = true;
 		sel = item;
 		break;
 	}
@@ -195,7 +197,9 @@ void OBSBasic::RemoveScene(OBSSource source)
 		OBSProjector::UpdateMultiviewProjectors();
 	}
 
-	OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
+	if (foundItem) {
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
+	}
 }
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
