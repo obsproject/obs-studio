@@ -27,7 +27,8 @@ static const char *virtualcam_name(void *unused)
 static void virtualcam_destroy(void *data)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
-	close(vcam->device);
+	if (vcam->device >= 0)
+		close(vcam->device);
 	bfree(data);
 }
 
@@ -133,6 +134,7 @@ static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)bzalloc(sizeof(*vcam));
 	vcam->output = output;
+	vcam->device = -1;
 
 	UNUSED_PARAMETER(settings);
 	return vcam;
@@ -256,6 +258,7 @@ static bool try_connect(void *data, const char *device)
 
 fail_close_device:
 	close(vcam->device);
+	vcam->device = -1;
 	return false;
 }
 
@@ -331,6 +334,7 @@ static void virtualcam_stop(void *data, uint64_t ts)
 	}
 
 	close(vcam->device);
+	vcam->device = -1;
 	blog(LOG_INFO, "Virtual camera stopped");
 
 	UNUSED_PARAMETER(ts);
