@@ -41,6 +41,8 @@
 #include <properties-view.hpp>
 #include <qt-wrappers.hpp>
 
+#include <Idian/Utils.hpp>
+
 #include <QCompleter>
 #include <QStandardItemModel>
 
@@ -4984,18 +4986,18 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	if (streamQuality) {
 		if (memMB <= memMaxMB) {
 			ui->simpleRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+			idian::Utils::removeClass(ui->advRBEstimate, "text-warning");
 		} else {
 			ui->simpleRBEstimate->setText(
 				QTStr(ESTIMATE_TOO_LARGE_STR)
 					.arg(QString::number(int(memMB)), QString::number(int(memMaxMB))));
-			ui->simpleRBEstimate->setProperty("class", "text-warning");
+			idian::Utils::addClass(ui->advRBEstimate, "text-warning");
 		}
 	} else {
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 		ui->simpleRBMegsMax->setMaximum(memMaxMB);
+		ui->simpleRBEstimate->style()->polish(ui->simpleRBEstimate);
 	}
-
-	ui->simpleRBEstimate->style()->polish(ui->simpleRBEstimate);
 
 	UpdateAutomaticReplayBufferCheckboxes();
 }
@@ -5077,21 +5079,22 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 
 		if (memMB <= memMaxMB) {
 			ui->advRBEstimate->setText(QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+			idian::Utils::removeClass(ui->advRBEstimate, "text-warning");
 		} else {
 			ui->advRBEstimate->setText(
 				QTStr(ESTIMATE_TOO_LARGE_STR)
 					.arg(QString::number(int(memMB)), QString::number(int(memMaxMB))));
-			ui->advRBEstimate->setProperty("class", "text-warning");
+			idian::Utils::addClass(ui->advRBEstimate, "text-warning");
 		}
 	} else {
 		ui->advRBMegsMax->setVisible(true);
 		ui->advRBMegsMaxLabel->setVisible(true);
 		ui->advRBMegsMax->setMaximum(memMaxMB);
 		ui->advRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
+		ui->advRBEstimate->style()->polish(ui->advRBEstimate);
 	}
 
 	ui->advReplayBufferFrame->setEnabled(!lossless && replayBufferEnabled);
-	ui->advRBEstimate->style()->polish(ui->advRBEstimate);
 	ui->advReplayBuf->setEnabled(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();
