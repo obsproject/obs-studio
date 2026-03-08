@@ -309,7 +309,7 @@ struct obs_encoder_info {
 	/**
 	 * Returns desired video format information
 	 *
-	 * @param          data  Data associated with this encoder context
+	 * @param          data  Data associated with this encoder context. For texture encoders, this is NULL.
 	 * @param[in/out]  info  Video format information
 	 */
 	void (*get_video_info)(void *data, struct video_scale_info *info);

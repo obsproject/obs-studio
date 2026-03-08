@@ -15,7 +15,8 @@ void cuda_opengl_free(struct nvenc_data *enc)
 		CUgraphicsResource res_y = enc->input_textures.array[i].res_y;
 		CUgraphicsResource res_uv = enc->input_textures.array[i].res_uv;
 		cu->cuGraphicsUnregisterResource(res_y);
-		cu->cuGraphicsUnregisterResource(res_uv);
+		if (res_uv)
+			cu->cuGraphicsUnregisterResource(res_uv);
 	}
 	cu->cuCtxPopCurrent(NULL);
 }
@@ -39,7 +40,10 @@ static inline bool get_res_for_tex_ids(struct nvenc_data *enc, GLuint tex_id_y, 
 	}
 
 	CU_CHECK(cu->cuGraphicsGLRegisterImage(tex_y, tex_id_y, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_READ_ONLY))
-	CU_CHECK(cu->cuGraphicsGLRegisterImage(tex_uv, tex_id_uv, GL_TEXTURE_2D, CU_GRAPHICS_REGISTER_FLAGS_READ_ONLY))
+	if (tex_id_uv) {
+		CU_CHECK(cu->cuGraphicsGLRegisterImage(tex_uv, tex_id_uv, GL_TEXTURE_2D,
+						       CU_GRAPHICS_REGISTER_FLAGS_READ_ONLY))
+	}
 
 	struct handle_tex ht = {tex_id_y, *tex_y, *tex_uv};
 	da_push_back(enc->input_textures, &ht);
@@ -47,45 +51,55 @@ static inline bool get_res_for_tex_ids(struct nvenc_data *enc, GLuint tex_id_y, 
 unmap:
 	if (!success) {
 		cu->cuGraphicsUnregisterResource(*tex_y);
-		cu->cuGraphicsUnregisterResource(*tex_uv);
+		if (*tex_uv)
+			cu->cuGraphicsUnregisterResource(*tex_uv);
 	}
 
 	return success;
 }
 
-static inline bool copy_tex_data(struct nvenc_data *enc, const bool p010, GLuint tex[2], struct nv_cuda_surface *surf)
+static inline bool copy_tex_data(struct nvenc_data *enc, GLuint tex[2], struct nv_cuda_surface *surf)
 {
 	bool success = true;
+	bool single_tex = enc->surface_format == NV_ENC_BUFFER_FORMAT_AYUV;
 	CUgraphicsResource mapped_tex[2] = {0};
 	CUarray mapped_cuda;
 
 	if (!get_res_for_tex_ids(enc, tex[0], tex[1], &mapped_tex[0], &mapped_tex[1]))
 		return false;
 
-	CU_CHECK(cu->cuGraphicsMapResources(2, mapped_tex, 0))
+	CU_CHECK(cu->cuGraphicsMapResources(single_tex ? 1 : 2, mapped_tex, 0))
 
 	CUDA_MEMCPY2D m = {0};
 	m.dstMemoryType = CU_MEMORYTYPE_ARRAY;
 	m.srcMemoryType = CU_MEMORYTYPE_ARRAY;
 	m.dstArray = surf->tex;
-	m.WidthInBytes = p010 ? enc->cx * 2 : enc->cx;
 	m.Height = enc->cy;
+
+	if (enc->surface_format == NV_ENC_BUFFER_FORMAT_YUV420_10BIT)
+		m.WidthInBytes = enc->cx * 2;
+	else if (enc->surface_format == NV_ENC_BUFFER_FORMAT_AYUV)
+		m.WidthInBytes = enc->cx * 4;
+	else
+		m.WidthInBytes = enc->cx;
 
 	// Map and copy Y texture
 	CU_CHECK(cu->cuGraphicsSubResourceGetMappedArray(&mapped_cuda, mapped_tex[0], 0, 0));
 	m.srcArray = mapped_cuda;
 	CU_CHECK(cu->cuMemcpy2D(&m))
 
-	// Map and copy UV texture
-	CU_CHECK(cu->cuGraphicsSubResourceGetMappedArray(&mapped_cuda, mapped_tex[1], 0, 0))
-	m.srcArray = mapped_cuda;
-	m.dstY += enc->cy;
-	m.Height = enc->cy / 2;
+	if (!single_tex) {
+		// Map and copy UV texture
+		CU_CHECK(cu->cuGraphicsSubResourceGetMappedArray(&mapped_cuda, mapped_tex[1], 0, 0))
+		m.srcArray = mapped_cuda;
+		m.dstY += enc->cy;
+		m.Height = enc->cy / 2;
 
-	CU_CHECK(cu->cuMemcpy2D(&m))
+		CU_CHECK(cu->cuMemcpy2D(&m))
+	}
 
 unmap:
-	cu->cuGraphicsUnmapResources(2, mapped_tex, 0);
+	cu->cuGraphicsUnmapResources(single_tex ? 1 : 2, mapped_tex, 0);
 
 	return success;
 }
@@ -96,8 +110,7 @@ bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts, ui
 	struct nvenc_data *enc = data;
 	struct nv_cuda_surface *surf;
 	struct nv_bitstream *bs;
-	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
-	GLuint input_tex[2];
+	GLuint input_tex[2] = {0, 0};
 
 	if (tex == NULL || tex->tex[0] == NULL) {
 		error("Encode failed: bad texture handle");
@@ -116,9 +129,13 @@ bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts, ui
 	CU_FAILED(cu->cuCtxPushCurrent(enc->cu_ctx))
 	obs_enter_graphics();
 	input_tex[0] = *(GLuint *)gs_texture_get_obj(tex->tex[0]);
-	input_tex[1] = *(GLuint *)gs_texture_get_obj(tex->tex[1]);
 
-	bool success = copy_tex_data(enc, p010, input_tex, surf);
+	/* AYUV only has one texture, NV12/P010 use two. */
+	if (enc->surface_format != NV_ENC_BUFFER_FORMAT_AYUV) {
+		input_tex[1] = *(GLuint *)gs_texture_get_obj(tex->tex[1]);
+	}
+
+	bool success = copy_tex_data(enc, input_tex, surf);
 
 	obs_leave_graphics();
 	CU_FAILED(cu->cuCtxPopCurrent(NULL))
@@ -131,7 +148,7 @@ bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts, ui
 
 	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
 	map.registeredResource = surf->res;
-	map.mappedBufferFmt = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
+	map.mappedBufferFmt = enc->surface_format;
 
 	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map)))
 		return false;

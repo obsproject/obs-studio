@@ -206,6 +206,8 @@ struct gs_exports {
 
 	bool (*device_nv12_available)(gs_device_t *device);
 	bool (*device_p010_available)(gs_device_t *device);
+	bool (*device_ayuv_available)(gs_device_t *device);
+	bool (*device_y410_available)(gs_device_t *device);
 	bool (*device_texture_create_nv12)(gs_device_t *device, gs_texture_t **tex_y, gs_texture_t **tex_uv,
 					   uint32_t width, uint32_t height, uint32_t flags);
 	bool (*device_texture_create_p010)(gs_device_t *device, gs_texture_t **tex_y, gs_texture_t **tex_uv,
