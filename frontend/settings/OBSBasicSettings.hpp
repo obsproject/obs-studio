@@ -205,6 +205,7 @@ private:
 	void InitStreamPage();
 	bool IsCustomService() const;
 	inline bool IsWHIP() const;
+	inline bool IsLiveJasmin() const;
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();

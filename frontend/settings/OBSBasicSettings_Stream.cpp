@@ -30,6 +30,7 @@ enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
 	WHIP,
+	LiveJasmin,
 };
 
 enum class Section : int {
@@ -45,6 +46,11 @@ bool OBSBasicSettings::IsCustomService() const
 inline bool OBSBasicSettings::IsWHIP() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::WHIP;
+}
+
+inline bool OBSBasicSettings::IsLiveJasmin() const
+{
+	return ui->service->currentData().toInt() == (int)ListOpt::LiveJasmin;
 }
 
 void OBSBasicSettings::InitStreamPage()
@@ -102,6 +108,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	bool is_rtmp_custom = (strcmp(type, "rtmp_custom") == 0);
 	bool is_rtmp_common = (strcmp(type, "rtmp_common") == 0);
 	bool is_whip = (strcmp(type, "whip_custom") == 0);
+	bool is_livejasmin = (strcmp(type, "livejasmin") == 0);
 
 	loading = true;
 
@@ -114,7 +121,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	protocol = QT_UTF8(obs_service_get_protocol(service_obj));
 	const char *bearer_token = obs_data_get_string(settings, "bearer_token");
 
-	if (is_rtmp_custom || is_whip)
+	if (is_rtmp_custom || is_whip || is_livejasmin)
 		ui->customServer->setText(server);
 
 	if (is_rtmp_custom) {
@@ -128,6 +135,12 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authUsername->setText(QT_UTF8(username));
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
+	} else if (is_livejasmin) {
+		int idx = ui->service->findData(QVariant((int)ListOpt::LiveJasmin));
+		if (idx != -1) {
+			ui->service->setCurrentIndex(idx);
+			lastServiceIdx = idx;
+		}
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
@@ -261,12 +274,15 @@ void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
 	bool whip = IsWHIP();
+	bool livejasmin = IsLiveJasmin();
 	const char *service_id = "rtmp_common";
 
 	if (customServer) {
 		service_id = "rtmp_custom";
 	} else if (whip) {
 		service_id = "whip_custom";
+	} else if (livejasmin) {
+		service_id = "livejasmin";
 	}
 
 	obs_service_t *oldService = main->GetService();
@@ -274,7 +290,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!customServer && !whip) {
+	if (!customServer && !whip && !livejasmin) {
 		obs_data_set_string(settings, "service", QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(settings, "protocol", QT_TO_UTF8(protocol));
 		if (ui->server->currentData() == CustomServerUUID()) {
@@ -313,6 +329,10 @@ void OBSBasicSettings::SaveStream1Settings()
 		obs_data_set_string(settings, "bearer_token", QT_TO_UTF8(ui->key->text()));
 	} else {
 		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
+	}
+
+	if (livejasmin) {
+		obs_data_set_string(settings, "service", "LiveJasmin");
 	}
 
 	OBSServiceAutoRelease newService = obs_service_create(service_id, "default_service", settings, hotkeyData);
@@ -372,7 +392,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 void OBSBasicSettings::UpdateMoreInfoLink()
 {
-	if (IsCustomService() || IsWHIP()) {
+	if (IsCustomService() || IsWHIP() || IsLiveJasmin()) {
 		ui->moreInfoButton->hide();
 		return;
 	}
@@ -415,6 +435,10 @@ void OBSBasicSettings::UpdateKeyLink()
 
 	if (customServer.contains("fbcdn.net") && IsCustomService()) {
 		streamKeyLink = "https://www.facebook.com/live/producer?ref=OBS";
+	}
+
+	if (IsLiveJasmin()) {
+		streamKeyLink = "https://cam.jasmin.com/#OBS";
 	}
 
 	if (serviceName == "Dacast") {
@@ -484,6 +508,8 @@ void OBSBasicSettings::LoadServices(bool showAll)
 	if (obs_is_output_protocol_registered("WHIP")) {
 		ui->service->addItem(QTStr("WHIP"), QVariant((int)ListOpt::WHIP));
 	}
+
+	ui->service->addItem("LiveJasmin", QVariant((int)ListOpt::LiveJasmin));
 
 	if (!showAll) {
 		ui->service->addItem(QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
@@ -624,6 +650,7 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
 	bool whip = IsWHIP();
+	bool livejasmin = IsLiveJasmin();
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
@@ -644,7 +671,7 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 	ui->authPwLabel->setVisible(custom);
 	ui->authPwWidget->setVisible(custom);
 
-	if (custom || whip) {
+	if (custom || whip || livejasmin) {
 		ui->destinationLayout->insertRow(1, ui->serverLabel, ui->serverStackedWidget);
 
 		ui->serverStackedWidget->setCurrentIndex(1);
@@ -767,17 +794,20 @@ OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
 	bool whip = IsWHIP();
+	bool livejasmin = IsLiveJasmin();
 	const char *service_id = "rtmp_common";
 
 	if (custom) {
 		service_id = "rtmp_custom";
 	} else if (whip) {
 		service_id = "whip_custom";
+	} else if (livejasmin) {
+		service_id = "livejasmin";
 	}
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!custom && !whip) {
+	if (!custom && !whip && !livejasmin) {
 		obs_data_set_string(settings, "service", QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(settings, "server", QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {

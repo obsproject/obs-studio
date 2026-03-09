@@ -31,6 +31,8 @@ target_sources(
     service-specific/amazon-ivs.h
     service-specific/dacast.c
     service-specific/dacast.h
+    service-specific/livejasmin.c
+    service-specific/livejasmin.h
     service-specific/nimotv.c
     service-specific/nimotv.h
     service-specific/service-ingest.c

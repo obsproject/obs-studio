@@ -9,6 +9,7 @@
 
 #include "service-specific/showroom.h"
 #include "service-specific/dacast.h"
+#include "service-specific/livejasmin.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("rtmp-services", "en-US")
@@ -24,6 +25,7 @@ static const char *RTMP_SERVICES_URL = (const char *)SERVICES_URL;
 
 extern struct obs_service_info rtmp_common_service;
 extern struct obs_service_info rtmp_custom_service;
+extern struct obs_service_info livejasmin_service;
 
 static update_info_t *update_info = NULL;
 static struct dstr module_name = {0};
@@ -95,6 +97,7 @@ bool obs_module_load(void)
 	init_twitch_data();
 	init_dacast_data();
 	init_amazon_ivs_data();
+	init_livejasmin_data();
 
 	dstr_copy(&module_name, "rtmp-services plugin (libobs ");
 	dstr_cat(&module_name, obs_get_version_string());
@@ -124,6 +127,7 @@ bool obs_module_load(void)
 
 	obs_register_service(&rtmp_common_service);
 	obs_register_service(&rtmp_custom_service);
+	obs_register_service(&livejasmin_service);
 	return true;
 }
 
@@ -134,5 +138,6 @@ void obs_module_unload(void)
 	free_showroom_data();
 	unload_dacast_data();
 	unload_amazon_ivs_data();
+	unload_livejasmin_data();
 	dstr_free(&module_name);
 }
