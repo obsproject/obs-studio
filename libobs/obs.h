@@ -2681,13 +2681,21 @@ EXPORT obs_scene_t *obs_canvas_get_scene_by_name(obs_canvas_t *canvas, const cha
 /** Reset a canvas's video mix */
 EXPORT bool obs_canvas_reset_video(obs_canvas_t *canvas, struct obs_video_info *ovi);
 /** Returns true if the canvas video is configured */
-EXPORT bool obs_canvas_has_video(obs_canvas_t *canvas);
+OBS_DEPRECATED EXPORT bool obs_canvas_has_video(obs_canvas_t *canvas);
 /** Get canvas video output */
 EXPORT video_t *obs_canvas_get_video(const obs_canvas_t *canvas);
 /** Get canvas video info (if it exists) */
 EXPORT bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info *ovi);
 /** Renders the sources of this canvas's view context */
 EXPORT void obs_canvas_render(obs_canvas_t *canvas);
+
+/* Canvas state */
+/** Disable a canvas */
+EXPORT void obs_canvas_disable(obs_canvas_t *canvas);
+/** Enable a canvas, requires video information to be set */
+EXPORT bool obs_canvas_enable(obs_canvas_t *canvas);
+/** Returns if the canvas is enabled and has a video mix configured */
+EXPORT bool obs_canvas_is_enabled(const obs_canvas_t *canvas);
 
 #ifdef __cplusplus
 }
