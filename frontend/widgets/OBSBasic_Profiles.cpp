@@ -94,6 +94,9 @@ void OBSBasic::SetupDuplicateProfile(const std::string &profileName)
 	const auto copyOptions = std::filesystem::copy_options::recursive |
 				 std::filesystem::copy_options::overwrite_existing;
 
+	// Save current profile data before copying
+	activeConfiguration.SaveSafe("tmp");
+
 	try {
 		std::filesystem::copy(currentProfile.path, newProfile.path, copyOptions);
 	} catch (const std::filesystem::filesystem_error &error) {
@@ -115,6 +118,9 @@ void OBSBasic::SetupRenameProfile(const std::string &profileName)
 
 	const auto copyOptions = std::filesystem::copy_options::recursive |
 				 std::filesystem::copy_options::overwrite_existing;
+
+	// Save current profile data before copying
+	activeConfiguration.SaveSafe("tmp");
 
 	try {
 		std::filesystem::copy(currentProfile.path, newProfile.path, copyOptions);
@@ -702,6 +708,9 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 		UpdateProfileEncoders();
 		ResetProfileData();
 	}
+
+	// Ensure defaults and updates are saved to disk
+	activeConfiguration.SaveSafe("tmp");
 
 	RefreshProfiles();
 
