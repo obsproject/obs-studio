@@ -3586,6 +3586,24 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Velora",
+            "more_info_link": "https://velora.tv/docs/streaming-codec-guide",
+            "stream_key_link": "https://velora.tv/settings/streaming",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://publish.velora.tv/live"
+                }
+            ],
+            "protocol": "RTMP",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ]
         }
     ]
 }
