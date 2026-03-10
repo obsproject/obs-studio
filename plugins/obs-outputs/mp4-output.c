@@ -392,10 +392,10 @@ static void generate_filename(struct mp4_output *out, struct dstr *dst, bool ove
 	char *filename = os_generate_formatted_filename(ext, space, fmt);
 
 	dstr_copy(dst, dir);
-	dstr_replace(dst, "\\", "/");
-	if (dstr_end(dst) != '/')
+	if (dstr_end(dst) != '/' && dstr_end(dst) != '\\')
 		dstr_cat_ch(dst, '/');
 	dstr_cat(dst, filename);
+	dstr_replace(dst, "\\", "/");
 
 	char *slash = strrchr(dst->array, '/');
 	if (slash) {
