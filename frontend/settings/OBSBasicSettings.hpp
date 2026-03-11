@@ -225,6 +225,7 @@ private:
 
 	/* Appearance */
 	void InitAppearancePage();
+	void enableAppearanceAutoThemeControls(bool enable);
 	void enableAppearanceFontControls(bool enable);
 	void enableAppearanceDensityControls(bool enable);
 
