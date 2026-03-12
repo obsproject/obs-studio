@@ -173,6 +173,7 @@
     --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2px));
     --input_height_half: calc(var(--input_height_base) / 2);
+    --spinbox_width: calc(var(--input_height_base) + calc(var(--input_padding) * 2px));
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey7);
@@ -1278,6 +1279,7 @@ QDoubleSpinBox {
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
     height: var(--input_height);
+    min-width: var(--spinbox_width);
     max-height: var(--input_height);
 }
 
