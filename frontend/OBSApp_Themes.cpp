@@ -501,19 +501,27 @@ static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars, OBSThe
 		return true;
 
 	QString key = var.value.toString();
-	while (vars[key].type == OBSThemeVariable::Alias) {
-		key = vars[key].value.toString();
+	if (key.isEmpty() || key.isNull()) {
+		blog(LOG_ERROR, R"(Variable key for %s is empty or null)", QT_TO_UTF8(var.name));
+		return false;
+	}
 
+	while (true) {
 		if (!vars.contains(key)) {
 			blog(LOG_ERROR, R"(Variable "%s" (aliased by "%s") does not exist!)", QT_TO_UTF8(key),
 			     QT_TO_UTF8(var.name));
 			return false;
 		}
+
+		const OBSThemeVariable &resolved = vars.value(key);
+
+		if (resolved.type != OBSThemeVariable::Alias) {
+			var = resolved;
+			return true;
+		}
+
+		key = resolved.value.toString();
 	}
-
-	var = vars[key];
-
-	return true;
 }
 
 static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var,
