@@ -580,6 +580,13 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 	}
 
 	QStringList args = var.value.toStringList();
+
+	if (args.length() != 3) {
+		blog(LOG_ERROR, "Math parse had invalid number of arguments: %lld (%s)", args.length(),
+		     QT_TO_UTF8(args.join(", ")));
+		return "'Invalid expression'";
+	}
+
 	QString &opt = args[1];
 	if (type == OBSThemeVariable::Calc && (opt != '*' && opt != '+' && opt != '-' && opt != '/')) {
 		blog(LOG_ERROR, "Unknown/invalid calc() operator: %s", QT_TO_UTF8(opt));
@@ -588,12 +595,6 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 
 	if ((type == OBSThemeVariable::Max || type == OBSThemeVariable::Min) && opt != ',') {
 		blog(LOG_ERROR, "Invalid math separator: %s", QT_TO_UTF8(opt));
-		return "'Invalid expression'";
-	}
-
-	if (args.length() != 3) {
-		blog(LOG_ERROR, "Math parse had invalid number of arguments: %lld (%s)", args.length(),
-		     QT_TO_UTF8(args.join(", ")));
 		return "'Invalid expression'";
 	}
 
