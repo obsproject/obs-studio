@@ -303,7 +303,7 @@ void d3d11_capture(void *swap_ptr, void *backbuffer_ptr)
 	if (capture_should_init()) {
 		d3d11_init(swap);
 	}
-	if (data.handle != nullptr && capture_ready()) {
+	if ((data.using_shtex ? data.handle : data.shmem_info) != nullptr && capture_ready()) {
 		ID3D11Resource *backbuffer;
 
 		hr = dxgi_backbuffer->QueryInterface(__uuidof(ID3D11Resource), (void **)&backbuffer);
