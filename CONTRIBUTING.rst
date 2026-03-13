@@ -37,7 +37,10 @@ General Guidelines
   to do so may result in your PR or Issue being closed. The templates request
   the bare minimum amount of information required for us to process them.
 
-- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst
+- Contributors to the OBS Project are expected to abide by the OBS Project Code 
+  of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst
+
+
 
 Coding Guidelines
 -----------------
@@ -59,6 +62,68 @@ Coding Guidelines
 - Comments and names of variables/functions/etc. must be in English
 
 - Formatting scripts (macOS/Linux only) are available `here <./build-aux>`__
+
+As of December 2024, we have done `a major reorganization and cleanup of the 
+frontend <https://github.com/obsproject/obs-studio/pull/11622>`_. We are 
+working towards implementing the following additional guidelines for C++ 
+code:
+
+  **Note**: Existing code was *not* updated to follow these guidelines.
+  We ask that contributors bring old code in line with these rules 
+  incrementally when making changes.
+
+- Class names use **CapitalCase**, class methods use **camelCase**
+
+- Class source files carry the name of their classes
+
+- Class headers contain only their own class' definition
+
+- Class headers only include other classes' interfaces (via their own
+  header files) that the compiler needs, otherwise forward declarations are used
+
+- Free-standing functions are put in an anonymous namespace (As opposed to
+  `static` functions)
+
+  - This also solves the issue of free-standing functions being sprinkled 
+    throughout the source code and puts them in a single self-contained space.
+    This also makes it obvious which utility functions might already exist and
+    encourage re-use instead of adding yet another variant in another translation
+    unit.
+
+- The `inline` decoration should be used according to its actual meaning in 
+  C++
+
+  - That a function definition is provided "in line" (It has no direct 
+    bearing on the code inlining behaviour of compilers).
+  - It should never be used in source files and should only ever be used in 
+    header files, and even there it should be used with all its associated 
+    caveats applied
+
+- Free-standing C++ functions should use **camelCase**, not **snake_case** 
+  (Which instead should be used to clearly identify C functions vs C++ functions)
+
+Naming Conventions
+^^^^^^^^^^^^^^^^^^
+
+- Clearly spell out words and avoid unnecessary abbreviations (e.g., no 
+  AdvAudio, but AdvancedAudio).
+
+- Ensure a consistent use of capitalisation across the codebase (Avoid having 
+  both Youtube and YouTube)
+
+- Make the purpose of functions explicit by their name itself, e.g., 
+  nudgePreviewItem() or isOutputActive(). Avoid ambiguous method names like 
+  Active() or Nudge()
+
+- Use Get, Set, and Is prefixes to clearly communicate whether a method 
+  gets, sets, or checks a state/status.
+
+- Don't rely on magic global variables or extern symbols that also "magically" 
+  have to exist in the global namespace. Encapsulate data with functionality and 
+  use APIs to access data or delegate functionality to encapsulated classes 
+  entirely.
+
+
 
 Commit Guidelines
 -----------------
