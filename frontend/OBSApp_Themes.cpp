@@ -551,7 +551,7 @@ static OBSThemeVariable ParseMathVariable(const QHash<QString, OBSThemeVariable>
 		if (var.type == OBSThemeVariable::Calc || var.type == OBSThemeVariable::Max ||
 		    var.type == OBSThemeVariable::Min) {
 			QString val = EvalMath(vars, var, var.type, recursion + 1);
-			var = ParseMathVariable(vars, val);
+			var = ParseMathVariable(vars, val, recursion + 1);
 		}
 
 		/* Only number or size would be valid here */
@@ -568,8 +568,8 @@ static OBSThemeVariable ParseMathVariable(const QHash<QString, OBSThemeVariable>
 static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var,
 			const OBSThemeVariable::VariableType type, const int recursion)
 {
-	if (recursion >= 10) {
-		/* Abort after 10 levels of recursion */
+	if (recursion >= 30) {
+		/* Abort after 30 levels of recursion */
 		blog(LOG_ERROR, "Maximum recursion levels hit!");
 		return "'Invalid expression'";
 	}
@@ -599,8 +599,8 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 
 	OBSThemeVariable val1, val2;
 	try {
-		val1 = ParseMathVariable(vars, args[0], 0);
-		val2 = ParseMathVariable(vars, args[2], 0);
+		val1 = ParseMathVariable(vars, args[0], recursion + 1);
+		val2 = ParseMathVariable(vars, args[2], recursion + 1);
 	} catch (...) {
 		return "'Invalid expression'";
 	}
