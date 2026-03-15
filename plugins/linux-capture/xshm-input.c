@@ -65,6 +65,9 @@ struct xshm_data {
 	bool use_xinerama;
 	bool use_randr;
 	bool advanced;
+
+	uint8_t randr_first_event;
+	bool geo_event_pending;
 };
 
 /**
@@ -279,6 +282,20 @@ static void xshm_capture_start(struct xshm_data *data)
 
 	data->cursor = xcb_xcursor_init(data->xcb);
 	xcb_xcursor_offset(data->cursor, data->adj_x_org, data->adj_y_org);
+
+	/* Always subscribe to ConfigureNotify on the root window.
+	 * According to WebRTC's source code comments, adding/removing monitors
+	 * can generate ConfigureNotify without any RRScreenChangeNotify. */
+	const uint32_t mask = XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+	xcb_change_window_attributes(data->xcb, data->xcb_screen->root, XCB_CW_EVENT_MASK, &mask);
+
+	if (data->use_randr) {
+		const xcb_query_extension_reply_t *ext = xcb_get_extension_data(data->xcb, &xcb_randr_id);
+		data->randr_first_event = ext->first_event;
+		xcb_randr_select_input(data->xcb, data->xcb_screen->root,
+				       XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE | XCB_RANDR_NOTIFY_MASK_CRTC_CHANGE);
+	}
+	xcb_flush(data->xcb);
 
 	obs_enter_graphics();
 
@@ -506,6 +523,24 @@ static void *xshm_create(obs_data_t *settings, obs_source_t *source)
 }
 
 /**
+ * Drain pending X events to detect screen geometry changes
+ */
+static void xshm_process_events(struct xshm_data *data)
+{
+	xcb_generic_event_t *event;
+	while ((event = xcb_poll_for_event(data->xcb))) {
+		uint8_t type = event->response_type & ~0x80; /* Strip out "sent event" flag */
+		if (type == XCB_CONFIGURE_NOTIFY) {
+			data->geo_event_pending = true;
+		} else if (data->use_randr && (type == data->randr_first_event + XCB_RANDR_SCREEN_CHANGE_NOTIFY ||
+					       type == data->randr_first_event + XCB_RANDR_NOTIFY)) {
+			data->geo_event_pending = true;
+		}
+		free(event);
+	}
+}
+
+/**
  * Prepare the capture data
  */
 static void xshm_video_tick(void *vptr, float seconds)
@@ -518,16 +553,22 @@ static void xshm_video_tick(void *vptr, float seconds)
 	if (!obs_source_showing(data->source))
 		return;
 
-	int_fast32_t geo_changed = xshm_update_geometry(data);
-	if (geo_changed < 0) {
-		blog(LOG_ERROR, "failed to update geometry in video tick!");
-		return;
-	}
+	xshm_process_events(data);
 
-	if (geo_changed > 0) {
-		obs_enter_graphics();
-		xshm_resize(data);
-		obs_leave_graphics();
+	if (data->geo_event_pending) {
+		data->geo_event_pending = false;
+
+		int_fast32_t geo_changed = xshm_update_geometry(data);
+		if (geo_changed < 0) {
+			blog(LOG_ERROR, "failed to update geometry in video tick!");
+			return;
+		}
+
+		if (geo_changed > 0) {
+			obs_enter_graphics();
+			xshm_resize(data);
+			obs_leave_graphics();
+		}
 	}
 
 	if (!data->texture || !data->xshm)
