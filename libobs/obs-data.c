@@ -483,6 +483,11 @@ static void obs_data_add_json_array(obs_data_t *data, const char *key, json_t *j
 	obs_data_array_release(array);
 }
 
+static inline void obs_data_add_json_null(obs_data_t *data, const char *key)
+{
+	obs_data_set_obj(data, key, NULL);
+}
+
 static void obs_data_add_json_item(obs_data_t *data, const char *key, json_t *json)
 {
 	if (json_is_object(json))
@@ -499,6 +504,8 @@ static void obs_data_add_json_item(obs_data_t *data, const char *key, json_t *js
 		obs_data_set_bool(data, key, true);
 	else if (json_is_false(json))
 		obs_data_set_bool(data, key, false);
+	else if (json_is_null(json))
+		obs_data_add_json_null(data, key);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -556,6 +563,9 @@ static inline void set_json_array(json_t *json, const char *name, obs_data_item_
 
 static json_t *obs_data_to_json(obs_data_t *data, bool with_defaults)
 {
+	if (!data)
+		return json_null();
+
 	json_t *json = json_object();
 
 	obs_data_item_t *item = NULL;

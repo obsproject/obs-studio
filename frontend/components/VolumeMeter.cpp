@@ -657,7 +657,7 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 
 void VolumeMeter::updateBackgroundCache(bool force)
 {
-	if (!force && !size().isValid()) {
+	if (!force && size().isEmpty()) {
 		return;
 	}
 
