@@ -1717,7 +1717,7 @@ VolumeMeter {
 
 VolumeMeter {
     color: var(--grey3);
-    font-size: 7.5pt;
+    font-size: 6pt;
     font-weight: bold;
     
     qproperty-backgroundNominalColor: var(--green5);
