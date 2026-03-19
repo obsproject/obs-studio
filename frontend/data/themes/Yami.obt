@@ -1733,7 +1733,7 @@ VolumeMeter {
 
 VolumeName {
     background: transparent;
-    padding: var(--padding_base);
+    padding: var(--padding_base) 0;
     border: 1px solid transparent;
 }
 
@@ -1771,12 +1771,16 @@ VolumeControl #volLabel {
     border-radius: var(--border_radius);
 }
 
+#hVolumeWidgets VolumeName {
+    padding-right: var(--padding_large);
+}
+
 #hVolumeWidgets VolumeName QLabel {
-    margin: 0px var(--spacing_base) var(--spacing_base);
+    margin: 0 var(--padding_large);
 }
 
 #hVolumeWidgets #volLabel {
-    margin: var(--spacing_base);
+    margin: 0 var(--spacing_base);
     border-radius: var(--border_radius);
 }
 
@@ -1794,7 +1798,7 @@ VolumeControl #volLabel {
 }
 
 #hVolumeWidgets VolumeControl QPushButton {
-    margin-left: var(--padding_xlarge);
+    margin-left: var(--padding_large);
 }
 
 #hVolumeWidgets VolumeControl #volMeterFrame {
