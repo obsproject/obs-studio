@@ -179,6 +179,9 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	toggleHiddenButton->setCheckable(true);
 	toggleHiddenButton->setChecked(showHidden);
 	toggleHiddenButton->setText(QTStr("Basic.AudioMixer.HiddenTotal").arg(0));
+	QString hiddenTooltip = showHidden ? QTStr("Basic.AudioMixer.HideHidden")
+					   : QTStr("Basic.AudioMixer.ShowHidden");
+	toggleHiddenButton->setToolTip(hiddenTooltip);
 	toggleHiddenButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
 	idian::Utils::addClass(toggleHiddenButton, "toolbar-button");
 	idian::Utils::addClass(toggleHiddenButton, "toggle-hidden");
@@ -951,6 +954,9 @@ void AudioMixer::updateShowHidden()
 	showHidden = settingShowHidden;
 
 	toggleHiddenButton->setText(QTStr("Basic.AudioMixer.HiddenTotal").arg(hiddenCount));
+	QString tooltip = showHidden ? QTStr("Basic.AudioMixer.HideHidden") : QTStr("Basic.AudioMixer.ShowHidden");
+	toggleHiddenButton->setToolTip(tooltip);
+
 	toggleHiddenButton->setChecked(showHidden);
 	showHiddenCheckBox->setChecked(showHidden);
 
