@@ -732,6 +732,13 @@ void VolumeControl::updateMixerState()
 	muteButton->setChecked(showAsMuted);
 	monitorButton->setChecked(showAsMonitored);
 
+	QString muteTooltip = showAsMuted ? QTStr("Unmute") : QTStr("Mute");
+	muteButton->setToolTip(muteTooltip);
+
+	QString monitorTooltip = showAsMonitored ? QTStr("Basic.AudioMixer.Monitoring.Disable")
+						 : QTStr("Basic.AudioMixer.Monitoring.Enable");
+	monitorButton->setToolTip(monitorTooltip);
+
 	if (showAsUnassigned) {
 		QIcon unassignedIcon;
 		unassignedIcon.addFile(QString::fromUtf8(":/res/images/unassigned.svg"), QSize(16, 16),
