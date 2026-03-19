@@ -652,27 +652,27 @@ void AudioMixer::updateVolumeLayouts()
 				hiddenCount += 1;
 			}
 
-			if (!isGlobal) {
-				sortingWeight += 20;
-			}
-
-			if (!isPinned) {
-				sortingWeight += 20;
+			if (isGlobal) {
+				sortingWeight = 0;
+			} else if (isPinned) {
+				sortingWeight = 20;
+			} else {
+				sortingWeight = 40;
 			}
 
 			if (isHidden && keepHiddenLast) {
-				sortingWeight += 20;
+				sortingWeight += 5;
 
 				if (isPreviewed) {
-					sortingWeight -= 10;
+					sortingWeight -= 1;
 				}
 			}
 
 			if (!isAudioActive && keepInactiveLast) {
-				sortingWeight += 50;
+				sortingWeight += 5;
 
 				if (isPreviewed) {
-					sortingWeight -= 10;
+					sortingWeight -= 1;
 				}
 			}
 
