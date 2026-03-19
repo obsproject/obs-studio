@@ -490,6 +490,11 @@ void AudioMixer::reloadVolumeControls()
 			return true;
 		}
 
+		bool audioActive = obs_source_audio_active(source);
+		if (!audioActive) {
+			return true;
+		}
+
 		auto uuidPointer = obs_source_get_uuid(source);
 		if (!uuidPointer || !*uuidPointer) {
 			return true;
