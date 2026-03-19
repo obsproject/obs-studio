@@ -80,6 +80,7 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	utils->addClass(monitorButton, "btn-monitor");
 
 	volumeLabel = new QLabel(this);
+	volumeLabel->setIndent(0);
 	volumeLabel->setObjectName("volLabel");
 
 	slider = new VolumeSlider(obs_fader, Qt::Horizontal, this);
@@ -203,7 +204,7 @@ void VolumeControl::obsSourceDestroy(void *data, calldata_t *)
 
 void VolumeControl::setLayoutVertical(bool vertical)
 {
-	QBoxLayout *newLayout = new QBoxLayout(vertical ? QBoxLayout::TopToBottom : QBoxLayout::LeftToRight);
+	QBoxLayout *newLayout = new QBoxLayout(QBoxLayout::TopToBottom);
 	newLayout->setContentsMargins(0, 0, 0, 0);
 	newLayout->setSpacing(0);
 
@@ -281,7 +282,7 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		setMaximumWidth(QWIDGETSIZE_MAX);
 		setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
-		QVBoxLayout *textLayout = new QVBoxLayout;
+		QHBoxLayout *textLayout = new QHBoxLayout;
 		QHBoxLayout *controlLayout = new QHBoxLayout;
 		QFrame *meterFrame = new QFrame;
 		QVBoxLayout *meterLayout = new QVBoxLayout;
@@ -294,18 +295,21 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		slider->setLayoutDirection(Qt::LeftToRight);
 		slider->setDisplayTicks(true);
 
-		nameButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+		nameButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 		categoryLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 		volumeLabel->setAlignment(Qt::AlignRight);
 
-		QHBoxLayout *textTopLayout = new QHBoxLayout;
-		textTopLayout->setContentsMargins(0, 0, 0, 0);
-		textTopLayout->addWidget(categoryLabel);
-		textTopLayout->addWidget(volumeLabel);
-
+		QHBoxLayout *textSubLayout = new QHBoxLayout;
+		textSubLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->setContentsMargins(0, 0, 0, 0);
-		textLayout->addItem(textTopLayout);
+
 		textLayout->addWidget(nameButton);
+		textLayout->addItem(textSubLayout);
+
+		textSubLayout->addSpacerItem(
+			new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Preferred));
+		textSubLayout->addWidget(categoryLabel);
+		textSubLayout->addWidget(volumeLabel);
 
 		meterFrame->setObjectName("volMeterFrame");
 		meterFrame->setLayout(meterLayout);
@@ -594,6 +598,7 @@ void VolumeControl::updateCategoryLabel()
 	utils->toggleClass("volume-unassigned", styleUnassigned);
 
 	categoryLabel->setText(labelText);
+	categoryLabel->setAlignment(Qt::AlignCenter);
 
 	utils->polishChildren();
 

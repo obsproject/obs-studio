@@ -1734,6 +1734,7 @@ VolumeMeter {
 VolumeName {
     background: transparent;
     padding: var(--padding_base);
+    border: 1px solid transparent;
 }
 
 VolumeName QLabel {
@@ -1750,9 +1751,10 @@ VolumeName:hover {
 }
 
 VolumeControl #volLabel {
+    min-width: 48px;
     padding: var(--padding_base) 0px var(--padding_base);
     text-align: center;
-    font-size: var(--font_base);
+    font-size: var(--font_small);
     color: var(--text_muted);
 }
 
@@ -1764,8 +1766,8 @@ VolumeControl #volLabel {
 }
 
 #hVolumeWidgets .mixer-category {
-    min-width: 72px;    
     margin: var(--spacing_base);
+    padding: 0px var(--padding_xlarge);
     border-radius: var(--border_radius);
 }
 
@@ -1779,11 +1781,11 @@ VolumeControl #volLabel {
 }
 
 #hVolumeWidgets #volMeterFrame {
-    margin-bottom: var(--padding_xlarge);
+    margin-bottom: var(--padding_large);
 }
 
 #hVolumeWidgets VolumeControl QSlider {
-    margin: var(--padding_large) 0px var(--padding_xlarge);
+    margin: var(--padding_large) 0px var(--padding_large);
 }
 
 #hVolumeWidgets VolumeControl QSlider::groove:horizontal {

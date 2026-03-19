@@ -495,7 +495,7 @@ inline void VolumeMeter::doLayout()
 
 	QFontMetrics metrics(tickFont);
 	// This is a quick and naive assumption for widest potential tick label.
-	tickTextTokenRect = metrics.boundingRect(" -88 ");
+	tickTextTokenRect = metrics.boundingRect("-88");
 
 	updateBackgroundCache();
 	resetLevels();
