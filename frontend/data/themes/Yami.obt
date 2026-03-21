@@ -92,7 +92,7 @@
     --danger: var(--red3);
 
     --text: var(--white1);
-    --text_light: rgb(214, 214, 214);
+    --text_light: var(--white1);
     --text_muted: rgb(153, 153, 153);
 
     --text_disabled: var(--text_muted);
@@ -1677,17 +1677,20 @@ QSlider::handle:disabled {
 
 .btn-monitor.checked {
     background: var(--green4);
+    color: var(--text_light);
     qproperty-icon: url(theme:Dark/headphones.svg);
 }
 
 .btn-monitor.checked:focus,
 .btn-monitor:checked:focus {
+    color: var(--text_light);
     border-color: var(--green1);
 }
 
 .btn-monitor.checked:hover {
     background: var(--green3);
     border-color: var(--green1);
+    color: var(--text_light);
 }
 
 .volume-inactive .btn-monitor.checked {
@@ -1861,7 +1864,7 @@ VolumeControl .mixer-category {
 
 VolumeControl.volume-pinned .mixer-category {
     background: var(--blue5);
-    color: var(--text);
+    color: var(--text_light);
 }
 
 VolumeControl.volume-hidden .mixer-category {

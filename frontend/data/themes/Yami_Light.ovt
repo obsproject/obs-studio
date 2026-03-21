@@ -25,7 +25,6 @@
     --bg_preview: var(--grey8);
 
     --text: var(--black1);
-    --text_light: var(--black3);
     --text_muted: var(--black4);
 
     --text_disabled: var(--text_muted);
@@ -61,6 +60,7 @@
 }
 
 .btn-monitor.checked {
+    color: var(--text_light);
     qproperty-icon: url(theme:Light/headphones.svg);
 }
 
@@ -74,6 +74,41 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0,0,0);
     qproperty-majorTickColor: var(--black1);
     qproperty-minorTickColor: var(--black5);
+}
+
+.toggle-hidden:checked {
+    background: var(--purple1);
+    border-color: var(--purple5);
+    color: var(--purple6);
+}
+
+VolumeControl .mixer-category {
+    background: var(--blue1);
+    color: var(--text_light);
+}
+
+VolumeControl.volume-pinned .mixer-category {
+    background: var(--blue2);    
+}
+
+VolumeControl.volume-hidden .mixer-category {
+    background: var(--purple1);
+    color: var(--purple6);
+}
+
+VolumeControl.volume-unassigned .mixer-category {
+    background: var(--yellow1);
+    color: var(--yellow6);
+}
+
+VolumeControl.volume-inactive .mixer-category {
+    background: var(--grey8);
+    color: var(--text_muted);
+}
+
+VolumeControl.volume-preview .mixer-category {
+    background: var(--green3);
+    color: var(--text_light);
 }
 
 QMenu::right-arrow {
