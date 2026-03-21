@@ -725,7 +725,7 @@ void VolumeControl::updateMixerState()
 	bool showAsUnassigned = !muted && unassigned;
 
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
-	setUseDisabledColors(showAsMuted);
+	setUseDisabledColors(showAsMuted || !isActive);
 
 	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
 	// in QSS so we set a checked class selector on the button to be used instead.

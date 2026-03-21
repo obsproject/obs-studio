@@ -66,16 +66,16 @@
     --grey8: #13141A;
 
     --white1: #FFFFFF;
-    --white2: #EBEBEB;
-    --white3: #D6D6D6;
-    --white4: #C2C2C2;
-    --white5: #ADADAD;
+    --white2: #E1E1E1;
+    --white3: #D2D2D2;
+    --white4: #B4B4B4;
+    --white5: #969696;
 
     --black1: #0A0A0A;
     --black2: #1F1F1F;
-    --black3: #333333;
-    --black4: #474747;
-    --black5: #5C5C5C;
+    --black3: #414141;
+    --black4: #646464;
+    --black5: #828282;
 
     /* Base Theme Colors */
     --bg_window: var(--grey7);
@@ -93,7 +93,7 @@
 
     --text: var(--white1);
     --text_light: var(--white1);
-    --text_muted: rgb(153, 153, 153);
+    --text_muted: var(--white5);
 
     --text_disabled: var(--text_muted);
     --text_inactive: rgb(255, 254, 255);
@@ -1693,14 +1693,6 @@ QSlider::handle:disabled {
     color: var(--text_light);
 }
 
-.volume-inactive .btn-monitor.checked {
-    background: var(--grey7);
-}
-
-.volume-inactive .btn-monitor.checked:hover {
-    background-color: var(--button_bg_hover);
-}
-
 /* Toggle hidden button */
 
 .toggle-hidden:checked {
@@ -1732,6 +1724,13 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0, 0, 0);
     qproperty-majorTickColor: var(--white5);
     qproperty-minorTickColor: var(--grey1);
+
+    qproperty-backgroundNominalColorDisabled: var(--black4);
+    qproperty-backgroundWarningColorDisabled: var(--black5);
+    qproperty-backgroundErrorColorDisabled: var(--black3);
+    qproperty-foregroundNominalColorDisabled: var(--white3);
+    qproperty-foregroundWarningColorDisabled: var(--white3);
+    qproperty-foregroundErrorColorDisabled: var(--white4);
 }
 
 VolumeName {
@@ -1843,11 +1842,8 @@ VolumeControl #volLabel {
     padding: 0px var(--padding_large);
 }
 
-/* Hidden Volume Controls */
-VolumeControl.volume-hidden,
-VolumeControl.volume-hidden VolumeMeter,
-VolumeControl.volume-inactive VolumeMeter,
-VolumeControl.volume-inactive {
+VolumeControl.volume-inactive,
+VolumeControl.volume-inactive VolumeMeter {
     background: var(--grey7);
 }
 
