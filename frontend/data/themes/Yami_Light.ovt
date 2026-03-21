@@ -64,6 +64,11 @@
     qproperty-icon: url(theme:Light/headphones.svg);
 }
 
+VolumeControl.volume-inactive,
+VolumeControl.volume-inactive VolumeMeter {
+    background: var(--grey8);
+}
+
 VolumeMeter {
     qproperty-backgroundNominalColor: var(--green4);
     qproperty-backgroundWarningColor: var(--yellow4);
@@ -74,6 +79,13 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0,0,0);
     qproperty-majorTickColor: var(--black1);
     qproperty-minorTickColor: var(--black5);
+
+    qproperty-backgroundNominalColorDisabled: var(--black3);
+    qproperty-backgroundWarningColorDisabled: var(--black4);
+    qproperty-backgroundErrorColorDisabled: var(--black3);
+    qproperty-foregroundNominalColorDisabled: var(--black5);
+    qproperty-foregroundWarningColorDisabled: var(--white5);
+    qproperty-foregroundErrorColorDisabled: var(--white4);
 }
 
 .toggle-hidden:checked {
