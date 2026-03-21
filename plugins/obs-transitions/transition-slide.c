@@ -107,9 +107,14 @@ static void slide_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t
 
 void slide_video_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
+	const bool previous = gs_set_linear_srgb(true);
+
 	struct slide_info *slide = data;
 	obs_transition_video_render(slide->source, slide_callback);
-	UNUSED_PARAMETER(effect);
+
+	gs_set_linear_srgb(previous);
 }
 
 static float mix_a(void *data, float t)
