@@ -9,6 +9,8 @@ if(NOT XCODE)
   message(FATAL_ERROR "Building OBS Studio on macOS requires Xcode generator.")
 endif()
 
+enable_language(Swift)
+
 include(compiler_common)
 
 add_compile_options("$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-fopenmp-simd>")
