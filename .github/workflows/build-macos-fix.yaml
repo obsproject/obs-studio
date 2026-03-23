@@ -7,7 +7,7 @@ on:
 
 jobs:
   macos-build:
-    name: macOS arm64 Build
+    name: macOS arm64 Full Build
     runs-on: macos-15
     defaults:
       run:
@@ -42,22 +42,33 @@ jobs:
             -DENABLE_BROWSER:BOOL=OFF \
             -DCMAKE_COMPILE_WARNING_AS_ERROR:BOOL=OFF
 
-      - name: Build mac-capture Plugin
+      - name: Build Full OBS Studio
         run: |
-          : Build mac-capture Plugin
+          : Build Full OBS Studio
           cd build_macos
           xcodebuild \
             ONLY_ACTIVE_ARCH=NO \
             -project obs-studio.xcodeproj \
-            -target mac-capture \
+            -target obs-studio \
             -destination "generic/platform=macOS,name=Any Mac" \
             -configuration RelWithDebInfo \
             -parallelizeTargets \
             -hideShellScriptEnvironment \
             build 2>&1 | xcbeautify --renderer github-actions
 
-      - name: Verify Plugin Built
+      - name: Package OBS.app
         run: |
-          : Verify Plugin Built
-          find build_macos -name "mac-capture*" -type f | head -20
-          print "mac-capture plugin compiled successfully!"
+          : Package OBS.app
+          cd build_macos
+          rm -rf OBS.app
+          mkdir OBS.app
+          ditto frontend/RelWithDebInfo/OBS.app OBS.app
+          print "OBS.app packaged successfully!"
+          ls -la OBS.app/
+
+      - name: Upload OBS.app
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBS-macOS-arm64-sleep-wake-fix
+          path: build_macos/OBS.app
+          retention-days: 30
