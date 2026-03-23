@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
+enable_language(Swift)
+
 add_library(libobs-metal SHARED)
 add_library(OBS::libobs-metal ALIAS libobs-metal)
 
