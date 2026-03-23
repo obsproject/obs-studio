@@ -1,0 +1,63 @@
+name: Build macOS Sleep/Wake Fix
+on:
+  push:
+    branches:
+      - 'fix/**'
+  workflow_dispatch:
+
+jobs:
+  macos-build:
+    name: macOS arm64 Build
+    runs-on: macos-15
+    defaults:
+      run:
+        shell: zsh --no-rcs --errexit --pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set Up Environment
+        run: |
+          : Set Up Environment
+          print "::group::Select Xcode"
+          local xcode_path="$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)"
+          sudo xcode-select --switch "${xcode_path}/Contents/Developer"
+          xcodebuild -version
+          print "::endgroup::"
+
+          print "::group::Install Dependencies"
+          brew install --quiet cmake xcbeautify
+          print "::endgroup::"
+
+      - name: Configure OBS Studio
+        env:
+          CODESIGN_IDENT: "-"
+        run: |
+          : Configure OBS Studio
+          typeset -gx NSUnbufferedIO=YES
+          cmake --preset macos \
+            -DCMAKE_OSX_ARCHITECTURES:STRING=arm64 \
+            -DENABLE_BROWSER:BOOL=OFF \
+            -DCMAKE_COMPILE_WARNING_AS_ERROR:BOOL=OFF
+
+      - name: Build mac-capture Plugin
+        run: |
+          : Build mac-capture Plugin
+          cd build_macos
+          xcodebuild \
+            ONLY_ACTIVE_ARCH=NO \
+            -project obs-studio.xcodeproj \
+            -target mac-capture \
+            -destination "generic/platform=macOS,name=Any Mac" \
+            -configuration RelWithDebInfo \
+            -parallelizeTargets \
+            -hideShellScriptEnvironment \
+            build 2>&1 | xcbeautify --renderer github-actions
+
+      - name: Verify Plugin Built
+        run: |
+          : Verify Plugin Built
+          find build_macos -name "mac-capture*" -type f | head -20
+          print "mac-capture plugin compiled successfully!"
