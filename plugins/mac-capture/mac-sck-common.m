@@ -44,8 +44,36 @@ bool is_screen_capture_available(void)
 
     MACCAP_LOG(LOG_WARNING, "%s", errorMessage.UTF8String);
 
+    if (self.sc->going_to_sleep) {
+        MACCAP_LOG(LOG_INFO, "Stream stopped during sleep transition, will restart on wake");
+        return;
+    }
+
     self.sc->capture_failed = true;
     obs_source_update_properties(self.sc->source);
+}
+
+- (void)systemWillSleep:(NSNotification *)notification
+{
+    if (self.sc) {
+        self.sc->going_to_sleep = true;
+        MACCAP_LOG(LOG_INFO, "System going to sleep, marking capture for restart on wake");
+    }
+}
+
+- (void)systemDidWake:(NSNotification *)notification
+{
+    if (self.sc) {
+        self.sc->going_to_sleep = false;
+        self.sc->wake_restart_pending = true;
+        self.sc->wake_time_ns = os_gettime_ns();
+        MACCAP_LOG(LOG_INFO, "System woke from sleep, scheduling capture restart");
+    }
+}
+
+- (void)screensDidWake:(NSNotification *)notification
+{
+    [self systemDidWake:notification];
 }
 
 @end

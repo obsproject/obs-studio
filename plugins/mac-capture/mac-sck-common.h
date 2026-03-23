@@ -56,6 +56,9 @@ struct API_AVAILABLE(macos(12.5)) screen_capture {
     os_sem_t *shareable_content_available;
     IOSurfaceRef current, prev;
     bool capture_failed;
+    bool going_to_sleep;
+    bool wake_restart_pending;
+    uint64_t wake_time_ns;
 
     pthread_mutex_t mutex;
 

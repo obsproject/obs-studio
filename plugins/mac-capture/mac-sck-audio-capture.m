@@ -46,6 +46,7 @@ API_AVAILABLE(macos(13.0)) static void sck_audio_capture_destroy(void *data)
     }
 
     if (sc->capture_delegate) {
+        [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:sc->capture_delegate];
         [sc->capture_delegate release];
     }
     [sc->application_id release];
@@ -168,6 +169,23 @@ API_AVAILABLE(macos(13.0)) static bool init_audio_screen_stream(struct screen_ca
     return did_stream_start;
 }
 
+API_AVAILABLE(macos(13.0)) static void sck_audio_capture_tick(void *data, float seconds __unused)
+{
+    struct screen_capture *sc = data;
+
+    if (sc->wake_restart_pending) {
+        uint64_t elapsed_ns = os_gettime_ns() - sc->wake_time_ns;
+        if (elapsed_ns >= 2000000000ULL) {
+            MACCAP_LOG(LOG_INFO, "Restarting audio capture after wake from sleep");
+            sc->wake_restart_pending = false;
+            destroy_audio_screen_stream(sc);
+            sc->capture_failed = false;
+            screen_capture_build_content_list(sc, sc->audio_capture_type == ScreenCaptureAudioDesktopStream);
+            init_audio_screen_stream(sc);
+        }
+    }
+}
+
 static void sck_audio_capture_defaults(obs_data_t *settings)
 {
     obs_data_set_default_string(settings, "application", NULL);
@@ -187,6 +205,21 @@ API_AVAILABLE(macos(13.0)) static void *sck_audio_capture_create(obs_data_t *set
 
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:sc->capture_delegate
+                                                           selector:@selector(systemWillSleep:)
+                                                               name:NSWorkspaceWillSleepNotification
+                                                             object:nil];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:sc->capture_delegate
+                                                           selector:@selector(systemDidWake:)
+                                                               name:NSWorkspaceDidWakeNotification
+                                                             object:nil];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:sc->capture_delegate
+                                                           selector:@selector(screensDidWake:)
+                                                               name:NSWorkspaceScreensDidWakeNotification
+                                                             object:nil];
 
     sc->display = CGMainDisplayID();
 
@@ -308,6 +341,7 @@ struct obs_source_info sck_audio_capture_info = {
     .destroy = sck_audio_capture_destroy,
 
     .output_flags = OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_AUDIO,
+    .video_tick = sck_audio_capture_tick,
 
     .get_defaults = sck_audio_capture_defaults,
     .get_properties = sck_audio_capture_properties,

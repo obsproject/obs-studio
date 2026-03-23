@@ -63,6 +63,7 @@ API_AVAILABLE(macos(12.5)) static void sck_video_capture_destroy(void *data)
     }
 
     if (sc->capture_delegate) {
+        [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:sc->capture_delegate];
         [sc->capture_delegate release];
     }
     [sc->application_id release];
@@ -291,6 +292,21 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;
 
+    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:sc->capture_delegate
+                                                           selector:@selector(systemWillSleep:)
+                                                               name:NSWorkspaceWillSleepNotification
+                                                             object:nil];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:sc->capture_delegate
+                                                           selector:@selector(systemDidWake:)
+                                                               name:NSWorkspaceDidWakeNotification
+                                                             object:nil];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:sc->capture_delegate
+                                                           selector:@selector(screensDidWake:)
+                                                               name:NSWorkspaceScreensDidWakeNotification
+                                                             object:nil];
+
     obs_enter_graphics();
     if (gs_get_device_type() == GS_DEVICE_OPENGL) {
         sc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
@@ -320,6 +336,23 @@ fail:
 API_AVAILABLE(macos(12.5)) static void sck_video_capture_tick(void *data, float seconds __unused)
 {
     struct screen_capture *sc = data;
+
+    if (sc->wake_restart_pending) {
+        uint64_t elapsed_ns = os_gettime_ns() - sc->wake_time_ns;
+        if (elapsed_ns >= 2000000000ULL) {
+            MACCAP_LOG(LOG_INFO, "Restarting screen capture after wake from sleep");
+            sc->wake_restart_pending = false;
+            obs_enter_graphics();
+            destroy_screen_stream(sc);
+            obs_leave_graphics();
+            sc->capture_failed = false;
+            screen_capture_build_content_list(sc, sc->capture_type == ScreenCaptureDisplayStream);
+            obs_enter_graphics();
+            init_screen_stream(sc);
+            obs_leave_graphics();
+            return;
+        }
+    }
 
     if (!sc->current)
         return;
