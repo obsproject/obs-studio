@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <obs-module.h>
+#include <util/platform.h>
 #include <util/threading.h>
 #include <pthread.h>
 
@@ -31,6 +32,10 @@ API_AVAILABLE(macos(12.5))
 @interface ScreenCaptureDelegate : NSObject <SCStreamOutput, SCStreamDelegate>
 
 @property struct screen_capture *sc;
+
+- (void)systemWillSleep:(NSNotification *)notification;
+- (void)systemDidWake:(NSNotification *)notification;
+- (void)screensDidWake:(NSNotification *)notification;
 
 @end
 
