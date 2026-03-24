@@ -22,7 +22,7 @@ jobs:
       flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
       updateChannel: ${{ steps.check.outputs.updateChannel }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
@@ -137,7 +137,7 @@ jobs:
           df -h
           echo ::endgroup::
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
@@ -232,7 +232,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/steam-upload
         with:
           steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
@@ -248,7 +248,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/windows-patches
         with:
           tagName: ${{ github.ref_name }}
