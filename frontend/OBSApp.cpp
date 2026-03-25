@@ -429,12 +429,10 @@ static bool MakeUserDirs()
 		return false;
 #endif
 
-#ifdef WHATSNEW_ENABLED
 	if (GetAppConfigPath(path, sizeof(path), "obs-studio/updates") <= 0)
 		return false;
 	if (!do_mkdir(path))
 		return false;
-#endif
 
 	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
 		return false;
