@@ -57,6 +57,7 @@ private:
 	std::atomic<bool> running;
 
 	std::mutex start_stop_mutex;
+	std::mutex data_mutex;
 	std::thread start_stop_thread;
 
 	uint32_t base_ssrc;
