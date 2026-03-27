@@ -27,7 +27,7 @@ jobs:
           Write-Output "Workflow SHA: ${sha}"
           "workflow_sha=${sha}" >> $env:GITHUB_OUTPUT
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           path: "repo"
           fetch-depth: 0
