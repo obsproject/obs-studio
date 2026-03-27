@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set Up Homebrew 🍺
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@4ebd32341e5b59ae7e1581111aa99d5d34cef962
       - name: Check for Defunct Services 📉
         uses: ./.github/actions/services-validator
         with:
