@@ -129,7 +129,7 @@ jobs:
           popd
 
       - name: Upload SARIF report files 📦
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@ebcb5b36ded6beda4ceefea6a8bc4cc885255bb3
         with:
           sarif_file: "${{ github.workspace }}/analytics/merged.sarif"
           category: 'clang-analyze (macOS Apple Silicon)'
