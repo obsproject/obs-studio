@@ -199,7 +199,7 @@ jobs:
     needs: create-appcast
     steps:
       - name: Merge Appcasts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: macos-sparkle-update
           pattern: macos-sparkle-update-*
