@@ -87,7 +87,7 @@ static void d3d9_free()
 static DXGI_FORMAT d3d9_to_dxgi_format(D3DFORMAT format)
 {
 	switch (format) {
-	case D3DFMT_A2B10G10R10:
+	case D3DFMT_A2R10G10B10:
 		return DXGI_FORMAT_R10G10B10A2_UNORM;
 	case D3DFMT_A8R8G8B8:
 		return DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -205,6 +205,13 @@ static inline bool d3d9_shtex_init_shtex()
 	return true;
 }
 
+static inline D3DFORMAT get_dxgi_compatible_format(const D3DFORMAT format)
+{
+	if (format == D3DFMT_A2R10G10B10)
+		return D3DFMT_A2B10G10R10;
+	return format;
+}
+
 static inline bool d3d9_shtex_init_copytex()
 {
 	struct d3d9_offsets offsets = global_hook_info->offsets.d3d9;
@@ -236,8 +243,9 @@ static inline bool d3d9_shtex_init_copytex()
 		memcpy(patch_addr, patch[data.patch].data, patch_size);
 	}
 
-	hr = data.device->CreateTexture(data.cx, data.cy, 1, D3DUSAGE_RENDERTARGET, data.d3d9_format, D3DPOOL_DEFAULT,
-					&tex, &data.handle);
+	hr = data.device->CreateTexture(data.cx, data.cy, 1, D3DUSAGE_RENDERTARGET,
+					get_dxgi_compatible_format(data.d3d9_format), D3DPOOL_DEFAULT, &tex,
+					&data.handle);
 
 	if (p_is_d3d9) {
 		*p_is_d3d9 = was_d3d9ex;
