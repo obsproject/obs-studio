@@ -45,7 +45,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Check for Defunct Services 📉
         uses: ./.github/actions/services-validator
         with:
@@ -63,7 +63,7 @@ jobs:
     env:
       CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           submodules: recursive
           token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
@@ -75,7 +75,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && inputs.job == 'steam'
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: ./.github/actions/steam-upload
         with:
           steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
@@ -93,7 +93,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: ./.github/actions/generate-docs
 
   update-documentation-cloudflare:
@@ -101,7 +101,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && inputs.job == 'documentation'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: ./.github/actions/generate-docs
         with:
           disableLinkExtensions: true
@@ -123,7 +123,7 @@ jobs:
           : Get Commit Hash 🆔
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
           path: docs
@@ -141,7 +141,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && inputs.job == 'patches'
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: ./.github/actions/windows-patches
         with:
           tagName: ${{ inputs.ref }}
