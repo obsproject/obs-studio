@@ -42,7 +42,7 @@ jobs:
           "commitHash=${shortHash}" >> $env:GITHUB_OUTPUT
 
       - name: Download Artifact 📥
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ steps.setup.outputs.commitHash }}
           path: ${{ github.workspace }}/build
