@@ -288,6 +288,7 @@ public slots:
 	void UpdateEditMenu();
 	void applicationShutdown() noexcept;
 	void toggleMixerLayout();
+	void toggleSceneListLayout();
 
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
@@ -389,13 +390,16 @@ private slots:
 	void on_actionPasteFilters_triggered();
 	void SourcePasteFilters(OBSSource source, OBSSource dstSource);
 
-	void SceneCopyFilters();
-	void ScenePasteFilters();
-
 	void on_actionCopyTransform_triggered();
 	void on_actionPasteTransform_triggered();
 
 public slots:
+	void copyFiltersFromSource(QString uuid);
+	void pasteFiltersToSource(QString uuid);
+
+	void SceneCopyFilters();
+	void ScenePasteFilters();
+
 	void actionCopyFilters();
 	void actionPasteFilters();
 
@@ -404,6 +408,11 @@ public:
 	OBSWeakSource copyFilter;
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
+
+	bool canPasteFilters()
+	{
+		return !obs_weak_source_expired(copyFiltersSource());
+	}
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_ContextToolbar
@@ -945,14 +954,17 @@ private:
 private slots:
 	void OpenSavedProjector(SavedProjectorInfo *info);
 
+public slots:
 	void OpenPreviewProjector();
 	void OpenSourceProjector();
 	void OpenMultiviewProjector();
 	void OpenSceneProjector();
+	void openProjectorForUuid(QString uuid);
 
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
 	void OpenSceneWindow();
+	void openWindowedProjectorForUuid(QString uuid);
 	void openMultiviewWindow();
 
 public:
@@ -1331,7 +1343,10 @@ private slots:
 	void Screenshot(OBSSource source_ = nullptr);
 	void ScreenshotSelectedSource();
 	void ScreenshotProgram();
+
+public slots:
 	void ScreenshotScene();
+	void screenshotScene(QString uuid);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Service
@@ -1539,8 +1554,6 @@ private:
 	OBSSource GetOverrideTransition(OBSSource source);
 	int GetOverrideTransitionDuration(OBSSource source);
 
-	QMenu *CreatePerSceneTransitionMenu();
-
 	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 
 	void PasteShowHideTransition(obs_sceneitem_t *item, bool show, obs_source_t *tr, int duration);
@@ -1593,6 +1606,8 @@ signals:
 public:
 	int GetTransitionDuration();
 	int GetTbarPosition();
+
+	QMenu *CreatePerSceneTransitionMenu();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Updater

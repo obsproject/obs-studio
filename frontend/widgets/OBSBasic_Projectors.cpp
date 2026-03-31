@@ -190,12 +190,26 @@ void OBSBasic::OpenMultiviewProjector()
 
 void OBSBasic::OpenSceneProjector()
 {
-	int monitor = sender()->property("monitor").toInt();
 	OBSScene scene = GetCurrentScene();
-	if (!scene)
+	if (!scene) {
 		return;
+	}
 
-	OpenProjector(obs_scene_get_source(scene), monitor, ProjectorType::Scene);
+	OBSSource source = obs_scene_get_source(scene);
+	const char *uuid = obs_source_get_uuid(source);
+
+	openProjectorForUuid(QString::fromUtf8(uuid));
+}
+
+void OBSBasic::openProjectorForUuid(QString uuid)
+{
+	int monitor = sender()->property("monitor").toInt();
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
+	if (!source) {
+		return;
+	}
+
+	OpenProjector(source, monitor, ProjectorType::Scene);
 }
 
 void OBSBasic::OpenPreviewWindow()
@@ -217,12 +231,24 @@ void OBSBasic::OpenSourceWindow()
 void OBSBasic::OpenSceneWindow()
 {
 	OBSScene scene = GetCurrentScene();
-	if (!scene)
+	if (!scene) {
 		return;
+	}
 
 	OBSSource source = obs_scene_get_source(scene);
+	const char *uuid = obs_source_get_uuid(source);
 
-	OpenProjector(obs_scene_get_source(scene), -1, ProjectorType::Scene);
+	openWindowedProjectorForUuid(QString::fromUtf8(uuid));
+}
+
+void OBSBasic::openWindowedProjectorForUuid(QString uuid)
+{
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
+	if (!source) {
+		return;
+	}
+
+	OpenProjector(source, -1, ProjectorType::Scene);
 }
 
 void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)

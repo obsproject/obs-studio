@@ -1488,6 +1488,14 @@ void OBSBasic::toggleMixerLayout()
 	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
 }
 
+void OBSBasic::toggleSceneListLayout()
+{
+	bool isGridMode = config_get_bool(App()->GetUserConfig(), "BasicWindow", "gridMode");
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode", !isGridMode);
+
+	emit userSettingChanged("BasicWindow", "gridMode");
+}
+
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)
 {
 	return obs_reset_video(ovi);

@@ -48,7 +48,23 @@ void OBSBasic::ScreenshotProgram()
 	Screenshot(GetProgramSource());
 }
 
+void OBSBasic::screenshotScene(QString uuid)
+{
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
+	if (!source) {
+		return;
+	}
+
+	Screenshot(source.Get());
+}
+
 void OBSBasic::ScreenshotScene()
 {
-	Screenshot(GetCurrentSceneSource());
+	OBSSource source = GetCurrentSceneSource();
+	if (!source) {
+		return;
+	}
+	const char *uuid = obs_source_get_uuid(source);
+
+	screenshotScene(QString::fromUtf8(uuid));
 }
