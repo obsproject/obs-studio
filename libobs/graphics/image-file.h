@@ -18,7 +18,7 @@
 #pragma once
 
 #include "graphics.h"
-#include "libnsgif/libnsgif.h"
+#include "libnsgif/nsgif.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,8 +33,10 @@ struct gs_image_file {
 	bool frame_updated;
 	bool loaded;
 
-	gif_animation gif;
+	nsgif_t *gif;
+	const nsgif_info_t *gif_info;
 	uint8_t *gif_data;
+	const uint8_t *gif_frame_image;
 	uint8_t **animation_frame_cache;
 	uint8_t *animation_frame_data;
 	uint64_t cur_time;
@@ -43,7 +45,7 @@ struct gs_image_file {
 	int last_decoded_frame;
 
 	uint8_t *texture_data;
-	gif_bitmap_callback_vt bitmap_callbacks;
+	nsgif_bitmap_cb_vt bitmap_callbacks;
 };
 
 struct gs_image_file2 {

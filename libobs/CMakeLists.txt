@@ -190,8 +190,10 @@ target_sources(
     graphics/image-file.c
     graphics/image-file.h
     graphics/input.h
-    graphics/libnsgif/libnsgif.c
-    graphics/libnsgif/libnsgif.h
+    graphics/libnsgif/gif.c
+    graphics/libnsgif/lzw.c
+    graphics/libnsgif/lzw.h
+    graphics/libnsgif/nsgif.h
     graphics/math-defs.h
     graphics/math-extra.c
     graphics/math-extra.h
@@ -282,7 +284,7 @@ set(
   graphics/graphics.h
   graphics/image-file.h
   graphics/input.h
-  graphics/libnsgif/libnsgif.h
+  graphics/libnsgif/nsgif.h
   graphics/math-defs.h
   graphics/math-extra.h
   graphics/matrix3.h
