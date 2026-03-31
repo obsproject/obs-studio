@@ -48,6 +48,7 @@ target_link_libraries(
 include(cmake/ui-components.cmake)
 include(cmake/ui-dialogs.cmake)
 include(cmake/ui-docks.cmake)
+include(cmake/ui-mediators.cmake)
 include(cmake/feature-importers.cmake)
 include(cmake/feature-plugin-manager.cmake)
 include(cmake/ui-models.cmake)
