@@ -64,6 +64,8 @@ target_sources(
     utility/display-helpers.hpp
     utility/item-widget-helpers.cpp
     utility/item-widget-helpers.hpp
+    utility/mediators/CanvasMediator.cpp
+    utility/mediators/CanvasMediator.hpp
     utility/models/multitrack-video.hpp
     utility/obf.c
     utility/obf.h

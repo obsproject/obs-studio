@@ -232,6 +232,11 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 	}
 }
 
+void OBSBasic::updateMultiviewProjectors()
+{
+	OBSProjector::UpdateMultiviewProjectors();
+}
+
 void OBSBasic::DuplicateSelectedScene()
 {
 	OBSScene curScene = GetCurrentScene();
