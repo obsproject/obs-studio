@@ -88,7 +88,7 @@ runs:
 
     - name: Restore Timestamp Cache ⏳
       if: fromJSON(inputs.runServiceChecks)
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: ${{ github.workspace }}/other
         key: service-check-${{ github.run_id }}
@@ -111,7 +111,7 @@ runs:
         source .venv/bin/activate
         python3 -u .github/scripts/utils.py/check-services.py
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       if: fromJSON(inputs.runServiceChecks)
       with:
         name: timestamps
