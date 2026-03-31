@@ -1179,6 +1179,9 @@ private:
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 
+public slots:
+	void AddSceneItem(OBSSceneItem item);
+
 private slots:
 	void AddSourceDialog();
 	void RenameSources(OBSSource source, QString newName, QString prevName);
@@ -1264,16 +1267,11 @@ private:
 
 	void MoveSceneItem(enum obs_order_movement movement, const QString &action_name);
 
-	/* OBS Callbacks */
-	static void SceneReordered(void *data, calldata_t *params);
-	static void SceneRefreshed(void *data, calldata_t *params);
-	static void SceneItemAdded(void *data, calldata_t *params);
-
 public slots:
 	void on_actionResetTransform_triggered();
+	void updateMultiviewProjectors();
 
 private slots:
-	void AddSceneItem(OBSSceneItem item);
 	void AddScene(OBSSource source);
 	void RemoveScene(OBSSource source);
 
@@ -1322,6 +1320,11 @@ public:
 	}
 
 	void CreateSceneUndoRedoAction(const QString &action_name, OBSData undo_data, OBSData redo_data);
+
+	// OBS Callbacks
+	static void SceneItemAdded(void *data, calldata_t *params);
+	static void SceneReordered(void *data, calldata_t *params);
+	static void SceneRefreshed(void *data, calldata_t *params);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Screenshots
