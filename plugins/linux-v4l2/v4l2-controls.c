@@ -70,7 +70,6 @@ static bool v4l2_control_changed(void *data, obs_properties_t *props, obs_proper
 	return ret;
 }
 
-
 static bool v4l2_get_control_value(obs_data_t *settings, const struct v4l2_queryctrl *qctrl, int *value)
 {
 	const char *name = (const char *)qctrl->name;
@@ -174,7 +173,6 @@ int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props, obs
 	return 0;
 }
 
-
 int_fast32_t v4l2_apply_controls(int_fast32_t dev, obs_data_t *settings)
 {
 	struct v4l2_queryctrl qctrl;
@@ -200,11 +198,11 @@ int_fast32_t v4l2_apply_controls(int_fast32_t dev, obs_data_t *settings)
 		control.value = value;
 
 		if (0 != v4l2_ioctl(dev, VIDIOC_S_CTRL, &control)) {
-			blog(LOG_WARNING, "failed to apply control %s (0x%08X): %s",
-			     (char *)qctrl.name, qctrl.id, strerror(errno));
+			blog(LOG_WARNING, "failed to apply control %s (0x%08X): %s", (char *)qctrl.name, qctrl.id,
+			     strerror(errno));
 		}
 
-next:
+	next:
 		qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
 	}
 

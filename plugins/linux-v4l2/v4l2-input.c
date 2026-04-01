@@ -982,7 +982,6 @@ static void v4l2_update_source_flags(struct v4l2_data *data, obs_data_t *setting
 	obs_source_set_async_unbuffered(data->source, !obs_data_get_bool(settings, "buffering"));
 }
 
-
 static void v4l2_apply_current_controls(struct v4l2_data *data, obs_data_t *settings)
 {
 	int dev;
@@ -999,7 +998,6 @@ static void v4l2_apply_current_controls(struct v4l2_data *data, obs_data_t *sett
 	v4l2_apply_controls(dev, settings);
 	v4l2_close(dev);
 }
-
 
 /**
  * Checking if any of the settings have changed so that we can restart the
