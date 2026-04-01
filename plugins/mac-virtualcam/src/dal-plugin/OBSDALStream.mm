@@ -128,7 +128,7 @@
         if (width == 0 || height == 0) {
             _testCardSize = NSMakeSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
         } else {
-            _testCardSize = NSMakeSize(width, height);
+            _testCardSize = NSMakeSize((double)width, (double)height);
         }
     }
     return _testCardSize;
@@ -240,7 +240,7 @@
     CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
     CGContextRef context = CGBitmapContextCreate(pxdata, width, height, 8,
                                                  CVPixelBufferGetBytesPerRowOfPlane(pxbuffer, 0), rgbColorSpace,
-                                                 kCGImageAlphaPremultipliedFirst | kCGImageByteOrder32Big);
+                                                 ((int)kCGImageAlphaPremultipliedFirst) | ((int)kCGImageByteOrder32Big));
     CFRelease(rgbColorSpace);
     NSParameterAssert(context);
 
@@ -249,7 +249,7 @@
 
     NSRect rect = NSMakeRect(0, 0, self.testCardImage.size.width, self.testCardImage.size.height);
     CGImageRef image = [self.testCardImage CGImageForProposedRect:&rect context:nsContext hints:nil];
-    CGContextDrawImage(context, CGRectMake(0, 0, CGImageGetWidth(image), CGImageGetHeight(image)), image);
+    CGContextDrawImage(context, CGRectMake(0, 0, (double)CGImageGetWidth(image), (double)CGImageGetHeight(image)), image);
 
     //	DrawDialWithFrame(
     //		NSMakeRect(0, 0, width, height),

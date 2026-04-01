@@ -445,7 +445,7 @@ static OSStatus input_callback(void *data, AudioUnitRenderActionFlags *action_fl
 		factor = ((double)info.numer) / info.denom;
 	}
 	if (info.numer != info.denom)
-		audio.timestamp = (uint64_t)(factor * ts_data->mHostTime);
+		audio.timestamp = (uint64_t)(factor * (double)ts_data->mHostTime);
 	else
 		audio.timestamp = ts_data->mHostTime;
 

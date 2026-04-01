@@ -539,8 +539,8 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 					     kVTCompressionPropertyKey_AllowFrameReordering,
 					     kVTCompressionPropertyKey_ProfileLevel};
 
-		SInt32 key_frame_interval = (SInt32)(enc->keyint * ((float)enc->fps_num / enc->fps_den));
-		float expected_framerate = (float)enc->fps_num / enc->fps_den;
+		SInt32 key_frame_interval = (SInt32)((float)enc->keyint * ((float)enc->fps_num / (float)enc->fps_den));
+		float expected_framerate = (float)enc->fps_num / (float)enc->fps_den;
 		CFNumberRef MaxKeyFrameInterval =
 			CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &key_frame_interval);
 		CFNumberRef ExpectedFrameRate =
