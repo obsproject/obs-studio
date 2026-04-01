@@ -248,7 +248,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		if (!actualProgramScene) {
 			actualProgramScene = GetCurrentSceneSource();
 		} else {
-			SetCurrentScene(actualProgramScene, true);
+			OBSScene scene = obs_scene_from_source(actualProgramScene);
+			mainCanvasMediator->setPreviewScene(scene);
 		}
 		TransitionToScene(actualProgramScene, true);
 

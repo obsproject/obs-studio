@@ -40,6 +40,7 @@
 #include <util/util.hpp>
 
 #include <QAccessible>
+#include <QListWidget>
 #include <QSystemTrayIcon>
 
 #include <deque>
@@ -259,6 +260,19 @@ private:
 
 	std::unique_ptr<Ui::OBSBasic> ui;
 
+	// Canvas Mediators
+	QPointer<OBS::CanvasMediator> mainCanvasMediator;
+	QPointer<OBS::CanvasMediator> activeCanvasMediator;
+	std::vector<QMetaObject::Connection> activeCanvasConnections;
+	void clearCanvasMediators()
+	{
+		mainCanvasMediator = nullptr;
+		setActiveCanvasMediator(nullptr);
+		App()->clearMediators();
+	}
+
+	void setActiveCanvasMediator(OBS::CanvasMediator *mediator);
+
 	void OnEvent(enum obs_frontend_event event);
 
 	bool InitBasicConfigDefaults();
@@ -308,6 +322,7 @@ public:
 	void UpdateTitleBar();
 
 	static OBSBasic *Get();
+	OBS::CanvasMediator *getActiveCanvasMediator() { return activeCanvasMediator.get(); }
 
 	void SetDisplayAffinity(QWindow *window);
 
@@ -333,6 +348,8 @@ signals:
 	void profileSettingChanged(const std::string &category, const std::string &name);
 
 	void mixerStatusChanged(QString sourceUuid);
+
+	void activeCanvasChanged(OBS::CanvasMediator *mediator);
 
 	/* -------------------------------------
 	 * MARK: - OAuth
@@ -409,10 +426,7 @@ public:
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
 
-	bool canPasteFilters()
-	{
-		return !obs_weak_source_expired(copyFiltersSource());
-	}
+	bool canPasteFilters() { return !obs_weak_source_expired(copyFiltersSource()); }
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_ContextToolbar
@@ -966,6 +980,7 @@ public slots:
 	void OpenSceneWindow();
 	void openWindowedProjectorForUuid(QString uuid);
 	void openMultiviewWindow();
+	void updateMultiviewProjectors();
 
 public:
 	void DeleteProjector(OBSProjector *projector);
@@ -1176,23 +1191,26 @@ private:
 	void CenterSelectedSceneItems(const CenterType &centerType);
 
 	/* OBS Callbacks */
-	static void SourceCreated(void *data, calldata_t *params);
-	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 
 	void AddSource(const char *id);
 	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
 
+	void MoveSceneItem(enum obs_order_movement movement, const QString &action_name);
+
 public slots:
 	void AddSceneItem(OBSSceneItem item);
 
-
-private slots:
-	void RenameSources(OBSSource source, QString newName, QString prevName);
-
 	void ReorderSources(OBSScene scene);
 	void RefreshSources(OBSScene scene);
+
+	void on_actionResetTransform_triggered();
+
+private slots:
+	void EditSceneItemName();
+	void RenameSources(OBSSource source, QString newName, QString prevName);
+	SourceTreeItem *GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem);
 
 	void SetDeinterlacingMode();
 	void SetDeinterlacingOrder();
@@ -1255,58 +1273,19 @@ public:
 	void actionOpenSourceFilters();
 	void actionOpenSourceProperties();
 
+	// OBS Callbacks
+	static void SceneItemAdded(void *data, calldata_t *params);
+	static void SceneRefreshed(void *data, calldata_t *params);
+
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Scenes
 	 * -------------------------------------
 	 */
 private:
 	QPointer<QMenu> sceneProjectorMenu;
-	QPointer<QAction> renameScene;
-	std::atomic<obs_scene_t *> currentScene = nullptr;
+
 	OBSWeakSource lastScene;
 	OBSWeakSource swapScene;
-
-	void LoadSceneListOrder(obs_data_array_t *array);
-	obs_data_array_t *SaveSceneListOrder();
-	void ChangeSceneIndex(bool relative, int idx, int invalidIdx);
-
-	void MoveSceneItem(enum obs_order_movement movement, const QString &action_name);
-
-public slots:
-	void on_actionResetTransform_triggered();
-	void updateMultiviewProjectors();
-
-private slots:
-	void AddScene(OBSSource source);
-	void RemoveScene(OBSSource source);
-
-	void DuplicateSelectedScene();
-	void RemoveSelectedScene();
-
-	SourceTreeItem *GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem);
-
-	void on_actionSceneFilters_triggered();
-
-	void on_scenes_currentItemChanged(QListWidgetItem *current, QListWidgetItem *prev);
-	void on_scenes_customContextMenuRequested(const QPoint &pos);
-
-	void GridActionClicked();
-	void on_actionSceneListMode_triggered();
-	void on_actionSceneGridMode_triggered();
-	void on_actionAddScene_triggered();
-	void on_actionRemoveScene_triggered();
-	void on_actionSceneUp_triggered();
-	void on_actionSceneDown_triggered();
-	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
-
-	void MoveSceneToTop();
-	void MoveSceneToBottom();
-
-	void EditSceneName();
-	void EditSceneItemName();
-
-	void SceneNameEdited(QWidget *editor);
-	void OpenSceneFilters();
 
 public:
 	static OBSData BackupScene(obs_scene_t *scene, std::vector<obs_source_t *> *sources = nullptr);
@@ -1316,20 +1295,27 @@ public:
 		return BackupScene(scene, sources);
 	}
 
-	OBSScene GetCurrentScene();
+	OBSScene GetCurrentScene()
+	{
+		if (!activeCanvasMediator) {
+			return nullptr;
+		}
+
+		return activeCanvasMediator->getPreviewScene();
+	}
 
 	inline OBSSource GetCurrentSceneSource()
 	{
 		OBSScene curScene = GetCurrentScene();
-		return OBSSource(obs_scene_get_source(curScene));
+		OBSSource source = obs_scene_get_source(curScene);
+		if (!source || obs_source_removed(source)) {
+			return nullptr;
+		}
+
+		return source;
 	}
 
 	void CreateSceneUndoRedoAction(const QString &action_name, OBSData undo_data, OBSData redo_data);
-
-	// OBS Callbacks
-	static void SceneItemAdded(void *data, calldata_t *params);
-	static void SceneReordered(void *data, calldata_t *params);
-	static void SceneRefreshed(void *data, calldata_t *params);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Screenshots

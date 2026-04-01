@@ -490,7 +490,6 @@ void OBSBasic::CreateEditTransformWindow(obs_sceneitem_t *item)
 	if (transformWindow)
 		transformWindow->close();
 	transformWindow = new OBSBasicTransform(item, this);
-	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::onSceneChanged);
 	transformWindow->show();
 	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
@@ -512,16 +511,15 @@ void OBSBasic::on_resetUI_triggered()
 	ui->toggleContextBar->setChecked(true);
 	ui->toggleSourceIcons->setChecked(true);
 	ui->toggleStatusBar->setChecked(true);
-	ui->scenes->SetGridMode(false);
 	ui->actionSceneListMode->setChecked(true);
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode", false);
+	emit userSettingChanged("BasicWindow", "gridMode");
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 {
 	ui->sourcesToolbar->setVisible(visible);
-	ui->scenesToolbar->setVisible(visible);
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowListboxToolbars", visible);
 	emit userSettingChanged("BasicWindow", "ShowListboxToolbars");
@@ -673,9 +671,7 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 
 	QPoint globalPos = mapToGlobal(pos);
 	if (className && strstr(className, "Dock") != nullptr && !objName.isEmpty()) {
-		if (objName.compare("scenesDock") == 0) {
-			ui->scenes->customContextMenuRequested(globalPos);
-		} else if (objName.compare("sourcesDock") == 0) {
+		if (objName.compare("sourcesDock") == 0) {
 			ui->sources->customContextMenuRequested(globalPos);
 		}
 	} else if (!className) {

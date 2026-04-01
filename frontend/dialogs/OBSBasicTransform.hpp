@@ -4,6 +4,7 @@
 
 #include <obs.hpp>
 #include <components/AlignmentSelector.hpp>
+#include <utility/mediators/CanvasMediator.hpp>
 
 #include <QDialog>
 #include <QPointer>
@@ -29,6 +30,8 @@ private:
 	bool ignoreTransformSignal = false;
 	bool ignoreItemChange = false;
 
+	QPointer<OBS::CanvasMediator> mediator;
+
 	template<typename Widget, typename WidgetParent, typename... SignalArgs, typename... SlotArgs>
 	void hookWidget(Widget *widget, void (WidgetParent::*signal)(SignalArgs...),
 			void (OBSBasicTransform::*slot)(SlotArgs...))
@@ -53,6 +56,7 @@ private slots:
 	void onControlChanged();
 	void onCropChanged();
 	void setEnabled(bool enable);
+	void attachMediator(OBS::CanvasMediator *mediator);
 
 public:
 	OBSBasicTransform(OBSSceneItem item, OBSBasic *parent);
@@ -60,4 +64,5 @@ public:
 
 public slots:
 	void onSceneChanged(QListWidgetItem *current, QListWidgetItem *prev);
+	void setSceneByUuid(QString uuid);
 };
