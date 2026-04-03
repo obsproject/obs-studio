@@ -444,10 +444,7 @@ static OSStatus input_callback(void *data, AudioUnitRenderActionFlags *action_fl
 		mach_timebase_info(&info);
 		factor = ((double)info.numer) / info.denom;
 	}
-	if (info.numer != info.denom)
-		audio.timestamp = (uint64_t)(factor * (double)ts_data->mHostTime);
-	else
-		audio.timestamp = ts_data->mHostTime;
+	audio.timestamp = AudioConvertHostTimeToNanos(ts_data->mHostTime);
 
 	obs_source_output_audio(ca->source, &audio);
 

@@ -630,10 +630,13 @@ static void syphon_video_tick(void *data, float seconds)
     if (s->crop)
         crop = &s->crop_rect;
 
+    float origin_x = (float) crop->origin.x;
+    float origin_y = (float) (s->height - crop->origin.y);
+    float end_x = (float) (s->width - crop->size.width);
+    float end_y = (float) crop->size.height;
+
     obs_enter_graphics();
-    build_sprite_rect(gs_vertexbuffer_get_data(s->vertbuffer), (float) crop->origin.x,
-                      (float) s->height - (float) crop->origin.y, (float) s->width - (float) crop->size.width,
-                      (float) crop->size.height);
+    build_sprite_rect(gs_vertexbuffer_get_data(s->vertbuffer), origin_x, origin_y, end_x, end_y);
     obs_leave_graphics();
 }
 
