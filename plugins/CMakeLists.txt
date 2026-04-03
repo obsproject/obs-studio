@@ -70,6 +70,7 @@ add_obs_plugin(
 )
 add_obs_plugin(obs-text PLATFORMS WINDOWS)
 add_obs_plugin(obs-transitions)
+add_obs_plugin(obs-uvmap-filter)
 add_obs_plugin(
     obs-vst
     PLATFORMS WINDOWS MACOS LINUX

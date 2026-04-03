@@ -1,0 +1,62 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform texture2d uvmap;
+
+uniform float2 uv_offset;
+uniform float  uv_zoom;
+
+sampler_state linearSampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+sampler_state borderSampler {
+	Filter      = Linear;
+	AddressU    = Border;
+	AddressV    = Border;
+	BorderColor = 00000000;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSUVMap(VertData v_in) : TARGET
+{
+	/* Zoom into the UV map: divide screen UV around centre, then shift */
+	float2 uv_map_coord = (v_in.uv - 0.5) / uv_zoom + 0.5 + uv_offset;
+
+	/* Sample UV map – R = U source coord, G = V source coord */
+	float4 uv_sample = uvmap.Sample(borderSampler, uv_map_coord);
+
+	/* If the UV map has no coverage here (border), return transparent */
+	if (uv_map_coord.x < 0.0 || uv_map_coord.x > 1.0 ||
+	    uv_map_coord.y < 0.0 || uv_map_coord.y > 1.0)
+		return float4(0.0, 0.0, 0.0, 0.0);
+
+	float2 source_uv = uv_sample.rg;
+
+	float4 rgba = image.Sample(linearSampler, source_uv);
+	/* Preserve alpha from UV map so transparent regions stay transparent */
+	rgba.a *= uv_sample.a;
+	return rgba;
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSUVMap(v_in);
+	}
+}
