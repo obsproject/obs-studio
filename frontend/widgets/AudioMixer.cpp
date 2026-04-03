@@ -179,6 +179,9 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	toggleHiddenButton->setCheckable(true);
 	toggleHiddenButton->setChecked(showHidden);
 	toggleHiddenButton->setText(QTStr("Basic.AudioMixer.HiddenTotal").arg(0));
+	QString hiddenTooltip = showHidden ? QTStr("Basic.AudioMixer.HideHidden")
+					   : QTStr("Basic.AudioMixer.ShowHidden");
+	toggleHiddenButton->setToolTip(hiddenTooltip);
 	toggleHiddenButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
 	idian::Utils::addClass(toggleHiddenButton, "toolbar-button");
 	idian::Utils::addClass(toggleHiddenButton, "toggle-hidden");
@@ -487,6 +490,11 @@ void AudioMixer::reloadVolumeControls()
 			return true;
 		}
 
+		bool audioActive = obs_source_audio_active(source);
+		if (!audioActive) {
+			return true;
+		}
+
 		auto uuidPointer = obs_source_get_uuid(source);
 		if (!uuidPointer || !*uuidPointer) {
 			return true;
@@ -644,27 +652,27 @@ void AudioMixer::updateVolumeLayouts()
 				hiddenCount += 1;
 			}
 
-			if (!isGlobal) {
-				sortingWeight += 20;
-			}
-
-			if (!isPinned) {
-				sortingWeight += 20;
+			if (isGlobal) {
+				sortingWeight = 0;
+			} else if (isPinned) {
+				sortingWeight = 20;
+			} else {
+				sortingWeight = 40;
 			}
 
 			if (isHidden && keepHiddenLast) {
-				sortingWeight += 20;
+				sortingWeight += 5;
 
 				if (isPreviewed) {
-					sortingWeight -= 10;
+					sortingWeight -= 1;
 				}
 			}
 
 			if (!isAudioActive && keepInactiveLast) {
-				sortingWeight += 50;
+				sortingWeight += 5;
 
 				if (isPreviewed) {
-					sortingWeight -= 10;
+					sortingWeight -= 1;
 				}
 			}
 
@@ -821,6 +829,13 @@ void AudioMixer::createMixerContextMenu()
 	inactiveLastCheckBox->setChecked(keepInactiveLast);
 	inactiveLastAction->setDefaultWidget(inactiveLastCheckBox);
 
+	QAction *layoutToggleAction = new QAction(QTStr("Basic.AudioMixer.Layout.Vertical"), mixerMenu);
+	if (mixerVertical) {
+		layoutToggleAction->setText(QTStr("Basic.AudioMixer.Layout.Horizontal"));
+	}
+
+	QAction *openAdvancedProperties = new QAction(QTStr("Basic.AdvAudio"), mixerMenu);
+
 	// Connect menu actions
 	connect(unhideAllAction, &QAction::triggered, this, &AudioMixer::unhideAllAudioControls, Qt::DirectConnection);
 
@@ -831,6 +846,11 @@ void AudioMixer::createMixerContextMenu()
 	connect(inactiveLastCheckBox, &QCheckBox::toggled, this, &AudioMixer::toggleKeepInactiveLast,
 		Qt::DirectConnection);
 
+	OBSBasic *main = OBSBasic::Get();
+	connect(layoutToggleAction, &QAction::triggered, main, &OBSBasic::toggleMixerLayout, Qt::DirectConnection);
+	connect(openAdvancedProperties, &QAction::triggered, main, &OBSBasic::on_actionAdvAudioProperties_triggered,
+		Qt::DirectConnection);
+
 	// Build menu and show
 	mixerMenu->addAction(unhideAllAction);
 	mixerMenu->addSeparator();
@@ -838,6 +858,10 @@ void AudioMixer::createMixerContextMenu()
 	mixerMenu->addAction(showInactiveAction);
 	mixerMenu->addAction(hiddenLastAction);
 	mixerMenu->addAction(inactiveLastAction);
+	mixerMenu->addSeparator();
+	mixerMenu->addAction(layoutToggleAction);
+	mixerMenu->addSeparator();
+	mixerMenu->addAction(openAdvancedProperties);
 
 	optionsButton->setMenu(mixerMenu);
 }
@@ -951,6 +975,9 @@ void AudioMixer::updateShowHidden()
 	showHidden = settingShowHidden;
 
 	toggleHiddenButton->setText(QTStr("Basic.AudioMixer.HiddenTotal").arg(hiddenCount));
+	QString tooltip = showHidden ? QTStr("Basic.AudioMixer.HideHidden") : QTStr("Basic.AudioMixer.ShowHidden");
+	toggleHiddenButton->setToolTip(tooltip);
+
 	toggleHiddenButton->setChecked(showHidden);
 	showHiddenCheckBox->setChecked(showHidden);
 
