@@ -1470,7 +1470,7 @@ retryScene:
 	disableSaving--;
 
 	if (vcamEnabled)
-		outputHandler->UpdateVirtualCamOutputSource();
+		UpdateVirtualCamConfig(vcamConfig);
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 	OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
@@ -1540,7 +1540,7 @@ void OBSBasic::ClearSceneData()
 	 * it holds. It will be reconfigured during loading. */
 	if (vcamEnabled) {
 		vcamConfig.type = VCamOutputType::ProgramView;
-		outputHandler->UpdateVirtualCamOutputSource();
+		UpdateVirtualCamConfig(vcamConfig);
 	}
 
 	collectionModuleData = nullptr;

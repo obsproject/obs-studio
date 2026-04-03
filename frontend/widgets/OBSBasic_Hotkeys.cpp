@@ -210,11 +210,9 @@ void OBSBasic::CreateHotkeys()
 		vcamHotkeys = obs_hotkey_pair_register_frontend(
 			"OBSBasic.StartVirtualCam", Str("Basic.Main.StartVirtualCam"), "OBSBasic.StopVirtualCam",
 			Str("Basic.Main.StopVirtualCam"),
-			MAKE_CALLBACK(!basic.outputHandler->VirtualCamActive(), basic.StartVirtualCam,
-				      "Starting virtual camera"),
-			MAKE_CALLBACK(basic.outputHandler->VirtualCamActive(), basic.StopVirtualCam,
-				      "Stopping virtual camera"),
-			this, this);
+			MAKE_CALLBACK(!basic.VirtualCamActive(), basic.StartVirtualCam, "Starting virtual camera"),
+			MAKE_CALLBACK(basic.VirtualCamActive(), basic.StopVirtualCam, "Stopping virtual camera"), this,
+			this);
 		LoadHotkeyPair(vcamHotkeys, "OBSBasic.StartVirtualCam", "OBSBasic.StopVirtualCam");
 	}
 
