@@ -65,7 +65,13 @@ static void *gpu_encode_thread(void *data)
 		video_output_inc_texture_frames(video->video);
 
 		for (size_t i = 0; i < video->gpu_encoders.num; i++) {
-			obs_encoder_t *encoder = obs_encoder_get_ref(video->gpu_encoders.array[i]);
+			/* gpu_encoders stores control (weak-ref) pointers held alive
+			 * by a weak-ref addref from start_gpu_encode. Using
+			 * obs_weak_encoder_get_encoder() reads only from the control
+			 * struct — never from the encoder struct — so there is no
+			 * use-after-free risk even if the encoder is being torn down
+			 * concurrently on another thread. */
+			obs_encoder_t *encoder = obs_weak_encoder_get_encoder(video->gpu_encoders.array[i]);
 			if (encoder)
 				da_push_back(encoders, &encoder);
 		}
@@ -81,8 +87,6 @@ static void *gpu_encode_thread(void *data)
 			uint32_t skip = 0;
 
 			obs_encoder_t *encoder = encoders.array[i];
-			obs_weak_encoder_t **paired = encoder->paired_encoders.array;
-			size_t num_paired = encoder->paired_encoders.num;
 
 			pkt.timebase_num = encoder->timebase_num * encoder->frame_rate_divisor;
 			pkt.timebase_den = encoder->timebase_den;
@@ -98,20 +102,43 @@ static void *gpu_encode_thread(void *data)
 					continue;
 			}
 
-			if (!encoder->first_received && num_paired) {
+			if (!encoder->first_received && encoder->paired_encoders.num) {
 				bool wait_for_audio = false;
 
-				for (size_t idx = 0; !wait_for_audio && idx < num_paired; idx++) {
-					obs_encoder_t *enc = obs_weak_encoder_get_encoder(paired[idx]);
+				/* Use trylock rather than a blocking lock to avoid a
+				 * deadlock with obs_encoder_stop(), which holds
+				 * init_mutex while waiting for gpu_encode_inactive.
+				 * If the lock is unavailable the encoder is mid-shutdown;
+				 * skip it for this cycle so the cycle can complete and
+				 * signal gpu_encode_inactive, unblocking the stop path.
+				 *
+				 * When the lock is available, snapshot paired_encoders
+				 * under it and addref each weak ref so the backing
+				 * array cannot be freed by obs_encoder_shutdown() on
+				 * another thread between the snapshot and the loop. */
+				if (pthread_mutex_trylock(&encoder->init_mutex) != 0) {
+					continue;
+				}
+
+				DARRAY(obs_weak_encoder_t *) paired_snap;
+				da_init(paired_snap);
+				da_copy(paired_snap, encoder->paired_encoders);
+				for (size_t idx = 0; idx < paired_snap.num; idx++)
+					obs_weak_encoder_addref(paired_snap.array[idx]);
+				pthread_mutex_unlock(&encoder->init_mutex);
+
+				for (size_t idx = 0; !wait_for_audio && idx < paired_snap.num; idx++) {
+					obs_encoder_t *enc = obs_weak_encoder_get_encoder(paired_snap.array[idx]);
 					if (!enc)
 						continue;
-
-					if (!enc->first_received || enc->first_raw_ts > timestamp) {
+					if (!enc->first_received || enc->first_raw_ts > timestamp)
 						wait_for_audio = true;
-					}
-
 					obs_encoder_release(enc);
 				}
+
+				for (size_t idx = 0; idx < paired_snap.num; idx++)
+					obs_weak_encoder_release(paired_snap.array[idx]);
+				da_free(paired_snap);
 
 				if (wait_for_audio)
 					continue;
