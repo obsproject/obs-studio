@@ -438,12 +438,6 @@ static OSStatus input_callback(void *data, AudioUnitRenderActionFlags *action_fl
 									     : ca->buf_list->mNumberBuffers;
 	audio.format = ca->format;
 	audio.samples_per_sec = ca->sample_rate;
-	static double factor = 0.;
-	static mach_timebase_info_data_t info = {0, 0};
-	if (info.numer == 0 && info.denom == 0) {
-		mach_timebase_info(&info);
-		factor = ((double)info.numer) / info.denom;
-	}
 	audio.timestamp = AudioConvertHostTimeToNanos(ts_data->mHostTime);
 
 	obs_source_output_audio(ca->source, &audio);
