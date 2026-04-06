@@ -810,6 +810,8 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 
 		pthread_mutex_destroy(&video->gpu_encoder_mutex);
 		pthread_mutex_init_value(&video->gpu_encoder_mutex);
+		for (size_t i = 0; i < video->gpu_encoders.num; i++)
+			obs_weak_encoder_release(video->gpu_encoders.array[i]);
 		da_free(video->gpu_encoders);
 
 		video->gpu_encoder_active = 0;
@@ -3189,10 +3191,15 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 	if (!video->gpu_encoders.num)
 		success = init_gpu_encoding(video);
-	if (success)
-		da_push_back(video->gpu_encoders, &encoder);
-	else
+	if (success) {
+		obs_weak_encoder_t *weak = obs_encoder_get_weak_encoder(encoder);
+		if (weak)
+			da_push_back(video->gpu_encoders, &weak);
+		else
+			success = false;
+	} else {
 		free_gpu_encoding(video);
+	}
 
 	pthread_mutex_unlock(&video->gpu_encoder_mutex);
 	obs_leave_graphics();
@@ -3213,13 +3220,24 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 	os_atomic_dec_long(&video->gpu_encoder_active);
 	video_output_dec_texture_encoders(video->video);
 
+	/* Acquire a second weak ref to use as the search key for da_erase_item.
+	 * The encoder struct is still alive here (the output holds a strong ref),
+	 * so get_weak_encoder is safe to call. */
+	obs_weak_encoder_t *weak = obs_encoder_get_weak_encoder(encoder);
+
 	pthread_mutex_lock(&video->gpu_encoder_mutex);
-	da_erase_item(video->gpu_encoders, &encoder);
+	da_erase_item(video->gpu_encoders, &weak);
 	if (!video->gpu_encoders.num)
 		call_free = true;
 	pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
 	os_event_wait(video->gpu_encode_inactive);
+
+	/* Release the weak ref taken in start_gpu_encode, then the search ref
+	 * taken above. Both must happen after os_event_wait so the GPU thread
+	 * can no longer dereference the stored control pointer. */
+	obs_weak_encoder_release(weak);
+	obs_weak_encoder_release(weak);
 
 	if (call_free) {
 		stop_gpu_encoding_thread(video);
