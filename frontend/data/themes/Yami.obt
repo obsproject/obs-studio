@@ -173,6 +173,9 @@
     --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2px));
     --input_height_half: calc(var(--input_height_base) / 2);
+    --input_width: calc(var(--input_height_base) + calc(var(--input_padding) * 2));
+
+    --context_height: calc(var(--input_height) + calc(var(--input_padding) * 4));
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey7);
@@ -208,8 +211,8 @@
     --tab_border_focus: var(--primary_lighter);
     --tab_border_selected: var(--primary);
 
-    --tab_padding_base: calc(5px + var(--padding_base));
-    --tab_padding_large: calc(9px + var(--padding_base));
+    --tab_padding_base: var(--padding_large);
+    --tab_padding_large: calc(0px + var(--padding_wide));
 
     --preview_scale_width: calc(calc(var(--input_text_padding) * 3.5) * calc(var(--font_base_value) / 10));
 
@@ -851,8 +854,9 @@ OBSDock QLabel {
 }
 
 QDockWidget {
-    font-size: var(--font_base);
+    font-size: var(--font_small);
     font-weight: bold;
+    color: var(--text_light);
 
     titlebar-close-icon: url(theme:Dark/close.svg);
     titlebar-normal-icon: url(theme:Dark/popout.svg);
@@ -860,8 +864,9 @@ QDockWidget {
 
 QDockWidget::title {
     text-align: left;
-    background-color: var(--button_bg);
-    padding: var(--padding_large);
+    background-color: var(--grey5);
+    border: 1px solid var(--grey4);
+    padding: var(--padding_base) var(--padding_large);
     border-top-left-radius: var(--border_radius);
     border-top-right-radius: var(--border_radius);
 }
@@ -1085,15 +1090,21 @@ QTabWidget::pane {
 
 QTabBar {
     outline: none;
+    font-size: var(--font_small);
+}
+
+QTabBar::top {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::bottom {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
 QTabWidget::tab-bar {
     alignment: left;
-}
-
-QTabBar QToolButton {
-    background: var(--button_bg);
-    border: none;
 }
 
 QTabBar::tab:top {
@@ -1108,13 +1119,12 @@ QTabBar::tab:bottom {
 
 QTabBar::tab {
     background: var(--tab_bg);
-    color: var(--text);
-    border: none;
+    color: var(--text_muted);
+    border: 1px solid var(--tab_bg);
     padding: var(--tab_padding_base) var(--tab_padding_large);
     min-width: 50px;
     margin: 1px 0px;
     margin-right: 2px;
-    border: 1px solid var(--tab_border);
 }
 
 QTabBar::tab:pressed {
@@ -1132,22 +1142,21 @@ QTabBar::tab:focus {
 }
 
 QTabBar::tab:selected {
-    background: var(--tab_bg_down);
+    background: var(--primary);
     color: var(--text);
+    border: 1px solid var(--primary_light);
 }
 
 QTabBar::tab:top {
-    border-bottom: 0px solid transparent;
     margin-bottom: 0px;
 }
 
 QTabBar::tab:bottom {
-    border-top: 0px solid transparent;
     margin-top: 0px;
 }
 
 QTabBar QToolButton {
-    background: var(--button_bg);
+    background: var(--tab_bg);
     min-width: 16px;
     padding: 0px;
 }
@@ -1276,8 +1285,9 @@ QDoubleSpinBox {
     background-color: var(--input_bg);
     border: var(--input_border_width) solid var(--input_bg);
     border-radius: var(--border_radius);
-    padding: var(--input_padding) var(--input_text_padding);
-    height: var(--input_height);
+    min-width: var(--input_width);
+    padding: var(--input_padding) 0px var(--input_padding) var(--input_padding);
+    padding-left: var(--input_text_padding);
     max-height: var(--input_height);
 }
 
