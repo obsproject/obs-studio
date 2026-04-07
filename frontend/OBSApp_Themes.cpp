@@ -501,23 +501,31 @@ static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars, OBSThe
 		return true;
 
 	QString key = var.value.toString();
-	while (vars[key].type == OBSThemeVariable::Alias) {
-		key = vars[key].value.toString();
+	if (key.isEmpty() || key.isNull()) {
+		blog(LOG_ERROR, R"(Variable key for %s is empty or null)", QT_TO_UTF8(var.name));
+		return false;
+	}
 
+	while (true) {
 		if (!vars.contains(key)) {
 			blog(LOG_ERROR, R"(Variable "%s" (aliased by "%s") does not exist!)", QT_TO_UTF8(key),
 			     QT_TO_UTF8(var.name));
 			return false;
 		}
+
+		const OBSThemeVariable &resolved = vars.value(key);
+
+		if (resolved.type != OBSThemeVariable::Alias) {
+			var = resolved;
+			return true;
+		}
+
+		key = resolved.value.toString();
 	}
-
-	var = vars[key];
-
-	return true;
 }
 
-static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var,
-			const OBSThemeVariable::VariableType type, const int recursion = 0);
+static std::optional<QString> EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var,
+				       const OBSThemeVariable::VariableType type, const int recursion = 0);
 
 static OBSThemeVariable ParseMathVariable(const QHash<QString, OBSThemeVariable> &vars, const QString &value,
 					  const int recursion = 0)
@@ -550,8 +558,9 @@ static OBSThemeVariable ParseMathVariable(const QHash<QString, OBSThemeVariable>
 		/* Handle nested math calculations */
 		if (var.type == OBSThemeVariable::Calc || var.type == OBSThemeVariable::Max ||
 		    var.type == OBSThemeVariable::Min) {
-			QString val = EvalMath(vars, var, var.type, recursion + 1);
-			var = ParseMathVariable(vars, val);
+			auto result = EvalMath(vars, var, var.type, recursion + 1);
+			QString val = result.has_value() ? result.value() : QString();
+			var = ParseMathVariable(vars, val, recursion + 1);
 		}
 
 		/* Only number or size would be valid here */
@@ -565,51 +574,53 @@ static OBSThemeVariable ParseMathVariable(const QHash<QString, OBSThemeVariable>
 	return var;
 }
 
-static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var,
-			const OBSThemeVariable::VariableType type, const int recursion)
+static std::optional<QString> EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBSThemeVariable &var,
+				       const OBSThemeVariable::VariableType type, const int recursion)
 {
-	if (recursion >= 10) {
-		/* Abort after 10 levels of recursion */
+	if (recursion >= 30) {
+		/* Abort after 30 levels of recursion */
 		blog(LOG_ERROR, "Maximum recursion levels hit!");
-		return "'Invalid expression'";
+		return std::nullopt;
 	}
 
 	if (type != OBSThemeVariable::Calc && type != OBSThemeVariable::Max && type != OBSThemeVariable::Min) {
 		blog(LOG_ERROR, "Invalid type for math operation!");
-		return "'Invalid expression'";
+		return std::nullopt;
 	}
 
 	QStringList args = var.value.toStringList();
-	QString &opt = args[1];
-	if (type == OBSThemeVariable::Calc && (opt != '*' && opt != '+' && opt != '-' && opt != '/')) {
-		blog(LOG_ERROR, "Unknown/invalid calc() operator: %s", QT_TO_UTF8(opt));
-		return "'Invalid expression'";
-	}
-
-	if ((type == OBSThemeVariable::Max || type == OBSThemeVariable::Min) && opt != ',') {
-		blog(LOG_ERROR, "Invalid math separator: %s", QT_TO_UTF8(opt));
-		return "'Invalid expression'";
-	}
 
 	if (args.length() != 3) {
 		blog(LOG_ERROR, "Math parse had invalid number of arguments: %lld (%s)", args.length(),
 		     QT_TO_UTF8(args.join(", ")));
-		return "'Invalid expression'";
+		return std::nullopt;
+	}
+
+	QString &opt = args[1];
+	if (type == OBSThemeVariable::Calc && (opt != '*' && opt != '+' && opt != '-' && opt != '/')) {
+		blog(LOG_ERROR, "Unknown/invalid calc() operator: %s", QT_TO_UTF8(opt));
+		return std::nullopt;
+	}
+
+	if ((type == OBSThemeVariable::Max || type == OBSThemeVariable::Min) && opt != ',') {
+		blog(LOG_ERROR, "Invalid math separator: %s", QT_TO_UTF8(opt));
+		return std::nullopt;
 	}
 
 	OBSThemeVariable val1, val2;
 	try {
-		val1 = ParseMathVariable(vars, args[0], 0);
-		val2 = ParseMathVariable(vars, args[2], 0);
+		val1 = ParseMathVariable(vars, args[0], recursion + 1);
+		val2 = ParseMathVariable(vars, args[2], recursion + 1);
 	} catch (...) {
-		return "'Invalid expression'";
+		blog(LOG_ERROR, "EvalMath exception");
+		return std::nullopt;
 	}
 
 	/* Ensure that suffixes match (if any) */
 	if (!val1.suffix.isEmpty() && !val2.suffix.isEmpty() && val1.suffix != val2.suffix) {
 		blog(LOG_ERROR, "Math operation requires suffixes to match or only one to be present! %s != %s",
 		     QT_TO_UTF8(val1.suffix), QT_TO_UTF8(val2.suffix));
-		return "'Invalid expression'";
+		return std::nullopt;
 	}
 
 	double d1 = val1.userValue.isValid() ? val1.userValue.toDouble() : val1.value.toDouble();
@@ -620,7 +631,7 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 		     "At least one invalid math value:"
 		     " op1: %f, op2: %f",
 		     d1, d2);
-		return "'Invalid expression'";
+		return std::nullopt;
 	}
 
 	double val = numeric_limits<double>::quiet_NaN();
@@ -638,7 +649,7 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 		if (!isnormal(val)) {
 			blog(LOG_ERROR, "Invalid calc() resulted in non-normal number: %f %s %f = %f", d1,
 			     QT_TO_UTF8(opt), d2, val);
-			return "'Invalid expression'";
+			return std::nullopt;
 		}
 	} else if (type == OBSThemeVariable::Max) {
 		val = d1 > d2 ? d1 : d2;
@@ -701,7 +712,8 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars, const QS
 			replace = value.value<QColor>().name(QColor::HexRgb);
 		} else if (var.type == OBSThemeVariable::Calc || var.type == OBSThemeVariable::Max ||
 			   var.type == OBSThemeVariable::Min) {
-			replace = EvalMath(vars, var, var.type);
+			auto result = EvalMath(vars, var, var.type);
+			replace = result.has_value() ? result.value() : replace;
 		} else if (var.type == OBSThemeVariable::Size || var.type == OBSThemeVariable::Number) {
 			double val = value.toDouble();
 
