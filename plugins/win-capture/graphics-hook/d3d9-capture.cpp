@@ -31,6 +31,7 @@ struct d3d9_data {
 	D3DFORMAT d3d9_format;
 	DXGI_FORMAT dxgi_format;
 	bool using_shtex;
+	bool d3d9_multisampled;
 
 	/* shared texture */
 	IDirect3DSurface9 *d3d9_copytex;
@@ -43,6 +44,7 @@ struct d3d9_data {
 
 	/* shared memory */
 	IDirect3DSurface9 *copy_surfaces[NUM_BUFFERS];
+	IDirect3DSurface9 *intermediate_surfaces[NUM_BUFFERS];
 	IDirect3DQuery9 *queries[NUM_BUFFERS];
 	struct shmem_data *shmem_info;
 	bool texture_mapped[NUM_BUFFERS];
@@ -74,6 +76,8 @@ static void d3d9_free()
 					data.copy_surfaces[i]->UnlockRect();
 				data.copy_surfaces[i]->Release();
 			}
+			if (data.intermediate_surfaces[i])
+				data.intermediate_surfaces[i]->Release();
 			if (data.queries[i])
 				data.queries[i]->Release();
 		}
@@ -87,7 +91,7 @@ static void d3d9_free()
 static DXGI_FORMAT d3d9_to_dxgi_format(D3DFORMAT format)
 {
 	switch (format) {
-	case D3DFMT_A2B10G10R10:
+	case D3DFMT_A2R10G10B10:
 		return DXGI_FORMAT_R10G10B10A2_UNORM;
 	case D3DFMT_A8R8G8B8:
 		return DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -205,6 +209,18 @@ static inline bool d3d9_shtex_init_shtex()
 	return true;
 }
 
+static inline D3DFORMAT get_dxgi_compatible_format(const D3DFORMAT format)
+{
+	if (format == D3DFMT_A2R10G10B10)
+		return D3DFMT_A2B10G10R10;
+	return format;
+}
+
+static inline bool d3d9_shmem_needs_intermediate()
+{
+	return data.d3d9_multisampled || get_dxgi_compatible_format(data.d3d9_format) != data.d3d9_format;
+}
+
 static inline bool d3d9_shtex_init_copytex()
 {
 	struct d3d9_offsets offsets = global_hook_info->offsets.d3d9;
@@ -236,8 +252,9 @@ static inline bool d3d9_shtex_init_copytex()
 		memcpy(patch_addr, patch[data.patch].data, patch_size);
 	}
 
-	hr = data.device->CreateTexture(data.cx, data.cy, 1, D3DUSAGE_RENDERTARGET, data.d3d9_format, D3DPOOL_DEFAULT,
-					&tex, &data.handle);
+	hr = data.device->CreateTexture(data.cx, data.cy, 1, D3DUSAGE_RENDERTARGET,
+					get_dxgi_compatible_format(data.d3d9_format), D3DPOOL_DEFAULT, &tex,
+					&data.handle);
 
 	if (p_is_d3d9) {
 		*p_is_d3d9 = was_d3d9ex;
@@ -289,7 +306,18 @@ static bool d3d9_shmem_init_buffers(size_t buffer)
 {
 	HRESULT hr;
 
-	hr = data.device->CreateOffscreenPlainSurface(data.cx, data.cy, data.d3d9_format, D3DPOOL_SYSTEMMEM,
+	D3DFORMAT copy_format = data.d3d9_format;
+	if (d3d9_shmem_needs_intermediate()) {
+		copy_format = get_dxgi_compatible_format(copy_format);
+		hr = data.device->CreateRenderTarget(data.cx, data.cy, copy_format, D3DMULTISAMPLE_NONE, 0, FALSE,
+						     &data.intermediate_surfaces[buffer], nullptr);
+		if (FAILED(hr)) {
+			hlog_hr("d3d9_shmem_init_buffers: Failed to create intermediate render target", hr);
+			return false;
+		}
+	}
+
+	hr = data.device->CreateOffscreenPlainSurface(data.cx, data.cy, copy_format, D3DPOOL_SYSTEMMEM,
 						      &data.copy_surfaces[buffer], nullptr);
 	if (FAILED(hr)) {
 		hlog_hr("d3d9_shmem_init_buffers: Failed to create surface", hr);
@@ -388,6 +416,7 @@ static bool d3d9_init_format_backbuffer(HWND &window)
 
 	data.d3d9_format = desc.Format;
 	data.dxgi_format = d3d9_to_dxgi_format(desc.Format);
+	data.d3d9_multisampled = desc.MultiSampleType != D3DMULTISAMPLE_NONE;
 	window = pp.hDeviceWindow;
 
 	data.cx = desc.Width;
@@ -406,6 +435,7 @@ static bool d3d9_init_format_swapchain(HWND &window)
 
 	data.dxgi_format = d3d9_to_dxgi_format(pp.BackBufferFormat);
 	data.d3d9_format = pp.BackBufferFormat;
+	data.d3d9_multisampled = pp.MultiSampleType != D3DMULTISAMPLE_NONE;
 	window = pp.hDeviceWindow;
 
 	data.cx = pp.BackBufferWidth;
@@ -521,11 +551,24 @@ static inline void d3d9_shmem_capture(IDirect3DSurface9 *backbuffer)
 			shmem_texture_data_unlock(data.cur_tex);
 		}
 
-		hr = data.device->GetRenderTargetData(src, dst);
-		if (FAILED(hr)) {
-			hlog_hr("d3d9_shmem_capture: GetRenderTargetData "
-				"failed",
-				hr);
+		if (d3d9_shmem_needs_intermediate()) {
+			IDirect3DSurface9 *intermediate = data.intermediate_surfaces[data.cur_tex];
+			hr = data.device->StretchRect(src, nullptr, intermediate, nullptr, D3DTEXF_NONE);
+			if (FAILED(hr)) {
+				hlog_hr("d3d9_shmem_capture: StretchRect failed", hr);
+
+			} else {
+				hr = data.device->GetRenderTargetData(intermediate, dst);
+				if (FAILED(hr)) {
+					hlog_hr("d3d9_shmem_capture: GetRenderTargetData (intermediate) failed", hr);
+				}
+			}
+
+		} else {
+			hr = data.device->GetRenderTargetData(src, dst);
+			if (FAILED(hr)) {
+				hlog_hr("d3d9_shmem_capture: GetRenderTargetData failed", hr);
+			}
 		}
 
 		data.queries[data.cur_tex]->Issue(D3DISSUE_END);
@@ -543,7 +586,7 @@ static void d3d9_capture(IDirect3DDevice9 *device, IDirect3DSurface9 *backbuffer
 	if (capture_should_init()) {
 		d3d9_init(device);
 	}
-	if (data.handle != nullptr && capture_ready()) {
+	if ((data.using_shtex ? data.handle : data.shmem_info) != nullptr && capture_ready()) {
 		if (data.device != device) {
 			d3d9_free();
 			return;
