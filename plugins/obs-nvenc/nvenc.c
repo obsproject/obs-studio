@@ -98,8 +98,17 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		enc->props.bitrate = obs_data_get_int(settings, "bitrate");
 		enc->props.max_bitrate = obs_data_get_int(settings, "max_bitrate");
 
+		bool cqvbr = astrcmpi(enc->props.rate_control, "CQVBR") == 0;
 		bool vbr = (enc->config.rcParams.rateControlMode == NV_ENC_PARAMS_RC_VBR);
-		enc->config.rcParams.averageBitRate = (uint32_t)enc->props.bitrate * 1000;
+
+		if (cqvbr) {
+			enc->config.rcParams.targetQuality = (uint8_t)obs_data_get_int(settings, "target_quality");
+			enc->config.rcParams.averageBitRate = 0;
+		} else {
+			enc->config.rcParams.targetQuality = 0;
+			enc->config.rcParams.averageBitRate = (uint32_t)enc->props.bitrate * 1000;
+		}
+
 		enc->config.rcParams.maxBitRate = vbr ? (uint32_t)enc->props.max_bitrate * 1000
 						      : (uint32_t)enc->props.bitrate * 1000;
 
