@@ -31,6 +31,7 @@
 
 #include <deque>
 #include <functional>
+#include <unordered_map>
 
 class ThumbnailView;
 
