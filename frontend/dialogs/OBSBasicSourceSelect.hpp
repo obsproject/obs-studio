@@ -29,12 +29,6 @@
 #include <QButtonGroup>
 #include <QDialog>
 
-constexpr int UNVERSIONED_ID_ROLE = Qt::UserRole + 1;
-constexpr int DEPRECATED_ROLE = Qt::UserRole + 2;
-
-constexpr const char *RECENT_TYPE_ID = "_recent";
-constexpr int RECENT_LIST_LIMIT = 16;
-
 class OBSBasicSourceSelect : public QDialog {
 	Q_OBJECT
 
@@ -51,7 +45,7 @@ protected:
 
 private:
 	std::unique_ptr<Ui::OBSBasicSourceSelect> ui;
-	QString selectedTypeId{RECENT_TYPE_ID};
+	QString selectedTypeId;
 	undo_stack &undo_s;
 
 	QPointer<QButtonGroup> sourceButtons;
@@ -73,14 +67,14 @@ private:
 
 	int lastSelectedIndex = -1;
 	std::vector<std::string> selectedItems;
-	void addSelectedItem(std::string uuid);
-	void removeSelectedItem(std::string uuid);
+	void addSelectedItem(const std::string &uuid);
+	void removeSelectedItem(const std::string &uuid);
 	void clearSelectedItems();
 
-	SourceSelectButton *findButtonForUuid(std::string uuid);
+	SourceSelectButton *findButtonForUuid(const std::string &uuid);
 
 	void createNew();
-	void addExisting(std::string uuid, bool visible);
+	void addExisting(const std::string &uuid, bool visible);
 
 	void updateButtonVisibility();
 

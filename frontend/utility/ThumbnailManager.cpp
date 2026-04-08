@@ -25,14 +25,41 @@
 
 #include <QImageWriter>
 
-constexpr int MIN_THUMBNAIL_UPDATE_INTERVAL_MS = 100;
-constexpr int THUMBNAIL_UPDATE_INTERVAL_MS = 5000;
+constexpr int kMinimumThumbnailUpdateInterval = 100;
+constexpr int kThumbnailUpdateInterval = 5000;
+
+void ThumbnailManager::ThumbnailCache::put(const std::string &key, const QPixmap &value)
+{
+	auto it = cacheMap.find(key);
+	if (it != cacheMap.end()) {
+		cacheList.erase(it->second);
+		cacheMap.erase(it);
+	}
+	cacheList.push_front(CacheEntry{key, value});
+	cacheMap[key] = cacheList.begin();
+	if (cacheMap.size() > maxSize) {
+		const CacheEntry &lastEntry = cacheList.back();
+		cacheMap.erase(lastEntry.first);
+		cacheList.pop_back();
+	}
+}
+
+std::optional<QPixmap> ThumbnailManager::ThumbnailCache::get(const std::string &key)
+{
+	auto it = cacheMap.find(key);
+	if (it == cacheMap.end()) {
+		return std::nullopt;
+	}
+
+	std::list<CacheEntry>::iterator entry = it->second;
+	return entry->second;
+}
 
 ThumbnailManager::ThumbnailManager(QObject *parent) : QObject(parent)
 {
 	elapsedTimer.start();
 	connect(&updateTimer, &QTimer::timeout, this, &ThumbnailManager::updateTick);
-	updateTickInterval(MIN_THUMBNAIL_UPDATE_INTERVAL_MS);
+	updateTickInterval(kMinimumThumbnailUpdateInterval);
 
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_destroy", &ThumbnailManager::obsSourceRemoved,
 				    this);
@@ -53,7 +80,7 @@ QPointer<ThumbnailView> ThumbnailManager::createView(QWidget *parent, obs_source
 
 	std::string uuid{uuidPointer};
 
-	auto item = getThumbnailItem(uuid);
+	QPointer<ThumbnailItem> item = getThumbnailItem(uuid);
 	ThumbnailView *view = item->createView(parent);
 
 	connect(view, &ThumbnailView::updateRequested, this, [this](std::string uuid) {
@@ -76,7 +103,7 @@ void ThumbnailManager::createThumbnailItem(const std::string &uuid)
 
 	if (item->isDefaultPixmap()) {
 		updateQueue.push_front(uuid);
-		updateTickInterval(MIN_THUMBNAIL_UPDATE_INTERVAL_MS);
+		updateTickInterval(kMinimumThumbnailUpdateInterval);
 	} else {
 		updateQueue.push_back(uuid);
 	}
@@ -97,12 +124,14 @@ QPointer<ThumbnailItem> ThumbnailManager::getThumbnailItem(const std::string &uu
 void ThumbnailManager::obsSourceRemoved(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
-	auto uuidPointer = obs_source_get_uuid(source);
+	const char *uuidPointer = obs_source_get_uuid(source);
 
-	if (uuidPointer) {
-		QMetaObject::invokeMethod(static_cast<ThumbnailManager *>(data), "deleteItemById", Qt::QueuedConnection,
-					  Q_ARG(QString, QString::fromStdString(uuidPointer)));
+	if (!uuidPointer) {
+		return;
 	}
+
+	QMetaObject::invokeMethod(static_cast<ThumbnailManager *>(data), "deleteItemById", Qt::QueuedConnection,
+				  Q_ARG(QString, QString::fromStdString(uuidPointer)));
 }
 
 bool ThumbnailManager::updateItem(ThumbnailItem *item)
@@ -159,9 +188,9 @@ void ThumbnailManager::updateNextItem(size_t cycleDepth)
 		}
 	}
 
-	int nextIntervalMS = MIN_THUMBNAIL_UPDATE_INTERVAL_MS;
+	int nextIntervalMS = kMinimumThumbnailUpdateInterval;
 	if (priorityQueue.size() == 0 && !quickUpdate) {
-		nextIntervalMS = THUMBNAIL_UPDATE_INTERVAL_MS;
+		nextIntervalMS = kThumbnailUpdateInterval;
 	}
 
 	updateTickInterval(nextIntervalMS);
@@ -198,7 +227,7 @@ void ThumbnailManager::addToPriorityQueue(const std::string &uuid, bool immediat
 		priorityQueue.push_front(std::string(uuid));
 
 		qint64 elapsed = elapsedTimer.elapsed();
-		if (elapsed > MIN_THUMBNAIL_UPDATE_INTERVAL_MS) {
+		if (elapsed > kMinimumThumbnailUpdateInterval) {
 			updateTick();
 		}
 	} else {
@@ -229,7 +258,7 @@ void ThumbnailManager::deleteItemById(QString uuid_)
 	if (entry != thumbnailList.end()) {
 		removeIdFromQueues(uuid);
 
-		auto item = entry->second;
+		QPointer<ThumbnailItem> item = entry->second;
 
 		if (item && !item->isDefaultPixmap()) {
 			std::string uuid = item->getUuid();

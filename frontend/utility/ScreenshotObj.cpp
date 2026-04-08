@@ -35,7 +35,7 @@
 namespace {
 void renderTick(void *param, float)
 {
-	auto *self = static_cast<ScreenshotObj *>(param);
+	ScreenshotObj *self = static_cast<ScreenshotObj *>(param);
 	if (self->stage() == ScreenshotObj::Stage::Finished) {
 		return;
 	}
@@ -104,9 +104,11 @@ void ScreenshotObj::renderScreenshot()
 		vec4 zero;
 		vec4_zero(&zero);
 
-		int x, y;
-		int scaledWidth, scaledHeight;
-		float scale;
+		int x{0};
+		int y{0};
+		int scaledWidth{0};
+		int scaledHeight{0};
+		float scale{0.0};
 
 		GetScaleAndCenterPos(sourceWidth, sourceHeight, outputWidth, outputHeight, x, y, scale);
 
@@ -177,7 +179,7 @@ void ScreenshotObj::copyData()
 			const uint32_t linesize = outputWidth * 8;
 			half_bytes.reserve(outputWidth * outputHeight * 8);
 
-			for (uint32_t y = 0; y < outputHeight; y++) {
+			for (uint32_t y = 0; y < outputHeight; ++y) {
 				const uint8_t *const line = videoData + (y * videoLinesize);
 				half_bytes.insert(half_bytes.end(), line, line + linesize);
 			}
@@ -185,8 +187,9 @@ void ScreenshotObj::copyData()
 			image = QImage(outputWidth, outputHeight, QImage::Format::Format_RGBX8888);
 
 			int linesize = image.bytesPerLine();
-			for (int y = 0; y < (int)outputHeight; y++)
+			for (int y = 0; y < (int)outputHeight; ++y) {
 				memcpy(image.scanLine(y), videoData + (y * videoLinesize), linesize);
+			}
 		}
 
 		gs_stagesurface_unmap(stagesurf);
@@ -218,7 +221,7 @@ void ScreenshotObj::saveToFile()
 	path = GetOutputFilename(rec_path, ext, noSpace, overwriteIfExists,
 				 GetFormatString(filenameFormat, "Screenshot", nullptr).c_str());
 
-	th = std::thread([this] {
+	thread = std::thread([this] {
 		muxFile();
 		QMetaObject::invokeMethod(this, &ScreenshotObj::onFinished, Qt::QueuedConnection);
 	});
@@ -344,11 +347,11 @@ void ScreenshotObj::muxFile()
 
 void ScreenshotObj::onFinished()
 {
-	if (th.joinable()) {
-		th.join();
+	if (thread.joinable()) {
+		thread.join();
 	}
 
-	if (outputWidth && outputHeight) {
+	if (outputWidth > 0 && outputHeight > 0) {
 		if (outputToFile) {
 			OBSBasic *main = OBSBasic::Get();
 			main->ShowStatusBarMessage(

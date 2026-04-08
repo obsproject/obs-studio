@@ -34,10 +34,10 @@ class SourceSelectButton : public QAbstractButton {
 	Q_OBJECT
 
 public:
-	SourceSelectButton(OBSWeakSource source, QWidget *parent = nullptr);
+	SourceSelectButton(OBSWeakSource weak, QWidget *parent = nullptr);
 	~SourceSelectButton();
 
-	std::string uuid() const { return sourceUuid; };
+	std::string_view uuid() const { return sourceUuid; };
 
 	void setThumbnailEnabled(bool enabled);
 	void updateThumbnail();

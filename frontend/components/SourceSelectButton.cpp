@@ -30,20 +30,13 @@
 
 SourceSelectButton::SourceSelectButton(OBSWeakSource weak, QWidget *parent) : QAbstractButton(parent), weakSource(weak)
 {
-	OBSSource source{OBSGetStrongRef(weak)};
-
-	if (!source || !weakSource) {
+	OBSSource source = OBSGetStrongRef(weak);
+	if (!source) {
 		return;
 	}
 
+	sourceUuid = obs_source_get_uuid(source);
 	const char *sourceName = obs_source_get_name(source);
-	const char *uuid = obs_source_get_uuid(source);
-
-	if (!sourceName || !uuid) {
-		return;
-	}
-
-	sourceUuid = uuid;
 
 	setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -67,7 +60,7 @@ SourceSelectButton::SourceSelectButton(OBSWeakSource weak, QWidget *parent) : QA
 	image->setMaximumSize(160, 90);
 	image->setAlignment(Qt::AlignCenter);
 
-	thumbnail = OBSBasic::Get()->thumbnails()->createView(this, source);
+	thumbnail = App()->thumbnails()->createView(this, source);
 	connect(thumbnail, &ThumbnailView::updated, this, &SourceSelectButton::updatePixmap);
 	updatePixmap(thumbnail->getPixmap());
 
@@ -130,7 +123,7 @@ void SourceSelectButton::resizeEvent(QResizeEvent *)
 	right = std::max(0, right);
 	bottom = std::max(0, bottom);
 
-	if (auto layout = this->layout()) {
+	if (QLayout *layout = this->layout()) {
 		layout->setContentsMargins(left, top, right, bottom);
 	}
 }
@@ -159,10 +152,12 @@ void SourceSelectButton::obsSourceRemoved(void *data, calldata_t *)
 void SourceSelectButton::obsSourceRenamed(void *data, calldata_t *params)
 {
 	const char *newNamePtr = static_cast<const char *>(calldata_ptr(params, "new_name"));
-	std::string newName = newNamePtr;
+	if (!newNamePtr) {
+		return;
+	}
 
 	QMetaObject::invokeMethod(static_cast<SourceSelectButton *>(data), "handleSourceRenamed", Qt::QueuedConnection,
-				  Q_ARG(QString, QString::fromStdString(newName)));
+				  Q_ARG(QString, QString::fromUtf8(newNamePtr)));
 }
 
 void SourceSelectButton::handleSourceRemoved()
@@ -187,7 +182,7 @@ void SourceSelectButton::mouseMoveEvent(QMouseEvent *event)
 
 	QMimeData *mimeData = new QMimeData;
 
-	mimeData->setData("application/x-obs-source-uuid", sourceUuid.c_str());
+	mimeData->setData("application/x-obs-source-uuid", sourceUuid.data());
 
 	QDrag *drag = new QDrag(this);
 	drag->setMimeData(mimeData);
@@ -221,6 +216,7 @@ void SourceSelectButton::updateThumbnail()
 void SourceSelectButton::updatePixmap(QPixmap pixmap)
 {
 	if (!pixmap.isNull()) {
-		image->setPixmap(pixmap.scaled(160, 90, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+		image->setPixmap(
+			pixmap.scaled(image->width(), image->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 	}
 }
