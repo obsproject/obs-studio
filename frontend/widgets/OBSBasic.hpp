@@ -26,7 +26,6 @@
 #include <utility/BasicOutputHandler.hpp>
 #include <utility/OBSCanvas.hpp>
 #include <utility/PreviewProgramSizeObserver.hpp>
-#include <utility/ThumbnailManager.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
 #include <utility/undo_stack.hpp>
@@ -284,8 +283,6 @@ private:
 	// TODO: Remove, orphaned instance method
 	void LoadProject();
 
-	ThumbnailManager *thumbnailManager = nullptr;
-
 public slots:
 	void close();
 	void UpdatePatronJson(const QString &text, const QString &error);
@@ -319,8 +316,6 @@ public:
 	inline bool isClosing() { return isClosing_; }
 	inline bool isClosePromptOpen() { return isClosePromptOpen_; }
 	void closeWindow();
-
-	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 protected:
 	bool isReadyToClose();

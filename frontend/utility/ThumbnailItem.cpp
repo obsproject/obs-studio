@@ -35,7 +35,7 @@ ThumbnailItem::ThumbnailItem(const std::string &uuid, ThumbnailManager *manager)
 
 	weakSource = OBSGetWeakRef(source);
 
-	auto cachedPixmap = manager->getCachedPixmap(uuid);
+	std::optional<QPixmap> cachedPixmap = manager->getCachedPixmap(uuid);
 	if (cachedPixmap.has_value()) {
 		setPixmap(cachedPixmap.value());
 		isDefaultPixmap_ = false;
@@ -53,22 +53,22 @@ ThumbnailItem::~ThumbnailItem() {}
 QPixmap ThumbnailItem::getDefaultThumbnail(obs_source_t *source)
 {
 	const char *id = obs_source_get_id(source);
-	auto main = App()->GetMainWindow();
+	OBSBasic *main = OBSBasic::Get();
 	if (main && id) {
 		QIcon icon = OBSBasic::Get()->GetSourceIcon(id);
 		QPixmap iconPixmap = icon.pixmap(90, 90);
 
-		QPixmap base(ThumbnailView::cx, ThumbnailView::cy);
-		base.fill(Qt::transparent);
+		QPixmap defaultPixmap(ThumbnailView::cx, ThumbnailView::cy);
+		defaultPixmap.fill(Qt::transparent);
 
-		QPainter painter(&base);
+		QPainter painter(&defaultPixmap);
 
-		const int x = (base.width() - iconPixmap.width()) / 2;
-		const int y = (base.height() - iconPixmap.height()) / 2;
+		const int x = (defaultPixmap.width() - iconPixmap.width()) / 2;
+		const int y = (defaultPixmap.height() - iconPixmap.height()) / 2;
 
 		painter.drawPixmap(x, y, iconPixmap);
 
-		return base;
+		return defaultPixmap;
 	}
 
 	return QPixmap();
@@ -101,7 +101,7 @@ void ThumbnailItem::setPixmap(QPixmap pixmap)
 
 void ThumbnailItem::incrementViewCount()
 {
-	viewCount++;
+	++viewCount;
 }
 
 ThumbnailView *ThumbnailItem::createView(QObject *parent)
@@ -144,7 +144,7 @@ void ThumbnailItem::decrementViewCount()
 
 void ThumbnailItem::incrementEnabledCount()
 {
-	enabledCount++;
+	++enabledCount;
 }
 
 void ThumbnailItem::decrementEnabledCount()
@@ -182,7 +182,7 @@ bool ThumbnailItem::update()
 			return false;
 		}
 
-		auto obj = new ScreenshotObj(source);
+		ScreenshotObj *obj = new ScreenshotObj(source);
 		obj->setSaveToFile(false);
 		obj->setSize(ThumbnailView::cx, ThumbnailView::cy);
 

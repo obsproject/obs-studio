@@ -50,31 +50,8 @@ class ThumbnailManager : public QObject {
 
 		ThumbnailCache(size_t maxSize) : maxSize(maxSize) {}
 
-		void put(const std::string &key, const QPixmap &value)
-		{
-			auto it = cacheMap.find(key);
-			if (it != cacheMap.end()) {
-				cacheList.erase(it->second);
-				cacheMap.erase(it);
-			}
-			cacheList.push_front(CacheEntry{key, value});
-			cacheMap[key] = cacheList.begin();
-			if (cacheMap.size() > maxSize) {
-				const CacheEntry &lastEntry = cacheList.back();
-				cacheMap.erase(lastEntry.first);
-				cacheList.pop_back();
-			}
-		}
-		std::optional<QPixmap> get(const std::string &key)
-		{
-			auto it = cacheMap.find(key);
-			if (it == cacheMap.end()) {
-				return std::nullopt;
-			}
-
-			std::list<CacheEntry>::iterator entry = it->second;
-			return entry->second;
-		}
+		void put(const std::string &key, const QPixmap &value);
+		std::optional<QPixmap> get(const std::string &key);
 	};
 
 	std::deque<std::string> priorityQueue;

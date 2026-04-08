@@ -929,6 +929,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 #endif
 
 	setDesktopFileName("com.obsproject.Studio");
+
 	pluginManager_ = std::make_unique<OBS::PluginManager>();
 }
 
@@ -1261,6 +1262,8 @@ bool OBSApp::OBSInit()
 	}
 
 	setQuitOnLastWindowClosed(false);
+
+	thumbnailManager = new ThumbnailManager(this);
 
 	mainWindow = new OBSBasic();
 
