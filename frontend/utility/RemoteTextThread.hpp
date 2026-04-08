@@ -33,7 +33,7 @@ class RemoteTextThread : public QThread {
 	void run() override;
 
 signals:
-	void Result(const QString &text, const QString &error);
+	void Result(const std::string &text, const std::string &error);
 
 public:
 	inline RemoteTextThread(std::string url_, std::string contentType_ = std::string(),
