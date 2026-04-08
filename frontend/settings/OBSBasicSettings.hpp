@@ -37,6 +37,39 @@ struct OBSTheme;
 
 std::string DeserializeConfigText(const char *value);
 
+// Structured data for service dropdown items
+struct ServiceItemData {
+	enum class Type {
+		Custom,           // rtmp_custom service
+		ShowAll,          // "Show All" option in dropdown
+		RtmpCommon,       // Standard rtmp_common service (Twitch, YouTube, etc.)
+		CustomServiceType // Custom service types (WHIP, MoQ, etc.)
+	};
+
+	Type type;
+	QString serviceId;   // Service ID: for RtmpCommon this is the service name,
+			     // for CustomServiceType this is the service type ID (e.g., "whip_custom")
+	QString displayName; // Human-readable display name
+
+	ServiceItemData() : type(Type::Custom) {}
+
+	ServiceItemData(Type t, const QString &id = QString(), const QString &name = QString())
+		: type(t),
+		  serviceId(id),
+		  displayName(name)
+	{
+	}
+
+	// Helper methods for easy type checking
+	bool isCustom() const { return type == Type::Custom; }
+	bool isShowAll() const { return type == Type::ShowAll; }
+	bool isRtmpCommon() const { return type == Type::RtmpCommon; }
+	bool isCustomServiceType() const { return type == Type::CustomServiceType; }
+};
+
+// Register with Qt's meta-type system so it can be stored in QVariant
+Q_DECLARE_METATYPE(ServiceItemData)
+
 class OBSBasicSettings : public QDialog {
 	Q_OBJECT
 	Q_PROPERTY(QIcon generalIcon READ GetGeneralIcon WRITE SetGeneralIcon DESIGNABLE true)
@@ -204,7 +237,10 @@ private:
 	/* stream */
 	void InitStreamPage();
 	bool IsCustomService() const;
+	bool IsCustomServiceType() const;
+	QString GetCustomServiceTypeId() const;
 	inline bool IsWHIP() const;
+	int FindService(const std::function<bool(const ServiceItemData &)> &predicate);
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();
