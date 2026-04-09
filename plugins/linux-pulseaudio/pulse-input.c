@@ -240,9 +240,9 @@ static void pulse_server_info(pa_context *c, const pa_server_info *i, void *user
 
 			blog(LOG_DEBUG, "Default input device: '%s'", data->device);
 		} else {
-			char *monitor = bzalloc(strlen(i->default_sink_name) + 9);
-			strcat(monitor, i->default_sink_name);
-			strcat(monitor, ".monitor");
+			size_t monitor_len = strlen(i->default_sink_name) + 9;
+			char *monitor = bzalloc(monitor_len);
+			snprintf(monitor, monitor_len, "%s.monitor", i->default_sink_name);
 
 			data->device = bstrdup(monitor);
 
