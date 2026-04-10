@@ -48,11 +48,7 @@ public:
 	}
 
 	void repolish() { repolish(parent); }
-	static void repolish(QWidget *widget)
-	{
-		widget->style()->unpolish(widget);
-		widget->style()->polish(widget);
-	}
+	static void repolish(QWidget *widget) { widget->style()->polish(widget); }
 
 	// Adds a style class to the widget
 	void addClass(const QString &classname) { addClass(parent, classname); }
