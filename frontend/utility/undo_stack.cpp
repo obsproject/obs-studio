@@ -3,6 +3,7 @@
 #include <OBSApp.hpp>
 
 #include "moc_undo_stack.cpp"
+#include "qt-wrappers.hpp"
 
 #define MAX_STACK_SIZE 5000
 
@@ -58,7 +59,7 @@ void undo_stack::add_action(const QString &name, const undo_redo_cb &undo, const
 	undo_items.push_front(n);
 	clear_redo();
 
-	ui->actionMainUndo->setText(QTStr("Undo.Item.Undo").arg(name));
+	ui->actionMainUndo->setText(QTStr("Undo.Item.Undo").arg(EscapeMenuItem(name)));
 	ui->actionMainUndo->setEnabled(true);
 
 	ui->actionMainRedo->setText(QTStr("Undo.Redo"));
@@ -77,14 +78,14 @@ void undo_stack::undo()
 	redo_items.push_front(temp);
 	undo_items.pop_front();
 
-	ui->actionMainRedo->setText(QTStr("Undo.Item.Redo").arg(temp.name));
+	ui->actionMainRedo->setText(QTStr("Undo.Item.Redo").arg(EscapeMenuItem(temp.name)));
 	ui->actionMainRedo->setEnabled(true);
 
 	if (undo_items.size() == 0) {
 		ui->actionMainUndo->setDisabled(true);
 		ui->actionMainUndo->setText(QTStr("Undo.Undo"));
 	} else {
-		ui->actionMainUndo->setText(QTStr("Undo.Item.Undo").arg(undo_items.front().name));
+		ui->actionMainUndo->setText(QTStr("Undo.Item.Undo").arg(EscapeMenuItem(undo_items.front().name)));
 	}
 }
 
@@ -100,14 +101,14 @@ void undo_stack::redo()
 	undo_items.push_front(temp);
 	redo_items.pop_front();
 
-	ui->actionMainUndo->setText(QTStr("Undo.Item.Undo").arg(temp.name));
+	ui->actionMainUndo->setText(QTStr("Undo.Item.Undo").arg(EscapeMenuItem(temp.name)));
 	ui->actionMainUndo->setEnabled(true);
 
 	if (redo_items.size() == 0) {
 		ui->actionMainRedo->setDisabled(true);
 		ui->actionMainRedo->setText(QTStr("Undo.Redo"));
 	} else {
-		ui->actionMainRedo->setText(QTStr("Undo.Item.Redo").arg(redo_items.front().name));
+		ui->actionMainRedo->setText(QTStr("Undo.Item.Redo").arg(EscapeMenuItem(redo_items.front().name)));
 	}
 }
 

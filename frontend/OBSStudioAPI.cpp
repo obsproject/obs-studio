@@ -147,7 +147,7 @@ void OBSStudioAPI::obs_frontend_set_current_scene_collection(const char *collect
 		QVariant v = action->property("file_name");
 
 		if (v.typeName() != nullptr) {
-			if (action->text() == qstrCollection) {
+			if (action->property("collection_name").toString() == qstrCollection) {
 				action->trigger();
 				break;
 			}
@@ -195,7 +195,7 @@ void OBSStudioAPI::obs_frontend_set_current_profile(const char *profile)
 		QVariant v = action->property("file_name");
 
 		if (v.typeName() != nullptr) {
-			if (action->text() == qstrProfile) {
+			if (action->property("profile_name").toString() == qstrProfile) {
 				action->trigger();
 				break;
 			}
