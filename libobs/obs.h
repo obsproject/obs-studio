@@ -714,6 +714,9 @@ EXPORT video_t *obs_get_video(void);
 /** Returns true if video is active, false otherwise */
 EXPORT bool obs_video_active(void);
 
+/** Returns true if audio is active, false otherwise */
+EXPORT bool obs_audio_active(void);
+
 /** Sets the primary output source for a channel. */
 EXPORT void obs_set_output_source(uint32_t channel, obs_source_t *source);
 
@@ -2615,8 +2618,12 @@ EXPORT obs_canvas_t *obs_get_main_canvas(void);
 
 /** Creates a new canvas */
 EXPORT obs_canvas_t *obs_canvas_create(const char *name, struct obs_video_info *ovi, uint32_t flags);
+EXPORT obs_canvas_t *obs_canvas_create2(const char *name, struct obs_video_info *ovi, struct obs_audio_info2 *oai,
+					uint32_t flags);
 /** Creates a new private canvas */
 EXPORT obs_canvas_t *obs_canvas_create_private(const char *name, struct obs_video_info *ovi, uint32_t flags);
+EXPORT obs_canvas_t *obs_canvas_create_private2(const char *name, struct obs_video_info *ovi,
+						struct obs_audio_info2 *oai, uint32_t flags);
 
 /** Signal that references to canvas should be released and mark the canvas as removed. */
 EXPORT void obs_canvas_remove(obs_canvas_t *canvas);
@@ -2688,6 +2695,16 @@ EXPORT video_t *obs_canvas_get_video(const obs_canvas_t *canvas);
 EXPORT bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info *ovi);
 /** Renders the sources of this canvas's view context */
 EXPORT void obs_canvas_render(obs_canvas_t *canvas);
+
+/* Canvas audio */
+/** Reset a canvas's audio mix */
+EXPORT bool obs_canvas_reset_audio(obs_canvas_t *canvas, struct obs_audio_info2 *oai);
+/** Returns true if the canvas audio is configured */
+EXPORT bool obs_canvas_has_audio(obs_canvas_t *canvas);
+/** Get canvas audio output */
+EXPORT audio_t *obs_canvas_get_audio(const obs_canvas_t *canvas);
+/** Get canvas audio info (if it exists) */
+EXPORT bool obs_canvas_get_audio_info(const obs_canvas_t *canvas, struct obs_audio_info2 *oai);
 
 #ifdef __cplusplus
 }

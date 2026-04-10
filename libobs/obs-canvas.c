@@ -31,6 +31,7 @@ static const char *canvas_signals[] = {
 	"void destroy(ptr canvas)",
 	"void remove(ptr canvas)",
 	"void video_reset(ptr canvas)",
+	"void audio_reset(ptr canvas)",
 
 	"void source_add(ptr canvas, ptr source)",
 	"void source_remove(ptr canvas, ptr source)",
@@ -136,7 +137,7 @@ obs_canvas_t *obs_weak_canvas_get_canvas(obs_weak_canvas_t *weak)
 /*** Creation / Destruction ***/
 
 static obs_canvas_t *obs_canvas_create_internal(const char *name, const char *uuid, struct obs_video_info *ovi,
-						uint32_t flags, bool private)
+						struct obs_audio_info2 *oai, uint32_t flags, bool private)
 {
 	struct obs_canvas *canvas = bzalloc(sizeof(struct obs_canvas));
 	canvas->flags = flags;
@@ -162,14 +163,24 @@ static obs_canvas_t *obs_canvas_create_internal(const char *name, const char *uu
 	/* A canvas can be created without a mix. */
 	if (ovi) {
 		canvas->ovi = *ovi;
-		canvas->mix = obs_create_video_mix(ovi);
-		if (canvas->mix) {
-			canvas->mix->view = &canvas->view;
-			canvas->mix->mix_audio = (flags & MIX_AUDIO) != 0;
+		canvas->video_mix = obs_create_video_mix(ovi);
+		if (canvas->video_mix) {
+			canvas->video_mix->view = &canvas->view;
+			canvas->video_mix->mix_audio = (flags & MIX_AUDIO) != 0;
 
 			pthread_mutex_lock(&obs->video.mixes_mutex);
-			da_push_back(obs->video.mixes, &canvas->mix);
+			da_push_back(obs->video.mixes, &canvas->video_mix);
 			pthread_mutex_unlock(&obs->video.mixes_mutex);
+		}
+	}
+
+	if (oai) {
+		canvas->oai = *oai;
+		canvas->audio_mix = obs_create_audio_mix(canvas, oai);
+		if (canvas->video_mix) {
+			pthread_mutex_lock(&obs->audio.mixes_mutex);
+			da_push_back(obs->audio.mixes, &canvas->audio_mix);
+			pthread_mutex_unlock(&obs->audio.mixes_mutex);
 		}
 	}
 
@@ -188,26 +199,41 @@ static obs_canvas_t *obs_canvas_create_internal(const char *name, const char *uu
 obs_canvas_t *obs_create_main_canvas(void)
 {
 	const uint32_t main_flags = MAIN | PROGRAM;
-	return obs_canvas_create_internal(MAIN_CANVAS_NAME, MAIN_CANVAS_UUID, NULL, main_flags, false);
+	return obs_canvas_create_internal(MAIN_CANVAS_NAME, MAIN_CANVAS_UUID, NULL, NULL, main_flags, false);
 }
 
 obs_canvas_t *obs_canvas_create(const char *name, struct obs_video_info *ovi, uint32_t flags)
 {
 	flags &= ~MAIN; /* Prevent user from creating a MAIN canvas. */
-	return obs_canvas_create_internal(name, NULL, ovi, flags, false);
+	return obs_canvas_create_internal(name, NULL, ovi, NULL, flags, false);
 }
 
 obs_canvas_t *obs_canvas_create_private(const char *name, struct obs_video_info *ovi, uint32_t flags)
 {
 	flags &= ~MAIN; /* Prevent user from creating a MAIN canvas. */
-	return obs_canvas_create_internal(name, NULL, ovi, flags, true);
+	return obs_canvas_create_internal(name, NULL, ovi, NULL, flags, true);
+}
+
+obs_canvas_t *obs_canvas_create2(const char *name, struct obs_video_info *ovi, struct obs_audio_info2 *oai,
+				 uint32_t flags)
+{
+	flags &= ~MAIN; /* Prevent user from creating a MAIN canvas. */
+	return obs_canvas_create_internal(name, NULL, ovi, oai, flags, false);
+}
+
+obs_canvas_t *obs_canvas_create_private2(const char *name, struct obs_video_info *ovi, struct obs_audio_info2 *oai,
+					 uint32_t flags)
+{
+	flags &= ~MAIN; /* Prevent user from creating a MAIN canvas. */
+	return obs_canvas_create_internal(name, NULL, ovi, oai, flags, true);
 }
 
 void obs_canvas_destroy(obs_canvas_t *canvas)
 {
 	canvas_dosignal(canvas, "canvas_destroy", "destroy");
 
-	obs_canvas_clear_mix(canvas);
+	obs_canvas_clear_video_mix(canvas);
+	obs_canvas_clear_audio_mix(canvas);
 
 	obs_source_t *source = canvas->sources;
 	while (source) {
@@ -257,21 +283,21 @@ obs_canvas_t *obs_load_canvas(obs_data_t *data)
 	uint32_t flags = (uint32_t)obs_data_get_int(data, "flags");
 
 	flags &= ~MAIN; /* Prevent user from creating a MAIN canvas. */
-	return obs_canvas_create_internal(name, uuid, NULL, flags, private);
+	return obs_canvas_create_internal(name, uuid, NULL, NULL, flags, private);
 }
 
 /*** Internal API ***/
 
 /* Free canvas mix (if any) */
-void obs_canvas_clear_mix(obs_canvas_t *canvas)
+void obs_canvas_clear_video_mix(obs_canvas_t *canvas)
 {
-	if (!canvas->mix)
+	if (!canvas->video_mix)
 		return;
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0; i < obs->video.mixes.num; i++) {
 		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
-		if (mix == canvas->mix) {
+		if (mix == canvas->video_mix) {
 			da_erase(obs->video.mixes, i);
 			obs_free_video_mix(mix);
 			break;
@@ -279,44 +305,96 @@ void obs_canvas_clear_mix(obs_canvas_t *canvas)
 	}
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
-	canvas->mix = NULL;
+	canvas->video_mix = NULL;
+}
+
+void obs_canvas_clear_audio_mix(obs_canvas_t *canvas)
+{
+	if (!canvas->audio_mix)
+		return;
+
+	pthread_mutex_lock(&obs->audio.mixes_mutex);
+	for (size_t i = 0; i < obs->audio.mixes.num; i++) {
+		struct obs_core_audio_mix *mix = obs->audio.mixes.array[i];
+		if (mix == canvas->audio_mix) {
+			da_erase(obs->audio.mixes, i);
+			obs_free_audio_mix(mix);
+			break;
+		}
+	}
+	pthread_mutex_unlock(&obs->audio.mixes_mutex);
+
+	canvas->audio_mix = NULL;
 }
 
 /* Clear mixes attached to canvases */
-void obs_free_canvas_mixes(void)
+void obs_free_canvas_video_mixes(void)
 {
 	pthread_mutex_lock(&obs->data.canvases_mutex);
 	struct obs_context_data *ctx, *tmp;
 	HASH_ITER (hh, (struct obs_context_data *)obs->data.canvases, ctx, tmp) {
 		obs_canvas_t *canvas = (obs_canvas_t *)ctx;
-		obs_canvas_clear_mix(canvas);
+		obs_canvas_clear_video_mix(canvas);
+	}
+	pthread_mutex_unlock(&obs->data.canvases_mutex);
+}
+
+void obs_free_canvas_audio_mixes(void)
+{
+	pthread_mutex_lock(&obs->data.canvases_mutex);
+	struct obs_context_data *ctx, *tmp;
+	HASH_ITER (hh, (struct obs_context_data *)obs->data.canvases, ctx, tmp) {
+		obs_canvas_t *canvas = (obs_canvas_t *)ctx;
+		obs_canvas_clear_audio_mix(canvas);
 	}
 	pthread_mutex_unlock(&obs->data.canvases_mutex);
 }
 
 bool obs_canvas_reset_video_internal(obs_canvas_t *canvas, struct obs_video_info *ovi)
 {
-	if (!ovi && !canvas->mix)
+	if (!ovi && !canvas->video_mix)
 		return true;
 
-	obs_canvas_clear_mix(canvas);
+	obs_canvas_clear_video_mix(canvas);
 
 	if (ovi)
 		canvas->ovi = *ovi;
 
-	canvas->mix = obs_create_video_mix(&canvas->ovi);
-	if (canvas->mix) {
-		canvas->mix->view = &canvas->view;
-		canvas->mix->mix_audio = (canvas->flags & MIX_AUDIO) != 0;
+	canvas->video_mix = obs_create_video_mix(&canvas->ovi);
+	if (canvas->video_mix) {
+		canvas->video_mix->view = &canvas->view;
+		canvas->video_mix->mix_audio = (canvas->flags & MIX_AUDIO) != 0;
 
 		pthread_mutex_lock(&obs->video.mixes_mutex);
-		da_push_back(obs->video.mixes, &canvas->mix);
+		da_push_back(obs->video.mixes, &canvas->video_mix);
 		pthread_mutex_unlock(&obs->video.mixes_mutex);
 	}
 
 	canvas_dosignal(canvas, "canvas_video_reset", "video_reset");
 
-	return !!canvas->mix;
+	return !!canvas->video_mix;
+}
+
+bool obs_canvas_reset_audio_internal(obs_canvas_t *canvas, struct obs_audio_info2 *oai)
+{
+	if (!oai && !canvas->audio_mix)
+		return true;
+
+	obs_canvas_clear_audio_mix(canvas);
+
+	if (oai)
+		canvas->oai = *oai;
+
+	canvas->audio_mix = obs_create_audio_mix(canvas, &canvas->oai);
+	if (canvas->audio_mix) {
+		pthread_mutex_lock(&obs->audio.mixes_mutex);
+		da_push_back(obs->audio.mixes, &canvas->audio_mix);
+		pthread_mutex_unlock(&obs->audio.mixes_mutex);
+	}
+
+	canvas_dosignal(canvas, "canvas_audio_reset", "audio_reset");
+
+	return !!canvas->audio_mix;
 }
 
 void obs_canvas_insert_source(obs_canvas_t *canvas, obs_source_t *source)
@@ -407,17 +485,39 @@ bool obs_canvas_reset_video(obs_canvas_t *canvas, struct obs_video_info *ovi)
 	return obs_canvas_reset_video_internal(canvas, ovi);
 }
 
+bool obs_canvas_reset_audio(obs_canvas_t *canvas, struct obs_audio_info2 *oai)
+{
+	if (canvas->flags & MAIN || obs_audio_active())
+		return false;
+
+	return obs_canvas_reset_audio_internal(canvas, oai);
+}
+
 video_t *obs_canvas_get_video(const obs_canvas_t *canvas)
 {
-	return canvas->mix ? canvas->mix->video : NULL;
+	return canvas->video_mix ? canvas->video_mix->video : NULL;
+}
+
+audio_t *obs_canvas_get_audio(const obs_canvas_t *canvas)
+{
+	return canvas->audio_mix ? canvas->audio_mix->audio : NULL;
 }
 
 bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info *ovi)
 {
-	if (!obs->video.graphics || !canvas->mix)
+	if (!obs->video.graphics || !canvas->video_mix)
 		return false;
 
 	*ovi = canvas->ovi;
+	return true;
+}
+
+bool obs_canvas_get_audio_info(const obs_canvas_t *canvas, struct obs_audio_info2 *oai)
+{
+	if (!canvas->audio_mix)
+		return false;
+
+	*oai = canvas->oai;
 	return true;
 }
 
@@ -581,7 +681,12 @@ bool obs_canvas_removed(obs_canvas_t *canvas)
 
 bool obs_canvas_has_video(obs_canvas_t *canvas)
 {
-	return canvas->mix != NULL;
+	return canvas->video_mix != NULL;
+}
+
+bool obs_canvas_has_audio(obs_canvas_t *canvas)
+{
+	return canvas->audio_mix != NULL;
 }
 
 void obs_canvas_render(obs_canvas_t *canvas)
