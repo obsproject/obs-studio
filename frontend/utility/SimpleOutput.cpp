@@ -375,13 +375,24 @@ void SimpleOutput::Update()
 void SimpleOutput::UpdateRecordingAudioSettings()
 {
 	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_int(settings, "bitrate", 192);
 	obs_data_set_string(settings, "rate_control", "CBR");
 
+	const char *audio_encoder = config_get_string(main->Config(), "SimpleOutput", "RecAudioEncoder");
 	int tracks = config_get_int(main->Config(), "SimpleOutput", "RecTracks");
 	const char *recFormat = config_get_string(main->Config(), "SimpleOutput", "RecFormat2");
 	const char *quality = config_get_string(main->Config(), "SimpleOutput", "RecQuality");
 	bool flv = strcmp(recFormat, "flv") == 0;
+
+	/* Scale the stereo reference bitrate (192 kbps) by the active channel
+	 * count so that multi-channel layouts such as 5.1 are not starved of
+	 * bandwidth relative to a stereo mix. */
+	int channels = (int)audio_output_get_channels(obs_get_audio());
+	int bitrate = 192 * channels / 2;
+	if (strcmp(audio_encoder, "opus") == 0)
+		bitrate = FindClosestAvailableSimpleOpusBitrate(bitrate);
+	else
+		bitrate = FindClosestAvailableSimpleAACBitrate(bitrate);
+	obs_data_set_int(settings, "bitrate", bitrate);
 
 	if (flv || strcmp(quality, "Stream") == 0) {
 		obs_encoder_update(audioRecording, settings);
