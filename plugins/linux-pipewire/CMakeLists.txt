@@ -39,6 +39,6 @@ target_sources(
 
 target_include_directories(linux-pipewire PRIVATE ${libdrm_include_directories})
 
-target_link_libraries(linux-pipewire PRIVATE OBS::libobs OBS::glad PipeWire::PipeWire gio::gio)
+target_link_libraries(linux-pipewire PRIVATE OBS::libobs PipeWire::PipeWire gio::gio)
 
 set_target_properties_obs(linux-pipewire PROPERTIES FOLDER plugins PREFIX "")
