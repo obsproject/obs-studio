@@ -25,38 +25,50 @@
 #define VIRTUAL_CAM_START "==== Virtual Camera Start =========================================="
 #define VIRTUAL_CAM_STOP "==== Virtual Camera Stop ==========================================="
 
+void OBSBasic::SetupVirtualCam()
+{
+	virtualCam.reset(new OutputObj(VIRTUAL_CAM_ID, "virtualcam_output", nullptr));
+
+	connect(virtualCam.data(), &OutputObj::started, this, &OBSBasic::OnVirtualCamStart);
+	connect(virtualCam.data(), &OutputObj::stopped, this, &OBSBasic::OnVirtualCamStop);
+}
+
 void OBSBasic::StartVirtualCam()
 {
-	if (!outputHandler || !outputHandler->virtualCam)
-		return;
-	if (outputHandler->VirtualCamActive())
+	if (!virtualCam)
 		return;
 	if (disableOutputsRef)
 		return;
 
 	SaveProject();
 
-	outputHandler->StartVirtualCam();
+	bool success = virtualCam->start();
+
+	if (!success) {
+		QString errorReason;
+
+		const char *error = obs_output_get_last_error(virtualCam->getOutput());
+		if (error) {
+			errorReason = QT_UTF8(error);
+		} else {
+			errorReason = QTStr("Output.StartFailedGeneric");
+		}
+
+		QMessageBox::critical(this, QTStr("Output.StartVirtualCamFailed"), errorReason);
+	}
 }
 
 void OBSBasic::StopVirtualCam()
 {
-	if (!outputHandler || !outputHandler->virtualCam)
+	if (!virtualCam)
 		return;
-
 	SaveProject();
-
-	if (outputHandler->VirtualCamActive())
-		outputHandler->StopVirtualCam();
-
+	virtualCam->stop();
 	OnDeactivate();
 }
 
 void OBSBasic::OnVirtualCamStart()
 {
-	if (!outputHandler || !outputHandler->virtualCam)
-		return;
-
 	emit VirtualCamStarted();
 
 	if (sysTrayVirtualCam)
@@ -71,9 +83,6 @@ void OBSBasic::OnVirtualCamStart()
 
 void OBSBasic::OnVirtualCamStop(int)
 {
-	if (!outputHandler || !outputHandler->virtualCam)
-		return;
-
 	emit VirtualCamStopped();
 
 	if (sysTrayVirtualCam)
@@ -84,18 +93,11 @@ void OBSBasic::OnVirtualCamStop(int)
 	blog(LOG_INFO, VIRTUAL_CAM_STOP);
 
 	OnDeactivate();
-
-	if (!restartingVCam)
-		return;
-
-	/* Restarting needs to be delayed to make sure that the virtual camera
-	 * implementation is stopped and avoid race condition. */
-	QTimer::singleShot(100, this, &OBSBasic::RestartingVirtualCam);
 }
 
 void OBSBasic::VirtualCamActionTriggered()
 {
-	if (outputHandler->VirtualCamActive()) {
+	if (virtualCam->isActive()) {
 		StopVirtualCam();
 	} else {
 		if (!UIValidation::NoSourcesConfirmation(this))
@@ -107,66 +109,45 @@ void OBSBasic::VirtualCamActionTriggered()
 
 void OBSBasic::OpenVirtualCamConfig()
 {
-	OBSBasicVCamConfig dialog(vcamConfig, outputHandler->VirtualCamActive(), this);
-
+	OBSBasicVCamConfig dialog(vcamConfig, VirtualCamActive(), this);
 	connect(&dialog, &OBSBasicVCamConfig::Accepted, this, &OBSBasic::UpdateVirtualCamConfig);
-	connect(&dialog, &OBSBasicVCamConfig::AcceptedAndRestart, this, &OBSBasic::RestartVirtualCam);
-
 	dialog.exec();
-}
-
-void log_vcam_changed(const VCamConfig &config, bool starting)
-{
-	const char *action = starting ? "Starting" : "Changing";
-
-	switch (config.type) {
-	case VCamOutputType::Invalid:
-		break;
-	case VCamOutputType::ProgramView:
-		blog(LOG_INFO, "%s Virtual Camera output to Program", action);
-		break;
-	case VCamOutputType::PreviewOutput:
-		blog(LOG_INFO, "%s Virtual Camera output to Preview", action);
-		break;
-	case VCamOutputType::SceneOutput:
-		blog(LOG_INFO, "%s Virtual Camera output to Scene : %s", action, config.scene.c_str());
-		break;
-	case VCamOutputType::SourceOutput:
-		blog(LOG_INFO, "%s Virtual Camera output to Source : %s", action, config.source.c_str());
-		break;
-	}
 }
 
 void OBSBasic::UpdateVirtualCamConfig(const VCamConfig &config)
 {
 	vcamConfig = config;
 
-	outputHandler->UpdateVirtualCamOutputSource();
-	log_vcam_changed(config, false);
-}
+	OBSSourceAutoRelease source;
 
-void OBSBasic::RestartVirtualCam(const VCamConfig &config)
-{
-	restartingVCam = true;
+	switch (vcamConfig.type) {
+	case VCamOutputType::Invalid:
+	case VCamOutputType::ProgramView:
+		virtualCam->setType(OutputType::Program);
+		break;
+	case VCamOutputType::PreviewOutput: {
+		virtualCam->setType(OutputType::Preview);
+		break;
+	}
+	case VCamOutputType::SceneOutput:
+		virtualCam->setType(OutputType::Scene);
+		source = obs_get_source_by_name(vcamConfig.scene.c_str());
+		break;
+	case VCamOutputType::SourceOutput:
+		virtualCam->setType(OutputType::Source);
+		source = obs_get_source_by_name(vcamConfig.source.c_str());
+	}
 
-	StopVirtualCam();
-
-	vcamConfig = config;
-}
-
-void OBSBasic::RestartingVirtualCam()
-{
-	if (!restartingVCam)
-		return;
-
-	outputHandler->UpdateVirtualCamOutputSource();
-	StartVirtualCam();
-	restartingVCam = false;
+	virtualCam->setSource(source.Get());
+	virtualCam->update();
 }
 
 bool OBSBasic::VirtualCamActive()
 {
-	if (!outputHandler)
-		return false;
-	return outputHandler->VirtualCamActive();
+	return virtualCam ? virtualCam->isActive() : false;
+}
+
+OBSOutput OBSBasic::GetVirtualCamOutput()
+{
+	return virtualCam ? virtualCam->getOutput() : nullptr;
 }
