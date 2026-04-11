@@ -355,24 +355,6 @@
             ]
         },
         {
-            "name": "Web.TV",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live3.origins.web.tv/liveext"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "GoodGame.ru",
             "servers": [
                 {
@@ -1341,28 +1323,6 @@
             ]
         },
         {
-            "name": "Lahzenegar - StreamG | لحظه‌نگار - استریمجی",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://rtmp.lahzecdn.com/pro"
-                },
-                {
-                    "name": "Iran",
-                    "url": "rtmp://rtmp-iran.lahzecdn.com/pro"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 4000,
-                "max audio bitrate": 192
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "MyLive",
             "servers": [
                 {
@@ -1453,24 +1413,6 @@
                     "url": "rtmp://rtmp.cloud.vimeo.com/live"
                 }
             ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Aparat",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
-                "max audio bitrate": 320,
-                "x264opts": "scenecut=0"
-            },
             "supported video codecs": [
                 "h264"
             ]
@@ -2437,26 +2379,6 @@
             "stream_key_link": "https://masterstream.ir/control-panel/streaming",
             "servers": [
                 {
-                    "name": "Iran Server 1 - Bandwidth Required",
-                    "url": "rtmp://live1.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 2 - Bandwidth Required",
-                    "url": "rtmp://live2.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 3 - Bandwidth Required",
-                    "url": "rtmp://live3.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 4 - Bandwidth Required",
-                    "url": "rtmp://live4.masterstream.ir/live"
-                },
-                {
-                    "name": "Iran Server 5 - Bandwidth Required",
-                    "url": "rtmp://live5.masterstream.ir/live"
-                },
-                {
                     "name": "International Server 1",
                     "url": "rtmp://ilive1.masterstream.ir/live"
                 },
@@ -2467,10 +2389,6 @@
                 {
                     "name": "International Server 3",
                     "url": "rtmp://ilive3.masterstream.ir/live"
-                },
-                {
-                    "name": "International Server 4",
-                    "url": "rtmp://ilive4.masterstream.ir/live"
                 }
             ],
             "protocol": "RTMP",
@@ -3488,104 +3406,6 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
-        },
-        {
-            "name": "SOOP Global",
-            "common": false,
-            "more_info_link": "https://sooplive.helpshift.com/hc/en/3-soop/faq/20",
-            "stream_key_link": "https://www.sooplive.com/dashboard",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://global-stream.sooplive.com/app"
-                }
-            ],
-            "protocol": "RTMP",
-            "supported video codecs": [
-                "h264"
-            ],
-            "supported audio codecs": [
-                "aac"
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "main",
-                "bframes": 0,
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720",
-                    "960x540",
-                    "640x360"
-                ],
-                "bitrate matrix": [
-                    {
-                        "res": "640x360",
-                        "fps": 30,
-                        "max bitrate": 500
-                    },
-                    {
-                        "res": "640x360",
-                        "fps": 60,
-                        "max bitrate": 1000
-                    },
-                    {
-                        "res": "960x540",
-                        "fps": 30,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "960x540",
-                        "fps": 60,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 30,
-                        "max bitrate": 4000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 60,
-                        "max bitrate": 4000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 30,
-                        "max bitrate": 8000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 60,
-                        "max bitrate": 8000
-                    }
-                ],
-                "max fps": 60,
-                "max video bitrate": 8000,
-                "max audio bitrate": 192
-            }
-        },
-        {
-            "name": "Sportify",
-            "more_info_link": "https://www.homegroundapp.com",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.homegroundapp.com/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 3500,
-                "max audio bitrate": 192,
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720"
-                ],
-                "max fps": 30
-            },
-            "supported video codecs": [
-                "h264"
-            ]
         }
     ]
 }
