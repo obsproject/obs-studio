@@ -214,50 +214,24 @@ QPushButton[toolButton="true"] {
   background: var(--bg_base);
 }
 
-#hMixerScrollArea VolControl {
-    padding: 0px var(--padding_container);
+#hVolumeWidgets VolumeControl {
     margin-bottom: 1px;
 }
 
-#hMixerScrollArea #volMeterFrame {
+#hVolumeWidgets VolumeControl #volMeterFrame {
     margin-top: var(--spacing_large);
 }
 
-#vMixerScrollArea VolControl {
-    padding: 0px var(--padding_xlarge) var(--spacing_large);
+#vVolumeWidgets VolumeControl {
     border-right: 1px solid var(--bg_window);
 }
 
-#vMixerScrollArea QLabel {
+#vVolumeWidgets VolumeControl QLabel {
     font-size: var(--font_small);
 }
 
-#vMixerScrollArea #volLabel {
+#vVolumeWidgets VolumeControl #volLabel {
     font-size: var(--font_base);
-}
-
-.indicator-mute::indicator,
-.indicator-mute::indicator:unchecked {
-    background-color: var(--bg_base);
-    border: none;
-    width: var(--icon_base_mixer);
-    height: var(--icon_base_mixer);
-    icon-size: var(--icon_base_mixer);
-}
-
-.indicator-mute::indicator:checked {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:checked:hover,
-.indicator-mute::indicator:unchecked:hover {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:hover,
-.indicator-mute::indicator:unchecked:hover {
-    icon-size: var(--icon_base_mixer);
-    border: none;
 }
 
 #contextContainer {
@@ -274,7 +248,6 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0,0,0);
     qproperty-majorTickColor: var(--text);
     qproperty-minorTickColor: rgb(122,121,122); /* light */
-    qproperty-meterThickness: 3;
 }
 
 OBSBasicStats {
