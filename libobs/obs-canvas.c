@@ -418,6 +418,14 @@ bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info
 		return false;
 
 	*ovi = canvas->ovi;
+
+	if (obs->data.main_canvas->mix) {
+		/* All canvasses are rendered at the main canvas's FPS regardless of what their own video info says.
+		 * Since the FPS in the canvas's own video info could be different, copy the values here. */
+		ovi->fps_num = obs->data.main_canvas->ovi.fps_num;
+		ovi->fps_den = obs->data.main_canvas->ovi.fps_den;
+	}
+
 	return true;
 }
 
