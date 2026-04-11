@@ -1568,6 +1568,9 @@ int obs_reset_video(struct obs_video_info *ovi)
 	case OBS_SCALE_AREA:
 		scale_type_name = "Area";
 		break;
+	case OBS_SCALE_BLERP:
+		scale_type_name = "Blerp";
+		break;
 	}
 
 	bool yuv = format_is_yuv(ovi->output_format);
