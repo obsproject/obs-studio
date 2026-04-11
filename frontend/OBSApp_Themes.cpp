@@ -19,6 +19,7 @@
 
 #include <utility/OBSProxyStyle.hpp>
 #include <utility/OBSThemeVariable.hpp>
+#include <utility/OBSThemeWatcher.hpp>
 #include <utility/platform.hpp>
 
 #include <qt-wrappers.hpp>
@@ -1018,7 +1019,15 @@ bool OBSApp::InitTheme()
 		}
 	}
 
+	auto autoTheme = config_get_bool(userConfig, "Appearance", "AutoTheme");
 	QString themeName = config_get_string(userConfig, "Appearance", "Theme");
+	if (autoTheme) {
+		if (ThemeWatcher::systemTheme() == ThemeWatcher::Theme::Dark) {
+			themeName = config_get_string(userConfig, "Appearance", "ThemeDark");
+		} else {
+			themeName = config_get_string(userConfig, "Appearance", "ThemeLight");
+		}
+	}
 
 	if (themeName.isEmpty() || !GetTheme(themeName)) {
 		if (!themeName.isEmpty()) {
