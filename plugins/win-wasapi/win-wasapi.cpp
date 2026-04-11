@@ -13,6 +13,7 @@
 #include <util/windows/window-helpers.h>
 #include <util/threading.h>
 #include <util/util_uint64.h>
+#include <media-io/audio-resampler.h>
 
 #include <atomic>
 #include <cinttypes>
@@ -149,7 +150,7 @@ class WASAPISource {
 	obs_weak_source_t *reroute_target = nullptr;
 	wstring default_id;
 	string device_id;
-	string device_name;
+
 	WinModule mmdevapi_module;
 	PFN_ActivateAudioInterfaceAsync activate_audio_interface_async = NULL;
 	PFN_RtwqUnlockWorkQueue rtwq_unlock_work_queue = NULL;
@@ -227,6 +228,7 @@ class WASAPISource {
 	speaker_layout speakers;
 	audio_format format;
 	uint32_t sampleRate;
+	audio_resampler_t *resampler;
 
 	vector<BYTE> silence;
 
@@ -240,11 +242,11 @@ class WASAPISource {
 
 	static ComPtr<IMMDevice> InitDevice(IMMDeviceEnumerator *enumerator, bool isDefaultDevice, SourceType type,
 					    const string device_id);
-	static ComPtr<IAudioClient> InitClient(IMMDevice *device, SourceType type, DWORD process_id,
-					       PFN_ActivateAudioInterfaceAsync activate_audio_interface_async,
-					       speaker_layout &speakers, audio_format &format, uint32_t &sampleRate);
-	static void InitFormat(const WAVEFORMATEX *wfex, enum speaker_layout &speakers, enum audio_format &format,
-			       uint32_t &sampleRate);
+	ComPtr<IAudioClient> InitClient(IMMDevice *device, SourceType type, DWORD process_id,
+					PFN_ActivateAudioInterfaceAsync activate_audio_interface_async,
+					speaker_layout &speakers, audio_format &format, uint32_t &sampleRate);
+	void InitFormat(const WAVEFORMATEX *wfex, enum speaker_layout &speakers, enum audio_format &format,
+			uint32_t &sampleRate);
 	static void ClearBuffer(IMMDevice *device);
 	static ComPtr<IAudioCaptureClient> InitCapture(IAudioClient *client, HANDLE receiveSignal);
 	void Initialize();
@@ -259,11 +261,15 @@ class WASAPISource {
 		string window_class;
 		string title;
 		string executable;
+		bool enableDownmix;
+		int mixChannels[MAX_AUDIO_CHANNELS];
 	};
 
 	UpdateParams BuildUpdateParams(obs_data_t *settings);
 	void UpdateSettings(UpdateParams &&params);
 	void LogSettings();
+
+	void UpdateResamplerMatrix();
 
 public:
 	WASAPISource(obs_data_t *settings, obs_source_t *source_, SourceType type);
@@ -289,6 +295,15 @@ public:
 		obs_weak_source_release(reroute_target);
 		reroute_target = obs_source_get_weak_source(target);
 	}
+
+	string device_name;
+	std::atomic<bool> enableDownmix;
+	std::atomic<bool> deviceUpdated;
+	std::atomic<bool> resamplerMatrixNeedsUpdate;
+	int inputChannels;
+	int mixChannels[MAX_AUDIO_CHANNELS];
+	size_t audioCapacity;
+	const uint8_t *resamplerData[MAX_AUDIO_CHANNELS];
 };
 
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_, SourceType type)
@@ -303,6 +318,14 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_, SourceTy
 		activate_audio_interface_async =
 			(PFN_ActivateAudioInterfaceAsync)GetProcAddress(mmdevapi_module, "ActivateAudioInterfaceAsync");
 	}
+
+	resampler = nullptr;
+	deviceUpdated.store(false, std::memory_order_relaxed);
+	resamplerData[0] = nullptr;
+	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
+		mixChannels[i] = -1;
+	}
+	resamplerMatrixNeedsUpdate.store(true, std::memory_order_release);
 
 	UpdateSettings(BuildUpdateParams(settings));
 	LogSettings();
@@ -469,6 +492,14 @@ WASAPISource::~WASAPISource()
 		obs_source_audio_output_capture_device_changed(source, NULL);
 
 	Stop();
+
+	if (sourceType == SourceType::Input) {
+		if (resampler != nullptr) {
+			audio_resampler_destroy(resampler);
+			resampler = nullptr;
+		}
+		bfree((void *)resamplerData[0]);
+	}
 }
 
 WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
@@ -481,6 +512,29 @@ WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
 	params.window_class.clear();
 	params.title.clear();
 	params.executable.clear();
+
+	if (sourceType == SourceType::Input) {
+		params.enableDownmix = obs_data_get_bool(settings, "enable_downmix");
+		bool downmixUpdated = params.enableDownmix != enableDownmix.load(std::memory_order_relaxed);
+
+		for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
+			std::string channel_str = "OBS_channel." + std::to_string(i);
+			params.mixChannels[i] = (int)obs_data_get_int(settings, channel_str.c_str());
+		}
+
+		deviceUpdated.store(params.device_id != device_id && device_id != "", std::memory_order_relaxed);
+
+		if (downmixUpdated || deviceUpdated.load(std::memory_order_relaxed)) {
+			for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
+				std::string channel_str = "OBS_channel." + std::to_string(i);
+				obs_data_set_int(settings, channel_str.c_str(), -1);
+				params.mixChannels[i] = -1;
+				mixChannels[i] = -1;
+			}
+			resamplerMatrixNeedsUpdate.store(true, std::memory_order_release);
+		}
+	}
+
 	if (sourceType != SourceType::Input) {
 		const char *const window = obs_data_get_string(settings, OPT_WINDOW);
 		char *window_class = nullptr;
@@ -517,6 +571,18 @@ void WASAPISource::UpdateSettings(UpdateParams &&params)
 	window_class = std::move(params.window_class);
 	title = std::move(params.title);
 	executable = std::move(params.executable);
+	if (sourceType == SourceType::Input) {
+		enableDownmix.store(std::move(params.enableDownmix), std::memory_order_relaxed);
+		bool changed = false;
+		for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
+			if (mixChannels[i] != params.mixChannels[i])
+				changed = true;
+
+			mixChannels[i] = std::move(params.mixChannels[i]);
+		}
+		if (changed)
+			resamplerMatrixNeedsUpdate.store(true, std::memory_order_release);
+	}
 }
 
 void WASAPISource::LogSettings()
@@ -766,6 +832,10 @@ void WASAPISource::ClearBuffer(IMMDevice *device)
 static speaker_layout ConvertSpeakerLayout(DWORD layout, WORD channels)
 {
 	switch (layout) {
+	case KSAUDIO_SPEAKER_MONO:
+		return SPEAKERS_MONO;
+	case KSAUDIO_SPEAKER_STEREO:
+		return SPEAKERS_STEREO;
 	case KSAUDIO_SPEAKER_2POINT1:
 		return SPEAKERS_2POINT1;
 	case KSAUDIO_SPEAKER_SURROUND:
@@ -776,9 +846,9 @@ static speaker_layout ConvertSpeakerLayout(DWORD layout, WORD channels)
 		return SPEAKERS_5POINT1;
 	case KSAUDIO_SPEAKER_7POINT1_SURROUND:
 		return SPEAKERS_7POINT1;
+	default:
+		return SPEAKERS_UNKNOWN;
 	}
-
-	return (speaker_layout)channels;
 }
 
 void WASAPISource::InitFormat(const WAVEFORMATEX *wfex, enum speaker_layout &speakers, enum audio_format &format,
@@ -793,8 +863,16 @@ void WASAPISource::InitFormat(const WAVEFORMATEX *wfex, enum speaker_layout &spe
 
 	/* WASAPI is always float */
 	speakers = ConvertSpeakerLayout(layout, wfex->nChannels);
+
+	if (!speakers && sourceType == SourceType::Input) {
+		blog(LOG_INFO, "WASAPI: Input Device has a non-supported speaker layout."
+			       " Consider disabling automatic downmix to do a manual channel select.");
+		speakers = (speaker_layout)wfex->nChannels;
+	}
+
 	format = AUDIO_FORMAT_FLOAT;
 	sampleRate = wfex->nSamplesPerSec;
+	inputChannels = sourceType == SourceType::Input ? wfex->nChannels : 0;
 }
 
 ComPtr<IAudioCaptureClient> WASAPISource::InitCapture(IAudioClient *client, HANDLE receiveSignal)
@@ -813,6 +891,34 @@ ComPtr<IAudioCaptureClient> WASAPISource::InitCapture(IAudioClient *client, HAND
 		throw HRError("Failed to start capture client", res);
 
 	return capture;
+}
+
+void WASAPISource::UpdateResamplerMatrix()
+{
+	if (!resampler)
+		return;
+
+	const int out_ch = (int)audio_output_get_channels(obs_get_audio());
+	const int in_ch = inputChannels;
+
+	if (!in_ch)
+		return;
+
+	std::vector<double> matrix(out_ch * in_ch, 0.0);
+	const int stride = in_ch;
+
+	for (int out = 0; out < out_ch; ++out) {
+		const int in = mixChannels[out];
+		if (in >= 0 && in < in_ch) {
+			matrix[out * stride + in] = 1.0;
+		}
+	}
+
+	if (!audio_resampler_set_matrix(resampler, matrix.data(), stride)) {
+		blog(LOG_WARNING, "WASAPI: failed to set resampler matrix (in=%d, out=%d)", in_ch, out_ch);
+		audio_resampler_destroy(resampler);
+		resampler = nullptr;
+	}
 }
 
 void WASAPISource::Initialize()
@@ -849,6 +955,32 @@ void WASAPISource::Initialize()
 
 	client = std::move(temp_client);
 	capture = std::move(temp_capture);
+
+	deviceUpdated.store(false, std::memory_order_relaxed);
+
+	if (resampler != nullptr) {
+		audio_resampler_destroy(resampler);
+		resampler = nullptr;
+		bfree((void *)resamplerData[0]);
+		resamplerData[0] = nullptr;
+	}
+
+	enum speaker_layout dst_speakers = (enum speaker_layout)audio_output_get_channels(obs_get_audio());
+	size_t size = get_audio_size(format, dst_speakers, 1);
+	audioCapacity = 1;
+	resamplerData[0] = (const uint8_t *)bmalloc(size);
+
+	struct resample_info src, dst;
+
+	src.samples_per_sec = sampleRate;
+	src.format = format;
+	src.speakers = (enum speaker_layout)inputChannels;
+
+	dst.samples_per_sec = sampleRate;
+	dst.format = format;
+	dst.speakers = (enum speaker_layout)audio_output_get_channels(obs_get_audio());
+
+	resampler = audio_resampler_create(&dst, &src);
 
 	if (rtwq_supported) {
 		HRESULT hr = rtwq_put_waiting_work_item(receiveSignal, 0, sampleReadyAsyncResult, nullptr);
@@ -1012,9 +1144,33 @@ bool WASAPISource::ProcessCaptureData()
 		}
 
 		obs_source_audio data = {};
-		data.data[0] = buffer;
+		if (sourceType == SourceType::Input) {
+			if (resamplerMatrixNeedsUpdate.exchange(false, std::memory_order_acq_rel))
+				UpdateResamplerMatrix();
+
+			if (!enableDownmix.load(std::memory_order_relaxed) && resampler) {
+				enum speaker_layout dst_speakers =
+					(enum speaker_layout)audio_output_get_channels(obs_get_audio());
+				size_t size = get_audio_size(format, dst_speakers, frames);
+				uint8_t *output[8];
+				uint32_t out_frames;
+				uint64_t ts_offset;
+
+				if (audioCapacity < frames) {
+					resamplerData[0] = (const uint8_t *)brealloc((void *)resamplerData[0], size);
+					audioCapacity = frames;
+				}
+				data.speakers = dst_speakers;
+				audio_resampler_resample(resampler, (uint8_t **)output, &out_frames, &ts_offset,
+							 (const uint8_t **)&buffer, (uint32_t)frames);
+				memcpy((void *)resamplerData[0], output[0], size);
+				data.data[0] = resamplerData[0];
+			} else {
+				data.data[0] = buffer;
+				data.speakers = speakers;
+			}
+		}
 		data.frames = frames;
-		data.speakers = speakers;
 		data.samples_per_sec = sampleRate;
 		data.format = format;
 		if (sourceType == SourceType::ProcessOutput) {
@@ -1331,6 +1487,12 @@ static void GetWASAPIDefaultsInput(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
 	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, false);
+	obs_data_set_default_bool(settings, "enable_downmix", true);
+
+	for (int i = 0; i < MAX_AUDIO_CHANNELS; ++i) {
+		string channel_str = "OBS_channel." + std::to_string(i);
+		obs_data_set_default_int(settings, channel_str.c_str(), -1);
+	}
 }
 
 static void GetWASAPIDefaultsDeviceOutput(obs_data_t *settings)
@@ -1461,10 +1623,85 @@ static bool UpdateWASAPIMethod(obs_properties_t *props, obs_property_t *, obs_da
 	return true;
 }
 
-static obs_properties_t *GetWASAPIPropertiesInput(void *)
+static bool channel_update_cb(void *vptr, obs_properties_t *props, obs_property_t *chanlist, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(props);
+	WASAPISource *data = (WASAPISource *)vptr;
+	if (data == NULL)
+		return false;
+
+	const char *device_id = obs_data_get_string(settings, OPT_DEVICE_ID);
+	const char *device_name = "";
+	vector<AudioDeviceInfo> devices;
+	GetWASAPIAudioDevices(devices, true);
+	for (int i = 0; i < devices.size(); i++) {
+		if (strcmp(device_id, devices[i].id.c_str()) == 0) {
+			device_name = devices[i].name.c_str();
+			break;
+		}
+	}
+
+	obs_property_list_clear(chanlist);
+	obs_property_list_add_int(chanlist, obs_module_text("None"), -1);
+	for (int j = 0; j < data->inputChannels; ++j) {
+		char label[256];
+		snprintf(label, sizeof(label), "%s channel %d", device_name, j + 1);
+		obs_property_list_add_int(chanlist, label, j);
+	}
+
+	return true;
+}
+
+bool reload_channel_props(void *vptr, obs_properties_t *props, obs_property_t *devlist, obs_data_t *settings,
+			  bool enable)
+{
+	WASAPISource *data = (WASAPISource *)vptr;
+	if (data == NULL)
+		return false;
+
+	bool enable_downmix = obs_data_get_bool(settings, "enable_downmix");
+	int obs_channels = (int)audio_output_get_channels(obs_get_audio());
+	std::vector<obs_property_t *> mix_channels(MAX_AUDIO_CHANNELS, nullptr);
+
+	for (int i = 0; i < MAX_AUDIO_CHANNELS; ++i) {
+		string channel_str = "OBS_channel." + std::to_string(i);
+		mix_channels[i] = obs_properties_get(props, channel_str.c_str());
+		obs_property_set_visible(mix_channels[i], i < obs_channels && !enable_downmix);
+		if (enable)
+			obs_data_set_int(settings, channel_str.c_str(), -1);
+		obs_property_set_modified_callback2(mix_channels[i], channel_update_cb, data);
+		channel_update_cb(data, props, mix_channels[i], settings);
+	}
+	return true;
+}
+
+static bool device_update_cb(void *vptr, obs_properties_t *props, obs_property_t *devlist, obs_data_t *settings)
+{
+	WASAPISource *data = (WASAPISource *)vptr;
+	if (data == NULL)
+		return false;
+
+	return reload_channel_props(data, props, devlist, settings,
+				    data->deviceUpdated.load(std::memory_order_relaxed));
+}
+
+static bool wasapi_downmix_changed(void *vptr, obs_properties_t *props, obs_property_t *devlist, obs_data_t *settings)
+{
+	WASAPISource *data = (WASAPISource *)vptr;
+	if (data == NULL)
+		return false;
+
+	bool enable_downmix = obs_data_get_bool(settings, "enable_downmix");
+	return reload_channel_props(data, props, devlist, settings,
+				    data->enableDownmix.load(std::memory_order_relaxed) != enable_downmix);
+}
+
+static obs_properties_t *GetWASAPIPropertiesInput(void *vptr)
+{
+	WASAPISource *data = (WASAPISource *)vptr;
 	obs_properties_t *props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
+	obs_property_t *property;
 
 	obs_property_t *device_prop = obs_properties_add_list(props, OPT_DEVICE_ID, obs_module_text("Device"),
 							      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -1479,7 +1716,32 @@ static obs_properties_t *GetWASAPIPropertiesInput(void *)
 		obs_property_list_add_string(device_prop, device.name.c_str(), device.id.c_str());
 	}
 
+	if (data != nullptr)
+		obs_property_set_modified_callback2(device_prop, device_update_cb, data);
+
 	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING, obs_module_text("UseDeviceTiming"));
+
+	if (data != nullptr) {
+		property = obs_properties_add_bool(props, "enable_downmix", obs_module_text("Downmix"));
+		obs_property_set_modified_callback2(property, wasapi_downmix_changed, data);
+		obs_property_set_long_description(property, obs_module_text("Downmix.Hint"));
+
+		int obs_channels = (int)audio_output_get_channels(obs_get_audio());
+		for (int i = 0; i < MAX_AUDIO_CHANNELS; ++i) {
+			string channel_str = "OBS_channel." + std::to_string(i);
+			property = obs_properties_add_list(props, channel_str.c_str(),
+							   obs_module_text(channel_str.c_str()), OBS_COMBO_TYPE_LIST,
+							   OBS_COMBO_FORMAT_INT);
+			obs_property_set_visible(
+				property, i < obs_channels && !data->enableDownmix.load(std::memory_order_relaxed));
+			obs_property_list_add_int(property, "Mute", -1);
+
+			for (int j = 0; j < data->inputChannels; ++j) {
+				string channel_device_str = data->device_name + " channel " + std::to_string(j);
+				obs_property_list_add_int(property, channel_device_str.c_str(), j);
+			}
+		}
+	}
 
 	return props;
 }
