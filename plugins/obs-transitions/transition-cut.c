@@ -30,9 +30,14 @@ static void cut_destroy(void *data)
 
 static void cut_video_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
+	const bool previous = gs_set_linear_srgb(true);
+
 	struct cut_info *cut = data;
 	obs_transition_video_render(cut->source, NULL);
-	UNUSED_PARAMETER(effect);
+
+	gs_set_linear_srgb(previous);
 }
 
 static float mix_a(void *data, float t)
