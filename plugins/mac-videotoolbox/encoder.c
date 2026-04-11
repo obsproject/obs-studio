@@ -539,12 +539,13 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 					     kVTCompressionPropertyKey_AllowFrameReordering,
 					     kVTCompressionPropertyKey_ProfileLevel};
 
-		SInt32 key_frame_interval = (SInt32)(enc->keyint * ((float)enc->fps_num / enc->fps_den));
-		float expected_framerate = (float)enc->fps_num / enc->fps_den;
+		int actual_frame_rate = enc->fps_num / enc->fps_den;
+		int key_frame_interval = enc->keyint * actual_frame_rate;
+
 		CFNumberRef MaxKeyFrameInterval =
-			CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &key_frame_interval);
+			CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &key_frame_interval);
 		CFNumberRef ExpectedFrameRate =
-			CFNumberCreate(kCFAllocatorDefault, kCFNumberFloat32Type, &expected_framerate);
+			CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &actual_frame_rate);
 		CFTypeRef AllowFrameReordering = enc->bframes ? kCFBooleanTrue : kCFBooleanFalse;
 
 		video_t *video = obs_encoder_video(enc->encoder);
