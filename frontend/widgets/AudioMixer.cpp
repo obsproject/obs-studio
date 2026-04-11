@@ -371,6 +371,7 @@ void AudioMixer::updateControlVisibility(QString uuid)
 	bool show = getMixerVisibilityForControl(control);
 
 	if (show) {
+		control->updateMixerState();
 		control->show();
 	} else {
 		control->hide();
@@ -708,7 +709,7 @@ void AudioMixer::updateVolumeLayouts()
 		layout->insertWidget(index, volControl);
 		volControl->setVertical(vertical);
 		volControl->updateName();
-		volControl->updateMixerState();
+		volControl->updateCategoryLabel();
 
 		bool showControl = getMixerVisibilityForControl(volControl);
 
@@ -1053,8 +1054,8 @@ void AudioMixer::obsSourceAudioDeactivated(void *data, calldata_t *params)
 
 	if (flags & OBS_SOURCE_AUDIO) {
 		auto uuidPointer = obs_source_get_uuid(source);
-		QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "removeSource", Qt::QueuedConnection,
-					  Q_ARG(QString, QString::fromUtf8(uuidPointer)));
+		QMetaObject::invokeMethod(static_cast<AudioMixer *>(data), "updateControlVisibility",
+					  Qt::QueuedConnection, Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 	}
 }
 
