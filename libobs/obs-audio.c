@@ -29,7 +29,7 @@ struct ts_info {
 
 static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 {
-	struct obs_core_audio *audio = p;
+	struct obs_core_audio_mix *audio = p;
 
 	if (da_find(audio->render_order, &source, 0) == DARRAY_INVALID) {
 		obs_source_t *s = obs_source_get_ref(source);
@@ -61,7 +61,7 @@ static void push_audio_tree2(obs_source_t *parent, obs_source_t *source, void *p
 	if (obs_source_removed(source))
 		return;
 
-	struct obs_core_audio *audio = p;
+	struct obs_core_audio_mix *audio = p;
 	size_t idx = da_find(audio->render_order, &source, 0);
 
 	if (idx == DARRAY_INVALID) {
@@ -220,7 +220,7 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 
 #define MAX_AUDIO_SIZE (AUDIO_OUTPUT_FRAMES * sizeof(float))
 
-static inline void discard_audio(struct obs_core_audio *audio, obs_source_t *source, size_t channels,
+static inline void discard_audio(struct obs_core_audio_mix *audio, obs_source_t *source, size_t channels,
 				 size_t sample_rate, struct ts_info *ts)
 {
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
@@ -312,12 +312,12 @@ static inline void discard_audio(struct obs_core_audio *audio, obs_source_t *sou
 	source->audio_ts = ts->end;
 }
 
-static inline bool audio_buffering_maxed(struct obs_core_audio *audio)
+static inline bool audio_buffering_maxed(struct obs_core_audio_mix *audio)
 {
 	return audio->total_buffering_ticks == audio->max_buffering_ticks;
 }
 
-static void set_fixed_audio_buffering(struct obs_core_audio *audio, size_t sample_rate, struct ts_info *ts)
+static void set_fixed_audio_buffering(struct obs_core_audio_mix *audio, size_t sample_rate, struct ts_info *ts)
 {
 	struct ts_info new_ts;
 	size_t total_ms;
@@ -358,8 +358,8 @@ static void set_fixed_audio_buffering(struct obs_core_audio *audio, size_t sampl
 	*ts = new_ts;
 }
 
-static void add_audio_buffering(struct obs_core_audio *audio, size_t sample_rate, struct ts_info *ts, uint64_t min_ts,
-				const char *buffering_name)
+static void add_audio_buffering(struct obs_core_audio_mix *audio, size_t sample_rate, struct ts_info *ts,
+				uint64_t min_ts, const char *buffering_name)
 {
 	struct ts_info new_ts;
 	uint64_t offset;
@@ -484,7 +484,7 @@ static inline const char *calc_min_ts(struct obs_core_data *data, size_t sample_
 	return buffering_name;
 }
 
-static inline void release_audio_sources(struct obs_core_audio *audio)
+static inline void release_audio_sources(struct obs_core_audio_mix *audio)
 {
 	for (size_t i = 0; i < audio->render_order.num; i++)
 		obs_source_release(audio->render_order.array[i]);
@@ -510,7 +510,7 @@ static inline void execute_audio_tasks(void)
 /* In case monitoring and an 'Audio Output Capture' source have the same device, one silences all the monitored
  * sources unless the 'Audio Output Capture' is muted.
  */
-static inline bool should_silence_monitored_source(obs_source_t *source, struct obs_core_audio *audio)
+static inline bool should_silence_monitored_source(obs_source_t *source, struct obs_core_audio_mix *audio)
 {
 	obs_source_t *dup_src = audio->monitoring_duplicating_source;
 
@@ -532,7 +532,7 @@ static inline bool should_silence_monitored_source(obs_source_t *source, struct 
 	return false;
 }
 
-static inline void clear_audio_output_buf(obs_source_t *source, struct obs_core_audio *audio)
+static inline void clear_audio_output_buf(obs_source_t *source, struct obs_core_audio_mix *audio)
 {
 	if (!audio->monitoring_duplicating_source)
 		return;
@@ -552,11 +552,38 @@ static inline void clear_audio_output_buf(obs_source_t *source, struct obs_core_
 	}
 }
 
+bool on_canvas_audio(uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts, uint32_t mixers,
+		     struct audio_output_data *mixes, struct obs_canvas *canvas);
+
 bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts, uint32_t mixers,
 		    struct audio_output_data *mixes)
 {
+	UNUSED_PARAMETER(param);
+	struct obs_context_data *start = (struct obs_context_data *)obs->data.canvases;
+	struct obs_context_data *context, *tmp;
+
+	pthread_mutex_lock(&obs->data.canvases_mutex);
+
+	HASH_ITER (hh, start, context, tmp) {
+		obs_canvas_t *canvas = (obs_canvas_t *)context;
+		on_canvas_audio(start_ts_in, end_ts_in, out_ts, mixers, mixes, canvas);
+	}
+
+	pthread_mutex_unlock(&obs->data.canvases_mutex);
+
+	return true;
+}
+
+bool on_canvas_audio(uint64_t start_ts_in, uint64_t end_ts_in, uint64_t *out_ts, uint32_t mixers,
+		     struct audio_output_data *mixes, struct obs_canvas *canvas)
+{
+	struct obs_core_audio_mix *audio = canvas->audio_mix;
+	struct obs_core_video_mix *video = canvas->video_mix;
+
+	if (!audio || !video)
+		return false;
+
 	struct obs_core_data *data = &obs->data;
-	struct obs_core_audio *audio = &obs->audio;
 	struct obs_source *source;
 	size_t sample_rate = audio_output_get_sample_rate(audio->audio);
 	size_t channels = audio_output_get_channels(audio->audio);
@@ -581,48 +608,47 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 	/* build audio render order */
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
-	for (size_t j = 0; j < obs->video.mixes.num; j++) {
-		struct obs_view *view = obs->video.mixes.array[j]->view;
-		if (!view)
+	struct obs_view *view = video->view;
+	if (!view)
+		return false;
+
+	pthread_mutex_lock(&view->channels_mutex);
+
+	/* NOTE: these are source channels, not audio channels */
+	for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
+		obs_source_t *source = view->channels[i];
+		if (!source)
+			continue;
+		if (!obs_source_active(source))
+			continue;
+		if (obs_source_removed(source))
 			continue;
 
-		pthread_mutex_lock(&view->channels_mutex);
+		/* first, add top - level sources as root_nodes */
+		if (canvas->video_mix->mix_audio)
+			da_push_back(audio->root_nodes, &source);
 
-		/* NOTE: these are source channels, not audio channels */
-		for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
-			obs_source_t *source = view->channels[i];
-			if (!source)
-				continue;
-			if (!obs_source_active(source))
-				continue;
-			if (obs_source_removed(source))
-				continue;
+		/* Build audio tree, tag duplicate individual sources */
+		obs_source_enum_active_tree(source, push_audio_tree2, audio);
 
-			/* first, add top - level sources as root_nodes */
-			if (obs->video.mixes.array[j]->mix_audio)
-				da_push_back(audio->root_nodes, &source);
-
-			/* Build audio tree, tag duplicate individual sources */
-			obs_source_enum_active_tree(source, push_audio_tree2, audio);
-
-			/* add top - level sources to audio tree */
-			push_audio_tree(NULL, source, audio);
-		}
-		pthread_mutex_unlock(&view->channels_mutex);
+		/* add top - level sources to audio tree */
+		push_audio_tree(NULL, source, audio);
 	}
+	pthread_mutex_unlock(&view->channels_mutex);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
-	pthread_mutex_lock(&data->audio_sources_mutex);
+	pthread_mutex_lock(&canvas->sources_mutex);
 
-	source = data->first_audio_source;
-	while (source) {
-		if (!obs_source_removed(source)) {
-			push_audio_tree(NULL, source, audio);
+	obs_source_t *canvas_source = canvas->sources;
+	while (canvas_source) {
+		if (!obs_source_removed(canvas_source)) {
+			push_audio_tree(NULL, canvas_source, audio);
 		}
-		source = (struct obs_source *)source->next_audio_source;
+
+		canvas_source = canvas_source->context.hh.next;
 	}
 
-	pthread_mutex_unlock(&data->audio_sources_mutex);
+	pthread_mutex_unlock(&canvas->sources_mutex);
 
 	/* ------------------------------------------------ */
 	/* render audio data */
@@ -723,6 +749,5 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 
 	execute_audio_tasks();
 
-	UNUSED_PARAMETER(param);
 	return true;
 }
