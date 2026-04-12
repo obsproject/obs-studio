@@ -588,6 +588,9 @@ inline void SimpleOutput::SetupOutputs()
 	} else {
 		obs_encoder_set_audio(audioRecording, obs_get_audio());
 	}
+
+	if (replayBufferVideoEncoder && replayBufferVideo)
+		obs_encoder_set_video(replayBufferVideoEncoder, replayBufferVideo);
 }
 
 std::shared_future<void> SimpleOutput::SetupStreaming(obs_service_t *service, SetupStreamingContinuation_t continuation)
@@ -782,7 +785,10 @@ void SimpleOutput::UpdateRecording()
 		}
 	}
 	if (replayBuffer) {
-		obs_output_set_video_encoder(replayBuffer, videoRecording);
+		if (replayBufferVideoEncoder)
+			obs_output_set_video_encoder(replayBuffer, replayBufferVideoEncoder);
+		else
+			obs_output_set_video_encoder(replayBuffer, videoRecording);
 		if (flv || strcmp(quality, "Stream") == 0) {
 			obs_output_set_audio_encoder(replayBuffer, audioRecording, 0);
 		} else {
@@ -879,6 +885,8 @@ bool SimpleOutput::StartRecording()
 
 bool SimpleOutput::StartReplayBuffer()
 {
+	SetupReplayBufferSceneOverride(usingRecordingPreset ? videoRecording : videoStreaming);
+
 	UpdateRecording();
 	if (!ConfigureRecording(true))
 		return false;

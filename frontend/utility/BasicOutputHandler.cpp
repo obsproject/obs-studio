@@ -384,6 +384,54 @@ void BasicOutputHandler::DestroyVirtualCameraScene()
 	vCamSourceSceneItem = nullptr;
 }
 
+void BasicOutputHandler::SetupReplayBufferView(const std::string &sceneName)
+{
+	DestroyReplayBufferView();
+
+	if (sceneName.empty())
+		return;
+
+	OBSSourceAutoRelease source = obs_get_source_by_name(sceneName.c_str());
+	if (!source)
+		return;
+
+	replayBufferView = obs_view_create();
+	obs_view_set_source(replayBufferView, 0, source);
+	replayBufferVideo = obs_view_add(replayBufferView);
+}
+
+void BasicOutputHandler::SetupReplayBufferSceneOverride(OBSEncoder baseEncoder)
+{
+	if (main->rbConfig.type != RBOutputSceneView)
+		return;
+
+	SetupReplayBufferView(main->rbConfig.scene);
+	if (!replayBufferVideo)
+		return;
+
+	replayBufferVideoEncoder =
+		obs_video_encoder_create(obs_encoder_get_id(baseEncoder), "replay_buffer_video", nullptr, nullptr);
+
+	OBSDataAutoRelease settings = obs_encoder_get_settings(baseEncoder);
+	obs_encoder_update(replayBufferVideoEncoder, settings);
+	obs_encoder_set_video(replayBufferVideoEncoder, replayBufferVideo);
+}
+
+void BasicOutputHandler::DestroyReplayBufferView()
+{
+	replayBufferVideoEncoder = nullptr;
+
+	if (!replayBufferView)
+		return;
+
+	obs_view_remove(replayBufferView);
+	obs_view_set_source(replayBufferView, 0, nullptr);
+	replayBufferVideo = nullptr;
+
+	obs_view_destroy(replayBufferView);
+	replayBufferView = nullptr;
+}
+
 const char *FindAudioEncoderFromCodec(const char *type)
 {
 	const char *alt_enc_id = nullptr;
