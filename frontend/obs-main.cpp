@@ -45,6 +45,7 @@
 #include <shellapi.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <mbctype.h>
 #else
 #include <signal.h>
 #endif
@@ -77,6 +78,7 @@ bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+bool using_utf8 = false;
 
 bool restart = false;
 bool restart_safe = false;
@@ -424,6 +426,41 @@ static void create_log_file(fstream &logFile)
 	}
 }
 
+static bool set_utf8_locale(void)
+{
+	// Use system locale with UTF-8 codepage (available from Windows 10 version 1803)
+	bool usingUTF8 = !!setlocale(LC_ALL, ".UTF-8");
+
+	/*
+	Fallback to minimal C locale
+	Could use "" for system defaults, but the Windows default ANSI codepages (such as .125x or .9xx)
+	mismatch with UTF-8 that is assumed by many parts of the codebase. "C" only covers ASCII, so no mismatches.
+	*/
+	usingUTF8 = usingUTF8 || !!setlocale(LC_ALL, "C.UTF-8");
+
+#ifdef _WIN32
+	usingUTF8 = usingUTF8 && (_setmbcp(CP_UTF8) == 0);
+#endif
+	if (!usingUTF8)
+		setlocale(LC_ALL, "C");
+
+	// fix float handling
+	setlocale(LC_NUMERIC, "C");
+
+	// Copy C runtime locale for C++
+	std::locale defaultLocale(setlocale(LC_ALL, nullptr));
+	std::locale::global(defaultLocale);
+
+	/*
+	system() is already the QLocale default, but just to be explicit about the intention.
+	Unlike CRT and C++ locales above, QLocale doesn't support customization of locale categories and codepages.
+	Ie. We can't enforce decimal point to be a dot and at the same time use user's preferred locale.
+	*/
+	QLocale::setDefault(QLocale::system());
+
+	return usingUTF8;
+}
+
 static auto ProfilerNameStoreRelease = [](profiler_name_store_t *store) {
 	profiler_name_store_free(store);
 };
@@ -536,6 +573,12 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	qputenv("QT_NO_SUBTRACTOPAQUESIBLINGS", "1");
 
 	OBSApp program(argc, argv, profilerNameStore.get());
+
+#if defined(Q_OS_UNIX)
+	// OBSApp (QApplication) constructor overwrote the locale for unix, so set it again
+	set_utf8_locale();
+#endif
+
 	try {
 		QAccessible::installFactory(accessibleFactory);
 		QFontDatabase::addApplicationFont(":/fonts/OpenSans-Regular.ttf");
@@ -682,6 +725,14 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			}
 			blog(LOG_INFO, "Command Line Arguments: %s", stor.str().c_str());
 		}
+
+		if (!using_utf8)
+			blog(LOG_DEBUG, "UTF-8 locale is not available on this OS version. "
+					"Skipping regional formatting and sorting.");
+
+		// Use collation (sorting rules) as indicator of regional settings
+		blog(LOG_DEBUG, "Locale: %s", setlocale(LC_COLLATE, nullptr));
+		blog(LOG_DEBUG, "App language: %s", program.GetLocale());
 
 		if (!program.OBSInit())
 			return 0;
@@ -856,6 +907,7 @@ static bool vc_runtime_outdated()
 
 int main(int argc, char *argv[])
 {
+	using_utf8 = set_utf8_locale();
 #ifndef _WIN32
 	using SignalHandlerCallback = decltype(OBSApp::sigIntSignalHandler);
 
