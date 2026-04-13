@@ -49,7 +49,7 @@ SOFTWARE
 #include <strmif.h>
 
 OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
+OBS_MODULE_USE_DEFAULT_LOCALE("win-mediafoundation-capture", "en-US")
 
 extern void RegisterMediaFoundationSource();
 
@@ -61,5 +61,5 @@ bool obs_module_load(void)
 
 void obs_module_unload()
 {
-	blog(LOG_INFO, "win-mf plugin unloaded");
+	blog(LOG_INFO, "win-mediafoundation capture plugin unloaded");
 }

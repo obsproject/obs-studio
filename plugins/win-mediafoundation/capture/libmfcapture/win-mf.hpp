@@ -121,50 +121,6 @@ constexpr const char *COLOR_SPACE = "color_space";
 constexpr const char *COLOR_RANGE = "color_range";
 constexpr const char *DEACTIVATE_WNS = "deactivate_when_not_showing";
 constexpr const char *AUTOROTATION = "autorotation";
-
-const char *TEXT_INPUT_NAME = obs_module_text("VideoCaptureDevice");
-const char *TEXT_DEVICE = obs_module_text("Device");
-const std::string_view TEXT_CONFIG_VIDEO = obs_module_text("ConfigureVideo");
-const char *TEXT_RES_FPS_TYPE = obs_module_text("ResFPSType");
-const char *TEXT_CUSTOM_RES = obs_module_text("ResFPSType.Custom");
-const char *TEXT_PREFERRED_RES = obs_module_text("ResFPSType.DevPreferred");
-const char *TEXT_FPS_MATCHING = obs_module_text("FPS.Matching");
-const char *TEXT_FPS_HIGHEST = obs_module_text("FPS.Highest");
-const char *TEXT_RESOLUTION = obs_module_text("Resolution");
-const std::string_view TEXT_BUFFERING = obs_module_text("Buffering");
-const std::string_view TEXT_BUFFERING_AUTO = obs_module_text("Buffering.AutoDetect");
-const std::string_view TEXT_BUFFERING_ON = obs_module_text("Buffering.Enable");
-const std::string_view TEXT_BUFFERING_OFF = obs_module_text("Buffering.Disable");
-const char *TEXT_FLIP_IMAGE = obs_module_text("FlipVertically");
-const std::string_view TEXT_AUTOROTATION = obs_module_text("Autorotation");
-const char *TEXT_ACTIVATE = obs_module_text("Activate");
-const char *TEXT_DEACTIVATE = obs_module_text("Deactivate");
-const std::string_view TEXT_COLOR_SPACE = obs_module_text("ColorSpace");
-const std::string_view TEXT_COLOR_DEFAULT = obs_module_text("ColorSpace.Default");
-const std::string_view TEXT_COLOR_709 = obs_module_text("ColorSpace.709");
-const std::string_view TEXT_COLOR_601 = obs_module_text("ColorSpace.601");
-const std::string_view TEXT_COLOR_2100PQ = obs_module_text("ColorSpace.2100PQ");
-const std::string_view TEXT_COLOR_2100HLG = obs_module_text("ColorSpace.2100HLG");
-const std::string_view TEXT_COLOR_RANGE = obs_module_text("ColorRange");
-const std::string_view TEXT_RANGE_DEFAULT = obs_module_text("ColorRange.Default");
-const std::string_view TEXT_RANGE_PARTIAL = obs_module_text("ColorRange.Partial");
-const std::string_view TEXT_RANGE_FULL = obs_module_text("ColorRange.Full");
-const char *TEXT_DWNS = obs_module_text("DeactivateWhenNotShowing");
-
-constexpr const char *INTELNPU_BLUR_TYPE = "intelnpu_blur_type";
-const char *TEXT_INTELNPU_BLUR_TYPE = obs_module_text("IntelNPU.BackgroundBlur");
-const char *TEXT_INTELNPU_BLUR_NONE = obs_module_text("IntelNPU.BlurNone");
-const char *TEXT_INTELNPU_BLUR_STANDARD = obs_module_text("IntelNPU.BlurStandard");
-const char *TEXT_INTELNPU_BLUR_PORTRAIT = obs_module_text("IntelNPU.Portrait");
-
-constexpr const char *INTELNPU_BACKGROUND_REMOVAL = "intelnpu_background_removal";
-const char *TEXT_INTELNPU_BACKGROUND_REMOVAL = obs_module_text("IntelNPU.BackgroundRemoval");
-
-constexpr const char *INTELNPU_AUTO_FRAMING = "intelnpu_auto_framing";
-const char *TEXT_INTELNPU_AUTO_FRAMING = obs_module_text("IntelNPU.AutoFraming");
-
-constexpr const char *INTELNPU_EYEGAZE_CORRECTION = "intelnpu_eyegaze_correction";
-const char *TEXT_INTELNPU_EYEGAZE_CORRECTION = obs_module_text("IntelNPU.EyeGazeCorrection");
 } // namespace
 
 enum BlurType {
