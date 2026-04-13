@@ -100,7 +100,21 @@ bool obs_module_load(void)
  */
 MODULE_EXPORT bool obs_module_load(void);
 
-/** Optional: Called when the module is unloaded.  */
+/**
+ * Optional: Called when libobs is shutting down and the module is about
+ * to be unloaded. All libobs objects are still active and valid at this
+ * point. Use this function to save user settings and release any strong
+ * references that the module itself is holding to libobs objects (sources,
+ * canvases, outputs, encoders, and services).
+ *
+ * Do not attempt to release or destroy any still-active objects provided
+ * by the module - ensure that they can continue functioning even after
+ * returning from this function, as libobs may still need to call into the
+ * module's callbacks (e.g. destroy) to clean up any remaining instances.
+ *
+ * After this function returns, do not make any further libobs API calls
+ * outside of libobs callbacks.
+ */
 MODULE_EXPORT void obs_module_unload(void);
 
 /** Optional: Called when all modules have finished loading */
