@@ -50,9 +50,9 @@ typedef void (*LIBVLC_AUDIO_SET_CALLBACKS)(libvlc_media_player_t *mp, libvlc_aud
 typedef void (*LIBVLC_AUDIO_SET_FORMAT_CALLBACKS)(libvlc_media_player_t *mp, libvlc_audio_setup_cb setup,
 						  libvlc_audio_cleanup_cb cleanup);
 typedef int (*LIBVLC_MEDIA_PLAYER_PLAY)(libvlc_media_player_t *p_mi);
-typedef void (*LIBVLC_MEDIA_PLAYER_STOP)(libvlc_media_player_t *p_mi);
+typedef void (*LIBVLC_MEDIA_PLAYER_STOP_ASYNC)(libvlc_media_player_t *p_mi);
 typedef libvlc_time_t (*LIBVLC_MEDIA_PLAYER_GET_TIME)(libvlc_media_player_t *p_mi);
-typedef void (*LIBVLC_MEDIA_PLAYER_SET_TIME)(libvlc_media_player_t *p_mi, libvlc_time_t i_time);
+typedef void (*LIBVLC_MEDIA_PLAYER_SET_TIME)(libvlc_media_player_t *p_mi, libvlc_time_t i_time, bool b_fast);
 typedef int (*LIBVLC_VIDEO_GET_SIZE)(libvlc_media_player_t *p_mi, unsigned num, unsigned *px, unsigned *py);
 typedef libvlc_event_manager_t *(*LIBVLC_MEDIA_PLAYER_EVENT_MANAGER)(libvlc_media_player_t *p_mp);
 typedef libvlc_state_t (*LIBVLC_MEDIA_PLAYER_GET_STATE)(libvlc_media_player_t *p_mi);
@@ -72,7 +72,7 @@ typedef libvlc_media_list_player_t *(*LIBVLC_MEDIA_LIST_PLAYER_NEW)(libvlc_insta
 typedef void (*LIBVLC_MEDIA_LIST_PLAYER_RELEASE)(libvlc_media_list_player_t *p_mlp);
 typedef void (*LIBVLC_MEDIA_LIST_PLAYER_PLAY)(libvlc_media_list_player_t *p_mlp);
 typedef void (*LIBVLC_MEDIA_LIST_PLAYER_PAUSE)(libvlc_media_list_player_t *p_mlp);
-typedef void (*LIBVLC_MEDIA_LIST_PLAYER_STOP)(libvlc_media_list_player_t *p_mlp);
+typedef void (*LIBVLC_MEDIA_LIST_PLAYER_STOP_ASYNC)(libvlc_media_list_player_t *p_mlp);
 typedef void (*LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_PLAYER)(libvlc_media_list_player_t *p_mlp,
 							  libvlc_media_player_t *p_mp);
 typedef void (*LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_LIST)(libvlc_media_list_player_t *p_mlp,
@@ -111,7 +111,7 @@ extern LIBVLC_VIDEO_SET_FORMAT_CALLBACKS libvlc_video_set_format_callbacks_;
 extern LIBVLC_AUDIO_SET_CALLBACKS libvlc_audio_set_callbacks_;
 extern LIBVLC_AUDIO_SET_FORMAT_CALLBACKS libvlc_audio_set_format_callbacks_;
 extern LIBVLC_MEDIA_PLAYER_PLAY libvlc_media_player_play_;
-extern LIBVLC_MEDIA_PLAYER_STOP libvlc_media_player_stop_;
+extern LIBVLC_MEDIA_PLAYER_STOP_ASYNC libvlc_media_player_stop_async_;
 extern LIBVLC_MEDIA_PLAYER_GET_TIME libvlc_media_player_get_time_;
 extern LIBVLC_MEDIA_PLAYER_SET_TIME libvlc_media_player_set_time_;
 extern LIBVLC_VIDEO_GET_SIZE libvlc_video_get_size_;
@@ -133,7 +133,7 @@ extern LIBVLC_MEDIA_LIST_PLAYER_NEW libvlc_media_list_player_new_;
 extern LIBVLC_MEDIA_LIST_PLAYER_RELEASE libvlc_media_list_player_release_;
 extern LIBVLC_MEDIA_LIST_PLAYER_PLAY libvlc_media_list_player_play_;
 extern LIBVLC_MEDIA_LIST_PLAYER_PAUSE libvlc_media_list_player_pause_;
-extern LIBVLC_MEDIA_LIST_PLAYER_STOP libvlc_media_list_player_stop_;
+extern LIBVLC_MEDIA_LIST_PLAYER_STOP_ASYNC libvlc_media_list_player_stop_async_;
 extern LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_PLAYER libvlc_media_list_player_set_media_player_;
 extern LIBVLC_MEDIA_LIST_PLAYER_SET_MEDIA_LIST libvlc_media_list_player_set_media_list_;
 extern LIBVLC_MEDIA_LIST_PLAYER_EVENT_MANAGER libvlc_media_list_player_event_manager_;
