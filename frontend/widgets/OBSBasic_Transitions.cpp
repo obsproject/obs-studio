@@ -70,6 +70,14 @@ void OBSBasic::InitDefaultTransitions()
 		}
 	}
 
+	// We require transitions in order to function, so exit with an error if
+	// obs-transitions failed to load for whatever reason.
+	if (!fadeTransition || !cutTransition) {
+		// FIXME: https://github.com/obsproject/obs-studio/issues/13394
+		throw "InitDefaultTransitions: Could not load default transitions. Try re-installing OBS Studio from "
+		      "<a href=\"https://obsproject.com/\">obsproject.com</a>.";
+	}
+
 	for (OBSSource &tr : defaultTransitions) {
 		std::string uuid = obs_source_get_uuid(tr);
 
