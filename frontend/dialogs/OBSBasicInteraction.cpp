@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "OBSBasicInteraction.hpp"
+#include "QInputMethodQueryEvent"
 
 #include <dialogs/OBSBasicProperties.hpp>
 #include <utility/OBSEventFilter.hpp>
@@ -46,21 +47,21 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	  renamedSignal(obs_source_get_signal_handler(source), "rename", OBSBasicInteraction::SourceRenamed, this),
 	  eventFilter(BuildEventFilter())
 {
-	int cx = (int)config_get_int(App()->GetAppConfig(), "InteractionWindow", "cx");
-	int cy = (int)config_get_int(App()->GetAppConfig(), "InteractionWindow", "cy");
 
 	Qt::WindowFlags flags = windowFlags();
 	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags & (~helpFlag));
 
 	ui->setupUi(this);
-
+	this->setAttribute(Qt::WA_DeleteOnClose);
 	ui->preview->setMouseTracking(true);
 	ui->preview->setFocusPolicy(Qt::StrongFocus);
 	ui->preview->installEventFilter(eventFilter.get());
+	ui->preview->setAttribute(Qt::WA_InputMethodEnabled, true);
 
-	if (cx > 400 && cy > 400)
-		resize(cx, cy);
+	auto handle = obs_source_get_signal_handler(source);
+	signal_handler_add(handle, "void composition_change(ptr source)");
+	signal_handler_connect(handle, "composition_change", composiytionChanged, this);
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
@@ -70,10 +71,40 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	};
 
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
+
+	auto s = obs_source_get_settings(source);
+	sizeFollowWindow = obs_data_get_bool(s, "size_follow_window");
+
+	if (sizeFollowWindow) {
+		int w, h;
+		w = obs_data_get_int(s, "width");
+		h = obs_data_get_int(s, "height");
+		int l, r, t, b;
+		ui->verticalLayout->getContentsMargins(&l, &t, &r, &b);
+		resize(w + l + r, h + t + b);
+		auto resizeCallback = [&]() {
+			QSize size = ui->preview->size();
+			auto s = obs_source_get_settings(source);
+			obs_data_set_int(s, "width", size.width());
+			obs_data_set_int(s, "height", size.height());
+			obs_source_update(source, s);
+			obs_data_release(s);
+		};
+		connect(ui->preview, &OBSQTDisplay::DisplayResized, this, resizeCallback);
+	}
+
+	obs_data_release(s);
+}
+
+QPoint OBSBasicInteraction::getDisplayPos()
+{
+	return ui->preview->pos();
 }
 
 OBSBasicInteraction::~OBSBasicInteraction()
 {
+	auto handle = obs_source_get_signal_handler(source);
+	signal_handler_disconnect(handle, "composition_change", composiytionChanged, this);
 	// since QT fakes a mouse movement while destructing a widget
 	// remove our event filter
 	ui->preview->removeEventFilter(eventFilter.get());
@@ -100,6 +131,10 @@ OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
 		case QEvent::KeyPress:
 		case QEvent::KeyRelease:
 			return this->HandleKeyEvent(static_cast<QKeyEvent *>(event));
+		case QEvent::InputMethod:
+			return this->HandleInputMethodEvent(static_cast<QInputMethodEvent *>(event));
+		case QEvent::InputMethodQuery:
+			return this->HandleInputMethodQuery(static_cast<QInputMethodQueryEvent *>(event));
 		default:
 			return false;
 		}
@@ -149,6 +184,40 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	gs_set_linear_srgb(previous);
 	gs_projection_pop();
 	gs_viewport_pop();
+}
+
+void OBSBasicInteraction::composiytionChanged(void *data, calldata_t *params)
+{
+	long long x_, y_, w_, h_;
+	calldata_get_int(params, "x", &x_);
+	calldata_get_int(params, "y", &y_);
+	calldata_get_int(params, "w", &w_);
+	calldata_get_int(params, "h", &h_);
+	OBSBasicInteraction *tmp = static_cast<OBSBasicInteraction *>(data);
+	QPoint pos = tmp->getDisplayPos();
+
+	if (!tmp->sizeFollowWindow) {
+		uint32_t sourceCX = max(obs_source_get_width(tmp->source), 1u);
+		uint32_t sourceCY = max(obs_source_get_height(tmp->source), 1u);
+		int x, y;
+		float scale;
+		QSize size = GetPixelSize(tmp);
+		int cx = size.width();
+		int cy = size.height();
+		qreal ratio = tmp->devicePixelRatioF();
+		GetScaleAndCenterPos(sourceCX, sourceCY, cx, cy, x, y, scale);
+
+		float srcX = float(x_) / ratio;
+		float srcY = float(y_) / ratio;
+		float srcW = float(w_) / ratio;
+		float srcH = float(h_) / ratio;
+
+		x_ = int(scale * srcX) + x;
+		y_ = int(scale * srcY) + y;
+		w_ = int(scale * srcW);
+		h_ = int(scale * srcH);
+	}
+	tmp->SetCompositionRect(QRect(x_ + pos.x(), y_ + pos.y(), w_, h_));
 }
 
 void OBSBasicInteraction::closeEvent(QCloseEvent *event)
@@ -376,6 +445,58 @@ bool OBSBasicInteraction::HandleKeyEvent(QKeyEvent *event)
 	obs_source_send_key_click(source, &keyEvent, keyUp);
 
 	return true;
+}
+
+bool OBSBasicInteraction::HandleInputMethodEvent(QInputMethodEvent *event)
+{
+	auto composingText = event->preeditString();
+	auto composedText = event->commitString();
+
+	if (!composedText.isEmpty()) {
+		obs_source_send_commit_text(source, composedText.toStdString().c_str());
+	} else if (!composingText.isEmpty()) {
+		//CefRange selectionRange;
+		int attr_start = 0;
+		for (auto &attr : event->attributes()) {
+			switch (attr.type) {
+			case QInputMethodEvent::TextFormat:
+				break;
+			case QInputMethodEvent::Cursor:
+				attr_start = attr.start;
+				break;
+			case QInputMethodEvent::Language:
+			case QInputMethodEvent::Ruby:
+			case QInputMethodEvent::Selection:
+				break;
+			default:
+				break;
+			}
+		}
+		obs_source_send_commit_composition(source, composingText.toStdString().c_str(), attr_start);
+	} else {
+		obs_source_send_cancel_composition(source);
+	}
+	return true;
+}
+
+bool OBSBasicInteraction::HandleInputMethodQuery(QInputMethodQueryEvent *event)
+{
+	switch (event->queries()) {
+	case Qt::ImCursorRectangle:
+		event->setValue(Qt::ImCursorRectangle, QVariant(compositionRect));
+		return true;
+	default:
+		return false;
+	}
+}
+
+void OBSBasicInteraction::SetCompositionRect(const QRect &rect)
+{
+	compositionRect = rect;
+	auto inputMethod = QGuiApplication::inputMethod();
+	if (inputMethod) {
+		inputMethod->update(Qt::ImCursorRectangle);
+	}
 }
 
 void OBSBasicInteraction::Init()

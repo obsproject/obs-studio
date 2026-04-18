@@ -460,6 +460,30 @@ struct obs_source_info {
 	void (*key_click)(void *data, const struct obs_key_event *event, bool key_up);
 
 	/**
+	* Called when input method commits finalized text.
+	*
+	* @param data  Source data
+	* @param text  The finalized text content committed by the input method
+	*/
+	void (*commit_text)(void *data, const char *text);
+
+	/**
+	 * Called when input method commits ongoing composition text (e.g., candidate words in Pinyin IME).
+	 *
+	 * @param data             Source data
+	 * @param text             The current composition text being edited
+	 * @param attr_start       To build The selected range within the composition text
+	 */
+	void (*commit_composition)(void *data, const char *text, int attr_start);
+
+	/**
+	 * Called when input method cancels the current composition (e.g., user cancels input or switches input method).
+	 *
+	 * @param data  Source data
+	 */
+	void (*cancel_composition)(void *data);
+
+	/**
 	 * Called when the filter is removed from a source
 	 *
 	 * @param  data    Filter data

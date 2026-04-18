@@ -1511,6 +1511,15 @@ EXPORT bool obs_source_add_active_child(obs_source_t *parent, obs_source_t *chil
  */
 EXPORT void obs_source_remove_active_child(obs_source_t *parent, obs_source_t *child);
 
+/** Sends an IME commit text event to a source. */
+EXPORT void obs_source_send_commit_text(obs_source_t *source, const char *text);
+
+/** Sends an IME commit composition event to a source. */
+EXPORT void obs_source_send_commit_composition(obs_source_t *source, const char *text, int attr_start);
+
+/** Sends an IME cancel composition event to a source. */
+EXPORT void obs_source_send_cancel_composition(obs_source_t *source);
+
 /** Sends a mouse down/up event to a source */
 EXPORT void obs_source_send_mouse_click(obs_source_t *source, const struct obs_mouse_event *event, int32_t type,
 					bool mouse_up, uint32_t click_count);

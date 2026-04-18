@@ -37,6 +37,8 @@ private:
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	std::unique_ptr<OBSEventFilter> eventFilter;
+	bool sizeFollowWindow;
+	QRect compositionRect;
 
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
@@ -49,6 +51,9 @@ private:
 	bool HandleMouseWheelEvent(QWheelEvent *event);
 	bool HandleFocusEvent(QFocusEvent *event);
 	bool HandleKeyEvent(QKeyEvent *event);
+	bool HandleInputMethodEvent(QInputMethodEvent *event);
+	bool HandleInputMethodQuery(QInputMethodQueryEvent *event);
+	void SetCompositionRect(const QRect &rect);
 
 	OBSEventFilter *BuildEventFilter();
 
@@ -56,6 +61,8 @@ public:
 	OBSBasicInteraction(QWidget *parent, OBSSource source_);
 	~OBSBasicInteraction();
 
+	static void composiytionChanged(void *data, calldata_t *params);
+	QPoint getDisplayPos();
 	void Init();
 
 protected:

@@ -1097,6 +1097,42 @@ void obs_source_update_properties(obs_source_t *source)
 	obs_source_dosignal(source, NULL, "update_properties");
 }
 
+void obs_source_send_commit_text(obs_source_t *source, const char *text)
+{
+	if (!obs_source_valid(source, "obs_source_commit_text"))
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.commit_text) {
+			source->info.commit_text(source->context.data, text);
+		}
+	}
+}
+
+void obs_source_send_commit_composition(obs_source_t *source, const char *text, int attr_start)
+{
+	if (!obs_source_valid(source, "obs_source_commit_text"))
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.commit_composition) {
+			source->info.commit_composition(source->context.data, text, attr_start);
+		}
+	}
+}
+
+void obs_source_send_cancel_composition(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_commit_text"))
+		return;
+
+	if (source->info.output_flags & OBS_SOURCE_INTERACTION) {
+		if (source->info.cancel_composition) {
+			source->info.cancel_composition(source->context.data);
+		}
+	}
+}
+
 void obs_source_send_mouse_click(obs_source_t *source, const struct obs_mouse_event *event, int32_t type, bool mouse_up,
 				 uint32_t click_count)
 {
