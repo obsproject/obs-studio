@@ -661,7 +661,7 @@ float obs_fader_get_mul(obs_fader_t *fader)
 bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 {
 	signal_handler_t *sh;
-	float vol;
+	float vol = 0.0f;
 
 	if (!fader || !source)
 		return false;
@@ -765,7 +765,7 @@ void obs_volmeter_destroy(obs_volmeter_t *volmeter)
 bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 {
 	signal_handler_t *sh;
-	float vol;
+	float vol = 0.0f;
 
 	if (!volmeter || !source)
 		return false;
