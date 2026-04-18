@@ -492,7 +492,7 @@ static void volmeter_process_audio_data(obs_volmeter_t *volmeter, const struct a
 static void volmeter_source_data_received(void *vptr, obs_source_t *source, const struct audio_data *data, bool muted)
 {
 	struct obs_volmeter *volmeter = (struct obs_volmeter *)vptr;
-	float mul;
+	float mul = 0.0f;
 	float magnitude[MAX_AUDIO_CHANNELS];
 	float peak[MAX_AUDIO_CHANNELS];
 	float input_peak[MAX_AUDIO_CHANNELS];
