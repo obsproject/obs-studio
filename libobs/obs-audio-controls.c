@@ -371,7 +371,7 @@ static float get_sample_peak(__m128 previous_samples, const float *samples, size
 		peak = _mm_max_ps(peak, abs_ps(new_work));
 	}
 
-	float peak_value;
+	float peak_value = 0.0f;
 	hmax_ps(peak_value, peak);
 	return peak_value;
 }
