@@ -32,20 +32,14 @@ class ThumbnailView : public QObject {
 	QPixmap pixmap{};
 	bool enabled = true;
 
-public slots:
-	void setPixmap(QPixmap pixmap);
-
 public:
-	ThumbnailView(QObject *parent, QPointer<ThumbnailItem> item);
-	~ThumbnailView();
+	ThumbnailView(QObject *parent, const QPointer<ThumbnailItem> &item);
+	~ThumbnailView() = default;
 
-	std::string uuid{};
-	QPixmap getPixmap() const { return pixmap; }
+	std::string uuid;
+	[[nodiscard]] QPixmap getPixmap() const { return pixmap; }
 
-	static constexpr int cx = 320;
-	static constexpr int cy = 180;
-
-	bool isEnabled() const { return enabled; }
+	[[nodiscard]] bool isEnabled() const { return enabled; }
 	void setEnabled(bool enabled);
 
 	void requestUpdate();
@@ -54,4 +48,7 @@ signals:
 	void updated(QPixmap pixmap);
 	void enabledChanged(bool enabled);
 	void updateRequested(std::string &uuid);
+
+public slots:
+	void setPixmap(QPixmap pixmap);
 };

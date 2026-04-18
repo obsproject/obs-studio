@@ -18,7 +18,7 @@
 
 #include "ThumbnailView.hpp"
 
-ThumbnailView::ThumbnailView(QObject *parent, QPointer<ThumbnailItem> item) : QObject(parent)
+ThumbnailView::ThumbnailView(QObject *parent, const QPointer<ThumbnailItem> &item) : QObject(parent)
 {
 	if (!parent) {
 		deleteLater();
@@ -38,8 +38,6 @@ ThumbnailView::ThumbnailView(QObject *parent, QPointer<ThumbnailItem> item) : QO
 		setEnabled(false);
 	}
 }
-
-ThumbnailView::~ThumbnailView() {}
 
 void ThumbnailView::setEnabled(bool enabled)
 {
@@ -61,7 +59,7 @@ void ThumbnailView::requestUpdate()
 
 void ThumbnailView::setPixmap(QPixmap pixmap)
 {
-	this->pixmap = pixmap;
+	this->pixmap = std::move(pixmap);
 
 	emit updated(this->pixmap);
 }

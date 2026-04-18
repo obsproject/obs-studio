@@ -26,7 +26,36 @@
 #include <QPainter>
 #include <QPixmap>
 
-ThumbnailItem::ThumbnailItem(const std::string &uuid, ThumbnailManager *manager) : uuid(uuid), QObject(manager)
+static constexpr int kDefaultWidth = 320;
+static constexpr int kDefaultHeight = 180;
+
+namespace {
+QPixmap getDefaultThumbnail(obs_source_t *source)
+{
+	const char *id = obs_source_get_id(source);
+	OBSBasic *main = OBSBasic::Get();
+	if (main && id) {
+		QIcon icon = OBSBasic::Get()->GetSourceIcon(id);
+		QPixmap iconPixmap = icon.pixmap(90, 90);
+
+		QPixmap defaultPixmap(kDefaultWidth, kDefaultHeight);
+		defaultPixmap.fill(Qt::transparent);
+
+		QPainter painter(&defaultPixmap);
+
+		const int x = (defaultPixmap.width() - iconPixmap.width()) / 2;
+		const int y = (defaultPixmap.height() - iconPixmap.height()) / 2;
+
+		painter.drawPixmap(x, y, iconPixmap);
+
+		return defaultPixmap;
+	}
+
+	return QPixmap();
+}
+} // namespace
+
+ThumbnailItem::ThumbnailItem(const std::string &uuid, ThumbnailManager *manager) : QObject(manager), uuid(uuid)
 {
 	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
 	if (!source) {
@@ -48,33 +77,7 @@ ThumbnailItem::ThumbnailItem(const std::string &uuid, ThumbnailManager *manager)
 	}
 }
 
-ThumbnailItem::~ThumbnailItem() {}
-
-QPixmap ThumbnailItem::getDefaultThumbnail(obs_source_t *source)
-{
-	const char *id = obs_source_get_id(source);
-	OBSBasic *main = OBSBasic::Get();
-	if (main && id) {
-		QIcon icon = OBSBasic::Get()->GetSourceIcon(id);
-		QPixmap iconPixmap = icon.pixmap(90, 90);
-
-		QPixmap defaultPixmap(ThumbnailView::cx, ThumbnailView::cy);
-		defaultPixmap.fill(Qt::transparent);
-
-		QPainter painter(&defaultPixmap);
-
-		const int x = (defaultPixmap.width() - iconPixmap.width()) / 2;
-		const int y = (defaultPixmap.height() - iconPixmap.height()) / 2;
-
-		painter.drawPixmap(x, y, iconPixmap);
-
-		return defaultPixmap;
-	}
-
-	return QPixmap();
-}
-
-void ThumbnailItem::updatePixmapFromImage(QImage image)
+void ThumbnailItem::updatePixmapFromImage(const QImage &image)
 {
 	if (!image.isNull()) {
 		setPixmap(QPixmap::fromImage(image));
@@ -94,7 +97,7 @@ QPixmap ThumbnailItem::getPixmap() const
 
 void ThumbnailItem::setPixmap(QPixmap pixmap)
 {
-	this->pixmap = pixmap;
+	this->pixmap = std::move(pixmap);
 
 	emit pixmapUpdated(this->pixmap);
 }
@@ -106,7 +109,7 @@ void ThumbnailItem::incrementViewCount()
 
 ThumbnailView *ThumbnailItem::createView(QObject *parent)
 {
-	ThumbnailView *view = new ThumbnailView(parent, this);
+	auto *view = new ThumbnailView(parent, this);
 
 	incrementViewCount();
 	if (view->isEnabled()) {
@@ -182,9 +185,9 @@ bool ThumbnailItem::update()
 			return false;
 		}
 
-		ScreenshotObj *obj = new ScreenshotObj(source);
+		auto *obj = new ScreenshotObj(source);
 		obj->setSaveToFile(false);
-		obj->setSize(ThumbnailView::cx, ThumbnailView::cy);
+		obj->setSize(kDefaultWidth, kDefaultHeight);
 
 		connect(obj, &ScreenshotObj::imageReady, this, &ThumbnailItem::updatePixmapFromImage);
 	}

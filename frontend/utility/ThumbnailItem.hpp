@@ -29,30 +29,32 @@ class ThumbnailView;
 class ThumbnailItem : public QObject {
 	Q_OBJECT
 
-	std::string uuid{};
+	std::string uuid;
 	OBSWeakSource weakSource;
-	QPixmap pixmap{};
+	QPixmap pixmap;
 	bool isVideoSource = false;
 
 	int viewCount{0};
 	int enabledCount{0};
 
 	bool isDefaultPixmap_ = true;
-	QPixmap getDefaultThumbnail(obs_source_t *source);
-	void updatePixmapFromImage(QImage image);
-	bool shouldUpdate() const;
+	void updatePixmapFromImage(const QImage &image);
+	[[nodiscard]] bool shouldUpdate() const;
 
 public:
 	ThumbnailItem(const std::string &uuid, ThumbnailManager *manager);
-	~ThumbnailItem();
+	~ThumbnailItem() = default;
 
 	bool update();
-	QPixmap getPixmap() const;
+	[[nodiscard]] QPixmap getPixmap() const;
 	void setPixmap(QPixmap pixmap);
 
-	bool isDefaultPixmap() const { return isDefaultPixmap_; }
-	bool isValid() const { return isVideoSource && weakSource && !obs_weak_source_expired(weakSource); }
-	const std::string &getUuid() const { return uuid; }
+	[[nodiscard]] bool isDefaultPixmap() const { return isDefaultPixmap_; }
+	[[nodiscard]] bool isValid() const
+	{
+		return isVideoSource && weakSource && !obs_weak_source_expired(weakSource);
+	}
+	[[nodiscard]] const std::string &getUuid() const { return uuid; }
 
 	ThumbnailView *createView(QObject *parent);
 
