@@ -455,7 +455,7 @@ static void volmeter_process_peak(obs_volmeter_t *volmeter, const struct audio_d
 
 	/* Clear the peak of the channels that have not been handled. */
 	for (; channel_nr < MAX_AUDIO_CHANNELS; channel_nr++) {
-		volmeter->peak[channel_nr] = 0.0;
+		volmeter->peak[channel_nr] = 0.0f;
 	}
 }
 
@@ -470,7 +470,7 @@ static void volmeter_process_magnitude(obs_volmeter_t *volmeter, const struct au
 			continue;
 		}
 
-		float sum = 0.0;
+		float sum = 0.0f;
 		for (size_t i = 0; i < nr_samples; i++) {
 			float sample = samples[i];
 			sum += sample * sample;
