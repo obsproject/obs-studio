@@ -368,7 +368,8 @@ void OBSBasicSourceSelect::refreshSources()
 	for (size_t i = 0; i < list.sources.num; ++i) {
 		obs_source_t *source = list.sources.array[i];
 
-		weakSources.push_back(obs_source_get_weak_source(source));
+		OBSWeakSourceAutoRelease weakSource = obs_source_get_weak_source(source);
+		weakSources.emplace_back(weakSource);
 	}
 	obs_frontend_source_list_free(&list);
 
@@ -484,7 +485,8 @@ bool OBSBasicSourceSelect::enumSourcesCallback(void *data, obs_source_t *source)
 
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect *>(data);
 
-	window->weakSources.push_back(obs_source_get_weak_source(source));
+	OBSWeakSourceAutoRelease weakSource = obs_source_get_weak_source(source);
+	window->weakSources.emplace_back(weakSource);
 
 	return true;
 }

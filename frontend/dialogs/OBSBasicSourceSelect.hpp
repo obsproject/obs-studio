@@ -54,7 +54,7 @@ private:
 	static void obsSourceCreated(void *param, calldata_t *calldata);
 	static void obsSourceRemoved(void *param, calldata_t *calldata);
 
-	std::vector<obs_weak_source_t *> weakSources;
+	std::vector<OBSWeakSource> weakSources;
 
 	QPointer<FlowLayout> existingFlowLayout = nullptr;
 
