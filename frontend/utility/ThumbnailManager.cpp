@@ -111,10 +111,10 @@ void ThumbnailManager::createThumbnailItem(const std::string &uuid)
 	thumbnailList[uuid] = item;
 
 	if (item->isDefaultPixmap()) {
-		updateQueue.push_front(uuid);
+		updateQueue.emplace_front(uuid);
 		updateTickInterval(kMinimumThumbnailUpdateInterval);
 	} else {
-		updateQueue.push_back(uuid);
+		updateQueue.emplace_back(uuid);
 	}
 
 	connect(item, &ThumbnailItem::noViewsRemaining, this, [this, uuid]() { deleteItemById(uuid); });
@@ -164,7 +164,7 @@ void ThumbnailManager::updateNextItem(size_t cycleDepth)
 		priorityQueue.pop_front();
 
 		item = thumbnailList[uuid];
-		updateQueue.push_back(uuid);
+		updateQueue.emplace_back(std::move(uuid));
 
 		if (!updateItem(item) && cycleDepth < thumbnailList.size()) {
 			updateNextItem(cycleDepth + 1);
@@ -175,7 +175,7 @@ void ThumbnailManager::updateNextItem(size_t cycleDepth)
 
 		updateQueue.pop_front();
 		item = thumbnailList[uuid];
-		updateQueue.push_back(uuid);
+		updateQueue.emplace_back(std::move(uuid));
 
 		if (item->isDefaultPixmap()) {
 			quickUpdate = true;

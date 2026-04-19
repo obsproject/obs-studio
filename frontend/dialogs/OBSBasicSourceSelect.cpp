@@ -227,7 +227,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 	: QDialog(parent),
 	  ui(new Ui::OBSBasicSourceSelect),
 	  undo_s(undo_s),
-	  selectedTypeId(kRecentTypeId.toString())
+	  selectedTypeId(kRecentTypeId.toString()),
+	  sourceButtons(new QButtonGroup(this))
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
@@ -366,7 +367,7 @@ void OBSBasicSourceSelect::refreshSources()
 	obs_frontend_get_scenes(&list);
 
 	for (size_t i = 0; i < list.sources.num; ++i) {
-		obs_source_t *source = list.sources.array[i];
+		OBSSource source = list.sources.array[i];
 
 		OBSWeakSourceAutoRelease weakSource = obs_source_get_weak_source(source);
 		weakSources.emplace_back(weakSource);
@@ -399,7 +400,7 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 	std::vector<obs_weak_source_t *> matchingSources{};
 	std::copy_if(weakSources.begin(), weakSources.end(), std::back_inserter(matchingSources),
 		     [this](obs_weak_source_t *weak) {
-			     obs_source_t *source = OBSGetStrongRef(weak);
+			     OBSSource source = OBSGetStrongRef(weak);
 
 			     if (!source || obs_source_removed(source)) {
 				     return false;
@@ -656,7 +657,7 @@ void OBSBasicSourceSelect::addSelectedItem(const std::string &uuid)
 	auto it = std::find(selectedItems.begin(), selectedItems.end(), uuid);
 
 	if (it == selectedItems.end()) {
-		selectedItems.push_back(uuid);
+		selectedItems.emplace_back(uuid);
 		emit selectedItemsChanged();
 	}
 
