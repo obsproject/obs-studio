@@ -27,6 +27,19 @@ try {
 	return false;
 }
 
+extern "C" EXPORT BOOL winrt_capture_secondary_windows_toggle_supported()
+try {
+	return winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(
+		L"Windows.Graphics.Capture.GraphicsCaptureSession", L"IncludeSecondaryWindows");
+} catch (const winrt::hresult_error &err) {
+	blog(LOG_ERROR, "winrt_capture_secondary_windows_supported (0x%08X): %s", err.code().value,
+	     winrt::to_string(err.message()).c_str());
+	return false;
+} catch (...) {
+	blog(LOG_ERROR, "winrt_capture_secondary_windows_supported (0x%08X)", winrt::to_hresult().value);
+	return false;
+}
+
 template<typename T>
 static winrt::com_ptr<T> GetDXGIInterfaceFromObject(winrt::Windows::Foundation::IInspectable const &object)
 {
@@ -98,6 +111,7 @@ struct winrt_capture {
 
 	bool capture_cursor;
 	BOOL cursor_visible;
+	BOOL capture_secondary_windows;
 
 	gs_texture_t *texture;
 	bool texture_written;
@@ -335,7 +349,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 }
 
 static struct winrt_capture *winrt_capture_init_internal(BOOL cursor, HWND window, BOOL client_area, BOOL force_sdr,
-							 HMONITOR monitor)
+							 BOOL secondary_windows, HMONITOR monitor)
 try {
 	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -381,6 +395,9 @@ try {
 	const BOOL cursor_toggle_supported = winrt_capture_cursor_toggle_supported();
 	if (cursor_toggle_supported)
 		session.IsCursorCaptureEnabled(cursor);
+	const BOOL secondary_windows_supported = winrt_capture_secondary_windows_toggle_supported();
+	if (secondary_windows_supported)
+		session.IncludeSecondaryWindows(secondary_windows);
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->window = window;
@@ -390,6 +407,7 @@ try {
 	capture->format = format;
 	capture->capture_cursor = cursor && cursor_toggle_supported;
 	capture->cursor_visible = cursor;
+	capture->capture_secondary_windows = secondary_windows && secondary_windows_supported;
 	capture->item = item;
 	capture->device = device;
 	d3d_device->GetImmediateContext(&capture->context);
@@ -422,14 +440,14 @@ try {
 }
 
 extern "C" EXPORT struct winrt_capture *winrt_capture_init_window(BOOL cursor, HWND window, BOOL client_area,
-								  BOOL force_sdr)
+								  BOOL force_sdr, BOOL secondary_windows)
 {
-	return winrt_capture_init_internal(cursor, window, client_area, force_sdr, NULL);
+	return winrt_capture_init_internal(cursor, window, client_area, force_sdr, secondary_windows, NULL);
 }
 
 extern "C" EXPORT struct winrt_capture *winrt_capture_init_monitor(BOOL cursor, HMONITOR monitor, BOOL force_sdr)
 {
-	return winrt_capture_init_internal(cursor, NULL, false, force_sdr, monitor);
+	return winrt_capture_init_internal(cursor, NULL, false, force_sdr, false, monitor);
 }
 
 extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
@@ -503,6 +521,27 @@ extern "C" EXPORT BOOL winrt_capture_show_cursor(struct winrt_capture *capture, 
 		     winrt::to_string(err.message()).c_str());
 	} catch (...) {
 		blog(LOG_ERROR, "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X)", winrt::to_hresult().value);
+	}
+
+	return success;
+}
+
+extern "C" EXPORT BOOL winrt_capture_secondary_windows(struct winrt_capture *capture, BOOL enabled)
+{
+	BOOL success = FALSE;
+
+	try {
+		if (capture->capture_secondary_windows != enabled) {
+			capture->session.IncludeSecondaryWindows(enabled);
+			capture->capture_secondary_windows = enabled;
+		}
+
+		success = TRUE;
+	} catch (winrt::hresult_error &err) {
+		blog(LOG_ERROR, "GraphicsCaptureSession::IncludeSecondaryWindows(0x%08X): %s", err.code().value,
+		     winrt::to_string(err.message()).c_str());
+	} catch (...) {
+		blog(LOG_ERROR, "GraphicsCaptureSession::IncludeSecondaryWindows(0x%08X)", winrt::to_hresult().value);
 	}
 
 	return success;

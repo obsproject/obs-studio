@@ -16,20 +16,21 @@
 
 /* clang-format off */
 
-#define TEXT_WINDOW_CAPTURE obs_module_text("WindowCapture")
-#define TEXT_WINDOW         obs_module_text("WindowCapture.Window")
-#define TEXT_METHOD         obs_module_text("WindowCapture.Method")
-#define TEXT_METHOD_AUTO    obs_module_text("WindowCapture.Method.Auto")
-#define TEXT_METHOD_BITBLT  obs_module_text("WindowCapture.Method.BitBlt")
-#define TEXT_METHOD_WGC     obs_module_text("WindowCapture.Method.WindowsGraphicsCapture")
-#define TEXT_MATCH_PRIORITY obs_module_text("WindowCapture.Priority")
-#define TEXT_MATCH_TITLE    obs_module_text("WindowCapture.Priority.Title")
-#define TEXT_MATCH_CLASS    obs_module_text("WindowCapture.Priority.Class")
-#define TEXT_MATCH_EXE      obs_module_text("WindowCapture.Priority.Exe")
-#define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
-#define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
-#define TEXT_CLIENT_AREA    obs_module_text("ClientArea")
-#define TEXT_FORCE_SDR      obs_module_text("ForceSdr")
+#define TEXT_WINDOW_CAPTURE            obs_module_text("WindowCapture")
+#define TEXT_WINDOW                    obs_module_text("WindowCapture.Window")
+#define TEXT_METHOD                    obs_module_text("WindowCapture.Method")
+#define TEXT_METHOD_AUTO               obs_module_text("WindowCapture.Method.Auto")
+#define TEXT_METHOD_BITBLT             obs_module_text("WindowCapture.Method.BitBlt")
+#define TEXT_METHOD_WGC                obs_module_text("WindowCapture.Method.WindowsGraphicsCapture")
+#define TEXT_MATCH_PRIORITY            obs_module_text("WindowCapture.Priority")
+#define TEXT_MATCH_TITLE               obs_module_text("WindowCapture.Priority.Title")
+#define TEXT_MATCH_CLASS               obs_module_text("WindowCapture.Priority.Class")
+#define TEXT_MATCH_EXE                 obs_module_text("WindowCapture.Priority.Exe")
+#define TEXT_CAPTURE_CURSOR            obs_module_text("CaptureCursor")
+#define TEXT_CAPTURE_SECONDARY_WINDOWS obs_module_text("CaptureSecondaryWindows")
+#define TEXT_COMPATIBILITY             obs_module_text("Compatibility")
+#define TEXT_CLIENT_AREA               obs_module_text("ClientArea")
+#define TEXT_FORCE_SDR                 obs_module_text("ForceSdr")
 
 /* clang-format on */
 
@@ -39,8 +40,9 @@
 
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
+typedef BOOL (*PFN_winrt_capture_secondary_windows_toggle_supported)();
 typedef struct winrt_capture *(*PFN_winrt_capture_init_window)(BOOL cursor, HWND window, BOOL client_area,
-							       BOOL force_sdr);
+							       BOOL force_sdr, BOOL secondary_windows);
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
@@ -53,6 +55,7 @@ typedef uint32_t (*PFN_winrt_capture_height)(const struct winrt_capture *capture
 struct winrt_exports {
 	PFN_winrt_capture_supported winrt_capture_supported;
 	PFN_winrt_capture_cursor_toggle_supported winrt_capture_cursor_toggle_supported;
+	PFN_winrt_capture_secondary_windows_toggle_supported winrt_capture_secondary_windows_toggle_supported;
 	PFN_winrt_capture_init_window winrt_capture_init_window;
 	PFN_winrt_capture_free winrt_capture_free;
 	PFN_winrt_capture_active winrt_capture_active;
@@ -85,6 +88,7 @@ struct window_capture {
 	enum window_capture_method method;
 	enum window_priority priority;
 	bool cursor;
+	bool secondary_windows;
 	bool compatibility;
 	bool client_area;
 	bool force_sdr;
@@ -220,6 +224,7 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->method = choose_method(method, wgc_supported, wc->class);
 	wc->priority = (enum window_priority)priority;
 	wc->cursor = obs_data_get_bool(s, "cursor");
+	wc->secondary_windows = obs_data_get_bool(s, "secondary_windows");
 	wc->capture_audio = obs_data_get_bool(s, "capture_audio");
 	wc->force_sdr = obs_data_get_bool(s, "force_sdr");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
@@ -284,6 +289,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module, cons
 
 	WINRT_IMPORT(winrt_capture_supported);
 	WINRT_IMPORT(winrt_capture_cursor_toggle_supported);
+	WINRT_IMPORT(winrt_capture_secondary_windows_toggle_supported);
 	WINRT_IMPORT(winrt_capture_init_window);
 	WINRT_IMPORT(winrt_capture_free);
 	WINRT_IMPORT(winrt_capture_active);
@@ -430,6 +436,7 @@ static void wc_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, "method", METHOD_AUTO);
 	obs_data_set_default_bool(defaults, "cursor", true);
+	obs_data_set_default_bool(defaults, "secondary_windows", true);
 	obs_data_set_default_bool(defaults, "force_sdr", false);
 	obs_data_set_default_bool(defaults, "compatibility", false);
 	obs_data_set_default_bool(defaults, "client_area", true);
@@ -444,9 +451,14 @@ static void update_settings_visibility(obs_properties_t *props, struct window_ca
 	const bool wgc_options = method == METHOD_WGC;
 
 	const bool wgc_cursor_toggle = wgc_options && wc->exports.winrt_capture_cursor_toggle_supported();
+	const bool wgc_secondary_windows_toggle = wgc_options &&
+						  wc->exports.winrt_capture_secondary_windows_toggle_supported();
 
 	obs_property_t *p = obs_properties_get(props, "cursor");
 	obs_property_set_visible(p, bitblt_options || wgc_cursor_toggle);
+
+	p = obs_properties_get(props, "secondary_windows");
+	obs_property_set_visible(p, wgc_secondary_windows_toggle);
 
 	p = obs_properties_get(props, "compatibility");
 	obs_property_set_visible(p, bitblt_options);
@@ -554,6 +566,8 @@ static obs_properties_t *wc_properties(void *data)
 	}
 
 	obs_properties_add_bool(ppts, "cursor", TEXT_CAPTURE_CURSOR);
+
+	obs_properties_add_bool(ppts, "secondary_windows", TEXT_CAPTURE_SECONDARY_WINDOWS);
 
 	obs_properties_add_bool(ppts, "compatibility", TEXT_COMPATIBILITY);
 
@@ -737,7 +751,7 @@ static void wc_tick(void *data, float seconds)
 		if (wc->window && (wc->capture_winrt == NULL)) {
 			if (!wc->previously_failed) {
 				wc->capture_winrt = wc->exports.winrt_capture_init_window(
-					wc->cursor, wc->window, wc->client_area, wc->force_sdr);
+					wc->cursor, wc->window, wc->client_area, wc->force_sdr, wc->secondary_windows);
 
 				if (!wc->capture_winrt) {
 					wc->previously_failed = true;
