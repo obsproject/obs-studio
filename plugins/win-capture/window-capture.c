@@ -273,7 +273,7 @@ static const char *wc_getname(void *unused)
 
 #define WINRT_IMPORT(func)                                           \
 	do {                                                         \
-		exports->func = (PFN_##func)os_dlsym(module, #func); \
+		exports->func = (PFN_## func)os_dlsym(module, #func); \
 		if (!exports->func) {                                \
 			success = false;                             \
 			blog(LOG_ERROR,                              \
