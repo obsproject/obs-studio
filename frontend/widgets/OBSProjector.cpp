@@ -205,16 +205,16 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 void OBSProjector::OBSSourceRenamed(void *data, calldata_t *params)
 {
 	OBSProjector *window = static_cast<OBSProjector *>(data);
-	QString oldName = calldata_string(params, "prev_name");
-	QString newName = calldata_string(params, "new_name");
+	QString oldName = QString::fromUtf8(calldata_string(params, "prev_name"));
+	QString newName = QString::fromUtf8(calldata_string(params, "new_name"));
 
-	QMetaObject::invokeMethod(window, "RenameProjector", Q_ARG(QString, oldName), Q_ARG(QString, newName));
+	QMetaObject::invokeMethod(window, &OBSProjector::RenameProjector, oldName, newName);
 }
 
 void OBSProjector::OBSSourceDestroyed(void *data, calldata_t *)
 {
 	OBSProjector *window = static_cast<OBSProjector *>(data);
-	QMetaObject::invokeMethod(window, "EscapeTriggered");
+	QMetaObject::invokeMethod(window, &OBSProjector::EscapeTriggered);
 }
 
 void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)

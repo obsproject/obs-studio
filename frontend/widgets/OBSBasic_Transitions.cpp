@@ -96,7 +96,7 @@ void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
 		OBSBasic *main = OBSBasic::Get();
 
 		if (pressed)
-			QMetaObject::invokeMethod(main, "TriggerQuickTransition", Qt::QueuedConnection, Q_ARG(int, id));
+			QMetaObject::invokeMethod(main, &OBSBasic::TriggerQuickTransition, Qt::QueuedConnection, id);
 	};
 
 	qt->hotkey = obs_hotkey_register_frontend(hotkeyId->array, QT_TO_UTF8(hotkeyName), quickTransition,
@@ -129,17 +129,17 @@ void OBSBasic::InitTransition(obs_source_t *transition)
 {
 	auto onTransitionStart = [](void *data, calldata_t *) {
 		OBSBasic *window = (OBSBasic *)data;
-		QMetaObject::invokeMethod(window, "TransitionStarted", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(window, &OBSBasic::TransitionStarted, Qt::QueuedConnection);
 	};
 
 	auto onTransitionStop = [](void *data, calldata_t *) {
 		OBSBasic *window = (OBSBasic *)data;
-		QMetaObject::invokeMethod(window, "TransitionStopped", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(window, &OBSBasic::TransitionStopped, Qt::QueuedConnection);
 	};
 
 	auto onTransitionFullStop = [](void *data, calldata_t *) {
 		OBSBasic *window = (OBSBasic *)data;
-		QMetaObject::invokeMethod(window, "TransitionFullyStopped", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(window, &OBSBasic::TransitionFullyStopped, Qt::QueuedConnection);
 	};
 
 	signal_handler_t *handler = obs_source_get_signal_handler(transition);
@@ -1097,8 +1097,7 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 	duration->setValue(qt ? qt->duration : 300);
 
 	if (qt) {
-		connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged, this,
-			&OBSBasic::QuickTransitionChangeDuration);
+		connect(duration, &QSpinBox::valueChanged, this, &OBSBasic::QuickTransitionChangeDuration);
 	}
 
 	action = menu->addAction(QTStr("FadeToBlack"));

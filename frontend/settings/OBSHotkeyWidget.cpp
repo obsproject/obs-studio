@@ -183,7 +183,7 @@ void OBSHotkeyWidget::BindingsChanged(void *data, calldata_t *param)
 	auto widget = static_cast<OBSHotkeyWidget *>(data);
 	auto key = static_cast<obs_hotkey_t *>(calldata_ptr(param, "key"));
 
-	QMetaObject::invokeMethod(widget, "HandleChangedBindings", Q_ARG(obs_hotkey_id, obs_hotkey_get_id(key)));
+	QMetaObject::invokeMethod(widget, &OBSHotkeyWidget::HandleChangedBindings, obs_hotkey_get_id(key));
 }
 
 void OBSHotkeyWidget::HandleChangedBindings(obs_hotkey_id id_)

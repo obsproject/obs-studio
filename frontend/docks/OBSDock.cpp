@@ -29,7 +29,7 @@ void OBSDock::closeEvent(QCloseEvent *event)
 
 	bool warned = config_get_bool(App()->GetUserConfig(), "General", "WarnedAboutClosingDocks");
 	if (!OBSBasic::Get()->isClosing() && !warned) {
-		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+		QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 	}
 
 	QDockWidget::closeEvent(event);

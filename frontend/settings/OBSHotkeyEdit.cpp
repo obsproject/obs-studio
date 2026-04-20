@@ -198,7 +198,7 @@ void OBSHotkeyEdit::InitSignalHandler()
 	layoutChanged = {obs_get_signal_handler(), "hotkey_layout_change",
 			 [](void *this_, calldata_t *) {
 				 auto edit = static_cast<OBSHotkeyEdit *>(this_);
-				 QMetaObject::invokeMethod(edit, "ReloadKeyLayout");
+				 QMetaObject::invokeMethod(edit, &OBSHotkeyEdit::ReloadKeyLayout);
 			 },
 			 this};
 }

@@ -641,9 +641,8 @@ private slots:
 
 	void logUploadFinished(const QString &text, const QString &error, OBS::LogFileType uploadType);
 
-	void updateCheckFinished();
-
 public slots:
+	void updateCheckFinished();
 	void on_actionAdvAudioProperties_triggered();
 
 public:

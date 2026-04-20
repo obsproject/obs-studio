@@ -41,7 +41,7 @@ void showUnassignedWarning(const char *name)
 		}
 	};
 
-	QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+	QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 }
 } // namespace
 
@@ -169,37 +169,38 @@ void VolumeControl::obsVolumeChanged(void *data, float)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 
-	QMetaObject::invokeMethod(volControl, "changeVolume", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(volControl, &VolumeControl::changeVolume, Qt::QueuedConnection);
 }
 
 void VolumeControl::obsVolumeMuted(void *data, calldata_t *)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 
-	QMetaObject::invokeMethod(volControl, "updateMixerState", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(volControl, &VolumeControl::updateMixerState, Qt::QueuedConnection);
 }
 
 void VolumeControl::obsMixersOrMonitoringChanged(void *data, calldata_t *)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
-	QMetaObject::invokeMethod(volControl, "updateMixerState", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(volControl, &VolumeControl::updateMixerState, Qt::QueuedConnection);
 }
 
 void VolumeControl::obsSourceActivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
-				  Q_ARG(bool, true));
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::sourceActiveChanged,
+				  Qt::QueuedConnection, true);
 }
 
 void VolumeControl::obsSourceDeactivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
-				  Q_ARG(bool, false));
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::sourceActiveChanged,
+				  Qt::QueuedConnection, false);
 }
 
 void VolumeControl::obsSourceDestroy(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "handleSourceDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::handleSourceDestroyed,
+				  Qt::QueuedConnection);
 }
 
 void VolumeControl::setLayoutVertical(bool vertical)

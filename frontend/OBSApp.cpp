@@ -1181,7 +1181,7 @@ static void ui_task_handler(obs_task_t task, void *param, bool wait)
 		/* to get clang-format to behave */
 		task(param);
 	};
-	QMetaObject::invokeMethod(App(), "Exec", wait ? WaitConnection() : Qt::AutoConnection, Q_ARG(VoidFunc, doTask));
+	QMetaObject::invokeMethod(App(), &OBSApp::Exec, wait ? WaitConnection() : Qt::AutoConnection, doTask);
 }
 
 bool OBSApp::OBSInit()

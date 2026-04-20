@@ -271,7 +271,7 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 
 void OBSBasicFilters::UpdateProperties(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(data)->view, "ReloadProperties");
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(data)->view, &OBSPropertiesView::ReloadProperties);
 }
 
 void OBSBasicFilters::AddFilter(OBSSource filter, bool focus)
@@ -623,7 +623,7 @@ void OBSBasicFilters::OBSSourceFilterAdded(void *param, calldata_t *data)
 	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(param);
 	obs_source_t *filter = (obs_source_t *)calldata_ptr(data, "filter");
 
-	QMetaObject::invokeMethod(window, "AddFilter", Q_ARG(OBSSource, OBSSource(filter)));
+	QMetaObject::invokeMethod(window, [window, filter]() { window->AddFilter(filter); });
 }
 
 void OBSBasicFilters::OBSSourceFilterRemoved(void *param, calldata_t *data)
@@ -631,17 +631,17 @@ void OBSBasicFilters::OBSSourceFilterRemoved(void *param, calldata_t *data)
 	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(param);
 	obs_source_t *filter = (obs_source_t *)calldata_ptr(data, "filter");
 
-	QMetaObject::invokeMethod(window, "RemoveFilter", Q_ARG(OBSSource, OBSSource(filter)));
+	QMetaObject::invokeMethod(window, [window, filter]() { window->RemoveFilter(filter); });
 }
 
 void OBSBasicFilters::OBSSourceReordered(void *param, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), "ReorderFilters");
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), &OBSBasicFilters::ReorderFilters);
 }
 
 void OBSBasicFilters::SourceRemoved(void *param, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), "close");
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), &OBSBasicFilters::close);
 }
 
 void OBSBasicFilters::SourceRenamed(void *param, calldata_t *data)
@@ -649,7 +649,7 @@ void OBSBasicFilters::SourceRenamed(void *param, calldata_t *data)
 	const char *name = calldata_string(data, "new_name");
 	QString title = QTStr("Basic.Filters.Title").arg(QT_UTF8(name));
 
-	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), "setWindowTitle", Q_ARG(QString, title));
+	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), &OBSBasicFilters::setWindowTitle, title);
 }
 
 void OBSBasicFilters::DrawPreview(void *data, uint32_t cx, uint32_t cy)

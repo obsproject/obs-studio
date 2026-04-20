@@ -101,7 +101,7 @@ static bool is_network_media_source(obs_source_t *source, const char *id)
 
 void OBSBasic::UpdateContextBarDeferred(bool force)
 {
-	QMetaObject::invokeMethod(this, "UpdateContextBar", Qt::QueuedConnection, Q_ARG(bool, force));
+	QMetaObject::invokeMethod(this, &OBSBasic::UpdateContextBar, Qt::QueuedConnection, force);
 }
 
 void OBSBasic::SourceToolBarActionsSetEnabled()

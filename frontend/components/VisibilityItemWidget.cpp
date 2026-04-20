@@ -36,7 +36,7 @@ void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 	VisibilityItemWidget *window = static_cast<VisibilityItemWidget *>(param);
 	bool enabled = calldata_bool(data, "enabled");
 
-	QMetaObject::invokeMethod(window, "SourceEnabled", Q_ARG(bool, enabled));
+	QMetaObject::invokeMethod(window, &VisibilityItemWidget::SourceEnabled, enabled);
 }
 
 void VisibilityItemWidget::SourceEnabled(bool enabled)

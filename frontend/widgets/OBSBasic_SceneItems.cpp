@@ -175,8 +175,7 @@ void OBSBasic::SourceCreated(void *data, calldata_t *params)
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL)
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "AddScene", WaitConnection(),
-					  Q_ARG(OBSSource, OBSSource(source)));
+		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::AddScene, WaitConnection(), source);
 }
 
 void OBSBasic::SourceRemoved(void *data, calldata_t *params)
@@ -184,8 +183,7 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL)
-		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RemoveScene",
-					  Q_ARG(OBSSource, OBSSource(source)));
+		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::RemoveScene, source);
 }
 
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)
@@ -194,8 +192,8 @@ void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 	const char *newName = calldata_string(params, "new_name");
 	const char *prevName = calldata_string(params, "prev_name");
 
-	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RenameSources", Q_ARG(OBSSource, source),
-				  Q_ARG(QString, QT_UTF8(newName)), Q_ARG(QString, QT_UTF8(prevName)));
+	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::RenameSources, source, QT_UTF8(newName),
+				  QT_UTF8(prevName));
 
 	blog(LOG_INFO, "Source '%s' renamed to '%s'", prevName, newName);
 }

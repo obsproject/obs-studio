@@ -368,14 +368,14 @@ void OBSBasicStatusBar::OBSOutputReconnect(void *data, calldata_t *params)
 	OBSBasicStatusBar *statusBar = static_cast<OBSBasicStatusBar *>(data);
 
 	int seconds = (int)calldata_int(params, "timeout_sec");
-	QMetaObject::invokeMethod(statusBar, "Reconnect", Q_ARG(int, seconds));
+	QMetaObject::invokeMethod(statusBar, &OBSBasicStatusBar::Reconnect, seconds);
 }
 
 void OBSBasicStatusBar::OBSOutputReconnectSuccess(void *data, calldata_t *)
 {
 	OBSBasicStatusBar *statusBar = static_cast<OBSBasicStatusBar *>(data);
 
-	QMetaObject::invokeMethod(statusBar, "ReconnectSuccess");
+	QMetaObject::invokeMethod(statusBar, &OBSBasicStatusBar::ReconnectSuccess);
 }
 
 void OBSBasicStatusBar::Reconnect(int seconds)

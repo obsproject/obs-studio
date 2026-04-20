@@ -9,6 +9,7 @@
 #include <qt-wrappers.hpp>
 #include <ui-config.h>
 
+#include <QTimer>
 #include <QUuid>
 
 #include "moc_TwitchAuth.cpp"
@@ -421,9 +422,9 @@ void TwitchAuth::TryLoadSecondaryUIPanes()
 		}
 
 		if (!found) {
-			QMetaObject::invokeMethod(&this_->uiLoadTimer, "start");
+			QMetaObject::invokeMethod(this_, [this_]() { this_->uiLoadTimer.start(); });
 		} else {
-			QMetaObject::invokeMethod(this_, "LoadSecondaryUIPanes");
+			QMetaObject::invokeMethod(this_, &TwitchAuth::LoadSecondaryUIPanes);
 		}
 	};
 

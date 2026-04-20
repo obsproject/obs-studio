@@ -154,7 +154,7 @@ void OBSBasicTransform::setScene(OBSScene scene)
 
 void OBSBasicTransform::setItem(OBSSceneItem newItem)
 {
-	QMetaObject::invokeMethod(this, "setItemQt", Q_ARG(OBSSceneItem, OBSSceneItem(newItem)));
+	QMetaObject::invokeMethod(this, &OBSBasicTransform::setItemQt, OBSSceneItem(newItem));
 }
 
 void OBSBasicTransform::setEnabled(bool enable)
@@ -181,7 +181,7 @@ void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item == window->item && !window->ignoreTransformSignal)
-		QMetaObject::invokeMethod(window, "refreshControls");
+		QMetaObject::invokeMethod(window, &OBSBasicTransform::refreshControls);
 }
 
 void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
@@ -220,7 +220,7 @@ void OBSBasicTransform::OBSSceneItemLocked(void *param, calldata_t *data)
 	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	bool locked = calldata_bool(data, "locked");
 
-	QMetaObject::invokeMethod(window, "setEnabled", Q_ARG(bool, !locked));
+	QMetaObject::invokeMethod(window, &OBSBasicTransform::setEnabled, !locked);
 }
 
 static const uint32_t indexToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,

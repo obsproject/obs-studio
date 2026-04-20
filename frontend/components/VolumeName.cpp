@@ -120,21 +120,21 @@ void VolumeName::obsSourceRenamed(void *data, calldata_t *params)
 	VolumeName *widget = static_cast<VolumeName *>(data);
 	const char *name = calldata_string(params, "new_name");
 
-	QMetaObject::invokeMethod(widget, "onRenamed", Qt::QueuedConnection, Q_ARG(QString, name));
+	QMetaObject::invokeMethod(widget, &VolumeName::onRenamed, Qt::QueuedConnection, QString::fromUtf8(name));
 }
 
 void VolumeName::obsSourceRemoved(void *data, calldata_t *)
 {
 	VolumeName *widget = static_cast<VolumeName *>(data);
 
-	QMetaObject::invokeMethod(widget, "onRemoved", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(widget, &VolumeName::onRemoved, Qt::QueuedConnection);
 }
 
 void VolumeName::obsSourceDestroyed(void *data, calldata_t *)
 {
 	VolumeName *widget = static_cast<VolumeName *>(data);
 
-	QMetaObject::invokeMethod(widget, "onDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(widget, &VolumeName::onDestroyed, Qt::QueuedConnection);
 }
 
 void VolumeName::resizeEvent(QResizeEvent *event)

@@ -91,8 +91,7 @@ OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new Im
 	ui->tableView->resizeColumnsToContents();
 
 	QModelIndex index = optionsModel->createIndex(optionsModel->rowCount() - 1, 2);
-	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex", Qt::QueuedConnection,
-				  Q_ARG(const QModelIndex &, index));
+	QMetaObject::invokeMethod(ui->tableView, &QTableView::setCurrentIndex, Qt::QueuedConnection, index);
 }
 
 void OBSImporter::addImportOption(QString path, bool automatic)

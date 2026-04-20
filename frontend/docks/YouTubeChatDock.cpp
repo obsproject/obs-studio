@@ -23,8 +23,8 @@ void YoutubeChatDock::YoutubeCookieCheck()
 		if (loginStateChanged) {
 			OBSBasic *main = OBSBasic::Get();
 			if (main->GetYouTubeAppDock() != nullptr) {
-				QMetaObject::invokeMethod(main->GetYouTubeAppDock(), "SettingsUpdated",
-							  Qt::QueuedConnection, Q_ARG(bool, !currentlyLoggedIn));
+				QMetaObject::invokeMethod(main->GetYouTubeAppDock(), &YouTubeAppDock::SettingsUpdated,
+							  Qt::QueuedConnection, !currentlyLoggedIn);
 			}
 		}
 	};
