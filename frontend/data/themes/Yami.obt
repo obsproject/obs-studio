@@ -686,10 +686,6 @@ QMenu {
     outline: none;
 }
 
-QMenu {
-    border: 1px solid var(--border_color);
-}
-
 QListWidget::item,
 SourceTreeItem {
     padding: var(--padding_large) var(--padding_large);
@@ -717,6 +713,12 @@ QListWidget::item {
 SourceTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
+}
+
+QMenu,
+QMenu > QMenu {
+    border: 1px solid var(--border_color);
+    padding: var(--spacing_base);
 }
 
 /* Temporary fix for plugins affected by fix in #11555 */
