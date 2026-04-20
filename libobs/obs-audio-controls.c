@@ -199,8 +199,8 @@ static void signal_levels_updated(struct obs_volmeter *volmeter, const float mag
 {
 	pthread_mutex_lock(&volmeter->callback_mutex);
 	for (size_t i = volmeter->callbacks.num; i > 0; i--) {
-		struct volmeter_callback cb = volmeter->callbacks.array[i - 1];
-		cb.callback(cb.param, magnitude, peak, input_peak);
+		struct volmeter_callback callback_object = volmeter->callbacks.array[i - 1];
+		callback_object.callback(callback_object.param, magnitude, peak, input_peak);
 	}
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
@@ -840,25 +840,25 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 
 void obs_volmeter_add_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param)
 {
-	struct volmeter_callback cb = {callback, param};
+	struct volmeter_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(volmeter, "obs_volmeter_add_callback"))
 		return;
 
 	pthread_mutex_lock(&volmeter->callback_mutex);
-	da_push_back(volmeter->callbacks, &cb);
+	da_push_back(volmeter->callbacks, &callback_object);
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
 
 void obs_volmeter_remove_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param)
 {
-	struct volmeter_callback cb = {callback, param};
+	struct volmeter_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(volmeter, "obs_volmeter_remove_callback"))
 		return;
 
 	pthread_mutex_lock(&volmeter->callback_mutex);
-	da_erase_item(volmeter->callbacks, &cb);
+	da_erase_item(volmeter->callbacks, &callback_object);
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
 
