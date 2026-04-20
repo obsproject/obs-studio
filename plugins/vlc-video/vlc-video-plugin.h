@@ -12,6 +12,12 @@ typedef SSIZE_T ssize_t;
 #include <vlc/libvlc_media_player.h>
 #include <vlc/libvlc_media_list_player.h>
 
+#include <vlc/libvlc_version.h>
+#if LIBVLC_VERSION_MAJOR < 4
+#define libvlc_Stopping               libvlc_Ended
+#define libvlc_MediaPlayerStopping    libvlc_MediaPlayerEndReached
+#endif
+
 extern libvlc_instance_t *libvlc;
 extern uint64_t time_start;
 
