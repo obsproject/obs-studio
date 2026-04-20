@@ -188,8 +188,8 @@ static void signal_volume_changed(struct obs_fader *fader, const float db)
 {
 	pthread_mutex_lock(&fader->callback_mutex);
 	for (size_t i = fader->callbacks.num; i > 0; i--) {
-		struct fader_callback cb = fader->callbacks.array[i - 1];
-		cb.callback(cb.param, db);
+		struct fader_callback callback_object = fader->callbacks.array[i - 1];
+		callback_object.callback(callback_object.param, db);
 	}
 	pthread_mutex_unlock(&fader->callback_mutex);
 }
@@ -706,25 +706,25 @@ void obs_fader_detach_source(obs_fader_t *fader)
 
 void obs_fader_add_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param)
 {
-	struct fader_callback cb = {callback, param};
+	struct fader_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(fader, "obs_fader_add_callback"))
 		return;
 
 	pthread_mutex_lock(&fader->callback_mutex);
-	da_push_back(fader->callbacks, &cb);
+	da_push_back(fader->callbacks, &callback_object);
 	pthread_mutex_unlock(&fader->callback_mutex);
 }
 
 void obs_fader_remove_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param)
 {
-	struct fader_callback cb = {callback, param};
+	struct fader_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(fader, "obs_fader_remove_callback"))
 		return;
 
 	pthread_mutex_lock(&fader->callback_mutex);
-	da_erase_item(fader->callbacks, &cb);
+	da_erase_item(fader->callbacks, &callback_object);
 	pthread_mutex_unlock(&fader->callback_mutex);
 }
 
