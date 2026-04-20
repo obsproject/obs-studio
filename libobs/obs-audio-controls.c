@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CLAMP(x, min, max) ((x) < min ? min : ((x) > max ? max : (x)))
 
-struct fader_cb {
+struct fader_callback {
 	obs_fader_changed_t callback;
 	void *param;
 };
@@ -53,7 +53,7 @@ struct obs_fader {
 	bool ignore_next_signal;
 
 	pthread_mutex_t callback_mutex;
-	DARRAY(struct fader_cb) callbacks;
+	DARRAY(struct fader_callback) callbacks;
 };
 
 struct meter_cb {
@@ -188,7 +188,7 @@ static void signal_volume_changed(struct obs_fader *fader, const float db)
 {
 	pthread_mutex_lock(&fader->callback_mutex);
 	for (size_t i = fader->callbacks.num; i > 0; i--) {
-		struct fader_cb cb = fader->callbacks.array[i - 1];
+		struct fader_callback cb = fader->callbacks.array[i - 1];
 		cb.callback(cb.param, db);
 	}
 	pthread_mutex_unlock(&fader->callback_mutex);
@@ -706,7 +706,7 @@ void obs_fader_detach_source(obs_fader_t *fader)
 
 void obs_fader_add_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param)
 {
-	struct fader_cb cb = {callback, param};
+	struct fader_callback cb = {callback, param};
 
 	if (!obs_ptr_valid(fader, "obs_fader_add_callback"))
 		return;
@@ -718,7 +718,7 @@ void obs_fader_add_callback(obs_fader_t *fader, obs_fader_changed_t callback, vo
 
 void obs_fader_remove_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param)
 {
-	struct fader_cb cb = {callback, param};
+	struct fader_callback cb = {callback, param};
 
 	if (!obs_ptr_valid(fader, "obs_fader_remove_callback"))
 		return;
