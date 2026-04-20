@@ -56,7 +56,7 @@ struct obs_fader {
 	DARRAY(struct fader_callback) callbacks;
 };
 
-struct meter_cb {
+struct volmeter_callback {
 	obs_volmeter_updated_t callback;
 	void *param;
 };
@@ -68,7 +68,7 @@ struct obs_volmeter {
 	float cur_db;
 
 	pthread_mutex_t callback_mutex;
-	DARRAY(struct meter_cb) callbacks;
+	DARRAY(struct volmeter_callback) callbacks;
 
 	enum obs_peak_meter_type peak_meter_type;
 	unsigned int update_ms;
@@ -199,7 +199,7 @@ static void signal_levels_updated(struct obs_volmeter *volmeter, const float mag
 {
 	pthread_mutex_lock(&volmeter->callback_mutex);
 	for (size_t i = volmeter->callbacks.num; i > 0; i--) {
-		struct meter_cb cb = volmeter->callbacks.array[i - 1];
+		struct volmeter_callback cb = volmeter->callbacks.array[i - 1];
 		cb.callback(cb.param, magnitude, peak, input_peak);
 	}
 	pthread_mutex_unlock(&volmeter->callback_mutex);
@@ -840,7 +840,7 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 
 void obs_volmeter_add_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param)
 {
-	struct meter_cb cb = {callback, param};
+	struct volmeter_callback cb = {callback, param};
 
 	if (!obs_ptr_valid(volmeter, "obs_volmeter_add_callback"))
 		return;
@@ -852,7 +852,7 @@ void obs_volmeter_add_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t 
 
 void obs_volmeter_remove_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param)
 {
-	struct meter_cb cb = {callback, param};
+	struct volmeter_callback cb = {callback, param};
 
 	if (!obs_ptr_valid(volmeter, "obs_volmeter_remove_callback"))
 		return;
