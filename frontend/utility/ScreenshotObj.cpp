@@ -303,7 +303,7 @@ static void ScreenshotTick(void *param, float)
 		break;
 	case STAGE_COPY_AND_SAVE:
 		data->Copy();
-		QMetaObject::invokeMethod(data, "Save");
+		QMetaObject::invokeMethod(data, &ScreenshotObj::Save);
 		obs_remove_tick_callback(ScreenshotTick, data);
 		break;
 	}

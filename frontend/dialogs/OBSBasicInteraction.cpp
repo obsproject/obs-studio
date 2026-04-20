@@ -108,7 +108,7 @@ OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
 
 void OBSBasicInteraction::SourceRemoved(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<OBSBasicInteraction *>(data), "close");
+	QMetaObject::invokeMethod(static_cast<OBSBasicInteraction *>(data), &OBSBasicInteraction::close);
 }
 
 void OBSBasicInteraction::SourceRenamed(void *data, calldata_t *params)
@@ -116,7 +116,7 @@ void OBSBasicInteraction::SourceRenamed(void *data, calldata_t *params)
 	const char *name = calldata_string(params, "new_name");
 	QString title = QTStr("Basic.InteractionWindow").arg(QT_UTF8(name));
 
-	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), "setWindowTitle", Q_ARG(QString, title));
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), &OBSBasicInteraction::setWindowTitle, title);
 }
 
 void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)

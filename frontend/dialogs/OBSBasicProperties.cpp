@@ -275,7 +275,7 @@ void OBSBasicProperties::previewTransitionClicked()
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), "close");
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), &OBSBasicProperties::close);
 }
 
 void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
@@ -283,12 +283,12 @@ void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
 	const char *name = calldata_string(params, "new_name");
 	QString title = QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name));
 
-	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), "setWindowTitle", Q_ARG(QString, title));
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), &OBSBasicProperties::setWindowTitle, title);
 }
 
 void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view, "ReloadProperties");
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view, &OBSPropertiesView::ReloadProperties);
 }
 
 void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)

@@ -60,7 +60,7 @@ void OBSBasic::ShowReplayBufferPauseWarning()
 
 	bool warned = config_get_bool(App()->GetUserConfig(), "General", "WarnedAboutReplayBufferPausing");
 	if (!warned) {
-		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+		QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 	}
 }
 

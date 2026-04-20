@@ -472,7 +472,7 @@ void OBSBasic::on_actionAlwaysOnTop_triggered()
 	CloseDialogs();
 #endif
 
-	QMetaObject::invokeMethod(this, "ToggleAlwaysOnTop", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSBasic::ToggleAlwaysOnTop, Qt::QueuedConnection);
 }
 
 void OBSBasic::ToggleAlwaysOnTop()

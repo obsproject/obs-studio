@@ -1442,23 +1442,23 @@ retryScene:
 
 	if (opt_start_streaming && !safe_mode) {
 		blog(LOG_INFO, "Starting stream due to command line parameter");
-		QMetaObject::invokeMethod(this, "StartStreaming", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::StartStreaming, Qt::QueuedConnection);
 		opt_start_streaming = false;
 	}
 
 	if (opt_start_recording && !safe_mode) {
 		blog(LOG_INFO, "Starting recording due to command line parameter");
-		QMetaObject::invokeMethod(this, "StartRecording", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::StartRecording, Qt::QueuedConnection);
 		opt_start_recording = false;
 	}
 
 	if (opt_start_replaybuffer && !safe_mode) {
-		QMetaObject::invokeMethod(this, "StartReplayBuffer", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::StartReplayBuffer, Qt::QueuedConnection);
 		opt_start_replaybuffer = false;
 	}
 
 	if (opt_start_virtualcam && !safe_mode) {
-		QMetaObject::invokeMethod(this, "StartVirtualCam", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::StartVirtualCam, Qt::QueuedConnection);
 		opt_start_virtualcam = false;
 	}
 
@@ -1491,7 +1491,7 @@ void OBSBasic::SaveProject()
 		return;
 
 	projectChanged = true;
-	QMetaObject::invokeMethod(this, "SaveProjectDeferred", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSBasic::SaveProjectDeferred, Qt::QueuedConnection);
 }
 
 void OBSBasic::SaveProjectDeferred()

@@ -506,7 +506,7 @@ void OBSYoutubeActions::InitBroadcast()
 			if (success)
 				broadcast.id = this->selectedBroadcast;
 		};
-		QMetaObject::invokeMethod(&msgBox, "accept", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&msgBox, &QMessageBox::accept, Qt::QueuedConnection);
 	};
 	QScopedPointer<QThread> thread(CreateQThread(action));
 	thread->start();
@@ -569,7 +569,7 @@ void OBSYoutubeActions::ReadyBroadcast()
 			if (success)
 				broadcast.id = this->selectedBroadcast;
 		};
-		QMetaObject::invokeMethod(&msgBox, "accept", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&msgBox, &QMessageBox::accept, Qt::QueuedConnection);
 	};
 	QScopedPointer<QThread> thread(CreateQThread(action));
 	thread->start();

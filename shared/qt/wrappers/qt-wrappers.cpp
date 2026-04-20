@@ -216,7 +216,7 @@ void ExecuteFuncSafeBlock(std::function<void()> func)
 
 	auto wait = [&]() {
 		func();
-		QMetaObject::invokeMethod(&eventLoop, "quit", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
 	};
 
 	os_atomic_inc_long(&insideEventLoop);
@@ -237,7 +237,7 @@ void ExecuteFuncSafeBlockMsgBox(std::function<void()> func, const QString &title
 
 	auto wait = [&]() {
 		func();
-		QMetaObject::invokeMethod(&dlg, "accept", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&dlg, &QMessageBox::accept, Qt::QueuedConnection);
 	};
 
 	os_atomic_inc_long(&insideEventLoop);

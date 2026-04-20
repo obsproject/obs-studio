@@ -65,7 +65,7 @@ void OBSBasic::StartStreaming()
 			no_broadcast.exec();
 
 			if (no_broadcast.clickedButton() == SetupBroadcast)
-				QMetaObject::invokeMethod(this, "SetupBroadcast");
+				QMetaObject::invokeMethod(this, &OBSBasic::SetupBroadcast);
 			return;
 		}
 	}
@@ -367,7 +367,7 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	if (!broadcastActive)
 		SetBroadcastFlowEnabled(auth && auth->broadcastFlow());
 	if (should_reconnect)
-		QMetaObject::invokeMethod(this, "StartStreaming", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::StartStreaming, Qt::QueuedConnection);
 }
 
 void OBSBasic::StreamActionTriggered()

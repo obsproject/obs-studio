@@ -56,7 +56,7 @@ void OBSBasic::YouTubeActionDialogOk(const QString &broadcast_id, const QString 
 	emit BroadcastStreamReady(broadcastReady);
 
 	if (start_now)
-		QMetaObject::invokeMethod(this, "StartStreaming");
+		QMetaObject::invokeMethod(this, &OBSBasic::StartStreaming);
 }
 
 void OBSBasic::YoutubeStreamCheck(const std::string &key)
@@ -64,7 +64,7 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 	YoutubeApiWrappers *apiYouTube(dynamic_cast<YoutubeApiWrappers *>(GetAuth()));
 	if (!apiYouTube) {
 		/* technically we should never get here -Lain */
-		QMetaObject::invokeMethod(this, "ForceStopStreaming", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::ForceStopStreaming, Qt::QueuedConnection);
 		youtubeStreamCheckThread->deleteLater();
 		blog(LOG_ERROR, "==========================================");
 		blog(LOG_ERROR, "%s: Uh, hey, we got here", __FUNCTION__);
@@ -78,13 +78,13 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 
 	while (StreamingActive()) {
 		if (timeout == 14) {
-			QMetaObject::invokeMethod(this, "ForceStopStreaming", Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this, &OBSBasic::ForceStopStreaming, Qt::QueuedConnection);
 			break;
 		}
 
 		if (!apiYouTube->FindStream(id, json)) {
-			QMetaObject::invokeMethod(this, "DisplayStreamStartError", Qt::QueuedConnection);
-			QMetaObject::invokeMethod(this, "StopStreaming", Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this, &OBSBasic::DisplayStreamStartError, Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this, &OBSBasic::StopStreaming, Qt::QueuedConnection);
 			break;
 		}
 
@@ -124,7 +124,7 @@ void OBSBasic::ShowYouTubeAutoStartWarning()
 
 	bool warned = config_get_bool(App()->GetUserConfig(), "General", "WarnedAboutYouTubeAutoStart");
 	if (!warned) {
-		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+		QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 	}
 }
 #endif
@@ -187,7 +187,7 @@ void OBSBasic::BroadcastButtonClicked()
 		broadcastReady = false;
 
 		autoStopBroadcast = true;
-		QMetaObject::invokeMethod(this, "StopStreaming");
+		QMetaObject::invokeMethod(this, &OBSBasic::StopStreaming);
 		emit BroadcastStreamReady(broadcastReady);
 		SetBroadcastFlowEnabled(true);
 	}

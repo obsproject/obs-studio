@@ -471,7 +471,7 @@ void OBSBasic::SceneReordered(void *data, calldata_t *params)
 
 	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
 
-	QMetaObject::invokeMethod(window, "ReorderSources", Q_ARG(OBSScene, OBSScene(scene)));
+	QMetaObject::invokeMethod(window, &OBSBasic::ReorderSources, OBSScene(scene));
 }
 
 void OBSBasic::SceneRefreshed(void *data, calldata_t *params)
@@ -480,7 +480,7 @@ void OBSBasic::SceneRefreshed(void *data, calldata_t *params)
 
 	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(params, "scene");
 
-	QMetaObject::invokeMethod(window, "RefreshSources", Q_ARG(OBSScene, OBSScene(scene)));
+	QMetaObject::invokeMethod(window, &OBSBasic::RefreshSources, OBSScene(scene));
 }
 
 void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
@@ -489,7 +489,7 @@ void OBSBasic::SceneItemAdded(void *data, calldata_t *params)
 
 	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(params, "item");
 
-	QMetaObject::invokeMethod(window, "AddSceneItem", Q_ARG(OBSSceneItem, OBSSceneItem(item)));
+	QMetaObject::invokeMethod(window, &OBSBasic::AddSceneItem, OBSSceneItem(item));
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current, QListWidgetItem *)
