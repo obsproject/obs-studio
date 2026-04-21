@@ -1849,7 +1849,9 @@ void OBSBasic::saveAll()
 				  saveGeometry().toBase64().constData());
 	}
 
-	Auth::Save();
+	if (!authDestroyedAfterSaveAll.load(std::memory_order_acquire)) {
+		Auth::Save();
+	}
 	SaveProjectNow();
 
 	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState", saveState().toBase64().constData());
@@ -1971,6 +1973,7 @@ void OBSBasic::closeWindow()
 	saveAll();
 
 	auth.reset();
+	authDestroyedAfterSaveAll.store(true, std::memory_order_release);
 
 #ifdef BROWSER_AVAILABLE
 	ClearExtraBrowserDocks();

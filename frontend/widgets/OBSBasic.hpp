@@ -340,6 +340,7 @@ signals:
 	 */
 private:
 	std::shared_ptr<Auth> auth;
+	std::atomic<bool> authDestroyedAfterSaveAll = false;
 
 public:
 	inline Auth *GetAuth() { return auth.get(); }
