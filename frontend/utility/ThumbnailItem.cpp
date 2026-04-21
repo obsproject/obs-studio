@@ -137,7 +137,7 @@ ThumbnailView *ThumbnailItem::createView(QObject *parent)
 void ThumbnailItem::decrementViewCount()
 {
 	if (viewCount > 0) {
-		viewCount--;
+		--viewCount;
 	}
 
 	if (viewCount <= 0) {
@@ -153,7 +153,7 @@ void ThumbnailItem::incrementEnabledCount()
 void ThumbnailItem::decrementEnabledCount()
 {
 	if (enabledCount > 0) {
-		enabledCount--;
+		--enabledCount;
 	}
 }
 

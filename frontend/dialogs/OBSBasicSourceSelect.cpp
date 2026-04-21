@@ -765,15 +765,15 @@ void OBSBasicSourceSelect::createNew()
 	OBSSceneItem item = addResult.value();
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	std::string scene_name = obs_source_get_name(main->GetCurrentSceneSource());
-	auto undo = [scene_name](const std::string &data) {
+	std::string sceneUuid = obs_source_get_uuid(main->GetCurrentSceneSource());
+	auto undo = [sceneUuid](const std::string &data) {
 		OBSBasic *main = OBSBasic::Get();
 
-		OBSSourceAutoRelease source = obs_get_source_by_name(data.c_str());
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
 		obs_source_remove(source);
 
-		OBSSourceAutoRelease scene_source = obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source.Get(), true);
+		OBSSourceAutoRelease sceneSource = obs_get_source_by_uuid(sceneUuid.c_str());
+		main->SetCurrentScene(sceneSource.Get(), true);
 	};
 	OBSDataAutoRelease wrapper = obs_data_create();
 	obs_data_set_string(wrapper, "id", id);
@@ -781,11 +781,11 @@ void OBSBasicSourceSelect::createNew()
 	obs_data_set_string(wrapper, "name", ui->newSourceName->text().toUtf8().constData());
 	obs_data_set_bool(wrapper, "visible", visible);
 
-	auto redo = [scene_name](const std::string &data) {
+	auto redo = [sceneUuid](const std::string &data) {
 		OBSBasic *main = OBSBasic::Get();
 
-		OBSSourceAutoRelease scene_source = obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source.Get(), true);
+		OBSSourceAutoRelease sceneSource = obs_get_source_by_uuid(sceneUuid.c_str());
+		main->SetCurrentScene(sceneSource.Get(), true);
 
 		OBSDataAutoRelease dat = obs_data_create_from_json(data.c_str());
 
@@ -805,10 +805,10 @@ void OBSBasicSourceSelect::createNew()
 
 		OBSSceneItem item = addResult.value();
 
-		obs_sceneitem_set_id(item, (int64_t)obs_data_get_int(dat, "item_id"));
+		obs_sceneitem_set_id(item, static_cast<int64_t>(obs_data_get_int(dat, "item_id")));
 	};
 	undo_s.add_action(QTStr("Undo.Add").arg(ui->newSourceName->text()), undo, redo,
-			  std::string(obs_source_get_name(newSource)), std::string(obs_data_get_json(wrapper)));
+			  std::string(obs_source_get_uuid(newSource)), std::string(obs_data_get_json(wrapper)));
 
 	main->CreatePropertiesWindow(newSource);
 
