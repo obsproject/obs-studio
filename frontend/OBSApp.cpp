@@ -1266,20 +1266,6 @@ bool OBSApp::OBSInit()
 
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 
-#ifndef __APPLE__
-	connect(QApplication::instance(), &QApplication::aboutToQuit, this, [this]() {
-		if (mainWindow) {
-			QPointer<OBSBasic> basicWindow = static_cast<OBSBasic *>(mainWindow.get());
-
-			basicWindow->closeWindow();
-		}
-
-		if (libobs_initialized) {
-			applicationShutdown();
-		}
-	});
-#endif
-
 	mainWindow->OBSInit();
 
 	connect(OBSBasic::Get(), &OBSBasic::mainWindowClosed, crashHandler_.get(),

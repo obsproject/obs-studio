@@ -1385,12 +1385,7 @@ void OBSBasic::OnFirstLoad()
 		on_actionViewCurrentLog_triggered();
 }
 
-OBSBasic::~OBSBasic()
-{
-	if (!isClosing()) {
-		closeWindow();
-	}
-}
+OBSBasic::~OBSBasic() {}
 
 void OBSBasic::applicationShutdown() noexcept
 {
