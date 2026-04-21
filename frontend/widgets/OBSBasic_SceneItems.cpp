@@ -587,7 +587,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	}
 
 	// Add new source
-	QAction *addSource = popup.addAction(QTStr("AddSource"), this, SLOT(AddSourceDialog()));
+	QAction *addSource = popup.addAction(QTStr("AddSource"), this, &OBSBasic::AddSourceDialog);
 	popup.addAction(addSource);
 	popup.addSeparator();
 
