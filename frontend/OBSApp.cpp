@@ -1931,7 +1931,9 @@ void OBSApp::commitData(QSessionManager &manager)
 {
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
-		main->saveAll();
+		if (!main->isClosing()) {
+			main->saveAll();
+		}
 
 		if (manager.allowsInteraction() && main->shouldPromptForClose()) {
 			manager.cancel();
