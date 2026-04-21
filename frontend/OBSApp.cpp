@@ -1916,7 +1916,7 @@ void OBSApp::processSigQuit()
 void OBSApp::commitData(QSessionManager &manager)
 {
 	OBSBasic *main = OBSBasic::Get();
-	if (main) {
+	if (main && !main->isClosing()) {
 		main->saveAll();
 
 		if (manager.allowsInteraction() && main->shouldPromptForClose()) {
