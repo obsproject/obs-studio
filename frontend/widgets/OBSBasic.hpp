@@ -445,7 +445,7 @@ private:
 	QPointer<OBSDock> mixerDock;
 
 public:
-	void AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool extraBrowser = false);
+	void addDockWidget(Qt::DockWidgetArea area, QDockWidget *dock, bool extraBrowser = false);
 	void RemoveDockWidget(const QString &name);
 	bool IsDockObjectNameUsed(const QString &name);
 	void AddCustomDockWidget(QDockWidget *dock);
@@ -454,7 +454,6 @@ public:
 private slots:
 	void on_resetDocks_triggered(bool force = false);
 	void on_lockDocks_toggled(bool lock);
-	void on_sideDocks_toggled(bool side);
 
 	void RepairCustomExtraDockName();
 
