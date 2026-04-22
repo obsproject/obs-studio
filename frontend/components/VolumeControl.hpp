@@ -90,6 +90,12 @@ private:
 
 	QMenu *contextMenu;
 
+	static const QIcon &getUnassignedIcon();
+	static const QIcon &getMutedIcon();
+	static const QIcon &getUnmutedIcon();
+	static const QIcon &getMonitorOnIcon();
+	static const QIcon &getMonitorOffIcon();
+
 	static void obsVolumeChanged(void *param, float db);
 	static void obsVolumeMuted(void *data, calldata_t *calldata);
 	static void obsMixersOrMonitoringChanged(void *data, calldata_t *);
@@ -99,7 +105,6 @@ private:
 
 	void setLayoutVertical(bool vertical);
 	void showVolumeControlMenu(QPoint pos = QPoint(0, 0));
-	void updateCategoryLabel();
 	void updateDecayRate();
 	void updatePeakMeterType();
 
@@ -156,6 +161,7 @@ public:
 	}
 
 	void updateName();
+	void updateCategoryLabel();
 	void refreshColors();
 	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
 		       const float inputPeak[MAX_AUDIO_CHANNELS]);
