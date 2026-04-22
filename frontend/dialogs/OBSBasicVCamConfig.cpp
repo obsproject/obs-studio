@@ -86,14 +86,6 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 		break;
 	}
 	}
-
-	if (!vcamActive)
-		return;
-
-	requireRestart = (activeType == VCamOutputType::ProgramView && type != VCamOutputType::ProgramView) ||
-			 (activeType != VCamOutputType::ProgramView && type == VCamOutputType::ProgramView);
-
-	ui->warningLabel->setVisible(requireRestart);
 }
 
 void OBSBasicVCamConfig::UpdateConfig()
@@ -116,9 +108,5 @@ void OBSBasicVCamConfig::UpdateConfig()
 
 	config.type = type;
 
-	if (requireRestart) {
-		emit AcceptedAndRestart(config);
-	} else {
-		emit Accepted(config);
-	}
+	emit Accepted(config);
 }
