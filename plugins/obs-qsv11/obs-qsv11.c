@@ -495,7 +495,10 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 
 	} else if (obsqsv->codec == QSV_CODEC_HEVC) {
 		codec = "HEVC";
-		if (astrcmpi(profile, "main") == 0) {
+
+		if (obsqsv->params.video_fmt_ayuv || obsqsv->params.video_fmt_y410) {
+			obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_REXT;
+		} else if (astrcmpi(profile, "main") == 0) {
 			obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_MAIN;
 			if (obs_encoder_video_tex_active(obsqsv->encoder, VIDEO_FORMAT_P010)) {
 				blog(LOG_WARNING, "[qsv encoder] Forcing main10 for P010");
@@ -513,6 +516,9 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 
 	obsqsv->params.VideoFormat = 5;
 	obsqsv->params.VideoFullRange = voi->range == VIDEO_RANGE_FULL;
+
+	const bool is_gbr = obs_encoder_video_tex_active(obsqsv->encoder, VIDEO_FORMAT_GBRA) ||
+			    obs_encoder_video_tex_active(obsqsv->encoder, VIDEO_FORMAT_GBR10);
 
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
@@ -533,7 +539,7 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	case VIDEO_CS_SRGB:
 		obsqsv->params.ColourPrimaries = 1;
 		obsqsv->params.TransferCharacteristics = 13;
-		obsqsv->params.MatrixCoefficients = 1;
+		obsqsv->params.MatrixCoefficients = is_gbr ? 0 : 1;
 		obsqsv->params.ChromaSampleLocTypeTopField = 0;
 		obsqsv->params.ChromaSampleLocTypeBottomField = 0;
 		break;
@@ -773,6 +779,29 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings, obs_enco
 		bfree(obsqsv);
 		return NULL;
 	}
+	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_AYUV:
+		if (codec != QSV_CODEC_HEVC || !useTexAlloc) {
+			const char *const text = obs_module_text("444Unsupported");
+			obs_encoder_set_last_error(encoder, text);
+			error("%s", text);
+			bfree(obsqsv);
+			return NULL;
+		}
+		obsqsv->params.video_fmt_ayuv = true;
+		break;
+	case VIDEO_FORMAT_Y410:
+	case VIDEO_FORMAT_GBR10:
+		if (codec != QSV_CODEC_HEVC || !useTexAlloc) {
+			const char *const text = obs_module_text("444Unsupported");
+			obs_encoder_set_last_error(encoder, text);
+			error("%s", text);
+			bfree(obsqsv);
+			return NULL;
+		}
+		obsqsv->params.video_fmt_y410 = true;
+		obsqsv->params.video_fmt_10bit = true;
+		break;
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -853,6 +882,12 @@ static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings, obs_
 
 	if (codec != QSV_CODEC_AVC)
 		gpu_texture_active = gpu_texture_active || obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010);
+	if (codec == QSV_CODEC_HEVC) {
+		gpu_texture_active = gpu_texture_active || obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBRA) ||
+				     obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_AYUV) ||
+				     obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_Y410) ||
+				     obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_GBR10);
+	}
 
 	if (!gpu_texture_active) {
 		blog(LOG_INFO, ">>> gpu tex not active, fall back to old qsv encoder");
@@ -925,24 +960,19 @@ static inline bool valid_av1_format(enum video_format format)
 	return format == VIDEO_FORMAT_NV12 || format == VIDEO_FORMAT_P010;
 }
 
-static inline void cap_resolution(struct obs_qsv *obsqsv, struct video_scale_info *info)
+static inline void cap_resolution(struct video_scale_info *info)
 {
 	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
-	uint32_t width = obs_encoder_get_width(obsqsv->encoder);
-	uint32_t height = obs_encoder_get_height(obsqsv->encoder);
 
 	if (adapters[adapter_index].is_dgpu == true)
 		qsv_platform = QSV_CPU_PLATFORM_UNKNOWN;
 
-	info->height = height;
-	info->width = width;
-
 	if (qsv_platform <= QSV_CPU_PLATFORM_IVB && qsv_platform != QSV_CPU_PLATFORM_UNKNOWN) {
-		if (width > 1920) {
+		if (info->width > 1920) {
 			info->width = 1920;
 		}
 
-		if (height > 1200) {
+		if (info->height > 1200) {
 			info->height = 1200;
 		}
 	}
@@ -951,31 +981,62 @@ static inline void cap_resolution(struct obs_qsv *obsqsv, struct video_scale_inf
 static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 {
 	struct obs_qsv *obsqsv = data;
-	enum video_format pref_format;
+	enum video_format pref_format = VIDEO_FORMAT_NONE;
 
-	pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
+	if (obsqsv) {
+		pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
+	}
 
 	if (!valid_format(pref_format)) {
 		pref_format = valid_format(info->format) ? info->format : VIDEO_FORMAT_NV12;
 	}
 
 	info->format = pref_format;
-	cap_resolution(obsqsv, info);
+	cap_resolution(info);
 }
 
 static void obs_qsv_video_plus_hdr_info(void *data, struct video_scale_info *info)
 {
 	struct obs_qsv *obsqsv = data;
-	enum video_format pref_format;
+	enum video_format pref_format = VIDEO_FORMAT_NONE;
 
-	pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
+	if (obsqsv) {
+		pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
+	}
 
 	if (!valid_av1_format(pref_format)) {
 		pref_format = valid_av1_format(info->format) ? info->format : VIDEO_FORMAT_NV12;
 	}
 
 	info->format = pref_format;
-	cap_resolution(obsqsv, info);
+	cap_resolution(info);
+}
+
+static void obs_qsv_video_info_hevc_tex(void *data, struct video_scale_info *info)
+{
+#ifdef _WIN32
+	/* Override to GBRA for BGRA to enable RGB texture encoding without colour conversion. */
+	if (info->format == VIDEO_FORMAT_BGRA) {
+		info->format = VIDEO_FORMAT_GBRA;
+		info->range = VIDEO_RANGE_FULL;
+		info->colorspace = VIDEO_CS_SRGB;
+		return;
+	} else if (info->format == VIDEO_FORMAT_I444) {
+		info->format = VIDEO_FORMAT_AYUV;
+		return;
+	} else if (info->format == VIDEO_FORMAT_Y410) {
+		info->format = VIDEO_FORMAT_Y410;
+		return;
+	} else if (info->format == VIDEO_FORMAT_GBR10 || info->format == VIDEO_FORMAT_R10L) {
+		info->format = VIDEO_FORMAT_GBR10;
+		info->range = VIDEO_RANGE_FULL;
+		/* Use SRGB for SDR */
+		if (info->colorspace != VIDEO_CS_2100_PQ && info->colorspace != VIDEO_CS_2100_HLG)
+			info->colorspace = VIDEO_CS_SRGB;
+		return;
+	}
+#endif
+	obs_qsv_video_plus_hdr_info(data, info);
 }
 
 static mfxU64 ts_obs_to_mfx(int64_t ts, const struct video_output_info *voi)
@@ -1402,7 +1463,7 @@ struct obs_encoder_info obs_qsv_hevc_encoder_tex = {
 	.get_properties = obs_qsv_props_hevc,
 	.get_defaults = obs_qsv_defaults_hevc,
 	.get_extra_data = obs_qsv_extra_data,
-	.get_video_info = obs_qsv_video_plus_hdr_info,
+	.get_video_info = obs_qsv_video_info_hevc_tex,
 };
 
 struct obs_encoder_info obs_qsv_hevc_encoder = {

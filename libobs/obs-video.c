@@ -369,6 +369,10 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
 		const float multiplier = obs_get_video_sdr_white_level() / 10000.f;
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
+		if (!convert_textures[1] && !convert_textures[2]) {
+			gs_effect_set_vec4(color_vec1, &vec1);
+			gs_effect_set_vec4(color_vec2, &vec2);
+		}
 		gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
 		gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
 		render_convert_plane(effect, convert_textures[0], video->conversion_techs[0]);
@@ -475,11 +479,13 @@ static inline bool queue_frame(struct obs_core_video_mix *video, bool raw_active
 	if (raw_active || vframe_info->count > 1) {
 		gs_copy_texture(tf.tex, video->convert_textures_encode[0]);
 #ifndef _WIN32
-		/* Y and UV textures are views of the same texture on D3D, and
-		 * gs_copy_texture will copy all views of the underlying
-		 * texture. On other platforms, these are two distinct textures
-		 * that must be copied separately. */
-		gs_copy_texture(tf.tex_uv, video->convert_textures_encode[1]);
+		if (video->convert_textures_encode[1]) {
+			/* Y and UV textures are views of the same texture on D3D, and
+			 * gs_copy_texture will copy all views of the underlying
+			 * texture. On other platforms, these are two distinct textures
+			 * that must be copied separately. */
+			gs_copy_texture(tf.tex_uv, video->convert_textures_encode[1]);
+		}
 #endif
 	} else {
 		gs_texture_t *tex = video->convert_textures_encode[0];
@@ -555,8 +561,11 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 		if (gpu_active) {
 			convert_textures = video->convert_textures_encode;
 #ifdef _WIN32
-			copy_surfaces = video->copy_surfaces_encode;
-			channel_count = 1;
+			if (video->encoder_texture_format == VIDEO_FORMAT_NV12 ||
+			    video->encoder_texture_format == VIDEO_FORMAT_P010) {
+				copy_surfaces = video->copy_surfaces_encode;
+				channel_count = 1;
+			}
 #endif
 			gs_flush();
 		}
@@ -732,7 +741,12 @@ static void set_gpu_converted_data(struct video_frame *output, const struct vide
 
 		break;
 	}
-
+	case VIDEO_FORMAT_R10L:
+	case VIDEO_FORMAT_Y410: {
+		set_gpu_converted_plane(info->width * 4, info->height, input->linesize[0], output->linesize[0],
+					input->data[0], output->data[0]);
+		break;
+	}
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
@@ -751,7 +765,8 @@ static void set_gpu_converted_data(struct video_frame *output, const struct vide
 	case VIDEO_FORMAT_YA2L:
 	case VIDEO_FORMAT_AYUV:
 	case VIDEO_FORMAT_V210:
-	case VIDEO_FORMAT_R10L:
+	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_GBR10:
 		/* unimplemented */
 		;
 	}

@@ -345,8 +345,7 @@ struct obs_core_video_mix {
 	bool texture_rendered;
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
-	bool using_nv12_tex;
-	bool using_p010_tex;
+	enum video_format encoder_texture_format;
 	struct deque vframe_info_buffer;
 	struct deque vframe_info_buffer_gpu;
 	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
@@ -602,6 +601,7 @@ extern bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in
 			   struct audio_output_data *mixes);
 
 extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
+extern const char *get_scale_type_name(enum obs_scale_type type);
 
 extern void start_raw_video(video_t *video, const struct video_scale_info *conversion, uint32_t frame_rate_divisor,
 			    void (*callback)(void *param, struct video_data *frame), void *param);
@@ -1091,6 +1091,8 @@ static inline enum gs_color_format convert_video_format(enum video_format format
 		case VIDEO_FORMAT_P416:
 		case VIDEO_FORMAT_V210:
 		case VIDEO_FORMAT_R10L:
+		case VIDEO_FORMAT_Y410:
+		case VIDEO_FORMAT_GBR10:
 			return GS_RGBA16F;
 		default:
 			return GS_BGRX;
