@@ -269,7 +269,7 @@ EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
 		     "gs_duplicator_update_frame: Failed to update "
 		     "frame (%08lX)",
 		     hr);
-		return true;
+		return false;
 	}
 
 	hr = res->QueryInterface(__uuidof(ID3D11Texture2D), (void **)tex.Assign());
