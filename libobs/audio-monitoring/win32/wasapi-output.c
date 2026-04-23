@@ -8,10 +8,10 @@
 #include "wasapi-output.h"
 
 #define ACTUALLY_DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-	EXTERN_C const GUID DECLSPEC_SELECTANY name = {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
+        EXTERN_C const GUID DECLSPEC_SELECTANY name = {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
 
 #define do_log(level, format, ...) \
-	blog(level, "[audio monitoring: '%s'] " format, obs_source_get_name(monitor->source), ##__VA_ARGS__)
+        blog(level, "[audio monitoring: '%s'] " format, obs_source_get_name(monitor->source), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
@@ -50,7 +50,7 @@ struct audio_monitor {
 /* #define DEBUG_AUDIO */
 
 static bool process_audio_delay(struct audio_monitor *monitor, float **data, uint32_t *frames, uint64_t ts,
-				uint32_t pad)
+				uint32_t pad, bool sync_to_video)
 {
 	obs_source_t *s = monitor->source;
 	uint64_t last_frame_ts = s->last_frame_ts;
@@ -71,34 +71,50 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data, uin
 	deque_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
 	deque_push_back(&monitor->delay_buffer, *data, *frames * blocksize);
 
-	if (!monitor->prev_video_ts) {
-		monitor->prev_video_ts = last_frame_ts;
-
-	} else if (monitor->prev_video_ts == last_frame_ts) {
-		monitor->time_since_prev += util_mul_div64(*frames, 1000000000ULL, monitor->sample_rate);
-	} else {
-		monitor->time_since_prev = 0;
+	if (sync_to_video) {
+		if (!monitor->prev_video_ts) {
+			monitor->prev_video_ts = last_frame_ts;
+		} else if (monitor->prev_video_ts == last_frame_ts) {
+			monitor->time_since_prev += util_mul_div64(*frames, 1000000000ULL, monitor->sample_rate);
+		} else {
+			monitor->time_since_prev = 0;
+		}
 	}
 
 	while (monitor->delay_buffer.size != 0) {
 		size_t size;
-		bool bad_diff;
 
 		deque_peek_front(&monitor->delay_buffer, &cur_ts, sizeof(ts));
 		front_ts = cur_ts - util_mul_div64(pad, 1000000000ULL, monitor->sample_rate);
-		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
-		bad_diff = !last_frame_ts || llabs(diff) > 5000000000 || monitor->time_since_prev > 100000000ULL;
 
-		/* delay audio if rushing */
-		if (!bad_diff && diff > 75000000) {
+		if (sync_to_video) {
+			diff = (int64_t)front_ts - (int64_t)last_frame_ts;
+			bool bad_diff = !last_frame_ts || llabs(diff) > 5000000000 ||
+					monitor->time_since_prev > 100000000ULL;
+
+			/* delay audio if rushing */
+			if (!bad_diff && diff > 75000000) {
 #ifdef DEBUG_AUDIO
-			blog(LOG_INFO,
-			     "audio rushing, cutting audio, "
-			     "diff: %lld, delay buffer size: %lu, "
-			     "v: %llu: a: %llu",
-			     diff, (int)monitor->delay_buffer.size, last_frame_ts, front_ts);
+				blog(LOG_INFO,
+				     "audio rushing, cutting audio, "
+				     "diff: %lld, delay buffer size: %lu, "
+				     "v: %llu: a: %llu",
+				     diff, (unsigned long)monitor->delay_buffer.size, last_frame_ts, front_ts);
 #endif
-			return false;
+				return false;
+			}
+		} else {
+			diff = (int64_t)front_ts - (int64_t)cur_time;
+			if (diff > 10000000) {
+#ifdef DEBUG_AUDIO
+				blog(LOG_INFO,
+				     "audio ahead of synctime, waiting, "
+				     "diff: %lld, delay buffer size: %lu, "
+				     "cur_time: %llu, front_ts: %llu",
+				     diff, (unsigned long)monitor->delay_buffer.size, cur_time, front_ts);
+#endif
+				return false;
+			}
 		}
 
 		deque_pop_front(&monitor->delay_buffer, NULL, sizeof(ts));
@@ -109,15 +125,30 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data, uin
 		deque_pop_front(&monitor->delay_buffer, monitor->buf.array, size);
 
 		/* cut audio if dragging */
-		if (!bad_diff && diff < -75000000 && monitor->delay_buffer.size > 0) {
+		if (sync_to_video) {
+			bool bad_diff = !last_frame_ts || llabs(diff) > 5000000000 ||
+					monitor->time_since_prev > 100000000ULL;
+			if (!bad_diff && diff < -75000000 && monitor->delay_buffer.size > 0) {
 #ifdef DEBUG_AUDIO
-			blog(LOG_INFO,
-			     "audio dragging, cutting audio, "
-			     "diff: %lld, delay buffer size: %lu, "
-			     "v: %llu: a: %llu",
-			     diff, (int)monitor->delay_buffer.size, last_frame_ts, front_ts);
+				blog(LOG_INFO,
+				     "audio dragging, cutting audio, "
+				     "diff: %lld, delay buffer size: %lu, "
+				     "v: %llu: a: %llu",
+				     diff, (unsigned long)monitor->delay_buffer.size, last_frame_ts, front_ts);
 #endif
-			continue;
+				continue;
+			}
+		} else {
+			if (diff < -10000000 && monitor->delay_buffer.size > 0) {
+#ifdef DEBUG_AUDIO
+				blog(LOG_INFO,
+				     "audio behind synctime, dropping, "
+				     "diff: %lld, delay buffer size: %lu, "
+				     "cur_time: %llu, front_ts: %llu",
+				     diff, (unsigned long)monitor->delay_buffer.size, cur_time, front_ts);
+#endif
+				continue;
+			}
 		}
 
 		*data = monitor->buf.array;
@@ -154,7 +185,7 @@ static bool audio_monitor_init_wasapi(struct audio_monitor *monitor)
 	HRESULT hr;
 
 	/* ------------------------------------------ *
-	 * Init device                                */
+         * Init device                                */
 
 	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, &IID_IMMDeviceEnumerator, (void **)&immde);
 	if (FAILED(hr)) {
@@ -179,7 +210,7 @@ static bool audio_monitor_init_wasapi(struct audio_monitor *monitor)
 	}
 
 	/* ------------------------------------------ *
-	 * Init client                                */
+         * Init client                                */
 
 	hr = device->lpVtbl->Activate(device, &IID_IAudioClient, CLSCTX_ALL, NULL, (void **)&monitor->client);
 	device->lpVtbl->Release(device);
@@ -194,14 +225,15 @@ static bool audio_monitor_init_wasapi(struct audio_monitor *monitor)
 		goto fail;
 	}
 
-	hr = monitor->client->lpVtbl->Initialize(monitor->client, AUDCLNT_SHAREMODE_SHARED, 0, 10000000, 0, wfex, NULL);
+	/* Initialize the audio client. Use a buffer duration of 500000 * 100 ns = 50 ms */
+	hr = monitor->client->lpVtbl->Initialize(monitor->client, AUDCLNT_SHAREMODE_SHARED, 0, 500000, 0, wfex, NULL);
 	if (FAILED(hr)) {
 		warn("%s: Failed to initialize: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
 
 	/* ------------------------------------------ *
-	 * Init resampler                             */
+         * Init resampler                             */
 
 	const struct audio_output_info *info = audio_output_get_info(obs->audio.audio);
 	WAVEFORMATEXTENSIBLE *ext = (WAVEFORMATEXTENSIBLE *)wfex;
@@ -224,7 +256,7 @@ static bool audio_monitor_init_wasapi(struct audio_monitor *monitor)
 	}
 
 	/* ------------------------------------------ *
-	 * Init client                                */
+         * Init client                                */
 
 	hr = monitor->client->lpVtbl->GetBufferSize(monitor->client, &frames);
 	if (FAILED(hr)) {
@@ -310,13 +342,11 @@ static void on_audio_playback(void *param, obs_source_t *source, const struct au
 	}
 
 	bool decouple_audio = source->async_unbuffered && source->async_decoupled;
+	uint64_t ts = audio_data->timestamp - ts_offset;
 
-	if (monitor->source_has_video && !decouple_audio) {
-		uint64_t ts = audio_data->timestamp - ts_offset;
-
-		if (!process_audio_delay(monitor, (float **)(&resample_data[0]), &resample_frames, ts, pad)) {
-			goto unlock;
-		}
+	bool sync_to_video = monitor->source_has_video && !decouple_audio;
+	if (!process_audio_delay(monitor, (float **)(&resample_data[0]), &resample_frames, ts, pad, sync_to_video)) {
+		goto unlock;
 	}
 
 	IAudioRenderClient *const render = monitor->render;
