@@ -3153,7 +3153,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 #endif
 
 #ifdef _WIN32
-	std::string priority = QT_TO_UTF8(ui->processPriority->currentData().toString());
+	std::string priority = ui->processPriority->currentData().toString().toStdString();
 	config_set_string(App()->GetAppConfig(), "General", "ProcessPriority", priority.c_str());
 	if (main->Active())
 		SetProcessPriority(priority.c_str());
@@ -4168,9 +4168,8 @@ void OBSBasicSettings::ReloadAudioSources()
 
 void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 {
-	QString speakerLayoutQstr = ui->channelSetup->itemText(idx);
-	std::string speakerLayout = QT_TO_UTF8(speakerLayoutQstr);
-	bool surround = IsSurround(speakerLayout.c_str());
+	QByteArray speakerLayout = ui->channelSetup->itemText(idx).toUtf8();
+	bool surround = IsSurround(speakerLayout.constData());
 	bool isOpus = ui->simpleOutStrAEncoder->currentData().toString() == "opus";
 
 	if (surround) {
