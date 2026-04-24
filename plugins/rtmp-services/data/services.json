@@ -3586,6 +3586,27 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Girls Gone Game",
+            "common": false,
+            "more_info_link": "https://girlsgonegame.com",
+            "stream_key_link": "https://girlsgonegame.com/streamer-dashboard/key",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://47e4f15676e4.global-contribute.live-video.net:443/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160,
+                "x264opts": "scenecut=0"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
