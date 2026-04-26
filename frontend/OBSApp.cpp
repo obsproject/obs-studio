@@ -74,6 +74,7 @@ extern bool opt_disable_updater;
 extern bool opt_disable_missing_files_check;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
+extern string opt_config_dir;
 
 // GPU hint exports for AMD/NVIDIA laptops
 #ifdef _MSC_VER
@@ -1676,6 +1677,14 @@ vector<pair<string, string>> GetLocaleNames()
 
 int GetAppConfigPath(char *path, size_t size, const char *name)
 {
+	if (!opt_config_dir.empty()) {
+		if (name && *name) {
+			return snprintf(path, size, "%s/%s", opt_config_dir.c_str(), name);
+		} else {
+			return snprintf(path, size, "%s", opt_config_dir.c_str());
+		}
+	}
+
 #if ALLOW_PORTABLE_MODE
 	if (portable_mode) {
 		if (name && *name) {
@@ -1693,6 +1702,16 @@ int GetAppConfigPath(char *path, size_t size, const char *name)
 
 char *GetAppConfigPathPtr(const char *name)
 {
+	if (!opt_config_dir.empty()) {
+		char path[512];
+
+		if (snprintf(path, sizeof(path), "%s/%s", opt_config_dir.c_str(), name) > 0) {
+			return bstrdup(path);
+		} else {
+			return NULL;
+		}
+	}
+
 #if ALLOW_PORTABLE_MODE
 	if (portable_mode) {
 		char path[512];
