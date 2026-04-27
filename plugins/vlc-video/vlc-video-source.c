@@ -589,6 +589,15 @@ static bool valid_extension(const char *ext)
 	return valid;
 }
 
+bool dir_file_filter(struct os_dirent *ent)
+{
+	if (ent->directory)
+		return false;
+
+	const char *ext = os_get_path_extension(ent->d_name);
+	return valid_extension(ext);
+}
+
 static void vlcs_update(void *data, obs_data_t *settings)
 {
 	media_file_array_t new_files;
@@ -642,31 +651,24 @@ static void vlcs_update(void *data, obs_data_t *settings)
 		os_dir_t *dir = os_opendir(path);
 
 		if (dir) {
+			DARRAY(struct os_dirent) files = {0};
+			da_init(files);
+			os_sortdir_natural(dir, &files.da, dir_file_filter);
+			os_closedir(dir);
+
 			struct dstr dir_path = {0};
-			struct os_dirent *ent;
-
-			for (;;) {
-				const char *ext;
-
-				ent = os_readdir(dir);
-				if (!ent)
-					break;
-				if (ent->directory)
-					continue;
-
-				ext = os_get_path_extension(ent->d_name);
-				if (!valid_extension(ext))
-					continue;
+			for (size_t j = 0; j < files.num; j++) {
 
 				dstr_copy(&dir_path, path);
 				dstr_cat_ch(&dir_path, '/');
-				dstr_cat(&dir_path, ent->d_name);
+				dstr_cat(&dir_path, files.array[j].d_name);
+
 				add_file(c, &new_files, dir_path.array, network_caching, track_index, subtitle_index,
 					 subtitle_enable);
 			}
-
 			dstr_free(&dir_path);
-			os_closedir(dir);
+			da_free(files);
+
 		} else {
 			add_file(c, &new_files, path, network_caching, track_index, subtitle_index, subtitle_enable);
 		}

@@ -131,6 +131,60 @@ Number/String Conversion Functions
 ---------------------
 
 
+Locale Awareness Functions
+----------------------------------
+
+.. type:: os_locale_t
+
+   Platform specific locale. Either _locale_t for Windows or locale_t for posix.
+
+.. type:: int (*os_locale_aware_cmp)(const void *a, const void *b, os_locale_t locale)
+
+   Locale aware comparison function.
+
+---------------------
+
+.. function:: int os_strcoll_l(const char *a, const char *b, os_locale_t locale)
+
+   Performs locale aware comparison with strcoll_l() or _strcoll_l() depending on platform.
+
+---------------------
+
+.. function:: int os_wcscoll_l(const wchar_t *a, const wchar_t *b, os_locale_t locale)
+
+   Performs locale aware comparison with wcscoll_l() or _wcscoll_l() depending on platform.
+
+---------------------
+
+.. function:: os_locale_t os_get_locale(const char *locale)
+
+   Returns platform specific locale type. Must be freed with os_free_locale().
+
+   :param locale: Locale to be created. (ie. "en_US.UTF-8")
+                  If NULL or empty, system default with UTF-8 encoding (for char apis) is returned.
+
+---------------------
+
+.. function:: void os_free_locale(os_locale_t locale)
+
+   Frees locale acquired with os_get_locale().
+
+---------------------
+
+.. function:: void os_locale_aware_sort(void *base, size_t elements, size_t element_size, os_locale_aware_cmp cmp, os_locale_t locale)
+
+   Performs locale aware sort with parameters similiar to qsort().
+
+   :param cmp: Comparison callback to use. Takes os_locale_t as the 3rd parameter.
+                This can be for example os_wcscoll_l or wstrnatcoll if the sort list is whcar_t* directly.
+
+   :param locale: Locale acquired from os_get_locale().
+                  If NULL, system default with UTF-8 encoding is used.
+		  If the comparison is for wide chars, then platform specific encoding is used.
+
+---------------------
+
+
 Dynamic Link Library Functions
 ------------------------------
 
@@ -282,6 +336,22 @@ Other Path/File Functions
 .. function:: void os_closedir(os_dir_t *dir)
 
    Closes a directory object.
+
+---------------------
+
+.. type:: bool (*dir_filter_func)(struct os_dirent *)
+
+   Filter function when iterating files in directory. Should return false to remove entries and true to keep them.
+
+---------------------
+
+.. function:: void os_sortdir_natural(os_dir_t *dir, struct darray *sorted, dir_filter_func filter_func)
+
+   Returns files in directory sorted by a natural (number aware) and locale aware sort.
+
+   :param sorted: Pointer to darray of struct os_dirent to append files to.
+
+   :param filter_func: Filter function for directory files.
 
 ---------------------
 
