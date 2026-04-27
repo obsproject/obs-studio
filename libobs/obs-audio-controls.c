@@ -322,42 +322,46 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
 	/* These are normalized-sinc parameters for interpolating over sample
 	 * points which are located at x-coords: -1.5, -0.5, +0.5, +1.5.
 	 * And oversample points at x-coords: -0.3, -0.1, 0.1, 0.3. */
-	const __m128 m3 = _mm_set_ps(-0.155915f, 0.935489f, 0.233872f, -0.103943f);
-	const __m128 m1 = _mm_set_ps(-0.216236f, 0.756827f, 0.504551f, -0.189207f);
-	const __m128 p1 = _mm_set_ps(-0.189207f, 0.504551f, 0.756827f, -0.216236f);
-	const __m128 p3 = _mm_set_ps(-0.103943f, 0.233872f, 0.935489f, -0.155915f);
+	const __m128 sinc_minus_03 = _mm_set_ps(-0.155915f, 0.935489f, 0.233872f, -0.103943f);
+	const __m128 sinc_minus_01 = _mm_set_ps(-0.216236f, 0.756827f, 0.504551f, -0.189207f);
+	const __m128 sinc_plus_01 = _mm_set_ps(-0.189207f, 0.504551f, 0.756827f, -0.216236f);
+	const __m128 sinc_plus_03 = _mm_set_ps(-0.103943f, 0.233872f, 0.935489f, -0.155915f);
 
-	__m128 work = previous_samples;
-	__m128 peak = previous_samples;
+	__m128 sample_window = previous_samples;
+	__m128 max_abs_per_lane = previous_samples;
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
-		__m128 new_work = _mm_load_ps(&samples[i]);
-		__m128 intrp_samples;
+		__m128 next_samples = _mm_load_ps(&samples[i]);
+		__m128 interpolated_samples = _mm_setzero_ps();
 
 		/* Include the actual sample values in the peak. */
-		__m128 abs_new_work = abs_ps(new_work);
-		peak = _mm_max_ps(peak, abs_new_work);
+		__m128 abs_next_samples = abs_ps(next_samples);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_next_samples);
 
 		/* Shift in the next point. */
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 	}
 
-	float r;
-	hmax_ps(r, peak);
-	return r;
+	float max_abs_sample = 0.0f;
+	hmax_ps(max_abs_sample, max_abs_per_lane);
+	return max_abs_sample;
 }
 
 /* points contain the first four samples to calculate the sinc interpolation
