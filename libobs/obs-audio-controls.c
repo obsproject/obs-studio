@@ -365,15 +365,15 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
  */
 static float get_sample_peak(__m128 previous_samples, const float *samples, size_t nr_samples)
 {
-	__m128 peak = previous_samples;
+	__m128 max_abs_per_lane = previous_samples;
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
-		__m128 new_work = _mm_load_ps(&samples[i]);
-		peak = _mm_max_ps(peak, abs_ps(new_work));
+		__m128 next_samples = _mm_load_ps(&samples[i]);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(next_samples));
 	}
 
-	float peak_value = 0.0f;
-	hmax_ps(peak_value, peak);
-	return peak_value;
+	float max_abs_sample = 0.0f;
+	hmax_ps(max_abs_sample, max_abs_per_lane);
+	return max_abs_sample;
 }
 
 static void volmeter_process_peak_last_samples(obs_volmeter_t *volmeter, int channel_nr, float *samples,
