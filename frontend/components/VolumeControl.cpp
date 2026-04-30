@@ -815,43 +815,27 @@ void VolumeControl::processMixerState()
 
 void VolumeControl::handleMuteButton(bool mute)
 {
-	OBSSource source = OBSGetStrongRef(weakSource());
-	if (!source) {
-		return;
-	}
+	setMuted(mute);
 
-	// The Mute and Monitor buttons in the volume mixer work as a pseudo quad-state toggle.
-	// Both buttons must be in their "off" state in order to actually process it as a mute.
-	// Otherwise, clicking "Mute" with monitoring enabled will toggle the monitoring type.
-
-	if (mute && obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT) {
-		setMonitoring(OBS_MONITORING_TYPE_MONITOR_ONLY);
-	} else if (!mute && obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY) {
-		setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-	} else {
-		setMuted(mute);
+	if (obsMonitoringType != OBS_MONITORING_TYPE_NONE) {
+		if (mute) {
+			setMonitoring(OBS_MONITORING_TYPE_MONITOR_ONLY);
+		} else {
+			setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+		}
 	}
 }
 
 void VolumeControl::handleMonitorButton(bool enableMonitoring)
 {
-	OBSSource source = OBSGetStrongRef(weakSource());
-	if (!source) {
+	if (!enableMonitoring) {
+		setMonitoring(OBS_MONITORING_TYPE_NONE);
 		return;
 	}
 
-	// The Mute and Monitor buttons in the volume mixer work as a pseudo quad-state toggle.
-	// The source is only ever actually "Muted" if Monitoring is set to None.
-
-	if (!enableMonitoring) {
-		setMonitoring(OBS_MONITORING_TYPE_NONE);
-		if (obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY) {
-			setMuted(true);
-		}
-	} else if (enableMonitoring && obsMuted) {
+	if (obsMuted) {
 		setMonitoring(OBS_MONITORING_TYPE_MONITOR_ONLY);
-		setMuted(false);
-	} else if (enableMonitoring && !obsMuted) {
+	} else {
 		setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
 	}
 }
