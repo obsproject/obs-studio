@@ -225,19 +225,19 @@ void VolumeControl::obsMonitoringChanged(void *data, calldata_t *params)
 
 void VolumeControl::obsSourceActivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceActiveChanged", Qt::QueuedConnection,
 				  Q_ARG(bool, true));
 }
 
 void VolumeControl::obsSourceDeactivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "sourceActiveChanged", Qt::QueuedConnection,
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceActiveChanged", Qt::QueuedConnection,
 				  Q_ARG(bool, false));
 }
 
 void VolumeControl::obsSourceDestroy(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "handleSourceDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceDestroyed", Qt::QueuedConnection);
 }
 
 void VolumeControl::setLayoutVertical(bool vertical)
@@ -742,7 +742,7 @@ void VolumeControl::setMonitoring(obs_monitoring_type type)
 					   std::bind(undo_redo, std::placeholders::_1, type), uuid, uuid);
 }
 
-void VolumeControl::sourceActiveChanged(bool active)
+void VolumeControl::onSourceActiveChanged(bool active)
 {
 	setUseDisabledColors(!active);
 	mixerStatus().set(VolumeControl::MixerStatus::Active, active);

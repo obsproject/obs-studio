@@ -115,7 +115,6 @@ private:
 	void setMonitoring(obs_monitoring_type type);
 
 public slots:
-	void sourceActiveChanged(bool active);
 	void setUseDisabledColors(bool greyscale);
 	void setLocked(bool locked);
 	void processMixerState();
@@ -130,9 +129,10 @@ private slots:
 	void updateText();
 	void setName(QString name);
 
-	void handleSourceDestroyed() { deleteLater(); }
+	void onSourceActiveChanged(bool active);
 	void onMuteChanged(bool muted);
 	void onMonitoringChanged(int type);
+	void onSourceDestroyed() { deleteLater(); }
 
 signals:
 	void unhideAll();
