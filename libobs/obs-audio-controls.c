@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CLAMP(x, min, max) ((x) < min ? min : ((x) > max ? max : (x)))
 
-struct fader_cb {
+struct fader_callback {
 	obs_fader_changed_t callback;
 	void *param;
 };
@@ -53,10 +53,10 @@ struct obs_fader {
 	bool ignore_next_signal;
 
 	pthread_mutex_t callback_mutex;
-	DARRAY(struct fader_cb) callbacks;
+	DARRAY(struct fader_callback) callbacks;
 };
 
-struct meter_cb {
+struct volmeter_callback {
 	obs_volmeter_updated_t callback;
 	void *param;
 };
@@ -68,7 +68,7 @@ struct obs_volmeter {
 	float cur_db;
 
 	pthread_mutex_t callback_mutex;
-	DARRAY(struct meter_cb) callbacks;
+	DARRAY(struct volmeter_callback) callbacks;
 
 	enum obs_peak_meter_type peak_meter_type;
 	unsigned int update_ms;
@@ -188,8 +188,8 @@ static void signal_volume_changed(struct obs_fader *fader, const float db)
 {
 	pthread_mutex_lock(&fader->callback_mutex);
 	for (size_t i = fader->callbacks.num; i > 0; i--) {
-		struct fader_cb cb = fader->callbacks.array[i - 1];
-		cb.callback(cb.param, db);
+		struct fader_callback callback_object = fader->callbacks.array[i - 1];
+		callback_object.callback(callback_object.param, db);
 	}
 	pthread_mutex_unlock(&fader->callback_mutex);
 }
@@ -199,8 +199,8 @@ static void signal_levels_updated(struct obs_volmeter *volmeter, const float mag
 {
 	pthread_mutex_lock(&volmeter->callback_mutex);
 	for (size_t i = volmeter->callbacks.num; i > 0; i--) {
-		struct meter_cb cb = volmeter->callbacks.array[i - 1];
-		cb.callback(cb.param, magnitude, peak, input_peak);
+		struct volmeter_callback callback_object = volmeter->callbacks.array[i - 1];
+		callback_object.callback(callback_object.param, magnitude, peak, input_peak);
 	}
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
@@ -322,42 +322,46 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
 	/* These are normalized-sinc parameters for interpolating over sample
 	 * points which are located at x-coords: -1.5, -0.5, +0.5, +1.5.
 	 * And oversample points at x-coords: -0.3, -0.1, 0.1, 0.3. */
-	const __m128 m3 = _mm_set_ps(-0.155915f, 0.935489f, 0.233872f, -0.103943f);
-	const __m128 m1 = _mm_set_ps(-0.216236f, 0.756827f, 0.504551f, -0.189207f);
-	const __m128 p1 = _mm_set_ps(-0.189207f, 0.504551f, 0.756827f, -0.216236f);
-	const __m128 p3 = _mm_set_ps(-0.103943f, 0.233872f, 0.935489f, -0.155915f);
+	const __m128 sinc_minus_03 = _mm_set_ps(-0.155915f, 0.935489f, 0.233872f, -0.103943f);
+	const __m128 sinc_minus_01 = _mm_set_ps(-0.216236f, 0.756827f, 0.504551f, -0.189207f);
+	const __m128 sinc_plus_01 = _mm_set_ps(-0.189207f, 0.504551f, 0.756827f, -0.216236f);
+	const __m128 sinc_plus_03 = _mm_set_ps(-0.103943f, 0.233872f, 0.935489f, -0.155915f);
 
-	__m128 work = previous_samples;
-	__m128 peak = previous_samples;
+	__m128 sample_window = previous_samples;
+	__m128 max_abs_per_lane = previous_samples;
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
-		__m128 new_work = _mm_load_ps(&samples[i]);
-		__m128 intrp_samples;
+		__m128 next_samples = _mm_load_ps(&samples[i]);
+		__m128 interpolated_samples = _mm_setzero_ps();
 
 		/* Include the actual sample values in the peak. */
-		__m128 abs_new_work = abs_ps(new_work);
-		peak = _mm_max_ps(peak, abs_new_work);
+		__m128 abs_next_samples = abs_ps(next_samples);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_next_samples);
 
 		/* Shift in the next point. */
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 
-		SHIFT_RIGHT_2PS(new_work, work);
-		VECTOR_MATRIX_CROSS_PS(intrp_samples, work, m3, m1, p1, p3);
-		peak = _mm_max_ps(peak, abs_ps(intrp_samples));
+		SHIFT_RIGHT_2PS(next_samples, sample_window);
+		VECTOR_MATRIX_CROSS_PS(interpolated_samples, sample_window, sinc_minus_03, sinc_minus_01, sinc_plus_01,
+				       sinc_plus_03);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(interpolated_samples));
 	}
 
-	float r;
-	hmax_ps(r, peak);
-	return r;
+	float max_abs_sample = 0.0f;
+	hmax_ps(max_abs_sample, max_abs_per_lane);
+	return max_abs_sample;
 }
 
 /* points contain the first four samples to calculate the sinc interpolation
@@ -365,15 +369,15 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
  */
 static float get_sample_peak(__m128 previous_samples, const float *samples, size_t nr_samples)
 {
-	__m128 peak = previous_samples;
+	__m128 max_abs_per_lane = previous_samples;
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
-		__m128 new_work = _mm_load_ps(&samples[i]);
-		peak = _mm_max_ps(peak, abs_ps(new_work));
+		__m128 next_samples = _mm_load_ps(&samples[i]);
+		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(next_samples));
 	}
 
-	float r;
-	hmax_ps(r, peak);
-	return r;
+	float max_abs_sample = 0.0f;
+	hmax_ps(max_abs_sample, max_abs_per_lane);
+	return max_abs_sample;
 }
 
 static void volmeter_process_peak_last_samples(obs_volmeter_t *volmeter, int channel_nr, float *samples,
@@ -455,7 +459,7 @@ static void volmeter_process_peak(obs_volmeter_t *volmeter, const struct audio_d
 
 	/* Clear the peak of the channels that have not been handled. */
 	for (; channel_nr < MAX_AUDIO_CHANNELS; channel_nr++) {
-		volmeter->peak[channel_nr] = 0.0;
+		volmeter->peak[channel_nr] = 0.0f;
 	}
 }
 
@@ -470,7 +474,7 @@ static void volmeter_process_magnitude(obs_volmeter_t *volmeter, const struct au
 			continue;
 		}
 
-		float sum = 0.0;
+		float sum = 0.0f;
 		for (size_t i = 0; i < nr_samples; i++) {
 			float sample = samples[i];
 			sum += sample * sample;
@@ -492,7 +496,7 @@ static void volmeter_process_audio_data(obs_volmeter_t *volmeter, const struct a
 static void volmeter_source_data_received(void *vptr, obs_source_t *source, const struct audio_data *data, bool muted)
 {
 	struct obs_volmeter *volmeter = (struct obs_volmeter *)vptr;
-	float mul;
+	float mul = 0.0f;
 	float magnitude[MAX_AUDIO_CHANNELS];
 	float peak[MAX_AUDIO_CHANNELS];
 	float input_peak[MAX_AUDIO_CHANNELS];
@@ -661,7 +665,7 @@ float obs_fader_get_mul(obs_fader_t *fader)
 bool obs_fader_attach_source(obs_fader_t *fader, obs_source_t *source)
 {
 	signal_handler_t *sh;
-	float vol;
+	float vol = 0.0f;
 
 	if (!fader || !source)
 		return false;
@@ -706,25 +710,25 @@ void obs_fader_detach_source(obs_fader_t *fader)
 
 void obs_fader_add_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param)
 {
-	struct fader_cb cb = {callback, param};
+	struct fader_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(fader, "obs_fader_add_callback"))
 		return;
 
 	pthread_mutex_lock(&fader->callback_mutex);
-	da_push_back(fader->callbacks, &cb);
+	da_push_back(fader->callbacks, &callback_object);
 	pthread_mutex_unlock(&fader->callback_mutex);
 }
 
 void obs_fader_remove_callback(obs_fader_t *fader, obs_fader_changed_t callback, void *param)
 {
-	struct fader_cb cb = {callback, param};
+	struct fader_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(fader, "obs_fader_remove_callback"))
 		return;
 
 	pthread_mutex_lock(&fader->callback_mutex);
-	da_erase_item(fader->callbacks, &cb);
+	da_erase_item(fader->callbacks, &callback_object);
 	pthread_mutex_unlock(&fader->callback_mutex);
 }
 
@@ -765,7 +769,7 @@ void obs_volmeter_destroy(obs_volmeter_t *volmeter)
 bool obs_volmeter_attach_source(obs_volmeter_t *volmeter, obs_source_t *source)
 {
 	signal_handler_t *sh;
-	float vol;
+	float vol = 0.0f;
 
 	if (!volmeter || !source)
 		return false;
@@ -840,25 +844,25 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 
 void obs_volmeter_add_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param)
 {
-	struct meter_cb cb = {callback, param};
+	struct volmeter_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(volmeter, "obs_volmeter_add_callback"))
 		return;
 
 	pthread_mutex_lock(&volmeter->callback_mutex);
-	da_push_back(volmeter->callbacks, &cb);
+	da_push_back(volmeter->callbacks, &callback_object);
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
 
 void obs_volmeter_remove_callback(obs_volmeter_t *volmeter, obs_volmeter_updated_t callback, void *param)
 {
-	struct meter_cb cb = {callback, param};
+	struct volmeter_callback callback_object = {callback, param};
 
 	if (!obs_ptr_valid(volmeter, "obs_volmeter_remove_callback"))
 		return;
 
 	pthread_mutex_lock(&volmeter->callback_mutex);
-	da_erase_item(volmeter->callbacks, &cb);
+	da_erase_item(volmeter->callbacks, &callback_object);
 	pthread_mutex_unlock(&volmeter->callback_mutex);
 }
 
