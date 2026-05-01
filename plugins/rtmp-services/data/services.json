@@ -3586,6 +3586,27 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Stream24",
+            "more_info_link": "https://stream24.io",
+            "stream_key_link": "https://app.stream24.io",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://app.stream24.io/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max video bitrate": 6000,
+                "max audio bitrate": 160,
+                "bframes": 2
+            }
         }
     ]
 }
