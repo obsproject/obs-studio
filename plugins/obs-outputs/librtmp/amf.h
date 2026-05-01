@@ -95,6 +95,7 @@ extern "C"
     char *AMF_EncodeNamedString(char *output, char *outend, const AVal * name, const AVal * value);
     char *AMF_EncodeNamedNumber(char *output, char *outend, const AVal * name, double dVal);
     char *AMF_EncodeNamedBoolean(char *output, char *outend, const AVal * name, int bVal);
+    char *AMF_EncodeNamedObjectStart(char *output, char *outend, const AVal *strName);
 
     unsigned short AMF_DecodeInt16(const char *data);
     unsigned int AMF_DecodeInt24(const char *data);
