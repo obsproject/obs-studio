@@ -1152,6 +1152,7 @@ void OBSBasic::OBSInit()
 	bool sysTrayWhenStarted = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SysTrayWhenStarted");
 	bool hideWindowOnStart = QSystemTrayIcon::isSystemTrayAvailable() && sysTrayEnabled &&
 				 (opt_minimize_tray || sysTrayWhenStarted);
+	deferExtraDockVisibility = hideWindowOnStart;
 
 #ifdef _WIN32
 	SetWin32DropStyle(this);
