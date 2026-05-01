@@ -575,6 +575,12 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	QPoint newPos = curPos + statsDockPos;
 	statsDock->move(newPos);
 
+	// Workaround for QTBUG-46620
+	// https://qt-project.atlassian.net/browse/QTBUG-46620
+	if (isMaximized()) {
+		setGeometry(window()->screen()->availableGeometry());
+	}
+
 	ui->actionReleaseNotes->setVisible(true);
 
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
