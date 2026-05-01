@@ -417,7 +417,7 @@ bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info
 	if (!obs->video.graphics || !canvas->mix)
 		return false;
 
-	*ovi = canvas->ovi;
+	*ovi = canvas->mix->ovi;
 	return true;
 }
 
