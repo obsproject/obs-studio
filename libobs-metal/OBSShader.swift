@@ -542,7 +542,7 @@ class OBSShader {
                 textures: [],
                 samplers: [],
                 arguments: [],
-                gsFunction: function,
+                gsFunction: function
             )
 
             for j in 0..<function.pointee.params.num {
