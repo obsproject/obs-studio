@@ -2,6 +2,8 @@
 
 #include "SourceToolbar.hpp"
 
+#include <Idian/Utils.hpp>
+
 class Ui_ColorSourceToolbar;
 
 class ColorSourceToolbar : public SourceToolbar {
@@ -10,6 +12,8 @@ class ColorSourceToolbar : public SourceToolbar {
 	std::unique_ptr<Ui_ColorSourceToolbar> ui;
 	QColor color;
 
+	std::unique_ptr<idian::Utils> utils;
+
 	void UpdateColor();
 
 public:
@@ -17,5 +21,5 @@ public:
 	~ColorSourceToolbar();
 
 public slots:
-	void on_choose_clicked();
+	void on_colorPreview_clicked();
 };
