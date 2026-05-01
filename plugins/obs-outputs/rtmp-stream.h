@@ -23,6 +23,7 @@
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
 #define OPT_DYN_BITRATE "dyn_bitrate"
+#define OPT_DYN_BITRATE_INTERPOLATION_TABLE_DATA "interpolation_table_data"
 #define OPT_DROP_THRESHOLD "drop_threshold_ms"
 #define OPT_PFRAME_DROP_THRESHOLD "pframe_drop_threshold_ms"
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
@@ -50,6 +51,10 @@ struct dbr_frame {
 	uint64_t send_beg;
 	uint64_t send_end;
 	size_t size;
+};
+
+struct dbr_interpolation_point {
+	long bitrates[MAX_OUTPUT_VIDEO_ENCODERS];
 };
 
 struct rtmp_stream {
@@ -112,6 +117,7 @@ struct rtmp_stream {
 	long dbr_cur_bitrate;
 	long dbr_inc_bitrate;
 	bool dbr_enabled;
+	DARRAY(struct dbr_interpolation_point) dbr_interpolation_table;
 
 	enum audio_id_t audio_codec[MAX_OUTPUT_AUDIO_ENCODERS];
 	enum video_id_t video_codec[MAX_OUTPUT_VIDEO_ENCODERS];
