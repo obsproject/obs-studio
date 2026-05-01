@@ -1341,6 +1341,30 @@
             ]
         },
         {
+            "name": "Girls Gone Game",
+            "more_info_link": "https://www.girlsgonegame.com",
+            "stream_key_link": "https://www.girlsgonegame.com/streamer/profile",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://47e4f15676e4.global-contribute.live-video.net:443/app/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max fps": 30
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
             "name": "Lahzenegar - StreamG | لحظه‌نگار - استریمجی",
             "servers": [
                 {
