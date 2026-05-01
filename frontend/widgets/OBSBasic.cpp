@@ -1219,6 +1219,12 @@ void OBSBasic::OBSInit()
 		NewYouTubeAppDock();
 #endif
 
+	// Workaround for QTBUG-46620
+	// https://qt-project.atlassian.net/browse/QTBUG-46620
+	if (isMaximized()) {
+		setGeometry(window()->screen()->availableGeometry());
+	}
+
 	const char *dockStateStr = config_get_string(App()->GetUserConfig(), "BasicWindow", "DockState");
 
 	if (!dockStateStr) {
