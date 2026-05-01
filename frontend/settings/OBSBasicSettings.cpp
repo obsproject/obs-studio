@@ -1612,7 +1612,10 @@ void OBSBasicSettings::LoadResolutionLists()
 	RecalcOutputResPixels(outputResString.c_str());
 	ResetDownscales(cx, cy);
 
-	ui->outputResolution->lineEdit()->setText(outputResString.c_str());
+	// No guarantee that outputResolution is editable, e.g., Facebook Live.
+	if (ui->outputResolution->isEditable()) {
+		ui->outputResolution->lineEdit()->setText(outputResString.c_str());
+	}
 
 	std::tuple<int, int> aspect = aspect_ratio(cx, cy);
 
