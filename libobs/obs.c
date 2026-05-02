@@ -615,8 +615,8 @@ static int obs_init_video_mix(struct obs_video_info *ovi, struct obs_core_video_
 	 * so share FPS settings for aux views */
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	size_t num = obs->video.mixes.num;
-	if (num && obs->data.main_canvas->mix) {
-		struct obs_video_info main_ovi = obs->data.main_canvas->mix->ovi;
+	if (num && obs->data.main_canvas->video_mix) {
+		struct obs_video_info main_ovi = obs->data.main_canvas->video_mix->ovi;
 		video->ovi.fps_num = main_ovi.fps_num;
 		video->ovi.fps_den = main_ovi.fps_den;
 	}
@@ -655,6 +655,32 @@ static int obs_init_video_mix(struct obs_video_info *ovi, struct obs_core_video_
 	return OBS_VIDEO_SUCCESS;
 }
 
+static bool obs_init_audio_mix(struct obs_canvas *canvas, struct obs_audio_info2 *oai, struct obs_core_audio_mix *audio)
+{
+	audio->oai = *oai;
+
+	struct audio_output_info ai;
+	ai.name = "Audio";
+	ai.samples_per_sec = oai->samples_per_sec;
+	ai.format = AUDIO_FORMAT_FLOAT_PLANAR;
+	ai.speakers = oai->speakers;
+	ai.input_callback = audio_callback;
+	ai.input_param = canvas;
+
+	int errorcode = audio_output_open(&audio->audio, &ai);
+	if (errorcode != AUDIO_OUTPUT_SUCCESS) {
+		if (errorcode == AUDIO_OUTPUT_INVALIDPARAM) {
+			blog(LOG_ERROR, "Invalid audio parameters specified");
+			return AUDIO_OUTPUT_INVALIDPARAM;
+		} else {
+			blog(LOG_ERROR, "Could not open audio output");
+		}
+		return AUDIO_OUTPUT_FAIL;
+	}
+
+	return AUDIO_OUTPUT_SUCCESS;
+}
+
 struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi)
 {
 	struct obs_core_video_mix *video = bzalloc(sizeof(struct obs_core_video_mix));
@@ -665,7 +691,17 @@ struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi)
 	return video;
 }
 
-static bool restore_canvases(void)
+struct obs_core_audio_mix *obs_create_audio_mix(struct obs_canvas *canvas, struct obs_audio_info2 *oai)
+{
+	struct obs_core_audio_mix *audio = bzalloc(sizeof(struct obs_core_audio_mix));
+	if (obs_init_audio_mix(canvas, oai, audio) != AUDIO_OUTPUT_SUCCESS) {
+		bfree(audio);
+		audio = NULL;
+	}
+	return audio;
+}
+
+static bool restore_canvas_video(void)
 {
 	bool success = true;
 
@@ -678,6 +714,27 @@ static bool restore_canvases(void)
 
 		if (!obs_canvas_reset_video_internal(canvas, NULL)) {
 			blog(LOG_ERROR, "Failed restoring video mix for canvas '%s'", canvas->context.name);
+			success = false;
+		}
+	}
+	pthread_mutex_unlock(&obs->data.canvases_mutex);
+
+	return success;
+}
+
+static bool restore_canvas_audio(void)
+{
+	bool success = true;
+
+	pthread_mutex_lock(&obs->data.canvases_mutex);
+	struct obs_context_data *ctx, *tmp;
+	HASH_ITER (hh, (struct obs_context_data *)obs->data.canvases, ctx, tmp) {
+		obs_canvas_t *canvas = (obs_canvas_t *)ctx;
+		if (canvas->flags & MAIN)
+			continue;
+
+		if (!obs_canvas_reset_audio_internal(canvas, NULL)) {
+			blog(LOG_ERROR, "Failed restoring audio mix for canvas '%s'", canvas->context.name);
 			success = false;
 		}
 	}
@@ -703,7 +760,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 	if (!obs_canvas_reset_video_internal(obs->data.main_canvas, ovi))
 		return OBS_VIDEO_FAIL;
 	/* Reset mixes for remaining canvases using their existing video info. */
-	if (!restore_canvases())
+	if (!restore_canvas_video())
 		return OBS_VIDEO_FAIL;
 
 	int errorcode;
@@ -818,6 +875,20 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 	bfree(video);
 }
 
+void obs_free_audio_mix(struct obs_core_audio_mix *audio)
+{
+	if (audio->audio) {
+		audio_output_close(audio->audio);
+		audio->audio = NULL;
+		audio->monitoring_duplicating_source = NULL;
+
+		deque_free(&audio->buffered_timestamps);
+		da_free(audio->render_order);
+		da_free(audio->root_nodes);
+	}
+	bfree(audio);
+}
+
 static void obs_free_video(void)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
@@ -883,7 +954,7 @@ static void obs_free_graphics(void)
 void set_monitoring_duplication_source(void *param)
 {
 	obs_source_t *src = param;
-	struct obs_core_audio *audio = &obs->audio;
+	struct obs_core_audio_mix *audio = obs->data.main_canvas->audio_mix;
 
 	audio->monitoring_duplicating_source = src;
 }
@@ -898,10 +969,13 @@ static void apply_monitoring_deduplication(void *ignored, calldata_t *cd)
 
 static void set_audio_thread(void *unused);
 
-static bool obs_init_audio(struct audio_output_info *ai)
+#ifndef SEC_TO_MSEC
+#define SEC_TO_MSEC 1000
+#endif
+
+static bool obs_init_audio(struct obs_audio_info2 *oai)
 {
 	struct obs_core_audio *audio = &obs->audio;
-	int errorcode;
 
 	pthread_mutex_init_value(&audio->monitoring_mutex);
 
@@ -909,47 +983,67 @@ static bool obs_init_audio(struct audio_output_info *ai)
 		return false;
 	if (pthread_mutex_init(&audio->task_mutex, NULL) != 0)
 		return false;
+	if (pthread_mutex_init(&audio->mixes_mutex, NULL) != 0)
+		return false;
+
+	/* Reset main canvas mix first so it remains first in the rendering order. */
+	if (!obs_canvas_reset_audio_internal(obs->data.main_canvas, oai))
+		return false;
+	/* Reset mixes for remaining canvases using their existing audio info. */
+	if (!restore_canvas_audio())
+		return false;
+
+	struct obs_core_audio_mix *audio_mix = obs->data.main_canvas->audio_mix;
+
+	if (oai->max_buffering_ms) {
+		uint32_t max_frames = oai->max_buffering_ms * oai->samples_per_sec / SEC_TO_MSEC;
+		max_frames += (AUDIO_OUTPUT_FRAMES - 1);
+		audio_mix->max_buffering_ticks = max_frames / AUDIO_OUTPUT_FRAMES;
+	} else {
+		audio_mix->max_buffering_ticks = 45;
+	}
+	audio_mix->fixed_buffer = oai->fixed_buffering;
+
+	int max_buffering_ms =
+		audio_mix->max_buffering_ticks * AUDIO_OUTPUT_FRAMES * SEC_TO_MSEC / (int)oai->samples_per_sec;
+
+	blog(LOG_INFO, "---------------------------------");
+	blog(LOG_INFO,
+	     "audio settings reset:\n"
+	     "\tsamples per sec: %d\n"
+	     "\tspeakers:        %d\n"
+	     "\tmax buffering:   %d milliseconds\n"
+	     "\tbuffering type:  %s",
+	     (int)oai->samples_per_sec, (int)oai->speakers, max_buffering_ms,
+	     oai->fixed_buffering ? "fixed" : "dynamically increasing");
 
 	struct obs_task_info audio_init = {.task = set_audio_thread};
 	deque_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
-	audio->monitoring_duplicating_source = NULL;
+	audio_mix->monitoring_duplicating_source = NULL;
 
 	signal_handler_add(obs->signals, "void deduplication_changed(ptr source)");
 	signal_handler_connect(obs->signals, "deduplication_changed", apply_monitoring_deduplication, NULL);
 
-	errorcode = audio_output_open(&audio->audio, ai);
-	if (errorcode == AUDIO_OUTPUT_SUCCESS)
-		return true;
-	else if (errorcode == AUDIO_OUTPUT_INVALIDPARAM)
-		blog(LOG_ERROR, "Invalid audio parameters specified");
-	else
-		blog(LOG_ERROR, "Could not open audio output");
-
-	return false;
-}
-
-static void stop_audio(void)
-{
-	struct obs_core_audio *audio = &obs->audio;
-
-	if (audio->audio) {
-		audio_output_close(audio->audio);
-		audio->audio = NULL;
-	}
+	return true;
 }
 
 static void obs_free_audio(void)
 {
 	struct obs_core_audio *audio = &obs->audio;
-	if (audio->audio)
-		audio_output_close(audio->audio);
 
-	deque_free(&audio->buffered_timestamps);
-	da_free(audio->render_order);
-	da_free(audio->root_nodes);
+	pthread_mutex_lock(&obs->audio.mixes_mutex);
+	for (size_t i = 0; i < obs->audio.mixes.num; i++) {
+		obs_free_audio_mix(audio->mixes.array[i]);
+		audio->mixes.array[i] = NULL;
+	}
+	da_free(obs->audio.mixes);
+	pthread_mutex_unlock(&obs->audio.mixes_mutex);
+
+	pthread_mutex_destroy(&obs->audio.mixes_mutex);
+	pthread_mutex_init_value(&obs->audio.mixes_mutex);
 
 	da_free(audio->monitors);
 	bfree(audio->monitoring_device_name);
@@ -1109,6 +1203,7 @@ static const char *obs_signals[] = {
 	"void canvas_remove(ptr canvas)",
 	"void canvas_destroy(ptr canvas)",
 	"void canvas_video_reset(ptr canvas)",
+	"void canvas_audio_reset(ptr canvas)",
 	"void canvas_rename(ptr canvas, string new_name, string prev_name)",
 
 	"void video_reset()",
@@ -1224,6 +1319,7 @@ static bool obs_init(const char *locale, const char *module_config_path, profile
 
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
 	pthread_mutex_init_value(&obs->audio.task_mutex);
+	pthread_mutex_init_value(&obs->audio.mixes_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.encoder_group_mutex);
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
@@ -1410,7 +1506,6 @@ void obs_shutdown(void)
 	da_free(obs->transition_types);
 
 	stop_video();
-	stop_audio();
 	stop_hotkeys();
 
 	module = obs->first_module;
@@ -1533,7 +1628,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_INVALID_PARAM;
 
 	stop_video();
-	obs_free_canvas_mixes();
+	obs_free_canvas_video_mixes();
 	obs_free_video();
 
 	/* align to multiple-of-two and SSE alignment sizes */
@@ -1592,52 +1687,17 @@ int obs_reset_video(struct obs_video_info *ovi)
 	return obs_init_video(ovi);
 }
 
-#ifndef SEC_TO_MSEC
-#define SEC_TO_MSEC 1000
-#endif
-
 bool obs_reset_audio2(const struct obs_audio_info2 *oai)
 {
-	struct obs_core_audio *audio = &obs->audio;
-	struct audio_output_info ai;
-
-	/* don't allow changing of audio settings if active. */
-	if (!obs || (audio->audio && audio_output_active(audio->audio)))
+	if (obs_audio_active())
 		return false;
 
+	obs_free_canvas_audio_mixes();
 	obs_free_audio();
 	if (!oai)
 		return true;
 
-	if (oai->max_buffering_ms) {
-		uint32_t max_frames = oai->max_buffering_ms * oai->samples_per_sec / SEC_TO_MSEC;
-		max_frames += (AUDIO_OUTPUT_FRAMES - 1);
-		audio->max_buffering_ticks = max_frames / AUDIO_OUTPUT_FRAMES;
-	} else {
-		audio->max_buffering_ticks = 45;
-	}
-	audio->fixed_buffer = oai->fixed_buffering;
-
-	int max_buffering_ms =
-		audio->max_buffering_ticks * AUDIO_OUTPUT_FRAMES * SEC_TO_MSEC / (int)oai->samples_per_sec;
-
-	ai.name = "Audio";
-	ai.samples_per_sec = oai->samples_per_sec;
-	ai.format = AUDIO_FORMAT_FLOAT_PLANAR;
-	ai.speakers = oai->speakers;
-	ai.input_callback = audio_callback;
-
-	blog(LOG_INFO, "---------------------------------");
-	blog(LOG_INFO,
-	     "audio settings reset:\n"
-	     "\tsamples per sec: %d\n"
-	     "\tspeakers:        %d\n"
-	     "\tmax buffering:   %d milliseconds\n"
-	     "\tbuffering type:  %s",
-	     (int)ai.samples_per_sec, (int)ai.speakers, max_buffering_ms,
-	     oai->fixed_buffering ? "fixed" : "dynamically increasing");
-
-	return obs_init_audio(&ai);
+	return obs_init_audio((struct obs_audio_info2 *)oai);
 }
 
 bool obs_reset_audio(const struct obs_audio_info *oai)
@@ -1652,10 +1712,10 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
-	if (!obs->video.graphics || !obs->data.main_canvas->mix)
+	if (!obs->video.graphics || !obs->data.main_canvas->video_mix)
 		return false;
 
-	*ovi = obs->data.main_canvas->mix->ovi;
+	*ovi = obs->data.main_canvas->video_mix->ovi;
 	return true;
 }
 
@@ -1682,7 +1742,7 @@ void obs_set_video_levels(float sdr_white_level, float hdr_nominal_peak_level)
 
 bool obs_get_audio_info(struct obs_audio_info *oai)
 {
-	struct obs_core_audio *audio = &obs->audio;
+	struct obs_core_audio_mix *audio = obs->data.main_canvas->audio_mix;
 	const struct audio_output_info *info;
 
 	if (!oai || !audio->audio)
@@ -1697,10 +1757,10 @@ bool obs_get_audio_info(struct obs_audio_info *oai)
 
 bool obs_get_audio_info2(struct obs_audio_info2 *oai2)
 {
-	struct obs_core_audio *audio = &obs->audio;
+	struct obs_core_audio_mix *audio = obs->data.main_canvas->audio_mix;
 	struct obs_audio_info oai;
 
-	if (!obs_get_audio_info(&oai) || !oai2 || !audio->audio) {
+	if (!obs_get_audio_info(&oai) || !oai2 || !audio) {
 		return false;
 	} else {
 		oai2->samples_per_sec = oai.samples_per_sec;
@@ -1816,12 +1876,12 @@ void obs_leave_graphics(void)
 
 audio_t *obs_get_audio(void)
 {
-	return obs->audio.audio;
+	return obs->data.main_canvas->audio_mix->audio;
 }
 
 video_t *obs_get_video(void)
 {
-	return obs->data.main_canvas->mix->video;
+	return obs->data.main_canvas->video_mix->video;
 }
 
 obs_source_t *obs_get_output_source(uint32_t channel)
@@ -2174,7 +2234,7 @@ static void obs_render_canvas_texture_internal(obs_canvas_t *canvas, enum gs_ble
 	gs_effect_t *effect;
 	gs_eparam_t *param;
 
-	video = canvas->mix;
+	video = canvas->video_mix;
 	if (!video || !video->texture_rendered)
 		return;
 
@@ -2244,7 +2304,7 @@ gs_texture_t *obs_get_main_texture(void)
 {
 	struct obs_core_video_mix *video;
 
-	video = obs->data.main_canvas->mix;
+	video = obs->data.main_canvas->video_mix;
 	if (!video->texture_rendered)
 		return NULL;
 
@@ -3130,26 +3190,26 @@ void obs_add_raw_video_callback(const struct video_scale_info *conversion,
 void obs_add_raw_video_callback2(const struct video_scale_info *conversion, uint32_t frame_rate_divisor,
 				 void (*callback)(void *param, struct video_data *frame), void *param)
 {
-	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
+	struct obs_core_video_mix *video = obs->data.main_canvas->video_mix;
 	start_raw_video(video->video, conversion, frame_rate_divisor, callback, param);
 }
 
 void obs_remove_raw_video_callback(void (*callback)(void *param, struct video_data *frame), void *param)
 {
-	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
+	struct obs_core_video_mix *video = obs->data.main_canvas->video_mix;
 	stop_raw_video(video->video, callback, param);
 }
 
 void obs_add_raw_audio_callback(size_t mix_idx, const struct audio_convert_info *conversion,
 				audio_output_callback_t callback, void *param)
 {
-	struct obs_core_audio *audio = &obs->audio;
+	struct obs_core_audio_mix *audio = obs->data.main_canvas->audio_mix;
 	audio_output_connect(audio->audio, mix_idx, conversion, callback, param);
 }
 
 void obs_remove_raw_audio_callback(size_t mix_idx, audio_output_callback_t callback, void *param)
 {
-	struct obs_core_audio *audio = &obs->audio;
+	struct obs_core_audio_mix *audio = obs->data.main_canvas->audio_mix;
 	audio_output_disconnect(audio->audio, mix_idx, callback, param);
 }
 
@@ -3253,13 +3313,13 @@ bool obs_video_active(void)
 
 bool obs_nv12_tex_active(void)
 {
-	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
+	struct obs_core_video_mix *video = obs->data.main_canvas->video_mix;
 	return video->using_nv12_tex;
 }
 
 bool obs_p010_tex_active(void)
 {
-	struct obs_core_video_mix *video = obs->data.main_canvas->mix;
+	struct obs_core_video_mix *video = obs->data.main_canvas->video_mix;
 	return video->using_p010_tex;
 }
 
@@ -3355,7 +3415,7 @@ bool obs_wait_for_destroy_queue(void)
 {
 	struct task_wait_info info = {0};
 
-	if (!obs->video.thread_initialized || !obs->audio.audio)
+	if (!obs->video.thread_initialized || !obs_get_audio())
 		return false;
 
 	/* allow video and audio threads time to release objects */
@@ -3478,4 +3538,22 @@ bool obs_enum_output_protocols(size_t idx, char **protocol)
 obs_canvas_t *obs_get_main_canvas(void)
 {
 	return obs_canvas_get_ref(obs->data.main_canvas);
+}
+
+bool obs_audio_active(void)
+{
+	bool result = false;
+
+	pthread_mutex_lock(&obs->audio.mixes_mutex);
+	for (size_t i = 0, num = obs->audio.mixes.num; i < num; i++) {
+		struct obs_core_audio_mix *audio = obs->audio.mixes.array[i];
+
+		if (audio_output_active(audio->audio)) {
+			result = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&obs->audio.mixes_mutex);
+
+	return result;
 }

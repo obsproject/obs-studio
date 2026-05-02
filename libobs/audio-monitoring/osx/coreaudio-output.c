@@ -147,7 +147,7 @@ extern bool devices_match(const char *id1, const char *id2);
 
 static bool audio_monitor_init(struct audio_monitor *monitor, obs_source_t *source)
 {
-	const struct audio_output_info *info = audio_output_get_info(obs->audio.audio);
+	const struct audio_output_info *info = audio_output_get_info(obs_get_audio());
 	uint32_t channels = get_audio_channels(info->speakers);
 	OSStatus stat;
 
