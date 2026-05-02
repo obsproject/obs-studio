@@ -242,10 +242,16 @@ typedef struct obs_hotkeys_platform obs_hotkeys_platform_t;
 
 void *obs_hotkey_thread(void *param);
 
+enum obs_hotkey_platform_pressed_state {
+	OBS_HOTKEY_PLATFORM_PRESSED,
+	OBS_HOTKEY_PLATFORM_NOT_PRESSED,
+	OBS_HOTKEY_PLATFORM_UNKNOWN,
+};
+
 struct obs_core_hotkeys;
 bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys);
 void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys);
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key);
+enum obs_hotkey_platform_pressed_state obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key);
 
 const char *obs_get_hotkey_translation(obs_key_t key, const char *def);
 

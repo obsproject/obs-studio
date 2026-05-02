@@ -683,7 +683,7 @@ obs_key_t obs_key_from_virtual_key(int keyCode)
     return OBS_KEY_NONE;
 }
 
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *platform, obs_key_t key)
+enum obs_hotkey_platform_pressed_state obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *platform, obs_key_t key)
 {
     if (key >= OBS_KEY_MOUSE1 && key <= OBS_KEY_MOUSE29) {
         int button = key - 1;
@@ -691,21 +691,21 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *platform, obs_key_t
         NSUInteger buttons = [NSEvent pressedMouseButtons];
 
         if ((buttons & (1 << button)) != 0) {
-            return true;
+            return OBS_HOTKEY_PLATFORM_PRESSED;
         } else {
-            return false;
+            return OBS_HOTKEY_PLATFORM_NOT_PRESSED;
         }
     }
 
-    if (!platform) {
-        return false;
+    if (!platform || !platform->eventTap) {
+        return OBS_HOTKEY_PLATFORM_UNKNOWN;
     }
 
     if (key >= OBS_KEY_LAST_VALUE) {
-        return false;
+        return OBS_HOTKEY_PLATFORM_NOT_PRESSED;
     }
 
-    return platform->is_key_down[key];
+    return platform->is_key_down[key] ? OBS_HOTKEY_PLATFORM_PRESSED : OBS_HOTKEY_PLATFORM_NOT_PRESSED;
 }
 
 static void unichar_to_utf8(const UniChar *character, char *buffer)
