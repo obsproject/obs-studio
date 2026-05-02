@@ -505,6 +505,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #ifdef _WIN32
 	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 #endif
+	QGuiApplication::setDesktopFileName("com.obsproject.Studio");
 
 	QCoreApplication::addLibraryPath(".");
 
