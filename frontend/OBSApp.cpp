@@ -1994,6 +1994,26 @@ void OBSApp::loadAppModules(struct obs_module_failure_info &mfi)
 	pluginManager_->postLoad();
 }
 
+OBS::CanvasMediator *OBSApp::createCanvasMediator(obs_canvas_t *canvas)
+{
+	OBS::CanvasMediator *mediator = OBS::CanvasMediator::create(canvas);
+	canvasMediators.push_back(mediator);
+
+	return mediator;
+}
+
+std::optional<OBS::CanvasMediator *> OBSApp::findCanvasMediator(obs_canvas_t *canvas)
+{
+	auto it = std::find_if(canvasMediators.begin(), canvasMediators.end(),
+			       [canvas](OBS::CanvasMediator *mediator) { return mediator->getCanvas() == canvas; });
+
+	if (it == canvasMediators.end()) {
+		return std::nullopt;
+	}
+
+	return *it;
+}
+
 void OBSApp::pluginManagerOpenDialog()
 {
 	pluginManager_->open();

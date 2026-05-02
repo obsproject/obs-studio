@@ -41,13 +41,16 @@ void *OBSStudioAPI::obs_frontend_get_system_tray()
 
 void OBSStudioAPI::obs_frontend_get_scenes(struct obs_frontend_source_list *sources)
 {
-	for (int i = 0; i < main->ui->scenes->count(); i++) {
-		QListWidgetItem *item = main->ui->scenes->item(i);
-		OBSScene scene = GetOBSRef<OBSScene>(item);
-		obs_source_t *source = obs_scene_get_source(scene);
+	if (auto activeCanvas = main->getActiveCanvasMediator()) {
+		auto scenes = activeCanvas->getScenes();
 
-		if (obs_source_get_ref(source) != nullptr)
-			da_push_back(sources->sources, &source);
+		for (std::string &sceneUuid : scenes) {
+			OBSSourceAutoRelease source = obs_get_source_by_uuid(sceneUuid.c_str());
+
+			if (obs_source_get_ref(source) != nullptr) {
+				da_push_back(sources->sources, &source);
+			}
+		}
 	}
 }
 

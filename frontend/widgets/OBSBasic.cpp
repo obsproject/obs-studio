@@ -45,6 +45,7 @@
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
 #include <widgets/AudioMixer.hpp>
+#include <widgets/SceneList.hpp>
 #include <widgets/OBSProjector.hpp>
 
 #include <OBSStudioAPI.hpp>
@@ -375,18 +376,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 	qRegisterMetaType<SavedProjectorInfo *>("SavedProjectorInfo *");
 
-	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
-
-	bool sceneGrid = config_get_bool(App()->GetUserConfig(), "BasicWindow", "gridMode");
-	ui->scenes->SetGridMode(sceneGrid);
-
-	if (sceneGrid)
-		ui->actionSceneGridMode->setChecked(true);
-	else
-		ui->actionSceneListMode->setChecked(true);
-
-	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
 
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;
@@ -448,8 +438,6 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	UpdateTitleBar();
 
-	connect(ui->scenes->itemDelegate(), &QAbstractItemDelegate::closeEditor, this, &OBSBasic::SceneNameEdited);
-
 	cpuUsageInfo = os_cpu_usage_info_start();
 	cpuUsageTimer = new QTimer(this);
 	connect(cpuUsageTimer.data(), &QTimer::timeout, ui->statusbar, &OBSBasicStatusBar::UpdateCPUUsage);
@@ -458,29 +446,21 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	diskFullTimer = new QTimer(this);
 	connect(diskFullTimer, &QTimer::timeout, this, &OBSBasic::CheckDiskSpaceRemaining);
 
-	renameScene = new QAction(QTStr("Rename"), ui->scenesDock);
-	renameScene->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-	connect(renameScene, &QAction::triggered, this, &OBSBasic::EditSceneName);
-	ui->scenesDock->addAction(renameScene);
-
 	renameSource = new QAction(QTStr("Rename"), ui->sourcesDock);
 	renameSource->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	connect(renameSource, &QAction::triggered, this, &OBSBasic::EditSceneItemName);
 	ui->sourcesDock->addAction(renameSource);
 
 #ifdef __APPLE__
-	renameScene->setShortcut({Qt::Key_Return});
 	renameSource->setShortcut({Qt::Key_Return});
 
 	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
-	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
 
 	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionShowMacPermissions->setMenuRole(QAction::ApplicationSpecificRole);
 	delete ui->actionE_xit;
 #else
-	renameScene->setShortcut({Qt::Key_F2});
 	renameSource->setShortcut({Qt::Key_F2});
 #endif
 
@@ -566,9 +546,6 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->enablePreviewButton, &QPushButton::clicked, this, &OBSBasic::TogglePreview);
-
-	connect(ui->scenes, &SceneTree::scenesReordered, ui->scenes,
-		[]() { OBSProjector::UpdateMultiviewProjectors(); });
 
 	connect(App(), &OBSApp::StyleChanged, this, [this]() { OnEvent(OBS_FRONTEND_EVENT_THEME_CHANGED); });
 #ifndef __APPLE__
@@ -915,9 +892,7 @@ void OBSBasic::InitOBSCallbacks()
 {
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
-	signalHandlers.reserve(signalHandlers.size() + 6);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create", OBSBasic::SourceCreated, this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove", OBSBasic::SourceRemoved, this);
+	signalHandlers.reserve(signalHandlers.size() + 4);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename", OBSBasic::SourceRenamed, this);
 	signalHandlers.emplace_back(
 		obs_get_signal_handler(), "source_filter_add",
@@ -1182,6 +1157,20 @@ void OBSBasic::OBSInit()
 	if (!hideWindowOnStart)
 		show();
 #endif
+
+	// Set up Scenes dock
+	SceneList *sceneList = new SceneList(this);
+	ui->scenesDock->setWidget(sceneList);
+
+	connect(this, &OBSBasic::activeCanvasChanged, sceneList, &SceneList::attachMediator);
+	sceneList->attachMediator(getActiveCanvasMediator());
+	//sceneList->rebuildFromMediator();
+
+	//// DEBUG SECOND COPY
+	//SceneList *sceneList2 = new SceneList(this);
+	//sceneList2->setWindowFlags(Qt::Window);
+	//sceneList2->attachMediator(mainCanvasMediator);
+	//sceneList2->show();
 
 	// Set up Audio Mixer dock
 	AudioMixer *audioMixer = new AudioMixer(this);
@@ -1486,6 +1475,14 @@ void OBSBasic::toggleMixerLayout()
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl", !vertical);
 
 	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
+}
+
+void OBSBasic::toggleSceneListLayout()
+{
+	bool isGridMode = config_get_bool(App()->GetUserConfig(), "BasicWindow", "gridMode");
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode", !isGridMode);
+
+	emit userSettingChanged("BasicWindow", "gridMode");
 }
 
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)
@@ -2143,6 +2140,46 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 	// implement SetDisplayAffinitySupported too!
 	UNUSED_PARAMETER(hideFromCapture);
 #endif
+}
+
+void OBSBasic::setActiveCanvasMediator(OBS::CanvasMediator *mediator)
+{
+	if (activeCanvasMediator == mediator) {
+		return;
+	}
+
+	// Disconnect old signals
+	for (auto &connection : activeCanvasConnections) {
+		disconnect(connection);
+	}
+
+	activeCanvasConnections.clear();
+
+	activeCanvasMediator = mediator;
+	if (!mediator) {
+		return;
+	}
+
+	// Bind frontend events to mediator signals
+	activeCanvasConnections.push_back(connect(mediator, &OBS::CanvasMediator::sceneOrderChanged, this,
+						  [this]() { OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED); }));
+	activeCanvasConnections.push_back(connect(mediator, &OBS::CanvasMediator::sceneRenamed, this,
+						  [this]() { OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED); }));
+
+	// Connect canvas signals
+	activeCanvasConnections.push_back(
+		connect(mediator, &OBS::CanvasMediator::previewChanged, this, [this](QString uuid) {
+			OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
+			OBSScene scene = obs_scene_from_source(source);
+			if (!scene) {
+				return;
+			}
+
+			ui->sources->RefreshItems();
+			SetCurrentScene(scene);
+		}));
+
+	emit activeCanvasChanged(activeCanvasMediator);
 }
 
 void OBSBasic::OnEvent(enum obs_frontend_event event)

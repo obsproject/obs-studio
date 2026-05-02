@@ -80,25 +80,52 @@ QMessageBox::StandardButton OBSMessageBox::question(QWidget *parent, const QStri
 
 void OBSMessageBox::information(QWidget *parent, const QString &title, const QString &text)
 {
-	QMessageBox mb(QMessageBox::Information, title, text, QMessageBox::NoButton, parent);
-	mb.addButton(tr("OK"), QMessageBox::AcceptRole);
-	mb.exec();
+	// FIXME: Remove all uses of this function. Exec is bad.
+	auto messageBox = createInformation(parent, title, text);
+	messageBox->exec();
 }
 
 void OBSMessageBox::warning(QWidget *parent, const QString &title, const QString &text, bool enableRichText)
 {
-	QMessageBox mb(QMessageBox::Warning, title, text, QMessageBox::NoButton, parent);
-	if (enableRichText)
-		mb.setTextFormat(Qt::RichText);
-	mb.addButton(tr("OK"), QMessageBox::AcceptRole);
-	mb.exec();
+	// FIXME: Remove all uses of this function. Exec is bad.
+	auto messageBox = createWarning(parent, title, text, enableRichText);
+	messageBox->exec();
 }
 
 void OBSMessageBox::critical(QWidget *parent, const QString &title, const QString &text)
 {
-	QMessageBox mb(QMessageBox::Critical, title, text, QMessageBox::NoButton, parent);
-	mb.addButton(tr("OK"), QMessageBox::AcceptRole);
-	mb.exec();
+	// FIXME: Remove all uses of this function. Exec is bad.
+	auto messageBox = createCritical(parent, title, text);
+	messageBox->exec();
+}
+
+QMessageBox *OBSMessageBox::createInformation(QWidget *parent, const QString &title, const QString &text)
+{
+	QMessageBox *informationBox =
+		new QMessageBox(QMessageBox::Information, title, text, QMessageBox::NoButton, parent);
+	informationBox->addButton(tr("OK"), QMessageBox::AcceptRole);
+
+	return informationBox;
+}
+
+QMessageBox *OBSMessageBox::createWarning(QWidget *parent, const QString &title, const QString &text,
+					  bool enableRichText)
+{
+	QMessageBox *warningBox = new QMessageBox(QMessageBox::Warning, title, text, QMessageBox::NoButton, parent);
+	if (enableRichText) {
+		warningBox->setTextFormat(Qt::RichText);
+	}
+	warningBox->addButton(tr("OK"), QMessageBox::AcceptRole);
+
+	return warningBox;
+}
+
+QMessageBox *OBSMessageBox::createCritical(QWidget *parent, const QString &title, const QString &text)
+{
+	QMessageBox *criticalBox = new QMessageBox(QMessageBox::Critical, title, text, QMessageBox::NoButton, parent);
+	criticalBox->addButton(tr("OK"), QMessageBox::AcceptRole);
+
+	return criticalBox;
 }
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods)

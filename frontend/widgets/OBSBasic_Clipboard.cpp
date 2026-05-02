@@ -212,19 +212,40 @@ void OBSBasic::actionPasteFilters()
 	SourcePasteFilters(source.Get(), dstSource);
 }
 
+void OBSBasic::copyFiltersFromSource(QString uuid)
+{
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.toUtf8().constData());
+	if (!source) {
+		return;
+	}
+
+	copyFiltersSource_ = obs_source_get_weak_source(source);
+	ui->actionPasteFilters->setEnabled(true);
+}
+
+void OBSBasic::pasteFiltersToSource(QString uuid)
+{
+	OBSSourceAutoRelease targetSource = obs_get_source_by_uuid(uuid.toUtf8().constData());
+	if (!targetSource) {
+		return;
+	}
+
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
+	SourcePasteFilters(source.Get(), targetSource.Get());
+}
+
 void OBSBasic::SceneCopyFilters()
 {
-	copyFiltersSource_ = obs_source_get_weak_source(GetCurrentSceneSource());
-	ui->actionPasteFilters->setEnabled(true);
+	const char *currentUuid = obs_source_get_uuid(GetCurrentSceneSource());
+	copyFiltersFromSource(QString::fromUtf8(currentUuid));
 }
 
 void OBSBasic::ScenePasteFilters()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
-
 	OBSSource dstSource = GetCurrentSceneSource();
+	const char *uuid = obs_source_get_uuid(dstSource);
 
-	SourcePasteFilters(source.Get(), dstSource);
+	pasteFiltersToSource(QString::fromUtf8(uuid));
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()
