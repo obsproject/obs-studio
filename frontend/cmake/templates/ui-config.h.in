@@ -14,3 +14,4 @@
 #define YOUTUBE_SECRET_HASH   0x@YOUTUBE_SECRET_HASH@
 
 #define DEFAULT_THEME "com.obsproject.Yami.Original"
+#define DEFAULT_LIGHT_THEME "com.obsproject.Yami.Light"
