@@ -103,6 +103,11 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 		return;
 	}
 
+	bool simulcast = videoLayerStates.size() > 1;
+	std::unique_lock<std::mutex> l(data_mutex, std::defer_lock);
+	if (simulcast)
+		l.lock();
+
 	if (audio_track && packet->type == OBS_ENCODER_AUDIO) {
 		int64_t duration = packet->dts_usec - last_audio_timestamp;
 		Send(packet->data, packet->size, duration, audio_track, audio_sr_reporter);
@@ -720,7 +725,8 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, std::shared
 
 void register_whip_output()
 {
-	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE | OBS_OUTPUT_MULTI_TRACK_AV;
+	const uint32_t base_flags = OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE | OBS_OUTPUT_MULTI_TRACK_AV |
+				    OBS_OUTPUT_NO_INTERLEAVE;
 
 	const char *audio_codecs = "opus";
 #ifdef ENABLE_HEVC
