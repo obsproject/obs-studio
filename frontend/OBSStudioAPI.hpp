@@ -110,6 +110,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_replay_buffer_save(void) override;
 
+	void obs_frontend_replay_buffer_save_duration(long long duration_usec) override;
+
 	void obs_frontend_replay_buffer_stop(void) override;
 
 	bool obs_frontend_replay_buffer_active(void) override;
