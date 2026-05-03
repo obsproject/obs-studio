@@ -591,13 +591,38 @@ bool OBSApp::InitGlobalConfig()
 							    : std::move(defaultPluginManagerLocation);
 	}
 
-	bool userConfigResult = InitUserConfig(userConfigLocation, lastVersion);
-
-	return userConfigResult;
+	return true;
 }
 
-bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t lastVersion)
+constexpr std::string_view OBSUserConfigSubDirectory = "obs-studio";
+
+static bool MakeUserConfigDir()
 {
+	const std::filesystem::path userConfigPath =
+		App()->userConfigLocation / std::filesystem::u8path(OBSUserConfigSubDirectory);
+
+	try {
+		if (!std::filesystem::exists(userConfigPath)) {
+			std::filesystem::create_directories(userConfigPath);
+		}
+
+	} catch (const std::filesystem::filesystem_error &error) {
+		blog(LOG_ERROR, "Failed to create user config directory '%s'\n%s", userConfigPath.u8string().c_str(),
+		     error.what());
+		return false;
+	}
+
+	return true;
+}
+
+bool OBSApp::InitUserConfig()
+{
+	if (!MakeUserConfigDir()) {
+		return false;
+	}
+
+	uint32_t lastVersion = config_get_int(appConfig, "General", "LastVersion");
+
 	const std::string userConfigFile = userConfigLocation.u8string() + "/obs-studio/user.ini";
 
 	int errorCode = userConfig.Open(userConfigFile.c_str(), CONFIG_OPEN_ALWAYS);
@@ -1055,6 +1080,8 @@ void OBSApp::AppInit()
 		throw "Failed to create required user directories";
 	if (!InitGlobalConfig())
 		throw "Failed to initialize global config";
+	if (!InitUserConfig())
+		throw "Failed to initialize user config";
 	if (!InitLocale())
 		throw "Failed to load locale";
 	if (!InitTheme())
