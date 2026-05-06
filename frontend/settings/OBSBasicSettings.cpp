@@ -369,6 +369,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->themeVariant,	     COMBO_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->autoVariant,	     CHECK_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->themeVariantLight,    COMBO_CHANGED,  APPEAR_CHANGED);
+	HookWidget(ui->themeVariantDark,     COMBO_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->appearanceFontScale,  SLIDER_CHANGED, APPEAR_CHANGED);
 	HookWidget(ui->appearanceDensity1,   CHECK_CHANGED,  APPEAR_CHANGED);
 	HookWidget(ui->appearanceDensity2,   CHECK_CHANGED,  APPEAR_CHANGED);

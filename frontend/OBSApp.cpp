@@ -23,6 +23,7 @@
 #include <utility/CrashHandler.hpp>
 #include <utility/OBSEventFilter.hpp>
 #include <utility/OBSProxyStyle.hpp>
+#include <ui-config.h>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <utility/models/branches.hpp>
 #endif
@@ -391,6 +392,10 @@ void OBSApp::InitUserConfigDefaults()
 
 	config_set_default_int(userConfig, "Appearance", "FontScale", 10);
 	config_set_default_int(userConfig, "Appearance", "Density", 1);
+	config_set_default_bool(userConfig, "Appearance", "AutoTheme", true);
+	config_set_default_string(userConfig, "Appearance", "Theme", DEFAULT_THEME);
+	config_set_default_string(userConfig, "Appearance", "ThemeDark", DEFAULT_THEME);
+	config_set_default_string(userConfig, "Appearance", "ThemeLight", DEFAULT_LIGHT_THEME);
 }
 
 static bool do_mkdir(const char *path)
@@ -1281,6 +1286,19 @@ bool OBSApp::OBSInit()
 #endif
 
 	mainWindow->OBSInit();
+
+	systemThemeWatcher = std::make_unique<ThemeWatcher>(this);
+	connect(systemThemeWatcher.get(), &ThemeWatcher::themeChanged, this, [this](ThemeWatcher *sender) {
+		auto config = GetUserConfig();
+		auto autoThemeEnabled = config_get_bool(config, "Appearance", "AutoTheme");
+		if (!autoThemeEnabled)
+			return;
+
+		auto theme = config_get_string(config, "Appearance",
+					       sender->currentTheme() == ThemeWatcher::Theme::Dark ? "ThemeDark"
+												   : "ThemeLight");
+		SetTheme(theme);
+	});
 
 	connect(OBSBasic::Get(), &OBSBasic::mainWindowClosed, crashHandler_.get(),
 		&OBS::CrashHandler::applicationShutdownHandler);

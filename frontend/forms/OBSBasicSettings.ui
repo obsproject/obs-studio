@@ -994,7 +994,7 @@
                    <property name="topMargin">
                     <number>2</number>
                    </property>
-                   <item row="0" column="0">
+                   <item row="1" column="0">
                     <widget class="QLabel" name="label_45">
                      <property name="text">
                       <string>Basic.Settings.Appearance.General.Theme</string>
@@ -1004,11 +1004,11 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
+                   <item row="1" column="1">
                     <widget class="QComboBox" name="theme"/>
                    </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_10">
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="themeVariantLabel">
                      <property name="text">
                       <string>Basic.Settings.Appearance.General.Variant</string>
                      </property>
@@ -1017,10 +1017,10 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="1">
+                   <item row="3" column="1">
                     <widget class="QComboBox" name="themeVariant"/>
                    </item>
-                   <item row="2" column="0">
+                   <item row="6" column="0">
                     <widget class="QLabel" name="appearanceSettingLabelFontScale">
                      <property name="text">
                       <string>Basic.Settings.Appearance.FontScale</string>
@@ -1030,7 +1030,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
+                   <item row="6" column="1">
                     <widget class="QFrame" name="frame_2">
                      <property name="frameShape">
                       <enum>QFrame::NoFrame</enum>
@@ -1113,14 +1113,14 @@
                      </layout>
                     </widget>
                    </item>
-                   <item row="3" column="0">
+                   <item row="7" column="0">
                     <widget class="QLabel" name="label_20">
                      <property name="text">
                       <string>Basic.Settings.Appearance.Density</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="7" column="1">
                     <widget class="QFrame" name="frame_5">
                      <property name="frameShape">
                       <enum>QFrame::NoFrame</enum>
@@ -1214,7 +1214,7 @@
                      </layout>
                     </widget>
                    </item>
-                   <item row="4" column="0">
+                   <item row="8" column="0">
                     <spacer name="horizontalSpacer_17">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -1223,6 +1223,54 @@
                       <size>
                        <width>170</width>
                        <height>10</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="autoVariant">
+                     <property name="text">
+                      <string>Basic.Settings.Appearance.General.AutoVariant</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="themeVariantLabelLight">
+                     <property name="text">
+                      <string>Basic.Settings.Appearance.General.VariantLight</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <widget class="QLabel" name="themeVariantLabelDark">
+                     <property name="text">
+                      <string>Basic.Settings.Appearance.General.VariantDark</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QComboBox" name="themeVariantDark">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QComboBox" name="themeVariantLight">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <spacer name="horizontalSpacer_33">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
                       </size>
                      </property>
                     </spacer>

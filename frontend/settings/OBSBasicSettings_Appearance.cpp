@@ -2,6 +2,7 @@
 
 #include <OBSApp.hpp>
 #include <utility/platform.hpp>
+#include <utility/OBSThemeWatcher.hpp>
 
 #include <qt-wrappers.hpp>
 
@@ -21,8 +22,15 @@ void OBSBasicSettings::InitAppearancePage()
 		ui->theme->setCurrentIndex(idx);
 
 	ui->themeVariant->setPlaceholderText(QTStr("Basic.Settings.Appearance.General.NoVariant"));
+	ui->themeVariantLight->setPlaceholderText(QTStr("Basic.Settings.Appearance.General.NoVariant"));
+	ui->themeVariantDark->setPlaceholderText(QTStr("Basic.Settings.Appearance.General.NoVariant"));
 
 	ui->appearanceFontScale->setDisplayTicks(true);
+
+	connect(ui->autoVariant, &QCheckBox::checkStateChanged, this, [&] {
+		enableAppearanceAutoThemeControls(ui->autoVariant->isChecked());
+		this->SaveAppearanceSettings();
+	});
 
 	connect(ui->appearanceFontScale, &QSlider::valueChanged, ui->appearanceFontScaleText,
 		[this](int value) { ui->appearanceFontScaleText->setText(QString::number(value)); });
@@ -47,6 +55,12 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 	ui->themeVariant->blockSignals(true);
 	ui->themeVariant->clear();
 
+	ui->themeVariantLight->blockSignals(true);
+	ui->themeVariantLight->clear();
+
+	ui->themeVariantDark->blockSignals(true);
+	ui->themeVariantDark->clear();
+
 	auto themes = App()->GetThemes();
 	std::sort(themes.begin(), themes.end(), [](const OBSTheme &a, const OBSTheme &b) -> bool {
 		return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
@@ -64,20 +78,52 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 			continue;
 
 		ui->themeVariant->addItem(theme.name, theme.id);
+		ui->themeVariantLight->addItem(theme.name, theme.id);
+		ui->themeVariantDark->addItem(theme.name, theme.id);
+
 		if (baseTheme && theme.filename == baseTheme->filename)
 			defaultVariant = theme.id;
 	}
 
-	int idx = ui->themeVariant->findData(currentTheme->id);
+	config_t *config = App()->GetUserConfig();
+	auto themeID = config_get_string(config, "Appearance", "Theme");
+	int idx = ui->themeVariant->findData(themeID);
 	if (idx != -1)
 		ui->themeVariant->setCurrentIndex(idx);
 
+	auto themeLightID = config_get_string(config, "Appearance", "ThemeLight");
+	int lightIdx = ui->themeVariantLight->findData(themeLightID);
+	if (lightIdx != -1)
+		ui->themeVariantLight->setCurrentIndex(lightIdx);
+
+	auto themeDarkID = config_get_string(config, "Appearance", "ThemeDark");
+	int darkIdx = ui->themeVariantDark->findData(themeDarkID);
+	if (darkIdx != -1)
+		ui->themeVariantDark->setCurrentIndex(darkIdx);
+
 	ui->themeVariant->setEnabled(ui->themeVariant->count() > 0);
 	ui->themeVariant->blockSignals(false);
+
+	ui->themeVariantLight->setEnabled(ui->themeVariantLight->count() > 0);
+	ui->themeVariantLight->blockSignals(false);
+
+	ui->themeVariantDark->setEnabled(ui->themeVariantDark->count() > 0);
+	ui->themeVariantDark->blockSignals(false);
+
 	/* If no variant is selected but variants are available set the first one. */
 	if (idx == -1 && ui->themeVariant->count() > 0) {
 		idx = ui->themeVariant->findData(defaultVariant);
 		ui->themeVariant->setCurrentIndex(idx != -1 ? idx : 0);
+	}
+
+	if (lightIdx == -1 && ui->themeVariantLight->count() > 0) {
+		idx = ui->themeVariantLight->findData(defaultVariant);
+		ui->themeVariantLight->setCurrentIndex(idx != -1 ? idx : 0);
+	}
+
+	if (darkIdx == -1 && ui->themeVariantDark->count() > 0) {
+		idx = ui->themeVariantDark->findData(defaultVariant);
+		ui->themeVariantDark->setCurrentIndex(idx != -1 ? idx : 0);
 	}
 }
 
@@ -94,6 +140,9 @@ void OBSBasicSettings::LoadAppearanceSettings(bool reload)
 
 		App()->SetTheme(themeId);
 	}
+
+	bool autoTheme = config_get_bool(App()->GetUserConfig(), "Appearance", "AutoTheme");
+	ui->autoVariant->setChecked(autoTheme);
 
 	int fontScale = config_get_int(App()->GetUserConfig(), "Appearance", "FontScale");
 	ui->appearanceFontScale->setValue(fontScale);
@@ -112,9 +161,31 @@ void OBSBasicSettings::SaveAppearanceSettings()
 {
 	config_t *config = App()->GetUserConfig();
 
-	OBSTheme *currentTheme = App()->GetTheme();
-	if (savedTheme != currentTheme) {
-		config_set_string(config, "Appearance", "Theme", QT_TO_UTF8(currentTheme->id));
+	auto autoVariant = ui->autoVariant->isChecked();
+	config_set_bool(config, "Appearance", "AutoTheme", autoVariant);
+
+	QString themeId = ui->theme->currentData().toString();
+	if (ui->themeVariant->currentIndex() != -1)
+		themeId = ui->themeVariant->currentData().toString();
+
+	if (autoVariant) {
+		QString themeIdLight = ui->theme->currentData().toString();
+		if (ui->themeVariantLight->currentIndex() != -1)
+			themeIdLight = ui->themeVariantLight->currentData().toString();
+
+		QString themeIdDark = ui->theme->currentData().toString();
+		if (ui->themeVariantDark->currentIndex() != -1)
+			themeIdDark = ui->themeVariantDark->currentData().toString();
+
+		config_set_string(config, "Appearance", "ThemeLight", QT_TO_UTF8(themeIdLight));
+		config_set_string(config, "Appearance", "ThemeDark", QT_TO_UTF8(themeIdDark));
+
+		themeId = themeIdDark;
+		if (ThemeWatcher::systemTheme() == ThemeWatcher::Theme::Light) {
+			themeId = themeIdLight;
+		}
+	} else {
+		config_set_string(config, "Appearance", "Theme", QT_TO_UTF8(themeId));
 	}
 
 	config_set_int(config, "Appearance", "FontScale", ui->appearanceFontScale->value());
@@ -122,7 +193,9 @@ void OBSBasicSettings::SaveAppearanceSettings()
 	int densityId = ui->appearanceDensityButtonGroup->checkedId();
 	config_set_int(config, "Appearance", "Density", densityId);
 
-	App()->SetTheme(currentTheme->id);
+	if (App()->GetTheme()->id != themeId) {
+		App()->SetTheme(themeId);
+	}
 }
 
 void OBSBasicSettings::on_theme_activated(int)
@@ -138,6 +211,7 @@ void OBSBasicSettings::on_themeVariant_activated(int)
 void OBSBasicSettings::updateAppearanceControls()
 {
 	OBSTheme *theme = App()->GetTheme();
+	enableAppearanceAutoThemeControls(ui->autoVariant->isChecked());
 	enableAppearanceFontControls(theme->usesFontScale);
 	enableAppearanceDensityControls(theme->usesDensity);
 	if (!theme->usesFontScale || !theme->usesDensity) {
@@ -146,6 +220,18 @@ void OBSBasicSettings::updateAppearanceControls()
 		ui->appearanceOptionsWarning->setVisible(false);
 	}
 	style()->polish(ui->appearanceOptionsWarningLabel);
+}
+
+void OBSBasicSettings::enableAppearanceAutoThemeControls(bool enable)
+{
+	ui->themeVariant->setVisible(!enable);
+	ui->themeVariantLabel->setVisible(!enable);
+
+	ui->themeVariantLight->setVisible(enable);
+	ui->themeVariantLabelLight->setVisible(enable);
+
+	ui->themeVariantDark->setVisible(enable);
+	ui->themeVariantLabelDark->setVisible(enable);
 }
 
 void OBSBasicSettings::enableAppearanceFontControls(bool enable)

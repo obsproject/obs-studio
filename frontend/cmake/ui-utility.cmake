@@ -35,6 +35,8 @@ target_sources(
     utility/OBSProxyStyle.hpp
     utility/OBSTheme.hpp
     utility/OBSThemeVariable.hpp
+    utility/OBSThemeWatcher.cpp
+    utility/OBSThemeWatcher.hpp
     utility/OBSTranslator.cpp
     utility/OBSTranslator.hpp
     utility/PreviewProgramSizeObserver.cpp

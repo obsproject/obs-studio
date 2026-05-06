@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <utility/OBSThemeWatcher.hpp>
 #include <utility/OBSTheme.hpp>
 #include <utility/NativeEventFilter.hpp>
 #include <widgets/OBSMainWindow.hpp>
@@ -114,6 +115,7 @@ private:
 	QHash<QString, OBSTheme> themes;
 	QPointer<QFileSystemWatcher> themeWatcher;
 	std::unique_ptr<QStyle> invisibleCursorStyle;
+	std::unique_ptr<ThemeWatcher> systemThemeWatcher;
 
 	void FindThemes();
 
