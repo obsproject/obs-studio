@@ -27,10 +27,12 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <typeinfo>
 
 #define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
 #define MAX_LABEL_LENGTH 80
+#define QT_REQUIRE_UI_THREAD() Q_ASSERT(QThread::currentThread() == qApp->thread());
 
 class QDataStream;
 class QComboBox;
@@ -99,3 +101,43 @@ QStringList OpenFiles(QWidget *parent, QString title, QString path, QString exte
 void TruncateLabel(QLabel *label, QString newText, int length = MAX_LABEL_LENGTH);
 
 void RefreshToolBarStyling(QToolBar *toolBar);
+
+// Template for Qt invokeMethod for OBS signals
+using OBSSourceFilter = OBSSource;
+
+template<typename> struct memberTraits;
+
+template<typename Return, typename Object, typename... Args> struct memberTraits<Return (Object::*)(Args...)> {
+	using objectType = Object;
+};
+
+template<typename T> static inline auto getParam(calldata_t *params)
+{
+	if constexpr (std::is_same_v<T, OBSSource>)
+		return static_cast<obs_source_t *>(calldata_ptr(params, "source"));
+	else if constexpr (std::is_same_v<T, OBSSourceFilter>)
+		return static_cast<obs_source_t *>(calldata_ptr(params, "filter"));
+	else if constexpr (std::is_same_v<T, OBSScene>)
+		return static_cast<obs_scene_t *>(calldata_ptr(params, "scene"));
+	else if constexpr (std::is_same_v<T, OBSSceneItem>)
+		return static_cast<obs_sceneitem_t *>(calldata_ptr(params, "item"));
+	else if constexpr (std::is_same_v<T, OBSOutput>)
+		return static_cast<obs_output_t *>(calldata_ptr(params, "output"));
+	else if constexpr (std::is_same_v<T, OBSCanvas>)
+		return static_cast<obs_canvas_t *>(calldata_ptr(params, "canvas"));
+	else
+		return nullptr;
+}
+
+template<auto Slot, typename Type = void, auto... Args> static inline void qtInvoke(void *data, calldata_t *params)
+{
+	using Receiver = typename memberTraits<decltype(Slot)>::objectType;
+	auto *object = static_cast<Receiver *>(data);
+
+	QMetaObject::invokeMethod(object, [=]() {
+		if constexpr (std::is_same_v<Type, void>)
+			std::invoke(Slot, object, Args...);
+		else
+			std::invoke(Slot, object, getParam<Type>(params), Args...);
+	});
+}
