@@ -2,7 +2,7 @@
 
 #include <widgets/OBSBasic.hpp>
 
-#include <qt-wrappers.hpp>
+#include <Idian/Utils.hpp>
 
 #include <QGridLayout>
 #include <QLabel>
@@ -285,12 +285,8 @@ void OBSBasicStats::Update()
 	QString str = QString::number(curFPS, 'f', 2);
 	fps->setText(str);
 
-	if (curFPS < (obsFPS * 0.8))
-		setClasses(fps, "text-danger");
-	else if (curFPS < (obsFPS * 0.95))
-		setClasses(fps, "text-warning");
-	else
-		setClasses(fps, "");
+	idian::Utils::toggleClass(fps, "text-danger", curFPS < (obsFPS * 0.8));
+	idian::Utils::toggleClass(fps, "text-warning", curFPS >= (obsFPS * 0.8) && curFPS < (obsFPS * 0.95));
 
 	/* ------------------ */
 
@@ -321,12 +317,8 @@ void OBSBasicStats::Update()
 	str = QString::number(num, 'f', 1) + abrv;
 	hddSpace->setText(str);
 
-	if (num_bytes < GBYTE)
-		setClasses(hddSpace, "text-danger");
-	else if (num_bytes < (5 * GBYTE))
-		setClasses(hddSpace, "text-warning");
-	else
-		setClasses(hddSpace, "");
+	idian::Utils::toggleClass(hddSpace, "text-danger", num_bytes < GBYTE);
+	idian::Utils::toggleClass(hddSpace, "text-warning", num_bytes >= GBYTE && num_bytes < (5 * GBYTE));
 
 	/* ------------------ */
 
@@ -344,12 +336,8 @@ void OBSBasicStats::Update()
 
 	long double fpsFrameTime = (long double)ovi.fps_den * 1000.0l / (long double)ovi.fps_num;
 
-	if (num > fpsFrameTime)
-		setClasses(renderTime, "text-danger");
-	else if (num > fpsFrameTime * 0.75l)
-		setClasses(renderTime, "text-warning");
-	else
-		setClasses(renderTime, "");
+	idian::Utils::toggleClass(renderTime, "text-danger", num > fpsFrameTime);
+	idian::Utils::toggleClass(renderTime, "text-warning", num <= fpsFrameTime && num > fpsFrameTime * 0.75l);
 
 	/* ------------------ */
 
@@ -372,12 +360,8 @@ void OBSBasicStats::Update()
 			   QString::number(num, 'f', 1));
 	skippedFrames->setText(str);
 
-	if (num > 5.0l)
-		setClasses(skippedFrames, "text-danger");
-	else if (num > 1.0l)
-		setClasses(skippedFrames, "text-warning");
-	else
-		setClasses(skippedFrames, "");
+	idian::Utils::toggleClass(skippedFrames, "text-danger", num > 5.0l);
+	idian::Utils::toggleClass(skippedFrames, "text-warning", num < 5.0l && num > 1.0l);
 
 	/* ------------------ */
 
@@ -397,12 +381,8 @@ void OBSBasicStats::Update()
 	str = MakeMissedFramesText(total_lagged, total_rendered, num);
 	missedFrames->setText(str);
 
-	if (num > 5.0l)
-		setClasses(missedFrames, "text-danger");
-	else if (num > 1.0l)
-		setClasses(missedFrames, "text-warning");
-	else
-		setClasses(missedFrames, "");
+	idian::Utils::toggleClass(missedFrames, "text-danger", num > 5.0l);
+	idian::Utils::toggleClass(missedFrames, "text-warning", num < 5.0l && num > 1.0l);
 
 	/* ------------------------------------------- */
 	/* recording/streaming stats                   */
@@ -495,6 +475,7 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 	QString str = QTStr("Basic.Stats.Status.Inactive");
 	QString styling;
 	bool active = output ? obs_output_active(output) : false;
+	bool textColorDanger = false;
 	if (rec) {
 		if (active)
 			str = QTStr("Basic.Stats.Status.Recording");
@@ -503,17 +484,17 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 			bool reconnecting = output ? obs_output_reconnecting(output) : false;
 
 			if (reconnecting) {
+				textColorDanger = true;
 				str = QTStr("Basic.Stats.Status.Reconnecting");
-				styling = "text-danger";
 			} else {
 				str = QTStr("Basic.Stats.Status.Live");
-				styling = "text-success";
 			}
 		}
 	}
 
 	status->setText(str);
-	setClasses(status, styling);
+	idian::Utils::toggleClass(status, "text-danger", textColorDanger);
+	idian::Utils::toggleClass(status, "text-success", !textColorDanger);
 
 	long double num = (long double)totalBytes / (1024.0l * 1024.0l);
 	const char *unit = "MiB";
@@ -549,12 +530,8 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 			      .arg(QString::number(dropped), QString::number(total), QString::number(num, 'f', 1));
 		droppedFrames->setText(str);
 
-		if (num > 5.0l)
-			setClasses(droppedFrames, "text-danger");
-		else if (num > 1.0l)
-			setClasses(droppedFrames, "text-warning");
-		else
-			setClasses(droppedFrames, "");
+		idian::Utils::toggleClass(droppedFrames, "text-danger", num > 5.0l);
+		idian::Utils::toggleClass(droppedFrames, "text-warning", num < 5.0l && num > 1.0l);
 	}
 
 	lastBytesSent = bytesSent;
