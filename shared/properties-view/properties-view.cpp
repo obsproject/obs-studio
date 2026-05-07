@@ -155,8 +155,6 @@ void OBSPropertiesView::RefreshProperties()
 		QLabel *noPropertiesLabel = new QLabel(NO_PROPERTIES_STRING);
 		layout->addWidget(noPropertiesLabel);
 	}
-
-	emit PropertiesRefreshed();
 }
 
 void OBSPropertiesView::SetScrollPos(int h, int v, int old_hend, int old_vend)
@@ -242,7 +240,6 @@ void OBSPropertiesView::SetDisabled(bool disabled)
 
 void OBSPropertiesView::resizeEvent(QResizeEvent *event)
 {
-	emit PropertiesResized();
 	VScrollArea::resizeEvent(event);
 }
 
