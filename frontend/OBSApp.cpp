@@ -1097,7 +1097,7 @@ void OBSApp::AppInit()
 	move_basic_to_scene_collections();
 
 	if (!MakeUserProfileDirs())
-		throw "Failed to create profile directories";
+		throw std::runtime_error("Failed to create profile directories");
 }
 
 void OBSApp::checkForUncleanShutdown()
@@ -1641,11 +1641,11 @@ vector<pair<string, string>> GetLocaleNames()
 {
 	string path;
 	if (!GetDataFilePath("locale.ini", path))
-		throw "Could not find locale.ini path";
+		throw std::runtime_error("Could not find locale.ini path");
 
 	ConfigFile ini;
 	if (ini.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
-		throw "Could not open locale.ini";
+		throw std::runtime_error("Could not open locale.ini");
 
 	size_t sections = config_num_sections(ini);
 
