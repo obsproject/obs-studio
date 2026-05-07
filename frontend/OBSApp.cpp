@@ -1051,14 +1051,14 @@ void OBSApp::AppInit()
 
 	QAccessible::installFactory(alignmentSelectorFactory);
 
-	if (!MakeUserDirs())
-		throw "Failed to create required user directories";
+		if (!MakeUserDirs())
+		throw std::runtime_error("Failed to create required user directories");
 	if (!InitGlobalConfig())
-		throw "Failed to initialize global config";
+		throw std::runtime_error("Failed to initialize global config");
 	if (!InitLocale())
-		throw "Failed to load locale";
+		throw std::runtime_error("Failed to load locale");
 	if (!InitTheme())
-		throw "Failed to load theme";
+		throw std::runtime_error("Failed to load theme");
 
 	config_set_default_string(userConfig, "Basic", "Profile", Str("Untitled"));
 	config_set_default_string(userConfig, "Basic", "ProfileDir", Str("Untitled"));

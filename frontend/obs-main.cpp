@@ -661,9 +661,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		ret = program.exec();
 
-	} catch (const char *error) {
-		blog(LOG_ERROR, "%s", error);
-		OBSErrorBox(nullptr, "%s", error);
+	} catch (const std::exception &error) {
+		blog(LOG_ERROR, "%s", error.what());
+		OBSErrorBox(nullptr, "%s", error.what());
 	}
 
 	if (restart || restart_safe) {
