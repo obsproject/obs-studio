@@ -44,6 +44,7 @@ public:
 	uint32_t cx;
 	uint32_t cy;
 	std::thread th;
+	bool success = false;
 
 	int stage = 0;
 
