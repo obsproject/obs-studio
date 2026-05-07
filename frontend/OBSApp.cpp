@@ -1051,7 +1051,7 @@ void OBSApp::AppInit()
 
 	QAccessible::installFactory(alignmentSelectorFactory);
 
-		if (!MakeUserDirs())
+	if (!MakeUserDirs())
 		throw std::runtime_error("Failed to create required user directories");
 	if (!InitGlobalConfig())
 		throw std::runtime_error("Failed to initialize global config");
