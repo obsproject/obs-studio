@@ -33,6 +33,8 @@ target_sources(
     dialogs/OBSBasicSourceSelect.hpp
     dialogs/OBSBasicTransform.cpp
     dialogs/OBSBasicTransform.hpp
+    dialogs/OBSBasicRBConfig.cpp
+    dialogs/OBSBasicRBConfig.hpp
     dialogs/OBSBasicVCamConfig.cpp
     dialogs/OBSBasicVCamConfig.hpp
     dialogs/OBSLogViewer.cpp

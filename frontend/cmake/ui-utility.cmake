@@ -49,6 +49,7 @@ target_sources(
     utility/RemuxQueueModel.hpp
     utility/RemuxWorker.cpp
     utility/RemuxWorker.hpp
+    utility/ReplayBufferConfig.hpp
     utility/SceneRenameDelegate.cpp
     utility/SceneRenameDelegate.hpp
     utility/ScreenshotObj.cpp

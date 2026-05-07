@@ -40,6 +40,9 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 		ui->virtualCamConfigButton, &QPushButton::clicked, this,
 		[this]() { emit this->VirtualCamConfigButtonClicked(); }, Qt::DirectConnection);
 	connect(
+		ui->replayBufferConfigButton, &QPushButton::clicked, this,
+		[this]() { emit this->ReplayBufferConfigButtonClicked(); }, Qt::DirectConnection);
+	connect(
 		ui->modeSwitch, &QPushButton::clicked, this, [this]() { emit this->StudioModeButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
@@ -64,6 +67,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	ui->saveReplayButton->setVisible(false);
 	ui->virtualCamButton->setVisible(false);
 	ui->virtualCamConfigButton->setVisible(false);
+	ui->replayBufferConfigButton->setVisible(false);
 
 	/* Set up state update connections */
 	connect(main, &OBSBasic::StreamingPreparing, this, &OBSBasicControls::StreamingPreparing);
@@ -274,6 +278,7 @@ void OBSBasicControls::EnableBroadcastFlow(bool enabled)
 void OBSBasicControls::EnableReplayBufferButtons(bool enabled)
 {
 	ui->replayBufferButton->setVisible(enabled);
+	ui->replayBufferConfigButton->setVisible(enabled);
 }
 
 void OBSBasicControls::EnableVirtualCamButtons()

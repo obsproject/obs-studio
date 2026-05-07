@@ -26,6 +26,7 @@
 #include <utility/BasicOutputHandler.hpp>
 #include <utility/OBSCanvas.hpp>
 #include <utility/PreviewProgramSizeObserver.hpp>
+#include <utility/ReplayBufferConfig.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
 #include <utility/undo_stack.hpp>
@@ -1027,6 +1028,7 @@ signals:
 private:
 	bool replayBufferStopping = false;
 	std::string lastReplay;
+	ReplayBufferConfig rbConfig;
 
 public slots:
 	void ShowReplayBufferPauseWarning();
@@ -1044,6 +1046,8 @@ public slots:
 private slots:
 	/* Replay Buffer action (start/stop) slot */
 	void ReplayBufferActionTriggered();
+	void OpenReplayBufferConfig();
+	void UpdateReplayBufferConfig(const ReplayBufferConfig &config);
 
 signals:
 	/* Replay Buffer signals */

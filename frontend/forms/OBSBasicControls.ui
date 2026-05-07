@@ -224,6 +224,32 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="replayBufferConfigButton">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Basic.Main.ReplayBufferConfig</string>
+          </property>
+          <property name="accessibleName">
+           <string>Basic.Main.ReplayBufferConfig</string>
+          </property>
+          <property name="icon">
+           <iconset resource="obs.qrc">
+            <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
+          </property>
+          <property name="class" stdset="0">
+           <string>icon-gear</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>

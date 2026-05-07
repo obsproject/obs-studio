@@ -62,6 +62,7 @@ signals:
 	void SaveReplayBufferButtonClicked();
 	void VirtualCamButtonClicked();
 	void VirtualCamConfigButtonClicked();
+	void ReplayBufferConfigButtonClicked();
 	void StudioModeButtonClicked();
 	void SettingsButtonClicked();
 
