@@ -831,7 +831,7 @@ int main(int argc, char *argv[])
 	using SignalHandlerCallback = decltype(OBSApp::sigIntSignalHandler);
 
 	auto setupSignalHandler = [](SignalHandlerCallback &callback, int signal) {
-		struct sigaction signalHandler {};
+		struct sigaction signalHandler{};
 		signalHandler.sa_handler = callback;
 		sigemptyset(&signalHandler.sa_mask);
 		signalHandler.sa_flags = 0;
