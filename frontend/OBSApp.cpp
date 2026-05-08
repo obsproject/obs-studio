@@ -1045,6 +1045,14 @@ static void move_basic_to_scene_collections(void)
 	}
 }
 
+
+static QString GetInitErrorString(const char *lookup, const char *fallback)
+{
+	if (App() && App()->GetTextLookup())
+		return QTStr(lookup);
+	return QString::fromUtf8(fallback);
+}
+
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
@@ -1052,13 +1060,29 @@ void OBSApp::AppInit()
 	QAccessible::installFactory(alignmentSelectorFactory);
 
 	if (!MakeUserDirs())
-		throw std::runtime_error("Failed to create required user directories");
+		throw std::runtime_error(
+			GetInitErrorString(
+				"Init.Error.UserDirs",
+				"Failed to create required user directories")
+				.toStdString());
 	if (!InitGlobalConfig())
-		throw std::runtime_error("Failed to initialize global config");
+		throw std::runtime_error(
+			GetInitErrorString(
+				"Init.Error.GlobalConfig",
+				"Failed to initialize global config")
+				.toStdString());
 	if (!InitLocale())
-		throw std::runtime_error("Failed to load locale");
+		throw std::runtime_error(
+			GetInitErrorString(
+				"Init.Error.Locale",
+				"Failed to load locale")
+				.toStdString());
 	if (!InitTheme())
-		throw std::runtime_error("Failed to load theme");
+		throw std::runtime_error(
+			GetInitErrorString(
+				"Init.Error.Theme",
+				"Failed to load theme")
+				.toStdString());
 
 	config_set_default_string(userConfig, "Basic", "Profile", Str("Untitled"));
 	config_set_default_string(userConfig, "Basic", "ProfileDir", Str("Untitled"));
@@ -1097,7 +1121,11 @@ void OBSApp::AppInit()
 	move_basic_to_scene_collections();
 
 	if (!MakeUserProfileDirs())
-		throw std::runtime_error("Failed to create profile directories");
+		throw std::runtime_error(
+			GetInitErrorString(
+				"Init.Error.ProfileDirs",
+				"Failed to create profile directories")
+				.toStdString());
 }
 
 void OBSApp::checkForUncleanShutdown()
