@@ -34,7 +34,15 @@ public:
 
 	enum class Stage { Render, Download, Output, Finished };
 
+	Stage stage() { return stage_; }
+
+	void setSize(QSize size);
+	void setSize(int width, int height);
+	void setSaveToFile(bool save);
+
 	void processStage();
+
+private:
 	void renderScreenshot();
 	void downloadData();
 	void copyData();
@@ -42,14 +50,6 @@ public:
 	void muxFile();
 	void onFinished();
 
-	Stage stage() { return stage_; }
-	void setStage(Stage stage) { stage_ = stage; }
-
-	void setSize(QSize size);
-	void setSize(int width, int height);
-	void setSaveToFile(bool save);
-
-private:
 	Stage stage_ = Stage::Render;
 
 	gs_texrender_t *texrender = nullptr;
@@ -69,6 +69,7 @@ private:
 	bool outputToFile = true;
 
 signals:
+	void imageSaved(std::string path);
 	void imageReady(QImage image);
 
 private slots:
