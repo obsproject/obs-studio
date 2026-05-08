@@ -187,9 +187,9 @@ void ThumbnailManager::updateNextItem(size_t cycleDepth)
 		}
 	}
 
-	int nextIntervalMS = kMinimumThumbnailUpdateInterval;
-	if (!priorityQueue.empty() && !quickUpdate) {
-		nextIntervalMS = kThumbnailUpdateInterval;
+	int nextIntervalMS = kThumbnailUpdateInterval;
+	if (!priorityQueue.empty() || quickUpdate) {
+		nextIntervalMS = kMinimumThumbnailUpdateInterval;
 	}
 
 	updateTickInterval(nextIntervalMS);
