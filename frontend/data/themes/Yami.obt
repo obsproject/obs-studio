@@ -809,6 +809,10 @@ OBSBasicSettings #PropertiesContainer {
     background-color: var(--bg_base);
 }
 
+OBSPropertiesView IconLabel {
+    margin-left: var(--spacing_large);
+}
+
 /* Dock Widget */
 OBSDock > QWidget {
     background: var(--bg_base);
