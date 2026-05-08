@@ -496,7 +496,7 @@ void OBSBasicSourceSelect::rebuildSourceTypeList()
 {
 	ui->sourceTypeList->clear();
 
-	OBSBasic *main = qobject_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 
 	const char *unversioned_type;
 	const char *type;
@@ -763,7 +763,7 @@ void OBSBasicSourceSelect::createNew()
 
 	OBSSceneItem item = addResult.value();
 
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *main = OBSBasic::Get();
 	std::string sceneUuid = obs_source_get_uuid(main->GetCurrentSceneSource());
 	auto undo = [sceneUuid](const std::string &data) {
 		OBSBasic *main = OBSBasic::Get();

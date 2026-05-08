@@ -237,7 +237,10 @@ void OBSBasic::setDockCornersVertical(bool vertical)
 
 void OBSBasic::RepairCustomExtraDockName()
 {
-	QDockWidget *dock = reinterpret_cast<QDockWidget *>(sender());
+	QDockWidget *dock = qobject_cast<QDockWidget *>(sender());
+	if (!dock) {
+		return;
+	}
 	int idx = extraCustomDocks.indexOf(dock);
 	QSignalBlocker block(dock);
 

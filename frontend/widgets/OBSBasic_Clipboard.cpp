@@ -187,7 +187,7 @@ void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 
 void OBSBasic::actionCopyFilters()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = static_cast<QAction *>(sender());
 	obs_source_t *source = action->property("source").value<OBSSource>();
 
 	if (!source) {
@@ -200,7 +200,7 @@ void OBSBasic::actionCopyFilters()
 
 void OBSBasic::actionPasteFilters()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	QAction *action = static_cast<QAction *>(sender());
 	obs_source_t *dstSource = action->property("source").value<OBSSource>();
 
 	if (!dstSource) {

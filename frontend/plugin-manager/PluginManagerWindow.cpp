@@ -116,7 +116,7 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 		row++;
 	}
 
-	QVBoxLayout *layout = qobject_cast<QVBoxLayout *>(ui->modulesList->layout());
+	QVBoxLayout *layout = static_cast<QVBoxLayout *>(ui->modulesList->layout());
 	if (safe_mode) {
 		QLabel *safeModeLabel = new QLabel(ui->modulesList);
 		safeModeLabel->setText(QTStr("PluginManager.SafeMode"));

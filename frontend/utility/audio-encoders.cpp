@@ -1,8 +1,8 @@
 #include "audio-encoders.hpp"
 
+#include <widgets/OBSBasic.hpp>
 #include <OBSApp.hpp>
 #include <obs.hpp>
-#include <widgets/OBSMainWindow.hpp>
 
 #include <mutex>
 #include <sstream>
@@ -65,12 +65,7 @@ static void HandleSampleRate(obs_property_t *prop, const char *id)
 		return;
 	}
 
-	auto main = reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
-	if (!main) {
-		blog(LOG_ERROR, "Failed to get main window while populating "
-				"bitrate map");
-		return;
-	}
+	OBSBasic *main = OBSBasic::Get();
 
 	uint32_t sampleRate = config_get_uint(main->Config(), "Audio", "SampleRate");
 
