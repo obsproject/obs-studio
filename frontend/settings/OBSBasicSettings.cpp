@@ -143,7 +143,7 @@ static inline bool SetInvalidValue(QComboBox *combo, const QString &name, const 
 {
 	combo->insertItem(0, name, data);
 
-	QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(combo->model());
+	QStandardItemModel *model = static_cast<QStandardItemModel *>(combo->model());
 	if (!model) {
 		return false;
 	}
@@ -294,13 +294,13 @@ static std::tuple<int, int> aspect_ratio(int cx, int cy)
 
 static inline void HighlightGroupBoxLabel(QGroupBox *gb, QWidget *widget, QString objectName)
 {
-	QFormLayout *layout = qobject_cast<QFormLayout *>(gb->layout());
+	QFormLayout *layout = static_cast<QFormLayout *>(gb->layout());
 
 	if (!layout) {
 		return;
 	}
 
-	QLabel *label = qobject_cast<QLabel *>(layout->labelForField(widget));
+	QLabel *label = static_cast<QLabel *>(layout->labelForField(widget));
 
 	if (label) {
 		label->setObjectName(objectName);
@@ -338,7 +338,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	: QDialog(parent),
-	  main(qobject_cast<OBSBasic *>(parent)),
+	  main(OBSBasic::Get()),
 	  ui(new Ui::OBSBasicSettings)
 {
 	string path;
@@ -1261,7 +1261,7 @@ void OBSBasicSettings::LoadBranchesList()
 
 		// Disable item if branch is disabled
 		if (!branch.is_enabled) {
-			QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(ui->updateChannelBox->model());
+			QStandardItemModel *model = static_cast<QStandardItemModel *>(ui->updateChannelBox->model());
 			QStandardItem *item = model->item(ui->updateChannelBox->count() - 1);
 			item->setFlags(Qt::NoItemFlags);
 		}
@@ -4511,7 +4511,7 @@ void OBSBasicSettings::SearchHotkeys(const QString &text, obs_key_combination_t 
 		return;
 	}
 
-	QFormLayout *hotkeysLayout = qobject_cast<QFormLayout *>(hotkeys->layout());
+	QFormLayout *hotkeysLayout = static_cast<QFormLayout *>(hotkeys->layout());
 	hotkeysLayout->setEnabled(false);
 
 	QString needle = text.toLower();
@@ -4714,7 +4714,7 @@ static void DisableIncompatibleCodecs(QComboBox *cbox, const QString &format, co
 			is_compatible = FFCodecAndFormatCompatible(codec, ext.c_str());
 		}
 
-		QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItemModel *model = static_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
 		if (is_compatible) {
@@ -4777,7 +4777,7 @@ static void ResetInvalidSelection(QComboBox *cbox)
 		return;
 	}
 
-	QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+	QStandardItemModel *model = static_cast<QStandardItemModel *>(cbox->model());
 	QStandardItem *item = model->item(idx);
 
 	if (item->isEnabled()) {
@@ -5128,7 +5128,7 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		 * with their setups without them knowing. */
 		if (ui->simpleOutPreset->findData(curPreset) == -1) {
 			ui->simpleOutPreset->addItem(curPreset, curPreset);
-			QStandardItemModel *model = qobject_cast<QStandardItemModel *>(ui->simpleOutPreset->model());
+			QStandardItemModel *model = static_cast<QStandardItemModel *>(ui->simpleOutPreset->model());
 			QStandardItem *item = model->item(model->rowCount() - 1);
 			item->setEnabled(false);
 		}
@@ -5366,7 +5366,7 @@ static void DisableIncompatibleSimpleCodecs(QComboBox *cbox, const QString &form
 			codec = obs_get_encoder_codec(encoder_id);
 		}
 
-		QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItemModel *model = static_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
 		if (ContainerSupportsCodec(format.toStdString(), codec.toStdString())) {
@@ -5398,7 +5398,7 @@ static void DisableIncompatibleSimpleContainer(QComboBox *cbox, const QString &c
 		QString format = cbox->itemData(idx).toString();
 		string formatStr = format.toStdString();
 
-		QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
+		QStandardItemModel *model = static_cast<QStandardItemModel *>(cbox->model());
 		QStandardItem *item = model->item(idx);
 
 		if (ContainerSupportsCodec(formatStr, vCodec) && ContainerSupportsCodec(formatStr, aCodec)) {
