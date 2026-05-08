@@ -827,7 +827,7 @@ bool OBSApp::SetTheme(const QString &name)
 	if (!theme)
 		return false;
 
-	if (themeWatcher) {
+	if (themeWatcher && themeWatcher->files().size() > 0) {
 		themeWatcher->blockSignals(true);
 		themeWatcher->removePaths(themeWatcher->files());
 	}
@@ -1027,18 +1027,22 @@ bool OBSApp::InitTheme()
 #endif
 	}
 
+	if (config_get_bool(userConfig, "Appearance", "AutoReload")) {
+		if (themeWatcher) {
+			themeWatcher->deleteLater();
+		}
+
+		// Set up Qt file watcher to automatically reload themes.
+		themeWatcher = new QFileSystemWatcher(this);
+		connect(themeWatcher, &QFileSystemWatcher::fileChanged, this, &OBSApp::themeFileChanged);
+	}
+
 	if (!SetTheme(themeName)) {
 		blog(LOG_ERROR,
 		     "Loading default theme \"%s\" failed, falling back to "
 		     "system theme as last resort.",
 		     QT_TO_UTF8(themeName));
 		return SetTheme("com.obsproject.System");
-	}
-
-	if (config_get_bool(userConfig, "Appearance", "AutoReload")) {
-		/* Set up Qt file watcher to automatically reload themes */
-		themeWatcher = new QFileSystemWatcher(this);
-		connect(themeWatcher.get(), &QFileSystemWatcher::fileChanged, this, &OBSApp::themeFileChanged);
 	}
 
 	return true;
