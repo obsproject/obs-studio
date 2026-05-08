@@ -165,6 +165,36 @@ VolumeControl::~VolumeControl()
 	}
 }
 
+const QIcon &VolumeControl::getUnassignedIcon()
+{
+	static const QIcon &icon = *new QIcon(":/res/images/unassigned.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getMutedIcon()
+{
+	static const QIcon &icon = *new QIcon(":/settings/images/settings/audio.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getUnmutedIcon()
+{
+	static const QIcon &icon = *new QIcon(":/settings/images/settings/audio.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getMonitorOnIcon()
+{
+	static const QIcon &icon = *new QIcon(":/res/images/headphones.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getMonitorOffIcon()
+{
+	static const QIcon &icon = *new QIcon(":/res/images/headphones-off.svg");
+	return icon;
+}
+
 void VolumeControl::obsVolumeChanged(void *data, float)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
@@ -600,7 +630,8 @@ void VolumeControl::updateCategoryLabel()
 	categoryLabel->setText(labelText);
 	categoryLabel->setAlignment(Qt::AlignCenter);
 
-	utils->polishChildren();
+	style()->polish(categoryLabel);
+	style()->polish(volumeMeter);
 
 	bool forceUpdate = true;
 	volumeMeter->updateBackgroundCache(forceUpdate);
@@ -727,13 +758,6 @@ void VolumeControl::updateMixerState()
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
 	setUseDisabledColors(showAsMuted || !isActive);
 
-	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
-	// in QSS so we set a checked class selector on the button to be used instead.
-	utils->toggleClass(muteButton, "checked", showAsMuted);
-	utils->toggleClass(monitorButton, "checked", showAsMonitored);
-
-	utils->toggleClass(muteButton, "mute-unassigned", showAsUnassigned);
-
 	muteButton->setChecked(showAsMuted);
 	monitorButton->setChecked(showAsMonitored);
 
@@ -745,36 +769,28 @@ void VolumeControl::updateMixerState()
 	monitorButton->setToolTip(monitorTooltip);
 
 	if (showAsUnassigned) {
-		QIcon unassignedIcon;
-		unassignedIcon.addFile(QString::fromUtf8(":/res/images/unassigned.svg"), QSize(16, 16),
-				       QIcon::Mode::Normal, QIcon::State::Off);
-		muteButton->setIcon(unassignedIcon);
+		muteButton->setIcon(getUnassignedIcon());
 	} else if (showAsMuted) {
-		QIcon mutedIcon;
-		mutedIcon.addFile(QString::fromUtf8(":/res/images/mute.svg"), QSize(16, 16), QIcon::Mode::Normal,
-				  QIcon::State::Off);
-		muteButton->setIcon(mutedIcon);
+		muteButton->setIcon(getMutedIcon());
 	} else {
-		QIcon unmutedIcon;
-		unmutedIcon.addFile(QString::fromUtf8(":/settings/images/settings/audio.svg"), QSize(16, 16),
-				    QIcon::Mode::Normal, QIcon::State::Off);
-		muteButton->setIcon(unmutedIcon);
+		muteButton->setIcon(getUnmutedIcon());
 	}
 
 	if (showAsMonitored) {
-		QIcon monitorOnIcon;
-		monitorOnIcon.addFile(QString::fromUtf8(":/res/images/headphones.svg"), QSize(16, 16),
-				      QIcon::Mode::Normal, QIcon::State::Off);
-		monitorButton->setIcon(monitorOnIcon);
+		monitorButton->setIcon(getMonitorOnIcon());
 	} else {
-		QIcon monitorOffIcon;
-		monitorOffIcon.addFile(QString::fromUtf8(":/res/images/headphones-off.svg"), QSize(16, 16),
-				       QIcon::Mode::Normal, QIcon::State::Off);
-		monitorButton->setIcon(monitorOffIcon);
+		monitorButton->setIcon(getMonitorOffIcon());
 	}
 
-	utils->repolish(muteButton);
-	utils->repolish(monitorButton);
+	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
+	// in QSS so we set a checked class selector on the button to be used instead.
+	utils->toggleClass(muteButton, "checked", showAsMuted);
+	utils->toggleClass(monitorButton, "checked", showAsMonitored);
+
+	utils->toggleClass(muteButton, "mute-unassigned", showAsUnassigned);
+
+	style()->polish(muteButton);
+	style()->polish(monitorButton);
 
 	updateCategoryLabel();
 }

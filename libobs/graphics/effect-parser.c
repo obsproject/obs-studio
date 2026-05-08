@@ -1026,13 +1026,27 @@ static inline int ep_parse_param_assign_intfloat_array(struct effect_parser *ep,
 	}
 
 	/* -------------------------------------------- */
-
-	code = cf_next_token_should_be(&ep->cfp, "{", ";", NULL);
-	if (code != PARSE_SUCCESS)
-		return code;
+	if (!cf_next_token(&ep->cfp)) {
+		cf_adderror_unexpected_eof(&ep->cfp);
+		return PARSE_EOF;
+	}
+	char *end_char = NULL;
+	if (strref_cmp(&ep->cfp.cur_token->str, "{") == 0) {
+		end_char = "}";
+	} else if (strref_cmp(&ep->cfp.cur_token->str, param->type) == 0) {
+		end_char = ")";
+		code = cf_next_token_should_be(&ep->cfp, "(", ";", NULL);
+		if (code != PARSE_SUCCESS)
+			return code;
+	} else if (!cf_go_to_token(&ep->cfp, ";", NULL)) {
+		return PARSE_EOF;
+	} else {
+		cf_adderror_expecting(&ep->cfp, "{");
+		return PARSE_CONTINUE;
+	}
 
 	for (i = 0; i < intfloat_count; i++) {
-		char *next = ((i + 1) < intfloat_count) ? "," : "}";
+		char *next = ((i + 1) < intfloat_count) ? "," : end_char;
 
 		code = ep_parse_param_assign_intfloat(ep, param, is_float);
 		if (code != PARSE_SUCCESS)

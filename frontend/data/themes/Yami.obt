@@ -686,10 +686,6 @@ QMenu {
     outline: none;
 }
 
-QMenu {
-    border: 1px solid var(--border_color);
-}
-
 QListWidget::item,
 SourceTreeItem {
     padding: var(--padding_large) var(--padding_large);
@@ -717,6 +713,12 @@ QListWidget::item {
 SourceTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
+}
+
+QMenu,
+QMenu > QMenu {
+    border: 1px solid var(--border_color);
+    padding: var(--spacing_base);
 }
 
 /* Temporary fix for plugins affected by fix in #11555 */
@@ -1494,6 +1496,19 @@ QToolButton:focus,
 .btn-tool:focus {
     border-color: var(--button_border);
     background-color: var(--button_bg_hover);
+}
+
+QToolButton:checked,
+.btn-tool:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+QToolButton:checked:hover,
+QToolButton:checked:focus,
+.btn-tool:checked:hover,
+.btn-tool:checked:focus {
+    border-color: var(--primary_lighter);
 }
 
 QToolButton:pressed,
@@ -2413,6 +2428,48 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 #previewZoomInButton:focus,
 #previewZoomOutButton:focus {
     border: 1px solid var(--input_border_hover);
+}
+
+/* Add Source Dialog */
+SourceSelectButton {
+    background: var(--grey5);
+    padding: var(--padding_base) var(--padding_large);
+    margin: var(--spacing_base);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    outline: none;
+}
+
+SourceSelectButton QLabel {
+    padding: var(--padding_large) 0;
+    text-align: center;
+}
+
+SourceSelectButton #thumbnail {
+    background: var(--grey6);
+    border-radius: var(--border_radius);
+    padding: 0;
+    margin-top: var(--spacing_base);
+}
+
+SourceSelectButton:hover {
+    background-color: var(--button_bg_hover);
+}
+
+SourceSelectButton:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+SourceSelectButton:focus,
+SourceSelectButton:checked:focus {
+    border-color: var(--white3);
+}
+
+SourceSelectButton:pressed,
+SourceSelectButton:pressed:hover {
+    background-color: var(--button_bg_down);
+    border-color: var(--button_border);
 }
 
 /* Idian Widgets */

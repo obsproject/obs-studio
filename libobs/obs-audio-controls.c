@@ -328,7 +328,7 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
 	const __m128 sinc_plus_03 = _mm_set_ps(-0.103943f, 0.233872f, 0.935489f, -0.155915f);
 
 	__m128 sample_window = previous_samples;
-	__m128 max_abs_per_lane = previous_samples;
+	__m128 max_abs_per_lane = abs_ps(previous_samples);
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
 		__m128 next_samples = _mm_load_ps(&samples[i]);
 		__m128 interpolated_samples = _mm_setzero_ps();
@@ -369,7 +369,7 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
  */
 static float get_sample_peak(__m128 previous_samples, const float *samples, size_t nr_samples)
 {
-	__m128 max_abs_per_lane = previous_samples;
+	__m128 max_abs_per_lane = abs_ps(previous_samples);
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
 		__m128 next_samples = _mm_load_ps(&samples[i]);
 		max_abs_per_lane = _mm_max_ps(max_abs_per_lane, abs_ps(next_samples));

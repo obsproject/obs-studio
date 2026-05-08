@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <utility/OBSTheme.hpp>
 #include <utility/NativeEventFilter.hpp>
+#include <utility/OBSTheme.hpp>
+#include <utility/ThumbnailManager.hpp>
 #include <widgets/OBSMainWindow.hpp>
 
 #include <obs-frontend-api.h>
@@ -89,6 +90,8 @@ private:
 	bool enableHotkeysOutOfFocus = true;
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
+
+	ThumbnailManager *thumbnailManager = nullptr;
 
 	std::unique_ptr<OBS::PluginManager> pluginManager_;
 
@@ -228,6 +231,8 @@ public:
 #endif
 
 	void loadAppModules(struct obs_module_failure_info &mfi);
+
+	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 	// Plugin Manager Accessors
 	void pluginManagerOpenDialog();

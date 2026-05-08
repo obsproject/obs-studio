@@ -37,6 +37,8 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 static bool open_editor_button_clicked(obs_properties_t *props, obs_property_t *property, void *data)
 {
+	UNUSED_PARAMETER(property);
+
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 
 	if (vstPlugin && vstPlugin->vstLoaded()) {
@@ -47,15 +49,13 @@ static bool open_editor_button_clicked(obs_properties_t *props, obs_property_t *
 		obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS), true);
 	}
 
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(property);
-	UNUSED_PARAMETER(data);
-
 	return true;
 }
 
 static bool close_editor_button_clicked(obs_properties_t *props, obs_property_t *property, void *data)
 {
+	UNUSED_PARAMETER(property);
+
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 
 	if (vstPlugin && vstPlugin->vstLoaded() && vstPlugin->isEditorOpen()) {
@@ -65,8 +65,6 @@ static bool close_editor_button_clicked(obs_properties_t *props, obs_property_t 
 		obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS), true);
 		obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS), false);
 	}
-
-	UNUSED_PARAMETER(property);
 
 	return true;
 }
@@ -302,8 +300,8 @@ static obs_properties_t *vst_properties(void *data)
 
 	fill_out_plugins(list);
 
-	obs_properties_add_button(props, OPEN_VST_SETTINGS, OPEN_VST_TEXT, open_editor_button_clicked);
-	obs_properties_add_button(props, CLOSE_VST_SETTINGS, CLOSE_VST_TEXT, close_editor_button_clicked);
+	obs_properties_add_button2(props, OPEN_VST_SETTINGS, OPEN_VST_TEXT, open_editor_button_clicked, data);
+	obs_properties_add_button2(props, CLOSE_VST_SETTINGS, CLOSE_VST_TEXT, close_editor_button_clicked, data);
 
 	bool open_settings_vis = true;
 	bool close_settings_vis = false;

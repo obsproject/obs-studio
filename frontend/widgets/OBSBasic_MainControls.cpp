@@ -47,6 +47,7 @@
 
 #include <qt-wrappers.hpp>
 
+#include <nlohmann/json.hpp>
 #include <QDesktopServices>
 
 #ifdef _WIN32
@@ -287,9 +288,10 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadTy
 
 	logUploadThread.reset(thread);
 
-	connect(thread, &RemoteTextThread::Result, this, [this, uploadType](const QString &text, const QString &error) {
-		logUploadFinished(text, error, uploadType);
-	});
+	connect(thread, &RemoteTextThread::Result, this,
+		[this, uploadType](const std::string &text, const std::string &error) {
+			logUploadFinished(text, error, uploadType);
+		});
 
 	logUploadThread->start();
 }
@@ -384,18 +386,17 @@ void OBSBasic::on_actionRestartSafe_triggered()
 	}
 }
 
-void OBSBasic::logUploadFinished(const QString &text, const QString &error, LogUploadType uploadType)
+void OBSBasic::logUploadFinished(const std::string &text, const std::string &error, LogUploadType uploadType)
 {
 	OBSApp *app = App();
 
-	if (text.isEmpty()) {
-		emit app->logUploadFailed(uploadType, error);
+	if (text.empty()) {
+		emit app->logUploadFailed(uploadType, QString::fromStdString(error));
 	} else {
-		OBSDataAutoRelease returnData = obs_data_create_from_json(QT_TO_UTF8(text));
-		string resURL = obs_data_get_string(returnData, "url");
-		QString logURL = resURL.c_str();
+		nlohmann::json parsed = nlohmann::json::parse(text);
+		std::string logURL = parsed["url"];
 
-		emit app->logUploadFinished(uploadType, logURL);
+		emit app->logUploadFinished(uploadType, QString::fromStdString(logURL));
 	}
 }
 
