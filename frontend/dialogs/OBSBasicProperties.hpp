@@ -19,6 +19,8 @@
 
 #include "ui_OBSBasicProperties.h"
 
+#include <obs.hpp>
+
 #include <QDialog>
 
 class OBSBasic;
@@ -49,8 +51,6 @@ private:
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 	static void UpdateProperties(void *data, calldata_t *params);
-	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
-	static void DrawTransitionPreview(void *data, uint32_t cx, uint32_t cy);
 	void UpdateCallback(void *obj, obs_data_t *settings);
 	bool ConfirmQuit();
 	int CheckSettings();
@@ -69,6 +69,5 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
-	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void reject() override;
 };
