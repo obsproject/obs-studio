@@ -504,53 +504,6 @@
           <property name="childrenCollapsible">
            <bool>false</bool>
           </property>
-          <widget class="QFrame" name="previewFrame">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_7">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="OBSQTDisplay" name="preview" native="true">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>150</height>
-               </size>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
           <widget class="QFrame" name="propertiesFrame">
            <property name="frameShape">
             <enum>QFrame::NoFrame</enum>
@@ -644,12 +597,6 @@
   </action>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>OBSQTDisplay</class>
-   <extends>QWidget</extends>
-   <header>widgets/OBSQTDisplay.hpp</header>
-   <container>1</container>
-  </customwidget>
   <customwidget>
    <class>FocusList</class>
    <extends>QListWidget</extends>
