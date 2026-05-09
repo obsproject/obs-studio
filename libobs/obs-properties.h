@@ -214,8 +214,8 @@ EXPORT obs_property_t *obs_properties_add_color(obs_properties_t *props, const c
 EXPORT obs_property_t *obs_properties_add_color_alpha(obs_properties_t *props, const char *name,
 						      const char *description);
 
-EXPORT obs_property_t *obs_properties_add_button(obs_properties_t *props, const char *name, const char *text,
-						 obs_property_clicked_t callback);
+OBS_DEPRECATED EXPORT obs_property_t *obs_properties_add_button(obs_properties_t *props, const char *name,
+								const char *text, obs_property_clicked_t callback);
 
 EXPORT obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text,
 						  obs_property_clicked_t callback, void *priv);
