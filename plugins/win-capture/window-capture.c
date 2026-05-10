@@ -111,9 +111,10 @@ struct window_capture {
 };
 
 static const char *wgc_partial_match_classes[] = {
-	"Chrome",
-	"Mozilla",
-	NULL,
+        "Chrome",
+        "Edge",
+        "Mozilla",
+        NULL,
 };
 
 static const char *wgc_whole_match_classes[] = {
