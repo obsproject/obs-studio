@@ -313,15 +313,27 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
 
 - (void)startCaptureSession
 {
-    if (!self.session.running) {
+    if (self.session.running) {
+        return;
+    }
+
+    @try {
         [self.session startRunning];
+    } @catch (NSException *exception) {
+        [self AVCaptureLog:LOG_ERROR withFormat:@"-[AVCaptureSession startRunning] raised %@: %@", exception.name,
+                                                exception.reason ?: @"(no reason)"];
     }
 }
 
 - (void)stopCaptureSession
 {
     if (self.session.running) {
-        [self.session stopRunning];
+        @try {
+            [self.session stopRunning];
+        } @catch (NSException *exception) {
+            [self AVCaptureLog:LOG_ERROR withFormat:@"-[AVCaptureSession stopRunning] raised %@: %@", exception.name,
+                                                    exception.reason ?: @"(no reason)"];
+        }
     }
 
     if (self.captureInfo->isFastPath) {
