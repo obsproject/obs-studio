@@ -517,14 +517,14 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
         }
     }
 
-    [self.session beginConfiguration];
-
     self.isDeviceLocked = [self.deviceInput.device lockForConfiguration:error];
 
     if (!self.isDeviceLocked) {
         [self AVCaptureLog:LOG_WARNING withFormat:@"Could not lock device for configuration"];
         return NO;
     }
+
+    [self.session beginConfiguration];
 
     [self AVCaptureLog:LOG_INFO
             withFormat:@"Capturing '%@' (%@):\n"
