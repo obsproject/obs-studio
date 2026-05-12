@@ -136,10 +136,12 @@ bool AutoConfigStreamPage::validatePage()
 
 	if (wiz->customServer) {
 		QString server = ui->customServer->text().trimmed();
-		wiz->server = wiz->serverName = QT_TO_UTF8(server);
+		const std::string name = server.toStdString();
+		wiz->server = name;
+		wiz->serverName = name;
 	} else {
-		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
-		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
+		wiz->serverName = ui->server->currentText().toStdString();
+		wiz->server = ui->server->currentData().toString().toStdString();
 	}
 
 	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
@@ -149,10 +151,10 @@ bool AutoConfigStreamPage::validatePage()
 	wiz->regionEU = ui->regionEU->isChecked();
 	wiz->regionAsia = ui->regionAsia->isChecked();
 	wiz->regionOther = ui->regionOther->isChecked();
-	wiz->serviceName = QT_TO_UTF8(ui->service->currentText());
+	wiz->serviceName = ui->service->currentText().toStdString();
 	if (ui->preferHardware)
 		wiz->preferHardware = ui->preferHardware->isChecked();
-	wiz->key = QT_TO_UTF8(ui->key->text());
+	wiz->key = ui->key->text().toStdString();
 
 	if (!wiz->customServer) {
 		if (wiz->serviceName == "Twitch")
@@ -302,7 +304,7 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 
 void AutoConfigStreamPage::OnAuthConnected()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	Auth::Type type = Auth::AuthType(service);
 
 	if (type == Auth::Type::OAuth_StreamKey || type == Auth::Type::OAuth_LinkedAccount) {
@@ -312,7 +314,7 @@ void AutoConfigStreamPage::OnAuthConnected()
 
 void AutoConfigStreamPage::on_connectAccount_clicked()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 	OAuth::DeleteCookies(service);
 
@@ -342,7 +344,7 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	main->auth.reset();
 	auth.reset();
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 #ifdef BROWSER_AVAILABLE
 	OAuth::DeleteCookies(service);
@@ -438,7 +440,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	if (showMore)
 		return;
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	bool regionBased = service == "Twitch";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustomService();
@@ -534,7 +536,7 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 	}
 
 	QString serviceName = ui->service->currentText();
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -550,7 +552,6 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link));
 		ui->moreInfoButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::UpdateKeyLink()
@@ -559,7 +560,7 @@ void AutoConfigStreamPage::UpdateKeyLink()
 	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -596,12 +597,11 @@ void AutoConfigStreamPage::UpdateKeyLink()
 		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink));
 		ui->streamKeyButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::LoadServices(bool showAll)
 {
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 
 	OBSDataAutoRelease settings = obs_data_create();
 
@@ -641,8 +641,6 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 			ui->service->setCurrentIndex(idx);
 	}
 
-	obs_properties_destroy(props);
-
 	ui->service->blockSignals(false);
 }
 
@@ -659,7 +657,7 @@ void AutoConfigStreamPage::UpdateServerList()
 		lastService = serviceName;
 	}
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -677,8 +675,6 @@ void AutoConfigStreamPage::UpdateServerList()
 		const char *server = obs_property_list_item_string(servers, i);
 		ui->server->addItem(name, server);
 	}
-
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::UpdateCompleted()

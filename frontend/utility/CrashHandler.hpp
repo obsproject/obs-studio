@@ -83,7 +83,7 @@ private:
 	PlatformType getPlatformType() const;
 
 private slots:
-	void crashLogUploadResultHandler(const QString &uploadResult, const QString &error);
+	void crashLogUploadResultHandler(const std::string &uploadResult, const std::string &error);
 
 	// FIXME: Turn into private slot once OBSBasic does not handle application shutdown duties anymore.
 public slots:

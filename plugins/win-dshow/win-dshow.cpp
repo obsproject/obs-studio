@@ -1879,9 +1879,9 @@ static obs_properties_t *GetDShowProperties(void *obj)
 			activateText = TEXT_DEACTIVATE;
 	}
 
-	obs_properties_add_button(ppts, "activate", activateText, ActivateClicked);
-	obs_properties_add_button(ppts, "video_config", TEXT_CONFIG_VIDEO, VideoConfigClicked);
-	obs_properties_add_button(ppts, "xbar_config", TEXT_CONFIG_XBAR, CrossbarConfigClicked);
+	obs_properties_add_button2(ppts, "activate", activateText, ActivateClicked, input);
+	obs_properties_add_button2(ppts, "video_config", TEXT_CONFIG_VIDEO, VideoConfigClicked, input);
+	obs_properties_add_button2(ppts, "xbar_config", TEXT_CONFIG_XBAR, CrossbarConfigClicked, input);
 
 	obs_properties_add_bool(ppts, DEACTIVATE_WNS, TEXT_DWNS);
 
