@@ -21,6 +21,7 @@
 #include <dialogs/LogUploadDialog.hpp>
 #include <plugin-manager/PluginManager.hpp>
 #include <utility/CrashHandler.hpp>
+#include <utility/HealthCheckService.hpp>
 #include <utility/OBSEventFilter.hpp>
 #include <utility/OBSProxyStyle.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
@@ -2099,6 +2100,15 @@ void OBSApp::handlePluginLoadState()
 			pluginManagerOpenDialog();
 		}
 	}
+}
+
+OBS::HealthCheckService *OBSApp::healthService()
+{
+	if (healthService_.isNull()) {
+		healthService_ = new OBS::HealthCheckService(this);
+	}
+
+	return healthService_;
 }
 
 void OBSApp::pluginManagerOpenDialog()
