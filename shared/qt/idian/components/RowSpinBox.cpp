@@ -15,16 +15,32 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
-
-// Idian - A family of custom widgets for OBS implementing the "Yami" UI design.
-//
-// (OBS Idian, get it?)
-
-#include <Idian/CheckBox.hpp>
-#include <Idian/ComboBox.hpp>
-#include <Idian/Row.hpp>
-#include <Idian/RowDoubleSpinBox.hpp>
-#include <Idian/RowList.hpp>
 #include <Idian/RowSpinBox.hpp>
-#include <Idian/ToggleSwitch.hpp>
+
+#include <Idian/moc_RowSpinBox.cpp>
+
+using idian::RowSpinBox;
+
+RowSpinBox::RowSpinBox(QWidget *parent) : QFrame(parent)
+{
+	layout = new QHBoxLayout();
+	setLayout(layout);
+
+	layout->setContentsMargins(0, 0, 0, 0);
+
+	decr = new QPushButton("-");
+	decr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(decr);
+
+	sbox = new QSpinBox();
+	sbox->setObjectName("obsSpinBox");
+	sbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	layout->addWidget(sbox);
+
+	incr = new QPushButton("+");
+	incr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(incr);
+
+	connect(decr, &QPushButton::pressed, sbox, &QSpinBox::stepDown);
+	connect(incr, &QPushButton::pressed, sbox, &QSpinBox::stepUp);
+}

@@ -15,16 +15,35 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
-
-// Idian - A family of custom widgets for OBS implementing the "Yami" UI design.
-//
-// (OBS Idian, get it?)
-
-#include <Idian/CheckBox.hpp>
-#include <Idian/ComboBox.hpp>
-#include <Idian/Row.hpp>
 #include <Idian/RowDoubleSpinBox.hpp>
-#include <Idian/RowList.hpp>
-#include <Idian/RowSpinBox.hpp>
-#include <Idian/ToggleSwitch.hpp>
+
+#include <Idian/moc_RowDoubleSpinBox.cpp>
+
+using idian::RowDoubleSpinBox;
+
+RowDoubleSpinBox::RowDoubleSpinBox(QWidget *parent) : QFrame(parent)
+{
+	layout = new QHBoxLayout();
+	setLayout(layout);
+
+	layout->setContentsMargins(0, 0, 0, 0);
+
+	decr = new QPushButton("-");
+	decr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(decr);
+
+	setFocusProxy(decr);
+
+	sbox = new QDoubleSpinBox();
+	sbox->setObjectName("obsSpinBox");
+	sbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	sbox->setAlignment(Qt::AlignCenter);
+	layout->addWidget(sbox);
+
+	incr = new QPushButton("+");
+	incr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(incr);
+
+	connect(decr, &QPushButton::pressed, sbox, &QDoubleSpinBox::stepDown);
+	connect(incr, &QPushButton::pressed, sbox, &QDoubleSpinBox::stepUp);
+}

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,14 +17,35 @@
 
 #pragma once
 
-// Idian - A family of custom widgets for OBS implementing the "Yami" UI design.
-//
-// (OBS Idian, get it?)
+#include <QWidget>
 
-#include <Idian/CheckBox.hpp>
-#include <Idian/ComboBox.hpp>
-#include <Idian/Row.hpp>
-#include <Idian/RowDoubleSpinBox.hpp>
-#include <Idian/RowList.hpp>
-#include <Idian/RowSpinBox.hpp>
-#include <Idian/ToggleSwitch.hpp>
+class QLabel;
+class QVBoxLayout;
+
+namespace idian {
+
+class RowInfo : public QWidget {
+	Q_OBJECT
+
+public:
+	RowInfo(QWidget *parent);
+	RowInfo(QWidget *parent, QString title);
+	RowInfo(QWidget *parent, QString title, QString description);
+	~RowInfo() = default;
+
+	void setTitle(const QString &title);
+	void setDescription(const QString &description);
+
+	void showTitle(bool visible);
+	void showDescription(bool visible);
+
+	QLabel *title() { return nameLabel; }
+	QLabel *description() { return descriptionLabel; }
+
+private:
+	QVBoxLayout *layout_ = nullptr;
+
+	QLabel *nameLabel = nullptr;
+	QLabel *descriptionLabel = nullptr;
+};
+} // namespace idian
