@@ -52,6 +52,9 @@ QPixmap Utils::recolorPixmap(const QPixmap &src, const QColor &color)
 	return QPixmap::fromImage(img);
 }
 
+// Updates the dynamic property 'class' on a widget with values in response to certain interaction events.
+// Ex. `hover` when the widget is hovered.
+// Widgets can then be styled via CSS class-style rules like .hover.
 void Utils::applyStateStylingEventFilter(QWidget *widget)
 {
 	widget->installEventFilter(new StateEventFilter(this, widget));
