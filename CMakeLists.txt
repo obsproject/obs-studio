@@ -18,6 +18,7 @@ include(helpers)
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
 option(ENABLE_SCRIPTING "Enable scripting support" ON)
 option(ENABLE_HEVC "Enable HEVC encoders" ON)
+option(ENABLE_UNIT_TESTS "Enable unit tests" OFF)
 
 add_subdirectory(libobs)
 if(OS_WINDOWS)
@@ -31,6 +32,10 @@ endif()
 add_subdirectory(plugins)
 
 add_subdirectory(test/test-input)
+if(ENABLE_UNIT_TESTS)
+  enable_testing()
+  add_subdirectory(test/media-playback)
+endif()
 
 add_subdirectory(frontend)
 

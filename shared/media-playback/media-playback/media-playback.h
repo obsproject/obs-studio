@@ -46,6 +46,7 @@ struct mp_media_info {
 	bool reconnecting;
 	bool request_preload;
 	bool full_decode;
+	bool sync_to_timecodes;
 };
 
 extern media_playback_t *media_playback_create(const struct mp_media_info *info);

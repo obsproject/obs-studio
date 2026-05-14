@@ -17,6 +17,8 @@ target_sources(
     media-playback/media-playback.h
     media-playback/media.c
     media-playback/media.h
+    media-playback/timecode.c
+    media-playback/timecode.h
 )
 
 target_include_directories(media-playback INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")

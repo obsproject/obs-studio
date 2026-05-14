@@ -50,6 +50,9 @@ struct mp_decode {
 	int64_t last_duration;
 	int64_t frame_pts;
 	int64_t next_pts;
+	AVRational timecode_frame_rate;
+	int64_t timecode_frame_duration;
+	int64_t frame_timecode;
 	AVFrame *in_frame;
 	AVFrame *sw_frame;
 	AVFrame *hw_frame;
@@ -57,6 +60,7 @@ struct mp_decode {
 	enum AVPixelFormat hw_format;
 	bool got_first_keyframe;
 	bool frame_ready;
+	bool frame_timecode_valid;
 	bool eof;
 	bool hw;
 	uint16_t max_luminance;

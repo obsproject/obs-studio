@@ -18,7 +18,11 @@
 
 #include "media-playback.h"
 #include "media.h"
+#include "timecode.h"
 #include <libavutil/mastering_display_metadata.h>
+#include <libavutil/frame.h>
+
+#define NSEC_PER_SEC 1000000000LL
 
 enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_CUDA,  AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_DXVA2,        AV_HWDEVICE_TYPE_VAAPI,
@@ -131,6 +135,22 @@ static uint16_t get_max_luminance(const AVStream *stream)
 	return max_luminance;
 }
 
+static AVRational get_stream_frame_rate(const AVStream *stream)
+{
+	AVRational frame_rate = stream->avg_frame_rate.num && stream->avg_frame_rate.den ? stream->avg_frame_rate
+											 : stream->r_frame_rate;
+
+	if (frame_rate.num > 0 && frame_rate.den > 0)
+		return frame_rate;
+
+	return (AVRational){30, 1};
+}
+
+static int64_t get_frame_duration(AVRational frame_rate)
+{
+	return av_rescale_q(frame_rate.den, (AVRational){1, frame_rate.num}, (AVRational){1, NSEC_PER_SEC});
+}
+
 bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 {
 	struct mp_decode *d = type == AVMEDIA_TYPE_VIDEO ? &m->v : &m->a;
@@ -150,6 +170,8 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 
 	if (type == AVMEDIA_TYPE_VIDEO)
 		d->max_luminance = get_max_luminance(stream);
+	d->timecode_frame_rate = get_stream_frame_rate(stream);
+	d->timecode_frame_duration = get_frame_duration(d->timecode_frame_rate);
 
 	if (id == AV_CODEC_ID_VP8 || id == AV_CODEC_ID_VP9) {
 		AVDictionaryEntry *tag = NULL;
@@ -213,6 +235,7 @@ void mp_decode_clear_packets(struct mp_decode *d)
 		deque_pop_front(&d->packets, &pkt, sizeof(pkt));
 		mp_media_free_packet(d->m, pkt);
 	}
+	d->frame_timecode_valid = false;
 }
 
 void mp_decode_free(struct mp_decode *d)
@@ -320,6 +343,18 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 	return ret;
 }
 
+static bool frame_timecode(struct mp_decode *d, int64_t *timestamp)
+{
+	const AVFrameSideData *side_data = NULL;
+
+	if (d->audio || !d->m->sync_to_timecodes)
+		return false;
+
+	side_data = av_frame_get_side_data(d->frame, AV_FRAME_DATA_S12M_TIMECODE);
+	return side_data && mp_s12m_timecode_parse(side_data->data, side_data->size, d->timecode_frame_rate,
+						   d->timecode_frame_duration, timestamp);
+}
+
 bool mp_decode_next(struct mp_decode *d)
 {
 	bool eof = d->m->eof;
@@ -327,6 +362,7 @@ bool mp_decode_next(struct mp_decode *d)
 	int ret;
 
 	d->frame_ready = false;
+	d->frame_timecode_valid = false;
 
 	if (!eof && !d->packets.size)
 		return true;
@@ -392,6 +428,8 @@ bool mp_decode_next(struct mp_decode *d)
 			d->frame_pts = av_rescale_q(d->in_frame->best_effort_timestamp, d->stream->time_base,
 						    (AVRational){1, 1000000000});
 
+		d->frame_timecode_valid = frame_timecode(d, &d->frame_timecode);
+
 		int64_t duration = d->in_frame->duration;
 		if (!duration)
 			duration = get_estimated_duration(d, last_pts);
@@ -417,5 +455,6 @@ void mp_decode_flush(struct mp_decode *d)
 	d->eof = false;
 	d->frame_pts = 0;
 	d->frame_ready = false;
+	d->frame_timecode_valid = false;
 	d->next_pts = 0;
 }

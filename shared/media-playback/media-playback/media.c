@@ -27,6 +27,66 @@
 
 static int64_t base_sys_ts = 0;
 
+#define NSEC_PER_SEC 1000000000LL
+#define TIMECODE_DAY_NS (24LL * 60 * 60 * NSEC_PER_SEC)
+#define TIMECODE_SYNC_DELAY_NS (2LL * NSEC_PER_SEC)
+
+static pthread_mutex_t timecode_sync_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool timecode_sync_anchor_valid = false;
+static int64_t timecode_sync_anchor_code_ns = 0;
+static int64_t timecode_sync_anchor_obs_ns = 0;
+
+static inline int64_t timecode_wrap_delta(int64_t delta)
+{
+	while (delta > TIMECODE_DAY_NS / 2)
+		delta -= TIMECODE_DAY_NS;
+	while (delta < -TIMECODE_DAY_NS / 2)
+		delta += TIMECODE_DAY_NS;
+
+	return delta;
+}
+
+static inline int64_t timecode_mod_day(int64_t timestamp)
+{
+	timestamp %= TIMECODE_DAY_NS;
+	if (timestamp < 0)
+		timestamp += TIMECODE_DAY_NS;
+
+	return timestamp;
+}
+
+static int64_t timecode_sync_timestamp(int64_t timecode_ns)
+{
+	const int64_t now = (int64_t)os_gettime_ns() - base_sys_ts;
+	int64_t timestamp = 0;
+
+	pthread_mutex_lock(&timecode_sync_mutex);
+
+	if (!timecode_sync_anchor_valid) {
+		timecode_sync_anchor_code_ns = timecode_ns;
+		timecode_sync_anchor_obs_ns = now + TIMECODE_SYNC_DELAY_NS;
+		timecode_sync_anchor_valid = true;
+		timestamp = timecode_sync_anchor_obs_ns;
+	} else {
+		const int64_t expected_code_ns = timecode_sync_anchor_code_ns + (now - timecode_sync_anchor_obs_ns);
+		const int64_t expected_day_ns = timecode_mod_day(expected_code_ns);
+		const int64_t delta = timecode_wrap_delta(timecode_ns - expected_day_ns);
+		const int64_t extended_code_ns = expected_code_ns + delta;
+
+		timestamp = timecode_sync_anchor_obs_ns + (extended_code_ns - timecode_sync_anchor_code_ns);
+	}
+
+	pthread_mutex_unlock(&timecode_sync_mutex);
+
+	return timestamp;
+}
+
+static inline void reset_timecode_sync(mp_media_t *m)
+{
+	m->timecode_sync_active = false;
+	m->timecode_sync_offset = 0;
+}
+
 static inline enum video_format convert_pixel_format(int f)
 {
 	switch (f) {
@@ -366,6 +426,9 @@ void mp_media_next_audio(mp_media_t *m)
 	audio.timestamp = m->full_decode ? d->frame_pts
 					 : m->base_ts + d->frame_pts - m->start_ts + m->play_sys_ts - base_sys_ts;
 
+	if (!m->full_decode && m->timecode_sync_active)
+		audio.timestamp += m->timecode_sync_offset;
+
 	if (audio.format == AUDIO_FORMAT_UNKNOWN)
 		return;
 
@@ -452,6 +515,18 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 
 	frame->timestamp = m->full_decode ? d->frame_pts
 					  : (m->base_ts + d->frame_pts - m->start_ts + m->play_sys_ts - base_sys_ts);
+
+	if (!m->full_decode) {
+		if (m->sync_to_timecodes && d->frame_timecode_valid) {
+			const int64_t timestamp = timecode_sync_timestamp(d->frame_timecode);
+
+			m->timecode_sync_offset = timestamp - frame->timestamp;
+			m->timecode_sync_active = true;
+		}
+
+		if (m->timecode_sync_active)
+			frame->timestamp += m->timecode_sync_offset;
+	}
 
 	frame->width = f->width;
 	frame->height = f->height;
@@ -562,6 +637,7 @@ bool mp_media_reset(mp_media_t *m)
 	m->eof = false;
 	m->base_ts += next_ts;
 	m->seek_next_ts = false;
+	reset_timecode_sync(m);
 
 	seek_to(m, start_time);
 
@@ -723,6 +799,7 @@ static bool init_avformat(mp_media_t *m)
 
 static void reset_ts(mp_media_t *m)
 {
+	reset_timecode_sync(m);
 	m->base_ts += mp_media_get_base_pts(m);
 	m->play_sys_ts = (int64_t)os_gettime_ns();
 	m->start_ts = m->next_pts_ns = mp_media_get_next_min_pts(m);
@@ -889,6 +966,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->speed = info->speed;
 	media->request_preload = info->request_preload;
 	media->is_local_file = info->is_local_file;
+	media->sync_to_timecodes = info->sync_to_timecodes && !info->is_local_file && !info->full_decode;
 	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)

@@ -83,6 +83,9 @@ struct mp_media {
 	int64_t start_ts;
 	int64_t base_ts;
 	bool full_decode;
+	bool sync_to_timecodes;
+	bool timecode_sync_active;
+	int64_t timecode_sync_offset;
 
 	uint64_t interrupt_poll_ts;
 

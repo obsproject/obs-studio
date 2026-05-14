@@ -46,6 +46,7 @@ struct ffmpeg_source {
 	bool is_local_file;
 	bool is_hw_decoding;
 	bool full_decode;
+	bool sync_to_timecodes;
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
 	bool close_when_inactive;
@@ -99,12 +100,14 @@ static bool is_local_file_modified(obs_properties_t *props, obs_property_t *prop
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
+	obs_property_t *sync_to_timecodes = obs_properties_get(props, "sync_to_timecodes");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_t *reconnect_delay_sec = obs_properties_get(props, "reconnect_delay_sec");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
+	obs_property_set_visible(sync_to_timecodes, !enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
 	obs_property_set_visible(speed, enabled);
@@ -121,6 +124,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
 	obs_data_set_default_bool(settings, "linear_alpha", false);
+	obs_data_set_default_bool(settings, "sync_to_timecodes", false);
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
@@ -189,6 +193,8 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "hw_decode", obs_module_text("HardwareDecode"));
 
+	obs_properties_add_bool(props, "sync_to_timecodes", obs_module_text("SyncToTimecodes"));
+
 	obs_properties_add_bool(props, "clear_on_media_end", obs_module_text("ClearOnMediaEnd"));
 
 	prop = obs_properties_add_bool(props, "close_when_inactive", obs_module_text("CloseFileWhenInactive"));
@@ -229,12 +235,14 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input, const c
 		"\tis_clear_on_media_end:   %s\n"
 		"\trestart_on_activate:     %s\n"
 		"\tclose_when_inactive:     %s\n"
+		"\tsync_to_timecodes:       %s\n"
 		"\tfull_decode:             %s\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)", input_format ? input_format : "(null)", s->speed_percent,
 		s->is_looping ? "yes" : "no", s->is_linear_alpha ? "yes" : "no", s->is_hw_decoding ? "yes" : "no",
 		s->is_clear_on_media_end ? "yes" : "no", s->restart_on_activate ? "yes" : "no",
-		s->close_when_inactive ? "yes" : "no", s->full_decode ? "yes" : "no", s->ffmpeg_options);
+		s->close_when_inactive ? "yes" : "no", s->sync_to_timecodes ? "yes" : "no",
+		s->full_decode ? "yes" : "no", s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -309,6 +317,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.reconnecting = s->reconnecting,
 			.request_preload = s->is_stinger,
 			.full_decode = s->full_decode,
+			.sync_to_timecodes = s->sync_to_timecodes,
 		};
 
 		s->media = media_playback_create(&info);
@@ -407,6 +416,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	bool is_linear_alpha;
 	int speed_percent;
 	bool is_looping;
+	bool sync_to_timecodes = false;
 
 	bfree(s->input_format);
 
@@ -414,6 +424,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		is_looping = obs_data_get_bool(settings, "looping");
+		sync_to_timecodes = false;
 
 		if (s->input && !should_restart_media)
 			should_restart_media |= strcmp(s->input, input) != 0;
@@ -424,6 +435,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		s->reconnect_delay_sec = (int)obs_data_get_int(settings, "reconnect_delay_sec");
 		s->reconnect_delay_sec = s->reconnect_delay_sec == 0 ? 10 : s->reconnect_delay_sec;
 		is_looping = false;
+		sync_to_timecodes = obs_data_get_bool(settings, "sync_to_timecodes");
 	}
 
 	stop_reconnect_thread(s);
@@ -437,6 +449,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	/* Restart media source if these properties are changed */
 	if (s->is_hw_decoding != is_hw_decoding || s->range != range || s->speed_percent != speed_percent ||
+	    s->sync_to_timecodes != sync_to_timecodes ||
 	    (s->ffmpeg_options && strcmp(s->ffmpeg_options, ffmpeg_options) != 0))
 		should_restart_media = true;
 
@@ -456,6 +469,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->input_format = input_format ? bstrdup(input_format) : NULL;
 	s->is_hw_decoding = is_hw_decoding;
 	s->full_decode = obs_data_get_bool(settings, "full_decode");
+	s->sync_to_timecodes = sync_to_timecodes;
 	s->is_clear_on_media_end = obs_data_get_bool(settings, "clear_on_media_end");
 	s->restart_on_activate = !astrcmpi_n(input, RIST_PROTO, sizeof(RIST_PROTO) - 1)
 					 ? false
