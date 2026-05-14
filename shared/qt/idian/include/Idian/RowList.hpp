@@ -17,14 +17,39 @@
 
 #pragma once
 
-// Idian - A family of custom widgets for OBS implementing the "Yami" UI design.
-//
-// (OBS Idian, get it?)
-
-#include <Idian/CheckBox.hpp>
-#include <Idian/ComboBox.hpp>
-#include <Idian/DoubleSpinBox.hpp>
-#include <Idian/RowList.hpp>
 #include <Idian/Row.hpp>
-#include <Idian/SpinBox.hpp>
-#include <Idian/ToggleSwitch.hpp>
+#include <Idian/Utils.hpp>
+
+#include <QFrame>
+#include <QLayout>
+#include <QWidget>
+
+namespace idian {
+class RowList : public QFrame {
+	Q_OBJECT
+
+public:
+	RowList(QWidget *parent = nullptr);
+
+	void addHeader(QWidget *widget);
+	void addRow(QWidget *row);
+	void clear();
+
+private:
+	QWidget *first = nullptr;
+	QWidget *last = nullptr;
+
+	QVBoxLayout *layout;
+	QVBoxLayout *rowLayout;
+};
+
+// Spacer with only cosmetic functionality
+class RowListSpacer : public QFrame {
+	Q_OBJECT
+public:
+	RowListSpacer(QWidget *parent = nullptr) : QFrame(parent)
+	{
+		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+	}
+};
+} // namespace idian

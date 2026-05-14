@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,43 +15,38 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
-
+#include <Idian/ExpandButton.hpp>
 #include <Idian/Utils.hpp>
 
-#include <QFrame>
-#include <QLayout>
-#include <QWidget>
+#include <QStyleOptionButton>
+#include <QPainter>
 
 namespace idian {
-class GenericRow;
+ExpandButton::ExpandButton(QWidget *parent) : QAbstractButton(parent)
+{
+	widgetUtils = new Utils(this);
+	widgetUtils->applyStateStylingEventFilter(this);
 
-class PropertiesList : public QFrame {
-	Q_OBJECT
+	setCheckable(true);
+}
 
-public:
-	PropertiesList(QWidget *parent = nullptr);
+void ExpandButton::paintEvent(QPaintEvent *)
+{
+	QStyleOptionButton opt;
+	opt.initFrom(this);
+	QPainter p(this);
 
-	void addRow(GenericRow *row);
-	void clear();
+	bool checked = isChecked();
 
-	QList<GenericRow *> rows() const { return rowsList; }
+	opt.state.setFlag(QStyle::State_On, checked);
+	opt.state.setFlag(QStyle::State_Off, !checked);
 
-private:
-	GenericRow *first = nullptr;
-	GenericRow *last = nullptr;
+	opt.state.setFlag(QStyle::State_Sunken, checked);
 
-	QVBoxLayout *layout;
-	QList<GenericRow *> rowsList;
-};
+	p.setRenderHint(QPainter::Antialiasing, true);
+	p.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
-// Spacer with only cosmetic functionality
-class PropertiesListSpacer : public QFrame {
-	Q_OBJECT
-public:
-	PropertiesListSpacer(QWidget *parent = nullptr) : QFrame(parent)
-	{
-		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-	}
-};
+	style()->drawPrimitive(QStyle::PE_PanelButtonCommand, &opt, &p, this);
+	style()->drawPrimitive(QStyle::PE_IndicatorCheckBox, &opt, &p, this);
+}
 } // namespace idian
