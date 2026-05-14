@@ -2111,6 +2111,21 @@ OBS::HealthCheckService *OBSApp::healthService()
 	return healthService_;
 }
 
+void OBSApp::openHealthCheckDialog()
+{
+	if (!mainWindow) {
+		return;
+	}
+
+	if (!healthCheckDialog) {
+		healthCheckDialog = new HealthCheckDialog(mainWindow);
+		healthCheckDialog->setAttribute(Qt::WA_DeleteOnClose);
+		healthCheckDialog->show();
+	} else {
+		healthCheckDialog->raise();
+	}
+}
+
 void OBSApp::pluginManagerOpenDialog()
 {
 	pluginManager_->open();
