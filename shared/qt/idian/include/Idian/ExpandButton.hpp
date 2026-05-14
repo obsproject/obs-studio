@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,26 +17,18 @@
 
 #pragma once
 
-#include <QFrame>
-#include <QLayout>
-#include <QPushButton>
-#include <QSpinBox>
+#include <Idian/InlineButton.hpp>
+
+#include <QAbstractButton>
+
+class QPixmap;
 
 namespace idian {
 
-class SpinBox : public QFrame {
-	Q_OBJECT;
+class ExpandButton : public InlineButton {
+	Q_OBJECT
 
 public:
-	SpinBox(QWidget *parent = nullptr);
-
-	QSpinBox *spinBox() const { return sbox; }
-
-private:
-	QHBoxLayout *layout;
-	QPushButton *decr;
-	QPushButton *incr;
-	QSpinBox *sbox;
+	explicit ExpandButton(QWidget *parent = nullptr);
 };
-
 } // namespace idian
