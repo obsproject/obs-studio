@@ -106,6 +106,10 @@ void OBSMissingFiles::saveFiles()
 		}
 	}
 
+	if (filesModel->found() == filesModel->files.length()) {
+		emit allFilesResolved();
+	}
+
 	QDialog::accept();
 }
 
