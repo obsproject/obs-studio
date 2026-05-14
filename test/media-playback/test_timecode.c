@@ -55,7 +55,7 @@ static bool parses_60hz_s12m_timecode(void)
 	};
 	int64_t timestamp = 0;
 	const int64_t frame_duration = 16683333;
-	const int64_t expected = ((1 * 60 + 2) * 60 + 3) * NSEC_PER_SEC + 11 * frame_duration;
+	const int64_t expected = (((1 * 60 + 2) * 60 + 3) * 60 + 11) * frame_duration;
 
 	return mp_s12m_timecode_parse((const uint8_t *)data, sizeof(data), (AVRational){60000, 1001}, frame_duration,
 				      &timestamp) &&
@@ -78,6 +78,34 @@ static bool parses_drop_frame_s12m_timecode(void)
 	return mp_s12m_timecode_parse((const uint8_t *)data, sizeof(data), (AVRational){30000, 1001}, frame_duration,
 				      &timestamp) &&
 	       timestamp == expected;
+}
+
+static bool keeps_fractional_s12m_frame_cadence(void)
+{
+	uint32_t frame29[] = {
+		1,
+		s12m_timecode(0, 0, 0, 29),
+		0,
+		0,
+	};
+	uint32_t frame30[] = {
+		1,
+		s12m_timecode(0, 0, 1, 0),
+		0,
+		0,
+	};
+	int64_t first = 0;
+	int64_t second = 0;
+	const int64_t frame_duration = 33366667;
+
+	if (!mp_s12m_timecode_parse((const uint8_t *)frame29, sizeof(frame29), (AVRational){30000, 1001},
+				    frame_duration, &first))
+		return false;
+	if (!mp_s12m_timecode_parse((const uint8_t *)frame30, sizeof(frame30), (AVRational){30000, 1001},
+				    frame_duration, &second))
+		return false;
+
+	return second - first == frame_duration;
 }
 
 static bool rejects_invalid_s12m_count(void)
@@ -163,6 +191,11 @@ int main(void)
 
 	if (!parses_drop_frame_s12m_timecode()) {
 		fprintf(stderr, "parses_drop_frame_s12m_timecode failed\n");
+		return 1;
+	}
+
+	if (!keeps_fractional_s12m_frame_cadence()) {
+		fprintf(stderr, "keeps_fractional_s12m_frame_cadence failed\n");
 		return 1;
 	}
 

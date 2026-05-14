@@ -41,6 +41,12 @@ static uint32_t timecode_frame_count(AVRational frame_rate)
 	return frames > 0 && frames <= UINT32_MAX ? (uint32_t)frames : 0;
 }
 
+static int64_t timecode_frame_number(uint32_t hours, uint32_t minutes, uint32_t seconds, uint32_t frames,
+				     uint32_t frame)
+{
+	return ((hours * 60LL + minutes) * 60LL + seconds) * frames + frame;
+}
+
 static bool read_s12m_timecode(uint32_t timecode, AVRational frame_rate, int64_t frame_duration, int64_t *timestamp)
 {
 	uint32_t hours = 0;
@@ -74,16 +80,16 @@ static bool read_s12m_timecode(uint32_t timecode, AVRational frame_rate, int64_t
 	if (drop_frame) {
 		const uint32_t drop_frames = frames / 30 * 2;
 		const uint32_t total_minutes = hours * 60 + minutes;
-		int64_t frame_count = 0;
+		const int64_t frame_count = timecode_frame_number(hours, minutes, seconds, frames, frame);
 
 		if (!drop_frames || frames % 30)
 			return false;
 		if (seconds == 0 && minutes % 10 && frame < drop_frames)
 			return false;
 
-		frame_count = ((hours * 60LL + minutes) * 60LL + seconds) * frames + frame -
-			      drop_frames * (total_minutes - total_minutes / 10);
-		*timestamp = frame_count * frame_duration;
+		*timestamp = (frame_count - drop_frames * (total_minutes - total_minutes / 10)) * frame_duration;
+	} else if (av_cmp_q(frame_rate, (AVRational){frames, 1}) != 0) {
+		*timestamp = timecode_frame_number(hours, minutes, seconds, frames, frame) * frame_duration;
 	} else {
 		*timestamp = ((hours * 60LL + minutes) * 60LL + seconds) * NSEC_PER_SEC + frame * frame_duration;
 	}
