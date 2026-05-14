@@ -983,6 +983,15 @@ StatusBarWidget > QFrame {
     padding: 0px var(--padding_xlarge) var(--padding_small);
 }
 
+StatusBarWidget #healthFrame {
+    border-left-width: 0px;
+    border-right-width: 1px;
+}
+
+StatusBarWidget QPushButton {
+    padding: 0px var(--padding_xlarge);
+}
+
 /* Group Box */
 
 QGroupBox {
