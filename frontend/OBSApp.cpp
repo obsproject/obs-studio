@@ -21,6 +21,7 @@
 #include <dialogs/LogUploadDialog.hpp>
 #include <plugin-manager/PluginManager.hpp>
 #include <utility/CrashHandler.hpp>
+#include <utility/HealthCheckService.hpp>
 #include <utility/OBSEventFilter.hpp>
 #include <utility/OBSProxyStyle.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
@@ -1266,7 +1267,6 @@ bool OBSApp::OBSInit()
 	thumbnailManager = new ThumbnailManager(this);
 
 	mainWindow = new OBSBasic();
-
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 
 #ifndef __APPLE__
@@ -1995,6 +1995,15 @@ void OBSApp::loadAppModules(struct obs_module_failure_info &mfi)
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 	pluginManager_->postLoad();
+}
+
+OBS::HealthCheckService *OBSApp::healthService()
+{
+	if (healthService_.isNull()) {
+		healthService_ = new OBS::HealthCheckService(this);
+	}
+
+	return healthService_;
 }
 
 void OBSApp::pluginManagerOpenDialog()

@@ -51,6 +51,7 @@ class CrashHandler;
 
 enum class LogFileType { NoType, CurrentAppLog, LastAppLog, CrashLog };
 enum class LogFileState { NoState, New, Uploaded };
+class HealthCheckService;
 class PluginManager;
 } // namespace OBS
 
@@ -92,6 +93,7 @@ private:
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 
 	ThumbnailManager *thumbnailManager = nullptr;
+	QPointer<OBS::HealthCheckService> healthService_;
 
 	std::unique_ptr<OBS::PluginManager> pluginManager_;
 
@@ -232,6 +234,7 @@ public:
 
 	void loadAppModules(struct obs_module_failure_info &mfi);
 
+	OBS::HealthCheckService *healthService();
 	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 	// Plugin Manager Accessors
