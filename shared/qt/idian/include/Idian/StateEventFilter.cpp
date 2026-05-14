@@ -102,7 +102,8 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 
 	if (updateIconColors) {
 		// Delay icon update
-		QTimer::singleShot(0, this, [this, widget]() { utils->applyColorToIcon(widget); });
+		QMetaObject::invokeMethod(
+			this, [this, widget]() { utils->applyColorToIcon(widget); }, Qt::QueuedConnection);
 	}
 
 	return QObject::eventFilter(obj, event);
