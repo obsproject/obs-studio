@@ -333,6 +333,74 @@
     color: var(--green3);
 }
 
+/* Color styles */
+QWidget.primary {
+    background: var(--blue5);
+    border: 1px solid var(--blue3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.secondary {
+    background: var(--teal5);
+    border: 1px solid var(--teal3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.info {
+    background: var(--grey8);
+    border: 1px solid var(--grey6);
+    border-radius: var(--border_radius);
+}
+
+QWidget.success {
+    background: var(--green5);
+    border: 1px solid var(--green3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.warning {
+    background: var(--yellow5);
+    border: 1px solid var(--yellow3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.danger {
+    background: var(--red5);
+    border: 1px solid var(--red3);
+    border-radius: var(--border_radius);
+}
+
+QPushButton.primary:hover {
+    background-color: var(--blue4);
+    border-color: var(--blue2);
+}
+
+QPushButton.secondary:hover {
+    background-color: var(--teal4);
+    border-color: var(--teal2);
+}
+
+QPushButton.info:hover {
+    background-color: var(--grey7);
+    border-color: var(--grey4);
+}
+
+QPushButton.success:hover {
+    background-color: var(--green4);
+    border-color: var(--green2);
+}
+
+QPushButton.warning:hover {
+    background-color: var(--yellow4);
+    border-color: var(--yellow2);
+}
+
+QPushButton.danger:hover {
+    background-color: var(--red4);
+    border-color: var(--red2);
+}
+
+
 .frame-notice {
     background: var(--grey8);
     border: 1px solid var(--grey6);
