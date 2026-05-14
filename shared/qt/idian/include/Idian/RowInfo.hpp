@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,55 +17,38 @@
 
 #pragma once
 
-#include <Idian/PropertiesList.hpp>
-#include <Idian/Row.hpp>
-#include <Idian/ToggleSwitch.hpp>
-
-#include <QLabel>
-#include <QLayout>
-#include <QMouseEvent>
 #include <QWidget>
 
-namespace idian {
+class QLabel;
+class QVBoxLayout;
 
-class Group : public QFrame, public Utils {
+namespace idian {
+class Utils;
+
+class RowInfo : public QWidget {
 	Q_OBJECT
 
 public:
-	Group(QWidget *parent = nullptr);
+	RowInfo(QWidget *parent);
+	RowInfo(QWidget *parent, QString title);
+	RowInfo(QWidget *parent, QString title, QString description);
+	~RowInfo() = default;
 
-	PropertiesList *properties() const { return propertyList; }
-
-	void addRow(GenericRow *row) const;
-
-	void setTitle(QString name);
-	void setDescription(QString desc);
+	void setTitle(const QString &title);
+	void setDescription(const QString &description);
 
 	void showTitle(bool visible);
 	void showDescription(bool visible);
 
-	void setCheckable(bool check);
-	bool isCheckable() { return checkable; }
+	QLabel *title() { return nameLabel; }
+	QLabel *description() { return descriptionLabel; }
 
 private:
-	QVBoxLayout *layout = nullptr;
+	Utils *widgetUtils;
 
-	QWidget *headerContainer = nullptr;
-	QHBoxLayout *headerLayout = nullptr;
-	QWidget *labelContainer = nullptr;
-	QVBoxLayout *labelLayout = nullptr;
-	QWidget *controlContainer = nullptr;
-	QVBoxLayout *controlLayout = nullptr;
-
-	QWidget *contentsContainer = nullptr;
-	QVBoxLayout *contentsLayout = nullptr;
+	QVBoxLayout *layout_ = nullptr;
 
 	QLabel *nameLabel = nullptr;
 	QLabel *descriptionLabel = nullptr;
-
-	PropertiesList *propertyList = nullptr;
-
-	ToggleSwitch *toggleSwitch = nullptr;
-	bool checkable = false;
 };
 } // namespace idian
