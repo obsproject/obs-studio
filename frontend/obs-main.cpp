@@ -73,7 +73,6 @@ bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
 bool opt_disable_updater = false;
-bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -990,9 +989,6 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {
 			opt_disable_updater = true;
 
-		} else if (arg_is(argv[i], "--disable-missing-files-check", nullptr)) {
-			opt_disable_missing_files_check = true;
-
 		} else if (arg_is(argv[i], "--steam", nullptr)) {
 			steam = true;
 
@@ -1018,8 +1014,7 @@ int main(int argc, char *argv[])
 				"--verbose: Make log more verbose.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"
 				"--unfiltered_log: Make log unfiltered.\n\n"
-				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
-				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n";
+				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n";
 
 #ifdef _WIN32
 			MessageBoxA(NULL, help.c_str(), "Help", MB_OK | MB_ICONASTERISK);
@@ -1045,11 +1040,6 @@ int main(int argc, char *argv[])
 	if (!opt_disable_updater) {
 		opt_disable_updater = os_file_exists(BASE_PATH "/disable_updater") ||
 				      os_file_exists(BASE_PATH "/disable_updater.txt");
-	}
-
-	if (!opt_disable_missing_files_check) {
-		opt_disable_missing_files_check = os_file_exists(BASE_PATH "/disable_missing_files_check") ||
-						  os_file_exists(BASE_PATH "/disable_missing_files_check.txt");
 	}
 #endif
 

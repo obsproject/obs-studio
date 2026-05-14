@@ -72,7 +72,6 @@ extern bool safe_mode;
 extern bool multi;
 extern bool disable_3p_plugins;
 extern bool opt_disable_updater;
-extern bool opt_disable_missing_files_check;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
 
@@ -1340,11 +1339,6 @@ bool OBSApp::IsPortableMode()
 bool OBSApp::IsUpdaterDisabled()
 {
 	return opt_disable_updater;
-}
-
-bool OBSApp::IsMissingFilesCheckDisabled()
-{
-	return opt_disable_missing_files_check;
 }
 
 #ifdef __APPLE__

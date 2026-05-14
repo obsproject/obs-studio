@@ -50,4 +50,7 @@ private:
 
 public slots:
 	void dataChanged();
+
+signals:
+	void allFilesResolved();
 };

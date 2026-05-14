@@ -199,7 +199,6 @@ public:
 	std::string GetVersionString(bool platform = true) const;
 	bool IsPortableMode();
 	bool IsUpdaterDisabled();
-	bool IsMissingFilesCheckDisabled();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
