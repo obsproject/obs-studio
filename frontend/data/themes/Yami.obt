@@ -2854,3 +2854,20 @@ AlignmentSelector::indicator:disabled {
 AlignmentSelector::indicator:checked:disabled {
     background: var(--grey3);
 }
+
+HealthCheckWidget idian--RowList {
+    border-radius: 0;
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+HealthCheckWidget idian--RowList idian--Row {
+    padding: var(--action_row_padding) var(--action_row_padding_x);
+}
+
+HealthCheckStatusLabel {
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    padding: var(--padding_large) var(--padding_xlarge);
+    font-weight: bold;
+}

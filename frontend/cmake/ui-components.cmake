@@ -44,6 +44,10 @@ target_sources(
     components/FocusList.hpp
     components/GameCaptureToolbar.cpp
     components/GameCaptureToolbar.hpp
+    components/HealthCheckInfoRow.cpp
+    components/HealthCheckInfoRow.hpp
+    components/HealthCheckStatusLabel.cpp
+    components/HealthCheckStatusLabel.hpp
     components/ImageSourceToolbar.cpp
     components/ImageSourceToolbar.hpp
     components/MediaControls.cpp

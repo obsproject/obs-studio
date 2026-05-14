@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <dialogs/HealthCheckDialog.hpp>
 #include <utility/NativeEventFilter.hpp>
 #include <utility/OBSTheme.hpp>
 #include <utility/ThumbnailManager.hpp>
@@ -94,6 +95,7 @@ private:
 
 	ThumbnailManager *thumbnailManager = nullptr;
 	QPointer<OBS::HealthCheckService> healthService_;
+	QPointer<HealthCheckDialog> healthCheckDialog;
 
 	std::unique_ptr<OBS::PluginManager> pluginManager_;
 
@@ -235,6 +237,8 @@ public:
 	void loadAppModules(struct obs_module_failure_info &mfi);
 
 	OBS::HealthCheckService *healthService();
+	void openHealthCheckDialog();
+
 	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 	// Plugin Manager Accessors
