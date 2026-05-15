@@ -94,13 +94,13 @@ void OBSPropertiesView::ReloadProperties()
 		OBSObject strongObj = GetObject();
 		void *obj = strongObj ? strongObj.Get() : rawObj;
 		if (obj)
-			properties.reset(reloadCallback(obj));
+			properties = reloadCallback(obj);
 	} else {
-		properties.reset(reloadCallback((void *)type.c_str()));
-		obs_properties_apply_settings(properties.get(), settings);
+		properties = reloadCallback((void *)type.c_str());
+		obs_properties_apply_settings(properties, settings);
 	}
 
-	uint32_t flags = obs_properties_get_flags(properties.get());
+	uint32_t flags = obs_properties_get_flags(properties);
 	deferUpdate = enableDefer && (flags & OBS_PROPERTIES_DEFER_UPDATE) != 0;
 
 	RefreshProperties();
@@ -128,7 +128,7 @@ void OBSPropertiesView::RefreshProperties()
 
 	layout->setLabelAlignment(Qt::AlignRight);
 
-	obs_property_t *property = obs_properties_first(properties.get());
+	obs_property_t *property = obs_properties_first(properties);
 	bool hasNoProperties = !property;
 
 	while (property) {
@@ -195,7 +195,6 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj, Prope
 				     PropertiesUpdateCallback callback_, PropertiesVisualUpdateCb visUpdateCb_,
 				     int minSize_)
 	: VScrollArea(nullptr),
-	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
 	  weakObj(obs_object_get_weak_object(obj)),
 	  reloadCallback(reloadCallback),
@@ -211,7 +210,6 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesRel
 				     PropertiesUpdateCallback callback_, PropertiesVisualUpdateCb visUpdateCb_,
 				     int minSize_)
 	: VScrollArea(nullptr),
-	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
 	  rawObj(obj),
 	  reloadCallback(reloadCallback),
@@ -226,7 +224,6 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesRel
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, PropertiesReloadCallback reloadCallback_,
 				     int minSize_)
 	: VScrollArea(nullptr),
-	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
 	  type(type_),
 	  reloadCallback(reloadCallback_),
@@ -1171,7 +1168,7 @@ static QWidget *CreateRationalFPS(OBSFrameRatePropertyWidget *fpsProps, bool &se
 }
 
 static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop, bool &warning, const char *option,
-							 media_frames_per_second *current_fps,
+							 int fps_selector_mode, media_frames_per_second *current_fps,
 							 frame_rate_ranges_t &fps_ranges)
 {
 	auto widget = new OBSFrameRatePropertyWidget{};
@@ -1201,7 +1198,6 @@ static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop, b
 			continue;
 
 		option_found = true;
-		combo->setCurrentIndex(combo->count() - 1);
 	}
 
 	hlayout->addWidget(combo, 0, Qt::AlignTop);
@@ -1217,22 +1213,24 @@ static OBSFrameRatePropertyWidget *CreateFrameRateWidget(obs_property_t *prop, b
 			return;
 
 		match_found = true;
-
-		stack->setCurrentIndex(stack->count() - 1);
-		combo->setCurrentIndex(stack->count() - 1);
 	};
 
 	AddWidget(CreateSimpleFPSValues);
 	AddWidget(CreateRationalFPS);
 	stack->addWidget(new QWidget{});
 
-	if (option_found)
+	// When possible, use the previously selected FPS selector mode (typically simple or rational). If a consumer has
+	// created extra selection modes and our stored value is out of bounds, fall back to the trailing values for the mode
+	// selector and the corresponding FPS selector.
+	if (fps_selector_mode < combo->count() && fps_selector_mode < stack->count()) {
+		combo->setCurrentIndex(fps_selector_mode);
+		stack->setCurrentIndex(fps_selector_mode);
+	} else {
+		combo->setCurrentIndex(combo->count() - 1);
 		stack->setCurrentIndex(stack->count() - 1);
-	else if (!match_found) {
-		int idx = current_fps ? 1 : 0; // Rational for "unsupported"
-					       // Simple as default
-		stack->setCurrentIndex(idx);
-		combo->setCurrentIndex(idx);
+	}
+
+	if (!match_found) {
 		warning = true;
 	}
 
@@ -1367,7 +1365,9 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		fps_ranges.emplace_back(obs_property_frame_rate_fps_range_min(prop, i),
 					obs_property_frame_rate_fps_range_max(prop, i));
 
-	auto widget = CreateFrameRateWidget(prop, warning, option, valid_fps, fps_ranges);
+	int selector_mode = obs_data_get_int(settings, "fps_selector_mode");
+
+	auto widget = CreateFrameRateWidget(prop, warning, option, selector_mode, valid_fps, fps_ranges);
 	auto info = new WidgetInfo(this, prop, widget);
 
 	widget->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -1643,6 +1643,8 @@ static bool FrameRateChanged(QWidget *widget, const char *name, OBSData &setting
 	};
 	unique_ptr<void, decltype(StopUpdating)> signalGuard(static_cast<void *>(w), StopUpdating);
 	w->updating = true;
+
+	obs_data_set_int(w->settings, "fps_selector_mode", w->modeSelect->currentIndex());
 
 	if (!obs_data_has_user_value(settings, name))
 		obs_data_set_obj(settings, name, nullptr);

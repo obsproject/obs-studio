@@ -86,12 +86,9 @@ class OBSPropertiesView : public VScrollArea {
 
 	friend class WidgetInfo;
 
-	using properties_delete_t = decltype(&obs_properties_destroy);
-	using properties_t = std::unique_ptr<obs_properties_t, properties_delete_t>;
-
 private:
 	QWidget *widget = nullptr;
-	properties_t properties;
+	OBSProperties properties;
 	OBSData settings;
 	OBSWeakObjectAutoRelease weakObj;
 	void *rawObj = nullptr;
