@@ -44,16 +44,16 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
 	  ui(new Ui::OBSBasicFilters),
 	  source(source_),
-	  addSignal(obs_source_get_signal_handler(source), "filter_add", OBSBasicFilters::OBSSourceFilterAdded, this),
-	  removeSignal(obs_source_get_signal_handler(source), "filter_remove", OBSBasicFilters::OBSSourceFilterRemoved,
-		       this),
-	  reorderSignal(obs_source_get_signal_handler(source), "reorder_filters", OBSBasicFilters::OBSSourceReordered,
-			this),
-	  removeSourceSignal(obs_source_get_signal_handler(source), "remove", OBSBasicFilters::SourceRemoved, this),
-	  renameSourceSignal(obs_source_get_signal_handler(source), "rename", OBSBasicFilters::SourceRenamed, this),
 	  noPreviewMargin(13)
 {
 	main = OBSBasic::Get();
+
+	signal_handler_t *handler = obs_source_get_signal_handler(source);
+	obsSignals.emplace_back(handler, "filter_add", OBSBasicFilters::OBSSourceFilterAdded, this);
+	obsSignals.emplace_back(handler, "filter_remove", OBSBasicFilters::OBSSourceFilterRemoved, this);
+	obsSignals.emplace_back(handler, "reorder_filters", OBSBasicFilters::OBSSourceReordered, this);
+	obsSignals.emplace_back(handler, "remove", OBSBasicFilters::SourceRemoved, this);
+	obsSignals.emplace_back(handler, "rename", OBSBasicFilters::SourceRenamed, this);
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
@@ -76,10 +76,10 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	installEventFilter(CreateShortcutFilter());
 
-	connect(ui->asyncFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor,
+	connect(ui->asyncFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor, this,
 		[this](QWidget *editor) { FilterNameEdited(editor, ui->asyncFilters); });
 
-	connect(ui->effectFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor,
+	connect(ui->effectFilters->itemDelegate(), &QAbstractItemDelegate::closeEditor, this,
 		[this](QWidget *editor) { FilterNameEdited(editor, ui->effectFilters); });
 
 	QPushButton *close = ui->buttonBox->button(QDialogButtonBox::Close);
@@ -133,7 +133,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		ui->rightLayout->setContentsMargins(0, 0, 0, 0);
 		ui->preview->show();
 		if (drawable_type)
-			connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+			connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
 	} else {
 		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
 		ui->preview->hide();
@@ -486,7 +486,7 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 
 		QAction *popupItem = new QAction(QT_UTF8(type.name.c_str()), this);
 		popupItem->setData(QT_UTF8(type.type.c_str()));
-		connect(popupItem, &QAction::triggered, [this, type]() { AddNewFilter(type.type.c_str()); });
+		connect(popupItem, &QAction::triggered, this, [this, type]() { AddNewFilter(type.type.c_str()); });
 		popup->addAction(popupItem);
 
 		foundValues = true;
@@ -947,7 +947,7 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 	QListWidgetItem *listItem = list->currentItem();
 	OBSSource filter = listItem->data(Qt::UserRole).value<OBSSource>();
 	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
-	string name = QT_TO_UTF8(edit->text().trimmed());
+	string name = edit->text().trimmed().toStdString();
 
 	const char *prevName = obs_source_get_name(filter);
 	bool sameName = (name == prevName);

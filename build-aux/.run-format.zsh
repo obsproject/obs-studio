@@ -92,15 +92,22 @@ invoke_formatter() {
       }
       ;;
     gersemi)
-      local formatter=gersemi
-      if (( ${+commands[gersemi]} )) {
-        local gersemi_version=($(gersemi --version))
 
-        if ! is-at-least 0.21.0 ${gersemi_version[2]}; then
-          log_error "gersemi is not version 0.21.0 or above (found ${gersemi_version[2]}."
-          exit 2
-        fi
+      if (( ${+commands[gersemi-0.25]} )) {
+        local formatter=gersemi-0.25
+      } elif (( ${+commands[gersemi]} )) {
+        local formatter=gersemi
+      } else {
+        log_error "No viable gersemi version found (required 0.25.0)"
+        exit 2
       }
+
+      local gersemi_version=($(${formatter} --version))
+
+      if ! is-at-least 0.25.0 ${gersemi_version[2]}; then
+        log_error "gersemi is not version 0.25.0 or above (found ${gersemi_version[2]}."
+        exit 2
+      fi
 
       if (( ! #source_files )) source_files=(CMakeLists.txt (libobs|libobs-*|frontend|plugins|deps|shared|cmake|test)/**/(CMakeLists.txt|*.cmake)(.N))
 
@@ -112,16 +119,29 @@ invoke_formatter() {
         local -a source_files=($@)
         local file
         local -a command=(${formatter} -c --no-cache ${source_files})
+        local -i in_error=0
 
         if (( ${#source_files} )) {
           while read -r line; do
             local -a line_tokens=(${(z)line})
             if (( #line_tokens )) {
-              file=${line_tokens[1]//*${project_root}\//}
+              file=${line_tokens[1]}
 
-              log_error "${file} requires formatting changes."
+              if [[ -r ${file} ]] {
+                in_error=0
+                file=${file//*${project_root}\//}
+
+                log_error "${file} requires formatting changes."
+              } else {
+                if (( in_error )) {
+                  log_output "${line}"
+                } else {
+                  log_error "${line}"
+                }
+                in_error=1
+              }
             } else {
-              log_error "${line}"
+              log_output "${line}"
             }
 
             if (( fail_on_error == 2 )) return 2

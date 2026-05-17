@@ -168,6 +168,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 {
 	obs_scene_t *scene = obs_scene_from_source(source);
 
+	bool foundItem = false;
 	QListWidgetItem *sel = nullptr;
 	int count = ui->scenes->count();
 
@@ -177,6 +178,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 		if (cur_scene != scene)
 			continue;
 
+		foundItem = true;
 		sel = item;
 		break;
 	}
@@ -195,7 +197,9 @@ void OBSBasic::RemoveScene(OBSSource source)
 		OBSProjector::UpdateMultiviewProjectors();
 	}
 
-	OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
+	if (foundItem) {
+		OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
+	}
 }
 
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
@@ -492,16 +496,21 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current, QListWidge
 {
 	OBSSource source;
 
+	bool forceSceneChange = false;
+
 	if (current) {
 		OBSScene scene = GetOBSRef<OBSScene>(current);
 		source = obs_scene_get_source(scene);
+
+		bool oldSceneIsRemoved = obs_source_removed(obs_scene_get_source(currentScene));
+		forceSceneChange = oldSceneIsRemoved;
 
 		currentScene = scene;
 	} else {
 		currentScene = NULL;
 	}
 
-	SetCurrentScene(source);
+	SetCurrentScene(source, forceSceneChange);
 
 	if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
 		outputHandler->UpdateVirtualCamOutputSource();
@@ -536,7 +545,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		copyFilters->setEnabled(false);
 		connect(copyFilters, &QAction::triggered, this, &OBSBasic::SceneCopyFilters);
 		QAction *pasteFilters = new QAction(QTStr("Paste.Filters"), this);
-		pasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource));
+		pasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource()));
 		connect(pasteFilters, &QAction::triggered, this, &OBSBasic::ScenePasteFilters);
 
 		popup.addSeparator();
@@ -596,7 +605,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			OBSProjector::UpdateMultiviewProjectors();
 		};
 
-		connect(multiviewAction, &QAction::triggered, std::bind(showInMultiview, data.Get()));
+		connect(multiviewAction, &QAction::triggered, multiviewAction, std::bind(showInMultiview, data.Get()));
 
 		copyFilters->setEnabled(obs_source_filter_count(source) > 0);
 	}
@@ -894,7 +903,7 @@ void OBSBasic::SceneNameEdited(QWidget *editor)
 {
 	OBSScene scene = GetCurrentScene();
 	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
-	string text = QT_TO_UTF8(edit->text().trimmed());
+	string text = edit->text().trimmed().toStdString();
 
 	if (!scene)
 		return;

@@ -47,6 +47,7 @@
 
 #include <qt-wrappers.hpp>
 
+#include <nlohmann/json.hpp>
 #include <QDesktopServices>
 
 #ifdef _WIN32
@@ -120,10 +121,11 @@ void OBSBasic::ResetUI()
 {
 	bool studioPortraitLayout = config_get_bool(App()->GetUserConfig(), "BasicWindow", "StudioPortraitLayout");
 
-	if (studioPortraitLayout)
+	if (studioPortraitLayout) {
 		ui->previewLayout->setDirection(QBoxLayout::BottomToTop);
-	else
+	} else {
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+	}
 
 	UpdatePreviewProgramIndicators();
 }
@@ -274,7 +276,8 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadTy
 	ui->menuLogFiles->setEnabled(false);
 
 	stringstream ss;
-	ss << "OBS " << App()->GetVersionString(false) << " log file uploaded at " << CurrentDateTimeString() << "\n\n"
+	ss << "OBS " << App()->GetVersionString(false) << " log file uploaded at " << CurrentDateTimeString()
+	   << ((uploadType == OBS::LogFileType::CurrentAppLog) ? " (Active Log)" : " (Complete Log)") << "\n\n"
 	   << fileString;
 
 	if (logUploadThread) {
@@ -285,9 +288,10 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadTy
 
 	logUploadThread.reset(thread);
 
-	connect(thread, &RemoteTextThread::Result, this, [this, uploadType](const QString &text, const QString &error) {
-		logUploadFinished(text, error, uploadType);
-	});
+	connect(thread, &RemoteTextThread::Result, this,
+		[this, uploadType](const std::string &text, const std::string &error) {
+			logUploadFinished(text, error, uploadType);
+		});
 
 	logUploadThread->start();
 }
@@ -382,18 +386,17 @@ void OBSBasic::on_actionRestartSafe_triggered()
 	}
 }
 
-void OBSBasic::logUploadFinished(const QString &text, const QString &error, LogUploadType uploadType)
+void OBSBasic::logUploadFinished(const std::string &text, const std::string &error, LogUploadType uploadType)
 {
 	OBSApp *app = App();
 
-	if (text.isEmpty()) {
-		emit app->logUploadFailed(uploadType, error);
+	if (text.empty()) {
+		emit app->logUploadFailed(uploadType, QString::fromStdString(error));
 	} else {
-		OBSDataAutoRelease returnData = obs_data_create_from_json(QT_TO_UTF8(text));
-		string resURL = obs_data_get_string(returnData, "url");
-		QString logURL = resURL.c_str();
+		nlohmann::json parsed = nlohmann::json::parse(text);
+		std::string logURL = parsed["url"];
 
-		emit app->logUploadFinished(uploadType, logURL);
+		emit app->logUploadFinished(uploadType, QString::fromStdString(logURL));
 	}
 }
 
@@ -488,7 +491,7 @@ void OBSBasic::CreateEditTransformWindow(obs_sceneitem_t *item)
 	if (transformWindow)
 		transformWindow->close();
 	transformWindow = new OBSBasicTransform(item, this);
-	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::OnSceneChanged);
+	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::onSceneChanged);
 	transformWindow->show();
 	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
@@ -520,9 +523,9 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 {
 	ui->sourcesToolbar->setVisible(visible);
 	ui->scenesToolbar->setVisible(visible);
-	ui->mixerToolbar->setVisible(visible);
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowListboxToolbars", visible);
+	emit userSettingChanged("BasicWindow", "ShowListboxToolbars");
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)
@@ -675,8 +678,6 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 			ui->scenes->customContextMenuRequested(globalPos);
 		} else if (objName.compare("sourcesDock") == 0) {
 			ui->sources->customContextMenuRequested(globalPos);
-		} else if (objName.compare("mixerDock") == 0) {
-			StackedMixerAreaContextMenuRequested();
 		}
 	} else if (!className) {
 		ui->menuDocks->exec(globalPos);

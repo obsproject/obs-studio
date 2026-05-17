@@ -109,8 +109,7 @@ if(PC_MbedTLS_VERSION VERSION_GREATER 0)
   set(MbedTLS_VERSION ${PC_MbedTLS_VERSION})
 elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h")
   file(
-    STRINGS
-    "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h"
+    STRINGS "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h"
     _VERSION_STRING
     REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
   )
@@ -123,8 +122,7 @@ elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h")
   )
 elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h")
   file(
-    STRINGS
-    "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h"
+    STRINGS "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h"
     _VERSION_STRING
     REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
   )

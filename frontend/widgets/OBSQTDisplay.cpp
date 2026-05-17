@@ -102,8 +102,8 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags) : QWidget(par
 		obs_display_resize(display, size.width(), size.height());
 	};
 
-	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
-	connect(windowHandle(), &QWindow::screenChanged, screenChanged);
+	connect(windowHandle(), &QWindow::visibleChanged, this, windowVisible);
+	connect(windowHandle(), &QWindow::screenChanged, this, screenChanged);
 
 	windowHandle()->installEventFilter(new SurfaceEventFilter(this));
 }

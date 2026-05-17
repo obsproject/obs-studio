@@ -202,16 +202,14 @@ macro(FFmpeg_check_version)
   elseif(EXISTS "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version.h")
     if(EXISTS "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version_major.h")
       file(
-        STRINGS
-        "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version_major.h"
+        STRINGS "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version_major.h"
         _version_string
         REGEX "^.*VERSION_MAJOR[ \t]+[0-9]+[ \t]*$"
       )
       string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
 
       file(
-        STRINGS
-        "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version.h"
+        STRINGS "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version.h"
         _version_string
         REGEX "^.*VERSION_(MINOR|MICRO)[ \t]+[0-9]+[ \t]*$"
       )
@@ -219,8 +217,7 @@ macro(FFmpeg_check_version)
       string(REGEX REPLACE ".*VERSION_MICRO[ \t]+([0-9]+).*" "\\1" _version_patch "${_version_string}")
     else()
       file(
-        STRINGS
-        "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version.h"
+        STRINGS "${FFmpeg_${component}_INCLUDE_DIR}/${component_libname}/version.h"
         _version_string
         REGEX "^.*VERSION_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$"
       )
@@ -292,8 +289,7 @@ endif()
 
 if(EXISTS "${FFmpeg_avutil_INCLUDE_DIR}/libavutil/ffversion.h")
   file(
-    STRINGS
-    "${FFmpeg_avutil_INCLUDE_DIR}/libavutil/ffversion.h"
+    STRINGS "${FFmpeg_avutil_INCLUDE_DIR}/libavutil/ffversion.h"
     _version_string
     REGEX "^.*FFMPEG_VERSION[ \t]+\"n?[0-9a-z\\~+.-]+\"[ \t]*$"
   )

@@ -108,7 +108,7 @@ static inline bool os_atomic_set_bool(volatile bool *ptr, bool val)
 	const char c = _InterlockedExchange8((volatile char *)ptr, (char)val);
 	bool b;
 
-	/* Avoid unnecesary char to bool conversion. Value known 0 or 1. */
+	/* Avoid unnecessary char to bool conversion. Value known 0 or 1. */
 	memcpy(&b, &c, sizeof(b));
 
 	return b;
@@ -135,7 +135,7 @@ static inline bool os_atomic_load_bool(const volatile bool *ptr)
 	_ReadWriteBarrier();
 #endif
 
-	/* Avoid unnecesary char to bool conversion. Value known 0 or 1. */
+	/* Avoid unnecessary char to bool conversion. Value known 0 or 1. */
 	memcpy(&b, &c, sizeof(b));
 
 	return b;

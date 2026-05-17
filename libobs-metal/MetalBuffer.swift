@@ -272,7 +272,7 @@ final class MetalIndexBuffer: MetalBuffer {
     /// Sets up buffer objects for the data provided in the provided memory location
     /// - Parameter data: Pointer to bytes representing index buffer data
     ///
-    /// The provided memory location is expected to provide bytes represnting index buffer data as either unsigned
+    /// The provided memory location is expected to provide bytes representing index buffer data as either unsigned
     /// 16-bit integers or unsigned 32-bit integers. The size depends on the type used to create the
     /// ``MetalIndexBuffer`` instance.
     public func setupBuffers(_ data: UnsafeMutableRawPointer? = nil) {

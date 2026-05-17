@@ -151,7 +151,7 @@ void mp4_pkt_callback(obs_output_t *output, struct encoder_packet *pkt, struct e
 
 		/* Video frames can be out of order (b-frames), so instead of using the video packet's dts_usec we need to calculate
 		 * the chapter DTS from the frame's PTS (for chapters DTS == PTS). */
-		int64_t chap_dts_usec = pkt->pts * 1000000 / pkt->timebase_den;
+		int64_t chap_dts_usec = (pkt->pts * 1000000 / pkt->timebase_den) - out->start_time;
 		int64_t chap_dts_msec = chap_dts_usec / 1000;
 		int64_t chap_dts_sec = chap_dts_msec / 1000;
 

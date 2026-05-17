@@ -247,9 +247,8 @@ void ScriptsTool::ReloadScript(const char *path)
 
 			OBSDataAutoRelease settings = obs_script_get_settings(script);
 
-			obs_properties_t *prop = obs_script_get_properties(script);
+			OBSProperties prop = obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);
-			obs_properties_destroy(prop);
 
 			break;
 		}
@@ -351,9 +350,8 @@ void ScriptsTool::on_addScripts_clicked()
 
 			OBSDataAutoRelease settings = obs_script_get_settings(script);
 
-			obs_properties_t *prop = obs_script_get_properties(script);
+			OBSProperties prop = obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);
-			obs_properties_destroy(prop);
 
 			ui->scripts->setCurrentItem(item);
 		}
@@ -630,6 +628,7 @@ extern "C" void InitScripts()
 {
 	scriptLogWindow = new ScriptLogWindow();
 
+	obs_scripting_set_module(obs_current_module());
 	obs_scripting_load();
 	obs_scripting_set_log_callback(script_log, nullptr);
 
@@ -677,5 +676,5 @@ extern "C" void InitScripts()
 	obs_frontend_add_preload_callback(load_script_data, nullptr);
 	obs_frontend_add_event_callback(obs_event, nullptr);
 
-	action->connect(action, &QAction::triggered, cb);
+	QObject::connect(action, &QAction::triggered, action, cb);
 }

@@ -55,7 +55,13 @@ runs:
         local base_url
         local hash
         IFS=';' read -r version base_url hash <<< \
-          "$(jq -r '.tools.sparkle | {version, baseUrl, hash} | join(";")' buildspec.json)"
+          "$(jq -r '
+            .configurePresets[]
+            | select(.name=="dependencies")
+            | .vendor["obsproject.com/obs-studio"].tools.sparkle
+            | {version, baseUrl, hash}
+            | join(";")
+          ' CMakePresets.json)"
 
         mkdir -p Sparkle && pushd Sparkle
         curl -s -L -O "${base_url}/${version}/Sparkle-${version}.tar.xz"

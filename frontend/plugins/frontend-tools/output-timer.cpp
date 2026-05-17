@@ -315,5 +315,5 @@ extern "C" void InitOutputTimer()
 	obs_frontend_add_save_callback(SaveOutputTimer, nullptr);
 	obs_frontend_add_event_callback(OBSEvent, nullptr);
 
-	action->connect(action, &QAction::triggered, cb);
+	QObject::connect(action, &QAction::triggered, action, cb);
 }

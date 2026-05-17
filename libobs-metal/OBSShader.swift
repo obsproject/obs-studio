@@ -413,7 +413,7 @@ class OBSShader {
     /// Analyzes shader uniform parameters parsed by the ``libobs`` shader parser.
     ///
     /// Each global variable declared as a "uniform" is stored as an ``OBSShaderVariable`` struct, which will be
-    /// extended with additional metadata by later analystics steps.
+    /// extended with additional metadata by later analysis steps.
     ///
     /// This is necessary as MSL does not support global variables and all data needs to be explicitly provided
     /// via buffer objects, which requires these "unforms" to be wrapped into a single struct and passed as an explicit
@@ -465,7 +465,7 @@ class OBSShader {
     ///
     /// Structured data declarations are used to pass data into and out of shaders.
     ///
-    /// Whereas HLSL allows one to use "InOut" structures with attribute mappings (e.g., using the same type defintion
+    /// Whereas HLSL allows one to use "InOut" structures with attribute mappings (e.g., using the same type definition
     /// for vertex data going in and out of a vertex shader), MSL does not allow the mixing of input mappings and output
     /// mappings in the same type definition.
     ///
@@ -663,7 +663,7 @@ class OBSShader {
     ///
     /// Because MSL does not support global variables, unforms, textures, or samplers need to be passed explicitly to a
     /// function. This requires scanning the entire function body (recursively in the case of separate function scopes
-    /// denoted by curvy brackets or parantheses) for any occurrence of a known uniform, texture, or sampler variable
+    /// denoted by curvy brackets or parentheses) for any occurrence of a known uniform, texture, or sampler variable
     /// name.
     ///
     /// - Parameters:

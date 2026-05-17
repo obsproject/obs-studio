@@ -13,7 +13,7 @@ extern volatile bool replaybuf_active;
 extern volatile bool virtualcam_active;
 
 template<typename T>
-inline size_t GetCallbackIdx(vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
+inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
 {
 	for (size_t i = 0; i < callbacks.size(); i++) {
 		OBSStudioCallback<T> curCB = callbacks[i];
@@ -326,7 +326,7 @@ void OBSStudioAPI::obs_frontend_add_tools_menu_item(const char *name, obs_fronte
 
 	QAction *action = main->ui->menuTools->addAction(QT_UTF8(name));
 	action->setMenuRole(QAction::NoRole);
-	QObject::connect(action, &QAction::triggered, func);
+	QObject::connect(action, &QAction::triggered, action, func);
 }
 
 bool OBSStudioAPI::obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)

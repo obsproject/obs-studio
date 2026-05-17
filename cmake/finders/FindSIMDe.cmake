@@ -48,8 +48,7 @@ find_path(
 
 if(EXISTS "${SIMDe_INCLUDE_DIR}/simde/simde-common.h")
   file(
-    STRINGS
-    "${SIMDe_INCLUDE_DIR}/simde/simde-common.h"
+    STRINGS "${SIMDe_INCLUDE_DIR}/simde/simde-common.h"
     _version_string
     REGEX "^.*VERSION_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$"
   )

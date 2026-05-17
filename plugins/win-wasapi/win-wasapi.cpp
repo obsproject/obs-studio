@@ -464,6 +464,9 @@ WASAPISource::~WASAPISource()
 	if (notify) {
 		notify->RemoveDefaultDeviceChangedCallback(this);
 	}
+	// If the device is also used for monitoring, a cleanup is needed.
+	if (sourceType == SourceType::DeviceOutput)
+		obs_source_audio_output_capture_device_changed(source, NULL);
 
 	Stop();
 }
@@ -503,6 +506,10 @@ WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
 
 void WASAPISource::UpdateSettings(UpdateParams &&params)
 {
+	// Signal to deduplication logic in case the device is also used for monitoring.
+	if (device_id != params.device_id && sourceType == SourceType::DeviceOutput)
+		obs_source_audio_output_capture_device_changed(source, params.device_id.c_str());
+
 	device_id = std::move(params.device_id);
 	useDeviceTiming = params.useDeviceTiming;
 	isDefaultDevice = params.isDefaultDevice;

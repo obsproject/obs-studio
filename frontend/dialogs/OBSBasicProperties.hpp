@@ -39,7 +39,6 @@ private:
 	OBSSignal updatePropertiesSignal;
 	OBSData oldSettings;
 	OBSPropertiesView *view;
-	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
 
 	OBSSourceAutoRelease sourceA;
@@ -59,7 +58,8 @@ private:
 
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
-	void AddPreviewButton();
+	void restoreDefaultsClicked();
+	void previewTransitionClicked();
 
 public:
 	OBSBasicProperties(QWidget *parent, OBSSource source_);

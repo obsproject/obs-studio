@@ -28,7 +28,7 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 
 	setLayout(itemLayout);
 
-	connect(vis, &QCheckBox::clicked, [this](bool visible) { obs_source_set_enabled(source, visible); });
+	connect(vis, &QCheckBox::clicked, this, [this](bool visible) { obs_source_set_enabled(source, visible); });
 }
 
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)

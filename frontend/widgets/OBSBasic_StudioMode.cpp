@@ -42,7 +42,7 @@ void OBSBasic::CreateProgramDisplay()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	};
 
-	connect(program.data(), &OBSQTDisplay::DisplayResized, displayResize);
+	connect(program.data(), &OBSQTDisplay::DisplayResized, this, displayResize);
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
 		obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderProgram, this);
@@ -52,7 +52,7 @@ void OBSBasic::CreateProgramDisplay()
 			ResizeProgram(ovi.base_width, ovi.base_height);
 	};
 
-	connect(program.data(), &OBSQTDisplay::DisplayCreated, addDisplay);
+	connect(program.data(), &OBSQTDisplay::DisplayCreated, this, addDisplay);
 
 	program->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
@@ -146,30 +146,30 @@ void OBSBasic::CreateProgramOptions()
 		action->setToolTip(QTStr("QuickTransitions.DuplicateSceneTT"));
 		action->setCheckable(true);
 		action->setChecked(sceneDuplicationMode);
-		connect(action, &QAction::triggered, toggleSceneDuplication);
-		connect(action, &QAction::hovered, showToolTip);
+		connect(action, &QAction::triggered, this, toggleSceneDuplication);
+		connect(action, &QAction::hovered, action, showToolTip);
 
 		action = menu.addAction(QTStr("QuickTransitions.EditProperties"));
 		action->setToolTip(QTStr("QuickTransitions.EditPropertiesTT"));
 		action->setCheckable(true);
 		action->setChecked(editPropertiesMode);
 		action->setEnabled(sceneDuplicationMode);
-		connect(action, &QAction::triggered, toggleEditProperties);
-		connect(action, &QAction::hovered, showToolTip);
+		connect(action, &QAction::triggered, this, toggleEditProperties);
+		connect(action, &QAction::hovered, action, showToolTip);
 
 		action = menu.addAction(QTStr("QuickTransitions.SwapScenes"));
 		action->setToolTip(QTStr("QuickTransitions.SwapScenesTT"));
 		action->setCheckable(true);
 		action->setChecked(swapScenesMode);
-		connect(action, &QAction::triggered, toggleSwapScenesMode);
-		connect(action, &QAction::hovered, showToolTip);
+		connect(action, &QAction::triggered, this, toggleSwapScenesMode);
+		connect(action, &QAction::hovered, action, showToolTip);
 
 		menu.exec(QCursor::pos());
 	};
 
 	connect(transitionButton.data(), &QAbstractButton::clicked, this, &OBSBasic::TransitionClicked);
-	connect(addQuickTransition, &QAbstractButton::clicked, onAdd);
-	connect(configTransitions, &QAbstractButton::clicked, onConfig);
+	connect(addQuickTransition, &QAbstractButton::clicked, this, onAdd);
+	connect(configTransitions, &QAbstractButton::clicked, this, onConfig);
 }
 
 void OBSBasic::TogglePreviewProgramMode()
@@ -179,15 +179,17 @@ void OBSBasic::TogglePreviewProgramMode()
 
 void OBSBasic::SetPreviewProgramMode(bool enabled)
 {
-	if (IsPreviewProgramMode() == enabled)
+	if (IsPreviewProgramMode() == enabled) {
 		return;
+	}
 
 	os_atomic_set_bool(&previewProgramMode, enabled);
 	emit PreviewProgramModeChanged(enabled);
 
 	if (IsPreviewProgramMode()) {
-		if (!previewEnabled)
+		if (!previewEnabled) {
 			EnablePreviewDisplay(true);
+		}
 
 		CreateProgramDisplay();
 		CreateProgramOptions();
@@ -217,12 +219,11 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		RefreshQuickTransitions();
 
 		programLabel = new QLabel(QTStr("StudioMode.ProgramSceneLabel"), this);
-		programLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+		programLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 		programLabel->setProperty("class", "label-preview-title");
 
 		programWidget = new QWidget();
 		programLayout = new QVBoxLayout();
-
 		programLayout->setContentsMargins(0, 0, 0, 0);
 		programLayout->setSpacing(0);
 
@@ -235,6 +236,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->addWidget(programWidget);
 		ui->previewLayout->setAlignment(programOptions, Qt::AlignCenter);
 
+		sizeObserver = new PreviewProgramSizeObserver(ui->preview, program, this);
+
 		OnEvent(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
 
 		blog(LOG_INFO, "Switched to Preview/Program mode");
@@ -242,16 +245,18 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			       "-------------------");
 	} else {
 		OBSSource actualProgramScene = OBSGetStrongRef(programScene);
-		if (!actualProgramScene)
+		if (!actualProgramScene) {
 			actualProgramScene = GetCurrentSceneSource();
-		else
+		} else {
 			SetCurrentScene(actualProgramScene, true);
+		}
 		TransitionToScene(actualProgramScene, true);
 
 		delete programOptions;
 		delete program;
 		delete programLabel;
 		delete programWidget;
+		sizeObserver->deleteLater();
 
 		if (lastScene) {
 			OBSSource actualLastScene = OBSGetStrongRef(lastScene);
@@ -264,11 +269,13 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		swapScene = nullptr;
 		prevFTBSource = nullptr;
 
-		for (QuickTransition &qt : quickTransitions)
+		for (QuickTransition &qt : quickTransitions) {
 			qt.button = nullptr;
+		}
 
-		if (!previewEnabled)
+		if (!previewEnabled) {
 			EnablePreviewDisplay(false);
+		}
 
 		ui->transitions->setEnabled(true);
 		tBarActive = false;

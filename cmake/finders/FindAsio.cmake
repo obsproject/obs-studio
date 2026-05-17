@@ -50,8 +50,7 @@ if(PC_Asio_VERSION VERSION_GREATER 0)
   set(Asio_VERSION ${PC_Asio_VERSION})
 elseif(EXISTS "${Asio_INCLUDE_DIR}/asio/version.hpp")
   file(
-    STRINGS
-    "${Asio_INCLUDE_DIR}/asio/version.hpp"
+    STRINGS "${Asio_INCLUDE_DIR}/asio/version.hpp"
     _version_string
     REGEX "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\\/\\/[ \t][0-9]+\\.[0-9]+\\.[0-9]+"
   )

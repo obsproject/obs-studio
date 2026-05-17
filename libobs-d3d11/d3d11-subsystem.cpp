@@ -479,9 +479,9 @@ struct HagsStatus {
 		}
 	}
 
-	string ToString() const
+	std::string ToString() const
 	{
-		string status = enabled ? "Enabled" : "Disabled";
+		std::string status = enabled ? "Enabled" : "Disabled";
 		status += " (Default: ";
 		status += enabled_by_default ? "Yes" : "No";
 		status += ", Driver status: ";
@@ -509,9 +509,9 @@ private:
 	}
 };
 
-static optional<HagsStatus> GetAdapterHagsStatus(const DXGI_ADAPTER_DESC *desc)
+static std::optional<HagsStatus> GetAdapterHagsStatus(const DXGI_ADAPTER_DESC *desc)
 {
-	optional<HagsStatus> ret;
+	std::optional<HagsStatus> ret;
 	D3DKMT_OPENADAPTERFROMLUID d3dkmt_openluid{};
 	d3dkmt_openluid.AdapterLuid = desc->AdapterLuid;
 
@@ -586,7 +586,7 @@ static bool FastClearSupported(UINT vendorId, uint64_t version)
 
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
-	wstring adapterName;
+	std::wstring adapterName;
 	DXGI_ADAPTER_DESC desc;
 	D3D_FEATURE_LEVEL levelUsed = D3D_FEATURE_LEVEL_10_0;
 	LARGE_INTEGER umd;

@@ -21,8 +21,6 @@
 
 #include <QMetaType>
 
-using namespace std;
-
 class QPushButton;
 
 struct QuickTransition {

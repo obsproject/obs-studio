@@ -19,11 +19,11 @@
 
 #include "OBSBasic.hpp"
 #include "ui-config.h"
+
 #include "ColorSelect.hpp"
 #include "OBSBasicControls.hpp"
 #include "OBSBasicStats.hpp"
 #include "plugin-manager/PluginManager.hpp"
-#include "VolControl.hpp"
 
 #include <obs-module.h>
 
@@ -44,6 +44,7 @@
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
+#include <widgets/AudioMixer.hpp>
 #include <widgets/OBSProjector.hpp>
 
 #include <OBSStudioAPI.hpp>
@@ -285,7 +286,6 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	controlsDock->setWindowTitle(QTStr("Basic.Main.Controls"));
 	/* Parenting is done there so controls will be deleted alongside controlsDock */
 	controlsDock->setWidget(controls);
-	addDockWidget(Qt::BottomDockWidgetArea, controlsDock);
 
 	connect(controls, &OBSBasicControls::StreamButtonClicked, this, &OBSBasic::StreamActionTriggered);
 
@@ -342,6 +342,17 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	connect(ui->transitionDuration, &QSpinBox::valueChanged, this,
 		[this](int value) { SetTransitionDuration(value); });
 
+	/* Main window default layout */
+	setDockCornersVertical(true);
+
+	/* Scenes and Sources dock on left
+	 * This specific arrangement can't be set up in Qt Designer */
+	addDockWidget(Qt::LeftDockWidgetArea, ui->scenesDock);
+	splitDockWidget(ui->scenesDock, ui->sourcesDock, Qt::Vertical);
+	int sideDockWidth = std::min(width() * 30 / 100, 320);
+	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
+	addDockWidget(Qt::BottomDockWidgetArea, controlsDock);
+
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();
@@ -389,8 +400,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	};
 	dpi = devicePixelRatioF();
 
-	connect(windowHandle(), &QWindow::screenChanged, displayResize);
-	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
+	connect(windowHandle(), &QWindow::screenChanged, this, displayResize);
+	connect(ui->preview, &OBSQTDisplay::DisplayResized, this, displayResize);
 
 	/* TODO: Move these into window-basic-preview */
 	/* Preview Scaling label */
@@ -461,13 +472,13 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	renameScene->setShortcut({Qt::Key_Return});
 	renameSource->setShortcut({Qt::Key_Return});
 
-	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
-	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
+	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace, Qt::Key_Delete});
+	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace, Qt::Key_Delete});
 
 	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionShowMacPermissions->setMenuRole(QAction::ApplicationSpecificRole);
-	ui->actionE_xit->setMenuRole(QAction::QuitRole);
+	delete ui->actionE_xit;
 #else
 	renameScene->setShortcut({Qt::Key_F2});
 	renameSource->setShortcut({Qt::Key_F2});
@@ -486,7 +497,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		nudge->setShortcut(seq);
 		nudge->setShortcutContext(Qt::WidgetShortcut);
 		ui->preview->addAction(nudge);
-		connect(nudge, &QAction::triggered, [this, distance, direction]() { Nudge(distance, direction); });
+		connect(nudge, &QAction::triggered, this,
+			[this, distance, direction]() { Nudge(distance, direction); });
 	};
 
 	addNudge(Qt::Key_Up, MoveDir::Up, 1);
@@ -555,9 +567,13 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->enablePreviewButton, &QPushButton::clicked, this, &OBSBasic::TogglePreview);
 
-	connect(ui->scenes, &SceneTree::scenesReordered, []() { OBSProjector::UpdateMultiviewProjectors(); });
+	connect(ui->scenes, &SceneTree::scenesReordered, ui->scenes,
+		[]() { OBSProjector::UpdateMultiviewProjectors(); });
 
 	connect(App(), &OBSApp::StyleChanged, this, [this]() { OnEvent(OBS_FRONTEND_EVENT_THEME_CHANGED); });
+#ifndef __APPLE__
+	connect(App(), &OBSApp::aboutToQuit, this, &OBSBasic::closeWindow);
+#endif
 
 	QActionGroup *actionGroup = new QActionGroup(this);
 	actionGroup->addAction(ui->actionSceneListMode);
@@ -899,15 +915,9 @@ void OBSBasic::InitOBSCallbacks()
 {
 	ProfileScope("OBSBasic::InitOBSCallbacks");
 
-	signalHandlers.reserve(signalHandlers.size() + 10);
+	signalHandlers.reserve(signalHandlers.size() + 6);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_create", OBSBasic::SourceCreated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_remove", OBSBasic::SourceRemoved, this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_activate", OBSBasic::SourceActivated, this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_deactivate", OBSBasic::SourceDeactivated, this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_audio_activate", OBSBasic::SourceAudioActivated,
-				    this);
-	signalHandlers.emplace_back(obs_get_signal_handler(), "source_audio_deactivate",
-				    OBSBasic::SourceAudioDeactivated, this);
 	signalHandlers.emplace_back(obs_get_signal_handler(), "source_rename", OBSBasic::SourceRenamed, this);
 	signalHandlers.emplace_back(
 		obs_get_signal_handler(), "source_filter_add",
@@ -1021,7 +1031,7 @@ void OBSBasic::OBSInit()
 
 	/* Modules can access frontend information (i.e. profile and scene collection data) during their initialization, and some modules (e.g. obs-websockets) are known to use the filesystem location of the current profile in their own code.
 
-     Thus the profile and scene collection discovery needs to happen before any access to that information (but after intializing global settings) to ensure legacy code gets valid path information.
+     Thus the profile and scene collection discovery needs to happen before any access to that information (but after initializing global settings) to ensure legacy code gets valid path information.
      */
 	RefreshSceneCollections(true);
 
@@ -1134,7 +1144,7 @@ void OBSBasic::OBSInit()
 			ResizePreview(ovi.base_width, ovi.base_height);
 	};
 
-	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDisplay);
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
@@ -1172,6 +1182,13 @@ void OBSBasic::OBSInit()
 	if (!hideWindowOnStart)
 		show();
 #endif
+
+	// Set up Audio Mixer dock
+	AudioMixer *audioMixer = new AudioMixer(this);
+	ui->mixerDock->setWidget(audioMixer);
+	ui->mixerDock->setContextMenuPolicy(Qt::CustomContextMenu);
+
+	connect(ui->mixerDock, &QDockWidget::customContextMenuRequested, audioMixer, &AudioMixer::showMixerContextMenu);
 
 	/* setup stats dock */
 	OBSBasicStats *statsDlg = new OBSBasicStats(statsDock, false);
@@ -1229,10 +1246,8 @@ void OBSBasic::OBSInit()
 	ui->lockDocks->blockSignals(false);
 
 	bool sideDocks = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks");
-	on_sideDocks_toggled(sideDocks);
-	ui->sideDocks->blockSignals(true);
 	ui->sideDocks->setChecked(sideDocks);
-	ui->sideDocks->blockSignals(false);
+	setDockCornersVertical(sideDocks);
 
 	SystemTray(true);
 
@@ -1263,7 +1278,7 @@ void OBSBasic::OBSInit()
 #endif
 	TimedCheckForUpdates();
 
-	ToggleMixerLayout(config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolControl"));
+	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
 
 	if (config_get_bool(activeConfiguration, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
@@ -1372,8 +1387,8 @@ void OBSBasic::OnFirstLoad()
 
 OBSBasic::~OBSBasic()
 {
-	if (!handledShutdown) {
-		applicationShutdown();
+	if (!isClosing()) {
+		closeWindow();
 	}
 }
 
@@ -1381,7 +1396,9 @@ void OBSBasic::applicationShutdown() noexcept
 {
 	/* clear out UI event queue */
 	QApplication::sendPostedEvents(nullptr);
+#ifndef __APPLE_
 	QApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+#endif
 
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
@@ -1390,8 +1407,6 @@ void OBSBasic::applicationShutdown() noexcept
 		patronJsonThread->wait();
 
 	delete screenshotData;
-	delete previewProjector;
-	delete studioProgramProjector;
 	delete previewProjectorSource;
 	delete previewProjectorMain;
 	delete sourceProjector;
@@ -1404,7 +1419,6 @@ void OBSBasic::applicationShutdown() noexcept
 	delete deinterlaceMenu;
 	delete perSceneTransitionMenu;
 	delete shortcutFilter;
-	delete trayMenu;
 	delete programOptions;
 	delete program;
 
@@ -1457,19 +1471,6 @@ void OBSBasic::applicationShutdown() noexcept
 	 * expect or want it to. */
 	QApplication::sendPostedEvents(nullptr);
 
-	config_set_int(App()->GetAppConfig(), "General", "LastVersion", LIBOBS_API_VER);
-	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
-
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled", previewEnabled);
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "AlwaysOnTop", ui->actionAlwaysOnTop->isChecked());
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SceneDuplicationMode", sceneDuplicationMode);
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SwapScenesMode", swapScenesMode);
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "EditPropertiesMode", editPropertiesMode);
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewProgramMode", IsPreviewProgramMode());
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "DocksLocked", ui->lockDocks->isChecked());
-	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks", ui->sideDocks->isChecked());
-	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
-
 #ifdef BROWSER_AVAILABLE
 	DestroyPanelCookieManager();
 	delete cef;
@@ -1477,6 +1478,14 @@ void OBSBasic::applicationShutdown() noexcept
 #endif
 
 	handledShutdown = true;
+}
+
+void OBSBasic::toggleMixerLayout()
+{
+	bool vertical = config_get_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl");
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "VerticalVolumeControl", !vertical);
+
+	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
 }
 
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)
@@ -1658,127 +1667,61 @@ bool OBSBasic::ResetAudio()
 	return obs_reset_audio2(&ai);
 }
 
+void OBSBasic::close()
+{
+	if (isClosePromptOpen() || isClosing()) {
+		return;
+	}
+
+	OBSMainWindow::close();
+}
+
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
-	/* Wait for multitrack video stream to start/finish processing in the background */
-	if (setupStreamingGuard.valid() &&
-	    setupStreamingGuard.wait_for(std::chrono::seconds{0}) != std::future_status::ready) {
-		QTimer::singleShot(1000, this, &OBSBasic::close);
-		event->ignore();
+	if (isClosePromptOpen() || isClosing()) {
 		return;
 	}
 
-	/* Do not close window if inside of a temporary event loop because we
-	 * could be inside of an Auth::LoadUI call.  Keep trying once per
-	 * second until we've exit any known sub-loops. */
-	if (os_atomic_load_long(&insideEventLoop) != 0) {
-		QTimer::singleShot(1000, this, &OBSBasic::close);
-		event->ignore();
-		return;
-	}
-
-#ifdef YOUTUBE_ENABLED
-	/* Also don't close the window if the youtube stream check is active */
-	if (youtubeStreamCheckThread) {
-		QTimer::singleShot(1000, this, &OBSBasic::close);
-		event->ignore();
-		return;
-	}
-#endif
-
-	if (isVisible())
+	if (isVisible()) {
 		config_set_string(App()->GetUserConfig(), "BasicWindow", "geometry",
 				  saveGeometry().toBase64().constData());
+	}
 
-	bool confirmOnExit = config_get_bool(App()->GetUserConfig(), "General", "ConfirmOnExit");
+	if (!isReadyToClose()) {
+		event->ignore();
 
-	if (confirmOnExit && outputHandler && outputHandler->Active() && !clearingFailed) {
-		SetShowing(true);
-
-		QMessageBox::StandardButton button =
-			OBSMessageBox::question(this, QTStr("ConfirmExit.Title"), QTStr("ConfirmExit.Text"));
-
-		if (button == QMessageBox::No) {
-			event->ignore();
-			restart = false;
-			return;
-		}
+		QTimer::singleShot(1000, this, &OBSBasic::close);
+		return;
 	}
 
 	if (remux && !remux->close()) {
 		event->ignore();
 		restart = false;
+
+		return;
+	}
+
+	if (shouldPromptForClose()) {
+		event->ignore();
+		restart = false;
+
+		if (!isClosePromptOpen()) {
+			bool shouldClose = promptToClose();
+
+			if (shouldClose) {
+				closeWindow();
+			}
+		}
+
 		return;
 	}
 
 	QWidget::closeEvent(event);
-	if (!event->isAccepted())
+	if (!event->isAccepted()) {
 		return;
-
-	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
-
-	closing = true;
-
-	/* While closing, a resize event to OBSQTDisplay could be triggered.
-	 * The graphics thread on macOS dispatches a lambda function to be
-	 * executed asynchronously in the main thread. However, the display is
-	 * sometimes deleted before the lambda function is actually executed.
-	 * To avoid such a case, destroy displays earlier than others such as
-	 * deleting browser docks. */
-	ui->preview->DestroyDisplay();
-	if (program)
-		program->DestroyDisplay();
-
-	if (outputHandler->VirtualCamActive())
-		outputHandler->StopVirtualCam();
-
-	if (introCheckThread)
-		introCheckThread->wait();
-	if (whatsNewInitThread)
-		whatsNewInitThread->wait();
-	if (updateCheckThread)
-		updateCheckThread->wait();
-	if (logUploadThread)
-		logUploadThread->wait();
-	if (devicePropertiesThread && devicePropertiesThread->isRunning()) {
-		devicePropertiesThread->wait();
-		devicePropertiesThread.reset();
 	}
 
-	QApplication::sendPostedEvents(nullptr);
-
-	signalHandlers.clear();
-
-	Auth::Save();
-	SaveProjectNow();
-	auth.reset();
-
-	delete extraBrowsers;
-
-	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState", saveState().toBase64().constData());
-
-#ifdef BROWSER_AVAILABLE
-	if (cef)
-		SaveExtraBrowserDocks();
-
-	ClearExtraBrowserDocks();
-#endif
-
-	OnEvent(OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN);
-
-	disableSaving++;
-
-	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
-	 * sources, etc) so that all references are released before shutdown */
-	ClearSceneData();
-
-	OnEvent(OBS_FRONTEND_EVENT_EXIT);
-
-	// Destroys the frontend API so plugins can't continue calling it
-	obs_frontend_set_callbacks_internal(nullptr);
-	api = nullptr;
-
-	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+	closeWindow();
 }
 
 bool OBSBasic::nativeEvent(const QByteArray &, void *message, qintptr *)
@@ -1899,6 +1842,174 @@ config_t *OBSBasic::Config() const
 	return activeConfiguration;
 }
 
+void OBSBasic::saveAll()
+{
+	if (isVisible()) {
+		config_set_string(App()->GetUserConfig(), "BasicWindow", "geometry",
+				  saveGeometry().toBase64().constData());
+	}
+
+	Auth::Save();
+	SaveProjectNow();
+
+	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState", saveState().toBase64().constData());
+
+#ifdef BROWSER_AVAILABLE
+	if (cef) {
+		SaveExtraBrowserDocks();
+	}
+#endif
+
+	config_set_int(App()->GetAppConfig(), "General", "LastVersion", LIBOBS_API_VER);
+	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
+
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled", previewEnabled);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "AlwaysOnTop", ui->actionAlwaysOnTop->isChecked());
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SceneDuplicationMode", sceneDuplicationMode);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SwapScenesMode", swapScenesMode);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "EditPropertiesMode", editPropertiesMode);
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewProgramMode", IsPreviewProgramMode());
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "DocksLocked", ui->lockDocks->isChecked());
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks", ui->sideDocks->isChecked());
+	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
+}
+
+bool OBSBasic::isReadyToClose()
+{
+	/* Wait for multitrack video stream to start/finish processing in the background */
+	if (setupStreamingGuard.valid() &&
+	    setupStreamingGuard.wait_for(std::chrono::seconds{0}) != std::future_status::ready) {
+		return false;
+	}
+
+	/* Do not close window if inside of a temporary event loop because we
+	 * could be inside of an Auth::LoadUI call.  Keep trying once per
+	 * second until we've exit any known sub-loops. */
+	if (os_atomic_load_long(&insideEventLoop) != 0) {
+		return false;
+	}
+
+#ifdef YOUTUBE_ENABLED
+	/* Also don't close the window if the youtube stream check is active */
+	if (youtubeStreamCheckThread) {
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+bool OBSBasic::shouldPromptForClose()
+{
+	bool confirmOnExit = config_get_bool(App()->GetUserConfig(), "General", "ConfirmOnExit");
+	if (confirmOnExit && outputHandler && outputHandler->Active() && !clearingFailed) {
+		return true;
+	}
+
+	return false;
+}
+
+bool OBSBasic::promptToClose()
+{
+	isClosePromptOpen_ = true;
+
+	SetShowing(true);
+	QMessageBox::StandardButton button =
+		OBSMessageBox::question(this, QTStr("ConfirmExit.Title"), QTStr("ConfirmExit.Text"),
+					QMessageBox::StandardButtons(QMessageBox::Ok | QMessageBox::Cancel));
+
+	if (button == QMessageBox::Cancel) {
+		isClosePromptOpen_ = false;
+		return false;
+	}
+
+	isClosePromptOpen_ = false;
+	return true;
+}
+
+void OBSBasic::closeWindow()
+{
+	if (isClosing()) {
+		return;
+	}
+
+	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
+
+	isClosing_ = true;
+
+	/* While closing, a resize event to OBSQTDisplay could be triggered.
+	 * The graphics thread on macOS dispatches a lambda function to be
+	 * executed asynchronously in the main thread. However, the display is
+	 * sometimes deleted before the lambda function is actually executed.
+	 * To avoid such a case, destroy displays earlier than others such as
+	 * deleting browser docks. */
+	ui->preview->DestroyDisplay();
+	if (program)
+		program->DestroyDisplay();
+
+	if (outputHandler->VirtualCamActive())
+		outputHandler->StopVirtualCam();
+
+	if (introCheckThread)
+		introCheckThread->wait();
+	if (whatsNewInitThread)
+		whatsNewInitThread->wait();
+	if (updateCheckThread)
+		updateCheckThread->wait();
+	if (logUploadThread)
+		logUploadThread->wait();
+	if (devicePropertiesThread && devicePropertiesThread->isRunning()) {
+		devicePropertiesThread->wait();
+		devicePropertiesThread.reset();
+	}
+
+	QApplication::sendPostedEvents(nullptr);
+
+	signalHandlers.clear();
+	delete extraBrowsers;
+
+	saveAll();
+
+	auth.reset();
+
+#ifdef BROWSER_AVAILABLE
+	ClearExtraBrowserDocks();
+
+#ifdef YOUTUBE_ENABLED
+	if (youtubeAppDock) {
+		RemoveDockWidget(youtubeAppDock->objectName());
+		youtubeAppDock = nullptr;
+	}
+#endif
+#endif
+
+	OnEvent(OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN);
+
+	disableSaving++;
+
+	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
+	 * sources, etc) so that all references are released before shutdown */
+	ClearSceneData();
+
+	OnEvent(OBS_FRONTEND_EVENT_EXIT);
+
+	// Destroys the frontend API so plugins can't continue calling it
+	obs_frontend_set_callbacks_internal(nullptr);
+	api = nullptr;
+
+	applicationShutdown();
+
+#ifndef __APPLE__
+	deleteLater();
+
+	emit mainWindowClosed();
+
+	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+#else
+	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+#endif
+}
+
 void OBSBasic::UpdateEditMenu()
 {
 	QModelIndexList items = GetAllSelectedSourceItems();
@@ -1947,7 +2058,7 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionCopyTransform->setEnabled(canTransformSingle);
 	ui->actionPasteTransform->setEnabled(canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
-	ui->actionPasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource) && totalCount > 0);
+	ui->actionPasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource()) && totalCount > 0);
 	ui->actionPasteRef->setEnabled(!!clipboard.size());
 	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
 
@@ -1997,12 +2108,12 @@ OBSBasic *OBSBasic::Get()
 	return reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 }
 
-void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
+void OBSBasic::UpdatePatronJson(const std::string &text, const std::string &error)
 {
-	if (!error.isEmpty())
+	if (!error.empty())
 		return;
 
-	patronJson = QT_TO_UTF8(text);
+	patronJson = text;
 }
 
 void OBSBasic::SetDisplayAffinity(QWindow *window)

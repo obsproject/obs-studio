@@ -156,8 +156,8 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 		obs_sceneitem_set_locked(sceneitem, checked);
 	};
 
-	connect(vis, &QAbstractButton::clicked, setItemVisible);
-	connect(lock, &QAbstractButton::clicked, setItemLocked);
+	connect(vis, &QAbstractButton::clicked, this, setItemVisible);
+	connect(lock, &QAbstractButton::clicked, this, setItemLocked);
 }
 
 void SourceTreeItem::paintEvent(QPaintEvent *event)
@@ -370,7 +370,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	OBSBasic *main = OBSBasic::Get();
 	OBSScene scene = main->GetCurrentScene();
 
-	newName = QT_TO_UTF8(editor->text());
+	newName = editor->text().toStdString();
 
 	setFocusProxy(nullptr);
 	int index = boxLayout->indexOf(editor);
@@ -563,13 +563,9 @@ void SourceTreeItem::ExpandClicked(bool checked)
 void SourceTreeItem::Select()
 {
 	tree->SelectItem(sceneitem, true);
-	OBSBasic::Get()->UpdateContextBarDeferred();
-	OBSBasic::Get()->UpdateEditMenu();
 }
 
 void SourceTreeItem::Deselect()
 {
 	tree->SelectItem(sceneitem, false);
-	OBSBasic::Get()->UpdateContextBarDeferred();
-	OBSBasic::Get()->UpdateEditMenu();
 }

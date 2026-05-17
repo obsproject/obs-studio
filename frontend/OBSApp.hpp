@@ -17,7 +17,9 @@
 
 #pragma once
 
+#include <utility/NativeEventFilter.hpp>
 #include <utility/OBSTheme.hpp>
+#include <utility/ThumbnailManager.hpp>
 #include <widgets/OBSMainWindow.hpp>
 
 #include <obs-frontend-api.h>
@@ -25,11 +27,13 @@
 #include <util/profiler.hpp>
 #include <util/util.hpp>
 
+#include <QAbstractNativeEventFilter>
 #include <QApplication>
 #include <QPalette>
 #include <QPointer>
 #include <QUuid>
 
+#include <array>
 #include <deque>
 #include <functional>
 #include <string>
@@ -61,6 +65,8 @@ struct UpdateBranch {
 class OBSApp : public QApplication {
 	Q_OBJECT
 
+	friend class OBS::NativeEventFilter;
+
 private:
 	QUuid appLaunchUUID_;
 	std::unique_ptr<OBS::CrashHandler> crashHandler_;
@@ -84,6 +90,8 @@ private:
 	bool enableHotkeysOutOfFocus = true;
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
+
+	ThumbnailManager *thumbnailManager = nullptr;
 
 	std::unique_ptr<OBS::PluginManager> pluginManager_;
 
@@ -115,14 +123,19 @@ private:
 	bool notify(QObject *receiver, QEvent *e) override;
 
 #ifndef _WIN32
-	static int sigintFd[2];
-	QSocketNotifier *snInt = nullptr;
-#else
-private slots:
-	void commitData(QSessionManager &manager);
+	static std::array<int, 2> sigIntFileDescriptor;
+	static std::array<int, 2> sigTermFileDescriptor;
+	static std::array<int, 2> sigAbrtFileDescriptor;
+	static std::array<int, 2> sigQuitFileDescriptor;
+
+	QPointer<QSocketNotifier> sigIntNotifier{};
+	QPointer<QSocketNotifier> sigTermNotifier{};
+	QPointer<QSocketNotifier> sigAbrtNotifier{};
+	QPointer<QSocketNotifier> sigQuitNotifier{};
 #endif
 
 private slots:
+	void commitData(QSessionManager &manager);
 	void addLogLine(int logLevel, const QString &message);
 	void themeFileChanged(const QString &);
 	void applicationShutdown() noexcept;
@@ -211,17 +224,25 @@ public:
 
 	inline void PopUITranslation() { translatorHooks.pop_front(); }
 #ifndef _WIN32
-	static void SigIntSignalHandler(int);
+	static void sigIntSignalHandler(int);
+	static void sigTermSignalHandler(int);
+	static void sigAbrtSignalHandler(int);
+	static void sigQuitSignalHandler(int);
 #endif
 
 	void loadAppModules(struct obs_module_failure_info &mfi);
+
+	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 	// Plugin Manager Accessors
 	void pluginManagerOpenDialog();
 
 public slots:
 	void Exec(VoidFunc func);
-	void ProcessSigInt();
+	void processSigInt();
+	void processSigTerm();
+	void processSigAbrt();
+	void processSigQuit();
 
 signals:
 	void logLineAdded(int logLevel, const QString &message);

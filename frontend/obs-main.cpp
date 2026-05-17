@@ -16,13 +16,14 @@
 ******************************************************************************/
 
 #include <OBSApp.hpp>
+
+#include <components/VolumeAccessibleInterface.hpp>
 #ifdef __APPLE__
 #include <dialogs/OBSPermissions.hpp>
 #endif
 #include <utility/BaseLexer.hpp>
 #include <utility/OBSTranslator.hpp>
 #include <utility/platform.hpp>
-#include <widgets/VolumeAccessibleInterface.hpp>
 
 #include <qt-wrappers.hpp>
 #include <util/platform.h>
@@ -303,35 +304,6 @@ static uint64_t convert_log_name(bool has_prefix, const char *name)
 	return std::stoull(timestring.str());
 }
 
-/* If upgrading from an older (non-XDG) build of OBS, move config files to XDG directory. */
-/* TODO: Remove after version 32.0. */
-#if defined(__FreeBSD__)
-static void move_to_xdg(void)
-{
-	char old_path[512];
-	char new_path[512];
-	char *home = getenv("HOME");
-	if (!home)
-		return;
-
-	if (snprintf(old_path, sizeof(old_path), "%s/.obs-studio", home) <= 0)
-		return;
-
-	/* make base xdg path if it doesn't already exist */
-	if (GetAppConfigPath(new_path, sizeof(new_path), "") <= 0)
-		return;
-	if (os_mkdirs(new_path) == MKDIR_ERROR)
-		return;
-
-	if (GetAppConfigPath(new_path, sizeof(new_path), "obs-studio") <= 0)
-		return;
-
-	if (os_file_exists(old_path) && !os_file_exists(new_path)) {
-		rename(old_path, new_path);
-	}
-}
-#endif
-
 static void delete_oldest_file(bool has_prefix, const char *location)
 {
 	BPtr<char> logDir(GetAppConfigPathPtr(location));
@@ -519,7 +491,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
+	/* NOTE: Users blindly set this, but this theme is incompatible with Qt6 and
 	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
 	 * looks ugly instead of crashing. */
 	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");
@@ -809,6 +781,42 @@ static void load_debug_privilege(void)
 
 	CloseHandle(token);
 }
+
+static void set_process_mitigations(void)
+{
+	// SetProcessMitigationPolicy is Windows 8+
+	typedef BOOL(WINAPI * PFN_SetProcessMitigationPolicy)(PROCESS_MITIGATION_POLICY, PVOID, SIZE_T);
+	PFN_SetProcessMitigationPolicy pSetProcessMitigationPolicy;
+
+	pSetProcessMitigationPolicy = (PFN_SetProcessMitigationPolicy)GetProcAddress(GetModuleHandle(L"KERNEL32"),
+										     "SetProcessMitigationPolicy");
+
+	if (pSetProcessMitigationPolicy) {
+		PROCESS_MITIGATION_DEP_POLICY dep = {0};
+		dep.DisableAtlThunkEmulation = 1;
+		dep.Enable = 1;
+		dep.Permanent = TRUE;
+		pSetProcessMitigationPolicy(ProcessDEPPolicy, &dep, sizeof(dep));
+
+		PROCESS_MITIGATION_ASLR_POLICY aslr = {0};
+		aslr.EnableBottomUpRandomization = 1;
+		aslr.EnableHighEntropy = 1;
+		aslr.EnableForceRelocateImages = 1;
+		aslr.DisallowStrippedImages = 1;
+		pSetProcessMitigationPolicy(ProcessASLRPolicy, &aslr, sizeof(aslr));
+
+		PROCESS_MITIGATION_EXTENSION_POINT_DISABLE_POLICY xpoints = {0};
+		xpoints.DisableExtensionPoints = 1;
+		pSetProcessMitigationPolicy(ProcessExtensionPointDisablePolicy, &xpoints, sizeof(xpoints));
+
+#ifdef _DEBUG
+		PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY hcheck = {0};
+		hcheck.RaiseExceptionOnInvalidHandleReference = 1;
+		hcheck.HandleExceptionsPermanentlyEnabled = 1;
+		pSetProcessMitigationPolicy(ProcessStrictHandleCheckPolicy, &hcheck, sizeof(hcheck));
+#endif
+	}
+}
 #endif
 
 static inline bool arg_is(const char *arg, const char *long_form, const char *short_form)
@@ -856,24 +864,35 @@ static bool vc_runtime_outdated()
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
-	signal(SIGPIPE, SIG_IGN);
+	using SignalHandlerCallback = decltype(OBSApp::sigIntSignalHandler);
 
-	struct sigaction sig_handler;
+	auto setupSignalHandler = [](SignalHandlerCallback &callback, int signal) {
+		struct sigaction signalHandler{};
+		signalHandler.sa_handler = callback;
+		sigemptyset(&signalHandler.sa_mask);
+		signalHandler.sa_flags = 0;
 
-	sig_handler.sa_handler = OBSApp::SigIntSignalHandler;
-	sigemptyset(&sig_handler.sa_mask);
-	sig_handler.sa_flags = 0;
+		sigaction(signal, &signalHandler, nullptr);
+	};
 
-	sigaction(SIGINT, &sig_handler, NULL);
+	setupSignalHandler(OBSApp::sigIntSignalHandler, SIGINT);
+	setupSignalHandler(OBSApp::sigTermSignalHandler, SIGTERM);
+	setupSignalHandler(OBSApp::sigTermSignalHandler, SIGHUP);
+	setupSignalHandler(OBSApp::sigAbrtSignalHandler, SIGABRT);
+	setupSignalHandler(OBSApp::sigQuitSignalHandler, SIGQUIT);
 
-	/* Block SIGPIPE in all threads, this can happen if a thread calls write on
-	a closed pipe. */
-	sigset_t sigpipe_mask;
-	sigemptyset(&sigpipe_mask);
-	sigaddset(&sigpipe_mask, SIGPIPE);
-	sigset_t saved_mask;
-	if (pthread_sigmask(SIG_BLOCK, &sigpipe_mask, &saved_mask) == -1) {
-		perror("pthread_sigmask");
+	// Block SIGPIPE in all threads, this can happen if a thread calls write on a closed pipe.
+	// Supposedly this can happen when OBS tries to write to a closed RTMP socket.
+	sigset_t sigpipeMask{};
+	sigemptyset(&sigpipeMask);
+	sigaddset(&sigpipeMask, SIGPIPE);
+	sigset_t savedMask{};
+
+	// pthread_sigmask returns 0 on success
+	bool signalMaskChanged = pthread_sigmask(SIG_BLOCK, &sigpipeMask, &savedMask) == 0;
+
+	if (!signalMaskChanged) {
+		perror("Unexpected failure to add 'SIG_BLOCK' to 'SIGPIPE' signal mask.");
 		exit(1);
 	}
 #endif
@@ -889,6 +908,15 @@ int main(int argc, char *argv[])
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
+	set_process_mitigations();
+
+	/* Shutdown priority value is a range from 0 - 4FF with higher values getting first priority.
+	 * 000 - 0FF and 400 - 4FF are reserved system ranges.
+	 * Processes start at shutdown level 0x280 by default.
+	 * We set the main OBS application to a higher priority to ensure it tries to close before
+	 * any subprocesses such as CEF.
+	 */
+	SetProcessShutdownParameters(0x300, SHUTDOWN_NORETRY);
 
 	const HMODULE hRtwq = LoadLibrary(L"RTWorkQ.dll");
 	if (hRtwq) {
@@ -899,10 +927,6 @@ int main(int argc, char *argv[])
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
-
-#if defined(__FreeBSD__)
-	move_to_xdg();
-#endif
 
 	obs_set_cmdline_args(argc, argv);
 

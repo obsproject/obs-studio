@@ -18,28 +18,43 @@
 #include "OBSSourceLabel.hpp"
 #include "moc_OBSSourceLabel.cpp"
 
-void OBSSourceLabel::SourceRenamed(void *data, calldata_t *params)
+OBSSourceLabel::OBSSourceLabel(const obs_source_t *source, QWidget *parent, Qt::WindowFlags f)
+	: QLabel(obs_source_get_name(source), parent, f),
+	  renamedSignal(obs_source_get_signal_handler(source), "rename", &OBSSourceLabel::obsSourceRenamed, this),
+	  removedSignal(obs_source_get_signal_handler(source), "remove", &OBSSourceLabel::obsSourceRemoved, this),
+	  destroyedSignal(obs_source_get_signal_handler(source), "destroy", &OBSSourceLabel::obsSourceDestroyed, this)
+{
+}
+
+void OBSSourceLabel::obsSourceRenamed(void *data, calldata_t *params)
 {
 	auto &label = *static_cast<OBSSourceLabel *>(data);
 
 	const char *name = calldata_string(params, "new_name");
 	label.setText(name);
 
-	emit label.Renamed(name);
+	emit label.renamed(name);
 }
 
-void OBSSourceLabel::SourceRemoved(void *data, calldata_t *)
+void OBSSourceLabel::obsSourceRemoved(void *data, calldata_t *)
 {
 	auto &label = *static_cast<OBSSourceLabel *>(data);
-	emit label.Removed();
+	emit label.removed();
 }
 
-void OBSSourceLabel::SourceDestroyed(void *data, calldata_t *)
+void OBSSourceLabel::obsSourceDestroyed(void *data, calldata_t *)
 {
 	auto &label = *static_cast<OBSSourceLabel *>(data);
-	emit label.Destroyed();
+	emit label.destroyed();
 
 	label.destroyedSignal.Disconnect();
 	label.removedSignal.Disconnect();
 	label.renamedSignal.Disconnect();
+}
+
+void OBSSourceLabel::mousePressEvent(QMouseEvent *event)
+{
+	emit clicked();
+
+	QLabel::mousePressEvent(event);
 }

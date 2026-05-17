@@ -11,9 +11,8 @@ function(_handle_qt_cross_compile architecture)
   set(multiValueArgs "")
   cmake_parse_arguments(PARSE_ARGV 0 _HQCC "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/buildspec.json" buildspec)
+  _get_dependency_data(dependency_data)
 
-  string(JSON dependency_data GET ${buildspec} dependencies)
   string(JSON data GET ${dependency_data} qt6)
   string(JSON version GET ${data} version)
 
@@ -100,7 +99,7 @@ function(_check_dependencies_windows)
   endif()
   set(platform windows-${arch})
 
-  _check_dependencies()
+  _check_dependencies(${dependencies_list})
 
   if(NOT CMAKE_VS_PLATFORM_NAME STREQUAL Win32)
     _handle_qt_cross_compile(${CMAKE_HOST_SYSTEM_PROCESSOR} DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.deps/${qt6_destination}")

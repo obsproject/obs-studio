@@ -60,15 +60,16 @@ template<typename OBSRef> struct SignalContainer {
 };
 } // namespace
 
-void OBSBasic::ReceivedIntroJson(const QString &text)
+void OBSBasic::ReceivedIntroJson(const std::string &text)
 {
 #ifdef WHATSNEW_ENABLED
-	if (closing)
+	if (isClosing()) {
 		return;
+	}
 
 	WhatsNewList items;
 	try {
-		nlohmann::json json = nlohmann::json::parse(text.toStdString());
+		nlohmann::json json = nlohmann::json::parse(text);
 		items = json.get<WhatsNewList>();
 	} catch (nlohmann::json::exception &e) {
 		blog(LOG_WARNING, "Parsing whatsnew data failed: %s", e.what());
@@ -153,8 +154,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 void OBSBasic::ShowWhatsNew(const QString &url)
 {
 #ifdef BROWSER_AVAILABLE
-	if (closing)
+	if (isClosing()) {
 		return;
+	}
 
 	if (obsWhatsNew) {
 		obsWhatsNew->close();

@@ -294,13 +294,18 @@ void obs_free_canvas_mixes(void)
 	pthread_mutex_unlock(&obs->data.canvases_mutex);
 }
 
+bool obs_canvas_has_valid_video_info(obs_canvas_t *canvas)
+{
+	struct obs_video_info *ovi = &canvas->ovi;
+	return ovi->base_width && ovi->base_height && ovi->output_width && ovi->output_height &&
+	       ovi->output_format != VIDEO_FORMAT_NONE;
+}
+
 bool obs_canvas_reset_video_internal(obs_canvas_t *canvas, struct obs_video_info *ovi)
 {
 	obs_canvas_clear_mix(canvas);
 
-	if (ovi)
-		canvas->ovi = *ovi;
-
+	canvas->ovi = *ovi;
 	canvas->mix = obs_create_video_mix(&canvas->ovi);
 	if (canvas->mix) {
 		canvas->mix->view = &canvas->view;
@@ -398,7 +403,7 @@ void obs_canvas_rename_source(obs_source_t *source, const char *name)
 
 bool obs_canvas_reset_video(obs_canvas_t *canvas, struct obs_video_info *ovi)
 {
-	if (canvas->flags & MAIN || obs_video_active())
+	if (!ovi || canvas->flags & MAIN || obs_video_active())
 		return false;
 
 	return obs_canvas_reset_video_internal(canvas, ovi);

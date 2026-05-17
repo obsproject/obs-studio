@@ -203,6 +203,17 @@ static bool ReadHTTPFile(HANDLE updateFile, const uint8_t *buffer, DWORD outSize
 	return true;
 }
 
+static void UpdateProgressBar()
+{
+	int position = (int)(((float)completedFileSize / (float)totalFileSize) * 100.0f);
+	int oldPosition = lastPosition;
+
+	if (position > oldPosition &&
+	    lastPosition.compare_exchange_strong(oldPosition, position, memory_order_relaxed)) {
+		SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, position, 0);
+	}
+}
+
 bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url, const wchar_t *outputPath, const wchar_t *extraHeaders,
 		 int *responseCode)
 {
@@ -281,7 +292,6 @@ bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url, const wchar_t *outputPa
 
 	BYTE buffer[READ_BUF_SIZE];
 	DWORD dwSize, outSize;
-	int lastPosition = 0;
 
 	WinHandle updateFile = CreateFile(outputPath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
 	if (!updateFile.Valid()) {
@@ -309,11 +319,7 @@ bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url, const wchar_t *outputPa
 			if (!ReadHTTPFile(updateFile, buffer, outSize, responseCode))
 				return false;
 
-			int position = (int)(((float)completedFileSize / (float)totalFileSize) * 100.0f);
-			if (position > lastPosition) {
-				lastPosition = position;
-				SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, position, 0);
-			}
+			UpdateProgressBar();
 		}
 
 		if (WaitForSingleObject(cancelRequested, 0) == WAIT_OBJECT_0) {
@@ -404,7 +410,6 @@ bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url, const wchar_t *extraH
 
 	BYTE buffer[READ_BUF_SIZE];
 	DWORD dwSize, outSize;
-	int lastPosition = 0;
 
 	do {
 		/* Check for available data. */
@@ -426,11 +431,7 @@ bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url, const wchar_t *extraH
 			out.insert(out.end(), (std::byte *)buffer, (std::byte *)buffer + outSize);
 
 			completedFileSize += outSize;
-			int position = (int)(((float)completedFileSize / (float)totalFileSize) * 100.0f);
-			if (position > lastPosition) {
-				lastPosition = position;
-				SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, position, 0);
-			}
+			UpdateProgressBar();
 		}
 
 		if (WaitForSingleObject(cancelRequested, 0) == WAIT_OBJECT_0) {

@@ -22,7 +22,7 @@ jobs:
       flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
       updateChannel: ${{ steps.check.outputs.updateChannel }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           submodules: recursive
           fetch-depth: 0
@@ -87,13 +87,57 @@ jobs:
       YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
       YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
       options: --privileged
+      volumes:
+        - /usr/local/lib/android:/to_clean/android
+        - /opt/hostedtoolcache/CodeQL:/to_clean/codeql
+        - /usr/local/.ghcup:/to_clean/ghcup
+        - /opt/hostedtoolcache/Python:/to_clean/python
+        - /usr/share/swift:/to_clean/swift
+        - /usr/share/dotnet:/to_clean/dotnet
     strategy:
       matrix:
         branch: ${{ fromJSON(needs.check-tag.outputs.flatpakMatrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Prepare build space
+        shell: bash
+        run: |
+          : Prepare build space
+
+          echo ::group::Available storage
+          df -h
+          echo ::endgroup::
+
+          echo ::group::Remove Android stuff
+          rm -rf /to_clean/android/*
+          echo ::endgroup::
+
+          echo ::group::Remove CodeQL stuff
+          rm -rf /to_clean/codeql/*
+          echo ::endgroup::
+
+          echo ::group::Remove GHCup stuff
+          rm -rf /to_clean/ghcup/*
+          echo ::endgroup::
+
+          echo ::group::Remove Python stuff
+          rm -rf /to_clean/python/*
+          echo ::endgroup::
+
+          echo ::group::Remove Swift stuff
+          rm -rf /to_clean/swift/*
+          echo ::endgroup::
+
+          echo ::group::Remove .NET stuff
+          rm -rf /to_clean/dotnet/*
+          echo ::endgroup::
+
+          echo ::group::Available storage
+          df -h
+          echo ::endgroup::
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           submodules: recursive
           fetch-depth: 0
@@ -109,7 +153,7 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
+          cache_key='flatpak-builder-${{ hashFiles('build-aux/com.obsproject.Studio.json') }}'
           cache_ref='master'
           read -r id key size unit created accessed <<< \
             "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
@@ -188,7 +232,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: ./.github/actions/steam-upload
         with:
           steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
@@ -204,7 +248,7 @@ jobs:
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: ./.github/actions/windows-patches
         with:
           tagName: ${{ github.ref_name }}

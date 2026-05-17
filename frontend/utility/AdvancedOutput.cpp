@@ -132,6 +132,12 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create streaming video encoder "
 		      "(advanced output)";
 	obs_encoder_release(videoStreaming);
+	if (whipSimulcastEncoders != nullptr) {
+		whipSimulcastEncoders->Create(streamEncoder, config_get_int(main->Config(), "AdvOut", "RescaleFilter"),
+					      config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers"),
+					      video_output_get_width(obs_get_video()),
+					      video_output_get_height(obs_get_video()));
+	}
 
 	const char *rate_control =
 		obs_data_get_string(useStreamEncoder ? streamEncSettings : recordEncSettings, "rate_control");
@@ -247,6 +253,9 @@ void AdvancedOutput::UpdateStreamSettings()
 	}
 
 	obs_encoder_update(videoStreaming, settings);
+	if (whipSimulcastEncoders != nullptr) {
+		whipSimulcastEncoders->Update(settings, obs_data_get_int(settings, "bitrate"));
+	}
 }
 
 inline void AdvancedOutput::UpdateRecordingSettings()
@@ -615,7 +624,8 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 	const char *audio_encoder_id = config_get_string(main->Config(), "AdvOut", "AudioEncoder");
 	int streamTrackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
 
-	auto handle_multitrack_video_result = [=](std::optional<bool> multitrackVideoResult) {
+	auto handle_multitrack_video_result = [this, type = std::string{type}, is_multitrack_output,
+					       multiTrackAudioMixes](std::optional<bool> multitrackVideoResult) {
 		if (multitrackVideoResult.has_value())
 			return multitrackVideoResult.value();
 
@@ -626,12 +636,9 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 			startStreaming.Disconnect();
 			stopStreaming.Disconnect();
 
-			streamOutput = obs_output_create(type, "adv_stream", nullptr, nullptr);
+			streamOutput = obs_output_create(type.c_str(), "adv_stream", nullptr, nullptr);
 			if (!streamOutput) {
-				blog(LOG_WARNING,
-				     "Creation of stream output type '%s' "
-				     "failed!",
-				     type);
+				blog(LOG_WARNING, "Creation of stream output type '%s' failed!", type.c_str());
 				return false;
 			}
 
@@ -649,6 +656,9 @@ std::shared_future<void> AdvancedOutput::SetupStreaming(obs_service_t *service,
 		}
 
 		obs_output_set_video_encoder(streamOutput, videoStreaming);
+		if (whipSimulcastEncoders != nullptr) {
+			whipSimulcastEncoders->SetStreamOutput(streamOutput);
+		}
 		obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 
 		if (!is_multitrack_output) {

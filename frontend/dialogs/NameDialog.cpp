@@ -56,6 +56,9 @@ NameDialog::NameDialog(QWidget *parent) : QDialog(parent)
 
 	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+	adjustSize();
 }
 
 static bool IsWhitespace(char ch)

@@ -20,15 +20,15 @@ if(ENABLE_WHATSNEW AND TARGET OBS::browser-panels)
     target_sources(
       obs-studio
       PRIVATE
+        utility/WhatsNewBrowserInitThread.cpp
+        utility/WhatsNewBrowserInitThread.hpp
+        utility/WhatsNewInfoThread.cpp
+        utility/WhatsNewInfoThread.hpp
         utility/crypto-helpers-mbedtls.cpp
         utility/crypto-helpers.hpp
         utility/models/whatsnew.hpp
         utility/update-helpers.cpp
         utility/update-helpers.hpp
-        utility/WhatsNewBrowserInitThread.cpp
-        utility/WhatsNewBrowserInitThread.hpp
-        utility/WhatsNewInfoThread.cpp
-        utility/WhatsNewInfoThread.hpp
     )
   endif()
 

@@ -479,7 +479,15 @@ Source Definition Structure (obs_source_info)
    - **OBS_ICON_TYPE_TEXT**            - Text
    - **OBS_ICON_TYPE_MEDIA**           - Media
    - **OBS_ICON_TYPE_BROWSER**         - Browser
-   - **OBS_ICON_TYPE_CUSTOM**          - Custom (not implemented yet)
+   - **OBS_ICON_TYPE_CUSTOM**          - Custom
+
+.. member:: const char *(*obs_source_info.get_dark_icon)(void *type_data)
+
+   Gets the icon file path used for dark themes. Make sure icon_type is set to OBS_ICON_TYPE_CUSTOM.
+
+.. member:: const char *(*obs_source_info.get_light_icon)(void *type_data)
+
+   Gets the icon file path used for light themes. Make sure icon_type is set to OBS_ICON_TYPE_CUSTOM.
 
 .. member:: void (*obs_source_info.media_play_pause)(void *data, bool pause)
 
@@ -1437,6 +1445,18 @@ General Source Functions
 
 ---------------------
 
+.. function:: const char *obs_source_get_dark_icon(const char *id)
+
+   Calls the :c:member:`obs_source_info.get_dark_icon` to get the dark icon.
+
+---------------------
+
+.. function:: const char *obs_source_get_light_icon(const char *id)
+
+   Calls the :c:member:`obs_source_info.get_light_icon` to get the light icon.
+
+---------------------
+
 .. function:: void obs_source_media_play_pause(obs_source_t *source, bool pause)
 
    Calls the :c:member:`obs_source_info.media_play_pause` to pause or play media.
@@ -1849,6 +1869,12 @@ Transitions
                        :c:func:`obs_transition_enable_fixed`, this
                        parameter will have no effect
    :param dest:        The destination source to transition to
+
+---------------------
+
+.. function:: void obs_transition_is_active(obs_source_t *transition)
+
+   :return: *true* if the transition is currently transitioning, *false* otherwise.
 
 ---------------------
 

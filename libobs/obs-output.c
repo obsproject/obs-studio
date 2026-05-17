@@ -1643,11 +1643,11 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 			 * nuh_temporal_id_plus1    u(3)
 			 * }
 			 */
-			const uint8_t prefix_sei_nal_type = 39;
+			const uint8_t suffix_sei_nal_type = 40;
 			/* The first bit is always 0, so we just need to
 			 * save the last bit off the original header and
 			 * add the SEI NAL type. */
-			uint8_t first_byte = (prefix_sei_nal_type << 1) | (0x01 & hevc_nal_header[0]);
+			uint8_t first_byte = (suffix_sei_nal_type << 1) | (0x01 & hevc_nal_header[0]);
 			hevc_nal_header[0] = first_byte;
 			/* The HEVC NAL unit header is 2 byte instead of
 			 * one, otherwise everything else is the

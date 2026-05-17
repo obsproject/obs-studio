@@ -89,9 +89,9 @@ void RemoteTextThread::run()
 		if (code != CURLE_OK) {
 			blog(LOG_WARNING, "RemoteTextThread: HTTP request failed. %s",
 			     strlen(error) ? error : curl_easy_strerror(code));
-			emit Result(QString(), QT_UTF8(error));
+			emit Result(std::string{}, std::string{error});
 		} else {
-			emit Result(QT_UTF8(str.c_str()), QString());
+			emit Result(str, std::string{});
 		}
 
 		curl_slist_free_all(header);

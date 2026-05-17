@@ -1323,6 +1323,13 @@ EXPORT void obs_source_add_audio_capture_callback(obs_source_t *source, obs_sour
 EXPORT void obs_source_remove_audio_capture_callback(obs_source_t *source, obs_source_audio_capture_t callback,
 						     void *param);
 
+/**
+ * For an Audio Output Capture source (like 'wasapi_output_capture') used for 'Desktop Audio', this checks whether the
+ * device is also used for monitoring. A signal to obs core struct is then emitted to trigger deduplication  logic at
+ * the end of an audio tick.
+ */
+EXPORT void obs_source_audio_output_capture_device_changed(obs_source_t *source, const char *device_id);
+
 typedef void (*obs_source_caption_t)(void *param, obs_source_t *source, const struct obs_source_cea_708 *captions);
 
 EXPORT void obs_source_add_caption_callback(obs_source_t *source, obs_source_caption_t callback, void *param);
@@ -1603,6 +1610,8 @@ EXPORT uint32_t obs_transition_get_alignment(const obs_source_t *transition);
 
 EXPORT void obs_transition_set_size(obs_source_t *transition, uint32_t cx, uint32_t cy);
 EXPORT void obs_transition_get_size(const obs_source_t *transition, uint32_t *cx, uint32_t *cy);
+
+EXPORT bool obs_transition_is_active(obs_source_t *transition);
 
 /* function used by transitions */
 
@@ -2342,6 +2351,9 @@ EXPORT size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder);
 /** For audio encoders, returns the mixer index */
 EXPORT size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder);
 
+/* For audio encoders, returns the number of samples to skip at the beginning of the stream */
+EXPORT uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder);
+
 /**
  * Sets the preferred video format for a video encoder.  If the encoder can use
  * the format specified, it will force a conversion to that format if the
@@ -2580,6 +2592,10 @@ EXPORT void obs_source_frame_copy(struct obs_source_frame *dst, const struct obs
 /* ------------------------------------------------------------------------- */
 /* Get source icon type */
 EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
+
+/* Get dark and light versions of custom icons */
+EXPORT const char *obs_source_get_dark_icon(const char *id);
+EXPORT const char *obs_source_get_light_icon(const char *id);
 
 /* ------------------------------------------------------------------------- */
 /* Canvases */

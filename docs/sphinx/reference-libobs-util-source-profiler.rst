@@ -86,6 +86,6 @@ Source Profiler Functions
    
    This function exists to avoid having to allocate new memory each time a profiling result is queried.
 
-   :param source: Source to get profiling informatio for
+   :param source: Source to get profiling information for
    :param result: Result object to fill
    :return:       *true* if data for the source exists, *false* otherwise

@@ -1,8 +1,8 @@
 {
     "id": "com.obsproject.Studio",
-    "runtime": "org.kde.Platform",
-    "runtime-version": "6.8",
-    "sdk": "org.kde.Sdk",
+    "runtime": "org.freedesktop.Platform",
+    "runtime-version": "25.08",
+    "sdk": "org.freedesktop.Sdk",
     "command": "obs",
     "finish-args": [
         "--socket=wayland",
@@ -30,44 +30,101 @@
         },
         "org.freedesktop.LinuxAudio.Plugins": {
             "directory": "extensions/Plugins",
-            "version": "24.08",
+            "version": "25.08",
             "add-ld-path": "lib",
             "merge-dirs": "vst",
             "subdirectories": true,
             "no-autodownload": true
         }
     },
-    "cleanup": [
-        "/share/man",
-        "*.la"
-    ],
     "modules": [
-        "modules/10-mbedtls.json",
-        "modules/20-librist.json",
-        "modules/20-nv-codec.json",
-        "modules/20-srt.json",
-        "modules/20-svt-av1.json",
-        "modules/20-x264.json",
-        "modules/30-ffmpeg.json",
-        "modules/40-luajit.json",
-        "modules/40-plog.json",
-        "modules/40-usrsctp.json",
-        "modules/50-intel-media-sdk.json",
-        "modules/50-jansson.json",
-        "modules/50-libdatachannel.json",
-        "modules/50-libqrcodegencpp.json",
-        "modules/50-libvpl.json",
-        "modules/50-ntv2.json",
-        "modules/50-rnnoise.json",
-        "modules/50-swig.json",
-        "modules/50-v4l-utils.json",
-        "modules/50-vpl-gpu-rt.json",
-        "modules/90-asio.json",
-        "modules/90-nlohmann-json.json",
-        "modules/90-simde.json",
-        "modules/90-uthash.json",
-        "modules/90-websocketpp.json",
-        "modules/99-cef.json",
+        {
+            "name": "obs-deps-base",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf base.tar.xz -C /"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "base.tar.xz",
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-01-09/flatpak-base-x86_64-2026-01-09.tar.xz",
+                    "sha256": "664ff7c2e3cfa552a6b16e7b78428c1940a5a42f85911b5e4d57a053f0dcc9e1"
+                }
+            ]
+        },
+        {
+            "name": "obs-deps-devel",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf devel.tar.xz -C /"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "devel.tar.xz",
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-01-09/flatpak-devel-x86_64-2026-01-09.tar.xz",
+                    "sha256": "214a18feff6d7e1ed5b42820ac806eafec50029e41f03c197f76e06eafb591dc"
+                }
+            ]
+        },
+        {
+            "name": "obs-deps-devtools",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf devtools.tar.xz -C /"
+            ],
+            "cleanup": [
+                "*"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "devtools.tar.xz",
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-01-09/flatpak-devtools-x86_64-2026-01-09.tar.xz",
+                    "sha256": "f3381b9661925a593ebe42dded1a87f86d54e49c7fde92567f2f19d37564bb61"
+                }
+            ]
+        },
+        {
+            "name": "qt",
+            "buildsystem": "simple",
+            "build-commands": [
+                "tar -xvf qt.tar.xz -C /"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "qt.tar.xz",
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-01-09/flatpak-qt-x86_64-2026-01-09.tar.xz",
+                    "sha256": "57c5c90cd5824d2a634ba92a0a2ad1b1a57347ee14a9eae41cf77c74970cee11"
+                }
+            ]
+        },
+        {
+            "name": "cef",
+            "build-options": {
+                "no-debuginfo": true
+            },
+            "buildsystem": "simple",
+            "build-commands": [
+                "mkdir -p /app/cef/libcef_dll_wrapper",
+                "cp -R ./include /app/cef",
+                "cp -R ./Release /app/cef",
+                "cp -R ./Resources /app/cef",
+                "cp -R ./build/libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
+            ],
+            "cleanup": [
+                "*"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_6533_linux_x86_64_v6.tar.xz",
+                    "sha256": "7963335519a19ccdc5233f7334c5ab023026e2f3e9a0cc417007c09d86608146"
+                }
+            ]
+        },
         {
             "name": "obs",
             "buildsystem": "cmake-ninja",

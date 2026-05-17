@@ -193,7 +193,7 @@ static bool openh264_encode(void *data, struct encoder_frame *frame, struct enco
 
 void openh264_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "bitrate", 6000);
 	obs_data_set_default_string(settings, "profile", "main");
 }
 

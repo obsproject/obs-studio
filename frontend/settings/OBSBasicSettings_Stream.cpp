@@ -95,6 +95,7 @@ void OBSBasicSettings::InitStreamPage()
 void OBSBasicSettings::LoadStream1Settings()
 {
 	bool ignoreRecommended = config_get_bool(main->Config(), "Stream1", "IgnoreRecommended");
+	int whipSimulcastTotalLayers = config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers");
 
 	obs_service_t *service_obj = main->GetService();
 	const char *type = obs_service_get_type(service_obj);
@@ -209,10 +210,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	if (use_custom_server)
 		ui->serviceCustomServer->setText(server);
 
-	if (is_whip)
+	if (is_whip) {
 		ui->key->setText(bearer_token);
-	else
+		ui->whipSimulcastGroupBox->show();
+	} else {
 		ui->key->setText(key);
+		ui->whipSimulcastGroupBox->hide();
+	}
 
 	ServiceChanged(true);
 
@@ -226,6 +230,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->streamPage->setEnabled(!streamActive);
 
 	ui->ignoreRecommended->setChecked(ignoreRecommended);
+	ui->whipSimulcastTotalLayers->setValue(whipSimulcastTotalLayers);
 
 	loading = false;
 
@@ -327,6 +332,9 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 
+	auto oldWHIPSimulcastTotalLayers = config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers");
+	SaveSpinBox(ui->whipSimulcastTotalLayers, "Stream1", "WHIPSimulcastTotalLayers");
+
 	auto oldMultitrackVideoSetting = config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo");
 
 	if (!IsCustomService()) {
@@ -355,7 +363,8 @@ void OBSBasicSettings::SaveStream1Settings()
 	SaveText(ui->multitrackVideoConfigOverride, "Stream1", "MultitrackVideoConfigOverride");
 	SaveComboData(ui->multitrackVideoAdditionalCanvas, "Stream1", "MultitrackExtraCanvas");
 
-	if (oldMultitrackVideoSetting != ui->enableMultitrackVideo->isChecked())
+	if (oldMultitrackVideoSetting != ui->enableMultitrackVideo->isChecked() ||
+	    oldWHIPSimulcastTotalLayers != ui->whipSimulcastTotalLayers->value())
 		main->ResetOutputs();
 
 	SwapMultiTrack(QT_TO_UTF8(protocol));
@@ -369,7 +378,7 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 	}
 
 	QString serviceName = ui->service->currentText();
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -385,7 +394,6 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link));
 		ui->moreInfoButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void OBSBasicSettings::UpdateKeyLink()
@@ -394,7 +402,7 @@ void OBSBasicSettings::UpdateKeyLink()
 	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -440,12 +448,11 @@ void OBSBasicSettings::UpdateKeyLink()
 		ui->getStreamKeyButton->setTargetUrl(QUrl(streamKeyLink));
 		ui->getStreamKeyButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)
 {
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 
 	OBSDataAutoRelease settings = obs_data_create();
 
@@ -488,8 +495,6 @@ void OBSBasicSettings::LoadServices(bool showAll)
 		if (idx != -1)
 			ui->service->setCurrentIndex(idx);
 	}
-
-	obs_properties_destroy(props);
 
 	ui->service->blockSignals(false);
 }
@@ -588,6 +593,12 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 	} else {
 		SwapMultiTrack(QT_TO_UTF8(protocol));
 	}
+
+	if (IsWHIP()) {
+		ui->whipSimulcastGroupBox->show();
+	} else {
+		ui->whipSimulcastGroupBox->hide();
+	}
 }
 
 void OBSBasicSettings::on_customServer_textChanged(const QString &)
@@ -606,7 +617,7 @@ void OBSBasicSettings::on_customServer_textChanged(const QString &)
 
 void OBSBasicSettings::ServiceChanged(bool resetFields)
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	bool custom = IsCustomService();
 	bool whip = IsWHIP();
 
@@ -676,15 +687,13 @@ QString OBSBasicSettings::FindProtocol()
 			return QString("RIST");
 
 	} else {
-		obs_properties_t *props = obs_get_service_properties("rtmp_common");
+		OBSProperties props = obs_get_service_properties("rtmp_common");
 		obs_property_t *services = obs_properties_get(props, "service");
 
 		OBSDataAutoRelease settings = obs_data_create();
 
 		obs_data_set_string(settings, "service", QT_TO_UTF8(ui->service->currentText()));
 		obs_property_modified(services, settings);
-
-		obs_properties_destroy(props);
 
 		const char *protocol = obs_data_get_string(settings, "protocol");
 		if (protocol && *protocol)
@@ -700,7 +709,7 @@ void OBSBasicSettings::UpdateServerList()
 
 	lastService = serviceName;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -722,8 +731,6 @@ void OBSBasicSettings::UpdateServerList()
 	if (serviceName == "Twitch" || serviceName == "Amazon IVS") {
 		ui->server->addItem(QTStr("Basic.Settings.Stream.SpecifyCustomServer"), CustomServerUUID());
 	}
-
-	obs_properties_destroy(props);
 }
 
 void OBSBasicSettings::on_show_clicked()
@@ -823,7 +830,7 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 
 void OBSBasicSettings::OnAuthConnected()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	Auth::Type type = Auth::AuthType(service);
 
 	if (type == Auth::Type::OAuth_StreamKey || type == Auth::Type::OAuth_LinkedAccount) {
@@ -838,7 +845,7 @@ void OBSBasicSettings::OnAuthConnected()
 
 void OBSBasicSettings::on_connectAccount_clicked()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 	OAuth::DeleteCookies(service);
 
@@ -875,7 +882,7 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	auth.reset();
 	main->SetBroadcastFlowEnabled(false);
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 #ifdef BROWSER_AVAILABLE
 	OAuth::DeleteCookies(service);
@@ -1139,7 +1146,7 @@ bool OBSBasicSettings::ResFPSValid(obs_service_resolution *res_list, size_t res_
 		if (fpsType != 0)
 			return false;
 
-		std::string fps_str = QT_TO_UTF8(ui->fpsCommon->currentText());
+		std::string fps_str = ui->fpsCommon->currentText().toStdString();
 		float fps;
 		sscanf(fps_str.c_str(), "%f", &fps);
 		if (fps > (float)max_fps)

@@ -68,7 +68,7 @@ QWidget *ImporterEntryPathItemDelegate::createEditor(QWidget *parent, const QSty
 	browseButton->setSizePolicy(buttonSizePolicy);
 	layout->addWidget(browseButton);
 
-	container->connect(browseButton, &QToolButton::clicked, browseCallback);
+	connect(browseButton, &QToolButton::clicked, this, browseCallback);
 
 	// The "clear" button is not shown in output cells
 	// or the insertion point's input cell.
@@ -78,7 +78,7 @@ QWidget *ImporterEntryPathItemDelegate::createEditor(QWidget *parent, const QSty
 		clearButton->setSizePolicy(buttonSizePolicy);
 		layout->addWidget(clearButton);
 
-		container->connect(clearButton, &QToolButton::clicked, clearCallback);
+		connect(clearButton, &QToolButton::clicked, this, clearCallback);
 	}
 
 	container->setLayout(layout);

@@ -357,8 +357,7 @@ function(target_install_resources target)
     list(FILTER data_files EXCLUDE REGEX "\\.DS_Store$")
     foreach(data_file IN LISTS data_files)
       cmake_path(
-        RELATIVE_PATH
-        data_file
+        RELATIVE_PATH data_file
         BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/"
         OUTPUT_VARIABLE relative_path
       )

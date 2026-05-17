@@ -25,7 +25,10 @@
 
 using idian::ComboBox;
 
-ComboBox::ComboBox(QWidget *parent) : QComboBox(parent), Utils(this) {}
+ComboBox::ComboBox(QWidget *parent) : QComboBox(parent), Utils(this)
+{
+	Utils::applyStateStylingEventFilter(this);
+}
 
 void ComboBox::showPopup()
 {
