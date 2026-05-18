@@ -1010,7 +1010,7 @@ Functions used by outputs
    the output stopped unexpectedly.  This is typically used if for
    example the server was disconnected for some reason, or if there was
    an error saving to file.  The output will trigger the "stop" signal
-   with the the desired code to indicate that the output has stopped
+   with the desired code to indicate that the output has stopped
    successfully.  See :ref:`output_signal_handler_reference` for more
    information on output signals.
 

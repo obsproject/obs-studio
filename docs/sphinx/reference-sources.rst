@@ -1015,7 +1015,7 @@ General Source Functions
 .. function:: bool obs_source_configurable(const obs_source_t *source)
               bool obs_is_source_configurable(const char *id)
 
-   :return: *true* if the the source has custom properties, *false*
+   :return: *true* if the source has custom properties, *false*
             otherwise
 
 ---------------------
@@ -1973,7 +1973,7 @@ Functions used by transitions
    Helper function used for transitioning audio.  Typically you'd call
    this in the obs_source_info.audio_render callback with its
    parameters, and use the mix_a_callback and mix_b_callback to
-   determine the the audio fading of source A and source B.
+   determine the audio fading of source A and source B.
 
    Relevant data types used with this function:
 

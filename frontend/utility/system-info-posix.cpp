@@ -409,7 +409,7 @@ void get_drm_cards(std::vector<drm_card_info> &cards)
  * with multiple GPUs (including the CPU iGPU), the GPU that
  * OBS is currently using must be placed first in the list, so
  * that composition_gpu_index=0 is valid. composition_gpu_index
- * is set to to ovi.adapter which is always 0 apparently.
+ * is set to ovi.adapter which is always 0 apparently.
  *
  * system_gpu_data() does the following:
  *   1. Gather information about the GPU being used by OBS
