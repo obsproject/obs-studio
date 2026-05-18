@@ -187,6 +187,8 @@ void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 
 void OBSBasic::actionCopyFilters()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = static_cast<QAction *>(sender());
 	obs_source_t *source = action->property("source").value<OBSSource>();
 
@@ -200,6 +202,8 @@ void OBSBasic::actionCopyFilters()
 
 void OBSBasic::actionPasteFilters()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = static_cast<QAction *>(sender());
 	obs_source_t *dstSource = action->property("source").value<OBSSource>();
 

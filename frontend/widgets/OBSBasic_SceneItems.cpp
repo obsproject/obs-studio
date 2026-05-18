@@ -249,6 +249,8 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 
 void OBSBasic::SetDeinterlacingMode()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;
@@ -281,6 +283,8 @@ void OBSBasic::SetDeinterlacingMode()
 
 void OBSBasic::SetDeinterlacingOrder()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;
@@ -351,6 +355,8 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 
 void OBSBasic::SetScaleFilter()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;
@@ -410,6 +416,8 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 
 void OBSBasic::SetBlendingMethod()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;
@@ -465,6 +473,8 @@ QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
 
 void OBSBasic::SetBlendingMode()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;
@@ -767,6 +777,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 void OBSBasic::actionOpenSourceFilters()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;
@@ -783,6 +795,8 @@ void OBSBasic::actionOpenSourceFilters()
 
 void OBSBasic::actionOpenSourceProperties()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;
@@ -823,6 +837,8 @@ static inline bool should_show_properties(obs_source_t *source, const char *id)
 
 void OBSBasic::AddSourceDialog()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;

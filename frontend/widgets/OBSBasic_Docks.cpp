@@ -237,6 +237,8 @@ void OBSBasic::setDockCornersVertical(bool vertical)
 
 void OBSBasic::RepairCustomExtraDockName()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QDockWidget *dock = qobject_cast<QDockWidget *>(sender());
 	if (!dock) {
 		return;

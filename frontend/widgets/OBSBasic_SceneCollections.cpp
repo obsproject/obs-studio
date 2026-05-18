@@ -337,6 +337,8 @@ void OBSBasic::DeleteSceneCollection(const QString &name)
 
 void OBSBasic::ChangeSceneCollection()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;

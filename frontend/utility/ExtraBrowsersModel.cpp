@@ -152,8 +152,11 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 
 void ExtraBrowsersModel::DeleteItem()
 {
+	// This is brittle and should be moved up to the caller when the sender() usage is cleaned up.
 	QTableView *widget = static_cast<QTableView *>(parent());
 
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	DelButton *del = static_cast<DelButton *>(sender());
 	int row = del->index.row();
 
