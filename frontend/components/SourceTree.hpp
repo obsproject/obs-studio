@@ -21,6 +21,8 @@ class SourceTree : public QListView {
 
 	OBSData undoSceneData;
 
+	SourceTreeModel *treeModel;
+
 	bool iconsVisible = true;
 
 	void UpdateNoSourcesMessage();
@@ -29,23 +31,24 @@ class SourceTree : public QListView {
 	void UpdateWidget(const QModelIndex &idx, obs_sceneitem_t *item);
 	void UpdateWidgets(bool force = false);
 
-	inline SourceTreeModel *GetStm() const { return static_cast<SourceTreeModel *>(model()); }
-
 public:
 	inline SourceTreeItem *GetItemWidget(int idx)
 	{
-		QWidget *widget = indexWidget(GetStm()->createIndex(idx, 0));
+		QWidget *widget = indexWidget(model()->createIndex(idx, 0));
 		return static_cast<SourceTreeItem *>(widget);
 	}
 
 	explicit SourceTree(QWidget *parent = nullptr);
 
-	inline bool IgnoreReorder() const { return ignoreReorder; }
-	inline void Clear() { GetStm()->Clear(); }
+	void setModel(SourceTreeModel *model);
+	SourceTreeModel *model() const { return treeModel; }
 
-	inline void Add(obs_sceneitem_t *item) { GetStm()->Add(item); }
-	inline OBSSceneItem Get(int idx) { return GetStm()->Get(idx); }
-	inline QString GetNewGroupName() { return GetStm()->GetNewGroupName(); }
+	inline bool IgnoreReorder() const { return ignoreReorder; }
+	inline void Clear() { model()->Clear(); }
+
+	inline void Add(obs_sceneitem_t *item) { model()->Add(item); }
+	inline OBSSceneItem Get(int idx) { return model()->Get(idx); }
+	inline QString GetNewGroupName() { return model()->GetNewGroupName(); }
 
 	void SelectItem(obs_sceneitem_t *sceneitem, bool select);
 
@@ -57,8 +60,8 @@ public:
 	void SetIconsVisible(bool visible);
 
 public slots:
-	inline void ReorderItems() { GetStm()->ReorderItems(); }
-	inline void RefreshItems() { GetStm()->SceneChanged(); }
+	inline void ReorderItems() { model()->ReorderItems(); }
+	inline void RefreshItems() { model()->SceneChanged(); }
 	void Remove(OBSSceneItem item, OBSScene scene);
 	void GroupSelectedItems();
 	void UngroupSelectedGroups();

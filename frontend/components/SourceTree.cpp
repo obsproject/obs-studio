@@ -41,30 +41,32 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 	setItemDelegate(new SourceTreeDelegate(this));
 }
 
+void SourceTree::setModel(SourceTreeModel *model)
+{
+	treeModel = model;
+	QListView::setModel(model);
+}
+
 void SourceTree::UpdateIcons()
 {
-	SourceTreeModel *stm = GetStm();
-	stm->SceneChanged();
+	model()->SceneChanged();
 }
 
 void SourceTree::SetIconsVisible(bool visible)
 {
-	SourceTreeModel *stm = GetStm();
-
 	iconsVisible = visible;
-	stm->SceneChanged();
+	model()->SceneChanged();
 }
 
 void SourceTree::ResetWidgets()
 {
 	OBSScene scene = GetCurrentScene();
 
-	SourceTreeModel *stm = GetStm();
-	stm->UpdateGroupState(false);
+	model()->UpdateGroupState(false);
 
-	for (int i = 0; i < stm->items.count(); i++) {
-		QModelIndex index = stm->createIndex(i, 0, nullptr);
-		setIndexWidget(index, new SourceTreeItem(this, stm->items[i]));
+	for (int i = 0; i < model()->items.count(); i++) {
+		QModelIndex index = model()->createIndex(i, 0, nullptr);
+		setIndexWidget(index, new SourceTreeItem(this, model()->items[i]));
 	}
 }
 
@@ -75,14 +77,12 @@ void SourceTree::UpdateWidget(const QModelIndex &idx, obs_sceneitem_t *item)
 
 void SourceTree::UpdateWidgets(bool force)
 {
-	SourceTreeModel *stm = GetStm();
-
-	for (int i = 0; i < stm->items.size(); i++) {
-		obs_sceneitem_t *item = stm->items[i];
+	for (int i = 0; i < model()->items.size(); i++) {
+		obs_sceneitem_t *item = model()->items[i];
 		SourceTreeItem *widget = GetItemWidget(i);
 
 		if (!widget) {
-			UpdateWidget(stm->createIndex(i, 0), item);
+			UpdateWidget(model()->createIndex(i, 0), item);
 		} else {
 			widget->Update(force);
 		}
@@ -91,18 +91,17 @@ void SourceTree::UpdateWidgets(bool force)
 
 void SourceTree::SelectItem(obs_sceneitem_t *sceneitem, bool select)
 {
-	SourceTreeModel *stm = GetStm();
 	int i = 0;
 
-	for (; i < stm->items.count(); i++) {
-		if (stm->items[i] == sceneitem)
+	for (; i < model()->items.count(); i++) {
+		if (model()->items[i] == sceneitem)
 			break;
 	}
 
-	if (i == stm->items.count())
+	if (i == model()->items.count())
 		return;
 
-	QModelIndex index = stm->createIndex(i, 0);
+	QModelIndex index = model()->createIndex(i, 0);
 	if (index.isValid() && select != selectionModel()->isSelected(index))
 		selectionModel()->select(index, select ? QItemSelectionModel::Select : QItemSelectionModel::Deselect);
 }
@@ -124,8 +123,8 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 	OBSScene scene = GetCurrentScene();
 	obs_source_t *scenesource = obs_scene_get_source(scene);
-	SourceTreeModel *stm = GetStm();
-	auto &items = stm->items;
+
+	auto &items = model()->items;
 	QModelIndexList indices = selectedIndexes();
 
 	DropIndicatorPosition indicator = dropIndicatorPosition();
@@ -172,7 +171,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	    indicator == QAbstractItemView::OnViewport)
 		row++;
 
-	if (row < 0 || row > stm->items.count()) {
+	if (row < 0 || row > model()->items.count()) {
 		QListView::dropEvent(event);
 		return;
 	}
@@ -194,10 +193,10 @@ void SourceTree::dropEvent(QDropEvent *event)
 	/* below another group                     */
 
 	obs_sceneitem_t *itemBelow;
-	if (row == stm->items.count())
+	if (row == model()->items.count())
 		itemBelow = nullptr;
 	else
-		itemBelow = stm->items[row];
+		itemBelow = model()->items[row];
 
 	if (hasGroups) {
 		if (!itemBelow || obs_sceneitem_get_group(scene, itemBelow) != dropGroup) {
@@ -253,7 +252,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 					obs_sceneitem_t *subitemGroup = obs_sceneitem_get_group(scene, subitem);
 
 					if (subitemGroup == item) {
-						QModelIndex idx = stm->createIndex(j, 0);
+						QModelIndex idx = model()->createIndex(j, 0);
 						indices.insert(i + 1, idx);
 					}
 				}
@@ -283,9 +282,9 @@ void SourceTree::dropEvent(QDropEvent *event)
 			itemTo--;
 
 		if (itemTo != from) {
-			stm->beginMoveRows(QModelIndex(), from, from, QModelIndex(), to);
+			model()->beginMoveRows(QModelIndex(), from, from, QModelIndex(), to);
 			MoveItem(items, from, itemTo);
-			stm->endMoveRows();
+			model()->endMoveRows();
 		}
 
 		r = persistentIdx.row() + 1;
@@ -397,9 +396,9 @@ void SourceTree::dropEvent(QDropEvent *event)
 	/* group                                   */
 
 	if (dropOnCollapsed) {
-		stm->beginRemoveRows(QModelIndex(), firstIdx, lastIdx);
+		model()->beginRemoveRows(QModelIndex(), firstIdx, lastIdx);
 		items.remove(firstIdx, lastIdx - firstIdx + 1);
-		stm->endRemoveRows();
+		model()->endRemoveRows();
 	}
 
 	/* --------------------------------------- */
@@ -423,19 +422,18 @@ void SourceTree::selectionChanged(const QItemSelection &selected, const QItemSel
 
 	{
 		QSignalBlocker sourcesSignalBlocker(this);
-		SourceTreeModel *stm = GetStm();
 
 		QModelIndexList selectedIdxs = selected.indexes();
 		QModelIndexList deselectedIdxs = deselected.indexes();
 
 		for (int i = 0; i < selectedIdxs.count(); i++) {
 			int idx = selectedIdxs[i].row();
-			obs_sceneitem_select(stm->items[idx], true);
+			obs_sceneitem_select(model()->items[idx], true);
 		}
 
 		for (int i = 0; i < deselectedIdxs.count(); i++) {
 			int idx = deselectedIdxs[i].row();
-			obs_sceneitem_select(stm->items[idx], false);
+			obs_sceneitem_select(model()->items[idx], false);
 		}
 
 		OBSBasic::Get()->UpdateContextBarDeferred();
@@ -480,11 +478,11 @@ void SourceTree::NewGroupEdit(int row)
 
 bool SourceTree::Edit(int row)
 {
-	SourceTreeModel *stm = GetStm();
-	if (row < 0 || row >= stm->items.count())
+	if (row < 0 || row >= model()->items.count()) {
 		return false;
+	}
 
-	QModelIndex index = stm->createIndex(row, 0);
+	QModelIndex index = model()->createIndex(row, 0);
 	QWidget *widget = indexWidget(index);
 	SourceTreeItem *itemWidget = static_cast<SourceTreeItem *>(widget);
 	if (itemWidget->IsEditing()) {
@@ -501,7 +499,6 @@ bool SourceTree::Edit(int row)
 
 bool SourceTree::MultipleBaseSelected() const
 {
-	SourceTreeModel *stm = GetStm();
 	QModelIndexList selectedIndices = selectedIndexes();
 
 	OBSScene scene = GetCurrentScene();
@@ -511,7 +508,7 @@ bool SourceTree::MultipleBaseSelected() const
 	}
 
 	for (auto &idx : selectedIndices) {
-		obs_sceneitem_t *item = stm->items[idx.row()];
+		obs_sceneitem_t *item = model()->items[idx.row()];
 		if (obs_sceneitem_is_group(item)) {
 			return false;
 		}
@@ -527,7 +524,6 @@ bool SourceTree::MultipleBaseSelected() const
 
 bool SourceTree::GroupsSelected() const
 {
-	SourceTreeModel *stm = GetStm();
 	QModelIndexList selectedIndices = selectedIndexes();
 
 	OBSScene scene = GetCurrentScene();
@@ -537,7 +533,7 @@ bool SourceTree::GroupsSelected() const
 	}
 
 	for (auto &idx : selectedIndices) {
-		obs_sceneitem_t *item = stm->items[idx.row()];
+		obs_sceneitem_t *item = model()->items[idx.row()];
 		if (!obs_sceneitem_is_group(item)) {
 			return false;
 		}
@@ -548,7 +544,6 @@ bool SourceTree::GroupsSelected() const
 
 bool SourceTree::GroupedItemsSelected() const
 {
-	SourceTreeModel *stm = GetStm();
 	QModelIndexList selectedIndices = selectedIndexes();
 	OBSScene scene = GetCurrentScene();
 
@@ -557,7 +552,7 @@ bool SourceTree::GroupedItemsSelected() const
 	}
 
 	for (auto &idx : selectedIndices) {
-		obs_sceneitem_t *item = stm->items[idx.row()];
+		obs_sceneitem_t *item = model()->items[idx.row()];
 		obs_scene *itemScene = obs_sceneitem_get_scene(item);
 
 		if (itemScene != scene) {
@@ -571,7 +566,7 @@ bool SourceTree::GroupedItemsSelected() const
 void SourceTree::Remove(OBSSceneItem item, OBSScene scene)
 {
 	OBSBasic *main = OBSBasic::Get();
-	GetStm()->Remove(item);
+	model()->Remove(item);
 	main->SaveProject();
 
 	if (!main->SavingDisabled()) {
@@ -586,18 +581,18 @@ void SourceTree::GroupSelectedItems()
 {
 	QModelIndexList indices = selectedIndexes();
 	std::sort(indices.begin(), indices.end());
-	GetStm()->GroupSelectedItems(indices);
+	model()->GroupSelectedItems(indices);
 }
 
 void SourceTree::UngroupSelectedGroups()
 {
 	QModelIndexList indices = selectedIndexes();
-	GetStm()->UngroupSelectedGroups(indices);
+	model()->UngroupSelectedGroups(indices);
 }
 
 void SourceTree::AddGroup()
 {
-	GetStm()->AddGroup();
+	model()->AddGroup();
 }
 
 void SourceTree::UpdateNoSourcesMessage()
@@ -615,8 +610,7 @@ void SourceTree::UpdateNoSourcesMessage()
 
 void SourceTree::paintEvent(QPaintEvent *event)
 {
-	SourceTreeModel *stm = GetStm();
-	if (stm && !stm->items.count()) {
+	if (model() && !model()->items.count()) {
 		QPainter p(viewport());
 
 		if (!textPrepared) {
