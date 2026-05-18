@@ -7,6 +7,8 @@ on:
     branches:
       - master
       - 'release/**'
+      - dev
+      - 'feature/**'
     tags:
       - '*'
 permissions:
@@ -14,7 +16,7 @@ permissions:
 jobs:
   check-format:
     name: Format 🔍
-    if: github.ref_name == 'master'
+    if: github.ref_name == 'master' || github.ref_name == 'dev' || startsWith(github.ref_name, 'feature/')
     uses: ./.github/workflows/check-format.yaml
     permissions:
       contents: read
