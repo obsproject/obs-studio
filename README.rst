@@ -1,79 +1,96 @@
-OBS Studio <https://obsproject.com>
-===================================
+OBS Studio Plus
+===============
 
-.. image:: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml/badge.svg?branch=master
-   :alt: OBS Studio Build Status - GitHub Actions
-   :target: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml?query=branch%3Amaster
+OBS Studio Plus is a community fork of `OBS Studio <https://obsproject.com>`_
+that aims to bring native multi-canvas streaming, first-class multi-destination
+output, and a modern UI to the world's most popular live-streaming software.
 
-.. image:: https://badges.crowdin.net/obs-studio/localized.svg
-   :alt: OBS Studio Translation Project Progress
-   :target: https://crowdin.com/project/obs-studio
+This fork preserves full compatibility with upstream OBS plugins, scenes, and
+profiles. Everything that works in OBS Studio works in OBS Studio Plus.
 
-.. image:: https://img.shields.io/discord/348973006581923840.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2
-   :alt: OBS Studio Discord Server
-   :target: https://obsproject.com/discord
+Status
+------
 
-What is OBS Studio?
--------------------
+Early development. See `ROADMAP.md <ROADMAP.md>`_ for the planned feature set
+and current progress.
 
-OBS Studio is software designed for capturing, compositing, encoding,
-recording, and streaming video content, efficiently.
+What's different from upstream OBS?
+-----------------------------------
 
-It's distributed under the GNU General Public License v2 (or any later
-version) - see the accompanying COPYING file for more details.
+The upstream OBS Studio project has quietly built much of the infrastructure
+needed for modern streaming workflows (multi-canvas, multi-output) but has not
+yet surfaced these capabilities to users. OBS Studio Plus exposes them, plus
+adds new capabilities on top:
+
+- **Native vertical + horizontal canvases** — stream 16:9 to Twitch and 9:16
+  to TikTok / Shorts / Reels simultaneously, from a single OBS instance.
+- **First-class multi-destination streaming** — push your stream to multiple
+  services at once with per-destination bitrate and resolution settings.
+- **Modern UI shell** — refreshed theming, restructured panels, unified
+  Go-Live workflow.
+- **Local-first AI features** — auto-framing, live captions, and improved
+  noise suppression as opt-in plugins. No cloud dependencies for core features.
+
+License
+-------
+
+OBS Studio Plus is distributed under the GNU General Public License v2 (or any
+later version), the same license as upstream OBS Studio. See the accompanying
+``COPYING`` file for details.
 
 Quick Links
 -----------
 
-- Website: https://obsproject.com
+- This fork's repository: https://github.com/OgBops/obs-studio-plus
 
-- Help/Documentation/Guides: https://github.com/obsproject/obs-studio/wiki
+- Upstream OBS Studio: https://github.com/obsproject/obs-studio
 
-- Forums: https://obsproject.com/forum/
+- Upstream OBS website: https://obsproject.com
 
-- Build Instructions: https://github.com/obsproject/obs-studio/wiki/Install-Instructions
+- Upstream build instructions:
+  https://github.com/obsproject/obs-studio/wiki/Install-Instructions
 
-- Developer/API Documentation: https://obsproject.com/docs
+- Upstream developer/API documentation: https://obsproject.com/docs
 
-- Donating/backing/sponsoring: https://obsproject.com/contribute
+Building from Source
+--------------------
 
-- Bug Tracker: https://github.com/obsproject/obs-studio/issues
+Build instructions are identical to upstream OBS Studio. See the upstream wiki
+for platform-specific guidance:
+https://github.com/obsproject/obs-studio/wiki/Install-Instructions
+
+Quick start (macOS)::
+
+    cmake --preset macos
+    cmake --build --preset macos
+
+Quick start (Linux)::
+
+    cmake --preset ubuntu-x86_64
+    cmake --build --preset ubuntu-x86_64
 
 Contributing
 ------------
 
-- If you would like to help fund or sponsor the project, you can do so
-  via `Patreon <https://www.patreon.com/obsproject>`_, `OpenCollective
-  <https://opencollective.com/obsproject>`_, or `PayPal
-  <https://www.paypal.me/obsproject>`_.  See our `contribute page
-  <https://obsproject.com/contribute>`_ for more information.
+Contributions are welcome. Before opening a pull request, please:
 
-- If you wish to contribute code to the project, please make sure to
-  read the coding and commit guidelines:
+- Read the upstream coding guidelines:
   https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.md
-  
-- Code for the project follows the code style guidelines, located
-  here: https://github.com/obsproject/obs-studio/blob/master/CODESTYLE.md
 
-- Developer/API documentation can be found here:
-  https://obsproject.com/docs
+- Follow the upstream code style:
+  https://github.com/obsproject/obs-studio/blob/master/CODESTYLE.md
 
-- If you wish to contribute translations, do not submit pull requests.
-  Instead, please use Crowdin.  For more information read this page:
-  https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
+- Open work-in-progress changes against the ``dev`` branch, not ``master``.
+  ``master`` tracks upstream OBS Studio so we can pull in their changes
+  cleanly.
 
-- Contributors to OBS Studio and related repositories are expected to
-  follow our Code of Conduct, which can be read here:
-  https://github.com/obsproject/obs-studio/blob/master/COC.rst
+Acknowledgements
+----------------
 
-- Other ways to contribute are by helping people out with support on
-  our forums or in our community chat.  Please limit support to topics
-  you fully understand -- bad advice is worse than no advice.  When it
-  comes to something that you don't fully know or understand, please
-  defer to the official help or official channels.
+OBS Studio Plus is built on top of the work of the OBS Studio team and its
+hundreds of contributors. See the ``AUTHORS`` file for the full list. This
+fork would not exist without their work.
 
-
-SAST Tools
-----------
-
-`PVS-Studio <https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source>`_ - static analyzer for C, C++, C#, and Java code.
+If you would like to support upstream OBS Studio (which we recommend, since
+this fork depends on their continued work), see
+https://obsproject.com/contribute.

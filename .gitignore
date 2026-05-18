@@ -32,6 +32,7 @@
 !COPYING
 !INSTALL
 !README.rst
+!ROADMAP.md
 
 # Exclude lock files
 *.lock.json
