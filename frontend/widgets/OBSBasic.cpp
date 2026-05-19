@@ -60,6 +60,7 @@
 #include <QThread>
 #include <QWidgetAction>
 
+#include <mutex>
 #ifdef _WIN32
 #include <sstream>
 #endif
@@ -106,6 +107,10 @@ extern bool cef_js_avail;
 
 extern void DestroyPanelCookieManager();
 extern void CheckExistingCookieId();
+
+namespace {
+std::once_flag saveOnceFlag;
+}
 
 static void AddExtraModulePaths()
 {
@@ -1849,16 +1854,19 @@ void OBSBasic::saveAll()
 				  saveGeometry().toBase64().constData());
 	}
 
-	Auth::Save();
-	SaveProjectNow();
+	std::call_once(saveOnceFlag, [this]() {
+		Auth::Save();
+		SaveProjectNow();
 
-	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState", saveState().toBase64().constData());
+		config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState",
+				  saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
-	if (cef) {
-		SaveExtraBrowserDocks();
-	}
+		if (cef) {
+			SaveExtraBrowserDocks();
+		}
 #endif
+	});
 
 	config_set_int(App()->GetAppConfig(), "General", "LastVersion", LIBOBS_API_VER);
 	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
