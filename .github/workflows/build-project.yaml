@@ -103,7 +103,7 @@ jobs:
 
           print "xcodeCasPath=${xcode_cas_path}" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         id: xcode-cache
         with:
           path: ${{ steps.setup.outputs.xcodeCasPath }}
@@ -191,7 +191,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+      - uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         id: ccache-cache
         with:
           path: ${{ github.workspace }}/.ccache
