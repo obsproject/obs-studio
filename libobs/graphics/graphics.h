@@ -501,6 +501,7 @@ struct gs_init_data {
 #define GS_DEVICE_OPENGL 1
 #define GS_DEVICE_DIRECT3D_11 2
 #define GS_DEVICE_METAL 3
+#define GS_DEVICE_DIRECT3D_12 4
 
 EXPORT const char *gs_get_device_name(void);
 EXPORT const char *gs_get_driver_version(void);
@@ -680,6 +681,7 @@ EXPORT void gs_copy_texture_region(gs_texture_t *dst, uint32_t dst_x, uint32_t d
 EXPORT void gs_stage_texture(gs_stagesurf_t *dst, gs_texture_t *src);
 
 EXPORT void gs_begin_frame(void);
+EXPORT void gs_end_frame(void);
 EXPORT void gs_begin_scene(void);
 EXPORT void gs_draw(enum gs_draw_mode draw_mode, uint32_t start_vert, uint32_t num_verts);
 EXPORT void gs_end_scene(void);

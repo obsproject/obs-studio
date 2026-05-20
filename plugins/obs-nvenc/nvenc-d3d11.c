@@ -67,7 +67,7 @@ bool d3d11_init(struct nvenc_data *enc, obs_data_t *settings)
 		return false;
 	}
 
-	enc->device = device;
+	enc->device11 = device;
 	enc->context = context;
 	return true;
 }
@@ -83,8 +83,8 @@ void d3d11_free(struct nvenc_data *enc)
 	if (enc->context) {
 		enc->context->lpVtbl->Release(enc->context);
 	}
-	if (enc->device) {
-		enc->device->lpVtbl->Release(enc->device);
+	if (enc->device11) {
+		enc->device11->lpVtbl->Release(enc->device11);
 	}
 }
 
@@ -104,7 +104,7 @@ static bool d3d11_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	desc.SampleDesc.Count = 1;
 	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
-	ID3D11Device *const device = enc->device;
+	ID3D11Device *const device = enc->device11;
 	ID3D11Texture2D *tex;
 	HRESULT hr = device->lpVtbl->CreateTexture2D(device, &desc, NULL, &tex);
 	if (FAILED(hr)) {
@@ -156,7 +156,8 @@ static void d3d11_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 			nv.nvEncUnmapInputResource(enc->session, nvtex->mapped_res);
 		}
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
-		nvtex->tex->lpVtbl->Release(nvtex->tex);
+		ID3D11Texture2D *tex11 = (ID3D11Texture2D *)(nvtex->tex);
+		tex11->lpVtbl->Release(tex11);
 	}
 }
 
@@ -172,7 +173,7 @@ void d3d11_free_textures(struct nvenc_data *enc)
 
 static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc, uint32_t handle, IDXGIKeyedMutex **km_out)
 {
-	ID3D11Device *device = enc->device;
+	ID3D11Device *device = enc->device11;
 	IDXGIKeyedMutex *km;
 	ID3D11Texture2D *input_tex;
 	HRESULT hr;
