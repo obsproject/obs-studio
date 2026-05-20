@@ -353,6 +353,18 @@ static void analyze_sidechain(struct compressor_data *cd, const uint32_t num_sam
 	cd->envelope = cd->envelope_buf[num_samples - 1];
 }
 
+static inline void apply_natural_release(struct compressor_data *cd, const uint32_t num_samples)
+{
+	if (cd->envelope_buf_len < num_samples)
+		resize_env_buffer(cd, num_samples);
+
+	const float release_gain = cd->release_gain;
+	for (uint32_t i = 0; i < num_samples; ++i) {
+		cd->envelope = release_gain * cd->envelope;
+		cd->envelope_buf[i] = cd->envelope;
+	}
+}
+
 static inline void process_compression(const struct compressor_data *cd, float **samples, uint32_t num_samples)
 {
 	for (size_t i = 0; i < num_samples; ++i) {
@@ -432,12 +444,7 @@ static struct obs_audio_data *compressor_filter_audio(void *data, struct obs_aud
 		analyze_sidechain(cd, num_samples);
 	} else if (has_sidechain_config) {
 		// SIDECHAIN MUTE/INACTIVE: Apply smooth decay
-		const float release_gain = cd->release_gain;
-		for (uint32_t i = 0; i < num_samples; ++i) {
-			cd->envelope = release_gain * cd->envelope;
-			if (i < cd->envelope_buf_len)
-				cd->envelope_buf[i] = cd->envelope;
-		}
+		apply_natural_release(cd, num_samples);
 	} else {
 		// NO SIDECHAIN: Standard self-compression
 		analyze_envelope(cd, samples, num_samples);
