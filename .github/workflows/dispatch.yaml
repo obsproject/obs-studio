@@ -129,7 +129,7 @@ jobs:
           path: docs
 
       - name: Publish to Live Page
-        uses: cloudflare/wrangler-action@4c10c1822abba527d820b29e6333e7f5dac2cabd
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           workingDirectory: docs
           apiToken: ${{ secrets.CF_API_TOKEN }}
