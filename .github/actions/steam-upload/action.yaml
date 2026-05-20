@@ -197,7 +197,7 @@ runs:
         popd
 
     - name: Set Up steamcmd 🚂
-      uses: CyberAndrii/setup-steamcmd@29e114af032a947f5ed57832409070d6e4cbfce3
+      uses: andriivitiv/setup-steamcmd@afc45f145b95c175c3a3862d3ca84756537d48e8 # v1.3.0
 
     - name: Generate Steam auth code 🔐
       id: steam-totp
