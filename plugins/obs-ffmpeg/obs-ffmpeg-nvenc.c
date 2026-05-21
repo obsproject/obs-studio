@@ -217,6 +217,10 @@ static void nvenc_destroy(void *data)
 {
 	struct nvenc_encoder *enc = data;
 	ffmpeg_video_encoder_free(&enc->ffve);
+#ifdef __linux__
+	cuda_free_surfaces(enc);
+	cuda_ctx_free(enc);
+#endif
 	da_free(enc->header);
 	da_free(enc->sei);
 	bfree(enc);
