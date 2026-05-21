@@ -1,4 +1,5 @@
 name: Push
+# obs-studio-plus fork: re-register after enabling Actions
 run-name: ${{ github.ref_name }} push run 🚀
 on:
   push:
