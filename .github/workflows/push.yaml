@@ -12,6 +12,7 @@ on:
       - 'feature/**'
     tags:
       - '*'
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
