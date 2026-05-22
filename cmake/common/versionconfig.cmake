@@ -27,7 +27,10 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git
       # obs-studio-plus fork: no upstream tags reachable from this commit, so
       # `git describe` returned a bare SHA. Fall back to _obs_default_version
       # for the canonical M.m.p triple and the raw OBS_VERSION string.
-      message(STATUS "OBS version: no tag reachable, using default ${_obs_default_version} (git describe: ${_obs_version})")
+      message(
+        STATUS
+        "OBS version: no tag reachable, using default ${_obs_default_version} (git describe: ${_obs_version})"
+      )
       set(_obs_version ${_obs_default_version})
       set(_obs_version_canonical ${_obs_default_version})
     endif()
