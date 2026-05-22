@@ -33,7 +33,7 @@
 !INSTALL
 !README.rst
 !ROADMAP.md
-!PLUS_PLAN.md
+!MOSAIC_PLAN.md
 !/engine
 
 # Exclude lock files

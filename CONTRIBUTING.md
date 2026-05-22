@@ -1,28 +1,30 @@
-OBS Studio Plus — Fork Contribution Rules
-=========================================
+Mosaic — Fork Contribution Rules
+================================
 
-> The section below is **specific to this fork** (`OgBops/obs-studio-plus`).
+> The section below is **specific to this fork** (`OgBops/mosaic`).
 > Upstream OBS Studio's full contribution guide follows further down and
 > applies to any code that is intended to be submitted upstream.
 
-This repository is the **engine** for the Plus desktop app. Plus is a
-separate user-facing product (separate repository, future). This fork
-exists for one reason: produce a headless `plus-host` binary that runs
-`libobs` in a sidecar process and exposes its functionality over IPC.
+This repository hosts `mosaic-host`, the engine for the Mosaic desktop
+app. Mosaic is a separate user-facing product (separate repository,
+future). This fork exists for one reason: produce a headless
+`mosaic-host` binary that runs the upstream broadcasting engine in a
+sidecar process and exposes its functionality over IPC.
 
-## The hard rule: OBS core is read-only
+## The hard rule: upstream broadcasting code is read-only
 
-We do **not** modify the engine, plugins, or any code that ships as part of
-upstream OBS Studio. The fork's value is in keeping libobs unmodified so
-upstream changes merge cleanly forever.
+We do **not** modify the upstream broadcasting engine, its plugins, or
+any code that ships as part of upstream OBS Studio. The fork's value is
+in keeping the upstream code unmodified so upstream changes merge cleanly
+forever.
 
 ### Off-limits paths
 
 | Path | What it is |
 |------|-----------|
-| `libobs/` | The OBS engine itself |
+| `libobs/` | The upstream broadcasting engine |
 | `libobs-d3d11/`, `libobs-opengl/`, `libobs-winrt/` | Engine GPU backends |
-| `plugins/` | Every encoder, capture source, filter, output |
+| `plugins/` | Every upstream encoder, capture source, filter, output |
 | `frontend/` (C++/Qt code) | Upstream Qt UI. We don't link it; we also don't modify it. |
 | `deps/` | Third-party dependencies as upstream ships them |
 
@@ -30,7 +32,7 @@ upstream changes merge cleanly forever.
 
 | Path | Purpose |
 |------|---------|
-| `engine/` | All Plus engine code (IPC server, host wrapper). New code lives here. |
+| `engine/` | All Mosaic engine code (IPC server, host wrapper). New code lives here. |
 | `.github/workflows/`, `.github/scripts/`, `.github/actions/` | CI infrastructure |
 | `cmake/common/versionconfig.cmake` | Already-shipped fork-specific build robustness fix |
 | `frontend/cmake/os-linux.cmake` | Already-shipped flatpak metadata fix |
@@ -44,9 +46,9 @@ Before any commit outside `engine/`:
 > "Would this change still be correct if we deleted the entire fork tomorrow
 > and submitted it upstream as a PR?"
 
-If yes, fine. If no, you're modifying core. Stop.
+If yes, fine. If no, you're modifying upstream code. Stop.
 
-## What if libobs is genuinely missing what we need?
+## What if the upstream engine is genuinely missing what we need?
 
 We file the change **upstream first**.
 
@@ -58,11 +60,11 @@ We file the change **upstream first**.
 
 We do not carry local core patches. The discipline is the point.
 
-## Where Plus engine code goes
+## Where Mosaic engine code goes
 
 ```
 engine/
-├─ host/            # plus-host binary: links libobs, runs IPC server
+├─ host/            # mosaic-host binary: links the upstream engine, runs IPC server
 │  ├─ ipc/          # newline-JSON IPC protocol implementation
 │  ├─ methods/      # IPC method handlers (capture, output, scenes...)
 │  └─ main.cpp      # entry point
@@ -81,12 +83,30 @@ To intentionally update the allowlist (rare — only for upstream-able
 fork-specific build/CI fixes), edit the allowlist in the workflow itself
 and reference the upstream issue or PR.
 
+## Branding separation (trademark)
+
+"OBS" and "OBS Studio" are trademarks of the OBS Project. Mosaic is an
+independent project and does not redistribute upstream-branded binaries.
+Specifically:
+
+- The Mosaic desktop app, when it exists, has its own name, icon, and
+  bundle identifier — it never ships as "OBS.app" or
+  `com.obsproject.obs-studio`.
+- This repository's `master` branch carries upstream code with its
+  original branding, but `master` is never tagged or released from this
+  repository.
+- The CI artifacts produced from `dev` are for our own development
+  verification only and are not redistributed publicly.
+- Any release artifact from this repository must be built from
+  `engine/`-only code, or from a `dev` HEAD where the build has been
+  explicitly re-branded.
+
 ## Branching
 
 | Branch | Purpose |
 |--------|---------|
 | `master` | Tracks upstream OBS Studio. Untouched. |
-| `dev` | Integration branch. Branding, CI, the engine entry points land here. |
+| `dev` | Integration branch. Mosaic docs, CI, the engine entry points land here. |
 | `engine/<name>` | Active engine work. Branch off `dev`. |
 | `engine/spike` | Phase 0 spike. Temporary; deleted after the spike retro. |
 
@@ -94,12 +114,12 @@ Open work-in-progress PRs against `dev`, never `master`.
 
 ## License
 
-Files in `engine/` are licensed under the GPL v2 or later, same as upstream
-OBS Studio, because they link `libobs`.
+Files in `engine/` are licensed under the GPL v2 or later, same as the
+upstream broadcasting source, because they link the upstream engine.
 
-The Plus app (separate repository) does **not** link `libobs` — it
-communicates with `plus-host` over IPC — and is therefore not subject to
-GPL. That separation is load-bearing. Keep it that way.
+The Mosaic app (separate repository) does **not** link the upstream
+engine — it communicates with `mosaic-host` over IPC — and is therefore
+not subject to GPL. That separation is load-bearing. Keep it that way.
 
 ---
 

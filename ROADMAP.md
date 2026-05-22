@@ -1,10 +1,10 @@
 # Roadmap
 
-The high-level roadmap and planning document is `PLUS_PLAN.md`. This file
+The high-level roadmap and planning document is `MOSAIC_PLAN.md`. This file
 is preserved as a pointer so links from the README and elsewhere don't
 break.
 
-→ See **[PLUS_PLAN.md](PLUS_PLAN.md)** for:
+→ See **[MOSAIC_PLAN.md](MOSAIC_PLAN.md)** for:
 
 - The Plus app architecture
 - Hard constraints (OBS core is read-only)

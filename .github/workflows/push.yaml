@@ -1,5 +1,5 @@
 name: Push
-# obs-studio-plus fork: re-register after enabling Actions
+# Mosaic fork: triggers on dev and engine/** branches
 run-name: ${{ github.ref_name }} push run 🚀
 on:
   push:

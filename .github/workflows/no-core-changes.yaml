@@ -1,7 +1,7 @@
 name: No Core Changes
-# Enforces the obs-studio-plus fork rule: libobs/, plugins/, deps/, and the
-# C++/Qt parts of frontend/ track upstream OBS Studio untouched. Only files
-# under engine/, CI infrastructure, and explicitly-allowlisted fork-specific
+# Enforces the Mosaic fork rule: libobs/, plugins/, deps/, and the C++/Qt
+# parts of frontend/ track upstream OBS Studio untouched. Only files under
+# engine/, CI infrastructure, and explicitly-allowlisted fork-specific
 # build fixes may diverge.
 #
 # See CONTRIBUTING.md for the full policy.
@@ -87,7 +87,7 @@ jobs:
           echo "${CHANGED}"
           echo '---'
           echo ''
-          echo 'See CONTRIBUTING.md ("OBS Studio Plus — Fork Contribution Rules").'
+          echo 'See CONTRIBUTING.md ("Mosaic — Fork Contribution Rules").'
           echo 'OBS core (libobs, plugins, frontend C++) tracks upstream untouched.'
           echo ''
           echo 'Options:'
