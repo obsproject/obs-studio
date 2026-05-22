@@ -110,7 +110,15 @@ package() {
   local commit_hash
 
   if [[ -d ${project_root}/.git ]] {
-    local git_description="$(git describe --tags --long)"
+    local git_description="$(git describe --tags --long 2>/dev/null)"
+    if [[ -z ${git_description} ]] {
+      # obs-studio-plus fork: no tags pushed to origin, so `git describe --tags`
+      # fails. Synthesize the same shape (<version>-<distance>-g<sha>) using
+      # total commit count and the short HEAD hash.
+      local _short_hash="$(git rev-parse --short=9 HEAD)"
+      local _commit_count="$(git rev-list --count HEAD)"
+      git_description="0.0.1-${_commit_count}-g${_short_hash}"
+    }
     commit_version="${${git_description%-*}%-*}"
     commit_hash="${git_description##*-g}"
     commit_distance="${${git_description%-*}##*-}"

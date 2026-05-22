@@ -44,7 +44,15 @@ function Package {
 
     Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
 
-    $GitDescription = Invoke-External git describe --tags --long
+    # obs-studio-plus fork: tolerate missing tags (git describe --tags fails
+    # when no tag is reachable). Fall back to <version>-<commit-count>-g<sha>.
+    $GitDescription = $null
+    try { $GitDescription = Invoke-External git describe --tags --long } catch { }
+    if ( -not $GitDescription ) {
+        $ShortHash = (Invoke-External git rev-parse --short=9 HEAD).Trim()
+        $CommitCount = (Invoke-External git rev-list --count HEAD).Trim()
+        $GitDescription = "0.0.1-${CommitCount}-g${ShortHash}"
+    }
     $Tokens = ($GitDescription -split '-')
     $CommitVersion = $Tokens[0..$($Tokens.Count - 3)] -join '-'
     $CommitHash = $($Tokens[-1]).SubString(1)
