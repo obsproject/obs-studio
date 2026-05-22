@@ -65,7 +65,34 @@ runs:
           GIT_BASE_REF='HEAD~1'
           case "${GITHUB_EVENT_NAME}" in
             pull_request) GIT_BASE_REF="origin/${GITHUB_BASE_REF}" ;;
-            push) if [[ "${GITHUB_EVENT_FORCED}" != 'true' ]]; then GIT_BASE_REF="${GITHUB_REF_BEFORE}"; fi ;;
+            push)
+              if [[ "${GITHUB_EVENT_FORCED}" != 'true' ]]; then
+                GIT_BASE_REF="${GITHUB_REF_BEFORE}"
+              fi
+              # obs-studio-plus fork: on the first push of a new feature
+              # branch, GITHUB_REF_BEFORE is 0000... (resolved above to the
+              # empty-tree SHA). That makes `git diff` return every file in
+              # the repo, so check-format jobs flag pre-existing upstream
+              # formatting drift on files we never touched. Fall back to the
+              # merge-base against origin/dev (or origin/master).
+              if [[ "${GIT_BASE_REF}" == '4b825dc642cb6eb9a060e54bf8d69288fbee4904' ]]; then
+                # actions/checkout doesn't fetch sibling branch refs by
+                # default; pull dev and master so merge-base can resolve.
+                git fetch --depth=1 origin dev master &> /dev/null || true
+                _MB=''
+                if git cat-file -e refs/remotes/origin/dev &> /dev/null; then
+                  _MB="$(git merge-base refs/remotes/origin/dev "${GIT_REF}" 2>/dev/null || true)"
+                fi
+                if [[ -z "${_MB}" ]] && git cat-file -e refs/remotes/origin/master &> /dev/null; then
+                  _MB="$(git merge-base refs/remotes/origin/master "${GIT_REF}" 2>/dev/null || true)"
+                fi
+                if [[ -n "${_MB}" ]]; then
+                  GIT_BASE_REF="${_MB}"
+                else
+                  GIT_BASE_REF='HEAD~1'
+                fi
+              fi
+              ;;
             *) ;;
           esac
         fi
