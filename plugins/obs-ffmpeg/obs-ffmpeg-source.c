@@ -50,6 +50,7 @@ struct ffmpeg_source {
 	bool restart_on_activate;
 	bool close_when_inactive;
 	bool seekable;
+	bool is_network;
 	bool is_stinger;
 	bool is_track_matte;
 	bool log_changes;
@@ -305,7 +306,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.is_linear_alpha = s->is_linear_alpha,
 			.hardware_decoding = s->is_hw_decoding,
 			.ffmpeg_options = s->ffmpeg_options,
-			.is_local_file = s->is_local_file || s->seekable,
+			.is_local_file = s->is_local_file || (s->seekable && !s->is_network),
 			.reconnecting = s->reconnecting,
 			.request_preload = s->is_stinger,
 			.full_decode = s->full_decode,
@@ -414,6 +415,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		is_looping = obs_data_get_bool(settings, "looping");
+		s->is_network = false;
 
 		if (s->input && !should_restart_media)
 			should_restart_media |= strcmp(s->input, input) != 0;
@@ -424,6 +426,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		s->reconnect_delay_sec = (int)obs_data_get_int(settings, "reconnect_delay_sec");
 		s->reconnect_delay_sec = s->reconnect_delay_sec == 0 ? 10 : s->reconnect_delay_sec;
 		is_looping = false;
+		s->is_network = true;
 	}
 
 	stop_reconnect_thread(s);
