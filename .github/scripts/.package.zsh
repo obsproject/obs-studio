@@ -110,11 +110,12 @@ package() {
   local commit_hash
 
   if [[ -d ${project_root}/.git ]] {
-    local git_description="$(git describe --tags --long 2>/dev/null)"
+    # `|| true` keeps ERR_RETURN/TRAPZERR from firing (and leaking the
+    # callstack into the variable) when the fork has no tags reachable.
+    local git_description="$(git describe --tags --long 2>/dev/null || true)"
     if [[ -z ${git_description} ]] {
-      # obs-studio-plus fork: no tags pushed to origin, so `git describe --tags`
-      # fails. Synthesize the same shape (<version>-<distance>-g<sha>) using
-      # total commit count and the short HEAD hash.
+      # obs-studio-plus fork fallback: synthesize <version>-<distance>-g<sha>
+      # from the commit count and short HEAD hash so packaging proceeds.
       local _short_hash="$(git rev-parse --short=9 HEAD)"
       local _commit_count="$(git rev-list --count HEAD)"
       git_description="0.0.1-${_commit_count}-g${_short_hash}"
