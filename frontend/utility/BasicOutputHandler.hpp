@@ -7,6 +7,7 @@
 #include <util/dstr.hpp>
 
 #include <future>
+#include <vector>
 
 #define RTMP_PROTOCOL "rtmp"
 #define SRT_PROTOCOL "srt"
@@ -19,6 +20,10 @@ using SetupStreamingContinuation_t = std::function<void(bool)>;
 struct BasicOutputHandler {
 	OBSOutputAutoRelease fileOutput;
 	OBSOutputAutoRelease streamOutput;
+	// Foundation for multi-destination streaming. Empty today; populated when
+	// the user configures additional destinations. AllStreamOutputs() below is
+	// the only correct way to iterate the active set.
+	std::vector<OBSOutputAutoRelease> additionalStreamOutputs;
 	OBSOutputAutoRelease replayBuffer;
 	OBSOutputAutoRelease virtualCam;
 	bool streamingActive = false;
@@ -36,6 +41,23 @@ struct BasicOutputHandler {
 		return (multitrackVideo && multitrackVideoActive)
 			       ? multitrackVideo->StreamingOutput()
 			       : OBSOutputAutoRelease{obs_output_get_ref(streamOutput)};
+	}
+
+	// All currently-configured stream outputs (primary + additional destinations).
+	// Used by callers that need to operate on every output (e.g. starting all
+	// destinations, aggregating bitrate stats). Today this returns just the
+	// primary; populating additionalStreamOutputs is the next milestone.
+	std::vector<obs_output_t *> AllStreamOutputs() const
+	{
+		std::vector<obs_output_t *> outputs;
+		outputs.reserve(1 + additionalStreamOutputs.size());
+		if (streamOutput)
+			outputs.push_back(streamOutput.Get());
+		for (const auto &out : additionalStreamOutputs) {
+			if (out)
+				outputs.push_back(out.Get());
+		}
+		return outputs;
 	}
 
 	obs_view_t *virtualCamView = nullptr;
