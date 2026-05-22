@@ -33,6 +33,8 @@
 !INSTALL
 !README.rst
 !ROADMAP.md
+!PLUS_PLAN.md
+!/engine
 
 # Exclude lock files
 *.lock.json

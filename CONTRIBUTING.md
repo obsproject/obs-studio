@@ -1,3 +1,108 @@
+OBS Studio Plus — Fork Contribution Rules
+=========================================
+
+> The section below is **specific to this fork** (`OgBops/obs-studio-plus`).
+> Upstream OBS Studio's full contribution guide follows further down and
+> applies to any code that is intended to be submitted upstream.
+
+This repository is the **engine** for the Plus desktop app. Plus is a
+separate user-facing product (separate repository, future). This fork
+exists for one reason: produce a headless `plus-host` binary that runs
+`libobs` in a sidecar process and exposes its functionality over IPC.
+
+## The hard rule: OBS core is read-only
+
+We do **not** modify the engine, plugins, or any code that ships as part of
+upstream OBS Studio. The fork's value is in keeping libobs unmodified so
+upstream changes merge cleanly forever.
+
+### Off-limits paths
+
+| Path | What it is |
+|------|-----------|
+| `libobs/` | The OBS engine itself |
+| `libobs-d3d11/`, `libobs-opengl/`, `libobs-winrt/` | Engine GPU backends |
+| `plugins/` | Every encoder, capture source, filter, output |
+| `frontend/` (C++/Qt code) | Upstream Qt UI. We don't link it; we also don't modify it. |
+| `deps/` | Third-party dependencies as upstream ships them |
+
+### Allowed playgrounds
+
+| Path | Purpose |
+|------|---------|
+| `engine/` | All Plus engine code (IPC server, host wrapper). New code lives here. |
+| `.github/workflows/`, `.github/scripts/`, `.github/actions/` | CI infrastructure |
+| `cmake/common/versionconfig.cmake` | Already-shipped fork-specific build robustness fix |
+| `frontend/cmake/os-linux.cmake` | Already-shipped flatpak metadata fix |
+| `*.md`, `*.rst`, `AUTHORS`, `COPYING` | Documentation and licensing |
+| `build-aux/` | Project tooling |
+
+### Smell test
+
+Before any commit outside `engine/`:
+
+> "Would this change still be correct if we deleted the entire fork tomorrow
+> and submitted it upstream as a PR?"
+
+If yes, fine. If no, you're modifying core. Stop.
+
+## What if libobs is genuinely missing what we need?
+
+We file the change **upstream first**.
+
+1. Search [obsproject/obs-studio issues](https://github.com/obsproject/obs-studio/issues)
+   for prior discussion.
+2. Open an upstream PR or issue with the API change request.
+3. Wait for upstream review.
+4. Once accepted upstream, sync via `master`.
+
+We do not carry local core patches. The discipline is the point.
+
+## Where Plus engine code goes
+
+```
+engine/
+├─ host/            # plus-host binary: links libobs, runs IPC server
+│  ├─ ipc/          # newline-JSON IPC protocol implementation
+│  ├─ methods/      # IPC method handlers (capture, output, scenes...)
+│  └─ main.cpp      # entry point
+├─ protocol/        # IPC protocol schema (shared definitions)
+└─ spike/           # Phase 0 throwaway code (deleted at end of phase 0)
+```
+
+## CI enforcement
+
+The workflow `.github/workflows/no-core-changes.yaml` runs on every push to
+`dev` and `engine/**`. It diffs against `upstream/master` and fails the
+build if any off-limits path has changed beyond explicitly-allowlisted
+commits.
+
+To intentionally update the allowlist (rare — only for upstream-able
+fork-specific build/CI fixes), edit the allowlist in the workflow itself
+and reference the upstream issue or PR.
+
+## Branching
+
+| Branch | Purpose |
+|--------|---------|
+| `master` | Tracks upstream OBS Studio. Untouched. |
+| `dev` | Integration branch. Branding, CI, the engine entry points land here. |
+| `engine/<name>` | Active engine work. Branch off `dev`. |
+| `engine/spike` | Phase 0 spike. Temporary; deleted after the spike retro. |
+
+Open work-in-progress PRs against `dev`, never `master`.
+
+## License
+
+Files in `engine/` are licensed under the GPL v2 or later, same as upstream
+OBS Studio, because they link `libobs`.
+
+The Plus app (separate repository) does **not** link `libobs` — it
+communicates with `plus-host` over IPC — and is therefore not subject to
+GPL. That separation is load-bearing. Keep it that way.
+
+---
+
 OBS Studio Contribution Guidelines
 ============
 

@@ -1,0 +1,99 @@
+name: No Core Changes
+# Enforces the obs-studio-plus fork rule: libobs/, plugins/, deps/, and the
+# C++/Qt parts of frontend/ track upstream OBS Studio untouched. Only files
+# under engine/, CI infrastructure, and explicitly-allowlisted fork-specific
+# build fixes may diverge.
+#
+# See CONTRIBUTING.md for the full policy.
+
+on:
+  push:
+    branches:
+      - dev
+      - 'engine/**'
+  pull_request:
+    branches:
+      - dev
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  diff-against-upstream:
+    name: Diff Against Upstream OBS
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/obsproject/obs-studio.git
+          git fetch --depth=200 upstream master
+
+      - name: Check off-limits paths
+        run: |
+          set -euo pipefail
+
+          # Off-limits paths (see CONTRIBUTING.md).
+          OFF_LIMITS=(
+            'libobs/'
+            'libobs-d3d11/'
+            'libobs-opengl/'
+            'libobs-winrt/'
+            'plugins/'
+            'deps/'
+          )
+
+          # Frontend is special: only the C++/Qt code is off-limits. The
+          # frontend/cmake/os-linux.cmake flatpak fix is allowlisted below.
+          # We restrict to actual source files, not cmake.
+          OFF_LIMITS+=(
+            'frontend/*.cpp'
+            'frontend/*.hpp'
+            'frontend/*.h'
+            'frontend/*.mm'
+            'frontend/*.swift'
+            'frontend/data/'
+            'frontend/dialogs/'
+            'frontend/docks/'
+            'frontend/forms/'
+            'frontend/idian/'
+            'frontend/menu/'
+            'frontend/models/'
+            'frontend/oauth/'
+            'frontend/plugins/'
+            'frontend/settings/'
+            'frontend/utility/'
+            'frontend/widgets/'
+            'frontend/window-basic-main.*'
+          )
+
+          MERGE_BASE=$(git merge-base upstream/master HEAD)
+          echo "Merge base with upstream/master: ${MERGE_BASE}"
+
+          # Find any diff in off-limits paths.
+          CHANGED=$(git diff --name-only "${MERGE_BASE}" HEAD -- "${OFF_LIMITS[@]}" || true)
+
+          if [[ -z "${CHANGED}" ]]; then
+            echo '✅ No core changes detected. Fork rule respected.'
+            exit 0
+          fi
+
+          echo '❌ The following files were modified in off-limits paths:'
+          echo '---'
+          echo "${CHANGED}"
+          echo '---'
+          echo ''
+          echo 'See CONTRIBUTING.md ("OBS Studio Plus — Fork Contribution Rules").'
+          echo 'OBS core (libobs, plugins, frontend C++) tracks upstream untouched.'
+          echo ''
+          echo 'Options:'
+          echo '  1. Move the change into engine/ (preferred)'
+          echo '  2. File the change upstream first (obsproject/obs-studio)'
+          echo '  3. If the change is genuinely fork-specific build/CI infrastructure'
+          echo '     and would be accepted upstream as a robustness fix, update'
+          echo '     CONTRIBUTING.md to allowlist it explicitly.'
+          exit 1

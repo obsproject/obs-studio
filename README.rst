@@ -3,66 +3,68 @@ OBS Studio Plus
 
 |build-status|
 
-OBS Studio Plus is a personal fork of `OBS Studio <https://obsproject.com>`_
-that explores three additions on top of upstream:
+This repository is the **engine** for the Plus desktop app — a future
+cross-platform streaming application that covers general streaming,
+vertical-first content (TikTok / Shorts / Reels), and podcast/interview
+workflows.
 
-1. **Native multi-destination streaming** — push the same stream to several
-   services in parallel, with per-destination configuration.
-2. **Native multi-canvas** — surface the existing ``obs_canvas_t`` engine
-   (already complete in ``libobs/obs-canvas.c``) so users can compose 16:9 +
-   9:16 outputs from a single OBS instance.
-3. **Local-first AI plugins** — captions (whisper.cpp), auto-framing, and
-   improved noise suppression as optional drop-in plugins. No cloud
-   dependencies.
+It is a fork of `OBS Studio <https://obsproject.com>`_ that exists for one
+specific purpose: to produce a headless ``plus-host`` binary which runs
+``libobs`` in a sidecar process and exposes its functionality over IPC.
+The Plus desktop app (separate repository, written in Rust + Tauri) talks
+to ``plus-host`` over a named pipe.
 
-Compatibility with upstream OBS plugins, scenes, and profiles is preserved.
+This is the same architecture Streamlabs Desktop uses with their
+``obs-studio-node`` — running libobs out of process keeps the GPL boundary
+at the IPC layer so the Plus app itself can be developed under any
+license, while the engine here remains GPL v2 like upstream OBS.
 
-Current status
---------------
+Status
+------
 
-Early development. The fork is being built incrementally; today's branches
-contain plumbing rather than user-visible features.
+**Pre-alpha.** The fork has just pivoted from "OBS with extra Qt features"
+to "engine for a separate app." Phase 0 (a 2-week feasibility spike) is
+the current work. There is no shippable product yet.
 
-================================  ==============================================
-Branch                            Status
-================================  ==============================================
-``master``                        Tracks upstream OBS, untouched
-``dev``                           Integration branch. Fork branding, CI fixes
-                                  for the no-tags state, and other plumbing.
-                                  CI builds all 6 platforms green.
-``feature/multi-output-foundation`` Header-only structural seam
-                                  (``additionalStreamOutputs`` vector +
-                                  ``AllStreamOutputs()`` helper) for the
-                                  multi-destination work to land on.
-``feature/multi-destination-dock``  Qt dock scaffold (~316 LOC). Compiles in
-                                  isolation; not wired into ``OBSBasic`` yet.
-``feature/ai-captions-plugin``    Plugin scaffold (~379 LOC) with a no-op
-                                  backend. Pending whisper.cpp integration.
-================================  ==============================================
+Today, a build from ``dev`` looks and behaves exactly like vanilla OBS
+Studio — that is intentional. The engine wrapper and the Plus app land in
+later phases. See `PLUS_PLAN.md <PLUS_PLAN.md>`_ for the full plan.
 
-Right now, a binary built from ``dev`` looks and behaves exactly like upstream
-OBS — that is intentional. The user-visible features land once the foundation
-is in place.
+Repository layout
+-----------------
+
+================================  ===============================================
+Branch / path                     What it is
+================================  ===============================================
+``master``                        Tracks upstream OBS Studio, untouched.
+``dev``                           Integration branch. Branding, CI fixes for
+                                  the no-tags state, engine entry points land
+                                  here. CI builds all 6 platforms green.
+``engine/spike``                  Phase 0 spike. Created at the start of phase 0,
+                                  deleted after the retro.
+``engine/host``                   ``plus-host`` proper (created in phase 1).
+``libobs/``, ``plugins/``,        Read-only mirror of upstream OBS. Modifying
+``frontend/`` C++                 these files fails CI.
+================================  ===============================================
+
+The hard rule: see `CONTRIBUTING.md <CONTRIBUTING.md>`_. OBS core is
+read-only in this fork. The CI workflow ``no-core-changes.yaml`` enforces
+the rule by diffing against ``upstream/master``.
 
 Downloads
 ---------
 
-CI produces prebuilt binaries for every push to ``dev`` and ``feature/**``.
-Artifacts (macOS arm64/x86_64 ``.dmg``, Ubuntu 24.04 ``.deb``, Flatpak,
-Windows x64/arm64 zips) are attached to each successful run on the
-`Actions tab <https://github.com/OgBops/obs-studio-plus/actions>`_ and expire
-90 days after the build.
+CI produces prebuilt binaries for every push to ``dev`` and ``engine/**``.
+Today these are vanilla OBS builds. Artifacts (macOS arm64/x86_64 ``.dmg``,
+Ubuntu 24.04 ``.deb``, Flatpak, Windows x64/arm64 zips) are attached to
+each successful run on the
+`Actions tab <https://github.com/OgBops/obs-studio-plus/actions>`_ and
+expire 90 days after the build.
 
 There is no signed release yet. macOS builds are ad-hoc signed; clear the
 quarantine attribute after downloading::
 
     xattr -dr com.apple.quarantine /path/to/OBS.app
-
-Roadmap
--------
-
-See `ROADMAP.md <ROADMAP.md>`_ for the planned feature set and milestone
-ordering.
 
 Building from source
 --------------------
@@ -81,41 +83,26 @@ Quick start (Linux)::
     cmake --preset ubuntu-x86_64
     cmake --build --preset ubuntu-x86_64
 
-A Command-Line-Tools-only macOS build using Ninja is in progress on
-``feature/macos-clt-build`` but is not currently the recommended local path.
-
-Contributing
-------------
-
-This is a personal fork. External contributions are welcome but not actively
-solicited at this stage. If you do open a pull request:
-
-- Read the upstream coding guidelines:
-  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.md
-- Follow the upstream code style:
-  https://github.com/obsproject/obs-studio/blob/master/CODESTYLE.md
-- Open work-in-progress changes against ``dev``, not ``master``.
-  ``master`` tracks upstream OBS Studio so upstream changes can be pulled in
-  cleanly.
-- Run the project's formatters before pushing — CI rejects unformatted
-  changes::
-
-      ./build-aux/run-format clang-format <files>
-      ./build-aux/run-gersemi <files>
-
 License
 -------
 
-OBS Studio Plus is distributed under the GNU General Public License v2 (or
-any later version), the same license as upstream OBS Studio. See ``COPYING``
-for details.
+The engine code in this repository (everything that links ``libobs``,
+including any code we add under ``engine/``) is distributed under the GNU
+General Public License v2 (or any later version), the same license as
+upstream OBS Studio. See ``COPYING`` for details.
+
+The Plus desktop app — which lives in a separate repository — does not
+link ``libobs``. It communicates with ``plus-host`` over IPC. That
+separation is load-bearing for keeping the Plus app closed-source-capable.
+Don't break it.
 
 Quick links
 -----------
 
 - This fork: https://github.com/OgBops/obs-studio-plus
+- Plan: `PLUS_PLAN.md <PLUS_PLAN.md>`_
+- Fork rules: `CONTRIBUTING.md <CONTRIBUTING.md>`_
 - Upstream OBS Studio: https://github.com/obsproject/obs-studio
-- Upstream OBS website: https://obsproject.com
 - Upstream developer/API documentation: https://obsproject.com/docs
 
 Acknowledgements
@@ -125,8 +112,8 @@ OBS Studio Plus is built on top of the work of the OBS Studio team and its
 hundreds of contributors. See the ``AUTHORS`` file for the full list. This
 fork would not exist without their work.
 
-If you would like to support upstream OBS Studio (which is recommended, since
-this fork depends on their continued work), see
+If you would like to support upstream OBS Studio (which is recommended,
+since this fork depends on their continued work), see
 https://obsproject.com/contribute.
 
 .. |build-status| image:: https://github.com/OgBops/obs-studio-plus/actions/workflows/push.yaml/badge.svg?branch=dev
