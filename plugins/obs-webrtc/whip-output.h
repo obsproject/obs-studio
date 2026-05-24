@@ -26,6 +26,11 @@ struct videoLayerState {
 	std::string rid;
 };
 
+struct trickleMediaSection {
+	std::string mid;
+	std::string mline;
+};
+
 class WHIPOutput {
 public:
 	WHIPOutput(obs_data_t *settings, obs_output_t *output);
@@ -52,9 +57,13 @@ private:
 	bool FetchIceServersViaOptions(std::vector<rtc::IceServer> &iceServers);
 	void Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
+	void UpdateTrickleSdpMetadata(const std::string &offer_sdp);
+	bool BuildTrickleSdpFragment(const std::string &mid, const std::string &candidate_line,
+				     bool end_of_candidates, std::string &sdp_frag);
 	void SendTrickleCandidate(const rtc::Candidate &candidate);
 	void SendEndOfCandidates();
 	void SendTrickleIcePatch(const std::string &sdp_frag);
+	void ApplyIncomingRemoteCandidates(const std::string &sdp_frag);
 
 	obs_output_t *output;
 
@@ -69,12 +78,16 @@ private:
 	std::atomic<bool> ice_gathering_complete;
 	std::atomic<bool> has_first_candidate;
 	std::atomic<bool> offer_sent;
+	std::atomic<bool> trickle_enabled;
 	bool has_ice_servers;
 
 	// Trickle ICE support (RFC 8840)
 	std::string ice_ufrag;
 	std::string ice_pwd;
 	std::string first_mid;
+	std::mutex trickle_sdp_mutex;
+	std::vector<trickleMediaSection> trickle_media_sections;
+	std::vector<std::string> trickle_bundle_mids;
 	std::vector<rtc::Candidate> pending_candidates; // Queued until POST completes
 	std::mutex pending_candidates_mutex;
 	std::atomic<bool> post_response_gather_started; // Distinguishes pre-offer vs final gather
