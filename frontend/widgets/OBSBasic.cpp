@@ -472,8 +472,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	renameScene->setShortcut({Qt::Key_Return});
 	renameSource->setShortcut({Qt::Key_Return});
 
-	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
-	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
+	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace, Qt::Key_Delete});
+	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace, Qt::Key_Delete});
 
 	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
@@ -2022,19 +2022,6 @@ void OBSBasic::UpdateEditMenu()
 		filter_count = obs_source_filter_count(source);
 	}
 
-	bool allowPastingDuplicate = !!clipboard.size();
-	for (size_t i = clipboard.size(); i > 0; i--) {
-		const size_t idx = i - 1;
-		OBSWeakSource &weak = clipboard[idx].weak_source;
-		if (obs_weak_source_expired(weak)) {
-			clipboard.erase(clipboard.begin() + idx);
-			continue;
-		}
-		OBSSourceAutoRelease strong = obs_weak_source_get_source(weak.Get());
-		if (allowPastingDuplicate && obs_source_get_output_flags(strong) & OBS_SOURCE_DO_NOT_DUPLICATE)
-			allowPastingDuplicate = false;
-	}
-
 	int videoCount = 0;
 	bool canTransformMultiple = false;
 	for (int i = 0; i < totalCount; i++) {
@@ -2059,8 +2046,11 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionPasteTransform->setEnabled(canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource()) && totalCount > 0);
-	ui->actionPasteRef->setEnabled(!!clipboard.size());
-	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
+	auto pasteType = getItemPasteType();
+	ui->actionPasteRef->setEnabled(pasteType == OBS::ItemPasteType::Reference ||
+				       pasteType == OBS::ItemPasteType::Both);
+	ui->actionPasteDup->setEnabled(pasteType == OBS::ItemPasteType::Duplicate ||
+				       pasteType == OBS::ItemPasteType::Both);
 
 	ui->actionMoveUp->setEnabled(totalCount > 0);
 	ui->actionMoveDown->setEnabled(totalCount > 0);
@@ -2108,12 +2098,12 @@ OBSBasic *OBSBasic::Get()
 	return reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 }
 
-void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
+void OBSBasic::UpdatePatronJson(const std::string &text, const std::string &error)
 {
-	if (!error.isEmpty())
+	if (!error.empty())
 		return;
 
-	patronJson = QT_TO_UTF8(text);
+	patronJson = text;
 }
 
 void OBSBasic::SetDisplayAffinity(QWindow *window)

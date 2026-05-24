@@ -1157,14 +1157,27 @@ void OBSBasic::Load(SceneCollection &collection)
 	LoadData(data, collection);
 }
 
-static inline void AddMissingFiles(void *data, obs_source_t *source)
+namespace {
+void addMissingFilterFiles(obs_source_t *, obs_source_t *filter, void *data)
 {
-	obs_missing_files_t *f = (obs_missing_files_t *)data;
-	obs_missing_files_t *sf = obs_source_get_missing_files(source);
+	obs_missing_files_t *missing_files = static_cast<obs_missing_files_t *>(data);
+	obs_missing_files_t *filter_missing_files = obs_source_get_missing_files(filter);
 
-	obs_missing_files_append(f, sf);
-	obs_missing_files_destroy(sf);
+	obs_missing_files_append(missing_files, filter_missing_files);
+	obs_missing_files_destroy(filter_missing_files);
 }
+
+void addMissingFiles(void *data, obs_source_t *source)
+{
+	obs_missing_files_t *missing_files = static_cast<obs_missing_files_t *>(data);
+	obs_missing_files_t *source_missing_files = obs_source_get_missing_files(source);
+
+	obs_missing_files_append(missing_files, source_missing_files);
+	obs_missing_files_destroy(source_missing_files);
+
+	obs_source_enum_filters(source, addMissingFilterFiles, data);
+}
+} // namespace
 
 void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 {
@@ -1317,12 +1330,12 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	updateRemigrationMenuItem(collection.getCoordinateMode(), ui->actionRemigrateSceneCollection);
 
 	obs_missing_files_t *files = obs_missing_files_create();
-	obs_load_sources(sources, AddMissingFiles, files);
+	obs_load_sources(sources, addMissingFiles, files);
 
 	if (resetVideo)
 		ResetVideo();
 	if (transitionsData)
-		LoadTransitions(transitionsData, AddMissingFiles, files);
+		LoadTransitions(transitionsData, addMissingFiles, files);
 	if (sceneOrder)
 		LoadSceneListOrder(sceneOrder);
 
@@ -1651,7 +1664,7 @@ void OBSBasic::on_actionShowMissingFiles_triggered()
 	obs_missing_files_t *files = obs_missing_files_create();
 
 	auto cb_sources = [](void *data, obs_source_t *source) {
-		AddMissingFiles(data, source);
+		addMissingFiles(data, source);
 		return true;
 	};
 

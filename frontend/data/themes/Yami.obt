@@ -173,6 +173,7 @@
     --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2px));
     --input_height_half: calc(var(--input_height_base) / 2);
+    --spinbox_width: calc(var(--input_height_base) + calc(var(--input_padding) * 2px));
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey7);
@@ -808,6 +809,10 @@ OBSBasicSettings #PropertiesContainer {
     background-color: var(--bg_base);
 }
 
+OBSPropertiesView IconLabel {
+    margin-left: var(--spacing_large);
+}
+
 /* Dock Widget */
 OBSDock > QWidget {
     background: var(--bg_base);
@@ -1280,6 +1285,7 @@ QDoubleSpinBox {
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
     height: var(--input_height);
+    min-width: var(--spinbox_width);
     max-height: var(--input_height);
 }
 
@@ -1496,6 +1502,19 @@ QToolButton:focus,
 .btn-tool:focus {
     border-color: var(--button_border);
     background-color: var(--button_bg_hover);
+}
+
+QToolButton:checked,
+.btn-tool:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+QToolButton:checked:hover,
+QToolButton:checked:focus,
+.btn-tool:checked:hover,
+.btn-tool:checked:focus {
+    border-color: var(--primary_lighter);
 }
 
 QToolButton:pressed,
@@ -2415,6 +2434,48 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 #previewZoomInButton:focus,
 #previewZoomOutButton:focus {
     border: 1px solid var(--input_border_hover);
+}
+
+/* Add Source Dialog */
+SourceSelectButton {
+    background: var(--grey5);
+    padding: var(--padding_base) var(--padding_large);
+    margin: var(--spacing_base);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    outline: none;
+}
+
+SourceSelectButton QLabel {
+    padding: var(--padding_large) 0;
+    text-align: center;
+}
+
+SourceSelectButton #thumbnail {
+    background: var(--grey6);
+    border-radius: var(--border_radius);
+    padding: 0;
+    margin-top: var(--spacing_base);
+}
+
+SourceSelectButton:hover {
+    background-color: var(--button_bg_hover);
+}
+
+SourceSelectButton:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+SourceSelectButton:focus,
+SourceSelectButton:checked:focus {
+    border-color: var(--white3);
+}
+
+SourceSelectButton:pressed,
+SourceSelectButton:pressed:hover {
+    background-color: var(--button_bg_down);
+    border-color: var(--button_border);
 }
 
 /* Idian Widgets */

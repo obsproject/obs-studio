@@ -1029,16 +1029,19 @@ static void nvenc_destroy(void *data)
 	for (size_t i = 0; i < enc->bitstreams.num; i++) {
 		nv_bitstream_free(enc, &enc->bitstreams.array[i]);
 	}
-	if (enc->session)
-		nv.nvEncDestroyEncoder(enc->session);
-
 #ifdef _WIN32
 	d3d11_free_textures(enc);
-	d3d11_free(enc);
 #else
 	cuda_opengl_free(enc);
 #endif
 	cuda_free_surfaces(enc);
+
+	if (enc->session)
+		nv.nvEncDestroyEncoder(enc->session);
+
+#ifdef _WIN32
+	d3d11_free(enc);
+#endif
 	cuda_ctx_free(enc);
 
 	bfree(enc->header);

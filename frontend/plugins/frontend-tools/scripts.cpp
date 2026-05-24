@@ -247,9 +247,8 @@ void ScriptsTool::ReloadScript(const char *path)
 
 			OBSDataAutoRelease settings = obs_script_get_settings(script);
 
-			obs_properties_t *prop = obs_script_get_properties(script);
+			OBSProperties prop = obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);
-			obs_properties_destroy(prop);
 
 			break;
 		}
@@ -351,9 +350,8 @@ void ScriptsTool::on_addScripts_clicked()
 
 			OBSDataAutoRelease settings = obs_script_get_settings(script);
 
-			obs_properties_t *prop = obs_script_get_properties(script);
+			OBSProperties prop = obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);
-			obs_properties_destroy(prop);
 
 			ui->scripts->setCurrentItem(item);
 		}
