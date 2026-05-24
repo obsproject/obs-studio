@@ -372,7 +372,6 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	FILE *tmp_file = NULL;
 	uint32_t filesize = 0;
 	char *tmp_read = NULL;
-	uint16_t header = 0;
 	size_t bytes_read;
 
 	tmp_file = os_fopen(filename, "rb");
@@ -385,24 +384,6 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	}
 	fseek(tmp_file, 0, SEEK_END);
 	filesize = (uint32_t)ftell(tmp_file);
-	fseek(tmp_file, 0, SEEK_SET);
-	bytes_read = fread(&header, 1, 2, tmp_file);
-
-	if (bytes_read == 2 && header == 0xFEFF) {
-		// File is already in UTF-16 format
-		if (srcdata->text != NULL) {
-			bfree(srcdata->text);
-			srcdata->text = NULL;
-		}
-		srcdata->text = bzalloc(filesize);
-		bytes_read = fread(srcdata->text, filesize - 2, 1, tmp_file);
-
-		bfree(tmp_read);
-		fclose(tmp_file);
-
-		return;
-	}
-
 	fseek(tmp_file, 0, SEEK_SET);
 
 	tmp_read = bzalloc(filesize + 1);
@@ -429,8 +410,6 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	size_t bytes_read;
 	char bvalue;
 
-	bool utf16 = false;
-
 	tmp_file = fopen(filename, "rb");
 	if (tmp_file == NULL) {
 		if (!srcdata->file_load_failed) {
@@ -439,10 +418,6 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		}
 		return;
 	}
-	bytes_read = fread(&value, 1, 2, tmp_file);
-
-	if (bytes_read == 2 && value == 0xFEFF)
-		utf16 = true;
 
 	fseek(tmp_file, 0, SEEK_END);
 	filesize = (uint32_t)ftell(tmp_file);
@@ -450,42 +425,19 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	log_lines = srcdata->log_lines;
 
 	while (line_breaks <= log_lines && cur_pos != 0) {
-		if (!utf16)
-			cur_pos--;
-		else
-			cur_pos -= 2;
+		cur_pos--;
 		fseek(tmp_file, cur_pos, SEEK_SET);
 
-		if (!utf16) {
-			bytes_read = fread(&bvalue, 1, 1, tmp_file);
-			if (bytes_read == 1 && bvalue == '\n')
-				line_breaks++;
-		} else {
-			bytes_read = fread(&value, 1, 2, tmp_file);
-			if (bytes_read == 2 && value == L'\n')
-				line_breaks++;
-		}
+		bytes_read = fread(&bvalue, 1, 1, tmp_file);
+		if (bytes_read == 1 && bvalue == '\n')
+			line_breaks++;
 	}
 
 	if (cur_pos != 0)
-		cur_pos += (utf16) ? 2 : 1;
+		cur_pos++;
 
 	fseek(tmp_file, cur_pos, SEEK_SET);
 
-	if (utf16) {
-		if (srcdata->text != NULL) {
-			bfree(srcdata->text);
-			srcdata->text = NULL;
-		}
-		srcdata->text = bzalloc(filesize - cur_pos);
-		bytes_read = fread(srcdata->text, (filesize - cur_pos), 1, tmp_file);
-
-		remove_cr(srcdata->text);
-		bfree(tmp_read);
-		fclose(tmp_file);
-
-		return;
-	}
 
 	tmp_read = bzalloc((filesize - cur_pos) + 1);
 	bytes_read = fread(tmp_read, filesize - cur_pos, 1, tmp_file);
