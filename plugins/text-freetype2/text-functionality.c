@@ -367,6 +367,14 @@ static void remove_cr(wchar_t *source)
 	source[j] = '\0';
 }
 
+static void load_text_from_utf8_buf(struct ft2_source *srcdata, const char *utf8_text, size_t len)
+{
+	size_t wlen = os_utf8_to_wcs(utf8_text, len, NULL, 0);
+	srcdata->text = bzalloc((wlen + 1) * sizeof(wchar_t));
+	os_utf8_to_wcs(utf8_text, len, srcdata->text, (wlen + 1));
+	remove_cr(srcdata->text);
+}
+
 void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 {
 	FILE *tmp_file = NULL;
@@ -394,10 +402,8 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
 
-	remove_cr(srcdata->text);
+	load_text_from_utf8_buf(srcdata, tmp_read, bytes_read);
 	bfree(tmp_read);
 }
 
@@ -467,10 +473,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	bytes_read = fread(tmp_read, 1, filesize - cur_pos, tmp_file);
 	fclose(tmp_file);
 
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
-
-	remove_cr(srcdata->text);
+	load_text_from_utf8_buf(srcdata, tmp_read, bytes_read);
 	bfree(tmp_read);
 }
 
