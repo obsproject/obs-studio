@@ -295,8 +295,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 	/* lookahead */
 
 	const bool use_profile_lookahead = config->rcParams.enableLookahead;
-	bool lookahead = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD) &&
-			 (enc->props.lookahead || use_profile_lookahead);
+	bool lookahead = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD) && enc->props.lookahead;
 
 	if (lookahead) {
 		rc_lookahead = use_profile_lookahead ? config->rcParams.lookaheadDepth : 8;
@@ -329,7 +328,18 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 		}
 	}
 
-	enc->config.rcParams.disableIadapt = enc->props.disable_scenecut;
+	if (!lookahead) {
+		config->rcParams.enableLookahead = 0;
+		config->rcParams.lookaheadDepth = 0;
+		config->rcParams.disableIadapt = 1;
+		config->rcParams.disableBadapt = 1;
+	}
+
+	/* disable adaptive Iframes when scenecut is disabled */
+
+	if (enc->props.disable_scenecut) {
+		enc->config.rcParams.disableIadapt = 1;
+	}
 
 	/* psycho aq */
 
@@ -337,6 +347,10 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings)
 		config->rcParams.enableAQ = 1;
 		config->rcParams.aqStrength = 8;
 		config->rcParams.enableTemporalAQ = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_TEMPORAL_AQ);
+	} else {
+		config->rcParams.enableAQ = 0;
+		config->rcParams.aqStrength = 0;
+		config->rcParams.enableTemporalAQ = 0;
 	}
 
 	/* -------------------------- */
