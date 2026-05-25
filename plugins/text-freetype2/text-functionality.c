@@ -387,7 +387,7 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	fseek(tmp_file, 0, SEEK_SET);
 
 	tmp_read = bzalloc(filesize + 1);
-	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
+	bytes_read = fread(tmp_read, 1, filesize, tmp_file);
 	fclose(tmp_file);
 
 	if (srcdata->text != NULL) {
@@ -441,7 +441,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	os_fseeki64(tmp_file, (int64_t)cur_pos, SEEK_SET);
 
 	tmp_read = bzalloc((filesize - cur_pos) + 1);
-	bytes_read = fread(tmp_read, filesize - cur_pos, 1, tmp_file);
+	bytes_read = fread(tmp_read, 1, filesize - cur_pos, tmp_file);
 	fclose(tmp_file);
 
 	if (srcdata->text != NULL) {
