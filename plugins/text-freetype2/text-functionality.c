@@ -356,15 +356,16 @@ time_t get_modified_timestamp(char *filename)
 	return stats.st_mtime;
 }
 
-static void remove_cr(wchar_t *source)
+static inline void remove_cr_and_zeroes(wchar_t *source, size_t len)
 {
-	int j = 0;
-	for (int i = 0; source[i] != '\0'; ++i) {
-		if (source[i] != L'\r') {
+	size_t j = 0;
+	for (size_t i = 0; i < len; i++) {
+		wchar_t ch = source[i];
+		if (ch != L'\0' && ch != L'\r') {
 			source[j++] = source[i];
 		}
 	}
-	source[j] = '\0';
+	source[j] = L'\0';
 }
 
 static void load_text_from_utf8_buf(struct ft2_source *srcdata, const char *utf8_text, size_t len)
@@ -372,7 +373,7 @@ static void load_text_from_utf8_buf(struct ft2_source *srcdata, const char *utf8
 	size_t wlen = os_utf8_to_wcs(utf8_text, len, NULL, 0);
 	srcdata->text = bzalloc((wlen + 1) * sizeof(wchar_t));
 	os_utf8_to_wcs(utf8_text, len, srcdata->text, (wlen + 1));
-	remove_cr(srcdata->text);
+	remove_cr_and_zeroes(srcdata->text, wlen);
 }
 
 void load_text_from_file(struct ft2_source *srcdata, const char *filename)
