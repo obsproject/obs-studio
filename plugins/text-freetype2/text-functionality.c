@@ -407,7 +407,6 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	size_t filesize;
 	size_t cur_pos;
 	size_t bytes_read;
-	char bvalue;
 	uint32_t log_lines;
 	uint32_t line_breaks = 0;
 	char *tmp_read = NULL;
@@ -427,16 +426,40 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	log_lines = srcdata->log_lines;
 
 	while (line_breaks <= log_lines && cur_pos != 0) {
-		cur_pos--;
+		char input[1024];
+
+		size_t count = (cur_pos > sizeof(input)) ? sizeof(input) : cur_pos;
+		cur_pos -= count;
 		os_fseeki64(tmp_file, (int64_t)cur_pos, SEEK_SET);
 
-		bytes_read = fread(&bvalue, 1, 1, tmp_file);
-		if (bytes_read == 1 && bvalue == '\n')
-			line_breaks++;
+		bytes_read = fread(input, 1, count, tmp_file);
+		if (bytes_read != count) {
+			blog(LOG_WARNING, "Somehow text-freetype2 did not read the "
+					  "intended count even though we know "
+					  "the file size should be safe.");
+			cur_pos = filesize;
+			break;
+		}
+
+		for (size_t i = 0; i < count; i++) {
+			char ch = input[count - i - 1];
+			if (ch == '\n') {
+				if (++line_breaks > log_lines) {
+					cur_pos += count - i;
+					break;
+				}
+			}
+		}
 	}
 
-	if (cur_pos != 0)
-		cur_pos++;
+	if (srcdata->text != NULL) {
+		bfree(srcdata->text);
+		srcdata->text = NULL;
+	}
+
+	if (cur_pos == filesize) {
+		return;
+	}
 
 	os_fseeki64(tmp_file, (int64_t)cur_pos, SEEK_SET);
 
@@ -444,10 +467,6 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	bytes_read = fread(tmp_read, 1, filesize - cur_pos, tmp_file);
 	fclose(tmp_file);
 
-	if (srcdata->text != NULL) {
-		bfree(srcdata->text);
-		srcdata->text = NULL;
-	}
 	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
 	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
 
