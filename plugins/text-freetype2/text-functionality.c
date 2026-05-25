@@ -404,11 +404,13 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 void read_from_end(struct ft2_source *srcdata, const char *filename)
 {
 	FILE *tmp_file = NULL;
-	uint32_t filesize = 0, cur_pos = 0, log_lines = 0;
-	char *tmp_read = NULL;
-	uint16_t value = 0, line_breaks = 0;
+	size_t filesize;
+	size_t cur_pos;
 	size_t bytes_read;
 	char bvalue;
+	uint32_t log_lines;
+	uint32_t line_breaks = 0;
+	char *tmp_read = NULL;
 
 	tmp_file = fopen(filename, "rb");
 	if (tmp_file == NULL) {
@@ -420,13 +422,13 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	}
 
 	fseek(tmp_file, 0, SEEK_END);
-	filesize = (uint32_t)ftell(tmp_file);
+	filesize = (size_t)os_ftelli64(tmp_file);
 	cur_pos = filesize;
 	log_lines = srcdata->log_lines;
 
 	while (line_breaks <= log_lines && cur_pos != 0) {
 		cur_pos--;
-		fseek(tmp_file, cur_pos, SEEK_SET);
+		os_fseeki64(tmp_file, (int64_t)cur_pos, SEEK_SET);
 
 		bytes_read = fread(&bvalue, 1, 1, tmp_file);
 		if (bytes_read == 1 && bvalue == '\n')
@@ -436,8 +438,7 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 	if (cur_pos != 0)
 		cur_pos++;
 
-	fseek(tmp_file, cur_pos, SEEK_SET);
-
+	os_fseeki64(tmp_file, (int64_t)cur_pos, SEEK_SET);
 
 	tmp_read = bzalloc((filesize - cur_pos) + 1);
 	bytes_read = fread(tmp_read, filesize - cur_pos, 1, tmp_file);
