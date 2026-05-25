@@ -16,6 +16,7 @@
 #include <QUrl>
 #include <QUrlQuery>
 
+#include <algorithm>
 #include <cinttypes>
 
 // Codec profile strings
@@ -238,7 +239,14 @@ static OBSEncoderAutoRelease create_video_encoder(DStr &name_buffer, size_t enco
 
 	dstr_printf(name_buffer, "multitrack video video encoder %zu", encoder_index);
 
-	OBSDataAutoRelease encoder_settings = obs_data_create_from_json(encoder_config.settings.dump().c_str());
+	// settings.dump() produces "null" when the config omits encoder settings, which
+	// obs_data_create_from_json cannot parse. Fall back to empty settings so the encoder uses its defaults.
+	OBSDataAutoRelease encoder_settings =
+		encoder_config.settings.is_object() ? obs_data_create_from_json(encoder_config.settings.dump().c_str())
+						    : obs_data_create();
+	if (!encoder_config.settings.is_object()) {
+		blog(LOG_INFO, "Encoder %zu has no settings, using defaults", encoder_index);
+	}
 
 	/* VAAPI-based encoders unfortunately use an integer for "profile". Until a string-based "profile" can be used with
 	 * VAAPI, find the corresponding integer value and update the settings with an integer-based "profile".
@@ -613,10 +621,11 @@ static bool create_video_encoders(const GoLiveApi::Config &go_live_config,
 			obs_output_set_video_encoder2(recording_output, encoder, i);
 
 		auto &data = go_live_config.encoder_configurations[i].bitrate_interpolation_points;
-		if (data.has_value())
+		if (data.has_value()) {
 			bitrate_interpolation_array.push_back(*data);
-		else
+		} else {
 			bitrate_interpolation_array.push_back(json::array());
+		}
 	}
 
 	video_encoder_group = encoder_group;
@@ -675,7 +684,15 @@ static void create_audio_encoders(const GoLiveApi::Config &go_live_config,
 
 		for (size_t i = 0; i < configs.size(); i++) {
 			dstr_printf(encoder_name_buffer, "%s %zu", name_prefix, i);
-			OBSDataAutoRelease settings = obs_data_create_from_json(configs[i].settings.dump().c_str());
+			// settings.dump() produces "null" when the config omits encoder settings,
+			// which obs_data_create_from_json cannot parse. Fall back to empty settings.
+			OBSDataAutoRelease settings =
+				configs[i].settings.is_object()
+					? obs_data_create_from_json(configs[i].settings.dump().c_str())
+					: obs_data_create();
+			if (!configs[i].settings.is_object()) {
+				blog(LOG_INFO, "Audio encoder %zu has no settings, using defaults", i);
+			}
 			OBSEncoderAutoRelease audio_encoder =
 				create_audio_encoder(encoder_name_buffer->array, audio_encoder_id, settings, mixer_idx);
 
@@ -782,7 +799,18 @@ static OBSOutputs SetupOBSOutput(QWidget *parent, const QString &multitrack_vide
 		return {nullptr, nullptr};
 
 	OBSDataAutoRelease settings = obs_output_get_settings(output);
-	obs_data_set_string(settings, "interpolation_table_data", bitrate_interpolation_array.dump().c_str());
+	// Only set interpolation_table_data if every encoder has interpolation points. Partial data would
+	// fail validation in the output plugin and disable DBR. Omitting it lets the output use its default
+	// linear interpolation (proportional scaling from 0 to max bitrate).
+	bool has_interpolation_data = std::all_of(bitrate_interpolation_array.begin(),
+						  bitrate_interpolation_array.end(),
+						  [](const json &arr) { return !arr.empty(); });
+	if (has_interpolation_data) {
+		obs_data_set_string(settings, "interpolation_table_data", bitrate_interpolation_array.dump().c_str());
+	} else {
+		blog(LOG_INFO,
+		     "Interpolation data missing for one or more encoders, using default linear interpolation");
+	}
 	obs_output_update(output, settings);
 
 	std::vector<speaker_layout> requested_speaker_layouts;
