@@ -1930,13 +1930,16 @@ void OBSApp::processSigQuit()
 void OBSApp::commitData(QSessionManager &manager)
 {
 	OBSBasic *main = OBSBasic::Get();
-	if (main) {
-		main->saveAll();
+    if (main) {
+        main->saveAll();
 
-		if (manager.allowsInteraction() && main->shouldPromptForClose()) {
-			manager.cancel();
-		}
-	}
+        if (manager.allowsInteraction() && main->shouldPromptForClose()) {
+            /* Don't block system shutdown if only replay buffer is active */
+            if (main->isRecording() || main->isStreaming()) {
+                manager.cancel();
+            }
+        }
+    }
 }
 
 void OBSApp::applicationShutdown() noexcept
