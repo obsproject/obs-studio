@@ -265,7 +265,7 @@ void AutoConfigStreamPage::on_show_clicked()
 
 void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 {
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	OAuthStreamKey *a = dynamic_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
 		bool validKey = !a->key().empty();
@@ -292,16 +292,17 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 
 			ui->connectedAccountText->setText(QTStr("Auth.LoadingChannel.Title"));
 
-			YoutubeApiWrappers *ytAuth = reinterpret_cast<YoutubeApiWrappers *>(a);
-			ChannelDescription cd;
-			if (ytAuth->GetChannelDescription(cd)) {
-				ui->connectedAccountText->setText(cd.title);
+			if (YoutubeApiWrappers *ytAuth = dynamic_cast<YoutubeApiWrappers *>(a)) {
+				ChannelDescription cd;
+				if (ytAuth->GetChannelDescription(cd)) {
+					ui->connectedAccountText->setText(cd.title);
 
-				/* Create throwaway stream key for bandwidth test */
-				if (ui->doBandwidthTest->isChecked()) {
-					StreamDescription stream = {"", "", "OBS Studio Test Stream"};
-					if (ytAuth->InsertStream(stream)) {
-						ui->key->setText(stream.name);
+					/* Create throwaway stream key for bandwidth test */
+					if (ui->doBandwidthTest->isChecked()) {
+						StreamDescription stream = {"", "", "OBS Studio Test Stream"};
+						if (ytAuth->InsertStream(stream)) {
+							ui->key->setText(stream.name);
+						}
 					}
 				}
 			}
@@ -406,7 +407,7 @@ void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 {
 #ifdef YOUTUBE_ENABLED
 	// when account is already connected:
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	OAuthStreamKey *a = dynamic_cast<OAuthStreamKey *>(auth.get());
 	if (a && service == a->service() && IsYouTubeService(a->service())) {
 		ui->connectedAccountLabel->setVisible(true);
 		ui->connectedAccountText->setVisible(true);
