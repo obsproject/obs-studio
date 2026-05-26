@@ -27,7 +27,7 @@ jobs:
           Write-Output "Workflow SHA: ${sha}"
           "workflow_sha=${sha}" >> $env:GITHUB_OUTPUT
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: "repo"
           fetch-depth: 0
@@ -42,7 +42,7 @@ jobs:
           "commitHash=${shortHash}" >> $env:GITHUB_OUTPUT
 
       - name: Download Artifact 📥
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ steps.setup.outputs.commitHash }}
           path: ${{ github.workspace }}/build
@@ -57,26 +57,26 @@ jobs:
           architecture: ${{ matrix.architecture }}
 
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: ${{ github.workspace }}/output/*-${{ matrix.architecture }}.zip
 
       - name: Upload Signed Build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-signed
           compression-level: 0
           path: ${{ github.workspace }}/output/*-${{ matrix.architecture }}.zip
 
       - name: Upload PDBs
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-pdbs
           compression-level: 0
           path: ${{ github.workspace }}/output/*-pdbs.zip
 
       - name: Upload Installer
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.architecture == 'x64'
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ github.ref_name }}-installer

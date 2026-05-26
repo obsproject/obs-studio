@@ -70,7 +70,7 @@ runs:
 
     - name: Download Nightly Assets 🌙
       id: asset-info-nightly
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       if: github.event_name == 'schedule'
 
     - name: Download Assets 📥
@@ -197,11 +197,11 @@ runs:
         popd
 
     - name: Set Up steamcmd 🚂
-      uses: CyberAndrii/setup-steamcmd@29e114af032a947f5ed57832409070d6e4cbfce3
+      uses: andriivitiv/setup-steamcmd@afc45f145b95c175c3a3862d3ca84756537d48e8 # v1.3.0
 
     - name: Generate Steam auth code 🔐
       id: steam-totp
-      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
+      uses: andriivitiv/steam-totp@1661caebf0a84a79be0166020f81837039137101 # v1.2.0
       if: ${{ ! fromJSON(inputs.preview) }}
       with:
         shared_secret: ${{ inputs.steamSecret }}
@@ -248,7 +248,7 @@ runs:
 
     - name: Generate Steam auth code 🔐
       id: steam-totp-playtest
-      uses: CyberAndrii/steam-totp@45775c32193801a84d19d94076d72a2ece010948
+      uses: andriivitiv/steam-totp@1661caebf0a84a79be0166020f81837039137101 # v1.2.0
       if: ${{ ! fromJSON(inputs.preview) && fromJSON(steps.asset-info.outputs.is_prerelease) }}
       with:
         shared_secret: ${{ inputs.steamSecret }}
@@ -285,7 +285,7 @@ runs:
         popd
 
     - name: Upload Steam build logs
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: steam-build-logs
         path: ${{ github.workspace }}/steam/build/*.log
