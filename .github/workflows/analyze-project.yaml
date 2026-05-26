@@ -41,7 +41,7 @@ jobs:
 
   macos:
     name: macOS 🍏 (clang-analyze)
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
@@ -57,8 +57,8 @@ jobs:
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          print '::group::Enable Xcode 16.4'
-          sudo xcode-select --switch /Applications/Xcode_16.4.app/Contents/Developer
+          print '::group::Enable Xcode 26.5'
+          sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
           print '::endgroup::'
 
           print '::group::Clean Homebrew Environment'
