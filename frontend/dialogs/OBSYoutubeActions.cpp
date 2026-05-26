@@ -17,11 +17,11 @@ const QString SchedulDateAndTimeFormat = "yyyy-MM-dd'T'hh:mm:ss'Z'";
 const QString RepresentSchedulDateAndTimeFormat = "dddd, MMMM d, yyyy h:m";
 const QString IndexOfGamingCategory = "20";
 
-OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcastReady)
+OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, YoutubeApiWrappers &apiYouTube, bool broadcastReady)
 	: QDialog(parent),
 	  ui(new Ui::OBSYoutubeActions),
-	  apiYouTube(dynamic_cast<YoutubeApiWrappers *>(auth)),
-	  workerThread(new WorkerThread(apiYouTube)),
+	  apiYouTube(&apiYouTube),
+	  workerThread(new WorkerThread(&apiYouTube)),
 	  broadcastReady(broadcastReady)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -121,12 +121,6 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 
 	connect(ui->selectFileButton, &QPushButton::clicked, this, thumbSelectionHandler);
 	connect(ui->thumbnailPreview, &ClickableLabel::clicked, this, thumbSelectionHandler);
-
-	if (!apiYouTube) {
-		blog(LOG_DEBUG, "YouTube API auth NOT found.");
-		Cancel();
-		return;
-	}
 
 	const char *name = config_get_string(OBSBasic::Get()->Config(), "YouTube", "ChannelName");
 	this->setWindowTitle(QTStr("YouTube.Actions.WindowTitle").arg(name));
