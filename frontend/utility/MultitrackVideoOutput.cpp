@@ -17,6 +17,7 @@
 #include <QUrlQuery>
 
 #include <cinttypes>
+#include <string_view>
 
 // Codec profile strings
 static const char *h264_main = "Main";
@@ -26,26 +27,14 @@ static const char *hevc_main = "Main";
 static const char *hevc_main10 = "Main 10";
 static const char *av1_main = "Main";
 
+constexpr std::string_view kCustomRtmpIdentifier{"rtmp_custom"};
+
 // Maximum reconnect attempts with an invalid key error before giving up (roughly 30 seconds with default start value)
 static constexpr uint8_t MAX_RECONNECT_ATTEMPTS = 5;
 
 Qt::ConnectionType BlockingConnectionTypeFor(QObject *object)
 {
 	return object->thread() == QThread::currentThread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection;
-}
-
-bool MultitrackVideoDeveloperModeEnabled()
-{
-	static bool developer_mode = [] {
-		auto args = qApp->arguments();
-		for (const auto &arg : args) {
-			if (arg == "--enable-multitrack-video-dev") {
-				return true;
-			}
-		}
-		return false;
-	}();
-	return developer_mode;
 }
 
 static OBSServiceAutoRelease create_service(const GoLiveApi::Config &go_live_config,
@@ -410,49 +399,53 @@ void MultitrackVideoOutput::PrepareStreaming(
 	     rtmp_url.has_value() ? rtmp_url->c_str() : "",
 	     vod_track_info_storage->array ? vod_track_info_storage->array : "No", canvasNames.c_str());
 
-	const bool custom_config_only = auto_config_url.isEmpty() && custom_config.has_value() &&
-					strcmp(obs_service_get_id(service), "rtmp_custom") == 0;
+	// This will crash if serviceId is a nullptr. Deliberately unhandled because that would constitute a critical
+	// application state error.
+	const char *serviceId = obs_service_get_id(service);
+	std::string_view serviceIdString{serviceId};
 
-	if (!custom_config_only) {
-		auto go_live_post = constructGoLivePost(stream_key, maximum_aggregate_bitrate, maximum_video_tracks,
-							vod_track_mixer.has_value(), canvases);
+	bool isCustomRtmpService = (serviceIdString == kCustomRtmpIdentifier);
+	bool hasAutoConfigUrl = !auto_config_url.isEmpty();
+	bool hasCustomConfig = custom_config.has_value();
 
-		go_live_config = DownloadGoLiveConfig(parent, auto_config_url, go_live_post, multitrack_video_name);
-	}
+	if (!isCustomRtmpService) {
+		if (hasAutoConfigUrl) {
+			auto go_live_post = constructGoLivePost(stream_key, maximum_aggregate_bitrate,
+								maximum_video_tracks, vod_track_mixer.has_value(),
+								canvases);
 
-	if (custom_config.has_value()) {
-		GoLiveApi::Config parsed_custom;
-		try {
-			parsed_custom = nlohmann::json::parse(*custom_config);
-		} catch (const nlohmann::json::exception &exception) {
-			blog(LOG_WARNING, "Failed to parse custom config: %s", exception.what());
-			throw MultitrackVideoError::critical(QTStr("FailedToStartStream.InvalidCustomConfig"));
+			go_live_config =
+				DownloadGoLiveConfig(parent, auto_config_url, go_live_post, multitrack_video_name);
+
+			if (go_live_config) {
+				blog(LOG_INFO, "Enhanced broadcasting config_id: '%s'",
+				     go_live_config->meta.config_id.c_str());
+			}
 		}
+	} else {
+		if (hasCustomConfig) {
+			GoLiveApi::Config parsed_custom;
+			try {
+				parsed_custom = nlohmann::json::parse(*custom_config);
+			} catch (const nlohmann::json::exception &exception) {
+				blog(LOG_WARNING, "Failed to parse custom config: %s", exception.what());
+				throw MultitrackVideoError::critical(QTStr("FailedToStartStream.InvalidCustomConfig"));
+			}
 
-		// copy unique ID from go live request
-		if (go_live_config.has_value()) {
-			parsed_custom.meta.config_id = go_live_config->meta.config_id;
-			blog(LOG_INFO, "Using config_id from go live config with custom config: %s",
-			     parsed_custom.meta.config_id.c_str());
+			nlohmann::json custom_data = parsed_custom;
+			blog(LOG_INFO, "Using custom go live config: %s", custom_data.dump(4).c_str());
+
+			custom.emplace(std::move(parsed_custom));
 		}
-
-		nlohmann::json custom_data = parsed_custom;
-		blog(LOG_INFO, "Using custom go live config: %s", custom_data.dump(4).c_str());
-
-		custom.emplace(std::move(parsed_custom));
 	}
 
-	if (go_live_config.has_value()) {
-		blog(LOG_INFO, "Enhanced broadcasting config_id: '%s'", go_live_config->meta.config_id.c_str());
-	}
-
-	if (!go_live_config && !custom) {
+	if (!(go_live_config || custom)) {
 		blog(LOG_ERROR, "MultitrackVideoOutput: no config set, this should never happen");
-		throw MultitrackVideoError::warning(QTStr("FailedToStartStream.NoConfig"));
+		throw MultitrackVideoError::warning(QTStr("FailedToStartStream.NoConfigSupplied"));
 	}
 
 	const auto &output_config = custom ? *custom : *go_live_config;
-	const auto &service_config = go_live_config ? *go_live_config : *custom;
+	const auto &service_config = custom ? *custom : *go_live_config;
 
 	std::vector<OBSEncoderAutoRelease> audio_encoders;
 	std::shared_ptr<obs_encoder_group_t> video_encoder_group;
