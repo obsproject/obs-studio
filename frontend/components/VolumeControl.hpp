@@ -118,7 +118,6 @@ public slots:
 	void updateMixerState();
 
 private slots:
-	void renameSource();
 	void changeVolume();
 
 	void handleMuteButton(bool checked);
@@ -126,6 +125,9 @@ private slots:
 	void sliderChanged(int vol);
 	void updateText();
 	void setName(QString name);
+
+private:
+	void renameSource(OBSSource source);
 
 	void handleSourceDestroyed() { deleteLater(); }
 

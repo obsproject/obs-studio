@@ -419,14 +419,6 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 	hideAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
 	pinAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
 
-	mixerRenameAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
-
-	copyFiltersAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
-	pasteFiltersAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
-
-	filtersAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
-	propertiesAction->setProperty("source", QVariant::fromValue<OBSSource>(source));
-
 	// Connect actions to signals
 	OBSBasic *main = OBSBasic::Get();
 
@@ -438,13 +430,13 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 		Qt::DirectConnection);
 	connect(lockAction, &QAction::toggled, this, &VolumeControl::setLocked);
 
-	connect(copyFiltersAction, &QAction::triggered, main, &OBSBasic::actionCopyFilters);
-	connect(pasteFiltersAction, &QAction::triggered, main, &OBSBasic::actionPasteFilters);
+	connect(copyFiltersAction, &QAction::triggered, main, [main, source] { main->copyFilters(source); });
+	connect(pasteFiltersAction, &QAction::triggered, main, [main, source] { main->pasteFilters(source); });
 
-	connect(mixerRenameAction, &QAction::triggered, this, &VolumeControl::renameSource);
+	connect(mixerRenameAction, &QAction::triggered, this, [this, source] { renameSource(source); });
 
-	connect(filtersAction, &QAction::triggered, main, &OBSBasic::actionOpenSourceFilters);
-	connect(propertiesAction, &QAction::triggered, main, &OBSBasic::actionOpenSourceProperties);
+	connect(filtersAction, &QAction::triggered, main, [main, source] { main->CreateFiltersWindow(source); });
+	connect(propertiesAction, &QAction::triggered, main, [main, source] { main->CreatePropertiesWindow(source); });
 
 	// Enable/disable actions
 	copyFiltersAction->setEnabled(obs_source_filter_count(source) > 0);
@@ -503,11 +495,8 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 	connect(popup, &QMenu::aboutToHide, popup, &QMenu::deleteLater);
 }
 
-void VolumeControl::renameSource()
+void VolumeControl::renameSource(OBSSource source)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	OBSSource source = action->property("source").value<OBSSource>();
-
 	std::string uuid = obs_source_get_uuid(source);
 
 	OBSBasic *main = OBSBasic::Get();

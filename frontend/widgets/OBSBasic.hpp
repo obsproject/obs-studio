@@ -399,11 +399,10 @@ private slots:
 	void on_actionCopyTransform_triggered();
 	void on_actionPasteTransform_triggered();
 
-public slots:
-	void actionCopyFilters();
-	void actionPasteFilters();
-
 public:
+	void copyFilters(OBSSource source);
+	void pasteFilters(OBSSource dstSource);
+
 	obs_weak_source_t *copyFiltersSource() { return copyFiltersSource_; }
 	OBSWeakSource copyFilter;
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
@@ -1246,9 +1245,6 @@ public:
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction, ColorSelect *select,
 				      obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(int idx, bool preview);
-
-	void actionOpenSourceFilters();
-	void actionOpenSourceProperties();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Scenes

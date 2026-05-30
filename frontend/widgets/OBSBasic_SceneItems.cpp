@@ -766,30 +766,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::actionOpenSourceFilters()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	if (!action->property("source").isValid()) {
-		return;
-	}
-
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
-	CreateFiltersWindow(source);
-}
-
-void OBSBasic::actionOpenSourceProperties()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	if (!action->property("source").isValid()) {
-		return;
-	}
-
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
-	CreatePropertiesWindow(source);
-}
-
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 {
 	if (ui->scenes->count()) {
