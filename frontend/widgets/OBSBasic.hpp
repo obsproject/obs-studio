@@ -464,7 +464,7 @@ private slots:
 	void on_lockDocks_toggled(bool lock);
 	void on_sideDocks_toggled(bool side);
 
-	void RepairCustomExtraDockName();
+	void RepairCustomExtraDockName(QDockWidget *dock);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Dropfiles
@@ -852,7 +852,7 @@ private:
 private slots:
 	void PreviewScalingModeChanged(int value);
 
-	void ColorChange();
+	void ColorChange(int preset, QPushButton *colorButton = nullptr);
 
 	void EnablePreview();
 	void DisablePreview();
@@ -905,7 +905,7 @@ private:
 	const OBSProfile &CreateProfile(const std::string &profileName);
 	void RemoveProfile(OBSProfile profile);
 
-	void ChangeProfile();
+	void ChangeProfile(QAction *action, const QString &profileName);
 
 	void RefreshProfileCache();
 
@@ -959,10 +959,10 @@ private:
 private slots:
 	void OpenSavedProjector(SavedProjectorInfo *info);
 
-	void OpenPreviewProjector();
-	void OpenSourceProjector();
-	void OpenMultiviewProjector();
-	void OpenSceneProjector();
+	void OpenPreviewProjector(int monitor);
+	void OpenSourceProjector(int monitor);
+	void OpenMultiviewProjector(int monitor);
+	void OpenSceneProjector(int monitor);
 
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
@@ -973,14 +973,15 @@ public:
 	void DeleteProjector(OBSProjector *projector);
 
 	static QList<QString> GetProjectorMenuMonitorsFormatted();
-	template<typename Receiver, typename... Args>
-	static void AddProjectorMenuMonitors(QMenu *parent, Receiver *target, void (Receiver::*slot)(Args...))
+	template<typename Receiver>
+	static void AddProjectorMenuMonitors(QMenu *parent, Receiver *target, void (Receiver::*slot)(int))
 	{
 		auto projectors = GetProjectorMenuMonitorsFormatted();
 		for (int i = 0; i < projectors.size(); i++) {
 			QString str = projectors[i];
-			QAction *action = parent->addAction(str, target, slot);
-			action->setProperty("monitor", i);
+			QAction *action = parent->addAction(str);
+			QObject::connect(action, &QAction::triggered, target,
+					 [target, slot, i]() { (target->*slot)(i); });
 		}
 	}
 
@@ -1100,7 +1101,7 @@ private:
 
 	bool CreateDuplicateSceneCollection(const QString &name);
 	void DeleteSceneCollection(const QString &name);
-	void ChangeSceneCollection();
+	void ChangeSceneCollection(QAction *action, const QString &collectionName);
 
 	void RefreshSceneCollectionCache();
 
@@ -1189,13 +1190,13 @@ private slots:
 	void ReorderSources(OBSScene scene);
 	void RefreshSources(OBSScene scene);
 
-	void SetDeinterlacingMode();
-	void SetDeinterlacingOrder();
+	void SetDeinterlacingMode(obs_deinterlace_mode mode);
+	void SetDeinterlacingOrder(obs_deinterlace_field_order order);
 
-	void SetScaleFilter();
+	void SetScaleFilter(obs_scale_type mode);
 
-	void SetBlendingMethod();
-	void SetBlendingMode();
+	void SetBlendingMethod(obs_blending_method method);
+	void SetBlendingMode(obs_blending_type mode);
 
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
@@ -1441,7 +1442,7 @@ private slots:
 
 	void ProgramViewContextMenuRequested();
 
-	void OpenStudioProgramProjector();
+	void OpenStudioProgramProjector(int monitor);
 	void OpenStudioProgramWindow();
 
 	/* Studio Mode toggle slot */
@@ -1519,7 +1520,7 @@ private:
 	void LoadTransitions(obs_data_array_t *transitions, obs_load_source_cb cb, void *private_data);
 
 	void AddQuickTransitionId(int id);
-	void AddQuickTransition();
+	void AddQuickTransition(const std::string &transitionUuid, QSpinBox *duration, bool fadeToBlack);
 	void AddQuickTransitionHotkey(QuickTransition *qt);
 	void RemoveQuickTransitionHotkey(QuickTransition *qt);
 	void LoadQuickTransitions(obs_data_array_t *array);
@@ -1535,10 +1536,10 @@ private:
 	int GetQuickTransitionIdx(int id);
 	QMenu *CreateTransitionMenu(QWidget *parent, QuickTransition *qt);
 	void ClearQuickTransitions();
-	void QuickTransitionClicked();
-	void QuickTransitionChange();
-	void QuickTransitionChangeDuration(int value);
-	void QuickTransitionRemoveClicked();
+	void QuickTransitionClicked(int id);
+	void QuickTransitionChange(int id, const std::string &transitionUuid, bool fadeToBlack);
+	void QuickTransitionChangeDuration(int id, int value);
+	void QuickTransitionRemoveClicked(int id);
 
 	OBSSource GetOverrideTransition(OBSSource source);
 	int GetOverrideTransitionDuration(OBSSource source);

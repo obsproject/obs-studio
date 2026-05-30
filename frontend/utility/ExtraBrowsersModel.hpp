@@ -3,6 +3,8 @@
 #include <QAbstractTableModel>
 #include <QUuid>
 
+class QPushButton;
+
 enum class Column : int {
 	Title,
 	Url,
@@ -41,7 +43,7 @@ public:
 	void Reset();
 	void CheckToAdd();
 	void UpdateItem(Item &item);
-	void DeleteItem();
+	void DeleteItem(QPushButton *button, const QModelIndex &index);
 	void Apply();
 
 	QVector<Item> items;

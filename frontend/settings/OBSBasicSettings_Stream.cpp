@@ -1819,7 +1819,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		if (idx == -1) {
 			lastAdvVideoEnc = get_adv_fallback(lastAdvVideoEnc);
 			ui->advOutEncoder->setProperty("changed", QVariant(true));
-			OutputsChanged();
+			OutputsChanged(nullptr);
 		}
 
 		idx = ui->advOutEncoder->findData(lastAdvVideoEnc);
@@ -1832,7 +1832,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		if (idx == -1) {
 			lastAdvAudioEnc = get_adv_audio_fallback(lastAdvAudioEnc);
 			ui->advOutAEncoder->setProperty("changed", QVariant(true));
-			OutputsChanged();
+			OutputsChanged(nullptr);
 		}
 
 		idx = ui->advOutAEncoder->findData(lastAdvAudioEnc);
@@ -1845,7 +1845,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		if (idx == -1) {
 			lastVideoEnc = get_simple_fallback(lastVideoEnc);
 			ui->simpleOutStrEncoder->setProperty("changed", QVariant(true));
-			OutputsChanged();
+			OutputsChanged(nullptr);
 		}
 
 		idx = ui->simpleOutStrEncoder->findData(lastVideoEnc);
@@ -1858,7 +1858,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		if (idx == -1) {
 			lastAudioEnc = (lastAudioEnc == "opus") ? "aac" : "opus";
 			ui->simpleOutStrAEncoder->setProperty("changed", QVariant(true));
-			OutputsChanged();
+			OutputsChanged(nullptr);
 		}
 
 		idx = ui->simpleOutStrAEncoder->findData(lastAudioEnc);

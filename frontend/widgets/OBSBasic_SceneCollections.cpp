@@ -335,18 +335,15 @@ void OBSBasic::DeleteSceneCollection(const QString &name)
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
 }
 
-void OBSBasic::ChangeSceneCollection()
+void OBSBasic::ChangeSceneCollection(QAction *action, const QString &collectionName)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-
 	if (!action) {
 		return;
 	}
 
 	const std::string_view currentCollectionName{
 		config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
-	const QVariant qCollectionName = action->property("collection_name");
-	const std::string selectedCollectionName{qCollectionName.toString().toStdString()};
+	const std::string selectedCollectionName{collectionName.toStdString()};
 
 	if (currentCollectionName == selectedCollectionName) {
 		action->setChecked(true);
@@ -399,9 +396,9 @@ void OBSBasic::RefreshSceneCollections(bool refreshCache)
 			const QString qCollectionName = QString().fromStdString(collectionName);
 
 			QAction *action = new QAction(qCollectionName, this);
-			action->setProperty("collection_name", qCollectionName);
 			action->setProperty("file_name", QString().fromStdString(collection.getFileName()));
-			connect(action, &QAction::triggered, this, &OBSBasic::ChangeSceneCollection);
+			connect(action, &QAction::triggered, this,
+				[this, action, qCollectionName]() { ChangeSceneCollection(action, qCollectionName); });
 			action->setCheckable(true);
 			action->setChecked(collectionName == currentCollectionName);
 
