@@ -401,13 +401,12 @@ void OBSProjector::RenameProjector(QString oldName, QString newName)
 	UpdateProjectorTitle(newName);
 }
 
-void OBSProjector::OpenFullScreenProjector()
+void OBSProjector::OpenFullScreenProjector(int monitor)
 {
 	if (!isFullScreen()) {
 		prevGeometry = geometry();
 	}
 
-	int monitor = sender()->property("monitor").toInt();
 	SetMonitor(monitor);
 
 	OBSSource source = GetSource();

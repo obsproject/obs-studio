@@ -45,7 +45,7 @@ private:
 
 private slots:
 	void EscapeTriggered();
-	void OpenFullScreenProjector();
+	void OpenFullScreenProjector(int monitor);
 	void ResizeToContent();
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
