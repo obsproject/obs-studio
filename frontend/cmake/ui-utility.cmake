@@ -28,6 +28,10 @@ target_sources(
     utility/MultitrackVideoOutput.cpp
     utility/MultitrackVideoOutput.hpp
     utility/NativeEventFilter.hpp
+    utility/OBSClipboardService.hpp
+    utility/OBSClipboardService.cpp
+    utility/OBSClipboardSerializer.hpp
+    utility/OBSClipboardSerializer.cpp
     utility/OBSCanvas.cpp
     utility/OBSCanvas.hpp
     utility/OBSEventFilter.hpp
