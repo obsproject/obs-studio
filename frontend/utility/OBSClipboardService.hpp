@@ -18,13 +18,22 @@
 #pragma once
 
 #include <obs.hpp>
-#include <QMimeData>
-#include <QClipboard>
 #include <vector>
 
 class OBSClipboardService {
 public:
 	bool canPasteSceneItems(bool duplicate) const;
+	bool canPasteFilters() const;
+	bool canPasteTransform() const;
+	bool canPasteTransition() const;
+
 	void copySceneItems(const std::vector<OBSSceneItem> &items);
+	void copyFilters(OBSSource source);
+	void copyTransform(OBSSceneItem item);
+	void copyTransition(OBSSceneItem item, bool show);
+
 	void pasteSceneItems(OBSScene scene, bool duplicate);
+	void pasteFilters(OBSSource destination);
+	void pasteTransform(const std::vector<OBSSceneItem> &items);
+	void pasteTransition(const std::vector<OBSSceneItem> &items, bool show);
 };

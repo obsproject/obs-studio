@@ -18,7 +18,6 @@
 #pragma once
 
 #include <obs.hpp>
-#include <QMimeData>
 
 class OBSClipboardSerializer {
 public:
