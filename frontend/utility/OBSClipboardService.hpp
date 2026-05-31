@@ -19,6 +19,7 @@
 
 #include <obs.hpp>
 #include <vector>
+#include <string_view>
 
 class OBSClipboardService {
 public:
@@ -36,4 +37,8 @@ public:
 	void pasteFilters(OBSSource destination);
 	void pasteTransform(const std::vector<OBSSceneItem> &items);
 	void pasteTransition(const std::vector<OBSSceneItem> &items, bool show);
+
+private:
+	void setMimeData(const std::string_view mimeType, OBSData payload);
+	OBSData getMimeData(const std::string_view mimeType);
 };
