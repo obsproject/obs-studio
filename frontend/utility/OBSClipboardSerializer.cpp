@@ -2,20 +2,33 @@
 
 OBSData OBSClipboardSerializer::SerializeSceneItem(OBSSceneItem item)
 {
-	return OBSData();
+	if (!item) {
+		return {};
+	}
+
+	return {};
 }
 
 OBSData OBSClipboardSerializer::SerializeFilters(OBSSource source)
 {
-	return OBSData();
+	if (!source) {
+		return {};
+	}
+	return {};
 }
 
 OBSData OBSClipboardSerializer::SerializeTransform(OBSSceneItem item)
 {
-	return OBSData();
+	if (!item) {
+		return {};
+	}
+	return {};
 }
 
 OBSData OBSClipboardSerializer::SerializeTransition(OBSSceneItem item, bool show)
 {
-	return OBSData();
+	if (!item) {
+		return {};
+	}
+	return {};
 }

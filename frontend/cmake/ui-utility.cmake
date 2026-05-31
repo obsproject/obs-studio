@@ -32,6 +32,7 @@ target_sources(
     utility/OBSClipboardService.cpp
     utility/OBSClipboardSerializer.hpp
     utility/OBSClipboardSerializer.cpp
+    utility/OBSClipboardMimeTypes.hpp
     utility/OBSCanvas.cpp
     utility/OBSCanvas.hpp
     utility/OBSEventFilter.hpp
