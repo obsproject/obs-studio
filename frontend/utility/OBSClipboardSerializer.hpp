@@ -25,4 +25,9 @@ public:
 	static OBSData SerializeFilters(OBSSource source);
 	static OBSData SerializeTransform(OBSSceneItem item);
 	static OBSData SerializeTransition(OBSSceneItem item, bool show);
+
+	static bool DeserializeSceneItem(OBSData data);
+	static bool DeserializeFilters(OBSData data);
+	static bool DeserializeTransform(OBSData data, obs_transform_info &transform, obs_sceneitem_crop &crop);
+	static bool DeserializeTransition(OBSData data);
 };
