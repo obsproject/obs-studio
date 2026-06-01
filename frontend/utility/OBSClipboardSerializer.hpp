@@ -29,5 +29,7 @@ public:
 	static bool DeserializeSceneItem(const OBSData &data);
 	static bool DeserializeFilters(const OBSData &data, OBSDataArrayAutoRelease &filters);
 	static bool DeserializeTransform(const OBSData &data, obs_transform_info &transform, obs_sceneitem_crop &crop);
-	static bool DeserializeTransition(const OBSData &data);
+
+	// not needed as obs_sceneitem_transition_load does the job for us
+	// static bool DeserializeTransition(const OBSData &data);
 };

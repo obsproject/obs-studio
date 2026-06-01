@@ -59,11 +59,15 @@ OBSData OBSClipboardSerializer::SerializeTransition(OBSSceneItem item, bool show
 	if (!item) {
 		return {};
 	}
-	return {};
+	OBSDataAutoRelease data = obs_sceneitem_transition_save(item, show);
+	return OBSData(data);
 }
 
 bool OBSClipboardSerializer::DeserializeSceneItem(const OBSData &data)
 {
+	if (!data) {
+		return false;
+	}
 	return false;
 }
 
@@ -99,7 +103,8 @@ bool OBSClipboardSerializer::DeserializeTransform(const OBSData &data, obs_trans
 	return true;
 }
 
-bool OBSClipboardSerializer::DeserializeTransition(const OBSData &data)
-{
-	return false;
-}
+// not needed as obs_sceneitem_transition_load does the job for us
+// bool OBSClipboardSerializer::DeserializeTransition(const OBSData &data)
+// {
+// 	return false;
+// }
