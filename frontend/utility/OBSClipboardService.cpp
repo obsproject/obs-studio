@@ -24,7 +24,7 @@ bool OBSClipboardService::canPasteTransform() const
 
 bool OBSClipboardService::canPasteTransition() const
 {
-	return false;
+	return !!getMimeData(OBSClipboard::SceneItemTransition);
 }
 
 void OBSClipboardService::copySceneItems(const std::vector<OBSSceneItem> &items) {}
@@ -47,7 +47,11 @@ void OBSClipboardService::copyTransform(OBSSceneItem item)
 	setMimeData(OBSClipboard::SceneItemTransform, payload);
 }
 
-void OBSClipboardService::copyTransition(OBSSceneItem item, bool show) {}
+void OBSClipboardService::copyTransition(OBSSceneItem item, bool show)
+{
+	OBSData payload = OBSClipboardSerializer::SerializeTransition(item, show);
+	setMimeData(OBSClipboard::SceneItemTransition, payload);
+}
 
 void OBSClipboardService::pasteSceneItems(OBSScene scene, bool duplicate) {}
 
@@ -70,8 +74,9 @@ void OBSClipboardService::pasteFilters(OBSSource destination)
 void OBSClipboardService::pasteTransform(const std::vector<OBSSceneItem> &items)
 {
 	OBSData payload = getMimeData(OBSClipboard::SceneItemTransform);
-	if (!payload)
+	if (!payload) {
 		return;
+	}
 
 	obs_transform_info transform;
 	obs_sceneitem_crop crop;
@@ -90,7 +95,18 @@ void OBSClipboardService::pasteTransform(const std::vector<OBSSceneItem> &items)
 	}
 }
 
-void OBSClipboardService::pasteTransition(const std::vector<OBSSceneItem> &items, bool show) {}
+void OBSClipboardService::pasteTransition(const std::vector<OBSSceneItem> &items, bool show)
+{
+	OBSData payload = getMimeData(OBSClipboard::SceneItemTransition);
+	if (!payload) {
+		return;
+	}
+	for (OBSSceneItem item : items) {
+		if (item) {
+			obs_sceneitem_transition_load(item, payload, show);
+		}
+	}
+}
 
 void OBSClipboardService::setMimeData(const char *mimeType, const OBSData &payload)
 {
