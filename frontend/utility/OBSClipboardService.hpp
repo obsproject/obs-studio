@@ -38,6 +38,6 @@ public:
 	void pasteTransition(const std::vector<OBSSceneItem> &items, bool show);
 
 private:
-	void setMimeData(const char *mimeType, const OBSData &payload);
+	void setMimeData(const char *mimeType, obs_data_t *payload);
 	OBSData getMimeData(const char *mimeType) const;
 };
