@@ -410,11 +410,13 @@ void AudioMixer::updatePreviewSources()
 			return;
 		}
 
-		if (!previewScene) {
-			return;
-		}
+		auto previewEnum = [](obs_scene_t *scene, obs_sceneitem_t *item, void *data) -> bool {
+			return (*static_cast<std::function<bool(obs_scene_t *, obs_sceneitem_t *)> *>(data))(scene, item);
+		};
 
-		auto getPreviewSources = [this](obs_scene_t *, obs_sceneitem_t *item) {
+		std::function<bool(obs_scene_t *, obs_sceneitem_t *)> getPreviewSources = 
+    			[&](obs_scene_t * /* scene */, obs_sceneitem_t *item) -> bool {
+
 			if (!obs_sceneitem_visible(item)) {
 				return true;
 			}
@@ -422,6 +424,22 @@ void AudioMixer::updatePreviewSources()
 			obs_source_t *source = obs_sceneitem_get_source(item);
 			if (!source) {
 				return true;
+			}
+
+			obs_scene_t *subScene = nullptr;
+
+			if(obs_source_is_group(source)) {
+				subScene = obs_group_from_source(source);
+			}
+			else {
+				subScene = obs_scene_from_source(source);
+			}
+
+			if(subScene) {
+				{
+					OBSSource safeSource = source; // Automatically adds a reference safely
+					obs_scene_enum_items(subScene, previewEnum, &getPreviewSources);
+				}
 			}
 
 			uint32_t flags = obs_source_get_output_flags(source);
@@ -439,12 +457,6 @@ void AudioMixer::updatePreviewSources()
 			}
 
 			return true;
-		};
-
-		using getPreviewSources_t = decltype(getPreviewSources);
-
-		auto previewEnum = [](obs_scene_t *scene, obs_sceneitem_t *item, void *data) -> bool {
-			return (*static_cast<getPreviewSources_t *>(data))(scene, item);
 		};
 
 		obs_scene_enum_items(previewScene, previewEnum, &getPreviewSources);
