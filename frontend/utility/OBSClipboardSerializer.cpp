@@ -79,7 +79,7 @@ OBSData OBSClipboardSerializer::SerializeTransition(OBSSceneItem item, bool show
 	return OBSData(data);
 }
 
-bool OBSClipboardSerializer::DeserializeSceneItem(const OBSData &data, OBSDataArrayAutoRelease &items,
+bool OBSClipboardSerializer::DeserializeSceneItem(const OBSDataAutoRelease &data, OBSDataArrayAutoRelease &items,
 						  OBSDataAutoRelease &source, uint32_t &outputFlags)
 {
 	if (!data) {
