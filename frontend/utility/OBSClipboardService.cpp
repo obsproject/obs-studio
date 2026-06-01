@@ -7,8 +7,10 @@
 #include <QClipboard>
 #include <QMimeData>
 
+#include <cstring>
+
 namespace {
-OBSDataAutoRelease CloneData(const OBSDataAutoRelease &data)
+OBSDataAutoRelease CloneData(obs_data_t *data)
 {
 	if (!data) {
 		return {};
@@ -17,7 +19,7 @@ OBSDataAutoRelease CloneData(const OBSDataAutoRelease &data)
 	return obs_data_create_from_json(obs_data_get_json(data));
 }
 
-OBSSourceAutoRelease ResolveReferencedSource(const OBSDataAutoRelease &sourceData)
+OBSSourceAutoRelease ResolveReferencedSource(obs_data_t *sourceData)
 {
 	const char *uuid = obs_data_get_string(sourceData, "uuid");
 	if (uuid && *uuid) {
@@ -30,6 +32,12 @@ OBSSourceAutoRelease ResolveReferencedSource(const OBSDataAutoRelease &sourceDat
 	}
 
 	return {};
+}
+
+bool CanLoadDuplicateSource(obs_data_t *sourceData)
+{
+	const char *id = obs_data_get_string(sourceData, "id");
+	return id && *id && strcmp(id, "group") != 0;
 }
 
 void PrepareRootSceneItem(obs_data_array_t *items, obs_source_t *source = nullptr)
@@ -81,7 +89,8 @@ bool OBSClipboardService::canPasteSceneItems(bool duplicate) const
 
 		const bool requiresReference = !duplicate || (outputFlags & OBS_SOURCE_DO_NOT_DUPLICATE);
 
-		if (!requiresReference || ResolveReferencedSource(sourceData)) {
+		if ((!requiresReference && CanLoadDuplicateSource(sourceData)) ||
+		    (requiresReference && ResolveReferencedSource(sourceData))) {
 			return true;
 		}
 	}
@@ -120,7 +129,7 @@ void OBSClipboardService::copySceneItems(const std::vector<OBSSceneItem> &items)
 
 	OBSDataAutoRelease payload = obs_data_create();
 	obs_data_set_array(payload, "items", serializedItems);
-	setMimeData(OBSClipboard::SceneItems, OBSData(payload.Get()));
+	setMimeData(OBSClipboard::SceneItems, payload);
 }
 
 void OBSClipboardService::copyFilters(OBSSource source)
@@ -197,8 +206,7 @@ void OBSClipboardService::pasteSceneItems(OBSScene scene, bool duplicate)
 
 		obs_data_erase(sourceData, "uuid");
 
-		const char *id = obs_data_get_string(sourceData, "id");
-		if (!id || !*id) {
+		if (!CanLoadDuplicateSource(sourceData)) {
 			continue;
 		}
 
@@ -266,7 +274,7 @@ void OBSClipboardService::pasteTransition(const std::vector<OBSSceneItem> &items
 	}
 }
 
-void OBSClipboardService::setMimeData(const char *mimeType, const OBSData &payload)
+void OBSClipboardService::setMimeData(const char *mimeType, obs_data_t *payload)
 {
 	if (!mimeType) {
 		return;
@@ -278,6 +286,8 @@ void OBSClipboardService::setMimeData(const char *mimeType, const OBSData &paylo
 
 	OBSDataAutoRelease envelope = obs_data_create();
 	obs_data_set_int(envelope, "version", OBSClipboard::PayloadVersion);
+	obs_data_set_string(envelope, "type", mimeType);
+	obs_data_set_string(envelope, "created_with", obs_get_version_string());
 	obs_data_set_obj(envelope, "payload", payload);
 
 	mimeData->setData(mimeType, QByteArray(obs_data_get_json(envelope)));
@@ -300,6 +310,9 @@ OBSData OBSClipboardService::getMimeData(const char *mimeType) const
 		return {};
 	}
 	if (obs_data_get_int(envelope, "version") != OBSClipboard::PayloadVersion) {
+		return {};
+	}
+	if (strcmp(obs_data_get_string(envelope, "type"), mimeType) != 0) {
 		return {};
 	}
 	OBSDataAutoRelease payload = obs_data_get_obj(envelope, "payload");
