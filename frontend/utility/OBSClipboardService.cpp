@@ -14,7 +14,7 @@ bool OBSClipboardService::canPasteSceneItems(bool duplicate) const
 
 bool OBSClipboardService::canPasteFilters() const
 {
-	return false;
+	return !!getMimeData(OBSClipboard::SourceFilters);
 }
 
 bool OBSClipboardService::canPasteTransform() const
@@ -29,10 +29,20 @@ bool OBSClipboardService::canPasteTransition() const
 
 void OBSClipboardService::copySceneItems(const std::vector<OBSSceneItem> &items) {}
 
-void OBSClipboardService::copyFilters(OBSSource source) {}
+void OBSClipboardService::copyFilters(OBSSource source)
+{
+	if (!source) {
+		return;
+	}
+	OBSData payload = OBSClipboardSerializer::SerializeFilters(source);
+	setMimeData(OBSClipboard::SourceFilters, payload);
+}
 
 void OBSClipboardService::copyTransform(OBSSceneItem item)
 {
+	if (!item) {
+		return;
+	}
 	OBSData payload = OBSClipboardSerializer::SerializeTransform(item);
 	setMimeData(OBSClipboard::SceneItemTransform, payload);
 }
@@ -41,7 +51,21 @@ void OBSClipboardService::copyTransition(OBSSceneItem item, bool show) {}
 
 void OBSClipboardService::pasteSceneItems(OBSScene scene, bool duplicate) {}
 
-void OBSClipboardService::pasteFilters(OBSSource destination) {}
+void OBSClipboardService::pasteFilters(OBSSource destination)
+{
+	if (!destination) {
+		return;
+	}
+	OBSData payload = getMimeData(OBSClipboard::SourceFilters);
+	if (!payload) {
+		return;
+	}
+	OBSDataArrayAutoRelease filters;
+	if (!OBSClipboardSerializer::DeserializeFilters(payload, filters)) {
+		return;
+	}
+	obs_source_restore_filters(destination, filters);
+}
 
 void OBSClipboardService::pasteTransform(const std::vector<OBSSceneItem> &items)
 {
