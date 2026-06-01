@@ -8,6 +8,7 @@
 #include <QMimeData>
 
 #include <cstring>
+#include <string>
 
 namespace {
 OBSDataAutoRelease CloneData(obs_data_t *data)
@@ -37,7 +38,23 @@ OBSSourceAutoRelease ResolveReferencedSource(obs_data_t *sourceData)
 bool CanLoadDuplicateSource(obs_data_t *sourceData)
 {
 	const char *id = obs_data_get_string(sourceData, "id");
-	return id && *id && strcmp(id, "group") != 0;
+	return id && *id;
+}
+
+std::string GetUniqueFilterName(obs_source_t *destination, const char *name)
+{
+	std::string uniqueName = name;
+	int suffix = 1;
+
+	for (;;) {
+		OBSSourceAutoRelease existing = obs_source_get_filter_by_name(destination, uniqueName.c_str());
+		if (!existing) {
+			break;
+		}
+		uniqueName = std::string(name) + " " + std::to_string(++suffix);
+	}
+
+	return uniqueName;
 }
 
 void PrepareRootSceneItem(obs_data_array_t *items, obs_source_t *source = nullptr)
@@ -234,7 +251,22 @@ void OBSClipboardService::pasteFilters(OBSSource destination)
 	if (!OBSClipboardSerializer::DeserializeFilters(payload, filters)) {
 		return;
 	}
-	obs_source_restore_filters(destination, filters);
+
+	for (size_t i = obs_data_array_count(filters); i > 0; i--) {
+		OBSDataAutoRelease serializedFilter = obs_data_array_item(filters, i - 1);
+		OBSDataAutoRelease filterData = CloneData(serializedFilter);
+		if (!filterData) {
+			continue;
+		}
+
+		const std::string name = GetUniqueFilterName(destination, obs_data_get_string(filterData, "name"));
+		obs_data_set_string(filterData, "name", name.c_str());
+		obs_data_erase(filterData, "uuid");
+		OBSSourceAutoRelease filter = obs_load_private_source(filterData);
+		if (filter) {
+			obs_source_filter_add(destination, filter);
+		}
+	}
 }
 
 void OBSClipboardService::pasteTransform(const std::vector<OBSSceneItem> &items)
@@ -244,8 +276,8 @@ void OBSClipboardService::pasteTransform(const std::vector<OBSSceneItem> &items)
 		return;
 	}
 
-	obs_transform_info transform;
-	obs_sceneitem_crop crop;
+	obs_transform_info transform = {};
+	obs_sceneitem_crop crop = {};
 
 	if (!OBSClipboardSerializer::DeserializeTransform(payload, transform, crop))
 		return;
