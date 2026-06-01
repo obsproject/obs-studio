@@ -6,7 +6,23 @@ OBSData OBSClipboardSerializer::SerializeSceneItem(OBSSceneItem item)
 		return {};
 	}
 
-	return {};
+	OBSSource source = obs_sceneitem_get_source(item);
+	if (!source) {
+		return {};
+	}
+	OBSDataArrayAutoRelease items = obs_data_array_create();
+	obs_sceneitem_save(item, items);
+
+	OBSDataAutoRelease sourceData = obs_save_source(source);
+	if (!sourceData) {
+		return {};
+	}
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_array(data, "items", items);
+	obs_data_set_obj(data, "source", sourceData);
+	obs_data_set_int(data, "output_flags", obs_source_get_output_flags(source));
+
+	return OBSData(data);
 }
 
 OBSData OBSClipboardSerializer::SerializeFilters(OBSSource source)
@@ -63,12 +79,16 @@ OBSData OBSClipboardSerializer::SerializeTransition(OBSSceneItem item, bool show
 	return OBSData(data);
 }
 
-bool OBSClipboardSerializer::DeserializeSceneItem(const OBSData &data)
+bool OBSClipboardSerializer::DeserializeSceneItem(const OBSData &data, OBSDataArrayAutoRelease &items,
+						  OBSDataAutoRelease &source, uint32_t &outputFlags)
 {
 	if (!data) {
 		return false;
 	}
-	return false;
+	items = obs_data_get_array(data, "items");
+	source = obs_data_get_obj(data, "source");
+	outputFlags = static_cast<uint32_t>(obs_data_get_int(data, "output_flags"));
+	return !!items && obs_data_array_count(items) && !!source;
 }
 
 bool OBSClipboardSerializer::DeserializeFilters(const OBSData &data, OBSDataArrayAutoRelease &filters)
