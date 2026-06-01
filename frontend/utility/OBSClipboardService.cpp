@@ -8,7 +8,7 @@
 #include <QMimeData>
 
 namespace {
-OBSDataAutoRelease CloneData(const OBSData &data)
+OBSDataAutoRelease CloneData(const OBSDataAutoRelease &data)
 {
 	if (!data) {
 		return {};
@@ -17,7 +17,7 @@ OBSDataAutoRelease CloneData(const OBSData &data)
 	return obs_data_create_from_json(obs_data_get_json(data));
 }
 
-OBSSourceAutoRelease ResolveReferencedSource(const OBSData &sourceData)
+OBSSourceAutoRelease ResolveReferencedSource(const OBSDataAutoRelease &sourceData)
 {
 	const char *uuid = obs_data_get_string(sourceData, "uuid");
 	if (uuid && *uuid) {
@@ -120,7 +120,7 @@ void OBSClipboardService::copySceneItems(const std::vector<OBSSceneItem> &items)
 
 	OBSDataAutoRelease payload = obs_data_create();
 	obs_data_set_array(payload, "items", serializedItems);
-	setMimeData(OBSClipboard::SceneItems, payload);
+	setMimeData(OBSClipboard::SceneItems, OBSData(payload.Get()));
 }
 
 void OBSClipboardService::copyFilters(OBSSource source)
@@ -196,6 +196,11 @@ void OBSClipboardService::pasteSceneItems(OBSScene scene, bool duplicate)
 		}
 
 		obs_data_erase(sourceData, "uuid");
+
+		const char *id = obs_data_get_string(sourceData, "id");
+		if (!id || !*id) {
+			continue;
+		}
 
 		OBSSourceAutoRelease source = obs_load_source(sourceData);
 		if (!source) {
