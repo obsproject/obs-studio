@@ -64,8 +64,6 @@ include(cmake/feature-youtube.cmake)
 include(cmake/feature-whatsnew.cmake)
 include(cmake/feature-idian-playground.cmake)
 
-add_subdirectory(plugins)
-
 configure_file(cmake/templates/ui-config.h.in ui-config.h)
 
 target_sources(
