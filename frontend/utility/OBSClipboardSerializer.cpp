@@ -14,7 +14,14 @@ OBSData OBSClipboardSerializer::SerializeFilters(OBSSource source)
 	if (!source) {
 		return {};
 	}
-	return {};
+	OBSDataArrayAutoRelease filters = obs_source_backup_filters(source);
+	if (!filters) {
+		return {};
+	}
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_array(data, "filters", filters);
+
+	return OBSData(data);
 }
 
 OBSData OBSClipboardSerializer::SerializeTransform(OBSSceneItem item)
@@ -55,14 +62,18 @@ OBSData OBSClipboardSerializer::SerializeTransition(OBSSceneItem item, bool show
 	return {};
 }
 
-bool OBSClipboardSerializer::DeserializeSceneItem(OBSData data)
+bool OBSClipboardSerializer::DeserializeSceneItem(const OBSData &data)
 {
 	return false;
 }
 
-bool OBSClipboardSerializer::DeserializeFilters(OBSData data)
+bool OBSClipboardSerializer::DeserializeFilters(const OBSData &data, OBSDataArrayAutoRelease &filters)
 {
-	return false;
+	if (!data) {
+		return false;
+	}
+	filters = obs_data_get_array(data, "filters");
+	return !!filters;
 }
 
 bool OBSClipboardSerializer::DeserializeTransform(const OBSData &data, obs_transform_info &transform,
@@ -88,7 +99,7 @@ bool OBSClipboardSerializer::DeserializeTransform(const OBSData &data, obs_trans
 	return true;
 }
 
-bool OBSClipboardSerializer::DeserializeTransition(OBSData data)
+bool OBSClipboardSerializer::DeserializeTransition(const OBSData &data)
 {
 	return false;
 }
