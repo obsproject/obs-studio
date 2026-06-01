@@ -68,7 +68,7 @@ void OBSClipboardService::pasteTransform(const std::vector<OBSSceneItem> &items)
 
 void OBSClipboardService::pasteTransition(const std::vector<OBSSceneItem> &items, bool show) {}
 
-void OBSClipboardService::setMimeData(const std::string_view mimeType, OBSData payload)
+void OBSClipboardService::setMimeData(const char *mimeType, const OBSData &payload)
 {
 	if (!mimeType) {
 		return;
@@ -87,13 +87,13 @@ void OBSClipboardService::setMimeData(const std::string_view mimeType, OBSData p
 	QApplication::clipboard()->setMimeData(mimeData);
 }
 
-OBSData OBSClipboardService::getMimeData(const std::string_view mimeType)
+OBSData OBSClipboardService::getMimeData(const char *mimeType) const
 {
 	if (!mimeType) {
 		return {};
 	}
-	QMimeData *mimeData = new QMimeData();
-	if (!mimeData->hasFormat(mimeType)) {
+	const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+	if (!mimeData || !mimeData->hasFormat(mimeType)) {
 		return {};
 	}
 	QByteArray data = mimeData->data(mimeType);

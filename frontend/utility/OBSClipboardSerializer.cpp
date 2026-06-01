@@ -30,16 +30,14 @@ OBSData OBSClipboardSerializer::SerializeTransform(OBSSceneItem item)
 	obs_sceneitem_get_crop(item, &crop);
 
 	OBSDataAutoRelease data = obs_data_create();
-	obs_data_set_double(data, "pos_x", transform.pos.x);
-	obs_data_set_double(data, "pos_y", transform.pos.y);
+	obs_data_set_vec2(data, "pos", &transform.pos);
 	obs_data_set_double(data, "rot", transform.rot);
-	obs_data_set_double(data, "scale_x", transform.scale.x);
-	obs_data_set_double(data, "scale_y", transform.scale.y);
+	obs_data_set_vec2(data, "scale", &transform.scale);
 	obs_data_set_int(data, "alignment", transform.alignment);
 	obs_data_set_int(data, "bounds_type", transform.bounds_type);
 	obs_data_set_int(data, "bounds_alignment", transform.bounds_alignment);
-	obs_data_set_double(data, "bounds_x", transform.bounds.x);
-	obs_data_set_double(data, "bounds_y", transform.bounds.y);
+	obs_data_set_vec2(data, "bounds", &transform.bounds);
+	obs_data_set_bool(data, "crop_to_bounds", transform.crop_to_bounds);
 
 	obs_data_set_int(data, "crop_left", crop.left);
 	obs_data_set_int(data, "crop_top", crop.top);
@@ -67,21 +65,20 @@ bool OBSClipboardSerializer::DeserializeFilters(OBSData data)
 	return false;
 }
 
-bool OBSClipboardSerializer::DeserializeTransform(OBSData data, obs_transform_info &transform, obs_sceneitem_crop &crop)
+bool OBSClipboardSerializer::DeserializeTransform(const OBSData &data, obs_transform_info &transform,
+						  obs_sceneitem_crop &crop)
 {
 	if (!data) {
 		return false;
 	}
-	transform.pos.x = obs_data_get_double(data, "pos_x");
-	transform.pos.y = obs_data_get_double(data, "pos_y");
+	obs_data_get_vec2(data, "pos", &transform.pos);
 	transform.rot = obs_data_get_double(data, "rot");
-	transform.scale.x = obs_data_get_double(data, "scale_x");
-	transform.scale.y = obs_data_get_double(data, "scale_y");
+	obs_data_get_vec2(data, "scale", &transform.scale);
 	transform.alignment = obs_data_get_int(data, "alignment");
 	transform.bounds_type = static_cast<obs_bounds_type>(obs_data_get_int(data, "bounds_type"));
 	transform.bounds_alignment = obs_data_get_int(data, "bounds_alignment");
-	transform.bounds.x = obs_data_get_double(data, "bounds_x");
-	transform.bounds.y = obs_data_get_double(data, "bounds_y");
+	obs_data_get_vec2(data, "bounds", &transform.bounds);
+	transform.crop_to_bounds = obs_data_get_bool(data, "crop_to_bounds");
 
 	crop.left = obs_data_get_int(data, "crop_left");
 	crop.top = obs_data_get_int(data, "crop_top");
