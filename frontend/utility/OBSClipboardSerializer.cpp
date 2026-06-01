@@ -79,7 +79,7 @@ OBSData OBSClipboardSerializer::SerializeTransition(OBSSceneItem item, bool show
 	return OBSData(data);
 }
 
-bool OBSClipboardSerializer::DeserializeSceneItem(const OBSDataAutoRelease &data, OBSDataArrayAutoRelease &items,
+bool OBSClipboardSerializer::DeserializeSceneItem(obs_data_t *data, OBSDataArrayAutoRelease &items,
 						  OBSDataAutoRelease &source, uint32_t &outputFlags)
 {
 	if (!data) {
@@ -91,7 +91,7 @@ bool OBSClipboardSerializer::DeserializeSceneItem(const OBSDataAutoRelease &data
 	return !!items && obs_data_array_count(items) && !!source;
 }
 
-bool OBSClipboardSerializer::DeserializeFilters(const OBSData &data, OBSDataArrayAutoRelease &filters)
+bool OBSClipboardSerializer::DeserializeFilters(obs_data_t *data, OBSDataArrayAutoRelease &filters)
 {
 	if (!data) {
 		return false;
@@ -100,7 +100,7 @@ bool OBSClipboardSerializer::DeserializeFilters(const OBSData &data, OBSDataArra
 	return !!filters;
 }
 
-bool OBSClipboardSerializer::DeserializeTransform(const OBSData &data, obs_transform_info &transform,
+bool OBSClipboardSerializer::DeserializeTransform(obs_data_t *data, obs_transform_info &transform,
 						  obs_sceneitem_crop &crop)
 {
 	if (!data) {
@@ -122,9 +122,3 @@ bool OBSClipboardSerializer::DeserializeTransform(const OBSData &data, obs_trans
 
 	return true;
 }
-
-// not needed as obs_sceneitem_transition_load does the job for us
-// bool OBSClipboardSerializer::DeserializeTransition(const OBSData &data)
-// {
-// 	return false;
-// }
