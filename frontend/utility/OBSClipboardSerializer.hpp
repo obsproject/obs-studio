@@ -26,11 +26,8 @@ public:
 	static OBSData SerializeTransform(OBSSceneItem item);
 	static OBSData SerializeTransition(OBSSceneItem item, bool show);
 
-	static bool DeserializeSceneItem(const OBSDataAutoRelease &data, OBSDataArrayAutoRelease &items,
-					 OBSDataAutoRelease &source, uint32_t &outputFlags);
-	static bool DeserializeFilters(const OBSData &data, OBSDataArrayAutoRelease &filters);
-	static bool DeserializeTransform(const OBSData &data, obs_transform_info &transform, obs_sceneitem_crop &crop);
-
-	// not needed as obs_sceneitem_transition_load does the job for us
-	// static bool DeserializeTransition(const OBSData &data);
+	static bool DeserializeSceneItem(obs_data_t *data, OBSDataArrayAutoRelease &items, OBSDataAutoRelease &source,
+					 uint32_t &outputFlags);
+	static bool DeserializeFilters(obs_data_t *data, OBSDataArrayAutoRelease &filters);
+	static bool DeserializeTransform(obs_data_t *data, obs_transform_info &transform, obs_sceneitem_crop &crop);
 };
