@@ -28,41 +28,48 @@
 
 class QLabel;
 class Thumbnail;
+class ThumbnailView;
 
-class SourceSelectButton : public QFrame {
+class SourceSelectButton : public QAbstractButton {
 	Q_OBJECT
 
 public:
-	SourceSelectButton(obs_source_t *source, QWidget *parent = nullptr);
+	SourceSelectButton(OBSWeakSource weak, QWidget *parent = nullptr);
 	~SourceSelectButton();
 
-	QPointer<QPushButton> getButton();
-	QString text();
+	std::string_view uuid() const { return sourceUuid; };
 
-	void setRectVisible(bool visible);
-	void setPreload(bool preload);
+	void setThumbnailEnabled(bool enabled);
+	void updateThumbnail();
 
 protected:
+	void paintEvent(QPaintEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
-	void moveEvent(QMoveEvent *event) override;
+	void enterEvent(QEnterEvent *event) override;
+	void leaveEvent(QEvent *event) override;
 	void mouseMoveEvent(QMouseEvent *event) override;
 	void buttonPressed();
 
 private:
 	OBSWeakSource weakSource;
-	std::shared_ptr<Thumbnail> thumbnail;
+	QPointer<ThumbnailView> thumbnail;
 	QPointer<QLabel> image;
+	std::string sourceUuid;
 
-	QPushButton *button = nullptr;
-	QVBoxLayout *layout = nullptr;
+	std::vector<OBSSignal> signalHandlers;
+	static void obsSourceRemoved(void *param, calldata_t *calldata);
+	static void obsSourceRenamed(void *param, calldata_t *calldata);
+
 	QLabel *label = nullptr;
-	bool preload = true;
-	bool rectVisible = false;
-
-	void setDefaultThumbnail();
+	bool thumbnailEnabled = true;
 
 	QPoint dragStartPosition;
 
 private slots:
-	void thumbnailUpdated(QPixmap pixmap);
+	void updatePixmap(QPixmap pixmap);
+	void handleSourceRemoved();
+	void handleSourceRenamed(QString name);
+
+signals:
+	void sourceRemoved();
 };

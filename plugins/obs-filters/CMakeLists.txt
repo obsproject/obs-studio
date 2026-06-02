@@ -26,6 +26,7 @@ target_sources(
     obs-filters.c
     scale-filter.c
     scroll-filter.c
+    sdr-on-hdr-filter.c
     sharpness-filter.c
 )
 

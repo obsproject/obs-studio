@@ -59,8 +59,12 @@ target_sources(
     utility/SimpleOutput.hpp
     utility/StartMultiTrackVideoStreamingGuard.hpp
     utility/SurfaceEventFilter.hpp
+    utility/ThumbnailItem.cpp
+    utility/ThumbnailItem.hpp
     utility/ThumbnailManager.cpp
     utility/ThumbnailManager.hpp
+    utility/ThumbnailView.cpp
+    utility/ThumbnailView.hpp
     utility/VCamConfig.hpp
     utility/audio-encoders.cpp
     utility/audio-encoders.hpp

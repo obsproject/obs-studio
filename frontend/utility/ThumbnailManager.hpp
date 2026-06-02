@@ -20,6 +20,9 @@
 
 #include <obs.hpp>
 
+#include <utility/ScreenshotObj.hpp>
+
+#include <QElapsedTimer>
 #include <QObject>
 #include <QPixmap>
 #include <QPointer>
@@ -27,80 +30,62 @@
 
 #include <deque>
 #include <functional>
+#include <unordered_map>
 
-class ThumbnailItem : public QObject {
-	Q_OBJECT
-
-	friend class ThumbnailManager;
-	friend class Thumbnail;
-
-	std::string uuid;
-	OBSWeakSource weakSource;
-	QPixmap pixmap;
-
-	void init(std::weak_ptr<ThumbnailItem> weakActiveItem);
-	void imageUpdated(QImage image);
-
-public:
-	ThumbnailItem(std::string uuid, OBSSource source);
-	~ThumbnailItem();
-
-	inline bool isNull() const { return !weakSource || obs_weak_source_expired(weakSource); }
-	inline const std::string &getUuid() const { return uuid; }
-
-signals:
-	void updateThumbnail(QPixmap pixmap);
-};
-
-class Thumbnail : public QObject {
-	Q_OBJECT
-
-	friend class ThumbnailManager;
-
-	std::shared_ptr<ThumbnailItem> item;
-
-private slots:
-	void thumbnailUpdated(QPixmap pixmap);
-
-public:
-	inline Thumbnail(std::shared_ptr<ThumbnailItem> item) : item(item) {}
-
-	inline QPixmap getPixmap() const { return item->pixmap; }
-
-	static constexpr QSize size = {320, 180};
-
-signals:
-	void updateThumbnail(QPixmap pixmap);
-};
+class ThumbnailItem;
+class ThumbnailView;
 
 class ThumbnailManager : public QObject {
 	Q_OBJECT
 
-	friend class ThumbnailItem;
+	std::vector<OBSSignal> signalHandlers;
+	static void obsSourceRemoved(void *data, calldata_t *params);
 
-	struct CachedItem {
-		std::optional<QPixmap> pixmap;
-		std::weak_ptr<ThumbnailItem> weakActiveItem;
+	struct ThumbnailCache {
+		size_t maxSize;
+
+		using CacheEntry = std::pair<std::string, QPixmap>;
+
+		std::list<CacheEntry> cacheList;
+		std::unordered_map<std::string, std::list<CacheEntry>::iterator> cacheMap;
+
+		explicit ThumbnailCache(size_t maxSize) : maxSize(maxSize) {}
+
+		void put(const std::string &key, const QPixmap &value);
+		std::optional<QPixmap> get(const std::string &key);
 	};
 
-	std::deque<std::weak_ptr<ThumbnailItem>> newThumbnails;
-	std::deque<std::weak_ptr<ThumbnailItem>> thumbnails;
-	std::unordered_map<std::string, CachedItem> cachedThumbnails;
+	std::deque<std::string> priorityQueue;
+	std::deque<std::string> updateQueue;
+	std::unordered_map<std::string, ThumbnailItem *> thumbnailList;
+	static constexpr int kMaxThumbnails = 64;
+	ThumbnailCache thumbnailCache{kMaxThumbnails};
+
 	QTimer updateTimer;
-
-	bool updatePixmap(std::shared_ptr<ThumbnailItem> &item);
-	void updateTick();
-
-	void updateIntervalChanged(size_t newCount);
+	QElapsedTimer elapsedTimer;
 
 public:
 	explicit ThumbnailManager(QObject *parent = nullptr);
-	~ThumbnailManager();
+	~ThumbnailManager() = default;
 
-	std::shared_ptr<Thumbnail> getThumbnail(OBSSource source);
-	std::optional<QPixmap> getCachedThumbnail(OBSSource source);
-	void preloadThumbnail(OBSSource source, QObject *object, std::function<void(QPixmap)> callback);
+	ThumbnailView *createView(QWidget *parent, obs_source_t *source);
+	std::optional<QPixmap> getCachedPixmap(const std::string &uuid);
 
 private:
 	Q_DISABLE_COPY_MOVE(ThumbnailManager);
+
+	void updateNextItem(size_t cycleDepth = 0);
+
+	void removeIdFromQueues(const std::string &uuid);
+	void updateTickInterval(int newInterval);
+
+	void createThumbnailItem(const std::string &uuid);
+	ThumbnailItem *getThumbnailItem(const std::string &uuid);
+
+private slots:
+	void updateTick();
+	void addToPriorityQueue(const std::string &uuid, bool immediate = false);
+	void addItemToCache(std::string &uuid, QPixmap &pixmap);
+	void deleteItem(ThumbnailItem *item);
+	void deleteItemById(const std::string &uuid);
 };

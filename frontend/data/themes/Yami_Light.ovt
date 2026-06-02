@@ -24,7 +24,7 @@
     --bg_base: var(--grey6);
     --bg_preview: var(--grey8);
 
-    --text: #030303
+    --text: var(--black1);
     --text_light: var(--black3);
     --text_muted: var(--black4);
 
@@ -54,6 +54,32 @@
     border-color: var(--button_border_hover);
 }
 
+/* Mute Button */
+
+.btn-mute {
+    qproperty-icon: url(theme:Light/settings/audio.svg);
+}
+
+.btn-mute.checked {
+    qproperty-icon: url(theme:Light/mute.svg);
+}
+
+/* Monitor Button */
+
+.btn-monitor {
+    qproperty-icon: url(theme:Light/headphones-off.svg);
+}
+
+.btn-monitor.checked {
+    color: var(--text_light);
+    qproperty-icon: url(theme:Light/headphones.svg);
+}
+
+VolumeControl.volume-inactive,
+VolumeControl.volume-inactive VolumeMeter {
+    background: var(--grey8);
+}
+
 VolumeMeter {
     qproperty-backgroundNominalColor: var(--green4);
     qproperty-backgroundWarningColor: var(--yellow4);
@@ -64,6 +90,48 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0,0,0);
     qproperty-majorTickColor: var(--black1);
     qproperty-minorTickColor: var(--black5);
+
+    qproperty-backgroundNominalColorDisabled: var(--black3);
+    qproperty-backgroundWarningColorDisabled: var(--black4);
+    qproperty-backgroundErrorColorDisabled: var(--black3);
+    qproperty-foregroundNominalColorDisabled: var(--black5);
+    qproperty-foregroundWarningColorDisabled: var(--white5);
+    qproperty-foregroundErrorColorDisabled: var(--white4);
+}
+
+.toggle-hidden:checked {
+    background: var(--purple1);
+    border-color: var(--purple5);
+    color: var(--purple6);
+}
+
+VolumeControl .mixer-category {
+    background: var(--blue1);
+    color: var(--text_light);
+}
+
+VolumeControl.volume-pinned .mixer-category {
+    background: var(--blue2);    
+}
+
+VolumeControl.volume-hidden .mixer-category {
+    background: var(--purple1);
+    color: var(--purple6);
+}
+
+VolumeControl.volume-unassigned .mixer-category {
+    background: var(--yellow1);
+    color: var(--yellow6);
+}
+
+VolumeControl.volume-inactive .mixer-category {
+    background: var(--grey8);
+    color: var(--text_muted);
+}
+
+VolumeControl.volume-preview .mixer-category {
+    background: var(--green3);
+    color: var(--text_light);
 }
 
 QMenu::right-arrow {
@@ -137,6 +205,14 @@ QPushButton#sourceFiltersButton {
 
 .icon-close {
     qproperty-icon: url(theme:Light/close.svg);
+}
+
+.icon-layout-vertical {
+    qproperty-icon: url(theme:Light/layout-vertical.svg);
+}
+
+.icon-layout-horizontal {
+    qproperty-icon: url(theme:Light/layout-horizontal.svg);
 }
 
 QToolBarExtension {
@@ -221,38 +297,6 @@ QTableView::indicator:unchecked:disabled {
 .indicator-visibility::indicator:checked,
 .indicator-visibility::indicator:checked:hover {
     image: url(theme:Light/visible.svg);
-}
-
-.indicator-mute::indicator:checked {
-    image: url(theme:Light/mute.svg);
-}
-
-.indicator-mute::indicator:unchecked {
-    image: url(theme:Light/settings/audio.svg);
-}
-
-.indicator-mute::indicator:unchecked:hover {
-    image: url(theme:Light/settings/audio.svg);
-}
-
-.indicator-mute::indicator:unchecked:focus {
-    image: url(theme:Light/settings/audio.svg);
-}
-
-.indicator-mute::indicator:checked:hover {
-    image: url(theme:Light/mute.svg);
-}
-
-.indicator-mute::indicator:checked:focus {
-    image: url(theme:Light/mute.svg);
-}
-
-.indicator-mute::indicator:checked:disabled {
-    image: url(theme:Light/mute.svg);
-}
-
-.indicator-mute::indicator:unchecked:disabled {
-    image: url(theme:Light/settings/audio.svg);
 }
 
 .indicator-expand::indicator:checked,

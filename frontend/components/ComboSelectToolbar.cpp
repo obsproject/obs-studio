@@ -77,7 +77,7 @@ void ComboSelectToolbar::Init()
 		return;
 	}
 
-	UpdateSourceComboToolbarProperties(ui->device, source, props.get(), prop_name, is_int);
+	UpdateSourceComboToolbarProperties(ui->device, source, props, prop_name, is_int);
 }
 
 void UpdateSourceComboToolbarValue(QComboBox *combo, OBSSource source, int idx, const char *prop_name, bool is_int)

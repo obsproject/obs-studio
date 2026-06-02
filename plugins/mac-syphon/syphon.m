@@ -568,7 +568,7 @@ static inline obs_properties_t *syphon_properties_internal(syphon_t s)
     LOAD_CROP(size.height);
 #undef LOAD_CROP
 
-    obs_properties_add_button(props, "syphon license", obs_module_text("SyphonLicense"), show_syphon_license);
+    obs_properties_add_button2(props, "syphon license", obs_module_text("SyphonLicense"), show_syphon_license, NULL);
 
     return props;
 }
@@ -630,10 +630,13 @@ static void syphon_video_tick(void *data, float seconds)
     if (s->crop)
         crop = &s->crop_rect;
 
+    float origin_x = (float) crop->origin.x;
+    float origin_y = (float) (s->height - crop->origin.y);
+    float end_x = (float) (s->width - crop->size.width);
+    float end_y = (float) crop->size.height;
+
     obs_enter_graphics();
-    build_sprite_rect(gs_vertexbuffer_get_data(s->vertbuffer), (float) crop->origin.x,
-                      s->height - (float) crop->origin.y, s->width - (float) crop->size.width,
-                      (float) crop->size.height);
+    build_sprite_rect(gs_vertexbuffer_get_data(s->vertbuffer), origin_x, origin_y, end_x, end_y);
     obs_leave_graphics();
 }
 

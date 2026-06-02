@@ -64,7 +64,7 @@ private:
 	uint32_t outputWidth = 0;
 	uint32_t outputHeight = 0;
 
-	std::thread th;
+	std::thread thread;
 	std::shared_ptr<QImage> imagePtr;
 	bool outputToFile = true;
 

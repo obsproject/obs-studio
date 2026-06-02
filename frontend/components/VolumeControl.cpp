@@ -52,8 +52,6 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	  contextMenu(nullptr),
 	  QFrame(parent)
 {
-	setAttribute(Qt::WA_OpaquePaintEvent, true);
-
 	utils = std::make_unique<idian::Utils>(this);
 
 	uuid = obs_source_get_uuid(source);
@@ -82,6 +80,7 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	utils->addClass(monitorButton, "btn-monitor");
 
 	volumeLabel = new QLabel(this);
+	volumeLabel->setIndent(0);
 	volumeLabel->setObjectName("volLabel");
 
 	slider = new VolumeSlider(obs_fader, Qt::Horizontal, this);
@@ -166,6 +165,36 @@ VolumeControl::~VolumeControl()
 	}
 }
 
+const QIcon &VolumeControl::getUnassignedIcon()
+{
+	static const QIcon &icon = *new QIcon(":/res/images/unassigned.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getMutedIcon()
+{
+	static const QIcon &icon = *new QIcon(":/settings/images/settings/audio.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getUnmutedIcon()
+{
+	static const QIcon &icon = *new QIcon(":/settings/images/settings/audio.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getMonitorOnIcon()
+{
+	static const QIcon &icon = *new QIcon(":/res/images/headphones.svg");
+	return icon;
+}
+
+const QIcon &VolumeControl::getMonitorOffIcon()
+{
+	static const QIcon &icon = *new QIcon(":/res/images/headphones-off.svg");
+	return icon;
+}
+
 void VolumeControl::obsVolumeChanged(void *data, float)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
@@ -205,7 +234,7 @@ void VolumeControl::obsSourceDestroy(void *data, calldata_t *)
 
 void VolumeControl::setLayoutVertical(bool vertical)
 {
-	QBoxLayout *newLayout = new QBoxLayout(vertical ? QBoxLayout::TopToBottom : QBoxLayout::LeftToRight);
+	QBoxLayout *newLayout = new QBoxLayout(QBoxLayout::TopToBottom);
 	newLayout->setContentsMargins(0, 0, 0, 0);
 	newLayout->setSpacing(0);
 
@@ -283,7 +312,7 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		setMaximumWidth(QWIDGETSIZE_MAX);
 		setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
-		QVBoxLayout *textLayout = new QVBoxLayout;
+		QHBoxLayout *textLayout = new QHBoxLayout;
 		QHBoxLayout *controlLayout = new QHBoxLayout;
 		QFrame *meterFrame = new QFrame;
 		QVBoxLayout *meterLayout = new QVBoxLayout;
@@ -296,18 +325,21 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		slider->setLayoutDirection(Qt::LeftToRight);
 		slider->setDisplayTicks(true);
 
-		nameButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+		nameButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 		categoryLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 		volumeLabel->setAlignment(Qt::AlignRight);
 
-		QHBoxLayout *textTopLayout = new QHBoxLayout;
-		textTopLayout->setContentsMargins(0, 0, 0, 0);
-		textTopLayout->addWidget(categoryLabel);
-		textTopLayout->addWidget(volumeLabel);
-
+		QHBoxLayout *textSubLayout = new QHBoxLayout;
+		textSubLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->setContentsMargins(0, 0, 0, 0);
-		textLayout->addItem(textTopLayout);
+
 		textLayout->addWidget(nameButton);
+		textLayout->addItem(textSubLayout);
+
+		textSubLayout->addSpacerItem(
+			new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Preferred));
+		textSubLayout->addWidget(categoryLabel);
+		textSubLayout->addWidget(volumeLabel);
 
 		meterFrame->setObjectName("volMeterFrame");
 		meterFrame->setLayout(meterLayout);
@@ -474,49 +506,68 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 void VolumeControl::renameSource()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_source_t *source = action->property("source").value<OBSSource>();
+	OBSSource source = action->property("source").value<OBSSource>();
 
-	const char *prevName = obs_source_get_name(source);
+	std::string uuid = obs_source_get_uuid(source);
 
-	for (;;) {
-		std::string name;
-		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.MixerRename.Title"),
-						       QTStr("Basic.Main.MixerRename.Text"), name, QT_UTF8(prevName));
-		if (!accepted) {
+	OBSBasic *main = OBSBasic::Get();
+
+	// Defer the rename dialog to avoid blocking the UI thread while the context menu is closing, which can cause issues on some platforms
+	QTimer::singleShot(0, main, [main, uuid]() {
+		if (!main) {
 			return;
 		}
 
-		if (name.empty()) {
-			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
-			continue;
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
+		if (!source) {
+			return;
 		}
 
-		OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
+		const char *prevName = obs_source_get_name(source);
 
-		if (sourceTest) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
-			continue;
+		for (;;) {
+			std::string name;
+			bool accepted = NameDialog::AskForName(main, QTStr("Basic.Main.MixerRename.Title"),
+							       QTStr("Basic.Main.MixerRename.Text"), name,
+							       QT_UTF8(prevName));
+			if (!accepted) {
+				return;
+			}
+
+			if (name.empty()) {
+				OBSMessageBox::warning(main, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
+				continue;
+			}
+
+			if (name == prevName) {
+				return;
+			}
+
+			OBSSourceAutoRelease sourceTest = obs_get_source_by_name(name.c_str());
+
+			if (sourceTest) {
+				OBSMessageBox::warning(main, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
+				continue;
+			}
+
+			std::string prevName(obs_source_get_name(source));
+			auto undo = [prevName](const std::string &data) {
+				OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
+				obs_source_set_name(source, prevName.c_str());
+			};
+
+			std::string editedName = name;
+			auto redo = [editedName](const std::string &data) {
+				OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
+				obs_source_set_name(source, editedName.c_str());
+			};
+
+			main->undo_s.add_action(QTStr("Undo.Rename").arg(name.c_str()), undo, redo, uuid, uuid);
+
+			obs_source_set_name(source, name.c_str());
+			break;
 		}
-
-		std::string prevName(obs_source_get_name(source));
-		auto undo = [prevName](const std::string &data) {
-			OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
-			obs_source_set_name(source, prevName.c_str());
-		};
-
-		std::string editedName = name;
-		auto redo = [editedName](const std::string &data) {
-			OBSSourceAutoRelease source = obs_get_source_by_uuid(data.c_str());
-			obs_source_set_name(source, editedName.c_str());
-		};
-
-		OBSBasic *main = OBSBasic::Get();
-		const char *uuid = obs_source_get_uuid(source);
-		main->undo_s.add_action(QTStr("Undo.Rename").arg(name.c_str()), undo, redo, uuid, uuid);
-
-		obs_source_set_name(source, name.c_str());
-		break;
-	}
+	});
 }
 
 void VolumeControl::changeVolume()
@@ -577,9 +628,13 @@ void VolumeControl::updateCategoryLabel()
 	utils->toggleClass("volume-unassigned", styleUnassigned);
 
 	categoryLabel->setText(labelText);
+	categoryLabel->setAlignment(Qt::AlignCenter);
 
-	utils->polishChildren();
-	volumeMeter->updateBackgroundCache();
+	style()->polish(categoryLabel);
+	style()->polish(volumeMeter);
+
+	bool forceUpdate = true;
+	volumeMeter->updateBackgroundCache(forceUpdate);
 }
 
 void VolumeControl::updateDecayRate()
@@ -691,7 +746,6 @@ void VolumeControl::updateMixerState()
 	bool isActive = obs_source_active(source) && obs_source_audio_active(source);
 
 	mixerStatus().set(VolumeControl::MixerStatus::Active, isActive);
-	setUseDisabledColors(!isActive);
 	mixerStatus().set(VolumeControl::MixerStatus::Unassigned, unassigned);
 
 	QSignalBlocker blockMute(muteButton);
@@ -702,6 +756,31 @@ void VolumeControl::updateMixerState()
 	bool showAsUnassigned = !muted && unassigned;
 
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
+	setUseDisabledColors(showAsMuted || !isActive);
+
+	muteButton->setChecked(showAsMuted);
+	monitorButton->setChecked(showAsMonitored);
+
+	QString muteTooltip = showAsMuted ? QTStr("Unmute") : QTStr("Mute");
+	muteButton->setToolTip(muteTooltip);
+
+	QString monitorTooltip = showAsMonitored ? QTStr("Basic.AudioMixer.Monitoring.Disable")
+						 : QTStr("Basic.AudioMixer.Monitoring.Enable");
+	monitorButton->setToolTip(monitorTooltip);
+
+	if (showAsUnassigned) {
+		muteButton->setIcon(getUnassignedIcon());
+	} else if (showAsMuted) {
+		muteButton->setIcon(getMutedIcon());
+	} else {
+		muteButton->setIcon(getUnmutedIcon());
+	}
+
+	if (showAsMonitored) {
+		monitorButton->setIcon(getMonitorOnIcon());
+	} else {
+		monitorButton->setIcon(getMonitorOffIcon());
+	}
 
 	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
 	// in QSS so we set a checked class selector on the button to be used instead.
@@ -710,40 +789,8 @@ void VolumeControl::updateMixerState()
 
 	utils->toggleClass(muteButton, "mute-unassigned", showAsUnassigned);
 
-	muteButton->setChecked(showAsMuted);
-	monitorButton->setChecked(showAsMonitored);
-
-	if (showAsUnassigned) {
-		QIcon unassignedIcon;
-		unassignedIcon.addFile(QString::fromUtf8(":/res/images/unassigned.svg"), QSize(16, 16),
-				       QIcon::Mode::Normal, QIcon::State::Off);
-		muteButton->setIcon(unassignedIcon);
-	} else if (showAsMuted) {
-		QIcon mutedIcon;
-		mutedIcon.addFile(QString::fromUtf8(":/res/images/mute.svg"), QSize(16, 16), QIcon::Mode::Normal,
-				  QIcon::State::Off);
-		muteButton->setIcon(mutedIcon);
-	} else {
-		QIcon unmutedIcon;
-		unmutedIcon.addFile(QString::fromUtf8(":/settings/images/settings/audio.svg"), QSize(16, 16),
-				    QIcon::Mode::Normal, QIcon::State::Off);
-		muteButton->setIcon(unmutedIcon);
-	}
-
-	if (showAsMonitored) {
-		QIcon monitorOnIcon;
-		monitorOnIcon.addFile(QString::fromUtf8(":/res/images/headphones.svg"), QSize(16, 16),
-				      QIcon::Mode::Normal, QIcon::State::Off);
-		monitorButton->setIcon(monitorOnIcon);
-	} else {
-		QIcon monitorOffIcon;
-		monitorOffIcon.addFile(QString::fromUtf8(":/res/images/headphones-off.svg"), QSize(16, 16),
-				       QIcon::Mode::Normal, QIcon::State::Off);
-		monitorButton->setIcon(monitorOffIcon);
-	}
-
-	utils->repolish(muteButton);
-	utils->repolish(monitorButton);
+	style()->polish(muteButton);
+	style()->polish(monitorButton);
 
 	updateCategoryLabel();
 }

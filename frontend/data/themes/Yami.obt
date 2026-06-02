@@ -66,16 +66,16 @@
     --grey8: #13141A;
 
     --white1: #FFFFFF;
-    --white2: #EBEBEB;
-    --white3: #D6D6D6;
-    --white4: #C2C2C2;
-    --white5: #ADADAD;
+    --white2: #E1E1E1;
+    --white3: #D2D2D2;
+    --white4: #B4B4B4;
+    --white5: #969696;
 
     --black1: #0A0A0A;
     --black2: #1F1F1F;
-    --black3: #333333;
-    --black4: #474747;
-    --black5: #5C5C5C;
+    --black3: #414141;
+    --black4: #646464;
+    --black5: #828282;
 
     /* Base Theme Colors */
     --bg_window: var(--grey7);
@@ -92,8 +92,8 @@
     --danger: var(--red3);
 
     --text: var(--white1);
-    --text_light: rgb(214, 214, 214);
-    --text_muted: rgb(153, 153, 153);
+    --text_light: var(--white1);
+    --text_muted: var(--white5);
 
     --text_disabled: var(--text_muted);
     --text_inactive: rgb(255, 254, 255);
@@ -173,6 +173,7 @@
     --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2px));
     --input_height_half: calc(var(--input_height_base) / 2);
+    --spinbox_width: calc(var(--input_height_base) + calc(var(--input_padding) * 2px));
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey7);
@@ -306,6 +307,10 @@
 
 .text-bold {
     font-weight: bold;
+}
+
+.text-italic {
+    font-style: italic;
 }
 
 .text-bright {
@@ -682,10 +687,6 @@ QMenu {
     outline: none;
 }
 
-QMenu {
-    border: 1px solid var(--border_color);
-}
-
 QListWidget::item,
 SourceTreeItem {
     padding: var(--padding_large) var(--padding_large);
@@ -713,6 +714,12 @@ QListWidget::item {
 SourceTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
+}
+
+QMenu,
+QMenu > QMenu {
+    border: 1px solid var(--border_color);
+    padding: var(--spacing_base);
 }
 
 /* Temporary fix for plugins affected by fix in #11555 */
@@ -800,6 +807,10 @@ OBSBasicSettings QScrollBar:horizontal {
 /* Settings properties view */
 OBSBasicSettings #PropertiesContainer {
     background-color: var(--bg_base);
+}
+
+OBSPropertiesView IconLabel {
+    margin-left: var(--spacing_large);
 }
 
 /* Dock Widget */
@@ -1274,6 +1285,7 @@ QDoubleSpinBox {
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
     height: var(--input_height);
+    min-width: var(--spinbox_width);
     max-height: var(--input_height);
 }
 
@@ -1492,6 +1504,19 @@ QToolButton:focus,
     background-color: var(--button_bg_hover);
 }
 
+QToolButton:checked,
+.btn-tool:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+QToolButton:checked:hover,
+QToolButton:checked:focus,
+.btn-tool:checked:hover,
+.btn-tool:checked:focus {
+    border-color: var(--primary_lighter);
+}
+
 QToolButton:pressed,
 QToolButton:pressed:hover,
 .btn-tool:pressed,
@@ -1673,25 +1698,20 @@ QSlider::handle:disabled {
 
 .btn-monitor.checked {
     background: var(--green4);
+    color: var(--text_light);
     qproperty-icon: url(theme:Dark/headphones.svg);
 }
 
 .btn-monitor.checked:focus,
 .btn-monitor:checked:focus {
+    color: var(--text_light);
     border-color: var(--green1);
 }
 
 .btn-monitor.checked:hover {
     background: var(--green3);
     border-color: var(--green1);
-}
-
-.volume-inactive .btn-monitor.checked {
-    background: var(--grey7);
-}
-
-.volume-inactive .btn-monitor.checked:hover {
-    background-color: var(--button_bg_hover);
+    color: var(--text_light);
 }
 
 /* Toggle hidden button */
@@ -1713,7 +1733,7 @@ VolumeMeter {
 
 VolumeMeter {
     color: var(--grey3);
-    font-size: 7.5pt;
+    font-size: 6pt;
     font-weight: bold;
     
     qproperty-backgroundNominalColor: var(--green5);
@@ -1725,11 +1745,19 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0, 0, 0);
     qproperty-majorTickColor: var(--white5);
     qproperty-minorTickColor: var(--grey1);
+
+    qproperty-backgroundNominalColorDisabled: var(--black4);
+    qproperty-backgroundWarningColorDisabled: var(--black5);
+    qproperty-backgroundErrorColorDisabled: var(--black3);
+    qproperty-foregroundNominalColorDisabled: var(--white3);
+    qproperty-foregroundWarningColorDisabled: var(--white3);
+    qproperty-foregroundErrorColorDisabled: var(--white4);
 }
 
 VolumeName {
     background: transparent;
-    padding: var(--padding_base);
+    padding: var(--padding_base) 0;
+    border: 1px solid transparent;
 }
 
 VolumeName QLabel {
@@ -1746,9 +1774,10 @@ VolumeName:hover {
 }
 
 VolumeControl #volLabel {
+    min-width: 48px;
     padding: var(--padding_base) 0px var(--padding_base);
     text-align: center;
-    font-size: var(--font_base);
+    font-size: var(--font_small);
     color: var(--text_muted);
 }
 
@@ -1760,26 +1789,30 @@ VolumeControl #volLabel {
 }
 
 #hVolumeWidgets .mixer-category {
-    min-width: 72px;    
     margin: var(--spacing_base);
+    padding: 0px var(--padding_xlarge);
     border-radius: var(--border_radius);
 }
 
+#hVolumeWidgets VolumeName {
+    padding-right: var(--padding_large);
+}
+
 #hVolumeWidgets VolumeName QLabel {
-    margin: 0px var(--spacing_base) var(--spacing_base);
+    margin: 0 var(--padding_large);
 }
 
 #hVolumeWidgets #volLabel {
-    margin: var(--spacing_base);
+    margin: 0 var(--spacing_base);
     border-radius: var(--border_radius);
 }
 
 #hVolumeWidgets #volMeterFrame {
-    margin-bottom: var(--padding_xlarge);
+    margin-bottom: var(--padding_large);
 }
 
 #hVolumeWidgets VolumeControl QSlider {
-    margin: var(--padding_large) 0px var(--padding_xlarge);
+    margin: var(--padding_large) 0px var(--padding_large);
 }
 
 #hVolumeWidgets VolumeControl QSlider::groove:horizontal {
@@ -1788,7 +1821,7 @@ VolumeControl #volLabel {
 }
 
 #hVolumeWidgets VolumeControl QPushButton {
-    margin-left: var(--padding_xlarge);
+    margin-left: var(--padding_large);
 }
 
 #hVolumeWidgets VolumeControl #volMeterFrame {
@@ -1830,11 +1863,8 @@ VolumeControl #volLabel {
     padding: 0px var(--padding_large);
 }
 
-/* Hidden Volume Controls */
-VolumeControl.volume-hidden,
-VolumeControl.volume-hidden VolumeMeter,
-VolumeControl.volume-inactive VolumeMeter,
-VolumeControl.volume-inactive {
+VolumeControl.volume-inactive,
+VolumeControl.volume-inactive VolumeMeter {
     background: var(--grey7);
 }
 
@@ -1851,7 +1881,7 @@ VolumeControl .mixer-category {
 
 VolumeControl.volume-pinned .mixer-category {
     background: var(--blue5);
-    color: var(--text);
+    color: var(--text_light);
 }
 
 VolumeControl.volume-hidden .mixer-category {
@@ -1877,15 +1907,6 @@ VolumeControl.volume-preview .mixer-category {
 #stackedMixerArea VolumeControl.volume-hidden QSlider::groove,
 #stackedMixerArea VolumeControl.volume-inactive QSlider::groove {
     background: var(--grey8);
-}
-
-VolumeControl.volume-hidden VolumeMeter {
-    qproperty-backgroundNominalColor: var(--grey5);
-    qproperty-backgroundWarningColor: var(--grey3);
-    qproperty-backgroundErrorColor: var(--grey5);
-    qproperty-foregroundNominalColor: var(--green4);
-    qproperty-foregroundWarningColor: var(--yellow4);
-    qproperty-foregroundErrorColor: var(--red4);
 }
 
 /* Status Bar */
@@ -2417,9 +2438,12 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 
 /* Add Source Dialog */
 SourceSelectButton {
-    text-align: center;
-    padding: var(--padding_base) var(--padding_base);
+    background: var(--grey5);
+    padding: var(--padding_base) var(--padding_large);
     margin: var(--spacing_base);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    outline: none;
 }
 
 SourceSelectButton QLabel {
@@ -2429,18 +2453,29 @@ SourceSelectButton QLabel {
 
 SourceSelectButton #thumbnail {
     background: var(--grey6);
-    border: 1px solid var(--grey4);
+    border-radius: var(--border_radius);
     padding: 0;
     margin-top: var(--spacing_base);
 }
 
-SourceSelectButton QPushButton {
-    background: var(--grey5);
+SourceSelectButton:hover {
+    background-color: var(--button_bg_hover);
 }
 
-SourceSelectButton QPushButton:checked:focus,
-SourceSelectButton QPushButton:focus {
+SourceSelectButton:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+SourceSelectButton:focus,
+SourceSelectButton:checked:focus {
     border-color: var(--white3);
+}
+
+SourceSelectButton:pressed,
+SourceSelectButton:pressed:hover {
+    background-color: var(--button_bg_down);
+    border-color: var(--button_border);
 }
 
 /* Idian Widgets */

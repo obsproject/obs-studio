@@ -562,11 +562,17 @@ void OBSBasic::RenameTransition(OBSSource transition)
 	bool accepted = NameDialog::AskForName(this, QTStr("TransitionNameDlg.Title"), QTStr("TransitionNameDlg.Text"),
 					       name, placeHolderText);
 
-	if (!accepted)
+	if (!accepted) {
 		return;
+	}
+
 	if (name.empty()) {
 		OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
 		RenameTransition(transition);
+		return;
+	}
+
+	if (name == oldName) {
 		return;
 	}
 

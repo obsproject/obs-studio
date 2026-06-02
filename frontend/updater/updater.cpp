@@ -14,21 +14,22 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "updater.hpp"
 #include "manifest.hpp"
+#include "updater.hpp"
 
 #include <psapi.h>
-#include <WinTrust.h>
 #include <SoftPub.h>
+#include <WinTrust.h>
 
 #include <util/windows/CoTaskMemPtr.hpp>
 
+#include <exception>
 #include <future>
+#include <mutex>
+#include <queue>
 #include <string>
 #include <string_view>
-#include <mutex>
 #include <unordered_set>
-#include <queue>
 
 using namespace std;
 using namespace updater;
@@ -53,11 +54,18 @@ HCRYPTPROV hProvider = 0;
 static bool bExiting = false;
 static bool updateFailed = false;
 
-static bool downloadThreadFailure = false;
+static bool logVisible = false;
+static int baseWindowHeight = 0;
+
+static constexpr int WM_LOG_MESSAGE = (WM_APP + 1);
+static constexpr int LOG_HEIGHT_DLU = 120;
+
+static atomic<bool> downloadThreadFailure = false;
 
 size_t totalFileSize = 0;
-size_t completedFileSize = 0;
-static int completedUpdates = 0;
+atomic<size_t> completedFileSize = 0;
+atomic<int> lastPosition;
+static atomic<int> completedUpdates = 0;
 
 static wchar_t tempPath[MAX_PATH];
 static wchar_t obs_base_directory[MAX_PATH];
@@ -97,18 +105,51 @@ static bool IsVSRedistOutdated()
 	return LOWORD(info->dwFileVersionMS) < 40;
 }
 
+static void Log(const wchar_t *fmt, ...)
+{
+	va_list argptr;
+
+	/* Find out how big our buffer needs to be */
+	va_start(argptr, fmt);
+	int len = _vscwprintf(fmt, argptr);
+	va_end(argptr);
+
+	if (len <= 0)
+		return;
+
+	/* Using len + 1 for null terminator, which gets chopped off below */
+	wstring str(len + 1, L'\0');
+
+	va_start(argptr, fmt);
+	len = _vsnwprintf_s(str.data(), len + 1, _TRUNCATE, fmt, argptr);
+	va_end(argptr);
+
+	if (len <= 0)
+		return;
+
+	/* Append newline and send to main window as a PostMessage to
+	*  avoid blocking worker threads with UI messages */
+	str.resize(len);
+	str += L"\r\n";
+
+	auto msg = make_unique<wstring>(move(str));
+
+	if (PostMessage(hwndMain, WM_LOG_MESSAGE, 0, reinterpret_cast<LPARAM>(msg.get()))) {
+		msg.release();
+	}
+}
+
 static void Status(const wchar_t *fmt, ...)
 {
 	wchar_t str[512];
 
 	va_list argptr;
 	va_start(argptr, fmt);
-
 	StringCbVPrintf(str, sizeof(str), fmt, argptr);
+	va_end(argptr);
 
 	SetDlgItemText(hwndMain, IDC_STATUS, str);
-
-	va_end(argptr);
+	Log(L"%s", str);
 }
 
 static bool MyCopyFile(const wchar_t *src, const wchar_t *dest)
@@ -215,14 +256,14 @@ static string QuickReadFile(const wchar_t *path)
 
 static bool QuickWriteFile(const wchar_t *file, const void *data, size_t size)
 try {
-	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH, nullptr);
+	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
 
 	if (handle == INVALID_HANDLE_VALUE)
-		throw GetLastError();
+		throw LastError();
 
 	DWORD written;
 	if (!WriteFile(handle, data, (DWORD)size, &written, nullptr))
-		throw GetLastError();
+		throw LastError();
 
 	return true;
 
@@ -380,7 +421,7 @@ bool DownloadWorkerThread()
 	HttpHandle hConnect = WinHttpConnect(hSession, kCDNHostname, INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
 		downloadThreadFailure = true;
-		Status(L"Update failed: Couldn't connect to %S", kCDNHostname);
+		Status(L"Update failed: Couldn't connect to %s", kCDNHostname);
 		return false;
 	}
 
@@ -412,9 +453,11 @@ bool DownloadWorkerThread()
 				return false;
 			}
 
-			auto &buf = download_data[update.downloadHash];
+			auto &buf = download_data.at(update.downloadHash);
 			/* Reserve required memory */
 			buf.reserve(update.fileSize);
+
+			Log(L"Downloading %s...", update.sourceURL.c_str());
 
 			if (!HTTPGetBuffer(hConnect, update.sourceURL.c_str(), L"Accept-Encoding: gzip", buf,
 					   &responseCode)) {
@@ -422,7 +465,7 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
-				return true;
+				return false;
 			}
 
 			if (responseCode != 200) {
@@ -430,7 +473,7 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Could not download "
 				       L"%s (error code %d)",
 				       update.outputPath.c_str(), responseCode);
-				return true;
+				return false;
 			}
 
 			/* Validate hash of downloaded data. */
@@ -442,7 +485,7 @@ bool DownloadWorkerThread()
 				Status(L"Update failed: Integrity check "
 				       L"failed on %s",
 				       update.outputPath.c_str());
-				return true;
+				return false;
 			}
 
 			/* Decompress data in compressed buffer. */
@@ -453,7 +496,7 @@ bool DownloadWorkerThread()
 					Status(L"Update failed: Decompression "
 					       L"failed on %s (error code %d)",
 					       update.outputPath.c_str(), res);
-					return true;
+					return false;
 				}
 			}
 
@@ -490,7 +533,11 @@ try {
 
 	return true;
 
+} catch (const exception &e) {
+	Status(L"Exception: %S", e.what());
+	return false;
 } catch (...) {
+	Status(L"Unknown exception occurred in RunDownloadWorkers");
 	return false;
 }
 
@@ -528,6 +575,8 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 		HANDLE hWait[2];
 		hWait[0] = proc;
 		hWait[1] = cancelRequested;
+
+		Log(L"Waiting for OBS PID %d at %s...", id, path);
 
 		int i = WaitForMultipleObjects(2, hWait, false, INFINITE);
 		if (i == WAIT_OBJECT_0 + 1)
@@ -603,6 +652,7 @@ void HasherThread()
 
 		if (!UTF8ToWideBuf(updateFileName, fileName.c_str()))
 			continue;
+
 		if (!IsSafeFilename(updateFileName))
 			continue;
 
@@ -633,7 +683,11 @@ try {
 	for (auto &result : futures) {
 		result.wait();
 	}
+
+} catch (const exception &e) {
+	Status(L"Exception: %S", e.what());
 } catch (...) {
+	Status(L"Unknown exception occurred in RunHasherWorkers");
 }
 
 /* ----------------------------------------------------------------------- */
@@ -802,24 +856,24 @@ static bool RenameRemovedFile(deletion_t &deletion)
 	return false;
 }
 
-static void UpdateWithPatchIfAvailable(const PatchResponse &patch)
+static bool UpdateWithPatchIfAvailable(const PatchResponse &patch)
 {
 	wchar_t widePatchableFilename[MAX_PATH];
 	wchar_t sourceURL[1024];
 
 	if (patch.source.compare(0, kCDNUrl.size(), kCDNUrl) != 0)
-		return;
+		return false;
 
 	if (patch.name.find('/') == string::npos)
-		return;
+		return false;
 
 	string patchPackageName(patch.name, 0, patch.name.find('/'));
 	string fileName(patch.name, patch.name.find('/') + 1);
 
 	if (!UTF8ToWideBuf(widePatchableFilename, fileName.c_str()))
-		return;
+		return false;
 	if (!UTF8ToWideBuf(sourceURL, patch.source.c_str()))
-		return;
+		return false;
 
 	for (update_t &update : updates) {
 		if (update.packageName != patchPackageName)
@@ -836,8 +890,12 @@ static void UpdateWithPatchIfAvailable(const PatchResponse &patch)
 		totalFileSize -= (update.fileSize - patch.size);
 		update.fileSize = patch.size;
 
-		break;
+		Log(L"Found patch for %s, %d bytes", widePatchableFilename, (int)patch.size);
+
+		return true;
 	}
+
+	return false;
 }
 
 static bool MoveInUseFileAway(const update_t &file)
@@ -929,6 +987,8 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 	retryAfterMovingFile:
 
 		if (file.patchable) {
+			Log(L"Patching %s...", file.outputPath.c_str());
+
 			error_code = ApplyPatch(ctx, patch_data.data(), file.fileSize, file.outputPath.c_str());
 
 			installed_ok = (error_code == 0);
@@ -955,6 +1015,7 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 				}
 			}
 		} else {
+			Log(L"Installing %s...", file.outputPath.c_str());
 			installed_ok = QuickWriteFile(file.outputPath.c_str(), patch_data.data(), patch_data.size());
 			error_code = GetLastError();
 		}
@@ -995,6 +1056,8 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 			return false;
 		}
 
+		Log(L"Installing %s...", file.outputPath.c_str());
+
 		/* We may be installing into new folders,
 		 * make sure they exist */
 		filesystem::path filePath(file.outputPath.c_str());
@@ -1017,9 +1080,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 }
 
 queue<reference_wrapper<update_t>> updateQueue;
-static int lastPosition = 0;
-static int installed = 0;
-static bool updateThreadFailed = false;
+
+static atomic<int> installed = 0;
+static atomic<bool> updateThreadFailed = false;
 
 static bool UpdateWorker()
 {
@@ -1043,8 +1106,10 @@ static bool UpdateWorker()
 			return false;
 		} else {
 			int position = (int)(((float)++installed / (float)completedUpdates) * 100.0f);
-			if (position > lastPosition) {
-				lastPosition = position;
+			int oldPosition = lastPosition;
+
+			if (position > oldPosition &&
+			    lastPosition.compare_exchange_strong(oldPosition, position, memory_order_relaxed)) {
 				SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, position, 0);
 			}
 		}
@@ -1072,7 +1137,11 @@ try {
 
 	return true;
 
+} catch (const exception &e) {
+	Status(L"Exception: %S", e.what());
+	return false;
 } catch (...) {
+	Status(L"Unknown exception occurred in RunUpdateWorkers");
 	return false;
 }
 
@@ -1219,9 +1288,11 @@ static void UpdateRegistryVersion(const Manifest &manifest)
 static void ClearShaderCache()
 {
 	wchar_t shader_path[MAX_PATH];
-	SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, shader_path);
-	StringCbCatW(shader_path, sizeof(shader_path), L"\\obs-studio\\shader-cache");
-	filesystem::remove_all(shader_path);
+	if (SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, shader_path) == S_OK) {
+		if (SUCCEEDED(StringCbCatW(shader_path, sizeof(shader_path), L"\\obs-studio\\shader-cache"))) {
+			filesystem::remove_all(shader_path);
+		}
+	}
 }
 
 extern "C" void UpdateHookFiles(void);
@@ -1305,6 +1376,8 @@ static bool Update(wchar_t *cmdLine)
 		}
 	}
 
+	Log(L"Branch: %s, AppData: %s, Portable: %d", branch.c_str(), appdata.c_str(), bIsPortable ? 1 : 0);
+
 	/* ------------------------------------- *
 	 * Get config path                       */
 
@@ -1364,6 +1437,8 @@ static bool Update(wchar_t *cmdLine)
 
 	Manifest manifest;
 	{
+		Log(L"Using manifest %s", manifestPath);
+
 		string manifestFile = QuickReadFile(manifestPath);
 		if (manifestFile.empty()) {
 			Status(L"Update failed: Couldn't load manifest file");
@@ -1500,9 +1575,15 @@ static bool Update(wchar_t *cmdLine)
 	}
 
 	/* Update updates with patch information. */
+	int patchableFiles = 0;
 	for (const PatchResponse &patch : patches) {
-		UpdateWithPatchIfAvailable(patch);
+		if (UpdateWithPatchIfAvailable(patch)) {
+			patchableFiles++;
+		}
 	}
+
+	Log(L"Total files: %d, patchable: %d, patches received: %d", (int)updates.size(), (int)files.size(),
+	    patchableFiles);
 
 	/* ------------------------------------- *
 	 * Deduplicate Downloads                 */
@@ -1518,8 +1599,19 @@ static bool Update(wchar_t *cmdLine)
 		}
 	}
 
+	Log(L"Total download size: %lld bytes", totalFileSize);
+
 	/* ------------------------------------- *
 	 * Download Updates                      */
+
+	/* Pre-allocate download_data map so worker threads only
+	 * look up existing entries rather than inserting new ones,
+	 * avoiding concurrent map mutation from multiple threads. */
+	download_data.reserve(downloadHashes.size());
+	for (update_t &update : updates) {
+		if (update.state == STATE_PENDING_DOWNLOAD)
+			download_data.try_emplace(update.downloadHash);
+	}
 
 	Status(L"Downloading updates...");
 	if (!RunDownloadWorkers(4))
@@ -1534,6 +1626,7 @@ static bool Update(wchar_t *cmdLine)
 	 * Install updates                       */
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 0, 0);
+	lastPosition = 0;
 
 	Status(L"Installing updates...");
 	if (!RunUpdateWorkers(4))
@@ -1555,6 +1648,8 @@ static bool Update(wchar_t *cmdLine)
 		si.cb = sizeof(si);
 		si.dwFlags = STARTF_USESHOWWINDOW;
 		si.wShowWindow = SW_HIDE;
+
+		Log(L"Executing: %s", cmd);
 
 		PROCESS_INFORMATION pi;
 		bool success = !!CreateProcessW(nullptr, cmd, nullptr, nullptr, false, CREATE_NEW_CONSOLE, nullptr,
@@ -1654,8 +1749,12 @@ static DWORD WINAPI UpdateThread(void *arg)
 			Status(L"Update aborted.");
 
 		HWND hProgress = GetDlgItem(hwndMain, IDC_PROGRESS);
+
+		/* Even a no-op style change apparently resets the progress bar */
 		LONG_PTR style = GetWindowLongPtr(hProgress, GWL_STYLE);
-		SetWindowLongPtr(hProgress, GWL_STYLE, style & ~PBS_MARQUEE);
+		if (style & PBS_MARQUEE)
+			SetWindowLongPtr(hProgress, GWL_STYLE, style & ~PBS_MARQUEE);
+
 		SendMessage(hProgress, PBM_SETSTATE, PBST_ERROR, 0);
 
 		SetDlgItemText(hwndMain, IDC_BUTTON, L"Exit");
@@ -1714,6 +1813,36 @@ static void LaunchOBS(LPWSTR lpCmdLine)
 	ShellExecuteEx(&execInfo);
 }
 
+static void ToggleLogVisibility()
+{
+	HWND hwndLog = GetDlgItem(hwndMain, IDC_LOG);
+	if (!hwndLog)
+		return;
+
+	logVisible = !logVisible;
+
+	RECT rc;
+	GetWindowRect(hwndMain, &rc);
+
+	SetDlgItemText(hwndMain, IDC_LOGBUTTON, logVisible ? L"Hide Log" : L"Show Log");
+
+	if (logVisible) {
+		RECT dluRect = {0, 0, 0, LOG_HEIGHT_DLU};
+		MapDialogRect(hwndMain, &dluRect);
+		int logPixelHeight = dluRect.bottom;
+
+		SetWindowPos(hwndMain, nullptr, 0, 0, rc.right - rc.left, baseWindowHeight + logPixelHeight,
+			     SWP_NOMOVE | SWP_NOZORDER);
+
+		SendMessage(hwndLog, EM_SCROLL, SB_BOTTOM, 0);
+
+		ShowWindow(hwndLog, SW_SHOW);
+	} else {
+		ShowWindow(hwndLog, SW_HIDE);
+		SetWindowPos(hwndMain, nullptr, 0, 0, rc.right - rc.left, baseWindowHeight, SWP_NOMOVE | SWP_NOZORDER);
+	}
+}
+
 static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
@@ -1721,6 +1850,33 @@ static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam,
 		static HICON hMainIcon = LoadIcon(hinstMain, MAKEINTRESOURCE(IDI_ICON1));
 		SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hMainIcon);
 		SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hMainIcon);
+
+		/* Save original window height for ToggleLogVisibility */
+		RECT rc;
+		GetWindowRect(hwnd, &rc);
+		baseWindowHeight = rc.bottom - rc.top;
+
+		/* Position the log window on the bottom of the main window */
+		RECT clientRc;
+		GetClientRect(hwnd, &clientRc);
+
+		RECT dluRect = {0, 0, 0, LOG_HEIGHT_DLU};
+		MapDialogRect(hwnd, &dluRect);
+
+		HWND hwndLog =
+			CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"",
+				       WS_CHILD | WS_VSCROLL | WS_HSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL,
+				       0, clientRc.bottom, clientRc.right, dluRect.bottom, hwnd,
+				       (HMENU)(INT_PTR)IDC_LOG, hinstMain, nullptr);
+
+		/* 32k by default without this */
+		SendMessage(hwndLog, EM_SETLIMITTEXT, 0, 0);
+
+		/* Propagate the main window font or it looks ugly */
+		HFONT hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
+		if (hFont)
+			SendMessage(hwndLog, WM_SETFONT, (WPARAM)hFont, FALSE);
+
 		return true;
 	}
 
@@ -1738,12 +1894,28 @@ static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam,
 					CancelUpdate(false);
 				}
 			}
+		} else if (LOWORD(wParam) == IDC_LOGBUTTON) {
+			if (HIWORD(wParam) == BN_CLICKED)
+				ToggleLogVisibility();
 		}
 		return true;
 
 	case WM_CLOSE:
 		CancelUpdate(true);
 		return true;
+
+	case WM_LOG_MESSAGE: {
+		/* Log message sent to us by Log() as PostMessage */
+		unique_ptr<wstring> msg(reinterpret_cast<wstring *>(lParam));
+
+		HWND hwndLog = GetDlgItem(hwnd, IDC_LOG);
+		if (hwndLog && msg) {
+			int textLen = GetWindowTextLength(hwndLog);
+			SendMessage(hwndLog, EM_SETSEL, textLen, textLen);
+			SendMessage(hwndLog, EM_REPLACESEL, FALSE, reinterpret_cast<LPARAM>(msg->c_str()));
+		}
+		return true;
+	}
 	}
 
 	return false;
@@ -1874,6 +2046,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 		if (!hwndMain) {
 			return -1;
 		}
+
+		Log(L"Update target: %s", obs_base_directory);
 
 		ShowWindow(hwndMain, SW_SHOWNORMAL);
 		SetForegroundWindow(hwndMain);

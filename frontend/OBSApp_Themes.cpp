@@ -705,12 +705,6 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars, const QS
 		} else if (var.type == OBSThemeVariable::Size || var.type == OBSThemeVariable::Number) {
 			double val = value.toDouble();
 
-			// Round any values with a px suffix. Qt does this anyway for some properties,
-			// but then will flat out break with decimals for others.
-			if (var.suffix == "px") {
-				val = std::roundf(val);
-			}
-
 			bool isInteger = ceill(val) == val;
 			replace = QString::number(val, 'f', isInteger ? 0 : -1);
 
@@ -718,6 +712,15 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars, const QS
 				replace += var.suffix;
 		} else {
 			replace = value.toString();
+		}
+
+		// Round any values with a px suffix. Qt does this anyway for some properties,
+		// but then will flat out break with decimals for others.
+		if (replace.right(2) == "px") {
+			QString replaceValue = replace.sliced(0, replace.length() - 2);
+			int val = (int)std::roundf(replaceValue.toDouble());
+
+			replace = QString::number(val) + "px";
 		}
 
 		stylesheet = stylesheet.replace(needle, replace);
@@ -824,7 +827,7 @@ bool OBSApp::SetTheme(const QString &name)
 	if (!theme)
 		return false;
 
-	if (themeWatcher) {
+	if (themeWatcher && themeWatcher->files().size() > 0) {
 		themeWatcher->blockSignals(true);
 		themeWatcher->removePaths(themeWatcher->files());
 	}
@@ -959,7 +962,6 @@ bool OBSApp::SetTheme(const QString &name)
 
 void OBSApp::themeFileChanged(const QString &path)
 {
-	themeWatcher->blockSignals(true);
 	blog(LOG_INFO, "Theme file \"%s\" changed, reloading...", QT_TO_UTF8(path));
 	SetTheme(currentTheme->id);
 }
@@ -999,12 +1001,6 @@ bool OBSApp::InitTheme()
 	/* Load list of themes and read their metadata */
 	FindThemes();
 
-	if (config_get_bool(userConfig, "Appearance", "AutoReload")) {
-		/* Set up Qt file watcher to automatically reload themes */
-		themeWatcher = new QFileSystemWatcher(this);
-		connect(themeWatcher.get(), &QFileSystemWatcher::fileChanged, this, &OBSApp::themeFileChanged);
-	}
-
 	/* Migrate old theme config key */
 	if (config_has_user_value(userConfig, "General", "CurrentTheme3") &&
 	    !config_has_user_value(userConfig, "Appearance", "Theme")) {
@@ -1029,6 +1025,16 @@ bool OBSApp::InitTheme()
 #else
 		themeName = DEFAULT_THEME;
 #endif
+	}
+
+	if (config_get_bool(userConfig, "Appearance", "AutoReload")) {
+		if (themeWatcher) {
+			themeWatcher->deleteLater();
+		}
+
+		// Set up Qt file watcher to automatically reload themes.
+		themeWatcher = new QFileSystemWatcher(this);
+		connect(themeWatcher, &QFileSystemWatcher::fileChanged, this, &OBSApp::themeFileChanged);
 	}
 
 	if (!SetTheme(themeName)) {
