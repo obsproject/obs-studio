@@ -23,6 +23,7 @@
 #include <utility/display-helpers.hpp>
 #include <utility/item-widget-helpers.hpp>
 #include <widgets/OBSBasic.hpp>
+#include <widgets/OBSSourceWidget.hpp>
 
 #include <properties-view.hpp>
 #include <qt-wrappers.hpp>
@@ -122,22 +123,13 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	obs_source_inc_showing(source);
 
-	auto addDrawCallback = [this]() {
-		obs_display_add_draw_callback(ui->preview->GetDisplay(), OBSBasicFilters::DrawPreview, this);
-	};
+	auto *previewWidget = new OBSSourceWidget(this, source_);
+	ui->rightLayout->insertWidget(0, previewWidget);
 
-	enum obs_source_type type = obs_source_get_type(source);
-	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT || type == OBS_SOURCE_TYPE_SCENE;
+	previewWidget->resize(width(), ui->rightLayout->height() / 2);
 
-	if ((caps & OBS_SOURCE_VIDEO) != 0) {
-		ui->rightLayout->setContentsMargins(0, 0, 0, 0);
-		ui->preview->show();
-		if (drawable_type)
-			connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
-	} else {
-		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
-		ui->preview->hide();
-	}
+	ui->rightLayout->setStretchFactor(0, 2);
+	ui->rightLayout->setStretchFactor(1, 3);
 
 #ifdef __APPLE__
 	ui->actionRenameFilter->setShortcut({Qt::Key_Return});
@@ -589,31 +581,7 @@ void OBSBasicFilters::closeEvent(QCloseEvent *event)
 	if (!event->isAccepted())
 		return;
 
-	obs_display_remove_draw_callback(ui->preview->GetDisplay(), OBSBasicFilters::DrawPreview, this);
-
 	main->SaveProject();
-}
-
-bool OBSBasicFilters::nativeEvent(const QByteArray &, void *message, qintptr *)
-{
-#ifdef _WIN32
-	const MSG &msg = *static_cast<MSG *>(message);
-	switch (msg.message) {
-	case WM_MOVE:
-		for (OBSQTDisplay *const display : findChildren<OBSQTDisplay *>()) {
-			display->OnMove();
-		}
-		break;
-	case WM_DISPLAYCHANGE:
-		for (OBSQTDisplay *const display : findChildren<OBSQTDisplay *>()) {
-			display->OnDisplayChange();
-		}
-	}
-#else
-	UNUSED_PARAMETER(message);
-#endif
-
-	return false;
 }
 
 /* OBS Signals */
@@ -650,38 +618,6 @@ void OBSBasicFilters::SourceRenamed(void *param, calldata_t *data)
 	QString title = QTStr("Basic.Filters.Title").arg(QT_UTF8(name));
 
 	QMetaObject::invokeMethod(static_cast<OBSBasicFilters *>(param), "setWindowTitle", Q_ARG(QString, title));
-}
-
-void OBSBasicFilters::DrawPreview(void *data, uint32_t cx, uint32_t cy)
-{
-	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(data);
-
-	if (!window->source)
-		return;
-
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
-
-	int x, y;
-	int newCX, newCY;
-	float scale;
-
-	GetScaleAndCenterPos(sourceCX, sourceCY, cx, cy, x, y, scale);
-
-	newCX = int(scale * float(sourceCX));
-	newCY = int(scale * float(sourceCY));
-
-	gs_viewport_push();
-	gs_projection_push();
-	const bool previous = gs_set_linear_srgb(true);
-
-	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY), -100.0f, 100.0f);
-	gs_set_viewport(x, y, newCX, newCY);
-	obs_source_video_render(window->source);
-
-	gs_set_linear_srgb(previous);
-	gs_projection_pop();
-	gs_viewport_pop();
 }
 
 /* Qt Slots */

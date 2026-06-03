@@ -19,6 +19,7 @@
 
 #include <utility/display-helpers.hpp>
 #include <widgets/OBSBasic.hpp>
+#include <widgets/OBSSourceWidget.hpp>
 
 #include <properties-view.hpp>
 #include <qt-wrappers.hpp>
@@ -59,8 +60,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->setupUi(this);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
-	if (cx > 400 && cy > 400)
+	if (cx > 400 && cy > 400) {
 		resize(cx, cy);
+	}
 
 	/* The OBSData constructor increments the reference once */
 	obs_data_release(oldSettings);
@@ -94,21 +96,15 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	updatePropertiesSignal.Connect(obs_source_get_signal_handler(source), "update_properties",
 				       OBSBasicProperties::UpdateProperties, this);
 
-	auto addDrawCallback = [this]() {
-		obs_display_add_draw_callback(ui->preview->GetDisplay(), OBSBasicProperties::DrawPreview, this);
-	};
-	auto addTransitionDrawCallback = [this]() {
-		obs_display_add_draw_callback(ui->preview->GetDisplay(), OBSBasicProperties::DrawTransitionPreview,
-					      this);
-	};
 	uint32_t caps = obs_source_get_output_flags(source);
-	bool drawable_type = type == OBS_SOURCE_TYPE_INPUT || type == OBS_SOURCE_TYPE_SCENE;
-	bool drawable_preview = (caps & OBS_SOURCE_VIDEO) != 0;
+	bool isSourceType = type == OBS_SOURCE_TYPE_INPUT || type == OBS_SOURCE_TYPE_SCENE;
+	bool hasVideo = (caps & OBS_SOURCE_VIDEO) != 0;
 
-	if (drawable_preview && drawable_type) {
-		ui->preview->show();
-		connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
+	auto *previewWidget = new OBSSourceWidget(this);
+	ui->windowSplitter->insertWidget(0, previewWidget);
 
+	if (hasVideo && isSourceType) {
+		previewWidget->setSource(source_);
 	} else if (type == OBS_SOURCE_TYPE_TRANSITION) {
 		sourceA = obs_source_create_private("scene", "sourceA", nullptr);
 		sourceB = obs_source_create_private("scene", "sourceB", nullptr);
@@ -145,12 +141,16 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 		connect(view, &OBSPropertiesView::Changed, this, updateCallback);
 
-		ui->preview->show();
-		connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addTransitionDrawCallback);
-
+		previewWidget->setSource(sourceClone);
+		previewWidget->setForceLinearSRGB(true);
 	} else {
-		ui->preview->hide();
+		previewWidget->hide();
 	}
+
+	previewWidget->resize(width(), ui->windowSplitter->height() / 2);
+
+	ui->windowSplitter->setStretchFactor(0, 2);
+	ui->windowSplitter->setStretchFactor(1, 3);
 
 	connect(ui->defaultsButton, &QPushButton::clicked, this, &OBSBasicProperties::restoreDefaultsClicked);
 }
@@ -344,75 +344,10 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 	}
 }
 
-void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
-{
-	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
-
-	if (!window->source)
-		return;
-
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
-
-	int x, y;
-	int newCX, newCY;
-	float scale;
-
-	GetScaleAndCenterPos(sourceCX, sourceCY, cx, cy, x, y, scale);
-
-	newCX = int(scale * float(sourceCX));
-	newCY = int(scale * float(sourceCY));
-
-	gs_viewport_push();
-	gs_projection_push();
-	const bool previous = gs_set_linear_srgb(true);
-
-	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY), -100.0f, 100.0f);
-	gs_set_viewport(x, y, newCX, newCY);
-	obs_source_video_render(window->source);
-
-	gs_set_linear_srgb(previous);
-	gs_projection_pop();
-	gs_viewport_pop();
-}
-
-void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx, uint32_t cy)
-{
-	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
-
-	if (!window->sourceClone)
-		return;
-
-	uint32_t sourceCX = max(obs_source_get_width(window->sourceClone), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->sourceClone), 1u);
-
-	int x, y;
-	int newCX, newCY;
-	float scale;
-
-	GetScaleAndCenterPos(sourceCX, sourceCY, cx, cy, x, y, scale);
-
-	newCX = int(scale * float(sourceCX));
-	newCY = int(scale * float(sourceCY));
-
-	gs_viewport_push();
-	gs_projection_push();
-	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY), -100.0f, 100.0f);
-	gs_set_viewport(x, y, newCX, newCY);
-
-	obs_source_video_render(window->sourceClone);
-
-	gs_projection_pop();
-	gs_viewport_pop();
-}
-
 void OBSBasicProperties::Cleanup()
 {
 	config_set_int(App()->GetAppConfig(), "PropertiesWindow", "cx", width());
 	config_set_int(App()->GetAppConfig(), "PropertiesWindow", "cy", height());
-
-	obs_display_remove_draw_callback(ui->preview->GetDisplay(), OBSBasicProperties::DrawPreview, this);
-	obs_display_remove_draw_callback(ui->preview->GetDisplay(), OBSBasicProperties::DrawTransitionPreview, this);
 }
 
 void OBSBasicProperties::reject()
@@ -432,28 +367,6 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 	QDialog::closeEvent(event);
 	if (event->isAccepted())
 		Cleanup();
-}
-
-bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message, qintptr *)
-{
-#ifdef _WIN32
-	const MSG &msg = *static_cast<MSG *>(message);
-	switch (msg.message) {
-	case WM_MOVE:
-		for (OBSQTDisplay *const display : findChildren<OBSQTDisplay *>()) {
-			display->OnMove();
-		}
-		break;
-	case WM_DISPLAYCHANGE:
-		for (OBSQTDisplay *const display : findChildren<OBSQTDisplay *>()) {
-			display->OnDisplayChange();
-		}
-	}
-#else
-	UNUSED_PARAMETER(message);
-#endif
-
-	return false;
 }
 
 void OBSBasicProperties::Init()

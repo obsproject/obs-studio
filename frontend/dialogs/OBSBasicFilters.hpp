@@ -19,6 +19,8 @@
 
 #include "ui_OBSBasicFilters.h"
 
+#include <obs.hpp>
+
 #include <QDialog>
 
 class OBSBasic;
@@ -50,7 +52,6 @@ private:
 	static void SourceRemoved(void *param, calldata_t *data);
 	static void SourceRenamed(void *param, calldata_t *data);
 	static void UpdateProperties(void *data, calldata_t *params);
-	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 
 	QMenu *CreateAddFilterPopupMenu(bool async);
 
@@ -121,5 +122,4 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
-	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 };
