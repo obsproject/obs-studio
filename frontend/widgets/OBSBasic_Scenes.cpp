@@ -567,13 +567,9 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		popup.addSeparator();
 
-		delete sceneProjectorMenu;
-		sceneProjectorMenu = new QMenu(QTStr("Projector.Open.Scene"));
-		AddProjectorMenuMonitors(sceneProjectorMenu, this, &OBSBasic::OpenSceneProjector);
-		sceneProjectorMenu->addSeparator();
-		sceneProjectorMenu->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenSceneWindow);
+		OBSSource source = GetCurrentSceneSource();
+		popup.addMenu(createProjectorMenu(QTStr("Projector.Open.Scene"), source, ProjectorType::Scene));
 
-		popup.addMenu(sceneProjectorMenu);
 		popup.addSeparator();
 
 		popup.addAction(QTStr("Screenshot.Scene"), this, &OBSBasic::ScreenshotScene);
@@ -582,15 +578,12 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		popup.addSeparator();
 
-		delete perSceneTransitionMenu;
-		perSceneTransitionMenu = CreatePerSceneTransitionMenu();
-		popup.addMenu(perSceneTransitionMenu);
+		popup.addMenu(CreatePerSceneTransitionMenu());
 
 		/* ---------------------- */
 
 		QAction *multiviewAction = popup.addAction(QTStr("ShowInMultiview"));
 
-		OBSSource source = GetCurrentSceneSource();
 		OBSDataAutoRelease data = obs_source_get_private_settings(source);
 
 		obs_data_set_default_bool(data, "show_in_multiview", true);

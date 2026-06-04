@@ -1285,14 +1285,6 @@ void OBSBasic::OBSInit()
 
 	OBSBasicStats::InitializeValues();
 
-	/* ----------------------- */
-	/* Add multiview menu      */
-
-	ui->viewMenu->addSeparator();
-
-	connect(ui->viewMenu->menuAction(), &QAction::hovered, this, &OBSBasic::updateMultiviewProjectorMenu);
-	OBSBasic::updateMultiviewProjectorMenu();
-
 	ui->sources->UpdateIcons();
 
 #if !defined(_WIN32)
@@ -1407,18 +1399,8 @@ void OBSBasic::applicationShutdown() noexcept
 		patronJsonThread->wait();
 
 	delete screenshotData;
-	delete previewProjectorSource;
-	delete previewProjectorMain;
-	delete sourceProjector;
-	delete sceneProjectorMenu;
-	delete scaleFilteringMenu;
-	delete blendingModeMenu;
-	delete colorMenu;
-	delete colorWidgetAction;
-	delete colorSelect;
-	delete deinterlaceMenu;
-	delete perSceneTransitionMenu;
 	delete shortcutFilter;
+	delete trayMenu;
 	delete programOptions;
 	delete program;
 

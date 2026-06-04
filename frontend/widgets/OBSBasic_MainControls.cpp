@@ -44,6 +44,7 @@
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
 #include <wizards/AutoConfig.hpp>
+#include <widgets/OBSProjector.hpp>
 
 #include <qt-wrappers.hpp>
 
@@ -682,4 +683,12 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 	} else if (!className) {
 		ui->menuDocks->exec(globalPos);
 	}
+}
+
+void OBSBasic::on_viewMenu_aboutToShow()
+{
+	multiviewMenu.reset(createProjectorMenu(QTStr("Projector.Open.Multiview"), nullptr, ProjectorType::Multiview));
+
+	QAction *separatorAction = ui->viewMenu->actions().at(ui->viewMenu->actions().count() - 2);
+	ui->viewMenu->insertMenu(separatorAction, multiviewMenu.data());
 }
