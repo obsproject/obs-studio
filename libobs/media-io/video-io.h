@@ -305,6 +305,8 @@ EXPORT bool video_output_connect2(video_t *video, const struct video_scale_info 
 				  void *param);
 EXPORT void video_output_disconnect(video_t *video, void (*callback)(void *param, struct video_data *frame),
 				    void *param);
+EXPORT bool video_output_disconnect2(video_t *video, void (*callback)(void *param, struct video_data *frame),
+				     void *param);
 
 EXPORT bool video_output_active(const video_t *video);
 

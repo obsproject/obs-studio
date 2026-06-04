@@ -438,16 +438,7 @@ static OSStatus input_callback(void *data, AudioUnitRenderActionFlags *action_fl
 									     : ca->buf_list->mNumberBuffers;
 	audio.format = ca->format;
 	audio.samples_per_sec = ca->sample_rate;
-	static double factor = 0.;
-	static mach_timebase_info_data_t info = {0, 0};
-	if (info.numer == 0 && info.denom == 0) {
-		mach_timebase_info(&info);
-		factor = ((double)info.numer) / info.denom;
-	}
-	if (info.numer != info.denom)
-		audio.timestamp = (uint64_t)(factor * ts_data->mHostTime);
-	else
-		audio.timestamp = ts_data->mHostTime;
+	audio.timestamp = AudioConvertHostTimeToNanos(ts_data->mHostTime);
 
 	obs_source_output_audio(ca->source, &audio);
 
@@ -784,6 +775,9 @@ static void coreaudio_destroy(void *data)
 
 	if (ca) {
 		coreaudio_shutdown(ca);
+		/* If the device is also used for monitoring, a cleanup is needed. */
+		if (!ca->input)
+			obs_source_audio_output_capture_device_changed(ca->source, NULL);
 
 		os_event_destroy(ca->exit_event);
 
@@ -818,11 +812,15 @@ static void coreaudio_set_channels(struct coreaudio_data *ca, obs_data_t *settin
 static void coreaudio_update(void *data, obs_data_t *settings)
 {
 	struct coreaudio_data *ca = data;
+	const char *new_id = obs_data_get_string(settings, "device_id");
+
+	if (!ca->input && strcmp(new_id, ca->device_uid) != 0)
+		obs_source_audio_output_capture_device_changed(ca->source, new_id);
 
 	coreaudio_shutdown(ca);
 
 	bfree(ca->device_uid);
-	ca->device_uid = bstrdup(obs_data_get_string(settings, "device_id"));
+	ca->device_uid = bstrdup(new_id);
 
 	ca->enable_downmix = obs_data_get_bool(settings, "enable_downmix");
 
@@ -865,6 +863,9 @@ static void *coreaudio_create(obs_data_t *settings, obs_source_t *source, bool i
 		ca->device_uid = bstrdup("default");
 
 	coreaudio_try_init(ca);
+	if (!ca->input)
+		obs_source_audio_output_capture_device_changed(source, ca->device_uid);
+
 	return ca;
 }
 

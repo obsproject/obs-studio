@@ -82,7 +82,7 @@ static bool apply_rc_opt(const struct obs_option *opt, NV_ENC_RC_PARAMS *nv_conf
 	APPLY_INT_OPT(lookaheadLevel, NV_ENC_LOOKAHEAD_LEVEL, PRIu32)
 #endif
 
-	/* Macros above will return true if succesfully evaluated.
+	/* Macros above will return true if successfully evaluated.
 	 * Otherwise, return false if option unknown/unsupported. */
 	return false;
 }
@@ -129,6 +129,9 @@ static bool apply_h264_opt(struct obs_option *opt, NV_ENC_CONFIG_H264 *nv_conf)
 
 	APPLY_INT_OPT(idrPeriod, uint32_t, PRIu32)
 	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE, PRIu32)
+#ifdef NVENC_13_0_OR_LATER
+	APPLY_INT_OPT(tfLevel, NV_ENC_TEMPORAL_FILTER_LEVEL, PRIu32)
+#endif
 
 	APPLY_BIT_OPT(enableFillerDataInsertion, 1)
 
@@ -162,6 +165,9 @@ static bool apply_av1_opt(struct obs_option *opt, NV_ENC_CONFIG_AV1 *nv_conf)
 	APPLY_INT_OPT(numTileRows, uint32_t, PRIu32)
 	APPLY_INT_OPT(idrPeriod, uint32_t, PRIu32)
 	APPLY_INT_OPT(useBFramesAsRef, NV_ENC_BFRAME_REF_MODE, PRIu32)
+#ifdef NVENC_13_0_OR_LATER
+	APPLY_INT_OPT(tfLevel, NV_ENC_TEMPORAL_FILTER_LEVEL, PRIu32)
+#endif
 
 	APPLY_BIT_OPT(enableBitstreamPadding, 1)
 
@@ -180,8 +186,10 @@ static bool apply_codec_opt(enum codec_type codec, struct obs_option *opt, NV_EN
 	return false;
 }
 
-void apply_user_args(struct nvenc_data *enc)
+bool apply_user_args(struct nvenc_data *enc)
 {
+	bool success = true;
+
 	for (size_t idx = 0; idx < enc->props.opts.count; idx++) {
 		struct obs_option *opt = &enc->props.opts.options[idx];
 
@@ -197,7 +205,10 @@ void apply_user_args(struct nvenc_data *enc)
 			continue;
 
 		warn("Unknown custom option: \"%s\"", opt->name);
+		success = false;
 	}
+
+	return success;
 }
 
 bool get_user_arg_int(struct nvenc_data *enc, const char *name, int *val)

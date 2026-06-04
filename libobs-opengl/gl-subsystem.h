@@ -658,6 +658,8 @@ struct gs_device {
 	struct fbo_info *cur_fbo;
 };
 
+typedef void *gs_sync;
+
 extern struct fbo_info *get_fbo(gs_texture_t *tex, uint32_t width, uint32_t height);
 
 extern void gl_update(gs_device_t *device);

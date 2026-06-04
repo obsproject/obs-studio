@@ -1033,8 +1033,11 @@ static int init_send(struct rtmp_stream *stream)
 			}
 		}
 
-		obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
-		if (aencoder) {
+		for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
+			obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
+			if (!aencoder)
+				continue;
+
 			obs_data_t *params = obs_encoder_get_settings(aencoder);
 			if (params) {
 				int bitrate = obs_data_get_int(params, "bitrate");

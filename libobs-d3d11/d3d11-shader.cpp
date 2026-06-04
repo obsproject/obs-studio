@@ -28,7 +28,7 @@
 #include <fstream>
 #include <d3dcompiler.h>
 
-void gs_vertex_shader::GetBuffersExpected(const vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
+void gs_vertex_shader::GetBuffersExpected(const std::vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
 {
 	for (size_t i = 0; i < inputs.size(); i++) {
 		const D3D11_INPUT_ELEMENT_DESC &input = inputs[i];
@@ -52,7 +52,7 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file, const 
 {
 	ShaderProcessor processor(device);
 	ComPtr<ID3D10Blob> shaderBlob;
-	string outputString;
+	std::string outputString;
 	HRESULT hr;
 
 	processor.Process(shaderString, file);
@@ -88,7 +88,7 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file, const ch
 {
 	ShaderProcessor processor(device);
 	ComPtr<ID3D10Blob> shaderBlob;
-	string outputString;
+	std::string outputString;
 	HRESULT hr;
 
 	processor.Process(shaderString, file);
@@ -226,26 +226,26 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 	snprintf(hashstr, sizeof(hashstr), "%02llx", hash);
 
 	BPtr program_data = os_get_program_data_path_ptr("obs-studio/shader-cache");
-	auto cachePath = filesystem::u8path(program_data.Get()) / hashstr;
+	auto cachePath = std::filesystem::u8path(program_data.Get()) / hashstr;
 	// Increment if on-disk format changes
 	cachePath += ".v2";
 
 	std::fstream cacheFile;
-	cacheFile.exceptions(fstream::badbit | fstream::eofbit);
+	cacheFile.exceptions(std::fstream::badbit | std::fstream::eofbit);
 
-	if (filesystem::exists(cachePath) && !filesystem::is_empty(cachePath))
-		cacheFile.open(cachePath, ios::in | ios::binary | ios::ate);
+	if (std::filesystem::exists(cachePath) && !std::filesystem::is_empty(cachePath))
+		cacheFile.open(cachePath, std::ios::in | std::ios::binary | std::ios::ate);
 
 	if (cacheFile.is_open()) {
 		uint64_t checksum;
 
 		try {
-			streampos len = cacheFile.tellg();
+			std::streampos len = cacheFile.tellg();
 			// Not enough data for checksum + shader
 			if (len <= sizeof(checksum))
-				throw length_error("File truncated");
+				throw std::length_error("File truncated");
 
-			cacheFile.seekg(0, ios::beg);
+			cacheFile.seekg(0, std::ios::beg);
 
 			len -= sizeof(checksum);
 			D3DCreateBlob(len, shader);
@@ -254,14 +254,14 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 
 			cacheFile.read((char *)&checksum, sizeof(checksum));
 			if (calculated_checksum != checksum)
-				throw exception("Checksum mismatch");
+				throw std::exception("Checksum mismatch");
 
 			is_cached = true;
-		} catch (const exception &e) {
+		} catch (const std::exception &e) {
 			// Something went wrong reading the cache file, delete it
 			blog(LOG_WARNING, "Loading shader cache file failed with \"%s\": %s", e.what(), file);
 			cacheFile.close();
-			filesystem::remove(cachePath);
+			std::filesystem::remove(cachePath);
 		}
 	}
 
@@ -275,7 +275,7 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 				throw HRError("Failed to compile shader", hr);
 		}
 
-		cacheFile.open(cachePath, ios::out | ios::binary);
+		cacheFile.open(cachePath, std::ios::out | std::ios::binary);
 		if (cacheFile.is_open()) {
 			try {
 				uint64_t calculated_checksum =
@@ -283,10 +283,10 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 
 				cacheFile.write((char *)(*shader)->GetBufferPointer(), (*shader)->GetBufferSize());
 				cacheFile.write((char *)&calculated_checksum, sizeof(calculated_checksum));
-			} catch (const exception &e) {
+			} catch (const std::exception &e) {
 				blog(LOG_WARNING, "Writing shader cache file failed with \"%s\": %s", e.what(), file);
 				cacheFile.close();
-				filesystem::remove(cachePath);
+				std::filesystem::remove(cachePath);
 			}
 		}
 	}
@@ -303,7 +303,7 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 #endif
 }
 
-inline void gs_shader::UpdateParam(vector<uint8_t> &constData, gs_shader_param &param, bool &upload)
+inline void gs_shader::UpdateParam(std::vector<uint8_t> &constData, gs_shader_param &param, bool &upload)
 {
 	if (param.type != GS_SHADER_PARAM_TEXTURE) {
 		if (!param.curValue.size())
@@ -342,7 +342,7 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData, gs_shader_param &
 
 void gs_shader::UploadParams()
 {
-	vector<uint8_t> constData;
+	std::vector<uint8_t> constData;
 	bool upload = false;
 
 	constData.reserve(constantSize);

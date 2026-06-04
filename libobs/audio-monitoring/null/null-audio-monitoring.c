@@ -26,3 +26,10 @@ void audio_monitor_destroy(struct audio_monitor *monitor)
 {
 	UNUSED_PARAMETER(monitor);
 }
+
+bool devices_match(const char *id1, const char *id2)
+{
+	UNUSED_PARAMETER(id1);
+	UNUSED_PARAMETER(id2);
+	return false;
+}

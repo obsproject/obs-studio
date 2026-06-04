@@ -85,7 +85,7 @@ effects:  **ViewProj**, and **image**.  The **ViewProj** parameter
 combination.  The **image** parameter (which is a texture2d) is a
 commonly used parameter for the main texture; this parameter will be
 used with the functions :c:func:`obs_source_draw()`,
-:c:func:`gs_draw_sprite()`, and
+:c:func:`gs_draw_sprite()`, :c:func:`gs_draw_quadf()`, and
 :c:func:`obs_source_process_filter_end()`.
 
 Here is an example of effect parameters:
@@ -198,7 +198,7 @@ Vertex components can have the following semantics:
 - **POSITION**       - Position value (*float4*).
 - **NORMAL**         - Normal value (*float4*).
 - **TANGENT**        - Tangent value (*float4*).
-- **TEXCOORD[0..7]** - Texture cooordinate value (*float2*, *float3*, or
+- **TEXCOORD[0..7]** - Texture coordinate value (*float2*, *float3*, or
   *float4*).
 
 Here is an example of a vertex semantic structure:
@@ -265,8 +265,8 @@ would be used:
    uniform texture2d image;
 
    struct VertInOut {
-           float4 my_position : POSITION;
-           float2 my_texcoord : TEXCOORD0;
+           float4 pos : POSITION;
+           float2 uv : TEXCOORD0;
    };
 
    VertInOut MyVertexShaderFunc(VertInOut vert_in)

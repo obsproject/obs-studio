@@ -4,8 +4,8 @@ local macos_version=$(sw_vers -productVersion)
 
 log_group 'Install macOS build requirements'
 log_info 'Checking macOS version...'
-if ! is-at-least 11.0 ${macos_version}; then
-  log_error "Minimum required macOS version is 11.0, but running on macOS ${macos_version}"
+if ! is-at-least 12.0 ${macos_version}; then
+  log_error "Minimum required macOS version is 12.0, but running on macOS ${macos_version}"
   return 2
 else
   log_status "macOS ${macos_version} is recent"

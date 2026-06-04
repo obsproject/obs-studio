@@ -246,6 +246,11 @@ static void *v4l2_thread(void *vptr)
 		blog(LOG_DEBUG, "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d", data->device_id,
 		     buf.timestamp.tv_usec, buf.index, buf.flags, buf.sequence, buf.length, buf.bytesused);
 
+		if (buf.flags & V4L2_BUF_FLAG_ERROR) {
+			blog(LOG_DEBUG, "skipping decoding of buffer with recoverable error-flag set");
+			goto continue_queue_buffer;
+		}
+
 		out.timestamp = timeval2ns(buf.timestamp);
 		if (!frames)
 			first_ts = out.timestamp;
@@ -264,6 +269,7 @@ static void *v4l2_thread(void *vptr)
 		}
 		obs_source_output_video(data->source, &out);
 
+	continue_queue_buffer:
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
 			blog(LOG_ERROR, "%s: failed to enqueue buffer", data->device_id);
 			break;

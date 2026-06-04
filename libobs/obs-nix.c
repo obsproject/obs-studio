@@ -72,11 +72,13 @@ void add_default_module_paths(void)
 
 	if (module_bin_path && module_data_path) {
 		char *abs_module_bin_path = os_get_abs_path_ptr(module_bin_path);
+		char *abs_module_install_path = os_get_abs_path_ptr(OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION);
 
 		if (abs_module_bin_path &&
-		    strcmp(abs_module_bin_path, OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION) != 0) {
+		    (!abs_module_install_path || strcmp(abs_module_bin_path, abs_module_install_path) != 0)) {
 			obs_add_module_path(module_bin_path, module_data_path);
 		}
+		bfree(abs_module_install_path);
 		bfree(abs_module_bin_path);
 	}
 
@@ -351,6 +353,7 @@ static void log_flatpak_info(void)
 
 	const char *branch = config_get_string(fp_info, "Instance", "branch");
 	const char *arch = config_get_string(fp_info, "Instance", "arch");
+	const char *commit = config_get_string(fp_info, "Instance", "app-commit");
 
 	const char *runtime = config_get_string(fp_info, "Application", "runtime");
 
@@ -361,6 +364,7 @@ static void log_flatpak_info(void)
 
 	blog(LOG_INFO, "Flatpak Branch: %s", branch ? branch : "none");
 	blog(LOG_INFO, "Flatpak Arch: %s", arch ? arch : "unknown");
+	blog(LOG_INFO, "Flatpak Commit: %s", commit ? commit : "unknown");
 
 	blog(LOG_INFO, "Flatpak Runtime: %s", runtime ? runtime : "none");
 

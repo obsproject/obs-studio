@@ -23,13 +23,6 @@
 #include <util/deque.h>
 #include <util/serializer.h>
 
-/* Flavour for target compatibility */
-enum mp4_flavour {
-	MP4,  /* ISO/IEC 14496-12 */
-	MOV,  /* Apple QuickTime */
-	CMAF, /* ISO/IEC 23000-19 */
-};
-
 enum mp4_track_type {
 	TRACK_UNKNOWN,
 	TRACK_VIDEO,
@@ -44,6 +37,7 @@ enum mp4_codec {
 	CODEC_H264,
 	CODEC_HEVC,
 	CODEC_AV1,
+	CODEC_PRORES,
 
 	/* Audio Codecs */
 	CODEC_AAC,
@@ -97,7 +91,7 @@ struct mp4_track {
 	/* Time Base (1/FPS for video, 1/sample rate for audio) */
 	uint32_t timebase_num;
 	uint32_t timebase_den;
-	/* Output timescale calculated from time base (Video only) */
+	/* Output timescale calculated from time base */
 	uint32_t timescale;
 
 	/* First PTS this track has seen (in track timescale) */
@@ -133,7 +127,7 @@ struct mp4_mux {
 	struct serializer *serializer;
 
 	/* Target format compatibility */
-	enum mp4_flavour mode;
+	enum mp4_flavor flavor;
 
 	/* Flags */
 	enum mp4_mux_flags flags;
@@ -340,3 +334,83 @@ static const char CHAPTER_PKT_FOOTER[12] = {
 	0x00, 0x00, 0x01, 0x00
 };
 /* clang-format on */
+
+/** QTFF/MOV specifics **/
+
+/* https://developer.apple.com/documentation/quicktime-file-format/sound_sample_description_version_2#LPCM-flag-values */
+enum lpcm_flags {
+	kAudioFormatFlagIsFloat = (1 << 0),
+	kAudioFormatFlagIsSignedInteger = (1 << 2),
+	kAudioFormatFlagIsPacked = (1 << 3),
+	kLinearPCMFormatFlagIsFloat = kAudioFormatFlagIsFloat,
+	kLinearPCMFormatFlagIsSignedInteger = kAudioFormatFlagIsSignedInteger,
+	kLinearPCMFormatFlagIsPacked = kAudioFormatFlagIsPacked,
+};
+
+static inline uint32_t get_lpcm_flags(enum mp4_codec codec)
+{
+	if (codec == CODEC_PCM_F32)
+		return kLinearPCMFormatFlagIsFloat | kLinearPCMFormatFlagIsPacked;
+	if (codec == CODEC_PCM_I16 || codec == CODEC_PCM_I24)
+		return kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
+
+	return 0;
+}
+
+enum channel_map_bits {
+	FL = 1 << 0,
+	FR = 1 << 1,
+	FC = 1 << 2,
+	LFE = 1 << 3,
+	RL = 1 << 4,
+	RR = 1 << 5,
+	RC = 1 << 8,
+	SL = 1 << 9,
+	SR = 1 << 10,
+};
+
+static uint32_t get_mov_channel_bitmap(enum speaker_layout layout)
+{
+	switch (layout) {
+	case SPEAKERS_MONO:
+		return FC;
+	case SPEAKERS_STEREO:
+		return FL | FR;
+	case SPEAKERS_2POINT1:
+		return FL | FR | LFE;
+	case SPEAKERS_4POINT0:
+		return FL | FR | FC | RC;
+	case SPEAKERS_4POINT1:
+		return FL | FR | FC | LFE | RC;
+	case SPEAKERS_5POINT1:
+		return FL | FR | FC | LFE | RL | RR;
+	case SPEAKERS_7POINT1:
+		return FL | FR | FC | LFE | RL | RR | SL | SR;
+	case SPEAKERS_UNKNOWN:
+		break;
+	}
+
+	return 0;
+}
+
+enum coreaudio_layout {
+	kAudioChannelLayoutTag_UseChannelBitmap = (1 << 16) | 0,
+	kAudioChannelLayoutTag_Mono = (100 << 16) | 1,
+	kAudioChannelLayoutTag_Stereo = (101 << 16) | 2,
+	kAudioChannelLayoutTag_DVD_4 = (133 << 16) | 3, // 2.1 (AAC Only)
+};
+
+static enum coreaudio_layout get_mov_channel_layout(enum mp4_codec codec, enum speaker_layout layout)
+{
+	switch (layout) {
+	case SPEAKERS_MONO:
+		return kAudioChannelLayoutTag_Mono;
+	case SPEAKERS_STEREO:
+		return kAudioChannelLayoutTag_Stereo;
+	case SPEAKERS_2POINT1:
+		/* Only supported for AAC. */
+		return codec == CODEC_AAC ? kAudioChannelLayoutTag_DVD_4 : kAudioChannelLayoutTag_UseChannelBitmap;
+	default:
+		return kAudioChannelLayoutTag_UseChannelBitmap;
+	}
+}

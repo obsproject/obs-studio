@@ -47,9 +47,26 @@ typedef nvmlReturn_t (*NVML_GET_DEVICE_NAME)(nvmlDevice_t, char *, unsigned);
 typedef nvmlReturn_t (*NVML_GET_DEVICE_PCIE_GEN)(nvmlDevice_t, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_DEVICE_PCIE_WIDTH)(nvmlDevice_t, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_DEVICE_NAME)(nvmlDevice_t, char *, unsigned);
+typedef nvmlReturn_t (*NVML_GET_DEVICE_ARCHITECTURE)(nvmlDevice_t, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_ENCODER_SESSIONS)(nvmlDevice_t, unsigned *, void *);
 typedef nvmlReturn_t (*NVML_GET_ENCODER_CAPACITY)(nvmlDevice_t, nvmlEncoderType, unsigned *);
 typedef nvmlReturn_t (*NVML_GET_ENCODER_UTILISATION)(nvmlDevice_t, unsigned *, unsigned *);
+
+/* Only Kepler is defined in NVIDIA's documentation, but it's also the main one we care about. */
+constexpr uint32_t NVML_DEVICE_ARCH_KEPLER = 2;
+
+const unordered_map<uint32_t, const string_view> arch_to_name = {
+	{NVML_DEVICE_ARCH_KEPLER, "Kepler"},
+	{3, "Kepler"},
+	{4, "Maxwell"},
+	{5, "Volta"},
+	{6, "Turing"},
+	{7, "Ampere"},
+	{8, "Ada"},
+	{9, "Hopper"},
+	{10, "Blackwell"},
+};
+
 /* List of capabilities to be queried per codec */
 static const vector<pair<NV_ENC_CAPS, string>> capabilities = {
 	{NV_ENC_CAPS_NUM_MAX_BFRAMES, "bframes"},
@@ -67,6 +84,11 @@ static const vector<pair<NV_ENC_CAPS, string>> capabilities = {
 	/* SDK 12.2+ features */
 	{NV_ENC_CAPS_SUPPORT_TEMPORAL_FILTER, "temporal_filter"},
 	{NV_ENC_CAPS_SUPPORT_LOOKAHEAD_LEVEL, "lookahead_level"},
+	{NV_ENC_CAPS_SUPPORT_UNIDIRECTIONAL_B, "unidirectional_b"},
+#endif
+#if NVENCAPI_MAJOR_VERSION >= 13
+	/* SDK 13.0+ features */
+	{NV_ENC_CAPS_SUPPORT_YUV422_ENCODE, "yuv_422"},
 #endif
 };
 
@@ -82,6 +104,7 @@ struct device_info {
 	string cuda_uuid;
 	string name;
 
+	uint32_t architecture;
 	uint32_t pcie_gen;
 	uint32_t pcie_width;
 
@@ -105,6 +128,7 @@ struct NVML {
 	NVML_GET_DEVICE_NAME getDeviceName;
 	NVML_GET_DEVICE_PCIE_GEN getDevicePCIeGen;
 	NVML_GET_DEVICE_PCIE_WIDTH getDevicePCIeWidth;
+	NVML_GET_DEVICE_ARCHITECTURE getDeviceArchitecture;
 	NVML_GET_ENCODER_SESSIONS getEncoderSessions;
 	NVML_GET_ENCODER_CAPACITY getEncoderCapacity;
 	NVML_GET_ENCODER_UTILISATION getEncoderUtilisation;
@@ -133,13 +157,14 @@ struct NVML {
 		getDeviceName = (NVML_GET_DEVICE_NAME)load_nvml_func("nvmlDeviceGetName");
 		getDevicePCIeGen = (NVML_GET_DEVICE_PCIE_GEN)load_nvml_func("nvmlDeviceGetCurrPcieLinkGeneration");
 		getDevicePCIeWidth = (NVML_GET_DEVICE_PCIE_WIDTH)load_nvml_func("nvmlDeviceGetCurrPcieLinkWidth");
+		getDeviceArchitecture = (NVML_GET_DEVICE_ARCHITECTURE)load_nvml_func("nvmlDeviceGetArchitecture");
 		getEncoderSessions = (NVML_GET_ENCODER_SESSIONS)load_nvml_func("nvmlDeviceGetEncoderSessions");
 		getEncoderCapacity = (NVML_GET_ENCODER_CAPACITY)load_nvml_func("nvmlDeviceGetEncoderCapacity");
 		getEncoderUtilisation = (NVML_GET_ENCODER_UTILISATION)load_nvml_func("nvmlDeviceGetEncoderUtilization");
 
 		if (!init || !shutdown || !getDriverVersion || !getDeviceHandleByPCIBusId || !getDeviceUUID ||
 		    !getDeviceName || !getDevicePCIeGen || !getDevicePCIeWidth || !getEncoderSessions ||
-		    !getEncoderCapacity || !getEncoderUtilisation) {
+		    !getEncoderCapacity || !getEncoderUtilisation || !getDeviceArchitecture) {
 			return false;
 		}
 
@@ -230,7 +255,7 @@ struct NVSession {
 
 	~NVSession() { nv.nvEncDestroyEncoder(ptr); }
 
-	bool OpenSession(const CUDACtx &ctx)
+	NVENCSTATUS OpenSession(const CUDACtx &ctx)
 	{
 		NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS params = {};
 		params.version = NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER;
@@ -238,7 +263,7 @@ struct NVSession {
 		params.device = ctx.ctx;
 		params.deviceType = NV_ENC_DEVICE_TYPE_CUDA;
 
-		return nv.nvEncOpenEncodeSessionEx(&params, &ptr) == NV_ENC_SUCCESS;
+		return nv.nvEncOpenEncodeSessionEx(&params, &ptr);
 	}
 };
 
@@ -274,7 +299,8 @@ static bool init_cuda()
 	return true;
 }
 
-static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info &device_info, NVML &nvml)
+static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info &device_info, NVML &nvml,
+			     bool &session_limit)
 {
 	CUDACtx cudaCtx;
 	NVSession nvSession;
@@ -298,13 +324,16 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 		nvml.getDevicePCIeGen(dev, &device_info.pcie_gen);
 		nvml.getDevicePCIeWidth(dev, &device_info.pcie_width);
 		nvml.getEncoderSessions(dev, &device_info.encoder_sessions, nullptr);
+		nvml.getDeviceArchitecture(dev, &device_info.architecture);
 		nvml.getEncoderUtilisation(dev, &device_info.utilisation, &device_info.sample_period);
 		nvml.getEncoderCapacity(dev, NVML_ENCODER_QUERY_H264, &device_info.capacity_h264);
 		nvml.getEncoderCapacity(dev, NVML_ENCODER_QUERY_HEVC, &device_info.capacity_hevc);
 		nvml.getEncoderCapacity(dev, NVML_ENCODER_QUERY_AV1, &device_info.capacity_av1);
 	}
 
-	if (!nvSession.OpenSession(cudaCtx))
+	auto res = nvSession.OpenSession(cudaCtx);
+	session_limit = session_limit || res == NV_ENC_ERR_INCOMPATIBLE_CLIENT_KEY;
+	if (res != NV_ENC_SUCCESS)
 		return false;
 
 	uint32_t guid_count = 0;
@@ -340,9 +369,22 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 				continue;
 
 			device_info.caps[codec_name][name] = v;
-			if (v > caps[codec_name][name])
-				caps[codec_name][name] = v;
+			caps[codec_name][name] = std::max(v, caps[codec_name][name]);
 		}
+
+#if NVENCAPI_MAJOR_VERSION > 12 || NVENCAPI_MINOR_VERSION >= 2
+		/* Explicitly check if UHQ tuning is supported since temporal filtering query is true for all codecs. */
+		NV_ENC_PRESET_CONFIG preset_config = {};
+		preset_config.version = NV_ENC_PRESET_CONFIG_VER;
+		preset_config.presetCfg.version = NV_ENC_CONFIG_VER;
+
+		NVENCSTATUS res = nv.nvEncGetEncodePresetConfigEx(nvSession.ptr, *guid, NV_ENC_PRESET_P7_GUID,
+								  NV_ENC_TUNING_INFO_ULTRA_HIGH_QUALITY,
+								  &preset_config);
+
+		device_info.caps[codec_name]["uhq"] = res == NV_ENC_SUCCESS ? 1 : 0;
+		caps[codec_name]["uhq"] = std::max(device_info.caps[codec_name]["uhq"], caps[codec_name]["uhq"]);
+#endif
 	}
 
 	return true;
@@ -370,6 +412,7 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 	int cuda_devices = 0;
 	int nvenc_devices = 0;
 	char driver_ver[NVML_SYSTEM_DRIVER_VERSION_BUFFER_SIZE];
+	bool session_limit = false;
 
 	/* NVIDIA driver version */
 	if (nvml.getDriverVersion(driver_ver, sizeof(driver_ver)) == NVML_SUCCESS) {
@@ -402,15 +445,20 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 		return false;
 	}
 
-	if (nvenc_ver < NVENC_CONFIGURED_VERSION) {
-		printf("reason=outdated_driver\n");
+	device_infos.resize(cuda_devices);
+	for (int idx = 0; idx < cuda_devices; idx++) {
+		if (get_adapter_caps(idx, caps, device_infos[idx], nvml, session_limit))
+			nvenc_devices++;
+	}
+
+	if (session_limit) {
+		printf("reason=session_limit\n");
 		return false;
 	}
 
-	device_infos.resize(cuda_devices);
-	for (int idx = 0; idx < cuda_devices; idx++) {
-		if (get_adapter_caps(idx, caps, device_infos[idx], nvml))
-			nvenc_devices++;
+	if (nvenc_ver < NVENC_CONFIGURED_VERSION) {
+		printf("reason=outdated_driver\n");
+		return false;
 	}
 
 	printf("nvenc_devices=%d\n", nvenc_devices);
@@ -418,6 +466,19 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 		printf("reason=no_supported_devices\n");
 		return false;
 	}
+
+	uint32_t latest_architecture = 0;
+	string_view architecture = "Unknown";
+
+	for (auto &info : device_infos)
+		latest_architecture = std::max(info.architecture, latest_architecture);
+
+	if (arch_to_name.count(latest_architecture))
+		architecture = arch_to_name.at(latest_architecture);
+
+	printf("latest_architecture=%u\n"
+	       "latest_architecture_name=%s\n",
+	       latest_architecture, architecture.data());
 
 	return true;
 }
@@ -453,12 +514,17 @@ int check_thread()
 	/* Per-device info (mostly for debugging) */
 	for (size_t idx = 0; idx < device_infos.size(); idx++) {
 		const auto &info = device_infos[idx];
+		string_view architecture = "Unknown";
+		if (arch_to_name.count(info.architecture))
+			architecture = arch_to_name.at(info.architecture);
 
 		printf("\n[device.%zu]\n"
 		       "pci_id=%s\n"
 		       "nvml_uuid=%s\n"
 		       "cuda_uuid=%s\n"
 		       "name=%s\n"
+		       "architecture=%u\n"
+		       "architecture_name=%s\n"
 		       "pcie_link_width=%d\n"
 		       "pcie_link_gen=%d\n"
 		       "encoder_sessions=%u\n"
@@ -468,8 +534,8 @@ int check_thread()
 		       "capacity_hevc=%u\n"
 		       "capacity_av1=%u\n",
 		       idx, info.pci_id.c_str(), info.nvml_uuid.c_str(), info.cuda_uuid.c_str(), info.name.c_str(),
-		       info.pcie_width, info.pcie_gen, info.encoder_sessions, info.utilisation, info.sample_period,
-		       info.capacity_h264, info.capacity_hevc, info.capacity_av1);
+		       info.architecture, architecture.data(), info.pcie_width, info.pcie_gen, info.encoder_sessions,
+		       info.utilisation, info.sample_period, info.capacity_h264, info.capacity_hevc, info.capacity_av1);
 
 		for (const auto &[codec, codec_caps] : info.caps) {
 			printf("\n[device.%zu.%s]\n", idx, codec.c_str());

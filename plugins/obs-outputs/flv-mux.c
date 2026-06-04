@@ -230,11 +230,7 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t 
 
 	dstr_printf(&encoder_name, "%s (libobs version ", MODULE_NAME);
 
-#ifdef HAVE_OBSCONFIG_H
 	dstr_cat(&encoder_name, obs_get_version_string());
-#else
-	dstr_catf(&encoder_name, "%d.%d.%d", LIBOBS_API_MAJOR_VER, LIBOBS_API_MINOR_VER, LIBOBS_API_PATCH_VER);
-#endif
 
 	dstr_cat(&encoder_name, ")");
 
@@ -311,7 +307,7 @@ static int32_t last_time = 0;
 
 static void flv_video(struct serializer *s, int32_t dts_offset, struct encoder_packet *packet, bool is_header)
 {
-	int64_t offset = packet->pts - packet->dts;
+	int32_t ct_offset_ms = get_ms_time(packet, packet->pts) - get_ms_time(packet, packet->dts);
 	int32_t time_ms = get_ms_time(packet, packet->dts) - dts_offset;
 
 	if (!packet->data || !packet->size)
@@ -336,7 +332,7 @@ static void flv_video(struct serializer *s, int32_t dts_offset, struct encoder_p
 	/* these are the 5 extra bytes mentioned above */
 	s_w8(s, packet->keyframe ? 0x17 : 0x27);
 	s_w8(s, is_header ? 0 : 1);
-	s_wb24(s, get_ms_time(packet, offset));
+	s_wb24(s, ct_offset_ms);
 	s_write(s, packet->data, packet->size);
 
 	write_previous_tag_size(s);
@@ -490,7 +486,8 @@ void flv_packet_ex(struct encoder_packet *packet, enum video_id_t codec_id, int3
 
 	// H.264/HEVC composition time offset
 	if ((codec_id == CODEC_H264 || codec_id == CODEC_HEVC) && type == PACKETTYPE_FRAMES) {
-		s_wb24(&s, get_ms_time(packet, packet->pts - packet->dts));
+		int32_t ct_offset_ms = get_ms_time(packet, packet->pts) - get_ms_time(packet, packet->dts);
+		s_wb24(&s, ct_offset_ms);
 	}
 
 	// packet data

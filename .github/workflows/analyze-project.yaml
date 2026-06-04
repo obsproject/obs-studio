@@ -5,12 +5,12 @@ jobs:
   windows:
     name: Windows 🪟 (PVS-Studio)
     runs-on: windows-2022
-    if: github.repository_owner == 'obsproject'
+    if: false && github.repository_owner == 'obsproject'
     defaults:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           fetch-depth: 0
@@ -41,15 +41,35 @@ jobs:
 
   macos:
     name: macOS 🍏 (clang-analyze)
-    runs-on: macos-14
+    runs-on: macos-15
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           fetch-depth: 0
+
+      - name: Set Up Environment 🔧
+        id: setup
+        run: |
+          : Set Up Environment 🔧
+          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+
+          print '::group::Enable Xcode 16.4'
+          sudo xcode-select --switch /Applications/Xcode_16.4.app/Contents/Developer
+          print '::endgroup::'
+
+          print '::group::Clean Homebrew Environment'
+          local -a unwanted_formulas=()
+          local -a remove_formulas=()
+          for formula (${unwanted_formulas}) {
+            if [[ -d ${HOMEBREW_PREFIX}/Cellar/${formula} ]] remove_formulas+=(${formula})
+          }
+
+          if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
+          print '::endgroup::'
 
       - name: Set Up Code Signing 🔑
         uses: ./.github/actions/setup-macos-codesigning
@@ -89,6 +109,7 @@ jobs:
 
           git fetch origin --no-tags --no-recurse-submodules -q
           .github/scripts/build-macos ${build_args}
+
       - name: Compile Analytics Data 📊
         run: |
           : Compile Analytics Data 📊
@@ -103,12 +124,12 @@ jobs:
 
           pushd ${analytics_root}
 
-          npx @microsoft/sarif-multitool merge *.sarif
+          npx @microsoft/sarif-multitool merge --merge-runs *.sarif
 
           popd
 
       - name: Upload SARIF report files 📦
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
           sarif_file: "${{ github.workspace }}/analytics/merged.sarif"
           category: 'clang-analyze (macOS Apple Silicon)'

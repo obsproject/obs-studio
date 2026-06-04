@@ -227,8 +227,7 @@ function(find_qt_plugins)
   endif()
 
   list(
-    APPEND
-    qt_plugins_Core
+    APPEND qt_plugins_Core
     platforms
     printsupport
     styles
@@ -304,12 +303,17 @@ function(target_export target)
   install(
     TARGETS ${target}
     EXPORT ${target}Targets
-    RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Development ${exclude_variant}
-    LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development ${exclude_variant}
-    ARCHIVE DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development ${exclude_variant}
-    FRAMEWORK DESTINATION Frameworks COMPONENT Development ${exclude_variant}
+    RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Development
+    ${exclude_variant}
+    LIBRARY DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development
+    ${exclude_variant}
+    ARCHIVE DESTINATION "${OBS_LIBRARY_DESTINATION}" COMPONENT Development
+    ${exclude_variant}
+    FRAMEWORK DESTINATION Frameworks COMPONENT Development
+    ${exclude_variant}
     INCLUDES DESTINATION "${include_destination}"
-    PUBLIC_HEADER DESTINATION "${include_destination}" COMPONENT Development ${exclude_variant}
+    PUBLIC_HEADER DESTINATION "${include_destination}" COMPONENT Development
+    ${exclude_variant}
   )
 
   get_target_property(obs_public_headers ${target} OBS_PUBLIC_HEADERS)
@@ -399,6 +403,15 @@ function(target_export target)
     COMPONENT Development
     ${exclude_variant}
   )
+
+  if(target STREQUAL libobs)
+    install(
+      FILES "${CMAKE_SOURCE_DIR}/cmake/finders/FindSIMDe.cmake"
+      DESTINATION "${package_destination}/finders"
+      COMPONENT Development
+      ${exclude_variant}
+    )
+  endif()
 endfunction()
 
 # check_uuid: Helper function to check for valid UUID
@@ -472,7 +485,10 @@ function(add_obs_plugin target)
           set(found_architecture TRUE)
         endif()
       elseif(OS_MACOS)
-        if("${architecture}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+        if(
+          "${architecture}" IN_LIST CMAKE_OSX_ARCHITECTURES
+          OR "${architecture}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}"
+        )
           set(found_architecture TRUE)
         endif()
       elseif("${architecture}" STREQUAL CMAKE_SYSTEM_PROCESSOR)

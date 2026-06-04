@@ -464,8 +464,13 @@ static void log_skipped(video_t *video)
 
 void video_output_disconnect(video_t *video, void (*callback)(void *param, struct video_data *frame), void *param)
 {
+	video_output_disconnect2(video, callback, param);
+}
+
+bool video_output_disconnect2(video_t *video, void (*callback)(void *param, struct video_data *frame), void *param)
+{
 	if (!video || !callback)
-		return;
+		return false;
 
 	video = get_root(video);
 
@@ -485,6 +490,8 @@ void video_output_disconnect(video_t *video, void (*callback)(void *param, struc
 	}
 
 	pthread_mutex_unlock(&video->input_mutex);
+
+	return idx != DARRAY_INVALID;
 }
 
 bool video_output_active(const video_t *video)

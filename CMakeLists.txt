@@ -25,10 +25,13 @@ if(OS_WINDOWS)
   add_subdirectory(libobs-winrt)
 endif()
 add_subdirectory(libobs-opengl)
+if(OS_MACOS)
+  add_subdirectory(libobs-metal)
+endif()
 add_subdirectory(plugins)
 
 add_subdirectory(test/test-input)
 
-add_subdirectory(UI)
+add_subdirectory(frontend)
 
 message_configuration()

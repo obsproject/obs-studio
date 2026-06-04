@@ -214,6 +214,52 @@ const char *device_preprocessor_name(void)
 	return "_OPENGL";
 }
 
+const char *gpu_get_driver_version(void)
+{
+	return ((const char *)glGetString(GL_VERSION));
+}
+
+const char *gpu_get_renderer(void)
+{
+	return ((const char *)glGetString(GL_RENDERER));
+}
+
+// Get the amount of dedicated GDDR memory, aka VRAM, in units of kilobytes.
+uint64_t gpu_get_dmem(void)
+{
+	GLint dmem = 0;
+	glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &dmem);
+
+	/* GLint is signed, however it makes little sense to have "negative" amounts of GPU memory. Check on this, clamp to
+	 * 0 if so, and cast to an unsigned value explicitly.
+	 */
+	if (dmem < 0) {
+		dmem = 0;
+	}
+
+	return (uint64_t)dmem;
+}
+
+// Get the amount of CPU memory shared by the GPU, in units of kilobytes.
+uint64_t gpu_get_smem(void)
+{
+	GLint dmem, total_mem = 0;
+	glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &dmem);
+	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &total_mem);
+
+	/* GLint is signed, however it makes little sense to have "negative" amounts of GPU memory. Check on this, clamp to
+	 * 0 if so, and cast to an unsigned value explicitly.
+	 */
+	if (dmem < 0) {
+		dmem = 0;
+	}
+	if (total_mem < 0) {
+		total_mem = 0;
+	}
+
+	return (uint64_t)total_mem - dmem;
+}
+
 int device_create(gs_device_t **p_device, uint32_t adapter)
 {
 	struct gs_device *device = bzalloc(sizeof(struct gs_device));

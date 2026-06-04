@@ -194,11 +194,21 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
     }
     os_sem_post(sc->shareable_content_available);
 
+    struct obs_video_info video_info;
+    bool hasVideoInfo = obs_get_video_info(&video_info);
+
     CGColorRef background = CGColorGetConstantColor(kCGColorClear);
     [sc->stream_properties setQueueDepth:8];
     [sc->stream_properties setShowsCursor:!sc->hide_cursor];
     [sc->stream_properties setColorSpaceName:kCGColorSpaceDisplayP3];
     [sc->stream_properties setBackgroundColor:background];
+    if (hasVideoInfo) {
+        CMTime frameTimeInterval = CMTimeMake((int64_t) video_info.fps_den, video_info.fps_num);
+        CMTime minimumUpdateTime = CMTimeMultiplyByFloat64(frameTimeInterval, 0.9);
+        [sc->stream_properties setMinimumFrameInterval:minimumUpdateTime];
+    } else {
+        blog(LOG_WARNING, "Unable to retrieve OBS output FPS when initializing macOS Screen Capture");
+    }
     FourCharCode l10r_type = 0;
     l10r_type = ('l' << 24) | ('1' << 16) | ('0' << 8) | 'r';
     [sc->stream_properties setPixelFormat:l10r_type];
@@ -281,7 +291,14 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
     sc->capture_delegate.sc = sc;
 
-    sc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+    obs_enter_graphics();
+    if (gs_get_device_type() == GS_DEVICE_OPENGL) {
+        sc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+    } else {
+        sc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+    }
+    obs_leave_graphics();
+
     if (!sc->effect)
         goto fail;
 
@@ -296,7 +313,6 @@ API_AVAILABLE(macos(12.5)) static void *sck_video_capture_create(obs_data_t *set
     return sc;
 
 fail:
-    obs_leave_graphics();
     sck_video_capture_destroy(sc);
     return NULL;
 }
@@ -376,24 +392,8 @@ API_AVAILABLE(macos(12.5)) static uint32_t sck_video_capture_getheight(void *dat
 
 static void sck_video_capture_defaults(obs_data_t *settings)
 {
-    CGDirectDisplayID initial_display = 0;
-    {
-        NSScreen *mainScreen = [NSScreen mainScreen];
-        if (mainScreen) {
-            NSNumber *screen_num = mainScreen.deviceDescription[@"NSScreenNumber"];
-            if (screen_num) {
-                initial_display = (CGDirectDisplayID) (uintptr_t) screen_num.pointerValue;
-            }
-        }
-    }
-
-    CFUUIDRef display_uuid = CGDisplayCreateUUIDFromDisplayID(initial_display);
-    CFStringRef uuid_string = CFUUIDCreateString(kCFAllocatorDefault, display_uuid);
-    obs_data_set_default_string(settings, "display_uuid", CFStringGetCStringPtr(uuid_string, kCFStringEncodingUTF8));
-    CFRelease(uuid_string);
-    CFRelease(display_uuid);
-
     obs_data_set_default_string(settings, "application", NULL);
+    obs_data_set_default_string(settings, "display_uuid", NULL);
     obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
     obs_data_set_default_int(settings, "window", kCGNullWindowID);
     obs_data_set_default_bool(settings, "show_cursor", true);

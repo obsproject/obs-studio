@@ -1,9 +1,13 @@
-autoload -Uz log_debug log_warning
+autoload -Uz is-at-least log_debug log_warning
 
 if (( ${+commands[ccache]} )) {
   log_debug "Found ccache at ${commands[ccache]}"
 
-  ccache --set-config=run_second_cpp=true
+  local ccache_version=$(ccache --version | head -1 | cut -d ' ' -f 3)
+  if ! is-at-least 4.12 ${ccache_version}; then
+    ccache --set-config=run_second_cpp=true
+  fi
+
   ccache --set-config=direct_mode=true
   ccache --set-config=inode_cache=true
   ccache --set-config=compiler_check=content

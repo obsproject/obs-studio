@@ -72,8 +72,6 @@ target_sources(
     util.hpp
 )
 
-target_compile_definitions(decklink PRIVATE $<$<PLATFORM_ID:Windows>:NOMINMAX>)
-
 target_link_libraries(
   decklink
   PRIVATE

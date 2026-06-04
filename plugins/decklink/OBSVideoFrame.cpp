@@ -188,7 +188,7 @@ HRESULT HDRVideoFrame::GetFloat(BMDDeckLinkFrameMetadataID metadataID, double *v
 		break;
 
 	case bmdDeckLinkFrameMetadataHDRMinDisplayMasteringLuminance:
-		*value = 0.00001;
+		*value = 0.0001;
 		break;
 
 	case bmdDeckLinkFrameMetadataHDRMaximumContentLightLevel:

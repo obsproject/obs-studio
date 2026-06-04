@@ -18,6 +18,10 @@
 #define NVENC_12_2_OR_LATER
 #endif
 
+#if NVENCAPI_MAJOR_VERSION >= 13
+#define NVENC_13_0_OR_LATER
+#endif
+
 enum codec_type {
 	CODEC_H264,
 	CODEC_HEVC,
@@ -46,18 +50,19 @@ struct encoder_caps {
 	int max_width;
 	int max_height;
 
-	/* These don't seem to work correctly, thanks NVIDIA. */
-	int temporal_filter;
-	int lookahead_level;
+	int temporal_filter; /* Broken prior to the 551.21 driver. */
+	int lookahead_level; /* Broken prior to the 570.20 driver. */
 
 	bool dyn_bitrate;
 	bool lookahead;
 	bool lossless;
 	bool temporal_aq;
+	bool uhq;
 
 	/* Yeah... */
 	bool ten_bit;
 	bool four_four_four;
+	bool four_two_two;
 };
 
 typedef NVENCSTATUS(NVENCAPI *NV_CREATE_INSTANCE_FUNC)(NV_ENCODE_API_FUNCTION_LIST *);

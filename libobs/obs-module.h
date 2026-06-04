@@ -179,3 +179,9 @@ MODULE_EXPORT const char *obs_module_name(void);
 
 /** Optional: Returns a description of the module */
 MODULE_EXPORT const char *obs_module_description(void);
+
+/** Returns the module's unique ID, or NULL if it doesn't have one */
+MODULE_EXPORT const char *obs_get_module_id(obs_module_t *module);
+
+/** Returns the module's semver version number or NULL if it doesn't have one */
+MODULE_EXPORT const char *obs_get_module_version(obs_module_t *module);

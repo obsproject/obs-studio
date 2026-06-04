@@ -7,16 +7,13 @@ if(OS_WINDOWS AND NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   return()
 endif()
 
+find_package(SIMDe REQUIRED)
 find_package(Threads REQUIRED)
 
 find_package(FFmpeg 6.1 REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
 
 find_package(ZLIB REQUIRED)
 find_package(Uthash REQUIRED)
-
-if(ENABLE_UI)
-  find_package(Qt6 REQUIRED Core)
-endif()
 
 find_package(jansson REQUIRED)
 if(NOT TARGET OBS::caption)
@@ -38,6 +35,7 @@ target_sources(
     obs-av1.h
     obs-avc.c
     obs-avc.h
+    obs-canvas.c
     obs-config.h
     obs-data.c
     obs-data.h
@@ -97,7 +95,6 @@ target_sources(
     util/cf-lexer.h
     util/cf-parser.c
     util/cf-parser.h
-    util/circlebuf.h
     util/config-file.c
     util/config-file.h
     util/crc32.c
@@ -133,25 +130,6 @@ target_sources(
     util/util.hpp
     util/util_uint128.h
     util/util_uint64.h
-)
-
-target_sources(
-  libobs
-  PRIVATE
-    util/simde/check.h
-    util/simde/debug-trap.h
-    util/simde/hedley.h
-    util/simde/simde-align.h
-    util/simde/simde-arch.h
-    util/simde/simde-common.h
-    util/simde/simde-constify.h
-    util/simde/simde-detect-clang.h
-    util/simde/simde-diagnostic.h
-    util/simde/simde-features.h
-    util/simde/simde-math.h
-    util/simde/x86/mmx.h
-    util/simde/x86/sse.h
-    util/simde/x86/sse2.h
 )
 
 target_sources(
@@ -237,6 +215,17 @@ target_sources(
     graphics/vec4.h
 )
 
+# Temporarily disables deprecation warnings while obs_data_autoselect_* is deprecated.
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+  set_source_files_properties(obs-data.c PROPERTIES COMPILE_OPTIONS "/wd4996")
+elseif(
+  CMAKE_C_COMPILER_ID STREQUAL "GNU"
+  OR CMAKE_C_COMPILER_ID STREQUAL "Clang"
+  OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang"
+)
+  set_source_files_properties(obs-data.c PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-declarations")
+endif()
+
 target_compile_features(libobs PUBLIC cxx_std_17)
 
 target_compile_definitions(
@@ -260,7 +249,7 @@ target_link_libraries(
     jansson::jansson
     Uthash::Uthash
     ZLIB::ZLIB
-  PUBLIC Threads::Threads
+  PUBLIC SIMDe::SIMDe Threads::Threads
 )
 
 if(OS_WINDOWS)
@@ -279,8 +268,6 @@ target_include_directories(
   libobs
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>" "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 )
-
-target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 
 set(
   public_headers
@@ -343,7 +330,6 @@ set(
   util/c99defs.h
   util/cf-lexer.h
   util/cf-parser.h
-  util/circlebuf.h
   util/config-file.h
   util/crc32.h
   util/darray.h
@@ -357,21 +343,6 @@ set(
   util/profiler.h
   util/profiler.hpp
   util/serializer.h
-  util/simde/check.h
-  util/simde/debug-trap.h
-  util/simde/hedley.h
-  util/simde/simde-align.h
-  util/simde/simde-arch.h
-  util/simde/simde-common.h
-  util/simde/simde-constify.h
-  util/simde/simde-detect-clang.h
-  util/simde/simde-diagnostic.h
-  util/simde/simde-features.h
-  util/simde/simde-math.h
-  util/simde/x86/mmx.h
-  util/simde/x86/sse.h
-  util/simde/x86/sse2.h
-  util/source-profiler.h
   util/sse-intrin.h
   util/task.h
   util/text-lookup.h
@@ -385,8 +356,7 @@ set(
 
 if(OS_WINDOWS)
   list(
-    APPEND
-    public_headers
+    APPEND public_headers
     util/threading-windows.h
     util/windows/ComPtr.hpp
     util/windows/CoTaskMemPtr.hpp

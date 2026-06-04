@@ -153,7 +153,7 @@ static const char *capture_type_to_string(enum obs_portal_capture_type capture_t
 
 static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res, void *user_data)
 {
-	struct obs_pipwire_connect_stream_info connect_info;
+	struct obs_pipewire_connect_stream_info connect_info;
 	struct screencast_portal_capture *capture;
 	g_autoptr(GUnixFDList) fd_list = NULL;
 	g_autoptr(GVariant) result = NULL;
@@ -183,7 +183,7 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res, voi
 	if (!capture->obs_pw)
 		return;
 
-	connect_info = (struct obs_pipwire_connect_stream_info){
+	connect_info = (struct obs_pipewire_connect_stream_info){
 		.stream_name = "OBS Studio",
 		.stream_properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY, "Capture",
 						       PW_KEY_MEDIA_ROLE, "Screen", NULL),

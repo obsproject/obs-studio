@@ -99,7 +99,7 @@ void cuda_ctx_free(struct nvenc_data *enc)
 
 static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nvsurf)
 {
-	const bool p010 = obs_p010_tex_active();
+	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
 	CUDA_ARRAY3D_DESCRIPTOR desc;
 	desc.Width = enc->cx;
 	desc.Height = enc->cy;
@@ -118,9 +118,8 @@ static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nv
 			desc.Height += enc->cy / 2;
 			break;
 		case NV_ENC_BUFFER_FORMAT_YUV420_10BIT:
-			desc.Format = CU_AD_FORMAT_UNSIGNED_INT16;
+			desc.Format = CU_AD_FORMAT_UNSIGNED_INT16; // 2 bytes per element
 			desc.Height += enc->cy / 2;
-			desc.NumChannels = 2; // number of bytes per element
 			break;
 		case NV_ENC_BUFFER_FORMAT_YUV444:
 			desc.Format = CU_AD_FORMAT_UNSIGNED_INT8;

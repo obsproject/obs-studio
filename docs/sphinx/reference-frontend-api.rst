@@ -462,19 +462,6 @@ Functions
 
 ---------------------------------------
 
-.. function:: void* obs_frontend_add_dock(void *dock)
-
-   Adds a QDockWidget to the UI's Docks menu.
-
-   :param dock: QDockWidget to add/create
-   :return: A pointer to the added QAction
-
-.. deprecated:: 30.0
-   Prefer :c:func:`obs_frontend_add_dock_by_id()` or
-   :c:func:`obs_frontend_add_custom_qdock()` instead.
-
----------------------------------------
-
 .. function:: bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
 
    Adds a dock with the widget to the UI with a toggle in the Docks
@@ -972,3 +959,29 @@ Functions
                       This uses the undo action from the first and the redo action from the last action.
 
    .. versionadded:: 29.1
+
+---------------------------------------
+
+.. function:: void obs_frontend_copy_sceneitem(obs_sceneitem_t *item)
+
+   :param item: The scene item to copy
+
+   .. versionadded:: 32.2
+
+---------------------------------------
+
+.. function:: bool obs_frontend_can_paste_sceneitem(bool duplicate)
+
+   :param duplicate: Check if the copied source allows duplication.
+   :return: Whether there is a scene item copied and can be pasted
+
+   .. versionadded:: 32.2
+
+---------------------------------------
+
+.. function:: void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
+
+   :param scene: The scene to paste on
+   :param duplicate: *true* for paste duplicate, *false* for paste reference
+
+   .. versionadded:: 32.2

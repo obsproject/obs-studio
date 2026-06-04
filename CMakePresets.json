@@ -21,6 +21,69 @@
       }
     },
     {
+      "name": "dependencies",
+      "hidden": true,
+      "vendor": {
+        "obsproject.com/obs-studio": {
+          "dependencies": {
+              "prebuilt": {
+                  "version": "2026-05-21",
+                  "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+                  "label": "Pre-Built obs-deps",
+                  "hashes": {
+                      "macos-universal": "f81d8762b372ec1cc6202f3c70172d4b5b15a3114567a16c1f561243517bfe57",
+                      "windows-x64": "0a7d633b1318ad9cf90b993464a64dc72a08e727c98386ae7c6b3a6a6ba5dae9",
+                      "windows-x86": "b26edb615d4d3f62c7f88a166fd7a386a97cb90e425140d2ff28004ac956008c",
+                      "windows-arm64": "e83810464fbbb65cf89d33fcf274bd3f7ab6510d85ca13e74183a5cbb0fae822"
+                  }
+              },
+              "qt6": {
+                  "version": "2026-05-21",
+                  "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+                  "label": "Pre-Built Qt6",
+                  "hashes": {
+                      "macos-universal": "2acfe38a2a2e524e08f39d48f76a192f19f2e8c542c605cbb0f8447cacd282a4",
+                      "windows-x64": "9d421e790222e9475e0811b3a62e1b56f3e1f8198cb05be2e08c9dc395d45be3",
+                      "windows-arm64": "99d48734af99ae2e45a4c9706471b9a0aafba4456dc6742e21bc738593aee8ab"
+                  },
+                  "debugSymbols": {
+                      "windows-x64": "35918418e697e3bdbeda9325d3a9c5b0aecb5bdf9bfea509a7ad7d69a0171cca",
+                      "windows-arm64": "49737bef219381eebb14ebe55809c4ef371d4ca5828adcee0bf275b980c7aa18"
+                  }
+              },
+              "cef": {
+                  "version": "6533",
+                  "baseUrl": "https://cdn-fastly.obsproject.com/downloads",
+                  "label": "Chromium Embedded Framework",
+                  "hashes": {
+                      "macos-x86_64": "37bf7571a48c5dfa8519817e4a90a3503a0eb30f9eadd68f4c3e783e363f272a",
+                      "macos-arm64": "429b50e74f6c174dcfe2f14d8204b54add497eaafe117f7b69ce6bb2354d2626",
+                      "ubuntu-x86_64": "7963335519a19ccdc5233f7334c5ab023026e2f3e9a0cc417007c09d86608146",
+                      "ubuntu-aarch64": "642514469eaa29a5c887891084d2e73f7dc2d7405f7dfa7726b2dbc24b309999",
+                      "windows-x64": "922efbda1f2f8be9e5b2754d878a14d90afc81f04e94fc9101a7513e2b5cecc1",
+                      "windows-arm64": "df9df4bd85826b4c071c6db404fd59cf93efd9c58ec3ab64e204466ae19bb02a"
+                  },
+                  "revision": {
+                      "macos-x86_64": 5,
+                      "macos-arm64": 5,
+                      "ubuntu-x86_64": 6,
+                      "ubuntu-aarch64": 6,
+                      "windows-x64": 2
+                  }
+              }
+            },
+            "tools": {
+              "sparkle": {
+                  "version": "2.9.1",
+                  "baseUrl": "https://github.com/sparkle-project/Sparkle/releases/download",
+                  "label": "Sparkle 2",
+                  "hash": "c0dde519fd2a43ddfc6a1eb76aec284d7d888fe281414f9177de3164d98ba4c7"
+              }
+            }
+          }
+        }
+    },
+    {
       "name": "macos",
       "displayName": "macOS",
       "description": "Default macOS build (single architecture only)",
@@ -33,7 +96,7 @@
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build_macos",
       "cacheVariables": {
-        "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "11.0"},
+        "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "12.0"},
         "OBS_CODESIGN_IDENTITY": {"type": "STRING", "value": "$penv{CODESIGN_IDENT}"},
         "OBS_CODESIGN_TEAM": {"type": "STRING", "value": "$penv{CODESIGN_TEAM}"},
         "OBS_PROVISIONING_PROFILE": {"type": "STRING", "value": "$penv{PROVISIONING_PROFILE}"},
@@ -53,7 +116,8 @@
       "warnings": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-        "ENABLE_CCACHE": true
+        "CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_ENABLE_CACHING": "YES",
+        "CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_CAS_PATH": "$penv{XCODE_CAS_PATH}"
       }
     },
     {
@@ -98,7 +162,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "architecture": "x64,version=10.0.22621",
+      "architecture": "x64,version=10.0.22621.0",
       "binaryDir": "${sourceDir}/build_x64",
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {
@@ -116,6 +180,38 @@
       "cacheVariables": {
         "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
+    },
+    {
+      "name": "windows-arm64",
+      "displayName": "Windows ARM64",
+      "description": "Default Windows build (ARM64)",
+      "inherits": ["environmentVars"],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "architecture": "ARM64,version=10.0.22621.0",
+      "binaryDir": "${sourceDir}/build_arm64",
+      "generator": "Visual Studio 17 2022",
+      "cacheVariables": {
+        "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
+        "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
+        "ENABLE_AJA": false,
+        "ENABLE_BROWSER": true,
+        "ENABLE_SCRIPTING": false,
+        "ENABLE_VST": false
+      }
+    },
+    {
+      "name": "windows-ci-arm64",
+      "displayName": "Windows ARM64 (CI)",
+      "description": "CI Windows build (ARM64)",
+      "inherits": ["windows-arm64"],
+      "warnings": {"dev": true, "deprecated": true},
+      "cacheVariables": {
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+      }
     }
   ],
   "buildPresets": [
@@ -124,6 +220,13 @@
       "configurePreset": "windows-x64",
       "displayName": "Windows 64-bit",
       "description": "Windows build for 64-bit (aka x64)",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "windows-arm64",
+      "configurePreset": "windows-arm64",
+      "displayName": "Windows on ARM 64-bit",
+      "description": "Windows build for ARM 64-bit (aka ARM64)",
       "configuration": "RelWithDebInfo"
     }
   ]

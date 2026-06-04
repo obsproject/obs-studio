@@ -159,7 +159,7 @@ static int librist_open(URLContext *h, const char *uri)
 	ret = rist_logging_set(&logging_settings, s->log_level, log_cb, h, NULL, NULL);
 	if (ret < 0) {
 		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / librist]: Failed to initialize logging settings");
-		return OBS_OUTPUT_CONNECT_FAILED;
+		return OBS_OUTPUT_ERROR;
 	}
 
 	blog(LOG_INFO, "[obs-ffmpeg mpegts muxer / librist]: libRIST version: %s, API: %s", librist_version(),
@@ -187,7 +187,7 @@ static int librist_open(URLContext *h, const char *uri)
 	if (ret < 0) {
 		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / librist]: Failed to parse url: %s", uri);
 		librist_close(h);
-		return OBS_OUTPUT_INVALID_STREAM;
+		return OBS_OUTPUT_BAD_PATH;
 	}
 
 	if (((s->encryption == 128 || s->encryption == 256) && !s->secret) ||
@@ -230,7 +230,7 @@ static int librist_open(URLContext *h, const char *uri)
 err:
 	librist_close(h);
 
-	return OBS_OUTPUT_CONNECT_FAILED;
+	return OBS_OUTPUT_ERROR;
 }
 
 static int librist_write(URLContext *h, const uint8_t *buf, int size)

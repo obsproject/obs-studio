@@ -1,6 +1,6 @@
 #include "dc-capture.h"
 
-#define WIN32_MEAN_AND_LEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 static inline void init_textures(struct dc_capture *capture)

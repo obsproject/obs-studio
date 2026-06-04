@@ -77,7 +77,7 @@ macro(Libx264_find_dll)
   cmake_path(GET Libx264_IMPLIB PARENT_PATH _implib_path)
   cmake_path(SET _bin_path NORMALIZE "${_implib_path}/../bin")
 
-  string(REGEX REPLACE "[0-9]+\\.([0-9]+)\\.[0-9]+" "\\1" _dll_version "${Libx264_VERSION}")
+  string(REGEX REPLACE "[0-9]+\\.([0-9]+)\\.[0-9]+.*" "\\1" _dll_version "${Libx264_VERSION}")
 
   find_program(
     Libx264_LIBRARY

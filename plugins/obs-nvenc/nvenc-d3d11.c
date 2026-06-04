@@ -93,7 +93,7 @@ void d3d11_free(struct nvenc_data *enc)
 
 static bool d3d11_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 {
-	const bool p010 = obs_p010_tex_active();
+	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
 
 	D3D11_TEXTURE2D_DESC desc = {0};
 	desc.Width = enc->cx;

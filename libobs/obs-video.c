@@ -25,7 +25,7 @@
 #include "media-io/video-frame.h"
 
 #ifdef _WIN32
-#define WIN32_MEAN_AND_LEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
@@ -64,7 +64,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	source = data->sources;
 	while (source) {
-		obs_source_t *s = obs_source_get_ref(source);
+		obs_source_t *s = obs_source_removed(source) ? NULL : obs_source_get_ref(source);
 		if (s)
 			da_push_back(data->sources_to_tick, &s);
 		source = (struct obs_source *)source->context.hh_uuid.next;
@@ -77,9 +77,11 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	for (size_t i = 0; i < data->sources_to_tick.num; i++) {
 		obs_source_t *s = data->sources_to_tick.array[i];
-		const uint64_t start = source_profiler_source_tick_start();
-		obs_source_video_tick(s, seconds);
-		source_profiler_source_tick_end(s, start);
+		if (!obs_source_removed(s)) {
+			const uint64_t start = source_profiler_source_tick_start();
+			obs_source_video_tick(s, seconds);
+			source_profiler_source_tick_end(s, start);
+		}
 		obs_source_release(s);
 	}
 
@@ -556,7 +558,6 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 			copy_surfaces = video->copy_surfaces_encode;
 			channel_count = 1;
 #endif
-			gs_flush();
 		}
 
 		if (video->gpu_conversion) {
@@ -564,7 +565,6 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 		}
 
 		if (gpu_active) {
-			gs_flush();
 			output_gpu_encoders(video, raw_active);
 		}
 

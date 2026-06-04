@@ -107,12 +107,12 @@ EXPORT void obs_data_set_default_array(obs_data_t *data, const char *name, obs_d
  * Use these to communicate the actual values of settings in case the user
  * settings aren't appropriate
  */
-EXPORT void obs_data_set_autoselect_string(obs_data_t *data, const char *name, const char *val);
-EXPORT void obs_data_set_autoselect_int(obs_data_t *data, const char *name, long long val);
-EXPORT void obs_data_set_autoselect_double(obs_data_t *data, const char *name, double val);
-EXPORT void obs_data_set_autoselect_bool(obs_data_t *data, const char *name, bool val);
-EXPORT void obs_data_set_autoselect_obj(obs_data_t *data, const char *name, obs_data_t *obj);
-EXPORT void obs_data_set_autoselect_array(obs_data_t *data, const char *name, obs_data_array_t *arr);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_string(obs_data_t *data, const char *name, const char *val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_int(obs_data_t *data, const char *name, long long val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_double(obs_data_t *data, const char *name, double val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_bool(obs_data_t *data, const char *name, bool val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_obj(obs_data_t *data, const char *name, obs_data_t *obj);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_array(obs_data_t *data, const char *name, obs_data_array_t *arr);
 
 /*
  * Get functions
@@ -131,12 +131,12 @@ EXPORT bool obs_data_get_default_bool(obs_data_t *data, const char *name);
 EXPORT obs_data_t *obs_data_get_default_obj(obs_data_t *data, const char *name);
 EXPORT obs_data_array_t *obs_data_get_default_array(obs_data_t *data, const char *name);
 
-EXPORT const char *obs_data_get_autoselect_string(obs_data_t *data, const char *name);
-EXPORT long long obs_data_get_autoselect_int(obs_data_t *data, const char *name);
-EXPORT double obs_data_get_autoselect_double(obs_data_t *data, const char *name);
-EXPORT bool obs_data_get_autoselect_bool(obs_data_t *data, const char *name);
-EXPORT obs_data_t *obs_data_get_autoselect_obj(obs_data_t *data, const char *name);
-EXPORT obs_data_array_t *obs_data_get_autoselect_array(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT const char *obs_data_get_autoselect_string(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT long long obs_data_get_autoselect_int(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT double obs_data_get_autoselect_double(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT bool obs_data_get_autoselect_bool(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT obs_data_t *obs_data_get_autoselect_obj(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT obs_data_array_t *obs_data_get_autoselect_array(obs_data_t *data, const char *name);
 
 /* Array functions */
 EXPORT obs_data_array_t *obs_data_array_create();
@@ -156,22 +156,22 @@ EXPORT void obs_data_array_enum(obs_data_array_t *array, void (*cb)(obs_data_t *
 
 EXPORT bool obs_data_has_user_value(obs_data_t *data, const char *name);
 EXPORT bool obs_data_has_default_value(obs_data_t *data, const char *name);
-EXPORT bool obs_data_has_autoselect_value(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT bool obs_data_has_autoselect_value(obs_data_t *data, const char *name);
 
 EXPORT bool obs_data_item_has_user_value(obs_data_item_t *data);
 EXPORT bool obs_data_item_has_default_value(obs_data_item_t *data);
-EXPORT bool obs_data_item_has_autoselect_value(obs_data_item_t *data);
+OBS_DEPRECATED EXPORT bool obs_data_item_has_autoselect_value(obs_data_item_t *data);
 
 /* ------------------------------------------------------------------------- */
 /* Clearing data values */
 
 EXPORT void obs_data_unset_user_value(obs_data_t *data, const char *name);
 EXPORT void obs_data_unset_default_value(obs_data_t *data, const char *name);
-EXPORT void obs_data_unset_autoselect_value(obs_data_t *data, const char *name);
+OBS_DEPRECATED EXPORT void obs_data_unset_autoselect_value(obs_data_t *data, const char *name);
 
 EXPORT void obs_data_item_unset_user_value(obs_data_item_t *data);
 EXPORT void obs_data_item_unset_default_value(obs_data_item_t *data);
-EXPORT void obs_data_item_unset_autoselect_value(obs_data_item_t *data);
+OBS_DEPRECATED EXPORT void obs_data_item_unset_autoselect_value(obs_data_item_t *data);
 
 /* ------------------------------------------------------------------------- */
 /* Item iteration */
@@ -202,12 +202,12 @@ EXPORT void obs_data_item_set_default_bool(obs_data_item_t **item, bool val);
 EXPORT void obs_data_item_set_default_obj(obs_data_item_t **item, obs_data_t *val);
 EXPORT void obs_data_item_set_default_array(obs_data_item_t **item, obs_data_array_t *val);
 
-EXPORT void obs_data_item_set_autoselect_string(obs_data_item_t **item, const char *val);
-EXPORT void obs_data_item_set_autoselect_int(obs_data_item_t **item, long long val);
-EXPORT void obs_data_item_set_autoselect_double(obs_data_item_t **item, double val);
-EXPORT void obs_data_item_set_autoselect_bool(obs_data_item_t **item, bool val);
-EXPORT void obs_data_item_set_autoselect_obj(obs_data_item_t **item, obs_data_t *val);
-EXPORT void obs_data_item_set_autoselect_array(obs_data_item_t **item, obs_data_array_t *val);
+OBS_DEPRECATED EXPORT void obs_data_item_set_autoselect_string(obs_data_item_t **item, const char *val);
+OBS_DEPRECATED EXPORT void obs_data_item_set_autoselect_int(obs_data_item_t **item, long long val);
+OBS_DEPRECATED EXPORT void obs_data_item_set_autoselect_double(obs_data_item_t **item, double val);
+OBS_DEPRECATED EXPORT void obs_data_item_set_autoselect_bool(obs_data_item_t **item, bool val);
+OBS_DEPRECATED EXPORT void obs_data_item_set_autoselect_obj(obs_data_item_t **item, obs_data_t *val);
+OBS_DEPRECATED EXPORT void obs_data_item_set_autoselect_array(obs_data_item_t **item, obs_data_array_t *val);
 
 /* Item get functions */
 EXPORT const char *obs_data_item_get_string(obs_data_item_t *item);
@@ -224,12 +224,12 @@ EXPORT bool obs_data_item_get_default_bool(obs_data_item_t *item);
 EXPORT obs_data_t *obs_data_item_get_default_obj(obs_data_item_t *item);
 EXPORT obs_data_array_t *obs_data_item_get_default_array(obs_data_item_t *item);
 
-EXPORT const char *obs_data_item_get_autoselect_string(obs_data_item_t *item);
-EXPORT long long obs_data_item_get_autoselect_int(obs_data_item_t *item);
-EXPORT double obs_data_item_get_autoselect_double(obs_data_item_t *item);
-EXPORT bool obs_data_item_get_autoselect_bool(obs_data_item_t *item);
-EXPORT obs_data_t *obs_data_item_get_autoselect_obj(obs_data_item_t *item);
-EXPORT obs_data_array_t *obs_data_item_get_autoselect_array(obs_data_item_t *item);
+OBS_DEPRECATED EXPORT const char *obs_data_item_get_autoselect_string(obs_data_item_t *item);
+OBS_DEPRECATED EXPORT long long obs_data_item_get_autoselect_int(obs_data_item_t *item);
+OBS_DEPRECATED EXPORT double obs_data_item_get_autoselect_double(obs_data_item_t *item);
+OBS_DEPRECATED EXPORT bool obs_data_item_get_autoselect_bool(obs_data_item_t *item);
+OBS_DEPRECATED EXPORT obs_data_t *obs_data_item_get_autoselect_obj(obs_data_item_t *item);
+OBS_DEPRECATED EXPORT obs_data_array_t *obs_data_item_get_autoselect_array(obs_data_item_t *item);
 
 /* ------------------------------------------------------------------------- */
 /* Helper functions for certain structures */
@@ -243,10 +243,10 @@ EXPORT void obs_data_set_default_vec3(obs_data_t *data, const char *name, const 
 EXPORT void obs_data_set_default_vec4(obs_data_t *data, const char *name, const struct vec4 *val);
 EXPORT void obs_data_set_default_quat(obs_data_t *data, const char *name, const struct quat *val);
 
-EXPORT void obs_data_set_autoselect_vec2(obs_data_t *data, const char *name, const struct vec2 *val);
-EXPORT void obs_data_set_autoselect_vec3(obs_data_t *data, const char *name, const struct vec3 *val);
-EXPORT void obs_data_set_autoselect_vec4(obs_data_t *data, const char *name, const struct vec4 *val);
-EXPORT void obs_data_set_autoselect_quat(obs_data_t *data, const char *name, const struct quat *val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_vec2(obs_data_t *data, const char *name, const struct vec2 *val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_vec3(obs_data_t *data, const char *name, const struct vec3 *val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_vec4(obs_data_t *data, const char *name, const struct vec4 *val);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_quat(obs_data_t *data, const char *name, const struct quat *val);
 
 EXPORT void obs_data_get_vec2(obs_data_t *data, const char *name, struct vec2 *val);
 EXPORT void obs_data_get_vec3(obs_data_t *data, const char *name, struct vec3 *val);
@@ -258,10 +258,10 @@ EXPORT void obs_data_get_default_vec3(obs_data_t *data, const char *name, struct
 EXPORT void obs_data_get_default_vec4(obs_data_t *data, const char *name, struct vec4 *val);
 EXPORT void obs_data_get_default_quat(obs_data_t *data, const char *name, struct quat *val);
 
-EXPORT void obs_data_get_autoselect_vec2(obs_data_t *data, const char *name, struct vec2 *val);
-EXPORT void obs_data_get_autoselect_vec3(obs_data_t *data, const char *name, struct vec3 *val);
-EXPORT void obs_data_get_autoselect_vec4(obs_data_t *data, const char *name, struct vec4 *val);
-EXPORT void obs_data_get_autoselect_quat(obs_data_t *data, const char *name, struct quat *val);
+OBS_DEPRECATED EXPORT void obs_data_get_autoselect_vec2(obs_data_t *data, const char *name, struct vec2 *val);
+OBS_DEPRECATED EXPORT void obs_data_get_autoselect_vec3(obs_data_t *data, const char *name, struct vec3 *val);
+OBS_DEPRECATED EXPORT void obs_data_get_autoselect_vec4(obs_data_t *data, const char *name, struct vec4 *val);
+OBS_DEPRECATED EXPORT void obs_data_get_autoselect_quat(obs_data_t *data, const char *name, struct quat *val);
 
 /* ------------------------------------------------------------------------- */
 /* Helper functions for media_frames_per_second/OBS_PROPERTY_FRAME_RATE */
@@ -269,8 +269,9 @@ EXPORT void obs_data_set_frames_per_second(obs_data_t *data, const char *name, s
 					   const char *option);
 EXPORT void obs_data_set_default_frames_per_second(obs_data_t *data, const char *name,
 						   struct media_frames_per_second fps, const char *option);
-EXPORT void obs_data_set_autoselect_frames_per_second(obs_data_t *data, const char *name,
-						      struct media_frames_per_second fps, const char *option);
+OBS_DEPRECATED EXPORT void obs_data_set_autoselect_frames_per_second(obs_data_t *data, const char *name,
+								     struct media_frames_per_second fps,
+								     const char *option);
 
 EXPORT bool obs_data_get_frames_per_second(obs_data_t *data, const char *name, struct media_frames_per_second *fps,
 					   const char **option);
@@ -283,15 +284,17 @@ EXPORT void obs_data_item_set_frames_per_second(obs_data_item_t **item, struct m
 						const char *option);
 EXPORT void obs_data_item_set_default_frames_per_second(obs_data_item_t **item, struct media_frames_per_second fps,
 							const char *option);
-EXPORT void obs_data_item_set_autoselect_frames_per_second(obs_data_item_t **item, struct media_frames_per_second fps,
-							   const char *option);
+OBS_DEPRECATED EXPORT void obs_data_item_set_autoselect_frames_per_second(obs_data_item_t **item,
+									  struct media_frames_per_second fps,
+									  const char *option);
 
 EXPORT bool obs_data_item_get_frames_per_second(obs_data_item_t *item, struct media_frames_per_second *fps,
 						const char **option);
 EXPORT bool obs_data_item_get_default_frames_per_second(obs_data_item_t *item, struct media_frames_per_second *fps,
 							const char **option);
-EXPORT bool obs_data_item_get_autoselect_frames_per_second(obs_data_item_t *item, struct media_frames_per_second *fps,
-							   const char **option);
+OBS_DEPRECATED EXPORT bool obs_data_item_get_autoselect_frames_per_second(obs_data_item_t *item,
+									  struct media_frames_per_second *fps,
+									  const char **option);
 
 /* ------------------------------------------------------------------------- */
 /* OBS-specific functions */

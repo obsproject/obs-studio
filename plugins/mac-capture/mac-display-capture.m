@@ -255,11 +255,16 @@ static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
     dc->source = source;
     dc->hide_cursor = !obs_data_get_bool(settings, "show_cursor");
 
-    dc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+    obs_enter_graphics();
+
+    if (gs_get_device_type() == GS_DEVICE_OPENGL) {
+        dc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
+    } else {
+        dc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+    }
+
     if (!dc->effect)
         goto fail;
-
-    obs_enter_graphics();
 
     struct gs_sampler_info info = {
         .filter = GS_FILTER_LINEAR,
@@ -600,10 +605,10 @@ static obs_properties_t *display_capture_properties(void *unused)
                                                      BOOL *_Nonnull stop __unused) {
         char dimension_buffer[4][12];
         char name_buffer[256];
-        snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u", (uint32_t)[screen frame].size.width);
-        snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u", (uint32_t)[screen frame].size.height);
-        snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d", (int32_t)[screen frame].origin.x);
-        snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d", (int32_t)[screen frame].origin.y);
+        snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u", (uint32_t) [screen frame].size.width);
+        snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u", (uint32_t) [screen frame].size.height);
+        snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d", (int32_t) [screen frame].origin.x);
+        snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d", (int32_t) [screen frame].origin.y);
 
         snprintf(name_buffer, sizeof(name_buffer), "%.200s: %.12sx%.12s @ %.12s,%.12s",
                  [[screen localizedName] UTF8String], dimension_buffer[0], dimension_buffer[1], dimension_buffer[2],

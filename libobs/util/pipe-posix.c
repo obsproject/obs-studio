@@ -24,6 +24,8 @@
 #include "bmem.h"
 #include "pipe.h"
 
+extern char **environ;
+
 struct os_process_pipe {
 	bool read_pipe;
 	int pid;
@@ -75,20 +77,24 @@ os_process_pipe_t *os_process_pipe_create_internal(const char *bin, char **argv,
 		posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
 		if (mainfds[1] != STDOUT_FILENO) {
 			posix_spawn_file_actions_adddup2(&file_actions, mainfds[1], STDOUT_FILENO);
-			posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
+			posix_spawn_file_actions_addclose(&file_actions, mainfds[1]);
 		}
 	} else {
+		posix_spawn_file_actions_addclose(&file_actions, mainfds[1]);
 		if (mainfds[0] != STDIN_FILENO) {
 			posix_spawn_file_actions_adddup2(&file_actions, mainfds[0], STDIN_FILENO);
-			posix_spawn_file_actions_addclose(&file_actions, mainfds[1]);
+			posix_spawn_file_actions_addclose(&file_actions, mainfds[0]);
 		}
 	}
 
 	posix_spawn_file_actions_addclose(&file_actions, errfds[0]);
-	posix_spawn_file_actions_adddup2(&file_actions, errfds[1], STDERR_FILENO);
+	if (errfds[1] != STDERR_FILENO) {
+		posix_spawn_file_actions_adddup2(&file_actions, errfds[1], STDERR_FILENO);
+		posix_spawn_file_actions_addclose(&file_actions, errfds[1]);
+	}
 
 	int pid;
-	int ret = posix_spawn(&pid, bin, &file_actions, NULL, (char *const *)argv, NULL);
+	int ret = posix_spawn(&pid, bin, &file_actions, NULL, (char *const *)argv, environ);
 
 	posix_spawn_file_actions_destroy(&file_actions);
 
@@ -124,7 +130,7 @@ os_process_pipe_t *os_process_pipe_create(const char *cmd_line, const char *type
 	if (!cmd_line)
 		return NULL;
 
-	char *argv[3] = {"-c", (char *)cmd_line, NULL};
+	char *argv[4] = {"sh", "-c", (char *)cmd_line, NULL};
 	return os_process_pipe_create_internal("/bin/sh", argv, type);
 }
 

@@ -17,4 +17,7 @@ if(OS_WINDOWS)
 
   target_include_directories(blake2_static PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
   set_target_properties(blake2_static PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+  set_target_properties(blake2 PROPERTIES FOLDER deps/blake2)
+  set_target_properties(blake2_static PROPERTIES FOLDER deps/blake2)
 endif()

@@ -509,7 +509,9 @@ static void add_surf_data(struct vk_inst_data *idata, VkSurfaceKHR surf, HWND hw
 static HWND find_surf_hwnd(struct vk_inst_data *idata, VkSurfaceKHR surf)
 {
 	struct vk_surf_data *surf_data = (struct vk_surf_data *)get_obj_data(&idata->surfaces, (uint64_t)surf);
-	return surf_data->hwnd;
+	if (surf_data)
+		return surf_data->hwnd;
+	return 0;
 }
 
 static void remove_free_surf_data(struct vk_inst_data *idata, VkSurfaceKHR surf, const VkAllocationCallbacks *ac)
@@ -1641,25 +1643,28 @@ static VkResult VKAPI_CALL OBS_CreateSwapchainKHR(VkDevice device, const VkSwapc
 	res = funcs->GetSwapchainImagesKHR(device, sc, &count, NULL);
 	debug_res("GetSwapchainImagesKHR", res);
 	if ((res == VK_SUCCESS) && (count > 0)) {
-		struct vk_swap_data *swap_data = alloc_swap_data(ac);
-		if (swap_data) {
-			swap_data->swap_images = vk_alloc(ac, count * sizeof(VkImage), _Alignof(VkImage),
-							  VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-			res = funcs->GetSwapchainImagesKHR(device, sc, &count, swap_data->swap_images);
-			debug_res("GetSwapchainImagesKHR", res);
+		HWND hwnd = find_surf_hwnd(data->inst_data, cinfo->surface);
+		if (hwnd) {
+			struct vk_swap_data *swap_data = alloc_swap_data(ac);
+			if (swap_data) {
+				swap_data->swap_images = vk_alloc(ac, count * sizeof(VkImage), _Alignof(VkImage),
+								  VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+				res = funcs->GetSwapchainImagesKHR(device, sc, &count, swap_data->swap_images);
+				debug_res("GetSwapchainImagesKHR", res);
 
-			swap_data->image_extent = cinfo->imageExtent;
-			swap_data->format = cinfo->imageFormat;
-			swap_data->hwnd = find_surf_hwnd(data->inst_data, cinfo->surface);
-			swap_data->export_image = VK_NULL_HANDLE;
-			swap_data->layout_initialized = false;
-			swap_data->export_mem = VK_NULL_HANDLE;
-			swap_data->image_count = count;
-			swap_data->handle = INVALID_HANDLE_VALUE;
-			swap_data->shtex_info = NULL;
-			swap_data->d3d11_tex = NULL;
-			swap_data->captured = false;
-			init_swap_data(swap_data, data, sc);
+				swap_data->image_extent = cinfo->imageExtent;
+				swap_data->format = cinfo->imageFormat;
+				swap_data->hwnd = hwnd;
+				swap_data->export_image = VK_NULL_HANDLE;
+				swap_data->layout_initialized = false;
+				swap_data->export_mem = VK_NULL_HANDLE;
+				swap_data->image_count = count;
+				swap_data->handle = INVALID_HANDLE_VALUE;
+				swap_data->shtex_info = NULL;
+				swap_data->d3d11_tex = NULL;
+				swap_data->captured = false;
+				init_swap_data(swap_data, data, sc);
+			}
 		}
 	}
 

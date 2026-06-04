@@ -71,8 +71,7 @@ find_path(
 
 if(CEF_INCLUDE_DIR)
   file(
-    STRINGS
-    "${CEF_INCLUDE_DIR}/cef_version.h"
+    STRINGS "${CEF_INCLUDE_DIR}/cef_version.h"
     _VERSION_STRING
     REGEX "^.*CEF_VERSION_(MAJOR|MINOR|PATCH)[ \t]+[0-9]+[ \t]*$"
   )

@@ -42,8 +42,7 @@ find_path(
 
 if(EXISTS "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp")
   file(
-    STRINGS
-    "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp"
+    STRINGS "${Websocketpp_INCLUDE_DIR}/websocketpp/version.hpp"
     _version_string
     REGEX "^.*(major|minor|patch)_version[ \t]+=[ \t]+[0-9]+"
   )

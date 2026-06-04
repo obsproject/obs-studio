@@ -96,7 +96,7 @@ bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts, ui
 	struct nvenc_data *enc = data;
 	struct nv_cuda_surface *surf;
 	struct nv_bitstream *bs;
-	const bool p010 = obs_p010_tex_active();
+	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
 	GLuint input_tex[2];
 
 	if (tex == NULL || tex->tex[0] == NULL) {

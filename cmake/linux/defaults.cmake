@@ -40,3 +40,4 @@ set(OBS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL TRUE)
 
 include(cpackconfig)
+include(ecmconfig)

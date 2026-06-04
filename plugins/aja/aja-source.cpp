@@ -283,8 +283,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 	AudioOffsets offsets;
 	ResetAudioBufferOffsets(card, audioSystem, offsets);
 
-	obs_data_t *settings = obs_source_get_settings(ajaSource->mSource);
-
 	AudioRepacker *audioRepacker =
 		new AudioRepacker(ConvertRepackFormat(sourceProps.SpeakerLayout(), sourceProps.swapFrontCenterLFE),
 				  sourceProps.audioSampleSize * 8);
@@ -292,7 +290,7 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 	while (ajaSource->IsCapturing()) {
 		if (card->GetModelName() == "(Not Found)") {
 			os_sleep_ms(250);
-			obs_source_update(ajaSource->mSource, settings);
+			obs_source_update(ajaSource->mSource, nullptr);
 			break;
 		}
 
@@ -321,7 +319,7 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			     NTV2VideoFormatToString(videoFormat, true).c_str(),
 			     NTV2VideoFormatToString(newVideoFormat, true).c_str());
 			os_sleep_ms(250);
-			obs_source_update(ajaSource->mSource, settings);
+			obs_source_update(ajaSource->mSource, nullptr);
 			break;
 		}
 
@@ -391,8 +389,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 		audioRepacker = nullptr;
 	}
 	ajaSource->GenerateTestPattern(sourceProps.videoFormat, sourceProps.pixelFormat, NTV2_TestPatt_Black);
-
-	obs_data_release(settings);
 }
 
 void AJASource::Deactivate()

@@ -772,6 +772,28 @@ General Output Functions
 
    .. versionadded:: 31.0
 
+---------------------
+
+.. function:: void obs_output_set_reconnect_callback(obs_output_t *output, bool (*reconnect_cb)(void *data, obs_output_t *output, int code), void *param)
+
+   Sets a callback that can be used to decide whether or not to attempt reconnecting.
+   Can also be used to reconfigure the output within the callback before continuing the reconnection attempts,
+   e.g., to update the stream key after the previous one has expired.
+   
+   Passing in a `NULL` pointer removes the callback.
+
+   :param output:        The output to register the reconnect_cb() function against
+   :param reconnect_cb:  Function pointer to the callback function
+   :param param:         Data passed to the callback
+
+   reconnect_cb() arguments:
+   :param data:    Data passed to the callback
+   :param output:  The output associated with the invoked callback function
+   :param code:    Error code the output was stopped with
+   :return:        Whether or not to continue attempting to reconnect
+
+   .. versionadded:: 31.1
+
 Functions used by outputs
 -------------------------
 

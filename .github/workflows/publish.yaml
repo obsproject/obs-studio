@@ -22,8 +22,16 @@ jobs:
       flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
       updateChannel: ${{ steps.check.outputs.updateChannel }}
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
+
       - name: Check Release Tag ☑️
         id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           : Check Release Tag ☑️
           if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
@@ -31,8 +39,25 @@ jobs:
 
           case "${GITHUB_REF_NAME}" in
             +([0-9]).+([0-9]).+([0-9]) )
+              lastPreRelease="$(gh release list --exclude-drafts --limit 10 --json "publishedAt,tagName,isPrerelease" \
+                --jq '[.[] | select(.isPrerelease == true)] | first | .tagName')"
+              currentRelease="${GITHUB_REF_NAME}"
+              isPreReleaseAhead=false
+
+              printf '%s\n%s\n' "${currentRelease}" "${lastPreRelease}" | sort --version-sort --reverse --check=quiet &&
+                isPreReleaseAhead=false || isPreReleaseAhead=true
+
+              # Edge case: Sort considers the non-suffixed version older than a suffixed one
+              if ${isPreReleaseAhead} && [[ "${currentRelease}" == "${lastPreRelease//-*}" ]]; then
+                isPreReleaseAhead=false
+              fi
+
               echo 'validTag=true' >> $GITHUB_OUTPUT
-              echo 'flatpakMatrix=["beta", "stable"]' >> $GITHUB_OUTPUT
+              if ! ${isPreReleaseAhead}; then
+                echo 'flatpakMatrix=["beta", "stable"]' >> $GITHUB_OUTPUT
+              else
+                echo 'flatpakMatrix=["stable"]' >> $GITHUB_OUTPUT
+              fi
               echo 'updateChannel=stable' >> $GITHUB_OUTPUT
               ;;
             +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
@@ -62,13 +87,57 @@ jobs:
       YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
       YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
     container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.6
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
       options: --privileged
+      volumes:
+        - /usr/local/lib/android:/to_clean/android
+        - /opt/hostedtoolcache/CodeQL:/to_clean/codeql
+        - /usr/local/.ghcup:/to_clean/ghcup
+        - /opt/hostedtoolcache/Python:/to_clean/python
+        - /usr/share/swift:/to_clean/swift
+        - /usr/share/dotnet:/to_clean/dotnet
     strategy:
       matrix:
         branch: ${{ fromJSON(needs.check-tag.outputs.flatpakMatrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Prepare build space
+        shell: bash
+        run: |
+          : Prepare build space
+
+          echo ::group::Available storage
+          df -h
+          echo ::endgroup::
+
+          echo ::group::Remove Android stuff
+          rm -rf /to_clean/android/*
+          echo ::endgroup::
+
+          echo ::group::Remove CodeQL stuff
+          rm -rf /to_clean/codeql/*
+          echo ::endgroup::
+
+          echo ::group::Remove GHCup stuff
+          rm -rf /to_clean/ghcup/*
+          echo ::endgroup::
+
+          echo ::group::Remove Python stuff
+          rm -rf /to_clean/python/*
+          echo ::endgroup::
+
+          echo ::group::Remove Swift stuff
+          rm -rf /to_clean/swift/*
+          echo ::endgroup::
+
+          echo ::group::Remove .NET stuff
+          rm -rf /to_clean/dotnet/*
+          echo ::endgroup::
+
+          echo ::group::Available storage
+          df -h
+          echo ::endgroup::
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           fetch-depth: 0
@@ -84,12 +153,10 @@ jobs:
 
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
 
-          gh extension install actions/gh-actions-cache
-
-          cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
+          cache_key='flatpak-builder-${{ hashFiles('build-aux/com.obsproject.Studio.json') }}'
           cache_ref='master'
-          read -r key size unit _ ref _ <<< \
-            "$(gh actions-cache list -B ${cache_ref} --key "${cache_key}-x86_64" | head -1)"
+          read -r id key size unit created accessed <<< \
+            "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
 
           if [[ "${key}" ]]; then
             echo "cacheHit=true" >> $GITHUB_OUTPUT
@@ -107,9 +174,9 @@ jobs:
           path: build-aux/com.obsproject.Studio.json
 
       - name: Build Flatpak Manifest
-        uses: flathub-infra/flatpak-github-actions/flatpak-builder@e5fa5a8fe51d76f770ad9d240e4ad5898b1c6a53
+        uses: flatpak/flatpak-github-actions/flatpak-builder@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7
         with:
-          bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
+          build-bundle: false
           manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
           cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
           cache-key: ${{ steps.setup.outputs.cacheKey }}
@@ -142,7 +209,7 @@ jobs:
           path: repo
 
       - name: Publish to Flathub Beta
-        uses: flathub-infra/flatpak-github-actions/flat-manager@e5fa5a8fe51d76f770ad9d240e4ad5898b1c6a53
+        uses: flatpak/flatpak-github-actions/flat-manager@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7
         if: ${{ matrix.branch == 'beta' }}
         with:
           flat-manager-url: https://hub.flathub.org/
@@ -151,7 +218,7 @@ jobs:
           build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Publish to Flathub
-        uses: flathub-infra/flatpak-github-actions/flat-manager@e5fa5a8fe51d76f770ad9d240e4ad5898b1c6a53
+        uses: flatpak/flatpak-github-actions/flat-manager@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7
         if: ${{ matrix.branch == 'stable' }}
         with:
           flat-manager-url: https://hub.flathub.org/
@@ -163,9 +230,9 @@ jobs:
     name: Upload Steam Builds 🚂
     needs: check-tag
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/steam-upload
         with:
           steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
@@ -179,9 +246,9 @@ jobs:
     name: Create Windows Patches 🩹
     needs: check-tag
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/windows-patches
         with:
           tagName: ${{ github.ref_name }}
