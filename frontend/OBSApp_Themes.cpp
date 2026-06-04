@@ -31,6 +31,7 @@
 #include <QFileSystemWatcher>
 #include <QMetaEnum>
 #include <QRandomGenerator>
+#include <QSet>
 #include <QTimer>
 
 using namespace std;
