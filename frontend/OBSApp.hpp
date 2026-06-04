@@ -29,6 +29,7 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QApplication>
+#include <QHash>
 #include <QPalette>
 #include <QPointer>
 #include <QUuid>
