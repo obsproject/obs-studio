@@ -46,7 +46,11 @@ void renderTick(void *param, float)
 }
 } // namespace
 
-ScreenshotObj::ScreenshotObj(obs_source_t *source) : weakSource(OBSGetWeakRef(source))
+/* Capture output = capture the scaled frame.
+The code below ensures that the output is captured only if the source is nullptr and the captureOutput flag is true. */
+ScreenshotObj::ScreenshotObj(obs_source_t *source, bool captureOutput)
+	: weakSource(OBSGetWeakRef(source)),
+	  captureOutput(!source && captureOutput)
 {
 	obs_add_tick_callback(renderTick, this);
 }
@@ -64,18 +68,21 @@ ScreenshotObj::~ScreenshotObj()
 void ScreenshotObj::renderScreenshot()
 {
 	OBSSourceAutoRelease source = OBSGetStrongRef(weakSource);
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
 
 	if (source) {
 		sourceWidth = obs_source_get_width(source);
 		sourceHeight = obs_source_get_height(source);
-	} else {
-		obs_video_info ovi;
-		obs_get_video_info(&ovi);
+	} else if (!captureOutput) {
 		sourceWidth = ovi.base_width;
 		sourceHeight = ovi.base_height;
+	} else {
+		outputWidth = ovi.output_width;
+		outputHeight = ovi.output_height;
 	}
 
-	if (!sourceWidth || !sourceHeight) {
+	if (!captureOutput && (!sourceWidth || !sourceHeight)) {
 		blog(LOG_WARNING, "Cannot render source, invalid target size");
 		obs_remove_tick_callback(renderTick, this);
 		deleteLater();
@@ -83,61 +90,82 @@ void ScreenshotObj::renderScreenshot()
 	}
 
 #ifdef _WIN32
-	enum gs_color_space space = obs_source_get_color_space(source, 0, nullptr);
+	enum gs_color_space space = (source) ? obs_source_get_color_space(source, 0, nullptr) : obs_get_color_space();
+	/* Fallback to SDR if a low-precision CF is selected */
 	if (space == GS_CS_709_EXTENDED) {
-		/* Convert for JXR */
-		space = GS_CS_709_SCRGB;
+		switch (ovi.output_format) {
+		case VIDEO_FORMAT_I010:
+		case VIDEO_FORMAT_P010:
+		case VIDEO_FORMAT_I210:
+		case VIDEO_FORMAT_I412:
+		case VIDEO_FORMAT_YA2L:
+		case VIDEO_FORMAT_P216:
+		case VIDEO_FORMAT_P416:
+			/* Convert for JXR */
+			space = GS_CS_709_SCRGB;
+			break;
+		default:
+			space = GS_CS_SRGB;
+		}
 	}
 #else
 	/* Tonemap to SDR if HDR */
 	const enum gs_color_space space = GS_CS_SRGB;
 #endif
-	const enum gs_color_format format = gs_get_format_from_space(space);
+	/* The output frame being captured is BGRA unless HDR is enabled */
+	const enum gs_color_format format = (captureOutput && space == GS_CS_SRGB) ? GS_BGRA
+										   : gs_get_format_from_space(space);
 
-	outputWidth = customSize.isValid() ? customSize.width() : sourceWidth;
-	outputHeight = customSize.isValid() ? customSize.height() : sourceHeight;
+	if (!captureOutput) {
+		outputWidth = customSize.isValid() ? customSize.width() : sourceWidth;
+		outputHeight = customSize.isValid() ? customSize.height() : sourceHeight;
+	}
 
 	texrender = gs_texrender_create(format, GS_ZS_NONE);
 	stagesurf = gs_stagesurface_create(outputWidth, outputHeight, format);
 
 	if (gs_texrender_begin_with_color_space(texrender, outputWidth, outputHeight, space)) {
-		vec4 zero;
-		vec4_zero(&zero);
-
-		int x{0};
-		int y{0};
-		int scaledWidth{0};
-		int scaledHeight{0};
-		float scale{0.0};
-
-		GetScaleAndCenterPos(sourceWidth, sourceHeight, outputWidth, outputHeight, x, y, scale);
-
-		scaledWidth = int(scale * float(sourceWidth));
-		scaledHeight = int(scale * float(sourceHeight));
-
-		gs_clear(GS_CLEAR_COLOR, &zero, 0.0f, 0);
-
-		gs_viewport_push();
-		gs_projection_push();
-
-		gs_ortho(0.0f, (float)sourceWidth, 0.0f, (float)sourceHeight, -100.0f, 100.0f);
-		gs_set_viewport(x, y, scaledWidth, scaledHeight);
-
-		gs_blend_state_push();
-		gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
-
-		if (source) {
-			obs_source_inc_showing(source);
-			obs_source_video_render(source);
-			obs_source_dec_showing(source);
+		if (captureOutput) {
+			tex = obs_get_output_texture();
 		} else {
-			obs_render_main_texture();
+			vec4 zero;
+			vec4_zero(&zero);
+
+			int x{0};
+			int y{0};
+			int scaledWidth{0};
+			int scaledHeight{0};
+			float scale{0.0};
+
+			GetScaleAndCenterPos(sourceWidth, sourceHeight, outputWidth, outputHeight, x, y, scale);
+
+			scaledWidth = int(scale * float(sourceWidth));
+			scaledHeight = int(scale * float(sourceHeight));
+
+			gs_clear(GS_CLEAR_COLOR, &zero, 0.0f, 0);
+
+			gs_viewport_push();
+			gs_projection_push();
+
+			gs_ortho(0.0f, (float)sourceWidth, 0.0f, (float)sourceHeight, -100.0f, 100.0f);
+			gs_set_viewport(x, y, scaledWidth, scaledHeight);
+
+			gs_blend_state_push();
+			gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
+
+			if (source) {
+				obs_source_inc_showing(source);
+				obs_source_video_render(source);
+				obs_source_dec_showing(source);
+			} else {
+				obs_render_main_texture();
+			}
+
+			gs_projection_pop();
+			gs_viewport_pop();
+
+			gs_blend_state_pop();
 		}
-
-		gs_projection_pop();
-		gs_viewport_pop();
-
-		gs_blend_state_pop();
 		gs_texrender_end(texrender);
 	}
 }
@@ -166,7 +194,7 @@ void ScreenshotObj::processStage()
 
 void ScreenshotObj::downloadData()
 {
-	gs_stage_texture(stagesurf, gs_texrender_get_texture(texrender));
+	gs_stage_texture(stagesurf, (captureOutput) ? tex : gs_texrender_get_texture(texrender));
 }
 
 void ScreenshotObj::copyData()
@@ -184,11 +212,19 @@ void ScreenshotObj::copyData()
 				half_bytes.insert(half_bytes.end(), line, line + linesize);
 			}
 		} else {
-			image = QImage(outputWidth, outputHeight, QImage::Format::Format_RGBX8888);
+			bool alpha = config_get_bool(OBSBasic::Get()->Config(), "SimpleOutput", "ScreenshotAlpha");
+
+			image = QImage(outputWidth, outputHeight,
+				       (alpha) ? QImage::Format::Format_RGBA8888 : QImage::Format::Format_RGBX8888);
 
 			int linesize = image.bytesPerLine();
 			for (int y = 0; y < (int)outputHeight; ++y) {
 				memcpy(image.scanLine(y), videoData + (y * videoLinesize), linesize);
+			}
+
+			/* Since the output texture is BGR, explicit conversion to RGB is required */
+			if (captureOutput) {
+				image.rgbSwap();
 			}
 		}
 
@@ -206,20 +242,19 @@ void ScreenshotObj::saveToFile()
 	OBSBasic *main = OBSBasic::Get();
 	config_t *config = main->Config();
 
-	const char *mode = config_get_string(config, "Output", "Mode");
-	const char *type = config_get_string(config, "AdvOut", "RecType");
-	const char *adv_path = strcmp(type, "Standard") ? config_get_string(config, "AdvOut", "FFFilePath")
-							: config_get_string(config, "AdvOut", "RecFilePath");
-	const char *rec_path = strcmp(mode, "Advanced") ? config_get_string(config, "SimpleOutput", "FilePath")
-							: adv_path;
+	const char *ssPath = config_get_string(main->Config(), "SimpleOutput", "ScreenshotFilePath");
+	const char *format = config_get_string(main->Config(), "SimpleOutput", "ScreenshotFormat");
+	quality = config_get_int(main->Config(), "SimpleOutput", "ScreenshotQuality");
 
-	bool noSpace = config_get_bool(config, "SimpleOutput", "FileNameWithoutSpace");
+	bool noSpace = config_get_bool(main->Config(), "SimpleOutput", "ScreenshotFileNameWithoutSpace");
 	const char *filenameFormat = config_get_string(config, "Output", "FilenameFormatting");
 	bool overwriteIfExists = config_get_bool(config, "Output", "OverwriteIfExists");
+	const char *ssPrefix = config_get_string(main->Config(), "SimpleOutput", "RecSSPrefix");
+	const char *ssSuffix = config_get_string(main->Config(), "SimpleOutput", "RecSSSuffix");
 
-	const char *ext = half_bytes.empty() ? "png" : "jxr";
-	path = GetOutputFilename(rec_path, ext, noSpace, overwriteIfExists,
-				 GetFormatString(filenameFormat, "Screenshot", nullptr).c_str());
+	ext = half_bytes.empty() ? format : "jxr";
+	path = GetOutputFilename(ssPath, ext, noSpace, overwriteIfExists,
+				 GetFormatString(filenameFormat, ssPrefix, ssSuffix).c_str());
 
 	thread = std::thread([this] {
 		muxFile();
@@ -331,7 +366,7 @@ static HRESULT SaveJxr(LPCWSTR path, uint8_t *pixels, uint32_t cx, uint32_t cy)
 void ScreenshotObj::muxFile()
 {
 	if (half_bytes.empty()) {
-		image.save(QT_UTF8(path.c_str()));
+		image.save(QT_UTF8(path.c_str()), ext, quality);
 		blog(LOG_INFO, "Saved screenshot to '%s'", path.c_str());
 	} else {
 #ifdef _WIN32

@@ -21,7 +21,7 @@
 
 #include <qt-wrappers.hpp>
 
-void OBSBasic::Screenshot(OBSSource source)
+void OBSBasic::Screenshot(OBSSource source, bool captureOutput)
 {
 	if (!!screenshotData) {
 		blog(LOG_WARNING, "Cannot take new screenshot, "
@@ -29,7 +29,7 @@ void OBSBasic::Screenshot(OBSSource source)
 		return;
 	}
 
-	screenshotData = new ScreenshotObj(source);
+	screenshotData = new ScreenshotObj(source, captureOutput);
 }
 
 void OBSBasic::ScreenshotSelectedSource()
@@ -51,4 +51,9 @@ void OBSBasic::ScreenshotProgram()
 void OBSBasic::ScreenshotScene()
 {
 	Screenshot(GetCurrentSceneSource());
+}
+
+void OBSBasic::ScreenshotOutput()
+{
+	Screenshot(nullptr, true);
 }

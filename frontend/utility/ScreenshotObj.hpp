@@ -29,7 +29,7 @@ class ScreenshotObj : public QObject {
 	Q_OBJECT
 
 public:
-	ScreenshotObj(obs_source_t *source);
+	ScreenshotObj(obs_source_t *source, bool captureOutput = false);
 	~ScreenshotObj() override;
 
 	enum class Stage { Render, Download, Output, Finished };
@@ -54,6 +54,7 @@ private:
 
 	gs_texrender_t *texrender = nullptr;
 	gs_stagesurf_t *stagesurf = nullptr;
+	gs_texture_t *tex = nullptr;
 	OBSWeakSource weakSource;
 	std::string path;
 	QImage image;
@@ -67,6 +68,9 @@ private:
 	std::thread thread;
 	std::shared_ptr<QImage> imagePtr;
 	bool outputToFile = true;
+	bool captureOutput = false;
+	const char *ext = nullptr;
+	int quality = 0;
 
 signals:
 	void imageReady(QImage image);
