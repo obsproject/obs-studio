@@ -1396,7 +1396,7 @@ void OBSBasic::applicationShutdown() noexcept
 {
 	/* clear out UI event queue */
 	QApplication::sendPostedEvents(nullptr);
-#ifndef __APPLE_
+#ifndef __APPLE__
 	QApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 #endif
 
