@@ -24,6 +24,7 @@ constexpr auto youtubeLiveBroadcastBindUrl = "https://www.googleapis.com/youtube
 
 constexpr auto youtubeLiveChannelUrl = "https://www.googleapis.com/youtube/v3/channels"sv;
 constexpr auto youtubeLiveTokenUrl = "https://oauth2.googleapis.com/token"sv;
+constexpr auto youtubeLiveI18nLanguagesUrl = "https://www.googleapis.com/youtube/v3/i18nLanguages"sv;
 constexpr auto youtubeLiveVideoCategoriesUrl = "https://www.googleapis.com/youtube/v3/videoCategories"sv;
 constexpr auto youtubeLiveVideosUrl = "https://www.googleapis.com/youtube/v3/videos"sv;
 constexpr auto youtubeLiveThumbnailUrl = "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"sv;
@@ -275,6 +276,31 @@ bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, const QString &page, 
 	return InsertCommand(url.c_str(), "application/json", "", nullptr, json_out);
 }
 
+bool YoutubeApiWrappers::GetI18nLanguagesList(QVector<I18nLanguageDescription> &language_list_out)
+{
+	lastErrorMessage.clear();
+	lastErrorReason.clear();
+	const QString url_template = QString(youtubeLiveI18nLanguagesUrl.data()) + "?part=snippet&hl=%1";
+
+	QString url = url_template.arg(QLocale().name());
+
+	Json json_out;
+	if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out)) {
+		if (lastErrorReason != "unsupportedLanguageCode" && lastErrorReason != "invalidLanguage")
+			return false;
+		// Try again with en_US if YouTube error indicates an unsupported locale
+		url = url_template.arg("en_US");
+		if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out))
+			return false;
+	}
+	language_list_out = {};
+	for (auto &j : json_out["items"].array_items()) {
+		language_list_out.push_back(
+			{j["id"].string_value().c_str(), j["snippet"]["name"].string_value().c_str()});
+	}
+	return language_list_out.isEmpty() ? false : true;
+}
+
 bool YoutubeApiWrappers::GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out)
 {
 	lastErrorMessage.clear();
@@ -315,19 +341,27 @@ bool YoutubeApiWrappers::GetVideoCategoriesList(QVector<CategoryDescription> &ca
 }
 
 bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id, const QString &video_title,
-					  const QString &video_description, const QString &categorie_id)
+					  const QString &video_description, const QString &categorie_id,
+					  const QString &language)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
 	const std::string url = std::string(youtubeLiveVideosUrl) + "?part=snippet";
+
+	Json::object snippet = {
+		{"title", QT_TO_UTF8(video_title)},
+		{"description", QT_TO_UTF8(video_description)},
+		{"categoryId", QT_TO_UTF8(categorie_id)},
+	};
+
+	if (!language.isEmpty()) {
+		snippet["defaultLanguage"] = QT_TO_UTF8(language);
+		snippet["defaultAudioLanguage"] = QT_TO_UTF8(language);
+	}
+
 	const Json data = Json::object{
 		{"id", QT_TO_UTF8(video_id)},
-		{"snippet",
-		 Json::object{
-			 {"title", QT_TO_UTF8(video_title)},
-			 {"description", QT_TO_UTF8(video_description)},
-			 {"categoryId", QT_TO_UTF8(categorie_id)},
-		 }},
+		{"snippet", snippet},
 	};
 	Json json_out;
 	return InsertCommand(url.c_str(), "application/json", "PUT", data.dump().c_str(), json_out);
