@@ -25,6 +25,7 @@
 #include <oauth/Auth.hpp>
 #include <utility/BasicOutputHandler.hpp>
 #include <utility/OBSCanvas.hpp>
+#include <utility/OutputObj.hpp>
 #include <utility/PreviewProgramSizeObserver.hpp>
 #include <utility/VCamConfig.hpp>
 #include <utility/platform.hpp>
@@ -1619,9 +1620,11 @@ private:
 	 * -------------------------------------
 	 */
 private:
+	QScopedPointer<OutputObj> virtualCam;
 	bool vcamEnabled = false;
 	VCamConfig vcamConfig;
-	bool restartingVCam = false;
+
+	void SetupVirtualCam();
 
 public slots:
 	void StartVirtualCam();
@@ -1634,8 +1637,6 @@ public slots:
 
 private slots:
 	void UpdateVirtualCamConfig(const VCamConfig &config);
-	void RestartVirtualCam(const VCamConfig &config);
-	void RestartingVirtualCam();
 
 	/* Virtual Cam action (start/stop) slots */
 	void VirtualCamActionTriggered();
@@ -1644,6 +1645,7 @@ private slots:
 
 public:
 	inline bool VCamEnabled() const { return vcamEnabled; }
+	OBSOutput GetVirtualCamOutput();
 
 signals:
 	/* Virtual Camera signals */

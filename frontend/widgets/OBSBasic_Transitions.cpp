@@ -679,9 +679,6 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				ui->scenes->setCurrentItem(item);
 				ui->scenes->blockSignals(false);
 
-				if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
-					outputHandler->UpdateVirtualCamOutputSource();
-
 				OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 				break;
 			}

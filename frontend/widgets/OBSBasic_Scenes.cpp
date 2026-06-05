@@ -512,9 +512,6 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current, QListWidge
 
 	SetCurrentScene(source, forceSceneChange);
 
-	if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
-		outputHandler->UpdateVirtualCamOutputSource();
-
 	OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 
 	UpdateContextBar();

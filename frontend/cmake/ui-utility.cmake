@@ -39,6 +39,8 @@ target_sources(
     utility/OBSTranslator.hpp
     utility/PreviewProgramSizeObserver.cpp
     utility/PreviewProgramSizeObserver.hpp
+    utility/OutputObj.cpp
+    utility/OutputObj.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
     utility/RemoteTextThread.cpp

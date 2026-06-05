@@ -10,7 +10,6 @@ extern volatile bool streaming_active;
 extern volatile bool recording_active;
 extern volatile bool recording_paused;
 extern volatile bool replaybuf_active;
-extern volatile bool virtualcam_active;
 
 template<typename T>
 inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
@@ -578,8 +577,7 @@ void OBSStudioAPI::obs_frontend_take_source_screenshot(obs_source_t *source)
 
 obs_output_t *OBSStudioAPI::obs_frontend_get_virtualcam_output()
 {
-	OBSOutput output = main->outputHandler->virtualCam.Get();
-	return obs_output_get_ref(output);
+	return obs_output_get_ref(main->GetVirtualCamOutput());
 }
 
 void OBSStudioAPI::obs_frontend_start_virtualcam()
@@ -594,7 +592,7 @@ void OBSStudioAPI::obs_frontend_stop_virtualcam()
 
 bool OBSStudioAPI::obs_frontend_virtualcam_active()
 {
-	return os_atomic_load_bool(&virtualcam_active);
+	return main->VirtualCamActive();
 }
 
 void OBSStudioAPI::obs_frontend_reset_video()

@@ -1046,6 +1046,7 @@ void OBSBasic::OBSInit()
 
 	vcamEnabled = (obs_get_output_flags(VIRTUAL_CAM_ID) & OBS_OUTPUT_VIDEO) != 0;
 	if (vcamEnabled) {
+		SetupVirtualCam();
 		emit VirtualCamEnabled();
 	}
 
@@ -1947,8 +1948,7 @@ void OBSBasic::closeWindow()
 	if (program)
 		program->DestroyDisplay();
 
-	if (outputHandler->VirtualCamActive())
-		outputHandler->StopVirtualCam();
+	StopVirtualCam();
 
 	if (introCheckThread)
 		introCheckThread->wait();
