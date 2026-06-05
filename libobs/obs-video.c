@@ -321,6 +321,16 @@ static inline gs_texture_t *render_output_texture(struct obs_core_video_mix *mix
 	return target;
 }
 
+inline gs_texture_t *obs_get_output_texture(void)
+{
+	return render_output_texture(get_mix_for_video(obs_get_video()));
+}
+
+inline enum gs_color_space obs_get_color_space(void)
+{
+	return get_mix_for_video(obs_get_video())->render_space;
+}
+
 static void render_convert_plane(gs_effect_t *effect, gs_texture_t *target, const char *tech_name)
 {
 	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);

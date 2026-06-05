@@ -826,6 +826,12 @@ EXPORT void obs_render_canvas_texture_src_color_only(obs_canvas_t *canvas);
  * is unavailable. */
 EXPORT gs_texture_t *obs_get_main_texture(void);
 
+/** Renders and returns the output texture of the main video */
+EXPORT gs_texture_t *obs_get_output_texture(void);
+
+/** Returns the render space of the main video */
+EXPORT enum gs_color_space obs_get_color_space(void);
+
 /** Saves a source to settings data */
 EXPORT obs_data_t *obs_save_source(obs_source_t *source);
 
