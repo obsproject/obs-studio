@@ -545,6 +545,12 @@ Video, Audio, and Graphics
 
 ---------------------
 
+.. function:: gs_texture_t *obs_get_output_texture(void)
+
+   :return: Renders and returns the output texture of the main video
+
+---------------------
+
 .. function:: bool obs_audio_monitoring_available(void)
 
    :return: Whether audio monitoring is supported and available on the current platform

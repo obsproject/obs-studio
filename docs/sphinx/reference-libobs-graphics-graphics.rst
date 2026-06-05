@@ -655,6 +655,12 @@ Draw Functions
 
 ---------------------
 
+.. function:: enum gs_color_space obs_get_color_space(void)
+
+   :return: Returns the render space of the main video
+
+---------------------
+
 .. function:: gs_texture_t  *gs_get_render_target(void)
 
    :return: The currently active render target
