@@ -640,6 +640,10 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addAction(QTStr("Screenshot.Source"), this, &OBSBasic::ScreenshotSelectedSource);
 	}
 
+	if (preview) {
+		popup.addAction(QTStr("Screenshot.Output"), this, &OBSBasic::ScreenshotOutput);
+	}
+
 	popup.addSeparator();
 
 	if (sourceSelected) {

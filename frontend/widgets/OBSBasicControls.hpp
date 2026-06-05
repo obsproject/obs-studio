@@ -57,6 +57,7 @@ signals:
 	void StreamButtonClicked();
 	void BroadcastButtonClicked();
 	void RecordButtonClicked();
+	void ScreenshotButtonClicked();
 	void PauseRecordButtonClicked();
 	void ReplayBufferButtonClicked();
 	void SaveReplayBufferButtonClicked();

@@ -379,6 +379,7 @@ void OBSBasic::ProgramViewContextMenuRequested()
 
 	popup.addSeparator();
 	popup.addAction(QTStr("Screenshot.StudioProgram"), this, &OBSBasic::ScreenshotProgram);
+	popup.addAction(QTStr("Screenshot.Output"), this, &OBSBasic::ScreenshotOutput);
 
 	popup.exec(QCursor::pos());
 }

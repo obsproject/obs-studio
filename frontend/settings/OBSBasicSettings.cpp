@@ -419,6 +419,12 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleReplayBuf,      GROUP_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutputScreenshotPath,           EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->simpleScreenshotsNoSpace,             CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutScreenshotFormat,            COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleScreenshotAlpha,                CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutputScreenshotQualitySpinBox, SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutputScreenshotQualitySlider,  SLIDER_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutAEncoder,       COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
@@ -538,6 +544,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->simpleRBPrefix,       EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->simpleRBSuffix,       EDIT_CHANGED,   ADV_CHANGED);
+	HookWidget(ui->simpleSSPrefix,       EDIT_CHANGED,   ADV_CHANGED);
+	HookWidget(ui->simpleSSSuffix,       EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->streamDelayEnable,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->streamDelaySec,       SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->streamDelayPreserve,  CHECK_CHANGED,  ADV_CHANGED);
@@ -747,6 +755,12 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->simpleOutputABitrate, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
 	connect(ui->simpleRBSecMax, &QSpinBox::valueChanged, this, &OBSBasicSettings::SimpleReplayBufferChanged);
+	connect(ui->simpleOutScreenshotFormat, &QComboBox::currentIndexChanged, this,
+		&OBSBasicSettings::UpdateScreenshotSettings);
+	connect(ui->simpleOutputScreenshotQualitySpinBox, &QSpinBox::valueChanged, this,
+		&OBSBasicSettings::SimpleScreenshotQualitySpinBoxChanged);
+	connect(ui->simpleOutputScreenshotQualitySlider, &QSlider::valueChanged, this,
+		&OBSBasicSettings::SimpleScreenshotQualitySliderChanged);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	connect(ui->advOutSplitFile, &QCheckBox::checkStateChanged, this, &OBSBasicSettings::AdvOutSplitFileChanged);
 #else
@@ -1067,6 +1081,10 @@ void OBSBasicSettings::LoadFormats()
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMP4"), "fragmented_mp4");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("fMOV"), "fragmented_mov");
 	ui->simpleOutRecFormat->addItem(FORMAT_STR("TS"), "mpegts");
+
+	ui->simpleOutScreenshotFormat->addItem(FORMAT_STR("PNG"), "png");
+	ui->simpleOutScreenshotFormat->addItem(FORMAT_STR("BMP"), "bmp");
+	ui->simpleOutScreenshotFormat->addItem(FORMAT_STR("JPEG"), "jpg");
 
 	ui->advOutRecFormat->addItem(FORMAT_STR("FLV"), "flv");
 	ui->advOutRecFormat->addItem(FORMAT_STR("MKV"), "mkv");
@@ -1714,6 +1732,11 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	int rbTime = config_get_int(main->Config(), "SimpleOutput", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
 	int tracks = config_get_int(main->Config(), "SimpleOutput", "RecTracks");
+	const char *screenshotPath = config_get_string(main->Config(), "SimpleOutput", "ScreenshotFilePath");
+	bool screenshotNoSpace = config_get_bool(main->Config(), "SimpleOutput", "ScreenshotFileNameWithoutSpace");
+	const char *screenshotFormat = config_get_string(main->Config(), "SimpleOutput", "ScreenshotFormat");
+	bool screenshotAlpha = config_get_bool(main->Config(), "SimpleOutput", "ScreenshotAlpha");
+	int screenshotQuality = config_get_int(main->Config(), "SimpleOutput", "ScreenshotQuality");
 
 	ui->simpleOutRecTrack1->setChecked(tracks & (1 << 0));
 	ui->simpleOutRecTrack2->setChecked(tracks & (1 << 1));
@@ -1778,6 +1801,16 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleReplayBuf->setChecked(replayBuf);
 	ui->simpleRBSecMax->setValue(rbTime);
 	ui->simpleRBMegsMax->setValue(rbSize);
+
+	ui->simpleOutputScreenshotPath->setText(screenshotPath);
+	ui->simpleScreenshotsNoSpace->setChecked(screenshotNoSpace);
+	idx = ui->simpleOutScreenshotFormat->findData(QString(screenshotFormat));
+	ui->simpleOutScreenshotFormat->setCurrentIndex(idx);
+	ui->simpleScreenshotAlpha->setChecked(screenshotAlpha);
+	ui->simpleOutputScreenshotQualitySpinBox->setValue(screenshotQuality);
+	ui->simpleOutputScreenshotQualitySlider->setValue(screenshotQuality);
+
+	UpdateScreenshotSettings();
 
 	SimpleStreamingEncoderChanged();
 }
@@ -2532,6 +2565,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	const char *bindIP = config_get_string(main->Config(), "Output", "BindIP");
 	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput", "RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput", "RecRBSuffix");
+	const char *ssPrefix = config_get_string(main->Config(), "SimpleOutput", "RecSSPrefix");
+	const char *ssSuffix = config_get_string(main->Config(), "SimpleOutput", "RecSSSuffix");
 	bool replayBuf = config_get_bool(main->Config(), "AdvOut", "RecRB");
 	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
@@ -2554,6 +2589,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
 	ui->simpleRBPrefix->setText(rbPrefix);
 	ui->simpleRBSuffix->setText(rbSuffix);
+	ui->simpleSSPrefix->setText(ssPrefix);
+	ui->simpleSSSuffix->setText(ssSuffix);
 
 	ui->advReplayBuf->setChecked(replayBuf);
 	ui->advRBSecMax->setValue(rbTime);
@@ -3201,6 +3238,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveEdit(ui->filenameFormatting, "Output", "FilenameFormatting");
 	SaveEdit(ui->simpleRBPrefix, "SimpleOutput", "RecRBPrefix");
 	SaveEdit(ui->simpleRBSuffix, "SimpleOutput", "RecRBSuffix");
+	SaveEdit(ui->simpleSSPrefix, "SimpleOutput", "RecSSPrefix");
+	SaveEdit(ui->simpleSSSuffix, "SimpleOutput", "RecSSSuffix");
 	SaveCheckBox(ui->overwriteIfExists, "Output", "OverwriteIfExists");
 	SaveCheckBox(ui->streamDelayEnable, "Output", "DelayEnable");
 	SaveSpinBox(ui->streamDelaySec, "Output", "DelaySec");
@@ -3381,6 +3420,12 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
 	config_set_int(main->Config(), "SimpleOutput", "RecTracks", SimpleOutGetSelectedAudioTracks());
+	SaveEdit(ui->simpleOutputScreenshotPath, "SimpleOutput", "ScreenshotFilePath");
+	SaveCheckBox(ui->simpleScreenshotsNoSpace, "SimpleOutput", "ScreenshotFileNameWithoutSpace");
+	SaveComboData(ui->simpleOutScreenshotFormat, "SimpleOutput", "ScreenshotFormat");
+	SaveCheckBox(ui->simpleScreenshotAlpha, "SimpleOutput", "ScreenshotAlpha");
+	SaveSpinBox(ui->simpleOutputScreenshotQualitySpinBox, "SimpleOutput", "ScreenshotQuality");
+	config_set_int(main->Config(), "SimpleOutput", "ScreenshotQuality", ui->simpleOutputScreenshotQualitySlider->value());
 
 	curAdvStreamEncoder = GetComboData(ui->advOutEncoder);
 
@@ -3854,6 +3899,17 @@ void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 		return;
 
 	ui->simpleOutputPath->setText(dir);
+}
+
+void OBSBasicSettings::on_simpleScreenshotOutputBrowse_clicked()
+{
+	QString dir =
+		SelectDirectory(this, QTStr("Basic.Settings.Output.SelectScreenshotDirectory"),
+			ui->simpleOutputScreenshotPath->text());
+	if (dir.isEmpty())
+		return;
+
+	ui->simpleOutputScreenshotPath->setText(dir);
 }
 
 void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
@@ -5805,4 +5861,30 @@ void OBSBasicSettings::AdvAudioEncodersChanged()
 	RestrictResetBitrates({ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate, ui->advOutTrack3Bitrate,
 			       ui->advOutTrack4Bitrate, ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate},
 			      320);
+}
+
+void OBSBasicSettings::UpdateScreenshotSettings()
+{
+	QString screenshotFormat = ui->simpleOutScreenshotFormat->currentData().toString();
+	bool enableAlpha = screenshotFormat == "png";
+	bool enableQuality = screenshotFormat == "jpg";
+
+	ui->simpleScreenshotAlpha->setEnabled(enableAlpha);
+	if (!enableAlpha) {
+		ui->simpleScreenshotAlpha->setChecked(false);
+	}
+	ui->simpleOutputScreenshotQualitySpinBox->setEnabled(enableQuality);
+	ui->simpleOutputScreenshotQualitySlider->setEnabled(enableQuality);
+	if (!enableQuality) {
+		ui->simpleOutputScreenshotQualitySpinBox->setValue(-1);
+		ui->simpleOutputScreenshotQualitySlider->setValue(-1);
+	}
+}
+void OBSBasicSettings::SimpleScreenshotQualitySpinBoxChanged()
+{
+	ui->simpleOutputScreenshotQualitySlider->setValue(ui->simpleOutputScreenshotQualitySpinBox->value());
+}
+void OBSBasicSettings::SimpleScreenshotQualitySliderChanged()
+{
+	ui->simpleOutputScreenshotQualitySpinBox->setValue(ui->simpleOutputScreenshotQualitySlider->value());
 }

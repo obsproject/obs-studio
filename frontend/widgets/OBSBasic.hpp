@@ -487,8 +487,10 @@ signals:
 private:
 	QPointer<QObject> shortcutFilter;
 	obs_hotkey_id statsHotkey = 0;
-	obs_hotkey_id screenshotHotkey = 0;
+	obs_hotkey_id previewScreenshotHotkey = 0;
 	obs_hotkey_id sourceScreenshotHotkey = 0;
+	obs_hotkey_id outputScreenshotHotkey = 0;
+	obs_hotkey_id programScreenshotHotkey = 0;
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys, replayBufHotkeys, vcamHotkeys,
 		togglePreviewHotkeys, contextBarHotkeys;
@@ -1332,10 +1334,11 @@ private:
 	std::string lastScreenshot;
 
 private slots:
-	void Screenshot(OBSSource source_ = nullptr);
+	void Screenshot(OBSSource source_ = nullptr, bool captureOutput = false);
 	void ScreenshotSelectedSource();
 	void ScreenshotProgram();
 	void ScreenshotScene();
+	void ScreenshotOutput();
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Service

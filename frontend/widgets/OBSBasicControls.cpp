@@ -28,6 +28,9 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 		ui->pauseRecordButton, &QPushButton::clicked, this, [this]() { emit this->PauseRecordButtonClicked(); },
 		Qt::DirectConnection);
 	connect(
+		ui->screenshotButton, &QPushButton::clicked, this, [this]() { emit this->ScreenshotButtonClicked(); },
+		Qt::DirectConnection);
+	connect(
 		ui->replayBufferButton, &QPushButton::clicked, this,
 		[this]() { emit this->ReplayBufferButtonClicked(); }, Qt::DirectConnection);
 	connect(

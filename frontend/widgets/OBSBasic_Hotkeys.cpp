@@ -262,13 +262,14 @@ void OBSBasic::CreateHotkeys()
 		obs_hotkey_register_frontend("OBSBasic.ResetStats", Str("Basic.Stats.ResetStats"), resetStats, this);
 	LoadHotkey(statsHotkey, "OBSBasic.ResetStats");
 
-	auto screenshot = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+	auto screenshotPreview = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
 		if (pressed)
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "Screenshot", Qt::QueuedConnection);
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ScreenshotScene", Qt::QueuedConnection);
 	};
 
-	screenshotHotkey = obs_hotkey_register_frontend("OBSBasic.Screenshot", Str("Screenshot"), screenshot, this);
-	LoadHotkey(screenshotHotkey, "OBSBasic.Screenshot");
+	previewScreenshotHotkey =
+		obs_hotkey_register_frontend("OBSBasic.PreviewScreenshot", Str("Screenshot.PreviewHotkey"), screenshotPreview, this);
+	LoadHotkey(previewScreenshotHotkey, "OBSBasic.PreviewScreenshot");
 
 	auto screenshotSource = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
 		if (pressed)
@@ -279,6 +280,26 @@ void OBSBasic::CreateHotkeys()
 	sourceScreenshotHotkey = obs_hotkey_register_frontend("OBSBasic.SelectedSourceScreenshot",
 							      Str("Screenshot.SourceHotkey"), screenshotSource, this);
 	LoadHotkey(sourceScreenshotHotkey, "OBSBasic.SelectedSourceScreenshot");
+
+	auto screenshotOutput = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+		if (pressed)
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ScreenshotOutput",
+						  Qt::QueuedConnection);
+	};
+
+	outputScreenshotHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.OutputScreenshot", Str("Screenshot.OutputHotkey"), screenshotOutput, this);
+	LoadHotkey(outputScreenshotHotkey, "OBSBasic.OutputScreenshot");
+
+	auto screenshotProgram = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+		if (pressed)
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ScreenshotProgram",
+						  Qt::QueuedConnection);
+	};
+
+	programScreenshotHotkey = obs_hotkey_register_frontend("OBSBasic.ProgramScreenshot",
+							      Str("Screenshot.ProgramHotkey"), screenshotProgram, this);
+	LoadHotkey(programScreenshotHotkey, "OBSBasic.ProgramScreenshot");
 }
 
 void OBSBasic::ClearHotkeys()
@@ -296,8 +317,10 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_unregister(forceStreamingStopHotkey);
 	obs_hotkey_unregister(transitionHotkey);
 	obs_hotkey_unregister(statsHotkey);
-	obs_hotkey_unregister(screenshotHotkey);
+	obs_hotkey_unregister(previewScreenshotHotkey);
 	obs_hotkey_unregister(sourceScreenshotHotkey);
+	obs_hotkey_unregister(outputScreenshotHotkey);
+	obs_hotkey_unregister(programScreenshotHotkey);
 }
 
 void OBSBasic::ResetStatsHotkey()
