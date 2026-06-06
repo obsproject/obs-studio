@@ -21,6 +21,8 @@
 
 #include <qt-wrappers.hpp>
 
+#include <QShowEvent>
+
 void setupDockAction(QDockWidget *dock)
 {
 	QAction *action = dock->toggleViewAction();
@@ -160,8 +162,10 @@ void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool ex
 	else
 		ui->menuDocks->addAction(dock->toggleViewAction());
 
-	if (extraBrowser)
+	if (extraBrowser) {
+		DeferExtraDockVisibility(dock);
 		return;
+	}
 #else
 	UNUSED_PARAMETER(extraBrowser);
 
@@ -170,6 +174,7 @@ void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool ex
 
 	extraDockNames.push_back(dock->objectName());
 	extraDocks.push_back(std::shared_ptr<QDockWidget>(dock));
+	DeferExtraDockVisibility(dock);
 }
 
 void OBSBasic::RemoveDockWidget(const QString &name)
@@ -218,6 +223,67 @@ void OBSBasic::AddCustomDockWidget(QDockWidget *dock)
 
 	extraCustomDockNames.push_back(dock->objectName());
 	extraCustomDocks.push_back(dock);
+	DeferExtraDockVisibility(dock);
+}
+
+void OBSBasic::DeferExtraDockVisibility(QDockWidget *dock)
+{
+	if (!deferExtraDockVisibility || !dock)
+		return;
+
+	for (auto &deferredDock : deferredExtraDockVisibility) {
+		if (deferredDock.first == dock)
+			return;
+	}
+
+	deferredExtraDockVisibility.append({dock, dock->isVisible()});
+
+	// When OBS starts hidden to tray, restoreState() can make floating
+	// extra docks visible before the main window is ever shown.
+	connect(dock, &QDockWidget::visibilityChanged, this, [this, dock](bool visible) {
+		if (!deferExtraDockVisibility || hidingDeferredExtraDock)
+			return;
+
+		for (auto &deferredDock : deferredExtraDockVisibility) {
+			if (deferredDock.first != dock)
+				continue;
+
+			deferredDock.second = visible;
+			if (visible && !isVisible()) {
+				hidingDeferredExtraDock = true;
+				dock->setVisible(false);
+				hidingDeferredExtraDock = false;
+			}
+			return;
+		}
+	});
+
+	if (dock->isVisible() && !isVisible()) {
+		hidingDeferredExtraDock = true;
+		dock->setVisible(false);
+		hidingDeferredExtraDock = false;
+	}
+}
+
+void OBSBasic::RestoreDeferredExtraDockVisibility()
+{
+	if (!deferExtraDockVisibility)
+		return;
+
+	deferExtraDockVisibility = false;
+
+	for (auto &deferredDock : deferredExtraDockVisibility) {
+		if (deferredDock.first)
+			deferredDock.first->setVisible(deferredDock.second);
+	}
+
+	deferredExtraDockVisibility.clear();
+}
+
+void OBSBasic::showEvent(QShowEvent *event)
+{
+	OBSMainWindow::showEvent(event);
+	RestoreDeferredExtraDockVisibility();
 }
 
 void OBSBasic::setDockCornersVertical(bool vertical)

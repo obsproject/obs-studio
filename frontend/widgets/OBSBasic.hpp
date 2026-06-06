@@ -40,9 +40,11 @@
 #include <util/util.hpp>
 
 #include <QAccessible>
+#include <QPointer>
 #include <QSystemTrayIcon>
 
 #include <deque>
+#include <utility>
 
 extern volatile bool recording_paused;
 
@@ -62,6 +64,7 @@ class VolumeControl;
 class YouTubeAppDock;
 #endif
 class QMessageBox;
+class QShowEvent;
 class QWidgetAction;
 struct QuickTransition;
 
@@ -443,6 +446,9 @@ private:
 	QByteArray startingDockLayout;
 	QStringList extraDockNames;
 	QList<std::shared_ptr<QDockWidget>> extraDocks;
+	bool deferExtraDockVisibility = false;
+	bool hidingDeferredExtraDock = false;
+	QList<std::pair<QPointer<QDockWidget>, bool>> deferredExtraDockVisibility;
 
 	QStringList extraCustomDockNames;
 	QList<QPointer<QDockWidget>> extraCustomDocks;
@@ -455,7 +461,15 @@ public:
 	void RemoveDockWidget(const QString &name);
 	bool IsDockObjectNameUsed(const QString &name);
 	void AddCustomDockWidget(QDockWidget *dock);
+	bool IsDeferringExtraDockVisibility() const { return deferExtraDockVisibility; }
 	void setDockCornersVertical(bool vertical);
+
+protected:
+	void showEvent(QShowEvent *event) override;
+
+private:
+	void DeferExtraDockVisibility(QDockWidget *dock);
+	void RestoreDeferredExtraDockVisibility();
 
 private slots:
 	void on_resetDocks_triggered(bool force = false);
