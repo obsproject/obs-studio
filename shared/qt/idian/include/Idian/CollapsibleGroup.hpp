@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2019 by Dillon Pentz <dillon@vodbox.io>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,40 +17,51 @@
 
 #pragma once
 
-#include "ui_OBSMissingFiles.h"
+#include <Idian/Utils.hpp>
 
-#include <obs.hpp>
+#include <QFrame>
 
-#include <QDialog>
-#include <QPointer>
+class QPixmap;
+class QVBoxLayout;
 
-class MissingFilesModel;
+namespace idian {
+class Row;
+class RowInfo;
+class ExpandButton;
+class RowList;
+class ToggleSwitch;
 
-class OBSMissingFiles : public QDialog {
+class CollapsibleGroup : public QFrame, public Utils {
 	Q_OBJECT
-	Q_PROPERTY(QIcon warningIcon READ GetWarningIcon WRITE SetWarningIcon DESIGNABLE true)
-
-	QPointer<MissingFilesModel> filesModel;
-	std::unique_ptr<Ui::OBSMissingFiles> ui;
 
 public:
-	explicit OBSMissingFiles(obs_missing_files_t *files, QWidget *parent = nullptr);
-	virtual ~OBSMissingFiles() override;
+	CollapsibleGroup(QWidget *parent = nullptr);
 
-	void addMissingFile(const char *originalPath, const char *sourceName);
+	void setCheckable(bool check);
+	bool isCheckable() { return checkable; }
 
-	QIcon GetWarningIcon();
-	void SetWarningIcon(const QIcon &icon);
+	void setChecked(bool checked);
+	bool isChecked();
 
-private:
-	void saveFiles();
-	void browseFolders();
+	void setExpanded(bool expand = true);
 
-	obs_missing_files_t *fileStore;
+	Row *row() { return rowWidget; }
+	RowList *list() { return propertyList; }
 
-public slots:
-	void dataChanged();
+protected:
+	void toggleVisibility();
+
+	QVBoxLayout *mainLayout;
+
+	Row *rowWidget;
+	ExpandButton *expandButton;
+
+	RowList *propertyList;
+
+	ToggleSwitch *toggleSwitch = nullptr;
+	bool checkable = false;
 
 signals:
-	void allFilesResolved();
+	void toggled(bool checked);
 };
+} // namespace idian

@@ -1,6 +1,9 @@
 #include "OBSBasicStatusBar.hpp"
 #include "ui_StatusBarWidget.h"
 
+#include <components/NoticeButton.hpp>
+#include <utility/HealthCheckItem.hpp>
+#include <utility/HealthCheckService.hpp>
 #include <widgets/OBSBasic.hpp>
 
 #include "moc_OBSBasicStatusBar.cpp"
@@ -35,6 +38,33 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	statusWidget->ui->delayFrame->hide();
 	statusWidget->ui->issuesFrame->hide();
 	statusWidget->ui->kbps->hide();
+
+	if (auto *healthService = App()->healthService()) {
+		auto *healthIssuesButton = new OBS::NoticeButton(this);
+		statusWidget->ui->healthFrame->layout()->addWidget(healthIssuesButton);
+		statusWidget->ui->healthFrame->setVisible(false);
+
+		connect(healthService, &OBS::HealthCheckService::globalStatusChanged, healthIssuesButton,
+			[statusWidget = this->statusWidget, healthService,
+			 healthIssuesButton](OBS::HealthStatus status) {
+				int invalidCount = healthService->getInvalidCount();
+
+				healthIssuesButton->setText(QTStr("HealthCheck.StatusBar").arg(invalidCount));
+				switch (status) {
+				case OBS::HealthStatus::Warning:
+					healthIssuesButton->setStyle(OBS::NoticeStyle::Warning);
+					break;
+				case OBS::HealthStatus::Critical:
+					healthIssuesButton->setStyle(OBS::NoticeStyle::Danger);
+					break;
+				default:
+					break;
+				}
+				statusWidget->ui->healthFrame->setVisible(status != OBS::HealthStatus::Valid);
+			});
+
+		connect(healthIssuesButton, &QPushButton::clicked, App(), &OBSApp::openHealthCheckDialog);
+	}
 
 	addPermanentWidget(statusWidget, 1);
 	setMinimumHeight(statusWidget->height());

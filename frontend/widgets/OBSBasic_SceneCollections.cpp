@@ -20,6 +20,8 @@
 #include <dialogs/OBSMissingFiles.hpp>
 #include <importer/OBSImporter.hpp>
 #include <models/SceneCollection.hpp>
+#include <utility/HealthCheckItem.hpp>
+#include <utility/HealthCheckService.hpp>
 #include <utility/item-widget-helpers.hpp>
 
 #include <qt-wrappers.hpp>
@@ -1477,8 +1479,22 @@ retryScene:
 
 	LogScenes();
 
-	if (!App()->IsMissingFilesCheckDisabled())
-		ShowMissingFilesDialog(files);
+	size_t missingFilesCount = obs_missing_files_count(files);
+	if (!missingFilesHealthCheck) {
+		missingFilesHealthCheck = App()->healthService()->createItem(this, "missing_files",
+									     QTStr("HealthCheck.MissingFiles.Title"));
+		missingFilesHealthCheck->setMessage(
+			QTStr("HealthCheck.MissingFiles.Info").arg(QString::number(missingFilesCount)));
+
+		OBS::HealthCheckAction *healthAction = missingFilesHealthCheck->createAction();
+		healthAction->setText(QTStr("HealthCheck.MissingFiles.Action"));
+		healthAction->setCallback([this]() { on_actionShowMissingFiles_triggered(); });
+	}
+
+	missingFilesCount > 0 ? missingFilesHealthCheck->setStatus(OBS::HealthStatus::Warning)
+			      : missingFilesHealthCheck->setStatus(OBS::HealthStatus::Valid);
+
+	obs_missing_files_destroy(files);
 
 	disableSaving--;
 
@@ -1638,7 +1654,12 @@ void OBSBasic::ClearSceneData()
 
 void OBSBasic::ShowMissingFilesDialog(obs_missing_files_t *files)
 {
-	if (obs_missing_files_count(files) > 0) {
+	size_t missingCount = obs_missing_files_count(files);
+	if (missingCount > 0) {
+		missingFilesHealthCheck->setStatus(OBS::HealthStatus::Warning);
+		missingFilesHealthCheck->setMessage(
+			QTStr("HealthCheck.MissingFiles.Info").arg(QString::number(missingCount)));
+
 		/* When loading the missing files dialog on launch, the
 		* window hasn't fully initialized by this point on macOS,
 		* so put this at the end of the current task queue. Fixes
@@ -1648,8 +1669,13 @@ void OBSBasic::ShowMissingFilesDialog(obs_missing_files_t *files)
 			missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
 			missDialog->show();
 			missDialog->raise();
+
+			connect(missDialog, &OBSMissingFiles::allFilesResolved, this,
+				[&]() { missingFilesHealthCheck->setStatus(OBS::HealthStatus::Valid); });
 		});
 	} else {
+		missingFilesHealthCheck->setStatus(OBS::HealthStatus::Valid);
+
 		obs_missing_files_destroy(files);
 
 		/* Only raise dialog if triggered manually */
@@ -1659,7 +1685,7 @@ void OBSBasic::ShowMissingFilesDialog(obs_missing_files_t *files)
 	}
 }
 
-void OBSBasic::on_actionShowMissingFiles_triggered()
+obs_missing_files_t *OBSBasic::getMissingFiles()
 {
 	obs_missing_files_t *files = obs_missing_files_create();
 
@@ -1669,5 +1695,12 @@ void OBSBasic::on_actionShowMissingFiles_triggered()
 	};
 
 	obs_enum_all_sources(cb_sources, files);
+
+	return files;
+}
+
+void OBSBasic::on_actionShowMissingFiles_triggered()
+{
+	obs_missing_files_t *files = getMissingFiles();
 	ShowMissingFilesDialog(files);
 }

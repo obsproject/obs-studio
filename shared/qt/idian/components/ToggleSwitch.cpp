@@ -50,6 +50,8 @@ ToggleSwitch::ToggleSwitch(QWidget *parent)
 
 	installEventFilter(this);
 
+	setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
 	connect(this, &ToggleSwitch::clicked, this, &ToggleSwitch::onClicked);
 
 	connect(animHandle, &QVariantAnimation::valueChanged, this, &ToggleSwitch::updateBackgroundColor);

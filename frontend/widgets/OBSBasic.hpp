@@ -66,6 +66,7 @@ class QWidgetAction;
 struct QuickTransition;
 
 namespace OBS {
+class HealthCheckItem;
 class SceneCollection;
 struct Rect;
 enum class LogFileType;
@@ -593,6 +594,10 @@ private:
 	QPointer<QWidgetAction> colorWidgetAction;
 	QPointer<ColorSelect> colorSelect;
 
+#ifdef ENABLE_IDIAN_PLAYGROUND
+	QPointer<QDialog> playground;
+#endif
+
 	QList<QDialog *> visDialogs;
 	QList<QDialog *> modalDialogs;
 	QList<QMessageBox *> visMsgBoxes;
@@ -1073,6 +1078,7 @@ private:
 	bool projectChanged = false;
 	bool clearingFailed = false;
 
+	QPointer<OBS::HealthCheckItem> missingFilesHealthCheck;
 	QPointer<OBSMissingFiles> missDialog;
 
 	OBSSceneCollectionCache collections;
@@ -1086,6 +1092,7 @@ private:
 	void ClearSceneData();
 	void LogScenes();
 	void SaveProjectNow();
+	obs_missing_files_t *getMissingFiles();
 	void ShowMissingFilesDialog(obs_missing_files_t *files);
 
 	void SetupNewSceneCollection(const std::string &collectionName);

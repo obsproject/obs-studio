@@ -21,6 +21,7 @@
 #include <dialogs/LogUploadDialog.hpp>
 #include <plugin-manager/PluginManager.hpp>
 #include <utility/CrashHandler.hpp>
+#include <utility/HealthCheckService.hpp>
 #include <utility/OBSEventFilter.hpp>
 #include <utility/OBSProxyStyle.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
@@ -71,7 +72,6 @@ extern bool safe_mode;
 extern bool multi;
 extern bool disable_3p_plugins;
 extern bool opt_disable_updater;
-extern bool opt_disable_missing_files_check;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
 
@@ -1264,7 +1264,6 @@ bool OBSApp::OBSInit()
 	thumbnailManager = new ThumbnailManager(this);
 
 	mainWindow = new OBSBasic();
-
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 
 #ifndef __APPLE__
@@ -1338,11 +1337,6 @@ bool OBSApp::IsPortableMode()
 bool OBSApp::IsUpdaterDisabled()
 {
 	return opt_disable_updater;
-}
-
-bool OBSApp::IsMissingFilesCheckDisabled()
-{
-	return opt_disable_missing_files_check;
 }
 
 #ifdef __APPLE__
@@ -1993,6 +1987,30 @@ void OBSApp::loadAppModules(struct obs_module_failure_info &mfi)
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 	pluginManager_->postLoad();
+}
+
+OBS::HealthCheckService *OBSApp::healthService()
+{
+	if (healthService_.isNull()) {
+		healthService_ = new OBS::HealthCheckService(this);
+	}
+
+	return healthService_;
+}
+
+void OBSApp::openHealthCheckDialog()
+{
+	if (!mainWindow) {
+		return;
+	}
+
+	if (!healthCheckDialog) {
+		healthCheckDialog = new HealthCheckDialog(mainWindow);
+		healthCheckDialog->setAttribute(Qt::WA_DeleteOnClose);
+		healthCheckDialog->show();
+	} else {
+		healthCheckDialog->raise();
+	}
 }
 
 void OBSApp::pluginManagerOpenDialog()

@@ -221,7 +221,6 @@
     --action_row_border: 3px;
     --action_row_input_width: calc(var(--action_row_base) * 4);
     --action_row_collapse: calc(var(--action_row_base) + var(--padding_large));
-    --action_row_collapse_radius: calc(var(--action_row_collapse) / 2);
     --action_row_padding: calc(var(--padding_large) * 1.5);
     --action_row_padding_x: calc(var(--action_row_padding) * 2);
     --action_row_padding_nested: calc(var(--action_row_padding_x) * 1.5);
@@ -332,6 +331,74 @@
 .text-success {
     color: var(--green3);
 }
+
+/* Color styles */
+QWidget.primary {
+    background: var(--blue5);
+    border: 1px solid var(--blue3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.secondary {
+    background: var(--teal5);
+    border: 1px solid var(--teal3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.info {
+    background: var(--grey8);
+    border: 1px solid var(--grey6);
+    border-radius: var(--border_radius);
+}
+
+QWidget.success {
+    background: var(--green5);
+    border: 1px solid var(--green3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.warning {
+    background: var(--yellow5);
+    border: 1px solid var(--yellow3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.danger {
+    background: var(--red5);
+    border: 1px solid var(--red3);
+    border-radius: var(--border_radius);
+}
+
+QPushButton.primary:hover {
+    background-color: var(--blue4);
+    border-color: var(--blue2);
+}
+
+QPushButton.secondary:hover {
+    background-color: var(--teal4);
+    border-color: var(--teal2);
+}
+
+QPushButton.info:hover {
+    background-color: var(--grey7);
+    border-color: var(--grey4);
+}
+
+QPushButton.success:hover {
+    background-color: var(--green4);
+    border-color: var(--green2);
+}
+
+QPushButton.warning:hover {
+    background-color: var(--yellow4);
+    border-color: var(--yellow2);
+}
+
+QPushButton.danger:hover {
+    background-color: var(--red4);
+    border-color: var(--red2);
+}
+
 
 .frame-notice {
     background: var(--grey8);
@@ -918,6 +985,15 @@ StatusBarWidget > QFrame {
     border: 0px solid var(--border_color);
     border-left-width: 1px;
     padding: 0px var(--padding_xlarge) var(--padding_small);
+}
+
+StatusBarWidget #healthFrame {
+    border-left-width: 0px;
+    border-right-width: 1px;
+}
+
+StatusBarWidget QPushButton {
+    padding: 0px var(--padding_xlarge);
 }
 
 /* Group Box */
@@ -2479,25 +2555,25 @@ SourceSelectButton:pressed:hover {
 }
 
 /* Idian Widgets */
-idian--Group {
+idian--ListHeader {
     border-radius: var(--border_radius);
     font-weight: bold;
     margin: 0 0 var(--spacing_base);
+    padding: 0 var(--padding_base);
     min-width: 300px;
-    max-width: 600px;
 }
 
-idian--Group .header .title {
+idian--ListHeader .title {
     font-weight: bold;
     padding: var(--padding_large) 0;
 }
 
-idian--Group .header .description {
+idian--ListHeader .description {
     color: var(--text_muted);
     padding: var(--spacing_small) 0;
 }
 
-idian--PropertiesList {
+idian--RowList {
     border-width: 0;
     padding: 0;
     margin: var(--spacing_base) 0;
@@ -2507,11 +2583,12 @@ idian--Row {
     background: var(--grey5);
     margin: 0;
     padding: var(--action_row_padding) var(--action_row_padding_x);
+    border-radius: var(--border_radius);
 }
 
 idian--Row.keyFocus {
     background: var(--grey4);
-    border: var(--highlight_width) solid var(--grey4);
+    border: var(--highlight_width) solid var(--highlight_color);
 }
 
 idian--Row.cursor-pointer.hover {
@@ -2519,17 +2596,21 @@ idian--Row.cursor-pointer.hover {
     border: var(--highlight_width) solid var(--grey1);
 }
 
-idian--Row.first {
+idian--RowList idian--Row {
+    border-radius: 0;
+}
+
+idian--RowList idian--Row.first {
     border-top-left-radius: var(--border_radius);
     border-top-right-radius: var(--border_radius);
 }
 
-idian--Row.last {
+idian--RowList idian--Row.last {
     border-bottom-left-radius: var(--border_radius);
     border-bottom-right-radius: var(--border_radius);
 }
 
-idian--Row > QLabel.description {
+idian--RowInfo QLabel.description {
     font-size: var(--font_small);
     color: var(--text_muted);
 }
@@ -2626,7 +2707,7 @@ idian--Row QDoubleSpinBox {
     padding: var(--padding_base) var(--action_row_padding_x);
 }
 
-idian--PropertiesListSpacer {
+idian--RowListSpacer {
     max-height: var(--spacing_small);
     min-height: var(--spacing_small);
     background-color: var(--bg_window);
@@ -2663,35 +2744,54 @@ idian--CheckBox.keyFocus.checked::indicator {
     border-color: var(--highlight_color);
 }
 
-idian--CollapsibleRow {
+idian--CollapsibleGroup {
     margin: 0;
     padding: 0;
     border: none;
 }
 
-idian--CollapsibleRow.keyFocus {
+idian--CollapsibleGroup.expanded > idian--Row {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+idian--CollapsibleGroup idian--Row.keyFocus {
     border: var(--highlight_width) solid var(--highlight_color);
 }
 
-idian--CollapsibleRow idian--PropertiesList {
+idian--CollapsibleGroup idian--RowList {
     border-radius: 0;
     border-left: 1px solid var(--grey5);
     border-right: 1px solid var(--grey5);
     border-bottom: 1px solid var(--grey5);
+    border-bottom: 1px solid var(--grey5);
     margin: var(--spacing_small) 0px 0px;
 }
 
-idian--CollapsibleRow idian--PropertiesList idian--Row {
+idian--CollapsibleGroup idian--RowList idian--Row {
     background-color: var(--grey6);
     padding-left: var(--action_row_padding_nested);
 }
 
-idian--CollapsibleRow idian--Row.first,
-idian--CollapsibleRow idian--Row.last {
+idian--CollapsibleGroup idian--RowList idian--Row.first {
     border-radius: 0;
 }
 
-idian--CollapsibleRow idian--PropertiesList idian--ToggleSwitch {
+idian--CollapsibleGroup idian--RowList idian--Row.last {
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+idian--RowList idian--CollapsibleGroup idian--Row.last {
+    border-radius: 0;
+}
+
+idian--RowList idian--CollapsibleGroup.last idian--Row.last {
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+idian--CollapsibleGroup idian--RowList idian--ToggleSwitch {
     qproperty-background: var(--grey7);
     qproperty-background_hover: var(--grey6);
 }
@@ -2707,7 +2807,7 @@ idian--ExpandButton {
 
 idian--ExpandButton::indicator {
     background: var(--grey5);
-    border-radius: var(--action_row_collapse_radius);
+    border-radius: var(--border_radius);
     padding: var(--padding_large);
     image: url(theme:Dark/down.svg);
     border: var(--highlight_width) solid var(--grey5);
@@ -2718,32 +2818,13 @@ idian--ExpandButton::indicator:checked {
 }
 
 idian--ExpandButton.keyFocus,
-idian--ExpandButton.keyFocus::indicator {
+idian--Row.keyFocus idian--ExpandButton::indicator {
     border-color: var(--highlight_color);
 }
 
-idian--RowFrame .btn-frame {
-    background: var(--grey5);
-    padding: var(--action_row_padding) var(--action_row_padding_x);
-}
-
-idian--RowFrame.hover .btn-frame {
+idian--ExpandButton.hover::indicator,
+idian--Row.hover idian--ExpandButton.row-buddy::indicator {
     background: var(--grey4);
-}
-
-idian--RowFrame.hover idian--Row {
-    background: var(--grey4);
-    border: var(--highlight_width) solid var(--grey1);
-    border-right: none;
-}
-
-idian--RowFrame.hover .row-buddy {
-    background: var(--grey4);
-    border: var(--highlight_width) solid var(--grey1);
-    border-left: none;
-}
-
-idian--RowFrame.hover idian--ExpandButton::indicator {
     border-color: var(--grey1);
 }
 
@@ -2785,4 +2866,21 @@ AlignmentSelector::indicator:disabled {
 
 AlignmentSelector::indicator:checked:disabled {
     background: var(--grey3);
+}
+
+HealthCheckWidget idian--RowList {
+    border-radius: 0;
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+HealthCheckWidget idian--RowList idian--Row {
+    padding: var(--action_row_padding) var(--action_row_padding_x);
+}
+
+HealthCheckStatusLabel {
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    padding: var(--padding_large) var(--padding_xlarge);
+    font-weight: bold;
 }

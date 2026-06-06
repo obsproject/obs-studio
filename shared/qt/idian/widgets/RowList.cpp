@@ -15,70 +15,75 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <Idian/PropertiesList.hpp>
-
-#include <Idian/Row.hpp>
+#include <Idian/RowList.hpp>
 
 #include <QStyle>
 
-#include <Idian/moc_PropertiesList.cpp>
+#include <Idian/moc_RowList.cpp>
 
-using idian::PropertiesList;
+using idian::RowList;
 
-PropertiesList::PropertiesList(QWidget *parent) : QFrame(parent)
+RowList::RowList(QWidget *parent) : QFrame(parent)
 {
 	layout = new QVBoxLayout();
 	layout->setSpacing(0);
 	layout->setContentsMargins(0, 0, 0, 0);
 	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
 
-	rowsList = QList<GenericRow *>();
-
 	setLayout(layout);
+
+	rowLayout = new QVBoxLayout();
+
+	layout->addLayout(rowLayout);
+}
+
+void idian::RowList::addHeader(QWidget *widget)
+{
+	layout->insertWidget(layout->indexOf(rowLayout) - 1, widget);
 }
 
 // Note: This function takes ownership of the added widget
 // and it may be deleted when the properties list is destroyed
 // or the clear() method is called!
-void PropertiesList::addRow(GenericRow *row)
+void RowList::addRow(QWidget *widget)
 {
-	// Add custom spacer once more than one element exists
-	if (layout->count() > 0)
-		layout->addWidget(new PropertiesListSpacer(this));
+	// Add custom spacer when more than one row exists
+	if (rowLayout->count() > 0) {
+		rowLayout->addWidget(new RowListSpacer(this));
+	}
 
 	// Custom properties to work around :first and :last not existing.
 	if (!first) {
-		Utils::addClass(row, "first");
-		first = row;
+		Utils::addClass(widget, "first");
+		first = widget;
 	}
 
 	// Remove last property from existing last item
-	if (last)
+	if (last) {
 		Utils::removeClass(last, "last");
+	}
 
 	// Most recently added item is also always last
-	Utils::addClass(row, "last");
-	last = row;
+	Utils::addClass(widget, "last");
+	last = widget;
 
-	row->setParent(this);
-	rowsList.append(row);
-	layout->addWidget(row);
+	rowLayout->addWidget(widget);
 	adjustSize();
 }
 
-void PropertiesList::clear()
+void RowList::clear()
 {
-	rowsList.clear();
 	first = nullptr;
 	last = nullptr;
-	QLayoutItem *item = layout->takeAt(0);
+	QLayoutItem *item = rowLayout->takeAt(0);
 
 	while (item) {
-		if (item->widget())
+		if (item->widget()) {
 			item->widget()->deleteLater();
+		}
 		delete item;
 
-		item = layout->takeAt(0);
+		item = rowLayout->takeAt(0);
 	}
 
 	adjustSize();

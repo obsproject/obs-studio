@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <dialogs/HealthCheckDialog.hpp>
 #include <utility/NativeEventFilter.hpp>
 #include <utility/OBSTheme.hpp>
 #include <utility/ThumbnailManager.hpp>
@@ -51,6 +52,7 @@ class CrashHandler;
 
 enum class LogFileType { NoType, CurrentAppLog, LastAppLog, CrashLog };
 enum class LogFileState { NoState, New, Uploaded };
+class HealthCheckService;
 class PluginManager;
 } // namespace OBS
 
@@ -92,6 +94,8 @@ private:
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 
 	ThumbnailManager *thumbnailManager = nullptr;
+	QPointer<OBS::HealthCheckService> healthService_;
+	QPointer<HealthCheckDialog> healthCheckDialog;
 
 	std::unique_ptr<OBS::PluginManager> pluginManager_;
 
@@ -195,7 +199,6 @@ public:
 	std::string GetVersionString(bool platform = true) const;
 	bool IsPortableMode();
 	bool IsUpdaterDisabled();
-	bool IsMissingFilesCheckDisabled();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
@@ -231,6 +234,9 @@ public:
 #endif
 
 	void loadAppModules(struct obs_module_failure_info &mfi);
+
+	OBS::HealthCheckService *healthService();
+	void openHealthCheckDialog();
 
 	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 

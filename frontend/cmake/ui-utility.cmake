@@ -19,6 +19,12 @@ target_sources(
     utility/GoLiveAPI_Network.hpp
     utility/GoLiveAPI_PostData.cpp
     utility/GoLiveAPI_PostData.hpp
+    utility/HealthCheckAction.cpp
+    utility/HealthCheckAction.hpp
+    utility/HealthCheckItem.cpp
+    utility/HealthCheckItem.hpp
+    utility/HealthCheckService.cpp
+    utility/HealthCheckService.hpp
     utility/MissingFilesModel.cpp
     utility/MissingFilesModel.hpp
     utility/MissingFilesPathItemDelegate.cpp
