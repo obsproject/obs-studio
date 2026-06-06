@@ -59,5 +59,6 @@ struct SimpleOutput : BasicOutputHandler {
 	virtual void StopReplayBuffer(bool force) override;
 	virtual bool StreamingActive() const override;
 	virtual bool RecordingActive() const override;
+	virtual bool RecordingPaused() const override;
 	virtual bool ReplayBufferActive() const override;
 };

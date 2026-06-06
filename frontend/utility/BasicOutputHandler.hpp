@@ -21,11 +21,6 @@ struct BasicOutputHandler {
 	OBSOutputAutoRelease streamOutput;
 	OBSOutputAutoRelease replayBuffer;
 	OBSOutputAutoRelease virtualCam;
-	bool streamingActive = false;
-	bool recordingActive = false;
-	bool delayActive = false;
-	bool replayBufferActive = false;
-	bool virtualCamActive = false;
 	OBSBasic *main;
 
 	std::unique_ptr<MultitrackVideoOutput> multitrackVideo;
@@ -82,6 +77,7 @@ struct BasicOutputHandler {
 	virtual void StopVirtualCam();
 	virtual bool StreamingActive() const = 0;
 	virtual bool RecordingActive() const = 0;
+	virtual bool RecordingPaused() const = 0;
 	virtual bool ReplayBufferActive() const { return false; }
 	virtual bool VirtualCamActive() const;
 
@@ -92,11 +88,7 @@ struct BasicOutputHandler {
 	virtual void DestroyVirtualCamView();
 	virtual void DestroyVirtualCameraScene();
 
-	inline bool Active() const
-	{
-		return streamingActive || recordingActive || delayActive || replayBufferActive || virtualCamActive ||
-		       multitrackVideoActive;
-	}
+	inline bool Active() const { return obs_video_active(); }
 
 protected:
 	void SetupAutoRemux(const char *&container);

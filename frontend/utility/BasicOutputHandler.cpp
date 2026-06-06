@@ -15,12 +15,6 @@ using namespace std;
 
 extern bool EncoderAvailable(const char *encoder);
 
-volatile bool streaming_active = false;
-volatile bool recording_active = false;
-volatile bool recording_paused = false;
-volatile bool replaybuf_active = false;
-volatile bool virtualcam_active = false;
-
 void OBSStreamStarting(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
@@ -30,7 +24,6 @@ void OBSStreamStarting(void *data, calldata_t *params)
 	if (sec == 0)
 		return;
 
-	output->delayActive = true;
 	QMetaObject::invokeMethod(output->main, "StreamDelayStarting", Q_ARG(int, sec));
 }
 
@@ -49,8 +42,6 @@ void OBSStreamStopping(void *data, calldata_t *params)
 void OBSStartStreaming(void *data, calldata_t * /* params */)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
-	output->streamingActive = true;
-	os_atomic_set_bool(&streaming_active, true);
 	QMetaObject::invokeMethod(output->main, "StreamingStart");
 }
 
@@ -62,19 +53,13 @@ void OBSStopStreaming(void *data, calldata_t *params)
 
 	QString arg_last_error = QString::fromUtf8(last_error);
 
-	output->streamingActive = false;
-	output->delayActive = false;
 	output->multitrackVideoActive = false;
-	os_atomic_set_bool(&streaming_active, false);
 	QMetaObject::invokeMethod(output->main, "StreamingStop", Q_ARG(int, code), Q_ARG(QString, arg_last_error));
 }
 
 void OBSStartRecording(void *data, calldata_t * /* params */)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
-
-	output->recordingActive = true;
-	os_atomic_set_bool(&recording_active, true);
 	QMetaObject::invokeMethod(output->main, "RecordingStart");
 }
 
@@ -85,10 +70,6 @@ void OBSStopRecording(void *data, calldata_t *params)
 	const char *last_error = calldata_string(params, "last_error");
 
 	QString arg_last_error = QString::fromUtf8(last_error);
-
-	output->recordingActive = false;
-	os_atomic_set_bool(&recording_active, false);
-	os_atomic_set_bool(&recording_paused, false);
 	QMetaObject::invokeMethod(output->main, "RecordingStop", Q_ARG(int, code), Q_ARG(QString, arg_last_error));
 }
 
@@ -113,9 +94,6 @@ void OBSRecordFileChanged(void *data, calldata_t *params)
 void OBSStartReplayBuffer(void *data, calldata_t * /* params */)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
-
-	output->replayBufferActive = true;
-	os_atomic_set_bool(&replaybuf_active, true);
 	QMetaObject::invokeMethod(output->main, "ReplayBufferStart");
 }
 
@@ -123,9 +101,6 @@ void OBSStopReplayBuffer(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
 	int code = (int)calldata_int(params, "code");
-
-	output->replayBufferActive = false;
-	os_atomic_set_bool(&replaybuf_active, false);
 	QMetaObject::invokeMethod(output->main, "ReplayBufferStop", Q_ARG(int, code));
 }
 
@@ -144,9 +119,6 @@ void OBSReplayBufferSaved(void *data, calldata_t * /* params */)
 static void OBSStartVirtualCam(void *data, calldata_t * /* params */)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
-
-	output->virtualCamActive = true;
-	os_atomic_set_bool(&virtualcam_active, true);
 	QMetaObject::invokeMethod(output->main, "OnVirtualCamStart");
 }
 
@@ -154,9 +126,6 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
 	int code = (int)calldata_int(params, "code");
-
-	output->virtualCamActive = false;
-	os_atomic_set_bool(&virtualcam_active, false);
 	QMetaObject::invokeMethod(output->main, "OnVirtualCamStop", Q_ARG(int, code));
 }
 

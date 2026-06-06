@@ -6,12 +6,6 @@
 
 #include <qt-wrappers.hpp>
 
-extern volatile bool streaming_active;
-extern volatile bool recording_active;
-extern volatile bool recording_paused;
-extern volatile bool replaybuf_active;
-extern volatile bool virtualcam_active;
-
 template<typename T>
 inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
 {
@@ -230,7 +224,7 @@ void OBSStudioAPI::obs_frontend_streaming_stop()
 
 bool OBSStudioAPI::obs_frontend_streaming_active()
 {
-	return os_atomic_load_bool(&streaming_active);
+	return main->outputHandler->StreamingActive();
 }
 
 void OBSStudioAPI::obs_frontend_recording_start()
@@ -245,7 +239,7 @@ void OBSStudioAPI::obs_frontend_recording_stop()
 
 bool OBSStudioAPI::obs_frontend_recording_active()
 {
-	return os_atomic_load_bool(&recording_active);
+	return main->outputHandler->RecordingActive();
 }
 
 void OBSStudioAPI::obs_frontend_recording_pause(bool pause)
@@ -255,12 +249,12 @@ void OBSStudioAPI::obs_frontend_recording_pause(bool pause)
 
 bool OBSStudioAPI::obs_frontend_recording_paused()
 {
-	return os_atomic_load_bool(&recording_paused);
+	return main->outputHandler->RecordingPaused();
 }
 
 bool OBSStudioAPI::obs_frontend_recording_split_file()
 {
-	if (os_atomic_load_bool(&recording_active) && !os_atomic_load_bool(&recording_paused)) {
+	if (main->outputHandler->RecordingActive() || !main->outputHandler->RecordingPaused()) {
 		proc_handler_t *ph = obs_output_get_proc_handler(main->outputHandler->fileOutput);
 		uint8_t stack[128];
 		calldata cd;
@@ -275,7 +269,7 @@ bool OBSStudioAPI::obs_frontend_recording_split_file()
 
 bool OBSStudioAPI::obs_frontend_recording_add_chapter(const char *name)
 {
-	if (!os_atomic_load_bool(&recording_active) || os_atomic_load_bool(&recording_paused))
+	if (!main->outputHandler->RecordingActive() || main->outputHandler->RecordingPaused())
 		return false;
 
 	proc_handler_t *ph = obs_output_get_proc_handler(main->outputHandler->fileOutput);
@@ -305,7 +299,7 @@ void OBSStudioAPI::obs_frontend_replay_buffer_stop()
 
 bool OBSStudioAPI::obs_frontend_replay_buffer_active()
 {
-	return os_atomic_load_bool(&replaybuf_active);
+	return main->outputHandler->ReplayBufferActive();
 }
 
 void *OBSStudioAPI::obs_frontend_add_tools_menu_qaction(const char *name)
@@ -594,7 +588,7 @@ void OBSStudioAPI::obs_frontend_stop_virtualcam()
 
 bool OBSStudioAPI::obs_frontend_virtualcam_active()
 {
-	return os_atomic_load_bool(&virtualcam_active);
+	return main->outputHandler->VirtualCamActive();
 }
 
 void OBSStudioAPI::obs_frontend_reset_video()

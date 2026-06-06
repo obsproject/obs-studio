@@ -749,7 +749,7 @@ void SimpleOutput::UpdateRecording()
 	int idx2 = 0;
 	const char *quality = config_get_string(main->Config(), "SimpleOutput", "RecQuality");
 
-	if (replayBufferActive || recordingActive)
+	if (ReplayBufferActive() || RecordingActive())
 		return;
 
 	if (usingRecordingPreset) {
@@ -918,6 +918,11 @@ bool SimpleOutput::StreamingActive() const
 bool SimpleOutput::RecordingActive() const
 {
 	return obs_output_active(fileOutput);
+}
+
+bool SimpleOutput::RecordingPaused() const
+{
+	return obs_output_paused(fileOutput);
 }
 
 bool SimpleOutput::ReplayBufferActive() const

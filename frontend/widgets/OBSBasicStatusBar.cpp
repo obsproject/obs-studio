@@ -263,11 +263,10 @@ void OBSBasicStatusBar::UpdateStreamTime()
 	}
 }
 
-extern volatile bool recording_paused;
-
 void OBSBasicStatusBar::UpdateRecordTime()
 {
-	bool paused = os_atomic_load_bool(&recording_paused);
+	OBSBasic *main = qobject_cast<OBSBasic *>(parent());
+	bool paused = main->outputHandler->RecordingPaused();
 
 	if (!paused) {
 		totalRecordSeconds++;
@@ -286,13 +285,15 @@ void OBSBasicStatusBar::UpdateRecordTime()
 
 void OBSBasicStatusBar::UpdateRecordTimeLabel()
 {
+	OBSBasic *main = qobject_cast<OBSBasic *>(parent());
+
 	int seconds = totalRecordSeconds % 60;
 	int totalMinutes = totalRecordSeconds / 60;
 	int minutes = totalMinutes % 60;
 	int hours = totalMinutes / 60;
 
 	QString text = QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
-	if (os_atomic_load_bool(&recording_paused)) {
+	if (main->outputHandler->RecordingPaused()) {
 		text += QStringLiteral(" (PAUSED)");
 	}
 
@@ -550,6 +551,8 @@ static QPixmap GetPixmap(const QString &filename)
 
 void OBSBasicStatusBar::UpdateIcons()
 {
+	OBSBasic *main = qobject_cast<OBSBasic *>(parent());
+
 	disconnectedPixmap = GetPixmap("network-disconnected.svg");
 	inactivePixmap = GetPixmap("network-inactive.svg");
 
@@ -558,7 +561,7 @@ void OBSBasicStatusBar::UpdateIcons()
 	recordingInactivePixmap = GetPixmap("recording-inactive.svg");
 	recordingPauseInactivePixmap = GetPixmap("recording-pause-inactive.svg");
 
-	bool streaming = obs_frontend_streaming_active();
+	bool streaming = main->outputHandler && main->outputHandler->StreamingActive();
 
 	if (!streaming) {
 		statusWidget->ui->streamIcon->setPixmap(streamingInactivePixmap);
@@ -568,7 +571,7 @@ void OBSBasicStatusBar::UpdateIcons()
 			statusWidget->ui->statusIcon->setPixmap(disconnectedPixmap);
 	}
 
-	bool recording = obs_frontend_recording_active();
+	bool recording = main->outputHandler && main->outputHandler->RecordingActive();
 
 	if (!recording)
 		statusWidget->ui->recordIcon->setPixmap(recordingInactivePixmap);

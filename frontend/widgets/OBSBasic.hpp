@@ -729,7 +729,7 @@ private:
 				trayIcon->setIcon(QIcon::fromTheme("obs-tray", trayIconFile));
 			}
 		} else if (outputHandler->Active() && trayIcon && trayIcon->isVisible()) {
-			if (os_atomic_load_bool(&recording_paused)) {
+			if (outputHandler->RecordingPaused()) {
 #ifdef __APPLE__
 				QIcon trayIconFile = QIcon(":/res/images/obs_paused_macos.svg");
 				trayIconFile.setIsMask(true);

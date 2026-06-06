@@ -930,6 +930,11 @@ bool AdvancedOutput::RecordingActive() const
 	return obs_output_active(fileOutput);
 }
 
+bool AdvancedOutput::RecordingPaused() const
+{
+	return obs_output_paused(fileOutput);
+}
+
 bool AdvancedOutput::ReplayBufferActive() const
 {
 	return obs_output_active(replayBuffer);

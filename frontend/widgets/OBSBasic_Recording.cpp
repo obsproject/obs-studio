@@ -42,8 +42,6 @@ void OBSBasic::on_actionShow_Recordings_triggered()
 #define RECORDING_START "==== Recording Start ==============================================="
 #define RECORDING_STOP "==== Recording Stop ================================================"
 
-extern volatile bool replaybuf_active;
-
 void OBSBasic::AutoRemux(QString input, bool no_show)
 {
 	auto config = Config();
@@ -272,15 +270,12 @@ bool OBSBasic::RecordingActive()
 
 void OBSBasic::PauseRecording()
 {
-	if (!isRecordingPausable || !outputHandler || !outputHandler->fileOutput ||
-	    os_atomic_load_bool(&recording_paused))
+	if (!isRecordingPausable || !outputHandler || !outputHandler->fileOutput || outputHandler->RecordingPaused())
 		return;
 
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, true)) {
-		os_atomic_set_bool(&recording_paused, true);
-
 		emit RecordingPaused();
 
 		ui->statusbar->RecordingPaused();
@@ -298,22 +293,19 @@ void OBSBasic::PauseRecording()
 
 		OnEvent(OBS_FRONTEND_EVENT_RECORDING_PAUSED);
 
-		if (os_atomic_load_bool(&replaybuf_active))
+		if (outputHandler->ReplayBufferActive())
 			ShowReplayBufferPauseWarning();
 	}
 }
 
 void OBSBasic::UnpauseRecording()
 {
-	if (!isRecordingPausable || !outputHandler || !outputHandler->fileOutput ||
-	    !os_atomic_load_bool(&recording_paused))
+	if (!isRecordingPausable || !outputHandler || !outputHandler->fileOutput || !outputHandler->RecordingPaused())
 		return;
 
 	obs_output_t *output = outputHandler->fileOutput;
 
 	if (obs_output_pause(output, false)) {
-		os_atomic_set_bool(&recording_paused, false);
-
 		emit RecordingUnpaused();
 
 		ui->statusbar->RecordingUnpaused();

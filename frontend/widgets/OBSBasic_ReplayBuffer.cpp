@@ -90,7 +90,7 @@ void OBSBasic::StartReplayBuffer()
 
 	SaveProject();
 
-	if (outputHandler->StartReplayBuffer() && os_atomic_load_bool(&recording_paused)) {
+	if (outputHandler->StartReplayBuffer() && outputHandler->RecordingPaused()) {
 		ShowReplayBufferPauseWarning();
 	}
 }
