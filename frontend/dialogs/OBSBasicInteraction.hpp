@@ -33,7 +33,7 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicInteraction> ui;
-	OBSSource source;
+	OBSWeakSourceAutoRelease weakSource;
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	std::unique_ptr<OBSEventFilter> eventFilter;
@@ -53,10 +53,12 @@ private:
 	OBSEventFilter *BuildEventFilter();
 
 public:
-	OBSBasicInteraction(QWidget *parent, OBSSource source_);
+	OBSBasicInteraction(QWidget *parent, OBSSource source);
 	~OBSBasicInteraction();
 
 	void Init();
+
+	inline OBSSource getSource() { return OBSGetStrongRef(weakSource); }
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
