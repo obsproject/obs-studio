@@ -11,8 +11,12 @@
 #include <mutex>
 #include <thread>
 #include <algorithm>
+#include <chrono>
+#include <condition_variable>
 
 #include <rtc/rtc.hpp>
+#include <vector>
+#include <rtc/candidate.hpp>
 
 struct videoLayerState {
 	uint16_t sequenceNumber;
@@ -45,14 +49,35 @@ private:
 	void SendDelete();
 	void StopThread(bool signal);
 	void ParseLinkHeader(std::string linkHeader, std::vector<rtc::IceServer> &iceServers);
+	bool FetchIceServersViaOptions(std::vector<rtc::IceServer> &iceServers);
 	void Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
+	void SendTrickleCandidate(const rtc::Candidate &candidate);
+	void SendEndOfCandidates();
+	void SendTrickleIcePatch(const std::string &sdp_frag);
 
 	obs_output_t *output;
 
 	std::string endpoint_url;
 	std::string bearer_token;
 	std::string resource_url;
+	std::mutex resource_etag_mutex;
+	std::string resource_etag;
+
+	std::mutex ice_gathering_mutex;
+	std::condition_variable ice_gathering_cv;
+	std::atomic<bool> ice_gathering_complete;
+	std::atomic<bool> has_first_candidate;
+	std::atomic<bool> offer_sent;
+	bool has_ice_servers;
+
+	// Trickle ICE support (RFC 8840)
+	std::string ice_ufrag;
+	std::string ice_pwd;
+	std::string first_mid;
+	std::vector<rtc::Candidate> pending_candidates; // Queued until POST completes
+	std::mutex pending_candidates_mutex;
+	std::atomic<bool> post_response_gather_started; // Distinguishes pre-offer vs final gather
 
 	std::atomic<bool> running;
 
