@@ -16,7 +16,9 @@
 #include <QUrl>
 #include <QUrlQuery>
 
+#include <algorithm>
 #include <cinttypes>
+#include <string_view>
 
 // Codec profile strings
 static const char *h264_main = "Main";
@@ -26,26 +28,16 @@ static const char *hevc_main = "Main";
 static const char *hevc_main10 = "Main 10";
 static const char *av1_main = "Main";
 
+constexpr std::string_view kCustomRtmpIdentifier{"rtmp_custom"};
+
 // Maximum reconnect attempts with an invalid key error before giving up (roughly 30 seconds with default start value)
 static constexpr uint8_t MAX_RECONNECT_ATTEMPTS = 5;
+
+using json = nlohmann::json;
 
 Qt::ConnectionType BlockingConnectionTypeFor(QObject *object)
 {
 	return object->thread() == QThread::currentThread() ? Qt::DirectConnection : Qt::BlockingQueuedConnection;
-}
-
-bool MultitrackVideoDeveloperModeEnabled()
-{
-	static bool developer_mode = [] {
-		auto args = qApp->arguments();
-		for (const auto &arg : args) {
-			if (arg == "--enable-multitrack-video-dev") {
-				return true;
-			}
-		}
-		return false;
-	}();
-	return developer_mode;
 }
 
 static OBSServiceAutoRelease create_service(const GoLiveApi::Config &go_live_config,
@@ -236,7 +228,14 @@ static OBSEncoderAutoRelease create_video_encoder(DStr &name_buffer, size_t enco
 
 	dstr_printf(name_buffer, "multitrack video video encoder %zu", encoder_index);
 
-	OBSDataAutoRelease encoder_settings = obs_data_create_from_json(encoder_config.settings.dump().c_str());
+	// settings.dump() produces "null" when the config omits encoder settings, which
+	// obs_data_create_from_json cannot parse. Fall back to empty settings so the encoder uses its defaults.
+	OBSDataAutoRelease encoder_settings =
+		encoder_config.settings.is_object() ? obs_data_create_from_json(encoder_config.settings.dump().c_str())
+						    : obs_data_create();
+	if (!encoder_config.settings.is_object()) {
+		blog(LOG_INFO, "Encoder %zu has no settings, using defaults", encoder_index);
+	}
 
 	/* VAAPI-based encoders unfortunately use an integer for "profile". Until a string-based "profile" can be used with
 	 * VAAPI, find the corresponding integer value and update the settings with an integer-based "profile".
@@ -410,49 +409,53 @@ void MultitrackVideoOutput::PrepareStreaming(
 	     rtmp_url.has_value() ? rtmp_url->c_str() : "",
 	     vod_track_info_storage->array ? vod_track_info_storage->array : "No", canvasNames.c_str());
 
-	const bool custom_config_only = auto_config_url.isEmpty() && custom_config.has_value() &&
-					strcmp(obs_service_get_id(service), "rtmp_custom") == 0;
+	// This will crash if serviceId is a nullptr. Deliberately unhandled because that would constitute a critical
+	// application state error.
+	const char *serviceId = obs_service_get_id(service);
+	std::string_view serviceIdString{serviceId};
 
-	if (!custom_config_only) {
-		auto go_live_post = constructGoLivePost(stream_key, maximum_aggregate_bitrate, maximum_video_tracks,
-							vod_track_mixer.has_value(), canvases);
+	bool isCustomRtmpService = (serviceIdString == kCustomRtmpIdentifier);
+	bool hasAutoConfigUrl = !auto_config_url.isEmpty();
+	bool hasCustomConfig = custom_config.has_value();
 
-		go_live_config = DownloadGoLiveConfig(parent, auto_config_url, go_live_post, multitrack_video_name);
-	}
+	if (!isCustomRtmpService) {
+		if (hasAutoConfigUrl) {
+			auto go_live_post = constructGoLivePost(stream_key, maximum_aggregate_bitrate,
+								maximum_video_tracks, vod_track_mixer.has_value(),
+								canvases);
 
-	if (custom_config.has_value()) {
-		GoLiveApi::Config parsed_custom;
-		try {
-			parsed_custom = nlohmann::json::parse(*custom_config);
-		} catch (const nlohmann::json::exception &exception) {
-			blog(LOG_WARNING, "Failed to parse custom config: %s", exception.what());
-			throw MultitrackVideoError::critical(QTStr("FailedToStartStream.InvalidCustomConfig"));
+			go_live_config =
+				DownloadGoLiveConfig(parent, auto_config_url, go_live_post, multitrack_video_name);
+
+			if (go_live_config) {
+				blog(LOG_INFO, "Enhanced broadcasting config_id: '%s'",
+				     go_live_config->meta.config_id.c_str());
+			}
 		}
+	} else {
+		if (hasCustomConfig) {
+			GoLiveApi::Config parsed_custom;
+			try {
+				parsed_custom = nlohmann::json::parse(*custom_config);
+			} catch (const nlohmann::json::exception &exception) {
+				blog(LOG_WARNING, "Failed to parse custom config: %s", exception.what());
+				throw MultitrackVideoError::critical(QTStr("FailedToStartStream.InvalidCustomConfig"));
+			}
 
-		// copy unique ID from go live request
-		if (go_live_config.has_value()) {
-			parsed_custom.meta.config_id = go_live_config->meta.config_id;
-			blog(LOG_INFO, "Using config_id from go live config with custom config: %s",
-			     parsed_custom.meta.config_id.c_str());
+			nlohmann::json custom_data = parsed_custom;
+			blog(LOG_INFO, "Using custom go live config: %s", custom_data.dump(4).c_str());
+
+			custom.emplace(std::move(parsed_custom));
 		}
-
-		nlohmann::json custom_data = parsed_custom;
-		blog(LOG_INFO, "Using custom go live config: %s", custom_data.dump(4).c_str());
-
-		custom.emplace(std::move(parsed_custom));
 	}
 
-	if (go_live_config.has_value()) {
-		blog(LOG_INFO, "Enhanced broadcasting config_id: '%s'", go_live_config->meta.config_id.c_str());
-	}
-
-	if (!go_live_config && !custom) {
+	if (!(go_live_config || custom)) {
 		blog(LOG_ERROR, "MultitrackVideoOutput: no config set, this should never happen");
-		throw MultitrackVideoError::warning(QTStr("FailedToStartStream.NoConfig"));
+		throw MultitrackVideoError::warning(QTStr("FailedToStartStream.NoConfigSupplied"));
 	}
 
 	const auto &output_config = custom ? *custom : *go_live_config;
-	const auto &service_config = go_live_config ? *go_live_config : *custom;
+	const auto &service_config = custom ? *custom : *go_live_config;
 
 	std::vector<OBSEncoderAutoRelease> audio_encoders;
 	std::shared_ptr<obs_encoder_group_t> video_encoder_group;
@@ -574,85 +577,10 @@ void MultitrackVideoOutput::StopStreaming()
 		obs_output_stop(dump_output);
 }
 
-bool MultitrackVideoOutput::HandleIncompatibleSettings(QWidget *parent, config_t *config, obs_service_t *service,
-						       bool &enableDynBitrate)
-{
-	QString incompatible_settings;
-	QString where_to_disable;
-	QString incompatible_settings_list;
-
-	size_t num = 1;
-
-	auto check_setting = [&](bool setting, const char *name, const char *section) {
-		if (!setting)
-			return;
-
-		incompatible_settings += QString(" %1. %2\n").arg(num).arg(QTStr(name));
-
-		where_to_disable += QString(" %1. [%2 → %3 → %4]\n")
-					    .arg(num)
-					    .arg(QTStr("Settings"))
-					    .arg(QTStr("Basic.Settings.Advanced"))
-					    .arg(QTStr(section));
-
-		incompatible_settings_list += QString("%1, ").arg(name);
-
-		num += 1;
-	};
-
-	check_setting(enableDynBitrate, "Basic.Settings.Output.DynamicBitrate.Beta", "Basic.Settings.Advanced.Network");
-
-	if (incompatible_settings.isEmpty())
-		return true;
-
-	OBSDataAutoRelease service_settings = obs_service_get_settings(service);
-
-	QMessageBox mb(parent);
-	mb.setIcon(QMessageBox::Critical);
-	mb.setWindowTitle(QTStr("MultitrackVideo.IncompatibleSettings.Title"));
-	mb.setText(QString(QTStr("MultitrackVideo.IncompatibleSettings.Text"))
-			   .arg(obs_data_get_string(service_settings, "multitrack_video_name"))
-			   .arg(incompatible_settings)
-			   .arg(where_to_disable));
-	auto this_stream = mb.addButton(QTStr("MultitrackVideo.IncompatibleSettings.DisableAndStartStreaming"),
-					QMessageBox::AcceptRole);
-	auto all_streams = mb.addButton(QString(QTStr("MultitrackVideo.IncompatibleSettings.UpdateAndStartStreaming")),
-					QMessageBox::AcceptRole);
-	mb.setStandardButtons(QMessageBox::StandardButton::Cancel);
-
-	mb.exec();
-
-	const char *action = "cancel";
-	if (mb.clickedButton() == this_stream) {
-		action = "DisableAndStartStreaming";
-	} else if (mb.clickedButton() == all_streams) {
-		action = "UpdateAndStartStreaming";
-	}
-
-	blog(LOG_INFO,
-	     "MultitrackVideoOutput: attempted to start stream with incompatible"
-	     "settings (%s); action taken: %s",
-	     incompatible_settings_list.toUtf8().constData(), action);
-
-	if (mb.clickedButton() == this_stream || mb.clickedButton() == all_streams) {
-		enableDynBitrate = false;
-
-		if (mb.clickedButton() == all_streams) {
-			config_set_bool(config, "Output", "DynamicBitrate", false);
-		}
-
-		return true;
-	}
-
-	MultitrackVideoOutput::ReleaseOnMainThread(take_current());
-	MultitrackVideoOutput::ReleaseOnMainThread(take_current_stream_dump());
-
-	return false;
-}
-
 static bool create_video_encoders(const GoLiveApi::Config &go_live_config,
 				  std::shared_ptr<obs_encoder_group_t> &video_encoder_group, obs_output_t *output,
-				  obs_output_t *recording_output, const std::vector<OBSCanvasAutoRelease> &canvases)
+				  obs_output_t *recording_output, json &bitrate_interpolation_array,
+				  const std::vector<OBSCanvasAutoRelease> &canvases)
 {
 	DStr video_encoder_name_buffer;
 	if (go_live_config.encoder_configurations.empty()) {
@@ -684,6 +612,13 @@ static bool create_video_encoders(const GoLiveApi::Config &go_live_config,
 		obs_output_set_video_encoder2(output, encoder, i);
 		if (recording_output)
 			obs_output_set_video_encoder2(recording_output, encoder, i);
+
+		auto &data = go_live_config.encoder_configurations[i].bitrate_interpolation_points;
+		if (data.has_value()) {
+			bitrate_interpolation_array.push_back(*data);
+		} else {
+			bitrate_interpolation_array.push_back(json::array());
+		}
 	}
 
 	video_encoder_group = encoder_group;
@@ -742,7 +677,15 @@ static void create_audio_encoders(const GoLiveApi::Config &go_live_config,
 
 		for (size_t i = 0; i < configs.size(); i++) {
 			dstr_printf(encoder_name_buffer, "%s %zu", name_prefix, i);
-			OBSDataAutoRelease settings = obs_data_create_from_json(configs[i].settings.dump().c_str());
+			// settings.dump() produces "null" when the config omits encoder settings,
+			// which obs_data_create_from_json cannot parse. Fall back to empty settings.
+			OBSDataAutoRelease settings =
+				configs[i].settings.is_object()
+					? obs_data_create_from_json(configs[i].settings.dump().c_str())
+					: obs_data_create();
+			if (!configs[i].settings.is_object()) {
+				blog(LOG_INFO, "Audio encoder %zu has no settings, using defaults", i);
+			}
 			OBSEncoderAutoRelease audio_encoder =
 				create_audio_encoder(encoder_name_buffer->array, audio_encoder_id, settings, mixer_idx);
 
@@ -843,8 +786,25 @@ static OBSOutputs SetupOBSOutput(QWidget *parent, const QString &multitrack_vide
 	if (dump_stream_to_file_config)
 		recording_output = create_recording_output(dump_stream_to_file_config);
 
-	if (!create_video_encoders(go_live_config, video_encoder_group, output, recording_output, canvases))
+	json bitrate_interpolation_array = json::array();
+	if (!create_video_encoders(go_live_config, video_encoder_group, output, recording_output,
+				   bitrate_interpolation_array, canvases))
 		return {nullptr, nullptr};
+
+	OBSDataAutoRelease settings = obs_output_get_settings(output);
+	// Only set interpolation_table_data if every encoder has interpolation points. Partial data would
+	// fail validation in the output plugin and disable DBR. Omitting it lets the output use its default
+	// linear interpolation (proportional scaling from 0 to max bitrate).
+	bool has_interpolation_data = std::all_of(bitrate_interpolation_array.begin(),
+						  bitrate_interpolation_array.end(),
+						  [](const json &arr) { return !arr.empty(); });
+	if (has_interpolation_data) {
+		obs_data_set_string(settings, "interpolation_table_data", bitrate_interpolation_array.dump().c_str());
+	} else {
+		blog(LOG_INFO,
+		     "Interpolation data missing for one or more encoders, using default linear interpolation");
+	}
+	obs_output_update(output, settings);
 
 	std::vector<speaker_layout> requested_speaker_layouts;
 	speaker_layout current_layout = SPEAKERS_UNKNOWN;

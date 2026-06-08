@@ -47,7 +47,7 @@ endif()
 
 set_target_properties_obs(
   decklink-output-ui
-  PROPERTIES FOLDER frontend
+  PROPERTIES FOLDER plugins/decklink
              PREFIX ""
              AUTOMOC ON
              AUTOUIC ON
