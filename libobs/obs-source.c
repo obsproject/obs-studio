@@ -641,8 +641,10 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name, b
 		if (scene && !create_private) {
 			return obs_source_get_ref(source);
 		}
-		if (!scene)
+		if (!scene) {
 			scene = obs_group_from_source(source);
+			new_name = obs_source_get_name(source);
+		}
 		if (!scene)
 			return NULL;
 
