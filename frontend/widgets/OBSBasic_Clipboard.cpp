@@ -207,19 +207,36 @@ void OBSBasic::actionPasteFilters()
 	SourcePasteFilters(source.Get(), dstSource);
 }
 
+void OBSBasic::copyFiltersFromSource(const OBSSource &source)
+{
+	if (!source) {
+		return;
+	}
+
+	copyFiltersSource_ = obs_source_get_weak_source(source);
+	ui->actionPasteFilters->setEnabled(true);
+}
+
+void OBSBasic::pasteFiltersToSource(const OBSSource &targetSource)
+{
+	if (!targetSource) {
+		return;
+	}
+
+	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
+	SourcePasteFilters(source.Get(), targetSource.Get());
+}
+
 void OBSBasic::SceneCopyFilters()
 {
-	copyFiltersSource_ = obs_source_get_weak_source(GetCurrentSceneSource());
-	ui->actionPasteFilters->setEnabled(true);
+	OBSSource source = GetCurrentSceneSource();
+	copyFiltersFromSource(source);
 }
 
 void OBSBasic::ScenePasteFilters()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
-
-	OBSSource dstSource = GetCurrentSceneSource();
-
-	SourcePasteFilters(source.Get(), dstSource);
+	OBSSource source = GetCurrentSceneSource();
+	pasteFiltersToSource(source);
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()

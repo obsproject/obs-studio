@@ -997,105 +997,6 @@
      <property name="bottomMargin">
       <number>1</number>
      </property>
-     <item>
-      <widget class="QFrame" name="scenesFrame">
-       <layout class="QVBoxLayout" name="verticalLayout_12">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="SceneTree" name="scenes">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="contextMenuPolicy">
-           <enum>Qt::CustomContextMenu</enum>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Plain</enum>
-          </property>
-          <property name="showDropIndicator" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
-          <property name="dragDropMode">
-           <enum>QAbstractItemView::InternalMove</enum>
-          </property>
-          <property name="defaultDropAction">
-           <enum>Qt::TargetMoveAction</enum>
-          </property>
-          <!-- Spacing must be 0 due to QTBUG-106395 -->
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <addaction name="actionRemoveScene"/>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolBar" name="scenesToolbar">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-          <property name="floatable">
-           <bool>false</bool>
-          </property>
-          <addaction name="actionAddScene"/>
-          <addaction name="actionRemoveScene"/>
-          <addaction name="separator"/>
-          <addaction name="actionSceneFilters"/>
-          <addaction name="separator"/>
-          <addaction name="actionSceneUp"/>
-          <addaction name="actionSceneDown"/>
-         </widget>
-        </item>
-        <item>
-         <spacer name="scenesFixedSizeHSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>150</width>
-            <height>0</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </widget>
-     </item>
     </layout>
    </widget>
   </widget>
@@ -1173,7 +1074,6 @@
           <property name="selectionMode">
            <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
-          <!-- Spacing must be 0 due to QTBUG-106395 -->
           <property name="spacing">
            <number>0</number>
           </property>
@@ -1493,21 +1393,6 @@
     </layout>
    </widget>
   </widget>
-  <action name="actionAddScene">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Add</string>
-   </property>
-   <property name="toolTip">
-    <string>AddScene</string>
-   </property>
-   <property name="class" stdset="0">
-    <string notr="true">icon-plus</string>
-   </property>
-  </action>
   <action name="actionAddSource">
    <property name="icon">
     <iconset resource="obs.qrc">
@@ -1521,30 +1406,6 @@
    </property>
    <property name="class" stdset="0">
     <string notr="true">icon-plus</string>
-   </property>
-  </action>
-  <action name="actionRemoveScene">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Remove</string>
-   </property>
-   <property name="toolTip">
-    <string>RemoveScene</string>
-   </property>
-   <property name="shortcut">
-    <string>Del</string>
-   </property>
-   <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>false</bool>
-   </property>
-   <property name="class" stdset="0">
-    <string notr="true">icon-trash</string>
    </property>
   </action>
   <action name="actionRemoveSource">
@@ -1589,21 +1450,6 @@
     <string notr="true">icon-gear</string>
    </property>
   </action>
-  <action name="actionSceneUp">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
-   </property>
-   <property name="text">
-    <string>MoveUp</string>
-   </property>
-   <property name="toolTip">
-    <string>MoveSceneUp</string>
-   </property>
-   <property name="class" stdset="0">
-    <string notr="true">icon-up</string>
-   </property>
-  </action>
   <action name="actionSourceUp">
    <property name="enabled">
     <bool>true</bool>
@@ -1620,21 +1466,6 @@
    </property>
    <property name="class" stdset="0">
     <string notr="true">icon-up</string>
-   </property>
-  </action>
-  <action name="actionSceneDown">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
-   </property>
-   <property name="text">
-    <string>MoveDown</string>
-   </property>
-   <property name="toolTip">
-    <string>MoveSceneDown</string>
-   </property>
-   <property name="class" stdset="0">
-    <string notr="true">icon-down</string>
    </property>
   </action>
   <action name="actionSourceDown">
@@ -2170,21 +2001,6 @@
     <string>icon-cogs</string>
    </property>
   </action>
-  <action name="actionSceneFilters">
-   <property name="icon">
-    <iconset resource="obs.qrc">
-     <normaloff>:/res/images/filter.svg</normaloff>:/res/images/filter.svg</iconset>
-   </property>
-   <property name="text">
-    <string>SceneFilters</string>
-   </property>
-   <property name="toolTip">
-    <string>SceneFilters</string>
-   </property>
-   <property name="class" stdset="0">
-    <string>icon-filter</string>
-   </property>
-  </action>
   <action name="actionSceneGridMode">
    <property name="checkable">
     <bool>true</bool>
@@ -2247,11 +2063,6 @@
    <class>SourceTree</class>
    <extends>QListView</extends>
    <header>components/SourceTree.hpp</header>
-  </customwidget>
-  <customwidget>
-   <class>SceneTree</class>
-   <extends>QListWidget</extends>
-   <header>components/SceneTree.hpp</header>
   </customwidget>
   <customwidget>
    <class>OBSDock</class>

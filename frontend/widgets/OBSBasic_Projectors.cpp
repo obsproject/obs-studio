@@ -190,12 +190,25 @@ void OBSBasic::OpenMultiviewProjector()
 
 void OBSBasic::OpenSceneProjector()
 {
-	int monitor = sender()->property("monitor").toInt();
 	OBSScene scene = GetCurrentScene();
-	if (!scene)
+	if (!scene) {
 		return;
+	}
 
-	OpenProjector(obs_scene_get_source(scene), monitor, ProjectorType::Scene);
+	OBSSource source = obs_scene_get_source(scene);
+
+	openProjectorForSource(source);
+}
+
+void OBSBasic::openProjectorForSource(const OBSSource &source)
+{
+	if (!source) {
+		return;
+	}
+
+	int monitor = sender()->property("monitor").toInt();
+
+	OpenProjector(source, monitor, ProjectorType::Scene);
 }
 
 void OBSBasic::OpenPreviewWindow()
@@ -217,12 +230,22 @@ void OBSBasic::OpenSourceWindow()
 void OBSBasic::OpenSceneWindow()
 {
 	OBSScene scene = GetCurrentScene();
-	if (!scene)
+	if (!scene) {
 		return;
+	}
 
 	OBSSource source = obs_scene_get_source(scene);
 
-	OpenProjector(obs_scene_get_source(scene), -1, ProjectorType::Scene);
+	openWindowedProjectorForSource(source);
+}
+
+void OBSBasic::openWindowedProjectorForSource(const OBSSource &source)
+{
+	if (!source) {
+		return;
+	}
+
+	OpenProjector(source, -1, ProjectorType::Scene);
 }
 
 void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
@@ -264,4 +287,9 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 void OBSBasic::openMultiviewWindow()
 {
 	OpenProjector(nullptr, -1, ProjectorType::Multiview);
+}
+
+void OBSBasic::updateMultiviewProjectors()
+{
+	OBSProjector::UpdateMultiviewProjectors();
 }

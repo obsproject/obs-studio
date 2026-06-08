@@ -243,8 +243,9 @@ void OBSBasic::TransitionStopped()
 {
 	if (swapScenesMode) {
 		OBSSource scene = OBSGetStrongRef(swapScene);
-		if (scene)
-			SetCurrentScene(scene);
+		if (scene) {
+			mainCanvasMediator->setPreviewScene(obs_scene_from_source(scene));
+		}
 	}
 
 	EnableTransitionWidgets(true);
@@ -668,24 +669,10 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 	}
 
 	if (obs_scene_get_source(GetCurrentScene()) != scene) {
-		for (int i = 0; i < ui->scenes->count(); i++) {
-			QListWidgetItem *item = ui->scenes->item(i);
-			OBSScene itemScene = GetOBSRef<OBSScene>(item);
-			obs_source_t *source = obs_scene_get_source(itemScene);
+		if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
+			outputHandler->UpdateVirtualCamOutputSource();
 
-			if (source == scene) {
-				ui->scenes->blockSignals(true);
-				currentScene = itemScene.Get();
-				ui->scenes->setCurrentItem(item);
-				ui->scenes->blockSignals(false);
-
-				if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
-					outputHandler->UpdateVirtualCamOutputSource();
-
-				OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
-				break;
-			}
-		}
+		OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 	}
 
 	UpdateContextBar(true);

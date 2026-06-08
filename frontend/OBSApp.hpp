@@ -20,6 +20,7 @@
 #include <utility/NativeEventFilter.hpp>
 #include <utility/OBSTheme.hpp>
 #include <utility/ThumbnailManager.hpp>
+#include <utility/mediators/CanvasMediator.hpp>
 #include <widgets/OBSMainWindow.hpp>
 
 #include <obs-frontend-api.h>
@@ -122,6 +123,8 @@ private:
 	void FindThemes();
 
 	bool notify(QObject *receiver, QEvent *e) override;
+
+	std::vector<OBS::CanvasMediator *> canvasMediators;
 
 #ifndef _WIN32
 	static std::array<int, 2> sigIntFileDescriptor;
@@ -234,6 +237,12 @@ public:
 	void loadAppModules(struct obs_module_failure_info &mfi);
 
 	ThumbnailManager *thumbnails() const { return thumbnailManager; }
+
+	// Mediators
+	OBS::CanvasMediator *createCanvasMediator(obs_canvas_t *canvas);
+	std::vector<OBS::CanvasMediator *> getCanvasMediators() const { return canvasMediators; }
+	std::optional<OBS::CanvasMediator *> findCanvasMediator(obs_canvas_t *canvas);
+	void clearMediators() { canvasMediators.clear(); }
 
 	// Plugin Manager Accessors
 	void pluginManagerOpenDialog();

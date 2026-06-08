@@ -48,7 +48,23 @@ void OBSBasic::ScreenshotProgram()
 	Screenshot(GetProgramSource());
 }
 
+void OBSBasic::screenshotScene(const OBSScene &scene)
+{
+	OBSSource source = obs_scene_get_source(scene);
+	if (!source) {
+		return;
+	}
+
+	Screenshot(source);
+}
+
 void OBSBasic::ScreenshotScene()
 {
-	Screenshot(GetCurrentSceneSource());
+	OBSSource source = GetCurrentSceneSource();
+	if (!source) {
+		return;
+	}
+	OBSScene scene = obs_scene_from_source(source);
+
+	screenshotScene(scene);
 }
