@@ -12,8 +12,9 @@ try : captions_handler(callback, AUDIO_FORMAT_16BIT, 16000) {
 	std::wstring wlang;
 	wlang.resize(lang.size());
 
-	for (size_t i = 0; i < lang.size(); i++)
+	for (size_t i = 0; i < lang.size(); i++) {
 		wlang[i] = (wchar_t)lang[i];
+	}
 
 	LCID lang_id = LocaleNameToLCID(wlang.c_str(), 0);
 
@@ -21,58 +22,70 @@ try : captions_handler(callback, AUDIO_FORMAT_16BIT, 16000) {
 	_snwprintf(lang_str, 31, L"language=%x", (int)lang_id);
 
 	stop = CreateEvent(nullptr, false, false, nullptr);
-	if (!stop.Valid())
+	if (!stop.Valid()) {
 		throw "Failed to create event";
+	}
 
 	hr = SpFindBestToken(SPCAT_RECOGNIZERS, lang_str, nullptr, &token);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SpFindBestToken failed", hr);
+	}
 
 	hr = CoCreateInstance(CLSID_SpInprocRecognizer, nullptr, CLSCTX_ALL, __uuidof(ISpRecognizer),
 			      (void **)&recognizer);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("CoCreateInstance for recognizer failed", hr);
+	}
 
 	hr = recognizer->SetRecognizer(token);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SetRecognizer failed", hr);
+	}
 
 	hr = recognizer->SetRecoState(SPRST_INACTIVE);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SetRecoState(SPRST_INACTIVE) failed", hr);
+	}
 
 	hr = recognizer->CreateRecoContext(&context);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("CreateRecoContext failed", hr);
+	}
 
 	ULONGLONG interest = SPFEI(SPEI_RECOGNITION) | SPFEI(SPEI_END_SR_STREAM);
 	hr = context->SetInterest(interest, interest);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SetInterest failed", hr);
+	}
 
 	hr = context->SetNotifyWin32Event();
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SetNotifyWin32Event", hr);
+	}
 
 	notify = context->GetNotifyEventHandle();
-	if (notify == INVALID_HANDLE_VALUE)
+	if (notify == INVALID_HANDLE_VALUE) {
 		throw HRError("GetNotifyEventHandle failed", E_NOINTERFACE);
+	}
 
 	size_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
 	audio = new CaptionStream((DWORD)sample_rate, this);
 	audio->Release();
 
 	hr = recognizer->SetInput(audio, false);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SetInput failed", hr);
+	}
 
 	hr = context->CreateGrammar(1, &grammar);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("CreateGrammar failed", hr);
+	}
 
 	hr = grammar->LoadDictation(nullptr, SPLO_STATIC);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("LoadDictation failed", hr);
+	}
 
 	try {
 		t = std::thread([this]() { main_thread(); });
@@ -104,12 +117,14 @@ try {
 	os_set_thread_name(__FUNCTION__);
 
 	hr = grammar->SetDictationState(SPRS_ACTIVE);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SetDictationState failed", hr);
+	}
 
 	hr = recognizer->SetRecoState(SPRST_ACTIVE);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("SetRecoState(SPRST_ACTIVE) failed", hr);
+	}
 
 	HANDLE events[] = {notify, stop};
 
@@ -117,8 +132,9 @@ try {
 
 	for (;;) {
 		DWORD ret = WaitForMultipleObjects(2, events, false, INFINITE);
-		if (ret != WAIT_OBJECT_0)
+		if (ret != WAIT_OBJECT_0) {
 			break;
+		}
 
 		CSpEvent event;
 		bool exit = false;
@@ -129,8 +145,9 @@ try {
 
 				CoTaskMemPtr<wchar_t> text;
 				hr = result->GetText((ULONG)-1, (ULONG)-1, true, &text, nullptr);
-				if (FAILED(hr))
+				if (FAILED(hr)) {
 					continue;
+				}
 
 				char text_utf8[512];
 				os_wcs_to_utf8(text, 0, text_utf8, 512);
@@ -145,8 +162,9 @@ try {
 			}
 		}
 
-		if (exit)
+		if (exit) {
 			break;
+		}
 	}
 
 	audio->Stop();
@@ -157,8 +175,9 @@ try {
 
 void mssapi_captions::pcm_data(const void *data, size_t frames)
 {
-	if (started)
+	if (started) {
 		audio->PushAudio(data, frames);
+	}
 }
 
 captions_handler_info mssapi_info = {[]() -> std::string { return "Microsoft Speech-to-Text"; },

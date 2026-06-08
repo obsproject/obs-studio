@@ -95,22 +95,26 @@ void SourceTree::SelectItem(obs_sceneitem_t *sceneitem, bool select)
 	int i = 0;
 
 	for (; i < stm->items.count(); i++) {
-		if (stm->items[i] == sceneitem)
+		if (stm->items[i] == sceneitem) {
 			break;
+		}
 	}
 
-	if (i == stm->items.count())
+	if (i == stm->items.count()) {
 		return;
+	}
 
 	QModelIndex index = stm->createIndex(i, 0);
-	if (index.isValid() && select != selectionModel()->isSelected(index))
+	if (index.isValid() && select != selectionModel()->isSelected(index)) {
 		selectionModel()->select(index, select ? QItemSelectionModel::Select : QItemSelectionModel::Deselect);
+	}
 }
 
 void SourceTree::mouseDoubleClickEvent(QMouseEvent *event)
 {
-	if (event->button() == Qt::LeftButton)
+	if (event->button() == Qt::LeftButton) {
 		QListView::mouseDoubleClickEvent(event);
+	}
 }
 
 void SourceTree::dropEvent(QDropEvent *event)
@@ -152,10 +156,12 @@ void SourceTree::dropEvent(QDropEvent *event)
 	obs_sceneitem_t *dropGroup = itemIsGroup ? dropItem : obs_sceneitem_get_group(scene, dropItem);
 
 	/* not a group if moving above the group */
-	if (indicator == QAbstractItemView::AboveItem && itemIsGroup)
+	if (indicator == QAbstractItemView::AboveItem && itemIsGroup) {
 		dropGroup = nullptr;
-	if (emptyDrop)
+	}
+	if (emptyDrop) {
 		dropGroup = nullptr;
+	}
 
 	/* --------------------------------------- */
 	/* remember to remove list items if        */
@@ -169,8 +175,9 @@ void SourceTree::dropEvent(QDropEvent *event)
 	}
 
 	if (indicator == QAbstractItemView::BelowItem || indicator == QAbstractItemView::OnItem ||
-	    indicator == QAbstractItemView::OnViewport)
+	    indicator == QAbstractItemView::OnViewport) {
 		row++;
+	}
 
 	if (row < 0 || row > stm->items.count()) {
 		QListView::dropEvent(event);
@@ -194,10 +201,11 @@ void SourceTree::dropEvent(QDropEvent *event)
 	/* below another group                     */
 
 	obs_sceneitem_t *itemBelow;
-	if (row == stm->items.count())
+	if (row == stm->items.count()) {
 		itemBelow = nullptr;
-	else
+	} else {
 		itemBelow = stm->items[row];
+	}
 
 	if (hasGroups) {
 		if (!itemBelow || obs_sceneitem_get_group(scene, itemBelow) != dropGroup) {
@@ -220,11 +228,13 @@ void SourceTree::dropEvent(QDropEvent *event)
 	std::vector<obs_source_t *> sources;
 	for (int i = 0; i < indices.size(); i++) {
 		obs_sceneitem_t *item = items[indices[i].row()];
-		if (obs_sceneitem_get_scene(item) != scene)
+		if (obs_sceneitem_get_scene(item) != scene) {
 			sources.push_back(obs_scene_get_source(obs_sceneitem_get_scene(item)));
+		}
 	}
-	if (dropGroup)
+	if (dropGroup) {
 		sources.push_back(obs_sceneitem_get_source(dropGroup));
+	}
 	OBSData undo_data = main->BackupScene(scene, &sources);
 
 	/* --------------------------------------- */
@@ -266,8 +276,9 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 	QList<QPersistentModelIndex> persistentIndices;
 	persistentIndices.reserve(indices.count());
-	for (QModelIndex &index : indices)
+	for (QModelIndex &index : indices) {
 		persistentIndices.append(index);
+	}
 	std::sort(persistentIndices.begin(), persistentIndices.end());
 
 	/* --------------------------------------- */
@@ -279,8 +290,9 @@ void SourceTree::dropEvent(QDropEvent *event)
 		int to = r;
 		int itemTo = to;
 
-		if (itemTo > from)
+		if (itemTo > from) {
 			itemTo--;
+		}
 
 		if (itemTo != from) {
 			stm->beginMoveRows(QModelIndex(), from, from, QModelIndex(), to);
@@ -347,10 +359,11 @@ void SourceTree::dropEvent(QDropEvent *event)
 				continue;
 			}
 
-			if (!hasGroups && i >= firstIdx && i <= lastIdx)
+			if (!hasGroups && i >= firstIdx && i <= lastIdx) {
 				group = dropGroup;
-			else
+			} else {
 				group = obs_sceneitem_get_group(scene, item);
+			}
 
 			if (lastGroup && lastGroup != group) {
 				insertLastGroup();
@@ -481,8 +494,9 @@ void SourceTree::NewGroupEdit(int row)
 bool SourceTree::Edit(int row)
 {
 	SourceTreeModel *stm = GetStm();
-	if (row < 0 || row >= stm->items.count())
+	if (row < 0 || row >= stm->items.count()) {
 		return false;
+	}
 
 	QModelIndex index = stm->createIndex(row, 0);
 	QWidget *widget = indexWidget(index);

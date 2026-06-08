@@ -32,11 +32,13 @@ static char **convert_string_list(vector<string> &strings)
 
 	size += string_data_offset;
 
-	for (auto &str : strings)
+	for (auto &str : strings) {
 		size += str.size() + 1;
+	}
 
-	if (!size)
+	if (!size) {
 		return 0;
+	}
 
 	out = (uint8_t *)bmalloc(size);
 	ptr_list = (char **)out;
@@ -73,8 +75,9 @@ void *obs_frontend_get_system_tray(void)
 
 char **obs_frontend_get_scene_names(void)
 {
-	if (!callbacks_valid())
+	if (!callbacks_valid()) {
 		return NULL;
+	}
 
 	struct obs_frontend_source_list sources = {};
 	vector<string> names;
@@ -92,8 +95,9 @@ char **obs_frontend_get_scene_names(void)
 
 void obs_frontend_get_scenes(struct obs_frontend_source_list *sources)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_get_scenes(sources);
+	}
 }
 
 obs_source_t *obs_frontend_get_current_scene(void)
@@ -103,14 +107,16 @@ obs_source_t *obs_frontend_get_current_scene(void)
 
 void obs_frontend_set_current_scene(obs_source_t *scene)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_current_scene(scene);
+	}
 }
 
 void obs_frontend_get_transitions(struct obs_frontend_source_list *sources)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_get_transitions(sources);
+	}
 }
 
 obs_source_t *obs_frontend_get_current_transition(void)
@@ -120,8 +126,9 @@ obs_source_t *obs_frontend_get_current_transition(void)
 
 void obs_frontend_set_current_transition(obs_source_t *transition)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_current_transition(transition);
+	}
 }
 
 int obs_frontend_get_transition_duration(void)
@@ -131,14 +138,16 @@ int obs_frontend_get_transition_duration(void)
 
 void obs_frontend_set_transition_duration(int duration)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_transition_duration(duration);
+	}
 }
 
 void obs_frontend_release_tbar(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_release_tbar();
+	}
 }
 
 int obs_frontend_get_tbar_position(void)
@@ -148,14 +157,16 @@ int obs_frontend_get_tbar_position(void)
 
 void obs_frontend_set_tbar_position(int position)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_tbar_position(position);
+	}
 }
 
 char **obs_frontend_get_scene_collections(void)
 {
-	if (!callbacks_valid())
+	if (!callbacks_valid()) {
 		return nullptr;
+	}
 
 	vector<string> strings;
 	c->obs_frontend_get_scene_collections(strings);
@@ -169,8 +180,9 @@ char *obs_frontend_get_current_scene_collection(void)
 
 void obs_frontend_set_current_scene_collection(const char *collection)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_current_scene_collection(collection);
+	}
 }
 
 bool obs_frontend_add_scene_collection(const char *name)
@@ -180,8 +192,9 @@ bool obs_frontend_add_scene_collection(const char *name)
 
 char **obs_frontend_get_profiles(void)
 {
-	if (!callbacks_valid())
+	if (!callbacks_valid()) {
 		return nullptr;
+	}
 
 	vector<string> strings;
 	c->obs_frontend_get_profiles(strings);
@@ -200,38 +213,44 @@ char *obs_frontend_get_current_profile_path(void)
 
 void obs_frontend_set_current_profile(const char *profile)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_current_profile(profile);
+	}
 }
 
 void obs_frontend_create_profile(const char *name)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_create_profile(name);
+	}
 }
 
 void obs_frontend_duplicate_profile(const char *name)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_duplicate_profile(name);
+	}
 }
 
 void obs_frontend_delete_profile(const char *profile)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_delete_profile(profile);
+	}
 }
 
 void obs_frontend_streaming_start(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_streaming_start();
+	}
 }
 
 void obs_frontend_streaming_stop(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_streaming_stop();
+	}
 }
 
 bool obs_frontend_streaming_active(void)
@@ -241,14 +260,16 @@ bool obs_frontend_streaming_active(void)
 
 void obs_frontend_recording_start(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_recording_start();
+	}
 }
 
 void obs_frontend_recording_stop(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_recording_stop();
+	}
 }
 
 bool obs_frontend_recording_active(void)
@@ -258,8 +279,9 @@ bool obs_frontend_recording_active(void)
 
 void obs_frontend_recording_pause(bool pause)
 {
-	if (!!callbacks_valid())
+	if (!!callbacks_valid()) {
 		c->obs_frontend_recording_pause(pause);
+	}
 }
 
 bool obs_frontend_recording_paused(void)
@@ -279,20 +301,23 @@ bool obs_frontend_recording_add_chapter(const char *name)
 
 void obs_frontend_replay_buffer_start(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_replay_buffer_start();
+	}
 }
 
 void obs_frontend_replay_buffer_save(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_replay_buffer_save();
+	}
 }
 
 void obs_frontend_replay_buffer_stop(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_replay_buffer_stop();
+	}
 }
 
 bool obs_frontend_replay_buffer_active(void)
@@ -307,8 +332,9 @@ void *obs_frontend_add_tools_menu_qaction(const char *name)
 
 void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback, void *private_data)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_add_tools_menu_item(name, callback, private_data);
+	}
 }
 
 bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget)
@@ -318,8 +344,9 @@ bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget
 
 void obs_frontend_remove_dock(const char *id)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_remove_dock(id);
+	}
 }
 
 bool obs_frontend_add_custom_qdock(const char *id, void *dock)
@@ -329,14 +356,16 @@ bool obs_frontend_add_custom_qdock(const char *id, void *dock)
 
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback, void *private_data)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_add_event_callback(callback, private_data);
+	}
 }
 
 void obs_frontend_remove_event_callback(obs_frontend_event_cb callback, void *private_data)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_remove_event_callback(callback, private_data);
+	}
 }
 
 obs_output_t *obs_frontend_get_streaming_output(void)
@@ -378,62 +407,72 @@ config_t *obs_frontend_get_global_config(void)
 
 void obs_frontend_open_projector(const char *type, int monitor, const char *geometry, const char *name)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_open_projector(type, monitor, geometry, name);
+	}
 }
 
 void obs_frontend_save(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_save();
+	}
 }
 
 void obs_frontend_defer_save_begin(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_defer_save_begin();
+	}
 }
 
 void obs_frontend_defer_save_end(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_defer_save_end();
+	}
 }
 
 void obs_frontend_add_save_callback(obs_frontend_save_cb callback, void *private_data)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_add_save_callback(callback, private_data);
+	}
 }
 
 void obs_frontend_remove_save_callback(obs_frontend_save_cb callback, void *private_data)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_remove_save_callback(callback, private_data);
+	}
 }
 
 void obs_frontend_add_preload_callback(obs_frontend_save_cb callback, void *private_data)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_add_preload_callback(callback, private_data);
+	}
 }
 
 void obs_frontend_remove_preload_callback(obs_frontend_save_cb callback, void *private_data)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_remove_preload_callback(callback, private_data);
+	}
 }
 
 void obs_frontend_push_ui_translation(obs_frontend_translate_ui_cb translate)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_push_ui_translation(translate);
+	}
 }
 
 void obs_frontend_pop_ui_translation(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_pop_ui_translation();
+	}
 }
 
 obs_service_t *obs_frontend_get_streaming_service(void)
@@ -443,14 +482,16 @@ obs_service_t *obs_frontend_get_streaming_service(void)
 
 void obs_frontend_set_streaming_service(obs_service_t *service)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_streaming_service(service);
+	}
 }
 
 void obs_frontend_save_streaming_service(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_save_streaming_service();
+	}
 }
 
 bool obs_frontend_preview_program_mode_active(void)
@@ -460,14 +501,16 @@ bool obs_frontend_preview_program_mode_active(void)
 
 void obs_frontend_set_preview_program_mode(bool enable)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_preview_program_mode(enable);
+	}
 }
 
 void obs_frontend_preview_program_trigger_transition(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_preview_program_trigger_transition();
+	}
 }
 
 bool obs_frontend_preview_enabled(void)
@@ -477,8 +520,9 @@ bool obs_frontend_preview_enabled(void)
 
 void obs_frontend_set_preview_enabled(bool enable)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_preview_enabled(enable);
+	}
 }
 
 obs_source_t *obs_frontend_get_current_preview_scene(void)
@@ -488,20 +532,23 @@ obs_source_t *obs_frontend_get_current_preview_scene(void)
 
 void obs_frontend_set_current_preview_scene(obs_source_t *scene)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_set_current_preview_scene(scene);
+	}
 }
 
 void obs_frontend_take_screenshot(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_take_screenshot();
+	}
 }
 
 void obs_frontend_take_source_screenshot(obs_source_t *source)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_take_source_screenshot(source);
+	}
 }
 
 obs_output_t *obs_frontend_get_virtualcam_output(void)
@@ -511,14 +558,16 @@ obs_output_t *obs_frontend_get_virtualcam_output(void)
 
 void obs_frontend_start_virtualcam(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_start_virtualcam();
+	}
 }
 
 void obs_frontend_stop_virtualcam(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_stop_virtualcam();
+	}
 }
 
 bool obs_frontend_virtualcam_active(void)
@@ -528,32 +577,37 @@ bool obs_frontend_virtualcam_active(void)
 
 void obs_frontend_reset_video(void)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_reset_video();
+	}
 }
 
 void obs_frontend_open_source_properties(obs_source_t *source)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_open_source_properties(source);
+	}
 }
 
 void obs_frontend_open_source_filters(obs_source_t *source)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_open_source_filters(source);
+	}
 }
 
 void obs_frontend_open_source_interaction(obs_source_t *source)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_open_source_interaction(source);
+	}
 }
 
 void obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_open_sceneitem_edit_transform(item);
+	}
 }
 
 char *obs_frontend_get_current_record_output_path(void)
@@ -589,14 +643,16 @@ char *obs_frontend_get_last_replay(void)
 void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
 				       const char *undo_data, const char *redo_data, bool repeatable)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_add_undo_redo_action(name, undo, redo, undo_data, redo_data, repeatable);
+	}
 }
 
 void obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_list)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		c->obs_frontend_get_canvases(canvas_list);
+	}
 }
 
 obs_canvas_t *obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags)
@@ -611,19 +667,22 @@ bool obs_frontend_remove_canvas(obs_canvas_t *canvas)
 
 void obs_frontend_copy_sceneitem(obs_sceneitem_t *item)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		return c->obs_frontend_copy_sceneitem(item);
+	}
 }
 
 bool obs_frontend_can_paste_sceneitem(bool duplicate)
 {
-	if (!callbacks_valid())
+	if (!callbacks_valid()) {
 		return false;
+	}
 	return c->obs_frontend_can_paste_sceneitem(duplicate);
 }
 
 void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
 {
-	if (callbacks_valid())
+	if (callbacks_valid()) {
 		return c->obs_frontend_paste_sceneitem(scene, duplicate);
+	}
 }

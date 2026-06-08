@@ -72,10 +72,11 @@ void AuthListener::NewConnection()
 			if (match.hasMatch()) {
 				if (state == match.captured("state")) {
 					match = re_code.match(redirect);
-					if (!match.hasMatch())
+					if (!match.hasMatch()) {
 						blog(LOG_DEBUG, "no 'code' "
 								"in server "
 								"redirect");
+					}
 
 					code = match.captured("code");
 				} else {

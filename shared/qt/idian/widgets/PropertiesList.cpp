@@ -43,8 +43,9 @@ PropertiesList::PropertiesList(QWidget *parent) : QFrame(parent)
 void PropertiesList::addRow(GenericRow *row)
 {
 	// Add custom spacer once more than one element exists
-	if (layout->count() > 0)
+	if (layout->count() > 0) {
 		layout->addWidget(new PropertiesListSpacer(this));
+	}
 
 	// Custom properties to work around :first and :last not existing.
 	if (!first) {
@@ -53,8 +54,9 @@ void PropertiesList::addRow(GenericRow *row)
 	}
 
 	// Remove last property from existing last item
-	if (last)
+	if (last) {
 		Utils::removeClass(last, "last");
+	}
 
 	// Most recently added item is also always last
 	Utils::addClass(row, "last");
@@ -74,8 +76,9 @@ void PropertiesList::clear()
 	QLayoutItem *item = layout->takeAt(0);
 
 	while (item) {
-		if (item->widget())
+		if (item->widget()) {
 			item->widget()->deleteLater();
+		}
 		delete item;
 
 		item = layout->takeAt(0);

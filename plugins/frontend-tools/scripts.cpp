@@ -155,8 +155,9 @@ void ScriptLogWindow::AddLogMsg(int log_level, QString msg)
 	lines += msg;
 	scriptLogWidget->setPlainText(lines);
 
-	if (bottomScrolled)
+	if (bottomScrolled) {
 		scroll->setValue(scroll->maximum());
+	}
 
 	if (log_level <= LOG_WARNING) {
 		show();
@@ -297,8 +298,9 @@ void ScriptsTool::on_addScripts_clicked()
 	QString filter;
 
 	while (*cur_format) {
-		if (!extensions.isEmpty())
+		if (!extensions.isEmpty()) {
 			extensions += QStringLiteral(" ");
+		}
 
 		extensions += QStringLiteral("*.");
 		extensions += *cur_format;
@@ -313,8 +315,9 @@ void ScriptsTool::on_addScripts_clicked()
 		filter += QStringLiteral(")");
 	}
 
-	if (filter.isEmpty())
+	if (filter.isEmpty()) {
 		return;
+	}
 
 	static std::string lastBrowsedDir;
 
@@ -325,8 +328,9 @@ void ScriptsTool::on_addScripts_clicked()
 
 	QStringList files =
 		OpenFiles(this, QT_UTF8(obs_module_text("AddScripts")), QT_UTF8(lastBrowsedDir.c_str()), filter);
-	if (!files.count())
+	if (!files.count()) {
 		return;
+	}
 
 	for (const QString &file : files) {
 		lastBrowsedDir = QFileInfo(file).absolutePath().toUtf8().constData();
@@ -362,16 +366,18 @@ void ScriptsTool::on_removeScripts_clicked()
 {
 	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
 
-	for (QListWidgetItem *item : items)
+	for (QListWidgetItem *item : items) {
 		RemoveScript(item->data(Qt::UserRole).toString().toUtf8().constData());
+	}
 	RefreshLists();
 }
 
 void ScriptsTool::on_reloadScripts_clicked()
 {
 	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
-	for (QListWidgetItem *item : items)
+	for (QListWidgetItem *item : items) {
 		ReloadScript(item->data(Qt::UserRole).toString().toUtf8().constData());
+	}
 
 	on_scripts_currentRowChanged(ui->scripts->currentRow());
 }
@@ -412,8 +418,9 @@ void ScriptsTool::on_scripts_customContextMenuRequested(const QPoint &pos)
 void ScriptsTool::on_editScript_clicked()
 {
 	int row = ui->scripts->currentRow();
-	if (row == -1)
+	if (row == -1) {
 		return;
+	}
 	QUrl url = QUrl::fromLocalFile(ui->scripts->item(row)->data(Qt::UserRole).toString());
 	QDesktopServices::openUrl(url);
 }
@@ -429,8 +436,9 @@ void ScriptsTool::on_pythonPathBrowse_clicked()
 	QString curPath = ui->pythonPath->text();
 	QString newPath = SelectDirectory(this, ui->pythonPathLabel->text(), curPath);
 
-	if (newPath.isEmpty())
+	if (newPath.isEmpty()) {
 		return;
+	}
 
 	QByteArray array = newPath.toUtf8();
 	const char *path = array.constData();
@@ -452,8 +460,9 @@ void ScriptsTool::on_pythonPathBrowse_clicked()
 		return;
 	}
 
-	if (!obs_scripting_load_python(path))
+	if (!obs_scripting_load_python(path)) {
 		return;
+	}
 
 	updatePythonVersionLabel();
 
@@ -505,8 +514,9 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 void ScriptsTool::on_defaults_clicked()
 {
 	QListWidgetItem *item = ui->scripts->currentItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	SetScriptDefaults(item->data(Qt::UserRole).toString().toUtf8().constData());
 }
@@ -534,8 +544,9 @@ void ScriptsTool::on_description_linkActivated(const QString &link)
 		messageBox.setIcon(QMessageBox::Question);
 		messageBox.exec();
 
-		if (messageBox.clickedButton() == yesButton)
+		if (messageBox.clickedButton() == yesButton) {
 			QDesktopServices::openUrl(url);
+		}
 	}
 }
 
@@ -587,14 +598,16 @@ static void load_script_data(obs_data_t *load_data, bool, void *)
 		}
 	}
 
-	if (scriptsWindow)
+	if (scriptsWindow) {
 		scriptsWindow->RefreshLists();
+	}
 }
 
 static void save_script_data(obs_data_t *save_data, bool saving, void *)
 {
-	if (!saving)
+	if (!saving) {
 		return;
+	}
 
 	OBSDataArrayAutoRelease array = obs_data_array_create();
 
@@ -652,8 +665,9 @@ extern "C" void InitScripts()
 	}
 #endif
 
-	if (!obs_scripting_python_loaded() && python_path && *python_path)
+	if (!obs_scripting_python_loaded() && python_path && *python_path) {
 		obs_scripting_load_python(python_path);
+	}
 #endif
 
 	scriptData = new ScriptData;

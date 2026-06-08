@@ -24,8 +24,9 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 	const char *encoder_id = nullptr;
 	for (size_t i = 0; obs_enum_encoder_types(i, &encoder_id); i++) {
 		auto codec = obs_get_encoder_codec(encoder_id);
-		if (!codec)
+		if (!codec) {
 			continue;
+		}
 
 		if (qstricmp(codec, "h264") == 0) {
 			client.supported_codecs.emplace("h264");
@@ -42,8 +43,9 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 	preferences.vod_track_audio = vod_track_enabled;
 
 	obs_video_info ovi;
-	if (obs_get_video_info(&ovi))
+	if (obs_get_video_info(&ovi)) {
 		preferences.composition_gpu_index = ovi.adapter;
+	}
 
 	for (const auto &canvas : canvases) {
 		if (obs_canvas_get_video_info(canvas, &ovi)) {
@@ -63,8 +65,9 @@ GoLiveApi::PostData constructGoLivePost(QString streamKey, const std::optional<u
 		preferences.audio_max_buffering_ms = oai2.max_buffering_ms;
 	}
 
-	if (maximum_aggregate_bitrate.has_value())
+	if (maximum_aggregate_bitrate.has_value()) {
 		preferences.maximum_aggregate_bitrate = maximum_aggregate_bitrate.value();
+	}
 
 	if (maximum_video_tracks.has_value()) {
 		/* Cap to maximum supported number of output encoders. */

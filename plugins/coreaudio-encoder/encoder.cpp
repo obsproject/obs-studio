@@ -116,8 +116,9 @@ struct ca_encoder {
 
 	~ca_encoder()
 	{
-		if (converter)
+		if (converter) {
 			AudioConverterDispose(converter);
+		}
 	}
 };
 typedef struct ca_encoder ca_encoder;
@@ -157,8 +158,9 @@ log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
 	dstr_vcatf(str, fmt, args);
 	va_end(args);
 
-	if (str->array)
+	if (str->array) {
 		return;
+	}
 
 	char array[4096];
 	va_start(args, fmt);
@@ -167,24 +169,26 @@ log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
 
 	array[4095] = 0;
 
-	if (!prev_str.array && !prev_str.len)
+	if (!prev_str.array && !prev_str.len) {
 		CA_CO_LOG(LOG_ERROR,
 			  "Could not allocate buffer for logging:"
 			  "\n'%s'",
 			  array);
-	else
+	} else {
 		CA_CO_LOG(LOG_ERROR,
 			  "Could not allocate buffer for logging:"
 			  "\n'%s'\nPrevious log entries:\n%s",
 			  array, prev_str.array);
+	}
 
 	bfree(prev_str.array);
 }
 
 static const char *flush_log(DStr &log)
 {
-	if (!log->array || !log->len)
+	if (!log->array || !log->len) {
 		return "";
+	}
 
 	if (log->array[log->len - 1] == '\n') {
 		log->array[log->len - 1] = 0; //Get rid of last newline
@@ -244,8 +248,9 @@ static DStr osstatus_to_dstr(OSStatus code)
 	cf_ptr<CFErrorRef> err{CFErrorCreate(kCFAllocatorDefault, kCFErrorDomainOSStatus, code, NULL)};
 	cf_ptr<CFStringRef> str{CFErrorCopyDescription(err.get())};
 
-	if (cfstr_copy_dstr(str.get(), kCFStringEncodingUTF8, result))
+	if (cfstr_copy_dstr(str.get(), kCFStringEncodingUTF8, result)) {
 		return result;
+	}
 #endif
 
 	const char *code_str = code_to_str(code);
@@ -257,10 +262,11 @@ static DStr osstatus_to_dstr(OSStatus code)
 static void log_osstatus(int log_level, ca_encoder *ca, const char *context, OSStatus code)
 {
 	DStr str = osstatus_to_dstr(code);
-	if (ca)
+	if (ca) {
 		CA_BLOG(log_level, "Error in %s: %s", context, str->array);
-	else
+	} else {
 		CA_LOG(log_level, "Error in %s: %s", context, str->array);
+	}
 }
 
 static const char *format_id_to_str(UInt32 format_id)
@@ -361,8 +367,9 @@ static bool enumerate_bitrates(DStr &log, ca_encoder *ca, AudioConverterRef conv
 	auto helper = [&](UInt32 size, void *data) {
 		auto range = static_cast<AudioValueRange *>(data);
 		size_t num_ranges = size / sizeof(AudioValueRange);
-		for (size_t i = 0; i < num_ranges; i++)
+		for (size_t i = 0; i < num_ranges; i++) {
 			func(static_cast<UInt32>(range[i].mMinimum), static_cast<UInt32>(range[i].mMaximum));
+		}
 	};
 
 	return query_converter_property_raw(log, ca, EXPAND_CONVERTER_NAMES(kAudioConverterApplicableEncodeBitRates),
@@ -374,8 +381,9 @@ static bool bitrate_valid(DStr &log, ca_encoder *ca, AudioConverterRef converter
 	bool valid = false;
 
 	auto helper = [&](UInt32 min_, UInt32 max_) {
-		if (min_ == bitrate || max_ == bitrate)
+		if (min_ == bitrate || max_ == bitrate) {
 			valid = true;
+		}
 	};
 
 	enumerate_bitrates(log, ca, converter, helper);
@@ -506,8 +514,9 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		log_to_dstr(log, ca.get(), "Trying format %s (0x%x)\n", format_id_to_str(format_id),
 			    (uint32_t)format_id);
 
-		if (!create_encoder(log, ca.get(), &in, &out, format_id, bitrate, samplerate, rate_control))
+		if (!create_encoder(log, ca.get(), &in, &out, format_id, bitrate, samplerate, rate_control)) {
 			continue;
+		}
 
 		encoder_created = true;
 		break;
@@ -521,8 +530,9 @@ static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 		return nullptr;
 	}
 
-	if (log->len)
+	if (log->len) {
 		CA_CO_DLOG_(LOG_DEBUG, "Encoder created");
+	}
 
 	OSStatus code;
 	UInt32 converter_quality = kAudioConverterQuality_Max;
@@ -668,8 +678,9 @@ static bool aac_encode(void *data, struct encoder_frame *frame, struct encoder_p
 
 	ca->input_buffer.insert(end(ca->input_buffer), frame->data[0], frame->data[0] + frame->linesize[0]);
 
-	if (ca->input_buffer.size() < ca->in_bytes_required)
+	if (ca->input_buffer.size() < ca->in_bytes_required) {
 		return true;
+	}
 
 	UInt32 packets = 1;
 
@@ -688,8 +699,9 @@ static bool aac_encode(void *data, struct encoder_frame *frame, struct encoder_p
 		return false;
 	}
 
-	if (!(*received_packet = packets > 0))
+	if (!(*received_packet = packets > 0)) {
 		return true;
+	}
 
 	packet->pts = ca->total_samples - ca->priming_samples;
 	packet->dts = ca->total_samples - ca->priming_samples;
@@ -740,8 +752,9 @@ static int read_descr_len(uint8_t **buffer)
 	while (count--) {
 		int c = *(*buffer)++;
 		len = (len << 7) | (c & 0x7f);
-		if (!(c & 0x80))
+		if (!(c & 0x80)) {
 			break;
+		}
 	}
 	return len;
 }
@@ -759,13 +772,15 @@ static void read_esds_desc_ext(uint8_t *desc_ext, vector<uint8_t> &buffer, bool 
 	uint8_t *esds = desc_ext;
 	int tag, len;
 
-	if (version_flags)
+	if (version_flags) {
 		esds += 4; // version + flags
+	}
 
 	read_descr(&esds, &tag);
 	esds += 2; // ID
-	if (tag == MP4ESDescrTag)
+	if (tag == MP4ESDescrTag) {
 		esds++; // priority
+	}
 
 	read_descr(&esds, &tag);
 	if (tag == MP4DecConfigDescrTag) {
@@ -776,12 +791,13 @@ static void read_esds_desc_ext(uint8_t *desc_ext, vector<uint8_t> &buffer, bool 
 		esds += 4; // average bitrate
 
 		len = read_descr(&esds, &tag);
-		if (tag == MP4DecSpecificDescrTag)
+		if (tag == MP4DecSpecificDescrTag) {
 			try {
 				buffer.assign(esds, esds + len);
 			} catch (...) {
 				//leave buffer empty
 			}
+		}
 	}
 }
 /* extracted code ends here */
@@ -830,11 +846,13 @@ static bool aac_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
 	ca_encoder *ca = static_cast<ca_encoder *>(data);
 
-	if (!ca->extra_data.size())
+	if (!ca->extra_data.size()) {
 		query_extra_data(ca);
+	}
 
-	if (!ca->extra_data.size())
+	if (!ca->extra_data.size()) {
 		return false;
+	}
 
 	*extra_data = ca->extra_data.data();
 	*size = ca->extra_data.size();
@@ -912,8 +930,9 @@ static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate, UInt32 &b
 	auto helper = [&](UInt32 min_, UInt32 max_) {
 		handle_bitrate(min_);
 
-		if (min_ == max_)
+		if (min_ == max_) {
 			return;
+		}
 
 		log_to_dstr(log, ca, "Got actual bit rate range: %u<->%u\n", static_cast<uint32_t>(min_),
 			    static_cast<uint32_t>(max_));
@@ -928,10 +947,11 @@ static bool find_best_match(DStr &log, ca_encoder *ca, UInt32 bitrate, UInt32 &b
 
 		auto converter = get_converter(log, ca, out);
 
-		if (converter)
+		if (converter) {
 			enumerate_bitrates(log, ca, converter.get(), helper);
-		else
+		} else {
 			log_to_dstr(log, ca, "Could not get converter\n");
+		}
 	}
 
 	best_match /= 1000;
@@ -967,11 +987,12 @@ static UInt32 find_matching_bitrate(UInt32 bitrate)
 			return;
 		}
 
-		if (log->len)
+		if (log->len) {
 			CA_CO_DLOG(LOG_DEBUG,
 				   "Default bitrate matching log "
 				   "for bitrate %u",
 				   static_cast<uint32_t>(bitrate));
+		}
 	});
 
 	return match;
@@ -1028,8 +1049,9 @@ static bool enumerate_samplerates(DStr &log, ca_encoder *ca, AudioStreamBasicDes
 	auto helper = [&](UInt32 size, void *data) {
 		auto range = static_cast<AudioValueRange *>(data);
 		size_t num_ranges = size / sizeof(AudioValueRange);
-		for (size_t i = 0; i < num_ranges; i++)
+		for (size_t i = 0; i < num_ranges; i++) {
 			func(range[i]);
+		}
 	};
 
 	return query_property_raw(log, ca, EXPAND_PROPERTY_NAMES(kAudioFormatProperty_AvailableEncodeSampleRates), desc,
@@ -1077,8 +1099,9 @@ static vector<UInt32> get_samplerates(DStr &log, ca_encoder *ca)
 
 		handle_samplerate(min_);
 
-		if (min_ == max_)
+		if (min_ == max_) {
 			return;
+		}
 
 		log_to_dstr(log, ca, "Got actual sample rate range: %u<->%u\n", static_cast<uint32_t>(min_),
 			    static_cast<uint32_t>(max_));
@@ -1110,8 +1133,9 @@ static void add_samplerates(obs_property_t *prop, ca_encoder *ca)
 		return;
 	}
 
-	if (log->len)
+	if (log->len) {
 		CA_CO_DLOG_(LOG_DEBUG, "Sample rate enumeration log");
+	}
 
 	sort(begin(samplerates), end(samplerates));
 
@@ -1145,8 +1169,9 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca, Float64 samplerate
 	auto helper = [&](UInt32 min_, UInt32 max_) {
 		handle_bitrate(min_);
 
-		if (min_ == max_)
+		if (min_ == max_) {
 			return;
+		}
 
 		log_to_dstr(log, ca, "Got actual bitrate range: %u<->%u\n", static_cast<uint32_t>(min_),
 			    static_cast<uint32_t>(max_));
@@ -1162,8 +1187,9 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca, Float64 samplerate
 
 		auto converter = get_converter(log, ca, out);
 
-		if (converter)
+		if (converter) {
 			enumerate_bitrates(log, ca, converter.get(), helper);
+		}
 	}
 
 	return bitrates;
@@ -1182,15 +1208,17 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca, Float64 samplerat
 		return;
 	}
 
-	if (log->len)
+	if (log->len) {
 		CA_CO_DLOG_(LOG_DEBUG, "Bitrate enumeration log");
+	}
 
 	bool selected_in_range = true;
 	if (selected) {
 		selected_in_range = find(begin(bitrates), end(bitrates), *selected * 1000) != end(bitrates);
 
-		if (!selected_in_range)
+		if (!selected_in_range) {
 			bitrates.push_back(*selected * 1000);
+		}
 	}
 
 	sort(begin(bitrates), end(bitrates));
@@ -1200,8 +1228,9 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca, Float64 samplerat
 		dstr_printf(buffer, "%u", (uint32_t)bitrate / 1000);
 		size_t idx = obs_property_list_add_int(prop, buffer->array, bitrate / 1000);
 
-		if (selected_in_range || bitrate / 1000 != *selected)
+		if (selected_in_range || bitrate / 1000 != *selected) {
 			continue;
+		}
 
 		obs_property_list_item_disable(prop, idx, true);
 	}
@@ -1210,8 +1239,9 @@ static void add_bitrates(obs_property_t *prop, ca_encoder *ca, Float64 samplerat
 static bool samplerate_updated(obs_properties_t *props, obs_property_t *prop, obs_data_t *settings)
 {
 	auto samplerate = static_cast<UInt32>(obs_data_get_int(settings, "samplerate"));
-	if (!samplerate)
+	if (!samplerate) {
 		samplerate = 44100;
+	}
 
 	prop = obs_properties_get(props, "bitrate");
 	if (prop) {

@@ -80,8 +80,9 @@ void output_stop()
 
 	main_output_running = false;
 
-	if (!shutting_down)
+	if (!shutting_down) {
 		doUI->OutputStateChanged(false);
+	}
 }
 
 void output_start()
@@ -103,12 +104,14 @@ void output_start()
 			obs_enter_graphics();
 			context.texrender_premultiplied = nullptr;
 			context.texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-			for (gs_stagesurf_t *&surf : context.stagesurfaces)
+			for (gs_stagesurf_t *&surf : context.stagesurfaces) {
 				surf = gs_stagesurface_create(width, height, GS_BGRA);
+			}
 			obs_leave_graphics();
 
-			for (bool &written : context.surf_written)
+			for (bool &written : context.surf_written) {
 				written = false;
+			}
 
 			context.stage_index = 0;
 
@@ -133,11 +136,13 @@ void output_start()
 
 			main_output_running = started;
 
-			if (!shutting_down)
+			if (!shutting_down) {
 				doUI->OutputStateChanged(started);
+			}
 
-			if (!started)
+			if (!started) {
 				output_stop();
+			}
 		} else {
 			obs_output_release(output);
 		}
@@ -146,10 +151,11 @@ void output_start()
 
 void output_toggle()
 {
-	if (main_output_running)
+	if (main_output_running) {
 		output_stop();
-	else
+	} else {
 		output_start();
+	}
 }
 
 OBSData load_preview_settings()
@@ -173,10 +179,12 @@ static void decklink_ui_tick(void *param, float /* sec */)
 {
 	auto ctx = (struct decklink_ui_output *)param;
 
-	if (ctx->texrender_premultiplied)
+	if (ctx->texrender_premultiplied) {
 		gs_texrender_reset(ctx->texrender_premultiplied);
-	if (ctx->texrender)
+	}
+	if (ctx->texrender) {
 		gs_texrender_reset(ctx->texrender);
+	}
 }
 
 void preview_output_stop()
@@ -205,8 +213,9 @@ void preview_output_stop()
 
 	preview_output_running = false;
 
-	if (!shutting_down)
+	if (!shutting_down) {
 		doUI->PreviewOutputStateChanged(false);
+	}
 }
 
 void preview_output_start()
@@ -228,12 +237,14 @@ void preview_output_start()
 			obs_enter_graphics();
 			context_preview.texrender_premultiplied = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
 			context_preview.texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
-			for (gs_stagesurf_t *&surf : context_preview.stagesurfaces)
+			for (gs_stagesurf_t *&surf : context_preview.stagesurfaces) {
 				surf = gs_stagesurface_create(width, height, GS_BGRA);
+			}
 			obs_leave_graphics();
 
-			for (bool &written : context_preview.surf_written)
+			for (bool &written : context_preview.surf_written) {
 				written = false;
+			}
 
 			context_preview.stage_index = 0;
 
@@ -262,11 +273,13 @@ void preview_output_start()
 			bool started = obs_output_start(context_preview.output);
 
 			preview_output_running = started;
-			if (!shutting_down)
+			if (!shutting_down) {
 				doUI->PreviewOutputStateChanged(started);
+			}
 
-			if (!started)
+			if (!started) {
 				preview_output_stop();
+			}
 		} else {
 			obs_output_release(output);
 		}
@@ -275,10 +288,11 @@ void preview_output_start()
 
 void preview_output_toggle()
 {
-	if (preview_output_running)
+	if (preview_output_running) {
 		preview_output_stop();
-	else
+	} else {
 		preview_output_start();
+	}
 }
 
 void on_preview_scene_changed(enum obs_frontend_event event, void *param)
@@ -314,28 +328,33 @@ static void decklink_ui_render(void *param)
 	gs_texture_t *tex = nullptr;
 
 	if (ctx == &context) {
-		if (!main_output_running)
+		if (!main_output_running) {
 			return;
+		}
 
 		tex = obs_get_main_texture();
-		if (!tex)
+		if (!tex) {
 			return;
+		}
 
 		width = gs_texture_get_width(tex);
 		height = gs_texture_get_height(tex);
 	} else if (ctx == &context_preview) {
-		if (!preview_output_running)
+		if (!preview_output_running) {
 			return;
+		}
 
-		if (!ctx->current_source)
+		if (!ctx->current_source) {
 			return;
+		}
 
 		width = obs_source_get_base_width(ctx->current_source);
 		height = obs_source_get_base_height(ctx->current_source);
 
 		gs_texrender_t *const texrender_premultiplied = ctx->texrender_premultiplied;
-		if (!gs_texrender_begin(texrender_premultiplied, width, height))
+		if (!gs_texrender_begin(texrender_premultiplied, width, height)) {
 			return;
+		}
 
 		struct vec4 background;
 		vec4_zero(&background);
@@ -360,8 +379,9 @@ static void decklink_ui_render(void *param)
 	const uint32_t scaled_width = conversion->width;
 	const uint32_t scaled_height = conversion->height;
 
-	if (!gs_texrender_begin(ctx->texrender, scaled_width, scaled_height))
+	if (!gs_texrender_begin(ctx->texrender, scaled_width, scaled_height)) {
 		return;
+	}
 
 	const bool previous = gs_framebuffer_srgb_enabled();
 	const bool source_hdr = (ctx->ovi.colorspace == VIDEO_CS_2100_PQ) || (ctx->ovi.colorspace == VIDEO_CS_2100_HLG);
@@ -435,21 +455,25 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
 		OBSData settings = load_settings();
 
-		if (settings && obs_data_get_bool(settings, "auto_start"))
+		if (settings && obs_data_get_bool(settings, "auto_start")) {
 			output_start();
+		}
 
 		OBSData previewSettings = load_preview_settings();
 
-		if (previewSettings && obs_data_get_bool(previewSettings, "auto_start"))
+		if (previewSettings && obs_data_get_bool(previewSettings, "auto_start")) {
 			preview_output_start();
+		}
 	} else if (event == OBS_FRONTEND_EVENT_EXIT) {
 		shutting_down = true;
 
-		if (preview_output_running)
+		if (preview_output_running) {
 			preview_output_stop();
+		}
 
-		if (main_output_running)
+		if (main_output_running) {
 			output_stop();
+		}
 	}
 }
 
@@ -462,17 +486,20 @@ void obs_module_unload(void)
 {
 	shutting_down = true;
 
-	if (preview_output_running)
+	if (preview_output_running) {
 		preview_output_stop();
+	}
 
-	if (main_output_running)
+	if (main_output_running) {
 		output_stop();
+	}
 }
 
 void obs_module_post_load(void)
 {
-	if (!obs_get_module("decklink"))
+	if (!obs_get_module("decklink")) {
 		return;
+	}
 
 	addOutputUI();
 

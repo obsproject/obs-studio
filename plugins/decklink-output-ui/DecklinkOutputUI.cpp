@@ -26,14 +26,16 @@ void DecklinkOutputUI::ShowHideDialog()
 
 void DecklinkOutputUI::SetupPropertiesView()
 {
-	if (propertiesView)
+	if (propertiesView) {
 		delete propertiesView;
+	}
 
 	obs_data_t *settings = obs_data_create();
 
 	OBSData data = load_settings();
-	if (data)
+	if (data) {
 		obs_data_apply(settings, data);
+	}
 
 	propertiesView = new OBSPropertiesView(settings, "decklink_output",
 					       (PropertiesReloadCallback)obs_get_output_properties, 170);
@@ -53,20 +55,23 @@ void DecklinkOutputUI::SaveSettings()
 	BPtr<char> path = obs_module_get_config_path(obs_current_module(), "decklinkOutputProps.json");
 
 	obs_data_t *settings = propertiesView->GetSettings();
-	if (settings)
+	if (settings) {
 		obs_data_save_json_safe(settings, path, "tmp", "bak");
+	}
 }
 
 void DecklinkOutputUI::SetupPreviewPropertiesView()
 {
-	if (previewPropertiesView)
+	if (previewPropertiesView) {
 		delete previewPropertiesView;
+	}
 
 	obs_data_t *settings = obs_data_create();
 
 	OBSData data = load_preview_settings();
-	if (data)
+	if (data) {
 		obs_data_apply(settings, data);
+	}
 
 	previewPropertiesView = new OBSPropertiesView(settings, "decklink_output",
 						      (PropertiesReloadCallback)obs_get_output_properties, 170);
@@ -86,8 +91,9 @@ void DecklinkOutputUI::SavePreviewSettings()
 	BPtr<char> path = obs_module_get_config_path(obs_current_module(), "decklinkPreviewOutputProps.json");
 
 	obs_data_t *settings = previewPropertiesView->GetSettings();
-	if (settings)
+	if (settings) {
 		obs_data_save_json_safe(settings, path, "tmp", "bak");
+	}
 }
 
 void DecklinkOutputUI::on_outputButton_clicked()

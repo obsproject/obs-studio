@@ -80,11 +80,13 @@ static DXGI_FORMAT get_pixel_format(HWND window, HMONITOR monitor, BOOL force_sd
 {
 	static constexpr DXGI_FORMAT sdr_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 
-	if (force_sdr)
+	if (force_sdr) {
 		return sdr_format;
+	}
 
-	if (window)
+	if (window) {
 		monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+	}
 
 	return (monitor && gs_is_monitor_hdr(monitor)) ? DXGI_FORMAT_R16G16B16A16_FLOAT : sdr_format;
 }
@@ -249,8 +251,9 @@ winrt_capture_create_item(IGraphicsCaptureItemInterop *const interop_factory, HW
 			const HRESULT hr = interop_factory->CreateForWindow(
 				window, winrt::guid_of<ABI::Windows::Graphics::Capture::IGraphicsCaptureItem>(),
 				reinterpret_cast<void **>(winrt::put_abi(item)));
-			if (FAILED(hr))
+			if (FAILED(hr)) {
 				blog(LOG_ERROR, "CreateForWindow (0x%08X)", hr);
+			}
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR, "CreateForWindow (0x%08X): %s", err.code().value,
 			     winrt::to_string(err.message()).c_str());
@@ -264,8 +267,9 @@ winrt_capture_create_item(IGraphicsCaptureItemInterop *const interop_factory, HW
 			const HRESULT hr = interop_factory->CreateForMonitor(
 				monitor, winrt::guid_of<ABI::Windows::Graphics::Capture::IGraphicsCaptureItem>(),
 				reinterpret_cast<void **>(winrt::put_abi(item)));
-			if (FAILED(hr))
+			if (FAILED(hr)) {
 				blog(LOG_ERROR, "CreateForMonitor (0x%08X)", hr);
+			}
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR, "CreateForMonitor (0x%08X): %s", err.code().value,
 			     winrt::to_string(err.message()).c_str());
@@ -286,17 +290,20 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	auto interop_factory = activation_factory.as<IGraphicsCaptureItemInterop>();
 	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item =
 		winrt_capture_create_item(interop_factory.get(), capture->window, capture->monitor);
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	ID3D11Device *const d3d_device = (ID3D11Device *)device_void;
 	ComPtr<IDXGIDevice> dxgi_device;
-	if (FAILED(d3d_device->QueryInterface(&dxgi_device)))
+	if (FAILED(d3d_device->QueryInterface(&dxgi_device))) {
 		blog(LOG_ERROR, "Failed to get DXGI device");
+	}
 
 	winrt::com_ptr<IInspectable> inspectable;
-	if (FAILED(CreateDirect3D11DeviceFromDXGIDevice(dxgi_device.Get(), inspectable.put())))
+	if (FAILED(CreateDirect3D11DeviceFromDXGIDevice(dxgi_device.Get(), inspectable.put()))) {
 		blog(LOG_ERROR, "Failed to get WinRT device");
+	}
 
 	const winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice device =
 		inspectable.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>();
@@ -313,8 +320,9 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		session.IsBorderRequired(false);
 	}
 
-	if (winrt_capture_cursor_toggle_supported())
+	if (winrt_capture_cursor_toggle_supported()) {
 		session.IsCursorCaptureEnabled(capture->capture_cursor && capture->cursor_visible);
+	}
 
 	capture->item = item;
 	capture->device = device;
@@ -358,8 +366,9 @@ try {
 	auto interop_factory = activation_factory.as<IGraphicsCaptureItemInterop>();
 	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item =
 		winrt_capture_create_item(interop_factory.get(), window, monitor);
-	if (!item)
+	if (!item) {
 		return nullptr;
+	}
 
 	const winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice device =
 		inspectable.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>();
@@ -379,8 +388,9 @@ try {
 
 	/* disable cursor capture if possible since ours performs better */
 	const BOOL cursor_toggle_supported = winrt_capture_cursor_toggle_supported();
-	if (cursor_toggle_supported)
+	if (cursor_toggle_supported) {
 		session.IsCursorCaptureEnabled(cursor);
+	}
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->window = window;
@@ -457,8 +467,9 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		capture->closed.revoke();
 
 		try {
-			if (capture->frame_pool)
+			if (capture->frame_pool) {
 				capture->frame_pool.Close();
+			}
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR, "Direct3D11CaptureFramePool::Close (0x%08X): %s", err.code().value,
 			     winrt::to_string(err.message()).c_str());
@@ -467,8 +478,9 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		}
 
 		try {
-			if (capture->session)
+			if (capture->session) {
 				capture->session.Close();
+			}
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR, "GraphicsCaptureSession::Close (0x%08X): %s", err.code().value,
 			     winrt::to_string(err.message()).c_str());

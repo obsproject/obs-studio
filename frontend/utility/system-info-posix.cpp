@@ -52,13 +52,15 @@ void trim_ws(std::string &s)
 {
 	// Trim leading whitespace
 	size_t pos = s.find_first_not_of(WHITE_SPACE);
-	if (pos != std::string::npos)
+	if (pos != std::string::npos) {
 		s = s.substr(pos);
+	}
 
 	// Trim trailing whitespace
 	pos = s.find_last_not_of(WHITE_SPACE);
-	if (pos != std::string::npos)
+	if (pos != std::string::npos) {
 		s = s.substr(0, pos + 1);
+	}
 }
 
 bool compare_match_strength(const drm_card_info &a, const drm_card_info &b)
@@ -224,8 +226,9 @@ bool get_cpu_name(optional<std::string> &proc_name)
 				size_t pos = line.find(':');
 				if (pos != std::string::npos && line.at(pos + 1) != '\0') {
 					physical_id = atoi(&line[pos + 1]);
-					if (physical_id == 0 && found_name)
+					if (physical_id == 0 && found_name) {
 						break;
+					}
 				}
 			}
 		}
@@ -246,8 +249,9 @@ bool get_cpu_freq(uint32_t &cpu_freq)
 	freq_file.open("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency");
 	if (!freq_file.is_open()) {
 		freq_file.open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-		if (!freq_file.is_open())
+		if (!freq_file.is_open()) {
 			return false;
+		}
 	}
 
 	if (getline(freq_file, line)) {

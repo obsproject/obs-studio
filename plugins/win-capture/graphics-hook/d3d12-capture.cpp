@@ -50,14 +50,18 @@ extern bool dxgi_present_attempted;
 
 void d3d12_free(void)
 {
-	if (data.copy_tex)
+	if (data.copy_tex) {
 		data.copy_tex->Release();
-	if (data.device11)
+	}
+	if (data.device11) {
 		data.device11->Release();
-	if (data.context11)
+	}
+	if (data.context11) {
 		data.context11->Release();
-	if (data.device11on12)
+	}
+	if (data.device11on12) {
 		data.device11on12->Release();
+	}
 
 	capture_free();
 
@@ -70,8 +74,9 @@ static bool create_d3d12_tex(UINT count)
 {
 	HRESULT hr;
 
-	if (count == 0)
+	if (count == 0) {
 		return false;
+	}
 
 	data.backbuffer_count = count;
 
@@ -222,8 +227,9 @@ static inline UINT d3d12_init_format(IDXGISwapChain *swap, HWND &window)
 
 	UINT count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD ? 1 : desc.BufferCount;
 
-	if (count == 1)
+	if (count == 1) {
 		data.dxgi_1_4 = false;
+	}
 
 	if (count > MAX_BACKBUFFERS) {
 		hlog("Somehow it's using more than the max backbuffers.  "
@@ -250,8 +256,9 @@ static void d3d12_init(IDXGISwapChain *swap)
 				     "unsupported; ignoring");
 			}
 
-			if (!d3d12_shtex_init(device, window, count))
+			if (!d3d12_shtex_init(device, window, count)) {
 				d3d12_free();
+			}
 		}
 
 		device->Release();
@@ -298,8 +305,9 @@ static inline void d3d12_shtex_capture(IDXGISwapChain *swap)
 			data.context11->Flush();
 
 			if (!dxgi_1_4) {
-				if (++data.cur_backbuffer >= data.backbuffer_count)
+				if (++data.cur_backbuffer >= data.backbuffer_count) {
 					data.cur_backbuffer = 0;
+				}
 			}
 
 			backbuffer->Release();
@@ -327,8 +335,9 @@ void d3d12_capture(void *swap_ptr, void *)
 static bool try_append_queue_if_unique(ID3D12CommandQueue *queue)
 {
 	for (size_t i = 0; i < dxgi_possible_swap_queue_count; ++i) {
-		if (dxgi_possible_swap_queues[i] == queue)
+		if (dxgi_possible_swap_queues[i] == queue) {
 			return false;
+		}
 	}
 
 	dxgi_possible_swap_queues[dxgi_possible_swap_queue_count] = queue;

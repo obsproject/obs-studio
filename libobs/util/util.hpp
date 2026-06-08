@@ -146,8 +146,9 @@ public:
 	inline const char *GetString(const char *lookupVal) const
 	{
 		const char *out;
-		if (!text_lookup_getstr(lookup, lookupVal, &out))
+		if (!text_lookup_getstr(lookup, lookupVal, &out)) {
 			return lookupVal;
+		}
 
 		return out;
 	}

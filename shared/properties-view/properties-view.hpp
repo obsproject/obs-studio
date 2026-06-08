@@ -167,10 +167,11 @@ public:
 
 	inline void UpdateSettings()
 	{
-		if (callback)
+		if (callback) {
 			callback(OBSGetStrongRef(weakObj), nullptr, settings);
-		else if (visUpdateCb)
+		} else if (visUpdateCb) {
 			visUpdateCb(OBSGetStrongRef(weakObj), settings);
+		}
 	}
 	inline bool DeferUpdate() const { return deferUpdate; }
 	inline void SetDeferrable(bool deferrable) { enableDefer = deferrable; }

@@ -76,12 +76,14 @@ static inline bool HasAudioDevices(const char *source_id)
 	OBSProperties props = obs_get_source_properties(output_id);
 	size_t count = 0;
 
-	if (!props)
+	if (!props) {
 		return false;
+	}
 
 	obs_property_t *devices = obs_properties_get(props, "device_id");
-	if (devices)
+	if (devices) {
 		count = obs_property_list_item_count(devices);
+	}
 
 	return count != 0;
 }
@@ -99,10 +101,12 @@ void OBSBasic::CreateFirstRunSources()
 	}
 #endif
 
-	if (hasDesktopAudio)
+	if (hasDesktopAudio) {
 		ResetAudioDevice(App()->OutputAudioSource(), "default", Str("Basic.DesktopDevice1"), 1);
-	if (hasInputAudio)
+	}
+	if (hasInputAudio) {
 		ResetAudioDevice(App()->InputAudioSource(), "default", Str("Basic.AuxDevice1"), 3);
+	}
 }
 
 OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
@@ -119,24 +123,28 @@ static void RenameListValues(QListWidget *listWidget, const QString &newName, co
 {
 	QList<QListWidgetItem *> items = listWidget->findItems(prevName, Qt::MatchExactly);
 
-	for (int i = 0; i < items.count(); i++)
+	for (int i = 0; i < items.count(); i++) {
 		items[i]->setText(newName);
+	}
 }
 
 void OBSBasic::RenameSources(OBSSource source, QString newName, QString prevName)
 {
 	RenameListValues(ui->scenes, newName, prevName);
 
-	if (vcamConfig.type == VCamOutputType::SourceOutput && prevName == QString::fromStdString(vcamConfig.source))
+	if (vcamConfig.type == VCamOutputType::SourceOutput && prevName == QString::fromStdString(vcamConfig.source)) {
 		vcamConfig.source = newName.toStdString();
-	if (vcamConfig.type == VCamOutputType::SceneOutput && prevName == QString::fromStdString(vcamConfig.scene))
+	}
+	if (vcamConfig.type == VCamOutputType::SceneOutput && prevName == QString::fromStdString(vcamConfig.scene)) {
 		vcamConfig.scene = newName.toStdString();
+	}
 
 	SaveProject();
 
 	obs_scene_t *scene = obs_scene_from_source(source);
-	if (scene)
+	if (scene) {
 		OBSProjector::UpdateMultiviewProjectors();
+	}
 
 	UpdateContextBar();
 	UpdatePreviewProgramIndicators();
@@ -171,8 +179,9 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 
 void OBSBasic::ReorderSources(OBSScene scene)
 {
-	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
+	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder()) {
 		return;
+	}
 
 	ui->sources->ReorderItems();
 	SaveProject();
@@ -180,8 +189,9 @@ void OBSBasic::ReorderSources(OBSScene scene)
 
 void OBSBasic::RefreshSources(OBSScene scene)
 {
-	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
+	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder()) {
 		return;
+	}
 
 	ui->sources->RefreshItems();
 	SaveProject();
@@ -191,18 +201,20 @@ void OBSBasic::SourceCreated(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
 
-	if (obs_scene_from_source(source) != NULL)
+	if (obs_scene_from_source(source) != NULL) {
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "AddScene", WaitConnection(),
 					  Q_ARG(OBSSource, OBSSource(source)));
+	}
 }
 
 void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 {
 	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
 
-	if (obs_scene_from_source(source) != NULL)
+	if (obs_scene_from_source(source) != NULL) {
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RemoveScene",
 					  Q_ARG(OBSSource, OBSSource(source)));
+	}
 }
 
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)
@@ -259,8 +271,9 @@ void OBSBasic::SetDeinterlacingMode()
 
 	auto undo_redo = [](const std::string &uuid, obs_deinterlace_mode val) {
 		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
-		if (source)
+		if (source) {
 			obs_source_set_deinterlace_mode(source, val);
+		}
 	};
 
 	const char *uuid = obs_source_get_uuid(source);
@@ -287,8 +300,9 @@ void OBSBasic::SetDeinterlacingOrder()
 
 	auto undo_redo = [](const std::string &uuid, obs_deinterlace_field_order val) {
 		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
-		if (source)
+		if (source) {
 			obs_source_set_deinterlace_field_order(source, val);
+		}
 	};
 
 	const char *uuid = obs_source_get_uuid(source);
@@ -354,8 +368,9 @@ void OBSBasic::SetScaleFilter()
 		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
 		obs_scene_t *sc = obs_group_or_scene_from_source(s);
 		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
-		if (si)
+		if (si) {
 			obs_sceneitem_set_scale_filter(si, val);
+		}
 	};
 
 	OBSSource source = obs_sceneitem_get_source(sceneItem);
@@ -409,8 +424,9 @@ void OBSBasic::SetBlendingMethod()
 		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
 		obs_scene_t *sc = obs_group_or_scene_from_source(s);
 		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
-		if (si)
+		if (si) {
 			obs_sceneitem_set_blending_method(si, val);
+		}
 	};
 
 	OBSSource source = obs_sceneitem_get_source(sceneItem);
@@ -460,8 +476,9 @@ void OBSBasic::SetBlendingMode()
 		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
 		obs_scene_t *sc = obs_group_or_scene_from_source(s);
 		obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
-		if (si)
+		if (si) {
 			obs_sceneitem_set_blending_mode(si, val);
+		}
 	};
 
 	OBSSource source = obs_sceneitem_get_source(sceneItem);
@@ -541,8 +558,9 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 		stringstream button;
 		button << "preset" << i;
 		QPushButton *colorButton = select->findChild<QPushButton *>(button.str().c_str());
-		if (preset == i + 1)
+		if (preset == i + 1) {
 			colorButton->setStyleSheet("border: 2px solid black");
+		}
 
 		colorButton->setProperty("bgColor", i);
 		connect(colorButton, &QPushButton::released, this, &OBSBasic::ColorChange);
@@ -601,8 +619,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this, &OBSBasic::TogglePreview);
 		action->setCheckable(true);
 		action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
-		if (IsPreviewProgramMode())
+		if (IsPreviewProgramMode()) {
 			action->setEnabled(false);
+		}
 
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);
@@ -692,8 +711,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 			resizeOutput->setEnabled(!obs_video_active());
 
-			if (width < 32 || height < 32)
+			if (width < 32 || height < 32) {
 				resizeOutput->setEnabled(false);
+			}
 		}
 
 		popup.addSeparator();
@@ -730,8 +750,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addAction(renameSource);
 		popup.addSeparator();
 
-		if (flags && flags & OBS_SOURCE_INTERACTION)
+		if (flags && flags & OBS_SOURCE_INTERACTION) {
 			popup.addAction(QTStr("Interact"), this, &OBSBasic::on_actionInteract_triggered);
+		}
 
 		popup.addAction(QTStr("Filters"), this, [&]() { OpenFilters(); });
 		QAction *action =
@@ -779,16 +800,20 @@ void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 
 static inline bool should_show_properties(obs_source_t *source, const char *id)
 {
-	if (!source)
+	if (!source) {
 		return false;
-	if (strcmp(id, "group") == 0)
+	}
+	if (strcmp(id, "group") == 0) {
 		return false;
-	if (!obs_source_configurable(source))
+	}
+	if (!obs_source_configurable(source)) {
 		return false;
+	}
 
 	uint32_t caps = obs_source_get_output_flags(source);
-	if ((caps & OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES) != 0)
+	if ((caps & OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES) != 0) {
 		return false;
+	}
 
 	return true;
 }
@@ -836,8 +861,9 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 	obs_scene_enum_items(scene, remove_items, &items);
 
-	if (!items.size())
+	if (!items.size()) {
 		return;
+	}
 
 	/* ------------------------------------- */
 	/* confirm action with user              */
@@ -860,11 +886,13 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	} else {
 		OBSSceneItem &item = items[0];
 		obs_source_t *source = obs_sceneitem_get_source(item);
-		if (source && QueryRemoveSource(source))
+		if (source && QueryRemoveSource(source)) {
 			confirmed = true;
+		}
 	}
-	if (!confirmed)
+	if (!confirmed) {
 		return;
+	}
 
 	/* ----------------------------------------------- */
 	/* save undo data                                  */
@@ -907,8 +935,9 @@ void OBSBasic::on_actionInteract_triggered()
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	if (source)
+	if (source) {
 		CreateInteractionWindow(source);
+	}
 }
 
 void OBSBasic::on_actionSourceProperties_triggered()
@@ -916,8 +945,9 @@ void OBSBasic::on_actionSourceProperties_triggered()
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	if (source)
+	if (source) {
 		CreatePropertiesWindow(source);
+	}
 }
 
 void OBSBasic::on_actionSourceUp_triggered()
@@ -979,10 +1009,12 @@ void OBSBasic::OpenInteraction(OBSSource source)
 
 void OBSBasic::OpenEditTransform(OBSSceneItem item)
 {
-	if (!item)
+	if (!item) {
 		item = GetCurrentSceneItem();
-	if (!item)
+	}
+	if (!item) {
 		return;
+	}
 	CreateEditTransformWindow(item);
 }
 
@@ -1000,8 +1032,9 @@ QModelIndexList OBSBasic::GetAllSelectedSourceItems()
 void OBSBasic::on_actionEditTransform_triggered()
 {
 	const auto item = GetCurrentSceneItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 	CreateEditTransformWindow(item);
 }
 
@@ -1057,22 +1090,26 @@ static void SetItemTL(obs_sceneitem_t *item, const vec3 &tl)
 
 static bool RotateSelectedSources(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
-	if (obs_sceneitem_is_group(item))
+	if (obs_sceneitem_is_group(item)) {
 		obs_sceneitem_group_enum_items(item, RotateSelectedSources, param);
-	if (!obs_sceneitem_selected(item))
+	}
+	if (!obs_sceneitem_selected(item)) {
 		return true;
-	if (obs_sceneitem_locked(item))
+	}
+	if (obs_sceneitem_locked(item)) {
 		return true;
+	}
 
 	float rot = *static_cast<float *>(param);
 
 	vec3 tl = GetItemTL(item);
 
 	rot += obs_sceneitem_get_rot(item);
-	if (rot >= 360.0f)
+	if (rot >= 360.0f) {
 		rot -= 360.0f;
-	else if (rot <= -360.0f)
+	} else if (rot <= -360.0f) {
 		rot += 360.0f;
+	}
 	obs_sceneitem_set_rot(item, rot);
 
 	obs_sceneitem_force_update_transform(item);
@@ -1128,12 +1165,15 @@ static bool MultiplySelectedItemScale(obs_scene_t * /* scene */, obs_sceneitem_t
 {
 	vec2 &mul = *static_cast<vec2 *>(param);
 
-	if (obs_sceneitem_is_group(item))
+	if (obs_sceneitem_is_group(item)) {
 		obs_sceneitem_group_enum_items(item, MultiplySelectedItemScale, param);
-	if (!obs_sceneitem_selected(item))
+	}
+	if (!obs_sceneitem_selected(item)) {
 		return true;
-	if (obs_sceneitem_locked(item))
+	}
+	if (obs_sceneitem_locked(item)) {
 		return true;
+	}
 
 	vec3 tl = GetItemTL(item);
 
@@ -1183,12 +1223,15 @@ static bool CenterAlignSelectedItems(obs_scene_t * /* scene */, obs_sceneitem_t 
 {
 	obs_bounds_type boundsType = *static_cast<obs_bounds_type *>(param);
 
-	if (obs_sceneitem_is_group(item))
+	if (obs_sceneitem_is_group(item)) {
 		obs_sceneitem_group_enum_items(item, CenterAlignSelectedItems, param);
-	if (!obs_sceneitem_selected(item))
+	}
+	if (!obs_sceneitem_selected(item)) {
 		return true;
-	if (obs_sceneitem_locked(item))
+	}
+	if (obs_sceneitem_locked(item)) {
 		return true;
+	}
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -1241,8 +1284,9 @@ void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 {
 	QModelIndexList selectedItems = GetAllSelectedSourceItems();
 
-	if (!selectedItems.count())
+	if (!selectedItems.count()) {
 		return;
+	}
 
 	vector<OBSSceneItem> items;
 
@@ -1256,14 +1300,16 @@ void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 		float width = float(obs_source_get_width(source)) * oti.scale.x;
 		float height = float(obs_source_get_height(source)) * oti.scale.y;
 
-		if (width == 0.0f || height == 0.0f)
+		if (width == 0.0f || height == 0.0f) {
 			continue;
+		}
 
 		items.emplace_back(item);
 	}
 
-	if (!items.size())
+	if (!items.size()) {
 		return;
+	}
 
 	// Get center x, y coordinates of items
 	vec3 center;
@@ -1311,10 +1357,11 @@ void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 
 		vec3 itemTL = GetItemTL(item);
 
-		if (centerType == CenterType::Vertical)
+		if (centerType == CenterType::Vertical) {
 			tl.x = itemTL.x;
-		else if (centerType == CenterType::Horizontal)
+		} else if (centerType == CenterType::Horizontal) {
 			tl.y = itemTL.y;
+		}
 
 		SetItemTL(item, tl);
 	}
@@ -1365,8 +1412,9 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 {
 	ui->sources->SetIconsVisible(visible);
-	if (advAudioWindow != nullptr)
+	if (advAudioWindow != nullptr) {
 		advAudioWindow->SetIconsVisible(visible);
+	}
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowSourceIcons", visible);
 }

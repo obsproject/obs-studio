@@ -37,8 +37,9 @@ void AJAOutputUI::ShowHideDialog()
 
 void AJAOutputUI::SetupPropertiesView()
 {
-	if (propertiesView)
+	if (propertiesView) {
 		delete propertiesView;
+	}
 
 	obs_data_t *settings = obs_data_create();
 	OBSData data = load_settings(kProgramPropsFilename);
@@ -77,14 +78,16 @@ void AJAOutputUI::SaveSettings(const char *filename, obs_data_t *settings)
 
 	BPtr<char> path = obs_module_get_config_path(obs_current_module(), filename);
 
-	if (settings)
+	if (settings) {
 		obs_data_save_json_safe(settings, path, "tmp", "bak");
+	}
 }
 
 void AJAOutputUI::SetupPreviewPropertiesView()
 {
-	if (previewPropertiesView)
+	if (previewPropertiesView) {
 		delete previewPropertiesView;
+	}
 
 	obs_data_t *settings = obs_data_create();
 
@@ -167,11 +170,13 @@ void AJAOutputUI::PreviewOutputStateChanged(bool active)
 static obs_properties_t *create_misc_props_ui(void *vp)
 {
 	AJAOutputUI *outputUI = (AJAOutputUI *)vp;
-	if (!outputUI)
+	if (!outputUI) {
 		return nullptr;
+	}
 	aja::CardManager *cardManager = outputUI->GetCardManager();
-	if (!cardManager)
+	if (!cardManager) {
 		return nullptr;
+	}
 
 	bool haveMultiView = false;
 	for (auto &c : *cardManager) {
@@ -229,8 +234,9 @@ aja::CardManager *AJAOutputUI::GetCardManager()
 
 void AJAOutputUI::SetupMiscPropertiesView()
 {
-	if (miscPropertiesView)
+	if (miscPropertiesView) {
 		delete miscPropertiesView;
+	}
 
 	obs_data_t *settings = obs_data_create();
 	OBSData data = load_settings(kMiscPropsFilename);

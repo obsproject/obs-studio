@@ -78,17 +78,19 @@ void output_start()
 
 		ajaOutputUI->OutputStateChanged(started);
 
-		if (!started)
+		if (!started) {
 			output_stop();
+		}
 	}
 }
 
 void output_toggle()
 {
-	if (main_output_running)
+	if (main_output_running) {
 		output_stop();
-	else
+	} else {
 		output_start();
+	}
 }
 
 void on_preview_scene_changed(enum obs_frontend_event event, void *param);
@@ -163,26 +165,30 @@ void preview_output_start()
 		preview_output_running = started;
 		ajaOutputUI->PreviewOutputStateChanged(started);
 
-		if (!started)
+		if (!started) {
 			preview_output_stop();
+		}
 	}
 }
 
 void preview_output_toggle()
 {
-	if (preview_output_running)
+	if (preview_output_running) {
 		preview_output_stop();
-	else
+	} else {
 		preview_output_start();
+	}
 }
 
 void populate_misc_device_list(obs_property_t *list, aja::CardManager *cardManager, NTV2DeviceID &firstDeviceID)
 {
 	for (const auto &iter : *cardManager) {
-		if (!iter.second)
+		if (!iter.second) {
 			continue;
-		if (firstDeviceID == DEVICE_ID_NOTFOUND)
+		}
+		if (firstDeviceID == DEVICE_ID_NOTFOUND) {
 			firstDeviceID = iter.second->GetDeviceID();
+		}
 		obs_property_list_add_string(list, iter.second->GetDisplayName().c_str(),
 					     iter.second->GetCardID().c_str());
 	}
@@ -208,14 +214,17 @@ void populate_multi_view_audio_sources(obs_property_t *list, NTV2DeviceID id)
 bool on_misc_device_selected(void *data, obs_properties_t *props, obs_property_t *, obs_data_t *settings)
 {
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return false;
+	}
 	aja::CardManager *cardManager = (aja::CardManager *)data;
-	if (!cardManager)
+	if (!cardManager) {
 		return false;
+	}
 	auto cardEntry = cardManager->GetCardEntry(cardID);
-	if (!cardEntry)
+	if (!cardEntry) {
 		return false;
+	}
 
 	NTV2DeviceID deviceID = cardEntry->GetDeviceID();
 	bool enableMultiViewUI = NTV2DeviceCanDoHDMIMultiView(deviceID);
@@ -270,14 +279,17 @@ bool on_multi_view_toggle(void *data, obs_properties_t *, obs_property_t *, obs_
 				!preview_output_running;
 	const int audioInputSource = obs_data_get_int(settings, kUIPropMultiViewAudioSource.id);
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return false;
+	}
 	aja::CardManager *cardManager = (aja::CardManager *)data;
-	if (!cardManager)
+	if (!cardManager) {
 		return false;
+	}
 	CNTV2Card *card = cardManager->GetCard(cardID);
-	if (!card)
+	if (!card) {
 		return false;
+	}
 
 	NTV2InputSource inputSource = (NTV2InputSource)audioInputSource;
 	toggle_multi_view(card, inputSource, multiViewEnabled);
@@ -315,8 +327,9 @@ void render_preview_source(void *param, uint32_t, uint32_t)
 {
 	auto ctx = (struct preview_output *)param;
 
-	if (!ctx->current_source)
+	if (!ctx->current_source) {
 		return;
+	}
 
 	uint32_t width = obs_source_get_base_width(ctx->current_source);
 	uint32_t height = obs_source_get_base_height(ctx->current_source);
@@ -381,22 +394,26 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 {
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
 		OBSData settings = load_settings(kProgramPropsFilename);
-		if (settings && obs_data_get_bool(settings, kUIPropAutoStartOutput.id))
+		if (settings && obs_data_get_bool(settings, kUIPropAutoStartOutput.id)) {
 			output_start();
+		}
 
 		OBSData previewSettings = load_settings(kPreviewPropsFilename);
-		if (previewSettings && obs_data_get_bool(previewSettings, kUIPropAutoStartOutput.id))
+		if (previewSettings && obs_data_get_bool(previewSettings, kUIPropAutoStartOutput.id)) {
 			preview_output_start();
+		}
 
 		OBSData miscSettings = load_settings(kMiscPropsFilename);
 		if (miscSettings && ajaOutputUI) {
 			on_multi_view_toggle(ajaOutputUI->GetCardManager(), nullptr, nullptr, miscSettings);
 		}
 	} else if (event == OBS_FRONTEND_EVENT_EXIT) {
-		if (main_output_running)
+		if (main_output_running) {
 			output_stop();
-		if (preview_output_running)
+		}
+		if (preview_output_running) {
 			preview_output_stop();
+		}
 	}
 }
 
@@ -404,8 +421,9 @@ static void aja_loaded(void * /* data */, calldata_t *calldata)
 {
 	// Receive CardManager pointer from the main AJA plugin
 	calldata_get_ptr(calldata, "card_manager", &cardManager);
-	if (ajaOutputUI)
+	if (ajaOutputUI) {
 		ajaOutputUI->SetCardManager(cardManager);
+	}
 }
 
 bool obs_module_load(void)
