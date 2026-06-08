@@ -276,6 +276,7 @@ void gs_device::InitAdapter(uint32_t adapterIdx)
 }
 
 const static D3D_FEATURE_LEVEL featureLevels[] = {
+	D3D_FEATURE_LEVEL_11_1,
 	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
 	D3D_FEATURE_LEVEL_10_0,
@@ -397,6 +398,22 @@ try {
 } catch (const char *error) {
 	blog(LOG_WARNING, "HasBadNV12Output failed: %s", error);
 	return false;
+}
+
+bool gs_device::Y410Supported()
+{
+	bool success = false;
+	try {
+		gs_texture_2d y410(this, NV12_CX, NV12_CY, GS_Y410, 1, nullptr, GS_RENDER_TARGET | GS_SHARED_KM_TEX,
+				   GS_TEXTURE_2D, false);
+		success = true;
+		blog(LOG_INFO, "Y410 textures supported!");
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "Y410 unsupported: %s (%08lX)", error.str, error.hr);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "Y410 unsupported: %s", error);
+	}
+	return success;
 }
 
 static bool increase_maximum_frame_latency(ID3D11Device *device)
@@ -616,7 +633,10 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create device", hr);
 
-	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %x", (unsigned int)levelUsed);
+	// Feature level is encoded as BCD, so we can just shift it to get the decimal number.
+	const auto levelMajor = static_cast<int32_t>(levelUsed) >> 12;
+	const auto levelMinor = static_cast<int32_t>(levelUsed) >> 8 & 0xf;
+	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %d.%d", levelMajor, levelMinor);
 
 	/* prevent stalls sometimes seen in Present calls */
 	if (!increase_maximum_frame_latency(device)) {
@@ -665,6 +685,11 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	nv12Supported = CheckFormat(device, DXGI_FORMAT_NV12) && !HasBadNV12Output();
 	p010Supported = nv12Supported && CheckFormat(device, DXGI_FORMAT_P010);
+	ayuvSupported = CheckFormat(device, DXGI_FORMAT_AYUV);
+	// CheckFormatSupport fails when checking for Y410 with D3D11_FORMAT_SUPPORT_RENDER_TARGET, but as long as both
+	// D3D11_BIND_SHADER_RESOURCE and D3D11_BIND_RENDER_TARGET are set it does work.
+	// So check by actually creating a texture instead of relying on CHeckFormatSupport.
+	y410Supported = Y410Supported();
 
 	fastClearSupported = FastClearSupported(desc.VendorId, driverVersion);
 }
@@ -2971,6 +2996,16 @@ extern "C" EXPORT bool device_nv12_available(gs_device_t *device)
 extern "C" EXPORT bool device_p010_available(gs_device_t *device)
 {
 	return device->p010Supported;
+}
+
+extern "C" EXPORT bool device_ayuv_available(gs_device_t *device)
+{
+	return device->ayuvSupported;
+}
+
+extern "C" EXPORT bool device_y410_available(gs_device_t *device)
+{
+	return device->y410Supported;
 }
 
 extern "C" EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)

@@ -1523,6 +1523,23 @@ bool device_p010_available(gs_device_t *device)
 #endif
 }
 
+bool device_ayuv_available(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+#ifdef _WIN32
+	return false;
+#else
+	return true; // RGBA texture
+#endif
+}
+
+bool device_y410_available(gs_device_t *device)
+{
+	/* TODO */
+	UNUSED_PARAMETER(device);
+	return false;
+}
+
 uint32_t gs_voltexture_get_width(const gs_texture_t *voltex)
 {
 	/* TODO */
