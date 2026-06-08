@@ -1398,9 +1398,6 @@ void OBSBasic::applicationShutdown() noexcept
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
 
-	if (patronJsonThread && patronJsonThread->isRunning())
-		patronJsonThread->wait();
-
 	delete screenshotData;
 	delete previewProjectorSource;
 	delete previewProjectorMain;
@@ -2091,14 +2088,6 @@ void OBSBasic::UpdateTitleBar()
 OBSBasic *OBSBasic::Get()
 {
 	return reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-}
-
-void OBSBasic::UpdatePatronJson(const std::string &text, const std::string &error)
-{
-	if (!error.empty())
-		return;
-
-	patronJson = text;
 }
 
 void OBSBasic::SetDisplayAffinity(QWindow *window)
