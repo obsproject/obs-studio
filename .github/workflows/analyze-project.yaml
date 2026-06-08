@@ -71,6 +71,12 @@ jobs:
           if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
           print '::endgroup::'
 
+          local xcode_cas_path="${HOME}/Library/Developer/Xcode/DerivedData/CompilationCache.noindex"
+
+          if ! [[ -d ${xcode_cas_path} ]] mkdir -p ${xcode_cas_path}
+
+          print "xcodeCasPath=${xcode_cas_path}" >> $GITHUB_OUTPUT
+
       - name: Set Up Code Signing 🔑
         uses: ./.github/actions/setup-macos-codesigning
         id: codesign
@@ -96,6 +102,7 @@ jobs:
           CODESIGN_IDENT: ${{ steps.codesign.outputs.codesignIdent }}
           CODESIGN_TEAM: ${{ steps.codesign.outputs.codesignTeam }}
           PROVISIONING_PROFILE: ${{ steps.codesign.outputs.provisioningProfileUUID }}
+          XCODE_CAS_PATH: ${{ steps.setup.outputs.xcodeCasPath }}
         run: |
           : Run macOS Build
 
