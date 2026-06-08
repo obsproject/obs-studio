@@ -180,17 +180,20 @@ void MediaControls::SeekTimerCallback()
 
 void MediaControls::StartMediaTimer()
 {
-	if (isSlideshow)
+	if (isSlideshow) {
 		return;
+	}
 
-	if (!mediaTimer.isActive())
+	if (!mediaTimer.isActive()) {
 		mediaTimer.start(16);
+	}
 }
 
 void MediaControls::StopMediaTimer()
 {
-	if (mediaTimer.isActive())
+	if (mediaTimer.isActive()) {
 		mediaTimer.stop();
+	}
 }
 
 void MediaControls::SetPlayingState()
@@ -288,10 +291,11 @@ void MediaControls::RefreshControls()
 		break;
 	}
 
-	if (isSlideshow)
+	if (isSlideshow) {
 		UpdateSlideCounter();
-	else
+	} else {
 		SetSliderPosition();
+	}
 }
 
 OBSSource MediaControls::GetSource()
@@ -333,10 +337,11 @@ void MediaControls::SetSliderPosition()
 
 	float sliderPosition;
 
-	if (duration)
+	if (duration) {
 		sliderPosition = (time / duration) * (float)ui->slider->maximum();
-	else
+	} else {
 		sliderPosition = 0.0f;
+	}
 
 	ui->slider->setValue((int)sliderPosition);
 	UpdateLabels((int)sliderPosition);
@@ -446,16 +451,18 @@ void MediaControls::on_durationLabel_clicked()
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "MediaControlsCountdownTimer", countDownTimer);
 
-	if (MediaPaused())
+	if (MediaPaused()) {
 		SetSliderPosition();
+	}
 }
 
 void MediaControls::MoveSliderFoward(int seconds)
 {
 	OBSSource source = OBSGetStrongRef(weakSource);
 
-	if (!source)
+	if (!source) {
 		return;
+	}
 
 	int ms = obs_source_media_get_time(source);
 	ms += seconds * 1000;
@@ -468,8 +475,9 @@ void MediaControls::MoveSliderBackwards(int seconds)
 {
 	OBSSource source = OBSGetStrongRef(weakSource);
 
-	if (!source)
+	if (!source) {
 		return;
+	}
 
 	int ms = obs_source_media_get_time(source);
 	ms -= seconds * 1000;
@@ -480,13 +488,15 @@ void MediaControls::MoveSliderBackwards(int seconds)
 
 void MediaControls::UpdateSlideCounter()
 {
-	if (!isSlideshow)
+	if (!isSlideshow) {
 		return;
+	}
 
 	OBSSource source = OBSGetStrongRef(weakSource);
 
-	if (!source)
+	if (!source) {
 		return;
+	}
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	calldata_t cd = {};
@@ -521,8 +531,9 @@ void MediaControls::UpdateLabels(int val)
 
 	ui->timerLabel->setText(FormatSeconds((int)(time / 1000.0f)));
 
-	if (!countDownTimer)
+	if (!countDownTimer) {
 		ui->durationLabel->setText(FormatSeconds((int)(duration / 1000.0f)));
-	else
+	} else {
 		ui->durationLabel->setText(QString("-") + FormatSeconds((int)((duration - time) / 1000.0f)));
+	}
 }

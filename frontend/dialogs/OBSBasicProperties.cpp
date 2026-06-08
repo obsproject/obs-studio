@@ -59,8 +59,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->setupUi(this);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
-	if (cx > 400 && cy > 400)
+	if (cx > 400 && cy > 400) {
 		resize(cx, cy);
+	}
 
 	/* The OBSData constructor increments the reference once */
 	obs_data_release(oldSettings);
@@ -321,24 +322,27 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		std::string undo_data(obs_data_get_json(oldSettings));
 		std::string redo_data(obs_data_get_json(new_settings));
 
-		if (undo_data.compare(redo_data) != 0)
+		if (undo_data.compare(redo_data) != 0) {
 			main->undo_s.add_action(QTStr("Undo.Properties").arg(obs_source_get_name(source)), undo_redo,
 						undo_redo, undo_data, redo_data);
+		}
 
 		acceptClicked = true;
 		close();
 
-		if (view->DeferUpdate())
+		if (view->DeferUpdate()) {
 			view->UpdateSettings();
+		}
 
 	} else if (val == QDialogButtonBox::RejectRole) {
 		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
 
-		if (view->DeferUpdate())
+		if (view->DeferUpdate()) {
 			obs_data_apply(settings, oldSettings);
-		else
+		} else {
 			obs_source_update(source, oldSettings);
+		}
 
 		close();
 	}
@@ -348,8 +352,9 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
 
-	if (!window->source)
+	if (!window->source) {
 		return;
+	}
 
 	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
 	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
@@ -380,8 +385,9 @@ void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx, uint32_t
 {
 	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
 
-	if (!window->sourceClone)
+	if (!window->sourceClone) {
 		return;
+	}
 
 	uint32_t sourceCX = max(obs_source_get_width(window->sourceClone), 1u);
 	uint32_t sourceCY = max(obs_source_get_height(window->sourceClone), 1u);
@@ -430,8 +436,9 @@ void OBSBasicProperties::reject()
 void OBSBasicProperties::closeEvent(QCloseEvent *event)
 {
 	QDialog::closeEvent(event);
-	if (event->isAccepted())
+	if (event->isAccepted()) {
 		Cleanup();
+	}
 }
 
 bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message, qintptr *)
@@ -481,8 +488,9 @@ bool OBSBasicProperties::ConfirmQuit()
 	switch (button) {
 	case QMessageBox::Save:
 		acceptClicked = true;
-		if (view->DeferUpdate())
+		if (view->DeferUpdate()) {
 			view->UpdateSettings();
+		}
 		// Do nothing because the settings are already updated
 		break;
 	case QMessageBox::Discard:

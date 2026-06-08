@@ -158,8 +158,9 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	if (!customServer) {
 		QComboBox *serverList = streamPage->ui->server;
 		int idx = serverList->findData(QString(server.c_str()));
-		if (idx == -1)
+		if (idx == -1) {
 			idx = 0;
+		}
 
 		serverList->setCurrentIndex(idx);
 	} else {
@@ -168,8 +169,9 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 		streamPage->ui->service->setCurrentIndex(idx);
 	}
 
-	if (!key.empty())
+	if (!key.empty()) {
 		streamPage->ui->key->setText(key.c_str());
+	}
 
 	TestHardwareEncoding();
 
@@ -211,28 +213,31 @@ void AutoConfig::TestHardwareEncoding()
 	size_t idx = 0;
 	const char *id;
 	while (obs_enum_encoder_types(idx++, &id)) {
-		if (strcmp(id, "ffmpeg_nvenc") == 0)
+		if (strcmp(id, "ffmpeg_nvenc") == 0) {
 			hardwareEncodingAvailable = nvencAvailable = true;
-		else if (strcmp(id, "obs_qsv11") == 0)
+		} else if (strcmp(id, "obs_qsv11") == 0) {
 			hardwareEncodingAvailable = qsvAvailable = true;
-		else if (strcmp(id, "h264_texture_amf") == 0)
+		} else if (strcmp(id, "h264_texture_amf") == 0) {
 			hardwareEncodingAvailable = vceAvailable = true;
+		}
 #ifdef __APPLE__
 		else if (strcmp(id, "com.apple.videotoolbox.videoencoder.ave.avc") == 0
 #ifndef __aarch64__
 			 && os_get_emulation_status() == true
 #endif
 		)
-			if (__builtin_available(macOS 13.0, *))
+			if (__builtin_available(macOS 13.0, *)) {
 				hardwareEncodingAvailable = appleAvailable = true;
+			}
 #endif
 	}
 }
 
 bool AutoConfig::CanTestServer(const char *server)
 {
-	if (!testRegions || (regionUS && regionEU && regionAsia && regionOther))
+	if (!testRegions || (regionUS && regionEU && regionAsia && regionOther)) {
 		return true;
+	}
 
 	if (service == Service::Twitch) {
 		if (astrcmp_n(server, "US West:", 8) == 0 || astrcmp_n(server, "US East:", 8) == 0 ||
@@ -257,8 +262,9 @@ void AutoConfig::done(int result)
 	QWizard::done(result);
 
 	if (result == QDialog::Accepted) {
-		if (type == Type::Streaming)
+		if (type == Type::Streaming) {
 			SaveStreamSettings();
+		}
 		SaveSettings();
 
 #ifdef YOUTUBE_ENABLED
@@ -300,20 +306,23 @@ void AutoConfig::SaveStreamSettings()
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!customServer)
+	if (!customServer) {
 		obs_data_set_string(settings, "service", serviceName.c_str());
+	}
 	obs_data_set_string(settings, "server", server.c_str());
 #ifdef YOUTUBE_ENABLED
-	if (!streamPage->auth || !IsYouTubeService(serviceName))
+	if (!streamPage->auth || !IsYouTubeService(serviceName)) {
 		obs_data_set_string(settings, "key", key.c_str());
+	}
 #else
 	obs_data_set_string(settings, "key", key.c_str());
 #endif
 
 	OBSServiceAutoRelease newService = obs_service_create(service_id, "default_service", settings, hotkeyData);
 
-	if (!newService)
+	if (!newService) {
 		return;
+	}
 
 	main->SetService(newService);
 	main->SaveService();
@@ -334,11 +343,12 @@ void AutoConfig::SaveStreamSettings()
 
 	config_set_bool(main->Config(), "Stream1", "EnableMultitrackVideo", multitrackVideo.testSuccessful);
 
-	if (multitrackVideo.targetBitrate.has_value())
+	if (multitrackVideo.targetBitrate.has_value()) {
 		config_set_int(main->Config(), "Stream1", "MultitrackVideoTargetBitrate",
 			       *multitrackVideo.targetBitrate);
-	else
+	} else {
 		config_remove_value(main->Config(), "Stream1", "MultitrackVideoTargetBitrate");
+	}
 
 	if (multitrackVideo.bitrate.has_value() && multitrackVideo.targetBitrate.has_value() &&
 	    (static_cast<double>(*multitrackVideo.bitrate) / *multitrackVideo.targetBitrate) >= 0.90) {
@@ -354,8 +364,9 @@ void AutoConfig::SaveSettings()
 {
 	OBSBasic *main = OBSBasic::Get();
 
-	if (recordingEncoder != Encoder::Stream)
+	if (recordingEncoder != Encoder::Stream) {
 		config_set_string(main->Config(), "SimpleOutput", "RecEncoder", GetEncoderId(recordingEncoder));
+	}
 
 	const char *quality = recordingQuality == Quality::High ? "Small" : "Stream";
 

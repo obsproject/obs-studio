@@ -118,8 +118,9 @@ void OBSBasic::AddScene(OBSSource source)
 
 			auto potential_source = static_cast<obs_source_t *>(data);
 			OBSSourceAutoRelease source = obs_source_get_ref(potential_source);
-			if (source && pressed)
+			if (source && pressed) {
 				main->SetCurrentScene(source.Get());
+			}
 		},
 		static_cast<obs_source_t *>(source));
 
@@ -175,8 +176,9 @@ void OBSBasic::RemoveScene(OBSSource source)
 	for (int i = 0; i < count; i++) {
 		auto item = ui->scenes->item(i);
 		auto cur_scene = GetOBSRef<OBSScene>(item);
-		if (cur_scene != scene)
+		if (cur_scene != scene) {
 			continue;
+		}
 
 		foundItem = true;
 		sel = item;
@@ -184,8 +186,9 @@ void OBSBasic::RemoveScene(OBSSource source)
 	}
 
 	if (sel != nullptr) {
-		if (sel == ui->scenes->currentItem())
+		if (sel == ui->scenes->currentItem()) {
 			ui->sources->Clear();
+		}
 		delete sel;
 	}
 
@@ -205,8 +208,9 @@ void OBSBasic::RemoveScene(OBSSource source)
 static bool select_one(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *param)
 {
 	obs_sceneitem_t *selectedItem = static_cast<obs_sceneitem_t *>(param);
-	if (obs_sceneitem_is_group(item))
+	if (obs_sceneitem_is_group(item)) {
 		obs_sceneitem_group_enum_items(item, select_one, param);
+	}
 
 	obs_sceneitem_select(item, (selectedItem == item));
 
@@ -217,8 +221,9 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 {
 	obs_scene_t *scene = obs_sceneitem_get_scene(item);
 
-	if (GetCurrentScene() == scene)
+	if (GetCurrentScene() == scene) {
 		ui->sources->Add(item);
+	}
 
 	SaveProject();
 
@@ -236,8 +241,9 @@ void OBSBasic::DuplicateSelectedScene()
 {
 	OBSScene curScene = GetCurrentScene();
 
-	if (!curScene)
+	if (!curScene) {
 		return;
+	}
 
 	OBSSource curSceneSource = obs_scene_get_source(curScene);
 	QString format{obs_source_get_name(curSceneSource)};
@@ -254,8 +260,9 @@ void OBSBasic::DuplicateSelectedScene()
 		string name;
 		bool accepted = NameDialog::AskForName(this, QTStr("Basic.Main.AddSceneDlg.Title"),
 						       QTStr("Basic.Main.AddSceneDlg.Text"), name, placeHolderText);
-		if (!accepted)
+		if (!accepted) {
 			return;
+		}
 
 		if (name.empty()) {
 			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
@@ -297,8 +304,9 @@ void OBSBasic::DuplicateSelectedScene()
 static bool save_undo_source_enum(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *p)
 {
 	obs_source_t *source = obs_sceneitem_get_source(item);
-	if (obs_obj_is_private(source) && !obs_source_removed(source))
+	if (obs_obj_is_private(source) && !obs_source_removed(source)) {
 		return true;
+	}
 
 	obs_data_array_t *array = (obs_data_array_t *)p;
 
@@ -307,12 +315,14 @@ static bool save_undo_source_enum(obs_scene_t * /* scene */, obs_sceneitem_t *it
 	const size_t count = obs_data_array_count(array);
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease sourceData = obs_data_array_item(array, i);
-		if (strcmp(name, obs_data_get_string(sourceData, "name")) == 0)
+		if (strcmp(name, obs_data_get_string(sourceData, "name")) == 0) {
 			return true;
+		}
 	}
 
-	if (obs_source_is_group(source))
+	if (obs_source_is_group(source)) {
 		obs_scene_enum_items(obs_group_from_source(source), save_undo_source_enum, p);
+	}
 
 	OBSDataAutoRelease source_data = obs_save_source(source);
 	obs_data_array_push_back(array, source_data);
@@ -323,8 +333,9 @@ static inline void RemoveSceneAndReleaseNested(obs_source_t *source)
 {
 	obs_source_remove(source);
 	auto cb = [](void *, obs_source_t *source) {
-		if (strcmp(obs_source_get_id(source), "scene") == 0)
+		if (strcmp(obs_source_get_id(source), "scene") == 0) {
 			obs_scene_prune_sources(obs_scene_from_source(source));
+		}
 		return true;
 	};
 	obs_enum_scenes(cb, NULL);
@@ -363,8 +374,9 @@ void OBSBasic::RemoveSelectedScene()
 
 	auto other_scenes_cb = [](void *data_ptr, obs_source_t *scene) {
 		struct other_scenes_cb_data *data = (struct other_scenes_cb_data *)data_ptr;
-		if (strcmp(obs_source_get_name(scene), obs_source_get_name(data->oldScene)) == 0)
+		if (strcmp(obs_source_get_name(scene), obs_source_get_name(data->oldScene)) == 0) {
 			return true;
+		}
 		obs_sceneitem_t *item = obs_scene_find_source(obs_group_or_scene_from_source(scene),
 							      obs_source_get_name(data->oldScene));
 		if (item) {
@@ -403,8 +415,9 @@ void OBSBasic::RemoveSelectedScene()
 		}
 
 		/* actually load sources now */
-		for (obs_source_t *source : sources)
+		for (obs_source_t *source : sources) {
 			obs_source_load2(source);
+		}
 
 		/* Add scene to scenes and groups it was nested in */
 		for (size_t i = 0; i < obs_data_array_count(scene_used_in_other_scenes); i++) {
@@ -512,8 +525,9 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current, QListWidge
 
 	SetCurrentScene(source, forceSceneChange);
 
-	if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
+	if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput) {
 		outputHandler->UpdateVirtualCamOutputSource();
+	}
 
 	OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 
@@ -638,10 +652,11 @@ void OBSBasic::GridActionClicked()
 	bool gridMode = !ui->scenes->GetGridMode();
 	ui->scenes->SetGridMode(gridMode);
 
-	if (gridMode)
+	if (gridMode) {
 		ui->actionSceneGridMode->setChecked(true);
-	else
+	} else {
 		ui->actionSceneListMode->setChecked(true);
+	}
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode", gridMode);
 }
@@ -705,14 +720,16 @@ void OBSBasic::on_actionRemoveScene_triggered()
 void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
 {
 	int idx = ui->scenes->currentRow();
-	if (idx == -1 || idx == invalidIdx)
+	if (idx == -1 || idx == invalidIdx) {
 		return;
+	}
 
 	ui->scenes->blockSignals(true);
 	QListWidgetItem *item = ui->scenes->takeItem(idx);
 
-	if (!relative)
+	if (!relative) {
 		idx = 0;
+	}
 
 	ui->scenes->insertItem(idx + offset, item);
 	ui->scenes->setCurrentRow(idx + offset);
@@ -751,15 +768,17 @@ void OBSBasic::EditSceneItemName()
 
 void OBSBasic::on_scenes_itemDoubleClicked(QListWidgetItem *witem)
 {
-	if (!witem)
+	if (!witem) {
 		return;
+	}
 
 	if (IsPreviewProgramMode()) {
 		bool doubleClickSwitch =
 			config_get_bool(App()->GetUserConfig(), "BasicWindow", "TransitionOnDoubleClick");
 
-		if (doubleClickSwitch)
+		if (doubleClickSwitch) {
 			TransitionClicked();
+		}
 	}
 }
 
@@ -811,8 +830,9 @@ void OBSBasic::CreateSceneUndoRedoAction(const QString &action_name, OBSData und
 			const char *name = obs_data_get_string(data, "name");
 
 			OBSSourceAutoRelease source = obs_get_source_by_name(name);
-			if (!source)
+			if (!source) {
 				source = obs_load_source(data);
+			}
 
 			sources.push_back(source.Get());
 
@@ -827,8 +847,9 @@ void OBSBasic::CreateSceneUndoRedoAction(const QString &action_name, OBSData und
 		}
 
 		/* actually load sources now */
-		for (obs_source_t *source : sources)
+		for (obs_source_t *source : sources) {
 			obs_source_load2(source);
+		}
 
 		ui->sources->RefreshItems();
 	};
@@ -844,13 +865,15 @@ void OBSBasic::MoveSceneItem(enum obs_order_movement movement, const QString &ac
 	OBSSceneItem item = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(item);
 
-	if (!source)
+	if (!source) {
 		return;
+	}
 
 	OBSScene scene = GetCurrentScene();
 	std::vector<obs_source_t *> sources;
-	if (scene != obs_sceneitem_get_scene(item))
+	if (scene != obs_sceneitem_get_scene(item)) {
 		sources.push_back(obs_scene_get_source(obs_sceneitem_get_scene(item)));
+	}
 
 	OBSData undo_data = BackupScene(scene, &sources);
 
@@ -866,8 +889,9 @@ void OBSBasic::MoveSceneItem(enum obs_order_movement movement, const QString &ac
 static void RenameListItem(OBSBasic *parent, QListWidget *listWidget, obs_source_t *source, const string &name)
 {
 	const char *prevName = obs_source_get_name(source);
-	if (name == prevName)
+	if (name == prevName) {
 		return;
+	}
 
 	OBSSourceAutoRelease foundSource = obs_get_source_by_name(name.c_str());
 	QListWidgetItem *listItem = listWidget->currentItem();
@@ -905,8 +929,9 @@ void OBSBasic::SceneNameEdited(QWidget *editor)
 	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
 	string text = edit->text().trimmed().toStdString();
 
-	if (!scene)
+	if (!scene) {
 		return;
+	}
 
 	obs_source_t *source = obs_scene_get_source(scene);
 	RenameListItem(this, ui->scenes, source, text);
@@ -926,12 +951,15 @@ void OBSBasic::OpenSceneFilters()
 
 static bool reset_tr(obs_scene_t * /* scene */, obs_sceneitem_t *item, void *)
 {
-	if (obs_sceneitem_is_group(item))
+	if (obs_sceneitem_is_group(item)) {
 		obs_sceneitem_group_enum_items(item, reset_tr, nullptr);
-	if (!obs_sceneitem_selected(item))
+	}
+	if (!obs_sceneitem_selected(item)) {
 		return true;
-	if (obs_sceneitem_locked(item))
+	}
+	if (obs_sceneitem_locked(item)) {
 		return true;
+	}
 
 	obs_sceneitem_defer_update_begin(item);
 
@@ -981,8 +1009,9 @@ SourceTreeItem *OBSBasic::GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem)
 		treeItem = ui->sources->GetItemWidget(i);
 		item = ui->sources->Get(i);
 	}
-	if (treeItem)
+	if (treeItem) {
 		return treeItem;
+	}
 
 	return nullptr;
 }
@@ -991,6 +1020,7 @@ void OBSBasic::on_actionSceneFilters_triggered()
 {
 	OBSSource sceneSource = GetCurrentSceneSource();
 
-	if (sceneSource)
+	if (sceneSource) {
 		OpenFilters(sceneSource);
+	}
 }

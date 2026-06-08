@@ -10,8 +10,9 @@ static bool GetWindowTitle(HWND window, string &title)
 	wstring wtitle;
 
 	wtitle.resize(len);
-	if (!GetWindowTextW(window, &wtitle[0], (int)len + 1))
+	if (!GetWindowTextW(window, &wtitle[0], (int)len + 1)) {
 		return false;
+	}
 
 	len = os_wcs_to_utf8(wtitle.c_str(), 0, nullptr, 0);
 	title.resize(len);
@@ -25,20 +26,24 @@ static bool WindowValid(HWND window)
 	RECT rect;
 	DWORD id;
 
-	if (!IsWindowVisible(window))
+	if (!IsWindowVisible(window)) {
 		return false;
+	}
 	GetWindowThreadProcessId(window, &id);
-	if (id == GetCurrentProcessId())
+	if (id == GetCurrentProcessId()) {
 		return false;
+	}
 
 	GetClientRect(window, &rect);
 	styles = GetWindowLongPtr(window, GWL_STYLE);
 	ex_styles = GetWindowLongPtr(window, GWL_EXSTYLE);
 
-	if (ex_styles & WS_EX_TOOLWINDOW)
+	if (ex_styles & WS_EX_TOOLWINDOW) {
 		return false;
-	if (styles & WS_CHILD)
+	}
+	if (styles & WS_CHILD) {
 		return false;
+	}
 
 	return true;
 }
@@ -49,8 +54,9 @@ void GetWindowList(vector<string> &windows)
 
 	while (window) {
 		string title;
-		if (WindowValid(window) && GetWindowTitle(window, title))
+		if (WindowValid(window) && GetWindowTitle(window, title)) {
 			windows.emplace_back(title);
+		}
 		window = GetNextWindow(window, GW_HWNDNEXT);
 	}
 }

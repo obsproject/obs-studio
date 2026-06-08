@@ -91,16 +91,19 @@ static bool IsVSRedistOutdated()
 	const wchar_t vc_dll[] = L"msvcp140";
 
 	auto size = GetFileVersionInfoSize(vc_dll, nullptr);
-	if (!size)
+	if (!size) {
 		return true;
+	}
 
 	buf.resize(size);
-	if (!GetFileVersionInfo(vc_dll, 0, size, buf.data()))
+	if (!GetFileVersionInfo(vc_dll, 0, size, buf.data())) {
 		return true;
+	}
 
 	bool success = VerQueryValue(buf.data(), L"\\", reinterpret_cast<LPVOID *>(&info), &len);
-	if (!success || !info || !len)
+	if (!success || !info || !len) {
 		return true;
+	}
 
 	return LOWORD(info->dwFileVersionMS) < 40;
 }
@@ -114,8 +117,9 @@ static void Log(const wchar_t *fmt, ...)
 	int len = _vscwprintf(fmt, argptr);
 	va_end(argptr);
 
-	if (len <= 0)
+	if (len <= 0) {
 		return;
+	}
 
 	/* Using len + 1 for null terminator, which gets chopped off below */
 	wstring str(len + 1, L'\0');
@@ -124,8 +128,9 @@ static void Log(const wchar_t *fmt, ...)
 	len = _vsnwprintf_s(str.data(), len + 1, _TRUNCATE, fmt, argptr);
 	va_end(argptr);
 
-	if (len <= 0)
+	if (len <= 0) {
 		return;
+	}
 
 	/* Append newline and send to main window as a PostMessage to
 	*  avoid blocking worker threads with UI messages */
@@ -159,28 +164,34 @@ try {
 
 	hSrc = CreateFile(src, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN,
 			  nullptr);
-	if (!hSrc.Valid())
+	if (!hSrc.Valid()) {
 		throw LastError();
+	}
 
 	hDest = CreateFile(dest, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
-	if (!hDest.Valid())
+	if (!hDest.Valid()) {
 		throw LastError();
+	}
 
 	BYTE buf[65536];
 	DWORD read, wrote;
 
 	for (;;) {
-		if (!ReadFile(hSrc, buf, sizeof(buf), &read, nullptr))
+		if (!ReadFile(hSrc, buf, sizeof(buf), &read, nullptr)) {
 			throw LastError();
+		}
 
-		if (read == 0)
+		if (read == 0) {
 			break;
+		}
 
-		if (!WriteFile(hDest, buf, read, &wrote, nullptr))
+		if (!WriteFile(hDest, buf, read, &wrote, nullptr)) {
 			throw LastError();
+		}
 
-		if (wrote != read)
+		if (wrote != read) {
 			return false;
+		}
 	}
 
 	return true;
@@ -193,12 +204,14 @@ try {
 static void MyDeleteFile(const wstring &filename)
 {
 	/* Try straightforward delete first */
-	if (DeleteFile(filename.c_str()))
+	if (DeleteFile(filename.c_str())) {
 		return;
+	}
 
 	DWORD err = GetLastError();
-	if (err == ERROR_FILE_NOT_FOUND)
+	if (err == ERROR_FILE_NOT_FOUND) {
 		return;
+	}
 
 	/* If all else fails, schedule the file to be deleted on reboot */
 	MoveFileEx(filename.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
@@ -208,18 +221,22 @@ static bool IsSafeFilename(const wchar_t *path)
 {
 	const wchar_t *p = path;
 
-	if (!*p)
+	if (!*p) {
 		return false;
+	}
 
-	if (wcsstr(path, L".."))
+	if (wcsstr(path, L"..")) {
 		return false;
+	}
 
-	if (*p == '/')
+	if (*p == '/') {
 		return false;
+	}
 
 	while (*p) {
-		if (!isalnum(*p) && *p != '.' && *p != '/' && *p != '_' && *p != '-')
+		if (!isalnum(*p) && *p != '.' && *p != '/' && *p != '_' && *p != '-') {
 			return false;
+		}
 		p++;
 	}
 
@@ -258,12 +275,14 @@ static bool QuickWriteFile(const wchar_t *file, const void *data, size_t size)
 try {
 	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
 
-	if (handle == INVALID_HANDLE_VALUE)
+	if (handle == INVALID_HANDLE_VALUE) {
 		throw LastError();
+	}
 
 	DWORD written;
-	if (!WriteFile(handle, data, (DWORD)size, &written, nullptr))
+	if (!WriteFile(handle, data, (DWORD)size, &written, nullptr)) {
 		throw LastError();
+	}
 
 	return true;
 
@@ -351,8 +370,9 @@ struct deletion_t {
 
 	void UndoRename() const
 	{
-		if (!deleteMeFilename.empty())
+		if (!deleteMeFilename.empty()) {
 			MoveFile(deleteMeFilename.c_str(), originalFilename.c_str());
+		}
 	}
 };
 
@@ -364,11 +384,13 @@ static mutex updateMutex;
 
 static inline void CleanupPartialUpdates()
 {
-	for (update_t &update : updates)
+	for (update_t &update : updates) {
 		update.CleanPartialUpdate();
+	}
 
-	for (deletion_t &deletion : deletions)
+	for (deletion_t &deletion : deletions) {
 		deletion.UndoRename();
+	}
 }
 
 /* ----------------------------------------------------------------------- */
@@ -387,10 +409,12 @@ static int Decompress(ZSTD_DCtx *ctx, std::vector<std::byte> &buf, size_t size)
 	// Overwrite buffer with decompressed data
 	size_t result = ZSTD_decompressDCtx(ctx, buf.data(), buf.size(), comp.data(), comp.size());
 
-	if (result != size)
+	if (result != size) {
 		return -9;
-	if (ZSTD_isError(result))
+	}
+	if (ZSTD_isError(result)) {
 		return -10;
+	}
 
 	return 0;
 }
@@ -440,8 +464,9 @@ bool DownloadWorkerThread()
 				return false;
 			}
 
-			if (update.state != STATE_PENDING_DOWNLOAD)
+			if (update.state != STATE_PENDING_DOWNLOAD) {
 				continue;
+			}
 
 			update.state = STATE_DOWNLOADING;
 
@@ -554,22 +579,26 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 	*path = 0;
 
 	WinHandle proc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, false, id);
-	if (!proc.Valid())
+	if (!proc.Valid()) {
 		return WAITIFOBS_WRONG_PROCESS;
+	}
 
-	if (!QueryFullProcessImageNameW(proc, 0, path, &path_len))
+	if (!QueryFullProcessImageNameW(proc, 0, path, &path_len)) {
 		return WAITIFOBS_WRONG_PROCESS;
+	}
 
 	// check it's actually our exe that's running
 	size_t len = wcslen(obs_base_directory);
-	if (wcsncmp(path, obs_base_directory, len) != 0)
+	if (wcsncmp(path, obs_base_directory, len) != 0) {
 		return WAITIFOBS_WRONG_PROCESS;
+	}
 
 	name = wcsrchr(path, L'\\');
-	if (name)
+	if (name) {
 		name += 1;
-	else
+	} else {
 		name = path;
+	}
 
 	if (_wcsnicmp(name, expected, 5) == 0) {
 		HANDLE hWait[2];
@@ -579,8 +608,9 @@ static inline DWORD WaitIfOBS(DWORD id, const wchar_t *expected)
 		Log(L"Waiting for OBS PID %d at %s...", id, path);
 
 		int i = WaitForMultipleObjects(2, hWait, false, INFINITE);
-		if (i == WAIT_OBJECT_0 + 1)
+		if (i == WAIT_OBJECT_0 + 1) {
 			return WAITIFOBS_CANCELLED;
+		}
 
 		return WAITIFOBS_SUCCESS;
 	}
@@ -640,8 +670,9 @@ void HasherThread()
 
 	while (true) {
 		ulock.lock();
-		if (hashQueue.empty())
+		if (hashQueue.empty()) {
 			return;
+		}
 
 		auto fileName = hashQueue.front();
 		hashQueue.pop();
@@ -650,11 +681,13 @@ void HasherThread()
 
 		wchar_t updateFileName[MAX_PATH];
 
-		if (!UTF8ToWideBuf(updateFileName, fileName.c_str()))
+		if (!UTF8ToWideBuf(updateFileName, fileName.c_str())) {
 			continue;
+		}
 
-		if (!IsSafeFilename(updateFileName))
+		if (!IsSafeFilename(updateFileName)) {
 			continue;
+		}
 
 		B2Hash existingHash;
 		if (CalculateFileHash(updateFileName, existingHash)) {
@@ -698,16 +731,18 @@ static inline bool FileExists(const wchar_t *path)
 	HANDLE hFind;
 
 	hFind = FindFirstFileW(path, &wfd);
-	if (hFind != INVALID_HANDLE_VALUE)
+	if (hFind != INVALID_HANDLE_VALUE) {
 		FindClose(hFind);
+	}
 
 	return hFind != INVALID_HANDLE_VALUE;
 }
 
 static bool NonCorePackageInstalled(const char *name)
 {
-	if (strcmp(name, "obs-browser") == 0)
+	if (strcmp(name, "obs-browser") == 0) {
 		return FileExists(L"obs-plugins\\64bit\\obs-browser.dll");
+	}
 
 	return false;
 }
@@ -715,29 +750,34 @@ static bool NonCorePackageInstalled(const char *name)
 static bool AddPackageUpdateFiles(const Package &package, const wchar_t *branch)
 {
 	wchar_t wPackageName[512];
-	if (!UTF8ToWideBuf(wPackageName, package.name.c_str()))
+	if (!UTF8ToWideBuf(wPackageName, package.name.c_str())) {
 		return false;
+	}
 
-	if (package.name != "core" && !NonCorePackageInstalled(package.name.c_str()))
+	if (package.name != "core" && !NonCorePackageInstalled(package.name.c_str())) {
 		return true;
+	}
 
 	for (const File &file : package.files) {
-		if (file.hash.size() != kBlake2StrLength)
+		if (file.hash.size() != kBlake2StrLength) {
 			continue;
+		}
 
 		/* The download hash may not exist if a file is uncompressed */
 
 		bool compressed = false;
-		if (file.compressed_hash.size() == kBlake2StrLength)
+		if (file.compressed_hash.size() == kBlake2StrLength) {
 			compressed = true;
+		}
 
 		/* convert strings to wide */
 
 		wchar_t sourceURL[1024];
 		wchar_t updateFileName[MAX_PATH];
 
-		if (!UTF8ToWideBuf(updateFileName, file.name.c_str()))
+		if (!UTF8ToWideBuf(updateFileName, file.name.c_str())) {
 			continue;
+		}
 
 		/* make sure paths are safe */
 
@@ -762,8 +802,9 @@ static bool AddPackageUpdateFiles(const Package &package, const wchar_t *branch)
 
 		if (hashes.count(file.name)) {
 			localFileHash = hashes[file.name];
-			if (localFileHash == updateHash)
+			if (localFileHash == updateHash) {
 				continue;
+			}
 
 			has_hash = true;
 		}
@@ -787,8 +828,9 @@ static bool AddPackageUpdateFiles(const Package &package, const wchar_t *branch)
 		}
 
 		update.has_hash = has_hash;
-		if (has_hash)
+		if (has_hash) {
 			update.my_hash = localFileHash;
+		}
 
 		updates.push_back(std::move(update));
 
@@ -802,18 +844,21 @@ static void AddPackageRemovedFiles(const Package &package)
 {
 	for (const string &filename : package.removed_files) {
 		wchar_t removedFileName[MAX_PATH];
-		if (!UTF8ToWideBuf(removedFileName, filename.c_str()))
+		if (!UTF8ToWideBuf(removedFileName, filename.c_str())) {
 			continue;
+		}
 
 		/* Ensure paths are safe, also check if file exists */
-		if (!IsSafeFilename(removedFileName))
+		if (!IsSafeFilename(removedFileName)) {
 			continue;
+		}
 		/* Technically GetFileAttributes can fail for other reasons,
 		 * so double-check by also checking the last error */
 		if (GetFileAttributesW(removedFileName) == INVALID_FILE_ATTRIBUTES) {
 			int err = GetLastError();
-			if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND)
+			if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
 				continue;
+			}
 		}
 
 		deletion_t deletion;
@@ -836,8 +881,9 @@ static bool RenameRemovedFile(deletion_t &deletion)
 	blake2b(hash.data(), hash.size(), junk, sizeof(junk), nullptr, 0);
 	HashToString(hash, temp);
 
-	if (!UTF8ToWideBuf(randomStr, temp.c_str()))
+	if (!UTF8ToWideBuf(randomStr, temp.c_str())) {
 		return false;
+	}
 
 	randomStr[8] = 0;
 
@@ -861,25 +907,31 @@ static bool UpdateWithPatchIfAvailable(const PatchResponse &patch)
 	wchar_t widePatchableFilename[MAX_PATH];
 	wchar_t sourceURL[1024];
 
-	if (patch.source.compare(0, kCDNUrl.size(), kCDNUrl) != 0)
+	if (patch.source.compare(0, kCDNUrl.size(), kCDNUrl) != 0) {
 		return false;
+	}
 
-	if (patch.name.find('/') == string::npos)
+	if (patch.name.find('/') == string::npos) {
 		return false;
+	}
 
 	string patchPackageName(patch.name, 0, patch.name.find('/'));
 	string fileName(patch.name, patch.name.find('/') + 1);
 
-	if (!UTF8ToWideBuf(widePatchableFilename, fileName.c_str()))
+	if (!UTF8ToWideBuf(widePatchableFilename, fileName.c_str())) {
 		return false;
-	if (!UTF8ToWideBuf(sourceURL, patch.source.c_str()))
+	}
+	if (!UTF8ToWideBuf(sourceURL, patch.source.c_str())) {
 		return false;
+	}
 
 	for (update_t &update : updates) {
-		if (update.packageName != patchPackageName)
+		if (update.packageName != patchPackageName) {
 			continue;
-		if (update.outputPath != widePatchableFilename)
+		}
+		if (update.outputPath != widePatchableFilename) {
 			continue;
+		}
 
 		update.patchable = true;
 
@@ -911,8 +963,9 @@ static bool MoveInUseFileAway(const update_t &file)
 	blake2b(hash.data(), hash.size(), junk, sizeof(junk), nullptr, 0);
 	HashToString(hash, temp);
 
-	if (!UTF8ToWideBuf(randomStr, temp.c_str()))
+	if (!UTF8ToWideBuf(randomStr, temp.c_str())) {
 		return false;
+	}
 
 	randomStr[8] = 0;
 
@@ -956,8 +1009,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 		if (curFileName) {
 			curFileName[0] = '\0';
 			curFileName++;
-		} else
+		} else {
 			curFileName = baseName;
+		}
 
 		/* Backup the existing file in case a rollback is needed */
 		StringCbCopy(oldFileRenamedPath, sizeof(oldFileRenamedPath), file.outputPath.c_str());
@@ -967,14 +1021,15 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 			DWORD err = GetLastError();
 			int is_sharing_violation = (err == ERROR_SHARING_VIOLATION || err == ERROR_USER_MAPPED_FILE);
 
-			if (is_sharing_violation)
+			if (is_sharing_violation) {
 				Status(L"Update failed: %s is still in use.  "
 				       L"Close all programs and try again.",
 				       curFileName);
-			else
+			} else {
 				Status(L"Update failed: Couldn't backup %s "
 				       L"(error %d)",
 				       curFileName, GetLastError());
+			}
 			return false;
 		}
 
@@ -1028,8 +1083,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 				if (!already_tried_to_move) {
 					already_tried_to_move = true;
 
-					if (MoveInUseFileAway(file))
+					if (MoveInUseFileAway(file)) {
 						goto retryAfterMovingFile;
+					}
 				}
 
 				Status(L"Update failed: %s is still in use.  "
@@ -1092,10 +1148,12 @@ static bool UpdateWorker()
 	while (true) {
 		ulock.lock();
 
-		if (updateThreadFailed)
+		if (updateThreadFailed) {
 			return false;
-		if (updateQueue.empty())
+		}
+		if (updateQueue.empty()) {
 			break;
+		}
 
 		auto update = updateQueue.front();
 		updateQueue.pop();
@@ -1120,8 +1178,9 @@ static bool UpdateWorker()
 
 static bool RunUpdateWorkers(int num)
 try {
-	for (update_t &update : updates)
+	for (update_t &update : updates) {
 		updateQueue.emplace(update);
+	}
 
 	vector<future<bool>> thread_success_results;
 	thread_success_results.resize(num);
@@ -1274,12 +1333,14 @@ static void UpdateRegistryVersion(const Manifest &manifest)
 					 manifest.version_minor, manifest.version_patch);
 	}
 
-	if (formattedLen <= 0)
+	if (formattedLen <= 0) {
 		return;
+	}
 
 	res = RegOpenKeyExA(HKEY_LOCAL_MACHINE, regKey, 0, KEY_WRITE | KEY_WOW64_32KEY, &key);
-	if (res != ERROR_SUCCESS)
+	if (res != ERROR_SUCCESS) {
 		return;
+	}
 
 	RegSetValueExA(key, "DisplayVersion", 0, REG_SZ, (const BYTE *)version, formattedLen + 1);
 	RegCloseKey(key);
@@ -1310,17 +1371,20 @@ static bool Update(wchar_t *cmdLine)
 
 		int i = WaitForMultipleObjects(2, hWait, false, INFINITE);
 
-		if (i == WAIT_OBJECT_0)
+		if (i == WAIT_OBJECT_0) {
 			ReleaseMutex(hObsUpdateMutex);
+		}
 
 		CloseHandle(hObsUpdateMutex);
 
-		if (i == WAIT_OBJECT_0 + 1)
+		if (i == WAIT_OBJECT_0 + 1) {
 			return false;
+		}
 	}
 
-	if (!WaitForOBS())
+	if (!WaitForOBS()) {
 		return false;
+	}
 
 	/* ------------------------------------- *
 	 * Init crypt stuff                      */
@@ -1500,12 +1564,14 @@ static bool Update(wchar_t *cmdLine)
 
 	PatchesRequest files;
 	for (update_t &update : updates) {
-		if (!update.has_hash)
+		if (!update.has_hash) {
 			continue;
+		}
 
 		char outputPath[MAX_PATH];
-		if (!WideToUTF8Buf(outputPath, update.outputPath.c_str()))
+		if (!WideToUTF8Buf(outputPath, update.outputPath.c_str())) {
 			continue;
+		}
 
 		string hash_string;
 		HashToString(update.my_hash, hash_string);
@@ -1535,22 +1601,25 @@ static bool Update(wchar_t *cmdLine)
 		size_t result = ZSTD_compress(compressedJson.data(), compressedJson.size(), post_body.data(),
 					      post_body.size(), ZSTD_CLEVEL_DEFAULT);
 
-		if (ZSTD_isError(result))
+		if (ZSTD_isError(result)) {
 			return false;
+		}
 
 		compressedJson.resize(result);
 
 		wstring manifestUrl(kPatchManifestURL);
-		if (branch != L"stable")
+		if (branch != L"stable") {
 			manifestUrl += L"?branch=" + branch;
+		}
 
 		int responseCode;
 		bool success = !!HTTPPostData(manifestUrl.c_str(), (BYTE *)compressedJson.data(),
 					      (int)compressedJson.size(), L"Accept-Encoding: gzip", &responseCode,
 					      newManifest);
 
-		if (!success)
+		if (!success) {
 			return false;
+		}
 
 		if (responseCode != 200) {
 			Status(L"Update failed: HTTP/%d while trying to "
@@ -1609,13 +1678,15 @@ static bool Update(wchar_t *cmdLine)
 	 * avoiding concurrent map mutation from multiple threads. */
 	download_data.reserve(downloadHashes.size());
 	for (update_t &update : updates) {
-		if (update.state == STATE_PENDING_DOWNLOAD)
+		if (update.state == STATE_PENDING_DOWNLOAD) {
 			download_data.try_emplace(update.downloadHash);
+		}
 	}
 
 	Status(L"Downloading updates...");
-	if (!RunDownloadWorkers(4))
+	if (!RunDownloadWorkers(4)) {
 		return false;
+	}
 
 	if ((size_t)completedUpdates != updates.size()) {
 		Status(L"Update failed to download all files.");
@@ -1629,8 +1700,9 @@ static bool Update(wchar_t *cmdLine)
 	lastPosition = 0;
 
 	Status(L"Installing updates...");
-	if (!RunUpdateWorkers(4))
+	if (!RunUpdateWorkers(4)) {
 		return false;
+	}
 
 	for (deletion_t &deletion : deletions) {
 		if (!RenameRemovedFile(deletion)) {
@@ -1716,13 +1788,15 @@ static bool Update(wchar_t *cmdLine)
 	/* If we get here, all updates installed successfully so we can purge
 	 * the old versions */
 	for (update_t &update : updates) {
-		if (!update.previousFile.empty())
+		if (!update.previousFile.empty()) {
 			DeleteFile(update.previousFile.c_str());
+		}
 	}
 
 	/* Delete all removed files mentioned in the manifest */
-	for (deletion_t &deletion : deletions)
+	for (deletion_t &deletion : deletions) {
 		MyDeleteFile(deletion.deleteMeFilename);
+	}
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 100, 0);
 
@@ -1742,18 +1816,21 @@ static DWORD WINAPI UpdateThread(void *arg)
 		 * partially installed updates */
 		CleanupPartialUpdates();
 
-		if (tempPath[0])
+		if (tempPath[0]) {
 			RemoveDirectory(tempPath);
+		}
 
-		if (WaitForSingleObject(cancelRequested, 0) == WAIT_OBJECT_0)
+		if (WaitForSingleObject(cancelRequested, 0) == WAIT_OBJECT_0) {
 			Status(L"Update aborted.");
+		}
 
 		HWND hProgress = GetDlgItem(hwndMain, IDC_PROGRESS);
 
 		/* Even a no-op style change apparently resets the progress bar */
 		LONG_PTR style = GetWindowLongPtr(hProgress, GWL_STYLE);
-		if (style & PBS_MARQUEE)
+		if (style & PBS_MARQUEE) {
 			SetWindowLongPtr(hProgress, GWL_STYLE, style & ~PBS_MARQUEE);
+		}
 
 		SendMessage(hProgress, PBM_SETSTATE, PBST_ERROR, 0);
 
@@ -1762,12 +1839,14 @@ static DWORD WINAPI UpdateThread(void *arg)
 
 		updateFailed = true;
 	} else {
-		if (tempPath[0])
+		if (tempPath[0]) {
 			RemoveDirectory(tempPath);
+		}
 	}
 
-	if (bExiting)
+	if (bExiting) {
 		ExitProcess(success);
+	}
 	return 0;
 }
 
@@ -1807,8 +1886,9 @@ static void LaunchOBS(LPWSTR lpCmdLine)
 	execInfo.lpDirectory = newCwd;
 	execInfo.nShow = SW_SHOWNORMAL;
 
-	if (lpCmdLine[0])
+	if (lpCmdLine[0]) {
 		execInfo.lpParameters = lpCmdLine;
+	}
 
 	ShellExecuteEx(&execInfo);
 }
@@ -1816,8 +1896,9 @@ static void LaunchOBS(LPWSTR lpCmdLine)
 static void ToggleLogVisibility()
 {
 	HWND hwndLog = GetDlgItem(hwndMain, IDC_LOG);
-	if (!hwndLog)
+	if (!hwndLog) {
 		return;
+	}
 
 	logVisible = !logVisible;
 
@@ -1874,8 +1955,9 @@ static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam,
 
 		/* Propagate the main window font or it looks ugly */
 		HFONT hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
-		if (hFont)
+		if (hFont) {
 			SendMessage(hwndLog, WM_SETFONT, (WPARAM)hFont, FALSE);
+		}
 
 		return true;
 	}
@@ -1885,18 +1967,20 @@ static INT_PTR CALLBACK UpdateDialogProc(HWND hwnd, UINT message, WPARAM wParam,
 			if (HIWORD(wParam) == BN_CLICKED) {
 				DWORD result = WaitForSingleObject(updateThread, 0);
 				if (result == WAIT_OBJECT_0) {
-					if (updateFailed)
+					if (updateFailed) {
 						PostQuitMessage(0);
-					else
+					} else {
 						PostQuitMessage(1);
+					}
 				} else {
 					EnableWindow((HWND)lParam, false);
 					CancelUpdate(false);
 				}
 			}
 		} else if (LOWORD(wParam) == IDC_LOGBUTTON) {
-			if (HIWORD(wParam) == BN_CLICKED)
+			if (HIWORD(wParam) == BN_CLICKED) {
 				ToggleLogVisibility();
+			}
 		}
 		return true;
 

@@ -102,12 +102,14 @@ VCamFilter::VCamFilter() : OutputFilter()
 VCamFilter::~VCamFilter()
 {
 	SetEvent(thread_stop);
-	if (th.joinable())
+	if (th.joinable()) {
 		th.join();
+	}
 	video_queue_close(vq);
 
-	if (placeholder.scaled_data)
+	if (placeholder.scaled_data) {
 		free(placeholder.scaled_data);
+	}
 
 	os_atomic_dec_long(&locks);
 }
@@ -160,8 +162,9 @@ void VCamFilter::Thread()
 {
 	HANDLE h[2] = {thread_start, thread_stop};
 	DWORD ret = WaitForMultipleObjects(2, h, false, INFINITE);
-	if (ret != WAIT_OBJECT_0)
+	if (ret != WAIT_OBJECT_0) {
 		return;
+	}
 
 	uint64_t cur_time = gettime_100ns();
 	uint64_t filter_time = GetTime();
@@ -191,8 +194,9 @@ void VCamFilter::Thread()
 	UpdatePlaceholder();
 
 	while (!stopped()) {
-		if (os_atomic_load_bool(&active))
+		if (os_atomic_load_bool(&active)) {
 			Frame(filter_time);
+		}
 		sleepto_100ns(cur_time += obs_interval);
 		filter_time += obs_interval;
 	}
@@ -277,12 +281,13 @@ void VCamFilter::Frame(uint64_t ts)
 
 	if (current_format != format) {
 		/* The output format changed, update the scalers */
-		if (current_format == VideoFormat::I420)
+		if (current_format == VideoFormat::I420) {
 			scaler.format = placeholder.scaler.format = TARGET_FORMAT_I420;
-		else if (current_format == VideoFormat::YUY2)
+		} else if (current_format == VideoFormat::YUY2) {
 			scaler.format = placeholder.scaler.format = TARGET_FORMAT_YUY2;
-		else
+		} else {
 			scaler.format = placeholder.scaler.format = TARGET_FORMAT_NV12;
+		}
 
 		format = current_format;
 
@@ -292,10 +297,11 @@ void VCamFilter::Frame(uint64_t ts)
 	/* Actual output */
 	uint8_t *ptr;
 	if (LockSampleData(&ptr)) {
-		if (state == SHARED_QUEUE_STATE_READY)
+		if (state == SHARED_QUEUE_STATE_READY) {
 			ShowOBSFrame(ptr);
-		else
+		} else {
 			ShowDefaultFrame(ptr);
+		}
 
 		UnlockSampleData(ts, ts + obs_interval);
 	}
@@ -323,15 +329,18 @@ void VCamFilter::ShowDefaultFrame(uint8_t *ptr)
    the placeholder graphic into the placeholder.scaled_data buffer. */
 void VCamFilter::UpdatePlaceholder(void)
 {
-	if (!placeholder.source_data)
+	if (!placeholder.source_data) {
 		return;
+	}
 
-	if (placeholder.scaled_data)
+	if (placeholder.scaled_data) {
 		free(placeholder.scaled_data);
+	}
 
 	placeholder.scaled_data = (uint8_t *)malloc(GetOutputBufferSize());
-	if (!placeholder.scaled_data)
+	if (!placeholder.scaled_data) {
 		return;
+	}
 
 	if (placeholder.cx == GetCX() && placeholder.cy == GetCY() && placeholder.scaler.format == TARGET_FORMAT_NV12) {
 		/* No scaling necessary if it matches exactly */

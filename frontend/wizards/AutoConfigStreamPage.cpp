@@ -122,10 +122,11 @@ bool AutoConfigStreamPage::validatePage()
 		if (IsYouTubeService(wiz->serviceName)) {
 			/* Adjust upper bound to YouTube limits
 			 * for resolutions above 1080p */
-			if (wiz->baseResolutionCY > 1440)
+			if (wiz->baseResolutionCY > 1440) {
 				bitrate = 51000;
-			else if (wiz->baseResolutionCY > 1080)
+			} else if (wiz->baseResolutionCY > 1080) {
 				bitrate = 18000;
+			}
 		}
 #endif
 	}
@@ -152,21 +153,25 @@ bool AutoConfigStreamPage::validatePage()
 	wiz->regionAsia = ui->regionAsia->isChecked();
 	wiz->regionOther = ui->regionOther->isChecked();
 	wiz->serviceName = ui->service->currentText().toStdString();
-	if (ui->preferHardware)
+	if (ui->preferHardware) {
 		wiz->preferHardware = ui->preferHardware->isChecked();
+	}
 	wiz->key = ui->key->text().toStdString();
 
 	if (!wiz->customServer) {
-		if (wiz->serviceName == "Twitch")
+		if (wiz->serviceName == "Twitch") {
 			wiz->service = AutoConfig::Service::Twitch;
+		}
 #ifdef YOUTUBE_ENABLED
-		else if (IsYouTubeService(wiz->serviceName))
+		else if (IsYouTubeService(wiz->serviceName)) {
 			wiz->service = AutoConfig::Service::YouTube;
+		}
 #endif
-		else if (wiz->serviceName == "Amazon IVS")
+		else if (wiz->serviceName == "Amazon IVS") {
 			wiz->service = AutoConfig::Service::AmazonIVS;
-		else
+		} else {
 			wiz->service = AutoConfig::Service::Other;
+		}
 	} else {
 		wiz->service = AutoConfig::Service::Other;
 	}
@@ -191,13 +196,15 @@ bool AutoConfigStreamPage::validatePage()
 								   postData, multitrack_video_name);
 
 				for (const auto &endpoint : config.ingest_endpoints) {
-					if (qstrnicmp("RTMP", endpoint.protocol.c_str(), 4) != 0)
+					if (qstrnicmp("RTMP", endpoint.protocol.c_str(), 4) != 0) {
 						continue;
+					}
 
 					std::string address = endpoint.url_template;
 					auto pos = address.find("/{stream_key}");
-					if (pos != address.npos)
+					if (pos != address.npos) {
 						address.erase(pos);
+					}
 
 					wiz->serviceConfigServers.push_back({address, address});
 				}
@@ -205,11 +212,13 @@ bool AutoConfigStreamPage::validatePage()
 				int multitrackVideoBitrate = 0;
 				for (auto &encoder_config : config.encoder_configurations) {
 					auto it = encoder_config.settings.find("bitrate");
-					if (it == encoder_config.settings.end())
+					if (it == encoder_config.settings.end()) {
 						continue;
+					}
 
-					if (!it->is_number_integer())
+					if (!it->is_number_integer()) {
 						continue;
+					}
 
 					int bitrate = 0;
 					it->get_to(bitrate);
@@ -235,8 +244,9 @@ bool AutoConfigStreamPage::validatePage()
 		button = OBSMessageBox::question(this, WARNING_TEXT("Title"), WARNING_TEXT("Text"));
 #undef WARNING_TEXT
 
-		if (button == QMessageBox::No)
+		if (button == QMessageBox::No) {
 			return false;
+		}
 	}
 
 	return true;
@@ -260,8 +270,9 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 	if (a) {
 		bool validKey = !a->key().empty();
 
-		if (validKey)
+		if (validKey) {
 			ui->key->setText(QT_UTF8(a->key().c_str()));
+		}
 
 		ui->streamKeyWidget->setVisible(false);
 		ui->streamKeyLabel->setVisible(false);
@@ -437,8 +448,9 @@ void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 void AutoConfigStreamPage::ServiceChanged()
 {
 	bool showMore = ui->service->currentData().toInt() == (int)ListOpt::ShowAll;
-	if (showMore)
+	if (showMore) {
 		return;
+	}
 
 	std::string service = ui->service->currentText().toStdString();
 	bool regionBased = service == "Twitch";
@@ -481,8 +493,9 @@ void AutoConfigStreamPage::ServiceChanged()
 	reset_service_ui_fields(service);
 
 	/* Test three closest servers if "Auto" is available for Twitch */
-	if ((service == "Twitch" && wiz->twitchAuto) || (service == "Amazon IVS" && wiz->amazonIVSAuto))
+	if ((service == "Twitch" && wiz->twitchAuto) || (service == "Amazon IVS" && wiz->amazonIVSAuto)) {
 		regionBased = false;
+	}
 
 	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
 	ui->streamkeyPageLayout->removeWidget(ui->serverStackedWidget);
@@ -495,8 +508,9 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->serverStackedWidget->setVisible(true);
 		ui->serverLabel->setVisible(true);
 	} else {
-		if (!testBandwidth)
+		if (!testBandwidth) {
 			ui->streamkeyPageLayout->insertRow(2, ui->serverLabel, ui->serverStackedWidget);
+		}
 
 		ui->region->setVisible(regionBased && testBandwidth);
 		ui->serverStackedWidget->setCurrentIndex(0);
@@ -622,11 +636,13 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 		names.push_back(name);
 	}
 
-	if (showAll)
+	if (showAll) {
 		names.sort(Qt::CaseInsensitive);
+	}
 
-	for (QString &name : names)
+	for (QString &name : names) {
 		ui->service->addItem(name);
+	}
 
 	if (!showAll) {
 		ui->service->addItem(QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
@@ -637,8 +653,9 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 
 	if (!lastService.isEmpty()) {
 		int idx = ui->service->findText(lastService);
-		if (idx != -1)
+		if (idx != -1) {
 			ui->service->setCurrentIndex(idx);
+		}
 	}
 
 	ui->service->blockSignals(false);

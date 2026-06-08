@@ -21,16 +21,18 @@ static Display *xdisplay = 0;
 
 Display *disp()
 {
-	if (!xdisplay)
+	if (!xdisplay) {
 		xdisplay = XOpenDisplay(NULL);
+	}
 
 	return xdisplay;
 }
 
 void CleanupSceneSwitcher()
 {
-	if (!xdisplay)
+	if (!xdisplay) {
 		return;
+	}
 
 	XCloseDisplay(xdisplay);
 	xdisplay = 0;
@@ -108,8 +110,9 @@ static std::vector<Window> getTopLevelWindows()
 			continue;
 		}
 
-		for (unsigned long i = 0; i < num; ++i)
+		for (unsigned long i = 0; i < num; ++i) {
 			res.emplace_back(data[i]);
+		}
 
 		XFree(data);
 	}
@@ -148,8 +151,9 @@ void GetWindowList(vector<string> &windows)
 	windows.resize(0);
 
 	for (size_t i = 0; i < getTopLevelWindows().size(); ++i) {
-		if (GetWindowTitle(i) != "")
+		if (GetWindowTitle(i) != "") {
 			windows.emplace_back(GetWindowTitle(i));
+		}
 	}
 }
 

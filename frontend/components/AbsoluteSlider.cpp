@@ -44,10 +44,11 @@ void AbsoluteSlider::mouseMoveEvent(QMouseEvent *event)
 {
 	int val = posToRangeValue(event);
 
-	if (val > maximum())
+	if (val > maximum()) {
 		val = maximum();
-	else if (val < minimum())
+	} else if (val < minimum()) {
 		val = minimum();
+	}
 
 	emit absoluteSliderHovered(val);
 

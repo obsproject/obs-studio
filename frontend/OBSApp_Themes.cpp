@@ -46,16 +46,18 @@ struct CFParser {
 static optional<OBSTheme> ParseThemeMeta(const QString &path)
 {
 	QFile themeFile(path);
-	if (!themeFile.open(QIODeviceBase::ReadOnly))
+	if (!themeFile.open(QIODeviceBase::ReadOnly)) {
 		return nullopt;
+	}
 
 	OBSTheme meta;
 	const QByteArray data = themeFile.readAll();
 	CFParser cfp;
 	int ret;
 
-	if (!cf_parser_parse(cfp, data.constData(), QT_TO_UTF8(path)))
+	if (!cf_parser_parse(cfp, data.constData(), QT_TO_UTF8(path))) {
 		return nullopt;
+	}
 
 	if (cf_token_is(cfp, "@") || cf_go_to_token(cfp, "@", nullptr)) {
 		while (cf_next_token(cfp)) {
@@ -63,58 +65,69 @@ static optional<OBSTheme> ParseThemeMeta(const QString &path)
 				break;
 			}
 
-			if (!cf_go_to_token(cfp, "@", nullptr))
+			if (!cf_go_to_token(cfp, "@", nullptr)) {
 				return nullopt;
+			}
 		}
 
-		if (!cf_token_is(cfp, "OBSThemeMeta"))
+		if (!cf_token_is(cfp, "OBSThemeMeta")) {
 			return nullopt;
+		}
 
-		if (!cf_next_token(cfp))
+		if (!cf_next_token(cfp)) {
 			return nullopt;
+		}
 
-		if (!cf_token_is(cfp, "{"))
+		if (!cf_token_is(cfp, "{")) {
 			return nullopt;
+		}
 
 		for (;;) {
-			if (!cf_next_token(cfp))
+			if (!cf_next_token(cfp)) {
 				return nullopt;
+			}
 
 			ret = cf_token_is_type(cfp, CFTOKEN_NAME, "name", nullptr);
-			if (ret != PARSE_SUCCESS)
+			if (ret != PARSE_SUCCESS) {
 				break;
+			}
 
 			string name(cfp->cur_token->str.array, cfp->cur_token->str.len);
 
 			ret = cf_next_token_should_be(cfp, ":", ";", nullptr);
-			if (ret != PARSE_SUCCESS)
+			if (ret != PARSE_SUCCESS) {
 				continue;
+			}
 
-			if (!cf_next_token(cfp))
+			if (!cf_next_token(cfp)) {
 				return nullopt;
+			}
 
 			ret = cf_token_is_type(cfp, CFTOKEN_STRING, "value", ";");
 
-			if (ret != PARSE_SUCCESS)
+			if (ret != PARSE_SUCCESS) {
 				continue;
+			}
 
 			BPtr str = cf_literal_to_str(cfp->cur_token->str.array, cfp->cur_token->str.len);
 
 			if (str) {
-				if (name == "dark")
+				if (name == "dark") {
 					meta.isDark = strcmp(str, "true") == 0;
-				else if (name == "extends")
+				} else if (name == "extends") {
 					meta.extends = str;
-				else if (name == "author")
+				} else if (name == "author") {
 					meta.author = str;
-				else if (name == "id")
+				} else if (name == "id") {
 					meta.id = str;
-				else if (name == "name")
+				} else if (name == "name") {
 					meta.name = str;
+				}
 			}
 
-			if (!cf_go_to_token(cfp, ";", nullptr))
+			if (!cf_go_to_token(cfp, ";", nullptr)) {
 				return nullopt;
+			}
 		}
 	}
 
@@ -139,22 +152,27 @@ static bool ParseVarName(CFParser &cfp, QString &value)
 	int ret;
 
 	ret = cf_next_token_should_be(cfp, "(", ";", nullptr);
-	if (ret != PARSE_SUCCESS)
+	if (ret != PARSE_SUCCESS) {
 		return false;
+	}
 	ret = cf_next_token_should_be(cfp, "-", ";", nullptr);
-	if (ret != PARSE_SUCCESS)
+	if (ret != PARSE_SUCCESS) {
 		return false;
+	}
 	ret = cf_next_token_should_be(cfp, "-", ";", nullptr);
-	if (ret != PARSE_SUCCESS)
+	if (ret != PARSE_SUCCESS) {
 		return false;
-	if (!cf_next_token(cfp))
+	}
+	if (!cf_next_token(cfp)) {
 		return false;
+	}
 
 	value = QString::fromUtf8(cfp->cur_token->str.array, cfp->cur_token->str.len);
 
 	ret = cf_next_token_should_be(cfp, ")", ";", nullptr);
-	if (ret != PARSE_SUCCESS)
+	if (ret != PARSE_SUCCESS) {
 		return false;
+	}
 
 	return !value.isEmpty();
 }
@@ -166,35 +184,40 @@ static QColor ParseColor(CFParser &cfp)
 	QColor res(QColor::Invalid);
 
 	if (cf_token_is(cfp, "#")) {
-		if (!cf_next_token(cfp))
+		if (!cf_next_token(cfp)) {
 			return res;
+		}
 
 		color = strtol(cfp->cur_token->str.array, nullptr, 16);
 	} else if (cf_token_is(cfp, "rgb")) {
 		int ret = cf_next_token_should_be(cfp, "(", ";", nullptr);
-		if (ret != PARSE_SUCCESS || !cf_next_token(cfp))
+		if (ret != PARSE_SUCCESS || !cf_next_token(cfp)) {
 			return res;
+		}
 
 		array = cfp->cur_token->str.array;
 		color |= strtol(array, nullptr, 10) << 16;
 
 		ret = cf_next_token_should_be(cfp, ",", ";", nullptr);
-		if (ret != PARSE_SUCCESS || !cf_next_token(cfp))
+		if (ret != PARSE_SUCCESS || !cf_next_token(cfp)) {
 			return res;
+		}
 
 		array = cfp->cur_token->str.array;
 		color |= strtol(array, nullptr, 10) << 8;
 
 		ret = cf_next_token_should_be(cfp, ",", ";", nullptr);
-		if (ret != PARSE_SUCCESS || !cf_next_token(cfp))
+		if (ret != PARSE_SUCCESS || !cf_next_token(cfp)) {
 			return res;
+		}
 
 		array = cfp->cur_token->str.array;
 		color |= strtol(array, nullptr, 10);
 
 		ret = cf_next_token_should_be(cfp, ")", ";", nullptr);
-		if (ret != PARSE_SUCCESS)
+		if (ret != PARSE_SUCCESS) {
 			return res;
+		}
 	} else if (cf_token_is(cfp, "bikeshed")) {
 		color |= QRandomGenerator::global()->bounded(INT8_MAX) << 16;
 		color |= QRandomGenerator::global()->bounded(INT8_MAX) << 8;
@@ -208,14 +231,17 @@ static QColor ParseColor(CFParser &cfp)
 static bool ParseMath(CFParser &cfp, QStringList &values, vector<OBSThemeVariable> &vars)
 {
 	int ret = cf_next_token_should_be(cfp, "(", ";", nullptr);
-	if (ret != PARSE_SUCCESS)
+	if (ret != PARSE_SUCCESS) {
 		return false;
-	if (!cf_next_token(cfp))
+	}
+	if (!cf_next_token(cfp)) {
 		return false;
+	}
 
 	while (!cf_token_is(cfp, ")")) {
-		if (cf_token_is(cfp, ";"))
+		if (cf_token_is(cfp, ";")) {
 			break;
+		}
 
 		if (cf_token_is(cfp, "calc") || cf_token_is(cfp, "max") || cf_token_is(cfp, "min")) {
 			/* Internal math operations do not have proper names.
@@ -226,15 +252,17 @@ static bool ParseMath(CFParser &cfp, QStringList &values, vector<OBSThemeVariabl
 			var.name = QString("__unnamed_%1").arg(QRandomGenerator::global()->generate64());
 
 			OBSThemeVariable::VariableType varType;
-			if (cf_token_is(cfp, "calc"))
+			if (cf_token_is(cfp, "calc")) {
 				varType = OBSThemeVariable::Calc;
-			else if (cf_token_is(cfp, "max"))
+			} else if (cf_token_is(cfp, "max")) {
 				varType = OBSThemeVariable::Max;
-			else if (cf_token_is(cfp, "min"))
+			} else if (cf_token_is(cfp, "min")) {
 				varType = OBSThemeVariable::Min;
+			}
 
-			if (!ParseMath(cfp, subvalues, vars))
+			if (!ParseMath(cfp, subvalues, vars)) {
 				return false;
+			}
 
 			var.type = varType;
 			var.value = subvalues;
@@ -242,16 +270,18 @@ static bool ParseMath(CFParser &cfp, QStringList &values, vector<OBSThemeVariabl
 			vars.push_back(std::move(var));
 		} else if (cf_token_is(cfp, "var")) {
 			QString value;
-			if (!ParseVarName(cfp, value))
+			if (!ParseVarName(cfp, value)) {
 				return false;
+			}
 
 			values << value;
 		} else {
 			values << QString::fromUtf8(cfp->cur_token->str.array, cfp->cur_token->str.len);
 		}
 
-		if (!cf_next_token(cfp))
+		if (!cf_next_token(cfp)) {
 			return false;
+		}
 	}
 
 	return !values.isEmpty();
@@ -264,43 +294,54 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 
 	std::vector<OBSThemeVariable> vars;
 
-	if (!cf_parser_parse(cfp, themeData, nullptr))
+	if (!cf_parser_parse(cfp, themeData, nullptr)) {
 		return vars;
-
-	if (!cf_token_is(cfp, "@") && !cf_go_to_token(cfp, "@", nullptr))
-		return vars;
-
-	while (cf_next_token(cfp)) {
-		if (cf_token_is(cfp, "OBSThemeVars"))
-			break;
-
-		if (!cf_go_to_token(cfp, "@", nullptr))
-			return vars;
 	}
 
-	if (!cf_next_token(cfp))
-		return {};
+	if (!cf_token_is(cfp, "@") && !cf_go_to_token(cfp, "@", nullptr)) {
+		return vars;
+	}
 
-	if (!cf_token_is(cfp, "{"))
+	while (cf_next_token(cfp)) {
+		if (cf_token_is(cfp, "OBSThemeVars")) {
+			break;
+		}
+
+		if (!cf_go_to_token(cfp, "@", nullptr)) {
+			return vars;
+		}
+	}
+
+	if (!cf_next_token(cfp)) {
 		return {};
+	}
+
+	if (!cf_token_is(cfp, "{")) {
+		return {};
+	}
 
 	for (;;) {
-		if (!cf_next_token(cfp))
+		if (!cf_next_token(cfp)) {
 			return vars;
+		}
 
-		if (!cf_token_is(cfp, "-"))
+		if (!cf_token_is(cfp, "-")) {
 			return vars;
+		}
 
 		ret = cf_next_token_should_be(cfp, "-", ";", nullptr);
-		if (ret != PARSE_SUCCESS)
+		if (ret != PARSE_SUCCESS) {
 			continue;
+		}
 
-		if (!cf_next_token(cfp))
+		if (!cf_next_token(cfp)) {
 			return vars;
+		}
 
 		ret = cf_token_is_type(cfp, CFTOKEN_NAME, "key", nullptr);
-		if (ret != PARSE_SUCCESS)
+		if (ret != PARSE_SUCCESS) {
 			break;
+		}
 
 		QString key = QString::fromUtf8(cfp->cur_token->str.array, cfp->cur_token->str.len);
 		OBSThemeVariable var;
@@ -319,16 +360,19 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 		}
 
 		ret = cf_next_token_should_be(cfp, ":", ";", nullptr);
-		if (ret != PARSE_SUCCESS)
+		if (ret != PARSE_SUCCESS) {
 			continue;
+		}
 
-		if (!cf_next_token(cfp))
+		if (!cf_next_token(cfp)) {
 			return vars;
+		}
 
 		/* Special values passed to the theme by OBS are prefixed with 'obs', so we
 		 * prevent theme variables from using it as a prefix. */
-		if (key.startsWith("obs"))
+		if (key.startsWith("obs")) {
 			continue;
+		}
 
 		if (cfp->cur_token->type == CFTOKEN_NUM) {
 			const char *ch = cfp->cur_token->str.array;
@@ -349,31 +393,35 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 			}
 		} else if (cf_token_is(cfp, "rgb") || cf_token_is(cfp, "#") || cf_token_is(cfp, "bikeshed")) {
 			QColor color = ParseColor(cfp);
-			if (!color.isValid())
+			if (!color.isValid()) {
 				continue;
+			}
 
 			var.value = color;
 			var.type = OBSThemeVariable::Color;
 		} else if (cf_token_is(cfp, "var")) {
 			QString value;
 
-			if (!ParseVarName(cfp, value))
+			if (!ParseVarName(cfp, value)) {
 				continue;
+			}
 
 			var.value = value;
 			var.type = OBSThemeVariable::Alias;
 		} else if (cf_token_is(cfp, "calc") || cf_token_is(cfp, "max") || cf_token_is(cfp, "min")) {
 			QStringList values;
 
-			if (cf_token_is(cfp, "calc"))
+			if (cf_token_is(cfp, "calc")) {
 				var.type = OBSThemeVariable::Calc;
-			else if (cf_token_is(cfp, "max"))
+			} else if (cf_token_is(cfp, "max")) {
 				var.type = OBSThemeVariable::Max;
-			else if (cf_token_is(cfp, "min"))
+			} else if (cf_token_is(cfp, "min")) {
 				var.type = OBSThemeVariable::Min;
+			}
 
-			if (!ParseMath(cfp, values, vars))
+			if (!ParseMath(cfp, values, vars)) {
 				continue;
+			}
 
 			var.value = values;
 		} else {
@@ -382,8 +430,9 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 			var.value = QString::fromUtf8(strVal.Get());
 		}
 
-		if (!cf_next_token(cfp))
+		if (!cf_next_token(cfp)) {
 			return vars;
+		}
 
 		if (cf_token_is(cfp, "!") &&
 		    cf_next_token_should_be(cfp, "editable", nullptr, nullptr) == PARSE_SUCCESS) {
@@ -398,8 +447,9 @@ static vector<OBSThemeVariable> ParseThemeVariables(const char *themeData)
 
 		vars.push_back(std::move(var));
 
-		if (!cf_token_is(cfp, ";") && !cf_go_to_token(cfp, ";", nullptr))
+		if (!cf_token_is(cfp, ";") && !cf_go_to_token(cfp, ";", nullptr)) {
 			return vars;
+		}
 	}
 
 	return vars;
@@ -420,8 +470,9 @@ void OBSApp::FindThemes()
 		QDirIterator it(QString::fromStdString(themeDir), filters, QDir::Files);
 		while (it.hasNext()) {
 			auto theme = ParseThemeMeta(it.next());
-			if (theme && !themes.contains(theme->id))
+			if (theme && !themes.contains(theme->id)) {
 				themes[theme->id] = std::move(*theme);
+			}
 		}
 	}
 
@@ -432,8 +483,9 @@ void OBSApp::FindThemes()
 
 		while (it.hasNext()) {
 			auto theme = ParseThemeMeta(it.next());
-			if (theme && !themes.contains(theme->id))
+			if (theme && !themes.contains(theme->id)) {
 				themes[theme->id] = std::move(*theme);
+			}
 		}
 	}
 
@@ -476,8 +528,9 @@ void OBSApp::FindThemes()
 			}
 
 			/* Mark this theme as a variant of first parent that is a base theme. */
-			if (!theme.isBaseTheme && parent->isBaseTheme && theme.parent.isEmpty())
+			if (!theme.isBaseTheme && parent->isBaseTheme && theme.parent.isEmpty()) {
 				theme.parent = parent->id;
+			}
 
 			theme.dependencies.push_front(parent->id);
 			parentId = parent->extends;
@@ -498,8 +551,9 @@ void OBSApp::FindThemes()
 
 static bool ResolveVariable(const QHash<QString, OBSThemeVariable> &vars, OBSThemeVariable &var)
 {
-	if (var.type != OBSThemeVariable::Alias)
+	if (var.type != OBSThemeVariable::Alias) {
 		return true;
+	}
 
 	QString key = var.value.toString();
 	while (vars[key].type == OBSThemeVariable::Alias) {
@@ -627,14 +681,15 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 	double val = numeric_limits<double>::quiet_NaN();
 
 	if (type == OBSThemeVariable::Calc) {
-		if (opt == "+")
+		if (opt == "+") {
 			val = d1 + d2;
-		else if (opt == "-")
+		} else if (opt == "-") {
 			val = d1 - d2;
-		else if (opt == "*")
+		} else if (opt == "*") {
 			val = d1 * d2;
-		else if (opt == "/")
+		} else if (opt == "/") {
 			val = d1 / d2;
+		}
 
 		if (!isnormal(val)) {
 			blog(LOG_ERROR, "Invalid calc() resulted in non-normal number: %f %s %f = %f", d1,
@@ -651,10 +706,11 @@ static QString EvalMath(const QHash<QString, OBSThemeVariable> &vars, const OBST
 	QString result = QString::number(val, 'f', isInteger ? 0 : -1);
 
 	/* Carry-over suffix */
-	if (!val1.suffix.isEmpty())
+	if (!val1.suffix.isEmpty()) {
 		result += val1.suffix;
-	else if (!val2.suffix.isEmpty())
+	} else if (!val2.suffix.isEmpty()) {
 		result += val2.suffix;
+	}
 
 	return result;
 }
@@ -690,8 +746,9 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars, const QS
 	for (const OBSThemeVariable &var_ : vars) {
 		OBSThemeVariable var(var_);
 
-		if (!ResolveVariable(vars, var))
+		if (!ResolveVariable(vars, var)) {
 			continue;
+		}
 
 		QString needle = needleTemplate.arg(var_.name);
 		QString replace;
@@ -709,8 +766,9 @@ static QString PrepareQSS(const QHash<QString, OBSThemeVariable> &vars, const QS
 			bool isInteger = ceill(val) == val;
 			replace = QString::number(val, 'f', isInteger ? 0 : -1);
 
-			if (!var.suffix.isEmpty())
+			if (!var.suffix.isEmpty()) {
 				replace += var.suffix;
+			}
 		} else {
 			replace = value.toString();
 		}
@@ -747,22 +805,27 @@ static QPalette PreparePalette(const QHash<QString, OBSThemeVariable> &vars, con
 	static QHash<QString, QPalette::ColorRole> roleMap;
 	static QHash<QString, QPalette::ColorGroup> groupMap;
 
-	if (roleMap.empty())
+	if (roleMap.empty()) {
 		FillEnumMap<QPalette::ColorRole>(roleMap);
-	if (groupMap.empty())
+	}
+	if (groupMap.empty()) {
 		FillEnumMap<QPalette::ColorGroup>(groupMap);
+	}
 
 	QPalette pal(defaultPalette);
 
 	for (const OBSThemeVariable &var_ : vars) {
-		if (!var_.name.startsWith("palette_"))
+		if (!var_.name.startsWith("palette_")) {
 			continue;
-		if (var_.name.count("_") < 1 || var_.name.count("_") > 2)
+		}
+		if (var_.name.count("_") < 1 || var_.name.count("_") > 2) {
 			continue;
+		}
 
 		OBSThemeVariable var(var_);
-		if (!ResolveVariable(vars, var) || var.type != OBSThemeVariable::Color)
+		if (!ResolveVariable(vars, var) || var.type != OBSThemeVariable::Color) {
 			continue;
+		}
 
 		/* Determine role and optionally group based on name.
 		 * Format is: palette_<role>[_<group>] */
@@ -816,8 +879,9 @@ static double getPaddingForDensityId(int id)
 
 OBSTheme *OBSApp::GetTheme(const QString &name)
 {
-	if (!themes.contains(name))
+	if (!themes.contains(name)) {
 		return nullptr;
+	}
 
 	return &themes[name];
 }
@@ -825,8 +889,9 @@ OBSTheme *OBSApp::GetTheme(const QString &name)
 bool OBSApp::SetTheme(const QString &name)
 {
 	OBSTheme *theme = GetTheme(name);
-	if (!theme)
+	if (!theme) {
 		return false;
+	}
 
 	if (themeWatcher && themeWatcher->files().size() > 0) {
 		themeWatcher->blockSignals(true);
@@ -861,10 +926,12 @@ bool OBSApp::SetTheme(const QString &name)
 	/* Find and add high contrast adjustment layer if available */
 	if (HighContrastEnabled()) {
 		for (const OBSTheme &theme_ : themes) {
-			if (!theme_.isHighContrast)
+			if (!theme_.isHighContrast) {
 				continue;
-			if (theme_.parent != theme->id)
+			}
+			if (theme_.parent != theme->id) {
 				continue;
+			}
 			themeIds << theme_.id;
 			break;
 		}
@@ -877,8 +944,9 @@ bool OBSApp::SetTheme(const QString &name)
 		QFile file(cur->location);
 		filenames << file.fileName();
 
-		if (!file.open(QIODeviceBase::ReadOnly))
+		if (!file.open(QIODeviceBase::ReadOnly)) {
 			return false;
+		}
 		const QByteArray content = file.readAll();
 
 		for (OBSThemeVariable &var : ParseThemeVariables(content.constData())) {

@@ -17,9 +17,10 @@ protected:
 	 * able to manually get into the partial state. */
 	void nextCheckState() override
 	{
-		if (checkState() != Qt::Checked)
+		if (checkState() != Qt::Checked) {
 			setCheckState(Qt::Checked);
-		else
+		} else {
 			setCheckState(Qt::Unchecked);
+		}
 	}
 };

@@ -34,12 +34,14 @@ DecklinkCaptionsUI::DecklinkCaptionsUI(QWidget *parent) : QDialog(parent), ui(ne
 		uint32_t caps = obs_source_get_output_flags(source);
 		QString name = obs_source_get_name(source);
 
-		if (caps & OBS_SOURCE_CEA_708)
+		if (caps & OBS_SOURCE_CEA_708) {
 			ui->source->addItem(name);
+		}
 
 		OBSWeakSource weak = OBSGetWeakRef(source);
-		if (weak == captions->source)
+		if (weak == captions->source) {
 			ui->source->setCurrentText(name);
+		}
 		return true;
 	};
 
@@ -86,8 +88,9 @@ void obs_captions::start()
 void obs_captions::stop()
 {
 	OBSSource s = OBSGetStrongRef(source);
-	if (s)
+	if (s) {
 		obs_source_remove_caption_callback(s, caption_callback, nullptr);
+	}
 }
 
 static void save_decklink_caption_data(obs_data_t *save_data, bool saving, void *)
@@ -103,8 +106,9 @@ static void save_decklink_caption_data(obs_data_t *save_data, bool saving, void 
 		captions->stop();
 
 		obs_data_t *obj = obs_data_get_obj(save_data, "decklink_captions");
-		if (!obj)
+		if (!obj) {
 			obj = obs_data_create();
+		}
 
 		captions->source_name = obs_data_get_string(obj, "source");
 		captions->source = GetWeakSourceByName(captions->source_name.c_str());
@@ -143,8 +147,9 @@ bool obs_module_load(void)
 
 void obs_module_post_load(void)
 {
-	if (!obs_get_module("decklink"))
+	if (!obs_get_module("decklink")) {
 		return;
+	}
 
 	addOutputUI();
 }

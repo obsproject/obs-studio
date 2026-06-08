@@ -72,11 +72,13 @@ using LogUploadType = OBS::LogFileType;
 void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (interaction)
+	if (interaction) {
 		closed = interaction->close();
+	}
 
-	if (!closed)
+	if (!closed) {
 		return;
+	}
 
 	interaction = new OBSBasicInteraction(this, source);
 	interaction->Init();
@@ -86,11 +88,13 @@ void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (properties)
+	if (properties) {
 		closed = properties->close();
+	}
 
-	if (!closed)
+	if (!closed) {
 		return;
+	}
 
 	properties = new OBSBasicProperties(this, source);
 	properties->Init();
@@ -100,11 +104,13 @@ void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (filters)
+	if (filters) {
 		closed = filters->close();
+	}
 
-	if (!closed)
+	if (!closed) {
 		return;
+	}
 
 	filters = new OBSBasicFilters(this, source);
 	filters->Init();
@@ -139,10 +145,12 @@ void OBSBasic::CloseDialogs()
 		}
 	}
 
-	if (!stats.isNull())
+	if (!stats.isNull()) {
 		stats->close(); //call close to save Stats geometry
-	if (!remux.isNull())
+	}
+	if (!remux.isNull()) {
 		remux->close();
+	}
 }
 
 void OBSBasic::EnumDialogs()
@@ -154,17 +162,20 @@ void OBSBasic::EnumDialogs()
 	/* fill list of Visible dialogs and Modal dialogs */
 	QList<QDialog *> dialogs = findChildren<QDialog *>();
 	for (QDialog *dialog : dialogs) {
-		if (dialog->isVisible())
+		if (dialog->isVisible()) {
 			visDialogs.append(dialog);
-		if (dialog->isModal())
+		}
+		if (dialog->isModal()) {
 			modalDialogs.append(dialog);
+		}
 	}
 
 	/* fill list of Visible message boxes */
 	QList<QMessageBox *> msgBoxes = findChildren<QMessageBox *>();
 	for (QMessageBox *msgbox : msgBoxes) {
-		if (msgbox->isVisible())
+		if (msgbox->isVisible()) {
 			visMsgBoxes.append(msgbox);
+		}
 	}
 }
 
@@ -215,10 +226,11 @@ void OBSBasic::on_action_Settings_triggered()
 		QMessageBox::StandardButton button =
 			OBSMessageBox::question(this, QTStr("Restart"), QTStr("NeedsRestart"));
 
-		if (button == QMessageBox::Yes)
+		if (button == QMessageBox::Yes) {
 			close();
-		else
+		} else {
 			restart = false;
+		}
 	}
 }
 
@@ -249,16 +261,18 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 {
 	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), subdir) <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), subdir) <= 0) {
 		return nullptr;
+	}
 
 	string path = logDir;
 	path += "/";
 	path += log;
 
 	BPtr<char> file = os_quick_read_utf8_file(path.c_str());
-	if (!file)
+	if (!file) {
 		blog(LOG_WARNING, "Failed to read log file %s", path.c_str());
+	}
 
 	return file;
 }
@@ -299,8 +313,9 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadTy
 void OBSBasic::on_actionShowLogs_triggered()
 {
 	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0) {
 		return;
+	}
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
 	QDesktopServices::openUrl(url);
@@ -330,8 +345,9 @@ void OBSBasic::on_actionUploadLastLog_triggered()
 
 void OBSBasic::on_actionViewCurrentLog_triggered()
 {
-	if (!logView)
+	if (!logView) {
 		logView = new OBSLogViewer();
+	}
 
 	logView->show();
 	logView->setWindowState((logView->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
@@ -366,8 +382,9 @@ void OBSBasic::on_actionRepair_triggered()
 	ui->actionCheckForUpdates->setEnabled(false);
 	ui->actionRepair->setEnabled(false);
 
-	if (updateCheckThread && updateCheckThread->isRunning())
+	if (updateCheckThread && updateCheckThread->isRunning()) {
 		return;
+	}
 
 	updateCheckThread.reset(new AutoUpdateThread(false, true));
 	updateCheckThread->start();
@@ -421,10 +438,12 @@ void OBSBasic::on_actionDiscord_triggered()
 void OBSBasic::on_actionShowWhatsNew_triggered()
 {
 #ifdef WHATSNEW_ENABLED
-	if (introCheckThread && introCheckThread->isRunning())
+	if (introCheckThread && introCheckThread->isRunning()) {
 		return;
-	if (!cef)
+	}
+	if (!cef) {
 		return;
+	}
 
 	config_set_int(App()->GetAppConfig(), "General", "InfoIncrement", -1);
 
@@ -488,8 +507,9 @@ void OBSBasic::ToggleAlwaysOnTop()
 
 void OBSBasic::CreateEditTransformWindow(obs_sceneitem_t *item)
 {
-	if (transformWindow)
+	if (transformWindow) {
 		transformWindow->close();
+	}
 	transformWindow = new OBSBasicTransform(item, this);
 	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::onSceneChanged);
 	transformWindow->show();
@@ -498,10 +518,11 @@ void OBSBasic::CreateEditTransformWindow(obs_sceneitem_t *item)
 
 void OBSBasic::on_actionFullscreenInterface_triggered()
 {
-	if (!isFullScreen())
+	if (!isFullScreen()) {
 		showFullScreen();
-	else
+	} else {
 		showNormal();
+	}
 }
 
 void OBSBasic::on_resetUI_triggered()
@@ -550,24 +571,28 @@ void OBSBasic::SetShowing(bool showing)
 			}
 		}
 
-		if (showHide)
+		if (showHide) {
 			showHide->setText(QTStr("Basic.SystemTray.Show"));
+		}
 		QTimer::singleShot(0, this, &OBSBasic::hide);
 
-		if (previewEnabled)
+		if (previewEnabled) {
 			EnablePreviewDisplay(false);
+		}
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(false);
 #endif
 
 	} else if (showing && !isVisible()) {
-		if (showHide)
+		if (showHide) {
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
+		}
 		QTimer::singleShot(0, this, &OBSBasic::show);
 
-		if (previewEnabled)
+		if (previewEnabled) {
 			EnablePreviewDisplay(true);
+		}
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(true);
@@ -603,8 +628,9 @@ void OBSBasic::ToggleShowHide()
 	if (showing) {
 		/* check for modal dialogs */
 		EnumDialogs();
-		if (!modalDialogs.isEmpty() || !visMsgBoxes.isEmpty())
+		if (!modalDialogs.isEmpty() || !visMsgBoxes.isEmpty()) {
 			return;
+		}
 	}
 	SetShowing(!showing);
 }
@@ -653,8 +679,9 @@ void OBSBasic::on_idianPlayground_triggered()
 
 void OBSBasic::on_actionShowAbout_triggered()
 {
-	if (about)
+	if (about) {
 		about->close();
+	}
 
 	about = new OBSAbout(this);
 	about->show();

@@ -205,20 +205,25 @@ public:
 
 	inline void IncrementSleepInhibition()
 	{
-		if (!sleepInhibitor)
+		if (!sleepInhibitor) {
 			return;
-		if (sleepInhibitRefs++ == 0)
+		}
+		if (sleepInhibitRefs++ == 0) {
 			os_inhibit_sleep_set_active(sleepInhibitor, true);
+		}
 	}
 
 	inline void DecrementSleepInhibition()
 	{
-		if (!sleepInhibitor)
+		if (!sleepInhibitor) {
 			return;
-		if (sleepInhibitRefs == 0)
+		}
+		if (sleepInhibitRefs == 0) {
 			return;
-		if (--sleepInhibitRefs == 0)
+		}
+		if (--sleepInhibitRefs == 0) {
 			os_inhibit_sleep_set_active(sleepInhibitor, false);
+		}
 	}
 
 	inline void PushUITranslation(obs_frontend_translate_ui_cb cb) { translatorHooks.emplace_front(cb); }

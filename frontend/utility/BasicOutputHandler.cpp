@@ -27,8 +27,9 @@ void OBSStreamStarting(void *data, calldata_t *params)
 	obs_output_t *obj = (obs_output_t *)calldata_ptr(params, "output");
 
 	int sec = (int)obs_output_get_active_delay(obj);
-	if (sec == 0)
+	if (sec == 0) {
 		return;
+	}
 
 	output->delayActive = true;
 	QMetaObject::invokeMethod(output->main, "StreamDelayStarting", Q_ARG(int, sec));
@@ -40,10 +41,11 @@ void OBSStreamStopping(void *data, calldata_t *params)
 	obs_output_t *obj = (obs_output_t *)calldata_ptr(params, "output");
 
 	int sec = (int)obs_output_get_active_delay(obj);
-	if (sec == 0)
+	if (sec == 0) {
 		QMetaObject::invokeMethod(output->main, "StreamStopping");
-	else
+	} else {
 		QMetaObject::invokeMethod(output->main, "StreamDelayStopping", Q_ARG(int, sec));
+	}
 }
 
 void OBSStartStreaming(void *data, calldata_t * /* params */)
@@ -192,8 +194,9 @@ const char *GetStreamOutputType(const obs_service_t *service)
 	/* Check if the service has a preferred output type */
 	output = obs_service_get_preferred_output_type(service);
 	if (output) {
-		if ((obs_get_output_flags(output) & OBS_OUTPUT_SERVICE) != 0)
+		if ((obs_get_output_flags(output) & OBS_OUTPUT_SERVICE) != 0) {
 			return output;
+		}
 
 		blog(LOG_WARNING, "The output '%s' is not registered, fallback to another one", output);
 	}
@@ -209,8 +212,9 @@ const char *GetStreamOutputType(const obs_service_t *service)
 
 	/* If third-party protocol, use the first enumerated type */
 	obs_enum_output_types_with_protocol(protocol, &output, return_first_id);
-	if (output)
+	if (output) {
 		return output;
+	}
 
 	blog(LOG_WARNING, "No output compatible with the service '%s' is registered", obs_service_get_id(service));
 
@@ -234,37 +238,43 @@ BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 				  (obs_data_has_user_value(settings, "multitrack_video_configuration_url") ||
 				   strcmp(obs_service_get_id(service), "rtmp_custom") == 0);
 
-	if (multitrack_enabled)
+	if (multitrack_enabled) {
 		multitrackVideo = make_unique<MultitrackVideoOutput>();
+	}
 
-	if (config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers") > 1)
+	if (config_get_int(main->Config(), "Stream1", "WHIPSimulcastTotalLayers") > 1) {
 		whipSimulcastEncoders = make_unique<WHIPSimulcastEncoders>();
+	}
 }
 
 extern void log_vcam_changed(const VCamConfig &config, bool starting);
 
 bool BasicOutputHandler::StartVirtualCam()
 {
-	if (!main->vcamEnabled)
+	if (!main->vcamEnabled) {
 		return false;
+	}
 
 	bool typeIsProgram = main->vcamConfig.type == VCamOutputType::ProgramView;
 
-	if (!virtualCamView && !typeIsProgram)
+	if (!virtualCamView && !typeIsProgram) {
 		virtualCamView = obs_view_create();
+	}
 
 	UpdateVirtualCamOutputSource();
 
 	if (!virtualCamVideo) {
 		virtualCamVideo = typeIsProgram ? obs_get_video() : obs_view_add(virtualCamView);
 
-		if (!virtualCamVideo)
+		if (!virtualCamVideo) {
 			return false;
+		}
 	}
 
 	obs_output_set_media(virtualCam, virtualCamVideo, obs_get_audio());
-	if (!Active())
+	if (!Active()) {
 		SetupOutputs();
+	}
 
 	bool success = obs_output_start(virtualCam);
 	if (!success) {
@@ -304,8 +314,9 @@ bool BasicOutputHandler::VirtualCamActive() const
 
 void BasicOutputHandler::UpdateVirtualCamOutputSource()
 {
-	if (!main->vcamEnabled || !virtualCamView)
+	if (!main->vcamEnabled || !virtualCamView) {
 		return;
+	}
 
 	OBSSourceAutoRelease source;
 
@@ -328,8 +339,9 @@ void BasicOutputHandler::UpdateVirtualCamOutputSource()
 	case VCamOutputType::SourceOutput:
 		OBSSourceAutoRelease s = obs_get_source_by_name(main->vcamConfig.source.c_str());
 
-		if (!vCamSourceScene)
+		if (!vCamSourceScene) {
 			vCamSourceScene = obs_scene_create_private("vcam_source");
+		}
 		source = obs_source_get_ref(obs_scene_get_source(vCamSourceScene));
 
 		if (vCamSourceSceneItem && (obs_sceneitem_get_source(vCamSourceSceneItem) != s)) {
@@ -353,8 +365,9 @@ void BasicOutputHandler::UpdateVirtualCamOutputSource()
 	}
 
 	OBSSourceAutoRelease current = obs_view_get_source(virtualCamView, 0);
-	if (source != current)
+	if (source != current) {
 		obs_view_set_source(virtualCamView, 0, source);
+	}
 }
 
 void BasicOutputHandler::DestroyVirtualCamView()
@@ -376,8 +389,9 @@ void BasicOutputHandler::DestroyVirtualCamView()
 
 void BasicOutputHandler::DestroyVirtualCameraScene()
 {
-	if (!vCamSourceScene)
+	if (!vCamSourceScene) {
 		return;
+	}
 
 	obs_scene_release(vCamSourceScene);
 	vCamSourceScene = nullptr;
@@ -411,22 +425,25 @@ void clear_archive_encoder(obs_output_t *output, const char *expected_name)
 		obs_encoder_release(last);
 	}
 
-	if (clear)
+	if (clear) {
 		obs_output_set_audio_encoder(output, nullptr, 1);
+	}
 }
 
 void BasicOutputHandler::SetupAutoRemux(const char *&container)
 {
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
-	if (autoRemux && strcmp(container, "mp4") == 0)
+	if (autoRemux && strcmp(container, "mp4") == 0) {
 		container = "mkv";
+	}
 }
 
 std::string BasicOutputHandler::GetRecordingFilename(const char *path, const char *container, bool noSpace,
 						     bool overwrite, const char *format, bool ffmpeg)
 {
-	if (!ffmpeg)
+	if (!ffmpeg) {
 		SetupAutoRemux(container);
+	}
 
 	string dst = GetOutputFilename(path, container, noSpace, overwrite, format);
 	lastRecordingPath = dst;
@@ -456,9 +473,10 @@ std::shared_future<void> BasicOutputHandler::SetupMultitrackVideo(obs_service_t 
 	bool is_custom = strncmp("rtmp_custom", obs_service_get_type(service), 11) == 0;
 
 	std::optional<std::string> custom_config = std::nullopt;
-	if (config_get_bool(main->Config(), "Stream1", "MultitrackVideoConfigOverrideEnabled"))
+	if (config_get_bool(main->Config(), "Stream1", "MultitrackVideoConfigOverrideEnabled")) {
 		custom_config = DeserializeConfigText(
 			config_get_string(main->Config(), "Stream1", "MultitrackVideoConfigOverride"));
+	}
 
 	std::optional<QString> extraCanvasUUID;
 	const char *uuid = config_get_string(main->Config(), "Stream1", "MultitrackExtraCanvas");
@@ -515,8 +533,9 @@ std::shared_future<void> BasicOutputHandler::SetupMultitrackVideo(obs_service_t 
 			}
 
 			multitrackVideoActive = false;
-			if (!error->ShowDialog(main, multitrack_video_name))
+			if (!error->ShowDialog(main, multitrack_video_name)) {
 				return continuation(false);
+			}
 			return continuation(std::nullopt);
 		}
 
@@ -557,8 +576,9 @@ OBSDataAutoRelease BasicOutputHandler::GenerateMultitrackVideoStreamDumpConfig()
 {
 	auto stream_dump_enabled = config_get_bool(main->Config(), "Stream1", "MultitrackVideoStreamDumpEnabled");
 
-	if (!stream_dump_enabled)
+	if (!stream_dump_enabled) {
 		return nullptr;
+	}
 
 	const char *path = config_get_string(main->Config(), "SimpleOutput", "FilePath");
 	bool noSpace = config_get_bool(main->Config(), "SimpleOutput", "FileNameWithoutSpace");

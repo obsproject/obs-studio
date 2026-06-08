@@ -729,8 +729,9 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 
 	auto answer = OBSMessageBox::question(this, QTStr("Basic.Main.RemigrateSceneCollection.Title"), message);
 
-	if (answer == QMessageBox::No)
+	if (answer == QMessageBox::No) {
 		return;
+	}
 
 	lastOutputResolution = {ovi.base_width, ovi.base_height};
 	if (currentCoordinateMode == SceneCoordinateMode::Relative) {
@@ -833,8 +834,9 @@ void OBSBasic::Save(SceneCollection &collection)
 
 	// Save all non-scene sources first
 	auto FilterAudioSources = [&](obs_source_t *source) {
-		if (obs_source_is_group(source) || obs_source_is_scene(source))
+		if (obs_source_is_group(source) || obs_source_is_scene(source)) {
 			return false;
+		}
 
 		return std::find(begin(audioSources), end(audioSources), source) == end(audioSources);
 	};
@@ -871,8 +873,9 @@ void OBSBasic::Save(SceneCollection &collection)
 	// Iterate over our additional canvases (if any), save their scenes and groups.
 	for (const auto &canvas : canvases) {
 		// Do not store sources from ephemeral canvases.
-		if (obs_canvas_get_flags(canvas) & EPHEMERAL)
+		if (obs_canvas_get_flags(canvas) & EPHEMERAL) {
 			continue;
+		}
 
 		obs_canvas_enum_scenes(canvas, exportSceneItemsCallback, &sourcesAndGroups);
 	}
@@ -887,8 +890,9 @@ void OBSBasic::Save(SceneCollection &collection)
 	// Current preview/program scenes
 	OBSScene scene = GetCurrentScene();
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
-	if (!curProgramScene)
+	if (!curProgramScene) {
 		curProgramScene = obs_scene_get_source(scene);
+	}
 
 	obs_data_set_string(saveData, "current_scene", obs_source_get_name(obs_scene_get_source(scene)));
 	obs_data_set_string(saveData, "current_program_scene", obs_source_get_name(curProgramScene));
@@ -941,8 +945,9 @@ void OBSBasic::Save(SceneCollection &collection)
 
 	// Module-specific data
 	if (api) {
-		if (!collectionModuleData)
+		if (!collectionModuleData) {
 			collectionModuleData = obs_data_create();
+		}
 
 		api->on_save(collectionModuleData);
 		obs_data_set_obj(saveData, "modules", collectionModuleData);
@@ -1002,12 +1007,14 @@ static void LogFilter(obs_source_t *, obs_source_t *filter, void *v_val);
 static void LoadAudioDevice(const char *name, int channel, obs_data_t *parent)
 {
 	OBSDataAutoRelease data = obs_data_get_obj(parent, name);
-	if (!data)
+	if (!data) {
 		return;
+	}
 
 	OBSSourceAutoRelease source = obs_load_source(data);
-	if (!source)
+	if (!source) {
 		return;
+	}
 
 	obs_set_output_source(channel, source);
 
@@ -1037,8 +1044,9 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 
 	OBSSceneAutoRelease scene = obs_scene_create(Str("Basic.Scene"));
 
-	if (firstStart)
+	if (firstStart) {
 		CreateFirstRunSources();
+	}
 
 	SetCurrentScene(scene, true);
 
@@ -1052,8 +1060,9 @@ static void LogFilter(obs_source_t *, obs_source_t *filter, void *v_val)
 	int val = (int)(intptr_t)v_val;
 	string indent;
 
-	for (int i = 0; i < val; i++)
+	for (int i = 0; i < val; i++) {
 		indent += "    ";
+	}
 
 	blog(LOG_INFO, "%s- filter: '%s' (%s)", indent.c_str(), name, id);
 }
@@ -1066,8 +1075,9 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 	int indent_count = (int)(intptr_t)v_val;
 	string indent;
 
-	for (int i = 0; i < indent_count; i++)
+	for (int i = 0; i < indent_count; i++) {
 		indent += "    ";
+	}
 
 	blog(LOG_INFO, "%s- source: '%s' (%s)", indent.c_str(), name, id);
 
@@ -1084,15 +1094,18 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 
 	obs_source_t *show_tn = obs_sceneitem_get_transition(item, true);
 	obs_source_t *hide_tn = obs_sceneitem_get_transition(item, false);
-	if (show_tn)
+	if (show_tn) {
 		blog(LOG_INFO, "    %s- show: '%s' (%s)", indent.c_str(), obs_source_get_name(show_tn),
 		     obs_source_get_id(show_tn));
-	if (hide_tn)
+	}
+	if (hide_tn) {
 		blog(LOG_INFO, "    %s- hide: '%s' (%s)", indent.c_str(), obs_source_get_name(hide_tn),
 		     obs_source_get_id(hide_tn));
+	}
 
-	if (obs_sceneitem_is_group(item))
+	if (obs_sceneitem_is_group(item)) {
 		obs_sceneitem_group_enum_items(item, LogSceneItem, (void *)(intptr_t)child_indent);
+	}
 	return true;
 }
 
@@ -1201,8 +1214,9 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	QApplication::sendPostedEvents(nullptr);
 
 	OBSDataAutoRelease modulesObj = obs_data_get_obj(data, "modules");
-	if (api)
+	if (api) {
 		api->on_preload(modulesObj);
+	}
 
 	/* Keep a reference to "modules" data so plugins that are not loaded do
 	 * not have their collection specific data lost. */
@@ -1219,16 +1233,19 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 
 	if (!opt_starting_scene.empty()) {
 		programSceneName = opt_starting_scene.c_str();
-		if (!IsPreviewProgramMode())
+		if (!IsPreviewProgramMode()) {
 			sceneName = opt_starting_scene.c_str();
+		}
 	}
 
 	int newDuration = obs_data_get_int(data, "transition_duration");
-	if (!newDuration)
+	if (!newDuration) {
 		newDuration = 300;
+	}
 
-	if (!transitionName)
+	if (!transitionName) {
 		transitionName = obs_source_get_name(fadeTransition);
+	}
 
 	const char *curSceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
 
@@ -1239,8 +1256,9 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	OBSSourceAutoRelease curProgramScene;
 	obs_source_t *curTransition;
 
-	if (!name || !*name)
+	if (!name || !*name) {
 		name = curSceneCollection;
+	}
 
 	LoadAudioDevice(DESKTOP_AUDIO_1.data(), 1, data);
 	LoadAudioDevice(DESKTOP_AUDIO_2.data(), 2, data);
@@ -1249,8 +1267,9 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	LoadAudioDevice(AUX_AUDIO_3.data(), 5, data);
 	LoadAudioDevice(AUX_AUDIO_4.data(), 6, data);
 
-	if (collection_canvases)
+	if (collection_canvases) {
 		canvases = OBS::Canvas::LoadCanvases(collection_canvases);
+	}
 
 	if (!sources) {
 		sources = std::move(groups);
@@ -1332,16 +1351,20 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	obs_missing_files_t *files = obs_missing_files_create();
 	obs_load_sources(sources, addMissingFiles, files);
 
-	if (resetVideo)
+	if (resetVideo) {
 		ResetVideo();
-	if (transitionsData)
+	}
+	if (transitionsData) {
 		LoadTransitions(transitionsData, addMissingFiles, files);
-	if (sceneOrder)
+	}
+	if (sceneOrder) {
 		LoadSceneListOrder(sceneOrder);
+	}
 
 	curTransition = FindTransition(transitionName);
-	if (!curTransition)
+	if (!curTransition) {
 		curTransition = fadeTransition;
+	}
 
 	SetTransitionDuration(newDuration);
 	SetTransition(curTransition);
@@ -1369,10 +1392,12 @@ retryScene:
 
 	SetCurrentScene(curScene.Get(), true);
 
-	if (!curProgramScene)
+	if (!curProgramScene) {
 		curProgramScene = std::move(curScene);
-	if (IsPreviewProgramMode())
+	}
+	if (IsPreviewProgramMode()) {
 		TransitionToScene(curProgramScene.Get(), true);
+	}
 
 	/* ------------------- */
 
@@ -1420,8 +1445,9 @@ retryScene:
 		OBSDataAutoRelease obj = obs_data_get_obj(data, "virtual-camera");
 
 		vcamConfig.type = (VCamOutputType)obs_data_get_int(obj, "type2");
-		if (vcamConfig.type == VCamOutputType::Invalid)
+		if (vcamConfig.type == VCamOutputType::Invalid) {
 			vcamConfig.type = (VCamOutputType)obs_data_get_int(obj, "type");
+		}
 
 		if (vcamConfig.type == VCamOutputType::Invalid) {
 			VCamInternalType internal = (VCamInternalType)obs_data_get_int(obj, "internal");
@@ -1445,13 +1471,15 @@ retryScene:
 
 	/* ---------------------- */
 
-	if (api)
+	if (api) {
 		api->on_load(modulesObj);
+	}
 
 	obs_data_release(data);
 
-	if (!opt_starting_scene.empty())
+	if (!opt_starting_scene.empty()) {
 		opt_starting_scene.clear();
+	}
 
 	if (opt_start_streaming && !safe_mode) {
 		blog(LOG_INFO, "Starting stream due to command line parameter");
@@ -1477,13 +1505,15 @@ retryScene:
 
 	LogScenes();
 
-	if (!App()->IsMissingFilesCheckDisabled())
+	if (!App()->IsMissingFilesCheckDisabled()) {
 		ShowMissingFilesDialog(files);
+	}
 
 	disableSaving--;
 
-	if (vcamEnabled)
+	if (vcamEnabled) {
 		outputHandler->UpdateVirtualCamOutputSource();
+	}
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 	OnEvent(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
@@ -1491,8 +1521,9 @@ retryScene:
 
 void OBSBasic::SaveProjectNow()
 {
-	if (disableSaving)
+	if (disableSaving) {
 		return;
+	}
 
 	projectChanged = true;
 	SaveProjectDeferred();
@@ -1500,8 +1531,9 @@ void OBSBasic::SaveProjectNow()
 
 void OBSBasic::SaveProject()
 {
-	if (disableSaving)
+	if (disableSaving) {
 		return;
+	}
 
 	projectChanged = true;
 	QMetaObject::invokeMethod(this, "SaveProjectDeferred", Qt::QueuedConnection);
@@ -1509,11 +1541,13 @@ void OBSBasic::SaveProject()
 
 void OBSBasic::SaveProjectDeferred()
 {
-	if (disableSaving)
+	if (disableSaving) {
 		return;
+	}
 
-	if (!projectChanged)
+	if (!projectChanged) {
 		return;
+	}
 
 	projectChanged = false;
 
@@ -1546,8 +1580,9 @@ void OBSBasic::ClearSceneData()
 
 	ClearProjectors();
 
-	for (int i = 0; i < MAX_CHANNELS; i++)
+	for (int i = 0; i < MAX_CHANNELS; i++) {
 		obs_set_output_source(i, nullptr);
+	}
 
 	/* Reset VCam to default to clear its private scene and any references
 	 * it holds. It will be reconfigured during loading. */
@@ -1653,9 +1688,10 @@ void OBSBasic::ShowMissingFilesDialog(obs_missing_files_t *files)
 		obs_missing_files_destroy(files);
 
 		/* Only raise dialog if triggered manually */
-		if (!disableSaving)
+		if (!disableSaving) {
 			OBSMessageBox::information(this, QTStr("MissingFiles.NoMissing.Title"),
 						   QTStr("MissingFiles.NoMissing.Text"));
+		}
 	}
 }
 
