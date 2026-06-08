@@ -3,6 +3,8 @@
 
 #include <widgets/OBSBasic.hpp>
 
+#include <QLocale>
+
 #include "moc_OBSBasicStatusBar.cpp"
 
 static constexpr int bitrateUpdateSeconds = 2;
@@ -118,7 +120,7 @@ void OBSBasicStatusBar::Deactivate()
 
 		statusWidget->ui->delayInfo->setText("");
 		statusWidget->ui->droppedFrames->setText(QTStr("DroppedFrames").arg("0", "0.0"));
-		statusWidget->ui->kbps->setText("0 kbps");
+		statusWidget->ui->kbps->setText(QTStr("Basic.StatusBar.Bitrate").arg("0"));
 
 		delaySecTotal = 0;
 		delaySecStarting = 0;
@@ -185,8 +187,8 @@ void OBSBasicStatusBar::UpdateBandwidth()
 
 	double kbitsPerSec = double(bitsBetween) / timePassed / 1000.0;
 
-	QString text;
-	text += QString::number(kbitsPerSec, 'f', 0) + QString(" kbps");
+	QLocale locale;
+	QString text = QTStr("Basic.StatusBar.Bitrate").arg(locale.toString(kbitsPerSec, 'f', 0));
 
 	statusWidget->ui->kbps->setText(text);
 	statusWidget->ui->kbps->setMinimumWidth(statusWidget->ui->kbps->width());
@@ -205,8 +207,8 @@ void OBSBasicStatusBar::UpdateCPUUsage()
 	if (!main)
 		return;
 
-	QString text;
-	text += QString("CPU: ") + QString::number(main->GetCPUUsage(), 'f', 1) + QString("%");
+	QLocale locale;
+	QString text = QTStr("Basic.StatusBar.CPUUsage").arg(locale.toString(main->GetCPUUsage(), 'f', 1));
 
 	statusWidget->ui->cpuUsage->setText(text);
 	statusWidget->ui->cpuUsage->setMinimumWidth(statusWidget->ui->cpuUsage->width());
@@ -220,7 +222,9 @@ void OBSBasicStatusBar::UpdateCurrentFPS()
 	obs_get_video_info(&ovi);
 	float targetFPS = (float)ovi.fps_num / (float)ovi.fps_den;
 
-	QString text = QString::asprintf("%.2f / %.2f FPS", obs_get_active_fps(), targetFPS);
+	QLocale locale;
+	QString text = QTStr("Basic.StatusBar.FPS")
+			       .arg(locale.toString(obs_get_active_fps(), 'f', 2), locale.toString(targetFPS, 'f', 2));
 
 	statusWidget->ui->fpsCurrent->setText(text);
 	statusWidget->ui->fpsCurrent->setMinimumWidth(statusWidget->ui->fpsCurrent->width());
@@ -293,7 +297,7 @@ void OBSBasicStatusBar::UpdateRecordTimeLabel()
 
 	QString text = QString::asprintf("%02d:%02d:%02d", hours, minutes, seconds);
 	if (os_atomic_load_bool(&recording_paused)) {
-		text += QStringLiteral(" (PAUSED)");
+		text += QTStr("Basic.StatusBar.Paused");
 	}
 
 	statusWidget->ui->recordTime->setText(text);
