@@ -1289,7 +1289,6 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 {
 	obs_bounds_type boundsType = obs_sceneitem_get_bounds_type(stretchItem);
 	uint32_t stretchFlags = (uint32_t)stretchHandle;
-	uint32_t align = obs_sceneitem_get_alignment(stretchItem);
 	vec3 tl, br, pos3;
 
 	vec3_zero(&tl);
@@ -1341,28 +1340,7 @@ void OBSBasicPreview::CropItem(const vec2 &pos)
 		pos3.y = br.y = max_y(pos3.y, minY);
 	}
 
-#define ALIGN_X (ITEM_LEFT | ITEM_RIGHT)
-#define ALIGN_Y (ITEM_TOP | ITEM_BOTTOM)
-	vec3 newPos;
-	vec3_zero(&newPos);
-
-	uint32_t align_x = (align & ALIGN_X);
-	uint32_t align_y = (align & ALIGN_Y);
-	if (align_x == (stretchFlags & ALIGN_X) && align_x != 0)
-		newPos.x = pos3.x;
-	else if (align & ITEM_RIGHT)
-		newPos.x = stretchItemSize.x;
-	else if (!(align & ITEM_LEFT))
-		newPos.x = stretchItemSize.x * 0.5f;
-
-	if (align_y == (stretchFlags & ALIGN_Y) && align_y != 0)
-		newPos.y = pos3.y;
-	else if (align & ITEM_BOTTOM)
-		newPos.y = stretchItemSize.y;
-	else if (!(align & ITEM_TOP))
-		newPos.y = stretchItemSize.y * 0.5f;
-#undef ALIGN_X
-#undef ALIGN_Y
+	vec3 newPos = CalculateStretchPos(tl, br);
 
 	crop = startCrop;
 
