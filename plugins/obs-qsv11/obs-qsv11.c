@@ -736,6 +736,7 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 {
 	struct obs_qsv *obsqsv = data;
 	obsqsv->params.nTargetBitRate = (mfxU16)obs_data_get_int(settings, "bitrate");
+	obsqsv->params.nMaxBitRate = (mfxU16)obs_data_get_int(settings, "max_bitrate");
 
 	if (!qsv_encoder_reconfig(obsqsv->context, &obsqsv->params)) {
 		warn("Failed to reconfigure");
