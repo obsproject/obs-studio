@@ -946,7 +946,7 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 {
 	QListWidgetItem *listItem = list->currentItem();
 	OBSSource filter = listItem->data(Qt::UserRole).value<OBSSource>();
-	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
+	QLineEdit *edit = static_cast<QLineEdit *>(editor);
 	string name = edit->text().trimmed().toStdString();
 
 	const char *prevName = obs_source_get_name(filter);

@@ -55,7 +55,7 @@ void OBSBasic::YouTubeActionDialogOk(const std::string &broadcastId, const std::
 
 void OBSBasic::YoutubeStreamCheck(const std::string &key)
 {
-	YoutubeApiWrappers *apiYouTube(dynamic_cast<YoutubeApiWrappers *>(GetAuth()));
+	YoutubeApiWrappers *apiYouTube(qobject_cast<YoutubeApiWrappers *>(GetAuth()));
 	if (!apiYouTube) {
 		/* technically we should never get here -Lain */
 		QMetaObject::invokeMethod(this, "ForceStopStreaming", Qt::QueuedConnection);

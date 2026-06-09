@@ -249,7 +249,13 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 
 void OBSBasic::SetDeinterlacingMode()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	obs_deinterlace_mode mode = (obs_deinterlace_mode)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
@@ -277,7 +283,13 @@ void OBSBasic::SetDeinterlacingMode()
 
 void OBSBasic::SetDeinterlacingOrder()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	obs_deinterlace_field_order order = (obs_deinterlace_field_order)action->property("order").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
@@ -343,7 +355,13 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 
 void OBSBasic::SetScaleFilter()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	obs_scale_type mode = (obs_scale_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
@@ -398,7 +416,13 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 
 void OBSBasic::SetBlendingMethod()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	obs_blending_method method = (obs_blending_method)action->property("method").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
@@ -449,7 +473,13 @@ QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
 
 void OBSBasic::SetBlendingMode()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	obs_blending_type mode = (obs_blending_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
@@ -747,7 +777,13 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 void OBSBasic::actionOpenSourceFilters()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	if (!action->property("source").isValid()) {
 		return;
 	}
@@ -759,7 +795,13 @@ void OBSBasic::actionOpenSourceFilters()
 
 void OBSBasic::actionOpenSourceProperties()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	if (!action->property("source").isValid()) {
 		return;
 	}
@@ -795,6 +837,8 @@ static inline bool should_show_properties(obs_source_t *source, const char *id)
 
 void OBSBasic::AddSourceDialog()
 {
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (!action) {
 		return;

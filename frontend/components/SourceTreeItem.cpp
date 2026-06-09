@@ -555,9 +555,9 @@ void SourceTreeItem::ExpandClicked(bool checked)
 	obs_data_set_bool(data, "collapsed", checked);
 
 	if (!checked)
-		tree->GetStm()->ExpandGroup(sceneitem);
+		tree->model()->ExpandGroup(sceneitem);
 	else
-		tree->GetStm()->CollapseGroup(sceneitem);
+		tree->model()->CollapseGroup(sceneitem);
 }
 
 void SourceTreeItem::Select()

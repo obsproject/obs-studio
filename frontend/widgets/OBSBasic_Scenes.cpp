@@ -902,7 +902,7 @@ static void RenameListItem(OBSBasic *parent, QListWidget *listWidget, obs_source
 void OBSBasic::SceneNameEdited(QWidget *editor)
 {
 	OBSScene scene = GetCurrentScene();
-	QLineEdit *edit = qobject_cast<QLineEdit *>(editor);
+	QLineEdit *edit = static_cast<QLineEdit *>(editor);
 	string text = edit->text().trimmed().toStdString();
 
 	if (!scene)

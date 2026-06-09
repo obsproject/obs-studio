@@ -205,7 +205,9 @@ void RemuxEntryPathItemDelegate::handleClear(QWidget *container)
 
 void RemuxEntryPathItemDelegate::updateText()
 {
-	QLineEdit *lineEdit = dynamic_cast<QLineEdit *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QLineEdit *lineEdit = static_cast<QLineEdit *>(sender());
 	QWidget *editor = lineEdit->parentWidget();
 	emit commitData(editor);
 }

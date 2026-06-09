@@ -505,7 +505,13 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 
 void VolumeControl::renameSource()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
+	// FIXME: https://github.com/obsproject/obs-studio/issues/13444
+	// sender() is a brittle and outdated way to work with signals/slots.
+	QAction *action = qobject_cast<QAction *>(sender());
+	if (!action) {
+		return;
+	}
+
 	OBSSource source = action->property("source").value<OBSSource>();
 
 	std::string uuid = obs_source_get_uuid(source);
