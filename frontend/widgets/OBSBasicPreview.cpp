@@ -1462,11 +1462,13 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 		baseSize.x -= float(crop.left + crop.right);
 		baseSize.y -= float(crop.top + crop.bottom);
 
-		if (!shiftDown)
-			ClampAspect(tl, br, size, baseSize);
+		if (baseSize.x > 0.0 && baseSize.y > 0.0) {
+			if (!shiftDown)
+				ClampAspect(tl, br, size, baseSize);
 
-		vec2_div(&size, &size, &baseSize);
-		obs_sceneitem_set_scale(stretchItem, &size);
+			vec2_div(&size, &size, &baseSize);
+			obs_sceneitem_set_scale(stretchItem, &size);
+		}
 	}
 
 	pos3 = CalculateStretchPos(tl, br);
