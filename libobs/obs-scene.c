@@ -3206,6 +3206,14 @@ void obs_sceneitem_get_crop(const obs_sceneitem_t *item, struct obs_sceneitem_cr
 	memcpy(crop, &item->crop, sizeof(*crop));
 }
 
+void obs_sceneitem_get_bounds_crop_sizes(const obs_sceneitem_t *item, struct obs_sceneitem_crop *cropped)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_get_bounds_crop"))
+		return;
+
+	memcpy(cropped, &item->bounds_crop, sizeof(*cropped));
+}
+
 void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item, enum obs_scale_type filter)
 {
 	if (!obs_ptr_valid(item, "obs_sceneitem_set_scale_filter"))
