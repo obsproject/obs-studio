@@ -164,71 +164,77 @@ void OBSBasic::UpdateContextBar(bool force)
 
 		const char *id = obs_source_get_unversioned_id(source);
 		uint32_t flags = obs_source_get_output_flags(source);
+		switch (obs_source_load_state(id)) {
+		case OBS_MODULE_DISABLED:
+		case OBS_MODULE_MISSING:
+			break;
+		default:
+			ui->sourceInteractButton->setVisible(flags & OBS_SOURCE_INTERACTION);
 
-		ui->sourceInteractButton->setVisible(flags & OBS_SOURCE_INTERACTION);
+			if (contextBarSize >= ContextBarSize_Reduced && (updateNeeded || force)) {
+				ClearContextBar();
+				if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
+					if (!is_network_media_source(source, id)) {
+						MediaControls *mediaControls = new MediaControls(ui->emptySpace);
+						mediaControls->SetSource(source);
 
-		if (contextBarSize >= ContextBarSize_Reduced && (updateNeeded || force)) {
-			ClearContextBar();
-			if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
-				if (!is_network_media_source(source, id)) {
-					MediaControls *mediaControls = new MediaControls(ui->emptySpace);
-					mediaControls->SetSource(source);
+						ui->emptySpace->layout()->addWidget(mediaControls);
+					}
+				} else if (strcmp(id, "browser_source") == 0) {
+					BrowserToolbar *c = new BrowserToolbar(ui->emptySpace, source);
+					ui->emptySpace->layout()->addWidget(c);
 
-					ui->emptySpace->layout()->addWidget(mediaControls);
+				} else if (strcmp(id, "wasapi_input_capture") == 0 ||
+					   strcmp(id, "wasapi_output_capture") == 0 ||
+					   strcmp(id, "coreaudio_input_capture") == 0 ||
+					   strcmp(id, "coreaudio_output_capture") == 0 ||
+					   strcmp(id, "pulse_input_capture") == 0 ||
+					   strcmp(id, "pulse_output_capture") == 0 ||
+					   strcmp(id, "alsa_input_capture") == 0) {
+					AudioCaptureToolbar *c = new AudioCaptureToolbar(ui->emptySpace, source);
+					c->Init();
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "wasapi_process_output_capture") == 0) {
+					ApplicationAudioCaptureToolbar *c =
+						new ApplicationAudioCaptureToolbar(ui->emptySpace, source);
+					c->Init();
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "window_capture") == 0 || strcmp(id, "xcomposite_input") == 0) {
+					WindowCaptureToolbar *c = new WindowCaptureToolbar(ui->emptySpace, source);
+					c->Init();
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "monitor_capture") == 0 || strcmp(id, "display_capture") == 0 ||
+					   strcmp(id, "xshm_input") == 0) {
+					DisplayCaptureToolbar *c = new DisplayCaptureToolbar(ui->emptySpace, source);
+					c->Init();
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "dshow_input") == 0) {
+					DeviceCaptureToolbar *c = new DeviceCaptureToolbar(ui->emptySpace, source);
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "game_capture") == 0) {
+					GameCaptureToolbar *c = new GameCaptureToolbar(ui->emptySpace, source);
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "image_source") == 0) {
+					ImageSourceToolbar *c = new ImageSourceToolbar(ui->emptySpace, source);
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "color_source") == 0) {
+					ColorSourceToolbar *c = new ColorSourceToolbar(ui->emptySpace, source);
+					ui->emptySpace->layout()->addWidget(c);
+
+				} else if (strcmp(id, "text_ft2_source") == 0 || strcmp(id, "text_gdiplus") == 0) {
+					TextSourceToolbar *c = new TextSourceToolbar(ui->emptySpace, source);
+					ui->emptySpace->layout()->addWidget(c);
 				}
-			} else if (strcmp(id, "browser_source") == 0) {
-				BrowserToolbar *c = new BrowserToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "wasapi_input_capture") == 0 ||
-				   strcmp(id, "wasapi_output_capture") == 0 ||
-				   strcmp(id, "coreaudio_input_capture") == 0 ||
-				   strcmp(id, "coreaudio_output_capture") == 0 ||
-				   strcmp(id, "pulse_input_capture") == 0 || strcmp(id, "pulse_output_capture") == 0 ||
-				   strcmp(id, "alsa_input_capture") == 0) {
-				AudioCaptureToolbar *c = new AudioCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "wasapi_process_output_capture") == 0) {
-				ApplicationAudioCaptureToolbar *c =
-					new ApplicationAudioCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "window_capture") == 0 || strcmp(id, "xcomposite_input") == 0) {
-				WindowCaptureToolbar *c = new WindowCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "monitor_capture") == 0 || strcmp(id, "display_capture") == 0 ||
-				   strcmp(id, "xshm_input") == 0) {
-				DisplayCaptureToolbar *c = new DisplayCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "dshow_input") == 0) {
-				DeviceCaptureToolbar *c = new DeviceCaptureToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "game_capture") == 0) {
-				GameCaptureToolbar *c = new GameCaptureToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "image_source") == 0) {
-				ImageSourceToolbar *c = new ImageSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "color_source") == 0) {
-				ColorSourceToolbar *c = new ColorSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "text_ft2_source") == 0 || strcmp(id, "text_gdiplus") == 0) {
-				TextSourceToolbar *c = new TextSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+			} else if (contextBarSize == ContextBarSize_Minimized) {
+				ClearContextBar();
 			}
-		} else if (contextBarSize == ContextBarSize_Minimized) {
-			ClearContextBar();
 		}
 
 		QIcon icon;
