@@ -149,7 +149,7 @@ void OBSBasic::pasteSceneItem(OBSScene scene, bool duplicate)
 			continue;
 		}
 
-		OBSBasicSourceSelect::sourcePaste(copyInfo, duplicate);
+		OBSBasicSourceSelect::sourcePaste(copyInfo, duplicate, scene);
 		RefreshSources(scene);
 	}
 

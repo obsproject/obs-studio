@@ -38,7 +38,7 @@ public:
 
 	OBSSource newSource;
 
-	static void sourcePaste(SourceCopyInfo &info, bool duplicate);
+	static void sourcePaste(SourceCopyInfo &info, bool duplicate, OBSScene scene = nullptr);
 
 protected:
 	void showEvent(QShowEvent *event) override;
