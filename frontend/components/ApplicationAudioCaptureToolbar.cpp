@@ -13,6 +13,10 @@ void ApplicationAudioCaptureToolbar::Init()
 	ui->activateButton = nullptr;
 
 	obs_module_t *mod = obs_get_module("win-wasapi");
+	if (!mod) {
+		return;
+	}
+
 	const char *device_str = obs_module_get_locale_text(mod, "Window");
 	ui->deviceLabel->setText(device_str);
 
