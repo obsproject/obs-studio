@@ -52,6 +52,8 @@ target_sources(
     components/MenuButton.hpp
     components/MenuCheckBox.cpp
     components/MenuCheckBox.hpp
+    components/MenuRadioButton.cpp
+    components/MenuRadioButton.hpp
     components/Multiview.cpp
     components/Multiview.hpp
     components/MuteCheckBox.hpp
