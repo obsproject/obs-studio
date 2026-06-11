@@ -682,6 +682,9 @@ static bool init_avformat(mp_media_t *m)
 			blog(LOG_WARNING, "Failed to parse FFmpeg options: %s\n%s", av_err2str(ret), m->ffmpeg_options);
 	}
 
+	if (is_rist)
+		av_dict_set(&opts, "log_level", "-1", 0);
+
 	m->fmt = avformat_alloc_context();
 	if (m->buffering == 0) {
 		m->fmt->flags |= AVFMT_FLAG_NOBUFFER;
