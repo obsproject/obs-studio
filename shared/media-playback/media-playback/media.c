@@ -859,6 +859,7 @@ static inline bool mp_media_init_internal(mp_media_t *m, const struct mp_media_i
 	m->path = info->path ? bstrdup(info->path) : NULL;
 	m->format_name = info->format ? bstrdup(info->format) : NULL;
 	m->hw = info->hardware_decoding;
+	m->ffmpeg_options = info->ffmpeg_options ? bstrdup(info->ffmpeg_options) : NULL;
 
 	if (info->full_decode)
 		return true;
@@ -880,7 +881,6 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_cb = info->v_cb;
 	media->a_cb = info->a_cb;
 	media->stop_cb = info->stop_cb;
-	media->ffmpeg_options = info->ffmpeg_options;
 	media->v_seek_cb = info->v_seek_cb;
 	media->v_preload_cb = info->v_preload_cb;
 	media->force_range = info->force_range;
@@ -943,6 +943,7 @@ void mp_media_free(mp_media_t *media)
 	av_freep(&media->scale_pic[0]);
 	bfree(media->path);
 	bfree(media->format_name);
+	bfree(media->ffmpeg_options);
 	memset(media, 0, sizeof(*media));
 	pthread_mutex_init_value(&media->mutex);
 }

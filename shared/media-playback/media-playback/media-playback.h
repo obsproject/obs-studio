@@ -36,7 +36,7 @@ struct mp_media_info {
 
 	const char *path;
 	const char *format;
-	char *ffmpeg_options;
+	const char *ffmpeg_options;
 	int buffering;
 	int speed;
 	enum video_range_type force_range;

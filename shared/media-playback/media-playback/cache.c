@@ -561,7 +561,7 @@ bool mp_cache_init(mp_cache_t *c, const struct mp_media_info *info)
 	c->v_cb = info->v_cb;
 	c->a_cb = info->a_cb;
 	c->stop_cb = info->stop_cb;
-	c->ffmpeg_options = info->ffmpeg_options;
+	c->ffmpeg_options = info->ffmpeg_options ? bstrdup(info->ffmpeg_options) : NULL;
 	c->v_seek_cb = info->v_seek_cb;
 	c->v_preload_cb = info->v_preload_cb;
 	c->request_preload = info->request_preload;
@@ -618,6 +618,7 @@ void mp_cache_free(mp_cache_t *c)
 
 	bfree(c->path);
 	bfree(c->format_name);
+	bfree(c->ffmpeg_options);
 	pthread_mutex_destroy(&c->mutex);
 	os_sem_destroy(c->sem);
 	memset(c, 0, sizeof(*c));
