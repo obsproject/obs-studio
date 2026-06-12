@@ -58,7 +58,7 @@ endif()
 
 set_target_properties_obs(
   aja-output-ui
-  PROPERTIES FOLDER frontend
+  PROPERTIES FOLDER plugins/aja
              PREFIX ""
              AUTOMOC ON
              AUTOUIC ON

@@ -59,7 +59,7 @@ jobs:
 
   macos-build:
     name: macOS 🍏
-    runs-on: macos-15
+    runs-on: macos-26
     needs: check-event
     strategy:
       fail-fast: false
@@ -80,8 +80,8 @@ jobs:
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          print '::group::Enable Xcode 26.1'
-          sudo xcode-select --switch /Applications/Xcode_26.1.app/Contents/Developer
+          print '::group::Enable Xcode 26.5'
+          sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
           print '::endgroup::'
 
           print '::group::Clean Homebrew Environment'

@@ -6,8 +6,9 @@ std::string vstrprintf(const char *format, va_list args)
 {
 	va_list args2;
 
-	if (!format)
+	if (!format) {
 		return std::string();
+	}
 
 	va_copy(args2, args);
 

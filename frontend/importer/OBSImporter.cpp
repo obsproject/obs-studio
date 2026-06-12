@@ -77,8 +77,9 @@ OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new Im
 	bool autoSearch = config_get_bool(App()->GetUserConfig(), "General", "AutomaticCollectionSearch");
 
 	OBSImporterFiles f;
-	if (autoSearch)
+	if (autoSearch) {
 		f = ImportersFindFiles();
+	}
 
 	for (size_t i = 0; i < f.size(); i++) {
 		QString path = f[i].c_str();
@@ -125,8 +126,9 @@ void OBSImporter::dropEvent(QDropEvent *ev)
 
 void OBSImporter::dragEnterEvent(QDragEnterEvent *ev)
 {
-	if (ev->mimeData()->hasUrls())
+	if (ev->mimeData()->hasUrls()) {
 		ev->accept();
+	}
 }
 
 void OBSImporter::browseImport()
@@ -175,8 +177,9 @@ void OBSImporter::importCollections()
 	for (int i = 0; i < optionsModel->rowCount() - 1; i++) {
 		int selected = optionsModel->index(i, ImporterColumn::Selected).data(Qt::CheckStateRole).value<int>();
 
-		if (selected == Qt::Unchecked)
+		if (selected == Qt::Unchecked) {
 			continue;
+		}
 
 		std::string pathStr = optionsModel->index(i, ImporterColumn::Path)
 					      .data(Qt::DisplayRole)

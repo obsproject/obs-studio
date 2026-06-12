@@ -45,12 +45,14 @@ bool log_sdk_version()
 
 bool obs_module_load(void)
 {
-	if (!log_sdk_version())
+	if (!log_sdk_version()) {
 		return false;
+	}
 
 	deviceEnum = new DeckLinkDeviceDiscovery();
-	if (!deviceEnum->Init())
+	if (!deviceEnum->Init()) {
 		return false;
+	}
 
 	decklink_source_info = create_decklink_source_info();
 	obs_register_source(&decklink_source_info);

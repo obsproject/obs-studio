@@ -81,8 +81,9 @@ void OutputTimer::StreamTimerStart()
 
 	int total = (((hours * 3600) + (minutes * 60)) + seconds) * 1000;
 
-	if (total == 0)
+	if (total == 0) {
 		total = 1000;
+	}
 
 	streamingTimer->setInterval(total);
 	streamingTimer->setSingleShot(true);
@@ -109,8 +110,9 @@ void OutputTimer::RecordTimerStart()
 
 	int total = (((hours * 3600) + (minutes * 60)) + seconds) * 1000;
 
-	if (total == 0)
+	if (total == 0) {
 		total = 1000;
+	}
 
 	recordingTimer->setInterval(total);
 	recordingTimer->setSingleShot(true);
@@ -128,16 +130,19 @@ void OutputTimer::StreamTimerStop()
 {
 	streamingAlreadyActive = false;
 
-	if (!isVisible() && streamingTimer->isActive() == false)
+	if (!isVisible() && streamingTimer->isActive() == false) {
 		return;
+	}
 
-	if (streamingTimer->isActive())
+	if (streamingTimer->isActive()) {
 		streamingTimer->stop();
+	}
 
 	ui->outputTimerStream->setText(obs_module_text("Start"));
 
-	if (streamingTimerDisplay->isActive())
+	if (streamingTimerDisplay->isActive()) {
 		streamingTimerDisplay->stop();
+	}
 
 	ui->streamTime->setText("00:00:00");
 	ui->outputTimerStream->setChecked(false);
@@ -147,16 +152,19 @@ void OutputTimer::RecordTimerStop()
 {
 	recordingAlreadyActive = false;
 
-	if (!isVisible() && recordingTimer->isActive() == false)
+	if (!isVisible() && recordingTimer->isActive() == false) {
 		return;
+	}
 
-	if (recordingTimer->isActive())
+	if (recordingTimer->isActive()) {
 		recordingTimer->stop();
+	}
 
 	ui->outputTimerRecord->setText(obs_module_text("Start"));
 
-	if (recordingTimerDisplay->isActive())
+	if (recordingTimerDisplay->isActive()) {
 		recordingTimerDisplay->stop();
+	}
 
 	ui->recordTime->setText("00:00:00");
 	ui->outputTimerRecord->setChecked(false);
@@ -178,10 +186,11 @@ void OutputTimer::UpdateRecordTimerDisplay()
 {
 	int remainingTime = 0;
 
-	if (obs_frontend_recording_paused() && ui->pauseRecordTimer->isChecked())
+	if (obs_frontend_recording_paused() && ui->pauseRecordTimer->isChecked()) {
 		remainingTime = recordingTimeLeft / 1000;
-	else
+	} else {
 		remainingTime = recordingTimer->remainingTime() / 1000;
+	}
 
 	int seconds = remainingTime % 60;
 	int minutes = (remainingTime % 3600) / 60;
@@ -193,8 +202,9 @@ void OutputTimer::UpdateRecordTimerDisplay()
 
 void OutputTimer::PauseRecordingTimer()
 {
-	if (!ui->pauseRecordTimer->isChecked())
+	if (!ui->pauseRecordTimer->isChecked()) {
 		return;
+	}
 
 	if (recordingTimer->isActive()) {
 		recordingTimeLeft = recordingTimer->remainingTime();
@@ -204,11 +214,13 @@ void OutputTimer::PauseRecordingTimer()
 
 void OutputTimer::UnpauseRecordingTimer()
 {
-	if (!ui->pauseRecordTimer->isChecked())
+	if (!ui->pauseRecordTimer->isChecked()) {
 		return;
+	}
 
-	if (recordingTimeLeft > 0 && !recordingTimer->isActive())
+	if (recordingTimeLeft > 0 && !recordingTimer->isActive()) {
 		recordingTimer->start(recordingTimeLeft);
+	}
 }
 
 void OutputTimer::ShowHideDialog()
@@ -256,8 +268,9 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 	} else {
 		OBSDataAutoRelease obj = obs_data_get_obj(save_data, "output-timer");
 
-		if (!obj)
+		if (!obj) {
 			obj = obs_data_create();
+		}
 
 		ot->ui->streamingTimerHours->setValue(obs_data_get_int(obj, "streamTimerHours"));
 		ot->ui->streamingTimerMinutes->setValue(obs_data_get_int(obj, "streamTimerMinutes"));

@@ -31,8 +31,9 @@ void gs_index_buffer::InitBuffer()
 	srd.pSysMem = indices.data;
 
 	hr = device->device->CreateBuffer(&bd, &srd, indexBuffer.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create buffer", hr);
+	}
 }
 
 gs_index_buffer::gs_index_buffer(gs_device_t *device, enum gs_index_type type, void *indices, size_t num,

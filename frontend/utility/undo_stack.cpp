@@ -34,8 +34,9 @@ void undo_stack::clear()
 void undo_stack::add_action(const QString &name, const undo_redo_cb &undo, const undo_redo_cb &redo,
 			    const std::string &undo_data, const std::string &redo_data, bool repeatable)
 {
-	if (!is_enabled())
+	if (!is_enabled()) {
 		return;
+	}
 
 	while (undo_items.size() >= MAX_STACK_SIZE) {
 		undo_redo_t item = undo_items.back();
@@ -67,8 +68,9 @@ void undo_stack::add_action(const QString &name, const undo_redo_cb &undo, const
 
 void undo_stack::undo()
 {
-	if (undo_items.size() == 0 || !is_enabled())
+	if (undo_items.size() == 0 || !is_enabled()) {
 		return;
+	}
 
 	last_is_repeatable = false;
 
@@ -90,8 +92,9 @@ void undo_stack::undo()
 
 void undo_stack::redo()
 {
-	if (redo_items.size() == 0 || !is_enabled())
+	if (redo_items.size() == 0 || !is_enabled()) {
 		return;
+	}
 
 	last_is_repeatable = false;
 
@@ -116,8 +119,9 @@ void undo_stack::enable_internal()
 	last_is_repeatable = false;
 
 	ui->actionMainUndo->setDisabled(false);
-	if (redo_items.size() > 0)
+	if (redo_items.size() > 0) {
 		ui->actionMainRedo->setDisabled(false);
+	}
 }
 
 void undo_stack::disable_internal()
@@ -131,29 +135,33 @@ void undo_stack::disable_internal()
 void undo_stack::enable()
 {
 	enabled = true;
-	if (is_enabled())
+	if (is_enabled()) {
 		enable_internal();
+	}
 }
 
 void undo_stack::disable()
 {
-	if (is_enabled())
+	if (is_enabled()) {
 		disable_internal();
+	}
 	enabled = false;
 }
 
 void undo_stack::push_disabled()
 {
-	if (is_enabled())
+	if (is_enabled()) {
 		disable_internal();
+	}
 	disable_refs++;
 }
 
 void undo_stack::pop_disabled()
 {
 	disable_refs--;
-	if (is_enabled())
+	if (is_enabled()) {
 		enable_internal();
+	}
 }
 
 void undo_stack::clear_redo()

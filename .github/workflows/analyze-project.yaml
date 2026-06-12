@@ -41,7 +41,7 @@ jobs:
 
   macos:
     name: macOS 🍏 (clang-analyze)
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
@@ -57,8 +57,8 @@ jobs:
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          print '::group::Enable Xcode 16.4'
-          sudo xcode-select --switch /Applications/Xcode_16.4.app/Contents/Developer
+          print '::group::Enable Xcode 26.5'
+          sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
           print '::endgroup::'
 
           print '::group::Clean Homebrew Environment'
@@ -70,6 +70,12 @@ jobs:
 
           if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
           print '::endgroup::'
+
+          local xcode_cas_path="${HOME}/Library/Developer/Xcode/DerivedData/CompilationCache.noindex"
+
+          if ! [[ -d ${xcode_cas_path} ]] mkdir -p ${xcode_cas_path}
+
+          print "xcodeCasPath=${xcode_cas_path}" >> $GITHUB_OUTPUT
 
       - name: Set Up Code Signing 🔑
         uses: ./.github/actions/setup-macos-codesigning
@@ -96,6 +102,7 @@ jobs:
           CODESIGN_IDENT: ${{ steps.codesign.outputs.codesignIdent }}
           CODESIGN_TEAM: ${{ steps.codesign.outputs.codesignTeam }}
           PROVISIONING_PROFILE: ${{ steps.codesign.outputs.provisioningProfileUUID }}
+          XCODE_CAS_PATH: ${{ steps.setup.outputs.xcodeCasPath }}
         run: |
           : Run macOS Build
 

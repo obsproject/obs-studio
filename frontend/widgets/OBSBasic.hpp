@@ -162,15 +162,17 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 static inline void UpdateProcessPriority()
 {
 	const char *priority = config_get_string(App()->GetAppConfig(), "General", "ProcessPriority");
-	if (priority && strcmp(priority, "Normal") != 0)
+	if (priority && strcmp(priority, "Normal") != 0) {
 		SetProcessPriority(priority);
+	}
 }
 
 static inline void ClearProcessPriority()
 {
 	const char *priority = config_get_string(App()->GetAppConfig(), "General", "ProcessPriority");
-	if (priority && strcmp(priority, "Normal") != 0)
+	if (priority && strcmp(priority, "Normal") != 0) {
 		SetProcessPriority("Normal");
+	}
 }
 #else
 #define UpdateProcessPriority() \
@@ -769,8 +771,9 @@ public:
 	inline void EnableOutputs(bool enable)
 	{
 		if (enable) {
-			if (--disableOutputsRef < 0)
+			if (--disableOutputsRef < 0) {
 				disableOutputsRef = 0;
+			}
 		} else {
 			disableOutputsRef++;
 		}

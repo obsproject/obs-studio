@@ -50,37 +50,49 @@ static struct d3d10_data data = {};
 
 void d3d10_free(void)
 {
-	if (data.scale_tex)
+	if (data.scale_tex) {
 		data.scale_tex->Release();
-	if (data.scale_resource)
+	}
+	if (data.scale_resource) {
 		data.scale_resource->Release();
-	if (data.vertex_shader)
+	}
+	if (data.vertex_shader) {
 		data.vertex_shader->Release();
-	if (data.vertex_layout)
+	}
+	if (data.vertex_layout) {
 		data.vertex_layout->Release();
-	if (data.pixel_shader)
+	}
+	if (data.pixel_shader) {
 		data.pixel_shader->Release();
-	if (data.sampler_state)
+	}
+	if (data.sampler_state) {
 		data.sampler_state->Release();
-	if (data.blend_state)
+	}
+	if (data.blend_state) {
 		data.blend_state->Release();
-	if (data.zstencil_state)
+	}
+	if (data.zstencil_state) {
 		data.zstencil_state->Release();
-	if (data.raster_state)
+	}
+	if (data.raster_state) {
 		data.raster_state->Release();
-	if (data.vertex_buffer)
+	}
+	if (data.vertex_buffer) {
 		data.vertex_buffer->Release();
+	}
 
 	capture_free();
 
 	if (data.using_shtex) {
-		if (data.texture)
+		if (data.texture) {
 			data.texture->Release();
+		}
 	} else {
 		for (size_t i = 0; i < NUM_BUFFERS; i++) {
 			if (data.copy_surfaces[i]) {
-				if (data.texture_mapped[i])
+				if (data.texture_mapped[i]) {
 					data.copy_surfaces[i]->Unmap(0);
+				}
 				data.copy_surfaces[i]->Release();
 			}
 		}
@@ -264,8 +276,9 @@ static void d3d10_init(IDXGISwapChain *swap)
 	}
 
 	const bool success = global_hook_info->force_shmem ? d3d10_shmem_init(window) : d3d10_shtex_init(window);
-	if (!success)
+	if (!success) {
 		d3d10_free();
+	}
 }
 
 static inline void d3d10_copy_texture(ID3D10Resource *dst, ID3D10Resource *src)
@@ -346,10 +359,11 @@ void d3d10_capture(void *swap_ptr, void *backbuffer_ptr)
 			return;
 		}
 
-		if (data.using_shtex)
+		if (data.using_shtex) {
 			d3d10_shtex_capture(backbuffer);
-		else
+		} else {
 			d3d10_shmem_capture(backbuffer);
+		}
 
 		backbuffer->Release();
 	}

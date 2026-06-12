@@ -83,7 +83,7 @@ endif()
 
 set_target_properties_obs(
   frontend-tools
-  PROPERTIES FOLDER frontend
+  PROPERTIES FOLDER plugins/frontend-tools
              PREFIX ""
              AUTOMOC ON
              AUTOUIC ON
