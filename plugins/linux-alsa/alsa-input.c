@@ -154,6 +154,8 @@ void alsa_destroy(void *vptr)
 {
 	struct alsa_data *data = vptr;
 
+	_alsa_stop_reopen(data);
+
 	if (data->handle)
 		_alsa_close(data);
 
