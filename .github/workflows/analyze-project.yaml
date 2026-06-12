@@ -4,7 +4,7 @@ on:
 jobs:
   windows:
     name: Windows 🪟 (PVS-Studio)
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     if: false && github.repository_owner == 'obsproject'
     defaults:
       run:
