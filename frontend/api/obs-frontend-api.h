@@ -78,8 +78,9 @@ struct obs_frontend_source_list {
 static inline void obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 {
 	size_t num = source_list->sources.num;
-	for (size_t i = 0; i < num; i++)
+	for (size_t i = 0; i < num; i++) {
 		obs_source_release(source_list->sources.array[i]);
+	}
 	da_free(source_list->sources);
 }
 
@@ -90,8 +91,9 @@ struct obs_frontend_canvas_list {
 static inline void obs_frontend_canvas_list_free(struct obs_frontend_canvas_list *canvas_list)
 {
 	size_t num = canvas_list->canvases.num;
-	for (size_t i = 0; i < num; i++)
+	for (size_t i = 0; i < num; i++) {
 		obs_canvas_release(canvas_list->canvases.array[i]);
+	}
 
 	da_free(canvas_list->canvases);
 }

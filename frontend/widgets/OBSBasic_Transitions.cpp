@@ -1144,7 +1144,7 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 	duration->setValue(qt ? qt->duration : 300);
 
 	if (qt) {
-		connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged, this,
+		connect(duration, (void (QSpinBox::*)(int))&QSpinBox::valueChanged, this,
 			&OBSBasic::QuickTransitionChangeDuration);
 	}
 
