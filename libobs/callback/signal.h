@@ -14,6 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+// clang-format Language: C
+
 #pragma once
 
 #include "../util/c99defs.h"

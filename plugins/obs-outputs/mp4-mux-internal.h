@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+// clang-format Language: C
+
 #pragma once
 
 #include "mp4-mux.h"
@@ -305,6 +307,7 @@ static inline void get_colour_information(obs_encoder_t *enc, uint16_t *pri, uin
 
 /* Chapter stubs (from libavformat/movenc.c) */
 
+/* clang-format off */
 static const uint8_t TEXT_STUB_HEADER[] = {
 	// TextSampleEntry
 	0x00, 0x00, 0x00, 0x01, // displayFlags
@@ -327,7 +330,6 @@ static const uint8_t TEXT_STUB_HEADER[] = {
 	0x00,       // font name length
 };
 
-/* clang-format off */
 static const char CHAPTER_PKT_FOOTER[12] = {
 	0x00, 0x00, 0x00, 0x0C,
 	'e',  'n',  'c',  'd',

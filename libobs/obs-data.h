@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+// clang-format Language: C
+
 #pragma once
 
 #include "util/c99defs.h"

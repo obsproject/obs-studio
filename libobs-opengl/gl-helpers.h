@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+// clang-format Language: C
+
 #pragma once
 
 static const char *gl_error_to_str(GLenum errorcode)

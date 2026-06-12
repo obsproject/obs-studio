@@ -15,6 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+// clang-format Language: C
+
 #pragma once
 #include <obs-module.h>
 #include "obs-ffmpeg-url.h"
