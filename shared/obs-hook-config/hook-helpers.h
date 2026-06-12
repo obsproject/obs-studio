@@ -1,3 +1,5 @@
+// clang-format Language: C
+
 #pragma once
 
 #if !defined(__cplusplus) && !defined(inline)
