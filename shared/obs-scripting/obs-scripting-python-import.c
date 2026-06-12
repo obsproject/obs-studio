@@ -145,7 +145,9 @@ bool import_python(const char *python_path, python_version_t *python_version)
 	}
 
 	IMPORT_FUNC(PyEval_ReleaseThread);
-	IMPORT_FUNC(PySys_SetArgv);
+	if (python_version->major == 3 && python_version->minor < 8) {
+		IMPORT_FUNC(PySys_SetArgv);
+	}
 	IMPORT_FUNC(PyImport_ImportModule);
 	IMPORT_FUNC(PyObject_CallFunctionObjArgs);
 	IMPORT_FUNC(_Py_NotImplementedStruct);
@@ -196,6 +198,15 @@ bool import_python(const char *python_path, python_version_t *python_version)
 	}
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 	IMPORT_FUNC(_Py_Dealloc);
+#endif
+#if PY_VERSION_HEX >= 0x03080000
+	if (python_version->major == 3 && python_version->minor >= 8) {
+		IMPORT_FUNC(PyWideStringList_Append);
+		IMPORT_FUNC(PyConfig_InitPythonConfig);
+		IMPORT_FUNC(PyConfig_Clear);
+		IMPORT_FUNC(Py_InitializeFromConfig);
+		IMPORT_FUNC(PyStatus_Exception);
+	}
 #endif
 #undef IMPORT_FUNC
 	success = true;
