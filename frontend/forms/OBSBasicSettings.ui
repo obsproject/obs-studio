@@ -2087,7 +2087,7 @@
                 <property name="title">
                  <string>Basic.Settings.Stream.WHIPSimulcastLabel</string>
                 </property>
-                <layout class="QVBoxLayout" name="verticalLayout_35">
+                <layout class="QVBoxLayout" name="verticalLayout_36">
                  <property name="leftMargin">
                   <number>9</number>
                  </property>
@@ -2143,19 +2143,19 @@
                    </property>
                    <item row="1" column="0">
                     <widget class="QLabel" name="whipSimulcastTotalLayersLabel">
-                     <property name="text">
-                      <string>Basic.Settings.Stream.WHIPSimulcastTotalLayers</string>
-                     </property>
                      <property name="minimumSize">
                       <size>
                        <width>170</width>
                        <height>0</height>
                       </size>
                      </property>
+                     <property name="text">
+                      <string>Basic.Settings.Stream.WHIPSimulcastTotalLayers</string>
+                     </property>
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <layout class="QHBoxLayout" name="horizontalLayout_35" stretch="0,0">
+                    <layout class="QHBoxLayout" name="horizontalLayout_35" stretch="0">
                      <item>
                       <widget class="QSpinBox" name="whipSimulcastTotalLayers">
                        <property name="minimum">
