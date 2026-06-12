@@ -179,7 +179,7 @@ jobs:
     name: Ubuntu 🐧
     strategy:
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04, ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     needs: check-event
     defaults:
