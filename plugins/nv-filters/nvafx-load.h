@@ -1,3 +1,5 @@
+// clang-format Language: C
+
 #pragma once
 #include <Windows.h>
 #include <stdio.h>

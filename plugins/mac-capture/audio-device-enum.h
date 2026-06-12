@@ -1,3 +1,5 @@
+// clang-format Language: C
+
 #pragma once
 
 #include <util/darray.h>
