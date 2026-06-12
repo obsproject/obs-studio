@@ -164,7 +164,8 @@ struct dstr xcomp_window_name(xcb_connection_t *conn, Display *disp, xcb_window_
 	}
 	if (name->type == ATOM_COMPOUND_TEXT) { // LibX11 is the only decoder for these.
 		XTextProperty xname = {
-			(unsigned char *)data, name->type,
+			(unsigned char *)data,
+			name->type,
 			8, // 8 by definition.
 			1, // Only decode the first element of string arrays.
 		};

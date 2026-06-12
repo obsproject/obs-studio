@@ -1324,7 +1324,7 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
                     if (frame->format != VIDEO_FORMAT_NONE && frame->format != videoFormat) {
                         [self AVCaptureLog:LOG_DEBUG
                                 withFormat:@"Switching fourcc: '%@' (0x%x) -> '%@' (0x%x)",
-                                           [OBSAVCapture stringFromFourCharCode:frame->format], frame -> format,
+                                           [OBSAVCapture stringFromFourCharCode:frame->format], frame->format,
                                            [OBSAVCapture stringFromFourCharCode:mediaSubType], mediaSubType];
                     }
 #endif

@@ -400,8 +400,9 @@ static bool load_lib(void)
 	/* attempt to load from path                    */
 
 	audio_toolbox = LoadLibraryExW(L"CoreAudioToolbox.dll", NULL, LOAD_LIBRARY_SAFE_CURRENT_DIRS);
-	if (!!audio_toolbox)
+	if (!!audio_toolbox) {
 		return true;
+	}
 
 	/* -------------------------------------------- */
 	/* attempt to load from known install locations */
@@ -446,8 +447,9 @@ static void unload_core_audio(void)
 #endif
 static bool load_core_audio(void)
 {
-	if (!load_lib())
+	if (!load_lib()) {
 		return false;
+	}
 
 #define LOAD_SYM_FROM_LIB(sym, lib, dll)                                                         \
 	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                       \
