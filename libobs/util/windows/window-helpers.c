@@ -479,7 +479,7 @@ static bool is_generic_class(const char *current_class)
 		if (astrstri(current_class, *class) != NULL) {
 			return true;
 		}
-		class ++;
+		class++;
 	}
 
 	return false;
