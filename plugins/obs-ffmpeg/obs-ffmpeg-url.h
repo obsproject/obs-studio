@@ -113,28 +113,28 @@ typedef void SRT_LOG_HANDLER_FN(void *opaque, int level, const char *file, int l
 				const char *message);
 
 #ifdef __cplusplus
-namespace srt_logging {
+namespace srt_logging
+{
 
-struct LogFA {
-private:
-	int value;
+	struct LogFA {
+		private : int value;
 
-public:
-	operator int() const { return value; }
+		public : operator int() const { return value; }
 
-	LogFA(int v) : value(v) {}
-};
+		LogFA(int v) : value(v) {}
+	};
 
-const LogFA LOGFA_GENERAL = 0;
+	const LogFA LOGFA_GENERAL = 0;
 
-namespace LogLevel {
-enum type {
-	fatal = LOG_CRIT,
-	error = LOG_ERR,
-	warning = 4, //issue w/ libobs so LOG_WARNING is removed
-	note = LOG_NOTICE,
-	debug = 7 //issue w/ libobs so LOG_DEBUG is removed
-};
-}
+	namespace LogLevel
+	{
+		enum type {
+			fatal = LOG_CRIT,
+			error = LOG_ERR,
+			warning = 4, //issue w/ libobs so LOG_WARNING is removed
+			note = LOG_NOTICE,
+			debug = 7 //issue w/ libobs so LOG_DEBUG is removed
+		};
+	}
 } // namespace srt_logging
 #endif
