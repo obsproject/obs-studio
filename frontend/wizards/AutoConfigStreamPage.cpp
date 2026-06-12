@@ -297,7 +297,7 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 				if (ytAuth->GetChannelDescription(cd)) {
 					ui->connectedAccountText->setText(cd.title);
 
-					/* Create throwaway stream key for bandwidth test */
+					// Create throwaway stream key for bandwidth test
 					if (ui->doBandwidthTest->isChecked()) {
 						StreamDescription stream = {"", "", "OBS Studio Test Stream"};
 						if (ytAuth->InsertStream(stream)) {
