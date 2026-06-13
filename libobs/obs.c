@@ -645,10 +645,14 @@ static int obs_init_video_mix(struct obs_video_info *ovi, struct obs_core_video_
 
 	gs_enter_context(obs->video.graphics);
 
-	if (video->gpu_conversion && !obs_init_gpu_conversion(video))
+	if (video->gpu_conversion && !obs_init_gpu_conversion(video)) {
+		gs_leave_context();
 		return OBS_VIDEO_FAIL;
-	if (!obs_init_textures(video))
+	}
+	if (!obs_init_textures(video)) {
+		gs_leave_context();
 		return OBS_VIDEO_FAIL;
+	}
 
 	gs_leave_context();
 
