@@ -267,7 +267,7 @@ static inline void socket_thread_windows_internal(struct rtmp_stream *stream)
 		}
 
 		int status = WaitForMultipleObjects(3, objs, false, INFINITE);
-		if (status == WAIT_ABANDONED || status == WAIT_FAILED) {
+		if ((status >= WAIT_ABANDONED_0 && status < WAIT_ABANDONED_0 + 3) || status == WAIT_FAILED) {
 			blog(LOG_ERROR, "socket_thread_windows: Aborting due "
 					"to WaitForMultipleObjects failure");
 			fatal_sock_shutdown(stream);
