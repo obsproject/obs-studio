@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
+#include <libavutil/error.h>
 
 #include <linux/videodev2.h>
 #include <libv4l2.h>
@@ -259,7 +260,11 @@ static void *v4l2_thread(void *vptr)
 		start = (uint8_t *)data->buffers.info[buf.index].start;
 
 		if (data->pixfmt == V4L2_PIX_FMT_MJPEG || data->pixfmt == V4L2_PIX_FMT_H264) {
-			if (v4l2_decode_frame(&out, start, buf.bytesused, &data->decoder) < 0) {
+			r = v4l2_decode_frame(&out, start, buf.bytesused, &data->decoder);
+			if (r == AVERROR(EAGAIN)) {
+				blog(LOG_DEBUG, "decoder encountered EAGAIN, so continue with next frame");
+				goto continue_queue_buffer;
+			} else if (r < 0) {
 				blog(LOG_ERROR, "failed to unpack jpeg or h264");
 				break;
 			}
