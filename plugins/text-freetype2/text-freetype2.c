@@ -33,7 +33,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "FreeType2 text source";
 }
 
-uint32_t texbuf_w = 2048, texbuf_h = 2048;
+uint32_t texbuf_w = 4096, texbuf_h = 4096;
 
 static const char *ft2_source_get_name(void *unused);
 static void *ft2_source_create(obs_data_t *settings, obs_source_t *source);
