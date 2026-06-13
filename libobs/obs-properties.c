@@ -590,7 +590,7 @@ obs_property_t *obs_properties_add_path(obs_properties_t *props, const char *nam
 	data->type = type;
 	data->default_path = bstrdup(default_path);
 
-	if (data->type == OBS_PATH_FILE)
+	if (data->type == OBS_PATH_FILE || data->type == OBS_PATH_FILE_SAVE)
 		data->filter = bstrdup(filter);
 
 	return p;
