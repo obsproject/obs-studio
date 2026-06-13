@@ -29,7 +29,6 @@
 #include <glib/gstdio.h>
 
 #include <fcntl.h>
-#include <glad/glad.h>
 #include <libdrm/drm_fourcc.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/video/format-utils.h>
@@ -285,16 +284,6 @@ static const uint32_t supported_formats_sync[] = {
 };
 
 #define N_SUPPORTED_FORMATS_SYNC (sizeof(supported_formats_sync) / sizeof(supported_formats_sync[0]))
-
-static void swap_texture_red_blue(gs_texture_t *texture)
-{
-	GLuint gl_texure = *(GLuint *)gs_texture_get_obj(texture);
-
-	glBindTexture(GL_TEXTURE_2D, gl_texure);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
 
 static inline struct spa_pod *build_format(obs_pipewire_stream *obs_pw_stream, struct spa_pod_builder *b,
 					   uint32_t format, uint64_t *modifiers, size_t modifier_count)
@@ -817,11 +806,10 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
 
 		use_modifiers = obs_pw_stream->format.info.raw.modifier != DRM_FORMAT_MOD_INVALID;
-		obs_pw_stream->texture = gs_texture_create_from_dmabuf(obs_pw_stream->format.info.raw.size.width,
-								       obs_pw_stream->format.info.raw.size.height,
-								       obs_pw_video_format.drm_format, GS_BGRX, planes,
-								       fds, strides, offsets,
-								       use_modifiers ? modifiers : NULL);
+		obs_pw_stream->texture = gs_texture_create_from_dmabuf(
+			obs_pw_stream->format.info.raw.size.width, obs_pw_stream->format.info.raw.size.height,
+			obs_pw_video_format.drm_format, obs_pw_video_format.gs_format, planes, fds, strides, offsets,
+			use_modifiers ? modifiers : NULL);
 
 		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(obs_pw_stream, obs_pw_stream->format.info.raw.format,
@@ -855,9 +843,6 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 							   obs_pw_video_format.gs_format, 1,
 							   (const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
 	}
-
-	if (obs_pw_video_format.swap_red_blue)
-		swap_texture_red_blue(obs_pw_stream->texture);
 
 	/* Video Crop */
 	region = spa_buffer_find_meta_data(buffer, SPA_META_VideoCrop, sizeof(*region));
@@ -912,9 +897,6 @@ read_metadata:
 			obs_pw_stream->cursor.texture =
 				gs_texture_create(obs_pw_stream->cursor.width, obs_pw_stream->cursor.height,
 						  obs_pw_video_format.gs_format, 1, &bitmap_data, GS_DYNAMIC);
-
-			if (obs_pw_video_format.swap_red_blue)
-				swap_texture_red_blue(obs_pw_stream->cursor.texture);
 		}
 
 		obs_pw_stream->cursor.x = cursor->position.x;
@@ -1326,6 +1308,9 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	bool rotated;
 	int flip = 0;
 
+	bool opaque;
+	gs_technique_t *tech;
+
 	gs_eparam_t *image;
 
 	if (!obs_pw_stream->texture)
@@ -1336,6 +1321,19 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 			obs_pw_stream->sync.acquire_syncobj_fd, obs_pw_stream->sync.acquire_point);
 		gs_sync_wait(acquire_sync);
 		gs_sync_destroy(acquire_sync);
+	}
+
+	/* Use opaque effect on formats without alpha that are put in a format with alpha */
+	switch (obs_pw_stream->format.info.raw.format) {
+	case SPA_VIDEO_FORMAT_RGBx:
+	case SPA_VIDEO_FORMAT_xBGR_210LE:
+		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+		opaque = true;
+		break;
+
+	default:
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+		opaque = false;
 	}
 
 	/* FIXME: Use obs_pw_stream->format.info.raw colorimetry info to handle
@@ -1354,9 +1352,18 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	 * See https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/3126
 	 *
 	 * The cursor bitmap alpha mode is also not specified, and the
-	 * convention there also seems to be premultiplied. */
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	 * convention there also seems to be premultiplied.
+	 *
+	 * The blend is applied later if the base format is without alpha.*/
+	if (!opaque) {
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	}
+
+	tech = gs_effect_get_technique(effect, "Draw");
+
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
 
 	if (has_effective_crop(obs_pw_stream)) {
 		gs_draw_sprite_subregion(obs_pw_stream->texture, flip, obs_pw_stream->crop.x, obs_pw_stream->crop.y,
@@ -1364,6 +1371,17 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	} else {
 		gs_draw_sprite(obs_pw_stream->texture, flip, 0, 0);
 	}
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
+
+	if (opaque) {
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	}
+
+	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+	image = gs_effect_get_param_by_name(effect, "image");
 
 	if (rotated)
 		gs_matrix_pop();
@@ -1376,7 +1394,10 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 		gs_matrix_translate3f(cursor_x, cursor_y, 0.0f);
 
 		gs_effect_set_texture(image, obs_pw_stream->cursor.texture);
-		gs_draw_sprite(obs_pw_stream->texture, 0, obs_pw_stream->cursor.width, obs_pw_stream->cursor.height);
+
+		while (gs_effect_loop(effect, "Draw"))
+			gs_draw_sprite(obs_pw_stream->texture, 0, obs_pw_stream->cursor.width,
+				       obs_pw_stream->cursor.height);
 
 		gs_matrix_pop();
 	}
