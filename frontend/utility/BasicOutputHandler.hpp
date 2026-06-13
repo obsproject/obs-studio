@@ -139,8 +139,9 @@ inline bool ServiceSupportsVodTrack(const char *service)
 	static const char *vodTrackServices[] = {"Twitch"};
 
 	for (const char *vodTrackService : vodTrackServices) {
-		if (astrcmpi(vodTrackService, service) == 0)
+		if (astrcmpi(vodTrackService, service) == 0) {
 			return true;
+		}
 	}
 
 	return false;

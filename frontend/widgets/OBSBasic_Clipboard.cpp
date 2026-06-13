@@ -40,10 +40,12 @@ void OBSBasic::on_actionPasteTransform_triggered()
 {
 	OBSDataAutoRelease wrapper = obs_scene_save_transform_states(GetCurrentScene(), false);
 	auto func = [](obs_scene_t *, obs_sceneitem_t *item, void *) {
-		if (!obs_sceneitem_selected(item))
+		if (!obs_sceneitem_selected(item)) {
 			return true;
-		if (obs_sceneitem_locked(item))
+		}
+		if (obs_sceneitem_locked(item)) {
 			return true;
+		}
 
 		OBSBasic *main = OBSBasic::Get();
 
@@ -135,8 +137,9 @@ void OBSBasic::pasteSceneItem(OBSScene scene, bool duplicate)
 		SourceCopyInfo &copyInfo = clipboard[i - 1];
 
 		OBSSource source = OBSGetStrongRef(copyInfo.weak_source);
-		if (!source)
+		if (!source) {
 			continue;
+		}
 
 		const char *name = obs_source_get_name(source);
 
@@ -166,8 +169,9 @@ void OBSBasic::on_actionPasteDup_triggered()
 
 void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 {
-	if (source == dstSource)
+	if (source == dstSource) {
 		return;
+	}
 
 	OBSDataArrayAutoRelease undo_array = obs_source_backup_filters(dstSource);
 	obs_source_copy_filters(dstSource, source);
@@ -226,8 +230,9 @@ void OBSBasic::on_actionCopyFilters_triggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
@@ -246,8 +251,9 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t
 
 		obs_source_restore_filters(source, array);
 
-		if (filters)
+		if (filters) {
 			filters->UpdateSource(source);
+		}
 	};
 
 	const char *uuid = obs_source_get_uuid(source);

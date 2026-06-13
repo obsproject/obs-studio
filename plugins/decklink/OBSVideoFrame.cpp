@@ -91,17 +91,18 @@ HDRVideoFrame::HDRVideoFrame(IDeckLinkMutableVideoFrame *frame) : m_videoFrame(f
 
 HRESULT HDRVideoFrame::QueryInterface(REFIID iid, LPVOID *ppv)
 {
-	if (ppv == nullptr)
+	if (ppv == nullptr) {
 		return E_INVALIDARG;
+	}
 
 	CFUUIDBytes unknown = CFUUIDGetUUIDBytes(IUnknownUUID);
-	if (CompareREFIID(iid, unknown))
+	if (CompareREFIID(iid, unknown)) {
 		*ppv = static_cast<IDeckLinkVideoFrame *>(this);
-	else if (CompareREFIID(iid, IID_IDeckLinkVideoFrame))
+	} else if (CompareREFIID(iid, IID_IDeckLinkVideoFrame)) {
 		*ppv = static_cast<IDeckLinkVideoFrame *>(this);
-	else if (CompareREFIID(iid, IID_IDeckLinkVideoFrameMetadataExtensions))
+	} else if (CompareREFIID(iid, IID_IDeckLinkVideoFrameMetadataExtensions)) {
 		*ppv = static_cast<IDeckLinkVideoFrameMetadataExtensions *>(this);
-	else {
+	} else {
 		*ppv = nullptr;
 		return E_NOINTERFACE;
 	}
@@ -119,8 +120,9 @@ ULONG HDRVideoFrame::Release(void)
 {
 	ULONG newRefValue = --m_refCount;
 
-	if (newRefValue == 0)
+	if (newRefValue == 0) {
 		delete this;
+	}
 
 	return newRefValue;
 }

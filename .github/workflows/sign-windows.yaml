@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         architecture: [x64, arm64]
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     environment:
       name: bouf
     defaults:

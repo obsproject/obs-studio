@@ -107,11 +107,13 @@ void populate_source_device_list(obs_property_t *list)
 	for (const auto &iter : cardManager.GetCardEntries()) {
 		if (iter.second) {
 			CNTV2Card *card = iter.second->GetCard();
-			if (!card)
+			if (!card) {
 				continue;
+			}
 
-			if (aja::IsOutputOnlyDevice(iter.second->GetDeviceID()))
+			if (aja::IsOutputOnlyDevice(iter.second->GetDeviceID())) {
 				continue;
+			}
 
 			obs_property_list_add_string(list, iter.second->GetDisplayName().c_str(),
 						     iter.second->GetCardID().c_str());
@@ -133,8 +135,9 @@ struct AudioOffsets {
 
 static void ResetAudioBufferOffsets(CNTV2Card *card, NTV2AudioSystem audioSystem, AudioOffsets &offsets)
 {
-	if (!card)
+	if (!card) {
 		return;
+	}
 
 	offsets.currentAddress = 0;
 	offsets.lastAddress = 0;
@@ -151,10 +154,12 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf, NTV2
 {
 	NTV2VideoFormat vid_fmt = vf;
 	NTV2PixelFormat pix_fmt = pf;
-	if (vid_fmt == NTV2_FORMAT_UNKNOWN)
+	if (vid_fmt == NTV2_FORMAT_UNKNOWN) {
 		vid_fmt = NTV2_FORMAT_720p_5994;
-	if (pix_fmt == NTV2_FBF_INVALID)
+	}
+	if (pix_fmt == NTV2_FBF_INVALID) {
 		pix_fmt = kDefaultAJAPixelFormat;
+	}
 
 	NTV2FormatDesc fd(vid_fmt, pix_fmt, NTV2_VANCMODE_OFF);
 	auto bufSize = fd.GetTotalRasterBytes();
@@ -180,8 +185,9 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf, NTV2
 	obsFrame.data[0] = mTestPattern.data();
 	obsFrame.linesize[0] = fd.GetBytesPerRow();
 	video_colorspace colorspace = VIDEO_CS_709;
-	if (NTV2_IS_SD_VIDEO_FORMAT(vid_fmt))
+	if (NTV2_IS_SD_VIDEO_FORMAT(vid_fmt)) {
 		colorspace = VIDEO_CS_601;
+	}
 	video_format_get_parameters_for_format(colorspace, VIDEO_RANGE_PARTIAL, obs_vid_fmt, obsFrame.color_matrix,
 					       obsFrame.color_range_min, obsFrame.color_range_max);
 	obs_source_output_video2(mSource, &obsFrame);
@@ -222,20 +228,23 @@ static inline bool TransferAudio(CNTV2Card *card, const NTV2AudioSystem audioSys
 		offsets.bytesRead = offsets.wrapAddress - offsets.lastAddress;
 
 		if (!CheckTransferAudioDMA(card, audioSystem, audioBuffer, audioBuffer.GetByteCount(),
-					   offsets.lastAddress, offsets.bytesRead, "(1)"))
+					   offsets.lastAddress, offsets.bytesRead, "(1)")) {
 			return false;
+		}
 
 		if (!CheckTransferAudioDMA(card, audioSystem, audioBuffer.GetHostAddress(offsets.bytesRead),
 					   audioBuffer.GetByteCount() - offsets.bytesRead, offsets.readOffset,
-					   offsets.currentAddress - offsets.readOffset, "(2)"))
+					   offsets.currentAddress - offsets.readOffset, "(2)")) {
 			return false;
+		}
 		offsets.bytesRead += offsets.currentAddress - offsets.readOffset;
 
 	} else {
 		offsets.bytesRead = offsets.currentAddress - offsets.lastAddress;
 		if (!CheckTransferAudioDMA(card, audioSystem, audioBuffer, audioBuffer.GetByteCount(),
-					   offsets.lastAddress, offsets.bytesRead, "(3)"))
+					   offsets.lastAddress, offsets.bytesRead, "(3)")) {
 			return false;
+		}
 	}
 
 	return true;
@@ -342,8 +351,9 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 				audioPacket.data[0] = (*audioRepacker)->packet_buffer;
 			} else {
 				/* Silence, or pass-through 8ch of audio */
-				if (sourceProps.audioNumChannels == 0)
+				if (sourceProps.audioNumChannels == 0) {
 					memset(hostAudioBuffer, 0, offsets.bytesRead);
+				}
 				audioPacket.data[0] = hostAudioBuffer;
 			}
 			obs_source_output_audio(ajaSource->mSource, &audioPacket);
@@ -357,8 +367,9 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 		card->DMAReadFrame(currentCardFrame, ajaSource->mVideoBuffer, ajaSource->mVideoBuffer.GetByteCount());
 
 		auto actualVideoFormat = videoFormat;
-		if (aja::Is3GLevelB(card, channel))
+		if (aja::Is3GLevelB(card, channel)) {
 			actualVideoFormat = aja::GetLevelAFormatForLevelBFormat(videoFormat);
+		}
 
 		const enum video_format obs_vid_fmt = aja::AJAPixelFormatToOBSVideoFormat(sourceProps.pixelFormat);
 
@@ -372,8 +383,9 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 		obsFrame.data[0] = reinterpret_cast<uint8_t *>((ULWord *)ajaSource->mVideoBuffer.GetHostPointer());
 		obsFrame.linesize[0] = fd.GetBytesPerRow();
 		video_colorspace colorspace = VIDEO_CS_709;
-		if (NTV2_IS_SD_VIDEO_FORMAT(actualVideoFormat))
+		if (NTV2_IS_SD_VIDEO_FORMAT(actualVideoFormat)) {
 			colorspace = VIDEO_CS_601;
+		}
 		video_format_get_parameters_for_format(colorspace, VIDEO_RANGE_PARTIAL, obs_vid_fmt,
 						       obsFrame.color_matrix, obsFrame.color_range_min,
 						       obsFrame.color_range_max);
@@ -514,8 +526,9 @@ bool AJASource::ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select, N
 			}
 			mCard->WaitForInputVerticalInterrupt(channel);
 			VPIDData vpid_data;
-			if (ReadChannelVPIDs(channel, vpid_data))
+			if (ReadChannelVPIDs(channel, vpid_data)) {
 				vpids.push_back(vpid_data);
+			}
 		} else if (NTV2_INPUT_SOURCE_IS_HDMI(src)) {
 			mCard->WaitForInputVerticalInterrupt(channel);
 
@@ -544,10 +557,11 @@ bool AJASource::ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select, N
 		if (vpids.size() > 0) {
 			auto vpid = *vpids.begin();
 			if (vpid.Sampling() == VPIDSampling_YUV_422) {
-				if (vpid.BitDepth() == VPIDBitDepth_8)
+				if (vpid.BitDepth() == VPIDBitDepth_8) {
 					pf = NTV2_FBF_8BIT_YCBCR;
-				else if (vpid.BitDepth() == VPIDBitDepth_10)
+				} else if (vpid.BitDepth() == VPIDBitDepth_10) {
 					pf = NTV2_FBF_10BIT_YCBCR;
+				}
 				blog(LOG_INFO, "AJASource::ReadWireFormats - Detected pixel format %s",
 				     NTV2FrameBufferFormatToString(pf, true).c_str());
 			} else if (vpid.Sampling() == VPIDSampling_GBR_444) {
@@ -570,8 +584,9 @@ void AJASource::ResetVideoBuffer(NTV2VideoFormat vf, NTV2PixelFormat pf)
 	if (vf != NTV2_FORMAT_UNKNOWN) {
 		auto videoBufferSize = GetVideoWriteSize(vf, pf);
 
-		if (mVideoBuffer)
+		if (mVideoBuffer) {
 			mVideoBuffer.Deallocate();
+		}
 
 		mVideoBuffer.Allocate(videoBufferSize, true);
 
@@ -583,8 +598,9 @@ void AJASource::ResetVideoBuffer(NTV2VideoFormat vf, NTV2PixelFormat pf)
 
 void AJASource::ResetAudioBuffer(size_t size)
 {
-	if (mAudioBuffer)
+	if (mAudioBuffer) {
 		mAudioBuffer.Deallocate();
+	}
 	mAudioBuffer.Allocate(size, true);
 }
 
@@ -614,8 +630,9 @@ bool aja_source_device_changed(void *data, obs_properties_t *props, obs_property
 	}
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return false;
+	}
 
 	auto &cardManager = aja::CardManager::Instance();
 	auto cardEntry = cardManager.GetCardEntry(cardID);
@@ -701,8 +718,9 @@ bool aja_io_selection_changed(void *data, obs_properties_t *props, obs_property_
 	}
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return false;
+	}
 
 	auto &cardManager = aja::CardManager::Instance();
 	auto cardEntry = cardManager.GetCardEntry(cardID);
@@ -809,8 +827,9 @@ static void aja_source_show(void *data)
 static void aja_source_hide(void *data)
 {
 	auto ajaSource = (AJASource *)data;
-	if (!ajaSource)
+	if (!ajaSource) {
 		return;
+	}
 
 	bool deactivateWhileNotShowing = ajaSource->GetSourceProps().deactivateWhileNotShowing;
 	bool showing = obs_source_showing(ajaSource->GetOBSSource());
@@ -954,10 +973,12 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	}
 
 	// Set auto-detected formats
-	if ((int32_t)vf_select == kAutoDetect)
+	if ((int32_t)vf_select == kAutoDetect) {
 		want_props.videoFormat = new_vf;
-	if ((int32_t)pf_select == kAutoDetect)
+	}
+	if ((int32_t)pf_select == kAutoDetect) {
 		want_props.pixelFormat = new_pf;
+	}
 
 	if (want_props.videoFormat == NTV2_FORMAT_UNKNOWN || want_props.pixelFormat == NTV2_FBF_INVALID) {
 		blog(LOG_ERROR, "aja_source_update: Unknown video/pixel format(s): %s / %s",
@@ -1046,8 +1067,9 @@ void aja_source_save(void *data, obs_data_t *settings)
 	}
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return;
+	}
 
 	auto &cardManager = aja::CardManager::Instance();
 	auto cardEntry = cardManager.GetCardEntry(cardID);

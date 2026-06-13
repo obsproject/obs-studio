@@ -29,8 +29,9 @@
 
 void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 {
-	if (event->isAutoRepeat())
+	if (event->isAutoRepeat()) {
 		return;
+	}
 
 	obs_key_combination_t new_key;
 
@@ -70,11 +71,13 @@ QVariant OBSHotkeyEdit::inputMethodQuery(Qt::InputMethodQuery query) const
 #ifdef __APPLE__
 void OBSHotkeyEdit::keyReleaseEvent(QKeyEvent *event)
 {
-	if (event->isAutoRepeat())
+	if (event->isAutoRepeat()) {
 		return;
+	}
 
-	if (event->key() != Qt::Key_CapsLock)
+	if (event->key() != Qt::Key_CapsLock) {
 		return;
+	}
 
 	obs_key_combination_t new_key;
 
@@ -140,8 +143,9 @@ void OBSHotkeyEdit::mousePressEvent(QMouseEvent *event)
 
 void OBSHotkeyEdit::HandleNewKey(obs_key_combination_t new_key)
 {
-	if (new_key == key || obs_key_combination_is_empty(new_key))
+	if (new_key == key || obs_key_combination_is_empty(new_key)) {
 		return;
+	}
 
 	key = new_key;
 
@@ -181,11 +185,13 @@ void OBSHotkeyEdit::ClearKey()
 
 void OBSHotkeyEdit::UpdateDuplicationState()
 {
-	if (!dupeIcon && !hasDuplicate)
+	if (!dupeIcon && !hasDuplicate) {
 		return;
+	}
 
-	if (!dupeIcon)
+	if (!dupeIcon) {
 		CreateDupeIcon();
+	}
 
 	if (dupeIcon->isVisible() != hasDuplicate) {
 		dupeIcon->setVisible(hasDuplicate);

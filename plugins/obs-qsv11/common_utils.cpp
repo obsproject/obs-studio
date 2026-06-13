@@ -84,10 +84,12 @@ mfxStatus ReadPlaneData(mfxU16 w, mfxU16 h, mfxU8 *buf, mfxU8 *ptr, mfxU16 pitch
 	mfxU32 nBytesRead;
 	for (mfxU16 i = 0; i < h; i++) {
 		nBytesRead = (mfxU32)fread(buf, 1, w, fSource);
-		if (w != nBytesRead)
+		if (w != nBytesRead) {
 			return MFX_ERR_MORE_DATA;
-		for (mfxU16 j = 0; j < w; j++)
+		}
+		for (mfxU16 j = 0; j < w; j++) {
 			ptr[i * pitch + j * 2 + offset] = buf[j];
+		}
 	}
 	return MFX_ERR_NONE;
 }
@@ -97,10 +99,11 @@ mfxStatus LoadRawFrame(mfxFrameSurface1 *pSurface, FILE *fSource)
 	if (!fSource) {
 		// Simulate instantaneous access to 1000 "empty" frames.
 		static int frameCount = 0;
-		if (1000 == frameCount++)
+		if (1000 == frameCount++) {
 			return MFX_ERR_MORE_DATA;
-		else
+		} else {
 			return MFX_ERR_NONE;
+		}
 	}
 
 	mfxStatus sts = MFX_ERR_NONE;
@@ -124,25 +127,29 @@ mfxStatus LoadRawFrame(mfxFrameSurface1 *pSurface, FILE *fSource)
 	// read luminance plane
 	for (i = 0; i < h; i++) {
 		nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, fSource);
-		if (w != nBytesRead)
+		if (w != nBytesRead) {
 			return MFX_ERR_MORE_DATA;
+		}
 	}
 
 	mfxU8 buf[2048]; // maximum supported chroma width for nv12
 	w /= 2;
 	h /= 2;
 	ptr = pData->UV + pInfo->CropX + (pInfo->CropY / 2) * pitch;
-	if (w > 2048)
+	if (w > 2048) {
 		return MFX_ERR_UNSUPPORTED;
+	}
 
 	// load U
 	sts = ReadPlaneData(w, h, buf, ptr, pitch, 0, fSource);
-	if (MFX_ERR_NONE != sts)
+	if (MFX_ERR_NONE != sts) {
 		return sts;
+	}
 	// load V
 	sts = ReadPlaneData(w, h, buf, ptr, pitch, 1, fSource);
-	if (MFX_ERR_NONE != sts)
+	if (MFX_ERR_NONE != sts) {
 		return sts;
+	}
 
 	return MFX_ERR_NONE;
 }
@@ -152,10 +159,11 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1 *pSurface, FILE *fSource)
 	if (!fSource) {
 		// Simulate instantaneous access to 1000 "empty" frames.
 		static int frameCount = 0;
-		if (1000 == frameCount++)
+		if (1000 == frameCount++) {
 			return MFX_ERR_MORE_DATA;
-		else
+		} else {
 			return MFX_ERR_NONE;
+		}
 	}
 
 	size_t nBytesRead;
@@ -172,8 +180,9 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1 *pSurface, FILE *fSource)
 
 	for (mfxU16 i = 0; i < h; i++) {
 		nBytesRead = fread(pSurface->Data.B + i * pSurface->Data.Pitch, 1, w * 4, fSource);
-		if ((size_t)(w * 4) != nBytesRead)
+		if ((size_t)(w * 4) != nBytesRead) {
 			return MFX_ERR_MORE_DATA;
+		}
 	}
 
 	return MFX_ERR_NONE;
@@ -183,8 +192,9 @@ mfxStatus WriteBitStreamFrame(mfxBitstream *pMfxBitstream, FILE *fSink)
 {
 	mfxU32 nBytesWritten =
 		(mfxU32)fwrite(pMfxBitstream->Data + pMfxBitstream->DataOffset, 1, pMfxBitstream->DataLength, fSink);
-	if (nBytesWritten != pMfxBitstream->DataLength)
+	if (nBytesWritten != pMfxBitstream->DataLength) {
 		return MFX_ERR_UNDEFINED_BEHAVIOR;
+	}
 
 	pMfxBitstream->DataLength = 0;
 
@@ -198,8 +208,9 @@ mfxStatus ReadBitStreamData(mfxBitstream *pBS, FILE *fSource)
 
 	mfxU32 nBytesRead = (mfxU32)fread(pBS->Data + pBS->DataLength, 1, pBS->MaxLength - pBS->DataLength, fSource);
 
-	if (0 == nBytesRead)
+	if (0 == nBytesRead) {
 		return MFX_ERR_MORE_DATA;
+	}
 
 	pBS->DataLength += nBytesRead;
 
@@ -210,8 +221,9 @@ mfxStatus WriteSection(mfxU8 *plane, mfxU16 factor, mfxU16 chunksize, mfxFrameIn
 		       mfxU32 i, mfxU32 j, FILE *fSink)
 {
 	if (chunksize != fwrite(plane + (pInfo->CropY * pData->Pitch / factor + pInfo->CropX) + i * pData->Pitch + j, 1,
-				chunksize, fSink))
+				chunksize, fSink)) {
 		return MFX_ERR_UNDEFINED_BEHAVIOR;
+	}
 	return MFX_ERR_NONE;
 }
 
@@ -222,27 +234,35 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE *fSink)
 	mfxU32 i, j, h, w;
 	mfxStatus sts = MFX_ERR_NONE;
 
-	for (i = 0; i < pInfo->CropH; i++)
+	for (i = 0; i < pInfo->CropH; i++) {
 		sts = WriteSection(pData->Y, 1, pInfo->CropW, pInfo, pData, i, 0, fSink);
+	}
 
 	h = pInfo->CropH / 2;
 	w = pInfo->CropW;
-	for (i = 0; i < h; i++)
-		for (j = 0; j < w; j += 2)
+	for (i = 0; i < h; i++) {
+		for (j = 0; j < w; j += 2) {
 			sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
-	for (i = 0; i < h; i++)
-		for (j = 1; j < w; j += 2)
+		}
+	}
+	for (i = 0; i < h; i++) {
+		for (j = 1; j < w; j += 2) {
 			sts = WriteSection(pData->UV, 2, 1, pInfo, pData, i, j, fSink);
+		}
+	}
 
 	return sts;
 }
 
 int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize)
 {
-	if (pTaskPool)
-		for (int i = 0; i < nPoolSize; i++)
-			if (!pTaskPool[i].syncp)
+	if (pTaskPool) {
+		for (int i = 0; i < nPoolSize; i++) {
+			if (!pTaskPool[i].syncp) {
 				return i;
+			}
+		}
+	}
 	return MFX_ERR_NOT_FOUND;
 }
 
@@ -256,10 +276,13 @@ void ClearYUVSurfaceSysMem(mfxFrameSurface1 *pSfc, mfxU16 width, mfxU16 height)
 // Get free raw frame surface
 int GetFreeSurfaceIndex(mfxFrameSurface1 **pSurfacesPool, mfxU16 nPoolSize)
 {
-	if (pSurfacesPool)
-		for (mfxU16 i = 0; i < nPoolSize; i++)
-			if (0 == pSurfacesPool[i]->Data.Locked)
+	if (pSurfacesPool) {
+		for (mfxU16 i = 0; i < nPoolSize; i++) {
+			if (0 == pSurfacesPool[i]->Data.Locked) {
 				return i;
+			}
+		}
+	}
 	return MFX_ERR_NOT_FOUND;
 }
 

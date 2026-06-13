@@ -41,15 +41,17 @@ void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 
 void VisibilityItemWidget::SourceEnabled(bool enabled)
 {
-	if (vis->isChecked() != enabled)
+	if (vis->isChecked() != enabled) {
 		vis->setChecked(enabled);
+	}
 }
 
 void VisibilityItemWidget::SetColor(const QColor &color, bool active_, bool selected_)
 {
 	/* Do not update unless the state has actually changed */
-	if (active_ == active && selected_ == selected)
+	if (active_ == active && selected_ == selected) {
 		return;
+	}
 
 	QPalette pal = vis->palette();
 	pal.setColor(QPalette::WindowText, color);

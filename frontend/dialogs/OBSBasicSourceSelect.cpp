@@ -274,7 +274,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 	connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	connect(ui->addExistingButton, &QAbstractButton::clicked, this, &OBSBasicSourceSelect::addSelectedSources);
-	connect(this, &OBSBasicSourceSelect::selectedItemsChanged, this, [=]() {
+	connect(this, &OBSBasicSourceSelect::selectedItemsChanged, this, [this]() {
 		ui->addExistingButton->setEnabled(selectedItems.size() > 0);
 		if (selectedItems.size() > 0) {
 			ui->addExistingButton->setText(QTStr("Add %1 Existing").arg(selectedItems.size()));
