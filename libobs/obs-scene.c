@@ -344,8 +344,8 @@ static inline void get_scene_dimensions(const obs_sceneitem_t *item, float *x, f
 {
 	obs_scene_t *parent = item->parent;
 	if (!parent || (parent->is_group && !parent->source->canvas)) {
-		*x = (float)obs->data.main_canvas->mix->ovi.base_width;
-		*y = (float)obs->data.main_canvas->mix->ovi.base_height;
+		*x = (float)obs->data.main_canvas->video_mix->ovi.base_width;
+		*y = (float)obs->data.main_canvas->video_mix->ovi.base_height;
 	} else if (parent->is_group) {
 		*x = (float)canvas_getwidth(parent->source->canvas);
 		*y = (float)canvas_getheight(parent->source->canvas);
@@ -1492,8 +1492,8 @@ static uint32_t scene_getwidth(void *data)
 		return scene->cx;
 	if (scene->source->canvas)
 		return canvas_getwidth(scene->source->canvas);
-	if (obs->data.main_canvas->mix)
-		return obs->data.main_canvas->mix->ovi.base_width;
+	if (obs->data.main_canvas->video_mix)
+		return obs->data.main_canvas->video_mix->ovi.base_width;
 	return 0;
 }
 
@@ -1504,8 +1504,8 @@ static uint32_t scene_getheight(void *data)
 		return scene->cy;
 	if (scene->source->canvas)
 		return canvas_getheight(scene->source->canvas);
-	if (obs->data.main_canvas->mix)
-		return obs->data.main_canvas->mix->ovi.base_height;
+	if (obs->data.main_canvas->video_mix)
+		return obs->data.main_canvas->video_mix->ovi.base_height;
 	return 0;
 }
 

@@ -405,7 +405,7 @@ static bool audio_monitor_init(struct audio_monitor *monitor, obs_source_t *sour
 		return false;
 	}
 
-	const struct audio_output_info *info = audio_output_get_info(obs->audio.audio);
+	const struct audio_output_info *info = audio_output_get_info(obs_get_audio());
 
 	struct resample_info from = {.samples_per_sec = info->samples_per_sec,
 				     .speakers = info->speakers,
