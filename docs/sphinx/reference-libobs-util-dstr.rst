@@ -59,6 +59,28 @@ General String Helper Functions
 
 ----------------------
 
+.. function:: int astrnatcmp(const char *str1, const char *str2, os_locale_t locale)
+
+   Natural comparison function for strings.
+
+   In natural comparison numbers are compared by their value instead of the alphabetical order.
+   For example "z2" < "z11" while in alphabetical comparison it would be "z11" < "z2".
+
+   Otherwise the function uses locale aware string comparison function strcoll_l() / _strcoll_l().
+
+----------------------
+
+.. function:: int wstrnatcmp(const wchar_t *str1, const wchar_t *str2, os_locale_t locale)
+
+   Natural comparison function for wide strings.
+
+   In natural comparison numbers are compared by their value instead of the alphabetical order.
+   For example "z2" < "z11" while in alphabetical comparison it would be "z11" < "z2".
+
+   Otherwise the function uses locale aware wide string comparison function wcscoll_l() / _wcscoll_l().
+
+----------------------
+
 .. function:: char *astrstri(const char *str, const char *find)
 
    Case insensitive version of strstr.
