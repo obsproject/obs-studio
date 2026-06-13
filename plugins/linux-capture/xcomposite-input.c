@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "graphics/graphics.h"
 #include "xhelpers.h"
 #include "xcursor-xcb.h"
 #include "xcomposite-input.h"
@@ -60,6 +61,7 @@ struct xcompcap {
 
 	Pixmap pixmap;
 	gs_texture_t *gltex;
+	gs_texture_t *backup_gltex;
 
 	pthread_mutex_t lock;
 
@@ -379,16 +381,28 @@ void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s, int log_lev
 		return;
 
 	s->pixmap = xcb_generate_id(conn);
-	xcb_void_cookie_t name_cookie = xcb_composite_name_window_pixmap_checked(conn, s->win, s->pixmap);
+
 	err = NULL;
+	xcb_void_cookie_t name_cookie;
+	name_cookie = xcb_composite_name_window_pixmap_checked(conn, s->win, s->pixmap);
+
 	if ((err = xcb_request_check(conn, name_cookie)) != NULL) {
-		blog(log_level, "xcb_composite_name_window_pixmap failed");
+		if (err->error_code == XCB_MATCH) {
+			blog(log_level, "could not get pixmap due to window being unviewable");
+		} else {
+			blog(log_level, "xcb_composite_name_window_pixmap failed");
+		}
 		s->pixmap = 0;
 		return;
 	}
-
 	XErrorHandler prev = XSetErrorHandler(silence_x11_errors);
 	s->gltex = gs_texture_create_from_pixmap(s->width, s->height, GS_BGRA_UNORM, GL_TEXTURE_2D, (void *)s->pixmap);
+	if (s->backup_gltex) {
+		gs_texture_destroy(s->backup_gltex);
+		s->backup_gltex = 0;
+	}
+	s->backup_gltex =
+		gs_texture_create_from_pixmap(s->width, s->height, GS_BGRA_UNORM, GL_TEXTURE_2D, (void *)s->pixmap);
 	XSetErrorHandler(prev);
 }
 
@@ -525,7 +539,7 @@ static void xcompcap_get_hooked(void *data, calldata_t *cd)
 static uint32_t xcompcap_get_width(void *data)
 {
 	struct xcompcap *s = (struct xcompcap *)data;
-	if (!s->gltex)
+	if (!s->gltex && !s->backup_gltex)
 		return 0;
 
 	int32_t border = s->crop_left + s->crop_right + 2 * s->border;
@@ -536,7 +550,7 @@ static uint32_t xcompcap_get_width(void *data)
 static uint32_t xcompcap_get_height(void *data)
 {
 	struct xcompcap *s = (struct xcompcap *)data;
-	if (!s->gltex)
+	if (!s->gltex && !s->backup_gltex)
 		return 0;
 
 	int32_t border = s->crop_bot + s->crop_top + 2 * s->border;
@@ -577,6 +591,10 @@ static void xcompcap_destroy(void *data)
 
 	watcher_unregister(conn, s);
 	xcomp_cleanup_pixmap(disp, s);
+	if (s->backup_gltex) {
+		gs_texture_destroy(s->backup_gltex);
+		s->backup_gltex = 0;
+	}
 
 	if (s->cursor)
 		xcb_xcursor_destroy(s->cursor);
@@ -641,15 +659,15 @@ static void xcompcap_video_tick(void *data, float seconds)
 		}
 
 		watcher_register(conn, s);
+
 		xcomp_cleanup_pixmap(disp, s);
-		// Avoid excessive logging. We expect this to fail while windows are
-		// minimized or on offscreen workspaces or already captured on NVIDIA.
 		xcomp_create_pixmap(conn, s, LOG_DEBUG);
+
 		xcb_xcursor_offset_win(conn, s->cursor, s->win);
 		xcb_xcursor_offset(s->cursor, s->cursor->x_org + s->crop_left, s->cursor->y_org + s->crop_top);
 	}
 
-	if (!s->gltex)
+	if (!s->gltex && !s->backup_gltex)
 		goto done;
 
 	if (xcompcap_get_height(s) == 0 || xcompcap_get_width(s) == 0)
@@ -674,26 +692,42 @@ static void xcompcap_video_render(void *data, gs_effect_t *effect)
 
 	pthread_mutex_lock(&s->lock);
 
-	if (!s->gltex)
-		goto done;
-
-	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-	if (s->exclude_alpha)
-		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
-
-	image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, s->gltex);
-
-	while (gs_effect_loop(effect, "Draw")) {
-		gs_draw_sprite_subregion(s->gltex, 0, s->crop_left, s->crop_top, xcompcap_get_width(s),
-					 xcompcap_get_height(s));
-	}
-
-	if (s->gltex && s->show_cursor && !s->cursor_outside) {
+	if (s->gltex || s->backup_gltex) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+		if (s->exclude_alpha)
+			effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+		image = gs_effect_get_param_by_name(effect, "image");
+		if (s->gltex) {
 
-		while (gs_effect_loop(effect, "Draw")) {
-			xcb_xcursor_render(s->cursor);
+			gs_effect_set_texture(image, s->gltex);
+
+			while (gs_effect_loop(effect, "Draw")) {
+				gs_draw_sprite_subregion(s->gltex, 0, s->crop_left, s->crop_top, xcompcap_get_width(s),
+							 xcompcap_get_height(s));
+			}
+
+			if (s->gltex && s->show_cursor && !s->cursor_outside) {
+				effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+
+				while (gs_effect_loop(effect, "Draw")) {
+					xcb_xcursor_render(s->cursor);
+				}
+			}
+		} else if (s->backup_gltex) {
+			gs_effect_set_texture(image, s->backup_gltex);
+
+			while (gs_effect_loop(effect, "Draw")) {
+				gs_draw_sprite_subregion(s->backup_gltex, 0, s->crop_left, s->crop_top,
+							 xcompcap_get_width(s), xcompcap_get_height(s));
+			}
+
+			if (s->backup_gltex && s->show_cursor && !s->cursor_outside) {
+				effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+
+				while (gs_effect_loop(effect, "Draw")) {
+					xcb_xcursor_render(s->cursor);
+				}
+			}
 		}
 	}
 
@@ -906,7 +940,12 @@ static void xcompcap_update(void *data, obs_data_t *settings)
 	}
 
 	watcher_register(conn, s);
+
 	xcomp_cleanup_pixmap(disp, s);
+	if (s->backup_gltex) {
+		gs_texture_destroy(s->backup_gltex);
+		s->backup_gltex = 0;
+	}
 	xcomp_create_pixmap(conn, s, LOG_ERROR);
 	xcb_xcursor_offset_win(conn, s->cursor, s->win);
 	xcb_xcursor_offset(s->cursor, s->cursor->x_org + s->crop_left, s->cursor->y_org + s->crop_top);
