@@ -1177,6 +1177,13 @@ private:
 	QMenu *CreateVisibilityTransitionMenu(bool visible);
 	void CenterSelectedSceneItems(const CenterType &centerType);
 
+	void setScaleFilter(OBSSceneItem sceneItem, obs_scale_type type);
+	void setBlendingMethod(OBSSceneItem item, obs_blending_method method);
+	void setBlendingMode(OBSSceneItem item, obs_blending_type type);
+
+	void setDeinterlacingMode(OBSSceneItem sceneItem, obs_deinterlace_mode type);
+	void setDeinterlacingOrder(OBSSceneItem sceneItem, obs_deinterlace_field_order order);
+
 	/* OBS Callbacks */
 	static void SourceCreated(void *data, calldata_t *params);
 	static void SourceRemoved(void *data, calldata_t *params);
@@ -1188,14 +1195,6 @@ private slots:
 
 	void ReorderSources(OBSScene scene);
 	void RefreshSources(OBSScene scene);
-
-	void SetDeinterlacingMode();
-	void SetDeinterlacingOrder();
-
-	void SetScaleFilter();
-
-	void SetBlendingMethod();
-	void SetBlendingMode();
 
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
@@ -1239,10 +1238,10 @@ private slots:
 public:
 	void ResetAudioDevice(const char *sourceId, const char *deviceId, const char *deviceDesc, int channel);
 
-	QMenu *AddDeinterlacingMenu(QMenu *menu, obs_source_t *source);
-	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
-	QMenu *AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item);
-	QMenu *AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item);
+	QMenu *createDeinterlacingMenu(QMenu *menu, obs_source_t *source);
+	QMenu *createScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
+	QMenu *createBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item);
+	QMenu *createBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction, ColorSelect *select,
 				      obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(int idx, bool preview);

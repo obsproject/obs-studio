@@ -695,7 +695,6 @@ SourceTreeItem {
 QMenu::item,
 QMenu > QWidget {
     padding: var(--padding_large) var(--padding_menu);
-    padding-right: 20px;
 }
 
 QMenu > QWidget {
@@ -755,6 +754,7 @@ QListWidget::item:hover {
 }
 
 QMenu::item:focus,
+QMenu > QWidget:focus,
 QListView::item:focus,
 QListWidget::item:focus,
 QMenu::item:selected:focus,
@@ -791,6 +791,10 @@ QListWidget QLineEdit {
 QListView QLineEdit:focus,
 QListWidget QLineEdit:focus {
     border: 1px solid var(--grey1);
+}
+
+QMenu MenuRadioButton {
+    padding-left: var(--padding_large);
 }
 
 /* Settings QList */
@@ -1418,9 +1422,7 @@ QDoubleSpinBox::down-arrow {
     color: var(--text);
 }
 
-
 /* Buttons */
-
 QPushButton {
     background-color: var(--button_bg);
     color: var(--text);
@@ -1532,7 +1534,6 @@ QToolButton:disabled,
 }
 
 /* Sliders */
-
 QSlider::groove {
     background-color: var(--grey4);
     border: none;
@@ -1999,6 +2000,7 @@ OBSBasicSettings {
 
 QCheckBox::indicator,
 QGroupBox::indicator,
+QRadioButton::indicator,
 QTableView::indicator {
     width: var(--icon_base);
     height: var(--icon_base);
@@ -2043,6 +2045,30 @@ QCheckBox::indicator:unchecked:disabled,
 QGroupBox::indicator:unchecked:disabled,
 QTableView::indicator:unchecked:disabled {
     image: url(theme:Yami/checkbox_unchecked_disabled.svg);
+}
+
+QRadioButton::indicator:checked {
+    image: url(theme:Yami/radio_checked.svg);
+}
+
+QRadioButton::indicator:unchecked {
+    image: url(theme:Yami/radio_unchecked.svg);
+}
+
+QRadioButton::indicator:checked:hover {
+    image: url(theme:Yami/radio_checked_focus.svg);
+}
+
+QRadioButton::indicator:unchecked:hover {
+    image: url(theme:Yami/radio_unchecked_focus.svg);
+}
+
+QRadioButton::indicator:checked:disabled {
+    image: url(theme:Yami/radio_checked_disabled.svg);
+}
+
+QRadioButton::indicator:unchecked:disabled {
+    image: url(theme:Yami/radio_unchecked_disabled.svg);
 }
 
 /* Icon Checkboxes */
