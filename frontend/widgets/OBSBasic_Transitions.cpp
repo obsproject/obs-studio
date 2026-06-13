@@ -1127,8 +1127,7 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 
 	if (qt) {
 		action = menu->addAction(QTStr("Remove"));
-		action->setProperty("id", qt->id);
-		connect(action, &QAction::triggered, this, &OBSBasic::QuickTransitionRemoveClicked);
+		connect(action, &QAction::triggered, this, [this, id = qt->id]() { QuickTransitionRemoveClicked(id); });
 
 		menu->addSeparator();
 	}
@@ -1145,18 +1144,17 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 
 	if (qt) {
 		connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged, this,
-			&OBSBasic::QuickTransitionChangeDuration);
+			[this, id = qt->id](int value) { QuickTransitionChangeDuration(id, value); });
 	}
 
 	action = menu->addAction(QTStr("FadeToBlack"));
-	action->setProperty("fadeToBlack", true);
 
 	if (qt) {
-		action->setProperty("id", qt->id);
-		connect(action, &QAction::triggered, this, &OBSBasic::QuickTransitionChange);
+		connect(action, &QAction::triggered, this,
+			[this, id = qt->id]() { QuickTransitionChange(id, std::string(), true); });
 	} else {
-		action->setProperty("duration", QVariant::fromValue<QWidget *>(duration));
-		connect(action, &QAction::triggered, this, &OBSBasic::AddQuickTransition);
+		connect(action, &QAction::triggered, this,
+			[this, duration]() { AddQuickTransition(std::string(), duration, true); });
 	}
 
 	for (const auto &[uuid, transition] : transitions) {
@@ -1164,15 +1162,17 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 			continue;
 		}
 
+		const std::string transitionUuid = uuid;
 		action = menu->addAction(obs_source_get_name(transition));
-		action->setProperty("transition_uuid", QString::fromStdString(uuid));
 
 		if (qt) {
-			action->setProperty("id", qt->id);
-			connect(action, &QAction::triggered, this, &OBSBasic::QuickTransitionChange);
+			connect(action, &QAction::triggered, this, [this, id = qt->id, transitionUuid]() {
+				QuickTransitionChange(id, transitionUuid, false);
+			});
 		} else {
-			action->setProperty("duration", QVariant::fromValue<QWidget *>(duration));
-			connect(action, &QAction::triggered, this, &OBSBasic::AddQuickTransition);
+			connect(action, &QAction::triggered, this, [this, transitionUuid, duration]() {
+				AddQuickTransition(transitionUuid, duration, false);
+			});
 		}
 	}
 
@@ -1206,7 +1206,7 @@ void OBSBasic::AddQuickTransitionId(int id)
 	/* --------------------------------- */
 
 	button->setMenu(buttonMenu);
-	connect(button, &QAbstractButton::clicked, this, &OBSBasic::QuickTransitionClicked);
+	connect(button, &QAbstractButton::clicked, this, [this, id]() { QuickTransitionClicked(id); });
 
 	QVBoxLayout *programLayout = reinterpret_cast<QVBoxLayout *>(programOptions->layout());
 
@@ -1226,11 +1226,8 @@ void OBSBasic::AddQuickTransitionId(int id)
 	programLayout->insertWidget(idx, button);
 }
 
-void OBSBasic::AddQuickTransition()
+void OBSBasic::AddQuickTransition(const std::string &transitionUuid, QSpinBox *duration, bool fadeToBlack)
 {
-	std::string transitionUuid = sender()->property("transition_uuid").toString().toStdString();
-	QSpinBox *duration = sender()->property("duration").value<QSpinBox *>();
-	bool fadeToBlack = sender()->property("fadeToBlack").value<bool>();
 	auto transitionIter = transitions.find(transitionUuid);
 	OBSSource transition;
 
@@ -1285,17 +1282,13 @@ void OBSBasic::ClearQuickTransitions()
 	}
 }
 
-void OBSBasic::QuickTransitionClicked()
+void OBSBasic::QuickTransitionClicked(int id)
 {
-	int id = sender()->property("id").toInt();
 	TriggerQuickTransition(id);
 }
 
-void OBSBasic::QuickTransitionChange()
+void OBSBasic::QuickTransitionChange(int id, const std::string &transitionUuid, bool fadeToBlack)
 {
-	int id = sender()->property("id").toInt();
-	std::string transitionUuid = sender()->property("transition_uuid").toString().toStdString();
-	bool fadeToBlack = sender()->property("fadeToBlack").value<bool>();
 	QuickTransition *qt = GetQuickTransition(id);
 
 	if (qt) {
@@ -1316,9 +1309,8 @@ void OBSBasic::QuickTransitionChange()
 	}
 }
 
-void OBSBasic::QuickTransitionChangeDuration(int value)
+void OBSBasic::QuickTransitionChangeDuration(int id, int value)
 {
-	int id = sender()->property("id").toInt();
 	QuickTransition *qt = GetQuickTransition(id);
 
 	if (qt) {
@@ -1327,9 +1319,8 @@ void OBSBasic::QuickTransitionChangeDuration(int value)
 	}
 }
 
-void OBSBasic::QuickTransitionRemoveClicked()
+void OBSBasic::QuickTransitionRemoveClicked(int id)
 {
-	int id = sender()->property("id").toInt();
 	int idx = GetQuickTransitionIdx(id);
 	if (idx == -1) {
 		return;

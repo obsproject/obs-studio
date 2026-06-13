@@ -449,19 +449,15 @@ static void ConfirmColor(SourceTree *sources, const QColor &color, QModelIndexLi
 	}
 }
 
-void OBSBasic::ColorChange()
+void OBSBasic::ColorChange(int preset, QPushButton *colorButton)
 {
 	QModelIndexList selectedItems = ui->sources->selectionModel()->selectedIndexes();
-	QAction *action = qobject_cast<QAction *>(sender());
-	QPushButton *colorButton = qobject_cast<QPushButton *>(sender());
 
 	if (selectedItems.count() == 0) {
 		return;
 	}
 
 	if (colorButton) {
-		int preset = colorButton->property("bgColor").value<int>();
-
 		for (int x = 0; x < selectedItems.count(); x++) {
 			SourceTreeItem *treeItem = ui->sources->GetItemWidget(selectedItems[x].row());
 			treeItem->setStyleSheet("");
@@ -484,9 +480,7 @@ void OBSBasic::ColorChange()
 		}
 
 		colorButton->setStyleSheet("border: 2px solid black");
-	} else if (action) {
-		int preset = action->property("bgColor").value<int>();
-
+	} else {
 		if (preset == 1) {
 			OBSSceneItem curSceneItem = GetCurrentSceneItem();
 			SourceTreeItem *curTreeItem = GetItemWidgetFromSceneItem(curSceneItem);
