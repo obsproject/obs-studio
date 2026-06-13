@@ -6,14 +6,14 @@ BEGIN
     BLOCK "040904B0"
     BEGIN
       VALUE "CompanyName", "${OBS_COMPANY_NAME}"
-      VALUE "FileDescription", "OBS WebRTC module"
+      VALUE "FileDescription", "OBS VST2 module"
       VALUE "FileVersion", "${OBS_VERSION_CANONICAL}"
       VALUE "ProductName", "${OBS_PRODUCT_NAME}"
       VALUE "ProductVersion", "${OBS_VERSION_CANONICAL}"
       VALUE "Comments", "${OBS_COMMENTS}"
       VALUE "LegalCopyright", "${OBS_LEGAL_COPYRIGHT}"
-      VALUE "InternalName", "obs-webrtc"
-      VALUE "OriginalFilename", "obs-webrtc"
+      VALUE "InternalName", "obs-vst"
+      VALUE "OriginalFilename", "obs-vst"
     END
   END
 

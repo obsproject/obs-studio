@@ -19,4 +19,9 @@ target_sources(
 
 target_link_libraries(obs-webrtc PRIVATE OBS::libobs LibDataChannel::LibDataChannel CURL::libcurl)
 
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in obs-webrtc.rc)
+  target_sources(obs-webrtc PRIVATE obs-webrtc.rc)
+endif()
+
 set_target_properties_obs(obs-webrtc PROPERTIES FOLDER plugins PREFIX "")
