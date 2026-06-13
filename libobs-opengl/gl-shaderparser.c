@@ -70,6 +70,8 @@ static bool gl_write_type_n(struct gl_shader_parser *glsp, const char *type, siz
 		dstr_cat(&glsp->gl_string, "uvec3");
 	else if (cmp_type(type, len, "uint4", 5) == 0)
 		dstr_cat(&glsp->gl_string, "uvec4");
+	else if (cmp_type(type, len, "float2x2", 8) == 0)
+		dstr_cat(&glsp->gl_string, "mat2x2");
 	else if (cmp_type(type, len, "float3x3", 8) == 0)
 		dstr_cat(&glsp->gl_string, "mat3x3");
 	else if (cmp_type(type, len, "float3x4", 8) == 0)
