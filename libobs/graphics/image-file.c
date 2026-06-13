@@ -203,7 +203,7 @@ static void gs_image_file_init_internal(gs_image_file_t *image, const char *file
 		gs_create_texture_file_data3(file, alpha_mode, &image->format, &image->cx, &image->cy, space);
 
 	if (mem_usage) {
-		*mem_usage += image->cx * image->cy * gs_get_format_bpp(image->format) / 8;
+		*mem_usage += (uint64_t)image->cx * image->cy * gs_get_format_bpp(image->format) / 8;
 	}
 
 	image->loaded = !!image->texture_data;
