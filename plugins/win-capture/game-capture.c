@@ -1719,6 +1719,15 @@ static void game_capture_tick(void *data, float seconds)
 
 	} else if (!gc->showing) {
 		gc->retry_time = 10.0f * hook_rate_to_float(gc->config.hook_rate);
+
+		/* Reattach linked WASAPI as soon as we are shown again. stop_capture()
+		 * clears audio on unhook; hook_ready may arrive later than the first
+		 * audio mix during a scene fade, so restore using any known HWND. */
+		if (gc->audio_source && gc->config.capture_audio) {
+			HWND audio_hwnd = gc->window ? gc->window : gc->next_window;
+			if (audio_hwnd && IsWindow(audio_hwnd))
+				reconfigure_audio_source(gc->audio_source, audio_hwnd);
+		}
 	}
 
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
