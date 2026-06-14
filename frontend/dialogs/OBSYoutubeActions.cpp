@@ -8,6 +8,7 @@
 #include <QDesktopServices>
 #include <QFileInfo>
 #include <QImageReader>
+#include <QScreen>
 #include <QStandardPaths>
 #include <QToolTip>
 
@@ -251,6 +252,16 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 	// MacOS theming issues
 	this->resize(this->width() + 200, this->height() + 120);
 #endif
+
+	// Clamp dialog to available screen geometry
+	if (QScreen *screen = this->screen(); screen) {
+		const QRect available = screen->availableGeometry();
+		const int maxH = static_cast<int>(available.height() * 0.85);
+		const int maxW = static_cast<int>(available.width() * 0.85);
+		if (height() > maxH || width() > maxW)
+			resize(std::min(width(), maxW), std::min(height(), maxH));
+	}
+
 	valid = true;
 }
 
