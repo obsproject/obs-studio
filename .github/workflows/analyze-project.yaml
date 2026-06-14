@@ -131,8 +131,42 @@ jobs:
 
           pushd ${analytics_root}
 
-          npx @microsoft/sarif-multitool merge --merge-runs *.sarif
+          # The jq expression below merges the results of all separate compilation (and
+          # analysis) runs into a single result of all tools, thus meeting the
+          # requirements of the codeql-action's upload job.
+          # The merged sarif file contains a single "runs" array with a single
+          # corresponding "tool" object.
+          #
+          # Each sarif file will have its own "rules" array (depending on which rules the
+          # file violated), so all violated rules across all compilations need to be
+          # collected into this array.
+          #
+          # Next, all "artifacts" array elements and "rules" array elements from all
+          # sarif files have to be added to the same "global" corresponding arrays in the
+          # new single "runs" object.
+          #
+          # Finally, because LLVM produces codeflow regions with invalid "endLine" and
+          # "endColumn" entries (with value 0), those entries are removed from the
+          # regions in the results' codeFlows arrays.
 
+          jq -s '{
+            "$schema": first(.[]."$schema"),
+            "version": first(.[].version),
+            "runs": [{
+              "tool": {
+                "driver": (first(.[].runs[].tool.driver) | del(.rules)) + {
+                  "rules": reduce(.[].runs[].tool.driver.rules) as $obj ([]; . + $obj) | unique
+                }
+              },
+              "artifacts": reduce(.[].runs[].artifacts) as $obj ([]; . + $obj) | unique,
+              "results": (reduce(.[].runs[].results) as $obj ([]; . + $obj))
+              | del(
+                .[].codeFlows[].threadFlows[].locations[].location.physicalLocation.region.endLine,
+                .[].codeFlows[].threadFlows[].locations[].location.physicalLocation.region.endColumn
+                | select(. == 0)
+              )
+            }]
+          }' *.sarif > merged.sarif
           popd
 
       - name: Upload SARIF report files 📦
