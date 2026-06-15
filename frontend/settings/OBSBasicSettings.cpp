@@ -520,6 +520,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutTrack6Name,     EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advReplayBuf,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advRBSecMax,          SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advRBStorageMode,     COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
@@ -805,6 +806,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->advOutRecType, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::AdvReplayBufferChanged);
 	connect(ui->advOutRecEncoder, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::AdvReplayBufferChanged);
 	connect(ui->advRBSecMax, &QSpinBox::valueChanged, this, &OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advRBStorageMode, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::AdvReplayBufferChanged);
 
 	// GPU scaling filters
 	auto addScaleFilter = [&](const char *string, int value) -> void {
@@ -2615,6 +2617,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool replayBuf = config_get_bool(main->Config(), "AdvOut", "RecRB");
 	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
+	int rbStorageMode = config_get_int(main->Config(), "AdvOut", "RecRBStorageMode");
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(App()->GetUserConfig(), "General", "HotkeyFocusType");
 	bool dynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
@@ -2639,6 +2642,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->advReplayBuf->setChecked(replayBuf);
 	ui->advRBSecMax->setValue(rbTime);
 	ui->advRBMegsMax->setValue(rbSize);
+	ui->advRBStorageMode->setCurrentIndex(rbStorageMode);
 
 	ui->reconnectEnable->setChecked(reconnect);
 	ui->reconnectRetryDelay->setValue(retryDelay);
@@ -3602,6 +3606,9 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advReplayBuf, "AdvOut", "RecRB");
 	SaveSpinBox(ui->advRBSecMax, "AdvOut", "RecRBTime");
 	SaveSpinBox(ui->advRBMegsMax, "AdvOut", "RecRBSize");
+	if (WidgetChanged(ui->advRBStorageMode)) {
+		config_set_int(main->Config(), "AdvOut", "RecRBStorageMode", ui->advRBStorageMode->currentIndex());
+	}
 
 	WriteJsonData(streamEncoderProps, "streamEncoder.json");
 	WriteJsonData(recordEncoderProps, "recordEncoder.json");
@@ -5298,9 +5305,14 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 
 	int seconds = ui->advRBSecMax->value();
 
-	// Set maximum to 75% of installed memory
-	uint64_t memTotal = os_get_sys_total_size();
-	int64_t memMaxMB = memTotal ? memTotal * 3 / 4 / 1024 / 1024 : 8192;
+	int64_t memMaxMB;
+	if (ui->advRBStorageMode->currentIndex() == 1) {
+		memMaxMB = 8388608; // 8TB limit for Disk
+	} else {
+		// Set maximum to 75% of installed memory for RAM
+		uint64_t memTotal = os_get_sys_total_size();
+		memMaxMB = memTotal ? memTotal * 3 / 4 / 1024 / 1024 : 8192;
+	}
 
 	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 / 8 / 1024 / 1024;
 	if (memMB < 1) {
