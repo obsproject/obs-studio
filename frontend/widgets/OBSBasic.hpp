@@ -873,6 +873,7 @@ private slots:
 	void TogglePreview();
 
 public:
+	void addSnapGuide(SnapGuide guide);
 	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
 	{
 		x = previewX;
