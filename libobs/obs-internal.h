@@ -135,6 +135,8 @@ struct obs_module {
 	DARRAY(char *) outputs;
 	DARRAY(char *) encoders;
 	DARRAY(char *) services;
+
+	enum obs_runtime_module_type module_type;
 };
 
 struct obs_disabled_module {
