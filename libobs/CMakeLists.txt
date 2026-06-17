@@ -39,6 +39,10 @@ target_sources(
     obs-avc.h
     obs-canvas.c
     obs-config.h
+    $<$<PLATFORM_ID:Darwin>:obs-core-modules-loader-mac.m>
+    $<$<PLATFORM_ID:Windows>:obs-core-modules-loader-win.c>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:obs-core-modules-loader-nix.c>
+    obs-core-modules-loader.h
     obs-data.c
     obs-data.h
     obs-defs.h
@@ -244,6 +248,7 @@ target_link_libraries(
   libobs
   PRIVATE
     OBS::caption
+    OBS::libobs-core-modules
     OBS::libobs-version
     FFmpeg::avcodec
     FFmpeg::avformat
