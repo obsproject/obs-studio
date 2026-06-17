@@ -158,6 +158,7 @@ extern void free_module(struct obs_module *mod);
 struct obs_module_path {
 	char *bin;
 	char *data;
+	enum obs_runtime_module_type type;
 };
 
 static inline void free_module_path(struct obs_module_path *omp)
@@ -552,7 +553,6 @@ struct obs_core {
 	DARRAY(struct obs_module_path) module_paths;
 	DARRAY(char *) safe_modules;
 	DARRAY(char *) disabled_modules;
-	DARRAY(char *) core_modules;
 
 	obs_source_info_array_t source_types;
 	obs_source_info_array_t input_types;
@@ -580,6 +580,8 @@ struct obs_core {
 	os_task_queue_t *destruction_task_thread;
 
 	obs_task_handler_t ui_task_handler;
+
+	bool core_modules_loaded;
 };
 
 extern struct obs_core *obs;
