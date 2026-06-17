@@ -586,16 +586,8 @@ EXPORT void obs_add_module_path(const char *bin, const char *data);
  */
 EXPORT void obs_add_safe_module(const char *name);
 
-/**
- * Adds a module to the list of core modules (which cannot be disabled).
- * If the list is empty, all modules are allowed.
- *
- * @param  name  Specifies the module's name (filename sans extension).
- */
-EXPORT void obs_add_core_module(const char *name);
-
 /** Automatically loads all modules from module paths (convenience function) */
-EXPORT void obs_load_all_modules(void);
+OBS_DEPRECATED EXPORT void obs_load_all_modules(void);
 
 struct obs_module_failure_info {
 	char **failed_modules;
@@ -603,7 +595,7 @@ struct obs_module_failure_info {
 };
 
 EXPORT void obs_module_failure_info_free(struct obs_module_failure_info *mfi);
-EXPORT void obs_load_all_modules2(struct obs_module_failure_info *mfi);
+OBS_DEPRECATED EXPORT void obs_load_all_modules2(struct obs_module_failure_info *mfi);
 
 /** Notifies modules that all modules have been loaded.  This function should
  * be called after all modules have been loaded. */
@@ -623,6 +615,7 @@ struct obs_module_info2 {
 	const char *bin_path;
 	const char *data_path;
 	const char *name;
+	enum obs_runtime_module_type type;
 };
 
 typedef void (*obs_find_module_callback2_t)(void *param, const struct obs_module_info2 *info);
@@ -633,8 +626,13 @@ EXPORT void obs_find_modules2(obs_find_module_callback2_t callback, void *param)
 /** Loads all registered core modules. */
 EXPORT bool obs_load_core_modules(void);
 
+/** Loads plugins at a given path. omp defines if modern or legacy plugins at path. */
+EXPORT void obs_load_plugins(struct obs_runtime_module_info *info, struct obs_module_failure_info *error);
+
 /** Returns true if a module is a core module. */
 EXPORT bool obs_is_core_module(obs_module_t *module);
+
+EXPORT bool obs_is_legacy_module(obs_module_t *module);
 
 /** Finds and loads a particular core module.
  *  Returns false if module cant be found. */

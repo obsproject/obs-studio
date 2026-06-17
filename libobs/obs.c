@@ -1266,6 +1266,8 @@ static bool obs_init(const char *locale, const char *module_config_path, profile
 	obs_register_source(&scene_info);
 	obs_register_source(&group_info);
 	obs_register_source(&audio_line_info);
+
+	obs->core_modules_loaded = false;
 	return true;
 }
 
@@ -1460,11 +1462,6 @@ void obs_shutdown(void)
 		bfree(obs->disabled_modules.array[i]);
 	}
 	da_free(obs->disabled_modules);
-
-	for (size_t i = 0; i < obs->core_modules.num; i++) {
-		bfree(obs->core_modules.array[i]);
-	}
-	da_free(obs->core_modules);
 
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
