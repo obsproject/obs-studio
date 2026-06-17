@@ -140,6 +140,31 @@ static void AddExtraModulePaths()
 #endif
 	}
 
+#if !defined(__APPLE__)
+#if defined(_WIN32)
+	char *thirdPartyPluginPath = os_get_executable_path_ptr("../../obs-plugins/64bit/");
+	char *thirdPartyDataPath = os_get_executable_path_ptr("../../data/obs-plugins/%module%");
+
+	if (thirdPartyPluginPath && *thirdPartyPluginPath && thirdPartyDataPath && *thirdPartyDataPath) {
+		obs_add_module_path(thirdPartyPluginPath, thirdPartyDataPath);
+	}
+
+	bfree(thirdPartyPluginPath);
+	bfree(thirdPartyDataPath);
+#else
+	constexpr std::string_view findToken{"obs-modules"};
+	constexpr std::string_view replaceToken{"obs-plugins"};
+	constexpr std::string_view thirdPartyDataPath{OBS_INSTALL_DATA_PATH "/obs-plugins/%module%"};
+
+	std::string thirdPartyPluginPath{OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION};
+	size_t startPos = thirdPartyPluginPath.find(findToken);
+	if (startPos != std::string::npos) {
+		thirdPartyPluginPath.replace(startPos, findToken.length(), replaceToken);
+		obs_add_module_path(thirdPartyPluginPath.c_str(), thirdPartyDataPath.data());
+	}
+#endif
+#endif
+
 	if (portable_mode) {
 		return;
 	}
