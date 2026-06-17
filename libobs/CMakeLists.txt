@@ -7,6 +7,8 @@ if(OS_WINDOWS AND NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   return()
 endif()
 
+include(cmake/obs-core-modules.cmake)
+
 find_package(SIMDe REQUIRED)
 find_package(Threads REQUIRED)
 
