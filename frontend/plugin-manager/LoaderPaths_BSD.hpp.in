@@ -1,0 +1,13 @@
+#pragma once
+
+#include <string_view>
+
+namespace OBS {
+    namespace Constants {
+        inline constexpr std::string_view kPlatformInstallPath{"@OBS_PLATFORM_INSTALL_PATH@"};
+        inline constexpr std::string_view kPlatformLibraryPath{"@OBS_PLATFORM_LIBRARY_PATH@"};
+        inline constexpr std::string_view kPlatformDataPath{"@OBS_PLATFORM_DATA_PATH@"};
+        inline constexpr std::string_view kPlatformPluginModulePath{"@OBS_PLATFORM_PLUGIN_MODULE_PATH@"};
+        inline constexpr std::string_view kPlatformPluginDataPath{"@OBS_PLATFORM_PLUGIN_DATA_PATH@"};
+    }
+}

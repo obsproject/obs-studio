@@ -236,12 +236,13 @@ public:
 	static void sigQuitSignalHandler(int);
 #endif
 
-	void loadAppModules(struct obs_module_failure_info &mfi);
+	void loadAppModules();
 
 	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 	// Plugin Manager Accessors
 	void pluginManagerOpenDialog();
+	void handlePluginLoadState();
 
 public slots:
 	void Exec(VoidFunc func);
