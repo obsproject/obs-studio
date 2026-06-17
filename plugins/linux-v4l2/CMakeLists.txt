@@ -4,7 +4,6 @@ option(ENABLE_V4L2 "Build OBS with v4l2 support" ON)
 option(ENABLE_UDEV "Build linux-v4l2 with UDEV support" ON)
 
 if(NOT ENABLE_V4L2)
-  target_disable(linux-v4l2)
   return()
 endif()
 
