@@ -15,12 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "util/platform.h"
-#include "util/dstr.h"
-
+#include "obs-core-modules-loader.h"
+#include "obs-core-modules.h"
 #include "obs-defs.h"
 #include "obs-internal.h"
 #include "obs-module.h"
+#include "util/dstr.h"
+#include "util/platform.h"
 
 extern const char *get_module_extension(void);
 
@@ -465,12 +466,7 @@ static bool is_safe_module(const char *name)
 
 static bool is_core_module(const char *name)
 {
-	for (size_t i = 0; i < obs->core_modules.num; i++) {
-		if (strcmp(name, obs->core_modules.array[i]) == 0)
-			return true;
-	}
-
-	return false;
+	return obs_in_core_module_list(name);
 }
 
 static bool is_disabled_module(const char *name)
@@ -582,6 +578,17 @@ void obs_load_all_modules2(struct obs_module_failure_info *mfi)
 	memset(mfi, 0, sizeof(*mfi));
 
 	profile_start(obs_load_all_modules2_name);
+
+	struct fail_info core_fail_info = {0};
+	load_core_modules(load_all_callback, &core_fail_info);
+
+	if (core_fail_info.fail_count > 0) {
+		fail_info.fail_count += core_fail_info.fail_count;
+
+		dstr_insert_dstr(&fail_info.fail_modules, 0, &core_fail_info.fail_modules);
+	}
+	dstr_free(&core_fail_info.fail_modules);
+
 	obs_find_modules2(load_all_callback, &fail_info);
 #ifdef _WIN32
 	profile_start(reset_win32_symbol_paths_name);
@@ -631,6 +638,52 @@ static char *make_data_directory(const char *module_name, const char *data_dir)
 		make_data_dir(&parsed_data_dir, data_dir, module_name + 3);
 
 	return parsed_data_dir.array;
+}
+
+/* Function to find a specifically defined module. Used for loading core modules by name.
+ * info->path_info.binary should be path to the module binary, without its file extension.
+ * info->path_info.data should be path to the module data directory including the module name.
+ */
+bool find_core_module(struct obs_runtime_module_info *info, obs_find_module_callback2_t callback, void *data)
+{
+	const char *file_name = strrchr(info->path_info.binary, '/');
+	const char *name = file_name ? (file_name + 1) : info->path_info.binary;
+	info->name = name;
+
+	if (info->type != OBS_MODULE_TYPE_CORE) {
+		blog(LOG_WARNING, "Module %s is not a core module, and must be loaded with the plugin loader.", name);
+		return false;
+	}
+
+	bool found = false;
+
+	struct dstr module_path;
+	dstr_init_copy(&module_path, info->path_info.binary);
+	dstr_cat(&module_path, get_module_extension());
+
+	char *parsed_data_directory;
+	parsed_data_directory = make_data_directory(name, info->path_info.data);
+
+	if (os_file_exists(module_path.array)) {
+		struct obs_module_info2 callback_info = {.bin_path = module_path.array,
+							 .data_path = parsed_data_directory,
+							 .name = name};
+
+		callback(data, &callback_info);
+		found = true;
+	}
+
+	bfree(parsed_data_directory);
+	dstr_free(&module_path);
+
+	return found;
+}
+
+bool obs_is_core_module(obs_module_t *module)
+{
+	if (!module)
+		return false;
+	return module->module_type == OBS_MODULE_TYPE_CORE;
 }
 
 static bool parse_binary_from_directory(struct dstr *parsed_bin_path, const char *bin_path, const char *file)
