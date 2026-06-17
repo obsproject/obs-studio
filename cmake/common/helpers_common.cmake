@@ -40,7 +40,7 @@ function(message_configuration)
     endforeach()
   endif()
 
-  if(ENABLE_PLUGINS)
+  if(ENABLE_CORE_MODULES)
     get_property(OBS_MODULES_ENABLED GLOBAL PROPERTY OBS_MODULES_ENABLED)
     list(SORT OBS_MODULES_ENABLED COMPARE NATURAL CASE SENSITIVE ORDER ASCENDING)
 
@@ -456,12 +456,16 @@ function(check_uuid uuid_string return_value)
   return(PROPAGATE ${return_value})
 endfunction()
 
-# add_obs_plugin: Add plugin subdirectory if host platform is in specified list of supported platforms and architectures
-function(add_obs_plugin target)
+# add_core_module: Add module subdirectory if host platform is in specified list of supported platforms and architectures
+function(add_core_module target)
   set(options WITH_MESSAGE)
   set(oneValueArgs "")
   set(multiValueArgs PLATFORMS ARCHITECTURES)
   cmake_parse_arguments(PARSE_ARGV 0 _AOP "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+  if(NOT TARGET libobs)
+    message(FATAL_ERROR "Cannot add libobs core module without existing 'libobs' target")
+  endif()
 
   set(found_platform FALSE)
   list(LENGTH _AOP_PLATFORMS _AOP_NUM_PLATFORMS)
@@ -514,4 +518,27 @@ function(add_obs_plugin target)
     endif()
     target_disable(${target})
   endif()
+endfunction()
+
+function(set_obs_core_modules)
+  if(NOT TARGET libobs OR NOT TARGET libobs-core-modules)
+    message(FATAL_ERROR "Unable to set up OBS Core Modules without 'libobs' target")
+  endif()
+
+  # get_target_property(core_modules_list libobs CORE_MODULE_TARGETS)
+  get_property(OBS_MODULES_ENABLED GLOBAL PROPERTY OBS_MODULES_ENABLED)
+  get_target_property(libobs_source_directory libobs SOURCE_DIR)
+  get_target_property(libobs_binary_directory libobs BINARY_DIR)
+
+  list(LENGTH OBS_MODULES_ENABLED core_modules_count)
+  string(REPLACE ";" "\",\n\t\"" core_modules_array_content "${OBS_MODULES_ENABLED}")
+
+  set(OBS_CORE_MODULE_COUNT "${core_modules_count}")
+  set(OBS_CORE_MODULE_LIST "\t\"${core_modules_array_content}\"")
+
+  configure_file(
+    "${libobs_source_directory}/obs-core-modules.c.in"
+    "${libobs_binary_directory}/obs-core-modules.c"
+    @ONLY
+  )
 endfunction()
