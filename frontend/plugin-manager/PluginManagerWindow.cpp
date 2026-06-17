@@ -33,7 +33,9 @@ extern bool safe_mode;
 
 namespace OBS {
 
-PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules, QWidget *parent)
+PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
+					 std::vector<std::string> const &failedModules, QWidget *parent)
+
 	: QDialog(parent),
 	  modules_(modules),
 	  ui(new Ui::PluginManagerWindow)
@@ -61,6 +63,9 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 	QListWidgetItem *installed = new QListWidgetItem(QTStr("PluginManager.Section.Manage"));
 	ui->sectionList->addItem(installed);
 
+	QListWidgetItem *failed = new QListWidgetItem("Failed");
+	ui->sectionList->addItem(failed);
+
 	QListWidgetItem *updates = new QListWidgetItem(QTStr("PluginManager.Section.Updates"));
 	updates->setFlags(updates->flags() & ~Qt::ItemIsEnabled);
 	updates->setFlags(updates->flags() & ~Qt::ItemIsSelectable);
@@ -87,22 +92,35 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 	int row = 0;
 	int missingIndex = -1;
 	for (auto &metadata : modules_) {
-		std::string id = metadata.module_name;
+		std::string_view id{metadata.module_name};
 		// Check if the module is missing:
-		bool missing = !obs_get_module(id.c_str()) && !obs_get_disabled_module(id.c_str());
+		obs_module_t *moduleData = nullptr;
+
+		moduleData = obs_get_module(id.data());
+
+		if (!moduleData) {
+			moduleData = obs_get_disabled_module(id.data());
+		}
+
+		bool isMissingModule = !moduleData;
+		bool isLegacyModule = !isMissingModule && obs_is_legacy_module(moduleData);
 
 		QString name = !metadata.display_name.empty() ? metadata.display_name.c_str()
 							      : metadata.module_name.c_str();
 
-		if (missing && missingIndex == -1) {
+		if (isMissingModule && missingIndex == -1) {
 			missingIndex = row;
+		}
+
+		if (isLegacyModule) {
+			name += " LEGACY";
 		}
 
 		auto item = new QCheckBox(name);
 		item->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 		item->setChecked(metadata.enabled);
 
-		if (!metadata.enabledAtLaunch || missing) {
+		if (!metadata.enabledAtLaunch || isMissingModule) {
 			item->setProperty("class", "text-muted");
 		}
 
@@ -114,6 +132,19 @@ PluginManagerWindow::PluginManagerWindow(std::vector<ModuleInfo> const &modules,
 		});
 
 		row++;
+	}
+
+	QLabel *item = new QLabel("FAILED ITEMS");
+	item->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+	ui->modulesList->layout()->addWidget(item);
+
+	for (std::string const &moduleName : failedModules) {
+		QString name = QString::fromStdString(moduleName);
+
+		QLabel *item = new QLabel(name);
+		item->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+		item->setProperty("class", "text-muted");
+		ui->modulesList->layout()->addWidget(item);
 	}
 
 	QVBoxLayout *layout = qobject_cast<QVBoxLayout *>(ui->modulesList->layout());
@@ -173,6 +204,20 @@ bool PluginManagerWindow::isEnabledPluginsChanged()
 	}
 
 	return result;
+}
+
+void PluginManagerWindow::setPage(Page page)
+{
+	switch (page) {
+	case Page::Installed:
+		ui->sectionList->setCurrentRow(1);
+		break;
+	case Page::Failure:
+		ui->sectionList->setCurrentRow(2);
+		break;
+	default:
+		break;
+	}
 }
 
 }; // namespace OBS
