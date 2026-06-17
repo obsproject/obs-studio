@@ -34,9 +34,9 @@ const char *get_module_extension(void)
 	return ".dll";
 }
 
-static const char *module_bin[] = {"../../obs-plugins/64bit"};
+static const char *module_bin[] = {"../../core/%module%"};
 
-static const char *module_data[] = {"../../data/obs-plugins/%module%"};
+static const char *module_data[] = {"../../core/%module%/data"};
 
 static const int module_patterns_size = sizeof(module_bin) / sizeof(module_bin[0]);
 
