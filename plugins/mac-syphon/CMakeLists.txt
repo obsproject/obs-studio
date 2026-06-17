@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_SYPHON "Enable Syphon sharing support" ON)
 if(NOT ENABLE_SYPHON)
-  target_disable(mac-syphon)
   target_disable_feature(mac-syphon "Syphon sharing support")
   return()
 else()

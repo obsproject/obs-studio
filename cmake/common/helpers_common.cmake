@@ -82,6 +82,11 @@ function(target_disable_feature target feature_description)
   endif()
 endfunction()
 
+# target_enable: Adds target to list of enabled modules
+function(target_enable target)
+  set_property(GLOBAL APPEND PROPERTY OBS_MODULES_ENABLED ${target})
+endfunction()
+
 # target_disable: Adds target to list of disabled modules
 function(target_disable target)
   set_property(GLOBAL APPEND PROPERTY OBS_MODULES_DISABLED ${target})
@@ -499,8 +504,14 @@ function(add_obs_plugin target)
 
   if(found_platform AND found_architecture)
     add_subdirectory(${target})
-  elseif(_AOP_WITH_MESSAGE)
-    add_custom_target(${target} COMMENT "Dummy target for unavailable module ${target}")
+  endif()
+
+  if(TARGET ${target})
+    target_enable(${target})
+  else()
+    if(_AOP_WITH_MESSAGE)
+      add_custom_target(${target} COMMENT "Dummy target for unavailable module ${target}")
+    endif()
     target_disable(${target})
   endif()
 endfunction()
