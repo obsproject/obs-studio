@@ -51,14 +51,14 @@ const char *get_module_extension(void)
 
 static const char *module_bin[] = {
 	"../../obs-plugins/64bit",
-	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION,
-	FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION,
+	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION "/core",
+	FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION "/core",
 };
 
 static const char *module_data[] = {
 	OBS_DATA_PATH "/obs-plugins/%module%",
-	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%",
-	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%",
+	OBS_INSTALL_DATA_PATH "/obs-modules/core/%module%",
+	FLATPAK_PLUGIN_PATH "/share/obs/obs-modules/core/%module%",
 };
 
 static const int module_patterns_size = sizeof(module_bin) / sizeof(module_bin[0]);
@@ -68,7 +68,7 @@ static const struct obs_nix_hotkeys_vtable *hotkeys_vtable = NULL;
 void add_default_module_paths(void)
 {
 	char *module_bin_path = os_get_executable_path_ptr("../" OBS_PLUGIN_PATH);
-	char *module_data_path = os_get_executable_path_ptr("../" OBS_DATA_PATH "/obs-plugins/%module%");
+	char *module_data_path = os_get_executable_path_ptr("../" OBS_DATA_PATH "/obs-modules/core/%module%");
 
 	if (module_bin_path && module_data_path) {
 		char *abs_module_bin_path = os_get_abs_path_ptr(module_bin_path);
