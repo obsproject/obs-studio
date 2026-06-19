@@ -50,6 +50,7 @@ runs:
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
         print ::group::Install gersemi
+        brew trust obsproject/tools
         brew install --quiet obsproject/tools/gersemi@0.25
         print ::endgroup::
 
