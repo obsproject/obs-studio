@@ -146,6 +146,7 @@ jobs:
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
@@ -158,6 +159,7 @@ jobs:
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_macos/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.*
@@ -216,6 +218,7 @@ jobs:
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           target: x86_64
           config: ${{ needs.check-event.outputs.config }}
@@ -223,12 +226,14 @@ jobs:
 
       - name: Upload Source Tarball 🗜️
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-${{ matrix.os }}-sources-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-sources.*
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu.*
@@ -408,6 +413,7 @@ jobs:
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
@@ -415,6 +421,7 @@ jobs:
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.zip
