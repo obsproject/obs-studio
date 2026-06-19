@@ -580,8 +580,8 @@ class MetalDevice {
 
         commandBuffer.commit()
 
-        renderState.inFlightRenderTargets.forEach {
-            $0.hasPendingWrites = false
+        for renderTarget in renderState.inFlightRenderTargets {
+            renderTarget.hasPendingWrites = false
         }
 
         renderState.inFlightRenderTargets.removeAll(keepingCapacity: true)
