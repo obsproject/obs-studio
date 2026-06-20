@@ -50,7 +50,7 @@ static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs,
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "canvas", canvas);
-	if (signal_obs)
+	if (signal_obs && !canvas->context.private)
 		signal_handler_signal(obs->signals, signal_obs, &data);
 	if (signal_canvas)
 		signal_handler_signal(canvas->context.signals, signal_canvas, &data);
