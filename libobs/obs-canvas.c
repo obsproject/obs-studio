@@ -43,7 +43,7 @@ static const char *canvas_signals[] = {
 	NULL,
 };
 
-static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs, const char *signal_source)
+static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs, const char *signal_canvas)
 {
 	struct calldata data;
 	uint8_t stack[128];
@@ -52,8 +52,8 @@ static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs,
 	calldata_set_ptr(&data, "canvas", canvas);
 	if (signal_obs)
 		signal_handler_signal(obs->signals, signal_obs, &data);
-	if (signal_source)
-		signal_handler_signal(canvas->context.signals, signal_source, &data);
+	if (signal_canvas)
+		signal_handler_signal(canvas->context.signals, signal_canvas, &data);
 }
 
 static inline void canvas_dosignal_source(const char *signal, obs_canvas_t *canvas, obs_source_t *source)
