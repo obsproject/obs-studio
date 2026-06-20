@@ -835,10 +835,6 @@ static void set_process_mitigations(void)
 		aslr.DisallowStrippedImages = 1;
 		pSetProcessMitigationPolicy(ProcessASLRPolicy, &aslr, sizeof(aslr));
 
-		PROCESS_MITIGATION_EXTENSION_POINT_DISABLE_POLICY xpoints = {0};
-		xpoints.DisableExtensionPoints = 1;
-		pSetProcessMitigationPolicy(ProcessExtensionPointDisablePolicy, &xpoints, sizeof(xpoints));
-
 #ifdef _DEBUG
 		PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY hcheck = {0};
 		hcheck.RaiseExceptionOnInvalidHandleReference = 1;
