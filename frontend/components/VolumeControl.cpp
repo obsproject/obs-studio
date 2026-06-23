@@ -164,7 +164,7 @@ VolumeControl::~VolumeControl()
 	}
 }
 
-const QIcon &VolumeControl::getUnassignedIcon()
+const QIcon &VolumeControl::getWarningIcon()
 {
 	static const QIcon &icon = *new QIcon(":/res/images/unassigned.svg");
 	return icon;
@@ -773,6 +773,7 @@ void VolumeControl::processMixerState()
 	bool showAsMuted = obsMuted || obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY;
 	bool showAsMonitored = obsMonitoringType != OBS_MONITORING_TYPE_NONE;
 	bool showAsUnassigned = !obsMuted && unassigned;
+	bool showWarningIcon = showAsUnassigned || obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY;
 
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
 	setUseDisabledColors(showAsMuted || !isActive);
@@ -787,8 +788,8 @@ void VolumeControl::processMixerState()
 						 : QTStr("Basic.AudioMixer.Monitoring.Enable");
 	monitorButton->setToolTip(monitorTooltip);
 
-	if (showAsUnassigned) {
-		muteButton->setIcon(getUnassignedIcon());
+	if (showWarningIcon) {
+		muteButton->setIcon(getWarningIcon());
 	} else if (showAsMuted) {
 		muteButton->setIcon(getMutedIcon());
 	} else {
@@ -806,7 +807,7 @@ void VolumeControl::processMixerState()
 	utils->toggleClass(muteButton, "checked", showAsMuted);
 	utils->toggleClass(monitorButton, "checked", showAsMonitored);
 
-	utils->toggleClass(muteButton, "mute-unassigned", showAsUnassigned);
+	utils->toggleClass(muteButton, "mute-warning", showWarningIcon);
 
 	style()->polish(muteButton);
 	style()->polish(monitorButton);
