@@ -1667,6 +1667,7 @@
             "name": "PikiDiary (ピキ日記 LIVE)",
             "common": false,
             "protocol": "WHIP",
+            "more_info_link": "https://piki.lol/docs/live-studio",
             "stream_key_link": "https://piki.lol/live/studio",
             "servers": [
                 {
