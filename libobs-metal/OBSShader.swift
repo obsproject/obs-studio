@@ -356,11 +356,11 @@ class OBSShader {
                 let sampler: UnsafeMutablePointer<shader_sampler>? = parser.samplers.array.advanced(by: i)
 
                 if let sampler {
-                    var sampler_info = gs_sampler_info()
-                    shader_sampler_convert(sampler, &sampler_info)
+                    var samplerInfo = gs_sampler_info()
+                    shader_sampler_convert(sampler, &samplerInfo)
 
                     let borderColor: MTLSamplerBorderColor =
-                        switch sampler_info.border_color {
+                        switch samplerInfo.border_color {
                         case 0x00_00_00_FF:
                             .opaqueBlack
                         case 0xFF_FF_FF_FF:
@@ -372,14 +372,14 @@ class OBSShader {
                     let descriptor = MTLSamplerDescriptor()
 
                     descriptor.borderColor = borderColor
-                    descriptor.maxAnisotropy = Int(sampler_info.max_anisotropy)
+                    descriptor.maxAnisotropy = Int(samplerInfo.max_anisotropy)
 
                     guard
-                        let sAddressMode = sampler_info.address_u.mtlMode,
-                        let tAddressMode = sampler_info.address_v.mtlMode,
-                        let rAddressMode = sampler_info.address_w.mtlMode,
-                        let minMagFilter = sampler_info.filter.minMagFilter,
-                        let mipFilter = sampler_info.filter.mipFilter
+                        let sAddressMode = samplerInfo.address_u.mtlMode,
+                        let tAddressMode = samplerInfo.address_v.mtlMode,
+                        let rAddressMode = samplerInfo.address_w.mtlMode,
+                        let minMagFilter = samplerInfo.filter.minMagFilter,
+                        let mipFilter = samplerInfo.filter.mipFilter
                     else {
                         samplers.append(descriptor)
                         continue
