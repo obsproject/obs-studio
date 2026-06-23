@@ -1686,7 +1686,7 @@
             "supported video codecs": [
                 "h264"
             ]
-        }
+        },
         {
             "name": "Nimo TV",
             "servers": [
