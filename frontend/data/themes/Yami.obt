@@ -1674,14 +1674,14 @@ QSlider::handle:disabled {
     border-color: var(--red1);
 }
 
-.btn-mute.mute-unassigned {
+.btn-mute.mute-warning {
     color: var(--yellow1);
     background: var(--yellow6);
     qproperty-icon: url(theme:Dark/unassigned.svg);
 }
 
-.btn-mute.mute-unassigned.hover,
-.btn-mute.mute-unassigned:focus {
+.btn-mute.mute-warning.hover,
+.btn-mute.mute-warning:focus {
     border-color: var(--yellow1);
 }
 
