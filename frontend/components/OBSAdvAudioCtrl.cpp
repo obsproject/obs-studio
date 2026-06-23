@@ -155,10 +155,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 	int idx;
 	if (obs_audio_monitoring_available()) {
 		monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.None"), (int)OBS_MONITORING_TYPE_NONE);
-		monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.MonitorOnly"),
-					(int)OBS_MONITORING_TYPE_MONITOR_ONLY);
 		monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.Both"),
 					(int)OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+		monitoringType->setPlaceholderText(QTStr("Basic.AdvAudio.Monitoring.MonitorOnly"));
 		int mt = (int)obs_source_get_monitoring_type(source);
 		idx = monitoringType->findData(mt);
 		monitoringType->setCurrentIndex(idx);

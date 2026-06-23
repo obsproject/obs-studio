@@ -818,27 +818,17 @@ void VolumeControl::handleMuteButton(bool mute)
 {
 	setMuted(mute);
 
-	if (obsMonitoringType != OBS_MONITORING_TYPE_NONE) {
-		if (mute) {
-			setMonitoring(OBS_MONITORING_TYPE_MONITOR_ONLY);
-		} else {
-			setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-		}
+	if (!mute && obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY) {
+		setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
 	}
 }
 
 void VolumeControl::handleMonitorButton(bool enableMonitoring)
 {
-	if (!enableMonitoring) {
-		setMonitoring(OBS_MONITORING_TYPE_NONE);
-		return;
-	}
+	obs_monitoring_type newType = (enableMonitoring) ? OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT
+							 : OBS_MONITORING_TYPE_NONE;
 
-	if (obsMuted) {
-		setMonitoring(OBS_MONITORING_TYPE_MONITOR_ONLY);
-	} else {
-		setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-	}
+	setMonitoring(newType);
 }
 
 void VolumeControl::sliderChanged(int vol)
