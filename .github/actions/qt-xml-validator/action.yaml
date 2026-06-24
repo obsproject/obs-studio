@@ -33,7 +33,7 @@ runs:
         echo ::endgroup::
 
     - name: Register Annotations 📝
-      uses: korelstar/xmllint-problem-matcher@b105cfa34e5c5a3e27644cee1d4d0f9993aef707
+      uses: korelstar/xmllint-problem-matcher@dd2ad21bd8a2de0187cb621419537f345e7e509c # v1.3.0
 
     - name: Check for Changed Files ✅
       uses: ./.github/actions/check-changes
