@@ -44,5 +44,7 @@ target_link_libraries(
     dxguid
     libmfcapture
 )
+# FIXME: WinRT library headers trigger deprecation warning until OBS Studio uses C++20 or newer
+target_compile_definitions(win-mediafoundation-capture PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
 set_target_properties_obs(win-mediafoundation-capture PROPERTIES FOLDER plugins/win-mediafoundation/capture PREFIX "")
