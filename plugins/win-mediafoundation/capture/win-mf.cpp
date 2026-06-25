@@ -889,9 +889,9 @@ static obs_properties_t *GetMediaFoundationSourceProperties(void *obj)
 	obs_property_set_modified_callback(p, DeviceIntervalChanged);
 
 	p = obs_properties_add_list(ppts, COLOR_RANGE, TEXT_COLOR_RANGE, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_int(p, TEXT_RANGE_DEFAULT, "default");
-	obs_property_list_add_int(p, TEXT_RANGE_PARTIAL, "partial");
-	obs_property_list_add_int(p, TEXT_RANGE_FULL, "full");
+	obs_property_list_add_string(p, TEXT_RANGE_DEFAULT, "default");
+	obs_property_list_add_string(p, TEXT_RANGE_PARTIAL, "partial");
+	obs_property_list_add_string(p, TEXT_RANGE_FULL, "full");
 
 	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
 
