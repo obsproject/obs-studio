@@ -29,7 +29,7 @@ struct stinger_info {
 	float transition_b_mul;
 	bool transitioning;
 	bool transition_point_is_frame;
-	int monitoring_type;
+	bool monitoring;
 	enum fade_style fade_style;
 
 	bool track_matte_enabled;
@@ -136,8 +136,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 		obs_source_set_muted(s->matte_source, true);
 	}
 
-	s->monitoring_type = (int)obs_data_get_int(settings, "audio_monitoring");
-	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
+	s->monitoring = obs_data_get_bool(settings, "enable_monitoring");
+	obs_source_set_monitoring_enabled(s->media_source, s->monitoring);
 
 	s->fade_style = (enum fade_style)obs_data_get_int(settings, "audio_fade_style");
 
@@ -729,14 +729,7 @@ static obs_properties_t *stinger_properties(void *data)
 	dstr_free(&filter);
 
 	// audio output settings
-	obs_property_t *monitor_list = obs_properties_add_list(ppts, "audio_monitoring",
-							       obs_module_text("AudioMonitoring"), OBS_COMBO_TYPE_LIST,
-							       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.None"), OBS_MONITORING_TYPE_NONE);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.MonitorOnly"),
-				  OBS_MONITORING_TYPE_MONITOR_ONLY);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.Both"),
-				  OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+	obs_properties_add_bool(ppts, "enable_monitoring", obs_module_text("AudioMonitoring"));
 
 	// audio fade settings
 	obs_property_t *audio_fade_style = obs_properties_add_list(
