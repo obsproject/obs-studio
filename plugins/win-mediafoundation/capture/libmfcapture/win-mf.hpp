@@ -90,6 +90,7 @@ constexpr const char *COLOR_SPACE = "color_space";
 constexpr const char *COLOR_RANGE = "color_range";
 constexpr const char *DEACTIVATE_WNS = "deactivate_when_not_showing";
 constexpr const char *AUTOROTATION = "autorotation";
+constexpr const char *HW_DECODE = "hw_decode";
 } // namespace
 
 enum BlurType {
