@@ -126,7 +126,7 @@ static inline bool DecodeDeviceDStr(DStr &name, DStr &path, const char *deviceId
 	const char *pathStr;
 
 	if (!deviceId || !*deviceId) {
-		return false:
+		return false;
 	}
 
 	pathStr = strchr(deviceId, ':');
