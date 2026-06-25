@@ -2354,7 +2354,12 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data, bool is_priva
 			obs_source_set_audio_mixers(source, 0x3F);
 		}
 	}
-	obs_source_set_monitoring_type(source, (enum obs_monitoring_type)monitoring_type);
+
+	obs_data_set_default_bool(source_data, "monitoring", false);
+	if (prev_ver < MAKE_SEMANTIC_VERSION(33, 0, 0)) {
+		obs_data_set_bool(source_data, "monitoring", monitoring_type != OBS_MONITORING_TYPE_NONE);
+	}
+	obs_source_set_monitoring_enabled(source, obs_data_get_bool(source_data, "monitoring"));
 
 	obs_data_release(source->private_settings);
 	source->private_settings = obs_data_get_obj(source_data, "private_settings");
@@ -2456,7 +2461,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	uint64_t ptm_delay = obs_source_get_push_to_mute_delay(source);
 	bool push_to_talk = obs_source_push_to_talk_enabled(source);
 	uint64_t ptt_delay = obs_source_get_push_to_talk_delay(source);
-	int m_type = (int)obs_source_get_monitoring_type(source);
+	bool monitoring = obs_source_get_monitoring_enabled(source);
 	int di_mode = (int)obs_source_get_deinterlace_mode(source);
 	int di_order = (int)obs_source_get_deinterlace_field_order(source);
 	obs_canvas_t *canvas = obs_source_get_canvas(source);
@@ -2492,7 +2497,9 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_obj(source_data, "hotkeys", hotkey_data);
 	obs_data_set_int(source_data, "deinterlace_mode", di_mode);
 	obs_data_set_int(source_data, "deinterlace_field_order", di_order);
-	obs_data_set_int(source_data, "monitoring_type", m_type);
+	obs_data_set_int(source_data, "monitoring_type",
+			 monitoring ? (int)OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT : (int)OBS_MONITORING_TYPE_NONE);
+	obs_data_set_int(source_data, "monitoring_enabled", monitoring);
 
 	if (canvas) {
 		obs_data_set_string(source_data, "canvas_uuid", obs_canvas_get_uuid(canvas));
