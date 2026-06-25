@@ -991,6 +991,7 @@ struct obs_source {
 	/* audio monitoring */
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
+	bool monitoring_enabled;
 
 	/* media action queue */
 	DARRAY(struct media_action) media_actions;
