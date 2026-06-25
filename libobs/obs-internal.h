@@ -537,6 +537,8 @@ struct obs_core_hotkeys {
 	char *push_to_talk;
 	char *sceneitem_show;
 	char *sceneitem_hide;
+	char *monitor_on;
+	char *monitor_off;
 };
 
 typedef DARRAY(struct obs_source_info) obs_source_info_array_t;
@@ -992,6 +994,7 @@ struct obs_source {
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
 	bool monitoring_enabled;
+	obs_hotkey_pair_id monitor_on_off_key;
 
 	/* media action queue */
 	DARRAY(struct media_action) media_actions;
