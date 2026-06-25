@@ -270,6 +270,11 @@ bool MediaFoundationSourceInput::UpdateVideoConfig(obs_data_t *settings)
 		fps = 10000000.0 / double(videoConfig.frameInterval);
 	}
 
+	BPtr<char> name_utf8;
+	BPtr<char> path_utf8;
+	os_wcs_to_utf8_ptr(videoConfig.name.c_str(), videoConfig.name.size(), &name_utf8);
+	os_wcs_to_utf8_ptr(videoConfig.path.c_str(), videoConfig.path.size(), &path_utf8);
+
 	SetupBuffering(settings);
 
 	blog(LOG_INFO, "---------------------------------");
@@ -283,7 +288,7 @@ bool MediaFoundationSourceInput::UpdateVideoConfig(obs_data_t *settings)
 	     "\tformat: %s\n"
 	     "\tbuffering: %s\n"
 	     "\thardware decode: %s",
-	     obs_source_get_name(source), (const char *)videoConfig.name, (const char *)videoConfig.path,
+	     obs_source_get_name(source), (const char *)name_utf8, (const char *)path_utf8,
 	     videoConfig.cx, videoConfig.cyAbs, (int)videoConfig.cyFlip, fps, videoConfig.frameInterval,
 	     formatName->array, obs_source_async_unbuffered(source) ? "disabled" : "enabled",
 	     hw_decode ? "enabled" : "disabled");
