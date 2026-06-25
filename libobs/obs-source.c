@@ -349,10 +349,40 @@ static void obs_source_hotkey_push_to_talk(void *data, obs_hotkey_id id, obs_hot
 	source->user_push_to_talk_pressed = pressed;
 }
 
+static bool obs_source_hotkey_monitor_on(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || obs_source_get_monitoring_enabled(source))
+		return false;
+
+	obs_source_set_monitoring_enabled(source, true);
+	return true;
+}
+
+static bool obs_source_hotkey_monitor_off(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || !obs_source_get_monitoring_enabled(source))
+		return false;
+
+	obs_source_set_monitoring_enabled(source, false);
+	return true;
+}
+
 static void obs_source_init_audio_hotkeys(struct obs_source *source)
 {
 	if (!(source->info.output_flags & OBS_SOURCE_AUDIO) || source->info.type != OBS_SOURCE_TYPE_INPUT) {
-		source->mute_unmute_key = OBS_INVALID_HOTKEY_ID;
+		source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
+		source->monitor_on_off_key = OBS_INVALID_HOTKEY_PAIR_ID;
+		source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 		source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 		return;
 	}
@@ -361,6 +391,10 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 								  "libobs.unmute", obs->hotkeys.unmute,
 								  obs_source_hotkey_mute, obs_source_hotkey_unmute,
 								  source, source);
+
+	source->monitor_on_off_key = obs_hotkey_pair_register_source(
+		source, "libobs.monitor-on", obs->hotkeys.monitor_on, "libobs.monitor-off", obs->hotkeys.monitor_off,
+		obs_source_hotkey_monitor_on, obs_source_hotkey_monitor_off, source, source);
 
 	source->push_to_mute_key = obs_hotkey_register_source(source, "libobs.push-to-mute", obs->hotkeys.push_to_mute,
 							      obs_source_hotkey_push_to_mute, source);
@@ -459,6 +493,7 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	}
 
 	source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
+	source->monitor_on_off_key = OBS_INVALID_HOTKEY_PAIR_ID;
 	source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 	source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 	source->last_obs_ver = last_obs_ver;
@@ -785,6 +820,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	obs_hotkey_unregister(source->push_to_talk_key);
 	obs_hotkey_unregister(source->push_to_mute_key);
 	obs_hotkey_pair_unregister(source->mute_unmute_key);
+	obs_hotkey_pair_unregister(source->monitor_on_off_key);
 
 	for (i = 0; i < source->async_cache.num; i++)
 		obs_source_frame_decref(source->async_cache.array[i].frame);
@@ -5556,7 +5592,6 @@ void obs_source_remove_audio_capture_callback(obs_source_t *source, obs_source_a
 	da_erase_item(source->audio_cb_list, &info);
 	pthread_mutex_unlock(&source->audio_cb_mutex);
 }
-
 
 void obs_source_set_monitoring_enabled(obs_source_t *source, bool enabled)
 {

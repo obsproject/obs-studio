@@ -1374,7 +1374,8 @@ void obs_hotkey_update_atomic(obs_hotkey_atomic_update_func func, void *data)
 }
 
 void obs_hotkeys_set_audio_hotkeys_translations(const char *mute, const char *unmute, const char *push_to_mute,
-						const char *push_to_talk)
+						const char *push_to_talk, const char *monitor_on,
+						const char *monitor_off)
 {
 #define SET_T(n)               \
 	bfree(obs->hotkeys.n); \
@@ -1383,6 +1384,8 @@ void obs_hotkeys_set_audio_hotkeys_translations(const char *mute, const char *un
 	SET_T(unmute);
 	SET_T(push_to_mute);
 	SET_T(push_to_talk);
+	SET_T(monitor_on);
+	SET_T(monitor_off);
 #undef SET_T
 }
 
