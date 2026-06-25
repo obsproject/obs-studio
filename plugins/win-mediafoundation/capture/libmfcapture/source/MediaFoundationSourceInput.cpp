@@ -47,6 +47,8 @@ SOFTWARE
 #include "DeviceEnumerator.h"
 #include "MediaFoundationSourceInput.h"
 
+#include <cinttypes>
+
 void MediaFoundationSourceInput::MediaFoundationSourceLoop()
 {
 	while (true) {
