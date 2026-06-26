@@ -1210,11 +1210,24 @@ General Source Functions
 .. function:: void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type)
               enum obs_monitoring_type obs_source_get_monitoring_type(obs_source_t *source)
 
+   .. deprecated:: 33.0
+   Use :c:func:`obs_source_set_monitoring_enabled` and :c:func:`obs_source_get_monitoring_enabled` instead.
+
    Sets/gets the desktop audio monitoring type.
 
    :param order: | OBS_MONITORING_TYPE_NONE - Do not monitor
                  | OBS_MONITORING_TYPE_MONITOR_ONLY - Send to monitor device, no outputs
                  | OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT - Send to monitor device and outputs
+
+---------------------
+
+.. function:: void obs_source_set_monitoring_enabled(obs_source_t *source, bool enable)
+              bool obs_source_get_monitoring_enabled(const obs_source_t *source)
+              
+
+   Sets/gets the audio monitoring enabled state for the source.
+
+   .. versionadded:: 33.0
 
 ---------------------
 
