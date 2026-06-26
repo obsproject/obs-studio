@@ -413,8 +413,13 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
+	/* Use the explicit byte count rather than strlen(tmp_read): a source
+	 * file may contain embedded NULs (e.g. fields from `usb-devices`-style
+	 * reports), which previously caused only the first line to render.
+	 * os_utf8_to_wcs() expects an explicit length when one is available
+	 * and treats embedded NULs as regular symbols (see libobs/util/utf8.c). */
+	srcdata->text = bzalloc((filesize + 1) * sizeof(wchar_t));
+	os_utf8_to_wcs(tmp_read, filesize, srcdata->text, (filesize + 1));
 
 	remove_cr(srcdata->text);
 	bfree(tmp_read);
@@ -495,8 +500,11 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
+	/* Use the explicit byte count rather than strlen(tmp_read) so that
+	 * embedded NULs in the source file (issue #7595) do not cause the
+	 * tail of a "scroll-from-end" log feed to be discarded. */
+	srcdata->text = bzalloc((filesize - cur_pos + 1) * sizeof(wchar_t));
+	os_utf8_to_wcs(tmp_read, filesize - cur_pos, srcdata->text, (filesize - cur_pos + 1));
 
 	remove_cr(srcdata->text);
 	bfree(tmp_read);
