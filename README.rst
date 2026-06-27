@@ -39,6 +39,19 @@ Quick Links
 
 - Bug Tracker: https://github.com/obsproject/obs-studio/issues
 
+Arch Linux
+----------
+
+OBS Studio is available in the official Arch Linux repositories.
+
+Install it using:
+
+sudo pacman -S obs-studio ffmpeg x264
+
+For additional plugins and full functionality, ensure your system is up to date:
+
+sudo pacman -Syu
+
 Contributing
 ------------
 
