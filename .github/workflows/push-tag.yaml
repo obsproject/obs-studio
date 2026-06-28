@@ -1,0 +1,138 @@
+name: Push Tag
+run-name: Push Tag - ${{ github.ref_name }}
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    tags:
+      - '*'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read                # Necessary for repository checkouts.
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+jobs:
+  build-project:
+    name: Build
+    uses: ./.github/workflows/build-project.yaml
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    with:
+      environment: build
+
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-slim
+    if: fromJSON(vars.ENABLE_DOCUMENTATION_UPDATE || 'false')
+    needs: build-project
+    outputs:
+      artifact-name: ${{ steps.generate.outputs.artifact-name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Generate Documentation
+        id: generate
+        uses: ./.github/actions/generate-docs
+        with:
+          disable-link-extensions: true
+
+  deploy-documentation:
+    name: Deploy Documentation To Cloudflare
+    runs-on: ubuntu-slim
+    if: fromJSON(vars.ENABLE_DOCUMENTATION_UPDATE || 'false')
+    needs: update-documentation
+    environment:
+      name: cf-pages-deploy
+      deployment: false
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.update-documentation.outputs.artifact-name }}
+          path: docs
+
+      - name: Set Up Redirects
+        env:
+          CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+        run: |
+          # Set Up Redirects
+          if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+          {
+            echo "/previous/27.2 https://obsproject.com/docs/27.2 302"
+            echo "/previous/:major.:minor https://:major-:minor.${CF_PAGES_PROJECT}.pages.dev 302"
+          } >> "${GITHUB_WORKSPACE}/docs/_redirects"
+
+      - name: Publish To Live Page
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          workingDirectory: ${{ format('{0}/docs', github.workspace) }}
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: >-
+            ${{ format(
+              'pages deploy {0}/docs --project-name={1} --commit-hash={2}',
+              github.workspace, vars.CF_PAGES_PROJECT, github.sha
+            ) }}
+
+  code-sign-builds:
+    name: Code Sign Builds
+    needs: build-project
+    if: github.repository_owner == 'obsproject'
+    # If 3rd party vault access requires pinned workflow, replace with:
+    # uses: <owner>/<repo>/obs-studio/.github/workflows/code-sign-project.yaml@<SHA>
+    uses: ./.github/workflows/code-sign-project.yaml
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    permissions:
+      contents: read            # Necessary to keep workflow base permissions.
+      id-token: write           # Necessary to set up Windows code signing credentials.
+      attestations: write       # Necessary to generate an attestation for the code signed build.
+    with:
+      environment: code-signing
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-slim
+    needs: [build-project, code-sign-builds]
+    permissions:
+      contents: write            # Necessary to create a release.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
+        with:
+          ref: ${{ github.ref_name }}
+          fail-on-mismatch: true
+
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
+
+      - name: Prepare Release Assets
+        id: prepare
+        uses: ./.github/actions/publish-obs/prepare-release-assets
+        with:
+          artifact-name: ${{ format('obs-studio-*-{0}*', steps.short-sha.outputs.sha) }}
+          version: ${{ steps.semver.outputs.version }}
+          download-artifacts: true
+
+      - name: Create Release
+        uses: ./.github/actions/publish-obs/create-github-release
+        with:
+          draft: true
+          is-prerelease: ${{ fromJSON(steps.semver.outputs.is-pre-release) }}
+          tag: ${{ steps.semver.outputs.version }}
+          name: ${{ format('OBS Studio {0}', steps.semver.outputs.version) }}
+          release-note-file: ${{ steps.prepare.outputs.checksum-file }}
+          files: ${{ steps.prepare.outputs.release-files }}
