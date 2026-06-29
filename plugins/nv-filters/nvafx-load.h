@@ -310,7 +310,6 @@ static inline bool load_lib()
 {
 	char sdkPath[MAX_PATH];
 	char effectsPath[MAX_PATH];
-	char cudaPath[MAX_PATH];
 
 	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
 		return false;
@@ -320,14 +319,10 @@ static inline bool load_lib()
 		return false;
 	}
 
-	if (_snprintf_s(cudaPath, _countof(cudaPath), _TRUNCATE, "%s\\nvcuda.dll", sdkPath) == -1) {
-		return false;
-	}
-
 	nv_audiofx =
 		LoadLibraryExA(effectsPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
-	nv_cuda = LoadLibraryExA(cudaPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	nv_cuda = LoadLibraryExA("nvcuda.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
 
 	return !!nv_audiofx && !!nv_cuda;
 }
