@@ -21,6 +21,7 @@
 #include "ColorSelect.hpp"
 #include "OBSProjector.hpp"
 
+#include <components/MenuRadioButton.hpp>
 #include <components/VolumeControl.hpp>
 #include <dialogs/NameDialog.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
@@ -259,11 +260,8 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 	}
 }
 
-void OBSBasic::SetDeinterlacingMode()
+void OBSBasic::setDeinterlacingMode(OBSSceneItem sceneItem, obs_deinterlace_mode mode)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_deinterlace_mode mode = (obs_deinterlace_mode)action->property("mode").toInt();
-	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
 	obs_deinterlace_mode oldMode = obs_source_get_deinterlace_mode(source);
@@ -288,11 +286,8 @@ void OBSBasic::SetDeinterlacingMode()
 	}
 }
 
-void OBSBasic::SetDeinterlacingOrder()
+void OBSBasic::setDeinterlacingOrder(OBSSceneItem sceneItem, obs_deinterlace_field_order order)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_deinterlace_field_order order = (obs_deinterlace_field_order)action->property("order").toInt();
-	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
 	obs_deinterlace_field_order oldOrder = obs_source_get_deinterlace_field_order(source);
@@ -317,52 +312,69 @@ void OBSBasic::SetDeinterlacingOrder()
 	}
 }
 
-QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
+QMenu *OBSBasic::createDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 {
-	obs_deinterlace_mode deinterlaceMode = obs_source_get_deinterlace_mode(source);
-	obs_deinterlace_field_order deinterlaceOrder = obs_source_get_deinterlace_field_order(source);
-	QAction *action;
+	obs_deinterlace_mode currentDeinterlaceMode = obs_source_get_deinterlace_mode(source);
+	obs_deinterlace_field_order currentDeinterlaceOrder = obs_source_get_deinterlace_field_order(source);
 
-#define ADD_MODE(name, mode)                                                             \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetDeinterlacingMode); \
-	action->setProperty("mode", (int)mode);                                          \
-	action->setCheckable(true);                                                      \
-	action->setChecked(deinterlaceMode == mode);
+	QButtonGroup *modeGroup = new QButtonGroup(menu);
+	auto createModeEntry = [this, menu, modeGroup, currentDeinterlaceMode](const char *name,
+									       obs_deinterlace_mode mode) {
+		MenuRadioButton *widget = new MenuRadioButton(QTStr(name), menu);
+		modeGroup->addButton(widget);
 
-	ADD_MODE("Disable", OBS_DEINTERLACE_MODE_DISABLE);
-	ADD_MODE("Deinterlacing.Discard", OBS_DEINTERLACE_MODE_DISCARD);
-	ADD_MODE("Deinterlacing.Retro", OBS_DEINTERLACE_MODE_RETRO);
-	ADD_MODE("Deinterlacing.Blend", OBS_DEINTERLACE_MODE_BLEND);
-	ADD_MODE("Deinterlacing.Blend2x", OBS_DEINTERLACE_MODE_BLEND_2X);
-	ADD_MODE("Deinterlacing.Linear", OBS_DEINTERLACE_MODE_LINEAR);
-	ADD_MODE("Deinterlacing.Linear2x", OBS_DEINTERLACE_MODE_LINEAR_2X);
-	ADD_MODE("Deinterlacing.Yadif", OBS_DEINTERLACE_MODE_YADIF);
-	ADD_MODE("Deinterlacing.Yadif2x", OBS_DEINTERLACE_MODE_YADIF_2X);
-#undef ADD_MODE
+		QWidgetAction *action = new QWidgetAction(menu);
+		widget->setChecked(currentDeinterlaceMode == mode);
+		action->setDefaultWidget(widget);
+		menu->addAction(action);
+
+		connect(widget, &QRadioButton::toggled, this, [this, mode, widget](bool checked) {
+			if (checked) {
+				setDeinterlacingMode(GetCurrentSceneItem(), mode);
+			}
+		});
+	};
+
+	createModeEntry("Disable", OBS_DEINTERLACE_MODE_DISABLE);
+	createModeEntry("Deinterlacing.Discard", OBS_DEINTERLACE_MODE_DISCARD);
+	createModeEntry("Deinterlacing.Retro", OBS_DEINTERLACE_MODE_RETRO);
+	createModeEntry("Deinterlacing.Blend", OBS_DEINTERLACE_MODE_BLEND);
+	createModeEntry("Deinterlacing.Blend2x", OBS_DEINTERLACE_MODE_BLEND_2X);
+	createModeEntry("Deinterlacing.Linear", OBS_DEINTERLACE_MODE_LINEAR);
+	createModeEntry("Deinterlacing.Linear2x", OBS_DEINTERLACE_MODE_LINEAR_2X);
+	createModeEntry("Deinterlacing.Yadif", OBS_DEINTERLACE_MODE_YADIF);
+	createModeEntry("Deinterlacing.Yadif2x", OBS_DEINTERLACE_MODE_YADIF_2X);
 
 	menu->addSeparator();
 
-#define ADD_ORDER(name, order)                                                                          \
-	action = menu->addAction(QTStr("Deinterlacing." name), this, &OBSBasic::SetDeinterlacingOrder); \
-	action->setProperty("order", (int)order);                                                       \
-	action->setCheckable(true);                                                                     \
-	action->setChecked(deinterlaceOrder == order);
+	QButtonGroup *orderGroup = new QButtonGroup(menu);
+	auto createOrderEntry = [this, menu, orderGroup, currentDeinterlaceOrder](const char *name,
+										  obs_deinterlace_field_order order) {
+		MenuRadioButton *widget = new MenuRadioButton(QTStr(name), menu);
+		orderGroup->addButton(widget);
 
-	ADD_ORDER("TopFieldFirst", OBS_DEINTERLACE_FIELD_ORDER_TOP);
-	ADD_ORDER("BottomFieldFirst", OBS_DEINTERLACE_FIELD_ORDER_BOTTOM);
-#undef ADD_ORDER
+		QWidgetAction *action = new QWidgetAction(menu);
+		widget->setChecked(currentDeinterlaceOrder == order);
+		action->setDefaultWidget(widget);
+		menu->addAction(action);
+
+		connect(widget, &QRadioButton::toggled, this, [this, order, widget](bool checked) {
+			if (checked) {
+				setDeinterlacingOrder(GetCurrentSceneItem(), order);
+			}
+		});
+	};
+
+	createOrderEntry("Deinterlacing.TopFieldFirst", OBS_DEINTERLACE_FIELD_ORDER_TOP);
+	createOrderEntry("Deinterlacing.BottomFieldFirst", OBS_DEINTERLACE_FIELD_ORDER_BOTTOM);
 
 	return menu;
 }
 
-void OBSBasic::SetScaleFilter()
+void OBSBasic::setScaleFilter(OBSSceneItem sceneItem, obs_scale_type type)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_scale_type mode = (obs_scale_type)action->property("mode").toInt();
-	OBSSceneItem sceneItem = GetCurrentSceneItem();
-
-	obs_scale_type oldMode = obs_sceneitem_get_scale_filter(sceneItem);
-	obs_sceneitem_set_scale_filter(sceneItem, mode);
+	obs_scale_type oldType = obs_sceneitem_get_scale_filter(sceneItem);
+	obs_sceneitem_set_scale_filter(sceneItem, type);
 
 	auto undo_redo = [](const std::string &uuid, int64_t id, obs_scale_type val) {
 		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
@@ -382,41 +394,44 @@ void OBSBasic::SetScaleFilter()
 	if (uuid && *uuid) {
 		QString actionString = QTStr("Undo.ScaleFiltering").arg(obs_source_get_name(source), name);
 
-		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMode);
-		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, mode);
+		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldType);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, type);
 
 		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
 	}
 }
 
-QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
+QMenu *OBSBasic::createScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 {
-	obs_scale_type scaleFilter = obs_sceneitem_get_scale_filter(item);
-	QAction *action;
+	obs_scale_type currentScaleFilter = obs_sceneitem_get_scale_filter(item);
 
-#define ADD_MODE(name, mode)                                                       \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetScaleFilter); \
-	action->setProperty("mode", (int)mode);                                    \
-	action->setCheckable(true);                                                \
-	action->setChecked(scaleFilter == mode);
+	auto createMenuEntry = [this, menu, currentScaleFilter](const char *name, obs_scale_type type) {
+		MenuRadioButton *widget = new MenuRadioButton(QTStr(name), menu);
 
-	ADD_MODE("Disable", OBS_SCALE_DISABLE);
-	ADD_MODE("ScaleFiltering.Point", OBS_SCALE_POINT);
-	ADD_MODE("ScaleFiltering.Bilinear", OBS_SCALE_BILINEAR);
-	ADD_MODE("ScaleFiltering.Bicubic", OBS_SCALE_BICUBIC);
-	ADD_MODE("ScaleFiltering.Lanczos", OBS_SCALE_LANCZOS);
-	ADD_MODE("ScaleFiltering.Area", OBS_SCALE_AREA);
-#undef ADD_MODE
+		QWidgetAction *action = new QWidgetAction(menu);
+		widget->setChecked(currentScaleFilter == type);
+		action->setDefaultWidget(widget);
+		menu->addAction(action);
+
+		connect(widget, &QRadioButton::toggled, this, [this, type, widget](bool checked) {
+			if (checked) {
+				setScaleFilter(GetCurrentSceneItem(), type);
+			}
+		});
+	};
+
+	createMenuEntry("Disable", OBS_SCALE_DISABLE);
+	createMenuEntry("ScaleFiltering.Point", OBS_SCALE_POINT);
+	createMenuEntry("ScaleFiltering.Bilinear", OBS_SCALE_BILINEAR);
+	createMenuEntry("ScaleFiltering.Bicubic", OBS_SCALE_BICUBIC);
+	createMenuEntry("ScaleFiltering.Lanczos", OBS_SCALE_LANCZOS);
+	createMenuEntry("ScaleFiltering.Area", OBS_SCALE_AREA);
 
 	return menu;
 }
 
-void OBSBasic::SetBlendingMethod()
+void OBSBasic::setBlendingMethod(OBSSceneItem sceneItem, obs_blending_method method)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_blending_method method = (obs_blending_method)action->property("method").toInt();
-	OBSSceneItem sceneItem = GetCurrentSceneItem();
-
 	obs_blending_method oldMethod = obs_sceneitem_get_blending_method(sceneItem);
 	obs_sceneitem_set_blending_method(sceneItem, method);
 
@@ -445,32 +460,35 @@ void OBSBasic::SetBlendingMethod()
 	}
 }
 
-QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
+QMenu *OBSBasic::createBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
 {
-	obs_blending_method blendingMethod = obs_sceneitem_get_blending_method(item);
-	QAction *action;
+	obs_blending_method currentBlendingMethod = obs_sceneitem_get_blending_method(item);
 
-#define ADD_MODE(name, method)                                                        \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetBlendingMethod); \
-	action->setProperty("method", (int)method);                                   \
-	action->setCheckable(true);                                                   \
-	action->setChecked(blendingMethod == method);
+	auto createMenuEntry = [this, menu, currentBlendingMethod](const char *name, obs_blending_method method) {
+		MenuRadioButton *widget = new MenuRadioButton(QTStr(name), menu);
 
-	ADD_MODE("BlendingMethod.Default", OBS_BLEND_METHOD_DEFAULT);
-	ADD_MODE("BlendingMethod.SrgbOff", OBS_BLEND_METHOD_SRGB_OFF);
-#undef ADD_MODE
+		QWidgetAction *action = new QWidgetAction(menu);
+		widget->setChecked(currentBlendingMethod == method);
+		action->setDefaultWidget(widget);
+		menu->addAction(action);
+
+		connect(widget, &QRadioButton::toggled, this, [this, method, widget](bool checked) {
+			if (checked) {
+				setBlendingMethod(GetCurrentSceneItem(), method);
+			}
+		});
+	};
+
+	createMenuEntry("BlendingMethod.Default", OBS_BLEND_METHOD_DEFAULT);
+	createMenuEntry("BlendingMethod.SrgbOff", OBS_BLEND_METHOD_SRGB_OFF);
 
 	return menu;
 }
 
-void OBSBasic::SetBlendingMode()
+void OBSBasic::setBlendingMode(OBSSceneItem sceneItem, obs_blending_type type)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_blending_type mode = (obs_blending_type)action->property("mode").toInt();
-	OBSSceneItem sceneItem = GetCurrentSceneItem();
-
 	obs_blending_type oldMode = obs_sceneitem_get_blending_mode(sceneItem);
-	obs_sceneitem_set_blending_mode(sceneItem, mode);
+	obs_sceneitem_set_blending_mode(sceneItem, type);
 
 	auto undo_redo = [](const std::string &uuid, int64_t id, obs_blending_type val) {
 		OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
@@ -491,31 +509,38 @@ void OBSBasic::SetBlendingMode()
 		QString actionString = QTStr("Undo.BlendingMode").arg(obs_source_get_name(source), name);
 
 		auto undoFunction = std::bind(undo_redo, std::placeholders::_1, id, oldMode);
-		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, mode);
+		auto redoFunction = std::bind(undo_redo, std::placeholders::_1, id, type);
 
 		undo_s.add_action(actionString, undoFunction, redoFunction, uuid, uuid);
 	}
 }
 
-QMenu *OBSBasic::AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item)
+QMenu *OBSBasic::createBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item)
 {
-	obs_blending_type blendingMode = obs_sceneitem_get_blending_mode(item);
-	QAction *action;
+	obs_blending_type currentBlendingMode = obs_sceneitem_get_blending_mode(item);
 
-#define ADD_MODE(name, mode)                                                        \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetBlendingMode); \
-	action->setProperty("mode", (int)mode);                                     \
-	action->setCheckable(true);                                                 \
-	action->setChecked(blendingMode == mode);
+	auto createMenuEntry = [this, menu, currentBlendingMode](const char *name, obs_blending_type type) {
+		MenuRadioButton *widget = new MenuRadioButton(QTStr(name), menu);
 
-	ADD_MODE("BlendingMode.Normal", OBS_BLEND_NORMAL);
-	ADD_MODE("BlendingMode.Additive", OBS_BLEND_ADDITIVE);
-	ADD_MODE("BlendingMode.Subtract", OBS_BLEND_SUBTRACT);
-	ADD_MODE("BlendingMode.Screen", OBS_BLEND_SCREEN);
-	ADD_MODE("BlendingMode.Multiply", OBS_BLEND_MULTIPLY);
-	ADD_MODE("BlendingMode.Lighten", OBS_BLEND_LIGHTEN);
-	ADD_MODE("BlendingMode.Darken", OBS_BLEND_DARKEN);
-#undef ADD_MODE
+		QWidgetAction *action = new QWidgetAction(menu);
+		widget->setChecked(currentBlendingMode == type);
+		action->setDefaultWidget(widget);
+		menu->addAction(action);
+
+		connect(widget, &QRadioButton::toggled, this, [this, type, widget](bool checked) {
+			if (checked) {
+				setBlendingMode(GetCurrentSceneItem(), type);
+			}
+		});
+	};
+
+	createMenuEntry("BlendingMode.Normal", OBS_BLEND_NORMAL);
+	createMenuEntry("BlendingMode.Additive", OBS_BLEND_ADDITIVE);
+	createMenuEntry("BlendingMode.Subtract", OBS_BLEND_SUBTRACT);
+	createMenuEntry("BlendingMode.Screen", OBS_BLEND_SCREEN);
+	createMenuEntry("BlendingMode.Multiply", OBS_BLEND_MULTIPLY);
+	createMenuEntry("BlendingMode.Lighten", OBS_BLEND_LIGHTEN);
+	createMenuEntry("BlendingMode.Darken", OBS_BLEND_DARKEN);
 
 	return menu;
 }
@@ -688,14 +713,14 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		// Scene item menu entries
 		if (hasVideo && source) {
 			scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
-			popup.addMenu(AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
+			popup.addMenu(createScaleFilteringMenu(scaleFilteringMenu, sceneItem));
 			blendingModeMenu = new QMenu(QTStr("BlendingMode"));
-			popup.addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
+			popup.addMenu(createBlendingModeMenu(blendingModeMenu, sceneItem));
 			blendingMethodMenu = new QMenu(QTStr("BlendingMethod"));
-			popup.addMenu(AddBlendingMethodMenu(blendingMethodMenu, sceneItem));
+			popup.addMenu(createBlendingMethodMenu(blendingMethodMenu, sceneItem));
 			if (isAsyncVideo) {
 				deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
-				popup.addMenu(AddDeinterlacingMenu(deinterlaceMenu, source));
+				popup.addMenu(createDeinterlacingMenu(deinterlaceMenu, source));
 			}
 
 			popup.addMenu(CreateVisibilityTransitionMenu(true));

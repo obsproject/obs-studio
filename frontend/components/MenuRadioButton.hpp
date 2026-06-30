@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,18 +17,18 @@
 
 #pragma once
 
-#include <QCheckBox>
+#include <QRadioButton>
 #include <QPointer>
 
 class QStyleOptionButton;
 class QStylePainter;
 class QMouseEvent;
 
-class MenuCheckBox : public QCheckBox {
+class MenuRadioButton : public QRadioButton {
 	Q_OBJECT
 
 public:
-	explicit MenuCheckBox(const QString &text, QWidget *parent = nullptr);
+	explicit MenuRadioButton(const QString &text, QWidget *parent = nullptr);
 
 protected:
 	void focusInEvent(QFocusEvent *event) override;
@@ -40,9 +40,9 @@ protected:
 	void leaveEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *event) override;
 
-private:
-	bool mousePressInside = false;
-
 	bool isHovered = false;
 	void setHovered(bool hovered);
+
+private:
+	bool mousePressInside = false;
 };
