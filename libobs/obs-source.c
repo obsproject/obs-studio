@@ -96,6 +96,7 @@ static const char *source_signals[] = {
 	"void audio_balance(ptr source, in out float balance)",
 	"void audio_mixers(ptr source, in out int mixers)",
 	"void audio_monitoring(ptr source, int type)",
+	"void monitor(ptr source, bool monitor)",
 	"void audio_activate(ptr source)",
 	"void audio_deactivate(ptr source)",
 	"void filter_add(ptr source, ptr filter)",
@@ -348,10 +349,40 @@ static void obs_source_hotkey_push_to_talk(void *data, obs_hotkey_id id, obs_hot
 	source->user_push_to_talk_pressed = pressed;
 }
 
+static bool obs_source_hotkey_monitor_on(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || obs_source_get_monitoring_enabled(source))
+		return false;
+
+	obs_source_set_monitoring_enabled(source, true);
+	return true;
+}
+
+static bool obs_source_hotkey_monitor_off(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || !obs_source_get_monitoring_enabled(source))
+		return false;
+
+	obs_source_set_monitoring_enabled(source, false);
+	return true;
+}
+
 static void obs_source_init_audio_hotkeys(struct obs_source *source)
 {
 	if (!(source->info.output_flags & OBS_SOURCE_AUDIO) || source->info.type != OBS_SOURCE_TYPE_INPUT) {
-		source->mute_unmute_key = OBS_INVALID_HOTKEY_ID;
+		source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
+		source->monitor_on_off_key = OBS_INVALID_HOTKEY_PAIR_ID;
+		source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 		source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 		return;
 	}
@@ -360,6 +391,10 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 								  "libobs.unmute", obs->hotkeys.unmute,
 								  obs_source_hotkey_mute, obs_source_hotkey_unmute,
 								  source, source);
+
+	source->monitor_on_off_key = obs_hotkey_pair_register_source(
+		source, "libobs.monitor-on", obs->hotkeys.monitor_on, "libobs.monitor-off", obs->hotkeys.monitor_off,
+		obs_source_hotkey_monitor_on, obs_source_hotkey_monitor_off, source, source);
 
 	source->push_to_mute_key = obs_hotkey_register_source(source, "libobs.push-to-mute", obs->hotkeys.push_to_mute,
 							      obs_source_hotkey_push_to_mute, source);
@@ -458,6 +493,7 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	}
 
 	source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
+	source->monitor_on_off_key = OBS_INVALID_HOTKEY_PAIR_ID;
 	source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 	source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 	source->last_obs_ver = last_obs_ver;
@@ -784,6 +820,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	obs_hotkey_unregister(source->push_to_talk_key);
 	obs_hotkey_unregister(source->push_to_mute_key);
 	obs_hotkey_pair_unregister(source->mute_unmute_key);
+	obs_hotkey_pair_unregister(source->monitor_on_off_key);
 
 	for (i = 0; i < source->async_cache.num; i++)
 		obs_source_frame_decref(source->async_cache.array[i].frame);
@@ -5556,28 +5593,38 @@ void obs_source_remove_audio_capture_callback(obs_source_t *source, obs_source_a
 	pthread_mutex_unlock(&source->audio_cb_mutex);
 }
 
-void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type)
+void obs_source_set_monitoring_enabled(obs_source_t *source, bool enabled)
 {
 	struct calldata data;
+	struct calldata compat_data;
 	uint8_t stack[128];
+	enum obs_monitoring_type compat_type;
 	bool was_on;
-	bool now_on;
 
-	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
+	if (!obs_source_valid(source, "obs_source_set_monitoring_enabled"))
 		return;
-	if (source->monitoring_type == type)
+
+	if (source->monitoring_enabled == enabled)
 		return;
+
+	compat_type = enabled ? OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT : OBS_MONITORING_TYPE_NONE;
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "source", source);
-	calldata_set_int(&data, "type", type);
+	calldata_set_bool(&data, "monitor", enabled);
 
-	signal_handler_signal(source->context.signals, "audio_monitoring", &data);
+	calldata_init_fixed(&compat_data, stack, sizeof(stack));
+	calldata_set_ptr(&compat_data, "source", source);
+	calldata_set_int(&compat_data, "type", compat_type);
 
-	was_on = source->monitoring_type != OBS_MONITORING_TYPE_NONE;
-	now_on = type != OBS_MONITORING_TYPE_NONE;
+	signal_handler_signal(source->context.signals, "monitor", &data);
+	signal_handler_signal(source->context.signals, "audio_monitoring", &compat_data);
 
-	if (was_on != now_on) {
+	was_on = source->monitoring_enabled;
+	source->monitoring_enabled = enabled;
+	source->monitoring_type = compat_type;
+
+	if (was_on != enabled) {
 		if (!was_on) {
 			source->monitor = audio_monitor_create(source);
 		} else {
@@ -5585,12 +5632,29 @@ void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_ty
 			source->monitor = NULL;
 		}
 	}
+}
 
-	source->monitoring_type = type;
+bool obs_source_get_monitoring_enabled(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_monitoring_enabled") ? source->monitoring_enabled : false;
+}
+
+void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type)
+{
+	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
+		return;
+
+	blog(LOG_WARNING,
+	     "obs_source_set_monitoring_type is deprecated. Use obs_source_set_monitoring_enabled instead.");
+
+	obs_source_set_monitoring_enabled(source, type != OBS_MONITORING_TYPE_NONE);
 }
 
 enum obs_monitoring_type obs_source_get_monitoring_type(const obs_source_t *source)
 {
+	blog(LOG_WARNING,
+	     "obs_source_get_monitoring_type is deprecated. Use obs_source_get_monitoring_enabled instead.");
+
 	return obs_source_valid(source, "obs_source_get_monitoring_type") ? source->monitoring_type
 									  : OBS_MONITORING_TYPE_NONE;
 }
