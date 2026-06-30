@@ -22,12 +22,14 @@ void HandleGoLiveApiErrors(QWidget *parent, const json &raw_json, const GoLiveAp
 {
 	using GoLiveApi::StatusResult;
 
-	if (!config.status)
+	if (!config.status) {
 		return;
+	}
 
 	auto &status = *config.status;
-	if (status.result == StatusResult::Success)
+	if (status.result == StatusResult::Success) {
 		return;
+	}
 
 	auto warn_continue = [&](QString message) {
 		bool ret = false;
@@ -44,8 +46,9 @@ void HandleGoLiveApiErrors(QWidget *parent, const json &raw_json, const GoLiveAp
 				return mb.exec() == QMessageBox::StandardButton::No;
 			},
 			BlockingConnectionTypeFor(parent), &ret);
-		if (ret)
+		if (ret) {
 			throw MultitrackVideoError::cancel();
+		}
 	};
 
 	auto missing_html = [] {
@@ -73,8 +76,9 @@ GoLiveApi::Config DownloadGoLiveConfig(QWidget *parent, QString url, const GoLiv
 	json post_data_json = post_data;
 	blog(LOG_INFO, "Go live POST data: %s", censoredJson(post_data_json).toUtf8().constData());
 
-	if (url.isEmpty())
+	if (url.isEmpty()) {
 		throw MultitrackVideoError::critical(QTStr("FailedToStartStream.MissingConfigURL"));
+	}
 
 	std::string encodeConfigText;
 	std::string libraryError;
@@ -89,9 +93,10 @@ GoLiveApi::Config DownloadGoLiveConfig(QWidget *parent, QString url, const GoLiv
 						      nullptr, // signature
 						      5);      // timeout in seconds
 
-	if (!encodeConfigDownloadedOk)
+	if (!encodeConfigDownloadedOk) {
 		throw MultitrackVideoError::warning(
 			QTStr("FailedToStartStream.ConfigRequestFailed").arg(url, libraryError.c_str()));
+	}
 	try {
 		auto data = json::parse(encodeConfigText);
 		blog(LOG_INFO, "Go live response data: %s", censoredJson(data, true).toUtf8().constData());

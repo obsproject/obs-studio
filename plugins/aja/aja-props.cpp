@@ -198,18 +198,19 @@ audio_format SourceProps::AudioFormat() const
 
 speaker_layout SourceProps::SpeakerLayout() const
 {
-	if (audioNumChannels == 1)
+	if (audioNumChannels == 1) {
 		return SPEAKERS_MONO;
-	else if (audioNumChannels == 2)
+	} else if (audioNumChannels == 2) {
 		return SPEAKERS_STEREO;
-	else if (audioNumChannels == 3)
+	} else if (audioNumChannels == 3) {
 		return SPEAKERS_2POINT1;
-	else if (audioNumChannels == 4)
+	} else if (audioNumChannels == 4) {
 		return SPEAKERS_4POINT0;
-	else if (audioNumChannels == 5)
+	} else if (audioNumChannels == 5) {
 		return SPEAKERS_4POINT1;
-	else if (audioNumChannels == 6)
+	} else if (audioNumChannels == 6) {
 		return SPEAKERS_5POINT1;
+	}
 	// NTV2 card is always set to at least 8ch
 	return SPEAKERS_7POINT1;
 }
@@ -319,8 +320,9 @@ NTV2Channel OutputProps::Channel() const
 	}
 
 	if (NTV2_OUTPUT_DEST_IS_HDMI(outputDest)) {
-		if (aja::CardCanDoHDMIMonitorOutput(deviceID) && NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
+		if (aja::CardCanDoHDMIMonitorOutput(deviceID) && NTV2_IS_4K_VIDEO_FORMAT(videoFormat)) {
 			return NTV2_CHANNEL3;
+		}
 		return static_cast<NTV2Channel>(NTV2DeviceGetNumFrameStores(deviceID) - 1);
 	}
 
@@ -335,17 +337,20 @@ NTV2Channel OutputProps::Framestore() const
 		return NTV2_CHANNEL2;
 	} else if (deviceID == DEVICE_ID_IO4K || deviceID == DEVICE_ID_IO4KPLUS) {
 		// SDI Monitor output uses framestore 4
-		if (ioSelect == IOSelection::SDI5)
+		if (ioSelect == IOSelection::SDI5) {
 			return NTV2_CHANNEL4;
+		}
 	}
 	// HDMI Monitor output uses framestore 4
 	if (ioSelect == IOSelection::HDMIMonitorOut) {
-		if (deviceID == DEVICE_ID_KONA5_8K)
+		if (deviceID == DEVICE_ID_KONA5_8K) {
 			return NTV2_CHANNEL4;
-		if (NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
+		}
+		if (NTV2_IS_4K_VIDEO_FORMAT(videoFormat)) {
 			return NTV2_CHANNEL3;
-		else
+		} else {
 			return NTV2_CHANNEL4;
+		}
 	}
 	return NTV2OutputDestinationToChannel(outputDest);
 }
@@ -388,8 +393,9 @@ audio_format OutputProps::AudioFormat() const
 
 speaker_layout OutputProps::SpeakerLayout() const
 {
-	if (audioNumChannels == 2)
+	if (audioNumChannels == 2) {
 		return SPEAKERS_STEREO;
+	}
 	// NTV2 is always at least 8ch on modern boards
 	return SPEAKERS_7POINT1;
 }

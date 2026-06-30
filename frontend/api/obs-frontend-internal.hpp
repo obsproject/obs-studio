@@ -141,6 +141,10 @@ struct obs_frontend_callbacks {
 	virtual obs_canvas_t *obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags) = 0;
 	virtual bool obs_frontend_remove_canvas(obs_canvas_t *canvas) = 0;
 	virtual void obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_list) = 0;
+
+	virtual void obs_frontend_copy_sceneitem(obs_sceneitem_t *item) = 0;
+	virtual bool obs_frontend_can_paste_sceneitem(bool duplicate) = 0;
+	virtual void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate) = 0;
 };
 
 EXPORT void obs_frontend_set_callbacks_internal(obs_frontend_callbacks *callbacks);

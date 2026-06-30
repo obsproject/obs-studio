@@ -21,8 +21,9 @@ class WinHandle {
 
 	inline void Clear()
 	{
-		if (handle && handle != INVALID_HANDLE_VALUE)
+		if (handle && handle != INVALID_HANDLE_VALUE) {
 			CloseHandle(handle);
+		}
 	}
 
 public:
@@ -52,8 +53,9 @@ class WinModule {
 
 	inline void Clear()
 	{
-		if (handle)
+		if (handle) {
 			FreeLibrary(handle);
+		}
 	}
 
 public:

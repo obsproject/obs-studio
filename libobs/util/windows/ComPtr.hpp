@@ -30,17 +30,20 @@ protected:
 
 	inline void Kill()
 	{
-		if (ptr)
+		if (ptr) {
 			ptr->Release();
+		}
 	}
 
 	inline void Replace(T *p)
 	{
 		if (ptr != p) {
-			if (p)
+			if (p) {
 				p->AddRef();
-			if (ptr)
+			}
+			if (ptr) {
 				ptr->Release();
+			}
 			ptr = p;
 		}
 	}
@@ -49,13 +52,15 @@ public:
 	inline ComPtr() : ptr(nullptr) {}
 	inline ComPtr(T *p) : ptr(p)
 	{
-		if (ptr)
+		if (ptr) {
 			ptr->AddRef();
+		}
 	}
 	inline ComPtr(const ComPtr<T> &c) : ptr(c.ptr)
 	{
-		if (ptr)
+		if (ptr) {
 			ptr->AddRef();
+		}
 	}
 	inline ComPtr(ComPtr<T> &&c) noexcept : ptr(c.ptr) { c.ptr = nullptr; }
 	template<class U> inline ComPtr(ComPtr<U> &&c) noexcept : ptr(c.Detach()) {}
@@ -110,8 +115,9 @@ public:
 	inline void CopyTo(T **out)
 	{
 		if (out) {
-			if (ptr)
+			if (ptr) {
 				ptr->AddRef();
+			}
 			*out = ptr;
 		}
 	}
@@ -120,8 +126,9 @@ public:
 	{
 		ULONG ref;
 
-		if (!ptr)
+		if (!ptr) {
 			return 0;
+		}
 		ref = ptr->Release();
 		ptr = nullptr;
 		return ref;

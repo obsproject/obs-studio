@@ -29,6 +29,7 @@ class VolumeName : public QAbstractButton {
 
 	QPointer<QLabel> label{};
 	int indicatorWidth;
+	QString fullText{};
 
 public:
 	VolumeName(obs_source_t *source, QWidget *parent = nullptr);
@@ -37,6 +38,7 @@ public:
 	void setAlignment(Qt::Alignment alignment);
 	Qt::Alignment alignment() const { return textAlignment; }
 
+	QSize minimumSizeHint() const override;
 	QSize sizeHint() const override;
 
 	void updateLabelText(const QString &name);

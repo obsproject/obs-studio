@@ -128,8 +128,9 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 	QLineEdit *text = container->findChild<QLineEdit *>();
 
 	QString currentPath = text->text();
-	if (currentPath.isEmpty() || currentPath.compare(QTStr("MissingFiles.Clear")) == 0)
+	if (currentPath.isEmpty() || currentPath.compare(QTStr("MissingFiles.Clear")) == 0) {
 		currentPath = "";
+	}
 
 	bool isSet = false;
 
@@ -146,8 +147,9 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 		isSet = true;
 	}
 
-	if (isSet)
+	if (isSet) {
 		emit commitData(container);
+	}
 }
 
 void MissingFilesPathItemDelegate::handleClear(QWidget *container)

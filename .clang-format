@@ -1,6 +1,5 @@
 # please use clang-format version 16 or later
 
-Standard: c++17
 AccessModifierOffset: -8
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
@@ -106,6 +105,10 @@ TypenameMacros:
   - 'DARRAY'
 UseTab: ForContinuationAndIndentation
 ---
+Language: Cpp
+Standard: c++17
+InsertBraces: true
+---
 Language: ObjC
 AccessModifierOffset: 2
 AlignArrayOfStructures: Right
@@ -207,3 +210,4 @@ SpacesInLineCommentPrefix:
 Standard: c++17
 TabWidth: 4
 UseTab: Never
+...

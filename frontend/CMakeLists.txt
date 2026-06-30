@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 add_subdirectory(api)
 
-option(ENABLE_FRONTEND "Enable building with UI frontend (requires Qt6)" ON)
-
 if(NOT ENABLE_FRONTEND)
   target_disable_feature(obs "User Interface")
   return()
@@ -65,8 +63,6 @@ include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
 include(cmake/feature-whatsnew.cmake)
 include(cmake/feature-idian-playground.cmake)
-
-add_subdirectory(plugins)
 
 configure_file(cmake/templates/ui-config.h.in ui-config.h)
 

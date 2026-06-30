@@ -33,8 +33,8 @@ class OBSYoutubeActions : public QDialog {
 	std::unique_ptr<Ui::OBSYoutubeActions> ui;
 
 signals:
-	void ok(const QString &broadcast_id, const QString &stream_id, const QString &key, bool autostart,
-		bool autostop, bool start_now);
+	void ok(const std::string &broadcast_id, const std::string &stream_id, const std::string &key, bool autostart,
+		bool autostop, bool startNow);
 
 protected:
 	void showEvent(QShowEvent *event) override;

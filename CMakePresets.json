@@ -27,28 +27,28 @@
         "obsproject.com/obs-studio": {
           "dependencies": {
               "prebuilt": {
-                  "version": "2025-08-23",
+                  "version": "2026-06-25",
                   "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
                   "label": "Pre-Built obs-deps",
                   "hashes": {
-                      "macos-universal": "9403bb43fb0a9bb215739a5659ca274fe884dbbbcd22bd9ca781c961fb041c42",
-                      "windows-x64": "8de229cff6f1981508c0eb646b35e644633a5855787b9f5d3b90ae2aeb87ffc1",
-                      "windows-x86": "fb3c68b75911f292b3206e346053638db1c73605957207445a0a92b33ab5e00a",
-                      "windows-arm64": "dd87ba00a6cbc153182fb62b3678a3b5021d1d11eb2730442060937a645eb97e"
+                      "macos-universal": "09ee1f53ef1b4464fd4f39f9aa3f3193b47e60d8c48b6ffc603f22a83814487e",
+                      "windows-x64": "aea064cc550563d0095603385c22cc52b33de71e57ea3f6ff1ae1d54a0bb9d8a",
+                      "windows-x86": "fde08f54707dbf57da24b21a5db4ccedd4c4eb09b9808a899f9068dc5f1a228d",
+                      "windows-arm64": "53c13f0634ebe27b8fb2aa17378d780210936428514b7bd47f64040c3b30d750"
                   }
               },
               "qt6": {
-                  "version": "2025-08-23",
+                  "version": "2026-06-25",
                   "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
                   "label": "Pre-Built Qt6",
                   "hashes": {
-                      "macos-universal": "990f11638b80a4509e14e8c315f6e4caa0861e37fcd3113a256fbff835ffca29",
-                      "windows-x64": "c62e82483bc7c0bf199e8ac3220c66a85a6e8a0cd69a05b6d44f873b830e415f",
-                      "windows-arm64": "cc8ec983de9b7d81aa98beeb1b989d707ee3c73b85b4d41c85d94114eba81f91"
+                      "macos-universal": "1f3d2b8b3ddf980dfee527471f1f970889f8cdfd8fa0404d9992986034f16260",
+                      "windows-x64": "b30ee3653d6381ca491daa5b30b3cff6deb1b3e7f149f4b087c2fb03a1432023",
+                      "windows-arm64": "7c256175d00d85d062aea88ffbfd096c44c8ad53e10adbbf21b1fc5fb591f98f"
                   },
                   "debugSymbols": {
-                      "windows-x64": "aae88a17e0211cb37db6a8602f2e20d69255be1f9700c699008ca5adbce1dde2",
-                      "windows-arm64": "6e866490277a8b29e82a87fc2f22407f93ddaf86444ea0d284370339a05511b3"
+                      "windows-x64": "be7c1dbde4a8720fc5cf59bb7a4f2ad55ee8b5dc17702e51c347bd4eec24a8e3",
+                      "windows-arm64": "d104eccc9f2457d22e9ddd9ce101b13025872b1d5ae08761b6ced284b773f648"
                   }
               },
               "cef": {
@@ -74,10 +74,10 @@
             },
             "tools": {
               "sparkle": {
-                  "version": "2.6.4",
+                  "version": "2.9.2",
                   "baseUrl": "https://github.com/sparkle-project/Sparkle/releases/download",
                   "label": "Sparkle 2",
-                  "hash": "50612a06038abc931f16011d7903b8326a362c1074dabccb718404ce8e585f0b"
+                  "hash": "1cb340cbbef04c6c0d162078610c25e2221031d794a3449d89f2f56f4df77c95"
               }
             }
           }
@@ -162,9 +162,9 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "architecture": "x64,version=10.0.22621.0",
+      "architecture": "x64,version=10.0.26100.0",
       "binaryDir": "${sourceDir}/build_x64",
-      "generator": "Visual Studio 17 2022",
+      "generator": "Visual Studio 18 2026",
       "cacheVariables": {
         "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
         "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
@@ -191,9 +191,9 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "architecture": "ARM64,version=10.0.22621.0",
+      "architecture": "ARM64,version=10.0.26100.0",
       "binaryDir": "${sourceDir}/build_arm64",
-      "generator": "Visual Studio 17 2022",
+      "generator": "Visual Studio 18 2026",
       "cacheVariables": {
         "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
         "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},

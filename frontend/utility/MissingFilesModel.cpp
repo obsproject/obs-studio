@@ -46,8 +46,9 @@ int MissingFilesModel::found() const
 	int res = 0;
 
 	for (int i = 0; i < files.length(); i++) {
-		if (files[i].state != Missing && files[i].state != Cleared)
+		if (files[i].state != Missing && files[i].state != Cleared) {
 			res++;
+		}
 	}
 
 	return res;
@@ -213,8 +214,9 @@ void MissingFilesModel::fileCheckLoop(const QString &path, bool skipPrompt, int 
 		os_dir_t *folder = os_opendir(dir.toStdString().c_str());
 		struct os_dirent *ent;
 		while ((ent = os_readdir(folder)) != NULL) {
-			if (!ent->directory || *ent->d_name == '.')
+			if (!ent->directory || *ent->d_name == '.') {
 				continue;
+			}
 
 			QString directoryPath = dir + QString(ent->d_name) + "/";
 			fileCheckLoop(directoryPath, true, depthWithoutFileMatch);

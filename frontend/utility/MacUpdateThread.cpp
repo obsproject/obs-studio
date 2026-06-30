@@ -13,13 +13,15 @@ static const char *MAC_DEFAULT_BRANCH = "stable";
 bool GetBranch(std::string &selectedBranch)
 {
 	const char *config_branch = config_get_string(App()->GetAppConfig(), "General", "UpdateBranch");
-	if (!config_branch)
+	if (!config_branch) {
 		return true;
+	}
 
 	bool found = false;
 	for (const UpdateBranch &branch : App()->GetBranches()) {
-		if (branch.name != config_branch)
+		if (branch.name != config_branch) {
 			continue;
+		}
 		/* A branch that is found but disabled will just silently fall back to
 		 * the default. But if the branch was removed entirely, the user should
 		 * be warned, so leave this false *only* if the branch was removed. */
@@ -53,8 +55,9 @@ try {
 	/* ----------------------------------- *
 	 * get branches from server            */
 
-	if (FetchAndVerifyFile("branches", "obs-studio/updates/branches.json", MAC_BRANCHES_URL, &text))
+	if (FetchAndVerifyFile("branches", "obs-studio/updates/branches.json", MAC_BRANCHES_URL, &text)) {
 		App()->SetBranchData(text);
+	}
 
 	/* ----------------------------------- *
 	 * Validate branch selection           */

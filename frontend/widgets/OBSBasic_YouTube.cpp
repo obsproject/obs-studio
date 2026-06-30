@@ -32,21 +32,15 @@ using namespace std;
 extern bool cef_js_avail;
 
 #ifdef YOUTUBE_ENABLED
-void OBSBasic::YouTubeActionDialogOk(const QString &broadcast_id, const QString &stream_id, const QString &key,
-				     bool autostart, bool autostop, bool start_now)
+void OBSBasic::YouTubeActionDialogOk(const std::string &broadcastId, const std::string &streamId,
+				     const std::string &key, bool autostart, bool autostop, bool startNow)
 {
-	//blog(LOG_DEBUG, "Stream key: %s", QT_TO_UTF8(key));
 	obs_service_t *service_obj = GetService();
 	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 
-	const std::string a_key = QT_TO_UTF8(key);
-	obs_data_set_string(settings, "key", a_key.c_str());
-
-	const std::string b_id = QT_TO_UTF8(broadcast_id);
-	obs_data_set_string(settings, "broadcast_id", b_id.c_str());
-
-	const std::string s_id = QT_TO_UTF8(stream_id);
-	obs_data_set_string(settings, "stream_id", s_id.c_str());
+	obs_data_set_string(settings, "key", key.c_str());
+	obs_data_set_string(settings, "broadcast_id", broadcastId.c_str());
+	obs_data_set_string(settings, "stream_id", streamId.c_str());
 
 	obs_service_update(service_obj, settings);
 	autoStartBroadcast = autostart;
@@ -55,8 +49,9 @@ void OBSBasic::YouTubeActionDialogOk(const QString &broadcast_id, const QString 
 
 	emit BroadcastStreamReady(broadcastReady);
 
-	if (start_now)
+	if (startNow) {
 		QMetaObject::invokeMethod(this, "StartStreaming");
+	}
 }
 
 void OBSBasic::YoutubeStreamCheck(const std::string &key)
@@ -142,11 +137,13 @@ void OBSBasic::BroadcastButtonClicked()
 		if (ytAuth.get()) {
 			if (!ytAuth->StartLatestBroadcast()) {
 				auto last_error = ytAuth->GetLastError();
-				if (last_error.isEmpty())
+				if (last_error.isEmpty()) {
 					last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
-				if (!ytAuth->GetTranslatedError(last_error))
+				}
+				if (!ytAuth->GetTranslatedError(last_error)) {
 					last_error = QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
 							     .arg(last_error, ytAuth->GetBroadcastId());
+				}
 
 				OBSMessageBox::warning(this, QTStr("Output.BroadcastStartFailed"), last_error, true);
 				return;
@@ -165,19 +162,22 @@ void OBSBasic::BroadcastButtonClicked()
 				this, QTStr("ConfirmStop.Title"), QTStr("YouTube.Actions.AutoStopStreamingWarning"),
 				QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return;
+			}
 		}
 
 		std::shared_ptr<YoutubeApiWrappers> ytAuth = dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
 			if (!ytAuth->StopLatestBroadcast()) {
 				auto last_error = ytAuth->GetLastError();
-				if (last_error.isEmpty())
+				if (last_error.isEmpty()) {
 					last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
-				if (!ytAuth->GetTranslatedError(last_error))
+				}
+				if (!ytAuth->GetTranslatedError(last_error)) {
 					last_error = QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
 							     .arg(last_error, ytAuth->GetBroadcastId());
+				}
 
 				OBSMessageBox::warning(this, QTStr("Output.BroadcastStopFailed"), last_error, true);
 			}
@@ -222,32 +222,37 @@ YouTubeAppDock *OBSBasic::GetYouTubeAppDock()
 
 void OBSBasic::NewYouTubeAppDock()
 {
-	if (!cef_js_avail)
+	if (!cef_js_avail) {
 		return;
+	}
 
 	/* make sure that the youtube app dock can't be immediately recreated.
 	 * dumb hack. blame chromium. or this particular dock. or both. if CEF
 	 * creates/destroys/creates a widget too quickly it can lead to a
 	 * crash. */
 	uint64_t ts = os_gettime_ns();
-	if ((ts - lastYouTubeAppDockCreationTime) < (5ULL * SEC_TO_NSEC))
+	if ((ts - lastYouTubeAppDockCreationTime) < (5ULL * SEC_TO_NSEC)) {
 		return;
+	}
 
 	lastYouTubeAppDockCreationTime = ts;
 
-	if (youtubeAppDock)
+	if (youtubeAppDock) {
 		RemoveDockWidget(youtubeAppDock->objectName());
+	}
 
 	youtubeAppDock = new YouTubeAppDock("YouTube Live Control Panel");
 }
 
 void OBSBasic::DeleteYouTubeAppDock()
 {
-	if (!cef_js_avail)
+	if (!cef_js_avail) {
 		return;
+	}
 
-	if (youtubeAppDock)
+	if (youtubeAppDock) {
 		RemoveDockWidget(youtubeAppDock->objectName());
+	}
 
 	youtubeAppDock = nullptr;
 }

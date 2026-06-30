@@ -454,7 +454,7 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 		 *
 		 * XXX: Fix design flaws with filters */
 		if (info->type == OBS_SOURCE_TYPE_FILTER)
-		private = true;
+			private = true;
 	}
 
 	source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
@@ -5706,6 +5706,24 @@ enum obs_icon_type obs_source_get_icon_type(const char *id)
 {
 	const struct obs_source_info *info = get_source_info(id);
 	return (info) ? info->icon_type : OBS_ICON_TYPE_UNKNOWN;
+}
+
+const char *obs_source_get_dark_icon(const char *id)
+{
+	if (obs_source_get_icon_type(id) != OBS_ICON_TYPE_CUSTOM)
+		return NULL;
+
+	const struct obs_source_info *info = get_source_info(id);
+	return (info && info->get_dark_icon) ? info->get_dark_icon(info->type_data) : NULL;
+}
+
+const char *obs_source_get_light_icon(const char *id)
+{
+	if (obs_source_get_icon_type(id) != OBS_ICON_TYPE_CUSTOM)
+		return NULL;
+
+	const struct obs_source_info *info = get_source_info(id);
+	return (info && info->get_light_icon) ? info->get_light_icon(info->type_data) : NULL;
 }
 
 void obs_source_media_play_pause(obs_source_t *source, bool pause)

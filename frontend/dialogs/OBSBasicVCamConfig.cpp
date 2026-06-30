@@ -48,8 +48,9 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 		for (char **temp = scenes; *temp; temp++) {
 			list->addItem(*temp);
 
-			if (config.scene.compare(*temp) == 0)
+			if (config.scene.compare(*temp) == 0) {
 				list->setCurrentIndex(list->count() - 1);
+			}
 		}
 		break;
 	}
@@ -59,8 +60,9 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 		auto AddSource = [&](obs_source_t *source) {
 			auto name = obs_source_get_name(source);
 
-			if (!(obs_source_get_output_flags(source) & OBS_SOURCE_VIDEO))
+			if (!(obs_source_get_output_flags(source) & OBS_SOURCE_VIDEO)) {
 				return;
+			}
 
 			sources.push_back(name);
 		};
@@ -69,8 +71,9 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 		obs_enum_sources(
 			[](void *data, obs_source_t *source) {
 				auto &AddSource = *static_cast<AddSource_t *>(data);
-				if (!obs_source_removed(source))
+				if (!obs_source_removed(source)) {
 					AddSource(source);
+				}
 				return true;
 			},
 			static_cast<void *>(&AddSource));
@@ -80,15 +83,17 @@ void OBSBasicVCamConfig::OutputTypeChanged()
 		for (auto &&source : sources) {
 			list->addItem(source.c_str());
 
-			if (config.source == source)
+			if (config.source == source) {
 				list->setCurrentIndex(list->count() - 1);
+			}
 		}
 		break;
 	}
 	}
 
-	if (!vcamActive)
+	if (!vcamActive) {
 		return;
+	}
 
 	requireRestart = (activeType == VCamOutputType::ProgramView && type != VCamOutputType::ProgramView) ||
 			 (activeType != VCamOutputType::ProgramView && type == VCamOutputType::ProgramView);

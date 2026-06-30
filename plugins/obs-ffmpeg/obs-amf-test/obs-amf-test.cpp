@@ -58,8 +58,9 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 
 	ComPtr<IDXGIAdapter> adapter;
 	hr = factory->EnumAdapters(adapter_idx, &adapter);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		return false;
+	}
 
 	DXGI_ADAPTER_DESC desc;
 	adapter->GetDesc(&desc);
@@ -67,8 +68,9 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 	uint32_t luid_idx = get_adapter_idx(adapter_idx, desc.AdapterLuid);
 	adapter_caps &caps = adapter_info[luid_idx];
 
-	if (desc.VendorId != AMD_VENDOR_ID)
+	if (desc.VendorId != AMD_VENDOR_ID) {
 		return true;
+	}
 
 	caps.is_amd = true;
 
@@ -76,17 +78,20 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 	ComPtr<ID3D11DeviceContext> context;
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device,
 			       nullptr, &context);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		return true;
+	}
 
 	AMFContextPtr amf_context;
 	res = amf_factory->CreateContext(&amf_context);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		return true;
+	}
 
 	res = amf_context->InitDX11(device);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		return true;
+	}
 
 	caps.supports_avc = has_encoder(amf_context, AMFVideoEncoderVCE_AVC);
 	caps.supports_hevc = has_encoder(amf_context, AMFVideoEncoder_HEVC);
@@ -100,8 +105,9 @@ DWORD WINAPI TimeoutThread(LPVOID param)
 	HANDLE hMainThread = (HANDLE)param;
 
 	DWORD ret = WaitForSingleObject(hMainThread, 2500);
-	if (ret == WAIT_TIMEOUT)
+	if (ret == WAIT_TIMEOUT) {
 		TerminateProcess(GetCurrentProcess(), STATUS_TIMEOUT);
+	}
 
 	CloseHandle(hMainThread);
 
@@ -126,16 +132,19 @@ try {
 	/* try initializing amf, I guess                             */
 
 	HMODULE amf_module = LoadLibraryW(AMF_DLL_NAME);
-	if (!amf_module)
+	if (!amf_module) {
 		throw "Failed to load AMF lib";
+	}
 
 	auto init = (AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
-	if (!init)
+	if (!init) {
 		throw "Failed to get init func";
+	}
 
 	res = init(AMF_FULL_VERSION, &amf_factory);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw "AMFInit failed";
+	}
 
 	/* --------------------------------------------------------- */
 	/* parse expected LUID order                                 */
@@ -148,8 +157,9 @@ try {
 	/* obtain adapter compatibility information                  */
 
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void **)&factory);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw "CreateDXGIFactory1 failed";
+	}
 
 	uint32_t idx = 0;
 	while (get_adapter_caps(factory, idx++))

@@ -23,8 +23,9 @@ public:
 
 	~ScopeGuard() noexcept
 	{
-		if (!dismissed_)
+		if (!dismissed_) {
 			execute();
+		}
 	}
 
 private:

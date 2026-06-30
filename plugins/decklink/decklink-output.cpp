@@ -65,8 +65,9 @@ static bool decklink_output_start(void *data)
 		return false;
 	}
 
-	if (!decklink->deviceHash || !*decklink->deviceHash)
+	if (!decklink->deviceHash || !*decklink->deviceHash) {
 		return false;
+	}
 
 	decklink->audio_samplerate = aoi.samples_per_sec;
 	decklink->audio_planes = 2;
@@ -78,8 +79,9 @@ static bool decklink_output_start(void *data)
 
 	device.Set(deviceEnum->FindByHash(decklink->deviceHash));
 
-	if (!device)
+	if (!device) {
 		return false;
+	}
 
 	DeckLinkDeviceMode *mode = device->FindOutputMode(decklink->modeID);
 
@@ -98,8 +100,9 @@ static bool decklink_output_start(void *data)
 
 	device->SetKeyerMode(decklink->keyerMode);
 
-	if (!decklink->Activate(device, decklink->modeID))
+	if (!decklink->Activate(device, decklink->modeID)) {
 		return false;
+	}
 
 	struct audio_convert_info conversion = {};
 	conversion.format = AUDIO_FORMAT_16BIT;
@@ -108,8 +111,9 @@ static bool decklink_output_start(void *data)
 
 	obs_output_set_audio_conversion(decklink->GetOutput(), &conversion);
 
-	if (!obs_output_begin_data_capture(decklink->GetOutput(), 0))
+	if (!obs_output_begin_data_capture(decklink->GetOutput(), 0)) {
 		return false;
+	}
 
 	return true;
 }
@@ -127,8 +131,9 @@ static void decklink_output_raw_video(void *data, struct video_data *frame)
 {
 	auto *decklink = (DeckLinkOutput *)data;
 
-	if (!decklink->start_timestamp)
+	if (!decklink->start_timestamp) {
 		decklink->start_timestamp = frame->timestamp;
+	}
 
 	decklink->UpdateVideoFrame(frame);
 }
@@ -142,16 +147,18 @@ static bool prepare_audio(DeckLinkOutput *decklink, const struct audio_data *fra
 		uint64_t end_ts = frame->timestamp + duration;
 		uint64_t cutoff;
 
-		if (end_ts <= decklink->start_timestamp)
+		if (end_ts <= decklink->start_timestamp) {
 			return false;
+		}
 
 		cutoff = decklink->start_timestamp - frame->timestamp;
 		output->timestamp += cutoff;
 
 		cutoff = util_mul_div64(cutoff, decklink->audio_samplerate, 1000000000ULL);
 
-		for (size_t i = 0; i < decklink->audio_planes; i++)
+		for (size_t i = 0; i < decklink->audio_planes; i++) {
 			output->data[i] += decklink->audio_size * (uint32_t)cutoff;
+		}
 
 		output->frames -= (uint32_t)cutoff;
 	}
@@ -164,11 +171,13 @@ static void decklink_output_raw_audio(void *data, struct audio_data *frames)
 	auto *decklink = (DeckLinkOutput *)data;
 	struct audio_data in;
 
-	if (!decklink->start_timestamp)
+	if (!decklink->start_timestamp) {
 		return;
+	}
 
-	if (!prepare_audio(decklink, frames, &in))
+	if (!prepare_audio(decklink, frames, &in)) {
 		return;
+	}
 
 	decklink->WriteAudio(&in);
 }
