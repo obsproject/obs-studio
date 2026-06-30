@@ -205,13 +205,6 @@ void release_afxlib(void)
 		FreeLibrary(nv_audiofx);
 		nv_audiofx = NULL;
 	}
-	cuCtxGetCurrent = NULL;
-	cuCtxPopCurrent = NULL;
-	cuInit = NULL;
-	if (nv_cuda) {
-		FreeLibrary(nv_cuda);
-		nv_cuda = NULL;
-	}
 }
 
 bool load_nvidia_afx(void)
@@ -276,11 +269,6 @@ bool load_nvidia_afx(void)
 	LOAD_SYM(NvAFX_Run);
 	LOAD_SYM(NvAFX_Reset);
 #undef LOAD_SYM
-#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cuda, "nvcuda.dll")
-	LOAD_SYM(cuCtxGetCurrent);
-	LOAD_SYM(cuCtxPopCurrent);
-	LOAD_SYM(cuInit);
-#undef LOAD_SYM
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_audiofx, "NVAudioEffects.dll")
 	LOAD_SYM(NvAFX_InitializeLogger);
 	bool new_sdk = nvafx_new_sdk;
@@ -291,33 +279,10 @@ bool load_nvidia_afx(void)
 	}
 #undef LOAD_SYM
 	NvAFX_Status err;
-	CUresult cudaerr;
 
 	NvAFX_Handle h = NULL;
 
-	cudaerr = cuInit(0);
-	if (cudaerr != CUDA_SUCCESS) {
-		goto cuda_errors;
-	}
-	CUcontext old = {0};
-	CUcontext curr = {0};
-	cudaerr = cuCtxGetCurrent(&old);
-	if (cudaerr != CUDA_SUCCESS) {
-		goto cuda_errors;
-	}
-
 	err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER, &h);
-	cudaerr = cuCtxGetCurrent(&curr);
-	if (cudaerr != CUDA_SUCCESS) {
-		goto cuda_errors;
-	}
-
-	if (curr != old) {
-		cudaerr = cuCtxPopCurrent(NULL);
-		if (cudaerr != CUDA_SUCCESS)
-			goto cuda_errors;
-	}
-
 	if (err != NVAFX_STATUS_SUCCESS) {
 		if (err == NVAFX_STATUS_GPU_UNSUPPORTED) {
 			blog(LOG_INFO, "[NVIDIA Audio Effects:] disabled: unsupported GPU");
@@ -337,8 +302,6 @@ bool load_nvidia_afx(void)
 	blog(LOG_INFO, "[NVIDIA Audio Effects:] enabled");
 	return true;
 
-cuda_errors:
-	blog(LOG_ERROR, "[NVIDIA Audio Effects:] disabled, CUDA error %i", cudaerr);
 unload_everything:
 	release_afxlib();
 
@@ -367,21 +330,10 @@ static bool nvidia_audio_initialize_internal(void *data)
 		ng->sample_rate = NVAFX_SAMPLE_RATE;
 		for (size_t i = 0; i < ng->channels; i++) {
 			// Create FX
-			CUcontext old = {0};
-			CUcontext curr = {0};
-			if (cuCtxGetCurrent(&old) != CUDA_SUCCESS) {
-				goto failure;
-			}
 			err = NvAFX_CreateEffect(ng->fx, &ng->handle[i]);
 			if (err != NVAFX_STATUS_SUCCESS) {
 				do_log(LOG_ERROR, "%s FX creation failed, error %i", ng->fx, err);
 				goto failure;
-			}
-			if (cuCtxGetCurrent(&curr) != CUDA_SUCCESS) {
-				goto failure;
-			}
-			if (curr != old) {
-				cuCtxPopCurrent(NULL);
 			}
 			// Set sample rate of FX
 			err = NvAFX_SetU32(ng->handle[i], NVAFX_PARAM_INPUT_SAMPLE_RATE, ng->sample_rate);
