@@ -1,74 +1,48 @@
 name: Generate Documentation
-description: Updates Sphinx-based documentation
+description: >
+  Installs the necessary toolchain to run generate 'Sphinx'-based documentation and uploads the generated files as a
+  workflow artifact.
 inputs:
-  sourceDirectory:
-    description: Path to repository checkout
-    required: false
-    default: ${{ github.workspace }}
-  disableLinkExtensions:
-    description: Disable Sphinx link extensions
-    required: false
+  disable-link-extensions:
+    description: >
+      A boolean value to indicate whether the generated documentation should not use links with '.html'
+      file extensions.
     default: 'false'
+  working-directory:
+    description: The path to an OBS Studio checkout's root directory.
+    default: ${{ github.workspace }}
+outputs:
+  artifact-name:
+    description: The name of the workflow artifact uploaded by the action.
+    value: ${{ steps.setup.outputs.artifact-name }}
 runs:
   using: composite
   steps:
-    - name: Update Version Number and Copyright ↗️
-      id: setup
-      shell: bash
-      run: |
-        : Update Version Number and Copyright ↗️
-        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-
-        : "${major:=}"
-        : "${minor:=}"
-        : "${patch:=}"
-
-        # This expression will first try to match all the LIBOBS_API_[...]_VER
-        # lines in 'obs-config.h', before removing the '#define ' prefix and
-        # trimming away whitespace characters and linebreaks.
-        # This will yield a single line with the each major, minor, and patch
-        # version variable name followed by its value, so every even item
-        # in this string will contain a version part.
-
-        read -r _ major _ minor _ patch _ <<< \
-          "$(grep -E -e "#define LIBOBS_API_(MAJOR|MINOR|PATCH)_VER *" libobs/obs-config.h \
-            | sed 's/#define //g' \
-            | tr -s ' ' \
-            | tr '\n' ' ')"
-
-        # This expression simply replaces the definition of the 'version' and
-        # 'release' variables in the Python script with updated variants using
-        # the version tokens set by the previous expression.
-        # The copyright variable assignment is updated to use the current
-        # local year as the second year value.
-
-        sed -i -E \
-          -e "s/version = '([0-9]+\.[0-9]+\.[0-9]+)'/version = '${major}.${minor}.${patch}'/g" \
-          -e "s/release = '([0-9]+\.[0-9]+\.[0-9]+)'/release = '${major}.${minor}.${patch}'/g" \
-          -e "s/copyright = '(2017-[0-9]+, Lain Bailey)'/copyright = '2017-$(date +"%Y"), Lain Bailey'/g" \
-          ${{ inputs.sourceDirectory }}/docs/sphinx/conf.py
-
-        if [[ '${{ inputs.disableLinkExtensions }}' == 'true' ]]; then
-          sed -i -e "s/html_link_suffix = None/html_link_suffix = ''/g" \
-           ${{ inputs.sourceDirectory }}/docs/sphinx/conf.py
-          echo "artifactName=OBS Studio Docs (No Extensions)" >> $GITHUB_OUTPUT
-        else
-          echo "artifactName=OBS Studio Docs" >> $GITHUB_OUTPUT
-        fi
-
-        echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
-
-    - name: Install Sphinx 📜
-      uses: totaldebug/sphinx-publish-action@a44364271972de3b13c5b63801c2596dfde82413
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
       with:
-        sphinx_src: ${{ inputs.sourceDirectory }}/docs/sphinx
-        build_only: true
-        target_branch: master
-        target_path: '../home/_build'
+        os: |
+          macOS
+          Linux
+        custom-error: generate-docs action requires a macOS or Linux runner.
+
+    - name: Setup Action
+      id: setup
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        DISABLE_LINK_EXTENSIONS: ${{ inputs.disable-link-extensions }}
+      run: ${GITHUB_ACTION_PATH}/setup-action.bash
+
+    - name: Generate Documentation
+      id: generate
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      run: ${GITHUB_ACTION_PATH}/generate-docs.bash
 
     - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
-        name: ${{ steps.setup.outputs.artifactName }} ${{ steps.setup.outputs.commitHash }}
+        name: ${{ steps.setup.outputs.artifact-name }}
         path: |
-          ${{ runner.temp }}/_github_home/_build
-          !${{ runner.temp }}/_github_home/_build/.doctrees
+          ${{ format('{0}/sphinx_build', runner.temp) }}
+          ${{ format('!{0}/sphinx_build/.doctrees', runner.temp) }}

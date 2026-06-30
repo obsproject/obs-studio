@@ -46,7 +46,7 @@ jobs:
       - uses: ./.github/actions/generate-docs
         if: github.ref_type == 'tag' || fromJSON(steps.checks.outputs.has-changed-files)
         with:
-          disableLinkExtensions: ${{ github.ref_type == 'tag' }}
+          disable-link-extensions: ${{ github.ref_type == 'tag' }}
 
   deploy-documentation:
     name: Deploy Documentation to Cloudflare ☁️
