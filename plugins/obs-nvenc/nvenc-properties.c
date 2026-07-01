@@ -202,7 +202,7 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec)
 	p = obs_properties_add_bool(props, "adaptive_quantization", obs_module_text("AdaptiveQuantization"));
 	obs_property_set_long_description(p, obs_module_text("AdaptiveQuantization.ToolTip"));
 
-	if (num_encoder_devices() > 1) {
+	if (num_encoder_devices() > 0) {
 		obs_properties_add_int(props, "device", obs_module_text("GPU"), -1, num_encoder_devices(), 1);
 	}
 
