@@ -3586,6 +3586,30 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Twitcast (ツイキャス)",
+            "more_info_link": "https://twitcasting.tv/helpcenter.php?pid=HELP_OBS_INDEX",
+            "stream_key_link": "https://twitcasting.tv/rtmpstreamkey.php",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp401.twitcasting.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max fps": 60,
+                "max video bitrate": 5700,
+                "max audio bitrate": 256,
+                "bframes": 0,
+                "x264opts": "tune=zerolatency"
+            },
+            "supported video codecs": [
+                "h264",
+                "hevc"
+            ]
         }
     ]
 }
