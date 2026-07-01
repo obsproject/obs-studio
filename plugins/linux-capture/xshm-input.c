@@ -164,6 +164,12 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	blog(LOG_INFO, "Geometry %" PRIdFAST32 "x%" PRIdFAST32 " @ %" PRIdFAST32 ",%" PRIdFAST32, data->width,
 	     data->height, data->x_org, data->y_org);
 
+	if (data->adj_width <= 0 || data->adj_height <= 0)
+		blog(LOG_ERROR,
+		     "Adjusted size is %" PRIdFAST32 "x%" PRIdFAST32
+		     ", SHM will fail. Check your screen resolution and your crop settings.",
+		     data->adj_width, data->adj_height);
+
 	if (prev_width == data->adj_width && prev_height == data->adj_height)
 		return 0;
 
