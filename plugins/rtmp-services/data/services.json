@@ -2266,22 +2266,28 @@
         },
         {
             "name": "Whowatch (ふわっち)",
+            "supported video codecs": ["h264"],
             "more_info_link": "https://whowatch.tv/help/encoder",
             "stream_key_link": "https://whowatch.tv/publish",
             "servers": [
                 {
-                    "name": "default",
-                    "url": "rtmp://live.whowatch.tv/live/"
+                    "name": "Global - グローバル (RTMPS, recommended)",
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app"
+                },
+                {
+                    "name": "Global - グローバル (RTMP)",
+                    "url": "rtmp://ingest.global-contribute.live-video.net/app"
                 }
             ],
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "recommended": {
+                "profile": "baseline",
                 "keyint": 2,
-                "max video bitrate": 1800,
+                "bframes": 0,
+                "x264opts": "scenecut=0: sliced-threads=0: preset=veryfast: tune=zerolatency",
+                "max video bitrate": 6000,
                 "max audio bitrate": 192
-            },
-            "supported video codecs": [
-                "h264"
-            ]
+            }
         },
         {
             "name": "IRLToolkit",
