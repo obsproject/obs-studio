@@ -63,7 +63,8 @@ static int load_module_exports(struct obs_module *mod, const char *path)
 
 bool obs_module_get_locale_string(const obs_module_t *mod, const char *lookup_string, const char **translated_string)
 {
-	if (mod->get_string) {
+	assert(mod);
+	if (mod && mod->get_string) {
 		return mod->get_string(lookup_string, translated_string);
 	}
 
