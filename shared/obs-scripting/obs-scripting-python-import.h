@@ -134,6 +134,13 @@ PY_EXTERN int (*Import_PyType_GetFlags)(PyTypeObject *o);
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 PY_EXTERN void (*Import__Py_Dealloc)(PyObject *obj);
 #endif
+#if PY_VERSION_HEX >= 0x03080000
+PY_EXTERN PyStatus (*Import_PyWideStringList_Append)(PyWideStringList *list, const wchar_t *item);
+PY_EXTERN void (*Import_PyConfig_InitPythonConfig)(PyConfig *config);
+PY_EXTERN void (*Import_PyConfig_Clear)(PyConfig *config);
+PY_EXTERN PyStatus (*Import_Py_InitializeFromConfig)(const PyConfig *config);
+PY_EXTERN int (*Import_PyStatus_Exception)(PyStatus err);
+#endif
 
 PY_EXTERN PyTypeObject PyCFunction_Type;
 
@@ -221,6 +228,13 @@ extern bool import_python(const char *python_path, python_version_t *python_vers
 #define PyTuple_New Import_PyTuple_New
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 #define _Py_Dealloc Import__Py_Dealloc
+#endif
+#if PY_VERSION_HEX >= 0x03080000
+#define PyWideStringList_Append Import_PyWideStringList_Append
+#define PyConfig_InitPythonConfig Import_PyConfig_InitPythonConfig
+#define PyConfig_Clear Import_PyConfig_Clear
+#define Py_InitializeFromConfig Import_Py_InitializeFromConfig
+#define PyStatus_Exception Import_PyStatus_Exception
 #endif
 
 #if PY_VERSION_HEX >= 0x030800f0

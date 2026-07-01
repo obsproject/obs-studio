@@ -1594,6 +1594,65 @@ extern void add_python_frontend_funcs(PyObject *module);
 
 static bool python_loaded_at_all = false;
 
+#if RUNTIME_LINK || PY_VERSION_HEX < 0x03070000
+static bool python_pre37_init_threads()
+{
+	PyEval_InitThreads();
+	if (!PyEval_ThreadsInitialized())
+		return false;
+
+	return true;
+}
+#endif
+
+#if RUNTIME_LINK || PY_VERSION_HEX < 0x03080000
+static bool python_pre38_init()
+{
+	Py_Initialize();
+	if (!Py_IsInitialized())
+		return false;
+
+#if RUNTIME_LINK
+	if (python_version.minor < 7 && !python_pre37_init_threads())
+		return false;
+#elif PY_VERSION_HEX < 0x03070000
+	if (!python_pre37_init_threads())
+		return false;
+#endif
+
+	/* ---------------------------------------------- */
+	/* Must set arguments for guis to work            */
+
+	wchar_t *argv[] = {L"", NULL};
+	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
+
+	PySys_SetArgv(argc, argv);
+
+	return true;
+}
+#endif
+
+#if RUNTIME_LINK || PY_VERSION_HEX >= 0x03080000
+static bool python_init()
+{
+	PyConfig config;
+	PyConfig_InitPythonConfig(&config);
+
+	/* ---------------------------------------------- */
+	/* Must set arguments for guis to work            */
+	config.parse_argv = 1;
+	PyWideStringList_Append(&config.argv, L"");
+
+	PyStatus status = Py_InitializeFromConfig(&config);
+	PyConfig_Clear(&config);
+
+	if (PyStatus_Exception(status))
+		return false;
+
+	return true;
+}
+#endif
+
 bool obs_scripting_load_python(const char *python_path)
 {
 	if (python_loaded)
@@ -1621,32 +1680,21 @@ bool obs_scripting_load_python(const char *python_path)
 	UNUSED_PARAMETER(python_path);
 #endif
 
-	Py_Initialize();
-	if (!Py_IsInitialized())
-		return false;
-
 #if RUNTIME_LINK
-	if (python_version.major == 3 && python_version.minor < 7) {
-		PyEval_InitThreads();
-		if (!PyEval_ThreadsInitialized())
+	if (python_version.minor < 8) {
+		if (!python_pre38_init())
+			return false;
+	} else {
+		if (!python_init())
 			return false;
 	}
-#elif PY_VERSION_HEX < 0x03070000
-	PyEval_InitThreads();
-	if (!PyEval_ThreadsInitialized())
+#elif PY_VERSION_HEX < 0x03080000
+	if (!python_pre38_init())
+		return false;
+#else
+	if (!python_init())
 		return false;
 #endif
-
-	/* ---------------------------------------------- */
-	/* Must set arguments for guis to work            */
-
-	wchar_t *argv[] = {L"", NULL};
-	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
-
-	PRAGMA_WARN_PUSH
-	PRAGMA_WARN_DEPRECATION
-	PySys_SetArgv(argc, argv);
-	PRAGMA_WARN_POP
 
 #ifdef __APPLE__
 	PyRun_SimpleString("import sys");
