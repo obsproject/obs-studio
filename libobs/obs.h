@@ -819,7 +819,7 @@ EXPORT void obs_render_main_texture_src_color_only(void);
 /** Renders the last canvas output texture */
 EXPORT void obs_render_canvas_texture(obs_canvas_t *canvas);
 
-/** Renders the last main output texture ignoring background color */
+/** Renders the last canvas output texture ignoring background color */
 EXPORT void obs_render_canvas_texture_src_color_only(obs_canvas_t *canvas);
 
 /** Returns the last main output texture.  This can return NULL if the texture
