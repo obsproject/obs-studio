@@ -12,7 +12,7 @@ class MediaControls : public QWidget {
 
 private:
 	std::vector<OBSSignal> sigs;
-	OBSWeakSource weakSource = nullptr;
+	OBSWeakSourceAutoRelease weakSource;
 	QTimer mediaTimer;
 	QTimer seekTimer;
 	int seek;
