@@ -695,6 +695,41 @@ static void erase_ch(struct dstr *str, size_t pos)
 	*str = new_str;
 }
 
+size_t os_strftime_utf8(char *dst, size_t dst_size, const char *format, const struct tm *tm)
+{
+	if (!dst || !dst_size || !format || !tm)
+		return 0;
+
+#ifdef _WIN32
+	/*
+	 * On Windows, strftime() returns strings encoded in the system's
+	 * ANSI codepage, not UTF-8. This causes issues when locale-specific
+	 * format specifiers (like %Z for timezone) contain non-ASCII
+	 * characters (e.g., German "Mitteleuropäische Zeit").
+	 *
+	 * Use wcsftime() to get proper wide characters, then convert to UTF-8.
+	 */
+	wchar_t wformat[64];
+	wchar_t wdst[256];
+
+	size_t format_len = os_utf8_to_wcs(format, 0, wformat, sizeof(wformat) / sizeof(wchar_t));
+	if (!format_len) {
+		dst[0] = '\0';
+		return 0;
+	}
+
+	size_t wlen = wcsftime(wdst, sizeof(wdst) / sizeof(wchar_t), wformat, tm);
+	if (!wlen) {
+		dst[0] = '\0';
+		return 0;
+	}
+
+	return os_wcs_to_utf8(wdst, wlen, dst, dst_size);
+#else
+	return strftime(dst, dst_size, format, tm);
+#endif
+}
+
 char *os_generate_formatted_filename(const char *extension, bool space, const char *format)
 {
 	time_t now = time(0);
@@ -727,9 +762,9 @@ char *os_generate_formatted_filename(const char *extension, bool space, const ch
 
 			if (astrcmp_n(cmp, spec[i][0], len) == 0) {
 				if (strlen(spec[i][1]))
-					strftime(convert, sizeof(convert), spec[i][1], cur_time);
+					os_strftime_utf8(convert, sizeof(convert), spec[i][1], cur_time);
 				else
-					strftime(convert, sizeof(convert), spec[i][0], cur_time);
+					os_strftime_utf8(convert, sizeof(convert), spec[i][0], cur_time);
 
 				dstr_copy(&c, convert);
 				if (c.len && valid_string(c.array))
