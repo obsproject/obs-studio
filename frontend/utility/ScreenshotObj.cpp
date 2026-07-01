@@ -353,11 +353,7 @@ void ScreenshotObj::onFinished()
 
 	if (outputWidth > 0 && outputHeight > 0) {
 		if (outputToFile) {
-			OBSBasic *main = OBSBasic::Get();
-			main->ShowStatusBarMessage(
-				QTStr("Basic.StatusBar.ScreenshotSavedTo").arg(QT_UTF8(path.c_str())));
-			main->lastScreenshot = path;
-			main->OnEvent(OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN);
+			emit imageSaved(path);
 		}
 
 		emit imageReady(image.copy());
