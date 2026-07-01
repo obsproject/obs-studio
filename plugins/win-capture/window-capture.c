@@ -376,6 +376,9 @@ static void wc_destroy(void *data)
 	if (wc->audio_source)
 		destroy_audio_source(wc->source, &wc->audio_source);
 
+	if (wc->window)
+		remove_captured_window(wc->window);
+
 	signal_handler_t *sh = obs_source_get_signal_handler(wc->source);
 	signal_handler_disconnect(sh, "rename", rename_audio_source, &wc->audio_source);
 
@@ -384,6 +387,7 @@ static void wc_destroy(void *data)
 
 static void force_reset(struct window_capture *wc)
 {
+	remove_captured_window(wc->window);
 	wc->window = NULL;
 	wc->resize_timer = RESIZE_CHECK_TIME;
 	wc->check_window_timer = WC_CHECK_TIMER;
@@ -395,7 +399,12 @@ static void force_reset(struct window_capture *wc)
 static void wc_update(void *data, obs_data_t *settings)
 {
 	struct window_capture *wc = data;
+	HWND old_window = wc->window;
 	update_settings(wc, settings);
+
+	if (old_window && wc->window != old_window)
+		remove_captured_window(old_window);
+
 	log_settings(wc, settings);
 
 	force_reset(wc);
