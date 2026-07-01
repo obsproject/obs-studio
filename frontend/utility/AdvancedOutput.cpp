@@ -219,6 +219,7 @@ void AdvancedOutput::UpdateStreamSettings()
 	if (applyServiceSettings) {
 		int bitrate = (int)obs_data_get_int(settings, "bitrate");
 		int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
+		obs_data_set_string(settings, "codec", obs_get_encoder_codec(streamEncoder));
 		obs_service_apply_encoder_settings(main->GetService(), settings, nullptr);
 		if (!enforceBitrate) {
 			int maxVideoBitrate;

@@ -343,6 +343,7 @@ void SimpleOutput::Update()
 	obs_data_set_string(audioSettings, "rate_control", "CBR");
 	obs_data_set_int(audioSettings, "bitrate", audioBitrate);
 
+	obs_data_set_string(videoSettings, "codec", obs_get_encoder_codec(encoder_id));
 	obs_service_apply_encoder_settings(main->GetService(), videoSettings, audioSettings);
 
 	if (!enforceBitrate) {
