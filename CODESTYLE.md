@@ -423,3 +423,174 @@ Both file formats are predominantly used for build system configuration or conti
     * **Exception:** If the key of a variable is used for an underlying system e.g., to define environment variables in a shell environment that commonly uses `UPPER_SNAKE_CASE` names.
 * Use **double quotes** for **key names** and **string values** in JSON files.
 * Use **single quotes** for **complex strings in YAML files** that might otherwise not be correctly interpreted as strings, quoting is otherwise not necessary.
+
+Be aware of the different multi-line string behaviors available in YAML:
+
+* `'Single quoted'` strings ignore leading white space (aka indentation), escaped line-breaks like `\n` and require two actual line breaks to add an actual new line.
+* `"Double quoted"` strings support escaped line-breaks, but otherwise behave like singled-quoted strings.
+* `Unquoted` strings behave like single-quoted strings, but YAML might give specific words or letters special meaning and can thus lead to unexpected behavior.
+
+It is safer to use "block scalars" that make the use of multi-line strings (and how they should be parsed) more explicit:
+
+* The `|` block-style indicator will retain newlines and indentation as-is.
+* The `>` block-style indicator will _replace newlines with spaces_.
+* By default both indicators will retain a single newline at the end of the string.
+* If the `-` indicator is added, _no newline is added_.
+* If the `+` indicator is added, _all existing newlines_ at the end of the string are retained.
+* Additionally an "indentation" number can be added to declare the number of spaces used for indentation by the string.
+
+#### GitHub Actions Workflows And Actions
+
+Use [Zizmor](https://zizmor.sh) to lint any changes to GitHub Actions workflow or repository action files.
+
+> [!IMPORTANT]
+> Use `zizmor --no-online-audits --persona=auditor`.
+
+Repository actions use strings for input and output and while GitHub will automatically convert native YAML types into JSON string representations before providing them as inputs, the same does not happen for outputs.
+
+To use such outputs as boolean values, use the `fromJSON()` function to convert the (JSON) string into its actual type. This can also be used to convert a JSON array string back into an actual array (which can then be used by functions like `contains()`).
+
+Use block scalars (see above) to break up long strings in workflow syntax into more readable multi-line variants. Combined with the `format()` function, this allows for complex string generation or conditionals while keeping the code readable:
+
+```YAML
+      - name: Some Workflow Action
+        if: >-
+          fromJSON(env.SOME_VARIABLE)
+          && steps.some-step.outputs.some-output == 'hello'
+        uses: actions/some-action
+        with:
+          path: >-
+            ${{ format(
+                '{0}/my-desired-file-{1}-{2}-output.{3}',
+                runner.temp, github.sha, steps.some-step.output.some-output, case(
+                    runner.os == 'Windows', '.zip', '.tar.xz'
+                )
+            ) }}
+```
+
+This example ensures that the string passed to the action contains no line breaks (which can lead to unexpected script execution issues) and avoids having the expression being cramped into a single line.
+
+### Shell Scripts
+
+Shell scripts are used in two areas: GitHub Actions workflows and actions, and additional helper scripts in the `build-aux` directory.
+
+Scripts for local use should use the scripting language most common on their target platform:
+
+* Zsh scripts for macOS
+* Bash scripts for Linux, BSDs, and others
+* Powershell Core scripts for Windows.
+
+While Zsh and Bash share a lot of common ground, they differ in important ways that impact the way scripts can be designed for them, while the Powershell script language is a much more powerful object-oriented language.
+
+#### Scripts Used On CI
+
+Scripts can be used in two forms in GitHub Actions: Either as inline snippets in `steps` or as full scripts invoked directly. In the former variant, GitHub Actions will take the text body defined inline and copy it into a script file on the runner's drive, before invoking it just like in the second form.
+
+By default Bash is preferred for scripts used on CI, with Zsh scripts being allowed for macOS-exclusive implementations. Powershell scripts should be avoided.
+
+> [!NOTE]
+> Powershell's debug output is severely flawed compared to Bash's and Zsh's:
+> * The output is more verbose and does not just print out the script line that is being executed.
+> * This makes the output harder to parse and read in GitHub Actions logs when debugging workflows and actions.
+> * Repository and environment secrets are automatically masked by GitHub Actions when printed in their entirety. But Powershell truncates its log output automatically.
+> * This can lead to partial leakage of secrets as the values cannot be masked by GitHub Actions's output parsing.
+> * Neither Bash nor Zsh are affected by this.
+
+The following rules apply to all scripting languages when used in GitHub Actions workflows and composite actions:
+
+* Ensure the validity of environment variables
+    * It is good practice to provide inputs to shell scripts as environment variables, but their definition as well as their values cannot be assumed.
+    * It is allowed to assume that default environment variables like `GITHUB_OUTPUT`, which are part of the GitHub Actions CI environment are set.
+    * For all other environment variables, use appropriate measures to ensure that they are actually bound or use fallback values:
+        * Use `set -o nounset` (or `setopt NO_UNSET` in Zsh) to automatically abort script execution if an _unset_ variable is encountered.
+    * Abort script execution outside of inline snippets if the "magic" environment variable `CI` is not set.
+    * Use **Shell Parameter Expansion** in [Bash](https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Shell-Parameter-Expansion-1) and [Zsh](https://zsh.sourceforge.io/Doc/Release/Expansion.html#Parameter-Expansion) to handle potentially unset or empty variables.
+        * Use `${VARIABLE:?}` to have the script fail immediately if an environment variable is not set or has an empty string value explicitly (rather than have the script fail at first access due to `NO_UNSET`).
+        * Use `${VARIABLE:=default}` to initialize an empty or unset variable with a default value.
+        * Use `${VARIABLE:-default}` to temporarily use a fallback value if the variable is unset or empty.
+* Always wrap the main functionality of a script in a separate function, preferable with the name of the script itself, and call this function from the global scope.
+* Use GitHub Actions output modifiers like `::warning::` and `::error::` to make them stand out.
+    * For actual errors, return `1` as the error code to "fail early".
+* Do not assume the current working directory of a script holds a checkout of the project.
+    * The working directory of a script can be changed in multiple ways and can also be set explicitly by a workflow or composite action before the script is invoked.
+    * Design composite actions in such a way that they can either be run from any working directory (whether that yields any benefit is up the caller) or fails early if the working directory does not fulfill specific requirements (e.g. a necessary file or directory is present).
+    * A common pattern is to provide callers a way to set the working directory for a composite action (e.g. if the checkout has been placed in an alternative location) but use `github.workspace` as the default value, which aligns with the checkout action's default behavior. Scripts associated with the action should still run checks to confirm the working directory indeed contains the required file(s).
+    * Design scripts in a way that they only pass absolute file paths to commands and functions that support them, removing the working directory as a source of failure.
+    * If the working directory needs to be adjusted (e.g. to create `tar` archives with relative paths), use `pushd` and `popd` to set and restore the working directories _with absolute paths_. This ensures that the script switches from whichever current working directory and also returns back to it before continuing the script.
+* Scripts used for GitHub Actions do not need elaborate argument or error handling, as they are not meant for "human consumption".
+    * Error and warning messages should be designed to be easily digestible at GitHub Action's workflow summary page.
+    * Script and function arguments are not required as script inputs are realized using environment variables, which are checked per the rules above.
+* Scripts should enable tracing when the `RUNNER_DEBUG` environment variable is set:
+    * Bash: `set -x`
+    * Zsh: `setopt XTRACE`
+
+#### Bash
+
+Bash scripts should try to target **Bash 3.0** but are allowed to use Bash 5.0 features if contained in an action that can automatically install or upgrade the necessary Bash version before running any actual scripts.
+
+In general each shell script should follow the best practices outlined by [ShellCheck](https://www.shellcheck.net) and scripts (as well as script snippets used in GitHub repository actions) should be checked with it.
+
+> [!IMPORTANT]
+> Use `shellcheck --severity=style --shell=bash --enable=all` when linting Bash scripts.
+
+* Ensure scripts themselves fail early on failures by external commands or nested function calls
+    * Use the common practice of enabling `errexit`, `pipefail`, and `nounset` for all scripts.
+    * Use conditional blocks or list operators like `&&` and `||` to gracefully handle non-zero return codes.
+* Use double quotes for all variables by default, be aware of necessary exceptions.
+    * Bash uses automatic word expansion and globbing on all variables by default, which can introduce side-effects. Thus it is best practice to always wrap variables in double quotes like so: `"${VARIABLE}"`.
+* The exception to this rule is composition of glob expressions:
+    * When composing a glob expression from one or more variables, avoid quotes for the parts that are intended to be subject to glob expansion, e.g. `"${path_prefix}"/some_path/*.txt`. Otherwise Bash will simply use the literal string `*.txt` and not expand it.
+    * Use `compgen` when handling user-provided glob expressions.
+* When the contents of a variable should be split into an array, use `read -a array_name <<< "${variable}"` instead of direct declaration (`declare -a array_name=(${variable})`) (ShellCheck will commonly suggest this automatically).
+* Prefer built-in shell functionality over use of external commands as much as possible except if a shell built-in has known deficiencies or its capabilities are too limited and resulting code becomes harder to reason about.
+    * Use glob expressions for simple matching, use POSIX regular expressions with `BASH_REMATCH` otherwise, use `sed` with extended regular expressions as a last resort.
+* Be aware of the pitfalls of arithmetic expressions, as even the judicious use of double quotes will not prevent a command substitution from executing.
+    * The test `$(( "${x}" ))` with `x` set to `a[0$(uname>&2)]` will execute `uname`. This is an existing issue with arithmetic evaluations in all modern shells.
+    * To make matters worse, several builtin commands will automatically evaluate variables as arithmetic expressions depending on their invocation. E.g. `[[ "${x}" -lt 2 ]]` is converted into an arithmetic comparison and thus `x` is evaluated accordingly (and runs `uname`). The same applies when assigning `x` to a variable declared as numeric (e.g. `typeset -i a; a="${x}`).
+    * Always sanitize any user-provided value that is directly or indirectly used in an arithmetic expression.
+        * This includes the use of `(( ))`, `$(( ))`, `[[ ]]` when a numerical comparison is used (e.g. `-lt`, `-gt`, etc), setting numerical variables (`let`, `typeset -i`), or as indices for arrays. **Double quoting the variable will not prevent this**.
+
+#### Zsh
+
+Zsh scripts require **Zsh 5.8 or newer**, which should align with the build requirements on macOS. Due to its differences to Bash and its cousins, ShellCheck cannot be used to lint Zsh scripts. In general a large set of ShellCheck best practices do apply to Zsh scripts as well, with some differences.
+
+* Ensure that scripts themselves fail early on failures by external commands or nested function calls.
+    * Use `setopt` to set `ERR_EXIT`, `ERR_RETURN`, `PIPE_FAIL`, `NO_UNSET`, and also `WARN_CREATE_GLOBAL`, and `WARN_NESTED_VAR` for all scripts.
+    * Use conditional blocks or list operators like `&&` and `||` to gracefully handle non-zero return codes.
+* Ensure that scripts run in `zsh` mode by calling `builtin emulate -L zsh` as early as possible to prevent emulation of other shells' behavior.
+* This enables Zsh's default behavior which will **not automatically expand variables**. Indeed Zsh only does so if specific modifiers are used. By default any variable stays a string, even if it could be split into words or its contents could be interpreted as a glob expression.
+    * To have Zsh interpret a string as a glob expression, it needs to be written as `${~variable}`.
+    * This effectively enables the `GLOB_SUBST` shell option for the expansion of this variable only. Do not enable `GLOB_SUBST` in a script if you want to make use of this behavior.
+    * Likewise to have Zsh split a string per default shell rules, it needs to be written as `${=variable}`.
+    * This can be used to split a variable containing words into an array via `typeset -a array=(${=variable})`, otherwise `typeset -a array=(${(s: :)variable})` or `read -A array <<< "${variable}"` can be used. Either way, the splitting needs be requested explicitly.
+* While this reduces the potential impact of unquoted expansions, it does not eliminate them entirely:
+    * Command substitutions (e.g. `$(some-command some_argument)`) are still broken into words using the `IFS` parameter in Zsh, so those should always be quoted (e.g. `output="$(some-command some-argument)"`).
+    * Zsh (like other shells) elides empty variables if they are not enclosed in double quotes. This can lead to problems if variables are used with commands that have a strict requirement for positional arguments like `printf`.
+    * Combined with the arithmetic evaluation issue shared with other shells, this can lead to unforeseen command execution. Consider `printf '[%d] %s'` which requires an even number of arguments. If provided with `1 ${empty_variable} 2 ${malicious_variable}`, the empty variable is elided and the `malicious_variable` is now used as input for `%d`, which will trigger arithmetic evaluation.
+        * If `malicious_variable` is set to the string `psvar[0$(uname>&2)]`, `uname` will be executed. Note that double quoting will **not** prevent the execution, but if `empty_variable` were enclosed in double quotes, it would not have been elided and `malicious_variable` would not be subject to arithmetic evaluation.
+* Thus the following rules apply for Zsh scripts:
+    * Always use double quotes for command substitutions (`result="$(some_command)"`).
+    * Always use double quotes when composing strings with parameter expansion (`string="some_${other_string}"`).
+    * Always use double quotes to ensure that even an empty argument is passed to a command or function that _requires_ a positional argument (`some_command "${possibly_empty}"`).
+    * Always sanitize any user-provided value that is directly or indirectly used in an arithmetic expression
+        * On top of the examples mentioned for Bash, Zsh will implicitly use arithmetic evaluation for `printf`, `integer`, and `exit`.
+
+#### Powershell
+
+Powershell scripts require **Powershell Core 7.3 or newer**. In general Powershell scripts should be checked using `Invoke-ScriptAnalyzer` available in the `PSScriptAnalyzer` module. Some basic rules (which accommodate the requirements by the script analyzer) are:
+
+* Always use a `[CmdletBinding]`.
+* Prefer named parameter bindings over the use of `$Args`.
+* Each function needs to have at least a `process` block. Use `begin` for setup code, use `end` for cleanup.
+* Use `Verb-PascalCase` for function names, and use `PascalCase` for variables.
+    * Environment variables commonly use `CAPITALCASE` but are wrapped in the `Env` object on Powershell.
+* Splat arrays into arguments when passed to functions or other commands via `@ArrayVariable`.
+    * Pack command arguments into an array if the command line would exceed a column limit of 120 characters and splat it in the invocation.
+* Powershell has much less implicit expansion features than POSIX shells but provides a more extensive and modern set of tools for splitting, matching, and evaluations. Those features need to be invoked manually however.
+    * While POSIX shells operate in a string-based manner, Powershell is object-based. The majority of first-party commands actually return an object that usually has a `ToString` method which is then implicitly called by the interpreter when passed to any other command that potentially takes a `String` as input.
+    * This allows Powershell scripts to pass complex objects between commands using the `|` operator, and allows sub-commands to access all the instance properties and methods present on the object rather then just operating on a textual representation.
+* Use functional patterns via piping as they are more canonical in Powershell:
+    * As an example, `Get-ChildItem` can get a list of file entries. While this command can be supplied with a limited set of inclusion, exclusion, and filter arguments, they each have very specific behaviors.
+    * Thus it is easier to pipe its output to `Where-Object` which is called for each "child item" and either returns `$true` or `$false` depending on whether the item fulfills a requirement. Similarly `ForEach-Object` is called for each item and can transform the input into a new output, which then replaces the original item.
+    * `Get-ChildItem | Where-Object { $_.Name -match 'My Desired Name Prefix .+' } | ForEach-Object { $_.Name.Uppercase() }` is thus similar to patterns like `list.filter( _ =~ "My Desired Name Prefix .+" }.map( to_upper(_)` in other languages.
+* When comparing an object against `$null`, always use the null constant first: `if ($null -eq $MyVariable)`.
