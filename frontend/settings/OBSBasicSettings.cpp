@@ -5944,8 +5944,8 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 		ui->advOutEncoder->setDisabled(disable_video);
 
 		ui->advOutUseRescale->setDisabled(disable_video);
-		ui->advOutRescale->setDisabled(disable_video);
 		ui->advOutRescaleFilter->setDisabled(disable_video);
+		ui->advOutRescale->setDisabled(disable_video || ui->advOutRescaleFilter->currentIndex() == 0);
 
 		if (streamEncoderProps) {
 			streamEncoderProps->SetDisabled(disable_video);
