@@ -102,6 +102,9 @@ struct obs_frontend_callbacks {
 	virtual obs_source_t *obs_frontend_get_current_preview_scene(void) = 0;
 	virtual void obs_frontend_set_current_preview_scene(obs_source_t *scene) = 0;
 
+	virtual bool obs_frontend_get_swap_scenes_mode(void) = 0;
+	virtual void obs_frontend_set_swap_scenes_mode(bool enabled) = 0;
+
 	virtual void on_load(obs_data_t *settings) = 0;
 	virtual void on_preload(obs_data_t *settings) = 0;
 	virtual void on_save(obs_data_t *settings) = 0;
