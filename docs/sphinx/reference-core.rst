@@ -212,6 +212,20 @@ Initialization, Shutdown, and Information
 
 ---------------------
 
+.. function:: bool obs_video_active(void)
+
+   Determines if video is active.
+
+   :return: *true* if active or *false* if not active
+
+---------------------
+
+.. function:: bool obs_audio_active(void)
+
+   Determines if audio is active.
+
+   :return: *true* if active or *false* if not active
+
 
 Libobs Objects
 --------------
