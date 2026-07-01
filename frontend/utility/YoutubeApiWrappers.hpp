@@ -1,54 +1,18 @@
 #pragma once
 
 #include <oauth/YoutubeAuth.hpp>
+#include "YoutubeApiClient.hpp"
+#include "YoutubeApiTypes.hpp"
 
 #include <json11.hpp>
 
 #include <QString>
-
-struct ChannelDescription {
-	QString id;
-	QString title;
-};
-
-struct StreamDescription {
-	QString id;
-	QString name;
-	QString title;
-};
-
-struct CategoryDescription {
-	QString id;
-	QString title;
-};
-
-struct BroadcastDescription {
-	QString id;
-	QString title;
-	QString description;
-	QString privacy;
-	CategoryDescription category;
-	QString latency;
-	bool made_for_kids;
-	bool auto_start;
-	bool auto_stop;
-	bool dvr;
-	bool schedul_for_later;
-	QString schedul_date_time;
-	QString projection;
-};
 
 bool IsYouTubeService(const std::string &service);
 bool IsUserSignedIntoYT();
 
 class YoutubeApiWrappers : public YoutubeAuth {
 	Q_OBJECT
-
-	bool TryInsertCommand(const char *url, const char *content_type, std::string request_type, const char *data,
-			      json11::Json &ret, long *error_code = nullptr, int data_size = 0);
-	bool UpdateAccessToken();
-	bool InsertCommand(const char *url, const char *content_type, std::string request_type, const char *data,
-			   json11::Json &ret, int data_size = 0);
 
 public:
 	YoutubeApiWrappers(const Def &d);
@@ -68,19 +32,15 @@ public:
 	bool StartLatestBroadcast();
 	bool StopLatestBroadcast();
 
-	void SetBroadcastId(QString &broadcast_id);
+	void SetBroadcastId(const QString &broadcast_id);
 	QString GetBroadcastId();
 
 	bool FindBroadcast(const QString &id, json11::Json &json_out);
 	bool FindStream(const QString &id, json11::Json &json_out);
 
-	QString GetLastError() { return lastErrorMessage; };
+	QString GetLastError() const;
 	bool GetTranslatedError(QString &error_message);
 
 private:
-	QString broadcast_id;
-
-	int lastError;
-	QString lastErrorMessage;
-	QString lastErrorReason;
+	YoutubeApiClient apiClient;
 };
