@@ -14,7 +14,8 @@ if(Qt6_VERSION AND Qt6_VERSION VERSION_LESS "6.9.0")
 endif()
 
 find_package(Libpci REQUIRED)
-target_link_libraries(obs-studio PRIVATE Libpci::pci)
+find_package(GLIB2 REQUIRED)
+target_link_libraries(obs-studio PRIVATE Libpci::pci GLIB2::GLIB2)
 
 if(TARGET OBS::python)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)
