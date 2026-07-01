@@ -1785,9 +1785,9 @@ static inline obs_scene_t *create_id(obs_canvas_t *canvas, const char *id, const
 	return source->context.data;
 }
 
-static inline obs_scene_t *create_private_id(const char *id, const char *name)
+static inline obs_scene_t *create_private_id(obs_canvas_t *canvas, const char *id, const char *name)
 {
-	struct obs_source *source = obs_source_create_private(id, name, NULL);
+	struct obs_source *source = obs_source_create_canvas_private(canvas, id, name, NULL);
 	return source->context.data;
 }
 
@@ -1798,7 +1798,7 @@ obs_scene_t *obs_scene_create(const char *name)
 
 obs_scene_t *obs_scene_create_private(const char *name)
 {
-	return create_private_id("scene", name);
+	return create_private_id(obs->data.main_canvas, "scene", name);
 }
 
 static obs_source_t *get_child_at_idx(obs_scene_t *scene, size_t idx)
@@ -1939,7 +1939,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name, enum obs_
 	/* --------------------------------- */
 
 	obs_canvas_t *canvas = obs_weak_canvas_get_canvas(scene->source->canvas);
-	new_scene = make_private ? create_private_id(scene->source->info.id, name)
+	new_scene = make_private ? create_private_id(canvas, scene->source->info.id, name)
 				 : create_id(canvas, scene->source->info.id, name);
 	obs_canvas_release(canvas);
 
