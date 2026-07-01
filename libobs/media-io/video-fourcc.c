@@ -46,6 +46,9 @@ enum video_format video_format_from_fourcc(uint32_t fourcc)
 
 	case MAKE_FOURCC('Y', '8', '0', '0'):
 		return VIDEO_FORMAT_Y800;
+
+	case MAKE_FOURCC('U', 'Y', 'V', 'A'):
+		return VIDEO_FORMAT_UYVA;
 	}
 	return VIDEO_FORMAT_NONE;
 }
