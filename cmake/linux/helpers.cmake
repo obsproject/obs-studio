@@ -22,6 +22,10 @@ function(set_target_properties_obs target)
   set(OBS_SOVERSION 30)
 
   if(target_type STREQUAL EXECUTABLE)
+    if(target STREQUAL browser-helper)
+      set(OBS_EXECUTABLE_DESTINATION "${OBS_PLUGIN_DESTINATION}/core")
+    endif()
+
     install(TARGETS ${target} RUNTIME DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Runtime)
 
     add_custom_command(
@@ -124,7 +128,7 @@ function(set_target_properties_obs target)
       set(plugin_destination "${OBS_SCRIPT_PLUGIN_DESTINATION}")
       set_property(TARGET ${target} PROPERTY INSTALL_RPATH "$ORIGIN/;$ORIGIN/..")
     else()
-      set(plugin_destination "${OBS_PLUGIN_DESTINATION}")
+      set(plugin_destination "${OBS_PLUGIN_DESTINATION}/core")
     endif()
 
     install(
@@ -170,20 +174,21 @@ function(set_target_properties_obs target)
           add_custom_command(
             TARGET ${target}
             POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/"
+            COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/core"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${imported_location}" "${cef_location}/chrome-sandbox"
               "${cef_location}/libEGL.so" "${cef_location}/libGLESv2.so" "${cef_location}/libvk_swiftshader.so"
               "${cef_location}/libvulkan.so.1" "${cef_location}/v8_context_snapshot.bin"
-              "${cef_location}/vk_swiftshader_icd.json" "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/"
+              "${cef_location}/vk_swiftshader_icd.json" "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/core"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak" "${cef_root_location}/Resources/icudtl.dat"
-              "${cef_root_location}/Resources/resources.pak" "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/"
+              "${cef_root_location}/Resources/resources.pak"
+              "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/core"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_directory "${cef_root_location}/Resources/locales"
-              "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/locales"
-            COMMENT "Add Chromium Embedded Framework to library directory"
+              "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}/core/locales"
+            COMMENT "Add Chromium Embedded Framwork to library directory"
           )
 
           install(
@@ -200,21 +205,19 @@ function(set_target_properties_obs target)
               "${cef_root_location}/Resources/chrome_200_percent.pak"
               "${cef_root_location}/Resources/icudtl.dat"
               "${cef_root_location}/Resources/resources.pak"
-            DESTINATION "${OBS_PLUGIN_DESTINATION}"
+            DESTINATION "${OBS_PLUGIN_DESTINATION}/core"
             COMPONENT Runtime
           )
 
           install(
             DIRECTORY "${cef_root_location}/Resources/locales"
-            DESTINATION "${OBS_PLUGIN_DESTINATION}"
+            DESTINATION "${OBS_PLUGIN_DESTINATION}/core"
             USE_SOURCE_PERMISSIONS
             COMPONENT Runtime
           )
         endif()
       endif()
     endif()
-
-    set_property(GLOBAL APPEND PROPERTY OBS_MODULES_ENABLED ${target})
   endif()
 
   target_install_resources(${target})
@@ -236,9 +239,9 @@ function(target_install_resources target)
       source_group("Resources/${relative_path}" FILES "${data_file}")
     endforeach()
 
-    get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
-    if(target IN_LIST obs_module_list)
-      set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/${target}")
+    get_target_property(target_type ${target} TYPE)
+    if(target_type STREQUAL MODULE_LIBRARY)
+      set(target_destination "${OBS_DATA_DESTINATION}/obs-modules/core/${target}")
     elseif(target STREQUAL obs)
       set(target_destination "${OBS_DATA_DESTINATION}/obs-studio")
     else()
@@ -267,11 +270,11 @@ endfunction()
 
 # Helper function to add a specific resource to a bundle
 function(target_add_resource target resource)
-  get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
+  get_target_property(target_type ${target} TYPE)
   if(ARGN)
     set(target_destination "${ARGN}")
-  elseif(${target} IN_LIST obs_module_list)
-    set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/${target}")
+  elseif(target_type STREQUAL MODULE_LIBRARY)
+    set(target_destination "${OBS_DATA_DESTINATION}/obs-modules/core/${target}")
   elseif(target STREQUAL obs)
     set(target_destination "${OBS_DATA_DESTINATION}/obs-studio")
   else()

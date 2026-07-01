@@ -30,8 +30,13 @@ class PluginManagerWindow : public QDialog {
 	std::unique_ptr<Ui::PluginManagerWindow> ui;
 
 public:
-	explicit PluginManagerWindow(std::vector<ModuleInfo> const &modules, QWidget *parent = nullptr);
+	enum class Page { Installed, Failure };
+
+	explicit PluginManagerWindow(std::vector<ModuleInfo> const &modules,
+				     std::vector<std::string> const &failedModules, QWidget *parent = nullptr);
 	inline std::vector<ModuleInfo> const result() { return modules_; }
+
+	void setPage(Page page);
 
 private:
 	std::vector<ModuleInfo> modules_;

@@ -173,6 +173,19 @@ enum obs_module_load_state {
 	OBS_MODULE_FAILED_TO_INITIALIZE,
 };
 
+enum obs_runtime_module_type { MODULE_TYPE_UNDEFINED, MODULE_TYPE_CORE, MODULE_TYPE_PLUGIN, MODULE_TYPE_LEGACY_PLUGIN };
+
+struct obs_runtime_module_path {
+	const char *binary;
+	const char *data;
+};
+
+struct obs_runtime_module_info {
+	struct obs_runtime_module_path path_info;
+	enum obs_runtime_module_type type;
+	const char *name;
+};
+
 struct obs_transform_info {
 	struct vec2 pos;
 	float rot;
@@ -575,7 +588,7 @@ EXPORT void obs_add_safe_module(const char *name);
 EXPORT void obs_add_core_module(const char *name);
 
 /** Automatically loads all modules from module paths (convenience function) */
-EXPORT void obs_load_all_modules(void);
+OBS_DEPRECATED EXPORT void obs_load_all_modules(void);
 
 struct obs_module_failure_info {
 	char **failed_modules;
@@ -583,7 +596,7 @@ struct obs_module_failure_info {
 };
 
 EXPORT void obs_module_failure_info_free(struct obs_module_failure_info *mfi);
-EXPORT void obs_load_all_modules2(struct obs_module_failure_info *mfi);
+OBS_DEPRECATED EXPORT void obs_load_all_modules2(struct obs_module_failure_info *mfi);
 
 /** Notifies modules that all modules have been loaded.  This function should
  * be called after all modules have been loaded. */
@@ -609,6 +622,22 @@ typedef void (*obs_find_module_callback2_t)(void *param, const struct obs_module
 
 /** Finds all modules within the search paths added by obs_add_module_path. */
 EXPORT void obs_find_modules2(obs_find_module_callback2_t callback, void *param);
+
+/** Loads all registered core modules. */
+EXPORT bool obs_load_core_modules();
+
+/** Loads plugins at a given path. omp defines if modern or legacy plugins at path */
+EXPORT void obs_load_plugins(struct obs_runtime_module_info *info, struct obs_module_failure_info *error);
+
+/** Returns true if a module is a core module. */
+EXPORT bool obs_is_core_module(obs_module_t *module);
+
+EXPORT bool obs_is_legacy_module(obs_module_t *module);
+
+/** Finds and loads a particular core module.
+ *  Returns false if module cant be found. */
+bool find_core_module(struct obs_runtime_module_info *info, obs_find_module_callback2_t callback, void *data);
+
 #endif
 
 typedef void (*obs_enum_module_callback_t)(void *param, obs_module_t *module);

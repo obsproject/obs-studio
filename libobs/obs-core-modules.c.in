@@ -1,0 +1,17 @@
+#include <string.h>
+#include <obs-core-modules.h>
+
+const char *obs_core_modules[] = {
+@OBS_CORE_MODULE_LIST@
+};
+
+const unsigned int obs_core_modules_count = @OBS_CORE_MODULE_COUNT@;
+
+bool obs_in_core_module_list(const char *name) {
+	for (unsigned int i = 0; i < obs_core_modules_count; i++) {
+		if(strcmp(obs_core_modules[i], name) == 0) {
+			return true;
+		}
+	}
+	return false;
+}

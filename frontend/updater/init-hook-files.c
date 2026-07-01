@@ -106,7 +106,7 @@ static LSTATUS get_reg(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, bool b64)
 	} while (false)
 
 #define IMPLICIT_LAYERS L"SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers"
-#define HOOK_LOCATION L"\\data\\obs-plugins\\win-capture\\"
+#define HOOK_LOCATION L"\\core\\win-capture\\data\\"
 
 static bool update_hook_file(bool b64)
 {
