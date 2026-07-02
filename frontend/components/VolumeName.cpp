@@ -54,6 +54,7 @@ VolumeName::VolumeName(obs_source_t *source, QWidget *parent)
 
 	label = new QLabel(this);
 	label->setIndent(0);
+	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 	layout->addWidget(label);
 
 	layout->setContentsMargins(0, 0, indicatorWidth, 0);
@@ -82,7 +83,9 @@ QSize VolumeName::minimumSizeHint() const
 	QFontMetrics metrics(label->font());
 	QSize textSize = metrics.size(Qt::TextSingleLine, plainText);
 
-	int width = textSize.width();
+	// A minimum sizeHint of 0 tells Qt it can try to reduce its size when an appropriate sizePolicy has been set.
+	// The text ellide behavior will ensure it fits within the actual bounds the widget is allocated.
+	int width = 0;
 	int height = textSize.height();
 
 	if (!opt.icon.isNull()) {
@@ -182,29 +185,24 @@ void VolumeName::setText(const QString &text)
 void VolumeName::updateLabelText(const QString &name)
 {
 	QString plainText = getPlainText(name);
+	fullText = name;
 
 	QFontMetrics metrics(label->font());
 
 	int availableWidth = label->contentsRect().width();
 	if (availableWidth <= 0) {
 		label->clear();
-		fullText = name;
 		return;
 	}
 
 	int textWidth = metrics.horizontalAdvance(plainText);
 
-	bool isRichText = (plainText != name);
-	bool needsElide = textWidth > availableWidth;
-
-	if (needsElide && !isRichText) {
-		QString elided = metrics.elidedText(plainText, Qt::ElideMiddle, availableWidth);
-		label->setText(elided);
-	} else {
-		label->setText(name);
+	if (availableWidth > textWidth) {
+		return;
 	}
 
-	fullText = name;
+	QString elided = metrics.elidedText(plainText, Qt::ElideMiddle, availableWidth);
+	label->setText(elided);
 }
 
 void VolumeName::onRemoved()
