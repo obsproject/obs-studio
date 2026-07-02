@@ -393,7 +393,7 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 		return;
 	}
 
-	QMenu *popup = new QMenu(this);
+	QMenu *popup = new QMenu(window());
 
 	// Create menu QActions
 	QAction *lockAction = new QAction(QTStr("LockVolume"), popup);
