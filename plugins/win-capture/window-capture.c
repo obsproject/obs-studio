@@ -132,6 +132,7 @@ static const char *wgc_whole_match_classes[] = {
 	"MSWinPub",          /* Microsoft Publisher */
 	"OfficeApp-Frame",   /* Microsoft 365 Software */
 	"SDL_app",
+	"WINDOWSCLIENT", /* Roblox */
 	NULL,
 };
 
