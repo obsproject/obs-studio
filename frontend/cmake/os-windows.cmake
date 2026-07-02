@@ -6,9 +6,6 @@ if(NOT TARGET OBS::w32-pthreads)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/w32-pthreads" "${CMAKE_BINARY_DIR}/deps/w32-pthreads")
 endif()
 
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-find_package(MbedTLS REQUIRED)
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 find_package(Detours REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
 

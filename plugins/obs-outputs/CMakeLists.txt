@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-find_package(MbedTLS REQUIRED)
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 find_package(ZLIB REQUIRED)
 find_package(jansson REQUIRED)
 
@@ -63,7 +60,15 @@ target_sources(
     utils.h
 )
 
-target_compile_definitions(obs-outputs PRIVATE USE_MBEDTLS CRYPTO)
+target_compile_definitions(obs-outputs PRIVATE CRYPTO)
+
+if(CRYPTO_BACKEND_U STREQUAL "mbedtls")
+  target_compile_definitions(obs-outputs PRIVATE USE_MBEDTLS)
+  set(librtmp_crypto_libraries MbedTLS::mbedtls)
+elseif(CRYPTO_BACKEND_U STREQUAL "openssl")
+  target_compile_definitions(obs-outputs PRIVATE USE_OPENSSL)
+  set(librtmp_crypto_libraries OpenSSL::SSL OpenSSL::Crypto)
+endif()
 
 target_compile_options(
   obs-outputs
@@ -79,7 +84,7 @@ target_link_libraries(
     OBS::happy-eyeballs
     OBS::opts-parser
     OBS::bpm
-    MbedTLS::mbedtls
+    ${librtmp_crypto_libraries}
     ZLIB::ZLIB
     jansson::jansson
     $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
