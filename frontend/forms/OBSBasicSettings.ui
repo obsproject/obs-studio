@@ -5818,7 +5818,7 @@
                              <number>20</number>
                             </property>
                             <property name="maximum">
-                             <number>8192</number>
+                             <number>8388608</number>
                             </property>
                             <property name="value">
                              <number>512</number>
@@ -5837,6 +5837,27 @@
                             <property name="text">
                              <string notr="true"/>
                             </property>
+                           </widget>
+                          </item>
+                          <item row="3" column="0">
+                           <widget class="QLabel" name="advRBStorageModeLabel">
+                            <property name="text">
+                             <string>Storage Mode (RAM / Disk)</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="3" column="1">
+                           <widget class="QComboBox" name="advRBStorageMode">
+                            <item>
+                             <property name="text">
+                              <string>RAM (Memory)</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
+                              <string>SSD/HDD (Disk)</string>
+                             </property>
+                            </item>
                            </widget>
                           </item>
                          </layout>
