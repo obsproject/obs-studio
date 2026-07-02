@@ -386,8 +386,6 @@ static void ffmpeg_source_tick(void *data, float seconds)
 	}
 }
 
-#define RIST_PROTO "rist"
-
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
 	struct ffmpeg_source *s = data;
@@ -457,9 +455,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->is_hw_decoding = is_hw_decoding;
 	s->full_decode = obs_data_get_bool(settings, "full_decode");
 	s->is_clear_on_media_end = obs_data_get_bool(settings, "clear_on_media_end");
-	s->restart_on_activate = !astrcmpi_n(input, RIST_PROTO, sizeof(RIST_PROTO) - 1)
-					 ? false
-					 : obs_data_get_bool(settings, "restart_on_activate");
+	s->restart_on_activate = obs_data_get_bool(settings, "restart_on_activate");
 	s->range = range;
 	is_linear_alpha = obs_data_get_bool(settings, "linear_alpha");
 	s->is_linear_alpha = is_linear_alpha;
