@@ -457,6 +457,19 @@ static inline void load_modifier(uint32_t *modifiers, obs_data_t *data, const ch
 
 static inline void create_binding(obs_hotkey_t *hotkey, obs_key_combination_t combo)
 {
+	/*
+	 * Prevent loading Mouse1 and Mouse2 as hotkeys. The frontend
+	 * already prevents users from setting these keys via the UI,
+	 * but they could still be loaded from a manually modified scene
+	 * collection JSON file, causing unexpected behavior.
+	 *
+	 * Placed in create_binding() rather than load_binding() so
+	 * this also covers third-party plugins using the public API
+	 * obs_hotkey_load_bindings().
+	 */
+	if (combo.key == OBS_KEY_MOUSE1 || combo.key == OBS_KEY_MOUSE2)
+		return;
+
 	obs_hotkey_binding_t *binding = da_push_back_new(obs->hotkeys.bindings);
 	if (!binding)
 		return;
