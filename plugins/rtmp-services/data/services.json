@@ -1664,6 +1664,31 @@
             ]
         },
         {
+            "name": "PikiDiary (ピキ日記LIVE)",
+            "common": false,
+            "protocol": "WHIP",
+            "more_info_link": "https://piki.lol/docs/live-studio",
+            "stream_key_link": "https://piki.lol/live/studio",
+            "servers": [
+                {
+                    "name": "Noutarin-1",
+                    "url": "https://piki.lol/live/whip"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 1600,
+                "max audio bitrate": 96,
+                "max fps": 30,
+                "supported resolutions": [
+                    "1280x720"
+                ]
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
             "name": "Nimo TV",
             "servers": [
                 {
