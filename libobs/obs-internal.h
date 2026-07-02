@@ -256,8 +256,8 @@ void obs_hotkeys_free(void);
 
 struct obs_hotkey_binding {
 	obs_key_combination_t key;
+	bool pressing_key;
 	bool pressed;
-	bool modifiers_match;
 
 	obs_hotkey_id hotkey_id;
 	obs_hotkey_t *hotkey;
