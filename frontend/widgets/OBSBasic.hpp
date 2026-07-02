@@ -1105,7 +1105,7 @@ private:
 	void RefreshSceneCollectionCache();
 
 	void RefreshSceneCollections(bool refreshCache = false);
-	void ActivateSceneCollection(SceneCollection &collection);
+	void ActivateSceneCollection(SceneCollection &collection, bool loadCollection = true);
 
 public slots:
 	void DeferSaveBegin();
