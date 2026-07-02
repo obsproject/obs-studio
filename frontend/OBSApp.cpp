@@ -81,6 +81,8 @@ extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
+static constexpr double kDefaultSnapDistance = 5.0;
+
 namespace {
 
 typedef struct UncleanLaunchAction {
@@ -361,7 +363,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "ScreenSnapping", true);
 	config_set_default_bool(userConfig, "BasicWindow", "SourceSnapping", true);
 	config_set_default_bool(userConfig, "BasicWindow", "CenterSnapping", false);
-	config_set_default_double(userConfig, "BasicWindow", "SnapDistance", 10.0);
+	config_set_default_double(userConfig, "BasicWindow", "SnapDistance", kDefaultSnapDistance);
 	config_set_default_bool(userConfig, "BasicWindow", "SpacingHelpersEnabled", true);
 	config_set_default_bool(userConfig, "BasicWindow", "RecordWhenStreaming", false);
 	config_set_default_bool(userConfig, "BasicWindow", "KeepRecordingWhenStreamStops", false);
@@ -628,7 +630,8 @@ bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t 
 
 void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 {
-	bool hasChanges = false;
+	bool hasUserConfigChanges = false;
+	bool hasGlobalConfigChanges = false;
 
 	const uint32_t v19 = MAKE_SEMANTIC_VERSION(19, 0, 0);
 	const uint32_t v21 = MAKE_SEMANTIC_VERSION(21, 0, 0);
@@ -644,7 +647,7 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 			bool useOldDefaults = lastVersion && lastVersion < version;
 			config_set_bool(userConfig, "General", configKey.c_str(), useOldDefaults);
 
-			hasChanges = true;
+			hasUserConfigChanges = true;
 		}
 	}
 
@@ -653,7 +656,7 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 
 		bool layoutUpdated = UpdatePre22MultiviewLayout(layout);
 
-		hasChanges = hasChanges | layoutUpdated;
+		hasUserConfigChanges = hasUserConfigChanges | layoutUpdated;
 	}
 
 	if (lastVersion && lastVersion < v24) {
@@ -663,11 +666,33 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 			config_set_string(userConfig, "General", "HotkeyFocusType", "DisableHotkeysInFocus");
 		}
 
-		hasChanges = true;
+		hasUserConfigChanges = true;
 	}
 
-	if (hasChanges) {
+	if (lastVersion && lastVersion < MAKE_SEMANTIC_VERSION(32, 2, 0)) {
+		bool migratedUserSettings = config_has_user_value(appConfig, "General", "Pre32.2Migrated");
+
+		if (!migratedUserSettings) {
+			double currentSnapDistance = config_get_double(userConfig, "BasicWindow", "SnapDistance");
+
+			if (currentSnapDistance == 10.0) {
+				double newDefaultSnapDistance = kDefaultSnapDistance;
+				config_set_double(userConfig, "BasicWindow", "SnapDistance", newDefaultSnapDistance);
+			}
+
+			config_set_bool(appConfig, "General", "Pre32.2Migrated", true);
+
+			hasUserConfigChanges = true;
+			hasGlobalConfigChanges = true;
+		}
+	}
+
+	if (hasUserConfigChanges) {
 		userConfig.SaveSafe("tmp");
+	}
+
+	if (hasGlobalConfigChanges) {
+		appConfig.SaveSafe("tmp");
 	}
 }
 
