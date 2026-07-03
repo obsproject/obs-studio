@@ -1708,6 +1708,23 @@ void OBSBasic::close()
 		return;
 	}
 
+	// qt glitch workaround, wayland-specific:
+	//
+	// if a window has been created but never shown, QWindow has no instantiated QPlatformWindow
+	// this causes QWindow::close() to report success without actually closing
+	// this means the handleClose fallback in QWidgetPrivate::close() gets skipped and nothing gets closed
+	//
+	// so we do it manually instead
+	//
+	// we don't want to do this *by default* because then we'd skip UI cleanup in the normal close path
+	// which doesn't matter if there's no UI to clean up, though!
+	QWindow *window = windowHandle();
+	if (window && !window->handle()) {
+		QCloseEvent closeEvent;
+		QApplication::sendEvent(this, &closeEvent);
+		return;
+	}
+
 	OBSMainWindow::close();
 }
 
