@@ -168,7 +168,7 @@ jobs:
           echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
       - name: Validate Flatpak manifest
-        uses: ./.github/actions/flatpak-builder-lint
+        uses: ./.github/actions/lint-obs/lint-flatpak-manifest
         with:
           artifact: manifest
           path: build-aux/com.obsproject.Studio.json

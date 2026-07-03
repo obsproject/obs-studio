@@ -1,8 +1,0 @@
-{
-  "com.obsproject.Studio": [
-    "finish-args-flatpak-spawn-access",
-    "external-gitmodule-url-found",
-    "finish-args-host-filesystem-access",
-    "appstream-flathub-manifest-url-not-reachable"
-  ]
-}
