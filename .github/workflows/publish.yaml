@@ -227,20 +227,13 @@ jobs:
           build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   steam-upload:
-    name: Upload Steam Builds 🚂
+    name: Publish Release On Steam
     needs: check-tag
     if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ./.github/actions/steam-upload
-        with:
-          steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
-          steamUser: ${{ secrets.STEAM_USER }}
-          steamPassword: ${{ secrets.STEAM_PASSWORD }}
-          workflowSecret: ${{ github.token }}
-          tagName: ${{ github.ref_name }}
-          preview: false
+    uses: ./.github/workflows/publish-steam.yaml
+    secrets: inherit
+    permissions:
+      contents: read
 
   windows-patches:
     name: Create Windows Patches 🩹
