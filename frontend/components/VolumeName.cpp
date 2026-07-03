@@ -198,6 +198,7 @@ void VolumeName::updateLabelText(const QString &name)
 	int textWidth = metrics.horizontalAdvance(plainText);
 
 	if (availableWidth > textWidth) {
+		label->setText(name);
 		return;
 	}
 
