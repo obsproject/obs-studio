@@ -1,176 +1,138 @@
 name: Analyze Project
 on:
   workflow_call:
+    inputs:
+      environment:
+        description: Deployment environment to use for jobs
+        required: true
+        type: string
+    secrets:
+      PVS_LICENSE_NAME:
+        description: PVS-Studio license name.
+        required: false
+      PVS_LICENSE_KEY:
+        description: PVS-Studio license key.
+        required: false
+      RESTREAM_CLIENTID:
+        description: OAuth client ID for Restream.io connection.
+        required: false
+      RESTREAM_HASH:
+        description: OAuth client ID hash for Restream.io connection.
+        required: false
+      TWITCH_CLIENTID:
+        description: OAuth client ID for Twitch.tv connection.
+        required: false
+      TWITCH_HASH:
+        description: OAuth client ID hash for Twitch.tv connection.
+        required: false
+      YOUTUBE_CLIENTID:
+        description: OAuth client ID for YouTube.com connection.
+        required: false
+      YOUTUBE_CLIENTID_HASH:
+        description: OAuth client ID hash for YouTube.com connection.
+        required: false
+      YOUTUBE_SECRET:
+        description: OAuth client secret for YouTube.com connection.
+        required: false
+      YOUTUBE_SECRET_HASH:
+        description: OAuth client secret hash for YouTube.com connection.
+        required: false
+      GPU_PRIORITY_VAL:
+        required: false
+permissions: {}
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
 jobs:
   windows:
-    name: Windows 🪟 (PVS-Studio)
+    name: Windows (PVS-Studio)
+    if: fromJSON(vars.ENABLE_PVS_STUDIO)
     runs-on: windows-2025-vs2026
-    if: false && github.repository_owner == 'obsproject'
-    defaults:
-      run:
-        shell: pwsh
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    permissions:
+      contents: read            # Necessary for repository checkouts.
+      security-events: write    # Necessary to post CodeQL security scanning reports
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          persist-credentials: false
           submodules: recursive
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - name: Build OBS Studio 🧱
-        uses: ./.github/actions/build-obs
-        env:
-          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
-          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
-          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
-          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
-          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
-          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
-          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
-          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
-          GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
-        with:
-          target: x64
-          config: Debug
-
-      - name: Run PVS-Studio Analysis
-        uses: ./.github/actions/windows-analysis
-        with:
-          pvsUsername: ${{ secrets.PVS_NAME }}
-          pvsKey: ${{ secrets.PVS_KEY }}
-          target: x64
-          config: Debug
-
-  macos:
-    name: macOS 🍏 (clang-analyze)
-    runs-on: macos-26
-    defaults:
-      run:
-        shell: zsh --no-rcs --errexit --pipefail {0}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Set Up Environment 🔧
+      - name: Set Up Environment
         id: setup
         run: |
-          : Set Up Environment 🔧
-          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+          # Set Up Environment
+          if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
 
-          print '::group::Enable Xcode 26.5'
-          sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
-          print '::endgroup::'
+          jq -r '.configurePresets[]
+            | select(.name == "dependencies")
+            | .vendor["obsproject.com/obs-studio"].tools.["pvs-studio"]
+            | to_entries
+            | map("\(.key)=\(.value|tostring)")
+            | .[]' "${PWD}/CMakePresets.json" >> "${GITHUB_OUTPUT}"
 
-          print '::group::Clean Homebrew Environment'
-          local -a unwanted_formulas=()
-          local -a remove_formulas=()
-          for formula (${unwanted_formulas}) {
-            if [[ -d ${HOMEBREW_PREFIX}/Cellar/${formula} ]] remove_formulas+=(${formula})
-          }
-
-          if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
-          print '::endgroup::'
-
-          local xcode_cas_path="${HOME}/Library/Developer/Xcode/DerivedData/CompilationCache.noindex"
-
-          if ! [[ -d ${xcode_cas_path} ]] mkdir -p ${xcode_cas_path}
-
-          print "xcodeCasPath=${xcode_cas_path}" >> $GITHUB_OUTPUT
-
-      - name: Set Up Code Signing 🔑
-        uses: ./.github/actions/setup-macos-codesigning
-        id: codesign
+      - name: Setup PVS-Studio
+        id: pvs-setup
+        uses: ./.github/actions/analyze-obs/setup-pvs-studio
         with:
-          codesignIdentity: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-          codesignCertificate: ${{ secrets.MACOS_SIGNING_CERT }}
-          certificatePassword: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
-          keychainPassword: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
-          provisioningProfile: ${{ secrets.MACOS_SIGNING_PROVISIONING_PROFILE }}
-          notarizationUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
-          notarizationPassword: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+          version: ${{ steps.setup.outputs.version }}
+          checksum: ${{ steps.setup.outputs.hash }}
+          url: ${{ steps.setup.outputs.baseUrl }}
+          user: ${{ secrets.PVS_LICENSE_NAME }}
+          license: ${{ secrets.PVS_LICENSE_KEY }}
 
-      - name: Build OBS Studio 🧱
+      - name: Analyze OBS Studio
+        id: analyze
+        uses: ./.github/actions/analyze-obs/run-pvs-studio
         env:
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENT_ID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_CLIENT_HASH || '0'}}
           TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
-          TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
-          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
-          RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
-          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
-          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
-          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
-          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
-          CODESIGN_IDENT: ${{ steps.codesign.outputs.codesignIdent }}
-          CODESIGN_TEAM: ${{ steps.codesign.outputs.codesignTeam }}
-          PROVISIONING_PROFILE: ${{ steps.codesign.outputs.provisioningProfileUUID }}
-          XCODE_CAS_PATH: ${{ steps.setup.outputs.xcodeCasPath }}
-        run: |
-          : Run macOS Build
-
-          local -a build_args=(
-            --config Debug
-            --target macos-arm64
-            --codesign
-            --analyze
-          )
-          if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
-
-          git fetch origin --no-tags --no-recurse-submodules -q
-          .github/scripts/build-macos ${build_args}
-
-      - name: Compile Analytics Data 📊
-        run: |
-          : Compile Analytics Data 📊
-
-          local analytics_root='${{ github.workspace }}/analytics'
-
-          local -a analytics_files=(${analytics_root}/StaticAnalyzer/obs-studio/**/*.plist)
-
-          for file (${analytics_files}) {
-            mv ${file} ${analytics_root}/${${file:t}//plist/sarif}
-          }
-
-          pushd ${analytics_root}
-
-          # The jq expression below merges the results of all separate compilation (and
-          # analysis) runs into a single result of all tools, thus meeting the
-          # requirements of the codeql-action's upload job.
-          # The merged sarif file contains a single "runs" array with a single
-          # corresponding "tool" object.
-          #
-          # Each sarif file will have its own "rules" array (depending on which rules the
-          # file violated), so all violated rules across all compilations need to be
-          # collected into this array.
-          #
-          # Next, all "artifacts" array elements and "rules" array elements from all
-          # sarif files have to be added to the same "global" corresponding arrays in the
-          # new single "runs" object.
-          #
-          # Finally, because LLVM produces codeflow regions with invalid "endLine" and
-          # "endColumn" entries (with value 0), those entries are removed from the
-          # regions in the results' codeFlows arrays.
-
-          jq -s '{
-            "$schema": first(.[]."$schema"),
-            "version": first(.[].version),
-            "runs": [{
-              "tool": {
-                "driver": (first(.[].runs[].tool.driver) | del(.rules)) + {
-                  "rules": reduce(.[].runs[].tool.driver.rules) as $obj ([]; . + $obj) | unique
-                }
-              },
-              "artifacts": reduce(.[].runs[].artifacts) as $obj ([]; . + $obj) | unique,
-              "results": (reduce(.[].runs[].results) as $obj ([]; . + $obj))
-              | del(
-                .[].codeFlows[].threadFlows[].locations[].location.physicalLocation.region.endLine,
-                .[].codeFlows[].threadFlows[].locations[].location.physicalLocation.region.endColumn
-                | select(. == 0)
-              )
-            }]
-          }' *.sarif > merged.sarif
-          popd
-
-      - name: Upload SARIF report files 📦
-        uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+          TWITCH_HASH: ${{ secrets.TWITCH_CLIENT_HASH || '0' }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENT_HASH || '0' }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_CLIENT_SECRET_HASH || '0' }}
+          GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL || '0'}}
         with:
-          sarif_file: "${{ github.workspace }}/analytics/merged.sarif"
-          category: 'clang-analyze (macOS Apple Silicon)'
+          architecture: x64
+          upload-codeql: true
+
+  macos:
+    name: macOS (clang-analyze)
+    runs-on: macos-26
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    permissions:
+      contents: read            # Necessary for repository checkouts.
+      security-events: write    # Necessary to post CodeQL security scanning reports
+    env:
+      XCODE_VERSION: '26.6'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Analyze OBS Studio
+        id: analyze
+        uses: ./.github/actions/analyze-obs/run-clang-analyze
+        env:
+          RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENT_ID }}
+          RESTREAM_HASH: ${{ secrets.RESTREAM_CLIENT_HASH || '0' }}
+          TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_HASH: ${{ secrets.TWITCH_CLIENT_HASH || '0' }}
+          YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENT_HASH || '0' }}
+          YOUTUBE_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_CLIENT_SECRET_HASH || '0' }}
+        with:
+          architecture: arm64
+          upload-codeql: true

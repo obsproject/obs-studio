@@ -98,11 +98,14 @@ jobs:
 
   analyze-project:
     name: Analyze 🔬
-    uses: ./.github/workflows/analyze-project.yaml
     needs: cache-cleanup
-    secrets: inherit
+    uses: ./.github/workflows/analyze-project.yaml
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
     permissions:
-      security-events: write
+      contents: read            # Necessary for repository checkouts.
+      security-events: write    # Necessary to post CodeQL security scanning reports
+    with:
+      environment: nightly
 
   upload-language-files:
     name: Upload Language Files 🌐
