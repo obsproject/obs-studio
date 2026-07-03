@@ -26,6 +26,7 @@ public:
 	explicit SceneTree(QWidget *parent = nullptr);
 
 private:
+	void recalculateGridSize();
 	void RepositionGrid(QDragMoveEvent *event = nullptr);
 
 protected:

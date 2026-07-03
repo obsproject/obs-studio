@@ -28,8 +28,7 @@ void SceneTree::SetGridMode(bool grid)
 		setStyleSheet("");
 	}
 
-	QResizeEvent event(size(), size());
-	resizeEvent(&event);
+	recalculateGridSize();
 }
 
 bool SceneTree::GetGridMode()
@@ -64,33 +63,7 @@ bool SceneTree::eventFilter(QObject *obj, QEvent *event)
 
 void SceneTree::resizeEvent(QResizeEvent *event)
 {
-	if (gridMode) {
-		int scrollWid = verticalScrollBar()->sizeHint().width();
-		const QRect lastItem = visualItemRect(item(count() - 1));
-		const int h = lastItem.y() + lastItem.height();
-
-		if (h < height()) {
-			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-			scrollWid = 0;
-		} else {
-			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-		}
-
-		int wid = contentsRect().width() - scrollWid - 1;
-		int items = (int)std::ceil((float)wid / maxWidth);
-		int itemWidth = wid / items;
-
-		setGridSize(QSize(itemWidth, itemHeight));
-
-		for (int i = 0; i < count(); i++) {
-			item(i)->setSizeHint(QSize(itemWidth, itemHeight));
-		}
-	} else {
-		setGridSize(QSize());
-		for (int i = 0; i < count(); i++) {
-			item(i)->setData(Qt::SizeHintRole, QVariant());
-		}
-	}
+	recalculateGridSize();
 
 	QListWidget::resizeEvent(event);
 }
@@ -133,17 +106,44 @@ void SceneTree::dropEvent(QDropEvent *event)
 		QListWidgetItem *item = takeItem(selectedIndexes()[0].row());
 		insertItem(r, item);
 		setCurrentItem(item);
-		resize(size());
 	}
 
 	QListWidget::dropEvent(event);
 
-	// We must call resizeEvent to correctly place all grid items.
-	// We also do this in rowsInserted.
-	QResizeEvent resEvent(size(), size());
-	SceneTree::resizeEvent(&resEvent);
+	recalculateGridSize();
 
 	QTimer::singleShot(100, [this]() { emit scenesReordered(); });
+}
+
+void SceneTree::recalculateGridSize()
+{
+	if (gridMode) {
+		int scrollWid = verticalScrollBar()->sizeHint().width();
+		const QRect lastItem = visualItemRect(item(count() - 1));
+		const int h = lastItem.y() + lastItem.height();
+
+		if (h < height()) {
+			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+			scrollWid = 0;
+		} else {
+			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+		}
+
+		int wid = contentsRect().width() - scrollWid - 1;
+		int items = (int)std::ceil((float)wid / maxWidth);
+		int itemWidth = wid / items;
+
+		setGridSize(QSize(itemWidth, itemHeight));
+
+		for (int i = 0; i < count(); i++) {
+			item(i)->setSizeHint(QSize(itemWidth, itemHeight));
+		}
+	} else {
+		setGridSize(QSize());
+		for (int i = 0; i < count(); i++) {
+			item(i)->setData(Qt::SizeHintRole, QVariant());
+		}
+	}
 }
 
 void SceneTree::RepositionGrid(QDragMoveEvent *event)
@@ -230,8 +230,7 @@ void SceneTree::dragLeaveEvent(QDragLeaveEvent *event)
 
 void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 {
-	QResizeEvent event(size(), size());
-	SceneTree::resizeEvent(&event);
+	recalculateGridSize();
 
 	QListWidget::rowsInserted(parent, start, end);
 }
