@@ -1,7 +1,6 @@
 #include "SceneTree.hpp"
 
 #include <QScrollBar>
-#include <QTimer>
 
 #include "moc_SceneTree.cpp"
 
@@ -106,7 +105,7 @@ void SceneTree::dropEvent(QDropEvent *event)
 
 	recalculateGridSize();
 
-	QTimer::singleShot(100, [this]() { emit scenesReordered(); });
+	emit scenesReordered();
 }
 
 void SceneTree::recalculateGridSize()
