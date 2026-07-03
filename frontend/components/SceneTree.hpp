@@ -30,7 +30,6 @@ private:
 	void RepositionGrid(QDragMoveEvent *event = nullptr);
 
 protected:
-	virtual bool eventFilter(QObject *obj, QEvent *event) override;
 	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void startDrag(Qt::DropActions supportedActions) override;
 	virtual void dropEvent(QDropEvent *event) override;

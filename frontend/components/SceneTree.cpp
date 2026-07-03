@@ -7,7 +7,6 @@
 
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
-	installEventFilter(this);
 	setDragDropMode(InternalMove);
 	setMovement(QListView::Snap);
 }
@@ -54,11 +53,6 @@ int SceneTree::GetGridItemWidth()
 int SceneTree::GetGridItemHeight()
 {
 	return itemHeight;
-}
-
-bool SceneTree::eventFilter(QObject *obj, QEvent *event)
-{
-	return QObject::eventFilter(obj, event);
 }
 
 void SceneTree::resizeEvent(QResizeEvent *event)
