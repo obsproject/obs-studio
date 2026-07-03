@@ -1,0 +1,79 @@
+name: Upload Assets
+description: Builds a Steam release with prepared assets and uploads it to Steam.
+inputs:
+  dry-run:
+    description: Enable dry-run mode (no side-effects).
+    default: 'false'
+  steam-secret:
+    description: Steam client secret
+    required: true
+  steam-user:
+    description: Steam user name
+    required: true
+  steam-password:
+    description: Steam user password
+    required: true
+  branch-name:
+    description: Steam branch for upload
+    default: stable
+  description:
+    description: Steam release description
+    default: ${{ github.sha }}
+  use-playtest:
+    description: Switches action to upload the build to Steam Playtest
+    default: 'false'
+  path:
+    description: Location of downloaded and prepared OBS Studio release assets
+    default: ${{ runner.temp }}
+runs:
+  using: composite
+  steps:
+    - name: Install Bash 5
+      id: install-bash
+      if: runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        # Install Bash
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+        
+        declare brew_prefix
+        brew_prefix="$(brew --prefix)"
+        if [[ ! -x "${brew_prefix}/bin/bash" ]]; then
+          brew install --quiet bash
+        fi
+
+    - name: Set Up steamcmd
+      id: setup-steamcmd
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: ${GITHUB_ACTION_PATH}/setup-steamcmd.bash
+
+    - name: Generate Steam TOTP Code
+      id: setup-totp
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        STEAM_SECRET: ${{ inputs.steam-secret }}
+      run: ${GITHUB_ACTION_PATH}/setup-steam-totp.bash
+
+    - name: Upload Assets to Steam
+      id: upload-assets
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        STEAMCMD_PATH: ${{ steps.setup-steamcmd.outputs.path }}
+        STEAM_USER: ${{ inputs.steam-user }}
+        STEAM_PASSWORD: ${{ inputs.steam-password }}
+        STEAM_TOTP_CODE: ${{ steps.setup-totp.outputs.code }}
+        ASSET_PATH: ${{ inputs.path }}
+        BRANCH_NAME: ${{ inputs.branch-name }}
+        DESCRIPTION: ${{ inputs.description }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        USE_PLAYTEST: ${{ inputs.use-playtest }}
+      run: ${GITHUB_ACTION_PATH}/upload-assets.bash
+
+    - name: Upload Steam build logs
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: >-
+          ${{ format(
+            'steam-build-logs-{0}', case(fromJSON(inputs.use-playtest || 'false'), 'playtest', 'default')
+          ) }}
+        path: ${{ steps.upload-assets.outputs.log-path }}
