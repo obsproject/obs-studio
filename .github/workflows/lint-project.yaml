@@ -163,7 +163,9 @@ jobs:
 
   compatibility-validator:
     name: Validate Compatibility
-    if: github.base_ref == 'master' || github.ref_name == 'master'
+    if: >-
+      contains(fromJSON('["master", "main"]'), github.base_ref)
+      || contains(fromJSON('["master", "main"]'), github.ref_name)
     runs-on: ubuntu-slim
     permissions:
       contents: read            # Necessary to keep workflow-level permission
@@ -190,7 +192,9 @@ jobs:
 
   services-validator:
     name: Validate Services
-    if: github.base_ref == 'master' || github.ref_name == 'master'
+    if: >-
+      contains(fromJSON('["master", "main"]'), github.base_ref)
+      || contains(fromJSON('["master", "main"]'), github.ref_name)
     runs-on: ubuntu-slim
     permissions:
       contents: read            # Necessary to keep workflow-level permission

@@ -13,11 +13,9 @@ concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 jobs:
-  check-format:
-    name: Format 🔍
-    uses: ./.github/workflows/check-format.yaml
-    permissions:
-      contents: read
+  lint-project:
+    name: Format
+    uses: ./.github/workflows/lint-project.yaml
 
   build-project:
     name: Build 🧱
@@ -25,54 +23,6 @@ jobs:
     secrets: inherit
     permissions:
       contents: read
-
-  compatibility-validation:
-    name: Validate Compatibility 🕵️
-    if: github.base_ref == 'master'
-    runs-on: ubuntu-24.04
-    permissions:
-      checks: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Check for Changed Files ✅
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          base: origin/${{ github.base_ref }}
-          pathspec: plugins/win-capture/data/*.json
-
-      - name: Check for Invalid Compatibility Data 📉
-        if: fromJSON(steps.checks.outputs.has-changed-files)
-        uses: ./.github/actions/compatibility-validator
-
-  services-validation:
-    name: Validate Services 🕵️
-    if: github.base_ref == 'master'
-    runs-on: ubuntu-24.04
-    permissions:
-      checks: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Check for Changed Files ✅
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          base: origin/${{ github.base_ref }}
-          pathspec: plugins/rtmp-services/data/*.json
-
-      - name: Check Services JSON Schema 📉
-        if: fromJSON(steps.checks.outputs.has-changed-files)
-        uses: ./.github/actions/services-validator
-        with:
-          repositorySecret: ${{ secrets.GITHUB_TOKEN }}
-          runSchemaChecks: true
-          runServiceChecks: false
 
   update-documentation:
     name: Update Documentation 📖
