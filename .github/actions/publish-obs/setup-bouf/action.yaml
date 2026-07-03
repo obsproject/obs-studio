@@ -1,0 +1,39 @@
+name: Setup BOUF
+description: Set up BOUF for use on GitHub Actions runners
+inputs:
+  version:
+    description: BOUF version to install
+    required: true
+  checksum:
+    description: Checksum of BOUF download to confirm authenticity
+    required: true
+  nsis-checksum:
+    description: Checksum of BOUF NSIS package download to confirm authenticity
+    required: true
+  url:
+    description: BOUF download URL
+    required: false
+    default: 'https://github.com/obsproject/bouf/releases/download'
+outputs:
+  path:
+    description: Location on the runner where BOUF has been extracted to
+    value: ${{ steps.setup.outputs.bouf-location }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Windows
+        custom-error: publish-obs/setup-bouf action requires a Windows runner.
+
+    - name: Setup BOUF
+      id: setup
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.workingDirectory }}
+      env:
+        BOUF_URL: ${{ inputs.url }}
+        BOUF_VERSION: ${{ inputs.version }}
+        BOUF_CHECKSUM: ${{ inputs.checksum }}
+        BOUF_NSIS_CHECKSUM: ${{ inputs.nsis-checksum }}
+      run: ${GITHUB_ACTION_PATH}/setup-bouf.bash

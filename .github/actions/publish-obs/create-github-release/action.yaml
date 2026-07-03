@@ -1,0 +1,73 @@
+name: Create GitHub Release
+description: Creates a GitHub release based on the provided git tag and the content provided via inputs.
+inputs:
+  name:
+    description: The display name of the release.
+    default: ''
+  tag:
+    description: The git tag to base the release on.
+    default: ''
+  release-notes:
+    description: A multi-line string with the release notes to use as the body of the release.
+    default: ''
+  release-note-file:
+    description: The path to a file containing the body text for the release.
+    default: ''
+  generate-release-notes:
+    description: >
+      A boolean value to indicate whether release notes should be automatically generated based on the 'previous-tag'.
+    default: 'false'
+  draft:
+    description: A boolean value to indicate whether the release should be created as a draft.
+    default: 'true'
+  is-prerelease:
+    description: A boolean value to indicate whether the release is created as a 'pre-release'.
+    default: 'false'
+  previous-tag:
+    description: >
+      The tag name of the release that is considered the "previous" release. Required for automatic release note
+      generation.
+    default: ''
+  files:
+    description: A JSON string representing an array of files to attach to the release or a glob pattern.
+    default: ''
+  github-token:
+    description: >
+      The GitHub token required for the `gh` command-line utility to create or edit GitHub releases. The provided
+      token needs to have the 'contents: write' permission.
+    default: ${{ github.token }}
+  working-directory:
+    description: The path to a directory to use as a base path for relative file paths.
+    default: ${{ github.workspace }}
+outputs:
+  release-id:
+    description: The ID of the created or updated GitHub release.
+    value: ${{ steps.create.outputs.release-id }}
+  release-url:
+    description: The URL to the created or updated GitHub release.
+    value: ${{ steps.create.outputs.release-url }}
+  release-upload-url:
+    description: The upload URL to add additional release assets to the GitHub release.
+    value: ${{ steps.create.outputs.release-upload-url }}
+  release-assets:
+    description: A JSON string representing an array of URLs for assets uploaded to the GitHub release by the action.
+    value: ${{ steps.create.outputs.release-asset-urls }}
+runs:
+  using: composite
+  steps:
+    - name: Create Release
+      shell: bash --noprofile --norc -eo pipefail {0}
+      working-directory: ${{ inputs.working-directory }}
+      id: create
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        RELEASE_NAME: ${{ inputs.name }}
+        RELEASE_TAG: ${{ inputs.tag }}
+        RELEASE_NOTES: ${{ inputs.release-notes }}
+        RELEASE_NOTE_FILE: ${{ inputs.release-note-file }}
+        GENERATE_RELEASE_NOTES: ${{ inputs.generate-release-notes }}
+        FILES: ${{ inputs.files }}
+        PREVIOUS_TAG: ${{ inputs.previous-tag }}
+        CREATE_DRAFT: ${{ inputs.draft }}
+        IS_PRERELEASE: ${{ inputs.is-prerelease }}
+      run: ${GITHUB_ACTION_PATH}/create-release.bash

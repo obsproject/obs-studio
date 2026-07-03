@@ -1,0 +1,201 @@
+name: Generate Windows Updater Files
+description: Generates proprietary update files to use with OBS Studio's automatic updater on Windows.
+inputs:
+  architecture:
+    description: The CPU architecture to generate updater files for. Available values are 'arm64' or 'x86_64'.
+    required: true
+  channel:
+    description: The update channel to generate updater files for. Available values are 'stable' or 'beta'.
+    default: stable
+  working-directory:
+    description: A path to an OBS Studio checkout.
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Windows
+        custom-error: publish-obs/generate-windows-update action requires a Windows runner.
+
+    - name: Install BOUF Dependencies
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        DEPENDENCIES: |-
+          NSIS.NSIS 3.12
+          Rclone.Rclone 1.74.4
+          JohnMacFarlane.Pandoc 3.9.0.2
+      run: |
+        # Install BOUF Dependencies
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare winget_path
+        winget_path="$(cygpath --unix "${LOCALAPPDATA}/Microsoft/WindowsApps/winget.exe")"
+        declare -a winget_arguments=(
+          --silent --accept-package-agreements --accept-source-agreements
+          --disable-interactivity --exact
+        )
+
+        echo '::group::Installing BOUF dependencies via winget'
+        declare dependency
+        declare version
+        while read -r dependency version; do
+          "${winget_path}" install "${winget_arguments[@]}" --version "${version}" --id "${dependency}"
+        done <<< "${DEPENDENCIES}"
+        echo '::endgroup::'
+
+    - name: Get BOUF Version Data
+      id: setup
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        # Get BOUF Version Data
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        jq -r '.configurePresets[]
+          | select(.name == "dependencies")
+          | .vendor["obsproject.com/obs-studio"].tools.bouf
+          | to_entries
+          | map("\(.key)=\(.value|tostring)")
+          | .[]' "${PWD}/CMakePresets.json" >> "${GITHUB_OUTPUT}"
+
+    - name: Setup BOUF
+      id: setup-bouf
+      uses: ./.github/actions/publish-obs/setup-bouf
+      with:
+        version: ${{ steps.setup.outputs.version }}
+        checksum: ${{ steps.setup.outputs.hash }}
+        nsis-checksum: ${{ steps.setup.outputs.nsis-hash }}
+        url: ${{ steps.setup.outputs.baseUrl }}
+
+    - name: Download Asset
+      id: download
+      uses: ./.github/actions/download-asset
+      with:
+        platform: windows
+        architecture: ${{ inputs.architecture }}
+        verify: true
+        path: ${{ runner.temp }}
+
+    - name: Extract Asset
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        RELEASE_ASSET: ${{ steps.download.outputs.path }}
+      run: |
+        # Extract Asset
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        mkdir -p "${RUNNER_TEMP}/current"
+        cd "${RUNNER_TEMP}/current"
+        unzip "${RELEASE_ASSET}"
+
+    - name: Download Versions
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        ARCHITECTURE: ${{ inputs.architecture }}
+        RCLONE_TRANSFERS: 100
+        RCLONE_FAST_LIST: true
+        RCLONE_EXCLUDE: ${{ format('{{pdbs/**,**/{0}/**}}', github.ref_name) }}
+        RCLONE_GCS_ENV_AUTH: 'true'
+        RCLONE_GCS_BUCKET_POLICY_ONLY: 'true'
+      run: |
+        # Download Versions
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        rclone copy ":gcs:obs-builds/${ARCHITECTURE}" "${RUNNER_TEMP}/previous"
+
+    - name: Prepare Release Notes
+      id: release-notes
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Prepare Release Notes
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare tag_subject
+        tag_subject="$(git tag -l --format='%(contents:subject)' "${GITHUB_REF_NAME}")"
+        declare tag_body
+        tag_body="$(git tag -l --format='%(contents:body)' "${GITHUB_REF_NAME}")"
+
+        release_notes="${RUNNER_TEMP}/bouf_notes.rst"
+        {
+          echo "${tag_subject}"
+          echo "###################################################"
+          echo ""
+          echo "${tag_body}"
+        } > "${release_notes}"
+
+        release_notes="$(cygpath --windows "${release_notes}")"
+        echo "path=${release_notes}" >> "${GITHUB_OUTPUT}"
+        echo "Generated release notes at ${release_notes}."
+
+    - name: Run BOUF
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        BOUF_PATH: ${{ steps.setup-bouf.outputs.path }}
+        UPDATE_CHANNEL: ${{ inputs.channel }}
+        RELEASE_NOTES_FILE: ${{ steps.release-notes.outputs.path }}
+      working-directory: ${{ steps.setup-bouf.outputs.path }}
+      run: |
+        # Run BOUF
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare pandoc_path
+        pandoc_path="$(cygpath --unix "${LOCALAPPDATA}/Programs/Pandoc")"
+        export PATH="${pandoc_path}:${PATH}"
+        BOUF_PATH="$(cygpath --unix "${BOUF_PATH}")"
+
+        mkdir -p "${RUNNER_TEMP}/previous"
+
+        declare -a bouf_args=(
+          --config "${GITHUB_ACTION_PATH}/config.toml"
+          --version "${GITHUB_REF_NAME}"
+          --branch "${UPDATE_CHANNEL}"
+          --notes-file "${RELEASE_NOTES_FILE}"
+          --input "${RUNNER_TEMP}/current"
+          --previous "${RUNNER_TEMP}/previous"
+          --output "${RUNNER_TEMP}/output"
+          --updater-data-only
+        )
+
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then
+          bouf_args+=(--verbose)
+        fi
+
+        ${BOUF_PATH}/bin/bouf.exe "${bouf_args[@]}"
+
+    - name: Sync Latest Build
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        ARCHITECTURE: ${{ inputs.architecture }}
+        UPDATE_CHANNEL: ${{ inputs.channel }}
+        RCLONE_TRANSFERS: 100
+        RCLONE_INCLUDE: ${{ format('**/{0}/**', github.ref_name) }}
+        RCLONE_GCS_ENV_AUTH: 'true'
+        RCLONE_GCS_BUCKET_POLICY_ONLY: 'true'
+      run: |
+        # Sync Latest Build
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        rclone sync --delete-excluded "${RUNNER_TEMP}/previous" \
+          ":gcs:obs-latest/${ARCHITECTURE}/${UPDATE_CHANNEL}"
+
+    - name: Upload Latest Build
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        ARCHITECTURE: ${{ inputs.architecture }}
+        RCLONE_TRANSFERS: 100
+        RCLONE_GCS_ENV_AUTH: 'true'
+        RCLONE_GCS_BUCKET_POLICY_ONLY: 'true'
+      run: |
+        # Upload Latest Build
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        rclone copy "${RUNNER_TEMP}/previous" ":gcs:obs-builds/${ARCHITECTURE}"
+
+    - name: Upload Update Files
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ format('windows-updater-files-{0}', inputs.architecture) }}
+        compression-level: 0
+        path: ${{ format('{0}/output', runner.temp) }}

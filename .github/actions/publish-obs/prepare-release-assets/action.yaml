@@ -1,0 +1,67 @@
+name: Prepare Release Assets
+description: Downloads and prepares available workflow artifacts for an OBS Studio release.
+inputs:
+  artifact-name:
+    description: A prefix or pattern used to select assets from available workflow artifacts.
+    default: 'obs-studio-*'
+  version:
+    description: The semantic version for which the assets should be prepared.
+    required: true
+  download-artifacts:
+    description: A boolean value to indicate whether the action should download the artifacts automatically.
+    default: 'false'
+  working-directory:
+    description: A path to an optional working directory for the action.
+    default: ${{ github.workspace }}
+outputs:
+  release-files:
+    description: A JSON string representing an array of all prepared assets.
+    value: ${{ steps.rename.outputs.release-files }}
+  checksum-file:
+    description: The path to the generated markdown file with checksums for all prepared assets.
+    value: ${{ steps.checksums.outputs.checksum-file }}
+runs:
+  using: composite
+  steps:
+    - name: Download Assets
+      id: download
+      if: fromJSON(inputs.download-artifacts)
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        path: ${{ inputs.working-directory }}
+        pattern: ${{ inputs.artifact-name }}
+        skip-decompress: true
+
+    - name: Install Bash 5
+      id: install-bash
+      if: runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        # Install Bash
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare brew_prefix
+        brew_prefix="$(brew --prefix)"
+        if [[ ! -x "${brew_prefix}/bin/bash" ]]; then
+          brew install --quiet bash
+
+          bash --version
+        fi
+
+    - name: Rename Assets
+      id: rename
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ARTIFACT_PATTERN: ${{ inputs.artifact-prefix }}
+        RELEASE_VERSION: ${{ inputs.version }}
+      run: ${GITHUB_ACTION_PATH}/rename-assets.bash
+
+    - name: Generate Checksums
+      id: checksums
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        RELEASE_FILES: ${{ steps.rename.outputs.release-files }}
+        RELEASE_VERSION: ${{ inputs.version }}
+      run: ${GITHUB_ACTION_PATH}/generate-checksums.bash
