@@ -74,6 +74,8 @@ void SceneTree::dropEvent(QDropEvent *event)
 	}
 
 	if (gridMode) {
+		QSignalBlocker block(this);
+
 		int scrollWid = verticalScrollBar()->sizeHint().width();
 		const QRect firstItem = visualItemRect(item(0));
 		const QRect lastItem = visualItemRect(item(count() - 1));
