@@ -215,3 +215,10 @@ void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 
 	QListWidget::rowsInserted(parent, start, end);
 }
+
+void SceneTree::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+	if (selected.count() == 0 && deselected.count() > 0 && !property("clearing").toBool()) {
+		setCurrentRow(deselected.indexes().front().row());
+	}
+}
