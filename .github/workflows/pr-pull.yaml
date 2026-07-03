@@ -41,11 +41,11 @@ jobs:
         uses: ./.github/actions/check-changes
         id: checks
         with:
-          baseRef: origin/${{ github.base_ref }}
-          checkGlob: plugins/win-capture/data/*.json
+          base: origin/${{ github.base_ref }}
+          pathspec: plugins/win-capture/data/*.json
 
       - name: Check for Invalid Compatibility Data 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
+        if: fromJSON(steps.checks.outputs.has-changed-files)
         uses: ./.github/actions/compatibility-validator
 
   services-validation:
@@ -63,11 +63,11 @@ jobs:
         uses: ./.github/actions/check-changes
         id: checks
         with:
-          baseRef: origin/${{ github.base_ref }}
-          checkGlob: plugins/rtmp-services/data/*.json
+          base: origin/${{ github.base_ref }}
+          pathspec: plugins/rtmp-services/data/*.json
 
       - name: Check Services JSON Schema 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
+        if: fromJSON(steps.checks.outputs.has-changed-files)
         uses: ./.github/actions/services-validator
         with:
           repositorySecret: ${{ secrets.GITHUB_TOKEN }}
@@ -87,8 +87,8 @@ jobs:
         uses: ./.github/actions/check-changes
         id: checks
         with:
-          baseRef: origin/${{ github.base_ref }}
-          checkGlob: docs/sphinx
+          base: origin/${{ github.base_ref }}
+          pathspec: docs/sphinx
 
       - uses: ./.github/actions/generate-docs
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
+        if: fromJSON(steps.checks.outputs.has-changed-files)

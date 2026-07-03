@@ -24,11 +24,11 @@ runs:
       uses: ./.github/actions/check-changes
       id: checks
       with:
-        checkGlob: "'*.c' '*.h' '*.cpp' '*.hpp' '*.m' '*.mm'"
-        diffFilter: 'ACM'
+        pathspec: "'*.c' '*.h' '*.cpp' '*.hpp' '*.m' '*.mm'"
+        filter: 'ACM'
 
     - name: Install Dependencies 🛍️
-      if: runner.os == 'Linux' && fromJSON(steps.checks.outputs.hasChangedFiles)
+      if: runner.os == 'Linux' && fromJSON(steps.checks.outputs.has-changed-files)
       shell: bash
       run: |
         : Install Dependencies 🛍️
@@ -41,7 +41,7 @@ runs:
         echo ::endgroup::
 
     - name: Run clang-format 🐉
-      if: fromJSON(steps.checks.outputs.hasChangedFiles)
+      if: fromJSON(steps.checks.outputs.has-changed-files)
       id: result
       shell: zsh --no-rcs --errexit --pipefail {0}
       working-directory: ${{ inputs.workingDirectory }}

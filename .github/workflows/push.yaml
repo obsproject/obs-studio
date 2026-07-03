@@ -41,11 +41,11 @@ jobs:
         uses: ./.github/actions/check-changes
         id: checks
         with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: plugins/win-capture/data/*.json
+          base: ${{ github.event.before }}
+          pathspec: plugins/win-capture/data/*.json
 
       - name: Check for Invalid Compatibility Data 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
+        if: fromJSON(steps.checks.outputs.has-changed-files)
         uses: ./.github/actions/compatibility-validator
         with:
           repositorySecret: ${{ github.token }}
@@ -65,11 +65,11 @@ jobs:
         uses: ./.github/actions/check-changes
         id: checks
         with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: plugins/rtmp-services/data/*.json
+          base: ${{ github.event.before }}
+          pathspec: plugins/rtmp-services/data/*.json
 
       - name: Check Services JSON Schema 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
+        if: fromJSON(steps.checks.outputs.has-changed-files)
         uses: ./.github/actions/services-validator
         with:
           repositorySecret: ${{ github.token }}
@@ -90,11 +90,11 @@ jobs:
         uses: ./.github/actions/check-changes
         id: checks
         with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: '!(cmake*)'
+          base: ${{ github.event.before }}
+          pathspec: '!(cmake*)'
 
       - uses: ./.github/actions/generate-docs
-        if: github.ref_type == 'tag' || fromJSON(steps.checks.outputs.hasChangedFiles)
+        if: github.ref_type == 'tag' || fromJSON(steps.checks.outputs.has-changed-files)
         with:
           disableLinkExtensions: ${{ github.ref_type == 'tag' }}
 

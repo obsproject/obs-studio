@@ -39,14 +39,14 @@ runs:
       uses: ./.github/actions/check-changes
       id: checks
       with:
-        checkGlob: 'frontend/forms/**/*.ui'
+        pathspec: 'frontend/forms/**/*.ui'
 
     - name: Validate XML 💯
-      if: fromJSON(steps.checks.outputs.hasChangedFiles)
+      if: fromJSON(steps.checks.outputs.has-changed-files)
       id: result
       shell: bash
       env:
-        CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
+        CHANGED_FILES: ${{ steps.checks.outputs.changed-files }}
       run: |
         : Validate XML 💯
         if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
