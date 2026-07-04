@@ -534,7 +534,7 @@ void OBSBasic::on_resetUI_triggered()
 	ui->toggleContextBar->setChecked(true);
 	ui->toggleSourceIcons->setChecked(true);
 	ui->toggleStatusBar->setChecked(true);
-	ui->scenes->SetGridMode(false);
+	ui->scenes->setGridMode(false);
 	ui->actionSceneListMode->setChecked(true);
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode", false);

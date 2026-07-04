@@ -389,7 +389,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
 
 	bool sceneGrid = config_get_bool(App()->GetUserConfig(), "BasicWindow", "gridMode");
-	ui->scenes->SetGridMode(sceneGrid);
+	ui->scenes->setGridMode(sceneGrid);
 
 	if (sceneGrid) {
 		ui->actionSceneGridMode->setChecked(true);
