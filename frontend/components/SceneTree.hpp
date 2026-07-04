@@ -7,8 +7,8 @@
 
 class SceneTree : public QListWidget {
 	Q_OBJECT
-	Q_PROPERTY(int gridItemWidth READ GetGridItemWidth WRITE SetGridItemWidth DESIGNABLE true)
-	Q_PROPERTY(int gridItemHeight READ GetGridItemHeight WRITE SetGridItemHeight DESIGNABLE true)
+	Q_PROPERTY(int gridItemWidth READ getGridItemWidth WRITE setGridItemWidth DESIGNABLE true)
+	Q_PROPERTY(int gridItemHeight READ getGridItemHeight WRITE setGridItemHeight DESIGNABLE true)
 
 	bool gridMode = false;
 	int maxWidth = 150;
@@ -16,19 +16,19 @@ class SceneTree : public QListWidget {
 	int lastTargetRow = -1;
 
 public:
-	void SetGridMode(bool grid);
-	bool GetGridMode();
+	void setGridMode(bool grid);
+	bool getGridMode();
 
-	void SetGridItemWidth(int width);
-	void SetGridItemHeight(int height);
-	int GetGridItemWidth();
-	int GetGridItemHeight();
+	void setGridItemWidth(int width);
+	void setGridItemHeight(int height);
+	int getGridItemWidth();
+	int getGridItemHeight();
 
 	explicit SceneTree(QWidget *parent = nullptr);
 
 private:
 	void recalculateGridSize();
-	void RepositionGrid(QDragMoveEvent *event = nullptr);
+	void repositionGrid(QDragMoveEvent *event = nullptr);
 
 protected:
 	virtual void resizeEvent(QResizeEvent *event) override;
