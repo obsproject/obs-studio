@@ -626,7 +626,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 	popup.addSeparator();
 
-	bool grid = ui->scenes->GetGridMode();
+	bool grid = ui->scenes->getGridMode();
 
 	QAction *gridAction = new QAction(grid ? QTStr("Basic.Main.ListMode") : QTStr("Basic.Main.GridMode"), this);
 	connect(gridAction, &QAction::triggered, this, &OBSBasic::GridActionClicked);
@@ -637,20 +637,20 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 void OBSBasic::on_actionSceneListMode_triggered()
 {
-	ui->scenes->SetGridMode(false);
+	ui->scenes->setGridMode(false);
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode", false);
 }
 
 void OBSBasic::on_actionSceneGridMode_triggered()
 {
-	ui->scenes->SetGridMode(true);
+	ui->scenes->setGridMode(true);
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "gridMode", true);
 }
 
 void OBSBasic::GridActionClicked()
 {
-	bool gridMode = !ui->scenes->GetGridMode();
-	ui->scenes->SetGridMode(gridMode);
+	bool gridMode = !ui->scenes->getGridMode();
+	ui->scenes->setGridMode(gridMode);
 
 	if (gridMode) {
 		ui->actionSceneGridMode->setChecked(true);

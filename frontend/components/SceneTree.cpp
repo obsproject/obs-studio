@@ -10,7 +10,7 @@ SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 	setMovement(QListView::Snap);
 }
 
-void SceneTree::SetGridMode(bool grid)
+void SceneTree::setGridMode(bool grid)
 {
 	parent()->setProperty("class", grid ? "list-grid" : "");
 	gridMode = grid;
@@ -29,27 +29,27 @@ void SceneTree::SetGridMode(bool grid)
 	recalculateGridSize();
 }
 
-bool SceneTree::GetGridMode()
+bool SceneTree::getGridMode()
 {
 	return gridMode;
 }
 
-void SceneTree::SetGridItemWidth(int width)
+void SceneTree::setGridItemWidth(int width)
 {
-	maxWidth = width;
+	maxWidth = std::max(1, width);
 }
 
-void SceneTree::SetGridItemHeight(int height)
+void SceneTree::setGridItemHeight(int height)
 {
-	itemHeight = height;
+	itemHeight = std::max(1, height);
 }
 
-int SceneTree::GetGridItemWidth()
+int SceneTree::getGridItemWidth()
 {
 	return maxWidth;
 }
 
-int SceneTree::GetGridItemHeight()
+int SceneTree::getGridItemHeight()
 {
 	return itemHeight;
 }
@@ -125,7 +125,7 @@ void SceneTree::recalculateGridSize()
 	}
 }
 
-void SceneTree::RepositionGrid(QDragMoveEvent *event)
+void SceneTree::repositionGrid(QDragMoveEvent *event)
 {
 	int scrollWid = verticalScrollBar()->sizeHint().width();
 	const QRect firstItem = visualItemRect(item(0));
@@ -194,7 +194,7 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 void SceneTree::dragMoveEvent(QDragMoveEvent *event)
 {
 	if (gridMode) {
-		RepositionGrid(event);
+		repositionGrid(event);
 	}
 
 	QListWidget::dragMoveEvent(event);
@@ -203,7 +203,7 @@ void SceneTree::dragMoveEvent(QDragMoveEvent *event)
 void SceneTree::dragLeaveEvent(QDragLeaveEvent *event)
 {
 	if (gridMode) {
-		RepositionGrid();
+		repositionGrid();
 	}
 
 	QListWidget::dragLeaveEvent(event);
