@@ -19,12 +19,12 @@ void SceneTree::SetGridMode(bool grid)
 		setResizeMode(QListView::Adjust);
 		setViewMode(QListView::IconMode);
 		setUniformItemSizes(true);
-		setStyleSheet("*{padding: 0; margin: 0;}");
 	} else {
 		setViewMode(QListView::ListMode);
 		setResizeMode(QListView::Fixed);
-		setStyleSheet("");
 	}
+
+	style()->polish(this);
 
 	recalculateGridSize();
 }
