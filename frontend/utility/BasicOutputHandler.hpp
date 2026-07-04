@@ -6,6 +6,7 @@
 #include <obs.hpp>
 #include <util/dstr.hpp>
 
+#include <functional>
 #include <future>
 
 #define RTMP_PROTOCOL "rtmp"

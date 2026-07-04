@@ -67,7 +67,7 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	utils->addClass(categoryLabel, "text-tiny");
 
 	nameButton = new VolumeName(source, this);
-	nameButton->setMaximumWidth(140);
+	nameButton->setMaximumWidth(280);
 	utils->addClass(nameButton, "text-small");
 	utils->addClass(nameButton, "mixer-name");
 
@@ -164,7 +164,7 @@ VolumeControl::~VolumeControl()
 	}
 }
 
-const QIcon &VolumeControl::getUnassignedIcon()
+const QIcon &VolumeControl::getWarningIcon()
 {
 	static const QIcon &icon = *new QIcon(":/res/images/unassigned.svg");
 	return icon;
@@ -333,7 +333,7 @@ void VolumeControl::setLayoutVertical(bool vertical)
 		slider->setLayoutDirection(Qt::LeftToRight);
 		slider->setDisplayTicks(true);
 
-		nameButton->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+		nameButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 		categoryLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 		volumeLabel->setAlignment(Qt::AlignRight);
 
@@ -393,7 +393,7 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 		return;
 	}
 
-	QMenu *popup = new QMenu(this);
+	QMenu *popup = new QMenu(window());
 
 	// Create menu QActions
 	QAction *lockAction = new QAction(QTStr("LockVolume"), popup);
@@ -773,6 +773,7 @@ void VolumeControl::processMixerState()
 	bool showAsMuted = obsMuted || obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY;
 	bool showAsMonitored = obsMonitoringType != OBS_MONITORING_TYPE_NONE;
 	bool showAsUnassigned = !obsMuted && unassigned;
+	bool showWarningIcon = showAsUnassigned || obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY;
 
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
 	setUseDisabledColors(showAsMuted || !isActive);
@@ -787,8 +788,8 @@ void VolumeControl::processMixerState()
 						 : QTStr("Basic.AudioMixer.Monitoring.Enable");
 	monitorButton->setToolTip(monitorTooltip);
 
-	if (showAsUnassigned) {
-		muteButton->setIcon(getUnassignedIcon());
+	if (showWarningIcon) {
+		muteButton->setIcon(getWarningIcon());
 	} else if (showAsMuted) {
 		muteButton->setIcon(getMutedIcon());
 	} else {
@@ -806,7 +807,7 @@ void VolumeControl::processMixerState()
 	utils->toggleClass(muteButton, "checked", showAsMuted);
 	utils->toggleClass(monitorButton, "checked", showAsMonitored);
 
-	utils->toggleClass(muteButton, "mute-unassigned", showAsUnassigned);
+	utils->toggleClass(muteButton, "mute-warning", showWarningIcon);
 
 	style()->polish(muteButton);
 	style()->polish(monitorButton);
@@ -818,27 +819,17 @@ void VolumeControl::handleMuteButton(bool mute)
 {
 	setMuted(mute);
 
-	if (obsMonitoringType != OBS_MONITORING_TYPE_NONE) {
-		if (mute) {
-			setMonitoring(OBS_MONITORING_TYPE_MONITOR_ONLY);
-		} else {
-			setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-		}
+	if (!mute && obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY) {
+		setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
 	}
 }
 
 void VolumeControl::handleMonitorButton(bool enableMonitoring)
 {
-	if (!enableMonitoring) {
-		setMonitoring(OBS_MONITORING_TYPE_NONE);
-		return;
-	}
+	obs_monitoring_type newType = (enableMonitoring) ? OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT
+							 : OBS_MONITORING_TYPE_NONE;
 
-	if (obsMuted) {
-		setMonitoring(OBS_MONITORING_TYPE_MONITOR_ONLY);
-	} else {
-		setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-	}
+	setMonitoring(newType);
 }
 
 void VolumeControl::sliderChanged(int vol)
