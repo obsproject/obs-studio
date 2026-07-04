@@ -13,6 +13,7 @@ class SceneTree : public QListWidget {
 	bool gridMode = false;
 	int maxWidth = 150;
 	int itemHeight = 24;
+	int lastTargetRow = -1;
 
 public:
 	void SetGridMode(bool grid);
