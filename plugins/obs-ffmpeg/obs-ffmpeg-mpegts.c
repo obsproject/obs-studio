@@ -549,6 +549,18 @@ static void close_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 	if (!h)
 		return; /* can happen when opening the url fails */
 
+	/* Detach the write callback's opaque before closing: buffered mux
+	 * output has already been delivered by av_write_trailer()'s
+	 * internal flush (ffmpeg_mpegts_data_free runs it before calling
+	 * here, while the URLContext is still alive), or was never
+	 * deliverable (header-only teardown). The avio_flush() this
+	 * function used to do after the close/free below invoked the write
+	 * callback on a freed URLContext — a use-after-free that could not
+	 * deliver data anyway, since the socket was already closed. */
+	AVIOContext *s = stream->s;
+	if (s)
+		s->opaque = NULL;
+
 	/* close rist or srt URLs ; free URLContext */
 	if (is_rist) {
 		err = librist_close(h);
@@ -560,15 +572,11 @@ static void close_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 	h = NULL;
 
 	/* close custom avio_context for srt or rist */
-	AVIOContext *s = stream->s;
-	if (!s)
-		return;
-
-	avio_flush(s);
-	s->opaque = NULL;
-	av_freep(&s->buffer);
-	avio_context_free(&s);
-	s = NULL;
+	if (s) {
+		av_freep(&s->buffer);
+		avio_context_free(&s);
+		s = NULL;
+	}
 
 	if (err)
 		info("[ffmpeg mpegts muxer]: Error closing URL %s", stream->ff_data.config.url);
@@ -785,8 +793,14 @@ static int mpegts_process_packet(struct ffmpeg_output *stream)
 					av_err2str(ret));
 
 		/* Treat "Invalid data found when processing input" and
-		 * "Invalid argument" as non-fatal */
-		if (ret == AVERROR_INVALIDDATA || ret == -EINVAL) {
+		 * "Invalid argument" as non-fatal, but only for per-packet
+		 * muxer rejections. If the error is latched on the IO
+		 * context (pb->error, which avio never clears), every
+		 * subsequent flush is silently discarded and the output
+		 * would keep "streaming" nothing forever — that must remain
+		 * fatal so the reconnect logic can recover. */
+		AVIOContext *pb = stream->ff_data.output ? stream->ff_data.output->pb : NULL;
+		if ((ret == AVERROR_INVALIDDATA || ret == -EINVAL) && (!pb || pb->error >= 0)) {
 			ret = 0;
 		}
 	}
