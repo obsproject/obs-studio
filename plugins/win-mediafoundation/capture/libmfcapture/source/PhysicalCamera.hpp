@@ -151,6 +151,8 @@ public:
 
 	bool GetTransparent() { return m_transparent; }
 
+	MF_COLOR_FORMAT GetFormat() { return m_fmt; }
+
 	// If llInterval is 0, set the camera to use the max FPS.
 	// Otherwise, set camera with matching FPS.
 	HRESULT SetOutputResolution(DWORD dwPhyStrmIndex, UINT32 uiWidth, UINT32 uiHeight, LONGLONG llInterval,

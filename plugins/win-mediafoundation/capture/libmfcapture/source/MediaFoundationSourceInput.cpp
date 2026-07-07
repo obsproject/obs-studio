@@ -49,6 +49,40 @@ SOFTWARE
 
 #include <cinttypes>
 
+namespace {
+struct MFVideoFormatName {
+	MF_COLOR_FORMAT format;
+	const char *name;
+};
+
+static const MFVideoFormatName videoFormatNames[] = {
+	/* unknown format*/
+	{MF_COLOR_FORMAT_UNKNOWN, "Unknown"},
+
+	/* planar YUV formats */
+	{MF_COLOR_FORMAT_NV12, "NV12"},
+
+	/* raw formats */
+	{MF_COLOR_FORMAT_ARGB, "ARGB"},
+	{MF_COLOR_FORMAT_XRGB, "XRGB"},
+};
+
+DStr GetVideoFormatName(MF_COLOR_FORMAT format)
+{
+	DStr name;
+	for (const MFVideoFormatName &format_ : videoFormatNames) {
+		if (format_.format == format) {
+			dstr_cat(name, format_.name);
+			return name;
+		}
+	}
+
+	dstr_cat(name, obs_module_text("VideoFormat.Unknown"));
+	dstr_replace(name, "%1", std::to_string((long long)format).c_str());
+	return name;
+}
+}
+
 void MediaFoundationSourceInput::MediaFoundationSourceLoop()
 {
 	while (true) {
@@ -263,6 +297,10 @@ bool MediaFoundationSourceInput::UpdateVideoConfig(obs_data_t *settings)
 			return false;
 		}
 	}
+
+	MF_COLOR_FORMAT colorFormat{};
+	HRESULT hr = MF_GetOutputFormat(mfcaptureDevice, &colorFormat);
+	DStr formatName = GetVideoFormatName(colorFormat);
 
 	double fps = 0.0;
 

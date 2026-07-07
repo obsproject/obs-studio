@@ -151,6 +151,18 @@ MFCAPTURE_EXPORTS HRESULT MF_GetOutputResolution(CAPTURE_DEVICE_HANDLE h, UINT32
 	return S_OK;
 }
 
+MFCAPTURE_EXPORTS HRESULT MF_GetOutputFormat(CAPTURE_DEVICE_HANDLE h, MF_COLOR_FORMAT *fmt)
+{
+	PhysicalCamera *p = (PhysicalCamera *)h;
+	if (!p) {
+		return E_INVALIDARG;
+	}
+
+	*fmt = p->GetFormat();
+
+	return S_OK;
+}
+
 MFCAPTURE_EXPORTS HRESULT MF_Start(CAPTURE_DEVICE_HANDLE h, MF_VideoDataCallback cb, void *pUserData)
 {
 	PhysicalCamera *p = (PhysicalCamera *)h;
