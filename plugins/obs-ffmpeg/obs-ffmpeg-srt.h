@@ -849,33 +849,50 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 	int ret;
 	SRT_TRACEBSTATS perf;
 
-	ret = libsrt_network_wait_fd_timeout(h, s->eid, 1, h->rw_timeout, &h->interrupt_callback);
-	if (ret)
-		return ret;
+	for (;;) {
+		ret = libsrt_network_wait_fd_timeout(h, s->eid, 1, h->rw_timeout, &h->interrupt_callback);
+		if (ret)
+			return ret;
 
-	ret = srt_send(s->fd, (char *)buf, size);
-	if (ret < 0) {
-		ret = libsrt_neterrno(h);
-	} else {
-		/* log every 60 seconds the rtt and link bandwidth
-		 * rtt: round-trip time
-		 * link bandwidth: bandwidth from ingest to egress
-		*/
-#ifdef _WIN32
-		struct timeb timebuffer;
-		ftime(&timebuffer);
-		double time = (double)timebuffer.time + 0.001 * (double)timebuffer.millitm;
-#else
-		struct timespec timesp;
-		clock_gettime(CLOCK_REALTIME, &timesp);
-		double time = (double)timesp.tv_sec + 0.000000001 * (double)timesp.tv_nsec;
-#endif
-		if (time > (s->time + 60.0)) {
-			srt_bistats(s->fd, &perf, 0, 1);
-			blog(LOG_DEBUG, "[obs-ffmpeg mpegts muxer / libsrt]: RTT [%.2f ms], Link Bandwidth [%.1f Mbps]",
-			     perf.msRTT, perf.mbpsBandwidth);
-			s->time = time;
+		ret = srt_send(s->fd, (char *)buf, size);
+		if (ret >= 0)
+			break;
+
+		if (srt_getlasterror(NULL) == SRT_EASYNCSND) {
+			/* Transient send backpressure: re-poll writability and
+			 * retry, quietly. This callback sits directly on a
+			 * custom AVIOContext, so unlike ffmpeg's own protocols
+			 * there is no retry_transfer_wrapper above it;
+			 * returning EAGAIN here latches a sticky error on the
+			 * AVIOContext, losing this flush (~7 TS packets) and
+			 * tearing the output down on the next write — or, if
+			 * the muxer keeps rejecting packets, wedging it into a
+			 * silent-discard state. */
+			srt_clearlasterror();
+			continue;
 		}
+
+		return libsrt_neterrno(h);
+	}
+
+	/* log every 60 seconds the rtt and link bandwidth
+	 * rtt: round-trip time
+	 * link bandwidth: bandwidth from ingest to egress
+	*/
+#ifdef _WIN32
+	struct timeb timebuffer;
+	ftime(&timebuffer);
+	double time = (double)timebuffer.time + 0.001 * (double)timebuffer.millitm;
+#else
+	struct timespec timesp;
+	clock_gettime(CLOCK_REALTIME, &timesp);
+	double time = (double)timesp.tv_sec + 0.000000001 * (double)timesp.tv_nsec;
+#endif
+	if (time > (s->time + 60.0)) {
+		srt_bistats(s->fd, &perf, 0, 1);
+		blog(LOG_DEBUG, "[obs-ffmpeg mpegts muxer / libsrt]: RTT [%.2f ms], Link Bandwidth [%.1f Mbps]",
+		     perf.msRTT, perf.mbpsBandwidth);
+		s->time = time;
 	}
 
 	return ret;
