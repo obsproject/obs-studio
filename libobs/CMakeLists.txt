@@ -54,6 +54,10 @@ target_sources(
     obs-missing-files.h
     obs-module.c
     obs-module.h
+    dynamic-delay.c
+    dynamic-delay.h
+    dynamic-delay-media.c
+    dynamic-delay-media.h
     obs-nal.c
     obs-nal.h
     obs-output-delay.c

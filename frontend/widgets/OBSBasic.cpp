@@ -23,6 +23,7 @@
 #include "ColorSelect.hpp"
 #include "OBSBasicControls.hpp"
 #include "OBSBasicStats.hpp"
+#include "OBSDynamicDelayDock.hpp"
 #include "plugin-manager/PluginManager.hpp"
 
 #include <obs-module.h>
@@ -375,6 +376,12 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	statsDock->setFloating(true);
 	statsDock->resize(700, 200);
 
+	dynamicDelayDock = new OBSDynamicDelayDock();
+	addDockWidget(Qt::BottomDockWidgetArea, dynamicDelayDock);
+	dynamicDelayDock->setVisible(false);
+	dynamicDelayDock->setFloating(true);
+	dynamicDelayDock->resize(600, 450);
+
 	copyActionsDynamicProperties();
 
 	qRegisterMetaType<int64_t>("int64_t");
@@ -535,6 +542,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	SETUP_DOCK(ui->transitionsDock);
 	SETUP_DOCK(controlsDock);
 	SETUP_DOCK(statsDock);
+	SETUP_DOCK(dynamicDelayDock);
 #undef SETUP_DOCK
 
 	// Register shortcuts for Undo/Redo

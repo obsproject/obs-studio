@@ -794,6 +794,106 @@ General Output Functions
 
    .. versionadded:: 31.1
 
+---------------------
+
+.. function:: void obs_output_set_dynamic_delay_enabled(obs_output_t *output, bool enabled)
+
+   Enables or disables the dynamic delay feature for this output. Unlike
+   `obs_output_set_delay()`, this can be toggled while the output is already
+   active. Disabling clears any buffered data and returns the output to the
+   live feed.
+
+   :param enabled: Whether the dynamic delay feature should be enabled
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: bool obs_output_get_dynamic_delay_enabled(const obs_output_t *output)
+
+   Gets whether the dynamic delay feature is currently enabled.
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: void obs_output_set_dynamic_delay_target_sec(obs_output_t *output, int target_sec)
+
+   Sets the target delay duration, in seconds (10-600). Takes effect the next
+   time the delay is activated via `obs_output_dynamic_delay_toggle()`.
+
+   :param target_sec: Target delay duration, in seconds
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: int obs_output_get_dynamic_delay_target_sec(const obs_output_t *output)
+
+   Gets the currently configured target delay duration, in seconds.
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: void obs_output_set_dynamic_delay_waiting_media(obs_output_t *output, const char *media_path)
+
+   Sets the path to a media file (video/image) to loop while the delay is
+   accumulating. Pass `NULL` to disable waiting media; the live feed will
+   keep streaming (buffered only) while accumulating instead.
+
+   :param media_path: Path to the waiting media file, or `NULL` to disable
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: const char *obs_output_get_dynamic_delay_waiting_media(const obs_output_t *output)
+
+   Gets the currently configured waiting media path, or `NULL` if unset.
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: int obs_output_get_dynamic_delay_state(const obs_output_t *output)
+
+   Gets the current dynamic delay state.
+
+   :return: | One of the following values:
+            | 0 - LIVE, no delay is active
+            | 1 - ACCUMULATING, buffering up to the target duration
+            | 2 - DELAYED, target reached; output is being fed from the buffer
+            | 3 - CATCHUP, delay was disabled; buffer is draining back to live
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: uint64_t obs_output_get_dynamic_delay_buffered_ms(const obs_output_t *output)
+
+   Gets the amount of data currently buffered, in milliseconds.
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: uint64_t obs_output_get_dynamic_delay_memory_bytes(const obs_output_t *output)
+
+   Gets the amount of memory currently used by the dynamic delay buffer, in bytes.
+
+   .. versionadded:: 32.2.0
+
+---------------------
+
+.. function:: void obs_output_dynamic_delay_toggle(obs_output_t *output)
+
+   Toggles the dynamic delay: starts accumulating if currently live, or
+   begins the catch-up transition back to live if currently accumulating or
+   delayed.
+
+   .. versionadded:: 32.2.0
+
 Functions used by outputs
 -------------------------
 

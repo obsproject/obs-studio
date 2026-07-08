@@ -52,6 +52,8 @@ target_sources(
     widgets/OBSBasicStats.hpp
     widgets/OBSBasicStatusBar.cpp
     widgets/OBSBasicStatusBar.hpp
+    widgets/OBSDynamicDelayDock.cpp
+    widgets/OBSDynamicDelayDock.hpp
     widgets/OBSMainWindow.hpp
     widgets/OBSProjector.cpp
     widgets/OBSProjector.hpp

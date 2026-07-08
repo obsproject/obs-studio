@@ -1208,6 +1208,9 @@ struct keyframe_group_data {
 	enum keyframe_group_track_status seen_on_track[MAX_OUTPUT_VIDEO_ENCODERS];
 };
 
+struct dynamic_delay_buffer;
+struct dyn_delay_media;
+
 struct obs_output {
 	struct obs_context_data context;
 	struct obs_output_info info;
@@ -1299,6 +1302,24 @@ struct obs_output {
 	volatile bool delay_capturing;
 
 	char *last_error_message;
+
+	/* Dynamic Stream Delay */
+	struct dynamic_delay_buffer *dynamic_delay_buf;
+	bool dynamic_delay_enabled;
+	int dynamic_delay_target_sec;
+	char *dynamic_delay_waiting_media;
+	int dynamic_delay_state;                     /* 0=LIVE, 1=ACCUMULATING, 2=DELAYED, 3=CATCHUP */
+	struct dyn_delay_media *dynamic_delay_media; /* waiting media pipeline */
+	bool dynamic_delay_wait_keyframe;            /* buffering starts on a video keyframe */
+	/* wire timeline bookkeeping, indexed [0]=video, [1]=audio */
+	int64_t dynamic_delay_wire_dts[2];   /* last dts actually sent */
+	int64_t dynamic_delay_wire_delta[2]; /* last dts increment seen */
+	bool dynamic_delay_wire_valid[2];
+	int64_t dynamic_delay_media_offset[2]; /* applied to waiting media packets */
+	bool dynamic_delay_media_offset_set[2];
+	int64_t dynamic_delay_pop_offset[2]; /* applied to packets popped from the buffer */
+	bool dynamic_delay_pop_offset_set[2];
+	pthread_mutex_t dynamic_delay_mutex;
 
 	float audio_data[MAX_AUDIO_CHANNELS][AUDIO_OUTPUT_FRAMES];
 };

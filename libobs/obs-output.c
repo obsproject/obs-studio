@@ -23,6 +23,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 #include "obs-av1.h"
+#include "dynamic-delay.h"
+#include "dynamic-delay-media.h"
 
 #include <caption/caption.h>
 #include <caption/mpeg.h>
@@ -202,12 +204,15 @@ obs_output_t *obs_output_create(const char *id, const char *name, obs_data_t *se
 	output = bzalloc(sizeof(struct obs_output));
 	pthread_mutex_init_value(&output->interleaved_mutex);
 	pthread_mutex_init_value(&output->delay_mutex);
+	pthread_mutex_init_value(&output->dynamic_delay_mutex);
 	pthread_mutex_init_value(&output->pause.mutex);
 	pthread_mutex_init_value(&output->pkt_callbacks_mutex);
 
 	if (pthread_mutex_init(&output->interleaved_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->delay_mutex, NULL) != 0)
+		goto fail;
+	if (pthread_mutex_init(&output->dynamic_delay_mutex, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init(&output->pause.mutex, NULL) != 0)
 		goto fail;
@@ -243,6 +248,8 @@ obs_output_t *obs_output_create(const char *id, const char *name, obs_data_t *se
 	output->reconnect_retry_max = 20;
 	output->reconnect_retry_exp = RECONNECT_RETRY_BASE_EXP + (rand_float(0) * 0.05f);
 	output->valid = true;
+	output->dynamic_delay_target_sec = 180;
+	output->dynamic_delay_state = 0;
 
 	obs_context_init_control(&output->context, output, (obs_destroy_cb)obs_output_destroy);
 	obs_context_data_insert(&output->context, &obs->data.outputs_mutex, &obs->data.first_output);
@@ -335,14 +342,24 @@ void obs_output_destroy(obs_output_t *output)
 
 		clear_raw_audio_buffers(output);
 
+		/* before mutex destruction: the media packet callback locks
+		 * dynamic_delay_mutex */
+		if (output->dynamic_delay_media)
+			dyn_delay_media_destroy(output->dynamic_delay_media);
+
 		os_event_destroy(output->stopping_event);
 		pthread_mutex_destroy(&output->pause.mutex);
 		pthread_mutex_destroy(&output->interleaved_mutex);
 		pthread_mutex_destroy(&output->delay_mutex);
+		pthread_mutex_destroy(&output->dynamic_delay_mutex);
 		pthread_mutex_destroy(&output->pkt_callbacks_mutex);
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
 		deque_free(&output->delay_data);
+		if (output->dynamic_delay_buf)
+			dynamic_delay_destroy(output->dynamic_delay_buf);
+		if (output->dynamic_delay_waiting_media)
+			bfree(output->dynamic_delay_waiting_media);
 		if (output->owns_info_id)
 			bfree((void *)output->info.id);
 		if (output->last_error_message)
@@ -1678,6 +1695,111 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	return avc || hevc || av1;
 }
 
+/* ------------------------------------------------------------------------- */
+/* Dynamic Stream Delay helpers. All of them expect dynamic_delay_mutex held. */
+
+static inline int dyn_delay_pkt_type(const struct encoder_packet *pkt)
+{
+	return pkt->type == OBS_ENCODER_VIDEO ? 0 : 1;
+}
+
+static inline void dyn_delay_track_wire(struct obs_output *output, const struct encoder_packet *pkt)
+{
+	int t = dyn_delay_pkt_type(pkt);
+	if (output->dynamic_delay_wire_valid[t]) {
+		int64_t delta = pkt->dts - output->dynamic_delay_wire_dts[t];
+		if (delta > 0)
+			output->dynamic_delay_wire_delta[t] = delta;
+	}
+	output->dynamic_delay_wire_dts[t] = pkt->dts;
+	output->dynamic_delay_wire_valid[t] = true;
+}
+
+/* offset that makes `pkt` continue the wire timeline of its type */
+static inline int64_t dyn_delay_continuation_offset(struct obs_output *output, const struct encoder_packet *pkt)
+{
+	int t = dyn_delay_pkt_type(pkt);
+	int64_t delta = output->dynamic_delay_wire_delta[t];
+
+	if (!output->dynamic_delay_wire_valid[t])
+		return 0;
+	if (delta <= 0)
+		delta = 1;
+	return output->dynamic_delay_wire_dts[t] + delta - pkt->dts;
+}
+
+static inline void dyn_delay_reset_offsets(struct obs_output *output)
+{
+	for (int t = 0; t < 2; t++) {
+		output->dynamic_delay_media_offset_set[t] = false;
+		output->dynamic_delay_pop_offset_set[t] = false;
+	}
+}
+
+/* Waiting media packets, delivered from the media encoder threads. Only
+ * forwarded while ACCUMULATING; timestamps are rewritten to continue the wire
+ * timeline where the live feed stopped. */
+static void dynamic_delay_media_packet(void *param, struct encoder_packet *packet)
+{
+	struct obs_output *output = param;
+	struct encoder_packet pkt = *packet;
+	int t;
+
+	if (!data_active(output))
+		return;
+
+	pthread_mutex_lock(&output->dynamic_delay_mutex);
+
+	if (output->dynamic_delay_state != 1) { /* only while ACCUMULATING */
+		pthread_mutex_unlock(&output->dynamic_delay_mutex);
+		return;
+	}
+
+	t = dyn_delay_pkt_type(&pkt);
+	if (!output->dynamic_delay_media_offset_set[t]) {
+		if (t == 0 && !pkt.keyframe) { /* video must lead with a keyframe */
+			pthread_mutex_unlock(&output->dynamic_delay_mutex);
+			return;
+		}
+		output->dynamic_delay_media_offset[t] = dyn_delay_continuation_offset(output, &pkt);
+		output->dynamic_delay_media_offset_set[t] = true;
+	}
+
+	pkt.dts += output->dynamic_delay_media_offset[t];
+	pkt.pts += output->dynamic_delay_media_offset[t];
+	pkt.dts_usec = packet_dts_usec(&pkt);
+	pkt.track_idx = 0; /* media encoders are not registered on the output */
+	dyn_delay_track_wire(output, &pkt);
+
+	/* sent while holding the mutex so wire writes stay serialized with the
+	 * interleave thread */
+	output->info.encoded_packet(output->context.data, &pkt);
+
+	pthread_mutex_unlock(&output->dynamic_delay_mutex);
+}
+
+/* Tears down all dynamic delay state; used when data capture ends so a new
+ * stream starts from a clean LIVE state. */
+static void obs_output_dynamic_delay_shutdown(struct obs_output *output)
+{
+	struct dyn_delay_media *media;
+
+	pthread_mutex_lock(&output->dynamic_delay_mutex);
+	media = output->dynamic_delay_media;
+	output->dynamic_delay_media = NULL;
+	if (output->dynamic_delay_buf)
+		dynamic_delay_clear(output->dynamic_delay_buf);
+	output->dynamic_delay_state = 0;
+	output->dynamic_delay_wait_keyframe = false;
+	dyn_delay_reset_offsets(output);
+	output->dynamic_delay_wire_valid[0] = false;
+	output->dynamic_delay_wire_valid[1] = false;
+	pthread_mutex_unlock(&output->dynamic_delay_mutex);
+
+	if (media)
+		dyn_delay_media_destroy(media);
+}
+
 static inline void send_interleaved(struct obs_output *output)
 {
 	struct encoder_packet out = output->interleaved_packets.array[0];
@@ -1752,6 +1874,86 @@ static inline void send_interleaved(struct obs_output *output)
 		callback->packet_cb(output, &out, found_ept ? &ept_local : NULL, callback->param);
 	}
 	pthread_mutex_unlock(&output->pkt_callbacks_mutex);
+
+	{
+		struct dyn_delay_media *media_to_stop = NULL;
+		struct encoder_packet delayed_pkt = {0};
+		bool have_delayed = false;
+		bool send_live = true;
+
+		pthread_mutex_lock(&output->dynamic_delay_mutex);
+		if (output->dynamic_delay_enabled && !output->dynamic_delay_buf) {
+			uint64_t target_ms = (uint64_t)output->dynamic_delay_target_sec * 1000ULL;
+			output->dynamic_delay_buf = dynamic_delay_create(target_ms > 0 ? target_ms : 180000ULL, 6000ULL,
+									 500ULL * 1024ULL * 1024ULL);
+		}
+		if (output->dynamic_delay_enabled && output->dynamic_delay_buf) {
+			if (output->dynamic_delay_state == 1) { // ACCUMULATING
+				if (output->dynamic_delay_wait_keyframe && out.type == OBS_ENCODER_VIDEO &&
+				    out.keyframe)
+					output->dynamic_delay_wait_keyframe = false;
+				if (!output->dynamic_delay_wait_keyframe)
+					dynamic_delay_push(output->dynamic_delay_buf, &out);
+				/* while the waiting media feeds the wire, the
+				 * live feed goes to the buffer only */
+				if (output->dynamic_delay_media)
+					send_live = false;
+				if (dynamic_delay_buffered_ms(output->dynamic_delay_buf) >=
+				    (uint64_t)output->dynamic_delay_target_sec * 1000ULL) {
+					output->dynamic_delay_state = 2; // DELAYED
+					media_to_stop = output->dynamic_delay_media;
+					output->dynamic_delay_media = NULL;
+					blog(LOG_INFO,
+					     "Dynamic Delay: Target delay reached! Transitioning to DELAYED state.");
+				}
+			} else if (output->dynamic_delay_state == 2) { // DELAYED
+				/* pop before push so the buffer never crosses its
+				 * limits (push silently drops the oldest packet,
+				 * which at the transition is the seam keyframe) */
+				bool popped = dynamic_delay_pop(output->dynamic_delay_buf, &delayed_pkt);
+				dynamic_delay_push(output->dynamic_delay_buf, &out);
+				if (popped) {
+					int t = dyn_delay_pkt_type(&delayed_pkt);
+					if (!output->dynamic_delay_pop_offset_set[t]) {
+						output->dynamic_delay_pop_offset[t] =
+							dyn_delay_continuation_offset(output, &delayed_pkt);
+						output->dynamic_delay_pop_offset_set[t] = true;
+					}
+					delayed_pkt.dts += output->dynamic_delay_pop_offset[t];
+					delayed_pkt.pts += output->dynamic_delay_pop_offset[t];
+					delayed_pkt.dts_usec = packet_dts_usec(&delayed_pkt);
+					dyn_delay_track_wire(output, &delayed_pkt);
+					have_delayed = true;
+					send_live = false;
+				}
+			} else if (output->dynamic_delay_state == 3) { // CATCHUP
+				dynamic_delay_clear(output->dynamic_delay_buf);
+				dyn_delay_reset_offsets(output);
+				output->dynamic_delay_wait_keyframe = false;
+				media_to_stop = output->dynamic_delay_media;
+				output->dynamic_delay_media = NULL;
+				output->dynamic_delay_state = 0; // Back to LIVE
+				blog(LOG_INFO, "Dynamic Delay: Buffer cleared. Returned to LIVE state.");
+			}
+		}
+		if (send_live)
+			dyn_delay_track_wire(output, &out);
+		pthread_mutex_unlock(&output->dynamic_delay_mutex);
+
+		/* destroyed outside the mutex: the media encoder callback
+		 * takes the same mutex */
+		if (media_to_stop)
+			dyn_delay_media_destroy(media_to_stop);
+
+		if (have_delayed) {
+			output->info.encoded_packet(output->context.data, &delayed_pkt);
+			obs_encoder_packet_release(&delayed_pkt);
+		}
+		if (!send_live) {
+			obs_encoder_packet_release(&out);
+			return;
+		}
+	}
 
 	output->info.encoded_packet(output->context.data, &out);
 	obs_encoder_packet_release(&out);
@@ -2864,6 +3066,8 @@ static void *end_data_capture_thread(void *data)
 	if (output->active_delay_ns)
 		obs_output_cleanup_delay(output);
 
+	obs_output_dynamic_delay_shutdown(output);
+
 	do_output_signal(output, "deactivate");
 	os_atomic_set_bool(&output->active, false);
 	os_event_signal(output->stopping_event);
@@ -3337,4 +3541,145 @@ void obs_output_set_reconnect_callback(obs_output_t *output,
 		output->reconnect_callback.reconnect_cb = reconnect_cb;
 		output->reconnect_callback.param = param;
 	}
+}
+
+void obs_output_set_dynamic_delay_enabled(obs_output_t *output, bool enabled)
+{
+	struct dyn_delay_media *media = NULL;
+
+	if (!output)
+		return;
+	pthread_mutex_lock(&output->dynamic_delay_mutex);
+	output->dynamic_delay_enabled = enabled;
+	if (!enabled) {
+		if (output->dynamic_delay_buf)
+			dynamic_delay_clear(output->dynamic_delay_buf);
+		output->dynamic_delay_state = 0;
+		media = output->dynamic_delay_media;
+		output->dynamic_delay_media = NULL;
+		dyn_delay_reset_offsets(output);
+	}
+	pthread_mutex_unlock(&output->dynamic_delay_mutex);
+
+	if (media)
+		dyn_delay_media_destroy(media);
+}
+
+bool obs_output_get_dynamic_delay_enabled(const obs_output_t *output)
+{
+	return output ? output->dynamic_delay_enabled : false;
+}
+
+void obs_output_set_dynamic_delay_target_sec(obs_output_t *output, int target_sec)
+{
+	if (!output)
+		return;
+	pthread_mutex_lock(&output->dynamic_delay_mutex);
+	output->dynamic_delay_target_sec = target_sec;
+	if (output->dynamic_delay_buf)
+		output->dynamic_delay_buf->max_time_ms = (uint64_t)target_sec * 1000ULL;
+	pthread_mutex_unlock(&output->dynamic_delay_mutex);
+}
+
+int obs_output_get_dynamic_delay_target_sec(const obs_output_t *output)
+{
+	return output ? output->dynamic_delay_target_sec : 0;
+}
+
+void obs_output_set_dynamic_delay_waiting_media(obs_output_t *output, const char *media_path)
+{
+	if (!output)
+		return;
+	pthread_mutex_lock(&output->dynamic_delay_mutex);
+	if (output->dynamic_delay_waiting_media)
+		bfree(output->dynamic_delay_waiting_media);
+	output->dynamic_delay_waiting_media = media_path ? bstrdup(media_path) : NULL;
+	pthread_mutex_unlock(&output->dynamic_delay_mutex);
+}
+
+const char *obs_output_get_dynamic_delay_waiting_media(const obs_output_t *output)
+{
+	return output ? output->dynamic_delay_waiting_media : NULL;
+}
+
+int obs_output_get_dynamic_delay_state(const obs_output_t *output)
+{
+	return output ? output->dynamic_delay_state : 0;
+}
+
+uint64_t obs_output_get_dynamic_delay_buffered_ms(const obs_output_t *output)
+{
+	if (!output || !output->dynamic_delay_buf)
+		return 0;
+	return dynamic_delay_buffered_ms(output->dynamic_delay_buf);
+}
+
+uint64_t obs_output_get_dynamic_delay_memory_bytes(const obs_output_t *output)
+{
+	if (!output || !output->dynamic_delay_buf)
+		return 0;
+	return dynamic_delay_get_memory_usage(output->dynamic_delay_buf);
+}
+
+void obs_output_dynamic_delay_toggle(obs_output_t *output)
+{
+	bool activate = false;
+
+	if (!output)
+		return;
+
+	pthread_mutex_lock(&output->dynamic_delay_mutex);
+	if (!output->dynamic_delay_enabled || output->dynamic_delay_state == 0) {
+		output->dynamic_delay_enabled = true;
+		output->dynamic_delay_state = 1; // ACCUMULATING
+		output->dynamic_delay_wait_keyframe = true;
+		dyn_delay_reset_offsets(output);
+		activate = true;
+		blog(LOG_INFO, "Dynamic Delay activated: ACCUMULATING");
+	} else {
+		output->dynamic_delay_state = 3; // CATCHUP
+		blog(LOG_INFO, "Dynamic Delay deactivated: CATCHUP / DROP");
+		for (size_t i = 0; i < MAX_OUTPUT_VIDEO_ENCODERS; i++) {
+			if (output->video_encoders[i])
+				obs_encoder_update(output->video_encoders[i], NULL);
+		}
+	}
+	pthread_mutex_unlock(&output->dynamic_delay_mutex);
+
+	if (!activate)
+		return;
+
+	/* start the waiting media pipeline; created outside the mutex because
+	 * encoder creation/start takes locks shared with the packet callback */
+	const char *path = output->dynamic_delay_waiting_media;
+	obs_encoder_t *venc = output->video_encoders[0];
+	obs_encoder_t *aenc = output->audio_encoders[0];
+
+	if (!path || !*path) {
+		blog(LOG_WARNING, "Dynamic Delay: no waiting media configured, "
+				  "live feed keeps streaming while accumulating");
+		return;
+	}
+	if (!data_active(output) || !venc) {
+		blog(LOG_WARNING, "Dynamic Delay: output not active, waiting media unavailable");
+		return;
+	}
+
+	struct dyn_delay_media *media = dyn_delay_media_create(path, venc, aenc, dynamic_delay_media_packet, output);
+	if (!media) {
+		blog(LOG_WARNING, "Dynamic Delay: failed to create waiting media pipeline, "
+				  "live feed keeps streaming while accumulating");
+		return;
+	}
+
+	pthread_mutex_lock(&output->dynamic_delay_mutex);
+	if (output->dynamic_delay_state == 1 && !output->dynamic_delay_media) {
+		output->dynamic_delay_media = media;
+		media = NULL;
+	}
+	pthread_mutex_unlock(&output->dynamic_delay_mutex);
+
+	/* state changed while the pipeline was being created */
+	if (media)
+		dyn_delay_media_destroy(media);
 }
