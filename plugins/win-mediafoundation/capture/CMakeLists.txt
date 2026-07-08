@@ -38,11 +38,14 @@ target_link_libraries(
     OBS::winrt-headers
     FFmpeg::avcodec
     FFmpeg::avutil
-    strmiids
-    winmm
     dxcore
     dxguid
     libmfcapture
+    mfplat
+    mfuuid
+    strmiids
+    windowsapp
+    winmm
 )
 # FIXME: WinRT library headers trigger deprecation warning until OBS Studio uses C++20 or newer
 target_compile_definitions(win-mediafoundation-capture PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)

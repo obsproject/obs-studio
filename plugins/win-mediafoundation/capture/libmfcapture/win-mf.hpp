@@ -74,10 +74,6 @@ SOFTWARE
 #define FPS_HIGHEST 0LL
 #define FPS_MATCHING -1LL
 
-#pragma comment(lib, "mfplat.lib")
-#pragma comment(lib, "mfuuid.lib")
-#pragma comment(lib, "windowsapp.lib")
-
 namespace {
 constexpr const char *VIDEO_DEVICE_ID = "video_device_id";
 constexpr const char *RES_TYPE = "res_type";
