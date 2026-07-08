@@ -41,7 +41,10 @@ target_link_libraries(
     dxcore
     dxguid
     libmfcapture
+    mf
     mfplat
+    mfreadwrite
+    mfsensorgroup
     mfuuid
     strmiids
     windowsapp

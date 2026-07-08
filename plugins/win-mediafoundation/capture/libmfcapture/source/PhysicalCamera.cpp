@@ -49,13 +49,6 @@ SOFTWARE
 #include <d3d11.h>
 #include <mfvirtualcamera.h>
 
-#pragma comment(lib, "mfuuid.lib")
-#pragma comment(lib, "mf.lib")
-#pragma comment(lib, "mfplat.lib")
-#pragma comment(lib, "mfreadwrite.lib")
-#pragma comment(lib, "shlwapi.lib")
-#pragma comment(lib, "mfsensorgroup.lib")
-
 extern void ControlNotification(WS_CONTROL_TYPE type, WS_CONTROL_VALUE value, void *pUserData);
 
 PhysicalCamera::~PhysicalCamera()
