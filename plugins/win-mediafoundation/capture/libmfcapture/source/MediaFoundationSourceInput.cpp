@@ -285,7 +285,7 @@ bool MediaFoundationSourceInput::UpdateVideoConfig(obs_data_t *settings)
 			videoConfig.cyAbs = h;
 			videoConfig.frameInterval = interval;
 		} else {
-			blog(LOG_ERROR, "%s: Frame width or height are zero(%" PRIu32 "x%" PRIu32 ")",
+			blog(LOG_ERROR, "%s: Frame width or height are zero (%" PRIu32 "x%" PRIu32 ")",
 			     obs_source_get_name(source), videoConfig.cx, videoConfig.cyAbs);
 			return false;
 		}
@@ -317,7 +317,7 @@ bool MediaFoundationSourceInput::UpdateVideoConfig(obs_data_t *settings)
 
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
-	     "[MediaFoundation Device: '%s'] settings updated: \n"
+	     "[MediaFoundation Device: '%s'] settings updated:\n"
 	     "\tvideo device: %s\n"
 	     "\tvideo path: %s\n"
 	     "\tresolution: %dx%d\n"
@@ -485,10 +485,7 @@ inline bool MediaFoundationSourceInput::Activate(obs_data_t *settings)
 	bool success = video_format_get_parameters_for_format(cs, range, VIDEO_FORMAT_BGRA, frame.color_matrix,
 							      frame.color_range_min, frame.color_range_max);
 	if (!success) {
-		blog(LOG_ERROR,
-		     "Failed to get video format parameters for "
-		     "video format %u",
-		     cs);
+		blog(LOG_ERROR, "Failed to get video format parameters for video format %u", cs);
 	}
 
 	return true;
