@@ -60,7 +60,6 @@ PhysicalCamera::~PhysicalCamera()
 
 HRESULT __stdcall PhysicalCamera::QueryInterface(REFIID iid, void **ppv)
 {
-
 	if (iid == IID_IUnknown) {
 		*ppv = static_cast<IUnknown *>(this);
 	} else if (iid == IID_IMFSourceReaderCallback) {
@@ -80,7 +79,6 @@ ULONG __stdcall PhysicalCamera::AddRef()
 
 ULONG __stdcall PhysicalCamera::Release()
 {
-
 	if (InterlockedDecrement(&m_cRef) == 0) {
 		delete this;
 		return 0;
@@ -166,7 +164,6 @@ HRESULT PhysicalCamera::Initialize(LPCWSTR pwszSymLink)
 
 HRESULT PhysicalCamera::Uninitialize()
 {
-
 	printf("%s, Begin\n", __FUNCSIG__);
 
 	Stop();
@@ -252,7 +249,6 @@ HRESULT PhysicalCamera::Start(DWORD dwPhyStrmIndex, MF_VideoDataCallback cb, voi
 
 HRESULT PhysicalCamera::Stop()
 {
-
 	printf("%s, Begin\n", __FUNCSIG__);
 	HRESULT hr = S_OK;
 
@@ -332,7 +328,6 @@ void resizeBilinearAlpha(BYTE *mask, int w, int h, DWORD *dest, int w2, int h2)
 
 HRESULT PhysicalCamera::FillSegMask(IMFSample *pSample)
 {
-
 	if (!pSample) {
 		return E_POINTER;
 	}
@@ -875,7 +870,6 @@ HRESULT PhysicalCamera::GetCurrentStreamInformation(DWORD dwPhyStrmIndex, Stream
 
 HRESULT PhysicalCamera::SetBlur(bool blur, bool shallowFocus, bool mask)
 {
-
 	printf("%s, %d, Begin\n", __FUNCSIG__, __LINE__);
 	winrt::slim_lock_guard lock(m_Lock);
 
@@ -1111,7 +1105,6 @@ HRESULT PhysicalCamera::GetEyeGazeCorrection(bool &enable)
 std::vector<MepSetting> PhysicalCamera::s_MepSettings;
 HRESULT PhysicalCamera::GetMepSetting(MepSetting &setting)
 {
-
 	bool blur, shallowfocus, mask, autoframing, eyegaze;
 
 	if (m_spExtController == nullptr) {
@@ -1134,7 +1127,6 @@ HRESULT PhysicalCamera::GetMepSetting(MepSetting &setting)
 
 HRESULT PhysicalCamera::SetMepSetting(MepSetting &setting)
 {
-
 	RETURN_IF_FAILED(SetBlur(setting.Blur, setting.ShallowFocus, setting.Mask));
 	RETURN_IF_FAILED(SetAutoFraming(setting.AutoFraming));
 	RETURN_IF_FAILED(SetEyeGazeCorrection(setting.EyeGazeCorrection));
@@ -1163,7 +1155,6 @@ HRESULT PhysicalCamera::SaveSettingsToDefault()
 
 HRESULT PhysicalCamera::RestoreDefaultSettings()
 {
-
 	for (auto &setting : s_MepSettings) {
 		if (setting.SymbolicLink == m_wsSymbolicName) {
 			RETURN_IF_FAILED(SetMepSetting(setting));
