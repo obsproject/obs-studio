@@ -76,6 +76,7 @@ SOFTWARE
 
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfuuid.lib")
+#pragma comment(lib, "windowsapp.lib")
 
 namespace {
 constexpr const char *VIDEO_DEVICE_ID = "video_device_id";
