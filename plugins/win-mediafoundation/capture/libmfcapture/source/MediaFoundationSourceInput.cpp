@@ -81,7 +81,7 @@ DStr GetVideoFormatName(MF_COLOR_FORMAT format)
 	dstr_replace(name, "%1", std::to_string((long long)format).c_str());
 	return name;
 }
-}
+} // namespace
 
 void MediaFoundationSourceInput::MediaFoundationSourceLoop()
 {
