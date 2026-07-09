@@ -16,6 +16,8 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_set_current_scene(obs_source_t *scene) = 0;
 
 	virtual void obs_frontend_get_transitions(struct obs_frontend_source_list *sources) = 0;
+	virtual obs_source_t *obs_frontend_add_transition(const char *transition_id, const char *transition_name,
+							  obs_data_t *settings) = 0;
 	virtual obs_source_t *obs_frontend_get_current_transition(void) = 0;
 	virtual void obs_frontend_set_current_transition(obs_source_t *transition) = 0;
 	virtual int obs_frontend_get_transition_duration(void) = 0;

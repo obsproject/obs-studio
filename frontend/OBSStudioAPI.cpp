@@ -85,6 +85,17 @@ void OBSStudioAPI::obs_frontend_get_transitions(struct obs_frontend_source_list 
 	}
 }
 
+obs_source_t *OBSStudioAPI::obs_frontend_add_transition(const char *transition_id, const char *transition_name,
+							obs_data_t *settings)
+{
+	main->AddTransition(transition_id, transition_name, false);
+	OBSSource tr = main->FindTransition(transition_name);
+	if (settings != nullptr) {
+		obs_source_reset_settings(tr, settings);
+	}
+	return obs_source_get_ref(tr);
+}
+
 obs_source_t *OBSStudioAPI::obs_frontend_get_current_transition()
 {
 	OBSSource tr = main->GetCurrentTransition();
