@@ -318,6 +318,20 @@ Functions
 
 ---------------------------------------
 
+.. function:: obs_source_t * obs_frontend_add_transition(const char *transition_id, const char *transition_name, obs_data_t *settings = NULL)
+
+   Adds a global transition in the collection.
+   The transition must have a unique name, otherwise it won't be added.
+
+   :param transition_id: Identifier of the transition
+   :param transition_name: Name of the transition
+   :param settings: An :c:type:`obs_data_t` pointer with the settings of the transition
+
+   :return: A new reference to the new transition, or *NULL* if the transition has not been added.
+            Release with :c:func:`obs_source_release()`.
+
+---------------------------------------
+
 .. function:: obs_source_t *obs_frontend_get_current_transition(void)
 
    :return: A new reference to the currently active transition.
