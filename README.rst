@@ -40,6 +40,9 @@ Important
 - This is a preview build. Test new Browser Sources before using them in a
   live production.
 - Use HTTPS whenever possible. WebGPU requires a secure context.
+- This preview uses OBS's separate CEF browser helper. CEF's Windows sandbox
+  cannot be enabled with that helper architecture, so only load Browser Source
+  pages that you trust.
 - If a source stays blank, first refresh the Browser Source and check that
   WebGPU mode is set to Auto.
 
