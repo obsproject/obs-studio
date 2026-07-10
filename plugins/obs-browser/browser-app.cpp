@@ -103,10 +103,12 @@ void BrowserApp::OnBeforeCommandLineProcessing(const CefString &, CefRefPtr<CefC
 	}
 
 #ifdef _WIN32
-	if (webgpu_requested)
+	if (webgpu_requested) {
 		command_line->AppendSwitch("obs-webgpu-enabled");
-	else
+		command_line->AppendSwitch("ignore-gpu-blocklist");
+	} else {
 		disable_features += ",WebGPU";
+	}
 	if (webgpu_requested && !insecure_origins.empty())
 		command_line->AppendSwitchWithValue("unsafely-treat-insecure-origin-as-secure", insecure_origins);
 #endif
