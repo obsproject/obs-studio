@@ -278,6 +278,8 @@ jobs:
 
       - name: Set Up Environment 🔧
         id: setup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
