@@ -8669,6 +8669,30 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="browserWebGPUModeLabel">
+                     <property name="text">
+                      <string>BrowserSource.WebGPU</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="browserWebGPUMode"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="browserWebGPUInsecureOriginsLabel">
+                     <property name="text">
+                      <string>BrowserSource.WebGPU.HTTPOrigins</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QLineEdit" name="browserWebGPUInsecureOrigins">
+                     <property name="toolTip">
+                      <string>BrowserSource.WebGPU.HTTPOrigins.Tooltip</string>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>

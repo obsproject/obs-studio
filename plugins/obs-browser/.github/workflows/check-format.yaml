@@ -1,0 +1,15 @@
+name: Check Code Formatting 🛠️
+on:
+  workflow_call:
+jobs:
+  clang-format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: clang-format Check 🐉
+        id: clang-format
+        uses: ./.github/actions/run-clang-format
+        with:
+          failCondition: error

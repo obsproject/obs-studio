@@ -320,6 +320,10 @@ bool OBSApp::InitGlobalConfigDefaults()
 #if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	config_set_default_bool(appConfig, "General", "BrowserHWAccel", true);
 #endif
+#ifdef _WIN32
+	config_set_default_string(appConfig, "General", "BrowserWebGPUMode", "auto");
+	config_set_default_string(appConfig, "General", "BrowserWebGPUInsecureOrigins", "");
+#endif
 
 #ifdef __APPLE__
 	config_set_default_bool(appConfig, "Video", "DisableOSXVSync", true);
@@ -1276,14 +1280,19 @@ bool OBSApp::OBSInit()
 
 #if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	bool browserHWAccel = config_get_bool(appConfig, "General", "BrowserHWAccel");
+	const char *browserWebGPUMode = config_get_string(appConfig, "General", "BrowserWebGPUMode");
+	const char *browserWebGPUOrigins = config_get_string(appConfig, "General", "BrowserWebGPUInsecureOrigins");
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
+	obs_data_set_string(settings, "BrowserWebGPUMode", browserWebGPUMode ? browserWebGPUMode : "auto");
+	obs_data_set_string(settings, "BrowserWebGPUInsecureOrigins", browserWebGPUOrigins ? browserWebGPUOrigins : "");
 	obs_apply_private_data(settings);
 
 	blog(LOG_INFO, "Current Date/Time: %s", CurrentDateTimeString().c_str());
 
 	blog(LOG_INFO, "Browser Hardware Acceleration: %s", browserHWAccel ? "true" : "false");
+	blog(LOG_INFO, "Browser WebGPU mode: %s", browserWebGPUMode ? browserWebGPUMode : "auto");
 #endif
 #ifdef _WIN32
 	bool hideFromCapture = config_get_bool(userConfig, "BasicWindow", "HideOBSWindowsFromCapture");

@@ -121,7 +121,9 @@ function(set_target_properties_obs target)
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${imported_location}" "${cef_location}/chrome_elf.dll"
+              "${cef_location}/d3dcompiler_47.dll" "${cef_location}/dxcompiler.dll" "${cef_location}/dxil.dll"
               "${cef_location}/libEGL.dll" "${cef_location}/libGLESv2.dll" "${cef_location}/v8_context_snapshot.bin"
+              "${cef_location}/vk_swiftshader.dll" "${cef_location}/vk_swiftshader_icd.json" "${cef_location}/vulkan-1.dll"
               "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${cef_root_location}/Resources/chrome_100_percent.pak"
@@ -137,9 +139,15 @@ function(set_target_properties_obs target)
             FILES
               "${imported_location}"
               "${cef_location}/chrome_elf.dll"
+              "${cef_location}/d3dcompiler_47.dll"
+              "${cef_location}/dxcompiler.dll"
+              "${cef_location}/dxil.dll"
               "${cef_location}/libEGL.dll"
               "${cef_location}/libGLESv2.dll"
               "${cef_location}/v8_context_snapshot.bin"
+              "${cef_location}/vk_swiftshader.dll"
+              "${cef_location}/vk_swiftshader_icd.json"
+              "${cef_location}/vulkan-1.dll"
               "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak"
               "${cef_root_location}/Resources/icudtl.dat"

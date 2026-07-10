@@ -62,6 +62,53 @@ if(NOT DEFINED CEF_ROOT_DIR OR CEF_ROOT_DIR STREQUAL "")
   )
 endif()
 
+# CEF 149+ official binary distributions ship the libcef wrapper source in
+# `libcef_dll` instead of a prebuilt `cef_dll_wrapper` library. Prefer that
+# layout on Windows so builds are reproducible from the official CEF archive.
+# Older OBS-provided CEF packages continue through the compatibility path
+# below unchanged.
+if(WIN32 AND EXISTS "${CEF_ROOT_DIR}/cmake/FindCEF.cmake" AND EXISTS "${CEF_ROOT_DIR}/libcef_dll/CMakeLists.txt")
+  set(CEF_ROOT "${CEF_ROOT_DIR}")
+  # CEF 149 uses bootstrap.exe for the Windows sandbox. OBS is currently an
+  # executable host, not a bootstrap client DLL, so the sandbox cannot be
+  # enabled until that launcher architecture is implemented.
+  set(USE_SANDBOX OFF CACHE BOOL "Disable unsupported CEF bootstrap sandbox" FORCE)
+  include("${CEF_ROOT_DIR}/cmake/FindCEF.cmake")
+
+  file(STRINGS "${CEF_ROOT_DIR}/include/cef_version.h" _cef_version_line
+       REGEX "^#define CEF_VERSION \\\".+\\\"")
+  string(REGEX REPLACE "^#define CEF_VERSION \\\"([^\\\"]+)\\\".*" "\\1" CEF_VERSION "${_cef_version_line}")
+
+  if(NOT TARGET CEF::Library)
+    add_library(CEF::Library SHARED IMPORTED)
+    set_property(TARGET CEF::Library PROPERTY IMPORTED_IMPLIB "${CEF_LIB_RELEASE}")
+    set_property(TARGET CEF::Library PROPERTY IMPORTED_LOCATION "${CEF_BINARY_DIR_RELEASE}/libcef.dll")
+    set_property(TARGET CEF::Library APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CEF_INCLUDE_PATH}")
+  endif()
+
+  if(NOT TARGET libcef_dll_wrapper)
+    add_subdirectory("${CEF_LIBCEF_DLL_WRAPPER_PATH}" "${CMAKE_BINARY_DIR}/cef/libcef_dll" EXCLUDE_FROM_ALL)
+  endif()
+  # CEF binary distributions do not include the translator-test sources that
+  # the upstream wrapper CMakeLists also enumerates. They are not part of the
+  # production wrapper, so remove those optional test entries before building
+  # the wrapper from the distribution sources.
+  get_property(_cef_wrapper_sources TARGET libcef_dll_wrapper PROPERTY SOURCES)
+  list(FILTER _cef_wrapper_sources EXCLUDE REGEX "(^|/)test/")
+  set_property(TARGET libcef_dll_wrapper PROPERTY SOURCES "${_cef_wrapper_sources}")
+  # OBS uses the static MSVC runtime. The CEF helper defaults RelWithDebInfo
+  # to /MD, so make every wrapper configuration match the OBS plugin ABI.
+  set_property(TARGET libcef_dll_wrapper PROPERTY MSVC_RUNTIME_LIBRARY
+               "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  if(NOT TARGET CEF::Wrapper)
+    add_library(CEF::Wrapper ALIAS libcef_dll_wrapper)
+  endif()
+
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(CEF REQUIRED_VARS CEF_LIB_RELEASE CEF_INCLUDE_PATH VERSION_VAR CEF_VERSION)
+  return()
+endif()
+
 find_path(
   CEF_INCLUDE_DIR
   "cef_version.h"

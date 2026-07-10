@@ -558,6 +558,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #if defined(_WIN32) || defined(__APPLE__) || defined(__linux__)
 	HookWidget(ui->browserHWAccel,       CHECK_CHANGED,  ADV_RESTART);
 #endif
+#ifdef _WIN32
+	HookWidget(ui->browserWebGPUMode, COMBO_CHANGED, ADV_RESTART);
+	HookWidget(ui->browserWebGPUInsecureOrigins, EDIT_CHANGED, ADV_RESTART);
+#endif
 	HookWidget(ui->filenameFormatting,   EDIT_CHANGED,   ADV_CHANGED);
 	HookWidget(ui->overwriteIfExists,    CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->simpleRBPrefix,       EDIT_CHANGED,   ADV_CHANGED);
@@ -2694,6 +2698,22 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->browserHWAccel->setChecked(browserHWAccel);
 	prevBrowserAccel = ui->browserHWAccel->isChecked();
 #endif
+#ifdef _WIN32
+	ui->browserWebGPUMode->clear();
+	ui->browserWebGPUMode->addItem(QTStr("BrowserSource.WebGPU.Auto"), "auto");
+	ui->browserWebGPUMode->addItem(QTStr("BrowserSource.WebGPU.Disabled"), "disabled");
+	const char *browserWebGPUMode = config_get_string(App()->GetAppConfig(), "General", "BrowserWebGPUMode");
+	SetComboByValue(ui->browserWebGPUMode, browserWebGPUMode ? QT_UTF8(browserWebGPUMode) : "auto");
+	ui->browserWebGPUInsecureOrigins->setText(
+		QT_UTF8(config_get_string(App()->GetAppConfig(), "General", "BrowserWebGPUInsecureOrigins")));
+	prevBrowserWebGPUMode = GetComboData(ui->browserWebGPUMode);
+	prevBrowserWebGPUInsecureOrigins = ui->browserWebGPUInsecureOrigins->text();
+#else
+	ui->browserWebGPUModeLabel->setVisible(false);
+	ui->browserWebGPUMode->setVisible(false);
+	ui->browserWebGPUInsecureOriginsLabel->setVisible(false);
+	ui->browserWebGPUInsecureOrigins->setVisible(false);
+#endif
 
 	SetComboByValue(ui->hotkeyFocusType, hotkeyFocusType);
 
@@ -3290,6 +3310,12 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	bool browserHWAccel = ui->browserHWAccel->isChecked();
 	config_set_bool(App()->GetAppConfig(), "General", "BrowserHWAccel", browserHWAccel);
 #endif
+#ifdef _WIN32
+	std::string browserWebGPUMode = GetComboData(ui->browserWebGPUMode).toStdString();
+	config_set_string(App()->GetAppConfig(), "General", "BrowserWebGPUMode", browserWebGPUMode.c_str());
+	std::string browserWebGPUOrigins = ui->browserWebGPUInsecureOrigins->text().toStdString();
+	config_set_string(App()->GetAppConfig(), "General", "BrowserWebGPUInsecureOrigins", browserWebGPUOrigins.c_str());
+#endif
 
 	if (WidgetChanged(ui->hotkeyFocusType)) {
 		QString str = GetComboData(ui->hotkeyFocusType);
@@ -3842,8 +3868,14 @@ void OBSBasicSettings::SaveSettings()
 	bool audioRestart =
 		(ui->channelSetup->currentIndex() != channelIndex || ui->sampleRate->currentIndex() != sampleRateIndex);
 	bool browserHWAccelChanged = (ui->browserHWAccel && ui->browserHWAccel->isChecked() != prevBrowserAccel);
+	bool browserWebGPUChanged = false;
+#ifdef _WIN32
+	browserWebGPUChanged =
+		(ui->browserWebGPUMode && GetComboData(ui->browserWebGPUMode) != prevBrowserWebGPUMode) ||
+		(ui->browserWebGPUInsecureOrigins && ui->browserWebGPUInsecureOrigins->text() != prevBrowserWebGPUInsecureOrigins);
+#endif
 
-	if (langChanged || audioRestart || browserHWAccelChanged) {
+	if (langChanged || audioRestart || browserHWAccelChanged || browserWebGPUChanged) {
 		restart = true;
 	} else {
 		restart = false;

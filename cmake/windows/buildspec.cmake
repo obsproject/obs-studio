@@ -87,19 +87,39 @@ function(_check_dependencies_windows)
   set(prebuilt_destination "obs-deps-VERSION-ARCH")
   set(qt6_filename "windows-deps-qt6-VERSION-ARCH-REVISION.zip")
   set(qt6_destination "obs-deps-qt6-VERSION-ARCH")
-  set(cef_filename "cef_binary_VERSION_windows_ARCH_REVISION.zip")
-  set(cef_destination "cef_binary_VERSION_windows_ARCH")
+  # CEF 149 is consumed directly from the official minimal distribution.
+  # The wrapper library is built by cmake/finders/FindCEF.cmake.
+  # Browser sources are x64-only for this fork. CEF uses `windows64`, not
+  # CMake's `windows-x64`, in its official archive names. Use the full
+  # distribution: it contains the wrapper sources needed by CEF 149.
+  set(cef_filename "cef_binary_VERSION_windows64.tar.bz2")
+  set(cef_destination "cef_binary_VERSION_windows64")
 
   if(CMAKE_VS_PLATFORM_NAME STREQUAL Win32)
     set(arch x86)
     set(dependencies_list prebuilt)
   else()
     string(TOLOWER "${CMAKE_VS_PLATFORM_NAME}" arch)
-    set(dependencies_list prebuilt qt6 cef)
+    set(dependencies_list prebuilt qt6)
+    if(arch STREQUAL x64)
+      list(APPEND dependencies_list cef)
+    endif()
   endif()
   set(platform windows-${arch})
 
   _check_dependencies(${dependencies_list})
+
+  if(arch STREQUAL x64)
+    # Official CEF archives contain a top-level directory with the same name
+    # as the archive. _check_dependencies extracts archives into a named
+    # dependency directory, so point CEF_ROOT_DIR at the nested distribution.
+    _get_dependency_data(dependency_data)
+    string(JSON cef_data GET ${dependency_data} cef)
+    string(JSON cef_version GET ${cef_data} version)
+    string(REPLACE "VERSION" "${cef_version}" cef_distribution "${cef_destination}")
+    set(CEF_ROOT_DIR "${dependencies_dir}/${cef_distribution}/${cef_distribution}" CACHE PATH
+        "CEF root directory" FORCE)
+  endif()
 
   if(NOT CMAKE_VS_PLATFORM_NAME STREQUAL Win32)
     _handle_qt_cross_compile(${CMAKE_HOST_SYSTEM_PROCESSOR} DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.deps/${qt6_destination}")

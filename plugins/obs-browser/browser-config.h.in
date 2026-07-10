@@ -1,0 +1,21 @@
+#pragma once
+
+#ifndef ON
+#define ON true
+#endif
+
+#ifndef OFF
+#define OFF false
+#endif
+
+#ifndef TRUE
+#define TRUE true
+#endif
+
+#ifndef FALSE
+#define FALSE false
+#endif
+
+#ifdef __APPLE__
+#define CEF_LIBRARY "@CEF_LIBRARY@"
+#endif

@@ -213,6 +213,8 @@ private:
 	QString lastCustomServer;
 	int prevLangIndex;
 	bool prevBrowserAccel;
+	QString prevBrowserWebGPUMode;
+	QString prevBrowserWebGPUInsecureOrigins;
 
 	void ServiceChanged(bool resetFields = false);
 	QString FindProtocol();

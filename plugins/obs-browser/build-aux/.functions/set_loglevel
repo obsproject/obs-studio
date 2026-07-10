@@ -1,0 +1,17 @@
+autoload -Uz log_debug log_error
+
+local -r _usage="Usage: %B${0}%b <loglevel>
+
+Set log level, following levels are supported: 0 (quiet), 1 (normal), 2 (verbose), 3 (debug)"
+
+if (( ! # )); then
+  log_error 'Called without arguments.'
+  log_output ${_usage}
+  return 2
+elif (( ${1} >= 4 )); then
+  log_error 'Called with loglevel > 3.'
+  log_output ${_usage}
+fi
+
+typeset -g -i -r _loglevel=${1}
+log_debug "Log level set to '${1}'"

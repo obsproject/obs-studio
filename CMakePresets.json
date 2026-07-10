@@ -52,24 +52,16 @@
                   }
               },
               "cef": {
-                  "version": "6533",
-                  "baseUrl": "https://cdn-fastly.obsproject.com/downloads",
+            "version": "149.0.6+g0d0eeb6+chromium-149.0.7827.201",
+            "baseUrl": "https://cef-builds.spotifycdn.com",
                   "label": "Chromium Embedded Framework",
                   "hashes": {
                       "macos-x86_64": "37bf7571a48c5dfa8519817e4a90a3503a0eb30f9eadd68f4c3e783e363f272a",
                       "macos-arm64": "429b50e74f6c174dcfe2f14d8204b54add497eaafe117f7b69ce6bb2354d2626",
                       "ubuntu-x86_64": "7963335519a19ccdc5233f7334c5ab023026e2f3e9a0cc417007c09d86608146",
                       "ubuntu-aarch64": "642514469eaa29a5c887891084d2e73f7dc2d7405f7dfa7726b2dbc24b309999",
-                      "windows-x64": "922efbda1f2f8be9e5b2754d878a14d90afc81f04e94fc9101a7513e2b5cecc1",
-                      "windows-arm64": "df9df4bd85826b4c071c6db404fd59cf93efd9c58ec3ab64e204466ae19bb02a"
-                  },
-                  "revision": {
-                      "macos-x86_64": 5,
-                      "macos-arm64": 5,
-                      "ubuntu-x86_64": 6,
-                      "ubuntu-aarch64": 6,
-                      "windows-x64": 2
-                  }
+              "windows-x64": "cedb34a205b879c9654fca884636a088fb64f4f00a5b3313707e136c692c6937"
+            }
               }
             },
             "tools": {
@@ -95,7 +87,7 @@
       },
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build_macos",
-      "cacheVariables": {
+        "cacheVariables": {
         "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "12.0"},
         "OBS_CODESIGN_IDENTITY": {"type": "STRING", "value": "$penv{CODESIGN_IDENT}"},
         "OBS_CODESIGN_TEAM": {"type": "STRING", "value": "$penv{CODESIGN_TEAM}"},
@@ -105,7 +97,7 @@
         "VIRTUALCAM_SOURCE_UUID": {"type": "STRING", "value": "A8D7B8AA-65AD-4D21-9C42-66480DBFA8E1"},
         "SPARKLE_APPCAST_URL": {"type": "STRING", "value": "https://obsproject.com/osx_update/updates_$(ARCHS)_v2.xml"},
         "SPARKLE_PUBLIC_KEY": {"type": "STRING", "value": "HQ5/Ba9VHOuEWaM0jtVjZzgHKFJX9YTl+HNVpgNF0iM="},
-        "ENABLE_BROWSER": true
+        "ENABLE_BROWSER": false
       }
     },
     {
@@ -137,6 +129,7 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
         "ENABLE_AJA": false,
+        "ENABLE_BROWSER": false,
         "ENABLE_VLC": true,
         "ENABLE_WAYLAND": true,
         "ENABLE_WEBRTC": false
@@ -197,8 +190,8 @@
       "cacheVariables": {
         "GPU_PRIORITY_VAL": {"type": "STRING", "value": "$penv{GPU_PRIORITY_VAL}"},
         "VIRTUALCAM_GUID": {"type": "STRING", "value": "A3FCE0F5-3493-419F-958A-ABA1250EC20B"},
-        "ENABLE_AJA": false,
-        "ENABLE_BROWSER": true,
+          "ENABLE_AJA": false,
+          "ENABLE_BROWSER": false,
         "ENABLE_SCRIPTING": false,
         "ENABLE_VST": false
       }

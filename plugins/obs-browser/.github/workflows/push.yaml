@@ -1,0 +1,20 @@
+name: Push
+run-name: ${{ github.ref_name }} push run 🚀
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
+      - 'release/**'
+    tags:
+      - '*'
+permissions:
+  contents: write
+jobs:
+  check-format:
+    name: Format 🔍
+    if: github.ref_name == 'master'
+    uses: ./.github/workflows/check-format.yaml
+    permissions:
+      contents: read
