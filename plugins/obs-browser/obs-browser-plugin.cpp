@@ -275,6 +275,18 @@ static obs_missing_files_t *browser_source_missingfiles(void *data)
 static CefRefPtr<BrowserApp> app;
 
 #ifdef _WIN32
+static void *GetCefSandboxInfo()
+{
+	using SandboxInfoFunction = void *(*)();
+	HMODULE frontend = GetModuleHandleW(L"obs64.dll");
+	if (!frontend)
+		return nullptr;
+	auto get_sandbox_info = reinterpret_cast<SandboxInfoFunction>(GetProcAddress(frontend, "OBSGetCefSandboxInfo"));
+	return get_sandbox_info ? get_sandbox_info() : nullptr;
+}
+#endif
+
+#ifdef _WIN32
 static std::string GetOBSAdapterLuid()
 {
 	std::string luid;
@@ -321,12 +333,18 @@ static void BrowserInit(void)
 	os_mkdir(conf_path);
 
 	CefSettings settings;
+	void *sandbox_info = nullptr;
+#ifdef _WIN32
+	sandbox_info = GetCefSandboxInfo();
+#endif
 	settings.log_severity = LOGSEVERITY_FATAL;
 	BPtr<char> log_path = obs_module_config_path("debug.log");
 	BPtr<char> log_path_abs = os_get_abs_path_ptr(log_path);
 	CefString(&settings.log_file) = log_path_abs;
 	settings.windowless_rendering_enabled = true;
-	settings.no_sandbox = true;
+	settings.no_sandbox = sandbox_info == nullptr;
+	if (settings.no_sandbox)
+		blog(LOG_ERROR, "[obs-browser]: CEF sandbox information is unavailable; refusing to start browser sources.");
 
 	uint32_t obs_ver = obs_get_version();
 	uint32_t obs_maj = obs_ver >> 24;
@@ -405,15 +423,15 @@ static void BrowserInit(void)
 #endif
 
 #ifdef _WIN32
-	CefExecuteProcess(args, app, nullptr);
+	CefExecuteProcess(args, app, sandbox_info);
 #endif
 
 #if !defined(_WIN32)
 	BackupSignalHandlers();
-	bool success = CefInitialize(args, settings, app, nullptr);
+	bool success = !settings.no_sandbox && CefInitialize(args, settings, app, sandbox_info);
 	RestoreSignalHandlers();
 #else
-	bool success = CefInitialize(args, settings, app, nullptr);
+	bool success = !settings.no_sandbox && CefInitialize(args, settings, app, sandbox_info);
 #endif
 
 	if (!success) {

@@ -69,10 +69,8 @@ endif()
 # below unchanged.
 if(WIN32 AND EXISTS "${CEF_ROOT_DIR}/cmake/FindCEF.cmake" AND EXISTS "${CEF_ROOT_DIR}/libcef_dll/CMakeLists.txt")
   set(CEF_ROOT "${CEF_ROOT_DIR}")
-  # CEF 149 uses bootstrap.exe for the Windows sandbox. OBS is currently an
-  # executable host, not a bootstrap client DLL, so the sandbox cannot be
-  # enabled until that launcher architecture is implemented.
-  set(USE_SANDBOX OFF CACHE BOOL "Disable unsupported CEF bootstrap sandbox" FORCE)
+  # CEF 149 uses bootstrap.exe and client DLLs for the Windows sandbox.
+  set(USE_SANDBOX ON CACHE BOOL "Enable CEF bootstrap sandbox" FORCE)
   include("${CEF_ROOT_DIR}/cmake/FindCEF.cmake")
 
   file(STRINGS "${CEF_ROOT_DIR}/include/cef_version.h" _cef_version_line
@@ -82,7 +80,9 @@ if(WIN32 AND EXISTS "${CEF_ROOT_DIR}/cmake/FindCEF.cmake" AND EXISTS "${CEF_ROOT
   if(NOT TARGET CEF::Library)
     add_library(CEF::Library SHARED IMPORTED)
     set_property(TARGET CEF::Library PROPERTY IMPORTED_IMPLIB "${CEF_LIB_RELEASE}")
-    set_property(TARGET CEF::Library PROPERTY IMPORTED_LOCATION "${CEF_BINARY_DIR_RELEASE}/libcef.dll")
+    set_property(TARGET CEF::Library PROPERTY IMPORTED_LOCATION "${CEF_ROOT_DIR}/Release/libcef.dll")
+    set_property(TARGET CEF::Library PROPERTY IMPORTED_LOCATION_RELEASE "${CEF_ROOT_DIR}/Release/libcef.dll")
+    set_property(TARGET CEF::Library PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
     set_property(TARGET CEF::Library APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CEF_INCLUDE_PATH}")
   endif()
 
