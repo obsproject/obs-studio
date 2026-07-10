@@ -42,7 +42,6 @@
 #include <util/windows/ComPtr.hpp>
 #include <dxgi.h>
 #include <dxgi1_2.h>
-#include <d3d11.h>
 #else
 #include "signal-restore.hpp"
 #endif
@@ -274,46 +273,6 @@ static obs_missing_files_t *browser_source_missingfiles(void *data)
 
 static CefRefPtr<BrowserApp> app;
 
-#ifdef _WIN32
-static void *GetCefSandboxInfo()
-{
-	using SandboxInfoFunction = void *(*)();
-	HMODULE frontend = GetModuleHandleW(L"obs64.dll");
-	if (!frontend)
-		return nullptr;
-	auto get_sandbox_info = reinterpret_cast<SandboxInfoFunction>(GetProcAddress(frontend, "OBSGetCefSandboxInfo"));
-	return get_sandbox_info ? get_sandbox_info() : nullptr;
-}
-#endif
-
-#ifdef _WIN32
-static std::string GetOBSAdapterLuid()
-{
-	std::string luid;
-	obs_enter_graphics();
-	auto *device = static_cast<ID3D11Device *>(gs_get_device_obj());
-	if (device) {
-		ComQIPtr<IDXGIDevice> dxgi_device(device);
-		if (dxgi_device) {
-			ComPtr<IDXGIAdapter> adapter;
-			if (SUCCEEDED(dxgi_device->GetAdapter(&adapter))) {
-				DXGI_ADAPTER_DESC desc = {};
-				if (SUCCEEDED(adapter->GetDesc(&desc))) {
-					luid = std::to_string(static_cast<uint32_t>(desc.AdapterLuid.HighPart));
-					luid += ",";
-					luid += std::to_string(desc.AdapterLuid.LowPart);
-				}
-			}
-		}
-	}
-	obs_leave_graphics();
-
-	if (luid.empty())
-		blog(LOG_WARNING, "[obs-browser]: Unable to determine the OBS D3D11 adapter LUID; CEF will select its default adapter.");
-	return luid;
-}
-#endif
-
 static void BrowserInit(void)
 {
 	string path = obs_get_module_binary_path(obs_current_module());
@@ -333,18 +292,12 @@ static void BrowserInit(void)
 	os_mkdir(conf_path);
 
 	CefSettings settings;
-	void *sandbox_info = nullptr;
-#ifdef _WIN32
-	sandbox_info = GetCefSandboxInfo();
-#endif
 	settings.log_severity = LOGSEVERITY_FATAL;
 	BPtr<char> log_path = obs_module_config_path("debug.log");
 	BPtr<char> log_path_abs = os_get_abs_path_ptr(log_path);
 	CefString(&settings.log_file) = log_path_abs;
 	settings.windowless_rendering_enabled = true;
-	settings.no_sandbox = sandbox_info == nullptr;
-	if (settings.no_sandbox)
-		blog(LOG_ERROR, "[obs-browser]: CEF sandbox information is unavailable; refusing to start browser sources.");
+	settings.no_sandbox = true;
 
 	uint32_t obs_ver = obs_get_version();
 	uint32_t obs_maj = obs_ver >> 24;
@@ -415,7 +368,7 @@ static void BrowserInit(void)
 
 #ifdef _WIN32
 	app = new BrowserApp(tex_sharing_avail, browser_webgpu_config.Enabled(),
-			     browser_webgpu_config.CommandLineOrigins(), GetOBSAdapterLuid());
+			     browser_webgpu_config.CommandLineOrigins());
 #elif defined(__APPLE__) || !defined(ENABLE_WAYLAND)
 	app = new BrowserApp(tex_sharing_avail);
 #else
@@ -423,15 +376,15 @@ static void BrowserInit(void)
 #endif
 
 #ifdef _WIN32
-	CefExecuteProcess(args, app, sandbox_info);
+	CefExecuteProcess(args, app, nullptr);
 #endif
 
 #if !defined(_WIN32)
 	BackupSignalHandlers();
-	bool success = !settings.no_sandbox && CefInitialize(args, settings, app, sandbox_info);
+	bool success = CefInitialize(args, settings, app, nullptr);
 	RestoreSignalHandlers();
 #else
-	bool success = !settings.no_sandbox && CefInitialize(args, settings, app, sandbox_info);
+	bool success = CefInitialize(args, settings, app, nullptr);
 #endif
 
 	if (!success) {
@@ -719,11 +672,24 @@ static inline bool is_intel(const std::wstring &str)
 	return wstrstri(str.c_str(), L"Intel") != 0;
 }
 
+static inline bool is_intel_arc(const std::wstring &str)
+{
+	return is_intel(str) && wstrstri(str.c_str(), L"Arc") != 0;
+}
+
 static void check_hwaccel_support(void)
 {
 	/* do not use hardware acceleration if a blacklisted device is the
 	 * default and on 2 or more adapters */
 	const wchar_t **device = blacklisted_devices;
+
+	/* The original Intel blacklist targets older integrated GPUs. Intel Arc
+	 * adapters support the modern D3D12/WebGPU path and must not be forced
+	 * into CEF's software fallback merely because another adapter exists. */
+	if (is_intel_arc(deviceId)) {
+		blog(LOG_INFO, "[obs-browser]: Intel Arc adapter detected; enabling browser GPU acceleration.");
+		return;
+	}
 
 	if (adapterCount >= 2 || !is_intel(deviceId)) {
 		while (*device) {
@@ -806,9 +772,6 @@ bool obs_module_load(void)
 								invalid_webgpu_origins);
 	for (const std::string &origin : invalid_webgpu_origins)
 		blog(LOG_WARNING, "[obs-browser]: Ignoring invalid WebGPU HTTP origin '%s'", origin.c_str());
-	blog(LOG_INFO, "[obs-browser]: WebGPU: %s; secure-context HTTP origins: %zu",
-	     browser_webgpu_config.Enabled() ? "auto" : "disabled", browser_webgpu_config.insecure_origins.size());
-
 #ifdef ENABLE_BROWSER_SHARED_TEXTURE
 	hwaccel = obs_data_get_bool(private_data, "BrowserHWAccel");
 
@@ -816,6 +779,18 @@ bool obs_module_load(void)
 		check_hwaccel_support();
 	}
 #endif
+
+#ifdef _WIN32
+	if (browser_webgpu_config.Enabled() && !hwaccel) {
+		browser_webgpu_config.mode = BrowserWebGPUMode::Disabled;
+		blog(LOG_WARNING,
+		     "[obs-browser]: WebGPU was requested but browser GPU acceleration is unavailable; "
+		     "using the stable software fallback for this launch.");
+	}
+#endif
+
+	blog(LOG_INFO, "[obs-browser]: WebGPU: %s; secure-context HTTP origins: %zu",
+	     browser_webgpu_config.Enabled() ? "auto" : "disabled", browser_webgpu_config.insecure_origins.size());
 
 	return true;
 }

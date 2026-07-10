@@ -52,39 +52,12 @@ function(set_target_properties_obs target)
   elseif(target_type STREQUAL SHARED_LIBRARY)
     set_target_properties(${target} PROPERTIES VERSION ${OBS_VERSION_MAJOR} SOVERSION ${OBS_VERSION_CANONICAL})
 
-    if(target STREQUAL obs-browser-helper)
-      _target_install_obs(
-        ${target}
-          DESTINATION "${OBS_PLUGIN_DESTINATION}"
-          LIBRARY_DESTINATION "${OBS_PLUGIN_DESTINATION}"
-          HEADER_DESTINATION "${OBS_INCLUDE_DESTINATION}"
-      )
-      install(FILES "$<TARGET_FILE:${target}>" DESTINATION "${OBS_PLUGIN_DESTINATION}" COMPONENT Runtime)
-      install(FILES "${CEF_ROOT_DIR}/Release/bootstrap.exe" DESTINATION "${OBS_PLUGIN_DESTINATION}"
-              RENAME "obs-browser-page.exe" COMPONENT Runtime)
-    else()
-      _target_install_obs(
-        ${target}
-          DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
-          LIBRARY_DESTINATION "${OBS_LIBRARY_DESTINATION}"
-          HEADER_DESTINATION "${OBS_INCLUDE_DESTINATION}"
-      )
-    endif()
-
-    if(target STREQUAL obs-studio)
-      get_property(obs_executables GLOBAL PROPERTY _OBS_EXECUTABLES)
-      get_property(obs_modules GLOBAL PROPERTY OBS_MODULES_ENABLED)
-      add_dependencies(${target} ${obs_executables} ${obs_modules})
-      _bundle_dependencies(${target})
-      target_add_resource(${target} "${CMAKE_CURRENT_SOURCE_DIR}/../AUTHORS"
-                          "${OBS_DATA_DESTINATION}/obs-studio/authors"
-      )
-      install(FILES "$<TARGET_FILE:${target}>" DESTINATION "${OBS_EXECUTABLE_DESTINATION}" COMPONENT Runtime)
-      install(FILES "${CEF_ROOT_DIR}/Release/bootstrap.exe" DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
-              RENAME "obs64.exe" COMPONENT Runtime)
-      install(FILES "${CEF_ROOT_DIR}/Release/chrome_elf.dll" DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
-              COMPONENT Runtime)
-    endif()
+    _target_install_obs(
+      ${target}
+        DESTINATION "${OBS_EXECUTABLE_DESTINATION}"
+        LIBRARY_DESTINATION "${OBS_LIBRARY_DESTINATION}"
+        HEADER_DESTINATION "${OBS_INCLUDE_DESTINATION}"
+    )
   elseif(target_type STREQUAL MODULE_LIBRARY)
     set_target_properties(${target} PROPERTIES VERSION 0 SOVERSION ${OBS_VERSION_CANONICAL})
 

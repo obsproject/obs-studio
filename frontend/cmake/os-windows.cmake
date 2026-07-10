@@ -41,24 +41,6 @@ target_sources(
     utility/win-dll-blocklist.c
 )
 
-if(ENABLE_BROWSER)
-  target_include_directories(obs-studio PRIVATE "${CEF_ROOT_DIR}")
-  target_compile_definitions(obs-studio PRIVATE CEF_USE_BOOTSTRAP)
-  add_custom_command(
-    TARGET obs-studio
-    POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CEF_ROOT_DIR}/Release/bootstrap.exe"
-            "$<TARGET_FILE_DIR:obs-studio>/obs64.exe"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CEF_ROOT_DIR}/Release/chrome_elf.dll"
-            "$<TARGET_FILE_DIR:obs-studio>/chrome_elf.dll"
-    COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CEF_ROOT_DIR}/Release/bootstrap.exe"
-            "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}/obs64.exe"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CEF_ROOT_DIR}/Release/chrome_elf.dll"
-            "${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_EXECUTABLE_DESTINATION}/chrome_elf.dll"
-  )
-endif()
-
 add_library(obs-updater-manifest INTERFACE)
 add_library(OBS::updater-manifest ALIAS obs-updater-manifest)
 
@@ -97,6 +79,7 @@ set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT obs-studi
 set_target_properties(
   obs-studio
   PROPERTIES
-    VS_DEBUGGER_COMMAND "${CMAKE_BINARY_DIR}/rundir/$<CONFIG>/bin/64bit/obs64.exe"
+    WIN32_EXECUTABLE TRUE
+    VS_DEBUGGER_COMMAND "${CMAKE_BINARY_DIR}/rundir/$<CONFIG>/bin/64bit/$<TARGET_FILE_NAME:obs-studio>"
     VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/rundir/$<CONFIG>/bin/64bit"
 )

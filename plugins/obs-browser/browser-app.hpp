@@ -70,7 +70,6 @@ class BrowserApp : public CefApp, public CefRenderProcessHandler, public CefBrow
 	bool shared_texture_available;
 	bool webgpu_enabled = false;
 	std::string insecure_origins;
-	std::string adapter_luid;
 	CallbackMap callbackMap;
 	int callbackId;
 #if !defined(__APPLE__) && !defined(_WIN32)
@@ -80,11 +79,10 @@ class BrowserApp : public CefApp, public CefRenderProcessHandler, public CefBrow
 public:
 #ifdef _WIN32
 	inline BrowserApp(bool shared_texture_available_ = false, bool webgpu_enabled_ = false,
-			  std::string insecure_origins_ = {}, std::string adapter_luid_ = {})
+			  std::string insecure_origins_ = {})
 		: shared_texture_available(shared_texture_available_),
 		  webgpu_enabled(webgpu_enabled_),
-		  insecure_origins(std::move(insecure_origins_)),
-		  adapter_luid(std::move(adapter_luid_))
+		  insecure_origins(std::move(insecure_origins_))
 	{
 	}
 #elif defined(__APPLE__)

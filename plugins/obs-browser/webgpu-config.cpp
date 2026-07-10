@@ -103,7 +103,7 @@ BrowserWebGPUConfig ParseBrowserWebGPUConfig(const std::string &mode, const std:
 						     std::vector<std::string> &invalid_entries)
 {
 	BrowserWebGPUConfig config;
-	config.mode = lower(trim(mode)) == "disabled" ? BrowserWebGPUMode::Disabled : BrowserWebGPUMode::Auto;
+	config.mode = lower(trim(mode)) == "auto" ? BrowserWebGPUMode::Auto : BrowserWebGPUMode::Disabled;
 
 	std::set<std::string> unique_origins = {"http://absolute"};
 	std::string token;

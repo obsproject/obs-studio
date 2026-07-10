@@ -2703,7 +2703,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->browserWebGPUMode->addItem(QTStr("BrowserSource.WebGPU.Auto"), "auto");
 	ui->browserWebGPUMode->addItem(QTStr("BrowserSource.WebGPU.Disabled"), "disabled");
 	const char *browserWebGPUMode = config_get_string(App()->GetAppConfig(), "General", "BrowserWebGPUMode");
-	SetComboByValue(ui->browserWebGPUMode, browserWebGPUMode ? QT_UTF8(browserWebGPUMode) : "auto");
+	SetComboByValue(ui->browserWebGPUMode, browserWebGPUMode ? QT_UTF8(browserWebGPUMode) : "disabled");
 	ui->browserWebGPUInsecureOrigins->setText(
 		QT_UTF8(config_get_string(App()->GetAppConfig(), "General", "BrowserWebGPUInsecureOrigins")));
 	prevBrowserWebGPUMode = GetComboData(ui->browserWebGPUMode);

@@ -45,9 +45,6 @@
 #include <shellapi.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#ifdef CEF_USE_BOOTSTRAP
-#include <include/cef_sandbox_win.h>
-#endif
 #else
 #include <signal.h>
 #endif
@@ -711,7 +708,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	return ret;
 }
-
 #define MAX_CRASH_REPORT_SIZE (200 * 1024)
 
 #ifdef _WIN32
@@ -888,7 +884,7 @@ static void set_process_mitigation_policies()
 #define ALLOW_PORTABLE_MODE 0
 #endif
 
-static int ObsMain(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 #ifndef _WIN32
 	using SignalHandlerCallback = decltype(OBSApp::sigIntSignalHandler);
@@ -1116,45 +1112,3 @@ static int ObsMain(int argc, char *argv[])
 	return ret;
 }
 
-#if defined(_WIN32) && defined(CEF_USE_BOOTSTRAP)
-static void *cef_sandbox_info = nullptr;
-
-extern "C" __declspec(dllexport) void *OBSGetCefSandboxInfo()
-{
-	return cef_sandbox_info;
-}
-
-int RunWinMain(HINSTANCE, LPTSTR, int, void *sandbox_info, cef_version_info_t *)
-{
-	cef_sandbox_info = sandbox_info;
-
-	int argc = 0;
-	LPWSTR *wide_argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	if (!wide_argv)
-		return 1;
-
-	std::vector<char *> argv;
-	argv.reserve(static_cast<size_t>(argc));
-	for (int index = 0; index < argc; index++) {
-		char *argument = nullptr;
-		if (!os_wcs_to_utf8_ptr(wide_argv[index], 0, &argument)) {
-			for (char *allocated : argv)
-				bfree(allocated);
-			LocalFree(wide_argv);
-			return 1;
-		}
-		argv.push_back(argument);
-	}
-	LocalFree(wide_argv);
-
-	const int result = ObsMain(argc, argv.data());
-	for (char *allocated : argv)
-		bfree(allocated);
-	return result;
-}
-#else
-int main(int argc, char *argv[])
-{
-	return ObsMain(argc, argv);
-}
-#endif

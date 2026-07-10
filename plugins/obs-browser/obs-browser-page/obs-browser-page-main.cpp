@@ -21,7 +21,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <include/cef_sandbox_win.h>
 #include <string>
 #include <thread>
 
@@ -73,7 +72,7 @@ static void shutdown_check_thread(DWORD parent_pid, DWORD main_thread_id)
 	CloseHandle(parent);
 }
 
-int RunWinMain(HINSTANCE, LPTSTR, int, void *sandbox_info, cef_version_info_t *)
+int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	PROCESS_POWER_THROTTLING_STATE PowerThrottling;
 	PowerThrottling.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
@@ -117,7 +116,7 @@ int main(int argc, char *argv[])
 #endif
 	CefRefPtr<BrowserApp> mainApp(new BrowserApp());
 
-	int ret = CefExecuteProcess(mainArgs, mainApp.get(), sandbox_info);
+	int ret = CefExecuteProcess(mainArgs, mainApp.get(), NULL);
 
 #ifdef _WIN32
 	/* chromium browser subprocesses actually have TerminateProcess called

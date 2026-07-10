@@ -1,6 +1,48 @@
 OBS Studio <https://obsproject.com>
 ===================================
 
+OBS Studio WebGPU - Windows Preview
+-----------------------------------
+
+This fork adds experimental WebGPU support for Browser Sources on Windows. It
+is intended for creators who need WebGPU content in an OBS Browser Source,
+while preserving a stable fallback for systems where browser GPU acceleration
+is unavailable.
+
+Download and start (Windows)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Open the latest release:
+   https://github.com/Loggableim/obs-studio-webgpu/releases/latest
+2. Download OBS-Studio-WebGPU-Windows-x64-preview.zip.
+3. Extract the ZIP completely to a folder of your choice.
+4. Open bin\\64bit\\obs64.exe with a double-click.
+
+Do not move only obs64.exe out of the extracted folder. It needs the included
+CEF runtime, plugins, and data directory beside it.
+
+Enable WebGPU for Browser Sources
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. In OBS, open Settings -> Advanced.
+2. Set Browser Source WebGPU mode to Auto.
+3. Restart OBS when prompted.
+4. Add or refresh a Browser Source with an HTTPS WebGPU page, for example
+   https://toji.github.io/webgpu-test/.
+
+WebGPU is disabled by default for new profiles so that unsupported systems
+continue to start reliably. Intel Arc adapters are recognised as WebGPU-capable
+and are not sent through the legacy Intel GPU fallback.
+
+Important
+~~~~~~~~~
+
+- This is a preview build. Test new Browser Sources before using them in a
+  live production.
+- Use HTTPS whenever possible. WebGPU requires a secure context.
+- If a source stays blank, first refresh the Browser Source and check that
+  WebGPU mode is set to Auto.
+
 .. image:: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml/badge.svg?branch=master
    :alt: OBS Studio Build Status - GitHub Actions
    :target: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml?query=branch%3Amaster

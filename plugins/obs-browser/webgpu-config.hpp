@@ -9,7 +9,7 @@ enum class BrowserWebGPUMode {
 };
 
 struct BrowserWebGPUConfig {
-	BrowserWebGPUMode mode = BrowserWebGPUMode::Auto;
+	BrowserWebGPUMode mode = BrowserWebGPUMode::Disabled;
 	std::vector<std::string> insecure_origins;
 
 	bool Enabled() const { return mode == BrowserWebGPUMode::Auto; }

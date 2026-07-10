@@ -321,7 +321,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(appConfig, "General", "BrowserHWAccel", true);
 #endif
 #ifdef _WIN32
-	config_set_default_string(appConfig, "General", "BrowserWebGPUMode", "auto");
+	config_set_default_string(appConfig, "General", "BrowserWebGPUMode", "disabled");
 	config_set_default_string(appConfig, "General", "BrowserWebGPUInsecureOrigins", "");
 #endif
 
@@ -1285,14 +1285,14 @@ bool OBSApp::OBSInit()
 
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
-	obs_data_set_string(settings, "BrowserWebGPUMode", browserWebGPUMode ? browserWebGPUMode : "auto");
+	obs_data_set_string(settings, "BrowserWebGPUMode", browserWebGPUMode ? browserWebGPUMode : "disabled");
 	obs_data_set_string(settings, "BrowserWebGPUInsecureOrigins", browserWebGPUOrigins ? browserWebGPUOrigins : "");
 	obs_apply_private_data(settings);
 
 	blog(LOG_INFO, "Current Date/Time: %s", CurrentDateTimeString().c_str());
 
 	blog(LOG_INFO, "Browser Hardware Acceleration: %s", browserHWAccel ? "true" : "false");
-	blog(LOG_INFO, "Browser WebGPU mode: %s", browserWebGPUMode ? browserWebGPUMode : "auto");
+	blog(LOG_INFO, "Browser WebGPU mode: %s", browserWebGPUMode ? browserWebGPUMode : "disabled");
 #endif
 #ifdef _WIN32
 	bool hideFromCapture = config_get_bool(userConfig, "BasicWindow", "HideOBSWindowsFromCapture");

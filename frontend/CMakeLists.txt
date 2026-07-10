@@ -24,12 +24,8 @@ if(NOT TARGET OBS::bpm)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/bpm" bpm)
 endif()
 
-if(OS_WINDOWS AND ENABLE_BROWSER)
-  add_library(obs-studio SHARED)
-else()
-  add_executable(obs-studio)
-endif()
-add_library(OBS::studio ALIAS obs-studio)
+add_executable(obs-studio)
+add_executable(OBS::studio ALIAS obs-studio)
 
 target_link_libraries(
   obs-studio

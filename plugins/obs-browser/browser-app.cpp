@@ -60,8 +60,6 @@ void BrowserApp::OnBeforeChildProcessLaunch(CefRefPtr<CefCommandLine> command_li
 	command_line->AppendSwitchWithValue("parent_pid", pid);
 	if (webgpu_enabled)
 		command_line->AppendSwitch("obs-webgpu-enabled");
-	if (!adapter_luid.empty())
-		command_line->AppendSwitchWithValue("use-adapter-luid", adapter_luid);
 #else
 	(void)command_line;
 #endif
@@ -69,11 +67,20 @@ void BrowserApp::OnBeforeChildProcessLaunch(CefRefPtr<CefCommandLine> command_li
 
 void BrowserApp::OnBeforeCommandLineProcessing(const CefString &, CefRefPtr<CefCommandLine> command_line)
 {
-	if (!shared_texture_available) {
+#ifdef _WIN32
+	const bool webgpu_requested = webgpu_enabled || command_line->HasSwitch("obs-webgpu-enabled");
+#endif
+
+	if (!shared_texture_available
+#ifdef _WIN32
+	    && !webgpu_requested
+#endif
+	) {
 		bool enableGPU = command_line->HasSwitch("enable-gpu");
 		CefString type = command_line->GetSwitchValue("type");
 
 		if (!enableGPU && type.empty()) {
+			command_line->AppendSwitch("disable-gpu");
 			command_line->AppendSwitch("disable-gpu-compositing");
 		}
 	}
@@ -96,15 +103,12 @@ void BrowserApp::OnBeforeCommandLineProcessing(const CefString &, CefRefPtr<CefC
 	}
 
 #ifdef _WIN32
-	const bool webgpu_requested = webgpu_enabled || command_line->HasSwitch("obs-webgpu-enabled");
 	if (webgpu_requested)
 		command_line->AppendSwitch("obs-webgpu-enabled");
 	else
 		disable_features += ",WebGPU";
-	if (!insecure_origins.empty())
+	if (webgpu_requested && !insecure_origins.empty())
 		command_line->AppendSwitchWithValue("unsafely-treat-insecure-origin-as-secure", insecure_origins);
-	if (!adapter_luid.empty())
-		command_line->AppendSwitchWithValue("use-adapter-luid", adapter_luid);
 #endif
 	command_line->AppendSwitchWithValue("disable-features", disable_features);
 
