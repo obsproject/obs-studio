@@ -1456,7 +1456,13 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitionsData, obs_load_sourc
 		const char *id = obs_data_get_string(item, "id");
 		OBSDataAutoRelease settings = obs_data_get_obj(item, "settings");
 
-		OBSSourceAutoRelease source = obs_source_create_private(id, name, settings);
+		OBSSourceAutoRelease source;
+		if (safe_mode || disable_3p_plugins) {
+			source = obs_source_create_private(id, name, settings);
+		} else {
+			source = obs_source_create_private_with_fallback(id, "cut_transition", name, settings);
+		}
+
 		if (!obs_obj_invalid(source)) {
 			std::string uuid = obs_source_get_uuid(source);
 			InitTransition(source);
