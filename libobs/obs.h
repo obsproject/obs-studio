@@ -1047,6 +1047,13 @@ EXPORT obs_source_t *obs_source_create(const char *id, const char *name, obs_dat
 
 EXPORT obs_source_t *obs_source_create_private(const char *id, const char *name, obs_data_t *settings);
 
+/**
+ * Same as 'obs_source_create_private()' but with a fallback type to use if the requested type is missing or invalid.
+ * This hould not be used outside of OBS
+ */
+EXPORT obs_source_t *obs_source_create_private_with_fallback(const char *id, const char *fallback_id, const char *name,
+							     obs_data_t *settings);
+
 /* if source has OBS_SOURCE_DO_NOT_DUPLICATE output flag set, only returns a
  * reference */
 EXPORT obs_source_t *obs_source_duplicate(obs_source_t *source, const char *desired_name, bool create_private);
