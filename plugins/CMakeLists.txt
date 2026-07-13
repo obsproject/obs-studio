@@ -65,6 +65,11 @@ add_obs_plugin(linux-jack PLATFORMS LINUX FREEBSD OPENBSD)
 add_obs_plugin(linux-pipewire PLATFORMS LINUX FREEBSD OPENBSD)
 add_obs_plugin(linux-pulseaudio PLATFORMS LINUX FREEBSD OPENBSD)
 add_obs_plugin(linux-v4l2 PLATFORMS LINUX FREEBSD OPENBSD)
+add_obs_plugin(
+  live-caption-studio
+  PLATFORMS WINDOWS MACOS LINUX
+  WITH_MESSAGE
+)
 add_obs_plugin(mac-avcapture PLATFORMS MACOS)
 add_obs_plugin(mac-capture PLATFORMS MACOS)
 add_obs_plugin(mac-syphon PLATFORMS MACOS)
