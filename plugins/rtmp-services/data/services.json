@@ -385,6 +385,18 @@
             ]
         },
         {
+            "name": "Velora.tv",
+            "servers": [
+                {
+                    "name": "Velora.tv Main Server"
+                    "url": "rtmp://publish.velora.tv/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
             "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
