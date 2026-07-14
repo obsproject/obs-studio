@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 
+#include "obs-hotkey-portal.h"
 #include "obs-internal.h"
 
 /* Since ids are just sequential size_t integers, we don't really need a
@@ -180,6 +181,10 @@ static inline obs_hotkey_id obs_hotkey_register_internal(obs_hotkey_registerer_t
 
 		context_add_hotkey(context, result);
 	}
+
+	// add with xdg-desktop-portal
+	obs_hotkey_portal_init(hotkey);
+	obs_hotkey_portal_register(hotkey);
 
 	hotkey_signal("hotkey_register", hotkey);
 
@@ -865,6 +870,8 @@ static inline void unregister_hotkey(obs_hotkey_id id)
 	bfree(hotkey->name);
 	bfree(hotkey->description);
 	bfree(hotkey);
+
+	obs_hotkey_portal_unregister(id);
 
 	remove_bindings(id);
 }
