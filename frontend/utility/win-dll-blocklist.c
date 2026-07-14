@@ -196,6 +196,11 @@ static blocked_module_t blocked_modules[] = {
 	// The app is defunct as of July 2023 and the plugin no longer has a purpose.
 	// Reference: https://github.com/obsproject/obs-studio/issues/13636
 	{L"\\soundtrack-plugin.dll", 0, 0, TS_IGNORE},
+
+	// More Korean banking anti-screenshot "security" software that injects and crashes OBS.
+	// Found via internal crash reports. Classified as malware by some vendors.
+	// Reference: https://vms.drweb.com/virus/?i=32005995
+	{L"\\imgsf50dxfilter_x64.dll", 0, 0, TS_IGNORE},
 };
 
 static bool is_module_blocked(wchar_t *dll, uint32_t timestamp)
