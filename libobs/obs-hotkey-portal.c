@@ -1,9 +1,12 @@
 #include "obs-hotkey-portal.h"
+#include "obs-hotkey.h"
 #include "obs.h"
 #include "util/base.h"
+#include "util/bmem.h"
 #include "util/c99defs.h"
 #include <gio/gio.h>
 #include <glib.h>
+#include <uthash.h>
 
 #define PORTAL_NAME "org.freedesktop.portal.Desktop"
 #define PORTAL_PATH "/org/freedesktop/portal/desktop"
@@ -20,7 +23,7 @@ static struct obs_hotkey_portal_state {
 	GQueue *pending_hotkeys;
 	// TODO: use the hash table that obs-hotkey already uses instead of
 	// this array. I just want to get this working first
-	GArray *registered_hotkeys;
+	// GArray *registered_hotkeys;
 } *state = NULL;
 
 typedef struct obs_hotkey_portal_state obs_hotkey_portal_state_t;
@@ -46,42 +49,67 @@ GString *get_formatted_sender(GDBusConnection *conn) {
     return unique_name;
 }
 
-GString *get_hotkey_portal_id(obs_hotkey_t *hotkey) {
-	if (hotkey == NULL || hotkey->name == NULL) {
+char *get_hotkey_portal_id(obs_hotkey_t *hotkey) {
+	if (hotkey == NULL) {
 		return NULL;
 	}
 
-	GString *ret_val = g_string_new(hotkey->name);
-	const char *id = NULL;
-	switch(hotkey->registerer_type) {
-	case OBS_HOTKEY_REGISTERER_FRONTEND:
-		break;
-	case OBS_HOTKEY_REGISTERER_SOURCE: {
-		id = obs_source_get_id(hotkey->registerer);
-		break;
-	}
-	case OBS_HOTKEY_REGISTERER_OUTPUT: {
-		id = obs_output_get_id(hotkey->registerer);
-		break;
-	}
-	case OBS_HOTKEY_REGISTERER_ENCODER: {
-		id = obs_encoder_get_id(hotkey->registerer);
-		break;
-	}
-	case OBS_HOTKEY_REGISTERER_SERVICE: {
-		id = obs_service_get_id(hotkey->registerer);
-		break;
-	}
-	default:
-		break;
+	const char *append_to_id = NULL;
+	void *registerer = obs_weak_object_get_object(hotkey->registerer);
+	if (registerer) {
+		switch(obs_hotkey_get_registerer_type(hotkey)) {
+		case OBS_HOTKEY_REGISTERER_SOURCE:
+			append_to_id = obs_source_get_uuid(registerer);
+			obs_object_release(registerer);
+			break;
+		default:
+			append_to_id = obs_obj_get_id(obs_weak_object_get_object(hotkey->registerer));
+			break;
+		}
 	}
 
-	// if (id != NULL) {
-	// 	g_print("Hotkey portal id: %s\n", ret_val->str);
-	// 	g_string_append_printf(ret_val, ".%s", id);
-	// 	g_print("Hotkey portal id2: %s\n", ret_val->str);
-	// }
-	return ret_val;
+	// append to id
+	char *id_dst;
+	if (append_to_id != NULL) {
+		id_dst = bzalloc(strlen(hotkey->name) + strlen(append_to_id) + 8);
+		sprintf(id_dst, "%s.%s", hotkey->name, append_to_id);
+		return id_dst;
+	} else {
+		id_dst = bstrdup(hotkey->name);
+	}
+
+	obs_object_release(registerer);
+	return id_dst;
+}
+
+char *get_hotkey_portal_description(obs_hotkey_t *hotkey) {
+	if (hotkey == NULL) {
+		return NULL;
+	}
+
+	const char *append_to_description = NULL;
+	void *registerer = obs_weak_object_get_object(hotkey->registerer);
+	if (registerer) {
+		switch(obs_hotkey_get_registerer_type(hotkey)) {
+		case OBS_HOTKEY_REGISTERER_SOURCE:
+			append_to_description = obs_source_get_name(registerer);
+			blog(LOG_INFO, "Desc: %s", append_to_description);
+			break;
+		default:
+			break;
+		}
+	}
+
+	char *description_dst;
+	if (append_to_description != NULL) {
+		description_dst = bzalloc(strlen(hotkey->description) + strlen(append_to_description) + 8);
+		sprintf(description_dst, "%s (%s)", hotkey->description, append_to_description);
+	} else {
+		description_dst = bstrdup(hotkey->description);
+	}
+
+	obs_object_release(registerer);
+	return description_dst;
 }
 
 void obs_hotkey_portal_free() {
@@ -90,10 +118,9 @@ void obs_hotkey_portal_free() {
 	}
 	g_dbus_connection_close_sync(state->conn, NULL, NULL);
 	g_object_unref(state->conn);
-	g_free(state->session_path);
+	bfree(state->session_path);
 	g_queue_free(state->pending_hotkeys);
-	g_array_free(state->registered_hotkeys, true);
-	g_free(state);
+	bfree(state);
 	state = NULL;
 }
 
@@ -119,18 +146,21 @@ static gboolean obs_hotkey_portal_finish_registration() {
 		hotkey != NULL;
 		hotkey = g_queue_pop_head(state->pending_hotkeys))
 	{
+		char *id = get_hotkey_portal_id(hotkey);
+
 		// description
+		char *description = get_hotkey_portal_description(hotkey);
 		GVariantBuilder vardict_builder;
 		g_variant_builder_init(&vardict_builder, G_VARIANT_TYPE_VARDICT);
-		g_variant_builder_add(&vardict_builder, "{sv}", "description", g_variant_new_string(hotkey->description));
-		blog(LOG_INFO, "Registering hotkey with portal: %s: %s\n", hotkey->name, hotkey->description);
+		g_variant_builder_add(&vardict_builder, "{sv}", "description", g_variant_new_string(description));
 
+		blog(LOG_INFO, "Registering hotkey with portal: %s: %s\n", hotkey->name, hotkey->description);
 		// add shortcut to builder
-		GVariant *data[] = {g_variant_new_string(get_hotkey_portal_id(hotkey)->str), g_variant_builder_end(&vardict_builder)};
+		GVariant *data[] = {g_variant_new_string(id), g_variant_builder_end(&vardict_builder)};
 		g_variant_builder_add_value(&shortcuts_builder, g_variant_new_tuple(data, 2));
 
-		// add shortcut to registered list
-		g_array_append_val(state->registered_hotkeys, *hotkey);
+		bfree(id);
+		bfree(description);
 	}
 
 	// options
@@ -165,21 +195,22 @@ static void activated_cb(
 	UNUSED_PARAMETER(user_data);
 
 	g_autofree char *session_path = NULL;
-	g_autofree char *shortcut_name = NULL;
+	g_autofree char *received_id = NULL;
 	uint64_t timestamp;
 	g_autoptr(GVariant) options = NULL;
 
-	g_variant_get(parameters, "(ost@a{sv})", &session_path, &shortcut_name, &timestamp, &options);
-	blog(LOG_INFO, "Portal hotkey activated: %s\n", shortcut_name);
+	g_variant_get(parameters, "(ost@a{sv})", &session_path, &received_id, &timestamp, &options);
+	blog(LOG_INFO, "Portal hotkey activated: %s\n", received_id);
 
-	// find shortcut id in registered list
-	for (unsigned i = 0; i < state->registered_hotkeys->len; ++i) {
-		obs_hotkey_t *hotkey = &g_array_index(state->registered_hotkeys, obs_hotkey_t, i);
-
-		if (strcmp(hotkey->name, shortcut_name) != 0) {
+	char *iter_id = NULL;
+	for (obs_hotkey_t *hotkey = obs->hotkeys.hotkeys; hotkey != NULL; hotkey = hotkey->hh.next) {
+		iter_id = get_hotkey_portal_id(hotkey);
+		if (strcmp(iter_id, received_id) != 0) {
+			bfree(iter_id);
 			continue;
 		}
 
+		bfree(iter_id);
 		hotkey->func(hotkey->data, hotkey->id, hotkey, true);
 		return;
 	}
@@ -315,11 +346,10 @@ void obs_hotkey_portal_init()
 	}
 
 	// initialise state
-	state = malloc(sizeof(obs_hotkey_portal_state_t));
+	state = bzalloc(sizeof(obs_hotkey_portal_state_t));
 	state->conn = conn;
 	state->session_path = NULL;
 	state->pending_hotkeys = g_queue_new();
-	state->registered_hotkeys = g_array_new(false, false, sizeof(obs_hotkey_t));
 }
 
 void obs_hotkey_portal_register(obs_hotkey_t *hotkey)
@@ -346,19 +376,9 @@ void obs_hotkey_portal_unregister(obs_hotkey_id id) {
 
 	blog(LOG_WARNING, "Unregistering hotkey with id %lu from xdg-desktop-portal", id);
 
-	// remove hotkey from registered list
-	for (unsigned i = 0; i < state->registered_hotkeys->len; ++i) {
-		obs_hotkey_t *hotkey = &g_array_index(state->registered_hotkeys, obs_hotkey_t, i);
-		if (hotkey->id == id) {
-			g_array_remove_index(state->registered_hotkeys, i);
-			break;
-		}
-	}
-
-	// pending list
+	// remove from pending list (if it's there)
 	for (GList *l = state->pending_hotkeys->head; l != NULL; l = l->next) {
-		obs_hotkey_t *hotkey = (obs_hotkey_t *)l->data;
-		if (hotkey->id == id) {
+		if (*(obs_hotkey_id*)l->data == id) {
 			g_queue_delete_link(state->pending_hotkeys, l);
 			break;
 		}
