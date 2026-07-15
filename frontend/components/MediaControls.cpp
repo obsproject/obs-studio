@@ -10,37 +10,37 @@
 void MediaControls::OBSMediaStopped(void *data, calldata_t *)
 {
 	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetRestartState");
+	QMetaObject::invokeMethod(media, &MediaControls::SetRestartState);
 }
 
 void MediaControls::OBSMediaPlay(void *data, calldata_t *)
 {
 	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPlayingState");
+	QMetaObject::invokeMethod(media, &MediaControls::SetPlayingState);
 }
 
 void MediaControls::OBSMediaPause(void *data, calldata_t *)
 {
 	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPausedState");
+	QMetaObject::invokeMethod(media, &MediaControls::SetPausedState);
 }
 
 void MediaControls::OBSMediaStarted(void *data, calldata_t *)
 {
 	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "SetPlayingState");
+	QMetaObject::invokeMethod(media, &MediaControls::SetPlayingState);
 }
 
 void MediaControls::OBSMediaNext(void *data, calldata_t *)
 {
 	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "UpdateSlideCounter");
+	QMetaObject::invokeMethod(media, &MediaControls::UpdateSlideCounter);
 }
 
 void MediaControls::OBSMediaPrevious(void *data, calldata_t *)
 {
 	MediaControls *media = static_cast<MediaControls *>(data);
-	QMetaObject::invokeMethod(media, "UpdateSlideCounter");
+	QMetaObject::invokeMethod(media, &MediaControls::UpdateSlideCounter);
 }
 
 MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::MediaControls)

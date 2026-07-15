@@ -137,7 +137,6 @@ private:
 
 private slots:
 	void commitData(QSessionManager &manager);
-	void addLogLine(int logLevel, const QString &message);
 	void themeFileChanged(const QString &);
 	void applicationShutdown() noexcept;
 
@@ -244,6 +243,7 @@ public:
 	void pluginManagerOpenDialog();
 
 public slots:
+	void addLogLine(int logLevel, const QString &message);
 	void Exec(VoidFunc func);
 	void processSigInt();
 	void processSigTerm();

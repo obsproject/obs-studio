@@ -84,7 +84,7 @@ void OBSBasic::ProcessHotkey(obs_hotkey_id id, bool pressed)
 void OBSBasic::HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed)
 {
 	OBSBasic &basic = *static_cast<OBSBasic *>(data);
-	QMetaObject::invokeMethod(&basic, "ProcessHotkey", Q_ARG(obs_hotkey_id, id), Q_ARG(bool, pressed));
+	QMetaObject::invokeMethod(&basic, &OBSBasic::ProcessHotkey, id, pressed);
 }
 
 void OBSBasic::CreateHotkeys()
@@ -249,7 +249,7 @@ void OBSBasic::CreateHotkeys()
 
 	auto transition = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
 		if (pressed) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "TransitionClicked",
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::TransitionClicked,
 						  Qt::QueuedConnection);
 		}
 	};
@@ -259,7 +259,7 @@ void OBSBasic::CreateHotkeys()
 
 	auto resetStats = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
 		if (pressed) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ResetStatsHotkey",
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::ResetStatsHotkey,
 						  Qt::QueuedConnection);
 		}
 	};
@@ -270,7 +270,8 @@ void OBSBasic::CreateHotkeys()
 
 	auto screenshot = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
 		if (pressed) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "Screenshot", Qt::QueuedConnection);
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::Screenshot,
+						  Qt::QueuedConnection, nullptr);
 		}
 	};
 
@@ -279,7 +280,7 @@ void OBSBasic::CreateHotkeys()
 
 	auto screenshotSource = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
 		if (pressed) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ScreenshotSelectedSource",
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::ScreenshotSelectedSource,
 						  Qt::QueuedConnection);
 		}
 	};

@@ -199,12 +199,11 @@ void SourceTreeItem::ReconnectSignals()
 		obs_scene_t *curScene = (obs_scene_t *)calldata_ptr(cd, "scene");
 
 		if (curItem == this_->sceneitem) {
-			QMetaObject::invokeMethod(this_->tree, "Remove", Q_ARG(OBSSceneItem, curItem),
-						  Q_ARG(OBSScene, curScene));
+			QMetaObject::invokeMethod(this_->tree, &SourceTree::Remove, curItem, curScene);
 			curItem = nullptr;
 		}
 		if (!curItem) {
-			QMetaObject::invokeMethod(this_, "Clear");
+			QMetaObject::invokeMethod(this_, &SourceTreeItem::Clear);
 		}
 	};
 
@@ -214,7 +213,7 @@ void SourceTreeItem::ReconnectSignals()
 		bool visible = calldata_bool(cd, "visible");
 
 		if (curItem == this_->sceneitem) {
-			QMetaObject::invokeMethod(this_, "VisibilityChanged", Q_ARG(bool, visible));
+			QMetaObject::invokeMethod(this_, &SourceTreeItem::VisibilityChanged, visible);
 		}
 	};
 
@@ -224,7 +223,7 @@ void SourceTreeItem::ReconnectSignals()
 		bool locked = calldata_bool(cd, "locked");
 
 		if (curItem == this_->sceneitem) {
-			QMetaObject::invokeMethod(this_, "LockedChanged", Q_ARG(bool, locked));
+			QMetaObject::invokeMethod(this_, &SourceTreeItem::LockedChanged, locked);
 		}
 	};
 
@@ -233,7 +232,7 @@ void SourceTreeItem::ReconnectSignals()
 		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem) {
-			QMetaObject::invokeMethod(this_, "Select");
+			QMetaObject::invokeMethod(this_, &SourceTreeItem::Select);
 		}
 	};
 
@@ -242,13 +241,13 @@ void SourceTreeItem::ReconnectSignals()
 		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem) {
-			QMetaObject::invokeMethod(this_, "Deselect");
+			QMetaObject::invokeMethod(this_, &SourceTreeItem::Deselect);
 		}
 	};
 
 	auto reorderGroup = [](void *data, calldata_t *) {
 		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
-		QMetaObject::invokeMethod(this_->tree, "ReorderItems");
+		QMetaObject::invokeMethod(this_->tree, &SourceTree::ReorderItems);
 	};
 
 	obs_scene_t *scene = obs_sceneitem_get_scene(sceneitem);
@@ -275,7 +274,7 @@ void SourceTreeItem::ReconnectSignals()
 		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
 		this_->DisconnectSignals();
 		this_->sceneitem = nullptr;
-		QMetaObject::invokeMethod(this_->tree, "RefreshItems");
+		QMetaObject::invokeMethod(this_->tree, &SourceTree::RefreshItems);
 	};
 
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
@@ -457,11 +456,11 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 	}
 
 	if (LineEditCanceled(event)) {
-		QMetaObject::invokeMethod(this, "ExitEditMode", Qt::QueuedConnection, Q_ARG(bool, false));
+		QMetaObject::invokeMethod(this, &SourceTreeItem::ExitEditMode, Qt::QueuedConnection, false);
 		return true;
 	}
 	if (LineEditChanged(event)) {
-		QMetaObject::invokeMethod(this, "ExitEditMode", Qt::QueuedConnection, Q_ARG(bool, true));
+		QMetaObject::invokeMethod(this, &SourceTreeItem::ExitEditMode, Qt::QueuedConnection, true);
 		return true;
 	}
 
