@@ -241,7 +241,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	loading = false;
 
-	QMetaObject::invokeMethod(this, "UpdateResFPSLimits", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSBasicSettings::UpdateResFPSLimits, Qt::QueuedConnection);
 }
 
 #define SRT_PROTOCOL "srt"
@@ -1140,8 +1140,7 @@ void OBSBasicSettings::DisplayEnforceWarning(bool checked)
 #undef ENFORCE_WARNING
 
 	if (button == QMessageBox::No) {
-		QMetaObject::invokeMethod(ui->ignoreRecommended, "setChecked", Qt::QueuedConnection,
-					  Q_ARG(bool, false));
+		QMetaObject::invokeMethod(ui->ignoreRecommended, &QCheckBox::setChecked, Qt::QueuedConnection, false);
 		return;
 	}
 
@@ -1317,11 +1316,11 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 
 		if (button == QMessageBox::No) {
 			if (idx != lastServiceIdx) {
-				QMetaObject::invokeMethod(ui->service, "setCurrentIndex", Qt::QueuedConnection,
-							  Q_ARG(int, lastServiceIdx));
+				QMetaObject::invokeMethod(ui->service, &QComboBox::setCurrentIndex,
+							  Qt::QueuedConnection, lastServiceIdx);
 			} else {
-				QMetaObject::invokeMethod(ui->ignoreRecommended, "setChecked", Qt::QueuedConnection,
-							  Q_ARG(bool, true));
+				QMetaObject::invokeMethod(ui->ignoreRecommended, &QCheckBox::setChecked,
+							  Qt::QueuedConnection, true);
 			}
 			return false;
 		}
@@ -1636,11 +1635,11 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 
 	if (button == QMessageBox::No) {
 		if (lastServiceIdx == 0 && lastServiceIdx == ui->service->currentIndex()) {
-			QMetaObject::invokeMethod(ui->customServer, "setText", Qt::QueuedConnection,
-						  Q_ARG(QString, lastCustomServer));
+			QMetaObject::invokeMethod(ui->customServer, &QLineEdit::setText, Qt::QueuedConnection,
+						  lastCustomServer);
 		} else {
-			QMetaObject::invokeMethod(ui->service, "setCurrentIndex", Qt::QueuedConnection,
-						  Q_ARG(int, lastServiceIdx));
+			QMetaObject::invokeMethod(ui->service, &QComboBox::setCurrentIndex, Qt::QueuedConnection,
+						  lastServiceIdx);
 		}
 		return false;
 	}
