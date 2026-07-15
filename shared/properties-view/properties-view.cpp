@@ -206,7 +206,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj, Prope
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	QMetaObject::invokeMethod(this, "ReloadProperties", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesReloadCallback reloadCallback,
@@ -221,7 +221,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesRel
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	QMetaObject::invokeMethod(this, "ReloadProperties", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, PropertiesReloadCallback reloadCallback_,
@@ -233,7 +233,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, Prope
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	QMetaObject::invokeMethod(this, "ReloadProperties", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
 }
 
 void OBSPropertiesView::SetDisabled(bool disabled)
@@ -1438,8 +1438,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 	stack->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
-	auto comboIndexChanged = static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged);
-	connect(combo, comboIndexChanged, stack, [=](int index) {
+	connect(combo, &QComboBox::currentIndexChanged, stack, [=](int index) {
 		bool out_of_bounds = index >= stack->count();
 		auto idx = out_of_bounds ? stack->count() - 1 : index;
 		stack->setCurrentIndex(idx);
@@ -1452,7 +1451,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		emit info->ControlChanged();
 	});
 
-	connect(widget->simpleFPS, comboIndexChanged, info, [=](int) {
+	connect(widget->simpleFPS, &QComboBox::currentIndexChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -1460,7 +1459,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		emit info->ControlChanged();
 	});
 
-	connect(widget->fpsRange, comboIndexChanged, info, [=](int) {
+	connect(widget->fpsRange, &QComboBox::currentIndexChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -1468,8 +1467,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		UpdateFPSLabels(widget);
 	});
 
-	auto sbValueChanged = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
-	connect(widget->numEdit, sbValueChanged, info, [=](int) {
+	connect(widget->numEdit, &QSpinBox::valueChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -1477,7 +1475,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		emit info->ControlChanged();
 	});
 
-	connect(widget->denEdit, sbValueChanged, info, [=](int) {
+	connect(widget->denEdit, &QSpinBox::valueChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -2028,7 +2026,7 @@ void WidgetInfo::ButtonClicked()
 	OBSObject strongObj = view->GetObject();
 	void *obj = strongObj ? strongObj.Get() : view->rawObj;
 	if (obs_property_button_clicked(property, obj)) {
-		QMetaObject::invokeMethod(view, "RefreshProperties", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(view, &OBSPropertiesView::RefreshProperties, Qt::QueuedConnection);
 	}
 }
 
@@ -2136,7 +2134,7 @@ void WidgetInfo::ControlChanged()
 
 	if (obs_property_modified(property, view->settings)) {
 		view->lastFocused = setting;
-		QMetaObject::invokeMethod(view, "RefreshProperties", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(view, &OBSPropertiesView::RefreshProperties, Qt::QueuedConnection);
 	}
 }
 

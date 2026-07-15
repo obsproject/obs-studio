@@ -20,7 +20,7 @@ public:
 	inline ExtraBrowsersModel(QObject *parent = nullptr) : QAbstractTableModel(parent)
 	{
 		Reset();
-		QMetaObject::invokeMethod(this, "Init", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &ExtraBrowsersModel::Init, Qt::QueuedConnection);
 	}
 
 	int rowCount(const QModelIndex &parent = QModelIndex()) const override;

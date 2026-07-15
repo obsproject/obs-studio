@@ -41,7 +41,7 @@ void showUnassignedWarning(const char *name)
 		}
 	};
 
-	QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+	QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 }
 } // namespace
 
@@ -198,7 +198,7 @@ void VolumeControl::obsVolumeChanged(void *data, float)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 
-	QMetaObject::invokeMethod(volControl, "changeVolume", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(volControl, &VolumeControl::changeVolume, Qt::QueuedConnection);
 }
 
 void VolumeControl::obsVolumeMuted(void *data, calldata_t *params)
@@ -206,13 +206,13 @@ void VolumeControl::obsVolumeMuted(void *data, calldata_t *params)
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 	bool muted = calldata_bool(params, "muted");
 
-	QMetaObject::invokeMethod(volControl, "onMuteChanged", Qt::QueuedConnection, Q_ARG(bool, muted));
+	QMetaObject::invokeMethod(volControl, &VolumeControl::onMuteChanged, Qt::QueuedConnection, muted);
 }
 
 void VolumeControl::obsMixersChanged(void *data, calldata_t *)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
-	QMetaObject::invokeMethod(volControl, "processMixerState", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(volControl, &VolumeControl::processMixerState, Qt::QueuedConnection);
 }
 
 void VolumeControl::obsMonitoringChanged(void *data, calldata_t *params)
@@ -220,24 +220,25 @@ void VolumeControl::obsMonitoringChanged(void *data, calldata_t *params)
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 	auto type = static_cast<int>(calldata_int(params, "type"));
 
-	QMetaObject::invokeMethod(volControl, "onMonitoringChanged", Qt::QueuedConnection, Q_ARG(int, type));
+	QMetaObject::invokeMethod(volControl, &VolumeControl::onMonitoringChanged, Qt::QueuedConnection, type);
 }
 
 void VolumeControl::obsSourceActivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceActiveChanged", Qt::QueuedConnection,
-				  Q_ARG(bool, true));
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::onSourceActiveChanged,
+				  Qt::QueuedConnection, true);
 }
 
 void VolumeControl::obsSourceDeactivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceActiveChanged", Qt::QueuedConnection,
-				  Q_ARG(bool, false));
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::onSourceActiveChanged,
+				  Qt::QueuedConnection, false);
 }
 
 void VolumeControl::obsSourceDestroy(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::onSourceDestroyed,
+				  Qt::QueuedConnection);
 }
 
 void VolumeControl::setLayoutVertical(bool vertical)

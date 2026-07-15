@@ -115,8 +115,7 @@ static void LogString(fstream &logFile, const char *timeString, char *str, int l
 	logFile << msg << endl;
 	logfile_mutex.unlock();
 
-	QMetaObject::invokeMethod(App(), "addLogLine", Qt::QueuedConnection, Q_ARG(int, log_level),
-				  Q_ARG(QString, QString(msg.c_str())));
+	QMetaObject::invokeMethod(App(), &OBSApp::addLogLine, Qt::QueuedConnection, log_level, QString(msg.c_str()));
 }
 
 static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
