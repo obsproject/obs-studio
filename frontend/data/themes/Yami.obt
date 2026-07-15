@@ -2437,6 +2437,16 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
 }
 
 /* Add Source Dialog */
+.btn-create-new {
+    background: transparent;
+    padding: var(--padding_wide) var(--padding_large);
+    border-radius: var(--border_radius);
+    border: 2px dashed var(--grey3);
+    outline: none;
+    qproperty-icon: url(theme:Dark/plus.svg);
+    margin-bottom: var(--spacing_large);
+}
+
 SourceSelectButton {
     background: var(--grey5);
     padding: var(--padding_base) var(--padding_large);
