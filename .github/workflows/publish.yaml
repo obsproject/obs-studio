@@ -311,7 +311,7 @@ jobs:
           sparklePrivateKey: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           baseImage: ${{ github.workspace }}/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.dmg
           channel: ${{ steps.setup.outputs.channel }}
-          count: 1
+          count: 3
           urlPrefix: 'https://cdn-fastly.obsproject.com/downloads'
           customTitle: 'OBS Studio'
           customLink: 'https://obsproject.com/'
