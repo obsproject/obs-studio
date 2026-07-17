@@ -65,6 +65,12 @@ target_sources(
     components/OBSSourceLabel.hpp
     components/SceneTree.cpp
     components/SceneTree.hpp
+    components/SegmentButton.cpp
+    components/SegmentButton.hpp
+    components/SegmentButtonFrame.cpp
+    components/SegmentButtonFrame.hpp
+    components/SegmentButtonGroup.cpp
+    components/SegmentButtonGroup.hpp
     components/SilentUpdateCheckBox.hpp
     components/SilentUpdateSpinBox.hpp
     components/SourceSelectButton.cpp

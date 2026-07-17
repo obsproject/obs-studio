@@ -2796,3 +2796,24 @@ AlignmentSelector::indicator:disabled {
 AlignmentSelector::indicator:checked:disabled {
     background: var(--grey3);
 }
+
+SegmentButtonFrame {
+    qproperty-buttonSpacing: 1;
+}
+
+SegmentButton {
+    margin: 0;
+    border-color: var(--input_border);
+    border-radius: 0;
+    padding: var(--padding_base) var(--padding_large);
+}
+
+SegmentButton.first {
+    border-top-left-radius: var(--border_radius);
+    border-bottom-left-radius: var(--border_radius);
+}
+
+SegmentButton.last {
+    border-top-right-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
