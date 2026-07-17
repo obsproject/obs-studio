@@ -27,11 +27,11 @@ class FlowFrame : public QFrame {
 public:
 	explicit FlowFrame(QWidget *parent = nullptr);
 
-	FlowLayout *flowLayout() const { return layout; }
+	FlowLayout *flowLayout() const { return layout_; }
 
 protected:
 	void keyPressEvent(QKeyEvent *event) override;
 
 private:
-	FlowLayout *layout;
+	FlowLayout *layout_;
 };
