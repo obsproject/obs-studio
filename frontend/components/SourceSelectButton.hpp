@@ -33,6 +33,9 @@ class ThumbnailView;
 class SourceSelectButton : public QAbstractButton {
 	Q_OBJECT
 
+	Q_PROPERTY(int thumbnailWidth READ getThumbnailWidth WRITE setThumbnailWidth DESIGNABLE true)
+	Q_PROPERTY(int thumbnailHeight READ getThumbnailHeight WRITE setThumbnailHeight DESIGNABLE true)
+
 public:
 	SourceSelectButton(OBSWeakSource weak, QWidget *parent = nullptr);
 	~SourceSelectButton();
@@ -41,6 +44,12 @@ public:
 
 	void setThumbnailEnabled(bool enabled);
 	void updateThumbnail();
+
+	int getThumbnailWidth() { return thumbnailWidth; };
+	void setThumbnailWidth(int width) { thumbnailWidth = width; }
+
+	int getThumbnailHeight() { return thumbnailHeight; };
+	void setThumbnailHeight(int height) { thumbnailHeight = height; }
 
 protected:
 	void paintEvent(QPaintEvent *event) override;
@@ -59,6 +68,9 @@ private:
 	std::vector<OBSSignal> signalHandlers;
 	static void obsSourceRemoved(void *param, calldata_t *calldata);
 	static void obsSourceRenamed(void *param, calldata_t *calldata);
+
+	int thumbnailWidth{160};
+	int thumbnailHeight{90};
 
 	QLabel *label = nullptr;
 	bool thumbnailEnabled = true;

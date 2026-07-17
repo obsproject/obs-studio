@@ -233,6 +233,9 @@
     --toggle_handle: calc(calc(calc(var(--toggle_height) * 0.9) - calc(var(--toggle_border) * 2)) - var(--toggle_margin));
     --toggle_radius: calc(var(--toggle_height) / 2);
 
+    --thumbnail_width: calc(128px + calc(var(--obsPadding) * 8));
+    --thumbnail_height: calc(calc(var(--thumbnail_width) * 9) / 16);
+
     /* Qt Palette variables can be set with the "palette_" prefix */
     --palette_window: var(--bg_window);
     --palette_windowText: var(--text);
@@ -2469,6 +2472,9 @@ SourceSelectButton {
     border-radius: var(--border_radius);
     border: 1px solid var(--grey3);
     outline: none;
+
+    qproperty-thumbnailWidth: var(--thumbnail_width);
+    qproperty-thumbnailHeight: var(--thumbnail_height);
 }
 
 SourceSelectButton QLabel {

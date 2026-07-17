@@ -56,8 +56,8 @@ SourceSelectButton::SourceSelectButton(OBSWeakSource weak, QWidget *parent) : QA
 	image = new QLabel(this);
 	image->setObjectName("thumbnail");
 	image->setAttribute(Qt::WA_TransparentForMouseEvents);
-	image->setMinimumSize(160, 90);
-	image->setMaximumSize(160, 90);
+	image->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	image->setFixedSize(getThumbnailWidth(), getThumbnailHeight());
 	image->setAlignment(Qt::AlignCenter);
 
 	thumbnail = App()->thumbnails()->createView(this, source);
