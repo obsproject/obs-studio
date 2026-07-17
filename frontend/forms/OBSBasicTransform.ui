@@ -44,7 +44,7 @@
       <number>0</number>
      </property>
      <property name="class" stdset="0">
-      <string>dialog-container</string>
+      <string>dialog-container dialog-column</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <property name="spacing">
@@ -875,7 +875,17 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
+         <item row="2" column="2">
+          <widget class="QLabel" name="cropBottomLabel">
+           <property name="text">
+            <string>Bottom</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="4">
           <widget class="QLabel" name="label_8">
            <property name="accessibleName">
             <string>Basic.TransformWindow.Crop</string>
@@ -885,16 +895,6 @@
            </property>
            <property name="class" stdset="0">
             <string>subtitle</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QLabel" name="cropBottomLabel">
-           <property name="text">
-            <string>Bottom</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>

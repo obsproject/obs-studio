@@ -345,18 +345,33 @@
 }
 
 .dialog-container {
-    padding: var(--padding_large) var(--padding_xlarge);
+    padding: var(--padding_xlarge) var(--padding_xlarge);
 }
 
 .dialog-frame {
     background-color: var(--grey6);
     border-radius: var(--border_radius);
     border: 1px solid var(--border_color);
-    margin: var(--spacing_base);
 }
 
-.dialog-frame > QWidget {
-    margin: var(--spacing_base) 0;
+.dialog-row > QWidget {
+    margin-left: var(--padding_large);
+    margin-right: var(--padding_large);
+}
+
+.dialog-column > QWidget {
+    margin-top: var(--padding_large);
+    margin-bottom: var(--padding_large);
+}
+
+.dialog-container.dialog-row {
+    padding-left: var(--padding_large);
+    padding-right: var(--padding_large);
+}
+
+.dialog-container.dialog-column {
+    padding-top: var(--padding_large);
+    padding-bottom: var(--padding_large);
 }
 
 .subtitle {
