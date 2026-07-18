@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1040</width>
+    <width>1020</width>
     <height>620</height>
    </rect>
   </property>
@@ -65,7 +65,7 @@
       <number>0</number>
      </property>
      <property name="class" stdset="0">
-      <string>dialog-container</string>
+      <string>dialog-container dialog-row</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,4">
       <property name="spacing">
@@ -211,9 +211,9 @@
          <number>0</number>
         </property>
         <property name="class" stdset="0">
-         <string/>
+         <string>dialog-column</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_8" stretch="0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_8" stretch="0,0,0,0">
          <property name="spacing">
           <number>0</number>
          </property>
@@ -230,6 +230,124 @@
           <number>0</number>
          </property>
          <item>
+          <widget class="QFrame" name="header">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="class" stdset="0">
+            <string/>
+           </property>
+           <layout class="QHBoxLayout" name="headerLayout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <layout class="QVBoxLayout" name="textLayout">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="sourceSelectTitle">
+                <property name="text">
+                 <string>Basic.SourceSelect.Recent</string>
+                </property>
+                <property name="class" stdset="0">
+                 <string>text-title</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="sourceSelectDescription">
+                <property name="text">
+                 <string>Basic.SourceSelect.Description</string>
+                </property>
+                <property name="class" stdset="0">
+                 <string>text-small text-muted margin-y</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="deprecatedFrame">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="class" stdset="0">
+            <string>frame-notice</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="deprecatedCreateLabel">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Plain</enum>
+              </property>
+              <property name="lineWidth">
+               <number>0</number>
+              </property>
+              <property name="text">
+               <string>Basic.SourceSelect.Deprecated.Create</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QFrame" name="selectSourceContainer">
            <property name="frameShape">
             <enum>QFrame::NoFrame</enum>
@@ -241,7 +359,7 @@
             <number>0</number>
            </property>
            <property name="class" stdset="0">
-            <string>dialog-container</string>
+            <string/>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <property name="spacing">
@@ -259,84 +377,6 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
-            <item>
-             <widget class="QLabel" name="sourceSelectTitle">
-              <property name="text">
-               <string>Basic.SourceSelect.Recent</string>
-              </property>
-              <property name="class" stdset="0">
-               <string>text-title</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="sourceSelectDescription">
-              <property name="text">
-               <string>Basic.SourceSelect.Description</string>
-              </property>
-              <property name="class" stdset="0">
-               <string>text-small text-muted margin-y</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QFrame" name="deprecatedFrame">
-              <property name="frameShape">
-               <enum>QFrame::NoFrame</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
-              </property>
-              <property name="lineWidth">
-               <number>0</number>
-              </property>
-              <property name="class" stdset="0">
-               <string>frame-notice</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_3">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="deprecatedCreateLabel">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="frameShape">
-                  <enum>QFrame::NoFrame</enum>
-                 </property>
-                 <property name="frameShadow">
-                  <enum>QFrame::Plain</enum>
-                 </property>
-                 <property name="lineWidth">
-                  <number>0</number>
-                 </property>
-                 <property name="text">
-                  <string>Basic.SourceSelect.Deprecated.Create</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
             <item>
              <widget class="QFrame" name="selectSourceFrame">
               <property name="accessibleName">
@@ -436,8 +476,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>819</width>
-                    <height>250</height>
+                    <width>803</width>
+                    <height>249</height>
                    </rect>
                   </property>
                   <property name="autoFillBackground">
@@ -460,7 +500,13 @@
                     <number>0</number>
                    </property>
                    <item>
-                    <widget class="FlowFrame" name="existingListFrame">
+                    <widget class="QFrame" name="existingListFrame">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
                      <property name="frameShape">
                       <enum>QFrame::NoFrame</enum>
                      </property>
@@ -470,6 +516,23 @@
                      <property name="lineWidth">
                       <number>0</number>
                      </property>
+                     <layout class="QVBoxLayout" name="existingListContainerLayout">
+                      <property name="spacing">
+                       <number>0</number>
+                      </property>
+                      <property name="leftMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="rightMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
+                     </layout>
                     </widget>
                    </item>
                    <item>
@@ -576,7 +639,7 @@
             <number>0</number>
            </property>
            <property name="class" stdset="0">
-            <string>dialog-container</string>
+            <string/>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <property name="spacing">
@@ -644,14 +707,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>FlowFrame</class>
-   <extends>QFrame</extends>
-   <header>components/FlowFrame.hpp</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <tabstops>
   <tabstop>sourceTypeList</tabstop>
   <tabstop>sourceVisible</tabstop>

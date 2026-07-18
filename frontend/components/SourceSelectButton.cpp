@@ -18,6 +18,7 @@
 
 #include "SourceSelectButton.hpp"
 
+#include <dialogs/OBSBasicSourceSelect.hpp>
 #include <utility/ThumbnailManager.hpp>
 #include <utility/ThumbnailView.hpp>
 #include <widgets/OBSBasic.hpp>
@@ -49,7 +50,7 @@ SourceSelectButton::SourceSelectButton(OBSWeakSource weak, QWidget *parent) : QA
 	setLayout(layout);
 
 	label = new QLabel(sourceName);
-	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 	label->setAttribute(Qt::WA_TransparentForMouseEvents);
 	label->setObjectName("name");
 
@@ -126,6 +127,8 @@ void SourceSelectButton::resizeEvent(QResizeEvent *)
 	if (QLayout *layout = this->layout()) {
 		layout->setContentsMargins(left, top, right, bottom);
 	}
+
+	updatePixmap(thumbnail->getPixmap());
 }
 
 void SourceSelectButton::enterEvent(QEnterEvent *)
@@ -170,6 +173,12 @@ void SourceSelectButton::handleSourceRenamed(QString name)
 	label->setText(name);
 }
 
+void SourceSelectButton::setThumbnailSize(int sizeId)
+{
+	auto size = static_cast<OBS::SourceThumbnailSize>(sizeId);
+	updateThumbnailSize(size);
+}
+
 void SourceSelectButton::mouseMoveEvent(QMouseEvent *event)
 {
 	if (!(event->buttons() & Qt::LeftButton)) {
@@ -211,6 +220,31 @@ void SourceSelectButton::setThumbnailEnabled(bool enabled)
 void SourceSelectButton::updateThumbnail()
 {
 	thumbnail->requestUpdate();
+}
+
+void SourceSelectButton::updateThumbnailSize(OBS::SourceThumbnailSize size)
+{
+	switch (size) {
+	case OBS::SourceThumbnailSize::None:
+		image->setVisible(false);
+		label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+		setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+		break;
+	case OBS::SourceThumbnailSize::Small:
+		image->setFixedSize(getThumbnailWidth() * 0.65, getThumbnailHeight() * 0.65);
+		image->setVisible(true);
+		label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+		setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+		break;
+	case OBS::SourceThumbnailSize::Large:
+		image->setFixedSize(getThumbnailWidth(), getThumbnailHeight());
+		image->setVisible(true);
+		label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+		setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+		break;
+	default:
+		break;
+	}
 }
 
 void SourceSelectButton::updatePixmap(QPixmap pixmap)

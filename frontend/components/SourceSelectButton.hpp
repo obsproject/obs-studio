@@ -20,15 +20,16 @@
 
 #include <obs.hpp>
 
-#include <QLabel>
 #include <QPointer>
 #include <QPushButton>
-#include <QTimer>
 #include <QVBoxLayout>
 
 class QLabel;
 class Thumbnail;
 class ThumbnailView;
+namespace OBS {
+enum class SourceThumbnailSize : int;
+}
 
 class SourceSelectButton : public QAbstractButton {
 	Q_OBJECT
@@ -44,6 +45,8 @@ public:
 
 	void setThumbnailEnabled(bool enabled);
 	void updateThumbnail();
+
+	void updateThumbnailSize(OBS::SourceThumbnailSize size);
 
 	int getThumbnailWidth() { return thumbnailWidth; };
 	void setThumbnailWidth(int width) { thumbnailWidth = width; }
@@ -81,6 +84,9 @@ private slots:
 	void updatePixmap(QPixmap pixmap);
 	void handleSourceRemoved();
 	void handleSourceRenamed(QString name);
+
+public slots:
+	void setThumbnailSize(int sizeId);
 
 signals:
 	void sourceRemoved();
