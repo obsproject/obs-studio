@@ -183,7 +183,6 @@ static inline obs_hotkey_id obs_hotkey_register_internal(obs_hotkey_registerer_t
 	}
 
 	// add with xdg-desktop-portal
-	obs_hotkey_portal_init(hotkey);
 	obs_hotkey_portal_register(hotkey);
 
 	hotkey_signal("hotkey_register", hotkey);
@@ -972,6 +971,8 @@ void obs_hotkeys_free(void)
 			obs->hotkeys.translations[i] = NULL;
 		}
 	}
+
+	obs_hotkey_portal_free();
 }
 
 void obs_enum_hotkeys(obs_hotkey_enum_func func, void *data)

@@ -93,7 +93,6 @@ char *get_hotkey_portal_description(obs_hotkey_t *hotkey) {
 		switch(obs_hotkey_get_registerer_type(hotkey)) {
 		case OBS_HOTKEY_REGISTERER_SOURCE:
 			append_to_description = obs_source_get_name(registerer);
-			blog(LOG_INFO, "Desc: %s", append_to_description);
 			break;
 		default:
 			break;
@@ -200,7 +199,6 @@ static void activated_cb(
 	g_autoptr(GVariant) options = NULL;
 
 	g_variant_get(parameters, "(ost@a{sv})", &session_path, &received_id, &timestamp, &options);
-	blog(LOG_INFO, "Portal hotkey activated: %s\n", received_id);
 
 	char *iter_id = NULL;
 	for (obs_hotkey_t *hotkey = obs->hotkeys.hotkeys; hotkey != NULL; hotkey = hotkey->hh.next) {
@@ -290,7 +288,7 @@ static void create_session_cb(
 	g_timeout_add(500, (GSourceFunc)obs_hotkey_portal_finish_registration, NULL);
 }
 
-void obs_hotkey_portal_init()
+static void obs_hotkey_portal_init()
 {
 	// only allow this function to run once
 	static bool init_run = false;
@@ -354,8 +352,8 @@ void obs_hotkey_portal_init()
 
 void obs_hotkey_portal_register(obs_hotkey_t *hotkey)
 {
-	// TODO: check if there is a potential race condition here
-	// TODO: check if this is even reachable in the first place
+	// init if haven't already
+	obs_hotkey_portal_init();
 	if (state == NULL) {
 		blog(LOG_WARNING, "Attempting to register a hotkey with the xdg-desktop-portal, but this feature has not been initialised");
 		return;

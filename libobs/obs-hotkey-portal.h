@@ -24,7 +24,6 @@
 
 // must be called before registering any hotkeys with the portal.
 // does nothing if it has already been called
-void obs_hotkey_portal_init();
 void obs_hotkey_portal_free();
 
 // returns true if the portal session has been started
