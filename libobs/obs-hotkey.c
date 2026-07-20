@@ -458,9 +458,7 @@ static inline void load_modifier(uint32_t *modifiers, obs_data_t *data, const ch
 static inline void create_binding(obs_hotkey_t *hotkey, obs_key_combination_t combo)
 {
 	if (combo.key == OBS_KEY_MOUSE1 || combo.key == OBS_KEY_MOUSE2) {
-		blog(LOG_WARNING,
-		     "obs-hotkey: Refusing to bind Mouse1/Mouse2 as hotkey \"%s\"",
-		     hotkey->name);
+		blog(LOG_WARNING, "obs-hotkey: Refusing to bind Mouse1/Mouse2 as hotkey \"%s\"", hotkey->name);
 		return;
 	}
 
