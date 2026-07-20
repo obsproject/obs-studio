@@ -48,8 +48,9 @@ void get_default_id(char **id)
 	if (!pdo->default_sink_name || !*pdo->default_sink_name) {
 		*id = bzalloc(1);
 	} else {
-		*id = bzalloc(strlen(pdo->default_sink_name) + 9);
-		strcat(*id, pdo->default_sink_name);
+		size_t sink_len = strlen(pdo->default_sink_name);
+		*id = bzalloc(sink_len + 9);
+		snprintf(*id, sink_len + 9, "%s", pdo->default_sink_name);
 		bfree(pdo->default_sink_name);
 	}
 
@@ -74,8 +75,7 @@ bool devices_match(const char *id1, const char *id2)
 	if (strcmp(id1, "default") == 0) {
 		get_default_id(&name_default);
 		name1 = bzalloc(strlen(name_default) + 9);
-		strcat(name1, name_default);
-		strcat(name1, ".monitor");
+		snprintf(name1, strlen(name_default) + 9, "%s.monitor", name_default);
 	} else {
 		name1 = bstrdup(id1);
 	}
@@ -84,12 +84,10 @@ bool devices_match(const char *id1, const char *id2)
 		if (!name_default)
 			get_default_id(&name_default);
 		name2 = bzalloc(strlen(name_default) + 9);
-		strcat(name2, name_default);
-		strcat(name2, ".monitor");
+		snprintf(name2, strlen(name_default) + 9, "%s.monitor", name_default);
 	} else {
 		name2 = bzalloc(strlen(id2) + 9);
-		strcat(name2, id2);
-		strcat(name2, ".monitor");
+		snprintf(name2, strlen(id2) + 9, "%s.monitor", id2);
 	}
 
 	match = strcmp(name1, name2) == 0;
