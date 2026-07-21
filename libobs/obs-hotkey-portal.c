@@ -203,7 +203,6 @@ static gboolean obs_hotkey_portal_finish_registration()
 		return G_SOURCE_CONTINUE;
 	}
 
-	blog(LOG_WARNING, "Here");
 	state->bind_shortcuts_called_for_session = true;
 
 	// bind some shortcuts
@@ -420,7 +419,6 @@ static void create_session_cb(GDBusConnection *conn, const char *sender_name, co
 	g_dbus_connection_signal_subscribe(conn, PORTAL_NAME, SHORTCUTS_IFACE, "ShortcutsChanged", PORTAL_PATH, NULL,
 					   G_DBUS_SIGNAL_FLAGS_NONE, shortcuts_changed_cb, NULL, NULL);
 
-	blog(LOG_WARNING, "HOASJOID");
 	state->session_path = bstrdup(session_handle);
 }
 
@@ -574,20 +572,18 @@ void obs_hotkey_portal_register_pair(obs_hotkey_pair_t *pair)
 
 void obs_hotkey_portal_unregister(obs_hotkey_id id)
 {
-	UNUSED_PARAMETER(id);
-	// TODO
-	// if (state == NULL) {
-	// 	blog(LOG_WARNING, "Attempting to unregister a hotkey with the xdg-desktop-portal, but this feature has not been initialised");
-	// 	return;
-	// }
-	//
-	// blog(LOG_WARNING, "Unregistering hotkey with id %lu from xdg-desktop-portal", id);
-	//
-	// // remove from pending list (if it's there)
-	// for (GList *l = state->pending_hotkeys->head; l != NULL; l = l->next) {
-	// 	if (*(obs_hotkey_id*)l->data == id) {
-	// 		g_queue_delete_link(state->pending_hotkeys, l);
-	// 		break;
-	// 	}
-	// }
+	if (state == NULL) {
+		blog(LOG_WARNING, "Attempting to unregister a hotkey with the xdg-desktop-portal, but this feature has not been initialised");
+		return;
+	}
+
+	blog(LOG_WARNING, "Unregistering hotkey with id %lu from xdg-desktop-portal", id);
+
+	// remove from pending list (if it's there)
+	for (GList *l = state->pending_hotkeys->head; l != NULL; l = l->next) {
+		if (*(obs_hotkey_id*)l->data == id) {
+			g_queue_delete_link(state->pending_hotkeys, l);
+			break;
+		}
+	}
 }
