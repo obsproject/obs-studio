@@ -906,6 +906,7 @@ bool AdvancedOutput::StartReplayBuffer()
 		rbSuffix = config_get_string(main->Config(), "SimpleOutput", "RecRBSuffix");
 		rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 		rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
+		int rbStorageMode = config_get_int(main->Config(), "AdvOut", "RecRBStorageMode");
 
 		string f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
 		string ext = GetFormatExt(recFormat);
@@ -918,6 +919,7 @@ bool AdvancedOutput::StartReplayBuffer()
 		obs_data_set_bool(settings, "allow_spaces", !noSpace);
 		obs_data_set_int(settings, "max_time_sec", rbTime);
 		obs_data_set_int(settings, "max_size_mb", usesBitrate ? 0 : rbSize);
+		obs_data_set_int(settings, "storage_mode", rbStorageMode);
 
 		obs_output_update(replayBuffer, settings);
 	}
