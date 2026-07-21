@@ -654,9 +654,8 @@ private slots:
 
 	void logUploadFinished(const std::string &text, const std::string &error, OBS::LogFileType uploadType);
 
-	void updateCheckFinished();
-
 public slots:
+	void updateCheckFinished();
 	void on_actionAdvAudioProperties_triggered();
 
 public:

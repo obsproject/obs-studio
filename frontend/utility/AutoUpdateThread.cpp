@@ -6,6 +6,7 @@
 #include <updater/manifest.hpp>
 #include <utility/WhatsNewInfoThread.hpp>
 #include <utility/update-helpers.hpp>
+#include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
 
@@ -138,8 +139,7 @@ void AutoUpdateThread::infoMsg(const QString &title, const QString &text)
 
 void AutoUpdateThread::info(const QString &title, const QString &text)
 {
-	QMetaObject::invokeMethod(this, "infoMsg", Qt::BlockingQueuedConnection, Q_ARG(QString, title),
-				  Q_ARG(QString, text));
+	QMetaObject::invokeMethod(this, &AutoUpdateThread::infoMsg, Qt::BlockingQueuedConnection, title, text);
 }
 
 int AutoUpdateThread::queryUpdateSlot(bool localManualUpdate, const QString &text)
@@ -152,8 +152,9 @@ int AutoUpdateThread::queryUpdate(bool localManualUpdate, const char *text_utf8)
 {
 	int ret = OBSUpdate::No;
 	QString text = text_utf8;
-	QMetaObject::invokeMethod(this, "queryUpdateSlot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(int, ret),
-				  Q_ARG(bool, localManualUpdate), Q_ARG(QString, text));
+	QMetaObject::invokeMethod(
+		this, [this, &ret, localManualUpdate, text]() { ret = queryUpdateSlot(localManualUpdate, text); },
+		Qt::BlockingQueuedConnection);
 	return ret;
 }
 
@@ -169,7 +170,8 @@ bool AutoUpdateThread::queryRepairSlot()
 bool AutoUpdateThread::queryRepair()
 {
 	bool ret = false;
-	QMetaObject::invokeMethod(this, "queryRepairSlot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, ret));
+	QMetaObject::invokeMethod(this, &AutoUpdateThread::queryRepairSlot, Qt::BlockingQueuedConnection,
+				  Q_RETURN_ARG(bool, ret));
 	return ret;
 }
 
@@ -182,7 +184,10 @@ try {
 	bool updatesAvailable = false;
 
 	struct FinishedTrigger {
-		inline ~FinishedTrigger() { QMetaObject::invokeMethod(App()->GetMainWindow(), "updateCheckFinished"); }
+		inline ~FinishedTrigger()
+		{
+			QMetaObject::invokeMethod(OBSBasic::Get(), &OBSBasic::updateCheckFinished);
+		}
 	} finishedTrigger;
 
 	/* ----------------------------------- *
@@ -344,7 +349,7 @@ try {
 	config_set_int(App()->GetAppConfig(), "General", "LastUpdateCheck", 0);
 	config_set_string(App()->GetAppConfig(), "General", "SkipUpdateVersion", "0");
 
-	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");
+	QMetaObject::invokeMethod(OBSBasic::Get(), &OBSBasic::close);
 
 } catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());

@@ -59,7 +59,7 @@ public:
 	{
 		if (update_timer) {
 			update_timer->stop();
-			QMetaObject::invokeMethod(update_timer, "timeout");
+			QMetaObject::invokeMethod(update_timer, &QTimer::stop);
 			update_timer->deleteLater();
 		}
 	}
