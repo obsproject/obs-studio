@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2026-2026 by Adam Fallon <adam.eric.fallon@gmail.com>
+    Copyright (C) 2026 by Adam Fallon
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
