@@ -39,7 +39,7 @@ void obs_hotkey_portal_register_pair(obs_hotkey_pair_t *pair);
 // // must only be called after these two hotkeys have been registered
 // void obs_hotkey_portal_register_pair(obs_hotkey_id first, obs_hotkey_id second);
 
-// stops listening to a hotkey
+// unqueues hotkey to be registered
 // should always be called, even if it has no effect (i.e. if unsupported on
 // the current platform)
 void obs_hotkey_portal_unregister(obs_hotkey_id id);

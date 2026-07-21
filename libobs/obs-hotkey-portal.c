@@ -22,16 +22,12 @@
 
 static struct obs_hotkey_portal_state {
 	GDBusConnection *conn;
-	// GVariant *session_path;
 	char *session_path;
+	bool bind_shortcuts_called_for_session;
 	// tracks the timestamp when pending_hotkeys was last added to
 	long add_to_pending_hotkeys_timestamp_us;
 	// stores list of hotkeys that need to be registered with the portal
 	GQueue *pending_hotkeys;
-	// TODO: use the hash table that obs-hotkey already uses instead of
-	// this array. I just want to get this working first
-	// GArray *registered_hotkeys;
-
 	// maps portal id -> hotkey id
 	GHashTable *registered_hotkeys;
 } *state = NULL;
@@ -49,6 +45,9 @@ struct obs_hotkey_portal_registered_hotkey {
 	size_t id;
 };
 typedef struct obs_hotkey_portal_registered_hotkey obs_hotkey_portal_registered_hotkey_t;
+
+static void close_session();
+static void create_session();
 
 gboolean destroy_registered_hotkey(gpointer key, gpointer value, gpointer user_data) {
 	UNUSED_PARAMETER(user_data);
@@ -70,11 +69,6 @@ void obs_hotkey_portal_free() {
 	state = NULL;
 }
 
-
-bool obs_hotkey_portal_session_active()
-{
-	return state != NULL && state->session_path != NULL;
-}
 
 GString *get_formatted_sender(GDBusConnection *conn) {
     g_autoptr(GString) temp = NULL;
@@ -166,7 +160,9 @@ void add_hotkey_to_builder(GVariantBuilder *shortcuts_builder, char *id, char *d
 
 // register all pending hotkeys, if any
 static gboolean obs_hotkey_portal_finish_registration() {
-	assert(obs_hotkey_portal_session_active());
+	if (!state || !state->session_path) {
+		return G_SOURCE_CONTINUE;
+	}
 
 	// check if at least 0.5 seconds have passed since the last time we added to pending_hotkeys
 	long current_timestamp = g_get_monotonic_time();
@@ -178,6 +174,31 @@ static gboolean obs_hotkey_portal_finish_registration() {
 	if (g_queue_is_empty(state->pending_hotkeys)) {
 		return G_SOURCE_CONTINUE;
 	}
+
+	// if BindShortcuts has already been called
+	if (state->bind_shortcuts_called_for_session) {
+		// destroy session
+		close_session();
+
+		// re-queue all hotkeys
+		GHashTableIter iter;
+		gpointer portal_id, dst;
+		g_hash_table_iter_init(&iter, state->registered_hotkeys);
+		while (g_hash_table_iter_next(&iter, &portal_id, &dst)) {
+			obs_hotkey_portal_registered_hotkey_t *hk = dst;
+			g_queue_push_head(state->pending_hotkeys, hk);
+			bfree(portal_id);
+		}
+
+		g_hash_table_remove_all(state->registered_hotkeys);
+
+		// open session back up
+		create_session();
+		return G_SOURCE_CONTINUE;
+	}
+
+	blog(LOG_WARNING, "Here");
+	state->bind_shortcuts_called_for_session = true;
 
 	// bind some shortcuts
 	GVariantBuilder shortcuts_builder;
@@ -344,7 +365,7 @@ static void deactivated_cb(GDBusConnection* conn, const char *sender_name, const
 	call_hotkey_cb(received_id, false);
 }
 
-static void shortcuts_changed_cb( GDBusConnection* conn, const char *sender_name, const char *object_path, const char *interface_name, const char *signal_name, GVariant *parameters, gpointer user_data)
+static void shortcuts_changed_cb(GDBusConnection* conn, const char *sender_name, const char *object_path, const char *interface_name, const char *signal_name, GVariant *parameters, gpointer user_data)
 {
 	UNUSED_PARAMETER(conn);
 	UNUSED_PARAMETER(sender_name);
@@ -358,15 +379,12 @@ static void shortcuts_changed_cb( GDBusConnection* conn, const char *sender_name
 	g_print("Shortcuts changed!\n");
 }
 
-static void create_session_cb(
-	GDBusConnection* conn,
-	const char *sender_name,
-	const char *object_path,
-	const char *interface_name,
-	const char *signal_name,
-	GVariant *parameters,
-	gpointer user_data
-) {
+static void create_session_cb(GDBusConnection* conn, const char *sender_name, const char *object_path, const char *interface_name, const char *signal_name, GVariant *parameters, gpointer user_data)
+{
+	if (!state || state->session_path) {
+		return;
+	}
+
 	UNUSED_PARAMETER(sender_name);
 	UNUSED_PARAMETER(object_path);
 	UNUSED_PARAMETER(interface_name);
@@ -385,39 +403,44 @@ static void create_session_cb(
 	g_dbus_connection_signal_subscribe(conn, PORTAL_NAME, SHORTCUTS_IFACE, "Deactivated", PORTAL_PATH, NULL, G_DBUS_SIGNAL_FLAGS_NONE, deactivated_cb, NULL, NULL);
 	g_dbus_connection_signal_subscribe(conn, PORTAL_NAME, SHORTCUTS_IFACE, "ShortcutsChanged", PORTAL_PATH, NULL, G_DBUS_SIGNAL_FLAGS_NONE, shortcuts_changed_cb, NULL, NULL);
 
+	blog(LOG_WARNING, "HOASJOID");
 	state->session_path = bstrdup(session_handle);
-
-	// schedule a timer to register all pending hotkeys every 0.1 seconds
-	g_timeout_add(500, (GSourceFunc)obs_hotkey_portal_finish_registration, NULL);
 }
 
-static void obs_hotkey_portal_init()
-{
-	// only allow this function to run once
-	static bool init_run = false;
-	if (init_run) {
+static void close_session() {
+	if (!state || !state->session_path || !state->conn) {
 		return;
 	}
-	init_run = true;
 
-	g_autoptr(GDBusConnection) conn = NULL;
 	GError *error = NULL;
-	GVariant *options = NULL;
-	g_autoptr(GString) request_handle_token = NULL;
+	g_dbus_connection_call_sync(state->conn, PORTAL_NAME, state->session_path, SESSION_IFACE, "Close", NULL, NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
+
+	if (error != NULL) {
+		blog(LOG_ERROR, "Failed to destroy global shortcuts portal session: %s", error->message);
+		return;
+	}
+	bfree(state->session_path);
+	state->bind_shortcuts_called_for_session = false;
+	state->session_path = NULL;
+}
+
+static void create_session() {
+	if (!state || state->session_path || !state->conn) {
+		return;
+	}
+
+	state->bind_shortcuts_called_for_session = false;
+
 	g_autoptr(GString) session_token = NULL;
+	g_autoptr(GString) request_handle_token = NULL;
+	GVariant *options = NULL;
 	g_autoptr(GString) request_path = NULL;
-	g_autoptr(GVariant) result = NULL;
 	g_autoptr(GString) sender = NULL;
 	GVariantBuilder options_builder;
+	g_autoptr(GVariant) result = NULL;
+	GError *error = NULL;
 
-	// get connection
-	conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
-	if (!conn) {
-		g_printerr("Failed to connect to dbus: %s\n", error->message);
-		return;
-	}
-
-	sender = get_formatted_sender(conn);
+	sender = get_formatted_sender(state->conn);
 
 	// get tokens
 	session_token = g_string_new(NULL);
@@ -436,13 +459,33 @@ static void obs_hotkey_portal_init()
 	request_path = g_string_new(NULL);
 	g_string_printf(request_path, "/org/freedesktop/portal/desktop/request/%s/%s", sender->str, request_handle_token->str);
 	g_print("Listening to request at path: %s\n", request_path->str);
-	g_dbus_connection_signal_subscribe(conn, PORTAL_NAME, REQUEST_IFACE, "Response", request_path->str, NULL, G_DBUS_SIGNAL_FLAGS_NONE, create_session_cb, NULL, NULL);
+	g_dbus_connection_signal_subscribe(state->conn, PORTAL_NAME, REQUEST_IFACE, "Response", request_path->str, NULL, G_DBUS_SIGNAL_FLAGS_NONE, create_session_cb, NULL, NULL);
 
 	// finally, connect to session
-	result = g_dbus_connection_call_sync(conn, PORTAL_NAME, PORTAL_PATH, SHORTCUTS_IFACE, "CreateSession", g_variant_new_tuple(&options, 1), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
+	result = g_dbus_connection_call_sync(state->conn, PORTAL_NAME, PORTAL_PATH, SHORTCUTS_IFACE, "CreateSession", g_variant_new_tuple(&options, 1), NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
 
 	if (result == NULL) {
 		blog(LOG_WARNING, "Failed to create global shortcuts portal session: %s", error->message);
+		return;
+	}
+}
+
+static void obs_hotkey_portal_init()
+{
+	// only allow this function to run once
+	static bool init_run = false;
+	if (init_run) {
+		return;
+	}
+	init_run = true;
+
+	g_autoptr(GDBusConnection) conn = NULL;
+	GError *error = NULL;
+
+	// get connection
+	conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
+	if (!conn) {
+		g_printerr("Failed to connect to dbus: %s\n", error->message);
 		return;
 	}
 
@@ -452,6 +495,11 @@ static void obs_hotkey_portal_init()
 	state->session_path = NULL;
 	state->pending_hotkeys = g_queue_new();
 	state->registered_hotkeys = g_hash_table_new(g_str_hash, g_str_equal);
+
+	create_session();
+
+	// schedule a timer to register all pending hotkeys every 0.1 seconds
+	g_timeout_add(500, (GSourceFunc)obs_hotkey_portal_finish_registration, NULL);
 }
 
 void obs_hotkey_portal_register(obs_hotkey_t *hotkey)
