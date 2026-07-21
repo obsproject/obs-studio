@@ -17,14 +17,8 @@
 
 #include "obs-internal.h"
 #include "obs-nix-platform.h"
-#include "util/bmem.h"
-#include "util/c99defs.h"
-#include "util/dstr.h"
 #include "obs-nix-wayland.h"
 
-#include <gio/gio.h>
-#include <glib.h>
-#include <glibconfig.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
@@ -36,9 +30,6 @@
 #define MAX_KEYCODES 256
 // X11 keymaps only have 4 shift levels, im not sure xkbcommon supports a way to shift the state into a higher level anyway.
 #define MAX_SHIFT_LEVELS 4
-
-#define PORTAL_NAME "org.freedesktop.portal.Desktop"
-#define PORTAL_PATH "/org/freedesktop/portal/desktop"
 
 struct obs_hotkeys_platform {
 	struct wl_display *display;
