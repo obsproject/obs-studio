@@ -22,8 +22,8 @@
 
 FlowFrame::FlowFrame(QWidget *parent) : QFrame(parent)
 {
-	layout = new FlowLayout(this);
-	setLayout(layout);
+	layout_ = new FlowLayout(this, 0, 0, 0);
+	setLayout(layout_);
 }
 
 void FlowFrame::keyPressEvent(QKeyEvent *event)
@@ -34,15 +34,15 @@ void FlowFrame::keyPressEvent(QKeyEvent *event)
 	}
 
 	int index = -1;
-	for (int i = 0; i < layout->count(); ++i) {
-		if (!layout->itemAt(i)->widget()) {
+	for (int i = 0; i < layout()->count(); ++i) {
+		if (!layout()->itemAt(i)->widget()) {
 			continue;
 		}
 
-		auto focusProxy = layout->itemAt(i)->widget()->focusProxy();
-		if (layout->itemAt(i)->widget() == focused || focusProxy == focused) {
+		auto focusProxy = layout()->itemAt(i)->widget()->focusProxy();
+		if (layout()->itemAt(i)->widget() == focused || focusProxy == focused) {
 			if (focusProxy == focused) {
-				focused = layout->itemAt(i)->widget();
+				focused = layout()->itemAt(i)->widget();
 			}
 
 			index = i;
@@ -64,12 +64,12 @@ void FlowFrame::keyPressEvent(QKeyEvent *event)
 	case Qt::Key_Up: {
 		// Find next widget in the given direction
 		int bestDistance = INT_MAX;
-		for (int i = 0; i < layout->count(); ++i) {
+		for (int i = 0; i < layout()->count(); ++i) {
 			if (i == index) {
 				continue;
 			}
 
-			QWidget *widget = layout->itemAt(i)->widget();
+			QWidget *widget = layout()->itemAt(i)->widget();
 			const QRect rect = widget->geometry();
 
 			bool isCandidate = false;

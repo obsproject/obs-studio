@@ -22,12 +22,22 @@
 #include "ui_OBSBasicSourceSelect.h"
 
 #include <components/FlowLayout.hpp>
-#include <components/SourceSelectButton.hpp>
 #include <utility/undo_stack.hpp>
 #include <widgets/OBSBasic.hpp>
 
 #include <QButtonGroup>
 #include <QDialog>
+
+class SourceSelectButton;
+
+namespace OBS {
+enum class SourceThumbnailSize : int {
+	Invalid = 0,
+	None,
+	Small,
+	Large,
+};
+}
 
 class OBSBasicSourceSelect : public QDialog {
 	Q_OBJECT
@@ -56,7 +66,7 @@ private:
 
 	std::vector<OBSWeakSource> weakSources;
 
-	QPointer<FlowLayout> existingFlowLayout = nullptr;
+	QPointer<QLayout> sourceListLayout = nullptr;
 
 	void refreshSources();
 	void updateExistingSources(int limit = 0);
@@ -78,9 +88,13 @@ private:
 
 	void updateButtonVisibility();
 
+	OBS::SourceThumbnailSize currentThumbnailSize{OBS::SourceThumbnailSize::Large};
+	void updateThumbnailSize(OBS::SourceThumbnailSize size);
+
 signals:
 	void sourcesUpdated();
 	void selectedItemsChanged();
+	void thumbnailSizeChanged(int sizeId);
 
 public slots:
 	void on_createNewSource_clicked(bool checked);
@@ -93,4 +107,6 @@ public slots:
 
 	void sourceButtonToggled(QAbstractButton *button, bool checked);
 	void sourceDropped(QString uuid);
+
+	void thumbnailSizeToggled(int sizeId, bool checked);
 };

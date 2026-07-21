@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,21 +17,11 @@
 
 #pragma once
 
-#include "FlowLayout.hpp"
+#include <QPushButton>
 
-#include <QFrame>
-
-class FlowFrame : public QFrame {
+class SegmentButton : public QPushButton {
 	Q_OBJECT
 
 public:
-	explicit FlowFrame(QWidget *parent = nullptr);
-
-	FlowLayout *flowLayout() const { return layout_; }
-
-protected:
-	void keyPressEvent(QKeyEvent *event) override;
-
-private:
-	FlowLayout *layout_;
+	SegmentButton(QWidget *parent = nullptr);
 };

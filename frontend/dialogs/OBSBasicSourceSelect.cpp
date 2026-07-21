@@ -19,11 +19,15 @@
 #include "OBSApp.hpp"
 #include "OBSBasicSourceSelect.hpp"
 
+#include <components/SegmentButton.hpp>
+#include <components/SegmentButtonFrame.hpp>
+#include <components/SourceSelectButton.hpp>
+
 #include <utility/ResizeSignaler.hpp>
 #include <utility/ThumbnailManager.hpp>
 #include <utility/ThumbnailView.hpp>
 
-#include "qt-wrappers.hpp"
+#include <qt-wrappers.hpp>
 
 #include <QList>
 #include <QMessageBox>
@@ -34,7 +38,7 @@ constexpr int kUnversionedIdRole = Qt::UserRole + 1;
 constexpr int kDeprecatedRole = Qt::UserRole + 2;
 
 constexpr QStringView kRecentTypeId = u"_recent";
-constexpr int kRecentListLimit = 16;
+constexpr int kRecentListLimit = 24;
 
 struct AddSourceData {
 	// Input data
@@ -236,9 +240,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 
 	ui->setupUi(this);
 
-	existingFlowLayout = ui->existingListFrame->flowLayout();
-	existingFlowLayout->setContentsMargins(0, 0, 0, 0);
-	existingFlowLayout->setSpacing(0);
+	sourceListLayout = new FlowLayout(0, 0, 0);
+	ui->existingListContainerLayout->addLayout(sourceListLayout);
 
 	// The scroll viewport is not accessible via Designer, so we have to disable autoFillBackground here.
 	// Additionally when Qt calls setWidget on a scrollArea to set the contents widget, it force sets
@@ -286,6 +289,38 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 	});
 
 	App()->DisableHotkeys();
+
+	// Set up thumbnail size buttons
+	auto *segmentFrame = new SegmentButtonFrame(this);
+
+	auto *listButton = new SegmentButton(segmentFrame);
+	listButton->setIcon(QIcon(":/res/images/sources/scene.svg"));
+	listButton->setAccessibleName(QTStr("Basic.SourceSelect.ThumbnailSize.None"));
+	listButton->setAccessibleDescription(QTStr("Basic.SourceSelect.Accessible.ThumbnailSize"));
+	segmentFrame->addButton(listButton, static_cast<int>(OBS::SourceThumbnailSize::None));
+
+	auto *smallButton = new SegmentButton(segmentFrame);
+	smallButton->setIcon(QIcon(":/res/images/thumb-small.svg"));
+	smallButton->setAccessibleName(QTStr("Basic.SourceSelect.ThumbnailSize.Small"));
+	smallButton->setAccessibleDescription(QTStr("Basic.SourceSelect.Accessible.ThumbnailSize"));
+	segmentFrame->addButton(smallButton, static_cast<int>(OBS::SourceThumbnailSize::Small));
+
+	auto *largeButton = new SegmentButton(segmentFrame);
+	largeButton->setIcon(QIcon(":/res/images/thumb-large.svg"));
+	largeButton->setAccessibleName(QTStr("Basic.SourceSelect.ThumbnailSize.Large"));
+	largeButton->setAccessibleDescription(QTStr("Basic.SourceSelect.Accessible.ThumbnailSize"));
+	segmentFrame->addButton(largeButton, static_cast<int>(OBS::SourceThumbnailSize::Large));
+
+	connect(segmentFrame->group(), &QButtonGroup::idToggled, this, &OBSBasicSourceSelect::thumbnailSizeToggled);
+
+	const int savedThumbnailSize = config_get_int(App()->GetAppConfig(), "BasicWindow", "AddSourceThumbnailSize");
+	if (auto *button = segmentFrame->button(savedThumbnailSize)) {
+		button->setChecked(true);
+	} else {
+		largeButton->setChecked(true);
+	}
+
+	ui->headerLayout->addWidget(segmentFrame);
 }
 
 OBSBasicSourceSelect::~OBSBasicSourceSelect()
@@ -381,7 +416,7 @@ void OBSBasicSourceSelect::refreshSources()
 
 void OBSBasicSourceSelect::updateExistingSources(int limit)
 {
-	QLayout *layout = ui->existingListFrame->flowLayout();
+	QLayout *layout = sourceListLayout;
 
 	// Clear existing buttons when switching types
 	QLayoutItem *child = nullptr;
@@ -441,9 +476,13 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 		}
 
 		SourceSelectButton *newButton = new SourceSelectButton(weak, ui->existingListFrame);
+		newButton->updateThumbnailSize(currentThumbnailSize);
+		connect(this, &OBSBasicSourceSelect::thumbnailSizeChanged, newButton,
+			&SourceSelectButton::setThumbnailSize);
+
 		std::string uuid = obs_source_get_uuid(source);
 
-		existingFlowLayout->addWidget(newButton);
+		sourceListLayout->addWidget(newButton);
 		sourceButtons->addButton(newButton);
 
 		bool isSelected = false;
@@ -589,7 +628,7 @@ void OBSBasicSourceSelect::sourceButtonToggled(QAbstractButton *button, bool che
 		return;
 	}
 
-	int toggledIndex = existingFlowLayout->indexOf(sourceButton);
+	int toggledIndex = sourceListLayout->indexOf(sourceButton);
 
 	std::string_view toggledUuid = sourceButton->uuid();
 
@@ -606,7 +645,7 @@ void OBSBasicSourceSelect::sourceButtonToggled(QAbstractButton *button, bool che
 		int end = std::max(toggledIndex, lastSelectedIndex);
 
 		for (int i = start; i <= end; ++i) {
-			QLayoutItem *item = existingFlowLayout->itemAt(i);
+			QLayoutItem *item = sourceListLayout->itemAt(i);
 			if (!item) {
 				continue;
 			}
@@ -661,6 +700,68 @@ void OBSBasicSourceSelect::sourceDropped(QString uuid)
 	}
 }
 
+void OBSBasicSourceSelect::thumbnailSizeToggled(int sizeId, bool checked)
+{
+	if (!checked) {
+		return;
+	}
+
+	if (static_cast<int>(currentThumbnailSize) == sizeId) {
+		return;
+	}
+
+	auto newSize = static_cast<OBS::SourceThumbnailSize>(sizeId);
+	updateThumbnailSize(newSize);
+}
+
+void OBSBasicSourceSelect::updateThumbnailSize(OBS::SourceThumbnailSize newSize)
+{
+	ui->existingListFrame->setUpdatesEnabled(false);
+
+	QLayout *newLayout = nullptr;
+	if (newSize == OBS::SourceThumbnailSize::None) {
+		newLayout = new QVBoxLayout();
+	} else if (newSize == OBS::SourceThumbnailSize::Small || newSize == OBS::SourceThumbnailSize::Large) {
+		if (currentThumbnailSize == OBS::SourceThumbnailSize::None) {
+			newLayout = new FlowLayout(nullptr, 0, 0, 0);
+		}
+	} else {
+		return;
+	}
+
+	currentThumbnailSize = newSize;
+
+	config_set_int(App()->GetAppConfig(), "BasicWindow", "AddSourceThumbnailSize", static_cast<int>(newSize));
+
+	emit thumbnailSizeChanged(static_cast<int>(newSize));
+
+	if (newLayout != nullptr) {
+		newLayout->setContentsMargins(0, 0, 0, 0);
+		newLayout->setSpacing(0);
+
+		QLayoutItem *item;
+		while ((item = sourceListLayout->takeAt(0)) != nullptr) {
+			newLayout->addItem(item);
+		}
+
+		ui->existingListContainerLayout->insertLayout(0, newLayout);
+
+		delete sourceListLayout;
+		sourceListLayout = newLayout;
+	}
+
+	sourceListLayout->activate();
+	ui->existingListFrame->updateGeometry();
+
+	// Incredibly omega super cursed hack to solve an issue where the vertical layout for list mode would not
+	// properly calculate heights for the widgets causing a squished size for exactly one tick of the event loop
+	// but ONLY when clicking a button with the mouse. Keyboard works totally fine. This would cause very brief
+	// visual flicker when switching to list mode.
+	// Wait for Qt to finish processing whatever hellish stuff it's doing before re-enabling updates.
+	QMetaObject::invokeMethod(
+		this, [this]() { ui->existingListFrame->setUpdatesEnabled(true); }, Qt::QueuedConnection);
+}
+
 void OBSBasicSourceSelect::addSelectedItem(const std::string &uuid)
 {
 	auto it = std::find(selectedItems.begin(), selectedItems.end(), uuid);
@@ -675,7 +776,7 @@ void OBSBasicSourceSelect::addSelectedItem(const std::string &uuid)
 		return;
 	}
 
-	lastSelectedIndex = existingFlowLayout->indexOf(button);
+	lastSelectedIndex = sourceListLayout->indexOf(button);
 }
 
 void OBSBasicSourceSelect::removeSelectedItem(const std::string &uuid)
@@ -691,7 +792,7 @@ void OBSBasicSourceSelect::removeSelectedItem(const std::string &uuid)
 		return;
 	}
 
-	lastSelectedIndex = existingFlowLayout->indexOf(button);
+	lastSelectedIndex = sourceListLayout->indexOf(button);
 }
 
 void OBSBasicSourceSelect::clearSelectedItems()
@@ -716,8 +817,8 @@ void OBSBasicSourceSelect::clearSelectedItems()
 
 SourceSelectButton *OBSBasicSourceSelect::findButtonForUuid(const std::string &uuid)
 {
-	for (int i = 0; i <= existingFlowLayout->count(); ++i) {
-		QLayoutItem *layoutItem = existingFlowLayout->itemAt(i);
+	for (int i = 0; i <= sourceListLayout->count(); ++i) {
+		QLayoutItem *layoutItem = sourceListLayout->itemAt(i);
 		if (!layoutItem || !layoutItem->widget()) {
 			continue;
 		}
@@ -948,6 +1049,7 @@ void OBSBasicSourceSelect::sourceTypeSelected(QListWidgetItem *current, QListWid
 	ui->noExistingLabel->setText(
 		QTStr("Basic.SourceSelect.NoExisting").arg(getDisplayNameForSourceType(selectedTypeId)));
 
-	ui->existingScrollArea->setVisible(existingFlowLayout->count() != 0);
-	ui->noExistingLabel->setVisible(existingFlowLayout->count() == 0);
+	bool showExistingList = sourceListLayout->count() != 0;
+	ui->existingScrollArea->setVisible(showExistingList);
+	ui->noExistingLabel->setVisible(!showExistingList);
 }

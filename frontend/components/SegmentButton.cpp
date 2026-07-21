@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,23 +15,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "SegmentButton.hpp"
 
-#include "FlowLayout.hpp"
+#include <Idian/Utils.hpp>
 
-#include <QFrame>
+SegmentButton::SegmentButton(QWidget *parent) : QPushButton(parent)
+{
+	setCheckable(true);
+	setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
-class FlowFrame : public QFrame {
-	Q_OBJECT
-
-public:
-	explicit FlowFrame(QWidget *parent = nullptr);
-
-	FlowLayout *flowLayout() const { return layout_; }
-
-protected:
-	void keyPressEvent(QKeyEvent *event) override;
-
-private:
-	FlowLayout *layout_;
-};
+	auto *utils = new idian::Utils(this);
+	utils->applyStateStylingEventFilter(this);
+}

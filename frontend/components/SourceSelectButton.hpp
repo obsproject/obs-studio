@@ -20,18 +20,22 @@
 
 #include <obs.hpp>
 
-#include <QLabel>
 #include <QPointer>
 #include <QPushButton>
-#include <QTimer>
 #include <QVBoxLayout>
 
 class QLabel;
 class Thumbnail;
 class ThumbnailView;
+namespace OBS {
+enum class SourceThumbnailSize : int;
+}
 
 class SourceSelectButton : public QAbstractButton {
 	Q_OBJECT
+
+	Q_PROPERTY(int thumbnailWidth READ getThumbnailWidth WRITE setThumbnailWidth DESIGNABLE true)
+	Q_PROPERTY(int thumbnailHeight READ getThumbnailHeight WRITE setThumbnailHeight DESIGNABLE true)
 
 public:
 	SourceSelectButton(OBSWeakSource weak, QWidget *parent = nullptr);
@@ -41,6 +45,14 @@ public:
 
 	void setThumbnailEnabled(bool enabled);
 	void updateThumbnail();
+
+	void updateThumbnailSize(OBS::SourceThumbnailSize size);
+
+	int getThumbnailWidth() { return thumbnailWidth; };
+	void setThumbnailWidth(int width) { thumbnailWidth = width; }
+
+	int getThumbnailHeight() { return thumbnailHeight; };
+	void setThumbnailHeight(int height) { thumbnailHeight = height; }
 
 protected:
 	void paintEvent(QPaintEvent *event) override;
@@ -60,6 +72,9 @@ private:
 	static void obsSourceRemoved(void *param, calldata_t *calldata);
 	static void obsSourceRenamed(void *param, calldata_t *calldata);
 
+	int thumbnailWidth{160};
+	int thumbnailHeight{90};
+
 	QLabel *label = nullptr;
 	bool thumbnailEnabled = true;
 
@@ -69,6 +84,9 @@ private slots:
 	void updatePixmap(QPixmap pixmap);
 	void handleSourceRemoved();
 	void handleSourceRenamed(QString name);
+
+public slots:
+	void setThumbnailSize(int sizeId);
 
 signals:
 	void sourceRemoved();

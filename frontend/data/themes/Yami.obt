@@ -233,6 +233,9 @@
     --toggle_handle: calc(calc(calc(var(--toggle_height) * 0.9) - calc(var(--toggle_border) * 2)) - var(--toggle_margin));
     --toggle_radius: calc(var(--toggle_height) / 2);
 
+    --thumbnail_width: calc(128px + calc(var(--obsPadding) * 8));
+    --thumbnail_height: calc(calc(var(--thumbnail_width) * 9) / 16);
+
     /* Qt Palette variables can be set with the "palette_" prefix */
     --palette_window: var(--bg_window);
     --palette_windowText: var(--text);
@@ -345,18 +348,33 @@
 }
 
 .dialog-container {
-    padding: var(--padding_large) var(--padding_xlarge);
+    padding: var(--padding_xlarge) var(--padding_xlarge);
 }
 
 .dialog-frame {
     background-color: var(--grey6);
     border-radius: var(--border_radius);
     border: 1px solid var(--border_color);
-    margin: var(--spacing_base);
 }
 
-.dialog-frame > QWidget {
-    margin: var(--spacing_base) 0;
+.dialog-row > QWidget {
+    margin-left: var(--padding_large);
+    margin-right: var(--padding_large);
+}
+
+.dialog-column > QWidget {
+    margin-top: var(--padding_large);
+    margin-bottom: var(--padding_large);
+}
+
+.dialog-container.dialog-row {
+    padding-left: var(--padding_large);
+    padding-right: var(--padding_large);
+}
+
+.dialog-container.dialog-column {
+    padding-top: var(--padding_large);
+    padding-bottom: var(--padding_large);
 }
 
 .subtitle {
@@ -2454,6 +2472,9 @@ SourceSelectButton {
     border-radius: var(--border_radius);
     border: 1px solid var(--grey3);
     outline: none;
+
+    qproperty-thumbnailWidth: var(--thumbnail_width);
+    qproperty-thumbnailHeight: var(--thumbnail_height);
 }
 
 SourceSelectButton QLabel {
@@ -2795,4 +2816,25 @@ AlignmentSelector::indicator:disabled {
 
 AlignmentSelector::indicator:checked:disabled {
     background: var(--grey3);
+}
+
+SegmentButtonFrame {
+    qproperty-buttonSpacing: 1;
+}
+
+SegmentButton {
+    margin: 0;
+    border-color: var(--input_border);
+    border-radius: 0;
+    padding: var(--padding_base) var(--padding_large);
+}
+
+SegmentButton.first {
+    border-top-left-radius: var(--border_radius);
+    border-bottom-left-radius: var(--border_radius);
+}
+
+SegmentButton.last {
+    border-top-right-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
 }
