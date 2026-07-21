@@ -7,6 +7,7 @@
 #include <gio/gio.h>
 #include <glib.h>
 #include <stdio.h>
+#include <string.h>
 #include <uthash.h>
 
 #define PORTAL_NAME "org.freedesktop.portal.Desktop"
@@ -25,14 +26,50 @@ static struct obs_hotkey_portal_state {
 	char *session_path;
 	// tracks the timestamp when pending_hotkeys was last added to
 	long add_to_pending_hotkeys_timestamp_us;
-	// stores list of ids that need to be registered with the portal
+	// stores list of hotkeys that need to be registered with the portal
 	GQueue *pending_hotkeys;
 	// TODO: use the hash table that obs-hotkey already uses instead of
 	// this array. I just want to get this working first
 	// GArray *registered_hotkeys;
+
+	// maps portal id -> hotkey id
+	GHashTable *registered_hotkeys;
 } *state = NULL;
 
 typedef struct obs_hotkey_portal_state obs_hotkey_portal_state_t;
+
+enum obs_hotkey_portal_registered_type {
+	SINGLE,
+	PAIR,
+};
+typedef enum obs_hotkey_portal_registered_type obs_hotkey_portal_registered_type_t;
+
+struct obs_hotkey_portal_registered_hotkey {
+	obs_hotkey_portal_registered_type_t type;
+	size_t id;
+};
+typedef struct obs_hotkey_portal_registered_hotkey obs_hotkey_portal_registered_hotkey_t;
+
+gboolean destroy_registered_hotkey(gpointer key, gpointer value, gpointer user_data) {
+	UNUSED_PARAMETER(user_data);
+	bfree(key);
+	bfree(value);
+	return TRUE;
+}
+
+void obs_hotkey_portal_free() {
+	if (state == NULL)
+		return;
+	g_dbus_connection_close_sync(state->conn, NULL, NULL);
+	g_object_unref(state->conn);
+	bfree(state->session_path);
+	g_queue_free_full(state->pending_hotkeys, bfree);
+	g_hash_table_foreach_remove(state->registered_hotkeys, destroy_registered_hotkey, NULL);
+	g_hash_table_destroy(state->registered_hotkeys);
+	bfree(state);
+	state = NULL;
+}
+
 
 bool obs_hotkey_portal_session_active()
 {
@@ -117,17 +154,6 @@ char *get_hotkey_portal_description(obs_hotkey_t *hotkey) {
 	return description_dst;
 }
 
-void obs_hotkey_portal_free() {
-	if (state == NULL)
-		return;
-	g_dbus_connection_close_sync(state->conn, NULL, NULL);
-	g_object_unref(state->conn);
-	bfree(state->session_path);
-	g_queue_free(state->pending_hotkeys);
-	bfree(state);
-	state = NULL;
-}
-
 void add_hotkey_to_builder(GVariantBuilder *shortcuts_builder, char *id, char *description) {
 	GVariantBuilder vardict_builder;
 	g_variant_builder_init(&vardict_builder, G_VARIANT_TYPE_VARDICT);
@@ -138,7 +164,7 @@ void add_hotkey_to_builder(GVariantBuilder *shortcuts_builder, char *id, char *d
 	g_variant_builder_add_value(shortcuts_builder, g_variant_new_tuple(data, 2));
 }
 
-// register all pending hotkeys
+// register all pending hotkeys, if any
 static gboolean obs_hotkey_portal_finish_registration() {
 	assert(obs_hotkey_portal_session_active());
 
@@ -157,68 +183,74 @@ static gboolean obs_hotkey_portal_finish_registration() {
 	GVariantBuilder shortcuts_builder;
 	g_variant_builder_init(&shortcuts_builder, G_VARIANT_TYPE("a(sa{sv})"));
 
-	// when adding a hotkey h1 that has a pair h2, then a hotkey for
-	// toggling between h1/h2 is added, then h1, then h2's id is recorded
-	// in this hash table so this process doesn't repeat for that one too.
-	g_autoptr(GHashTable) added_ids = g_hash_table_new(g_int_hash, g_int_equal);
-
-	for (obs_hotkey_id *queued_id = g_queue_pop_head(state->pending_hotkeys);
-		queued_id != NULL;
-		queued_id = g_queue_pop_head(state->pending_hotkeys))
+	for (obs_hotkey_portal_registered_hotkey_t *queued_hk = g_queue_pop_head(state->pending_hotkeys);
+		queued_hk != NULL;
+		queued_hk = g_queue_pop_head(state->pending_hotkeys))
 	{
-		// if this hotkey has already been added, skip
-		if (g_hash_table_contains(added_ids, queued_id))
-			continue;
 
-		obs_hotkey_t *hotkey;
-		HASH_FIND(hh, obs->hotkeys.hotkeys, queued_id, sizeof(size_t), hotkey);
-		blog(LOG_INFO, "Registering hotkey id with portal: %lu\n", *queued_id);
+		if (queued_hk->type == SINGLE) {
+			obs_hotkey_t *hotkey;
+			HASH_FIND_HKEY(obs->hotkeys.hotkeys, queued_hk->id, hotkey);
+			blog(LOG_INFO, "Registering hotkey id with portal: %lu", queued_hk->id);
 
-		if (!hotkey)
-			continue;
+			if (!hotkey)
+				continue;
 
-		char *id = get_hotkey_portal_id(hotkey);
-		char *description = get_hotkey_portal_description(hotkey);
+			char *id = get_hotkey_portal_id(hotkey);
+			char *description = get_hotkey_portal_description(hotkey);
 
-		blog(LOG_INFO, "Registering hotkey with portal: %s: %s\n",
-				hotkey->name, hotkey->description);
+			blog(LOG_INFO, "Registering hotkey with portal: %s: %s",
+					hotkey->name, hotkey->description);
 
-		add_hotkey_to_builder(&shortcuts_builder, id, description);
-		g_hash_table_add(added_ids, &hotkey->id);
+			add_hotkey_to_builder(&shortcuts_builder, id, description);
+			g_hash_table_insert(state->registered_hotkeys, id, queued_hk);
 
-		// // handle pair
-		// if (hotkey->pair_partner_id != OBS_INVALID_HOTKEY_PAIR_ID) {
-		// 	obs_hotkey_t *hotkey_pair;
-		// 	HASH_FIND_HKEY(obs->hotkeys.hotkeys, hotkey->pair_partner_id, hotkey_pair);
-		//
-		// 	if (hotkey_pair) {
-		// 		char *id_pair = get_hotkey_portal_id(hotkey_pair);
-		// 		size_t joint_id_len = strlen(id_pair) + strlen(id) + 2;
-		// 		char *joint_id = bzalloc(joint_id_len);
-		// 		snprintf(joint_id, joint_id_len, "%s.%s", id, id_pair);
-		//
-		// 		char *desc_pair = get_hotkey_portal_description(hotkey_pair);
-		// 		size_t joint_desc_len = strlen(desc_pair) + strlen(description) + 2;
-		// 		char *joint_desc = bzalloc(joint_desc_len);
-		// 		snprintf(joint_desc, joint_desc_len, "%s/%s", description, desc_pair);
-		//
-		// 		// add pair
-		// 		add_hotkey_to_builder(&shortcuts_builder, id_pair, desc_pair);
-		// 		g_hash_table_add(added_ids, &hotkey_pair->id);
-		//
-		// 		// ...and then add joint hotkey
-		// 		add_hotkey_to_builder(&shortcuts_builder, joint_id, joint_desc);
-		//
-		// 		bfree(id_pair);
-		// 		bfree(joint_id);
-		// 		bfree(desc_pair);
-		// 		bfree(joint_desc);
-		// 	}
-		//
-		// }
+			// id is now owned by state->registered_hotkeys
+			bfree(description);
+		} else if (queued_hk->type == PAIR) {
+			blog(LOG_INFO, "Registering hotkey pair id with portal: %lu", queued_hk->id);
+			// get pair
+			obs_hotkey_pair_t *pair;
+			HASH_FIND_HKEY(obs->hotkeys.hotkey_pairs, queued_hk->id, pair);
 
-		bfree(id);
-		bfree(description);
+			if (!pair)
+				continue;
+
+			// get both hotkeys in that pair
+			obs_hotkey_t *hotkey1, *hotkey2;
+			HASH_FIND_HKEY(obs->hotkeys.hotkeys, pair->id[0], hotkey1);
+			HASH_FIND_HKEY(obs->hotkeys.hotkeys, pair->id[1], hotkey2);
+
+			if (!hotkey1 || !hotkey2)
+				continue;
+
+			// get id
+			char *hotkey1_id = get_hotkey_portal_id(hotkey1);
+			char *hotkey2_id = get_hotkey_portal_id(hotkey2);
+			size_t joint_id_len = strlen(hotkey1_id) + strlen(hotkey2_id) + 2;
+			char *joint_id = bzalloc(joint_id_len);
+			snprintf(joint_id, joint_id_len, "%s.%s", hotkey1_id, hotkey2_id);
+
+			// get description
+			char *hotkey1_desc = get_hotkey_portal_description(hotkey1);
+			char *hotkey2_desc = get_hotkey_portal_description(hotkey2);
+			size_t joint_desc_len = strlen(hotkey1_desc) + strlen(hotkey2_desc) + 2;
+			char *joint_desc = bzalloc(joint_desc_len);
+			snprintf(joint_desc, joint_desc_len, "%s/%s", hotkey1_desc, hotkey2_desc);
+
+			// add hotkey
+			add_hotkey_to_builder(&shortcuts_builder, joint_id, joint_desc);
+			g_hash_table_insert(state->registered_hotkeys, joint_id, queued_hk);
+
+			bfree(hotkey1_id);
+			bfree(hotkey1_desc);
+			bfree(hotkey2_id);
+			bfree(hotkey2_desc);
+			// joint_id is now owned by state->registered_hotkeys
+			bfree(joint_desc);
+		} else {
+			blog(LOG_ERROR, "Invalid hotkey type: %d", queued_hk->type);
+		}
 	}
 
 	// options
@@ -237,14 +269,25 @@ static gboolean obs_hotkey_portal_finish_registration() {
 
 static void call_hotkey_cb(const char *received_id, bool pressed) {
 	char *iter_id = NULL;
-	for (obs_hotkey_t *hotkey = obs->hotkeys.hotkeys; hotkey != NULL; hotkey = hotkey->hh.next) {
-		iter_id = get_hotkey_portal_id(hotkey);
-		if (strcmp(iter_id, received_id) != 0) {
-			bfree(iter_id);
-			continue;
-		}
 
-		blog(LOG_INFO, "%s\n", iter_id);
+	obs_hotkey_portal_registered_hotkey_t *received_hk;
+	received_hk = g_hash_table_lookup(state->registered_hotkeys, received_id);
+
+	if (!received_hk) {
+		blog(LOG_ERROR, "Failed to find activated hotkey for portal");
+		return;
+	}
+
+	if (received_hk->type == SINGLE) {
+		obs_hotkey_t *hotkey;
+		HASH_FIND_HKEY(obs->hotkeys.hotkeys, received_hk->id, hotkey);
+
+		if (!hotkey)
+			return;
+		if (pressed == hotkey->pressed)
+			return;
+
+		hotkey->pressed = pressed;
 
 		if (!obs->hotkeys.reroute_hotkeys)
 			hotkey->func(hotkey->data, hotkey->id, hotkey, pressed);
@@ -252,9 +295,25 @@ static void call_hotkey_cb(const char *received_id, bool pressed) {
 			obs->hotkeys.router_func(obs->hotkeys.router_func_data, hotkey->id, pressed);
 
 		bfree(iter_id);
-		return;
-	}
+	} else if (received_hk->type == PAIR) {
+		obs_hotkey_pair_t *pair;
+		HASH_FIND_HKEY(obs->hotkeys.hotkey_pairs, received_hk->id, pair);
 
+		if (!pair)
+			return;
+
+		for (size_t i = 0; i < 2; ++i) {
+			obs_hotkey_t *hk;
+			HASH_FIND_HKEY(obs->hotkeys.hotkeys, pair->id[i], hk);
+			if (!obs->hotkeys.reroute_hotkeys)
+				pair->func[i](hk->data, hk->id, hk, pressed);
+			else if (obs->hotkeys.router_func)
+				obs->hotkeys.router_func(obs->hotkeys.router_func_data, hk->id, pressed);
+		}
+
+	} else {
+		blog(LOG_ERROR, "Invalid hotkey type: %d", received_hk->type);
+	}
 }
 
 static void activated_cb(GDBusConnection* conn, const char *sender_name, const char *object_path, const char *interface_name, const char *signal_name, GVariant *parameters, gpointer user_data)
@@ -392,6 +451,7 @@ static void obs_hotkey_portal_init()
 	state->conn = conn;
 	state->session_path = NULL;
 	state->pending_hotkeys = g_queue_new();
+	state->registered_hotkeys = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
 void obs_hotkey_portal_register(obs_hotkey_t *hotkey)
@@ -403,27 +463,55 @@ void obs_hotkey_portal_register(obs_hotkey_t *hotkey)
 		return;
 	}
 
-	blog(LOG_WARNING, "Registering hotkey with id %lu to xdg-desktop-portal", hotkey->id);
+	// add to pending list
+	obs_hotkey_portal_registered_hotkey_t *hk;
+	hk = bzalloc(sizeof(obs_hotkey_portal_registered_hotkey_t));
+	hk->type = SINGLE;
+	hk->id = hotkey->id;
+
+	blog(LOG_WARNING, "Registering hotkey with id %lu to xdg-desktop-portal", hk->id);
+
+	g_queue_push_tail(state->pending_hotkeys, hk);
+	state->add_to_pending_hotkeys_timestamp_us = g_get_monotonic_time();
+}
+
+void obs_hotkey_portal_register_pair(obs_hotkey_pair_t *pair)
+{
+	// init if haven't already
+	obs_hotkey_portal_init();
+	if (state == NULL) {
+		blog(LOG_WARNING, "Attempting to register a hotkey with the xdg-desktop-portal, but this feature has not been initialised");
+		return;
+	}
+
+	blog(LOG_WARNING, "Registering hotkey pair with id %lu to xdg-desktop-portal", pair->pair_id);
 
 	// add to pending list
-	g_queue_push_tail(state->pending_hotkeys, &hotkey->id);
+	obs_hotkey_portal_registered_hotkey_t *hk;
+	hk = bzalloc(sizeof(obs_hotkey_portal_registered_hotkey_t));
+	hk->type = PAIR;
+	hk->id = pair->pair_id;
+
+	g_queue_push_tail(state->pending_hotkeys, hk);
 	state->add_to_pending_hotkeys_timestamp_us = g_get_monotonic_time();
 }
 
 void obs_hotkey_portal_unregister(obs_hotkey_id id)
 {
-	if (state == NULL) {
-		blog(LOG_WARNING, "Attempting to unregister a hotkey with the xdg-desktop-portal, but this feature has not been initialised");
-		return;
-	}
-
-	blog(LOG_WARNING, "Unregistering hotkey with id %lu from xdg-desktop-portal", id);
-
-	// remove from pending list (if it's there)
-	for (GList *l = state->pending_hotkeys->head; l != NULL; l = l->next) {
-		if (*(obs_hotkey_id*)l->data == id) {
-			g_queue_delete_link(state->pending_hotkeys, l);
-			break;
-		}
-	}
+	UNUSED_PARAMETER(id);
+	// TODO
+	// if (state == NULL) {
+	// 	blog(LOG_WARNING, "Attempting to unregister a hotkey with the xdg-desktop-portal, but this feature has not been initialised");
+	// 	return;
+	// }
+	//
+	// blog(LOG_WARNING, "Unregistering hotkey with id %lu from xdg-desktop-portal", id);
+	//
+	// // remove from pending list (if it's there)
+	// for (GList *l = state->pending_hotkeys->head; l != NULL; l = l->next) {
+	// 	if (*(obs_hotkey_id*)l->data == id) {
+	// 		g_queue_delete_link(state->pending_hotkeys, l);
+	// 		break;
+	// 	}
+	// }
 }

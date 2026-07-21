@@ -340,6 +340,8 @@ static obs_hotkey_pair_id register_hotkey_pair_internal(obs_hotkey_registerer_t 
 
 	obs_hotkey_pair_id id = pair->pair_id;
 
+	obs_hotkey_portal_register_pair(pair);
+
 	unlock();
 	return id;
 }
