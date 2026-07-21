@@ -34,6 +34,10 @@ bool obs_hotkey_portal_session_active();
 // the current platform)
 void obs_hotkey_portal_register(obs_hotkey_t *hotkey);
 
+// // specifies hotkeys which should be a considered a pair
+// // must only be called after these two hotkeys have been registered
+// void obs_hotkey_portal_register_pair(obs_hotkey_id first, obs_hotkey_id second);
+
 // stops listening to a hotkey
 // should always be called, even if it has no effect (i.e. if unsupported on
 // the current platform)

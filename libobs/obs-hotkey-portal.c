@@ -6,6 +6,7 @@
 #include "util/c99defs.h"
 #include <gio/gio.h>
 #include <glib.h>
+#include <stdio.h>
 #include <uthash.h>
 
 #define PORTAL_NAME "org.freedesktop.portal.Desktop"
@@ -14,12 +15,17 @@
 #define REQUEST_IFACE "org.freedesktop.portal.Request"
 #define SESSION_IFACE "org.freedesktop.portal.Session"
 
+#undef HASH_FUNCTION
+#define HASH_FUNCTION(s, len, hashv) (hashv) = *s % UINT_MAX
+#define HASH_FIND_HKEY(head, id, out) HASH_FIND(hh, head, &(id), sizeof(size_t), out)
+
 static struct obs_hotkey_portal_state {
 	GDBusConnection *conn;
 	// GVariant *session_path;
 	char *session_path;
 	// tracks the timestamp when pending_hotkeys was last added to
 	long add_to_pending_hotkeys_timestamp_us;
+	// stores list of ids that need to be registered with the portal
 	GQueue *pending_hotkeys;
 	// TODO: use the hash table that obs-hotkey already uses instead of
 	// this array. I just want to get this working first
@@ -112,15 +118,24 @@ char *get_hotkey_portal_description(obs_hotkey_t *hotkey) {
 }
 
 void obs_hotkey_portal_free() {
-	if (state == NULL) {
+	if (state == NULL)
 		return;
-	}
 	g_dbus_connection_close_sync(state->conn, NULL, NULL);
 	g_object_unref(state->conn);
 	bfree(state->session_path);
 	g_queue_free(state->pending_hotkeys);
 	bfree(state);
 	state = NULL;
+}
+
+void add_hotkey_to_builder(GVariantBuilder *shortcuts_builder, char *id, char *description) {
+	GVariantBuilder vardict_builder;
+	g_variant_builder_init(&vardict_builder, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_add(&vardict_builder, "{sv}", "description", g_variant_new_string(description));
+
+	// add shortcut to builder
+	GVariant *data[] = {g_variant_new_string(id), g_variant_builder_end(&vardict_builder)};
+	g_variant_builder_add_value(shortcuts_builder, g_variant_new_tuple(data, 2));
 }
 
 // register all pending hotkeys
@@ -141,22 +156,66 @@ static gboolean obs_hotkey_portal_finish_registration() {
 	// bind some shortcuts
 	GVariantBuilder shortcuts_builder;
 	g_variant_builder_init(&shortcuts_builder, G_VARIANT_TYPE("a(sa{sv})"));
-	for (obs_hotkey_t *hotkey = g_queue_pop_head(state->pending_hotkeys);
-		hotkey != NULL;
-		hotkey = g_queue_pop_head(state->pending_hotkeys))
+
+	// when adding a hotkey h1 that has a pair h2, then a hotkey for
+	// toggling between h1/h2 is added, then h1, then h2's id is recorded
+	// in this hash table so this process doesn't repeat for that one too.
+	g_autoptr(GHashTable) added_ids = g_hash_table_new(g_int_hash, g_int_equal);
+
+	for (obs_hotkey_id *queued_id = g_queue_pop_head(state->pending_hotkeys);
+		queued_id != NULL;
+		queued_id = g_queue_pop_head(state->pending_hotkeys))
 	{
+		// if this hotkey has already been added, skip
+		if (g_hash_table_contains(added_ids, queued_id))
+			continue;
+
+		obs_hotkey_t *hotkey;
+		HASH_FIND(hh, obs->hotkeys.hotkeys, queued_id, sizeof(size_t), hotkey);
+		blog(LOG_INFO, "Registering hotkey id with portal: %lu\n", *queued_id);
+
+		if (!hotkey)
+			continue;
+
 		char *id = get_hotkey_portal_id(hotkey);
-
-		// description
 		char *description = get_hotkey_portal_description(hotkey);
-		GVariantBuilder vardict_builder;
-		g_variant_builder_init(&vardict_builder, G_VARIANT_TYPE_VARDICT);
-		g_variant_builder_add(&vardict_builder, "{sv}", "description", g_variant_new_string(description));
 
-		blog(LOG_INFO, "Registering hotkey with portal: %s: %s\n", hotkey->name, hotkey->description);
-		// add shortcut to builder
-		GVariant *data[] = {g_variant_new_string(id), g_variant_builder_end(&vardict_builder)};
-		g_variant_builder_add_value(&shortcuts_builder, g_variant_new_tuple(data, 2));
+		blog(LOG_INFO, "Registering hotkey with portal: %s: %s\n",
+				hotkey->name, hotkey->description);
+
+		add_hotkey_to_builder(&shortcuts_builder, id, description);
+		g_hash_table_add(added_ids, &hotkey->id);
+
+		// // handle pair
+		// if (hotkey->pair_partner_id != OBS_INVALID_HOTKEY_PAIR_ID) {
+		// 	obs_hotkey_t *hotkey_pair;
+		// 	HASH_FIND_HKEY(obs->hotkeys.hotkeys, hotkey->pair_partner_id, hotkey_pair);
+		//
+		// 	if (hotkey_pair) {
+		// 		char *id_pair = get_hotkey_portal_id(hotkey_pair);
+		// 		size_t joint_id_len = strlen(id_pair) + strlen(id) + 2;
+		// 		char *joint_id = bzalloc(joint_id_len);
+		// 		snprintf(joint_id, joint_id_len, "%s.%s", id, id_pair);
+		//
+		// 		char *desc_pair = get_hotkey_portal_description(hotkey_pair);
+		// 		size_t joint_desc_len = strlen(desc_pair) + strlen(description) + 2;
+		// 		char *joint_desc = bzalloc(joint_desc_len);
+		// 		snprintf(joint_desc, joint_desc_len, "%s/%s", description, desc_pair);
+		//
+		// 		// add pair
+		// 		add_hotkey_to_builder(&shortcuts_builder, id_pair, desc_pair);
+		// 		g_hash_table_add(added_ids, &hotkey_pair->id);
+		//
+		// 		// ...and then add joint hotkey
+		// 		add_hotkey_to_builder(&shortcuts_builder, joint_id, joint_desc);
+		//
+		// 		bfree(id_pair);
+		// 		bfree(joint_id);
+		// 		bfree(desc_pair);
+		// 		bfree(joint_desc);
+		// 	}
+		//
+		// }
 
 		bfree(id);
 		bfree(description);
@@ -176,30 +235,7 @@ static gboolean obs_hotkey_portal_finish_registration() {
 	return G_SOURCE_CONTINUE;
 }
 
-static void activated_cb(
-	GDBusConnection* conn,
-	const char *sender_name,
-	const char *object_path,
-	const char *interface_name,
-	const char *signal_name,
-	GVariant *parameters,
-	gpointer user_data
-) {
-	UNUSED_PARAMETER(conn);
-	UNUSED_PARAMETER(sender_name);
-	UNUSED_PARAMETER(object_path);
-	UNUSED_PARAMETER(interface_name);
-	UNUSED_PARAMETER(signal_name);
-	UNUSED_PARAMETER(parameters);
-	UNUSED_PARAMETER(user_data);
-
-	g_autofree char *session_path = NULL;
-	g_autofree char *received_id = NULL;
-	uint64_t timestamp;
-	g_autoptr(GVariant) options = NULL;
-
-	g_variant_get(parameters, "(ost@a{sv})", &session_path, &received_id, &timestamp, &options);
-
+static void call_hotkey_cb(const char *received_id, bool pressed) {
 	char *iter_id = NULL;
 	for (obs_hotkey_t *hotkey = obs->hotkeys.hotkeys; hotkey != NULL; hotkey = hotkey->hh.next) {
 		iter_id = get_hotkey_portal_id(hotkey);
@@ -208,21 +244,21 @@ static void activated_cb(
 			continue;
 		}
 
+		blog(LOG_INFO, "%s\n", iter_id);
+
+		if (!obs->hotkeys.reroute_hotkeys)
+			hotkey->func(hotkey->data, hotkey->id, hotkey, pressed);
+		else if (obs->hotkeys.router_func)
+			obs->hotkeys.router_func(obs->hotkeys.router_func_data, hotkey->id, pressed);
+
 		bfree(iter_id);
-		hotkey->func(hotkey->data, hotkey->id, hotkey, true);
 		return;
 	}
+
 }
 
-static void deactivated_cb(
-	GDBusConnection* conn,
-	const char *sender_name,
-	const char *object_path,
-	const char *interface_name,
-	const char *signal_name,
-	GVariant *parameters,
-	gpointer user_data
-) {
+static void activated_cb(GDBusConnection* conn, const char *sender_name, const char *object_path, const char *interface_name, const char *signal_name, GVariant *parameters, gpointer user_data)
+{
 	UNUSED_PARAMETER(conn);
 	UNUSED_PARAMETER(sender_name);
 	UNUSED_PARAMETER(object_path);
@@ -230,19 +266,27 @@ static void deactivated_cb(
 	UNUSED_PARAMETER(signal_name);
 	UNUSED_PARAMETER(parameters);
 	UNUSED_PARAMETER(user_data);
-
-	g_print("Button released!\n");
+	g_autofree char *received_id = NULL;
+	g_variant_get(parameters, "(ost@a{sv})", NULL, &received_id, NULL, NULL);
+	call_hotkey_cb(received_id, true);
 }
 
-static void shortcuts_changed_cb(
-	GDBusConnection* conn,
-	const char *sender_name,
-	const char *object_path,
-	const char *interface_name,
-	const char *signal_name,
-	GVariant *parameters,
-	gpointer user_data
-) {
+static void deactivated_cb(GDBusConnection* conn, const char *sender_name, const char *object_path, const char *interface_name, const char *signal_name, GVariant *parameters, gpointer user_data)
+{
+	UNUSED_PARAMETER(conn);
+	UNUSED_PARAMETER(sender_name);
+	UNUSED_PARAMETER(object_path);
+	UNUSED_PARAMETER(interface_name);
+	UNUSED_PARAMETER(signal_name);
+	UNUSED_PARAMETER(parameters);
+	UNUSED_PARAMETER(user_data);
+	g_autofree char *received_id = NULL;
+	g_variant_get(parameters, "(ost@a{sv})", NULL, &received_id, NULL, NULL);
+	call_hotkey_cb(received_id, false);
+}
+
+static void shortcuts_changed_cb( GDBusConnection* conn, const char *sender_name, const char *object_path, const char *interface_name, const char *signal_name, GVariant *parameters, gpointer user_data)
+{
 	UNUSED_PARAMETER(conn);
 	UNUSED_PARAMETER(sender_name);
 	UNUSED_PARAMETER(object_path);
@@ -362,11 +406,12 @@ void obs_hotkey_portal_register(obs_hotkey_t *hotkey)
 	blog(LOG_WARNING, "Registering hotkey with id %lu to xdg-desktop-portal", hotkey->id);
 
 	// add to pending list
-	g_queue_push_tail(state->pending_hotkeys, hotkey);
+	g_queue_push_tail(state->pending_hotkeys, &hotkey->id);
 	state->add_to_pending_hotkeys_timestamp_us = g_get_monotonic_time();
 }
 
-void obs_hotkey_portal_unregister(obs_hotkey_id id) {
+void obs_hotkey_portal_unregister(obs_hotkey_id id)
+{
 	if (state == NULL) {
 		blog(LOG_WARNING, "Attempting to unregister a hotkey with the xdg-desktop-portal, but this feature has not been initialised");
 		return;
