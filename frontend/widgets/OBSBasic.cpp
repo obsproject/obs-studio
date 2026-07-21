@@ -321,7 +321,13 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	/* Set up transitions combobox connections */
 	connect(this, &OBSBasic::TransitionAdded, this, [this](const QString &name, const QString &uuid) {
 		QSignalBlocker sb(ui->transitions);
-		ui->transitions->addItem(name, uuid);
+		OBSSourceAutoRelease transition = obs_get_source_by_uuid(QT_TO_UTF8(uuid));
+		if ((obs_source_get_output_flags(transition) & OBS_SOURCE_FALLBACK) != 0) {
+			QString file = !App()->IsThemeDark() ? ":res/images/no_sources.svg" : "theme:Dark/no_sources.svg";
+			ui->transitions->addItem(QIcon(file), name, uuid);
+		} else {
+			ui->transitions->addItem(name, uuid);
+		}
 	});
 	connect(this, &OBSBasic::TransitionRenamed, this, [this](const QString &uuid, const QString &newName) {
 		QSignalBlocker sb(ui->transitions);

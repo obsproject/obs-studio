@@ -208,6 +208,12 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_REQUIRES_CANVAS (1 << 17)
 
+/**
+ * Source is a fallback, meaning the original source is invalid,
+ * and has been replaced by another one. Used for invalid transitions
+ */
+#define OBS_SOURCE_FALLBACK (1 << 18)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent, obs_source_t *child, void *param);
