@@ -135,6 +135,8 @@ struct obs_module {
 	DARRAY(char *) outputs;
 	DARRAY(char *) encoders;
 	DARRAY(char *) services;
+
+	enum obs_runtime_module_type module_type;
 };
 
 struct obs_disabled_module {
@@ -576,6 +578,8 @@ struct obs_core {
 	os_task_queue_t *destruction_task_thread;
 
 	obs_task_handler_t ui_task_handler;
+
+	bool core_modules_loaded;
 };
 
 extern struct obs_core *obs;

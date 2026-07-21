@@ -6,7 +6,6 @@ mark_as_advanced(ENABLE_NVENC_FFMPEG_IDS)
 
 if(NOT ENABLE_NVENC)
   target_disable_feature(obs-nvenc "NVIDIA Hardware Encoder")
-  target_disable(obs-nvenc)
   return()
 endif()
 
