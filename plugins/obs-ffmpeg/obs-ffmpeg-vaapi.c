@@ -1010,8 +1010,10 @@ static bool vaapi_device_codec_supported(const char *path, enum codec_type codec
 	switch (codec) {
 	case CODEC_H264:
 		return vaapi_device_h264_supported(path);
+#if ENABLE_HEVC
 	case CODEC_HEVC:
 		return vaapi_device_hevc_supported(path);
+#endif
 	case CODEC_AV1:
 		return vaapi_device_av1_supported(path);
 	default:
