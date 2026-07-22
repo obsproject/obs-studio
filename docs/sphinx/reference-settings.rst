@@ -121,10 +121,57 @@ General Functions
 
 ---------------------
 
+.. function:: bool obs_data_save_json_with_defaults(obs_data_t *data, const char *file)
+
+   Saves the data to a file as Json text and includes default values.
+
+   :param file: The file to save to
+   :return:     *true* if successful, *false* otherwise
+
+---------------------
+
 .. function:: bool obs_data_save_json_safe(obs_data_t *data, const char *file, const char *temp_ext, const char *backup_ext)
 
    Saves the data to a file as Json text, and if overwriting an old
    file, backs up that old file to help prevent potential file
+   corruption.
+
+   :param file:       The file to save to
+   :param backup_ext: The backup extension to use for the overwritten
+                      file if it exists
+   :return:           *true* if successful, *false* otherwise
+
+---------------------
+
+.. function:: bool obs_data_save_json_safe_with_defaults(obs_data_t *data, const char *file, const char *temp_ext, const char *backup_ext)
+
+   Saves the data, including defaults, to a file as Json text, and if
+   overwriting an old file, backs up that old file to help prevent potential
+   file corruption.
+
+   :param file:       The file to save to
+   :param backup_ext: The backup extension to use for the overwritten
+                      file if it exists
+   :return:           *true* if successful, *false* otherwise
+
+---------------------
+
+.. function:: bool obs_data_save_json_pretty_safe(obs_data_t *data, const char *file, const char *temp_ext, const char *backup_ext)
+
+   Saves the data to a file as formatted Json text, and if overwriting an old
+   file, backs up that old file to help prevent potential file corruption.
+
+   :param file:       The file to save to
+   :param backup_ext: The backup extension to use for the overwritten
+                      file if it exists
+   :return:           *true* if successful, *false* otherwise
+
+---------------------
+
+.. function:: bool obs_data_save_json_pretty_safe_with_defaults(obs_data_t *data, const char *file, const char *temp_ext, const char *backup_ext)
+
+   Saves the data, including defaults, to a file as formatted Json text, and if
+   overwriting an old file, backs up that old file to help prevent potential file
    corruption.
 
    :param file:       The file to save to
