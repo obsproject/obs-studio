@@ -333,8 +333,8 @@ static inline size_t get_rating(struct font_path_info *info, struct dstr *cmp)
 	size_t num = 0;
 
 	do {
-		char ch1 = (char)toupper(*src);
-		char ch2 = (char)toupper(*dst);
+		unsigned char ch1 = (unsigned char)toupper((unsigned char)*src);
+		unsigned char ch2 = (unsigned char)toupper((unsigned char)*dst);
 
 		if (ch1 != ch2)
 			break;

@@ -382,8 +382,11 @@ EXPORT const char *obs_get_version_string(void);
  * and safely copies argv/argc from main(). Subsequent calls do nothing.
  *
  * @param  argc  The count of command line arguments, from main()
- * @param  argv  An array of command line arguments, copied from main() and ends
+ * @param  argv  An array of command line arguments in UTF-8, copied from main() and ends
  *               with NULL.
+ * 
+ *		 On Windows this requires that active code page is UTF-8.
+ *		 For example as a declaration in obs.manifest.
  */
 EXPORT void obs_set_cmdline_args(int argc, const char *const *argv);
 
