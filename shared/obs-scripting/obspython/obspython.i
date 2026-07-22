@@ -64,6 +64,19 @@ static inline void wrap_blog(int log_level, const char *message)
  * %newobject obs_module_get_config_path; */
 %typemap(newfree) char * "bfree($1);";
 
+%newobject obs_frontend_get_current_scene_collection;
+%newobject obs_frontend_get_current_profile;
+%newobject obs_frontend_get_current_record_output_path;
+%newobject obs_frontend_get_last_recording;
+%newobject obs_frontend_get_last_screenshot;
+%newobject obs_frontend_get_last_replay;
+%newobject os_quick_read_utf8_file;
+%newobject os_get_config_path_ptr;
+%newobject os_get_program_data_path_ptr;
+%newobject os_get_abs_path_ptr;
+%newobject os_generate_formatted_filename;
+%newobject os_generate_uuid;
+
 %ignore blog;
 %ignore blogva;
 %ignore bcrash;
