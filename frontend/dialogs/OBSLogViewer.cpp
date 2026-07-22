@@ -8,7 +8,25 @@
 #include <QFile>
 #include <QScrollBar>
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 #include "moc_OBSLogViewer.cpp"
+
+/**
+ * Checks if the current platform supports the "stay on top" feature for windows.
+ *
+ * @return bool True if the current platform supports the "stay on top" feature, false otherwise.
+ */
+static bool has_stay_on_top_support()
+{
+#ifdef ENABLE_WAYLAND
+	return obs_get_nix_platform() != OBS_NIX_PLATFORM_WAYLAND;
+#else
+	return true;
+#endif
+}
 
 OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLogViewer)
 {
@@ -18,8 +36,19 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLog
 	ui->setupUi(this);
 
 	bool showLogViewerOnStartup = config_get_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup");
+	bool alwaysOnTop = config_get_bool(App()->GetUserConfig(), "LogViewer", "OnTop");
 
 	ui->showStartup->setChecked(showLogViewerOnStartup);
+
+	if (has_stay_on_top_support()) {
+		ui->onTop->setChecked(alwaysOnTop);
+	} else {
+		ui->onTop->setEnabled(false);
+		ui->onTop->setVisible(false);
+	}
+
+	if (alwaysOnTop)
+		setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
 	const char *geom = config_get_string(App()->GetUserConfig(), "LogViewer", "geometry");
 
@@ -41,6 +70,18 @@ OBSLogViewer::~OBSLogViewer()
 void OBSLogViewer::on_showStartup_clicked(bool checked)
 {
 	config_set_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup", checked);
+}
+
+void OBSLogViewer::on_onTop_clicked(bool checked)
+{
+	config_set_bool(App()->GetUserConfig(), "LogViewer", "OnTop", checked);
+
+	if (checked)
+		setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+	else
+		setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
+
+	show();
 }
 
 void OBSLogViewer::InitLog()
