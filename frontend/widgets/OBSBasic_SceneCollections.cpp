@@ -229,7 +229,7 @@ void OBSBasic::SetupRenameSceneCollection(const std::string &collectionName)
 	obs_data_save_json_safe(collection, newCollection.getFileName().c_str(), "tmp", nullptr);
 
 	cleanBackupCollision(newCollection);
-	ActivateSceneCollection(newCollection);
+	ActivateSceneCollection(newCollection, false);
 	RemoveSceneCollection(currentCollection);
 
 	blog(LOG_INFO, "Renamed scene collection '%s' to '%s' (%s)", currentCollection.getName().c_str(),
@@ -767,7 +767,7 @@ void OBSBasic::on_actionRemigrateSceneCollection_triggered()
 
 // MARK: - Scene Collection Management Helper Functions
 
-void OBSBasic::ActivateSceneCollection(SceneCollection &collection)
+void OBSBasic::ActivateSceneCollection(SceneCollection &collection, bool loadCollection)
 {
 	const std::string currentCollectionName{config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
 
@@ -780,7 +780,9 @@ void OBSBasic::ActivateSceneCollection(SceneCollection &collection)
 	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection", collection.getName().c_str());
 	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", collection.getFileName().c_str());
 
-	Load(collection);
+	if (loadCollection) {
+		Load(collection);
+	}
 
 	RefreshSceneCollections();
 
