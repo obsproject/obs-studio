@@ -28,6 +28,7 @@ target_sources(
     scroll-filter.c
     sdr-on-hdr-filter.c
     sharpness-filter.c
+    white-balance-filter.c
 )
 
 target_link_libraries(obs-filters PRIVATE OBS::libobs $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>)
