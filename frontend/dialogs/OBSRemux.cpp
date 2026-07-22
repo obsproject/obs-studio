@@ -103,8 +103,9 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 
 bool OBSRemux::stopRemux()
 {
-	if (!worker->isWorking)
+	if (!worker->isWorking) {
 		return true;
+	}
 
 	// By locking the worker thread's mutex, we ensure that its
 	// update poll will be blocked as long as we're in here with
@@ -190,8 +191,9 @@ void OBSRemux::dropEvent(QDropEvent *ev)
 
 void OBSRemux::dragEnterEvent(QDragEnterEvent *ev)
 {
-	if (ev->mimeData()->hasUrls() && !worker->isWorking)
+	if (ev->mimeData()->hasUrls() && !worker->isWorking) {
 		ev->accept();
+	}
 }
 
 void OBSRemux::beginRemux()
@@ -208,15 +210,18 @@ void OBSRemux::beginRemux()
 		QString message = QTStr("Remux.FileExists");
 		message += "\n\n";
 
-		for (QFileInfo fileInfo : overwriteFiles)
+		for (QFileInfo fileInfo : overwriteFiles) {
 			message += fileInfo.canonicalFilePath() + "\n";
+		}
 
-		if (OBSMessageBox::question(this, QTStr("Remux.FileExistsTitle"), message) != QMessageBox::Yes)
+		if (OBSMessageBox::question(this, QTStr("Remux.FileExistsTitle"), message) != QMessageBox::Yes) {
 			proceedWithRemux = false;
+		}
 	}
 
-	if (!proceedWithRemux)
+	if (!proceedWithRemux) {
 		return;
+	}
 
 	// Set all jobs to "pending" first.
 	queueModel->beginProcessing();
@@ -264,16 +269,18 @@ void OBSRemux::remuxNextEntry()
 
 void OBSRemux::closeEvent(QCloseEvent *event)
 {
-	if (!stopRemux())
+	if (!stopRemux()) {
 		event->ignore();
-	else
+	} else {
 		QDialog::closeEvent(event);
+	}
 }
 
 void OBSRemux::reject()
 {
-	if (!stopRemux())
+	if (!stopRemux()) {
 		return;
+	}
 
 	QDialog::reject();
 }

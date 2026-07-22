@@ -32,14 +32,15 @@ void gs_vertex_shader::GetBuffersExpected(const std::vector<D3D11_INPUT_ELEMENT_
 {
 	for (size_t i = 0; i < inputs.size(); i++) {
 		const D3D11_INPUT_ELEMENT_DESC &input = inputs[i];
-		if (strcmp(input.SemanticName, "NORMAL") == 0)
+		if (strcmp(input.SemanticName, "NORMAL") == 0) {
 			hasNormals = true;
-		else if (strcmp(input.SemanticName, "TANGENT") == 0)
+		} else if (strcmp(input.SemanticName, "TANGENT") == 0) {
 			hasTangents = true;
-		else if (strcmp(input.SemanticName, "COLOR") == 0)
+		} else if (strcmp(input.SemanticName, "COLOR") == 0) {
 			hasColors = true;
-		else if (strcmp(input.SemanticName, "TEXCOORD") == 0)
+		} else if (strcmp(input.SemanticName, "TEXCOORD") == 0) {
 			nTexUnits++;
+		}
 	}
 }
 
@@ -68,15 +69,17 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file, const 
 	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
 
 	hr = device->device->CreateVertexShader(data.data(), data.size(), NULL, shader.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create vertex shader", hr);
+	}
 
 	const UINT layoutSize = (UINT)layoutData.size();
 	if (layoutSize > 0) {
 		hr = device->device->CreateInputLayout(layoutData.data(), (UINT)layoutSize, data.data(), data.size(),
 						       layout.Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to create input layout", hr);
+		}
 	}
 
 	viewProj = gs_shader_get_param_by_name(this, "ViewProj");
@@ -103,8 +106,9 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file, const ch
 	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
 
 	hr = device->device->CreatePixelShader(data.data(), data.size(), NULL, shader.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create pixel shader", hr);
+	}
 }
 
 /*
@@ -163,16 +167,18 @@ void gs_shader::BuildConstantBuffer()
 			continue;
 		}
 
-		if (param.arrayCount)
+		if (param.arrayCount) {
 			size *= param.arrayCount;
+		}
 
 		/* checks to see if this constant needs to start at a new
 		 * register */
 		if (size && (constantSize & 15) != 0) {
 			size_t alignMax = (constantSize + 15) & ~15;
 
-			if ((size + constantSize) > alignMax)
+			if ((size + constantSize) > alignMax) {
 				constantSize = alignMax;
+			}
 		}
 
 		param.pos = constantSize;
@@ -190,12 +196,14 @@ void gs_shader::BuildConstantBuffer()
 		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 		hr = device->device->CreateBuffer(&bd, NULL, constants.Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to create constant buffer", hr);
+		}
 	}
 
-	for (size_t i = 0; i < params.size(); i++)
+	for (size_t i = 0; i < params.size(); i++) {
 		gs_shader_set_default(&params[i]);
+	}
 }
 
 static uint64_t fnv1a_hash(const char *str, size_t len)
@@ -218,8 +226,9 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 	bool is_cached = false;
 	char hashstr[20];
 
-	if (!shaderString)
+	if (!shaderString) {
 		throw "No shader string specified";
+	}
 
 	size_t shaderStrLen = strlen(shaderString);
 	uint64_t hash = fnv1a_hash(shaderString, shaderStrLen);
@@ -233,8 +242,9 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 	std::fstream cacheFile;
 	cacheFile.exceptions(std::fstream::badbit | std::fstream::eofbit);
 
-	if (std::filesystem::exists(cachePath) && !std::filesystem::is_empty(cachePath))
+	if (std::filesystem::exists(cachePath) && !std::filesystem::is_empty(cachePath)) {
 		cacheFile.open(cachePath, std::ios::in | std::ios::binary | std::ios::ate);
+	}
 
 	if (cacheFile.is_open()) {
 		uint64_t checksum;
@@ -242,8 +252,9 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 		try {
 			std::streampos len = cacheFile.tellg();
 			// Not enough data for checksum + shader
-			if (len <= sizeof(checksum))
+			if (len <= sizeof(checksum)) {
 				throw std::length_error("File truncated");
+			}
 
 			cacheFile.seekg(0, std::ios::beg);
 
@@ -253,8 +264,9 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 			uint64_t calculated_checksum = fnv1a_hash((char *)(*shader)->GetBufferPointer(), len);
 
 			cacheFile.read((char *)&checksum, sizeof(checksum));
-			if (calculated_checksum != checksum)
+			if (calculated_checksum != checksum) {
 				throw std::exception("Checksum mismatch");
+			}
 
 			is_cached = true;
 		} catch (const std::exception &e) {
@@ -269,10 +281,11 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 		hr = D3DCompile(shaderString, shaderStrLen, file, NULL, NULL, "main", target,
 				D3D10_SHADER_OPTIMIZATION_LEVEL3, 0, shader, errorsBlob.Assign());
 		if (FAILED(hr)) {
-			if (errorsBlob != NULL && errorsBlob->GetBufferSize())
+			if (errorsBlob != NULL && errorsBlob->GetBufferSize()) {
 				throw ShaderError(errorsBlob, hr);
-			else
+			} else {
 				throw HRError("Failed to compile shader", hr);
+			}
 		}
 
 		cacheFile.open(cachePath, std::ios::out | std::ios::binary);
@@ -306,8 +319,9 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 inline void gs_shader::UpdateParam(std::vector<uint8_t> &constData, gs_shader_param &param, bool &upload)
 {
 	if (param.type != GS_SHADER_PARAM_TEXTURE) {
-		if (!param.curValue.size())
+		if (!param.curValue.size()) {
 			throw "Not all shader parameters were set";
+		}
 
 		/* padding in case the constant needs to start at a new
 		 * register */
@@ -327,10 +341,11 @@ inline void gs_shader::UpdateParam(std::vector<uint8_t> &constData, gs_shader_pa
 	} else if (param.curValue.size() == sizeof(struct gs_shader_texture)) {
 		struct gs_shader_texture shader_tex;
 		memcpy(&shader_tex, param.curValue.data(), sizeof(shader_tex));
-		if (shader_tex.srgb)
+		if (shader_tex.srgb) {
 			device_load_texture_srgb(device, shader_tex.tex, param.textureID);
-		else
+		} else {
 			device_load_texture(device, shader_tex.tex, param.textureID);
+		}
 
 		if (param.nextSampler) {
 			ID3D11SamplerState *state = param.nextSampler->state;
@@ -347,19 +362,22 @@ void gs_shader::UploadParams()
 
 	constData.reserve(constantSize);
 
-	for (size_t i = 0; i < params.size(); i++)
+	for (size_t i = 0; i < params.size(); i++) {
 		UpdateParam(constData, params[i], upload);
+	}
 
-	if (constData.size() != constantSize)
+	if (constData.size() != constantSize) {
 		throw "Invalid constant data size given to shader";
+	}
 
 	if (upload) {
 		D3D11_MAPPED_SUBRESOURCE map;
 		HRESULT hr;
 
 		hr = device->context->Map(constants, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Could not lock constant buffer", hr);
+		}
 
 		memcpy(map.pData, constData.data(), constData.size());
 		device->context->Unmap(constants, 0);
@@ -368,8 +386,9 @@ void gs_shader::UploadParams()
 
 void gs_shader_destroy(gs_shader_t *shader)
 {
-	if (shader && shader->device->lastVertexShader == shader)
+	if (shader && shader->device->lastVertexShader == shader) {
 		shader->device->lastVertexShader = nullptr;
+	}
 	delete shader;
 }
 
@@ -387,8 +406,9 @@ gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
 {
 	for (size_t i = 0; i < shader->params.size(); i++) {
 		gs_shader_param &param = shader->params[i];
-		if (strcmp(param.name.c_str(), name) == 0)
+		if (strcmp(param.name.c_str(), name) == 0) {
 			return &param;
+		}
 	}
 
 	return NULL;
@@ -396,24 +416,27 @@ gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
 
 gs_sparam_t *gs_shader_get_viewproj_matrix(const gs_shader_t *shader)
 {
-	if (shader->type != GS_SHADER_VERTEX)
+	if (shader->type != GS_SHADER_VERTEX) {
 		return NULL;
+	}
 
 	return static_cast<const gs_vertex_shader *>(shader)->viewProj;
 }
 
 gs_sparam_t *gs_shader_get_world_matrix(const gs_shader_t *shader)
 {
-	if (shader->type != GS_SHADER_VERTEX)
+	if (shader->type != GS_SHADER_VERTEX) {
 		return NULL;
+	}
 
 	return static_cast<const gs_vertex_shader *>(shader)->world;
 }
 
 void gs_shader_get_param_info(const gs_sparam_t *param, struct gs_shader_param_info *info)
 {
-	if (!param)
+	if (!param) {
 		return;
+	}
 
 	info->name = param->name.c_str();
 	info->type = param->type;
@@ -422,12 +445,14 @@ void gs_shader_get_param_info(const gs_sparam_t *param, struct gs_shader_param_i
 static inline void shader_setval_inline(gs_shader_param *param, const void *data, size_t size)
 {
 	assert(param);
-	if (!param)
+	if (!param) {
 		return;
+	}
 
 	bool size_changed = param->curValue.size() != size;
-	if (size_changed)
+	if (size_changed) {
 		param->curValue.resize(size);
+	}
 
 	if (size_changed || memcmp(param->curValue.data(), data, size) != 0) {
 		memcpy(param->curValue.data(), data, size);
@@ -490,8 +515,9 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 
 void gs_shader_set_default(gs_sparam_t *param)
 {
-	if (param->defaultValue.size())
+	if (param->defaultValue.size()) {
 		shader_setval_inline(param, param->defaultValue.data(), param->defaultValue.size());
+	}
 }
 
 void gs_shader_set_next_sampler(gs_sparam_t *param, gs_samplerstate_t *sampler)

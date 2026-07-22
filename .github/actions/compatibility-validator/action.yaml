@@ -55,7 +55,7 @@ runs:
         echo ::endgroup::
 
     - name: Annotate Schema Validation Errors 🏷️
-      uses: yuzutech/annotations-action@0e061a6e3ac848299310b6429b60d67cafd4e7f8
+      uses: yuzutech/annotations-action@00b2d488bcba3bd01014dc073d276ef4a45d5c6c # v0.6.0
       if: failure()
       with:
         repo-token: ${{ inputs.repositorySecret }}

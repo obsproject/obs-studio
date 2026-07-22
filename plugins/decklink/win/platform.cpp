@@ -29,8 +29,9 @@ IDeckLinkVideoConversion *CreateVideoConversionInstance(void)
 
 bool DeckLinkStringToStdString(decklink_string_t input, std::string &output)
 {
-	if (input == nullptr)
+	if (input == nullptr) {
 		return false;
+	}
 
 	char *out = _com_util::ConvertBSTRToString(input);
 	output = std::string(out);

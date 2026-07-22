@@ -324,14 +324,14 @@ void CrashHandler::handleExistingCrashLogUpload()
 	}
 }
 
-void CrashHandler::crashLogUploadResultHandler(const QString &uploadResult, const QString &error)
+void CrashHandler::crashLogUploadResultHandler(const std::string &uploadResult, const std::string &error)
 {
-	if (uploadResult.isEmpty()) {
-		emit crashLogUploadFailed(error);
+	if (uploadResult.empty()) {
+		emit crashLogUploadFailed(QString::fromStdString(error));
 		return;
 	}
 
-	json uploadResultData = json::parse(uploadResult.toStdString());
+	json uploadResultData = json::parse(uploadResult);
 
 	try {
 		std::string crashLogUrl = uploadResultData["url"];

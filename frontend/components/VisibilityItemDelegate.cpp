@@ -14,13 +14,15 @@ void VisibilityItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem
 
 	QObject *parentObj = parent();
 	QListWidget *list = qobject_cast<QListWidget *>(parentObj);
-	if (!list)
+	if (!list) {
 		return;
+	}
 
 	QListWidgetItem *item = list->item(index.row());
 	VisibilityItemWidget *widget = qobject_cast<VisibilityItemWidget *>(list->itemWidget(item));
-	if (!widget)
+	if (!widget) {
 		return;
+	}
 
 	bool selected = option.state.testFlag(QStyle::State_Selected);
 	bool active = option.state.testFlag(QStyle::State_Active);
@@ -40,10 +42,11 @@ void VisibilityItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem
 
 	QPalette::ColorRole role;
 
-	if (selected && active)
+	if (selected && active) {
 		role = highlightRole;
-	else
+	} else {
 		role = QPalette::WindowText;
+	}
 
 	widget->SetColor(palette.color(group, role), active, selected);
 }
@@ -51,8 +54,9 @@ void VisibilityItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem
 bool VisibilityItemDelegate::eventFilter(QObject *object, QEvent *event)
 {
 	QWidget *editor = qobject_cast<QWidget *>(object);
-	if (!editor)
+	if (!editor) {
 		return false;
+	}
 
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);

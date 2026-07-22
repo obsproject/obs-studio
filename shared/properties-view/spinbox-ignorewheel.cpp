@@ -7,8 +7,9 @@ SpinBoxIgnoreScroll::SpinBoxIgnoreScroll(QWidget *parent) : QSpinBox(parent)
 
 void SpinBoxIgnoreScroll::wheelEvent(QWheelEvent *event)
 {
-	if (!hasFocus())
+	if (!hasFocus()) {
 		event->ignore();
-	else
+	} else {
 		QSpinBox::wheelEvent(event);
+	}
 }

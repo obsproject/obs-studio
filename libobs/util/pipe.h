@@ -41,8 +41,7 @@ EXPORT void os_process_args_add_arg(struct os_process_args *args, const char *ar
 #ifndef _MSC_VER
 __attribute__((__format__(__printf__, 2, 3)))
 #endif
-EXPORT void
-os_process_args_add_argf(struct os_process_args *args, const char *format, ...);
+EXPORT void os_process_args_add_argf(struct os_process_args *args, const char *format, ...);
 EXPORT char **os_process_args_get_argv(const struct os_process_args *args);
 EXPORT size_t os_process_args_get_argc(struct os_process_args *args);
 EXPORT void os_process_args_destroy(struct os_process_args *args);

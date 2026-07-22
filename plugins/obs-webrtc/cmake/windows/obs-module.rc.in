@@ -6,7 +6,7 @@ BEGIN
     BLOCK "040904B0"
     BEGIN
       VALUE "CompanyName", "${OBS_COMPANY_NAME}"
-      VALUE "FileDescription", "OBS output module"
+      VALUE "FileDescription", "OBS WebRTC module"
       VALUE "FileVersion", "${OBS_VERSION_CANONICAL}"
       VALUE "ProductName", "${OBS_PRODUCT_NAME}"
       VALUE "ProductVersion", "${OBS_VERSION_CANONICAL}"

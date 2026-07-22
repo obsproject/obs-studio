@@ -4,7 +4,7 @@ log_level = "trace"
 [env]
 # On CI these should be in %PATH%
 sevenzip_path = "7z"
-makensis_path = "makensis"
+makensis_path = "C:/Program Files (x86)/NSIS/makensis.exe"
 pandoc_path = "pandoc"
 pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
 

@@ -538,8 +538,9 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 	RemoveProfile(currentProfile);
 
 #ifdef YOUTUBE_ENABLED
-	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock) {
 		NewYouTubeAppDock();
+	}
 #endif
 
 	blog(LOG_INFO, "Switched to profile '%s' (%s)", newProfile.name.c_str(), newProfile.directoryName.c_str());
@@ -710,8 +711,9 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 
 	Auth::Load();
 #ifdef YOUTUBE_ENABLED
-	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
+	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock) {
 		NewYouTubeAppDock();
+	}
 #endif
 
 	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
@@ -802,27 +804,31 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	const char *id;
 
 	while (obs_enum_encoder_types(idx++, &id)) {
-		if (strcmp(id, "h264_texture_amf") == 0)
+		if (strcmp(id, "h264_texture_amf") == 0) {
 			amd_supported = true;
-		else if (strcmp(id, "obs_qsv11") == 0)
+		} else if (strcmp(id, "obs_qsv11") == 0) {
 			qsv_supported = true;
-		else if (strcmp(id, "obs_qsv11_av1") == 0)
+		} else if (strcmp(id, "obs_qsv11_av1") == 0) {
 			qsv_av1_supported = true;
-		else if (strcmp(id, "ffmpeg_nvenc") == 0)
+		} else if (strcmp(id, "ffmpeg_nvenc") == 0) {
 			nve_supported = true;
+		}
 #ifdef ENABLE_HEVC
-		else if (strcmp(id, "h265_texture_amf") == 0)
+		else if (strcmp(id, "h265_texture_amf") == 0) {
 			amd_hevc_supported = true;
-		else if (strcmp(id, "ffmpeg_hevc_nvenc") == 0)
+		} else if (strcmp(id, "ffmpeg_hevc_nvenc") == 0) {
 			nve_hevc_supported = true;
+		}
 #endif
-		else if (strcmp(id, "av1_texture_amf") == 0)
+		else if (strcmp(id, "av1_texture_amf") == 0) {
 			amd_av1_supported = true;
-		else if (strcmp(id, "com.apple.videotoolbox.videoencoder.ave.avc") == 0)
+		} else if (strcmp(id, "com.apple.videotoolbox.videoencoder.ave.avc") == 0) {
 			apple_supported = true;
+		}
 #ifdef ENABLE_HEVC
-		else if (strcmp(id, "com.apple.videotoolbox.videoencoder.ave.hevc") == 0)
+		else if (strcmp(id, "com.apple.videotoolbox.videoencoder.ave.hevc") == 0) {
 			apple_hevc_supported = true;
+		}
 #endif
 	}
 
@@ -896,10 +902,12 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 		return true;
 	};
 
-	if (!CheckEncoder(curStreamEncoder))
+	if (!CheckEncoder(curStreamEncoder)) {
 		config_set_string(activeConfiguration, "SimpleOutput", "StreamEncoder", curStreamEncoder);
-	if (!CheckEncoder(curRecEncoder))
+	}
+	if (!CheckEncoder(curRecEncoder)) {
 		config_set_string(activeConfiguration, "SimpleOutput", "RecEncoder", curRecEncoder);
+	}
 	if (changed) {
 		activeConfiguration.SaveSafe("tmp");
 	}

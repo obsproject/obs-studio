@@ -11,7 +11,7 @@ class WhatsNewInfoThread : public QThread {
 	virtual void run() override;
 
 signals:
-	void Result(const QString &text);
+	void Result(const std::string &text);
 
 public:
 	inline WhatsNewInfoThread() {}

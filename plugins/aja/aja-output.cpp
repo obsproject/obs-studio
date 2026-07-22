@@ -139,10 +139,12 @@ AJAOutput::AJAOutput(CNTV2Card *card, const std::string &cardID, const std::stri
 
 AJAOutput::~AJAOutput()
 {
-	if (mVideoQueue)
+	if (mVideoQueue) {
 		mVideoQueue.reset();
-	if (mAudioQueue)
+	}
+	if (mAudioQueue) {
 		mAudioQueue.reset();
+	}
 }
 
 CNTV2Card *AJAOutput::GetCard()
@@ -230,10 +232,12 @@ void AJAOutput::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf, NTV2
 {
 	NTV2VideoFormat vid_fmt = vf;
 	NTV2PixelFormat pix_fmt = pf;
-	if (vid_fmt == NTV2_FORMAT_UNKNOWN)
+	if (vid_fmt == NTV2_FORMAT_UNKNOWN) {
 		vid_fmt = NTV2_FORMAT_720p_5994;
-	if (pix_fmt == NTV2_FBF_INVALID)
+	}
+	if (pix_fmt == NTV2_FBF_INVALID) {
 		pix_fmt = kDefaultAJAPixelFormat;
+	}
 
 	NTV2FormatDesc fd(vid_fmt, pix_fmt, NTV2_VANCMODE_OFF);
 	auto bufSize = fd.GetTotalRasterBytes();
@@ -334,8 +338,9 @@ void AJAOutput::DMAAudioFromQueue(NTV2AudioSystem audioSys, uint32_t channels, u
 	AudioFrames &af = mAudioQueue->front();
 	size_t sizeLeft = af.size - af.offset;
 
-	if (!mFirstAudioTS)
+	if (!mFirstAudioTS) {
 		mFirstAudioTS = af.frames.timestamp;
+	}
 	mLastAudioTS = af.frames.timestamp;
 
 	if (sizeLeft == 0) {
@@ -413,8 +418,9 @@ void AJAOutput::DMAVideoFromQueue()
 	auto &vf = mVideoQueue->front();
 	auto data = vf.frame.data[0];
 
-	if (!mFirstVideoTS)
+	if (!mFirstVideoTS) {
 		mFirstVideoTS = vf.frame.timestamp;
+	}
 	mLastVideoTS = vf.frame.timestamp;
 
 	mVideoDelay = (((int64_t)mWriteCardFrame + (int64_t)mNumCardFrames - (int64_t)mPlayCardFrame) %
@@ -436,18 +442,21 @@ void AJAOutput::DMAVideoFromQueue()
 	if (writeFrame) {
 		// find the next buffer
 		uint32_t writeCardFrame = mWriteCardFrame + 1;
-		if (writeCardFrame > mLastCardFrame)
+		if (writeCardFrame > mLastCardFrame) {
 			writeCardFrame = mFirstCardFrame;
+		}
 
 		// use the next buffer if available
-		if (writeCardFrame != mPlayCardFrame)
+		if (writeCardFrame != mPlayCardFrame) {
 			mWriteCardFrame = writeCardFrame;
+		}
 
 		mVideoWriteFrames++;
 
 		auto result = mCard->DMAWriteFrame(mWriteCardFrame, reinterpret_cast<ULWord *>(data), (ULWord)vf.size);
-		if (!result)
+		if (!result) {
 			blog(LOG_DEBUG, "AJAOutput::DMAVideoFromQueue: Failed to write video frame!");
+		}
 	}
 
 	if (freeFrame) {
@@ -502,8 +511,9 @@ uint32_t AJAOutput::get_card_play_count()
 			mCard->GetInterruptCount(interrupt, intCount);
 			mCard->GetOutputFieldID(channel, fieldID);
 		}
-		if (fieldID == NTV2_FIELD1)
+		if (fieldID == NTV2_FIELD1) {
 			intCount--;
+		}
 		frameCount = intCount / 2;
 	}
 
@@ -641,8 +651,9 @@ void AJAOutput::OutputThread(AJAThread *thread, void *ctx)
 
 			if (ajaOutput->mPlayCardFrame != ajaOutput->mWriteCardFrame) {
 				uint32_t playCardNext = ajaOutput->mPlayCardFrame + 1;
-				if (playCardNext > ajaOutput->mLastCardFrame)
+				if (playCardNext > ajaOutput->mLastCardFrame) {
 					playCardNext = ajaOutput->mFirstCardFrame;
+				}
 
 				if (playCardNext != ajaOutput->mWriteCardFrame) {
 					ajaOutput->mPlayCardNext = playCardNext;
@@ -765,12 +776,14 @@ void populate_output_device_list(obs_property_t *list)
 	auto &cardManager = aja::CardManager::Instance();
 	cardManager.EnumerateCards();
 	for (auto &iter : cardManager.GetCardEntries()) {
-		if (!iter.second)
+		if (!iter.second) {
 			continue;
+		}
 
 		CNTV2Card *card = iter.second->GetCard();
-		if (!card)
+		if (!card) {
 			continue;
+		}
 
 		NTV2DeviceID deviceID = card->GetDeviceID();
 
@@ -793,8 +806,9 @@ bool aja_output_device_changed(void *data, obs_properties_t *props, obs_property
 	populate_output_device_list(list);
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return false;
+	}
 
 	const char *outputID = obs_data_get_string(settings, kUIPropAJAOutputID.id);
 	auto &cardManager = aja::CardManager::Instance();
@@ -847,8 +861,9 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list, obs_
 	blog(LOG_DEBUG, "AJA Output Dest Changed");
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return false;
+	}
 
 	auto &cardManager = aja::CardManager::Instance();
 	auto cardEntry = cardManager.GetCardEntry(cardID);
@@ -921,8 +936,9 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 	blog(LOG_INFO, "Creating AJA Output...");
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID || !cardID[0])
+	if (!cardID || !cardID[0]) {
 		return nullptr;
+	}
 
 	const char *outputID = obs_data_get_string(settings, kUIPropAJAOutputID.id);
 
@@ -1138,8 +1154,9 @@ static void aja_output_stop(void *data, uint64_t ts)
 static void aja_output_raw_video(void *data, struct video_data *frame)
 {
 	auto ajaOutput = (AJAOutput *)data;
-	if (!ajaOutput)
+	if (!ajaOutput) {
 		return;
+	}
 
 	auto outputProps = ajaOutput->GetOutputProps();
 	auto rasterBytes = outputProps.FormatDesc().GetTotalRasterBytes();
@@ -1149,8 +1166,9 @@ static void aja_output_raw_video(void *data, struct video_data *frame)
 static void aja_output_raw_audio(void *data, struct audio_data *frames)
 {
 	auto ajaOutput = (AJAOutput *)data;
-	if (!ajaOutput)
+	if (!ajaOutput) {
 		return;
+	}
 
 	auto outputProps = ajaOutput->GetOutputProps();
 	auto audioSize = outputProps.AudioSize();

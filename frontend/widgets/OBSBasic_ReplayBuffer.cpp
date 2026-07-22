@@ -30,10 +30,11 @@
 
 void OBSBasic::ReplayBufferActionTriggered()
 {
-	if (outputHandler->ReplayBufferActive())
+	if (outputHandler->ReplayBufferActive()) {
 		StopReplayBuffer();
-	else
+	} else {
 		StartReplayBuffer();
+	}
 };
 
 void OBSBasic::ShowReplayBufferPauseWarning()
@@ -66,15 +67,19 @@ void OBSBasic::ShowReplayBufferPauseWarning()
 
 void OBSBasic::StartReplayBuffer()
 {
-	if (!outputHandler || !outputHandler->replayBuffer)
+	if (!outputHandler || !outputHandler->replayBuffer) {
 		return;
-	if (outputHandler->ReplayBufferActive())
+	}
+	if (outputHandler->ReplayBufferActive()) {
 		return;
-	if (disableOutputsRef)
+	}
+	if (disableOutputsRef) {
 		return;
+	}
 
-	if (!UIValidation::NoSourcesConfirmation(this))
+	if (!UIValidation::NoSourcesConfirmation(this)) {
 		return;
+	}
 
 	if (!OutputPathValid()) {
 		OutputPathInvalidMessage();
@@ -97,13 +102,15 @@ void OBSBasic::StartReplayBuffer()
 
 void OBSBasic::ReplayBufferStopping()
 {
-	if (!outputHandler || !outputHandler->replayBuffer)
+	if (!outputHandler || !outputHandler->replayBuffer) {
 		return;
+	}
 
 	emit ReplayBufStopping();
 
-	if (sysTrayReplayBuffer)
+	if (sysTrayReplayBuffer) {
 		sysTrayReplayBuffer->setText(QTStr("Basic.Main.StoppingReplayBuffer"));
+	}
 
 	replayBufferStopping = true;
 	OnEvent(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STOPPING);
@@ -111,26 +118,30 @@ void OBSBasic::ReplayBufferStopping()
 
 void OBSBasic::StopReplayBuffer()
 {
-	if (!outputHandler || !outputHandler->replayBuffer)
+	if (!outputHandler || !outputHandler->replayBuffer) {
 		return;
+	}
 
 	SaveProject();
 
-	if (outputHandler->ReplayBufferActive())
+	if (outputHandler->ReplayBufferActive()) {
 		outputHandler->StopReplayBuffer(replayBufferStopping);
+	}
 
 	OnDeactivate();
 }
 
 void OBSBasic::ReplayBufferStart()
 {
-	if (!outputHandler || !outputHandler->replayBuffer)
+	if (!outputHandler || !outputHandler->replayBuffer) {
 		return;
+	}
 
 	emit ReplayBufStarted();
 
-	if (sysTrayReplayBuffer)
+	if (sysTrayReplayBuffer) {
 		sysTrayReplayBuffer->setText(QTStr("Basic.Main.StopReplayBuffer"));
+	}
 
 	replayBufferStopping = false;
 	OnEvent(OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTED);
@@ -142,10 +153,12 @@ void OBSBasic::ReplayBufferStart()
 
 void OBSBasic::ReplayBufferSave()
 {
-	if (!outputHandler || !outputHandler->replayBuffer)
+	if (!outputHandler || !outputHandler->replayBuffer) {
 		return;
-	if (!outputHandler->ReplayBufferActive())
+	}
+	if (!outputHandler->ReplayBufferActive()) {
 		return;
+	}
 
 	calldata_t cd = {0};
 	proc_handler_t *ph = obs_output_get_proc_handler(outputHandler->replayBuffer);
@@ -155,10 +168,12 @@ void OBSBasic::ReplayBufferSave()
 
 void OBSBasic::ReplayBufferSaved()
 {
-	if (!outputHandler || !outputHandler->replayBuffer)
+	if (!outputHandler || !outputHandler->replayBuffer) {
 		return;
-	if (!outputHandler->ReplayBufferActive())
+	}
+	if (!outputHandler->ReplayBufferActive()) {
 		return;
+	}
 
 	calldata_t cd = {0};
 	proc_handler_t *ph = obs_output_get_proc_handler(outputHandler->replayBuffer);
@@ -176,13 +191,15 @@ void OBSBasic::ReplayBufferSaved()
 
 void OBSBasic::ReplayBufferStop(int code)
 {
-	if (!outputHandler || !outputHandler->replayBuffer)
+	if (!outputHandler || !outputHandler->replayBuffer) {
 		return;
+	}
 
 	emit ReplayBufStopped();
 
-	if (sysTrayReplayBuffer)
+	if (sysTrayReplayBuffer) {
 		sysTrayReplayBuffer->setText(QTStr("Basic.Main.StartReplayBuffer"));
+	}
 
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
@@ -212,7 +229,8 @@ void OBSBasic::ReplayBufferStop(int code)
 
 bool OBSBasic::ReplayBufferActive()
 {
-	if (!outputHandler)
+	if (!outputHandler) {
 		return false;
+	}
 	return outputHandler->ReplayBufferActive();
 }

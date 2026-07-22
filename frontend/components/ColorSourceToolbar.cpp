@@ -54,7 +54,7 @@ void ColorSourceToolbar::on_choose_clicked()
 		return;
 	}
 
-	obs_property_t *p = obs_properties_get(props.get(), "color");
+	obs_property_t *p = obs_properties_get(props, "color");
 	const char *desc = obs_property_description(p);
 
 	QColorDialog::ColorDialogOptions options;

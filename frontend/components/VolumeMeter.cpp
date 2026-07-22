@@ -364,7 +364,7 @@ VolumeMeter::~VolumeMeter()
 void VolumeMeter::obsSourceDestroyed(void *data, calldata_t *)
 {
 	VolumeMeter *self = static_cast<VolumeMeter *>(data);
-	QMetaObject::invokeMethod(self, "handleSourceDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(self, "onSourceDestroyed", Qt::QueuedConnection);
 }
 
 void VolumeMeter::setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],

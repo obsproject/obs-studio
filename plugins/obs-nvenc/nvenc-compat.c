@@ -299,8 +299,8 @@ struct obs_encoder_info compat_h264_nvenc_info = {
 	.id = "jim_nvenc",
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_DEPRECATED,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_DEPRECATED,
 	.get_name = h264_nvenc_get_name,
 	.create = h264_nvenc_create,
 	.destroy = fake_nvenc_destroy,
@@ -314,8 +314,8 @@ struct obs_encoder_info compat_hevc_nvenc_info = {
 	.id = "jim_hevc_nvenc",
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_DEPRECATED,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_DEPRECATED,
 	.get_name = hevc_nvenc_get_name,
 	.create = hevc_nvenc_create,
 	.destroy = fake_nvenc_destroy,
@@ -329,8 +329,8 @@ struct obs_encoder_info compat_av1_nvenc_info = {
 	.id = "jim_av1_nvenc",
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_DEPRECATED,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_DEPRECATED,
 	.get_name = av1_nvenc_get_name,
 	.create = av1_nvenc_create,
 	.destroy = fake_nvenc_destroy,
@@ -343,7 +343,8 @@ struct obs_encoder_info compat_h264_nvenc_soft_info = {
 	.id = "obs_nvenc_h264_cuda",
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_DEPRECATED,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_DEPRECATED,
 	.get_name = h264_nvenc_get_name,
 	.create = h264_nvenc_soft_create,
 	.destroy = fake_nvenc_destroy,
@@ -357,7 +358,8 @@ struct obs_encoder_info compat_hevc_nvenc_soft_info = {
 	.id = "obs_nvenc_hevc_cuda",
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_DEPRECATED,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_DEPRECATED,
 	.get_name = hevc_nvenc_get_name,
 	.create = hevc_nvenc_soft_create,
 	.destroy = fake_nvenc_destroy,
@@ -371,7 +373,8 @@ struct obs_encoder_info compat_av1_nvenc_soft_info = {
 	.id = "obs_nvenc_av1_cuda",
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_DEPRECATED,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_DEPRECATED,
 	.get_name = av1_nvenc_get_name,
 	.create = av1_nvenc_soft_create,
 	.destroy = fake_nvenc_destroy,

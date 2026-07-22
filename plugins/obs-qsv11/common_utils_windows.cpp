@@ -79,8 +79,9 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pm
 			MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 		}
 
-		if (deviceHandle == NULL || *deviceHandle == NULL)
+		if (deviceHandle == NULL || *deviceHandle == NULL) {
 			return MFX_ERR_DEVICE_FAILED;
+		}
 
 		// Provide device manager to VPL
 		sts = MFXVideoCORE_SetHandle(*pSession, DEVICE_MGR_TYPE, *deviceHandle);
@@ -136,8 +137,9 @@ double TimeDiffMsec(mfxTime tfinish, mfxTime tstart)
 {
 	static LARGE_INTEGER tFreq = {0};
 
-	if (!tFreq.QuadPart)
+	if (!tFreq.QuadPart) {
 		QueryPerformanceFrequency(&tFreq);
+	}
 
 	double freq = (double)tFreq.QuadPart;
 	return 1000.0 * ((double)tfinish.QuadPart - (double)tstart.QuadPart) / freq;
@@ -181,8 +183,9 @@ void check_adapters(struct adapter_info *adapters, size_t *adapter_count)
 	for (;;) {
 		char data[2048];
 		size_t len = os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
-		if (!len)
+		if (!len) {
 			break;
+		}
 
 		dstr_ncat(&caps_str, data, len);
 	}
@@ -207,8 +210,9 @@ void check_adapters(struct adapter_info *adapters, size_t *adapter_count)
 
 	config_adapter_count = config_num_sections(config);
 
-	if (config_adapter_count < *adapter_count)
+	if (config_adapter_count < *adapter_count) {
 		*adapter_count = config_adapter_count;
+	}
 
 	for (size_t i = 0; i < *adapter_count; i++) {
 		char section[16];

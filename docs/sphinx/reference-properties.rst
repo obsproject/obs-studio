@@ -259,7 +259,14 @@ Property Object Functions
 ---------------------
 
 .. function:: obs_property_t *obs_properties_add_button(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback)
-              obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback, void *priv)
+
+   Like :c:func:`obs_properties_add_button2`, except the value of the ``data`` argument in the callback is
+   determined by the caller of :c:func:`obs_property_button_clicked`, and as such unspecified by libobs.
+
+   .. deprecated:: 32.1
+   Use :c:func:`obs_properties_add_button2` instead.
+
+.. function:: obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback, void *priv)
 
    Adds a button property.  This property does not actually store any
    settings; it's used to implement a button in user interface if the
@@ -270,11 +277,7 @@ Property Object Functions
 
    :param    name:        Setting identifier string
    :param    text:        Localized name shown to user
-   :param    callback:    Callback to be executed when the button is pressed. Note that if the property
-                          is created with :c:func:`obs_properties_add_button` instead of
-                          :c:func:`obs_properties_add_button2`, the value of ``data`` is determined by
-                          the caller of :c:func:`obs_property_button_clicked`, and as such unspecified
-                          by libobs.
+   :param    callback:    Callback to be executed when the button is pressed
    :param    priv:        Pointer passed back as the `data` argument of the callback
    :return:               The property
 

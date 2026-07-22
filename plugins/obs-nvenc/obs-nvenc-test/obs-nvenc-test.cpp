@@ -137,8 +137,9 @@ struct NVML {
 
 	~NVML()
 	{
-		if (initialised && shutdown)
+		if (initialised && shutdown) {
 			shutdown();
+		}
 	}
 
 	bool Init()
@@ -213,8 +214,9 @@ struct CUDACtx {
 	bool Init(int adapter_idx)
 	{
 		CUdevice dev;
-		if (cu->cuDeviceGet(&dev, adapter_idx) != CUDA_SUCCESS)
+		if (cu->cuDeviceGet(&dev, adapter_idx) != CUDA_SUCCESS) {
 			return false;
+		}
 
 		return cu->cuCtxCreate(&ctx, 0, dev) == CUDA_SUCCESS;
 	}
@@ -305,8 +307,9 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 	CUDACtx cudaCtx;
 	NVSession nvSession;
 
-	if (!cudaCtx.Init(adapter_idx))
+	if (!cudaCtx.Init(adapter_idx)) {
 		return false;
+	}
 
 	device_info.pci_id = cudaCtx.GetPCIBusId();
 	device_info.cuda_uuid = cudaCtx.GetUUID();
@@ -333,18 +336,21 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 
 	auto res = nvSession.OpenSession(cudaCtx);
 	session_limit = session_limit || res == NV_ENC_ERR_INCOMPATIBLE_CLIENT_KEY;
-	if (res != NV_ENC_SUCCESS)
+	if (res != NV_ENC_SUCCESS) {
 		return false;
+	}
 
 	uint32_t guid_count = 0;
-	if (nv.nvEncGetEncodeGUIDCount(nvSession.ptr, &guid_count) != NV_ENC_SUCCESS)
+	if (nv.nvEncGetEncodeGUIDCount(nvSession.ptr, &guid_count) != NV_ENC_SUCCESS) {
 		return false;
+	}
 
 	vector<GUID> guids;
 	guids.resize(guid_count);
 	NVENCSTATUS stat = nv.nvEncGetEncodeGUIDs(nvSession.ptr, guids.data(), guid_count, &guid_count);
-	if (stat != NV_ENC_SUCCESS)
+	if (stat != NV_ENC_SUCCESS) {
 		return false;
+	}
 
 	NV_ENC_CAPS_PARAM param = {NV_ENC_CAPS_PARAM_VER};
 
@@ -365,8 +371,9 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 		for (const auto &[cap, name] : capabilities) {
 			int v;
 			param.capsToQuery = cap;
-			if (nv.nvEncGetEncodeCaps(nvSession.ptr, *guid, &param, &v) != NV_ENC_SUCCESS)
+			if (nv.nvEncGetEncodeCaps(nvSession.ptr, *guid, &param, &v) != NV_ENC_SUCCESS) {
 				continue;
+			}
 
 			device_info.caps[codec_name][name] = v;
 			caps[codec_name][name] = std::max(v, caps[codec_name][name]);
@@ -393,16 +400,19 @@ static bool get_adapter_caps(int adapter_idx, codec_caps_map &caps, device_info 
 bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 {
 	/* NVENC API init */
-	if (!init_nvenc())
+	if (!init_nvenc()) {
 		return false;
+	}
 
 	/* CUDA init */
-	if (!init_cuda())
+	if (!init_cuda()) {
 		return false;
+	}
 
 	NVML nvml;
-	if (!nvml.Init())
+	if (!nvml.Init()) {
 		return false;
+	}
 
 	/* --------------------------------------------------------- */
 	/* obtain adapter compatibility information                  */
@@ -447,8 +457,9 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 
 	device_infos.resize(cuda_devices);
 	for (int idx = 0; idx < cuda_devices; idx++) {
-		if (get_adapter_caps(idx, caps, device_infos[idx], nvml, session_limit))
+		if (get_adapter_caps(idx, caps, device_infos[idx], nvml, session_limit)) {
 			nvenc_devices++;
+		}
 	}
 
 	if (session_limit) {
@@ -470,11 +481,13 @@ bool nvenc_checks(codec_caps_map &caps, vector<device_info> &device_infos)
 	uint32_t latest_architecture = 0;
 	string_view architecture = "Unknown";
 
-	for (auto &info : device_infos)
+	for (auto &info : device_infos) {
 		latest_architecture = std::max(info.architecture, latest_architecture);
+	}
 
-	if (arch_to_name.count(latest_architecture))
+	if (arch_to_name.count(latest_architecture)) {
 		architecture = arch_to_name.at(latest_architecture);
+	}
 
 	printf("latest_architecture=%u\n"
 	       "latest_architecture_name=%s\n",
@@ -515,8 +528,9 @@ int check_thread()
 	for (size_t idx = 0; idx < device_infos.size(); idx++) {
 		const auto &info = device_infos[idx];
 		string_view architecture = "Unknown";
-		if (arch_to_name.count(info.architecture))
+		if (arch_to_name.count(info.architecture)) {
 			architecture = arch_to_name.at(info.architecture);
+		}
 
 		printf("\n[device.%zu]\n"
 		       "pci_id=%s\n"
@@ -554,8 +568,9 @@ int main(int, char **)
 	future<int> f = async(launch::async, check_thread);
 	future_status status = f.wait_for(2.5s);
 
-	if (status == future_status::timeout)
+	if (status == future_status::timeout) {
 		exit(1);
+	}
 
 	return f.get();
 }

@@ -26,8 +26,9 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
 		Json source = sources[i];
-		if (name == source["name"].string_value())
+		if (name == source["name"].string_value()) {
 			return true;
+		}
 	}
 
 	return false;
@@ -208,8 +209,9 @@ static Json::object translate_source(const Json &in, const Json &sources)
 
 		Json browser = Json::parse(browser_dec, err);
 
-		if (err != "")
+		if (err != "") {
 			return Json::object{};
+		}
 
 		Json::object obj = browser.object_items();
 
@@ -277,8 +279,9 @@ static void translate_sc(const Json &in, Json &out)
 	for (size_t i = 0; i < scenes.size(); i++) {
 		Json in_scene = scenes[i];
 
-		if (first_name.empty())
+		if (first_name.empty()) {
 			first_name = in_scene["name"].string_value();
+		}
 
 		Json::array items = Json::array{};
 
@@ -294,8 +297,9 @@ static void translate_sc(const Json &in, Json &out)
 
 			items.push_back(out_item);
 
-			if (out_source.find("preexist") == out_source.end())
+			if (out_source.find("preexist") == out_source.end()) {
 				out_sources.push_back(out_source);
+			}
 		}
 
 		out_sources.push_back(
@@ -341,12 +345,14 @@ static void create_data_item(Json::object &out, const string &line)
 {
 	size_t end_pos = line.find(':') - 1;
 
-	if (end_pos == string::npos)
+	if (end_pos == string::npos) {
 		return;
+	}
 
 	size_t start_pos = 0;
-	while (line[start_pos] == ' ')
+	while (line[start_pos] == ' ') {
 		start_pos++;
+	}
 
 	string name = line.substr(start_pos, end_pos - start_pos);
 	const char *c_name = name.c_str();
@@ -404,12 +410,14 @@ static Json::array create_sources(Json::object &out, string &line, string &src)
 	while (!line.empty() && line[l_len - 1] != '}') {
 		size_t end_pos = line.find(':');
 
-		if (end_pos == string::npos)
+		if (end_pos == string::npos) {
 			return Json::array{};
+		}
 
 		size_t start_pos = 0;
-		while (line[start_pos] == ' ')
+		while (line[start_pos] == ' ') {
 			start_pos++;
+		}
 
 		string name = line.substr(start_pos, end_pos - start_pos - 1);
 
@@ -423,8 +431,9 @@ static Json::array create_sources(Json::object &out, string &line, string &src)
 		l_len = line.size();
 	}
 
-	if (!out.empty())
+	if (!out.empty()) {
 		out["sources"] = res;
+	}
 
 	return res;
 }
@@ -433,12 +442,14 @@ static Json::object create_object(Json::object &out, string &line, string &src)
 {
 	size_t end_pos = line.find(':');
 
-	if (end_pos == string::npos)
+	if (end_pos == string::npos) {
 		return Json::object{};
+	}
 
 	size_t start_pos = 0;
-	while (line[start_pos] == ' ')
+	while (line[start_pos] == ' ') {
 		start_pos++;
+	}
 
 	string name = line.substr(start_pos, end_pos - start_pos - 1);
 
@@ -450,22 +461,25 @@ static Json::object create_object(Json::object &out, string &line, string &src)
 
 	while (!line.empty() && line[l_len] != '}') {
 		start_pos = 0;
-		while (line[start_pos] == ' ')
+		while (line[start_pos] == ' ') {
 			start_pos++;
+		}
 
-		if (line.substr(start_pos, 7) == "sources")
+		if (line.substr(start_pos, 7) == "sources") {
 			create_sources(res, line, src);
-		else if (line[l_len] == '{')
+		} else if (line[l_len] == '{') {
 			create_object(res, line, src);
-		else
+		} else {
 			create_data_item(res, line);
+		}
 
 		line = ReadLine(src);
 		l_len = line.size() - 1;
 	}
 
-	if (!out.empty())
+	if (!out.empty()) {
 		out[name] = res;
+	}
 
 	return res;
 }
@@ -478,11 +492,13 @@ string ClassicImporter::Name(const string &path)
 int ClassicImporter::ImportScenes(const string &path, string &name, Json &res)
 {
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
-	if (!file_data)
+	if (!file_data) {
 		return IMPORTER_FILE_WONT_OPEN;
+	}
 
-	if (name.empty())
+	if (name.empty()) {
 		name = GetFilenameFromPath(path);
+	}
 
 	Json::object data = Json::object{};
 	data["name"] = name;
@@ -514,13 +530,15 @@ bool ClassicImporter::Check(const string &path)
 {
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 
-	if (!file_data)
+	if (!file_data) {
 		return false;
+	}
 
 	bool check = false;
 
-	if (strncmp(file_data, "scenes : {\r\n", 12) == 0)
+	if (strncmp(file_data, "scenes : {\r\n", 12) == 0) {
 		check = true;
+	}
 
 	return check;
 }
@@ -532,14 +550,16 @@ OBSImporterFiles ClassicImporter::FindFiles()
 #ifdef _WIN32
 	char dst[512];
 	int found = os_get_config_path(dst, 512, "OBS\\sceneCollection\\");
-	if (found == -1)
+	if (found == -1) {
 		return res;
+	}
 
 	os_dir_t *dir = os_opendir(dst);
 	struct os_dirent *ent;
 	while ((ent = os_readdir(dir)) != NULL) {
-		if (ent->directory || *ent->d_name == '.')
+		if (ent->directory || *ent->d_name == '.') {
 			continue;
+		}
 
 		string name = ent->d_name;
 		size_t pos = name.find(".xconfig");

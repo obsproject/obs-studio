@@ -558,7 +558,6 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 			copy_surfaces = video->copy_surfaces_encode;
 			channel_count = 1;
 #endif
-			gs_flush();
 		}
 
 		if (video->gpu_conversion) {
@@ -566,7 +565,6 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 		}
 
 		if (gpu_active) {
-			gs_flush();
 			output_gpu_encoders(video, raw_active);
 		}
 

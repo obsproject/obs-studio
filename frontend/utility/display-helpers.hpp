@@ -120,8 +120,9 @@ static inline void InitSafeAreas(gs_vertbuffer_t **actionSafeMargin, gs_vertbuff
 
 static inline void RenderSafeAreas(gs_vertbuffer_t *vb, int cx, int cy)
 {
-	if (!vb)
+	if (!vb) {
 		return;
+	}
 
 	matrix4 transform;
 	matrix4_identity(&transform);
@@ -137,8 +138,9 @@ static inline void RenderSafeAreas(gs_vertbuffer_t *vb, int cx, int cy)
 	gs_eparam_t *color = gs_effect_get_param_by_name(solid, "color");
 
 	gs_effect_set_color(color, OUTLINE_COLOR);
-	while (gs_effect_loop(solid, "Solid"))
+	while (gs_effect_loop(solid, "Solid")) {
 		gs_draw(GS_LINESTRIP, 0, 0);
+	}
 
 	gs_matrix_pop();
 }

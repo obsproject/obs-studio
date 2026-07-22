@@ -125,10 +125,12 @@ void RemuxEntryPathItemDelegate::setModelData(QWidget *editor, QAbstractItemMode
 	if (pathListProp.isValid()) {
 		QStringList list = editor->property(PATH_LIST_PROP).toStringList();
 		if (isOutput) {
-			if (list.size() > 0)
+			if (list.size() > 0) {
 				model->setData(index, list);
-		} else
+			}
+		} else {
 			model->setData(index, list, RemuxEntryRole::NewPathsToProcessRole);
+		}
 	} else {
 		QLineEdit *lineEdit = editor->findChild<QLineEdit *>();
 		model->setData(index, lineEdit->text());
@@ -165,8 +167,9 @@ void RemuxEntryPathItemDelegate::handleBrowse(QWidget *container)
 	QLineEdit *text = container->findChild<QLineEdit *>();
 
 	QString currentPath = text->text();
-	if (currentPath.isEmpty())
+	if (currentPath.isEmpty()) {
 		currentPath = defaultPath;
+	}
 
 	bool isSet = false;
 	if (isOutput) {
@@ -190,8 +193,9 @@ void RemuxEntryPathItemDelegate::handleBrowse(QWidget *container)
 #endif
 	}
 
-	if (isSet)
+	if (isSet) {
 		emit commitData(container);
+	}
 }
 
 void RemuxEntryPathItemDelegate::handleClear(QWidget *container)

@@ -30,8 +30,9 @@ Canvas::Canvas(Canvas &&other) noexcept
 
 Canvas::~Canvas() noexcept
 {
-	if (!canvas)
+	if (!canvas) {
 		return;
+	}
 
 	obs_canvas_remove(canvas);
 	obs_canvas_release(canvas);
@@ -47,10 +48,12 @@ Canvas &Canvas::operator=(Canvas &&other) noexcept
 
 std::optional<OBSDataAutoRelease> Canvas::Save() const
 {
-	if (!canvas)
+	if (!canvas) {
 		return std::nullopt;
-	if (obs_data_t *saved = obs_save_canvas(canvas))
+	}
+	if (obs_data_t *saved = obs_save_canvas(canvas)) {
 		return saved;
+	}
 
 	return std::nullopt;
 }
@@ -70,8 +73,9 @@ std::vector<Canvas> Canvas::LoadCanvases(obs_data_array_t *canvases)
 {
 	auto cb = [](obs_data_t *data, void *param) -> void {
 		auto vec = static_cast<std::vector<Canvas> *>(param);
-		if (auto canvas = Canvas::Load(data))
+		if (auto canvas = Canvas::Load(data)) {
 			vec->emplace_back(std::move(*canvas));
+		}
 	};
 
 	std::vector<Canvas> ret;
@@ -86,8 +90,9 @@ OBSDataArrayAutoRelease Canvas::SaveCanvases(const std::vector<Canvas> &canvases
 
 	for (auto &canvas : canvases) {
 		auto canvas_data = canvas.Save();
-		if (!canvas_data)
+		if (!canvas_data) {
 			continue;
+		}
 
 		OBSDataAutoRelease data = obs_data_create();
 		obs_data_set_obj(data, "info", *canvas_data);

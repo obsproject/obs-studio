@@ -23,8 +23,9 @@ QListWidgetItem *TakeListItem(QListWidget *widget, int row)
 {
 	QListWidgetItem *item = widget->item(row);
 
-	if (item)
+	if (item) {
 		delete widget->itemWidget(item);
+	}
 
 	return widget->takeItem(row);
 }
@@ -46,8 +47,9 @@ void ClearListItems(QListWidget *widget)
 
 	widget->setCurrentItem(nullptr, QItemSelectionModel::Clear);
 
-	for (int i = 0; i < widget->count(); i++)
+	for (int i = 0; i < widget->count(); i++) {
 		delete widget->itemWidget(widget->item(i));
+	}
 
 	widget->clear();
 #if QT_VERSION < QT_VERSION_CHECK(6, 4, 3)

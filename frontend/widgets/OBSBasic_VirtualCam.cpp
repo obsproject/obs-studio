@@ -27,12 +27,15 @@
 
 void OBSBasic::StartVirtualCam()
 {
-	if (!outputHandler || !outputHandler->virtualCam)
+	if (!outputHandler || !outputHandler->virtualCam) {
 		return;
-	if (outputHandler->VirtualCamActive())
+	}
+	if (outputHandler->VirtualCamActive()) {
 		return;
-	if (disableOutputsRef)
+	}
+	if (disableOutputsRef) {
 		return;
+	}
 
 	SaveProject();
 
@@ -41,26 +44,30 @@ void OBSBasic::StartVirtualCam()
 
 void OBSBasic::StopVirtualCam()
 {
-	if (!outputHandler || !outputHandler->virtualCam)
+	if (!outputHandler || !outputHandler->virtualCam) {
 		return;
+	}
 
 	SaveProject();
 
-	if (outputHandler->VirtualCamActive())
+	if (outputHandler->VirtualCamActive()) {
 		outputHandler->StopVirtualCam();
+	}
 
 	OnDeactivate();
 }
 
 void OBSBasic::OnVirtualCamStart()
 {
-	if (!outputHandler || !outputHandler->virtualCam)
+	if (!outputHandler || !outputHandler->virtualCam) {
 		return;
+	}
 
 	emit VirtualCamStarted();
 
-	if (sysTrayVirtualCam)
+	if (sysTrayVirtualCam) {
 		sysTrayVirtualCam->setText(QTStr("Basic.Main.StopVirtualCam"));
+	}
 
 	OnEvent(OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED);
 
@@ -71,13 +78,15 @@ void OBSBasic::OnVirtualCamStart()
 
 void OBSBasic::OnVirtualCamStop(int)
 {
-	if (!outputHandler || !outputHandler->virtualCam)
+	if (!outputHandler || !outputHandler->virtualCam) {
 		return;
+	}
 
 	emit VirtualCamStopped();
 
-	if (sysTrayVirtualCam)
+	if (sysTrayVirtualCam) {
 		sysTrayVirtualCam->setText(QTStr("Basic.Main.StartVirtualCam"));
+	}
 
 	OnEvent(OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED);
 
@@ -85,8 +94,9 @@ void OBSBasic::OnVirtualCamStop(int)
 
 	OnDeactivate();
 
-	if (!restartingVCam)
+	if (!restartingVCam) {
 		return;
+	}
 
 	/* Restarting needs to be delayed to make sure that the virtual camera
 	 * implementation is stopped and avoid race condition. */
@@ -98,8 +108,9 @@ void OBSBasic::VirtualCamActionTriggered()
 	if (outputHandler->VirtualCamActive()) {
 		StopVirtualCam();
 	} else {
-		if (!UIValidation::NoSourcesConfirmation(this))
+		if (!UIValidation::NoSourcesConfirmation(this)) {
 			return;
+		}
 
 		StartVirtualCam();
 	}
@@ -156,8 +167,9 @@ void OBSBasic::RestartVirtualCam(const VCamConfig &config)
 
 void OBSBasic::RestartingVirtualCam()
 {
-	if (!restartingVCam)
+	if (!restartingVCam) {
 		return;
+	}
 
 	outputHandler->UpdateVirtualCamOutputSource();
 	StartVirtualCam();
@@ -166,7 +178,8 @@ void OBSBasic::RestartingVirtualCam()
 
 bool OBSBasic::VirtualCamActive()
 {
-	if (!outputHandler)
+	if (!outputHandler) {
 		return false;
+	}
 	return outputHandler->VirtualCamActive();
 }

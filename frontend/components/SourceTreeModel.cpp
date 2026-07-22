@@ -163,8 +163,9 @@ void SourceTreeModel::ReorderItems()
 		beginMoveRows(QModelIndex(), idx1Old, idx1Old + count - 1, QModelIndex(), idx1New + count);
 		for (i = 0; i < count; i++) {
 			int to = idx1New + count;
-			if (to > idx1Old)
+			if (to > idx1Old) {
 				to--;
+			}
 			MoveItem(items, idx1Old, to);
 		}
 		endMoveRows();
@@ -194,8 +195,9 @@ void SourceTreeModel::Remove(obs_sceneitem_t *item)
 		}
 	}
 
-	if (idx == -1)
+	if (idx == -1) {
 		return;
+	}
 
 	int startIdx = idx;
 	int endIdx = idx;
@@ -208,10 +210,11 @@ void SourceTreeModel::Remove(obs_sceneitem_t *item)
 			obs_sceneitem_t *subitem = items[i];
 			obs_scene_t *subscene = obs_sceneitem_get_scene(subitem);
 
-			if (subscene == scene)
+			if (subscene == scene) {
 				endIdx = i;
-			else
+			} else {
 				break;
+			}
 		}
 	}
 
@@ -219,16 +222,18 @@ void SourceTreeModel::Remove(obs_sceneitem_t *item)
 	items.remove(idx, endIdx - startIdx + 1);
 	endRemoveRows();
 
-	if (is_group)
+	if (is_group) {
 		UpdateGroupState(true);
+	}
 
 	OBSBasic::Get()->UpdateContextBarDeferred();
 }
 
 OBSSceneItem SourceTreeModel::Get(int idx)
 {
-	if (idx == -1 || idx >= items.count())
+	if (idx == -1 || idx >= items.count()) {
 		return OBSSceneItem();
+	}
 	return items[idx];
 }
 
@@ -255,8 +260,9 @@ QVariant SourceTreeModel::data(const QModelIndex &index, int role) const
 
 Qt::ItemFlags SourceTreeModel::flags(const QModelIndex &index) const
 {
-	if (!index.isValid())
+	if (!index.isValid()) {
 		return QAbstractListModel::flags(index) | Qt::ItemIsDropEnabled;
+	}
 
 	obs_sceneitem_t *item = items[index.row()];
 	bool is_group = obs_sceneitem_is_group(item);
@@ -278,8 +284,9 @@ QString SourceTreeModel::GetNewGroupName()
 	int i = 2;
 	for (;;) {
 		OBSSourceAutoRelease group = obs_get_source_by_name(QT_TO_UTF8(name));
-		if (!group)
+		if (!group) {
 			break;
+		}
 		name = QTStr("Basic.Main.Group").arg(QString::number(i++));
 	}
 
@@ -290,8 +297,9 @@ void SourceTreeModel::AddGroup()
 {
 	QString name = GetNewGroupName();
 	obs_sceneitem_t *group = obs_scene_add_group(GetCurrentScene(), QT_TO_UTF8(name));
-	if (!group)
+	if (!group) {
 		return;
+	}
 
 	beginInsertRows(QModelIndex(), 0, 0);
 	items.insert(0, group);
@@ -305,8 +313,9 @@ void SourceTreeModel::AddGroup()
 
 void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 {
-	if (indices.count() == 0)
+	if (indices.count() == 0) {
 		return;
+	}
 
 	OBSBasic *main = OBSBasic::Get();
 	OBSScene scene = GetCurrentScene();
@@ -329,8 +338,9 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 
 	main->undo_s.push_disabled();
 
-	for (obs_sceneitem_t *item : item_order)
+	for (obs_sceneitem_t *item : item_order) {
 		obs_sceneitem_select(item, false);
+	}
 
 	hasGroups = true;
 	st->UpdateWidgets(true);
@@ -349,8 +359,9 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 void SourceTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 {
 	OBSBasic *main = OBSBasic::Get();
-	if (indices.count() == 0)
+	if (indices.count() == 0) {
 		return;
+	}
 
 	OBSScene scene = main->GetCurrentScene();
 	OBSData undoData = main->BackupScene(scene);
@@ -369,8 +380,9 @@ void SourceTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 void SourceTreeModel::ExpandGroup(obs_sceneitem_t *item)
 {
 	int itemIdx = items.indexOf(item);
-	if (itemIdx == -1)
+	if (itemIdx == -1) {
 		return;
+	}
 
 	itemIdx++;
 
@@ -379,12 +391,14 @@ void SourceTreeModel::ExpandGroup(obs_sceneitem_t *item)
 	QVector<OBSSceneItem> subItems;
 	obs_scene_enum_items(scene, enumItem, &subItems);
 
-	if (!subItems.size())
+	if (!subItems.size()) {
 		return;
+	}
 
 	beginInsertRows(QModelIndex(), itemIdx, itemIdx + subItems.size() - 1);
-	for (int i = 0; i < subItems.size(); i++)
+	for (int i = 0; i < subItems.size(); i++) {
 		items.insert(i + itemIdx, subItems[i]);
+	}
 	endInsertRows();
 
 	st->UpdateWidgets();
@@ -401,14 +415,16 @@ void SourceTreeModel::CollapseGroup(obs_sceneitem_t *item)
 		obs_scene_t *itemScene = obs_sceneitem_get_scene(items[i]);
 
 		if (itemScene == scene) {
-			if (startIdx == -1)
+			if (startIdx == -1) {
 				startIdx = i;
+			}
 			endIdx = i;
 		}
 	}
 
-	if (startIdx == -1)
+	if (startIdx == -1) {
 		return;
+	}
 
 	beginRemoveRows(QModelIndex(), startIdx, endIdx);
 	items.remove(startIdx, endIdx - startIdx + 1);

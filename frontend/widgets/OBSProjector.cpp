@@ -29,8 +29,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 
 	isAlwaysOnTop = config_get_bool(App()->GetUserConfig(), "BasicWindow", "ProjectorAlwaysOnTop");
 
-	if (isAlwaysOnTop)
+	if (isAlwaysOnTop) {
 		setWindowFlags(Qt::WindowStaysOnTopHint);
+	}
 
 	// Mark the window as a projector so SetDisplayAffinity
 	// can skip it
@@ -46,15 +47,17 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 #endif
 
-	if (monitor == -1)
+	if (monitor == -1) {
 		resize(480, 270);
-	else
+	} else {
 		SetMonitor(monitor);
+	}
 
-	if (source)
+	if (source) {
 		UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
-	else
+	} else {
 		UpdateProjectorTitle(QString());
+	}
 
 	QAction *action = new QAction(this);
 	action->setShortcut(Qt::Key_Escape);
@@ -87,8 +90,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor, 
 
 	App()->IncrementSleepInhibition();
 
-	if (source)
+	if (source) {
 		obs_source_inc_showing(source);
+	}
 
 	ready = true;
 
@@ -106,8 +110,9 @@ OBSProjector::~OBSProjector()
 	obs_display_remove_draw_callback(GetDisplay(), isMultiview ? OBSRenderMultiview : OBSRender, this);
 
 	OBSSource source = GetSource();
-	if (source)
+	if (source) {
 		obs_source_dec_showing(source);
+	}
 
 	if (isMultiview) {
 		delete multiview;
@@ -127,23 +132,26 @@ void OBSProjector::SetMonitor(int monitor)
 
 void OBSProjector::SetHideCursor()
 {
-	if (savedMonitor == -1)
+	if (savedMonitor == -1) {
 		return;
+	}
 
 	bool hideCursor = config_get_bool(App()->GetUserConfig(), "BasicWindow", "HideProjectorCursor");
 
-	if (hideCursor && type != ProjectorType::Multiview)
+	if (hideCursor && type != ProjectorType::Multiview) {
 		setCursor(Qt::BlankCursor);
-	else
+	} else {
 		setCursor(Qt::ArrowCursor);
+	}
 }
 
 void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSProjector *window = (OBSProjector *)data;
 
-	if (updatingMultiview || !window->ready)
+	if (updatingMultiview || !window->ready) {
 		return;
+	}
 
 	window->multiview->Render(cx, cy);
 }
@@ -152,8 +160,9 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSProjector *window = static_cast<OBSProjector *>(data);
 
-	if (!window->ready)
+	if (!window->ready) {
 		return;
+	}
 
 	OBSBasic *main = OBSBasic::Get();
 	OBSSource source = window->GetSource();
@@ -194,10 +203,11 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 		window->weakSource = nullptr;
 	}
 
-	if (source)
+	if (source) {
 		obs_source_video_render(source);
-	else
+	} else {
 		obs_render_main_texture();
+	}
 
 	endRegion();
 }
@@ -221,28 +231,34 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 {
 	OBSQTDisplay::mouseDoubleClickEvent(event);
 
-	if (!mouseSwitching)
+	if (!mouseSwitching) {
 		return;
+	}
 
-	if (!transitionOnDoubleClick)
+	if (!transitionOnDoubleClick) {
 		return;
+	}
 
 	// Only MultiView projectors handle double click
-	if (this->type != ProjectorType::Multiview)
+	if (this->type != ProjectorType::Multiview) {
 		return;
+	}
 
 	OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();
-	if (!main->IsPreviewProgramMode())
+	if (!main->IsPreviewProgramMode()) {
 		return;
+	}
 
 	if (event->button() == Qt::LeftButton) {
 		QPoint pos = event->pos();
 		OBSSource src = multiview->GetSourceByPosition(pos.x(), pos.y());
-		if (!src)
+		if (!src) {
 			return;
+		}
 
-		if (main->GetProgramSource() != src)
+		if (main->GetProgramSource() != src) {
 			main->TransitionToScene(src);
+		}
 	}
 }
 
@@ -276,20 +292,24 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 		popup.exec(QCursor::pos());
 	} else if (event->button() == Qt::LeftButton) {
 		// Only MultiView projectors handle left click
-		if (this->type != ProjectorType::Multiview)
+		if (this->type != ProjectorType::Multiview) {
 			return;
+		}
 
-		if (!mouseSwitching)
+		if (!mouseSwitching) {
 			return;
+		}
 
 		QPoint pos = event->pos();
 		OBSSource src = multiview->GetSourceByPosition(pos.x(), pos.y());
-		if (!src)
+		if (!src) {
 			return;
+		}
 
 		OBSBasic *main = (OBSBasic *)obs_frontend_get_main_window();
-		if (main->GetCurrentSceneSource() != src)
+		if (main->GetCurrentSceneSource() != src) {
 			main->SetCurrentScene(src, false);
+		}
 	}
 }
 
@@ -363,8 +383,9 @@ void OBSProjector::UpdateMultiviewProjectors()
 	updatingMultiview = true;
 	obs_leave_graphics();
 
-	for (auto &projector : multiviewProjectors)
+	for (auto &projector : multiviewProjectors) {
 		projector->UpdateMultiview();
+	}
 
 	obs_enter_graphics();
 	updatingMultiview = false;
@@ -373,16 +394,18 @@ void OBSProjector::UpdateMultiviewProjectors()
 
 void OBSProjector::RenameProjector(QString oldName, QString newName)
 {
-	if (oldName == newName)
+	if (oldName == newName) {
 		return;
+	}
 
 	UpdateProjectorTitle(newName);
 }
 
 void OBSProjector::OpenFullScreenProjector()
 {
-	if (!isFullScreen())
+	if (!isFullScreen()) {
 		prevGeometry = geometry();
+	}
 
 	int monitor = sender()->property("monitor").toInt();
 	SetMonitor(monitor);
@@ -397,10 +420,11 @@ void OBSProjector::OpenWindowedProjector()
 	showNormal();
 	setCursor(Qt::ArrowCursor);
 
-	if (!prevGeometry.isNull())
+	if (!prevGeometry.isNull()) {
 		setGeometry(prevGeometry);
-	else
+	} else {
 		resize(480, 270);
+	}
 
 	savedMonitor = -1;
 
@@ -465,9 +489,11 @@ void OBSProjector::SetIsAlwaysOnTop(bool isAlwaysOnTop, bool isOverridden)
 
 void OBSProjector::ScreenRemoved(QScreen *screen)
 {
-	if (GetMonitor() < 0)
+	if (GetMonitor() < 0) {
 		return;
+	}
 
-	if (screen == this->screen())
+	if (screen == this->screen()) {
 		EscapeTriggered();
+	}
 }

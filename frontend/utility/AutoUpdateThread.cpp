@@ -54,9 +54,10 @@ try {
 	json manifestContents = json::parse(manifest_data);
 	Manifest manifest = manifestContents.get<Manifest>();
 
-	if (manifest.version_major == 0 && manifest.commit.empty())
+	if (manifest.version_major == 0 && manifest.commit.empty()) {
 		throw strprintf("Invalid version number: %d.%d.%d", manifest.version_major, manifest.version_minor,
 				manifest.version_patch);
+	}
 
 	notes = manifest.notes;
 
@@ -67,19 +68,21 @@ try {
 		new_ver <<= 16;
 		/* RC builds are shifted so that rc1 and beta1 versions do not result
 		 * in the same new_ver. */
-		if (manifest.rc > 0)
+		if (manifest.rc > 0) {
 			new_ver |= (uint64_t)manifest.rc << 8;
-		else if (manifest.beta > 0)
+		} else if (manifest.beta > 0) {
 			new_ver |= (uint64_t)manifest.beta;
+		}
 
 		updateVer = to_string(new_ver);
 
 		/* When using a pre-release build or non-default branch we only check if
 		 * the manifest version is different, so that it can be rolled back. */
-		if (branch != WIN_DEFAULT_BRANCH || isPreRelease)
+		if (branch != WIN_DEFAULT_BRANCH || isPreRelease) {
 			*updatesAvailable = new_ver != currentVersion;
-		else
+		} else {
 			*updatesAvailable = new_ver > currentVersion;
+		}
 	} else {
 		/* Test or nightly builds may not have a (valid) version number,
 		 * so compare commit hashes instead. */
@@ -99,13 +102,15 @@ try {
 bool GetBranchAndUrl(string &selectedBranch, string &manifestUrl)
 {
 	const char *config_branch = config_get_string(App()->GetAppConfig(), "General", "UpdateBranch");
-	if (!config_branch)
+	if (!config_branch) {
 		return true;
+	}
 
 	bool found = false;
 	for (const UpdateBranch &branch : App()->GetBranches()) {
-		if (branch.name != config_branch)
+		if (branch.name != config_branch) {
 			continue;
+		}
 		/* A branch that is found but disabled will just silently fall back to
 		 * the default. But if the branch was removed entirely, the user should
 		 * be warned, so leave this false *only* if the branch was removed. */
@@ -183,8 +188,9 @@ try {
 	/* ----------------------------------- *
 	 * get branches from server            */
 
-	if (FetchAndVerifyFile("branches", "obs-studio\\updates\\branches.json", WIN_BRANCHES_URL, &text))
+	if (FetchAndVerifyFile("branches", "obs-studio\\updates\\branches.json", WIN_BRANCHES_URL, &text)) {
 		App()->SetBranchData(text);
+	}
 
 	/* ----------------------------------- *
 	 * check branch and get manifest url   */
@@ -196,16 +202,18 @@ try {
 
 	/* allow server to know if this was a manual update check in case
 	 * we want to allow people to bypass a configured rollout rate */
-	if (manualUpdate)
+	if (manualUpdate) {
 		extraHeaders.emplace_back("X-OBS2-ManualUpdate: 1");
+	}
 
 	/* ----------------------------------- *
 	 * get manifest from server            */
 
 	text.clear();
 	if (!FetchAndVerifyFile("manifest", "obs-studio\\updates\\manifest.json", manifestUrl.c_str(), &text,
-				extraHeaders))
+				extraHeaders)) {
 		return;
+	}
 
 	/* ----------------------------------- *
 	 * check manifest for update           */
@@ -213,12 +221,14 @@ try {
 	string notes;
 	string updateVer;
 
-	if (!ParseUpdateManifest(text.c_str(), &updatesAvailable, notes, updateVer, branch))
+	if (!ParseUpdateManifest(text.c_str(), &updatesAvailable, notes, updateVer, branch)) {
 		throw string("Failed to parse manifest");
+	}
 
 	if (!updatesAvailable && !repairMode) {
-		if (manualUpdate)
+		if (manualUpdate) {
 			info(QTStr("Updater.NoUpdatesAvailable.Title"), QTStr("Updater.NoUpdatesAvailable.Text"));
+		}
 		return;
 	} else if (updatesAvailable && repairMode) {
 		info(QTStr("Updater.RepairButUpdatesAvailable.Title"), QTStr("Updater.RepairButUpdatesAvailable.Text"));
@@ -229,21 +239,24 @@ try {
 	 * skip this version if set to skip    */
 
 	const char *skipUpdateVer = config_get_string(App()->GetAppConfig(), "General", "SkipUpdateVersion");
-	if (!manualUpdate && !repairMode && skipUpdateVer && updateVer == skipUpdateVer)
+	if (!manualUpdate && !repairMode && skipUpdateVer && updateVer == skipUpdateVer) {
 		return;
+	}
 
 	/* ----------------------------------- *
 	 * fetch updater module                */
 
-	if (!FetchAndVerifyFile("updater", "obs-studio\\updates\\updater.exe", WIN_UPDATER_URL, nullptr))
+	if (!FetchAndVerifyFile("updater", "obs-studio\\updates\\updater.exe", WIN_UPDATER_URL, nullptr)) {
 		return;
+	}
 
 	/* ----------------------------------- *
 	 * query user for update               */
 
 	if (repairMode) {
-		if (!queryRepair())
+		if (!queryRepair()) {
 			return;
+		}
 	} else {
 		int queryResult = queryUpdate(manualUpdate, notes.c_str());
 
@@ -266,8 +279,9 @@ try {
 	wchar_t cwd[MAX_PATH];
 	GetModuleFileNameW(nullptr, cwd, _countof(cwd) - 1);
 	wchar_t *p = wcsrchr(cwd, '\\');
-	if (p)
+	if (p) {
 		*p = 0;
+	}
 
 	/* ----------------------------------- *
 	 * execute updater                     */
@@ -276,8 +290,9 @@ try {
 	BPtr<wchar_t> wUpdateFilePath;
 
 	size_t size = os_utf8_to_wcs_ptr(updateFilePath, 0, &wUpdateFilePath);
-	if (!size)
+	if (!size) {
 		throw string("Could not convert updateFilePath to wide");
+	}
 
 	/* note, can't use CreateProcess to launch as admin. */
 	SHELLEXECUTEINFO execInfo = {};
@@ -286,13 +301,15 @@ try {
 	execInfo.lpFile = wUpdateFilePath;
 
 	string parameters;
-	if (branch != WIN_DEFAULT_BRANCH)
+	if (branch != WIN_DEFAULT_BRANCH) {
 		parameters += "--branch=" + branch;
+	}
 
 	obs_cmdline_args obs_args = obs_get_cmdline_args();
 	for (int idx = 1; idx < obs_args.argc; idx++) {
-		if (!parameters.empty())
+		if (!parameters.empty()) {
 			parameters += " ";
+		}
 
 		parameters += obs_args.argv[idx];
 	}
@@ -300,15 +317,17 @@ try {
 	/* Portable mode can be enabled via sentinel files, so copying the
 	 * command line doesn't guarantee the flag to be there. */
 	if (App()->IsPortableMode() && parameters.find("--portable") == string::npos) {
-		if (!parameters.empty())
+		if (!parameters.empty()) {
 			parameters += " ";
+		}
 		parameters += "--portable";
 	}
 
 	BPtr<wchar_t> lpParameters;
 	size = os_utf8_to_wcs_ptr(parameters.c_str(), 0, &lpParameters);
-	if (!size && !parameters.empty())
+	if (!size && !parameters.empty()) {
 		throw string("Could not convert parameters to wide");
+	}
 
 	execInfo.lpParameters = lpParameters;
 	execInfo.lpDirectory = cwd;

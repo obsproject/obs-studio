@@ -67,8 +67,9 @@ bool HTTPPostData(const wchar_t *url, const BYTE *data, int dataLen, const wchar
 
 	WinHttpCrackUrl(url, 0, 0, &urlComponents);
 
-	if (urlComponents.nPort == 443)
+	if (urlComponents.nPort == 443) {
 		secure = true;
+	}
 
 	/* -------------------------------------- *
 	 * connect to server                      */
@@ -146,8 +147,9 @@ bool HTTPPostData(const wchar_t *url, const BYTE *data, int dataLen, const wchar
 	*responseCode = wcstoul(statusCode, nullptr, 10);
 
 	/* are we supposed to return true here? */
-	if (!bResults || *responseCode != 200)
+	if (!bResults || *responseCode != 200) {
 		return true;
+	}
 
 	BYTE buffer[READ_BUF_SIZE];
 	DWORD dwSize, outSize;
@@ -167,8 +169,9 @@ bool HTTPPostData(const wchar_t *url, const BYTE *data, int dataLen, const wchar
 			return false;
 		}
 
-		if (!outSize)
+		if (!outSize) {
 			break;
+		}
 
 		if (!ReadHTTPData(responseBuf, buffer, outSize)) {
 			*responseCode = -6;
@@ -240,8 +243,9 @@ bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url, const wchar_t *outputPa
 
 	WinHttpCrackUrl(url, 0, 0, &urlComponents);
 
-	if (urlComponents.nPort == 443)
+	if (urlComponents.nPort == 443) {
 		secure = true;
+	}
 
 	/* -------------------------------------- *
 	 * request data                           */
@@ -287,8 +291,9 @@ bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url, const wchar_t *outputPa
 	*responseCode = wcstoul(statusCode, nullptr, 10);
 
 	/* are we supposed to return true here? */
-	if (!bResults || *responseCode != 200)
+	if (!bResults || *responseCode != 200) {
 		return true;
+	}
 
 	BYTE buffer[READ_BUF_SIZE];
 	DWORD dwSize, outSize;
@@ -313,11 +318,13 @@ bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url, const wchar_t *outputPa
 			*responseCode = -9;
 			return false;
 		} else {
-			if (!outSize)
+			if (!outSize) {
 				break;
+			}
 
-			if (!ReadHTTPFile(updateFile, buffer, outSize, responseCode))
+			if (!ReadHTTPFile(updateFile, buffer, outSize, responseCode)) {
 				return false;
+			}
 
 			UpdateProgressBar();
 		}
@@ -358,8 +365,9 @@ bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url, const wchar_t *extraH
 
 	WinHttpCrackUrl(url, 0, 0, &urlComponents);
 
-	if (urlComponents.nPort == 443)
+	if (urlComponents.nPort == 443) {
 		secure = true;
+	}
 
 	/* -------------------------------------- *
 	 * request data                           */
@@ -405,8 +413,9 @@ bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url, const wchar_t *extraH
 	*responseCode = wcstoul(statusCode, nullptr, 10);
 
 	/* are we supposed to return true here? */
-	if (!bResults || *responseCode != 200)
+	if (!bResults || *responseCode != 200) {
 		return true;
+	}
 
 	BYTE buffer[READ_BUF_SIZE];
 	DWORD dwSize, outSize;
@@ -425,8 +434,9 @@ bool HTTPGetBuffer(HINTERNET hConnect, const wchar_t *url, const wchar_t *extraH
 			*responseCode = -9;
 			return false;
 		} else {
-			if (!outSize)
+			if (!outSize) {
 				break;
+			}
 
 			out.insert(out.end(), (std::byte *)buffer, (std::byte *)buffer + outSize);
 

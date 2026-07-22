@@ -139,8 +139,9 @@ void ImporterEntryPathItemDelegate::handleBrowse(QWidget *container)
 		isSet = true;
 	}
 
-	if (isSet)
+	if (isSet) {
 		emit commitData(container);
+	}
 }
 
 void ImporterEntryPathItemDelegate::handleClear(QWidget *container)

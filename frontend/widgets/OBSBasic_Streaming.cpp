@@ -47,10 +47,12 @@ void OBSBasic::DisplayStreamStartError()
 
 void OBSBasic::StartStreaming()
 {
-	if (outputHandler->StreamingActive())
+	if (outputHandler->StreamingActive()) {
 		return;
-	if (disableOutputsRef)
+	}
+	if (disableOutputsRef) {
 		return;
+	}
 
 	if (auth && auth->broadcastFlow()) {
 		if (!broadcastActive && !broadcastReady) {
@@ -64,8 +66,9 @@ void OBSBasic::StartStreaming()
 			no_broadcast.setWindowTitle(QTStr("Output.NoBroadcast.Title"));
 			no_broadcast.exec();
 
-			if (no_broadcast.clickedButton() == SetupBroadcast)
+			if (no_broadcast.clickedButton() == SetupBroadcast) {
 				QMetaObject::invokeMethod(this, "SetupBroadcast");
+			}
 			return;
 		}
 	}
@@ -89,8 +92,9 @@ void OBSBasic::StartStreaming()
 
 		emit StreamingStarting(autoStartBroadcast);
 
-		if (sysTrayStream)
+		if (sysTrayStream) {
 			sysTrayStream->setText("Basic.Main.Connecting");
+		}
 
 		if (!outputHandler->StartStreaming(service)) {
 			DisplayStreamStartError();
@@ -104,13 +108,15 @@ void OBSBasic::StartStreaming()
 
 		bool recordWhenStreaming =
 			config_get_bool(App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
-		if (recordWhenStreaming)
+		if (recordWhenStreaming) {
 			StartRecording();
+		}
 
 		bool replayBufferWhileStreaming =
 			config_get_bool(App()->GetUserConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
-		if (replayBufferWhileStreaming)
+		if (replayBufferWhileStreaming) {
 			StartReplayBuffer();
+		}
 
 #ifdef YOUTUBE_ENABLED
 		if (!autoStartBroadcast)
@@ -125,8 +131,9 @@ void OBSBasic::StopStreaming()
 {
 	SaveProject();
 
-	if (outputHandler->StreamingActive())
+	if (outputHandler->StreamingActive()) {
 		outputHandler->StopStreaming(streamingStopping);
+	}
 
 	// special case: force reset broadcast state if
 	// no autostart and no autostop selected
@@ -149,23 +156,26 @@ void OBSBasic::StopStreaming()
 	bool recordWhenStreaming = config_get_bool(App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
 	bool keepRecordingWhenStreamStops =
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "KeepRecordingWhenStreamStops");
-	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
+	if (recordWhenStreaming && !keepRecordingWhenStreamStops) {
 		StopRecording();
+	}
 
 	bool replayBufferWhileStreaming =
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
 	bool keepReplayBufferStreamStops =
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "KeepReplayBufferStreamStops");
-	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops)
+	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops) {
 		StopReplayBuffer();
+	}
 }
 
 void OBSBasic::ForceStopStreaming()
 {
 	SaveProject();
 
-	if (outputHandler->StreamingActive())
+	if (outputHandler->StreamingActive()) {
 		outputHandler->StopStreaming(true);
+	}
 
 	// special case: force reset broadcast state if
 	// no autostart and no autostop selected
@@ -188,15 +198,17 @@ void OBSBasic::ForceStopStreaming()
 	bool recordWhenStreaming = config_get_bool(App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
 	bool keepRecordingWhenStreamStops =
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "KeepRecordingWhenStreamStops");
-	if (recordWhenStreaming && !keepRecordingWhenStreamStops)
+	if (recordWhenStreaming && !keepRecordingWhenStreamStops) {
 		StopRecording();
+	}
 
 	bool replayBufferWhileStreaming =
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
 	bool keepReplayBufferStreamStops =
 		config_get_bool(App()->GetUserConfig(), "BasicWindow", "KeepReplayBufferStreamStops");
-	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops)
+	if (replayBufferWhileStreaming && !keepReplayBufferStreamStops) {
 		StopReplayBuffer();
+	}
 }
 
 void OBSBasic::StreamDelayStarting(int sec)
@@ -257,8 +269,9 @@ void OBSBasic::StreamingStart()
 	OnActivate();
 
 #ifdef YOUTUBE_ENABLED
-	if (YouTubeAppDock::IsYTServiceSelected())
+	if (YouTubeAppDock::IsYTServiceSelected()) {
 		youtubeAppDock->IngestionStarted();
+	}
 #endif
 
 	blog(LOG_INFO, STREAMING_START);
@@ -268,8 +281,9 @@ void OBSBasic::StreamStopping()
 {
 	emit StreamingStopping();
 
-	if (sysTrayStream)
+	if (sysTrayStream) {
 		sysTrayStream->setText(QTStr("Basic.Main.StoppingStreaming"));
+	}
 
 	streamingStopping = true;
 	OnEvent(OBS_FRONTEND_EVENT_STREAMING_STOPPING);
@@ -325,10 +339,11 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		errorDescription = Str("Output.ConnectFail.Disconnected");
 	}
 
-	if (use_last_error && !last_error.isEmpty())
+	if (use_last_error && !last_error.isEmpty()) {
 		dstr_printf(errorMessage, "%s\n\n%s", errorDescription, QT_TO_UTF8(last_error));
-	else
+	} else {
 		dstr_copy(errorMessage, errorDescription);
+	}
 
 	ui->statusbar->StreamStopped();
 
@@ -345,8 +360,9 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	OnDeactivate();
 
 #ifdef YOUTUBE_ENABLED
-	if (YouTubeAppDock::IsYTServiceSelected())
+	if (YouTubeAppDock::IsYTServiceSelected()) {
 		youtubeAppDock->IngestionStopped();
+	}
 #endif
 
 	blog(LOG_INFO, STREAMING_STOP);
@@ -364,10 +380,12 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	}
 
 	// Reset broadcast button state/text
-	if (!broadcastActive)
+	if (!broadcastActive) {
 		SetBroadcastFlowEnabled(auth && auth->broadcastFlow());
-	if (should_reconnect)
+	}
+	if (should_reconnect) {
 		QMetaObject::invokeMethod(this, "StartStreaming", Qt::QueuedConnection);
+	}
 }
 
 void OBSBasic::StreamActionTriggered()
@@ -381,8 +399,9 @@ void OBSBasic::StreamActionTriggered()
 				this, QTStr("ConfirmStop.Title"), QTStr("YouTube.Actions.AutoStopStreamingWarning"),
 				QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return;
+			}
 
 			confirm = false;
 		}
@@ -392,14 +411,16 @@ void OBSBasic::StreamActionTriggered()
 				OBSMessageBox::question(this, QTStr("ConfirmStop.Title"), QTStr("ConfirmStop.Text"),
 							QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return;
+			}
 		}
 
 		StopStreaming();
 	} else {
-		if (!UIValidation::NoSourcesConfirmation(this))
+		if (!UIValidation::NoSourcesConfirmation(this)) {
 			return;
+		}
 
 		Auth *auth = GetAuth();
 
@@ -423,23 +444,26 @@ void OBSBasic::StreamActionTriggered()
 			OBSDataAutoRelease settings = obs_service_get_settings(service);
 			bwtest = obs_data_get_bool(settings, "bwtest");
 			// Disable confirmation if this is going to open broadcast setup
-			if (auth && auth->broadcastFlow() && !broadcastReady && !broadcastActive)
+			if (auth && auth->broadcastFlow() && !broadcastReady && !broadcastActive) {
 				confirm = false;
+			}
 		}
 
 		if (bwtest && isVisible()) {
 			QMessageBox::StandardButton button = OBSMessageBox::question(this, QTStr("ConfirmBWTest.Title"),
 										     QTStr("ConfirmBWTest.Text"));
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return;
+			}
 		} else if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(this, QTStr("ConfirmStart.Title"), QTStr("ConfirmStart.Text"),
 							QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return;
+			}
 		}
 
 		StartStreaming();
@@ -448,7 +472,8 @@ void OBSBasic::StreamActionTriggered()
 
 bool OBSBasic::StreamingActive()
 {
-	if (!outputHandler)
+	if (!outputHandler) {
 		return false;
+	}
 	return outputHandler->StreamingActive();
 }

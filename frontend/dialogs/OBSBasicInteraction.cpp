@@ -59,8 +59,9 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	ui->preview->setFocusPolicy(Qt::StrongFocus);
 	ui->preview->installEventFilter(eventFilter.get());
 
-	if (cx > 400 && cy > 400)
+	if (cx > 400 && cy > 400) {
 		resize(cx, cy);
+	}
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
@@ -123,8 +124,9 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSBasicInteraction *window = static_cast<OBSBasicInteraction *>(data);
 
-	if (!window->source)
+	if (!window->source) {
 		return;
+	}
 
 	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
 	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
@@ -154,8 +156,9 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 void OBSBasicInteraction::closeEvent(QCloseEvent *event)
 {
 	QDialog::closeEvent(event);
-	if (!event->isAccepted())
+	if (!event->isAccepted()) {
 		return;
+	}
 
 	config_set_int(App()->GetAppConfig(), "InteractionWindow", "cx", width());
 	config_set_int(App()->GetAppConfig(), "InteractionWindow", "cy", height());
@@ -189,25 +192,31 @@ static int TranslateQtKeyboardEventModifiers(QInputEvent *event, bool mouseEvent
 {
 	int obsModifiers = INTERACT_NONE;
 
-	if (event->modifiers().testFlag(Qt::ShiftModifier))
+	if (event->modifiers().testFlag(Qt::ShiftModifier)) {
 		obsModifiers |= INTERACT_SHIFT_KEY;
-	if (event->modifiers().testFlag(Qt::AltModifier))
+	}
+	if (event->modifiers().testFlag(Qt::AltModifier)) {
 		obsModifiers |= INTERACT_ALT_KEY;
+	}
 #ifdef __APPLE__
 	// Mac: Meta = Control, Control = Command
-	if (event->modifiers().testFlag(Qt::ControlModifier))
+	if (event->modifiers().testFlag(Qt::ControlModifier)) {
 		obsModifiers |= INTERACT_COMMAND_KEY;
-	if (event->modifiers().testFlag(Qt::MetaModifier))
+	}
+	if (event->modifiers().testFlag(Qt::MetaModifier)) {
 		obsModifiers |= INTERACT_CONTROL_KEY;
+	}
 #else
 	// Handle windows key? Can a browser even trap that key?
-	if (event->modifiers().testFlag(Qt::ControlModifier))
+	if (event->modifiers().testFlag(Qt::ControlModifier)) {
 		obsModifiers |= INTERACT_CONTROL_KEY;
+	}
 #endif
 
 	if (!mouseEvent) {
-		if (event->modifiers().testFlag(Qt::KeypadModifier))
+		if (event->modifiers().testFlag(Qt::KeypadModifier)) {
 			obsModifiers |= INTERACT_IS_KEY_PAD;
+		}
 	}
 
 	return obsModifiers;
@@ -217,12 +226,15 @@ static int TranslateQtMouseEventModifiers(QMouseEvent *event)
 {
 	int modifiers = TranslateQtKeyboardEventModifiers(event, true);
 
-	if (event->buttons().testFlag(Qt::LeftButton))
+	if (event->buttons().testFlag(Qt::LeftButton)) {
 		modifiers |= INTERACT_MOUSE_LEFT;
-	if (event->buttons().testFlag(Qt::MiddleButton))
+	}
+	if (event->buttons().testFlag(Qt::MiddleButton)) {
 		modifiers |= INTERACT_MOUSE_MIDDLE;
-	if (event->buttons().testFlag(Qt::RightButton))
+	}
+	if (event->buttons().testFlag(Qt::RightButton)) {
 		modifiers |= INTERACT_MOUSE_RIGHT;
+	}
 
 	return modifiers;
 }
@@ -252,10 +264,12 @@ bool OBSBasicInteraction::GetSourceRelativeXY(int mouseX, int mouseY, int &relX,
 	}
 
 	// Confirm mouse is inside the source
-	if (relX < 0 || relX > int(sourceCX))
+	if (relX < 0 || relX > int(sourceCX)) {
 		return false;
-	if (relY < 0 || relY > int(sourceCY))
+	}
+	if (relY < 0 || relY > int(sourceCY)) {
 		return false;
+	}
 
 	return true;
 }
@@ -264,8 +278,9 @@ bool OBSBasicInteraction::HandleMouseClickEvent(QMouseEvent *event)
 {
 	bool mouseUp = event->type() == QEvent::MouseButtonRelease;
 	int clickCount = 1;
-	if (event->type() == QEvent::MouseButtonDblClick)
+	if (event->type() == QEvent::MouseButtonDblClick) {
 		clickCount = 2;
+	}
 
 	struct obs_mouse_event mouseEvent = {};
 
@@ -295,8 +310,9 @@ bool OBSBasicInteraction::HandleMouseClickEvent(QMouseEvent *event)
 	QPoint pos = event->pos();
 	bool insideSource = GetSourceRelativeXY(pos.x(), pos.y(), mouseEvent.x, mouseEvent.y);
 
-	if (mouseUp || insideSource)
+	if (mouseUp || insideSource) {
 		obs_source_send_mouse_click(source, &mouseEvent, button, mouseUp, clickCount);
+	}
 
 	return true;
 }
@@ -329,15 +345,17 @@ bool OBSBasicInteraction::HandleMouseWheelEvent(QWheelEvent *event)
 
 	const QPoint angleDelta = event->angleDelta();
 	if (!event->pixelDelta().isNull()) {
-		if (angleDelta.x())
+		if (angleDelta.x()) {
 			xDelta = event->pixelDelta().x();
-		else
+		} else {
 			yDelta = event->pixelDelta().y();
+		}
 	} else {
-		if (angleDelta.x())
+		if (angleDelta.x()) {
 			xDelta = angleDelta.x();
-		else
+		} else {
 			yDelta = angleDelta.y();
+		}
 	}
 
 	const QPointF position = event->position();

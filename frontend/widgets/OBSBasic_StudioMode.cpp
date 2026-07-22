@@ -38,8 +38,9 @@ void OBSBasic::CreateProgramDisplay()
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;
 
-		if (obs_get_video_info(&ovi))
+		if (obs_get_video_info(&ovi)) {
 			ResizeProgram(ovi.base_width, ovi.base_height);
+		}
 	};
 
 	connect(program.data(), &OBSQTDisplay::DisplayResized, this, displayResize);
@@ -48,8 +49,9 @@ void OBSBasic::CreateProgramDisplay()
 		obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderProgram, this);
 
 		struct obs_video_info ovi;
-		if (obs_get_video_info(&ovi))
+		if (obs_get_video_info(&ovi)) {
 			ResizeProgram(ovi.base_width, ovi.base_height);
+		}
 	};
 
 	connect(program.data(), &OBSQTDisplay::DisplayCreated, this, addDisplay);
@@ -121,8 +123,9 @@ void OBSBasic::CreateProgramOptions()
 			editPropertiesMode = !editPropertiesMode;
 
 			OBSSource actualScene = OBSGetStrongRef(programScene);
-			if (actualScene)
+			if (actualScene) {
 				TransitionToScene(actualScene, true);
+			}
 		};
 
 		auto toggleSwapScenesMode = [this]() {
@@ -133,8 +136,9 @@ void OBSBasic::CreateProgramOptions()
 			sceneDuplicationMode = !sceneDuplicationMode;
 
 			OBSSource actualScene = OBSGetStrongRef(programScene);
-			if (actualScene)
+			if (actualScene) {
 				TransitionToScene(actualScene, true);
+			}
 		};
 
 		auto showToolTip = [&]() {
@@ -260,8 +264,9 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		if (lastScene) {
 			OBSSource actualLastScene = OBSGetStrongRef(lastScene);
-			if (actualLastScene)
+			if (actualLastScene) {
 				obs_source_dec_showing(actualLastScene);
+			}
 			lastScene = nullptr;
 		}
 
@@ -342,22 +347,26 @@ void OBSBasic::UpdatePreviewProgramIndicators()
 
 	ui->previewLabel->setVisible(labels);
 
-	if (programLabel)
+	if (programLabel) {
 		programLabel->setVisible(labels);
+	}
 
-	if (!labels)
+	if (!labels) {
 		return;
+	}
 
 	QString preview =
 		QTStr("StudioMode.PreviewSceneName").arg(QT_UTF8(obs_source_get_name(GetCurrentSceneSource())));
 
 	QString program = QTStr("StudioMode.ProgramSceneName").arg(QT_UTF8(obs_source_get_name(GetProgramSource())));
 
-	if (ui->previewLabel->text() != preview)
+	if (ui->previewLabel->text() != preview) {
 		ui->previewLabel->setText(preview);
+	}
 
-	if (programLabel && programLabel->text() != program)
+	if (programLabel && programLabel->text() != program) {
 		programLabel->setText(program);
+	}
 }
 
 OBSSource OBSBasic::GetProgramSource()

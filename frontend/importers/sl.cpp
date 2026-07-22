@@ -114,8 +114,9 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 		Json item = sources[i];
 		string source_name = item["name"].string_value();
 
-		if (source_name == name)
+		if (source_name == name) {
 			return true;
+		}
 	}
 
 	return false;
@@ -127,8 +128,9 @@ static string get_source_name_from_id(const Json &root, const Json::array &sourc
 		Json item = sources[i];
 		string source_id = item["sl_id"].string_value();
 
-		if (source_id == id)
+		if (source_id == id) {
 			return item["name"].string_value();
+		}
 	}
 
 	Json::array scene_arr = root["scenes"]["items"].array_items();
@@ -143,8 +145,9 @@ static string get_source_name_from_id(const Json &root, const Json::array &sourc
 			int copy = 1;
 			string out_name = name;
 
-			while (source_name_exists(sources, out_name))
+			while (source_name_exists(sources, out_name)) {
 				out_name = name + "(" + to_string(copy++) + ")";
+			}
 
 			return out_name;
 		}
@@ -169,8 +172,9 @@ static void get_hotkey_bindings(Json::object &out_hotkeys, const Json &in_hotkey
 
 			string key = translate_key(binding["key"].string_value());
 
-			if (key == "IGNORE")
+			if (key == "IGNORE") {
 				continue;
+			}
 
 			out_hotkey.push_back(Json::object{{"control", modifiers["ctrl"]},
 							  {"shift", modifiers["shift"]},
@@ -285,8 +289,9 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 		int copy = 1;
 		string out_name = name;
-		while (source_name_exists(out_sources, out_name))
+		while (source_name_exists(out_sources, out_name)) {
 			out_name = name + "(" + to_string(copy++) + ")";
+		}
 
 		string sl_id = source["id"].string_value();
 
@@ -336,11 +341,13 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 		int copy = 1;
 		string out_name = name;
-		while (source_name_exists(out_sources, out_name))
+		while (source_name_exists(out_sources, out_name)) {
 			out_name = name + "(" + to_string(copy++) + ")";
+		}
 
-		if (scene_name.empty())
+		if (scene_name.empty()) {
 			scene_name = out_name;
+		}
 
 		string sl_id = scene["id"].string_value();
 
@@ -368,8 +375,9 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		string name = transition["name"].string_value();
 		string id = transition["id"].string_value();
 
-		if (id == t_id)
+		if (id == t_id) {
 			transition_name = name;
+		}
 
 		out_transitions.push_back(Json::object{{"id", transition["type"]},
 						       {"settings", in_settings},
@@ -436,8 +444,9 @@ int SLImporter::ImportScenes(const string &path, string &name, Json &res)
 	std::string err;
 	Json data = Json::parse(file_data, err);
 
-	if (err != "")
+	if (err != "") {
 		return IMPORTER_ERROR_DURING_CONVERSION;
+	}
 
 	string node_type = data["nodeType"].string_value();
 
@@ -473,8 +482,9 @@ bool SLImporter::Check(const string &path)
 		if (!root.is_null()) {
 			string node_type = root["nodeType"].string_value();
 
-			if (node_type == "RootNode")
+			if (node_type == "RootNode") {
 				check = true;
+			}
 		}
 	}
 
@@ -489,16 +499,18 @@ OBSImporterFiles SLImporter::FindFiles()
 
 	int found = os_get_config_path(dst, 512, "slobs-client/SceneCollections/");
 
-	if (found == -1)
+	if (found == -1) {
 		return res;
+	}
 
 	os_dir_t *dir = os_opendir(dst);
 	struct os_dirent *ent;
 	while ((ent = os_readdir(dir)) != NULL) {
 		string name = ent->d_name;
 
-		if (ent->directory || name[0] == '.' || name == "manifest.json")
+		if (ent->directory || name[0] == '.' || name == "manifest.json") {
 			continue;
+		}
 
 		size_t pos = name.find_last_of(".json");
 		size_t end_pos = name.size() - 1;

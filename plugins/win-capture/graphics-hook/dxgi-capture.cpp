@@ -44,8 +44,9 @@ static void STDMETHODCALLTYPE SwapChainDestructed(void *pData)
 		dxgi_possible_swap_queue_count = 0;
 		dxgi_present_attempted = false;
 
-		if (data.free)
+		if (data.free) {
 			data.free();
+		}
 		data.free = nullptr;
 	}
 }
@@ -138,8 +139,9 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap, UINT 
 	dxgi_possible_swap_queue_count = 0;
 	dxgi_present_attempted = false;
 
-	if (data.free)
+	if (data.free) {
 		data.free();
+	}
 	data.free = nullptr;
 
 	const HRESULT hr = RealResizeBuffers(swap, buffer_count, width, height, format, flags);
@@ -154,8 +156,9 @@ static inline IUnknown *get_dxgi_backbuffer(IDXGISwapChain *swap)
 	IUnknown *res = nullptr;
 
 	const HRESULT hr = swap->GetBuffer(0, IID_PPV_ARGS(&res));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		hlog_hr("get_dxgi_backbuffer: GetBuffer failed", hr);
+	}
 
 	return res;
 }
@@ -174,8 +177,9 @@ static void update_mismatch_count(bool match)
 			dxgi_possible_swap_queue_count = 0;
 			dxgi_present_attempted = false;
 
-			if (data.free)
+			if (data.free) {
 				data.free();
+			}
 			data.free = nullptr;
 
 			swap_chain_mismatch_count = 0;
@@ -312,8 +316,9 @@ bool hook_dxgi(void)
 	void *present_addr = get_offset_addr(dxgi_module, global_hook_info->offsets.dxgi.present);
 	void *resize_addr = get_offset_addr(dxgi_module, global_hook_info->offsets.dxgi.resize);
 	void *present1_addr = nullptr;
-	if (global_hook_info->offsets.dxgi.present1)
+	if (global_hook_info->offsets.dxgi.present1) {
 		present1_addr = get_offset_addr(dxgi_module, global_hook_info->offsets.dxgi.present1);
+	}
 
 	DetourTransactionBegin();
 
@@ -333,8 +338,9 @@ bool hook_dxgi(void)
 	if (success) {
 		hlog("Hooked IDXGISwapChain::Present");
 		hlog("Hooked IDXGISwapChain::ResizeBuffers");
-		if (RealPresent1)
+		if (RealPresent1) {
 			hlog("Hooked IDXGISwapChain1::Present1");
+		}
 		hlog("Hooked DXGI");
 	} else {
 		RealPresent = nullptr;

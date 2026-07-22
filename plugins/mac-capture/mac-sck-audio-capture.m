@@ -106,6 +106,7 @@ API_AVAILABLE(macos(13.0)) static bool init_audio_screen_stream(struct screen_ca
 
     [sc->stream_properties setCapturesAudio:TRUE];
     [sc->stream_properties setExcludesCurrentProcessAudio:TRUE];
+    [sc->stream_properties setShowsCursor:FALSE];
 
     struct obs_audio_info audio_info;
     BOOL did_get_audio_info = obs_get_audio_info(&audio_info);
