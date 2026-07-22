@@ -59,7 +59,7 @@ const char *get_font_path(const char *family, uint16_t size, const char *style, 
 		FcStrFree(path);
 
 		int fc_index = 0;
-		FcPatternGetInteger(match, FC_INDEX, 1, &fc_index);
+		FcPatternGetInteger(match, FC_INDEX, 0, &fc_index);
 		*idx = (FT_Long)fc_index;
 
 		FcPatternDestroy(match);
