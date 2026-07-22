@@ -9,6 +9,8 @@
 #define do_log(level, format, ...) \
 	blog(level, "[obs-webrtc] [whip_output: '%s'] " format, obs_output_get_name(output), ##__VA_ARGS__)
 
+constexpr size_t maxHttpResponseSize = 512 * 1024;
+
 static uint32_t generate_random_u32()
 {
 	std::random_device rd;
@@ -44,6 +46,9 @@ static size_t curl_writefunction(char *data, size_t size, size_t nmemb, void *pr
 	auto read_buffer = static_cast<std::string *>(priv_data);
 
 	size_t real_size = size * nmemb;
+	if (read_buffer->size() + real_size > maxHttpResponseSize) {
+		return CURL_WRITEFUNC_ERROR;
+	}
 
 	read_buffer->append(data, real_size);
 	return real_size;
