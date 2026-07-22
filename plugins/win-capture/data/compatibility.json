@@ -87,6 +87,34 @@
             "url": ""
         },
         {
+            "name": "Construct 3",
+            "translation_key": "Compatibility.WindowCapture.BitBlt.Applications.Based",
+            "severity": 0,
+            "executable": "",
+            "window_class": "WindowsWebview2Wrapper",
+            "window_title": "",
+            "match_flags": 4,
+            "game_capture": false,
+            "window_capture": true,
+            "window_capture_wgc": false,
+            "message": "Applications based on Chromium may not be capturable using the selected Capture Method (BitBlt).",
+            "url": ""
+        },
+        {
+            "name": "Construct 3",
+            "translation_key": "Compatibility.GameCapture.Blocked.Applications.Built",
+            "severity": 2,
+            "executable": "",
+            "window_class": "WindowsWebview2Wrapper",
+            "window_title": "",
+            "match_flags": 4,
+            "game_capture": true,
+            "window_capture": false,
+            "window_capture_wgc": false,
+            "message": "Games built on Chromium cannot be captured using Game Capture. Use Window Capture or Display Capture instead.",
+            "url": ""
+        },
+        {
             "name": "UWP",
             "translation_key": "Compatibility.WindowCapture.BitBlt.Applications",
             "severity": 0,

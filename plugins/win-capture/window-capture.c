@@ -121,16 +121,17 @@ static const char *wgc_whole_match_classes[] = {
 	"Windows.UI.Core.CoreWindow",
 	"WinUIDesktopWin32WindowClass",
 	"GAMINGSERVICESUI_HOSTING_WINDOW_CLASS",
-	"XLMAIN",            /* Microsoft Excel */
-	"PPTFrameClass",     /* Microsoft PowerPoint */
-	"screenClass",       /* Microsoft PowerPoint (Slide Show) */
-	"PodiumParent",      /* Microsoft PowerPoint (Presenter View) */
-	"OpusApp",           /* Microsoft Word */
-	"OMain",             /* Microsoft Access */
-	"Framework::CFrame", /* Microsoft OneNote */
-	"rctrl_renwnd32",    /* Microsoft Outlook */
-	"MSWinPub",          /* Microsoft Publisher */
-	"OfficeApp-Frame",   /* Microsoft 365 Software */
+	"XLMAIN",                 /* Microsoft Excel */
+	"PPTFrameClass",          /* Microsoft PowerPoint */
+	"screenClass",            /* Microsoft PowerPoint (Slide Show) */
+	"PodiumParent",           /* Microsoft PowerPoint (Presenter View) */
+	"OpusApp",                /* Microsoft Word */
+	"OMain",                  /* Microsoft Access */
+	"Framework::CFrame",      /* Microsoft OneNote */
+	"rctrl_renwnd32",         /* Microsoft Outlook */
+	"MSWinPub",               /* Microsoft Publisher */
+	"OfficeApp-Frame",        /* Microsoft 365 Software */
+	"WindowsWebview2Wrapper", /* Construct 3 Games */
 	"SDL_app",
 	NULL,
 };
