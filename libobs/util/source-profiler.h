@@ -49,6 +49,14 @@ typedef struct profiler_result {
 	uint64_t async_input_worst;
 	uint64_t async_rendered_best;
 	uint64_t async_rendered_worst;
+
+	/* Audio render time in ns */
+	uint64_t audio_render_avg;
+	uint64_t audio_render_max;
+
+	/* Audio async render time in ns */
+	uint64_t audio_async_avg;
+	uint64_t audio_async_max;
 } profiler_result_t;
 
 /* Enable/disable profiler (applied on next frame) */
