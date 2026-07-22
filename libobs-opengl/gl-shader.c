@@ -482,6 +482,12 @@ static void program_set_param_data(struct gs_program *program, struct program_pa
 			gl_success("glUniform4fv");
 		}
 
+	} else if (pp->param->type == GS_SHADER_PARAM_MATRIX3X3) {
+		if (validate_param(pp, sizeof(struct matrix3))) {
+			glUniformMatrix3fv(pp->obj, 1, false, (float *)array);
+			gl_success("glUniformMatrix3fv");
+		}
+
 	} else if (pp->param->type == GS_SHADER_PARAM_MATRIX4X4) {
 		if (validate_param(pp, sizeof(struct matrix4))) {
 			glUniformMatrix4fv(pp->obj, 1, false, (float *)array);
