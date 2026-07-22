@@ -489,7 +489,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QDoubleSpinBox" name="snapDistance">
+                    <widget class="OBS::DoubleSpinBox" name="snapDistance">
                      <property name="decimals">
                       <number>1</number>
                      </property>
@@ -1947,7 +1947,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QSpinBox" name="multitrackVideoMaximumAggregateBitrate">
+                      <widget class="OBS::SpinBox" name="multitrackVideoMaximumAggregateBitrate">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                          <horstretch>0</horstretch>
@@ -1996,7 +1996,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QSpinBox" name="multitrackVideoMaximumVideoTracks">
+                      <widget class="OBS::SpinBox" name="multitrackVideoMaximumVideoTracks">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                          <horstretch>0</horstretch>
@@ -2157,7 +2157,7 @@
                    <item row="1" column="1">
                     <layout class="QHBoxLayout" name="horizontalLayout_35" stretch="0">
                      <item>
-                      <widget class="QSpinBox" name="whipSimulcastTotalLayers">
+                      <widget class="OBS::SpinBox" name="whipSimulcastTotalLayers">
                        <property name="minimum">
                         <number>1</number>
                        </property>
@@ -2507,7 +2507,7 @@
                         </widget>
                        </item>
                        <item row="0" column="1">
-                        <widget class="QSpinBox" name="simpleOutputVBitrate">
+                        <widget class="OBS::SpinBox" name="simpleOutputVBitrate">
                          <property name="minimum">
                           <number>200</number>
                          </property>
@@ -3060,7 +3060,7 @@
                         </widget>
                        </item>
                        <item row="0" column="1">
-                        <widget class="QSpinBox" name="simpleRBSecMax">
+                        <widget class="OBS::SpinBox" name="simpleRBSecMax">
                          <property name="suffix">
                           <string notr="true"> sec</string>
                          </property>
@@ -3083,7 +3083,7 @@
                         </widget>
                        </item>
                        <item row="1" column="1">
-                        <widget class="QSpinBox" name="simpleRBMegsMax">
+                        <widget class="OBS::SpinBox" name="simpleRBMegsMax">
                          <property name="suffix">
                           <string notr="true"> MB</string>
                          </property>
@@ -4146,7 +4146,7 @@
                                 </widget>
                                </item>
                                <item row="9" column="1">
-                                <widget class="QSpinBox" name="advOutSplitFileTime">
+                                <widget class="OBS::SpinBox" name="advOutSplitFileTime">
                                  <property name="suffix">
                                   <string> min</string>
                                  </property>
@@ -4169,7 +4169,7 @@
                                 </widget>
                                </item>
                                <item row="10" column="1">
-                                <widget class="QSpinBox" name="advOutSplitFileSize">
+                                <widget class="OBS::SpinBox" name="advOutSplitFileSize">
                                  <property name="suffix">
                                   <string> MB</string>
                                  </property>
@@ -4520,7 +4520,7 @@
                                 </widget>
                                </item>
                                <item row="7" column="1">
-                                <widget class="QSpinBox" name="advOutFFVBitrate">
+                                <widget class="OBS::SpinBox" name="advOutFFVBitrate">
                                  <property name="minimum">
                                   <number>0</number>
                                  </property>
@@ -4540,7 +4540,7 @@
                                 </widget>
                                </item>
                                <item row="8" column="1">
-                                <widget class="QSpinBox" name="advOutFFVGOPSize">
+                                <widget class="OBS::SpinBox" name="advOutFFVGOPSize">
                                  <property name="maximum">
                                   <number>1000000000</number>
                                  </property>
@@ -4610,7 +4610,7 @@
                                 </widget>
                                </item>
                                <item row="13" column="1">
-                                <widget class="QSpinBox" name="advOutFFABitrate">
+                                <widget class="OBS::SpinBox" name="advOutFFABitrate">
                                  <property name="minimum">
                                   <number>32</number>
                                  </property>
@@ -5794,7 +5794,7 @@
                            </widget>
                           </item>
                           <item row="0" column="1">
-                           <widget class="QSpinBox" name="advRBSecMax">
+                           <widget class="OBS::SpinBox" name="advRBSecMax">
                             <property name="suffix">
                              <string notr="true"> s</string>
                             </property>
@@ -5810,7 +5810,7 @@
                            </widget>
                           </item>
                           <item row="1" column="1">
-                           <widget class="QSpinBox" name="advRBMegsMax">
+                           <widget class="OBS::SpinBox" name="advRBMegsMax">
                             <property name="suffix">
                              <string> MB</string>
                             </property>
@@ -6660,7 +6660,7 @@
                  <number>0</number>
                 </property>
                 <item alignment="Qt::AlignTop">
-                 <widget class="QSpinBox" name="fpsInteger">
+                 <widget class="OBS::SpinBox" name="fpsInteger">
                   <property name="minimum">
                    <number>1</number>
                   </property>
@@ -6702,7 +6702,7 @@
                  </widget>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QSpinBox" name="fpsNumerator">
+                 <widget class="OBS::SpinBox" name="fpsNumerator">
                   <property name="minimum">
                    <number>1</number>
                   </property>
@@ -6722,7 +6722,7 @@
                  </widget>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QSpinBox" name="fpsDenominator">
+                 <widget class="OBS::SpinBox" name="fpsDenominator">
                   <property name="minimum">
                    <number>1</number>
                   </property>
@@ -8118,7 +8118,7 @@
                       <number>0</number>
                      </property>
                      <item>
-                      <widget class="QSpinBox" name="sdrWhiteLevel">
+                      <widget class="OBS::SpinBox" name="sdrWhiteLevel">
                        <property name="suffix">
                         <string notr="true"> nits</string>
                        </property>
@@ -8147,7 +8147,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QSpinBox" name="hdrNominalPeakLevel">
+                      <widget class="OBS::SpinBox" name="hdrNominalPeakLevel">
                        <property name="suffix">
                         <string notr="true"> nits</string>
                        </property>
@@ -8367,7 +8367,7 @@
                        <number>0</number>
                       </property>
                       <item>
-                       <widget class="QSpinBox" name="streamDelaySec">
+                       <widget class="OBS::SpinBox" name="streamDelaySec">
                         <property name="enabled">
                          <bool>true</bool>
                         </property>
@@ -8477,7 +8477,7 @@
                       <number>0</number>
                      </property>
                      <item>
-                      <widget class="QSpinBox" name="reconnectRetryDelay">
+                      <widget class="OBS::SpinBox" name="reconnectRetryDelay">
                        <property name="suffix">
                         <string> s</string>
                        </property>
@@ -8506,7 +8506,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QSpinBox" name="reconnectMaxRetries">
+                      <widget class="OBS::SpinBox" name="reconnectMaxRetries">
                        <property name="minimum">
                         <number>1</number>
                        </property>
@@ -8797,9 +8797,19 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>UrlPushButton</class>
-   <extends>QPushButton</extends>
-   <header>components/UrlPushButton.hpp</header>
+   <class>OBS::SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>SpinBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>OBS::DoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>DoubleSpinBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>AbsoluteSlider</class>
+   <extends>QSlider</extends>
+   <header>components/AbsoluteSlider.hpp</header>
   </customwidget>
   <customwidget>
    <class>OBSHotkeyEdit</class>
@@ -8807,9 +8817,9 @@
    <header>settings/OBSHotkeyEdit.hpp</header>
   </customwidget>
   <customwidget>
-   <class>AbsoluteSlider</class>
-   <extends>QSlider</extends>
-   <header>components/AbsoluteSlider.hpp</header>
+   <class>UrlPushButton</class>
+   <extends>QPushButton</extends>
+   <header>components/UrlPushButton.hpp</header>
   </customwidget>
  </customwidgets>
  <tabstops>

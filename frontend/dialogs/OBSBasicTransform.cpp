@@ -1,5 +1,6 @@
 #include "OBSBasicTransform.hpp"
 
+#include <DoubleSpinBox.hpp>
 #include <widgets/OBSBasic.hpp>
 
 #include "moc_OBSBasicTransform.cpp"
