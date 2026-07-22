@@ -355,24 +355,6 @@
             ]
         },
         {
-            "name": "Web.TV",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live3.origins.web.tv/liveext"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "GoodGame.ru",
             "servers": [
                 {
@@ -1522,23 +1504,6 @@
             ]
         },
         {
-            "name": "DLive",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.dlive.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Lightcast.com",
             "servers": [
                 {
@@ -1952,24 +1917,6 @@
             ]
         },
         {
-            "name": "OPENREC.tv - Premium member (プレミアム会員)",
-            "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://a.station.openrec.tv:1935/live1"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 5000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "nanoStream Cloud / bintu",
             "more_info_link": "https://www.nanocosmos.de/obs",
             "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
@@ -2095,18 +2042,6 @@
                 {
                     "name": "BoxCast",
                     "url": "rtmp://rtmp.boxcast.com/live"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Disciple Media",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ],
             "supported video codecs": [
@@ -3500,104 +3435,6 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
-        },
-        {
-            "name": "SOOP Global",
-            "common": false,
-            "more_info_link": "https://sooplive.helpshift.com/hc/en/3-soop/faq/20",
-            "stream_key_link": "https://www.sooplive.com/dashboard",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://global-stream.sooplive.com/app"
-                }
-            ],
-            "protocol": "RTMP",
-            "supported video codecs": [
-                "h264"
-            ],
-            "supported audio codecs": [
-                "aac"
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "main",
-                "bframes": 0,
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720",
-                    "960x540",
-                    "640x360"
-                ],
-                "bitrate matrix": [
-                    {
-                        "res": "640x360",
-                        "fps": 30,
-                        "max bitrate": 500
-                    },
-                    {
-                        "res": "640x360",
-                        "fps": 60,
-                        "max bitrate": 1000
-                    },
-                    {
-                        "res": "960x540",
-                        "fps": 30,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "960x540",
-                        "fps": 60,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 30,
-                        "max bitrate": 4000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 60,
-                        "max bitrate": 4000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 30,
-                        "max bitrate": 8000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 60,
-                        "max bitrate": 8000
-                    }
-                ],
-                "max fps": 60,
-                "max video bitrate": 8000,
-                "max audio bitrate": 192
-            }
-        },
-        {
-            "name": "Sportify",
-            "more_info_link": "https://www.homegroundapp.com",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.homegroundapp.com/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 3500,
-                "max audio bitrate": 192,
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720"
-                ],
-                "max fps": 30
-            },
-            "supported video codecs": [
-                "h264"
-            ]
         }
     ]
 }
