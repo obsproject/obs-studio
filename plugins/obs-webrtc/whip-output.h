@@ -1,6 +1,7 @@
 #pragma once
 
 #include <obs-module.h>
+#include <rtc/candidate.hpp>
 #include <util/curl/curl-helper.h>
 #include <util/platform.h>
 #include <util/base.h>
@@ -13,6 +14,7 @@
 #include <algorithm>
 
 #include <rtc/rtc.hpp>
+#include <vector>
 
 struct videoLayerState {
 	uint16_t sequenceNumber;
@@ -48,11 +50,15 @@ private:
 	void Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
 
+	bool SendTrickledCandidates();
+
 	obs_output_t *output;
 
 	std::string endpoint_url;
 	std::string bearer_token;
 	std::string resource_url;
+	std::string ice_ufrag;
+	std::string ice_pwd;
 
 	std::atomic<bool> running;
 
@@ -65,6 +71,7 @@ private:
 	std::shared_ptr<rtc::Track> video_track;
 	std::shared_ptr<rtc::RtcpSrReporter> audio_sr_reporter;
 	std::shared_ptr<rtc::RtcpSrReporter> video_sr_reporter;
+	std::shared_ptr<std::vector<rtc::Candidate>> trickled_candidates;
 
 	std::map<obs_encoder_t *, std::shared_ptr<videoLayerState>> videoLayerStates;
 
