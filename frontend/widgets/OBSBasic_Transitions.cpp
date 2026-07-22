@@ -452,7 +452,7 @@ OBSSource OBSBasic::GetCurrentTransition()
 	return transition->second;
 }
 
-void OBSBasic::AddTransition(const char *id)
+void OBSBasic::AddTransition(const char *id, const char *transitionName = nullptr, bool showProperties = true)
 {
 	std::string name;
 	QString placeHolderText = QT_UTF8(obs_source_get_display_name(id));
@@ -464,23 +464,32 @@ void OBSBasic::AddTransition(const char *id)
 		placeHolderText = format.arg(++i);
 	}
 
-	bool accepted = NameDialog::AskForName(this, QTStr("TransitionNameDlg.Title"), QTStr("TransitionNameDlg.Text"),
-					       name, placeHolderText);
+	bool accepted;
+	if (transitionName != nullptr) {
+		accepted = true;
+		name = std::string(transitionName);
+	} else {
+		accepted = NameDialog::AskForName(this, QTStr("TransitionNameDlg.Title"),
+						  QTStr("TransitionNameDlg.Text"), name, placeHolderText);
+	}
 
 	if (accepted) {
 		std::string uuid;
 
 		if (name.empty()) {
-			OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
-			AddTransition(id);
+			if (transitionName == nullptr) {
+				OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"), QTStr("NoNameEntered.Text"));
+				AddTransition(id, nullptr, showProperties);
+			}
 			return;
 		}
 
 		source = FindTransition(name.c_str());
 		if (source) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
-
-			AddTransition(id);
+			if (transitionName == nullptr) {
+				OBSMessageBox::warning(this, QTStr("NameExists.Title"), QTStr("NameExists.Text"));
+				AddTransition(id, nullptr, showProperties);
+			}
 			return;
 		}
 
@@ -494,9 +503,10 @@ void OBSBasic::AddTransition(const char *id)
 
 		emit TransitionAdded(QString::fromStdString(name), QString::fromStdString(uuid));
 
-		UpdateCurrentTransition(uuid, true);
-
-		CreatePropertiesWindow(source);
+		if (showProperties) {
+			UpdateCurrentTransition(uuid, true);
+			CreatePropertiesWindow(source);
+		}
 		obs_source_release(source);
 
 		OnEvent(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
