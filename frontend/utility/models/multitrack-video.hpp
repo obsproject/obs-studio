@@ -96,8 +96,9 @@ struct Client {
 	string name = "obs-studio";
 	string version;
 	std::unordered_set<std::string> supported_codecs;
+	std::unordered_set<std::string> supported_encoders;
 
-	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Client, name, version, supported_codecs)
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Client, name, version, supported_codecs, supported_encoders)
 };
 
 struct Cpu {
