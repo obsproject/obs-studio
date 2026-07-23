@@ -1442,7 +1442,6 @@ void OBSBasic::applicationShutdown() noexcept
 	delete scaleFilteringMenu;
 	delete blendingModeMenu;
 	delete colorMenu;
-	delete colorWidgetAction;
 	delete colorSelect;
 	delete deinterlaceMenu;
 	delete perSceneTransitionMenu;
