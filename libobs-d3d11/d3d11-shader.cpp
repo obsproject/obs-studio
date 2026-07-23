@@ -27,6 +27,7 @@
 #include <filesystem>
 #include <fstream>
 #include <d3dcompiler.h>
+#include <system_error>
 
 void gs_vertex_shader::GetBuffersExpected(const std::vector<D3D11_INPUT_ELEMENT_DESC> &inputs)
 {
@@ -218,6 +219,16 @@ static uint64_t fnv1a_hash(const char *str, size_t len)
 	return hash;
 }
 
+static void remove_cache_file(const std::filesystem::path &cachePath, const char *reason) noexcept
+{
+	blog(LOG_WARNING, "Discarding shader cache file %s: %s",
+	     reinterpret_cast<const char *>(cachePath.u8string().c_str()), reason);
+
+	// Intentionally ignored - we don't care about failure here, we just don't want exceptions
+	std::error_code ec;
+	std::filesystem::remove(cachePath, ec);
+}
+
 void gs_shader::Compile(const char *shaderString, const char *file, const char *target, ID3D10Blob **shader)
 {
 	ComPtr<ID3D10Blob> errorsBlob;
@@ -239,41 +250,47 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 	// Increment if on-disk format changes
 	cachePath += ".v2";
 
-	std::fstream cacheFile;
-	cacheFile.exceptions(std::fstream::badbit | std::fstream::eofbit);
-
-	if (std::filesystem::exists(cachePath) && !std::filesystem::is_empty(cachePath)) {
-		cacheFile.open(cachePath, std::ios::in | std::ios::binary | std::ios::ate);
-	}
-
+	std::ifstream cacheFile(cachePath, std::ios::binary | std::ios::ate);
 	if (cacheFile.is_open()) {
-		uint64_t checksum;
+		uint64_t checksum = 0;
 
-		try {
-			std::streampos len = cacheFile.tellg();
-			// Not enough data for checksum + shader
-			if (len <= sizeof(checksum)) {
-				throw std::length_error("File truncated");
-			}
+		std::streamoff len = cacheFile.tellg();
 
-			cacheFile.seekg(0, std::ios::beg);
-
-			len -= sizeof(checksum);
-			D3DCreateBlob(len, shader);
-			cacheFile.read((char *)(*shader)->GetBufferPointer(), len);
-			uint64_t calculated_checksum = fnv1a_hash((char *)(*shader)->GetBufferPointer(), len);
-
-			cacheFile.read((char *)&checksum, sizeof(checksum));
-			if (calculated_checksum != checksum) {
-				throw std::exception("Checksum mismatch");
-			}
-
-			is_cached = true;
-		} catch (const std::exception &e) {
-			// Something went wrong reading the cache file, delete it
-			blog(LOG_WARNING, "Loading shader cache file failed with \"%s\": %s", e.what(), file);
+		// Not enough data for checksum + shader
+		if (len < 0 || len <= static_cast<std::streamoff>(sizeof(checksum))) {
 			cacheFile.close();
-			std::filesystem::remove(cachePath);
+			remove_cache_file(cachePath, "truncated or unreadable");
+		} else {
+			len -= sizeof(checksum);
+
+			hr = D3DCreateBlob(len, shader);
+			if (FAILED(hr)) {
+				cacheFile.close();
+				remove_cache_file(cachePath, "cache blob allocation failed");
+			} else {
+				cacheFile.seekg(0, std::ios::beg);
+				cacheFile.read(static_cast<char *>((*shader)->GetBufferPointer()), len);
+				cacheFile.read(reinterpret_cast<char *>(&checksum), sizeof(checksum));
+
+				const bool success = static_cast<bool>(cacheFile);
+
+				if (success) {
+					uint64_t calculated_checksum =
+						fnv1a_hash(static_cast<char *>((*shader)->GetBufferPointer()), len);
+
+					if (calculated_checksum == checksum) {
+						is_cached = true;
+					}
+				}
+
+				if (!is_cached) {
+					(*shader)->Release();
+					*shader = nullptr;
+
+					cacheFile.close();
+					remove_cache_file(cachePath, !success ? "read error" : "checksum mismatch");
+				}
+			}
 		}
 	}
 
@@ -288,18 +305,17 @@ void gs_shader::Compile(const char *shaderString, const char *file, const char *
 			}
 		}
 
-		cacheFile.open(cachePath, std::ios::out | std::ios::binary);
-		if (cacheFile.is_open()) {
-			try {
-				uint64_t calculated_checksum =
-					fnv1a_hash((char *)(*shader)->GetBufferPointer(), (*shader)->GetBufferSize());
+		std::ofstream outFile(cachePath, std::ios::binary | std::ios::trunc);
+		if (outFile.is_open()) {
+			uint64_t calculated_checksum = fnv1a_hash(static_cast<char *>((*shader)->GetBufferPointer()),
+								  (*shader)->GetBufferSize());
 
-				cacheFile.write((char *)(*shader)->GetBufferPointer(), (*shader)->GetBufferSize());
-				cacheFile.write((char *)&calculated_checksum, sizeof(calculated_checksum));
-			} catch (const std::exception &e) {
-				blog(LOG_WARNING, "Writing shader cache file failed with \"%s\": %s", e.what(), file);
-				cacheFile.close();
-				std::filesystem::remove(cachePath);
+			outFile.write(static_cast<char *>((*shader)->GetBufferPointer()), (*shader)->GetBufferSize());
+			outFile.write(reinterpret_cast<char *>(&calculated_checksum), sizeof(calculated_checksum));
+			outFile.close();
+
+			if (outFile.fail()) {
+				remove_cache_file(cachePath, "write error");
 			}
 		}
 	}
