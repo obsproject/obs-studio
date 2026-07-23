@@ -1,0 +1,30 @@
+name: Generate Short Sha
+description: Creates a shortened SHA variant of the current git SHA.
+inputs:
+  sha:
+    description: The git SHA to generate a shortened SHA variant from.
+    default: ${{ github.sha }}
+  working-directory:
+    description: The path to a git repository from which the SHA originates.
+    default: ${{ github.workspace }}
+outputs:
+  sha:
+    description: The shortened SHA variant generated from the input 'sha'.
+    value: ${{ steps.short-sha.outputs.sha }}
+runs:
+  using: composite
+  steps:
+    - name: Generate Short SHA
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      id: short-sha
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GIT_SHA: ${{ inputs.sha }}
+      run: |
+        # Generate Short SHA
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare git_output
+        git_output="$(git rev-parse --short "${GITHUB_SHA}")"
+        echo "sha=${git_output}" >> "${GITHUB_OUTPUT}"
+        echo "Short GitHub SHA: '${git_output}'."
