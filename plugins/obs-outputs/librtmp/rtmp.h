@@ -187,6 +187,7 @@ extern "C"
 #define RTMP_FEATURE_MFP	0x08	/* not yet supported */
 #define RTMP_FEATURE_WRITE	0x10	/* publish, not play */
 #define RTMP_FEATURE_HTTP2	0x20	/* server-side rtmpt */
+#define RTMP_FEATURE_RECONNECT	0x40 /* reconnect supported */
 
 #define RTMP_PROTOCOL_UNDEFINED	-1
 #define RTMP_PROTOCOL_RTMP      0
@@ -196,6 +197,8 @@ extern "C"
 #define RTMP_PROTOCOL_RTMPTE    (RTMP_FEATURE_HTTP|RTMP_FEATURE_ENC)
 #define RTMP_PROTOCOL_RTMPTS    (RTMP_FEATURE_HTTP|RTMP_FEATURE_SSL)
 #define RTMP_PROTOCOL_RTMFP     RTMP_FEATURE_MFP
+
+#define RTMP_CAPS_RECONNECT     1
 
 #define RTMP_DEFAULT_CHUNKSIZE	128
 
@@ -516,6 +519,7 @@ extern "C"
     void RTMP_TLS_Free(RTMP *r);
     void RTMP_Free(RTMP *r);
     void RTMP_EnableWrite(RTMP *r);
+    void RTMP_EnableReconnect(RTMP *r);
 
     int RTMP_LibVersion(void);
     void RTMP_UserInterrupt(void);	/* user typed Ctrl-C */
