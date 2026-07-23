@@ -1957,7 +1957,7 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(const char *encod
 	view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 	view->setProperty("changed", QVariant(changed));
 	view->setScrolling(false);
-	QObject::connect(view, &OBSPropertiesView::Changed, this, &OBSBasicSettings::OutputsChanged);
+	QObject::connect(view, &OBSPropertiesView::Changed, this, [this, view]() { OutputsChanged(view); });
 
 	return view;
 }
@@ -4283,45 +4283,52 @@ void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 	}
 }
 
-void OBSBasicSettings::GeneralChanged()
+static void MarkChangedWidget(QObject *widget)
+{
+	if (widget) {
+		widget->setProperty("changed", QVariant(true));
+	}
+}
+
+void OBSBasicSettings::GeneralChanged(QObject *widget)
 {
 	if (!loading) {
 		generalChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
 
-void OBSBasicSettings::Stream1Changed()
+void OBSBasicSettings::Stream1Changed(QObject *widget)
 {
 	if (!loading) {
 		stream1Changed = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
 
-void OBSBasicSettings::OutputsChanged()
+void OBSBasicSettings::OutputsChanged(QObject *widget)
 {
 	if (!loading) {
 		outputsChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 
 		UpdateMultitrackVideo();
 	}
 }
 
-void OBSBasicSettings::AudioChanged()
+void OBSBasicSettings::AudioChanged(QObject *widget)
 {
 	if (!loading) {
 		audioChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
 
-void OBSBasicSettings::AudioChangedRestart()
+void OBSBasicSettings::AudioChangedRestart(QObject *widget)
 {
 	ui->audioMsg->setVisible(false);
 
@@ -4339,7 +4346,7 @@ void OBSBasicSettings::AudioChangedRestart()
 		}
 
 		audioChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
@@ -4442,7 +4449,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 	}
 }
 
-void OBSBasicSettings::AdvancedChangedRestart()
+void OBSBasicSettings::AdvancedChangedRestart(QObject *widget)
 {
 	ui->advancedMsg->setVisible(false);
 
@@ -4450,25 +4457,25 @@ void OBSBasicSettings::AdvancedChangedRestart()
 		advancedChanged = true;
 		ui->advancedMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
 		ui->advancedMsg->setVisible(true);
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
 
-void OBSBasicSettings::VideoChangedResolution()
+void OBSBasicSettings::VideoChangedResolution(QObject *widget)
 {
 	if (!loading && ValidResolutions(ui.get())) {
 		videoChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
 
-void OBSBasicSettings::VideoChanged()
+void OBSBasicSettings::VideoChanged(QObject *widget)
 {
 	if (!loading) {
 		videoChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
@@ -4639,29 +4646,29 @@ void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
 	LoadHotkeySettings(ignoreKey);
 }
 
-void OBSBasicSettings::A11yChanged()
+void OBSBasicSettings::A11yChanged(QObject *widget)
 {
 	if (!loading) {
 		a11yChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
 
-void OBSBasicSettings::AppearanceChanged()
+void OBSBasicSettings::AppearanceChanged(QObject *widget)
 {
 	if (!loading) {
 		appearanceChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
 
-void OBSBasicSettings::AdvancedChanged()
+void OBSBasicSettings::AdvancedChanged(QObject *widget)
 {
 	if (!loading) {
 		advancedChanged = true;
-		sender()->setProperty("changed", QVariant(true));
+		MarkChangedWidget(widget);
 		EnableApplyButton(true);
 	}
 }
@@ -5623,7 +5630,8 @@ void OBSBasicSettings::LowLatencyBufferingChanged(bool checked)
 	}
 
 	QMetaObject::invokeMethod(this, "UpdateAudioWarnings", Qt::QueuedConnection);
-	QMetaObject::invokeMethod(this, "AudioChangedRestart");
+	QMetaObject::invokeMethod(
+		this, [this]() { AudioChangedRestart(ui->lowLatencyBuffering); }, Qt::QueuedConnection);
 }
 
 void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)

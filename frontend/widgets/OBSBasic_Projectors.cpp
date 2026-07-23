@@ -173,15 +173,13 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor, Project
 	return projector;
 }
 
-void OBSBasic::OpenPreviewProjector()
+void OBSBasic::OpenPreviewProjector(int monitor)
 {
-	int monitor = sender()->property("monitor").toInt();
 	OpenProjector(nullptr, monitor, ProjectorType::Preview);
 }
 
-void OBSBasic::OpenSourceProjector()
+void OBSBasic::OpenSourceProjector(int monitor)
 {
-	int monitor = sender()->property("monitor").toInt();
 	OBSSceneItem item = GetCurrentSceneItem();
 	if (!item) {
 		return;
@@ -190,15 +188,13 @@ void OBSBasic::OpenSourceProjector()
 	OpenProjector(obs_sceneitem_get_source(item), monitor, ProjectorType::Source);
 }
 
-void OBSBasic::OpenMultiviewProjector()
+void OBSBasic::OpenMultiviewProjector(int monitor)
 {
-	int monitor = sender()->property("monitor").toInt();
 	OpenProjector(nullptr, monitor, ProjectorType::Multiview);
 }
 
-void OBSBasic::OpenSceneProjector()
+void OBSBasic::OpenSceneProjector(int monitor)
 {
-	int monitor = sender()->property("monitor").toInt();
 	OBSScene scene = GetCurrentScene();
 	if (!scene) {
 		return;

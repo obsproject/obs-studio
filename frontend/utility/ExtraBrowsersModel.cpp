@@ -102,7 +102,7 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 	del->setProperty("class", "icon-trash");
 	del->setObjectName("extraPanelDelete");
 	del->setMinimumSize(QSize(20, 20));
-	connect(del, &QPushButton::clicked, this, &ExtraBrowsersModel::DeleteItem);
+	connect(del, &QPushButton::clicked, this, [this, del, index]() { DeleteItem(del, index); });
 
 	widget->setIndexWidget(index, del);
 	widget->setRowHeight(idx, 20);
@@ -153,18 +153,17 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	}
 }
 
-void ExtraBrowsersModel::DeleteItem()
+void ExtraBrowsersModel::DeleteItem(QPushButton *button, const QModelIndex &index)
 {
 	QTableView *widget = reinterpret_cast<QTableView *>(parent());
 
-	DelButton *del = reinterpret_cast<DelButton *>(sender());
-	int row = del->index.row();
+	int row = index.row();
 
 	/* there's some sort of internal bug in Qt and deleting certain index
 	 * widgets or "editors" that can cause a crash inside Qt if the widget
 	 * is not manually removed, at least on 5.7 */
-	widget->setIndexWidget(del->index, nullptr);
-	del->deleteLater();
+	widget->setIndexWidget(index, nullptr);
+	button->deleteLater();
 
 	/* --------- */
 

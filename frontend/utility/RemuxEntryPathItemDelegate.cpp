@@ -78,7 +78,9 @@ QWidget *RemuxEntryPathItemDelegate::createEditor(QWidget *parent, const QStyleO
 						QSizePolicy::ControlType::LineEdit));
 		layout->addWidget(text);
 
-		QObject::connect(text, &QLineEdit::editingFinished, this, &RemuxEntryPathItemDelegate::updateText);
+		QObject::connect(text, &QLineEdit::editingFinished, this, [this, container]() {
+			emit const_cast<RemuxEntryPathItemDelegate *>(this)->commitData(container);
+		});
 
 		QToolButton *browseButton = new QToolButton();
 		browseButton->setText("...");
@@ -205,11 +207,4 @@ void RemuxEntryPathItemDelegate::handleClear(QWidget *container)
 	container->setProperty(PATH_LIST_PROP, QStringList());
 
 	emit commitData(container);
-}
-
-void RemuxEntryPathItemDelegate::updateText()
-{
-	QLineEdit *lineEdit = dynamic_cast<QLineEdit *>(sender());
-	QWidget *editor = lineEdit->parentWidget();
-	emit commitData(editor);
 }
