@@ -871,6 +871,26 @@ fail:
 	return ret;
 }
 
+static int calldata_scene(lua_State *script)
+{
+	calldata_t *cd;
+	const char *str;
+	int ret = 0;
+
+	if (!ls_get_libobs_obj(calldata_t, 1, &cd))
+		goto fail;
+	str = lua_tostring(script, 2);
+	if (!str)
+		goto fail;
+
+	obs_scene_t *scene = calldata_ptr(cd, str);
+	if (ls_push_libobs_obj(obs_scene_t, scene, false))
+		++ret;
+
+fail:
+	return ret;
+}
+
 static int calldata_sceneitem(lua_State *script)
 {
 	calldata_t *cd;
@@ -885,6 +905,46 @@ static int calldata_sceneitem(lua_State *script)
 
 	obs_sceneitem_t *sceneitem = calldata_ptr(cd, str);
 	if (ls_push_libobs_obj(obs_sceneitem_t, sceneitem, false))
+		++ret;
+
+fail:
+	return ret;
+}
+
+static int calldata_output(lua_State *script)
+{
+	calldata_t *cd;
+	const char *str;
+	int ret = 0;
+
+	if (!ls_get_libobs_obj(calldata_t, 1, &cd))
+		goto fail;
+	str = lua_tostring(script, 2);
+	if (!str)
+		goto fail;
+
+	obs_output_t *output = calldata_ptr(cd, str);
+	if (ls_push_libobs_obj(obs_output_t, output, false))
+		++ret;
+
+fail:
+	return ret;
+}
+
+static int calldata_canvas(lua_State *script)
+{
+	calldata_t *cd;
+	const char *str;
+	int ret = 0;
+
+	if (!ls_get_libobs_obj(calldata_t, 1, &cd))
+		goto fail;
+	str = lua_tostring(script, 2);
+	if (!str)
+		goto fail;
+
+	obs_canvas_t *canvas = calldata_ptr(cd, str);
+	if (ls_push_libobs_obj(obs_canvas_t, canvas, false))
 		++ret;
 
 fail:
@@ -1015,7 +1075,10 @@ static void add_hook_functions(lua_State *script)
 	add_func("source_list_release", source_list_release);
 	add_func("sceneitem_list_release", sceneitem_list_release);
 	add_func("calldata_source", calldata_source);
+	add_func("calldata_scene", calldata_scene);
 	add_func("calldata_sceneitem", calldata_sceneitem);
+	add_func("calldata_output", calldata_output);
+	add_func("calldata_canvas", calldata_canvas);
 	add_func("obs_add_main_render_callback", obs_lua_add_main_render_callback);
 	add_func("obs_remove_main_render_callback", obs_lua_remove_main_render_callback);
 	add_func("obs_add_tick_callback", obs_lua_add_tick_callback);
