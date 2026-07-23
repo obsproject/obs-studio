@@ -69,7 +69,8 @@ struct audio_output {
 	size_t planes;
 
 	pthread_t thread;
-	os_event_t *stop_event;
+	os_sem_t *update_semaphore;
+	bool stop;
 
 	bool initialized;
 
@@ -77,7 +78,13 @@ struct audio_output {
 	void *input_param;
 	pthread_mutex_t input_mutex;
 	struct audio_mix mixes[MAX_AUDIO_MIXES];
+
+	struct audio_output *next;
+	struct audio_output *previous;
 };
+
+static struct audio_output *first;
+static pthread_mutex_t audio_mutex;
 
 /* ------------------------------------------------------------------------- */
 
@@ -220,7 +227,10 @@ static void *audio_thread(void *param)
 	const char *audio_thread_name =
 		profile_store_name(obs_get_profiler_name_store(), "audio_thread(%s)", audio->info.name);
 
-	while (os_event_try(audio->stop_event) == EAGAIN) {
+	while (os_sem_wait(audio->update_semaphore) == 0) {
+		if (audio->stop)
+			break;
+
 		samples += AUDIO_OUTPUT_FRAMES;
 		uint64_t audio_time = start_time + audio_frames_to_ns(rate, samples);
 
@@ -234,6 +244,8 @@ static void *audio_thread(void *param)
 		profile_end(audio_thread_name);
 
 		profile_reenable_thread();
+
+		os_sem_post(audio->next->update_semaphore);
 	}
 
 #ifdef _WIN32
@@ -369,21 +381,43 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 	out->input_param = info->input_param;
 	out->block_size = (planar ? 1 : out->channels) * get_audio_bytes_per_channel(info->format);
 
-	if (pthread_mutex_init_recursive(&out->input_mutex) != 0)
+	if (pthread_mutex_init_recursive(&audio_mutex) != 0)
 		goto fail0;
-	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
+	if (pthread_mutex_init_recursive(&out->input_mutex) != 0)
 		goto fail1;
-	if (pthread_create(&out->thread, NULL, audio_thread, out) != 0)
+	if (os_sem_init(&out->update_semaphore, 0) != 0)
 		goto fail2;
+	if (pthread_create(&out->thread, NULL, audio_thread, out) != 0)
+		goto fail3;
 
 	out->initialized = true;
+
+	pthread_mutex_lock(&audio_mutex);
+	if (!first) {
+		out->next = out;
+		out->previous = out;
+		first = out;
+		os_sem_post(first->update_semaphore);
+	} else {
+		out->next = first;
+		out->previous = first->previous;
+
+		first->previous->next = out;
+		first->previous = out;
+
+		first = out;
+	}
+	pthread_mutex_unlock(&audio_mutex);
+
 	*audio = out;
 	return AUDIO_OUTPUT_SUCCESS;
 
+fail3:
+	os_sem_destroy(out->update_semaphore);
 fail2:
-	os_event_destroy(out->stop_event);
-fail1:
 	pthread_mutex_destroy(&out->input_mutex);
+fail1:
+	pthread_mutex_destroy(&audio_mutex);
 fail0:
 	audio_output_close(out);
 	return AUDIO_OUTPUT_FAIL;
@@ -396,11 +430,27 @@ void audio_output_close(audio_t *audio)
 	if (!audio)
 		return;
 
-	if (audio->initialized) {
-		os_event_signal(audio->stop_event);
+	if (audio->initialized && !audio->stop) {
+		audio->stop = true;
+		os_sem_post(audio->update_semaphore);
 		pthread_join(audio->thread, &thread_ret);
-		os_event_destroy(audio->stop_event);
+		os_sem_destroy(audio->update_semaphore);
 		pthread_mutex_destroy(&audio->input_mutex);
+
+		pthread_mutex_lock(&audio_mutex);
+		if (audio->next == audio) {
+			first = NULL;
+		} else {
+			audio->previous->next = audio->next;
+			audio->next->previous = audio->previous;
+
+			if (first == audio)
+				first = audio->next;
+		}
+		pthread_mutex_unlock(&audio_mutex);
+
+		if (!first)
+			pthread_mutex_destroy(&audio_mutex);
 	}
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
@@ -452,4 +502,30 @@ size_t audio_output_get_channels(const audio_t *audio)
 uint32_t audio_output_get_sample_rate(const audio_t *audio)
 {
 	return audio->info.samples_per_sec;
+}
+
+bool audio_output_is_first(const audio_t *audio)
+{
+	bool is_first = false;
+
+	pthread_mutex_lock(&audio_mutex);
+	if (audio->next == first) {
+		is_first = true;
+	}
+	pthread_mutex_unlock(&audio_mutex);
+
+	return is_first;
+}
+
+bool audio_output_is_last(const audio_t *audio)
+{
+	bool is_last = false;
+
+	pthread_mutex_lock(&audio_mutex);
+	if (audio == first) {
+		is_last = true;
+	}
+	pthread_mutex_unlock(&audio_mutex);
+
+	return is_last;
 }

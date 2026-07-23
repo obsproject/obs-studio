@@ -48,6 +48,11 @@ The following signals are defined for canvases:
    Called when the canvas's video mix has been reset after a call to
    :c:func:`obs_reset_video()` or :c:func:`obs_canvas_reset_video()`.
 
+**audio_reset** (ptr canvas)
+
+   Called when the canvas's audio mix has been reset after a call to
+   :c:func:`obs_reset_audio()`, :c:func:`obs_reset_audio2()` or :c:func:`obs_canvas_reset_video()`.
+
 **source_add** (ptr canvas, ptr source)
 
    Called when a source has been added to the canvas.
@@ -103,12 +108,37 @@ General Canvas Functions
 
 ---------------------
 
+.. function:: obs_canvas_t *obs_canvas_create2(const char *name, struct obs_video_info *ovi, struct obs_audio_info2 *oai, uint32_t flags)
+
+   Creates a new canvas.
+
+   :param name: Name, will be deduplicated if necessary
+   :param ovi: Video configuration to use for this canvas's video output
+   :param oai: Audio configuration to use for this canvas's audio output
+   :param flags: Canvas flags
+   :return: Canvas object
+
+
+---------------------
+
 .. function:: obs_canvas_t *obs_canvas_create_private(const char *name, struct obs_video_info *ovi, uint32_t flags)
 
    Creates a new private canvas.
 
    :param name: Name, will **not** be deduplicated
    :param ovi: Video configuration to use for this canvas's video output
+   :param flags: Canvas flags
+   :return: Canvas object
+
+---------------------
+
+.. function:: obs_canvas_t *obs_canvas_create_private2(const char *name, struct obs_video_info *ovi, struct obs_audio_info2, uint32_t flags)
+
+   Creates a new private canvas.
+
+   :param name: Name, will **not** be deduplicated
+   :param ovi: Video configuration to use for this canvas's video output
+   :param oai: Audio configuration to use for this canvas's audio output
    :param flags: Canvas flags
    :return: Canvas object
 
@@ -298,5 +328,32 @@ Canvas Video Functions
 .. function:: void obs_canvas_render(obs_canvas_t *canvas)
 
    Render the canvas's view. Must be called on the graphics thread.
+
+---------------------
+
+Canvas Audio Functions
+----------------------
+
+.. function:: bool obs_canvas_reset_audio(obs_canvas_t *canvas, struct obs_audio_info2 *oai)
+
+   Reset a canvas's audio configuration.
+
+---------------------
+
+.. function:: bool obs_canvas_has_audio(obs_canvas_t *canvas)
+
+   Returns true if the canvas audio is configured.
+
+---------------------
+
+.. function:: audio_t *obs_canvas_get_audio(const obs_canvas_t *canvas)
+
+   Get canvas audio output
+
+---------------------
+
+.. function:: bool obs_canvas_get_audio_info(const obs_canvas_t *canvas, struct obs_audio_info2 *oai)
+
+   Get canvas audio info (if any)
 
 ---------------------
