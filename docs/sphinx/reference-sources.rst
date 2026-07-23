@@ -976,6 +976,8 @@ General Source Functions
    Gets/sets the hidden property that determines whether it should be hidden from the user.
    Used when the source is still alive but should not be referenced.
 
+   .. deprecated:: 33.0
+
 ---------------------
 
 .. function:: uint32_t obs_source_get_output_flags(const obs_source_t *source)

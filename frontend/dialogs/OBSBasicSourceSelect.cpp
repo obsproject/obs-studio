@@ -482,10 +482,6 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 
 bool OBSBasicSourceSelect::enumSourcesCallback(void *data, obs_source_t *source)
 {
-	if (obs_source_is_hidden(source)) {
-		return true;
-	}
-
 	OBSBasicSourceSelect *window = static_cast<OBSBasicSourceSelect *>(data);
 
 	OBSWeakSourceAutoRelease weakSource = obs_source_get_weak_source(source);
