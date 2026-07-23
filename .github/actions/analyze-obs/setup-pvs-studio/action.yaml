@@ -1,0 +1,44 @@
+name: Setup PVS-Studio
+description: >
+  Downloads the specified version of PVS Studio from the provided download location and installs it on the Windows
+  runner.
+
+  PVS Studio requires a valid license key to work, whose details need to be provided the the action.
+inputs:
+  version:
+    description: The PVS Studio version to install.
+    required: true
+  checksum:
+    description: The SHA-256 checksum of the downloaded PVS Studio installer.
+    required: true
+  url:
+    description: The URL of the PVS Studio setup program required for installation.
+    default: 'https://files.pvs-studio.com/PVS-Studio_setup.exe'
+  user:
+    description: The PVS Studio license user name.
+    required: true
+  license:
+    description: The PVS Studio license key.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System
+      if: runner.os != 'Windows'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        : Check Runner Operating System
+        echo '::error::analyze-obs/setup-pvs-studio action requires a Windows runner.'
+        exit 1
+
+    - name: Setup PVS-Studio
+      id: setup
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.workingDirectory }}
+      env:
+        PVS_STUDIO_URL: ${{ inputs.url }}
+        PVS_STUDIO_VERSION: ${{ inputs.version }}
+        PVS_STUDIO_CHECKSUM: ${{ inputs.checksum }}
+        PVS_STUDIO_USERNAME: ${{ inputs.user }}
+        PVS_STUDIO_LICENSE: ${{ inputs.license }}
+      run: ${GITHUB_ACTION_PATH}/setup-pvs-studio.bash

@@ -85,6 +85,12 @@
                 "label": "BOUF - Building OBS Updates Fast(er)",
                 "hash": "2e16d5116415579b5dd8cd68b3fe6edaa7513938427567121942f592292605d5",
                 "nsis-hash": "e323043627cfeebd237d306afc001c8c36a3c37f6ecef2b349a19a3209ae3450"
+              },
+              "pvs-studio": {
+                "version": "7.43",
+                "baseUrl": "https://files.pvs-studio.com/PVS-Studio_setup.exe",
+                "label": "PVS-Studio",
+                "hash": "04973bf660ee4f6e3c888c27d2a3db055a6d7792d5d078f548e4f635e0411412"
               }
             }
           }

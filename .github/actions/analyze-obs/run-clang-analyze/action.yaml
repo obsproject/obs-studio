@@ -1,0 +1,62 @@
+name: Run clang-analyze
+description: >
+  Uses Clang Static Analyzer to generate SARIF files which can then be uploaded to GitHub as a CodeQL report after
+  merging the files into a format accepted by GitHub.
+inputs:
+  architecture:
+    description: >
+      The CPU architecture used for building OBS Studio. Available values are 'x86_64' and 'arm64'.
+    required: true
+  upload-codeql:
+    description: A boolean value to indicate whether the generated SARIF report should be automatically uploaded.
+    default: 'false'
+  xcode-version:
+    description: An Xcode version number to select a specific Xcode version pre-installed on the runner.
+    default: ''
+  github-token:
+    description: >
+      The GitHub token required to upload the SARIF file as CodeQL report.
+      The provided token needs to have the 'security-events: write' permission.
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: |
+          macOS
+          Linux
+        custom-error: analyze-obs/run-clang-analyze action requires a macOS or Linux runner.
+
+    - name: Build OBS Studio
+      id: build
+      uses: ./.github/actions/build-obs
+      with:
+        config: Debug
+        architecture: ${{ inputs.architecture }}
+        analyze: true
+        xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Gather Xcode SARIF files
+      if: runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ANALYTICS_PATH: ${{ steps.build.outputs.analyzer-output-path }}
+      run: zsh --errexit --pipefail --no-rcs ${GITHUB_ACTION_PATH}/gather-xcode-sarif-files.zsh
+
+    - name: Merge SARIF files
+      id: merge
+      uses: ./.github/actions/analyze-obs/merge-clang-sarif
+      with:
+        path: ${{ steps.build.outputs.analyzer-output-path }}
+        output-name: ${{ format('obs-studio-{0}-{1}.sarif', runner.os, inputs.architecture) }}
+
+    - name: Upload CodeQL Report
+      uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+      if: ${{ fromJSON(inputs.upload-codeql) }}
+      with:
+        token: ${{ inputs.github-token }}
+        sarif_file: ${{ steps.merge.outputs.path }}
+        category: ${{ format('clang-analyze ({0} {1}', runner.os, inputs.architecture) }}
