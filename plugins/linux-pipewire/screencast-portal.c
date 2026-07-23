@@ -736,7 +736,7 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_capture_info = {
 		.id = "pipewire-screen-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 		.get_name = screencast_portal_desktop_capture_get_name,
 		.create = screencast_portal_capture_create,
 		.destroy = screencast_portal_capture_destroy,
