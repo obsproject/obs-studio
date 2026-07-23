@@ -1,0 +1,244 @@
+name: Code Sign Project
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Deployment environment to use for jobs.
+        required: true
+        type: string
+    secrets:
+      MACOS_CODE_SIGN_IDENTITY:
+        description: Apple Developer identity for macOS code signing.
+        required: true
+      MACOS_CODE_SIGN_CERT:
+        description: Apple Developer certificate for macOS code signing.
+        required: true
+      MACOS_CODE_SIGN_CERT_PASSWORD:
+        description: Apple Developer certificate password for macOS code signing.
+        required: true
+      MACOS_NOTARIZATION_ID:
+        description: Apple Id for macOS notarization.
+        required: true
+      MACOS_NOTARIZATION_PASSWORD:
+        description: Apple Id app password for macOS notarization.
+        required: true
+      GCP_IDENTITY_POOL:
+        description: Google Cloud Platform identity pool.
+        required: true
+      GCP_SERVICE_ACCOUNT_NAME:
+        description: Google Cloud Platform service account name.
+        required: true
+permissions: {}
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+jobs:
+  code-sign-macos:
+    name: Code Sign macOS Disk Image
+    runs-on: macos-26
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    strategy:
+      fail-fast: true
+      matrix:
+        architecture: [arm64, x86_64]
+    permissions:
+      contents: read            # Necessary to keep workflow base permissions.
+      id-token: write           # Necessary to generate an attestation for the code signed build.
+      attestations: write       # Necessary to generate an attestation for the code signed build.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          ref: ${{ job.workflow_sha }}
+
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
+        with:
+          ref: ${{ github.ref_name }}
+          fail-on-mismatch: true
+
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
+
+      - name: Download Asset
+        id: download
+        uses: ./.github/actions/download-asset
+        with:
+          platform: macOS
+          architecture: ${{ matrix.architecture }}
+          suffix: '-unsigned'
+          path: ${{ runner.temp }}
+
+      - name: Set Up Code Signing
+        id: setup
+        uses: ./.github/actions/codesign-obs/setup-macos
+        with:
+          identity: ${{ secrets.MACOS_CODE_SIGN_IDENTITY }}
+          cert: ${{ secrets.MACOS_CODE_SIGN_CERT }}
+          cert-password: ${{ secrets.MACOS_CODE_SIGN_CERT_PASSWORD }}
+
+      - name: Code Sign macOS Disk Image
+        id: codesign
+        uses: ./.github/actions/codesign-obs/codesign-macos
+        with:
+          path: ${{ steps.download.outputs.path }}
+          identity: ${{ steps.setup.outputs.identity }}
+          team: ${{ steps.setup.outputs.team }}
+          notarize: ${{ fromJSON(vars.ENABLE_MACOS_NOTARIZATION || 'false') }}
+          notarization-user: ${{ secrets.MACOS_NOTARIZATION_ID }}
+          notarization-password: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+
+      - name: Generate Artifact Attestation
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: ${{ steps.codesign.outputs.path }}
+
+      - name: Upload Code Signed Disk Image
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ${{ steps.codesign.outputs.path }}
+          archive: false
+          overwrite: true
+
+  code-sign-windows:
+    name: Code Sign Windows Build
+    runs-on: windows-2025-vs2026
+    if: ${{ fromJSON(vars.ENABLE_WINDOWS_CODE_SIGNING || 'false') }}
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    strategy:
+      fail-fast: true
+      matrix:
+        architecture: [x86_64, arm64]
+    permissions:
+      contents: read            # Necessary to keep workflow base permissions.
+      id-token: write           # Necessary to generate an attestation for the code signed build.
+      attestations: write       # Necessary to generate an attestation for the code signed build.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          ref: ${{ job.workflow_sha }}
+
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
+        with:
+          ref: ${{ github.ref_name }}
+          fail-on-mismatch: true
+
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
+
+      - name: Download Asset
+        id: download
+        uses: ./.github/actions/download-asset
+        with:
+          platform: Windows
+          architecture: ${{ matrix.architecture }}
+          suffix: '-unsigned'
+          path: ${{ runner.temp }}
+
+      - name: Set Up Code Signing
+        uses: ./.github/actions/codesign-obs/setup-windows
+        with:
+          gcp-identity-provider: ${{ secrets.GCP_IDENTITY_POOL }}
+          gcp-account-name: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
+
+      - name: Sign Windows Build
+        id: codesign
+        uses: ./.github/actions/codesign-obs/codesign-windows
+        with:
+          path: ${{ steps.download.outputs.path }}
+
+      - name: Generate artifact attestation
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: ${{ steps.codesign.outputs.path }}
+
+      - name: Upload Signed Build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ${{ steps.codesign.outputs.path }}
+          archive: false
+          overwrite: true
+
+  create-windows-installer:
+    name: Create Windows Installer
+    runs-on: windows-2025-vs2026
+    if: ${{ fromJSON(vars.ENABLE_WINDOWS_CODE_SIGNING || 'false') }}
+    needs: code-sign-windows
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    strategy:
+      fail-fast: true
+      matrix:
+        architecture: [x86_64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          ref: ${{ job.workflow_sha }}
+
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
+        with:
+          ref: ${{ github.ref_name }}
+          fail-on-mismatch: true
+
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
+
+      - name: Download Asset
+        id: download
+        uses: ./.github/actions/download-asset
+        with:
+          platform: Windows
+          architecture: ${{ matrix.architecture }}
+          suffix: '-signed'
+          verify: true
+          path: ${{ runner.temp }}
+
+      - name: Set Up Code Signing
+        uses: ./.github/actions/codesign-obs/setup-windows
+        with:
+          gcp-identity-provider: ${{ secrets.GCP_IDENTITY_POOL }}
+          gcp-account-name: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
+
+      - name: Create Windows Installer
+        id: installer
+        uses: ./.github/actions/publish-obs/create-windows-installer
+        with:
+          path: ${{ steps.download.outputs.path }}
+          architecture: ${{ matrix.architecture }}
+          version: ${{ github.ref_name }}
+
+      - name: Upload PDBs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ${{ steps.installer.outputs.pdb-path }}
+          archive: false
+          overwrite: true
+
+      - name: Upload Installer
+        if: matrix.architecture == 'x86_64'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ${{ steps.installer.outputs.installer-path }}
+          archive: false
+          overwrite: true
