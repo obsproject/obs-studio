@@ -359,7 +359,7 @@ struct obs_core_video_mix {
 	pthread_mutex_t gpu_encoder_mutex;
 	struct deque gpu_encoder_queue;
 	struct deque gpu_encoder_avail_queue;
-	DARRAY(obs_encoder_t *) gpu_encoders;
+	DARRAY(obs_weak_encoder_t *) gpu_encoders;
 	os_sem_t *gpu_encode_semaphore;
 	os_event_t *gpu_encode_inactive;
 	pthread_t gpu_encode_thread;
