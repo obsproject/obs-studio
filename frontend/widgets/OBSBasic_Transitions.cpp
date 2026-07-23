@@ -741,6 +741,9 @@ void OBSBasic::TransitionClicked()
 
 void OBSBasic::TBarReleased()
 {
+	if (!tBar || !previewProgramMode)
+		return;
+
 	int val = tBar->value();
 
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
@@ -788,6 +791,9 @@ static bool ValidTBarTransition(OBSSource transition)
 
 void OBSBasic::TBarChanged(int value)
 {
+	if (!tBar || !previewProgramMode)
+		return;
+
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
 
 	if (!tBarActive) {
@@ -820,6 +826,9 @@ void OBSBasic::TBarChanged(int value)
 
 int OBSBasic::GetTbarPosition()
 {
+	if (!tBar || !previewProgramMode)
+		return 0;
+
 	return tBar->value();
 }
 
