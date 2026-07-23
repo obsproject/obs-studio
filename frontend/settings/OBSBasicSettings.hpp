@@ -396,6 +396,9 @@ private slots:
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();
+#ifdef _WIN32
+	void AsioMonitoringShow();
+#endif
 	void SurroundWarning(int idx);
 	void SpeakerLayoutChanged(int idx);
 	void LowLatencyBufferingChanged(bool checked);

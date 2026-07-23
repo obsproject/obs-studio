@@ -783,7 +783,7 @@ static inline bool ss_audio_render_(obs_source_t *transition, uint64_t *ts_out,
 		return false;
 
 	obs_source_get_audio_mix(transition, &child_audio);
-	for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+	for (size_t mix = 0; mix < MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES; mix++) {
 		if ((mixers & (1 << mix)) == 0)
 			continue;
 

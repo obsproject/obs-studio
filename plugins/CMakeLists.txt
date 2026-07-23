@@ -37,6 +37,7 @@ add_obs_plugin(
     WITH_MESSAGE
 )
 add_obs_plugin(aja-output-ui PLATFORMS WINDOWS MACOS LINUX WITH_MESSAGE)
+add_obs_plugin(asio-output-ui PLATFORMS WINDOWS WITH_MESSAGE)
 add_obs_plugin(coreaudio-encoder PLATFORMS WINDOWS MACOS)
 add_obs_plugin(
     decklink
@@ -101,6 +102,7 @@ add_obs_plugin(rtmp-services)
 add_obs_plugin(sndio PLATFORMS LINUX FREEBSD OPENBSD)
 add_obs_plugin(text-freetype2)
 add_obs_plugin(vlc-video WITH_MESSAGE)
+add_obs_plugin(win-asio PLATFORMS WINDOWS)
 add_obs_plugin(win-capture PLATFORMS WINDOWS)
 add_obs_plugin(win-dshow PLATFORMS WINDOWS)
 add_obs_plugin(win-wasapi PLATFORMS WINDOWS)

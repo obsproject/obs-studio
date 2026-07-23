@@ -1699,7 +1699,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out, struct obs_source_a
 		obs_source_get_audio_mix(source, &child_audio);
 
 		if (!source->audio_is_duplicated) {
-			for (size_t mix = 0; mix < MAX_AUDIO_MIXES; mix++) {
+			for (size_t mix = 0; mix < (MAX_AUDIO_MIXES + MAX_AUDIO_MONITORING_MIXES); mix++) {
 				if ((mixers & (1 << mix)) == 0)
 					continue;
 
