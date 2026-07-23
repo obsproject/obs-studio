@@ -1,0 +1,93 @@
+name: Build Flatpak
+description: Builds OBS Studio for Flatpak.
+inputs:
+  architecture:
+    description: The CPU architecture to build OBS-Studio for. Available value is 'x86_64'.
+    required: true
+  bundle:
+    description: >
+      A boolean value to indicate whether to actually build a bundle.
+      If set to 'false', an available cached bundle is used instead.
+    default: 'false'
+  github-token:
+    description: The GitHub token required to check GitHub Actions caches for available cached bundles.
+    default: ${{ github.token }}
+  working-directory:
+    description: The path to a directory with an OBS Studio checkout for the action to operate on.
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System
+      if: runner.os != 'Linux'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        : Check Runner Operating System
+        echo '::error::build-flatpak action requires a Linux runner.'
+        exit 1
+
+    - name: Check Flatpak Builder Cache
+      id: cache
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: ${GITHUB_ACTION_PATH}/check-builder-cache.bash
+
+    - name: Validate Flatpak manifest
+      uses: ./.github/actions/lint-obs/lint-flatpak-manifest
+      with:
+        artifact: manifest
+        path: build-aux/com.obsproject.Studio.json
+
+    - name: Generate Short GitHub SHA
+      id: short-sha
+      uses: ./.github/actions/generate-short-sha
+
+    - name: Build Flatpak Manifest
+      uses: flatpak/flatpak-github-actions/flatpak-builder@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7
+      with:
+        build-bundle: ${{ fromJSON(inputs.bundle) }}
+        bundle: ${{ format('obs-studio-flatpak-{0}.flatpak', steps.short-sha.outputs.sha) }}
+        cache: >-
+          ${{ fromJSON(steps.cache.outputs.cache-hit)
+            || (github.event_name == 'push' && github.ref_name == 'master')
+          }}
+        manifest-path: ${{ format('{0}/build-aux/com.obsproject.Studio.json', github.workspace) }}
+        mirror-screenshots-url: https://dl.flathub.org/media
+        restore-cache: ${{ fromJSON(steps.cache.outputs.cache-hit) }}
+
+    - name: Validate AppStream
+      uses: ./.github/actions/lint-obs/lint-flatpak-manifest
+      with:
+        artifact: appstream
+        path: ${{ format('{0}/metainfo/com.obsproject.Studio.metainfo.xml', env.FLATPAK_BUILD_SHARE_PATH) }}
+
+    - name: Verify Icon and Metadata in app-info
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ env.FLATPAK_BUILD_SHARE_PATH }}
+      run: |
+        : Verify Icon and Metadata in app-info
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        if [[ ! -f "${PWD}/app-info/icons/flatpak/128x128/com.obsproject.Studio.png" ]]; then
+          echo '::error::Missing 128x128 icon in app-info'
+          exit 1
+        fi
+
+        if [[ ! -f "${PWD}/app-info/xmls/com.obsproject.Studio.xml.gz" ]]; then
+          echo '::error::Missing com.obsproject.Studio.xml.gz in app-info'
+          exit 1
+        fi
+
+    - name: Validate build directory
+      uses: ./.github/actions/lint-obs/lint-flatpak-manifest
+      with:
+        artifact: builddir
+        path: flatpak_app
+
+    - name: Validate repository
+      uses: ./.github/actions/lint-obs/lint-flatpak-manifest
+      with:
+        artifact: repo
+        path: repo
