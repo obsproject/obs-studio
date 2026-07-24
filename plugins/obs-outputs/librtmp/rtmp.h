@@ -99,6 +99,7 @@ typedef tls_ctx *TLS_CTX;
 
 #define TLS_setfd(s,fd)	mbedtls_ssl_set_bio(s, fd, mbedtls_net_send, mbedtls_net_recv, NULL)
 #define TLS_connect(s)	mbedtls_ssl_handshake(s)
+#define TLS_success(r)	((r) == 0)
 #define TLS_accept(s)	mbedtls_ssl_handshake(s)
 #define TLS_read(s,b,l)	mbedtls_ssl_read(s,(unsigned char *)b,l)
 #define TLS_write(s,b,l)	mbedtls_ssl_write(s,(unsigned char *)b,l)
@@ -132,6 +133,7 @@ typedef struct tls_ctx
 	SSL_SET_SESSION(s, 1, 600, &ctx->ssn)
 #define TLS_setfd(s,fd)	ssl_set_bio(s, net_recv, &fd, net_send, &fd)
 #define TLS_connect(s)	ssl_handshake(s)
+#define TLS_success(r)	((r) == 0)
 #define TLS_accept(s)	ssl_handshake(s)
 #define TLS_read(s,b,l)	ssl_read(s,(unsigned char *)b,l)
 #define TLS_write(s,b,l)	ssl_write(s,(unsigned char *)b,l)
@@ -150,17 +152,20 @@ typedef struct tls_ctx
 #define TLS_client(ctx,s)	gnutls_init((gnutls_session_t *)(&s), GNUTLS_CLIENT); gnutls_priority_set(s, ctx->prios); gnutls_credentials_set(s, GNUTLS_CRD_CERTIFICATE, ctx->cred)
 #define TLS_setfd(s,fd)	gnutls_transport_set_ptr(s, (gnutls_transport_ptr_t)(long)fd)
 #define TLS_connect(s)	gnutls_handshake(s)
+#define TLS_success(r)	((r) == 0)
 #define TLS_accept(s)	gnutls_handshake(s)
 #define TLS_read(s,b,l)	gnutls_record_recv(s,b,l)
 #define TLS_write(s,b,l)	gnutls_record_send(s,b,l)
 #define TLS_shutdown(s)	gnutls_bye(s, GNUTLS_SHUT_RDWR)
 #define TLS_close(s)	gnutls_deinit(s)
 
-#else	/* USE_OPENSSL */
+#elif defined(USE_OPENSSL)
+#include <openssl/ssl.h>
 #define TLS_CTX	SSL_CTX *
 #define TLS_client(ctx,s)	s = SSL_new(ctx)
 #define TLS_setfd(s,fd)	SSL_set_fd(s,fd)
 #define TLS_connect(s)	SSL_connect(s)
+#define TLS_success(r)	((r) == 1)
 #define TLS_accept(s)	SSL_accept(s)
 #define TLS_read(s,b,l)	SSL_read(s,b,l)
 #define TLS_write(s,b,l)	SSL_write(s,b,l)

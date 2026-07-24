@@ -24,11 +24,12 @@
 
 /* This file is #included in rtmp.c, it is not meant to be compiled alone */
 
-#if defined(USE_MBEDTLS)
-#include <mbedtls/md.h>
 #ifndef SHA256_DIGEST_LENGTH
 #define SHA256_DIGEST_LENGTH	32
 #endif
+
+#if defined(USE_MBEDTLS)
+#include <mbedtls/md.h>
 typedef mbedtls_md_context_t *HMAC_CTX;
 #define HMAC_setup(ctx, key, len)	ctx = malloc(sizeof(mbedtls_md_context_t)); mbedtls_md_init(ctx); \
   mbedtls_md_setup(ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1); \
@@ -39,9 +40,6 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 
 #elif defined(USE_POLARSSL)
 #include <polarssl/sha2.h>
-#ifndef SHA256_DIGEST_LENGTH
-#define SHA256_DIGEST_LENGTH	32
-#endif
 #define HMAC_CTX	sha2_context
 #define HMAC_setup(ctx, key, len)	sha2_hmac_starts(&ctx, (unsigned char *)key, len, 0)
 #define HMAC_crunch(ctx, buf, len)	sha2_hmac_update(&ctx, buf, len)
@@ -50,9 +48,6 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 #elif defined(USE_GNUTLS)
 #include <nettle/hmac.h>
 #include <nettle/arcfour.h>
-#ifndef SHA256_DIGEST_LENGTH
-#define SHA256_DIGEST_LENGTH	32
-#endif
 #undef HMAC_CTX
 #define HMAC_CTX	struct hmac_sha256_ctx
 #define HMAC_setup(ctx, key, len)	hmac_sha256_set_key(&ctx, len, key)
@@ -60,15 +55,67 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 #define HMAC_finish(ctx, dig)		hmac_sha256_digest(&ctx, SHA256_DIGEST_LENGTH, dig)
 #define HMAC_close(ctx)
 
-#else	/* USE_OPENSSL */
+#elif defined(USE_OPENSSL)
+#include <openssl/evp.h>
 #include <openssl/sha.h>
-#include <openssl/hmac.h>
-#if OPENSSL_VERSION_NUMBER < 0x0090800 || !defined(SHA256_DIGEST_LENGTH)
-#error Your OpenSSL is too old, need 0.9.8 or newer with SHA256
-#endif
-#define HMAC_setup(ctx, key, len)	HMAC_CTX_init(&ctx); HMAC_Init_ex(&ctx, key, len, EVP_sha256(), 0)
-#define HMAC_crunch(ctx, buf, len)	HMAC_Update(&ctx, buf, len)
-#define HMAC_finish(ctx, dig, len)	HMAC_Final(&ctx, dig, &len); HMAC_CTX_cleanup(&ctx)
+typedef struct librtmp_hmac_ctx {
+    EVP_MD_CTX *md_ctx;
+    EVP_PKEY *key;
+} RTMP_HMAC_CTX;
+#define HMAC_CTX RTMP_HMAC_CTX *
+static inline int
+HMAC_setup_openssl(HMAC_CTX *ctx, const uint8_t *key_data, size_t len)
+{
+    *ctx = calloc(1, sizeof(**ctx));
+    if (!*ctx) {
+        RTMP_Log(RTMP_LOGERROR, "%s: failed to allocate HMAC context", __FUNCTION__);
+        return FALSE;
+    }
+
+    (*ctx)->md_ctx = EVP_MD_CTX_new();
+    if (!(*ctx)->md_ctx) {
+        RTMP_Log(RTMP_LOGERROR, "%s: failed to allocate EVP message digest context",
+                 __FUNCTION__);
+        goto fail;
+    }
+
+    (*ctx)->key = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL, key_data, (int)len);
+    if (!(*ctx)->key) {
+        RTMP_Log(RTMP_LOGERROR, "%s: failed to allocate EVP HMAC key", __FUNCTION__);
+        goto fail;
+    }
+
+    if (EVP_DigestSignInit((*ctx)->md_ctx, NULL, EVP_sha256(), NULL, (*ctx)->key) != 1) {
+        RTMP_Log(RTMP_LOGERROR, "%s: failed to initialize EVP HMAC context", __FUNCTION__);
+        goto fail;
+    }
+
+    return TRUE;
+
+fail:
+    EVP_MD_CTX_free((*ctx)->md_ctx);
+    EVP_PKEY_free((*ctx)->key);
+    free(*ctx);
+    *ctx = NULL;
+    return FALSE;
+}
+#define HMAC_setup(ctx, key_data, len)  HMAC_setup_openssl(&ctx, key_data, len)
+#define HMAC_crunch(ctx, buf, len)      EVP_DigestSignUpdate((ctx)->md_ctx, buf, len)
+#define HMAC_close(ctx) do { \
+    EVP_MD_CTX_free((ctx)->md_ctx); \
+    EVP_PKEY_free((ctx)->key); \
+    free(ctx); \
+    ctx = NULL; \
+} while (0)
+static inline void
+HMAC_finish_openssl(HMAC_CTX *ctx, uint8_t *dig, unsigned int *len)
+{
+    size_t hmac_len = SHA256_DIGEST_LENGTH;
+    EVP_DigestSignFinal((*ctx)->md_ctx, dig, &hmac_len);
+    *len = (unsigned int)hmac_len;
+    HMAC_close(*ctx);
+}
+#define HMAC_finish(ctx, dig, len)      HMAC_finish_openssl(&ctx, dig, &len)
 #endif
 
 #define FP10
@@ -180,7 +227,7 @@ HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t *key,
 #if defined(USE_MBEDTLS) || defined(USE_POLARSSL) || defined(USE_GNUTLS)
     digestLen = SHA256_DIGEST_LENGTH;
     HMAC_finish(ctx, digest);
-#else
+#elif defined(USE_OPENSSL)
     HMAC_finish(ctx, digest, digestLen);
 #endif
 
