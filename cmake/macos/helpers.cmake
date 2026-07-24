@@ -251,7 +251,11 @@ function(set_target_properties_obs target)
       )
     endif()
 
-    set_property(GLOBAL APPEND PROPERTY _OBS_FRAMEWORKS ${target})
+    set(skip_frameworks libobs obs-frontend-api obs-scripting)
+
+    if(NOT ${target} IN_LIST skip_frameworks)
+      set_property(GLOBAL APPEND PROPERTY _OBS_FRAMEWORKS ${target})
+    endif()
     set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
   elseif(target_type STREQUAL MODULE_LIBRARY)
     if(target STREQUAL obspython)
