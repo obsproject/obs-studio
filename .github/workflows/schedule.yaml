@@ -1,0 +1,161 @@
+name: Schedule
+run-name: Scheduled Repository Actions
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 17 0 * * *
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions: {}
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+jobs:
+  check-nightly-ref:
+    name: Check Nightly Git Ref
+    runs-on: ubuntu-slim
+    outputs:
+      pass: ${{ steps.ref-check.outputs.pass }}
+      previous-sha: ${{ steps.ref-check.outputs.previous-sha }}
+    steps:
+      - name: Check Nightly Ref
+        id: ref-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check Nightly Ref
+          if [[ "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+          declare gh_output
+          gh_output="$(gh run list \
+            --repo "${GITHUB_REPOSITORY}" \
+            --workflow schedule.yaml \
+            --limit 2 \
+            --json headSha \
+            --jq '.[1].headSha')"
+
+          if [[ "${GITHUB_SHA}" == "${gh_output}" ]]; then
+            echo "No change in HEAD SHA used by workflow detected."
+            echo "pass=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Change in HEAD SHA used by workflow detected."
+            {
+              echo "pass=true"
+              echo "previous-sha=${gh_output}"
+            } >> "${GITHUB_OUTPUT}"
+          fi
+
+  cache-cleanup:
+    name: Cache Cleanup
+    runs-on: ubuntu-slim
+    needs: check-nightly-ref
+    if: ${{ fromJSON(needs.check-nightly-ref.outputs.pass) }}
+    permissions:
+      contents: read            # Necessary for repository checkouts.
+      actions: write            # Necessary to update and delete stale actions caches
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Remove Compilation Caches
+        uses: ./.github/actions/clean-cache
+        with:
+          name: '(macos|ubuntu-.*)-compilation-(x86_64|arm64)-.*'
+          ref: refs/heads/master
+
+  build-project:
+    name: Build
+    needs: cache-cleanup
+    uses: ./.github/workflows/build-project.yaml
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    permissions:
+      contents: read            # Necessary for repository checkouts.
+    with:
+      environment: build
+
+  analyze-project:
+    name: Code Analysis
+    needs: cache-cleanup
+    uses: ./.github/workflows/analyze-project.yaml
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    permissions:
+      contents: read            # Necessary for repository checkouts.
+      security-events: write    # Necessary to post CodeQL security scanning reports
+    with:
+      environment: nightly
+
+  services-availability:
+    name: Check Service Availability
+    runs-on: ubuntu-slim
+    if: fromJSON(vars.ENABLE_SERVICE_CHECKS || 'false')
+    environment:
+      name: nightly
+      deployment: false
+    permissions:
+      contents: write         # Necessary to push commits to repository
+      checks: write           # Necessary to create error annotations
+      pull-requests: write    # Necessary to create pull requests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Check Services
+        uses: ./.github/actions/lint-obs/validate-services-data
+        with:
+          path: 'plugins/rtmp-services/data/*.json'
+          api-token: ${{ secrets.SERVICE_CHECK_API_KEY }}
+          api-servers: ${{ secrets.SERVICE_CHECK_SERVERS }}
+          run-schema-checks: false
+          run-service-checks: true
+          create-pull-request: true
+          purge-age: ${{ vars.SERVICE_CHECK_PURGE_AGE }}
+
+  upload-language-files:
+    name: Upload Language Files
+    runs-on: ubuntu-slim
+    needs: check-nightly-ref
+    if: fromJSON(vars.ENABLE_L10N_UPDATE || 'false') && fromJSON(needs.check-nightly-ref.outputs.pass)
+    environment:
+      name: nightly
+      deployment: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Check for Changed Files
+        id: checks
+        uses: ./.github/actions/check-changes
+        with:
+          base: ${{ needs.check-nightly-ref.outputs.previous-sha }}
+          pathspec: '**/en-US.ini'
+
+      - name: Upload US English Language Files
+        if: fromJSON(steps.checks.outputs.has-changed-files)
+        uses: obsproject/obs-crowdin-sync/upload@4b488c7ced03aa109d9f12529bd91c26c54b3e89
+        env:
+          CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT || '' }}
+          GITHUB_EVENT_BEFORE: ${{ needs.check-nightly-ref.outputs.previous-sha }}
+
+  publish-to-steam:
+    name: Publish To Steam
+    needs: build-project
+    if: fromJSON(vars.ENABLE_STEAM_PUBLISH || 'false')
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/publish-steam.yaml
+    with:
+      environment: code-signing
+      macos-apple-url: ${{ inputs.steam-asset-macos-apple }}
+      macos-intel-url: ${{ inputs.steam-asset-macos-intel }}
+      windows-x64-url: ${{ inputs.steam-asset-windows-x64 }}
