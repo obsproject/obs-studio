@@ -62,6 +62,7 @@ bool safe_mode = false;
 bool disable_3p_plugins = false;
 static bool unclean_shutdown = false;
 bool multi = false;
+bool opt_ignore_unclean_shutdown = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
@@ -964,6 +965,9 @@ int main(int argc, char *argv[])
 		if (arg_is(argv[i], "--multi", "-m")) {
 			multi = true;
 
+		} else if (arg_is(argv[i], "--ignore-unclean-shutdown", nullptr)) {
+			opt_ignore_unclean_shutdown = true;
+
 #if ALLOW_PORTABLE_MODE
 		} else if (arg_is(argv[i], "--portable", "-p")) {
 			portable_mode = true;
@@ -1046,6 +1050,7 @@ int main(int argc, char *argv[])
 				"--portable, -p: Use portable mode.\n"
 #endif
 				"--multi, -m: Don't warn when launching multiple instances.\n\n"
+				"--ignore-unclean-shutdown: Disable unsafe shutdown check dialog.\n"
 				"--safe-mode: Run in Safe Mode (disables third-party plugins, scripting, and WebSockets).\n"
 				"--only-bundled-plugins: Only load included (first-party) plugins\n"
 				"--verbose: Make log more verbose.\n"
