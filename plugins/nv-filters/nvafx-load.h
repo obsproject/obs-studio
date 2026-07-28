@@ -12,7 +12,6 @@
 
 #ifdef LIBNVAFX_ENABLED
 static HMODULE nv_audiofx = NULL;
-static HMODULE nv_cuda = NULL;
 
 /** Effects @ref NvAFX_EffectSelector  */
 #define NVAFX_EFFECT_DENOISER "denoiser"
@@ -166,60 +165,6 @@ typedef NvAFX_Status NVAFX_API (*NvAFX_Reset_t)(NvAFX_Handle effect);
 typedef NvAFX_Status NVAFX_API (*NvAFX_InitializeLogger_t)(LoggingSeverity level, LoggingTarget target,
 							   const char *filename, logging_cb_t cb, void *userdata);
 typedef NvAFX_Status NVAFX_API (*NvAFX_UninitializeLogger_t)();
-/* cuda */
-typedef enum cudaError_enum {
-	CUDA_SUCCESS = 0,
-	CUDA_ERROR_INVALID_VALUE = 1,
-	CUDA_ERROR_OUT_OF_MEMORY = 2,
-	CUDA_ERROR_NOT_INITIALIZED = 3,
-	CUDA_ERROR_DEINITIALIZED = 4,
-	CUDA_ERROR_PROFILER_DISABLED = 5,
-	CUDA_ERROR_PROFILER_NOT_INITIALIZED = 6,
-	CUDA_ERROR_PROFILER_ALREADY_STARTED = 7,
-	CUDA_ERROR_PROFILER_ALREADY_STOPPED = 8,
-	CUDA_ERROR_NO_DEVICE = 100,
-	CUDA_ERROR_INVALID_DEVICE = 101,
-	CUDA_ERROR_INVALID_IMAGE = 200,
-	CUDA_ERROR_INVALID_CONTEXT = 201,
-	CUDA_ERROR_CONTEXT_ALREADY_CURRENT = 202,
-	CUDA_ERROR_MAP_FAILED = 205,
-	CUDA_ERROR_UNMAP_FAILED = 206,
-	CUDA_ERROR_ARRAY_IS_MAPPED = 207,
-	CUDA_ERROR_ALREADY_MAPPED = 208,
-	CUDA_ERROR_NO_BINARY_FOR_GPU = 209,
-	CUDA_ERROR_ALREADY_ACQUIRED = 210,
-	CUDA_ERROR_NOT_MAPPED = 211,
-	CUDA_ERROR_NOT_MAPPED_AS_ARRAY = 212,
-	CUDA_ERROR_NOT_MAPPED_AS_POINTER = 213,
-	CUDA_ERROR_ECC_UNCORRECTABLE = 214,
-	CUDA_ERROR_UNSUPPORTED_LIMIT = 215,
-	CUDA_ERROR_CONTEXT_ALREADY_IN_USE = 216,
-	CUDA_ERROR_INVALID_SOURCE = 300,
-	CUDA_ERROR_FILE_NOT_FOUND = 301,
-	CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND = 302,
-	CUDA_ERROR_SHARED_OBJECT_INIT_FAILED = 303,
-	CUDA_ERROR_OPERATING_SYSTEM = 304,
-	CUDA_ERROR_INVALID_HANDLE = 400,
-	CUDA_ERROR_NOT_FOUND = 500,
-	CUDA_ERROR_NOT_READY = 600,
-	CUDA_ERROR_LAUNCH_FAILED = 700,
-	CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES = 701,
-	CUDA_ERROR_LAUNCH_TIMEOUT = 702,
-	CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING = 703,
-	CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED = 704,
-	CUDA_ERROR_PEER_ACCESS_NOT_ENABLED = 705,
-	CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE = 708,
-	CUDA_ERROR_CONTEXT_IS_DESTROYED = 709,
-	CUDA_ERROR_ASSERT = 710,
-	CUDA_ERROR_TOO_MANY_PEERS = 711,
-	CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED = 712,
-	CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED = 713,
-	CUDA_ERROR_UNKNOWN = 999
-} CUresult;
-typedef struct CUctx_st *CUcontext;
-typedef CUresult(__stdcall *cuCtxGetCurrent_t)(CUcontext *pctx);
-typedef CUresult(__stdcall *cuCtxPopCurrent_t)(CUcontext *pctx);
-typedef CUresult(__stdcall *cuInit_t)(unsigned int Flags);
 
 static NvAFX_GetEffectList_t NvAFX_GetEffectList = NULL;
 static NvAFX_CreateEffect_t NvAFX_CreateEffect = NULL;
@@ -243,10 +188,6 @@ static NvAFX_Reset_t NvAFX_Reset = NULL;
 /* SDK >= 1.6.0 */
 static NvAFX_InitializeLogger_t NvAFX_InitializeLogger = NULL;
 static NvAFX_UninitializeLogger_t NvAFX_UninitializeLogger = NULL;
-/* cuda */
-static cuCtxGetCurrent_t cuCtxGetCurrent = NULL;
-static cuCtxPopCurrent_t cuCtxPopCurrent = NULL;
-static cuInit_t cuInit = NULL;
 
 void release_lib(void)
 {
@@ -276,13 +217,6 @@ void release_lib(void)
 		FreeLibrary(nv_audiofx);
 		nv_audiofx = NULL;
 	}
-	cuCtxGetCurrent = NULL;
-	cuCtxPopCurrent = NULL;
-	cuInit = NULL;
-	if (nv_cuda) {
-		FreeLibrary(nv_cuda);
-		nv_cuda = NULL;
-	}
 }
 
 static inline bool nvafx_get_sdk_path(char *buffer, const size_t len)
@@ -310,7 +244,6 @@ static inline bool load_lib()
 {
 	char sdkPath[MAX_PATH];
 	char effectsPath[MAX_PATH];
-	char cudaPath[MAX_PATH];
 
 	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
 		return false;
@@ -320,16 +253,10 @@ static inline bool load_lib()
 		return false;
 	}
 
-	if (_snprintf_s(cudaPath, _countof(cudaPath), _TRUNCATE, "%s\\nvcuda.dll", sdkPath) == -1) {
-		return false;
-	}
-
 	nv_audiofx =
 		LoadLibraryExA(effectsPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
-	nv_cuda = LoadLibraryExA(cudaPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-
-	return !!nv_audiofx && !!nv_cuda;
+	return !!nv_audiofx;
 }
 
 static unsigned int get_lib_version(void)

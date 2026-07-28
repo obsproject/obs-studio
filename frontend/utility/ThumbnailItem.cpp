@@ -36,7 +36,7 @@ QPixmap getDefaultThumbnail(obs_source_t *source)
 	OBSBasic *main = OBSBasic::Get();
 	if (main && id) {
 		QIcon icon = OBSBasic::Get()->GetSourceIcon(id);
-		QPixmap iconPixmap = icon.pixmap(90, 90);
+		QPixmap iconPixmap = icon.pixmap(QSize(90, 90), 1.0);
 
 		QPixmap defaultPixmap(kDefaultWidth, kDefaultHeight);
 		defaultPixmap.fill(Qt::transparent);

@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1010</width>
-    <height>614</height>
+    <width>1040</width>
+    <height>620</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -151,6 +151,12 @@
            <property name="lineWidth">
             <number>0</number>
            </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOn</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
            <property name="sizeAdjustPolicy">
             <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
            </property>
@@ -235,7 +241,7 @@
             <number>0</number>
            </property>
            <property name="class" stdset="0">
-            <string/>
+            <string>dialog-container</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <property name="spacing">
@@ -254,7 +260,85 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QFrame" name="selectExistingFrame">
+             <widget class="QLabel" name="sourceSelectTitle">
+              <property name="text">
+               <string>Basic.SourceSelect.Recent</string>
+              </property>
+              <property name="class" stdset="0">
+               <string>text-title</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="sourceSelectDescription">
+              <property name="text">
+               <string>Basic.SourceSelect.Description</string>
+              </property>
+              <property name="class" stdset="0">
+               <string>text-small text-muted margin-y</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="deprecatedFrame">
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Plain</enum>
+              </property>
+              <property name="lineWidth">
+               <number>0</number>
+              </property>
+              <property name="class" stdset="0">
+               <string>frame-notice</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="deprecatedCreateLabel">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Plain</enum>
+                 </property>
+                 <property name="lineWidth">
+                  <number>0</number>
+                 </property>
+                 <property name="text">
+                  <string>Basic.SourceSelect.Deprecated.Create</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="selectSourceFrame">
               <property name="accessibleName">
                <string>Basic.SourceSelect.AddExisting</string>
               </property>
@@ -284,18 +368,40 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QLabel" name="existingLabel">
+                <widget class="QPushButton" name="createNewSource">
                  <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                  <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="text">
+                  <string>Basic.SourceSelect.NewSource</string>
+                 </property>
+                 <property name="class" stdset="0">
+                  <string>btn-create-new</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="noExistingLabel">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>Basic.SourceSelect.Existing</string>
+                  <string>Basic.SourceSelect.NoExisting</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
                  </property>
                  <property name="class" stdset="0">
-                  <string>text-title</string>
+                  <string>text-muted</string>
                  </property>
                 </widget>
                </item>
@@ -313,6 +419,9 @@
                  <property name="lineWidth">
                   <number>0</number>
                  </property>
+                 <property name="verticalScrollBarPolicy">
+                  <enum>Qt::ScrollBarAlwaysOn</enum>
+                 </property>
                  <property name="horizontalScrollBarPolicy">
                   <enum>Qt::ScrollBarAlwaysOff</enum>
                  </property>
@@ -327,8 +436,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>800</width>
-                    <height>510</height>
+                    <width>819</width>
+                    <height>250</height>
                    </rect>
                   </property>
                   <property name="autoFillBackground">
@@ -402,6 +511,25 @@
                    <number>0</number>
                   </property>
                   <item>
+                   <widget class="QPushButton" name="addExistingButton">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="text">
+                     <string>Basic.SourceSelect.NoSelection</string>
+                    </property>
+                    <property name="class" stdset="0">
+                     <string>button-primary</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
                    <spacer name="horizontalSpacer_4">
                     <property name="orientation">
                      <enum>Qt::Horizontal</enum>
@@ -426,143 +554,6 @@
                      </size>
                     </property>
                    </spacer>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="addExistingButton">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="text">
-                     <string>Add Existing</string>
-                    </property>
-                    <property name="class" stdset="0">
-                     <string>button-primary</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
-             <widget class="QFrame" name="createNewFrame">
-              <property name="frameShape">
-               <enum>QFrame::NoFrame</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
-              </property>
-              <property name="lineWidth">
-               <number>0</number>
-              </property>
-              <property name="class" stdset="0">
-               <string>dialog-container dialog-frame</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_3">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="label">
-                 <property name="text">
-                  <string>Basic.SourceSelect.NewSource</string>
-                 </property>
-                 <property name="class" stdset="0">
-                  <string>text-title</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="deprecatedCreateLabel">
-                 <property name="frameShape">
-                  <enum>QFrame::NoFrame</enum>
-                 </property>
-                 <property name="frameShadow">
-                  <enum>QFrame::Plain</enum>
-                 </property>
-                 <property name="lineWidth">
-                  <number>0</number>
-                 </property>
-                 <property name="text">
-                  <string>Basic.SourceSelect.Deprecated.Create</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QFrame" name="frame">
-                 <property name="frameShape">
-                  <enum>QFrame::NoFrame</enum>
-                 </property>
-                 <property name="frameShadow">
-                  <enum>QFrame::Plain</enum>
-                 </property>
-                 <property name="lineWidth">
-                  <number>0</number>
-                 </property>
-                 <layout class="QHBoxLayout" name="horizontalLayout_3">
-                  <property name="spacing">
-                   <number>0</number>
-                  </property>
-                  <property name="leftMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="topMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="rightMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>0</number>
-                  </property>
-                  <item>
-                   <widget class="QLineEdit" name="newSourceName">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="accessibleName">
-                     <string>Basic.SourceSelect.Accessible.SourceName</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="createNewSource">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="text">
-                     <string>Basic.SourceSelect.CreateButton</string>
-                    </property>
-                    <property name="class" stdset="0">
-                     <string>button-primary margin-left</string>
-                    </property>
-                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -635,7 +626,7 @@
                </sizepolicy>
               </property>
               <property name="standardButtons">
-               <set>QDialogButtonBox::Cancel</set>
+               <set>QDialogButtonBox::Close</set>
               </property>
               <property name="centerButtons">
                <bool>false</bool>
@@ -663,10 +654,6 @@
  </customwidgets>
  <tabstops>
   <tabstop>sourceTypeList</tabstop>
-  <tabstop>existingScrollArea</tabstop>
-  <tabstop>addExistingButton</tabstop>
-  <tabstop>newSourceName</tabstop>
-  <tabstop>createNewSource</tabstop>
   <tabstop>sourceVisible</tabstop>
  </tabstops>
  <resources>

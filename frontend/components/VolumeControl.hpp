@@ -92,7 +92,7 @@ private:
 
 	QMenu *contextMenu;
 
-	static const QIcon &getUnassignedIcon();
+	static const QIcon &getWarningIcon();
 	static const QIcon &getMutedIcon();
 	static const QIcon &getUnmutedIcon();
 	static const QIcon &getMonitorOnIcon();
