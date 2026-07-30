@@ -2901,9 +2901,16 @@ void gs_samplerstate_destroy(gs_samplerstate_t *samplerstate)
 
 void gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer)
 {
-	if (vertbuffer && vertbuffer->device->lastVertexBuffer == vertbuffer) {
-		vertbuffer->device->lastVertexBuffer = nullptr;
+	if (vertbuffer) {
+		gs_device_t *device = vertbuffer->device;
+		if (device->curVertexBuffer == vertbuffer) {
+			device->curVertexBuffer = nullptr;
+		}
+		if (device->lastVertexBuffer == vertbuffer) {
+			device->lastVertexBuffer = nullptr;
+		}
 	}
+
 	delete vertbuffer;
 }
 
@@ -2956,6 +2963,10 @@ struct gs_vb_data *gs_vertexbuffer_get_data(const gs_vertbuffer_t *vertbuffer)
 
 void gs_indexbuffer_destroy(gs_indexbuffer_t *indexbuffer)
 {
+	if (indexbuffer && indexbuffer->device->curIndexBuffer == indexbuffer) {
+		indexbuffer->device->curIndexBuffer = nullptr;
+	}
+
 	delete indexbuffer;
 }
 
