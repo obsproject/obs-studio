@@ -130,6 +130,7 @@ static inline void RenderSafeAreas(gs_vertbuffer_t *vb, int cx, int cy)
 	transform.y.y = cy;
 
 	gs_load_vertexbuffer(vb);
+	gs_load_indexbuffer(nullptr);
 
 	gs_matrix_push();
 	gs_matrix_mul(&transform);
