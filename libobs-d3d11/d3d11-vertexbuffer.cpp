@@ -48,8 +48,10 @@ void gs_vertex_buffer::FlushBuffer(ID3D11Buffer *buffer, void *array, size_t ele
 UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader, ID3D11Buffer **buffers, uint32_t *strides)
 {
 	UINT numBuffers = 0;
-	PushBuffer(&numBuffers, buffers, strides, vertexBuffer, sizeof(vec3), "point");
 
+	if (shader->hasPositions) {
+		PushBuffer(&numBuffers, buffers, strides, vertexBuffer, sizeof(vec3), "point");
+	}
 	if (shader->hasNormals) {
 		PushBuffer(&numBuffers, buffers, strides, normalBuffer, sizeof(vec3), "normal");
 	}
