@@ -3598,6 +3598,28 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "restreamer.ir | ری استریمر | استریم همزمان",
+            "more_info_link": "https://restreamer.ir",
+            "stream_key_link": "https://restreamer.ir/console",
+            "protocol": "RTMP",
+            "servers": [
+                {
+                    "url": "rtmp://rtmp.restreamer.ir:1935/live",
+                    "name": "Primary"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 6000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
+
