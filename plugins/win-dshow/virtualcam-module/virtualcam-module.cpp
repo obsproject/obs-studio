@@ -17,7 +17,8 @@ class VCamFactory : public IClassFactory {
 	CLSID cls;
 
 public:
-	inline VCamFactory(CLSID cls_) : cls(cls_) {}
+	inline VCamFactory(CLSID cls_) : cls(cls_) { os_atomic_inc_long(&locks); }
+	inline ~VCamFactory() { os_atomic_dec_long(&locks); }
 
 	// IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, void **p_ptr);

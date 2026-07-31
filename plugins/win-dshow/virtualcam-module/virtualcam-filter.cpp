@@ -16,6 +16,9 @@ extern volatile long locks;
 
 VCamFilter::VCamFilter() : OutputFilter()
 {
+	os_atomic_inc_long(&locks);
+	AddRef();
+
 	thread_start = CreateEvent(nullptr, true, false, nullptr);
 	thread_stop = CreateEvent(nullptr, true, false, nullptr);
 
@@ -94,9 +97,6 @@ VCamFilter::VCamFilter() : OutputFilter()
 	/* ---------------------------------------- */
 
 	th = std::thread([this] { Thread(); });
-
-	AddRef();
-	os_atomic_inc_long(&locks);
 }
 
 VCamFilter::~VCamFilter()
