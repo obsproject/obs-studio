@@ -8,13 +8,18 @@ using namespace Gdiplus;
 
 extern HINSTANCE dll_inst;
 
-static std::vector<uint8_t> placeholder;
-static bool initialized = false;
-int cx, cy;
+namespace {
+
+struct Placeholder {
+	std::vector<uint8_t> data;
+	int cx = 0;
+	int cy = 0;
+	bool valid = false;
+};
 
 /* XXX: optimize this later.  or don't, it's only called once. */
 
-static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
+std::vector<uint8_t> convert_placeholder(const uint8_t *rgb_in, int width, int height)
 {
 	size_t size = width * height * 3;
 	size_t linesize = width * 3;
@@ -36,12 +41,13 @@ static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
 		*(out++) = (uint8_t)(((112 * r - 94 * g - 18 * b + 128) >> 8) + 128);
 	}
 
-	placeholder.resize(width * height * 3 / 2);
+	std::vector<uint8_t> nv12_out;
+	nv12_out.resize(width * height * 3 / 2);
 
 	in = &yuv_out[0];
 	end = in + size;
 
-	out = &placeholder[0];
+	out = &nv12_out[0];
 	uint8_t *chroma = out + width * height;
 
 	while (in < end) {
@@ -76,20 +82,23 @@ static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
 		in = in2;
 		out = out2;
 	}
+
+	return nv12_out;
 }
 
-static bool load_placeholder_internal()
+Placeholder load_placeholder_internal()
 {
+	Placeholder result;
 	Status s;
 
 	wchar_t file[MAX_PATH];
 	if (!GetModuleFileNameW(dll_inst, file, MAX_PATH)) {
-		return false;
+		return result;
 	}
 
 	wchar_t *slash = wcsrchr(file, '\\');
 	if (!slash) {
-		return false;
+		return result;
 	}
 
 	slash[1] = 0;
@@ -98,46 +107,68 @@ static bool load_placeholder_internal()
 
 	Bitmap bmp(file);
 	if (bmp.GetLastStatus() != Status::Ok) {
-		return false;
+		return result;
 	}
 
-	cx = bmp.GetWidth();
-	cy = bmp.GetHeight();
+	const int cx = bmp.GetWidth();
+	const int cy = bmp.GetHeight();
 
 	BitmapData bmd = {};
 	Rect r(0, 0, cx, cy);
 
 	s = bmp.LockBits(&r, ImageLockModeRead, PixelFormat24bppRGB, &bmd);
 	if (s != Status::Ok) {
-		return false;
+		return result;
 	}
 
-	convert_placeholder((const uint8_t *)bmd.Scan0, cx, cy);
+	result.data = convert_placeholder((const uint8_t *)bmd.Scan0, cx, cy);
+	result.cx = cx;
+	result.cy = cy;
+	result.valid = true;
 
 	bmp.UnlockBits(&bmd);
-	return true;
+	return result;
 }
+
+Placeholder load_placeholder()
+{
+	GdiplusStartupInput si;
+	ULONG_PTR token;
+
+	if (GdiplusStartup(&token, &si, nullptr) != Status::Ok) {
+		return Placeholder();
+	}
+
+	Placeholder result = load_placeholder_internal();
+
+	GdiplusShutdown(token);
+	return result;
+}
+
+// A single application can create any number of VCamFilter instances, each of
+// which loads the placeholder from its own thread. As this is shared global
+// state, ensure only a single copy is initialized with C++11 function-local
+// static initialization to prevent multiple initializations stomping on
+// each other.
+const Placeholder &get_placeholder()
+{
+	static const Placeholder placeholder = load_placeholder();
+	return placeholder;
+}
+
+} // namespace
 
 bool initialize_placeholder()
 {
-	if (initialized) {
-		return true;
-	}
-
-	GdiplusStartupInput si;
-	ULONG_PTR token;
-	GdiplusStartup(&token, &si, nullptr);
-
-	initialized = load_placeholder_internal();
-
-	GdiplusShutdown(token);
-	return initialized;
+	return get_placeholder().valid;
 }
 
 const uint8_t *get_placeholder_ptr()
 {
-	if (initialized) {
-		return placeholder.data();
+	const Placeholder &placeholder = get_placeholder();
+
+	if (placeholder.valid) {
+		return placeholder.data.data();
 	}
 
 	return nullptr;
@@ -145,9 +176,11 @@ const uint8_t *get_placeholder_ptr()
 
 const bool get_placeholder_size(int *out_cx, int *out_cy)
 {
-	if (initialized) {
-		*out_cx = cx;
-		*out_cy = cy;
+	const Placeholder &placeholder = get_placeholder();
+
+	if (placeholder.valid) {
+		*out_cx = placeholder.cx;
+		*out_cy = placeholder.cy;
 		return true;
 	}
 
