@@ -82,6 +82,7 @@
       "displayName": "macOS",
       "description": "Default macOS build (single architecture only)",
       "inherits": ["environmentVars"],
+      "warnings": {"dev": true, "deprecated": true},
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -108,7 +109,7 @@
       "displayName": "macOS (CI)",
       "description": "CI macOS build (single architecture only)",
       "inherits": ["macos"],
-      "warnings": {"dev": true, "deprecated": true},
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
@@ -138,6 +139,7 @@
     {
       "name": "ubuntu-ci",
       "inherits": ["ubuntu"],
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
@@ -150,6 +152,7 @@
       "displayName": "Windows x64",
       "description": "Default Windows build (x64)",
       "inherits": ["environmentVars"],
+      "warnings": {"dev": true, "deprecated": true},
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -169,7 +172,7 @@
       "displayName": "Windows x64 (CI)",
       "description": "CI Windows build (x64)",
       "inherits": ["windows-x64"],
-      "warnings": {"dev": true, "deprecated": true},
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
@@ -179,6 +182,7 @@
       "displayName": "Windows ARM64",
       "description": "Default Windows build (ARM64)",
       "inherits": ["environmentVars"],
+      "warnings": {"dev": true, "deprecated": true},
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -201,7 +205,7 @@
       "displayName": "Windows ARM64 (CI)",
       "description": "CI Windows build (ARM64)",
       "inherits": ["windows-arm64"],
-      "warnings": {"dev": true, "deprecated": true},
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "CMAKE_COMPILE_WARNING_AS_ERROR": true
       }
