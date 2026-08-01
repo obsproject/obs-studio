@@ -140,7 +140,7 @@ endif()
 
 if(MbedTLS_VERSION VERSION_GREATER_EQUAL 3.6.0)
   message(
-    DEPRECATION
+    NOTICE
     "Use of the custom CMake find module for MbedTLS versions >= 3.6.0 is not supported - build errors might occur!"
   )
 endif()
