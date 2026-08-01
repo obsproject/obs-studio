@@ -1,0 +1,65 @@
+name: Check Code Format
+description: >
+  Allows a workflow to run an available linter on the specified set of files. If desired, the action will fail on the
+  very first file that fails linting, or alternatively fails after all specified files have been linted and any single
+  one resulted in failure.
+inputs:
+  linter:
+    description: >
+      The linter to run with the specified files. Available linters are 'clang-format', 'gersemi', 'swift-format',
+      'zizmor', and 'xmllint'.
+    required: true
+  files:
+    description: A JSON string representing an array of file paths for files to lint.
+    required: true
+  fail-on:
+    description: >
+      A string indicating the fail condition to use by the action. Available values are 'never', 'fast', and 'error'.
+    default: never
+  working-directory:
+    description: >
+      The path to an OBS Studio checkout. This is necessary to find the formatter scripts in the 'build-aux' directory.
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Ubuntu
+      if: runner.os == 'Linux'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        LINTER_COMMAND: ${{ inputs.linter }}
+      run: ${GITHUB_ACTION_PATH}/setup-ubuntu.bash
+
+    - name: Setup macOS
+      if: runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        LINTER_COMMAND: ${{ inputs.linter }}
+      run: zsh --errexit --pipefail --no-rcs ${GITHUB_ACTION_PATH}/setup-macos.zsh
+
+    - name: Setup Windows
+      if: runner.os == 'Windows'
+      shell: pwsh -command ". '{0}'"
+      env:
+        LINTER_COMMAND: ${{ inputs.linter }}
+      run: ${GITHUB_ACTION_PATH}/Setup-Windows.ps1
+
+    - name: Linter
+      if: runner.os != 'Windows'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        LINTER_COMMAND: ${{ inputs.linter }}
+        CHANGED_FILES: ${{ inputs.files }}
+        FAIL_MODE: ${{ inputs.fail-on }}
+      run: ${GITHUB_ACTION_PATH}/formatter-launcher.bash
+
+    - name: Linter
+      if: runner.os == 'Windows'
+      shell: pwsh -command ". '{0}'"
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        LINTER_COMMAND: ${{ inputs.linter }}
+        CHANGED_FILES: ${{ inputs.files }}
+        FAIL_MODE: ${{ inputs.fail-on }}
+      run: ${GITHUB_ACTION_PATH}/Formatter-Launcher.ps1
