@@ -163,6 +163,7 @@ function(find_dependencies)
     # Root of recursive dependency resolution
     set(is_root TRUE)
     set(nested_depth 0)
+    set(found_libraries "")
   else()
     # Branch of recursive dependency resolution
     set(is_root FALSE)
