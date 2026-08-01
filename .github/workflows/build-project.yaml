@@ -137,12 +137,12 @@ jobs:
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
           XCODE_CAS_PATH: ${{ steps.setup.outputs.xcodeCasPath }}
         with:
-          target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
-          codesign: ${{ fromJSON(needs.check-event.outputs.codesign) }}
-          codesignIdent: ${{ steps.codesign.outputs.codesignIdent }}
-          codesignTeam: ${{ steps.codesign.outputs.codesignTeam }}
-          provisioningProfileUUID: ${{ steps.codesign.outputs.provisioningProfileUUID }}
+          architecture: ${{ matrix.target }}
+          codesign-ident: ${{ steps.codesign.outputs.codesignIdent }}
+          codesign-team: ${{ steps.codesign.outputs.codesignTeam }}
+          provisioning-profile-id: ${{ steps.codesign.outputs.provisioningProfileUUID }}
+          path: ${{ github.workspace }}
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
@@ -214,8 +214,9 @@ jobs:
           YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
         with:
-          target: x86_64
           config: ${{ needs.check-event.outputs.config }}
+          architecture: x86_64
+          path: ${{ github.workspace }}
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
@@ -409,8 +410,9 @@ jobs:
           YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
           GPU_PRIORITY_VAL: ${{ secrets.GPU_PRIORITY_VAL }}
         with:
-          target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
+          architecture: ${{ matrix.architecture }}
+          path: ${{ github.workspace }}
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
