@@ -197,7 +197,7 @@ function(_target_install_obs target)
 
     cmake_path(RELATIVE_PATH CMAKE_CURRENT_SOURCE_DIR BASE_DIRECTORY "${OBS_SOURCE_DIR}" OUTPUT_VARIABLE project_path)
 
-    set(32bit_project_path "${OBS_SOURCE_DIR}/build_x86/${project_path}")
+    set(32bit_project_path "${OBS_BUILD_PARENT_PATH}/build_x86/${project_path}")
     set(target_file "${32bit_project_path}/$<CONFIG>/${target}32.${suffix}")
     set(target_pdb_file "${32bit_project_path}/$<CONFIG>/${target}32.pdb")
     set(comment "Copy ${target} (x86) to destination")
@@ -218,7 +218,7 @@ function(_target_install_obs target)
 
     cmake_path(RELATIVE_PATH CMAKE_CURRENT_SOURCE_DIR BASE_DIRECTORY "${OBS_SOURCE_DIR}" OUTPUT_VARIABLE project_path)
 
-    set(64bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
+    set(64bit_project_path "${OBS_BUILD_PARENT_PATH}/build_x64/${project_path}")
     set(target_file "${64bit_project_path}/$<CONFIG>/${target}64.${suffix}")
     set(target_pdb_file "${64bit_project_path}/$<CONFIG>/${target}64.pdb")
     set(comment "Copy ${target} (x64) to destination")
