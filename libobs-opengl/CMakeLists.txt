@@ -17,6 +17,8 @@ if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
     find_package(OpenGL REQUIRED EGL)
     find_package(Wayland REQUIRED)
   endif()
+else()
+  set(ENABLE_WAYLAND FALSE)
 endif()
 
 target_sources(
