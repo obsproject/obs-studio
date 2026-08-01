@@ -59,7 +59,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     add_custom_command(
       TARGET graphics-hook
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x64 --config $<CONFIG> -t graphics-hook
+      COMMAND "${CMAKE_COMMAND}" --build ${OBS_BUILD_PARENT_PATH}/build_x64 --config $<CONFIG> -t graphics-hook
       COMMENT "Build x64 graphics-hook"
     )
   endif()
@@ -68,7 +68,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     add_custom_command(
       TARGET graphics-hook
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x86 --config $<CONFIG> -t graphics-hook
+      COMMAND "${CMAKE_COMMAND}" --build ${OBS_BUILD_PARENT_PATH}/build_x86 --config $<CONFIG> -t graphics-hook
       COMMENT "Build x86 graphics-hook"
     )
   endif()
