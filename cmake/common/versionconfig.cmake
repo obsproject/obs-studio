@@ -54,20 +54,14 @@ set(OBS_BETA ${_obs_beta})
 string(REPLACE ";" "." OBS_VERSION_CANONICAL "${_obs_version_canonical}")
 string(REPLACE ";" "." OBS_VERSION "${_obs_version}")
 
+message(STATUS "Checking for pre-release version of OBS Studio")
+
 if(OBS_RELEASE_CANDIDATE GREATER 0)
-  message(
-    AUTHOR_WARNING
-    "******************************************************************************\n"
-    "  + OBS-Studio - Release candidate detected, OBS_VERSION is now: ${OBS_VERSION}\n"
-    "******************************************************************************"
-  )
+  message(STATUS "Checking for pre-release version of OBS Studio - ${OBS_VERSION} is a RELEASE CANDIDATE.")
 elseif(OBS_BETA GREATER 0)
-  message(
-    AUTHOR_WARNING
-    "******************************************************************************\n"
-    "  + OBS-Studio - Beta detected, OBS_VERSION is now: ${OBS_VERSION}\n"
-    "******************************************************************************"
-  )
+  message(STATUS "Checking for pre-release version of OBS Studio - ${OBS_VERSION} is a BETA.")
+else()
+  message(STATUS "Checking for pre-release version of OBS Studio - ${OBS_VERSION} is a RELEASE.")
 endif()
 
 unset(_obs_default_version)
