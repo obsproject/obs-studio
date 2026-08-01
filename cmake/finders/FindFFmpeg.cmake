@@ -165,7 +165,7 @@ macro(FFmpeg_find_component component)
 
   if(FFmpeg_${component}_LIBRARY AND FFmpeg_${component}_INCLUDE_DIR)
     set(FFmpeg_${component}_FOUND TRUE)
-    set(FFmpeg_${component}_LIBRARIES ${${_library_var}})
+    set(FFmpeg_${component}_LIBRARIES ${FFmpeg_${component}_LIBRARY})
     set(FFmpeg_${component}_INCLUDE_DIRS ${FFmpeg_${component}_INCLUDE_DIR})
     set(FFmpeg_${component}_DEFINITIONS ${PC_FFmpeg_${component}_CFLAGS_OTHER})
     mark_as_advanced(FFmpeg_${component}_LIBRARY FFmpeg_${component}_INCLUDE_DIR FFmpeg_${component}_IMPLIB)
