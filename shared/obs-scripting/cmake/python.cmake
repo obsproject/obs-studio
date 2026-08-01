@@ -14,7 +14,6 @@ if(ENABLE_SCRIPTING_PYTHON)
   add_custom_command(
     OUTPUT swig/swigpyrun.h
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory swig
     COMMAND
       ${CMAKE_COMMAND} -E env "SWIG_LIB=${SWIG_DIR}" ${SWIG_EXECUTABLE} -python
