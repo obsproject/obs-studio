@@ -56,8 +56,7 @@ elseif(EXISTS "${Asio_INCLUDE_DIR}/asio/version.hpp")
   )
 
   string(
-    REGEX REPLACE
-    "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\\/\\/[ \t]([0-9]+\\.[0-9]+\\.[0-9]+)"
+    REGEX REPLACE "#define[ \t]+ASIO_VERSION[ \t]+[0-9]+[ \t]+\\/\\/[ \t]([0-9]+\\.[0-9]+\\.[0-9]+)"
     "\\1"
     Asio_VERSION
     "${_version_string}"
