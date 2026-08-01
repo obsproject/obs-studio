@@ -32,8 +32,7 @@ function(_handle_qt_cross_compile architecture)
 
   if(config_has_buildabi)
     string(
-      REGEX REPLACE
-      "host_build {\n[ \t]+QT_ARCH = (x86_64|arm64)\n.+[ \t]+QT_TARGET_ARCH = (x86_64|arm64)\n.+}.+"
+      REGEX REPLACE "host_build {\n[ \t]+QT_ARCH = (x86_64|arm64)\n.+[ \t]+QT_TARGET_ARCH = (x86_64|arm64)\n.+}.+"
       "\\1;\\2"
       host_build_tuple
       "${qt_arch_config}"
