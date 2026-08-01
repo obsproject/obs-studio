@@ -8,6 +8,7 @@ include(buildspec_common)
 function(_check_dependencies_macos)
   set(arch universal)
   set(platform macos-${arch})
+  set(destination "")
 
   set(dependencies_dir "${CMAKE_CURRENT_SOURCE_DIR}/.deps")
   set(prebuilt_filename "macos-deps-VERSION-ARCH-REVISION.tar.xz")
