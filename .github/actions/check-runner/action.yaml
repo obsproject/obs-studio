@@ -1,0 +1,21 @@
+name: Check Runner
+description: Checks the current runner against the set of implemented conditions.
+inputs:
+  os:
+    description: A multiline string of runner operating system strings.
+    default: |
+      macOS
+      Windows
+      Linux
+  custom-error:
+    description: A custom error message to use when runner fails checks.
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        CHECK_OS: ${{ inputs.os }}
+        CUSTOM_ERROR: ${{ inputs.custom-error }}
+      run: ${GITHUB_ACTION_PATH}/check-runner.bash
