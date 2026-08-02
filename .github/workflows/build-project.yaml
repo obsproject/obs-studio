@@ -148,28 +148,51 @@ jobs:
         uses: ./.github/actions/package-obs
         if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
-          target: ${{ matrix.target }}
+          architecture: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
-          codesign: ${{ fromJSON(needs.check-event.outputs.codesign) && fromJSON(steps.codesign.outputs.haveCodesignIdent) }}
-          codesignIdent: ${{ steps.codesign.outputs.codesignIdent }}
-          notarize: ${{ fromJSON(needs.check-event.outputs.notarize) && fromJSON(steps.codesign.outputs.haveNotarizationUser) }}
-          codesignUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
-          codesignPass: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+          path: ${{ github.workspace }}
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ fromJSON(needs.check-event.outputs.package) }}
+        with:
+          name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}-unsigned
+          path: ${{ github.workspace }}/obs-studio-macos-${{ matrix.target }}-*-unsigned.dmg
+
+      - name: Code Sign macOS Disk Image
+        id: codesign-output
+        if: >-
+          fromJSON(needs.check-event.outputs.package)
+          && fromJSON(needs.check-event.outputs.codesign)
+          && fromJSON(steps.codesign.outputs.haveCodesignIdent)
+        uses: ./.github/actions/codesign-obs/codesign-macos
+        with:
+          path: >-
+            ${{ format('{0}/obs-studio-macos-{1}-{2}-unsigned.dmg',
+              github.workspace, matrix.target, needs.check-event.outputs.commitHash
+            ) }}
+          identity: ${{ steps.codesign.outputs.codesignIdent }}
+          team: ${{ steps.codesign.outputs.codesignTeam }}
+          notarize: ${{ fromJSON(needs.check-event.outputs.notarize) && fromJSON(steps.codesign.outputs.haveNotarizationUser) }}
+          notarization-user: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          notarization-password: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+
+      - name: Upload Code Signed Artifacts ✍️
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: >-
+          fromJSON(needs.check-event.outputs.package)
+          && fromJSON(needs.check-event.outputs.codesign)
+          && fromJSON(steps.codesign.outputs.haveCodesignIdent)
         with:
           name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_macos/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.*
+          path: ${{ steps.codesign-output.outputs.path }}
 
       - name: Upload Debug Symbol Artifacts 🪲
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ needs.check-event.outputs.config == 'Release' }}
         with:
           name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}-dSYMs
-          path: ${{ github.workspace }}/build_macos/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}-dSYMs.tar.xz
+          path: ${{ github.workspace }}/obs-studio-macos-${{ matrix.target }}-*-debug-symbols.tar.xz
 
       - uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         if: github.event_name != 'pull_request' && steps.xcode-cache.outputs.cache-hit != 'true'
@@ -222,35 +245,36 @@ jobs:
         uses: ./.github/actions/package-obs
         if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
-          target: x86_64
+          architecture: x86_64
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
+          path: ${{ github.workspace }}
 
       - name: Upload Source Tarball 🗜️
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ fromJSON(needs.check-event.outputs.package) }}
+        if: ${{ needs.check-event.outputs.config == 'Release' }}
         with:
           name: obs-studio-${{ matrix.os }}-sources-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-sources.*
+          path: ${{ github.workspace }}/obs-studio-ubuntu-x86_64-*-sources.*
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu.*
+          path: ${{ github.workspace }}/obs-studio-ubuntu-x86_64-*.deb
 
       - name: Upload Debug Symbol Artifacts 🪲
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ fromJSON(needs.check-event.outputs.package) }}
+        if: ${{ needs.check-event.outputs.config == 'Release' }}
         with:
           name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}-dbgsym
-          path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb
+          path: ${{ github.workspace }}/obs-studio-ubuntu-x86_64-*-debug-symbols.ddeb
 
       - uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         if: github.event_name != 'pull_request' && steps.ccache-cache.outputs.cache-hit != 'true'
         with:
-          path: ${{ github.workspace }}/.ccache
+          path: ${{ runner.temp }}/.ccache
           key: ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
 
   flatpak-build:
@@ -418,13 +442,14 @@ jobs:
         uses: ./.github/actions/package-obs
         if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
-          target: ${{ matrix.architecture }}
+          architecture: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
           package: ${{ fromJSON(needs.check-event.outputs.package) }}
+          path: ${{ github.workspace }}
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ needs.check-event.outputs.commitHash }}
-          path: ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.zip
+          path: ${{ github.workspace }}/obs-studio-windows-${{ matrix.architecture }}-*.zip
