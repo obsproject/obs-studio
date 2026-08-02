@@ -21,10 +21,6 @@ int main(int argc, char *argv[])
 	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	SetDllDirectoryW(L"");
 
-	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {0};
-	policy.PreferSystem32Images = 1;
-	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
-
 	if (!RegisterClassA(&wc)) {
 		printf("failed to register '%s'\n", DUMMY_WNDCLASS);
 		return -1;
