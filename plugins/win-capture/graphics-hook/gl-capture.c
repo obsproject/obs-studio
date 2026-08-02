@@ -266,13 +266,13 @@ static inline bool gl_shtex_init_d3d11(void)
 	IDXGIAdapter *adapter;
 	HRESULT hr;
 
-	HMODULE d3d11 = load_system_library("d3d11.dll");
+	HMODULE d3d11 = load_system_library(L"d3d11.dll");
 	if (!d3d11) {
 		hlog("gl_shtex_init_d3d11: failed to load D3D11.dll: %d", GetLastError());
 		return false;
 	}
 
-	HMODULE dxgi = load_system_library("dxgi.dll");
+	HMODULE dxgi = load_system_library(L"dxgi.dll");
 	if (!dxgi) {
 		hlog("gl_shtex_init_d3d11: failed to load DXGI.dll: %d", GetLastError());
 		return false;
@@ -563,7 +563,7 @@ static void gl_copy_backbuffer(GLuint dst)
 	glReadBuffer(GL_BACK);
 
 	/* darkest dungeon fix */
-	darkest_dungeon_fix = glGetError() == GL_INVALID_OPERATION && _strcmpi(process_name, "Darkest.exe") == 0;
+	darkest_dungeon_fix = glGetError() == GL_INVALID_OPERATION && _wcsicmp(process_name, L"Darkest.exe") == 0;
 
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	if (gl_error("gl_copy_backbuffer", "failed to set draw buffer")) {
@@ -820,16 +820,18 @@ bool hook_gl(void)
 	void *wgl_slb_proc;
 	void *wgl_sb_proc;
 
-	gl = get_system_module("opengl32.dll");
+	gl = get_system_module(L"opengl32.dll");
 	if (!gl) {
 		return false;
 	}
 
 	/* "life is feudal: your own" somehow uses both opengl and directx at
 	 * the same time, so blacklist it from capturing opengl */
-	const char *process_name = get_process_name();
-	if (_strcmpi(process_name, "yo_cm_client.exe") == 0 || _strcmpi(process_name, "cm_client.exe") == 0) {
-		hlog("Ignoring opengl for game: %s", process_name);
+	const wchar_t *process_name = get_process_name();
+	if (_wcsicmp(process_name, L"yo_cm_client.exe") == 0 || _wcsicmp(process_name, L"cm_client.exe") == 0) {
+		char *process_name_utf8 = wide_to_utf8_ptr(process_name);
+		hlog("Ignoring opengl for game: %s", process_name_utf8 ? process_name_utf8 : "<unknown>");
+		free(process_name_utf8);
 		return true;
 	}
 
