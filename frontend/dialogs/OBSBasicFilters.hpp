@@ -21,6 +21,7 @@
 
 #include <QDialog>
 
+class GainReductionMeter;
 class OBSBasic;
 class OBSPropertiesView;
 
@@ -33,6 +34,8 @@ private:
 	std::unique_ptr<Ui::OBSBasicFilters> ui;
 	OBSSource source;
 	OBSPropertiesView *view = nullptr;
+	// Shown only while a compressor_filter is selected in this dialog
+	GainReductionMeter *gainReductionMeter = nullptr;
 
 	std::vector<OBSSignal> obsSignals;
 	OBSSignal updatePropertiesSignal;

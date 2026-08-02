@@ -44,6 +44,8 @@ target_sources(
     components/FocusList.hpp
     components/GameCaptureToolbar.cpp
     components/GameCaptureToolbar.hpp
+    components/GainReductionMeter.cpp
+    components/GainReductionMeter.hpp
     components/ImageSourceToolbar.cpp
     components/ImageSourceToolbar.hpp
     components/MediaControls.cpp

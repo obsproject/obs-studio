@@ -17,6 +17,7 @@
 
 #include "OBSBasicFilters.hpp"
 
+#include <components/GainReductionMeter.hpp>
 #include <components/VisibilityItemDelegate.hpp>
 #include <components/VisibilityItemWidget.hpp>
 #include <dialogs/NameDialog.hpp>
@@ -26,6 +27,8 @@
 
 #include <properties-view.hpp>
 #include <qt-wrappers.hpp>
+
+#include <cstring>
 
 #include <QLineEdit>
 
@@ -241,6 +244,12 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 		 *
 		 * macOS might be especially affected as it doesn't switch keyboard focus
 		 * to buttons like Windows does. */
+		// Tear down GR meter with the properties view when selection changes
+		if (gainReductionMeter) {
+			gainReductionMeter->hide();
+			gainReductionMeter->deleteLater();
+			gainReductionMeter = nullptr;
+		}
 		if (view) {
 			view->hide();
 			view->deleteLater();
@@ -270,6 +279,15 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 
 	view->setMinimumHeight(150);
 	UpdateSplitter();
+
+	// obs_properties has no meter widget type, so host GR UI here for compressor
+	const char *id = obs_source_get_id(filter);
+	if (id && strcmp(id, "compressor_filter") == 0) {
+		gainReductionMeter = new GainReductionMeter(ui->propertiesFrame, filter);
+		ui->propertiesLayout->addWidget(gainReductionMeter);
+		gainReductionMeter->show();
+	}
+
 	ui->propertiesLayout->addWidget(view);
 	view->show();
 }

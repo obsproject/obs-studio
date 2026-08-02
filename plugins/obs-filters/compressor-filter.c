@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
+#include <string.h>
 
 #include <obs-module.h>
 #include <media-io/audio-math.h>
@@ -75,6 +76,13 @@ struct compressor_data {
 	float envelope;
 	float slope;
 
+	/* Metering: float GR dB stored as long bits for atomic cross-thread reads.
+	 * Written on the audio thread; read from the UI via get_gain_reduction. */
+	volatile long gain_reduction_db_bits;
+	/* Set true each audio block that runs process_compression; cleared in video_tick.
+	 * If still false at tick time, the filter is idle/disabled -> publish 0 dB. */
+	volatile bool gain_reduction_updated;
+
 	pthread_mutex_t sidechain_update_mutex;
 	uint64_t sidechain_check_time;
 	obs_weak_source_t *weak_sidechain;
@@ -133,6 +141,29 @@ static void resize_env_buffer(struct compressor_data *cd, size_t len)
 static inline float gain_coefficient(uint32_t sample_rate, float time)
 {
 	return (float)exp(-1.0f / (sample_rate * time));
+}
+
+/* Publish GR for the UI (audio thread). Bitcast float <-> long for os_atomic_*. */
+static inline void store_gain_reduction_db(struct compressor_data *cd, float db)
+{
+	long bits = 0;
+	memcpy(&bits, &db, sizeof(float));
+	os_atomic_set_long(&cd->gain_reduction_db_bits, bits);
+}
+
+static inline float load_gain_reduction_db(struct compressor_data *cd)
+{
+	long bits = os_atomic_load_long(&cd->gain_reduction_db_bits);
+	float db = 0.0f;
+	memcpy(&db, &bits, sizeof(float));
+	return db;
+}
+
+/* proc_handler entry: "void get_gain_reduction(out float db)" */
+static void get_gain_reduction(void *data, calldata_t *cd)
+{
+	struct compressor_data *cd_data = data;
+	calldata_set_float(cd, "db", load_gain_reduction_db(cd_data));
 }
 
 static const char *compressor_name(void *unused)
@@ -261,6 +292,10 @@ static void *compressor_create(obs_data_t *settings, obs_source_t *filter)
 		return NULL;
 	}
 
+	/* Let the Filters UI (and scripts) read live gain reduction */
+	proc_handler_t *ph = obs_source_get_proc_handler(filter);
+	proc_handler_add(ph, "void get_gain_reduction(out float db)", get_gain_reduction, cd);
+
 	compressor_update(cd, settings);
 	return cd;
 }
@@ -353,12 +388,19 @@ static void analyze_sidechain(struct compressor_data *cd, const uint32_t num_sam
 	cd->envelope = cd->envelope_buf[num_samples - 1];
 }
 
-static inline void process_compression(const struct compressor_data *cd, float **samples, uint32_t num_samples)
+static inline void process_compression(struct compressor_data *cd, float **samples, uint32_t num_samples)
 {
+	/* Track the strongest reduction in this block for the meter (most negative dB) */
+	float min_gain_db = 0.0f;
+
 	for (size_t i = 0; i < num_samples; ++i) {
 		const float env_db = mul_to_db(cd->envelope_buf[i]);
-		float gain = cd->slope * (cd->threshold - env_db);
-		gain = db_to_mul(fminf(0, gain));
+		/* keep gain_db so we can meter it */
+		float gain_db = fminf(0.0f, cd->slope * (cd->threshold - env_db));
+		float gain = db_to_mul(gain_db);
+
+		if (gain_db < min_gain_db)
+			min_gain_db = gain_db;
 
 		for (size_t c = 0; c < cd->num_channels; ++c) {
 			if (samples[c]) {
@@ -366,12 +408,20 @@ static inline void process_compression(const struct compressor_data *cd, float *
 			}
 		}
 	}
+
+	store_gain_reduction_db(cd, min_gain_db);
+	os_atomic_set_bool(&cd->gain_reduction_updated, true);
 }
 
 static void compressor_tick(void *data, float seconds)
 {
 	struct compressor_data *cd = data;
 	char *new_name = NULL;
+
+	/* os_atomic_set_bool returns the previous value. If it was already false,
+	 * no audio block ran since the last tick (filter disabled / no audio) -> 0 dB. */
+	if (!os_atomic_set_bool(&cd->gain_reduction_updated, false))
+		store_gain_reduction_db(cd, 0.0f);
 
 	pthread_mutex_lock(&cd->sidechain_update_mutex);
 
