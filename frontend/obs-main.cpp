@@ -846,11 +846,6 @@ static bool vc_runtime_outdated()
 
 static void set_process_mitigation_policies()
 {
-	// DLL planting protection - prefer system32 images
-	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {};
-	policy.PreferSystem32Images = 1;
-	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
-
 	PROCESS_MITIGATION_DEP_POLICY dep = {0};
 	dep.DisableAtlThunkEmulation = 1;
 	dep.Enable = 1;
