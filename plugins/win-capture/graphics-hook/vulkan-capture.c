@@ -575,13 +575,13 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 	IDXGIAdapter1 *adapter;
 	HRESULT hr;
 
-	HMODULE d3d11 = load_system_library("d3d11.dll");
+	HMODULE d3d11 = load_system_library(L"d3d11.dll");
 	if (!d3d11) {
 		flog("failed to load d3d11: %d", GetLastError());
 		return false;
 	}
 
-	HMODULE dxgi = load_system_library("dxgi.dll");
+	HMODULE dxgi = load_system_library(L"dxgi.dll");
 	if (!dxgi) {
 		flog("failed to load dxgi: %d", GetLastError());
 		return false;
