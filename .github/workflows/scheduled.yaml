@@ -94,8 +94,10 @@ jobs:
     name: Build 🧱
     uses: ./.github/workflows/build-project.yaml
     needs: cache-cleanup
-    secrets: inherit
-
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    with:
+      environment: build
+      
   analyze-project:
     name: Analyze 🔬
     needs: cache-cleanup

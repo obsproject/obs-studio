@@ -22,9 +22,11 @@ jobs:
   build-project:
     name: Build 🧱
     uses: ./.github/workflows/build-project.yaml
-    secrets: inherit
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
     permissions:
       contents: read
+    with:
+      environment: build
 
   update-documentation:
     name: Update Documentation 📖
