@@ -117,7 +117,11 @@
       "inherits": ["macos"],
       "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW"
       }
     },
     {
@@ -150,6 +154,10 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
         "CMAKE_COLOR_DIAGNOSTICS": true,
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW",
         "ENABLE_CCACHE": true
       }
     },
@@ -180,7 +188,11 @@
       "inherits": ["windows-x64"],
       "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW"
       }
     },
     {
@@ -213,7 +225,11 @@
       "inherits": ["windows-arm64"],
       "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW"
       }
     }
   ],
