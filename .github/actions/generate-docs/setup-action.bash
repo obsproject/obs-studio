@@ -69,6 +69,7 @@ setup-action() {
       sudo apt-get install --yes --no-install-recommends python3
       ;;
     macOS)
+      brew update
       brew install ${RUNNER_DEBUG:+--verbose} python3
       ;;
     *)

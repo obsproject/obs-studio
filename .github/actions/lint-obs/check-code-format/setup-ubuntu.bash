@@ -12,16 +12,18 @@ setup-brew() {
   local brew_env
   brew_env="$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
   eval "${brew_env}"
+  brew update
 
+  echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "${GITHUB_PATH}"
+}
+
+setup-ubuntu() {
   if [[ -n "${RUNNER_DEBUG:-}" ]]; then
     echo '::group::Brew configuration'
     brew config
     echo '::endgroup::'
   fi
-  echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "${GITHUB_PATH}"
-}
 
-setup-ubuntu() {
   echo "::group::Installing ${LINTER_COMMAND:-}..."
   case "${LINTER_COMMAND:-}" in
     clang-format)

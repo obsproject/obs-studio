@@ -26,17 +26,21 @@ setup-macos() {
   echo "::group::Installing ${LINTER_COMMAND:-}..."
   case ${LINTER_COMMAND:-} {
     clang-format)
+      brew update
       brew trust obsproject/tools/clang-format@22
       brew install ${RUNNER_DEBUG:+--verbose} obsproject/tools/clang-format@22
       ;;
     gersemi)
+      brew update
       brew install ${RUNNER_DEBUG:+--verbose} gersemi
       ;;
     swift-format)
+      brew update
       brew install ${RUNNER_DEBUG:+--verbose} swift-format
       ;;
     xmllint) ;;
     zizmor)
+      brew update
       brew install ${RUNNER_DEBUG:+--verbose} zizmor
       ;;
     *)

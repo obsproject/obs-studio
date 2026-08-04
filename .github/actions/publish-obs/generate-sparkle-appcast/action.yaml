@@ -67,7 +67,8 @@ runs:
         # Setup Action
         if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
 
-        brew install --quiet pandoc
+        brew update
+        brew install pandoc
 
         mkdir -p "${RUNNER_TEMP}/appcasts"
         mkdir -p "${RUNNER_TEMP}/appcast_builds"

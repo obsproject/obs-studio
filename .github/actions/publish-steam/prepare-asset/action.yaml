@@ -30,7 +30,8 @@ runs:
         declare brew_prefix
         brew_prefix="$(brew --prefix)"
         if [[ ! -x "${brew_prefix}/bin/bash" ]]; then
-          brew install --quiet bash
+          brew update
+          brew install bash
         fi
 
     - name: Prepare Asset
