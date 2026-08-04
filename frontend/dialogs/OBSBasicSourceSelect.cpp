@@ -546,10 +546,10 @@ void OBSBasicSourceSelect::rebuildSourceTypeList()
 
 	// Shift Deprecated sources to the bottom
 	QList<QListWidgetItem *> deprecatedItems;
-	for (int i = 0; i < ui->sourceTypeList->count(); ++i) {
+	for (int i = ui->sourceTypeList->count() - 1; i >= 0; --i) {
 		QListWidgetItem *item = ui->sourceTypeList->item(i);
 		if (!item) {
-			break;
+			continue;
 		}
 
 		bool isDeprecated = item->data(kDeprecatedRole).toBool();
@@ -562,6 +562,7 @@ void OBSBasicSourceSelect::rebuildSourceTypeList()
 		}
 	}
 
+	std::reverse(deprecatedItems.begin(), deprecatedItems.end());
 	for (const auto &item : deprecatedItems) {
 		ui->sourceTypeList->addItem(item);
 	}
