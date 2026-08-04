@@ -7,9 +7,36 @@
 
 #include <windows.h>
 #include "graphics-hook-info.h"
+#include "process-arch.h"
 
 extern struct graphics_offsets offsets32;
 extern struct graphics_offsets offsets64;
+extern struct graphics_offsets offsets_arm64;
+
+static inline struct graphics_offsets *offsets_for_arch(enum process_arch arch)
+{
+	switch (arch) {
+	case PROCESS_ARCH_ARM64:
+		return &offsets_arm64;
+	case PROCESS_ARCH_X64:
+		return &offsets64;
+	default:
+		return &offsets32;
+	}
+}
+
+/* Config file suffix for the cached offsets of each architecture. */
+static inline const char *config_suffix(enum process_arch arch)
+{
+	switch (arch) {
+	case PROCESS_ARCH_ARM64:
+		return "-arm64.ini";
+	case PROCESS_ARCH_X64:
+		return "64.ini";
+	default:
+		return "32.ini";
+	}
+}
 
 static inline bool load_offsets_from_string(struct graphics_offsets *offsets, const char *str)
 {
@@ -139,7 +166,7 @@ failed:
 	return !ver_mismatch;
 }
 
-bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache, const char *config_path)
+bool load_graphics_offsets(enum process_arch arch, bool use_hook_address_cache, const char *config_path)
 {
 	char *offset_exe_path = NULL;
 	struct dstr config_ini = {0};
@@ -151,13 +178,14 @@ bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache, const char
 	char data[2048];
 
 #ifndef _WIN64
-	if (!is32bit && !is_64_bit_windows()) {
+	if (arch != PROCESS_ARCH_X86 && !is_64_bit_windows()) {
 		return true;
 	}
 #endif
 
 	dstr_copy(&offset_exe, "get-graphics-offsets");
-	dstr_cat(&offset_exe, is32bit ? "32.exe" : "64.exe");
+	dstr_cat(&offset_exe, process_arch_suffix(arch));
+	dstr_cat(&offset_exe, ".exe");
 	offset_exe_path = obs_module_file(offset_exe.array);
 
 	dstr_init_move_array(&cmd, offset_exe_path);
@@ -188,13 +216,13 @@ bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache, const char
 
 	if (use_hook_address_cache) {
 		dstr_copy(&config_ini, config_path);
-		dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
+		dstr_cat(&config_ini, config_suffix(arch));
 
 		os_quick_write_utf8_file_safe(config_ini.array, str.array, str.len, false, "tmp", NULL);
 		dstr_free(&config_ini);
 	}
 
-	success = load_offsets_from_string(is32bit ? &offsets32 : &offsets64, str.array);
+	success = load_offsets_from_string(offsets_for_arch(arch), str.array);
 	if (!success) {
 		blog(LOG_INFO, "load_graphics_offsets: Failed to load string");
 	}
@@ -208,16 +236,16 @@ error:
 	return success;
 }
 
-bool load_cached_graphics_offsets(bool is32bit, const char *config_path)
+bool load_cached_graphics_offsets(enum process_arch arch, const char *config_path)
 {
 	struct dstr config_ini = {0};
 	bool success;
 
 	dstr_copy(&config_ini, config_path);
-	dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
-	success = load_offsets_from_file(is32bit ? &offsets32 : &offsets64, config_ini.array);
+	dstr_cat(&config_ini, config_suffix(arch));
+	success = load_offsets_from_file(offsets_for_arch(arch), config_ini.array);
 	if (!success)
-		success = load_graphics_offsets(is32bit, true, config_path);
+		success = load_graphics_offsets(arch, true, config_path);
 
 	dstr_free(&config_ini);
 	return success;

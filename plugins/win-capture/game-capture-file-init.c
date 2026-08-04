@@ -8,6 +8,7 @@
 #include <util/platform.h>
 #include <util/c99defs.h>
 #include <util/base.h>
+#include "process-arch.h"
 
 /* ------------------------------------------------------------------------- */
 /* helper funcs                                                              */
@@ -147,9 +148,16 @@ static LSTATUS get_reg(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, bool b64)
 static bool programdata64_hook_exists = false;
 static bool programdata32_hook_exists = false;
 
-char *get_hook_path(bool b64)
+char *get_hook_path(enum process_arch arch)
 {
 	wchar_t path[MAX_PATH];
+	const bool b64 = arch != PROCESS_ARCH_X86;
+
+	/* Native ARM64 targets need the ARM64 hook, which is never staged into
+	 * ProgramData (only the 32-bit and 64-bit hooks are, for Vulkan layer
+	 * registration), so always load it from the plugin directory. */
+	if (arch == PROCESS_ARCH_ARM64)
+		return obs_module_file("graphics-hook-arm64.dll");
 
 	get_programdata_path(path, L"obs-studio-hook\\");
 	make_filename(path, L"graphics-hook", L".dll");
