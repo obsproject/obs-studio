@@ -8,6 +8,7 @@
 
 #include "compat-helpers.h"
 #include "compat-format-ver.h"
+#include "process-arch.h"
 #ifdef OBS_LEGACY
 #include "compat-config.h"
 #endif
@@ -31,15 +32,21 @@ static HANDLE init_hooks_thread = NULL;
 static update_info_t *update_info = NULL;
 
 extern bool cached_versions_match(void);
-extern bool load_cached_graphics_offsets(bool is32bit, const char *config_path);
-extern bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache, const char *config_path);
+extern bool load_cached_graphics_offsets(enum process_arch arch, const char *config_path);
+extern bool load_graphics_offsets(enum process_arch arch, bool use_hook_address_cache, const char *config_path);
 
-/* temporary, will eventually be erased once we figure out how to create both
- * 32bit and 64bit versions of the helpers/hook */
+/* Offsets are needed for every architecture a capture target may run as. On
+ * Windows on ARM that includes native ARM64 as well as emulated x64. */
 #ifdef _WIN64
-#define IS32BIT false
+static const enum process_arch offset_archs[] = {
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+	PROCESS_ARCH_ARM64,
+#endif
+	PROCESS_ARCH_X64,
+	PROCESS_ARCH_X86,
+};
 #else
-#define IS32BIT true
+static const enum process_arch offset_archs[] = {PROCESS_ARCH_X86, PROCESS_ARCH_X64};
 #endif
 
 static const bool use_hook_address_cache = false;
@@ -48,13 +55,20 @@ static DWORD WINAPI init_hooks(LPVOID param)
 {
 	char *config_path = param;
 
-	if (use_hook_address_cache && cached_versions_match() && load_cached_graphics_offsets(IS32BIT, config_path)) {
+	if (use_hook_address_cache && cached_versions_match() &&
+	    load_cached_graphics_offsets(offset_archs[0], config_path)) {
 
-		load_cached_graphics_offsets(!IS32BIT, config_path);
+		for (size_t i = 1; i < OBS_COUNTOF(offset_archs); i++)
+			load_cached_graphics_offsets(offset_archs[i], config_path);
 		obs_register_source(&game_capture_info);
 
-	} else if (load_graphics_offsets(IS32BIT, use_hook_address_cache, config_path)) {
-		load_graphics_offsets(!IS32BIT, use_hook_address_cache, config_path);
+	} else {
+		/* Load each architecture independently: a failure for one must not
+		 * skip the others. On Windows on ARM the emulated x64 targets are
+		 * the common case, so losing their offsets because the ARM64
+		 * helper failed would be the worse outcome. */
+		for (size_t i = 0; i < OBS_COUNTOF(offset_archs); i++)
+			load_graphics_offsets(offset_archs[i], use_hook_address_cache, config_path);
 	}
 
 	bfree(config_path);

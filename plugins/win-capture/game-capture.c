@@ -19,6 +19,7 @@
 #include "app-helpers.h"
 #include "audio-helpers.h"
 #include "nt-stuff.h"
+#include "process-arch.h"
 
 #define do_log(level, format, ...) \
 	blog(level, "[game-capture: '%s'] " format, obs_source_get_name(gc->source), ##__VA_ARGS__)
@@ -147,7 +148,7 @@ struct game_capture {
 	bool active;
 	bool capturing;
 	bool activate_hook;
-	bool process_is_64bit;
+	enum process_arch process_arch;
 	bool error_acquiring;
 	bool dwm_capture;
 	bool initial_config;
@@ -197,6 +198,7 @@ struct game_capture {
 
 struct graphics_offsets offsets32 = {0};
 struct graphics_offsets offsets64 = {0};
+struct graphics_offsets offsets_arm64 = {0};
 
 static inline bool use_anticheat(struct game_capture *gc)
 {
@@ -689,6 +691,51 @@ static inline bool is_64bit_process(HANDLE process)
 	return !x86;
 }
 
+/* GetProcessInformation is Windows 11 and newer, so it is resolved at runtime to
+ * keep working on older systems. */
+typedef BOOL(WINAPI *get_process_information_t)(HANDLE, PROCESS_INFORMATION_CLASS, LPVOID, DWORD);
+
+/* Determine the architecture of a target process.
+ *
+ * IsWow64Process only reports whether a process runs under WOW64, so on Windows
+ * on ARM it cannot tell a native ARM64 process from an emulated x64 one -- both
+ * report "not WOW64". IsWow64Process2 is no better here: for both of those it
+ * returns IMAGE_FILE_MACHINE_UNKNOWN as the process machine (measured on an
+ * ARM64 host: native ARM64, ARM64EC and x64 targets all report UNKNOWN).
+ *
+ * GetProcessInformation(ProcessMachineTypeInfo) does report the real machine
+ * (ARM64 / AMD64 / I386) for every case, so prefer it and keep the older APIs
+ * only as a fallback for systems that lack it (pre-Windows 11). */
+static inline enum process_arch get_process_arch(HANDLE process)
+{
+	static get_process_information_t get_process_information = NULL;
+	static bool resolved = false;
+
+	if (!resolved) {
+		get_process_information = (get_process_information_t)GetProcAddress(GetModuleHandleW(L"kernel32"),
+										    "GetProcessInformation");
+		resolved = true;
+	}
+
+	if (get_process_information) {
+		PROCESS_MACHINE_INFORMATION info = {0};
+		if (get_process_information(process, ProcessMachineTypeInfo, &info, sizeof(info))) {
+			switch (info.ProcessMachine) {
+			case IMAGE_FILE_MACHINE_I386:
+				return PROCESS_ARCH_X86;
+			case IMAGE_FILE_MACHINE_AMD64:
+				return PROCESS_ARCH_X64;
+			case IMAGE_FILE_MACHINE_ARM64:
+				return PROCESS_ARCH_ARM64;
+			}
+		}
+	}
+
+	/* Fall back to the WOW64 check, which can at least separate 32-bit from
+	 * 64-bit targets. */
+	return is_64bit_process(process) ? PROCESS_ARCH_X64 : PROCESS_ARCH_X86;
+}
+
 static inline bool open_target_process(struct game_capture *gc)
 {
 	gc->target_process = open_process(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, false, gc->process_id);
@@ -697,7 +744,7 @@ static inline bool open_target_process(struct game_capture *gc)
 		return false;
 	}
 
-	gc->process_is_64bit = is_64bit_process(gc->target_process);
+	gc->process_arch = get_process_arch(gc->target_process);
 	gc->is_app = is_app(gc->target_process);
 	if (gc->is_app) {
 		gc->app_sid = get_app_sid(gc->target_process);
@@ -793,7 +840,27 @@ static inline bool init_hook_info(struct game_capture *gc)
 		     "(multi-adapter compatibility mode)");
 	}
 
-	gc->global_hook_info->offsets = gc->process_is_64bit ? offsets64 : offsets32;
+	const struct graphics_offsets *offsets;
+	switch (gc->process_arch) {
+	case PROCESS_ARCH_ARM64:
+		offsets = &offsets_arm64;
+		break;
+	case PROCESS_ARCH_X64:
+		offsets = &offsets64;
+		break;
+	default:
+		offsets = &offsets32;
+		break;
+	}
+
+	/* The offsets are filled in by get-graphics-offsets-<arch>.exe at load time.
+	 * If that helper failed there is nothing for the hook to hook, so bail out
+	 * with a diagnostic instead of injecting a zeroed table. */
+	if (!offsets->d3d9.present && !offsets->dxgi.present && !offsets->dxgi.present1) {
+		warn("init_hook_info: no graphics offsets for '%s' targets", process_arch_suffix(gc->process_arch));
+		return false;
+	}
+	gc->global_hook_info->offsets = *offsets;
 	gc->global_hook_info->capture_overlay = gc->config.capture_overlays;
 	gc->global_hook_info->force_shmem = gc->config.force_shmem;
 	gc->global_hook_info->UNUSED_use_scale = false;
@@ -909,7 +976,7 @@ static inline bool create_inject_process(struct game_capture *gc, const char *in
 	return success;
 }
 
-extern char *get_hook_path(bool b64);
+extern char *get_hook_path(enum process_arch arch);
 
 static inline bool inject_hook(struct game_capture *gc)
 {
@@ -917,14 +984,15 @@ static inline bool inject_hook(struct game_capture *gc)
 	bool success = false;
 	char *inject_path;
 	char *hook_path;
+	struct dstr inject_exe = {0};
 
-	if (gc->process_is_64bit) {
-		inject_path = obs_module_file("inject-helper64.exe");
-	} else {
-		inject_path = obs_module_file("inject-helper32.exe");
-	}
+	dstr_copy(&inject_exe, "inject-helper");
+	dstr_cat(&inject_exe, process_arch_suffix(gc->process_arch));
+	dstr_cat(&inject_exe, ".exe");
+	inject_path = obs_module_file(inject_exe.array);
+	dstr_free(&inject_exe);
 
-	hook_path = get_hook_path(gc->process_is_64bit);
+	hook_path = get_hook_path(gc->process_arch);
 
 	if (!check_file_integrity(gc, inject_path, "inject helper")) {
 		goto cleanup;
@@ -933,11 +1001,11 @@ static inline bool inject_hook(struct game_capture *gc)
 		goto cleanup;
 	}
 
-#ifdef _WIN64
-	matching_architecture = gc->process_is_64bit;
-#else
-	matching_architecture = !gc->process_is_64bit;
-#endif
+	/* A remote thread can only be created in a process of the same
+	 * architecture, so anything else has to go through the inject helper.
+	 * On Windows on ARM this matters for emulated x64 targets: they are
+	 * 64-bit like this ARM64 build, but not the same architecture. */
+	matching_architecture = gc->process_arch == obs_process_arch();
 
 	if (matching_architecture && !use_anticheat(gc)) {
 		info("using direct hook");
