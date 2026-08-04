@@ -123,6 +123,58 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     )
   endif()
 
+  # On ARM64, rebuild the module as an ARM64X hybrid image, replacing the plain
+  # ARM64 DLL in place. Native-ARM64 and emulated-x64 processes share a single
+  # 64-bit COM registration view, so the one InprocServer32 slot can point at
+  # only one architecture. An ARM64X image holds both an arm64 and an arm64ec
+  # slice, letting that single registration serve both kinds of consumer.
+  # See cmake/windows/build-arm64x.cmake for the mechanism.
+  if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+    # Derive the ARM64 cross tools and vcvarsall from the configured linker:
+    #   <VC>/Tools/MSVC/<ver>/bin/Hostx64/arm64/link.exe
+    cmake_path(GET CMAKE_LINKER PARENT_PATH _arm64x_bindir)
+    set(ARM64X_LINK "${CMAKE_LINKER}")
+    set(ARM64X_CL "${_arm64x_bindir}/cl.exe")
+    string(REGEX REPLACE "/VC/Tools/MSVC/.*$" "/VC/Auxiliary/Build/vcvarsall.bat" VCVARSALL "${CMAKE_LINKER}")
+
+    # configure_file() cannot expand $<CONFIG>, so the wrapper takes the real
+    # configuration as argument 1 and substitutes it for %CONFIG% at build time.
+    set(ARM64X_NATIVE_OBJ_DIR "${CMAKE_CURRENT_BINARY_DIR}/obs-virtualcam-module.dir/%CONFIG%")
+    set(ARM64X_EC_OBJ_DIR "${CMAKE_CURRENT_BINARY_DIR}/arm64ec.dir/%CONFIG%")
+    set(ARM64X_WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    set(ARM64X_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/windows/build-arm64x.cmake")
+    # Reuse the native ARM64 exports: an ARM64X image needs the same six COM
+    # entry points in both of its views.
+    set(ARM64X_DEF "${CMAKE_CURRENT_SOURCE_DIR}/cmake/windows/virtualcam-module-arm64.def")
+    # Overwrite the module the native link just produced, PDB included: the native
+    # PDB does not describe the hybrid image, and it is packaged next to the DLL.
+    set(ARM64X_OUT_DLL "${CMAKE_CURRENT_BINARY_DIR}/%CONFIG%/obs-virtualcam-module-arm64.dll")
+    set(ARM64X_OUT_PDB "${CMAKE_CURRENT_BINARY_DIR}/%CONFIG%/obs-virtualcam-module-arm64.pdb")
+
+    # vcvarsall takes <host>_<target>; on an ARM64 host this is a native build.
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(ARM64|arm64|aarch64)$")
+      set(ARM64X_VCVARS_ARG arm64)
+    else()
+      set(ARM64X_VCVARS_ARG amd64_arm64)
+    endif()
+    # Mirrors the native link: the libraries linked above plus the Win32 defaults.
+    set(ARM64X_SYSTEM_LIBS "gdiplus.lib strmiids.lib winmm.lib ${CMAKE_CXX_STANDARD_LIBRARIES}")
+
+    configure_file(cmake/windows/build-arm64x.bat.in build-arm64x.bat @ONLY)
+
+    # Under the VS generator the command runs inside a .rule via cmd, which
+    # resolves a bare .bat first token as a relative command and fails to find
+    # it. Go through `cmd /c call "<native abs path>"` instead.
+    cmake_path(NATIVE_PATH CMAKE_CURRENT_BINARY_DIR _arm64x_bindir_native)
+    add_custom_command(
+      TARGET obs-virtualcam-module
+      POST_BUILD
+      COMMAND cmd /c call "${_arm64x_bindir_native}\\build-arm64x.bat" $<CONFIG>
+      COMMENT "Build ARM64X obs-virtualcam-module"
+      VERBATIM
+    )
+  endif()
+
   add_dependencies(win-dshow obs-virtualcam-module)
 endif()
 

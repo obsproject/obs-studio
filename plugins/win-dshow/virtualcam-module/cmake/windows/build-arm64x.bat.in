@@ -1,0 +1,35 @@
+@echo off
+rem Auto-generated wrapper: set up the ARM64 cross toolchain environment, then
+rem run the ARM64X post-build driver via cmake -P.
+rem
+rem The build configuration (Debug/RelWithDebInfo/...) is passed as %1 at build
+rem time. CMake's configure_file() does NOT expand generator expressions, so the
+rem paths below use %CONFIG% and we substitute the real config at run time.
+setlocal EnableDelayedExpansion
+set "CONFIG=%~1"
+if "%CONFIG%"=="" (
+  echo ARM64X: no build configuration passed as argument 1
+  exit /b 1
+)
+
+rem The vcvarsall argument is <host>_<target>, so it depends on the machine doing
+rem the build: an x64 host cross-compiles (amd64_arm64) while an ARM64 host builds
+rem natively (arm64). Use the host architecture CMake detected at configure time.
+call "@VCVARSALL@" @ARM64X_VCVARS_ARG@ >nul 2>&1
+if errorlevel 1 (
+  echo ARM64X: failed to initialize @ARM64X_VCVARS_ARG@ environment via vcvarsall
+  exit /b 1
+)
+
+"@CMAKE_COMMAND@" ^
+  -DNATIVE_OBJ_DIR="@ARM64X_NATIVE_OBJ_DIR@" ^
+  -DWORK_DIR="@ARM64X_WORK_DIR@" ^
+  -DCL="@ARM64X_CL@" ^
+  -DLINK="@ARM64X_LINK@" ^
+  -DDEF="@ARM64X_DEF@" ^
+  -DOUT_DLL="@ARM64X_OUT_DLL@" ^
+  -DEC_OBJ_DIR="@ARM64X_EC_OBJ_DIR@" ^
+  -DSYSTEM_LIBS="@ARM64X_SYSTEM_LIBS@" ^
+  -DOUT_PDB="@ARM64X_OUT_PDB@" ^
+  -P "@ARM64X_SCRIPT@"
+exit /b %errorlevel%
