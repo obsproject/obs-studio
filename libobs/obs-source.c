@@ -3010,6 +3010,12 @@ enum gs_color_space obs_source_get_color_space(obs_source_t *source, size_t coun
 			return obs_source_get_color_space(source->filter_parent, count, preferred_spaces);
 	}
 
+	/* a filter that produces no video must not answer for the chain below it */
+	if (source->info.type == OBS_SOURCE_TYPE_FILTER && (source->info.output_flags & OBS_SOURCE_VIDEO) == 0) {
+		if (source->filter_target)
+			return obs_source_get_color_space(source->filter_target, count, preferred_spaces);
+	}
+
 	if (!source->context.data || !source->enabled) {
 		if (source->filter_target)
 			return obs_source_get_color_space(source->filter_target, count, preferred_spaces);
