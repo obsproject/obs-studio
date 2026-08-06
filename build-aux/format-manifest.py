@@ -7,6 +7,26 @@ import sys
 from typing import Any
 
 
+class LogFilter(logging.Filter):
+    def filter(self, record):
+        if record.levelno == logging.ERROR or record.levelno == logging.CRITICAL:
+            record.github_level = "::error::"
+            record.obs_level = "✖"
+        elif record.levelno == logging.WARNING:
+            record.github_level = "::warning::"
+            record.obs_level = "⚠"
+        elif record.levelno == logging.INFO:
+            record.github_level = "::notice::"
+            record.obs_level = "ℹ︎"
+        elif record.levelno == logging.DEBUG:
+            record.github_level = "::debug::"
+            record.obs_level = "⚙︎"
+        else:
+            record.github_level = ""
+
+        return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Format Flatpak manifest")
     parser.add_argument(
@@ -28,8 +48,20 @@ def main() -> int:
 
     arguments = parser.parse_args()
 
-    logging.basicConfig(level=arguments.loglevel, format="%(message)s")
+    ENV_CI = os.environ.get("CI", None)
+
+    if ENV_CI is not None:
+        logging.basicConfig(
+            level=arguments.loglevel, format="%(github_level)s%(message)s"
+        )
+    else:
+        logging.basicConfig(
+            level=arguments.loglevel, format="%(obs_level)s %(message)s"
+        )
+
+    log_filter = LogFilter()
     logger = logging.getLogger()
+    logger.addFilter(log_filter)
 
     manifest_file = arguments.manifest_file
 
@@ -45,19 +77,19 @@ def main() -> int:
 
             if arguments.check:
                 if new_manifest_string != manifest_string:
-                    logger.error(f"❌ Manifest file is not correctly formatted")
+                    logger.error(f"Manifest file is not correctly formatted")
                     return 2
                 else:
-                    logger.info(f"✅ Module list passed order validation")
+                    logger.info(f"Module list passed order validation")
                     return 0
 
             manifest.seek(0)
             manifest.truncate()
             manifest.write(new_manifest_string)
 
-            logger.info(f"✅ Updated manifest file '{manifest_file}")
+            logger.info(f"Updated manifest file '{manifest_file}")
     except IOError:
-        logger.error(f"❌ Unable to read manifest file '{manifest_file}'")
+        logger.error(f"Unable to read manifest file '{manifest_file}'")
         return 2
 
     return 0

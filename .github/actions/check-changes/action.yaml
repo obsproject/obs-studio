@@ -1,82 +1,50 @@
 name: Check For Changed Files
-description: Checks for changed files compared to specific git reference and glob expression
+description: >
+  Checks for changed files in a git repository based on two git refs, optionally limited by a git-style "diff" filter
+  and a git-style "pathspec" and returns the list of changed files meeting the specified criteria and a boolean flag
+  to use as a conditional value in workflows and actions.
 inputs:
-  baseRef:
-    description: Git reference to check against
-    required: false
   ref:
-    description: Git reference to check with
-    required: false
+    description: A git reference to check for changed files with.
     default: HEAD
-  checkGlob:
-    description: Glob expression to limit check to specific files
-    required: false
-  useFallback:
-    description: Use fallback compare against prior commit
-    required: false
-    default: 'true'
-  diffFilter:
-    description: git diff-filter string to use
-    required: false
+  base:
+    description: A git reference to check against.
     default: ''
+  filter:
+    description: A git-style diff filter string to limit the kinds of changes to check for.
+    default: ''
+  pathspec:
+    description: A git-style 'pathspec' string to limit the file paths to check for.
+    default: ''
+  use-fallback:
+    description: A boolean value to indicate whether to use a fallback base reference if the 'ref' is invalid.
+    default: 'true'
+  working-directory:
+    description: The path from which to run the git checks.
+    default: ${{ github.workspace }}
 outputs:
-  hasChangedFiles:
-    value: ${{ steps.checks.outputs.hasChangedFiles }}
-    description: True if specified files were changed in comparison to specified git reference
-  changedFiles:
-    value: ${{ steps.checks.outputs.changedFiles }}
-    description: List of changed files
+  has-changed-files:
+    value: ${{ steps.checks.outputs.has-changed-files }}
+    description: A boolean string to indicate whether any changed files were detected with the given constraints.
+  changed-repo-files:
+    value: ${{ steps.checks.outputs.changed-repo-files }}
+    description: A JSON array string of file paths relative to the working-directory of all changed files.
+  changed-files:
+    value: ${{ steps.checks.outputs.changed-files }}
+    description: A JSON array string of absolute file paths of all changed files.
 runs:
   using: composite
   steps:
-    - name: Check For Changed Files ✅
-      shell: bash
+    - name: Check For Changed Files
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
       id: checks
       env:
-        GIT_BASE_REF: ${{ inputs.baseRef }}
         GIT_REF: ${{ inputs.ref }}
+        GIT_BASE_REF: ${{ inputs.base }}
+        DIFF_FILTER: ${{ inputs.filter }}
+        PATH_SPEC: ${{ inputs.pathspec }}
+        USE_FALLBACK: ${{ inputs.use-fallback }}
         GITHUB_EVENT_FORCED: ${{ github.event.forced }}
         GITHUB_REF_BEFORE: ${{ github.event.before }}
-        USE_FALLBACK: ${{ inputs.useFallback }}
-        DIFF_FILTER: ${{ inputs.diffFilter }}
-      run: |
-        : Check for Changed Files ✅
-        if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-        shopt -s extglob
-        shopt -s dotglob
-
-        # 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is a "hidden" sha1 hash of
-        # the "empty tree", retrieved via 'git hash-object -t tree /dev/null',
-        # and used here as a last-resort fallback to always provide a valid
-        # git ref.
-
-        if [[ "${GIT_BASE_REF}" ]]; then
-          if ! git cat-file -e "${GIT_BASE_REF}" &> /dev/null; then
-            echo "::warning::Provided base reference ${GIT_BASE_REF} is invalid"
-            if [[ "${USE_FALLBACK}" == 'true' ]]; then
-              GIT_BASE_REF='HEAD~1'
-            fi
-          fi
-        else
-          if ! git cat-file -e ${GITHUB_REF_BEFORE} &> /dev/null; then
-            GITHUB_REF_BEFORE='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
-          fi
-
-          GIT_BASE_REF='HEAD~1'
-          case "${GITHUB_EVENT_NAME}" in
-            pull_request) GIT_BASE_REF="origin/${GITHUB_BASE_REF}" ;;
-            push) if [[ "${GITHUB_EVENT_FORCED}" != 'true' ]]; then GIT_BASE_REF="${GITHUB_REF_BEFORE}"; fi ;;
-            *) ;;
-          esac
-        fi
-
-        changes=($(git diff --name-only --diff-filter="${DIFF_FILTER}" ${GIT_BASE_REF} ${GIT_REF} -- ${{ inputs.checkGlob }}))
-
-        if (( ${#changes[@]} )); then
-          file_string="${changes[*]}"
-          echo "hasChangedFiles=true" >> $GITHUB_OUTPUT
-          echo "changedFiles=[\"${file_string// /\",\"}\"]" >> $GITHUB_OUTPUT
-        else
-          echo "hasChangedFiles=false" >> $GITHUB_OUTPUT
-          echo "changedFiles=[]" >> GITHUB_OUTPUT
-        fi
+      run: ${GITHUB_ACTION_PATH}/check-changes.bash

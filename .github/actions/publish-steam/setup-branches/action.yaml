@@ -1,0 +1,32 @@
+name: Setup Branches
+description: >
+  Selects an appopriate Steam release branch and description based on the GitHub Actions workflow event and git
+  reference.
+inputs:
+  ref-name:
+    description: The git ref to use for the Steam release.
+    default: ${{ github.ref }}
+  github-token:
+    description: The GitHub token used to make authenticated API requests.
+    default: ${{ github.token }}
+outputs:
+  branch-name:
+    description: The Steam release branch to use for the given git reference.
+    value: ${{ steps.setup.outputs.branch-name }}
+  description:
+    description: A descriptive name for the given git reference.
+    value: ${{ steps.setup.outputs.description }}
+  is-prerelease:
+    description: A boolean string to indicate whether the provided git reference marks a pre-release version.
+    value: ${{ steps.setup.outputs.is-prerelease }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Branches
+      id: setup
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ github.workspace }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        GIT_REF: ${{ inputs.ref-name }}
+      run: ${GITHUB_ACTION_PATH}/setup-branches.bash

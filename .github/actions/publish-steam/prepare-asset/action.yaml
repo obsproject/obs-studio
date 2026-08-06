@@ -1,0 +1,45 @@
+name: Prepare Asset
+description: Prepares a OBS Studio release asset for publishing on Steam.
+inputs:
+  platform:
+    description: >
+      Platform to prepare Steam asset for. Available values: 'macOS' or 'Windows'.
+    required: true
+  architecture:
+    description: >
+      The CPU architecture to prepare the Steam for. Available values: 'arm64' or 'x86_64' ('x64' on Windows).
+    required: true
+  path:
+    description: The path to the release asset to prepare.
+    default: ${{ github.workspace }}
+outputs:
+  path:
+    description: The path to a directory with the prepared Steam release asset.
+    value: ${{ steps.prepare.outputs.asset-path }}
+runs:
+  using: composite
+  steps:
+    - name: Install Bash 5
+      id: install-bash
+      if: runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        # Install Bash
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare brew_prefix
+        brew_prefix="$(brew --prefix)"
+        if [[ ! -x "${brew_prefix}/bin/bash" ]]; then
+          brew update
+          brew install bash
+        fi
+
+    - name: Prepare Asset
+      id: prepare
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ runner.temp }}
+      env:
+        PLATFORM: ${{ inputs.platform }}
+        ARCHITECTURE: ${{ inputs.architecture }}
+        ASSET: ${{ inputs.path }}
+      run: ${GITHUB_ACTION_PATH}/prepare-asset.bash

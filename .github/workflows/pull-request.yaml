@@ -1,0 +1,65 @@
+name: Pull
+run-name: Pull - ${{ github.event.number }}
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}
+  cancel-in-progress: true
+permissions:
+  contents: read                # Necessary for repository checkouts.
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+jobs:
+  lint-project:
+    name: Format
+    uses: ./.github/workflows/lint-project.yaml
+    permissions:
+      contents: read            # Necessary to keep workflow-level permission
+      checks: write             # Necessary to produce annotations
+
+  build-project:
+    name: Build
+    if: ${{ ! cancelled() }}
+    needs: lint-project
+    uses: ./.github/workflows/build-project.yaml
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    with:
+      environment: pull
+
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-slim
+    if: >-
+      ${{
+        ! cancelled()
+        && fromJSON(vars.ENABLE_DOCUMENTATION_UPDATE || 'false')
+        && contains(fromJSON('["master", "main"]'), github.base_ref)
+      }}
+    needs: build-project
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: ${{ github.event.pull_request.commits }}
+
+      - name: Check for Changed Files
+        id: checks
+        uses: ./.github/actions/check-changes
+        with:
+          pathspec: ':!cmake* :!*CMakeLists.txt'
+
+      - name: Generate Documentation
+        id: generate
+        uses: ./.github/actions/generate-docs
+        if: fromJSON(steps.checks.outputs.has-changed-files)

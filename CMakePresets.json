@@ -78,6 +78,19 @@
                   "baseUrl": "https://github.com/sparkle-project/Sparkle/releases/download",
                   "label": "Sparkle 2",
                   "hash": "1cb340cbbef04c6c0d162078610c25e2221031d794a3449d89f2f56f4df77c95"
+              },
+              "bouf": {
+                "version": "0.6.5",
+                "baseUrl": "https://github.com/obsproject/bouf/releases/download",
+                "label": "BOUF - Building OBS Updates Fast(er)",
+                "hash": "2e16d5116415579b5dd8cd68b3fe6edaa7513938427567121942f592292605d5",
+                "nsis-hash": "e323043627cfeebd237d306afc001c8c36a3c37f6ecef2b349a19a3209ae3450"
+              },
+              "pvs-studio": {
+                "version": "7.43",
+                "baseUrl": "https://files.pvs-studio.com/PVS-Studio_setup.exe",
+                "label": "PVS-Studio",
+                "hash": "04973bf660ee4f6e3c888c27d2a3db055a6d7792d5d078f548e4f635e0411412"
               }
             }
           }
@@ -88,6 +101,7 @@
       "displayName": "macOS",
       "description": "Default macOS build (single architecture only)",
       "inherits": ["environmentVars"],
+      "warnings": {"dev": true, "deprecated": true},
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -96,6 +110,7 @@
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build_macos",
       "cacheVariables": {
+        "CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_ENABLE_CACHING": "YES",
         "CMAKE_OSX_DEPLOYMENT_TARGET": {"type": "STRING", "value": "13.0"},
         "OBS_CODESIGN_IDENTITY": {"type": "STRING", "value": "$penv{CODESIGN_IDENT}"},
         "OBS_CODESIGN_TEAM": {"type": "STRING", "value": "$penv{CODESIGN_TEAM}"},
@@ -113,11 +128,13 @@
       "displayName": "macOS (CI)",
       "description": "CI macOS build (single architecture only)",
       "inherits": ["macos"],
-      "warnings": {"dev": true, "deprecated": true},
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-        "CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_ENABLE_CACHING": "YES",
-        "CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_CAS_PATH": "$penv{XCODE_CAS_PATH}"
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW"
       }
     },
     {
@@ -145,10 +162,15 @@
     {
       "name": "ubuntu-ci",
       "inherits": ["ubuntu"],
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_COMPILE_WARNING_AS_ERROR": true,
         "CMAKE_COLOR_DIAGNOSTICS": true,
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW",
         "ENABLE_CCACHE": true
       }
     },
@@ -157,6 +179,7 @@
       "displayName": "Windows x64",
       "description": "Default Windows build (x64)",
       "inherits": ["environmentVars"],
+      "warnings": {"dev": true, "deprecated": true},
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -176,9 +199,13 @@
       "displayName": "Windows x64 (CI)",
       "description": "CI Windows build (x64)",
       "inherits": ["windows-x64"],
-      "warnings": {"dev": true, "deprecated": true},
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW"
       }
     },
     {
@@ -186,6 +213,7 @@
       "displayName": "Windows ARM64",
       "description": "Default Windows build (ARM64)",
       "inherits": ["environmentVars"],
+      "warnings": {"dev": true, "deprecated": true},
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -208,9 +236,13 @@
       "displayName": "Windows ARM64 (CI)",
       "description": "CI Windows build (ARM64)",
       "inherits": ["windows-arm64"],
-      "warnings": {"dev": true, "deprecated": true},
+      "errors": {"dev": true, "deprecated": true},
       "cacheVariables": {
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "CMAKE_COMPILE_WARNING_AS_ERROR": true,
+        "CMAKE_POLICY_DEFAULT_CMP0179": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0181": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0199": "NEW",
+        "CMAKE_POLICY_DEFAULT_CMP0200": "NEW"
       }
     }
   ],

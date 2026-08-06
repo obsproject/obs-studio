@@ -1,0 +1,47 @@
+name: Check Version Tag
+description: >
+  Checks whether the name of the provided git ref represents a semantic version string. If possible, the version
+  segments are extracted from a valid version string and the action can also optionally fail if no valid version string
+  is detected.
+inputs:
+  ref:
+    description: A git reference to check for a semantic version string.
+    required: true
+  fail-on-mismatch:
+    description: A boolean value to indicate whether the action should fail if no semantic version was detected.
+    default: 'false'
+outputs:
+  version:
+    description: A string representing the full version.
+    value: ${{ steps.semver.outputs.version }}
+  major:
+    description: A string representing the major version segment.
+    value: ${{ steps.semver.outputs.major }}
+  minor:
+    description: A string representing the minor version segment.
+    value: ${{ steps.semver.outputs.minor }}
+  patch:
+    description: A string representing the patch version segment.
+    value: ${{ steps.semver.outputs.patch }}
+  pre-release:
+    description: A string representing the pre-release version segment (e.g. '-rc2').
+    value: ${{ steps.semver.outputs.pre-release }}
+  number:
+    description: A string representing just the pre-release number (e.g. '2').
+    value: ${{ steps.semver.outputs.number }}
+  is-pre-release:
+    description: A boolean string representing whether or not the git ref is a valid pre-release semantic version.
+    value: ${{ steps.semver.outputs.pre-release != '' }}
+  is-valid-semver:
+    description: A boolean string representing whether or not the git ref is a valid semantic version.
+    value: ${{ steps.semver.outputs.is-valid-semver }}
+runs:
+  using: composite
+  steps:
+    - name: Check Version Tag
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      id: semver
+      env:
+        GIT_REF: ${{ inputs.ref }}
+        FAIL_ON_MISMATCH: ${{ inputs.fail-on-mismatch }}
+      run: ${GITHUB_ACTION_PATH}/check-version-tag.bash

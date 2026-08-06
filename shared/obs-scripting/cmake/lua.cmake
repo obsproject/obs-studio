@@ -8,7 +8,6 @@ if(ENABLE_SCRIPTING_LUA)
   add_custom_command(
     OUTPUT swig/swigluarun.h
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory swig
     COMMAND ${CMAKE_COMMAND} -E env "SWIG_LIB=${SWIG_DIR}" ${SWIG_EXECUTABLE} -lua -external-runtime swig/swigluarun.h
     COMMENT "obs-scripting - generating Luajit SWIG interface headers"

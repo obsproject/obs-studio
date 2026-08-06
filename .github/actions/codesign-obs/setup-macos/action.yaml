@@ -1,0 +1,61 @@
+name: Set Up macOS Code Signing
+description: >
+  Sets up an Apple Developer certificate in the key-chain of a macOS runner for use with code signing and also sets up
+  a provisioning profile required for system extensions support used by OBS Studio.
+inputs:
+  identity:
+    description: >
+      The Apple Developer ID associated with the developer certificate that will be installed in the runner's key-chain.
+    required: true
+  cert:
+    description: The Apple Developer PKCS12 certificate as a base64-encoded string.
+    required: true
+  cert-password:
+    description: The password required to unlock the PKCS12 certificate.
+    required: true
+  provisioning-profile:
+    description: The provisioning profile as a base64-encoded string.
+    default: ''
+outputs:
+  can-codesign:
+    description: A boolean string indicating whether the provided inputs enable code signing on the runner.
+    value: ${{ steps.codesign.outputs.have-codesign-ident }}
+  identity:
+    description: The Apple Developer ID for which a code signing certificate was successfully installed.
+    value: ${{ steps.codesign.outputs.codesign-ident }}
+  team:
+    description: The Apple Developer team for which a code signing certificate was successfully installed.
+    value: ${{ steps.codesign.outputs.codesign-team }}
+  profile:
+    description: A boolean string indicating whether a provisioning profile was installed on the runner.
+    value: ${{ steps.provisioning.outputs.have-rovisioning-profile }}
+  profile-uuid:
+    description: The UUID of the provisioning profile that was installed on the runner.
+    value: ${{ steps.provisioning.outputs.profile-uuid }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner Operating System
+      if: runner.os != 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        : Check Runner Operating System
+        echo '::error::codesign-obs/setup-macos action requires a macOS runner.'
+        exit 1
+
+    - name: Set Up Key-Chain
+      id: codesign
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        SIGNING_IDENTITY: ${{ inputs.identity }}
+        SIGNING_CERT: ${{ inputs.cert }}
+        SIGNING_CERT_PASSWORD: ${{ inputs.cert-password }}
+      run: zsh --errexit --pipefail --no-rcs ${GITHUB_ACTION_PATH}/setup-keychain.zsh
+
+    - name: Set Up Provisioning Profile
+      id: provisioning
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+          CODESIGN_TEAM: ${{ steps.codesign.outputs.codesign-team }}
+          PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
+      run: zsh --errexit --pipefail --no-rcs ${GITHUB_ACTION_PATH}/setup-provisioning.zsh

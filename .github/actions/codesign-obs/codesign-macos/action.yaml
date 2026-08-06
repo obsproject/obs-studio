@@ -1,0 +1,45 @@
+name: Code Sign and Notarize macOS Disk Image
+description: Code signs and optionally notarizes an existing OBS Studio disk image
+inputs:
+  path:
+    description: A path to an OBS Studio disk image file present on the runner.
+    required: true
+  identity:
+    description: The Apple Developer ID to code sign the disk image with.
+    required: true
+  team:
+    description: The Apple Developer team ID to code sign the disk image with.
+    required: true
+  notarize:
+    description: A boolean value to indicate whether the disk image should also be notarized.
+    default: 'false'
+  notarization-user:
+    description: The Apple ID used to authenticate with Apple's notarization servers.
+    default: ''
+  notarization-password:
+    description: The app password to authenticate with Apple's notarization servers.
+    default: ''
+outputs:
+  path:
+    description: Path to code signed and notarized disk image.
+    value: ${{ steps.codesign.outputs.path }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: macOS
+        custom-error: codesign-obs/codesign-macos action requires a macOS runner.
+
+    - name: Code Sign macOS Disk Image
+      id: codesign
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        DISK_IMAGE: ${{ inputs.path }}
+        CODESIGN_IDENT: ${{ inputs.identity }}
+        CODESIGN_TEAM: ${{ inputs.team }}
+        RUN_NOTARIZATION: ${{ inputs.notarize }}
+        NOTARIZATION_USER: ${{ inputs.notarization-user }}
+        NOTARIZATION_PASSWORD: ${{ inputs.notarization-password }}
+      run: zsh --errexit --pipefail --no-rcs ${GITHUB_ACTION_PATH}/codesign-macos.zsh

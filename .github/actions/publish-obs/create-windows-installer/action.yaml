@@ -1,0 +1,106 @@
+name: Create Windows Installer
+description: >
+  Creates and code signs an NSIS-based installation program for Windows platforms. It also strips and separates all
+  program database ('.pdb') files and also produces a new compressed archive of the build.
+inputs:
+  path:
+    description: The path to a compressed archive containing an OBS Studio build.
+    required: true
+  architecture:
+    description: The build architecture to generate an NSIS-based installation program for.
+    required: true
+  version:
+    description: The version string to generate an NSIS-based installation program for.
+    required: true
+outputs:
+  installer-path:
+    description: The path to the generated NSIS-based installation program.
+    value: ${{ steps.generate.outputs.installer-path }}
+  pdb-path:
+    description: The path to the generated compressed archive of the stripped program database files.
+    value: ${{ steps.generate.outputs.pdb-zip-path }}
+  archive-path:
+    description: The path to the generated compressed archive of the OBS Studio build.
+    value: ${{ steps.generate.outputs.build-zip-path }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Windows
+        custom-error: publish-obs/generate-windows-update action requires a Windows runner.
+
+    - name: Install BOUF Dependencies
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        DEPENDENCIES: |-
+          NSIS.NSIS 3.12
+          Rclone.Rclone 1.74.4
+          JohnMacFarlane.Pandoc 3.9.0.2
+      run: |
+        # Install BOUF Dependencies
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare winget_path
+        winget_path="$(cygpath --unix "${LOCALAPPDATA}/Microsoft/WindowsApps/winget.exe")"
+        declare -a winget_arguments=(
+          --silent --accept-package-agreements --accept-source-agreements
+          --disable-interactivity --exact
+        )
+
+        echo '::group::Installing BOUF dependencies via winget'
+        declare dependency
+        declare version
+        while read -r dependency version; do
+          "${winget_path}" install "${winget_arguments[@]}" --version "${version}" --id "${dependency}"
+        done <<< "${DEPENDENCIES}"
+        echo '::endgroup::'
+
+    - name: Get BOUF Version Data
+      id: setup
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        # Get BOUF Version Data
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        jq -r '.configurePresets[]
+          | select(.name == "dependencies")
+          | .vendor["obsproject.com/obs-studio"].tools.bouf
+          | to_entries
+          | map("\(.key)=\(.value|tostring)")
+          | .[]' "${PWD}/CMakePresets.json" >> "${GITHUB_OUTPUT}"
+
+    - name: Setup BOUF
+      id: setup-bouf
+      uses: ./.github/actions/publish-obs/setup-bouf
+      with:
+        version: ${{ steps.setup.outputs.version }}
+        checksum: ${{ steps.setup.outputs.hash }}
+        nsis-checksum: ${{ steps.setup.outputs.nsis-hash }}
+        url: ${{ steps.setup.outputs.baseUrl }}
+
+    - name: Extract Asset
+      id: extract
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        RELEASE_ASSET: ${{ inputs.path }}
+      run: |
+        # Extract Asset
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        mkdir -p "${RUNNER_TEMP}/obs-installer-build"
+        cd "${RUNNER_TEMP}/obs-installer-build"
+        RELEASE_ASSET="$(cygpath --unix "${RELEASE_ASSET}")"
+        unzip "${RELEASE_ASSET}"
+        rm "${RELEASE_ASSET}"
+
+    - name: Create NSIS Installer
+      id: generate
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        BOUF_PATH: ${{ steps.setup-bouf.outputs.path }}
+        ARCHITECTURE: ${{ inputs.architecture }}
+        VERSION: ${{ inputs.version }}
+      working-directory: ${{ steps.setup-bouf.outputs.path }}
+      run: ${GITHUB_ACTION_PATH}/create-installer.bash

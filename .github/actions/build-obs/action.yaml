@@ -1,121 +1,107 @@
-name: Set Up and Build obs-studio
-description: Builds obs-studio for specified architecture and build config
+name: Build OBS Studio
+description: >
+  Runs a standardized build of OBS Studio for the platform of the runner it is called on. It uses dedicated CI presets
+  present in the project's 'CMakePresets.json' file to inherit the same build settings as local builds, with compile
+  warnings elevated to errors by default.
 inputs:
-  target:
-    description: Build target for obs-studio
-    required: true
   config:
-    description: Build configuration
-    required: false
+    description: >
+      The CMake-style build configuration to use for building OBS Studio.
+      Available values are 'Debug', 'RelWithDebInfo', 'Release', and 'MinSizeRel'.
     default: RelWithDebInfo
-  codesign:
-    description: Enable codesigning (macOS only)
-    required: false
-    default: 'false'
-  codesignIdent:
-    description: Developer ID for application codesigning (macOS only)
-    required: false
+  architecture:
+    description: >
+      The CPU architecture to build OBS-Studio for.
+      Available values are 'arm64' and 'x86_64'.
+    required: true
+  codesign-ident:
+    description: The Apple Developer ID to use for code signing on macOS.
     default: '-'
-  codesignTeam:
-    description: Team ID for application codesigning (macOS only)
-    required: false
+  codesign-team:
+    description: The Apple Developer team ID to use for code signing on macOS.
     default: ''
-  provisioningProfileUUID:
-    description: UUID of provisioning profile (macOS only)
-    required: false
+  provisioning-profile-id:
+    description: The UUID of the provisioning profile to use for macOS builds.
     default: ''
-  workingDirectory:
-    description: Working directory for packaging
-    required: false
+  analyze:
+    description: A boolean value indicating whether to use a Clang 'analyze' build.
+    default: 'false'
+  path:
+    description: The parent path for the destination directory of the generated build system.
+    default: ${{ runner.temp }}
+  xcode-version:
+    description: An Xcode version number to select a specific Xcode version pre-installed on the runner.
+    default: ''
+  xcode-cas-path:
+    description: The path to an Xcode compilation cache.
+    default: ''
+  working-directory:
+    description: The path to a directory with an OBS Studio checkout for the action to operate on.
     default: ${{ github.workspace }}
+outputs:
+  analyzer-output-path:
+    description: The path to the directory with generated SARIF output files.
+    value: >-
+      ${{ case(
+        runner.os == 'macOS', steps.build-macos.outputs.analyzer-output-path,
+        runner.os == 'Linux', steps.build-ubuntu.outputs.analyzer-output-path,
+        null
+      ) }}
 runs:
   using: composite
   steps:
-    - name: Run macOS Build
+    - name: Set Up Xcode
+      id: setup-macos
       if: runner.os == 'macOS'
-      shell: zsh --no-rcs --errexit --pipefail {0}
-      working-directory: ${{ inputs.workingDirectory }}
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
       env:
-        CODESIGN_IDENT: ${{ inputs.codesignIdent }}
-        CODESIGN_TEAM: ${{ inputs.codesignTeam }}
-        PROVISIONING_PROFILE: ${{ inputs.provisioningProfileUUID }}
-      run: |
-        : Run macOS Build
+        XCODE_VERSION: ${{ inputs.xcode-version }}
+        XCODE_CAS_PATH: ${{ inputs.xcode-cas-path }}
+      run: zsh --errexit --pipefail --no-rcs ${GITHUB_ACTION_PATH}/setup-macos.zsh
 
-        local -a build_args=(
-          --config ${{ inputs.config }}
-          --target macos-${{ inputs.target }}
-        )
-        if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
+    - name: Run macOS Build
+      id: build-macos
+      if: runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        BUILD_CONFIG: ${{ inputs.config }}
+        BUILD_TARGET: ${{ inputs.architecture }}
+        CODESIGN_IDENT: ${{ inputs.codesign-ident }}
+        CODESIGN_TEAM: ${{ inputs.codesign-team }}
+        PROVISIONING_PROFILE: ${{ inputs.provisioning-profile-id }}
+        OUTPUT_PATH: ${{ inputs.path }}
+        ANALYZE: ${{ inputs.analyze }}
+        XCODE_CAS_PATH: ${{ steps.setup-macos.outputs.xcode-cas-path }}
+      run: zsh --errexit --pipefail --no-rcs ${GITHUB_ACTION_PATH}/build-macos.zsh
 
-        if [[ '${{ inputs.codesign }}' == true ]] build_args+=(--codesign)
-
-        git fetch origin --no-tags --no-recurse-submodules -q
-        .github/scripts/build-macos ${build_args}
-
-    - name: Install Dependencies 🛍️
+    - name: Install Ubuntu Build Dependencies
+      id: setup-ubuntu
       if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        : Install Dependencies 🛍️
-        echo ::group::Install Dependencies
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-        brew update
-        brew install --quiet zsh
-        echo ::endgroup::
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        BUILD_TARGET: ${{ inputs.architecture }}
+        OUTPUT_PATH: ${{ inputs.path }}
+      run: ${GITHUB_ACTION_PATH}/setup-ubuntu.bash
 
     - name: Run Ubuntu Build
+      id: build-ubuntu
       if: runner.os == 'Linux'
-      shell: zsh --no-rcs --errexit --pipefail {0}
-      working-directory: ${{ inputs.workingDirectory }}
-      run: |
-        : Run Ubuntu Build
-
-        local -a build_args=(
-          --config ${{ inputs.config }}
-          --target ubuntu-${{ inputs.target }}
-        )
-        if (( ${+RUNNER_DEBUG} )) build_args+=(--debug)
-
-        git fetch origin --no-tags --no-recurse-submodules -q
-        .github/scripts/build-ubuntu ${build_args}
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        BUILD_CONFIG: ${{ inputs.config }}
+        BUILD_TARGET: ${{ inputs.architecture }}
+        OUTPUT_PATH: ${{ inputs.path }}
+      working-directory: ${{ inputs.working-directory }}
+      run: ${GITHUB_ACTION_PATH}/build-ubuntu.bash
 
     - name: Run Windows Build
+      id: build-windows
       if: runner.os == 'Windows'
-      shell: pwsh
-      working-directory: ${{ inputs.workingDirectory }}
-      run: |
-        # Run Windows Build
-        $BuildArgs = @{
-          Target = '${{ inputs.target }}'
-          Configuration = '${{ inputs.config }}'
-        }
-
-        if ( $Env:RUNNER_DEBUG -ne $null ) {
-          $BuildArgs += @{ Debug = $true }
-        }
-
-        git fetch origin --no-tags --no-recurse-submodules -q
-        .github/scripts/Build-Windows.ps1 @BuildArgs
-
-    - name: Create Summary 📊
-      if: runner.os == 'Linux'
-      shell: zsh --no-rcs --errexit --pipefail {0}
-      run: |
-        : Create Summary 📊
-
-        local -a ccache_data
-        if (( ${+RUNNER_DEBUG} )) {
-          setopt XTRACE
-          ccache_data=("${(fA)$(ccache -s -vv)}")
-        } else {
-          ccache_data=("${(fA)$(ccache -s)}")
-        }
-
-        print '### ${{ runner.os }} Ccache Stats (${{ inputs.target }})' >> $GITHUB_STEP_SUMMARY
-        print '```' >> $GITHUB_STEP_SUMMARY
-        for line (${ccache_data}) {
-          print ${line} >> $GITHUB_STEP_SUMMARY
-        }
-        print '```' >> $GITHUB_STEP_SUMMARY
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        BUILD_CONFIG: ${{ inputs.config }}
+        BUILD_TARGET: ${{ case(inputs.architecture == 'x86_64', 'x64', inputs.architecture) }}
+        OUTPUT_PATH: ${{ inputs.path }}
+      working-directory: ${{ inputs.working-directory }}
+      run: ${GITHUB_ACTION_PATH}/build-windows.bash

@@ -1,0 +1,37 @@
+name: Setup Windows Code Signing
+description: >
+  Sets up Google CNG provider and authenticates with the Google Cloud to create an authenticated environment on a
+  Windows runner.
+inputs:
+  gcp-identity-provider:
+    description: >
+      The full identifier of the Workload Identity Provider, including the project number, pool name, and provider name.
+    required: true
+  gcp-account-name:
+    description: Email address or unique identifier of the Google Cloud service account.
+    required: true
+  github-token:
+    description: The GitHub token required for the 'gh' command-line utility to download the Google CNG tool.
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Windows
+        custom-error: codesign-obs/setup-windows action requires a Windows runner.
+
+    - name: Setup Google CNG Provider
+      id: setup-gcp
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        CNG_VERSION: '1.4'
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: ${GITHUB_ACTION_PATH}/setup-cng.bash
+
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # v3.0.0
+      with:
+        workload_identity_provider: ${{ inputs.gcp-identity-provider }}
+        service_account: ${{ inputs.gcp-account-name }}

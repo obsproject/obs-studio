@@ -1,0 +1,32 @@
+name: Flatpak Manifest Validator
+description: >
+  Parses the Flatpak manifest available in an OBS Studio checkout and checks if dumping it again introduces formatting
+  errors.
+inputs:
+  path:
+    description: The path to the Flatpak manifest file to lint.
+    default: build-aux/com.obsproject.Studio.json
+  fail-on:
+    description: >
+      A string indicating the fail condition to use by the action.
+      Available values are 'never', 'fast', and 'error'.
+    default: never
+  working-directory:
+    description: A path to the root directory to base a relative file path on.
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Linux
+        custom-error: lint-obs/validate-flatpak-manifest action requires a Linux runner.
+
+    - name: Validate Flatpak Manifest
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        MANIFEST_FILE: ${{ inputs.path }}
+        FAIL_MODE: ${{ inputs.fail-on }}
+      run: ${GITHUB_ACTION_PATH}/run-validator.bash

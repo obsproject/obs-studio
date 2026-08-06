@@ -1,0 +1,41 @@
+[general]
+log_level = "trace"
+
+[env]
+# On CI these should be in %PATH%
+sevenzip_path = "7z"
+makensis_path = "C:/Program Files (x86)/NSIS/makensis.exe"
+pandoc_path = "pandoc.exe"
+pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
+
+## Preparation steps
+[prepare]
+
+[prepare.copy]
+never_copy = [
+    "bin/32bit",
+    "obs-plugins/32bit",
+    ".keepme",
+]
+
+[prepare.codesign]
+skip_sign = true
+
+[prepare.strip_pdbs]
+# PDBs to not strip
+exclude = [
+    "obs-frontend-api.pdb",
+    "obs64.pdb",
+    "obs.pdb",
+]
+
+[package]
+[package.installer]
+skip = true
+
+[package.zip]
+name = "OBS-Studio-{version}-arm64.zip"
+pdb_name = "OBS-Studio-{version}-arm64-pdbs.zip"
+
+[package.updater]
+skip_sign = true

@@ -1,0 +1,55 @@
+name: Lint Flatpak Manifest
+description: Runs 'flatpak-builder-lint' on a 'flatpak-builder' manifest or a build directory.
+inputs:
+  artifact:
+    description: >
+      The type of artifact to run 'flatpak-builder-lint' on. Available values are 'builddir', 'repo', 'manifest',
+      or 'appstream'.
+    required: true
+  path:
+    description: A path to a 'flatpak-builder' manifest or a Flatpak build directory.
+    required: true
+  working-directory:
+    description: A path to the root directory to base the manifest or build directory path on.
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Linux
+        custom-error: lint-obs/lint-flatpak-manifest action requires a Linux runner.
+
+    - name: Check artifact type
+      shell: bash --noprofile --norc -eo pipefail {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ARTIFACT_TYPE: ${{ inputs.artifact }}
+      run: |
+        # Check artifact input
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        shopt -s extglob
+
+        if [[ "${ARTIFACT_TYPE}" != @(builddir|repo|manifest|appstream) ]]; then
+          echo "::error::Unsupported artifact type '${ARTIFACT_TYPE}'."
+          exit 1
+        fi
+
+    - name: Run flatpak-builder-lint
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ARTIFACT_TYPE: ${{ inputs.artifact }}
+        INPUT_PATH: ${{ inputs.path }}
+      run: |
+        # Run flatpak-builder-lint
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        flatpak-builder-lint \
+          --exceptions \
+          --user-exceptions "${GITHUB_ACTION_PATH}/exceptions.json" \
+          --gha-format \
+          "${ARTIFACT_TYPE}" \
+          "${INPUT_PATH}"

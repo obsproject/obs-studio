@@ -228,6 +228,10 @@ endif()
 
 target_compile_features(libobs PUBLIC cxx_std_17)
 
+if(NOT DEFINED ENABLE_FFMPEG_MUX_DEBUG)
+  set(ENABLE_FFMPEG_MUX_DEBUG FALSE)
+endif()
+
 target_compile_definitions(
   libobs
   PRIVATE IS_LIBOBS

@@ -1,0 +1,58 @@
+name: Run PVS-Studio
+description: >
+  Uses PVS-Studio to run static code analysis on an existing OBS Studio Visual Studio project and uploads the generated
+  SARIF file as a CodeQL report.
+inputs:
+  architecture:
+    description: >
+      The CPU architecture used for building OBS Studio.
+      Available values are 'x64' and 'arm64'.
+    required: true
+  upload-codeql:
+    description: A boolean value to indicate whether the generated SARIF report should be automatically uploaded.
+    default: 'false'
+  github-token:
+    description: >
+      The GitHub token required to upload the SARIF file as CodeQL report.
+      The provided token needs to have the 'security-events: write' permission.
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Windows
+        custom-error: analyze-obs/run-pvs-studio action requires a Windows runner.
+
+    - name: Build OBS Studio
+      id: build
+      uses: ./.github/actions/build-obs
+      with:
+        config: Debug
+        architecture: ${{ inputs.architecture }}
+        path: ${{ runner.temp }}
+
+    - name: Run PVS-Studio
+      id: analyze
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        BUILD_SOLUTION: ${{ format('{0}/build_{1}/obs-studio.sln?', runner.temp, inputs.architecture) }}
+        BUILD_ARCHITECTURE: ${{ inputs.architecture }}
+        BUILD_CONFIG: Debug
+      run: ${GITHUB_ACTION_PATH}/run-pvs-studio.bash
+
+    - name: Upload PVS-Studio Output
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: pvs-analysis-log
+        path: |
+          ${{ format('{0}/pvs-analysis.plog', runner.temp) }}
+          ${{ format('{0}/pvs-analysis.plog.sarif', runner.temp) }}
+
+    - name: Upload PVS-Studio CodeQL Report
+      uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+      if: ${{ fromJSON(inputs.upload-codeql) }}
+      with:
+        sarif_file: ${{ format('{0}/pvs-analysis.plog.sarif', runner.temp) }}
+        category: PVS-Studio (Windows)

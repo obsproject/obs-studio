@@ -1,0 +1,116 @@
+name: Validate Services Data
+description: >
+  Runs schema checks on the provided list of OBS Studio service configuration files before optionally running
+  proprietary checks on the services contained in the file.
+
+  The infrastructure to run these service checks is not public and requires access information provided to the action.
+inputs:
+  path:
+    description: A string of either a JSON array of files, a glob expression, or a relative file path.
+    required: true
+  api-token:
+    description: An API token for the server check service.
+    required: true
+  api-servers:
+    description: A comma-separated list of server check service endpoints.
+    required: true
+  run-schema-checks:
+    description: A boolean value to indicate whether the JSON schema of provided files should be checked.
+    default: 'true'
+  run-service-checks:
+    description: >
+      A boolean value to indicate whether the server check service should be used to check availability of the
+      services.
+    default: 'false'
+  purge-age:
+    description: The grace period in seconds after which an unresponsive service is considered for removal.
+    default: '842400'
+  create-pull-request:
+    description: >
+      A boolean value to indicate whether a pull request with a list of all services considered for removal should be
+      created by the action.
+    default: 'false'
+  github-token:
+    description: >
+      The GitHub token required to optionally create a pull request. The provided token needs to have the
+      'pull-requests: write' permission.
+    default: ${{ github.token }}
+  working-directory:
+    description: A path to the root directory of an OBS Studio checkout.
+    default: ${{ github.workspace }}
+outputs:
+  has-defunct-services:
+    description: A boolean string to indicate whether any defunct services were detected.
+    value: ${{ toJSON(steps.services-check.outputs.failures > 0) }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: |
+          macOS
+          Linux
+        custom-error: lint-obs/validate-services-data action requires a macOS or Linux runner.
+
+    - name: Validate Services File JSON Schema
+      id: validate-services
+      if: fromJSON(inputs.run-schema-checks)
+      uses: ./.github/actions/lint-obs/validate-json-schema
+      with:
+        path: ${{ inputs.path }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Restore Timestamp Cache
+      if: fromJSON(inputs.run-service-checks)
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ${{ format('{0}/timestamps', runner.temp) }}
+        key: ${{ format('service-check-{0}', github.event_name) }}
+        restore-keys: service-check-
+
+    - name: Install and Configure Python
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: ${GITHUB_ACTION_PATH}/setup-action.bash
+
+    - name: Check for defunct services
+      id: services-check
+      if: fromJSON(inputs.run-service-checks)
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        API_KEY: ${{ inputs.api-token }}
+        API_SERVERS: ${{ inputs.api-servers }}
+        CACHE_DIR: ${{ format('{0}/timestamps', runner.temp) }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        REPOSITORY: ${{ github.repository }}
+        WORKFLOW_RUN_ID: ${{ github.run_id }}
+        PURGE_AGE: ${{ inputs.purge-age }}
+      run: |
+        # Check for defunct services
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        source "${RUNNER_TEMP}/services-validator-venv/bin/activate"
+        python3 -u "${GITHUB_ACTION_PATH}/check-services.py"
+
+    - name: Upload Timestamp Cache
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: fromJSON(inputs.run-service-checks)
+      with:
+        name: timestamps
+        path: ${{ format('{0}/timestamps/*', runner.temp) }}
+
+    - name: Create Pull Request
+      uses: ./.github/actions/create-pull-request
+      if: |-
+        fromJSON(inputs.create-pull-request)
+        && fromJSON(inputs.run-service-checks)
+        && fromJSON(steps.services-check.outputs.failures) > 0
+      with:
+        author: 'Service Checker <commits@obsproject.com>'
+        branch: 'automated/clean-services'
+        commit-message: 'rtmp-services: Remove defunct servers/services'
+        title: 'rtmp-services: Remove defunct servers/services'
+        body: ${{ fromJSON(steps.services-check.outputs.pr_message) }}
+        delete-unused: true
+        github-token: ${{ inputs.github-token }}

@@ -1,0 +1,234 @@
+name: Publish On Steam
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Deployment environment to use for jobs.
+        required: true
+        type: string
+      dry-run:
+        description: Enable dry-run mode (no side-effects).
+        type: boolean
+        default: false
+      ref:
+        type: string
+        description: Git reference to use for workflow
+        default: ${{ github.ref }}
+      windows-x64-url:
+        type: string
+        description: Optional Windows X64 asset URL
+        default: ''
+      windows-arm64-url:
+        type: string
+        description: Optional Windows ARM64 asset URL
+        default: ''
+      macos-apple-url:
+        type: string
+        description: Optional macOS Apple Silicon asset URL
+        default: ''
+      macos-intel-url:
+        type: string
+        description: Optional macOS Intel asset URL
+        default: ''
+    secrets:
+      STEAM_SHARED_SECRET:
+        required: true
+      STEAM_USER:
+        required: true
+      STEAM_PASSWORD:
+        required: true
+
+permissions:
+  contents: read    # Necessary for repository checkouts.
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+jobs:
+  macos-build:
+    name: macOS
+    runs-on: macos-26
+    strategy:
+      fail-fast: true
+      matrix:
+        architecture: [arm64, x86_64]
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Setup Custom Asset
+        id: setup
+        env:
+          APPLE_ASSET_URL: ${{ inputs.macos-apple-url }}
+          INTEL_ASSET_URL: ${{ inputs.macos-intel-url }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          # Setup Custom Asset
+          if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+          {
+            case "${ARCHITECTURE}" in
+              arm64) echo "url=${APPLE_ASSET_URL}" ;;
+              x86_64) echo "url=${INTEL_ASSET_URL}" ;;
+              *)
+                echo "::error::Unsupported architecture '${ARCHITECTURE}'."
+                exit 1
+                ;;
+            esac
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Download Asset
+        id: download
+        uses: ./.github/actions/download-asset
+        with:
+          platform: macOS
+          architecture: ${{ matrix.architecture }}
+          path: ${{ format('{0}/steam_asset', github.workspace) }}
+          custom-asset: ${{ steps.custom.setup.url }}
+
+      - name: Prepare Asset
+        id: prepare
+        uses: ./.github/actions/publish-steam/prepare-asset
+        with:
+          platform: macOS
+          architecture: ${{ matrix.architecture }}
+          path: ${{ steps.download.outputs.path }}
+
+      - name: Upload Asset Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ${{ steps.prepare.outputs.path }}
+          archive: false
+
+  windows-build:
+    name: Windows
+    strategy:
+      matrix:
+        architecture: [x86_64]
+    runs-on: windows-2025-vs2026
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Custom Asset
+        id: setup
+        env:
+          X64_ASSET_URL: ${{ inputs.windows-x64-url }}
+          ARM64_ASSET_URL: ${{ inputs.windows-arm64-url }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          # Setup Custom Asset
+          if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+          {
+            case "${ARCHITECTURE}" in
+              arm64) echo "url=${ARM64_ASSET_URL}" ;;
+              x86_64) echo "url=${X64_ASSET_URL}" ;;
+              *)
+                echo "::error::Unsupported architecture '${ARCHITECTURE}'."
+                exit 1
+                ;;
+            esac
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Download Assets
+        id: download
+        uses: ./.github/actions/download-asset
+        with:
+          platform: Windows
+          architecture: ${{ matrix.architecture }}
+          path: ${{ format('{0}/steam_asset', github.workspace) }}
+          custom-asset: ${{ steps.custom.setup.url }}
+
+      - name: Prepare Asset
+        id: prepare
+        uses: ./.github/actions/publish-steam/prepare-asset
+        with:
+          platform: Windows
+          architecture: ${{ matrix.architecture }}
+          path: ${{ steps.download.outputs.path }}
+
+      - name: Upload Asset Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ format('steam-asset-windows-{0}', matrix.architecture) }}
+          path: ${{ steps.prepare.outputs.path }}
+
+  create-package:
+    name: Create Steam Package
+    runs-on: ubuntu-slim
+    needs: [macos-build, windows-build]
+    environment:
+      name: ${{ inputs.environment }}
+      deployment: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Download Asset Artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: ${{ format('{0}/steam_asset', runner.temp) }}
+          pattern: steam-asset-*
+          merge-multiple: true
+
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
+
+      - name: Setup Branches
+        id: setup
+        uses: ./.github/actions/publish-steam/setup-branches
+        with:
+          ref-name: >-
+            ${{ case(
+              startsWith(inputs.ref, 'refs/heads'), steps.short-sha.outputs.sha,
+              inputs.ref
+            ) }}
+
+      - name: Upload Steam Assets
+        uses: ./.github/actions/publish-steam/upload-assets
+        with:
+          path: ${{ format('{0}/steam_asset', runner.temp) }}
+          dry-run: ${{ inputs.dry-run }}
+          steam-secret: ${{ secrets.STEAM_SHARED_SECRET }}
+          steam-user: ${{ secrets.STEAM_USER }}
+          steam-password: ${{ secrets.STEAM_PASSWORD }}
+          branch-name: ${{ steps.setup.outputs.branch-name }}
+          description: ${{ steps.setup.outputs.description }}
+
+      - name: Upload Steam Playtest Assets
+        if: ${{ fromJSON(steps.setup.outputs.is-prerelease )}}
+        uses: ./.github/actions/publish-steam/upload-assets
+        with:
+          path: ${{ format('{0}/steam_asset', github.workspace) }}
+          dry-run: ${{ inputs.dry-run }}
+          steam-secret: ${{ secrets.STEAM_SHARED_SECRET }}
+          steam-user: ${{ secrets.STEAM_USER }}
+          steam-password: ${{ secrets.STEAM_PASSWORD }}
+          branch-name: ${{ steps.setup.outputs.branch-name }}
+          description: ${{ steps.setup.outputs.description }}
+          use-playtest: ${{ steps.setup.outputs.is-prerelease }}
+
+      - name: Merge Steam Publish Logs
+        uses: actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: steam-build-logs
+          pattern: steam-build-logs-*
+          delete-merged: true

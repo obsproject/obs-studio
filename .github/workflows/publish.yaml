@@ -1,5 +1,5 @@
 name: Publish
-run-name: Publish Repository Actions 🛫
+run-name: Publish Tag - ${{ github.ref_name }}
 on:
   release:
     types:
@@ -7,328 +7,287 @@ on:
     branches:
       - master
       - 'release/**'
-permissions:
-  contents: read
+permissions: {}
 concurrency:
-  group: '${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
+  group: ${{ github.workflow }}-publish-${{ github.ref }}
   cancel-in-progress: true
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
 jobs:
-  check-tag:
-    name: Check Release Tag
-    if: github.repository_owner == 'obsproject'
-    runs-on: ubuntu-24.04
+  setup-flathub:
+    name: Set Up Flathub Matrix
+    if: fromJSON(vars.ENABLE_FLATHUB_PUBLISH)
+    runs-on: ubuntu-slim
+    env:
+      GH_TOKEN: ${{ github.token }}
     outputs:
-      validTag: ${{ steps.check.outputs.validTag }}
-      flatpakMatrix: ${{ steps.check.outputs.flatpakMatrix }}
-      updateChannel: ${{ steps.check.outputs.updateChannel }}
+      matrix: ${{ steps.check.outputs.matrix }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          submodules: recursive
-          fetch-depth: 0
-          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
+          persist-credentials: false
+          fetch-depth: 1
 
-      - name: Check Release Tag ☑️
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Check GitHub Release
         id: check
         env:
-          GH_TOKEN: ${{ github.token }}
+          PRE_RELEASE: ${{ steps.semver.outputs.pre-release }}
         run: |
-          : Check Release Tag ☑️
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-          shopt -s extglob
+          # Check GitHub Release
+          if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
 
-          case "${GITHUB_REF_NAME}" in
-            +([0-9]).+([0-9]).+([0-9]) )
-              lastPreRelease="$(gh release list --exclude-drafts --limit 10 --json "publishedAt,tagName,isPrerelease" \
-                --jq '[.[] | select(.isPrerelease == true)] | first | .tagName')"
-              currentRelease="${GITHUB_REF_NAME}"
-              isPreReleaseAhead=false
-
-              printf '%s\n%s\n' "${currentRelease}" "${lastPreRelease}" | sort --version-sort --reverse --check=quiet &&
-                isPreReleaseAhead=false || isPreReleaseAhead=true
-
-              # Edge case: Sort considers the non-suffixed version older than a suffixed one
-              if ${isPreReleaseAhead} && [[ "${currentRelease}" == "${lastPreRelease//-*}" ]]; then
-                isPreReleaseAhead=false
-              fi
-
-              echo 'validTag=true' >> $GITHUB_OUTPUT
-              if ! ${isPreReleaseAhead}; then
-                echo 'flatpakMatrix=["beta", "stable"]' >> $GITHUB_OUTPUT
-              else
-                echo 'flatpakMatrix=["stable"]' >> $GITHUB_OUTPUT
-              fi
-              echo 'updateChannel=stable' >> $GITHUB_OUTPUT
-              ;;
-            +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
-              echo 'validTag=true' >> $GITHUB_OUTPUT
-              echo 'flatpakMatrix=["beta"]' >> $GITHUB_OUTPUT
-              echo 'updateChannel=beta' >> $GITHUB_OUTPUT
-              ;;
-            *) echo 'validTag=false' >> $GITHUB_OUTPUT ;;
-          esac
-
-  flatpak-publish:
-    name: Flathub 📦
-    needs: check-tag
-    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: ubuntu-24.04
-    defaults:
-      run:
-        shell: bash
-    env:
-      FLATPAK_BUILD_SHARE_PATH: flatpak_app/files/share
-      TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
-      TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
-      RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
-      RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
-      YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
-      YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
-      YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
-      YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
-    container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
-      options: --privileged
-      volumes:
-        - /usr/local/lib/android:/to_clean/android
-        - /opt/hostedtoolcache/CodeQL:/to_clean/codeql
-        - /usr/local/.ghcup:/to_clean/ghcup
-        - /opt/hostedtoolcache/Python:/to_clean/python
-        - /usr/share/swift:/to_clean/swift
-        - /usr/share/dotnet:/to_clean/dotnet
-    strategy:
-      matrix:
-        branch: ${{ fromJSON(needs.check-tag.outputs.flatpakMatrix) }}
-    steps:
-      - name: Prepare build space
-        shell: bash
-        run: |
-          : Prepare build space
-
-          echo ::group::Available storage
-          df -h
-          echo ::endgroup::
-
-          echo ::group::Remove Android stuff
-          rm -rf /to_clean/android/*
-          echo ::endgroup::
-
-          echo ::group::Remove CodeQL stuff
-          rm -rf /to_clean/codeql/*
-          echo ::endgroup::
-
-          echo ::group::Remove GHCup stuff
-          rm -rf /to_clean/ghcup/*
-          echo ::endgroup::
-
-          echo ::group::Remove Python stuff
-          rm -rf /to_clean/python/*
-          echo ::endgroup::
-
-          echo ::group::Remove Swift stuff
-          rm -rf /to_clean/swift/*
-          echo ::endgroup::
-
-          echo ::group::Remove .NET stuff
-          rm -rf /to_clean/dotnet/*
-          echo ::endgroup::
-
-          echo ::group::Available storage
-          df -h
-          echo ::endgroup::
-
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          submodules: recursive
-          fetch-depth: 0
-          set-safe-directory: ${{ env.GITHUB_WORKSPACE }}
-
-      - name: Set Up Environment 🔧
-        id: setup
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          : Set Up Environment 🔧
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-
-          cache_key='flatpak-builder-${{ hashFiles('build-aux/com.obsproject.Studio.json') }}'
-          cache_ref='master'
-          read -r id key size unit created accessed <<< \
-            "$(gh cache list --ref "refs/heads/${cache_ref}" --key "${cache_key}-x86_64" | head -1)"
-
-          if [[ "${key}" ]]; then
-            echo "cacheHit=true" >> $GITHUB_OUTPUT
+          if [[ -n "${PRE_RELEASE}" ]]; then
+            echo 'matrix=["beta"]' >> "${GITHUB_OUTPUT}"
           else
-            echo "cacheHit=false" >> $GITHUB_OUTPUT
+              declare gh_output
+              gh_output=$(gh release list --repo "${GITHUB_REPOSITORY}" --exclude-drafts \
+                --limit 20 --json 'tagName,isPrerelease')
+
+              declare jq_output
+              jq_output="$(jq --raw-output --arg version "${GITHUB_REF_NAME}" '
+                (map(select(.isPrerelease == true)) | first | .tagName) as $prerelease_version |
+                {
+                  "current_index": (map(.tagName == $version) | index(true)),
+                  "prerelease_index": (map(.tagName == $prerelease_version) | index(true))
+                } | join(" ")
+              ' <<< "${gh_output}")"
+
+              {
+                declare -i prerelease_index
+                declare -i version_index
+                read -r version_index prerelease_index <<< "${jq_output}"
+                if (( version_index > prerelease_index )); then
+                  echo 'matrix=["beta", "stable"]'
+                else
+                  echo 'matrix=["stable"]'
+                fi
+              }  >> "${GITHUB_OUTPUT}"
           fi
 
-          echo "cacheKey=${cache_key}" >> $GITHUB_OUTPUT
-          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
-
-      - name: Validate Flatpak manifest
-        uses: ./.github/actions/flatpak-builder-lint
-        with:
-          artifact: manifest
-          path: build-aux/com.obsproject.Studio.json
-
-      - name: Build Flatpak Manifest
-        uses: flatpak/flatpak-github-actions/flatpak-builder@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7
-        with:
-          build-bundle: false
-          manifest-path: ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
-          cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
-          cache-key: ${{ steps.setup.outputs.cacheKey }}
-          mirror-screenshots-url: https://dl.flathub.org/media
-          branch: ${{ matrix.branch }}
-
-      - name: Validate AppStream
-        uses: ./.github/actions/flatpak-builder-lint
-        with:
-          artifact: appstream
-          path: ${{ env.FLATPAK_BUILD_SHARE_PATH }}/metainfo/com.obsproject.Studio.metainfo.xml
-
-      - name: Verify Icon and Metadata in app-info
-        working-directory: ${{ env.FLATPAK_BUILD_SHARE_PATH }}
+  publish-to-flathub:
+    name: Publish To Flathub
+    if: fromJSON(vars.ENABLE_FLATHUB_PUBLISH)
+    needs: setup-flathub
+    runs-on: ubuntu-26.04
+    environment:
+      name: code-signing
+      deployment: false
+    strategy:
+      fail-fast: true
+      matrix:
+        builder-branch: ${{ fromJSON(needs.setup-flathub.outputs.matrix )}}
+    env:
+      FLATPAK_BUILD_SHARE_PATH: flatpak_app/files/share
+      RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENT_ID }}
+      RESTREAM_HASH: ${{ secrets.RESTREAM_CLIENT_HASH || '0' }}
+      TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+      TWITCH_HASH: ${{ secrets.TWITCH_CLIENT_HASH || '0' }}
+      YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENT_HASH || '0' }}
+      YOUTUBE_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_CLIENT_SECRET_HASH || '0' }}
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08     # zizmor: ignore[unpinned-images]
+      options: --privileged
+      volumes:
+        - /opt/hostedtoolcache/CodeQL:/to_clean/codeql
+        - /opt/hostedtoolcache/Python:/to_clean/python
+        - /usr/local/.ghcup:/to_clean/ghcup
+        - /usr/local/lib/android:/to_clean/android
+        - /usr/share/dotnet:/to_clean/dotnet
+        - /usr/share/swift:/to_clean/swift
+    defaults:
+      run:
+        shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+    steps:
+      - name: Prepare Container Image
+        env:
+          REMOVE_LIST: 'Android CodeQL GHCup Python Swift dotNET'
         run: |
-          : Verify Icon and Metadata in app-info
-          test -f app-info/icons/flatpak/128x128/com.obsproject.Studio.png || { echo "::error::Missing 128x128 icon in app-info"; exit 1; }
-          test -f app-info/xmls/com.obsproject.Studio.xml.gz || { echo "::error::Missing com.obsproject.Studio.xml.gz in app-info"; exit 1; }
+          # Prepare Container Image
+          if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
 
-      - name: Validate build directory
-        uses: ./.github/actions/flatpak-builder-lint
-        with:
-          artifact: builddir
-          path: flatpak_app
+          declare -a removals
+          read -r -a removals <<< "${REMOVE_LIST}"
+          for removal in "${removals[@]}"; do
+            echo "Removing ${removal} files from runner."
+            rm -rf /to_clean/"${removal,,*}"/*
+          done
 
-      - name: Validate repository
-        uses: ./.github/actions/flatpak-builder-lint
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          artifact: repo
-          path: repo
+          persist-credentials: false
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Add Workspace As Safe Directory
+        run: |
+          # Add Workspace As Safe Directory
+          if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
+
+      - name: Create Flatpak Bundle
+        uses: ./.github/actions/build-flatpak
+        with:
+          architecture: x86_64
+          bundle: false
+          builder-branch: ${{ matrix.builder-branch }}
 
       - name: Publish to Flathub Beta
         uses: flatpak/flatpak-github-actions/flat-manager@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7
-        if: ${{ matrix.branch == 'beta' }}
+        if: matrix.branch == 'beta'
         with:
           flat-manager-url: https://hub.flathub.org/
           repository: beta
           token: ${{ secrets.FLATHUB_BETA_TOKEN }}
-          build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          build-log-url: >-
+            ${{ format(
+              '{0}/{1}/actions/runs/{2}',
+              github.server_url, github.repository, github.run_id
+            ) }}
 
       - name: Publish to Flathub
         uses: flatpak/flatpak-github-actions/flat-manager@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7
-        if: ${{ matrix.branch == 'stable' }}
+        if: matrix.branch == 'stable'
         with:
           flat-manager-url: https://hub.flathub.org/
           repository: stable
           token: ${{ secrets.FLATHUB_TOKEN }}
-          build-log-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          build-log-url: >-
+            ${{ format(
+              '{0}/{1}/actions/runs/{2}',
+              github.server_url, github.repository, github.run_id
+            ) }}
 
-  steam-upload:
-    name: Upload Steam Builds 🚂
-    needs: check-tag
-    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
+  generate-appcasts:
+    name: Generate Sparkle AppCast files
     runs-on: macos-26
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ./.github/actions/steam-upload
-        with:
-          steamSecret: ${{ secrets.STEAM_SHARED_SECRET }}
-          steamUser: ${{ secrets.STEAM_USER }}
-          steamPassword: ${{ secrets.STEAM_PASSWORD }}
-          workflowSecret: ${{ github.token }}
-          tagName: ${{ github.ref_name }}
-          preview: false
-
-  windows-patches:
-    name: Create Windows Patches 🩹
-    needs: check-tag
-    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: windows-2025-vs2026
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ./.github/actions/windows-patches
-        with:
-          tagName: ${{ github.ref_name }}
-          workflowSecret: ${{ github.token }}
-          channel: ${{ needs.check-tag.outputs.updateChannel }}
-          gcsAccessKeyId: ${{ secrets.GCS_ACCESS_KEY_ID }}
-          gcsAccessKeySecret: ${{ secrets.GCS_ACCESS_KEY_SECRET }}
-
-  create-appcast:
-    name: Create Sparkle Appcast 🎙️
-    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
-    runs-on: macos-26
-    needs: check-tag
+    if: fromJSON(vars.ENABLE_UPDATE_GENERATION || 'false')
+    environment:
+      name: code-signing
+      deployment: false
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        target: [arm64, x86_64]
-    defaults:
-      run:
-        shell: zsh --no-rcs --errexit --pipefail {0}
+        architecture: [arm64, x86_64]
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          submodules: recursive
-          fetch-depth: 0
-          ref: ${{ github.ref }}
+          persist-credentials: false
+          fetch-depth: 1
 
-      - name: Set Up Environment 🔧
-        id: setup
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          : Set Up Environment 🔧
-          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
-
-          local channel='stable'
-          if [[ ${GITHUB_REF_NAME} == *(beta|rc)* ]] {
-            channel='beta'
-          }
-
-          local -A arch_names=(x86_64 intel arm64 apple)
-          print "cpuName=${arch_names[${{ matrix.target }}]}" >> $GITHUB_OUTPUT
-          print "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
-          print "channel=${channel}" >> $GITHUB_OUTPUT
-
-          local workflowRunId="$(gh run list --branch "${GITHUB_REF_NAME}" --event push --limit 1 --json "databaseId" --jq ".[].databaseId")"
-          print "workflowRunId=${workflowRunId}" >> $GITHUB_OUTPUT
-
-      - name: Download Artifact 📥
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
         with:
-          name: obs-studio-macos-${{ matrix.target }}-${{ steps.setup.outputs.commitHash }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ steps.setup.outputs.workflowRunId }}
+          ref: ${{ github.ref_name }}
+          fail-on-mismatch: true
 
-      - name: Generate Appcast 🎙️
-        id: generate-appcast
-        uses: ./.github/actions/sparkle-appcast
-        with:
-          sparklePrivateKey: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-          baseImage: ${{ github.workspace }}/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.dmg
-          channel: ${{ steps.setup.outputs.channel }}
-          count: 5
-          urlPrefix: 'https://cdn-fastly.obsproject.com/downloads'
-          customTitle: 'OBS Studio'
-          customLink: 'https://obsproject.com/'
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
 
-      - name: Upload Artifacts 📡
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - name: Generate Sparkle AppCasts
+        uses: ./.github/actions/publish-obs/generate-sparkle-appcast
         with:
-          name: macos-sparkle-update-${{ matrix.target }}
-          path: ${{ github.workspace }}/output
+          architecture: ${{ matrix.architecture }}
+          channel: >-
+            ${{ case(
+              steps.semver.outputs.pre-release != '', 'beta',
+              'stable'
+            )}}
+          signing-key: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          num-deltas: 3
+          rollout-interval: 86400
+          custom-title: 'OBS Studio'
+          custom-link: 'https://obsproject.com'
 
   merge-appcasts:
-    runs-on: ubuntu-24.04
-    needs: create-appcast
+    name: Merge Appcasts
+    runs-on: ubuntu-slim
+    needs: generate-appcasts
     steps:
       - name: Merge Appcasts
         uses: actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: macos-sparkle-update
-          pattern: macos-sparkle-update-*
+          pattern: sparkle-appcast-*
           delete-merged: true
+
+  generate-windows-updates:
+    name: Generate Windows Updater Files
+    runs-on: windows-2025-vs2026
+    if: fromJSON(vars.ENABLE_UPDATE_GENERATION || 'false')
+    environment:
+      name: code-signing
+      deployment: false
+    strategy:
+      fail-fast: true
+      matrix:
+        architecture: [arm64, x86_64]
+    permissions:
+      contents: read            # Necessary to keep workflow base permissions.
+      id-token: write           # Necessary to set up Windows code signing credentials.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Generate Semver From Tag
+        id: semver
+        uses: ./.github/actions/check-version-tag
+        with:
+          ref: ${{ github.ref_name }}
+          fail-on-mismatch: true
+
+      - name: Generate Short GitHub SHA
+        id: short-sha
+        uses: ./.github/actions/generate-short-sha
+
+      - name: Set Up Google Cloud Credentials
+        uses: ./.github/actions/codesign-obs/setup-windows
+        with:
+          gcp-identity-provider: ${{ secrets.GCP_IDENTITY_POOL }}
+          gcp-account-name: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}
+
+      - name: Generate Windows Updater Files
+        uses: ./.github/actions/publish-obs/generate-windows-update
+        with:
+          architecture: ${{ matrix.architecture }}
+          channel: >-
+            ${{ case(
+              steps.semver.outputs.pre-release != '', 'beta',
+              'stable'
+            ) }}
+
+  publish-to-steam:
+    name: Publish To Steam
+    if: fromJSON(vars.ENABLE_STEAM_PUBLISH || 'false')
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/publish-steam.yaml
+    with:
+      environment: code-signing

@@ -1,0 +1,135 @@
+name: Download Asset
+description: >
+  Downloads an OBS Studio workflow asset based on the platform and architecture and also the GitHub event that
+  triggered the workflow that implements the action.
+inputs:
+  platform:
+    description: >
+      The platform name for which to download the asset. Available values are 'Windows', 'macOS', or an Ubuntu
+      runner identifier.
+    required: true
+  architecture:
+    description: >
+      The build architecture for which to download the asset. Available values are 'arm64' or 'x86_64'.
+    required: true
+  custom-asset:
+    description: >
+      A download URL for a custom asset to download. This asset needs to replace an existing asset identified by
+      the platform and architecture inputs.
+    default: ''
+  suffix:
+    description: >
+      The action will automatically generate a possible workflow artifact name based on platform and architecture.
+      The suffix can be added to more uniquely identify an asset. ('push' and 'schedule' events only).
+    default: ''
+  verify:
+    description: >
+      A boolean value to indicate whether the downloaded asset should be verified using GitHub Actions attestations.
+    default: 'false'
+  path:
+    description: A path to a directory into which the downloaded assets should be moved.
+    default: ${{ github.workspace }}
+  github-token:
+    description: The GitHub token required for the 'gh' command-line utility to download the assets.
+    default: ${{ github.token }}
+  working-directory:
+    description: >
+      The path to an OBS Studio checkout. This is necessary for the 'gh' command-line tool to operate correctly.
+    default: ${{ github.workspace }}
+outputs:
+  path:
+    description: The path to the downloaded asset file.
+    value: ${{ steps.download.outputs.path }}
+  verified:
+    description: A boolean value indicating whether verification succeeded.
+    value: ${{ steps.verify.outputs.verified }}
+runs:
+  using: composite
+  steps:
+    - name: Install Bash 5
+      id: install-bash
+      if: runner.os == 'macOS'
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        # Install Bash
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare brew_prefix
+        brew_prefix="$(brew --prefix)"
+        if [[ ! -x "${brew_prefix}/bin/bash" ]]; then
+          brew update
+          brew install bash
+        fi
+
+    - name: Download Asset Artifacts             # Remove once 'gh' supports artifacts uploaded with 'archive: false'
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      if: >-
+        case(
+          contains(fromJSON('["push", "schedule"]'), github.event_name), true,
+          github.event_name == 'workflow_dispatch' && github.ref_type != 'tag', true,
+          false
+        )
+      with:
+        path: ${{ inputs.path }}
+        pattern: >-
+          ${{ format(
+            'obs-studio-{0}-{1}-*{2}{3}',
+            case(
+              inputs.platform == 'macOS', 'macos',
+              inputs.platform == 'Windows', 'windows',
+              inputs.platform == 'Linux', 'ubuntu',
+              inputs.platform
+            ), inputs.architecture, inputs.suffix,
+            case(
+              inputs.platform == 'macOS', '.dmg',
+              inputs.platform == 'Windows', '.zip',
+              inputs.platform == 'Linux', '.deb',
+              '')
+          ) }}
+        skip-decompress: true
+
+    - name: Download Asset
+      id: download
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PLATFORM: ${{ inputs.platform }}
+        ARCHITECTURE: ${{ inputs.architecture }}
+        DESTINATION: ${{ inputs.path }}
+        PATTERN: ${{ inputs.suffix }}
+        TAG_NAME: ${{ github.ref_name }}
+      run: ${GITHUB_ACTION_PATH}/download-asset.bash
+
+    - name: Download Custom Asset
+      id: download-custom
+      if: github.event_name == 'workflow_dispatch' && inputs.custom-asset != ''
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PLATFORM: ${{ inputs.platform }}
+        ARCHITECTURE: ${{ inputs.architecture }}
+        CUSTOM_ASSET: ${{ inputs.custom-asset }}
+        DESTINATION: ${{ inputs.path }}
+      run: ${GITHUB_ACTION_PATH}/download-custom-asset.bash
+
+    - name: Verify Asset
+      id: verify
+      if: fromJSON(inputs.verify) && inputs.custom-asset == ''
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        ASSET_PATH: ${{ steps.download.outputs.path }}
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Verify Asset
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        {
+          if gh attestation verify "${ASSET_PATH}" --owner "${GITHUB_REPOSITORY_OWNER}"; then
+            echo "verified=true"
+          else
+            echo "verified=false"
+          fi
+        }  >> "${GITHUB_OUTPUT}"

@@ -1,271 +1,65 @@
 name: Push
-run-name: ${{ github.ref_name }} push run 🚀
+run-name: Push - ${{ github.ref_name }}
 on:
   push:
     paths-ignore:
       - '**.md'
     branches:
       - master
+      - main
       - 'release/**'
-    tags:
-      - '*'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ contains(github.ref, 'release/') }}
 permissions:
-  contents: write
+  contents: read                # Necessary for repository checkouts.
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
 jobs:
-  check-format:
-    name: Format 🔍
-    if: github.ref_name == 'master'
-    uses: ./.github/workflows/check-format.yaml
+  lint-project:
+    name: Format
+    uses: ./.github/workflows/lint-project.yaml
     permissions:
-      contents: read
+      contents: read            # Necessary to keep workflow-level permission
+      checks: write             # Necessary to produce annotations
 
   build-project:
-    name: Build 🧱
+    name: Build
+    if: ${{ ! cancelled() }}
+    needs: lint-project
     uses: ./.github/workflows/build-project.yaml
-    secrets: inherit
-    permissions:
-      contents: read
-
-  compatibility-validation:
-    name: Validate Compatibility 🕵️
-    if: github.ref_name == 'master'
-    runs-on: ubuntu-24.04
-    permissions:
-      checks: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Check for Changed Files ✅
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: plugins/win-capture/data/*.json
-
-      - name: Check for Invalid Compatibility Data 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
-        uses: ./.github/actions/compatibility-validator
-        with:
-          repositorySecret: ${{ github.token }}
-
-  services-validation:
-    name: Validate Services 🕵️
-    if: github.ref_name == 'master'
-    runs-on: ubuntu-24.04
-    permissions:
-      checks: write
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Check for Changed Files ✅
-        uses: ./.github/actions/check-changes
-        id: checks
-        with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: plugins/rtmp-services/data/*.json
-
-      - name: Check Services JSON Schema 📉
-        if: fromJSON(steps.checks.outputs.hasChangedFiles)
-        uses: ./.github/actions/services-validator
-        with:
-          repositorySecret: ${{ github.token }}
-          runSchemaChecks: true
-          runServiceChecks: false
+    secrets: inherit            # zizmor: ignore[secrets-inherit]
+    with:
+      environment: build
 
   update-documentation:
-    name: Update Documentation 📖
-    if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
-    runs-on: ubuntu-24.04
+    name: Update Documentation
+    runs-on: ubuntu-slim
+    if: >-
+      ${{
+        ! cancelled()
+        && fromJSON(vars.ENABLE_DOCUMENTATION_UPDATE || 'false')
+        && contains(fromJSON('["master", "main"]'), github.ref_name)
+      }}
+    needs: build-project
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          persist-credentials: false
           fetch-depth: 0
 
-      - name: Check for Changed Files ✅
-        if: github.ref_type != 'tag'
-        uses: ./.github/actions/check-changes
+      - name: Check for Changed Files
         id: checks
+        uses: ./.github/actions/check-changes
         with:
-          baseRef: ${{ github.event.before }}
-          checkGlob: '!(cmake*)'
+          base: ${{ github.event.before }}
+          pathspec: ':!cmake* :!*CMakeLists.txt'
 
-      - uses: ./.github/actions/generate-docs
-        if: github.ref_type == 'tag' || fromJSON(steps.checks.outputs.hasChangedFiles)
+      - name: Generate Documentation
+        id: generate
+        uses: ./.github/actions/generate-docs
+        if: fromJSON(steps.checks.outputs.has-changed-files)
         with:
-          disableLinkExtensions: ${{ github.ref_type == 'tag' }}
-
-  deploy-documentation:
-    name: Deploy Documentation to Cloudflare ☁️
-    if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: ubuntu-24.04
-    needs: update-documentation
-    defaults:
-      run:
-        shell: bash
-    environment:
-      name: cf-pages-deploy
-    steps:
-      - name: Get Commit Information 🆔
-        id: setup
-        run: |
-          : Get Commit Hash 🆔
-          echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
-
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: OBS Studio Docs (No Extensions) ${{ steps.setup.outputs.commitHash }}
-          path: docs
-
-      - name: Set Up Redirects 🔄
-        run: |
-          : Set Up Redirects 🔄
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-
-          echo "/previous/27.2 https://obsproject.com/docs/27.2 302" >> docs/_redirects
-          echo "/previous/:major.:minor https://:major-:minor.${{ vars.CF_PAGES_PROJECT }}.pages.dev 302" >> docs/_redirects
-
-      - name: Publish to Live Page
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
-        with:
-          workingDirectory: docs
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'
-
-  sign-windows-build:
-    name: Windows Signing ✍️
-    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@ac19ea663375cd02997be92b7d8ff6dd89a511ad
-    if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    needs: build-project
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-      attestations: 'write'
-    secrets: inherit
-
-  create-release:
-    name: Create Release 🛫
-    if: github.ref_type == 'tag'
-    runs-on: ubuntu-24.04
-    needs: [build-project, sign-windows-build]
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Check Release Tag ☑️
-        id: check
-        run: |
-          : Check Release Tag ☑️
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-          shopt -s extglob
-
-          case "${GITHUB_REF_NAME}" in
-            +([0-9]).+([0-9]).+([0-9]) )
-              echo 'validTag=true' >> $GITHUB_OUTPUT
-              echo 'prerelease=false' >> $GITHUB_OUTPUT
-              echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-              ;;
-            +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
-              echo 'validTag=true' >> $GITHUB_OUTPUT
-              echo 'prerelease=true' >> $GITHUB_OUTPUT
-              echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-              ;;
-            *) echo 'validTag=false' >> $GITHUB_OUTPUT ;;
-          esac
-
-      - name: Download Build Artifacts 📥
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        if: ${{ fromJSON(steps.check.outputs.validTag) }}
-
-      - name: Rename Files 🏷️
-        if: fromJSON(steps.check.outputs.validTag)
-        run: |
-          : Rename Files 🏷️
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-
-          root_dir="${PWD}"
-
-          commit_hash="${GITHUB_SHA:0:9}"
-          macos_arm64_artifact_name="obs-studio-macos-arm64-${commit_hash}"
-          macos_arm64_dsym_artifact_name="obs-studio-macos-arm64-${commit_hash}-dSYMs"
-          macos_intel_artifact_name="obs-studio-macos-x86_64-${commit_hash}"
-          macos_intel_dsym_artifact_name="obs-studio-macos-x86_64-${commit_hash}-dSYMs"
-          ubuntu_2404_x86_64_artifact_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}"
-          ubuntu_2404_x86_64_debug_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}-dbgsym"
-          ubuntu_2604_x86_64_artifact_name="obs-studio-ubuntu-26.04-x86_64-${commit_hash}"
-          ubuntu_2604_x86_64_debug_name="obs-studio-ubuntu-26.04-x86_64-${commit_hash}-dbgsym"
-          ubuntu_2604_sources_name="obs-studio-ubuntu-26.04-sources-${commit_hash}"
-          windows_x64_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
-          windows_x64_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
-          windows_x64_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
-          windows_arm64_artifact_name="obs-studio-windows-arm64-${{ steps.check.outputs.version }}-signed"
-          windows_arm64_debug_name="obs-studio-windows-arm64-${{ steps.check.outputs.version }}-pdbs"
-
-          echo '::group::Renaming Artifacts'
-          mv -v "${macos_arm64_artifact_name}/"obs-studio-*-macos-apple.dmg \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Apple.dmg
-          mv -v "${macos_arm64_dsym_artifact_name}/"obs-studio-*-macos-apple-dSYMs.tar.xz \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Apple-dSYMs.tar.xz
-          mv -v "${macos_intel_artifact_name}/"obs-studio-*-macos-intel.dmg \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel.dmg
-          mv -v "${macos_intel_dsym_artifact_name}/"obs-studio-*-macos-intel-dSYMs.tar.xz \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel-dSYMs.tar.xz
-          mv -v "${ubuntu_2404_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64.deb
-          mv -v "${ubuntu_2404_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64-dbsym.ddeb
-          mv -v "${ubuntu_2604_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-26.04-x86_64.deb
-          mv -v "${ubuntu_2604_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-26.04-x86_64-dbsym.ddeb
-          mv -v "${ubuntu_2604_sources_name}/"obs-studio-*-sources.tar.gz \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
-          mv -v "${windows_x64_artifact_name}/"OBS-Studio-*.zip \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64.zip
-          mv -v "${windows_x64_installer_name}/"OBS-Studio-*.exe \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-Installer.exe
-          mv -v "${windows_x64_debug_name}/"OBS-Studio-*-pdbs.zip \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-PDBs.zip
-          mv -v "${windows_arm64_artifact_name}/"OBS-Studio-*.zip \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64.zip
-          mv -v "${windows_arm64_debug_name}/"OBS-Studio-*-pdbs.zip \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64-PDBs.zip
-          echo '::endgroup::'
-
-      - name: Generate Checksums 🪪
-        if: fromJSON(steps.check.outputs.validTag)
-        run: |
-          : Generate Checksums 🪪
-          if [[ "${RUNNER_DEBUG}" ]]; then set -x; fi
-          shopt -s extglob
-
-          echo "### Checksums" > ${{ github.workspace }}/CHECKSUMS.txt
-          for file in ${{ github.workspace }}/@(*.deb|*.ddeb|*.dmg|*.tar.xz|*.tar.gz|*.exe|*.zip); do
-            echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
-          done
-
-      - name: Create Release 🛫
-        if: fromJSON(steps.check.outputs.validTag)
-        id: create_release
-        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
-        with:
-          draft: true
-          prerelease: ${{ fromJSON(steps.check.outputs.prerelease) }}
-          tag_name: ${{ steps.check.outputs.version }}
-          name: OBS Studio ${{ steps.check.outputs.version }}
-          body_path: ${{ github.workspace }}/CHECKSUMS.txt
-          files: |
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-macOS-*.dmg
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-macOS-*-dSYMs.tar.xz
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.deb
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-*.ddeb
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64.zip
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-Installer.exe
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64-PDBs.zip
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64.zip
-            ${{ github.workspace }}/OBS-Studio-${{ steps.check.outputs.version }}-Windows-arm64-PDBs.zip
+          disable-link-extensions: false

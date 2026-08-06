@@ -1,0 +1,35 @@
+name: Setup Sparkle
+description: Set up Sparkle for use on GitHub Actions runners
+inputs:
+  version:
+    description: Sparkle version to install
+    required: true
+  checksum:
+    description: Checksum of Sparkle download to confirm authenticity
+    required: true
+  url:
+    description: Sparkle download URL
+    required: false
+    default: 'https://github.com/sparkle-project/Sparkle/releases/download'
+outputs:
+  path:
+    description: Location on the runner where Sparkle has been extracted to
+    value: ${{ steps.setup.outputs.sparkle-location }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: macOS
+        custom-error: publish-obs/setup-sparkle action requires a macOS runner.
+
+    - name: Setup Sparkle
+      id: setup
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.workingDirectory }}
+      env:
+        SPARKLE_URL: ${{ inputs.url }}
+        SPARKLE_VERSION: ${{ inputs.version }}
+        SPARKLE_CHECKSUM: ${{ inputs.checksum }}
+      run: zsh --no-rcs --errexit --pipefail ${GITHUB_ACTION_PATH}/setup-sparkle.zsh

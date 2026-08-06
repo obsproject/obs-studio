@@ -1,0 +1,67 @@
+name: Sign Windows Builds
+description: Code signs an existing OBS Studio Windows build provided as a '.zip' archive.
+inputs:
+  path:
+    description: A path to an OBS Studio build archive in '.zip' format present on the runner.
+    required: true
+outputs:
+  path:
+    description: The path to a new archive in '.zip' format with the code signed OBS Studio build.
+    value: ${{ steps.compress.outputs.path }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: Windows
+        custom-error: codesign-obs/codesign-windows action requires a Windows runner.
+
+    - name: Extract Asset
+      id: extract
+      env:
+        RELEASE_ASSET: ${{ inputs.path }}
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: |
+        # Extract Asset
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        declare asset_basename
+        asset_basename="$(basename "${RELEASE_ASSET}")"
+
+        mkdir -p "${RUNNER_TEMP}/signed-build"
+        cd "${RUNNER_TEMP}/signed-build"
+        if [[ -d "${RELEASE_ASSET}" ]]; then
+          RELEASE_ASSET="${RELEASE_ASSET}/${asset_basename}"
+        fi
+        unzip "${RELEASE_ASSET}"
+        rm "${RELEASE_ASSET}"
+
+    - name: Sign Game Capture with RSA cert
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        ARTIFACT_PATH: ${{ format('{0}/signed-build', runner.temp) }}
+      run: ${GITHUB_ACTION_PATH}/sign-gamecapture.bash
+
+    - name: Sign OBS Studio package
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      env:
+        ARTIFACT_PATH: ${{ format('{0}/signed-build', runner.temp) }}
+      run: ${GITHUB_ACTION_PATH}/sign-package.bash
+
+    - name: Compress Asset
+      id: compress
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ format('{0}/signed-build', runner.temp) }}
+      env:
+        RELEASE_ASSET: ${{ inputs.path }}
+      run: |
+        # Compress Asset
+        if [[ -n "${RUNNER_DEBUG:-}" ]]; then set -x; fi
+
+        signed_asset="${RELEASE_ASSET//unsigned/signed}"
+        7z a -mx1 "${signed_asset}" "${PWD}"/*
+
+        declare output_path
+        output_path="$(cygpath --windows "${signed_asset}")"
+        echo "path=${output_path}" >> "${GITHUB_OUTPUT}"

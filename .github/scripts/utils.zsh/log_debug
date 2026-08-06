@@ -1,1 +1,0 @@
-if (( debug )) print -PR -e "::debug::%F{220}DEBUG: ${@}%f"

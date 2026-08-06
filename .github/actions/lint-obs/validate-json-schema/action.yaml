@@ -1,0 +1,45 @@
+name: Validate JSON Schema
+description: >
+  Runs schema checks on the provided list of JSON files and annotates them if any schema violations were detected.
+inputs:
+  path:
+    description: A string representing either a JSON array of files, a glob expression, or an absolute file path.
+    required: true
+  github-token:
+    description: >
+      The GitHub token required to post schema validation annotations. The provided token needs to have the
+      'checks: write' permission.
+    default: ${{ github.token }}
+  working-directory:
+    description: A path to the root directory to base the relative file names on.
+    default: ${{ github.workspace }}
+runs:
+  using: composite
+  steps:
+    - name: Check Runner
+      uses: ./.github/actions/check-runner
+      with:
+        os: |
+          macOS
+          Linux
+        custom-error: lint-obs/validate-json-schema action requires a macOS or Linux runner.
+
+    - name: Install and Configure Python
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      run: ${GITHUB_ACTION_PATH}/setup-action.bash
+
+    - name: Validate Compatibility Files JSON Schema
+      id: validate
+      shell: bash --noprofile --norc -eo errexit -eo pipefail -eo nounset {0}
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        JSON_FILES: ${{ inputs.path }}
+      run: ${GITHUB_ACTION_PATH}/run-validator.bash
+
+    - name: Annotate Schema Validation Errors
+      uses: yuzutech/annotations-action@00b2d488bcba3bd01014dc073d276ef4a45d5c6c # v0.6.0
+      if: failure()
+      with:
+        title: JSON Schema Validation Errors
+        input: ${{ format('{0}/validation_errors.json', runner.temp) }}
+        repo-token: ${{ inputs.github-token }}
