@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        branch: ${{ fromJSON(needs.setup-flathub.outputs.matrix )}}
+        builder-branch: ${{ fromJSON(needs.setup-flathub.outputs.matrix )}}
     env:
       FLATPAK_BUILD_SHARE_PATH: flatpak_app/files/share
       RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENT_ID }}
@@ -150,6 +150,7 @@ jobs:
         with:
           architecture: x86_64
           bundle: false
+          builder-branch: ${{ matrix.builder-branch }}
 
       - name: Publish to Flathub Beta
         uses: flatpak/flatpak-github-actions/flat-manager@401fe28a8384095fc1531b9d320b292f0ee45adb # v6.7

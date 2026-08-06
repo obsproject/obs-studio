@@ -9,6 +9,9 @@ inputs:
       A boolean value to indicate whether to actually build a bundle.
       If set to 'false', an available cached bundle is used instead.
     default: 'false'
+  builder-branch:
+    description: Branch used by flatpak-builder to export application.
+    default: 'master'
   github-token:
     description: The GitHub token required to check GitHub Actions caches for available cached bundles.
     default: ${{ github.token }}
@@ -49,13 +52,18 @@ runs:
       with:
         build-bundle: ${{ fromJSON(inputs.bundle) }}
         bundle: ${{ format('obs-studio-flatpak-{0}.flatpak', steps.short-sha.outputs.sha) }}
+        branch: ${{ inputs.builder-branch }}
         cache: >-
           ${{ fromJSON(steps.cache.outputs.cache-hit)
             || (github.event_name == 'push' && github.ref_name == 'master')
           }}
         manifest-path: ${{ format('{0}/build-aux/com.obsproject.Studio.json', github.workspace) }}
         mirror-screenshots-url: https://dl.flathub.org/media
-        restore-cache: ${{ fromJSON(steps.cache.outputs.cache-hit) }}
+        restore-cache: >-
+          ${{
+            inputs.builder-branch != 'master'
+            && fromJSON(steps.cache.outputs.cache-hit)
+          }}
 
     - name: Validate AppStream
       uses: ./.github/actions/lint-obs/lint-flatpak-manifest
