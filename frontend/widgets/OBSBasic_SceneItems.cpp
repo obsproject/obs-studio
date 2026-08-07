@@ -534,8 +534,7 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 				    "*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
 				    "*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
-	obs_data_t *privData = obs_sceneitem_get_private_settings(item);
-	obs_data_release(privData);
+	OBSDataAutoRelease privData = obs_sceneitem_get_private_settings(item);
 
 	obs_data_set_default_int(privData, "color-preset", 0);
 	int preset = obs_data_get_int(privData, "color-preset");

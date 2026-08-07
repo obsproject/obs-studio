@@ -1136,7 +1136,7 @@ void OBSBasic::Load(SceneCollection &collection)
 	lastOutputResolution.reset();
 	collection.setMigrationResolution(0, 0);
 
-	obs_data_t *data = obs_data_create_from_json_file_safe(collection.getFilePathString().c_str(), "bak");
+	OBSDataAutoRelease data = obs_data_create_from_json_file_safe(collection.getFilePathString().c_str(), "bak");
 
 	if (!data) {
 		disableSaving--;
@@ -1167,7 +1167,7 @@ void OBSBasic::Load(SceneCollection &collection)
 		return;
 	}
 
-	LoadData(data, collection);
+	LoadData(data.Get(), collection);
 }
 
 namespace {
@@ -1192,7 +1192,7 @@ void addMissingFiles(void *data, obs_source_t *source)
 }
 } // namespace
 
-void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
+void OBSBasic::LoadData(OBSData data, SceneCollection &collection)
 {
 	ClearSceneData();
 	ClearContextBar();
@@ -1474,8 +1474,6 @@ retryScene:
 	if (api) {
 		api->on_load(modulesObj);
 	}
-
-	obs_data_release(data);
 
 	if (!opt_starting_scene.empty()) {
 		opt_starting_scene.clear();
