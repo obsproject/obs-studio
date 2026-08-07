@@ -309,7 +309,7 @@ static inline float hook_rate_to_float(enum hook_rate rate)
 	}
 }
 
-static void stop_capture(struct game_capture *gc)
+static void stop_capture(struct game_capture *gc, bool clear_audio)
 {
 	ipc_pipe_server_free(&gc->pipe);
 
@@ -354,7 +354,7 @@ static void stop_capture(struct game_capture *gc)
 	if (gc->active)
 		info("capture stopped");
 
-	// if it was previously capturing, send an unhooked signal
+	/* if it was previously capturing, send an unhooked signal */
 	if (gc->capturing) {
 		gc->capturing = false;
 		signal_handler_t *sh = obs_source_get_signal_handler(gc->source);
@@ -363,8 +363,13 @@ static void stop_capture(struct game_capture *gc)
 		signal_handler_signal(sh, "unhooked", &data);
 		calldata_free(&data);
 
-		// Also update audio source to stop capturing
-		if (gc->audio_source)
+		/*
+		 * Clear linked WASAPI only on real unhooks. When the source is
+		 * merely no longer showing (scene transition finished), keep
+		 * the window target so Activate() can resume audio as soon as
+		 * the source is shown again, without waiting for hook_ready.
+		 */
+		if (clear_audio && gc->audio_source)
 			reconfigure_audio_source(gc->audio_source, NULL);
 	}
 
@@ -387,7 +392,7 @@ static inline void free_config(struct game_capture_config *config)
 static void game_capture_destroy(void *data)
 {
 	struct game_capture *gc = data;
-	stop_capture(gc);
+	stop_capture(gc, true);
 
 	if (gc->audio_source)
 		destroy_audio_source(gc->source, &gc->audio_source);
@@ -567,7 +572,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 
 	if (!gc->initial_config) {
 		if (reset_capture) {
-			stop_capture(gc);
+			stop_capture(gc, true);
 		}
 	} else {
 		gc->initial_config = false;
@@ -1185,7 +1190,7 @@ static void try_hook(struct game_capture *gc)
 		}
 
 		if (!init_hook(gc)) {
-			stop_capture(gc);
+			stop_capture(gc, true);
 		}
 	} else {
 		gc->active = false;
@@ -1712,7 +1717,7 @@ static void game_capture_tick(void *data, float seconds)
 	if (!obs_source_showing(gc->source)) {
 		if (gc->showing) {
 			if (gc->active)
-				stop_capture(gc);
+				stop_capture(gc, false);
 			gc->showing = false;
 		}
 		return;
@@ -1723,10 +1728,10 @@ static void game_capture_tick(void *data, float seconds)
 
 	if (gc->hook_stop && object_signalled(gc->hook_stop)) {
 		debug("hook stop signal received");
-		stop_capture(gc);
+		stop_capture(gc, true);
 	}
 	if (gc->active && deactivate) {
-		stop_capture(gc);
+		stop_capture(gc, true);
 	}
 
 	if (gc->active && !gc->hook_ready && gc->process_id) {
@@ -1745,7 +1750,7 @@ static void game_capture_tick(void *data, float seconds)
 
 		} else if (!gc->capturing) {
 			gc->retry_interval = ERROR_RETRY_INTERVAL * hook_rate_to_float(gc->config.hook_rate);
-			stop_capture(gc);
+			stop_capture(gc, true);
 		}
 	}
 
@@ -1782,7 +1787,7 @@ static void game_capture_tick(void *data, float seconds)
 		}
 		if (result != CAPTURE_RETRY && !gc->capturing) {
 			gc->retry_interval = ERROR_RETRY_INTERVAL * hook_rate_to_float(gc->config.hook_rate);
-			stop_capture(gc);
+			stop_capture(gc, true);
 		}
 	}
 
@@ -1799,7 +1804,7 @@ static void game_capture_tick(void *data, float seconds)
 		if (!capture_valid(gc)) {
 			info("capture window no longer exists, "
 			     "terminating capture");
-			stop_capture(gc);
+			stop_capture(gc, true);
 		} else {
 			if (gc->copy_texture) {
 				obs_enter_graphics();
