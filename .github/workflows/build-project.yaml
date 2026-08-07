@@ -4,7 +4,7 @@ on:
 jobs:
   check-event:
     name: Event Data 🔎
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     defaults:
       run:
         shell: bash
@@ -182,7 +182,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, ubuntu-26.04]
+        os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     needs: check-event
     defaults:
@@ -254,7 +254,7 @@ jobs:
 
   flatpak-build:
     name: Flatpak 📦
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: check-event
     defaults:
       run:
