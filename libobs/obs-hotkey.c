@@ -479,6 +479,9 @@ static inline void load_binding(obs_hotkey_t *hotkey, obs_data_t *data)
 	load_modifier(modifiers, data, "command", INTERACT_COMMAND_KEY);
 
 	combo.key = obs_key_from_name(obs_data_get_string(data, "key"));
+	if (combo.key == OBS_KEY_MOUSE1 || combo.key == OBS_KEY_MOUSE2)
+		return;
+
 	if (!modifiers && (combo.key == OBS_KEY_NONE || combo.key >= OBS_KEY_LAST_VALUE))
 		return;
 
