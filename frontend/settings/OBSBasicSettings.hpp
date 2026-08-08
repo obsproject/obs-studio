@@ -163,11 +163,11 @@ private:
 		EnableApplyButton(false);
 	}
 
-	template<typename Widget, typename WidgetParent, typename... SignalArgs, typename... SlotArgs>
+	template<typename Widget, typename WidgetParent, typename... SignalArgs>
 	void HookWidget(Widget *widget, void (WidgetParent::*signal)(SignalArgs...),
-			void (OBSBasicSettings::*slot)(SlotArgs...))
+			void (OBSBasicSettings::*slot)(QObject *))
 	{
-		QObject::connect(widget, signal, this, slot);
+		QObject::connect(widget, signal, this, [this, widget, slot](SignalArgs...) { (this->*slot)(widget); });
 		widget->setProperty("changed", QVariant(false));
 	}
 
@@ -386,31 +386,31 @@ private slots:
 	void on_choose9_clicked();
 	void on_colorPreset_currentIndexChanged(int idx);
 
-	void GeneralChanged();
+	void GeneralChanged(QObject *widget);
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	void HideOBSWindowWarning(Qt::CheckState state);
 #else
 	void HideOBSWindowWarning(int state);
 #endif
-	void AudioChanged();
-	void AudioChangedRestart();
+	void AudioChanged(QObject *widget);
+	void AudioChangedRestart(QObject *widget);
 	void ReloadAudioSources();
 	void SurroundWarning(int idx);
 	void SpeakerLayoutChanged(int idx);
 	void LowLatencyBufferingChanged(bool checked);
 	void UpdateAudioWarnings();
-	void OutputsChanged();
-	void Stream1Changed();
-	void VideoChanged();
-	void VideoChangedResolution();
+	void OutputsChanged(QObject *widget);
+	void Stream1Changed(QObject *widget);
+	void VideoChanged(QObject *widget);
+	void VideoChangedResolution(QObject *widget);
 	void HotkeysChanged();
 	bool ScanDuplicateHotkeys(QFormLayout *layout);
 	void ReloadHotkeys(obs_hotkey_id ignoreKey = OBS_INVALID_HOTKEY_ID);
-	void A11yChanged();
-	void AppearanceChanged();
-	void AdvancedChanged();
-	void AdvancedChangedRestart();
+	void A11yChanged(QObject *widget);
+	void AppearanceChanged(QObject *widget);
+	void AdvancedChanged(QObject *widget);
+	void AdvancedChangedRestart(QObject *widget);
 
 	void UpdateStreamDelayEstimate();
 

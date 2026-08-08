@@ -259,10 +259,8 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId, cons
 	}
 }
 
-void OBSBasic::SetDeinterlacingMode()
+void OBSBasic::SetDeinterlacingMode(obs_deinterlace_mode mode)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_deinterlace_mode mode = (obs_deinterlace_mode)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
@@ -288,10 +286,8 @@ void OBSBasic::SetDeinterlacingMode()
 	}
 }
 
-void OBSBasic::SetDeinterlacingOrder()
+void OBSBasic::SetDeinterlacingOrder(obs_deinterlace_field_order order)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_deinterlace_field_order order = (obs_deinterlace_field_order)action->property("order").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 
@@ -323,10 +319,10 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 	obs_deinterlace_field_order deinterlaceOrder = obs_source_get_deinterlace_field_order(source);
 	QAction *action;
 
-#define ADD_MODE(name, mode)                                                             \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetDeinterlacingMode); \
-	action->setProperty("mode", (int)mode);                                          \
-	action->setCheckable(true);                                                      \
+#define ADD_MODE(name, mode)                                                                    \
+	action = menu->addAction(QTStr("" name));                                             \
+	connect(action, &QAction::triggered, this, [this]() { SetDeinterlacingMode(mode); }); \
+	action->setCheckable(true);                                                             \
 	action->setChecked(deinterlaceMode == mode);
 
 	ADD_MODE("Disable", OBS_DEINTERLACE_MODE_DISABLE);
@@ -342,10 +338,10 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 
 	menu->addSeparator();
 
-#define ADD_ORDER(name, order)                                                                          \
-	action = menu->addAction(QTStr("Deinterlacing." name), this, &OBSBasic::SetDeinterlacingOrder); \
-	action->setProperty("order", (int)order);                                                       \
-	action->setCheckable(true);                                                                     \
+#define ADD_ORDER(name, order)                                                                        \
+	action = menu->addAction(QTStr("Deinterlacing." name));                                      \
+	connect(action, &QAction::triggered, this, [this]() { SetDeinterlacingOrder(order); });      \
+	action->setCheckable(true);                                                                   \
 	action->setChecked(deinterlaceOrder == order);
 
 	ADD_ORDER("TopFieldFirst", OBS_DEINTERLACE_FIELD_ORDER_TOP);
@@ -355,10 +351,8 @@ QMenu *OBSBasic::AddDeinterlacingMenu(QMenu *menu, obs_source_t *source)
 	return menu;
 }
 
-void OBSBasic::SetScaleFilter()
+void OBSBasic::SetScaleFilter(obs_scale_type mode)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_scale_type mode = (obs_scale_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
 	obs_scale_type oldMode = obs_sceneitem_get_scale_filter(sceneItem);
@@ -394,10 +388,10 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	obs_scale_type scaleFilter = obs_sceneitem_get_scale_filter(item);
 	QAction *action;
 
-#define ADD_MODE(name, mode)                                                       \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetScaleFilter); \
-	action->setProperty("mode", (int)mode);                                    \
-	action->setCheckable(true);                                                \
+#define ADD_MODE(name, mode)                                                              \
+	action = menu->addAction(QTStr("" name));                                       \
+	connect(action, &QAction::triggered, this, [this]() { SetScaleFilter(mode); }); \
+	action->setCheckable(true);                                                       \
 	action->setChecked(scaleFilter == mode);
 
 	ADD_MODE("Disable", OBS_SCALE_DISABLE);
@@ -411,10 +405,8 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	return menu;
 }
 
-void OBSBasic::SetBlendingMethod()
+void OBSBasic::SetBlendingMethod(obs_blending_method method)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_blending_method method = (obs_blending_method)action->property("method").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
 	obs_blending_method oldMethod = obs_sceneitem_get_blending_method(sceneItem);
@@ -450,10 +442,10 @@ QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
 	obs_blending_method blendingMethod = obs_sceneitem_get_blending_method(item);
 	QAction *action;
 
-#define ADD_MODE(name, method)                                                        \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetBlendingMethod); \
-	action->setProperty("method", (int)method);                                   \
-	action->setCheckable(true);                                                   \
+#define ADD_MODE(name, method)                                                                 \
+	action = menu->addAction(QTStr("" name));                                           \
+	connect(action, &QAction::triggered, this, [this]() { SetBlendingMethod(method); }); \
+	action->setCheckable(true);                                                          \
 	action->setChecked(blendingMethod == method);
 
 	ADD_MODE("BlendingMethod.Default", OBS_BLEND_METHOD_DEFAULT);
@@ -463,10 +455,8 @@ QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
 	return menu;
 }
 
-void OBSBasic::SetBlendingMode()
+void OBSBasic::SetBlendingMode(obs_blending_type mode)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_blending_type mode = (obs_blending_type)action->property("mode").toInt();
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 
 	obs_blending_type oldMode = obs_sceneitem_get_blending_mode(sceneItem);
@@ -502,10 +492,10 @@ QMenu *OBSBasic::AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item)
 	obs_blending_type blendingMode = obs_sceneitem_get_blending_mode(item);
 	QAction *action;
 
-#define ADD_MODE(name, mode)                                                        \
-	action = menu->addAction(QTStr("" name), this, &OBSBasic::SetBlendingMode); \
-	action->setProperty("mode", (int)mode);                                     \
-	action->setCheckable(true);                                                 \
+#define ADD_MODE(name, mode)                                                               \
+	action = menu->addAction(QTStr("" name));                                        \
+	connect(action, &QAction::triggered, this, [this]() { SetBlendingMode(mode); }); \
+	action->setCheckable(true);                                                        \
 	action->setChecked(blendingMode == mode);
 
 	ADD_MODE("BlendingMode.Normal", OBS_BLEND_NORMAL);
@@ -540,12 +530,14 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 	obs_data_set_default_int(privData, "color-preset", 0);
 	int preset = obs_data_get_int(privData, "color-preset");
 
-	action = menu->addAction(QTStr("Clear"), this, &OBSBasic::ColorChange);
+	action = menu->addAction(QTStr("Clear"));
+	connect(action, &QAction::triggered, this, [this]() { ColorChange(0); });
 	action->setCheckable(true);
 	action->setProperty("bgColor", 0);
 	action->setChecked(preset == 0);
 
-	action = menu->addAction(QTStr("CustomColor"), this, &OBSBasic::ColorChange);
+	action = menu->addAction(QTStr("CustomColor"));
+	connect(action, &QAction::triggered, this, [this]() { ColorChange(1); });
 	action->setCheckable(true);
 	action->setProperty("bgColor", 1);
 	action->setChecked(preset == 1);
@@ -563,7 +555,8 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 		}
 
 		colorButton->setProperty("bgColor", i);
-		connect(colorButton, &QPushButton::released, this, &OBSBasic::ColorChange);
+		connect(colorButton, &QPushButton::released, this,
+			[this, colorButton, i]() { ColorChange(i, colorButton); });
 	}
 
 	menu->addAction(widgetAction);
@@ -766,30 +759,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::actionOpenSourceFilters()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	if (!action->property("source").isValid()) {
-		return;
-	}
-
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
-	CreateFiltersWindow(source);
-}
-
-void OBSBasic::actionOpenSourceProperties()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	if (!action->property("source").isValid()) {
-		return;
-	}
-
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
-	CreatePropertiesWindow(source);
-}
-
 void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
 {
 	if (ui->scenes->count()) {
@@ -820,11 +789,6 @@ static inline bool should_show_properties(obs_source_t *source, const char *id)
 
 void OBSBasic::AddSourceDialog()
 {
-	QAction *action = qobject_cast<QAction *>(sender());
-	if (!action) {
-		return;
-	}
-
 	if (addWindow) {
 		addWindow->close();
 	}

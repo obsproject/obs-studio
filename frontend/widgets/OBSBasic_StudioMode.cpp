@@ -402,9 +402,8 @@ void OBSBasic::DisablePreviewProgram()
 	SetPreviewProgramMode(false);
 }
 
-void OBSBasic::OpenStudioProgramProjector()
+void OBSBasic::OpenStudioProgramProjector(int monitor)
 {
-	int monitor = sender()->property("monitor").toInt();
 	OpenProjector(nullptr, monitor, ProjectorType::StudioProgram);
 }
 

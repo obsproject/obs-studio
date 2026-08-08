@@ -184,11 +184,8 @@ void OBSBasic::SourcePasteFilters(OBSSource source, OBSSource dstSource)
 	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array, redo_array);
 }
 
-void OBSBasic::actionCopyFilters()
+void OBSBasic::copyFilters(OBSSource source)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_source_t *source = action->property("source").value<OBSSource>();
-
 	if (!source) {
 		return;
 	}
@@ -197,18 +194,18 @@ void OBSBasic::actionCopyFilters()
 	ui->actionPasteFilters->setEnabled(true);
 }
 
-void OBSBasic::actionPasteFilters()
+void OBSBasic::pasteFilters(OBSSource dstSource)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_source_t *dstSource = action->property("source").value<OBSSource>();
-
 	if (!dstSource) {
 		return;
 	}
 
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
+	OBSSource source = OBSGetStrongRef(copyFiltersSource());
+	if (!source) {
+		return;
+	}
 
-	SourcePasteFilters(source.Get(), dstSource);
+	SourcePasteFilters(source, dstSource);
 }
 
 void OBSBasic::SceneCopyFilters()
@@ -219,11 +216,14 @@ void OBSBasic::SceneCopyFilters()
 
 void OBSBasic::ScenePasteFilters()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
+	OBSSource source = OBSGetStrongRef(copyFiltersSource());
+	if (!source) {
+		return;
+	}
 
 	OBSSource dstSource = GetCurrentSceneSource();
 
-	SourcePasteFilters(source.Get(), dstSource);
+	SourcePasteFilters(source, dstSource);
 }
 
 void OBSBasic::on_actionCopyFilters_triggered()
@@ -236,9 +236,7 @@ void OBSBasic::on_actionCopyFilters_triggered()
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	copyFiltersSource_ = obs_source_get_weak_source(source);
-
-	ui->actionPasteFilters->setEnabled(true);
+	copyFilters(source);
 }
 
 void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
@@ -270,12 +268,15 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t
 
 void OBSBasic::on_actionPasteFilters_triggered()
 {
-	OBSSourceAutoRelease source = obs_weak_source_get_source(copyFiltersSource());
+	OBSSource source = OBSGetStrongRef(copyFiltersSource());
+	if (!source) {
+		return;
+	}
 
 	OBSSceneItem sceneItem = GetCurrentSceneItem();
 	OBSSource dstSource = obs_sceneitem_get_source(sceneItem);
 
-	SourcePasteFilters(source.Get(), dstSource);
+	SourcePasteFilters(source, dstSource);
 }
 
 OBS::ItemPasteType OBSBasic::getItemPasteType()

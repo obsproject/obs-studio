@@ -247,17 +247,14 @@ void OBSBasic::DeleteProfile(const QString &name)
 	OnEvent(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 }
 
-void OBSBasic::ChangeProfile()
+void OBSBasic::ChangeProfile(QAction *action, const QString &profileName)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-
 	if (!action) {
 		return;
 	}
 
 	const std::string_view currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
-	const QVariant qProfileName = action->property("profile_name");
-	const std::string selectedProfileName{qProfileName.toString().toStdString()};
+	const std::string selectedProfileName{profileName.toStdString()};
 
 	if (currentProfileName == selectedProfileName) {
 		action->setChecked(true);
@@ -310,9 +307,9 @@ void OBSBasic::RefreshProfiles(bool refreshCache)
 			const QString qProfileName = QString().fromStdString(profileName);
 
 			QAction *action = new QAction(qProfileName, this);
-			action->setProperty("profile_name", qProfileName);
 			action->setProperty("file_name", QString().fromStdString(profile.directoryName));
-			connect(action, &QAction::triggered, this, &OBSBasic::ChangeProfile);
+			connect(action, &QAction::triggered, this,
+				[this, action, qProfileName]() { ChangeProfile(action, qProfileName); });
 			action->setCheckable(true);
 			action->setChecked(profileName == currentProfileName);
 
