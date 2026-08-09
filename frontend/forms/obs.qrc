@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/res">
+    <file>images/thumb-large.svg</file>
+    <file>images/thumb-small.svg</file>
     <file>images/layout-horizontal.svg</file>
     <file>images/layout-vertical.svg</file>
     <file>images/close.svg</file>
@@ -90,7 +92,7 @@
     <file>images/settings/accessibility.svg</file>
     <file>images/settings/appearance.svg</file>
   </qresource>
-  <qresource prefix="">
+  <qresource>
     <file>fonts/OpenSans-Regular.ttf</file>
     <file>fonts/OpenSans-Bold.ttf</file>
     <file>fonts/OpenSans-Italic.ttf</file>

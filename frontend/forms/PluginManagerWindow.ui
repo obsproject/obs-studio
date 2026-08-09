@@ -41,7 +41,7 @@
       <number>0</number>
      </property>
      <property name="class" stdset="0">
-      <string>dialog-container</string>
+      <string>dialog-container dialog-column</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="spacing">
@@ -60,7 +60,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QFrame" name="frame">
+       <widget class="QFrame" name="upperFrame">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -69,6 +69,9 @@
         </property>
         <property name="lineWidth">
          <number>0</number>
+        </property>
+        <property name="class" stdset="0">
+         <string>dialog-row</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,4">
          <property name="spacing">
@@ -317,7 +320,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QFrame" name="footer">
+       <widget class="QFrame" name="lowerFrame">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -328,9 +331,9 @@
          <number>0</number>
         </property>
         <property name="class" stdset="0">
-         <string>dialog-container</string>
+         <string>dialog-row</string>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
          <property name="spacing">
           <number>0</number>
          </property>
@@ -347,10 +350,43 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QDialogButtonBox" name="buttonBox">
-           <property name="standardButtons">
-            <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+          <widget class="QFrame" name="footer">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
            </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="class" stdset="0">
+            <string/>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QDialogButtonBox" name="buttonBox">
+              <property name="standardButtons">
+               <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
          </item>
         </layout>
