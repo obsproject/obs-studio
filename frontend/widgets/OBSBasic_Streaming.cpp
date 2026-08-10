@@ -259,6 +259,8 @@ void OBSBasic::StreamingStart()
 		if (!key.empty() && !youtubeStreamCheckThread) {
 			youtubeStreamCheckThread = CreateQThread([this, key] { YoutubeStreamCheck(key); });
 			youtubeStreamCheckThread->setObjectName("YouTubeStreamCheckThread");
+			connect(youtubeStreamCheckThread, &QThread::finished, youtubeStreamCheckThread,
+				&QObject::deleteLater);
 			youtubeStreamCheckThread->start();
 		}
 	}

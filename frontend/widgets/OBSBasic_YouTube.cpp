@@ -60,7 +60,6 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 	if (!apiYouTube) {
 		/* technically we should never get here -Lain */
 		QMetaObject::invokeMethod(this, "ForceStopStreaming", Qt::QueuedConnection);
-		youtubeStreamCheckThread->deleteLater();
 		blog(LOG_ERROR, "==========================================");
 		blog(LOG_ERROR, "%s: Uh, hey, we got here", __FUNCTION__);
 		blog(LOG_ERROR, "==========================================");
@@ -93,8 +92,6 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 			timeout++;
 		}
 	}
-
-	youtubeStreamCheckThread->deleteLater();
 }
 
 void OBSBasic::ShowYouTubeAutoStartWarning()
