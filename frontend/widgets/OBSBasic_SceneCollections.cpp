@@ -246,13 +246,18 @@ void OBSBasic::SetupRenameSceneCollection(const std::string &collectionName)
 	collections.erase(currentCollection.getName());
 
 	cleanBackupCollision(newCollection);
-	ActivateSceneCollection(newCollection);
 	RemoveSceneCollection(currentCollection);
+
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollection", newCollection.getName().c_str());
+	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", newCollection.getFileName().c_str());
+
+	refreshApplicationState();
 
 	blog(LOG_INFO, "Renamed scene collection '%s' to '%s' (%s)", currentCollection.getName().c_str(),
 	     newCollection.getName().c_str(), newCollection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
 
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED);
 }
 
@@ -798,13 +803,16 @@ void OBSBasic::ActivateSceneCollection(SceneCollection &collection)
 	config_set_string(App()->GetUserConfig(), "Basic", "SceneCollectionFile", collection.getFileName().c_str());
 
 	Load(collection);
-
-	RefreshSceneCollections();
-
-	UpdateTitleBar();
+	refreshApplicationState();
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
+}
+
+void OBSBasic::refreshApplicationState()
+{
+	RefreshSceneCollections();
+	UpdateTitleBar();
 }
 
 // MARK: - OBSBasic Scene Collection Functions
