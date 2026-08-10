@@ -1087,7 +1087,8 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 			if (info->flags & OBS_OUTPUT_MULTI_TRACK) {
 				CHECK_REQUIRED_VAL_(info, raw_audio2, obs_register_output);
 			} else {
-				CHECK_REQUIRED_VAL_(info, raw_audio, obs_register_output);
+				CHECK_REQUIRED_VAL_EITHER(struct obs_output_info, info, raw_audio, raw_audio_monitoring,
+							  obs_register_output);
 			}
 		}
 	}
