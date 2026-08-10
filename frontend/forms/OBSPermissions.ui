@@ -366,8 +366,24 @@
              <property name="sizeConstraint">
               <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
              </property>
+             <property name="topMargin">
+              <number>8</number>
+             </property>
+             <property name="bottomMargin">
+              <number>25</number>
+             </property>
              <item>
-              <widget class="QWidget"/>
+              <spacer name="horizontalSpacer_5">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
              </item>
              <item>
               <widget class="QPushButton" name="inputMonitoringPermissionButton">
