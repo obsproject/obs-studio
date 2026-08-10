@@ -168,6 +168,7 @@ void OBSBasic::SetupDuplicateSceneCollection(const std::string &collectionName)
 	try {
 		std::filesystem::copy(currentCollection.getFilePath(), newCollection.getFilePath(), copyOptions);
 	} catch (const std::filesystem::filesystem_error &error) {
+		collections.erase(newCollection.getName());
 		blog(LOG_DEBUG, "%s", error.what());
 		throw std::logic_error("Failed to copy file for cloned scene collection: " + newCollection.getName());
 	}
@@ -195,7 +196,15 @@ void OBSBasic::SetupDuplicateSceneCollection(const std::string &collectionName)
 		obs_data_set_array(collection, "sources", sources);
 	}
 
-	obs_data_save_json_safe(collection, newCollection.getFilePathString().c_str(), "tmp", nullptr);
+	if (!obs_data_save_json_safe(collection, newCollection.getFilePathString().c_str(), "tmp", nullptr)) {
+		collections.erase(newCollection.getName());
+
+		// If removal fails the copy may appear again after restart using the original name and thus hide the original collection.
+		// Any changes made to the original collection may appear to be lost after restart, but are still present in the original file.
+		RemoveSceneCollection(newCollection);
+
+		throw std::logic_error("Failed to save duplicated scene collection: " + newCollection.getName());
+	}
 
 	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
@@ -217,16 +226,24 @@ void OBSBasic::SetupRenameSceneCollection(const std::string &collectionName)
 	try {
 		std::filesystem::copy(currentCollection.getFilePath(), newCollection.getFilePath(), copyOptions);
 	} catch (const std::filesystem::filesystem_error &error) {
+		collections.erase(newCollection.getName());
 		blog(LOG_DEBUG, "%s", error.what());
 		throw std::logic_error("Failed to copy file for scene collection: " + currentCollection.getName());
 	}
 
-	collections.erase(currentCollection.getName());
-
 	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.getFilePathString().c_str());
 	obs_data_set_string(collection, "name", newCollection.getName().c_str());
 
-	obs_data_save_json_safe(collection, newCollection.getFilePathString().c_str(), "tmp", nullptr);
+	if (!obs_data_save_json_safe(collection, newCollection.getFilePathString().c_str(), "tmp", nullptr)) {
+		collections.erase(newCollection.getName());
+
+		// If removal fails the copy may appear again after restart using the original name and thus hide the original collection.
+		// Any changes made to the original collection may appear to be lost after restart, but are still present in the original file.
+		RemoveSceneCollection(currentCollection);
+		throw std::logic_error("Failed to save renamed scene collection: " + newCollection.getName());
+	}
+
+	collections.erase(currentCollection.getName());
 
 	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
