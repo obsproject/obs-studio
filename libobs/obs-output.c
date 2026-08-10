@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <inttypes.h>
+#include "audio-monitoring/monitoring-mix.h"
 #include "util/platform.h"
 #include "util/util_uint64.h"
 #include "util/array-serializer.h"
@@ -2427,6 +2428,17 @@ static void default_raw_audio_callback(void *param, size_t mix_idx, struct audio
 	}
 }
 
+static void raw_audio_monitoring_callback(void *param, struct audio_data *in)
+{
+	struct obs_output *output = param;
+
+	if (!in || in->frames == 0 || !data_active(output)) {
+		return;
+	}
+
+	output->info.raw_audio_monitoring(output->context.data, in);
+}
+
 static inline void start_audio_encoders(struct obs_output *output, encoded_callback_t encoded_callback)
 {
 	for (size_t i = 0; i < MAX_OUTPUT_AUDIO_ENCODERS; i++) {
@@ -2454,9 +2466,13 @@ static inline void start_raw_audio(obs_output_t *output)
 						     default_raw_audio_callback, output);
 			}
 		}
-	} else {
+	} else if (output->info.raw_audio) {
 		audio_output_connect(output->audio, get_first_mixer(output), get_audio_conversion(output),
 				     default_raw_audio_callback, output);
+	}
+
+	if (output->info.raw_audio_monitoring) {
+		monitoring_mix_output_connect(obs->audio.monitoring_mix, raw_audio_monitoring_callback, output);
 	}
 }
 
@@ -2829,8 +2845,12 @@ static inline void stop_raw_audio(obs_output_t *output)
 				audio_output_disconnect(output->audio, idx, default_raw_audio_callback, output);
 			}
 		}
-	} else {
+	} else if (output->info.raw_audio) {
 		audio_output_disconnect(output->audio, get_first_mixer(output), default_raw_audio_callback, output);
+	}
+
+	if (output->info.raw_audio_monitoring) {
+		monitoring_mix_output_disconnect(obs->audio.monitoring_mix, raw_audio_monitoring_callback, output);
 	}
 }
 
