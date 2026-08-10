@@ -172,7 +172,7 @@ void OBSBasic::SetupDuplicateSceneCollection(const std::string &collectionName)
 		throw std::logic_error("Failed to copy file for cloned scene collection: " + newCollection.getName());
 	}
 
-	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.getFileName().c_str());
+	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.getFilePathString().c_str());
 
 	obs_data_set_string(collection, "name", newCollection.getName().c_str());
 
@@ -195,7 +195,7 @@ void OBSBasic::SetupDuplicateSceneCollection(const std::string &collectionName)
 		obs_data_set_array(collection, "sources", sources);
 	}
 
-	obs_data_save_json_safe(collection, newCollection.getFileName().c_str(), "tmp", nullptr);
+	obs_data_save_json_safe(collection, newCollection.getFilePathString().c_str(), "tmp", nullptr);
 
 	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
@@ -223,10 +223,10 @@ void OBSBasic::SetupRenameSceneCollection(const std::string &collectionName)
 
 	collections.erase(currentCollection.getName());
 
-	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.getFileName().c_str());
+	OBSDataAutoRelease collection = obs_data_create_from_json_file(newCollection.getFilePathString().c_str());
 	obs_data_set_string(collection, "name", newCollection.getName().c_str());
 
-	obs_data_save_json_safe(collection, newCollection.getFileName().c_str(), "tmp", nullptr);
+	obs_data_save_json_safe(collection, newCollection.getFilePathString().c_str(), "tmp", nullptr);
 
 	cleanBackupCollision(newCollection);
 	ActivateSceneCollection(newCollection);
