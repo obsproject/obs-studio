@@ -84,7 +84,7 @@ void OBSBasic::ProcessHotkey(obs_hotkey_id id, bool pressed)
 void OBSBasic::HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed)
 {
 	OBSBasic &basic = *static_cast<OBSBasic *>(data);
-	QMetaObject::invokeMethod(&basic, "ProcessHotkey", Q_ARG(obs_hotkey_id, id), Q_ARG(bool, pressed));
+	QMetaObject::invokeMethod(&basic, &OBSBasic::ProcessHotkey, id, pressed);
 }
 
 void OBSBasic::CreateHotkeys()
@@ -93,12 +93,14 @@ void OBSBasic::CreateHotkeys()
 
 	auto LoadHotkeyData = [&](const char *name) -> OBSData {
 		const char *info = config_get_string(activeConfiguration, "Hotkeys", name);
-		if (!info)
+		if (!info) {
 			return {};
+		}
 
 		OBSDataAutoRelease data = obs_data_create_from_json(info);
-		if (!data)
+		if (!data) {
 			return {};
+		}
 
 		return data.Get();
 	};
@@ -181,8 +183,9 @@ void OBSBasic::CreateHotkeys()
 	splitFileHotkey = obs_hotkey_register_frontend(
 		"OBSBasic.SplitFile", Str("Basic.Main.SplitFile"),
 		[](void *, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-			if (pressed)
+			if (pressed) {
 				obs_frontend_recording_split_file();
+			}
 		},
 		this);
 	LoadHotkey(splitFileHotkey, "OBSBasic.SplitFile");
@@ -190,8 +193,9 @@ void OBSBasic::CreateHotkeys()
 	addChapterHotkey = obs_hotkey_register_frontend(
 		"OBSBasic.AddChapterMarker", Str("Basic.Main.AddChapterMarker"),
 		[](void *, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-			if (pressed)
+			if (pressed) {
 				obs_frontend_recording_add_chapter(nullptr);
+			}
 		},
 		this);
 	LoadHotkey(addChapterHotkey, "OBSBasic.AddChapterMarker");
@@ -244,18 +248,20 @@ void OBSBasic::CreateHotkeys()
 #undef MAKE_CALLBACK
 
 	auto transition = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-		if (pressed)
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "TransitionClicked",
+		if (pressed) {
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::TransitionClicked,
 						  Qt::QueuedConnection);
+		}
 	};
 
 	transitionHotkey = obs_hotkey_register_frontend("OBSBasic.Transition", Str("Transition"), transition, this);
 	LoadHotkey(transitionHotkey, "OBSBasic.Transition");
 
 	auto resetStats = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-		if (pressed)
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ResetStatsHotkey",
+		if (pressed) {
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::ResetStatsHotkey,
 						  Qt::QueuedConnection);
+		}
 	};
 
 	statsHotkey =
@@ -263,17 +269,20 @@ void OBSBasic::CreateHotkeys()
 	LoadHotkey(statsHotkey, "OBSBasic.ResetStats");
 
 	auto screenshot = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-		if (pressed)
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "Screenshot", Qt::QueuedConnection);
+		if (pressed) {
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::Screenshot,
+						  Qt::QueuedConnection, nullptr);
+		}
 	};
 
 	screenshotHotkey = obs_hotkey_register_frontend("OBSBasic.Screenshot", Str("Screenshot"), screenshot, this);
 	LoadHotkey(screenshotHotkey, "OBSBasic.Screenshot");
 
 	auto screenshotSource = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
-		if (pressed)
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "ScreenshotSelectedSource",
+		if (pressed) {
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::ScreenshotSelectedSource,
 						  Qt::QueuedConnection);
+		}
 	};
 
 	sourceScreenshotHotkey = obs_hotkey_register_frontend("OBSBasic.SelectedSourceScreenshot",

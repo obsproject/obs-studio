@@ -29,6 +29,7 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QApplication>
+#include <QHash>
 #include <QPalette>
 #include <QPointer>
 #include <QUuid>
@@ -136,7 +137,6 @@ private:
 
 private slots:
 	void commitData(QSessionManager &manager);
-	void addLogLine(int logLevel, const QString &message);
 	void themeFileChanged(const QString &);
 	void applicationShutdown() noexcept;
 
@@ -204,20 +204,25 @@ public:
 
 	inline void IncrementSleepInhibition()
 	{
-		if (!sleepInhibitor)
+		if (!sleepInhibitor) {
 			return;
-		if (sleepInhibitRefs++ == 0)
+		}
+		if (sleepInhibitRefs++ == 0) {
 			os_inhibit_sleep_set_active(sleepInhibitor, true);
+		}
 	}
 
 	inline void DecrementSleepInhibition()
 	{
-		if (!sleepInhibitor)
+		if (!sleepInhibitor) {
 			return;
-		if (sleepInhibitRefs == 0)
+		}
+		if (sleepInhibitRefs == 0) {
 			return;
-		if (--sleepInhibitRefs == 0)
+		}
+		if (--sleepInhibitRefs == 0) {
 			os_inhibit_sleep_set_active(sleepInhibitor, false);
+		}
 	}
 
 	inline void PushUITranslation(obs_frontend_translate_ui_cb cb) { translatorHooks.emplace_front(cb); }
@@ -238,6 +243,7 @@ public:
 	void pluginManagerOpenDialog();
 
 public slots:
+	void addLogLine(int logLevel, const QString &message);
 	void Exec(VoidFunc func);
 	void processSigInt();
 	void processSigTerm();

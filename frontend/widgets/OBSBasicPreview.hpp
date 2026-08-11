@@ -147,8 +147,9 @@ public:
 
 	inline void SetFixedScaling(bool newFixedScalingVal)
 	{
-		if (fixedScaling == newFixedScalingVal)
+		if (fixedScaling == newFixedScalingVal) {
 			return;
+		}
 
 		fixedScaling = newFixedScalingVal;
 		emit fixedScalingChanged(fixedScaling);

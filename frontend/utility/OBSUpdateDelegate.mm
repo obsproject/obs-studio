@@ -30,6 +30,11 @@
     }
 }
 
+- (NSString *)feedURLStringForUpdater:(SPUUpdater *)updater
+{
+    return self.feedUrl;
+}
+
 - (void)dealloc
 {
     @autoreleasepool {

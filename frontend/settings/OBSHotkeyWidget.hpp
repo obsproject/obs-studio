@@ -63,8 +63,9 @@ public:
 	void setToolTip(const QString &toolTip_)
 	{
 		toolTip = toolTip_;
-		for (auto &edit : edits)
+		for (auto &edit : edits) {
 			edit->setToolTip(toolTip_);
+		}
 	}
 
 	void Apply();

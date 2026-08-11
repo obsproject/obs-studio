@@ -39,8 +39,9 @@ void addModuleToPluginManagerImpl(void *param, obs_module_t *newModule)
 	std::string moduleName = obs_get_module_file_name(newModule);
 	moduleName = moduleName.substr(0, moduleName.rfind("."));
 
-	if (!obs_get_module_allow_disable(moduleName.c_str()))
+	if (!obs_get_module_allow_disable(moduleName.c_str())) {
 		return;
+	}
 
 	const char *display_name = obs_get_module_name(newModule);
 	std::string module_name = moduleName;

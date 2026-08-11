@@ -41,12 +41,14 @@
 static bool QuickWriteFile(const char *file, const std::string &data)
 try {
 	std::ofstream fileStream(std::filesystem::u8path(file), std::ios::binary);
-	if (fileStream.fail())
+	if (fileStream.fail()) {
 		throw strprintf("Failed to open file '%s': %s", file, strerror(errno));
+	}
 
 	fileStream.write(data.data(), data.size());
-	if (fileStream.fail())
+	if (fileStream.fail()) {
 		throw strprintf("Failed to write file '%s': %s", file, strerror(errno));
+	}
 
 	return true;
 
@@ -58,8 +60,9 @@ try {
 static bool QuickReadFile(const char *file, std::string &data)
 try {
 	std::ifstream fileStream(std::filesystem::u8path(file), std::ios::binary);
-	if (!fileStream.is_open() || fileStream.fail())
+	if (!fileStream.is_open() || fileStream.fail()) {
 		throw strprintf("Failed to open file '%s': %s", file, strerror(errno));
+	}
 
 	fileStream.seekg(0, fileStream.end);
 	size_t size = fileStream.tellg();
@@ -68,8 +71,9 @@ try {
 	data.resize(size);
 	fileStream.read(&data[0], size);
 
-	if (fileStream.fail())
+	if (fileStream.fail()) {
 		throw strprintf("Failed to write file '%s': %s", file, strerror(errno));
+	}
 
 	return true;
 
@@ -81,26 +85,31 @@ try {
 static bool CalculateFileHash(const char *path, uint8_t *hash)
 try {
 	blake2b_state blake2;
-	if (blake2b_init(&blake2, BLAKE2_HASH_LENGTH) != 0)
+	if (blake2b_init(&blake2, BLAKE2_HASH_LENGTH) != 0) {
 		return false;
+	}
 
 	std::ifstream file(std::filesystem::u8path(path), std::ios::binary);
-	if (!file.is_open() || file.fail())
+	if (!file.is_open() || file.fail()) {
 		return false;
+	}
 
 	char buf[HASH_READ_BUF_SIZE];
 
 	for (;;) {
 		file.read(buf, HASH_READ_BUF_SIZE);
 		size_t read = file.gcount();
-		if (blake2b_update(&blake2, &buf, read) != 0)
+		if (blake2b_update(&blake2, &buf, read) != 0) {
 			return false;
-		if (file.eof())
+		}
+		if (file.eof()) {
 			break;
+		}
 	}
 
-	if (blake2b_final(&blake2, hash, BLAKE2_HASH_LENGTH) != 0)
+	if (blake2b_final(&blake2, hash, BLAKE2_HASH_LENGTH) != 0) {
 		return false;
+	}
 
 	return true;
 
@@ -133,14 +142,16 @@ std::string GetProgramGUID()
 	 * kind of identifiable information */
 	const char *pguid = config_get_string(App()->GetAppConfig(), "General", "InstallGUID");
 	std::string guid;
-	if (pguid)
+	if (pguid) {
 		guid = pguid;
+	}
 
 	if (guid.empty()) {
 		GenerateGUID(guid);
 
-		if (!guid.empty())
+		if (!guid.empty()) {
 			config_set_string(App()->GetAppConfig(), "General", "InstallGUID", guid.c_str());
+		}
 	}
 
 	return guid;
@@ -152,10 +163,12 @@ static void LoadPublicKey(std::string &pubkey)
 {
 	std::string pemFilePath;
 
-	if (!GetDataFilePath("OBSPublicRSAKey.pem", pemFilePath))
+	if (!GetDataFilePath("OBSPublicRSAKey.pem", pemFilePath)) {
 		throw std::string("Could not find OBS public key file!");
-	if (!QuickReadFile(pemFilePath.c_str(), pubkey))
+	}
+	if (!QuickReadFile(pemFilePath.c_str(), pubkey)) {
 		throw std::string("Could not read OBS public key file!");
+	}
 }
 
 static bool CheckDataSignature(const char *name, const std::string &data, const std::string &hexSig)
@@ -163,19 +176,22 @@ try {
 	static std::mutex pubkey_mutex;
 	static std::string obsPubKey;
 
-	if (hexSig.empty() || hexSig.length() > 0xFFFF || (hexSig.length() & 1) != 0)
+	if (hexSig.empty() || hexSig.length() > 0xFFFF || (hexSig.length() & 1) != 0) {
 		throw strprintf("Missing or invalid signature for %s: %s", name, hexSig.c_str());
+	}
 
 	std::scoped_lock lock(pubkey_mutex);
-	if (obsPubKey.empty())
+	if (obsPubKey.empty()) {
 		LoadPublicKey(obsPubKey);
+	}
 
 	// Convert hex string to bytes
 	auto signature = QByteArray::fromHex(hexSig.data());
 
 	if (!VerifySignature((uint8_t *)obsPubKey.data(), obsPubKey.size(), (uint8_t *)data.data(), data.size(),
-			     (uint8_t *)signature.data(), signature.size()))
+			     (uint8_t *)signature.data(), signature.size())) {
 		throw strprintf("Signature check failed for %s", name);
+	}
 
 	return true;
 
@@ -229,8 +245,9 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url, std
 	success = GetRemoteFile(url, data, error, &responseCode, nullptr, "", nullptr, headers, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
-		if (responseCode == 404)
+		if (responseCode == 404) {
 			return false;
+		}
 
 		throw strprintf("Failed to fetch %s file: %s", name, error.c_str());
 	}
@@ -240,23 +257,27 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url, std
 
 	if (responseCode == 200) {
 		success = CheckDataSignature(name, data, signature);
-		if (!success)
+		if (!success) {
 			throw strprintf("Invalid %s signature", name);
+		}
 	}
 
 	/* ----------------------------------- *
 	 * write or load file                  */
 
 	if (responseCode == 200) {
-		if (!QuickWriteFile(filePath, data))
+		if (!QuickWriteFile(filePath, data)) {
 			throw strprintf("Could not write file '%s'", filePath.Get());
+		}
 	} else if (out) { /* Only read file if caller wants data */
-		if (!QuickReadFile(filePath, data))
+		if (!QuickReadFile(filePath, data)) {
 			throw strprintf("Could not read file '%s'", filePath.Get());
+		}
 	}
 
-	if (out)
+	if (out) {
 		*out = data;
+	}
 
 	/* ----------------------------------- *
 	 * success                             */

@@ -31,8 +31,9 @@ vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format, bool ignore_comp
 
 	while ((codec = av_codec_iterate(&i)) != nullptr) {
 		// Not an encoding codec
-		if (!av_codec_is_encoder(codec))
+		if (!av_codec_is_encoder(codec)) {
 			continue;
+		}
 		// Skip if not supported and compatibility check not disabled
 		if (!ignore_compatibility && !av_codec_get_tag(format.codec_tags, codec->id)) {
 			continue;
@@ -46,16 +47,19 @@ vector<FFmpegCodec> GetFormatCodecs(const FFmpegFormat &format, bool ignore_comp
 
 bool FFCodecAndFormatCompatible(const char *codec, const char *format)
 {
-	if (!codec || !format)
+	if (!codec || !format) {
 		return false;
+	}
 
 	const AVOutputFormat *output_format = av_guess_format(format, nullptr, nullptr);
-	if (!output_format)
+	if (!output_format) {
 		return false;
+	}
 
 	const AVCodecDescriptor *codec_desc = avcodec_descriptor_get_by_name(codec);
-	if (!codec_desc)
+	if (!codec_desc) {
 		return false;
+	}
 
 	return avformat_query_codec(output_format, codec_desc->id, FF_COMPLIANCE_NORMAL) == 1;
 }
@@ -171,13 +175,15 @@ static const unordered_map<string, unordered_set<string>> codec_compat = {
 bool ContainerSupportsCodec(const string &container, const string &codec)
 {
 	auto iter = codec_compat.find(container);
-	if (iter == codec_compat.end())
+	if (iter == codec_compat.end()) {
 		return false;
+	}
 
 	auto codecs = iter->second;
 	// Assume everything is supported
-	if (codecs.empty())
+	if (codecs.empty()) {
 		return true;
+	}
 
 	return codecs.count(codec) > 0;
 }

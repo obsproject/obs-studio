@@ -144,8 +144,9 @@ std::string CardEntry::GetDisplayName() const
 		std::ostringstream oss;
 		oss << mCard->GetIndexNumber() << " - " << mCard->GetModelName();
 		const std::string &serial = GetSerial();
-		if (!serial.empty())
+		if (!serial.empty()) {
 			oss << " (" << serial << ")";
+		}
 
 		return oss.str();
 	}
@@ -157,8 +158,9 @@ std::string CardEntry::GetDisplayName() const
 std::string CardEntry::GetSerial() const
 {
 	std::string serial;
-	if (mCard)
+	if (mCard) {
 		mCard->GetSerialNumberString(serial);
+	}
 
 	return serial;
 }
@@ -166,8 +168,9 @@ std::string CardEntry::GetSerial() const
 NTV2DeviceID CardEntry::GetDeviceID() const
 {
 	NTV2DeviceID id = DEVICE_ID_NOTFOUND;
-	if (mCard)
+	if (mCard) {
 		id = mCard->GetDeviceID();
+	}
 
 	return id;
 }
@@ -255,11 +258,13 @@ bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id, const std::
 			size_t channelsReady = 0;
 			for (auto &&src : inputSources) {
 				auto channel = NTV2InputSourceToChannel(src);
-				if (ChannelReady(channel, owner))
+				if (ChannelReady(channel, owner)) {
 					channelsReady++;
+				}
 			}
-			if (channelsReady == inputSources.size())
+			if (channelsReady == inputSources.size()) {
 				return true;
+			}
 		}
 	}
 
@@ -288,11 +293,13 @@ bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id, const std:
 			size_t channelsReady = 0;
 			for (auto &&dst : outputDests) {
 				auto channel = NTV2OutputDestinationToChannel(dst);
-				if (ChannelReady(channel, owner))
+				if (ChannelReady(channel, owner)) {
 					channelsReady++;
+				}
 			}
-			if (channelsReady == outputDests.size())
+			if (channelsReady == outputDests.size()) {
 				return true;
+			}
 		}
 	}
 
@@ -452,8 +459,9 @@ bool CardEntry::UpdateChannelOwnerName(const std::string &oldName, const std::st
 
 bool CardEntry::isAutoCirculateRunning(NTV2Channel chan)
 {
-	if (!mCard)
+	if (!mCard) {
 		return false;
+	}
 
 	AUTOCIRCULATE_STATUS acStatus;
 	if (mCard->AutoCirculateGetStatus(chan, acStatus)) {
@@ -499,8 +507,9 @@ void CardManager::EnumerateCards()
 		// New Card Entry
 		if (mCardEntries.find(cardID) == mCardEntries.end()) {
 			CardEntryPtr cardEntry = std::make_shared<CardEntry>(iter.deviceIndex, cardID);
-			if (cardEntry && cardEntry->Initialize())
+			if (cardEntry && cardEntry->Initialize()) {
 				mCardEntries.emplace(cardID, cardEntry);
+			}
 		} else {
 			// Card fell off of the bus and came back with a new physical index?
 			auto currEntry = mCardEntries[cardID];
@@ -508,8 +517,9 @@ void CardManager::EnumerateCards()
 				if (currEntry->GetCardIndex() != iter.deviceIndex) {
 					mCardEntries.erase(cardID);
 					CardEntryPtr cardEntry = std::make_shared<CardEntry>(iter.deviceIndex, cardID);
-					if (cardEntry && cardEntry->Initialize())
+					if (cardEntry && cardEntry->Initialize()) {
 						mCardEntries.emplace(cardID, cardEntry);
+					}
 				}
 			}
 		}
@@ -525,8 +535,9 @@ size_t CardManager::NumCardEntries() const
 CNTV2Card *CardManager::GetCard(const std::string &cardID)
 {
 	auto entry = GetCardEntry(cardID);
-	if (entry)
+	if (entry) {
 		return entry->GetCard();
+	}
 	return nullptr;
 }
 
@@ -534,8 +545,9 @@ const CardEntryPtr CardManager::GetCardEntry(const std::string &cardID) const
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
 	for (const auto &entry : mCardEntries) {
-		if (entry.second && entry.second->GetCardID() == cardID)
+		if (entry.second && entry.second->GetCardID() == cardID) {
 			return entry.second;
+		}
 	}
 	return nullptr;
 }

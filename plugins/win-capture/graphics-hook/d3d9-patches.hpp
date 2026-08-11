@@ -165,8 +165,9 @@ static inline int get_d3d9_patch(HMODULE d3d9)
 	uint8_t *addr = (uint8_t *)d3d9;
 	for (int i = 0; i < NUM_VERS; i++) {
 		int ret = safe_memcmp(addr + patch_offset[i], patch_cmp[i], CMP_SIZE);
-		if (ret == 0)
+		if (ret == 0) {
 			return i;
+		}
 	}
 
 	return -1;
@@ -174,8 +175,9 @@ static inline int get_d3d9_patch(HMODULE d3d9)
 
 static inline uint8_t *get_d3d9_patch_addr(HMODULE d3d9, int patch)
 {
-	if (patch == -1)
+	if (patch == -1) {
 		return nullptr;
+	}
 
 	uint8_t *addr = (uint8_t *)d3d9;
 	return addr + patch_offset[patch] + CMP_SIZE;

@@ -69,6 +69,7 @@ namespace OBS {
 class SceneCollection;
 struct Rect;
 enum class LogFileType;
+enum class ItemPasteType { Invalid, Reference, Duplicate, Both };
 } // namespace OBS
 
 #define SIMPLE_ENCODER_X264 "x264"
@@ -161,15 +162,17 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 static inline void UpdateProcessPriority()
 {
 	const char *priority = config_get_string(App()->GetAppConfig(), "General", "ProcessPriority");
-	if (priority && strcmp(priority, "Normal") != 0)
+	if (priority && strcmp(priority, "Normal") != 0) {
 		SetProcessPriority(priority);
+	}
 }
 
 static inline void ClearProcessPriority()
 {
 	const char *priority = config_get_string(App()->GetAppConfig(), "General", "ProcessPriority");
-	if (priority && strcmp(priority, "Normal") != 0)
+	if (priority && strcmp(priority, "Normal") != 0) {
 		SetProcessPriority("Normal");
+	}
 }
 #else
 #define UpdateProcessPriority() \
@@ -405,6 +408,10 @@ public:
 	OBSWeakSource copyFilter;
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
+
+	void copySceneItem(OBSSceneItem item);
+	OBS::ItemPasteType getItemPasteType();
+	void pasteSceneItem(OBSScene scene, bool duplicate);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_ContextToolbar
@@ -647,9 +654,8 @@ private slots:
 
 	void logUploadFinished(const std::string &text, const std::string &error, OBS::LogFileType uploadType);
 
-	void updateCheckFinished();
-
 public slots:
+	void updateCheckFinished();
 	void on_actionAdvAudioProperties_triggered();
 
 public:
@@ -764,8 +770,9 @@ public:
 	inline void EnableOutputs(bool enable)
 	{
 		if (enable) {
-			if (--disableOutputsRef < 0)
+			if (--disableOutputsRef < 0) {
 				disableOutputsRef = 0;
+			}
 		} else {
 			disableOutputsRef++;
 		}

@@ -11,12 +11,14 @@ static int CountVideoSources()
 {
 	int count = 0;
 	auto countSources = [](void *param, obs_source_t *source) {
-		if (!source)
+		if (!source) {
 			return true;
+		}
 
 		uint32_t flags = obs_source_get_output_flags(source);
-		if ((flags & OBS_SOURCE_VIDEO) != 0)
+		if ((flags & OBS_SOURCE_VIDEO) != 0) {
 			(*static_cast<int *>(param))++;
+		}
 
 		return true;
 	};
@@ -28,12 +30,14 @@ static int CountVideoSources()
 bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 {
 	// There are sources, don't need confirmation
-	if (CountVideoSources() != 0)
+	if (CountVideoSources() != 0) {
 		return true;
+	}
 
 	// Ignore no video if no parent is visible to alert on
-	if (!parent->isVisible())
+	if (!parent->isVisible()) {
 		return true;
+	}
 
 	QString msg = QTStr("NoSources.Text");
 	msg += "\n\n";
@@ -48,16 +52,18 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 	messageBox.setIcon(QMessageBox::Question);
 	messageBox.exec();
 
-	if (messageBox.clickedButton() != yesButton)
+	if (messageBox.clickedButton() != yesButton) {
 		return false;
-	else
+	} else {
 		return true;
+	}
 }
 
 StreamSettingsAction UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 {
-	if (obs_service_can_try_to_connect(service))
+	if (obs_service_can_try_to_connect(service)) {
 		return StreamSettingsAction::ContinueStream;
+	}
 
 	char const *serviceType = obs_service_get_type(service);
 	bool isCustomService = (strcmp(serviceType, "rtmp_custom") == 0);
@@ -100,10 +106,12 @@ StreamSettingsAction UIValidation::StreamSettingsConfirmation(QWidget *parent, O
 	messageBox.setIcon(QMessageBox::Warning);
 	messageBox.exec();
 
-	if (messageBox.clickedButton() == settings)
+	if (messageBox.clickedButton() == settings) {
 		return StreamSettingsAction::OpenSettings;
-	if (messageBox.clickedButton() == cancel)
+	}
+	if (messageBox.clickedButton() == cancel) {
 		return StreamSettingsAction::Cancel;
+	}
 
 	return StreamSettingsAction::ContinueStream;
 }

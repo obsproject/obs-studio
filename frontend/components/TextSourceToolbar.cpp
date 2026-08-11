@@ -40,8 +40,9 @@ TextSourceToolbar::TextSourceToolbar(QWidget *parent, OBSSource source)
 	bool single_line = !read_from_file && (!text || (strchr(text, '\n') == nullptr));
 	ui->emptySpace->setVisible(!single_line);
 	ui->text->setVisible(single_line);
-	if (single_line)
+	if (single_line) {
 		ui->text->setText(text);
+	}
 }
 
 TextSourceToolbar::~TextSourceToolbar() {}

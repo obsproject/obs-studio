@@ -360,19 +360,38 @@ static inline bool query_dmabuf_modifiers(EGLDisplay egl_display, EGLint drm_for
 
 	if (max_modifiers != 0) {
 		EGLuint64KHR *modifier_list = bzalloc(max_modifiers * sizeof(EGLuint64KHR));
-		EGLBoolean *external_only = NULL;
 		if (!modifier_list) {
 			blog(LOG_ERROR, "Unable to allocate memory");
+			return false;
+		}
+
+		EGLBoolean *external_only = bzalloc(max_modifiers * sizeof(EGLBoolean));
+		if (!external_only) {
+			blog(LOG_ERROR, "Unable to allocate memory");
+			bfree(modifier_list);
 			return false;
 		}
 
 		if (!glad_eglQueryDmaBufModifiersEXT(egl_display, drm_format, max_modifiers, modifier_list,
 						     external_only, &max_modifiers)) {
 			blog(LOG_ERROR, "Cannot query a list of modifiers: %s", gl_egl_error_to_string(eglGetError()));
+			bfree(external_only);
 			bfree(modifier_list);
 			return false;
 		}
 
+		// Filter out external_only modifiers, since they require special handling.
+		for (int i = 0, j = 0; j < max_modifiers; i++) {
+			if (external_only[i]) {
+				max_modifiers--;
+				memmove(&modifier_list[j], &modifier_list[j + 1],
+					sizeof(EGLuint64KHR) * (max_modifiers - j));
+			} else {
+				j++;
+			}
+		}
+
+		bfree(external_only);
 		*modifiers = modifier_list;
 	}
 

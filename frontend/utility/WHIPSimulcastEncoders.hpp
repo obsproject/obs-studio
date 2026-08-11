@@ -69,14 +69,16 @@ public:
 
 	void SetVideoFormat(enum video_format format)
 	{
-		for (auto enc : whipSimulcastEncoders)
+		for (auto enc : whipSimulcastEncoders) {
 			obs_encoder_set_preferred_video_format(enc, format);
+		}
 	}
 
 	void SetStreamOutput(obs_output_t *streamOutput)
 	{
-		for (size_t i = 0; i < whipSimulcastEncoders.size(); i++)
+		for (size_t i = 0; i < whipSimulcastEncoders.size(); i++) {
 			obs_output_set_video_encoder2(streamOutput, whipSimulcastEncoders[i], i + 1);
+		}
 	}
 
 private:

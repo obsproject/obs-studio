@@ -7,8 +7,9 @@ bool DeckLinkStringToStdString(decklink_string_t input, std::string &output)
 
 	char *buffer = cfstr_copy_cstr(string, kCFStringEncodingASCII);
 
-	if (buffer)
+	if (buffer) {
 		output = std::string(buffer);
+	}
 
 	bfree(buffer);
 	CFRelease(string);

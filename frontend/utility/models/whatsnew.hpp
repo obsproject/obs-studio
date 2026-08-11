@@ -33,10 +33,11 @@ template<typename T> struct nlohmann::adl_serializer<std::optional<T>> {
 
 	static void to_json(json &json, std::optional<T> t)
 	{
-		if (t)
+		if (t) {
 			json = *t;
-		else
+		} else {
 			json = nullptr;
+		}
 	}
 };
 

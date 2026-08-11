@@ -1495,8 +1495,20 @@
             "name": "Piczel.tv",
             "servers": [
                 {
-                    "name": "Default",
-                    "url": "rtmp://piczel.tv:1935/live"
+                    "name": "US East: 1",
+                    "url": "rtmp://boston.piczel.tv/live"
+                },
+                {
+                    "name": "US East: 2",
+                    "url": "rtmp://boston-2.piczel.tv/live"
+                },
+                {
+                    "name": "France",
+                    "url": "rtmp://france.piczel.tv/live"
+                },
+                {
+                    "name": "Brazil",
+                    "url": "rtmp://brazil.piczel.tv/live"
                 }
             ],
             "recommended": {

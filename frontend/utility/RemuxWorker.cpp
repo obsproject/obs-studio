@@ -22,8 +22,9 @@
 
 void RemuxWorker::UpdateProgress(float percent)
 {
-	if (abs(lastProgress - percent) < 0.1f)
+	if (abs(lastProgress - percent) < 0.1f) {
 		return;
+	}
 
 	emit updateProgress(percent);
 	lastProgress = percent;

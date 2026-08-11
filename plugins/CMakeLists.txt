@@ -36,9 +36,25 @@ add_obs_plugin(
     PLATFORMS WINDOWS MACOS LINUX
     WITH_MESSAGE
 )
+add_obs_plugin(aja-output-ui PLATFORMS WINDOWS MACOS LINUX WITH_MESSAGE)
 add_obs_plugin(coreaudio-encoder PLATFORMS WINDOWS MACOS)
 add_obs_plugin(
     decklink
+    PLATFORMS WINDOWS MACOS LINUX
+    WITH_MESSAGE
+)
+add_obs_plugin(
+    decklink-captions
+    PLATFORMS WINDOWS MACOS LINUX
+    WITH_MESSAGE
+)
+add_obs_plugin(
+    decklink-output-ui
+    PLATFORMS WINDOWS MACOS LINUX
+    WITH_MESSAGE
+)
+add_obs_plugin(
+    frontend-tools
     PLATFORMS WINDOWS MACOS LINUX
     WITH_MESSAGE
 )

@@ -168,6 +168,9 @@ char *get_hook_path(bool b64)
 
 #define IMPLICIT_LAYERS L"SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers"
 
+#undef warn
+#define warn(format, ...) blog(LOG_WARNING, "update_hook_file: " format, ##__VA_ARGS__)
+
 static bool update_hook_file(bool b64)
 {
 	wchar_t temp[MAX_PATH];
@@ -181,16 +184,20 @@ static bool update_hook_file(bool b64)
 		      L"win-capture\\");
 	make_filename(temp, L"obs-vulkan", L".json");
 
-	if (_wfullpath(src_json, temp, MAX_PATH) == NULL)
+	if (_wfullpath(src_json, temp, MAX_PATH) == NULL) {
+		warn("failed to get full path for %ls", temp);
 		return false;
+	}
 
 	StringCbCopyW(temp, sizeof(temp),
 		      L"..\\..\\data\\obs-plugins\\"
 		      L"win-capture\\");
 	make_filename(temp, L"graphics-hook", L".dll");
 
-	if (_wfullpath(src, temp, MAX_PATH) == NULL)
+	if (_wfullpath(src, temp, MAX_PATH) == NULL) {
+		warn("failed to get full path for %ls", temp);
 		return false;
+	}
 
 	get_programdata_path(temp, L"obs-studio-hook\\");
 	StringCbCopyW(dst_json, sizeof(dst_json), temp);
@@ -199,19 +206,31 @@ static bool update_hook_file(bool b64)
 	make_filename(dst, L"graphics-hook", L".dll");
 
 	if (!file_exists(src)) {
+		warn("source graphics-hook%d.dll missing", b64 ? 64 : 32);
 		return false;
 	}
 	if (!file_exists(src_json)) {
+		warn("source obs-vulkan%d.json missing", b64 ? 64 : 32);
 		return false;
 	}
 	if (!file_exists(dst) || !file_exists(dst_json)) {
-		CreateDirectoryW(temp, NULL);
+		if (!CreateDirectoryW(temp, NULL)) {
+			DWORD err = GetLastError();
+			if (err != ERROR_ALREADY_EXISTS) {
+				warn("failed to create directory %ls (%lu)", temp, err);
+				return false;
+			}
+		}
 		if (has_elevation())
 			add_aap_perms(temp);
-		if (!CopyFileW(src_json, dst_json, false))
+		if (!CopyFileW(src_json, dst_json, false)) {
+			warn("failed to install %ls (%lu)", dst_json, GetLastError());
 			return false;
-		if (!CopyFileW(src, dst, false))
+		}
+		if (!CopyFileW(src, dst, false)) {
+			warn("failed to install %ls (%lu)", dst, GetLastError());
 			return false;
+		}
 		return true;
 	}
 
@@ -220,34 +239,46 @@ static bool update_hook_file(bool b64)
 
 	struct win_version_info ver_src = {0};
 	struct win_version_info ver_dst = {0};
-	if (!get_dll_ver(src, &ver_src))
+	if (!get_dll_ver(src, &ver_src)) {
+		warn("failed to get version of source");
 		return false;
+	}
 #ifndef _DEBUG
-	if (!get_dll_ver(dst, &ver_dst))
+	if (!get_dll_ver(dst, &ver_dst)) {
+		warn("failed to get version of %ls", dst);
 		return false;
+	}
 #endif
 
 	/* if source is greater than dst, overwrite new file  */
 	while (win_version_compare(&ver_dst, &ver_src) < 0) {
-		if (!CopyFileW(src_json, dst_json, false))
+		if (!CopyFileW(src_json, dst_json, false)) {
+			warn("failed to update %ls (%lu)", dst_json, GetLastError());
 			return false;
-		if (!CopyFileW(src, dst, false))
+		}
+		if (!CopyFileW(src, dst, false)) {
+			warn("failed to update %ls (%lu)", dst, GetLastError());
 			return false;
+		}
 
-		if (!get_dll_ver(dst, &ver_dst))
+		if (!get_dll_ver(dst, &ver_dst)) {
+			warn("failed to get version of %ls", dst);
 			return false;
+		}
 	}
 
 	/* do not use if major version incremented in target compared to
 	 * ours */
 	if (ver_dst.major > ver_src.major) {
+		warn("target %ls has major version %d, source has major version %d", dst, ver_dst.major, ver_src.major);
 		return false;
 	}
 
 	return true;
 }
 
-#define warn(format, ...) blog(LOG_WARNING, "%s: " format, "[Vulkan Capture Init]", ##__VA_ARGS__)
+#undef warn
+#define warn(format, ...) blog(LOG_WARNING, "[Vulkan Capture Init]: " format, ##__VA_ARGS__)
 
 /* Sets vulkan layer registry if it doesn't already exist */
 static void init_vulkan_registry(bool b64)

@@ -76,7 +76,7 @@ runs:
         Invoke-External "C:\Program Files (x86)\PVS-Studio\PlogConverter.exe" @conversionParams
 
     - name: Upload PVS-Studio Logs
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: 'pvs-analysis-log'
         path: |
@@ -84,7 +84,7 @@ runs:
           ${{ github.workspace }}/analysis.plog.sarif
 
     - name: Upload PVS-Studio Report
-      uses: github/codeql-action/upload-sarif@ebcb5b36ded6beda4ceefea6a8bc4cc885255bb3
+      uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
       with:
         sarif_file: "${{ github.workspace }}/analysis.plog.sarif"
         category: 'PVS-Studio (Windows)'

@@ -35,8 +35,9 @@ void ImageSourceToolbar::on_browse_clicked()
 	const char *default_path = obs_property_path_default_path(p);
 
 	QString startDir = ui->path->text();
-	if (startDir.isEmpty())
+	if (startDir.isEmpty()) {
 		startDir = default_path;
+	}
 
 	QString path = OpenFile(this, desc, startDir, filter);
 	if (path.isEmpty()) {

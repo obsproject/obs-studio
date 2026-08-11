@@ -98,8 +98,17 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		enc->props.bitrate = obs_data_get_int(settings, "bitrate");
 		enc->props.max_bitrate = obs_data_get_int(settings, "max_bitrate");
 
+		bool cqvbr = astrcmpi(enc->props.rate_control, "CQVBR") == 0;
 		bool vbr = (enc->config.rcParams.rateControlMode == NV_ENC_PARAMS_RC_VBR);
-		enc->config.rcParams.averageBitRate = (uint32_t)enc->props.bitrate * 1000;
+
+		if (cqvbr) {
+			enc->config.rcParams.targetQuality = (uint8_t)obs_data_get_int(settings, "target_quality");
+			enc->config.rcParams.averageBitRate = 0;
+		} else {
+			enc->config.rcParams.targetQuality = 0;
+			enc->config.rcParams.averageBitRate = (uint32_t)enc->props.bitrate * 1000;
+		}
+
 		enc->config.rcParams.maxBitRate = vbr ? (uint32_t)enc->props.max_bitrate * 1000
 						      : (uint32_t)enc->props.bitrate * 1000;
 
@@ -1029,16 +1038,19 @@ static void nvenc_destroy(void *data)
 	for (size_t i = 0; i < enc->bitstreams.num; i++) {
 		nv_bitstream_free(enc, &enc->bitstreams.array[i]);
 	}
-	if (enc->session)
-		nv.nvEncDestroyEncoder(enc->session);
-
 #ifdef _WIN32
 	d3d11_free_textures(enc);
-	d3d11_free(enc);
 #else
 	cuda_opengl_free(enc);
 #endif
 	cuda_free_surfaces(enc);
+
+	if (enc->session)
+		nv.nvEncDestroyEncoder(enc->session);
+
+#ifdef _WIN32
+	d3d11_free(enc);
+#endif
 	cuda_ctx_free(enc);
 
 	bfree(enc->header);
@@ -1392,7 +1404,8 @@ struct obs_encoder_info h264_nvenc_info = {
 	.id = "obs_nvenc_h264_tex",
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
+		OBS_ENCODER_CAP_ROI,
 	.get_name = h264_nvenc_get_name,
 	.create = h264_nvenc_create,
 	.destroy = nvenc_destroy,
@@ -1413,7 +1426,8 @@ struct obs_encoder_info hevc_nvenc_info = {
 	.id = "obs_nvenc_hevc_tex",
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
+		OBS_ENCODER_CAP_ROI,
 	.get_name = hevc_nvenc_get_name,
 	.create = hevc_nvenc_create,
 	.destroy = nvenc_destroy,
@@ -1434,7 +1448,8 @@ struct obs_encoder_info av1_nvenc_info = {
 	.id = "obs_nvenc_av1_tex",
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
+		OBS_ENCODER_CAP_ROI,
 	.get_name = av1_nvenc_get_name,
 	.create = av1_nvenc_create,
 	.destroy = nvenc_destroy,
@@ -1453,7 +1468,8 @@ struct obs_encoder_info h264_nvenc_soft_info = {
 	.id = "obs_nvenc_h264_soft",
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_INTERNAL,
 	.get_name = h264_nvenc_soft_get_name,
 	.create = h264_nvenc_soft_create,
 	.destroy = nvenc_destroy,
@@ -1471,7 +1487,8 @@ struct obs_encoder_info hevc_nvenc_soft_info = {
 	.id = "obs_nvenc_hevc_soft",
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_INTERNAL,
 	.get_name = hevc_nvenc_soft_get_name,
 	.create = hevc_nvenc_soft_create,
 	.destroy = nvenc_destroy,
@@ -1489,7 +1506,8 @@ struct obs_encoder_info av1_nvenc_soft_info = {
 	.id = "obs_nvenc_av1_soft",
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_INTERNAL,
 	.get_name = av1_nvenc_soft_get_name,
 	.create = av1_nvenc_soft_create,
 	.destroy = nvenc_destroy,

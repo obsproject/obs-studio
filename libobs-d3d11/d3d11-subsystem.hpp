@@ -533,10 +533,12 @@ struct gs_texture_2d : gs_texture {
 	inline void Release()
 	{
 		texture.Release();
-		for (ComPtr<ID3D11RenderTargetView> &rt : renderTarget)
+		for (ComPtr<ID3D11RenderTargetView> &rt : renderTarget) {
 			rt.Release();
-		for (ComPtr<ID3D11RenderTargetView> &rt : renderTargetLinear)
+		}
+		for (ComPtr<ID3D11RenderTargetView> &rt : renderTargetLinear) {
 			rt.Release();
+		}
 		gdiSurface.Release();
 		shaderRes.Release();
 		shaderResLinear.Release();
@@ -738,12 +740,15 @@ struct gs_vertex_shader : gs_shader {
 	inline uint32_t NumBuffersExpected() const
 	{
 		uint32_t count = nTexUnits + 1;
-		if (hasNormals)
+		if (hasNormals) {
 			count++;
-		if (hasColors)
+		}
+		if (hasColors) {
 			count++;
-		if (hasTangents)
+		}
+		if (hasTangents) {
 			count++;
+		}
 
 		return count;
 	}
@@ -786,10 +791,12 @@ struct gs_pixel_shader : gs_shader {
 	inline void GetSamplerStates(ID3D11SamplerState **states)
 	{
 		size_t i;
-		for (i = 0; i < samplers.size(); i++)
+		for (i = 0; i < samplers.size(); i++) {
 			states[i] = samplers[i]->sampler.state;
-		for (; i < GS_MAX_TEXTURES; i++)
+		}
+		for (; i < GS_MAX_TEXTURES; i++) {
 			states[i] = NULL;
+		}
 	}
 
 	gs_pixel_shader(gs_device_t *device, const char *file, const char *shaderString);

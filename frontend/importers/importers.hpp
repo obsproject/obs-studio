@@ -103,8 +103,9 @@ static inline std::string GetFilenameFromPath(const std::string &path)
 {
 #ifdef _WIN32
 	size_t pos = path.find_last_of('\\');
-	if (pos == -1 || pos < path.find_last_of('/'))
+	if (pos == -1 || pos < path.find_last_of('/')) {
 		pos = path.find_last_of('/');
+	}
 #else
 	size_t pos = path.find_last_of('/');
 #endif
@@ -121,8 +122,9 @@ static inline std::string GetFolderFromPath(const std::string &path)
 {
 #ifdef _WIN32
 	size_t pos = path.find_last_of('\\');
-	if (pos == -1 || pos < path.find_last_of('/'))
+	if (pos == -1 || pos < path.find_last_of('/')) {
 		pos = path.find_last_of('/');
+	}
 #else
 	size_t pos = path.find_last_of('/');
 #endif
@@ -147,14 +149,17 @@ static inline std::string ReadLine(std::string &str)
 
 	size_t pos = str.find('\n');
 
-	if (pos == std::string::npos)
+	if (pos == std::string::npos) {
 		pos = str.find(EOF);
+	}
 
-	if (pos == std::string::npos)
+	if (pos == std::string::npos) {
 		pos = str.find('\0');
+	}
 
-	if (pos == std::string::npos)
+	if (pos == std::string::npos) {
 		return "";
+	}
 
 	std::string res = str.substr(0, pos);
 	str = str.substr(pos + 1);

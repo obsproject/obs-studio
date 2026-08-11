@@ -175,8 +175,9 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 		for (int i = 0; i < count(); i++) {
 			auto *wItem = item(i);
 
-			if (wItem->isSelected())
+			if (wItem->isSelected()) {
 				continue;
+			}
 
 			QModelIndex index = indexFromItem(wItem);
 
@@ -193,8 +194,9 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 		for (int i = 0; i < count(); i++) {
 			auto *wItem = item(i);
 
-			if (wItem->isSelected())
+			if (wItem->isSelected()) {
 				continue;
+			}
 
 			QModelIndex index = indexFromItem(wItem);
 
@@ -238,7 +240,8 @@ void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 // Workaround for QTBUG-105870. Remove once that is solved upstream.
 void SceneTree::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
-	if (selected.count() == 0 && deselected.count() > 0 && !property("clearing").toBool())
+	if (selected.count() == 0 && deselected.count() > 0 && !property("clearing").toBool()) {
 		setCurrentRow(deselected.indexes().front().row());
+	}
 }
 #endif

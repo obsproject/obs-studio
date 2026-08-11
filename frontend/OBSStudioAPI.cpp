@@ -17,8 +17,9 @@ inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks, T cal
 {
 	for (size_t i = 0; i < callbacks.size(); i++) {
 		OBSStudioCallback<T> curCB = callbacks[i];
-		if (curCB.callback == callback && curCB.private_data == private_data)
+		if (curCB.callback == callback && curCB.private_data == private_data) {
 			return i;
+		}
 	}
 
 	return (size_t)-1;
@@ -46,8 +47,9 @@ void OBSStudioAPI::obs_frontend_get_scenes(struct obs_frontend_source_list *sour
 		OBSScene scene = GetOBSRef<OBSScene>(item);
 		obs_source_t *source = obs_scene_get_source(scene);
 
-		if (obs_source_get_ref(source) != nullptr)
+		if (obs_source_get_ref(source) != nullptr) {
 			da_push_back(sources->sources, &source);
+		}
 	}
 }
 
@@ -64,11 +66,10 @@ obs_source_t *OBSStudioAPI::obs_frontend_get_current_scene()
 void OBSStudioAPI::obs_frontend_set_current_scene(obs_source_t *scene)
 {
 	if (main->IsPreviewProgramMode()) {
-		QMetaObject::invokeMethod(main, "TransitionToScene", WaitConnection(),
-					  Q_ARG(OBSSource, OBSSource(scene)));
+		QMetaObject::invokeMethod(main, [this, scene]() { main->TransitionToScene(scene); }, WaitConnection());
 	} else {
-		QMetaObject::invokeMethod(main, "SetCurrentScene", WaitConnection(), Q_ARG(OBSSource, OBSSource(scene)),
-					  Q_ARG(bool, false));
+		QMetaObject::invokeMethod(main, qOverload<OBSSource, bool>(&OBSBasic::SetCurrentScene),
+					  WaitConnection(), scene, false);
 	}
 }
 
@@ -77,8 +78,9 @@ void OBSStudioAPI::obs_frontend_get_transitions(struct obs_frontend_source_list 
 	for (const auto &[uuid, transition] : main->transitions) {
 		obs_source_t *source = transition;
 
-		if (obs_source_get_ref(source) != nullptr)
+		if (obs_source_get_ref(source) != nullptr) {
 			da_push_back(sources->sources, &source);
+		}
 	}
 }
 
@@ -90,7 +92,7 @@ obs_source_t *OBSStudioAPI::obs_frontend_get_current_transition()
 
 void OBSStudioAPI::obs_frontend_set_current_transition(obs_source_t *transition)
 {
-	QMetaObject::invokeMethod(main, "SetTransition", Q_ARG(OBSSource, OBSSource(transition)));
+	QMetaObject::invokeMethod(main, &OBSBasic::SetTransition, OBSSource(transition));
 }
 
 int OBSStudioAPI::obs_frontend_get_transition_duration()
@@ -100,17 +102,17 @@ int OBSStudioAPI::obs_frontend_get_transition_duration()
 
 void OBSStudioAPI::obs_frontend_set_transition_duration(int duration)
 {
-	QMetaObject::invokeMethod(main, "SetTransitionDuration", Q_ARG(int, duration));
+	QMetaObject::invokeMethod(main, &OBSBasic::SetTransitionDuration, duration);
 }
 
 void OBSStudioAPI::obs_frontend_release_tbar()
 {
-	QMetaObject::invokeMethod(main, "TBarReleased");
+	QMetaObject::invokeMethod(main, &OBSBasic::TBarReleased);
 }
 
 void OBSStudioAPI::obs_frontend_set_tbar_position(int position)
 {
-	QMetaObject::invokeMethod(main, "TBarChanged", Q_ARG(int, position));
+	QMetaObject::invokeMethod(main, &OBSBasic::TBarChanged, position);
 }
 
 int OBSStudioAPI::obs_frontend_get_tbar_position()
@@ -158,8 +160,9 @@ void OBSStudioAPI::obs_frontend_set_current_scene_collection(const char *collect
 bool OBSStudioAPI::obs_frontend_add_scene_collection(const char *name)
 {
 	bool success = false;
-	QMetaObject::invokeMethod(main, "CreateNewSceneCollection", WaitConnection(), Q_RETURN_ARG(bool, success),
-				  Q_ARG(QString, QT_UTF8(name)));
+	QMetaObject::invokeMethod(
+		main, [this, &success, name = QT_UTF8(name)]() { success = main->CreateNewSceneCollection(name); },
+		WaitConnection());
 	return success;
 }
 
@@ -205,27 +208,27 @@ void OBSStudioAPI::obs_frontend_set_current_profile(const char *profile)
 
 void OBSStudioAPI::obs_frontend_create_profile(const char *name)
 {
-	QMetaObject::invokeMethod(main, "CreateNewProfile", Q_ARG(QString, name));
+	QMetaObject::invokeMethod(main, &OBSBasic::CreateNewProfile, QString::fromUtf8(name));
 }
 
 void OBSStudioAPI::obs_frontend_duplicate_profile(const char *name)
 {
-	QMetaObject::invokeMethod(main, "CreateDuplicateProfile", Q_ARG(QString, name));
+	QMetaObject::invokeMethod(main, &OBSBasic::CreateDuplicateProfile, QString::fromUtf8(name));
 }
 
 void OBSStudioAPI::obs_frontend_delete_profile(const char *profile)
 {
-	QMetaObject::invokeMethod(main, "DeleteProfile", Q_ARG(QString, profile));
+	QMetaObject::invokeMethod(main, &OBSBasic::DeleteProfile, QString::fromUtf8(profile));
 }
 
 void OBSStudioAPI::obs_frontend_streaming_start()
 {
-	QMetaObject::invokeMethod(main, "StartStreaming");
+	QMetaObject::invokeMethod(main, &OBSBasic::StartStreaming);
 }
 
 void OBSStudioAPI::obs_frontend_streaming_stop()
 {
-	QMetaObject::invokeMethod(main, "StopStreaming");
+	QMetaObject::invokeMethod(main, &OBSBasic::StopStreaming);
 }
 
 bool OBSStudioAPI::obs_frontend_streaming_active()
@@ -235,12 +238,12 @@ bool OBSStudioAPI::obs_frontend_streaming_active()
 
 void OBSStudioAPI::obs_frontend_recording_start()
 {
-	QMetaObject::invokeMethod(main, "StartRecording");
+	QMetaObject::invokeMethod(main, &OBSBasic::StartRecording);
 }
 
 void OBSStudioAPI::obs_frontend_recording_stop()
 {
-	QMetaObject::invokeMethod(main, "StopRecording");
+	QMetaObject::invokeMethod(main, &OBSBasic::StopRecording);
 }
 
 bool OBSStudioAPI::obs_frontend_recording_active()
@@ -275,8 +278,9 @@ bool OBSStudioAPI::obs_frontend_recording_split_file()
 
 bool OBSStudioAPI::obs_frontend_recording_add_chapter(const char *name)
 {
-	if (!os_atomic_load_bool(&recording_active) || os_atomic_load_bool(&recording_paused))
+	if (!os_atomic_load_bool(&recording_active) || os_atomic_load_bool(&recording_paused)) {
 		return false;
+	}
 
 	proc_handler_t *ph = obs_output_get_proc_handler(main->outputHandler->fileOutput);
 
@@ -290,17 +294,17 @@ bool OBSStudioAPI::obs_frontend_recording_add_chapter(const char *name)
 
 void OBSStudioAPI::obs_frontend_replay_buffer_start()
 {
-	QMetaObject::invokeMethod(main, "StartReplayBuffer");
+	QMetaObject::invokeMethod(main, &OBSBasic::StartReplayBuffer);
 }
 
 void OBSStudioAPI::obs_frontend_replay_buffer_save()
 {
-	QMetaObject::invokeMethod(main, "ReplayBufferSave");
+	QMetaObject::invokeMethod(main, &OBSBasic::ReplayBufferSave);
 }
 
 void OBSStudioAPI::obs_frontend_replay_buffer_stop()
 {
-	QMetaObject::invokeMethod(main, "StopReplayBuffer");
+	QMetaObject::invokeMethod(main, &OBSBasic::StopReplayBuffer);
 }
 
 bool OBSStudioAPI::obs_frontend_replay_buffer_active()
@@ -378,15 +382,17 @@ bool OBSStudioAPI::obs_frontend_add_custom_qdock(const char *id, void *dock)
 void OBSStudioAPI::obs_frontend_add_event_callback(obs_frontend_event_cb callback, void *private_data)
 {
 	size_t idx = GetCallbackIdx(callbacks, callback, private_data);
-	if (idx == (size_t)-1)
+	if (idx == (size_t)-1) {
 		callbacks.emplace_back(callback, private_data);
+	}
 }
 
 void OBSStudioAPI::obs_frontend_remove_event_callback(obs_frontend_event_cb callback, void *private_data)
 {
 	size_t idx = GetCallbackIdx(callbacks, callback, private_data);
-	if (idx == (size_t)-1)
+	if (idx == (size_t)-1) {
 		return;
+	}
 
 	callbacks.erase(callbacks.begin() + idx);
 }
@@ -395,8 +401,9 @@ obs_output_t *OBSStudioAPI::obs_frontend_get_streaming_output()
 {
 	auto multitrackVideo = main->outputHandler->multitrackVideo.get();
 	auto mtvOutput = multitrackVideo ? obs_output_get_ref(multitrackVideo->StreamingOutput()) : nullptr;
-	if (mtvOutput)
+	if (mtvOutput) {
 		return mtvOutput;
+	}
 
 	OBSOutput output = main->outputHandler->streamOutput.Get();
 	return obs_output_get_ref(output);
@@ -438,16 +445,17 @@ void OBSStudioAPI::obs_frontend_open_projector(const char *type, int monitor, co
 		name ? name : "",
 	};
 	if (type) {
-		if (astrcmpi(type, "Source") == 0)
+		if (astrcmpi(type, "Source") == 0) {
 			proj.type = ProjectorType::Source;
-		else if (astrcmpi(type, "Scene") == 0)
+		} else if (astrcmpi(type, "Scene") == 0) {
 			proj.type = ProjectorType::Scene;
-		else if (astrcmpi(type, "StudioProgram") == 0)
+		} else if (astrcmpi(type, "StudioProgram") == 0) {
 			proj.type = ProjectorType::StudioProgram;
-		else if (astrcmpi(type, "Multiview") == 0)
+		} else if (astrcmpi(type, "Multiview") == 0) {
 			proj.type = ProjectorType::Multiview;
+		}
 	}
-	QMetaObject::invokeMethod(main, "OpenSavedProjector", WaitConnection(), Q_ARG(SavedProjectorInfo *, &proj));
+	QMetaObject::invokeMethod(main, [this, &proj]() { main->OpenSavedProjector(&proj); }, WaitConnection());
 }
 
 void OBSStudioAPI::obs_frontend_save()
@@ -457,26 +465,28 @@ void OBSStudioAPI::obs_frontend_save()
 
 void OBSStudioAPI::obs_frontend_defer_save_begin()
 {
-	QMetaObject::invokeMethod(main, "DeferSaveBegin");
+	QMetaObject::invokeMethod(main, &OBSBasic::DeferSaveBegin);
 }
 
 void OBSStudioAPI::obs_frontend_defer_save_end()
 {
-	QMetaObject::invokeMethod(main, "DeferSaveEnd");
+	QMetaObject::invokeMethod(main, &OBSBasic::DeferSaveEnd);
 }
 
 void OBSStudioAPI::obs_frontend_add_save_callback(obs_frontend_save_cb callback, void *private_data)
 {
 	size_t idx = GetCallbackIdx(saveCallbacks, callback, private_data);
-	if (idx == (size_t)-1)
+	if (idx == (size_t)-1) {
 		saveCallbacks.emplace_back(callback, private_data);
+	}
 }
 
 void OBSStudioAPI::obs_frontend_remove_save_callback(obs_frontend_save_cb callback, void *private_data)
 {
 	size_t idx = GetCallbackIdx(saveCallbacks, callback, private_data);
-	if (idx == (size_t)-1)
+	if (idx == (size_t)-1) {
 		return;
+	}
 
 	saveCallbacks.erase(saveCallbacks.begin() + idx);
 }
@@ -484,15 +494,17 @@ void OBSStudioAPI::obs_frontend_remove_save_callback(obs_frontend_save_cb callba
 void OBSStudioAPI::obs_frontend_add_preload_callback(obs_frontend_save_cb callback, void *private_data)
 {
 	size_t idx = GetCallbackIdx(preloadCallbacks, callback, private_data);
-	if (idx == (size_t)-1)
+	if (idx == (size_t)-1) {
 		preloadCallbacks.emplace_back(callback, private_data);
+	}
 }
 
 void OBSStudioAPI::obs_frontend_remove_preload_callback(obs_frontend_save_cb callback, void *private_data)
 {
 	size_t idx = GetCallbackIdx(preloadCallbacks, callback, private_data);
-	if (idx == (size_t)-1)
+	if (idx == (size_t)-1) {
 		return;
+	}
 
 	preloadCallbacks.erase(preloadCallbacks.begin() + idx);
 }
@@ -534,7 +546,7 @@ void OBSStudioAPI::obs_frontend_set_preview_program_mode(bool enable)
 
 void OBSStudioAPI::obs_frontend_preview_program_trigger_transition()
 {
-	QMetaObject::invokeMethod(main, "TransitionClicked");
+	QMetaObject::invokeMethod(main, &OBSBasic::TransitionClicked);
 }
 
 bool OBSStudioAPI::obs_frontend_preview_enabled()
@@ -544,8 +556,9 @@ bool OBSStudioAPI::obs_frontend_preview_enabled()
 
 void OBSStudioAPI::obs_frontend_set_preview_enabled(bool enable)
 {
-	if (main->previewEnabled != enable)
+	if (main->previewEnabled != enable) {
 		main->EnablePreviewDisplay(enable);
+	}
 }
 
 obs_source_t *OBSStudioAPI::obs_frontend_get_current_preview_scene()
@@ -561,19 +574,19 @@ obs_source_t *OBSStudioAPI::obs_frontend_get_current_preview_scene()
 void OBSStudioAPI::obs_frontend_set_current_preview_scene(obs_source_t *scene)
 {
 	if (main->IsPreviewProgramMode()) {
-		QMetaObject::invokeMethod(main, "SetCurrentScene", Q_ARG(OBSSource, OBSSource(scene)),
-					  Q_ARG(bool, false));
+		QMetaObject::invokeMethod(main, qOverload<OBSSource, bool>(&OBSBasic::SetCurrentScene),
+					  OBSSource(scene), false);
 	}
 }
 
 void OBSStudioAPI::obs_frontend_take_screenshot()
 {
-	QMetaObject::invokeMethod(main, "Screenshot");
+	QMetaObject::invokeMethod(main, &OBSBasic::Screenshot, nullptr);
 }
 
 void OBSStudioAPI::obs_frontend_take_source_screenshot(obs_source_t *source)
 {
-	QMetaObject::invokeMethod(main, "Screenshot", Q_ARG(OBSSource, OBSSource(source)));
+	QMetaObject::invokeMethod(main, &OBSBasic::Screenshot, OBSSource(source));
 }
 
 obs_output_t *OBSStudioAPI::obs_frontend_get_virtualcam_output()
@@ -584,12 +597,12 @@ obs_output_t *OBSStudioAPI::obs_frontend_get_virtualcam_output()
 
 void OBSStudioAPI::obs_frontend_start_virtualcam()
 {
-	QMetaObject::invokeMethod(main, "StartVirtualCam");
+	QMetaObject::invokeMethod(main, &OBSBasic::StartVirtualCam);
 }
 
 void OBSStudioAPI::obs_frontend_stop_virtualcam()
 {
-	QMetaObject::invokeMethod(main, "StopVirtualCam");
+	QMetaObject::invokeMethod(main, &OBSBasic::StopVirtualCam);
 }
 
 bool OBSStudioAPI::obs_frontend_virtualcam_active()
@@ -604,22 +617,22 @@ void OBSStudioAPI::obs_frontend_reset_video()
 
 void OBSStudioAPI::obs_frontend_open_source_properties(obs_source_t *source)
 {
-	QMetaObject::invokeMethod(main, "OpenProperties", Q_ARG(OBSSource, OBSSource(source)));
+	QMetaObject::invokeMethod(main, &OBSBasic::OpenProperties, OBSSource(source));
 }
 
 void OBSStudioAPI::obs_frontend_open_source_filters(obs_source_t *source)
 {
-	QMetaObject::invokeMethod(main, "OpenFilters", Q_ARG(OBSSource, OBSSource(source)));
+	QMetaObject::invokeMethod(main, &OBSBasic::OpenFilters, OBSSource(source));
 }
 
 void OBSStudioAPI::obs_frontend_open_source_interaction(obs_source_t *source)
 {
-	QMetaObject::invokeMethod(main, "OpenInteraction", Q_ARG(OBSSource, OBSSource(source)));
+	QMetaObject::invokeMethod(main, &OBSBasic::OpenInteraction, OBSSource(source));
 }
 
 void OBSStudioAPI::obs_frontend_open_sceneitem_edit_transform(obs_sceneitem_t *item)
 {
-	QMetaObject::invokeMethod(main, "OpenEditTransform", Q_ARG(OBSSceneItem, OBSSceneItem(item)));
+	QMetaObject::invokeMethod(main, &OBSBasic::OpenEditTransform, OBSSceneItem(item));
 }
 
 char *OBSStudioAPI::obs_frontend_get_current_record_output_path()
@@ -666,8 +679,9 @@ void OBSStudioAPI::obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_li
 {
 	for (const auto &canvas : main->canvases) {
 		obs_canvas_t *ref = obs_canvas_get_ref(canvas);
-		if (ref)
+		if (ref) {
 			da_push_back(canvas_list->canvases, &ref);
+		}
 	}
 }
 
@@ -680,6 +694,28 @@ obs_canvas_t *OBSStudioAPI::obs_frontend_add_canvas(const char *name, obs_video_
 bool OBSStudioAPI::obs_frontend_remove_canvas(obs_canvas_t *canvas)
 {
 	return main->RemoveCanvas(canvas);
+}
+
+void OBSStudioAPI::obs_frontend_copy_sceneitem(obs_sceneitem_t *item)
+{
+	main->clipboard.clear();
+	main->copySceneItem(item);
+	main->UpdateEditMenu();
+}
+
+bool OBSStudioAPI::obs_frontend_can_paste_sceneitem(bool duplicate)
+{
+	auto pasteType = main->getItemPasteType();
+	if (duplicate) {
+		return pasteType == OBS::ItemPasteType::Duplicate || pasteType == OBS::ItemPasteType::Both;
+	} else {
+		return pasteType == OBS::ItemPasteType::Reference || pasteType == OBS::ItemPasteType::Both;
+	}
+}
+
+void OBSStudioAPI::obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
+{
+	main->pasteSceneItem(scene, duplicate);
 }
 
 void OBSStudioAPI::on_load(obs_data_t *settings)
@@ -709,8 +745,9 @@ void OBSStudioAPI::on_save(obs_data_t *settings)
 void OBSStudioAPI::on_event(enum obs_frontend_event event)
 {
 	if (main->disableSaving && event != OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP &&
-	    event != OBS_FRONTEND_EVENT_EXIT)
+	    event != OBS_FRONTEND_EVENT_EXIT) {
 		return;
+	}
 
 	for (size_t i = callbacks.size(); i > 0; i--) {
 		auto cb = callbacks[i - 1];

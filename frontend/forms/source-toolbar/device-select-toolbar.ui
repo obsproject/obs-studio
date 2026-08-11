@@ -27,7 +27,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,1,0,0">
    <property name="sizeConstraint">
-    <enum>QLayout::SetNoConstraint</enum>
+    <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
    </property>
    <property name="leftMargin">
     <number>0</number>
@@ -87,7 +87,7 @@
       <string notr="true"/>
      </property>
      <property name="sizeAdjustPolicy">
-      <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+      <enum>QComboBox::SizeAdjustPolicy::AdjustToMinimumContentsLengthWithIcon</enum>
      </property>
     </widget>
    </item>
@@ -113,10 +113,10 @@
    <item>
     <spacer name="horizontalSpacer">
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
+      <enum>QSizePolicy::Policy::Expanding</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>

@@ -57,7 +57,7 @@
        <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -93,7 +93,7 @@
           <string>Basic.AutoConfig.TestPage.Result.Footer</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -103,7 +103,7 @@
        <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -123,7 +123,7 @@
           <string notr="true"/>
          </property>
          <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

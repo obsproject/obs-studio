@@ -23,8 +23,9 @@
 
 void OBSPreviewScalingComboBox::PreviewFixedScalingChanged(bool fixed)
 {
-	if (fixedScaling == fixed)
+	if (fixedScaling == fixed) {
 		return;
+	}
 
 	fixedScaling = fixed;
 	UpdateSelection();
@@ -60,8 +61,9 @@ void OBSPreviewScalingComboBox::PreviewScaleChanged(float scale)
 
 void OBSPreviewScalingComboBox::SetScaleOutputEnabled(bool show)
 {
-	if (scaleOutputEnabled == show)
+	if (scaleOutputEnabled == show) {
 		return;
+	}
 
 	scaleOutputEnabled = show;
 

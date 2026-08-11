@@ -1152,6 +1152,9 @@ int main(int argc, char *argv[])
 	char **argv;
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	SetDllDirectoryW(L"");
 
 	argv = malloc(argc * sizeof(char *));
 	for (int i = 0; i < argc; i++) {

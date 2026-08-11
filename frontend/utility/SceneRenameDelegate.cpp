@@ -30,8 +30,9 @@ void SceneRenameDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
 {
 	QStyledItemDelegate::setEditorData(editor, index);
 	QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
-	if (lineEdit)
+	if (lineEdit) {
 		lineEdit->selectAll();
+	}
 }
 
 bool SceneRenameDelegate::eventFilter(QObject *editor, QEvent *event)
@@ -41,8 +42,9 @@ bool SceneRenameDelegate::eventFilter(QObject *editor, QEvent *event)
 		switch (keyEvent->key()) {
 		case Qt::Key_Escape: {
 			QLineEdit *lineEdit = qobject_cast<QLineEdit *>(editor);
-			if (lineEdit)
+			if (lineEdit) {
 				lineEdit->undo();
+			}
 			break;
 		}
 		case Qt::Key_Tab:

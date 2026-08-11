@@ -34,8 +34,9 @@ RestreamAuth::RestreamAuth(const Def &d) : OAuthStreamKey(d) {}
 
 RestreamAuth::~RestreamAuth()
 {
-	if (!uiLoaded)
+	if (!uiLoaded) {
 		return;
+	}
 
 	OBSBasic *main = OBSBasic::Get();
 
@@ -49,12 +50,15 @@ try {
 	std::string client_id = RESTREAM_CLIENTID;
 	deobfuscate_str(&client_id[0], RESTREAM_HASH);
 
-	if (!GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION))
+	if (!GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION)) {
 		return false;
-	if (token.empty())
+	}
+	if (token.empty()) {
 		return false;
-	if (!key_.empty())
+	}
+	if (!key_.empty()) {
 		return true;
+	}
 
 	std::string auth;
 	auth += "Authorization: Bearer ";
@@ -76,16 +80,19 @@ try {
 
 	ExecThreadedWithoutBlocking(func, QTStr("Auth.LoadingChannel.Title"),
 				    QTStr("Auth.LoadingChannel.Text").arg(service()));
-	if (!success || output.empty())
+	if (!success || output.empty()) {
 		throw ErrorInfo("Failed to get stream key from remote", error);
+	}
 
 	json = Json::parse(output, error);
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo("Failed to parse json", error);
+	}
 
 	error = json["error"].string_value();
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo(error, json["error_description"].string_value());
+	}
 
 	key_ = json["streamKey"].string_value();
 
@@ -121,12 +128,15 @@ bool RestreamAuth::LoadInternal()
 
 void RestreamAuth::LoadUI()
 {
-	if (!cef)
+	if (!cef) {
 		return;
-	if (uiLoaded)
+	}
+	if (uiLoaded) {
 		return;
-	if (!GetChannelInfo())
+	}
+	if (!GetChannelInfo()) {
 		return;
+	}
 
 	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
@@ -266,8 +276,9 @@ static void DeleteCookies()
 void RegisterRestreamAuth()
 {
 #if !defined(__APPLE__) && !defined(_WIN32)
-	if (QApplication::platformName().contains("wayland"))
+	if (QApplication::platformName().contains("wayland")) {
 		return;
+	}
 #endif
 
 	OAuth::RegisterOAuth(restreamDef, CreateRestreamAuth, RestreamAuth::Login, DeleteCookies);

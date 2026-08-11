@@ -88,12 +88,14 @@ static bool d3d8_init_format_backbuffer(IDirect3DDevice8 *device)
 	D3DSURFACE_DESC desc;
 	HRESULT hr;
 
-	if (!d3d8_get_window_handle(device))
+	if (!d3d8_get_window_handle(device)) {
 		return false;
+	}
 
 	backbuffer = d3d8_get_backbuffer(device);
-	if (!backbuffer)
+	if (!backbuffer) {
 		return false;
+	}
 
 	hr = backbuffer->GetDesc(&desc);
 	backbuffer->Release();
@@ -158,8 +160,9 @@ static void d3d8_free()
 
 	for (size_t i = 0; i < NUM_BUFFERS; i++) {
 		if (data.copy_surfaces[i]) {
-			if (data.surface_locked[i])
+			if (data.surface_locked[i]) {
 				data.copy_surfaces[i]->UnlockRect();
+			}
 			data.copy_surfaces[i]->Release();
 		}
 	}
@@ -173,11 +176,13 @@ static void d3d8_init(IDirect3DDevice8 *device)
 {
 	data.d3d8 = get_system_module("d3d8.dll");
 
-	if (!d3d8_init_format_backbuffer(device))
+	if (!d3d8_init_format_backbuffer(device)) {
 		return;
+	}
 
-	if (!d3d8_shmem_init(device))
+	if (!d3d8_shmem_init(device)) {
 		d3d8_free();
+	}
 }
 
 static void d3d8_shmem_capture_copy(int idx)
@@ -245,8 +250,9 @@ static void d3d8_capture(IDirect3DDevice8 *device, IDirect3DSurface8 *backbuffer
 
 static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice8 *device, D3DPRESENT_PARAMETERS *parameters)
 {
-	if (capture_active())
+	if (capture_active()) {
 		d3d8_free();
+	}
 
 	return RealReset(device, parameters);
 }
@@ -277,8 +283,9 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device, CONST RE
 {
 	IDirect3DSurface8 *backbuffer;
 
-	if (!hooked_reset)
+	if (!hooked_reset) {
 		setup_reset_hooks(device);
+	}
 
 	backbuffer = d3d8_get_backbuffer(device);
 	if (backbuffer) {

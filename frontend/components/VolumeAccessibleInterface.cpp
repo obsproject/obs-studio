@@ -27,10 +27,11 @@ QVariant VolumeAccessibleInterface::currentValue() const
 	QString text;
 	float db = obs_fader_get_db(slider()->fad);
 
-	if (db < -96.0f)
+	if (db < -96.0f) {
 		text = "-inf dB";
-	else
+	} else {
 		text = QString::number(db, 'f', 1).append(" dB");
+	}
 
 	return text;
 }

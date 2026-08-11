@@ -29,11 +29,11 @@ jobs:
   compatibility-validation:
     name: Validate Compatibility 🕵️
     if: github.base_ref == 'master'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
@@ -51,11 +51,11 @@ jobs:
   services-validation:
     name: Validate Services 🕵️
     if: github.base_ref == 'master'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       checks: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
@@ -77,9 +77,9 @@ jobs:
   update-documentation:
     name: Update Documentation 📖
     if: github.repository_owner == 'obsproject' && github.base_ref == 'master'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 

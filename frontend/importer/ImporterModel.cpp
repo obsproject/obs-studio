@@ -37,10 +37,11 @@ QVariant ImporterModel::data(const QModelIndex &index, int role) const
 	QVariant result = QVariant();
 
 	if (index.row() >= options.length()) {
-		if (role == ImporterEntryRole::CheckEmpty)
+		if (role == ImporterEntryRole::CheckEmpty) {
 			result = true;
-		else
+		} else {
 			return QVariant();
+		}
 	} else if (role == Qt::DisplayRole) {
 		switch (index.column()) {
 		case ImporterColumn::Path:
@@ -59,10 +60,11 @@ QVariant ImporterModel::data(const QModelIndex &index, int role) const
 	} else if (role == Qt::CheckStateRole) {
 		switch (index.column()) {
 		case ImporterColumn::Selected:
-			if (options[index.row()].program != "")
+			if (options[index.row()].program != "") {
 				result = options[index.row()].selected ? Qt::Checked : Qt::Unchecked;
-			else
+			} else {
 				result = Qt::Unchecked;
+			}
 		}
 	} else if (role == ImporterEntryRole::CheckEmpty) {
 		result = options[index.row()].empty;
