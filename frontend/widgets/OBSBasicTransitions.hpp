@@ -28,7 +28,7 @@ private slots:
 	void transitionsControlChanged(bool locked);
 
 public:
-	OBSBasicTransitions(OBSBasic *main);
+	OBSBasicTransitions(QWidget *parent, OBSBasic *main);
 	~OBSBasicTransitions() {}
 
 signals:

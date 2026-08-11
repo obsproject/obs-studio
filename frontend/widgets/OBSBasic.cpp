@@ -300,11 +300,10 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		[this]() { OnEvent(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED); }, Qt::DirectConnection);
 
 	// Add transitions dock
-	OBSBasicTransitions *transitionsWidget = new OBSBasicTransitions(this);
 	transitionsDock = new OBSDock(this);
 	transitionsDock->setObjectName(QString::fromUtf8("transitionsDock"));
 	transitionsDock->setWindowTitle(QTStr("Basic.SceneTransitions"));
-	// Parenting is done there so transitions will be deleted alongside transitionsDock
+	OBSBasicTransitions *transitionsWidget = new OBSBasicTransitions(transitionsDock, this);
 	transitionsDock->setWidget(transitionsWidget);
 	addDockWidget(Qt::BottomDockWidgetArea, transitionsDock);
 
@@ -321,12 +320,11 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	connect(transitionsWidget, &OBSBasicTransitions::currentTransitionPropertiesMenuClicked, this,
 		&OBSBasic::createCurrentTransitionPropertiesMenu);
 
-	/* Add controls dock */
-	OBSBasicControls *controls = new OBSBasicControls(this);
+	// Add controls dock
 	controlsDock = new OBSDock(this);
 	controlsDock->setObjectName(QString::fromUtf8("controlsDock"));
 	controlsDock->setWindowTitle(QTStr("Basic.Main.Controls"));
-	/* Parenting is done there so controls will be deleted alongside controlsDock */
+	OBSBasicControls *controls = new OBSBasicControls(controlsDock, this);
 	controlsDock->setWidget(controls);
 
 	connect(controls, &OBSBasicControls::StreamButtonClicked, this, &OBSBasic::StreamActionTriggered);
