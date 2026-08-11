@@ -3,7 +3,9 @@
 
 #include "moc_OBSBasicTransitions.cpp"
 
-OBSBasicTransitions::OBSBasicTransitions(OBSBasic *main) : QFrame(nullptr), ui(new Ui::OBSBasicTransitions)
+OBSBasicTransitions::OBSBasicTransitions(QWidget *parent, OBSBasic *main)
+	: QFrame(parent),
+	  ui(new Ui::OBSBasicTransitions)
 {
 	// Create UI elements
 	ui->setupUi(this);
