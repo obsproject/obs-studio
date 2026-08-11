@@ -305,6 +305,8 @@ static void obs_nix_wayland_key_to_str(obs_key_t key, struct dstr *dstr)
 		return translate_key(key, "Page Down");
 	case OBS_KEY_NUMLOCK:
 		return translate_key(key, "Num Lock");
+	case OBS_KEY_CLEAR:
+		return translate_key(key, "Clear");
 	case OBS_KEY_SCROLLLOCK:
 		return translate_key(key, "Scroll Lock");
 	case OBS_KEY_CAPSLOCK:
@@ -399,6 +401,28 @@ static obs_key_t obs_nix_wayland_key_from_virtual_key(int sym)
 		return OBS_KEY_8;
 	case XKB_KEY_9:
 		return OBS_KEY_9;
+	case XKB_KEY_KP_Home:
+		return OBS_KEY_HOME;
+	case XKB_KEY_KP_Left:
+		return OBS_KEY_LEFT;
+	case XKB_KEY_KP_Up:
+		return OBS_KEY_UP;
+	case XKB_KEY_KP_Right:
+		return OBS_KEY_RIGHT;
+	case XKB_KEY_KP_Down:
+		return OBS_KEY_DOWN;
+	case XKB_KEY_KP_Prior:
+		return OBS_KEY_PAGEUP;
+	case XKB_KEY_KP_Next:
+		return OBS_KEY_PAGEDOWN;
+	case XKB_KEY_KP_End:
+		return OBS_KEY_END;
+	case XKB_KEY_KP_Begin:
+		return OBS_KEY_CLEAR;
+	case XKB_KEY_KP_Insert:
+		return OBS_KEY_INSERT;
+	case XKB_KEY_KP_Delete:
+		return OBS_KEY_DELETE;
 	case XKB_KEY_A:
 		return OBS_KEY_A;
 	case XKB_KEY_a:
