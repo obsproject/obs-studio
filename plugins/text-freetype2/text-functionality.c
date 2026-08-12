@@ -409,14 +409,21 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
 	fclose(tmp_file);
 
+	size_t clean_len = 0;
+	for (size_t i = 0; i < filesize; i++) {
+		if (tmp_read[i] != '\0' && tmp_read[i] != '\r') {
+			tmp_read[clean_len++] = tmp_read[i];
+		}
+	}
+	tmp_read[clean_len] = '\0';
+
 	if (srcdata->text != NULL) {
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
+	srcdata->text = bzalloc((clean_len + 1) * sizeof(wchar_t));
+	os_utf8_to_wcs(tmp_read, clean_len, srcdata->text, clean_len + 1);
 
-	remove_cr(srcdata->text);
 	bfree(tmp_read);
 }
 
@@ -487,18 +494,27 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		return;
 	}
 
-	tmp_read = bzalloc((filesize - cur_pos) + 1);
-	bytes_read = fread(tmp_read, filesize - cur_pos, 1, tmp_file);
+	size_t read_size = filesize - cur_pos;
+	tmp_read = bzalloc(read_size + 1);
+	bytes_read = fread(tmp_read, read_size, 1, tmp_file);
 	fclose(tmp_file);
+
+	// FILTER: Strip embedded null bytes (\0) and Windows carriage returns (\r)
+	size_t clean_len = 0;
+	for (size_t i = 0; i < read_size; i++) {
+		if (tmp_read[i] != '\0' && tmp_read[i] != '\r') {
+			tmp_read[clean_len++] = tmp_read[i];
+		}
+	}
+	tmp_read[clean_len] = '\0';
 
 	if (srcdata->text != NULL) {
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text, (strlen(tmp_read) + 1));
+	srcdata->text = bzalloc((clean_len + 1) * sizeof(wchar_t));
+	os_utf8_to_wcs(tmp_read, clean_len, srcdata->text, clean_len + 1);
 
-	remove_cr(srcdata->text);
 	bfree(tmp_read);
 }
 
