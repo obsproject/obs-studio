@@ -3598,6 +3598,81 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+		{
+            "name": "ITZON",
+			"more_info_link": "https://itzon.tv/wiki#obs",
+            "stream_key_link": "https://itzon.tv/dashboard/stream",
+            "multitrack_video_configuration_url": "https://itzon.tv/api/multitrack/config",
+            "multitrack_video_name": "Enhanced Broadcasting",
+            "multitrack_video_learn_more_link": "https://itzon.tv/wiki#obs",
+            "servers": [
+                {
+                    "name": "Frankfurt, DE",
+                    "url": "rtmp://de-media.itzon.tv/live"
+                },
+                {
+                    "name": "Montreal, CA",
+                    "url": "rtmp://ca-media.itzon.tv/live"
+                },
+                {
+                    "name": "Oregon, US",
+                    "url": "rtmp://us-west-media.itzon.tv/live"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://sg-media.itzon.tv/live"
+                },
+                {
+                    "name": "Tokyo, JP",
+                    "url": "rtmp://jp-media.itzon.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 8000,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
+            "name": "ITZON Restream",
+			"more_info_link": "https://itzon.tv/wiki#obs",
+            "stream_key_link": "https://studio.itzon.tv/dashboard/restream",
+            "servers": [
+                {
+                    "name": "Frankfurt, DE",
+                    "url": "rtmp://de-media.itzon.tv/restream"
+                },
+                {
+                    "name": "Montreal, CA",
+                    "url": "rtmp://ca-media.itzon.tv/restream"
+                },
+                {
+                    "name": "Oregon, US",
+                    "url": "rtmp://us-west-media.itzon.tv/restream"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://sg-media.itzon.tv/restream"
+                },
+                {
+                    "name": "Tokyo, JP",
+                    "url": "rtmp://jp-media.itzon.tv/restream"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 8000,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
