@@ -28,6 +28,8 @@
 
 #include <QDialog>
 
+constexpr int kMaxDeviceChannels = 32;
+
 class ASIOSettingsDialog : public QDialog {
 	Q_OBJECT
 
@@ -40,6 +42,7 @@ public:
 	OBSData settings_;
 	obs_output_t *output_;
 	std::string currentDeviceName;
+	int64_t currentRouting[kMaxDeviceChannels];
 
 public slots:
 	void propertiesChanged();
