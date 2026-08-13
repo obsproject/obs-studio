@@ -27,8 +27,22 @@
 
 extern void output_start();
 extern bool output_stop_and_wait();
-extern bool output_running;
 extern std::string g_currentDeviceName;
+
+static int getTrackFromBitmask(int64_t bitmask)
+{
+	if (bitmask >= 0) {
+		for (int j = 0; j < (MAX_AUDIO_MIXES + 1); j++) {
+			for (int k = 0; k < MAX_AUDIO_CHANNELS; k++) {
+				int64_t idx = (int64_t)k + (1LL << (j + 4));
+				if (bitmask == idx) {
+					return j;
+				}
+			}
+		}
+	}
+	return -1;
+}
 
 ASIOSettingsDialog::ASIOSettingsDialog(QWidget *parent, obs_output_t *output, OBSData settings)
 	: QDialog(parent),
@@ -41,6 +55,10 @@ ASIOSettingsDialog::ASIOSettingsDialog(QWidget *parent, obs_output_t *output, OB
 	setSizeGripEnabled(true);
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	propertiesView = nullptr;
+	for (int i = 0; i < kMaxDeviceChannels; ++i) {
+		const std::string key = "device_ch" + std::to_string(i);
+		currentRouting[i] = settings_ ? obs_data_get_int(settings_, key.c_str()) : -1;
+	}
 }
 
 void ASIOSettingsDialog::showHideDialog(bool enabled)
@@ -87,25 +105,59 @@ void ASIOSettingsDialog::saveSettings()
 	}
 }
 
+static bool isMonitoringTrack(int track)
+{
+	return track == MAX_AUDIO_MIXES;
+}
+
+// Check the transition from 'regular' tracks or no track ( == -1) to the 'monitoring track' bc it requires a restart
+// of the output.
+static bool crossesMonitoringBoundary(int oldTrack, int newTrack)
+{
+	return oldTrack != newTrack && (isMonitoringTrack(oldTrack) || isMonitoringTrack(newTrack));
+}
+
 void ASIOSettingsDialog::propertiesChanged()
 {
 	const char *dev = obs_data_get_string(settings_, "device_name");
 	const std::string newDevice = (dev && *dev) ? dev : std::string{};
 	const bool deviceChanged = newDevice != currentDeviceName;
 
-	if (deviceChanged && obs_output_active(output_)) {
-		if (!output_stop_and_wait()) {
-			blog(LOG_ERROR, "[asio_output_ui] Timed out while stopping the output");
-			obs_data_set_string(settings_, "device_name", currentDeviceName.c_str());
-			propertiesView->ReloadProperties();
-			return;
+	bool routingBoundaryChanged = false;
+	// If the track has changed from a regular track to the monitoring track or vice versa, we need to stop the output and
+	// restart it to ensure single producer access to the circular buffer.
+	for (int i = 0; i < kMaxDeviceChannels; ++i) {
+		std::string key = "device_ch" + std::to_string(i);
+		const int64_t newRouting = obs_data_get_int(settings_, key.c_str());
+		if (crossesMonitoringBoundary(getTrackFromBitmask(currentRouting[i]),
+					      getTrackFromBitmask(newRouting))) {
+			routingBoundaryChanged = true;
+			break;
 		}
 	}
 
+	const bool restartRequired = obs_output_active(output_) && (deviceChanged || routingBoundaryChanged);
+	if (restartRequired && !output_stop_and_wait()) {
+		blog(LOG_ERROR, "[asio_output_ui] Timed out while stopping the output");
+		obs_data_set_string(settings_, "device_name", currentDeviceName.c_str());
+
+		for (int i = 0; i < kMaxDeviceChannels; ++i) {
+			const std::string key = "device_ch" + std::to_string(i);
+			obs_data_set_int(settings_, key.c_str(), currentRouting[i]);
+		}
+
+		propertiesView->ReloadProperties();
+		return;
+	}
 	obs_output_update(output_, settings_);
+
+	for (int i = 0; i < kMaxDeviceChannels; ++i) {
+		const std::string key = "device_ch" + std::to_string(i);
+		currentRouting[i] = obs_data_get_int(settings_, key.c_str());
+	}
 	saveSettings();
 
-	if (deviceChanged && !newDevice.empty() && !output_running) {
+	if (!newDevice.empty() && (restartRequired || deviceChanged) && !obs_output_active(output_)) {
 		output_start();
 	}
 
