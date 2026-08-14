@@ -21,11 +21,13 @@
 
 #include "asio-common.h"
 
+#include <media-io/audio-resampler.h>
 #include <obs-frontend-api.h>
 #include <util/darray.h>
 #include <util/platform.h>
 #include <util/threading.h>
 
+#define EXTRA_MONITORING_MIX 1
 struct asio_device;
 
 struct asio_data {
@@ -54,6 +56,7 @@ struct asio_data {
 	 * track_index range is [0-6] for the 6 OBS tracks + 1 for the monitoring.
 	 */
 	int64_t output_routing[MAX_DEVICE_CHANNELS];
+	audio_resampler_t *monitoring_resampler;
 };
 
 bool asio_output_start(void *vptr);
