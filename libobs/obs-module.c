@@ -672,6 +672,26 @@ static bool parse_binary_from_directory(struct dstr *parsed_bin_path, const char
 	return found;
 }
 
+#ifdef _WIN32
+/* libobs used to give modules their paths as relative, non-resolved unix-style paths which caused issues if
+ * the current directory changed. We now resolve relative paths to absolute paths to fix this, but lots of existing
+ * code still assumes that / is the only valid path separator, so we convert back to / for compatibility. */
+static const char *fixup_path(char *path_in)
+{
+	char *p = path_in;
+
+	while ((p = strchr(p, '\\')))
+		*p++ = '/';
+
+	return path_in;
+}
+#else
+static const char *fixup_path(char *path_in)
+{
+	return path_in;
+}
+#endif
+
 static void process_found_module(struct obs_module_path *omp, const char *path, bool directory,
 				 obs_find_module_callback2_t callback, void *param)
 {
@@ -702,10 +722,14 @@ static void process_found_module(struct obs_module_path *omp, const char *path, 
 	parsed_data_dir = make_data_directory(name.array, omp->data);
 
 	if (parsed_data_dir && bin_found) {
-		info.bin_path = parsed_bin_path.array;
-		info.data_path = parsed_data_dir;
+		/* Ensure modules receive absolute paths so they can find their resources correctly */
+		info.bin_path = fixup_path(os_get_abs_path_ptr(parsed_bin_path.array));
+		info.data_path = fixup_path(os_get_abs_path_ptr(parsed_data_dir));
+
 		info.name = name.array;
 		callback(param, &info);
+		bfree((void *)info.bin_path);
+		bfree((void *)info.data_path);
 	}
 
 	bfree(parsed_data_dir);
