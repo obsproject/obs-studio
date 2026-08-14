@@ -114,8 +114,8 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx, u
 	for (size_t i = mix->inputs.num; i > 0; i--) {
 		struct audio_input *input = mix->inputs.array + (i - 1);
 
-		float(*buf)[AUDIO_OUTPUT_FRAMES] = input->conversion.allow_clipping ? mix->buffer_unclamped
-										    : mix->buffer;
+		float (*buf)[AUDIO_OUTPUT_FRAMES] = input->conversion.allow_clipping ? mix->buffer_unclamped
+										     : mix->buffer;
 		for (size_t i = 0; i < audio->planes; i++)
 			data.data[i] = (uint8_t *)buf[i];
 

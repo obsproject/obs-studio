@@ -42,6 +42,7 @@ runs:
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
         print ::group::Install Dependencies
+        brew update
         brew install --quiet coreutils pandoc
         print ::endgroup::
 

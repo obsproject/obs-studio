@@ -148,15 +148,17 @@ void setupSceneItem(void *_data, obs_scene_t *scene)
 }
 
 std::optional<OBSSceneItem> setupExistingSource(std::string_view uuid, bool visible, bool duplicate,
-						SourceCopyInfo *info = nullptr)
+						SourceCopyInfo *info = nullptr, OBSScene scene = nullptr)
 {
 	OBSSourceAutoRelease temp = obs_get_source_by_uuid(uuid.data());
 	if (!temp) {
 		return std::nullopt;
 	}
 
-	OBSBasic *main = OBSBasic::Get();
-	OBSScene scene = main->GetCurrentScene();
+	if (!scene) {
+		OBSBasic *main = OBSBasic::Get();
+		scene = main->GetCurrentScene();
+	}
 	if (!scene) {
 		return std::nullopt;
 	}
@@ -253,9 +255,9 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 	connect(ui->existingScrollArea->horizontalScrollBar(), &QScrollBar::valueChanged, this,
 		&OBSBasicSourceSelect::updateButtonVisibility);
 
-	ui->createNewFrame->setVisible(false);
-	ui->deprecatedCreateLabel->setVisible(false);
-	ui->deprecatedCreateLabel->setProperty("class", "text-muted");
+	ui->createNewSource->setVisible(false);
+	ui->noExistingLabel->setVisible(false);
+	ui->deprecatedFrame->setVisible(false);
 
 	rebuildSourceTypeList();
 	refreshSources();
@@ -270,16 +272,16 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, undo_stack &undo_s)
 
 	connect(ui->sourceTypeList, &QListWidget::itemDoubleClicked, this, &OBSBasicSourceSelect::createNew);
 	connect(ui->sourceTypeList, &QListWidget::currentItemChanged, this, &OBSBasicSourceSelect::sourceTypeSelected);
-	connect(ui->newSourceName, &QLineEdit::returnPressed, this, &OBSBasicSourceSelect::createNew);
 	connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	connect(ui->addExistingButton, &QAbstractButton::clicked, this, &OBSBasicSourceSelect::addSelectedSources);
 	connect(this, &OBSBasicSourceSelect::selectedItemsChanged, this, [this]() {
 		ui->addExistingButton->setEnabled(selectedItems.size() > 0);
 		if (selectedItems.size() > 0) {
-			ui->addExistingButton->setText(QTStr("Add %1 Existing").arg(selectedItems.size()));
+			ui->addExistingButton->setText(
+				QTStr("Basic.SourceSelect.AddExisting").arg(selectedItems.size()));
 		} else {
-			ui->addExistingButton->setText("Add Existing");
+			ui->addExistingButton->setText(QTStr("Basic.SourceSelect.NoSelection"));
 		}
 	});
 
@@ -310,7 +312,7 @@ void OBSBasicSourceSelect::obsSourceRemoved(void *data, calldata_t *params)
 				  Qt::QueuedConnection, Q_ARG(QString, QString::fromUtf8(uuidPointer)));
 }
 
-void OBSBasicSourceSelect::sourcePaste(SourceCopyInfo &info, bool duplicate)
+void OBSBasicSourceSelect::sourcePaste(SourceCopyInfo &info, bool duplicate, OBSScene scene)
 {
 	OBSSource source = OBSGetStrongRef(info.weak_source);
 	if (!source) {
@@ -319,7 +321,7 @@ void OBSBasicSourceSelect::sourcePaste(SourceCopyInfo &info, bool duplicate)
 
 	std::string uuid = obs_source_get_uuid(source);
 
-	setupExistingSource(uuid, info.visible, duplicate, &info);
+	setupExistingSource(uuid, info.visible, duplicate, &info, scene);
 }
 
 void OBSBasicSourceSelect::showEvent(QShowEvent *)
@@ -535,12 +537,19 @@ void OBSBasicSourceSelect::rebuildSourceTypeList()
 
 	ui->sourceTypeList->sortItems();
 
+	auto *deprecatedTitle = new QListWidgetItem(ui->sourceTypeList);
+	deprecatedTitle->setText(QTStr("Deprecated"));
+	deprecatedTitle->setFlags(deprecatedTitle->flags() & ~Qt::ItemIsEnabled);
+	deprecatedTitle->setFlags(deprecatedTitle->flags() & ~Qt::ItemIsSelectable);
+
+	ui->sourceTypeList->addItem(deprecatedTitle);
+
 	// Shift Deprecated sources to the bottom
 	QList<QListWidgetItem *> deprecatedItems;
-	for (int i = 0; i < ui->sourceTypeList->count(); ++i) {
+	for (int i = ui->sourceTypeList->count() - 1; i >= 0; --i) {
 		QListWidgetItem *item = ui->sourceTypeList->item(i);
 		if (!item) {
-			break;
+			continue;
 		}
 
 		bool isDeprecated = item->data(kDeprecatedRole).toBool();
@@ -553,6 +562,7 @@ void OBSBasicSourceSelect::rebuildSourceTypeList()
 		}
 	}
 
+	std::reverse(deprecatedItems.begin(), deprecatedItems.end());
 	for (const auto &item : deprecatedItems) {
 		ui->sourceTypeList->addItem(item);
 	}
@@ -730,10 +740,6 @@ void OBSBasicSourceSelect::createNew()
 {
 	bool visible = ui->sourceVisible->isChecked();
 
-	if (ui->newSourceName->text().isEmpty()) {
-		return;
-	}
-
 	if (selectedTypeId.compare(kRecentTypeId) == 0) {
 		return;
 	}
@@ -744,7 +750,8 @@ void OBSBasicSourceSelect::createNew()
 
 	std::string sourceType = selectedTypeId.toStdString();
 	const char *id = sourceType.c_str();
-	std::string newName = ui->newSourceName->text().toStdString();
+	QString placeholder = getDisplayNameForSourceType(selectedTypeId);
+	std::string newName = getNewSourceName(placeholder.toStdString().c_str());
 
 	std::optional<OBSSource> createResult = setupNewSource(this, id, newName.c_str());
 	if (!createResult.has_value()) {
@@ -777,7 +784,7 @@ void OBSBasicSourceSelect::createNew()
 	OBSDataAutoRelease wrapper = obs_data_create();
 	obs_data_set_string(wrapper, "id", id);
 	obs_data_set_int(wrapper, "item_id", obs_sceneitem_get_id(item));
-	obs_data_set_string(wrapper, "name", ui->newSourceName->text().toUtf8().constData());
+	obs_data_set_string(wrapper, "name", newName.c_str());
 	obs_data_set_bool(wrapper, "visible", visible);
 
 	auto redo = [sceneUuid](const std::string &data) {
@@ -806,7 +813,7 @@ void OBSBasicSourceSelect::createNew()
 
 		obs_sceneitem_set_id(item, static_cast<int64_t>(obs_data_get_int(dat, "item_id")));
 	};
-	undo_s.add_action(QTStr("Undo.Add").arg(ui->newSourceName->text()), undo, redo,
+	undo_s.add_action(QTStr("Undo.Add").arg(QString::fromStdString(newName)), undo, redo,
 			  std::string(obs_source_get_uuid(newSource)), std::string(obs_data_get_json(wrapper)));
 
 	main->CreatePropertiesWindow(newSource);
@@ -908,9 +915,15 @@ void OBSBasicSourceSelect::sourceTypeSelected(QListWidgetItem *current, QListWid
 	QVariant unversionedIdData = current->data(kUnversionedIdRole);
 	QVariant deprecatedData = current->data(kDeprecatedRole);
 
+	bool isDeprecatedType = deprecatedData.toBool();
+	ui->deprecatedFrame->setVisible(isDeprecatedType);
+
 	if (unversionedIdData.toString().compare(kRecentTypeId) == 0) {
+		ui->sourceSelectTitle->setText(QTStr("Basic.SourceSelect.Recent"));
 		selectedTypeId = kRecentTypeId.toString();
-		ui->createNewFrame->setVisible(false);
+		ui->noExistingLabel->setVisible(false);
+		ui->existingScrollArea->setVisible(true);
+		ui->createNewSource->setVisible(false);
 		updateExistingSources(kRecentListLimit);
 		return;
 	}
@@ -920,31 +933,21 @@ void OBSBasicSourceSelect::sourceTypeSelected(QListWidgetItem *current, QListWid
 		return;
 	}
 
-	ui->createNewFrame->setVisible(true);
-
-	bool isDeprecatedType = deprecatedData.toBool();
-	ui->deprecatedCreateLabel->setVisible(isDeprecatedType);
+	ui->createNewSource->setVisible(type != "scene");
 
 	selectedTypeId = type;
 
 	QString placeHolderText{getDisplayNameForSourceType(selectedTypeId)};
 
-	QString text{placeHolderText};
-	int i = 2;
-	OBSSourceAutoRelease source = nullptr;
-	while ((source = obs_get_source_by_name(QT_TO_UTF8(text)))) {
-		text = QString("%1 %2").arg(placeHolderText).arg(i++);
-	}
-
-	ui->newSourceName->setText(text);
+	ui->createNewSource->setText(
+		QTStr("Basic.SourceSelect.NewSource").arg(getDisplayNameForSourceType(selectedTypeId)));
+	ui->sourceSelectTitle->setText(QString("%1").arg(getDisplayNameForSourceType(selectedTypeId)));
 
 	updateExistingSources();
 
-	if (existingFlowLayout->count() == 0) {
-		QLabel *noExisting = new QLabel();
-		noExisting->setText(
-			QTStr("Basic.SourceSelect.NoExisting").arg(getDisplayNameForSourceType(selectedTypeId)));
-		noExisting->setProperty("class", "text-muted");
-		existingFlowLayout->addWidget(noExisting);
-	}
+	ui->noExistingLabel->setText(
+		QTStr("Basic.SourceSelect.NoExisting").arg(getDisplayNameForSourceType(selectedTypeId)));
+
+	ui->existingScrollArea->setVisible(existingFlowLayout->count() != 0);
+	ui->noExistingLabel->setVisible(existingFlowLayout->count() == 0);
 }

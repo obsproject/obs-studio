@@ -1050,6 +1050,8 @@ bool OBSApp::InitTheme()
 	defaultPalette = palette();
 #if !defined(_WIN32) && !defined(__APPLE__)
 	setStyle(new OBSProxyStyle("Fusion"));
+#elif defined(_WIN32)
+	setStyle(new OBSProxyStyle("windowsvista"));
 #else
 	setStyle(new OBSProxyStyle());
 #endif

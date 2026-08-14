@@ -886,8 +886,14 @@ static inline bool create_inject_process(struct game_capture *gc, const char *in
 	STARTUPINFO si = {0};
 	bool success = false;
 
-	os_utf8_to_wcs_ptr(inject_path, 0, &inject_path_w);
-	os_utf8_to_wcs_ptr(hook_dll, 0, &hook_dll_w);
+	char *abs_inject_path = os_get_abs_path_ptr(inject_path);
+	char *abs_hook_dll = os_get_abs_path_ptr(hook_dll);
+
+	os_utf8_to_wcs_ptr(abs_inject_path, 0, &inject_path_w);
+	os_utf8_to_wcs_ptr(abs_hook_dll, 0, &hook_dll_w);
+
+	bfree(abs_inject_path);
+	bfree(abs_hook_dll);
 
 	si.cb = sizeof(si);
 

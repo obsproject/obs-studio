@@ -115,8 +115,7 @@ static void LogString(fstream &logFile, const char *timeString, char *str, int l
 	logFile << msg << endl;
 	logfile_mutex.unlock();
 
-	QMetaObject::invokeMethod(App(), "addLogLine", Qt::QueuedConnection, Q_ARG(int, log_level),
-				  Q_ARG(QString, QString(msg.c_str())));
+	QMetaObject::invokeMethod(App(), &OBSApp::addLogLine, Qt::QueuedConnection, log_level, QString(msg.c_str()));
 }
 
 static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
@@ -811,42 +810,6 @@ static void load_debug_privilege(void)
 
 	CloseHandle(token);
 }
-
-static void set_process_mitigations(void)
-{
-	// SetProcessMitigationPolicy is Windows 8+
-	typedef BOOL(WINAPI * PFN_SetProcessMitigationPolicy)(PROCESS_MITIGATION_POLICY, PVOID, SIZE_T);
-	PFN_SetProcessMitigationPolicy pSetProcessMitigationPolicy;
-
-	pSetProcessMitigationPolicy = (PFN_SetProcessMitigationPolicy)GetProcAddress(GetModuleHandle(L"KERNEL32"),
-										     "SetProcessMitigationPolicy");
-
-	if (pSetProcessMitigationPolicy) {
-		PROCESS_MITIGATION_DEP_POLICY dep = {0};
-		dep.DisableAtlThunkEmulation = 1;
-		dep.Enable = 1;
-		dep.Permanent = TRUE;
-		pSetProcessMitigationPolicy(ProcessDEPPolicy, &dep, sizeof(dep));
-
-		PROCESS_MITIGATION_ASLR_POLICY aslr = {0};
-		aslr.EnableBottomUpRandomization = 1;
-		aslr.EnableHighEntropy = 1;
-		aslr.EnableForceRelocateImages = 1;
-		aslr.DisallowStrippedImages = 1;
-		pSetProcessMitigationPolicy(ProcessASLRPolicy, &aslr, sizeof(aslr));
-
-		PROCESS_MITIGATION_EXTENSION_POINT_DISABLE_POLICY xpoints = {0};
-		xpoints.DisableExtensionPoints = 1;
-		pSetProcessMitigationPolicy(ProcessExtensionPointDisablePolicy, &xpoints, sizeof(xpoints));
-
-#ifdef _DEBUG
-		PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY hcheck = {0};
-		hcheck.RaiseExceptionOnInvalidHandleReference = 1;
-		hcheck.HandleExceptionsPermanentlyEnabled = 1;
-		pSetProcessMitigationPolicy(ProcessStrictHandleCheckPolicy, &hcheck, sizeof(hcheck));
-#endif
-	}
-}
 #endif
 
 static inline bool arg_is(const char *arg, const char *long_form, const char *short_form)
@@ -882,10 +845,25 @@ static bool vc_runtime_outdated()
 
 static void set_process_mitigation_policies()
 {
-	// DLL planting protection - prefer system32 images
-	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {};
-	policy.PreferSystem32Images = 1;
-	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
+	PROCESS_MITIGATION_DEP_POLICY dep = {0};
+	dep.DisableAtlThunkEmulation = 1;
+	dep.Enable = 1;
+	dep.Permanent = TRUE;
+	SetProcessMitigationPolicy(ProcessDEPPolicy, &dep, sizeof(dep));
+
+	PROCESS_MITIGATION_ASLR_POLICY aslr = {0};
+	aslr.EnableBottomUpRandomization = 1;
+	aslr.EnableHighEntropy = 1;
+	aslr.EnableForceRelocateImages = 1;
+	aslr.DisallowStrippedImages = 1;
+	SetProcessMitigationPolicy(ProcessASLRPolicy, &aslr, sizeof(aslr));
+
+#ifdef _DEBUG
+	PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY hcheck = {0};
+	hcheck.RaiseExceptionOnInvalidHandleReference = 1;
+	hcheck.HandleExceptionsPermanentlyEnabled = 1;
+	SetProcessMitigationPolicy(ProcessStrictHandleCheckPolicy, &hcheck, sizeof(hcheck));
+#endif
 }
 #endif
 
@@ -955,7 +933,6 @@ int main(int argc, char *argv[])
 	SetDllDirectoryW(L"");
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
-	set_process_mitigations();
 
 	/* Shutdown priority value is a range from 0 - 4FF with higher values getting first priority.
 	 * 000 - 0FF and 400 - 4FF are reserved system ranges.

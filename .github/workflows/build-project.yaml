@@ -4,7 +4,7 @@ on:
 jobs:
   check-event:
     name: Event Data 🔎
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     defaults:
       run:
         shell: bash
@@ -146,6 +146,7 @@ jobs:
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           target: ${{ matrix.target }}
           config: ${{ needs.check-event.outputs.config }}
@@ -158,6 +159,7 @@ jobs:
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-macos-${{ matrix.target }}-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_macos/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.*
@@ -178,8 +180,9 @@ jobs:
   ubuntu-build:
     name: Ubuntu 🐧
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     needs: check-event
     defaults:
@@ -216,6 +219,7 @@ jobs:
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           target: x86_64
           config: ${{ needs.check-event.outputs.config }}
@@ -223,12 +227,14 @@ jobs:
 
       - name: Upload Source Tarball 🗜️
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-${{ matrix.os }}-sources-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-sources.*
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-${{ matrix.os }}-x86_64-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_ubuntu/obs-studio-*-x86_64-ubuntu-gnu.*
@@ -248,7 +254,7 @@ jobs:
 
   flatpak-build:
     name: Flatpak 📦
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: check-event
     defaults:
       run:
@@ -379,7 +385,7 @@ jobs:
     strategy:
       matrix:
         architecture: [x64, arm64]
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     needs: check-event
     defaults:
       run:
@@ -408,6 +414,7 @@ jobs:
 
       - name: Package OBS Studio 📀
         uses: ./.github/actions/package-obs
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           target: ${{ matrix.architecture }}
           config: ${{ needs.check-event.outputs.config }}
@@ -415,6 +422,7 @@ jobs:
 
       - name: Upload Artifacts 📡
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ fromJSON(needs.check-event.outputs.package) }}
         with:
           name: obs-studio-windows-${{ matrix.architecture }}-${{ needs.check-event.outputs.commitHash }}
           path: ${{ github.workspace }}/build_${{ matrix.architecture }}/obs-studio-*-windows-${{ matrix.architecture }}.zip

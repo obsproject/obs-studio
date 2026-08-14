@@ -29,7 +29,7 @@ jobs:
   compatibility-validation:
     name: Validate Compatibility 🕵️
     if: github.ref_name == 'master'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       checks: write
     steps:
@@ -53,7 +53,7 @@ jobs:
   services-validation:
     name: Validate Services 🕵️
     if: github.ref_name == 'master'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       checks: write
     steps:
@@ -79,7 +79,7 @@ jobs:
   update-documentation:
     name: Update Documentation 📖
     if: github.repository_owner == 'obsproject' && (github.ref_name == 'master' || github.ref_type == 'tag')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -101,7 +101,7 @@ jobs:
   deploy-documentation:
     name: Deploy Documentation to Cloudflare ☁️
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: update-documentation
     defaults:
       run:
@@ -136,78 +136,9 @@ jobs:
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages publish . --project-name=${{ vars.CF_PAGES_PROJECT }} --commit-hash='${{ steps.setup.outputs.commitHash }}'
 
-  create-appcast:
-    name: Create Sparkle Appcast 🎙️
-    if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
-    runs-on: macos-26
-    needs: build-project
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [arm64, x86_64]
-    defaults:
-      run:
-        shell: zsh --no-rcs --errexit --pipefail {0}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          submodules: recursive
-          fetch-depth: 0
-          ref: ${{ github.ref }}
-
-      - name: Set Up Environment 🔧
-        id: setup
-        run: |
-          : Set Up Environment 🔧
-          if (( ${+RUNNER_DEBUG} )) setopt XTRACE
-
-          local channel='stable'
-          if [[ ${GITHUB_REF_NAME} == *(beta|rc)* ]] {
-            channel='beta'
-          }
-
-          local -A arch_names=(x86_64 intel arm64 apple)
-          print "cpuName=${arch_names[${{ matrix.target }}]}" >> $GITHUB_OUTPUT
-          print "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
-          print "channel=${channel}" >> $GITHUB_OUTPUT
-
-      - name: Download Artifact 📥
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: obs-studio-macos-${{ matrix.target }}-${{ steps.setup.outputs.commitHash }}
-
-      - name: Generate Appcast 🎙️
-        id: generate-appcast
-        uses: ./.github/actions/sparkle-appcast
-        with:
-          sparklePrivateKey: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-          baseImage: ${{ github.workspace }}/obs-studio-*-macos-${{ steps.setup.outputs.cpuName }}.dmg
-          channel: ${{ steps.setup.outputs.channel }}
-          count: 1
-          urlPrefix: 'https://cdn-fastly.obsproject.com/downloads'
-          customTitle: 'OBS Studio'
-          customLink: 'https://obsproject.com/'
-
-      - name: Upload Artifacts 📡
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: macos-sparkle-update-${{ matrix.target }}
-          path: ${{ github.workspace }}/output
-
-  merge-appcasts:
-    runs-on: ubuntu-24.04
-    needs: create-appcast
-    steps:
-      - name: Merge Appcasts
-        uses: actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: macos-sparkle-update
-          pattern: macos-sparkle-update-*
-          delete-merged: true
-
   sign-windows-build:
     name: Windows Signing ✍️
-    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@037100a28131fc10127f5a3f85b80306ebe1b6ff
+    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@ac19ea663375cd02997be92b7d8ff6dd89a511ad
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
     needs: build-project
     permissions:
@@ -219,7 +150,7 @@ jobs:
   create-release:
     name: Create Release 🛫
     if: github.ref_type == 'tag'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: [build-project, sign-windows-build]
     defaults:
       run:
@@ -263,9 +194,9 @@ jobs:
           macos_arm64_dsym_artifact_name="obs-studio-macos-arm64-${commit_hash}-dSYMs"
           macos_intel_artifact_name="obs-studio-macos-x86_64-${commit_hash}"
           macos_intel_dsym_artifact_name="obs-studio-macos-x86_64-${commit_hash}-dSYMs"
-          ubuntu_2404_x86_64_artifact_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}"
-          ubuntu_2404_x86_64_debug_name="obs-studio-ubuntu-24.04-x86_64-${commit_hash}-dbgsym"
-          ubuntu_2404_sources_name="obs-studio-ubuntu-24.04-sources-${commit_hash}"
+          ubuntu_2604_x86_64_artifact_name="obs-studio-ubuntu-26.04-x86_64-${commit_hash}"
+          ubuntu_2604_x86_64_debug_name="obs-studio-ubuntu-26.04-x86_64-${commit_hash}-dbgsym"
+          ubuntu_2604_sources_name="obs-studio-ubuntu-26.04-sources-${commit_hash}"
           windows_x64_artifact_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-signed"
           windows_x64_installer_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-installer"
           windows_x64_debug_name="obs-studio-windows-x64-${{ steps.check.outputs.version }}-pdbs"
@@ -281,11 +212,11 @@ jobs:
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel.dmg
           mv -v "${macos_intel_dsym_artifact_name}/"obs-studio-*-macos-intel-dSYMs.tar.xz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-macOS-Intel-dSYMs.tar.xz
-          mv -v "${ubuntu_2404_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64.deb
-          mv -v "${ubuntu_2404_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
-            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-24.04-x86_64-dbsym.ddeb
-          mv -v "${ubuntu_2404_sources_name}/"obs-studio-*-sources.tar.gz \
+          mv -v "${ubuntu_2604_x86_64_artifact_name}/"obs-studio-*-x86_64-ubuntu-gnu.deb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-26.04-x86_64.deb
+          mv -v "${ubuntu_2604_x86_64_debug_name}/"obs-studio-*-x86_64-ubuntu-gnu-dbgsym.ddeb \
+            "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Ubuntu-26.04-x86_64-dbsym.ddeb
+          mv -v "${ubuntu_2604_sources_name}/"obs-studio-*-sources.tar.gz \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Sources.tar.gz
           mv -v "${windows_x64_artifact_name}/"OBS-Studio-*.zip \
             "${root_dir}"/OBS-Studio-${{ steps.check.outputs.version }}-Windows-x64.zip
@@ -314,7 +245,7 @@ jobs:
       - name: Create Release 🛫
         if: fromJSON(steps.check.outputs.validTag)
         id: create_release
-        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           draft: true
           prerelease: ${{ fromJSON(steps.check.outputs.prerelease) }}

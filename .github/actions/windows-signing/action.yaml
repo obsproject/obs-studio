@@ -54,6 +54,12 @@ runs:
         Expand-Archive -Path $windows_zip -DestinationPath bin
         Expand-Archive -Path $nsis_zip -DestinationPath nsis
 
+    - name: Install NSIS
+      shell: pwsh
+      run: |
+        # Install NSIS
+        winget install --silent --accept-package-agreements --accept-source-agreements --disable-interactivity -e --id NSIS.NSIS
+
     - name: Setup Google CNG Provider
       shell: pwsh
       env:

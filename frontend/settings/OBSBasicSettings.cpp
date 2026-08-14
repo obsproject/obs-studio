@@ -723,7 +723,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			return;
 		}
 
-		QMetaObject::invokeMethod(settings, "ReloadAudioSources", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(settings, &OBSBasicSettings::ReloadAudioSources, Qt::QueuedConnection);
 	};
 	sourceCreated.Connect(obs_get_signal_handler(), "source_create", ReloadAudioSources, this);
 	channelChanged.Connect(obs_get_signal_handler(), "channel_change", ReloadAudioSources, this);
@@ -732,14 +732,14 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	auto ReloadHotkeys = [](void *data, calldata_t *) {
 		auto settings = static_cast<OBSBasicSettings *>(data);
-		QMetaObject::invokeMethod(settings, "ReloadHotkeys");
+		QMetaObject::invokeMethod(settings, &OBSBasicSettings::ReloadHotkeys, OBS_INVALID_HOTKEY_ID);
 	};
 	hotkeyRegistered.Connect(obs_get_signal_handler(), "hotkey_register", ReloadHotkeys, this);
 
 	auto ReloadHotkeysIgnore = [](void *data, calldata_t *param) {
 		auto settings = static_cast<OBSBasicSettings *>(data);
 		auto key = static_cast<obs_hotkey_t *>(calldata_ptr(param, "key"));
-		QMetaObject::invokeMethod(settings, "ReloadHotkeys", Q_ARG(obs_hotkey_id, obs_hotkey_get_id(key)));
+		QMetaObject::invokeMethod(settings, &OBSBasicSettings::ReloadHotkeys, obs_hotkey_get_id(key));
 	};
 	hotkeyUnregistered.Connect(obs_get_signal_handler(), "hotkey_unregister", ReloadHotkeysIgnore, this);
 
@@ -2442,29 +2442,33 @@ void OBSBasicSettings::LoadAudioSources()
 		audioSourceSignals.emplace_back(
 			handler, "push_to_mute_changed",
 			[](void *data, calldata_t *param) {
-				QMetaObject::invokeMethod(static_cast<QObject *>(data), "setCheckedSilently",
-							  Q_ARG(bool, calldata_bool(param, "enabled")));
+				auto checkBox = static_cast<SilentUpdateCheckBox *>(data);
+				bool enabled = calldata_bool(param, "enabled");
+				QMetaObject::invokeMethod(checkBox, &SilentUpdateCheckBox::setCheckedSilently, enabled);
 			},
 			ptmCB);
 		audioSourceSignals.emplace_back(
 			handler, "push_to_mute_delay",
 			[](void *data, calldata_t *param) {
-				QMetaObject::invokeMethod(static_cast<QObject *>(data), "setValueSilently",
-							  Q_ARG(int, calldata_int(param, "delay")));
+				auto spinBox = static_cast<SilentUpdateSpinBox *>(data);
+				auto delay = static_cast<int>(calldata_int(param, "delay"));
+				QMetaObject::invokeMethod(spinBox, &SilentUpdateSpinBox::setValueSilently, delay);
 			},
 			ptmSB);
 		audioSourceSignals.emplace_back(
 			handler, "push_to_talk_changed",
 			[](void *data, calldata_t *param) {
-				QMetaObject::invokeMethod(static_cast<QObject *>(data), "setCheckedSilently",
-							  Q_ARG(bool, calldata_bool(param, "enabled")));
+				auto checkBox = static_cast<SilentUpdateCheckBox *>(data);
+				bool enabled = calldata_bool(param, "enabled");
+				QMetaObject::invokeMethod(checkBox, &SilentUpdateCheckBox::setCheckedSilently, enabled);
 			},
 			pttCB);
 		audioSourceSignals.emplace_back(
 			handler, "push_to_talk_delay",
 			[](void *data, calldata_t *param) {
-				QMetaObject::invokeMethod(static_cast<QObject *>(data), "setValueSilently",
-							  Q_ARG(int, calldata_int(param, "delay")));
+				auto spinBox = static_cast<SilentUpdateSpinBox *>(data);
+				auto delay = static_cast<int>(calldata_int(param, "delay"));
+				QMetaObject::invokeMethod(spinBox, &SilentUpdateSpinBox::setValueSilently, delay);
 			},
 			pttSB);
 
@@ -2475,9 +2479,9 @@ void OBSBasicSettings::LoadAudioSources()
 		label->setMinimumSize(QSize(170, 0));
 		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 		connect(label, &OBSSourceLabel::removed, this,
-			[this]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
+			[this]() { QMetaObject::invokeMethod(this, &OBSBasicSettings::ReloadAudioSources); });
 		connect(label, &OBSSourceLabel::destroyed, this,
-			[this]() { QMetaObject::invokeMethod(this, "ReloadAudioSources"); });
+			[this]() { QMetaObject::invokeMethod(this, &OBSBasicSettings::ReloadAudioSources); });
 
 		layout->addRow(label, form);
 		return true;
@@ -5572,8 +5576,8 @@ void OBSBasicSettings::SurroundWarning(int idx)
 		button = OBSMessageBox::question(this, QTStr(MULTI_CHANNEL_WARNING ".Title"), warningString);
 
 		if (button == QMessageBox::No) {
-			QMetaObject::invokeMethod(ui->channelSetup, "setCurrentIndex", Qt::QueuedConnection,
-						  Q_ARG(int, lastChannelSetupIdx));
+			QMetaObject::invokeMethod(ui->channelSetup, &QComboBox::setCurrentIndex, Qt::QueuedConnection,
+						  lastChannelSetupIdx);
 			return;
 		}
 	}
@@ -5616,14 +5620,14 @@ void OBSBasicSettings::LowLatencyBufferingChanged(bool checked)
 		auto button = OBSMessageBox::question(this, QTStr(LL_BUFFERING_WARNING ".Title"), warningStr);
 
 		if (button == QMessageBox::No) {
-			QMetaObject::invokeMethod(ui->lowLatencyBuffering, "setChecked", Qt::QueuedConnection,
-						  Q_ARG(bool, false));
+			QMetaObject::invokeMethod(ui->lowLatencyBuffering, &QCheckBox::setChecked, Qt::QueuedConnection,
+						  false);
 			return;
 		}
 	}
 
-	QMetaObject::invokeMethod(this, "UpdateAudioWarnings", Qt::QueuedConnection);
-	QMetaObject::invokeMethod(this, "AudioChangedRestart");
+	QMetaObject::invokeMethod(this, &OBSBasicSettings::UpdateAudioWarnings, Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSBasicSettings::AudioChangedRestart);
 }
 
 void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
@@ -5648,8 +5652,8 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 		button = OBSMessageBox::question(this, SIMPLE_OUTPUT_WARNING("Lossless.Title"), warningString);
 
 		if (button == QMessageBox::No) {
-			QMetaObject::invokeMethod(ui->simpleOutRecQuality, "setCurrentIndex", Qt::QueuedConnection,
-						  Q_ARG(int, lastSimpleRecQualityIdx));
+			QMetaObject::invokeMethod(ui->simpleOutRecQuality, &QComboBox::setCurrentIndex,
+						  Qt::QueuedConnection, lastSimpleRecQualityIdx);
 			return;
 		}
 	}

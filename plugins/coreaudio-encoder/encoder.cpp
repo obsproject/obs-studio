@@ -148,8 +148,7 @@ template<typename T> using cf_ptr = unique_ptr<typename remove_pointer<T>::type>
 #ifndef _MSC_VER
 __attribute__((__format__(__printf__, 3, 4)))
 #endif
-static void
-log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
+static void log_to_dstr(DStr &str, ca_encoder *ca, const char *fmt, ...)
 {
 	dstr prev_str = *static_cast<dstr *>(str);
 

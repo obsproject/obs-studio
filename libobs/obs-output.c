@@ -2371,7 +2371,7 @@ static bool prepare_audio(struct obs_output *output, const struct audio_data *ol
 		cutoff = util_mul_div64(cutoff, output->sample_rate, 1000000000ULL);
 
 		for (size_t i = 0; i < output->planes; i++)
-			new->data[i] += output->audio_size *(uint32_t)cutoff;
+			new->data[i] += output->audio_size * (uint32_t)cutoff;
 		new->frames -= (uint32_t)cutoff;
 	}
 

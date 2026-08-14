@@ -937,14 +937,14 @@ void OBSBasic::InitOBSCallbacks()
 	signalHandlers.emplace_back(
 		obs_get_signal_handler(), "source_filter_add",
 		[](void *data, calldata_t *) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "UpdateEditMenu",
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::UpdateEditMenu,
 						  Qt::QueuedConnection);
 		},
 		this);
 	signalHandlers.emplace_back(
 		obs_get_signal_handler(), "source_filter_remove",
 		[](void *data, calldata_t *) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "UpdateEditMenu",
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::UpdateEditMenu,
 						  Qt::QueuedConnection);
 		},
 		this);
@@ -1149,10 +1149,9 @@ void OBSBasic::OBSInit()
 	previewEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled");
 
 	if (!previewEnabled && !IsPreviewProgramMode()) {
-		QMetaObject::invokeMethod(this, "EnablePreviewDisplay", Qt::QueuedConnection,
-					  Q_ARG(bool, previewEnabled));
+		QMetaObject::invokeMethod(this, &OBSBasic::EnablePreviewDisplay, Qt::QueuedConnection, previewEnabled);
 	} else if (!previewEnabled && IsPreviewProgramMode()) {
-		QMetaObject::invokeMethod(this, "EnablePreviewDisplay", Qt::QueuedConnection, Q_ARG(bool, true));
+		QMetaObject::invokeMethod(this, &OBSBasic::EnablePreviewDisplay, Qt::QueuedConnection, true);
 	}
 
 	disableSaving--;
@@ -1293,7 +1292,7 @@ void OBSBasic::OBSInit()
 	}
 
 	if (!first_run && !has_last_version && !Active()) {
-		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::on_autoConfigure_triggered, Qt::QueuedConnection);
 	}
 
 #if (defined(_WIN32) || defined(__APPLE__)) && (OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
@@ -2052,9 +2051,9 @@ void OBSBasic::closeWindow()
 
 	emit mainWindowClosed();
 
-	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(App(), &OBSApp::quit, Qt::QueuedConnection);
 #else
-	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(App(), &OBSApp::quit, Qt::QueuedConnection);
 #endif
 }
 

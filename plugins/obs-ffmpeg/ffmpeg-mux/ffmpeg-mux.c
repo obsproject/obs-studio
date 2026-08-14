@@ -1156,10 +1156,6 @@ int main(int argc, char *argv[])
 	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	SetDllDirectoryW(L"");
 
-	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {0};
-	policy.PreferSystem32Images = 1;
-	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
-
 	argv = malloc(argc * sizeof(char *));
 	for (int i = 0; i < argc; i++) {
 		size_t len = wcslen(argv_w[i]);

@@ -308,7 +308,7 @@ void SourceTreeModel::AddGroup()
 	st->UpdateWidget(createIndex(0, 0, nullptr), group);
 	UpdateGroupState(true);
 
-	QMetaObject::invokeMethod(st, "Edit", Qt::QueuedConnection, Q_ARG(int, 0));
+	QMetaObject::invokeMethod(st, &SourceTree::Edit, Qt::QueuedConnection, 0);
 }
 
 void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
@@ -353,7 +353,7 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 	/* that's created automatically.                                     */
 
 	int newIdx = indices[0].row();
-	QMetaObject::invokeMethod(st, "NewGroupEdit", Qt::QueuedConnection, Q_ARG(int, newIdx));
+	QMetaObject::invokeMethod(st, &SourceTree::NewGroupEdit, Qt::QueuedConnection, newIdx);
 }
 
 void SourceTreeModel::UngroupSelectedGroups(QModelIndexList &indices)

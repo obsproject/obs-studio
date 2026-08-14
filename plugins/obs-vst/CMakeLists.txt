@@ -42,6 +42,8 @@ target_link_libraries(
 )
 
 if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in obs-vst.rc)
+  target_sources(obs-vst PRIVATE obs-vst.rc)
   set_property(TARGET obs-vst APPEND PROPERTY AUTORCC_OPTIONS --format-version 1)
 endif()
 
