@@ -220,7 +220,7 @@ static struct asio_output_route decode_output_route(int64_t encoded_route, int c
 		return route;
 	}
 
-	for (int mix_index = 0; mix_index < (MAX_AUDIO_MIXES + 1); ++mix_index) {
+	for (int mix_index = 0; mix_index < (MAX_AUDIO_MIXES + EXTRA_MONITORING_MIX); ++mix_index) {
 		const int64_t first_route = 1LL << (mix_index + 4);
 		const int64_t channel_index = encoded_route - first_route;
 
@@ -613,7 +613,7 @@ static bool on_asio_device_changed(void *priv, obs_properties_t *props, obs_prop
 
 				obs_property_list_add_int(p, obs_module_text("Mute"), -1);
 
-				for (int j = 0; j < MAX_AUDIO_MIXES; j++) {
+				for (int j = 0; j < (MAX_AUDIO_MIXES + EXTRA_MONITORING_MIX); j++) {
 					for (int k = 0; k < global_output_asio_data->obs_track_channels; k++) {
 						long long idx = k + (1ULL << (j + 4));
 						char label[32];
@@ -719,7 +719,7 @@ static obs_properties_t *asio_properties_internal(void *vptr, bool is_output)
 									     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 				obs_property_list_add_int(lp, obs_module_text("Mute"), -1);
 
-				for (int j = 0; j < MAX_AUDIO_MIXES; j++) {
+				for (int j = 0; j < (MAX_AUDIO_MIXES + EXTRA_MONITORING_MIX); j++) {
 					for (int k = 0; k < global_output_asio_data->obs_track_channels; k++) {
 						long long idx = k + (1ULL << (j + 4));
 						char label[32];
@@ -918,6 +918,11 @@ static void asio_receive_audio(void *vptr, size_t mix_idx, struct audio_data *fr
 	}
 }
 
+static void asio_receive_audio_monitoring(void *vptr, struct audio_data *frame)
+{
+	asio_receive_audio(vptr, MAX_AUDIO_MIXES, frame);
+}
+
 static bool display_control_panel_output(obs_properties_t *props, obs_property_t *property, void *vptr)
 {
 	return display_control_panel(props, property, vptr, true);
@@ -945,4 +950,5 @@ struct obs_output_info asio_output = {
 	.get_defaults = asio_defaults,
 	.get_properties = asio_output_properties,
 	.raw_audio2 = asio_receive_audio,
+	.raw_audio_monitoring = asio_receive_audio_monitoring,
 };
