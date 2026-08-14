@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2019 by Dillon Pentz <dillon@vodbox.io>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,40 +17,16 @@
 
 #pragma once
 
-#include "ui_OBSMissingFiles.h"
+#include <Idian/Row.hpp>
 
-#include <obs.hpp>
+namespace OBS {
+class HealthCheckItem;
+}
 
-#include <QDialog>
-#include <QPointer>
-
-class MissingFilesModel;
-
-class OBSMissingFiles : public QDialog {
+class HealthCheckInfoRow : public idian::Row {
 	Q_OBJECT
-	Q_PROPERTY(QIcon warningIcon READ GetWarningIcon WRITE SetWarningIcon DESIGNABLE true)
-
-	QPointer<MissingFilesModel> filesModel;
-	std::unique_ptr<Ui::OBSMissingFiles> ui;
 
 public:
-	explicit OBSMissingFiles(obs_missing_files_t *files, QWidget *parent = nullptr);
-	virtual ~OBSMissingFiles() override;
-
-	void addMissingFile(const char *originalPath, const char *sourceName);
-
-	QIcon GetWarningIcon();
-	void SetWarningIcon(const QIcon &icon);
-
-private:
-	void saveFiles();
-	void browseFolders();
-
-	obs_missing_files_t *fileStore;
-
-public slots:
-	void dataChanged();
-
-signals:
-	void allFilesResolved();
+	HealthCheckInfoRow(QWidget *parent, OBS::HealthCheckItem *item);
+	~HealthCheckInfoRow() = default;
 };

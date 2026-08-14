@@ -13,6 +13,8 @@ target_link_libraries(obs-studio PRIVATE OBS::properties-view)
 target_sources(
   obs-studio
   PRIVATE
+    dialogs/HealthCheckDialog.cpp
+    dialogs/HealthCheckDialog.hpp
     dialogs/LogUploadDialog.cpp
     dialogs/LogUploadDialog.hpp
     dialogs/NameDialog.cpp

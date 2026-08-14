@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2019 by Dillon Pentz <dillon@vodbox.io>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,40 +17,35 @@
 
 #pragma once
 
-#include "ui_OBSMissingFiles.h"
+#include <QObject>
 
-#include <obs.hpp>
-
-#include <QDialog>
-#include <QPointer>
-
-class MissingFilesModel;
-
-class OBSMissingFiles : public QDialog {
-	Q_OBJECT
-	Q_PROPERTY(QIcon warningIcon READ GetWarningIcon WRITE SetWarningIcon DESIGNABLE true)
-
-	QPointer<MissingFilesModel> filesModel;
-	std::unique_ptr<Ui::OBSMissingFiles> ui;
+namespace OBS {
+class HealthCheckItem;
+class HealthCheckAction : public QObject {
 
 public:
-	explicit OBSMissingFiles(obs_missing_files_t *files, QWidget *parent = nullptr);
-	virtual ~OBSMissingFiles() override;
+	// Limits constructor to only HealthCheckItem.
+	class PassKey {
+		friend class HealthCheckItem;
+		PassKey() = default;
+	};
 
-	void addMissingFile(const char *originalPath, const char *sourceName);
+	HealthCheckAction(PassKey, QObject *parent);
+	~HealthCheckAction() = default;
 
-	QIcon GetWarningIcon();
-	void SetWarningIcon(const QIcon &icon);
+	HealthCheckAction(const HealthCheckAction &) = delete;
+	HealthCheckAction &operator=(const HealthCheckAction &) = delete;
+
+	void setText(QString text);
+	const QString &text();
+
+	void setCallback(std::function<void()> func);
 
 private:
-	void saveFiles();
-	void browseFolders();
-
-	obs_missing_files_t *fileStore;
+	QString text_{""};
+	std::function<void()> callback = nullptr;
 
 public slots:
-	void dataChanged();
-
-signals:
-	void allFilesResolved();
+	void trigger();
 };
+} // namespace OBS
