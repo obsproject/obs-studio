@@ -26,6 +26,7 @@
 #include <util/platform.h>
 #include <util/threading.h>
 
+#define EXTRA_MONITORING_MIX 1
 struct asio_device;
 
 struct asio_data {
