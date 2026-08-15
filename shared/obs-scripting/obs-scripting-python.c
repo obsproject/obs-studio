@@ -985,6 +985,28 @@ fail:
 	return py_ret;
 }
 
+static PyObject *calldata_scene(PyObject *self, PyObject *args)
+{
+	PyObject *py_ret = NULL;
+	PyObject *py_cd = NULL;
+
+	calldata_t *cd;
+	const char *name;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "Os", &py_cd, &name))
+		goto fail;
+	if (!py_to_libobs(calldata_t, py_cd, &cd))
+		goto fail;
+
+	obs_scene_t *scene = calldata_ptr(cd, name);
+	libobs_to_py(obs_scene_t, scene, false, &py_ret);
+
+fail:
+	return py_ret;
+}
+
 static PyObject *calldata_sceneitem(PyObject *self, PyObject *args)
 {
 	PyObject *py_ret = NULL;
@@ -1002,6 +1024,50 @@ static PyObject *calldata_sceneitem(PyObject *self, PyObject *args)
 
 	obs_sceneitem_t *item = calldata_ptr(cd, name);
 	libobs_to_py(obs_sceneitem_t, item, false, &py_ret);
+
+fail:
+	return py_ret;
+}
+
+static PyObject *calldata_output(PyObject *self, PyObject *args)
+{
+	PyObject *py_ret = NULL;
+	PyObject *py_cd = NULL;
+
+	calldata_t *cd;
+	const char *name;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "Os", &py_cd, &name))
+		goto fail;
+	if (!py_to_libobs(calldata_t, py_cd, &cd))
+		goto fail;
+
+	obs_output_t *output = calldata_ptr(cd, name);
+	libobs_to_py(obs_output_t, output, false, &py_ret);
+
+fail:
+	return py_ret;
+}
+
+static PyObject *calldata_canvas(PyObject *self, PyObject *args)
+{
+	PyObject *py_ret = NULL;
+	PyObject *py_cd = NULL;
+
+	calldata_t *cd;
+	const char *name;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "Os", &py_cd, &name))
+		goto fail;
+	if (!py_to_libobs(calldata_t, py_cd, &cd))
+		goto fail;
+
+	obs_canvas_t *canvas = calldata_ptr(cd, name);
+	libobs_to_py(obs_canvas_t, canvas, false, &py_ret);
 
 fail:
 	return py_ret;
@@ -1203,7 +1269,10 @@ static void add_hook_functions(PyObject *module)
 		DEF_FUNC("timer_remove", timer_remove),
 		DEF_FUNC("timer_add", timer_add),
 		DEF_FUNC("calldata_source", calldata_source),
+		DEF_FUNC("calldata_scene", calldata_scene),
 		DEF_FUNC("calldata_sceneitem", calldata_sceneitem),
+		DEF_FUNC("calldata_output", calldata_output),
+		DEF_FUNC("calldata_canvas", calldata_canvas),
 		DEF_FUNC("source_list_release", source_list_release),
 		DEF_FUNC("sceneitem_list_release", sceneitem_list_release),
 		DEF_FUNC("obs_enum_sources", enum_sources),
