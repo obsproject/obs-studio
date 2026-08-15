@@ -289,6 +289,30 @@ QTableView::indicator:unchecked:disabled {
     image: url(theme:Light/checkbox_unchecked_disabled.svg);
 }
 
+QRadioButton::indicator:checked {
+    image: url(theme:Light/radio_checked.svg);
+}
+
+QRadioButton::indicator:unchecked {
+    image: url(theme:Light/radio_unchecked.svg);
+}
+
+QRadioButton::indicator:checked:hover {
+    image: url(theme:Light/radio_checked_focus.svg);
+}
+
+QRadioButton::indicator:unchecked:hover {
+    image: url(theme:Light/radio_unchecked_focus.svg);
+}
+
+QRadioButton::indicator:checked:disabled {
+    image: url(theme:Light/radio_checked_disabled.svg);
+}
+
+QRadioButton::indicator:unchecked:disabled {
+    image: url(theme:Light/radio_unchecked_disabled.svg);
+}
+
 .indicator-lock::indicator:checked,
 .indicator-lock::indicator:checked:hover {
     image: url(theme:Light/locked.svg);

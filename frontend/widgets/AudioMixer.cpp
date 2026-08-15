@@ -803,13 +803,11 @@ void AudioMixer::createMixerContextMenu()
 
 	showHiddenCheckBox = new MenuCheckBox(QTStr("Basic.AudioMixer.ShowHidden"), mixerMenu);
 	QWidgetAction *showHiddenAction = new QWidgetAction(mixerMenu);
-	showHiddenCheckBox->setAction(showHiddenAction);
 	showHiddenCheckBox->setChecked(showHidden);
 	showHiddenAction->setDefaultWidget(showHiddenCheckBox);
 
 	QWidgetAction *showInactiveAction = new QWidgetAction(mixerMenu);
 	MenuCheckBox *showInactiveCheckBox = new MenuCheckBox(QTStr("Basic.AudioMixer.ShowInactive"), mixerMenu);
-	showInactiveCheckBox->setAction(showInactiveAction);
 	showInactiveCheckBox->setChecked(showInactive);
 	showInactiveAction->setDefaultWidget(showInactiveCheckBox);
 
@@ -817,7 +815,6 @@ void AudioMixer::createMixerContextMenu()
 	const char *hiddenLastString = mixerVertical ? "Basic.AudioMixer.KeepHiddenRight"
 						     : "Basic.AudioMixer.KeepHiddenBottom";
 	MenuCheckBox *hiddenLastCheckBox = new MenuCheckBox(QTStr(hiddenLastString), mixerMenu);
-	hiddenLastCheckBox->setAction(hiddenLastAction);
 	hiddenLastCheckBox->setChecked(keepHiddenLast);
 	hiddenLastAction->setDefaultWidget(hiddenLastCheckBox);
 
@@ -825,7 +822,6 @@ void AudioMixer::createMixerContextMenu()
 	const char *inactiveLastString = mixerVertical ? "Basic.AudioMixer.KeepInactiveRight"
 						       : "Basic.AudioMixer.KeepInactiveBottom";
 	MenuCheckBox *inactiveLastCheckBox = new MenuCheckBox(QTStr(inactiveLastString), mixerMenu);
-	inactiveLastCheckBox->setAction(inactiveLastAction);
 	inactiveLastCheckBox->setChecked(keepInactiveLast);
 	inactiveLastAction->setDefaultWidget(inactiveLastCheckBox);
 
