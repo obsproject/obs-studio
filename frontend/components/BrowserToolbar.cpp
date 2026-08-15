@@ -11,6 +11,11 @@ BrowserToolbar::BrowserToolbar(QWidget *parent, OBSSource source)
 
 BrowserToolbar::~BrowserToolbar() {}
 
+void BrowserToolbar::on_interactButton_clicked()
+{
+	emit interactClicked();
+}
+
 void BrowserToolbar::on_refresh_clicked()
 {
 	OBSSource source = GetSource();

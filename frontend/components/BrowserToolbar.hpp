@@ -13,6 +13,10 @@ public:
 	BrowserToolbar(QWidget *parent, OBSSource source);
 	~BrowserToolbar();
 
+signals:
+	void interactClicked();
+
 public slots:
 	void on_refresh_clicked();
+	void on_interactButton_clicked();
 };
