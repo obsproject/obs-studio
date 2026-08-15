@@ -944,6 +944,9 @@ static void nvvfx_filter_render(void *data, gs_effect_t *effect, bool has_blur)
 			gs_effect_set_texture_srgb(filter->image_param, gs_texrender_get_texture(render));
 			gs_effect_set_float(filter->multiplier_param, multiplier);
 
+			gs_load_vertexbuffer(NULL);
+			gs_load_indexbuffer(NULL);
+
 			while (gs_effect_loop(filter->effect, tech_name)) {
 				gs_draw(GS_TRIS, 0, 3);
 			}

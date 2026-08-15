@@ -2421,6 +2421,8 @@ static bool update_async_texrender(struct obs_source *source, const struct obs_s
 			gs_effect_set_val(max_param, frame->color_range_max, sizeof(float) * 3);
 		}
 
+		gs_load_vertexbuffer(NULL);
+		gs_load_indexbuffer(NULL);
 		gs_draw(GS_TRIS, 0, 3);
 
 		gs_technique_end_pass(tech);
