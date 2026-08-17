@@ -428,8 +428,8 @@ static char *os_get_path_ptr_internal(const char *name, int folder)
 	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
 	dstr_init_move_array(&path, ptr);
 	if (name && *name) {
-	dstr_cat(&path, "\\");
-	dstr_cat(&path, name);
+		dstr_cat(&path, "\\");
+		dstr_cat(&path, name);
 	}
 	return path.array;
 }
@@ -533,6 +533,7 @@ struct os_dir {
 	WIN32_FIND_DATA wfd;
 	bool first;
 	struct os_dirent out;
+	char filename_utf8[FILENAME_MAX_LENGTH_UTF8];
 };
 
 os_dir_t *os_opendir(const char *path)
@@ -580,8 +581,9 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 			return NULL;
 	}
 
-	os_wcs_to_utf8(dir->wfd.cFileName, 0, dir->out.d_name, sizeof(dir->out.d_name));
+	os_wcs_to_utf8(dir->wfd.cFileName, 0, dir->filename_utf8, sizeof(dir->filename_utf8));
 
+	dir->out.d_name = dir->filename_utf8;
 	dir->out.directory = is_dir(&dir->wfd);
 
 	return &dir->out;
