@@ -474,10 +474,7 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 	if (!dir->cur_dirent)
 		return NULL;
 
-	const size_t length = strlen(dir->cur_dirent->d_name);
-	if (sizeof(dir->out.d_name) <= length)
-		return NULL;
-	memcpy(dir->out.d_name, dir->cur_dirent->d_name, length + 1);
+	dir->out.d_name = dir->cur_dirent->d_name;
 
 	dstr_copy(&file_path, dir->path);
 	dstr_cat(&file_path, "/");
