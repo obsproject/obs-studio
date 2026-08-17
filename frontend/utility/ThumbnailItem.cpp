@@ -185,9 +185,11 @@ bool ThumbnailItem::update()
 			return false;
 		}
 
-		auto *obj = new ScreenshotObj(source);
-		obj->setSaveToFile(false);
-		obj->setSize(kDefaultWidth, kDefaultHeight);
+		ScreenshotObj::Options options;
+		options.outputToFile = false;
+		options.size = {kDefaultWidth, kDefaultHeight};
+
+		auto *obj = new ScreenshotObj(source, options);
 
 		connect(obj, &ScreenshotObj::imageReady, this, &ThumbnailItem::updatePixmapFromImage);
 	}

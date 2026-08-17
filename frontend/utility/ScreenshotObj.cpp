@@ -32,24 +32,14 @@
 
 #include "moc_ScreenshotObj.cpp"
 
-namespace {
-void renderTick(void *param, float)
-{
-	ScreenshotObj *self = static_cast<ScreenshotObj *>(param);
-	if (self->stage() == ScreenshotObj::Stage::Finished) {
-		return;
-	}
-
-	obs_enter_graphics();
-	self->processStage();
-	obs_leave_graphics();
-}
-} // namespace
-
-ScreenshotObj::ScreenshotObj(obs_source_t *source) : weakSource(OBSGetWeakRef(source))
+ScreenshotObj::ScreenshotObj(obs_source_t *source, const Options &options)
+	: weakSource(OBSGetWeakRef(source)),
+	  options(options)
 {
 	obs_add_tick_callback(renderTick, this);
 }
+
+ScreenshotObj::ScreenshotObj(obs_source_t *source) : ScreenshotObj(source, {}) {}
 
 ScreenshotObj::~ScreenshotObj()
 {
@@ -59,6 +49,18 @@ ScreenshotObj::~ScreenshotObj()
 	obs_leave_graphics();
 
 	obs_remove_tick_callback(renderTick, this);
+}
+
+void ScreenshotObj::renderTick(void *param, float)
+{
+	ScreenshotObj *self = static_cast<ScreenshotObj *>(param);
+	if (self->stage() == ScreenshotObj::Stage::Finished) {
+		return;
+	}
+
+	obs_enter_graphics();
+	self->processStage();
+	obs_leave_graphics();
 }
 
 void ScreenshotObj::renderScreenshot()
@@ -94,8 +96,8 @@ void ScreenshotObj::renderScreenshot()
 #endif
 	const enum gs_color_format format = gs_get_format_from_space(space);
 
-	outputWidth = customSize.isValid() ? customSize.width() : sourceWidth;
-	outputHeight = customSize.isValid() ? customSize.height() : sourceHeight;
+	outputWidth = options.size.isValid() ? options.size.width() : sourceWidth;
+	outputHeight = options.size.isValid() ? options.size.height() : sourceHeight;
 
 	texrender = gs_texrender_create(format, GS_ZS_NONE);
 	stagesurf = gs_stagesurface_create(outputWidth, outputHeight, format);
@@ -198,7 +200,7 @@ void ScreenshotObj::copyData()
 
 void ScreenshotObj::saveToFile()
 {
-	if (!outputToFile) {
+	if (!options.outputToFile) {
 		QMetaObject::invokeMethod(this, &ScreenshotObj::onFinished, Qt::QueuedConnection);
 		return;
 	}
@@ -352,7 +354,7 @@ void ScreenshotObj::onFinished()
 	}
 
 	if (outputWidth > 0 && outputHeight > 0) {
-		if (outputToFile) {
+		if (options.outputToFile) {
 			emit imageSaved(path);
 		}
 
@@ -360,21 +362,6 @@ void ScreenshotObj::onFinished()
 	}
 
 	this->deleteLater();
-}
-
-void ScreenshotObj::setSize(QSize size)
-{
-	customSize = size;
-}
-
-void ScreenshotObj::setSize(int width, int height)
-{
-	setSize(QSize(width, height));
-}
-
-void ScreenshotObj::setSaveToFile(bool save)
-{
-	outputToFile = save;
 }
 
 void ScreenshotObj::handleSave()
