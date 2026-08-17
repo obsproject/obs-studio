@@ -22,6 +22,7 @@
 #include <dialogs/OBSPermissions.hpp>
 #endif
 #include <utility/BaseLexer.hpp>
+#include <utility/InitException.hpp>
 #include <utility/OBSTranslator.hpp>
 #include <utility/platform.hpp>
 
@@ -690,6 +691,12 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		ret = program.exec();
 
+	} catch (const OBS::InitException &error) {
+		blog(LOG_ERROR, "%s", error.what());
+		if (!error.GetDetail().empty()) {
+			blog(LOG_ERROR, "%s", error.GetDetail().c_str());
+		}
+		OBSErrorBox(nullptr, "%s", QT_TO_UTF8(error.GetUserMessage()));
 	} catch (const char *error) {
 		blog(LOG_ERROR, "%s", error);
 		OBSErrorBox(nullptr, "%s", error);

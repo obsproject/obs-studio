@@ -39,6 +39,7 @@
 #include <dialogs/OBSBasicTransform.hpp>
 #include <models/SceneCollection.hpp>
 #include <settings/OBSBasicSettings.hpp>
+#include <utility/InitException.hpp>
 #include <utility/QuickTransition.hpp>
 #include <utility/SceneRenameDelegate.hpp>
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
@@ -212,11 +213,11 @@ static void SetSafeModuleNames()
 static void SetCoreModuleNames()
 {
 #ifndef SAFE_MODULES
-	throw "SAFE_MODULES not defined";
+	throw OBS::InitException(OBS::InitErrorCode::SafeModulesUndefined);
 #else
 	std::string safeModules = SAFE_MODULES;
 	if (safeModules.empty()) {
-		throw "SAFE_MODULES is empty";
+		throw OBS::InitException(OBS::InitErrorCode::SafeModulesEmpty);
 	}
 	string module;
 	stringstream modules_(SAFE_MODULES);
@@ -954,14 +955,6 @@ void OBSBasic::InitOBSCallbacks()
 #define STARTUP_SEPARATOR "==== Startup complete ==============================================="
 #define SHUTDOWN_SEPARATOR "==== Shutting down =================================================="
 
-#define UNSUPPORTED_ERROR                                                     \
-	"Failed to initialize video:\n\nRequired graphics API functionality " \
-	"not found.  Your GPU may not be supported."
-
-#define UNKNOWN_ERROR                                                  \
-	"Failed to initialize video.  Your GPU may not be supported, " \
-	"or your graphics drivers may need to be updated."
-
 static inline void LogEncoders()
 {
 	constexpr uint32_t hide_flags = OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL;
@@ -993,10 +986,10 @@ void OBSBasic::OBSInit()
 	ProfileScope("OBSBasic::OBSInit");
 
 	if (!InitBasicConfig()) {
-		throw "Failed to load basic.ini";
+		throw OBS::InitException(OBS::InitErrorCode::BasicConfig);
 	}
 	if (!ResetAudio()) {
-		throw "Failed to initialize audio";
+		throw OBS::InitException(OBS::InitErrorCode::Audio);
 	}
 
 	int ret = 0;
@@ -1005,14 +998,14 @@ void OBSBasic::OBSInit()
 
 	switch (ret) {
 	case OBS_VIDEO_MODULE_NOT_FOUND:
-		throw "Failed to initialize video:  Graphics module not found";
+		throw OBS::InitException(OBS::InitErrorCode::VideoModuleNotFound);
 	case OBS_VIDEO_NOT_SUPPORTED:
-		throw UNSUPPORTED_ERROR;
+		throw OBS::InitException(OBS::InitErrorCode::VideoNotSupported);
 	case OBS_VIDEO_INVALID_PARAM:
-		throw "Failed to initialize video:  Invalid parameters";
+		throw OBS::InitException(OBS::InitErrorCode::VideoInvalidParam);
 	default:
 		if (ret != OBS_VIDEO_SUCCESS) {
-			throw UNKNOWN_ERROR;
+			throw OBS::InitException(OBS::InitErrorCode::VideoUnknown);
 		}
 	}
 
@@ -1074,7 +1067,7 @@ void OBSBasic::OBSInit()
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
 	if (!InitService()) {
-		throw "Failed to initialize service";
+		throw OBS::InitException(OBS::InitErrorCode::Service);
 	}
 
 	ResetOutputs();

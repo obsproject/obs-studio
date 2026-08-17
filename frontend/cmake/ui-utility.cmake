@@ -19,6 +19,8 @@ target_sources(
     utility/GoLiveAPI_Network.hpp
     utility/GoLiveAPI_PostData.cpp
     utility/GoLiveAPI_PostData.hpp
+    utility/InitException.cpp
+    utility/InitException.hpp
     utility/MissingFilesModel.cpp
     utility/MissingFilesModel.hpp
     utility/MissingFilesPathItemDelegate.cpp
