@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-find_package(MbedTLS REQUIRED)
+find_package(MbedTLS 3...<4 REQUIRED)
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 find_package(ZLIB REQUIRED)
 find_package(jansson REQUIRED)
