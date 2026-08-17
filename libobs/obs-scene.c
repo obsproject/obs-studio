@@ -914,6 +914,9 @@ static inline void render_item(struct obs_scene_item *item)
 		item->item_render = gs_texrender_create(format, GS_ZS_NONE);
 	}
 
+	const bool linear_srgb = !item->item_render || (item->blend_method != OBS_BLEND_METHOD_SRGB_OFF);
+	const bool previous = gs_get_linear_srgb();
+
 	if (item->item_render) {
 		uint32_t width = obs_source_get_width(item->source);
 		uint32_t height = obs_source_get_height(item->source);
@@ -937,6 +940,7 @@ static inline void render_item(struct obs_scene_item *item)
 			gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
 			gs_matrix_translate3f(-(float)(item->crop.left + item->bounds_crop.left),
 					      -(float)(item->crop.top + item->bounds_crop.top), 0.0f);
+			gs_set_linear_srgb(linear_srgb);
 
 			if (item->user_visible && transition_active(item->show_transition)) {
 				const int cx = obs_source_get_width(item->source);
@@ -954,12 +958,12 @@ static inline void render_item(struct obs_scene_item *item)
 				obs_source_set_texcoords_centered(item->source, false);
 			}
 
+			gs_set_linear_srgb(previous);
 			gs_texrender_end(item->item_render);
 		}
 	}
 
-	const bool linear_srgb = !item->item_render || (item->blend_method != OBS_BLEND_METHOD_SRGB_OFF);
-	const bool previous = gs_set_linear_srgb(linear_srgb);
+	gs_set_linear_srgb(linear_srgb);
 	gs_matrix_push();
 	gs_matrix_mul(&item->draw_transform);
 	if (item->item_render) {
