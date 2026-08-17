@@ -61,7 +61,10 @@ QWidget *ImporterEntryPathItemDelegate::createEditor(QWidget *parent, const QSty
 					QSizePolicy::ControlType::LineEdit));
 	layout->addWidget(text);
 
-	QObject::connect(text, &QLineEdit::editingFinished, this, &ImporterEntryPathItemDelegate::updateText);
+	auto commitCallback = [this, container]() {
+		emit const_cast<ImporterEntryPathItemDelegate *>(this)->commitData(container);
+	};
+	QObject::connect(text, &QLineEdit::editingFinished, this, commitCallback);
 
 	QToolButton *browseButton = new QToolButton();
 	browseButton->setText("...");
@@ -151,11 +154,4 @@ void ImporterEntryPathItemDelegate::handleClear(QWidget *container)
 	container->setProperty(PATH_LIST_PROP, QStringList());
 
 	emit commitData(container);
-}
-
-void ImporterEntryPathItemDelegate::updateText()
-{
-	QLineEdit *lineEdit = dynamic_cast<QLineEdit *>(sender());
-	QWidget *editor = lineEdit->parentWidget();
-	emit commitData(editor);
 }
