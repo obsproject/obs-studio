@@ -404,11 +404,12 @@ size_t os_get_abs_path(const char *path, char *abspath, size_t size)
 	char newpath[PATH_MAX];
 	int ret;
 
-	if (!abspath)
-		return 0;
-
 	if (!realpath(path, newpath))
 		return 0;
+
+	if (!abspath) {
+		return strlen(newpath);
+	}
 
 	ret = snprintf(abspath, min_size, "%s", newpath);
 	return ret >= 0 ? ret : 0;
@@ -416,9 +417,13 @@ size_t os_get_abs_path(const char *path, char *abspath, size_t size)
 
 char *os_get_abs_path_ptr(const char *path)
 {
-	char *ptr = bmalloc(512);
+	size_t len = os_get_abs_path(path, NULL, 0);
+	if (!len)
+		return NULL;
 
-	if (!os_get_abs_path(path, ptr, 512)) {
+	char *ptr = bmalloc(len + 1);
+
+	if (!os_get_abs_path(path, ptr, len + 1)) {
 		bfree(ptr);
 		ptr = NULL;
 	}

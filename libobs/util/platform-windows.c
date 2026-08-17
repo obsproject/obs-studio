@@ -503,9 +503,6 @@ size_t os_get_abs_path(const char *path, char *abspath, size_t size)
 	size_t out_len = 0;
 	size_t len;
 
-	if (!abspath)
-		return 0;
-
 	len = os_utf8_to_wcs(path, 0, wpath, MAX_PATH);
 	if (!len)
 		return 0;
@@ -517,9 +514,13 @@ size_t os_get_abs_path(const char *path, char *abspath, size_t size)
 
 char *os_get_abs_path_ptr(const char *path)
 {
-	char *ptr = bmalloc(MAX_PATH);
+	size_t len = os_get_abs_path(path, NULL, 0);
+	if (!len)
+		return NULL;
 
-	if (!os_get_abs_path(path, ptr, MAX_PATH)) {
+	char *ptr = bmalloc(len + 1);
+
+	if (!os_get_abs_path(path, ptr, len + 1)) {
 		bfree(ptr);
 		ptr = NULL;
 	}
@@ -597,18 +598,22 @@ void os_closedir(os_dir_t *dir)
 int64_t os_get_free_space(const char *path)
 {
 	ULARGE_INTEGER remainingSpace;
-	char abs_path[512];
-	wchar_t w_abs_path[512];
+	char *abs_path;
+	wchar_t *w_abs_path;
+	int64_t ret = -1;
 
-	if (os_get_abs_path(path, abs_path, 512) > 0) {
-		if (os_utf8_to_wcs(abs_path, 0, w_abs_path, 512) > 0) {
+	abs_path = os_get_abs_path_ptr(path);
+	if (abs_path) {
+		if (os_utf8_to_wcs_ptr(abs_path, 0, &w_abs_path) > 0) {
 			BOOL success = GetDiskFreeSpaceExW(w_abs_path, (PULARGE_INTEGER)&remainingSpace, NULL, NULL);
 			if (success)
-				return (int64_t)remainingSpace.QuadPart;
+				ret = (int64_t)remainingSpace.QuadPart;
 		}
+		bfree(w_abs_path);
+		bfree(abs_path);
 	}
 
-	return -1;
+	return ret;
 }
 
 static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd, const char *pattern)
@@ -926,24 +931,26 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	BOOL success;
 	LPVOID data;
 	DWORD size;
-	char utf8_lib[512];
+	char *utf8_lib;
 
 	if (!ver_initialized && !initialize_version_functions())
 		return false;
 	if (!ver_initialize_success)
 		return false;
 
-	os_wcs_to_utf8(lib, 0, utf8_lib, sizeof(utf8_lib));
+	os_wcs_to_utf8_ptr(lib, 0, &utf8_lib);
 
 	size = get_file_version_info_size(lib, NULL);
 	if (!size) {
 		blog(LOG_ERROR, "Failed to get %s version info size", utf8_lib);
+		bfree(utf8_lib);
 		return false;
 	}
 
 	data = bmalloc(size);
 	if (!get_file_version_info(lib, 0, size, data)) {
 		blog(LOG_ERROR, "Failed to get %s version info", utf8_lib);
+		bfree(utf8_lib);
 		bfree(data);
 		return false;
 	}
@@ -951,6 +958,7 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	success = ver_query_value(data, L"\\", (LPVOID *)&info, &len);
 	if (!success || !info || !len) {
 		blog(LOG_ERROR, "Failed to get %s version info value", utf8_lib);
+		bfree(utf8_lib);
 		bfree(data);
 		return false;
 	}
@@ -960,6 +968,7 @@ bool get_dll_ver(const wchar_t *lib, struct win_version_info *ver_info)
 	ver_info->build = (int)HIWORD(info->dwFileVersionLS);
 	ver_info->revis = (int)LOWORD(info->dwFileVersionLS);
 
+	bfree(utf8_lib);
 	bfree(data);
 	return true;
 }
