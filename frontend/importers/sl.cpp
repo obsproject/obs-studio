@@ -495,11 +495,9 @@ OBSImporterFiles SLImporter::FindFiles()
 {
 	OBSImporterFiles res;
 #if defined(_WIN32) || defined(__APPLE__)
-	char dst[512];
+	BPtr<char> dst = os_get_config_path_ptr("slobs-client/SceneCollections/");
 
-	int found = os_get_config_path(dst, 512, "slobs-client/SceneCollections/");
-
-	if (found == -1) {
+	if (!dst) {
 		return res;
 	}
 
@@ -515,7 +513,7 @@ OBSImporterFiles SLImporter::FindFiles()
 		size_t pos = name.find_last_of(".json");
 		size_t end_pos = name.size() - 1;
 		if (pos != string::npos && pos == end_pos) {
-			string str = dst + name;
+			string str = dst.Get() + name;
 			res.push_back(str);
 		}
 	}

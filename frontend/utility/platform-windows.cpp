@@ -60,11 +60,11 @@ bool GetDataFilePath(const char *data, string &output)
 string GetDefaultVideoSavePath()
 {
 	wchar_t path_utf16[MAX_PATH];
-	char path_utf8[MAX_PATH] = {};
+	BPtr<char> path_utf8;
 
 	SHGetFolderPathW(NULL, CSIDL_MYVIDEO, NULL, SHGFP_TYPE_CURRENT, path_utf16);
 
-	os_wcs_to_utf8(path_utf16, wcslen(path_utf16), path_utf8, MAX_PATH);
+	os_wcs_to_utf8_ptr(path_utf16, wcslen(path_utf16), &path_utf8);
 	return string(path_utf8);
 }
 
@@ -91,10 +91,10 @@ static vector<string> GetUserPreferredLocales()
 			break;
 		}
 
-		char conv[MAX_PATH] = {};
-		os_wcs_to_utf8(&*start, separator - start, conv, MAX_PATH);
+		BPtr<char> conv;
+		os_wcs_to_utf8_ptr(&*start, separator - start, &conv);
 
-		result.emplace_back(conv);
+		result.emplace_back(string(conv.Get()));
 
 		start = separator + 1;
 	}
@@ -307,14 +307,11 @@ RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 	if (!portable_mode) {
 		name = "OBSStudioCore";
 	} else {
-		char path[500];
-		char absPath[512];
-		*path = 0;
-		*absPath = 0;
-		GetAppConfigPath(path, sizeof(path), "");
-		os_get_abs_path(path, absPath, sizeof(absPath));
+		BPtr<char> path = GetAppConfigPathPtr("");
+		BPtr<char> absPath = os_get_abs_path_ptr(path.Get());
+
 		name = "OBSStudioPortable";
-		name += absPath;
+		name += absPath.Get();
 	}
 
 	BPtr<wchar_t> wname;

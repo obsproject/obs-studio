@@ -38,6 +38,7 @@
 
 #include <QCheckBox>
 #include <QDesktopServices>
+#include <QDateTime>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <QFile>
 #endif
@@ -331,18 +332,16 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 bool OBSApp::InitGlobalLocationDefaults()
 {
-	char path[512];
-
-	int len = GetAppConfigPath(path, sizeof(path), nullptr);
-	if (len <= 0) {
+	BPtr<char> path = GetAppConfigPathPtr(nullptr);
+	if (!path || !*path.Get()) {
 		OBSErrorBox(NULL, "Unable to get global configuration path.");
 		return false;
 	}
 
-	config_set_default_string(appConfig, "Locations", "Configuration", path);
-	config_set_default_string(appConfig, "Locations", "SceneCollections", path);
-	config_set_default_string(appConfig, "Locations", "Profiles", path);
-	config_set_default_string(appConfig, "Locations", "PluginManagerSettings", path);
+	config_set_default_string(appConfig, "Locations", "Configuration", path.Get());
+	config_set_default_string(appConfig, "Locations", "SceneCollections", path.Get());
+	config_set_default_string(appConfig, "Locations", "Profiles", path.Get());
+	config_set_default_string(appConfig, "Locations", "PluginManagerSettings", path.Get());
 
 	return true;
 }
@@ -407,49 +406,37 @@ static bool do_mkdir(const char *path)
 
 static bool MakeUserDirs()
 {
-	char path[512];
+	BPtr<char> path;
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/basic") <= 0) {
-		return false;
-	}
-	if (!do_mkdir(path)) {
+	path = GetAppConfigPathPtr("obs-studio/basic");
+	if (!path || !*path.Get() || !do_mkdir(path)) {
 		return false;
 	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/logs") <= 0) {
-		return false;
-	}
-	if (!do_mkdir(path)) {
+	path = GetAppConfigPathPtr("obs-studio/logs");
+	if (!path || !*path.Get() || !do_mkdir(path)) {
 		return false;
 	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/profiler_data") <= 0) {
-		return false;
-	}
-	if (!do_mkdir(path)) {
+	path = GetAppConfigPathPtr("obs-studio/profiler_data");
+	if (!path || !*path.Get() || !do_mkdir(path)) {
 		return false;
 	}
 
 #ifdef _WIN32
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/crashes") <= 0) {
-		return false;
-	}
-	if (!do_mkdir(path)) {
+	path = GetAppConfigPathPtr("obs-studio/crashes");
+	if (!path || !*path.Get() || !do_mkdir(path)) {
 		return false;
 	}
 #endif
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/updates") <= 0) {
-		return false;
-	}
-	if (!do_mkdir(path)) {
+	path = GetAppConfigPathPtr("obs-studio/updates");
+	if (!path || !*path.Get() || !do_mkdir(path)) {
 		return false;
 	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0) {
-		return false;
-	}
-	if (!do_mkdir(path)) {
+	path = GetAppConfigPathPtr("obs-studio/plugin_config");
+	if (!path || !*path.Get() || !do_mkdir(path)) {
 		return false;
 	}
 
@@ -537,10 +524,8 @@ bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
 
 bool OBSApp::InitGlobalConfig()
 {
-	char path[512];
-
-	int len = GetAppConfigPath(path, sizeof(path), "obs-studio/global.ini");
-	if (len <= 0) {
+	BPtr<char> path = GetAppConfigPathPtr("obs-studio/global.ini");
+	if (!path || !*path.Get()) {
 		return false;
 	}
 
@@ -676,23 +661,21 @@ static constexpr string_view OBSUserIniPath = "/obs-studio/user.ini";
 
 bool OBSApp::MigrateGlobalSettings()
 {
-	char path[512];
-
-	int len = GetAppConfigPath(path, sizeof(path), nullptr);
-	if (len <= 0) {
+	BPtr<char> path = GetAppConfigPathPtr(nullptr);
+	if (!path || !*path.Get()) {
 		OBSErrorBox(nullptr, "Unable to get global configuration path.");
 		return false;
 	}
 
 	std::string legacyConfigFileString;
-	legacyConfigFileString.reserve(strlen(path) + OBSGlobalIniPath.size());
-	legacyConfigFileString.append(path).append(OBSGlobalIniPath);
+	legacyConfigFileString.reserve(strlen(path.Get()) + OBSGlobalIniPath.size());
+	legacyConfigFileString.append(path.Get()).append(OBSGlobalIniPath);
 
 	const std::filesystem::path legacyGlobalConfigFile = std::filesystem::u8path(legacyConfigFileString);
 
 	std::string configFileString;
-	configFileString.reserve(strlen(path) + OBSUserIniPath.size());
-	configFileString.append(path).append(OBSUserIniPath);
+	configFileString.reserve(strlen(path.Get()) + OBSUserIniPath.size());
+	configFileString.append(path.Get()).append(OBSUserIniPath);
 
 	const std::filesystem::path userConfigFile = std::filesystem::u8path(configFileString);
 
@@ -970,13 +953,13 @@ OBSApp::~OBSApp()
 
 static void move_basic_to_profiles(void)
 {
-	char path[512];
+	BPtr<char> path = GetAppConfigPathPtr("obs-studio/basic");
 
-	if (GetAppConfigPath(path, 512, "obs-studio/basic") <= 0) {
+	if (!path || !*path.Get()) {
 		return;
 	}
 
-	const std::filesystem::path basicPath = std::filesystem::u8path(path);
+	const std::filesystem::path basicPath = std::filesystem::u8path(path.Get());
 
 	if (!std::filesystem::exists(basicPath)) {
 		return;
@@ -1034,13 +1017,13 @@ static void move_basic_to_profiles(void)
 
 static void move_basic_to_scene_collections(void)
 {
-	char path[512];
+	BPtr<char> path = GetAppConfigPathPtr("obs-studio/basic");
 
-	if (GetAppConfigPath(path, 512, "obs-studio/basic") <= 0) {
+	if (!path || !*path.Get()) {
 		return;
 	}
 
-	const std::filesystem::path basicPath = std::filesystem::u8path(path);
+	const std::filesystem::path basicPath = std::filesystem::u8path(path.Get());
 
 	if (!std::filesystem::exists(basicPath)) {
 		return;
@@ -1169,9 +1152,9 @@ const char *OBSApp::GetRenderModule() const
 
 static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 {
-	char path[512];
+	BPtr<char> path = GetAppConfigPathPtr("obs-studio/plugin_config");
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0) {
+	if (!path || !*path.Get()) {
 		return false;
 	}
 
@@ -1515,16 +1498,10 @@ skip:
 
 string GenerateTimeDateFilename(const char *extension, bool noSpace)
 {
-	time_t now = time(0);
-	char file[256] = {};
-	struct tm *cur_time;
+	QString format = noSpace ? "yyyy-MM-dd_hh-mm-ss" : "yyyy-MM-dd hh-mm-ss";
+	QString filename = QDateTime::currentDateTime().toString(format) + "." + extension;
 
-	cur_time = localtime(&now);
-	snprintf(file, sizeof(file), "%d-%02d-%02d%c%02d-%02d-%02d.%s", cur_time->tm_year + 1900, cur_time->tm_mon + 1,
-		 cur_time->tm_mday, noSpace ? '_' : ' ', cur_time->tm_hour, cur_time->tm_min, cur_time->tm_sec,
-		 extension);
-
-	return string(file);
+	return filename.toStdString();
 }
 
 string GenerateSpecifiedFilename(const char *extension, bool noSpace, const char *format)
