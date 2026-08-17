@@ -208,6 +208,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_REQUIRES_CANVAS (1 << 17)
 
+/**
+ * Source should initially use OBS_BLEND_METHOD_SRGB_OFF when added to a scene
+ */
+#define OBS_SOURCE_INITIAL_BLEND_METHOD_SRGB_OFF (1 << 18)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent, obs_source_t *child, void *param);
