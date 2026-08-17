@@ -29,6 +29,12 @@ class ScreenshotObj : public QObject {
 	Q_OBJECT
 
 public:
+	struct Options {
+		QSize size{};
+		bool outputToFile{true};
+	};
+
+	ScreenshotObj(obs_source_t *source, const Options &options);
 	ScreenshotObj(obs_source_t *source);
 	~ScreenshotObj() override;
 
@@ -36,13 +42,10 @@ public:
 
 	Stage stage() { return stage_; }
 
-	void setSize(QSize size);
-	void setSize(int width, int height);
-	void setSaveToFile(bool save);
-
+private:
+	static void renderTick(void *param, float seconds);
 	void processStage();
 
-private:
 	void renderScreenshot();
 	void downloadData();
 	void copyData();
@@ -50,23 +53,24 @@ private:
 	void muxFile();
 	void onFinished();
 
+	OBSWeakSource weakSource;
+
 	Stage stage_ = Stage::Render;
+	Options options;
 
 	gs_texrender_t *texrender = nullptr;
 	gs_stagesurf_t *stagesurf = nullptr;
-	OBSWeakSource weakSource;
+
 	std::string path;
 	QImage image;
 	std::vector<uint8_t> half_bytes;
-	QSize customSize;
+
 	uint32_t sourceWidth = 0;
 	uint32_t sourceHeight = 0;
 	uint32_t outputWidth = 0;
 	uint32_t outputHeight = 0;
 
 	std::thread thread;
-	std::shared_ptr<QImage> imagePtr;
-	bool outputToFile = true;
 
 signals:
 	void imageSaved(std::string path);
