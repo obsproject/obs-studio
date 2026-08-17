@@ -427,8 +427,10 @@ static char *os_get_path_ptr_internal(const char *name, int folder)
 
 	os_wcs_to_utf8_ptr(path_utf16, 0, &ptr);
 	dstr_init_move_array(&path, ptr);
+	if (name && *name) {
 	dstr_cat(&path, "\\");
 	dstr_cat(&path, name);
+	}
 	return path.array;
 }
 

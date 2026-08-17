@@ -1743,10 +1743,18 @@ char *GetAppConfigPathPtr(const char *name)
 {
 #if ALLOW_PORTABLE_MODE
 	if (portable_mode) {
-		char path[512];
+		if (!name || !*name) {
+			return bstrdup(CONFIG_PATH);
+		}
 
-		if (snprintf(path, sizeof(path), CONFIG_PATH "/%s", name) > 0) {
-			return bstrdup(path);
+		int len = snprintf(NULL, 0, CONFIG_PATH "/%s", name);
+		if (len <= 0) {
+			return NULL;
+		}
+		char *path = (char *)bmalloc((size_t)len + 1);
+
+		if (snprintf(path, len + 1, CONFIG_PATH "/%s", name) > 0) {
+			return path;
 		} else {
 			return NULL;
 		}
