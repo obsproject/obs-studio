@@ -166,6 +166,7 @@ void OBSBasic::UpdateContextBar(bool force)
 		uint32_t flags = obs_source_get_output_flags(source);
 
 		ui->sourceInteractButton->setVisible(flags & OBS_SOURCE_INTERACTION);
+		ui->sourceMatchResolutionButton->setVisible(flags & OBS_SOURCE_RESOLUTION_MATCHING);
 
 		if (contextBarSize >= ContextBarSize_Reduced && (updateNeeded || force)) {
 			ClearContextBar();
@@ -260,16 +261,19 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
 		ui->sourceInteractButton->setVisible(false);
+		ui->sourceMatchResolutionButton->setVisible(false);
 	}
 
 	if (contextBarSize == ContextBarSize_Normal) {
 		ui->sourcePropertiesButton->setText(QTStr("Properties"));
 		ui->sourceFiltersButton->setText(QTStr("Filters"));
 		ui->sourceInteractButton->setText(QTStr("Interact"));
+		ui->sourceMatchResolutionButton->setText(QTStr("MatchResolution"));
 	} else {
 		ui->sourcePropertiesButton->setText("");
 		ui->sourceFiltersButton->setText("");
 		ui->sourceInteractButton->setText("");
+		ui->sourceMatchResolutionButton->setText("");
 	}
 }
 

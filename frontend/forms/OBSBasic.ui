@@ -661,6 +661,29 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="sourceMatchResolutionButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>MatchResolution.Tooltip</string>
+            </property>
+            <property name="text">
+             <string>MatchResolution</string>
+            </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/settings/images/settings/video.svg</normaloff>:/settings/images/settings/video.svg</iconset>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line">
             <property name="orientation">
              <enum>Qt::Orientation::Vertical</enum>

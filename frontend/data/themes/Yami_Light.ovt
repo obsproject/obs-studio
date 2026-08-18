@@ -151,6 +151,10 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(theme:Light/filter.svg);
 }
 
+QPushButton#sourceMatchResolutionButton {
+    qproperty-icon: url(theme:Light/settings/video.svg);
+}
+
 .icon-plus {
     qproperty-icon: url(theme:Light/plus.svg);
 }

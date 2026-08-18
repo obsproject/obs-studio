@@ -1215,10 +1215,12 @@ private slots:
 	void on_sourcePropertiesButton_clicked();
 	void on_sourceFiltersButton_clicked();
 	void on_sourceInteractButton_clicked();
+	void on_sourceMatchResolutionButton_clicked();
 
 	void on_actionAddSource_triggered();
 	void on_actionRemoveSource_triggered();
 	void on_actionInteract_triggered();
+	void on_actionMatchResolution_triggered();
 	void on_actionSourceProperties_triggered();
 	void on_actionSourceUp_triggered();
 	void on_actionSourceDown_triggered();

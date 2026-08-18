@@ -275,6 +275,10 @@ SceneTree {
     qproperty-icon: url(:/res/images/interact.svg);
 }
 
+#contextContainer QPushButton#sourceMatchResolutionButton {
+    qproperty-icon: url(:/settings/images/settings/video.svg);
+}
+
 /* Media icons */
 
 .icon-media-play {

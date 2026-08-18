@@ -31,6 +31,8 @@
 
 #include <QWidgetAction>
 
+#include <algorithm>
+#include <cmath>
 #include <sstream>
 
 using namespace std;
@@ -49,6 +51,103 @@ void setHiddenInMixer(obs_source_t *source, bool hidden)
 	OBSDataAutoRelease priv_settings = obs_source_get_private_settings(source);
 	obs_data_set_bool(priv_settings, "mixer_hidden", hidden);
 }
+
+namespace {
+
+OBSDataAutoRelease saveMatchResolutionState(obs_source_t *source, obs_scene_t *scene)
+{
+	OBSDataAutoRelease state = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
+	OBSDataAutoRelease currentSettings = obs_source_get_settings(source);
+	OBSDataAutoRelease transformStates = obs_scene_save_transform_states(scene, false);
+
+	obs_data_apply(settings, currentSettings);
+	obs_data_set_string(state, "source_uuid", obs_source_get_uuid(source));
+	obs_data_set_obj(state, "source_settings", settings);
+	obs_data_set_obj(state, "transform_states", transformStates);
+
+	return state;
+}
+
+void restoreMatchResolutionState(const std::string &json)
+{
+	OBSDataAutoRelease state = obs_data_create_from_json(json.c_str());
+	if (!state) {
+		return;
+	}
+
+	OBSSourceAutoRelease source = obs_get_source_by_uuid(obs_data_get_string(state, "source_uuid"));
+	OBSDataAutoRelease settings = obs_data_get_obj(state, "source_settings");
+	OBSDataAutoRelease transformStates = obs_data_get_obj(state, "transform_states");
+
+	if (source && settings) {
+		obs_source_reset_settings(source, settings);
+	}
+
+	if (transformStates) {
+		OBSSourceAutoRelease sceneSource =
+			obs_get_source_by_uuid(obs_data_get_string(transformStates, "scene_uuid"));
+		if (sceneSource) {
+			OBSBasic::Get()->SetCurrentScene(sceneSource.Get(), true);
+		}
+
+		obs_scene_load_transform_states(obs_data_get_json(transformStates));
+	}
+
+	OBSBasic::Get()->UpdateContextBar();
+}
+
+vec2 getSceneItemCanvasScale(obs_sceneitem_t *item, obs_scene_t *scene)
+{
+	obs_sceneitem_force_update_transform(item);
+
+	matrix4 transform{};
+	obs_sceneitem_get_draw_transform(item, &transform);
+
+	obs_sceneitem_t *group = obs_sceneitem_get_group(scene, item);
+	if (group) {
+		obs_sceneitem_force_update_transform(group);
+
+		matrix4 groupTransform{};
+		obs_sceneitem_get_draw_transform(group, &groupTransform);
+		matrix4_mul(&transform, &transform, &groupTransform);
+	}
+
+	vec2 scale{};
+	vec2_set(&scale, std::hypot(transform.x.x, transform.x.y), std::hypot(transform.y.x, transform.y.y));
+	return scale;
+}
+
+int getMatchedSourceDimension(uint32_t sourceSize, float canvasScale, obs_property_t *property)
+{
+	if (!sourceSize || !std::isfinite(canvasScale) || canvasScale <= 0.0f || !property) {
+		return 0;
+	}
+
+	const int minimum = obs_property_int_min(property);
+	const int maximum = obs_property_int_max(property);
+	const double matchedSize = static_cast<double>(sourceSize) * canvasScale;
+
+	if (matchedSize <= minimum) {
+		return minimum;
+	}
+	if (matchedSize >= maximum) {
+		return maximum;
+	}
+
+	return static_cast<int>(std::lround(matchedSize));
+}
+
+void scaleCropAxis(int first, int second, uint32_t oldSize, int newSize, int &newFirst, int &newSecond)
+{
+	const double ratio = static_cast<double>(newSize) / oldSize;
+	const int newTotal = std::max(0, static_cast<int>(std::lround((first + second) * ratio)));
+
+	newFirst = std::clamp(static_cast<int>(std::lround(first * ratio)), 0, newTotal);
+	newSecond = newTotal - newFirst;
+}
+
+} // namespace
 
 std::string getNewSourceName(std::string_view name)
 {
@@ -751,6 +850,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (flags && flags & OBS_SOURCE_INTERACTION) {
 			popup.addAction(QTStr("Interact"), this, &OBSBasic::on_actionInteract_triggered);
 		}
+		if (flags & OBS_SOURCE_RESOLUTION_MATCHING) {
+			popup.addAction(QTStr("MatchResolution"), this, &OBSBasic::on_actionMatchResolution_triggered);
+		}
 
 		popup.addAction(QTStr("Filters"), this, [&]() { OpenFilters(); });
 		QAction *action =
@@ -935,6 +1037,67 @@ void OBSBasic::on_actionInteract_triggered()
 
 	if (source) {
 		CreateInteractionWindow(source);
+	}
+}
+
+void OBSBasic::on_actionMatchResolution_triggered()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+	if (!item) {
+		return;
+	}
+
+	OBSSource source = obs_sceneitem_get_source(item);
+	if (!source || !(obs_source_get_output_flags(source) & OBS_SOURCE_RESOLUTION_MATCHING)) {
+		return;
+	}
+
+	OBSScene scene = GetCurrentScene();
+	if (!scene) {
+		return;
+	}
+
+	const uint32_t sourceWidth = obs_source_get_width(source);
+	const uint32_t sourceHeight = obs_source_get_height(source);
+	const vec2 canvasScale = getSceneItemCanvasScale(item, scene);
+
+	OBSProperties properties = obs_source_properties(source);
+	obs_property_t *widthProperty = obs_properties_get(properties, "width");
+	obs_property_t *heightProperty = obs_properties_get(properties, "height");
+	const int matchedWidth = getMatchedSourceDimension(sourceWidth, canvasScale.x, widthProperty);
+	const int matchedHeight = getMatchedSourceDimension(sourceHeight, canvasScale.y, heightProperty);
+	if (!matchedWidth || !matchedHeight) {
+		return;
+	}
+
+	OBSDataAutoRelease undoState = saveMatchResolutionState(source, scene);
+
+	obs_transform_info transformInfo{};
+	obs_sceneitem_get_info2(item, &transformInfo);
+	transformInfo.scale.x *= static_cast<float>(sourceWidth) / matchedWidth;
+	transformInfo.scale.y *= static_cast<float>(sourceHeight) / matchedHeight;
+
+	obs_sceneitem_crop crop{};
+	obs_sceneitem_get_crop(item, &crop);
+	scaleCropAxis(crop.left, crop.right, sourceWidth, matchedWidth, crop.left, crop.right);
+	scaleCropAxis(crop.top, crop.bottom, sourceHeight, matchedHeight, crop.top, crop.bottom);
+
+	OBSDataAutoRelease settings = obs_data_create();
+	obs_data_set_int(settings, "width", matchedWidth);
+	obs_data_set_int(settings, "height", matchedHeight);
+
+	obs_sceneitem_defer_update_begin(item);
+	obs_source_update(source, settings);
+	obs_sceneitem_set_info2(item, &transformInfo);
+	obs_sceneitem_set_crop(item, &crop);
+	obs_sceneitem_defer_update_end(item);
+
+	OBSDataAutoRelease redoState = saveMatchResolutionState(source, scene);
+	std::string undoJson{obs_data_get_json(undoState)};
+	std::string redoJson{obs_data_get_json(redoState)};
+	if (undoJson != redoJson) {
+		undo_s.add_action(QTStr("Undo.MatchResolution").arg(obs_source_get_name(source)),
+				  restoreMatchResolutionState, restoreMatchResolutionState, undoJson, redoJson);
 	}
 }
 
@@ -1430,4 +1593,9 @@ void OBSBasic::on_sourceFiltersButton_clicked()
 void OBSBasic::on_sourceInteractButton_clicked()
 {
 	on_actionInteract_triggered();
+}
+
+void OBSBasic::on_sourceMatchResolutionButton_clicked()
+{
+	on_actionMatchResolution_triggered();
 }

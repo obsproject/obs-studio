@@ -208,6 +208,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_REQUIRES_CANVAS (1 << 17)
 
+/**
+ * Source supports matching its resolution to its rendered size
+ */
+#define OBS_SOURCE_RESOLUTION_MATCHING (1 << 18)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent, obs_source_t *child, void *param);

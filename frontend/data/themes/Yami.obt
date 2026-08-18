@@ -1063,6 +1063,11 @@ QPushButton#sourceFiltersButton {
     icon-size: var(--icon_base);
 }
 
+QPushButton#sourceMatchResolutionButton {
+    qproperty-icon: url(theme:Dark/settings/video.svg);
+    icon-size: var(--icon_base);
+}
+
 /* Scenes and Sources toolbar */
 
 QToolBar {
