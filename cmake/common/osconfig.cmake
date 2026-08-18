@@ -17,4 +17,13 @@ elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD|OpenBSD")
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/linux")
   string(TOUPPER "${CMAKE_HOST_SYSTEM_NAME}" _SYSTEM_NAME_U)
   set(OS_${_SYSTEM_NAME_U} TRUE)
+
+  option(ENABLE_FLATPAK "Enable Flatpak-specific implementations." OFF)
+  mark_as_advanced(ENABLE_FLATPAK)
+
+  if(OS_LINUX AND ENABLE_FLATPAK)
+    set(OS_FLATPAK TRUE)
+  else()
+    set(OS_FLATPAK FALSE)
+  endif()
 endif()
