@@ -26,6 +26,21 @@ The template might require checking off items that might not be applicable e.g.,
 
 Authors of contributions to the OBS Project are expected to abide by the “OBS Project Code of Conduct” available at https://github.com/obsproject/obs-studio/blob/master/COC.rst.
 
+## Pull Request Review Guidelines
+
+In general reviews of pull requests are not limited to project members and can be undertaken by contributors and other GitHub users. Project members commonly coordinate reviews of pull requests at their own disgression in line with project needs and available bandwidth.
+
+To reduce possible friction of the review process, a simple set of rules should be followed:
+
+* **Do not** request reviews from specific community or project members yourself.
+    * It is permitted to ping other GitHub users to notify them of a PR and kindly ask them if they are willing (and able) to review it, all within reason.
+* Reviewers might leave comments or ask for changes on specific lines of changed code. Once the comment has been addressed **do not unilaterally resolve** the comment.
+    * It is entirely the reviewer's decision whether they would consider the changes to be sufficient to address their concerns. Just having addressed a comment, does not resolve it.
+    * As a reviewer, make sure to regularly review the comments received on your reviews, check the code changes, and resolve your comments once they have been addressed. **Don't leave pull request authors hanging.**
+    * Project members will usually ping reviewers about unresolved review comments and resolve such comments themselves to unblock PRs from being merged.
+* When addressing review comments through code changes, try to avoid force-pushes and use temporary commits which can be squashed later (see below).
+    * Unless necessary, avoid rebasing a pull request branch unless it is absolutely necessary. Rebasing will pull in changes from the base branch into the "changes since last push" of the pull request, making it harder for reviewers to check what changes have been pushed.
+
 ## Commit Authoring Guidelines
 
 The project uses the “50/72” standard for commit messages, which requires that a commit title uses no more than 50 characters, while any consecutive line used for the commit description is allowed to use a maximum of 72 characters (with long lines manually broken up).
@@ -108,7 +123,7 @@ Additional commit description
 Co-authored-by: Name <git@address.TLD>
 ```
 
-# AI/Machine Learning Policy
+## AI/Machine Learning Policy
 
 AI/machine learning systems such as Copilot, ChatGPT, and Claude, are prone to generating plausible-sounding, but wrong code that makes incorrect assumptions about OBS internals or APIs it interfaces with.
 
