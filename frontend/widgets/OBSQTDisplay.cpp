@@ -220,3 +220,18 @@ void OBSQTDisplay::OnDisplayChange()
 		obs_display_update_color_space(display);
 	}
 }
+
+/* The backing scale factor can change without an accompanying resize event,
+ * e.g. on macOS it is transiently reset while the display reattaches after
+ * waking from sleep. Any size pushed while the transient ratio is active
+ * leaves the swap chain at the wrong pixel size, so it has to be pushed
+ * again once the ratio settles. */
+void OBSQTDisplay::OnDevicePixelRatioChange()
+{
+	if (isVisible() && display) {
+		QSize size = GetPixelSize(this);
+		obs_display_resize(display, size.width(), size.height());
+
+		emit DisplayResized();
+	}
+}

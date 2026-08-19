@@ -46,4 +46,5 @@ public:
 
 	void OnMove();
 	void OnDisplayChange();
+	void OnDevicePixelRatioChange();
 };
