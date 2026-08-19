@@ -20,8 +20,22 @@
 #include "../util/platform.h"
 #include "../util/dstr.h"
 #include "vec4.h"
+#include "libnsgif/nsgif.h"
 
 #define blog(level, format, ...) blog(level, "%s: " format, __FUNCTION__, __VA_ARGS__)
+
+struct gs_image_file_internal {
+	nsgif_t *gif;
+	const nsgif_info_t *gif_info;
+	const uint8_t *gif_frame_image;
+	nsgif_bitmap_cb_vt bitmap_callbacks;
+
+	uint8_t *gif_data;
+	uint8_t **animation_frame_cache;
+	uint8_t *animation_frame_data;
+
+	int last_decoded_frame;
+};
 
 static void *bi_def_bitmap_create(int width, int height)
 {
@@ -57,7 +71,8 @@ static void bi_def_bitmap_modified(void *bitmap)
 
 static inline int get_full_decoded_gif_size(gs_image_file_t *image)
 {
-	return image->gif_info->width * image->gif_info->height * 4 * image->gif_info->frame_count;
+	return image->internal->gif_info->width * image->internal->gif_info->height * 4 *
+	       image->internal->gif_info->frame_count;
 }
 
 static inline void *alloc_mem(gs_image_file_t *image, uint64_t *mem_usage, size_t size)
@@ -79,14 +94,14 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t
 	FILE *file;
 	nsgif_bitmap_t *bitmap;
 
-	image->bitmap_callbacks.create = bi_def_bitmap_create;
-	image->bitmap_callbacks.destroy = bi_def_bitmap_destroy;
-	image->bitmap_callbacks.get_buffer = bi_def_bitmap_get_buffer;
-	image->bitmap_callbacks.modified = bi_def_bitmap_modified;
-	image->bitmap_callbacks.set_opaque = bi_def_bitmap_set_opaque;
-	image->bitmap_callbacks.test_opaque = bi_def_bitmap_test_opaque;
+	image->internal->bitmap_callbacks.create = bi_def_bitmap_create;
+	image->internal->bitmap_callbacks.destroy = bi_def_bitmap_destroy;
+	image->internal->bitmap_callbacks.get_buffer = bi_def_bitmap_get_buffer;
+	image->internal->bitmap_callbacks.modified = bi_def_bitmap_modified;
+	image->internal->bitmap_callbacks.set_opaque = bi_def_bitmap_set_opaque;
+	image->internal->bitmap_callbacks.test_opaque = bi_def_bitmap_test_opaque;
 
-	nsgif_create(&image->bitmap_callbacks, NSGIF_BITMAP_FMT_R8G8B8A8, &image->gif);
+	nsgif_create(&image->internal->bitmap_callbacks, NSGIF_BITMAP_FMT_R8G8B8A8, &image->internal->gif);
 
 	file = os_fopen(path, "rb");
 	if (!file) {
@@ -98,15 +113,15 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t
 	size = (size_t)os_ftelli64(file);
 	fseek(file, 0, SEEK_SET);
 
-	image->gif_data = bmalloc(size);
-	size_read = fread(image->gif_data, 1, size, file);
+	image->internal->gif_data = bmalloc(size);
+	size_read = fread(image->internal->gif_data, 1, size, file);
 	if (size_read != size) {
 		blog(LOG_WARNING, "Failed to fully read gif file '%s'.", path);
 		goto fail;
 	}
 
 	do {
-		result = nsgif_data_scan(image->gif, size, image->gif_data);
+		result = nsgif_data_scan(image->internal->gif, size, image->internal->gif_data);
 		if (result < 0) {
 			blog(LOG_WARNING,
 			     "Failed to initialize gif '%s', "
@@ -116,46 +131,46 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t
 		}
 	} while (result != NSGIF_OK);
 
-	nsgif_data_complete(image->gif);
+	nsgif_data_complete(image->internal->gif);
 
-	image->gif_info = nsgif_get_info(image->gif);
+	image->internal->gif_info = nsgif_get_info(image->internal->gif);
 
-	if (image->gif_info->width > 4096 || image->gif_info->height > 4096) {
-		blog(LOG_WARNING, "Bad texture dimensions (%dx%d) in '%s'", image->gif_info->width,
-		     image->gif_info->height, path);
+	if (image->internal->gif_info->width > 4096 || image->internal->gif_info->height > 4096) {
+		blog(LOG_WARNING, "Bad texture dimensions (%dx%d) in '%s'", image->internal->gif_info->width,
+		     image->internal->gif_info->height, path);
 		goto fail;
 	}
 
-	max_size = (uint64_t)image->gif_info->width * (uint64_t)image->gif_info->height *
-		   (uint64_t)image->gif_info->frame_count * 4LLU;
+	max_size = (uint64_t)image->internal->gif_info->width * (uint64_t)image->internal->gif_info->height *
+		   (uint64_t)image->internal->gif_info->frame_count * 4LLU;
 
 	if ((uint64_t)get_full_decoded_gif_size(image) != max_size) {
 		blog(LOG_WARNING, "Gif '%s' overflowed maximum pointer size", path);
 		goto fail;
 	}
 
-	image->is_animated_gif = (image->gif_info->frame_count > 1 && result >= 0);
+	image->is_animated_gif = (image->internal->gif_info->frame_count > 1 && result >= 0);
 	if (image->is_animated_gif) {
-		nsgif_frame_decode(image->gif, 0, &bitmap);
+		nsgif_frame_decode(image->internal->gif, 0, &bitmap);
 
-		image->animation_frame_cache =
-			alloc_mem(image, mem_usage, image->gif_info->frame_count * sizeof(uint8_t *));
-		image->animation_frame_data = alloc_mem(image, mem_usage, get_full_decoded_gif_size(image));
+		image->internal->animation_frame_cache =
+			alloc_mem(image, mem_usage, image->internal->gif_info->frame_count * sizeof(uint8_t *));
+		image->internal->animation_frame_data = alloc_mem(image, mem_usage, get_full_decoded_gif_size(image));
 
-		for (unsigned int i = 0; i < image->gif_info->frame_count; i++) {
-			if (nsgif_frame_decode(image->gif, i, &bitmap) != NSGIF_OK)
+		for (unsigned int i = 0; i < image->internal->gif_info->frame_count; i++) {
+			if (nsgif_frame_decode(image->internal->gif, i, &bitmap) != NSGIF_OK)
 				blog(LOG_WARNING,
 				     "Couldn't decode frame %u "
 				     "of '%s'",
 				     i, path);
 		}
 
-		nsgif_frame_decode(image->gif, 0, &bitmap);
+		nsgif_frame_decode(image->internal->gif, 0, &bitmap);
 
-		image->gif_frame_image = (const uint8_t *)bitmap;
+		image->internal->gif_frame_image = (const uint8_t *)bitmap;
 
-		image->cx = (uint32_t)image->gif_info->width;
-		image->cy = (uint32_t)image->gif_info->height;
+		image->cx = (uint32_t)image->internal->gif_info->width;
+		image->cy = (uint32_t)image->internal->gif_info->height;
 		image->format = GS_RGBA;
 
 		if (mem_usage) {
@@ -169,9 +184,9 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t
 			gs_premultiply_xyza_loop((uint8_t *)bitmap, (size_t)image->cx * image->cy);
 		}
 	} else {
-		nsgif_destroy(image->gif);
-		bfree(image->gif_data);
-		image->gif_data = NULL;
+		nsgif_destroy(image->internal->gif);
+		bfree(image->internal->gif_data);
+		image->internal->gif_data = NULL;
 		is_animated_gif = false;
 		goto not_animated;
 	}
@@ -200,6 +215,8 @@ static void gs_image_file_init_internal(gs_image_file_t *image, const char *file
 
 	if (!file)
 		return;
+
+	image->internal = bzalloc(sizeof(struct gs_image_file_internal));
 
 	len = strlen(file);
 
@@ -235,17 +252,20 @@ void gs_image_file_free(gs_image_file_t *image)
 		return;
 
 	if (image->loaded) {
-		if (image->is_animated_gif) {
-			nsgif_destroy(image->gif);
-			bfree(image->animation_frame_cache);
-			bfree(image->animation_frame_data);
+		if (image->is_animated_gif && image->internal) {
+			nsgif_destroy(image->internal->gif);
+			bfree(image->internal->animation_frame_cache);
+			bfree(image->internal->animation_frame_data);
 		}
 
 		gs_texture_destroy(image->texture);
 	}
 
 	bfree(image->texture_data);
-	bfree(image->gif_data);
+	if (image->internal) {
+		bfree(image->internal->gif_data);
+		bfree(image->internal);
+	}
 	memset(image, 0, sizeof(*image));
 }
 
@@ -274,9 +294,12 @@ void gs_image_file_init_texture(gs_image_file_t *image)
 	if (!image->loaded)
 		return;
 
+	if (!image->internal)
+		image->internal = bzalloc(sizeof(struct gs_image_file_internal));
+
 	if (image->is_animated_gif) {
 		image->texture = gs_texture_create(image->cx, image->cy, image->format, 1,
-						   (const uint8_t **)&image->gif_frame_image, GS_DYNAMIC);
+						   (const uint8_t **)&image->internal->gif_frame_image, GS_DYNAMIC);
 
 	} else {
 		image->texture = gs_texture_create(image->cx, image->cy, image->format, 1,
@@ -288,7 +311,7 @@ void gs_image_file_init_texture(gs_image_file_t *image)
 
 static inline uint64_t get_time(gs_image_file_t *image, int i)
 {
-	const nsgif_frame_info_t *gif_frame_info = nsgif_get_frame_info(image->gif, i);
+	const nsgif_frame_info_t *gif_frame_info = nsgif_get_frame_info(image->internal->gif, i);
 	uint64_t val = (uint64_t)gif_frame_info->delay * 10000000ULL;
 	if (!val)
 		val = 100000000;
@@ -306,7 +329,7 @@ static inline int calculate_new_frame(gs_image_file_t *image, uint64_t elapsed_t
 			break;
 
 		image->cur_time -= t;
-		if ((unsigned int)++new_frame == image->gif_info->frame_count) {
+		if ((unsigned int)++new_frame == image->internal->gif_info->frame_count) {
 			if (!loops || ++image->cur_loop < loops) {
 				new_frame = 0;
 			} else if (image->cur_loop == loops) {
@@ -321,24 +344,26 @@ static inline int calculate_new_frame(gs_image_file_t *image, uint64_t elapsed_t
 
 static void decode_new_frame(gs_image_file_t *image, int new_frame, enum gs_image_alpha_mode alpha_mode)
 {
-	if (!image->animation_frame_cache[new_frame]) {
+	if (!image->internal->animation_frame_cache[new_frame]) {
 		int last_frame;
 		nsgif_bitmap_t *bitmap;
 
 		/* if looped, decode frame 0 */
-		last_frame = (new_frame < image->last_decoded_frame) ? 0 : image->last_decoded_frame + 1;
+		last_frame =
+			(new_frame < image->internal->last_decoded_frame) ? 0 : image->internal->last_decoded_frame + 1;
 
 		/* decode missed frames */
 		for (int i = last_frame; i < new_frame; i++) {
-			if (nsgif_frame_decode(image->gif, i, &bitmap) != NSGIF_OK)
+			if (nsgif_frame_decode(image->internal->gif, i, &bitmap) != NSGIF_OK)
 				return;
 		}
 
 		/* decode actual desired frame */
-		if (nsgif_frame_decode(image->gif, new_frame, &bitmap) == NSGIF_OK) {
-			const size_t area = (size_t)image->gif_info->width * image->gif_info->height;
+		if (nsgif_frame_decode(image->internal->gif, new_frame, &bitmap) == NSGIF_OK) {
+			const size_t area =
+				(size_t)image->internal->gif_info->width * image->internal->gif_info->height;
 			size_t pos = new_frame * area * 4;
-			image->animation_frame_cache[new_frame] = image->animation_frame_data + pos;
+			image->internal->animation_frame_cache[new_frame] = image->internal->animation_frame_data + pos;
 
 			if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
 				gs_premultiply_xyza_srgb_loop((uint8_t *)bitmap, area);
@@ -346,11 +371,11 @@ static void decode_new_frame(gs_image_file_t *image, int new_frame, enum gs_imag
 				gs_premultiply_xyza_loop((uint8_t *)bitmap, area);
 			}
 
-			image->gif_frame_image = (const uint8_t *)bitmap;
+			image->internal->gif_frame_image = (const uint8_t *)bitmap;
 
-			memcpy(image->animation_frame_cache[new_frame], (const uint8_t *)bitmap, area * 4);
+			memcpy(image->internal->animation_frame_cache[new_frame], (const uint8_t *)bitmap, area * 4);
 
-			image->last_decoded_frame = new_frame;
+			image->internal->last_decoded_frame = new_frame;
 		}
 	}
 
@@ -362,10 +387,10 @@ static bool gs_image_file_tick_internal(gs_image_file_t *image, uint64_t elapsed
 {
 	int loops;
 
-	if (!image->is_animated_gif || !image->loaded)
+	if (!image->is_animated_gif || !image->loaded || !image->internal)
 		return false;
 
-	loops = image->gif_info->loop_max;
+	loops = image->internal->gif_info->loop_max;
 	if (loops >= 0xFFFF)
 		loops = 0;
 
@@ -403,14 +428,14 @@ bool gs_image_file4_tick(gs_image_file4_t *if4, uint64_t elapsed_time_ns)
 
 static void gs_image_file_update_texture_internal(gs_image_file_t *image, enum gs_image_alpha_mode alpha_mode)
 {
-	if (!image->is_animated_gif || !image->loaded)
+	if (!image->is_animated_gif || !image->loaded || !image->internal)
 		return;
 
-	if (!image->animation_frame_cache[image->cur_frame])
+	if (!image->internal->animation_frame_cache[image->cur_frame])
 		decode_new_frame(image, image->cur_frame, alpha_mode);
 
-	gs_texture_set_image(image->texture, image->animation_frame_cache[image->cur_frame], image->gif_info->width * 4,
-			     false);
+	gs_texture_set_image(image->texture, image->internal->animation_frame_cache[image->cur_frame],
+			     image->internal->gif_info->width * 4, false);
 }
 
 void gs_image_file_update_texture(gs_image_file_t *image)
