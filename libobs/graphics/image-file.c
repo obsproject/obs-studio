@@ -69,22 +69,23 @@ static void bi_def_bitmap_modified(void *bitmap)
 	UNUSED_PARAMETER(bitmap);
 }
 
-static inline int get_full_decoded_gif_size(gs_image_file_t *image)
+static inline int get_full_decoded_gif_size(gs_image_file_ex_t *image)
 {
 	return image->internal->gif_info->width * image->internal->gif_info->height * 4 *
 	       image->internal->gif_info->frame_count;
 }
 
-static inline void *alloc_mem(gs_image_file_t *image, uint64_t *mem_usage, size_t size)
+static inline void *alloc_mem(gs_image_file_ex_t *image, uint64_t *mem_usage, size_t size)
 {
 	UNUSED_PARAMETER(image);
 
 	if (mem_usage)
 		*mem_usage += size;
+
 	return bzalloc(size);
 }
 
-static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t *mem_usage,
+static bool init_animated_gif(gs_image_file_ex_t *image, const char *path, uint64_t *mem_usage,
 			      enum gs_image_alpha_mode alpha_mode)
 {
 	bool is_animated_gif = true;
@@ -159,10 +160,7 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t
 
 		for (unsigned int i = 0; i < image->internal->gif_info->frame_count; i++) {
 			if (nsgif_frame_decode(image->internal->gif, i, &bitmap) != NSGIF_OK)
-				blog(LOG_WARNING,
-				     "Couldn't decode frame %u "
-				     "of '%s'",
-				     i, path);
+				blog(LOG_WARNING, "Couldn't decode frame %u of '%s'", i, path);
 		}
 
 		nsgif_frame_decode(image->internal->gif, 0, &bitmap);
@@ -195,7 +193,8 @@ static bool init_animated_gif(gs_image_file_t *image, const char *path, uint64_t
 
 fail:
 	if (!image->loaded)
-		gs_image_file_free(image);
+		gs_image_file_ex_free(image);
+
 not_animated:
 	if (file)
 		fclose(file);
@@ -203,8 +202,8 @@ not_animated:
 	return is_animated_gif;
 }
 
-static void gs_image_file_init_internal(gs_image_file_t *image, const char *file, uint64_t *mem_usage,
-					enum gs_color_space *space, enum gs_image_alpha_mode alpha_mode)
+static void gs_image_file_ex_init_internal(gs_image_file_ex_t *image, const char *file, uint64_t *mem_usage,
+					   enum gs_color_space *space, enum gs_image_alpha_mode alpha_mode)
 {
 	size_t len;
 
@@ -236,17 +235,17 @@ static void gs_image_file_init_internal(gs_image_file_t *image, const char *file
 	image->loaded = !!image->texture_data;
 	if (!image->loaded) {
 		blog(LOG_WARNING, "Failed to load file '%s'", file);
-		gs_image_file_free(image);
+		gs_image_file_ex_free(image);
 	}
 }
 
-void gs_image_file_init(gs_image_file_t *image, const char *file)
+void gs_image_file_ex_init(gs_image_file_ex_t *image, const char *file, enum gs_image_alpha_mode alpha_mode)
 {
 	enum gs_color_space unused;
-	gs_image_file_init_internal(image, file, NULL, &unused, GS_IMAGE_ALPHA_STRAIGHT);
+	gs_image_file_ex_init_internal(image, file, NULL, &unused, alpha_mode);
 }
 
-void gs_image_file_free(gs_image_file_t *image)
+void gs_image_file_ex_free(gs_image_file_ex_t *image)
 {
 	if (!image)
 		return;
@@ -269,27 +268,7 @@ void gs_image_file_free(gs_image_file_t *image)
 	memset(image, 0, sizeof(*image));
 }
 
-void gs_image_file2_init(gs_image_file2_t *if2, const char *file)
-{
-	enum gs_color_space unused;
-	gs_image_file_init_internal(&if2->image, file, &if2->mem_usage, &unused, GS_IMAGE_ALPHA_STRAIGHT);
-}
-
-void gs_image_file3_init(gs_image_file3_t *if3, const char *file, enum gs_image_alpha_mode alpha_mode)
-{
-	enum gs_color_space unused;
-	gs_image_file_init_internal(&if3->image2.image, file, &if3->image2.mem_usage, &unused, alpha_mode);
-	if3->alpha_mode = alpha_mode;
-}
-
-void gs_image_file4_init(gs_image_file4_t *if4, const char *file, enum gs_image_alpha_mode alpha_mode)
-{
-	gs_image_file_init_internal(&if4->image3.image2.image, file, &if4->image3.image2.mem_usage, &if4->space,
-				    alpha_mode);
-	if4->image3.alpha_mode = alpha_mode;
-}
-
-void gs_image_file_init_texture(gs_image_file_t *image)
+void gs_image_file_ex_init_texture(gs_image_file_ex_t *image)
 {
 	if (!image->loaded)
 		return;
@@ -309,16 +288,17 @@ void gs_image_file_init_texture(gs_image_file_t *image)
 	}
 }
 
-static inline uint64_t get_time(gs_image_file_t *image, int i)
+static inline uint64_t get_time(gs_image_file_ex_t *image, int i)
 {
 	const nsgif_frame_info_t *gif_frame_info = nsgif_get_frame_info(image->internal->gif, i);
 	uint64_t val = (uint64_t)gif_frame_info->delay * 10000000ULL;
 	if (!val)
 		val = 100000000;
+
 	return val;
 }
 
-static inline int calculate_new_frame(gs_image_file_t *image, uint64_t elapsed_time_ns, int loops)
+static inline int calculate_new_frame(gs_image_file_ex_t *image, uint64_t elapsed_time_ns, int loops)
 {
 	int new_frame = image->cur_frame;
 
@@ -342,7 +322,7 @@ static inline int calculate_new_frame(gs_image_file_t *image, uint64_t elapsed_t
 	return new_frame;
 }
 
-static void decode_new_frame(gs_image_file_t *image, int new_frame, enum gs_image_alpha_mode alpha_mode)
+static void decode_new_frame(gs_image_file_ex_t *image, int new_frame, enum gs_image_alpha_mode alpha_mode)
 {
 	if (!image->internal->animation_frame_cache[new_frame]) {
 		int last_frame;
@@ -382,8 +362,8 @@ static void decode_new_frame(gs_image_file_t *image, int new_frame, enum gs_imag
 	image->cur_frame = new_frame;
 }
 
-static bool gs_image_file_tick_internal(gs_image_file_t *image, uint64_t elapsed_time_ns,
-					enum gs_image_alpha_mode alpha_mode)
+static bool gs_image_file_ex_tick_internal(gs_image_file_ex_t *image, uint64_t elapsed_time_ns,
+					   enum gs_image_alpha_mode alpha_mode)
 {
 	int loops;
 
@@ -406,27 +386,12 @@ static bool gs_image_file_tick_internal(gs_image_file_t *image, uint64_t elapsed
 	return false;
 }
 
-bool gs_image_file_tick(gs_image_file_t *image, uint64_t elapsed_time_ns)
+bool gs_image_file_ex_tick(gs_image_file_ex_t *image, uint64_t elapsed_time_ns)
 {
-	return gs_image_file_tick_internal(image, elapsed_time_ns, false);
+	return gs_image_file_ex_tick_internal(image, elapsed_time_ns, false);
 }
 
-bool gs_image_file2_tick(gs_image_file2_t *if2, uint64_t elapsed_time_ns)
-{
-	return gs_image_file_tick_internal(&if2->image, elapsed_time_ns, false);
-}
-
-bool gs_image_file3_tick(gs_image_file3_t *if3, uint64_t elapsed_time_ns)
-{
-	return gs_image_file_tick_internal(&if3->image2.image, elapsed_time_ns, if3->alpha_mode);
-}
-
-bool gs_image_file4_tick(gs_image_file4_t *if4, uint64_t elapsed_time_ns)
-{
-	return gs_image_file_tick_internal(&if4->image3.image2.image, elapsed_time_ns, if4->image3.alpha_mode);
-}
-
-static void gs_image_file_update_texture_internal(gs_image_file_t *image, enum gs_image_alpha_mode alpha_mode)
+static void gs_image_file_ex_update_texture_internal(gs_image_file_ex_t *image, enum gs_image_alpha_mode alpha_mode)
 {
 	if (!image->is_animated_gif || !image->loaded || !image->internal)
 		return;
@@ -438,22 +403,7 @@ static void gs_image_file_update_texture_internal(gs_image_file_t *image, enum g
 			     image->internal->gif_info->width * 4, false);
 }
 
-void gs_image_file_update_texture(gs_image_file_t *image)
+void gs_image_file_ex_update_texture(gs_image_file_ex_t *image)
 {
-	gs_image_file_update_texture_internal(image, false);
-}
-
-void gs_image_file2_update_texture(gs_image_file2_t *if2)
-{
-	gs_image_file_update_texture_internal(&if2->image, false);
-}
-
-void gs_image_file3_update_texture(gs_image_file3_t *if3)
-{
-	gs_image_file_update_texture_internal(&if3->image2.image, if3->alpha_mode);
-}
-
-void gs_image_file4_update_texture(gs_image_file4_t *if4)
-{
-	gs_image_file_update_texture_internal(&if4->image3.image2.image, if4->image3.alpha_mode);
+	gs_image_file_ex_update_texture_internal(image, false);
 }

@@ -30,7 +30,7 @@ struct lut_filter_data {
 	gs_effect_t *effect;
 	gs_texture_t *target;
 
-	gs_image_file_t image;
+	gs_image_file_ex_t image;
 
 	uint32_t cube_width;
 	void *cube_data;
@@ -243,7 +243,7 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 	filter->cube_data = NULL;
 
 	obs_enter_graphics();
-	gs_image_file_free(&filter->image);
+	gs_image_file_ex_free(&filter->image);
 	gs_voltexture_destroy(filter->target);
 	filter->target = NULL;
 	obs_leave_graphics();
@@ -261,7 +261,7 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 			filter->cube_data = load_cube_file(path, &filter->cube_width, &filter->domain_min,
 							   &filter->domain_max, &clut_dim);
 		} else {
-			gs_image_file_init(&filter->image, path);
+			gs_image_file_ex_init(&filter->image, path, GS_IMAGE_ALPHA_STRAIGHT);
 			filter->cube_width = LUT_WIDTH;
 		}
 
@@ -384,7 +384,7 @@ static void color_grade_filter_destroy(void *data)
 	obs_enter_graphics();
 	gs_effect_destroy(filter->effect);
 	gs_voltexture_destroy(filter->target);
-	gs_image_file_free(&filter->image);
+	gs_image_file_ex_free(&filter->image);
 	obs_leave_graphics();
 
 	bfree(filter->cube_data);
