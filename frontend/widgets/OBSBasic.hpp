@@ -1083,7 +1083,7 @@ private:
 	void DisableRelativeCoordinates(bool disable);
 	void CreateDefaultScene(bool firstStart);
 	void Save(SceneCollection &collection);
-	void LoadData(obs_data_t *data, SceneCollection &collection);
+	void LoadData(OBSData data, SceneCollection &collection);
 	void Load(SceneCollection &collection);
 
 	void ClearSceneData();

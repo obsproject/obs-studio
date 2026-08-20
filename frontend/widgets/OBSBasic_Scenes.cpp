@@ -790,9 +790,8 @@ OBSData OBSBasic::BackupScene(obs_scene_t *scene, std::vector<obs_source_t *> *s
 		obs_scene_enum_items(scene, save_undo_source_enum, undo_array);
 	} else {
 		for (obs_source_t *source : *sources) {
-			obs_data_t *source_data = obs_save_source(source);
+			OBSDataAutoRelease source_data = obs_save_source(source);
 			obs_data_array_push_back(undo_array, source_data);
-			obs_data_release(source_data);
 		}
 	}
 
