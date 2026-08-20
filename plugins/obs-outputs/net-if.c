@@ -55,10 +55,12 @@ static void netif_convert_to_string(char *dest, struct sockaddr_storage *byte_ad
 	else if (family == AF_INET6)
 		inet_ntop(family, &(((struct sockaddr_in6 *)byte_address)->sin6_addr), temp_char, INET6_ADDRSTRLEN);
 #else
+	wchar_t temp_wchar[INET6_ADDRSTRLEN] = {0};
 	if (family == AF_INET)
-		InetNtopA(family, &(((SOCKADDR_IN *)byte_address)->sin_addr), temp_char, INET6_ADDRSTRLEN);
+		InetNtopW(family, &(((SOCKADDR_IN *)byte_address)->sin_addr), temp_wchar, INET6_ADDRSTRLEN);
 	else if (family == AF_INET6)
-		InetNtopA(family, &(((SOCKADDR_IN6 *)byte_address)->sin6_addr), temp_char, INET6_ADDRSTRLEN);
+		InetNtopW(family, &(((SOCKADDR_IN6 *)byte_address)->sin6_addr), temp_wchar, INET6_ADDRSTRLEN);
+	WideCharToMultiByte(CP_UTF8, 0, temp_wchar, -1, temp_char, INET6_ADDRSTRLEN, NULL, NULL);
 #endif
 	strncpy(dest, temp_char, INET6_ADDRSTRLEN);
 }
@@ -113,7 +115,10 @@ bool netif_str_to_addr(struct sockaddr_storage *out, int *addr_len, const char *
 	*addr_len = sizeof(*out);
 
 #ifdef _WIN32
-	int ret = WSAStringToAddressA((LPSTR)addr, out->ss_family, NULL, (LPSOCKADDR)out, addr_len);
+	wchar_t *waddr = NULL;
+	os_utf8_to_wcs_ptr(addr, 0, &waddr);
+	int ret = WSAStringToAddressW((LPWSTR)waddr, out->ss_family, NULL, (LPSOCKADDR)out, addr_len);
+	bfree(waddr);
 	if (ret == SOCKET_ERROR)
 		warn("Could not parse address, error code: %d", GetLastError());
 	return ret != SOCKET_ERROR;

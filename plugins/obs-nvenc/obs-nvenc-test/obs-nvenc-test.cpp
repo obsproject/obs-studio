@@ -186,7 +186,7 @@ private:
 	bool load_nvml_lib()
 	{
 #ifdef _WIN32
-		nvml_lib = LoadLibraryA("nvml.dll");
+		nvml_lib = LoadLibraryW(L"nvml.dll");
 #else
 		nvml_lib = dlopen("libnvidia-ml.so.1", RTLD_LAZY);
 #endif
