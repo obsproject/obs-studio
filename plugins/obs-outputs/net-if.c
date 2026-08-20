@@ -205,16 +205,20 @@ static inline PIP_ADAPTER_ADDRESSES get_adapters(void)
 	} while ((ret == ERROR_BUFFER_OVERFLOW) && (i < max_tries));
 
 	if (ret != NO_ERROR && ret != ERROR_NO_DATA) {
-		LPSTR msg_buf = NULL;
+		LPWSTR msg_buf = NULL;
 
 		bfree(adapter);
 		adapter = NULL;
 
-		FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+		FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
 				       FORMAT_MESSAGE_IGNORE_INSERTS,
-			       NULL, ret, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg_buf, 0, NULL);
+			       NULL, ret, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&msg_buf, 0, NULL);
 		if (msg_buf) {
-			warn("Call to GetAdaptersAddresses failed: %s (%d)", msg_buf, ret);
+			char *msg_utf8 = NULL;
+			os_wcs_to_utf8_ptr(msg_buf, 0, &msg_utf8);
+			warn("Call to GetAdaptersAddresses failed: %s (%d)", msg_utf8 ? msg_utf8 : "<unknown error>",
+			     ret);
+			bfree(msg_utf8);
 			LocalFree(msg_buf);
 		}
 	}

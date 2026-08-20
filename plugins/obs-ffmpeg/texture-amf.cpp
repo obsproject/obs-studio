@@ -63,6 +63,13 @@ struct adapter_caps {
 	bool supports_av1 = false;
 };
 
+char* WideToUTF8(const wchar_t* wide)
+{
+	char* resultText = NULL;
+	os_wcs_to_utf8_ptr(wide, 0, &resultText);
+	return resultText;
+}
+
 /* ------------------------------------------------------------------------- */
 
 static std::map<uint32_t, adapter_caps> caps;
@@ -282,7 +289,11 @@ template<typename T> static void set_amf_property(amf_base *enc, const wchar_t *
 {
 	AMF_RESULT res = enc->amf_encoder->SetProperty(name, value);
 	if (res != AMF_OK) {
-		error("Failed to set property '%ls': %ls", name, amf_trace->GetResultText(res));
+		char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(res));
+		char *nameUtf8 = WideToUTF8(amf_trace->GetResultText(res));
+		error("Failed to set property '%s': %s", nameUtf8, resultUtf8);
+		bfree(resultUtf8);
+		bfree(nameUtf8);
 	}
 }
 
@@ -886,7 +897,9 @@ try {
 
 } catch (const amf_error &err) {
 	amf_texencode *enc = (amf_texencode *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	error("%s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	*received_packet = false;
 	return false;
 
@@ -986,7 +999,9 @@ try {
 
 } catch (const amf_error &err) {
 	amf_fallback *enc = (amf_fallback *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	error("%s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	*received_packet = false;
 	return false;
 } catch (const char *err) {
@@ -1166,7 +1181,9 @@ try {
 	return true;
 
 } catch (const amf_error &err) {
-	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	error("%s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return false;
 }
 
@@ -1454,7 +1471,9 @@ try {
 
 } catch (const amf_error &err) {
 	amf_base *enc = (amf_base *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	error("%s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return false;
 }
 
@@ -1744,7 +1763,9 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h264] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[texture-amf-h264] %s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return obs_encoder_create_rerouted(encoder, "h264_fallback_amf");
 
 } catch (const char *err) {
@@ -1788,7 +1809,9 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return nullptr;
 
 } catch (const char *err) {
@@ -1936,7 +1959,9 @@ try {
 
 } catch (const amf_error &err) {
 	amf_base *enc = (amf_base *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	error("%s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return false;
 }
 
@@ -2148,7 +2173,9 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h265] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[texture-amf-h265] %s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return obs_encoder_create_rerouted(encoder, "h265_fallback_amf");
 
 } catch (const char *err) {
@@ -2189,7 +2216,9 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return nullptr;
 
 } catch (const char *err) {
@@ -2364,7 +2393,9 @@ try {
 
 } catch (const amf_error &err) {
 	amf_base *enc = (amf_base *)data;
-	error("%s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	error("%s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return false;
 }
 
@@ -2573,7 +2604,9 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-av1] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[texture-amf-av1] %s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return obs_encoder_create_rerouted(encoder, "av1_fallback_amf");
 
 } catch (const char *err) {
@@ -2615,7 +2648,9 @@ try {
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[fallback-amf-av1] %s: %s: %ls", __FUNCTION__, err.str, amf_trace->GetResultText(err.res));
+	char *resultUtf8 = WideToUTF8(amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-av1] %s: %s: %s", __FUNCTION__, err.str, resultUtf8);
+	bfree(resultUtf8);
 	return nullptr;
 
 } catch (const char *err) {

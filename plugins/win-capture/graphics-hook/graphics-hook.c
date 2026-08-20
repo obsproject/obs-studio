@@ -456,13 +456,15 @@ void hlog(const char *format, ...)
 
 void hlog_hr(const char *text, HRESULT hr)
 {
-	LPSTR buffer = NULL;
+	LPWSTR buffer = NULL;
 
-	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
-		       NULL, hr, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPSTR)&buffer, 0, NULL);
+	FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
+		       NULL, hr, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPWSTR)&buffer, 0, NULL);
 
 	if (buffer) {
-		hlog("%s (0x%08lX): %s", text, hr, buffer);
+		char* buffer_utf8 = wide_to_utf8_ptr(buffer);
+		hlog("%s (0x%08lX): %s", text, hr, buffer_utf8);
+		free(buffer_utf8);
 		LocalFree(buffer);
 	} else {
 		hlog("%s (0x%08lX)", text, hr);
