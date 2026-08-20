@@ -106,13 +106,18 @@ void *os_dlopen(const char *path)
 		if (error == ERROR_PROC_NOT_FOUND)
 			return NULL;
 
-		char *message = NULL;
+		wchar_t *message = NULL;
+		char *message_utf8 = NULL;
 
-		FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
+		FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
 				       FORMAT_MESSAGE_ALLOCATE_BUFFER,
-			       NULL, error, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPSTR)&message, 0, NULL);
+			       NULL, error, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPWSTR)&message, 0, NULL);
 
-		blog(LOG_INFO, "LoadLibrary failed for '%s': %s (%lu)", path, message, error);
+		if (message)
+			os_wcs_to_utf8_ptr(message, 0, &message_utf8);
+
+		blog(LOG_INFO, "LoadLibrary failed for '%s': %s (%lu)", path, message_utf8 ? message_utf8 : "", error);
+		bfree(message_utf8);
 
 		if (message)
 			LocalFree(message);
