@@ -34,6 +34,19 @@ extern "C" {
  */
 int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props, obs_data_t *settings);
 
+/**
+ * Apply saved/current OBS control values to a v4l2 device.
+ *
+ * This is used for non-UI updates, where source settings may change without
+ * running the property modified callbacks that normally issue VIDIOC_S_CTRL.
+ *
+ * @param dev handle to the v4l2 device
+ * @param settings the source settings containing the control values
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_apply_controls(int_fast32_t dev, obs_data_t *settings);
+
 #ifdef __cplusplus
 }
 #endif
