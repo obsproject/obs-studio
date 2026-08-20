@@ -80,11 +80,13 @@ static const char *my_dhm_G = "4";
 #define MD5_DIGEST_LENGTH 16
 #include <nettle/base64.h>
 #include <nettle/md5.h>
-#else	/* USE_OPENSSL */
+#elif defined(USE_OPENSSL)
 #include <openssl/ssl.h>
-#include <openssl/md5.h>
+#include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include <openssl/x509_vfy.h>
+#define MD5_DIGEST_LENGTH 16
 #endif
 #endif
 
@@ -100,6 +102,7 @@ static const char *my_dhm_G = "4";
 
 #define RTMP_SIG_SIZE 1536
 #define RTMP_LARGE_HEADER_SIZE 12
+#define RTMP_TLS_CERT_VERIFY_FAILED -0x2700
 
 static const int packetSize[] = { 12, 8, 4, 1 };
 
@@ -363,9 +366,9 @@ error:
     mbedtls_x509_crt_free(chain);
     free(chain);
     r->RTMP_TLS_ctx->cacert = NULL;
-#else /* USE_MBEDTLS */
+#else
 	UNUSED_PARAMETER(r);
-#endif /* USE_MBEDTLS */
+#endif
 }
 
 void
@@ -402,14 +405,17 @@ RTMP_TLS_Init(RTMP *r)
     gnutls_priority_init(&RTMP_TLS_ctx->prios, "NORMAL", NULL);
     gnutls_certificate_set_x509_trust_file(RTMP_TLS_ctx->cred,
                                            "ca.pem", GNUTLS_X509_FMT_PEM);
-#elif !defined(NO_SSL) /* USE_OPENSSL */
-    /* libcrypto doesn't need anything special */
-    SSL_load_error_strings();
-    SSL_library_init();
-    OpenSSL_add_all_digests();
-    RTMP_TLS_ctx = SSL_CTX_new(SSLv23_method());
-    SSL_CTX_set_options(RTMP_TLS_ctx, SSL_OP_ALL);
-    SSL_CTX_set_default_verify_paths(RTMP_TLS_ctx);
+#elif defined(USE_OPENSSL) && !defined(NO_SSL)
+    r->RTMP_TLS_ctx = SSL_CTX_new(TLS_client_method());
+    if (!r->RTMP_TLS_ctx) {
+        RTMP_Log(RTMP_LOGERROR, "RTMP_TLS_Init: Failed to create OpenSSL context");
+        return;
+    }
+
+    SSL_CTX_set_options(r->RTMP_TLS_ctx, SSL_OP_ALL);
+    SSL_CTX_set_verify(r->RTMP_TLS_ctx, SSL_VERIFY_PEER, NULL);
+    if (SSL_CTX_set_default_verify_paths(r->RTMP_TLS_ctx) != 1)
+        RTMP_Log(RTMP_LOGWARNING, "RTMP_TLS_Init: Failed to load default OpenSSL verify paths");
 #endif
 #else
 	UNUSED_PARAMETER(r);
@@ -419,7 +425,6 @@ RTMP_TLS_Init(RTMP *r)
 void
 RTMP_TLS_Free(RTMP *r) {
 #if defined(CRYPTO) && defined(USE_MBEDTLS)
-
     if (!r->RTMP_TLS_ctx)
         return;
     mbedtls_ssl_config_free(&r->RTMP_TLS_ctx->conf);
@@ -434,6 +439,11 @@ RTMP_TLS_Free(RTMP *r) {
 
     // NO mbedtls_net_free() BECAUSE WE SET IT UP BY HAND!
     free(r->RTMP_TLS_ctx);
+    r->RTMP_TLS_ctx = NULL;
+#elif defined(USE_OPENSSL)
+    if (!r->RTMP_TLS_ctx)
+        return;
+    SSL_CTX_free(r->RTMP_TLS_ctx);
     r->RTMP_TLS_ctx = NULL;
 #else
 	UNUSED_PARAMETER(r);
@@ -956,12 +966,34 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
 
         if (mbedtls_ssl_set_hostname(r->m_sb.sb_ssl, hostname))
             return FALSE;
-#else
-        TLS_setfd(r->m_sb.sb_ssl, r->m_sb.sb_socket);
+#elif defined(USE_OPENSSL)
+        if (!r->m_sb.sb_ssl)
+            return FALSE;
+
+        char *hostname = malloc(r->Link.hostname.av_len + 1);
+        if (!hostname) {
+            TLS_close(r->m_sb.sb_ssl);
+            r->m_sb.sb_ssl = NULL;
+            return FALSE;
+        }
+
+        memcpy(hostname, r->Link.hostname.av_val, r->Link.hostname.av_len);
+        hostname[r->Link.hostname.av_len] = 0;
+
+        if (SSL_set_tlsext_host_name(r->m_sb.sb_ssl, hostname) != 1 ||
+            X509_VERIFY_PARAM_set1_host(SSL_get0_param(r->m_sb.sb_ssl), hostname, 0) != 1 ||
+            TLS_setfd(r->m_sb.sb_ssl, r->m_sb.sb_socket) != 1) {
+            free(hostname);
+            TLS_close(r->m_sb.sb_ssl);
+            r->m_sb.sb_ssl = NULL;
+            return FALSE;
+        }
+
+        free(hostname);
 #endif
 
         int connect_return = TLS_connect(r->m_sb.sb_ssl);
-        if (connect_return < 0)
+        if (!TLS_success(connect_return))
         {
 #if defined(USE_MBEDTLS)
             r->last_error_code = connect_return;
@@ -987,9 +1019,24 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
                     return FALSE;
                 }
             }
+#elif defined(USE_OPENSSL)
+            long verify_result = SSL_get_verify_result(r->m_sb.sb_ssl);
+            if (verify_result != X509_V_OK) {
+                r->last_error_code = RTMP_TLS_CERT_VERIFY_FAILED;
+                RTMP_Log(RTMP_LOGERROR, "%s, Cert verify failed: %ld (%s)", __FUNCTION__, verify_result,
+                         X509_verify_cert_error_string(verify_result));
+                RTMP_Close(r);
+                return FALSE;
+            }
+
+            r->last_error_code = SSL_get_error(r->m_sb.sb_ssl, connect_return);
 #endif
             // output the error in a format that matches mbedTLS
+#ifdef USE_OPENSSL
+            connect_return = r->last_error_code;
+#else
             connect_return = abs(connect_return);
+#endif
             RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed: -0x%x", __FUNCTION__, connect_return);
             RTMP_Close(r);
             return FALSE;
@@ -2593,7 +2640,7 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
         return 0;
     }
 
-#else   /* USE_OPENSSL */
+#elif defined(USE_OPENSSL)
     BIO *bmem, *b64;
     BUF_MEM *bptr;
 
@@ -2640,8 +2687,49 @@ typedef struct md5_ctx	MD5_CTX;
 #define MD5_Init(ctx)	md5_init(ctx)
 #define MD5_Update(ctx,data,len)	md5_update(ctx,len,data)
 #define MD5_Final(dig,ctx)	md5_digest(ctx,MD5_DIGEST_LENGTH,dig)
-#else
+#elif defined(USE_OPENSSL)
+typedef EVP_MD_CTX *MD5_CTX;
+static inline int
+MD5_Init_openssl(MD5_CTX *ctx)
+{
+    *ctx = EVP_MD_CTX_new();
+    if (!*ctx) {
+        RTMP_Log(RTMP_LOGERROR, "%s: failed to allocate EVP message digest context",
+                 __FUNCTION__);
+        return FALSE;
+    }
+
+    if (EVP_DigestInit_ex(*ctx, EVP_md5(), NULL) != 1) {
+        RTMP_Log(RTMP_LOGERROR, "%s: failed to initialize MD5 context", __FUNCTION__);
+        EVP_MD_CTX_free(*ctx);
+        *ctx = NULL;
+        return FALSE;
+    }
+
+    return TRUE;
+}
+#define MD5_Update(ctx,data,len)    EVP_DigestUpdate(*(ctx), data, len)
+static inline void
+MD5_Final_openssl(unsigned char *dig, MD5_CTX *ctx)
+{
+    unsigned int md5_len;
+    EVP_DigestFinal_ex(*ctx, dig, &md5_len);
+    EVP_MD_CTX_free(*ctx);
+    *ctx = NULL;
+}
+#define MD5_Final(dig,ctx)  MD5_Final_openssl(dig,ctx)
 #endif
+
+static inline int
+MD5_Init_checked(MD5_CTX *ctx)
+{
+#if defined(USE_OPENSSL)
+    return MD5_Init_openssl(ctx);
+#else
+    MD5_Init(ctx);
+    return TRUE;
+#endif
+}
 
 static const AVal av_authmod_adobe = AVC("authmod=adobe");
 static const AVal av_authmod_llnw  = AVC("authmod=llnw");
@@ -2672,6 +2760,7 @@ static int
 PublisherAuth(RTMP *r, AVal *description)
 {
     char *token_in = NULL;
+    char *orig_ptr = NULL;
     char *ptr;
     unsigned char md5sum_val[MD5_DIGEST_LENGTH+1];
     MD5_CTX md5ctx;
@@ -2716,7 +2805,7 @@ PublisherAuth(RTMP *r, AVal *description)
         }
         else if((token_in = strstr(description->av_val, "?reason=needauth")) != NULL)
         {
-            char *par, *val = NULL, *orig_ptr;
+            char *par, *val = NULL;
             AVal user, salt, opaque, challenge, *aptr = NULL;
 
             opaque.av_len = challenge.av_len = salt.av_len = user.av_len = 0;
@@ -2766,7 +2855,8 @@ PublisherAuth(RTMP *r, AVal *description)
                 aptr->av_len = (int)strlen(aptr->av_val);
 
             /* hash1 = base64enc(md5(user + _aodbeAuthSalt + password)) */
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, user.av_val, user.av_len);
             MD5_Update(&md5ctx, salt.av_val, salt.av_len);
             MD5_Update(&md5ctx, r->Link.pubPasswd.av_val, r->Link.pubPasswd.av_len);
@@ -2783,7 +2873,8 @@ PublisherAuth(RTMP *r, AVal *description)
             b64enc((unsigned char *) &challenge2_data, sizeof(int), challenge2, CHALLENGE2_LEN);
             RTMP_Log(RTMP_LOGDEBUG, "%s, b64(%d) = %s", __FUNCTION__, challenge2_data, challenge2);
 
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, salted2, B64DIGEST_LEN);
             /* response = base64enc(md5(hash1 + opaque + challenge2)) */
             if (opaque.av_len)
@@ -2887,7 +2978,6 @@ PublisherAuth(RTMP *r, AVal *description)
         }
         else if((token_in = strstr(description->av_val, "?reason=needauth")) != NULL)
         {
-            char *orig_ptr;
             char *par, *val = NULL;
             char hash1[HEXHASH_LEN+1], hash2[HEXHASH_LEN+1], hash3[HEXHASH_LEN+1];
             AVal user, nonce, *aptr = NULL;
@@ -2953,7 +3043,8 @@ PublisherAuth(RTMP *r, AVal *description)
             snprintf(cnonce, sizeof(cnonce), "%08x", rand());
 
             /* hash1 = hexenc(md5(user + ":" + realm + ":" + password)) */
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, user.av_val, user.av_len);
             MD5_Update(&md5ctx, ":", 1);
             MD5_Update(&md5ctx, (void *)realm, sizeof(realm)-1);
@@ -2972,7 +3063,8 @@ PublisherAuth(RTMP *r, AVal *description)
             if (ptr)
                 apptmp.av_len = ptr - apptmp.av_val;
 
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, (void *)method, sizeof(method)-1);
             MD5_Update(&md5ctx, ":/", 2);
             MD5_Update(&md5ctx, apptmp.av_val, apptmp.av_len);
@@ -2985,7 +3077,8 @@ PublisherAuth(RTMP *r, AVal *description)
             hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash2, sizeof(hash2));
 
             /* hash3 = hexenc(md5(hash1 + ":" + nonce + ":" + nchex + ":" + cnonce + ":" + qop + ":" + hash2)) */
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, hash1, HEXHASH_LEN);
             MD5_Update(&md5ctx, ":", 1);
             MD5_Update(&md5ctx, nonce.av_val, nonce.av_len);
@@ -3066,6 +3159,11 @@ PublisherAuth(RTMP *r, AVal *description)
         return 0;
     }
     return 1;
+
+md5_error:
+    free(orig_ptr);
+    r->Link.pFlags |= RTMP_PUB_CLEAN;
+    return 0;
 }
 #endif
 
