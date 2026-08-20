@@ -311,14 +311,14 @@ template<typename T> static void set_amf_property(amf_base *enc, const wchar_t *
 /* ------------------------------------------------------------------------- */
 /* Implementation                                                            */
 
-static HMODULE get_lib(const char *lib)
+static HMODULE get_lib(const wchar_t *lib)
 {
-	HMODULE mod = GetModuleHandleA(lib);
+	HMODULE mod = GetModuleHandleW(lib);
 	if (mod) {
 		return mod;
 	}
 
-	return LoadLibraryA(lib);
+	return LoadLibraryW(lib);
 }
 
 #define AMD_VENDOR_ID 0x1002
@@ -327,8 +327,8 @@ typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static bool amf_init_d3d11(amf_texencode *enc)
 try {
-	HMODULE dxgi = get_lib("DXGI.dll");
-	HMODULE d3d11 = get_lib("D3D11.dll");
+	HMODULE dxgi = get_lib(L"DXGI.dll");
+	HMODULE d3d11 = get_lib(L"D3D11.dll");
 	CREATEDXGIFACTORY1PROC create_dxgi;
 	PFN_D3D11_CREATE_DEVICE create_device;
 	ComPtr<IDXGIFactory> factory;

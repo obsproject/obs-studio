@@ -759,9 +759,10 @@ static void main_crash_handler(const char *format, va_list args, void * /* param
 
 	snprintf(message_buffer.get(), size + 1, CRASH_MESSAGE, absolutePath.c_str());
 
-	string finalMessage = string(message_buffer.get(), message_buffer.get() + size);
+	BPtr<wchar_t> finalMessage;
+	os_utf8_to_wcs_ptr(message_buffer.get(), size, &finalMessage);
 
-	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!", MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
+	int ret = MessageBoxW(NULL, finalMessage, L"OBS has crashed!", MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
 
 	if (ret == IDYES) {
 		size_t len = strlen(text);
@@ -835,10 +836,17 @@ static bool vc_runtime_outdated()
 		return false;
 	}
 
-	int choice = MessageBoxA(NULL, vcRunErrorMsg, vcRunErrorTitle, MB_OKCANCEL | MB_ICONERROR | MB_TASKMODAL);
+	BPtr<wchar_t> title;
+	BPtr<wchar_t> msg;
+	BPtr<wchar_t> url;
+	os_utf8_to_wcs_ptr(vcRunErrorTitle, 0, &title);
+	os_utf8_to_wcs_ptr(vcRunErrorMsg, 0, &msg);
+	os_utf8_to_wcs_ptr(vcRunInstallerUrl, 0, &url);
+
+	int choice = MessageBoxW(NULL, msg, title, MB_OKCANCEL | MB_ICONERROR | MB_TASKMODAL);
 	if (choice == IDOK) {
 		/* Open the URL in the default browser. */
-		ShellExecuteA(NULL, "open", vcRunInstallerUrl, NULL, NULL, SW_SHOWNORMAL);
+		ShellExecuteW(NULL, L"open", url, NULL, NULL, SW_SHOWNORMAL);
 	}
 
 	return true;
@@ -1055,7 +1063,9 @@ int main(int argc, char *argv[])
 				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n";
 
 #ifdef _WIN32
-			MessageBoxA(NULL, help.c_str(), "Help", MB_OK | MB_ICONASTERISK);
+			BPtr<wchar_t> wHelp;
+			os_utf8_to_wcs_ptr(help.c_str(), 0, &wHelp);
+			MessageBoxW(NULL, wHelp, L"Help", MB_OK | MB_ICONASTERISK);
 #else
 			std::cout << help << "--version, -V: Get current version.\n";
 #endif

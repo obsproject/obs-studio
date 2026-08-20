@@ -10,10 +10,10 @@ int main(int argc, char *argv[])
 	struct dxgi_offsets dxgi = {0};
 	struct dxgi_offsets2 dxgi2 = {0};
 
-	WNDCLASSA wc = {0};
+	WNDCLASSW wc = {0};
 	wc.style = CS_OWNDC;
-	wc.hInstance = GetModuleHandleA(NULL);
-	wc.lpfnWndProc = (WNDPROC)DefWindowProcA;
+	wc.hInstance = GetModuleHandleW(NULL);
+	wc.lpfnWndProc = (WNDPROC)DefWindowProcW;
 	wc.lpszClassName = DUMMY_WNDCLASS;
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);
@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
 	policy.PreferSystem32Images = 1;
 	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
 
-	if (!RegisterClassA(&wc)) {
-		printf("failed to register '%s'\n", DUMMY_WNDCLASS);
+	if (!RegisterClassW(&wc)) {
+		printf("failed to register '%S'\n", DUMMY_WNDCLASS);
 		return -1;
 	}
 

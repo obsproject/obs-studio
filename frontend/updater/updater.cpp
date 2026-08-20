@@ -1317,19 +1317,19 @@ static bool UpdateVSRedists()
 
 static void UpdateRegistryVersion(const Manifest &manifest)
 {
-	const char *regKey = R"(Software\Microsoft\Windows\CurrentVersion\Uninstall\OBS Studio)";
+	const wchar_t *regKey = LR"(Software\Microsoft\Windows\CurrentVersion\Uninstall\OBS Studio)";
 	LSTATUS res;
 	HKEY key;
-	char version[32];
+	wchar_t version[32];
 	int formattedLen;
 
 	/* The manifest does not store a version string, so we gotta make one ourselves. */
 	if (manifest.beta || manifest.rc) {
-		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d-%s%d", manifest.version_major,
-					 manifest.version_minor, manifest.version_patch, manifest.beta ? "beta" : "rc",
-					 manifest.beta ? manifest.beta : manifest.rc);
+		formattedLen = swprintf_s(version, _countof(version), L"%d.%d.%d-%s%d", manifest.version_major,
+					  manifest.version_minor, manifest.version_patch,
+					  manifest.beta ? L"beta" : L"rc", manifest.beta ? manifest.beta : manifest.rc);
 	} else {
-		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d", manifest.version_major,
+		formattedLen = swprintf_s(version, _countof(version), L"%d.%d.%d", manifest.version_major,
 					 manifest.version_minor, manifest.version_patch);
 	}
 
@@ -1337,12 +1337,12 @@ static void UpdateRegistryVersion(const Manifest &manifest)
 		return;
 	}
 
-	res = RegOpenKeyExA(HKEY_LOCAL_MACHINE, regKey, 0, KEY_WRITE | KEY_WOW64_32KEY, &key);
+	res = RegOpenKeyExW(HKEY_LOCAL_MACHINE, regKey, 0, KEY_WRITE | KEY_WOW64_32KEY, &key);
 	if (res != ERROR_SUCCESS) {
 		return;
 	}
 
-	RegSetValueExA(key, "DisplayVersion", 0, REG_SZ, (const BYTE *)version, formattedLen + 1);
+	RegSetValueExW(key, L"DisplayVersion", 0, REG_SZ, (const BYTE *)version, (formattedLen + 1) * sizeof(wchar_t));
 	RegCloseKey(key);
 }
 

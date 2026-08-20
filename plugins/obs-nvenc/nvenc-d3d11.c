@@ -8,13 +8,13 @@
 /* ------------------------------------------------------------------------- */
 /* D3D11 Context/Device management                                           */
 
-static HANDLE get_lib(struct nvenc_data *enc, const char *lib)
+static HANDLE get_lib(struct nvenc_data *enc, const wchar_t *lib)
 {
-	HMODULE mod = GetModuleHandleA(lib);
+	HMODULE mod = GetModuleHandleW(lib);
 	if (mod)
 		return mod;
 
-	mod = LoadLibraryA(lib);
+	mod = LoadLibraryW(lib);
 	if (!mod)
 		error("Failed to load %s", lib);
 	return mod;
@@ -24,8 +24,8 @@ typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 bool d3d11_init(struct nvenc_data *enc, obs_data_t *settings)
 {
-	HMODULE dxgi = get_lib(enc, "DXGI.dll");
-	HMODULE d3d11 = get_lib(enc, "D3D11.dll");
+	HMODULE dxgi = get_lib(enc, L"DXGI.dll");
+	HMODULE d3d11 = get_lib(enc, L"D3D11.dll");
 	CREATEDXGIFACTORY1PROC create_dxgi;
 	PFN_D3D11_CREATE_DEVICE create_device;
 	IDXGIFactory1 *factory;
