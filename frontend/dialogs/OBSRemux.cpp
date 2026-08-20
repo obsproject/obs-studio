@@ -97,8 +97,7 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	connect(queueModel.data(), &RemuxQueueModel::rowsRemoved, this, &OBSRemux::rowCountChanged);
 
 	QModelIndex index = queueModel->createIndex(0, 1);
-	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex", Qt::QueuedConnection,
-				  Q_ARG(const QModelIndex &, index));
+	QMetaObject::invokeMethod(ui->tableView, &QTableView::setCurrentIndex, Qt::QueuedConnection, index);
 }
 
 bool OBSRemux::stopRemux()

@@ -654,9 +654,8 @@ private slots:
 
 	void logUploadFinished(const std::string &text, const std::string &error, OBS::LogFileType uploadType);
 
-	void updateCheckFinished();
-
 public slots:
+	void updateCheckFinished();
 	void on_actionAdvAudioProperties_triggered();
 
 public:
@@ -917,6 +916,7 @@ private:
 	std::vector<std::string> GetRestartRequirements(const ConfigFile &config) const;
 	void ResetProfileData();
 	void CheckForSimpleModeX264Fallback();
+	void CheckForMissingEncoders();
 
 public:
 	inline const OBSProfileCache &GetProfileCache() const noexcept { return profiles; };

@@ -115,8 +115,7 @@ static void LogString(fstream &logFile, const char *timeString, char *str, int l
 	logFile << msg << endl;
 	logfile_mutex.unlock();
 
-	QMetaObject::invokeMethod(App(), "addLogLine", Qt::QueuedConnection, Q_ARG(int, log_level),
-				  Q_ARG(QString, QString(msg.c_str())));
+	QMetaObject::invokeMethod(App(), &OBSApp::addLogLine, Qt::QueuedConnection, log_level, QString(msg.c_str()));
 }
 
 static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
@@ -854,11 +853,6 @@ static bool vc_runtime_outdated()
 
 static void set_process_mitigation_policies()
 {
-	// DLL planting protection - prefer system32 images
-	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {};
-	policy.PreferSystem32Images = 1;
-	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
-
 	PROCESS_MITIGATION_DEP_POLICY dep = {0};
 	dep.DisableAtlThunkEmulation = 1;
 	dep.Enable = 1;
