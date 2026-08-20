@@ -587,7 +587,7 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat, uint_fast32_
 	case V4L2_FRMIVAL_TYPE_DISCRETE:
 		while (v4l2_ioctl(dev, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) == 0) {
 			float fps = (float)frmival.discrete.denominator / frmival.discrete.numerator;
-			int pack = v4l2_pack_tuple(frmival.discrete.numerator, frmival.discrete.denominator);
+			uint64_t pack = v4l2_pack_tuple(frmival.discrete.numerator, frmival.discrete.denominator);
 			dstr_printf(&buffer, "%.2f", fps);
 			obs_property_list_add_int(prop, buffer.array, pack);
 			frmival.index++;
@@ -941,6 +941,9 @@ static void v4l2_init(struct v4l2_data *data)
 	blog(LOG_INFO, "Linesize: %d Bytes", data->linesize);
 
 	/* set framerate */
+	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
+	blog(LOG_INFO, "Attempting to set framerate: %.2f fps, (%d / %d)", (float)fps_denom / fps_num, fps_denom,
+	     fps_num);
 	if (v4l2_set_framerate(data->dev, &data->framerate) < 0) {
 		blog(LOG_ERROR, "Unable to set framerate");
 		goto fail;
