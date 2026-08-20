@@ -149,22 +149,22 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 
 	QVector<I18nLanguageDescription> languageList;
 	if (apiYouTube->GetI18nLanguagesList(languageList)) {
-		QString obs_language = QLocale::languageToCode(QLocale(App()->GetLocale()).language());
-		bool obs_language_found = false;
+		QString obsLanguage = QLocale::languageToCode(QLocale(App()->GetLocale()).language());
+		bool obsLanguageFound = false;
 
 		for (auto &language : languageList) {
 			ui->languageBox->addItem(language.name, language.id);
-			if (language.id == obs_language) {
-				obs_language_found = true;
+			if (language.id == obsLanguage) {
+				obsLanguageFound = true;
 			}
 		}
 
-		if (obs_language_found) {
-			ui->languageBox->setCurrentIndex(ui->languageBox->findData(obs_language));
+		if (obsLanguageFound) {
+			ui->languageBox->setCurrentIndex(ui->languageBox->findData(obsLanguage));
 		} else {
-			int en_index = ui->languageBox->findData("en");
-			if (en_index != -1) {
-				ui->languageBox->setCurrentIndex(en_index);
+			int enIndex = ui->languageBox->findData("en");
+			if (enIndex != -1) {
+				ui->languageBox->setCurrentIndex(enIndex);
 			} else if (ui->languageBox->count() > 0) {
 				ui->languageBox->setCurrentIndex(0);
 			}

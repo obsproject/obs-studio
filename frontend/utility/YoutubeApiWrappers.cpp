@@ -289,9 +289,9 @@ bool YoutubeApiWrappers::GetI18nLanguagesList(QVector<I18nLanguageDescription> &
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-	const QString url_template = QString(youtubeLiveI18nLanguagesUrl.data()) + "?part=snippet&hl=%1";
+	const QString urlTemplate = QString(youtubeLiveI18nLanguagesUrl.data()) + "?part=snippet&hl=%1";
 
-	QString url = url_template.arg(QLocale().name());
+	QString url = urlTemplate.arg(QLocale().name());
 
 	Json json_out;
 	if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out)) {
@@ -299,7 +299,7 @@ bool YoutubeApiWrappers::GetI18nLanguagesList(QVector<I18nLanguageDescription> &
 			return false;
 		}
 		// Try again with en_US if YouTube error indicates an unsupported locale
-		url = url_template.arg("en_US");
+		url = urlTemplate.arg("en_US");
 		if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out)) {
 			return false;
 		}
