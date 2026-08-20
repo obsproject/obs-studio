@@ -239,6 +239,32 @@ static inline void init_module_info(struct exception_handler_data *data)
 
 extern const char *get_win_release_id();
 
+static int get_process_uptime_seconds()
+{
+	FILETIME creation_time = {0};
+	FILETIME exit_time = {0};
+	FILETIME kernel_time = {0};
+	FILETIME user_time = {0};
+
+	if (!GetProcessTimes(GetCurrentProcess(), &creation_time, &exit_time, &kernel_time, &user_time))
+		return -1;
+
+	FILETIME current_time = {0};
+	GetSystemTimeAsFileTime(&current_time);
+
+	// Can't cast directly due to alignment requirements of ULARGE_INTEGER
+	ULARGE_INTEGER creation_time_ularge = {0};
+	ULARGE_INTEGER current_time_ularge = {0};
+
+	creation_time_ularge.LowPart = creation_time.dwLowDateTime;
+	creation_time_ularge.HighPart = creation_time.dwHighDateTime;
+
+	current_time_ularge.LowPart = current_time.dwLowDateTime;
+	current_time_ularge.HighPart = current_time.dwHighDateTime;
+
+	return (int)((current_time_ularge.QuadPart - creation_time_ularge.QuadPart) / 10000000);
+}
+
 static inline void write_header(struct exception_handler_data *data)
 {
 	char date_time[80];
@@ -255,6 +281,8 @@ static inline void write_header(struct exception_handler_data *data)
 
 	const char *release_id = get_win_release_id();
 
+	int process_uptime_seconds = get_process_uptime_seconds();
+
 	dstr_catf(&data->str,
 		  "Unhandled exception: %x\r\n"
 		  "Date/Time: %s\r\n"
@@ -262,11 +290,14 @@ static inline void write_header(struct exception_handler_data *data)
 		  "libobs version: " OBS_VERSION " (%s-bit)\r\n"
 		  "Windows version: %d.%d build %d (release: %s; revision: %d; "
 		  "%s-bit)\r\n"
-		  "CPU: %s\r\n\r\n",
+		  "CPU: %s\r\n"
+		  "Process Uptime: %dh %dm %ds\r\n"
+		  "\r\n",
 		  data->exception->ExceptionRecord->ExceptionCode, date_time, data->main_trace.instruction_ptr,
 		  data->module_name.array, obs_bitness, data->win_version.major, data->win_version.minor,
 		  data->win_version.build, release_id, data->win_version.revis, is_64_bit_windows() ? "64" : "32",
-		  data->cpu_info.array);
+		  data->cpu_info.array, process_uptime_seconds / 3600, (process_uptime_seconds % 3600) / 60,
+		  process_uptime_seconds % 60);
 }
 
 struct module_info {
