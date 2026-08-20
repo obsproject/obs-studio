@@ -3453,6 +3453,82 @@
             "recommended": {
                 "max audio bitrate": 96
             }
+        },
+        {
+            "name": "Yandex Cloud Video",
+            "more_info_link": "https://yandex.cloud/en/docs/video/",
+            "stream_key_link": "https://video.yandex.cloud/",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://rtmp.video.cloud.yandex.net/live"
+                },
+                {
+                    "name": "Backup (requires backup stream key)",
+                    "url": "rtmp://rtmp-backup.video.cloud.yandex.net/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 9000,
+                "max audio bitrate": 192,
+                "max fps": 60,
+                "bitrate matrix": [
+                    {
+                        "res": "424x240",
+                        "fps": 30,
+                        "max bitrate": 900
+                    },
+                    {
+                        "res": "424x240",
+                        "fps": 60,
+                        "max bitrate": 1200
+                    },
+                    {
+                        "res": "640x360",
+                        "fps": 30,
+                        "max bitrate": 1500
+                    },
+                    {
+                        "res": "640x360",
+                        "fps": 60,
+                        "max bitrate": 2000
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 30,
+                        "max bitrate": 2500
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 60,
+                        "max bitrate": 4000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4500
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 9000
+                    }
+                ]
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
