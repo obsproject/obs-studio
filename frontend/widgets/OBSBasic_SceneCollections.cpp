@@ -688,7 +688,8 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 		}
 
 		obs_data_set_array(collection, "sources", newSources);
-		obs_data_save_json_pretty_safe(collection, destinationFile.u8string().c_str(), "tmp", "bak");
+		obs_data_save_json_pretty_safe_with_defaults(collection, destinationFile.u8string().c_str(), "tmp",
+							     "bak");
 	}
 }
 
@@ -982,7 +983,7 @@ void OBSBasic::Save(SceneCollection &collection)
 	obs_data_set_int(saveData, "version", sceneCollectionVersion);
 
 	const std::string collectionFileName = collection.getFilePathString();
-	bool success = obs_data_save_json_pretty_safe(saveData, collectionFileName.c_str(), "tmp", "bak");
+	bool success = obs_data_save_json_pretty_safe_with_defaults(saveData, collectionFileName.c_str(), "tmp", "bak");
 
 	if (!success) {
 		blog(LOG_ERROR, "Could not save scene data to %s", collectionFileName.c_str());
@@ -1316,8 +1317,8 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 			backupFilePath.replace_extension(".json.v1");
 
 			if (!std::filesystem::exists(backupFilePath)) {
-				bool success = obs_data_save_json_pretty_safe(data, backupFilePath.u8string().c_str(),
-									      "tmp", nullptr);
+				bool success = obs_data_save_json_pretty_safe_with_defaults(
+					data, backupFilePath.u8string().c_str(), "tmp", nullptr);
 
 				if (!success) {
 					blog(LOG_WARNING,
