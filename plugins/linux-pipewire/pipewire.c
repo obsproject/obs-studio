@@ -817,11 +817,10 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
 
 		use_modifiers = obs_pw_stream->format.info.raw.modifier != DRM_FORMAT_MOD_INVALID;
-		obs_pw_stream->texture = gs_texture_create_from_dmabuf(obs_pw_stream->format.info.raw.size.width,
-								       obs_pw_stream->format.info.raw.size.height,
-								       obs_pw_video_format.drm_format, GS_BGRX, planes,
-								       fds, strides, offsets,
-								       use_modifiers ? modifiers : NULL);
+		obs_pw_stream->texture = gs_texture_create_from_dmabuf(
+			obs_pw_stream->format.info.raw.size.width, obs_pw_stream->format.info.raw.size.height,
+			obs_pw_video_format.drm_format, obs_pw_video_format.gs_format, planes, fds, strides, offsets,
+			use_modifiers ? modifiers : NULL);
 
 		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(obs_pw_stream, obs_pw_stream->format.info.raw.format,
@@ -1328,6 +1327,11 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 
 	gs_eparam_t *image;
 
+	const char *tech_name = "DrawSrgbDecompress";
+	gs_technique_t *tech;
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+
 	if (!obs_pw_stream->texture)
 		return;
 
@@ -1338,8 +1342,14 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 		gs_sync_destroy(acquire_sync);
 	}
 
-	/* FIXME: Use obs_pw_stream->format.info.raw colorimetry info to handle
-	 * textures in their corresponding color space */
+	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+
+	tech = gs_effect_get_technique(effect, tech_name);
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
+
+	gs_enable_framebuffer_srgb(true);
+
 	image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, obs_pw_stream->texture);
 
@@ -1382,6 +1392,11 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	}
 
 	gs_blend_state_pop();
+
+	gs_enable_framebuffer_srgb(previous);
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
 
 	if (obs_pw_stream->sync.set) {
 		gs_sync_t *release_sync = gs_sync_create();
