@@ -385,3 +385,8 @@ void RefreshToolBarStyling(QToolBar *toolBar)
 		widget->style()->polish(widget);
 	}
 }
+
+QString EscapeMenuItem(const QString name)
+{
+	return QString(name).replace("&", "&&");
+}

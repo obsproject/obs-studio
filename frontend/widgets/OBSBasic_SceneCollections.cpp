@@ -398,7 +398,7 @@ void OBSBasic::RefreshSceneCollections(bool refreshCache)
 			const SceneCollection &collection = collections.at(collectionName);
 			const QString qCollectionName = QString().fromStdString(collectionName);
 
-			QAction *action = new QAction(qCollectionName, this);
+			QAction *action = new QAction(EscapeMenuItem(qCollectionName), this);
 			action->setProperty("collection_name", qCollectionName);
 			action->setProperty("file_name", QString().fromStdString(collection.getFileName()));
 			connect(action, &QAction::triggered, this, &OBSBasic::ChangeSceneCollection);
