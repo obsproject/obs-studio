@@ -30,6 +30,8 @@
 #define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
 #define TEXT_CLIENT_AREA    obs_module_text("ClientArea")
 #define TEXT_FORCE_SDR      obs_module_text("ForceSdr")
+#define TEXT_USE_PID        obs_module_text("WindowCapture.UsePid")
+#define TEXT_PID_WINDOW     obs_module_text("WindowCapture.PidWindow")
 
 /* clang-format on */
 
@@ -90,6 +92,8 @@ struct window_capture {
 	bool force_sdr;
 	bool hooked;
 	bool capture_audio;
+	bool use_pid;
+	DWORD target_pid;
 
 	struct dc_capture capture;
 
@@ -187,16 +191,38 @@ static const char *get_method_name(int method)
 static void log_settings(struct window_capture *wc, obs_data_t *s)
 {
 	int method = (int)obs_data_get_int(s, "method");
+	const char *force_sdr = (wc->force_sdr && (wc->method == METHOD_WGC)) ? "true" : "false";
+	const char *source_name = obs_source_get_name(wc->source);
 
-	if (wc->title != NULL) {
+	if (!wc->use_pid && !wc->title) {
+		blog(LOG_INFO, "[window-capture: '%s'] update settings: no window selected", source_name);
+		return;
+	}
+
+	if (wc->use_pid && !wc->target_pid) {
+		blog(LOG_INFO, "[window-capture: '%s'] update settings: PID mode enabled but no PID selected",
+		     source_name);
+		return;
+	}
+
+	if (wc->use_pid) {
+		blog(LOG_INFO,
+		     "[window-capture: '%s'] update settings:\n"
+		     "\tmode: PID\n"
+		     "\ttarget PID: %lu\n"
+		     "\tmethod selected: %s\n"
+		     "\tmethod chosen: %s\n"
+		     "\tforce SDR: %s",
+		     source_name, (unsigned long)wc->target_pid, get_method_name(method), get_method_name(wc->method),
+		     force_sdr);
+	} else {
 		blog(LOG_INFO,
 		     "[window-capture: '%s'] update settings:\n"
 		     "\texecutable: %s\n"
 		     "\tmethod selected: %s\n"
 		     "\tmethod chosen: %s\n"
 		     "\tforce SDR: %s",
-		     obs_source_get_name(wc->source), wc->executable, get_method_name(method),
-		     get_method_name(wc->method), (wc->force_sdr && (wc->method == METHOD_WGC)) ? "true" : "false");
+		     source_name, wc->executable, get_method_name(method), get_method_name(wc->method), force_sdr);
 		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
 	}
 }
@@ -224,6 +250,8 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->force_sdr = obs_data_get_bool(s, "force_sdr");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
+	wc->use_pid = obs_data_get_bool(s, "use_pid");
+	wc->target_pid = (DWORD)obs_data_get_int(s, "pid_window");
 
 	setup_audio_source(wc->source, &wc->audio_source, window, wc->capture_audio, wc->priority);
 
@@ -433,6 +461,8 @@ static void wc_defaults(obs_data_t *defaults)
 	obs_data_set_default_bool(defaults, "force_sdr", false);
 	obs_data_set_default_bool(defaults, "compatibility", false);
 	obs_data_set_default_bool(defaults, "client_area", true);
+	obs_data_set_default_bool(defaults, "use_pid", false);
+	obs_data_set_default_int(defaults, "pid_window", 0);
 }
 
 static void update_settings_visibility(obs_properties_t *props, struct window_capture *wc)
@@ -512,6 +542,32 @@ static bool wc_window_changed(obs_properties_t *props, obs_property_t *p, obs_da
 	return true;
 }
 
+static bool wc_use_pid_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(p);
+
+	struct window_capture *wc = obs_properties_get_param(props);
+	if (!wc)
+		return false;
+
+	update_settings(wc, settings);
+
+	const bool use_pid = wc->use_pid;
+
+	obs_property_t *window_p = obs_properties_get(props, "window");
+	obs_property_t *priority_p = obs_properties_get(props, "priority");
+	obs_property_t *pid_p = obs_properties_get(props, "pid_window");
+
+	obs_property_set_visible(window_p, !use_pid);
+	obs_property_set_visible(priority_p, !use_pid);
+	obs_property_set_visible(pid_p, use_pid);
+
+	if (use_pid)
+		ms_fill_pid_window_list(pid_p, obs_module_text("SelectAWindow"));
+
+	return true;
+}
+
 static obs_properties_t *wc_properties(void *data)
 {
 	struct window_capture *wc = data;
@@ -520,6 +576,8 @@ static obs_properties_t *wc_properties(void *data)
 	obs_properties_set_param(ppts, wc, NULL);
 
 	obs_property_t *p;
+
+	const bool use_pid = wc ? wc->use_pid : false;
 
 	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
@@ -532,6 +590,15 @@ static obs_properties_t *wc_properties(void *data)
 
 	ms_fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
 	obs_property_set_modified_callback(p, wc_window_changed);
+	obs_property_set_visible(p, !use_pid);
+
+	p = obs_properties_add_list(ppts, "pid_window", TEXT_PID_WINDOW, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	if (use_pid)
+		ms_fill_pid_window_list(p, obs_module_text("SelectAWindow"));
+	obs_property_set_visible(p, use_pid);
+
+	p = obs_properties_add_bool(ppts, "use_pid", TEXT_USE_PID);
+	obs_property_set_modified_callback(p, wc_use_pid_changed);
 
 	p = obs_properties_add_list(ppts, "method", TEXT_METHOD, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_METHOD_AUTO, METHOD_AUTO);
@@ -544,6 +611,7 @@ static obs_properties_t *wc_properties(void *data)
 	obs_property_list_add_int(p, TEXT_MATCH_TITLE, WINDOW_PRIORITY_TITLE);
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
+	obs_property_set_visible(p, !use_pid);
 
 	p = obs_properties_add_text(ppts, "compat_info", NULL, OBS_TEXT_INFO);
 	obs_property_set_enabled(p, false);
@@ -606,7 +674,8 @@ static void wc_tick(void *data, float seconds)
 			calldata_free(&data);
 		}
 
-		if (!wc->title && !wc->class) {
+		const bool no_target = wc->use_pid ? !wc->target_pid : (!wc->title && !wc->class);
+		if (no_target) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
 			return;
@@ -627,10 +696,16 @@ static void wc_tick(void *data, float seconds)
 
 		wc->check_window_timer = 0.0f;
 
-		wc->window = (wc->method == METHOD_WGC) ? ms_find_window_top_level(INCLUDE_MINIMIZED, wc->priority,
-										   wc->class, wc->title, wc->executable)
-							: ms_find_window(INCLUDE_MINIMIZED, wc->priority, wc->class,
-									 wc->title, wc->executable);
+		if (wc->use_pid) {
+			wc->window = ms_find_window_by_pid(wc->target_pid, INCLUDE_MINIMIZED);
+		} else {
+			wc->window = (wc->method == METHOD_WGC)
+					     ? ms_find_window_top_level(INCLUDE_MINIMIZED, wc->priority, wc->class,
+									wc->title, wc->executable)
+					     : ms_find_window(INCLUDE_MINIMIZED, wc->priority, wc->class, wc->title,
+							      wc->executable);
+		}
+
 		if (!wc->window) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
