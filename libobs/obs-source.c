@@ -527,6 +527,25 @@ obs_source_t *obs_source_create_private(const char *id, const char *name, obs_da
 	return obs_source_create_internal(id, name, NULL, settings, NULL, true, LIBOBS_API_VER, NULL);
 }
 
+static obs_properties_t *fallback_properties(void *data)
+{
+	UNUSED_PARAMETER(data);
+	obs_properties_t *props = obs_properties_create();
+	return props;
+}
+obs_source_t *obs_source_create_private_with_fallback(const char *id, const char *fallback_id, const char *name, obs_data_t *settings)
+{
+	obs_source_t *source = obs_source_create_private(id, name, settings);
+	if (obs_obj_invalid(source)) {
+		obs_source_release(source);
+		source = obs_source_create_private(fallback_id, name, settings);
+		source->info.id = bstrdup(id);
+		source->info.get_properties = fallback_properties;
+		source->info.output_flags |= OBS_SOURCE_FALLBACK;
+	}
+	return source;
+}
+
 obs_source_t *obs_source_create_canvas(obs_canvas_t *canvas, const char *id, const char *name, obs_data_t *settings,
 				       obs_data_t *hotkey_data)
 {
