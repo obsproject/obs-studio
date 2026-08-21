@@ -28,7 +28,7 @@ Authors of contributions to the OBS Project are expected to abide by the “OBS 
 
 ## Pull Request Review Guidelines
 
-In general reviews of pull requests are not limited to project members and can be undertaken by contributors and other GitHub users. Project members commonly coordinate reviews of pull requests at their own disgression in line with project needs and available bandwidth.
+In general reviews of pull requests are not limited to project members and can be undertaken by contributors and other GitHub users. Project members commonly coordinate reviews of pull requests at their own discretion in line with project needs and available bandwidth.
 
 To reduce possible friction of the review process, a simple set of rules should be followed:
 
