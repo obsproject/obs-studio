@@ -88,6 +88,35 @@ typedef struct UncleanLaunchAction {
 	bool sendCrashReport = false;
 } UncleanLaunchAction;
 
+enum class PluginFailureAction { Continue, OpenPluginManager };
+
+PluginFailureAction handlePluginFailure()
+{
+	QMessageBox pluginWarning;
+
+	pluginWarning.setIcon(QMessageBox::Warning);
+
+	pluginWarning.setWindowTitle(QTStr("PluginFailure.Dialog.Title"));
+	pluginWarning.setText(QTStr("PluginFailure.Labels.Text"));
+
+	QPushButton *continueButton =
+		pluginWarning.addButton(QTStr("PluginFailure.Dialog.Continue"), QMessageBox::RejectRole);
+	QPushButton *handleButton =
+		pluginWarning.addButton(QTStr("PluginFailure.Dialog.Open"), QMessageBox::AcceptRole);
+
+	pluginWarning.setDefaultButton(continueButton);
+
+	pluginWarning.exec();
+
+	bool openPluginManager = pluginWarning.clickedButton() == handleButton;
+
+	if (openPluginManager) {
+		return PluginFailureAction::OpenPluginManager;
+	} else {
+		return PluginFailureAction::Continue;
+	}
+}
+
 UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 {
 	UncleanLaunchAction launchAction;
@@ -2037,16 +2066,27 @@ void OBSApp::addLogLine(int logLevel, const QString &message)
 	emit logLineAdded(logLevel, message);
 }
 
-void OBSApp::loadAppModules(struct obs_module_failure_info &mfi)
+void OBSApp::loadAppModules()
 {
-	pluginManager_->preLoad();
-	blog(LOG_INFO, "---------------------------------");
-	obs_load_all_modules2(&mfi);
-	blog(LOG_INFO, "---------------------------------");
-	obs_log_loaded_modules();
-	blog(LOG_INFO, "---------------------------------");
-	obs_post_load_modules();
-	pluginManager_->postLoad();
+	using PluginMode = OBS::PluginManager::Mode;
+	PluginMode mode = (disable_3p_plugins || safe_mode) ? PluginMode::CoreOnly : PluginMode::Full;
+	pluginManager_->setPluginMode(mode);
+
+	pluginManager_->loadAllPlugins(portable_mode);
+}
+
+void OBSApp::handlePluginLoadState()
+{
+	using PluginState = OBS::PluginManager::State;
+	PluginState loadState = pluginManager_->loadState();
+
+	if (loadState != PluginState::Success) {
+		PluginFailureAction action = handlePluginFailure();
+
+		if (action == PluginFailureAction::OpenPluginManager) {
+			pluginManagerOpenDialog();
+		}
+	}
 }
 
 void OBSApp::pluginManagerOpenDialog()

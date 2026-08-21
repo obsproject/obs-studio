@@ -27,7 +27,6 @@ struct obs_core *obs = NULL;
 
 static THREAD_LOCAL bool is_ui_thread = false;
 
-extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
 static inline void make_video_info(struct video_output_info *vi, struct obs_video_info *ovi)
@@ -1261,7 +1260,8 @@ static bool obs_init(const char *locale, const char *module_config_path, profile
 	obs_register_source(&scene_info);
 	obs_register_source(&group_info);
 	obs_register_source(&audio_line_info);
-	add_default_module_paths();
+
+	obs->core_modules_loaded = false;
 	return true;
 }
 

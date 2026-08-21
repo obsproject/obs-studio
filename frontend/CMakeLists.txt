@@ -94,10 +94,6 @@ foreach(graphics_library IN ITEMS opengl metal d3d11)
   endif()
 endforeach()
 
-get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
-list(JOIN obs_module_list "|" SAFE_MODULES)
-target_compile_definitions(obs-studio PRIVATE "SAFE_MODULES=\"${SAFE_MODULES}\"")
-
 get_target_property(target_sources obs-studio SOURCES)
 set(target_cpp_sources ${target_sources})
 set(target_hpp_sources ${target_sources})

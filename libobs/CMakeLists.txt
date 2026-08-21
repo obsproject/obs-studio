@@ -7,6 +7,8 @@ if(OS_WINDOWS AND NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   return()
 endif()
 
+include(cmake/obs-core-modules.cmake)
+
 find_package(SIMDe REQUIRED)
 find_package(Threads REQUIRED)
 
@@ -37,6 +39,10 @@ target_sources(
     obs-avc.h
     obs-canvas.c
     obs-config.h
+    $<$<PLATFORM_ID:Darwin>:obs-core-modules-loader-mac.m>
+    $<$<PLATFORM_ID:Windows>:obs-core-modules-loader-win.c>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:obs-core-modules-loader-nix.c>
+    obs-core-modules-loader.h
     obs-data.c
     obs-data.h
     obs-defs.h
@@ -241,6 +247,7 @@ target_link_libraries(
   PRIVATE
     OBS::caption
     OBS::libobs-version
+    OBS::libobs-core-modules
     FFmpeg::avcodec
     FFmpeg::avformat
     FFmpeg::avutil
