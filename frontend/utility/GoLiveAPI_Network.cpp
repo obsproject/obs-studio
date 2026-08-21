@@ -4,9 +4,11 @@
 #include <OBSApp.hpp>
 #include <utility/MultitrackVideoError.hpp>
 #include <utility/RemoteTextThread.hpp>
+#include <widgets/OBSBasic.hpp>
 
 #include <obs.hpp>
 
+#include <QCheckBox>
 #include <QMessageBox>
 #include <QThreadPool>
 #include <nlohmann/json.hpp>
@@ -32,6 +34,12 @@ void HandleGoLiveApiErrors(QWidget *parent, const json &raw_json, const GoLiveAp
 	}
 
 	auto warn_continue = [&](QString message) {
+		if (config_get_bool(OBSBasic::Get()->Config(), "Stream1", "MultitrackVideoSkipWarningDialog")) {
+			blog(LOG_WARNING, "Go live config status warning (dialog suppressed): %s",
+			     message.toUtf8().constData());
+			return;
+		}
+
 		bool ret = false;
 		QMetaObject::invokeMethod(
 			parent,
@@ -43,7 +51,17 @@ void HandleGoLiveApiErrors(QWidget *parent, const json &raw_json, const GoLiveAp
 				mb.setText(message + QTStr("FailedToStartStream.WarningRetry"));
 				mb.setStandardButtons(QMessageBox::StandardButton::Yes |
 						      QMessageBox::StandardButton::No);
-				return mb.exec() == QMessageBox::StandardButton::No;
+
+				QCheckBox *dontShowAgain = new QCheckBox(QTStr("DoNotShowAgain"), &mb);
+				mb.setCheckBox(dontShowAgain);
+
+				bool cancel = mb.exec() == QMessageBox::StandardButton::No;
+				if (!cancel && dontShowAgain->isChecked()) {
+					config_t *config = OBSBasic::Get()->Config();
+					config_set_bool(config, "Stream1", "MultitrackVideoSkipWarningDialog", true);
+					config_save_safe(config, "tmp", nullptr);
+				}
+				return cancel;
 			},
 			BlockingConnectionTypeFor(parent), &ret);
 		if (ret) {
