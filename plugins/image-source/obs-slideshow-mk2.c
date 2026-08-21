@@ -405,6 +405,15 @@ static void restart_slides(struct slideshow *ss)
 	ssd->slides = new_slides;
 }
 
+bool dir_file_filter(struct os_dirent *ent)
+{
+	if (ent->directory)
+		return false;
+
+	const char *ext = os_get_path_extension(ent->d_name);
+	return valid_extension(ext);
+}
+
 static void ss_update(void *data, obs_data_t *settings)
 {
 	struct slideshow *ss = data;
@@ -498,30 +507,23 @@ static void ss_update(void *data, obs_data_t *settings)
 		}
 
 		if (dir) {
+			DARRAY(struct os_dirent) files;
+			da_init(files);
+			os_sortdir_natural(dir, &files.da, dir_file_filter);
+			os_closedir(dir);
+
 			struct dstr dir_path = {0};
-			struct os_dirent *ent;
-
-			for (;;) {
-				const char *ext;
-
-				ent = os_readdir(dir);
-				if (!ent)
-					break;
-				if (ent->directory)
-					continue;
-
-				ext = os_get_path_extension(ent->d_name);
-				if (!valid_extension(ext))
-					continue;
+			for (size_t j = 0; j < files.num; j++) {
 
 				dstr_copy(&dir_path, path);
 				dstr_cat_ch(&dir_path, '/');
-				dstr_cat(&dir_path, ent->d_name);
+				dstr_cat(&dir_path, files.array[j].d_name);
+
 				add_file(&new_data.files, dir_path.array);
 			}
-
 			dstr_free(&dir_path);
-			os_closedir(dir);
+			da_free(files);
+
 		} else {
 			add_file(&new_data.files, path);
 		}
