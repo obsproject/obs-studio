@@ -121,7 +121,7 @@ function script_properties()
 	obs.source_list_release(sources)
 
 	obs.obs_properties_add_text(props, "stop_text", "Final Text", obs.OBS_TEXT_DEFAULT)
-	obs.obs_properties_add_button(props, "reset_button", "Reset Timer", reset_button_clicked)
+	obs.obs_properties_add_button2(props, "reset_button", "Reset Timer", reset_button_clicked)
 
 	return props
 end
