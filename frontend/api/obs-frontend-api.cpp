@@ -313,6 +313,12 @@ void obs_frontend_replay_buffer_save(void)
 	}
 }
 
+void obs_frontend_replay_buffer_save_duration(long long duration_usec)
+{
+	if (callbacks_valid())
+		c->obs_frontend_replay_buffer_save_duration(duration_usec);
+}
+
 void obs_frontend_replay_buffer_stop(void)
 {
 	if (callbacks_valid()) {
