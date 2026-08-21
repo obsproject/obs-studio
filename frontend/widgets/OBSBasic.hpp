@@ -423,6 +423,7 @@ private:
 	void SourceToolBarActionsSetEnabled();
 
 	void copyActionsDynamicProperties();
+	std::optional<QWidget *> createContextBarWidget(obs_source_t *source);
 
 private slots:
 	void on_toggleContextBar_toggled(bool visible);
@@ -916,6 +917,7 @@ private:
 	std::vector<std::string> GetRestartRequirements(const ConfigFile &config) const;
 	void ResetProfileData();
 	void CheckForSimpleModeX264Fallback();
+	void CheckForMissingEncoders();
 
 public:
 	inline const OBSProfileCache &GetProfileCache() const noexcept { return profiles; };

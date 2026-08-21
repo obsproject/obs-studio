@@ -23,9 +23,12 @@
 #include <wizards/AutoConfig.hpp>
 
 #include <qt-wrappers.hpp>
+#include <util/pipe.h>
 
 #include <QDir>
 #include <QFile>
+
+#include <unordered_set>
 
 // MARK: Constant Expressions
 
@@ -40,6 +43,7 @@ extern void DestroyPanelCookieManager();
 extern void DuplicateCurrentCookieProfile(ConfigFile &config);
 extern void CheckExistingCookieId();
 extern void DeleteCookies();
+extern const char *get_simple_output_encoder(const char *name);
 
 // MARK: - Anonymous Namespace
 namespace {
@@ -736,6 +740,7 @@ void OBSBasic::ActivateProfile(const OBSProfile &profile, bool reset)
 void OBSBasic::UpdateProfileEncoders()
 {
 	InitBasicConfigDefaults2();
+	CheckForMissingEncoders();
 	CheckForSimpleModeX264Fallback();
 }
 
@@ -911,4 +916,195 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	if (changed) {
 		activeConfiguration.SaveSafe("tmp");
 	}
+}
+
+namespace {
+using OsProcessArgs = std::unique_ptr<os_process_args_t, decltype(&os_process_args_destroy)>;
+
+struct ErrorDetails {
+	// HTML breadcrumb to section in knowledge base article, may be empty
+	QString breadcrumb;
+	// Human-readable/localized error message
+	QString message;
+};
+using CheckResult = std::optional<ErrorDetails>;
+
+#ifndef __APPLE__
+CheckResult CheckNVENCInternal(const std::unordered_set<std::string_view> &missing_encoders)
+{
+	const std::vector<std::pair<std::string_view, std::string_view>> nvencFailureReasons = {
+		{"nvml_lib", "EncoderMissing.NVENC.Reason.NvmlLoad"},
+		// Some error messages are a prefix + numeric error code
+		{"nvml_init", "EncoderMissing.NVENC.Reason.NvmlInit"},
+		{"nvenc_lib", "EncoderMissing.NVENC.Reason.NvencLoad"},
+		{"nvenc_init", "EncoderMissing.NVENC.Reason.NvencInit"},
+		{"cuda_lib", "EncoderMissing.NVENC.Reason.CudaLoad"},
+		{"cuda_init", "EncoderMissing.NVENC.Reason.CudaInit"},
+		{"no_cuda_version", "EncoderMissing.NVENC.Reason.CudaVersion"},
+		{"no_devices", "EncoderMissing.NVENC.NoDevices"},
+		{"no_nvenc_version", "EncoderMissing.NVENC.Reason.NvencVersion"},
+		{"outdated_driver", "EncoderMissing.NVENC.Reason.DriverOutdated"},
+		{"no_supported_devices", "EncoderMissing.NVENC.Reason.NoSupportedDevices"},
+		{"session_limit", "EncoderMissing.NVENC.Reason.SessionLimitExceeded"},
+	};
+
+	// Most basic check: Is the module even loaded?
+	if (!obs_get_module("obs-nvenc")) {
+		return ErrorDetails{"plugin_not_loaded", QTStr("EncoderMissing.MissingModule").arg("obs-nvenc")};
+	}
+
+#ifdef _WIN32
+	BPtr testBinary = os_get_executable_path_ptr("obs-nvenc-test.exe");
+#else
+	BPtr testBinary = os_get_executable_path_ptr("obs-nvenc-test");
+#endif
+
+	OsProcessArgs args{os_process_args_create(testBinary), os_process_args_destroy};
+
+	os_process_pipe_t *pp = os_process_pipe_create2(args.get(), "r");
+	if (!pp) {
+		return ErrorDetails{"nvenc_test_failure", QTStr("EncoderMissing.NVENC.TestProgramFailedStartup")};
+	}
+
+	std::string caps_result;
+	for (;;) {
+		char data[4096];
+		const size_t len = os_process_pipe_read(pp, reinterpret_cast<uint8_t *>(data), sizeof(data));
+		if (!len) {
+			break;
+		}
+
+		caps_result.append(data, len);
+	}
+
+	int exitCode = os_process_pipe_destroy(pp);
+
+	if (caps_result.empty()) {
+		return ErrorDetails{"nvenc_test_failure",
+				    QTStr("EncoderMissing.NVENC.TestProgramExitWithError").arg(exitCode)};
+	}
+
+	auto config = ConfigFile();
+	if (config.OpenString(caps_result.c_str()) != CONFIG_SUCCESS) {
+		return ErrorDetails{"nvenc_test_failure",
+				    QTStr("EncoderMissing.NVENC.TestProgramReadFailure").arg(exitCode)};
+	}
+
+	// Read devices and attempt to find reason for failure
+	auto numDevices = config_get_uint(config, "general", "cuda_devices");
+	if (!numDevices) {
+		return ErrorDetails{"no_device", QTStr("EncoderMissing.NVENC.NoDevices")};
+	}
+
+	// Check device generation (architecture)
+	for (uint64_t i = 0; i < numDevices; i++) {
+		std::string section = "device." + std::to_string(i);
+
+		if (!config_has_user_value(config, section.c_str(), "name")) {
+			continue;
+		}
+
+		const QString name(config_get_string(config, section.c_str(), "name"));
+		const std::string_view arch = config_get_string(config, section.c_str(), "architecture_name");
+
+		if (arch == "Kepler") {
+			return ErrorDetails{"kepler", QTStr("EncoderMissing.NVENC.Unsupported.Kepler").arg(name)};
+		}
+	}
+
+	// All other specific failures of the test binary
+	if (config_has_user_value(config, "general", "reason")) {
+		const std::string_view reason = config_get_string(config, "general", "reason");
+
+		for (auto &[code, desc] : nvencFailureReasons) {
+			if (reason.find(code) == std::string_view::npos) {
+				continue;
+			}
+
+			return ErrorDetails{code.data(),
+					    QTStr("EncoderMissing.NVENC.TestProgramError").arg(QTStr(desc.data()))};
+		}
+	}
+
+	// Finally, if everything else looks good but the encoder missing is AV1, and AV1 is not supported on any GPUs,
+	// that's probably the issue the user is having (for example, when copying a profile from another machine).
+	if (!config_get_bool(config, "av1", "codec_supported") &&
+	    (missing_encoders.count("obs_nvenc_av1_cuda") || missing_encoders.count("obs_nvenc_av1_soft") ||
+	     missing_encoders.count("obs_nvenc_av1_tex"))) {
+		return ErrorDetails{"no_av1", QTStr("EncoderMissing.NVENC.Reason.AV1Unsupported")};
+	}
+
+	return std::nullopt;
+}
+
+CheckResult CheckNVENC(const std::unordered_set<std::string_view> &missing_encoders)
+{
+	static auto result = CheckNVENCInternal(missing_encoders);
+	return result;
+}
+#endif
+
+CheckResult CheckX264()
+{
+	static const bool module_loaded = obs_get_module("obs-x264") != nullptr;
+	// This should be the only failure mode possible here.
+	if (!module_loaded) {
+		return ErrorDetails{"plugin_not_loaded", QTStr("EncoderMissing.MissingModule").arg("obs-x264")};
+	}
+
+	return std::nullopt;
+}
+} // namespace
+
+void OBSBasic::CheckForMissingEncoders()
+{
+	constexpr QStringView kbURL(u"https://obsproject.com/kb/encoder-missing#%1");
+	const QString encoderListItem = QTStr("EncoderMissing.ItemText");
+	const QString unknownErrorText = QTStr("EncoderMissing.Unknown");
+
+	std::unordered_set<std::string_view> missing_encoders = {
+		config_get_string(activeConfiguration, "AdvOut", "Encoder"),
+		config_get_string(activeConfiguration, "AdvOut", "RecEncoder"),
+		get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "StreamEncoder")),
+		get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "RecEncoder")),
+	};
+
+	size_t idx = 0;
+	const char *id;
+	while (obs_enum_encoder_types(idx++, &id)) {
+		missing_encoders.erase(id);
+	}
+
+	if (missing_encoders.empty() || (missing_encoders.size() == 1 && missing_encoders.count("none"))) {
+		return;
+	}
+
+	QString crumb;
+	QStringList encoderList;
+
+	for (auto &encoder : missing_encoders) {
+		CheckResult res;
+
+		if (encoder.find("x264") != std::string_view::npos) {
+			res = CheckX264();
+#ifndef __APPLE__
+		} else if (encoder.find("nvenc") != std::string_view::npos) {
+			res = CheckNVENC(missing_encoders);
+#endif
+		}
+
+		if (res) {
+			encoderList += encoderListItem.arg(encoder.data()).arg(res->message).arg(res->breadcrumb);
+			if (crumb.isEmpty() && !res->breadcrumb.isEmpty()) {
+				crumb = res->breadcrumb;
+			}
+		} else {
+			encoderList += encoderListItem.arg(encoder.data()).arg(unknownErrorText).arg("unknown");
+		}
+	}
+
+	// Format and show error message
+	const QString encoderMissingMessage =
+		QTStr("EncoderMissing.Text").arg(encoderList.join("\n")).arg(kbURL.arg(crumb));
+	OBSMessageBox::warning(this, QTStr("EncoderMissing.Title"), encoderMissingMessage, true);
 }
