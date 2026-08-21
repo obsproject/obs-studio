@@ -92,3 +92,27 @@ sudo apt-get install -y --no-install-recommends \
   libffmpeg-nvenc-dev librist-dev libsrt-openssl-dev \
   qt6-base-dev libqt6svg6-dev qt6-base-private-dev \
   libvpl-dev libvpl2
+
+log_group 'Setting up VST3 SDK...'
+
+pushd "${project_root}/.deps"
+
+local _target="vst3sdk"
+local _url="https://github.com/steinbergmedia/vst3sdk.git"
+local _hash="9fad9770f2ae8542ab1a548a68c1ad1ac690abe0"
+
+if [[ ! -d ${_target}/pluginterfaces ]]; then
+  log_status "Cloning Steinberg VST3 SDK..."
+  git clone --filter=blob:none --sparse --recurse-submodules=no "${_url}" "${_target}"
+
+  pushd "${_target}"
+  git checkout "${_hash}"
+  git submodule update --init base pluginterfaces public.sdk
+  popd
+
+  log_status "Steinberg VST3 SDK cloned successfully."
+else
+  log_status "Steinberg VST3 SDK already present; skipping clone."
+fi
+
+popd
