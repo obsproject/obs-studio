@@ -991,14 +991,18 @@ static bool vk_down(DWORD vk)
 	return down;
 }
 
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
+enum obs_hotkey_platform_pressed_state obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
+	bool pressed;
+
 	if (key == OBS_KEY_META) {
-		return vk_down(VK_LWIN) || vk_down(VK_RWIN);
+		pressed = vk_down(VK_LWIN) || vk_down(VK_RWIN);
+		return pressed ? OBS_HOTKEY_PLATFORM_PRESSED : OBS_HOTKEY_PLATFORM_NOT_PRESSED;
 	}
 
 	UNUSED_PARAMETER(context);
-	return vk_down(obs_key_to_virtual_key(key));
+	pressed = vk_down(obs_key_to_virtual_key(key));
+	return pressed ? OBS_HOTKEY_PLATFORM_PRESSED : OBS_HOTKEY_PLATFORM_NOT_PRESSED;
 }
 
 void obs_key_to_str(obs_key_t key, struct dstr *str)
