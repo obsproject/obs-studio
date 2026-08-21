@@ -1,3 +1,26 @@
+/* ------------------------------------------------------------------------- *
+ *                                                                           *
+ *                                 IMPORTANT                                 *
+ *                                                                           *
+ * ------------------------------------------------------------------------- *
+ *                                                                           *
+ * Yami contains many core definitions for the appearance of widgets
+ * throughout the app.
+ *
+ * If you are developing a custom theme it is HIGHLY RECOMMENDED that you
+ * use Yami as a Base and apply your changes in a Variant Theme (.ovt).
+ * Creating your own Base Theme means you are opting out of the default
+ * appearance for all widgets and will be responsible for keeping your base
+ * theme up to date with every new release!
+ *
+ * Do NOT copy Yami into a new base theme only to make minor changes or
+ * adjustments. Your theme will likely break with every OBS Studio update.
+ *
+ * You can learn more about OBS Studio's theme system on our GitHub wiki:
+ * https://github.com/obsproject/obs-studio/wiki/OBS-Studio-Theme-System
+ *                                                                           *
+ * ------------------------------------------------------------------------- */
+
 @OBSThemeMeta {
     name: 'Yami';
     id: 'com.obsproject.Yami';

@@ -1,3 +1,21 @@
+/* ------------------------------------------------------------------------- *
+ *                                                                           *
+ *                                 IMPORTANT                                 *
+ *                                                                           *
+ * ------------------------------------------------------------------------- *
+ *                                                                           *
+ * This is a Variant Theme (Style) for Yami named Light. Variant themes
+ * override variable values and append additional style rules to the end of
+ * the final composed stylesheet.
+ *
+ * If you are developing a custom theme it is HIGHLY RECOMMENDED that you
+ * use Yami as a Base and apply your changes in a Variant Theme (.ovt).
+ *
+ * You can learn more about OBS Studio's theme system on our GitHub wiki:
+ * https://github.com/obsproject/obs-studio/wiki/OBS-Studio-Theme-System
+ *                                                                           *
+ * ------------------------------------------------------------------------- */
+
 @OBSThemeMeta {
     name: 'Light';
     id: 'com.obsproject.Yami.Light';

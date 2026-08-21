@@ -490,7 +490,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QWidget" name="addExistingContainer" native="true">
+                <widget class="QWidget" name="addExistingContainer">
                  <property name="minimumSize">
                   <size>
                    <width>0</width>
