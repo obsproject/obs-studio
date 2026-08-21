@@ -493,18 +493,15 @@ static inline void release_audio_sources(struct obs_core_audio *audio)
 static inline void execute_audio_tasks(void)
 {
 	struct obs_core_audio *audio = &obs->audio;
-	bool tasks_remaining = true;
-
-	while (tasks_remaining) {
-		pthread_mutex_lock(&audio->task_mutex);
-		if (audio->tasks.size) {
-			struct obs_task_info info;
-			deque_pop_front(&audio->tasks, &info, sizeof(info));
-			info.task(info.param);
-		}
-		tasks_remaining = !!audio->tasks.size;
+	pthread_mutex_lock(&audio->task_mutex);
+	while (audio->tasks.size) {
+		struct obs_task_info info;
+		deque_pop_front(&audio->tasks, &info, sizeof(info));
 		pthread_mutex_unlock(&audio->task_mutex);
+		info.task(info.param);
+		pthread_mutex_lock(&audio->task_mutex);
 	}
+	pthread_mutex_unlock(&audio->task_mutex);
 }
 
 /* In case monitoring and an 'Audio Output Capture' source have the same device, one silences all the monitored
