@@ -455,8 +455,21 @@ static inline void load_modifier(uint32_t *modifiers, obs_data_t *data, const ch
 		*modifiers |= flag;
 }
 
+static inline bool valid_binding(obs_key_combination_t combo)
+{
+	if (combo.key < OBS_KEY_NONE || combo.key >= OBS_KEY_LAST_VALUE)
+		return false;
+	if (obs_key_combination_is_empty(combo))
+		return false;
+
+	return combo.key != OBS_KEY_MOUSE1 && combo.key != OBS_KEY_MOUSE2;
+}
+
 static inline void create_binding(obs_hotkey_t *hotkey, obs_key_combination_t combo)
 {
+	if (!valid_binding(combo))
+		return;
+
 	obs_hotkey_binding_t *binding = da_push_back_new(obs->hotkeys.bindings);
 	if (!binding)
 		return;
@@ -479,7 +492,7 @@ static inline void load_binding(obs_hotkey_t *hotkey, obs_data_t *data)
 	load_modifier(modifiers, data, "command", INTERACT_COMMAND_KEY);
 
 	combo.key = obs_key_from_name(obs_data_get_string(data, "key"));
-	if (!modifiers && (combo.key == OBS_KEY_NONE || combo.key >= OBS_KEY_LAST_VALUE))
+	if (!*modifiers && (combo.key == OBS_KEY_NONE || combo.key >= OBS_KEY_LAST_VALUE))
 		return;
 
 	create_binding(hotkey, combo);
