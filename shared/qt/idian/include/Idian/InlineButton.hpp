@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,41 +17,20 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
+#include <QPushButton>
 
-#include <QFrame>
-#include <QLayout>
-#include <QWidget>
+class QPixmap;
 
 namespace idian {
-class GenericRow;
+class Utils;
 
-class PropertiesList : public QFrame {
+class InlineButton : public QPushButton {
 	Q_OBJECT
 
 public:
-	PropertiesList(QWidget *parent = nullptr);
-
-	void addRow(GenericRow *row);
-	void clear();
-
-	QList<GenericRow *> rows() const { return rowsList; }
+	explicit InlineButton(QWidget *parent = nullptr);
 
 private:
-	GenericRow *first = nullptr;
-	GenericRow *last = nullptr;
-
-	QVBoxLayout *layout;
-	QList<GenericRow *> rowsList;
-};
-
-// Spacer with only cosmetic functionality
-class PropertiesListSpacer : public QFrame {
-	Q_OBJECT
-public:
-	PropertiesListSpacer(QWidget *parent = nullptr) : QFrame(parent)
-	{
-		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-	}
+	Utils *widgetUtils;
 };
 } // namespace idian
