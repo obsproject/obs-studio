@@ -84,9 +84,19 @@ endif()
 if(ENABLE_WAYLAND)
   find_package(Wayland REQUIRED Client)
   find_package(Xkbcommon REQUIRED)
+  find_package(WaylandScanner REQUIRED)
 
   target_sources(libobs PRIVATE obs-nix-wayland.c)
   target_link_libraries(libobs PRIVATE Wayland::Client xkbcommon::xkbcommon)
+
+  # Client stubs for the vendored vicinae-hotkey protocol, generated into CMAKE_CURRENT_BINARY_DIR
+  ecm_add_wayland_client_protocol(
+    libobs
+    PROTOCOL "${CMAKE_CURRENT_SOURCE_DIR}/wayland-protocols/vicinae-hotkey-v1.xml"
+    BASENAME vicinae-hotkey-v1
+  )
+  target_include_directories(libobs PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+
   target_enable_feature(libobs "Wayland compositor support (Linux)")
 else()
   target_disable_feature(libobs "Wayland compositor support (Linux)")
