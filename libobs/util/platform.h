@@ -30,6 +30,15 @@
 extern "C" {
 #endif
 
+#ifdef _WIN32
+/*
+ * Maximum length of a UTF-8 encoded filename (not path) converted from a UTF-16 filename on Windows.
+ * A UTF-16 code unit (wchar_t) can be up to 3 bytes/chars in UTF-8.
+ * Other OSs use UTF-8 apis directly, so the there's no expansion between api and internal storage.
+ */
+#define FILENAME_MAX_LENGTH_UTF8 (_MAX_PATH * 3)
+#endif
+
 EXPORT FILE *os_wfopen(const wchar_t *path, const char *mode);
 EXPORT FILE *os_fopen(const char *path, const char *mode);
 EXPORT int64_t os_fgetsize(FILE *file);
@@ -121,7 +130,7 @@ struct os_dir;
 typedef struct os_dir os_dir_t;
 
 struct os_dirent {
-	char d_name[256];
+	char *d_name;
 	bool directory;
 };
 
