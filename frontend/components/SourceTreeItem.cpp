@@ -134,11 +134,15 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 
 		auto undo_redo = [](const std::string &uuid, int64_t id, bool val) {
-			OBSSourceAutoRelease s = obs_get_source_by_uuid(uuid.c_str());
-			obs_scene_t *sc = obs_group_or_scene_from_source(s);
-			obs_sceneitem_t *si = obs_scene_find_sceneitem_by_id(sc, id);
-			if (si) {
-				obs_sceneitem_set_visible(si, val);
+			OBSSourceAutoRelease sceneSource = obs_get_source_by_uuid(uuid.c_str());
+			obs_scene_t *scene = obs_group_or_scene_from_source(sceneSource);
+			obs_sceneitem_t *sceneItem = obs_scene_find_sceneitem_by_id(scene, id);
+			if (sceneItem) {
+				obs_sceneitem_set_visible(sceneItem, val);
+				const char *itemName = obs_source_get_name(obs_sceneitem_get_source(sceneItem));
+				const char *name = obs_source_get_name(sceneSource);
+				blog(LOG_INFO, "User set sceneitem '%s' (%li) on scene '%s' to %s (undo_redo)",
+				     itemName, (long)id, name, val ? "enabled" : "disabled");
 			}
 		};
 
@@ -151,6 +155,10 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 
 		QSignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_visible(sceneitem, val);
+
+		const char *itemName = obs_source_get_name(obs_sceneitem_get_source(sceneitem));
+		blog(LOG_INFO, "User set sceneitem '%s' (%li) on scene '%s' to %s", itemName, (long)id, name,
+		     val ? "enabled" : "disabled");
 	};
 
 	auto setItemLocked = [this](bool checked) {
