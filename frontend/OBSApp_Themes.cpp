@@ -1000,9 +1000,9 @@ bool OBSApp::SetTheme(const QString &name)
 	filename += ".out";
 
 	filesystem::path debugOut;
-	char configPath[512];
-	if (GetAppConfigPath(configPath, sizeof(configPath), filename.c_str())) {
-		debugOut = absolute(filesystem::u8path(configPath));
+	BPtr<char> configPath = GetAppConfigPathPtr(filename.c_str());
+	if (configPath && *configPath.Get()) {
+		debugOut = absolute(filesystem::u8path(configPath.Get()));
 		filesystem::create_directories(debugOut.parent_path());
 	}
 
@@ -1063,9 +1063,9 @@ bool OBSApp::InitTheme()
 		QDir::addSearchPath("theme", absolute(installSearchDir));
 	}
 
-	char userDir[512];
-	if (GetAppConfigPath(userDir, sizeof(userDir), "obs-studio/themes")) {
-		auto configSearchDir = filesystem::u8path(userDir);
+	BPtr<char> userDir = GetAppConfigPathPtr("obs-studio/themes");
+	if (userDir && *userDir.Get()) {
+		auto configSearchDir = filesystem::u8path(userDir.Get());
 		QDir::addSearchPath("theme", absolute(configSearchDir));
 	}
 

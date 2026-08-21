@@ -179,13 +179,16 @@ static bool update_hook_file(bool b64)
 	wchar_t src_json[MAX_PATH];
 	wchar_t dst_json[MAX_PATH];
 
+	char utf8_str[FILENAME_MAX_LENGTH_UTF8] = "";
+
 	StringCbCopyW(temp, sizeof(temp),
 		      L"..\\..\\data\\obs-plugins\\"
 		      L"win-capture\\");
 	make_filename(temp, L"obs-vulkan", L".json");
 
 	if (_wfullpath(src_json, temp, MAX_PATH) == NULL) {
-		warn("failed to get full path for %ls", temp);
+		os_wcs_to_utf8(temp, 0, utf8_str, sizeof(utf8_str));
+		warn("failed to get full path for %s", utf8_str);
 		return false;
 	}
 
@@ -195,7 +198,8 @@ static bool update_hook_file(bool b64)
 	make_filename(temp, L"graphics-hook", L".dll");
 
 	if (_wfullpath(src, temp, MAX_PATH) == NULL) {
-		warn("failed to get full path for %ls", temp);
+		os_wcs_to_utf8(temp, 0, utf8_str, sizeof(utf8_str));
+		warn("failed to get full path for %s", utf8_str);
 		return false;
 	}
 
@@ -217,18 +221,21 @@ static bool update_hook_file(bool b64)
 		if (!CreateDirectoryW(temp, NULL)) {
 			DWORD err = GetLastError();
 			if (err != ERROR_ALREADY_EXISTS) {
-				warn("failed to create directory %ls (%lu)", temp, err);
+				os_wcs_to_utf8(temp, 0, utf8_str, sizeof(utf8_str));
+				warn("failed to create directory %s (%lu)", utf8_str, err);
 				return false;
 			}
 		}
 		if (has_elevation())
 			add_aap_perms(temp);
 		if (!CopyFileW(src_json, dst_json, false)) {
-			warn("failed to install %ls (%lu)", dst_json, GetLastError());
+			os_wcs_to_utf8(dst_json, 0, utf8_str, sizeof(utf8_str));
+			warn("failed to install %s (%lu)", utf8_str, GetLastError());
 			return false;
 		}
 		if (!CopyFileW(src, dst, false)) {
-			warn("failed to install %ls (%lu)", dst, GetLastError());
+			os_wcs_to_utf8(dst, 0, utf8_str, sizeof(utf8_str));
+			warn("failed to install %s (%lu)", utf8_str, GetLastError());
 			return false;
 		}
 		return true;
@@ -245,7 +252,8 @@ static bool update_hook_file(bool b64)
 	}
 #ifndef _DEBUG
 	if (!get_dll_ver(dst, &ver_dst)) {
-		warn("failed to get version of %ls", dst);
+		os_wcs_to_utf8(dst, 0, utf8_str, sizeof(utf8_str));
+		warn("failed to get version of %s", utf8_str);
 		return false;
 	}
 #endif
@@ -253,16 +261,19 @@ static bool update_hook_file(bool b64)
 	/* if source is greater than dst, overwrite new file  */
 	while (win_version_compare(&ver_dst, &ver_src) < 0) {
 		if (!CopyFileW(src_json, dst_json, false)) {
-			warn("failed to update %ls (%lu)", dst_json, GetLastError());
+			os_wcs_to_utf8(dst_json, 0, utf8_str, sizeof(utf8_str));
+			warn("failed to update %s (%lu)", utf8_str, GetLastError());
 			return false;
 		}
 		if (!CopyFileW(src, dst, false)) {
-			warn("failed to update %ls (%lu)", dst, GetLastError());
+			os_wcs_to_utf8(dst, 0, utf8_str, sizeof(utf8_str));
+			warn("failed to update %s (%lu)", utf8_str, GetLastError());
 			return false;
 		}
 
 		if (!get_dll_ver(dst, &ver_dst)) {
-			warn("failed to get version of %ls", dst);
+			os_wcs_to_utf8(dst, 0, utf8_str, sizeof(utf8_str));
+			warn("failed to get version of %s", utf8_str);
 			return false;
 		}
 	}
@@ -270,7 +281,9 @@ static bool update_hook_file(bool b64)
 	/* do not use if major version incremented in target compared to
 	 * ours */
 	if (ver_dst.major > ver_src.major) {
-		warn("target %ls has major version %d, source has major version %d", dst, ver_dst.major, ver_src.major);
+		os_wcs_to_utf8(dst, 0, utf8_str, sizeof(utf8_str));
+		warn("target %s has major version %d, source has major version %d", utf8_str, ver_dst.major,
+		     ver_src.major);
 		return false;
 	}
 

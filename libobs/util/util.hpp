@@ -37,7 +37,7 @@ template<typename T> class BPtr {
 
 public:
 	inline BPtr(T *p = nullptr) : ptr(p) {}
-	inline BPtr(BPtr &&other) { *this = std::move(other); }
+	inline BPtr(BPtr &&other) : ptr(nullptr) { *this = std::move(other); }
 	inline ~BPtr() { bfree(ptr); }
 
 	inline T *operator=(T *p)
@@ -49,6 +49,7 @@ public:
 
 	inline BPtr &operator=(BPtr &&other)
 	{
+		bfree(ptr);
 		ptr = other.ptr;
 		other.ptr = nullptr;
 		return *this;

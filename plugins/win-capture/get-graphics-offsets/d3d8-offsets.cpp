@@ -21,13 +21,13 @@ static inline bool d3d8_init(d3d8_info &info)
 	d3d8create_t create;
 	HRESULT hr;
 
-	info.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "d3d8 get-addr window", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
-				    GetModuleHandleA(nullptr), nullptr);
+	info.hwnd = CreateWindowExW(0, DUMMY_WNDCLASS, L"d3d8 get-addr window", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
+				    GetModuleHandleW(nullptr), nullptr);
 	if (!info.hwnd) {
 		return false;
 	}
 
-	info.module = LoadLibraryA("d3d8.dll");
+	info.module = LoadLibraryW(L"d3d8.dll");
 	if (!info.module) {
 		return false;
 	}

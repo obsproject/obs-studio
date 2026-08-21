@@ -219,22 +219,23 @@ void release_lib(void)
 	}
 }
 
-static inline bool nvafx_get_sdk_path(char *buffer, const size_t len)
+static inline bool nvafx_get_sdk_path(wchar_t *buffer, const size_t len)
 {
-	DWORD ret = GetEnvironmentVariableA("NVAFX_SDK_DIR", buffer, (DWORD)len);
+	DWORD ret = GetEnvironmentVariableW(L"NVAFX_SDK_DIR", buffer, (DWORD)len);
 
-	if (!ret || ret >= len - 1) {
-		char path[MAX_PATH];
-		if (!GetEnvironmentVariableA("ProgramFiles", path, MAX_PATH)) {
+	if (!ret || ret >= len) {
+		wchar_t path[MAX_PATH];
+		if (!GetEnvironmentVariableW(L"ProgramFiles", path, MAX_PATH)) {
 			buffer[0] = 0;
 			return false;
 		}
 
-		if (_snprintf_s(buffer, len, _TRUNCATE, "%s\\NVIDIA Corporation\\NVIDIA Audio Effects SDK", path) > 0) {
-			return true;
+		int r = _snwprintf_s(buffer, len, _TRUNCATE, L"%s\\NVIDIA Corporation\\NVIDIA Audio Effects SDK",
+				     path);
+		if (r <= 0 || r >= len) {
+			buffer[0] = 0;
+			return false;
 		}
-
-		return false;
 	}
 
 	return true;
@@ -242,19 +243,19 @@ static inline bool nvafx_get_sdk_path(char *buffer, const size_t len)
 
 static inline bool load_lib()
 {
-	char sdkPath[MAX_PATH];
-	char effectsPath[MAX_PATH];
+	wchar_t sdkPath[MAX_PATH];
+	wchar_t effectsPath[MAX_PATH];
 
 	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
 		return false;
 	}
 
-	if (_snprintf_s(effectsPath, _countof(effectsPath), _TRUNCATE, "%s\\NVAudioEffects.dll", sdkPath) == -1) {
+	if (_snwprintf_s(effectsPath, _countof(effectsPath), _TRUNCATE, L"%s\\NVAudioEffects.dll", sdkPath) == -1) {
 		return false;
 	}
 
 	nv_audiofx =
-		LoadLibraryExA(effectsPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+		LoadLibraryExW(effectsPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
 	return !!nv_audiofx;
 }
@@ -269,14 +270,14 @@ static unsigned int get_lib_version(void)
 
 	version_checked = true;
 
-	char sdkPath[MAX_PATH];
+	wchar_t sdkPath[MAX_PATH];
 	wchar_t dllPath[MAX_PATH];
 
 	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
 		return version;
 	}
 
-	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%S\\NVAudioEffects.dll", sdkPath) == -1) {
+	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%s\\NVAudioEffects.dll", sdkPath) == -1) {
 		return version;
 	}
 

@@ -1221,16 +1221,16 @@ gs_monitor_color_info gs_device::GetMonitorColorInfo(HMONITOR hMonitor)
 	return gs_monitor_color_info(false, 8, 80);
 }
 
-static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id, size_t capacity)
+static void PopulateMonitorIds(HMONITOR handle, wchar_t *id, wchar_t *alt_id, size_t capacity)
 {
-	MONITORINFOEXA mi;
+	MONITORINFOEXW mi;
 	mi.cbSize = sizeof(mi);
-	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
-		strcpy_s(alt_id, capacity, mi.szDevice);
-		DISPLAY_DEVICEA device;
+	if (GetMonitorInfoW(handle, (LPMONITORINFO)&mi)) {
+		wcscpy_s(alt_id, capacity, mi.szDevice);
+		DISPLAY_DEVICEW device;
 		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			strcpy_s(id, capacity, device.DeviceID);
+		if (EnumDisplayDevicesW(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+			wcscpy_s(id, capacity, device.DeviceID);
 		}
 	}
 }
@@ -1257,8 +1257,8 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		DISPLAYCONFIG_TARGET_DEVICE_NAME target;
 
 		constexpr size_t id_capacity = 128;
-		char id[id_capacity]{};
-		char alt_id[id_capacity]{};
+		wchar_t id[id_capacity]{};
+		wchar_t alt_id[id_capacity]{};
 		PopulateMonitorIds(desc.Monitor, id, alt_id, id_capacity);
 
 		MONITORINFOEX info;
@@ -1330,7 +1330,11 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		const ULONG sdr_white_nits = GetSdrMaxNits(desc.Monitor);
 
 		char *friendly_name;
+		char *id_utf8;
+		char *alt_id_utf8;
 		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0, &friendly_name);
+		os_wcs_to_utf8_ptr(id, 0, &id_utf8);
+		os_wcs_to_utf8_ptr(alt_id, 0, &alt_id_utf8);
 
 		blog(LOG_INFO,
 		     "\t  output %u:\n"
@@ -1354,8 +1358,10 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		     primaries[3][0], primaries[3][1], gamut_size / DoubleTriangleArea(.64, .33, .3, .6, .15, .06),
 		     gamut_size / DoubleTriangleArea(.68, .32, .265, .69, .15, .060),
 		     gamut_size / DoubleTriangleArea(.708, .292, .17, .797, .131, .046), sdr_white_nits, min_luminance,
-		     max_luminance, max_full_frame_luminance, dpiX, scaling, id, alt_id);
+		     max_luminance, max_full_frame_luminance, dpiX, scaling, id_utf8, alt_id_utf8);
 		bfree(friendly_name);
+		bfree(id_utf8);
+		bfree(alt_id_utf8);
 	}
 }
 
