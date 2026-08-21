@@ -12,6 +12,7 @@ uniform float2 base_dimension;
 uniform float2 base_dimension_i;
 uniform float undistort_factor = 1.0;
 uniform float multiplier;
+uniform bool use_blerp = false;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -113,6 +114,27 @@ float4 DrawBicubic(FragData f_in, bool undistort)
 
 	int2 coord_top_left = int2(max(uv0 * base_dimension, 0.5));
 	int2 coord_bottom_right = int2(min(uv3 * base_dimension, base_dimension - 0.5));
+
+	if (use_blerp) {
+		float4 top_left = image.Load(int3(coord_top_left, 0));
+		float4 top_right = image.Load(int3(coord_bottom_right.x, coord_top_left.y, 0));
+		float4 mid_middle = image.Sample(textureSampler, float2(u_middle, v_middle));
+		float4 bot_left = image.Load(int3(coord_top_left.x, coord_bottom_right.y, 0));
+		float4 bot_right = image.Load(int3(coord_bottom_right, 0));
+
+		// I am replacing all the mid points with lerps from corner to corner to avoid
+		// the extra texture reads.
+		// Interestingly lerp seems to be a bit more expensive than just doing this math
+		float4 mid_left = (top_left + bot_left) * 0.5;
+		float4 mid_right = (top_right + bot_right) * 0.5;
+		float4 top_middle = (top_left + top_right) * 0.5;
+		float4 bot_middle = (bot_left + bot_right) * 0.5;
+
+		float4 top = (top_left * rowtaps.x) + (top_middle * u_weight_sum) + (top_right * rowtaps.w);
+		float4 middle = (mid_left * rowtaps.x) + (mid_middle * u_weight_sum) + (mid_right * rowtaps.w);
+		float4 bottom = (bot_left * rowtaps.x) + (bot_middle * u_weight_sum) + (bot_right * rowtaps.w);
+		return (top * coltaps.x) + (middle * v_weight_sum) + (bottom * coltaps.w);
+	}
 
 	float4 top = image.Load(int3(coord_top_left, 0)) * rowtaps.x;
 	top += image.Sample(textureSampler, float2(u_middle, uv0.y)) * u_weight_sum;
