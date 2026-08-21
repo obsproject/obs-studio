@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+
+# Combined POSIX Csh/Powershell entry point script
+# Based on StackOverflow answer by Jeff Hykin
+# https://stackoverflow.com/a/67292076
+#
+# In Csh the first line will echo "--%" to /dev/null, followed by the colon built-in
+# (using the semi-colon to create a command list). This built-in does nothing apart
+# from variable expansions, and is given a multi-line string.
+#
+# In Powershell the line uses the '--%' token to stop parsing, which will also send the
+# 'echo'. output to Powershell's null output, and will then encounter the declaration
+# of a multiline comment, which extends until after the "exit" command.
+#
+# Thus Powershell will execute the code below "exit" in earnest, whereas Csh will ignore
+# anything past that "exit".
+#
+
+echo --% >/dev/null;: ' | out-null
+<#'
+host_os="$(uname)"
+script_location="$(dirname "${0}")"
+linter_name="$(basename "${0}")"
+linter_name="${linter_name#*-}"
+
+if [ "${host_os}" = 'Darwin' ]; then
+    exec zsh "${script_location}/.run-format.zsh" --linter "${linter_name}" "${@}"
+elif command -v zsh > /dev/null; then
+    exec zsh "${script_location}/.run-format.zsh" --linter "${linter_name}" "${@}"
+else
+    exec bash "${script_location}/.run-format.bash" --linter "${linter_name}" "${@}"
+fi
+exit #>
+
+$ScriptLocation = $PSScriptRoot
+$LinterName = ($MyInvocation.MyCommand.Name) -replace 'run-(.+).ps1','$1'
+
+. ${ScriptLocation}/.run-format.ps1 -Linter "${LinterName}" @Args
