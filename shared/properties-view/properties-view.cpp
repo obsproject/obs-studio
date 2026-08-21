@@ -25,6 +25,9 @@
 #include <QObject>
 #include <QDesktopServices>
 #include <QUuid>
+
+#include "DoubleSpinBox.hpp"
+#include "SpinBox.hpp"
 #include "double-slider.hpp"
 #include "spinbox-ignorewheel.hpp"
 #include "moc_properties-view.cpp"
@@ -434,7 +437,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout, QLabel
 
 	const char *name = obs_property_name(prop);
 	int val = (int)obs_data_get_int(settings, name);
-	QSpinBox *spin = new SpinBoxIgnoreScroll();
+	OBS::SpinBox *spin = new OBS::SpinBox();
 
 	spin->setEnabled(obs_property_enabled(prop));
 
@@ -482,7 +485,7 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout, QLab
 
 	const char *name = obs_property_name(prop);
 	double val = obs_data_get_double(settings, name);
-	QDoubleSpinBox *spin = new QDoubleSpinBox();
+	OBS::DoubleSpinBox *spin = new OBS::DoubleSpinBox();
 
 	if (!obs_property_enabled(prop)) {
 		spin->setEnabled(false);
@@ -517,8 +520,8 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout, QLab
 		slider->setOrientation(Qt::Horizontal);
 		subLayout->addWidget(slider);
 
-		connect(slider, &DoubleSlider::doubleValChanged, spin, &QDoubleSpinBox::setValue);
-		connect(spin, &QDoubleSpinBox::valueChanged, slider, &DoubleSlider::setDoubleVal);
+		connect(slider, &DoubleSlider::doubleValChanged, spin, &OBS::DoubleSpinBox::setValue);
+		connect(spin, &OBS::DoubleSpinBox::valueChanged, slider, &DoubleSlider::setDoubleVal);
 	}
 
 	connect(spin, &QDoubleSpinBox::valueChanged, info, &WidgetInfo::ControlChanged);
