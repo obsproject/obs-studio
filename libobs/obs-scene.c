@@ -1961,7 +1961,8 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name, enum obs_
 
 	for (size_t i = 0; i < items.num; i++) {
 		item = items.array[i];
-		source = make_unique ? dup_child(&items, i, new_scene, make_private) : new_ref(item->source);
+		source = make_unique || item->is_group ? dup_child(&items, i, new_scene, make_private)
+						       : new_ref(item->source);
 
 		if (source) {
 			struct obs_scene_item *new_item = obs_scene_add(new_scene, source);
