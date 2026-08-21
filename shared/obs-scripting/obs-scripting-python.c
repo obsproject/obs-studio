@@ -1637,16 +1637,28 @@ bool obs_scripting_load_python(const char *python_path)
 		return false;
 #endif
 
-	/* ---------------------------------------------- */
-	/* Must set arguments for guis to work            */
+//PySys_SetArgv is deprecated in 3.8+, so use the new initialization API if detected
+#if PY_VERSION_HEX >= 0x03080000
+	PyConfig config;
+	PyConfig_InitPythonConfig(&config);
 
+	config.parse_argv = 0;
+	config.safe_path = 1;
+
+	PyWideStringList_Append(&config.argv, L"");
+
+	PyStatus status = Py_InitializeFromConfig(&config);
+	PyConfig_Clear(&config); //critical!
+
+	if (PyStatus_Exception(status)) {
+		Py_ExitStatusException(status);
+	}
+#else
+	// Classic 3.6/3.7 path
+	Py_Initialize();
 	wchar_t *argv[] = {L"", NULL};
-	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
-
-	PRAGMA_WARN_PUSH
-	PRAGMA_WARN_DEPRECATION
-	PySys_SetArgv(argc, argv);
-	PRAGMA_WARN_POP
+	PySys_SetArgv(0, argv); // or PySys_SetArgvEx if you have 3.7+
+#endif
 
 #ifdef __APPLE__
 	PyRun_SimpleString("import sys");
