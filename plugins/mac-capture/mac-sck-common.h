@@ -43,6 +43,7 @@ struct API_AVAILABLE(macos(12.5)) screen_capture {
     NSRect frame;
     bool hide_cursor;
     bool hide_obs;
+    bool hide_privacy_indicators;
     bool show_hidden_windows;
     bool show_empty_names;
     bool audio_only;
