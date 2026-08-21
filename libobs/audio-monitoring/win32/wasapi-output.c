@@ -203,7 +203,7 @@ static bool audio_monitor_init_wasapi(struct audio_monitor *monitor)
 	/* ------------------------------------------ *
 	 * Init resampler                             */
 
-	const struct audio_output_info *info = audio_output_get_info(obs->audio.audio);
+	const struct audio_output_info *info = audio_output_get_info(obs_get_audio());
 	WAVEFORMATEXTENSIBLE *ext = (WAVEFORMATEXTENSIBLE *)wfex;
 	struct resample_info from;
 	struct resample_info to;

@@ -437,10 +437,14 @@ struct obs_core_video {
 
 extern void add_ready_encoder_group(obs_encoder_t *encoder);
 
+extern struct obs_core_audio_mix *obs_create_audio_mix(struct obs_canvas *canvas, struct obs_audio_info2 *oai);
+extern void obs_free_audio_mix(struct obs_core_audio_mix *audio);
+
 struct audio_monitor;
 
-struct obs_core_audio {
+struct obs_core_audio_mix {
 	audio_t *audio;
+	struct obs_audio_info2 oai;
 
 	DARRAY(struct obs_source *) render_order;
 	DARRAY(struct obs_source *) root_nodes;
@@ -451,7 +455,9 @@ struct obs_core_audio {
 	int total_buffering_ticks;
 	int max_buffering_ticks;
 	bool fixed_buffer;
+};
 
+struct obs_core_audio {
 	pthread_mutex_t monitoring_mutex;
 	DARRAY(struct audio_monitor *) monitors;
 	char *monitoring_device_name;
@@ -461,6 +467,9 @@ struct obs_core_audio {
 	struct deque tasks;
 
 	struct obs_source *monitoring_duplicating_source;
+
+	pthread_mutex_t mixes_mutex;
+	DARRAY(struct obs_core_audio_mix *) mixes;
 };
 
 /* user sources, output channels, and displays */
@@ -733,18 +742,27 @@ struct obs_canvas {
 	/* For now, canvas objects mainly act as a proxy for the existing view and video mix objects,
 	 * though this may change in the future. */
 	struct obs_view view;
-	struct obs_core_video_mix *mix;
+	struct obs_core_video_mix *video_mix;
+	struct obs_core_audio_mix *audio_mix;
+
+	struct obs_audio_info2 oai;
 };
 
 extern obs_canvas_t *obs_create_main_canvas(void);
 extern void obs_canvas_destroy(obs_canvas_t *canvas);
 extern void obs_canvas_clear_mix(obs_canvas_t *canvas);
 extern void obs_free_canvas_mixes(void);
+extern void obs_canvas_clear_video_mix(obs_canvas_t *canvas);
+extern void obs_canvas_clear_audio_mix(obs_canvas_t *canvas);
+extern void obs_free_canvas_video_mixes(void);
+extern void obs_free_canvas_audio_mixes(void);
 extern bool obs_canvas_has_valid_video_info(obs_canvas_t *canvas);
 extern bool obs_canvas_reset_video_internal(obs_canvas_t *canvas, struct obs_video_info *ovi);
+extern bool obs_canvas_reset_audio_internal(obs_canvas_t *canvas, struct obs_audio_info2 *oai);
 extern void obs_canvas_insert_source(obs_canvas_t *canvas, obs_source_t *source);
 extern void obs_canvas_remove_source(obs_source_t *source);
 extern void obs_canvas_rename_source(obs_source_t *source, const char *name);
+extern bool obs_canvas_has_valid_video_info(obs_canvas_t *canvas);
 
 /* ------------------------------------------------------------------------- */
 /* sources  */
