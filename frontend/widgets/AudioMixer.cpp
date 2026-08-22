@@ -409,44 +409,7 @@ void AudioMixer::updatePreviewSources()
 			return;
 		}
 
-		if (!previewScene) {
-			return;
-		}
-
-		auto getPreviewSources = [this](obs_scene_t *, obs_sceneitem_t *item) {
-			if (!obs_sceneitem_visible(item)) {
-				return true;
-			}
-
-			obs_source_t *source = obs_sceneitem_get_source(item);
-			if (!source) {
-				return true;
-			}
-
-			uint32_t flags = obs_source_get_output_flags(source);
-			if ((flags & OBS_SOURCE_AUDIO) == 0) {
-				return true;
-			}
-
-			if (!obs_source_audio_active(source)) {
-				return true;
-			}
-
-			auto uuidPointer = obs_source_get_uuid(source);
-			if (uuidPointer && *uuidPointer) {
-				previewSources.insert(QString::fromUtf8(uuidPointer));
-			}
-
-			return true;
-		};
-
-		using getPreviewSources_t = decltype(getPreviewSources);
-
-		auto previewEnum = [](obs_scene_t *scene, obs_sceneitem_t *item, void *data) -> bool {
-			return (*static_cast<getPreviewSources_t *>(data))(scene, item);
-		};
-
-		obs_scene_enum_items(previewScene, previewEnum, &getPreviewSources);
+		findAudioSourcesInScene(previewScene);
 	}
 }
 
@@ -750,6 +713,52 @@ void AudioMixer::updateVolumeLayouts()
 	stackedMixerArea->setMinimumSize(minimumSize.width() + scrollBarSize, minimumSize.height() + scrollBarSize);
 
 	setUpdatesEnabled(true);
+}
+
+bool AudioMixer::enumPreviewSources(obs_scene_t *, obs_sceneitem_t *item)
+{
+	if (!obs_sceneitem_visible(item)) {
+		return true;
+	}
+
+	obs_source_t *source = obs_sceneitem_get_source(item);
+	if (!source) {
+		return true;
+	}
+
+	if (obs_source_is_scene(source)) {
+		findAudioSourcesInScene(obs_scene_from_source(source));
+		return true;
+	} else if (obs_source_is_group(source)) {
+		findAudioSourcesInScene(obs_group_from_source(source));
+		return true;
+	}
+
+	uint32_t flags = obs_source_get_output_flags(source);
+	if ((flags & OBS_SOURCE_AUDIO) == 0) {
+		return true;
+	}
+
+	if (!obs_source_audio_active(source)) {
+		return true;
+	}
+
+	auto uuidPointer = obs_source_get_uuid(source);
+	if (uuidPointer && *uuidPointer) {
+		previewSources.insert(QString::fromUtf8(uuidPointer));
+	}
+
+	return true;
+}
+
+void AudioMixer::findAudioSourcesInScene(obs_scene_t *scene)
+{
+	auto getPreviewSources = [](obs_scene_t *scene, obs_sceneitem_t *item, void *data) -> bool {
+		auto mixer = static_cast<AudioMixer *>(data);
+		return mixer->enumPreviewSources(scene, item);
+	};
+
+	obs_scene_enum_items(scene, getPreviewSources, this);
 }
 
 void AudioMixer::mixerContextMenuRequested()
