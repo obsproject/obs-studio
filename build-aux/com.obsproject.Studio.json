@@ -22,6 +22,7 @@
     "add-extensions": {
         "com.obsproject.Studio.Plugin": {
             "directory": "plugins",
+            "versions": "stable;test",
             "subdirectories": true,
             "add-ld-path": "lib",
             "merge-dirs": "lib/obs-plugins;share/obs/obs-plugins",
