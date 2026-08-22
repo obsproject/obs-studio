@@ -213,20 +213,6 @@
             "url": "https://www.bungie.net/en/Help/Article/46101"
         },
         {
-            "name": "Grand Theft Auto: San Andreas",
-            "translation_key": "Compatibility.GameCapture.Blocked",
-            "severity": 2,
-            "executable": "gta-sa.exe",
-            "window_class": "",
-            "window_title": "",
-            "match_flags": 1,
-            "game_capture": true,
-            "window_capture": false,
-            "window_capture_wgc": false,
-            "message": "Grand Theft Auto: San Andreas cannot be captured using Game Capture. Use Window Capture or Display Capture instead.",
-            "url": ""
-        },
-        {
             "name": "League of Legends Launcher",
             "translation_key": "Compatibility.GameCapture.Blocked",
             "severity": 1,
@@ -238,20 +224,6 @@
             "window_capture": false,
             "window_capture_wgc": false,
             "message": "League of Legends Launcher cannot be captured using Game Capture. Use Window Capture or Display Capture instead.",
-            "url": ""
-        },
-        {
-            "name": "San Andreas Multiplayer",
-            "translation_key": "Compatibility.GameCapture.Blocked",
-            "severity": 2,
-            "executable": "samp.exe",
-            "window_class": "",
-            "window_title": "",
-            "match_flags": 1,
-            "game_capture": true,
-            "window_capture": false,
-            "window_capture_wgc": false,
-            "message": "San Andreas Multiplayer cannot be captured using Game Capture. Use Window Capture or Display Capture instead.",
             "url": ""
         },
         {
