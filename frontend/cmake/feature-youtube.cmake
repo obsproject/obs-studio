@@ -19,6 +19,9 @@ if(
       oauth/YoutubeAuth.hpp
       utility/YoutubeApiWrappers.cpp
       utility/YoutubeApiWrappers.hpp
+      utility/YoutubeApiClient.hpp
+      utility/YoutubeApiClient.cpp
+      utility/YoutubeApiTypes.hpp
   )
 
   target_enable_feature(obs-studio "YouTube API connection" YOUTUBE_ENABLED)
