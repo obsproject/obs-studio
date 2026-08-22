@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 
+#include "audio-monitoring/monitoring-mix.h"
 #include "graphics/matrix4.h"
 #include "callback/calldata.h"
 
@@ -956,6 +957,9 @@ static void obs_free_audio(void)
 	da_free(audio->monitors);
 	bfree(audio->monitoring_device_name);
 	bfree(audio->monitoring_device_id);
+	monitoring_mix_destroy(audio->monitoring_mix);
+	audio->monitoring_mix = NULL;
+
 	deque_free(&audio->tasks);
 	pthread_mutex_destroy(&audio->task_mutex);
 	pthread_mutex_destroy(&audio->monitoring_mutex);
@@ -1622,6 +1626,11 @@ bool obs_reset_audio2(const struct obs_audio_info2 *oai)
 
 	int max_buffering_ms =
 		audio->max_buffering_ticks * AUDIO_OUTPUT_FRAMES * SEC_TO_MSEC / (int)oai->samples_per_sec;
+
+	audio->monitoring_mix = monitoring_mix_create(oai->samples_per_sec, get_audio_channels(oai->speakers));
+	if (!audio->monitoring_mix) {
+		blog(LOG_ERROR, "Failed to create audio monitoring mix");
+	}
 
 	ai.name = "Audio";
 	ai.samples_per_sec = oai->samples_per_sec;

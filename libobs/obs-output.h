@@ -85,6 +85,9 @@ struct obs_output_info {
 
 	/* required if OBS_OUTPUT_SERVICE */
 	const char *protocols;
+
+	/* raw audio callback for mixed monitoring outputs with low latency */
+	void (*raw_audio_monitoring)(void *data, struct audio_data *frames);
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info, size_t size);

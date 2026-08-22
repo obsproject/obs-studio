@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <math.h>
 
+#include "audio-monitoring/monitoring-mix.h"
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
 #include "media-io/audio-io.h"
@@ -720,6 +721,9 @@ void obs_source_destroy(struct obs_source *source)
 	}
 
 	if (is_audio_source(source)) {
+		if (source->monitoring_mix_source && obs->audio.monitoring_mix) {
+			monitoring_mix_remove_source(obs->audio.monitoring_mix, source->monitoring_mix_source);
+		}
 		pthread_mutex_lock(&source->audio_cb_mutex);
 		da_free(source->audio_cb_list);
 		pthread_mutex_unlock(&source->audio_cb_mutex);
@@ -5580,9 +5584,13 @@ void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_ty
 	if (was_on != now_on) {
 		if (!was_on) {
 			source->monitor = audio_monitor_create(source);
+			monitoring_mix_add_source(source);
 		} else {
 			audio_monitor_destroy(source->monitor);
 			source->monitor = NULL;
+			if (source->monitoring_mix_source && obs->audio.monitoring_mix) {
+				monitoring_mix_remove_source(obs->audio.monitoring_mix, source->monitoring_mix_source);
+			}
 		}
 	}
 
