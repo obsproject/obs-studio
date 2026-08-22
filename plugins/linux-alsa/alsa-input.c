@@ -110,6 +110,7 @@ static enum speaker_layout _alsa_channels_to_obs_speakers(unsigned int);
 void *alsa_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct alsa_data *data = bzalloc(sizeof(struct alsa_data));
+	bool async_compensation;
 
 	data->source = source;
 #if SHUTDOWN_ON_DEACTIVATE
@@ -140,6 +141,10 @@ void *alsa_create(obs_data_t *settings, obs_source_t *source)
 #if !SHUTDOWN_ON_DEACTIVATE
 	_alsa_try_open(data);
 #endif
+
+	async_compensation = obs_data_get_bool(settings, "async_compensation");
+	obs_source_set_async_compensation(data->source, async_compensation);
+
 	return data;
 
 cleanup:
@@ -186,6 +191,7 @@ void alsa_update(void *vptr, obs_data_t *settings)
 	struct alsa_data *data = vptr;
 	const char *device;
 	unsigned int rate;
+	bool async_compensation;
 	bool reset = false;
 
 	device = obs_data_get_string(settings, "device_id");
@@ -218,6 +224,9 @@ void alsa_update(void *vptr, obs_data_t *settings)
 		_alsa_try_open(data);
 	}
 #endif
+
+	async_compensation = obs_data_get_bool(settings, "async_compensation");
+	obs_source_set_async_compensation(data->source, async_compensation);
 }
 
 const char *alsa_get_name(void *unused)
@@ -231,6 +240,7 @@ void alsa_get_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "device_id", "default");
 	obs_data_set_default_string(settings, "custom_pcm", "default");
 	obs_data_set_default_int(settings, "rate", 44100);
+	obs_data_set_default_bool(settings, "async_compensation", true);
 }
 
 static bool alsa_devices_changed(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
@@ -332,6 +342,8 @@ obs_properties_t *alsa_get_properties(void *unused)
 	obs_property_list_add_string(devices, obs_module_text("Custom"), "__custom__");
 
 	snd_device_name_free_hint(hints);
+
+	obs_properties_add_bool(props, "async_compensation", obs_module_text("AsyncCompensation"));
 
 	return props;
 }
