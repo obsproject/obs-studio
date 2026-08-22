@@ -205,7 +205,9 @@ void cache_standard_glyphs(struct ft2_source *srcdata)
 
 	cache_glyphs(srcdata, L"abcdefghijklmnopqrstuvwxyz"
 			      L"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
-			      L"!@#$%^&*()-_=+,<.>/?\\|[]{}`~ \'\"\0");
+			      L"!@#$%^&*()-_=+,<.>/?\\|[]{}`~ \'\""
+			      L"абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+			      L"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0");
 }
 
 FT_Render_Mode get_render_mode(struct ft2_source *srcdata)
