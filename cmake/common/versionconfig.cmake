@@ -19,22 +19,17 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git
   if(_git_describe_err)
     message(FATAL_ERROR "Could not fetch OBS version tag from git.\n" ${_git_describe_err})
   endif()
-
-  if(_obs_version_result EQUAL 0)
-    string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1;\\2;\\3" _obs_version_canonical ${_obs_version})
-  endif()
 elseif(DEFINED OBS_VERSION_OVERRIDE)
-  if(OBS_VERSION_OVERRIDE MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
-    string(
-      REGEX REPLACE
-      "([0-9]+)\\.([0-9]+)\\.([0-9]+).*"
-      "\\1;\\2;\\3"
-      _obs_version_canonical
-      ${OBS_VERSION_OVERRIDE}
-    )
-    set(_obs_version ${OBS_VERSION_OVERRIDE})
-  else()
+  set(_obs_version ${OBS_VERSION_OVERRIDE})
+endif()
+
+if(_obs_version MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
+  string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1;\\2;\\3" _obs_version_canonical ${_obs_version})
+else()
+  if(DEFINED OBS_VERSION_OVERRIDE)
     message(FATAL_ERROR "Invalid version supplied - must be <MAJOR>.<MINOR>.<PATCH>[-(rc|beta)<NUMBER>].")
+  else()
+    set(_obs_version_canonical "0;0;1")
   endif()
 endif()
 
@@ -55,20 +50,14 @@ set(OBS_BETA ${_obs_beta})
 string(REPLACE ";" "." OBS_VERSION_CANONICAL "${_obs_version_canonical}")
 string(REPLACE ";" "." OBS_VERSION "${_obs_version}")
 
+message(STATUS "Checking for pre-release version of OBS Studio")
+
 if(OBS_RELEASE_CANDIDATE GREATER 0)
-  message(
-    AUTHOR_WARNING
-    "******************************************************************************\n"
-    "  + OBS-Studio - Release candidate detected, OBS_VERSION is now: ${OBS_VERSION}\n"
-    "******************************************************************************"
-  )
+  message(STATUS "Checking for pre-release version of OBS Studio - ${OBS_VERSION} is a RELEASE CANDIDATE.")
 elseif(OBS_BETA GREATER 0)
-  message(
-    AUTHOR_WARNING
-    "******************************************************************************\n"
-    "  + OBS-Studio - Beta detected, OBS_VERSION is now: ${OBS_VERSION}\n"
-    "******************************************************************************"
-  )
+  message(STATUS "Checking for pre-release version of OBS Studio - ${OBS_VERSION} is a BETA.")
+else()
+  message(STATUS "Checking for pre-release version of OBS Studio - ${OBS_VERSION} is a RELEASE.")
 endif()
 
 unset(_obs_default_version)

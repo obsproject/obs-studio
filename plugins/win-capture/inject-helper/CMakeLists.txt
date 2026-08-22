@@ -19,7 +19,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     add_custom_command(
       TARGET inject-helper
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x64 --config $<CONFIG> -t inject-helper
+      COMMAND "${CMAKE_COMMAND}" --build ${OBS_BUILD_PARENT_PATH}/build_x64 --config $<CONFIG> -t inject-helper
       COMMENT "Build x64 inject-helper"
     )
   endif()
@@ -28,7 +28,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     add_custom_command(
       TARGET inject-helper
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x86 --config $<CONFIG> -t inject-helper
+      COMMAND "${CMAKE_COMMAND}" --build ${OBS_BUILD_PARENT_PATH}/build_x86 --config $<CONFIG> -t inject-helper
       COMMENT "Build x86 inject-helper"
     )
   endif()

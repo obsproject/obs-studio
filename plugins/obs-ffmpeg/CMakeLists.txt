@@ -5,6 +5,8 @@ option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
 
 if(OS_LINUX OR OS_WINDOWS)
   option(ENABLE_FFMPEG_NVENC "Enable legacy FFmpeg NVENC encoder" OFF)
+else()
+  set(ENABLE_FFMPEG_NVENC OFF)
 endif()
 
 include(cmake/dependencies.cmake)
