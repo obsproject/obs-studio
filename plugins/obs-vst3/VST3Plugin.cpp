@@ -537,9 +537,14 @@ bool VST3Plugin::createView()
 		return false;
 	}
 	if (hostContext->backend() == VST3Backend::Wayland) {
+#if defined(ENABLE_WAYLAND) && ENABLE_WAYLAND
 		infovst3plugin(
 			"Our VST3 host does not support Wayland for GUI. VST3s will be active in headless mode.");
 		return false;
+#else
+		infovst3plugin("Wayland backend not enabled at compile time");
+		return false;
+#endif
 	}
 #else
 	infovst3plugin("Platform is not supported yet");

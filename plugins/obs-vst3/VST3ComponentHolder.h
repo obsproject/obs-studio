@@ -29,7 +29,7 @@ class VST3Plugin;
 class VST3ComponentHolder : public IComponentHandler, public IUnitHandler {
 public:
 	explicit VST3ComponentHolder(VST3Plugin *plugin_);
-	~VST3ComponentHolder() noexcept;
+	virtual ~VST3ComponentHolder() noexcept;
 
 	VST3ComponentHolder(const VST3ComponentHolder &) = delete;
 	VST3ComponentHolder &operator=(const VST3ComponentHolder &) = delete;

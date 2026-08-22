@@ -119,9 +119,12 @@ bool loadHost()
 
 	if (platform == OBS_NIX_PLATFORM_X11_EGL) {
 		backend = VST3Backend::X11;
-	} else if (platform == OBS_NIX_PLATFORM_WAYLAND) {
+	}
+#if defined(ENABLE_WAYLAND) && ENABLE_WAYLAND
+	else if (platform == OBS_NIX_PLATFORM_WAYLAND) {
 		backend = VST3Backend::Wayland;
 	}
+#endif
 #endif
 
 	if (backend == VST3Backend::Unknown) {
