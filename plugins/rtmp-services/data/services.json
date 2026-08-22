@@ -3598,6 +3598,26 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "Upstream.so",
+            "more_info_link": "https://upstream.so/multistreaming/",
+            "stream_key_link": "https://studio.upstream.so/stream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://ingest.upstream.so:1935/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            },
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ]
         }
     ]
 }
