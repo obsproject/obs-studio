@@ -91,6 +91,11 @@ add_obs_plugin(
     PLATFORMS WINDOWS MACOS LINUX
     WITH_MESSAGE
 )
+add_obs_plugin(
+    obs-vst3
+    PLATFORMS WINDOWS MACOS LINUX
+    WITH_MESSAGE
+)
 add_obs_plugin(obs-webrtc)
 
 check_obs_websocket()
