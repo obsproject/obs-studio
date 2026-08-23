@@ -113,6 +113,7 @@ private:
 
 	void setMuted(bool mute);
 	void setMonitoring(obs_monitoring_type type);
+	void renameSource(OBSSource source);
 
 public slots:
 	void setUseDisabledColors(bool greyscale);
@@ -120,7 +121,6 @@ public slots:
 	void processMixerState();
 
 private slots:
-	void renameSource();
 	void changeVolume();
 
 	void handleMuteButton(bool checked);
@@ -128,7 +128,6 @@ private slots:
 	void sliderChanged(int vol);
 	void updateText();
 	void setName(QString name);
-
 	void onSourceActiveChanged(bool active);
 	void onMuteChanged(bool muted);
 	void onMonitoringChanged(int type);
