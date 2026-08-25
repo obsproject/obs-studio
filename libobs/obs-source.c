@@ -5613,11 +5613,12 @@ void obs_source_set_monitoring_enabled(obs_source_t *source, bool enabled)
 	calldata_set_ptr(&data, "source", source);
 	calldata_set_bool(&data, "monitor", enabled);
 
+	signal_handler_signal(source->context.signals, "monitor", &data);
+
 	calldata_init_fixed(&compat_data, stack, sizeof(stack));
 	calldata_set_ptr(&compat_data, "source", source);
 	calldata_set_int(&compat_data, "type", compat_type);
 
-	signal_handler_signal(source->context.signals, "monitor", &data);
 	signal_handler_signal(source->context.signals, "audio_monitoring", &compat_data);
 
 	was_on = source->monitoring_enabled;
