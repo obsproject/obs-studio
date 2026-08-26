@@ -27,6 +27,25 @@ try {
 	return false;
 }
 
+static void
+winrt_capture_enable_secondary_windows(const winrt::Windows::Graphics::Capture::GraphicsCaptureSession &session,
+				       HWND window)
+{
+#if defined(NTDDI_WIN11_GE)
+	try {
+		if (window && winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(
+				      L"Windows.Graphics.Capture.GraphicsCaptureSession", L"IncludeSecondaryWindows")) {
+			session.IncludeSecondaryWindows(true);
+		}
+	} catch (const winrt::hresult_error &err) {
+		blog(LOG_ERROR, "winrt_capture_enable_secondary_windows (0x%08X): %s", err.code().value,
+		     winrt::to_string(err.message()).c_str());
+	} catch (...) {
+		blog(LOG_ERROR, "winrt_capture_enable_secondary_windows (0x%08X)", winrt::to_hresult().value);
+	}
+#endif
+}
+
 template<typename T>
 static winrt::com_ptr<T> GetDXGIInterfaceFromObject(winrt::Windows::Foundation::IInspectable const &object)
 {
@@ -313,6 +332,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 			capture->last_size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session = frame_pool.CreateCaptureSession(item);
 
+	winrt_capture_enable_secondary_windows(session, capture->window);
+
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::RequestAccessAsync(
 			winrt::Windows::Graphics::Capture::GraphicsCaptureAccessKind::Borderless)
@@ -378,6 +399,8 @@ try {
 		winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::Create(
 			device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(format), 2, size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session = frame_pool.CreateCaptureSession(item);
+
+	winrt_capture_enable_secondary_windows(session, window);
 
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::RequestAccessAsync(
