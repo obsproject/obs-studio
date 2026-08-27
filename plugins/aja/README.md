@@ -27,7 +27,7 @@ https://github.com/aja-video/ntv2
 - Run `make`
 - `cd` into the `ntv2/bin` directory and run `sudo sh load_ajantv2` to install the AJA kernel module.
 
-NOTE: To uniunstall the Linux kernel module, `cd` into the `ntv2/bin` directory and run `sudo sh unload_ajantv2`.
+NOTE: To uninstall the Linux kernel module, `cd` into the `ntv2/bin` directory and run `sudo sh unload_ajantv2`.
 
 ---
 
