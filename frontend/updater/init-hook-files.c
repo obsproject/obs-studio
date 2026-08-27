@@ -34,7 +34,7 @@ static bool add_aap_perms(const wchar_t *dir)
 		goto fail;
 	}
 
-	ea.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE;
+	ea.grfAccessPermissions = GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | DELETE;
 
 	/* BUILTIN_USERS */
 	ConvertStringSidToSidW(L"S-1-5-32-545", &bu_sid);
@@ -108,6 +108,35 @@ static LSTATUS get_reg(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, bool b64)
 #define IMPLICIT_LAYERS L"SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers"
 #define HOOK_LOCATION L"\\data\\obs-plugins\\win-capture\\"
 
+static bool copy_hook_file(const wchar_t *src, const wchar_t *dst)
+{
+	if (CopyFileW(src, dst, false)) {
+		return true;
+	}
+
+	DWORD err = GetLastError();
+	if (err == ERROR_ACCESS_DENIED || err == ERROR_SHARING_VIOLATION || err == ERROR_USER_MAPPED_FILE ||
+	    err == ERROR_LOCK_VIOLATION) {
+		wchar_t dst_old[MAX_PATH];
+		StringCbCopyW(dst_old, sizeof(dst_old), dst);
+		StringCbCatW(dst_old, sizeof(dst_old), L".old");
+
+		/* ponytail: hot-rename locked DLL to .old and schedule deletion on reboot */
+		bool renamed = MoveFileExW(dst, dst_old, MOVEFILE_REPLACE_EXISTING);
+		for (int i = 0; !renamed && i < 100; i++) {
+			StringCbPrintfW(dst_old, sizeof(dst_old), L"%s.%lu.%d.old", dst, GetTickCount(), i);
+			renamed = MoveFileExW(dst, dst_old, MOVEFILE_REPLACE_EXISTING);
+		}
+
+		if (renamed) {
+			MoveFileExW(dst_old, NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+			return CopyFileW(src, dst, false);
+		}
+	}
+
+	return false;
+}
+
 static bool update_hook_file(bool b64)
 {
 	wchar_t temp[MAX_PATH];
@@ -117,11 +146,11 @@ static bool update_hook_file(bool b64)
 	wchar_t dst_json[MAX_PATH];
 
 	GetCurrentDirectoryW(_countof(src_json), src_json);
-	StringCbCat(src_json, sizeof(src_json), HOOK_LOCATION);
+	StringCbCatW(src_json, sizeof(src_json), HOOK_LOCATION);
 	make_filename(src_json, L"obs-vulkan", L".json");
 
 	GetCurrentDirectoryW(_countof(src), src);
-	StringCbCat(src, sizeof(src), HOOK_LOCATION);
+	StringCbCatW(src, sizeof(src), HOOK_LOCATION);
 	make_filename(src, L"graphics-hook", L".dll");
 
 	get_programdata_path(temp, L"obs-studio-hook\\");
@@ -136,8 +165,8 @@ static bool update_hook_file(bool b64)
 
 	CreateDirectoryW(temp, NULL);
 	add_aap_perms(temp);
-	CopyFileW(src, dst, false);
-	CopyFileW(src_json, dst_json, false);
+	copy_hook_file(src, dst);
+	copy_hook_file(src_json, dst_json);
 	return true;
 }
 

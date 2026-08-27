@@ -65,7 +65,7 @@ try {
 	/* --------------------------------- *
 	 * open patch and file to patch      */
 
-	hTarget = CreateFile(targetFile, GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+	hTarget = CreateFile(targetFile, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
 	if (!hTarget.Valid()) {
 		throw int(GetLastError());
 	}
@@ -123,7 +123,7 @@ try {
 	size_t result = ZSTD_decompress_usingDict(zstdCtx, newData.data(), newData.size(), patch_data + kHeaderSize,
 						  patch_size - kHeaderSize, oldData.data(), oldData.size());
 
-	if (result != newsize || ZSTD_isError(result)) {
+	if (result != (size_t)newsize || ZSTD_isError(result)) {
 		throw int(-9);
 	}
 
@@ -133,7 +133,30 @@ try {
 	hTarget = nullptr;
 	hTarget = CreateFile(targetFile, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
 	if (!hTarget.Valid()) {
-		throw int(GetLastError());
+		DWORD err = GetLastError();
+		if (err == ERROR_ACCESS_DENIED || err == ERROR_SHARING_VIOLATION ||
+		    err == ERROR_USER_MAPPED_FILE || err == ERROR_LOCK_VIOLATION) {
+			wchar_t targetFileOld[MAX_PATH];
+			StringCbCopy(targetFileOld, sizeof(targetFileOld), targetFile);
+			StringCbCat(targetFileOld, sizeof(targetFileOld), L".old");
+
+			/* ponytail: hot-rename locked binary to .old and schedule deletion on reboot */
+			bool renamed = MoveFileEx(targetFile, targetFileOld, MOVEFILE_REPLACE_EXISTING);
+			for (int i = 0; !renamed && i < 100; i++) {
+				StringCbPrintf(targetFileOld, sizeof(targetFileOld), L"%s.%lu.%d.old",
+					       targetFile, GetTickCount(), i);
+				renamed = MoveFileEx(targetFile, targetFileOld, MOVEFILE_REPLACE_EXISTING);
+			}
+
+			if (renamed) {
+				MoveFileEx(targetFileOld, nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+				hTarget = CreateFile(targetFile, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
+			}
+		}
+
+		if (!hTarget.Valid()) {
+			throw int(GetLastError());
+		}
 	}
 
 	DWORD written;

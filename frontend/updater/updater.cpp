@@ -24,6 +24,7 @@
 #include <util/windows/CoTaskMemPtr.hpp>
 
 #include <exception>
+#include <filesystem>
 #include <future>
 #include <mutex>
 #include <queue>
@@ -170,7 +171,30 @@ try {
 
 	hDest = CreateFile(dest, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
 	if (!hDest.Valid()) {
-		throw LastError();
+		DWORD err = GetLastError();
+		if (err == ERROR_ACCESS_DENIED || err == ERROR_SHARING_VIOLATION ||
+		    err == ERROR_USER_MAPPED_FILE || err == ERROR_LOCK_VIOLATION) {
+			wchar_t destOld[MAX_PATH];
+			StringCbCopy(destOld, sizeof(destOld), dest);
+			StringCbCat(destOld, sizeof(destOld), L".old");
+
+			/* ponytail: hot-rename locked binary to .old and schedule deletion on reboot */
+			bool renamed = MoveFileEx(dest, destOld, MOVEFILE_REPLACE_EXISTING);
+			for (int i = 0; !renamed && i < 100; i++) {
+				StringCbPrintf(destOld, sizeof(destOld), L"%s.%lu.%d.old", dest,
+					       GetTickCount(), i);
+				renamed = MoveFileEx(dest, destOld, MOVEFILE_REPLACE_EXISTING);
+			}
+
+			if (renamed) {
+				MoveFileEx(destOld, nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+				hDest = CreateFile(dest, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
+			}
+		}
+
+		if (!hDest.Valid()) {
+			throw LastError();
+		}
 	}
 
 	BYTE buf[65536];
@@ -274,9 +298,31 @@ static string QuickReadFile(const wchar_t *path)
 static bool QuickWriteFile(const wchar_t *file, const void *data, size_t size)
 try {
 	WinHandle handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
+	if (!handle.Valid()) {
+		DWORD err = GetLastError();
+		if (err == ERROR_ACCESS_DENIED || err == ERROR_SHARING_VIOLATION ||
+		    err == ERROR_USER_MAPPED_FILE || err == ERROR_LOCK_VIOLATION) {
+			wchar_t fileOld[MAX_PATH];
+			StringCbCopy(fileOld, sizeof(fileOld), file);
+			StringCbCat(fileOld, sizeof(fileOld), L".old");
 
-	if (handle == INVALID_HANDLE_VALUE) {
-		throw LastError();
+			/* ponytail: hot-rename locked binary to .old and schedule deletion on reboot */
+			bool renamed = MoveFileEx(file, fileOld, MOVEFILE_REPLACE_EXISTING);
+			for (int i = 0; !renamed && i < 100; i++) {
+				StringCbPrintf(fileOld, sizeof(fileOld), L"%s.%lu.%d.old", file,
+					       GetTickCount(), i);
+				renamed = MoveFileEx(file, fileOld, MOVEFILE_REPLACE_EXISTING);
+			}
+
+			if (renamed) {
+				MoveFileEx(fileOld, nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+				handle = CreateFile(file, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, 0, nullptr);
+			}
+		}
+
+		if (!handle.Valid()) {
+			throw LastError();
+		}
 	}
 
 	DWORD written;
@@ -797,7 +843,7 @@ static bool AddPackageUpdateFiles(const Package &package, const wchar_t *branch)
 
 		/* We don't really care if this fails, it's just to avoid
 		 * wasting bandwidth by downloading unmodified files */
-		B2Hash localFileHash;
+		B2Hash localFileHash = {};
 		bool has_hash = false;
 
 		if (hashes.count(file.name)) {
@@ -1019,7 +1065,8 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 
 		if (!MyCopyFile(file.outputPath.c_str(), oldFileRenamedPath)) {
 			DWORD err = GetLastError();
-			int is_sharing_violation = (err == ERROR_SHARING_VIOLATION || err == ERROR_USER_MAPPED_FILE);
+			int is_sharing_violation = (err == ERROR_ACCESS_DENIED || err == ERROR_SHARING_VIOLATION ||
+						    err == ERROR_USER_MAPPED_FILE || err == ERROR_LOCK_VIOLATION);
 
 			if (is_sharing_violation) {
 				Status(L"Update failed: %s is still in use.  "
@@ -1076,8 +1123,10 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 		}
 
 		if (!installed_ok) {
-			int is_sharing_violation =
-				(error_code == ERROR_SHARING_VIOLATION || error_code == ERROR_USER_MAPPED_FILE);
+			int is_sharing_violation = (error_code == ERROR_ACCESS_DENIED ||
+						    error_code == ERROR_SHARING_VIOLATION ||
+						    error_code == ERROR_USER_MAPPED_FILE ||
+						    error_code == ERROR_LOCK_VIOLATION);
 
 			if (is_sharing_violation) {
 				if (!already_tried_to_move) {
@@ -1389,13 +1438,13 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Init crypt stuff                      */
 
-	CryptProvider hProvider;
-	if (!CryptAcquireContext(&hProvider, nullptr, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) {
+	CryptProvider provider;
+	if (!CryptAcquireContext(&provider, nullptr, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) {
 		SetDlgItemTextW(hwndMain, IDC_STATUS, L"Update failed: CryptAcquireContext failure");
 		return false;
 	}
 
-	::hProvider = hProvider;
+	hProvider = provider;
 
 	/* ------------------------------------- */
 
