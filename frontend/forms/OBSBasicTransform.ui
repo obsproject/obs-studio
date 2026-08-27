@@ -122,7 +122,7 @@
           </widget>
          </item>
          <item row="1" column="3">
-          <widget class="QDoubleSpinBox" name="sizeX">
+          <widget class="OBS::DoubleSpinBox" name="sizeX">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -169,7 +169,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="positionX">
+          <widget class="OBS::DoubleSpinBox" name="positionX">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -200,7 +200,7 @@
           </widget>
          </item>
          <item row="1" column="4">
-          <widget class="QDoubleSpinBox" name="rotation">
+          <widget class="OBS::DoubleSpinBox" name="rotation">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -295,7 +295,7 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="positionY">
+          <widget class="OBS::DoubleSpinBox" name="positionY">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -326,7 +326,7 @@
           </widget>
          </item>
          <item row="2" column="3">
-          <widget class="QDoubleSpinBox" name="sizeY">
+          <widget class="OBS::DoubleSpinBox" name="sizeY">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -586,7 +586,7 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="boundsWidth">
+          <widget class="OBS::DoubleSpinBox" name="boundsWidth">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -620,7 +620,7 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QDoubleSpinBox" name="boundsHeight">
+          <widget class="OBS::DoubleSpinBox" name="boundsHeight">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -729,7 +729,7 @@
           </widget>
          </item>
          <item row="2" column="3">
-          <widget class="QSpinBox" name="cropBottom">
+          <widget class="OBS::SpinBox" name="cropBottom">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -773,7 +773,7 @@
           </spacer>
          </item>
          <item row="1" column="3">
-          <widget class="QSpinBox" name="cropRight">
+          <widget class="OBS::SpinBox" name="cropRight">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -804,7 +804,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="cropLeft">
+          <widget class="OBS::SpinBox" name="cropLeft">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -845,7 +845,7 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QSpinBox" name="cropTop">
+          <widget class="OBS::SpinBox" name="cropTop">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -928,6 +928,18 @@
   <tabstop>cropTop</tabstop>
   <tabstop>cropBottom</tabstop>
  </tabstops>
+ <customwidgets>
+  <customwidget>
+   <class>OBS::SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>SpinBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>OBS::DoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>DoubleSpinBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

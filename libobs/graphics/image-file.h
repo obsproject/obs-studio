@@ -18,13 +18,12 @@
 #pragma once
 
 #include "graphics.h"
-#include "libnsgif/libnsgif.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct gs_image_file {
+struct gs_image_file_ex {
 	gs_texture_t *texture;
 	enum gs_color_format format;
 	uint32_t cx;
@@ -33,91 +32,26 @@ struct gs_image_file {
 	bool frame_updated;
 	bool loaded;
 
-	gif_animation gif;
-	uint8_t *gif_data;
-	uint8_t **animation_frame_cache;
-	uint8_t *animation_frame_data;
+	struct gs_image_file_internal *internal;
+
 	uint64_t cur_time;
 	int cur_frame;
 	int cur_loop;
-	int last_decoded_frame;
 
 	uint8_t *texture_data;
-	gif_bitmap_callback_vt bitmap_callbacks;
-};
-
-struct gs_image_file2 {
-	struct gs_image_file image;
 	uint64_t mem_usage;
-};
-
-struct gs_image_file3 {
-	struct gs_image_file2 image2;
 	enum gs_image_alpha_mode alpha_mode;
-};
-
-struct gs_image_file4 {
-	struct gs_image_file3 image3;
 	enum gs_color_space space;
 };
 
-typedef struct gs_image_file gs_image_file_t;
-typedef struct gs_image_file2 gs_image_file2_t;
-typedef struct gs_image_file3 gs_image_file3_t;
-typedef struct gs_image_file4 gs_image_file4_t;
+typedef struct gs_image_file_ex gs_image_file_ex_t;
 
-EXPORT void gs_image_file_init(gs_image_file_t *image, const char *file);
-EXPORT void gs_image_file_free(gs_image_file_t *image);
+EXPORT void gs_image_file_ex_init(gs_image_file_ex_t *image, const char *file, enum gs_image_alpha_mode alpha_mode);
+EXPORT void gs_image_file_ex_free(gs_image_file_ex_t *image);
 
-EXPORT void gs_image_file_init_texture(gs_image_file_t *image);
-EXPORT bool gs_image_file_tick(gs_image_file_t *image, uint64_t elapsed_time_ns);
-EXPORT void gs_image_file_update_texture(gs_image_file_t *image);
-
-EXPORT void gs_image_file2_init(gs_image_file2_t *if2, const char *file);
-
-EXPORT bool gs_image_file2_tick(gs_image_file2_t *if2, uint64_t elapsed_time_ns);
-EXPORT void gs_image_file2_update_texture(gs_image_file2_t *if2);
-
-EXPORT void gs_image_file3_init(gs_image_file3_t *if3, const char *file, enum gs_image_alpha_mode alpha_mode);
-
-EXPORT bool gs_image_file3_tick(gs_image_file3_t *if3, uint64_t elapsed_time_ns);
-EXPORT void gs_image_file3_update_texture(gs_image_file3_t *if3);
-
-EXPORT void gs_image_file4_init(gs_image_file4_t *if4, const char *file, enum gs_image_alpha_mode alpha_mode);
-
-EXPORT bool gs_image_file4_tick(gs_image_file4_t *if4, uint64_t elapsed_time_ns);
-EXPORT void gs_image_file4_update_texture(gs_image_file4_t *if4);
-
-static inline void gs_image_file2_free(gs_image_file2_t *if2)
-{
-	gs_image_file_free(&if2->image);
-	if2->mem_usage = 0;
-}
-
-static inline void gs_image_file2_init_texture(gs_image_file2_t *if2)
-{
-	gs_image_file_init_texture(&if2->image);
-}
-
-static inline void gs_image_file3_free(gs_image_file3_t *if3)
-{
-	gs_image_file2_free(&if3->image2);
-}
-
-static inline void gs_image_file3_init_texture(gs_image_file3_t *if3)
-{
-	gs_image_file2_init_texture(&if3->image2);
-}
-
-static inline void gs_image_file4_free(gs_image_file4_t *if4)
-{
-	gs_image_file3_free(&if4->image3);
-}
-
-static inline void gs_image_file4_init_texture(gs_image_file4_t *if4)
-{
-	gs_image_file3_init_texture(&if4->image3);
-}
+EXPORT void gs_image_file_ex_init_texture(gs_image_file_ex_t *image);
+EXPORT bool gs_image_file_ex_tick(gs_image_file_ex_t *image, uint64_t elapsed_time_ns);
+EXPORT void gs_image_file_ex_update_texture(gs_image_file_ex_t *image);
 
 #ifdef __cplusplus
 }
