@@ -176,7 +176,7 @@ static void platform_seat_capabilities(void *data, struct wl_seat *seat, uint32_
 	bool kb_present = capabilities & WL_SEAT_CAPABILITY_KEYBOARD;
 
 	if (kb_present && plat->keyboard == NULL) {
-		plat->keyboard = wl_seat_get_keyboard(plat->seat);
+		plat->keyboard = wl_seat_get_keyboard(seat);
 		wl_keyboard_add_listener(plat->keyboard, &keyboard_listener, plat);
 	} else if (!kb_present && plat->keyboard != NULL) {
 		wl_keyboard_release(plat->keyboard);
