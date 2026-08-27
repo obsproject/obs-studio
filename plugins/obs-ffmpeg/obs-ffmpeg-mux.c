@@ -47,9 +47,9 @@ static const char *ffmpeg_mpegts_mux_getname(void *type)
 static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 {
 	while (stream->packets.size > 0) {
-		struct encoder_packet pkt;
-		deque_pop_front(&stream->packets, &pkt, sizeof(pkt));
-		obs_encoder_packet_release(&pkt);
+		struct rb_packet rb_pkt;
+		deque_pop_front(&stream->packets, &rb_pkt, sizeof(rb_pkt));
+		obs_encoder_packet_release(&rb_pkt.pkt);
 	}
 
 	deque_free(&stream->packets);
@@ -69,7 +69,7 @@ static void ffmpeg_mux_destroy(void *data)
 	if (stream->mux_thread_joinable)
 		pthread_join(stream->mux_thread, NULL);
 	for (size_t i = 0; i < stream->mux_packets.num; i++)
-		obs_encoder_packet_release(&stream->mux_packets.array[i]);
+		obs_encoder_packet_release(&stream->mux_packets.array[i].pkt);
 	da_free(stream->mux_packets);
 	deque_free(&stream->packets);
 
@@ -766,9 +766,10 @@ static inline bool has_audio(struct ffmpeg_muxer *stream)
 
 static void push_back_packet(mux_packets_t *packets, struct encoder_packet *packet)
 {
-	struct encoder_packet pkt;
-	obs_encoder_packet_ref(&pkt, packet);
-	da_push_back(*packets, &pkt);
+	struct rb_packet rb_pkt;
+	obs_encoder_packet_ref(&rb_pkt.pkt, packet);
+	rb_pkt.disk_offset = -1;
+	da_push_back(*packets, &rb_pkt);
 }
 
 static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
@@ -786,7 +787,8 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 
 	if (stream->split_file && stream->mux_packets.num) {
 		int64_t pts_usec = packet_pts_usec(packet);
-		struct encoder_packet *first_pkt = stream->mux_packets.array;
+		struct rb_packet *first_rb = &stream->mux_packets.array[0];
+		struct encoder_packet *first_pkt = &first_rb->pkt;
 		int64_t first_pts_usec = packet_pts_usec(first_pkt);
 
 		if (pts_usec >= first_pts_usec) {
@@ -829,7 +831,8 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 
 	if (stream->split_file && stream->split_file_ready) {
 		for (size_t i = 0; i < stream->mux_packets.num; i++) {
-			struct encoder_packet *pkt = &stream->mux_packets.array[i];
+			struct rb_packet *rb = &stream->mux_packets.array[i];
+			struct encoder_packet *pkt = &rb->pkt;
 			ts_offset_update(stream, pkt);
 			write_packet(stream, pkt);
 			obs_encoder_packet_release(pkt);
@@ -972,6 +975,12 @@ static void replay_buffer_destroy(void *data)
 	struct ffmpeg_muxer *stream = data;
 	if (stream->hotkey)
 		obs_hotkey_unregister(stream->hotkey);
+	if (stream->disk_tmp_file) {
+		fclose(stream->disk_tmp_file);
+		stream->disk_tmp_file = NULL;
+		os_unlink(stream->disk_tmp_path.array);
+		dstr_free(&stream->disk_tmp_path);
+	}
 	ffmpeg_mux_destroy(data);
 }
 
@@ -987,6 +996,27 @@ static bool replay_buffer_start(void *data)
 	obs_data_t *s = obs_output_get_settings(stream->output);
 	stream->max_time = obs_data_get_int(s, "max_time_sec") * 1000000LL;
 	stream->max_size = obs_data_get_int(s, "max_size_mb") * (1024 * 1024);
+	stream->storage_mode = (int)obs_data_get_int(s, "storage_mode");
+	
+	if (stream->storage_mode == 1) {
+		const char *dir = obs_data_get_string(s, "directory");
+		dstr_copy(&stream->disk_tmp_path, dir);
+		char slash = '/';
+		if (stream->disk_tmp_path.array && stream->disk_tmp_path.array[stream->disk_tmp_path.len - 1] == '\\') {
+			slash = '\\';
+		}
+		if (stream->disk_tmp_path.array && stream->disk_tmp_path.array[stream->disk_tmp_path.len - 1] != slash) {
+			dstr_cat_ch(&stream->disk_tmp_path, slash);
+		}
+		dstr_cat(&stream->disk_tmp_path, "replay_buffer_disk.tmp");
+		stream->disk_tmp_file = os_fopen(stream->disk_tmp_path.array, "wb+");
+		stream->disk_write_pos = 0;
+		if (!stream->disk_tmp_file) {
+			warn("Failed to create temporary disk replay buffer file '%s'", stream->disk_tmp_path.array);
+			stream->storage_mode = 0; // Fallback to RAM
+		}
+	}
+
 	obs_data_release(s);
 
 	os_atomic_set_bool(&stream->active, true);
@@ -999,15 +1029,16 @@ static bool replay_buffer_start(void *data)
 
 static bool purge_front(struct ffmpeg_muxer *stream)
 {
-	struct encoder_packet pkt;
+	struct rb_packet rb_pkt;
 	bool keyframe;
 
 	if (!stream->packets.size)
 		return false;
 
-	deque_pop_front(&stream->packets, &pkt, sizeof(pkt));
+	deque_pop_front(&stream->packets, &rb_pkt, sizeof(rb_pkt));
+	struct encoder_packet *pkt = &rb_pkt.pkt;
 
-	keyframe = pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe;
+	keyframe = pkt->type == OBS_ENCODER_VIDEO && pkt->keyframe;
 
 	if (keyframe)
 		stream->keyframes--;
@@ -1016,26 +1047,26 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 		stream->cur_size = 0;
 		stream->cur_time = 0;
 	} else {
-		struct encoder_packet first;
+		struct rb_packet first;
 		deque_peek_front(&stream->packets, &first, sizeof(first));
-		stream->cur_time = first.dts_usec;
-		stream->cur_size -= (int64_t)pkt.size;
+		stream->cur_time = first.pkt.dts_usec;
+		stream->cur_size -= (int64_t)pkt->size;
 	}
 
-	obs_encoder_packet_release(&pkt);
+	obs_encoder_packet_release(pkt);
 	return keyframe;
 }
 
 static inline void purge(struct ffmpeg_muxer *stream)
 {
 	if (purge_front(stream)) {
-		struct encoder_packet pkt;
+		struct rb_packet rb_pkt;
 
 		for (;;) {
 			if (!stream->packets.size)
 				return;
-			deque_peek_front(&stream->packets, &pkt, sizeof(pkt));
-			if (pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe)
+			deque_peek_front(&stream->packets, &rb_pkt, sizeof(rb_pkt));
+			if (rb_pkt.pkt.type == OBS_ENCODER_VIDEO && rb_pkt.pkt.keyframe)
 				return;
 
 			purge_front(stream);
@@ -1060,37 +1091,46 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream, struct encod
 		purge(stream);
 }
 
-static void insert_packet(mux_packets_t *packets, struct encoder_packet *packet, int64_t video_offset,
+static void insert_packet(mux_packets_t *packets, struct rb_packet *packet, int64_t video_offset,
 			  int64_t *audio_offsets, int64_t video_pts_offset, int64_t *audio_dts_offsets)
 {
-	struct encoder_packet pkt;
+	struct rb_packet rb_pkt = *packet;
+	struct encoder_packet *pkt = &rb_pkt.pkt;
 	size_t idx;
 
-	obs_encoder_packet_ref(&pkt, packet);
+	obs_encoder_packet_ref(pkt, &packet->pkt);
 
-	if (pkt.type == OBS_ENCODER_VIDEO) {
-		pkt.dts_usec -= video_offset;
-		pkt.dts -= video_pts_offset;
-		pkt.pts -= video_pts_offset;
+	if (pkt->type == OBS_ENCODER_VIDEO) {
+		pkt->dts_usec -= video_offset;
+		pkt->dts -= video_pts_offset;
+		pkt->pts -= video_pts_offset;
 	} else {
-		pkt.dts_usec -= audio_offsets[pkt.track_idx];
-		pkt.dts -= audio_dts_offsets[pkt.track_idx];
-		pkt.pts -= audio_dts_offsets[pkt.track_idx];
+		pkt->dts_usec -= audio_offsets[pkt->track_idx];
+		pkt->dts -= audio_dts_offsets[pkt->track_idx];
+		pkt->pts -= audio_dts_offsets[pkt->track_idx];
 	}
 
 	for (idx = packets->num; idx > 0; idx--) {
-		struct encoder_packet *p = packets->array + (idx - 1);
-		if (p->dts_usec < pkt.dts_usec)
+		struct rb_packet *p = packets->array + (idx - 1);
+		if (p->pkt.dts_usec < pkt->dts_usec)
 			break;
 	}
 
-	da_insert(*packets, idx, &pkt);
+	da_insert(*packets, idx, &rb_pkt);
 }
 
 static void *replay_buffer_mux_thread(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
 	bool error = false;
+	
+	FILE *disk_read_file = NULL;
+	if (stream->storage_mode == 1 && stream->disk_tmp_path.array) {
+		disk_read_file = os_fopen(stream->disk_tmp_path.array, "rb");
+		if (!disk_read_file) {
+			warn("Failed to open temporary disk replay buffer file for reading '%s'", stream->disk_tmp_path.array);
+		}
+	}
 
 	start_pipe(stream, stream->path.array);
 
@@ -1107,7 +1147,21 @@ static void *replay_buffer_mux_thread(void *data)
 	}
 
 	for (size_t i = 0; i < stream->mux_packets.num; i++) {
-		struct encoder_packet *pkt = &stream->mux_packets.array[i];
+		struct rb_packet *rb = &stream->mux_packets.array[i];
+		struct encoder_packet *pkt = &rb->pkt;
+		
+		// Load from disk if needed
+		if (stream->storage_mode == 1 && rb->disk_offset >= 0 && disk_read_file) {
+			long *p_refs = bmalloc(pkt->size + sizeof(long));
+			*p_refs = 1;
+			pkt->data = (void *)(p_refs + 1);
+			os_fseeki64(disk_read_file, rb->disk_offset, SEEK_SET);
+			size_t read_bytes = fread(pkt->data, 1, pkt->size, disk_read_file);
+			if (read_bytes != pkt->size) {
+				warn("Failed to read complete packet from disk");
+			}
+		}
+
 		if (!write_packet(stream, pkt)) {
 			warn("Could not write packet for file '%s'", stream->path.array);
 			error = true;
@@ -1119,11 +1173,14 @@ static void *replay_buffer_mux_thread(void *data)
 	info("Wrote replay buffer to '%s'", stream->path.array);
 
 error:
+	if (disk_read_file) {
+		fclose(disk_read_file);
+	}
 	os_process_pipe_destroy(stream->pipe);
 	stream->pipe = NULL;
 	if (error) {
 		for (size_t i = 0; i < stream->mux_packets.num; i++)
-			obs_encoder_packet_release(&stream->mux_packets.array[i]);
+			obs_encoder_packet_release(&stream->mux_packets.array[i].pkt);
 	}
 	da_free(stream->mux_packets);
 	os_atomic_set_bool(&stream->muxing, false);
@@ -1139,7 +1196,7 @@ error:
 
 static void replay_buffer_save(struct ffmpeg_muxer *stream)
 {
-	const size_t size = sizeof(struct encoder_packet);
+	const size_t size = sizeof(struct rb_packet);
 	size_t num_packets = stream->packets.size / size;
 
 	da_reserve(stream->mux_packets, num_packets);
@@ -1155,8 +1212,8 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
 
 	for (size_t i = 0; i < num_packets; i++) {
-		struct encoder_packet *pkt;
-		pkt = deque_data(&stream->packets, i * size);
+		struct rb_packet *rb = deque_data(&stream->packets, i * size);
+		struct encoder_packet *pkt = &rb->pkt;
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {
@@ -1172,7 +1229,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			}
 		}
 
-		insert_packet(&stream->mux_packets, pkt, video_offset, audio_offsets, video_pts_offset,
+		insert_packet(&stream->mux_packets, rb, video_offset, audio_offsets, video_pts_offset,
 			      audio_dts_offsets);
 	}
 
@@ -1198,6 +1255,13 @@ static void deactivate_replay_buffer(struct ffmpeg_muxer *stream, int code)
 	os_atomic_set_bool(&stream->sent_headers, false);
 	os_atomic_set_bool(&stream->stopping, false);
 	replay_buffer_clear(stream);
+
+	if (stream->disk_tmp_file) {
+		fclose(stream->disk_tmp_file);
+		stream->disk_tmp_file = NULL;
+		os_unlink(stream->disk_tmp_path.array);
+		dstr_free(&stream->disk_tmp_path);
+	}
 }
 
 static void replay_buffer_data(void *data, struct encoder_packet *packet)
@@ -1222,13 +1286,49 @@ static void replay_buffer_data(void *data, struct encoder_packet *packet)
 	}
 
 	obs_encoder_packet_ref(&pkt, packet);
+	
+	struct rb_packet rb_pkt;
+	rb_pkt.pkt = pkt;
+	rb_pkt.disk_offset = -1;
+
+	if (stream->storage_mode == 1 && stream->disk_tmp_file && pkt.data && pkt.size > 0) {
+		// Calculate wrap-around if needed
+		int64_t disk_size_limit = stream->max_size > 0 ? stream->max_size : (int64_t)8LL * 1024 * 1024 * 1024; // 8GB default limit
+		if (stream->disk_write_pos + (int64_t)pkt.size > disk_size_limit) {
+			stream->disk_write_pos = 0; // Wrap around
+			os_fseeki64(stream->disk_tmp_file, 0, SEEK_SET);
+		}
+
+		// Purge packets that are about to be overwritten
+		while (stream->packets.size > 0) {
+			struct rb_packet first;
+			deque_peek_front(&stream->packets, &first, sizeof(first));
+			if (first.disk_offset != -1 && first.disk_offset >= stream->disk_write_pos &&
+			    first.disk_offset < stream->disk_write_pos + (int64_t)pkt.size) {
+				purge_front(stream);
+			} else {
+				break;
+			}
+		}
+
+		rb_pkt.disk_offset = stream->disk_write_pos;
+		fwrite(pkt.data, 1, pkt.size, stream->disk_tmp_file);
+		stream->disk_write_pos += pkt.size;
+		
+		// Free actual data from RAM but keep the structure
+		long *p_refs = ((long *)pkt.data) - 1;
+		if (os_atomic_dec_long(p_refs) == 0)
+			bfree(p_refs);
+		rb_pkt.pkt.data = NULL;
+	}
+
 	replay_buffer_purge(stream, &pkt);
 
 	if (!stream->packets.size)
 		stream->cur_time = pkt.dts_usec;
 	stream->cur_size += pkt.size;
 
-	deque_push_back(&stream->packets, packet, sizeof(*packet));
+	deque_push_back(&stream->packets, &rb_pkt, sizeof(rb_pkt));
 
 	if (packet->type == OBS_ENCODER_VIDEO && packet->keyframe)
 		stream->keyframes++;

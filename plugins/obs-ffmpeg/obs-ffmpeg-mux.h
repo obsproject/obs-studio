@@ -9,7 +9,12 @@
 #include <util/platform.h>
 #include <util/threading.h>
 
-typedef DARRAY(struct encoder_packet) mux_packets_t;
+struct rb_packet {
+	struct encoder_packet pkt;
+	int64_t disk_offset;
+};
+
+typedef DARRAY(struct rb_packet) mux_packets_t;
 
 struct ffmpeg_muxer {
 	obs_output_t *output;
@@ -32,6 +37,11 @@ struct ffmpeg_muxer {
 	int64_t max_time;
 
 	/* replay buffer */
+	int storage_mode;
+	FILE *disk_tmp_file;
+	struct dstr disk_tmp_path;
+	int64_t disk_write_pos;
+
 	int64_t save_ts;
 	int keyframes;
 	obs_hotkey_id hotkey;
