@@ -4,6 +4,7 @@
 #include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
+#include <Idian/Utils.hpp>
 
 #include <QCheckBox>
 #include <QLineEdit>
@@ -68,20 +69,23 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 		iconLabel = new QLabel();
 		iconLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 		iconLabel->setPixmap(pixmap);
-		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
-		iconLabel->setProperty("class", "source-icon");
+		idian::Utils::addClass(iconLabel, "source-icon");
+		idian::Utils::toggleClass(iconLabel, "text-muted", !sourceVisible);
+		idian::Utils::applyColorToIcon(iconLabel);
 	}
 
 	vis = new QCheckBox();
-	vis->setProperty("class", "checkbox-icon indicator-visibility");
+	idian::Utils::addClass(vis, "checkbox-icon");
+	idian::Utils::addClass(vis, "indicator-visibility");
 	vis->setChecked(sourceVisible);
 	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
 	vis->setAccessibleDescription(QTStr("Basic.Main.Sources.VisibilityDescription").arg(name));
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
 	lock = new QCheckBox();
-	lock->setProperty("class", "checkbox-icon indicator-lock");
+	idian::Utils::addClass(lock, "checkbox-icon");
+	idian::Utils::addClass(lock, "indicator-lock");
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
 	lock->setAccessibleName(QTStr("Basic.Main.Sources.Lock"));
 	lock->setAccessibleDescription(QTStr("Basic.Main.Sources.LockDescription").arg(name));
@@ -90,13 +94,13 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 	label = new OBSSourceLabel(source);
 	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 	label->setAttribute(Qt::WA_TranslucentBackground);
-	label->setEnabled(sourceVisible);
+	idian::Utils::toggleClass(label, "text-muted", !sourceVisible);
 
 	const char *sourceId = obs_source_get_unversioned_id(source);
 	switch (obs_source_load_state(sourceId)) {
 	case OBS_MODULE_DISABLED:
 	case OBS_MODULE_MISSING:
-		label->setStyleSheet("QLabel {color: #CC0000;}");
+		idian::Utils::addClass(label, "text-danger");
 		break;
 	default:
 		break;
@@ -470,9 +474,10 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 void SourceTreeItem::VisibilityChanged(bool visible)
 {
 	if (iconLabel) {
-		iconLabel->setEnabled(visible);
+		idian::Utils::toggleClass(iconLabel, "text-muted", !visible);
+		idian::Utils::applyColorToIcon(iconLabel);
 	}
-	label->setEnabled(visible);
+	idian::Utils::toggleClass(label, "text-muted", !visible);
 	vis->setChecked(visible);
 }
 
@@ -538,7 +543,7 @@ void SourceTreeItem::Update(bool force)
 
 	} else if (type == Type::Group) {
 		expand = new QCheckBox();
-		expand->setProperty("class", "checkbox-icon indicator-expand");
+		idian::Utils::addClass(expand, "checkbox-icon indicator-expand");
 		expand->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 #ifdef __APPLE__
 		expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
