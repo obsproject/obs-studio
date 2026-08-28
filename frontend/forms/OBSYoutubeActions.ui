@@ -177,13 +177,33 @@
             </widget>
            </item>
            <item row="6" column="0">
+            <widget class="QLabel" name="label_language">
+             <property name="text">
+              <string>Basic.Settings.General.Language</string>
+             </property>
+             <property name="buddy">
+              <cstring>languageBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QComboBox" name="languageBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
             <widget class="QLabel" name="label_8">
              <property name="text">
               <string>YouTube.Actions.MadeForKids</string>
              </property>
             </widget>
            </item>
-           <item row="6" column="1">
+           <item row="7" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <item>
               <widget class="QRadioButton" name="notMakeForKids">
@@ -210,21 +230,21 @@
              </item>
             </layout>
            </item>
-           <item row="7" column="1">
+           <item row="8" column="1">
             <widget class="QRadioButton" name="yesMakeForKids">
              <property name="text">
               <string>YouTube.Actions.MadeForKids.Yes</string>
              </property>
             </widget>
            </item>
-           <item row="8" column="0">
+           <item row="9" column="0">
             <widget class="QLabel" name="label_6">
              <property name="text">
               <string>YouTube.Actions.Thumbnail</string>
              </property>
             </widget>
            </item>
-           <item row="8" column="1">
+           <item row="9" column="1">
             <widget class="ClickableLabel" name="thumbnailPreview">
              <property name="enabled">
               <bool>true</bool>
@@ -258,7 +278,7 @@
              </property>
             </widget>
            </item>
-           <item row="9" column="1">
+           <item row="10" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_13">
              <property name="rightMargin">
               <number>0</number>
@@ -282,7 +302,7 @@
              </item>
             </layout>
            </item>
-           <item row="26" column="1">
+           <item row="27" column="1">
             <spacer name="verticalSpacer_2">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -295,7 +315,7 @@
              </property>
             </spacer>
            </item>
-           <item row="10" column="0">
+           <item row="11" column="0">
             <widget class="QLabel" name="label_7">
              <property name="font">
               <font>
@@ -307,7 +327,7 @@
              </property>
             </widget>
            </item>
-           <item row="14" column="1">
+           <item row="15" column="1">
             <widget class="QCheckBox" name="checkScheduledLater">
              <property name="enabled">
               <bool>true</bool>
@@ -317,7 +337,7 @@
              </property>
             </widget>
            </item>
-           <item row="13" column="1">
+           <item row="14" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_7">
              <item>
               <widget class="QCheckBox" name="check360Video">
@@ -357,7 +377,7 @@
              </item>
             </layout>
            </item>
-           <item row="15" column="1">
+           <item row="16" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_6">
              <item>
               <widget class="QCheckBox" name="checkAutoStart">
@@ -406,7 +426,7 @@
              </item>
             </layout>
            </item>
-           <item row="16" column="1">
+           <item row="17" column="1">
             <widget class="QCheckBox" name="checkAutoStop">
              <property name="enabled">
               <bool>true</bool>
@@ -419,7 +439,7 @@
              </property>
             </widget>
            </item>
-           <item row="17" column="1">
+           <item row="18" column="1">
             <widget class="QDateTimeEdit" name="scheduledTime">
              <property name="enabled">
               <bool>true</bool>
@@ -448,7 +468,7 @@
              </property>
             </spacer>
            </item>
-           <item row="12" column="1">
+           <item row="13" column="1">
             <widget class="QCheckBox" name="checkDVR">
              <property name="text">
               <string>YouTube.Actions.EnableDVR</string>
@@ -458,7 +478,7 @@
              </property>
             </widget>
            </item>
-           <item row="11" column="0">
+           <item row="12" column="0">
             <widget class="QLabel" name="label_3">
              <property name="text">
               <string>YouTube.Actions.Latency</string>
@@ -468,7 +488,7 @@
              </property>
             </widget>
            </item>
-           <item row="11" column="1">
+           <item row="12" column="1">
             <widget class="QComboBox" name="latencyBox">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">

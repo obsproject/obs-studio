@@ -1,5 +1,6 @@
 #include "OBSYoutubeActions.hpp"
 
+#include <OBSApp.hpp>
 #include <docks/YouTubeAppDock.hpp>
 #include <widgets/OBSBasic.hpp>
 
@@ -144,6 +145,36 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 		if (category.id == IndexOfGamingCategory) {
 			ui->categoryBox->setCurrentText(category.title);
 		}
+	}
+
+	QVector<I18nLanguageDescription> languageList = apiYouTube->GetI18nLanguagesList();
+	if (!languageList.isEmpty()) {
+		for (auto &language : languageList) {
+			ui->languageBox->addItem(language.name, language.id);
+		}
+
+		// Default to the OBS interface language. YouTube's list is keyed by
+		// tags like "en", "pt-BR" or "zh-CN", so try the full OBS locale
+		// first (matches the region-qualified entries), then the bare
+		// language code, then fall back to English.
+		const char *appLocale = App()->GetLocale();
+		QLocale locale{appLocale};
+		QLocale::Language localeLanguage = locale.language();
+		QString languageCode = QLocale::languageToCode(localeLanguage);
+
+		int languageIndex = ui->languageBox->findData(QString::fromUtf8(appLocale));
+		if (languageIndex == -1) {
+			languageIndex = ui->languageBox->findData(languageCode);
+		}
+		if (languageIndex == -1) {
+			languageIndex = ui->languageBox->findData(QStringLiteral("en"));
+		}
+		if (languageIndex != -1) {
+			ui->languageBox->setCurrentIndex(languageIndex);
+		}
+	} else {
+		blog(LOG_WARNING, "Failed to retrieve YouTube i18n languages list, disabling language selection.");
+		ui->languageBox->setEnabled(false);
 	}
 
 	connect(ui->okButton, &QPushButton::clicked, this, &OBSYoutubeActions::InitBroadcast);
@@ -397,8 +428,8 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api, BroadcastDesc
 		blog(LOG_DEBUG, "No broadcast created.");
 		return false;
 	}
-	if (!apiYouTube->SetVideoCategory(broadcast.id, broadcast.title, broadcast.description,
-					  broadcast.category.id)) {
+	if (!apiYouTube->SetVideoCategory(broadcast.id, broadcast.title, broadcast.description, broadcast.category.id,
+					  broadcast.language)) {
 		blog(LOG_DEBUG, "No category set.");
 		return false;
 	}
@@ -626,6 +657,12 @@ void OBSYoutubeActions::UiToBroadcast(BroadcastDescription &broadcast)
 	broadcast.schedul_for_later = ui->checkScheduledLater->isChecked();
 	broadcast.projection = ui->check360Video->isChecked() ? "360" : "rectangular";
 
+	// Store the selected broadcast language; left empty when the language
+	// list could not be loaded and the combobox is disabled.
+	if (ui->languageBox->isEnabled()) {
+		broadcast.language = ui->languageBox->currentData().toString();
+	}
+
 	if (ui->checkRememberSettings->isChecked()) {
 		SaveSettings(broadcast);
 	}
@@ -647,6 +684,9 @@ void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
 	config_set_bool(main->activeConfiguration, "YouTube", "ScheduleForLater", broadcast.schedul_for_later);
 	config_set_string(main->activeConfiguration, "YouTube", "Projection", QT_TO_UTF8(broadcast.projection));
 	config_set_string(main->activeConfiguration, "YouTube", "ThumbnailFile", QT_TO_UTF8(thumbnailFile));
+	if (!broadcast.language.isEmpty()) {
+		config_set_string(main->activeConfiguration, "YouTube", "Language", QT_TO_UTF8(broadcast.language));
+	}
 	config_set_bool(main->activeConfiguration, "YouTube", "RememberSettings", true);
 }
 
@@ -697,6 +737,14 @@ void OBSYoutubeActions::LoadSettings()
 			ui->check360Video->setChecked(true);
 		} else {
 			ui->check360Video->setChecked(false);
+		}
+	}
+
+	const char *language = config_get_string(main->activeConfiguration, "YouTube", "Language");
+	if (language && *language) {
+		int languageIndex = ui->languageBox->findData(QT_UTF8(language));
+		if (languageIndex != -1) {
+			ui->languageBox->setCurrentIndex(languageIndex);
 		}
 	}
 
