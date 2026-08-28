@@ -6,7 +6,6 @@
 #include <qt-wrappers.hpp>
 
 #include <QCheckBox>
-#include <QFontMetrics>
 #include <QStackedWidget>
 
 #include <array>
@@ -22,7 +21,6 @@
 
 static inline void setMixer(obs_source_t *source, const int mixerIdx, const bool checked);
 
-constexpr int kMaxTrackLabelWidth = 90;
 static void applyMixerTrackLabel(QCheckBox *box, int trackIndex, config_t *config);
 OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(source_)
 {
@@ -578,9 +576,7 @@ static QString getCustomTrackLabelByIndex(const int trackIndex, config_t *config
 static void applyMixerTrackLabel(QCheckBox *box, const int trackIndex, config_t *config)
 {
 	const QString customLabel = getCustomTrackLabelByIndex(trackIndex, config);
-	const QFontMetrics metrics(box->font());
-
-	box->setText(metrics.elidedText(customLabel, Qt::ElideRight, kMaxTrackLabelWidth));
+	box->setText(QString::fromUtf8(std::to_string(trackIndex+1)));
 	box->setToolTip(customLabel);
 	box->setAccessibleName(getLocalizedMixerNameByIndex(trackIndex));
 }
