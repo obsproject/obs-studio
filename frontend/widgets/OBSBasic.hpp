@@ -327,6 +327,7 @@ protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void changeEvent(QEvent *event) override;
+	virtual bool event(QEvent *event) override;
 
 signals:
 	void mainWindowClosed();

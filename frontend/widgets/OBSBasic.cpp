@@ -1802,6 +1802,34 @@ void OBSBasic::changeEvent(QEvent *event)
 	}
 }
 
+bool OBSBasic::event(QEvent *event)
+{
+	switch (event->type()) {
+	case QEvent::DevicePixelRatioChange: {
+		/* The device pixel ratio of the window can change at runtime,
+		 * e.g. on Wayland when the initial integer scale is followed
+		 * by the fractional scale, or when the window is moved to a
+		 * monitor with a different scale factor. The cached value is
+		 * used for mouse coordinate mapping of the preview, so make
+		 * sure it stays in sync and the preview geometry is
+		 * recalculated accordingly. */
+		dpi = devicePixelRatioF();
+
+		obs_video_info ovi;
+		if (obs_get_video_info(&ovi)) {
+			ResizePreview(ovi.base_width, ovi.base_height);
+		}
+
+		UpdatePreviewControls();
+		break;
+	}
+	default:
+		break;
+	}
+
+	return OBSMainWindow::event(event);
+}
+
 void OBSBasic::GetFPSCommon(uint32_t &num, uint32_t &den) const
 {
 	const char *val = config_get_string(activeConfiguration, "Video", "FPSCommon");
