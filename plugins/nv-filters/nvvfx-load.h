@@ -37,12 +37,9 @@ extern "C" {
 #endif           // _WIN32 or linux
 #endif           //NvCV_API
 
-#define CUDARTAPI
 #ifdef LIBNVVFX_ENABLED
 static HMODULE nv_videofx = NULL;
 static HMODULE nv_cvimage = NULL;
-static HMODULE nv_cudart = NULL;
-static HMODULE nv_cuda = NULL;
 static HMODULE nv_greenscreen = NULL;
 static HMODULE nv_blur = NULL;
 
@@ -393,142 +390,6 @@ typedef NvCV_Status NvCV_API (*NvCVImage_FromD3DColorSpace_t)(DXGI_COLOR_SPACE_T
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3D11Texture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3DTexture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
 
-/* cuda runtime */
-typedef enum cudaError {
-	cudaSuccess = 0,
-	cudaErrorInvalidValue = 1,
-	cudaErrorMemoryAllocation = 2,
-	cudaErrorInitializationError = 3,
-	cudaErrorCudartUnloading = 4,
-	cudaErrorProfilerDisabled = 5,
-	cudaErrorProfilerNotInitialized = 6,
-	cudaErrorProfilerAlreadyStarted = 7,
-	cudaErrorProfilerAlreadyStopped = 8,
-	cudaErrorInvalidConfiguration = 9,
-	cudaErrorInvalidPitchValue = 12,
-	cudaErrorInvalidSymbol = 13,
-	cudaErrorInvalidHostPointer = 16,
-	cudaErrorInvalidDevicePointer = 17,
-	cudaErrorInvalidTexture = 18,
-	cudaErrorInvalidTextureBinding = 19,
-	cudaErrorInvalidChannelDescriptor = 20,
-	cudaErrorInvalidMemcpyDirection = 21,
-	cudaErrorAddressOfConstant = 22,
-	cudaErrorTextureFetchFailed = 23,
-	cudaErrorTextureNotBound = 24,
-	cudaErrorSynchronizationError = 25,
-	cudaErrorInvalidFilterSetting = 26,
-	cudaErrorInvalidNormSetting = 27,
-	cudaErrorMixedDeviceExecution = 28,
-	cudaErrorNotYetImplemented = 31,
-	cudaErrorMemoryValueTooLarge = 32,
-	cudaErrorStubLibrary = 34,
-	cudaErrorInsufficientDriver = 35,
-	cudaErrorCallRequiresNewerDriver = 36,
-	cudaErrorInvalidSurface = 37,
-	cudaErrorDuplicateVariableName = 43,
-	cudaErrorDuplicateTextureName = 44,
-	cudaErrorDuplicateSurfaceName = 45,
-	cudaErrorDevicesUnavailable = 46,
-	cudaErrorIncompatibleDriverContext = 49,
-	cudaErrorMissingConfiguration = 52,
-	cudaErrorPriorLaunchFailure = 53,
-	cudaErrorLaunchMaxDepthExceeded = 65,
-	cudaErrorLaunchFileScopedTex = 66,
-	cudaErrorLaunchFileScopedSurf = 67,
-	cudaErrorSyncDepthExceeded = 68,
-	cudaErrorLaunchPendingCountExceeded = 69,
-	cudaErrorInvalidDeviceFunction = 98,
-	cudaErrorNoDevice = 100,
-	cudaErrorInvalidDevice = 101,
-	cudaErrorDeviceNotLicensed = 102,
-	cudaErrorSoftwareValidityNotEstablished = 103,
-	cudaErrorStartupFailure = 127,
-	cudaErrorInvalidKernelImage = 200,
-	cudaErrorDeviceUninitialized = 201,
-	cudaErrorMapBufferObjectFailed = 205,
-	cudaErrorUnmapBufferObjectFailed = 206,
-	cudaErrorArrayIsMapped = 207,
-	cudaErrorAlreadyMapped = 208,
-	cudaErrorNoKernelImageForDevice = 209,
-	cudaErrorAlreadyAcquired = 210,
-	cudaErrorNotMapped = 211,
-	cudaErrorNotMappedAsArray = 212,
-	cudaErrorNotMappedAsPointer = 213,
-	cudaErrorECCUncorrectable = 214,
-	cudaErrorUnsupportedLimit = 215,
-	cudaErrorDeviceAlreadyInUse = 216,
-	cudaErrorPeerAccessUnsupported = 217,
-	cudaErrorInvalidPtx = 218,
-	cudaErrorInvalidGraphicsContext = 219,
-	cudaErrorNvlinkUncorrectable = 220,
-	cudaErrorJitCompilerNotFound = 221,
-	cudaErrorUnsupportedPtxVersion = 222,
-	cudaErrorJitCompilationDisabled = 223,
-	cudaErrorInvalidSource = 300,
-	cudaErrorFileNotFound = 301,
-	cudaErrorSharedObjectSymbolNotFound = 302,
-	cudaErrorSharedObjectInitFailed = 303,
-	cudaErrorOperatingSystem = 304,
-	cudaErrorInvalidResourceHandle = 400,
-	cudaErrorIllegalState = 401,
-	cudaErrorSymbolNotFound = 500,
-	cudaErrorNotReady = 600,
-	cudaErrorIllegalAddress = 700,
-	cudaErrorLaunchOutOfResources = 701,
-	cudaErrorLaunchTimeout = 702,
-	cudaErrorLaunchIncompatibleTexturing = 703,
-	cudaErrorPeerAccessAlreadyEnabled = 704,
-	cudaErrorPeerAccessNotEnabled = 705,
-	cudaErrorSetOnActiveProcess = 708,
-	cudaErrorContextIsDestroyed = 709,
-	cudaErrorAssert = 710,
-	cudaErrorTooManyPeers = 711,
-	cudaErrorHostMemoryAlreadyRegistered = 712,
-	cudaErrorHostMemoryNotRegistered = 713,
-	cudaErrorHardwareStackError = 714,
-	cudaErrorIllegalInstruction = 715,
-	cudaErrorMisalignedAddress = 716,
-	cudaErrorInvalidAddressSpace = 717,
-	cudaErrorInvalidPc = 718,
-	cudaErrorLaunchFailure = 719,
-	cudaErrorCooperativeLaunchTooLarge = 720,
-	cudaErrorNotPermitted = 800,
-	cudaErrorNotSupported = 801,
-	cudaErrorSystemNotReady = 802,
-	cudaErrorSystemDriverMismatch = 803,
-	cudaErrorCompatNotSupportedOnDevice = 804,
-	cudaErrorStreamCaptureUnsupported = 900,
-	cudaErrorStreamCaptureInvalidated = 901,
-	cudaErrorStreamCaptureMerge = 902,
-	cudaErrorStreamCaptureUnmatched = 903,
-	cudaErrorStreamCaptureUnjoined = 904,
-	cudaErrorStreamCaptureIsolation = 905,
-	cudaErrorStreamCaptureImplicit = 906,
-	cudaErrorCapturedEvent = 907,
-	cudaErrorStreamCaptureWrongThread = 908,
-	cudaErrorTimeout = 909,
-	cudaErrorGraphExecUpdateFailure = 910,
-	cudaErrorUnknown = 999,
-	cudaErrorApiFailureBase = 10000
-} cudaError;
-
-typedef enum cudaMemcpyKind {
-	cudaMemcpyHostToHost = 0,     /**< Host   -> Host */
-	cudaMemcpyHostToDevice = 1,   /**< Host   -> Device */
-	cudaMemcpyDeviceToHost = 2,   /**< Device -> Host */
-	cudaMemcpyDeviceToDevice = 3, /**< Device -> Device */
-	cudaMemcpyDefault = 4
-} cudaMemcpyKind;
-
-typedef enum cudaError cudaError_t;
-
-typedef cudaError_t CUDARTAPI (*cudaMalloc_t)(void **devPtr, size_t size);
-typedef cudaError_t CUDARTAPI (*cudaStreamSynchronize_t)(CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaFree_t)(void *devPtr);
-typedef cudaError_t CUDARTAPI (*cudaMemsetAsync_t)(void *devPtr, int value, size_t count, CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaMemcpy_t)(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind);
-
 /* NVVFX */
 static NvVFX_GetVersion_t NvVFX_GetVersion = NULL;
 static NvVFX_CreateEffect_t NvVFX_CreateEffect = NULL;
@@ -580,12 +441,6 @@ static NvCVImage_InitFromD3D11Texture_t NvCVImage_InitFromD3D11Texture = NULL;
 /* error codes */
 static NvCV_GetErrorStringFromCode_t NvCV_GetErrorStringFromCode = NULL;
 
-/* cuda runtime */
-static cudaMalloc_t cudaMalloc = NULL;
-static cudaStreamSynchronize_t cudaStreamSynchronize = NULL;
-static cudaFree_t cudaFree = NULL;
-static cudaMemcpy_t cudaMemcpy = NULL;
-static cudaMemsetAsync_t cudaMemsetAsync = NULL;
 static inline void release_vfx_lib(void)
 {
 	NvVFX_CreateEffect = NULL;
