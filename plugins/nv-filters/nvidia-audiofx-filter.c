@@ -812,6 +812,18 @@ static void nvidia_audio_defaults(obs_data_t *s)
 		obs_data_set_default_bool(s, S_NVAFX_VAD, 1);
 }
 
+static bool nvidia_audio_method_modified(void *data, obs_properties_t *props, obs_property_t *property,
+					 obs_data_t *settings)
+{
+	const struct nvidia_audio_data *ng = data;
+	const char *method = obs_data_get_string(settings, S_METHOD);
+
+	bool visible = ng->sdk_version >= MIN_AFX_LOGGER_VERSION && (strcmp(method, S_METHOD_NVAFX_DEREVERB) != 0);
+	obs_property_set_visible(obs_properties_get(props, S_NVAFX_VAD), visible);
+
+	UNUSED_PARAMETER(property);
+	return true;
+}
 
 static obs_properties_t *nvidia_audio_properties(void *data)
 {
@@ -826,9 +838,8 @@ static obs_properties_t *nvidia_audio_properties(void *data)
 					     S_METHOD_NVAFX_DEREVERB_DENOISER);
 		obs_property_t *slider = obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY,
 									 0.0f, 1.0f, 0.01f);
-		obs_property_t *vad = obs_properties_add_bool(ppts, S_NVAFX_VAD, TEXT_NVAFX_VAD);
-		if (get_lib_version() >= MIN_AFX_LOGGER_VERSION)
-			obs_property_set_visible(vad, 0);
+		obs_properties_add_bool(ppts, S_NVAFX_VAD, TEXT_NVAFX_VAD);
+		obs_property_set_modified_callback2(method, nvidia_audio_method_modified, ng);
 
 		unsigned int version = get_lib_version();
 		obs_property_t *warning = obs_properties_add_text(ppts, "deprecation", NULL, OBS_TEXT_INFO);
