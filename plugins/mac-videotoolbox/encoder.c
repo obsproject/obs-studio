@@ -492,11 +492,12 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 	VTCompressionSessionRef s;
 
 	const char *codec_name = obs_encoder_get_codec(enc->encoder);
+	struct vt_encoder_type_data *type_data = (struct vt_encoder_type_data *)obs_encoder_get_type_data(enc->encoder);
+	bool hardware_h26x = type_data->hardware_accelerated &&
+			     (enc->codec_type == kCMVideoCodecType_H264 || enc->codec_type == kCMVideoCodecType_HEVC);
 
 	CFDictionaryRef encoder_spec;
 	if (strcmp(codec_name, "prores") == 0) {
-		struct vt_encoder_type_data *type_data =
-			(struct vt_encoder_type_data *)obs_encoder_get_type_data(enc->encoder);
 		encoder_spec = create_prores_encoder_spec(enc->codec_type, type_data->hardware_accelerated);
 	} else {
 		encoder_spec = create_encoder_spec(enc->vt_encoder_id);
@@ -593,7 +594,8 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 	}
 
 	// This can fail depending on hardware configuration
-	code = session_set_prop(s, kVTCompressionPropertyKey_RealTime, kCFBooleanFalse);
+	code = session_set_prop(s, kVTCompressionPropertyKey_RealTime,
+				hardware_h26x ? kCFBooleanTrue : kCFBooleanFalse);
 	if (code != noErr)
 		log_osstatus(LOG_WARNING, enc,
 			     "setting kVTCompressionPropertyKey_RealTime failed, "
