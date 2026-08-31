@@ -941,9 +941,6 @@ static void v4l2_init(struct v4l2_data *data)
 	blog(LOG_INFO, "Linesize: %d Bytes", data->linesize);
 
 	/* set framerate */
-	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
-	blog(LOG_DEBUG, "Attempting to set framerate: %.2f fps, (%d / %d)", (float)fps_denom / fps_num, fps_denom,
-	     fps_num);
 	if (v4l2_set_framerate(data->dev, &data->framerate) < 0) {
 		blog(LOG_ERROR, "Unable to set framerate");
 		goto fail;
