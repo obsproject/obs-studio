@@ -265,6 +265,10 @@ void OBSBasic::EnablePreviewDisplay(bool enable)
 	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
 	ui->previewContainer->setVisible(enable);
 	ui->previewDisabledWidget->setVisible(!enable);
+
+	if (enable) {
+		ui->preview->CreateDisplay();
+	}
 }
 
 void OBSBasic::TogglePreview()

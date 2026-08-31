@@ -74,6 +74,7 @@ bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
 bool opt_disable_updater = false;
 bool opt_disable_missing_files_check = false;
+bool opt_disable_preview = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -1011,6 +1012,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--studio-mode", nullptr)) {
 			opt_studio_mode = true;
 
+		} else if (arg_is(argv[i], "--disable-preview", nullptr)) {
+			opt_disable_preview = true;
+
 		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
 			opt_allow_opengl = true;
 
@@ -1035,6 +1039,7 @@ int main(int argc, char *argv[])
 				"--profile <string>: Use specific profile.\n"
 				"--scene <string>: Start with specific scene.\n\n"
 				"--studio-mode: Enable studio mode.\n"
+				"--disable-preview: Disable the main preview for this launch (session only).\n"
 				"--minimize-to-tray: Minimize to system tray.\n"
 #if ALLOW_PORTABLE_MODE
 				"--portable, -p: Use portable mode.\n"

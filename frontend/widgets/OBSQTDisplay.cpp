@@ -138,6 +138,10 @@ void OBSQTDisplay::CreateDisplay()
 		return;
 	}
 
+	if (!isVisible()) {
+		return;
+	}
+
 	if (!windowHandle()->isExposed()) {
 		return;
 	}

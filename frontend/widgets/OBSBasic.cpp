@@ -81,6 +81,7 @@ extern bool disable_3p_plugins;
 extern bool opt_studio_mode;
 extern bool opt_always_on_top;
 extern bool opt_minimize_tray;
+extern bool opt_disable_preview;
 extern std::string opt_starting_profile;
 extern std::string opt_starting_collection;
 
@@ -1148,10 +1149,20 @@ void OBSBasic::OBSInit()
 
 	previewEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled");
 
+	if (opt_disable_preview) {
+		if (IsPreviewProgramMode()) {
+			blog(LOG_INFO, "[Preview] --disable-preview ignored because studio mode is active");
+		} else {
+			previewEnabled = false;
+			blog(LOG_INFO,
+			     "[Preview] Disabled by --disable-preview (session override, not written to user.ini)");
+		}
+	}
+
 	if (!previewEnabled && !IsPreviewProgramMode()) {
-		QMetaObject::invokeMethod(this, &OBSBasic::EnablePreviewDisplay, Qt::QueuedConnection, previewEnabled);
+		EnablePreviewDisplay(false);
 	} else if (!previewEnabled && IsPreviewProgramMode()) {
-		QMetaObject::invokeMethod(this, &OBSBasic::EnablePreviewDisplay, Qt::QueuedConnection, true);
+		EnablePreviewDisplay(true);
 	}
 
 	disableSaving--;
