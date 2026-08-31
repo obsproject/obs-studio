@@ -48,9 +48,9 @@
 #endif
 
 #include <chrono>
+#include <sstream>
 
 #ifdef _WIN32
-#include <sstream>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else

@@ -10,6 +10,7 @@
 #include <blake2.h>
 
 #include <fstream>
+#include <mutex>
 
 #include "moc_WhatsNewInfoThread.cpp"
 
