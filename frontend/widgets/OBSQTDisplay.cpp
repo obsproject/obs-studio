@@ -143,6 +143,9 @@ void OBSQTDisplay::CreateDisplay()
 	}
 
 	QSize size = GetPixelSize(this);
+	if (size.width() < 1 || size.height() < 1) {
+		return;
+	}
 
 	gs_init_data info = {};
 	info.cx = size.width();
@@ -155,6 +158,9 @@ void OBSQTDisplay::CreateDisplay()
 	}
 
 	display = obs_display_create(&info, backgroundColor);
+	if (!display) {
+		return;
+	}
 
 	emit DisplayCreated(this);
 }

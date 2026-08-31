@@ -377,20 +377,42 @@ static void gl_x11_egl_platform_destroy(struct gl_platform *plat)
 	bfree(plat);
 }
 
+static bool x11_window_is_viewable(xcb_connection_t *xcb_conn, xcb_window_t window)
+{
+	xcb_generic_error_t *error = NULL;
+	xcb_get_window_attributes_cookie_t cookie;
+	xcb_get_window_attributes_reply_t *attr;
+	bool viewable;
+
+	cookie = xcb_get_window_attributes(xcb_conn, window);
+	attr = xcb_get_window_attributes_reply(xcb_conn, cookie, &error);
+	viewable = !error && attr && attr->map_state == XCB_MAP_STATE_VIEWABLE;
+	free(error);
+	free(attr);
+	return viewable;
+}
+
 static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 {
 	const struct gl_platform *plat = swap->device->plat;
 	Display *display = plat->xdisplay;
 	xcb_connection_t *xcb_conn = XGetXCBConnection(display);
-	xcb_window_t wid = xcb_generate_id(xcb_conn);
 	xcb_window_t parent = swap->info.window.id;
-	xcb_get_geometry_reply_t *geometry = get_window_geometry(xcb_conn, parent);
+	xcb_get_geometry_reply_t *geometry = NULL;
+	xcb_window_t wid = 0;
 	bool status = false;
-
 	int visual;
 
-	if (!geometry)
+	if (!parent || !x11_window_is_viewable(xcb_conn, parent)) {
+		return false;
+	}
+
+	geometry = get_window_geometry(xcb_conn, parent);
+	if (!geometry || geometry->width == 0 || geometry->height == 0) {
 		goto fail_geometry_request;
+	}
+
+	wid = xcb_generate_id(xcb_conn);
 
 	{
 		if (!eglGetConfigAttrib(plat->edisplay, plat->config, EGL_NATIVE_VISUAL_ID, (EGLint *)&visual)) {
