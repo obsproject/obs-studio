@@ -40,6 +40,7 @@
 #include <models/SceneCollection.hpp>
 #include <settings/OBSBasicSettings.hpp>
 #include <utility/QuickTransition.hpp>
+#include <utility/RuntimeStatus.hpp>
 #include <utility/SceneRenameDelegate.hpp>
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
@@ -2193,6 +2194,10 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 
 void OBSBasic::OnEvent(enum obs_frontend_event event)
 {
+	if (OBS::RuntimeStatus *runtimeStatus = App()->GetRuntimeStatus()) {
+		runtimeStatus->handleFrontendEvent(event);
+	}
+
 	if (api) {
 		api->on_event(event);
 	}

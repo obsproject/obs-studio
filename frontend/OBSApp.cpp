@@ -23,6 +23,7 @@
 #include <utility/CrashHandler.hpp>
 #include <utility/OBSEventFilter.hpp>
 #include <utility/OBSProxyStyle.hpp>
+#include <utility/RuntimeStatus.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 #include <utility/models/branches.hpp>
 #endif
@@ -959,6 +960,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	setDesktopFileName("com.obsproject.Studio");
 
 	pluginManager_ = std::make_unique<OBS::PluginManager>();
+	runtimeStatus_ = std::make_unique<OBS::RuntimeStatus>();
 }
 
 OBSApp::~OBSApp()
@@ -1994,6 +1996,10 @@ void OBSApp::commitData(QSessionManager &manager)
 
 void OBSApp::applicationShutdown() noexcept
 {
+	if (runtimeStatus_) {
+		runtimeStatus_->shutdown();
+	}
+
 #ifdef _WIN32
 	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
 	if (disableAudioDucking) {

@@ -53,6 +53,7 @@ class CrashHandler;
 enum class LogFileType { NoType, CurrentAppLog, LastAppLog, CrashLog };
 enum class LogFileState { NoState, New, Uploaded };
 class PluginManager;
+class RuntimeStatus;
 } // namespace OBS
 
 struct UpdateBranch {
@@ -95,6 +96,7 @@ private:
 	ThumbnailManager *thumbnailManager = nullptr;
 
 	std::unique_ptr<OBS::PluginManager> pluginManager_;
+	std::unique_ptr<OBS::RuntimeStatus> runtimeStatus_;
 
 	bool UpdatePre22MultiviewLayout(const char *layout);
 
@@ -154,6 +156,7 @@ public:
 	inline bool HotkeysEnabledInFocus() const { return enableHotkeysInFocus; }
 
 	inline QMainWindow *GetMainWindow() const { return mainWindow.data(); }
+	inline OBS::RuntimeStatus *GetRuntimeStatus() const { return runtimeStatus_.get(); }
 
 	inline config_t *GetAppConfig() const { return appConfig; }
 	inline config_t *GetUserConfig() const { return userConfig; }

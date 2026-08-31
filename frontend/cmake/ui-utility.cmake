@@ -50,6 +50,8 @@ target_sources(
     utility/RemuxWorker.cpp
     utility/RemuxWorker.hpp
     utility/ResizeSignaler.hpp
+    utility/RuntimeStatus.cpp
+    utility/RuntimeStatus.hpp
     utility/SceneRenameDelegate.cpp
     utility/SceneRenameDelegate.hpp
     utility/ScreenshotObj.cpp
