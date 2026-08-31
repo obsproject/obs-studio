@@ -1,5 +1,7 @@
 #include "../platform.hpp"
 
+#include <cstdlib>
+
 bool DeckLinkStringToStdString(decklink_string_t input, std::string &output)
 {
 	if (input == nullptr) {
