@@ -65,6 +65,9 @@ struct xshm_data {
 	bool use_xinerama;
 	bool use_randr;
 	bool advanced;
+
+	uint8_t randr_first_event;
+	bool geo_event_pending;
 };
 
 /**
@@ -79,6 +82,30 @@ static inline void xshm_resize_texture(struct xshm_data *data)
 	if (data->texture)
 		gs_texture_destroy(data->texture);
 	data->texture = gs_texture_create(data->adj_width, data->adj_height, GS_BGRA, 1, NULL, GS_DYNAMIC);
+}
+
+/**
+ * Recreate shared memory segment and texture after geometry change
+ *
+ * @note requires to be called within the obs graphics context
+ */
+static void xshm_resize(struct xshm_data *data)
+{
+	xshm_xcb_detach(data->xshm);
+
+	data->xshm = xshm_xcb_attach(data->xcb, data->adj_width, data->adj_height);
+	if (!data->xshm) {
+		blog(LOG_ERROR, "failed to attach shm after resize!");
+		if (data->texture) {
+			gs_texture_destroy(data->texture);
+			data->texture = NULL;
+		}
+		return;
+	}
+
+	xshm_resize_texture(data);
+
+	xcb_xcursor_offset(data->cursor, data->adj_x_org, data->adj_y_org);
 }
 
 /**
@@ -105,7 +132,7 @@ static bool xshm_check_extensions(xcb_connection_t *xcb)
 /**
  * Update the capture
  *
- * @return < 0 on error, 0 when size is unchanged, > 1 on size change
+ * @return < 0 on error, 0 when size is unchanged, > 0 on size change
  */
 static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 {
@@ -161,11 +188,11 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 	if (data->cut_bot != 0)
 		data->adj_height = data->adj_height - data->cut_bot;
 
-	blog(LOG_INFO, "Geometry %" PRIdFAST32 "x%" PRIdFAST32 " @ %" PRIdFAST32 ",%" PRIdFAST32, data->width,
-	     data->height, data->x_org, data->y_org);
-
 	if (prev_width == data->adj_width && prev_height == data->adj_height)
 		return 0;
+
+	blog(LOG_INFO, "Geometry %" PRIdFAST32 "x%" PRIdFAST32 " @ %" PRIdFAST32 ",%" PRIdFAST32, data->width,
+	     data->height, data->x_org, data->y_org);
 
 	return 1;
 }
@@ -255,6 +282,20 @@ static void xshm_capture_start(struct xshm_data *data)
 
 	data->cursor = xcb_xcursor_init(data->xcb);
 	xcb_xcursor_offset(data->cursor, data->adj_x_org, data->adj_y_org);
+
+	/* Always subscribe to ConfigureNotify on the root window.
+	 * According to WebRTC's source code comments, adding/removing monitors
+	 * can generate ConfigureNotify without any RRScreenChangeNotify. */
+	const uint32_t mask = XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+	xcb_change_window_attributes(data->xcb, data->xcb_screen->root, XCB_CW_EVENT_MASK, &mask);
+
+	if (data->use_randr) {
+		const xcb_query_extension_reply_t *ext = xcb_get_extension_data(data->xcb, &xcb_randr_id);
+		data->randr_first_event = ext->first_event;
+		xcb_randr_select_input(data->xcb, data->xcb_screen->root,
+				       XCB_RANDR_NOTIFY_MASK_SCREEN_CHANGE | XCB_RANDR_NOTIFY_MASK_CRTC_CHANGE);
+	}
+	xcb_flush(data->xcb);
 
 	obs_enter_graphics();
 
@@ -482,6 +523,24 @@ static void *xshm_create(obs_data_t *settings, obs_source_t *source)
 }
 
 /**
+ * Drain pending X events to detect screen geometry changes
+ */
+static void xshm_process_events(struct xshm_data *data)
+{
+	xcb_generic_event_t *event;
+	while ((event = xcb_poll_for_event(data->xcb))) {
+		uint8_t type = event->response_type & ~0x80; /* Strip out "sent event" flag */
+		if (type == XCB_CONFIGURE_NOTIFY) {
+			data->geo_event_pending = true;
+		} else if (data->use_randr && (type == data->randr_first_event + XCB_RANDR_SCREEN_CHANGE_NOTIFY ||
+					       type == data->randr_first_event + XCB_RANDR_NOTIFY)) {
+			data->geo_event_pending = true;
+		}
+		free(event);
+	}
+}
+
+/**
  * Prepare the capture data
  */
 static void xshm_video_tick(void *vptr, float seconds)
@@ -489,9 +548,30 @@ static void xshm_video_tick(void *vptr, float seconds)
 	UNUSED_PARAMETER(seconds);
 	XSHM_DATA(vptr);
 
-	if (!data->texture)
+	if (!data->xcb)
 		return;
 	if (!obs_source_showing(data->source))
+		return;
+
+	xshm_process_events(data);
+
+	if (data->geo_event_pending) {
+		data->geo_event_pending = false;
+
+		int_fast32_t geo_changed = xshm_update_geometry(data);
+		if (geo_changed < 0) {
+			blog(LOG_ERROR, "failed to update geometry in video tick!");
+			return;
+		}
+
+		if (geo_changed > 0) {
+			obs_enter_graphics();
+			xshm_resize(data);
+			obs_leave_graphics();
+		}
+	}
+
+	if (!data->texture || !data->xshm)
 		return;
 
 	xcb_shm_get_image_cookie_t img_c;
