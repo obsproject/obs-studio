@@ -46,17 +46,22 @@ runs:
       working-directory: ${{ github.workspace }}
       env:
         CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
+        FAIL_MODE: ${{ inputs.failCondition }}
       run: |
         : Run gersemi 🎛️
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
         print ::group::Install gersemi
         brew update
-        brew trust obsproject/tools
-        brew install --quiet obsproject/tools/gersemi@0.25
+        brew install --quiet gersemi
         print ::endgroup::
+
+        if [[ "${FAIL_MODE:-never}" == 'never' ]] {
+          setopt NO_ERR_EXIT
+          setopt NO_ERR_RETURN
+        }
 
         print ::group::Run gersemi
         local -a changes=(${(s:,:)CHANGED_FILES//[\[\]\'\"]/})
-        ./build-aux/run-gersemi --fail-${{ inputs.failCondition }} --check ${changes}
+        ./build-aux/run-gersemi --check --github ${changes}
         print ::endgroup::

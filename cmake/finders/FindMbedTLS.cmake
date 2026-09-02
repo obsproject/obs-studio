@@ -114,8 +114,7 @@ elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h")
     REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
   )
   string(
-    REGEX REPLACE
-    ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
+    REGEX REPLACE ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
     "\\1"
     MbedTLS_VERSION
     "${_VERSION_STRING}"
@@ -127,8 +126,7 @@ elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h")
     REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
   )
   string(
-    REGEX REPLACE
-    ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
+    REGEX REPLACE ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
     "\\1"
     MbedTLS_VERSION
     "${_VERSION_STRING}"

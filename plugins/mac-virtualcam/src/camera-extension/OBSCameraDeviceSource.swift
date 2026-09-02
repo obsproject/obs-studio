@@ -12,7 +12,7 @@ import Foundation
 import IOKit.audio
 import os.log
 
-let OBSCameraFrameRate: Int = 60
+let obsCameraFrameRate: Int = 60
 
 class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
     private(set) var device: CMIOExtensionDevice!
@@ -71,8 +71,8 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
 
         let videoStreamFormat = CMIOExtensionStreamFormat.init(
             formatDescription: _videoDescription,
-            maxFrameDuration: CMTime(value: 1, timescale: Int32(OBSCameraFrameRate)),
-            minFrameDuration: CMTime(value: 1, timescale: Int32(OBSCameraFrameRate)),
+            maxFrameDuration: CMTime(value: 1, timescale: Int32(obsCameraFrameRate)),
+            minFrameDuration: CMTime(value: 1, timescale: Int32(obsCameraFrameRate)),
             validFrameDurations: nil
         )
         _bufferAuxAttributes = [kCVPixelBufferPoolAllocationThresholdKey: 5]
@@ -132,7 +132,7 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
     }
 
     func startStreaming() {
-        guard let _ = _bufferPool else {
+        guard _bufferPool != nil else {
             return
         }
 
@@ -142,7 +142,7 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
 
         _placeholderTimer!.schedule(
             deadline: .now(),
-            repeating: 1.0 / Double(OBSCameraFrameRate),
+            repeating: 1.0 / Double(obsCameraFrameRate),
             leeway: .seconds(0)
         )
 
@@ -279,7 +279,7 @@ class OBSCameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
 
         _consumeBufferTimer!.schedule(
             deadline: .now(),
-            repeating: 1.0 / (Double(OBSCameraFrameRate) * 3.0),
+            repeating: 1.0 / (Double(obsCameraFrameRate) * 3.0),
             leeway: .seconds(0)
         )
 
