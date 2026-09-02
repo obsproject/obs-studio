@@ -260,12 +260,12 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 
 static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 {
-	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), subdir) <= 0) {
+	BPtr<char> logDir = GetAppConfigPathPtr(subdir);
+	if (!logDir || !*logDir.Get()) {
 		return nullptr;
 	}
 
-	string path = logDir;
+	string path(logDir.Get());
 	path += "/";
 	path += log;
 
@@ -312,8 +312,8 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadTy
 
 void OBSBasic::on_actionShowLogs_triggered()
 {
-	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0) {
+	BPtr<char> logDir = GetAppConfigPathPtr("obs-studio/logs");
+	if (!logDir || !*logDir.Get()) {
 		return;
 	}
 
