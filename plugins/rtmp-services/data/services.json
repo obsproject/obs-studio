@@ -385,55 +385,15 @@
             ]
         },
         {
-            "name": "Vaughn Live / iNSTAGIB",
+            "name": "Vaughn Live",
+            "stream_key_link": "https://vaughn.live/settings/channel",
+            "alt_names": [
+                "Vaughn Live / iNSTAGIB"
+            ],
             "servers": [
                 {
-                    "name": "US: Vint Hill, VA",
-                    "url": "rtmp://live-iad.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Vint Hill, VA #2",
-                    "url": "rtmp://live-iad2.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Dallas, TX",
-                    "url": "rtmp://live-dfw.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Denver, CO",
-                    "url": "rtmp://live-den.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: New York, NY",
-                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Miami, FL",
-                    "url": "rtmp://live-mia.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Seattle, WA",
-                    "url": "rtmp://live-sea.vaughnsoft.net/live"
-                },
-                {
-                    "name": "CA: Toronto",
-                    "url": "rtmp://live-tor.vaughnsoft.net/live"
-                },
-                {
-                    "name": "EU: Amsterdam, NL",
-                    "url": "rtmp://live-ams.vaughnsoft.net/live"
-                },
-                {
-                    "name": "EU: London, UK",
-                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
-                },
-                {
-                    "name": "EU: Paris, FR",
-                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
-                },
-                {
-                    "name": "Tokyo, JP",
-                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                    "name": "Default",
+                    "url": "rtmp://live.vaughnsoft.net/live"
                 }
             ],
             "recommended": {
@@ -449,52 +409,8 @@
             "name": "Breakers.TV",
             "servers": [
                 {
-                    "name": "US: Vint Hill, VA",
-                    "url": "rtmp://live-iad.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Vint Hill, VA #2",
-                    "url": "rtmp://live-iad2.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Dallas, TX",
-                    "url": "rtmp://live-dfw.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Denver, CO",
-                    "url": "rtmp://live-den.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: New York, NY",
-                    "url": "rtmp://live-nyc.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Miami, FL",
-                    "url": "rtmp://live-mia.vaughnsoft.net/live"
-                },
-                {
-                    "name": "US: Seattle, WA",
-                    "url": "rtmp://live-sea.vaughnsoft.net/live"
-                },
-                {
-                    "name": "CA: Toronto",
-                    "url": "rtmp://live-tor.vaughnsoft.net/live"
-                },
-                {
-                    "name": "EU: Amsterdam, NL",
-                    "url": "rtmp://live-ams.vaughnsoft.net/live"
-                },
-                {
-                    "name": "EU: London, UK",
-                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
-                },
-                {
-                    "name": "EU: Paris, FR",
-                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
-                },
-                {
-                    "name": "Tokyo, JP",
-                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
+                    "name": "Default",
+                    "url": "rtmp://live.vaughnsoft.net/live"
                 }
             ],
             "recommended": {
