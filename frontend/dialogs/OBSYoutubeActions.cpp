@@ -642,7 +642,7 @@ void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
 	config_set_string(main->activeConfiguration, "YouTube", "Latency", QT_TO_UTF8(broadcast.latency));
 	config_set_bool(main->activeConfiguration, "YouTube", "MadeForKids", broadcast.made_for_kids);
 	config_set_bool(main->activeConfiguration, "YouTube", "AutoStart", broadcast.auto_start);
-	config_set_bool(main->activeConfiguration, "YouTube", "AutoStop", broadcast.auto_start);
+	config_set_bool(main->activeConfiguration, "YouTube", "AutoStop", broadcast.auto_stop);
 	config_set_bool(main->activeConfiguration, "YouTube", "DVR", broadcast.dvr);
 	config_set_bool(main->activeConfiguration, "YouTube", "ScheduleForLater", broadcast.schedul_for_later);
 	config_set_string(main->activeConfiguration, "YouTube", "Projection", QT_TO_UTF8(broadcast.projection));
