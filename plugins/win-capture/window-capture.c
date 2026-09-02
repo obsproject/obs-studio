@@ -299,6 +299,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module, cons
 }
 
 extern bool graphics_uses_d3d11;
+static void force_reset(struct window_capture *wc);
 
 static void *wc_create(obs_data_t *settings, obs_source_t *source)
 {
@@ -345,6 +346,7 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 
 	update_settings(wc, settings);
 	log_settings(wc, settings);
+	force_reset(wc);
 	return wc;
 }
 
