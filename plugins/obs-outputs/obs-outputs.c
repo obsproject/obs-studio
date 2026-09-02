@@ -5,6 +5,10 @@
 #include <mbedtls/threading.h>
 #endif
 
+#if defined(USE_MBEDTLS)
+#include <psa/crypto.h>
+#endif
+
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-outputs", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
@@ -70,6 +74,10 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
+#if defined(USE_MBEDTLS)
+	mbedtls_psa_crypto_free();
+#endif
+
 #ifdef _WIN32
 #ifdef MBEDTLS_THREADING_ALT
 	mbedtls_threading_free_alt();

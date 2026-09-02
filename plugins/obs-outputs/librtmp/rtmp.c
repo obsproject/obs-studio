@@ -53,8 +53,7 @@
 #include <Security/Security.h>
 #endif
 
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/md5.h>
+#include <psa/crypto.h>
 #include <mbedtls/base64.h>
 #define MD5_DIGEST_LENGTH 16
 
@@ -373,18 +372,10 @@ RTMP_TLS_Init(RTMP *r)
 {
 #ifdef CRYPTO
 #if defined(USE_MBEDTLS)
-    const char * pers = "RTMP_TLS";
     r->RTMP_TLS_ctx = calloc(1,sizeof(struct tls_ctx));
 
+    psa_crypto_init();
     mbedtls_ssl_config_init(&r->RTMP_TLS_ctx->conf);
-    mbedtls_ctr_drbg_init(&r->RTMP_TLS_ctx->ctr_drbg);
-    mbedtls_entropy_init(&r->RTMP_TLS_ctx->entropy);
-
-    mbedtls_ctr_drbg_seed(&r->RTMP_TLS_ctx->ctr_drbg,
-                          mbedtls_entropy_func,
-                          &r->RTMP_TLS_ctx->entropy,
-                          (const unsigned char *)pers,
-                          strlen(pers));
 
     RTMP_TLS_LoadCerts(r);
 #elif defined(USE_POLARSSL)
@@ -423,8 +414,6 @@ RTMP_TLS_Free(RTMP *r) {
     if (!r->RTMP_TLS_ctx)
         return;
     mbedtls_ssl_config_free(&r->RTMP_TLS_ctx->conf);
-    mbedtls_ctr_drbg_free(&r->RTMP_TLS_ctx->ctr_drbg);
-    mbedtls_entropy_free(&r->RTMP_TLS_ctx->entropy);
 
     if (r->RTMP_TLS_ctx->cacert) {
         mbedtls_x509_crt_free(r->RTMP_TLS_ctx->cacert);
@@ -2618,17 +2607,18 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
 }
 
 #if defined(USE_MBEDTLS)
-typedef	mbedtls_md5_context MD5_CTX;
-
-#if MBEDTLS_VERSION_NUMBER >= 0x02070000 && MBEDTLS_VERSION_MAJOR < 3
-#define MD5_Init(ctx)	mbedtls_md5_init(ctx); mbedtls_md5_starts_ret(ctx)
-#define MD5_Update(ctx,data,len)	mbedtls_md5_update_ret(ctx,(unsigned char *)data,len)
-#define MD5_Final(dig,ctx)	mbedtls_md5_finish_ret(ctx,dig); mbedtls_md5_free(ctx)
-#else
-#define MD5_Init(ctx)	mbedtls_md5_init(ctx); mbedtls_md5_starts(ctx)
-#define MD5_Update(ctx,data,len)	mbedtls_md5_update(ctx,(unsigned char *)data,len)
-#define MD5_Final(dig,ctx)	mbedtls_md5_finish(ctx,dig); mbedtls_md5_free(ctx)
-#endif
+typedef	psa_hash_operation_t MD5_CTX;
+const psa_algorithm_t mbedtls_md5_alg = PSA_ALG_MD5;
+#define MD5_Init(ctx)	psa_crypto_init(); \
+    *ctx = psa_hash_operation_init(); \
+    psa_hash_setup(ctx, mbedtls_md5_alg)
+#define MD5_Update(ctx,data,len) psa_hash_update(ctx,(const uint8_t *)data,len)
+#define MD5_Final(dig,ctx)  \
+    do { \
+        size_t hash_len; \
+        psa_hash_finish(ctx, dig, sizeof(dig), &hash_len); \
+        psa_hash_abort(ctx); \
+    } while (0)
 
 #elif defined(USE_POLARSSL)
 #define MD5_CTX	md5_context
