@@ -282,7 +282,7 @@ string CurrentDateTimeString()
 	struct tm tstruct;
 	char buf[80];
 	tstruct = *localtime(&now);
-	strftime(buf, sizeof(buf), "%Y-%m-%d, %X", &tstruct);
+	strftime(buf, sizeof(buf), "%Y-%m-%d, %H:%M:%S", &tstruct);
 	return buf;
 }
 
@@ -724,11 +724,6 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
-	// set basic default application locale
-	if (!locale.empty()) {
-		QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
-	}
-
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
 		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
@@ -767,11 +762,6 @@ bool OBSApp::InitLocale()
 
 			blog(LOG_INFO, "Using preferred locale '%s'", locale_.c_str());
 			locale = locale_;
-
-			// set application default locale to the new chosen one
-			if (!locale.empty()) {
-				QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
-			}
 
 			return true;
 		}
@@ -913,13 +903,6 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	  appLaunchUUID_(QUuid::createUuid())
 {
 	installNativeEventFilter(new OBS::NativeEventFilter);
-
-	/* fix float handling */
-#if defined(Q_OS_UNIX)
-	if (!setlocale(LC_NUMERIC, "C")) {
-		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
-	}
-#endif
 
 #ifndef _WIN32
 	// Add POSIX signal handlers:
