@@ -54,7 +54,7 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QWidget" name="canvasEditor" native="true">
+     <widget class="QWidget" name="canvasEditor">
       <layout class="QHBoxLayout" name="previewLayout">
        <property name="spacing">
         <number>2</number>
@@ -178,7 +178,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="previewContainer" native="true">
+        <widget class="QWidget" name="previewContainer">
          <layout class="QVBoxLayout" name="previewTextLayout">
           <property name="spacing">
            <number>0</number>
@@ -243,7 +243,7 @@
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QWidget" name="previewXContainer" native="true">
+             <widget class="QWidget" name="previewXContainer">
               <layout class="QHBoxLayout" name="horizontalLayout_7">
                <property name="spacing">
                 <number>0</number>

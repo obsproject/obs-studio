@@ -173,8 +173,8 @@ Property Object Functions
 
    Adds a 'path' property.  Can be a directory or a file.
 
-   If target is a file path, the filters should be this format, separated by
-   double semicolons, and extensions separated by space::
+   If target is a file path or file save, the filters should be this format,
+   separated by double semicolons, and extensions separated by space::
 
      "Example types 1 and 2 (*.ex1 *.ex2);;Example type 3 (*.ex3)"
 
@@ -187,9 +187,10 @@ Property Object Functions
                            - **OBS_PATH_DIRECTORY** - Directory
 
    :param    filter:       If type is a file path, then describes the file filter
-                           that the user can browse.  Items are separated via
-                           double semicolons.  If multiple file types in a
-                           filter, separate with space.
+                           that the user can browse. If type is a save path,
+                           then describes the file types the file can be
+                           saved as. Items are separated via double semicolons.
+                           If multiple file types in a filter, separate with space.
    :param    default_path: The default path to start in, or *NULL*
    :return:                The property
 
@@ -740,6 +741,9 @@ Property Modification Functions
    :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
    :returns: The index of the list item.
 
+   Note: If ``p`` is of type OBS_COMBO_TYPE_EDITABLE, :c:func:`obs_data_get_string` will return ``name`` instead of
+   ``val``.
+
 ---------------------
 
 .. function:: size_t obs_property_list_add_int(obs_property_t *p, const char *name, long long val)
@@ -769,6 +773,9 @@ Property Modification Functions
    :param    idx:  The index of the list item
    :param    name: Localized name shown to user
    :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
+
+   Note: If ``p`` is of type OBS_COMBO_TYPE_EDITABLE, :c:func:`obs_data_get_string` will return ``name`` instead of
+   ``val``.
 
 ---------------------
 

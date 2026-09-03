@@ -135,6 +135,73 @@ void OBSBasic::SourceToolBarActionsSetEnabled()
 	RefreshToolBarStyling(ui->sourcesToolbar);
 }
 
+std::optional<QWidget *> OBSBasic::createContextBarWidget(obs_source_t *source)
+{
+	uint32_t flags = obs_source_get_output_flags(source);
+	const char *id = obs_source_get_unversioned_id(source);
+
+	if (obs_source_load_state(id) != OBS_MODULE_ENABLED) {
+		return std::nullopt;
+	}
+
+	if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
+		if (!is_network_media_source(source, id)) {
+			MediaControls *contextBarWidget = new MediaControls(ui->emptySpace);
+			contextBarWidget->SetSource(source);
+			return contextBarWidget;
+		}
+	} else if (strcmp(id, "browser_source") == 0) {
+		BrowserToolbar *contextBarWidget = new BrowserToolbar(ui->emptySpace, source);
+		return contextBarWidget;
+
+	} else if (strcmp(id, "wasapi_input_capture") == 0 || strcmp(id, "wasapi_output_capture") == 0 ||
+		   strcmp(id, "coreaudio_input_capture") == 0 || strcmp(id, "coreaudio_output_capture") == 0 ||
+		   strcmp(id, "pulse_input_capture") == 0 || strcmp(id, "pulse_output_capture") == 0 ||
+		   strcmp(id, "alsa_input_capture") == 0) {
+		AudioCaptureToolbar *contextBarWidget = new AudioCaptureToolbar(ui->emptySpace, source);
+		contextBarWidget->Init();
+		return contextBarWidget;
+
+	} else if (strcmp(id, "wasapi_process_output_capture") == 0) {
+		ApplicationAudioCaptureToolbar *contextBarWidget =
+			new ApplicationAudioCaptureToolbar(ui->emptySpace, source);
+		contextBarWidget->Init();
+		return contextBarWidget;
+
+	} else if (strcmp(id, "window_capture") == 0 || strcmp(id, "xcomposite_input") == 0) {
+		WindowCaptureToolbar *contextBarWidget = new WindowCaptureToolbar(ui->emptySpace, source);
+		contextBarWidget->Init();
+		return contextBarWidget;
+
+	} else if (strcmp(id, "monitor_capture") == 0 || strcmp(id, "display_capture") == 0 ||
+		   strcmp(id, "xshm_input") == 0) {
+		DisplayCaptureToolbar *contextBarWidget = new DisplayCaptureToolbar(ui->emptySpace, source);
+		contextBarWidget->Init();
+		return contextBarWidget;
+
+	} else if (strcmp(id, "dshow_input") == 0) {
+		DeviceCaptureToolbar *contextBarWidget = new DeviceCaptureToolbar(ui->emptySpace, source);
+		return contextBarWidget;
+
+	} else if (strcmp(id, "game_capture") == 0) {
+		GameCaptureToolbar *contextBarWidget = new GameCaptureToolbar(ui->emptySpace, source);
+		return contextBarWidget;
+
+	} else if (strcmp(id, "image_source") == 0) {
+		ImageSourceToolbar *contextBarWidget = new ImageSourceToolbar(ui->emptySpace, source);
+		return contextBarWidget;
+
+	} else if (strcmp(id, "color_source") == 0) {
+		ColorSourceToolbar *contextBarWidget = new ColorSourceToolbar(ui->emptySpace, source);
+		return contextBarWidget;
+
+	} else if (strcmp(id, "text_ft2_source") == 0 || strcmp(id, "text_gdiplus") == 0) {
+		TextSourceToolbar *contextBarWidget = new TextSourceToolbar(ui->emptySpace, source);
+		return contextBarWidget;
+	}
+	return std::nullopt;
+}
+
 void OBSBasic::UpdateContextBar(bool force)
 {
 	SourceToolBarActionsSetEnabled();
@@ -164,68 +231,13 @@ void OBSBasic::UpdateContextBar(bool force)
 
 		const char *id = obs_source_get_unversioned_id(source);
 		uint32_t flags = obs_source_get_output_flags(source);
-
 		ui->sourceInteractButton->setVisible(flags & OBS_SOURCE_INTERACTION);
 
 		if (contextBarSize >= ContextBarSize_Reduced && (updateNeeded || force)) {
 			ClearContextBar();
-			if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
-				if (!is_network_media_source(source, id)) {
-					MediaControls *mediaControls = new MediaControls(ui->emptySpace);
-					mediaControls->SetSource(source);
-
-					ui->emptySpace->layout()->addWidget(mediaControls);
-				}
-			} else if (strcmp(id, "browser_source") == 0) {
-				BrowserToolbar *c = new BrowserToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "wasapi_input_capture") == 0 ||
-				   strcmp(id, "wasapi_output_capture") == 0 ||
-				   strcmp(id, "coreaudio_input_capture") == 0 ||
-				   strcmp(id, "coreaudio_output_capture") == 0 ||
-				   strcmp(id, "pulse_input_capture") == 0 || strcmp(id, "pulse_output_capture") == 0 ||
-				   strcmp(id, "alsa_input_capture") == 0) {
-				AudioCaptureToolbar *c = new AudioCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "wasapi_process_output_capture") == 0) {
-				ApplicationAudioCaptureToolbar *c =
-					new ApplicationAudioCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "window_capture") == 0 || strcmp(id, "xcomposite_input") == 0) {
-				WindowCaptureToolbar *c = new WindowCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "monitor_capture") == 0 || strcmp(id, "display_capture") == 0 ||
-				   strcmp(id, "xshm_input") == 0) {
-				DisplayCaptureToolbar *c = new DisplayCaptureToolbar(ui->emptySpace, source);
-				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "dshow_input") == 0) {
-				DeviceCaptureToolbar *c = new DeviceCaptureToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "game_capture") == 0) {
-				GameCaptureToolbar *c = new GameCaptureToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "image_source") == 0) {
-				ImageSourceToolbar *c = new ImageSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "color_source") == 0) {
-				ColorSourceToolbar *c = new ColorSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
-
-			} else if (strcmp(id, "text_ft2_source") == 0 || strcmp(id, "text_gdiplus") == 0) {
-				TextSourceToolbar *c = new TextSourceToolbar(ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+			std::optional<QWidget *> contextBarWidget = createContextBarWidget(source);
+			if (contextBarWidget.has_value()) {
+				ui->emptySpace->layout()->addWidget(contextBarWidget.value());
 			}
 		} else if (contextBarSize == ContextBarSize_Minimized) {
 			ClearContextBar();

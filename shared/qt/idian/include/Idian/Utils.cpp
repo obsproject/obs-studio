@@ -20,13 +20,14 @@
 #include <Idian/StateEventFilter.hpp>
 
 #include <QAbstractButton>
+#include <QLabel>
 #include <QPainter>
 #include <QStyleOptionButton>
+#include <QStyleOptionFrame>
 
 namespace idian {
-void Utils::applyColorToIcon(QWidget *widget)
+void Utils::applyColorToIcon(QAbstractButton *button)
 {
-	QAbstractButton *button = qobject_cast<QAbstractButton *>(widget);
 	if (button && !button->icon().isNull()) {
 		// Filter is on a widget with an icon set, update its colors
 		QStyleOptionButton opt;
@@ -39,6 +40,19 @@ void Utils::applyColorToIcon(QWidget *widget)
 		tintedIcon.addPixmap(tinted, QIcon::Disabled);
 
 		button->setIcon(tintedIcon);
+	}
+}
+
+void Utils::applyColorToIcon(QLabel *label)
+{
+	if (label && !label->pixmap().isNull()) {
+		QStyleOptionFrame opt;
+		opt.initFrom(label);
+
+		QColor color = opt.palette.color(QPalette::Text);
+		QPixmap tinted = recolorPixmap(label->pixmap(), color);
+
+		label->setPixmap(tinted);
 	}
 }
 

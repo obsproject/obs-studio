@@ -629,8 +629,9 @@ void AudioMixer::updateVolumeLayouts()
 
 			OBSSource source = OBSGetStrongRef(control->weakSource());
 			if (!source) {
-				const char *cachedName = control->getCachedName().toUtf8().constData();
-				blog(LOG_INFO, "Tried to sort VolumeControl for '%s' but source is null", cachedName);
+				const QByteArray cachedName = control->getCachedName().toUtf8();
+				blog(LOG_INFO, "Tried to sort VolumeControl for '%s' but source is null",
+				     cachedName.constData());
 				continue;
 			}
 

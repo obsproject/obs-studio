@@ -67,8 +67,8 @@ void OBSBasic::InitHotkeys()
 	t.escape = Str("Hotkeys.Escape");
 	obs_hotkeys_set_translations(&t);
 
-	obs_hotkeys_set_audio_hotkeys_translations(Str("Mute"), Str("Unmute"), Str("Push-to-mute"),
-						   Str("Push-to-talk"));
+	obs_hotkeys_set_audio_hotkeys_translations(Str("Mute"), Str("Unmute"), Str("Push-to-mute"), Str("Push-to-talk"),
+						   Str("MonitorOn"), Str("MonitorOff"));
 
 	obs_hotkeys_set_sceneitem_hotkeys_translations(Str("SceneItemShow"), Str("SceneItemHide"));
 
@@ -209,6 +209,30 @@ void OBSBasic::CreateHotkeys()
 								basic.StopReplayBuffer, "Stopping replay buffer"),
 						  this, this);
 	LoadHotkeyPair(replayBufHotkeys, "OBSBasic.StartReplayBuffer", "OBSBasic.StopReplayBuffer");
+
+	auto replayBufferCallback = [](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+		OBSBasic *basic = static_cast<OBSBasic *>(data);
+		if (basic->outputHandler->ReplayBufferActive() && pressed) {
+			blog(LOG_INFO, "Saving replay buffer due to hotkey");
+			basic->ReplayBufferSave();
+		}
+	};
+
+	saveReplayBufferHotkey = obs_hotkey_register_frontend("OBSBasic.SaveReplayBuffer", Str("Basic.Main.SaveReplay"),
+							      replayBufferCallback, this);
+
+	bool hasSaveReplayHotkey = config_has_user_value(activeConfiguration, "Hotkeys", "OBSBasic.SaveReplayBuffer");
+	if (hasSaveReplayHotkey) {
+		LoadHotkey(saveReplayBufferHotkey, "OBSBasic.SaveReplayBuffer");
+	} else {
+		OBSDataArrayAutoRelease array = obs_data_get_array(LoadHotkeyData("ReplayBuffer"), "ReplayBuffer.Save");
+		obs_hotkey_load(saveReplayBufferHotkey, array);
+
+		OBSDataAutoRelease newData = obs_data_create();
+		obs_data_set_array(newData, "bindings", array);
+		config_set_string(activeConfiguration, "Hotkeys", "OBSBasic.SaveReplayBuffer",
+				  obs_data_get_json(newData));
+	}
 
 	if (vcamEnabled) {
 		vcamHotkeys = obs_hotkey_pair_register_frontend(

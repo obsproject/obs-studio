@@ -423,6 +423,7 @@ private:
 	void SourceToolBarActionsSetEnabled();
 
 	void copyActionsDynamicProperties();
+	std::optional<QWidget *> createContextBarWidget(obs_source_t *source);
 
 private slots:
 	void on_toggleContextBar_toggled(bool visible);
@@ -494,7 +495,7 @@ private:
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys, replayBufHotkeys, vcamHotkeys,
 		togglePreviewHotkeys, contextBarHotkeys;
-	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, addChapterHotkey;
+	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, addChapterHotkey, saveReplayBufferHotkey;
 
 	void InitHotkeys();
 	void CreateHotkeys();
@@ -916,6 +917,7 @@ private:
 	std::vector<std::string> GetRestartRequirements(const ConfigFile &config) const;
 	void ResetProfileData();
 	void CheckForSimpleModeX264Fallback();
+	void CheckForMissingEncoders();
 
 public:
 	inline const OBSProfileCache &GetProfileCache() const noexcept { return profiles; };
@@ -1498,8 +1500,8 @@ private:
 	std::unordered_map<std::string, std::string> transitionNameToUuids;
 	int transitionDuration;
 	std::string currentTransitionUuid;
-	obs_source_t *fadeTransition;
-	obs_source_t *cutTransition;
+	obs_source_t *fadeTransition = nullptr;
+	obs_source_t *cutTransition = nullptr;
 	std::vector<QuickTransition> quickTransitions;
 	bool swapScenesMode = true;
 
