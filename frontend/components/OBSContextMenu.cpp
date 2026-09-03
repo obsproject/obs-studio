@@ -25,14 +25,14 @@ void OBSContextMenu::showEvent(QShowEvent *event)
 		switch (parentDisplayAffinity) {
 		case WDA_EXCLUDEFROMCAPTURE:
 			if (!SetWindowDisplayAffinity(windowId, WDA_EXCLUDEFROMCAPTURE)) {
-				blog(LOG_INFO, "Could not set display affinity for Context Menu.");
+				blog(LOG_INFO, "Tried to hide from capture; could not set display affinity for Context Menu.");
 			}
 			break;
 		case WDA_NONE:
 		case WDA_MONITOR:
 		default:
 			if (!SetWindowDisplayAffinity(windowId, WDA_NONE)) {
-				blog(LOG_INFO, "Could not set display affinity for Context Menu.");
+				blog(LOG_INFO, "Could not unhide from capture; could not set display affinity for Context Menu.");
 			}
 		}
 	}
