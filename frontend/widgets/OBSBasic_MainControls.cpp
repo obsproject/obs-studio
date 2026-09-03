@@ -27,6 +27,7 @@
 #include <dialogs/OBSBasicInteraction.hpp>
 #include <dialogs/OBSBasicProperties.hpp>
 #include <dialogs/OBSBasicTransform.hpp>
+#include <components/OBSContextMenu.hpp>
 #ifdef ENABLE_IDIAN_PLAYGROUND
 #include <dialogs/OBSIdianPlayground.hpp>
 #endif
@@ -691,6 +692,10 @@ void OBSBasic::on_actionShowAbout_triggered()
 
 void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 {
+	if (previewSource) {
+		delete previewSource;
+	}
+
 	QWidget *widget = childAt(pos);
 	const char *className = nullptr;
 	QString objName;

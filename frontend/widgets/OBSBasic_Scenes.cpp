@@ -21,6 +21,7 @@
 #include "OBSProjector.hpp"
 
 #include <dialogs/NameDialog.hpp>
+#include <components/OBSContextMenu.hpp>
 
 #include <qt-wrappers.hpp>
 
@@ -547,6 +548,10 @@ void OBSBasic::EditSceneName()
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
+	if (previewSource) {
+		delete previewSource;
+	}
+
 	QListWidgetItem *item = ui->scenes->itemAt(pos);
 
 	QMenu popup(this);

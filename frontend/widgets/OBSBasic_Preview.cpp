@@ -245,10 +245,12 @@ void OBSBasic::on_preview_customContextMenuRequested()
 
 void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 {
+	if (previewSource) {
+		delete previewSource;
+	}
+
 	QMenu popup(this);
 	delete previewProjectorMain;
-	delete previewSource;
-
 
 	QAction *action = popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this, &OBSBasic::TogglePreview);
 	action->setCheckable(true);
