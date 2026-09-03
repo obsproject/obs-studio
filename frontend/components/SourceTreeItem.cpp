@@ -543,7 +543,8 @@ void SourceTreeItem::Update(bool force)
 
 	} else if (type == Type::Group) {
 		expand = new QCheckBox();
-		idian::Utils::addClass(expand, "checkbox-icon indicator-expand");
+		idian::Utils::addClass(expand, "checkbox-icon");
+		idian::Utils::addClass(expand, "indicator-expand");
 		expand->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 #ifdef __APPLE__
 		expand->setAttribute(Qt::WA_LayoutUsesWidgetRect);
