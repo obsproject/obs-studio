@@ -47,7 +47,7 @@ protected:
 	void ShowErrorDialog(QWidget *parent, QString text);
 
 public:
-	explicit OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcastReady);
+	explicit OBSYoutubeActions(QWidget *parent, YoutubeApiWrappers &apiYouTube, bool broadcastReady);
 	virtual ~OBSYoutubeActions() override;
 
 	bool Valid() { return valid; };
