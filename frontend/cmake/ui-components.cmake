@@ -101,4 +101,6 @@ target_sources(
     components/VolumeSlider.hpp
     components/WindowCaptureToolbar.cpp
     components/WindowCaptureToolbar.hpp
+    components/OBSContextMenu.cpp
+    components/OBSContextMenu.hpp
 )

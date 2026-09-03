@@ -58,6 +58,7 @@ class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
 class VolumeControl;
+class OBSContextMenu;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
 #endif
@@ -495,7 +496,7 @@ private:
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys, replayBufHotkeys, vcamHotkeys,
 		togglePreviewHotkeys, contextBarHotkeys;
-	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, addChapterHotkey, saveReplayBufferHotkey;
+	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, addChapterHotkey;
 
 	void InitHotkeys();
 	void CreateHotkeys();
@@ -949,6 +950,7 @@ private:
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> previewProjectorSource;
 	QPointer<QMenu> previewProjectorMain;
+	QPointer<OBSContextMenu> m_previewSource;
 
 	void updateMultiviewProjectorMenu();
 	void ClearProjectors();
