@@ -950,7 +950,7 @@ private:
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> previewProjectorSource;
 	QPointer<QMenu> previewProjectorMain;
-	QPointer<OBSContextMenu> previewSource;
+	QPointer<OBSContextMenu> previewSourceMenu;
 
 	void updateMultiviewProjectorMenu();
 	void ClearProjectors();

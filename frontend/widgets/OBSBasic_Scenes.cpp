@@ -548,8 +548,8 @@ void OBSBasic::EditSceneName()
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
-	if (previewSource) {
-		previewSource->close();
+	if (previewSourceMenu) {
+		previewSourceMenu->close();
 	}
 
 	QListWidgetItem *item = ui->scenes->itemAt(pos);

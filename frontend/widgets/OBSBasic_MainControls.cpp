@@ -692,8 +692,8 @@ void OBSBasic::on_actionShowAbout_triggered()
 
 void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 {
-	if (previewSource) {
-		previewSource->close();
+	if (previewSourceMenu) {
+		previewSourceMenu->close();
 	}
 
 	QWidget *widget = childAt(pos);
