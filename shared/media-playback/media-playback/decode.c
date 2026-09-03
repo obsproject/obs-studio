@@ -89,7 +89,16 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 	    c->codec_id != AV_CODEC_ID_JPEG2000 && c->codec_id != AV_CODEC_ID_MPEG4 && c->codec_id != AV_CODEC_ID_WEBP)
 		c->thread_count = 0;
 
-	ret = avcodec_open2(c, d->codec, NULL);
+	AVDictionary *opts = NULL;
+	if (d->m->ffmpeg_options) {
+		int parse_ret = av_dict_parse_string(&opts, d->m->ffmpeg_options, "=", " ", 0);
+		if (parse_ret)
+			blog(LOG_WARNING, "Failed to parse FFmpeg options for decoder: %s\n%s", av_err2str(parse_ret),
+			     d->m->ffmpeg_options);
+	}
+
+	ret = avcodec_open2(c, d->codec, opts ? &opts : NULL);
+	av_dict_free(&opts);
 	if (ret < 0)
 		goto fail;
 
