@@ -558,7 +558,8 @@ void OBSBasic::on_actionImportProfile_triggered()
 	const QString sourceDirectory = SelectDirectory(this, QTStr("Basic.MainMenu.Profile.Import"), home);
 
 	if (!sourceDirectory.isEmpty() && !sourceDirectory.isNull()) {
-		const std::filesystem::path sourcePath = std::filesystem::u8path(sourceDirectory.toStdString());
+		const std::filesystem::path sourcePath =
+			std::filesystem::u8path(QDir::cleanPath(sourceDirectory).toStdString());
 		const std::string directoryName = sourcePath.filename().u8string();
 
 		if (auto profile = GetProfileByDirectoryName(directoryName)) {
