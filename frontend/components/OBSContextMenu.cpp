@@ -9,6 +9,8 @@
 #include "Windows.h"
 #endif
 
+// This context menu will automatically delete itself on close.
+// No need to manually delete this.
 OBSContextMenu::OBSContextMenu(QWidget *parent)
 {
 	setParent(parent);

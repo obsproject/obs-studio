@@ -573,7 +573,7 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
 	if (previewSource) {
-		delete previewSource;
+		previewSource->close();
 	}
 
 	previewSource = new OBSContextMenu(this);

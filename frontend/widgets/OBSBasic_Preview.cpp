@@ -246,7 +246,7 @@ void OBSBasic::on_preview_customContextMenuRequested()
 void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 {
 	if (previewSource) {
-		delete previewSource;
+		previewSource->close();
 	}
 
 	QMenu popup(this);
