@@ -572,11 +572,11 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction
 
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
-	if (m_previewSource) {
-		delete m_previewSource;
+	if (previewSource) {
+		delete previewSource;
 	}
 
-	m_previewSource = new OBSContextMenu(this);
+	previewSource = new OBSContextMenu(this);
 	delete previewProjectorSource;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
@@ -605,19 +605,19 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	}
 
 	// Add new source
-	QAction *addSource = m_previewSource->addAction(QTStr("AddSource"), this, &OBSBasic::AddSourceDialog);
-	m_previewSource->addAction(addSource);
-	m_previewSource->addSeparator();
+	QAction *addSource = previewSource->addAction(QTStr("AddSource"), this, &OBSBasic::AddSourceDialog);
+	previewSource->addAction(addSource);
+	previewSource->addSeparator();
 
 	if (!preview && !sourceSelected) {
 		QAction *addGroup = new QAction(QTStr("Basic.Main.NewGroup"), this);
 		connect(addGroup, &QAction::triggered, ui->sources, &SourceTree::AddGroup);
-		m_previewSource->addAction(addGroup);
+		previewSource->addAction(addGroup);
 	}
 
 	// Preview menu entries
 	if (preview) {
-		QAction *action = m_previewSource->addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this,
+		QAction *action = previewSource->addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this,
 							     &OBSBasic::TogglePreview);
 		action->setCheckable(true);
 		action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
@@ -625,10 +625,10 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			action->setEnabled(false);
 		}
 
-		m_previewSource->addAction(ui->actionLockPreview);
-		m_previewSource->addMenu(ui->scalingMenu);
+		previewSource->addAction(ui->actionLockPreview);
+		previewSource->addMenu(ui->scalingMenu);
 
-		m_previewSource->addSeparator();
+		previewSource->addSeparator();
 	}
 
 	// Projector menu entries
@@ -638,7 +638,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		previewProjectorSource->addSeparator();
 		previewProjectorSource->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenPreviewWindow);
 
-		m_previewSource->addMenu(previewProjectorSource);
+		previewSource->addMenu(previewProjectorSource);
 	}
 
 	if (hasVideo) {
@@ -647,21 +647,21 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		sourceProjector->addSeparator();
 		sourceProjector->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenSourceWindow);
 
-		m_previewSource->addMenu(sourceProjector);
+		previewSource->addMenu(sourceProjector);
 	}
 
-	m_previewSource->addSeparator();
+	previewSource->addSeparator();
 
 	// Screenshot menu entries
 	if (preview) {
-		m_previewSource->addAction(QTStr("Screenshot.Preview"), this, &OBSBasic::ScreenshotScene);
+		previewSource->addAction(QTStr("Screenshot.Preview"), this, &OBSBasic::ScreenshotScene);
 	}
 
 	if (hasVideo) {
-		m_previewSource->addAction(QTStr("Screenshot.Source"), this, &OBSBasic::ScreenshotSelectedSource);
+		previewSource->addAction(QTStr("Screenshot.Source"), this, &OBSBasic::ScreenshotSelectedSource);
 	}
 
-	m_previewSource->addSeparator();
+	previewSource->addSeparator();
 
 	if (sourceSelected) {
 		// Sources list menu entries
@@ -669,14 +669,14 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			colorMenu = new QMenu(QTStr("ChangeBG"));
 			colorWidgetAction = new QWidgetAction(colorMenu);
 			colorSelect = new ColorSelect(colorMenu);
-			m_previewSource->addMenu(
+			previewSource->addMenu(
 				AddBackgroundColorMenu(colorMenu, colorWidgetAction, colorSelect, sceneItem));
 
 			if (hasAudio) {
 				bool isHidden = isHiddenInMixer(source);
 
 				QAction *actionHideMixer =
-					m_previewSource->addAction(QTStr("HideMixer"), this, [source, isHidden]() {
+					previewSource->addAction(QTStr("HideMixer"), this, [source, isHidden]() {
 						setHiddenInMixer(source, !isHidden);
 
 						OBSBasic *main = OBSBasic::Get();
@@ -685,28 +685,28 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 				actionHideMixer->setCheckable(true);
 				actionHideMixer->setChecked(isHidden);
 			}
-			m_previewSource->addSeparator();
+			previewSource->addSeparator();
 		}
 
 		// Scene item menu entries
 		if (hasVideo && source) {
 			scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
-			m_previewSource->addMenu(AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
+			previewSource->addMenu(AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
 			blendingModeMenu = new QMenu(QTStr("BlendingMode"));
-			m_previewSource->addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
+			previewSource->addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
 			blendingMethodMenu = new QMenu(QTStr("BlendingMethod"));
-			m_previewSource->addMenu(AddBlendingMethodMenu(blendingMethodMenu, sceneItem));
+			previewSource->addMenu(AddBlendingMethodMenu(blendingMethodMenu, sceneItem));
 			if (isAsyncVideo) {
 				deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
-				m_previewSource->addMenu(AddDeinterlacingMenu(deinterlaceMenu, source));
+				previewSource->addMenu(AddDeinterlacingMenu(deinterlaceMenu, source));
 			}
 
-			m_previewSource->addMenu(CreateVisibilityTransitionMenu(true));
-			m_previewSource->addMenu(CreateVisibilityTransitionMenu(false));
+			previewSource->addMenu(CreateVisibilityTransitionMenu(true));
+			previewSource->addMenu(CreateVisibilityTransitionMenu(false));
 
-			m_previewSource->addSeparator();
+			previewSource->addSeparator();
 
-			QAction *resizeOutput = m_previewSource->addAction(QTStr("ResizeOutputSizeOfSource"), this,
+			QAction *resizeOutput = previewSource->addAction(QTStr("ResizeOutputSizeOfSource"), this,
 								&OBSBasic::ResizeOutputSizeOfSource);
 
 			int width = obs_source_get_width(source);
@@ -719,56 +719,56 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			}
 		}
 
-		m_previewSource->addSeparator();
+		previewSource->addSeparator();
 
-		m_previewSource->addMenu(ui->orderMenu);
+		previewSource->addMenu(ui->orderMenu);
 
 		if (hasVideo) {
-			m_previewSource->addMenu(ui->transformMenu);
+			previewSource->addMenu(ui->transformMenu);
 		}
 
-		m_previewSource->addSeparator();
+		previewSource->addSeparator();
 
 		// Source grouping
 		if (ui->sources->MultipleBaseSelected()) {
-			m_previewSource->addAction(QTStr("Basic.Main.GroupItems"), ui->sources,
+			previewSource->addAction(QTStr("Basic.Main.GroupItems"), ui->sources,
 						   &SourceTree::GroupSelectedItems);
-			m_previewSource->addSeparator();
+			previewSource->addSeparator();
 		} else if (ui->sources->GroupsSelected()) {
-			m_previewSource->addAction(QTStr("Basic.Main.Ungroup"), ui->sources,
+			previewSource->addAction(QTStr("Basic.Main.Ungroup"), ui->sources,
 						   &SourceTree::UngroupSelectedGroups);
-			m_previewSource->addSeparator();
+			previewSource->addSeparator();
 		}
 
-		m_previewSource->addAction(ui->actionCopySource);
-		m_previewSource->addAction(ui->actionPasteRef);
-		m_previewSource->addAction(ui->actionPasteDup);
-		m_previewSource->addSeparator();
+		previewSource->addAction(ui->actionCopySource);
+		previewSource->addAction(ui->actionPasteRef);
+		previewSource->addAction(ui->actionPasteDup);
+		previewSource->addSeparator();
 
 		if (hasVideo || hasAudio) {
-			m_previewSource->addAction(ui->actionCopyFilters);
-			m_previewSource->addAction(ui->actionPasteFilters);
-			m_previewSource->addSeparator();
+			previewSource->addAction(ui->actionCopyFilters);
+			previewSource->addAction(ui->actionPasteFilters);
+			previewSource->addSeparator();
 		}
 
-		m_previewSource->addAction(ui->actionRemoveSource);
-		m_previewSource->addAction(renameSource);
-		m_previewSource->addSeparator();
+		previewSource->addAction(ui->actionRemoveSource);
+		previewSource->addAction(renameSource);
+		previewSource->addSeparator();
 
 		if (flags && flags & OBS_SOURCE_INTERACTION) {
-			m_previewSource->addAction(QTStr("Interact"), this, &OBSBasic::on_actionInteract_triggered);
+			previewSource->addAction(QTStr("Interact"), this, &OBSBasic::on_actionInteract_triggered);
 		}
 
-		m_previewSource->addAction(QTStr("Filters"), this, [&]() { OpenFilters(); });
-		QAction *action = m_previewSource->addAction(QTStr("Properties"), this,
+		previewSource->addAction(QTStr("Filters"), this, [&]() { OpenFilters(); });
+		QAction *action = previewSource->addAction(QTStr("Properties"), this,
 							     &OBSBasic::on_actionSourceProperties_triggered);
 		action->setEnabled(obs_source_configurable(source));
 	} else {
-		m_previewSource->addAction(ui->actionPasteRef);
-		m_previewSource->addAction(ui->actionPasteDup);
+		previewSource->addAction(ui->actionPasteRef);
+		previewSource->addAction(ui->actionPasteDup);
 	}
 
-	m_previewSource->exec(mapFromGlobal(QCursor::pos()));
+	previewSource->exec(mapFromGlobal(QCursor::pos()));
 }
 
 void OBSBasic::actionOpenSourceFilters()
