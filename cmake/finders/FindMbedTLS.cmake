@@ -65,7 +65,7 @@ include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_MbedTLS QUIET mbedtls mbedcrypto mbedx509)
+  pkg_check_modules(PC_MbedTLS QUIET mbedtls tfpsacrypto mbedx509)
 endif()
 
 # MbedTLS_set_soname: Set SONAME on imported library targets
@@ -235,7 +235,7 @@ if(MbedTLS_FOUND)
     set(MbedTLS_LIBRARIES ${MbedTLS_LIBRARY})
   else()
     set(MbedTLS_LIBRARIES ${MbedTLS_LIBRARY} ${MbedCrypto_LIBRARY} ${MbedX509_LIBRARY})
-    set_property(TARGET MbedTLS::mbedtls PROPERTY INTERFACE_LINK_LIBRARIES MbedTLS::mbedcrypto MbedTLS::mbedx509)
+    set_property(TARGET MbedTLS::mbedtls PROPERTY INTERFACE_LINK_LIBRARIES MbedTLS::tfpsacrypto MbedTLS::mbedx509)
   endif()
 endif()
 

@@ -25,17 +25,25 @@
 /* This file is #included in rtmp.c, it is not meant to be compiled alone */
 
 #if defined(USE_MBEDTLS)
-#include <mbedtls/md.h>
+#include <psa/crypto.h>
 #ifndef SHA256_DIGEST_LENGTH
 #define SHA256_DIGEST_LENGTH	32
 #endif
-typedef mbedtls_md_context_t *HMAC_CTX;
-#define HMAC_setup(ctx, key, len)	ctx = malloc(sizeof(mbedtls_md_context_t)); mbedtls_md_init(ctx); \
-  mbedtls_md_setup(ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1); \
-  mbedtls_md_hmac_starts(ctx, (const unsigned char *)key, len)
-#define HMAC_crunch(ctx, buf, len)	mbedtls_md_hmac_update(ctx, buf, len)
-#define HMAC_finish(ctx, dig)		mbedtls_md_hmac_finish(ctx, dig)
-#define HMAC_close(ctx)			mbedtls_md_free(ctx); free(ctx); ctx = NULL
+typedef psa_mac_operation_t HMAC_CTX;
+const psa_algorithm_t mbedtls_hmac_alg = PSA_ALG_HMAC(PSA_ALG_SHA_256);
+
+#define HMAC_setup(ctx, key, len) psa_crypto_init(); \
+    ctx = psa_mac_operation_init(); \
+    mbedtls_svc_key_id_t key_id; \
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT; \
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE); \
+    psa_set_key_algorithm(&attributes, mbedtls_hmac_alg); \
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC); \
+    psa_import_key(&attributes, key, len, &key_id); \
+    psa_mac_sign_setup(&ctx, key_id, mbedtls_hmac_alg)
+#define HMAC_crunch(ctx, buf, len)	psa_mac_update(&ctx, buf, len)
+#define HMAC_finish(ctx, dig, digestLen) psa_mac_sign_finish(&ctx, dig, SHA256_DIGEST_LENGTH, &digestLen)
+#define HMAC_close(ctx) psa_mac_abort(&ctx)
 
 #elif defined(USE_POLARSSL)
 #include <polarssl/sha2.h>
@@ -171,13 +179,17 @@ static void
 HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t *key,
            size_t keylen, uint8_t *digest)
 {
+#if defined(USE_MBEDTLS)
+    size_t digestLen;
+#else
     unsigned int digestLen;
+#endif
     HMAC_CTX ctx;
 
     HMAC_setup(ctx, key, keylen);
     HMAC_crunch(ctx, message, messageLen);
 
-#if defined(USE_MBEDTLS) || defined(USE_POLARSSL) || defined(USE_GNUTLS)
+#if defined(USE_POLARSSL) || defined(USE_GNUTLS)
     digestLen = SHA256_DIGEST_LENGTH;
     HMAC_finish(ctx, digest);
 #else
