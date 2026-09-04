@@ -5,6 +5,7 @@
 #include <QT>
 #include <QWindow>
 #include <QCursor>
+#include <QString>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -13,9 +14,24 @@
 
 // This context menu will automatically delete itself on close.
 // No need to manually delete this.
-OBSMenu::OBSMenu(QWidget *parent) : parent(parent)
+OBSMenu::OBSMenu(QWidget *parent, const bool &deleteOnClose) : parent(parent)
 {
-	setAttribute(Qt::WA_DeleteOnClose);
+	if (deleteOnClose) {
+		setAttribute(Qt::WA_DeleteOnClose);
+	} else {
+		connect(parent, &QObject::destroyed, this, &QMenu::deleteLater);
+	}
+}
+
+OBSMenu::OBSMenu(const QString &title, QWidget *parent, const bool &deleteOnClose) : parent(parent)
+{
+	setTitle(title);
+
+	if (deleteOnClose) {
+		setAttribute(Qt::WA_DeleteOnClose);
+	} else {
+		connect(parent, &QObject::destroyed, this, &QMenu::deleteLater);
+	}
 }
 
 void OBSMenu::showEvent(QShowEvent *event)
@@ -42,5 +58,5 @@ void OBSMenu::showEvent(QShowEvent *event)
 }
 
 void OBSMenu::popupMenu() {
-	popup(mapFrom(parent, QCursor::pos()));
+	popup(QCursor::pos());
 }

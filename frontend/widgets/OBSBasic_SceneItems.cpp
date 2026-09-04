@@ -22,7 +22,6 @@
 #include "OBSProjector.hpp"
 #include "AudioMixer.hpp"
 
-#include <components/OBSMenu.hpp>
 #include <components/VolumeControl.hpp>
 #include <dialogs/NameDialog.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
@@ -578,17 +577,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		previewSourceMenu->close();
 	}
 
-	previewSourceMenu = new OBSMenu(this);
-	delete previewProjectorSource;
-	delete sourceProjector;
-	delete scaleFilteringMenu;
-	delete blendingMethodMenu;
-	delete blendingModeMenu;
-	delete colorMenu;
-	delete colorWidgetAction;
-	delete colorSelect;
-	delete deinterlaceMenu;
-
+	previewSourceMenu = new OBSMenu(this, true);
 	OBSSceneItem sceneItem;
 	obs_source_t *source;
 	uint32_t flags;
@@ -608,11 +597,13 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 	// Add new source
 	QAction *addSource = previewSourceMenu->addAction(QTStr("AddSource"), this, &OBSBasic::AddSourceDialog);
+
 	previewSourceMenu->addAction(addSource);
 	previewSourceMenu->addSeparator();
 
 	if (!preview && !sourceSelected) {
 		QAction *addGroup = new QAction(QTStr("Basic.Main.NewGroup"), this);
+
 		connect(addGroup, &QAction::triggered, ui->sources, &SourceTree::AddGroup);
 		previewSourceMenu->addAction(addGroup);
 	}
@@ -621,34 +612,35 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	if (preview) {
 		QAction *action = previewSourceMenu->addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this,
 							     &OBSBasic::TogglePreview);
+
 		action->setCheckable(true);
 		action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
+
 		if (IsPreviewProgramMode()) {
 			action->setEnabled(false);
 		}
 
 		previewSourceMenu->addAction(ui->actionLockPreview);
 		previewSourceMenu->addMenu(ui->scalingMenu);
-
 		previewSourceMenu->addSeparator();
 	}
 
 	// Projector menu entries
 	if (preview) {
-		previewProjectorSource = new QMenu(QTStr("Projector.Open.Preview"));
+		previewProjectorSource = new OBSMenu(QTStr("Projector.Open.Preview"), previewSourceMenu, false);
+
 		AddProjectorMenuMonitors(previewProjectorSource, this, &OBSBasic::OpenPreviewProjector);
 		previewProjectorSource->addSeparator();
 		previewProjectorSource->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenPreviewWindow);
-
 		previewSourceMenu->addMenu(previewProjectorSource);
 	}
 
 	if (hasVideo) {
-		sourceProjector = new QMenu(QTStr("Projector.Open.Source"));
+		sourceProjector = new OBSMenu(QTStr("Projector.Open.Source"), previewSourceMenu, false);
+
 		AddProjectorMenuMonitors(sourceProjector, this, &OBSBasic::OpenSourceProjector);
 		sourceProjector->addSeparator();
 		sourceProjector->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenSourceWindow);
-
 		previewSourceMenu->addMenu(sourceProjector);
 	}
 
@@ -668,7 +660,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	if (sourceSelected) {
 		// Sources list menu entries
 		if (!preview) {
-			colorMenu = new QMenu(QTStr("ChangeBG"));
+			colorMenu = new OBSMenu(QTStr("ChangeBG"), previewSourceMenu, false);
 			colorWidgetAction = new QWidgetAction(colorMenu);
 			colorSelect = new ColorSelect(colorMenu);
 			previewSourceMenu->addMenu(
@@ -687,19 +679,20 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 				actionHideMixer->setCheckable(true);
 				actionHideMixer->setChecked(isHidden);
 			}
+
 			previewSourceMenu->addSeparator();
 		}
 
 		// Scene item menu entries
 		if (hasVideo && source) {
-			scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
+			scaleFilteringMenu = new OBSMenu(QTStr("ScaleFiltering"), previewSourceMenu, false);
 			previewSourceMenu->addMenu(AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
-			blendingModeMenu = new QMenu(QTStr("BlendingMode"));
+			blendingModeMenu = new OBSMenu(QTStr("BlendingMode"), previewSourceMenu, false);
 			previewSourceMenu->addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
-			blendingMethodMenu = new QMenu(QTStr("BlendingMethod"));
+			blendingMethodMenu = new OBSMenu(QTStr("BlendingMethod"), previewSourceMenu, false);
 			previewSourceMenu->addMenu(AddBlendingMethodMenu(blendingMethodMenu, sceneItem));
 			if (isAsyncVideo) {
-				deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
+				deinterlaceMenu = new OBSMenu(QTStr("Deinterlacing"), previewSourceMenu, false);
 				previewSourceMenu->addMenu(AddDeinterlacingMenu(deinterlaceMenu, source));
 			}
 
@@ -722,7 +715,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		}
 
 		previewSourceMenu->addSeparator();
-
 		previewSourceMenu->addMenu(ui->orderMenu);
 
 		if (hasVideo) {

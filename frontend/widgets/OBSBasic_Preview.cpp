@@ -19,7 +19,7 @@
 
 #include "OBSBasic.hpp"
 
-#include <components/OBSContextMenu.hpp>
+#include <components/OBSMenu.hpp>
 #include <utility/display-helpers.hpp>
 #include <widgets/OBSProjector.hpp>
 

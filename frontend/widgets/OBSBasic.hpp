@@ -21,6 +21,7 @@
 #include "OBSMainWindow.hpp"
 
 #include <OBSApp.hpp>
+#include <components/OBSMenu.hpp>
 #include <components/AccessibleAlignmentSelector.hpp>
 #include <oauth/Auth.hpp>
 #include <utility/BasicOutputHandler.hpp>
@@ -58,7 +59,6 @@ class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
 class VolumeControl;
-class OBSMenu;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
 #endif
@@ -588,7 +588,7 @@ private:
 	QPointer<QAction> showHide;
 	QPointer<QAction> exit;
 
-	QPointer<QMenu> scaleFilteringMenu;
+	QPointer<OBSMenu> scaleFilteringMenu;
 	QPointer<QMenu> blendingMethodMenu;
 	QPointer<QMenu> blendingModeMenu;
 	QPointer<QMenu> colorMenu;

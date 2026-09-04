@@ -21,7 +21,7 @@
 #include "OBSProjector.hpp"
 
 #include <dialogs/NameDialog.hpp>
-#include <components/OBSContextMenu.hpp>
+#include <components/OBSMenu.hpp>
 
 #include <qt-wrappers.hpp>
 

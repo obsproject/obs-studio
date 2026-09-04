@@ -1434,16 +1434,9 @@ void OBSBasic::applicationShutdown() noexcept
 	}
 
 	delete screenshotData;
-	delete previewProjectorSource;
+	delete previewSourceMenu;
 	delete previewProjectorMain;
-	delete sourceProjector;
 	delete sceneProjectorMenu;
-	delete scaleFilteringMenu;
-	delete blendingModeMenu;
-	delete colorMenu;
-	delete colorWidgetAction;
-	delete colorSelect;
-	delete deinterlaceMenu;
 	delete perSceneTransitionMenu;
 	delete shortcutFilter;
 	delete programOptions;

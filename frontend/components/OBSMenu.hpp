@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QWidget>
 #include <QMenu>
 
 class OBSMenu : public QMenu {
@@ -8,7 +9,9 @@ class OBSMenu : public QMenu {
 	QWidget* parent;
 
 public:
-	OBSMenu(QWidget*);
+	OBSMenu(QWidget*, const bool&);
+
+	OBSMenu(const QString&, QWidget*, const bool&);
 
 	void showEvent(QShowEvent *event) override;
 

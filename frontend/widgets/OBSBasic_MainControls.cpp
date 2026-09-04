@@ -27,7 +27,7 @@
 #include <dialogs/OBSBasicInteraction.hpp>
 #include <dialogs/OBSBasicProperties.hpp>
 #include <dialogs/OBSBasicTransform.hpp>
-#include <components/OBSContextMenu.hpp>
+#include <components/OBSMenu.hpp>
 #ifdef ENABLE_IDIAN_PLAYGROUND
 #include <dialogs/OBSIdianPlayground.hpp>
 #endif
