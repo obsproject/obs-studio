@@ -17,14 +17,45 @@
 
 #pragma once
 
-// Idian - A family of custom widgets for OBS implementing the "Yami" UI design.
-//
-// (OBS Idian, get it?)
-
-#include <Idian/CheckBox.hpp>
-#include <Idian/ComboBox.hpp>
-#include <Idian/DoubleSpinBox.hpp>
 #include <Idian/RowList.hpp>
-#include <Idian/Row.hpp>
-#include <Idian/SpinBox.hpp>
 #include <Idian/ToggleSwitch.hpp>
+
+#include <QLabel>
+#include <QLayout>
+#include <QMouseEvent>
+#include <QWidget>
+
+namespace idian {
+
+class ListHeader : public QFrame, public Utils {
+	Q_OBJECT
+
+public:
+	ListHeader(QWidget *parent = nullptr);
+	ListHeader(QWidget *parent, QString title);
+	ListHeader(QWidget *parent, QString title, QString description);
+
+	void setTitle(QString name);
+	void setDescription(QString desc);
+
+	void showTitle(bool visible);
+	void showDescription(bool visible);
+
+	void setCheckable(bool check);
+	bool isCheckable() { return checkable; }
+
+private:
+	Utils *widgetUtils;
+
+	QHBoxLayout *layout_ = nullptr;
+
+	QLabel *nameLabel = nullptr;
+	QLabel *descriptionLabel = nullptr;
+
+	ToggleSwitch *toggleSwitch = nullptr;
+	bool checkable = false;
+
+signals:
+	void toggled(bool enable);
+};
+} // namespace idian
