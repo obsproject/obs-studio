@@ -12,43 +12,43 @@
 
 #ifdef LIBNVAFX_ENABLED
 static HMODULE nv_audiofx = NULL;
+static HMODULE nv_denoiserfx = NULL;
+static HMODULE nv_dereverbfx = NULL;
+static HMODULE nv_dereverbdenoiserfx = NULL;
 
 /** Effects @ref NvAFX_EffectSelector  */
 #define NVAFX_EFFECT_DENOISER "denoiser"
 #define NVAFX_EFFECT_DEREVERB "dereverb"
 #define NVAFX_EFFECT_DEREVERB_DENOISER "dereverb_denoiser"
-#define NVAFX_EFFECT_AEC "aec"
-#define NVAFX_EFFECT_SUPERRES "superres"
 
 /** Model paths */
 #define NVAFX_EFFECT_DENOISER_MODEL "\\models\\denoiser_48k.trtpkg"
 #define NVAFX_EFFECT_DEREVERB_MODEL "\\models\\dereverb_48k.trtpkg"
 #define NVAFX_EFFECT_DEREVERB_DENOISER_MODEL "\\models\\dereverb_denoiser_48k.trtpkg"
 
-#define NVAFX_CHAINED_EFFECT_DENOISER_16k_SUPERRES_16k_TO_48k "denoiser16k_superres16kto48k"
-#define NVAFX_CHAINED_EFFECT_DEREVERB_16k_SUPERRES_16k_TO_48k "dereverb16k_superres16kto48k"
-#define NVAFX_CHAINED_EFFECT_DEREVERB_DENOISER_16k_SUPERRES_16k_TO_48k "dereverb_denoiser16k_superres16kto48k"
-#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DENOISER_16k "superres8kto16k_denoiser16k"
-#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DEREVERB_16k "superres8kto16k_dereverb16k"
-#define NVAFX_CHAINED_EFFECT_SUPERRES_8k_TO_16k_DEREVERB_DENOISER_16k "superres8kto16k_dereverb_denoiser16k"
-
 /** Parameter selectors */
-
 #define NVAFX_PARAM_NUM_STREAMS "num_streams"
 #define NVAFX_PARAM_USE_DEFAULT_GPU "use_default_gpu"
 #define NVAFX_PARAM_USER_CUDA_CONTEXT "user_cuda_context"
 #define NVAFX_PARAM_DISABLE_CUDA_GRAPH "disable_cuda_graph"
-#define NVAFX_PARAM_ENABLE_VAD "enable_vad"
+
 /** Effect parameters. @ref NvAFX_ParameterSelector */
 #define NVAFX_PARAM_MODEL_PATH "model_path"
 #define NVAFX_PARAM_INPUT_SAMPLE_RATE "input_sample_rate"
 #define NVAFX_PARAM_OUTPUT_SAMPLE_RATE "output_sample_rate"
+
 #define NVAFX_PARAM_NUM_INPUT_SAMPLES_PER_FRAME "num_input_samples_per_frame"
 #define NVAFX_PARAM_NUM_OUTPUT_SAMPLES_PER_FRAME "num_output_samples_per_frame"
+/* SDK >= 3.0.0.49: replaces the 2 previous define... */
+#define NVAFX_PARAM_NUM_SAMPLES_PER_INPUT_FRAME "num_samples_per_input_frame"
+#define NVAFX_PARAM_NUM_SAMPLES_PER_OUTPUT_FRAME "num_samples_per_output_frame"
+
 #define NVAFX_PARAM_NUM_INPUT_CHANNELS "num_input_channels"
 #define NVAFX_PARAM_NUM_OUTPUT_CHANNELS "num_output_channels"
 #define NVAFX_PARAM_INTENSITY_RATIO "intensity_ratio"
 #define NVAFX_PARAM_ENABLE_VAD "enable_vad"
+/** SDK >= 3.0.0.49: Voice activity status (boolean) is an immutable parameter. */
+#define NVAFX_PARAM_VAD_RESULT "vad_result"
 
 #pragma deprecated(NVAFX_PARAM_DENOISER_MODEL_PATH)
 #define NVAFX_PARAM_DENOISER_MODEL_PATH NVAFX_PARAM_MODEL_PATH
@@ -90,12 +90,32 @@ typedef enum {
 	/** Model file could not be loaded */
 	NVAFX_STATUS_MODEL_LOAD_FAILED = 8,
 
-	/** (32 bit SDK only) COM server was not registered, please see user manual for details */
-	NVAFX_STATUS_32_SERVER_NOT_REGISTERED = 9,
-	/** (32 bit SDK only) COM operation failed */
-	NVAFX_STATUS_32_COM_ERROR = 10,
+	/** Model is not loaded, it needs to be loaded for this operation */
+	NVAFX_STATUS_MODEL_NOT_LOADED = 9,
+	/** Selected model is incompatible */
+	NVAFX_STATUS_INCOMPATIBLE_MODEL = 10,
 	/** GPU supported. The SDK requires Turing and above GPU with Tensor cores */
 	NVAFX_STATUS_GPU_UNSUPPORTED = 11,
+	/** No supported GPU found on the system */
+	NVAFX_STATUS_NO_SUPPORTED_GPU_FOUND = 12,
+	/** Current GPU is not the one selected */
+	NVAFX_STATUS_WRONG_GPU = 13,
+	/** Cuda operation failure */
+	NVAFX_STATUS_CUDA_ERROR = 14,
+	/** Invalid operation performed **/
+	NVAFX_STATUS_INVALID_OPERATION = 15,
+	/** CUDA runtime is less than supported version*/
+	NVAFX_UNSUPPORTED_RUNTIME = 16,
+	/** (32 bit SDK only) COM server was not registered, please see user manual for details */
+	NVAFX_STATUS_32_SERVER_NOT_REGISTERED = 17,
+	/** (32 bit SDK only) COM operation failed */
+	NVAFX_STATUS_32_COM_ERROR = 18,
+	/** Cuda Context Failure Error */
+	NVAFX_STATUS_CUDA_CONTEXT_CREATION_FAILED = 19,
+	/** Dynamic Load Library Error */
+	NVAFX_STATUS_LIBRARY_ERROR = 20,
+	/** Dynamic Load Library out of memory error */
+	NVAFX_STATUS_OUT_OF_MEMORY = 21,
 } NvAFX_Status;
 
 #define NVAFX_TRUE 1
@@ -131,30 +151,18 @@ typedef const char *NvAFX_EffectSelector;
 typedef const char *NvAFX_ParameterSelector;
 typedef void *NvAFX_Handle;
 
-typedef NvAFX_Status NVAFX_API (*NvAFX_GetEffectList_t)(int *num_effects, NvAFX_EffectSelector *effects[]);
 typedef NvAFX_Status NVAFX_API (*NvAFX_CreateEffect_t)(NvAFX_EffectSelector code, NvAFX_Handle *effect);
-typedef NvAFX_Status NVAFX_API (*NvAFX_CreateChainedEffect_t)(NvAFX_EffectSelector code, NvAFX_Handle *effect);
 typedef NvAFX_Status NVAFX_API (*NvAFX_DestroyEffect_t)(NvAFX_Handle effect);
 typedef NvAFX_Status NVAFX_API (*NvAFX_SetU32_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
 						 unsigned int val);
-typedef NvAFX_Status NVAFX_API (*NvAFX_SetU32List_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
-						     unsigned int *val, unsigned int size);
 typedef NvAFX_Status NVAFX_API (*NvAFX_SetString_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
 						    const char *val);
-typedef NvAFX_Status NVAFX_API (*NvAFX_SetStringList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
-							const char **val, unsigned int size);
 typedef NvAFX_Status NVAFX_API (*NvAFX_SetFloat_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name, float val);
-typedef NvAFX_Status NVAFX_API (*NvAFX_SetFloatList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
-						       float *val, unsigned int size);
 typedef NvAFX_Status NVAFX_API (*NvAFX_GetU32_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
 						 unsigned int *val);
 typedef NvAFX_Status NVAFX_API (*NvAFX_GetString_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name, char *val,
 						    int max_length);
-typedef NvAFX_Status NVAFX_API (*NvAFX_GetStringList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
-							char **val, int *max_length, unsigned int size);
 typedef NvAFX_Status NVAFX_API (*NvAFX_GetFloat_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name, float *val);
-typedef NvAFX_Status NVAFX_API (*NvAFX_GetFloatList_t)(NvAFX_Handle effect, NvAFX_ParameterSelector param_name,
-						       float *val, unsigned int size);
 typedef NvAFX_Status NVAFX_API (*NvAFX_Load_t)(NvAFX_Handle effect);
 typedef NvAFX_Status NVAFX_API (*NvAFX_GetSupportedDevices_t)(NvAFX_Handle effect, int *num, int *devices);
 typedef NvAFX_Status NVAFX_API (*NvAFX_Run_t)(NvAFX_Handle effect, const float **input, float **output,
@@ -166,21 +174,14 @@ typedef NvAFX_Status NVAFX_API (*NvAFX_InitializeLogger_t)(LoggingSeverity level
 							   const char *filename, logging_cb_t cb, void *userdata);
 typedef NvAFX_Status NVAFX_API (*NvAFX_UninitializeLogger_t)();
 
-static NvAFX_GetEffectList_t NvAFX_GetEffectList = NULL;
 static NvAFX_CreateEffect_t NvAFX_CreateEffect = NULL;
-static NvAFX_CreateChainedEffect_t NvAFX_CreateChainedEffect = NULL;
 static NvAFX_DestroyEffect_t NvAFX_DestroyEffect = NULL;
 static NvAFX_SetU32_t NvAFX_SetU32 = NULL;
-static NvAFX_SetU32List_t NvAFX_SetU32List = NULL;
 static NvAFX_SetString_t NvAFX_SetString = NULL;
-static NvAFX_SetStringList_t NvAFX_SetStringList = NULL;
 static NvAFX_SetFloat_t NvAFX_SetFloat = NULL;
-static NvAFX_SetFloatList_t NvAFX_SetFloatList = NULL;
 static NvAFX_GetU32_t NvAFX_GetU32 = NULL;
 static NvAFX_GetString_t NvAFX_GetString = NULL;
-static NvAFX_GetStringList_t NvAFX_GetStringList = NULL;
 static NvAFX_GetFloat_t NvAFX_GetFloat = NULL;
-static NvAFX_GetFloatList_t NvAFX_GetFloatList = NULL;
 static NvAFX_Load_t NvAFX_Load = NULL;
 static NvAFX_GetSupportedDevices_t NvAFX_GetSupportedDevices = NULL;
 static NvAFX_Run_t NvAFX_Run = NULL;
@@ -189,23 +190,16 @@ static NvAFX_Reset_t NvAFX_Reset = NULL;
 static NvAFX_InitializeLogger_t NvAFX_InitializeLogger = NULL;
 static NvAFX_UninitializeLogger_t NvAFX_UninitializeLogger = NULL;
 
-void release_lib(void)
+static inline void release_afx_lib(void)
 {
-	NvAFX_GetEffectList = NULL;
 	NvAFX_CreateEffect = NULL;
-	NvAFX_CreateChainedEffect = NULL;
 	NvAFX_DestroyEffect = NULL;
 	NvAFX_SetU32 = NULL;
-	NvAFX_SetU32List = NULL;
 	NvAFX_SetString = NULL;
-	NvAFX_SetStringList = NULL;
 	NvAFX_SetFloat = NULL;
-	NvAFX_SetFloatList = NULL;
 	NvAFX_GetU32 = NULL;
 	NvAFX_GetString = NULL;
-	NvAFX_GetStringList = NULL;
 	NvAFX_GetFloat = NULL;
-	NvAFX_GetFloatList = NULL;
 	NvAFX_Load = NULL;
 	NvAFX_GetSupportedDevices = NULL;
 	NvAFX_Run = NULL;
@@ -213,9 +207,22 @@ void release_lib(void)
 	/* SDK >= 1.6.0 */
 	NvAFX_InitializeLogger = NULL;
 	NvAFX_UninitializeLogger = NULL;
+
 	if (nv_audiofx) {
 		FreeLibrary(nv_audiofx);
 		nv_audiofx = NULL;
+	}
+	if (nv_denoiserfx) {
+		FreeLibrary(nv_denoiserfx);
+		nv_denoiserfx = NULL;
+	}
+	if (nv_dereverbfx) {
+		FreeLibrary(nv_dereverbfx);
+		nv_dereverbfx = NULL;
+	}
+	if (nv_dereverbdenoiserfx) {
+		FreeLibrary(nv_dereverbdenoiserfx);
+		nv_dereverbdenoiserfx = NULL;
 	}
 }
 
@@ -223,6 +230,9 @@ static inline bool nvafx_get_sdk_path(char *buffer, const size_t len)
 {
 	DWORD ret = GetEnvironmentVariableA("NVAFX_SDK_DIR", buffer, (DWORD)len);
 
+	if (!ret || ret >= len - 1) {
+		ret = GetEnvironmentVariableA("AFX_SDK_DIR", buffer, (DWORD)len);
+	}
 	if (!ret || ret >= len - 1) {
 		char path[MAX_PATH];
 		if (!GetEnvironmentVariableA("ProgramFiles", path, MAX_PATH)) {
@@ -238,25 +248,6 @@ static inline bool nvafx_get_sdk_path(char *buffer, const size_t len)
 	}
 
 	return true;
-}
-
-static inline bool load_lib()
-{
-	char sdkPath[MAX_PATH];
-	char effectsPath[MAX_PATH];
-
-	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
-		return false;
-	}
-
-	if (_snprintf_s(effectsPath, _countof(effectsPath), _TRUNCATE, "%s\\NVAudioEffects.dll", sdkPath) == -1) {
-		return false;
-	}
-
-	nv_audiofx =
-		LoadLibraryExA(effectsPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-
-	return !!nv_audiofx;
 }
 
 static unsigned int get_lib_version(void)
@@ -285,6 +276,44 @@ static unsigned int get_lib_version(void)
 		version = nto_ver.major << 24 | nto_ver.minor << 16 | nto_ver.build << 8 | nto_ver.revis << 0;
 
 	return version;
+}
+
+static inline bool load_afx_module(HMODULE *module, const char *sdk_path, const char *filename)
+{
+	char path[MAX_PATH];
+
+	if (*module) {
+		return true;
+	}
+
+	if (_snprintf_s(path, _countof(path), _TRUNCATE, "%s\\%s", sdk_path, filename) < 0) {
+		return false;
+	}
+
+	*module = LoadLibraryExA(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	return *module != NULL;
+}
+
+static inline bool load_lib(unsigned int version)
+{
+	char sdk_path[MAX_PATH];
+
+	if (!nvafx_get_sdk_path(sdk_path, _countof(sdk_path)))
+		return false;
+
+	if (!load_afx_module(&nv_audiofx, sdk_path, "NVAudioEffects.dll"))
+		return false;
+
+	if (version < MIN_ARM_AFX_SDK_VERSION)
+		return true;
+
+	if (!load_afx_module(&nv_denoiserfx, sdk_path, "nvafxdenoiser.dll") ||
+	    !load_afx_module(&nv_dereverbfx, sdk_path, "nvafxdereverb.dll") ||
+	    !load_afx_module(&nv_dereverbdenoiserfx, sdk_path, "nvafxdereverbdenoiser.dll")) {
+		return false;
+	}
+
+	return true;
 }
 
 #endif

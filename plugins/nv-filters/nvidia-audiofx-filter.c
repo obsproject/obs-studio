@@ -49,8 +49,6 @@
 #define ssize_t intptr_t
 #endif
 
-bool nvafx_new_sdk = false;
-
 struct nvidia_audio_data {
 	obs_source_t *context;
 
@@ -116,8 +114,9 @@ struct nvidia_audio_data {
 	struct obs_audio_data output_audio;
 	DARRAY(float) output_data;
 
-	/* Optimization for Voice Audio Data (VAD) ; requires SDK >= 0.7.6 */
+	/* Optimization for Voice Audio Data (VAD) ; requires SDK >= 1.6.2 */
 	bool vad;
+	unsigned int sdk_version;
 };
 
 static const char *nvidia_audio_name(void *unused)
@@ -136,7 +135,7 @@ static void nvidia_audio_destroy(void *data)
 	if (ng->nvidia_sdk_dir_found)
 		pthread_mutex_lock(&ng->nvafx_mutex);
 
-	if (nvafx_new_sdk)
+	if (ng->sdk_version >= MIN_AFX_LOGGER_VERSION)
 		NvAFX_UninitializeLogger();
 
 	for (size_t i = 0; i < ng->channels; i++) {
@@ -180,32 +179,6 @@ bool nvidia_afx_loaded = false;
 #pragma warning(push)
 #pragma warning(disable : 4706)
 #endif
-void release_afxlib(void)
-{
-	NvAFX_GetEffectList = NULL;
-	NvAFX_CreateEffect = NULL;
-	NvAFX_CreateChainedEffect = NULL;
-	NvAFX_DestroyEffect = NULL;
-	NvAFX_SetU32 = NULL;
-	NvAFX_SetU32List = NULL;
-	NvAFX_SetString = NULL;
-	NvAFX_SetStringList = NULL;
-	NvAFX_SetFloat = NULL;
-	NvAFX_SetFloatList = NULL;
-	NvAFX_GetU32 = NULL;
-	NvAFX_GetString = NULL;
-	NvAFX_GetStringList = NULL;
-	NvAFX_GetFloat = NULL;
-	NvAFX_GetFloatList = NULL;
-	NvAFX_Load = NULL;
-	NvAFX_GetSupportedDevices = NULL;
-	NvAFX_Run = NULL;
-	NvAFX_Reset = NULL;
-	if (nv_audiofx) {
-		FreeLibrary(nv_audiofx);
-		nv_audiofx = NULL;
-	}
-}
 
 bool load_nvidia_afx(void)
 {
@@ -224,9 +197,10 @@ bool load_nvidia_afx(void)
 			     (MIN_VFX_SDK_VERSION >> 16) & 0x00ff, (MIN_VFX_SDK_VERSION >> 8) & 0x0000ff);
 		}
 	}
-	if (!load_lib()) {
+	if (!load_lib(version)) {
 		blog(LOG_INFO,
 		     "[NVIDIA Audio Effects:] NVIDIA denoiser disabled, redistributable not found or could not be loaded.");
+		release_afx_lib();
 		return false;
 	}
 
@@ -239,47 +213,24 @@ bool load_nvidia_afx(void)
 		goto unload_everything;                                                                        \
 	}
 
-#define LOAD_SYM_FROM_LIB2(sym, lib, dll)                                                                      \
-	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                                     \
-		DWORD err = GetLastError();                                                                    \
-		printf("[NVIDIA Audio Effects:]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
-		nvafx_new_sdk = false;                                                                         \
-	} else {                                                                                               \
-		nvafx_new_sdk = true;                                                                          \
-	}
-
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_audiofx, "NVAudioEffects.dll")
-	LOAD_SYM(NvAFX_GetEffectList);
 	LOAD_SYM(NvAFX_CreateEffect);
-	LOAD_SYM(NvAFX_CreateChainedEffect);
 	LOAD_SYM(NvAFX_DestroyEffect);
 	LOAD_SYM(NvAFX_SetU32);
-	LOAD_SYM(NvAFX_SetU32List);
 	LOAD_SYM(NvAFX_SetString);
-	LOAD_SYM(NvAFX_SetStringList);
 	LOAD_SYM(NvAFX_SetFloat);
-	LOAD_SYM(NvAFX_SetFloatList);
 	LOAD_SYM(NvAFX_GetU32);
 	LOAD_SYM(NvAFX_GetString);
-	LOAD_SYM(NvAFX_GetStringList);
 	LOAD_SYM(NvAFX_GetFloat);
-	LOAD_SYM(NvAFX_GetFloatList);
 	LOAD_SYM(NvAFX_Load);
 	LOAD_SYM(NvAFX_GetSupportedDevices);
 	LOAD_SYM(NvAFX_Run);
 	LOAD_SYM(NvAFX_Reset);
-#undef LOAD_SYM
-#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_audiofx, "NVAudioEffects.dll")
 	LOAD_SYM(NvAFX_InitializeLogger);
-	bool new_sdk = nvafx_new_sdk;
 	LOAD_SYM(NvAFX_UninitializeLogger);
-	if (!nvafx_new_sdk || !new_sdk) {
-		blog(LOG_INFO, "[NVIDIA AUDIO FX]: SDK loaded but old redistributable detected. Please upgrade.");
-		nvafx_new_sdk = false;
-	}
 #undef LOAD_SYM
-	NvAFX_Status err;
 
+	NvAFX_Status err;
 	NvAFX_Handle h = NULL;
 
 	err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER, &h);
@@ -303,7 +254,7 @@ bool load_nvidia_afx(void)
 	return true;
 
 unload_everything:
-	release_afxlib();
+	release_afx_lib();
 
 	return false;
 }
@@ -313,7 +264,7 @@ unload_everything:
 
 void unload_nvidia_afx(void)
 {
-	release_afxlib();
+	release_afx_lib();
 
 	if (nvidia_afx_initializer_mutex_initialized) {
 		pthread_mutex_destroy(&nvidia_afx_initializer_mutex);
@@ -352,8 +303,9 @@ static bool nvidia_audio_initialize_internal(void *data)
 			}
 
 			// Set VAD (Voice Audio Data)
-			if (nvafx_new_sdk) {
+			if (get_lib_version() >= MIN_AFX_LOGGER_VERSION && strcmp(ng->fx, NVAFX_EFFECT_DEREVERB) != 0) {
 				err = NvAFX_SetU32(ng->handle[i], NVAFX_PARAM_ENABLE_VAD, ng->vad);
+
 				if (err != NVAFX_STATUS_SUCCESS) {
 					do_log(LOG_ERROR, "NvAFX_SetU32(VAD: %i) failed, error %i", ng->vad, err);
 					goto failure;
@@ -415,7 +367,10 @@ static void *nvidia_audio_initialize(void *data)
 			do_log(LOG_ERROR, "The number of channels is not 1 in the sdk any more ==> update code");
 			goto failure;
 		}
-		NvAFX_Status err = NvAFX_GetU32(ng->handle[0], NVAFX_PARAM_NUM_INPUT_SAMPLES_PER_FRAME,
+		bool updated_string = ng->sdk_version >= MIN_ARM_AFX_SDK_VERSION;
+		NvAFX_Status err = NvAFX_GetU32(ng->handle[0],
+						updated_string ? NVAFX_PARAM_NUM_SAMPLES_PER_INPUT_FRAME
+							       : NVAFX_PARAM_NUM_INPUT_SAMPLES_PER_FRAME,
 						&ng->num_samples_per_frame);
 		if (err != NVAFX_STATUS_SUCCESS) {
 			do_log(LOG_ERROR, "NvAFX_GetU32() failed to get the number of samples per frame, error %i",
@@ -529,7 +484,7 @@ static void nvidia_audio_update(void *data, obs_data_t *s)
 			pthread_mutex_unlock(&ng->nvafx_mutex);
 		}
 		/* updating for VAD toggled on or off */
-		if (nvafx_new_sdk) {
+		if (ng->sdk_version >= MIN_AFX_LOGGER_VERSION && strcmp(ng->fx, NVAFX_EFFECT_DEREVERB) != 0) {
 			if (vad != ng->vad && (strcmp(ng->fx, method) == 0)) {
 				NvAFX_Status err;
 				ng->vad = vad;
@@ -599,7 +554,7 @@ static void *nvidia_audio_create(obs_data_t *settings, obs_source_t *filter)
 		ng->nvafx_initialized = false;
 		ng->nvafx_loading = false;
 		ng->fx = NULL;
-
+		ng->sdk_version = get_lib_version();
 		pthread_mutex_init(&ng->nvafx_mutex, NULL);
 
 		info("NVAFX SDK redist path was found here %s", sdk_path);
@@ -656,7 +611,7 @@ static void *nvidia_audio_create(obs_data_t *settings, obs_source_t *filter)
 	nvidia_audio_update(ng, settings);
 
 	/* Setup NVIDIA logger */
-	if (nvafx_new_sdk) {
+	if (ng->sdk_version >= MIN_AFX_LOGGER_VERSION) {
 		NvAFX_Status err = NvAFX_InitializeLogger(NVAFX_LOG_LEVEL_ERROR, LOG_TARGET_CALLBACK, NULL,
 							  &nvafx_logger_callback, ng);
 		if (err != NVAFX_STATUS_SUCCESS) {
@@ -853,8 +808,21 @@ static void nvidia_audio_defaults(obs_data_t *s)
 {
 	obs_data_set_default_double(s, S_NVAFX_INTENSITY, 1.0);
 	obs_data_set_default_string(s, S_METHOD, S_METHOD_NVAFX_DENOISER);
-	if (nvafx_new_sdk)
+	if (get_lib_version() >= MIN_AFX_LOGGER_VERSION)
 		obs_data_set_default_bool(s, S_NVAFX_VAD, 1);
+}
+
+static bool nvidia_audio_method_modified(void *data, obs_properties_t *props, obs_property_t *property,
+					 obs_data_t *settings)
+{
+	const struct nvidia_audio_data *ng = data;
+	const char *method = obs_data_get_string(settings, S_METHOD);
+
+	bool visible = ng->sdk_version >= MIN_AFX_LOGGER_VERSION && (strcmp(method, S_METHOD_NVAFX_DEREVERB) != 0);
+	obs_property_set_visible(obs_properties_get(props, S_NVAFX_VAD), visible);
+
+	UNUSED_PARAMETER(property);
+	return true;
 }
 
 static obs_properties_t *nvidia_audio_properties(void *data)
@@ -870,9 +838,8 @@ static obs_properties_t *nvidia_audio_properties(void *data)
 					     S_METHOD_NVAFX_DEREVERB_DENOISER);
 		obs_property_t *slider = obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY,
 									 0.0f, 1.0f, 0.01f);
-		obs_property_t *vad = obs_properties_add_bool(ppts, S_NVAFX_VAD, TEXT_NVAFX_VAD);
-		if (!nvafx_new_sdk)
-			obs_property_set_visible(vad, 0);
+		obs_properties_add_bool(ppts, S_NVAFX_VAD, TEXT_NVAFX_VAD);
+		obs_property_set_modified_callback2(method, nvidia_audio_method_modified, ng);
 
 		unsigned int version = get_lib_version();
 		obs_property_t *warning = obs_properties_add_text(ppts, "deprecation", NULL, OBS_TEXT_INFO);
