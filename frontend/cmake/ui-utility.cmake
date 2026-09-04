@@ -25,6 +25,8 @@ target_sources(
     utility/MissingFilesPathItemDelegate.hpp
     utility/MultitrackVideoError.cpp
     utility/MultitrackVideoError.hpp
+    utility/OBSInitException.cpp
+    utility/OBSInitException.hpp
     utility/MultitrackVideoOutput.cpp
     utility/MultitrackVideoOutput.hpp
     utility/NativeEventFilter.hpp
