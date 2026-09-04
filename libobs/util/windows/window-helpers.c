@@ -573,3 +573,80 @@ HWND ms_find_window_top_level(enum window_search_mode mode, enum window_priority
 	EnumWindows(enum_windows_proc, (LPARAM)&data);
 	return data.best_window;
 }
+
+struct pid_enum_data {
+	enum window_search_mode mode;
+	DWORD pid;
+	HWND result;
+};
+
+static BOOL CALLBACK enum_windows_by_pid_proc(HWND window, LPARAM lParam)
+{
+	struct pid_enum_data *data = (struct pid_enum_data *)lParam;
+
+	if (!check_window_valid(window, data->mode))
+		return TRUE;
+
+	if (IsWindowCloaked(window))
+		return TRUE;
+
+	DWORD wpid = 0;
+	GetWindowThreadProcessId(window, &wpid);
+	if (wpid == data->pid) {
+		data->result = window;
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static BOOL CALLBACK enum_pid_list_proc(HWND window, LPARAM lParam)
+{
+	obs_property_t *p = (obs_property_t *)lParam;
+
+	if (!check_window_valid(window, EXCLUDE_MINIMIZED))
+		return TRUE;
+
+	struct dstr exe = {0};
+	if (!ms_get_window_exe(&exe, window))
+		return TRUE;
+
+	if (is_microsoft_internal_window_exe(exe.array)) {
+		dstr_free(&exe);
+		return TRUE;
+	}
+
+	DWORD pid = 0;
+	GetWindowThreadProcessId(window, &pid);
+
+	struct dstr title = {0};
+	struct dstr label = {0};
+	ms_get_window_title(&title, window);
+	dstr_printf(&label, "[%lu] %s - %s", (unsigned long)pid, exe.array, title.array ? title.array : "");
+	obs_property_list_add_int(p, label.array, (long long)pid);
+
+	dstr_free(&label);
+	dstr_free(&title);
+	dstr_free(&exe);
+	return TRUE;
+}
+
+void ms_fill_pid_window_list(obs_property_t *p, const char *placeholder)
+{
+	obs_property_list_clear(p);
+
+	obs_property_list_add_int(p, placeholder, 0);
+	obs_property_list_item_disable(p, 0, true);
+
+	EnumWindows(enum_pid_list_proc, (LPARAM)p);
+}
+
+HWND ms_find_window_by_pid(DWORD pid, enum window_search_mode mode)
+{
+	struct pid_enum_data data;
+	data.mode = mode;
+	data.pid = pid;
+	data.result = NULL;
+	EnumWindows(enum_windows_by_pid_proc, (LPARAM)&data);
+	return data.result;
+}
