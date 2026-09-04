@@ -81,7 +81,7 @@ extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
-static constexpr double kDefaultSnapDistance = 5.0;
+constexpr double kDefaultSnapDistance = 5.0;
 
 namespace {
 
