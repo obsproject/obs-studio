@@ -142,9 +142,9 @@ void obs_view_render(obs_view_t *view)
 
 video_t *obs_view_add(obs_view_t *view)
 {
-	if (!obs->data.main_canvas->mix)
+	if (!obs->data.main_canvas->video_mix)
 		return NULL;
-	return obs_view_add2(view, &obs->data.main_canvas->mix->ovi);
+	return obs_view_add2(view, &obs->data.main_canvas->video_mix->ovi);
 }
 
 video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi)
