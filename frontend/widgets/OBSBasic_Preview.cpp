@@ -245,24 +245,19 @@ void OBSBasic::on_preview_customContextMenuRequested()
 
 void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 {
-	if (previewSourceMenu) {
-		previewSourceMenu->close();
-	}
-
-	QMenu popup(this);
-	delete previewProjectorMain;
-
-	QAction *action = popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this, &OBSBasic::TogglePreview);
+	disabledPreviewSourceMenu = new OBSMenu(this, true);
+	QAction *action = disabledPreviewSourceMenu->addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this,
+							       &OBSBasic::TogglePreview);
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
 
-	previewProjectorMain = new QMenu(QTStr("Projector.Open.Preview"));
+	previewProjectorMain = new OBSMenu(QTStr("Projector.Open.Preview"), disabledPreviewSourceMenu, false);
+
 	AddProjectorMenuMonitors(previewProjectorMain, this, &OBSBasic::OpenPreviewProjector);
 	previewProjectorMain->addSeparator();
 	previewProjectorMain->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenPreviewWindow);
-
-	popup.addMenu(previewProjectorMain);
-	popup.exec(QCursor::pos());
+	disabledPreviewSourceMenu->addMenu(previewProjectorMain);
+	disabledPreviewSourceMenu->popupMenu();
 }
 
 void OBSBasic::EnablePreviewDisplay(bool enable)
