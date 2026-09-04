@@ -2,6 +2,7 @@
 #include "ui_media-controls.h"
 
 #include <OBSApp.hpp>
+#include <utility/AppTooltip.hpp>
 
 #include <QToolTip>
 
@@ -80,6 +81,8 @@ MediaControls::MediaControls(QWidget *parent) : QWidget(parent), ui(new Ui::Medi
 	connect(playPause, &QAction::triggered, this, &MediaControls::on_playPauseButton_clicked);
 	playPause->setShortcut({Qt::Key_Space});
 	addAction(playPause);
+
+	AppTooltip::useAppTooltip(this);
 }
 
 MediaControls::~MediaControls() {}
@@ -156,7 +159,10 @@ void MediaControls::AbsoluteSliderReleased()
 void MediaControls::AbsoluteSliderHovered(int val)
 {
 	float seconds = ((float)GetSliderTime(val) / 1000.0f);
-	QToolTip::showText(QCursor::pos(), FormatSeconds((int)seconds), this);
+
+	int sliderTop = mapToGlobal(ui->slider->geometry().topLeft()).y();
+	QPoint tooltipPosition = QPoint(QCursor::pos().x(), sliderTop);
+	AppTooltip::showTooltip(ui->slider, tooltipPosition, FormatSeconds((int)seconds), 200);
 }
 
 void MediaControls::AbsoluteSliderMoved(int val)
