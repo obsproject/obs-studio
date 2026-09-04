@@ -43,10 +43,7 @@ public:
 
 	OBSInitErrorCode code() const { return code_; }
 
-	const char *what() const noexcept override
-	{
-		return detail_.empty() ? codeName(code_) : detail_.c_str();
-	}
+	const char *what() const noexcept override { return detail_.empty() ? codeName(code_) : detail_.c_str(); }
 
 	QString localizedMessage() const;
 

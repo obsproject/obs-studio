@@ -1082,12 +1082,10 @@ void OBSApp::AppInit()
 	QAccessible::installFactory(alignmentSelectorFactory);
 
 	if (!MakeUserDirs()) {
-		throw OBSInitException(OBSInitErrorCode::UserDirs,
-				       "Failed to create required user directories");
+		throw OBSInitException(OBSInitErrorCode::UserDirs, "Failed to create required user directories");
 	}
 	if (!InitGlobalConfig()) {
-		throw OBSInitException(OBSInitErrorCode::GlobalConfig,
-				       "Failed to initialize global config");
+		throw OBSInitException(OBSInitErrorCode::GlobalConfig, "Failed to initialize global config");
 	}
 	if (!InitLocale()) {
 		throw OBSInitException(OBSInitErrorCode::Locale, "Failed to load locale");
@@ -1135,8 +1133,7 @@ void OBSApp::AppInit()
 	move_basic_to_scene_collections();
 
 	if (!MakeUserProfileDirs()) {
-		throw OBSInitException(OBSInitErrorCode::ProfileDirs,
-				       "Failed to create profile directories");
+		throw OBSInitException(OBSInitErrorCode::ProfileDirs, "Failed to create profile directories");
 	}
 }
 
@@ -1691,14 +1688,12 @@ vector<pair<string, string>> GetLocaleNames()
 {
 	string path;
 	if (!GetDataFilePath("locale.ini", path)) {
-		throw OBSInitException(OBSInitErrorCode::LocaleIniPath,
-				       "Could not find locale.ini path");
+		throw OBSInitException(OBSInitErrorCode::LocaleIniPath, "Could not find locale.ini path");
 	}
 
 	ConfigFile ini;
 	if (ini.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0) {
-		throw OBSInitException(OBSInitErrorCode::LocaleIniOpen,
-				       "Could not open locale.ini");
+		throw OBSInitException(OBSInitErrorCode::LocaleIniOpen, "Could not open locale.ini");
 	}
 
 	size_t sections = config_num_sections(ini);
