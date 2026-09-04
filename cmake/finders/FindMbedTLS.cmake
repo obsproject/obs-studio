@@ -114,8 +114,7 @@ elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/build_info.h")
     REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
   )
   string(
-    REGEX REPLACE
-    ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
+    REGEX REPLACE ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
     "\\1"
     MbedTLS_VERSION
     "${_VERSION_STRING}"
@@ -127,22 +126,21 @@ elseif(EXISTS "${MbedTLS_INCLUDE_DIR}/mbedtls/version.h")
     REGEX "#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+.+"
   )
   string(
-    REGEX REPLACE
-    ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
+    REGEX REPLACE ".*#define[ \t]+MBEDTLS_VERSION_STRING[ \t]+\"(.+)\".*"
     "\\1"
     MbedTLS_VERSION
     "${_VERSION_STRING}"
   )
 else()
   if(NOT MbedTLS_FIND_QUIETLY)
-    message(AUTHOR_WARNING "Failed to find MbedTLS version.")
+    message(WARNING "Failed to find MbedTLS version.")
   endif()
   set(MbedTLS_VERSION 0.0.0)
 endif()
 
 if(MbedTLS_VERSION VERSION_GREATER_EQUAL 3.6.0)
   message(
-    DEPRECATION
+    NOTICE
     "Use of the custom CMake find module for MbedTLS versions >= 3.6.0 is not supported - build errors might occur!"
   )
 endif()
