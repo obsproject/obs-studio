@@ -548,71 +548,63 @@ void OBSBasic::EditSceneName()
 
 void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
-	if (previewSourceMenu) {
-		previewSourceMenu->close();
-	}
-
 	QListWidgetItem *item = ui->scenes->itemAt(pos);
+	scenesMenu = new OBSMenu(this, true);
+	OBSMenu order(QTStr("Basic.MainMenu.Edit.Order"), scenesMenu, false);
 
-	QMenu popup(this);
-	QMenu order(QTStr("Basic.MainMenu.Edit.Order"), this);
-
-	popup.addAction(QTStr("AddScene") + "...", this, &OBSBasic::on_actionAddScene_triggered);
+	scenesMenu->addAction(QTStr("AddScene") + "...", this, &OBSBasic::on_actionAddScene_triggered);
 
 	if (item) {
 		QAction *copyFilters = new QAction(QTStr("Copy.Filters"), this);
+
 		copyFilters->setEnabled(false);
 		connect(copyFilters, &QAction::triggered, this, &OBSBasic::SceneCopyFilters);
+
 		QAction *pasteFilters = new QAction(QTStr("Paste.Filters"), this);
+
 		pasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource()));
 		connect(pasteFilters, &QAction::triggered, this, &OBSBasic::ScenePasteFilters);
-
-		popup.addSeparator();
-		popup.addAction(QTStr("Duplicate"), this, &OBSBasic::DuplicateSelectedScene);
-		popup.addAction(copyFilters);
-		popup.addAction(pasteFilters);
-		popup.addSeparator();
-		popup.addAction(renameScene);
-		popup.addAction(ui->actionRemoveScene);
-		popup.addSeparator();
-
+		scenesMenu->addSeparator();
+		scenesMenu->addAction(QTStr("Duplicate"), this, &OBSBasic::DuplicateSelectedScene);
+		scenesMenu->addAction(copyFilters);
+		scenesMenu->addAction(pasteFilters);
+		scenesMenu->addSeparator();
+		scenesMenu->addAction(renameScene);
+		scenesMenu->addAction(ui->actionRemoveScene);
+		scenesMenu->addSeparator();
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"), this, &OBSBasic::on_actionSceneUp_triggered);
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"), this,
 				&OBSBasic::on_actionSceneDown_triggered);
 		order.addSeparator();
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"), this, &OBSBasic::MoveSceneToTop);
 		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"), this, &OBSBasic::MoveSceneToBottom);
-		popup.addMenu(&order);
+		scenesMenu->addMenu(&order);
+		scenesMenu->addSeparator();
 
-		popup.addSeparator();
+		sceneProjectorMenu = new OBSMenu(QTStr("Projector.Open.Scene"), scenesMenu, false);
 
-		delete sceneProjectorMenu;
-		sceneProjectorMenu = new QMenu(QTStr("Projector.Open.Scene"));
 		AddProjectorMenuMonitors(sceneProjectorMenu, this, &OBSBasic::OpenSceneProjector);
 		sceneProjectorMenu->addSeparator();
 		sceneProjectorMenu->addAction(QTStr("Projector.Window"), this, &OBSBasic::OpenSceneWindow);
+		scenesMenu->addMenu(sceneProjectorMenu);
+		scenesMenu->addSeparator();
+		scenesMenu->addAction(QTStr("Screenshot.Scene"), this, &OBSBasic::ScreenshotScene);
+		scenesMenu->addSeparator();
+		scenesMenu->addAction(QTStr("Filters"), this, &OBSBasic::OpenSceneFilters);
+		scenesMenu->addSeparator();
 
-		popup.addMenu(sceneProjectorMenu);
-		popup.addSeparator();
+		perSceneTransitionMenu = CreatePerSceneTransitionMenu(scenesMenu);
 
-		popup.addAction(QTStr("Screenshot.Scene"), this, &OBSBasic::ScreenshotScene);
-		popup.addSeparator();
-		popup.addAction(QTStr("Filters"), this, &OBSBasic::OpenSceneFilters);
-
-		popup.addSeparator();
-
-		delete perSceneTransitionMenu;
-		perSceneTransitionMenu = CreatePerSceneTransitionMenu();
-		popup.addMenu(perSceneTransitionMenu);
+		scenesMenu->addMenu(perSceneTransitionMenu);
 
 		/* ---------------------- */
 
-		QAction *multiviewAction = popup.addAction(QTStr("ShowInMultiview"));
-
+		QAction *multiviewAction = scenesMenu->addAction(QTStr("ShowInMultiview"));
 		OBSSource source = GetCurrentSceneSource();
 		OBSDataAutoRelease data = obs_source_get_private_settings(source);
 
 		obs_data_set_default_bool(data, "show_in_multiview", true);
+
 		bool show = obs_data_get_bool(data, "show_in_multiview");
 
 		multiviewAction->setCheckable(true);
@@ -625,19 +617,17 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		};
 
 		connect(multiviewAction, &QAction::triggered, multiviewAction, std::bind(showInMultiview, data.Get()));
-
 		copyFilters->setEnabled(obs_source_filter_count(source) > 0);
 	}
 
-	popup.addSeparator();
+	scenesMenu->addSeparator();
 
 	bool grid = ui->scenes->GetGridMode();
-
 	QAction *gridAction = new QAction(grid ? QTStr("Basic.Main.ListMode") : QTStr("Basic.Main.GridMode"), this);
-	connect(gridAction, &QAction::triggered, this, &OBSBasic::GridActionClicked);
-	popup.addAction(gridAction);
 
-	popup.exec(QCursor::pos());
+	connect(gridAction, &QAction::triggered, this, &OBSBasic::GridActionClicked);
+	scenesMenu->addAction(gridAction);
+	scenesMenu->popupMenu();
 }
 
 void OBSBasic::on_actionSceneListMode_triggered()

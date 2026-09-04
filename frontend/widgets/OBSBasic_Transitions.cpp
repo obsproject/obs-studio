@@ -836,19 +836,18 @@ static inline void ResetQuickTransitionText(QuickTransition *qt)
 	qt->button->setText(MakeQuickTransitionText(qt));
 }
 
-QMenu *OBSBasic::CreatePerSceneTransitionMenu()
+OBSMenu *OBSBasic::CreatePerSceneTransitionMenu(OBSMenu *parentMenu)
 {
 	OBSSource scene = GetCurrentSceneSource();
-	QMenu *menu = new QMenu(QTStr("TransitionOverride"));
-
+	OBSMenu *menu = new OBSMenu(QTStr("TransitionOverride"), parentMenu, false);
 	OBSDataAutoRelease data = obs_source_get_private_settings(scene);
 
 	obs_data_set_default_int(data, "transition_duration", 300);
 
 	const char *curTransition = obs_data_get_string(data, "transition");
 	int curDuration = (int)obs_data_get_int(data, "transition_duration");
-
 	QSpinBox *duration = new QSpinBox(menu);
+
 	duration->setMinimum(50);
 	duration->setSuffix(" ms");
 	duration->setMaximum(20000);
@@ -908,23 +907,25 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 		}
 
 		action = menu->addAction(QT_UTF8(name));
+
 		action->setProperty("transition_uuid", QString::fromStdString(uuid));
 		action->setCheckable(true);
 		action->setChecked(match);
-
 		connect(action, &QAction::triggered, this, std::bind(setTransition, action));
 	};
 
 	addAction();
+
 	for (const auto &[uuid, transition] : transitions) {
 		addAction(uuid);
 	}
 
 	QWidgetAction *durationAction = new QWidgetAction(menu);
-	durationAction->setDefaultWidget(duration);
 
+	durationAction->setDefaultWidget(duration);
 	menu->addSeparator();
 	menu->addAction(durationAction);
+
 	return menu;
 }
 
