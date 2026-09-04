@@ -90,17 +90,19 @@ static inline bool gl_error(const char *func, const char *str)
 	return false;
 }
 
-static void gl_free(void)
+static void gl_free(bool gl_valid)
 {
 	capture_free();
 
 	if (data.using_shtex) {
-		if (data.gl_dxobj)
-			obsglDXUnregisterObjectNV(data.gl_device, data.gl_dxobj);
-		if (data.gl_device)
-			obsglDXCloseDeviceNV(data.gl_device);
-		if (data.texture)
-			glDeleteTextures(1, &data.texture);
+		if (gl_valid) {
+			if (data.gl_dxobj)
+				obsglDXUnregisterObjectNV(data.gl_device, data.gl_dxobj);
+			if (data.gl_device)
+				obsglDXCloseDeviceNV(data.gl_device);
+			if (data.texture)
+				glDeleteTextures(1, &data.texture);
+		}
 		if (data.d3d11_tex)
 			ID3D11Resource_Release(data.d3d11_tex);
 		if (data.d3d11_context)
@@ -111,7 +113,7 @@ static void gl_free(void)
 			IDXGISwapChain_Release(data.dxgi_swap);
 		if (data.hwnd)
 			DestroyWindow(data.hwnd);
-	} else {
+	} else if (gl_valid) {
 		for (size_t i = 0; i < NUM_BUFFERS; i++) {
 			if (data.pbos[i]) {
 				if (data.texture_mapped[i]) {
@@ -128,10 +130,12 @@ static void gl_free(void)
 		}
 	}
 
-	if (data.fbo)
-		glDeleteFramebuffers(1, &data.fbo);
+	if (gl_valid) {
+		if (data.fbo)
+			glDeleteFramebuffers(1, &data.fbo);
 
-	gl_error("gl_free", "GL error occurred on free");
+		gl_error("gl_free", "GL error occurred on free");
+	}
 
 	memset(&data, 0, sizeof(data));
 
@@ -536,7 +540,7 @@ static int gl_init(HDC hdc)
 	}
 
 	if (!success)
-		gl_free();
+		gl_free(true);
 	else
 		ret = INIT_SUCCESS;
 
@@ -706,7 +710,7 @@ static void gl_capture(HDC hdc)
 	glGetError();
 
 	if (capture_should_stop()) {
-		gl_free();
+		gl_free(true);
 	}
 	if (capture_should_init()) {
 		if (gl_init(hdc) == INIT_SHTEX_FAILED) {
@@ -722,7 +726,7 @@ static void gl_capture(HDC hdc)
 		get_window_size(hdc, &new_cx, &new_cy);
 		if (new_cx != data.cx || new_cy != data.cy) {
 			if (new_cx != 0 && new_cy != 0)
-				gl_free();
+				gl_free(true);
 			return;
 		}
 
@@ -787,12 +791,7 @@ static BOOL WINAPI hook_wgl_swap_layer_buffers(HDC hdc, UINT planes)
 static BOOL WINAPI hook_wgl_delete_context(HGLRC hrc)
 {
 	if (capture_active() && functions_initialized) {
-		HDC last_hdc = obsglGetCurrentDC();
-		HGLRC last_hrc = obsglGetCurrentContext();
-
-		obsglMakeCurrent(data.hdc, hrc);
-		gl_free();
-		obsglMakeCurrent(last_hdc, last_hrc);
+		gl_free(false);
 	}
 
 	return RealWglDeleteContext(hrc);
