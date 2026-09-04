@@ -35,10 +35,10 @@ struct SnapGuide {
 	vec2 start;
 	vec2 end;
 
-	SnapGuide(float x1, float y1, float x2, float y2)
+	explicit SnapGuide(vec2 start, vec2 end)
 	{
-		start = {x1, y1};
-		end = {x2, y2};
+		this->start = start;
+		this->end = end;
 	}
 };
 
