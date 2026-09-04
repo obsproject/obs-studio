@@ -38,4 +38,6 @@ struct AudioDeviceInfo {
 };
 
 std::string GetDeviceName(IMMDevice *device);
+std::string GetWASAPIDefaultDeviceName(bool input);
 void GetWASAPIAudioDevices(std::vector<AudioDeviceInfo> &devices, bool input);
+int GetWASAPIDeviceInputChannels(const char *device_id);
