@@ -20,6 +20,7 @@
 #include "OBSBasic.hpp"
 #include "ColorSelect.hpp"
 #include "OBSProjector.hpp"
+#include "AudioMixer.hpp"
 
 #include <components/OBSContextMenu.hpp>
 #include <components/VolumeControl.hpp>
@@ -31,6 +32,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QWidgetAction>
+#include <QObject>
 
 #include <sstream>
 
@@ -576,7 +578,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		previewSourceMenu->close();
 	}
 
-	previewSourceMenu = new OBSContextMenu(this);
+	previewSourceMenu = new OBSContextMenu(this->windowHandle());
 	delete previewProjectorSource;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
@@ -768,7 +770,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		previewSourceMenu->addAction(ui->actionPasteDup);
 	}
 
-	previewSourceMenu->exec(mapFromGlobal(QCursor::pos()));
+	previewSourceMenu->popup(mapFromGlobal(QCursor::pos()));
 }
 
 void OBSBasic::actionOpenSourceFilters()

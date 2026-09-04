@@ -5,8 +5,10 @@
 class OBSContextMenu : public QMenu {
 	Q_OBJECT
 
+	QWindow* parentWindow;
+
 public:
-	OBSContextMenu(QWidget *parent);
+	OBSContextMenu(QWindow*);
 
 	void showEvent(QShowEvent *event) override;
 };
