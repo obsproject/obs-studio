@@ -22,7 +22,7 @@
 #include "OBSProjector.hpp"
 #include "AudioMixer.hpp"
 
-#include <components/OBSContextMenu.hpp>
+#include <components/OBSMenu.hpp>
 #include <components/VolumeControl.hpp>
 #include <dialogs/NameDialog.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
@@ -578,7 +578,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		previewSourceMenu->close();
 	}
 
-	previewSourceMenu = new OBSContextMenu(this->windowHandle());
+	previewSourceMenu = new OBSMenu(this);
 	delete previewProjectorSource;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
@@ -770,7 +770,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		previewSourceMenu->addAction(ui->actionPasteDup);
 	}
 
-	previewSourceMenu->popup(mapFromGlobal(QCursor::pos()));
+	previewSourceMenu->popupMenu();
 }
 
 void OBSBasic::actionOpenSourceFilters()

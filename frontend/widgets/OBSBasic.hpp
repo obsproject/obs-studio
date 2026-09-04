@@ -58,7 +58,7 @@ class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
 class VolumeControl;
-class OBSContextMenu;
+class OBSMenu;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
 #endif
@@ -950,7 +950,7 @@ private:
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> previewProjectorSource;
 	QPointer<QMenu> previewProjectorMain;
-	QPointer<OBSContextMenu> previewSourceMenu;
+	QPointer<OBSMenu> previewSourceMenu;
 
 	void updateMultiviewProjectorMenu();
 	void ClearProjectors();

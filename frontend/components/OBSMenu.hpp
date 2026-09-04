@@ -2,13 +2,15 @@
 
 #include <QMenu>
 
-class OBSContextMenu : public QMenu {
+class OBSMenu : public QMenu {
 	Q_OBJECT
 
-	QWindow* parentWindow;
+	QWidget* parent;
 
 public:
-	OBSContextMenu(QWindow*);
+	OBSMenu(QWidget*);
 
 	void showEvent(QShowEvent *event) override;
+
+	void popupMenu();
 };

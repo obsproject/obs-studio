@@ -1,9 +1,10 @@
-#include "OBSContextMenu.hpp"
+#include "OBSMenu.hpp"
 
 #include <obs.hpp>
 
 #include <QT>
 #include <QWindow>
+#include <QCursor>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -12,14 +13,14 @@
 
 // This context menu will automatically delete itself on close.
 // No need to manually delete this.
-OBSContextMenu::OBSContextMenu(QWindow *window) : parentWindow(window)
+OBSMenu::OBSMenu(QWidget *parent) : parent(parent)
 {
 	setAttribute(Qt::WA_DeleteOnClose);
 }
 
-void OBSContextMenu::showEvent(QShowEvent *event)
+void OBSMenu::showEvent(QShowEvent *event)
 {
-	HWND parentWindowHandle = (HWND)parentWindow->winId();
+	HWND parentWindowHandle = (HWND)parent->winId();
 	DWORD currentDisplayAffinity;
 	HWND contextWindowHandle = (HWND)windowHandle()->winId();
 
@@ -38,4 +39,8 @@ void OBSContextMenu::showEvent(QShowEvent *event)
 			}
 		}
 	}
+}
+
+void OBSMenu::popupMenu() {
+	popup(mapFrom(parent, QCursor::pos()));
 }
