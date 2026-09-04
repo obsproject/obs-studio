@@ -50,6 +50,7 @@ struct ffmpeg_source {
 	bool restart_on_activate;
 	bool close_when_inactive;
 	bool seekable;
+	int playback_buffer;
 	bool is_stinger;
 	bool is_track_matte;
 	bool log_changes;
@@ -99,12 +100,14 @@ static bool is_local_file_modified(obs_properties_t *props, obs_property_t *prop
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
+	obs_property_t *playback_buffer = obs_properties_get(props, "playback_buffer");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_t *reconnect_delay_sec = obs_properties_get(props, "reconnect_delay_sec");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
+	obs_property_set_visible(playback_buffer, !enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
 	obs_property_set_visible(speed, enabled);
@@ -123,6 +126,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "linear_alpha", false);
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
+	obs_data_set_default_int(settings, "playback_buffer", 0);
 	obs_data_set_default_int(settings, "speed_percent", 100);
 	obs_data_set_default_bool(settings, "log_changes", true);
 }
@@ -179,6 +183,13 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	prop = obs_properties_add_int_slider(props, "buffering_mb", obs_module_text("BufferingMB"), 0, 16, 1);
 	obs_property_int_set_suffix(prop, " MB");
 
+	prop = obs_properties_add_list(props, "playback_buffer", obs_module_text("PlaybackBuffer"), OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(prop, obs_module_text("PlaybackBuffer.Buffered"), 0);
+	obs_property_list_add_int(prop, obs_module_text("PlaybackBuffer.Unbuffered"), 1);
+	obs_property_list_add_int(prop, obs_module_text("PlaybackBuffer.Decoupled"), 2);
+	obs_property_set_long_description(prop, obs_module_text("PlaybackBuffer.ToolTip"));
+
 	obs_properties_add_text(props, "input", obs_module_text("Input"), OBS_TEXT_DEFAULT);
 
 	obs_properties_add_text(props, "input_format", obs_module_text("InputFormat"), OBS_TEXT_DEFAULT);
@@ -230,11 +241,13 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input, const c
 		"\trestart_on_activate:     %s\n"
 		"\tclose_when_inactive:     %s\n"
 		"\tfull_decode:             %s\n"
+		"\tplayback_buffer:         %d\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)", input_format ? input_format : "(null)", s->speed_percent,
 		s->is_looping ? "yes" : "no", s->is_linear_alpha ? "yes" : "no", s->is_hw_decoding ? "yes" : "no",
 		s->is_clear_on_media_end ? "yes" : "no", s->restart_on_activate ? "yes" : "no",
-		s->close_when_inactive ? "yes" : "no", s->full_decode ? "yes" : "no", s->ffmpeg_options);
+		s->close_when_inactive ? "yes" : "no", s->full_decode ? "yes" : "no", s->playback_buffer,
+		s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -430,6 +443,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
 	range = obs_data_get_int(settings, "color_range");
+	int playback_buffer = (int)obs_data_get_int(settings, "playback_buffer");
 	speed_percent = (int)obs_data_get_int(settings, "speed_percent");
 	if (speed_percent < 1 || speed_percent > 200)
 		speed_percent = 100;
@@ -437,6 +451,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	/* Restart media source if these properties are changed */
 	if (s->is_hw_decoding != is_hw_decoding || s->range != range || s->speed_percent != speed_percent ||
+	    s->playback_buffer != playback_buffer ||
 	    (s->ffmpeg_options && strcmp(s->ffmpeg_options, ffmpeg_options) != 0))
 		should_restart_media = true;
 
@@ -464,6 +479,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	is_linear_alpha = obs_data_get_bool(settings, "linear_alpha");
 	s->is_linear_alpha = is_linear_alpha;
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
+	s->playback_buffer = playback_buffer;
 	s->speed_percent = speed_percent;
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
@@ -471,6 +487,11 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->is_stinger = is_stinger;
 	s->is_track_matte = is_track_matte;
 	s->log_changes = obs_data_get_bool(settings, "log_changes");
+
+	bool unbuffered = (s->playback_buffer == 1 || s->playback_buffer == 2);
+	bool decoupled = (s->playback_buffer == 2);
+	obs_source_set_async_unbuffered(s->source, unbuffered);
+	obs_source_set_async_decoupled(s->source, decoupled);
 
 	if (s->speed_percent < 1 || s->speed_percent > 200)
 		s->speed_percent = 100;
