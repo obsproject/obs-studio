@@ -1,0 +1,63 @@
+#pragma once
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+#include <memory>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <stdint.h>
+#include <string>
+#include <vector>
+
+#include <util/windows/ComPtr.hpp>
+
+namespace MF {
+enum class EncoderType { H264_SOFTWARE, H264_QSV, H264_NVENC, H264_VCE, H264_QCOM, HEVC_QCOM, AV1_QCOM };
+
+static const char *typeNames[] = {"Software", "Quicksync", "NVENC", "AMD VCE", "QCOM_H264", "QCOM_HEVC", "QCOM_AV1"};
+
+class EncoderDescriptor {
+public:
+	static std::vector<std::shared_ptr<EncoderDescriptor>> Enumerate(const char[]);
+
+public:
+	EncoderDescriptor(ComPtr<IMFActivate> activate_, const char *name_, const char *id_, GUID &guid_,
+			  const std::string &guidString_, bool isAsync_, bool isHardware_, EncoderType type_)
+		: activate(activate_),
+		  name(name_),
+		  id(id_),
+		  guid(guid_),
+		  guidString(guidString_),
+		  isAsync(isAsync_),
+		  isHardware(isHardware_),
+		  type(type_)
+	{
+	}
+
+	EncoderDescriptor(const EncoderDescriptor &) = delete;
+
+public:
+	const char *Name() const { return name; }
+	const char *Id() const { return id; }
+	ComPtr<IMFActivate> &Activator() { return activate; }
+	GUID &Guid() { return guid; }
+	std::string GuidString() const { return guidString; }
+	bool Async() const { return isAsync; }
+	bool Hardware() const { return isHardware; }
+	EncoderType Type() const { return type; }
+
+private:
+	ComPtr<IMFActivate> activate;
+	const char *name;
+	const char *id;
+	GUID guid;
+	std::string guidString;
+	bool isAsync;
+	bool isHardware;
+	EncoderType type;
+};
+}; // namespace MF
