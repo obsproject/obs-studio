@@ -950,7 +950,6 @@ private:
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> previewProjectorSource;
 	QPointer<QMenu> previewProjectorMain;
-	QPointer<OBSMenu> previewSourceMenu;
 	QPointer<OBSMenu> disabledPreviewSourceMenu;
 
 	void updateMultiviewProjectorMenu();
@@ -1165,6 +1164,7 @@ public slots:
 	 */
 private:
 	QPointer<QMenu> sourceProjector;
+	QPointer<OBSMenu> previewSourceMenu;
 	QPointer<QAction> renameSource;
 
 	void CreateFirstRunSources();
@@ -1259,7 +1259,8 @@ public:
 	 * -------------------------------------
 	 */
 private:
-	QPointer<QMenu> sceneProjectorMenu;
+	QPointer<OBSMenu> scenesMenu; 
+	QPointer<OBSMenu> sceneProjectorMenu;
 	QPointer<QAction> renameScene;
 	std::atomic<obs_scene_t *> currentScene = nullptr;
 	OBSWeakSource lastScene;
@@ -1494,7 +1495,7 @@ public:
 private:
 	std::vector<OBSDataAutoRelease> safeModeTransitions;
 	QPointer<QPushButton> transitionButton;
-	QPointer<QMenu> perSceneTransitionMenu;
+	QPointer<OBSMenu> perSceneTransitionMenu;
 
 	std::unordered_map<std::string, OBSSource> transitions;
 	// FIXME: Any code accessing this collection relies on order of insertion
@@ -1550,7 +1551,7 @@ private:
 	OBSSource GetOverrideTransition(OBSSource source);
 	int GetOverrideTransitionDuration(OBSSource source);
 
-	QMenu *CreatePerSceneTransitionMenu();
+	OBSMenu *CreatePerSceneTransitionMenu(OBSMenu *parentMenu);
 
 	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 
