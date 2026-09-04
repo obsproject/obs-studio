@@ -24,6 +24,9 @@
 
 const struct obs_source_info group_info;
 
+/* TODO: Set to the OBS version that first ships this migration. */
+#define SRGB_OFF_INITIAL_BLEND_MIGRATION_VERSION MAKE_SEMANTIC_VERSION(32, 2, 2)
+
 static void resize_group(obs_sceneitem_t *group, bool scene_resize);
 static void resize_scene(obs_scene_t *scene);
 static void signal_parent(obs_scene_t *parent, const char *name, calldata_t *params);
@@ -34,6 +37,14 @@ static inline bool item_texture_enabled(const struct obs_scene_item *item);
 static void init_hotkeys(obs_scene_t *scene, obs_sceneitem_t *item, const char *name);
 
 typedef DARRAY(struct obs_scene_item *) obs_scene_item_ptr_array_t;
+
+static inline enum obs_blending_method source_initial_blend_method(obs_source_t *source)
+{
+	if ((source->info.output_flags & OBS_SOURCE_INITIAL_BLEND_METHOD_SRGB_OFF) != 0)
+		return OBS_BLEND_METHOD_SRGB_OFF;
+
+	return OBS_BLEND_METHOD_DEFAULT;
+}
 
 /* NOTE: For proper mutex lock order (preventing mutual cross-locks), never
  * lock the graphics mutex inside either of the scene mutexes.
@@ -914,6 +925,9 @@ static inline void render_item(struct obs_scene_item *item)
 		item->item_render = gs_texrender_create(format, GS_ZS_NONE);
 	}
 
+	const bool linear_srgb = !item->item_render || (item->blend_method != OBS_BLEND_METHOD_SRGB_OFF);
+	const bool previous = gs_get_linear_srgb();
+
 	if (item->item_render) {
 		uint32_t width = obs_source_get_width(item->source);
 		uint32_t height = obs_source_get_height(item->source);
@@ -937,6 +951,7 @@ static inline void render_item(struct obs_scene_item *item)
 			gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
 			gs_matrix_translate3f(-(float)(item->crop.left + item->bounds_crop.left),
 					      -(float)(item->crop.top + item->bounds_crop.top), 0.0f);
+			gs_set_linear_srgb(linear_srgb);
 
 			if (item->user_visible && transition_active(item->show_transition)) {
 				const int cx = obs_source_get_width(item->source);
@@ -954,12 +969,12 @@ static inline void render_item(struct obs_scene_item *item)
 				obs_source_set_texcoords_centered(item->source, false);
 			}
 
+			gs_set_linear_srgb(previous);
 			gs_texrender_end(item->item_render);
 		}
 	}
 
-	const bool linear_srgb = !item->item_render || (item->blend_method != OBS_BLEND_METHOD_SRGB_OFF);
-	const bool previous = gs_set_linear_srgb(linear_srgb);
+	gs_set_linear_srgb(linear_srgb);
 	gs_matrix_push();
 	gs_matrix_mul(&item->draw_transform);
 	if (item->item_render) {
@@ -1233,6 +1248,12 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	if (blend_method_str) {
 		if (astrcmpi(blend_method_str, "srgb_off") == 0)
 			item->blend_method = OBS_BLEND_METHOD_SRGB_OFF;
+	}
+
+	if (obs_source_get_last_obs_version(source) < SRGB_OFF_INITIAL_BLEND_MIGRATION_VERSION) {
+		const enum obs_blending_method initial_blend_method = source_initial_blend_method(source);
+		if (initial_blend_method != OBS_BLEND_METHOD_DEFAULT && item->blend_method == OBS_BLEND_METHOD_DEFAULT)
+			item->blend_method = initial_blend_method;
 	}
 
 	blend_str = obs_data_get_string(item_data, "blend_type");
@@ -2296,6 +2317,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene, obs_source_t 
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 	item->is_scene = strcmp(source->info.id, scene_info.id) == 0;
 	item->private_settings = obs_data_create();
+	item->blend_method = source_initial_blend_method(source);
 	item->toggle_visibility = OBS_INVALID_HOTKEY_PAIR_ID;
 	item->absolute_coordinates = scene->absolute_coordinates;
 	os_atomic_set_long(&item->active_refs, 1);
