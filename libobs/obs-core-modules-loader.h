@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by FiniteSingularity <finitesingularityttv@gmail.com>
+    Copyright (C) 2026 by FiniteSingularity <finitesingularityttv@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,35 +17,6 @@
 
 #pragma once
 
-#include "ui_PluginManagerWindow.h"
-#include "PluginManager.hpp"
+#include <obs-internal.h>
 
-#include <QDialog>
-#include <QWidget>
-
-namespace OBS {
-
-class PluginManagerWindow : public QDialog {
-	Q_OBJECT
-	std::unique_ptr<Ui::PluginManagerWindow> ui;
-
-public:
-	enum class Page { Installed, Failure };
-
-	explicit PluginManagerWindow(std::vector<ModuleInfo> const &modules,
-				     std::vector<std::string> const &failedModules, QWidget *parent = nullptr);
-	inline std::vector<ModuleInfo> const result() { return modules_; }
-
-	void setPage(Page page);
-
-private:
-	std::vector<ModuleInfo> modules_;
-
-	void sectionSelectionChanged();
-	QPersistentModelIndex activeSectionIndex;
-	void setSection(QPersistentModelIndex index);
-
-	bool isEnabledPluginsChanged();
-};
-
-}; // namespace OBS
+extern void load_core_modules(obs_find_module_callback2_t callback, void *data);

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by FiniteSingularity <finitesingularityttv@gmail.com>
+    Copyright (C) 2026 by FiniteSingularity <finitesingularityttv@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,35 +17,16 @@
 
 #pragma once
 
-#include "ui_PluginManagerWindow.h"
-#include "PluginManager.hpp"
-
-#include <QDialog>
-#include <QWidget>
+#include <string_view>
 
 namespace OBS {
-
-class PluginManagerWindow : public QDialog {
-	Q_OBJECT
-	std::unique_ptr<Ui::PluginManagerWindow> ui;
-
-public:
-	enum class Page { Installed, Failure };
-
-	explicit PluginManagerWindow(std::vector<ModuleInfo> const &modules,
-				     std::vector<std::string> const &failedModules, QWidget *parent = nullptr);
-	inline std::vector<ModuleInfo> const result() { return modules_; }
-
-	void setPage(Page page);
-
-private:
-	std::vector<ModuleInfo> modules_;
-
-	void sectionSelectionChanged();
-	QPersistentModelIndex activeSectionIndex;
-	void setSection(QPersistentModelIndex index);
-
-	bool isEnabledPluginsChanged();
-};
-
-}; // namespace OBS
+    namespace Constants {
+        inline constexpr std::string_view kPlatformInstallPath{"@OBS_PLATFORM_INSTALL_PATH@"};
+        inline constexpr std::string_view kPlatformLibraryPath{"@OBS_PLATFORM_LIBRARY_PATH@"};
+        inline constexpr std::string_view kPlatformDataPath{"@OBS_PLATFORM_DATA_PATH@"};
+        inline constexpr std::string_view kPlatformPluginModulePath{"@OBS_PLATFORM_PLUGIN_MODULE_PATH@"};
+        inline constexpr std::string_view kPlatformPluginDataPath{"@OBS_PLATFORM_PLUGIN_DATA_PATH@"};
+        inline constexpr std::string_view kXDGConfigHomeVariable{"XDG_CONFIG_HOME"};
+        inline constexpr std::string_view kXDGDataHomeVariable{"XDG_DATA_HOME"};
+    }
+}

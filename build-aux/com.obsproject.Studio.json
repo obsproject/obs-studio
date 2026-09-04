@@ -24,7 +24,7 @@
             "directory": "plugins",
             "subdirectories": true,
             "add-ld-path": "lib",
-            "merge-dirs": "lib/obs-plugins;share/obs/obs-plugins",
+            "merge-dirs": "lib/obs-modules/plugins;share/obs/obs-modules/plugins;lib/obs-plugins;share/obs/obs-plugins",
             "no-autodownload": true,
             "autodelete": true
         },
@@ -131,6 +131,7 @@
             "builddir": true,
             "config-opts": [
                 "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                "-DENABLE_FLATPAK=ON",
                 "-DENABLE_WAYLAND=ON",
                 "-DENABLE_BROWSER=ON",
                 "-DCEF_ROOT_DIR=/app/cef",

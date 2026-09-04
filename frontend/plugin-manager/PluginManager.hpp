@@ -43,22 +43,41 @@ struct ModuleInfo {
 };
 
 class PluginManager {
+public:
+	using ModuleList = std::vector<std::string>;
+	enum class Mode { CoreOnly, Full };
+	enum class State { Failure, PartialFailure, Success };
+
 private:
+	Mode loadMode_{Mode::Full};
+	State loadState_{State::Failure};
+
 	std::vector<ModuleInfo> modules_ = {};
-	std::vector<std::string> disabledSources_ = {};
-	std::vector<std::string> disabledOutputs_ = {};
-	std::vector<std::string> disabledServices_ = {};
-	std::vector<std::string> disabledEncoders_ = {};
+	ModuleList failedModules_{};
+	ModuleList disabledSources_ = {};
+	ModuleList disabledOutputs_ = {};
+	ModuleList disabledServices_ = {};
+	ModuleList disabledEncoders_ = {};
 	std::filesystem::path getConfigFilePath_();
-	void loadModules_();
+	void loadModuleConfiguration_();
 	void saveModules_();
 	void disableModules_();
 	void addModuleTypes_();
 	void linkUnloadedModules_();
 
+	State loadPlugins(bool usePortableMode);
+	State loadLegacyPlugins(bool usePortableMode);
+
 public:
+	Mode pluginMode() { return loadMode_; }
+	void setPluginMode(Mode mode) { loadMode_ = mode; }
+
+	State loadState() { return loadState_; }
+
+	void disablePlugins();
 	void preLoad();
 	void postLoad();
+	void loadAllPlugins(bool usePortableMode);
 	void open();
 
 	friend void addModuleToPluginManagerImpl(void *param, obs_module_t *newModule);
@@ -67,6 +86,14 @@ public:
 void addModuleToPluginManagerImpl(void *param, obs_module_t *newModule);
 
 }; // namespace OBS
+
+bool operator&&(const OBS::PluginManager::State &lhs, const OBS::PluginManager::State &rhs);
+bool operator&&(const OBS::PluginManager::State &lhs, bool rhs);
+bool operator&&(bool lhs, const OBS::PluginManager::State &rhs);
+
+bool operator||(const OBS::PluginManager::State &lhs, const OBS::PluginManager::State &rhs);
+bool operator||(const OBS::PluginManager::State &lhs, bool rhs);
+bool operator||(bool lhs, const OBS::PluginManager::State &rhs);
 
 // Anonymous namespace function to add module to plugin manager
 // via libobs's module enumeration.

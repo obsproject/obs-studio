@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 option(ENABLE_VST "Enable building OBS with VST plugin" ON)
 
 if(NOT ENABLE_VST)
-  target_disable(obs-vst)
   return()
 endif()
 
