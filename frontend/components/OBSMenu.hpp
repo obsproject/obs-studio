@@ -9,9 +9,9 @@ class OBSMenu : public QMenu {
 	QWidget* parent;
 
 public:
-	OBSMenu(QWidget*, const bool&);
+	OBSMenu(QWidget *parent, const bool &deleteOnClose);
 
-	OBSMenu(const QString&, QWidget*, const bool&);
+	OBSMenu(const QString &title, QWidget *parent, const bool &deleteOnClose);
 
 	void showEvent(QShowEvent *event) override;
 

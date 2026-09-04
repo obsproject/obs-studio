@@ -672,6 +672,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 						OBSBasic *main = OBSBasic::Get();
 						emit main->mixerStatusChanged(obs_source_get_uuid(source));
 					});
+
 				actionHideMixer->setCheckable(true);
 				actionHideMixer->setChecked(isHidden);
 			}
