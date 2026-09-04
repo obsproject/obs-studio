@@ -454,6 +454,7 @@ extern "C"
         RTMP_LNK Link;
         int connect_time_ms;
         int last_error_code;
+        char last_error_description[256];
 
 #ifdef CRYPTO
         TLS_CTX RTMP_TLS_ctx;

@@ -3101,6 +3101,7 @@ static const AVal av_NetStream_Publish_Start = AVC("NetStream.Publish.Start");
 static const AVal av_NetStream_Publish_Rejected = AVC("NetStream.Publish.Rejected");
 static const AVal av_NetStream_Publish_Denied = AVC("NetStream.Publish.Denied");
 static const AVal av_NetStream_Publish_BadName = AVC("NetStream.Publish.BadName");
+static const AVal av_NetStream_Publish_Failed = AVC("NetStream.Publish.Failed");
 
 
 /* Returns 0 for OK/Failed/error, 1 for 'Stop or Complete' */
@@ -3353,13 +3354,18 @@ HandleInvoke(RTMP *r, const char *body, unsigned int nBodySize)
                 || AVMATCH(&code, &av_NetConnection_Connect_InvalidApp)
                 || AVMATCH(&code, &av_NetStream_Publish_Rejected)
                 || AVMATCH(&code, &av_NetStream_Publish_Denied)
-                || AVMATCH(&code, &av_NetStream_Publish_BadName))
+                || AVMATCH(&code, &av_NetStream_Publish_BadName)
+                || AVMATCH(&code, &av_NetStream_Publish_Failed))
         {
             r->m_stream_id = -1;
             RTMP_Close(r);
 
             if (description.av_len)
+            {
+                snprintf(r->last_error_description, sizeof(r->last_error_description),
+                         "%.*s", description.av_len, description.av_val);
                 RTMP_Log(RTMP_LOGERROR, "%s:\n%s (%s)", r->Link.tcUrl.av_val, code.av_val, description.av_val);
+            }
             else
                 RTMP_Log(RTMP_LOGERROR, "%s:\n%s", r->Link.tcUrl.av_val, code.av_val);
         }
