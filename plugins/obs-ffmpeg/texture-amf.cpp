@@ -1399,7 +1399,8 @@ static bool amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 		set_avc_property(enc, PEAK_BITRATE, bitrate);
 		set_avc_property(enc, VBV_BUFFER_SIZE, bitrate);
 
-		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
+		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR ||
+		    rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
 			set_avc_property(enc, FILLER_DATA_ENABLE, true);
 			pipeline_flush = false;
 		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
@@ -1882,7 +1883,8 @@ static bool amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t
 		set_hevc_property(enc, PEAK_BITRATE, bitrate);
 		set_hevc_property(enc, VBV_BUFFER_SIZE, bitrate);
 
-		if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR) {
+		if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR ||
+		    rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
 			set_hevc_property(enc, FILLER_DATA_ENABLE, true);
 			pipeline_flush = false;
 		} else if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
@@ -2308,10 +2310,11 @@ static bool amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 		set_av1_property(enc, PEAK_BITRATE, bitrate);
 		set_av1_property(enc, VBV_BUFFER_SIZE, bitrate);
 
-		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
+		if (rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CBR ||
+		    rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
 			set_av1_property(enc, FILLER_DATA, true);
 			pipeline_flush = false;
-		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
+		} else if (rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
 			   rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
 			set_av1_property(enc, PEAK_BITRATE, bitrate * 1.5);
 			set_av1_property(enc, VBV_BUFFER_SIZE, bitrate * 1.5);
