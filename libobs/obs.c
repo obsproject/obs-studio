@@ -1150,11 +1150,13 @@ static inline bool obs_init_hotkeys(void)
 	hotkeys->sceneitem_show = bstrdup("Show '%1'");
 	hotkeys->sceneitem_hide = bstrdup("Hide '%1'");
 
-	if (!obs_hotkeys_platform_init(hotkeys))
+	/* The mutex must exist before the platform layer initializes, as a
+	 * platform backend may spawn a thread that uses it right away. */
+	if (pthread_mutex_init_recursive(&hotkeys->mutex) != 0)
 		return false;
 
-	if (pthread_mutex_init_recursive(&hotkeys->mutex) != 0)
-		goto fail;
+	if (!obs_hotkeys_platform_init(hotkeys))
+		return false;
 
 	if (os_event_init(&hotkeys->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;

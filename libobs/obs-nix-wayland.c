@@ -22,14 +22,33 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <poll.h>
+#include <errno.h>
+#include <pthread.h>
 
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
+
+#include "wayland-vicinae-hotkey-v1-client-protocol.h"
 
 // X11 only supports 256 scancodes, most keyboards dont have 256 keys so this should be reasonable.
 #define MAX_KEYCODES 256
 // X11 keymaps only have 4 shift levels, im not sure xkbcommon supports a way to shift the state into a higher level anyway.
 #define MAX_SHIFT_LEVELS 4
+
+/* An OBS key combination: INTERACT_* modifier bits plus the trigger key. */
+struct vicinae_combo {
+	uint32_t modifiers;
+	obs_key_t key;
+};
+
+/* Heap allocated so its address stays stable as wl listener user data. */
+struct vicinae_binding {
+	obs_hotkeys_platform_t *plat;
+	struct vicinae_combo combo;
+	struct vicinae_hotkey_v1 *obj;
+	bool active;
+};
 
 struct obs_hotkeys_platform {
 	struct wl_display *display;
@@ -41,9 +60,24 @@ struct obs_hotkeys_platform {
 	xkb_keysym_t key_to_sym[MAX_SHIFT_LEVELS][MAX_KEYCODES];
 	xkb_keysym_t obs_to_key[OBS_KEY_LAST_VALUE];
 	uint32_t current_layout;
+
+	/* vicinae_hotkey_v1 state, owned by the vicinae thread, except
+	 * vicinae_held which is also read by the libobs hotkey thread and is
+	 * guarded by vicinae_mutex. */
+	struct wl_event_queue *vicinae_queue;
+	struct vicinae_hotkey_manager_v1 *vicinae_manager;
+	pthread_t vicinae_thread;
+	bool vicinae_thread_active;
+	volatile bool vicinae_running;
+	int vicinae_stop_pipe[2];
+	pthread_mutex_t vicinae_mutex;
+	DARRAY(struct vicinae_binding *) vicinae_bindings;
+	DARRAY(struct vicinae_combo) vicinae_denied;
+	DARRAY(struct vicinae_combo) vicinae_held;
 };
 
 static obs_key_t obs_nix_wayland_key_from_virtual_key(int sym);
+static int obs_nix_wayland_key_to_virtual_key(obs_key_t key);
 
 static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key, void *data)
 {
@@ -225,6 +259,374 @@ const struct wl_registry_listener registry_listener = {
 	.global_remove = platform_registry_remover,
 };
 
+/* The libobs hotkey thread drives press/release detection off is_pressed().
+ * On X11 that polls the X server, but Wayland never delivers key events to
+ * unfocused clients, so out-of-focus hotkeys historically did not work. When
+ * the compositor supports vicinae_hotkey_v1 we instead bind every distinct
+ * OBS combination as a global hotkey, track which ones the compositor reports
+ * as held, and answer is_pressed() from that set. */
+
+static inline bool vicinae_combo_equal(const struct vicinae_combo *a, const struct vicinae_combo *b)
+{
+	return a->key == b->key && a->modifiers == b->modifiers;
+}
+
+static inline uint32_t obs_modifiers_to_vicinae(uint32_t modifiers)
+{
+	uint32_t bits = 0;
+	if (modifiers & INTERACT_SHIFT_KEY)
+		bits |= VICINAE_HOTKEY_MANAGER_V1_MODIFIERS_SHIFT;
+	if (modifiers & INTERACT_CONTROL_KEY)
+		bits |= VICINAE_HOTKEY_MANAGER_V1_MODIFIERS_CTRL;
+	if (modifiers & INTERACT_ALT_KEY)
+		bits |= VICINAE_HOTKEY_MANAGER_V1_MODIFIERS_ALT;
+	if (modifiers & INTERACT_COMMAND_KEY)
+		bits |= VICINAE_HOTKEY_MANAGER_V1_MODIFIERS_SUPER;
+	return bits;
+}
+
+/* The protocol expects unshifted keysyms (XKB_KEY_b, not XKB_KEY_B), so
+ * prefer the live keymap and lowercase letters from the fallback table. */
+static uint32_t vicinae_keysym_for_key(obs_hotkeys_platform_t *plat, obs_key_t key)
+{
+	if (key >= OBS_KEY_MOUSE1 && key <= OBS_KEY_MOUSE29)
+		return 0;
+
+	xkb_keycode_t keycode = plat->obs_to_key[key];
+	if (keycode) {
+		xkb_keysym_t sym = plat->key_to_sym[0][keycode];
+		if (sym)
+			return sym;
+	}
+
+	int sym = obs_nix_wayland_key_to_virtual_key(key);
+	if (sym >= XKB_KEY_A && sym <= XKB_KEY_Z)
+		sym = sym - XKB_KEY_A + XKB_KEY_a;
+	return (uint32_t)sym;
+}
+
+static void vicinae_held_set(obs_hotkeys_platform_t *plat, const struct vicinae_combo *combo, bool pressed)
+{
+	pthread_mutex_lock(&plat->vicinae_mutex);
+	size_t idx = DARRAY_INVALID;
+	for (size_t i = 0; i < plat->vicinae_held.num; i++) {
+		if (vicinae_combo_equal(&plat->vicinae_held.array[i], combo)) {
+			idx = i;
+			break;
+		}
+	}
+	if (pressed && idx == DARRAY_INVALID)
+		da_push_back(plat->vicinae_held, combo);
+	else if (!pressed && idx != DARRAY_INVALID)
+		da_erase(plat->vicinae_held, idx);
+	pthread_mutex_unlock(&plat->vicinae_mutex);
+}
+
+static void vicinae_hotkey_handle_bound(void *data, struct vicinae_hotkey_v1 *hotkey)
+{
+	UNUSED_PARAMETER(hotkey);
+	struct vicinae_binding *vb = data;
+	vb->active = true;
+	blog(LOG_DEBUG, "[wayland] global hotkey bound (key %d, mods 0x%x)", (int)vb->combo.key, vb->combo.modifiers);
+}
+
+static void vicinae_remove_binding(obs_hotkeys_platform_t *plat, struct vicinae_binding *vb, bool deny)
+{
+	struct vicinae_combo combo = vb->combo;
+	vicinae_held_set(plat, &combo, false);
+
+	for (size_t i = 0; i < plat->vicinae_bindings.num; i++) {
+		if (plat->vicinae_bindings.array[i] == vb) {
+			da_erase(plat->vicinae_bindings, i);
+			break;
+		}
+	}
+
+	if (vb->obj)
+		vicinae_hotkey_v1_destroy(vb->obj);
+	bfree(vb);
+
+	if (deny)
+		da_push_back(plat->vicinae_denied, &combo);
+}
+
+static void vicinae_hotkey_handle_denied(void *data, struct vicinae_hotkey_v1 *hotkey, uint32_t reason,
+					 const char *message)
+{
+	UNUSED_PARAMETER(hotkey);
+	struct vicinae_binding *vb = data;
+	blog(LOG_DEBUG, "[wayland] global hotkey denied (key %d, mods 0x%x, reason %u): %s", (int)vb->combo.key,
+	     vb->combo.modifiers, reason, message ? message : "");
+	/* Remember the denial so reconcile does not keep re-requesting it. */
+	vicinae_remove_binding(vb->plat, vb, true);
+}
+
+static void vicinae_hotkey_handle_revoked(void *data, struct vicinae_hotkey_v1 *hotkey, uint32_t reason,
+					  const char *message)
+{
+	UNUSED_PARAMETER(hotkey);
+	struct vicinae_binding *vb = data;
+	blog(LOG_DEBUG, "[wayland] global hotkey revoked (key %d, mods 0x%x, reason %u): %s", (int)vb->combo.key,
+	     vb->combo.modifiers, reason, message ? message : "");
+	/* Re-request later only if the combination was merely superseded;
+	 * removals and policy changes must not be silently re-bound. */
+	bool deny = reason != VICINAE_HOTKEY_V1_REVOKE_REASON_SUPERSEDED;
+	vicinae_remove_binding(vb->plat, vb, deny);
+}
+
+static void vicinae_hotkey_handle_pressed(void *data, struct vicinae_hotkey_v1 *hotkey, uint32_t serial, uint32_t time)
+{
+	UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(serial);
+	UNUSED_PARAMETER(time);
+	struct vicinae_binding *vb = data;
+	vicinae_held_set(vb->plat, &vb->combo, true);
+}
+
+static void vicinae_hotkey_handle_released(void *data, struct vicinae_hotkey_v1 *hotkey, uint32_t serial, uint32_t time)
+{
+	UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(serial);
+	UNUSED_PARAMETER(time);
+	struct vicinae_binding *vb = data;
+	vicinae_held_set(vb->plat, &vb->combo, false);
+}
+
+static const struct vicinae_hotkey_v1_listener vicinae_hotkey_listener = {
+	.bound = vicinae_hotkey_handle_bound,
+	.denied = vicinae_hotkey_handle_denied,
+	.revoked = vicinae_hotkey_handle_revoked,
+	.pressed = vicinae_hotkey_handle_pressed,
+	.released = vicinae_hotkey_handle_released,
+};
+
+static void vicinae_registry_global(void *data, struct wl_registry *registry, uint32_t name, const char *interface,
+				    uint32_t version)
+{
+	obs_hotkeys_platform_t *plat = data;
+	if (strcmp(interface, vicinae_hotkey_manager_v1_interface.name) == 0) {
+		uint32_t bind_version = version < 1 ? version : 1;
+		plat->vicinae_manager =
+			wl_registry_bind(registry, name, &vicinae_hotkey_manager_v1_interface, bind_version);
+	}
+}
+
+static void vicinae_registry_global_remove(void *data, struct wl_registry *registry, uint32_t name)
+{
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(registry);
+	UNUSED_PARAMETER(name);
+}
+
+static const struct wl_registry_listener vicinae_registry_listener = {
+	.global = vicinae_registry_global,
+	.global_remove = vicinae_registry_global_remove,
+};
+
+static bool vicinae_has_binding(obs_hotkeys_platform_t *plat, const struct vicinae_combo *combo)
+{
+	for (size_t i = 0; i < plat->vicinae_bindings.num; i++) {
+		if (vicinae_combo_equal(&plat->vicinae_bindings.array[i]->combo, combo))
+			return true;
+	}
+	return false;
+}
+
+static bool vicinae_combo_in(const struct darray *list, const struct vicinae_combo *combo)
+{
+	const struct vicinae_combo *array = list->array;
+	for (size_t i = 0; i < list->num; i++) {
+		if (vicinae_combo_equal(&array[i], combo))
+			return true;
+	}
+	return false;
+}
+
+/* Make the set of vicinae_hotkey_v1 objects match the combinations OBS has
+ * bound. Runs on the vicinae thread. */
+static void vicinae_reconcile(obs_hotkeys_platform_t *plat)
+{
+	if (!plat->vicinae_manager)
+		return;
+
+	DARRAY(struct vicinae_combo) desired;
+	da_init(desired);
+
+	pthread_mutex_lock(&obs->hotkeys.mutex);
+	for (size_t i = 0; i < obs->hotkeys.bindings.num; i++) {
+		obs_hotkey_binding_t *binding = &obs->hotkeys.bindings.array[i];
+		struct vicinae_combo combo = {binding->key.modifiers, binding->key.key};
+		if (combo.key == OBS_KEY_NONE || combo.key >= OBS_KEY_LAST_VALUE)
+			continue;
+		if (combo.key >= OBS_KEY_MOUSE1 && combo.key <= OBS_KEY_MOUSE29)
+			continue;
+		if (!vicinae_combo_in(&desired.da, &combo))
+			da_push_back(desired, &combo);
+	}
+	pthread_mutex_unlock(&obs->hotkeys.mutex);
+
+	for (size_t i = plat->vicinae_bindings.num; i > 0; i--) {
+		struct vicinae_binding *vb = plat->vicinae_bindings.array[i - 1];
+		if (!vicinae_combo_in(&desired.da, &vb->combo))
+			vicinae_remove_binding(plat, vb, false);
+	}
+
+	/* Forget denials for combinations no longer in use so a reconfigured
+	 * shortcut gets another chance. */
+	for (size_t i = plat->vicinae_denied.num; i > 0; i--) {
+		if (!vicinae_combo_in(&desired.da, &plat->vicinae_denied.array[i - 1]))
+			da_erase(plat->vicinae_denied, i - 1);
+	}
+
+	for (size_t i = 0; i < desired.num; i++) {
+		struct vicinae_combo combo = desired.array[i];
+		if (vicinae_has_binding(plat, &combo) || vicinae_combo_in(&plat->vicinae_denied.da, &combo))
+			continue;
+
+		uint32_t keysym = vicinae_keysym_for_key(plat, combo.key);
+		if (!keysym)
+			continue;
+
+		struct vicinae_binding *vb = bzalloc(sizeof(struct vicinae_binding));
+		vb->plat = plat;
+		vb->combo = combo;
+		vb->obj = vicinae_hotkey_manager_v1_bind(plat->vicinae_manager, keysym,
+							 obs_modifiers_to_vicinae(combo.modifiers), NULL,
+							 "com.obsproject.Studio", "OBS Studio hotkey");
+		vicinae_hotkey_v1_add_listener(vb->obj, &vicinae_hotkey_listener, vb);
+		da_push_back(plat->vicinae_bindings, &vb);
+	}
+
+	da_free(desired);
+}
+
+static void *vicinae_thread(void *arg)
+{
+	obs_hotkeys_platform_t *plat = arg;
+	struct wl_display *display = plat->display;
+	struct wl_event_queue *queue = plat->vicinae_queue;
+
+	os_set_thread_name("libobs: vicinae hotkey thread");
+
+	struct pollfd fds[2];
+	fds[0].fd = wl_display_get_fd(display);
+	fds[0].events = POLLIN;
+	fds[1].fd = plat->vicinae_stop_pipe[0];
+	fds[1].events = POLLIN;
+
+	while (os_atomic_load_bool(&plat->vicinae_running)) {
+		vicinae_reconcile(plat);
+
+		while (wl_display_prepare_read_queue(display, queue) != 0)
+			wl_display_dispatch_queue_pending(display, queue);
+		wl_display_flush(display);
+
+		fds[0].revents = 0;
+		fds[1].revents = 0;
+		int ret = poll(fds, 2, 250);
+		if (ret < 0) {
+			wl_display_cancel_read(display);
+			if (errno == EINTR)
+				continue;
+			break;
+		}
+
+		if (!os_atomic_load_bool(&plat->vicinae_running) || (fds[1].revents & POLLIN)) {
+			wl_display_cancel_read(display);
+			break;
+		}
+
+		if (fds[0].revents & POLLIN) {
+			if (wl_display_read_events(display) < 0)
+				break;
+			wl_display_dispatch_queue_pending(display, queue);
+		} else {
+			wl_display_cancel_read(display);
+		}
+	}
+
+	return NULL;
+}
+
+static void vicinae_init(obs_hotkeys_platform_t *plat)
+{
+	struct wl_display *display = plat->display;
+
+	plat->vicinae_queue = wl_display_create_queue(display);
+
+	struct wl_registry *registry = wl_display_get_registry(display);
+	wl_proxy_set_queue((struct wl_proxy *)registry, plat->vicinae_queue);
+	wl_registry_add_listener(registry, &vicinae_registry_listener, plat);
+	wl_display_roundtrip_queue(display, plat->vicinae_queue);
+	wl_registry_destroy(registry);
+
+	if (!plat->vicinae_manager) {
+		blog(LOG_INFO, "[wayland] vicinae_hotkey_v1 not available; "
+			       "global hotkeys are limited to when OBS is focused");
+		wl_event_queue_destroy(plat->vicinae_queue);
+		plat->vicinae_queue = NULL;
+		return;
+	}
+
+	if (pipe(plat->vicinae_stop_pipe) != 0) {
+		blog(LOG_WARNING, "[wayland] failed to create vicinae stop pipe; global hotkeys disabled");
+		vicinae_hotkey_manager_v1_destroy(plat->vicinae_manager);
+		plat->vicinae_manager = NULL;
+		wl_event_queue_destroy(plat->vicinae_queue);
+		plat->vicinae_queue = NULL;
+		return;
+	}
+
+	os_atomic_set_bool(&plat->vicinae_running, true);
+	if (pthread_create(&plat->vicinae_thread, NULL, vicinae_thread, plat) == 0) {
+		plat->vicinae_thread_active = true;
+		blog(LOG_INFO, "[wayland] vicinae_hotkey_v1 available; global hotkeys enabled");
+	} else {
+		os_atomic_set_bool(&plat->vicinae_running, false);
+		blog(LOG_WARNING, "[wayland] failed to start vicinae hotkey thread; global hotkeys disabled");
+		close(plat->vicinae_stop_pipe[0]);
+		close(plat->vicinae_stop_pipe[1]);
+		vicinae_hotkey_manager_v1_destroy(plat->vicinae_manager);
+		plat->vicinae_manager = NULL;
+		wl_event_queue_destroy(plat->vicinae_queue);
+		plat->vicinae_queue = NULL;
+	}
+}
+
+static void vicinae_free(obs_hotkeys_platform_t *plat)
+{
+	if (plat->vicinae_thread_active) {
+		os_atomic_set_bool(&plat->vicinae_running, false);
+		const char stop = 1;
+		(void)!write(plat->vicinae_stop_pipe[1], &stop, 1);
+		pthread_join(plat->vicinae_thread, NULL);
+		plat->vicinae_thread_active = false;
+		close(plat->vicinae_stop_pipe[0]);
+		close(plat->vicinae_stop_pipe[1]);
+	}
+
+	for (size_t i = 0; i < plat->vicinae_bindings.num; i++) {
+		struct vicinae_binding *vb = plat->vicinae_bindings.array[i];
+		if (vb->obj)
+			vicinae_hotkey_v1_destroy(vb->obj);
+		bfree(vb);
+	}
+	da_free(plat->vicinae_bindings);
+	da_free(plat->vicinae_denied);
+	da_free(plat->vicinae_held);
+
+	if (plat->vicinae_manager) {
+		vicinae_hotkey_manager_v1_destroy(plat->vicinae_manager);
+		plat->vicinae_manager = NULL;
+		wl_display_flush(plat->display);
+	}
+	if (plat->vicinae_queue) {
+		wl_event_queue_destroy(plat->vicinae_queue);
+		plat->vicinae_queue = NULL;
+	}
+	pthread_mutex_destroy(&plat->vicinae_mutex);
+}
+
 void obs_nix_wayland_log_info(void)
 {
 	struct wl_display *display = obs_get_nix_platform_display();
@@ -246,12 +648,16 @@ static bool obs_nix_wayland_hotkeys_platform_init(struct obs_core_hotkeys *hotke
 	struct wl_registry *registry = wl_display_get_registry(display);
 	wl_registry_add_listener(registry, &registry_listener, hotkeys->platform_context);
 	wl_display_roundtrip(display);
+
+	pthread_mutex_init(&hotkeys->platform_context->vicinae_mutex, NULL);
+	vicinae_init(hotkeys->platform_context);
 	return true;
 }
 
 static void obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 {
 	obs_hotkeys_platform_t *plat = hotkeys->platform_context;
+	vicinae_free(plat);
 	xkb_context_unref(plat->xkb_context);
 	xkb_keymap_unref(plat->xkb_keymap);
 	xkb_state_unref(plat->xkb_state);
@@ -260,12 +666,36 @@ static void obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotke
 
 static bool obs_nix_wayland_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
-	UNUSED_PARAMETER(context);
-	UNUSED_PARAMETER(key);
-	// This function is only used by the hotkey thread for capturing out of
-	// focus hotkey triggers. Since wayland never delivers key events when out
-	// of focus we leave this blank intentionally.
-	return false;
+	/* A modifier key is pressed if any held vicinae combination requires
+	 * it, a trigger key if a held combination uses it. Without the
+	 * protocol vicinae_held stays empty and this returns false as it
+	 * always did on Wayland. */
+	bool pressed = false;
+	pthread_mutex_lock(&context->vicinae_mutex);
+	for (size_t i = 0; i < context->vicinae_held.num; i++) {
+		const struct vicinae_combo *combo = &context->vicinae_held.array[i];
+		switch (key) {
+		case OBS_KEY_SHIFT:
+			pressed = combo->modifiers & INTERACT_SHIFT_KEY;
+			break;
+		case OBS_KEY_CONTROL:
+			pressed = combo->modifiers & INTERACT_CONTROL_KEY;
+			break;
+		case OBS_KEY_ALT:
+			pressed = combo->modifiers & INTERACT_ALT_KEY;
+			break;
+		case OBS_KEY_META:
+			pressed = combo->modifiers & INTERACT_COMMAND_KEY;
+			break;
+		default:
+			pressed = combo->key == key;
+			break;
+		}
+		if (pressed)
+			break;
+	}
+	pthread_mutex_unlock(&context->vicinae_mutex);
+	return pressed;
 }
 
 static void obs_nix_wayland_key_to_str(obs_key_t key, struct dstr *dstr)
