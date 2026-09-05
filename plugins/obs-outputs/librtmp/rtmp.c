@@ -1613,7 +1613,6 @@ WriteN(RTMP *r, const char *buffer, int n)
             l.l_linger = 0;
             setsockopt(r->m_sb.sb_socket, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
             RTMPSockBuf_Close(&r->m_sb);
-
             RTMP_Close(r);
             n = 1;
             break;
@@ -4341,11 +4340,15 @@ RTMP_Close(RTMP *r)
         if (r->m_clientID.av_val)
         {
             HTTP_Post(r, RTMPT_CLOSE, "", 1);
-            free(r->m_clientID.av_val);
-            r->m_clientID.av_val = NULL;
-            r->m_clientID.av_len = 0;
         }
         RTMPSockBuf_Close(&r->m_sb);
+    }
+
+    if (r->m_clientID.av_val)
+    {
+        free(r->m_clientID.av_val);
+        r->m_clientID.av_val = NULL;
+        r->m_clientID.av_len = 0;
     }
 
     for (int idx = 0; idx < r->Link.nStreams; idx++)
@@ -4545,7 +4548,11 @@ RTMPSockBuf_Close(RTMPSockBuf *sb)
     }
 #endif
     if (sb->sb_socket != INVALID_SOCKET)
-        return closesocket(sb->sb_socket);
+    {
+        int ret = closesocket(sb->sb_socket);
+        sb->sb_socket = INVALID_SOCKET;
+        return ret;
+    }
     return 0;
 }
 
