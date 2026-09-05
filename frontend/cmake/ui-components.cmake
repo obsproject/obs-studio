@@ -67,6 +67,8 @@ target_sources(
     components/SceneTree.hpp
     components/SilentUpdateCheckBox.hpp
     components/SilentUpdateSpinBox.hpp
+    components/SlidingStackedWidget.cpp
+    components/SlidingStackedWidget.hpp
     components/SourceSelectButton.cpp
     components/SourceSelectButton.hpp
     components/SourceToolbar.cpp
