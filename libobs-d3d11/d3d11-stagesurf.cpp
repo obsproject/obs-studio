@@ -21,10 +21,16 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width, uint32_t
 	: gs_obj(device, gs_type::gs_stage_surface),
 	  width(width),
 	  height(height),
-	  format(colorFormat),
-	  dxgiFormat(ConvertGSTextureFormatView(colorFormat))
+	  format(colorFormat)
 {
 	HRESULT hr;
+
+	// Non-RGB formats need to use the resource format instead of the view format.
+	if (format == GS_AYUV || format == GS_Y410) {
+		dxgiFormat = ConvertGSTextureFormatResource(format);
+	} else {
+		dxgiFormat = ConvertGSTextureFormatView(format);
+	}
 
 	memset(&td, 0, sizeof(td));
 	td.Width = width;
