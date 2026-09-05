@@ -1176,9 +1176,7 @@ private:
 	int GetTopSelectedSourceItem();
 
 	QModelIndexList GetAllSelectedSourceItems();
-
-	// TODO: Move back to transitions
-	QMenu *CreateVisibilityTransitionMenu(bool visible);
+	
 	void CenterSelectedSceneItems(const CenterType &centerType);
 
 	/* OBS Callbacks */
@@ -1552,6 +1550,7 @@ private:
 	int GetOverrideTransitionDuration(OBSSource source);
 
 	OBSMenu *CreatePerSceneTransitionMenu(OBSMenu *parentMenu);
+	OBSMenu *CreateVisibilityTransitionMenu(OBSMenu *parentMenu, bool visible);
 
 	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 
