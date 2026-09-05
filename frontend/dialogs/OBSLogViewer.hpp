@@ -15,6 +15,7 @@ private slots:
 	void AddLine(int type, const QString &text);
 	void on_openButton_clicked();
 	void on_showStartup_clicked(bool checked);
+	void on_onTop_clicked(bool checked);
 
 public:
 	OBSLogViewer(QWidget *parent = 0);
