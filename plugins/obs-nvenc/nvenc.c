@@ -4,6 +4,8 @@
 #include <util/darray.h>
 #include <util/dstr.h>
 
+#include <stdio.h>
+
 /* ========================================================================= */
 
 #define EXTRA_BUFFERS 5
@@ -935,15 +937,42 @@ static void *nvenc_create_base(enum codec_type codec, obs_data_t *settings, obs_
 	 */
 	const int gpu = (int)obs_data_get_int(settings, "device");
 	const bool gpu_set = obs_data_has_user_value(settings, "device");
+	const int devices = num_encoder_devices();
 #ifndef _WIN32
 	const bool force_tex = obs_data_get_bool(settings, "force_cuda_tex");
 #else
 	const bool force_tex = false;
 #endif
 
-	if (gpu_set && gpu != -1 && texture && !force_tex) {
-		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back "
-			       "to non-texture encoder");
+	if (gpu_set && gpu >= devices) {
+		if (devices == 1) {
+			blog(LOG_WARNING, "[obs-nvenc] Nonzero GPU index when only one device is available, ignoring.");
+		} else {
+			struct dstr error_message;
+			char gpu_str[16];
+
+			dstr_init_copy(&error_message, obs_module_text("BadGPUIndex"));
+			/* Selected index */
+			snprintf(gpu_str, sizeof(gpu_str) - 1, "%d", gpu);
+			gpu_str[sizeof(gpu_str) - 1] = 0;
+			dstr_replace(&error_message, "%1", gpu_str);
+			/* Number of devices */
+			snprintf(gpu_str, sizeof(gpu_str) - 1, "%d", devices);
+			gpu_str[sizeof(gpu_str) - 1] = 0;
+			dstr_replace(&error_message, "%2", gpu_str);
+			/* Maximum valid index */
+			snprintf(gpu_str, sizeof(gpu_str) - 1, "%d", devices - 1);
+			gpu_str[sizeof(gpu_str) - 1] = 0;
+			dstr_replace(&error_message, "%3", gpu_str);
+
+			obs_encoder_set_last_error(encoder, error_message.array);
+			dstr_free(&error_message);
+
+			blog(LOG_ERROR, "[obs-nvenc] User has set invalid GPU index (%d >= %d)", gpu, devices);
+			return NULL;
+		}
+	} else if (gpu_set && gpu != -1 && texture && !force_tex) {
+		blog(LOG_INFO, "[obs-nvenc] different GPU selected by user, falling back to non-texture encoder");
 		goto reroute;
 	}
 

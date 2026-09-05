@@ -19,6 +19,10 @@ bool cuda_ctx_init(struct nvenc_data *enc, obs_data_t *settings, const bool text
 	CUdevice device;
 
 	int gpu = (int)obs_data_get_int(settings, "device");
+	/* Ignore invalid GPU incides */
+	if (gpu >= num_encoder_devices()) {
+		gpu = 0;
+	}
 #ifndef _WIN32
 	/* CUDA can do fairly efficient cross-GPU OpenGL mappings, allow it as
 	 * a hidden option for experimentation. */
