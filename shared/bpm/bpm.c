@@ -9,7 +9,10 @@ static void render_metrics_time(struct metrics_time *m_time)
 	 */
 	memset(&m_time->rfc3339_str, 0, sizeof(m_time->rfc3339_str));
 	strftime(m_time->rfc3339_str, sizeof(m_time->rfc3339_str), "%Y-%m-%dT%T", gmtime(&m_time->tspec.tv_sec));
-	sprintf(m_time->rfc3339_str + strlen(m_time->rfc3339_str), ".%03ldZ", m_time->tspec.tv_nsec / 1000000);
+	uint64_t current_length = strlen(m_time->rfc3339_str);
+	size_t remaining_buffer_size = sizeof(m_time->rfc3339_str) - current_length;
+	snprintf(m_time->rfc3339_str + current_length, remaining_buffer_size, ".%03ldZ",
+		 m_time->tspec.tv_nsec / 1000000);
 	m_time->valid = true;
 }
 
