@@ -149,38 +149,43 @@ class MetalDevice {
     func blitSwapChains() {
         guard swapChains.count > 0 else { return }
 
-        guard let commandBuffer = commandQueue.makeCommandBuffer(),
-            let encoder = commandBuffer.makeBlitCommandEncoder()
-        else {
-            return
-        }
-
         self.swapChainQueue.sync {
             swapChains = swapChains.filter { $0.discard == false }
         }
 
-        for swapChain in swapChains {
-            guard let renderTarget = swapChain.renderTarget, let drawable = swapChain.layer.nextDrawable() else {
-                continue
-            }
-
-            guard renderTarget.texture.width == drawable.texture.width,
-                renderTarget.texture.height == drawable.texture.height,
-                renderTarget.texture.pixelFormat == drawable.texture.pixelFormat
+        autoreleasepool {
+            guard let commandBuffer = commandQueue.makeCommandBuffer(),
+                let encoder = commandBuffer.makeBlitCommandEncoder()
             else {
-                continue
+                return
             }
 
-            autoreleasepool {
+            var drawablesToPresent: [CAMetalDrawable] = []
+            for swapChain in swapChains {
+                guard let renderTarget = swapChain.renderTarget, let drawable = swapChain.layer.nextDrawable() else {
+                    continue
+                }
+
+                guard renderTarget.texture.width == drawable.texture.width,
+                    renderTarget.texture.height == drawable.texture.height,
+                    renderTarget.texture.pixelFormat == drawable.texture.pixelFormat
+                else {
+                    continue
+                }
+
                 encoder.waitForFence(swapChain.fence)
                 encoder.copy(from: renderTarget.texture, to: drawable.texture)
+                drawablesToPresent.append(drawable)
+            }
 
+            encoder.endEncoding()
+
+            for drawable in drawablesToPresent {
                 commandBuffer.present(drawable)
             }
-        }
 
-        encoder.endEncoding()
-        commandBuffer.commit()
+            commandBuffer.commit()
+        }
     }
 
     /// Simulates an explicit "clear" command commonly used in OpenGL or Direct3D11 implementations.
