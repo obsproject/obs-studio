@@ -212,8 +212,8 @@ static inline void init_cpu_info(struct exception_handler_data *data)
 static BOOL CALLBACK enum_all_modules(PCTSTR module_name, DWORD64 module_base, ULONG module_size,
 				      struct exception_handler_data *data)
 {
-	char name_utf8[MAX_PATH];
-	os_wcs_to_utf8(module_name, 0, name_utf8, MAX_PATH);
+	char *name_utf8;
+	os_wcs_to_utf8_ptr(module_name, 0, &name_utf8);
 
 	if (data->main_trace.instruction_ptr >= module_base &&
 	    data->main_trace.instruction_ptr < module_base + module_size) {
@@ -229,6 +229,7 @@ static BOOL CALLBACK enum_all_modules(PCTSTR module_name, DWORD64 module_base, U
 	dstr_catf(&data->module_list, "%08" PRIX64 "-%08" PRIX64 " %s\r\n", module_base, module_base + module_size,
 		  name_utf8);
 #endif
+	bfree(name_utf8);
 	return true;
 }
 
@@ -271,14 +272,14 @@ static inline void write_header(struct exception_handler_data *data)
 
 struct module_info {
 	DWORD64 addr;
-	char name_utf8[MAX_PATH];
+	char name_utf8[FILENAME_MAX_LENGTH_UTF8];
 };
 
 static BOOL CALLBACK enum_module(PCTSTR module_name, DWORD64 module_base, ULONG module_size, struct module_info *info)
 {
 	if (info->addr >= module_base && info->addr < module_base + module_size) {
 
-		os_wcs_to_utf8(module_name, 0, info->name_utf8, MAX_PATH);
+		os_wcs_to_utf8(module_name, 0, info->name_utf8, FILENAME_MAX_LENGTH_UTF8);
 		strlwr(info->name_utf8);
 		return false;
 	}

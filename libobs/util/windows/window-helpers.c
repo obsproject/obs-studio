@@ -98,7 +98,7 @@ static HMODULE kernel32(void)
 {
 	static HMODULE kernel32_handle = NULL;
 	if (!kernel32_handle)
-		kernel32_handle = GetModuleHandleA("kernel32");
+		kernel32_handle = GetModuleHandleW(L"kernel32");
 	return kernel32_handle;
 }
 

@@ -174,7 +174,7 @@ static void d3d8_free()
 
 static void d3d8_init(IDirect3DDevice8 *device)
 {
-	data.d3d8 = get_system_module("d3d8.dll");
+	data.d3d8 = get_system_module(L"d3d8.dll");
 
 	if (!d3d8_init_format_backbuffer(device)) {
 		return;
@@ -349,7 +349,7 @@ static bool manually_get_d3d8_present_addr(HMODULE d3d8_module, void **present_a
 
 bool hook_d3d8(void)
 {
-	HMODULE d3d8_module = get_system_module("d3d8.dll");
+	HMODULE d3d8_module = get_system_module(L"d3d8.dll");
 	uint32_t d3d8_size;
 	void *present_addr = nullptr;
 
