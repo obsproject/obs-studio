@@ -32,7 +32,9 @@ void gs_vertex_shader::GetBuffersExpected(const std::vector<D3D11_INPUT_ELEMENT_
 {
 	for (size_t i = 0; i < inputs.size(); i++) {
 		const D3D11_INPUT_ELEMENT_DESC &input = inputs[i];
-		if (strcmp(input.SemanticName, "NORMAL") == 0) {
+		if (strcmp(input.SemanticName, "SV_Position") == 0) {
+			hasPositions = true;
+		} else if (strcmp(input.SemanticName, "NORMAL") == 0) {
 			hasNormals = true;
 		} else if (strcmp(input.SemanticName, "TANGENT") == 0) {
 			hasTangents = true;
@@ -46,6 +48,7 @@ void gs_vertex_shader::GetBuffersExpected(const std::vector<D3D11_INPUT_ELEMENT_
 
 gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file, const char *shaderString)
 	: gs_shader(device, gs_type::gs_vertex_shader, GS_SHADER_VERTEX),
+	  hasPositions(false),
 	  hasNormals(false),
 	  hasColors(false),
 	  hasTangents(false),
@@ -386,9 +389,16 @@ void gs_shader::UploadParams()
 
 void gs_shader_destroy(gs_shader_t *shader)
 {
-	if (shader && shader->device->lastVertexShader == shader) {
-		shader->device->lastVertexShader = nullptr;
+	if (shader) {
+		gs_device_t *device = shader->device;
+		if (device->curVertexShader == shader) {
+			device->curVertexShader = nullptr;
+		}
+		if (device->lastVertexShader == shader) {
+			device->lastVertexShader = nullptr;
+		}
 	}
+
 	delete shader;
 }
 
