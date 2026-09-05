@@ -983,11 +983,11 @@ void OBSBasic::PasteShowHideTransition(obs_sceneitem_t *item, bool show, obs_sou
 	undo_s.add_action(text.arg(name), undo_redo, undo_redo, undo_data, redo_data);
 }
 
-QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
+OBSMenu *OBSBasic::CreateVisibilityTransitionMenu(OBSMenu *parentMenu, bool visible)
 {
 	OBSSceneItem si = GetCurrentSceneItem();
 
-	QMenu *menu = new QMenu(QTStr(visible ? "ShowTransition" : "HideTransition"));
+	OBSMenu *menu = new OBSMenu(QTStr(visible ? "ShowTransition" : "HideTransition"), parentMenu, false);
 	QAction *action;
 
 	OBSSource curTransition = obs_sceneitem_get_transition(si, visible);
@@ -1126,6 +1126,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	action = menu->addAction(QT_UTF8(Str("Paste")));
 	action->setEnabled(!!OBSGetStrongRef(copySourceTransition));
 	connect(action, &QAction::triggered, this, std::bind(pasteTransition, action, visible));
+
 	return menu;
 }
 

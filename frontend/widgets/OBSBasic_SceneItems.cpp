@@ -693,8 +693,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 				previewSourceMenu->addMenu(AddDeinterlacingMenu(deinterlaceMenu, source));
 			}
 
-			previewSourceMenu->addMenu(CreateVisibilityTransitionMenu(true));
-			previewSourceMenu->addMenu(CreateVisibilityTransitionMenu(false));
+			previewSourceMenu->addMenu(CreateVisibilityTransitionMenu(previewSourceMenu, true));
+			previewSourceMenu->addMenu(CreateVisibilityTransitionMenu(previewSourceMenu, false));
 
 			previewSourceMenu->addSeparator();
 
