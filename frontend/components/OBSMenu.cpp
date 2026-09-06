@@ -12,6 +12,10 @@
 #include "Windows.h"
 #endif
 
+OBSMenu::OBSMenu(QWidget* parent) : parent(parent) {
+	connect(parent, &QObject::destroyed, this, &QMenu::deleteLater);
+}
+
 // This context menu will automatically delete itself on close.
 // No need to manually delete this.
 OBSMenu::OBSMenu(QWidget *parent, const bool &deleteOnClose) : parent(parent)
@@ -36,7 +40,14 @@ OBSMenu::OBSMenu(const QString &title, QWidget *parent, const bool &deleteOnClos
 
 void OBSMenu::showEvent(QShowEvent *event)
 {
-	HWND parentWindowHandle = (HWND)parent->winId();
+	HWND parentWindowHandle;
+
+	if (parent->isWindow()) {
+		parentWindowHandle = (HWND)parent->winId();
+	} else {
+		parentWindowHandle = (HWND)parent->parentWidget()->winId();
+	}
+
 	DWORD currentDisplayAffinity;
 	HWND contextWindowHandle = (HWND)windowHandle()->winId();
 
