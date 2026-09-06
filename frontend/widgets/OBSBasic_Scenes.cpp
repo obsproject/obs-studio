@@ -550,7 +550,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 {
 	QListWidgetItem *item = ui->scenes->itemAt(pos);
 	scenesMenu = new OBSMenu(this, true);
-	OBSMenu order(QTStr("Basic.MainMenu.Edit.Order"), scenesMenu, false);
+	OBSMenu* order = new OBSMenu(QTStr("Basic.MainMenu.Edit.Order"), scenesMenu, false);
 
 	scenesMenu->addAction(QTStr("AddScene") + "...", this, &OBSBasic::on_actionAddScene_triggered);
 
@@ -572,13 +572,13 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		scenesMenu->addAction(renameScene);
 		scenesMenu->addAction(ui->actionRemoveScene);
 		scenesMenu->addSeparator();
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"), this, &OBSBasic::on_actionSceneUp_triggered);
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"), this,
+		order->addAction(QTStr("Basic.MainMenu.Edit.Order.MoveUp"), this, &OBSBasic::on_actionSceneUp_triggered);
+		order->addAction(QTStr("Basic.MainMenu.Edit.Order.MoveDown"), this,
 				&OBSBasic::on_actionSceneDown_triggered);
-		order.addSeparator();
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"), this, &OBSBasic::MoveSceneToTop);
-		order.addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"), this, &OBSBasic::MoveSceneToBottom);
-		scenesMenu->addMenu(&order);
+		order->addSeparator();
+		order->addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToTop"), this, &OBSBasic::MoveSceneToTop);
+		order->addAction(QTStr("Basic.MainMenu.Edit.Order.MoveToBottom"), this, &OBSBasic::MoveSceneToBottom);
+		scenesMenu->addMenu(order);
 		scenesMenu->addSeparator();
 
 		sceneProjectorMenu = new OBSMenu(QTStr("Projector.Open.Scene"), scenesMenu, false);
