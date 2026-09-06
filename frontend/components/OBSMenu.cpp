@@ -3,7 +3,6 @@
 #include <obs.hpp>
 
 #include <QT>
-#include <QObject>
 #include <QWindow>
 #include <QCursor>
 #include <QString>
