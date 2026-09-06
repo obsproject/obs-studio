@@ -9,6 +9,8 @@ class OBSMenu : public QMenu {
 	QWidget* parent;
 
 public:
+	OBSMenu(QWidget *parent);
+
 	OBSMenu(QWidget *parent, const bool &deleteOnClose);
 
 	OBSMenu(const QString &title, QWidget *parent, const bool &deleteOnClose);
