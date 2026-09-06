@@ -6,7 +6,7 @@
 class OBSMenu : public QMenu {
 	Q_OBJECT
 
-	QWidget* parent;
+	QWidget* parent{nullptr};
 
 public:
 	OBSMenu(QWidget *parent);
