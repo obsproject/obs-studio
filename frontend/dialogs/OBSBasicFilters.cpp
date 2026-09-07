@@ -92,6 +92,9 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	connect(ui->asyncFilters->model(), &QAbstractItemModel::rowsMoved, this, &OBSBasicFilters::FiltersMoved);
 	connect(ui->effectFilters->model(), &QAbstractItemModel::rowsMoved, this, &OBSBasicFilters::FiltersMoved);
 
+	connect(ui->addAsyncFilter, &QPushButton::clicked, this, &OBSBasicFilters::on_addAsyncFilter_clicked);
+	connect(ui->addEffectFilter, &QPushButton::clicked, this, &OBSBasicFilters::on_addEffectFilter_clicked);
+
 	uint32_t caps = obs_source_get_output_flags(source);
 	bool audio = (caps & OBS_SOURCE_AUDIO) != 0;
 	bool audioOnly = (caps & OBS_SOURCE_VIDEO) == 0;
@@ -455,7 +458,7 @@ static bool filter_compatible(bool async, uint32_t sourceFlags, uint32_t filterF
 	return (async && (filterAudio || filterAsync)) || (!async && !filterAudio && !filterAsync);
 }
 
-QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
+OBSMenu *OBSBasicFilters::CreateAddFilterPopupMenu(QWidget *parent, const bool &autoDeleteContextMenu, bool async)
 {
 	uint32_t sourceFlags = obs_source_get_output_flags(source);
 	const char *type_str;
@@ -491,7 +494,8 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 
 	sort(types.begin(), types.end());
 
-	QMenu *popup = new QMenu(QTStr("Add"), this);
+	QPointer<OBSMenu> popup = new OBSMenu(QTStr("Add"), parent, autoDeleteContextMenu);
+
 	for (FilterInfo &type : types) {
 		uint32_t filterFlags = obs_get_source_output_flags(type.type.c_str());
 
@@ -509,7 +513,6 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 
 	if (!foundValues) {
 		delete popup;
-		popup = nullptr;
 	}
 
 	return popup;
@@ -724,9 +727,11 @@ static bool QueryRemove(QWidget *parent, obs_source_t *source)
 void OBSBasicFilters::on_addAsyncFilter_clicked()
 {
 	ui->asyncFilters->setFocus();
-	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(true));
+
+	QPointer<OBSMenu> popup = CreateAddFilterPopupMenu(this, true, true);
+
 	if (popup) {
-		popup->exec(QCursor::pos());
+		popup->popupMenu();
 	}
 }
 
@@ -770,9 +775,11 @@ void OBSBasicFilters::on_asyncFilters_currentRowChanged(int row)
 void OBSBasicFilters::on_addEffectFilter_clicked()
 {
 	ui->effectFilters->setFocus();
-	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(false));
+
+	QPointer<OBSMenu> popup = CreateAddFilterPopupMenu(this, true, false);
+
 	if (popup) {
-		popup->exec(QCursor::pos());
+		popup->popupMenu();
 	}
 }
 
@@ -853,30 +860,29 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 {
 	QListWidget *list = async ? ui->asyncFilters : ui->effectFilters;
 	QListWidgetItem *item = list->itemAt(pos);
+	QPointer<OBSMenu> popup = new OBSMenu(window(), true);
+	QPointer<OBSMenu> addMenu = CreateAddFilterPopupMenu(popup, false, async);
 
-	QMenu popup(window());
-
-	QPointer<QMenu> addMenu = CreateAddFilterPopupMenu(async);
 	if (addMenu) {
-		popup.addMenu(addMenu);
+		popup->addMenu(addMenu);
 	}
 
 	if (item) {
-		popup.addSeparator();
-		popup.addAction(QTStr("Duplicate"), this, [&]() {
-			DuplicateItem(async ? ui->asyncFilters->currentItem() : ui->effectFilters->currentItem());
+		popup->addSeparator();
+		popup->addAction(QTStr("Duplicate"), this, [&]() {
+			DuplicateItem(isAsync ? ui->asyncFilters->currentItem() : ui->effectFilters->currentItem());
 		});
-		popup.addSeparator();
-		popup.addAction(ui->actionRenameFilter);
-		popup.addAction(ui->actionRemoveFilter);
-		popup.addSeparator();
+		popup->addSeparator();
+		popup->addAction(ui->actionRenameFilter);
+		popup->addAction(ui->actionRemoveFilter);
+		popup->addSeparator();
 
 		QAction *copyAction = new QAction(QTStr("Copy"));
 		connect(copyAction, &QAction::triggered, this, &OBSBasicFilters::CopyFilter);
 		copyAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_C));
 		ui->effectWidget->addAction(copyAction);
 		ui->asyncWidget->addAction(copyAction);
-		popup.addAction(copyAction);
+		popup->addAction(copyAction);
 	}
 
 	QAction *pasteAction = new QAction(QTStr("Paste"));
@@ -885,9 +891,9 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 	pasteAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_V));
 	ui->effectWidget->addAction(pasteAction);
 	ui->asyncWidget->addAction(pasteAction);
-	popup.addAction(pasteAction);
+	popup->addAction(pasteAction);
 
-	popup.exec(QCursor::pos());
+	popup->popupMenu();
 }
 
 void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
