@@ -173,7 +173,6 @@ AudioMixer::AudioMixer(QWidget *parent) : QFrame(parent)
 	idian::Utils::addClass(optionsButton, "text-bold");
 
 	createMixerContextMenu();
-	optionsButton->setMenu(mixerMenu);
 
 	toggleHiddenButton = new QPushButton(mixerToolbar);
 	toggleHiddenButton->setCheckable(true);
@@ -797,7 +796,7 @@ void AudioMixer::createMixerContextMenu()
 		mixerMenu->deleteLater();
 	}
 
-	mixerMenu = new QMenu(this);
+	mixerMenu = new OBSMenu(this, false);
 
 	// Create menu actions
 	QAction *unhideAllAction = new QAction(QTStr("UnhideAll"), mixerMenu);
@@ -831,6 +830,7 @@ void AudioMixer::createMixerContextMenu()
 	inactiveLastAction->setDefaultWidget(inactiveLastCheckBox);
 
 	QAction *layoutToggleAction = new QAction(QTStr("Basic.AudioMixer.Layout.Vertical"), mixerMenu);
+
 	if (mixerVertical) {
 		layoutToggleAction->setText(QTStr("Basic.AudioMixer.Layout.Horizontal"));
 	}
@@ -870,7 +870,7 @@ void AudioMixer::createMixerContextMenu()
 void AudioMixer::showMixerContextMenu()
 {
 	createMixerContextMenu();
-	mixerMenu->popup(QCursor::pos());
+	mixerMenu->popupMenu();
 }
 
 void AudioMixer::addControlForUuid(QString uuid)
