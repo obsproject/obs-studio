@@ -19,6 +19,8 @@
 
 #include "ui_OBSBasicFilters.h"
 
+#include <components/OBSMenu.hpp>
+
 #include <QDialog>
 
 class OBSBasic;
@@ -52,7 +54,7 @@ private:
 	static void UpdateProperties(void *data, calldata_t *params);
 	static void DrawPreview(void *data, uint32_t cx, uint32_t cy);
 
-	QMenu *CreateAddFilterPopupMenu(bool async);
+	OBSMenu *CreateAddFilterPopupMenu(QWidget *parent, const bool &autoDeleteContextMenu, bool async);
 
 	void AddNewFilter(const char *id);
 	void ReorderFilter(QListWidget *list, obs_source_t *filter, size_t idx);
