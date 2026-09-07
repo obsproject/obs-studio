@@ -4,6 +4,7 @@
 #include <components/VolumeMeter.hpp>
 #include <components/VolumeName.hpp>
 #include <components/VolumeSlider.hpp>
+#include <components/OBSMenu.hpp>
 #include <dialogs/NameDialog.hpp>
 #include <widgets/OBSBasic.hpp>
 
@@ -393,7 +394,7 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 		return;
 	}
 
-	QMenu *popup = new QMenu(window());
+	QPointer<OBSMenu> popup = new OBSMenu(window(), true);
 
 	// Create menu QActions
 	QAction *lockAction = new QAction(QTStr("LockVolume"), popup);
@@ -506,9 +507,7 @@ void VolumeControl::showVolumeControlMenu(QPoint pos)
 		popupPos = menuPos;
 	}
 
-	popup->popup(popupPos);
-
-	connect(popup, &QMenu::aboutToHide, popup, &QMenu::deleteLater);
+	popup->popupMenu();
 }
 
 void VolumeControl::renameSource()
