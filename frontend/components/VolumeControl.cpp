@@ -10,6 +10,7 @@
 
 #include <QMessageBox>
 #include <QObjectCleanupHandler>
+#include <QPointer>
 
 #include "moc_VolumeControl.cpp"
 
