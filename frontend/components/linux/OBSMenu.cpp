@@ -1,14 +1,12 @@
 #include <components/OBSMenu.hpp>
 
-#include <obs.hpp>
-
 #include <Qt>
 #include <QWindow>
 #include <QCursor>
 #include <QString>
-#include <QGuiApplication>
 
-OBSMenu::OBSMenu(QWidget* parent) : parent(parent) {
+OBSMenu::OBSMenu(QWidget *parent) : parent(parent)
+{
 	connect(parent, &QObject::destroyed, this, &QMenu::deleteLater);
 }
 
@@ -40,6 +38,7 @@ void OBSMenu::showEvent([[maybe_unused]] QShowEvent *event)
 	//       capture is supported on linux
 }
 
-void OBSMenu::popupMenu() {
+void OBSMenu::popupMenu()
+{
 	popup(QCursor::pos());
 }
