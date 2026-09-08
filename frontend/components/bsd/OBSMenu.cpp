@@ -1,4 +1,4 @@
-#include "OBSMenu.hpp"
+#include <components/OBSMenu.hpp>
 
 #include <obs.hpp>
 
@@ -7,11 +7,6 @@
 #include <QCursor>
 #include <QString>
 #include <QGuiApplication>
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include "Windows.h"
-#endif
 
 OBSMenu::OBSMenu(QWidget* parent) : parent(parent) {
 	connect(parent, &QObject::destroyed, this, &QMenu::deleteLater);
@@ -41,28 +36,6 @@ OBSMenu::OBSMenu(const QString &title, QWidget *parent, const bool &deleteOnClos
 
 void OBSMenu::showEvent(QShowEvent *event)
 {
-	HWND parentWindowHandle = reinterpret_cast<HWND>(QGuiApplication::focusWindow()->winId());
-	DWORD currentDisplayAffinity;
-	HWND contextWindowHandle = reinterpret_cast<HWND>((winId()));
-
-	if (GetWindowDisplayAffinity(parentWindowHandle, &currentDisplayAffinity) == TRUE) {
-		switch (currentDisplayAffinity) {
-		case WDA_EXCLUDEFROMCAPTURE:
-			if (SetWindowDisplayAffinity(contextWindowHandle, WDA_EXCLUDEFROMCAPTURE) == FALSE) {
-				blog(LOG_INFO, "Tried to hide from capture; could not set display affinity for Context Menu.");
-			}
-
-			break;
-		case WDA_NONE:
-		case WDA_MONITOR:
-		default:
-			if (SetWindowDisplayAffinity(contextWindowHandle, WDA_NONE) == FALSE) {
-				blog(LOG_INFO, "Could not unhide from capture; could not set display affinity for Context Menu.");
-			}
-
-			break;
-		}
-	}
 }
 
 void OBSMenu::popupMenu() {
