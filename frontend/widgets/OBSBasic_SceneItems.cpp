@@ -598,7 +598,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	previewSourceMenu->addSeparator();
 
 	if (!preview && !sourceSelected) {
-		QAction *addGroup = new QAction(QTStr("Basic.Main.NewGroup"), this);
+		QAction *addGroup = new QAction(QTStr("Basic.Main.NewGroup"), previewSourceMenu);
 
 		connect(addGroup, &QAction::triggered, ui->sources, &SourceTree::AddGroup);
 		previewSourceMenu->addAction(addGroup);
