@@ -101,6 +101,9 @@ target_sources(
     components/VolumeSlider.hpp
     components/WindowCaptureToolbar.cpp
     components/WindowCaptureToolbar.hpp
-    components/OBSMenu.cpp
     components/OBSMenu.hpp
+    $<$<PLATFORM_ID:Windows>:components/win32/OBSMenu.cpp>
+    $<$<PLATFORM_ID:Darwin>:components/osx/OBSMenu.cpp>
+    $<$<PLATFORM_ID:FreeBSD, OpenBSD>:components/bsd/OBSMenu.cpp>
+    $<$<PLATFORM_ID:Linux>:components/linux/OBSMenu.cpp>
 )

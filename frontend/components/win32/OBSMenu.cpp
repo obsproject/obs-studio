@@ -1,8 +1,8 @@
-#include "OBSMenu.hpp"
+#include <components/OBSMenu.hpp>
 
 #include <obs.hpp>
 
-#include <QT>
+#include <Qt>
 #include <QWindow>
 #include <QCursor>
 #include <QString>
@@ -39,7 +39,7 @@ OBSMenu::OBSMenu(const QString &title, QWidget *parent, const bool &deleteOnClos
 	}
 }
 
-void OBSMenu::showEvent(QShowEvent *event)
+void OBSMenu::showEvent([[maybe_unused]] QShowEvent *event)
 {
 	HWND parentWindowHandle = reinterpret_cast<HWND>(QGuiApplication::focusWindow()->winId());
 	DWORD currentDisplayAffinity;
