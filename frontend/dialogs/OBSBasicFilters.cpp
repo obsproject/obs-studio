@@ -503,7 +503,7 @@ OBSMenu *OBSBasicFilters::CreateAddFilterPopupMenu(QWidget *parent, const bool &
 			continue;
 		}
 
-		QAction *popupItem = new QAction(QT_UTF8(type.name.c_str()), this);
+		QAction *popupItem = new QAction(QT_UTF8(type.name.c_str()), popup);
 		popupItem->setData(QT_UTF8(type.type.c_str()));
 		connect(popupItem, &QAction::triggered, this, [this, type]() { AddNewFilter(type.type.c_str()); });
 		popup->addAction(popupItem);
@@ -877,7 +877,7 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 		popup->addAction(ui->actionRemoveFilter);
 		popup->addSeparator();
 
-		QAction *copyAction = new QAction(QTStr("Copy"));
+		QAction *copyAction = new QAction(QTStr("Copy"), popup);
 		connect(copyAction, &QAction::triggered, this, &OBSBasicFilters::CopyFilter);
 		copyAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_C));
 		ui->effectWidget->addAction(copyAction);
@@ -885,7 +885,7 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 		popup->addAction(copyAction);
 	}
 
-	QAction *pasteAction = new QAction(QTStr("Paste"));
+	QAction *pasteAction = new QAction(QTStr("Paste"), popup);
 	pasteAction->setEnabled(main->copyFilter);
 	connect(pasteAction, &QAction::triggered, this, &OBSBasicFilters::PasteFilter);
 	pasteAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_V));
