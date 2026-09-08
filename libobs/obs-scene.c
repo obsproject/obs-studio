@@ -1848,6 +1848,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst, struct obs_sc
 	dst->pos = src->pos;
 	dst->rot = src->rot;
 	dst->scale = src->scale;
+	dst->scale_ref = src->scale_ref;
 	dst->align = src->align;
 	dst->last_width = src->last_width;
 	dst->last_height = src->last_height;
