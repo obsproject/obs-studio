@@ -893,6 +893,9 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 	ui->asyncWidget->addAction(pasteAction);
 	popup->addAction(pasteAction);
 
+	list = nullptr;
+	item = nullptr;
+
 	popup->popupMenu();
 }
 
