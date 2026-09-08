@@ -1,19 +1,16 @@
 #include <components/OBSMenu.hpp>
 
-#include <obs.hpp>
-
 #include <Qt>
 #include <QWindow>
 #include <QCursor>
 #include <QString>
-#include <QGuiApplication>
 
+// This context menu will automatically delete itself on close.
+// No need to manually delete this.
 OBSMenu::OBSMenu(QWidget* parent) : parent(parent) {
 	connect(parent, &QObject::destroyed, this, &QMenu::deleteLater);
 }
 
-// This context menu will automatically delete itself on close.
-// No need to manually delete this.
 OBSMenu::OBSMenu(QWidget *parent, const bool &deleteOnClose) : parent(parent)
 {
 	if (deleteOnClose) {

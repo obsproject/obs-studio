@@ -1,12 +1,9 @@
 #include <components/OBSMenu.hpp>
 
-#include <obs.hpp>
-
 #include <Qt>
 #include <QWindow>
 #include <QCursor>
 #include <QString>
-#include <QGuiApplication>
 
 OBSMenu::OBSMenu(QWidget* parent) : parent(parent) {
 	connect(parent, &QObject::destroyed, this, &QMenu::deleteLater);
@@ -36,6 +33,8 @@ OBSMenu::OBSMenu(const QString &title, QWidget *parent, const bool &deleteOnClos
 
 void OBSMenu::showEvent([[maybe_unused]] QShowEvent *event)
 {
+	// TODO: implement this custom showEvent handler when hiding OBS Studio from
+	//       capture is supported on bsd
 }
 
 void OBSMenu::popupMenu() {
