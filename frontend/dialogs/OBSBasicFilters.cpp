@@ -869,7 +869,7 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 
 	if (item) {
 		popup->addSeparator();
-		popup->addAction(QTStr("Duplicate"), popup, [&]() {
+		popup->addAction(QTStr("Duplicate"), this, [&]() {
 			DuplicateItem(isAsync ? ui->asyncFilters->currentItem() : ui->effectFilters->currentItem());
 		});
 		popup->addSeparator();
