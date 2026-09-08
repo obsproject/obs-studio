@@ -7,32 +7,6 @@ endif()
 
 target_link_libraries(obs-studio PRIVATE OBS::qt-slider-ignorewheel)
 
-if(OS_WINDOWS)
-  target_sources(
-    obs-studio
-    PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/components/win32/OBSMenu.cpp"
-    )
-elseif(OS_MACOS)
-  target_sources(
-    obs-studio
-    PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/components/osx/OBSMenu.cpp"
-    )
-elseif(OS_FREEBSD OR OS_OPENBSD)
-  target_sources(
-    obs-studio
-    PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/components/bsd/OBSMenu.cpp"
-    )
-elseif(OS_LINUX)
-  target_sources(
-    obs-studio
-    PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/components/linux/OBSMenu.cpp"
-    )
-endif()
-
 target_sources(
   obs-studio
   PRIVATE
@@ -128,4 +102,8 @@ target_sources(
     components/WindowCaptureToolbar.cpp
     components/WindowCaptureToolbar.hpp
     components/OBSMenu.hpp
+    $<$<PLATFORM_ID:Windows>:components/win32/OBSMenu.cpp>
+    $<$<PLATFORM_ID:Darwin>:components/osx/OBSMenu.cpp>
+    $<$<PLATFORM_ID:FreeBSD, OpenBSD>:components/bsd/OBSMenu.cpp>
+    $<$<PLATFORM_ID:Linux>:components/linux/OBSMenu.cpp>
 )
