@@ -459,10 +459,14 @@ void OBSApp::FindThemes()
 {
 
 	QStringList filters;
+#if AERIUM_BUILD
+	filters << "Aerium.ovt" << "Yami.obt" << "System.obt";
+#else
 	filters << "*.obt" // OBS Base Theme
 		<< "*.ovt" // OBS Variant Theme
 		<< "*.oha" // OBS High-contrast Adjustment layer
 		;
+#endif
 
 	{
 		string themeDir;
@@ -476,6 +480,7 @@ void OBSApp::FindThemes()
 		}
 	}
 
+#if !AERIUM_BUILD
 	{
 		const std::string themeDir = App()->userConfigLocation.u8string() + "/obs-studio/themes";
 
@@ -488,6 +493,7 @@ void OBSApp::FindThemes()
 			}
 		}
 	}
+#endif
 
 	/* Build dependency tree for all themes, removing ones that have items missing. */
 	QSet<QString> invalid;
@@ -1036,12 +1042,9 @@ void OBSApp::themeFileChanged(const QString &path)
 }
 
 static map<string, string> themeMigrations = {
-	{"Yami", DEFAULT_THEME},
-	{"Grey", "com.obsproject.Yami.Grey"},
-	{"Rachni", "com.obsproject.Yami.Rachni"},
-	{"Light", "com.obsproject.Yami.Light"},
-	{"Dark", "com.obsproject.Yami.Classic"},
-	{"Acri", "com.obsproject.Yami.Acri"},
+	{"Yami", "com.obsproject.Yami.Original"}, {"Grey", "com.obsproject.Yami.Grey"},
+	{"Rachni", "com.obsproject.Yami.Rachni"}, {"Light", "com.obsproject.Yami.Light"},
+	{"Dark", "com.obsproject.Yami.Classic"},  {"Acri", "com.obsproject.Yami.Acri"},
 	{"System", "com.obsproject.System"},
 };
 
@@ -1083,6 +1086,11 @@ bool OBSApp::InitTheme()
 	}
 
 	QString themeName = config_get_string(userConfig, "Appearance", "Theme");
+
+#if AERIUM_BUILD
+	themeName = DEFAULT_THEME;
+	config_set_string(userConfig, "Appearance", "Theme", DEFAULT_THEME);
+#endif
 
 	if (themeName.isEmpty() || !GetTheme(themeName)) {
 		if (!themeName.isEmpty()) {

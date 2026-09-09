@@ -1,0 +1,10 @@
+.env*
+.git/
+test/
+README.md
+coverage/
+.agents/
+.claude/
+skills-lock.json
+scripts/*
+!scripts/verify-twitch.mjs

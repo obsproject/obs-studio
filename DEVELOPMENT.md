@@ -26,9 +26,41 @@ Always use `--portable` for development sessions to keep test settings separate 
 
 The bundle uses `io.github.aeriumchris.aerium` and ad-hoc signing for local development. OBS's updater, What's New panel, and virtual camera are disabled in the Aerium preset. OBS names, icons, internal paths, and browser-helper identifiers are still present elsewhere; this is not a completed product rebrand. Service-account integrations need Aerium-owned credentials before they can be enabled. No signing or service secrets are needed for the baseline build.
 
+## Aerium Appearance
+
+Aerium is the only available theme in Aerium builds: `#9146FF` accents with layered violet panels and controls. Previously saved theme choices migrate to Aerium at startup, and external themes are not loaded. **Settings > Appearance** shows Aerium with theme switching disabled; font size and density remain adjustable.
+
+The style lives in `frontend/data/themes/Aerium.ovt` and inherits Yami's layout and widget behavior. The macOS Aerium bundle excludes other styles and their assets, retaining only Aerium, its Yami/Dark dependencies, and an internal system-renderer fallback for theme-loading failure. These dependencies are not alternative user-selectable themes. Upstream theme sources remain in the repository for builds without `AERIUM_BUILD`, which retain OBS's theme behavior.
+
+Keep Aerium color changes in this variant rather than editing the upstream base theme. Warning, error, recording-indicator, and audio-meter colors retain their meaning; the video preview background stays neutral.
+
+For theme changes, rebuild and inspect the main window, Settings, selections, hover/focus states, and disabled controls in an isolated portable configuration. Check fresh settings, migration from a removed theme, and exclusion of external themes. Building alone does not validate visual contrast or theme parsing at runtime.
+
+## Twitch Account
+
+Aerium builds open a modal Twitch login window covering the main window at startup. It follows the main window's size and position and prevents access to the underlying controls until an account is verified. Escape, Close, cancelled consent, and failed login attempts do not dismiss it; **Quit Aerium** remains available. A saved Keychain session dismisses it automatically after successful validation. Signing out brings the login window back.
+
+**Sign in with Twitch** opens authentication in the system browser through `https://api.aerium.tv`; no Twitch password or provider token is handled by the desktop. After authorization, the overlay closes and the top-right header shows the verified Twitch username, with an account menu for reconnecting and signing out. Login is required to access the main UI, including recording controls. This UI gate does not stop an already-running recording or stream if the session subsequently ends.
+
+The desktop uses a random, SHA-256-bound handoff proof, polls for up to ten minutes, and validates the resulting session before displaying the username. Aerium access tokens stay in memory. On macOS, rotating refresh tokens are stored in Keychain under `tv.aerium.desktop.development`, restored on startup, and removed on sign-out. This development Keychain entry is shared across portable Aerium profiles but separate from OBS. Keychain failure is reported; other platforms currently use memory-only sessions. A service outage can be retried, but an ambiguous failed refresh requires sign-in again because the server may already have rotated the token.
+
+Login is currently restricted by the backend to the two approved development accounts. This is Aerium account login, not yet automatic configuration of OBS's Twitch streaming service, chat, Whispers, friends, or co-streaming. See [backend/README.md](backend/README.md) for the deployed API and security contract.
+
+The focused widget tests run against simulated HTTP replies and an in-memory credential store, without opening a browser or touching Twitch or Keychain:
+
+```sh
+qt_dir="$(sed -n 's/^Qt6_DIR:PATH=//p' build_aerium/CMakeCache.txt)"
+cmake -S test/aerium-account -B build_aerium/account-tests \
+	-DQt6_DIR="$qt_dir" -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
+cmake --build build_aerium/account-tests --parallel 3
+ctest --test-dir build_aerium/account-tests --output-on-failure
+```
+
+For a real-account smoke test, start the portable app, check that the login overlay covers and blocks the main window, click sign-in, authorize an approved account in Twitch, and check that only verified login dismisses it and shows the top-right username. Quit and reopen to verify Keychain restoration, then sign out and verify the overlay returns and remains across a restart. Check resizing, Escape, declined consent, an unapproved account, and an unavailable network. Automated widget tests do not replace this provider-consent and Keychain smoke test.
+
 ## Validation
 
-The `Aerium CI` workflow runs on pushes to `master`, pull requests targeting `master`, and manual dispatch. It validates reStructuredText, lints its workflow, compiles the Apple Silicon app, checks its identifier and ad-hoc signature, and runs `--version` and `--help`. It also checks that the development preset has no Sparkle updater or virtual camera enabled.
+The `Aerium CI` workflow runs on pushes to `master`, pull requests targeting `master`, and manual dispatch. It validates reStructuredText, lints its workflow, compiles the Apple Silicon app, runs the isolated desktop account tests, checks its identifier and ad-hoc signature, and runs `--version` and `--help`. It also checks that the development preset has no Sparkle updater or virtual camera enabled.
 
 CI packages the development bundle on every run to validate delivery. Only successful pushes to `master` and manual CI runs on `master` upload artifacts, retained for 14 days. Pull requests do not upload distributable artifacts. Packaging includes the portable launcher, development guide, license, matching tracked source including recursive submodules, build metadata, and SHA-256 checksums.
 
@@ -73,7 +105,7 @@ Only the delivery job has repository write permission. The environment is restri
 ### Manual Recording Smoke Test
 
 1. Start the development app in portable mode with only bundled plugins.
-2. Skip account connections and the automatic configuration wizard. Disable desktop and microphone audio devices for the synthetic test.
+2. Sign in with an approved Aerium development account, then skip the automatic configuration wizard and any separate streaming-service connections. Disable desktop and microphone audio devices for the synthetic test.
 3. Create a disposable profile and scene collection, add a color source and a text source, and choose a temporary recording folder.
 4. Record at least ten seconds locally, stop, and play the result. Check dimensions, duration, visible sources, and successful finalization.
 5. Close and reopen the app in portable mode. Confirm the test scene persists and the regular OBS profile was not changed.

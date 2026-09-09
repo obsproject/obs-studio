@@ -13,4 +13,10 @@
 #define YOUTUBE_CLIENTID_HASH 0x@YOUTUBE_CLIENTID_HASH@
 #define YOUTUBE_SECRET_HASH   0x@YOUTUBE_SECRET_HASH@
 
+#cmakedefine01 AERIUM_BUILD
+
+#if AERIUM_BUILD
+#define DEFAULT_THEME "io.github.aeriumchris.Aerium"
+#else
 #define DEFAULT_THEME "com.obsproject.Yami.Original"
+#endif

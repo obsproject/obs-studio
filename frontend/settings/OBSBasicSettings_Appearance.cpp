@@ -4,17 +4,23 @@
 #include <utility/platform.hpp>
 
 #include <qt-wrappers.hpp>
+#include <ui-config.h>
 
 void OBSBasicSettings::InitAppearancePage()
 {
 	savedTheme = App()->GetTheme();
 	const QString currentBaseTheme = savedTheme->isBaseTheme ? savedTheme->id : savedTheme->parent;
 
+#if AERIUM_BUILD
+	ui->theme->addItem(savedTheme->name, currentBaseTheme);
+	ui->theme->setEnabled(false);
+#else
 	for (const OBSTheme &theme : App()->GetThemes()) {
 		if (theme.isBaseTheme && (HighContrastEnabled() || theme.isVisible || theme.id == currentBaseTheme)) {
 			ui->theme->addItem(theme.name, theme.id);
 		}
 	}
+#endif
 
 	int idx = ui->theme->findData(currentBaseTheme);
 	if (idx != -1) {
@@ -78,7 +84,11 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 		ui->themeVariant->setCurrentIndex(idx);
 	}
 
+#if AERIUM_BUILD
+	ui->themeVariant->setEnabled(false);
+#else
 	ui->themeVariant->setEnabled(ui->themeVariant->count() > 0);
+#endif
 	ui->themeVariant->blockSignals(false);
 	/* If no variant is selected but variants are available set the first one. */
 	if (idx == -1 && ui->themeVariant->count() > 0) {

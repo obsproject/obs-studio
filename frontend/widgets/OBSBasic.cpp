@@ -20,6 +20,11 @@
 #include "OBSBasic.hpp"
 #include "ui-config.h"
 
+#if AERIUM_BUILD
+#include "AeriumAccountWidget.hpp"
+#include <QToolBar>
+#endif
+
 #include "ColorSelect.hpp"
 #include "OBSBasicControls.hpp"
 #include "OBSBasicStats.hpp"
@@ -255,6 +260,18 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
+
+#if AERIUM_BUILD
+	auto *accountBar = new QToolBar(this);
+	accountBar->setObjectName("aeriumAccountBar");
+	accountBar->setMovable(false);
+	accountBar->setFloatable(false);
+	accountBar->setAllowedAreas(Qt::TopToolBarArea);
+	accountBar->setContextMenuPolicy(Qt::PreventContextMenu);
+	accountBar->toggleViewAction()->setEnabled(false);
+	accountBar->addWidget(new AeriumAccountWidget(accountBar, nullptr, this));
+	addToolBar(Qt::TopToolBarArea, accountBar);
+#endif
 
 	/* Set up streaming connections */
 	connect(

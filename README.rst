@@ -20,9 +20,10 @@ Early Development
 -----------------
 
 **Aerium is in its very early stages.** Work so far covers repository
-setup, project policies, and a macOS development build configuration.
-The application interface remains inherited from OBS; the planned
-workflow improvements and additional features have not been implemented.
+setup, project policies, macOS development builds and CI, and an Aerium
+violet interface style built around ``#9146FF``. The layout and workflows
+remain inherited from OBS; the planned workflow improvements and additional
+features have not been implemented.
 
 The goals below describe what the project intends to explore, not features
 that are already available or a committed release roadmap. Scope, design,

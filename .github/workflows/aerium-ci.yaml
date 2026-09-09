@@ -69,6 +69,15 @@ jobs:
       - name: Build
         run: cmake --build --preset aerium-macos --parallel 3 -- -quiet
 
+      - name: Test desktop account login
+        run: |
+          qt_dir="$(sed -n 's/^Qt6_DIR:PATH=//p' build_aerium/CMakeCache.txt)"
+          test -n "$qt_dir"
+          cmake -S test/aerium-account -B build_aerium/account-tests \
+            -DQt6_DIR="$qt_dir" -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
+          cmake --build build_aerium/account-tests --parallel 3
+          ctest --test-dir build_aerium/account-tests --output-on-failure
+
       - name: Check executable and development safeguards
         run: |
           app=build_aerium/frontend/RelWithDebInfo/Aerium.app
@@ -78,6 +87,7 @@ jobs:
           grep -q '^ENABLE_VIRTUALCAM:BOOL=FALSE$' build_aerium/CMakeCache.txt
           grep -q '^SPARKLE_APPCAST_URL:.*=$' build_aerium/CMakeCache.txt
           test ! -d "${app}/Contents/Frameworks/Sparkle.framework"
+          test -f "${app}/Contents/PlugIns/tls/libqsecuretransportbackend.dylib"
           codesign --verify --deep --strict "${app}"
 
       - name: Save build dependencies

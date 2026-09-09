@@ -371,6 +371,11 @@ function(target_install_resources target)
         BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/"
         OUTPUT_VARIABLE relative_path
       )
+      if(AERIUM_BUILD AND target STREQUAL "obs-studio" AND relative_path MATCHES "^themes/")
+        if(NOT relative_path MATCHES "^themes/(Aerium[.]ovt|Yami[.]obt|System[.]obt|Dark/.*|Yami/.*)$")
+          continue()
+        endif()
+      endif()
       cmake_path(GET relative_path PARENT_PATH relative_path)
       target_sources(${target} PRIVATE "${data_file}")
       set_property(SOURCE "${data_file}" PROPERTY MACOSX_PACKAGE_LOCATION "Resources/${relative_path}")

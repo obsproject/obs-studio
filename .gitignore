@@ -3,6 +3,7 @@
 
 # Except for default project files
 !/.github
+!/backend
 !/build-aux
 !/cmake
 !/deps

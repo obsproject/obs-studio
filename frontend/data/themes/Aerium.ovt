@@ -1,0 +1,148 @@
+@OBSThemeMeta {
+    name: 'Aerium';
+    id: 'io.github.aeriumchris.Aerium';
+    extends: 'com.obsproject.Yami';
+    author: 'AeriumChris';
+    dark: 'true';
+}
+
+@OBSThemeVars {
+    --grey1: #8664B3;
+    --grey2: #67468E;
+    --grey3: #553479;
+    --grey4: #41265F;
+    --grey5: #321E4D;
+    --grey6: #27163E;
+    --grey7: #1D102F;
+    --grey8: #140B21;
+
+    --primary: #9146FF;
+    --primary_light: #A675F0;
+    --primary_lighter: #D1B3FF;
+    --primary_dark: #7535CF;
+    --primary_darker: #59269E;
+
+    --blue1: var(--primary_lighter);
+    --blue2: var(--primary);
+    --blue3: var(--primary_dark);
+    --blue4: var(--primary_darker);
+    --blue5: #452073;
+    --blue6: #301744;
+
+    --bg_window: var(--grey7);
+    --bg_base: var(--grey6);
+    --bg_preview: #101014;
+
+    --text: #FFFFFF;
+    --text_light: #FFFFFF;
+    --text_muted: #C5B3DD;
+    --text_disabled: #9C86B8;
+    --text_inactive: var(--text);
+
+    --border_color: var(--grey3);
+    --highlight_color: var(--primary_lighter);
+
+    --input_bg: var(--grey5);
+    --input_bg_hover: var(--grey6);
+    --input_bg_focus: var(--grey7);
+    --input_border: var(--grey1);
+    --input_border_hover: var(--primary_light);
+    --input_border_focus: var(--primary_lighter);
+
+    --list_item_bg_selected: var(--primary);
+    --list_item_bg_hover: var(--primary_darker);
+
+    --button_bg: var(--grey4);
+    --button_bg_hover: var(--grey3);
+    --button_bg_down: var(--primary_darker);
+    --button_bg_disabled: var(--grey6);
+    --button_border: var(--grey2);
+    --button_border_hover: var(--primary_light);
+    --button_border_focus: var(--primary_lighter);
+
+    --tab_bg: var(--grey6);
+    --tab_bg_hover: var(--grey4);
+    --tab_bg_down: var(--primary);
+    --tab_border_selected: var(--primary);
+
+    --scrollbar_handle: var(--grey2);
+    --scrollbar_hover: var(--primary_dark);
+    --scrollbar_down: var(--primary);
+    --scrollbar_border: var(--grey2);
+
+    --palette_link: var(--primary_lighter);
+    --palette_linkVisited: var(--primary_light);
+}
+
+.button-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+QDialog#aeriumLoginWindow {
+    background-color: var(--bg_window);
+    border-top: 2px solid var(--primary);
+}
+
+QLabel#aeriumLoginTitle {
+    color: var(--text);
+    font-size: 32px;
+    font-weight: bold;
+}
+
+QLabel#aeriumOverlayStatus {
+    color: var(--text_muted);
+}
+
+.button-primary:hover,
+.button-primary:focus {
+    background-color: var(--primary_dark);
+    border-color: var(--primary_lighter);
+}
+
+.button-primary:pressed {
+    background-color: var(--primary_darker);
+}
+
+QMenu::item:selected:hover,
+QListView::item:selected:hover,
+QListWidget::item:selected:hover,
+#ytEventList .row-selected:hover {
+    background-color: var(--primary_dark);
+}
+
+QPushButton:focus,
+QToolButton:focus,
+.btn-tool:focus {
+    border-color: var(--button_border_focus);
+}
+
+#streamButton {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+#streamButton:hover:!pressed,
+#streamButton:hover:!pressed.state-active,
+#recordButton:hover:!pressed.state-active,
+#pauseRecordButton:hover:!pressed.state-active,
+#replayBufferButton:!pressed.state-active,
+#virtualCamButton:!pressed.state-active,
+#modeSwitch:hover:!pressed.state-active,
+#broadcastButton:hover:!pressed.state-active {
+    background-color: var(--primary_dark);
+}
+
+#streamButton:pressed {
+    background-color: var(--primary_darker);
+}
+
+#streamButton:focus {
+    border-color: var(--primary_lighter);
+}
+
+#streamButton:disabled {
+    background-color: var(--button_bg_disabled);
+    border-color: var(--button_border);
+    color: var(--text_disabled);
+}

@@ -59,6 +59,20 @@ include(cmake/ui-utility.cmake)
 include(cmake/ui-widgets.cmake)
 include(cmake/ui-wizards.cmake)
 
+if(AERIUM_BUILD)
+  target_sources(
+    obs-studio
+    PRIVATE
+      widgets/AeriumAccountWidget.cpp
+      widgets/AeriumAccountWidget.hpp
+      utility/AeriumCredentials.cpp
+      utility/AeriumCredentials.hpp
+  )
+  if(OS_MACOS)
+    target_link_libraries(obs-studio PRIVATE "$<LINK_LIBRARY:FRAMEWORK,Security.framework>")
+  endif()
+endif()
+
 if(NOT OAUTH_BASE_URL)
   set(OAUTH_BASE_URL "https://auth.obsproject.com/" CACHE STRING "Default OAuth base URL")
   mark_as_advanced(OAUTH_BASE_URL)

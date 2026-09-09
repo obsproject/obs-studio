@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/verify-twitch.mjs",
+  "outputDirectory": "public",
+  "regions": ["iad1"],
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "functions": { "api/index.mjs": { "maxDuration": 60 } }
+}
