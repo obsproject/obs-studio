@@ -3505,6 +3505,25 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "MyVideoSpot",
+            "more_info_link": "https://docs.myvideospot.com/article/116-live-streaming-basics",
+            "stream_key_link": "https://docs.myvideospot.com/article/118-streaming-with-third-party-apps",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://streaming.myvrspot.com/mvs"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            },
+            "supported video codecs": [
+                "h264"
+            ]
         }
     ]
 }
